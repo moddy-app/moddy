@@ -11,7 +11,7 @@ from typing import List
 import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
-from utils.embeds import ModdyEmbed, ModdyResponse, ModdyColors
+from utils.embeds import ModdyEmbed, ModdyColors
 from config import COLORS
 
 
@@ -29,60 +29,78 @@ class CommandsList(commands.Cog):
     async def list_commands(self, ctx):
         """Liste toutes les commandes disponibles"""
 
-        embed = discord.Embed(
-            title="Commandes Disponibles",
-            color=COLORS["primary"]
+        embed = ModdyEmbed.create(
+            title="<:commands:1401610449136648283> Commandes disponibles",
+            color=ModdyColors.PRIMARY,
         )
 
-        # Commandes par cog
         for cog_name, cog in self.bot.cogs.items():
-            commands_list = []
+            text_cmds: List[str] = []
+            slash_cmds: List[str] = []
 
-            # Commandes texte
             for cmd in cog.get_commands():
                 if not cmd.hidden:
                     aliases = f" ({', '.join(cmd.aliases)})" if cmd.aliases else ""
-                    commands_list.append(f"`{cmd.name}{aliases}`")
+                    text_cmds.append(f"`{cmd.name}{aliases}`")
 
-            # Commandes slash
             for cmd in cog.get_app_commands():
-                commands_list.append(f"`/{cmd.name}` (slash)")
+                slash_cmds.append(f"`/{cmd.name}`")
 
-            if commands_list:
-                # Limiter la longueur pour respecter la limite Discord
-                value = "\n".join(commands_list)
+            if text_cmds or slash_cmds:
+                lines: List[str] = []
+                if text_cmds:
+                    lines.append("<:code:1401610523803652196> " + ", ".join(text_cmds))
+                if slash_cmds:
+                    lines.append("<:commands:1401610449136648283> " + ", ".join(slash_cmds))
+
+                value = "\n".join(lines)
                 if len(value) > 1024:
                     value = value[:1021] + "..."
 
                 embed.add_field(
                     name=f"**{cog_name}**",
                     value=value,
-                    inline=True
+                    inline=True,
                 )
 
-        # Commandes sans cog
-        no_cog_commands = []
+        no_cog_text: List[str] = []
+        no_cog_slash: List[str] = []
+
         for cmd in self.bot.commands:
             if not cmd.cog and not cmd.hidden:
                 aliases = f" ({', '.join(cmd.aliases)})" if cmd.aliases else ""
-                no_cog_commands.append(f"`{cmd.name}{aliases}`")
+                no_cog_text.append(f"`{cmd.name}{aliases}`")
 
-        if no_cog_commands:
-            value = "\n".join(no_cog_commands)
+        for cmd in self.bot.tree.get_commands():
+            if cmd.binding is None:
+                no_cog_slash.append(f"`/{cmd.name}`")
+
+        if no_cog_text or no_cog_slash:
+            lines: List[str] = []
+            if no_cog_text:
+                lines.append("<:code:1401610523803652196> " + ", ".join(no_cog_text))
+            if no_cog_slash:
+                lines.append("<:commands:1401610449136648283> " + ", ".join(no_cog_slash))
+
+            value = "\n".join(lines)
             if len(value) > 1024:
                 value = value[:1021] + "..."
 
             embed.add_field(
                 name="**Sans catégorie**",
                 value=value,
-                inline=True
+                inline=True,
             )
 
-        # Stats
         total_commands = len([c for c in self.bot.commands if not c.hidden])
         total_slash = len(self.bot.tree.get_commands())
 
-        embed.set_footer(text=f"Total : {total_commands} commandes texte, {total_slash} commandes slash")
+        embed.set_footer(
+            text=(
+                f"<:code:1401610523803652196> {total_commands} | "
+                f"<:commands:1401610449136648283> {total_slash}"
+            )
+        )
 
         await ctx.send(embed=embed)
 
