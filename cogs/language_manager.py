@@ -1,51 +1,17 @@
 """
 Système de gestion de langue pour Moddy
-Intercepte les interactions et vérifie/définit la langue de l'utilisateur
+Version modifiée : envoie un MP au lieu d'afficher une popup
 """
 
 import discord
 from discord.ext import commands
 from typing import Optional, Dict
 import asyncio
+import logging
 
 from config import COLORS
 
-
-class LanguageSelectView(discord.ui.View):
-    """Vue pour sélectionner la langue préférée"""
-
-    def __init__(self, user_id: int):
-        super().__init__(timeout=60)
-        self.user_id = user_id
-        self.selected_lang = None
-
-    @discord.ui.button(label="Français", emoji="🇫🇷", style=discord.ButtonStyle.primary)
-    async def french_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        """Sélectionne le français"""
-        if interaction.user.id != self.user_id:
-            await interaction.response.send_message(
-                "Cette sélection n'est pas pour vous.",
-                ephemeral=True
-            )
-            return
-
-        self.selected_lang = "FR"
-        await interaction.response.defer()
-        self.stop()
-
-    @discord.ui.button(label="English", emoji="🇬🇧", style=discord.ButtonStyle.primary)
-    async def english_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        """Sélectionne l'anglais"""
-        if interaction.user.id != self.user_id:
-            await interaction.response.send_message(
-                "This selection is not for you.",
-                ephemeral=True
-            )
-            return
-
-        self.selected_lang = "EN"
-        await interaction.response.defer()
-        self.stop()
+logger = logging.getLogger('moddy')
 
 
 class LanguageManager(commands.Cog):
@@ -54,9 +20,8 @@ class LanguageManager(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.lang_cache = {}  # Cache pour éviter trop de requêtes DB
-        self.pending_interactions = {}  # Stocke les interactions en attente
-        # Dictionnaire pour stocker les langues des interactions en cours
-        self.interaction_languages = {}
+        self.interaction_languages = {}  # Stocke les langues des interactions en cours
+        self.notified_users = set()  # Pour suivre les utilisateurs ayant déjà reçu le MP
 
         # Textes multilingues
         self.texts = {
@@ -92,9 +57,11 @@ class LanguageManager(commands.Cog):
         if self.bot.db:
             try:
                 lang = await self.bot.db.get_attribute('user', user_id, 'LANG')
-                self.lang_cache[user_id] = lang
+                if lang:
+                    self.lang_cache[user_id] = lang
                 return lang
-            except:
+            except Exception as e:
+                logger.error(f"Erreur récupération langue: {e}")
                 return None
         return None
 
@@ -123,87 +90,60 @@ class LanguageManager(commands.Cog):
                 )
                 # Met à jour le cache
                 self.lang_cache[user_id] = lang
+                logger.info(f"Langue définie pour {user_id}: {lang}")
                 return True
             except Exception as e:
-                import logging
-                logger = logging.getLogger('moddy')
                 logger.error(f"Erreur définition langue: {e}")
                 return False
         return False
 
-    async def prompt_language_selection(self, interaction: discord.Interaction) -> Optional[str]:
-        """Demande à l'utilisateur de choisir sa langue"""
-        # Crée l'embed bilingue
-        embed = discord.Embed(
-            title="Language Selection / Sélection de la langue",
-            description=(
-                "🇫🇷 **Français**\n"
-                "Quelle langue préférez-vous utiliser ?\n\n"
-                "🇬🇧 **English**\n"
-                "Which language do you prefer to use?"
-            ),
-            color=COLORS["info"]
-        )
+    async def send_language_info_dm(self, user: discord.User):
+        """Envoie un MP à l'utilisateur pour l'informer sur le changement de langue"""
+        # Vérifie si on a déjà envoyé un MP à cet utilisateur
+        if user.id in self.notified_users:
+            return True
 
-        # Crée la vue avec les boutons
-        view = LanguageSelectView(interaction.user.id)
-
-        # Envoie le message
         try:
-            if interaction.response.is_done():
-                msg = await interaction.followup.send(embed=embed, view=view, ephemeral=True)
-            else:
-                await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
-                msg = await interaction.original_response()
+            embed = discord.Embed(
+                title="Language / Langue",
+                color=COLORS["primary"]
+            )
 
-            # Attend la sélection
-            await view.wait()
+            # Message bilingue
+            embed.add_field(
+                name="English",
+                value=(
+                    "Welcome to Moddy! Your language has been set to **English** by default.\n\n"
+                    "If you want to change your language to French, use the command:\n"
+                    "`/preferences`"
+                ),
+                inline=False
+            )
 
-            if view.selected_lang:
-                # Sauvegarde la langue
-                success = await self.set_user_language(interaction.user.id, view.selected_lang)
+            embed.add_field(
+                name="Français",
+                value=(
+                    "Bienvenue sur Moddy ! Votre langue a été définie sur **Anglais** par défaut.\n\n"
+                    "Si vous souhaitez changer votre langue en français, utilisez la commande :\n"
+                    "`/preferences`"
+                ),
+                inline=False
+            )
 
-                if success:
-                    # Message de confirmation
-                    confirm_embed = discord.Embed(
-                        description=self.get_text(view.selected_lang, "language_set"),
-                        color=COLORS["success"]
-                    )
+            embed.set_footer(text="Moddy Bot")
 
-                    try:
-                        await msg.edit(embed=confirm_embed, view=None)
-                    except:
-                        pass
+            await user.send(embed=embed)
+            self.notified_users.add(user.id)
+            logger.info(f"MP langue envoyé à {user.name} ({user.id})")
+            return True
 
-                    return view.selected_lang
-                else:
-                    # Erreur lors de la sauvegarde
-                    error_embed = discord.Embed(
-                        description="Error saving language preference / Erreur lors de la sauvegarde",
-                        color=COLORS["error"]
-                    )
-                    try:
-                        await msg.edit(embed=error_embed, view=None)
-                    except:
-                        pass
-                    return None
-            else:
-                # Timeout
-                timeout_embed = discord.Embed(
-                    description="Time expired / Temps écoulé",
-                    color=COLORS["warning"]
-                )
-                try:
-                    await msg.edit(embed=timeout_embed, view=None)
-                except:
-                    pass
-                return None
-
+        except discord.Forbidden:
+            logger.warning(f"Impossible d'envoyer un MP à {user.name} ({user.id}) - MPs désactivés")
+            self.notified_users.add(user.id)  # On marque quand même comme notifié
+            return False
         except Exception as e:
-            import logging
-            logger = logging.getLogger('moddy')
-            logger.error(f"Erreur sélection langue: {e}")
-            return None
+            logger.error(f"Erreur envoi MP langue: {e}")
+            return False
 
     @commands.Cog.listener()
     async def on_interaction(self, interaction: discord.Interaction):
@@ -224,66 +164,53 @@ class LanguageManager(commands.Cog):
         user_lang = await self.get_user_language(interaction.user.id)
 
         if not user_lang:
-            # L'utilisateur n'a pas de langue définie, on lui demande
-            # Stocke l'interaction originale
-            self.pending_interactions[interaction.user.id] = interaction
+            # L'utilisateur n'a pas de langue définie
+            # Définit l'anglais par défaut IMMÉDIATEMENT
+            logger.info(f"Nouvel utilisateur détecté: {interaction.user.name} ({interaction.user.id})")
 
-            # Demande la langue
-            selected_lang = await self.prompt_language_selection(interaction)
+            # Définit la langue par défaut
+            await self.set_user_language(interaction.user.id, "EN", interaction.user.id)
+            self.set_interaction_language(interaction, "EN")
 
-            if selected_lang:
-                # La langue a été sélectionnée, on peut continuer
-                # Stocke la langue dans notre dictionnaire
-                self.set_interaction_language(interaction, selected_lang)
+            # Envoie le MP de manière asynchrone (sans bloquer)
+            asyncio.create_task(self.send_language_info_dm(interaction.user))
 
-                # Log l'action
-                if log_cog := self.bot.get_cog("LoggingSystem"):
+            # Log l'action
+            if log_cog := self.bot.get_cog("LoggingSystem"):
+                try:
                     await log_cog.log_command(
                         type('obj', (object,), {
-                            'author': interaction.user,
-                            'guild': interaction.guild,
-                            'channel': interaction.channel
+                            'command': interaction.command,
+                            'guild': interaction.guild
                         })(),
-                        "language_set",
-                        {"language": selected_lang, "first_interaction": True}
+                        interaction.user,
+                        {
+                            'action': 'language_auto_set',
+                            'lang': 'EN',
+                            'method': 'default_with_dm'
+                        }
                     )
-            else:
-                # Erreur ou timeout, on arrête l'interaction
-                if interaction.user.id in self.pending_interactions:
-                    del self.pending_interactions[interaction.user.id]
-                return
+                except:
+                    pass
 
-            # Nettoie
-            if interaction.user.id in self.pending_interactions:
-                del self.pending_interactions[interaction.user.id]
         else:
-            # L'utilisateur a déjà une langue, on la stocke
+            # L'utilisateur a déjà une langue, on la stocke pour cette interaction
             self.set_interaction_language(interaction, user_lang)
 
-    @commands.command(name="changelang", aliases=["cl", "lang"])
-    async def change_language(self, ctx, lang: str = None):
+    @commands.command(name="changelang", aliases=["lang", "language"])
+    async def change_language_command(self, ctx, lang: str = None):
         """Change la langue de l'utilisateur (commande texte)"""
         if not lang:
-            current_lang = await self.get_user_language(ctx.author.id)
-
-            embed = discord.Embed(
-                title="Language / Langue",
-                description=(
-                    f"**Current / Actuelle:** `{current_lang or 'Not set / Non définie'}`\n\n"
-                    "**Available / Disponibles:**\n"
-                    "`FR` - Français\n"
-                    "`EN` - English\n\n"
-                    "**Usage:** `!changelang FR` or `!changelang EN`"
-                ),
-                color=COLORS["info"]
-            )
-            await ctx.send(embed=embed)
+            current = await self.get_user_language(ctx.author.id)
+            if current == "FR":
+                await ctx.send("Votre langue actuelle : **Français**\nUtilisez `/changelang EN` pour changer.")
+            else:
+                await ctx.send("Your current language: **English**\nUse `/changelang FR` to change.")
             return
 
-        # Valide la langue
         lang = lang.upper()
         if lang not in ["FR", "EN"]:
-            await ctx.send("<:undone:1398729502028333218> Invalid language / Langue invalide. Use `FR` or `EN`.")
+            await ctx.send("Invalid language / Langue invalide.\nUse `FR` or `EN`.")
             return
 
         # Change la langue
@@ -308,6 +235,11 @@ class LanguageManager(commands.Cog):
 
         # Nettoie aussi la langue de l'interaction
         self.interaction_languages.pop(interaction.id, None)
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        """Quand le bot est prêt"""
+        logger.info("LanguageManager prêt - Mode: MP automatique")
 
 
 # Fonction helper pour récupérer la langue d'une interaction
