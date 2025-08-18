@@ -3,7 +3,7 @@ Commande preferences pour Moddy
 Gère toutes les préférences utilisateur : langue, incognito, notifications DM
 """
 
-import nextcord as discord
+import nextcord
 from nextcord import app_commands
 from nextcord.ext import commands
 from typing import Optional
@@ -14,10 +14,10 @@ from utils.embeds import ModdyEmbed, ModdyResponse, ModdyColors
 from config import COLORS
 
 
-class PreferencesView(discord.ui.View):
+class PreferencesView(nextcord.ui.View):
     """Vue principale des préférences"""
 
-    def __init__(self, bot, user: discord.User, user_data: dict, lang: str):
+    def __init__(self, bot, user: nextcord.User, user_data: dict, lang: str):
         super().__init__(timeout=300)  # 5 minutes
         self.bot = bot
         self.user = user
@@ -133,27 +133,27 @@ class PreferencesView(discord.ui.View):
     def _add_main_buttons(self):
         """Ajoute les boutons du menu principal"""
         # Bouton Langue
-        lang_button = discord.ui.Button(
+        lang_button = nextcord.ui.Button(
             label=self.get_text("language_button"),
-            style=discord.ButtonStyle.primary,
+            style=nextcord.ButtonStyle.primary,
             row=0
         )
         lang_button.callback = self.show_language_settings
         self.add_item(lang_button)
 
         # Bouton Confidentialité
-        privacy_button = discord.ui.Button(
+        privacy_button = nextcord.ui.Button(
             label=self.get_text("privacy_button"),
-            style=discord.ButtonStyle.primary,
+            style=nextcord.ButtonStyle.primary,
             row=0
         )
         privacy_button.callback = self.show_privacy_settings
         self.add_item(privacy_button)
 
         # Bouton Notifications
-        notif_button = discord.ui.Button(
+        notif_button = nextcord.ui.Button(
             label=self.get_text("notification_button"),
-            style=discord.ButtonStyle.primary,
+            style=nextcord.ButtonStyle.primary,
             row=1
         )
         notif_button.callback = self.show_notification_settings
@@ -164,9 +164,9 @@ class PreferencesView(discord.ui.View):
         current_lang = self.user_data['attributes'].get('LANG', 'EN')
 
         # Bouton Français
-        fr_button = discord.ui.Button(
+        fr_button = nextcord.ui.Button(
             label="Français",
-            style=discord.ButtonStyle.success if current_lang == "FR" else discord.ButtonStyle.secondary,
+            style=nextcord.ButtonStyle.success if current_lang == "FR" else nextcord.ButtonStyle.secondary,
             disabled=current_lang == "FR",
             row=0
         )
@@ -174,9 +174,9 @@ class PreferencesView(discord.ui.View):
         self.add_item(fr_button)
 
         # Bouton English
-        en_button = discord.ui.Button(
+        en_button = nextcord.ui.Button(
             label="English",
-            style=discord.ButtonStyle.success if current_lang == "EN" else discord.ButtonStyle.secondary,
+            style=nextcord.ButtonStyle.success if current_lang == "EN" else nextcord.ButtonStyle.secondary,
             disabled=current_lang == "EN",
             row=0
         )
@@ -184,10 +184,10 @@ class PreferencesView(discord.ui.View):
         self.add_item(en_button)
 
         # Bouton Retour
-        back_button = discord.ui.Button(
+        back_button = nextcord.ui.Button(
             label=self.get_text("back"),
             emoji="<:back:1401600847733067806>",
-            style=discord.ButtonStyle.danger,
+            style=nextcord.ButtonStyle.danger,
             row=1
         )
         back_button.callback = self.go_back
@@ -198,10 +198,10 @@ class PreferencesView(discord.ui.View):
         default_incognito = self.user_data['attributes'].get('DEFAULT_INCOGNITO', True)
 
         # Bouton Activer Incognito
-        enable_button = discord.ui.Button(
+        enable_button = nextcord.ui.Button(
             label=f"{self.get_text('enabled')}",
             emoji="<:done:1398729525277229066>",
-            style=discord.ButtonStyle.success if default_incognito else discord.ButtonStyle.secondary,
+            style=nextcord.ButtonStyle.success if default_incognito else nextcord.ButtonStyle.secondary,
             disabled=default_incognito,
             row=0
         )
@@ -209,10 +209,10 @@ class PreferencesView(discord.ui.View):
         self.add_item(enable_button)
 
         # Bouton Désactiver Incognito
-        disable_button = discord.ui.Button(
+        disable_button = nextcord.ui.Button(
             label=f"{self.get_text('disabled')}",
             emoji="<:undone:1398729502028333218>",
-            style=discord.ButtonStyle.danger if not default_incognito else discord.ButtonStyle.secondary,
+            style=nextcord.ButtonStyle.danger if not default_incognito else nextcord.ButtonStyle.secondary,
             disabled=not default_incognito,
             row=0
         )
@@ -220,10 +220,10 @@ class PreferencesView(discord.ui.View):
         self.add_item(disable_button)
 
         # Bouton Retour
-        back_button = discord.ui.Button(
+        back_button = nextcord.ui.Button(
             label=self.get_text("back"),
             emoji="<:back:1401600847733067806>",
-            style=discord.ButtonStyle.danger,
+            style=nextcord.ButtonStyle.danger,
             row=1
         )
         back_button.callback = self.go_back
@@ -239,10 +239,10 @@ class PreferencesView(discord.ui.View):
 
         # Bouton Notifications Serveurs
         server_notif = notif_data.get('server_notifications', True)
-        server_button = discord.ui.Button(
+        server_button = nextcord.ui.Button(
             label=f"{self.get_text('server_notifications')}",
             emoji="<:done:1398729525277229066>" if server_notif else "<:undone:1398729502028333218>",
-            style=discord.ButtonStyle.success if server_notif else discord.ButtonStyle.danger,
+            style=nextcord.ButtonStyle.success if server_notif else nextcord.ButtonStyle.danger,
             row=0
         )
         server_button.callback = self.toggle_server_notifications
@@ -250,26 +250,26 @@ class PreferencesView(discord.ui.View):
 
         # Bouton Notifications Moddy
         moddy_notif = notif_data.get('moddy_notifications', True)
-        moddy_button = discord.ui.Button(
+        moddy_button = nextcord.ui.Button(
             label=f"{self.get_text('moddy_notifications')}",
             emoji="<:done:1398729525277229066>" if moddy_notif else "<:undone:1398729502028333218>",
-            style=discord.ButtonStyle.success if moddy_notif else discord.ButtonStyle.danger,
+            style=nextcord.ButtonStyle.success if moddy_notif else nextcord.ButtonStyle.danger,
             row=1
         )
         moddy_button.callback = self.toggle_moddy_notifications
         self.add_item(moddy_button)
 
         # Bouton Retour
-        back_button = discord.ui.Button(
+        back_button = nextcord.ui.Button(
             label=self.get_text("back"),
             emoji="<:back:1401600847733067806>",
-            style=discord.ButtonStyle.danger,
+            style=nextcord.ButtonStyle.danger,
             row=2
         )
         back_button.callback = self.go_back
         self.add_item(back_button)
 
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+    async def interaction_check(self, interaction: nextcord.Interaction) -> bool:
         """Vérifie que c'est bien l'utilisateur qui interagit"""
         if interaction.user.id != self.user.id:
             if self.lang == "FR":
@@ -281,7 +281,7 @@ class PreferencesView(discord.ui.View):
         return True
 
     # Callbacks pour la langue
-    async def show_language_settings(self, interaction: discord.Interaction):
+    async def show_language_settings(self, interaction: nextcord.Interaction):
         """Affiche les paramètres de langue"""
         self.current_page = "language"
         self._update_buttons()
@@ -289,7 +289,7 @@ class PreferencesView(discord.ui.View):
         embed = self.create_language_embed()
         await interaction.response.edit_message(embed=embed, view=self)
 
-    async def set_french(self, interaction: discord.Interaction):
+    async def set_french(self, interaction: nextcord.Interaction):
         """Définit le français comme langue"""
         await self.bot.db.set_attribute(
             'user', self.user.id, 'LANG', 'FR',
@@ -307,7 +307,7 @@ class PreferencesView(discord.ui.View):
 
         await interaction.response.edit_message(embed=embed, view=self)
 
-    async def set_english(self, interaction: discord.Interaction):
+    async def set_english(self, interaction: nextcord.Interaction):
         """Définit l'anglais comme langue"""
         await self.bot.db.set_attribute(
             'user', self.user.id, 'LANG', 'EN',
@@ -326,7 +326,7 @@ class PreferencesView(discord.ui.View):
         await interaction.response.edit_message(embed=embed, view=self)
 
     # Callbacks pour la confidentialité
-    async def show_privacy_settings(self, interaction: discord.Interaction):
+    async def show_privacy_settings(self, interaction: nextcord.Interaction):
         """Affiche les paramètres de confidentialité"""
         self.current_page = "privacy"
         self._update_buttons()
@@ -334,7 +334,7 @@ class PreferencesView(discord.ui.View):
         embed = self.create_privacy_embed()
         await interaction.response.edit_message(embed=embed, view=self)
 
-    async def enable_incognito(self, interaction: discord.Interaction):
+    async def enable_incognito(self, interaction: nextcord.Interaction):
         """Active le mode incognito par défaut"""
         await self.bot.db.set_attribute(
             'user', self.user.id, 'DEFAULT_INCOGNITO', True,
@@ -349,7 +349,7 @@ class PreferencesView(discord.ui.View):
 
         await interaction.response.edit_message(embed=embed, view=self)
 
-    async def disable_incognito(self, interaction: discord.Interaction):
+    async def disable_incognito(self, interaction: nextcord.Interaction):
         """Désactive le mode incognito par défaut"""
         await self.bot.db.set_attribute(
             'user', self.user.id, 'DEFAULT_INCOGNITO', False,
@@ -365,7 +365,7 @@ class PreferencesView(discord.ui.View):
         await interaction.response.edit_message(embed=embed, view=self)
 
     # Callbacks pour les notifications
-    async def show_notification_settings(self, interaction: discord.Interaction):
+    async def show_notification_settings(self, interaction: nextcord.Interaction):
         """Affiche les paramètres de notifications"""
         self.current_page = "notifications"
         self._update_buttons()
@@ -373,7 +373,7 @@ class PreferencesView(discord.ui.View):
         embed = self.create_notifications_embed()
         await interaction.response.edit_message(embed=embed, view=self)
 
-    async def toggle_server_notifications(self, interaction: discord.Interaction):
+    async def toggle_server_notifications(self, interaction: nextcord.Interaction):
         """Active/désactive les notifications serveurs"""
         # Récupère d'abord les données actuelles depuis la DB
         self.user_data = await self.bot.db.get_user(self.user.id)
@@ -399,7 +399,7 @@ class PreferencesView(discord.ui.View):
 
         await interaction.response.edit_message(embed=embed, view=self)
 
-    async def toggle_moddy_notifications(self, interaction: discord.Interaction):
+    async def toggle_moddy_notifications(self, interaction: nextcord.Interaction):
         """Active/désactive les notifications Moddy"""
         # Récupère d'abord les données actuelles depuis la DB
         self.user_data = await self.bot.db.get_user(self.user.id)
@@ -426,7 +426,7 @@ class PreferencesView(discord.ui.View):
         await interaction.response.edit_message(embed=embed, view=self)
 
     # Navigation
-    async def go_back(self, interaction: discord.Interaction):
+    async def go_back(self, interaction: nextcord.Interaction):
         """Retour au menu principal"""
         self.current_page = "main"
         self._update_buttons()
@@ -435,7 +435,7 @@ class PreferencesView(discord.ui.View):
         await interaction.response.edit_message(embed=embed, view=self)
 
     # Création des embeds
-    def create_main_embed(self) -> discord.Embed:
+    def create_main_embed(self) -> nextcord.Embed:
         """Crée l'embed principal"""
         # Récupère les valeurs actuelles
         current_lang = self.user_data['attributes'].get('LANG', 'EN')
@@ -450,7 +450,7 @@ class PreferencesView(discord.ui.View):
             notif_data.get('moddy_notifications', True)
         ])
 
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title=self.get_text("preferences_title"),
             description=self.get_text("main_description"),
             color=COLORS["primary"]
@@ -482,11 +482,11 @@ class PreferencesView(discord.ui.View):
 
         return embed
 
-    def create_language_embed(self) -> discord.Embed:
+    def create_language_embed(self) -> nextcord.Embed:
         """Crée l'embed de langue"""
         current_lang = self.user_data['attributes'].get('LANG', 'EN')
 
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title=self.get_text('language_title'),
             color=COLORS["info"]
         )
@@ -506,11 +506,11 @@ class PreferencesView(discord.ui.View):
 
         return embed
 
-    def create_privacy_embed(self) -> discord.Embed:
+    def create_privacy_embed(self) -> nextcord.Embed:
         """Crée l'embed de confidentialité"""
         default_incognito = self.user_data['attributes'].get('DEFAULT_INCOGNITO', True)
 
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title=self.get_text('privacy_title'),
             color=COLORS["info"]
         )
@@ -532,14 +532,14 @@ class PreferencesView(discord.ui.View):
 
         return embed
 
-    def create_notifications_embed(self) -> discord.Embed:
+    def create_notifications_embed(self) -> nextcord.Embed:
         """Crée l'embed de notifications"""
         notif_data = self.user_data['data'].get('notifications', {
             'server_notifications': True,
             'moddy_notifications': True
         })
 
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title=self.get_text('notification_title'),
             color=COLORS["info"]
         )
@@ -580,7 +580,7 @@ class Preferences(commands.Cog):
         name="preferences",
         description="Gérez vos préférences personnelles / Manage your personal preferences"
     )
-    async def preferences(self, interaction: discord.Interaction):
+    async def preferences(self, interaction: nextcord.Interaction):
         """Commande principale des préférences"""
 
         # Vérifie la DB
@@ -661,7 +661,7 @@ class Preferences(commands.Cog):
         name="prefs",
         description="Raccourci pour préférences / Shortcut for preferences"
     )
-    async def prefs_shortcut(self, interaction: discord.Interaction):
+    async def prefs_shortcut(self, interaction: nextcord.Interaction):
         """Raccourci pour la commande preferences"""
         await self.preferences(interaction)
 

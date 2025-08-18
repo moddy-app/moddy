@@ -3,7 +3,7 @@ Commande de gestion utilisateur pour développeurs
 Panel complet avec boutons pour gérer les utilisateurs
 """
 
-import nextcord as discord
+import nextcord
 from nextcord.ext import commands
 from datetime import datetime, timezone
 import json
@@ -28,11 +28,11 @@ class UserManagement(commands.Cog):
         return self.bot.is_developer(ctx.author.id)
 
     @commands.command(name="user", aliases=["u", "manage"])
-    async def user_management(self, ctx, user: discord.User = None):
+    async def user_management(self, ctx, user: nextcord.User = None):
         """Panel de gestion d'un utilisateur"""
 
         if not user:
-            embed = discord.Embed(
+            embed = nextcord.Embed(
                 title="<:manageuser:1398729745293774919> User Management",
                 description=(
                     "**Usage:** `user @user` or `user [ID]`\n\n"
@@ -78,7 +78,7 @@ class UserManagement(commands.Cog):
             await log_cog.log_command(ctx, "user", {"target": str(user), "id": user.id})
 
     @staticmethod
-    def _create_user_embed(bot, user: discord.User, user_data: Dict[str, Any], ctx: commands.Context) -> discord.Embed:
+    def _create_user_embed(bot, user: nextcord.User, user_data: Dict[str, Any], ctx: commands.Context) -> nextcord.Embed:
         """Crée l'embed principal avec les infos utilisateur"""
 
         # Récupère les infos Discord
@@ -105,7 +105,7 @@ class UserManagement(commands.Cog):
             if guild.get_member(user.id):
                 mutual_guilds.append(guild)
 
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title=f"<:manageuser:1398729745293774919> Managing {user}",
             color=COLORS["primary"]
         )
@@ -165,10 +165,10 @@ class UserManagement(commands.Cog):
         return embed
 
 
-class UserManagementView(discord.ui.View):
+class UserManagementView(nextcord.ui.View):
     """Vue avec les boutons de gestion"""
 
-    def __init__(self, bot, user: discord.User, user_data: Dict[str, Any], author: discord.User):
+    def __init__(self, bot, user: nextcord.User, user_data: Dict[str, Any], author: nextcord.User):
         super().__init__(timeout=600)  # 10 minutes au lieu de 5
         self.bot = bot
         self.user = user
@@ -188,7 +188,7 @@ class UserManagementView(discord.ui.View):
         except:
             pass
 
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+    async def interaction_check(self, interaction: nextcord.Interaction) -> bool:
         """Seul l'auteur peut utiliser les boutons ET doit être développeur"""
         # Vérifie d'abord que c'est un développeur
         if not self.bot.is_developer(interaction.user.id):
@@ -207,11 +207,11 @@ class UserManagementView(discord.ui.View):
             return False
         return True
 
-    @discord.ui.button(label="Attributes", emoji="<:label:1398729473649676440>", style=discord.ButtonStyle.primary)
-    async def show_attributes(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Attributes", emoji="<:label:1398729473649676440>", style=nextcord.ButtonStyle.primary)
+    async def show_attributes(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Affiche et gère les attributs"""
 
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title=f"<:label:1398729473649676440> {self.user}'s Attributes",
             color=COLORS["info"]
         )
@@ -236,11 +236,11 @@ class UserManagementView(discord.ui.View):
 
         await interaction.response.edit_message(embed=embed, view=view)
 
-    @discord.ui.button(label="Data", emoji="<:data_object:1401600908323852318>", style=discord.ButtonStyle.primary)
-    async def show_data(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Data", emoji="<:data_object:1401600908323852318>", style=nextcord.ButtonStyle.primary)
+    async def show_data(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Affiche la data stockée"""
 
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title=f"<:data_object:1401600908323852318> {self.user}'s Data",
             color=COLORS["info"]
         )
@@ -268,11 +268,11 @@ class UserManagementView(discord.ui.View):
 
         await interaction.response.edit_message(embed=embed, view=view)
 
-    @discord.ui.button(label="Actions", emoji="<:settings:1398729549323440208>", style=discord.ButtonStyle.secondary)
-    async def show_actions(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Actions", emoji="<:settings:1398729549323440208>", style=nextcord.ButtonStyle.secondary)
+    async def show_actions(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Affiche les actions disponibles"""
 
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title=f"<:settings:1398729549323440208> Actions for {self.user}",
             description="Choose an action to perform:",
             color=COLORS["warning"]
@@ -283,11 +283,11 @@ class UserManagementView(discord.ui.View):
 
         await interaction.response.edit_message(embed=embed, view=view)
 
-    @discord.ui.button(label="History", emoji="<:history:1401600464587456512>", style=discord.ButtonStyle.secondary)
-    async def show_history(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="History", emoji="<:history:1401600464587456512>", style=nextcord.ButtonStyle.secondary)
+    async def show_history(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Affiche l'historique des changements"""
 
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title=f"<:history:1401600464587456512> {self.user}'s History",
             color=COLORS["info"]
         )
@@ -329,8 +329,8 @@ class UserManagementView(discord.ui.View):
 
         await interaction.response.edit_message(embed=embed, view=view)
 
-    @discord.ui.button(label="Refresh", emoji="<:sync:1398729150885269546>", style=discord.ButtonStyle.secondary)
-    async def refresh(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Refresh", emoji="<:sync:1398729150885269546>", style=nextcord.ButtonStyle.secondary)
+    async def refresh(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Rafraîchit les données"""
 
         await interaction.response.defer()
@@ -357,18 +357,18 @@ class UserManagementView(discord.ui.View):
                 ephemeral=True
             )
 
-    @discord.ui.button(label="Close", style=discord.ButtonStyle.danger)
-    async def close(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Close", style=nextcord.ButtonStyle.danger)
+    async def close(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Ferme le panel"""
         await interaction.response.defer()
         await interaction.delete_original_response()
         self.stop()
 
 
-class AttributeActionView(discord.ui.View):
+class AttributeActionView(nextcord.ui.View):
     """Vue pour gérer les attributs"""
 
-    def __init__(self, bot, user: discord.User, user_data: Dict[str, Any], author: discord.User, parent_view):
+    def __init__(self, bot, user: nextcord.User, user_data: Dict[str, Any], author: nextcord.User, parent_view):
         super().__init__(timeout=600)
         self.bot = bot
         self.user = user
@@ -387,7 +387,7 @@ class AttributeActionView(discord.ui.View):
         except:
             pass
 
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+    async def interaction_check(self, interaction: nextcord.Interaction) -> bool:
         """Vérifie que c'est un développeur ET l'auteur"""
         if not self.bot.is_developer(interaction.user.id):
             await interaction.response.send_message(
@@ -404,14 +404,14 @@ class AttributeActionView(discord.ui.View):
             return False
         return True
 
-    @discord.ui.button(label="Add", emoji="<:add:1401608434230493254>", style=discord.ButtonStyle.success)
-    async def add_attribute(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Add", emoji="<:add:1401608434230493254>", style=nextcord.ButtonStyle.success)
+    async def add_attribute(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Modal pour ajouter un attribut"""
         modal = AddAttributeModal(self.bot, self.user, self.author, self)
         await interaction.response.send_modal(modal)
 
-    @discord.ui.button(label="Modify", emoji="<:edit:1401600709824086169>", style=discord.ButtonStyle.primary)
-    async def modify_attribute(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Modify", emoji="<:edit:1401600709824086169>", style=nextcord.ButtonStyle.primary)
+    async def modify_attribute(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Sélecteur pour modifier un attribut"""
         if not self.user_data['attributes']:
             await interaction.response.send_message(
@@ -428,8 +428,8 @@ class AttributeActionView(discord.ui.View):
             ephemeral=True
         )
 
-    @discord.ui.button(label="Remove", emoji="<:undone:1398729502028333218>", style=discord.ButtonStyle.danger)
-    async def remove_attribute(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Remove", emoji="<:undone:1398729502028333218>", style=nextcord.ButtonStyle.danger)
+    async def remove_attribute(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Sélecteur pour supprimer un attribut"""
         if not self.user_data['attributes']:
             await interaction.response.send_message(
@@ -446,8 +446,8 @@ class AttributeActionView(discord.ui.View):
             ephemeral=True
         )
 
-    @discord.ui.button(label="Back", emoji="<:back:1401600847733067806>", style=discord.ButtonStyle.secondary)
-    async def back(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Back", emoji="<:back:1401600847733067806>", style=nextcord.ButtonStyle.secondary)
+    async def back(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Retour au menu principal"""
         self.parent_view.user_data = await self.bot.db.get_user(self.user.id)
 
@@ -467,10 +467,10 @@ class AttributeActionView(discord.ui.View):
         self.user_data = self.parent_view.user_data
 
 
-class UserActionsView(discord.ui.View):
+class UserActionsView(nextcord.ui.View):
     """Vue avec les actions utilisateur"""
 
-    def __init__(self, bot, user: discord.User, user_data: Dict[str, Any], author: discord.User, parent_view):
+    def __init__(self, bot, user: nextcord.User, user_data: Dict[str, Any], author: nextcord.User, parent_view):
         super().__init__(timeout=600)
         self.bot = bot
         self.user = user
@@ -486,10 +486,10 @@ class UserActionsView(discord.ui.View):
         """Ajoute les boutons avec les bonnes couleurs selon l'état"""
         # Bouton Premium
         has_premium = self.user_data['attributes'].get('PREMIUM', False)
-        premium_btn = discord.ui.Button(
+        premium_btn = nextcord.ui.Button(
             label="Premium",
             emoji="<:premium:1401602724801548381>",
-            style=discord.ButtonStyle.success if has_premium else discord.ButtonStyle.danger,
+            style=nextcord.ButtonStyle.success if has_premium else nextcord.ButtonStyle.danger,
             row=0
         )
         premium_btn.callback = self.toggle_premium
@@ -497,10 +497,10 @@ class UserActionsView(discord.ui.View):
 
         # Bouton Blacklist
         is_blacklisted = self.user_data['attributes'].get('BLACKLISTED', False)
-        blacklist_btn = discord.ui.Button(
+        blacklist_btn = nextcord.ui.Button(
             label="Blacklist",
             emoji="<:blacklist:1401596866478477363>",
-            style=discord.ButtonStyle.success if is_blacklisted else discord.ButtonStyle.danger,
+            style=nextcord.ButtonStyle.success if is_blacklisted else nextcord.ButtonStyle.danger,
             row=0
         )
         blacklist_btn.callback = self.toggle_blacklist
@@ -508,44 +508,44 @@ class UserActionsView(discord.ui.View):
 
         # Bouton Track
         is_tracked = self.user_data['attributes'].get('TRACK', False)
-        track_btn = discord.ui.Button(
+        track_btn = nextcord.ui.Button(
             label="Track",
             emoji="<:track:1401596933222695002>",
-            style=discord.ButtonStyle.success if is_tracked else discord.ButtonStyle.danger,
+            style=nextcord.ButtonStyle.success if is_tracked else nextcord.ButtonStyle.danger,
             row=0
         )
         track_btn.callback = self.toggle_track
         self.add_item(track_btn)
 
         # Autres boutons
-        reset_btn = discord.ui.Button(
+        reset_btn = nextcord.ui.Button(
             label="Reset",
             emoji="<:sync:1398729150885269546>",
-            style=discord.ButtonStyle.danger,
+            style=nextcord.ButtonStyle.danger,
             row=1
         )
         reset_btn.callback = self.reset_user
         self.add_item(reset_btn)
 
-        export_btn = discord.ui.Button(
+        export_btn = nextcord.ui.Button(
             label="Export",
             emoji="<:download:1401600503867248730>",
-            style=discord.ButtonStyle.secondary,
+            style=nextcord.ButtonStyle.secondary,
             row=1
         )
         export_btn.callback = self.export_data
         self.add_item(export_btn)
 
-        back_btn = discord.ui.Button(
+        back_btn = nextcord.ui.Button(
             label="Back",
             emoji="<:back:1401600847733067806>",
-            style=discord.ButtonStyle.secondary,
+            style=nextcord.ButtonStyle.secondary,
             row=1
         )
         back_btn.callback = self.back
         self.add_item(back_btn)
 
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+    async def interaction_check(self, interaction: nextcord.Interaction) -> bool:
         """Vérifie que c'est un développeur ET l'auteur"""
         if not self.bot.is_developer(interaction.user.id):
             await interaction.response.send_message(
@@ -555,7 +555,7 @@ class UserActionsView(discord.ui.View):
             return False
         return interaction.user == self.author
 
-    async def toggle_premium(self, interaction: discord.Interaction):
+    async def toggle_premium(self, interaction: nextcord.Interaction):
         """Active/désactive le premium"""
         has_premium = self.user_data['attributes'].get('PREMIUM', False)
         new_value = not has_premium
@@ -575,7 +575,7 @@ class UserActionsView(discord.ui.View):
             new_view.message = self.message
 
             # Recrée l'embed
-            embed = discord.Embed(
+            embed = nextcord.Embed(
                 title=f"<:settings:1398729549323440208> Actions for {self.user}",
                 description=f"<:done:1398729525277229066> Premium {'enabled' if new_value else 'disabled'}!",
                 color=COLORS["success"]
@@ -589,14 +589,14 @@ class UserActionsView(discord.ui.View):
                 ephemeral=True
             )
 
-    async def toggle_blacklist(self, interaction: discord.Interaction):
+    async def toggle_blacklist(self, interaction: nextcord.Interaction):
         """Active/désactive la blacklist"""
         is_blacklisted = self.user_data['attributes'].get('BLACKLISTED', False)
 
         if not is_blacklisted:
             # Demande confirmation pour blacklist
             view = ConfirmView()
-            embed = discord.Embed(
+            embed = nextcord.Embed(
                 title="Confirmation required",
                 description=f"Are you sure you want to blacklist {self.user.mention}?\n"
                             "They will no longer be able to use the bot.",
@@ -625,7 +625,7 @@ class UserActionsView(discord.ui.View):
             new_view.message = self.message
 
             # Recrée l'embed
-            embed = discord.Embed(
+            embed = nextcord.Embed(
                 title=f"<:settings:1398729549323440208> Actions for {self.user}",
                 description=f"<:done:1398729525277229066> {'Blacklist enabled' if new_value else 'Blacklist removed'}!",
                 color=COLORS["success"]
@@ -649,7 +649,7 @@ class UserActionsView(discord.ui.View):
                     view=None
                 )
 
-    async def toggle_track(self, interaction: discord.Interaction):
+    async def toggle_track(self, interaction: nextcord.Interaction):
         """Active/désactive le tracking"""
         is_tracked = self.user_data['attributes'].get('TRACK', False)
         new_value = not is_tracked
@@ -669,7 +669,7 @@ class UserActionsView(discord.ui.View):
             new_view.message = self.message
 
             # Recrée l'embed
-            embed = discord.Embed(
+            embed = nextcord.Embed(
                 title=f"<:settings:1398729549323440208> Actions for {self.user}",
                 description=f"<:done:1398729525277229066> Tracking {'enabled' if new_value else 'disabled'}!",
                 color=COLORS["success"]
@@ -683,12 +683,12 @@ class UserActionsView(discord.ui.View):
                 ephemeral=True
             )
 
-    async def reset_user(self, interaction: discord.Interaction):
+    async def reset_user(self, interaction: nextcord.Interaction):
         """Réinitialise toutes les données de l'utilisateur"""
         modal = ResetConfirmModal(self.bot, self.user, self.author)
         await interaction.response.send_modal(modal)
 
-    async def export_data(self, interaction: discord.Interaction):
+    async def export_data(self, interaction: nextcord.Interaction):
         """Exporte toutes les données de l'utilisateur"""
         await interaction.response.defer(ephemeral=True)
 
@@ -714,7 +714,7 @@ class UserActionsView(discord.ui.View):
 
             json_str = json.dumps(export_data, indent=2, ensure_ascii=False)
 
-            file = discord.File(
+            file = nextcord.File(
                 io.StringIO(json_str),
                 filename=f"user_{self.user.id}_export.json"
             )
@@ -731,7 +731,7 @@ class UserActionsView(discord.ui.View):
                 ephemeral=True
             )
 
-    async def back(self, interaction: discord.Interaction):
+    async def back(self, interaction: nextcord.Interaction):
         """Retour au menu principal"""
         self.parent_view.user_data = await self.bot.db.get_user(self.user.id)
 
@@ -746,10 +746,10 @@ class UserActionsView(discord.ui.View):
         await interaction.response.edit_message(embed=embed, view=self.parent_view)
 
 
-class DataManagementView(discord.ui.View):
+class DataManagementView(nextcord.ui.View):
     """Vue pour gérer la data utilisateur"""
 
-    def __init__(self, bot, user: discord.User, user_data: Dict[str, Any], author: discord.User, parent_view):
+    def __init__(self, bot, user: nextcord.User, user_data: Dict[str, Any], author: nextcord.User, parent_view):
         super().__init__(timeout=600)
         self.bot = bot
         self.user = user
@@ -757,7 +757,7 @@ class DataManagementView(discord.ui.View):
         self.author = author
         self.parent_view = parent_view
 
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+    async def interaction_check(self, interaction: nextcord.Interaction) -> bool:
         """Vérifie que c'est un développeur ET l'auteur"""
         if not self.bot.is_developer(interaction.user.id):
             await interaction.response.send_message(
@@ -767,20 +767,20 @@ class DataManagementView(discord.ui.View):
             return False
         return interaction.user == self.author
 
-    @discord.ui.button(label="Edit JSON", emoji="<:edit:1401600709824086169>", style=discord.ButtonStyle.primary)
-    async def edit_json(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Edit JSON", emoji="<:edit:1401600709824086169>", style=nextcord.ButtonStyle.primary)
+    async def edit_json(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Ouvre un modal pour éditer le JSON complet"""
         modal = EditDataModal(self.bot, self.user, self.user_data, self.author)
         await interaction.response.send_modal(modal)
 
-    @discord.ui.button(label="Add key", emoji="<:add:1401608434230493254>", style=discord.ButtonStyle.success)
-    async def add_key(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Add key", emoji="<:add:1401608434230493254>", style=nextcord.ButtonStyle.success)
+    async def add_key(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Ajoute une nouvelle clé à la data"""
         modal = AddDataKeyModal(self.bot, self.user, self.author)
         await interaction.response.send_modal(modal)
 
-    @discord.ui.button(label="Remove key", emoji="<:undone:1398729502028333218>", style=discord.ButtonStyle.danger)
-    async def remove_key(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Remove key", emoji="<:undone:1398729502028333218>", style=nextcord.ButtonStyle.danger)
+    async def remove_key(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Supprime une clé de la data"""
         if not self.user_data['data']:
             await interaction.response.send_message(
@@ -796,11 +796,11 @@ class DataManagementView(discord.ui.View):
             ephemeral=True
         )
 
-    @discord.ui.button(label="Reset", emoji="<:sync:1398729150885269546>", style=discord.ButtonStyle.danger)
-    async def reset_data(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Reset", emoji="<:sync:1398729150885269546>", style=nextcord.ButtonStyle.danger)
+    async def reset_data(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Réinitialise toute la data"""
         view = ConfirmView()
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title="Confirmation required",
             description=f"Are you sure you want to reset all data for {self.user.mention}?",
             color=COLORS["error"]
@@ -830,8 +830,8 @@ class DataManagementView(discord.ui.View):
                     view=None
                 )
 
-    @discord.ui.button(label="Back", emoji="<:back:1401600847733067806>", style=discord.ButtonStyle.secondary)
-    async def back(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Back", emoji="<:back:1401600847733067806>", style=nextcord.ButtonStyle.secondary)
+    async def back(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Retour au menu principal"""
         self.parent_view.user_data = await self.bot.db.get_user(self.user.id)
 
@@ -846,10 +846,10 @@ class DataManagementView(discord.ui.View):
         await interaction.response.edit_message(embed=embed, view=self.parent_view)
 
 
-class EditDataModal(discord.ui.Modal, title="Edit JSON data"):
+class EditDataModal(nextcord.ui.Modal, title="Edit JSON data"):
     """Modal pour éditer le JSON complet"""
 
-    def __init__(self, bot, user: discord.User, user_data: Dict[str, Any], author: discord.User):
+    def __init__(self, bot, user: nextcord.User, user_data: Dict[str, Any], author: nextcord.User):
         super().__init__()
         self.bot = bot
         self.user = user
@@ -863,9 +863,9 @@ class EditDataModal(discord.ui.Modal, title="Edit JSON data"):
         if len(current_json) > 1024:
             current_json = current_json[:1021] + "..."
 
-        self.json_input = discord.ui.TextInput(
+        self.json_input = nextcord.ui.TextInput(
             label="JSON Data",
-            style=discord.TextStyle.paragraph,
+            style=nextcord.TextStyle.paragraph,
             placeholder='{"key": "value"}',
             default=current_json,
             max_length=4000,
@@ -873,7 +873,7 @@ class EditDataModal(discord.ui.Modal, title="Edit JSON data"):
         )
         self.add_item(self.json_input)
 
-    async def on_submit(self, interaction: discord.Interaction):
+    async def on_submit(self, interaction: nextcord.Interaction):
         try:
             # Parse le JSON
             new_data = json.loads(self.json_input.value)
@@ -904,31 +904,31 @@ class EditDataModal(discord.ui.Modal, title="Edit JSON data"):
             )
 
 
-class AddDataKeyModal(discord.ui.Modal, title="Add a key to data"):
+class AddDataKeyModal(nextcord.ui.Modal, title="Add a key to data"):
     """Modal pour ajouter une nouvelle clé"""
 
-    def __init__(self, bot, user: discord.User, author: discord.User):
+    def __init__(self, bot, user: nextcord.User, author: nextcord.User):
         super().__init__()
         self.bot = bot
         self.user = user
         self.author = author
 
-    key_path = discord.ui.TextInput(
+    key_path = nextcord.ui.TextInput(
         label="Key path",
         placeholder="Ex: preferences.theme or simply theme",
         max_length=100,
         required=True
     )
 
-    value_input = discord.ui.TextInput(
+    value_input = nextcord.ui.TextInput(
         label="Value (JSON)",
-        style=discord.TextStyle.paragraph,
+        style=nextcord.TextStyle.paragraph,
         placeholder='Examples:\n"text"\n123\ntrue\n{"key": "value"}\n["item1", "item2"]',
         max_length=1000,
         required=True
     )
 
-    async def on_submit(self, interaction: discord.Interaction):
+    async def on_submit(self, interaction: nextcord.Interaction):
         try:
             # Parse la valeur
             if self.value_input.value.lower() == "true":
@@ -960,10 +960,10 @@ class AddDataKeyModal(discord.ui.Modal, title="Add a key to data"):
             )
 
 
-class RemoveDataKeyView(discord.ui.View):
+class RemoveDataKeyView(nextcord.ui.View):
     """Vue pour sélectionner une clé à supprimer"""
 
-    def __init__(self, bot, user: discord.User, user_data: Dict[str, Any], author: discord.User):
+    def __init__(self, bot, user: nextcord.User, user_data: Dict[str, Any], author: nextcord.User):
         super().__init__(timeout=60)
         self.bot = bot
         self.user = user
@@ -978,7 +978,7 @@ class RemoveDataKeyView(discord.ui.View):
                 value_preview = value_preview[:47] + "..."
 
             options.append(
-                discord.SelectOption(
+                nextcord.SelectOption(
                     label=key,
                     value=key,
                     description=value_preview,
@@ -986,14 +986,14 @@ class RemoveDataKeyView(discord.ui.View):
                 )
             )
 
-        self.select = discord.ui.Select(
+        self.select = nextcord.ui.Select(
             placeholder="Choose a key to remove",
             options=options[:25]
         )
         self.select.callback = self.select_callback
         self.add_item(self.select)
 
-    async def select_callback(self, interaction: discord.Interaction):
+    async def select_callback(self, interaction: nextcord.Interaction):
         """Quand une clé est sélectionnée"""
         selected = self.select.values[0]
 
@@ -1027,7 +1027,7 @@ class RemoveDataKeyView(discord.ui.View):
             )
 
 
-class BackButtonView(discord.ui.View):
+class BackButtonView(nextcord.ui.View):
     """Vue simple avec juste un bouton retour"""
 
     def __init__(self, parent_view, message):
@@ -1035,7 +1035,7 @@ class BackButtonView(discord.ui.View):
         self.parent_view = parent_view
         self.message = message
 
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+    async def interaction_check(self, interaction: nextcord.Interaction) -> bool:
         """Vérifie que c'est un développeur"""
         if not self.parent_view.bot.is_developer(interaction.user.id):
             await interaction.response.send_message(
@@ -1045,8 +1045,8 @@ class BackButtonView(discord.ui.View):
             return False
         return True
 
-    @discord.ui.button(label="Back", emoji="<:back:1401600847733067806>", style=discord.ButtonStyle.secondary)
-    async def back(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Back", emoji="<:back:1401600847733067806>", style=nextcord.ButtonStyle.secondary)
+    async def back(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Retour au menu principal"""
         self.parent_view.user_data = await self.parent_view.bot.db.get_user(self.parent_view.user.id)
 
@@ -1066,38 +1066,38 @@ class BackButtonView(discord.ui.View):
         await interaction.response.edit_message(embed=embed, view=self.parent_view)
 
 
-class AddAttributeModal(discord.ui.Modal, title="Add an attribute"):
+class AddAttributeModal(nextcord.ui.Modal, title="Add an attribute"):
     """Modal pour ajouter un attribut"""
 
-    def __init__(self, bot, user: discord.User, author: discord.User, parent_view=None):
+    def __init__(self, bot, user: nextcord.User, author: nextcord.User, parent_view=None):
         super().__init__()
         self.bot = bot
         self.user = user
         self.author = author
         self.parent_view = parent_view
 
-    attribute_name = discord.ui.TextInput(
+    attribute_name = nextcord.ui.TextInput(
         label="Attribute name",
         placeholder="Ex: BETA, PREMIUM, LANG...",
         max_length=50,
         required=True
     )
 
-    attribute_value = discord.ui.TextInput(
+    attribute_value = nextcord.ui.TextInput(
         label="Value",
         placeholder="true, false, FR, EN... (leave empty for true)",
         max_length=100,
         required=False
     )
 
-    reason = discord.ui.TextInput(
+    reason = nextcord.ui.TextInput(
         label="Reason",
         placeholder="Why this attribute is being added",
         max_length=200,
         required=False
     )
 
-    async def on_submit(self, interaction: discord.Interaction):
+    async def on_submit(self, interaction: nextcord.Interaction):
         value = self.attribute_value.value or "true"
         if value.lower() == "true":
             value = True
@@ -1132,10 +1132,10 @@ class AddAttributeModal(discord.ui.Modal, title="Add an attribute"):
             )
 
 
-class ModifyAttributeView(discord.ui.View):
+class ModifyAttributeView(nextcord.ui.View):
     """Vue pour sélectionner un attribut à modifier"""
 
-    def __init__(self, bot, user: discord.User, user_data: Dict[str, Any], author: discord.User):
+    def __init__(self, bot, user: nextcord.User, user_data: Dict[str, Any], author: nextcord.User):
         super().__init__(timeout=60)
         self.bot = bot
         self.user = user
@@ -1145,21 +1145,21 @@ class ModifyAttributeView(discord.ui.View):
         options = []
         for attr, value in user_data['attributes'].items():
             options.append(
-                discord.SelectOption(
+                nextcord.SelectOption(
                     label=attr,
                     value=attr,
                     description=f"Current value: {value}"
                 )
             )
 
-        self.select = discord.ui.Select(
+        self.select = nextcord.ui.Select(
             placeholder="Choose an attribute",
             options=options[:25]
         )
         self.select.callback = self.select_callback
         self.add_item(self.select)
 
-    async def select_callback(self, interaction: discord.Interaction):
+    async def select_callback(self, interaction: nextcord.Interaction):
         """Quand un attribut est sélectionné"""
         selected = self.select.values[0]
         current_value = self.user_data['attributes'][selected]
@@ -1168,10 +1168,10 @@ class ModifyAttributeView(discord.ui.View):
         await interaction.response.send_modal(modal)
 
 
-class RemoveAttributeView(discord.ui.View):
+class RemoveAttributeView(nextcord.ui.View):
     """Vue pour sélectionner un attribut à supprimer"""
 
-    def __init__(self, bot, user: discord.User, user_data: Dict[str, Any], author: discord.User):
+    def __init__(self, bot, user: nextcord.User, user_data: Dict[str, Any], author: nextcord.User):
         super().__init__(timeout=60)
         self.bot = bot
         self.user = user
@@ -1181,7 +1181,7 @@ class RemoveAttributeView(discord.ui.View):
         options = []
         for attr, value in user_data['attributes'].items():
             options.append(
-                discord.SelectOption(
+                nextcord.SelectOption(
                     label=attr,
                     value=attr,
                     description=f"Value: {value}",
@@ -1189,14 +1189,14 @@ class RemoveAttributeView(discord.ui.View):
                 )
             )
 
-        self.select = discord.ui.Select(
+        self.select = nextcord.ui.Select(
             placeholder="Choose an attribute to remove",
             options=options[:25]
         )
         self.select.callback = self.select_callback
         self.add_item(self.select)
 
-    async def select_callback(self, interaction: discord.Interaction):
+    async def select_callback(self, interaction: nextcord.Interaction):
         """Quand un attribut est sélectionné"""
         selected = self.select.values[0]
 
@@ -1219,17 +1219,17 @@ class RemoveAttributeView(discord.ui.View):
             )
 
 
-class ModifyAttributeModal(discord.ui.Modal, title="Modify an attribute"):
+class ModifyAttributeModal(nextcord.ui.Modal, title="Modify an attribute"):
     """Modal pour modifier un attribut"""
 
-    def __init__(self, bot, user: discord.User, author: discord.User, attr_name: str, current_value):
+    def __init__(self, bot, user: nextcord.User, author: nextcord.User, attr_name: str, current_value):
         super().__init__()
         self.bot = bot
         self.user = user
         self.author = author
         self.attr_name = attr_name
 
-        self.value_input = discord.ui.TextInput(
+        self.value_input = nextcord.ui.TextInput(
             label=f"New value for {attr_name}",
             placeholder=f"Current value: {current_value}",
             default=str(current_value),
@@ -1238,7 +1238,7 @@ class ModifyAttributeModal(discord.ui.Modal, title="Modify an attribute"):
         )
         self.add_item(self.value_input)
 
-        self.reason = discord.ui.TextInput(
+        self.reason = nextcord.ui.TextInput(
             label="Reason for modification",
             placeholder="Optional",
             max_length=200,
@@ -1246,7 +1246,7 @@ class ModifyAttributeModal(discord.ui.Modal, title="Modify an attribute"):
         )
         self.add_item(self.reason)
 
-    async def on_submit(self, interaction: discord.Interaction):
+    async def on_submit(self, interaction: nextcord.Interaction):
         value = self.value_input.value
         if value.lower() == "true":
             value = True
@@ -1274,50 +1274,50 @@ class ModifyAttributeModal(discord.ui.Modal, title="Modify an attribute"):
             )
 
 
-class ConfirmView(discord.ui.View):
+class ConfirmView(nextcord.ui.View):
     """Vue de confirmation simple"""
 
     def __init__(self):
         super().__init__(timeout=30)
         self.value = None
 
-    @discord.ui.button(label="Confirm", style=discord.ButtonStyle.danger)
-    async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Confirm", style=nextcord.ButtonStyle.danger)
+    async def confirm(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         await interaction.response.defer()
         self.value = True
         self.stop()
 
-    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.secondary)
-    async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Cancel", style=nextcord.ButtonStyle.secondary)
+    async def cancel(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         await interaction.response.defer()
         self.value = False
         self.stop()
 
 
-class ResetConfirmModal(discord.ui.Modal, title="Reset user"):
+class ResetConfirmModal(nextcord.ui.Modal, title="Reset user"):
     """Modal de confirmation pour reset"""
 
-    def __init__(self, bot, user: discord.User, author: discord.User):
+    def __init__(self, bot, user: nextcord.User, author: nextcord.User):
         super().__init__()
         self.bot = bot
         self.user = user
         self.author = author
 
-    confirm_text = discord.ui.TextInput(
+    confirm_text = nextcord.ui.TextInput(
         label="Type the username to confirm",
         placeholder="Exact username",
         max_length=100,
         required=True
     )
 
-    reason = discord.ui.TextInput(
+    reason = nextcord.ui.TextInput(
         label="Reason for reset",
         placeholder="Why reset this user?",
         max_length=200,
         required=True
     )
 
-    async def on_submit(self, interaction: discord.Interaction):
+    async def on_submit(self, interaction: nextcord.Interaction):
         if self.confirm_text.value != self.user.name:
             await interaction.response.send_message(
                 f"<:undone:1398729502028333218> Incorrect confirmation. You must type exactly: `{self.user.name}`",

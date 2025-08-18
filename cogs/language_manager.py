@@ -3,7 +3,7 @@ Système de gestion de langue pour Moddy
 Version modifiée : envoie un MP au lieu d'afficher une popup
 """
 
-import nextcord as discord
+import nextcord
 from nextcord.ext import commands
 from typing import Optional, Dict
 import asyncio
@@ -65,11 +65,11 @@ class LanguageManager(commands.Cog):
                 return None
         return None
 
-    def get_interaction_language(self, interaction: discord.Interaction) -> Optional[str]:
+    def get_interaction_language(self, interaction: nextcord.Interaction) -> Optional[str]:
         """Récupère la langue stockée pour une interaction"""
         return self.interaction_languages.get(interaction.id)
 
-    def set_interaction_language(self, interaction: discord.Interaction, lang: str):
+    def set_interaction_language(self, interaction: nextcord.Interaction, lang: str):
         """Stocke la langue pour une interaction"""
         self.interaction_languages[interaction.id] = lang
         # Nettoie les vieilles entrées après 5 minutes
@@ -97,14 +97,14 @@ class LanguageManager(commands.Cog):
                 return False
         return False
 
-    async def send_language_info_dm(self, user: discord.User):
+    async def send_language_info_dm(self, user: nextcord.User):
         """Envoie un MP à l'utilisateur pour l'informer sur le changement de langue"""
         # Vérifie si on a déjà envoyé un MP à cet utilisateur
         if user.id in self.notified_users:
             return True
 
         try:
-            embed = discord.Embed(
+            embed = nextcord.Embed(
                 title="Language / Langue",
                 color=COLORS["primary"]
             )
@@ -137,7 +137,7 @@ class LanguageManager(commands.Cog):
             logger.info(f"MP langue envoyé à {user.name} ({user.id})")
             return True
 
-        except discord.Forbidden:
+        except nextcord.Forbidden:
             logger.warning(f"Impossible d'envoyer un MP à {user.name} ({user.id}) - MPs désactivés")
             self.notified_users.add(user.id)  # On marque quand même comme notifié
             return False
@@ -146,14 +146,14 @@ class LanguageManager(commands.Cog):
             return False
 
     @commands.Cog.listener()
-    async def on_interaction(self, interaction: discord.Interaction):
+    async def on_interaction(self, interaction: nextcord.Interaction):
         """Intercepte toutes les interactions pour vérifier la langue"""
         # Ignore les interactions du bot lui-même
         if interaction.user.bot:
             return
 
         # Ignore les interactions qui ne sont pas des commandes
-        if interaction.type != discord.InteractionType.application_command:
+        if interaction.type != nextcord.InteractionType.application_command:
             return
 
         # Ignore les commandes de développeur (elles restent en anglais)
@@ -225,7 +225,7 @@ class LanguageManager(commands.Cog):
             await ctx.send("<:undone:1398729502028333218> Error changing language / Erreur lors du changement")
 
     @commands.Cog.listener()
-    async def on_app_command_completion(self, interaction: discord.Interaction, command):
+    async def on_app_command_completion(self, interaction: nextcord.Interaction, command):
         """Nettoie le cache périodiquement après les commandes"""
         # Nettoie le cache si trop grand
         if len(self.lang_cache) > 1000:
@@ -243,7 +243,7 @@ class LanguageManager(commands.Cog):
 
 
 # Fonction helper pour récupérer la langue d'une interaction
-def get_user_lang(interaction: discord.Interaction, bot) -> str:
+def get_user_lang(interaction: nextcord.Interaction, bot) -> str:
     """Récupère la langue de l'utilisateur pour une interaction"""
     # Essaye de récupérer depuis le manager
     if lang_manager := bot.get_cog("LanguageManager"):

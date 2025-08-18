@@ -3,7 +3,7 @@ Système de logging pour les commandes développeur
 Enregistre toutes les utilisations de commandes staff dans un canal dédié
 """
 
-import nextcord as discord
+import nextcord
 from nextcord.ext import commands
 from datetime import datetime, timezone
 import traceback
@@ -21,7 +21,7 @@ class DevCommandLogger(commands.Cog):
         self.log_channel_id = 1394323753701212291  # Canal de logs dev
         self.command_stats = {}  # Statistiques d'utilisation
 
-    async def get_log_channel(self) -> Optional[discord.TextChannel]:
+    async def get_log_channel(self) -> Optional[nextcord.TextChannel]:
         """Récupère le canal de logs"""
         return self.bot.get_channel(self.log_channel_id)
 
@@ -55,7 +55,7 @@ class DevCommandLogger(commands.Cog):
             status = "❌ Échec"
 
         # Crée l'embed principal
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title=f"Commande Dev : `{ctx.command.name}`",
             color=color,
             timestamp=datetime.now(timezone.utc)
@@ -215,7 +215,7 @@ class LoggingSystem(commands.Cog):
         if not channel:
             return
 
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title=f"🔧 Action Dev : {action}",
             color=COLORS["info"],
             timestamp=datetime.now(timezone.utc)
@@ -258,7 +258,7 @@ class LoggingSystem(commands.Cog):
         if not channel:
             return
 
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title=f"🚨 {title}",
             description=description,
             color=COLORS["error"],

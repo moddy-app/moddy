@@ -3,7 +3,7 @@ Fichier de test pour les composants Discord V2
 Teste toutes les fonctionnalités de la branche expérimentale
 """
 
-import nextcord as discord
+import nextcord
 from nextcord.ext import commands
 import asyncio
 from datetime import datetime
@@ -13,7 +13,7 @@ TOKEN = "TON_TOKEN_ICI"  # Remplace par ton token de test
 TEST_GUILD_ID = 123456789  # Remplace par l'ID de ton serveur de test
 
 # Création du bot
-intents = discord.Intents.default()
+intents = nextcord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
@@ -30,7 +30,7 @@ class ComponentsV2Test(commands.Cog):
         # Méthode 1 : Envoi direct avec flags
         try:
             await ctx.send(
-                flags=discord.MessageFlags.components_v2,  # ou 32768
+                flags=nextcord.MessageFlags.components_v2,  # ou 32768
                 components=[
                     {
                         "type": 10,  # Text Display
@@ -45,20 +45,20 @@ class ComponentsV2Test(commands.Cog):
     async def test_layout_v2(self, ctx):
         """Test avec LayoutView"""
 
-        class TestLayoutView(discord.ui.LayoutView):
+        class TestLayoutView(nextcord.ui.LayoutView):
             def __init__(self):
                 super().__init__()
 
-            @discord.ui.text_display(content="**Bonjour!** Ceci est un Text Display dans une LayoutView.")
+            @nextcord.ui.text_display(content="**Bonjour!** Ceci est un Text Display dans une LayoutView.")
             async def text_component(self):
                 pass
 
-            @discord.ui.container(accent_color=0x00FF00)
+            @nextcord.ui.container(accent_color=0x00FF00)
             async def green_container(self):
                 """Container avec couleur verte"""
                 pass
 
-            @discord.ui.separator(spacing=discord.ui.SeparatorSpacing.Large, divider=True)
+            @nextcord.ui.separator(spacing=nextcord.ui.SeparatorSpacing.Large, divider=True)
             async def divider(self):
                 pass
 
@@ -125,13 +125,13 @@ class ComponentsV2Test(commands.Cog):
     async def test_interactive_v2(self, ctx):
         """Test avec interactions"""
 
-        class InteractiveView(discord.ui.View):
+        class InteractiveView(nextcord.ui.View):
             def __init__(self):
                 super().__init__(timeout=60)
                 self.click_count = 0
 
-            @discord.ui.button(label="Compteur: 0", style=discord.ButtonStyle.primary)
-            async def counter_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+            @nextcord.ui.button(label="Compteur: 0", style=nextcord.ButtonStyle.primary)
+            async def counter_button(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
                 self.click_count += 1
                 button.label = f"Compteur: {self.click_count}"
 
@@ -221,7 +221,7 @@ class ComponentsV2Test(commands.Cog):
 @bot.event
 async def on_ready():
     print(f"Bot connecté : {bot.user}")
-    print(f"Version discord.py : {discord.__version__}")
+    print(f"Version nextcord.py : {nextcord.__version__}")
     print(f"Serveurs : {len(bot.guilds)}")
 
     # Vérifier si les composants V2 sont disponibles
@@ -230,13 +230,13 @@ async def on_ready():
     else:
         print("❌ LayoutView non disponible")
 
-    if hasattr(discord.MessageFlags, 'components_v2'):
+    if hasattr(nextcord.MessageFlags, 'components_v2'):
         print("✅ Flag components_v2 disponible")
     else:
         print("❌ Flag components_v2 non disponible")
 
     # Vérifier d'autres attributs V2
-    if hasattr(discord.ui, 'text_display'):
+    if hasattr(nextcord.ui, 'text_display'):
         print("✅ text_display disponible")
     else:
         print("❌ text_display non disponible")

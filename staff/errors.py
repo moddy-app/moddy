@@ -3,7 +3,7 @@ Commandes de gestion des erreurs pour développeurs
 Permet de consulter et gérer les erreurs du bot
 """
 
-import nextcord as discord
+import nextcord
 from nextcord.ext import commands
 from datetime import datetime, timedelta
 import sys
@@ -35,7 +35,7 @@ class ErrorManagement(commands.Cog):
 
         if not error_code:
             # Affiche les dernières erreurs
-            embed = discord.Embed(
+            embed = nextcord.Embed(
                 title="Dernières erreurs",
                 description="Voici les 10 dernières erreurs enregistrées",
                 color=COLORS["info"]
@@ -115,7 +115,7 @@ class ErrorManagement(commands.Cog):
         data = found_error['data']
         timestamp = found_error['timestamp']
 
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title=f"Détails de l'erreur {error_code}",
             color=COLORS["warning"],
             timestamp=timestamp
@@ -217,7 +217,7 @@ class ErrorManagement(commands.Cog):
             except Exception as e:
                 message += f"\n❌ **Erreur BDD:** {str(e)[:100]}"
 
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title="Nettoyage des erreurs",
             description=message,
             color=COLORS["success"]
@@ -231,7 +231,7 @@ class ErrorManagement(commands.Cog):
     @commands.command(name="errortest", aliases=["testerror", "testerr"])
     async def test_error(self, ctx, error_type: str = "basic"):
         """Génère une erreur de test pour vérifier le système"""
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title="Test d'erreur",
             description=f"Génération d'une erreur de type : `{error_type}`",
             color=COLORS["warning"]
@@ -265,7 +265,7 @@ class ErrorManagement(commands.Cog):
 
         errors = list(error_tracker.error_cache)
 
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title="Statistiques des erreurs",
             color=COLORS["info"],
             timestamp=datetime.utcnow()
@@ -388,7 +388,7 @@ class ErrorManagement(commands.Cog):
             try:
                 stats = await self.bot.db.get_stats()
 
-                embed = discord.Embed(
+                embed = nextcord.Embed(
                     title="Base de données d'erreurs",
                     color=COLORS["info"]
                 )
@@ -442,7 +442,7 @@ class ErrorManagement(commands.Cog):
                 await ctx.send(embed=embed)
 
         else:
-            embed = discord.Embed(
+            embed = nextcord.Embed(
                 title="Actions disponibles",
                 description=(
                     "`errordb info` - Affiche les statistiques\n"

@@ -3,7 +3,7 @@ Commandes de gestion de la console pour développeurs
 Permet de contrôler les logs console
 """
 
-import nextcord as discord
+import nextcord
 from nextcord.ext import commands
 from datetime import datetime
 import logging
@@ -60,7 +60,7 @@ class ConsoleCommands(commands.Cog):
         if len(content) > 4000:
             content = content[:3997] + '...'
 
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title=f"Console - {len(recent_logs)} derniers logs",
             description=f"```\n{content}\n```",
             color=COLORS["primary"],
@@ -100,7 +100,7 @@ class ConsoleCommands(commands.Cog):
         """Change le niveau de logging"""
         if not level:
             current = logging.getLogger().getEffectiveLevel()
-            embed = discord.Embed(
+            embed = nextcord.Embed(
                 title="Niveau de logging",
                 description=f"**Niveau actuel :** `{logging.getLevelName(current)}`\n\n"
                             "**Niveaux disponibles :**\n"
@@ -198,7 +198,7 @@ class ConsoleCommands(commands.Cog):
         }
 
         # Embed de départ
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title="Exécution de code",
             description=f"```py\n{code[:500]}{'...' if len(code) > 500 else ''}\n```",
             color=COLORS["warning"],
@@ -272,7 +272,7 @@ class ConsoleCommands(commands.Cog):
             log_type = log.get('type', 'unknown')
             log_types[log_type] = log_types.get(log_type, 0) + 1
 
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title="Statistiques des logs",
             description=f"**Total :** `{len(console_logger.log_buffer)}` logs en buffer",
             color=COLORS["info"],

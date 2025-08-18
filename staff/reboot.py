@@ -3,7 +3,7 @@ Commande reboot pour développeurs
 Redémarre le bot et modifie le message original
 """
 
-import nextcord as discord
+import nextcord
 from nextcord.ext import commands
 import asyncio
 import os
@@ -36,7 +36,7 @@ class Reboot(commands.Cog):
         """Redémarre le bot automatiquement"""
 
         # Embed initial
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title="Redémarrage en cours...",
             description="Le bot va redémarrer dans quelques secondes.",
             color=COLORS["warning"],
@@ -179,7 +179,7 @@ class RebootNotifier(commands.Cog):
                 speed = "Lent"
 
             # Créer le nouvel embed
-            embed = discord.Embed(
+            embed = nextcord.Embed(
                 title="Redémarrage terminé !",
                 color=COLORS["success"],
                 timestamp=datetime.utcnow()
@@ -210,7 +210,7 @@ class RebootNotifier(commands.Cog):
                 name="Système",
                 value=f"**Commandes:** `{len(self.bot.commands)}`\n"
                       f"**Cogs:** `{len(self.bot.cogs)}`\n"
-                      f"**Version:** discord.py `{discord.__version__}`",
+                      f"**Version:** nextcord.py `{nextcord.__version__}`",
                 inline=True
             )
 

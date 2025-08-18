@@ -3,7 +3,7 @@ Commandes pour gérer les attributs utilisateurs/serveurs
 Réservées aux développeurs
 """
 
-import nextcord as discord
+import nextcord
 from nextcord.ext import commands
 from datetime import datetime
 import sys
@@ -25,7 +25,7 @@ class AttributeCommands(commands.Cog):
         return self.bot.is_developer(ctx.author.id)
 
     @commands.command(name="attr", aliases=["attribute"])
-    async def attribute(self, ctx, action: str = None, target: discord.User = None, attr_name: str = None, *,
+    async def attribute(self, ctx, action: str = None, target: nextcord.User = None, attr_name: str = None, *,
                         value: str = None):
         """Gère les attributs utilisateurs"""
 
@@ -35,7 +35,7 @@ class AttributeCommands(commands.Cog):
 
         if not action:
             # Affiche l'aide
-            embed = discord.Embed(
+            embed = nextcord.Embed(
                 title="<:manageuser:1398729745293774919> Gestion des attributs",
                 description=(
                     "**Utilisation :**\n"
@@ -58,7 +58,7 @@ class AttributeCommands(commands.Cog):
             # Récupère l'utilisateur
             user_data = await self.bot.db.get_user(target.id)
 
-            embed = discord.Embed(
+            embed = nextcord.Embed(
                 title=f"<:label:1398729473649676440> Attributs de {target}",
                 color=COLORS["info"]
             )
@@ -155,7 +155,7 @@ class AttributeCommands(commands.Cog):
                     await ctx.send("<:info:1401614681440784477> Aucun utilisateur avec des attributs")
                     return
 
-                embed = discord.Embed(
+                embed = nextcord.Embed(
                     title="<:user:1398729712204779571> Utilisateurs avec attributs",
                     color=COLORS["info"]
                 )
@@ -190,7 +190,7 @@ class AttributeCommands(commands.Cog):
             await ctx.send("<:undone:1398729502028333218> Base de données non connectée")
             return
 
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title="<:settings:1398729549323440208> Mise à jour des développeurs",
             description="<:loading:1395047662092550194> Attribution du statut DEVELOPER...",
             color=COLORS["warning"]

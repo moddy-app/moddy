@@ -3,7 +3,7 @@ Système Incognito pour les commandes slash de Moddy
 Permet aux utilisateurs de contrôler la visibilité de leurs réponses
 """
 
-import nextcord as discord
+import nextcord
 from nextcord import app_commands
 from typing import Optional
 import functools
@@ -20,7 +20,7 @@ def add_incognito_option(default_value: bool = True):
     def decorator(func):
         # Wrapper qui ajoute le paramètre incognito
         @functools.wraps(func)
-        async def wrapper(self, interaction: discord.Interaction, *args, incognito: Optional[bool] = None, **kwargs):
+        async def wrapper(self, interaction: nextcord.Interaction, *args, incognito: Optional[bool] = None, **kwargs):
             # IMPORTANT : Si incognito n'est pas spécifié explicitement dans la commande
             # on vérifie la préférence utilisateur
             if incognito is None:
@@ -62,7 +62,7 @@ def add_incognito_option(default_value: bool = True):
     return decorator
 
 
-def get_incognito_setting(interaction: discord.Interaction) -> bool:
+def get_incognito_setting(interaction: nextcord.Interaction) -> bool:
     """
     Récupère le réglage incognito depuis l'interaction
 

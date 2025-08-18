@@ -3,7 +3,7 @@ Système centralisé pour les embeds épurés
 Style moderne avec couleurs élégantes
 """
 
-import nextcord as discord
+import nextcord
 from typing import List, Optional, Dict, Any, Union
 from datetime import datetime, timezone
 
@@ -47,7 +47,7 @@ class ModdyEmbed:
             thumbnail: Optional[str] = None,
             image: Optional[str] = None,
             timestamp: bool = False
-    ) -> discord.Embed:
+    ) -> nextcord.Embed:
         """
         Crée un embed épuré avec style moderne
 
@@ -66,7 +66,7 @@ class ModdyEmbed:
         if color is None:
             color = ModdyColors.LIGHT
 
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title=title,
             description=description,
             color=color
@@ -101,14 +101,14 @@ class ModdyEmbed:
         return embed
 
     @staticmethod
-    def minimal(description: str, color: int = ModdyColors.LIGHT) -> discord.Embed:
+    def minimal(description: str, color: int = ModdyColors.LIGHT) -> nextcord.Embed:
         """Crée un embed minimal avec juste une description"""
-        return discord.Embed(description=description, color=color)
+        return nextcord.Embed(description=description, color=color)
 
     @staticmethod
-    def field_block(title: str, fields: Dict[str, Any], color: int = ModdyColors.PRIMARY) -> discord.Embed:
+    def field_block(title: str, fields: Dict[str, Any], color: int = ModdyColors.PRIMARY) -> nextcord.Embed:
         """Crée un embed avec des champs organisés"""
-        embed = discord.Embed(title=title, color=color)
+        embed = nextcord.Embed(title=title, color=color)
 
         for name, value in fields.items():
             # Formater automatiquement les valeurs
@@ -131,7 +131,7 @@ class ModdyResponse:
     """Templates de réponses standardisées avec style moderne"""
 
     @staticmethod
-    def success(title: str, description: str, footer: Optional[str] = None) -> discord.Embed:
+    def success(title: str, description: str, footer: Optional[str] = None) -> nextcord.Embed:
         """Message de succès avec couleur verte moderne"""
         embed = ModdyEmbed.create(
             title=title,
@@ -142,7 +142,7 @@ class ModdyResponse:
         return embed
 
     @staticmethod
-    def error(title: str, description: str, footer: Optional[str] = None) -> discord.Embed:
+    def error(title: str, description: str, footer: Optional[str] = None) -> nextcord.Embed:
         """Message d'erreur avec couleur rouge moderne"""
         embed = ModdyEmbed.create(
             title=title,
@@ -153,7 +153,7 @@ class ModdyResponse:
         return embed
 
     @staticmethod
-    def warning(title: str, description: str, footer: Optional[str] = None) -> discord.Embed:
+    def warning(title: str, description: str, footer: Optional[str] = None) -> nextcord.Embed:
         """Message d'avertissement avec couleur jaune dorée"""
         embed = ModdyEmbed.create(
             title=title,
@@ -164,7 +164,7 @@ class ModdyResponse:
         return embed
 
     @staticmethod
-    def info(title: str, description: str = None, fields: List[tuple] = None) -> discord.Embed:
+    def info(title: str, description: str = None, fields: List[tuple] = None) -> nextcord.Embed:
         """Message d'information avec couleur bleue"""
         return ModdyEmbed.create(
             title=title,
@@ -174,7 +174,7 @@ class ModdyResponse:
         )
 
     @staticmethod
-    def loading(message: str = "Chargement en cours...") -> discord.Embed:
+    def loading(message: str = "Chargement en cours...") -> nextcord.Embed:
         """Message de chargement épuré"""
         return ModdyEmbed.minimal(
             description=message,
@@ -182,7 +182,7 @@ class ModdyResponse:
         )
 
     @staticmethod
-    def confirm(title: str, description: str, footer: str = None) -> discord.Embed:
+    def confirm(title: str, description: str, footer: str = None) -> nextcord.Embed:
         """Message de confirmation avec couleur subtile"""
         return ModdyEmbed.create(
             title=title,
@@ -192,10 +192,10 @@ class ModdyResponse:
         )
 
 
-def format_diagnostic_embed(data: dict) -> discord.Embed:
+def format_diagnostic_embed(data: dict) -> nextcord.Embed:
     """Formate un embed de diagnostic avec style moderne"""
 
-    embed = discord.Embed(
+    embed = nextcord.Embed(
         title="Diagnostic Système",
         color=ModdyColors.PRIMARY,
         timestamp=datetime.now(timezone.utc)
@@ -269,9 +269,9 @@ def format_diagnostic_embed(data: dict) -> discord.Embed:
     return embed
 
 
-def format_commands_embed(commands_by_cog: dict) -> discord.Embed:
+def format_commands_embed(commands_by_cog: dict) -> nextcord.Embed:
     """Formate un embed pour la liste des commandes"""
-    embed = discord.Embed(
+    embed = nextcord.Embed(
         title="Commandes Disponibles",
         description="Liste complète des commandes du bot",
         color=ModdyColors.PRIMARY
@@ -296,7 +296,7 @@ def quick_embed(
         color: int = ModdyColors.PRIMARY,
         title: str = None,
         footer: str = None
-) -> discord.Embed:
+) -> nextcord.Embed:
     """Crée rapidement un embed simple"""
     return ModdyEmbed.create(
         title=title,
