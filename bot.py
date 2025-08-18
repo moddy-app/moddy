@@ -4,6 +4,7 @@ Gère toute la logique centrale et les événements
 """
 
 import nextcord
+from nextcord.errors import ApplicationError
 from nextcord.ext import commands, tasks
 import asyncio
 import logging
@@ -101,9 +102,6 @@ class ModdyBot(commands.Bot):
         """Appelé une fois au démarrage du bot"""
         logger.info("🔧 Configuration initiale...")
 
-        # Configure le gestionnaire d'erreurs pour les commandes slash
-        self.tree.on_error = self.on_app_command_error
-
         # Récupère l'équipe de développement
         await self.fetch_dev_team()
 
@@ -129,7 +127,7 @@ class ModdyBot(commands.Bot):
             await self.tree.sync()
             logger.info("✅ Commandes synchronisées globalement")
 
-    async def on_app_command_error(self, interaction: nextcord.Interaction, error: nextcord.app_commands.AppCommandError):
+    async def on_application_command_error(self, interaction: nextcord.Interaction, error: ApplicationError):
         """Gestion des erreurs des commandes slash"""
         # Utilise le cog ErrorTracker s'il est chargé
         error_cog = self.get_cog("ErrorTracker")
