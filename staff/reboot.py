@@ -3,8 +3,8 @@ Commande reboot pour développeurs
 Redémarre le bot et modifie le message original
 """
 
-import discord
-from discord.ext import commands
+import nextcord as discord
+from nextcord.ext import commands
 import asyncio
 import os
 import sys

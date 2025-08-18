@@ -3,8 +3,8 @@ Commandes de gestion des erreurs pour développeurs
 Permet de consulter et gérer les erreurs du bot
 """
 
-import discord
-from discord.ext import commands
+import nextcord as discord
+from nextcord.ext import commands
 from datetime import datetime, timedelta
 import sys
 from pathlib import Path

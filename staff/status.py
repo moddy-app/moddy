@@ -3,8 +3,8 @@ Commande pour changer le statut du bot
 Réservée aux développeurs
 """
 
-import discord
-from discord.ext import commands
+import nextcord as discord
+from nextcord.ext import commands
 from typing import Optional
 
 # Import du système d'embeds épuré

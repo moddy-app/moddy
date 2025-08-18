@@ -3,8 +3,8 @@ Système Incognito pour les commandes slash de Moddy
 Permet aux utilisateurs de contrôler la visibilité de leurs réponses
 """
 
-import discord
-from discord import app_commands
+import nextcord as discord
+from nextcord import app_commands
 from typing import Optional
 import functools
 

@@ -3,8 +3,8 @@ Fichier de test pour les composants Discord V2
 Teste toutes les fonctionnalités de la branche expérimentale
 """
 
-import discord
-from discord.ext import commands
+import nextcord as discord
+from nextcord.ext import commands
 import asyncio
 from datetime import datetime
 

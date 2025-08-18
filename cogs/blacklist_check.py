@@ -3,8 +3,8 @@ Système de vérification de blacklist corrigé
 Intercepte et BLOQUE toutes les interactions des utilisateurs blacklistés
 """
 
-import discord
-from discord.ext import commands
+import nextcord as discord
+from nextcord.ext import commands
 from typing import Union
 
 from config import COLORS

@@ -2,8 +2,8 @@
 Commande pour voir les statistiques d'utilisation des commandes dev
 """
 
-import discord
-from discord.ext import commands
+import nextcord as discord
+from nextcord.ext import commands
 from datetime import datetime, timedelta
 import sys
 from pathlib import Path

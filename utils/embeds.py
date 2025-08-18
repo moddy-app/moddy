@@ -3,7 +3,7 @@ Système centralisé pour les embeds épurés
 Style moderne avec couleurs élégantes
 """
 
-import discord
+import nextcord as discord
 from typing import List, Optional, Dict, Any, Union
 from datetime import datetime, timezone
 

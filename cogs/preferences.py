@@ -3,9 +3,9 @@ Commande preferences pour Moddy
 Gère toutes les préférences utilisateur : langue, incognito, notifications DM
 """
 
-import discord
-from discord import app_commands
-from discord.ext import commands
+import nextcord as discord
+from nextcord import app_commands
+from nextcord.ext import commands
 from typing import Optional
 from datetime import datetime
 import asyncio

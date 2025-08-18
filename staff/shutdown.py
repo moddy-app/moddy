@@ -3,8 +3,8 @@ Commande shutdown pour développeurs
 Permet d'arrêter le bot proprement
 """
 
-import discord
-from discord.ext import commands
+import nextcord as discord
+from nextcord.ext import commands
 import asyncio
 import sys
 from datetime import datetime, timezone

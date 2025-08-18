@@ -3,9 +3,9 @@ Commande translate pour Moddy
 Utilise l'API DeepL pour traduire du texte avec détection automatique
 """
 
-import discord
-from discord import app_commands
-from discord.ext import commands
+import nextcord as discord
+from nextcord import app_commands
+from nextcord.ext import commands
 from typing import Optional
 import aiohttp
 import re

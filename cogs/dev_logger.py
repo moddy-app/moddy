@@ -3,8 +3,8 @@ Système de logging pour les commandes développeur
 Enregistre toutes les utilisations de commandes staff dans un canal dédié
 """
 
-import discord
-from discord.ext import commands
+import nextcord as discord
+from nextcord.ext import commands
 from datetime import datetime, timezone
 import traceback
 import json

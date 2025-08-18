@@ -3,8 +3,8 @@ Commandes pour gérer les attributs utilisateurs/serveurs
 Réservées aux développeurs
 """
 
-import discord
-from discord.ext import commands
+import nextcord as discord
+from nextcord.ext import commands
 from datetime import datetime
 import sys
 from pathlib import Path

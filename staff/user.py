@@ -3,8 +3,8 @@ Commande de gestion utilisateur pour développeurs
 Panel complet avec boutons pour gérer les utilisateurs
 """
 
-import discord
-from discord.ext import commands
+import nextcord as discord
+from nextcord.ext import commands
 from datetime import datetime, timezone
 import json
 import sys

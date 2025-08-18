@@ -4,8 +4,8 @@ Affiche des informations détaillées sur le statut du bot
 Style épuré sans emojis système
 """
 
-import discord
-from discord.ext import commands
+import nextcord as discord
+from nextcord.ext import commands
 import asyncio
 import time
 import platform

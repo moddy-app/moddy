@@ -3,8 +3,8 @@ Système de gestion d'erreurs avancé pour Moddy
 Tracking, logs Discord et notifications avec base de données
 """
 
-import discord
-from discord.ext import commands
+import nextcord as discord
+from nextcord.ext import commands
 import traceback
 import hashlib
 import json

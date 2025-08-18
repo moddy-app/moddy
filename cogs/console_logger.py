@@ -3,8 +3,8 @@ Système de redirection des logs console vers Discord
 Capture tout ce qui s'affiche dans la console Python
 """
 
-import discord
-from discord.ext import commands, tasks
+import nextcord as discord
+from nextcord.ext import commands, tasks
 import logging
 import sys
 import io

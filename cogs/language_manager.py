@@ -3,8 +3,8 @@ Système de gestion de langue pour Moddy
 Version modifiée : envoie un MP au lieu d'afficher une popup
 """
 
-import discord
-from discord.ext import commands
+import nextcord as discord
+from nextcord.ext import commands
 from typing import Optional, Dict
 import asyncio
 import logging

@@ -3,8 +3,8 @@ Moddy - Classe principale du bot
 Gère toute la logique centrale et les événements
 """
 
-import discord
-from discord.ext import commands, tasks
+import nextcord as discord
+from nextcord.ext import commands, tasks
 import asyncio
 import logging
 from datetime import datetime, timezone
