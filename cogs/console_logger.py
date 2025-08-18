@@ -3,7 +3,7 @@ Système de redirection des logs console vers Discord
 Capture tout ce qui s'affiche dans la console Python
 """
 
-import nextcord as discord
+import nextcord
 from nextcord.ext import commands, tasks
 import logging
 import sys
@@ -29,10 +29,10 @@ class ConsoleLogger(commands.Cog):
 
         # Filtres pour ignorer certains logs
         self.ignored_patterns = [
-            "discord.gateway",
-            "discord.client",
-            "discord.http",
-            "discord.state",
+            "nextcord.gateway",
+            "nextcord.client",
+            "nextcord.http",
+            "nextcord.state",
             "WebSocket Event",
             "Dispatching event",
             "POST https://discord.com",
@@ -177,7 +177,7 @@ class ConsoleLogger(commands.Cog):
             if len(content) > 4000:
                 content = content[:3997] + '...'
 
-            embed = discord.Embed(
+            embed = nextcord.Embed(
                 description=f"```\n{content}\n```",
                 color=colors.get(log_type, COLORS["primary"]),
                 timestamp=datetime.now(timezone.utc)
@@ -219,8 +219,8 @@ class DiscordLogHandler(logging.Handler):
     def emit(self, record):
         """Émet un log vers Discord"""
         try:
-            # Ignore les logs discord.py
-            if record.name.startswith('discord.'):
+            # Ignore les logs nextcord.py
+            if record.name.startswith('nextcord.'):
                 return
 
             # Formate le message

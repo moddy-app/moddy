@@ -3,7 +3,7 @@ Commande translate pour Moddy
 Utilise l'API DeepL pour traduire du texte avec détection automatique
 """
 
-import nextcord as discord
+import nextcord
 from nextcord import app_commands
 from nextcord.ext import commands
 from typing import Optional
@@ -17,10 +17,10 @@ from utils.incognito import add_incognito_option, get_incognito_setting
 from config import COLORS, DEEPL_API_KEY
 
 
-class TranslateView(discord.ui.View):
+class TranslateView(nextcord.ui.View):
     """Vue pour retraduire dans une autre langue"""
 
-    def __init__(self, bot, original_text: str, from_lang: str, current_to_lang: str, lang: str, author: discord.User):
+    def __init__(self, bot, original_text: str, from_lang: str, current_to_lang: str, lang: str, author: nextcord.User):
         super().__init__(timeout=120)
         self.bot = bot
         self.original_text = original_text
@@ -68,7 +68,7 @@ class TranslateView(discord.ui.View):
         for code, (emoji, name, name_fr) in languages.items():
             # Ne pas inclure la langue actuelle
             if code != self.current_to_lang:
-                options.append(discord.SelectOption(
+                options.append(nextcord.SelectOption(
                     label=name_fr if self.lang == "FR" else name,
                     value=code,
                     emoji=emoji
@@ -79,7 +79,7 @@ class TranslateView(discord.ui.View):
 
         placeholder = "Traduire dans une autre langue" if self.lang == "FR" else "Translate to another language"
 
-        select = discord.ui.Select(
+        select = nextcord.ui.Select(
             placeholder=placeholder,
             options=options,
             min_values=1,
@@ -89,7 +89,7 @@ class TranslateView(discord.ui.View):
 
         return select
 
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+    async def interaction_check(self, interaction: nextcord.Interaction) -> bool:
         """Vérifie que c'est l'auteur qui utilise le menu"""
         if interaction.user != self.author:
             if self.lang == "FR":
@@ -100,7 +100,7 @@ class TranslateView(discord.ui.View):
             return False
         return True
 
-    async def translate_callback(self, interaction: discord.Interaction):
+    async def translate_callback(self, interaction: nextcord.Interaction):
         """Callback pour retraduire le texte"""
         new_lang = self.children[0].values[0]
 
@@ -241,7 +241,7 @@ class Translate(commands.Cog):
         else:
             return code
 
-    def sanitize_mentions(self, text: str, guild: Optional[discord.Guild]) -> str:
+    def sanitize_mentions(self, text: str, guild: Optional[nextcord.Guild]) -> str:
         """Remplace les mentions par du texte sans ping"""
         # Remplace @everyone et @here
         text = text.replace('@everyone', '@\u200beveryone')
@@ -365,9 +365,9 @@ class Translate(commands.Cog):
         except Exception:
             return None
 
-    def create_translation_embed(self, original: str, translated: str, from_lang: str, to_lang: str, user_lang: str) -> discord.Embed:
+    def create_translation_embed(self, original: str, translated: str, from_lang: str, to_lang: str, user_lang: str) -> nextcord.Embed:
         """Crée l'embed de traduction"""
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title=f"<:translate:1398720130950627600> {self.get_text(user_lang, 'translation_title')}",
             color=COLORS["primary"]
         )
@@ -437,7 +437,7 @@ class Translate(commands.Cog):
     @add_incognito_option()
     async def translate_command(
         self,
-        interaction: discord.Interaction,
+        interaction: nextcord.Interaction,
         text: str,
         to: app_commands.Choice[str],
         incognito: Optional[bool] = None

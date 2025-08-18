@@ -3,7 +3,7 @@ Commande ping publique
 Simple et accessible à tous
 """
 
-import nextcord as discord
+import nextcord
 from nextcord import app_commands
 from nextcord.ext import commands
 import time
@@ -19,7 +19,7 @@ class PublicPing(commands.Cog):
         self.bot = bot
 
     @app_commands.command(name="ping", description="Vérifie la latence du bot")
-    async def ping_slash(self, interaction: discord.Interaction):
+    async def ping_slash(self, interaction: nextcord.Interaction):
         """Commande slash /ping simple pour tout le monde"""
 
         # Calcul des latences
@@ -43,7 +43,7 @@ class PublicPing(commands.Cog):
             emoji = "🔴"
 
         # Créer l'embed avec du contenu
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title=f"{EMOJIS['ping']} Pong!",
             description=(
                 f"{emoji} **Connexion {status}**\n\n"

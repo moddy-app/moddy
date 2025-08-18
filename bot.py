@@ -3,7 +3,7 @@ Moddy - Classe principale du bot
 Gère toute la logique centrale et les événements
 """
 
-import nextcord as discord
+import nextcord
 from nextcord.ext import commands, tasks
 import asyncio
 import logging
@@ -31,7 +31,7 @@ class ModdyBot(commands.Bot):
 
     def __init__(self):
         # Intents nécessaires
-        intents = discord.Intents.default()
+        intents = nextcord.Intents.default()
         intents.message_content = True
         intents.guilds = True
         intents.members = True
@@ -41,11 +41,11 @@ class ModdyBot(commands.Bot):
             command_prefix=self.get_prefix,
             intents=intents,
             help_command=None,  # On fait notre propre commande help
-            activity=discord.Activity(
-                type=discord.ActivityType.watching,
+            activity=nextcord.Activity(
+                type=nextcord.ActivityType.watching,
                 name="les serveurs | /help"
             ),
-            status=discord.Status.online,
+            status=nextcord.Status.online,
             case_insensitive=True
         )
 
@@ -120,7 +120,7 @@ class ModdyBot(commands.Bot):
         # Synchronise les commandes slash
         if DEBUG:
             # En debug, sync seulement sur le serveur de test
-            guild = discord.Object(id=1234567890)  # Remplace par ton serveur de test
+            guild = nextcord.Object(id=1234567890)  # Remplace par ton serveur de test
             self.tree.copy_global_to(guild=guild)
             await self.tree.sync(guild=guild)
             logger.info("✅ Commandes synchronisées (mode debug)")
@@ -129,7 +129,7 @@ class ModdyBot(commands.Bot):
             await self.tree.sync()
             logger.info("✅ Commandes synchronisées globalement")
 
-    async def on_app_command_error(self, interaction: discord.Interaction, error: discord.app_commands.AppCommandError):
+    async def on_app_command_error(self, interaction: nextcord.Interaction, error: nextcord.app_commands.AppCommandError):
         """Gestion des erreurs des commandes slash"""
         # Utilise le cog ErrorTracker s'il est chargé
         error_cog = self.get_cog("ErrorTracker")
@@ -200,7 +200,7 @@ class ModdyBot(commands.Bot):
         """Vérifie si un utilisateur est développeur"""
         return user_id in self._dev_team_ids
 
-    async def get_prefix(self, message: discord.Message):
+    async def get_prefix(self, message: nextcord.Message):
         """Récupère le préfixe pour un message"""
         # En MP, utilise le préfixe par défaut
         if not message.guild:
@@ -349,7 +349,7 @@ class ModdyBot(commands.Bot):
             except:
                 pass
 
-    async def on_guild_join(self, guild: discord.Guild):
+    async def on_guild_join(self, guild: nextcord.Guild):
         """Quand le bot rejoint un serveur"""
         logger.info(f"➕ Nouveau serveur : {guild.name} ({guild.id})")
 
@@ -361,7 +361,7 @@ class ModdyBot(commands.Bot):
 
                     # Envoie un message au propriétaire si possible
                     try:
-                        embed = discord.Embed(
+                        embed = nextcord.Embed(
                             description=(
                                 "<:blacklist:1401596864784777363> You cannot add Moddy to servers while blacklisted.\n"
                                 "<:blacklist:1401596864784777363> Vous ne pouvez pas ajouter Moddy à des serveurs en étant blacklisté."
@@ -371,11 +371,11 @@ class ModdyBot(commands.Bot):
                         embed.set_footer(text=f"ID: {guild.owner_id}")
 
                         # Crée le bouton
-                        view = discord.ui.View()
-                        view.add_item(discord.ui.Button(
+                        view = nextcord.ui.View()
+                        view.add_item(nextcord.ui.Button(
                             label="Unblacklist request",
                             url="https://moddy.app/unbl_request",
-                            style=discord.ButtonStyle.link
+                            style=nextcord.ButtonStyle.link
                         ))
 
                         await guild.owner.send(embed=embed, view=view)
@@ -418,14 +418,14 @@ class ModdyBot(commands.Bot):
             except Exception as e:
                 logger.error(f"Erreur BDD (guild_join) : {e}")
 
-    async def on_guild_remove(self, guild: discord.Guild):
+    async def on_guild_remove(self, guild: nextcord.Guild):
         """Quand le bot quitte un serveur"""
         logger.info(f"➖ Serveur quitté : {guild.name} ({guild.id})")
 
         # Nettoie le cache
         self.prefix_cache.pop(guild.id, None)
 
-    async def on_message(self, message: discord.Message):
+    async def on_message(self, message: nextcord.Message):
         """Traite chaque message"""
         # Ignore ses propres messages
         if message.author == self.user:
@@ -474,8 +474,8 @@ class ModdyBot(commands.Bot):
         import random
         activity_type, name = random.choice(statuses)
 
-        activity = discord.Activity(
-            type=getattr(discord.ActivityType, activity_type),
+        activity = nextcord.Activity(
+            type=getattr(nextcord.ActivityType, activity_type),
             name=name
         )
 

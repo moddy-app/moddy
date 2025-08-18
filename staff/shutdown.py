@@ -3,7 +3,7 @@ Commande shutdown pour développeurs
 Permet d'arrêter le bot proprement
 """
 
-import nextcord as discord
+import nextcord
 from nextcord.ext import commands
 import asyncio
 import sys
@@ -32,7 +32,7 @@ class Shutdown(commands.Cog):
         """Arrête le bot proprement"""
 
         # Embed de confirmation
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title="Confirmation d'arrêt",
             description="Êtes-vous sûr de vouloir arrêter le bot ?",
             color=COLORS["warning"]
@@ -77,7 +77,7 @@ class Shutdown(commands.Cog):
             return f"{seconds}s"
 
 
-class ShutdownView(discord.ui.View):
+class ShutdownView(nextcord.ui.View):
     """Vue pour confirmer l'arrêt"""
 
     def __init__(self, bot, author):
@@ -87,7 +87,7 @@ class ShutdownView(discord.ui.View):
         self.confirmed = False
         self.message = None
 
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+    async def interaction_check(self, interaction: nextcord.Interaction) -> bool:
         """Seul l'auteur peut utiliser les boutons"""
         if interaction.user != self.author:
             await interaction.response.send_message(
@@ -97,8 +97,8 @@ class ShutdownView(discord.ui.View):
             return False
         return True
 
-    @discord.ui.button(label="Confirmer l'arrêt", style=discord.ButtonStyle.danger)
-    async def confirm_shutdown(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Confirmer l'arrêt", style=nextcord.ButtonStyle.danger)
+    async def confirm_shutdown(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Confirme l'arrêt du bot"""
         self.confirmed = True
 
@@ -107,7 +107,7 @@ class ShutdownView(discord.ui.View):
             item.disabled = True
 
         # Embed d'arrêt
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title="Arrêt en cours...",
             description="Le bot s'arrête proprement.",
             color=COLORS["error"],
@@ -134,14 +134,14 @@ class ShutdownView(discord.ui.View):
         await self.bot.close()
         sys.exit(0)
 
-    @discord.ui.button(label="Annuler", style=discord.ButtonStyle.secondary)
-    async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Annuler", style=nextcord.ButtonStyle.secondary)
+    async def cancel(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Annule l'arrêt"""
         # Désactiver tous les boutons
         for item in self.children:
             item.disabled = True
 
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title="Arrêt annulé",
             description="Le bot continue de fonctionner normalement.",
             color=COLORS["success"]
@@ -158,7 +158,7 @@ class ShutdownView(discord.ui.View):
                 item.disabled = True
 
             try:
-                embed = discord.Embed(
+                embed = nextcord.Embed(
                     title="Temps écoulé",
                     description="La demande d'arrêt a expiré.",
                     color=COLORS["info"]

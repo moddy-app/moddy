@@ -4,7 +4,7 @@ Affiche des informations détaillées sur le statut du bot
 Style épuré sans emojis système
 """
 
-import nextcord as discord
+import nextcord
 from nextcord.ext import commands
 import asyncio
 import time
@@ -80,7 +80,7 @@ class StaffDiagnostic(commands.Cog):
         diagnostic_data = {
             'api_latency': api_latency,
             'message_latency': message_latency,
-            'discord_version': discord.__version__,
+            'discord_version': nextcord.__version__,
             'db_status': db_status,
             'db_latency': db_latency,
             'uptime': uptime_str,
@@ -116,7 +116,7 @@ class StaffDiagnostic(commands.Cog):
         )
 
 
-class DiagnosticView(discord.ui.View):
+class DiagnosticView(nextcord.ui.View):
     """Vue avec boutons pour le diagnostic"""
 
     def __init__(self, bot, author):
@@ -124,7 +124,7 @@ class DiagnosticView(discord.ui.View):
         self.bot = bot
         self.author = author
 
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+    async def interaction_check(self, interaction: nextcord.Interaction) -> bool:
         """Vérifie que seul l'auteur peut utiliser les boutons"""
         if interaction.user != self.author:
             await interaction.response.send_message(
@@ -134,8 +134,8 @@ class DiagnosticView(discord.ui.View):
             return False
         return True
 
-    @discord.ui.button(label="Rafraîchir", style=discord.ButtonStyle.primary)
-    async def refresh(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Rafraîchir", style=nextcord.ButtonStyle.primary)
+    async def refresh(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Rafraîchit les statistiques"""
         await interaction.response.send_message("Rafraîchissement...", ephemeral=True)
 
@@ -144,8 +144,8 @@ class DiagnosticView(discord.ui.View):
         ctx.author = self.author
         await self.bot.get_command("diag").invoke(ctx)
 
-    @discord.ui.button(label="Collecter les déchets", style=discord.ButtonStyle.secondary)
-    async def garbage_collect(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Collecter les déchets", style=nextcord.ButtonStyle.secondary)
+    async def garbage_collect(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Force le garbage collector Python"""
         import gc
         collected = gc.collect()
@@ -154,8 +154,8 @@ class DiagnosticView(discord.ui.View):
             ephemeral=True
         )
 
-    @discord.ui.button(label="Logs", style=discord.ButtonStyle.secondary)
-    async def show_logs(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Logs", style=nextcord.ButtonStyle.secondary)
+    async def show_logs(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Affiche les derniers logs"""
         from config import LOG_FILE
 
@@ -164,7 +164,7 @@ class DiagnosticView(discord.ui.View):
                 lines = f.readlines()
                 last_logs = ''.join(lines[-10:])  # 10 dernières lignes
 
-            embed = discord.Embed(
+            embed = nextcord.Embed(
                 title="Derniers logs",
                 description=f"```\n{last_logs[-1900:]}\n```",
                 color=COLORS["developer"]
@@ -180,8 +180,8 @@ class DiagnosticView(discord.ui.View):
                 ephemeral=True
             )
 
-    @discord.ui.button(label="Fermer", style=discord.ButtonStyle.danger)
-    async def close(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Fermer", style=nextcord.ButtonStyle.danger)
+    async def close(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Ferme le diagnostic"""
         await interaction.response.defer()
         await interaction.delete_original_response()

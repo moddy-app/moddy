@@ -3,7 +3,7 @@ Commande de gestion serveur pour développeurs
 Panel complet avec boutons pour gérer les serveurs
 """
 
-import nextcord as discord
+import nextcord
 from nextcord.ext import commands
 from datetime import datetime, timezone
 import json
@@ -32,7 +32,7 @@ class ServerManagement(commands.Cog):
         """Panel de gestion d'un serveur"""
 
         if not guild_input:
-            embed = discord.Embed(
+            embed = nextcord.Embed(
                 title="<:server:1398840906248671354> Server Management",
                 description=(
                     "**Usage:** `server [name/ID]`\n\n"
@@ -67,7 +67,7 @@ class ServerManagement(commands.Cog):
                 cached_info = await self.bot.db.get_cached_guild(int(guild_input))
                 if cached_info:
                     # Crée un objet guild partiel
-                    guild = discord.Object(id=int(guild_input))
+                    guild = nextcord.Object(id=int(guild_input))
                     guild.name = cached_info['name']
                     guild._cached_data = cached_info
             except:
@@ -108,7 +108,7 @@ class ServerManagement(commands.Cog):
             await log_cog.log_command(ctx, "server", {"target": getattr(guild, 'name', 'Unknown'), "id": guild.id})
 
     @staticmethod
-    def _create_guild_embed(bot, guild, guild_data: Dict[str, Any], ctx: commands.Context) -> discord.Embed:
+    def _create_guild_embed(bot, guild, guild_data: Dict[str, Any], ctx: commands.Context) -> nextcord.Embed:
         """Crée l'embed principal avec les infos serveur"""
 
         # Si c'est un serveur depuis le cache
@@ -147,7 +147,7 @@ class ServerManagement(commands.Cog):
             member_count = guild.member_count
             icon_url = guild.icon.url if guild.icon else None
 
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title=f"<:server:1398840906248671354> Managing {guild.name}",
             description=f"*{info_source}*",
             color=COLORS["primary"]
@@ -233,10 +233,10 @@ class ServerManagement(commands.Cog):
         return embed
 
 
-class ServerManagementView(discord.ui.View):
+class ServerManagementView(nextcord.ui.View):
     """Vue avec les boutons de gestion"""
 
-    def __init__(self, bot, guild, guild_data: Dict[str, Any], author: discord.User):
+    def __init__(self, bot, guild, guild_data: Dict[str, Any], author: nextcord.User):
         super().__init__(timeout=600)  # 10 minutes
         self.bot = bot
         self.guild = guild
@@ -256,7 +256,7 @@ class ServerManagementView(discord.ui.View):
         except:
             pass
 
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+    async def interaction_check(self, interaction: nextcord.Interaction) -> bool:
         """Seul l'auteur peut utiliser les boutons ET doit être développeur"""
         if not self.bot.is_developer(interaction.user.id):
             await interaction.response.send_message(
@@ -273,11 +273,11 @@ class ServerManagementView(discord.ui.View):
             return False
         return True
 
-    @discord.ui.button(label="Attributes", emoji="<:label:1398729473649676440>", style=discord.ButtonStyle.primary)
-    async def show_attributes(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Attributes", emoji="<:label:1398729473649676440>", style=nextcord.ButtonStyle.primary)
+    async def show_attributes(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Affiche et gère les attributs"""
 
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title=f"<:label:1398729473649676440> {self.guild.name}'s Attributes",
             color=COLORS["info"]
         )
@@ -302,11 +302,11 @@ class ServerManagementView(discord.ui.View):
 
         await interaction.response.edit_message(embed=embed, view=view)
 
-    @discord.ui.button(label="Data", emoji="<:data_object:1401600908323852318>", style=discord.ButtonStyle.primary)
-    async def show_data(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Data", emoji="<:data_object:1401600908323852318>", style=nextcord.ButtonStyle.primary)
+    async def show_data(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Affiche la data stockée"""
 
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title=f"<:data_object:1401600908323852318> {self.guild.name}'s Data",
             color=COLORS["info"]
         )
@@ -334,11 +334,11 @@ class ServerManagementView(discord.ui.View):
 
         await interaction.response.edit_message(embed=embed, view=view)
 
-    @discord.ui.button(label="Actions", emoji="<:settings:1398729549323440208>", style=discord.ButtonStyle.secondary)
-    async def show_actions(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Actions", emoji="<:settings:1398729549323440208>", style=nextcord.ButtonStyle.secondary)
+    async def show_actions(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Affiche les actions disponibles"""
 
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title=f"<:settings:1398729549323440208> Actions for {self.guild.name}",
             description="Choose an action to perform:",
             color=COLORS["warning"]
@@ -349,11 +349,11 @@ class ServerManagementView(discord.ui.View):
 
         await interaction.response.edit_message(embed=embed, view=view)
 
-    @discord.ui.button(label="History", emoji="<:history:1401600464587456512>", style=discord.ButtonStyle.secondary)
-    async def show_history(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="History", emoji="<:history:1401600464587456512>", style=nextcord.ButtonStyle.secondary)
+    async def show_history(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Affiche l'historique des changements"""
 
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title=f"<:history:1401600464587456512> {self.guild.name}'s History",
             color=COLORS["info"]
         )
@@ -395,8 +395,8 @@ class ServerManagementView(discord.ui.View):
 
         await interaction.response.edit_message(embed=embed, view=view)
 
-    @discord.ui.button(label="Refresh", emoji="<:sync:1398729150885269546>", style=discord.ButtonStyle.secondary)
-    async def refresh(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Refresh", emoji="<:sync:1398729150885269546>", style=nextcord.ButtonStyle.secondary)
+    async def refresh(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Rafraîchit les données"""
 
         await interaction.response.defer()
@@ -436,18 +436,18 @@ class ServerManagementView(discord.ui.View):
                 ephemeral=True
             )
 
-    @discord.ui.button(label="Close", style=discord.ButtonStyle.danger)
-    async def close(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Close", style=nextcord.ButtonStyle.danger)
+    async def close(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Ferme le panel"""
         await interaction.response.defer()
         await interaction.delete_original_response()
         self.stop()
 
 
-class GuildAttributeActionView(discord.ui.View):
+class GuildAttributeActionView(nextcord.ui.View):
     """Vue pour gérer les attributs serveur"""
 
-    def __init__(self, bot, guild, guild_data: Dict[str, Any], author: discord.User, parent_view):
+    def __init__(self, bot, guild, guild_data: Dict[str, Any], author: nextcord.User, parent_view):
         super().__init__(timeout=600)
         self.bot = bot
         self.guild = guild
@@ -466,7 +466,7 @@ class GuildAttributeActionView(discord.ui.View):
         except:
             pass
 
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+    async def interaction_check(self, interaction: nextcord.Interaction) -> bool:
         """Vérifie que c'est un développeur ET l'auteur"""
         if not self.bot.is_developer(interaction.user.id):
             await interaction.response.send_message(
@@ -483,14 +483,14 @@ class GuildAttributeActionView(discord.ui.View):
             return False
         return True
 
-    @discord.ui.button(label="Add", emoji="<:add:1401608434230493254>", style=discord.ButtonStyle.success)
-    async def add_attribute(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Add", emoji="<:add:1401608434230493254>", style=nextcord.ButtonStyle.success)
+    async def add_attribute(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Modal pour ajouter un attribut"""
         modal = AddGuildAttributeModal(self.bot, self.guild, self.author, self)
         await interaction.response.send_modal(modal)
 
-    @discord.ui.button(label="Modify", emoji="<:edit:1401600709824086169>", style=discord.ButtonStyle.primary)
-    async def modify_attribute(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Modify", emoji="<:edit:1401600709824086169>", style=nextcord.ButtonStyle.primary)
+    async def modify_attribute(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Sélecteur pour modifier un attribut"""
         if not self.guild_data['attributes']:
             await interaction.response.send_message(
@@ -507,8 +507,8 @@ class GuildAttributeActionView(discord.ui.View):
             ephemeral=True
         )
 
-    @discord.ui.button(label="Remove", emoji="<:undone:1398729502028333218>", style=discord.ButtonStyle.danger)
-    async def remove_attribute(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Remove", emoji="<:undone:1398729502028333218>", style=nextcord.ButtonStyle.danger)
+    async def remove_attribute(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Sélecteur pour supprimer un attribut"""
         if not self.guild_data['attributes']:
             await interaction.response.send_message(
@@ -525,8 +525,8 @@ class GuildAttributeActionView(discord.ui.View):
             ephemeral=True
         )
 
-    @discord.ui.button(label="Back", emoji="<:back:1401600847733067806>", style=discord.ButtonStyle.secondary)
-    async def back(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Back", emoji="<:back:1401600847733067806>", style=nextcord.ButtonStyle.secondary)
+    async def back(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Retour au menu principal"""
         self.parent_view.guild_data = await self.bot.db.get_guild(self.guild.id)
 
@@ -546,10 +546,10 @@ class GuildAttributeActionView(discord.ui.View):
         self.guild_data = self.parent_view.guild_data
 
 
-class GuildActionsView(discord.ui.View):
+class GuildActionsView(nextcord.ui.View):
     """Vue avec les actions serveur"""
 
-    def __init__(self, bot, guild, guild_data: Dict[str, Any], author: discord.User, parent_view):
+    def __init__(self, bot, guild, guild_data: Dict[str, Any], author: nextcord.User, parent_view):
         super().__init__(timeout=600)
         self.bot = bot
         self.guild = guild
@@ -565,10 +565,10 @@ class GuildActionsView(discord.ui.View):
         """Ajoute les boutons avec les bonnes couleurs selon l'état"""
         # Bouton Premium
         has_premium = self.guild_data['attributes'].get('PREMIUM_GUILD', False)
-        premium_btn = discord.ui.Button(
+        premium_btn = nextcord.ui.Button(
             label="Premium",
             emoji="<:premium:1401602724801548381>",
-            style=discord.ButtonStyle.success if has_premium else discord.ButtonStyle.danger,
+            style=nextcord.ButtonStyle.success if has_premium else nextcord.ButtonStyle.danger,
             row=0
         )
         premium_btn.callback = self.toggle_premium
@@ -576,10 +576,10 @@ class GuildActionsView(discord.ui.View):
 
         # Bouton Beta
         has_beta = self.guild_data['attributes'].get('BETA_FEATURES', False)
-        beta_btn = discord.ui.Button(
+        beta_btn = nextcord.ui.Button(
             label="Beta",
             emoji="<:idea:1398729314597343313>",
-            style=discord.ButtonStyle.success if has_beta else discord.ButtonStyle.danger,
+            style=nextcord.ButtonStyle.success if has_beta else nextcord.ButtonStyle.danger,
             row=0
         )
         beta_btn.callback = self.toggle_beta
@@ -587,10 +587,10 @@ class GuildActionsView(discord.ui.View):
 
         # Bouton Officiel
         is_official = self.guild_data['attributes'].get('OFFICIAL_SERVER', False)
-        official_btn = discord.ui.Button(
+        official_btn = nextcord.ui.Button(
             label="Official",
             emoji="<:verified:1398729677601902635>",
-            style=discord.ButtonStyle.success if is_official else discord.ButtonStyle.danger,
+            style=nextcord.ButtonStyle.success if is_official else nextcord.ButtonStyle.danger,
             row=0
         )
         official_btn.callback = self.toggle_official
@@ -598,43 +598,43 @@ class GuildActionsView(discord.ui.View):
 
         # Autres boutons
         if not hasattr(self.guild, '_cached_data'):  # Seulement si le bot est présent
-            leave_btn = discord.ui.Button(
+            leave_btn = nextcord.ui.Button(
                 label="Leave",
                 emoji="<:import:1398729171584421958>",
-                style=discord.ButtonStyle.danger,
+                style=nextcord.ButtonStyle.danger,
                 row=1
             )
             leave_btn.callback = self.leave_guild
             self.add_item(leave_btn)
 
-        reset_btn = discord.ui.Button(
+        reset_btn = nextcord.ui.Button(
             label="Reset",
             emoji="<:sync:1398729150885269546>",
-            style=discord.ButtonStyle.danger,
+            style=nextcord.ButtonStyle.danger,
             row=1
         )
         reset_btn.callback = self.reset_guild
         self.add_item(reset_btn)
 
-        export_btn = discord.ui.Button(
+        export_btn = nextcord.ui.Button(
             label="Export",
             emoji="<:download:1401600503867248730>",
-            style=discord.ButtonStyle.secondary,
+            style=nextcord.ButtonStyle.secondary,
             row=1
         )
         export_btn.callback = self.export_data
         self.add_item(export_btn)
 
-        back_btn = discord.ui.Button(
+        back_btn = nextcord.ui.Button(
             label="Back",
             emoji="<:back:1401600847733067806>",
-            style=discord.ButtonStyle.secondary,
+            style=nextcord.ButtonStyle.secondary,
             row=1
         )
         back_btn.callback = self.back
         self.add_item(back_btn)
 
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+    async def interaction_check(self, interaction: nextcord.Interaction) -> bool:
         """Vérifie que c'est un développeur ET l'auteur"""
         if not self.bot.is_developer(interaction.user.id):
             await interaction.response.send_message(
@@ -644,7 +644,7 @@ class GuildActionsView(discord.ui.View):
             return False
         return interaction.user == self.author
 
-    async def toggle_premium(self, interaction: discord.Interaction):
+    async def toggle_premium(self, interaction: nextcord.Interaction):
         """Active/désactive le premium"""
         has_premium = self.guild_data['attributes'].get('PREMIUM_GUILD', False)
         new_value = not has_premium
@@ -664,7 +664,7 @@ class GuildActionsView(discord.ui.View):
             new_view.message = self.message
 
             # Recrée l'embed
-            embed = discord.Embed(
+            embed = nextcord.Embed(
                 title=f"<:settings:1398729549323440208> Actions for {self.guild.name}",
                 description=f"<:done:1398729525277229066> Premium {'enabled' if new_value else 'disabled'}!",
                 color=COLORS["success"]
@@ -678,7 +678,7 @@ class GuildActionsView(discord.ui.View):
                 ephemeral=True
             )
 
-    async def toggle_beta(self, interaction: discord.Interaction):
+    async def toggle_beta(self, interaction: nextcord.Interaction):
         """Active/désactive les features beta"""
         has_beta = self.guild_data['attributes'].get('BETA_FEATURES', False)
         new_value = not has_beta
@@ -698,7 +698,7 @@ class GuildActionsView(discord.ui.View):
             new_view.message = self.message
 
             # Recrée l'embed
-            embed = discord.Embed(
+            embed = nextcord.Embed(
                 title=f"<:settings:1398729549323440208> Actions for {self.guild.name}",
                 description=f"<:done:1398729525277229066> Beta features {'enabled' if new_value else 'disabled'}!",
                 color=COLORS["success"]
@@ -712,14 +712,14 @@ class GuildActionsView(discord.ui.View):
                 ephemeral=True
             )
 
-    async def toggle_official(self, interaction: discord.Interaction):
+    async def toggle_official(self, interaction: nextcord.Interaction):
         """Active/désactive le statut officiel"""
         is_official = self.guild_data['attributes'].get('OFFICIAL_SERVER', False)
 
         if not is_official:
             # Demande confirmation
             view = ConfirmView()
-            embed = discord.Embed(
+            embed = nextcord.Embed(
                 title="Confirmation required",
                 description=f"Are you sure you want to mark **{self.guild.name}** as an official server?",
                 color=COLORS["warning"]
@@ -747,7 +747,7 @@ class GuildActionsView(discord.ui.View):
             new_view.message = self.message
 
             # Recrée l'embed
-            embed = discord.Embed(
+            embed = nextcord.Embed(
                 title=f"<:settings:1398729549323440208> Actions for {self.guild.name}",
                 description=f"<:done:1398729525277229066> Official status {'enabled' if new_value else 'removed'}!",
                 color=COLORS["success"]
@@ -771,10 +771,10 @@ class GuildActionsView(discord.ui.View):
                     view=None
                 )
 
-    async def leave_guild(self, interaction: discord.Interaction):
+    async def leave_guild(self, interaction: nextcord.Interaction):
         """Fait quitter le bot du serveur"""
         view = ConfirmView()
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title="Confirmation required",
             description=f"Are you sure you want to make the bot leave **{self.guild.name}**?",
             color=COLORS["error"]
@@ -806,12 +806,12 @@ class GuildActionsView(discord.ui.View):
                     view=None
                 )
 
-    async def reset_guild(self, interaction: discord.Interaction):
+    async def reset_guild(self, interaction: nextcord.Interaction):
         """Réinitialise toutes les données du serveur"""
         modal = ResetGuildConfirmModal(self.bot, self.guild, self.author)
         await interaction.response.send_modal(modal)
 
-    async def export_data(self, interaction: discord.Interaction):
+    async def export_data(self, interaction: nextcord.Interaction):
         """Exporte toutes les données du serveur"""
         await interaction.response.defer(ephemeral=True)
 
@@ -843,7 +843,7 @@ class GuildActionsView(discord.ui.View):
 
             json_str = json.dumps(export_data, indent=2, ensure_ascii=False, default=str)
 
-            file = discord.File(
+            file = nextcord.File(
                 io.StringIO(json_str),
                 filename=f"guild_{self.guild.id}_export.json"
             )
@@ -860,7 +860,7 @@ class GuildActionsView(discord.ui.View):
                 ephemeral=True
             )
 
-    async def back(self, interaction: discord.Interaction):
+    async def back(self, interaction: nextcord.Interaction):
         """Retour au menu principal"""
         self.parent_view.guild_data = await self.bot.db.get_guild(self.guild.id)
 
@@ -875,10 +875,10 @@ class GuildActionsView(discord.ui.View):
         await interaction.response.edit_message(embed=embed, view=self.parent_view)
 
 
-class GuildDataManagementView(discord.ui.View):
+class GuildDataManagementView(nextcord.ui.View):
     """Vue pour gérer la data serveur"""
 
-    def __init__(self, bot, guild, guild_data: Dict[str, Any], author: discord.User, parent_view):
+    def __init__(self, bot, guild, guild_data: Dict[str, Any], author: nextcord.User, parent_view):
         super().__init__(timeout=600)
         self.bot = bot
         self.guild = guild
@@ -886,7 +886,7 @@ class GuildDataManagementView(discord.ui.View):
         self.author = author
         self.parent_view = parent_view
 
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+    async def interaction_check(self, interaction: nextcord.Interaction) -> bool:
         """Vérifie que c'est un développeur ET l'auteur"""
         if not self.bot.is_developer(interaction.user.id):
             await interaction.response.send_message(
@@ -896,20 +896,20 @@ class GuildDataManagementView(discord.ui.View):
             return False
         return interaction.user == self.author
 
-    @discord.ui.button(label="Edit JSON", emoji="<:edit:1401600709824086169>", style=discord.ButtonStyle.primary)
-    async def edit_json(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Edit JSON", emoji="<:edit:1401600709824086169>", style=nextcord.ButtonStyle.primary)
+    async def edit_json(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Ouvre un modal pour éditer le JSON complet"""
         modal = EditGuildDataModal(self.bot, self.guild, self.guild_data, self.author)
         await interaction.response.send_modal(modal)
 
-    @discord.ui.button(label="Add key", emoji="<:add:1401608434230493254>", style=discord.ButtonStyle.success)
-    async def add_key(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Add key", emoji="<:add:1401608434230493254>", style=nextcord.ButtonStyle.success)
+    async def add_key(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Ajoute une nouvelle clé à la data"""
         modal = AddGuildDataKeyModal(self.bot, self.guild, self.author)
         await interaction.response.send_modal(modal)
 
-    @discord.ui.button(label="Remove key", emoji="<:undone:1398729502028333218>", style=discord.ButtonStyle.danger)
-    async def remove_key(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Remove key", emoji="<:undone:1398729502028333218>", style=nextcord.ButtonStyle.danger)
+    async def remove_key(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Supprime une clé de la data"""
         if not self.guild_data['data']:
             await interaction.response.send_message(
@@ -925,11 +925,11 @@ class GuildDataManagementView(discord.ui.View):
             ephemeral=True
         )
 
-    @discord.ui.button(label="Reset", emoji="<:sync:1398729150885269546>", style=discord.ButtonStyle.danger)
-    async def reset_data(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Reset", emoji="<:sync:1398729150885269546>", style=nextcord.ButtonStyle.danger)
+    async def reset_data(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Réinitialise toute la data"""
         view = ConfirmView()
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title="Confirmation required",
             description=f"Are you sure you want to reset all data for **{self.guild.name}**?",
             color=COLORS["error"]
@@ -959,8 +959,8 @@ class GuildDataManagementView(discord.ui.View):
                     view=None
                 )
 
-    @discord.ui.button(label="Back", emoji="<:back:1401600847733067806>", style=discord.ButtonStyle.secondary)
-    async def back(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Back", emoji="<:back:1401600847733067806>", style=nextcord.ButtonStyle.secondary)
+    async def back(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Retour au menu principal"""
         self.parent_view.guild_data = await self.bot.db.get_guild(self.guild.id)
 
@@ -975,10 +975,10 @@ class GuildDataManagementView(discord.ui.View):
         await interaction.response.edit_message(embed=embed, view=self.parent_view)
 
 
-class TagManagementView(discord.ui.View):
+class TagManagementView(nextcord.ui.View):
     """Vue pour gérer les tags"""
 
-    def __init__(self, bot, guild, guild_data: Dict[str, Any], author: discord.User, parent_view):
+    def __init__(self, bot, guild, guild_data: Dict[str, Any], author: nextcord.User, parent_view):
         super().__init__(timeout=600)
         self.bot = bot
         self.guild = guild
@@ -986,14 +986,14 @@ class TagManagementView(discord.ui.View):
         self.author = author
         self.parent_view = parent_view
 
-    @discord.ui.button(label="Add", emoji="<:add:1401608434230493254>", style=discord.ButtonStyle.success)
-    async def add_tag(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Add", emoji="<:add:1401608434230493254>", style=nextcord.ButtonStyle.success)
+    async def add_tag(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Ajoute un nouveau tag"""
         modal = AddTagModal(self.bot, self.guild, self.author)
         await interaction.response.send_modal(modal)
 
-    @discord.ui.button(label="Remove", emoji="<:undone:1398729502028333218>", style=discord.ButtonStyle.danger)
-    async def remove_tag(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Remove", emoji="<:undone:1398729502028333218>", style=nextcord.ButtonStyle.danger)
+    async def remove_tag(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Supprime un tag"""
         tags = self.guild_data['data'].get('tags', {})
 
@@ -1012,13 +1012,13 @@ class TagManagementView(discord.ui.View):
             ephemeral=True
         )
 
-    @discord.ui.button(label="Back", emoji="<:back:1401600847733067806>", style=discord.ButtonStyle.secondary)
-    async def back(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Back", emoji="<:back:1401600847733067806>", style=nextcord.ButtonStyle.secondary)
+    async def back(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Retour à la config"""
         # Rafraîchit les données
         self.parent_view.guild_data = await self.bot.db.get_guild(self.guild.id)
 
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title=f"<:panel:1398720151980998789> {self.guild.name} Configuration",
             color=COLORS["info"]
         )
@@ -1030,8 +1030,8 @@ class TagManagementView(discord.ui.View):
                 name="<:settings:1398729549323440208> Settings",
                 value=(
                     f"**Prefix:** `{config.get('prefix', '!')}`\n"
-                    f"**Welcome channel:** {f'<#{config["welcome_channel"]}>' if config.get('welcome_channel') else 'Not defined'}\n"
-                    f"**Log channel:** {f'<#{config["log_channel"]}>' if config.get('log_channel') else 'Not defined'}"
+                    f"**Welcome channel:** {'<#' + str(config['welcome_channel']) + '>' if config.get('welcome_channel') else 'Not defined'}\n"
+                    f"**Log channel:** {'<#' + str(config['log_channel']) + '>' if config.get('log_channel') else 'Not defined'}"
                 ),
                 inline=False
             )
@@ -1041,38 +1041,38 @@ class TagManagementView(discord.ui.View):
 
 # === MODALS ===
 
-class AddGuildAttributeModal(discord.ui.Modal, title="Add an attribute"):
+class AddGuildAttributeModal(nextcord.ui.Modal, title="Add an attribute"):
     """Modal pour ajouter un attribut serveur"""
 
-    def __init__(self, bot, guild, author: discord.User, parent_view=None):
+    def __init__(self, bot, guild, author: nextcord.User, parent_view=None):
         super().__init__()
         self.bot = bot
         self.guild = guild
         self.author = author
         self.parent_view = parent_view
 
-    attribute_name = discord.ui.TextInput(
+    attribute_name = nextcord.ui.TextInput(
         label="Attribute name",
         placeholder="Ex: BETA_FEATURES, PREMIUM_GUILD, LANG...",
         max_length=50,
         required=True
     )
 
-    attribute_value = discord.ui.TextInput(
+    attribute_value = nextcord.ui.TextInput(
         label="Value",
         placeholder="true, false, FR, EN... (leave empty for true)",
         max_length=100,
         required=False
     )
 
-    reason = discord.ui.TextInput(
+    reason = nextcord.ui.TextInput(
         label="Reason",
         placeholder="Why this attribute is being added",
         max_length=200,
         required=False
     )
 
-    async def on_submit(self, interaction: discord.Interaction):
+    async def on_submit(self, interaction: nextcord.Interaction):
         value = self.attribute_value.value or "true"
         if value.lower() == "true":
             value = True
@@ -1106,10 +1106,10 @@ class AddGuildAttributeModal(discord.ui.Modal, title="Add an attribute"):
             )
 
 
-class ModifyGuildAttributeView(discord.ui.View):
+class ModifyGuildAttributeView(nextcord.ui.View):
     """Vue pour sélectionner un attribut à modifier"""
 
-    def __init__(self, bot, guild, guild_data: Dict[str, Any], author: discord.User):
+    def __init__(self, bot, guild, guild_data: Dict[str, Any], author: nextcord.User):
         super().__init__(timeout=60)
         self.bot = bot
         self.guild = guild
@@ -1119,21 +1119,21 @@ class ModifyGuildAttributeView(discord.ui.View):
         options = []
         for attr, value in guild_data['attributes'].items():
             options.append(
-                discord.SelectOption(
+                nextcord.SelectOption(
                     label=attr,
                     value=attr,
                     description=f"Current value: {value}"
                 )
             )
 
-        self.select = discord.ui.Select(
+        self.select = nextcord.ui.Select(
             placeholder="Choose an attribute",
             options=options[:25]
         )
         self.select.callback = self.select_callback
         self.add_item(self.select)
 
-    async def select_callback(self, interaction: discord.Interaction):
+    async def select_callback(self, interaction: nextcord.Interaction):
         """Quand un attribut est sélectionné"""
         selected = self.select.values[0]
         current_value = self.guild_data['attributes'][selected]
@@ -1142,10 +1142,10 @@ class ModifyGuildAttributeView(discord.ui.View):
         await interaction.response.send_modal(modal)
 
 
-class RemoveGuildAttributeView(discord.ui.View):
+class RemoveGuildAttributeView(nextcord.ui.View):
     """Vue pour sélectionner un attribut à supprimer"""
 
-    def __init__(self, bot, guild, guild_data: Dict[str, Any], author: discord.User):
+    def __init__(self, bot, guild, guild_data: Dict[str, Any], author: nextcord.User):
         super().__init__(timeout=60)
         self.bot = bot
         self.guild = guild
@@ -1155,7 +1155,7 @@ class RemoveGuildAttributeView(discord.ui.View):
         options = []
         for attr, value in guild_data['attributes'].items():
             options.append(
-                discord.SelectOption(
+                nextcord.SelectOption(
                     label=attr,
                     value=attr,
                     description=f"Value: {value}",
@@ -1163,14 +1163,14 @@ class RemoveGuildAttributeView(discord.ui.View):
                 )
             )
 
-        self.select = discord.ui.Select(
+        self.select = nextcord.ui.Select(
             placeholder="Choose an attribute to remove",
             options=options[:25]
         )
         self.select.callback = self.select_callback
         self.add_item(self.select)
 
-    async def select_callback(self, interaction: discord.Interaction):
+    async def select_callback(self, interaction: nextcord.Interaction):
         """Quand un attribut est sélectionné"""
         selected = self.select.values[0]
 
@@ -1193,17 +1193,17 @@ class RemoveGuildAttributeView(discord.ui.View):
             )
 
 
-class ModifyGuildAttributeModal(discord.ui.Modal, title="Modify an attribute"):
+class ModifyGuildAttributeModal(nextcord.ui.Modal, title="Modify an attribute"):
     """Modal pour modifier un attribut serveur"""
 
-    def __init__(self, bot, guild, author: discord.User, attr_name: str, current_value):
+    def __init__(self, bot, guild, author: nextcord.User, attr_name: str, current_value):
         super().__init__()
         self.bot = bot
         self.guild = guild
         self.author = author
         self.attr_name = attr_name
 
-        self.value_input = discord.ui.TextInput(
+        self.value_input = nextcord.ui.TextInput(
             label=f"New value for {attr_name}",
             placeholder=f"Current value: {current_value}",
             default=str(current_value),
@@ -1212,7 +1212,7 @@ class ModifyGuildAttributeModal(discord.ui.Modal, title="Modify an attribute"):
         )
         self.add_item(self.value_input)
 
-        self.reason = discord.ui.TextInput(
+        self.reason = nextcord.ui.TextInput(
             label="Reason for modification",
             placeholder="Optional",
             max_length=200,
@@ -1220,7 +1220,7 @@ class ModifyGuildAttributeModal(discord.ui.Modal, title="Modify an attribute"):
         )
         self.add_item(self.reason)
 
-    async def on_submit(self, interaction: discord.Interaction):
+    async def on_submit(self, interaction: nextcord.Interaction):
         value = self.value_input.value
         if value.lower() == "true":
             value = True
@@ -1248,10 +1248,10 @@ class ModifyGuildAttributeModal(discord.ui.Modal, title="Modify an attribute"):
             )
 
 
-class EditGuildDataModal(discord.ui.Modal, title="Edit JSON data"):
+class EditGuildDataModal(nextcord.ui.Modal, title="Edit JSON data"):
     """Modal pour éditer le JSON complet de la data serveur"""
 
-    def __init__(self, bot, guild, guild_data: Dict[str, Any], author: discord.User):
+    def __init__(self, bot, guild, guild_data: Dict[str, Any], author: nextcord.User):
         super().__init__()
         self.bot = bot
         self.guild = guild
@@ -1265,9 +1265,9 @@ class EditGuildDataModal(discord.ui.Modal, title="Edit JSON data"):
         if len(current_json) > 1024:
             current_json = current_json[:1021] + "..."
 
-        self.json_input = discord.ui.TextInput(
+        self.json_input = nextcord.ui.TextInput(
             label="JSON Data",
-            style=discord.TextStyle.paragraph,
+            style=nextcord.TextStyle.paragraph,
             placeholder='{"key": "value"}',
             default=current_json,
             max_length=4000,
@@ -1275,7 +1275,7 @@ class EditGuildDataModal(discord.ui.Modal, title="Edit JSON data"):
         )
         self.add_item(self.json_input)
 
-    async def on_submit(self, interaction: discord.Interaction):
+    async def on_submit(self, interaction: nextcord.Interaction):
         try:
             # Parse le JSON
             new_data = json.loads(self.json_input.value)
@@ -1310,31 +1310,31 @@ class EditGuildDataModal(discord.ui.Modal, title="Edit JSON data"):
             )
 
 
-class AddGuildDataKeyModal(discord.ui.Modal, title="Add a key to data"):
+class AddGuildDataKeyModal(nextcord.ui.Modal, title="Add a key to data"):
     """Modal pour ajouter une nouvelle clé à la data serveur"""
 
-    def __init__(self, bot, guild, author: discord.User):
+    def __init__(self, bot, guild, author: nextcord.User):
         super().__init__()
         self.bot = bot
         self.guild = guild
         self.author = author
 
-    key_path = discord.ui.TextInput(
+    key_path = nextcord.ui.TextInput(
         label="Key path",
         placeholder="Ex: config.prefix or simply tags",
         max_length=100,
         required=True
     )
 
-    value_input = discord.ui.TextInput(
+    value_input = nextcord.ui.TextInput(
         label="Value (JSON)",
-        style=discord.TextStyle.paragraph,
+        style=nextcord.TextStyle.paragraph,
         placeholder='Examples:\n"text"\n123\ntrue\n{"key": "value"}\n["item1", "item2"]',
         max_length=1000,
         required=True
     )
 
-    async def on_submit(self, interaction: discord.Interaction):
+    async def on_submit(self, interaction: nextcord.Interaction):
         try:
             # Parse la valeur
             if self.value_input.value.lower() == "true":
@@ -1370,10 +1370,10 @@ class AddGuildDataKeyModal(discord.ui.Modal, title="Add a key to data"):
             )
 
 
-class RemoveGuildDataKeyView(discord.ui.View):
+class RemoveGuildDataKeyView(nextcord.ui.View):
     """Vue pour sélectionner une clé à supprimer de la data serveur"""
 
-    def __init__(self, bot, guild, guild_data: Dict[str, Any], author: discord.User):
+    def __init__(self, bot, guild, guild_data: Dict[str, Any], author: nextcord.User):
         super().__init__(timeout=60)
         self.bot = bot
         self.guild = guild
@@ -1388,7 +1388,7 @@ class RemoveGuildDataKeyView(discord.ui.View):
                 value_preview = value_preview[:47] + "..."
 
             options.append(
-                discord.SelectOption(
+                nextcord.SelectOption(
                     label=key,
                     value=key,
                     description=value_preview,
@@ -1396,14 +1396,14 @@ class RemoveGuildDataKeyView(discord.ui.View):
                 )
             )
 
-        self.select = discord.ui.Select(
+        self.select = nextcord.ui.Select(
             placeholder="Choose a key to remove",
             options=options[:25]
         )
         self.select.callback = self.select_callback
         self.add_item(self.select)
 
-    async def select_callback(self, interaction: discord.Interaction):
+    async def select_callback(self, interaction: nextcord.Interaction):
         """Quand une clé est sélectionnée"""
         selected = self.select.values[0]
 
@@ -1441,16 +1441,16 @@ class RemoveGuildDataKeyView(discord.ui.View):
             )
 
 
-class ChangePrefixModal(discord.ui.Modal, title="Change prefix"):
+class ChangePrefixModal(nextcord.ui.Modal, title="Change prefix"):
     """Modal pour changer le préfixe du serveur"""
 
-    def __init__(self, bot, guild, author: discord.User):
+    def __init__(self, bot, guild, author: nextcord.User):
         super().__init__()
         self.bot = bot
         self.guild = guild
         self.author = author
 
-    prefix_input = discord.ui.TextInput(
+    prefix_input = nextcord.ui.TextInput(
         label="New prefix",
         placeholder="Ex: !, ?, //, >>",
         max_length=10,
@@ -1458,7 +1458,7 @@ class ChangePrefixModal(discord.ui.Modal, title="Change prefix"):
         required=True
     )
 
-    async def on_submit(self, interaction: discord.Interaction):
+    async def on_submit(self, interaction: nextcord.Interaction):
         new_prefix = self.prefix_input.value
 
         try:
@@ -1480,31 +1480,31 @@ class ChangePrefixModal(discord.ui.Modal, title="Change prefix"):
             )
 
 
-class AddTagModal(discord.ui.Modal, title="Add a tag"):
+class AddTagModal(nextcord.ui.Modal, title="Add a tag"):
     """Modal pour ajouter un tag"""
 
-    def __init__(self, bot, guild, author: discord.User):
+    def __init__(self, bot, guild, author: nextcord.User):
         super().__init__()
         self.bot = bot
         self.guild = guild
         self.author = author
 
-    tag_name = discord.ui.TextInput(
+    tag_name = nextcord.ui.TextInput(
         label="Tag name",
         placeholder="Ex: rules, help, info",
         max_length=50,
         required=True
     )
 
-    tag_content = discord.ui.TextInput(
+    tag_content = nextcord.ui.TextInput(
         label="Tag content",
-        style=discord.TextStyle.paragraph,
+        style=nextcord.TextStyle.paragraph,
         placeholder="Content to be displayed when the tag is used",
         max_length=2000,
         required=True
     )
 
-    async def on_submit(self, interaction: discord.Interaction):
+    async def on_submit(self, interaction: nextcord.Interaction):
         try:
             # Récupère les tags actuels
             guild_data = await self.bot.db.get_guild(self.guild.id)
@@ -1529,10 +1529,10 @@ class AddTagModal(discord.ui.Modal, title="Add a tag"):
             )
 
 
-class RemoveTagView(discord.ui.View):
+class RemoveTagView(nextcord.ui.View):
     """Vue pour sélectionner un tag à supprimer"""
 
-    def __init__(self, bot, guild, tags: Dict[str, str], author: discord.User):
+    def __init__(self, bot, guild, tags: Dict[str, str], author: nextcord.User):
         super().__init__(timeout=60)
         self.bot = bot
         self.guild = guild
@@ -1543,7 +1543,7 @@ class RemoveTagView(discord.ui.View):
         for tag_name, tag_content in list(tags.items())[:25]:
             content_preview = tag_content[:50] + "..." if len(tag_content) > 50 else tag_content
             options.append(
-                discord.SelectOption(
+                nextcord.SelectOption(
                     label=tag_name,
                     value=tag_name,
                     description=content_preview,
@@ -1551,14 +1551,14 @@ class RemoveTagView(discord.ui.View):
                 )
             )
 
-        self.select = discord.ui.Select(
+        self.select = nextcord.ui.Select(
             placeholder="Choose a tag to remove",
             options=options
         )
         self.select.callback = self.select_callback
         self.add_item(self.select)
 
-    async def select_callback(self, interaction: discord.Interaction):
+    async def select_callback(self, interaction: nextcord.Interaction):
         """Quand un tag est sélectionné"""
         selected = self.select.values[0]
 
@@ -1587,10 +1587,10 @@ class RemoveTagView(discord.ui.View):
             )
 
 
-class FeatureToggleView(discord.ui.View):
+class FeatureToggleView(nextcord.ui.View):
     """Vue pour activer/désactiver des features"""
 
-    def __init__(self, bot, guild, current_features: Dict[str, bool], author: discord.User):
+    def __init__(self, bot, guild, current_features: Dict[str, bool], author: nextcord.User):
         super().__init__(timeout=60)
         self.bot = bot
         self.guild = guild
@@ -1613,16 +1613,16 @@ class FeatureToggleView(discord.ui.View):
         for feature_key, feature_name in all_features.items():
             is_enabled = current_features.get(feature_key, False)
 
-            btn = discord.ui.Button(
+            btn = nextcord.ui.Button(
                 label=feature_name,
                 emoji="<:done:1398729525277229066>" if is_enabled else "<:undone:1398729502028333218>",
-                style=discord.ButtonStyle.success if is_enabled else discord.ButtonStyle.danger,
+                style=nextcord.ButtonStyle.success if is_enabled else nextcord.ButtonStyle.danger,
                 custom_id=feature_key
             )
             btn.callback = self.toggle_feature
             self.add_item(btn)
 
-    async def toggle_feature(self, interaction: discord.Interaction):
+    async def toggle_feature(self, interaction: nextcord.Interaction):
         """Toggle une feature"""
         feature_key = interaction.data['custom_id']
 
@@ -1653,30 +1653,30 @@ class FeatureToggleView(discord.ui.View):
             )
 
 
-class ResetGuildConfirmModal(discord.ui.Modal, title="Reset server"):
+class ResetGuildConfirmModal(nextcord.ui.Modal, title="Reset server"):
     """Modal de confirmation pour reset serveur"""
 
-    def __init__(self, bot, guild, author: discord.User):
+    def __init__(self, bot, guild, author: nextcord.User):
         super().__init__()
         self.bot = bot
         self.guild = guild
         self.author = author
 
-    confirm_text = discord.ui.TextInput(
+    confirm_text = nextcord.ui.TextInput(
         label="Type the server name to confirm",
         placeholder="Exact server name",
         max_length=100,
         required=True
     )
 
-    reason = discord.ui.TextInput(
+    reason = nextcord.ui.TextInput(
         label="Reason for reset",
         placeholder="Why reset this server?",
         max_length=200,
         required=True
     )
 
-    async def on_submit(self, interaction: discord.Interaction):
+    async def on_submit(self, interaction: nextcord.Interaction):
         if self.confirm_text.value != self.guild.name:
             await interaction.response.send_message(
                 f"<:undone:1398729502028333218> Incorrect confirmation. You must type exactly: `{self.guild.name}`",
@@ -1719,7 +1719,7 @@ class ResetGuildConfirmModal(discord.ui.Modal, title="Reset server"):
             )
 
 
-class BackButtonView(discord.ui.View):
+class BackButtonView(nextcord.ui.View):
     """Vue simple avec juste un bouton retour"""
 
     def __init__(self, parent_view, message):
@@ -1727,7 +1727,7 @@ class BackButtonView(discord.ui.View):
         self.parent_view = parent_view
         self.message = message
 
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+    async def interaction_check(self, interaction: nextcord.Interaction) -> bool:
         """Vérifie que c'est un développeur"""
         if not self.parent_view.bot.is_developer(interaction.user.id):
             await interaction.response.send_message(
@@ -1737,8 +1737,8 @@ class BackButtonView(discord.ui.View):
             return False
         return True
 
-    @discord.ui.button(label="Back", emoji="<:back:1401600847733067806>", style=discord.ButtonStyle.secondary)
-    async def back(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Back", emoji="<:back:1401600847733067806>", style=nextcord.ButtonStyle.secondary)
+    async def back(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         """Retour au menu principal"""
         self.parent_view.guild_data = await self.parent_view.bot.db.get_guild(self.parent_view.guild.id)
 
@@ -1758,21 +1758,21 @@ class BackButtonView(discord.ui.View):
         await interaction.response.edit_message(embed=embed, view=self.parent_view)
 
 
-class ConfirmView(discord.ui.View):
+class ConfirmView(nextcord.ui.View):
     """Vue de confirmation simple"""
 
     def __init__(self):
         super().__init__(timeout=30)
         self.value = None
 
-    @discord.ui.button(label="Confirm", style=discord.ButtonStyle.danger)
-    async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Confirm", style=nextcord.ButtonStyle.danger)
+    async def confirm(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         await interaction.response.defer()
         self.value = True
         self.stop()
 
-    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.secondary)
-    async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @nextcord.ui.button(label="Cancel", style=nextcord.ButtonStyle.secondary)
+    async def cancel(self, interaction: nextcord.Interaction, button: nextcord.ui.Button):
         await interaction.response.defer()
         self.value = False
         self.stop()

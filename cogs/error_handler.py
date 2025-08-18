@@ -3,7 +3,7 @@ Système de gestion d'erreurs avancé pour Moddy
 Tracking, logs Discord et notifications avec base de données
 """
 
-import nextcord as discord
+import nextcord
 from nextcord.ext import commands
 import traceback
 import hashlib
@@ -76,7 +76,7 @@ class ErrorTracker(commands.Cog):
             logger = logging.getLogger('moddy')
             logger.error(f"Erreur lors du stockage en BDD: {e}")
 
-    async def get_error_channel(self) -> Optional[discord.TextChannel]:
+    async def get_error_channel(self) -> Optional[nextcord.TextChannel]:
         """Récupère le canal d'erreurs"""
         return self.bot.get_channel(self.error_channel_id)
 
@@ -125,7 +125,7 @@ class ErrorTracker(commands.Cog):
         # Détermine la couleur selon la gravité
         color = COLORS["error"] if is_fatal else COLORS["warning"]
 
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title=f"{'Erreur Fatale' if is_fatal else 'Erreur'} Détectée",
             color=color,
             timestamp=datetime.now(timezone.utc)
@@ -213,7 +213,7 @@ class ErrorTracker(commands.Cog):
 
         # Erreurs avec gestion spécifique (pas de log)
         if isinstance(error, commands.MissingPermissions):
-            embed = discord.Embed(
+            embed = nextcord.Embed(
                 title="Permissions insuffisantes",
                 description=f"Permissions manquantes : `{', '.join(error.missing_permissions)}`",
                 color=COLORS["error"]
@@ -222,7 +222,7 @@ class ErrorTracker(commands.Cog):
             return
 
         if isinstance(error, commands.CommandOnCooldown):
-            embed = discord.Embed(
+            embed = nextcord.Embed(
                 title="Cooldown actif",
                 description=f"Réessaye dans `{error.retry_after:.1f}` secondes",
                 color=COLORS["warning"]
@@ -231,7 +231,7 @@ class ErrorTracker(commands.Cog):
             return
 
         if isinstance(error, commands.MissingRequiredArgument):
-            embed = discord.Embed(
+            embed = nextcord.Embed(
                 title="Argument manquant",
                 description=f"L'argument `{error.param.name}` est requis",
                 color=COLORS["error"]
@@ -262,7 +262,7 @@ class ErrorTracker(commands.Cog):
         await self.send_error_log(error_code, error_details, is_fatal)
 
         # Message à l'utilisateur
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title="Une erreur est survenue",
             description=(
                 f"**Code d'erreur :** `{error_code}`\n\n"

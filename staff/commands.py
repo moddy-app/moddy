@@ -3,7 +3,7 @@ Commande pour lister toutes les commandes disponibles
 Utile pour le debug et la gestion
 """
 
-import nextcord as discord
+import nextcord
 from nextcord.ext import commands
 from typing import List
 
@@ -108,7 +108,7 @@ class CommandsList(commands.Cog):
     async def list_cogs(self, ctx):
         """Liste tous les cogs chargés"""
 
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title="Modules chargés",
             description="",
             color=COLORS["primary"]

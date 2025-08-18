@@ -3,7 +3,7 @@ Commande pour changer le statut du bot
 Réservée aux développeurs
 """
 
-import nextcord as discord
+import nextcord
 from nextcord.ext import commands
 from typing import Optional
 
@@ -30,7 +30,7 @@ class StatusCommand(commands.Cog):
     async def status_group(self, ctx):
         """Commande principale pour gérer le statut"""
         if ctx.invoked_subcommand is None:
-            embed = discord.Embed(
+            embed = nextcord.Embed(
                 title="Gestion du statut",
                 description=(
                     "**Commandes disponibles:**\n\n"
@@ -50,11 +50,11 @@ class StatusCommand(commands.Cog):
         """Change le statut du bot"""
         # Map des types d'activité
         activity_types = {
-            "playing": discord.ActivityType.playing,
-            "watching": discord.ActivityType.watching,
-            "listening": discord.ActivityType.listening,
-            "streaming": discord.ActivityType.streaming,
-            "competing": discord.ActivityType.competing
+            "playing": nextcord.ActivityType.playing,
+            "watching": nextcord.ActivityType.watching,
+            "listening": nextcord.ActivityType.listening,
+            "streaming": nextcord.ActivityType.streaming,
+            "competing": nextcord.ActivityType.competing
         }
 
         if activity_type.lower() not in activity_types:
@@ -70,7 +70,7 @@ class StatusCommand(commands.Cog):
             self.bot.status_update.stop()
 
         # Change le statut
-        activity = discord.Activity(
+        activity = nextcord.Activity(
             type=activity_types[activity_type.lower()],
             name=text
         )
@@ -151,7 +151,7 @@ class StatusCommand(commands.Cog):
             self.bot.status_update.stop()
 
         # Crée l'activité streaming
-        activity = discord.Streaming(name=game, url=url)
+        activity = nextcord.Streaming(name=game, url=url)
         await self.bot.change_presence(activity=activity)
 
         embed = ModdyResponse.success(
@@ -173,8 +173,8 @@ class StatusCommand(commands.Cog):
         if emoji:
             text = f"{emoji} {text}"
 
-        activity = discord.Activity(
-            type=discord.ActivityType.playing,
+        activity = nextcord.Activity(
+            type=nextcord.ActivityType.playing,
             name=text
         )
 

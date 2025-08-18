@@ -3,23 +3,23 @@ Système de vérification de blacklist corrigé
 Intercepte et BLOQUE toutes les interactions des utilisateurs blacklistés
 """
 
-import nextcord as discord
+import nextcord
 from nextcord.ext import commands
 from typing import Union
 
 from config import COLORS
 
 
-class BlacklistButton(discord.ui.View):
+class BlacklistButton(nextcord.ui.View):
     """Vue avec le bouton de demande d'unblacklist"""
 
     def __init__(self):
         super().__init__()
         # Ajoute le bouton avec un lien
-        self.add_item(discord.ui.Button(
+        self.add_item(nextcord.ui.Button(
             label="Unblacklist request",
             url="https://moddy.app/unbl_request",
-            style=discord.ButtonStyle.link
+            style=nextcord.ButtonStyle.link
         ))
 
 
@@ -41,10 +41,10 @@ class BlacklistCheck(commands.Cog):
                 return False
         return False
 
-    async def send_blacklist_message(self, interaction: discord.Interaction):
+    async def send_blacklist_message(self, interaction: nextcord.Interaction):
         """Envoie TOUJOURS le message de blacklist en ephemeral
         (Fonction maintenant obsolète mais gardée pour compatibilité)"""
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             description=(
                 "<:blacklist:1401596864784777363> You have been blacklisted from using Moddy.\n"
                 "<:blacklist:1401596864784777363> Vous avez été blacklisté de Moddy."
@@ -63,7 +63,7 @@ class BlacklistCheck(commands.Cog):
             else:
                 # Sinon, envoie une nouvelle réponse en ephemeral
                 await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
-        except discord.HTTPException:
+        except nextcord.HTTPException:
             # En cas d'erreur HTTP, ne fait rien (évite le spam)
             pass
         except Exception:
@@ -71,7 +71,7 @@ class BlacklistCheck(commands.Cog):
             pass
 
     @commands.Cog.listener()
-    async def on_interaction(self, interaction: discord.Interaction):
+    async def on_interaction(self, interaction: nextcord.Interaction):
         """Intercepte TOUTES les interactions Discord"""
         # Ignore les interactions du bot lui-même
         if interaction.user.bot:
@@ -79,9 +79,9 @@ class BlacklistCheck(commands.Cog):
 
         # Vérifie seulement pour les commandes et composants
         if interaction.type not in [
-            discord.InteractionType.application_command,
-            discord.InteractionType.component,
-            discord.InteractionType.modal_submit
+            nextcord.InteractionType.application_command,
+            nextcord.InteractionType.component,
+            nextcord.InteractionType.modal_submit
         ]:
             return
 
@@ -131,7 +131,7 @@ class BlacklistCheck(commands.Cog):
 
             # IMPORTANT: Répond immédiatement avec le message de blacklist
             # Cela empêche la commande de s'exécuter car l'interaction est déjà répondue
-            embed = discord.Embed(
+            embed = nextcord.Embed(
                 description=(
                     "<:blacklist:1401596864784777363> You have been blacklisted from using Moddy.\n"
                     "<:blacklist:1401596864784777363> Vous avez été blacklisté de Moddy."
@@ -144,7 +144,7 @@ class BlacklistCheck(commands.Cog):
             try:
                 # Répond immédiatement pour bloquer la commande
                 await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
-            except discord.errors.InteractionResponded:
+            except nextcord.errors.InteractionResponded:
                 # Si déjà répondu, utilise followup
                 await interaction.followup.send(embed=embed, view=view, ephemeral=True)
             except Exception:
@@ -154,7 +154,7 @@ class BlacklistCheck(commands.Cog):
             return
 
     @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
+    async def on_message(self, message: nextcord.Message):
         """Vérifie aussi pour les commandes texte (préfixe)"""
         # Ignore les bots
         if message.author.bot:
@@ -200,7 +200,7 @@ class BlacklistCheck(commands.Cog):
                                         return  # Laisse passer la commande
 
                         # Crée l'embed de blacklist
-                        embed = discord.Embed(
+                        embed = nextcord.Embed(
                             description=(
                                 "<:blacklist:1401596864784777363> You have been blacklisted from using Moddy.\n"
                                 "<:blacklist:1401596864784777363> Vous avez été blacklisté de Moddy."
@@ -216,7 +216,7 @@ class BlacklistCheck(commands.Cog):
                         try:
                             # Envoie le message sans mentionner l'auteur
                             await message.reply(embed=embed, view=view, mention_author=False, delete_after=10)
-                        except discord.Forbidden:
+                        except nextcord.Forbidden:
                             # Si on ne peut pas répondre, essaie d'envoyer dans le canal
                             try:
                                 await message.channel.send(embed=embed, view=view, delete_after=10)
@@ -241,7 +241,7 @@ class BlacklistCheck(commands.Cog):
             return
 
         # Simule l'envoi du message
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             description=(
                 "<:blacklist:1401596864784777363> You have been blacklisted from using Moddy.\n"
                 "<:blacklist:1401596864784777363> Vous avez été blacklisté de Moddy."

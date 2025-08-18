@@ -2,7 +2,7 @@
 Commande pour voir les statistiques d'utilisation des commandes dev
 """
 
-import nextcord as discord
+import nextcord
 from nextcord.ext import commands
 from datetime import datetime, timedelta
 import sys
@@ -36,7 +36,7 @@ class DevStats(commands.Cog):
             return
 
         # Embed principal
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title="📊 Statistiques des Commandes Dev",
             color=COLORS["primary"],
             timestamp=datetime.now()
@@ -137,7 +137,7 @@ class DevStats(commands.Cog):
         )
 
         # Confirmation
-        embed = discord.Embed(
+        embed = nextcord.Embed(
             title="🚨 Alerte envoyée",
             description="L'alerte a été envoyée dans le canal de logs avec un ping.",
             color=COLORS["error"]
