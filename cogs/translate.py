@@ -13,8 +13,7 @@ from datetime import datetime, timedelta
 import asyncio
 
 from utils.embeds import ModdyEmbed, ModdyResponse, ModdyColors
-from utils.incognito import add_incognito_option, get_incognito_setting
-from config import COLORS, DEEPL_API_KEY
+from config import COLORS, DEEPL_API_KEY, EMOJIS
 
 
 class TranslateView(nextcord.ui.View):
@@ -38,40 +37,24 @@ class TranslateView(nextcord.ui.View):
 
         # Langues disponibles DeepL (les plus communes)
         languages = {
-            "EN-US": ("🇺🇸", "English (US)", "Anglais (US)"),
-            "EN-GB": ("🇬🇧", "English (UK)", "Anglais (UK)"),
-            "FR": ("🇫🇷", "Français", "Français"),
-            "DE": ("🇩🇪", "Deutsch", "Allemand"),
-            "ES": ("🇪🇸", "Español", "Espagnol"),
-            "IT": ("🇮🇹", "Italiano", "Italien"),
-            "PT-PT": ("🇵🇹", "Português", "Portugais"),
-            "PT-BR": ("🇧🇷", "Português (BR)", "Portugais (BR)"),
-            "NL": ("🇳🇱", "Nederlands", "Néerlandais"),
-            "PL": ("🇵🇱", "Polski", "Polonais"),
-            "RU": ("🇷🇺", "Русский", "Russe"),
-            "JA": ("🇯🇵", "日本語", "Japonais"),
-            "ZH": ("🇨🇳", "中文", "Chinois"),
-            "KO": ("🇰🇷", "한국어", "Coréen"),
-            "TR": ("🇹🇷", "Türkçe", "Turc"),
-            "SV": ("🇸🇪", "Svenska", "Suédois"),
-            "DA": ("🇩🇰", "Dansk", "Danois"),
-            "NO": ("🇳🇴", "Norsk", "Norvégien"),
-            "FI": ("🇫🇮", "Suomi", "Finnois"),
-            "EL": ("🇬🇷", "Ελληνικά", "Grec"),
-            "CS": ("🇨🇿", "Čeština", "Tchèque"),
-            "RO": ("🇷🇴", "Română", "Roumain"),
-            "HU": ("🇭🇺", "Magyar", "Hongrois"),
-            "UK": ("🇺🇦", "Українська", "Ukrainien"),
-            "BG": ("🇧🇬", "Български", "Bulgare")
+            "EN-US": ("English (US)", "Anglais (US)"), "EN-GB": ("English (UK)", "Anglais (UK)"),
+            "FR": ("Français", "Français"), "DE": ("Deutsch", "Allemand"), "ES": ("Español", "Espagnol"),
+            "IT": ("Italiano", "Italien"), "PT-PT": ("Português", "Portugais"),
+            "PT-BR": ("Português (BR)", "Portugais (BR)"), "NL": ("Nederlands", "Néerlandais"),
+            "PL": ("Polski", "Polonais"), "RU": ("Русский", "Russe"), "JA": ("日本語", "Japonais"),
+            "ZH": ("中文", "Chinois"), "KO": ("한국어", "Coréen"), "TR": ("Türkçe", "Turc"),
+            "SV": ("Svenska", "Suédois"), "DA": ("Dansk", "Danois"), "NO": ("Norsk", "Norvégien"),
+            "FI": ("Suomi", "Finnois"), "EL": ("Ελληνικά", "Grec"), "CS": ("Čeština", "Tchèque"),
+            "RO": ("Română", "Roumain"), "HU": ("Magyar", "Hongrois"), "UK": ("Українська", "Ukrainien"),
+            "BG": ("Български", "Bulgare")
         }
 
-        for code, (emoji, name, name_fr) in languages.items():
+        for code, (name, name_fr) in languages.items():
             # Ne pas inclure la langue actuelle
             if code != self.current_to_lang:
                 options.append(nextcord.SelectOption(
                     label=name_fr if self.lang == "FR" else name,
-                    value=code,
-                    emoji=emoji
+                    value=code
                 ))
 
         # Limiter à 25 options (limite Discord)
@@ -434,7 +417,6 @@ class Translate(commands.Cog):
         app_commands.Choice(name="🇺🇦 Українська", value="UK"),
         app_commands.Choice(name="🇧🇬 Български", value="BG")
     ])
-    @add_incognito_option()
     async def translate_command(
         self,
         interaction: nextcord.Interaction,
@@ -444,86 +426,23 @@ class Translate(commands.Cog):
     ):
         """Commande principale de traduction"""
 
-        # IMPORTANT : Attend un peu pour laisser le système de langue faire son travail
-        await asyncio.sleep(0.1)
-
-        # Vérifie si l'interaction a déjà été répondue (par le système de langue)
-        if interaction.response.is_done():
-            # Le système de langue a demandé la sélection, on attend qu'il finisse
-            # et on exécute la traduction après
-            await asyncio.sleep(2)  # Attend que l'utilisateur choisisse sa langue
-
-            # Récupère la langue mise à jour
-            lang = 'EN'  # Fallback par défaut
-            if self.bot.db:
-                try:
-                    user_lang = await self.bot.db.get_attribute('user', interaction.user.id, 'LANG')
-                    if user_lang:
-                        lang = user_lang
-                except:
-                    pass
-
-            # Récupère le mode ephemeral
-            if incognito is None and self.bot.db:
-                try:
-                    user_pref = await self.bot.db.get_attribute('user', interaction.user.id, 'DEFAULT_INCOGNITO')
-                    ephemeral = True if user_pref is None else user_pref
-                except:
-                    ephemeral = True
-            else:
-                ephemeral = incognito if incognito is not None else True
-
-            # Vérifie la limite de taux
-            can_use, remaining = await self.check_rate_limit(interaction.user.id)
-            if not can_use:
-                error_embed = ModdyResponse.error(
-                    self.get_text(lang, "error_title"),
-                    self.get_text(lang, "error_rate_limit").format(remaining)
-                )
-                await interaction.followup.send(embed=error_embed, ephemeral=True)
-                return
-
-            # Continue avec la traduction via followup
-            loading_embed = ModdyResponse.loading(self.get_text(lang, "translating"))
-            msg = await interaction.followup.send(embed=loading_embed, ephemeral=ephemeral)
-
-            # Exécute la traduction
-            sanitized_text = self.sanitize_mentions(text, interaction.guild)
-            source_lang = await self.detect_language(sanitized_text)
-            translated = await self.translate_text(sanitized_text, to.value)
-
-            if translated and source_lang:
-                embed = self.create_translation_embed(
-                    sanitized_text,
-                    translated,
-                    source_lang,
-                    to.value,
-                    lang
-                )
-                view = TranslateView(
-                    self.bot,
-                    sanitized_text,
-                    source_lang,
-                    to.value,
-                    lang,
-                    interaction.user
-                )
-                await msg.edit(embed=embed, view=view)
-            else:
-                error_embed = ModdyResponse.error(
-                    self.get_text(lang, "error_title"),
-                    self.get_text(lang, "error_api")
-                )
-                await msg.edit(embed=error_embed)
-
-            return
-
-        # Si l'interaction n'a pas encore été répondue, on continue normalement
-        # Récupère la langue de l'utilisateur
-        lang = getattr(interaction, 'user_lang', 'EN')
+        # La logique de gestion de la langue est maintenant automatique et ne bloque plus.
+        # L'ancien bloc `if interaction.response.is_done()` a été supprimé.
+        # Récupère la langue de l'utilisateur en utilisant le helper
+        from cogs.language_manager import get_user_lang
+        lang = get_user_lang(interaction, self.bot)
 
         # Récupère le mode ephemeral
-        ephemeral = get_incognito_setting(interaction)
+        ephemeral = True
+        if incognito is None and self.bot.db:
+            try:
+                user_pref = await self.bot.db.get_attribute('user', interaction.user.id, 'DEFAULT_INCOGNITO')
+                if user_pref is not None:
+                    ephemeral = user_pref
+            except Exception:
+                pass
+        elif incognito is not None:
+            ephemeral = incognito
 
         # Vérifie la limite de taux (20 par minute par utilisateur)
         can_use, remaining = await self.check_rate_limit(interaction.user.id)
