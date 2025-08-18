@@ -3,8 +3,8 @@ Système de gestion d'erreurs avancé pour Moddy
 Tracking, logs Discord et notifications avec base de données
 """
 
-import discord
-from discord.ext import commands
+import nextcord as discord
+from nextcord.ext import commands
 import traceback
 import hashlib
 import json
@@ -315,5 +315,5 @@ class ErrorTracker(commands.Cog):
         await self.send_error_log(error_code, error_details, is_fatal=True)
 
 
-async def setup(bot):
-    await bot.add_cog(ErrorTracker(bot))
+def setup(bot):
+    bot.add_cog(ErrorTracker(bot))

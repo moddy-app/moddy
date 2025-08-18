@@ -1,5 +1,5 @@
-# Core Discord.py
-discord.py>=2.3.0
+# Core Nextcord
+nextcord>=2.0.0
 
 # Environment variables
 python-dotenv==1.0.0

@@ -3,8 +3,8 @@ Commande pour changer le statut du bot
 Réservée aux développeurs
 """
 
-import discord
-from discord.ext import commands
+import nextcord as discord
+from nextcord.ext import commands
 from typing import Optional
 
 # Import du système d'embeds épuré
@@ -187,5 +187,5 @@ class StatusCommand(commands.Cog):
         await ctx.send(embed=embed)
 
 
-async def setup(bot):
-    await bot.add_cog(StatusCommand(bot))
+def setup(bot):
+    bot.add_cog(StatusCommand(bot))

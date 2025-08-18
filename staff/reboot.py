@@ -3,8 +3,8 @@ Commande reboot pour développeurs
 Redémarre le bot et modifie le message original
 """
 
-import discord
-from discord.ext import commands
+import nextcord as discord
+from nextcord.ext import commands
 import asyncio
 import os
 import sys
@@ -236,6 +236,6 @@ class RebootNotifier(commands.Cog):
                 os.remove(temp_file)
 
 
-async def setup(bot):
-    await bot.add_cog(Reboot(bot))
-    await bot.add_cog(RebootNotifier(bot))
+def setup(bot):
+    bot.add_cog(Reboot(bot))
+    bot.add_cog(RebootNotifier(bot))

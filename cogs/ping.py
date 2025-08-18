@@ -3,9 +3,8 @@ Commande ping publique
 Simple et accessible à tous
 """
 
-import discord
-from discord import app_commands
-from discord.ext import commands
+import nextcord as discord
+from nextcord.ext import commands
 import time
 from datetime import datetime
 
@@ -18,7 +17,7 @@ class PublicPing(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="ping", description="Vérifie la latence du bot")
+    @discord.slash_command(name="ping", description="Vérifie la latence du bot")
     async def ping_slash(self, interaction: discord.Interaction):
         """Commande slash /ping simple pour tout le monde"""
 
@@ -31,16 +30,16 @@ class PublicPing(commands.Cog):
         # Déterminer la qualité de la connexion
         if api_latency < 50:
             status = "Excellente"
-            emoji = "🟢"
+            emoji = EMOJIS["done"]
         elif api_latency < 100:
             status = "Bonne"
-            emoji = "🟡"
+            emoji = EMOJIS["done"]
         elif api_latency < 200:
             status = "Moyenne"
-            emoji = "🟠"
+            emoji = EMOJIS["undone"]
         else:
             status = "Mauvaise"
-            emoji = "🔴"
+            emoji = EMOJIS["undone"]
 
         # Créer l'embed avec du contenu
         embed = discord.Embed(
@@ -76,5 +75,5 @@ class PublicPing(commands.Cog):
         await interaction.edit_original_response(embed=embed)
 
 
-async def setup(bot):
-    await bot.add_cog(PublicPing(bot))
+def setup(bot):
+    bot.add_cog(PublicPing(bot))

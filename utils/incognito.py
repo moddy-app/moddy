@@ -4,7 +4,7 @@ Permet aux utilisateurs de contrôler la visibilité de leurs réponses
 """
 
 import discord
-from discord import app_commands
+# from discord import app_commands # This is broken in nextcord and this file is unused.
 from typing import Optional
 import functools
 

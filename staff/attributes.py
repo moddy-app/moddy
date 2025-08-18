@@ -3,8 +3,8 @@ Commandes pour gérer les attributs utilisateurs/serveurs
 Réservées aux développeurs
 """
 
-import discord
-from discord.ext import commands
+import nextcord as discord
+from nextcord.ext import commands
 from datetime import datetime
 import sys
 from pathlib import Path
@@ -241,5 +241,5 @@ class AttributeCommands(commands.Cog):
         await msg.edit(embed=embed)
 
 
-async def setup(bot):
-    await bot.add_cog(AttributeCommands(bot))
+def setup(bot):
+    bot.add_cog(AttributeCommands(bot))

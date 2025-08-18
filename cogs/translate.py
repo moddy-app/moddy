@@ -3,9 +3,8 @@ Commande translate pour Moddy
 Utilise l'API DeepL pour traduire du texte avec détection automatique
 """
 
-import discord
-from discord import app_commands
-from discord.ext import commands
+import nextcord as discord
+from nextcord.ext import commands
 from typing import Optional
 import aiohttp
 import re
@@ -13,7 +12,6 @@ from datetime import datetime, timedelta
 import asyncio
 
 from utils.embeds import ModdyEmbed, ModdyResponse, ModdyColors
-from utils.incognito import add_incognito_option, get_incognito_setting
 from config import COLORS, DEEPL_API_KEY
 
 
@@ -398,49 +396,48 @@ class Translate(commands.Cog):
 
         return embed
 
-    @app_commands.command(
+    @discord.slash_command(
         name="translate",
         description="Traduit du texte dans une autre langue / Translate text to another language"
     )
-    @app_commands.describe(
-        text="Le texte à traduire / The text to translate",
-        to="Langue de destination / Target language",
-        incognito="Rendre la réponse visible uniquement pour vous / Make response visible only to you"
-    )
-    @app_commands.choices(to=[
-        app_commands.Choice(name="🇺🇸 English (US)", value="EN-US"),
-        app_commands.Choice(name="🇬🇧 English (UK)", value="EN-GB"),
-        app_commands.Choice(name="🇫🇷 Français", value="FR"),
-        app_commands.Choice(name="🇩🇪 Deutsch", value="DE"),
-        app_commands.Choice(name="🇪🇸 Español", value="ES"),
-        app_commands.Choice(name="🇮🇹 Italiano", value="IT"),
-        app_commands.Choice(name="🇵🇹 Português", value="PT-PT"),
-        app_commands.Choice(name="🇧🇷 Português (BR)", value="PT-BR"),
-        app_commands.Choice(name="🇳🇱 Nederlands", value="NL"),
-        app_commands.Choice(name="🇵🇱 Polski", value="PL"),
-        app_commands.Choice(name="🇷🇺 Русский", value="RU"),
-        app_commands.Choice(name="🇯🇵 日本語", value="JA"),
-        app_commands.Choice(name="🇨🇳 中文", value="ZH"),
-        app_commands.Choice(name="🇰🇷 한국어", value="KO"),
-        app_commands.Choice(name="🇹🇷 Türkçe", value="TR"),
-        app_commands.Choice(name="🇸🇪 Svenska", value="SV"),
-        app_commands.Choice(name="🇩🇰 Dansk", value="DA"),
-        app_commands.Choice(name="🇳🇴 Norsk", value="NO"),
-        app_commands.Choice(name="🇫🇮 Suomi", value="FI"),
-        app_commands.Choice(name="🇬🇷 Ελληνικά", value="EL"),
-        app_commands.Choice(name="🇨🇿 Čeština", value="CS"),
-        app_commands.Choice(name="🇷🇴 Română", value="RO"),
-        app_commands.Choice(name="🇭🇺 Magyar", value="HU"),
-        app_commands.Choice(name="🇺🇦 Українська", value="UK"),
-        app_commands.Choice(name="🇧🇬 Български", value="BG")
-    ])
-    @add_incognito_option()
     async def translate_command(
         self,
         interaction: discord.Interaction,
-        text: str,
-        to: app_commands.Choice[str],
-        incognito: Optional[bool] = None
+        text: str = discord.SlashOption(description="Le texte à traduire / The text to translate"),
+        to: str = discord.SlashOption(
+            description="Langue de destination / Target language",
+            choices={
+                "🇺🇸 English (US)": "EN-US",
+                "🇬🇧 English (UK)": "EN-GB",
+                "🇫🇷 Français": "FR",
+                "🇩🇪 Deutsch": "DE",
+                "🇪🇸 Español": "ES",
+                "🇮🇹 Italiano": "IT",
+                "🇵🇹 Português": "PT-PT",
+                "🇧🇷 Português (BR)": "PT-BR",
+                "🇳🇱 Nederlands": "NL",
+                "🇵🇱 Polski": "PL",
+                "🇷🇺 Русский": "RU",
+                "🇯🇵 日本語": "JA",
+                "🇨🇳 中文": "ZH",
+                "🇰🇷 한국어": "KO",
+                "🇹🇷 Türkçe": "TR",
+                "🇸🇪 Svenska": "SV",
+                "🇩🇰 Dansk": "DA",
+                "🇳🇴 Norsk": "NO",
+                "🇫🇮 Suomi": "FI",
+                "🇬🇷 Ελληνικά": "EL",
+                "🇨🇿 Čeština": "CS",
+                "🇷🇴 Română": "RO",
+                "🇭🇺 Magyar": "HU",
+                "🇺🇦 Українська": "UK",
+                "🇧🇬 Български": "BG"
+            }
+        ),
+        incognito: Optional[bool] = discord.SlashOption(
+            description="Rendre la réponse visible uniquement pour vous / Make response visible only to you",
+            required=False
+        )
     ):
         """Commande principale de traduction"""
 
@@ -490,21 +487,21 @@ class Translate(commands.Cog):
             # Exécute la traduction
             sanitized_text = self.sanitize_mentions(text, interaction.guild)
             source_lang = await self.detect_language(sanitized_text)
-            translated = await self.translate_text(sanitized_text, to.value)
+            translated = await self.translate_text(sanitized_text, to)
 
             if translated and source_lang:
                 embed = self.create_translation_embed(
                     sanitized_text,
                     translated,
                     source_lang,
-                    to.value,
+                    to,
                     lang
                 )
                 view = TranslateView(
                     self.bot,
                     sanitized_text,
                     source_lang,
-                    to.value,
+                    to,
                     lang,
                     interaction.user
                 )
@@ -523,7 +520,14 @@ class Translate(commands.Cog):
         lang = getattr(interaction, 'user_lang', 'EN')
 
         # Récupère le mode ephemeral
-        ephemeral = get_incognito_setting(interaction)
+        if incognito is None and self.bot.db:
+            try:
+                user_pref = await self.bot.db.get_attribute('user', interaction.user.id, 'DEFAULT_INCOGNITO')
+                ephemeral = True if user_pref is None else user_pref
+            except:
+                ephemeral = True
+        else:
+            ephemeral = incognito if incognito is not None else True
 
         # Vérifie la limite de taux (20 par minute par utilisateur)
         can_use, remaining = await self.check_rate_limit(interaction.user.id)
@@ -555,7 +559,7 @@ class Translate(commands.Cog):
         source_lang = await self.detect_language(sanitized_text)
 
         # Traduit le texte
-        translated = await self.translate_text(sanitized_text, to.value)
+        translated = await self.translate_text(sanitized_text, to)
 
         if translated and source_lang:
             # Crée l'embed de résultat
@@ -563,7 +567,7 @@ class Translate(commands.Cog):
                 sanitized_text,
                 translated,
                 source_lang,
-                to.value,
+                to,
                 lang
             )
 
@@ -572,7 +576,7 @@ class Translate(commands.Cog):
                 self.bot,
                 sanitized_text,
                 source_lang,
-                to.value,
+                to,
                 lang,
                 interaction.user
             )
@@ -588,5 +592,5 @@ class Translate(commands.Cog):
             await interaction.edit_original_response(embed=error_embed)
 
 
-async def setup(bot):
-    await bot.add_cog(Translate(bot))
+def setup(bot):
+    bot.add_cog(Translate(bot))

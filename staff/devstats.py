@@ -2,8 +2,8 @@
 Commande pour voir les statistiques d'utilisation des commandes dev
 """
 
-import discord
-from discord.ext import commands
+import nextcord as discord
+from nextcord.ext import commands
 from datetime import datetime, timedelta
 import sys
 from pathlib import Path
@@ -175,5 +175,5 @@ class DevStats(commands.Cog):
             )
 
 
-async def setup(bot):
-    await bot.add_cog(DevStats(bot))
+def setup(bot):
+    bot.add_cog(DevStats(bot))

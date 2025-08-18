@@ -3,8 +3,8 @@ Commande pour lister toutes les commandes disponibles
 Utile pour le debug et la gestion
 """
 
-import discord
-from discord.ext import commands
+import nextcord as discord
+from nextcord.ext import commands
 from typing import List
 
 # Import du système d'embeds épuré
@@ -114,5 +114,5 @@ class CommandsList(commands.Cog):
         await ctx.send(embed=embed)
 
 
-async def setup(bot):
-    await bot.add_cog(CommandsList(bot))
+def setup(bot):
+    bot.add_cog(CommandsList(bot))

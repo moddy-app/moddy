@@ -3,9 +3,8 @@ Commande preferences pour Moddy
 Gère toutes les préférences utilisateur : langue, incognito, notifications DM
 """
 
-import discord
-from discord import app_commands
-from discord.ext import commands
+import nextcord as discord
+from nextcord.ext import commands
 from typing import Optional
 from datetime import datetime
 import asyncio
@@ -576,7 +575,7 @@ class Preferences(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(
+    @discord.slash_command(
         name="preferences",
         description="Gérez vos préférences personnelles / Manage your personal preferences"
     )
@@ -657,7 +656,7 @@ class Preferences(commands.Cog):
             # Si déjà répondu (par le système de langue), utilise followup
             await interaction.followup.send(embed=embed, view=view, ephemeral=True)
 
-    @app_commands.command(
+    @discord.slash_command(
         name="prefs",
         description="Raccourci pour préférences / Shortcut for preferences"
     )
@@ -666,5 +665,5 @@ class Preferences(commands.Cog):
         await self.preferences(interaction)
 
 
-async def setup(bot):
-    await bot.add_cog(Preferences(bot))
+def setup(bot):
+    bot.add_cog(Preferences(bot))

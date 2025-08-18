@@ -3,8 +3,8 @@ Système de gestion de langue pour Moddy
 Intercepte les interactions et vérifie/définit la langue de l'utilisateur
 """
 
-import discord
-from discord.ext import commands
+import nextcord as discord
+from nextcord.ext import commands
 from typing import Optional, Dict
 import asyncio
 
@@ -298,7 +298,7 @@ class LanguageManager(commands.Cog):
             await ctx.send("<:undone:1398729502028333218> Error changing language / Erreur lors du changement")
 
     @commands.Cog.listener()
-    async def on_app_command_completion(self, interaction: discord.Interaction, command):
+    async def on_application_command_completion(self, interaction: discord.Interaction, command):
         """Nettoie le cache périodiquement après les commandes"""
         # Nettoie le cache si trop grand
         if len(self.lang_cache) > 1000:
@@ -327,5 +327,5 @@ def get_user_lang(interaction: discord.Interaction, bot) -> str:
     return "EN"
 
 
-async def setup(bot):
-    await bot.add_cog(LanguageManager(bot))
+def setup(bot):
+    bot.add_cog(LanguageManager(bot))

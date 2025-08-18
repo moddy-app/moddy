@@ -4,8 +4,8 @@ Affiche des informations détaillées sur le statut du bot
 Style épuré sans emojis système
 """
 
-import discord
-from discord.ext import commands
+import nextcord as discord
+from nextcord.ext import commands
 import asyncio
 import time
 import platform
@@ -188,5 +188,5 @@ class DiagnosticView(discord.ui.View):
         self.stop()
 
 
-async def setup(bot):
-    await bot.add_cog(StaffDiagnostic(bot))
+def setup(bot):
+    bot.add_cog(StaffDiagnostic(bot))

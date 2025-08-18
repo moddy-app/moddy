@@ -3,8 +3,8 @@ Moddy - Classe principale du bot
 Gère toute la logique centrale et les événements
 """
 
-import discord
-from discord.ext import commands, tasks
+import nextcord as discord
+from nextcord.ext import commands, tasks
 import asyncio
 import logging
 from datetime import datetime, timezone
@@ -101,9 +101,6 @@ class ModdyBot(commands.Bot):
         """Appelé une fois au démarrage du bot"""
         logger.info("🔧 Configuration initiale...")
 
-        # Configure le gestionnaire d'erreurs pour les commandes slash
-        self.tree.on_error = self.on_app_command_error
-
         # Récupère l'équipe de développement
         await self.fetch_dev_team()
 
@@ -117,19 +114,7 @@ class ModdyBot(commands.Bot):
         # Démarre les tâches de fond
         self.status_update.start()
 
-        # Synchronise les commandes slash
-        if DEBUG:
-            # En debug, sync seulement sur le serveur de test
-            guild = discord.Object(id=1234567890)  # Remplace par ton serveur de test
-            self.tree.copy_global_to(guild=guild)
-            await self.tree.sync(guild=guild)
-            logger.info("✅ Commandes synchronisées (mode debug)")
-        else:
-            # En production, sync global
-            await self.tree.sync()
-            logger.info("✅ Commandes synchronisées globalement")
-
-    async def on_app_command_error(self, interaction: discord.Interaction, error: discord.app_commands.AppCommandError):
+    async def on_application_command_error(self, interaction: discord.Interaction, error: discord.ApplicationCommandError):
         """Gestion des erreurs des commandes slash"""
         # Utilise le cog ErrorTracker s'il est chargé
         error_cog = self.get_cog("ErrorTracker")
@@ -322,6 +307,19 @@ class ModdyBot(commands.Bot):
         logger.info(f"✅ {self.user} est connecté !")
         logger.info(f"📊 {len(self.guilds)} serveurs | {len(self.users)} utilisateurs")
         logger.info(f"🏓 Latence : {round(self.latency * 1000)}ms")
+
+        # Synchronise les commandes slash
+        logger.info("Synchronisation des commandes slash...")
+        if DEBUG:
+            # En debug, sync seulement sur le serveur de test
+            # guild = discord.Object(id=1234567890) # A spécifier si besoin
+            # await self.sync_application_commands(guild_id=1234567890)
+            await self.sync_application_commands() # Pour l'instant on sync globalement
+            logger.info("✅ Commandes synchronisées (mode debug)")
+        else:
+            # En production, sync global
+            await self.sync_application_commands()
+            logger.info("✅ Commandes synchronisées globalement")
 
         # Met à jour les attributs DEVELOPER maintenant que self.user est disponible
         if self.db and self._dev_team_ids:

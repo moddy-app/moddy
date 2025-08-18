@@ -3,8 +3,8 @@ Système de logging pour les commandes développeur
 Enregistre toutes les utilisations de commandes staff dans un canal dédié
 """
 
-import discord
-from discord.ext import commands
+import nextcord as discord
+from nextcord.ext import commands
 from datetime import datetime, timezone
 import traceback
 import json
@@ -278,8 +278,8 @@ class LoggingSystem(commands.Cog):
             pass
 
 
-async def setup(bot):
+def setup(bot):
     # Charge d'abord le logger automatique
-    await bot.add_cog(DevCommandLogger(bot))
+    bot.add_cog(DevCommandLogger(bot))
     # Puis le système de logging manuel
-    await bot.add_cog(LoggingSystem(bot))
+    bot.add_cog(LoggingSystem(bot))

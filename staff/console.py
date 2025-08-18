@@ -3,8 +3,8 @@ Commandes de gestion de la console pour développeurs
 Permet de contrôler les logs console
 """
 
-import discord
-from discord.ext import commands
+import nextcord as discord
+from nextcord.ext import commands
 from datetime import datetime
 import logging
 import sys
@@ -306,5 +306,5 @@ class ConsoleCommands(commands.Cog):
         await ctx.send(embed=embed)
 
 
-async def setup(bot):
-    await bot.add_cog(ConsoleCommands(bot))
+def setup(bot):
+    bot.add_cog(ConsoleCommands(bot))

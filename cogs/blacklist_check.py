@@ -3,8 +3,8 @@ Système de vérification de blacklist
 Intercepte toutes les interactions avant traitement
 """
 
-import discord
-from discord.ext import commands
+import nextcord as discord
+from nextcord.ext import commands
 from typing import Union
 
 from config import COLORS
@@ -193,5 +193,5 @@ class BlacklistCheck(commands.Cog):
         await ctx.send("**[TEST MODE]** Voici ce que verrait un utilisateur blacklisté:", embed=embed, view=view)
 
 
-async def setup(bot):
-    await bot.add_cog(BlacklistCheck(bot))
+def setup(bot):
+    bot.add_cog(BlacklistCheck(bot))

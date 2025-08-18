@@ -3,8 +3,8 @@ Commande de gestion serveur pour développeurs
 Panel complet avec boutons pour gérer les serveurs
 """
 
-import discord
-from discord.ext import commands
+import nextcord as discord
+from nextcord.ext import commands
 from datetime import datetime, timezone
 import json
 import sys
@@ -1778,5 +1778,5 @@ class ConfirmView(discord.ui.View):
         self.stop()
 
 
-async def setup(bot):
-    await bot.add_cog(ServerManagement(bot))
+def setup(bot):
+    bot.add_cog(ServerManagement(bot))

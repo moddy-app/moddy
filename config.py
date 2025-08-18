@@ -83,24 +83,19 @@ GLOBAL_COOLDOWN: int = int(os.getenv("GLOBAL_COOLDOWN", "3"))
 # EMOJIS ET APPARENCE
 # =============================================================================
 
-# Emojis utilisés dans le bot (désactivés pour un design épuré)
+# Emojis utilisés dans le bot
 EMOJIS = {
-    "success": "",
-    "error": "",
-    "warning": "",
-    "info": "",
-    "loading": "",
-    "arrow": "",
-    "bot": "",
-    "developer": "",
-    "reminder": "",
-    "tag": "",
-    "server": "",
-    "user": "",
-    "stats": "",
-    "ping": "",
-    "help": "",
-    "settings": ""
+    "success": "<:done:1398729525277229066>",
+    "error": "<:undone:1398729502028333218>",
+    "warning": "<:undone:1398729502028333218>", # Placeholder, might need a specific warning emoji
+    "info": "<:info:1401614681440784477>",
+    "loading": "<:loading:1395047662092550194>",
+    "ping": "<:sync:1398729150885269546>", # Using sync as ping emoji
+    "done": "<:done:1398729525277229066>",
+    "undone": "<:undone:1398729502028333218>",
+    "bot": "<:moddy:1396880909117947924>",
+    "developer": "<:dev:1398729645557285066>",
+    "settings": "<:settings:1398729549323440208>"
 }
 
 # Couleurs pour les embeds (couleurs modernes)
