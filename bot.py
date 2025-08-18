@@ -129,7 +129,7 @@ class ModdyBot(commands.Bot):
             await self.tree.sync()
             logger.info("✅ Commandes synchronisées globalement")
 
-    async def on_app_command_error(self, interaction: nextcord.Interaction, error: nextcord.app_commands.AppCommandError):
+    async def on_app_command_error(self, interaction: nextcord.Interaction, error: nextcord.errors.ApplicationError):
         """Gestion des erreurs des commandes slash"""
         # Utilise le cog ErrorTracker s'il est chargé
         error_cog = self.get_cog("ErrorTracker")
