@@ -581,81 +581,34 @@ class Preferences(commands.Cog):
         description="Gérez vos préférences personnelles / Manage your personal preferences"
     )
     async def preferences(self, interaction: nextcord.Interaction):
-        """Commande principale des préférences"""
+        """Commande principale des préférences (logique simplifiée)"""
 
-        # Vérifie la DB
         if not self.bot.db:
-            error_text = (
-                "<:undone:1398729502028333218> Base de données non disponible / Database unavailable"
+            await interaction.response.send_message(
+                "<:undone:1398729502028333218> Base de données non disponible / Database unavailable",
+                ephemeral=True
             )
-            # Vérifie si déjà répondu
-            if not interaction.response.is_done():
-                await interaction.response.send_message(error_text, ephemeral=True)
-            else:
-                await interaction.followup.send(error_text, ephemeral=True)
             return
 
-        # Attend un peu pour laisser le système de langue faire son travail
-        await asyncio.sleep(0.1)
-
-        # Vérifie si l'interaction a déjà été répondue (par le système de langue)
-        if interaction.response.is_done():
-            # Le système de langue a demandé la sélection, on attend qu'il finisse
-            # et on affiche les préférences après
-            await asyncio.sleep(2)
-
-            # Récupère les données mises à jour
-            try:
-                user_data = await self.bot.db.get_user(interaction.user.id)
-                lang = user_data['attributes'].get('LANG', 'EN')
-
-                # Crée la vue et l'embed
-                view = PreferencesView(self.bot, interaction.user, user_data, lang)
-                embed = view.create_main_embed()
-
-                # Envoie en followup
-                await interaction.followup.send(embed=embed, view=view, ephemeral=True)
-                return
-            except Exception as e:
-                error_embed = ModdyResponse.error(
-                    "Erreur / Error",
-                    f"Impossible de récupérer vos données / Unable to retrieve your data\n`{str(e)}`"
-                )
-                await interaction.followup.send(embed=error_embed, ephemeral=True)
-                return
-
-        # Récupère les données utilisateur
         try:
+            # Le LanguageManager a déjà défini une langue par défaut si nécessaire
             user_data = await self.bot.db.get_user(interaction.user.id)
             lang = user_data['attributes'].get('LANG', 'EN')
-        except Exception as e:
-            # IMPORTANT: Vérifie si l'interaction a déjà été répondue avant d'envoyer l'erreur
-            if not interaction.response.is_done():
-                error_embed = ModdyResponse.error(
-                    "Erreur / Error",
-                    f"Impossible de récupérer vos données / Unable to retrieve your data\n`{str(e)}`"
-                )
-                await interaction.response.send_message(embed=error_embed, ephemeral=True)
-            else:
-                # Si déjà répondu, utilise followup
-                error_embed = ModdyResponse.error(
-                    "Erreur / Error",
-                    f"Impossible de récupérer vos données / Unable to retrieve your data\n`{str(e)}`"
-                )
-                await interaction.followup.send(embed=error_embed, ephemeral=True)
-            return
 
-        # Crée la vue et l'embed
-        view = PreferencesView(self.bot, interaction.user, user_data, lang)
-        embed = view.create_main_embed()
+            # Crée la vue et l'embed
+            view = PreferencesView(self.bot, interaction.user, user_data, lang)
+            embed = view.create_main_embed()
 
-        # IMPORTANT: Vérifie si l'interaction a déjà été répondue
-        if not interaction.response.is_done():
             # Envoie la réponse (toujours en ephemeral pour les préférences)
             await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
-        else:
-            # Si déjà répondu (par le système de langue), utilise followup
-            await interaction.followup.send(embed=embed, view=view, ephemeral=True)
+
+        except Exception as e:
+            error_embed = ModdyResponse.error(
+                "Erreur / Error",
+                f"Impossible de récupérer vos données / Unable to retrieve your data\n`{str(e)}`"
+            )
+            # La réponse n'a pas encore été envoyée si une exception se produit ici, on peut donc répondre sans risque.
+            await interaction.response.send_message(embed=error_embed, ephemeral=True)
 
     @app_commands.command(
         name="prefs",
