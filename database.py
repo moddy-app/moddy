@@ -192,17 +192,26 @@ class ModdyDatabase:
     async def cache_guild_info(self, guild_id: int, info: Dict[str, Any],
                                source: UpdateSource = UpdateSource.API_CALL):
         """Met en cache les informations d'un serveur"""
+        created_at_dt = info.get('created_at')
+        logger.info(f"[DIAG] cache_guild_info for {guild_id}: initial created_at is {created_at_dt} (type: {type(created_at_dt)})")
+
+        # Correction du fuseau horaire pour 'created_at'
+        if isinstance(created_at_dt, datetime):
+            if created_at_dt.tzinfo is None:
+                logger.warning(f"[DIAG] For {guild_id}, created_at is NAIVE. Applying UTC timezone.")
+                created_at_dt = created_at_dt.replace(tzinfo=timezone.utc)
+            else:
+                logger.info(f"[DIAG] For {guild_id}, created_at is AWARE. No change needed.")
+        else:
+            logger.error(f"[DIAG] For {guild_id}, created_at is NOT a datetime object.")
+
         # Crée une copie des données pour la sérialisation JSON
         # afin de ne pas modifier le dictionnaire original.
         serializable_info = info.copy()
-        created_at_dt = info.get('created_at')
-
-        # Correction du fuseau horaire pour 'created_at'
-        if isinstance(created_at_dt, datetime) and created_at_dt.tzinfo is None:
-            created_at_dt = created_at_dt.replace(tzinfo=timezone.utc)
-
         if 'created_at' in serializable_info and isinstance(serializable_info['created_at'], datetime):
             serializable_info['created_at'] = serializable_info['created_at'].isoformat()
+
+        logger.info(f"[DIAG] For {guild_id}, final created_at value for DB is {created_at_dt}")
 
         async with self.pool.acquire() as conn:
             await conn.execute("""
