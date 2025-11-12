@@ -1,21 +1,13 @@
 """
-Système de vérification de blacklist - INTERCEPTION TOTALE
-Bloque TOUTES les interactions des utilisateurs blacklistés AVANT qu'elles n'arrivent à destination
-- Commandes par préfixe: bloquées dans process_commands
-- Slash commands: bloquées dans on_interaction (handler principal)
-- Boutons/Modals/Selects: bloquées dans on_interaction
-- interaction_check: sécurité supplémentaire (backup)
+Système de vérification de blacklist
+Intercepte toutes les interactions avant traitement
 """
 
 import discord
 from discord.ext import commands
+from typing import Union
 
-BLACKLIST_MESSAGE = (
-    "<:undone:1398729502028333218> You cannot interact with Moddy because your account "
-    "has been blacklisted by our team."
-)
-BLACKLIST_LINK = "https://moddy.app/unbl_request"
-BLACKLIST_RESPONSE = f"{BLACKLIST_MESSAGE}\n{BLACKLIST_LINK}"
+from config import COLORS, EMOJIS
 
 
 class BlacklistButton(discord.ui.View):
@@ -38,53 +30,6 @@ class BlacklistCheck(commands.Cog):
         self.bot = bot
         self.blacklist_cache = {}  # Cache pour éviter trop de requêtes DB
 
-        # SÉCURITÉ SUPPLÉMENTAIRE: Ajoute un interaction_check global au CommandTree
-        # Note: Le blocage principal se fait dans on_interaction (ci-dessous)
-        # Ceci sert de backup au cas où on_interaction ne serait pas appelé
-        @bot.tree.interaction_check
-        async def blacklist_interaction_check(interaction: discord.Interaction) -> bool:
-            """Vérifie la blacklist AVANT l'exécution de toute app command (BACKUP)"""
-            # Ignore les bots
-            if interaction.user.bot:
-                return True
-
-            # Vérifie si l'utilisateur est blacklisté
-            if await self.is_blacklisted(interaction.user.id):
-                # Envoie le message de blacklist
-                view = BlacklistButton()
-
-                try:
-                    await interaction.response.send_message(
-                        content=BLACKLIST_RESPONSE,
-                        view=view,
-                        ephemeral=True
-                    )
-                except:
-                    pass
-
-                # Log l'interaction bloquée
-                if log_cog := self.bot.get_cog("LoggingSystem"):
-                    try:
-                        await log_cog.log_critical(
-                            title="🚫 Slash Command Blacklistée Bloquée",
-                            description=(
-                                f"**Utilisateur:** {interaction.user.mention} (`{interaction.user.id}`)\n"
-                                f"**Type:** {interaction.type.name}\n"
-                                f"**Commande:** {interaction.command.name if interaction.command else 'N/A'}\n"
-                                f"**Serveur:** {interaction.guild.name if interaction.guild else 'DM'}\n"
-                                f"**Action:** Slash command bloquée AVANT exécution (interaction_check)"
-                            ),
-                            ping_dev=False
-                        )
-                    except:
-                        pass
-
-                # Retourne False pour bloquer l'exécution de la commande
-                return False
-
-            # Autorise l'interaction
-            return True
-
         # Override la méthode process_commands pour bloquer AVANT le traitement
         original_process_commands = bot.process_commands
 
@@ -93,36 +38,24 @@ class BlacklistCheck(commands.Cog):
             if message.author.bot:
                 return await original_process_commands(message)
 
-            # Vérifie si le message commence par un préfixe (commande ou mention)
-            # On récupère les préfixes possibles
-            prefixes = await self.bot.get_prefix(message)
-            if isinstance(prefixes, str):
-                prefixes = [prefixes]
-
-            # Vérifie si le message commence par un des préfixes
-            is_command = any(message.content.startswith(prefix) for prefix in prefixes)
-
-            # Si ce n'est pas une commande (pas de préfixe), laisse passer sans vérifier la blacklist
-            if not is_command:
-                return await original_process_commands(message)
-
-            # C'est une commande (commence par un préfixe), vérifie maintenant si l'utilisateur est blacklisté
+            # Vérifie si l'utilisateur est blacklisté
             if await self.is_blacklisted(message.author.id):
                 # Envoie le message de blacklist
+                embed = discord.Embed(
+                    description=(
+                        f"{EMOJIS['undone']} You cannot interact with Moddy because your account has been blacklisted by our team.\n\n"
+                        f"*Vous ne pouvez pas interagir avec Moddy car votre compte a été blacklisté par notre équipe.*"
+                    ),
+                    color=COLORS["error"]
+                )
+                embed.set_footer(text=f"User ID: {message.author.id}")
                 view = BlacklistButton()
 
                 try:
-                    await message.reply(
-                        content=BLACKLIST_RESPONSE,
-                        view=view,
-                        mention_author=False
-                    )
+                    await message.reply(embed=embed, view=view, mention_author=False)
                 except:
                     try:
-                        await message.channel.send(
-                            content=BLACKLIST_RESPONSE,
-                            view=view
-                        )
+                        await message.channel.send(embed=embed, view=view)
                     except:
                         pass
 
@@ -138,42 +71,25 @@ class BlacklistCheck(commands.Cog):
         original_on_interaction = bot.on_interaction if hasattr(bot, 'on_interaction') else None
 
         async def blacklist_aware_on_interaction(interaction: discord.Interaction):
-            """Intercepte TOUTES les interactions AVANT dispatch - AUCUNE EXCEPTION"""
+            """Intercepte TOUTES les interactions AVANT qu'elles soient dispatchées"""
             # Ignore les bots
             if interaction.user.bot:
                 if original_on_interaction:
                     return await original_on_interaction(interaction)
                 return
 
-            # CRITIQUE : Vérifie la blacklist pour TOUTES les interactions
-            # On ne fait AUCUNE exception, même pas pour les app commands
-            # Toutes les interactions des utilisateurs blacklistés sont bloquées ICI
+            # Vérifie si l'utilisateur est blacklisté
             if await self.is_blacklisted(interaction.user.id):
                 # BLOQUE l'interaction en y répondant immédiatement
+                # Une fois qu'on a répondu, les handlers ne peuvent plus traiter l'interaction
                 try:
-                    # Envoie directement le message de blacklist
-                    view = BlacklistButton()
-
-                    # Vérifie si l'interaction n'a pas déjà été répondue
-                    if not interaction.response.is_done():
-                        await interaction.response.send_message(
-                            content=BLACKLIST_RESPONSE,
-                            view=view,
-                            ephemeral=True
-                        )
-                    else:
-                        # Si déjà répondue, utilise followup
-                        await interaction.followup.send(
-                            content=BLACKLIST_RESPONSE,
-                            view=view,
-                            ephemeral=True
-                        )
+                    await self.send_blacklist_message(interaction)
                 except Exception as e:
-                    # Fallback ultime si tout échoue
+                    # Fallback si l'envoi échoue
                     try:
                         if not interaction.response.is_done():
                             await interaction.response.send_message(
-                                BLACKLIST_RESPONSE,
+                                f"{EMOJIS['undone']} You cannot interact with Moddy.",
                                 ephemeral=True
                             )
                     except:
@@ -182,21 +98,14 @@ class BlacklistCheck(commands.Cog):
                 # Log l'interaction bloquée
                 if log_cog := self.bot.get_cog("LoggingSystem"):
                     try:
-                        interaction_type = interaction.type.name
-                        # Récupère le custom_id ou le nom de commande selon le type
-                        if interaction.type == discord.InteractionType.application_command:
-                            identifier = f"Commande: {interaction.command.name if interaction.command else 'N/A'}"
-                        else:
-                            identifier = f"Custom ID: {interaction.data.get('custom_id', 'N/A') if hasattr(interaction, 'data') else 'N/A'}"
-
                         await log_cog.log_critical(
-                            title="🚫 Interaction Blacklistée Bloquée (on_interaction)",
+                            title="🚫 Interaction Blacklistée Bloquée",
                             description=(
                                 f"**Utilisateur:** {interaction.user.mention} (`{interaction.user.id}`)\n"
-                                f"**Type:** {interaction_type}\n"
-                                f"**{identifier}**\n"
+                                f"**Type:** {interaction.type.name}\n"
+                                f"**Custom ID:** {interaction.data.get('custom_id', 'N/A')}\n"
                                 f"**Serveur:** {interaction.guild.name if interaction.guild else 'DM'}\n"
-                                f"**Action:** Interaction bloquée AVANT dispatch (on_interaction handler)"
+                                f"**Action:** Interaction bloquée AVANT dispatch"
                             ),
                             ping_dev=False
                         )
@@ -231,28 +140,27 @@ class BlacklistCheck(commands.Cog):
 
     async def send_blacklist_message(self, interaction: discord.Interaction):
         """Envoie le message de blacklist"""
+        embed = discord.Embed(
+            description=(
+                f"{EMOJIS['undone']} You cannot interact with Moddy because your account has been blacklisted by our team.\n\n"
+                f"*Vous ne pouvez pas interagir avec Moddy car votre compte a été blacklisté par notre équipe.*"
+            ),
+            color=COLORS["error"]
+        )
+
+        embed.set_footer(text=f"User ID: {interaction.user.id}")
+
         view = BlacklistButton()
 
         try:
             if interaction.response.is_done():
-                await interaction.followup.send(
-                    content=BLACKLIST_RESPONSE,
-                    view=view,
-                    ephemeral=True
-                )
+                await interaction.followup.send(embed=embed, view=view, ephemeral=True)
             else:
-                await interaction.response.send_message(
-                    content=BLACKLIST_RESPONSE,
-                    view=view,
-                    ephemeral=True
-                )
+                await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
         except:
             # Si tout échoue, essaye en message normal
             try:
-                await interaction.channel.send(
-                    content=BLACKLIST_RESPONSE,
-                    view=view
-                )
+                await interaction.channel.send(embed=embed, view=view)
             except:
                 pass
 
@@ -271,12 +179,32 @@ class BlacklistCheck(commands.Cog):
         if not self.bot.is_developer(ctx.author.id):
             return
 
+        # Crée une fausse interaction
+        class FakeInteraction:
+            def __init__(self, user, channel):
+                self.user = user
+                self.channel = channel
+                self.response = type('obj', (object,), {'is_done': lambda: False})()
+
+            async def response(self):
+                return self.response
+
+        fake_interaction = FakeInteraction(ctx.author, ctx.channel)
+
+        # Simule l'envoi du message
+        embed = discord.Embed(
+            description=(
+                f"{EMOJIS['undone']} You cannot interact with Moddy because your account has been blacklisted by our team.\n\n"
+                f"*Vous ne pouvez pas interagir avec Moddy car votre compte a été blacklisté par notre équipe.*"
+            ),
+            color=COLORS["error"]
+        )
+
+        embed.set_footer(text=f"User ID: {ctx.author.id}")
+
         view = BlacklistButton()
 
-        await ctx.send(
-            f"**[TEST MODE]** Voici ce que verrait un utilisateur blacklisté:\n{BLACKLIST_RESPONSE}",
-            view=view
-        )
+        await ctx.send("**[TEST MODE]** Voici ce que verrait un utilisateur blacklisté:", embed=embed, view=view)
 
 
 async def setup(bot):
