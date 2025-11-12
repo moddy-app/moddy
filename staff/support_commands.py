@@ -13,15 +13,16 @@ from utils.staff_permissions import staff_permissions, CommandType
 from database import db
 from config import COLORS
 from utils.components_v2 import create_error_message, create_info_message, EMOJIS
+from utils.staff_base import StaffBaseCog
 
 logger = logging.getLogger('moddy.support_commands')
 
 
-class SupportCommands(commands.Cog):
+class SupportCommands(StaffBaseCog):
     """Support commands (sup. prefix)"""
 
     def __init__(self, bot):
-        self.bot = bot
+        super().__init__(bot)
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -52,7 +53,7 @@ class SupportCommands(commands.Cog):
 
         if not allowed:
             view = create_error_message("Permission Denied", reason)
-            await message.channel.send(view=view, delete_after=10)
+            await self.reply_and_track(message, view=view, mention_author=False)
             return
 
         # Route to appropriate command
@@ -63,7 +64,7 @@ class SupportCommands(commands.Cog):
                 "Unknown Command",
                 f"Support command `{command_name}` not found.\n\nSupport commands are in development."
             )
-            await message.channel.send(view=view, delete_after=15)
+            await self.reply_and_track(message, view=view, mention_author=False)
 
     async def handle_help_command(self, message: discord.Message, args: str):
         """
@@ -76,7 +77,7 @@ class SupportCommands(commands.Cog):
             footer=f"Requested by {message.author}"
         )
 
-        await message.channel.send(view=view)
+        await self.reply_and_track(message, view=view, mention_author=False)
 
 
 async def setup(bot):

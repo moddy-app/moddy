@@ -15,15 +15,16 @@ from utils.staff_permissions import staff_permissions, CommandType
 from database import db
 from config import COLORS
 from utils.components_v2 import create_error_message, create_success_message, create_info_message, create_warning_message, EMOJIS
+from utils.staff_base import StaffBaseCog
 
 logger = logging.getLogger('moddy.dev_commands')
 
 
-class DeveloperCommands(commands.Cog):
+class DeveloperCommands(StaffBaseCog):
     """Developer commands (d. prefix)"""
 
     def __init__(self, bot):
-        self.bot = bot
+        super().__init__(bot)
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -62,7 +63,7 @@ class DeveloperCommands(commands.Cog):
         if not allowed:
             logger.warning(f"   ❌ Permission denied: {reason}")
             view = create_error_message("Permission Denied", reason)
-            await message.reply(view=view, mention_author=False)
+            await self.reply_and_track(message, view=view, mention_author=False)
             return
 
         logger.info(f"   ✅ Permission granted")
@@ -82,7 +83,7 @@ class DeveloperCommands(commands.Cog):
             await self.handle_error_command(message, args)
         else:
             view = create_error_message("Unknown Command", f"Developer command `{command_name}` not found.")
-            await message.reply(view=view, mention_author=False)
+            await self.reply_and_track(message, view=view, mention_author=False)
 
     async def handle_reload_command(self, message: discord.Message, args: str):
         """
@@ -92,7 +93,7 @@ class DeveloperCommands(commands.Cog):
         if not args or args == "all":
             # Reload all extensions
             view = create_info_message("Reloading All Extensions", "Reloading all cogs and staff commands...")
-            msg = await message.reply(view=view, mention_author=False)
+            msg = await self.reply_and_track(message, view=view, mention_author=False)
 
             success = []
             failed = []
@@ -155,7 +156,7 @@ class DeveloperCommands(commands.Cog):
                     footer=f"Executed by {message.author}"
                 )
 
-                await message.reply(view=view, mention_author=False)
+                await self.reply_and_track(message, view=view, mention_author=False)
 
             except Exception as e:
                 view = create_error_message(
@@ -164,7 +165,7 @@ class DeveloperCommands(commands.Cog):
                     fields=[{'name': 'Error', 'value': f"```{str(e)[:500]}```"}]
                 )
 
-                await message.reply(view=view, mention_author=False)
+                await self.reply_and_track(message, view=view, mention_author=False)
 
     async def handle_shutdown_command(self, message: discord.Message, args: str):
         """
@@ -176,7 +177,7 @@ class DeveloperCommands(commands.Cog):
             "MODDY is shutting down..."
         )
 
-        await message.reply(view=view, mention_author=False)
+        await self.reply_and_track(message, view=view, mention_author=False)
 
         logger.info(f"Bot shutdown requested by {message.author} ({message.author.id})")
         await self.bot.close()
@@ -239,7 +240,7 @@ class DeveloperCommands(commands.Cog):
             footer=f"Requested by {message.author}"
         )
 
-        await message.reply(view=view, mention_author=False)
+        await self.reply_and_track(message, view=view, mention_author=False)
 
     async def handle_sql_command(self, message: discord.Message, args: str):
         """
@@ -251,7 +252,7 @@ class DeveloperCommands(commands.Cog):
                 "Invalid Usage",
                 "**Usage:** `<@1373916203814490194> d.sql [query]`\n\nProvide a SQL query to execute."
             )
-            await message.reply(view=view, mention_author=False)
+            await self.reply_and_track(message, view=view, mention_author=False)
             return
 
         if not db:
@@ -259,7 +260,7 @@ class DeveloperCommands(commands.Cog):
                 "Database Not Available",
                 "Database is not connected."
             )
-            await message.reply(view=view, mention_author=False)
+            await self.reply_and_track(message, view=view, mention_author=False)
             return
 
         query = args.strip()
@@ -271,7 +272,7 @@ class DeveloperCommands(commands.Cog):
                 "Dangerous Query",
                 f"This query contains potentially dangerous operations:\n```sql\n{query[:500]}\n```\n\nReact with ✅ to confirm execution."
             )
-            msg = await message.reply(view=view, mention_author=False)
+            msg = await self.reply_and_track(message, view=view, mention_author=False)
             await msg.add_reaction("✅")
             await msg.add_reaction("❌")
 
@@ -298,7 +299,7 @@ class DeveloperCommands(commands.Cog):
 
                     if not rows:
                         view = create_success_message("Query Executed", "No results returned.")
-                        await message.reply(view=view, mention_author=False)
+                        await self.reply_and_track(message, view=view, mention_author=False)
                         return
 
                     # Format results
@@ -325,7 +326,7 @@ class DeveloperCommands(commands.Cog):
                         footer=f"Executed by {message.author}"
                     )
 
-                await message.reply(view=view, mention_author=False)
+                await self.reply_and_track(message, view=view, mention_author=False)
 
         except Exception as e:
             view = create_error_message(
@@ -334,7 +335,7 @@ class DeveloperCommands(commands.Cog):
                 fields=[{'name': 'Error', 'value': f"```{str(e)[:500]}```"}]
             )
 
-            await message.reply(view=view, mention_author=False)
+            await self.reply_and_track(message, view=view, mention_author=False)
 
     async def handle_jsk_command(self, message: discord.Message, args: str):
         """
@@ -346,7 +347,7 @@ class DeveloperCommands(commands.Cog):
                 "Invalid Usage",
                 "**Usage:** `<@1373916203814490194> d.jsk [code]`\n\nProvide Python code to execute."
             )
-            await message.reply(view=view, mention_author=False)
+            await self.reply_and_track(message, view=view, mention_author=False)
             return
 
         code = args.strip()
@@ -413,7 +414,7 @@ class DeveloperCommands(commands.Cog):
                 footer=f"Executed by {message.author}"
             )
 
-            await message.reply(view=view, mention_author=False)
+            await self.reply_and_track(message, view=view, mention_author=False)
 
         except Exception as e:
             # Format error
@@ -428,7 +429,7 @@ class DeveloperCommands(commands.Cog):
                 fields=[{'name': 'Error', 'value': f"```python\n{error_traceback}\n```"}]
             )
 
-            await message.reply(view=view, mention_author=False)
+            await self.reply_and_track(message, view=view, mention_author=False)
 
     async def handle_error_command(self, message: discord.Message, args: str):
         """
@@ -440,7 +441,7 @@ class DeveloperCommands(commands.Cog):
                 "Invalid Usage",
                 "**Usage:** `<@1373916203814490194> d.error [error_code]`\n\nProvide an error code to get information."
             )
-            await message.reply(view=view, mention_author=False)
+            await self.reply_and_track(message, view=view, mention_author=False)
             return
 
         error_code = args.strip().upper()
@@ -470,7 +471,7 @@ class DeveloperCommands(commands.Cog):
                 "Error Not Found",
                 f"No error found with code `{error_code}`.\n\nThe error may have expired from cache or was never logged."
             )
-            await message.reply(view=view, mention_author=False)
+            await self.reply_and_track(message, view=view, mention_author=False)
             return
 
         # Use database error if available, otherwise use cached error
@@ -557,7 +558,7 @@ class DeveloperCommands(commands.Cog):
             fields=fields
         )
 
-        await message.reply(view=view, mention_author=False)
+        await self.reply_and_track(message, view=view, mention_author=False)
 
 
 async def setup(bot):

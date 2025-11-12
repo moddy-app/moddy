@@ -13,6 +13,7 @@ from utils.staff_permissions import staff_permissions, CommandType
 from database import db
 from config import COLORS
 from utils.components_v2 import create_error_message, create_success_message, create_info_message, create_warning_message, create_simple_message, EMOJIS
+from utils.staff_base import StaffBaseCog
 
 logger = logging.getLogger('moddy.team_commands')
 
@@ -47,30 +48,11 @@ def parse_user_id(args: str) -> Optional[int]:
         return None
 
 
-class TeamCommands(commands.Cog):
+class TeamCommands(StaffBaseCog):
     """Team commands accessible to all staff (t. prefix)"""
 
     def __init__(self, bot):
-        self.bot = bot
-        # Store command message -> response message mapping for auto-deletion
-        self.command_responses = {}  # {command_msg_id: response_msg_id}
-
-    @commands.Cog.listener()
-    async def on_message_delete(self, message: discord.Message):
-        """Handle message deletion to auto-delete command responses"""
-        # Check if this message is a command that has a response
-        if message.id in self.command_responses:
-            response_msg_id = self.command_responses[message.id]
-            try:
-                # Try to fetch and delete the response message
-                response_msg = await message.channel.fetch_message(response_msg_id)
-                await response_msg.delete()
-                logger.info(f"Auto-deleted response {response_msg_id} for deleted command {message.id}")
-            except (discord.NotFound, discord.Forbidden, discord.HTTPException) as e:
-                logger.debug(f"Could not delete response message {response_msg_id}: {e}")
-            finally:
-                # Clean up the mapping
-                del self.command_responses[message.id]
+        super().__init__(bot)
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -101,7 +83,7 @@ class TeamCommands(commands.Cog):
 
         if not allowed:
             view = create_error_message("Permission Denied", reason)
-            await message.reply(view=view, mention_author=False)
+            await self.reply_and_track(message, view=view, mention_author=False)
             return
 
         # Route to appropriate command
@@ -124,7 +106,7 @@ class TeamCommands(commands.Cog):
                 "Unknown Command",
                 f"Team command `{command_name}` not found.\n\nUse `<@1373916203814490194> t.help` for a list of available commands."
             )
-            await message.reply(view=view, mention_author=False)
+            await self.reply_and_track(message, view=view, mention_author=False)
 
     async def handle_invite_command(self, message: discord.Message, args: str):
         """
@@ -136,7 +118,7 @@ class TeamCommands(commands.Cog):
                 "Invalid Usage",
                 "**Usage:** `<@1373916203814490194> t.invite [server_id]`\n\nProvide a server ID to get an invite link."
             )
-            await message.reply(view=view, mention_author=False)
+            await self.reply_and_track(message, view=view, mention_author=False)
             return
 
         # Parse server ID
@@ -147,7 +129,7 @@ class TeamCommands(commands.Cog):
                 "Invalid Server ID",
                 "Please provide a valid server ID (numbers only)."
             )
-            await message.reply(view=view, mention_author=False)
+            await self.reply_and_track(message, view=view, mention_author=False)
             return
 
         # Get guild
@@ -157,7 +139,7 @@ class TeamCommands(commands.Cog):
                 "Server Not Found",
                 f"MODDY is not in a server with ID `{guild_id}`."
             )
-            await message.reply(view=view, mention_author=False)
+            await self.reply_and_track(message, view=view, mention_author=False)
             return
 
         # Try to create an invite
@@ -177,7 +159,7 @@ class TeamCommands(commands.Cog):
                     "Cannot Create Invite",
                     f"MODDY doesn't have permission to create invites in **{guild.name}**."
                 )
-                await message.reply(view=view, mention_author=False)
+                await self.reply_and_track(message, view=view, mention_author=False)
                 return
 
             # Create invite (7 days, 5 uses, no temporary membership)
@@ -199,9 +181,7 @@ class TeamCommands(commands.Cog):
 
             view = InviteComponents()
 
-            reply_msg = await message.reply(view=view, mention_author=False)
-            # Store for auto-deletion
-            self.command_responses[message.id] = reply_msg.id
+            await self.reply_and_track(message, view=view, mention_author=False)
 
             # Log the action
             logger.info(f"Staff {message.author} ({message.author.id}) requested invite for {guild.name} ({guild.id})")
@@ -211,7 +191,7 @@ class TeamCommands(commands.Cog):
                 "Permission Denied",
                 f"MODDY doesn't have permission to create invites in **{guild.name}**."
             )
-            await message.reply(view=view, mention_author=False)
+            await self.reply_and_track(message, view=view, mention_author=False)
 
         except Exception as e:
             logger.error(f"Error creating invite: {e}")
@@ -219,7 +199,7 @@ class TeamCommands(commands.Cog):
                 "Error",
                 f"Failed to create invite: {str(e)}"
             )
-            await message.reply(view=view, mention_author=False)
+            await self.reply_and_track(message, view=view, mention_author=False)
 
     async def handle_serverinfo_command(self, message: discord.Message, args: str):
         """
@@ -231,7 +211,7 @@ class TeamCommands(commands.Cog):
                 "Invalid Usage",
                 "**Usage:** `<@1373916203814490194> t.serverinfo [server_id]`\n\nProvide a server ID to get information."
             )
-            await message.reply(view=view, mention_author=False)
+            await self.reply_and_track(message, view=view, mention_author=False)
             return
 
         # Parse server ID
@@ -242,7 +222,7 @@ class TeamCommands(commands.Cog):
                 "Invalid Server ID",
                 "Please provide a valid server ID (numbers only)."
             )
-            await message.reply(view=view, mention_author=False)
+            await self.reply_and_track(message, view=view, mention_author=False)
             return
 
         # Get guild
@@ -252,7 +232,7 @@ class TeamCommands(commands.Cog):
                 "Server Not Found",
                 f"MODDY is not in a server with ID `{guild_id}`."
             )
-            await message.reply(view=view, mention_author=False)
+            await self.reply_and_track(message, view=view, mention_author=False)
             return
 
         # Create info view
@@ -302,9 +282,7 @@ class TeamCommands(commands.Cog):
             fields=fields
         )
 
-        reply_msg = await message.reply(view=view, mention_author=False)
-        # Store for auto-deletion
-        self.command_responses[message.id] = reply_msg.id
+        await self.reply_and_track(message, view=view, mention_author=False)
 
     async def handle_help_command(self, message: discord.Message, args: str):
         """
@@ -394,9 +372,7 @@ class TeamCommands(commands.Cog):
             fields=fields
         )
 
-        reply_msg = await message.reply(view=view, mention_author=False)
-        # Store for auto-deletion
-        self.command_responses[message.id] = reply_msg.id
+        await self.reply_and_track(message, view=view, mention_author=False)
 
     async def handle_flex_command(self, message: discord.Message, args: str):
         """
@@ -411,7 +387,7 @@ class TeamCommands(commands.Cog):
                 "Not a Staff Member",
                 "You don't have any staff roles in the MODDY team."
             )
-            await message.reply(view=view, mention_author=False)
+            await self.reply_and_track(message, view=view, mention_author=False)
             return
 
         # Get primary role (highest in hierarchy)
@@ -462,7 +438,7 @@ class TeamCommands(commands.Cog):
                 "Permission Denied",
                 "I don't have permission to send messages or delete messages in this channel."
             )
-            await message.reply(view=view_error, mention_author=False)
+            await self.reply_and_track(message, view=view_error, mention_author=False)
 
         except Exception as e:
             logger.error(f"Error in t.flex command: {e}")
@@ -470,7 +446,7 @@ class TeamCommands(commands.Cog):
                 "Error",
                 f"Failed to send verification message: {str(e)}"
             )
-            await message.reply(view=view_error, mention_author=False)
+            await self.reply_and_track(message, view=view_error, mention_author=False)
 
     async def handle_mutualserver_command(self, message: discord.Message, args: str):
         """
@@ -482,7 +458,7 @@ class TeamCommands(commands.Cog):
                 "Invalid Usage",
                 "**Usage:** `<@1373916203814490194> t.mutualserver [user_id]` or `<@1373916203814490194> t.mutualserver @user`\n\nProvide a user ID or mention to view mutual servers."
             )
-            await message.reply(view=view, mention_author=False)
+            await self.reply_and_track(message, view=view, mention_author=False)
             return
 
         # Parse user ID
@@ -492,7 +468,7 @@ class TeamCommands(commands.Cog):
                 "Invalid User ID",
                 "Please provide a valid user ID or mention a user."
             )
-            await message.reply(view=view, mention_author=False)
+            await self.reply_and_track(message, view=view, mention_author=False)
             return
 
         # Try to fetch user
@@ -503,7 +479,7 @@ class TeamCommands(commands.Cog):
                 "User Not Found",
                 f"Could not find a user with ID `{user_id}`."
             )
-            await message.reply(view=view, mention_author=False)
+            await self.reply_and_track(message, view=view, mention_author=False)
             return
         except Exception as e:
             logger.error(f"Error fetching user {user_id}: {e}")
@@ -511,7 +487,7 @@ class TeamCommands(commands.Cog):
                 "Error",
                 f"Failed to fetch user: {str(e)}"
             )
-            await message.reply(view=view, mention_author=False)
+            await self.reply_and_track(message, view=view, mention_author=False)
             return
 
         # Find mutual servers
@@ -522,7 +498,7 @@ class TeamCommands(commands.Cog):
                 "No Mutual Servers",
                 f"MODDY and **{user}** (`{user_id}`) don't share any servers."
             )
-            await message.reply(view=view, mention_author=False)
+            await self.reply_and_track(message, view=view, mention_author=False)
             return
 
         # Create fields for each mutual server
@@ -578,9 +554,7 @@ class TeamCommands(commands.Cog):
             fields=fields
         )
 
-        reply_msg = await message.reply(view=view, mention_author=False)
-        # Store for auto-deletion
-        self.command_responses[message.id] = reply_msg.id
+        await self.reply_and_track(message, view=view, mention_author=False)
 
     async def handle_user_command(self, message: discord.Message, args: str):
         """
@@ -592,7 +566,7 @@ class TeamCommands(commands.Cog):
                 "Invalid Usage",
                 "**Usage:** `<@1373916203814490194> t.user [user_id]` or `<@1373916203814490194> t.user @user`\n\nProvide a user ID or mention to get information."
             )
-            await message.reply(view=view, mention_author=False)
+            await self.reply_and_track(message, view=view, mention_author=False)
             return
 
         # Parse user ID
@@ -602,7 +576,7 @@ class TeamCommands(commands.Cog):
                 "Invalid User ID",
                 "Please provide a valid user ID or mention a user."
             )
-            await message.reply(view=view, mention_author=False)
+            await self.reply_and_track(message, view=view, mention_author=False)
             return
 
         # Try to fetch user
@@ -613,7 +587,7 @@ class TeamCommands(commands.Cog):
                 "User Not Found",
                 f"Could not find a user with ID `{user_id}`."
             )
-            await message.reply(view=view, mention_author=False)
+            await self.reply_and_track(message, view=view, mention_author=False)
             return
         except Exception as e:
             logger.error(f"Error fetching user {user_id}: {e}")
@@ -621,7 +595,7 @@ class TeamCommands(commands.Cog):
                 "Error",
                 f"Failed to fetch user: {str(e)}"
             )
-            await message.reply(view=view, mention_author=False)
+            await self.reply_and_track(message, view=view, mention_author=False)
             return
 
         # Get user data from database
@@ -675,9 +649,7 @@ class TeamCommands(commands.Cog):
             fields=fields
         )
 
-        reply_msg = await message.reply(view=view, mention_author=False)
-        # Store for auto-deletion
-        self.command_responses[message.id] = reply_msg.id
+        await self.reply_and_track(message, view=view, mention_author=False)
 
     async def handle_server_command(self, message: discord.Message, args: str):
         """
@@ -689,7 +661,7 @@ class TeamCommands(commands.Cog):
                 "Invalid Usage",
                 "**Usage:** `<@1373916203814490194> t.server [server_id]`\n\nProvide a server ID to get information."
             )
-            await message.reply(view=view, mention_author=False)
+            await self.reply_and_track(message, view=view, mention_author=False)
             return
 
         # Parse server ID
@@ -700,7 +672,7 @@ class TeamCommands(commands.Cog):
                 "Invalid Server ID",
                 "Please provide a valid server ID (numbers only)."
             )
-            await message.reply(view=view, mention_author=False)
+            await self.reply_and_track(message, view=view, mention_author=False)
             return
 
         # Get guild
@@ -710,7 +682,7 @@ class TeamCommands(commands.Cog):
                 "Server Not Found",
                 f"MODDY is not in a server with ID `{guild_id}`."
             )
-            await message.reply(view=view, mention_author=False)
+            await self.reply_and_track(message, view=view, mention_author=False)
             return
 
         # Get guild data from database
@@ -777,9 +749,7 @@ class TeamCommands(commands.Cog):
             fields=fields
         )
 
-        reply_msg = await message.reply(view=view, mention_author=False)
-        # Store for auto-deletion
-        self.command_responses[message.id] = reply_msg.id
+        await self.reply_and_track(message, view=view, mention_author=False)
 
 
 async def setup(bot):

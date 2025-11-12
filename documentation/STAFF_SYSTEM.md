@@ -524,6 +524,10 @@ Features:
 - All staff command responses use `message.reply()` instead of `message.channel.send()`
 - `mention_author=False` is used to avoid unnecessary mentions
 - **Auto-deletion on command removal:** When you delete the command message, the bot's response is automatically deleted as well
+  - This feature is implemented through a centralized `StaffBaseCog` base class in `utils/staff_base.py`
+  - All staff command cogs inherit from this base class, ensuring consistent behavior
+  - The system works automatically for all commands - no manual tracking required
+  - Covers all command types: team (t.), management (m.), developer (d.), moderator (mod.), support (sup.), and communication (com.)
 - This keeps channels clean while allowing staff to remove accidental or outdated commands
 - No footers are displayed (e.g., no "Requested by..." text)
 
@@ -536,6 +540,7 @@ All staff commands are in **English only** and do **NOT** use the i18n system.
 ### Files:
 
 - `/utils/staff_permissions.py` - Permission manager and role hierarchy
+- `/utils/staff_base.py` - Base cog class with automatic message deletion functionality
 - `/staff/staff_manager.py` - Management commands (m. prefix)
 - `/staff/team_commands.py` - Team commands (t. prefix)
 - `/staff/dev_commands.py` - Developer commands (d. prefix)
@@ -549,6 +554,11 @@ All staff commands are in **English only** and do **NOT** use the i18n system.
 - `StaffPermissionManager` - Main permission checking logic
   - `STAFF_PREFIX` - Bot mention: `<@1373916203814490194>`
   - `SUPER_ADMIN_ID` - Super admin user ID: `1164597199594852395`
+- `StaffBaseCog` - Base cog class for all staff commands (in `utils/staff_base.py`)
+  - Provides automatic message deletion when command is deleted
+  - `reply_and_track()` - Reply to a message and automatically track for deletion
+  - `send_and_track()` - Send a message to channel and track for deletion
+  - All staff cogs inherit from this class
 - `StaffRole` - Enum of available roles
 - `CommandType` - Enum of command type prefixes
 - Components V2 helpers in `utils/components_v2.py`:
@@ -646,6 +656,18 @@ These badges are automatically displayed in:
 - Any other staff-related displays
 
 ## Recent Changes (Latest Update)
+
+**Automatic Message Deletion System Overhaul:**
+- **Centralized Base Class:** All staff command cogs now inherit from `StaffBaseCog` in `utils/staff_base.py`
+- **Robust Auto-Deletion:** When a staff command message is deleted, the bot's response is automatically deleted
+  - Works consistently across ALL staff commands (team, management, developer, moderator, support, communication)
+  - No manual tracking required in individual command handlers
+  - Future commands automatically benefit from this system
+- **Helper Methods:** New `reply_and_track()` and `send_and_track()` methods for easy integration
+- **Developer Commands Fixed:** Developer commands (d. prefix) now properly support auto-deletion
+- **Support/Communication Commands Fixed:** These commands now use proper reply tracking instead of channel.send()
+
+**Previous Updates:**
 
 **New Team Commands Added:**
 - **t.mutualserver [user_id]:** View mutual servers shared with a user and their permissions in those servers
