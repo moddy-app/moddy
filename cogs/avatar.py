@@ -9,6 +9,7 @@ from discord.ext import commands
 from typing import Optional
 import aiohttp
 import io
+from PIL import Image
 
 from utils.incognito import add_incognito_option, get_incognito_setting
 from utils.i18n import i18n
@@ -58,9 +59,19 @@ class AvatarView(ui.LayoutView):
             async with session.get(avatar_url) as resp:
                 if resp.status == 200:
                     data = await resp.read()
-                    avatar_bytes = io.BytesIO(data)
+
+                    # Open the image with Pillow
+                    with Image.open(io.BytesIO(data)) as img:
+                        # Resize the image
+                        img = img.resize((239, 239), Image.Resampling.LANCZOS)
+
+                        # Save the resized image to a BytesIO object
+                        resized_avatar_bytes = io.BytesIO()
+                        img.save(resized_avatar_bytes, format='PNG')
+                        resized_avatar_bytes.seek(0)
+
                     avatar_filename = f"avatar_{self.user.id}.png"
-                    return discord.File(avatar_bytes, filename=avatar_filename)
+                    return discord.File(resized_avatar_bytes, filename=avatar_filename)
                 return None
 
 
