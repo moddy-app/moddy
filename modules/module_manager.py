@@ -163,6 +163,74 @@ class ModuleManager:
 
         return self.active_modules[guild_id].get(module_id)
 
+    async def _migrate_welcome_split(self, guild_id: int, guild_data: Dict[str, Any]) -> bool:
+        """
+        Migre l'ancienne configuration 'welcome' vers 'welcome_channel' et 'welcome_dm'
+
+        Args:
+            guild_id: ID du serveur
+            guild_data: Données du serveur
+
+        Returns:
+            True si une migration a été effectuée, False sinon
+        """
+        modules_config = guild_data.get('data', {}).get('modules', {})
+
+        # Vérifie si l'ancienne config existe
+        if 'welcome' not in modules_config:
+            return False
+
+        try:
+            old_welcome_config = modules_config['welcome']
+            logger.info(f"🔄 Migrating old welcome config for guild {guild_id}")
+
+            # Crée la config pour welcome_channel
+            welcome_channel_config = {
+                'channel_id': old_welcome_config.get('channel_id'),
+                'message_template': old_welcome_config.get('message_template', "Bienvenue {user} sur le serveur !"),
+                'mention_user': old_welcome_config.get('mention_user', True),
+                'embed_enabled': old_welcome_config.get('embed_enabled', False),
+                'embed_title': old_welcome_config.get('embed_title', "Bienvenue !"),
+                'embed_description': old_welcome_config.get('embed_description'),
+                'embed_color': old_welcome_config.get('embed_color', 0x5865F2),
+                'embed_footer': old_welcome_config.get('embed_footer'),
+                'embed_image_url': old_welcome_config.get('embed_image_url'),
+                'embed_thumbnail_enabled': old_welcome_config.get('embed_thumbnail_enabled', True),
+                'embed_author_enabled': old_welcome_config.get('embed_author_enabled', False)
+            }
+
+            # Pour le DM, adapte le message (pas de mention dans les DMs)
+            dm_message = old_welcome_config.get('message_template', "Bienvenue sur le serveur {server} !")
+            if '{user}' in dm_message:
+                dm_message = dm_message.replace('{user}', '{username}')
+
+            welcome_dm_config = {
+                'message_template': dm_message,
+                'embed_enabled': old_welcome_config.get('embed_enabled', False),
+                'embed_title': old_welcome_config.get('embed_title', "Bienvenue !"),
+                'embed_description': old_welcome_config.get('embed_description'),
+                'embed_color': old_welcome_config.get('embed_color', 0x5865F2),
+                'embed_footer': old_welcome_config.get('embed_footer'),
+                'embed_image_url': old_welcome_config.get('embed_image_url'),
+                'embed_thumbnail_enabled': old_welcome_config.get('embed_thumbnail_enabled', True),
+                'embed_author_enabled': old_welcome_config.get('embed_author_enabled', False)
+            }
+
+            # Met à jour les modules
+            modules_config['welcome_channel'] = welcome_channel_config
+            modules_config['welcome_dm'] = welcome_dm_config
+            del modules_config['welcome']
+
+            # Sauvegarde dans la DB
+            await self.bot.db.update_guild_data(guild_id, 'modules', modules_config)
+            logger.info(f"✅ Welcome config migrated successfully for guild {guild_id}")
+
+            return True
+
+        except Exception as e:
+            logger.error(f"❌ Error migrating welcome config for guild {guild_id}: {e}", exc_info=True)
+            return False
+
     async def load_guild_modules(self, guild_id: int):
         """
         Charge tous les modules configurés pour un serveur depuis la DB
@@ -177,6 +245,13 @@ class ModuleManager:
         try:
             # Récupère les données du serveur
             guild_data = await self.bot.db.get_guild(guild_id)
+
+            # Migre l'ancienne config welcome si nécessaire
+            migrated = await self._migrate_welcome_split(guild_id, guild_data)
+            if migrated:
+                # Recharge les données après migration
+                guild_data = await self.bot.db.get_guild(guild_id)
+
             modules_config = guild_data.get('data', {}).get('modules', {})
 
             # Initialise le dictionnaire pour ce serveur
