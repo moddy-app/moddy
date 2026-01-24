@@ -121,7 +121,7 @@
       "loading": "<a:loading:1395047662092550194> **Fetching invite information...**",
       "view": {
         "guild": {
-          "title": "Server Invite Information",
+          "title": "Invite Information",
           "name": "Server Name",
           "id": "Server ID",
           "description": "Description",
@@ -135,7 +135,12 @@
           "features": "Server Features",
           "verification": "Verification Level",
           "nsfw": "NSFW Server",
-          "invite_code": "Invite Code"
+          "invite_code": "Invite Code",
+          "show_server_info": "View server info"
+        },
+        "server_info": {
+          "title": "Server Information",
+          "back": "Back"
         },
         "group_dm": {
           "title": "Group DM Invite",

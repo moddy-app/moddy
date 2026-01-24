@@ -37,7 +37,7 @@ class InviteView(BaseView):
 
         # Type 0: Guild (Server)
         if invite_type == 0:
-            self._build_guild_invite(container)
+            self._build_guild_invite_info(container)
         # Type 1: Group DM
         elif invite_type == 1:
             self._build_group_dm_invite(container)
@@ -52,8 +52,8 @@ class InviteView(BaseView):
 
         self.add_item(container)
 
-    def _build_guild_invite(self, container: ui.Container):
-        """Build view for guild (server) invite"""
+    def _build_guild_invite_info(self, container: ui.Container):
+        """Build view for guild invite - shows invite info only"""
         guild = self.invite_data.get('guild', {})
         inviter = self.invite_data.get('inviter')
         channel = self.invite_data.get('channel', {})
@@ -63,33 +63,14 @@ class InviteView(BaseView):
             f"### <:search:1443752796460552232> {t('commands.invite.view.guild.title', locale=self.locale)}"
         ))
 
-        # Guild name and ID
-        guild_name = guild.get('name', 'Unknown')
-        guild_id = guild.get('id', 'Unknown')
+        # Invite code
+        code = self.invite_data.get('code', 'Unknown')
         container.add_item(ui.TextDisplay(
-            f"**{t('commands.invite.view.guild.name', locale=self.locale)}:** {guild_name}\n"
-            f"**{t('commands.invite.view.guild.id', locale=self.locale)}:** `{guild_id}`"
+            f"**{t('commands.invite.view.guild.invite_code', locale=self.locale)}:** `{code}`\n"
+            f"-# discord.gg/{code}"
         ))
 
-        # Guild description if available
-        description = guild.get('description')
-        if description:
-            container.add_item(ui.TextDisplay(
-                f"**{t('commands.invite.view.guild.description', locale=self.locale)}:**\n{description}"
-            ))
-
-        # Member counts
-        approximate_member_count = self.invite_data.get('approximate_member_count')
-        approximate_presence_count = self.invite_data.get('approximate_presence_count')
-
-        if approximate_member_count is not None:
-            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-            container.add_item(ui.TextDisplay(
-                f"**{t('commands.invite.view.guild.members', locale=self.locale)}:** `{approximate_member_count:,}`\n"
-                f"**{t('commands.invite.view.guild.online', locale=self.locale)}:** `{approximate_presence_count:,}`"
-            ))
-
-        # Channel info
+        # Channel info (destination)
         channel_name = channel.get('name', 'Unknown')
         channel_type = channel.get('type', 0)
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
@@ -121,39 +102,21 @@ class InviteView(BaseView):
             except:
                 pass
 
-        # Guild features
-        features = guild.get('features', [])
-        if features and len(features) > 0:
-            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-            features_display = ', '.join(f"`{f}`" for f in features[:5])
-            if len(features) > 5:
-                features_display += f" +{len(features) - 5} more"
-            container.add_item(ui.TextDisplay(
-                f"**{t('commands.invite.view.guild.features', locale=self.locale)}:**\n{features_display}"
-            ))
+        # Add button to view server info
+        button_row = ui.ActionRow()
+        server_info_btn = ui.Button(
+            emoji=discord.PartialEmoji.from_str("<:groups:1446127489842806967>"),
+            label=t('commands.invite.view.guild.show_server_info', locale=self.locale),
+            style=discord.ButtonStyle.secondary
+        )
+        server_info_btn.callback = self.on_show_server_info
+        button_row.add_item(server_info_btn)
+        container.add_item(button_row)
 
-        # Verification level
-        verification_level = guild.get('verification_level')
-        if verification_level is not None:
-            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-            container.add_item(ui.TextDisplay(
-                f"**{t('commands.invite.view.guild.verification', locale=self.locale)}:** `{self._get_verification_level(verification_level)}`"
-            ))
-
-        # NSFW level
-        nsfw_level = guild.get('nsfw_level')
-        if nsfw_level is not None and nsfw_level > 0:
-            container.add_item(ui.TextDisplay(
-                f"<:warning:1446108410092195902> **{t('commands.invite.view.guild.nsfw', locale=self.locale)}**"
-            ))
-
-        # Invite code
-        code = self.invite_data.get('code', 'Unknown')
-        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-        container.add_item(ui.TextDisplay(
-            f"**{t('commands.invite.view.guild.invite_code', locale=self.locale)}:** `{code}`\n"
-            f"-# discord.gg/{code}"
-        ))
+    async def on_show_server_info(self, interaction: discord.Interaction):
+        """Show server information view"""
+        server_view = ServerInfoView(self.invite_data, self.locale)
+        await interaction.response.edit_message(view=server_view)
 
     def _build_group_dm_invite(self, container: ui.Container):
         """Build view for group DM invite"""
@@ -256,6 +219,101 @@ class InviteView(BaseView):
             16: "Media"
         }
         return channel_types.get(channel_type, f"Unknown ({channel_type})")
+
+
+class ServerInfoView(BaseView):
+    """View to display server information for guild invites"""
+
+    def __init__(self, invite_data: Dict[str, Any], locale: str):
+        super().__init__(timeout=180)
+        self.invite_data = invite_data
+        self.locale = locale
+
+        # Build the view
+        self.build_view()
+
+    def build_view(self):
+        """Builds the Components V2 view for server information"""
+        self.clear_items()
+
+        container = ui.Container()
+        guild = self.invite_data.get('guild', {})
+
+        # Title
+        container.add_item(ui.TextDisplay(
+            f"### <:groups:1446127489842806967> {t('commands.invite.view.server_info.title', locale=self.locale)}"
+        ))
+
+        # Guild name and ID
+        guild_name = guild.get('name', 'Unknown')
+        guild_id = guild.get('id', 'Unknown')
+        container.add_item(ui.TextDisplay(
+            f"**{t('commands.invite.view.guild.name', locale=self.locale)}:** {guild_name}\n"
+            f"**{t('commands.invite.view.guild.id', locale=self.locale)}:** `{guild_id}`"
+        ))
+
+        # Guild description if available
+        description = guild.get('description')
+        if description:
+            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+            container.add_item(ui.TextDisplay(
+                f"**{t('commands.invite.view.guild.description', locale=self.locale)}:**\n{description}"
+            ))
+
+        # Member counts
+        approximate_member_count = self.invite_data.get('approximate_member_count')
+        approximate_presence_count = self.invite_data.get('approximate_presence_count')
+
+        if approximate_member_count is not None:
+            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+            container.add_item(ui.TextDisplay(
+                f"**{t('commands.invite.view.guild.members', locale=self.locale)}:** `{approximate_member_count:,}`\n"
+                f"**{t('commands.invite.view.guild.online', locale=self.locale)}:** `{approximate_presence_count:,}`"
+            ))
+
+        # Guild features
+        features = guild.get('features', [])
+        if features and len(features) > 0:
+            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+            features_display = ', '.join(f"`{f}`" for f in features[:5])
+            if len(features) > 5:
+                features_display += f" +{len(features) - 5} more"
+            container.add_item(ui.TextDisplay(
+                f"**{t('commands.invite.view.guild.features', locale=self.locale)}:**\n{features_display}"
+            ))
+
+        # Verification level
+        verification_level = guild.get('verification_level')
+        if verification_level is not None:
+            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+            container.add_item(ui.TextDisplay(
+                f"**{t('commands.invite.view.guild.verification', locale=self.locale)}:** `{self._get_verification_level(verification_level)}`"
+            ))
+
+        # NSFW level
+        nsfw_level = guild.get('nsfw_level')
+        if nsfw_level is not None and nsfw_level > 0:
+            container.add_item(ui.TextDisplay(
+                f"<:warning:1446108410092195902> **{t('commands.invite.view.guild.nsfw', locale=self.locale)}**"
+            ))
+
+        # Add back button
+        button_row = ui.ActionRow()
+        back_btn = ui.Button(
+            emoji=discord.PartialEmoji.from_str("<:back:1401600847733067806>"),
+            label=t('commands.invite.view.server_info.back', locale=self.locale),
+            style=discord.ButtonStyle.secondary
+        )
+        back_btn.callback = self.on_back
+        button_row.add_item(back_btn)
+        container.add_item(button_row)
+
+        self.add_item(container)
+
+    async def on_back(self, interaction: discord.Interaction):
+        """Go back to invite info view"""
+        invite_view = InviteView(self.invite_data, self.locale)
+        await interaction.response.edit_message(view=invite_view)
 
     def _get_verification_level(self, level: int) -> str:
         """Get verification level name"""
