@@ -189,30 +189,37 @@ class InviteView(BaseView):
         info_lines.append(f"**{t('commands.invite.view.group_dm.invite_code', locale=self.locale)}:** `{code}`")
 
         # Group name and ID
-        channel_name = channel.get('name', 'Unnamed Group')
-        channel_id = channel.get('id', 'Unknown')
-        info_lines.append(f"**{t('commands.invite.view.group_dm.name', locale=self.locale)}:** {channel_name}")
-        info_lines.append(f"**{t('commands.invite.view.group_dm.id', locale=self.locale)}:** `{channel_id}`")
+        channel_name = channel.get('name') if channel else None
+        channel_id = channel.get('id') if channel else None
+        if channel_name:
+            info_lines.append(f"**{t('commands.invite.view.group_dm.name', locale=self.locale)}:** {channel_name}")
+        if channel_id:
+            info_lines.append(f"**{t('commands.invite.view.group_dm.id', locale=self.locale)}:** `{channel_id}`")
 
-        # Members count
-        recipients = channel.get('recipients', [])
-        if recipients:
-            info_lines.append(f"**{t('commands.invite.view.group_dm.members', locale=self.locale)}:** `{len(recipients)}`")
+        # Members count (prefer approximate_member_count)
+        member_count = self.invite_data.get('approximate_member_count')
+        if member_count is None and channel:
+            recipients = channel.get('recipients', [])
+            if recipients:
+                member_count = len(recipients)
+        if member_count is not None:
+            info_lines.append(f"**{t('commands.invite.view.group_dm.members', locale=self.locale)}:** `{member_count}`")
 
-        # Inviter
-        if inviter:
-            inviter_username = inviter.get('username', 'Unknown')
-            inviter_global_name = inviter.get('global_name')
-            inviter_id = inviter.get('id', 'Unknown')
-
-            if inviter_global_name:
-                inviter_display = f"{inviter_global_name} (@{inviter_username})"
-            else:
-                inviter_display = inviter_username
-
-            info_lines.append(f"**{t('commands.invite.view.group_dm.inviter', locale=self.locale)}:** {inviter_display}\n-# ID: `{inviter_id}`")
+        # Expiration (if available)
+        expires_at = self.invite_data.get('expires_at')
+        if expires_at:
+            try:
+                expires_dt = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
+                expires_ts = int(expires_dt.timestamp())
+                info_lines.append(f"**{t('commands.invite.view.guild.expires', locale=self.locale)}:** <t:{expires_ts}:F> (<t:{expires_ts}:R>)")
+            except:
+                pass
 
         container.add_item(ui.TextDisplay("\n".join(info_lines)))
+
+        # Inviter section (separate block)
+        if inviter:
+            self._add_inviter_info(container, inviter)
 
     def _build_friend_invite(self, container: ui.Container):
         """Build view for friend invite"""
@@ -232,38 +239,96 @@ class InviteView(BaseView):
         # Invite code first
         info_lines.append(f"**{t('commands.invite.view.friend.invite_code', locale=self.locale)}:** `{code}`")
 
-        if inviter:
-            inviter_username = inviter.get('username', 'Unknown')
-            inviter_discriminator = inviter.get('discriminator', '0')
-            inviter_id = inviter.get('id', 'Unknown')
-            inviter_global_name = inviter.get('global_name')
-
-            if inviter_global_name:
-                info_lines.append(f"**{t('commands.invite.view.friend.display_name', locale=self.locale)}:** {inviter_global_name}")
-                info_lines.append(f"**{t('commands.invite.view.friend.username', locale=self.locale)}:** @{inviter_username}")
-            else:
-                if inviter_discriminator != '0':
-                    username_display = f"{inviter_username}#{inviter_discriminator}"
-                else:
-                    username_display = f"@{inviter_username}"
-                info_lines.append(f"**{t('commands.invite.view.friend.username', locale=self.locale)}:** {username_display}")
-
-            info_lines.append(f"**{t('commands.invite.view.friend.id', locale=self.locale)}:** `{inviter_id}`")
-
-            # Public flags (badges)
-            public_flags = inviter.get('public_flags', 0)
-            if public_flags > 0:
-                badges = self._get_user_badges(public_flags)
-                if badges:
-                    info_lines.append(f"**Badges:** {badges}")
-
-            # Accent color
-            accent_color = inviter.get('accent_color')
-            if accent_color:
-                hex_color = f"#{accent_color:06x}"
-                info_lines.append(f"**Accent Color:** `{hex_color}`")
+        # Expiration (if available)
+        expires_at = self.invite_data.get('expires_at')
+        if expires_at:
+            try:
+                expires_dt = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
+                expires_ts = int(expires_dt.timestamp())
+                info_lines.append(f"**{t('commands.invite.view.guild.expires', locale=self.locale)}:** <t:{expires_ts}:F> (<t:{expires_ts}:R>)")
+            except:
+                pass
 
         container.add_item(ui.TextDisplay("\n".join(info_lines)))
+
+        # Inviter section (separate block with all details)
+        if inviter:
+            self._add_inviter_info(container, inviter)
+
+    def _add_inviter_info(self, container: ui.Container, inviter: Dict[str, Any]):
+        """Add inviter information block to container"""
+        info_lines = []
+
+        inviter_username = inviter.get('username', 'Unknown')
+        inviter_discriminator = inviter.get('discriminator', '0')
+        inviter_id = inviter.get('id', 'Unknown')
+        inviter_global_name = inviter.get('global_name')
+
+        # Display name and username
+        if inviter_global_name:
+            info_lines.append(f"**{t('commands.invite.view.friend.display_name', locale=self.locale)}:** {inviter_global_name}")
+            info_lines.append(f"**{t('commands.invite.view.friend.username', locale=self.locale)}:** @{inviter_username}")
+        else:
+            if inviter_discriminator != '0':
+                username_display = f"{inviter_username}#{inviter_discriminator}"
+            else:
+                username_display = f"@{inviter_username}"
+            info_lines.append(f"**{t('commands.invite.view.friend.username', locale=self.locale)}:** {username_display}")
+
+        # User ID
+        info_lines.append(f"**{t('commands.invite.view.friend.id', locale=self.locale)}:** `{inviter_id}`")
+
+        # Public flags (badges)
+        public_flags = inviter.get('public_flags', 0)
+        if public_flags > 0:
+            badges = self._get_user_badges(public_flags)
+            if badges:
+                info_lines.append(f"**Badges:** {badges}")
+
+        # Banner color
+        banner_color = inviter.get('banner_color')
+        accent_color = inviter.get('accent_color')
+        if banner_color:
+            info_lines.append(f"**Banner Color:** `{banner_color}`")
+        elif accent_color:
+            hex_color = f"#{accent_color:06x}"
+            info_lines.append(f"**Accent Color:** `{hex_color}`")
+
+        # Avatar decoration
+        avatar_decoration = inviter.get('avatar_decoration_data')
+        if avatar_decoration:
+            info_lines.append(f"**Avatar Decoration:** `{avatar_decoration.get('sku_id', 'Unknown')}`")
+
+        # Collectibles (nameplate)
+        collectibles = inviter.get('collectibles', {})
+        nameplate = collectibles.get('nameplate')
+        if nameplate:
+            nameplate_label = nameplate.get('label', 'Unknown')
+            # Clean up the label
+            clean_label = nameplate_label.replace('COLLECTIBLES_NAMEPLATES_', '').replace('_A11Y', '').replace('_', ' ').title()
+            info_lines.append(f"**Nameplate:** `{clean_label}` ({nameplate.get('palette', 'default')})")
+
+        container.add_item(ui.TextDisplay("\n".join(info_lines)))
+
+        # Image links (avatar, banner)
+        image_links = []
+        avatar_hash = inviter.get('avatar')
+        banner_hash = inviter.get('banner')
+
+        if avatar_hash:
+            ext = "gif" if avatar_hash.startswith("a_") else "png"
+            avatar_url = f"https://cdn.discordapp.com/avatars/{inviter_id}/{avatar_hash}.{ext}?size=512"
+            image_links.append(f"[Avatar]({avatar_url})")
+
+        if banner_hash:
+            ext = "gif" if banner_hash.startswith("a_") else "png"
+            banner_url = f"https://cdn.discordapp.com/banners/{inviter_id}/{banner_hash}.{ext}?size=512"
+            image_links.append(f"[Banner]({banner_url})")
+
+        if image_links:
+            container.add_item(ui.TextDisplay(
+                f"**{t('commands.invite.view.guild.images', locale=self.locale)}:** {' | '.join(image_links)}"
+            ))
 
     def _get_channel_type_name(self, channel_type: int) -> str:
         """Get human-readable channel type name"""
@@ -334,13 +399,6 @@ class ServerInfoView(BaseView):
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
-        # Server icon (if available)
-        icon_hash = guild.get('icon') or profile.get('icon_hash')
-        if icon_hash:
-            ext = "gif" if icon_hash.startswith("a_") else "png"
-            icon_url = f"https://cdn.discordapp.com/icons/{guild_id}/{icon_hash}.{ext}?size=256"
-            container.add_item(ui.MediaGallery(discord.MediaGalleryItem(media=icon_url)))
-
         # Build info list (most important first)
         info_lines = []
 
@@ -399,10 +457,16 @@ class ServerInfoView(BaseView):
                 f"<:warning:1446108410092195902> **{t('commands.invite.view.guild.nsfw', locale=self.locale)}** (Level: `{nsfw_level}`)"
             ))
 
-        # Server images (banner, splash)
+        # Server images (icon, banner, splash) as links
         image_links = []
+        icon_hash = guild.get('icon') or profile.get('icon_hash')
         banner_hash = guild.get('banner') or profile.get('banner_hash')
         splash_hash = guild.get('splash')
+
+        if icon_hash:
+            ext = "gif" if icon_hash.startswith("a_") else "png"
+            icon_url = f"https://cdn.discordapp.com/icons/{guild_id}/{icon_hash}.{ext}?size=512"
+            image_links.append(f"[Icon]({icon_url})")
 
         if banner_hash:
             ext = "gif" if banner_hash.startswith("a_") else "png"
