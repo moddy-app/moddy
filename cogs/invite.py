@@ -10,6 +10,7 @@ from discord.ext import commands
 from typing import Optional, Dict, Any
 import aiohttp
 import json
+import io
 from datetime import datetime
 
 from utils.i18n import i18n, t
@@ -39,65 +40,27 @@ class InviteView(BaseView):
         # Type 0: Guild (Server)
         if invite_type == 0:
             self._build_guild_invite_info(container)
+            self.add_item(container)
+            self._add_guild_buttons()
         # Type 1: Group DM
         elif invite_type == 1:
             self._build_group_dm_invite(container)
+            self.add_item(container)
+            self._add_raw_data_button()
         # Type 2: Friend
         elif invite_type == 2:
             self._build_friend_invite(container)
+            self.add_item(container)
+            self._add_raw_data_button()
         else:
             # Unknown type
             container.add_item(ui.TextDisplay(
                 t("commands.invite.errors.unknown_type", locale=self.locale, type=invite_type)
             ))
+            self.add_item(container)
 
-        self.add_item(container)
-
-    def _build_guild_invite_info(self, container: ui.Container):
-        """Build view for guild invite - shows invite info only"""
-        guild = self.invite_data.get('guild', {})
-        inviter = self.invite_data.get('inviter')
-        channel = self.invite_data.get('channel', {})
-        code = self.invite_data.get('code', 'Unknown')
-
-        # Title
-        container.add_item(ui.TextDisplay(
-            f"### <:search:1443752796460552232> {t('commands.invite.view.guild.title', locale=self.locale)}"
-        ))
-
-        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-
-        # Build info list (most important first)
-        info_lines = []
-
-        # Invite code (most important)
-        info_lines.append(f"**{t('commands.invite.view.guild.invite_code', locale=self.locale)}:** `{code}`")
-
-        # Channel destination
-        channel_name = channel.get('name', 'Unknown')
-        channel_type = channel.get('type', 0)
-        info_lines.append(f"**{t('commands.invite.view.guild.channel', locale=self.locale)}:** #{channel_name} (`{self._get_channel_type_name(channel_type)}`)")
-
-        # Inviter info (if available)
-        if inviter:
-            inviter_username = inviter.get('username', 'Unknown')
-            inviter_id = inviter.get('id', 'Unknown')
-            info_lines.append(f"**{t('commands.invite.view.guild.inviter', locale=self.locale)}:** {inviter_username} (`{inviter_id}`)")
-
-        # Expiration (if available)
-        expires_at = self.invite_data.get('expires_at')
-        if expires_at:
-            try:
-                expires_dt = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
-                expires_ts = int(expires_dt.timestamp())
-                info_lines.append(f"**{t('commands.invite.view.guild.expires', locale=self.locale)}:** <t:{expires_ts}:R>")
-            except:
-                pass
-
-        # Add all info as a single text block
-        container.add_item(ui.TextDisplay("\n".join(info_lines)))
-
-        # Add buttons (outside container)
+    def _add_guild_buttons(self):
+        """Add buttons for guild invite (outside container, below)"""
         button_row = ui.ActionRow()
         server_info_btn = ui.Button(
             emoji=discord.PartialEmoji.from_str("<:server:1464693264773939319>"),
@@ -118,6 +81,78 @@ class InviteView(BaseView):
 
         self.add_item(button_row)
 
+    def _add_raw_data_button(self):
+        """Add raw data button only (for non-guild invites)"""
+        button_row = ui.ActionRow()
+        raw_btn = ui.Button(
+            emoji=discord.PartialEmoji.from_str("<:code:1401610523803652196>"),
+            label="Raw Data",
+            style=discord.ButtonStyle.secondary
+        )
+        raw_btn.callback = self.on_show_raw_data
+        button_row.add_item(raw_btn)
+        self.add_item(button_row)
+
+    def _build_guild_invite_info(self, container: ui.Container):
+        """Build view for guild invite - shows invite info only"""
+        guild = self.invite_data.get('guild', {})
+        inviter = self.invite_data.get('inviter')
+        channel = self.invite_data.get('channel', {})
+        code = self.invite_data.get('code', 'Unknown')
+        invite_id = self.invite_data.get('id')
+
+        # Title
+        container.add_item(ui.TextDisplay(
+            f"### <:search:1443752796460552232> {t('commands.invite.view.guild.title', locale=self.locale)}"
+        ))
+
+        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+
+        # Build info list (most important first)
+        info_lines = []
+
+        # Invite code (most important)
+        info_lines.append(f"**{t('commands.invite.view.guild.invite_code', locale=self.locale)}:** `{code}`")
+
+        # Invite ID
+        if invite_id:
+            info_lines.append(f"**{t('commands.invite.view.guild.invite_id', locale=self.locale)}:** `{invite_id}`")
+
+        # Channel destination
+        channel_name = channel.get('name', 'Unknown')
+        channel_id = channel.get('id')
+        channel_type = channel.get('type', 0)
+        channel_info = f"#{channel_name} (`{self._get_channel_type_name(channel_type)}`)"
+        if channel_id:
+            channel_info += f"\n-# ID: `{channel_id}`"
+        info_lines.append(f"**{t('commands.invite.view.guild.channel', locale=self.locale)}:** {channel_info}")
+
+        # Inviter info (if available)
+        if inviter:
+            inviter_username = inviter.get('username', 'Unknown')
+            inviter_global_name = inviter.get('global_name')
+            inviter_id = inviter.get('id', 'Unknown')
+
+            if inviter_global_name:
+                inviter_display = f"{inviter_global_name} (@{inviter_username})"
+            else:
+                inviter_display = inviter_username
+
+            info_lines.append(f"**{t('commands.invite.view.guild.inviter', locale=self.locale)}:** {inviter_display}\n-# ID: `{inviter_id}`")
+
+        # Expiration (if available)
+        expires_at = self.invite_data.get('expires_at')
+        if expires_at:
+            try:
+                expires_dt = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
+                expires_ts = int(expires_dt.timestamp())
+                info_lines.append(f"**{t('commands.invite.view.guild.expires', locale=self.locale)}:** <t:{expires_ts}:F> (<t:{expires_ts}:R>)")
+            except:
+                pass
+
+        # Add all info as a single text block
+        container.add_item(ui.TextDisplay("\n".join(info_lines)))
+
     async def on_show_server_info(self, interaction: discord.Interaction):
         """Show server information view"""
         server_view = ServerInfoView(self.invite_data, self.locale)
@@ -127,16 +162,12 @@ class InviteView(BaseView):
         """TEMP: Show raw API response data"""
         raw_json = json.dumps(self.invite_data, indent=2, ensure_ascii=False)
 
-        # Split into chunks if too long (Discord limit is 2000 chars)
-        if len(raw_json) <= 1900:
-            await interaction.response.send_message(f"```json\n{raw_json}\n```", ephemeral=True)
-        else:
-            # Send as file if too long
-            file = discord.File(
-                fp=__import__('io').BytesIO(raw_json.encode('utf-8')),
-                filename="invite_raw_data.json"
-            )
-            await interaction.response.send_message("Raw API response:", file=file, ephemeral=True)
+        # Send as file (safer for any size)
+        file = discord.File(
+            fp=io.BytesIO(raw_json.encode('utf-8')),
+            filename="invite_raw_data.json"
+        )
+        await interaction.response.send_message("Raw API response:", file=file, ephemeral=True)
 
     def _build_group_dm_invite(self, container: ui.Container):
         """Build view for group DM invite"""
@@ -154,6 +185,9 @@ class InviteView(BaseView):
         # Build info list
         info_lines = []
 
+        # Invite code
+        info_lines.append(f"**{t('commands.invite.view.group_dm.invite_code', locale=self.locale)}:** `{code}`")
+
         # Group name and ID
         channel_name = channel.get('name', 'Unnamed Group')
         channel_id = channel.get('id', 'Unknown')
@@ -168,11 +202,15 @@ class InviteView(BaseView):
         # Inviter
         if inviter:
             inviter_username = inviter.get('username', 'Unknown')
+            inviter_global_name = inviter.get('global_name')
             inviter_id = inviter.get('id', 'Unknown')
-            info_lines.append(f"**{t('commands.invite.view.group_dm.inviter', locale=self.locale)}:** {inviter_username} (`{inviter_id}`)")
 
-        # Invite code
-        info_lines.append(f"**{t('commands.invite.view.group_dm.invite_code', locale=self.locale)}:** `{code}`")
+            if inviter_global_name:
+                inviter_display = f"{inviter_global_name} (@{inviter_username})"
+            else:
+                inviter_display = inviter_username
+
+            info_lines.append(f"**{t('commands.invite.view.group_dm.inviter', locale=self.locale)}:** {inviter_display}\n-# ID: `{inviter_id}`")
 
         container.add_item(ui.TextDisplay("\n".join(info_lines)))
 
@@ -191,6 +229,9 @@ class InviteView(BaseView):
         # Build info list
         info_lines = []
 
+        # Invite code first
+        info_lines.append(f"**{t('commands.invite.view.friend.invite_code', locale=self.locale)}:** `{code}`")
+
         if inviter:
             inviter_username = inviter.get('username', 'Unknown')
             inviter_discriminator = inviter.get('discriminator', '0')
@@ -199,17 +240,28 @@ class InviteView(BaseView):
 
             if inviter_global_name:
                 info_lines.append(f"**{t('commands.invite.view.friend.display_name', locale=self.locale)}:** {inviter_global_name}")
-                info_lines.append(f"**{t('commands.invite.view.friend.username', locale=self.locale)}:** {inviter_username}")
+                info_lines.append(f"**{t('commands.invite.view.friend.username', locale=self.locale)}:** @{inviter_username}")
             else:
                 if inviter_discriminator != '0':
                     username_display = f"{inviter_username}#{inviter_discriminator}"
                 else:
-                    username_display = inviter_username
+                    username_display = f"@{inviter_username}"
                 info_lines.append(f"**{t('commands.invite.view.friend.username', locale=self.locale)}:** {username_display}")
 
             info_lines.append(f"**{t('commands.invite.view.friend.id', locale=self.locale)}:** `{inviter_id}`")
 
-        info_lines.append(f"**{t('commands.invite.view.friend.invite_code', locale=self.locale)}:** `{code}`")
+            # Public flags (badges)
+            public_flags = inviter.get('public_flags', 0)
+            if public_flags > 0:
+                badges = self._get_user_badges(public_flags)
+                if badges:
+                    info_lines.append(f"**Badges:** {badges}")
+
+            # Accent color
+            accent_color = inviter.get('accent_color')
+            if accent_color:
+                hex_color = f"#{accent_color:06x}"
+                info_lines.append(f"**Accent Color:** `{hex_color}`")
 
         container.add_item(ui.TextDisplay("\n".join(info_lines)))
 
@@ -232,6 +284,28 @@ class InviteView(BaseView):
         }
         return channel_types.get(channel_type, f"Unknown ({channel_type})")
 
+    def _get_user_badges(self, flags: int) -> str:
+        """Get user badges from public flags"""
+        badges = []
+        flag_names = {
+            1 << 0: "Discord Staff",
+            1 << 1: "Partner",
+            1 << 2: "HypeSquad Events",
+            1 << 3: "Bug Hunter Level 1",
+            1 << 6: "HypeSquad Bravery",
+            1 << 7: "HypeSquad Brilliance",
+            1 << 8: "HypeSquad Balance",
+            1 << 9: "Early Supporter",
+            1 << 14: "Bug Hunter Level 2",
+            1 << 17: "Verified Bot Developer",
+            1 << 18: "Discord Certified Moderator",
+            1 << 22: "Active Developer"
+        }
+        for flag, name in flag_names.items():
+            if flags & flag:
+                badges.append(f"`{name}`")
+        return ", ".join(badges) if badges else ""
+
 
 class ServerInfoView(BaseView):
     """View to display server information for guild invites"""
@@ -250,6 +324,8 @@ class ServerInfoView(BaseView):
 
         container = ui.Container()
         guild = self.invite_data.get('guild', {})
+        profile = self.invite_data.get('profile', {})
+        guild_id = guild.get('id', 'Unknown')
 
         # Title
         container.add_item(ui.TextDisplay(
@@ -258,20 +334,38 @@ class ServerInfoView(BaseView):
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
+        # Server icon thumbnail (if available)
+        icon_hash = guild.get('icon') or profile.get('icon_hash')
+        if icon_hash:
+            ext = "gif" if icon_hash.startswith("a_") else "png"
+            icon_url = f"https://cdn.discordapp.com/icons/{guild_id}/{icon_hash}.{ext}?size=256"
+            container.add_item(ui.Thumbnail(media=ui.UnfurledMediaItem(url=icon_url)))
+
         # Build info list (most important first)
         info_lines = []
 
         # Guild name and ID (most important)
         guild_name = guild.get('name', 'Unknown')
-        guild_id = guild.get('id', 'Unknown')
         info_lines.append(f"**{t('commands.invite.view.guild.name', locale=self.locale)}:** {guild_name}")
         info_lines.append(f"**{t('commands.invite.view.guild.id', locale=self.locale)}:** `{guild_id}`")
 
-        # Member counts
-        approximate_member_count = self.invite_data.get('approximate_member_count')
-        approximate_presence_count = self.invite_data.get('approximate_presence_count')
-        if approximate_member_count is not None:
-            info_lines.append(f"**{t('commands.invite.view.guild.members', locale=self.locale)}:** `{approximate_member_count:,}` ({t('commands.invite.view.guild.online', locale=self.locale)}: `{approximate_presence_count:,}`)")
+        # Vanity URL
+        vanity_url = guild.get('vanity_url_code')
+        if vanity_url:
+            info_lines.append(f"**Vanity URL:** discord.gg/{vanity_url}")
+
+        # Member counts (use profile data or approximate)
+        member_count = profile.get('member_count') or self.invite_data.get('approximate_member_count')
+        online_count = profile.get('online_count') or self.invite_data.get('approximate_presence_count')
+        if member_count is not None:
+            info_lines.append(f"**{t('commands.invite.view.guild.members', locale=self.locale)}:** `{member_count:,}` ({t('commands.invite.view.guild.online', locale=self.locale)}: `{online_count:,}`)")
+
+        # Boost info
+        premium_tier = guild.get('premium_tier', 0)
+        premium_count = guild.get('premium_subscription_count', 0)
+        if premium_tier > 0 or premium_count > 0:
+            boost_info = f"Level `{premium_tier}` (`{premium_count}` boosts)"
+            info_lines.append(f"**{t('commands.invite.view.guild.boost', locale=self.locale)}:** {boost_info}")
 
         # Verification level
         verification_level = guild.get('verification_level')
@@ -281,7 +375,7 @@ class ServerInfoView(BaseView):
         container.add_item(ui.TextDisplay("\n".join(info_lines)))
 
         # Guild description (if available, separate block)
-        description = guild.get('description')
+        description = guild.get('description') or profile.get('description')
         if description:
             container.add_item(ui.TextDisplay(
                 f"**{t('commands.invite.view.guild.description', locale=self.locale)}:**\n-# {description}"
@@ -290,23 +384,43 @@ class ServerInfoView(BaseView):
         # Guild features (if available)
         features = guild.get('features', [])
         if features and len(features) > 0:
-            features_display = ', '.join(f"`{f}`" for f in features[:5])
-            if len(features) > 5:
-                features_display += f" +{len(features) - 5}"
+            features_display = ', '.join(f"`{f}`" for f in features[:8])
+            if len(features) > 8:
+                features_display += f" +{len(features) - 8}"
             container.add_item(ui.TextDisplay(
                 f"**{t('commands.invite.view.guild.features', locale=self.locale)}:**\n-# {features_display}"
             ))
 
         # NSFW warning (if applicable)
-        nsfw_level = guild.get('nsfw_level')
-        if nsfw_level is not None and nsfw_level > 0:
+        nsfw_level = guild.get('nsfw_level', 0)
+        is_nsfw = guild.get('nsfw', False)
+        if nsfw_level > 0 or is_nsfw:
             container.add_item(ui.TextDisplay(
-                f"<:warning:1446108410092195902> **{t('commands.invite.view.guild.nsfw', locale=self.locale)}**"
+                f"<:warning:1446108410092195902> **{t('commands.invite.view.guild.nsfw', locale=self.locale)}** (Level: `{nsfw_level}`)"
+            ))
+
+        # Server images (banner, splash)
+        image_links = []
+        banner_hash = guild.get('banner') or profile.get('banner_hash')
+        splash_hash = guild.get('splash')
+
+        if banner_hash:
+            ext = "gif" if banner_hash.startswith("a_") else "png"
+            banner_url = f"https://cdn.discordapp.com/banners/{guild_id}/{banner_hash}.{ext}?size=512"
+            image_links.append(f"[Banner]({banner_url})")
+
+        if splash_hash:
+            splash_url = f"https://cdn.discordapp.com/splashes/{guild_id}/{splash_hash}.png?size=512"
+            image_links.append(f"[Splash]({splash_url})")
+
+        if image_links:
+            container.add_item(ui.TextDisplay(
+                f"**{t('commands.invite.view.guild.images', locale=self.locale)}:** {' | '.join(image_links)}"
             ))
 
         self.add_item(container)
 
-        # Add back button (outside container)
+        # Add back button (outside container, below)
         button_row = ui.ActionRow()
         back_btn = ui.Button(
             emoji=discord.PartialEmoji.from_str("<:back:1401600847733067806>"),

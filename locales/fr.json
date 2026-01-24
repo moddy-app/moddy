@@ -136,6 +136,9 @@
           "verification": "Niveau de vérification",
           "nsfw": "Serveur NSFW",
           "invite_code": "Code d'invitation",
+          "invite_id": "ID de l'invitation",
+          "boost": "Boost du serveur",
+          "images": "Images",
           "show_server_info": "Voir les infos du serveur"
         },
         "server_info": {
