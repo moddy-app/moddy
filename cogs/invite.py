@@ -9,6 +9,7 @@ from cogs.error_handler import BaseView
 from discord.ext import commands
 from typing import Optional, Dict, Any
 import aiohttp
+import json
 from datetime import datetime
 
 from utils.i18n import i18n, t
@@ -57,120 +58,139 @@ class InviteView(BaseView):
         guild = self.invite_data.get('guild', {})
         inviter = self.invite_data.get('inviter')
         channel = self.invite_data.get('channel', {})
+        code = self.invite_data.get('code', 'Unknown')
 
         # Title
         container.add_item(ui.TextDisplay(
             f"### <:search:1443752796460552232> {t('commands.invite.view.guild.title', locale=self.locale)}"
         ))
 
-        # Invite code
-        code = self.invite_data.get('code', 'Unknown')
-        container.add_item(ui.TextDisplay(
-            f"**{t('commands.invite.view.guild.invite_code', locale=self.locale)}:** `{code}`\n"
-            f"-# discord.gg/{code}"
-        ))
+        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
-        # Channel info (destination)
+        # Build info list (most important first)
+        info_lines = []
+
+        # Invite code (most important)
+        info_lines.append(f"**{t('commands.invite.view.guild.invite_code', locale=self.locale)}:** `{code}`")
+
+        # Channel destination
         channel_name = channel.get('name', 'Unknown')
         channel_type = channel.get('type', 0)
-        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-        container.add_item(ui.TextDisplay(
-            f"**{t('commands.invite.view.guild.channel', locale=self.locale)}:** #{channel_name}\n"
-            f"**{t('commands.invite.view.guild.channel_type', locale=self.locale)}:** `{self._get_channel_type_name(channel_type)}`"
-        ))
+        info_lines.append(f"**{t('commands.invite.view.guild.channel', locale=self.locale)}:** #{channel_name} (`{self._get_channel_type_name(channel_type)}`)")
 
-        # Inviter info
+        # Inviter info (if available)
         if inviter:
             inviter_username = inviter.get('username', 'Unknown')
             inviter_id = inviter.get('id', 'Unknown')
-            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-            container.add_item(ui.TextDisplay(
-                f"**{t('commands.invite.view.guild.inviter', locale=self.locale)}:** {inviter_username}\n"
-                f"**{t('commands.invite.view.guild.inviter_id', locale=self.locale)}:** `{inviter_id}`"
-            ))
+            info_lines.append(f"**{t('commands.invite.view.guild.inviter', locale=self.locale)}:** {inviter_username} (`{inviter_id}`)")
 
-        # Expiration info
+        # Expiration (if available)
         expires_at = self.invite_data.get('expires_at')
         if expires_at:
             try:
                 expires_dt = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
                 expires_ts = int(expires_dt.timestamp())
-                container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-                container.add_item(ui.TextDisplay(
-                    f"**{t('commands.invite.view.guild.expires', locale=self.locale)}:** <t:{expires_ts}:R>"
-                ))
+                info_lines.append(f"**{t('commands.invite.view.guild.expires', locale=self.locale)}:** <t:{expires_ts}:R>")
             except:
                 pass
 
-        # Add button to view server info
+        # Add all info as a single text block
+        container.add_item(ui.TextDisplay("\n".join(info_lines)))
+
+        # Add buttons (outside container)
         button_row = ui.ActionRow()
         server_info_btn = ui.Button(
-            emoji=discord.PartialEmoji.from_str("<:groups:1446127489842806967>"),
+            emoji=discord.PartialEmoji.from_str("<:server:1464693264773939319>"),
             label=t('commands.invite.view.guild.show_server_info', locale=self.locale),
-            style=discord.ButtonStyle.secondary
+            style=discord.ButtonStyle.primary
         )
         server_info_btn.callback = self.on_show_server_info
         button_row.add_item(server_info_btn)
-        container.add_item(button_row)
+
+        # TEMP: Raw data button for debugging
+        raw_btn = ui.Button(
+            emoji=discord.PartialEmoji.from_str("<:code:1401610523803652196>"),
+            label="Raw Data",
+            style=discord.ButtonStyle.secondary
+        )
+        raw_btn.callback = self.on_show_raw_data
+        button_row.add_item(raw_btn)
+
+        self.add_item(button_row)
 
     async def on_show_server_info(self, interaction: discord.Interaction):
         """Show server information view"""
         server_view = ServerInfoView(self.invite_data, self.locale)
         await interaction.response.edit_message(view=server_view)
 
+    async def on_show_raw_data(self, interaction: discord.Interaction):
+        """TEMP: Show raw API response data"""
+        raw_json = json.dumps(self.invite_data, indent=2, ensure_ascii=False)
+
+        # Split into chunks if too long (Discord limit is 2000 chars)
+        if len(raw_json) <= 1900:
+            await interaction.response.send_message(f"```json\n{raw_json}\n```", ephemeral=True)
+        else:
+            # Send as file if too long
+            file = discord.File(
+                fp=__import__('io').BytesIO(raw_json.encode('utf-8')),
+                filename="invite_raw_data.json"
+            )
+            await interaction.response.send_message("Raw API response:", file=file, ephemeral=True)
+
     def _build_group_dm_invite(self, container: ui.Container):
         """Build view for group DM invite"""
         channel = self.invite_data.get('channel', {})
         inviter = self.invite_data.get('inviter')
+        code = self.invite_data.get('code', 'Unknown')
 
         # Title
         container.add_item(ui.TextDisplay(
             f"### <:message:1443749710073696286> {t('commands.invite.view.group_dm.title', locale=self.locale)}"
         ))
 
-        # Channel name
+        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+
+        # Build info list
+        info_lines = []
+
+        # Group name and ID
         channel_name = channel.get('name', 'Unnamed Group')
         channel_id = channel.get('id', 'Unknown')
-        container.add_item(ui.TextDisplay(
-            f"**{t('commands.invite.view.group_dm.name', locale=self.locale)}:** {channel_name}\n"
-            f"**{t('commands.invite.view.group_dm.id', locale=self.locale)}:** `{channel_id}`"
-        ))
+        info_lines.append(f"**{t('commands.invite.view.group_dm.name', locale=self.locale)}:** {channel_name}")
+        info_lines.append(f"**{t('commands.invite.view.group_dm.id', locale=self.locale)}:** `{channel_id}`")
 
-        # Recipients count
+        # Members count
         recipients = channel.get('recipients', [])
         if recipients:
-            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-            container.add_item(ui.TextDisplay(
-                f"**{t('commands.invite.view.group_dm.members', locale=self.locale)}:** `{len(recipients)}`"
-            ))
+            info_lines.append(f"**{t('commands.invite.view.group_dm.members', locale=self.locale)}:** `{len(recipients)}`")
 
-        # Inviter info
+        # Inviter
         if inviter:
             inviter_username = inviter.get('username', 'Unknown')
             inviter_id = inviter.get('id', 'Unknown')
-            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-            container.add_item(ui.TextDisplay(
-                f"**{t('commands.invite.view.group_dm.inviter', locale=self.locale)}:** {inviter_username}\n"
-                f"**{t('commands.invite.view.group_dm.inviter_id', locale=self.locale)}:** `{inviter_id}`"
-            ))
+            info_lines.append(f"**{t('commands.invite.view.group_dm.inviter', locale=self.locale)}:** {inviter_username} (`{inviter_id}`)")
 
         # Invite code
-        code = self.invite_data.get('code', 'Unknown')
-        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-        container.add_item(ui.TextDisplay(
-            f"**{t('commands.invite.view.group_dm.invite_code', locale=self.locale)}:** `{code}`"
-        ))
+        info_lines.append(f"**{t('commands.invite.view.group_dm.invite_code', locale=self.locale)}:** `{code}`")
+
+        container.add_item(ui.TextDisplay("\n".join(info_lines)))
 
     def _build_friend_invite(self, container: ui.Container):
         """Build view for friend invite"""
         inviter = self.invite_data.get('inviter')
+        code = self.invite_data.get('code', 'Unknown')
 
         # Title
         container.add_item(ui.TextDisplay(
             f"### <:user:1398729712204779571> {t('commands.invite.view.friend.title', locale=self.locale)}"
         ))
 
-        # Inviter info
+        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+
+        # Build info list
+        info_lines = []
+
         if inviter:
             inviter_username = inviter.get('username', 'Unknown')
             inviter_discriminator = inviter.get('discriminator', '0')
@@ -178,28 +198,20 @@ class InviteView(BaseView):
             inviter_global_name = inviter.get('global_name')
 
             if inviter_global_name:
-                container.add_item(ui.TextDisplay(
-                    f"**{t('commands.invite.view.friend.display_name', locale=self.locale)}:** {inviter_global_name}\n"
-                    f"**{t('commands.invite.view.friend.username', locale=self.locale)}:** {inviter_username}\n"
-                    f"**{t('commands.invite.view.friend.id', locale=self.locale)}:** `{inviter_id}`"
-                ))
+                info_lines.append(f"**{t('commands.invite.view.friend.display_name', locale=self.locale)}:** {inviter_global_name}")
+                info_lines.append(f"**{t('commands.invite.view.friend.username', locale=self.locale)}:** {inviter_username}")
             else:
                 if inviter_discriminator != '0':
                     username_display = f"{inviter_username}#{inviter_discriminator}"
                 else:
                     username_display = inviter_username
+                info_lines.append(f"**{t('commands.invite.view.friend.username', locale=self.locale)}:** {username_display}")
 
-                container.add_item(ui.TextDisplay(
-                    f"**{t('commands.invite.view.friend.username', locale=self.locale)}:** {username_display}\n"
-                    f"**{t('commands.invite.view.friend.id', locale=self.locale)}:** `{inviter_id}`"
-                ))
+            info_lines.append(f"**{t('commands.invite.view.friend.id', locale=self.locale)}:** `{inviter_id}`")
 
-        # Invite code
-        code = self.invite_data.get('code', 'Unknown')
-        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-        container.add_item(ui.TextDisplay(
-            f"**{t('commands.invite.view.friend.invite_code', locale=self.locale)}:** `{code}`"
-        ))
+        info_lines.append(f"**{t('commands.invite.view.friend.invite_code', locale=self.locale)}:** `{code}`")
+
+        container.add_item(ui.TextDisplay("\n".join(info_lines)))
 
     def _get_channel_type_name(self, channel_type: int) -> str:
         """Get human-readable channel type name"""
@@ -241,63 +253,60 @@ class ServerInfoView(BaseView):
 
         # Title
         container.add_item(ui.TextDisplay(
-            f"### <:groups:1446127489842806967> {t('commands.invite.view.server_info.title', locale=self.locale)}"
+            f"### <:server:1464693264773939319> {t('commands.invite.view.server_info.title', locale=self.locale)}"
         ))
 
-        # Guild name and ID
+        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+
+        # Build info list (most important first)
+        info_lines = []
+
+        # Guild name and ID (most important)
         guild_name = guild.get('name', 'Unknown')
         guild_id = guild.get('id', 'Unknown')
-        container.add_item(ui.TextDisplay(
-            f"**{t('commands.invite.view.guild.name', locale=self.locale)}:** {guild_name}\n"
-            f"**{t('commands.invite.view.guild.id', locale=self.locale)}:** `{guild_id}`"
-        ))
-
-        # Guild description if available
-        description = guild.get('description')
-        if description:
-            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-            container.add_item(ui.TextDisplay(
-                f"**{t('commands.invite.view.guild.description', locale=self.locale)}:**\n{description}"
-            ))
+        info_lines.append(f"**{t('commands.invite.view.guild.name', locale=self.locale)}:** {guild_name}")
+        info_lines.append(f"**{t('commands.invite.view.guild.id', locale=self.locale)}:** `{guild_id}`")
 
         # Member counts
         approximate_member_count = self.invite_data.get('approximate_member_count')
         approximate_presence_count = self.invite_data.get('approximate_presence_count')
-
         if approximate_member_count is not None:
-            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-            container.add_item(ui.TextDisplay(
-                f"**{t('commands.invite.view.guild.members', locale=self.locale)}:** `{approximate_member_count:,}`\n"
-                f"**{t('commands.invite.view.guild.online', locale=self.locale)}:** `{approximate_presence_count:,}`"
-            ))
-
-        # Guild features
-        features = guild.get('features', [])
-        if features and len(features) > 0:
-            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-            features_display = ', '.join(f"`{f}`" for f in features[:5])
-            if len(features) > 5:
-                features_display += f" +{len(features) - 5} more"
-            container.add_item(ui.TextDisplay(
-                f"**{t('commands.invite.view.guild.features', locale=self.locale)}:**\n{features_display}"
-            ))
+            info_lines.append(f"**{t('commands.invite.view.guild.members', locale=self.locale)}:** `{approximate_member_count:,}` ({t('commands.invite.view.guild.online', locale=self.locale)}: `{approximate_presence_count:,}`)")
 
         # Verification level
         verification_level = guild.get('verification_level')
         if verification_level is not None:
-            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+            info_lines.append(f"**{t('commands.invite.view.guild.verification', locale=self.locale)}:** `{self._get_verification_level(verification_level)}`")
+
+        container.add_item(ui.TextDisplay("\n".join(info_lines)))
+
+        # Guild description (if available, separate block)
+        description = guild.get('description')
+        if description:
             container.add_item(ui.TextDisplay(
-                f"**{t('commands.invite.view.guild.verification', locale=self.locale)}:** `{self._get_verification_level(verification_level)}`"
+                f"**{t('commands.invite.view.guild.description', locale=self.locale)}:**\n-# {description}"
             ))
 
-        # NSFW level
+        # Guild features (if available)
+        features = guild.get('features', [])
+        if features and len(features) > 0:
+            features_display = ', '.join(f"`{f}`" for f in features[:5])
+            if len(features) > 5:
+                features_display += f" +{len(features) - 5}"
+            container.add_item(ui.TextDisplay(
+                f"**{t('commands.invite.view.guild.features', locale=self.locale)}:**\n-# {features_display}"
+            ))
+
+        # NSFW warning (if applicable)
         nsfw_level = guild.get('nsfw_level')
         if nsfw_level is not None and nsfw_level > 0:
             container.add_item(ui.TextDisplay(
                 f"<:warning:1446108410092195902> **{t('commands.invite.view.guild.nsfw', locale=self.locale)}**"
             ))
 
-        # Add back button
+        self.add_item(container)
+
+        # Add back button (outside container)
         button_row = ui.ActionRow()
         back_btn = ui.Button(
             emoji=discord.PartialEmoji.from_str("<:back:1401600847733067806>"),
@@ -306,9 +315,7 @@ class ServerInfoView(BaseView):
         )
         back_btn.callback = self.on_back
         button_row.add_item(back_btn)
-        container.add_item(button_row)
-
-        self.add_item(container)
+        self.add_item(button_row)
 
     async def on_back(self, interaction: discord.Interaction):
         """Go back to invite info view"""
