@@ -325,6 +325,7 @@ class ServerInfoView(BaseView):
         container = ui.Container()
         guild = self.invite_data.get('guild', {})
         profile = self.invite_data.get('profile', {})
+        guild_id = guild.get('id', 'Unknown')
 
         # Title
         container.add_item(ui.TextDisplay(
@@ -333,12 +334,18 @@ class ServerInfoView(BaseView):
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
+        # Server icon thumbnail (if available)
+        icon_hash = guild.get('icon') or profile.get('icon_hash')
+        if icon_hash:
+            ext = "gif" if icon_hash.startswith("a_") else "png"
+            icon_url = f"https://cdn.discordapp.com/icons/{guild_id}/{icon_hash}.{ext}?size=256"
+            container.add_item(ui.Thumbnail(media=ui.UnfurledMediaItem(url=icon_url)))
+
         # Build info list (most important first)
         info_lines = []
 
         # Guild name and ID (most important)
         guild_name = guild.get('name', 'Unknown')
-        guild_id = guild.get('id', 'Unknown')
         info_lines.append(f"**{t('commands.invite.view.guild.name', locale=self.locale)}:** {guild_name}")
         info_lines.append(f"**{t('commands.invite.view.guild.id', locale=self.locale)}:** `{guild_id}`")
 
@@ -390,6 +397,25 @@ class ServerInfoView(BaseView):
         if nsfw_level > 0 or is_nsfw:
             container.add_item(ui.TextDisplay(
                 f"<:warning:1446108410092195902> **{t('commands.invite.view.guild.nsfw', locale=self.locale)}** (Level: `{nsfw_level}`)"
+            ))
+
+        # Server images (banner, splash)
+        image_links = []
+        banner_hash = guild.get('banner') or profile.get('banner_hash')
+        splash_hash = guild.get('splash')
+
+        if banner_hash:
+            ext = "gif" if banner_hash.startswith("a_") else "png"
+            banner_url = f"https://cdn.discordapp.com/banners/{guild_id}/{banner_hash}.{ext}?size=512"
+            image_links.append(f"[Banner]({banner_url})")
+
+        if splash_hash:
+            splash_url = f"https://cdn.discordapp.com/splashes/{guild_id}/{splash_hash}.png?size=512"
+            image_links.append(f"[Splash]({splash_url})")
+
+        if image_links:
+            container.add_item(ui.TextDisplay(
+                f"**{t('commands.invite.view.guild.images', locale=self.locale)}:** {' | '.join(image_links)}"
             ))
 
         self.add_item(container)

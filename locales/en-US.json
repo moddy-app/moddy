@@ -138,6 +138,7 @@
           "invite_code": "Invite Code",
           "invite_id": "Invite ID",
           "boost": "Server Boost",
+          "images": "Images",
           "show_server_info": "View server info"
         },
         "server_info": {
