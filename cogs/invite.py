@@ -9,6 +9,7 @@ from cogs.error_handler import BaseView
 from discord.ext import commands
 from typing import Optional, Dict, Any
 import aiohttp
+import json
 from datetime import datetime
 
 from utils.i18n import i18n, t
@@ -96,7 +97,7 @@ class InviteView(BaseView):
         # Add all info as a single text block
         container.add_item(ui.TextDisplay("\n".join(info_lines)))
 
-        # Add button to view server info (outside container)
+        # Add buttons (outside container)
         button_row = ui.ActionRow()
         server_info_btn = ui.Button(
             emoji=discord.PartialEmoji.from_str("<:server:1464693264773939319>"),
@@ -105,12 +106,37 @@ class InviteView(BaseView):
         )
         server_info_btn.callback = self.on_show_server_info
         button_row.add_item(server_info_btn)
+
+        # TEMP: Raw data button for debugging
+        raw_btn = ui.Button(
+            emoji=discord.PartialEmoji.from_str("<:code:1401610523803652196>"),
+            label="Raw Data",
+            style=discord.ButtonStyle.secondary
+        )
+        raw_btn.callback = self.on_show_raw_data
+        button_row.add_item(raw_btn)
+
         self.add_item(button_row)
 
     async def on_show_server_info(self, interaction: discord.Interaction):
         """Show server information view"""
         server_view = ServerInfoView(self.invite_data, self.locale)
         await interaction.response.edit_message(view=server_view)
+
+    async def on_show_raw_data(self, interaction: discord.Interaction):
+        """TEMP: Show raw API response data"""
+        raw_json = json.dumps(self.invite_data, indent=2, ensure_ascii=False)
+
+        # Split into chunks if too long (Discord limit is 2000 chars)
+        if len(raw_json) <= 1900:
+            await interaction.response.send_message(f"```json\n{raw_json}\n```", ephemeral=True)
+        else:
+            # Send as file if too long
+            file = discord.File(
+                fp=__import__('io').BytesIO(raw_json.encode('utf-8')),
+                filename="invite_raw_data.json"
+            )
+            await interaction.response.send_message("Raw API response:", file=file, ephemeral=True)
 
     def _build_group_dm_invite(self, container: ui.Container):
         """Build view for group DM invite"""
