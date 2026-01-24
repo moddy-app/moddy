@@ -121,7 +121,7 @@
       "loading": "<a:loading:1395047662092550194> **Récupération des informations de l'invitation...**",
       "view": {
         "guild": {
-          "title": "Informations sur l'invitation du serveur",
+          "title": "Informations sur l'invitation",
           "name": "Nom du serveur",
           "id": "ID du serveur",
           "description": "Description",
@@ -135,7 +135,12 @@
           "features": "Fonctionnalités du serveur",
           "verification": "Niveau de vérification",
           "nsfw": "Serveur NSFW",
-          "invite_code": "Code d'invitation"
+          "invite_code": "Code d'invitation",
+          "show_server_info": "Voir les infos du serveur"
+        },
+        "server_info": {
+          "title": "Informations du serveur",
+          "back": "Retour"
         },
         "group_dm": {
           "title": "Invitation de groupe MP",
