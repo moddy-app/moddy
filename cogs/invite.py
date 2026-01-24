@@ -334,12 +334,12 @@ class ServerInfoView(BaseView):
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
-        # Server icon thumbnail (if available)
+        # Server icon (if available)
         icon_hash = guild.get('icon') or profile.get('icon_hash')
         if icon_hash:
             ext = "gif" if icon_hash.startswith("a_") else "png"
             icon_url = f"https://cdn.discordapp.com/icons/{guild_id}/{icon_hash}.{ext}?size=256"
-            container.add_item(ui.Thumbnail(media=ui.UnfurledMediaItem(url=icon_url)))
+            container.add_item(ui.MediaGallery(discord.MediaGalleryItem(media=icon_url)))
 
         # Build info list (most important first)
         info_lines = []
