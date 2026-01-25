@@ -228,12 +228,22 @@ class ModdyBot(commands.Bot):
         logger.info("🌐 Starting internal API server...")
         self.start_internal_api_server()
 
-        # Test backend connection
-        logger.info("🔍 Testing backend connection...")
+        # Test backend connection with full Railway Private Network diagnostic
+        # This includes DNS wait (Railway DNS not available for ~3-5s at startup)
+        logger.info("🔍 Testing backend connection (Railway Private Network)...")
         try:
-            from services.backend_client import get_backend_client
+            from services.backend_client import get_backend_client, BackendClientError
             backend_client = get_backend_client()
-            await backend_client.test_connection()
+            # Use full diagnostic which includes DNS wait and retries
+            connection_ok = await backend_client.test_connection(use_full_diagnostic=True)
+            if connection_ok:
+                logger.info("✅ Backend connection established successfully")
+            else:
+                logger.warning("⚠️ Backend connection test failed - check logs above for details")
+                logger.warning("   The bot will start, but backend-dependent features may not work")
+        except BackendClientError as e:
+            logger.error(f"⚠️ Backend connection test failed: {e}")
+            logger.error("   The bot will start, but backend-dependent features may not work")
         except Exception as e:
             logger.error(f"⚠️ Backend connection test failed: {e}")
             logger.error("   The bot will start, but backend-dependent features may not work")

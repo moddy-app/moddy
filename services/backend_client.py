@@ -3,10 +3,16 @@ Client HTTP pour la communication Bot → Backend.
 Permet au bot d'appeler les endpoints internes du backend.
 
 Basé sur /documentation/internal-api.md
+
+Railway Private Network Notes:
+- DNS is NOT available during the first ~3-5 seconds after service startup
+- Uses IPv6 by default (legacy) or IPv4 (post-Oct 2025)
+- Implements retry logic with exponential backoff for resilience
 """
 
 import httpx
 import logging
+import asyncio
 from typing import Optional, Dict, Any
 import os
 
@@ -18,6 +24,11 @@ BACKEND_INTERNAL_URL = os.getenv(
     "http://website-backend.railway.internal:8080"
 )
 INTERNAL_API_SECRET = os.getenv("INTERNAL_API_SECRET")
+
+# Retry configuration
+DEFAULT_MAX_RETRIES = 3
+DEFAULT_RETRY_DELAY = 2.0  # seconds
+DEFAULT_RETRY_BACKOFF = 1.5  # multiplier
 
 if not INTERNAL_API_SECRET:
     logger.warning("⚠️ INTERNAL_API_SECRET not set - backend communication will fail")
@@ -73,16 +84,106 @@ class BackendClient:
             "Authorization": f"Bearer {self.api_secret}"
         }
 
-    async def test_connection(self) -> bool:
+    async def _request_with_retry(
+        self,
+        method: str,
+        endpoint: str,
+        json: Optional[Dict] = None,
+        max_retries: int = DEFAULT_MAX_RETRIES,
+        retry_delay: float = DEFAULT_RETRY_DELAY
+    ) -> httpx.Response:
+        """
+        Make an HTTP request with retry logic and exponential backoff.
+
+        Args:
+            method: HTTP method ('GET', 'POST', etc.)
+            endpoint: API endpoint
+            json: JSON payload for POST requests
+            max_retries: Maximum number of retry attempts
+            retry_delay: Initial delay between retries in seconds
+
+        Returns:
+            httpx.Response object
+
+        Raises:
+            BackendClientError: If all retries fail
+        """
+        last_error = None
+        current_delay = retry_delay
+
+        for attempt in range(1, max_retries + 1):
+            try:
+                if method.upper() == 'GET':
+                    response = await self.client.get(
+                        endpoint,
+                        headers=self._get_auth_headers()
+                    )
+                else:
+                    response = await self.client.post(
+                        endpoint,
+                        headers=self._get_auth_headers(),
+                        json=json
+                    )
+                return response
+
+            except (httpx.ConnectError, httpx.TimeoutException) as e:
+                last_error = e
+                error_type = type(e).__name__
+
+                if attempt < max_retries:
+                    logger.warning(
+                        f"⚠️ {error_type} on {endpoint} (attempt {attempt}/{max_retries}), "
+                        f"retrying in {current_delay:.1f}s..."
+                    )
+                    await asyncio.sleep(current_delay)
+                    current_delay *= DEFAULT_RETRY_BACKOFF
+                else:
+                    logger.error(f"❌ {error_type} on {endpoint} after {max_retries} attempts")
+
+            except Exception as e:
+                # Don't retry on other exceptions
+                raise BackendClientError(f"Unexpected error: {e}") from e
+
+        raise BackendClientError(f"Failed after {max_retries} attempts: {last_error}")
+
+    async def test_connection(self, use_full_diagnostic: bool = True) -> bool:
         """
         Test la connexion au backend avec des logs de diagnostic détaillés.
 
         Cette méthode est utile pour diagnostiquer les problèmes de connectivité,
         particulièrement dans un environnement Railway avec Private Networking.
 
+        Args:
+            use_full_diagnostic: If True, run full Railway diagnostic with DNS check
+                                 and initial wait. If False, just test HTTP.
+
         Returns:
             True si la connexion est réussie, False sinon
         """
+        if use_full_diagnostic:
+            # Use the comprehensive Railway diagnostic
+            try:
+                from services.railway_diagnostic import diagnose_railway_private_network
+
+                # Extract hostname and port from URL
+                url_parts = self.backend_url.replace("http://", "").split(":")
+                hostname = url_parts[0]
+                port = int(url_parts[1]) if len(url_parts) > 1 else 8080
+
+                result = await diagnose_railway_private_network(
+                    backend_hostname=hostname,
+                    backend_port=port,
+                    initial_wait=5,
+                    max_retries=3
+                )
+
+                return result.success
+
+            except ImportError:
+                logger.warning("⚠️ Railway diagnostic module not found, falling back to basic test")
+                # Fall through to basic test
+
+        # Basic connection test (fallback or when use_full_diagnostic=False)
         logger.info("=" * 60)
         logger.info("🔍 BACKEND CONNECTION TEST")
         logger.info("=" * 60)
@@ -94,10 +195,7 @@ class BackendClient:
 
         try:
             logger.info("Testing connection to backend...")
-            response = await self.client.get(
-                "/internal/health",
-                headers=self._get_auth_headers()
-            )
+            response = await self._request_with_retry('GET', "/internal/health")
 
             logger.info(f"HTTP Status Code: {response.status_code}")
 
@@ -125,8 +223,8 @@ class BackendClient:
                 logger.error("=" * 60)
                 return False
 
-        except httpx.ConnectError as e:
-            logger.error("❌ CONNECTION ERROR - Cannot connect to backend")
+        except BackendClientError as e:
+            logger.error(f"❌ CONNECTION ERROR - Cannot connect to backend")
             logger.error(f"   Error: {e}")
             logger.error("   Possible causes:")
             logger.error("   - Backend service is not running")
@@ -134,17 +232,6 @@ class BackendClient:
             logger.error("   - Services not in the same Railway project")
             logger.error("   - Railway Private Network not enabled")
             logger.error(f"   Current URL: {self.backend_url}")
-            logger.error("=" * 60)
-            return False
-
-        except httpx.TimeoutException as e:
-            logger.error("❌ TIMEOUT ERROR - Backend did not respond in time")
-            logger.error(f"   Error: {e}")
-            logger.error("   Possible causes:")
-            logger.error("   - Backend is starting up (check backend logs)")
-            logger.error("   - Backend is overloaded")
-            logger.error("   - Network issues between services")
-            logger.error(f"   Timeout configured: {self.client.timeout.read}s")
             logger.error("=" * 60)
             return False
 
@@ -179,10 +266,7 @@ class BackendClient:
             BackendClientError: Si le backend n'est pas accessible
         """
         try:
-            response = await self.client.get(
-                "/internal/health",
-                headers=self._get_auth_headers()
-            )
+            response = await self._request_with_retry('GET', "/internal/health")
             response.raise_for_status()
             data = response.json()
             logger.info(f"✅ Backend health check: {data.get('status', 'unknown')}")
@@ -190,9 +274,8 @@ class BackendClient:
         except httpx.HTTPStatusError as e:
             logger.error(f"❌ Backend health check failed: HTTP {e.response.status_code}")
             raise BackendClientError(f"Backend health check failed: {e}") from e
-        except httpx.RequestError as e:
-            logger.error(f"❌ Backend health check failed: {e}")
-            raise BackendClientError(f"Failed to connect to backend: {e}") from e
+        except BackendClientError:
+            raise
         except Exception as e:
             logger.error(f"❌ Backend health check failed: {e}", exc_info=True)
             raise BackendClientError(f"Unexpected error: {e}") from e
@@ -211,9 +294,9 @@ class BackendClient:
             BackendClientError: Si la requête échoue
         """
         try:
-            response = await self.client.post(
+            response = await self._request_with_retry(
+                'POST',
                 "/internal/user/info",
-                headers=self._get_auth_headers(),
                 json={"discord_id": discord_id}
             )
             response.raise_for_status()
@@ -229,9 +312,8 @@ class BackendClient:
         except httpx.HTTPStatusError as e:
             logger.error(f"❌ Failed to get user info: HTTP {e.response.status_code}")
             raise BackendClientError(f"Failed to get user info: {e}") from e
-        except httpx.RequestError as e:
-            logger.error(f"❌ Failed to get user info: {e}")
-            raise BackendClientError(f"Failed to connect to backend: {e}") from e
+        except BackendClientError:
+            raise
         except Exception as e:
             logger.error(f"❌ Failed to get user info: {e}", exc_info=True)
             raise BackendClientError(f"Unexpected error: {e}") from e
@@ -263,9 +345,9 @@ class BackendClient:
                 "metadata": metadata or {}
             }
 
-            response = await self.client.post(
+            response = await self._request_with_retry(
+                'POST',
                 "/internal/event/notify",
-                headers=self._get_auth_headers(),
                 json=payload
             )
             response.raise_for_status()
@@ -277,9 +359,8 @@ class BackendClient:
         except httpx.HTTPStatusError as e:
             logger.error(f"❌ Failed to notify event: HTTP {e.response.status_code}")
             raise BackendClientError(f"Failed to notify event: {e}") from e
-        except httpx.RequestError as e:
-            logger.error(f"❌ Failed to notify event: {e}")
-            raise BackendClientError(f"Failed to connect to backend: {e}") from e
+        except BackendClientError:
+            raise
         except Exception as e:
             logger.error(f"❌ Failed to notify event: {e}", exc_info=True)
             raise BackendClientError(f"Unexpected error: {e}") from e
@@ -298,9 +379,9 @@ class BackendClient:
             BackendClientError: Si la requête échoue
         """
         try:
-            response = await self.client.post(
+            response = await self._request_with_retry(
+                'POST',
                 "/internal/subscription/info",
-                headers=self._get_auth_headers(),
                 json={"discord_id": discord_id}
             )
             response.raise_for_status()
@@ -316,9 +397,8 @@ class BackendClient:
         except httpx.HTTPStatusError as e:
             logger.error(f"❌ Failed to get subscription info: HTTP {e.response.status_code}")
             raise BackendClientError(f"Failed to get subscription info: {e}") from e
-        except httpx.RequestError as e:
-            logger.error(f"❌ Failed to get subscription info: {e}")
-            raise BackendClientError(f"Failed to connect to backend: {e}") from e
+        except BackendClientError:
+            raise
         except Exception as e:
             logger.error(f"❌ Failed to get subscription info: {e}", exc_info=True)
             raise BackendClientError(f"Unexpected error: {e}") from e
@@ -342,9 +422,9 @@ class BackendClient:
             BackendClientError: Si la requête échoue
         """
         try:
-            response = await self.client.post(
+            response = await self._request_with_retry(
+                'POST',
                 "/internal/subscription/invoices",
-                headers=self._get_auth_headers(),
                 json={
                     "discord_id": discord_id,
                     "limit": limit
@@ -361,9 +441,8 @@ class BackendClient:
         except httpx.HTTPStatusError as e:
             logger.error(f"❌ Failed to get invoices: HTTP {e.response.status_code}")
             raise BackendClientError(f"Failed to get invoices: {e}") from e
-        except httpx.RequestError as e:
-            logger.error(f"❌ Failed to get invoices: {e}")
-            raise BackendClientError(f"Failed to connect to backend: {e}") from e
+        except BackendClientError:
+            raise
         except Exception as e:
             logger.error(f"❌ Failed to get invoices: {e}", exc_info=True)
             raise BackendClientError(f"Unexpected error: {e}") from e
@@ -395,9 +474,9 @@ class BackendClient:
                 "reason": reason
             }
 
-            response = await self.client.post(
+            response = await self._request_with_retry(
+                'POST',
                 "/internal/subscription/refund",
-                headers=self._get_auth_headers(),
                 json=payload
             )
             response.raise_for_status()
@@ -414,9 +493,8 @@ class BackendClient:
         except httpx.HTTPStatusError as e:
             logger.error(f"❌ Failed to process refund: HTTP {e.response.status_code}")
             raise BackendClientError(f"Failed to process refund: {e}") from e
-        except httpx.RequestError as e:
-            logger.error(f"❌ Failed to process refund: {e}")
-            raise BackendClientError(f"Failed to connect to backend: {e}") from e
+        except BackendClientError:
+            raise
         except Exception as e:
             logger.error(f"❌ Failed to process refund: {e}", exc_info=True)
             raise BackendClientError(f"Unexpected error: {e}") from e
