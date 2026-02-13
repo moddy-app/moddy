@@ -67,6 +67,23 @@ async def ping():
     return {"ping": "pong"}
 
 
+@app.get("/health")
+async def health():
+    """
+    Endpoint de health check pour Railway et autres services de monitoring.
+
+    Retourne toujours un statut 200 quand le serveur est en ligne,
+    indépendamment de l'état du bot Discord.
+
+    Pour vérifier l'état du bot Discord, utilisez /internal/health (authentification requise).
+    """
+    return {
+        "status": "healthy",
+        "service": "moddy-bot-api",
+        "version": "1.0.0"
+    }
+
+
 def set_bot(bot):
     """
     Définit l'instance du bot Discord pour l'API interne.
