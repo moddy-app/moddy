@@ -332,6 +332,27 @@ async def start_services():
             logger.info(f"  • {name}: {state}")
 
 
+async def start_api_server():
+    """Starts the FastAPI server for health checks and internal API."""
+    import uvicorn
+    from internal_api.server import app, set_bot
+
+    # Railway uses PORT environment variable
+    port = int(os.getenv("PORT", os.getenv("INTERNAL_PORT", 3000)))
+
+    logger = logging.getLogger('moddy')
+    logger.info(f"🌐 Starting API server on port {port}...")
+
+    config = uvicorn.Config(
+        app,
+        host="0.0.0.0",  # Railway requires binding to 0.0.0.0
+        port=port,
+        log_level="info"
+    )
+    server = uvicorn.Server(config)
+    await server.serve()
+
+
 async def main():
     """Launches the bot and all services."""
 
@@ -395,60 +416,68 @@ async def main():
             state = status.get(service_name, "Unknown")
             await ctx.send(f"Service {service_name}: {state}")
 
-        # Starts the bot with retry logic for network issues
-        logger.info("🚀 Starting Discord bot...")
+        # Start API server and Discord bot in parallel
+        logger.info("🚀 Starting API server and Discord bot...")
 
-        max_retries = 5
-        retry_delay = 2  # seconds
+        async def start_bot_with_retry():
+            """Starts the bot with retry logic for network issues."""
+            max_retries = 5
+            retry_delay = 2  # seconds
 
-        for attempt in range(1, max_retries + 1):
-            try:
-                await bot.start(TOKEN)
-                break  # Success, exit retry loop
-            except asyncio.TimeoutError:
-                if attempt < max_retries:
-                    logger.warning(f"⚠️ Connection timeout (attempt {attempt}/{max_retries})")
-                    logger.info(f"🔄 Retrying in {retry_delay} seconds...")
-                    await asyncio.sleep(retry_delay)
-                    retry_delay *= 2  # Exponential backoff
-                else:
-                    logger.error(f"❌ Failed to connect after {max_retries} attempts")
-                    raise
-            except discord.HTTPException as e:
-                # Handle Discord rate limits (429) with longer delay
-                if e.status == 429:
+            for attempt in range(1, max_retries + 1):
+                try:
+                    await bot.start(TOKEN)
+                    break  # Success, exit retry loop
+                except asyncio.TimeoutError:
                     if attempt < max_retries:
-                        # Check if Discord provided a Retry-After header
-                        retry_after = None
-                        if hasattr(e.response, 'headers') and 'Retry-After' in e.response.headers:
-                            try:
-                                retry_after = int(e.response.headers['Retry-After'])
-                            except (ValueError, TypeError):
-                                pass
-
-                        # Use Discord's suggested delay or default to 60 seconds
-                        rate_limit_delay = retry_after if retry_after else 60
-
-                        logger.warning(f"⚠️ Discord rate limit hit (429) - attempt {attempt}/{max_retries}")
-                        if retry_after:
-                            logger.info(f"🔄 Discord requests waiting {rate_limit_delay} seconds (Retry-After header)")
-                        else:
-                            logger.info(f"🔄 Waiting {rate_limit_delay} seconds before retry...")
-                        logger.info("💡 Tip: Too many restarts can trigger rate limits. The timer does NOT reset on retries.")
-                        await asyncio.sleep(rate_limit_delay)
+                        logger.warning(f"⚠️ Connection timeout (attempt {attempt}/{max_retries})")
+                        logger.info(f"🔄 Retrying in {retry_delay} seconds...")
+                        await asyncio.sleep(retry_delay)
+                        retry_delay *= 2  # Exponential backoff
                     else:
-                        logger.error(f"❌ Failed to connect after {max_retries} attempts (rate limited)")
-                        logger.error("💡 Discord is blocking the bot due to too many requests.")
-                        logger.error("💡 Wait 5-10 minutes before trying again, or check for multiple instances.")
+                        logger.error(f"❌ Failed to connect after {max_retries} attempts")
                         raise
-                else:
-                    # Other HTTP errors should not be retried
-                    logger.error(f"❌ Discord HTTP error: {e}")
+                except discord.HTTPException as e:
+                    # Handle Discord rate limits (429) with longer delay
+                    if e.status == 429:
+                        if attempt < max_retries:
+                            # Check if Discord provided a Retry-After header
+                            retry_after = None
+                            if hasattr(e.response, 'headers') and 'Retry-After' in e.response.headers:
+                                try:
+                                    retry_after = int(e.response.headers['Retry-After'])
+                                except (ValueError, TypeError):
+                                    pass
+
+                            # Use Discord's suggested delay or default to 60 seconds
+                            rate_limit_delay = retry_after if retry_after else 60
+
+                            logger.warning(f"⚠️ Discord rate limit hit (429) - attempt {attempt}/{max_retries}")
+                            if retry_after:
+                                logger.info(f"🔄 Discord requests waiting {rate_limit_delay} seconds (Retry-After header)")
+                            else:
+                                logger.info(f"🔄 Waiting {rate_limit_delay} seconds before retry...")
+                            logger.info("💡 Tip: Too many restarts can trigger rate limits. The timer does NOT reset on retries.")
+                            await asyncio.sleep(rate_limit_delay)
+                        else:
+                            logger.error(f"❌ Failed to connect after {max_retries} attempts (rate limited)")
+                            logger.error("💡 Discord is blocking the bot due to too many requests.")
+                            logger.error("💡 Wait 5-10 minutes before trying again, or check for multiple instances.")
+                            raise
+                    else:
+                        # Other HTTP errors should not be retried
+                        logger.error(f"❌ Discord HTTP error: {e}")
+                        raise
+                except Exception as e:
+                    # Other exceptions should not be retried
+                    logger.error(f"❌ Connection error: {e}")
                     raise
-            except Exception as e:
-                # Other exceptions should not be retried
-                logger.error(f"❌ Connection error: {e}")
-                raise
+
+        # Run both API server and bot concurrently
+        await asyncio.gather(
+            start_api_server(),
+            start_bot_with_retry()
+        )
 
     except ImportError as e:
         logger.error(f"❌ Import error: {e}")
