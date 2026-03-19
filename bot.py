@@ -260,7 +260,20 @@ class ModdyBot(commands.Bot):
             if cog_manager and ctx.cog:
                 cog_name = type(ctx.cog).__name__
                 if cog_manager.is_cog_disabled(cog_name):
-                    await ctx.send("This feature is temporarily unavailable.")
+                    from discord.ui import LayoutView, Container, TextDisplay, ActionRow, Button
+                    from utils.emojis import WARNING
+                    _view = LayoutView()
+                    _container = Container(accent_colour=discord.Colour.red())
+                    _container.add_item(TextDisplay(
+                        f"{WARNING} **Feature unavailable**\n"
+                        "-# This feature is temporarily disabled. Please try again later."
+                    ))
+                    _view.add_item(_container)
+                    _row = ActionRow()
+                    _row.add_item(Button(label="Support", url="https://moddy.app/support", style=discord.ButtonStyle.link))
+                    _row.add_item(Button(label="Status", url="https://status.moddy.app", style=discord.ButtonStyle.link))
+                    _view.add_item(_row)
+                    await ctx.send(view=_view)
                     raise commands.CheckFailure("Cog is disabled")
 
         # Load extensions
@@ -911,10 +924,20 @@ class ModdyBot(commands.Bot):
 
                 if cog_name and cog_manager.is_cog_disabled(cog_name):
                     try:
-                        await interaction.response.send_message(
-                            "This feature is temporarily unavailable.",
-                            ephemeral=True
-                        )
+                        from discord.ui import LayoutView, Container, TextDisplay, ActionRow, Button
+                        from utils.emojis import WARNING
+                        _view = LayoutView()
+                        _container = Container(accent_colour=discord.Colour.red())
+                        _container.add_item(TextDisplay(
+                            f"{WARNING} **Feature unavailable**\n"
+                            "-# This feature is temporarily disabled. Please try again later."
+                        ))
+                        _view.add_item(_container)
+                        _row = ActionRow()
+                        _row.add_item(Button(label="Support", url="https://moddy.app/support", style=discord.ButtonStyle.link))
+                        _row.add_item(Button(label="Status", url="https://status.moddy.app", style=discord.ButtonStyle.link))
+                        _view.add_item(_row)
+                        await interaction.response.send_message(view=_view, ephemeral=True)
                     except Exception:
                         pass
                     return False

@@ -249,7 +249,7 @@ class DeveloperCommands(StaffCommandsCog):
                     'value': "\n".join([f"• {f}" for f in failed[:5]]) + (f"\n*...and {len(failed) - 5} more*" if len(failed) > 5 else "")
                 })
 
-            footer = f"Executed by {message.author}"
+            footer = None
 
             if failed:
                 result_view = create_warning_message(title, description, fields)
@@ -278,7 +278,7 @@ class DeveloperCommands(StaffCommandsCog):
                 view = create_success_message(
                     "Extension Reloaded",
                     f"Successfully reloaded `{ext_name}`",
-                    footer=f"Executed by {message.author}"
+                    footer=None
                 )
 
                 await self.reply_with_tracking(message, view)
@@ -452,7 +452,7 @@ class DeveloperCommands(StaffCommandsCog):
                     view = create_success_message(
                         "Query Executed",
                         f"**Rows:** {len(rows)}\n\n{result_text}",
-                        footer=f"Executed by {message.author}"
+                        footer=None
                     )
                 else:
                     # Execute non-SELECT query
@@ -461,7 +461,7 @@ class DeveloperCommands(StaffCommandsCog):
                     view = create_success_message(
                         "Query Executed",
                         f"```sql\n{query[:500]}\n```\n\n**Result:** {result}",
-                        footer=f"Executed by {message.author}"
+                        footer=None
                     )
 
                 await self.reply_with_tracking(message, view)
@@ -554,7 +554,7 @@ class DeveloperCommands(StaffCommandsCog):
                 "Code Executed",
                 f"```python\n{code[:500]}\n```",
                 fields=[{'name': 'Output', 'value': f"```python\n{output}\n```"}],
-                footer=f"Executed by {message.author}"
+                footer=None
             )
 
             await self.reply_with_tracking(message, view)
@@ -757,7 +757,7 @@ class DeveloperCommands(StaffCommandsCog):
                 view = create_success_message(
                     "Commands Synced",
                     f"Successfully synced **{len(synced)}** commands globally.\n\n-# Commands may take up to 1 hour to appear in all servers.",
-                    footer=f"Executed by {message.author}"
+                    footer=None
                 )
 
             else:
@@ -785,7 +785,7 @@ class DeveloperCommands(StaffCommandsCog):
                     view = create_success_message(
                         "Commands Synced",
                         f"Successfully synced **{len(synced)}** guild-only commands to **{guild_name}**.\n\n-# Global commands are already available everywhere.",
-                        footer=f"Executed by {message.author}"
+                        footer=None
                     )
 
                 except ValueError:
@@ -856,7 +856,7 @@ class DeveloperCommands(StaffCommandsCog):
                 view = create_success_message(
                     "Announcements Setup Complete",
                     f"Successfully setup announcements for **{guild.name}** (`{guild.id}`).\n\n-# {result_message}",
-                    footer=f"Executed by {message.author}"
+                    footer=None
                 )
             else:
                 # Check if it's a permission error
@@ -926,7 +926,7 @@ class DeveloperCommands(StaffCommandsCog):
 
         success, result_msg = await cog_manager.disable_cog(cog_name)
         if success:
-            view = create_success_message("Cog Disabled", result_msg, footer=f"Executed by {message.author}")
+            view = create_success_message("Cog Disabled", result_msg, footer=None)
         else:
             view = create_error_message("Cannot Disable", result_msg)
         await self.reply_with_tracking(message, view)
@@ -956,7 +956,7 @@ class DeveloperCommands(StaffCommandsCog):
 
         success, result_msg = await cog_manager.enable_cog(cog_name)
         if success:
-            view = create_success_message("Cog Enabled", result_msg, footer=f"Executed by {message.author}")
+            view = create_success_message("Cog Enabled", result_msg, footer=None)
         else:
             view = create_error_message("Cannot Enable", result_msg)
         await self.reply_with_tracking(message, view)
