@@ -14,7 +14,11 @@ import re
 from utils.staff_permissions import staff_permissions, CommandType
 from database import db
 from config import COLORS
-from utils.components_v2 import create_error_message, create_info_message, create_success_message, EMOJIS
+from utils.components_v2 import create_error_message, create_info_message, create_success_message
+from utils.emojis import (
+    EMOJIS, SUPPORT, PREMIUM, BALANCE, RED_STATUS, WARNING,
+    DOWNLOAD, INFO, DONE, UNDONE, GREEN_STATUS, YELLOW_STATUS
+)
 from utils.staff_logger import staff_logger
 from staff.base import StaffCommandsCog
 from services import get_backend_client, BackendClientError
@@ -96,7 +100,7 @@ class SupportCommands(StaffCommandsCog):
         # Build help message
         container = ui.Container()
         container.add_item(ui.TextDisplay(
-            "### <:support:1398734366670065726> Support Commands"
+            f"### {SUPPORT} Support Commands"
         ))
         container.add_item(ui.TextDisplay(
             "Available support commands based on your permissions."
@@ -105,14 +109,14 @@ class SupportCommands(StaffCommandsCog):
 
         if can_view:
             container.add_item(ui.TextDisplay(
-                "**Subscription Management** <:premium:1401602724801548381>\n"
+                f"**Subscription Management** {PREMIUM}\n"
                 "-# `sup.subscription @user` - View user's subscription details\n"
                 "-# `sup.invoices @user [limit]` - View user's payment invoices"
             ))
 
         if can_manage:
             container.add_item(ui.TextDisplay(
-                "**Payment Management** <:balance:1398729232862941445>\n"
+                f"**Payment Management** {BALANCE}\n"
                 "-# `sup.refund @user [amount] [reason]` - Refund a payment"
             ))
 
@@ -194,7 +198,7 @@ class SupportCommands(StaffCommandsCog):
             # Build response with Components V2
             container = ui.Container()
             container.add_item(ui.TextDisplay(
-                f"### <:premium:1401602724801548381> Subscription Information"
+                f"### {PREMIUM} Subscription Information"
             ))
             container.add_item(ui.TextDisplay(
                 f"User: {user.mention} ({user})"
@@ -203,7 +207,7 @@ class SupportCommands(StaffCommandsCog):
 
             if not subscription_data.get("has_subscription"):
                 container.add_item(ui.TextDisplay(
-                    "<:red_status:1450929038758772940> **No Active Subscription**\n"
+                    f"{RED_STATUS} **No Active Subscription**\n"
                     "-# This user does not have an active subscription."
                 ))
             else:
@@ -229,7 +233,7 @@ class SupportCommands(StaffCommandsCog):
                 if sub.get("cancel_at_period_end"):
                     container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
                     container.add_item(ui.TextDisplay(
-                        f"<:warning:1446108410092195902> **Cancellation Scheduled**\n"
+                        f"{WARNING} **Cancellation Scheduled**\n"
                         f"-# Subscription will end on {self._format_date(sub['current_period_end'])}"
                     ))
 
@@ -316,7 +320,7 @@ class SupportCommands(StaffCommandsCog):
             # Build response
             container = ui.Container()
             container.add_item(ui.TextDisplay(
-                f"### <:download:1401600503867248730> Payment Invoices"
+                f"### {DOWNLOAD} Payment Invoices"
             ))
             container.add_item(ui.TextDisplay(
                 f"User: {user.mention} ({user})"
@@ -326,7 +330,7 @@ class SupportCommands(StaffCommandsCog):
             invoices = invoices_data.get("invoices", [])
             if not invoices:
                 container.add_item(ui.TextDisplay(
-                    "<:info:1401614681440784477> **No Invoices Found**\n"
+                    f"{INFO} **No Invoices Found**\n"
                     "-# This user has no payment invoices."
                 ))
             else:
@@ -337,7 +341,7 @@ class SupportCommands(StaffCommandsCog):
 
                 for i, invoice in enumerate(invoices[:10], 1):  # Show max 10 in display
                     amount = invoice["amount"] / 100
-                    status_emoji = "<:done:1398729525277229066>" if invoice["status"] == "paid" else "<:undone:1398729502028333218>"
+                    status_emoji = DONE if invoice["status"] == "paid" else UNDONE
                     pdf_link = f"[PDF]({invoice['invoice_pdf']})" if invoice.get("invoice_pdf") else "N/A"
 
                     container.add_item(ui.TextDisplay(
@@ -461,7 +465,7 @@ class SupportCommands(StaffCommandsCog):
 
                 container = ui.Container()
                 container.add_item(ui.TextDisplay(
-                    f"### <:done:1398729525277229066> Refund Processed"
+                    f"### {DONE} Refund Processed"
                 ))
                 container.add_item(ui.TextDisplay(
                     f"User: {user.mention} ({user})"
@@ -520,14 +524,14 @@ class SupportCommands(StaffCommandsCog):
     def _get_status_emoji(self, status: str) -> str:
         """Get status emoji based on subscription status"""
         status_emojis = {
-            "active": "<:green_status:1450929035428495505>",
-            "canceled": "<:red_status:1450929038758772940>",
-            "trialing": "<:yellow_status:1450929037542166669>",
-            "past_due": "<:warning:1446108410092195902>",
-            "incomplete": "<:yellow_status:1450929037542166669>",
-            "unpaid": "<:red_status:1450929038758772940>",
+            "active": GREEN_STATUS,
+            "canceled": RED_STATUS,
+            "trialing": YELLOW_STATUS,
+            "past_due": WARNING,
+            "incomplete": YELLOW_STATUS,
+            "unpaid": RED_STATUS,
         }
-        return status_emojis.get(status, "<:info:1401614681440784477>")
+        return status_emojis.get(status, INFO)
 
     def _format_date(self, iso_date: str) -> str:
         """Format ISO 8601 date to readable format"""

@@ -10,6 +10,7 @@ import logging
 
 from utils.i18n import t
 from cogs.error_handler import BaseView
+from utils.emojis import GROUPS, REQUIRED_FIELDS, WARNING, BACK, SAVE, UNDONE, DELETE
 
 logger = logging.getLogger('moddy.modules.interserver_config')
 
@@ -64,7 +65,7 @@ class InterServerConfigView(BaseView):
 
         # Titre et description
         container.add_item(ui.TextDisplay(
-            f"### <:groups:1446127489842806967> {t('modules.interserver.config.title', locale=self.locale)}"
+            f"### {GROUPS} {t('modules.interserver.config.title', locale=self.locale)}"
         ))
         container.add_item(ui.TextDisplay(
             t('modules.interserver.config.description', locale=self.locale)
@@ -74,7 +75,7 @@ class InterServerConfigView(BaseView):
 
         # Section : Salon inter-serveur
         container.add_item(ui.TextDisplay(
-            f"**{t('modules.interserver.config.channel.section_title', locale=self.locale)}**<:required_fields:1446549185385074769>\n"
+            f"**{t('modules.interserver.config.channel.section_title', locale=self.locale)}**{REQUIRED_FIELDS}\n"
             f"-# {t('modules.interserver.config.channel.section_description', locale=self.locale)}"
         ))
 
@@ -99,7 +100,7 @@ class InterServerConfigView(BaseView):
 
         # Section : Type d'inter-serveur
         container.add_item(ui.TextDisplay(
-            f"**{t('modules.interserver.config.type.section_title', locale=self.locale)}**<:required_fields:1446549185385074769>\n"
+            f"**{t('modules.interserver.config.type.section_title', locale=self.locale)}**{REQUIRED_FIELDS}\n"
             f"-# {t('modules.interserver.config.type.section_description', locale=self.locale)}"
         ))
 
@@ -134,7 +135,7 @@ class InterServerConfigView(BaseView):
 
         # Avertissement de sécurité
         container.add_item(ui.TextDisplay(
-            f"<:warning:1446108410092195902> **{t('modules.interserver.config.warning.title', locale=self.locale)}**\n"
+            f"{WARNING} **{t('modules.interserver.config.warning.title', locale=self.locale)}**\n"
             f"-# {t('modules.interserver.config.warning.description', locale=self.locale)}"
         ))
 
@@ -149,7 +150,7 @@ class InterServerConfigView(BaseView):
 
         # Bouton Back (toujours présent, désactivé si modifications en cours)
         back_btn = ui.Button(
-            emoji=discord.PartialEmoji.from_str("<:back:1401600847733067806>"),
+            emoji=discord.PartialEmoji.from_str(BACK),
             label=t('modules.config.buttons.back', locale=self.locale),
             style=discord.ButtonStyle.secondary,
             custom_id="back_btn",
@@ -161,7 +162,7 @@ class InterServerConfigView(BaseView):
         # Bouton Save (visible uniquement si modifications)
         if self.has_changes:
             save_btn = ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:save:1444101502154182778>"),
+                emoji=discord.PartialEmoji.from_str(SAVE),
                 label=t('modules.config.buttons.save', locale=self.locale),
                 style=discord.ButtonStyle.success,
                 custom_id="save_btn"
@@ -171,7 +172,7 @@ class InterServerConfigView(BaseView):
 
             # Bouton Annuler
             cancel_btn = ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:undone:1398729502028333218>"),
+                emoji=discord.PartialEmoji.from_str(UNDONE),
                 label=t('modules.config.buttons.cancel', locale=self.locale),
                 style=discord.ButtonStyle.danger,
                 custom_id="cancel_btn"
@@ -182,7 +183,7 @@ class InterServerConfigView(BaseView):
             # Bouton Supprimer la configuration (si config existe)
             if self.has_existing_config:
                 delete_btn = ui.Button(
-                    emoji=discord.PartialEmoji.from_str("<:delete:1401600770431909939>"),
+                    emoji=discord.PartialEmoji.from_str(DELETE),
                     label=t('modules.config.buttons.delete', locale=self.locale),
                     style=discord.ButtonStyle.danger,
                     custom_id="delete_btn"

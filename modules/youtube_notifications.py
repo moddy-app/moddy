@@ -11,6 +11,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 
 from modules.module_manager import ModuleBase
+from utils.emojis import MODDY_ALT
 
 logger = logging.getLogger('moddy.modules.youtube_notifications')
 
@@ -24,7 +25,7 @@ class YoutubeNotificationsModule(ModuleBase):
     MODULE_ID = "youtube_notifications"
     MODULE_NAME = "YouTube Notifications"
     MODULE_DESCRIPTION = "Notifications en temps réel pour les vidéos YouTube"
-    MODULE_EMOJI = "<:moddy:1451280939412881508>"  # Using moddy emoji as YouTube icon
+    MODULE_EMOJI = MODDY_ALT  # Using moddy emoji as YouTube icon
 
     # WebSub Hub URL for YouTube
     WEBSUB_HUB = "https://pubsubhubbub.appspot.com/"

@@ -8,6 +8,7 @@ from typing import Dict, Any, Optional, List
 import logging
 
 from modules.module_manager import ModuleBase
+from utils.emojis import MANAGE_USER
 
 logger = logging.getLogger('moddy.modules.auto_role')
 
@@ -21,7 +22,7 @@ class AutoRoleModule(ModuleBase):
     MODULE_ID = "auto_role"
     MODULE_NAME = "Auto Role"
     MODULE_DESCRIPTION = "Attribue automatiquement des rôles aux nouveaux membres"
-    MODULE_EMOJI = "<:manageuser:1398729745293774919>"
+    MODULE_EMOJI = MANAGE_USER
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)

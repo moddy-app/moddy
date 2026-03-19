@@ -7,6 +7,8 @@ import discord
 from typing import List, Optional, Dict, Any, Union
 from datetime import datetime, timezone
 
+from utils.emojis import DONE, UNDONE, LOADING, SETTINGS, COMMANDS
+
 
 class ModdyColors:
     """Modern and elegant color palette."""
@@ -115,7 +117,7 @@ class ModdyEmbed:
             if isinstance(value, (int, float)):
                 formatted_value = f"`{value}`"
             elif isinstance(value, bool):
-                formatted_value = "<:done:1398729525277229066>" if value else "<:undone:1398729502028333218>"
+                formatted_value = DONE if value else UNDONE
             else:
                 formatted_value = str(value)
                 # Put dynamic values in backticks
@@ -134,7 +136,7 @@ class ModdyResponse:
     def success(title: str, description: str, footer: Optional[str] = None) -> discord.Embed:
         """Success message with a modern green color."""
         embed = ModdyEmbed.create(
-            title=f"<:done:1398729525277229066> {title}",
+            title=f"{DONE} {title}",
             description=description,
             color=ModdyColors.SUCCESS,
             footer=footer
@@ -145,7 +147,7 @@ class ModdyResponse:
     def error(title: str, description: str, footer: Optional[str] = None) -> discord.Embed:
         """Error message with a modern red color."""
         embed = ModdyEmbed.create(
-            title=f"<:undone:1398729502028333218> {title}",
+            title=f"{UNDONE} {title}",
             description=description,
             color=ModdyColors.ERROR,
             footer=footer
@@ -177,7 +179,7 @@ class ModdyResponse:
     def loading(message: str = "Loading...") -> discord.Embed:
         """Clean loading message."""
         return ModdyEmbed.minimal(
-            description=f"<a:loading:1455219844080336907> {message}",
+            description=f"{LOADING} {message}",
             color=ModdyColors.LIGHT
         )
 
@@ -196,7 +198,7 @@ def format_diagnostic_embed(data: dict) -> discord.Embed:
     """Formats a diagnostic embed with a modern style."""
 
     embed = discord.Embed(
-        title="<:settings:1398729549323440208> System Diagnostic",
+        title=f"{SETTINGS} System Diagnostic",
         color=ModdyColors.PRIMARY,
         timestamp=datetime.now(timezone.utc)
     )
@@ -272,7 +274,7 @@ def format_diagnostic_embed(data: dict) -> discord.Embed:
 def format_commands_embed(commands_by_cog: dict) -> discord.Embed:
     """Formats an embed for the command list."""
     embed = discord.Embed(
-        title="<:commands:1401610449136648283> Available Commands",
+        title=f"{COMMANDS} Available Commands",
         description="Complete list of the bot's commands.",
         color=ModdyColors.PRIMARY
     )

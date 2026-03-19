@@ -24,8 +24,8 @@ from utils.components_v2 import (
     create_warning_message,
     create_staff_info_message,
     create_simple_message,
-    EMOJIS
 )
+from utils.emojis import EMOJIS
 from utils.staff_logger import staff_logger
 from utils.staff_role_permissions import (
     COMMON_PERMISSIONS,

@@ -14,6 +14,7 @@ from datetime import datetime
 
 from utils.incognito import add_incognito_option, get_incognito_setting
 from utils.i18n import i18n
+from utils.emojis import DONE, UNDONE, EMOJI as EMOJI_ICON
 
 
 class EmojiView(BaseView):
@@ -48,7 +49,7 @@ class EmojiView(BaseView):
         emoji_url_display = f"{emoji_url}?size=256"
 
         # Add title with emoji icon
-        container.add_item(ui.TextDisplay(f"### <:emoji:1398729407065100359> {i18n.get('commands.emoji.view.title', locale=self.locale, name=emoji_name)}"))
+        container.add_item(ui.TextDisplay(f"### {EMOJI_ICON} {i18n.get('commands.emoji.view.title', locale=self.locale, name=emoji_name)}"))
 
         # Add MediaGallery with emoji image (256px)
         container.add_item(
@@ -64,7 +65,7 @@ class EmojiView(BaseView):
         animated_label = i18n.get("commands.emoji.view.animated", locale=self.locale)
 
         # Format animated status with emojis
-        animated_status = "<:done:1398729525277229066>" if is_animated else "<:undone:1398729502028333218>"
+        animated_status = DONE if is_animated else UNDONE
 
         # Build info text
         info_text = f"**{name_label}:** `{emoji_name}`\n"
@@ -123,9 +124,9 @@ class EmojiNavigationView(BaseView):
         title_text = i18n.get('commands.emoji.view.title', locale=self.locale, name=emoji_name)
         if len(self.emoji_list) > 1:
             # Add navigation info to title
-            title_text = f"### <:emoji:1398729407065100359> {title_text}\n-# {i18n.get('commands.emoji.context_menu.navigation', locale=self.locale, current=self.current_index + 1, total=len(self.emoji_list))}"
+            title_text = f"### {EMOJI_ICON} {title_text}\n-# {i18n.get('commands.emoji.context_menu.navigation', locale=self.locale, current=self.current_index + 1, total=len(self.emoji_list))}"
         else:
-            title_text = f"### <:emoji:1398729407065100359> {title_text}"
+            title_text = f"### {EMOJI_ICON} {title_text}"
 
         container.add_item(ui.TextDisplay(title_text))
 
@@ -143,7 +144,7 @@ class EmojiNavigationView(BaseView):
         animated_label = i18n.get("commands.emoji.view.animated", locale=self.locale)
 
         # Format animated status with emojis
-        animated_status = "<:done:1398729525277229066>" if is_animated else "<:undone:1398729502028333218>"
+        animated_status = DONE if is_animated else UNDONE
 
         # Build info text
         info_text = f"**{name_label}:** `{emoji_name}`\n"

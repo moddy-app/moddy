@@ -9,7 +9,7 @@ import logging
 
 from cogs.error_handler import BaseView
 from utils.staff_permissions import staff_permissions, StaffRole, CommandType
-from utils.components_v2 import EMOJIS
+from utils.emojis import EMOJIS
 
 logger = logging.getLogger('moddy.staff_help')
 

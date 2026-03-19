@@ -9,6 +9,7 @@ import logging
 from datetime import datetime
 
 from modules.module_manager import ModuleBase
+from utils.emojis import HISTORY, DONE
 
 logger = logging.getLogger('moddy.modules.auto_restore_roles')
 
@@ -23,7 +24,7 @@ class AutoRestoreRolesModule(ModuleBase):
     MODULE_ID = "auto_restore_roles"
     MODULE_NAME = "Auto Restore Roles"
     MODULE_DESCRIPTION = "Restaure automatiquement les rôles des utilisateurs qui reviennent"
-    MODULE_EMOJI = "<:history:1401600464587456512>"
+    MODULE_EMOJI = HISTORY
 
     # Modes de sauvegarde
     MODE_ALL = "all"  # Tous les rôles
@@ -241,7 +242,7 @@ class AutoRestoreRolesModule(ModuleBase):
                 return
 
             embed = discord.Embed(
-                title="<:history:1401600464587456512> Rôles sauvegardés",
+                title=f"{HISTORY} Rôles sauvegardés",
                 description=f"Les rôles de {member.mention} ont été sauvegardés",
                 color=0xFFA500,
                 timestamp=datetime.utcnow()
@@ -275,7 +276,7 @@ class AutoRestoreRolesModule(ModuleBase):
                 return
 
             embed = discord.Embed(
-                title="<:done:1398729525277229066> Rôles restaurés",
+                title=f"{DONE} Rôles restaurés",
                 description=f"Les rôles de {member.mention} ont été restaurés automatiquement",
                 color=0x00FF00,
                 timestamp=datetime.utcnow()

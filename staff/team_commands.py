@@ -12,7 +12,8 @@ from datetime import datetime, timezone
 from utils.staff_permissions import staff_permissions, CommandType
 from database import db
 from config import COLORS
-from utils.components_v2 import create_error_message, create_success_message, create_info_message, create_warning_message, create_simple_message, EMOJIS
+from utils.components_v2 import create_error_message, create_success_message, create_info_message, create_warning_message, create_simple_message
+from utils.emojis import EMOJIS
 from utils.staff_logger import staff_logger
 from staff.base import StaffCommandsCog
 

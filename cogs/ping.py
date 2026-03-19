@@ -12,7 +12,8 @@ from discord.ext import commands
 from discord.ui import LayoutView, Container, TextDisplay, Separator, ActionRow, Button
 from discord import SeparatorSpacing
 
-from config import COLORS, EMOJIS
+from config import COLORS
+from utils.emojis import GREEN_STATUS, YELLOW_STATUS, RED_STATUS
 from utils.i18n import i18n, t
 
 
@@ -52,13 +53,13 @@ class PublicPing(commands.Cog):
 
         # Déterminer la qualité de la connexion et l'emoji de statut
         if api_latency <= 150:
-            status_emoji = "<:green_status:1450929035428495505>"
+            status_emoji = GREEN_STATUS
             status_key = "excellent"
         elif api_latency < 300:
-            status_emoji = "<:yellow_status:1450929037542166669>"
+            status_emoji = YELLOW_STATUS
             status_key = "good"
         else:
-            status_emoji = "<:red_status:1450929038758772940>"
+            status_emoji = RED_STATUS
             status_key = "poor"
 
         # Récupérer le texte du statut traduit

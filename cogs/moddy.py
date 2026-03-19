@@ -11,7 +11,7 @@ from datetime import datetime
 
 from cogs.error_handler import BaseView
 from utils.i18n import i18n, t
-from config import EMOJIS
+from utils.emojis import EMOJIS
 
 
 class AttributionView(BaseView):

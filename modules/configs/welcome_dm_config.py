@@ -10,6 +10,7 @@ import logging
 
 from utils.i18n import t
 from cogs.error_handler import BaseView, BaseModal
+from utils.emojis import WAVING_HAND, REQUIRED_FIELDS, EDIT, DONE, UNDONE, BACK, SAVE, DELETE
 
 logger = logging.getLogger('moddy.modules.welcome_dm_config')
 
@@ -156,7 +157,7 @@ class WelcomeDmConfigView(BaseView):
 
         # Header
         container.add_item(ui.TextDisplay(
-            f"### <:waving_hand:1446127491004760184> {t('modules.welcome_dm.config.title', locale=self.locale)}"
+            f"### {WAVING_HAND} {t('modules.welcome_dm.config.title', locale=self.locale)}"
         ))
         container.add_item(ui.TextDisplay(
             t('modules.welcome_dm.config.description', locale=self.locale)
@@ -166,7 +167,7 @@ class WelcomeDmConfigView(BaseView):
 
         # Message configuration (Required field)
         container.add_item(ui.TextDisplay(
-            f"**{t('modules.welcome_dm.config.message.section_title', locale=self.locale)}**<:required_fields:1446549185385074769>\n"
+            f"**{t('modules.welcome_dm.config.message.section_title', locale=self.locale)}**{REQUIRED_FIELDS}\n"
             f"-# {t('modules.welcome_dm.config.message.section_description', locale=self.locale)}\n"
             f"-# {t('modules.config.current_value', locale=self.locale)} `{self.working_config['message_template'][:100]}{'...' if len(self.working_config['message_template']) > 100 else ''}`"
         ))
@@ -177,7 +178,7 @@ class WelcomeDmConfigView(BaseView):
         edit_message_btn = ui.Button(
             label=t('modules.welcome_dm.config.message.edit_button', locale=self.locale),
             style=discord.ButtonStyle.primary,
-            emoji=discord.PartialEmoji.from_str("<:edit:1401600709824086169>"),
+            emoji=discord.PartialEmoji.from_str(EDIT),
             custom_id="edit_message"
         )
         edit_message_btn.callback = self.on_edit_message
@@ -195,7 +196,7 @@ class WelcomeDmConfigView(BaseView):
         embed_btn = ui.Button(
             label=t('modules.welcome_dm.config.embed.toggle', locale=self.locale),
             style=discord.ButtonStyle.success if self.working_config['embed_enabled'] else discord.ButtonStyle.secondary,
-            emoji=discord.PartialEmoji.from_str("<:done:1398729525277229066>" if self.working_config['embed_enabled'] else "<:undone:1398729502028333218>"),
+            emoji=discord.PartialEmoji.from_str(DONE if self.working_config['embed_enabled'] else UNDONE),
             custom_id="toggle_embed"
         )
         embed_btn.callback = self.on_toggle_embed
@@ -210,7 +211,7 @@ class WelcomeDmConfigView(BaseView):
             edit_title_btn = ui.Button(
                 label=t('modules.welcome_dm.config.embed.edit_title', locale=self.locale),
                 style=discord.ButtonStyle.primary,
-                emoji=discord.PartialEmoji.from_str("<:edit:1401600709824086169>"),
+                emoji=discord.PartialEmoji.from_str(EDIT),
                 custom_id="edit_embed_title"
             )
             edit_title_btn.callback = self.on_edit_embed_title
@@ -233,7 +234,7 @@ class WelcomeDmConfigView(BaseView):
             edit_desc_btn = ui.Button(
                 label=t('modules.welcome_dm.config.embed.edit_description', locale=self.locale),
                 style=discord.ButtonStyle.primary,
-                emoji=discord.PartialEmoji.from_str("<:edit:1401600709824086169>"),
+                emoji=discord.PartialEmoji.from_str(EDIT),
                 custom_id="edit_embed_description"
             )
             edit_desc_btn.callback = self.on_edit_embed_description
@@ -247,7 +248,7 @@ class WelcomeDmConfigView(BaseView):
             thumbnail_btn = ui.Button(
                 label=t('modules.welcome_dm.config.embed.thumbnail', locale=self.locale),
                 style=discord.ButtonStyle.success if self.working_config['embed_thumbnail_enabled'] else discord.ButtonStyle.secondary,
-                emoji=discord.PartialEmoji.from_str("<:done:1398729525277229066>" if self.working_config['embed_thumbnail_enabled'] else "<:undone:1398729502028333218>"),
+                emoji=discord.PartialEmoji.from_str(DONE if self.working_config['embed_thumbnail_enabled'] else UNDONE),
                 custom_id="toggle_thumbnail"
             )
             thumbnail_btn.callback = self.on_toggle_thumbnail
@@ -256,7 +257,7 @@ class WelcomeDmConfigView(BaseView):
             author_btn = ui.Button(
                 label=t('modules.welcome_dm.config.embed.author', locale=self.locale),
                 style=discord.ButtonStyle.success if self.working_config['embed_author_enabled'] else discord.ButtonStyle.secondary,
-                emoji=discord.PartialEmoji.from_str("<:done:1398729525277229066>" if self.working_config['embed_author_enabled'] else "<:undone:1398729502028333218>"),
+                emoji=discord.PartialEmoji.from_str(DONE if self.working_config['embed_author_enabled'] else UNDONE),
                 custom_id="toggle_author"
             )
             author_btn.callback = self.on_toggle_author
@@ -275,7 +276,7 @@ class WelcomeDmConfigView(BaseView):
 
         # Back button (disabled if changes pending)
         back_btn = ui.Button(
-            emoji=discord.PartialEmoji.from_str("<:back:1401600847733067806>"),
+            emoji=discord.PartialEmoji.from_str(BACK),
             label=t('modules.config.buttons.back', locale=self.locale),
             style=discord.ButtonStyle.secondary,
             custom_id="back_btn",
@@ -287,7 +288,7 @@ class WelcomeDmConfigView(BaseView):
         # Save button (only if changes)
         if self.has_changes:
             save_btn = ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:save:1444101502154182778>"),
+                emoji=discord.PartialEmoji.from_str(SAVE),
                 label=t('modules.config.buttons.save', locale=self.locale),
                 style=discord.ButtonStyle.success,
                 custom_id="save_btn"
@@ -297,7 +298,7 @@ class WelcomeDmConfigView(BaseView):
 
             # Cancel button
             cancel_btn = ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:undone:1398729502028333218>"),
+                emoji=discord.PartialEmoji.from_str(UNDONE),
                 label=t('modules.config.buttons.cancel', locale=self.locale),
                 style=discord.ButtonStyle.danger,
                 custom_id="cancel_btn"
@@ -308,7 +309,7 @@ class WelcomeDmConfigView(BaseView):
             # Delete button (if config exists)
             if self.has_existing_config:
                 delete_btn = ui.Button(
-                    emoji=discord.PartialEmoji.from_str("<:delete:1401600770431909939>"),
+                    emoji=discord.PartialEmoji.from_str(DELETE),
                     label=t('modules.config.buttons.delete', locale=self.locale),
                     style=discord.ButtonStyle.danger,
                     custom_id="delete_btn"

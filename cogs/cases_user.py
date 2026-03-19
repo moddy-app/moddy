@@ -16,7 +16,7 @@ from utils.moderation_cases import (
     CaseType, SanctionType, CaseStatus, EntityType, ModerationCase,
     get_sanction_name, get_sanction_emoji
 )
-from utils.components_v2 import EMOJIS
+from utils.emojis import EMOJIS
 
 logger = logging.getLogger('moddy.cases_user')
 

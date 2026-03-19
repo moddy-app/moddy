@@ -10,6 +10,7 @@ import logging
 
 from utils.i18n import t
 from cogs.error_handler import BaseView, BaseModal
+from utils.emojis import STAR, REQUIRED_FIELDS, EDIT, BACK, SAVE, UNDONE, DELETE
 
 logger = logging.getLogger('moddy.modules.starboard_config')
 
@@ -90,7 +91,7 @@ class StarboardConfigView(BaseView):
 
         # Header
         container.add_item(ui.TextDisplay(
-            f"### <:star:1446267438671859832> {t('modules.starboard.config.title', locale=self.locale)}"
+            f"### {STAR} {t('modules.starboard.config.title', locale=self.locale)}"
         ))
         container.add_item(ui.TextDisplay(
             t('modules.starboard.config.description', locale=self.locale)
@@ -100,7 +101,7 @@ class StarboardConfigView(BaseView):
 
         # Channel selector (Required field)
         container.add_item(ui.TextDisplay(
-            f"**{t('modules.starboard.config.channel.section_title', locale=self.locale)}**<:required_fields:1446549185385074769>\n"
+            f"**{t('modules.starboard.config.channel.section_title', locale=self.locale)}**{REQUIRED_FIELDS}\n"
             f"-# {t('modules.starboard.config.channel.section_description', locale=self.locale)}"
         ))
 
@@ -134,7 +135,7 @@ class StarboardConfigView(BaseView):
         edit_count_btn = ui.Button(
             label=t('modules.starboard.config.reaction_count.edit_button', locale=self.locale),
             style=discord.ButtonStyle.primary,
-            emoji=discord.PartialEmoji.from_str("<:edit:1401600709824086169>"),
+            emoji=discord.PartialEmoji.from_str(EDIT),
             custom_id="edit_reaction_count"
         )
         edit_count_btn.callback = self.on_edit_reaction_count
@@ -153,7 +154,7 @@ class StarboardConfigView(BaseView):
 
         # Back button (disabled if changes pending)
         back_btn = ui.Button(
-            emoji=discord.PartialEmoji.from_str("<:back:1401600847733067806>"),
+            emoji=discord.PartialEmoji.from_str(BACK),
             label=t('modules.config.buttons.back', locale=self.locale),
             style=discord.ButtonStyle.secondary,
             custom_id="back_btn",
@@ -165,7 +166,7 @@ class StarboardConfigView(BaseView):
         # Save button (only if changes)
         if self.has_changes:
             save_btn = ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:save:1444101502154182778>"),
+                emoji=discord.PartialEmoji.from_str(SAVE),
                 label=t('modules.config.buttons.save', locale=self.locale),
                 style=discord.ButtonStyle.success,
                 custom_id="save_btn"
@@ -175,7 +176,7 @@ class StarboardConfigView(BaseView):
 
             # Cancel button
             cancel_btn = ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:undone:1398729502028333218>"),
+                emoji=discord.PartialEmoji.from_str(UNDONE),
                 label=t('modules.config.buttons.cancel', locale=self.locale),
                 style=discord.ButtonStyle.danger,
                 custom_id="cancel_btn"
@@ -186,7 +187,7 @@ class StarboardConfigView(BaseView):
             # Delete button (if config exists)
             if self.has_existing_config:
                 delete_btn = ui.Button(
-                    emoji=discord.PartialEmoji.from_str("<:delete:1401600770431909939>"),
+                    emoji=discord.PartialEmoji.from_str(DELETE),
                     label=t('modules.config.buttons.delete', locale=self.locale),
                     style=discord.ButtonStyle.danger,
                     custom_id="delete_btn"

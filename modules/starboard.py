@@ -7,6 +7,7 @@ from typing import Dict, Any, Optional
 import logging
 
 from modules.module_manager import ModuleBase
+from utils.emojis import STAR, MESSAGE, TEXT
 
 logger = logging.getLogger('moddy.modules.starboard')
 
@@ -21,7 +22,7 @@ class StarboardModule(ModuleBase):
     MODULE_ID = "starboard"
     MODULE_NAME = "Starboard"
     MODULE_DESCRIPTION = "Tableau d'honneur des messages populaires"
-    MODULE_EMOJI = "<:star:1446267438671859832>"
+    MODULE_EMOJI = STAR
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)
@@ -297,13 +298,13 @@ class StarboardModule(ModuleBase):
         )
 
         embed.add_field(
-            name="<:message:1443749710073696286> Message",
+            name=f"{MESSAGE} Message",
             value=f"[Aller au message]({message.jump_url})",
             inline=True
         )
 
         embed.add_field(
-            name="<:text:1439692405317046372> Salon",
+            name=f"{TEXT} Salon",
             value=message.channel.mention,
             inline=True
         )

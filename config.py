@@ -101,33 +101,21 @@ COLORS = {
 }
 
 # =============================================================================
-# EMOJIS PERSONNALISÉS
+# ENVIRONMENT MODE
 # =============================================================================
 
-EMOJIS = {
-    # Status
-    "done": "<:done:1398729525277229066>",
-    "undone": "<:undone:1398729502028333218>",
-    "loading": "<a:loading:1395047662092550194>",
+# Environment mode: "production", "development", "maintenance"
+ENV_MODE: str = os.environ.get("ENV_MODE", "production").lower()
 
-    # Icônes
-    "settings": "<:settings:1398729549323440208>",
-    "info": "<:info:1398729537201930270>",
-    "warning": "<:warning:1446108410092195902>",
-    "error": "<:error:1444049460924776478>",
+# In development mode, only these user IDs can use the bot
+# Comma-separated list in env var, or falls back to DEVELOPER_IDS
+dev_allowed_str = os.environ.get("DEV_ALLOWED_IDS", "")
+DEV_ALLOWED_IDS: List[int] = [int(id.strip()) for id in dev_allowed_str.split(",") if id.strip()] or DEVELOPER_IDS
 
-    # Actions
-    "add": "<:add:1398729490724679720>",
-    "remove": "<:remove:1398729478435393598>",
-    "edit": "<:edit:1398729467756752906>",
-
-    # Bot
-    "moddy": "<:moddy:1398729456117551207>",
-    "developer": "<:developer:1398729444520325202>",
-    "staff": "<:staff:1398729432759476245>",
-    "ping": "<:support:1398734366670065726>"
-}
-
+# Convenience helpers
+IS_DEV = ENV_MODE == "development"
+IS_PROD = ENV_MODE == "production"
+IS_MAINTENANCE = ENV_MODE == "maintenance"
 
 # =============================================================================
 # VALIDATION DE LA CONFIGURATION
@@ -137,29 +125,36 @@ def validate_config():
     """Vérifie que la configuration est valide"""
     errors = []
 
+    # Validate environment mode
+    valid_modes = ("production", "development", "maintenance")
+    if ENV_MODE not in valid_modes:
+        errors.append(f"[FAIL] ENV_MODE '{ENV_MODE}' is invalid. Must be one of: {', '.join(valid_modes)}")
+
+    print(f"Environment mode: {ENV_MODE.upper()}")
+
     # Token obligatoire
     if not TOKEN:
-        errors.append("❌ DISCORD_TOKEN manquant dans les variables d'environnement Railway")
+        errors.append("[FAIL] DISCORD_TOKEN manquant dans les variables d'environnement Railway")
 
     # Vérifier que les dossiers existent
     if not COGS_DIR.exists():
         COGS_DIR.mkdir(exist_ok=True)
-        print(f"📁 Dossier créé : {COGS_DIR}")
+        print(f"Directory created: {COGS_DIR}")
 
     if not STAFF_DIR.exists():
         STAFF_DIR.mkdir(exist_ok=True)
-        print(f"📁 Dossier créé : {STAFF_DIR}")
+        print(f"Directory created: {STAFF_DIR}")
 
     # Avertissements non bloquants
     if not DATABASE_URL:
-        print("⚠️ DATABASE_URL non configurée - Mode sans base de données")
+        print("[WARN] DATABASE_URL not configured - running without database")
 
     if not DEEPL_API_KEY:
-        print("⚠️ DEEPL_API_KEY non configurée - Commande translate désactivée")
+        print("[WARN] DEEPL_API_KEY not configured - translate command disabled")
 
     if DEBUG:
-        print("🔧 Mode DEBUG activé")
-        print("🚂 Environnement Railway détecté")
+        print("Debug mode enabled")
+        print("Railway environment detected")
 
     # Si erreurs critiques, arrêter
     if errors:
@@ -167,7 +162,7 @@ def validate_config():
             print(error)
         sys.exit(1)
 
-    print("✅ Configuration validée pour Railway")
+    print("Configuration validated")
 
 
 # Valider au chargement du module
@@ -180,14 +175,15 @@ if __name__ != "__main__":
 
 if __name__ == "__main__":
     # Pour tester la config : python config.py
-    print("\n🚂 Configuration Railway actuelle :")
-    print(f"  DISCORD_TOKEN: {'✅ Configuré' if TOKEN else '❌ Manquant'}")
-    print(f"  DATABASE_URL: {'✅ Configuré' if DATABASE_URL else '⚠️ Non configuré'}")
-    print(f"  DEEPL_API_KEY: {'✅ Configuré' if DEEPL_API_KEY else '⚠️ Non configuré'}")
+    print("\nRailway Configuration:")
+    print(f"  ENV_MODE: {ENV_MODE}")
+    print(f"  DISCORD_TOKEN: {'configured' if TOKEN else 'MISSING'}")
+    print(f"  DATABASE_URL: {'configured' if DATABASE_URL else 'not configured'}")
+    print(f"  DEEPL_API_KEY: {'configured' if DEEPL_API_KEY else 'not configured'}")
     print(f"  DEBUG: {DEBUG}")
     print(f"  DEFAULT_PREFIX: {DEFAULT_PREFIX}")
-    print(f"  DEVELOPER_IDS: {DEVELOPER_IDS or 'Auto-détection'}")
-    print(f"\n📁 Chemins :")
+    print(f"  DEVELOPER_IDS: {DEVELOPER_IDS or 'Auto-detection'}")
+    print(f"\nPaths:")
     print(f"  ROOT_DIR: {ROOT_DIR}")
     print(f"  COGS_DIR: {COGS_DIR}")
     print(f"  STAFF_DIR: {STAFF_DIR}")
@@ -195,11 +191,11 @@ if __name__ == "__main__":
 
     # Affiche toutes les variables d'environnement Railway (pour debug)
     if DEBUG:
-        print(f"\n🔍 Variables d'environnement Railway détectées :")
+        print(f"\nRailway environment variables detected:")
         railway_vars = [k for k in os.environ.keys() if
                         'RAILWAY' in k or 'DISCORD' in k or 'DATABASE' in k or 'DEEPL' in k]
         for var in sorted(railway_vars):
             value = os.environ.get(var)
             if 'TOKEN' in var or 'KEY' in var or 'PASSWORD' in var:
-                value = '***' if value else 'Non défini'
+                value = '***' if value else 'Not set'
             print(f"  {var}: {value}")

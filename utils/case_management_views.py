@@ -16,7 +16,7 @@ from utils.moderation_cases import (
     CASE_TYPE_SANCTIONS
 )
 from database import db
-from utils.components_v2 import EMOJIS
+from utils.emojis import EMOJIS
 
 logger = logging.getLogger('moddy.case_management')
 

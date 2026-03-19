@@ -15,7 +15,8 @@ import os
 from utils.staff_permissions import staff_permissions, CommandType
 from database import db
 from config import COLORS
-from utils.components_v2 import create_error_message, create_success_message, create_info_message, create_warning_message, EMOJIS
+from utils.components_v2 import create_error_message, create_success_message, create_info_message, create_warning_message
+from utils.emojis import EMOJIS
 from utils.staff_logger import staff_logger
 from staff.base import StaffCommandsCog
 from utils.announcement_setup import setup_announcement_channel
@@ -193,6 +194,14 @@ class DeveloperCommands(StaffCommandsCog):
             await self.handle_setup_announcements_command(message, args)
         elif command_name == "serverlist":
             await self.handle_serverlist_command(message, args)
+        elif command_name == "disable":
+            await self.handle_disable_command(message, args)
+        elif command_name == "enable":
+            await self.handle_enable_command(message, args)
+        elif command_name == "disabled":
+            await self.handle_disabled_command(message, args)
+        elif command_name == "cogs":
+            await self.handle_cogs_command(message, args)
         else:
             view = create_error_message("Unknown Command", f"Developer command `{command_name}` not found.")
             await self.reply_with_tracking(message, view)
@@ -889,6 +898,119 @@ class DeveloperCommands(StaffCommandsCog):
         view = ServerListView(self.bot, guilds, page=0, per_page=10)
 
         # Send the view
+        await self.reply_with_tracking(message, view)
+
+
+    async def handle_disable_command(self, message: discord.Message, args: str):
+        """
+        Handle d.disable command - Disable a cog at runtime
+        Usage: <@bot> d.disable <CogName>
+        """
+        if staff_logger:
+            await staff_logger.log_command("d", "disable", message.author, args=args or "no args")
+
+        if not args or not args.strip():
+            view = create_error_message(
+                "Invalid Usage",
+                "**Usage:** `d.disable <CogName>`\n\nProvide the cog class name (e.g. `Invite`, `Reminder`)."
+            )
+            await self.reply_with_tracking(message, view)
+            return
+
+        cog_name = args.strip()
+        cog_manager = self.bot.get_cog("CogManager")
+        if not cog_manager:
+            view = create_error_message("Error", "CogManager is not loaded.")
+            await self.reply_with_tracking(message, view)
+            return
+
+        success, result_msg = await cog_manager.disable_cog(cog_name)
+        if success:
+            view = create_success_message("Cog Disabled", result_msg, footer=f"Executed by {message.author}")
+        else:
+            view = create_error_message("Cannot Disable", result_msg)
+        await self.reply_with_tracking(message, view)
+
+    async def handle_enable_command(self, message: discord.Message, args: str):
+        """
+        Handle d.enable command - Re-enable a cog at runtime
+        Usage: <@bot> d.enable <CogName>
+        """
+        if staff_logger:
+            await staff_logger.log_command("d", "enable", message.author, args=args or "no args")
+
+        if not args or not args.strip():
+            view = create_error_message(
+                "Invalid Usage",
+                "**Usage:** `d.enable <CogName>`\n\nProvide the cog class name (e.g. `Invite`, `Reminder`)."
+            )
+            await self.reply_with_tracking(message, view)
+            return
+
+        cog_name = args.strip()
+        cog_manager = self.bot.get_cog("CogManager")
+        if not cog_manager:
+            view = create_error_message("Error", "CogManager is not loaded.")
+            await self.reply_with_tracking(message, view)
+            return
+
+        success, result_msg = await cog_manager.enable_cog(cog_name)
+        if success:
+            view = create_success_message("Cog Enabled", result_msg, footer=f"Executed by {message.author}")
+        else:
+            view = create_error_message("Cannot Enable", result_msg)
+        await self.reply_with_tracking(message, view)
+
+    async def handle_disabled_command(self, message: discord.Message, args: str):
+        """
+        Handle d.disabled command - List currently disabled cogs
+        Usage: <@bot> d.disabled
+        """
+        if staff_logger:
+            await staff_logger.log_command("d", "disabled", message.author)
+
+        cog_manager = self.bot.get_cog("CogManager")
+        if not cog_manager:
+            view = create_error_message("Error", "CogManager is not loaded.")
+            await self.reply_with_tracking(message, view)
+            return
+
+        disabled = cog_manager.get_disabled_cogs()
+        if disabled:
+            listing = "\n".join([f"• `{name}`" for name in disabled])
+            view = create_info_message(
+                "Disabled Cogs",
+                f"**{len(disabled)}** cog(s) currently disabled:\n\n{listing}",
+            )
+        else:
+            view = create_success_message("No Disabled Cogs", "All cogs are currently enabled.")
+        await self.reply_with_tracking(message, view)
+
+    async def handle_cogs_command(self, message: discord.Message, args: str):
+        """
+        Handle d.cogs command - List all loaded cogs with status
+        Usage: <@bot> d.cogs
+        """
+        if staff_logger:
+            await staff_logger.log_command("d", "cogs", message.author)
+
+        cog_manager = self.bot.get_cog("CogManager")
+        disabled_set = set()
+        if cog_manager:
+            disabled_set = cog_manager.disabled_cogs
+
+        cog_names = sorted(self.bot.cogs.keys())
+        lines = []
+        for name in cog_names:
+            status = f"{EMOJIS['undone']} Disabled" if name in disabled_set else f"{EMOJIS['done']} Enabled"
+            lines.append(f"• `{name}` — {status}")
+
+        listing = "\n".join(lines) if lines else "*No cogs loaded.*"
+        view = create_info_message(
+            "Loaded Cogs",
+            f"**{len(cog_names)}** cog(s) loaded:\n\n{listing}",
+            footer=f"Requested by {message.author}"
+        )
         await self.reply_with_tracking(message, view)
 
 

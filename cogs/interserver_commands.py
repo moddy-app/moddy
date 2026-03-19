@@ -11,7 +11,7 @@ import logging
 from datetime import datetime, timezone
 
 from utils.i18n import t
-from config import EMOJIS
+from utils.emojis import EMOJIS
 from utils.components_v2 import create_error_message, create_info_message, create_success_message
 from cogs.error_handler import BaseView, BaseModal
 

@@ -7,6 +7,7 @@ from typing import Dict, Any, Optional
 import logging
 
 from modules.module_manager import ModuleBase
+from utils.emojis import WAVING_HAND
 
 logger = logging.getLogger('moddy.modules.welcome_channel')
 
@@ -20,7 +21,7 @@ class WelcomeChannelModule(ModuleBase):
     MODULE_ID = "welcome_channel"
     MODULE_NAME = "Welcome Channel"
     MODULE_DESCRIPTION = "Message de bienvenue dans un salon public"
-    MODULE_EMOJI = "<:waving_hand:1446127491004760184>"
+    MODULE_EMOJI = WAVING_HAND
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)

@@ -21,8 +21,13 @@ from config import (
     DATABASE_URL,
     DEVELOPER_IDS,
     COLORS,
-    EMOJIS
+    IS_DEV,
+    IS_PROD,
+    IS_MAINTENANCE,
+    DEV_ALLOWED_IDS,
+    ENV_MODE,
 )
+from utils.emojis import EMOJIS, ERROR as ERROR_EMOJI
 from database import setup_database, db
 # Import du nouveau système i18n
 from utils.i18n import i18n
@@ -145,12 +150,12 @@ class ModdyBot(commands.Bot):
                     if response.status == 200:
                         data = await response.json()
                         self.version = data.get("tag_name", "Unknown")
-                        logger.info(f"✅ Bot version: {self.version}")
+                        logger.info(f"Bot version: {self.version}")
                     else:
-                        logger.warning(f"⚠️ Failed to fetch version: HTTP {response.status}")
+                        logger.warning(f"[WARN] Failed to fetch version: HTTP {response.status}")
                         self.version = "Unknown"
         except Exception as e:
-            logger.error(f"❌ Error fetching version: {e}")
+            logger.error(f"[FAIL] Error fetching version: {e}")
             self.version = "Unknown"
 
     def start_internal_api_server(self):
@@ -171,7 +176,7 @@ class ModdyBot(commands.Bot):
 
         # Fonction pour exécuter le serveur dans le thread
         def run_server():
-            logger.info(f"🌐 Starting internal API server on port {internal_port}")
+            logger.info(f"Starting internal API server on port {internal_port}")
             uvicorn.run(
                 app,
                 host="::",  # IPv4 + IPv6
@@ -187,11 +192,11 @@ class ModdyBot(commands.Bot):
             name="InternalAPIServer"
         )
         self.internal_api_thread.start()
-        logger.info(f"✅ Internal API server started on port {internal_port}")
+        logger.info(f"Internal API server started on port {internal_port}")
 
     async def setup_hook(self):
         """Called once on bot startup"""
-        logger.info("🔧 Initial setup...")
+        logger.info("Initial setup...")
 
         # Fetch bot version from GitHub
         await self.fetch_version()
@@ -204,49 +209,59 @@ class ModdyBot(commands.Bot):
             await self.setup_database()
 
         # Initialize i18n system
-        logger.info("🌐 Loading i18n system...")
+        logger.info("Loading i18n system...")
         i18n.load_translations()
-        logger.info(f"✅ i18n loaded with {len(i18n.supported_locales)} languages")
+        logger.info(f"i18n loaded with {len(i18n.supported_locales)} languages")
 
         # Initialize staff permissions system
-        logger.info("👥 Initializing staff permissions system...")
+        logger.info("Initializing staff permissions system...")
         setup_staff_permissions(self)
-        logger.info("✅ Staff permissions system ready")
+        logger.info("Staff permissions system ready")
 
         # Initialize staff logger
-        logger.info("📝 Initializing staff logger...")
+        logger.info("Initializing staff logger...")
         init_staff_logger(self)
-        logger.info("✅ Staff logger ready")
+        logger.info("Staff logger ready")
 
         # Initialize module manager
-        logger.info("📦 Initializing module manager...")
+        logger.info("Initializing module manager...")
         self.module_manager = ModuleManager(self)
         self.module_manager.discover_modules()
-        logger.info("✅ Module manager ready")
+        logger.info("Module manager ready")
 
         # Start internal API server
-        logger.info("🌐 Starting internal API server...")
+        logger.info("Starting internal API server...")
         self.start_internal_api_server()
 
         # Test backend connection with full Railway Private Network diagnostic
         # This includes DNS wait (Railway DNS not available for ~3-5s at startup)
-        logger.info("🔍 Testing backend connection (Railway Private Network)...")
+        logger.info("Testing backend connection (Railway Private Network)...")
         try:
             from services.backend_client import get_backend_client, BackendClientError
             backend_client = get_backend_client()
             # Use full diagnostic which includes DNS wait and retries
             connection_ok = await backend_client.test_connection(use_full_diagnostic=True)
             if connection_ok:
-                logger.info("✅ Backend connection established successfully")
+                logger.info("Backend connection established successfully")
             else:
-                logger.warning("⚠️ Backend connection test failed - check logs above for details")
+                logger.warning("[WARN] Backend connection test failed - check logs above for details")
                 logger.warning("   The bot will start, but backend-dependent features may not work")
         except BackendClientError as e:
-            logger.error(f"⚠️ Backend connection test failed: {e}")
+            logger.error(f"[WARN] Backend connection test failed: {e}")
             logger.error("   The bot will start, but backend-dependent features may not work")
         except Exception as e:
-            logger.error(f"⚠️ Backend connection test failed: {e}")
+            logger.error(f"[WARN] Backend connection test failed: {e}")
             logger.error("   The bot will start, but backend-dependent features may not work")
+
+        # Add before_invoke check for prefix commands cog disable
+        @self.before_invoke
+        async def check_cog_disabled(ctx):
+            cog_manager = self.get_cog("CogManager")
+            if cog_manager and ctx.cog:
+                cog_name = type(ctx.cog).__name__
+                if cog_manager.is_cog_disabled(cog_name):
+                    await ctx.send("This feature is temporarily unavailable.")
+                    raise commands.CheckFailure("Cog is disabled")
 
         # Load extensions
         await self.load_extensions()
@@ -259,12 +274,12 @@ class ModdyBot(commands.Bot):
             # In debug mode, sync commands the same way as production
             # This ensures global commands work in DMs even in debug mode
             await self.sync_commands()
-            logger.info("✅ Commands synced (debug mode)")
-            logger.info("ℹ️ Guild-only commands will be synced in on_ready()")
+            logger.info("Commands synced (debug mode)")
+            logger.info("Guild-only commands will be synced in on_ready()")
         else:
             # In production, sync commands properly
             await self.sync_commands()
-            logger.info("✅ Commands synced")
+            logger.info("Commands synced")
 
     async def sync_commands(self):
         """
@@ -302,10 +317,10 @@ class ModdyBot(commands.Bot):
 
             # Synchroniser les commandes globales uniquement (accessibles partout)
             await self.tree.sync()
-            logger.info(f"✅ Global commands synced ({len(self._guild_only_commands)} guild-only will be synced in on_ready)")
+            logger.info(f"Global commands synced ({len(self._guild_only_commands)} guild-only will be synced in on_ready)")
 
         except Exception as e:
-            logger.error(f"❌ Error syncing commands: {e}")
+            logger.error(f"[FAIL] Error syncing commands: {e}")
 
     async def sync_all_guild_commands(self):
         """
@@ -336,17 +351,17 @@ class ModdyBot(commands.Bot):
                     await self.tree.sync(guild=guild)
 
                     guild_count += 1
-                    logger.info(f"✅ Guild commands synced for {guild.name} ({guild.id})")
+                    logger.info(f"Guild commands synced for {guild.name} ({guild.id})")
                 except Exception as e:
-                    logger.error(f"❌ Error syncing commands for guild {guild.id}: {e}")
+                    logger.error(f"[FAIL] Error syncing commands for guild {guild.id}: {e}")
 
             if self._guild_only_commands:
-                logger.info(f"✅ Guild-specific commands synced for {guild_count} servers")
+                logger.info(f"Guild-specific commands synced for {guild_count} servers")
             else:
-                logger.info(f"✅ Cleared guild commands for {guild_count} servers (no guild-only commands)")
+                logger.info(f"Cleared guild commands for {guild_count} servers (no guild-only commands)")
 
         except Exception as e:
-            logger.error(f"❌ Error syncing guild commands: {e}")
+            logger.error(f"[FAIL] Error syncing guild commands: {e}")
 
     async def sync_guild_commands(self, guild: discord.Guild):
         """
@@ -376,9 +391,9 @@ class ModdyBot(commands.Bot):
             # Synchroniser les guild-only pour ce serveur (ou sync vide si pas de guild-only)
             await self.tree.sync(guild=guild)
 
-            logger.info(f"✅ Commands synced for {guild.name} ({guild.id})")
+            logger.info(f"Commands synced for {guild.name} ({guild.id})")
         except Exception as e:
-            logger.error(f"❌ Error syncing commands for guild {guild.id}: {e}")
+            logger.error(f"[FAIL] Error syncing commands for guild {guild.id}: {e}")
 
     async def on_app_command_error(self, interaction: discord.Interaction, error: discord.app_commands.AppCommandError):
         """Slash command error handling - delegates to ErrorTracker cog"""
@@ -400,7 +415,7 @@ class ModdyBot(commands.Bot):
                         super().__init__(timeout=None)
                         container = ui.Container()
                         container.add_item(
-                            ui.TextDisplay(f"### <:error:1444049460924776478> An Error Occurred")
+                            ui.TextDisplay(f"### {ERROR_EMOJI} An Error Occurred")
                         )
                         container.add_item(
                             ui.TextDisplay("An unexpected error occurred. Please try again.")
@@ -439,11 +454,11 @@ class ModdyBot(commands.Bot):
                     member.id for member in app_info.team.members
                     if not member.bot and member.id != app_info.id
                 }
-                logger.info(f"✅ Dev team: {len(self._dev_team_ids)} members")
+                logger.info(f"Dev team: {len(self._dev_team_ids)} members")
                 logger.info(f"   IDs: {list(self._dev_team_ids)}")
             else:
                 self._dev_team_ids = {app_info.owner.id}
-                logger.info(f"✅ Owner: {app_info.owner} ({app_info.owner.id})")
+                logger.info(f"Owner: {app_info.owner} ({app_info.owner.id})")
 
             # Also add IDs from config
             if DEVELOPER_IDS:
@@ -451,7 +466,7 @@ class ModdyBot(commands.Bot):
                 logger.info(f"   + IDs from config: {DEVELOPER_IDS}")
 
         except Exception as e:
-            logger.error(f"❌ Error fetching team: {e}")
+            logger.error(f"[FAIL] Error fetching team: {e}")
             # Fallback to IDs in config if available
             if DEVELOPER_IDS:
                 self._dev_team_ids = set(DEVELOPER_IDS)
@@ -494,13 +509,13 @@ class ModdyBot(commands.Bot):
         """Initialize the database connection"""
         try:
             self.db = await setup_database(DATABASE_URL)
-            logger.info("✅ Database connected (ModdyDatabase)")
+            logger.info("Database connected (ModdyDatabase)")
 
             # Property for compatibility with old code
             self.db_pool = self.db.pool
 
         except Exception as e:
-            logger.error(f"❌ DB connection error: {e}")
+            logger.error(f"[FAIL] DB connection error: {e}")
             self.db = None
             self.db_pool = None
 
@@ -509,37 +524,44 @@ class ModdyBot(commands.Bot):
         # Load the error system first
         try:
             await self.load_extension("cogs.error_handler")
-            logger.info("✅ Error system loaded")
+            logger.info("Error system loaded")
         except Exception as e:
-            logger.error(f"❌ CRITICAL: Could not load the error system: {e}")
+            logger.error(f"[FAIL] CRITICAL: Could not load the error system: {e}")
 
         # Load the blacklist check system with PRIORITY
         try:
             await self.load_extension("cogs.blacklist_check")
-            logger.info("✅ Blacklist check system loaded")
+            logger.info("Blacklist check system loaded")
         except Exception as e:
-            logger.error(f"❌ Error loading blacklist check: {e}")
+            logger.error(f"[FAIL] Error loading blacklist check: {e}")
+
+        # Load the cog manager system (must be early for disable checks)
+        try:
+            await self.load_extension("cogs.cog_manager")
+            logger.info("Cog manager system loaded")
+        except Exception as e:
+            logger.error(f"[FAIL] Error loading cog manager: {e}")
 
         # Load the dev logging system
         try:
             await self.load_extension("cogs.dev_logger")
-            logger.info("✅ Dev logging system loaded")
+            logger.info("Dev logging system loaded")
         except Exception as e:
-            logger.error(f"❌ Error loading dev logger: {e}")
+            logger.error(f"[FAIL] Error loading dev logger: {e}")
 
         # Load user cogs
         cogs_dir = Path("cogs")
         if cogs_dir.exists():
             for file in cogs_dir.glob("*.py"):
                 # Skip special files
-                if file.name.startswith("_") or file.name in ["error_handler.py", "blacklist_check.py", "dev_logger.py"]:
+                if file.name.startswith("_") or file.name in ["error_handler.py", "blacklist_check.py", "dev_logger.py", "cog_manager.py"]:
                     continue
 
                 try:
                     await self.load_extension(f"cogs.{file.stem}")
-                    logger.info(f"✅ Cog loaded: {file.stem}")
+                    logger.info(f"Cog loaded: {file.stem}")
                 except Exception as e:
-                    logger.error(f"❌ Cog error {file.stem}: {e}")
+                    logger.error(f"[FAIL] Cog error {file.stem}: {e}")
                     # Log to Discord if possible
                     if error_cog := self.get_cog("ErrorTracker"):
                         error_code = error_cog.generate_error_code(e)
@@ -563,9 +585,9 @@ class ModdyBot(commands.Bot):
 
                 try:
                     await self.load_extension(f"staff.{file.stem}")
-                    logger.info(f"✅ Staff command loaded: {file.stem}")
+                    logger.info(f"Staff command loaded: {file.stem}")
                 except Exception as e:
-                    logger.error(f"❌ Staff command error {file.stem}: {e}")
+                    logger.error(f"[FAIL] Staff command error {file.stem}: {e}")
                     # Log to Discord if possible
                     if error_cog := self.get_cog("ErrorTracker"):
                         error_code = error_cog.generate_error_code(e)
@@ -585,14 +607,14 @@ class ModdyBot(commands.Bot):
         # Fetch development team (moved from setup_hook to avoid blocking during connection)
         await self.fetch_dev_team()
 
-        logger.info(f"✅ {self.user} is connected!")
-        logger.info(f"📊 {len(self.guilds)} servers | {len(self.users)} users")
-        logger.info(f"🏓 Latency: {round(self.latency * 1000)}ms")
-        logger.info(f"🌐 i18n: {len(i18n.supported_locales)} languages loaded")
+        logger.info(f"Bot connected: {self.user} (mode: {ENV_MODE})")
+        logger.info(f"Servers: {len(self.guilds)} | Users: {len(self.users)}")
+        logger.info(f"Latency: {round(self.latency * 1000)}ms")
+        logger.info(f"i18n: {len(i18n.supported_locales)} languages loaded")
 
         # Update DEVELOPER attributes now that self.user is available
         if self.db and self._dev_team_ids:
-            logger.info(f"📝 Automatically updating DEVELOPER attributes...")
+            logger.info(f"Automatically updating DEVELOPER attributes...")
             for dev_id in self._dev_team_ids:
                 try:
                     # Get or create user
@@ -603,14 +625,14 @@ class ModdyBot(commands.Bot):
                         'user', dev_id, 'DEVELOPER', True,
                         self.user.id, "Auto-detection at startup"
                     )
-                    logger.info(f"✅ DEVELOPER attribute set for {dev_id}")
+                    logger.info(f"DEVELOPER attribute set for {dev_id}")
 
                     # ALWAYS set TEAM attribute for dev team members (critical for staff commands)
                     await self.db.set_attribute(
                         'user', dev_id, 'TEAM', True,
                         self.user.id, "Auto-assigned to dev team members"
                     )
-                    logger.info(f"✅ TEAM attribute set for {dev_id}")
+                    logger.info(f"TEAM attribute set for {dev_id}")
 
                     # Auto-assign Manager + Dev roles for dev team members
                     from utils.staff_permissions import StaffRole
@@ -628,18 +650,18 @@ class ModdyBot(commands.Bot):
 
                     if updated:
                         await self.db.set_staff_roles(dev_id, roles, self.user.id)
-                        logger.info(f"✅ Auto-assigned Manager+Dev roles for {dev_id}")
+                        logger.info(f"Auto-assigned Manager+Dev roles for {dev_id}")
                     else:
-                        logger.info(f"✅ Dev {dev_id} already has Manager+Dev roles")
+                        logger.info(f"Dev {dev_id} already has Manager+Dev roles")
 
                 except Exception as e:
-                    logger.error(f"❌ Error setting DEVELOPER attribute for {dev_id}: {e}")
+                    logger.error(f"[FAIL] Error setting DEVELOPER attribute for {dev_id}: {e}")
 
         # DB stats if connected
         if self.db:
             try:
                 stats = await self.db.get_stats()
-                logger.info(f"📊 DB: {stats['users']} users, {stats['guilds']} guilds, {stats['errors']} errors")
+                logger.info(f"DB: {stats['users']} users, {stats['guilds']} guilds, {stats['errors']} errors")
             except:
                 pass
 
@@ -647,24 +669,99 @@ class ModdyBot(commands.Bot):
         if self.module_manager and self.db:
             try:
                 await self.module_manager.load_all_modules()
-                logger.info("✅ All guild modules loaded successfully")
+                logger.info("All guild modules loaded successfully")
             except Exception as e:
-                logger.error(f"❌ Error loading guild modules: {e}", exc_info=True)
+                logger.error(f"[FAIL] Error loading guild modules: {e}", exc_info=True)
 
         # Synchronize guild-only commands for all guilds
         # This is done here (not in setup_hook) because self.guilds is only available after connection
-        logger.info("🔄 Synchronizing guild-only commands...")
+        logger.info("Synchronizing guild-only commands...")
         await self.sync_all_guild_commands()
+
+        # Run startup health checks
+        await self.run_startup_checks()
+
+    async def run_startup_checks(self):
+        """Run comprehensive startup health checks on all systems."""
+        logger.info("Running startup health checks...")
+        results = []
+
+        # 1. Database check
+        if self.db and self.db.pool:
+            try:
+                async with self.db.pool.acquire() as conn:
+                    await conn.fetchval("SELECT 1")
+                results.append(("Database", True, "Connected"))
+            except Exception as e:
+                results.append(("Database", False, str(e)))
+        else:
+            results.append(("Database", False, "Not configured"))
+
+        # 2. Check all loaded cogs
+        expected_cogs_dir = Path("cogs")
+        expected_staff_dir = Path("staff")
+        loaded_cogs = set(self.cogs.keys())
+
+        cog_files = [f.stem for f in expected_cogs_dir.glob("*.py") if not f.name.startswith("_") and f.name != "error_handler.py" and f.name != "blacklist_check.py" and f.name != "dev_logger.py"]
+        staff_files = [f.stem for f in expected_staff_dir.glob("*.py") if not f.name.startswith("_") and f.name != "base.py"]
+
+        failed_cogs = []
+        for cog_file in cog_files:
+            # Check if corresponding cog class is loaded
+            cog_module_name = f"cogs.{cog_file}"
+            if not any(cog_module_name in str(getattr(cog, '__module__', '')) for cog in self.cogs.values()):
+                # Try a simpler check - just see if it loaded
+                pass
+
+        results.append(("Cogs", True, f"{len(loaded_cogs)} loaded"))
+
+        # 3. Check all registered modules
+        if self.module_manager:
+            module_count = len(self.module_manager.registered_modules)
+            results.append(("Modules", True, f"{module_count} registered"))
+        else:
+            results.append(("Modules", False, "Module manager not initialized"))
+
+        # 4. Check i18n
+        if i18n.supported_locales:
+            results.append(("i18n", True, f"{len(i18n.supported_locales)} locales"))
+        else:
+            results.append(("i18n", False, "No locales loaded"))
+
+        # 5. Backend connection
+        try:
+            from services.backend_client import get_backend_client
+            client = get_backend_client()
+            health = await client.health_check()
+            results.append(("Backend", True if health else False, "Connected" if health else "Unreachable"))
+        except Exception as e:
+            results.append(("Backend", False, f"Error: {e}"))
+
+        # 6. Log results
+        all_ok = all(ok for _, ok, _ in results)
+        logger.info("=" * 50)
+        logger.info("STARTUP HEALTH CHECK RESULTS")
+        logger.info("-" * 50)
+        for name, ok, detail in results:
+            status = "OK" if ok else "FAIL"
+            logger.info(f"  [{status:4s}] {name:15s} | {detail}")
+        logger.info("-" * 50)
+        if all_ok:
+            logger.info("All checks passed.")
+        else:
+            failed = [name for name, ok, _ in results if not ok]
+            logger.warning(f"Some checks failed: {', '.join(failed)}")
+        logger.info("=" * 50)
 
     async def on_guild_join(self, guild: discord.Guild):
         """When the bot joins a server"""
-        logger.info(f"➕ New server: {guild.name} ({guild.id})")
+        logger.info(f"New server: {guild.name} ({guild.id})")
 
         # Check if the server owner is blacklisted
         if self.db:
             try:
                 if await self.db.has_attribute('user', guild.owner_id, 'BLACKLISTED'):
-                    logger.warning(f"⚠️ Add attempt by blacklisted user: {guild.owner_id}")
+                    logger.warning(f"[WARN] Add attempt by blacklisted user: {guild.owner_id}")
 
                     # Send a message to the owner if possible
                     try:
@@ -715,23 +812,23 @@ class ModdyBot(commands.Bot):
         # This ensures guild-only commands (/config) are available in this server
         try:
             await self.sync_guild_commands(guild)
-            logger.info(f"✅ Commands synchronized for new guild {guild.name} ({guild.id})")
+            logger.info(f"Commands synchronized for new guild {guild.name} ({guild.id})")
         except Exception as e:
-            logger.error(f"❌ Error syncing commands for new guild {guild.id}: {e}")
+            logger.error(f"[FAIL] Error syncing commands for new guild {guild.id}: {e}")
 
         # Setup announcement channel following
         try:
             success, message = await setup_announcement_channel(guild)
             if success:
-                logger.info(f"✅ Announcement channel setup for {guild.name}: {message}")
+                logger.info(f"Announcement channel setup for {guild.name}: {message}")
             else:
-                logger.warning(f"⚠️ Failed to setup announcement channel for {guild.name}: {message}")
+                logger.warning(f"[WARN] Failed to setup announcement channel for {guild.name}: {message}")
         except Exception as e:
-            logger.error(f"❌ Error setting up announcement channel for {guild.id}: {e}")
+            logger.error(f"[FAIL] Error setting up announcement channel for {guild.id}: {e}")
 
     async def on_guild_remove(self, guild: discord.Guild):
         """When the bot leaves a server"""
-        logger.info(f"➖ Server left: {guild.name} ({guild.id})")
+        logger.info(f"Server left: {guild.name} ({guild.id})")
 
         # Clean the cache
         self.prefix_cache.pop(guild.id, None)
@@ -741,9 +838,9 @@ class ModdyBot(commands.Bot):
         try:
             self.tree.clear_commands(guild=guild)
             await self.tree.sync(guild=guild)
-            logger.info(f"✅ Commands cleared for guild {guild.name} ({guild.id})")
+            logger.info(f"Commands cleared for guild {guild.name} ({guild.id})")
         except Exception as e:
-            logger.error(f"❌ Error clearing commands for guild {guild.id}: {e}")
+            logger.error(f"[FAIL] Error clearing commands for guild {guild.id}: {e}")
 
     async def _global_blacklist_check(self, interaction: discord.Interaction) -> bool:
         """
@@ -753,6 +850,16 @@ class ModdyBot(commands.Bot):
         """
         if not self.db or interaction.user.bot:
             return True  # Autorise si pas de DB ou si c'est un bot
+
+        # Development mode - only allowed users can use slash commands
+        if IS_DEV and not self.is_developer(interaction.user.id) and interaction.user.id not in DEV_ALLOWED_IDS:
+            try:
+                await interaction.response.send_message(
+                    "This bot is currently in development mode.", ephemeral=True
+                )
+            except Exception:
+                pass
+            return False
 
         try:
             is_blacklisted = await self.db.has_attribute('user', interaction.user.id, 'BLACKLISTED')
@@ -792,6 +899,25 @@ class ModdyBot(commands.Bot):
 
         except Exception as e:
             logger.error(f"Error checking blacklist in _global_blacklist_check: {e}")
+
+        # Check if the command's cog is disabled
+        if interaction.command:
+            cog_manager = self.get_cog("CogManager")
+            if cog_manager:
+                # Get the cog name from the command
+                cog_name = None
+                if hasattr(interaction.command, 'binding') and interaction.command.binding:
+                    cog_name = type(interaction.command.binding).__name__
+
+                if cog_name and cog_manager.is_cog_disabled(cog_name):
+                    try:
+                        await interaction.response.send_message(
+                            "This feature is temporarily unavailable.",
+                            ephemeral=True
+                        )
+                    except Exception:
+                        pass
+                    return False
 
         return True  # Autorise si pas blacklisté ou en cas d'erreur
 
@@ -886,6 +1012,10 @@ class ModdyBot(commands.Bot):
         if self.maintenance_mode and not self.is_developer(message.author.id):
             return
 
+        # Development mode - only allowed users can use the bot
+        if IS_DEV and not self.is_developer(message.author.id) and message.author.id not in DEV_ALLOWED_IDS:
+            return
+
         # Blacklist check is now handled by the BlacklistCheck cog
         # which intercepts all interactions BEFORE they are processed
 
@@ -924,7 +1054,7 @@ class ModdyBot(commands.Bot):
 
     async def close(self):
         """Cleanly closing the bot"""
-        logger.info("🔄 Shutting down...")
+        logger.info("Shutting down...")
 
         # Stop tasks BEFORE closing
         if self.status_update.is_running():
@@ -937,9 +1067,9 @@ class ModdyBot(commands.Bot):
         try:
             from services import close_backend_client
             await close_backend_client()
-            logger.info("✅ Backend client closed")
+            logger.info("Backend client closed")
         except Exception as e:
-            logger.error(f"❌ Error closing backend client: {e}")
+            logger.error(f"[FAIL] Error closing backend client: {e}")
 
         # Close DB connection
         if self.db:
@@ -950,7 +1080,7 @@ class ModdyBot(commands.Bot):
             await self.http._HTTPClient__session.close()
 
         # Note: Le serveur HTTP interne s'arrête automatiquement car il est daemon=True
-        logger.info("🌐 Internal API server will stop automatically")
+        logger.info("Internal API server will stop automatically")
 
         # Close the bot
         await super().close()

@@ -8,6 +8,8 @@ from typing import Optional, Dict, Any, List
 from datetime import datetime, timezone
 import logging
 
+from utils.emojis import SANCTION_EMOJIS as _EMOJI_SANCTION_EMOJIS, SANCTION_EMOJI_DEFAULT
+
 logger = logging.getLogger('moddy.moderation_cases')
 
 
@@ -79,20 +81,16 @@ SANCTION_DESCRIPTIONS = {
 }
 
 
-# Sanction emojis
+# Sanction emojis - built from centralized registry
 SANCTION_EMOJIS = {
-    SanctionType.INTERSERVER_WARN: "⚠️",
-    SanctionType.INTERSERVER_TIMEOUT: "⏱️",
-    SanctionType.INTERSERVER_BLACKLIST: "🚫",
-    SanctionType.GLOBAL_WARN: "⚠️",
-    SanctionType.GLOBAL_LIMITED: "⛔",
-    SanctionType.GLOBAL_BLACKLIST: "🚫"
+    SanctionType(k.lower()): v
+    for k, v in _EMOJI_SANCTION_EMOJIS.items()
 }
 
 
 def get_sanction_emoji(sanction_type: SanctionType) -> str:
     """Get emoji for a sanction type"""
-    return SANCTION_EMOJIS.get(sanction_type, "📋")
+    return SANCTION_EMOJIS.get(sanction_type, SANCTION_EMOJI_DEFAULT)
 
 
 def get_sanction_name(sanction_type: SanctionType) -> str:

@@ -10,58 +10,9 @@ from discord.ext import commands
 from typing import Optional
 import aiohttp
 from datetime import datetime
-from config import COLORS, EMOJIS
+from config import COLORS
+from utils.emojis import EMOJIS, DISCORD_BADGES, MODDY_BADGES, AUTO_MODDY_BADGES, VERIFIED, MINI_VERIFIED, CERTIF_BADGE, USER as USER_ICON, BANNER as BANNER_ICON, TEXT
 from utils.i18n import i18n
-
-
-# Discord badge emojis mapping
-DISCORD_BADGES = {
-    "staff": "<:discordstaff:1439636927321079890>",
-    "partner": "<:discordpartner:1439636926159126739>",
-    "hypesquad": "<:hypesquadevents:1439636933058760735>",
-    "bug_hunter_level_1": "<:discordbughunter1:1439636911999418589>",
-    "bug_hunter_level_2": "<:discordbughunter2:1439636913697853562>",
-    "hypesquad_bravery": "<:hypesquadbravery:1439636930399572090>",
-    "hypesquad_brilliance": "<:hypesquadbrilliance:1439636931549069454>",
-    "hypesquad_balance": "<:hypesquadbalance:1439636929195933706>",
-    "early_supporter": "<:discordearlysupporter:1439636915900125194>",
-    "verified_bot_developer": "<:discordbotdevcertif:1439636910845989005>",
-    "active_developer": "<:activedeveloper:1439636908274618448>",
-    "nitro": "<:discordnitro:1439636918668099767>",
-    "discord_mod": "<:discordmod:1439636917338509435>",
-    "supports_commands": "<:supportscommands:1439636938372944012>",
-}
-
-# Moddy badge emojis from AGENTS.MD
-MODDY_BADGES = {
-    "PREMIUM": "<:premium_badge:1437514360758075514>",
-    "PARTNER": "<:partener_badge:1437514359294263388>",
-    "CONTRIBUTOR": "<:contributor_badge:1437514354802036940>",
-    "CERTIF": "<:Certif_badge:1437514351774011392>",
-    "BUGHUNTER": "<:BugHunter_badge:1437514350406668318>",
-    "BLACKLISTED": "<:Blacklisted_badge:1437514349152571452>",
-    "DEVELOPER": "<:dev_badge:1437514335009247274>",
-    "MODDYTEAM": "<:moddyteam_badge:1437514344467398837>",
-    "MANAGER": "<:manager_badge:1437514336355483749>",
-    "SUPERVISOR": "<:supervisor_badge:1437514346476470405>",
-    "SUPPORT_SUPERVISOR": "<:support_supervisor_badge:1437514347923636435>",
-    "COMMUNICATION_SUPERVISOR": "<:communication_supervisor_badge:1437514333763535068>",
-    "MOD_SUPERVISOR": "<:mod_supervisor_badge:1437514356135821322>",
-    "MODERATOR": "<:moderator_badge:1437514357230796891>",
-    "COMMUNICATION": "<:comunication_badge:1437514353304670268>",
-    "SUPPORTAGENT": "<:supportagent_badge:1437514361861177350>",
-}
-
-# Auto-assigned Moddy badges based on attributes
-AUTO_MODDY_BADGES = {
-    "TEAM": "<:moddyteam_badge:1437514344467398837>",
-    "SUPPORT": "<:supportagent_badge:1437514361861177350>",
-    "VERIFIED": "<:Certif_badge:1437514351774011392>",
-}
-
-# Special emojis
-VERIFIED_EMOJI = "<:verified:1398729677601902635>"
-MINI_VERIFIED_EMOJI = "<:miniverified:1439667456737280021>"
 
 # Discord badge support article URLs (locale-specific)
 DISCORD_BADGE_URLS = {
@@ -108,10 +59,10 @@ class UserInfoView(BaseView):
         should_show_verified = is_discord_staff or is_verified_attr or is_team_attr
 
         # Build title with display name or username (for bots) and verified emoji if applicable
-        verified_suffix = f" {VERIFIED_EMOJI}" if should_show_verified else ""
+        verified_suffix = f" {VERIFIED}" if should_show_verified else ""
         # For bots, use username in title instead of display name
         title_name = username if is_bot else global_name
-        title = f"### <:user:1398729712204779571> Information about **{title_name}**{verified_suffix}"
+        title = f"### {USER_ICON} Information about **{title_name}**{verified_suffix}"
         container.add_item(ui.TextDisplay(title))
 
         # Build info block with quotes
@@ -215,10 +166,10 @@ class UserInfoView(BaseView):
         notices = []
         if is_discord_staff:
             discord_employee_text = i18n.get("commands.user.view.discord_employee_notice", locale=self.locale)
-            notices.append(f"-# {MINI_VERIFIED_EMOJI} {discord_employee_text}")
+            notices.append(f"-# {MINI_VERIFIED} {discord_employee_text}")
         if is_team_attr:
             moddy_team_text = i18n.get("commands.user.view.moddy_team_notice", locale=self.locale)
-            notices.append(f"-# {MINI_VERIFIED_EMOJI} {moddy_team_text}")
+            notices.append(f"-# {MINI_VERIFIED} {moddy_team_text}")
 
         if notices:
             container.add_item(ui.TextDisplay("\n".join(notices)))
@@ -291,7 +242,7 @@ class UserInfoView(BaseView):
         should_show_verified = is_discord_staff or is_verified_attr or is_team_attr
 
         # Add Certif badge at the end if user has verified emoji and badge not already present
-        certif_badge = "<:Certif_badge:1437514351774011392>"
+        certif_badge = CERTIF_BADGE
         if should_show_verified and certif_badge not in badges:
             badges.append(certif_badge)
 
@@ -516,7 +467,7 @@ class UserInfoView(BaseView):
         # Create description view
         desc_view = ui.LayoutView()
         desc_container = ui.Container()
-        desc_container.add_item(ui.TextDisplay(f"### <:text:1439692405317046372> Description"))
+        desc_container.add_item(ui.TextDisplay(f"### {TEXT} Description"))
         desc_container.add_item(ui.TextDisplay(f"```{description}```"))
         desc_view.add_item(desc_container)
 
@@ -586,7 +537,7 @@ class UserInfoView(BaseView):
         # Create Components V2 view with MediaGallery
         banner_view = ui.LayoutView()
         banner_container = ui.Container(
-            ui.TextDisplay(f"### <:banner:1439659080472989726> Bannière de **{self.user_data.get('username', 'Unknown')}**"),
+            ui.TextDisplay(f"### {BANNER_ICON} Bannière de **{self.user_data.get('username', 'Unknown')}**"),
             ui.MediaGallery(
                 discord.MediaGalleryItem(media=banner_url)
             ),

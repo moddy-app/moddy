@@ -10,6 +10,7 @@ import logging
 
 from utils.i18n import t
 from cogs.error_handler import BaseView
+from utils.emojis import MANAGE_USER, BACK, SAVE, UNDONE, DELETE
 
 logger = logging.getLogger('moddy.modules.auto_role_config')
 
@@ -58,7 +59,7 @@ class AutoRoleConfigView(BaseView):
 
         # Header
         container.add_item(ui.TextDisplay(
-            f"### <:manageuser:1398729745293774919> {t('modules.auto_role.config.title', locale=self.locale)}"
+            f"### {MANAGE_USER} {t('modules.auto_role.config.title', locale=self.locale)}"
         ))
         container.add_item(ui.TextDisplay(
             t('modules.auto_role.config.description', locale=self.locale)
@@ -133,7 +134,7 @@ class AutoRoleConfigView(BaseView):
 
         # Back button (disabled if changes pending)
         back_btn = ui.Button(
-            emoji=discord.PartialEmoji.from_str("<:back:1401600847733067806>"),
+            emoji=discord.PartialEmoji.from_str(BACK),
             label=t('modules.config.buttons.back', locale=self.locale),
             style=discord.ButtonStyle.secondary,
             disabled=self.has_changes
@@ -144,7 +145,7 @@ class AutoRoleConfigView(BaseView):
         if self.has_changes:
             # Save button
             save_btn = ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:save:1444101502154182778>"),
+                emoji=discord.PartialEmoji.from_str(SAVE),
                 label=t('modules.config.buttons.save', locale=self.locale),
                 style=discord.ButtonStyle.success
             )
@@ -153,7 +154,7 @@ class AutoRoleConfigView(BaseView):
 
             # Cancel button
             cancel_btn = ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:undone:1398729502028333218>"),
+                emoji=discord.PartialEmoji.from_str(UNDONE),
                 label=t('modules.config.buttons.cancel', locale=self.locale),
                 style=discord.ButtonStyle.danger
             )
@@ -163,7 +164,7 @@ class AutoRoleConfigView(BaseView):
             if self.has_existing_config:
                 # Delete button
                 delete_btn = ui.Button(
-                    emoji=discord.PartialEmoji.from_str("<:delete:1401600770431909939>"),
+                    emoji=discord.PartialEmoji.from_str(DELETE),
                     label=t('modules.config.buttons.delete', locale=self.locale),
                     style=discord.ButtonStyle.danger
                 )

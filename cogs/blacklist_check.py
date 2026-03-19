@@ -14,6 +14,7 @@ Ce cog gère:
 import discord
 from discord.ext import commands
 from utils.components_v2 import create_blacklist_message
+from utils.emojis import DONE
 
 
 class BlacklistCheck(commands.Cog):
@@ -119,7 +120,7 @@ class BlacklistCheck(commands.Cog):
             return
 
         self.blacklist_cache.clear()
-        await ctx.send("<:done:1398729525277229066> Cache de blacklist vidé")
+        await ctx.send(f"{DONE} Cache de blacklist vidé")
 
     @commands.command(name="testbl")
     async def test_blacklist(self, ctx):

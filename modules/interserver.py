@@ -13,6 +13,7 @@ from datetime import datetime, timedelta, timezone
 import asyncio
 
 from modules.module_manager import ModuleBase
+from utils.emojis import GROUPS, UNDONE, DONE, VERIFIED, LOADING as LOADING_EMOJI, REPLY as REPLY_EMOJI
 
 logger = logging.getLogger('moddy.modules.interserver')
 
@@ -33,7 +34,7 @@ class InterServerModule(ModuleBase):
     MODULE_ID = "interserver"
     MODULE_NAME = "Inter-Server"
     MODULE_DESCRIPTION = "Connecte plusieurs serveurs via des salons dédiés"
-    MODULE_EMOJI = "<:groups:1446127489842806967>"
+    MODULE_EMOJI = GROUPS
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)
@@ -320,7 +321,7 @@ class InterServerModule(ModuleBase):
                                 # Fallback vers le message original si pas trouvé dans ce serveur
                                 reply_link = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.reference.message_id}"
 
-                            final_content = f"-# <:reply:1444821779444138146> [Reply to message]({reply_link})\n{final_content}"
+                            final_content = f"-# {REPLY_EMOJI} [Reply to message]({reply_link})\n{final_content}"
                     except Exception as e:
                         logger.debug(f"Could not add reply link: {e}")
 
@@ -367,7 +368,7 @@ class InterServerModule(ModuleBase):
 
                 # Ajoute la réaction verified pour les messages Moddy Team
                 if is_moddy_team:
-                    await sent_message.add_reaction("<:verified:1398729677601902635>")
+                    await sent_message.add_reaction(VERIFIED)
 
                 success_count += 1
 
@@ -516,7 +517,7 @@ class InterServerModule(ModuleBase):
 
                     # Container avec les informations uniquement
                     container = discord_ui.Container(
-                        discord_ui.TextDisplay(content=f"### <:groups:1446127489842806967> New Inter-Server Message"),
+                        discord_ui.TextDisplay(content=f"### {GROUPS} New Inter-Server Message"),
                         discord_ui.TextDisplay(content=f"**Moddy ID:** `{self.moddy_id}`\n**Author:** {self.author_info}\n**Server:** {self.server_info}\n**Relayed:** {self.success_count}/{self.total_count} servers\n**Moddy Team:** {'✅ Yes' if self.is_moddy_team else '❌ No'}\n**Time:** <t:{int(datetime.now(timezone.utc).timestamp())}:R>\n\n**Content:**\n{self.content_preview}"),
                     )
                     self.add_item(container)
@@ -557,7 +558,7 @@ class InterServerModule(ModuleBase):
                 SanctionType.INTERSERVER_BLACKLIST.value
             )
             if is_blacklisted:
-                await message.add_reaction("<:undone:1398729502028333218>")
+                await message.add_reaction(UNDONE)
                 await message.channel.send(
                     f"{message.author.mention} You are blacklisted from using the inter-server system.",
                     delete_after=10
@@ -568,7 +569,7 @@ class InterServerModule(ModuleBase):
             is_team = await self.bot.db.has_attribute('user', message.author.id, 'TEAM')
             if not is_team:
                 if not self._check_cooldown(message.author.id):
-                    await message.add_reaction("<:undone:1398729502028333218>")
+                    await message.add_reaction(UNDONE)
                     await message.channel.send(
                         f"{message.author.mention} Slow down! You can send a message every 3 seconds.",
                         delete_after=5
@@ -585,7 +586,7 @@ class InterServerModule(ModuleBase):
                 return
 
             # Ajoute la réaction loading
-            await message.add_reaction("<a:loading:1395047662092550194>")
+            await message.add_reaction(LOADING_EMOJI)
 
             # Détecte les messages Moddy Team
             is_moddy_team_message = False
@@ -621,14 +622,14 @@ class InterServerModule(ModuleBase):
             if not target_channels:
                 logger.debug(f"No target channels found for interserver relay from guild {self.guild_id}")
                 # Retire la réaction loading et ajoute done quand même
-                await message.remove_reaction("<a:loading:1395047662092550194>", self.bot.user)
-                await message.add_reaction("<:done:1398729525277229066>")
+                await message.remove_reaction(LOADING_EMOJI, self.bot.user)
+                await message.add_reaction(DONE)
 
                 # Supprime la réaction done après 5 secondes
                 async def remove_done_reaction():
                     await asyncio.sleep(5)
                     try:
-                        await message.remove_reaction("<:done:1398729525277229066>", self.bot.user)
+                        await message.remove_reaction(DONE, self.bot.user)
                     except:
                         pass
 
@@ -640,24 +641,24 @@ class InterServerModule(ModuleBase):
 
             # Ajoute la réaction verified pour les messages Moddy Team
             if is_moddy_team_message:
-                await message.add_reaction("<:verified:1398729677601902635>")
+                await message.add_reaction(VERIFIED)
 
             # Retire loading et ajoute done si majorité de succès
-            await message.remove_reaction("<a:loading:1395047662092550194>", self.bot.user)
+            await message.remove_reaction(LOADING_EMOJI, self.bot.user)
             if success_count >= len(target_channels) // 2:  # Au moins 50% de succès
-                await message.add_reaction("<:done:1398729525277229066>")
+                await message.add_reaction(DONE)
 
                 # Supprime la réaction done après 5 secondes
                 async def remove_done_reaction():
                     await asyncio.sleep(5)
                     try:
-                        await message.remove_reaction("<:done:1398729525277229066>", self.bot.user)
+                        await message.remove_reaction(DONE, self.bot.user)
                     except:
                         pass
 
                 asyncio.create_task(remove_done_reaction())
             else:
-                await message.add_reaction("<:undone:1398729502028333218>")
+                await message.add_reaction(UNDONE)
 
             # Envoie le log au salon staff approprié
             await self._send_staff_log(message, moddy_id, is_moddy_team_message, success_count, len(target_channels))
@@ -668,7 +669,7 @@ class InterServerModule(ModuleBase):
             logger.error(f"Error relaying interserver message: {e}", exc_info=True)
             # Retire loading et ajoute error
             try:
-                await message.remove_reaction("<a:loading:1395047662092550194>", self.bot.user)
-                await message.add_reaction("<:undone:1398729502028333218>")
+                await message.remove_reaction(LOADING_EMOJI, self.bot.user)
+                await message.add_reaction(UNDONE)
             except:
                 pass

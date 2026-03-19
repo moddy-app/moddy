@@ -10,6 +10,7 @@ import logging
 
 from utils.i18n import t
 from cogs.error_handler import BaseView
+from utils.emojis import HISTORY, REQUIRED_FIELDS, DONE, DELETE, BACK, SAVE, UNDONE
 
 logger = logging.getLogger('moddy.modules.auto_restore_roles_config')
 
@@ -60,7 +61,7 @@ class AutoRestoreRolesConfigView(BaseView):
 
         # Header
         container.add_item(ui.TextDisplay(
-            f"### <:history:1401600464587456512> {t('modules.auto_restore_roles.config.title', locale=self.locale)}"
+            f"### {HISTORY} {t('modules.auto_restore_roles.config.title', locale=self.locale)}"
         ))
         container.add_item(ui.TextDisplay(
             t('modules.auto_restore_roles.config.description', locale=self.locale)
@@ -71,7 +72,7 @@ class AutoRestoreRolesConfigView(BaseView):
         # Mode selector (Required field)
         from modules.auto_restore_roles import AutoRestoreRolesModule
         container.add_item(ui.TextDisplay(
-            f"**{t('modules.auto_restore_roles.config.mode.section_title', locale=self.locale)}**<:required_fields:1446549185385074769>\n"
+            f"**{t('modules.auto_restore_roles.config.mode.section_title', locale=self.locale)}**{REQUIRED_FIELDS}\n"
             f"-# {t('modules.auto_restore_roles.config.mode.section_description', locale=self.locale)}"
         ))
 
@@ -85,14 +86,14 @@ class AutoRestoreRolesConfigView(BaseView):
                     label=t('modules.auto_restore_roles.config.mode.all.label', locale=self.locale),
                     value=AutoRestoreRolesModule.MODE_ALL,
                     description=t('modules.auto_restore_roles.config.mode.all.description', locale=self.locale),
-                    emoji="<:done:1398729525277229066>",
+                    emoji=DONE,
                     default=self.working_config['mode'] == AutoRestoreRolesModule.MODE_ALL
                 ),
                 discord.SelectOption(
                     label=t('modules.auto_restore_roles.config.mode.except.label', locale=self.locale),
                     value=AutoRestoreRolesModule.MODE_EXCEPT,
                     description=t('modules.auto_restore_roles.config.mode.except.description', locale=self.locale),
-                    emoji="<:delete:1401600770431909939>",
+                    emoji=DELETE,
                     default=self.working_config['mode'] == AutoRestoreRolesModule.MODE_EXCEPT
                 ),
                 discord.SelectOption(
@@ -111,7 +112,7 @@ class AutoRestoreRolesConfigView(BaseView):
         # Excluded roles selector (visible only in EXCEPT mode)
         if self.working_config['mode'] == AutoRestoreRolesModule.MODE_EXCEPT:
             container.add_item(ui.TextDisplay(
-                f"**{t('modules.auto_restore_roles.config.excluded_roles.section_title', locale=self.locale)}**<:required_fields:1446549185385074769>\n"
+                f"**{t('modules.auto_restore_roles.config.excluded_roles.section_title', locale=self.locale)}**{REQUIRED_FIELDS}\n"
                 f"-# {t('modules.auto_restore_roles.config.excluded_roles.section_description', locale=self.locale)}"
             ))
 
@@ -156,7 +157,7 @@ class AutoRestoreRolesConfigView(BaseView):
         # Included roles selector (visible only in ONLY mode)
         if self.working_config['mode'] == AutoRestoreRolesModule.MODE_ONLY:
             container.add_item(ui.TextDisplay(
-                f"**{t('modules.auto_restore_roles.config.included_roles.section_title', locale=self.locale)}**<:required_fields:1446549185385074769>\n"
+                f"**{t('modules.auto_restore_roles.config.included_roles.section_title', locale=self.locale)}**{REQUIRED_FIELDS}\n"
                 f"-# {t('modules.auto_restore_roles.config.included_roles.section_description', locale=self.locale)}"
             ))
 
@@ -231,7 +232,7 @@ class AutoRestoreRolesConfigView(BaseView):
 
         # Back button (disabled if changes pending)
         back_btn = ui.Button(
-            emoji=discord.PartialEmoji.from_str("<:back:1401600847733067806>"),
+            emoji=discord.PartialEmoji.from_str(BACK),
             label=t('modules.config.buttons.back', locale=self.locale),
             style=discord.ButtonStyle.secondary,
             disabled=self.has_changes
@@ -242,7 +243,7 @@ class AutoRestoreRolesConfigView(BaseView):
         if self.has_changes:
             # Save button
             save_btn = ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:save:1444101502154182778>"),
+                emoji=discord.PartialEmoji.from_str(SAVE),
                 label=t('modules.config.buttons.save', locale=self.locale),
                 style=discord.ButtonStyle.success
             )
@@ -251,7 +252,7 @@ class AutoRestoreRolesConfigView(BaseView):
 
             # Cancel button
             cancel_btn = ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:undone:1398729502028333218>"),
+                emoji=discord.PartialEmoji.from_str(UNDONE),
                 label=t('modules.config.buttons.cancel', locale=self.locale),
                 style=discord.ButtonStyle.danger
             )
@@ -261,7 +262,7 @@ class AutoRestoreRolesConfigView(BaseView):
             if self.has_existing_config:
                 # Delete button
                 delete_btn = ui.Button(
-                    emoji=discord.PartialEmoji.from_str("<:delete:1401600770431909939>"),
+                    emoji=discord.PartialEmoji.from_str(DELETE),
                     label=t('modules.config.buttons.delete', locale=self.locale),
                     style=discord.ButtonStyle.danger
                 )

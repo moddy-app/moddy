@@ -11,6 +11,7 @@ import re
 
 from utils.i18n import t
 from cogs.error_handler import BaseView, BaseModal
+from utils.emojis import MODDY_ALT, REQUIRED_FIELDS, EDIT, INFO, ADD, BACK, SAVE, UNDONE, DELETE, DONE
 
 logger = logging.getLogger('moddy.modules.youtube_notifications_config')
 
@@ -144,7 +145,7 @@ class EditSubscriptionView(BaseView):
 
         # Title
         container.add_item(ui.TextDisplay(
-            f"### <:moddy:1451280939412881508> {t('modules.youtube_notifications.config.edit.title', locale=self.locale)}"
+            f"### {MODDY_ALT} {t('modules.youtube_notifications.config.edit.title', locale=self.locale)}"
         ))
 
         # Channel info (read-only)
@@ -167,7 +168,7 @@ class EditSubscriptionView(BaseView):
         edit_message_btn = ui.Button(
             label=t('modules.youtube_notifications.config.edit.edit_message', locale=self.locale),
             style=discord.ButtonStyle.primary,
-            emoji=discord.PartialEmoji.from_str("<:edit:1401600709824086169>")
+            emoji=discord.PartialEmoji.from_str(EDIT)
         )
         edit_message_btn.callback = self.on_edit_message
         message_row.add_item(edit_message_btn)
@@ -177,7 +178,7 @@ class EditSubscriptionView(BaseView):
 
         # Discord channel selector
         container.add_item(ui.TextDisplay(
-            f"**{t('modules.youtube_notifications.config.edit.discord_channel', locale=self.locale)}**<:required_fields:1446549185385074769>\n"
+            f"**{t('modules.youtube_notifications.config.edit.discord_channel', locale=self.locale)}**{REQUIRED_FIELDS}\n"
             f"-# {t('modules.youtube_notifications.config.edit.discord_channel_description', locale=self.locale)}"
         ))
 
@@ -237,7 +238,7 @@ class EditSubscriptionView(BaseView):
 
         # Back button
         back_btn = ui.Button(
-            emoji=discord.PartialEmoji.from_str("<:back:1401600847733067806>"),
+            emoji=discord.PartialEmoji.from_str(BACK),
             label=t('modules.config.buttons.back', locale=self.locale),
             style=discord.ButtonStyle.secondary,
             disabled=self.has_changes
@@ -248,7 +249,7 @@ class EditSubscriptionView(BaseView):
         if self.has_changes:
             # Save button
             save_btn = ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:save:1444101502154182778>"),
+                emoji=discord.PartialEmoji.from_str(SAVE),
                 label=t('modules.config.buttons.save', locale=self.locale),
                 style=discord.ButtonStyle.success
             )
@@ -257,7 +258,7 @@ class EditSubscriptionView(BaseView):
 
             # Cancel button
             cancel_btn = ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:undone:1398729502028333218>"),
+                emoji=discord.PartialEmoji.from_str(UNDONE),
                 label=t('modules.config.buttons.cancel', locale=self.locale),
                 style=discord.ButtonStyle.danger
             )
@@ -266,7 +267,7 @@ class EditSubscriptionView(BaseView):
         else:
             # Delete button
             delete_btn = ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:delete:1401600770431909939>"),
+                emoji=discord.PartialEmoji.from_str(DELETE),
                 label=t('modules.config.buttons.delete', locale=self.locale),
                 style=discord.ButtonStyle.danger
             )
@@ -429,7 +430,7 @@ class YoutubeNotificationsConfigView(BaseView):
 
         # Header
         container.add_item(ui.TextDisplay(
-            f"### <:moddy:1451280939412881508> {t('modules.youtube_notifications.config.title', locale=self.locale)}"
+            f"### {MODDY_ALT} {t('modules.youtube_notifications.config.title', locale=self.locale)}"
         ))
         container.add_item(ui.TextDisplay(
             t('modules.youtube_notifications.config.description', locale=self.locale)
@@ -463,7 +464,7 @@ class YoutubeNotificationsConfigView(BaseView):
                     edit_btn = ui.Button(
                         label=str(j + 1),
                         style=discord.ButtonStyle.secondary,
-                        emoji=discord.PartialEmoji.from_str("<:edit:1401600709824086169>"),
+                        emoji=discord.PartialEmoji.from_str(EDIT),
                         custom_id=f"edit_sub_{j}"
                     )
                     edit_btn.callback = lambda inter, idx=j: self.on_edit_subscription(inter, idx)
@@ -473,7 +474,7 @@ class YoutubeNotificationsConfigView(BaseView):
             container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
         else:
             container.add_item(ui.TextDisplay(
-                f"<:info:1401614681440784477> {t('modules.youtube_notifications.config.subscriptions.empty', locale=self.locale)}"
+                f"{INFO} {t('modules.youtube_notifications.config.subscriptions.empty', locale=self.locale)}"
             ))
 
         # Add channel button
@@ -481,7 +482,7 @@ class YoutubeNotificationsConfigView(BaseView):
         add_btn = ui.Button(
             label=t('modules.youtube_notifications.config.buttons.add', locale=self.locale),
             style=discord.ButtonStyle.success,
-            emoji=discord.PartialEmoji.from_str("<:add:1439697866049323090>")
+            emoji=discord.PartialEmoji.from_str(ADD)
         )
         add_btn.callback = self.on_add_channel
         add_row.add_item(add_btn)
@@ -496,7 +497,7 @@ class YoutubeNotificationsConfigView(BaseView):
 
         # Back button (disabled if changes pending)
         back_btn = ui.Button(
-            emoji=discord.PartialEmoji.from_str("<:back:1401600847733067806>"),
+            emoji=discord.PartialEmoji.from_str(BACK),
             label=t('modules.config.buttons.back', locale=self.locale),
             style=discord.ButtonStyle.secondary,
             disabled=self.has_changes
@@ -507,7 +508,7 @@ class YoutubeNotificationsConfigView(BaseView):
         # Save button (only if changes)
         if self.has_changes:
             save_btn = ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:save:1444101502154182778>"),
+                emoji=discord.PartialEmoji.from_str(SAVE),
                 label=t('modules.config.buttons.save', locale=self.locale),
                 style=discord.ButtonStyle.success
             )
@@ -516,7 +517,7 @@ class YoutubeNotificationsConfigView(BaseView):
 
             # Cancel button
             cancel_btn = ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:undone:1398729502028333218>"),
+                emoji=discord.PartialEmoji.from_str(UNDONE),
                 label=t('modules.config.buttons.cancel', locale=self.locale),
                 style=discord.ButtonStyle.danger
             )
@@ -526,7 +527,7 @@ class YoutubeNotificationsConfigView(BaseView):
             # Delete all button (if config exists)
             if self.has_existing_config:
                 delete_btn = ui.Button(
-                    emoji=discord.PartialEmoji.from_str("<:delete:1401600770431909939>"),
+                    emoji=discord.PartialEmoji.from_str(DELETE),
                     label=t('modules.config.buttons.delete', locale=self.locale),
                     style=discord.ButtonStyle.danger
                 )
@@ -565,7 +566,7 @@ class YoutubeNotificationsConfigView(BaseView):
         container = ui.Container()
 
         container.add_item(ui.TextDisplay(
-            f"### <:moddy:1451280939412881508> {t('modules.youtube_notifications.config.add.select_title', locale=self.locale)}"
+            f"### {MODDY_ALT} {t('modules.youtube_notifications.config.add.select_title', locale=self.locale)}"
         ))
 
         container.add_item(ui.TextDisplay(
@@ -577,7 +578,7 @@ class YoutubeNotificationsConfigView(BaseView):
 
         # Discord channel selector
         container.add_item(ui.TextDisplay(
-            f"**{t('modules.youtube_notifications.config.add.discord_channel', locale=self.locale)}**<:required_fields:1446549185385074769>\n"
+            f"**{t('modules.youtube_notifications.config.add.discord_channel', locale=self.locale)}**{REQUIRED_FIELDS}\n"
             f"-# {t('modules.youtube_notifications.config.add.discord_channel_description', locale=self.locale)}"
         ))
 
@@ -614,7 +615,7 @@ class YoutubeNotificationsConfigView(BaseView):
         button_row = ui.ActionRow()
 
         cancel_btn = ui.Button(
-            emoji=discord.PartialEmoji.from_str("<:undone:1398729502028333218>"),
+            emoji=discord.PartialEmoji.from_str(UNDONE),
             label=t('modules.config.buttons.cancel', locale=self.locale),
             style=discord.ButtonStyle.danger
         )
@@ -622,7 +623,7 @@ class YoutubeNotificationsConfigView(BaseView):
         button_row.add_item(cancel_btn)
 
         confirm_btn = ui.Button(
-            emoji=discord.PartialEmoji.from_str("<:done:1398729525277229066>"),
+            emoji=discord.PartialEmoji.from_str(DONE),
             label=t('modules.config.buttons.confirm', locale=self.locale),
             style=discord.ButtonStyle.success,
             disabled=True  # Enabled after channel selection

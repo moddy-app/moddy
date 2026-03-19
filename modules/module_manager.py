@@ -110,13 +110,13 @@ class ModuleBase(ABC):
         """Active le module"""
         self.enabled = True
         await self.on_enable()
-        logger.info(f"✅ Module {self.MODULE_ID} activé pour le serveur {self.guild_id}")
+        logger.info(f"Module {self.MODULE_ID} enabled for guild {self.guild_id}")
 
     async def disable(self):
         """Désactive le module"""
         self.enabled = False
         await self.on_disable()
-        logger.info(f"❌ Module {self.MODULE_ID} désactivé pour le serveur {self.guild_id}")
+        logger.info(f"Module {self.MODULE_ID} disabled for guild {self.guild_id}")
 
     async def on_enable(self):
         """Hook appelé quand le module est activé"""
@@ -156,10 +156,10 @@ class ModuleManager:
 
         module_id = module_class.MODULE_ID
         if module_id in self.registered_modules:
-            logger.warning(f"⚠️ Module {module_id} already registered, overwriting")
+            logger.warning(f"[WARN] Module {module_id} already registered, overwriting")
 
         self.registered_modules[module_id] = module_class
-        logger.info(f"✅ Module registered: {module_id} ({module_class.MODULE_NAME})")
+        logger.info(f"Module registered: {module_id} ({module_class.MODULE_NAME})")
 
     def get_available_modules(self) -> List[Dict[str, str]]:
         """
@@ -202,7 +202,7 @@ class ModuleManager:
             guild_id: ID du serveur
         """
         if not self.bot.db:
-            logger.warning("⚠️ No database connection, cannot load modules")
+            logger.warning("[WARN] No database connection, cannot load modules")
             return
 
         try:
@@ -232,14 +232,14 @@ class ModuleManager:
                     # Active le module si la config est valide (enabled est déterminé dans load_config)
                     if module_instance.enabled:
                         await module_instance.enable()
-                    logger.info(f"✅ Module {module_id} loaded for guild {guild_id} (enabled: {module_instance.enabled})")
+                    logger.info(f"Module loaded: {module_id} (guild: {guild_id}, enabled: {module_instance.enabled})")
                 else:
-                    logger.error(f"❌ Failed to load module {module_id} for guild {guild_id}")
+                    logger.error(f"[FAIL] Failed to load module {module_id} for guild {guild_id}")
 
-            logger.info(f"📦 Loaded {len(self.active_modules[guild_id])} modules for guild {guild_id}")
+            logger.info(f"Loaded {len(self.active_modules[guild_id])} modules for guild {guild_id}")
 
         except Exception as e:
-            logger.error(f"❌ Error loading modules for guild {guild_id}: {e}", exc_info=True)
+            logger.error(f"[FAIL] Error loading modules for guild {guild_id}: {e}", exc_info=True)
 
     async def save_module_config(self, guild_id: int, module_id: str, config_data: Dict[str, Any]) -> tuple[bool, Optional[str]]:
         """
@@ -306,7 +306,7 @@ class ModuleManager:
                 config_data
             )
 
-            logger.info(f"📝 Config saved to DB for module {module_id} in guild {guild_id}: {config_data}")
+            logger.info(f"Config saved to DB for module {module_id} in guild {guild_id}: {config_data}")
 
             # Met à jour ou crée l'instance active
             if guild_id not in self.active_modules:
@@ -329,11 +329,11 @@ class ModuleManager:
             else:
                 await module_instance.disable()
 
-            logger.info(f"✅ Configuration saved for module {module_id} in guild {guild_id} (enabled: {module_instance.enabled})")
+            logger.info(f"Configuration saved for module {module_id} in guild {guild_id} (enabled: {module_instance.enabled})")
             return True, None
 
         except Exception as e:
-            logger.error(f"❌ Error saving module config: {e}", exc_info=True)
+            logger.error(f"[FAIL] Error saving module config: {e}", exc_info=True)
             return False, f"Internal error: {str(e)}"
 
     async def delete_module_config(self, guild_id: int, module_id: str) -> bool:
@@ -364,11 +364,11 @@ class ModuleManager:
                 {}
             )
 
-            logger.info(f"🗑️ Configuration deleted for module {module_id} in guild {guild_id}")
+            logger.info(f"Configuration deleted for module {module_id} in guild {guild_id}")
             return True
 
         except Exception as e:
-            logger.error(f"❌ Error deleting module config: {e}", exc_info=True)
+            logger.error(f"[FAIL] Error deleting module config: {e}", exc_info=True)
             return False
 
     async def get_module_config(self, guild_id: int, module_id: str) -> Optional[Dict[str, Any]]:
@@ -390,7 +390,7 @@ class ModuleManager:
             modules_config = guild_data.get('data', {}).get('modules', {})
             return modules_config.get(module_id)
         except Exception as e:
-            logger.error(f"❌ Error getting module config: {e}", exc_info=True)
+            logger.error(f"[FAIL] Error getting module config: {e}", exc_info=True)
             return None
 
     async def load_all_modules(self):
@@ -399,16 +399,16 @@ class ModuleManager:
         Appelé au démarrage du bot
         """
         if not self.bot.db:
-            logger.warning("⚠️ No database connection, cannot load modules")
+            logger.warning("[WARN] No database connection, cannot load modules")
             return
 
-        logger.info("📦 Loading modules for all guilds...")
+        logger.info("Loading modules for all guilds...")
 
         # Récupère tous les serveurs
         for guild in self.bot.guilds:
             await self.load_guild_modules(guild.id)
 
-        logger.info("✅ All guild modules loaded")
+        logger.info("All guild modules loaded")
 
     def discover_modules(self):
         """
@@ -416,7 +416,7 @@ class ModuleManager:
         """
         modules_dir = Path(__file__).parent
 
-        logger.info("🔍 Discovering modules...")
+        logger.info("Discovering modules...")
 
         # Parcourt tous les fichiers Python dans le dossier modules
         for file in modules_dir.glob("*.py"):
@@ -435,6 +435,6 @@ class ModuleManager:
                         self.register_module(obj)
 
             except Exception as e:
-                logger.error(f"❌ Error loading module {file.stem}: {e}", exc_info=True)
+                logger.error(f"[FAIL] Error loading module {file.stem}: {e}", exc_info=True)
 
-        logger.info(f"✅ Discovered {len(self.registered_modules)} modules")
+        logger.info(f"Discovered {len(self.registered_modules)} modules")

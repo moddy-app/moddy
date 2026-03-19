@@ -14,7 +14,7 @@ import io
 from datetime import datetime
 
 from utils.i18n import i18n, t
-from config import EMOJIS
+from utils.emojis import EMOJIS
 
 
 class InviteView(BaseView):
@@ -454,7 +454,7 @@ class ServerInfoView(BaseView):
         is_nsfw = guild.get('nsfw', False)
         if nsfw_level > 0 or is_nsfw:
             container.add_item(ui.TextDisplay(
-                f"<:warning:1446108410092195902> **{t('commands.invite.view.guild.nsfw', locale=self.locale)}** (Level: `{nsfw_level}`)"
+                f"{EMOJIS['warning']} **{t('commands.invite.view.guild.nsfw', locale=self.locale)}** (Level: `{nsfw_level}`)"
             ))
 
         # Server images (icon, banner, splash) as links

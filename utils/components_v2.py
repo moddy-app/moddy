@@ -8,66 +8,7 @@ from discord.ui import LayoutView, Container, TextDisplay, Separator
 from discord import SeparatorSpacing
 from typing import List, Optional, Dict
 
-# Emojis personnalisés du bot
-EMOJIS = {
-    # Core emojis
-    'done': '<:done:1398729525277229066>',
-    'undone': '<:undone:1398729502028333218>',
-    'error': '<:error:1444049460924776478>',
-    'info': '<:info:1401614681440784477>',
-    'warning': '<:warning:1446108410092195902>',
-    'sync': '<:sync:1398729150885269546>',
-    'user': '<:user:1398729712204779571>',
-    'dev': '<:dev:1398729645557285066>',
-    'settings': '<:settings:1398729549323440208>',
-    'blacklist': '<:blacklist:1401596866478477363>',
-    'time': '<:time:1398729780723060736>',
-    'snowflake': '<:snowflake:1398729841938792458>',
-    'web': '<:web:1398729801061240883>',
-    'moddy': '<:moddy:1396880909117947924>',
-    'loading': '<a:loading:1455219844080336907>',
-    'history': '<:history:1401600464587456512>',
-    'delete': '<:delete:1401600770431909939>',
-    'commands': '<:commands:1401610449136648283>',
-    'book': '<:book:1446557736350388364>',
-    'code': '<:code:1401610523803652196>',
-    'bug': '<:bug:1401614189482475551>',
-    'logout': '<:logout:1401603690858676224>',
-    'verified': '<:verified:1398729677601902635>',
-    'next': '<next:1443745574972031067>',
-    'back': '<:back:1401600847733067806>',
-    'note': '<note:1443749708857085982>',
-    'message': '<message:1443749710073696286>',
-    'search': '<search:1443752796460552232>',
-    'save': '<save:1444101502154182778>',
-    'reply': '<reply:1444821779444138146>',
-    'groups': '<:groups:1446127489842806967>',
-    'waving_hand': '<:waving_hand:1446127491004760184>',
-    'flag': '<:flag:1446197210198048778>',
-    'toggle_off': '<:toggle_off:1446267399786594514>',
-    'toggle_on': '<:toogle_on:1446267419034386473>',
-    'at': '<:at:1446199071013470319>',
-    'star': '<:star:1446267438671859832>',
-    'required_fields': '<:required_fields:1446549185385074769>',
-    # Staff badges
-    'supportagent_badge': '<:supportagent_badge:1437514361861177350>',
-    'moderator_badge': '<:moderator_badge:1437514357230796891>',
-    'mod_supervisor_badge': '<:mod_supervisor_badge:1437514356135821322>',
-    'comunication_badge': '<:comunication_badge:1437514353304670268>',
-    'support_supervisor_badge': '<:support_supervisor_badge:1437514347923636435>',
-    'supervisor_badge': '<:supervisor_badge:1437514346476470405>',
-    'moddyteam_badge': '<:moddyteam_badge:1437514344467398837>',
-    'manager_badge': '<:manager_badge:1437514336355483749>',
-    'dev_badge': '<:dev_badge:1437514335009247274>',
-    'communication_supervisor_badge': '<:communication_supervisor_badge:1437514333763535068>',
-    # Other badges
-    'premium_badge': '<:premium_badge:1437514360758075514>',
-    'partner_badge': '<:partener_badge:1437514359294263388>',
-    'contributor_badge': '<:contributor_badge:1437514354802036940>',
-    'certif_badge': '<:Certif_badge:1437514351774011392>',
-    'bughunter_badge': '<:BugHunter_badge:1437514350406668318>',
-    'blacklisted_badge': '<:Blacklisted_badge:1437514349152571452>',
-}
+from utils.emojis import EMOJIS
 
 
 def create_simple_message(

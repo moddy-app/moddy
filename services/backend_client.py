@@ -31,7 +31,7 @@ DEFAULT_RETRY_DELAY = 2.0  # seconds
 DEFAULT_RETRY_BACKOFF = 1.5  # multiplier
 
 if not INTERNAL_API_SECRET:
-    logger.warning("⚠️ INTERNAL_API_SECRET not set - backend communication will fail")
+    logger.warning("[WARN] INTERNAL_API_SECRET not set - backend communication will fail")
 
 
 class BackendClientError(Exception):
@@ -59,7 +59,7 @@ class BackendClient:
         self.api_secret = api_secret or INTERNAL_API_SECRET
 
         if not self.api_secret:
-            logger.error("❌ BackendClient initialized without INTERNAL_API_SECRET")
+            logger.error("[FAIL] BackendClient initialized without INTERNAL_API_SECRET")
             raise BackendClientError("INTERNAL_API_SECRET is required")
 
         self.client = httpx.AsyncClient(

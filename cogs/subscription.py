@@ -12,6 +12,7 @@ from datetime import datetime
 from services import get_backend_client, BackendClientError
 from cogs.error_handler import BaseView
 from utils.i18n import t
+from utils.emojis import PREMIUM, WARNING, GREEN_STATUS, RED_STATUS, YELLOW_STATUS, INFO, ERROR
 
 logger = logging.getLogger('moddy.cogs.subscription')
 
@@ -35,7 +36,7 @@ class SubscriptionView(BaseView):
 
         # Titre avec emoji premium
         container.add_item(ui.TextDisplay(
-            f"### <:premium:1401602724801548381> Your Subscription"
+            f"### {PREMIUM} Your Subscription"
         ))
 
         if not self.subscription_data.get("has_subscription"):
@@ -91,7 +92,7 @@ class SubscriptionView(BaseView):
             if sub.get("cancel_at_period_end"):
                 container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
                 container.add_item(ui.TextDisplay(
-                    f"<:warning:1446108410092195902> **Cancellation Scheduled**\n"
+                    f"{WARNING} **Cancellation Scheduled**\n"
                     f"-# Your subscription will end on {renewal_date}"
                 ))
 
@@ -100,14 +101,14 @@ class SubscriptionView(BaseView):
     def _get_status_emoji(self, status: str) -> str:
         """Retourne l'emoji correspondant au statut"""
         status_emojis = {
-            "active": "<:green_status:1450929035428495505>",
-            "canceled": "<:red_status:1450929038758772940>",
-            "trialing": "<:yellow_status:1450929037542166669>",
-            "past_due": "<:warning:1446108410092195902>",
-            "incomplete": "<:yellow_status:1450929037542166669>",
-            "unpaid": "<:red_status:1450929038758772940>",
+            "active": GREEN_STATUS,
+            "canceled": RED_STATUS,
+            "trialing": YELLOW_STATUS,
+            "past_due": WARNING,
+            "incomplete": YELLOW_STATUS,
+            "unpaid": RED_STATUS,
         }
-        return status_emojis.get(status, "<:info:1401614681440784477>")
+        return status_emojis.get(status, INFO)
 
     def _format_date(self, iso_date: str) -> str:
         """Formate une date ISO 8601 en format lisible"""
@@ -171,7 +172,7 @@ class Subscription(commands.Cog):
         except BackendClientError as e:
             logger.error(f"❌ Backend error for user {interaction.user.id}: {e}", exc_info=True)
             await interaction.followup.send(
-                "<:error:1444049460924776478> **Error**\n"
+                f"{ERROR} **Error**\n"
                 "Unable to retrieve your subscription information. Please try again later.",
                 ephemeral=True
             )
@@ -181,7 +182,7 @@ class Subscription(commands.Cog):
                 exc_info=True
             )
             await interaction.followup.send(
-                "<:error:1444049460924776478> **Error**\n"
+                f"{ERROR} **Error**\n"
                 "An unexpected error occurred. Please try again later.",
                 ephemeral=True
             )

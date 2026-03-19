@@ -10,7 +10,7 @@ from typing import Optional
 import logging
 
 from utils.i18n import t
-from config import EMOJIS
+from utils.emojis import EMOJIS
 from cogs.error_handler import BaseView
 
 logger = logging.getLogger('moddy.cogs.config')
@@ -78,7 +78,7 @@ class ConfigMainView(BaseView):
         # Si aucun module disponible
         if not options:
             container.add_item(ui.TextDisplay(
-                f"<:warning:1446108410092195902> {t('modules.config.main.no_modules', locale=self.locale)}"
+                f"{EMOJIS['warning']} {t('modules.config.main.no_modules', locale=self.locale)}"
             ))
             self.add_item(container)
             return

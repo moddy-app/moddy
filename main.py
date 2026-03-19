@@ -27,7 +27,7 @@ if sys.platform == "win32":
 
 # Checking Python version
 if sys.version_info < (3, 11):
-    print("❌ Python 3.11+ is required!")
+    print("[FAIL] Python 3.11+ is required!")
     sys.exit(1)
 
 
@@ -46,7 +46,7 @@ class ServiceManager:
 
     def _signal_handler(self, signum, frame):
         """Handles shutdown signals."""
-        self.logger.info("📍 Shutdown signal received, closing services...")
+        self.logger.info("Shutdown signal received, closing services...")
         self.cleanup()
 
     def start_service(self, name: str, command: list, health_check_url: Optional[str] = None):
@@ -60,11 +60,11 @@ class ServiceManager:
         """
         if name in self.services and self.services[name].get('process'):
             if self.services[name]['process'].poll() is None:
-                self.logger.info(f"✅ {name} is already active")
+                self.logger.info(f"{name} is already active")
                 return True
 
         try:
-            self.logger.info(f"🚀 Starting service {name}...")
+            self.logger.info(f"Starting service {name}...")
 
             # Starts the process
             process = subprocess.Popen(
@@ -95,24 +95,24 @@ class ServiceManager:
             # Waiting for the service to be ready
             if health_check_url:
                 if self._wait_for_service(name, health_check_url):
-                    self.logger.info(f"✅ {name} is operational")
+                    self.logger.info(f"{name} is operational")
                     return True
                 else:
-                    self.logger.error(f"❌ {name} did not start correctly")
+                    self.logger.error(f"[FAIL] {name} did not start correctly")
                     self.stop_service(name)
                     return False
             else:
                 # No health check, assuming it's okay after a delay
                 time.sleep(2)
                 if process.poll() is None:
-                    self.logger.info(f"✅ {name} launched (no health check)")
+                    self.logger.info(f"{name} launched (no health check)")
                     return True
                 else:
-                    self.logger.error(f"❌ {name} stopped immediately")
+                    self.logger.error(f"[FAIL] {name} stopped immediately")
                     return False
 
         except Exception as e:
-            self.logger.error(f"❌ Error starting {name}: {e}")
+            self.logger.error(f"[FAIL] Error starting {name}: {e}")
             return False
 
     def _stream_logs(self, service_name: str, process: subprocess.Popen):
@@ -132,9 +132,9 @@ class ServiceManager:
                     line = line.strip()
                     if line:
                         # Determines the log level
-                        if 'ERROR' in line or 'CRITICAL' in line or '❌' in line:
+                        if 'ERROR' in line or 'CRITICAL' in line:
                             logger.error(line)
-                        elif 'WARNING' in line or 'WARN' in line or '⚠️' in line:
+                        elif 'WARNING' in line or 'WARN' in line:
                             logger.warning(line)
                         elif 'DEBUG' in line:
                             logger.debug(line)
@@ -144,7 +144,7 @@ class ServiceManager:
                 # Checks if the process is still active
                 if process.poll() is not None:
                     if self.running:
-                        logger.warning(f"⚠️ {service_name} has stopped (code: {process.returncode})")
+                        logger.warning(f"[WARN] {service_name} has stopped (code: {process.returncode})")
                     break
 
         except Exception as e:
@@ -185,16 +185,16 @@ class ServiceManager:
             process = service['process']
 
             if process.poll() is None:
-                self.logger.info(f"⏹️  Stopping service {name}...")
+                self.logger.info(f"Stopping service {name}...")
 
                 # Trying to stop cleanly
                 process.terminate()
                 try:
                     process.wait(timeout=5)
-                    self.logger.info(f"✅ {name} stopped cleanly")
+                    self.logger.info(f"{name} stopped cleanly")
                 except subprocess.TimeoutExpired:
                     # Forcing stop
-                    self.logger.warning(f"⚠️ Forcing stop of {name}")
+                    self.logger.warning(f"[WARN] Forcing stop of {name}")
                     process.kill()
                     process.wait()
 
@@ -224,11 +224,11 @@ class ServiceManager:
         for name, service in self.services.items():
             if service.get('process'):
                 if service['process'].poll() is None:
-                    status[name] = "🟢 Running"
+                    status[name] = "Running"
                 else:
-                    status[name] = f"🔴 Stopped (code: {service['process'].returncode})"
+                    status[name] = f"Stopped (code: {service['process'].returncode})"
             else:
-                status[name] = "⚫ Not started"
+                status[name] = "Not started"
         return status
 
 
@@ -262,35 +262,13 @@ def setup_logging():
     """Configures the unified logging system."""
 
     # Log format
-    log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    log_format = '%(asctime)s [%(levelname)-8s] %(name)-25s | %(message)s'
     date_format = '%Y-%m-%d %H:%M:%S'
 
-    # Console handler with colors
+    # Console handler
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(logging.INFO)
-
-    # Custom formatter with colors (if available)
-    try:
-        from colorlog import ColoredFormatter
-
-        class CompactColoredFormatter(ColoredFormatter, CompactExceptionFormatter):
-            """Combines colored formatting with compact exceptions"""
-            pass
-
-        colored_format = '%(log_color)s%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-        console_handler.setFormatter(CompactColoredFormatter(
-            colored_format,
-            datefmt=date_format,
-            log_colors={
-                'DEBUG': 'cyan',
-                'INFO': 'green',
-                'WARNING': 'yellow',
-                'ERROR': 'red',
-                'CRITICAL': 'red,bg_white',
-            }
-        ))
-    except ImportError:
-        console_handler.setFormatter(CompactExceptionFormatter(log_format, date_format))
+    console_handler.setFormatter(CompactExceptionFormatter(log_format, date_format))
 
     # File handler
     log_dir = Path(__file__).parent / 'logs'
@@ -327,7 +305,7 @@ async def start_services():
     # Displays the status of services, if any
     status = service_manager.get_status()
     if status:
-        logger.info("📊 Services status:")
+        logger.info("Services status:")
         for name, state in status.items():
             logger.info(f"  • {name}: {state}")
 
@@ -341,7 +319,7 @@ async def start_api_server():
     port = int(os.getenv("PORT", os.getenv("INTERNAL_PORT", 3000)))
 
     logger = logging.getLogger('moddy')
-    logger.info(f"🌐 Starting API server on port {port}...")
+    logger.info(f"Starting API server on port {port}...")
 
     config = uvicorn.Config(
         app,
@@ -358,7 +336,7 @@ async def main():
 
     # Configuring logging
     logger = setup_logging()
-    logger.info("🔧 Initializing Moddy...")
+    logger.info("Initializing Moddy...")
 
     try:
         # Starting external services
@@ -369,7 +347,7 @@ async def main():
         from config import TOKEN
 
         if not TOKEN:
-            logger.error("❌ Discord token missing! Check your .env file")
+            logger.error("[FAIL] Discord token missing! Check your .env file")
             return
 
         # Creates the bot with a reference to the service manager
@@ -417,7 +395,7 @@ async def main():
             await ctx.send(f"Service {service_name}: {state}")
 
         # Start API server and Discord bot in parallel
-        logger.info("🚀 Starting API server and Discord bot...")
+        logger.info("Starting API server and Discord bot...")
 
         async def start_bot_with_retry():
             """Starts the bot with retry logic for network issues."""
@@ -430,12 +408,12 @@ async def main():
                     break  # Success, exit retry loop
                 except asyncio.TimeoutError:
                     if attempt < max_retries:
-                        logger.warning(f"⚠️ Connection timeout (attempt {attempt}/{max_retries})")
-                        logger.info(f"🔄 Retrying in {retry_delay} seconds...")
+                        logger.warning(f"[WARN] Connection timeout (attempt {attempt}/{max_retries})")
+                        logger.info(f"Retrying in {retry_delay} seconds...")
                         await asyncio.sleep(retry_delay)
                         retry_delay *= 2  # Exponential backoff
                     else:
-                        logger.error(f"❌ Failed to connect after {max_retries} attempts")
+                        logger.error(f"[FAIL] Failed to connect after {max_retries} attempts")
                         raise
                 except discord.HTTPException as e:
                     # Handle Discord rate limits (429) with longer delay
@@ -452,25 +430,25 @@ async def main():
                             # Use Discord's suggested delay or default to 60 seconds
                             rate_limit_delay = retry_after if retry_after else 60
 
-                            logger.warning(f"⚠️ Discord rate limit hit (429) - attempt {attempt}/{max_retries}")
+                            logger.warning(f"[WARN] Discord rate limit hit (429) - attempt {attempt}/{max_retries}")
                             if retry_after:
-                                logger.info(f"🔄 Discord requests waiting {rate_limit_delay} seconds (Retry-After header)")
+                                logger.info(f"Discord requests waiting {rate_limit_delay} seconds (Retry-After header)")
                             else:
-                                logger.info(f"🔄 Waiting {rate_limit_delay} seconds before retry...")
-                            logger.info("💡 Tip: Too many restarts can trigger rate limits. The timer does NOT reset on retries.")
+                                logger.info(f"Waiting {rate_limit_delay} seconds before retry...")
+                            logger.info("Tip: Too many restarts can trigger rate limits. The timer does NOT reset on retries.")
                             await asyncio.sleep(rate_limit_delay)
                         else:
-                            logger.error(f"❌ Failed to connect after {max_retries} attempts (rate limited)")
-                            logger.error("💡 Discord is blocking the bot due to too many requests.")
-                            logger.error("💡 Wait 5-10 minutes before trying again, or check for multiple instances.")
+                            logger.error(f"[FAIL] Failed to connect after {max_retries} attempts (rate limited)")
+                            logger.error("Discord is blocking the bot due to too many requests.")
+                            logger.error("Wait 5-10 minutes before trying again, or check for multiple instances.")
                             raise
                     else:
                         # Other HTTP errors should not be retried
-                        logger.error(f"❌ Discord HTTP error: {e}")
+                        logger.error(f"[FAIL] Discord HTTP error: {e}")
                         raise
                 except Exception as e:
                     # Other exceptions should not be retried
-                    logger.error(f"❌ Connection error: {e}")
+                    logger.error(f"[FAIL] Connection error: {e}")
                     raise
 
         # Run both API server and bot concurrently
@@ -480,22 +458,22 @@ async def main():
         )
 
     except ImportError as e:
-        logger.error(f"❌ Import error: {e}")
+        logger.error(f"[FAIL] Import error: {e}")
         logger.error("Check that bot.py and config.py exist.")
         sys.exit(1)
     except KeyboardInterrupt:
-        logger.info("⏹️ Shutdown requested")
+        logger.info("Shutdown requested")
     except RuntimeError as e:
         if "Session is closed" in str(e):
-            logger.info("🔄 Closing for restart")
+            logger.info("Closing for restart")
         else:
-            logger.error(f"❌ Runtime error: {e}")
+            logger.error(f"[FAIL] Runtime error: {e}")
     except Exception as e:
-        logger.error(f"❌ Fatal error: {e}", exc_info=True)
+        logger.error(f"[FAIL] Fatal error: {e}", exc_info=True)
         sys.exit(1)
     finally:
         # Cleaning up services
-        logger.info("🧹 Cleaning up services...")
+        logger.info("Cleaning up services...")
         service_manager.cleanup()
 
 
@@ -506,7 +484,7 @@ if __name__ == "__main__":
 
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("\n👋 Goodbye!")
+        print("\nGoodbye!")
     finally:
         # Ensures everything is properly cleaned up
         service_manager.cleanup()
