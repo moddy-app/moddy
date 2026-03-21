@@ -60,12 +60,12 @@ class MyView(BaseView):
 
 ## 😀 Emoji Usage
 
-### **ONLY use custom emojis from `/documentation/emojis.md`**
+### **ONLY use custom emojis from `/docs/EMOJIS.md`**
 
 **✅ DO:**
 - Use bot's custom emojis: `<:done:1398729525277229066>`
 - Use flag emojis for languages: 🇬🇧 🇫🇷 🇪🇸
-- Reference `/documentation/emojis.md` for the full list
+- Reference `/docs/EMOJIS.md` for the full list
 
 **❌ NEVER:**
 - Use default Unicode emojis (except flags)
@@ -685,7 +685,7 @@ Before submitting any UI code, verify:
 
 - [ ] Using Components V2 (`ui.Container`, `ui.TextDisplay`)
 - [ ] NOT using regular embeds (`discord.Embed`)
-- [ ] Using ONLY custom emojis from `/documentation/emojis.md` (except flags)
+- [ ] Using ONLY custom emojis from `/docs/EMOJIS.md` (except flags)
 - [ ] Titles use `###` format with emoji prefix
 - [ ] Dynamic values are wrapped in backticks
 - [ ] Separators used sparingly (only when necessary)
@@ -703,14 +703,14 @@ Before submitting any UI code, verify:
 
 ---
 
-## 📚 Related Documentation
+## Related Documentation
 
-- `/documentation/Components_V2.md` - Technical details on Components V2
-- `/documentation/emojis.md` - Complete list of custom emojis
-- `/documentation/Error_Handling.md` - BaseView and BaseModal requirements
-- `/documentation/COMMANDS.md` - Slash command standards
-- `/utils/i18n.py` - Internationalization system
-- `/utils/components_v2.py` - Helper functions for V2 components
+- [COMPONENTS_V2.md](COMPONENTS_V2.md) — Technical details on Components V2
+- [EMOJIS.md](EMOJIS.md) — Complete list of custom emojis
+- [ERROR_HANDLING.md](ERROR_HANDLING.md) — BaseView and BaseModal requirements
+- [COMMANDS.md](COMMANDS.md) — Slash command standards
+- `/utils/i18n.py` — Internationalization system
+- `/utils/components_v2.py` — Helper functions for V2 components
 
 ---
 

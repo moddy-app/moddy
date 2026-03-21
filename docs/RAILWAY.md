@@ -111,14 +111,7 @@ Pour vérifier que les variables sont correctement configurées, consulter les l
 - Vérifier que le bot a les permissions "Gérer les rôles"
 - Vérifier que le rôle du bot est **au-dessus** du rôle premium dans la hiérarchie
 
-## 📚 Documentation associée
+## Related Documentation
 
-- `/documentation/internal-api.md` - Documentation complète de l'API interne
-- `/documentation/INTERNAL_API_SETUP.md` - Guide de configuration
-- `/.env.example` - Exemple de fichier .env local
-
----
-
-**Version :** 1.0
-**Dernière mise à jour :** 2026-01-07
-**Auteur :** Claude
+- [INTERNAL_API.md](INTERNAL_API.md) — Complete internal API documentation
+- [BACKEND_INTEGRATION_STATUS.md](BACKEND_INTEGRATION_STATUS.md) — Integration diagnostic

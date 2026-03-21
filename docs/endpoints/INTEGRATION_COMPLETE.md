@@ -158,10 +158,10 @@ Create user-facing commands to expose these features:
 
 ## Documentation References
 
-- Backend API Documentation: `/docs/internal-api.md`
+- Backend API Documentation: `/docs/INTERNAL_API.md`
 - Endpoint Specifications: `/docs/endpoints/*.md`
-- Setup Guide: `/docs/INTERNAL_API_SETUP.md`
-- Error Handling: `/docs/Error_Handling.md`
+- Setup Guide: `/docs/INTERNAL_API.md`
+- Error Handling: `/docs/ERROR_HANDLING.md`
 
 ## Configuration Required
 

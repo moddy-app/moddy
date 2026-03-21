@@ -851,6 +851,6 @@ Le système de modules de Moddy offre une architecture propre, extensible et fac
 - Tester en local avant de déployer
 
 **Ressources :**
-- Documentation Composants V2 : `/documentation/Components_V2.md`
+- Documentation Composants V2 : `/docs/COMPONENTS_V2.md`
 - Exemple complet : `/modules/welcome.py` + `/modules/configs/welcome_config.py`
 - Système i18n : `/utils/i18n.py`
