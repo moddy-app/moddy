@@ -29,7 +29,7 @@ DEVELOPER_IDS: List[int] = [int(id.strip()) for id in dev_ids_str.split(",") if 
 # BASE DE DONNÉES
 # =============================================================================
 
-# URL de connexion Neon PostgreSQL - Variable Railway: DATABASE_URL
+# URL de connexion PostgreSQL - Variable Railway: DATABASE_URL
 DATABASE_URL: Optional[str] = os.environ.get("DATABASE_URL")
 
 # Pool de connexions

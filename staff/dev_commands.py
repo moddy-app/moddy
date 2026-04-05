@@ -73,8 +73,11 @@ class ServerListView(BaseView):
                     features.append("Partner")
 
                 # Build server info
+                joined_at = guild.me.joined_at if guild.me else None
+                joined_str = f"<t:{int(joined_at.timestamp())}:d>" if joined_at else "Unknown"
+
                 server_info = f"**{guild.name}**\n"
-                server_info += f"-# ID: `{guild.id}` • Members: `{guild.member_count:,}`"
+                server_info += f"-# ID: `{guild.id}` • Joined: {joined_str} • Members: `{guild.member_count:,}`"
                 if features:
                     server_info += f" • {', '.join(features)}"
 

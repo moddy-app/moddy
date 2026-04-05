@@ -87,6 +87,8 @@ Stocke les données des utilisateurs Discord.
 - `user_id` (BIGINT, PRIMARY KEY) - ID Discord de l'utilisateur
 - `attributes` (JSONB) - Attributs/flags de l'utilisateur
 - `data` (JSONB) - Données supplémentaires (préférences, etc.)
+- `stripe_customer_id` (VARCHAR(50)) - ID client Stripe (ex: `cus_UAf6a2WKTw6yCI`)
+- `email` (VARCHAR(255)) - Adresse email de l'utilisateur
 - `created_at` (TIMESTAMPTZ) - Date de création
 - `updated_at` (TIMESTAMPTZ) - Dernière mise à jour
 

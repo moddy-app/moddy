@@ -227,9 +227,33 @@ class ModdyDatabase(
                     user_id BIGINT PRIMARY KEY,
                     attributes JSONB DEFAULT '{}'::jsonb,
                     data JSONB DEFAULT '{}'::jsonb,
+                    stripe_customer_id VARCHAR(50),
+                    email VARCHAR(255),
                     created_at TIMESTAMPTZ DEFAULT NOW(),
                     updated_at TIMESTAMPTZ DEFAULT NOW()
                 )
+            """)
+
+            # Migration: Add stripe_customer_id and email columns if they don't exist
+            await conn.execute("""
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'users'
+                        AND column_name = 'stripe_customer_id'
+                    ) THEN
+                        ALTER TABLE users ADD COLUMN stripe_customer_id VARCHAR(50);
+                    END IF;
+
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'users'
+                        AND column_name = 'email'
+                    ) THEN
+                        ALTER TABLE users ADD COLUMN email VARCHAR(255);
+                    END IF;
+                END $$;
             """)
 
             await conn.execute("""

@@ -36,6 +36,8 @@ class UserRepository:
                 'user_id': row['user_id'],
                 'attributes': self._parse_jsonb(row['attributes']),
                 'data': self._parse_jsonb(row['data']),
+                'stripe_customer_id': row['stripe_customer_id'],
+                'email': row['email'],
                 'created_at': row.get('created_at', datetime.now(timezone.utc)),
                 'updated_at': row.get('updated_at', datetime.now(timezone.utc))
             }
