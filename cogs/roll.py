@@ -9,15 +9,20 @@ from discord.ext import commands
 from typing import Optional
 import random
 
+from cogs.error_handler import BaseView
 from utils.incognito import add_incognito_option, get_incognito_setting
 from utils.i18n import i18n
 
 
-class RollView(ui.LayoutView):
-    """View to display dice roll result using Components V2"""
+class RollView(BaseView):
+    """View to display dice roll result using Components V2.
+
+    Non-interactive (no buttons) — only needs BaseView inheritance for the
+    centralized error handler. ``timeout=None`` is inherited from BaseView.
+    """
 
     def __init__(self, result: int, max_value: int, locale: str):
-        super().__init__(timeout=180)
+        super().__init__()
         self.result = result
         self.max_value = max_value
         self.locale = locale

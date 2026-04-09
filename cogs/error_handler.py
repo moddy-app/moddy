@@ -171,11 +171,52 @@ class BaseView(ui.LayoutView):
     1. Errors are caught and logged with FULL traceback in ONE log line
     2. User ALWAYS receives an error embed
     3. Error handler processes ALL exceptions
+
+    Persistence
+    -----------
+    The default ``timeout`` is ``None`` — views never expire in memory.
+    Subclasses that still want a timeout can pass ``timeout=<seconds>`` to
+    ``super().__init__``; any numeric value overrides the default.
+
+    To make a view survive a bot restart, set the class attribute
+    ``__persistent__ = True`` and override :meth:`register_persistent`. The
+    registration runs once in :func:`bot.setup_hook` via
+    ``utils.persistent_views.register_all_persistent_views``. See
+    ``docs/PERSISTENT_VIEWS.md`` for the full pattern.
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    # Override to True on subclasses that should be registered as persistent
+    # at bot startup. Subclasses that set this to True MUST also implement
+    # register_persistent(bot).
+    __persistent__: bool = False
+
+    def __init__(self, *, timeout: Optional[float] = None, **kwargs):
+        # Default timeout=None so views never expire in memory, regardless of
+        # whether they are registered as persistent. Subclasses can still
+        # override by passing timeout=<seconds>.
+        super().__init__(timeout=timeout, **kwargs)
         self.bot = None  # MUST be set by subclass
+
+    @classmethod
+    def register_persistent(cls, bot) -> None:
+        """
+        Register this view for persistence across bot restarts.
+
+        Subclasses with ``__persistent__ = True`` MUST override this and
+        typically call one of:
+
+        - ``bot.add_view(cls())`` for a static shell instance
+          (all children have stable ``custom_id``s and callbacks re-derive
+          state from ``interaction``).
+        - ``bot.add_dynamic_items(...)`` for ``discord.ui.DynamicItem``
+          subclasses whose ``custom_id`` encodes state via a regex.
+
+        See ``docs/PERSISTENT_VIEWS.md`` for the cookbook.
+        """
+        raise NotImplementedError(
+            f"{cls.__name__}.__persistent__ is True but register_persistent() "
+            f"is not implemented."
+        )
 
     async def on_error(self, interaction: discord.Interaction, error: Exception, item: discord.ui.Item) -> None:
         """
@@ -277,6 +318,14 @@ class BaseView(ui.LayoutView):
 class BaseModal(ui.Modal):
     """
     Base class for ALL UI Modals with centralized error handling.
+
+    Note
+    ----
+    Modals cannot be registered as persistent — Discord treats a modal
+    submission as a one-shot interaction that must be answered while the
+    owning message's component store is still in memory. ``discord.ui.Modal``
+    already defaults ``timeout`` to ``None``, so modals will not expire
+    mid-edit as long as the bot process stays up.
     """
 
     def __init__(self, *args, **kwargs):

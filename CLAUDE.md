@@ -162,7 +162,18 @@ moddy/
 - For "unexpected" errors in cogs/modules: let the global error handler manage them
 - For expected errors: use `create_error_message()` / `create_success_message()` from `utils/components_v2.py`
 
-### 8. Language
+### 8. Persistent Views
+- `BaseView` defaults to `timeout=None` — views never expire in memory
+- To make a view survive a **bot restart**:
+  1. Set `__persistent__ = True` on the class
+  2. Give every interactive child a stable, namespaced `custom_id` (`moddy:<cog>:<view>:<action>`)
+  3. Make `__init__` safely accept `bot=None` / default args so a "shell" can be instantiated
+  4. Implement `register_persistent(cls, bot)` (usually `bot.add_view(cls())`)
+  5. Add the class to `utils/persistent_views.py::_collect_persistent_view_classes()`
+- Callbacks on persistent views must re-derive state from `interaction` (not `self`) — after a restart, `self` is the shell
+- See → [docs/PERSISTENT_VIEWS.md](docs/PERSISTENT_VIEWS.md)
+
+### 9. Language
 - Code comments, commits, PRs: **English only**
 - User-facing strings: via i18n (French + English)
 
@@ -177,6 +188,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 |---|---|
 | [docs/DESIGN.md](docs/DESIGN.md) | Any UI/UX work, configuration panels, interactive components |
 | [docs/COMPONENTS_V2.md](docs/COMPONENTS_V2.md) | Any code that creates Discord UI elements |
+| [docs/PERSISTENT_VIEWS.md](docs/PERSISTENT_VIEWS.md) | Any view that should survive a bot restart (most views) |
 | [docs/ERROR_HANDLING.md](docs/ERROR_HANDLING.md) | Any code with Views, Modals, or error handling |
 | [docs/EMOJIS.md](docs/EMOJIS.md) | When you need to use an emoji/icon |
 
