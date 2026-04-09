@@ -14,18 +14,31 @@ from utils.i18n import i18n, t
 from utils.emojis import EMOJIS
 
 
-class AttributionView(BaseView):
-    """View to display attributions"""
+# Namespaced custom_id constants for persistent dispatch.
+# Format: moddy:<cog>:<view>:<action>
+_CID_MAIN_ATTRIBUTION = "moddy:moddy:main:attribution"
+_CID_MAIN_WE_SUPPORT = "moddy:moddy:main:we_support"
+_CID_ATTRIBUTION_BACK = "moddy:moddy:attribution:back"
+_CID_WE_SUPPORT_BACK = "moddy:moddy:we_support:back"
 
-    def __init__(self, bot, locale: str, user_id: int):
-        super().__init__(timeout=600)
+
+class AttributionView(BaseView):
+    """View to display attributions.
+
+    Persistent: yes. Auth: public (informational command).
+    """
+
+    __persistent__ = True
+
+    def __init__(self, bot=None, locale: str = "en-US", user_id: Optional[int] = None):
+        super().__init__()
         self.bot = bot
         self.locale = locale
         self.user_id = user_id
         self.build_view()
 
     def build_view(self):
-        """Build the attributions view"""
+        """Build the attributions view."""
         self.clear_items()
 
         container = ui.Container()
@@ -68,43 +81,48 @@ class AttributionView(BaseView):
 
         self.add_item(container)
 
-        # Back button
+        # Back button (persistent — stable custom_id)
         back_row = ui.ActionRow()
         back_btn = ui.Button(
             emoji=discord.PartialEmoji.from_str("<:back:1401600847733067806>"),
             label=t('commands.moddy.buttons.back', locale=self.locale),
-            style=discord.ButtonStyle.secondary
+            style=discord.ButtonStyle.secondary,
+            custom_id=_CID_ATTRIBUTION_BACK,
         )
         back_btn.callback = self.on_back
         back_row.add_item(back_btn)
         self.add_item(back_row)
 
     async def on_back(self, interaction: discord.Interaction):
-        """Handle back button click"""
-        if interaction.user.id != self.user_id:
-            await interaction.response.send_message(
-                t('commands.moddy.errors.wrong_user', locale=self.locale),
-                ephemeral=True
-            )
-            return
-
-        # Go back to main view
-        main_view = ModdyMainView(self.bot, self.locale, self.user_id)
+        """Handle back button click — re-derives state from interaction."""
+        bot = interaction.client
+        locale = i18n.get_user_locale(interaction)
+        main_view = ModdyMainView(bot, locale, interaction.user.id)
         await interaction.response.edit_message(view=main_view)
+
+    @classmethod
+    def register_persistent(cls, bot) -> None:
+        """Auth model: public — anyone who can see the message can click."""
+        bot.add_view(cls())
 
 
 class WeSupportView(BaseView):
-    """View to display projects we support"""
+    """View to display projects we support.
 
-    def __init__(self, bot, locale: str, user_id: int):
-        super().__init__(timeout=600)
+    Persistent: yes. Auth: public (informational command).
+    """
+
+    __persistent__ = True
+
+    def __init__(self, bot=None, locale: str = "en-US", user_id: Optional[int] = None):
+        super().__init__()
         self.bot = bot
         self.locale = locale
         self.user_id = user_id
         self.build_view()
 
     def build_view(self):
-        """Build the we support view"""
+        """Build the we support view."""
         self.clear_items()
 
         container = ui.Container()
@@ -128,43 +146,54 @@ class WeSupportView(BaseView):
 
         self.add_item(container)
 
-        # Back button
+        # Back button (persistent — stable custom_id)
         back_row = ui.ActionRow()
         back_btn = ui.Button(
             emoji=discord.PartialEmoji.from_str("<:back:1401600847733067806>"),
             label=t('commands.moddy.buttons.back', locale=self.locale),
-            style=discord.ButtonStyle.secondary
+            style=discord.ButtonStyle.secondary,
+            custom_id=_CID_WE_SUPPORT_BACK,
         )
         back_btn.callback = self.on_back
         back_row.add_item(back_btn)
         self.add_item(back_row)
 
     async def on_back(self, interaction: discord.Interaction):
-        """Handle back button click"""
-        if interaction.user.id != self.user_id:
-            await interaction.response.send_message(
-                t('commands.moddy.errors.wrong_user', locale=self.locale),
-                ephemeral=True
-            )
-            return
-
-        # Go back to main view
-        main_view = ModdyMainView(self.bot, self.locale, self.user_id)
+        """Handle back button click — re-derives state from interaction."""
+        bot = interaction.client
+        locale = i18n.get_user_locale(interaction)
+        main_view = ModdyMainView(bot, locale, interaction.user.id)
         await interaction.response.edit_message(view=main_view)
+
+    @classmethod
+    def register_persistent(cls, bot) -> None:
+        """Auth model: public — anyone who can see the message can click."""
+        bot.add_view(cls())
 
 
 class ModdyMainView(BaseView):
-    """Main view for the /moddy command"""
+    """Main view for the /moddy command.
 
-    def __init__(self, bot, locale: str, user_id: int):
-        super().__init__(timeout=600)
+    Persistent: yes. Auth: public (informational command).
+
+    When ``bot`` is ``None`` the view is in "shell" mode — only the layout
+    structure needed for persistent dispatch is built, and any content that
+    requires runtime bot state (guild count, user count, version) is
+    skipped. The shell is what gets registered via ``bot.add_view`` and
+    never rendered to the user.
+    """
+
+    __persistent__ = True
+
+    def __init__(self, bot=None, locale: str = "en-US", user_id: Optional[int] = None):
+        super().__init__()
         self.bot = bot
         self.locale = locale
         self.user_id = user_id
         self.build_view()
 
     def build_view(self):
-        """Build the main about view"""
+        """Build the main about view."""
         self.clear_items()
 
         container = ui.Container()
@@ -181,19 +210,22 @@ class ModdyMainView(BaseView):
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
-        # Bot Information section
-        version = self.bot.version or "Unknown"
-        server_count = len(self.bot.guilds)
-        user_count = len(self.bot.users)
+        # Bot Information section — only when we have a live bot reference.
+        # In shell mode (bot is None, used for persistent registration) we
+        # skip this since it requires runtime state.
+        if self.bot is not None:
+            version = self.bot.version or "Unknown"
+            server_count = len(self.bot.guilds)
+            user_count = len(self.bot.users)
 
-        container.add_item(ui.TextDisplay(
-            f"**{t('commands.moddy.bot_info.title', locale=self.locale)}**\n"
-            f"> **{t('commands.moddy.bot_info.version', locale=self.locale)}:** `{version}`\n"
-            f"> **{t('commands.moddy.bot_info.servers', locale=self.locale)}:** `{server_count:,}`\n"
-            f"> **{t('commands.moddy.bot_info.users', locale=self.locale)}:** `{user_count:,}`"
-        ))
+            container.add_item(ui.TextDisplay(
+                f"**{t('commands.moddy.bot_info.title', locale=self.locale)}**\n"
+                f"> **{t('commands.moddy.bot_info.version', locale=self.locale)}:** `{version}`\n"
+                f"> **{t('commands.moddy.bot_info.servers', locale=self.locale)}:** `{server_count:,}`\n"
+                f"> **{t('commands.moddy.bot_info.users', locale=self.locale)}:** `{user_count:,}`"
+            ))
 
-        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
         # Links section
         container.add_item(ui.TextDisplay(
@@ -218,13 +250,14 @@ class ModdyMainView(BaseView):
 
         self.add_item(container)
 
-        # Action buttons (Attribution and We Support)
+        # Action buttons (persistent — stable custom_ids)
         buttons_row = ui.ActionRow()
 
         attribution_btn = ui.Button(
             emoji=discord.PartialEmoji.from_str("<:attribution:1451293906175262871>"),
             label=t('commands.moddy.buttons.attribution', locale=self.locale),
-            style=discord.ButtonStyle.secondary
+            style=discord.ButtonStyle.secondary,
+            custom_id=_CID_MAIN_ATTRIBUTION,
         )
         attribution_btn.callback = self.on_attribution
         buttons_row.add_item(attribution_btn)
@@ -232,7 +265,8 @@ class ModdyMainView(BaseView):
         we_support_btn = ui.Button(
             emoji=discord.PartialEmoji.from_str("<:favorite:1451293904329769081>"),
             label=t('commands.moddy.buttons.we_support', locale=self.locale),
-            style=discord.ButtonStyle.secondary
+            style=discord.ButtonStyle.secondary,
+            custom_id=_CID_MAIN_WE_SUPPORT,
         )
         we_support_btn.callback = self.on_we_support
         buttons_row.add_item(we_support_btn)
@@ -240,30 +274,23 @@ class ModdyMainView(BaseView):
         self.add_item(buttons_row)
 
     async def on_attribution(self, interaction: discord.Interaction):
-        """Handle attribution button click"""
-        if interaction.user.id != self.user_id:
-            await interaction.response.send_message(
-                t('commands.moddy.errors.wrong_user', locale=self.locale),
-                ephemeral=True
-            )
-            return
-
-        # Show attribution view
-        attribution_view = AttributionView(self.bot, self.locale, self.user_id)
+        """Handle attribution button click — re-derives state from interaction."""
+        bot = interaction.client
+        locale = i18n.get_user_locale(interaction)
+        attribution_view = AttributionView(bot, locale, interaction.user.id)
         await interaction.response.edit_message(view=attribution_view)
 
     async def on_we_support(self, interaction: discord.Interaction):
-        """Handle we support button click"""
-        if interaction.user.id != self.user_id:
-            await interaction.response.send_message(
-                t('commands.moddy.errors.wrong_user', locale=self.locale),
-                ephemeral=True
-            )
-            return
-
-        # Show we support view
-        we_support_view = WeSupportView(self.bot, self.locale, self.user_id)
+        """Handle we support button click — re-derives state from interaction."""
+        bot = interaction.client
+        locale = i18n.get_user_locale(interaction)
+        we_support_view = WeSupportView(bot, locale, interaction.user.id)
         await interaction.response.edit_message(view=we_support_view)
+
+    @classmethod
+    def register_persistent(cls, bot) -> None:
+        """Auth model: public — anyone who can see the message can click."""
+        bot.add_view(cls())
 
 
 class Moddy(commands.Cog):

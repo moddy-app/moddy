@@ -279,6 +279,11 @@ class ModdyBot(commands.Bot):
         # Load extensions
         await self.load_extensions()
 
+        # Register persistent views (must run AFTER cogs are loaded so that
+        # every view class is importable). See docs/PERSISTENT_VIEWS.md.
+        from utils.persistent_views import register_all_persistent_views
+        register_all_persistent_views(self)
+
         # Start background tasks
         self.status_update.start()
 

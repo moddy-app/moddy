@@ -9,15 +9,20 @@ from discord.ext import commands
 from typing import Optional
 import aiohttp
 
+from cogs.error_handler import BaseView
 from utils.incognito import add_incognito_option, get_incognito_setting
 from utils.i18n import i18n
 
 
-class BannerView(ui.LayoutView):
-    """View to display user banner using Components V2"""
+class BannerView(BaseView):
+    """View to display user banner using Components V2.
+
+    Non-interactive (no buttons) — only needs BaseView inheritance for the
+    centralized error handler. ``timeout=None`` is inherited from BaseView.
+    """
 
     def __init__(self, user_data: dict, locale: str):
-        super().__init__(timeout=180)
+        super().__init__()
         self.user_data = user_data
         self.locale = locale
 

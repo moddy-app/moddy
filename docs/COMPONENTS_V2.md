@@ -27,6 +27,13 @@ class MyView(ui.LayoutView):
 
 Elle remplace `ui.View` quand tu veux utiliser des containers / textdisplay / separators.
 
+> ⚠️ **Dans Moddy, on n'hérite jamais directement de `ui.LayoutView`.** Toute
+> View doit hériter de `BaseView` (qui étend `ui.LayoutView`) pour bénéficier
+> du handler d'erreurs centralisé et du `timeout=None` par défaut.
+> Si la View doit survivre à un redémarrage du bot, voir
+> **[docs/PERSISTENT_VIEWS.md](PERSISTENT_VIEWS.md)** pour la convention
+> `custom_id` et le pattern `register_persistent`.
+
 ---
 
 ## 🧱 **2. Le `ui.Container`**

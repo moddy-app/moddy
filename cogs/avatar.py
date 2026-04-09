@@ -15,10 +15,13 @@ from utils.i18n import i18n
 
 
 class AvatarView(BaseView):
-    """View to display user avatar using Components V2"""
+    """View to display user avatar using Components V2.
+
+    Non-interactive (no buttons) — timeout=None is inherited from BaseView.
+    """
 
     def __init__(self, user_data: dict, locale: str):
-        super().__init__(timeout=180)
+        super().__init__()
         self.user_data = user_data
         self.locale = locale
 
