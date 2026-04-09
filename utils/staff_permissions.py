@@ -5,7 +5,6 @@ Handles role hierarchy, permissions, and command access control
 
 from enum import Enum
 from typing import List, Optional, Set
-from database import db
 import logging
 
 logger = logging.getLogger('moddy.staff_permissions')
@@ -103,7 +102,7 @@ class StaffPermissionManager:
         if user_id == self.SUPER_ADMIN_ID:
             return [StaffRole.MANAGER, StaffRole.DEV]
 
-        if not db:
+        if not self.bot.db:
             return []
 
         # Check if user is in Discord dev team - auto Manager + Dev
@@ -111,7 +110,7 @@ class StaffPermissionManager:
             return [StaffRole.MANAGER, StaffRole.DEV]
 
         # Get from database
-        perms = await db.get_staff_permissions(user_id)
+        perms = await self.bot.db.get_staff_permissions(user_id)
         roles = []
 
         for role_str in perms['roles']:
@@ -131,10 +130,10 @@ class StaffPermissionManager:
 
     async def get_denied_commands(self, user_id: int) -> List[str]:
         """Get list of denied commands for a user"""
-        if not db:
+        if not self.bot.db:
             return []
 
-        perms = await db.get_staff_permissions(user_id)
+        perms = await self.bot.db.get_staff_permissions(user_id)
         return perms['denied_commands']
 
     async def is_command_denied(self, user_id: int, command_name: str) -> bool:
@@ -288,7 +287,7 @@ class StaffPermissionManager:
         is_dev = self.bot.is_developer(user_id)
 
         # Check if user has TEAM attribute (is staff)
-        if not db:
+        if not self.bot.db:
             # If db is not available, only allow super admin and devs
             if is_dev:
                 logger.debug(f"✅ Developer {user_id} granted access (database unavailable)")
@@ -296,7 +295,7 @@ class StaffPermissionManager:
             logger.error(f"❌ Permission check failed: Database not available")
             return (False, "Database not available")
 
-        user_data = await db.get_user(user_id)
+        user_data = await self.bot.db.get_user(user_id)
         has_team_attr = user_data['attributes'].get('TEAM')
 
         logger.debug(f"🔍 Checking permissions for user {user_id}:")
