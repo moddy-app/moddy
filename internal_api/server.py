@@ -1,111 +1,105 @@
 """
-Serveur HTTP interne pour recevoir les requêtes du backend.
+Serveur HTTP interne du bot.
 
-Ce serveur écoute sur un port SÉPARÉ (3000) pour éviter d'exposer
-les endpoints internes publiquement.
+Expose deux endpoints :
+- GET /health  : health check pour Railway (toujours 200 si le process tourne)
+- GET /status  : métriques du bot, appelé par le backend quand un staff demande
+                 le statut du bot via le dashboard.
 
-Basé sur /documentation/internal-api.md
+Authentification : header `Authorization: Bearer {INTERNAL_API_SECRET}`
+requis sur /status uniquement (protège les métriques des accès non autorisés).
 """
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 import logging
 import os
-from internal_api.middleware.auth import verify_internal_auth
-from internal_api.routes.internal import router as internal_router, set_bot_instance
+import time
+import psutil
 
-# Configuration du logging
 logger = logging.getLogger('moddy.internal_api')
 
-# Créer l'application FastAPI
 app = FastAPI(
     title="Moddy Bot Internal API",
-    description="API interne pour la communication avec le backend",
-    version="1.0.0",
-    docs_url=None,  # Désactiver la documentation Swagger publique
-    redoc_url=None  # Désactiver ReDoc
+    version="2.0.0",
+    docs_url=None,
+    redoc_url=None,
 )
 
-# Ajouter le middleware d'authentification
-app.middleware("http")(verify_internal_auth)
-
-# Ajouter les routes internes
-app.include_router(internal_router)
+# Référence globale au bot
+_bot = None
 
 
-@app.on_event("startup")
-async def startup_event():
-    """Event exécuté au démarrage du serveur."""
-    logger.info("🚀 Internal API server starting...")
-    logger.info(f"📡 Listening on port {os.getenv('INTERNAL_PORT', 3000)}")
-
-    # Vérifier que le secret est configuré
-    if not os.getenv("INTERNAL_API_SECRET"):
-        logger.warning("⚠️ INTERNAL_API_SECRET not configured - API is INSECURE")
-    else:
-        logger.info("✅ INTERNAL_API_SECRET configured")
+def set_bot(bot):
+    global _bot
+    _bot = bot
+    logger.info("Bot instance configured for internal API")
 
 
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Event exécuté à l'arrêt du serveur."""
-    logger.info("⏹️ Internal API server shutting down...")
-
-
-@app.get("/")
-async def root():
-    """Endpoint racine."""
-    return {
-        "service": "moddy-bot-internal",
-        "status": "running",
-        "version": "1.0.0"
-    }
-
-
-@app.get("/ping")
-async def ping():
-    """Endpoint de test simple."""
-    return {"ping": "pong"}
+def _check_auth(request: Request) -> bool:
+    """Vérifie le header Authorization si INTERNAL_API_SECRET est configuré."""
+    secret = os.getenv("INTERNAL_API_SECRET")
+    if not secret:
+        return True  # Pas de secret configuré → accès libre (dev)
+    auth = request.headers.get("Authorization", "")
+    return auth == f"Bearer {secret}"
 
 
 @app.get("/health")
 async def health():
-    """
-    Endpoint de health check pour Railway et autres services de monitoring.
+    """Health check pour Railway — toujours 200 quand le process est vivant."""
+    return {"status": "healthy", "service": "moddy-bot"}
 
-    Retourne toujours un statut 200 quand le serveur est en ligne,
-    indépendamment de l'état du bot Discord.
 
-    Pour vérifier l'état du bot Discord, utilisez /internal/health (authentification requise).
+@app.get("/ping")
+async def ping():
+    return {"ping": "pong"}
+
+
+@app.get("/status")
+async def status(request: Request):
     """
+    Métriques du bot Discord pour le dashboard staff.
+    Authentification requise si INTERNAL_API_SECRET est configuré.
+    """
+    if not _check_auth(request):
+        return JSONResponse(status_code=401, content={"error": "Unauthorized"})
+
+    bot = _bot
+
+    if bot is None or not bot.is_ready():
+        return JSONResponse(
+            status_code=503,
+            content={"status": "starting", "guilds": 0, "users": 0,
+                     "shards": [], "latency_ms": 0, "uptime_seconds": 0, "memory_mb": 0}
+        )
+
+    # Shards
+    if bot.shard_count:
+        shards = [
+            {"id": sid, "latency": round(shard.latency * 1000, 2), "is_closed": shard.is_closed()}
+            for sid, shard in bot.shards.items()
+        ]
+    else:
+        shards = [{"id": 0, "latency": round(bot.latency * 1000, 2), "is_closed": False}]
+
+    # Memory
+    try:
+        process = psutil.Process()
+        memory_mb = round(process.memory_info().rss / 1024 / 1024, 2)
+    except Exception:
+        memory_mb = 0
+
+    # Uptime
+    start_time = getattr(bot, "_start_time", time.time())
+    uptime_seconds = int(time.time() - start_time)
+
     return {
-        "status": "healthy",
-        "service": "moddy-bot-api",
-        "version": "1.0.0"
+        "status": "online",
+        "guilds": len(bot.guilds),
+        "users": len(bot.users),
+        "shards": shards,
+        "latency_ms": round(bot.latency * 1000, 2),
+        "uptime_seconds": uptime_seconds,
+        "memory_mb": memory_mb,
     }
-
-
-def set_bot(bot):
-    """
-    Définit l'instance du bot Discord pour l'API interne.
-
-    Args:
-        bot: Instance de ModdyBot
-    """
-    set_bot_instance(bot)
-    logger.info("✅ Bot instance configured for internal API")
-
-
-if __name__ == "__main__":
-    import uvicorn
-
-    # Lancer le serveur sur :: (IPv4 + IPv6)
-    # Port 3000 par défaut (privé, non exposé publiquement)
-    port = int(os.getenv("INTERNAL_PORT", 3000))
-    logger.info(f"🚀 Démarrage du serveur interne sur le port {port}")
-
-    uvicorn.run(
-        "internal_api.server:app",
-        host="::",
-        port=port,
-        log_level="info"
-    )

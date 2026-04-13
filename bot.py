@@ -19,6 +19,8 @@ from config import (
     DEBUG,
     DEFAULT_PREFIX,
     DATABASE_URL,
+    REDIS_URL,
+    REDIS_PASSWORD,
     DEVELOPER_IDS,
     COLORS,
     IS_DEV,
@@ -79,7 +81,9 @@ class ModdyBot(commands.Bot):
 
         # Internal variables
         self.launch_time = datetime.now(timezone.utc)
+        self._start_time = None  # Set in setup_hook once event loop is running
         self.db = None  # ModdyDatabase instance
+        self.redis = None  # Redis client (shared with backend)
         self._dev_team_ids: Set[int] = set()
         self.maintenance_mode = False
         self.version = None  # Bot version from GitHub releases
@@ -93,7 +97,7 @@ class ModdyBot(commands.Bot):
         # Cache pour les commandes guild-only (NE JAMAIS les remettre dans l'arbre global)
         self._guild_only_commands = []
 
-        # Serveur HTTP interne pour l'API backend
+        # Serveur HTTP interne pour /status
         self.internal_api_server = None
         self.internal_api_thread = None
 
@@ -161,38 +165,158 @@ class ModdyBot(commands.Bot):
     def start_internal_api_server(self):
         """
         Démarre le serveur HTTP interne dans un thread séparé.
-        Ce serveur écoute sur le port INTERNAL_PORT (3000) pour recevoir
-        les requêtes du backend via Railway Private Network.
+        Expose GET /health et GET /status (appelé par le backend pour les métriques).
         """
         import threading
         import uvicorn
         from internal_api.server import app, set_bot
 
-        # Configurer le bot dans le serveur interne
         set_bot(self)
 
-        # Port du serveur interne
-        internal_port = int(os.getenv("INTERNAL_PORT", 3000))
+        port = int(os.getenv("PORT", 3000))
 
-        # Fonction pour exécuter le serveur dans le thread
         def run_server():
-            logger.info(f"Starting internal API server on port {internal_port}")
+            logger.info(f"Starting internal API server on port {port}")
             uvicorn.run(
                 app,
-                host="::",  # IPv4 + IPv6
-                port=internal_port,
-                log_level="info",
-                access_log=False  # Désactiver les logs d'accès pour éviter le spam
+                host="::",  # IPv4 + IPv6 dual-stack
+                port=port,
+                log_level="warning",
+                access_log=False,
             )
 
-        # Créer et démarrer le thread
         self.internal_api_thread = threading.Thread(
             target=run_server,
             daemon=True,
             name="InternalAPIServer"
         )
         self.internal_api_thread.start()
-        logger.info(f"Internal API server started on port {internal_port}")
+        logger.info(f"Internal API server started on port {port}")
+
+    async def _setup_redis(self):
+        """Initialize Redis connection and start background listeners."""
+        import redis.asyncio as aioredis
+        try:
+            self.redis = aioredis.from_url(
+                REDIS_URL,
+                password=REDIS_PASSWORD,
+                decode_responses=True,
+            )
+            await self.redis.ping()
+            logger.info("Redis connected")
+            # Start background tasks
+            asyncio.create_task(self._listen_pubsub())
+            asyncio.create_task(self._consume_task_stream())
+        except Exception as e:
+            logger.error(f"[FAIL] Redis connection error: {e}")
+            self.redis = None
+
+    async def _listen_pubsub(self):
+        """Listen to Redis Pub/Sub channel moddy:bot (non-critical backend notifications)."""
+        import json
+        while True:
+            try:
+                pubsub = self.redis.pubsub()
+                await pubsub.subscribe("moddy:bot")
+                logger.info("Pub/Sub subscribed to moddy:bot")
+                async for message in pubsub.listen():
+                    if message["type"] != "message":
+                        continue
+                    try:
+                        data = json.loads(message["data"])
+                        await self._handle_bot_event(data)
+                    except Exception as e:
+                        logger.error(f"[PubSub] Error handling message: {e}")
+            except Exception as e:
+                logger.error(f"[PubSub] Connection error: {e}")
+                await asyncio.sleep(5)
+
+    async def _handle_bot_event(self, data: dict):
+        """Route Pub/Sub events from the backend."""
+        event_type = data.get("type")
+        guild_id = data.get("guild_id")
+
+        if event_type in ("config_updated", "module_updated", "module_disabled", "logging_updated"):
+            # Invalidate local module cache so next access re-reads from DB
+            if self.module_manager and guild_id:
+                try:
+                    await self.module_manager.unload_guild_modules(guild_id)
+                    logger.info(f"[PubSub] Module cache invalidated for guild {guild_id} ({event_type})")
+                except Exception as e:
+                    logger.error(f"[PubSub] Error reloading modules for guild {guild_id}: {e}")
+
+        elif event_type == "premium_activated":
+            logger.info(f"[PubSub] Premium activated for guild {guild_id}")
+
+        elif event_type == "premium_deactivated":
+            logger.info(f"[PubSub] Premium deactivated for guild {guild_id}")
+
+        elif event_type == "payment_failed":
+            user_id = data.get("user_id")
+            logger.warning(f"[PubSub] Payment failed for user {user_id}")
+
+        else:
+            logger.debug(f"[PubSub] Unknown event type: {event_type}")
+
+    async def _consume_task_stream(self):
+        """Consume Redis Stream moddy:tasks (critical guaranteed tasks from backend)."""
+        import json
+        TASK_STREAM = "moddy:tasks"
+        LAST_ID_KEY = "moddy:tasks:last_id"
+
+        while True:
+            try:
+                last_id = await self.redis.get(LAST_ID_KEY) or "0"
+                while True:
+                    messages = await self.redis.xread(
+                        {TASK_STREAM: last_id},
+                        block=5000,
+                        count=10,
+                    )
+                    if not messages:
+                        continue
+                    for _stream, entries in messages:
+                        for entry_id, fields in entries:
+                            try:
+                                await self._process_task(fields)
+                                last_id = entry_id
+                                await self.redis.set(LAST_ID_KEY, last_id)
+                            except Exception as e:
+                                logger.error(f"[Stream] Error processing task {entry_id}: {e}")
+            except Exception as e:
+                logger.error(f"[Stream] Connection error: {e}")
+                await asyncio.sleep(5)
+
+    async def _process_task(self, fields: dict):
+        """Process a task from the moddy:tasks stream."""
+        import json
+        task_type = fields.get("type")
+        guild_id = int(fields.get("guild_id", 0))
+        payload = json.loads(fields.get("payload", "{}"))
+
+        if task_type == "update_panel":
+            # Reload a module's panel message in Discord
+            if self.module_manager and guild_id:
+                module_id = payload.get("module_id")
+                guild = self.get_guild(guild_id)
+                if guild:
+                    try:
+                        await self.module_manager.reload_module(guild, module_id)
+                    except Exception as e:
+                        logger.error(f"[Stream] Error updating panel for guild {guild_id}: {e}")
+
+        elif task_type == "send_announcement":
+            message_text = payload.get("message", "")
+            guild_ids = payload.get("guild_ids")
+            targets = self.guilds if not guild_ids else [self.get_guild(gid) for gid in guild_ids]
+            for guild in targets:
+                if guild and guild.system_channel:
+                    try:
+                        await guild.system_channel.send(message_text)
+                    except Exception as e:
+                        logger.warning(f"[Stream] Could not send announcement to {guild.id}: {e}")
+        else:
+            logger.warning(f"[Stream] Unknown task type: {task_type}")
 
     async def setup_hook(self):
         """Called once on bot startup"""
@@ -233,25 +357,15 @@ class ModdyBot(commands.Bot):
         logger.info("Starting internal API server...")
         self.start_internal_api_server()
 
-        # Test backend connection with full Railway Private Network diagnostic
-        # This includes DNS wait (Railway DNS not available for ~3-5s at startup)
-        logger.info("Testing backend connection (Railway Private Network)...")
-        try:
-            from services.backend_client import get_backend_client, BackendClientError
-            backend_client = get_backend_client()
-            # Use full diagnostic which includes DNS wait and retries
-            connection_ok = await backend_client.test_connection(use_full_diagnostic=True)
-            if connection_ok:
-                logger.info("Backend connection established successfully")
-            else:
-                logger.warning("[WARN] Backend connection test failed - check logs above for details")
-                logger.warning("   The bot will start, but backend-dependent features may not work")
-        except BackendClientError as e:
-            logger.error(f"[WARN] Backend connection test failed: {e}")
-            logger.error("   The bot will start, but backend-dependent features may not work")
-        except Exception as e:
-            logger.error(f"[WARN] Backend connection test failed: {e}")
-            logger.error("   The bot will start, but backend-dependent features may not work")
+        # Set start time for /status uptime metric
+        import time as _time
+        self._start_time = _time.time()
+
+        # Connect to Redis
+        if REDIS_URL:
+            await self._setup_redis()
+        else:
+            logger.warning("[WARN] REDIS_URL not set - Redis features disabled")
 
         # Add before_invoke check for prefix commands cog disable
         @self.before_invoke
@@ -746,14 +860,15 @@ class ModdyBot(commands.Bot):
         else:
             results.append(("i18n", False, "No locales loaded"))
 
-        # 5. Backend connection
-        try:
-            from services.backend_client import get_backend_client
-            client = get_backend_client()
-            health = await client.health_check()
-            results.append(("Backend", True if health else False, "Connected" if health else "Unreachable"))
-        except Exception as e:
-            results.append(("Backend", False, f"Error: {e}"))
+        # 5. Redis connection
+        if self.redis:
+            try:
+                await self.redis.ping()
+                results.append(("Redis", True, "Connected"))
+            except Exception as e:
+                results.append(("Redis", False, str(e)))
+        else:
+            results.append(("Redis", False, "Not configured"))
 
         # 6. Log results
         all_ok = all(ok for _, ok, _ in results)
@@ -826,6 +941,13 @@ class ModdyBot(commands.Bot):
             except Exception as e:
                 logger.error(f"DB Error (guild_join): {e}")
 
+        # Invalidate backend Redis cache (so dashboard reflects new guild list)
+        if self.redis:
+            try:
+                await self.redis.delete("moddy:bot_guilds")
+            except Exception as e:
+                logger.warning(f"[WARN] Could not invalidate Redis cache on guild join: {e}")
+
         # Synchronize commands for this new guild
         # This ensures guild-only commands (/config) are available in this server
         try:
@@ -850,6 +972,18 @@ class ModdyBot(commands.Bot):
 
         # Clean the cache
         self.prefix_cache.pop(guild.id, None)
+
+        # Invalidate backend Redis cache
+        if self.redis:
+            try:
+                await self.redis.delete(
+                    "moddy:bot_guilds",
+                    f"discord:guild:{guild.id}:info",
+                    f"discord:guild:{guild.id}:channels",
+                    f"discord:guild:{guild.id}:roles",
+                )
+            except Exception as e:
+                logger.warning(f"[WARN] Could not invalidate Redis cache on guild remove: {e}")
 
         # Clear commands for this guild to remove guild-only commands
         # This ensures /config is no longer accessible in this server
@@ -1091,13 +1225,13 @@ class ModdyBot(commands.Bot):
         # Wait a bit for tasks to finish
         await asyncio.sleep(0.1)
 
-        # Close BackendClient connection
-        try:
-            from services import close_backend_client
-            await close_backend_client()
-            logger.info("Backend client closed")
-        except Exception as e:
-            logger.error(f"[FAIL] Error closing backend client: {e}")
+        # Close Redis connection
+        if self.redis:
+            try:
+                await self.redis.aclose()
+                logger.info("Redis closed")
+            except Exception as e:
+                logger.error(f"[FAIL] Error closing Redis: {e}")
 
         # Close DB connection
         if self.db:

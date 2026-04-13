@@ -37,6 +37,16 @@ DB_POOL_MIN_SIZE: int = int(os.environ.get("DB_POOL_MIN_SIZE", "1"))
 DB_POOL_MAX_SIZE: int = int(os.environ.get("DB_POOL_MAX_SIZE", "10"))
 
 # =============================================================================
+# REDIS
+# =============================================================================
+
+# URL de connexion Redis - Variable Railway: REDIS_URL
+REDIS_URL: Optional[str] = os.environ.get("REDIS_URL", "redis://localhost:6379")
+
+# Mot de passe Redis (optionnel)
+REDIS_PASSWORD: Optional[str] = os.environ.get("REDIS_PASSWORD") or None
+
+# =============================================================================
 # API KEYS
 # =============================================================================
 
@@ -148,6 +158,9 @@ def validate_config():
     # Avertissements non bloquants
     if not DATABASE_URL:
         print("[WARN] DATABASE_URL not configured - running without database")
+
+    if not REDIS_URL:
+        print("[WARN] REDIS_URL not configured - Redis features disabled")
 
     if not DEEPL_API_KEY:
         print("[WARN] DEEPL_API_KEY not configured - translate command disabled")

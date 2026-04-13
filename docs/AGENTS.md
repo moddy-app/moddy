@@ -100,6 +100,6 @@ Full list in [EMOJIS.md](EMOJIS.md). Most commonly used:
 | [DATABASE.md](DATABASE.md) | Database schema and queries |
 | [ERROR_HANDLING.md](ERROR_HANDLING.md) | Error handling with BaseView/BaseModal |
 | [COMPONENTS_V2.md](COMPONENTS_V2.md) | Components V2 technical reference |
-| [INTERNAL_API.md](INTERNAL_API.md) | Bot ↔ Backend communication |
+| [BACKEND-INTEGRATION.md](BACKEND-INTEGRATION.md) | Bot ↔ Backend communication (Redis, Pub/Sub, Streams) |
 | [RAILWAY.md](RAILWAY.md) | Environment variables and deployment |
 | [EMOJIS.md](EMOJIS.md) | Complete custom emoji list |

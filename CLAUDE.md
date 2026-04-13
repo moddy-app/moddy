@@ -203,14 +203,13 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 ### Infrastructure
 | Document | When to Read |
 |---|---|
-| [docs/INTERNAL_API.md](docs/INTERNAL_API.md) | Bot ↔ Backend communication, API endpoints |
+| [docs/BACKEND-INTEGRATION.md](docs/BACKEND-INTEGRATION.md) | Bot ↔ Backend integration (Redis, Pub/Sub, Streams, `/status`) |
 | [docs/RAILWAY.md](docs/RAILWAY.md) | Environment variables, deployment, troubleshooting |
 
 ### Other
 | Document | When to Read |
 |---|---|
 | [docs/AGENTS.md](docs/AGENTS.md) | Agent system documentation |
-| [docs/endpoints/](docs/endpoints/) | Individual API endpoint specifications |
 
 ### Session Logs
 | Directory | Purpose |
