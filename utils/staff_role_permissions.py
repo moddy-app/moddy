@@ -62,6 +62,7 @@ MANAGER_PERMISSIONS = [
     "setstaff",      # Manage staff permissions
     "stafflist",     # View staff list
     "staffinfo",     # View staff information
+    "badge_manage",  # Manage user verification badges
 ]
 
 # Map role names to their available permissions
@@ -115,6 +116,7 @@ def get_permission_label(permission: str) -> str:
         "setstaff": "Manage Staff Permissions",
         "stafflist": "View Staff List",
         "staffinfo": "View Staff Information",
+        "badge_manage": "Manage User Verification Badges",
     }
     return labels.get(permission, permission.replace("_", " ").title())
 

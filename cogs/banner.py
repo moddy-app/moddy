@@ -12,6 +12,7 @@ import aiohttp
 from cogs.error_handler import BaseView
 from utils.incognito import add_incognito_option, get_incognito_setting
 from utils.i18n import i18n
+from utils.emojis import get_user_verification_badge
 
 
 class BannerView(BaseView):
@@ -21,9 +22,10 @@ class BannerView(BaseView):
     centralized error handler. ``timeout=None`` is inherited from BaseView.
     """
 
-    def __init__(self, user_data: dict, locale: str):
+    def __init__(self, user_data: dict, moddy_attributes: dict, locale: str):
         super().__init__()
         self.user_data = user_data
+        self.moddy_attributes = moddy_attributes
         self.locale = locale
 
         # Build the view
@@ -42,9 +44,17 @@ class BannerView(BaseView):
         banner_hash = self.user_data.get("banner")
         username = self.user_data.get("username", "Unknown")
 
+        # Determine verification badge (badge attached directly to username, no space)
+        badge, _ = get_user_verification_badge(self.user_data, self.moddy_attributes)
+        title_text = i18n.get(
+            "commands.banner.view.title",
+            locale=self.locale,
+            username=f"{username}{badge}"
+        )
+
         if not banner_hash:
             # User has no custom banner
-            container.add_item(ui.TextDisplay(f"### <:banner:1439659080472989726> {i18n.get('commands.banner.view.title', locale=self.locale, username=username)}"))
+            container.add_item(ui.TextDisplay(f"### <:banner:1439659080472989726> {title_text}"))
             container.add_item(ui.TextDisplay(i18n.get("commands.banner.errors.no_banner", locale=self.locale)))
             self.add_item(container)
             return
@@ -57,7 +67,7 @@ class BannerView(BaseView):
         banner_url_display = f"{banner_url_base}?size=600"
 
         # Add title
-        container.add_item(ui.TextDisplay(f"### <:banner:1439659080472989726> {i18n.get('commands.banner.view.title', locale=self.locale, username=username)}"))
+        container.add_item(ui.TextDisplay(f"### <:banner:1439659080472989726> {title_text}"))
 
         # Add MediaGallery with banner URL (600px)
         container.add_item(
@@ -127,8 +137,18 @@ class Banner(commands.Cog):
 
                 user_data = await resp.json()
 
+        # Get Moddy attributes for the user
+        moddy_attributes = {}
+        if self.bot.db:
+            try:
+                user_db_data = await self.bot.db.get_user(int(user_id))
+                if user_db_data:
+                    moddy_attributes = user_db_data.get("attributes", {})
+            except Exception:
+                pass
+
         # Create the view with user data
-        view = BannerView(user_data, locale)
+        view = BannerView(user_data, moddy_attributes, locale)
 
         # Send response with Components V2
         # Note: Components V2 cannot be used with embeds

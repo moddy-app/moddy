@@ -11,7 +11,12 @@ from typing import Optional
 import aiohttp
 from datetime import datetime
 from config import COLORS
-from utils.emojis import EMOJIS, DISCORD_BADGES, MODDY_BADGES, AUTO_MODDY_BADGES, VERIFIED, MINI_VERIFIED, CERTIF_BADGE, USER as USER_ICON, BANNER as BANNER_ICON, TEXT
+from utils.emojis import (
+    EMOJIS, DISCORD_BADGES, MODDY_BADGES, AUTO_MODDY_BADGES,
+    MINI_VERIFIED, CERTIF_BADGE, USER as USER_ICON, BANNER as BANNER_ICON, TEXT,
+    VERIFIED_ORG, VERIFIED_ORG_MEMBER,
+    get_user_verification_badge,
+)
 from utils.i18n import i18n
 
 # Discord badge support article URLs (locale-specific)
@@ -51,18 +56,18 @@ class UserInfoView(BaseView):
         global_name = self.user_data.get("global_name", username)
         is_bot = self.user_data.get("bot", False)
 
-        # Check if user should have verified emoji
-        public_flags = self.user_data.get("public_flags", 0)
-        is_discord_staff = bool(public_flags & (1 << 0))
-        is_verified_attr = self.moddy_attributes.get("VERIFIED", False)
-        is_team_attr = self.moddy_attributes.get("TEAM", False)
-        should_show_verified = is_discord_staff or is_verified_attr or is_team_attr
+        # Determine verification badge (3-tier system)
+        verification_badge, org_names = get_user_verification_badge(
+            self.user_data, self.moddy_attributes
+        )
 
-        # Build title with display name or username (for bots) and verified emoji if applicable
-        verified_suffix = f" {VERIFIED}" if should_show_verified else ""
-        # For bots, use username in title instead of display name
+        # Build title — badge is attached directly to the name (no space)
         title_name = username if is_bot else global_name
-        title = f"### {USER_ICON} Information about **{title_name}**{verified_suffix}"
+        title = i18n.get(
+            "commands.user.view.title",
+            locale=self.locale,
+            username=f"**{title_name}{verification_badge}**"
+        )
         container.add_item(ui.TextDisplay(title))
 
         # Build info block with quotes
@@ -162,14 +167,25 @@ class UserInfoView(BaseView):
         # Add all info lines to container
         container.add_item(ui.TextDisplay("\n".join(info_lines)))
 
-        # Add special notices for Discord staff and Moddy team
+        # Add affiliation / verification notices
         notices = []
-        if is_discord_staff:
-            discord_employee_text = i18n.get("commands.user.view.discord_employee_notice", locale=self.locale)
-            notices.append(f"-# {MINI_VERIFIED} {discord_employee_text}")
-        if is_team_attr:
-            moddy_team_text = i18n.get("commands.user.view.moddy_team_notice", locale=self.locale)
-            notices.append(f"-# {MINI_VERIFIED} {moddy_team_text}")
+        if verification_badge == VERIFIED_ORG_MEMBER:
+            if org_names:
+                for org in org_names:
+                    if org == "Discord":
+                        text = i18n.get("commands.user.view.discord_employee_notice", locale=self.locale)
+                    elif org == "Moddy Team":
+                        text = i18n.get("commands.user.view.moddy_team_notice", locale=self.locale)
+                    else:
+                        text = i18n.get("commands.user.view.verified_org_member_notice", locale=self.locale, org_name=org)
+                    notices.append(f"-# {MINI_VERIFIED} {text}")
+            else:
+                # VERIFIED_ORG_MEMBER set but no org configured yet
+                text = i18n.get("commands.user.view.verified_org_member_no_org_notice", locale=self.locale)
+                notices.append(f"-# {MINI_VERIFIED} {text}")
+        elif verification_badge == VERIFIED_ORG:
+            text = i18n.get("commands.user.view.verified_org_notice", locale=self.locale)
+            notices.append(f"-# {MINI_VERIFIED} {text}")
 
         if notices:
             container.add_item(ui.TextDisplay("\n".join(notices)))
@@ -498,9 +514,16 @@ class UserInfoView(BaseView):
         avatar_url = f"https://cdn.discordapp.com/avatars/{user_id}/{avatar_hash}.{extension}?size=1024"
 
         # Create Components V2 view with MediaGallery
+        badge, _ = get_user_verification_badge(self.user_data, self.moddy_attributes)
+        username_display = self.user_data.get("username", "Unknown")
+        avatar_title = i18n.get(
+            "commands.avatar.view.title",
+            locale=self.locale,
+            user=f"**{username_display}{badge}**"
+        )
         avatar_view = ui.LayoutView()
         avatar_container = ui.Container(
-            ui.TextDisplay(f"### <:face:1439042029198770289> Avatar de **{self.user_data.get('username', 'Unknown')}**"),
+            ui.TextDisplay(avatar_title),
             ui.MediaGallery(
                 discord.MediaGalleryItem(media=avatar_url)
             ),
@@ -535,9 +558,16 @@ class UserInfoView(BaseView):
         banner_url = f"https://cdn.discordapp.com/banners/{user_id}/{banner_hash}.{extension}?size=1024"
 
         # Create Components V2 view with MediaGallery
+        badge, _ = get_user_verification_badge(self.user_data, self.moddy_attributes)
+        username_display = self.user_data.get("username", "Unknown")
+        banner_title_text = i18n.get(
+            "commands.banner.view.title",
+            locale=self.locale,
+            username=f"{username_display}{badge}"
+        )
         banner_view = ui.LayoutView()
         banner_container = ui.Container(
-            ui.TextDisplay(f"### {BANNER_ICON} Bannière de **{self.user_data.get('username', 'Unknown')}**"),
+            ui.TextDisplay(f"### {BANNER_ICON} {banner_title_text}"),
             ui.MediaGallery(
                 discord.MediaGalleryItem(media=banner_url)
             ),

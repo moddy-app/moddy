@@ -78,7 +78,9 @@ COMMAND_CATEGORIES = {
             ("m.unrank @user", "Remove a user from the staff team"),
             ("m.setstaff @user", "Manage staff member permissions"),
             ("m.stafflist", "List all staff members"),
-            ("m.staffinfo [@user]", "Show detailed staff member information")
+            ("m.staffinfo [@user]", "Show detailed staff member information"),
+            ("m.badge @user <verified|verified_org|verified_org_member> [org]", "Assign a verification badge to a user"),
+            ("m.badge @user remove <verified|verified_org|verified_org_member>", "Remove a verification badge from a user")
         ],
         "roles": [StaffRole.MANAGER]
     },

@@ -12,6 +12,7 @@ import aiohttp
 
 from utils.incognito import add_incognito_option, get_incognito_setting
 from utils.i18n import i18n
+from utils.emojis import get_user_verification_badge
 
 
 class AvatarView(BaseView):
@@ -20,9 +21,10 @@ class AvatarView(BaseView):
     Non-interactive (no buttons) — timeout=None is inherited from BaseView.
     """
 
-    def __init__(self, user_data: dict, locale: str):
+    def __init__(self, user_data: dict, moddy_attributes: dict, locale: str):
         super().__init__()
         self.user_data = user_data
+        self.moddy_attributes = moddy_attributes
         self.locale = locale
 
         # Build the view
@@ -41,9 +43,17 @@ class AvatarView(BaseView):
         avatar_hash = self.user_data.get("avatar")
         username = self.user_data.get("username", "Unknown")
 
+        # Determine verification badge
+        badge, _ = get_user_verification_badge(self.user_data, self.moddy_attributes)
+        title = i18n.get(
+            "commands.avatar.view.title",
+            locale=self.locale,
+            user=f"**{username}{badge}**"
+        )
+
         if not avatar_hash:
             # User has no custom avatar
-            container.add_item(ui.TextDisplay(f"### <:face:1439042029198770289> Avatar de **{username}**"))
+            container.add_item(ui.TextDisplay(title))
             container.add_item(ui.TextDisplay(i18n.get("commands.user.errors.no_avatar", locale=self.locale)))
             self.add_item(container)
             return
@@ -56,7 +66,7 @@ class AvatarView(BaseView):
         avatar_url_display = f"{avatar_url_base}?size=256"
 
         # Add title
-        container.add_item(ui.TextDisplay(f"### <:face:1439042029198770289> Avatar de **{username}**"))
+        container.add_item(ui.TextDisplay(title))
 
         # Add MediaGallery with avatar URL (256px)
         container.add_item(
@@ -125,11 +135,20 @@ class Avatar(commands.Cog):
 
                 user_data = await resp.json()
 
+        # Get Moddy attributes for the user
+        moddy_attributes = {}
+        if self.bot.db:
+            try:
+                user_db_data = await self.bot.db.get_user(int(user_id))
+                if user_db_data:
+                    moddy_attributes = user_db_data.get("attributes", {})
+            except Exception:
+                pass
+
         # Create the view with user data
-        view = AvatarView(user_data, locale)
+        view = AvatarView(user_data, moddy_attributes, locale)
 
         # Send response with Components V2
-        # Note: Components V2 cannot be used with embeds
         await interaction.edit_original_response(
             content=None,
             view=view

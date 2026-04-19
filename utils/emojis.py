@@ -55,7 +55,9 @@ HISTORY = "<:history:1401600464587456512>"
 BOOK = "<:book:1446557736350388364>"
 CODE = "<:code:1401610523803652196>"
 BUG = "<:bug:1401614189482475551>"
-VERIFIED = "<:verified:1398729677601902635>"
+VERIFIED = "<:verified:1495533347685007461>"
+VERIFIED_ORG = "<:verified_org:1495537358337081465>"
+VERIFIED_ORG_MEMBER = "<:verified_org_member:1495533349266264230>"
 MINI_VERIFIED = "<:miniverified:1439667456737280021>"
 NOTE = "<note:1443749708857085982>"
 MESSAGE = "<message:1443749710073696286>"
@@ -159,6 +161,8 @@ EMOJIS = {
     "bug": BUG,
     "logout": LOGOUT,
     "verified": VERIFIED,
+    "verified_org": VERIFIED_ORG,
+    "verified_org_member": VERIFIED_ORG_MEMBER,
     "next": NEXT,
     "back": BACK,
     "note": NOTE,
@@ -263,3 +267,49 @@ SANCTION_EMOJIS = {
     "GLOBAL_BLACKLIST": "\U0001f6ab",
 }
 SANCTION_EMOJI_DEFAULT = "\U0001f4cb"
+
+
+# =============================================================================
+# VERIFICATION BADGE UTILITIES
+# =============================================================================
+
+def get_user_verification_badge(user_data: dict, moddy_attributes: dict) -> tuple:
+    """Determine the verification badge and org affiliation for a user.
+
+    Priority:
+      1. VERIFIED_ORG attribute → verified_org badge
+      2. Discord staff flag / TEAM attribute / VERIFIED_ORG_MEMBER attribute → verified_org_member badge
+      3. VERIFIED attribute → verified badge
+
+    Returns:
+        (badge_emoji: str, org_names: list[str])
+        badge_emoji is an empty string when the user has no badge.
+        org_names lists all orgs for verified_org_member (may be empty for other badge types).
+    """
+    # 1. Verified organisation
+    if moddy_attributes.get("VERIFIED_ORG"):
+        return (VERIFIED_ORG, [])
+
+    # 2. Org-member badge (auto or manual)
+    public_flags = user_data.get("public_flags", 0)
+    is_discord_staff = bool(public_flags & (1 << 0))
+    is_moddy_team = bool(moddy_attributes.get("TEAM"))
+    is_org_member_attr = bool(moddy_attributes.get("VERIFIED_ORG_MEMBER"))
+
+    if is_discord_staff or is_moddy_team or is_org_member_attr:
+        orgs = []
+        if is_discord_staff:
+            orgs.append("Discord")
+        if is_moddy_team:
+            orgs.append("Moddy Team")
+        if is_org_member_attr:
+            custom_org = moddy_attributes.get("VERIFIED_ORG_MEMBER_ORG")
+            if custom_org and custom_org not in orgs:
+                orgs.append(custom_org)
+        return (VERIFIED_ORG_MEMBER, orgs)
+
+    # 3. Normal verified
+    if moddy_attributes.get("VERIFIED"):
+        return (VERIFIED, [])
+
+    return ("", [])

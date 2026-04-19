@@ -158,7 +158,18 @@ moddy/
 ### 6. Dynamic Values in Backticks
 - Wrap all dynamic/user-specific data in backticks: `` f"**User:** `{user.id}`" ``
 
-### 7. Error Handling
+### 7. Verification Badge on Usernames
+- **Whenever a command displays a username or display name (outside of mentions), it must show the verification badge** using `get_user_verification_badge()` from `utils/emojis.py`.
+- Three tiers (priority order):
+  1. `VERIFIED_ORG` attribute → `<:verified_org:...>` badge
+  2. Discord staff flag / `TEAM` attribute / `VERIFIED_ORG_MEMBER` attribute → `<:verified_org_member:...>` badge + `-# affiliation notice`
+  3. `VERIFIED` attribute → `<:verified:...>` badge
+- The badge is appended **directly** to the name — **no space**: `f"{name}{badge}"`
+- Fetch `moddy_attributes` from `bot.db.get_user()` before building the view.
+- Do **not** show any badge if the user has none — empty string.
+- See `utils/emojis.py::get_user_verification_badge()` for the implementation.
+
+### 8. Error Handling
 - For "unexpected" errors in cogs/modules: let the global error handler manage them
 - For expected errors: use `create_error_message()` / `create_success_message()` from `utils/components_v2.py`
 

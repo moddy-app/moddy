@@ -882,6 +882,8 @@ class StaffManagement(StaffCommandsCog):
             await self.handle_stafflist_command(message, args)
         elif command_name == "staffinfo":
             await self.handle_staffinfo_command(message, args)
+        elif command_name == "badge":
+            await self.handle_badge_command(message, args)
         else:
             view = create_error_message("Unknown Command", f"Management command `{command_name}` not found.")
             await message.reply(view=view, mention_author=False)
@@ -1253,6 +1255,119 @@ class StaffManagement(StaffCommandsCog):
         )
 
         await self.reply_with_tracking(message, view)
+
+    async def handle_badge_command(self, message: discord.Message, args: str):
+        """
+        Handle m.badge command — Manage user verification badges.
+
+        Usage:
+          m.badge @user verified
+          m.badge @user verified_org
+          m.badge @user verified_org_member [org_name]
+          m.badge @user remove <verified|verified_org|verified_org_member>
+        """
+        if staff_logger:
+            await staff_logger.log_command("m", "badge", message.author, args=args)
+
+        USAGE = (
+            "**Usage:**\n"
+            "• `m.badge @user verified` — Standard verified badge\n"
+            "• `m.badge @user verified_org` — Verified organisation badge\n"
+            "• `m.badge @user verified_org_member [org_name]` — Org-member badge (org_name optional)\n"
+            "• `m.badge @user remove <verified|verified_org|verified_org_member>` — Remove a badge"
+        )
+
+        # --- parse target user ---
+        target_user = None
+        for mention in message.mentions:
+            if mention.id != self.bot.user.id:
+                target_user = mention
+                break
+
+        tokens = args.strip().split() if args else []
+
+        if not target_user and tokens:
+            try:
+                target_user = await self.bot.fetch_user(int(tokens[0]))
+                tokens = tokens[1:]
+            except (ValueError, discord.NotFound, discord.HTTPException):
+                pass
+
+        if not target_user or not tokens:
+            view = create_error_message("Invalid Usage", USAGE)
+            await message.reply(view=view, mention_author=False)
+            return
+
+        # Remove the user mention token if it's still present
+        if tokens and tokens[0].startswith("<@"):
+            tokens = tokens[1:]
+
+        if not tokens:
+            view = create_error_message("Invalid Usage", USAGE)
+            await message.reply(view=view, mention_author=False)
+            return
+
+        action = tokens[0].lower()
+        extra = tokens[1:]  # remaining tokens
+
+        VALID_BADGE_TYPES = {"verified", "verified_org", "verified_org_member"}
+
+        # --- REMOVE ---
+        if action == "remove":
+            if not extra or extra[0].lower() not in VALID_BADGE_TYPES:
+                view = create_error_message(
+                    "Invalid Usage",
+                    f"Specify which badge to remove: `verified`, `verified_org`, or `verified_org_member`.\n\n{USAGE}"
+                )
+                await message.reply(view=view, mention_author=False)
+                return
+
+            badge_type = extra[0].upper()
+            try:
+                await db.set_attribute("user", target_user.id, badge_type, False, message.author.id, f"Badge {badge_type} removed via m.badge")
+                if badge_type == "VERIFIED_ORG_MEMBER":
+                    await db.set_attribute("user", target_user.id, "VERIFIED_ORG_MEMBER_ORG", None, message.author.id, "Org name cleared via m.badge remove")
+
+                view = create_success_message(
+                    "Badge Removed",
+                    f"Removed `{badge_type}` badge from {target_user.mention}."
+                )
+                await self.reply_with_tracking(message, view)
+            except Exception as e:
+                logger.error(f"Error removing badge: {e}")
+                view = create_error_message("Error", f"Failed to remove badge: {e}")
+                await message.reply(view=view, mention_author=False)
+            return
+
+        # --- SET ---
+        if action not in VALID_BADGE_TYPES:
+            view = create_error_message("Invalid Badge Type", f"Valid types: `verified`, `verified_org`, `verified_org_member`.\n\n{USAGE}")
+            await message.reply(view=view, mention_author=False)
+            return
+
+        attr_key = action.upper()  # VERIFIED / VERIFIED_ORG / VERIFIED_ORG_MEMBER
+
+        try:
+            await db.set_attribute("user", target_user.id, attr_key, True, message.author.id, f"Badge {attr_key} set via m.badge")
+
+            details_lines = [f"Assigned `{attr_key}` badge to {target_user.mention}."]
+
+            # For org_member, optionally store org name
+            if action == "verified_org_member" and extra:
+                org_name = " ".join(extra)
+                await db.set_attribute("user", target_user.id, "VERIFIED_ORG_MEMBER_ORG", org_name, message.author.id, "Org name set via m.badge")
+                details_lines.append(f"Organisation: **{org_name}**")
+            elif action == "verified_org_member":
+                # Clear any stale org name
+                await db.set_attribute("user", target_user.id, "VERIFIED_ORG_MEMBER_ORG", None, message.author.id, "Org name cleared via m.badge")
+
+            view = create_success_message("Badge Assigned", "\n".join(details_lines))
+            await self.reply_with_tracking(message, view)
+
+        except Exception as e:
+            logger.error(f"Error assigning badge: {e}")
+            view = create_error_message("Error", f"Failed to assign badge: {e}")
+            await message.reply(view=view, mention_author=False)
 
 
 async def setup(bot):
