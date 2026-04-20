@@ -52,7 +52,7 @@
         "incognito": "Make response visible only to you"
       },
       "view": {
-        "title": "### <:face:1439042029198770289> {user}'s Avatar",
+        "title": "### <:face:1439042029198770289> **{name}**'s Avatar{badge}",
         "username": "Username:",
         "user_id": "ID:",
         "bot": "Bot:",
@@ -67,7 +67,7 @@
       },
       "loading": "<a:loading:1395047662092550194> **Fetching banner...**",
       "view": {
-        "title": "**{username}**'s Banner",
+        "title": "**{name}**'s Banner{badge}",
         "download": "Download"
       },
       "errors": {
@@ -218,7 +218,7 @@
       },
       "loading": "<a:loading:1395047662092550194> **Fetching user information...**",
       "view": {
-        "title": "### <:user:1398729712204779571> Information about {username}",
+        "title": "### <:user:1398729712204779571> Information about **{name}**{badge}",
         "display_name": "Display name",
         "username": "Username",
         "id": "ID",
@@ -237,7 +237,9 @@
         "moddy_team_notice": "This person is part of the Moddy team",
         "verified_org_member_notice": "This person is affiliated with **{org_name}**",
         "verified_org_member_no_org_notice": "This account is a verified member of an organization",
-        "verified_org_notice": "This account is a verified organization"
+        "verified_org_notice": "This account is a verified organization",
+        "verified_date": "Verified on {date}",
+        "verified_learn_more": "Learn more"
       },
       "buttons": {
         "bot_info": "Bot Info",

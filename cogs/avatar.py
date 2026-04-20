@@ -12,7 +12,7 @@ import aiohttp
 
 from utils.incognito import add_incognito_option, get_incognito_setting
 from utils.i18n import i18n
-from utils.emojis import get_user_verification_badge
+from utils.emojis import get_user_verification_badge, format_verification_badge
 
 
 class AvatarView(BaseView):
@@ -44,11 +44,14 @@ class AvatarView(BaseView):
         username = self.user_data.get("username", "Unknown")
 
         # Determine verification badge
-        badge, _ = get_user_verification_badge(self.user_data, self.moddy_attributes)
+        badge, _, _ = get_user_verification_badge(self.user_data, self.moddy_attributes)
+        badge_link = format_verification_badge(badge)
+        display_name = self.user_data.get("global_name") or username
         title = i18n.get(
             "commands.avatar.view.title",
             locale=self.locale,
-            user=f"**{username}{badge}**"
+            name=display_name,
+            badge=badge_link
         )
 
         if not avatar_hash:

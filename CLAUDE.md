@@ -162,12 +162,16 @@ moddy/
 - **Whenever a command displays a username or display name (outside of mentions), it must show the verification badge** using `get_user_verification_badge()` from `utils/emojis.py`.
 - Three tiers (priority order):
   1. `VERIFIED_ORG` attribute → `<:verified_org:...>` badge
-  2. Discord staff flag / `TEAM` attribute / `VERIFIED_ORG_MEMBER` attribute → `<:verified_org_member:...>` badge + `-# affiliation notice`
+  2. Discord staff flag / `TEAM` attribute / `VERIFIED_ORG_MEMBER` attribute → `<:verified:...>` badge + `-# affiliation notice`
   3. `VERIFIED` attribute → `<:verified:...>` badge
-- The badge is appended **directly** to the name — **no space**: `f"{name}{badge}"`
+- The badge is wrapped as a **hyperlink** using `format_verification_badge(badge)` from `utils/emojis.py`, which produces `[<:verified:...>](https://docs.moddy.app/articles/verified-badges)`.
+- The formatted badge is appended **after the bold name** — no space between name and badge: `**{name}**{badge}`.
+- Pass `name=` and `badge=` as **separate** i18n parameters (not combined into one).
+- Use `global_name` (display name) instead of `username` wherever possible.
 - Fetch `moddy_attributes` from `bot.db.get_user()` before building the view.
 - Do **not** show any badge if the user has none — empty string.
-- See `utils/emojis.py::get_user_verification_badge()` for the implementation.
+- `get_user_verification_badge()` now returns a 3-tuple `(badge_emoji, org_names, tier)`. Unpack all three.
+- See `utils/emojis.py::get_user_verification_badge()` and `format_verification_badge()` for the implementation.
 
 ### 8. Error Handling
 - For "unexpected" errors in cogs/modules: let the global error handler manage them

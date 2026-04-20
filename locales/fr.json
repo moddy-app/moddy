@@ -52,7 +52,7 @@
         "incognito": "Rendre la réponse visible uniquement pour vous"
       },
       "view": {
-        "title": "### <:face:1439042029198770289> Avatar de {user}",
+        "title": "### <:face:1439042029198770289> Avatar de **{name}**{badge}",
         "username": "Nom d'utilisateur :",
         "user_id": "ID :",
         "bot": "Bot :",
@@ -67,7 +67,7 @@
       },
       "loading": "<a:loading:1395047662092550194> **Récupération de la bannière...**",
       "view": {
-        "title": "Bannière de **{username}**",
+        "title": "Bannière de **{name}**{badge}",
         "download": "Télécharger"
       },
       "errors": {
@@ -218,7 +218,7 @@
       },
       "loading": "<a:loading:1395047662092550194> **Récupération des informations de l'utilisateur...**",
       "view": {
-        "title": "### <:user:1398729712204779571> Informations sur {username}",
+        "title": "### <:user:1398729712204779571> Informations sur **{name}**{badge}",
         "display_name": "Nom d'affichage",
         "username": "Nom d'utilisateur",
         "id": "ID",
@@ -237,7 +237,9 @@
         "moddy_team_notice": "Cette personne fait partie de l'équipe Moddy",
         "verified_org_member_notice": "Cette personne est affiliée à **{org_name}**",
         "verified_org_member_no_org_notice": "Ce compte est un membre vérifié d'une organisation",
-        "verified_org_notice": "Ce compte est une organisation vérifiée"
+        "verified_org_notice": "Ce compte est une organisation vérifiée",
+        "verified_date": "Vérifié le {date}",
+        "verified_learn_more": "En savoir plus"
       },
       "buttons": {
         "bot_info": "Infos Bot",

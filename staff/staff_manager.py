@@ -12,6 +12,7 @@ from typing import Optional, List, Dict
 from cogs.error_handler import BaseView
 import logging
 import json
+import re
 from datetime import datetime, timezone
 
 from utils.staff_permissions import staff_permissions, StaffRole, CommandType
@@ -1261,77 +1262,88 @@ class StaffManagement(StaffCommandsCog):
         Handle m.badge command — Manage user verification badges.
 
         Usage:
-          m.badge @user verified
-          m.badge @user verified_org
-          m.badge @user verified_org_member [org_name]
-          m.badge @user remove <verified|verified_org|verified_org_member>
+          m.badge @user v/org/member [org_name]   — assign badge
+          m.badge @user rm <v|org|member>          — remove badge
+
+        Short aliases: v=verified, org=verified_org, member=verified_org_member
         """
-        if staff_logger:
-            await staff_logger.log_command("m", "badge", message.author, args=args)
+        BADGE_ALIASES = {
+            "v": "VERIFIED", "verified": "VERIFIED",
+            "org": "VERIFIED_ORG", "vo": "VERIFIED_ORG", "verified_org": "VERIFIED_ORG",
+            "member": "VERIFIED_ORG_MEMBER", "m": "VERIFIED_ORG_MEMBER",
+            "vom": "VERIFIED_ORG_MEMBER", "org_member": "VERIFIED_ORG_MEMBER",
+            "verified_org_member": "VERIFIED_ORG_MEMBER",
+        }
+        REMOVE_ALIASES = {"rm", "remove", "del", "r", "delete"}
 
         USAGE = (
             "**Usage:**\n"
-            "• `m.badge @user verified` — Standard verified badge\n"
-            "• `m.badge @user verified_org` — Verified organisation badge\n"
-            "• `m.badge @user verified_org_member [org_name]` — Org-member badge (org_name optional)\n"
-            "• `m.badge @user remove <verified|verified_org|verified_org_member>` — Remove a badge"
+            "• `m.badge @user v` — Standard verified\n"
+            "• `m.badge @user org` — Verified organisation\n"
+            "• `m.badge @user member [org_name]` — Org-member badge\n"
+            "• `m.badge @user rm <v|org|member>` — Remove a badge"
         )
 
-        # --- parse target user ---
+        if staff_logger:
+            await staff_logger.log_command("m", "badge", message.author, args=args)
+
+        tokens = args.strip().split() if args else []
+
+        # --- Parse target user ---
+        # First try non-bot mentions
         target_user = None
         for mention in message.mentions:
             if mention.id != self.bot.user.id:
                 target_user = mention
                 break
 
-        tokens = args.strip().split() if args else []
-
+        # Fallback: extract user from token (supports <@ID> and plain ID, including the bot itself)
         if not target_user and tokens:
-            try:
-                target_user = await self.bot.fetch_user(int(tokens[0]))
-                tokens = tokens[1:]
-            except (ValueError, discord.NotFound, discord.HTTPException):
-                pass
+            raw = tokens[0]
+            match = re.match(r'<@!?(\d+)>', raw)
+            raw_id = int(match.group(1)) if match else None
+            if raw_id is None:
+                try:
+                    raw_id = int(raw)
+                except ValueError:
+                    pass
+            if raw_id:
+                try:
+                    target_user = await self.bot.fetch_user(raw_id)
+                    tokens = tokens[1:]
+                except (discord.NotFound, discord.HTTPException):
+                    pass
+
+        # Strip leading mention token if still present
+        if tokens and re.match(r'<@!?(\d+)>', tokens[0]):
+            tokens = tokens[1:]
 
         if not target_user or not tokens:
             view = create_error_message("Invalid Usage", USAGE)
             await message.reply(view=view, mention_author=False)
             return
 
-        # Remove the user mention token if it's still present
-        if tokens and tokens[0].startswith("<@"):
-            tokens = tokens[1:]
-
-        if not tokens:
-            view = create_error_message("Invalid Usage", USAGE)
-            await message.reply(view=view, mention_author=False)
-            return
-
         action = tokens[0].lower()
-        extra = tokens[1:]  # remaining tokens
-
-        VALID_BADGE_TYPES = {"verified", "verified_org", "verified_org_member"}
+        extra = tokens[1:]
 
         # --- REMOVE ---
-        if action == "remove":
-            if not extra or extra[0].lower() not in VALID_BADGE_TYPES:
+        if action in REMOVE_ALIASES:
+            if not extra or extra[0].lower() not in BADGE_ALIASES:
                 view = create_error_message(
                     "Invalid Usage",
-                    f"Specify which badge to remove: `verified`, `verified_org`, or `verified_org_member`.\n\n{USAGE}"
+                    f"Specify badge to remove: `v`, `org`, or `member`.\n\n{USAGE}"
                 )
                 await message.reply(view=view, mention_author=False)
                 return
 
-            badge_type = extra[0].upper()
+            attr_key = BADGE_ALIASES[extra[0].lower()]
             try:
-                await db.set_attribute("user", target_user.id, badge_type, False, message.author.id, f"Badge {badge_type} removed via m.badge")
-                if badge_type == "VERIFIED_ORG_MEMBER":
-                    await db.set_attribute("user", target_user.id, "VERIFIED_ORG_MEMBER_ORG", None, message.author.id, "Org name cleared via m.badge remove")
+                await db.set_attribute("user", target_user.id, attr_key, False, message.author.id, f"Badge {attr_key} removed via m.badge")
+                await db.set_attribute("user", target_user.id, f"{attr_key}_DATE", None, message.author.id, "Badge date cleared via m.badge")
+                if attr_key == "VERIFIED_ORG_MEMBER":
+                    await db.set_attribute("user", target_user.id, "VERIFIED_ORG_MEMBER_ORG", None, message.author.id, "Org cleared via m.badge")
 
-                view = create_success_message(
-                    "Badge Removed",
-                    f"Removed `{badge_type}` badge from {target_user.mention}."
-                )
+                view = create_success_message("Badge Removed", f"Removed `{attr_key}` badge from {target_user.mention}.")
                 await self.reply_with_tracking(message, view)
             except Exception as e:
                 logger.error(f"Error removing badge: {e}")
@@ -1340,26 +1352,27 @@ class StaffManagement(StaffCommandsCog):
             return
 
         # --- SET ---
-        if action not in VALID_BADGE_TYPES:
-            view = create_error_message("Invalid Badge Type", f"Valid types: `verified`, `verified_org`, `verified_org_member`.\n\n{USAGE}")
+        if action not in BADGE_ALIASES:
+            view = create_error_message("Invalid Badge Type", f"Valid types: `v`, `org`, `member`.\n\n{USAGE}")
             await message.reply(view=view, mention_author=False)
             return
 
-        attr_key = action.upper()  # VERIFIED / VERIFIED_ORG / VERIFIED_ORG_MEMBER
+        attr_key = BADGE_ALIASES[action]
+        timestamp = str(int(datetime.now(timezone.utc).timestamp()))
 
         try:
             await db.set_attribute("user", target_user.id, attr_key, True, message.author.id, f"Badge {attr_key} set via m.badge")
+            await db.set_attribute("user", target_user.id, f"{attr_key}_DATE", timestamp, message.author.id, "Badge date set via m.badge")
 
             details_lines = [f"Assigned `{attr_key}` badge to {target_user.mention}."]
 
-            # For org_member, optionally store org name
-            if action == "verified_org_member" and extra:
-                org_name = " ".join(extra)
-                await db.set_attribute("user", target_user.id, "VERIFIED_ORG_MEMBER_ORG", org_name, message.author.id, "Org name set via m.badge")
-                details_lines.append(f"Organisation: **{org_name}**")
-            elif action == "verified_org_member":
-                # Clear any stale org name
-                await db.set_attribute("user", target_user.id, "VERIFIED_ORG_MEMBER_ORG", None, message.author.id, "Org name cleared via m.badge")
+            if attr_key == "VERIFIED_ORG_MEMBER":
+                if extra:
+                    org_name = " ".join(extra)
+                    await db.set_attribute("user", target_user.id, "VERIFIED_ORG_MEMBER_ORG", org_name, message.author.id, "Org set via m.badge")
+                    details_lines.append(f"Organisation: **{org_name}**")
+                else:
+                    await db.set_attribute("user", target_user.id, "VERIFIED_ORG_MEMBER_ORG", None, message.author.id, "Org cleared via m.badge")
 
             view = create_success_message("Badge Assigned", "\n".join(details_lines))
             await self.reply_with_tracking(message, view)

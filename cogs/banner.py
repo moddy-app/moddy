@@ -12,7 +12,7 @@ import aiohttp
 from cogs.error_handler import BaseView
 from utils.incognito import add_incognito_option, get_incognito_setting
 from utils.i18n import i18n
-from utils.emojis import get_user_verification_badge
+from utils.emojis import get_user_verification_badge, format_verification_badge
 
 
 class BannerView(BaseView):
@@ -44,12 +44,15 @@ class BannerView(BaseView):
         banner_hash = self.user_data.get("banner")
         username = self.user_data.get("username", "Unknown")
 
-        # Determine verification badge (badge attached directly to username, no space)
-        badge, _ = get_user_verification_badge(self.user_data, self.moddy_attributes)
+        # Determine verification badge
+        badge, _, _ = get_user_verification_badge(self.user_data, self.moddy_attributes)
+        badge_link = format_verification_badge(badge)
+        display_name = self.user_data.get("global_name") or username
         title_text = i18n.get(
             "commands.banner.view.title",
             locale=self.locale,
-            username=f"{username}{badge}"
+            name=display_name,
+            badge=badge_link
         )
 
         if not banner_hash:

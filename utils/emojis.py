@@ -55,9 +55,9 @@ HISTORY = "<:history:1401600464587456512>"
 BOOK = "<:book:1446557736350388364>"
 CODE = "<:code:1401610523803652196>"
 BUG = "<:bug:1401614189482475551>"
-VERIFIED = "<:verified:1495533347685007461>"
+VERIFIED = "<:verified:1495533349266264230>"
 VERIFIED_ORG = "<:verified_org:1495537358337081465>"
-VERIFIED_ORG_MEMBER = "<:verified_org_member:1495533349266264230>"
+VERIFIED_ORG_MEMBER = "<:verified:1495533349266264230>"  # same visual as VERIFIED
 MINI_VERIFIED = "<:miniverified:1439667456737280021>"
 NOTE = "<note:1443749708857085982>"
 MESSAGE = "<message:1443749710073696286>"
@@ -273,22 +273,36 @@ SANCTION_EMOJI_DEFAULT = "\U0001f4cb"
 # VERIFICATION BADGE UTILITIES
 # =============================================================================
 
+DOCS_VERIFIED_URL = "https://docs.moddy.app/articles/verified-badges"
+
+
+def format_verification_badge(badge: str) -> str:
+    """Wrap a verification badge emoji in a hyperlink to the docs page.
+
+    Returns an empty string if badge is empty.
+    """
+    if not badge:
+        return ""
+    return f"[{badge}]({DOCS_VERIFIED_URL})"
+
+
 def get_user_verification_badge(user_data: dict, moddy_attributes: dict) -> tuple:
     """Determine the verification badge and org affiliation for a user.
 
     Priority:
-      1. VERIFIED_ORG attribute → verified_org badge
-      2. Discord staff flag / TEAM attribute / VERIFIED_ORG_MEMBER attribute → verified_org_member badge
-      3. VERIFIED attribute → verified badge
+      1. VERIFIED_ORG attribute → verified_org badge  (tier "verified_org")
+      2. Discord staff flag / TEAM attribute / VERIFIED_ORG_MEMBER attribute
+         → verified badge  (tier "org_member")
+      3. VERIFIED attribute → verified badge  (tier "verified")
 
     Returns:
-        (badge_emoji: str, org_names: list[str])
+        (badge_emoji: str, org_names: list[str], tier: str | None)
         badge_emoji is an empty string when the user has no badge.
-        org_names lists all orgs for verified_org_member (may be empty for other badge types).
+        tier is one of "verified_org" | "org_member" | "verified" | None.
     """
     # 1. Verified organisation
     if moddy_attributes.get("VERIFIED_ORG"):
-        return (VERIFIED_ORG, [])
+        return (VERIFIED_ORG, [], "verified_org")
 
     # 2. Org-member badge (auto or manual)
     public_flags = user_data.get("public_flags", 0)
@@ -306,10 +320,10 @@ def get_user_verification_badge(user_data: dict, moddy_attributes: dict) -> tupl
             custom_org = moddy_attributes.get("VERIFIED_ORG_MEMBER_ORG")
             if custom_org and custom_org not in orgs:
                 orgs.append(custom_org)
-        return (VERIFIED_ORG_MEMBER, orgs)
+        return (VERIFIED_ORG_MEMBER, orgs, "org_member")
 
     # 3. Normal verified
     if moddy_attributes.get("VERIFIED"):
-        return (VERIFIED, [])
+        return (VERIFIED, [], "verified")
 
-    return ("", [])
+    return ("", [], None)

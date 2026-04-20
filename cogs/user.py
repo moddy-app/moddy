@@ -14,8 +14,8 @@ from config import COLORS
 from utils.emojis import (
     EMOJIS, DISCORD_BADGES, MODDY_BADGES, AUTO_MODDY_BADGES,
     MINI_VERIFIED, CERTIF_BADGE, USER as USER_ICON, BANNER as BANNER_ICON, TEXT,
-    VERIFIED_ORG, VERIFIED_ORG_MEMBER,
-    get_user_verification_badge,
+    VERIFIED_ORG, DOCS_VERIFIED_URL,
+    get_user_verification_badge, format_verification_badge,
 )
 from utils.i18n import i18n
 
@@ -57,16 +57,18 @@ class UserInfoView(BaseView):
         is_bot = self.user_data.get("bot", False)
 
         # Determine verification badge (3-tier system)
-        verification_badge, org_names = get_user_verification_badge(
+        verification_badge, org_names, tier = get_user_verification_badge(
             self.user_data, self.moddy_attributes
         )
+        badge_link = format_verification_badge(verification_badge)
 
-        # Build title — badge is attached directly to the name (no space)
-        title_name = username if is_bot else global_name
+        # Build title — badge is a hyperlink appended after the bold name
+        title_name = username if is_bot else (self.user_data.get("global_name") or username)
         title = i18n.get(
             "commands.user.view.title",
             locale=self.locale,
-            username=f"**{title_name}{verification_badge}**"
+            name=title_name,
+            badge=badge_link
         )
         container.add_item(ui.TextDisplay(title))
 
@@ -169,23 +171,56 @@ class UserInfoView(BaseView):
 
         # Add affiliation / verification notices
         notices = []
-        if verification_badge == VERIFIED_ORG_MEMBER:
+        show_learn_more = False
+
+        if tier == "org_member":
             if org_names:
                 for org in org_names:
                     if org == "Discord":
                         text = i18n.get("commands.user.view.discord_employee_notice", locale=self.locale)
+                        notices.append(f"-# {MINI_VERIFIED} {text}")
                     elif org == "Moddy Team":
                         text = i18n.get("commands.user.view.moddy_team_notice", locale=self.locale)
+                        notices.append(f"-# {MINI_VERIFIED} {text}")
                     else:
                         text = i18n.get("commands.user.view.verified_org_member_notice", locale=self.locale, org_name=org)
-                    notices.append(f"-# {MINI_VERIFIED} {text}")
+                        date_attr = self.moddy_attributes.get("VERIFIED_ORG_MEMBER_DATE")
+                        if date_attr:
+                            date_text = i18n.get("commands.user.view.verified_date", locale=self.locale, date=f"<t:{date_attr}:D>")
+                            notices.append(f"-# {MINI_VERIFIED} {text} • {date_text}")
+                        else:
+                            notices.append(f"-# {MINI_VERIFIED} {text}")
+                        show_learn_more = True
             else:
-                # VERIFIED_ORG_MEMBER set but no org configured yet
                 text = i18n.get("commands.user.view.verified_org_member_no_org_notice", locale=self.locale)
-                notices.append(f"-# {MINI_VERIFIED} {text}")
-        elif verification_badge == VERIFIED_ORG:
+                date_attr = self.moddy_attributes.get("VERIFIED_ORG_MEMBER_DATE")
+                if date_attr:
+                    date_text = i18n.get("commands.user.view.verified_date", locale=self.locale, date=f"<t:{date_attr}:D>")
+                    notices.append(f"-# {MINI_VERIFIED} {text} • {date_text}")
+                else:
+                    notices.append(f"-# {MINI_VERIFIED} {text}")
+                show_learn_more = True
+
+        elif tier == "verified_org":
             text = i18n.get("commands.user.view.verified_org_notice", locale=self.locale)
-            notices.append(f"-# {MINI_VERIFIED} {text}")
+            date_attr = self.moddy_attributes.get("VERIFIED_ORG_DATE")
+            if date_attr:
+                date_text = i18n.get("commands.user.view.verified_date", locale=self.locale, date=f"<t:{date_attr}:D>")
+                notices.append(f"-# {MINI_VERIFIED} {text} • {date_text}")
+            else:
+                notices.append(f"-# {MINI_VERIFIED} {text}")
+            show_learn_more = True
+
+        elif tier == "verified":
+            date_attr = self.moddy_attributes.get("VERIFIED_DATE")
+            if date_attr:
+                date_text = i18n.get("commands.user.view.verified_date", locale=self.locale, date=f"<t:{date_attr}:D>")
+                notices.append(f"-# {MINI_VERIFIED} {date_text}")
+            show_learn_more = True
+
+        if show_learn_more:
+            learn_more_text = i18n.get("commands.user.view.verified_learn_more", locale=self.locale)
+            notices.append(f"-# [{learn_more_text}]({DOCS_VERIFIED_URL})")
 
         if notices:
             container.add_item(ui.TextDisplay("\n".join(notices)))
@@ -514,12 +549,14 @@ class UserInfoView(BaseView):
         avatar_url = f"https://cdn.discordapp.com/avatars/{user_id}/{avatar_hash}.{extension}?size=1024"
 
         # Create Components V2 view with MediaGallery
-        badge, _ = get_user_verification_badge(self.user_data, self.moddy_attributes)
-        username_display = self.user_data.get("username", "Unknown")
+        badge, _, _ = get_user_verification_badge(self.user_data, self.moddy_attributes)
+        badge_link = format_verification_badge(badge)
+        display_name = self.user_data.get("global_name") or self.user_data.get("username", "Unknown")
         avatar_title = i18n.get(
             "commands.avatar.view.title",
             locale=self.locale,
-            user=f"**{username_display}{badge}**"
+            name=display_name,
+            badge=badge_link
         )
         avatar_view = ui.LayoutView()
         avatar_container = ui.Container(
@@ -558,12 +595,14 @@ class UserInfoView(BaseView):
         banner_url = f"https://cdn.discordapp.com/banners/{user_id}/{banner_hash}.{extension}?size=1024"
 
         # Create Components V2 view with MediaGallery
-        badge, _ = get_user_verification_badge(self.user_data, self.moddy_attributes)
-        username_display = self.user_data.get("username", "Unknown")
+        badge, _, _ = get_user_verification_badge(self.user_data, self.moddy_attributes)
+        badge_link = format_verification_badge(badge)
+        display_name = self.user_data.get("global_name") or self.user_data.get("username", "Unknown")
         banner_title_text = i18n.get(
             "commands.banner.view.title",
             locale=self.locale,
-            username=f"{username_display}{badge}"
+            name=display_name,
+            badge=badge_link
         )
         banner_view = ui.LayoutView()
         banner_container = ui.Container(
