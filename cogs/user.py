@@ -94,11 +94,6 @@ class UserInfoView(BaseView):
             default_index = (int(user_id) >> 22) % 6
             avatar_thumbnail_url = f"https://cdn.discordapp.com/embed/avatars/{default_index}.png"
 
-        container.add_item(ui.Section(
-            ui.TextDisplay(title),
-            accessory=ui.Thumbnail(media=avatar_thumbnail_url)
-        ))
-
         # Build info block with quotes
         info_lines = []
 
@@ -193,8 +188,12 @@ class UserInfoView(BaseView):
         provisional_label = i18n.get("commands.user.view.provisional_account", locale=self.locale)
         info_lines.append(f"> **{provisional_label}:** {provisional_emoji}")
 
-        # Add all info lines to container
-        container.add_item(ui.TextDisplay("\n".join(info_lines)))
+        # Add title + info block in a single Section so content sits beside the thumbnail
+        container.add_item(ui.Section(
+            ui.TextDisplay(title),
+            ui.TextDisplay("\n".join(info_lines)),
+            accessory=ui.Thumbnail(media=avatar_thumbnail_url)
+        ))
 
         # Add affiliation / verification notices
         notices = []
