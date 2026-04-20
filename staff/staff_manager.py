@@ -1308,11 +1308,14 @@ class StaffManagement(StaffCommandsCog):
                 except ValueError:
                     pass
             if raw_id:
+                tokens = tokens[1:]
                 try:
                     target_user = await self.bot.fetch_user(raw_id)
-                    tokens = tokens[1:]
-                except (discord.NotFound, discord.HTTPException):
-                    pass
+                except Exception:
+                    # fetch_user can fail (deleted account, network, etc.)
+                    # Use a minimal placeholder — only .id and .mention are needed
+                    from types import SimpleNamespace
+                    target_user = SimpleNamespace(id=raw_id, mention=f"<@{raw_id}>")
 
         # Strip leading mention token if still present
         if tokens and re.match(r'<@!?(\d+)>', tokens[0]):
