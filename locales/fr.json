@@ -235,7 +235,7 @@
         "provisional_account": "Compte provisoire",
         "discord_employee_notice": "Cette personne est un employé de Discord",
         "moddy_team_notice": "Cette personne fait partie de l'équipe Moddy",
-        "verified_org_member_notice": "Cette personne est affiliée à **{org_name}**",
+        "verified_org_member_notice": "Cette personne est affiliée à {org_name}",
         "verified_org_member_no_org_notice": "Ce compte est un membre vérifié d'une organisation",
         "verified_org_notice": "Ce compte est une organisation vérifiée",
         "verified_date": "Vérifié le {date}",

@@ -235,7 +235,7 @@
         "provisional_account": "Provisional Account",
         "discord_employee_notice": "This person is a Discord employee",
         "moddy_team_notice": "This person is part of the Moddy team",
-        "verified_org_member_notice": "This person is affiliated with **{org_name}**",
+        "verified_org_member_notice": "This person is affiliated with {org_name}",
         "verified_org_member_no_org_notice": "This account is a verified member of an organization",
         "verified_org_notice": "This account is a verified organization",
         "verified_date": "Verified on {date}",
