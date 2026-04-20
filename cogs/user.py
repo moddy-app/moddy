@@ -19,6 +19,19 @@ from utils.emojis import (
 )
 from utils.i18n import i18n
 
+def _format_org_names(orgs: list, locale: str) -> str:
+    """Format a list of org names into a readable string with locale-aware joining."""
+    if not orgs:
+        return ""
+    bold = [f"**{o}**" for o in orgs]
+    sep = " et " if locale == "fr" else " and "
+    if len(bold) == 1:
+        return bold[0]
+    if len(bold) == 2:
+        return f"{bold[0]}{sep}{bold[1]}"
+    return ", ".join(bold[:-1]) + sep + bold[-1]
+
+
 # Discord badge support article URLs (locale-specific)
 DISCORD_BADGE_URLS = {
     "fr": "https://support.discord.com/hc/fr/articles/360035962891-Le-b-a-ba-des-Badges-de-Profil",
@@ -174,24 +187,28 @@ class UserInfoView(BaseView):
         show_learn_more = False
 
         if tier == "org_member":
-            if org_names:
-                for org in org_names:
-                    if org == "Discord":
-                        text = i18n.get("commands.user.view.discord_employee_notice", locale=self.locale)
-                        notices.append(f"-# {MINI_VERIFIED} {text}")
-                    elif org == "Moddy Team":
-                        text = i18n.get("commands.user.view.moddy_team_notice", locale=self.locale)
-                        notices.append(f"-# {MINI_VERIFIED} {text}")
-                    else:
-                        text = i18n.get("commands.user.view.verified_org_member_notice", locale=self.locale, org_name=org)
-                        date_attr = self.moddy_attributes.get("VERIFIED_ORG_MEMBER_DATE")
-                        if date_attr:
-                            date_text = i18n.get("commands.user.view.verified_date", locale=self.locale, date=f"<t:{date_attr}:D>")
-                            notices.append(f"-# {MINI_VERIFIED} {text} • {date_text}")
-                        else:
-                            notices.append(f"-# {MINI_VERIFIED} {text}")
-                        show_learn_more = True
-            else:
+            auto_orgs = [o for o in org_names if o in ("Discord", "Moddy Team")]
+            custom_orgs = [o for o in org_names if o not in ("Discord", "Moddy Team")]
+
+            for org in auto_orgs:
+                if org == "Discord":
+                    text = i18n.get("commands.user.view.discord_employee_notice", locale=self.locale)
+                else:
+                    text = i18n.get("commands.user.view.moddy_team_notice", locale=self.locale)
+                notices.append(f"-# {MINI_VERIFIED} {text}")
+
+            if custom_orgs:
+                formatted = _format_org_names(custom_orgs, self.locale)
+                text = i18n.get("commands.user.view.verified_org_member_notice", locale=self.locale, org_name=formatted)
+                date_attr = self.moddy_attributes.get("VERIFIED_ORG_MEMBER_DATE")
+                if date_attr:
+                    date_text = i18n.get("commands.user.view.verified_date", locale=self.locale, date=f"<t:{date_attr}:D>")
+                    notices.append(f"-# {MINI_VERIFIED} {text} • {date_text}")
+                else:
+                    notices.append(f"-# {MINI_VERIFIED} {text}")
+                show_learn_more = True
+            elif not auto_orgs:
+                # VERIFIED_ORG_MEMBER set but no org configured
                 text = i18n.get("commands.user.view.verified_org_member_no_org_notice", locale=self.locale)
                 date_attr = self.moddy_attributes.get("VERIFIED_ORG_MEMBER_DATE")
                 if date_attr:

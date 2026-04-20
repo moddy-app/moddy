@@ -286,6 +286,22 @@ def format_verification_badge(badge: str) -> str:
     return f"[{badge}]({DOCS_VERIFIED_URL})"
 
 
+def _parse_org_list(raw) -> list:
+    """Parse VERIFIED_ORG_MEMBER_ORG — supports JSON array or legacy plain string."""
+    if not raw:
+        return []
+    if isinstance(raw, list):
+        return raw
+    s = str(raw).strip()
+    if s.startswith("["):
+        import json as _json
+        try:
+            return _json.loads(s)
+        except Exception:
+            pass
+    return [s]
+
+
 def get_user_verification_badge(user_data: dict, moddy_attributes: dict) -> tuple:
     """Determine the verification badge and org affiliation for a user.
 
@@ -317,9 +333,9 @@ def get_user_verification_badge(user_data: dict, moddy_attributes: dict) -> tupl
         if is_moddy_team:
             orgs.append("Moddy Team")
         if is_org_member_attr:
-            custom_org = moddy_attributes.get("VERIFIED_ORG_MEMBER_ORG")
-            if custom_org and custom_org not in orgs:
-                orgs.append(custom_org)
+            for custom_org in _parse_org_list(moddy_attributes.get("VERIFIED_ORG_MEMBER_ORG")):
+                if custom_org not in orgs:
+                    orgs.append(custom_org)
         return (VERIFIED_ORG_MEMBER, orgs, "org_member")
 
     # 3. Normal verified

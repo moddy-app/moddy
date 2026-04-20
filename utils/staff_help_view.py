@@ -81,7 +81,7 @@ COMMAND_CATEGORIES = {
             ("m.staffinfo [@user]", "Show detailed staff member information"),
             ("m.badge @user v", "Assign standard verified badge"),
             ("m.badge @user org", "Assign verified organisation badge"),
-            ("m.badge @user member [org_name]", "Assign org-member badge (org_name optional)"),
+            ("m.badge @user member [org1, org2, ...]", "Assign org-member badge (one or more orgs)"),
             ("m.badge @user rm <v|org|member>", "Remove a verification badge")
         ],
         "roles": [StaffRole.MANAGER]

@@ -1368,9 +1368,13 @@ class StaffManagement(StaffCommandsCog):
 
             if attr_key == "VERIFIED_ORG_MEMBER":
                 if extra:
-                    org_name = " ".join(extra)
-                    await db.set_attribute("user", target_user.id, "VERIFIED_ORG_MEMBER_ORG", org_name, message.author.id, "Org set via m.badge")
-                    details_lines.append(f"Organisation: **{org_name}**")
+                    # Split by comma to support multiple orgs: m.badge @user member Orga1, Orga2
+                    raw_orgs = " ".join(extra)
+                    orgs = [o.strip() for o in raw_orgs.split(",") if o.strip()]
+                    org_value = json.dumps(orgs)
+                    await db.set_attribute("user", target_user.id, "VERIFIED_ORG_MEMBER_ORG", org_value, message.author.id, "Orgs set via m.badge")
+                    orgs_display = ", ".join(f"**{o}**" for o in orgs)
+                    details_lines.append(f"Organisation(s): {orgs_display}")
                 else:
                     await db.set_attribute("user", target_user.id, "VERIFIED_ORG_MEMBER_ORG", None, message.author.id, "Org cleared via m.badge")
 
