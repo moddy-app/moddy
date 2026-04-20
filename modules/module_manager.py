@@ -241,6 +241,16 @@ class ModuleManager:
         except Exception as e:
             logger.error(f"[FAIL] Error loading modules for guild {guild_id}: {e}", exc_info=True)
 
+    async def unload_guild_modules(self, guild_id: int):
+        """Remove guild module cache so next access reloads from DB."""
+        if guild_id in self.active_modules:
+            for module in self.active_modules[guild_id].values():
+                try:
+                    await module.disable()
+                except Exception:
+                    pass
+            del self.active_modules[guild_id]
+
     async def save_module_config(self, guild_id: int, module_id: str, config_data: Dict[str, Any]) -> tuple[bool, Optional[str]]:
         """
         Sauvegarde la configuration d'un module dans la DB
