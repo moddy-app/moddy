@@ -133,7 +133,42 @@ self.add_item(button_row)
 
 ---
 
-## 🌫️ **8. Texte grisé / note / sous-titre**
+## 🖼️ **8. Section avec Thumbnail (image à droite)**
+
+Un `ui.Section` permet d'afficher du texte **à gauche** et une image miniature **à droite**, comme une carte.
+Il s'ajoute directement dans un `ui.Container`.
+
+```python
+container.add_item(
+    ui.Section(
+        ui.TextDisplay("### Titre"),
+        ui.TextDisplay("Ligne de description"),
+        accessory=ui.Thumbnail(media="https://cdn.discordapp.com/avatars/123/abc.png?size=256"),
+    )
+)
+```
+
+> La propriété `accessory` accepte un `ui.Thumbnail(media=url)`.
+> Le thumbnail est affiché à droite de tout le contenu textuel de la section.
+
+**Cas d'usage typique :** afficher l'avatar d'un utilisateur à côté de ses informations.
+
+**Helper disponible dans `utils/components_v2.py` :**
+
+```python
+from utils.components_v2 import create_section_with_thumbnail
+
+section = create_section_with_thumbnail(
+    title="### Nom de l'utilisateur",
+    thumbnail_url=avatar_url,
+    description="Description optionnelle",
+)
+container.add_item(section)
+```
+
+---
+
+## 🌫️ **9. Texte grisé / note / sous-titre**
 
 Tu utilises simplement markdown `-#` ou `>`, par exemple :
 

@@ -4,7 +4,7 @@ Utilities for creating structured messages using Discord's Components V2
 """
 
 import discord
-from discord.ui import LayoutView, Container, TextDisplay, Separator
+from discord.ui import LayoutView, Container, TextDisplay, Separator, Section, Thumbnail
 from discord import SeparatorSpacing
 from typing import List, Optional, Dict
 
@@ -220,6 +220,30 @@ def create_staff_info_message(
 
     view.add_item(container)
     return view
+
+
+def create_section_with_thumbnail(
+    title: str,
+    thumbnail_url: str,
+    description: Optional[str] = None,
+) -> Section:
+    """
+    Create a ui.Section with a Thumbnail accessory (image on the right).
+
+    Intended to be added directly to a Container via container.add_item().
+
+    Args:
+        title: Primary text (supports markdown)
+        thumbnail_url: URL of the image to show as thumbnail
+        description: Optional secondary text below the title
+
+    Returns:
+        Section with Thumbnail accessory
+    """
+    items = [TextDisplay(title)]
+    if description:
+        items.append(TextDisplay(description))
+    return Section(*items, accessory=Thumbnail(media=thumbnail_url))
 
 
 def create_blacklist_message() -> LayoutView:

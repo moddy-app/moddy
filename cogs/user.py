@@ -84,7 +84,20 @@ class UserInfoView(BaseView):
             name=title_name,
             badge=badge_link
         )
-        container.add_item(ui.TextDisplay(title))
+
+        # Build avatar thumbnail URL
+        avatar_hash = self.user_data.get("avatar")
+        if avatar_hash:
+            ext = "gif" if avatar_hash.startswith("a_") else "png"
+            avatar_thumbnail_url = f"https://cdn.discordapp.com/avatars/{user_id}/{avatar_hash}.{ext}?size=256"
+        else:
+            default_index = (int(user_id) >> 22) % 6
+            avatar_thumbnail_url = f"https://cdn.discordapp.com/embed/avatars/{default_index}.png"
+
+        container.add_item(ui.Section(
+            ui.TextDisplay(title),
+            accessory=ui.Thumbnail(media=avatar_thumbnail_url)
+        ))
 
         # Build info block with quotes
         info_lines = []
@@ -150,7 +163,7 @@ class UserInfoView(BaseView):
             sku_id = avatar_decoration.get("sku_id")
             if sku_id:
                 avatar_decoration_label = i18n.get("commands.user.view.avatar_decoration", locale=self.locale)
-                info_lines.append(f"> **{avatar_decoration_label}:** https://discord.com/shop#itemSkuId={sku_id}")
+                info_lines.append(f"> **{avatar_decoration_label}:** [`{sku_id}`](https://discord.com/shop#itemSkuId={sku_id})")
 
         # Profile decoration
         collectibles = self.user_data.get("collectibles")
@@ -160,7 +173,7 @@ class UserInfoView(BaseView):
                 nameplate_sku = nameplate.get("sku_id")
                 if nameplate_sku:
                     nameplate_label = i18n.get("commands.user.view.nameplate", locale=self.locale)
-                    info_lines.append(f"> **{nameplate_label}:** https://discord.com/shop#itemSkuId={nameplate_sku}")
+                    info_lines.append(f"> **{nameplate_label}:** [`{nameplate_sku}`](https://discord.com/shop#itemSkuId={nameplate_sku})")
 
         # Bot status
         bot_emoji = EMOJIS.get("done") if is_bot else EMOJIS.get("undone")
