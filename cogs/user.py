@@ -42,7 +42,7 @@ DISCORD_BADGE_URLS = {
 class UserInfoView(BaseView):
     """View for displaying user information using Components V2"""
 
-    def __init__(self, user_data: dict, bot_data: Optional[dict], moddy_attributes: dict, locale: str, author_id: int, bot):
+    def __init__(self, user_data: dict, bot_data: Optional[dict], moddy_attributes: dict, locale: str, author_id: int, bot, user_verification_data: dict = None):
         super().__init__(timeout=180)
         self.user_data = user_data
         self.bot_data = bot_data
@@ -50,6 +50,7 @@ class UserInfoView(BaseView):
         self.locale = locale
         self.author_id = author_id
         self.bot = bot
+        self.user_verification_data = user_verification_data or {}
 
         # Build the view
         self.build_view()
@@ -71,7 +72,7 @@ class UserInfoView(BaseView):
 
         # Determine verification badge (3-tier system)
         verification_badge, org_names, tier = get_user_verification_badge(
-            self.user_data, self.moddy_attributes
+            self.user_data, self.moddy_attributes, self.user_verification_data
         )
         badge_link = format_verification_badge(verification_badge)
 
@@ -200,7 +201,7 @@ class UserInfoView(BaseView):
             if custom_orgs:
                 formatted = _format_org_names(custom_orgs, self.locale)
                 text = i18n.get("commands.user.view.verified_org_member_notice", locale=self.locale, org_name=formatted)
-                date_attr = self.moddy_attributes.get("VERIFIED_ORG_MEMBER_DATE")
+                date_attr = self._get_badge_date("VERIFIED_ORG_MEMBER")
                 if date_attr:
                     date_text = i18n.get("commands.user.view.verified_date", locale=self.locale, date=f"<t:{date_attr}:D>")
                     notices.append(f"-# {MINI_VERIFIED} {text} • {date_text}")
@@ -210,7 +211,7 @@ class UserInfoView(BaseView):
             elif not auto_orgs:
                 # VERIFIED_ORG_MEMBER set but no org configured
                 text = i18n.get("commands.user.view.verified_org_member_no_org_notice", locale=self.locale)
-                date_attr = self.moddy_attributes.get("VERIFIED_ORG_MEMBER_DATE")
+                date_attr = self._get_badge_date("VERIFIED_ORG_MEMBER")
                 if date_attr:
                     date_text = i18n.get("commands.user.view.verified_date", locale=self.locale, date=f"<t:{date_attr}:D>")
                     notices.append(f"-# {MINI_VERIFIED} {text} • {date_text}")
@@ -220,7 +221,7 @@ class UserInfoView(BaseView):
 
         elif tier == "verified_org":
             text = i18n.get("commands.user.view.verified_org_notice", locale=self.locale)
-            date_attr = self.moddy_attributes.get("VERIFIED_ORG_DATE")
+            date_attr = self._get_badge_date("VERIFIED_ORG")
             if date_attr:
                 date_text = i18n.get("commands.user.view.verified_date", locale=self.locale, date=f"<t:{date_attr}:D>")
                 notices.append(f"-# {MINI_VERIFIED} {text} • {date_text}")
@@ -229,7 +230,7 @@ class UserInfoView(BaseView):
             show_learn_more = True
 
         elif tier == "verified":
-            date_attr = self.moddy_attributes.get("VERIFIED_DATE")
+            date_attr = self._get_badge_date("VERIFIED")
             if date_attr:
                 date_text = i18n.get("commands.user.view.verified_date", locale=self.locale, date=f"<t:{date_attr}:D>")
                 notices.append(f"-# {MINI_VERIFIED} {date_text}")
@@ -247,6 +248,13 @@ class UserInfoView(BaseView):
 
         # Add action buttons
         self._add_buttons()
+
+    def _get_badge_date(self, attr_key: str):
+        """Return the verification date for a badge, checking data.verification first then legacy attributes."""
+        date = (self.user_verification_data.get(attr_key) or {}).get("date")
+        if date is not None:
+            return str(date)
+        return self.moddy_attributes.get(f"{attr_key}_DATE")
 
     def _get_discord_badges(self) -> list:
         """Get Discord badges for the user"""
@@ -566,7 +574,7 @@ class UserInfoView(BaseView):
         avatar_url = f"https://cdn.discordapp.com/avatars/{user_id}/{avatar_hash}.{extension}?size=1024"
 
         # Create Components V2 view with MediaGallery
-        badge, _, _ = get_user_verification_badge(self.user_data, self.moddy_attributes)
+        badge, _, _ = get_user_verification_badge(self.user_data, self.moddy_attributes, self.user_verification_data)
         badge_link = format_verification_badge(badge)
         display_name = self.user_data.get("global_name") or self.user_data.get("username", "Unknown")
         avatar_title = i18n.get(
@@ -612,7 +620,7 @@ class UserInfoView(BaseView):
         banner_url = f"https://cdn.discordapp.com/banners/{user_id}/{banner_hash}.{extension}?size=1024"
 
         # Create Components V2 view with MediaGallery
-        badge, _, _ = get_user_verification_badge(self.user_data, self.moddy_attributes)
+        badge, _, _ = get_user_verification_badge(self.user_data, self.moddy_attributes, self.user_verification_data)
         badge_link = format_verification_badge(badge)
         display_name = self.user_data.get("global_name") or self.user_data.get("username", "Unknown")
         banner_title_text = i18n.get(
@@ -701,13 +709,15 @@ class User(commands.Cog):
                     if resp.status == 200:
                         bot_data = await resp.json()
 
-        # Get Moddy attributes for the user
+        # Get Moddy attributes and verification data for the user
         moddy_attributes = {}
+        user_verification_data = {}
         if self.bot.db:
             try:
                 user_db_data = await self.bot.db.get_user(int(user_id))
                 if user_db_data:
                     moddy_attributes = user_db_data.get("attributes", {})
+                    user_verification_data = (user_db_data.get("data") or {}).get("verification") or {}
             except Exception:
                 # If user not in DB, that's okay
                 pass
@@ -719,7 +729,8 @@ class User(commands.Cog):
             moddy_attributes=moddy_attributes,
             locale=locale,
             author_id=interaction.user.id,
-            bot=self.bot
+            bot=self.bot,
+            user_verification_data=user_verification_data
         )
 
         # Update the message with the view

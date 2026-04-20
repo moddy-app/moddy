@@ -302,7 +302,7 @@ def _parse_org_list(raw) -> list:
     return [s]
 
 
-def get_user_verification_badge(user_data: dict, moddy_attributes: dict) -> tuple:
+def get_user_verification_badge(user_data: dict, moddy_attributes: dict, user_verification_data: dict = None) -> tuple:
     """Determine the verification badge and org affiliation for a user.
 
     Priority:
@@ -310,6 +310,12 @@ def get_user_verification_badge(user_data: dict, moddy_attributes: dict) -> tupl
       2. Discord staff flag / TEAM attribute / VERIFIED_ORG_MEMBER attribute
          → verified badge  (tier "org_member")
       3. VERIFIED attribute → verified badge  (tier "verified")
+
+    Args:
+        user_data: Raw Discord API user dict (needs public_flags).
+        moddy_attributes: User's attributes dict from DB (boolean flags).
+        user_verification_data: Optional dict from DB data.verification — holds
+            dates and org lists. Falls back to legacy attribute keys when absent.
 
     Returns:
         (badge_emoji: str, org_names: list[str], tier: str | None)
@@ -333,7 +339,13 @@ def get_user_verification_badge(user_data: dict, moddy_attributes: dict) -> tupl
         if is_moddy_team:
             orgs.append("Moddy Team")
         if is_org_member_attr:
-            for custom_org in _parse_org_list(moddy_attributes.get("VERIFIED_ORG_MEMBER_ORG")):
+            if user_verification_data is not None:
+                raw = (user_verification_data.get("VERIFIED_ORG_MEMBER") or {}).get("orgs") or []
+                custom_orgs = raw if isinstance(raw, list) else _parse_org_list(raw)
+            else:
+                # Backward compat: orgs stored in attributes
+                custom_orgs = _parse_org_list(moddy_attributes.get("VERIFIED_ORG_MEMBER_ORG"))
+            for custom_org in custom_orgs:
                 if custom_org not in orgs:
                     orgs.append(custom_org)
         return (VERIFIED_ORG_MEMBER, orgs, "org_member")

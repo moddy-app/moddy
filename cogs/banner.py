@@ -22,11 +22,12 @@ class BannerView(BaseView):
     centralized error handler. ``timeout=None`` is inherited from BaseView.
     """
 
-    def __init__(self, user_data: dict, moddy_attributes: dict, locale: str):
+    def __init__(self, user_data: dict, moddy_attributes: dict, locale: str, user_verification_data: dict = None):
         super().__init__()
         self.user_data = user_data
         self.moddy_attributes = moddy_attributes
         self.locale = locale
+        self.user_verification_data = user_verification_data or {}
 
         # Build the view
         self.build_view()
@@ -45,7 +46,7 @@ class BannerView(BaseView):
         username = self.user_data.get("username", "Unknown")
 
         # Determine verification badge
-        badge, _, _ = get_user_verification_badge(self.user_data, self.moddy_attributes)
+        badge, _, _ = get_user_verification_badge(self.user_data, self.moddy_attributes, self.user_verification_data)
         badge_link = format_verification_badge(badge)
         display_name = self.user_data.get("global_name") or username
         title_text = i18n.get(
@@ -140,18 +141,20 @@ class Banner(commands.Cog):
 
                 user_data = await resp.json()
 
-        # Get Moddy attributes for the user
+        # Get Moddy attributes and verification data for the user
         moddy_attributes = {}
+        user_verification_data = {}
         if self.bot.db:
             try:
                 user_db_data = await self.bot.db.get_user(int(user_id))
                 if user_db_data:
                     moddy_attributes = user_db_data.get("attributes", {})
+                    user_verification_data = (user_db_data.get("data") or {}).get("verification") or {}
             except Exception:
                 pass
 
         # Create the view with user data
-        view = BannerView(user_data, moddy_attributes, locale)
+        view = BannerView(user_data, moddy_attributes, locale, user_verification_data)
 
         # Send response with Components V2
         # Note: Components V2 cannot be used with embeds

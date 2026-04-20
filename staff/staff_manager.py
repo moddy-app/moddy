@@ -1262,10 +1262,13 @@ class StaffManagement(StaffCommandsCog):
         Handle m.badge command — Manage user verification badges.
 
         Usage:
-          m.badge @user v/org/member [org_name]   — assign badge
+          m.badge @user v/org/member [org_name]   — assign badge (orgs are additive)
           m.badge @user rm <v|org|member>          — remove badge
+          m.badge import <json>                    — bulk import from JSON (or attach a .json file)
 
         Short aliases: v=verified, org=verified_org, member=verified_org_member
+
+        Dates and org lists are stored in users.data.verification (not in attributes).
         """
         BADGE_ALIASES = {
             "v": "VERIFIED", "verified": "VERIFIED",
@@ -1280,14 +1283,20 @@ class StaffManagement(StaffCommandsCog):
             "**Usage:**\n"
             "• `m.badge @user v` — Standard verified\n"
             "• `m.badge @user org` — Verified organisation\n"
-            "• `m.badge @user member [org_name]` — Org-member badge\n"
-            "• `m.badge @user rm <v|org|member>` — Remove a badge"
+            "• `m.badge @user member [org1, org2]` — Org-member badge (adds to existing orgs)\n"
+            "• `m.badge @user rm <v|org|member>` — Remove a badge\n"
+            "• `m.badge import [...]` — Bulk import from JSON (or attach a .json file)"
         )
 
         if staff_logger:
             await staff_logger.log_command("m", "badge", message.author, args=args)
 
         tokens = args.strip().split() if args else []
+
+        # --- Import subcommand (no target user needed) ---
+        if tokens and tokens[0].lower() == "import":
+            await self._handle_badge_import(message, tokens[1:])
+            return
 
         # --- Parse target user ---
         # First try non-bot mentions
@@ -1297,7 +1306,7 @@ class StaffManagement(StaffCommandsCog):
                 target_user = mention
                 break
 
-        # Fallback: extract user from token (supports <@ID> and plain ID, including the bot itself)
+        # Fallback: extract user from token (supports <@ID> and plain ID)
         if not target_user and tokens:
             raw = tokens[0]
             match = re.match(r'<@!?(\d+)>', raw)
@@ -1312,8 +1321,6 @@ class StaffManagement(StaffCommandsCog):
                 try:
                     target_user = await self.bot.fetch_user(raw_id)
                 except Exception:
-                    # fetch_user can fail (deleted account, network, etc.)
-                    # Use a minimal placeholder — only .id and .mention are needed
                     from types import SimpleNamespace
                     target_user = SimpleNamespace(id=raw_id, mention=f"<@{raw_id}>")
 
@@ -1342,9 +1349,14 @@ class StaffManagement(StaffCommandsCog):
             attr_key = BADGE_ALIASES[extra[0].lower()]
             try:
                 await db.set_attribute("user", target_user.id, attr_key, False, message.author.id, f"Badge {attr_key} removed via m.badge")
+                # Clean up legacy attribute keys
                 await db.set_attribute("user", target_user.id, f"{attr_key}_DATE", None, message.author.id, "Badge date cleared via m.badge")
                 if attr_key == "VERIFIED_ORG_MEMBER":
                     await db.set_attribute("user", target_user.id, "VERIFIED_ORG_MEMBER_ORG", None, message.author.id, "Org cleared via m.badge")
+                # Clear data.verification entry
+                await db.update_user_data(target_user.id, f"verification.{attr_key}.date", None)
+                if attr_key == "VERIFIED_ORG_MEMBER":
+                    await db.update_user_data(target_user.id, "verification.VERIFIED_ORG_MEMBER.orgs", None)
 
                 view = create_success_message("Badge Removed", f"Removed `{attr_key}` badge from {target_user.mention}.")
                 await self.reply_with_tracking(message, view)
@@ -1361,25 +1373,31 @@ class StaffManagement(StaffCommandsCog):
             return
 
         attr_key = BADGE_ALIASES[action]
-        timestamp = str(int(datetime.now(timezone.utc).timestamp()))
+        timestamp = int(datetime.now(timezone.utc).timestamp())
 
         try:
             await db.set_attribute("user", target_user.id, attr_key, True, message.author.id, f"Badge {attr_key} set via m.badge")
-            await db.set_attribute("user", target_user.id, f"{attr_key}_DATE", timestamp, message.author.id, "Badge date set via m.badge")
+            # Store date in data.verification (not in attributes)
+            await db.update_user_data(target_user.id, f"verification.{attr_key}.date", timestamp)
 
             details_lines = [f"Assigned `{attr_key}` badge to {target_user.mention}."]
 
             if attr_key == "VERIFIED_ORG_MEMBER":
                 if extra:
-                    # Split by comma to support multiple orgs: m.badge @user member Orga1, Orga2
                     raw_orgs = " ".join(extra)
-                    orgs = [o.strip() for o in raw_orgs.split(",") if o.strip()]
-                    org_value = json.dumps(orgs)
-                    await db.set_attribute("user", target_user.id, "VERIFIED_ORG_MEMBER_ORG", org_value, message.author.id, "Orgs set via m.badge")
-                    orgs_display = ", ".join(f"**{o}**" for o in orgs)
+                    new_orgs = [o.strip() for o in raw_orgs.split(",") if o.strip()]
+                    # Read existing orgs and merge (additive, no duplicates)
+                    user_db = await db.get_user(target_user.id)
+                    existing = (user_db.get("data") or {}).get("verification", {}).get("VERIFIED_ORG_MEMBER", {})
+                    existing_orgs = existing.get("orgs") if isinstance(existing, dict) else []
+                    existing_orgs = existing_orgs if isinstance(existing_orgs, list) else []
+                    merged = list(existing_orgs)
+                    for org in new_orgs:
+                        if org not in merged:
+                            merged.append(org)
+                    await db.update_user_data(target_user.id, "verification.VERIFIED_ORG_MEMBER.orgs", merged)
+                    orgs_display = ", ".join(f"**{o}**" for o in merged)
                     details_lines.append(f"Organisation(s): {orgs_display}")
-                else:
-                    await db.set_attribute("user", target_user.id, "VERIFIED_ORG_MEMBER_ORG", None, message.author.id, "Org cleared via m.badge")
 
             view = create_success_message("Badge Assigned", "\n".join(details_lines))
             await self.reply_with_tracking(message, view)
@@ -1388,6 +1406,176 @@ class StaffManagement(StaffCommandsCog):
             logger.error(f"Error assigning badge: {e}")
             view = create_error_message("Error", f"Failed to assign badge: {e}")
             await message.reply(view=view, mention_author=False)
+
+    async def _handle_badge_import(self, message: discord.Message, extra_tokens: list):
+        """
+        Handle m.badge import — bulk-set badges from a JSON array.
+
+        JSON format (array of entries):
+          [
+            {
+              "user_id": "123456789",
+              "action": "set",          // "set" (default) or "remove"
+              "badge": "member",        // "v"/"verified", "org"/"verified_org", "member"/"verified_org_member"
+              "orgs": ["Org1", "Org2"], // for member badge; additive unless "replace_orgs": true
+              "replace_orgs": false,    // optional, default false
+              "date": 1234567890        // optional unix timestamp, defaults to now
+            }
+          ]
+        """
+        BADGE_ALIASES = {
+            "v": "VERIFIED", "verified": "VERIFIED",
+            "org": "VERIFIED_ORG", "vo": "VERIFIED_ORG", "verified_org": "VERIFIED_ORG",
+            "member": "VERIFIED_ORG_MEMBER", "m": "VERIFIED_ORG_MEMBER",
+            "vom": "VERIFIED_ORG_MEMBER", "org_member": "VERIFIED_ORG_MEMBER",
+            "verified_org_member": "VERIFIED_ORG_MEMBER",
+        }
+
+        IMPORT_USAGE = (
+            "**Usage:** `m.badge import [...]` or attach a `.json` file.\n\n"
+            "**JSON format:**\n"
+            "```json\n"
+            '[\n'
+            '  {\n'
+            '    "user_id": "123456789",\n'
+            '    "action": "set",\n'
+            '    "badge": "member",\n'
+            '    "orgs": ["Org1", "Org2"],\n'
+            '    "replace_orgs": false,\n'
+            '    "date": 1234567890\n'
+            '  }\n'
+            ']\n'
+            "```\n"
+            "Valid `badge` values: `v`/`verified`, `org`/`verified_org`, `member`/`verified_org_member`\n"
+            "Valid `action` values: `set` (default), `remove`"
+        )
+
+        # --- Load JSON ---
+        raw_json = None
+
+        # Try attachment first
+        if message.attachments:
+            for attachment in message.attachments:
+                if attachment.filename.endswith(".json") or attachment.content_type and "json" in attachment.content_type:
+                    try:
+                        raw_bytes = await attachment.read()
+                        raw_json = raw_bytes.decode("utf-8")
+                        break
+                    except Exception as e:
+                        view = create_error_message("Import Error", f"Failed to read attachment: {e}")
+                        await message.reply(view=view, mention_author=False)
+                        return
+
+        # Fallback: inline JSON from tokens
+        if raw_json is None and extra_tokens:
+            raw_json = " ".join(extra_tokens)
+
+        if not raw_json:
+            view = create_error_message("Invalid Usage", IMPORT_USAGE)
+            await message.reply(view=view, mention_author=False)
+            return
+
+        try:
+            entries = json.loads(raw_json)
+        except json.JSONDecodeError as e:
+            view = create_error_message("JSON Parse Error", f"Invalid JSON: {e}\n\n{IMPORT_USAGE}")
+            await message.reply(view=view, mention_author=False)
+            return
+
+        if not isinstance(entries, list):
+            view = create_error_message("JSON Format Error", f"Expected a JSON array `[...]`.\n\n{IMPORT_USAGE}")
+            await message.reply(view=view, mention_author=False)
+            return
+
+        # --- Process entries ---
+        now_ts = int(datetime.now(timezone.utc).timestamp())
+        results_ok = []
+        results_err = []
+
+        for i, entry in enumerate(entries):
+            if not isinstance(entry, dict):
+                results_err.append(f"Entry #{i+1}: not an object")
+                continue
+
+            user_id_raw = entry.get("user_id")
+            if not user_id_raw:
+                results_err.append(f"Entry #{i+1}: missing `user_id`")
+                continue
+
+            try:
+                user_id = int(str(user_id_raw).strip())
+            except ValueError:
+                results_err.append(f"Entry #{i+1}: invalid `user_id` `{user_id_raw}`")
+                continue
+
+            action = str(entry.get("action", "set")).lower()
+            badge_raw = str(entry.get("badge", "")).lower()
+
+            if badge_raw not in BADGE_ALIASES:
+                results_err.append(f"`{user_id_raw}`: unknown badge `{badge_raw}`")
+                continue
+
+            attr_key = BADGE_ALIASES[badge_raw]
+
+            try:
+                if action == "remove":
+                    await db.set_attribute("user", user_id, attr_key, False, message.author.id, "Badge removed via m.badge import")
+                    await db.set_attribute("user", user_id, f"{attr_key}_DATE", None, message.author.id, "Badge date cleared via m.badge import")
+                    if attr_key == "VERIFIED_ORG_MEMBER":
+                        await db.set_attribute("user", user_id, "VERIFIED_ORG_MEMBER_ORG", None, message.author.id, "Org cleared via m.badge import")
+                    await db.update_user_data(user_id, f"verification.{attr_key}.date", None)
+                    if attr_key == "VERIFIED_ORG_MEMBER":
+                        await db.update_user_data(user_id, "verification.VERIFIED_ORG_MEMBER.orgs", None)
+                    results_ok.append(f"`{user_id_raw}` — removed `{attr_key}`")
+
+                else:  # "set"
+                    badge_date = entry.get("date", now_ts)
+                    try:
+                        badge_date = int(badge_date)
+                    except (ValueError, TypeError):
+                        badge_date = now_ts
+
+                    await db.set_attribute("user", user_id, attr_key, True, message.author.id, f"Badge {attr_key} set via m.badge import")
+                    await db.update_user_data(user_id, f"verification.{attr_key}.date", badge_date)
+
+                    if attr_key == "VERIFIED_ORG_MEMBER":
+                        new_orgs = entry.get("orgs", [])
+                        if not isinstance(new_orgs, list):
+                            new_orgs = [str(new_orgs)] if new_orgs else []
+                        replace = bool(entry.get("replace_orgs", False))
+                        if replace:
+                            final_orgs = new_orgs
+                        else:
+                            user_db = await db.get_user(user_id)
+                            existing = (user_db.get("data") or {}).get("verification", {}).get("VERIFIED_ORG_MEMBER", {})
+                            existing_orgs = existing.get("orgs") if isinstance(existing, dict) else []
+                            existing_orgs = existing_orgs if isinstance(existing_orgs, list) else []
+                            final_orgs = list(existing_orgs)
+                            for org in new_orgs:
+                                if org not in final_orgs:
+                                    final_orgs.append(org)
+                        await db.update_user_data(user_id, "verification.VERIFIED_ORG_MEMBER.orgs", final_orgs)
+                        orgs_str = ", ".join(f"**{o}**" for o in final_orgs) if final_orgs else "_none_"
+                        results_ok.append(f"`{user_id_raw}` — set `{attr_key}` • orgs: {orgs_str}")
+                    else:
+                        results_ok.append(f"`{user_id_raw}` — set `{attr_key}`")
+
+            except Exception as e:
+                logger.error(f"Badge import error for user {user_id}: {e}")
+                results_err.append(f"`{user_id_raw}`: {e}")
+
+        # --- Build result message ---
+        lines = [f"**Badge import complete** — {len(results_ok)} ok, {len(results_err)} error(s)"]
+        if results_ok:
+            lines.append("\n".join(f"{EMOJIS['done']} {r}" for r in results_ok))
+        if results_err:
+            lines.append("\n".join(f"{EMOJIS['error']} {r}" for r in results_err))
+
+        if results_err:
+            view = create_warning_message("Badge Import", "\n".join(lines))
+        else:
+            view = create_success_message("Badge Import", "\n".join(lines))
+        await self.reply_with_tracking(message, view)
 
 
 async def setup(bot):

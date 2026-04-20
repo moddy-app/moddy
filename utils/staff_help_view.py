@@ -81,8 +81,9 @@ COMMAND_CATEGORIES = {
             ("m.staffinfo [@user]", "Show detailed staff member information"),
             ("m.badge @user v", "Assign standard verified badge"),
             ("m.badge @user org", "Assign verified organisation badge"),
-            ("m.badge @user member [org1, org2, ...]", "Assign org-member badge (one or more orgs)"),
-            ("m.badge @user rm <v|org|member>", "Remove a verification badge")
+            ("m.badge @user member [org1, org2]", "Add org-member badge (orgs are additive)"),
+            ("m.badge @user rm <v|org|member>", "Remove a verification badge"),
+            ("m.badge import [...]", "Bulk import badges from a JSON array (or attach a .json file)")
         ],
         "roles": [StaffRole.MANAGER]
     },
