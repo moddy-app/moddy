@@ -39,3 +39,6 @@ python-multipart==0.0.9
 # Error tracking and monitoring
 sentry-sdk==2.18.0
 
+# Token encryption for token_detector cog
+cryptography>=42.0.0
+

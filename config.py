@@ -53,6 +53,10 @@ REDIS_PASSWORD: Optional[str] = os.environ.get("REDIS_PASSWORD") or None
 # DeepL API pour les traductions - Variable Railway: DEEPL_API_KEY
 DEEPL_API_KEY: str = os.environ.get("DEEPL_API_KEY", "")
 
+# Fernet key for token_detector in-memory cache encryption - Variable Railway: TOKEN_DETECTOR_KEY
+# Generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+TOKEN_DETECTOR_KEY: str = os.environ.get("TOKEN_DETECTOR_KEY", "")
+
 # =============================================================================
 # PARAMÈTRES DU BOT
 # =============================================================================
