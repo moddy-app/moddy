@@ -29,7 +29,9 @@ import discord
 from discord import ui
 from discord.ext import commands
 
-from cogs.error_handler import BaseView
+import traceback
+
+from cogs.error_handler import BaseView, ErrorView, capture_error_to_sentry
 from utils.emojis import (
     WARNING, ERROR, DONE, INFO, DELETE, LOGOUT, SETTINGS,
 )
@@ -37,6 +39,80 @@ from utils.emojis import (
 logger = logging.getLogger("moddy.token_detector")
 
 DISCORD_API = "https://discord.com/api/v10"
+
+
+# =============================================================================
+# ERROR ROUTING — unexpected exceptions in DynamicItem callbacks
+# =============================================================================
+
+async def _route_error(
+    interaction: discord.Interaction,
+    error: Exception,
+    context: str,
+) -> None:
+    """Route an unexpected exception to the centralized ErrorTracker cog."""
+    compact_tb = "".join(
+        traceback.format_exception(type(error), error, error.__traceback__)
+    ).replace("\n", " ⮐ ")
+    logger.error(f"Unexpected error in TokenDetector/{context}: {compact_tb}")
+
+    bot = interaction.client
+    error_tracker = bot.get_cog("ErrorTracker") if bot else None
+
+    if error_tracker:
+        error_code = error_tracker.generate_error_code(error)
+        error_details = error_tracker.format_error_details(error)
+        error_details.update({
+            "command": f"TokenDetector:{context}",
+            "user": f"{interaction.user} ({interaction.user.id})",
+            "guild": (
+                f"{interaction.guild.name} ({interaction.guild.id})"
+                if interaction.guild else "DM"
+            ),
+            "channel": (
+                f"#{interaction.channel.name}"
+                if hasattr(interaction.channel, "name") else "DM"
+            ),
+        })
+
+        sentry_id = capture_error_to_sentry(error, {
+            "error_type": "DynamicItem Error",
+            "error_code": error_code,
+            "context": context,
+            "user_id": interaction.user.id if interaction.user else None,
+            "guild_id": interaction.guild.id if interaction.guild else None,
+        })
+        if sentry_id:
+            error_details["sentry_event_id"] = sentry_id
+
+        error_tracker.store_error(error_code, error_details)
+        await error_tracker.store_error_db(error_code, error_details)
+        await error_tracker.send_error_log(error_code, error_details, is_fatal=False)
+
+        error_view = ErrorView(error_code)
+        try:
+            if interaction.response.is_done():
+                await interaction.followup.send(view=error_view, ephemeral=True)
+            else:
+                await interaction.response.send_message(view=error_view, ephemeral=True)
+        except Exception:
+            pass
+    else:
+        try:
+            msg = "An unexpected error occurred and has been logged."
+            if interaction.response.is_done():
+                await interaction.followup.send(msg, ephemeral=True)
+            else:
+                await interaction.response.send_message(msg, ephemeral=True)
+        except Exception:
+            pass
+
+
+class _ErrorRoutingMixin:
+    """Mixin that routes unhandled DynamicItem callback exceptions to ErrorTracker."""
+
+    async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
+        await _route_error(interaction, error, type(self).__name__)
 
 # Left-border accent colour for the alert container (deep calm red, not flashy)
 _ALERT_COLOUR = discord.Colour(0xA93226)
@@ -346,6 +422,7 @@ def _already_done_view(action: str) -> BaseView:
 # =============================================================================
 
 class UserDetailsButton(
+    _ErrorRoutingMixin,
     ui.DynamicItem[ui.Button],
     template=r"moddy:td:user:details:(?P<ck>[0-9a-f]{10}):(?P<mid>\d+):(?P<cid>\d+)",
 ):
@@ -397,6 +474,7 @@ class UserDetailsButton(
 # =============================================================================
 
 class UserInvalidateButton(
+    _ErrorRoutingMixin,
     ui.DynamicItem[ui.Button],
     template=r"moddy:td:user:invalidate:(?P<ck>[0-9a-f]{10})",
 ):
@@ -453,6 +531,7 @@ class UserInvalidateButton(
 # =============================================================================
 
 class UserConfirmInvalidateButton(
+    _ErrorRoutingMixin,
     ui.DynamicItem[ui.Button],
     template=r"moddy:td:user:confirm:(?P<ck>[0-9a-f]{10})",
 ):
@@ -541,6 +620,7 @@ class UserConfirmInvalidateButton(
 # =============================================================================
 
 class UserCancelButton(
+    _ErrorRoutingMixin,
     ui.DynamicItem[ui.Button],
     template=r"moddy:td:user:cancel",
 ):
@@ -575,6 +655,7 @@ class UserCancelButton(
 # =============================================================================
 
 class UserDeleteMsgButton(
+    _ErrorRoutingMixin,
     ui.DynamicItem[ui.Button],
     template=r"moddy:td:user:delete:(?P<ck>[0-9a-f]{10}):(?P<mid>\d+):(?P<cid>\d+)",
 ):
@@ -657,6 +738,7 @@ class UserDeleteMsgButton(
 # =============================================================================
 
 class UserResetPwButton(
+    _ErrorRoutingMixin,
     ui.DynamicItem[ui.Button],
     template=r"moddy:td:user:resetpw:(?P<ck>[0-9a-f]{10})",
 ):
@@ -772,6 +854,7 @@ class UserResetPwButton(
 # =============================================================================
 
 class BotDetailsButton(
+    _ErrorRoutingMixin,
     ui.DynamicItem[ui.Button],
     template=r"moddy:td:bot:details:(?P<ck>[0-9a-f]{10}):(?P<mid>\d+):(?P<cid>\d+)",
 ):
@@ -823,6 +906,7 @@ class BotDetailsButton(
 # =============================================================================
 
 class BotDeleteMsgButton(
+    _ErrorRoutingMixin,
     ui.DynamicItem[ui.Button],
     template=r"moddy:td:bot:delete:(?P<ck>[0-9a-f]{10}):(?P<mid>\d+):(?P<cid>\d+)",
 ):
