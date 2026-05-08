@@ -1017,7 +1017,7 @@ def _build_bot_alert_view(
     row.add_item(ui.Button(
         label="Regenerate Token",
         style=discord.ButtonStyle.link,
-        url=f"https://discord.com/developers/applications/{bot_id}/bot",
+        url=f"https://discord.com/developers/applications/{bot_id}/bot?token",
     ))
     view.add_item(row)
 
