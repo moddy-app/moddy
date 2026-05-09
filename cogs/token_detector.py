@@ -115,7 +115,7 @@ class _ErrorRoutingMixin:
         await _route_error(interaction, error, type(self).__name__)
 
 # Left-border accent colour for the alert container (deep calm red, not flashy)
-_ALERT_COLOUR = discord.Colour(0xA93226)
+_ALERT_COLOUR = discord.Colour(0xE74C3C)
 
 # =============================================================================
 # TOKEN REGEX
@@ -837,13 +837,11 @@ class UserResetPwButton(
                 await _refresh_dm(bot, data, self.ck, is_bot_alert=False)
 
             else:
-                c.add_item(ui.TextDisplay(
-                    f"### {ERROR} Reset Request Failed\n"
-                    f"Discord returned an unexpected response (HTTP {status}) when trying "
-                    "to send a password reset email.\n\n"
-                    "Please reset your password manually at "
-                    "<https://discord.com/settings/account>."
-                ))
+                # Unexpected — raise so _ErrorRoutingMixin.on_error handles it
+                raise RuntimeError(
+                    f"Unexpected Discord API response for POST /auth/forgot: "
+                    f"HTTP {status}, body={resp_data!r}"
+                )
 
         view.add_item(c)
         await interaction.followup.send(view=view, ephemeral=True)
@@ -1003,7 +1001,7 @@ def _build_user_alert_view(
     c = ui.Container(accent_colour=_ALERT_COLOUR)
 
     c.add_item(ui.TextDisplay(
-        f"### {WARNING} Session Token Detected"
+        f"### {WARNING} Your account token was just exposed"
     ))
     c.add_item(ui.TextDisplay(
         "A session token associated with your account was found in a public message. "
@@ -1072,7 +1070,7 @@ def _build_bot_alert_view(
     c = ui.Container(accent_colour=_ALERT_COLOUR)
 
     c.add_item(ui.TextDisplay(
-        f"### {WARNING} Bot Token Exposed"
+        f"### {WARNING} Your bot token has been compromised"
     ))
     c.add_item(ui.TextDisplay(
         f"The token for your bot **{bot_name}** (`{bot_id}`) was found in a public message. "
