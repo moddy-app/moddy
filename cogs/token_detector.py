@@ -836,8 +836,18 @@ class UserResetPwButton(
                 update_alert(self.ck, data)
                 await _refresh_dm(bot, data, self.ck, is_bot_alert=False)
 
+            elif status == 400 and "captcha_key" in (resp_data or {}):
+                # Discord requires a captcha — cannot be completed programmatically
+                c.add_item(ui.TextDisplay(
+                    f"### {ERROR} Captcha Required\n"
+                    "Discord is asking for a captcha to process this request, "
+                    "which can't be completed automatically.\n\n"
+                    "Please reset your password directly at "
+                    "<https://discord.com/settings/account>."
+                ))
+
             else:
-                # Unexpected — raise so _ErrorRoutingMixin.on_error handles it
+                # Truly unexpected — raise so _ErrorRoutingMixin.on_error handles it
                 raise RuntimeError(
                     f"Unexpected Discord API response for POST /auth/forgot: "
                     f"HTTP {status}, body={resp_data!r}"
