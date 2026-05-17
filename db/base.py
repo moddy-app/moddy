@@ -20,6 +20,8 @@ from db.repositories.saved_messages import SavedMessageRepository
 from db.repositories.interserver import InterserverRepository
 from db.repositories.moderation import ModerationRepository
 from db.repositories.saved_roles import SavedRolesRepository
+from db.repositories.token_alerts import TokenAlertRepository
+from db.repositories.token_secrets import TokenSecretRepository
 
 logger = logging.getLogger('moddy.database')
 
@@ -40,6 +42,8 @@ class ModdyDatabase(
     InterserverRepository,
     ModerationRepository,
     SavedRolesRepository,
+    TokenAlertRepository,
+    TokenSecretRepository,
 ):
     """Gestionnaire principal de la base de données"""
 
@@ -540,6 +544,49 @@ class ModdyDatabase(
             await conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_saved_roles_saved_at
                 ON saved_roles(saved_at)
+            """)
+
+            # Token alerts — metadata only, token itself is never stored
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS token_alerts (
+                    ck VARCHAR(10) PRIMARY KEY,
+                    masked_content TEXT,
+                    msg_id BIGINT,
+                    channel_id BIGINT,
+                    channel_name TEXT,
+                    guild_id BIGINT,
+                    guild_name TEXT,
+                    author_id BIGINT,
+                    author_name TEXT,
+                    alert_timestamp BIGINT,
+                    bot_id BIGINT,
+                    bot_name TEXT,
+                    state JSONB DEFAULT '{"deleted": false, "invalidated": false}'::jsonb,
+                    dm_message_id BIGINT,
+                    dm_channel_id BIGINT,
+                    created_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            """)
+
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_token_alerts_created_at
+                ON token_alerts(created_at)
+            """)
+
+            # Token secrets — encrypted token storage for cross-restart Invalidate button
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS token_secrets (
+                    ck VARCHAR(10) PRIMARY KEY,
+                    encrypted_token BYTEA NOT NULL,
+                    user_id_hmac BYTEA NOT NULL,
+                    week_number INTEGER NOT NULL,
+                    created_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            """)
+
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_token_secrets_created_at
+                ON token_secrets(created_at)
             """)
 
             logger.info("[OK] Tables initialisées")

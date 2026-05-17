@@ -205,6 +205,8 @@ class DeveloperCommands(StaffCommandsCog):
             await self.handle_disabled_command(message, args)
         elif command_name == "cogs":
             await self.handle_cogs_command(message, args)
+        elif command_name == "presence":
+            await self.handle_presence_command(message, args)
         else:
             view = create_error_message("Unknown Command", f"Developer command `{command_name}` not found.")
             await self.reply_with_tracking(message, view)
@@ -987,6 +989,65 @@ class DeveloperCommands(StaffCommandsCog):
             )
         else:
             view = create_success_message("No Disabled Cogs", "All cogs are currently enabled.")
+        await self.reply_with_tracking(message, view)
+
+    async def handle_presence_command(self, message: discord.Message, args: str):
+        """
+        Handle d.presence command - Change the bot's presence/status
+        Usage: <@bot> d.presence <online|idle|dnd|invisible> [activity text]
+        """
+        if staff_logger:
+            await staff_logger.log_command("d", "presence", message.author, args=args or "no args")
+
+        STATUS_MAP = {
+            "online": discord.Status.online,
+            "idle": discord.Status.idle,
+            "dnd": discord.Status.dnd,
+            "invisible": discord.Status.invisible,
+            "offline": discord.Status.invisible,
+        }
+
+        STATUS_LABELS = {
+            "online": f"{EMOJIS['green_status']} Online",
+            "idle": f"{EMOJIS['yellow_status']} Idle",
+            "dnd": f"{EMOJIS['red_status']} Do Not Disturb",
+            "invisible": "Invisible",
+            "offline": "Invisible",
+        }
+
+        if not args or not args.strip():
+            options = " | ".join(f"`{k}`" for k in STATUS_MAP)
+            view = create_error_message(
+                "Invalid Usage",
+                f"**Usage:** `d.presence <status> [activity text]`\n\n**Statuses:** {options}\n\n**Example:** `d.presence idle En maintenance`"
+            )
+            await self.reply_with_tracking(message, view)
+            return
+
+        parts = args.strip().split(None, 1)
+        status_key = parts[0].lower()
+        activity_text = parts[1].strip() if len(parts) > 1 else None
+
+        if status_key not in STATUS_MAP:
+            options = " | ".join(f"`{k}`" for k in STATUS_MAP)
+            view = create_error_message(
+                "Unknown Status",
+                f"Status `{status_key}` is not valid.\n\n**Available:** {options}"
+            )
+            await self.reply_with_tracking(message, view)
+            return
+
+        status = STATUS_MAP[status_key]
+        activity = discord.CustomActivity(name=activity_text) if activity_text else None
+
+        await self.bot.change_presence(status=status, activity=activity)
+
+        label = STATUS_LABELS[status_key]
+        description = f"Presence changed to **{label}**."
+        if activity_text:
+            description += f"\n**Activity:** `{activity_text}`"
+
+        view = create_success_message("Presence Updated", description, footer=None)
         await self.reply_with_tracking(message, view)
 
     async def handle_cogs_command(self, message: discord.Message, args: str):

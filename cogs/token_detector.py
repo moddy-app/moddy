@@ -4,18 +4,20 @@ validates them against the Discord API, and alerts the affected user or bot
 owner via DM with action buttons.
 
 Security design:
-- Tokens are NEVER stored in the database.
-- Tokens are held in process memory, encrypted with Fernet (TOKEN_DETECTOR_KEY env var).
-- Each alert payload is keyed by a 10-char random hex string embedded in button custom_ids.
-- Cache entries expire after 24 h. After invalidation the token field is cleared but the
-  rest of the payload is kept so Message Info and Delete still work.
-- After a bot restart the cache is empty; buttons show a graceful "unavailable" message.
+- Tokens are encrypted in process memory with Fernet (TOKEN_DETECTOR_KEY env var) and also
+  stored in the `token_secrets` table using AES-256-GCM with a per-alert derived key.
+- The DB column is only decryptable with both the button's `ck` (custom_id) and TOKEN_DETECTOR_KEY.
+- Non-sensitive metadata (server/channel names, button state) lives in `token_alerts`.
+- Cache entries expire after 24 h. After invalidation the token is cleared and the DB secret deleted.
+- On restart: metadata loads from `token_alerts`; token loads from `token_secrets` (if key is set).
 """
 
 from __future__ import annotations
 
 import asyncio
 import base64
+import hashlib
+import hmac
 import json
 import logging
 import os
@@ -33,7 +35,7 @@ import traceback
 
 from cogs.error_handler import BaseView, ErrorView, capture_error_to_sentry
 from utils.emojis import (
-    WARNING, ERROR, DONE, INFO, DELETE, LOGOUT, SETTINGS,
+    WARNING, ERROR, DONE, INFO, DELETE, LOGOUT,
 )
 
 logger = logging.getLogger("moddy.token_detector")
@@ -151,7 +153,6 @@ _TOKEN_RE = re.compile(
 #   "state": {
 #     "deleted": bool,
 #     "invalidated": bool,
-#     "pw_reset_sent": bool,
 #   },
 #   # set after the DM is sent:
 #   "dm_message_id": int | None,
@@ -236,6 +237,12 @@ def update_alert(ck: str, new_data: dict) -> bool:
         return True
     except Exception:
         return False
+
+
+def _derive_alert_key(ck: str, week_number: int) -> bytes:
+    """Derive a per-alert AES-256 key: HMAC-SHA256(master_key, '{ck}_{week_number}')."""
+    master = os.environ.get("TOKEN_DETECTOR_KEY", "").encode()
+    return hmac.new(master, f"{ck}_{week_number}".encode(), hashlib.sha256).digest()
 
 
 # =============================================================================
@@ -445,7 +452,7 @@ class UserDetailsButton(
         return cls(match.group("ck"), int(match.group("mid")), int(match.group("cid")))
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        data = peek_alert(self.ck)
+        data = await peek_alert_with_db_fallback(self.ck, interaction.client)
         if data is None:
             await interaction.response.send_message(view=_expired_view(), ephemeral=True)
             return
@@ -497,7 +504,7 @@ class UserInvalidateButton(
         return cls(match.group("ck"))
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        data = peek_alert(self.ck)
+        data = await peek_alert_with_db_fallback(self.ck, interaction.client)
         if data is None:
             await interaction.response.send_message(view=_expired_view(), ephemeral=True)
             return
@@ -555,7 +562,7 @@ class UserConfirmInvalidateButton(
     async def callback(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer(ephemeral=True)
         bot = interaction.client
-        data = peek_alert(self.ck)
+        data = await peek_alert_with_db_fallback(self.ck, bot)
         if data is None:
             await interaction.followup.send(view=_expired_view(), ephemeral=True)
             return
@@ -607,11 +614,17 @@ class UserConfirmInvalidateButton(
         # Clear token from cache, mark invalidated — other buttons (info, delete) still work
         data["token"] = ""
         data["state"]["invalidated"] = True
-        # pw_reset_sent also disabled because we have no token left for the email
-        data["state"]["pw_reset_sent"] = True
         update_alert(self.ck, data)
+        try:
+            await bot.db.update_token_alert_state(self.ck, data["state"])
+        except Exception as exc:
+            logger.debug(f"DB state update failed for alert {self.ck}: {exc}")
+        try:
+            await bot.db.delete_token_secret(self.ck)
+        except Exception as exc:
+            logger.debug(f"Token secret delete failed for alert {self.ck}: {exc}")
 
-        # Refresh original DM so Invalidate + Reset Password become visually disabled
+        # Refresh original DM so Invalidate button becomes visually disabled
         await _refresh_dm(bot, data, self.ck, is_bot_alert=False)
 
 
@@ -680,7 +693,7 @@ class UserDeleteMsgButton(
     async def callback(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer(ephemeral=True)
         bot = interaction.client
-        data = peek_alert(self.ck)
+        data = await peek_alert_with_db_fallback(self.ck, bot)
         if data is None:
             await interaction.followup.send(view=_expired_view(), ephemeral=True)
             return
@@ -705,7 +718,7 @@ class UserDeleteMsgButton(
         except Exception as exc:
             logger.debug(f"Bot delete attempt failed: {exc}")
 
-        # Attempt 2: delete via the user's token
+        # Attempt 2: delete via the user's token (only available in memory cache)
         if not deleted:
             token = data.get("token", "")
             if token:
@@ -721,6 +734,10 @@ class UserDeleteMsgButton(
             ))
             data["state"]["deleted"] = True
             update_alert(self.ck, data)
+            try:
+                await bot.db.update_token_alert_state(self.ck, data["state"])
+            except Exception as exc:
+                logger.debug(f"DB state update failed for alert {self.ck}: {exc}")
             await _refresh_dm(bot, data, self.ck, is_bot_alert=False)
         else:
             c.add_item(ui.TextDisplay(
@@ -734,127 +751,33 @@ class UserDeleteMsgButton(
 
 
 # =============================================================================
-# DYNAMIC ITEM — USER ALERT: CHANGE PASSWORD
+# DB FALLBACK — load alert metadata from DB when memory cache is cold
 # =============================================================================
 
-class UserResetPwButton(
-    _ErrorRoutingMixin,
-    ui.DynamicItem[ui.Button],
-    template=r"moddy:td:user:resetpw:(?P<ck>[0-9a-f]{10})",
-):
-    """Sends a password-reset email via POST /auth/forgot."""
-
-    def __init__(self, ck: str, disabled: bool = False) -> None:
-        super().__init__(
-            ui.Button(
-                label="Change Password",
-                style=discord.ButtonStyle.primary,
-                emoji=discord.PartialEmoji.from_str(SETTINGS),
-                custom_id=f"moddy:td:user:resetpw:{ck}",
-                disabled=disabled,
-            )
-        )
-        self.ck = ck
-
-    @classmethod
-    async def from_custom_id(cls, interaction, item, match: re.Match):
-        return cls(match.group("ck"))
-
-    async def callback(self, interaction: discord.Interaction) -> None:
-        await interaction.response.defer(ephemeral=True)
-        bot = interaction.client
-        data = peek_alert(self.ck)
-        if data is None:
-            await interaction.followup.send(view=_expired_view(), ephemeral=True)
-            return
-        if data.get("state", {}).get("pw_reset_sent"):
-            await interaction.followup.send(
-                view=_already_done_view("password reset"), ephemeral=True
-            )
-            return
-
-        email = data.get("email")
-        view = BaseView()
-        c = ui.Container()
-
-        if not email:
-            # No email in scope — direct user to settings
-            c.add_item(ui.TextDisplay(
-                f"### {ERROR} Email Address Unavailable\n"
-                "We couldn't retrieve your email address from the session token "
-                "(it may not include the email scope).\n\n"
-                "Please reset your password manually at "
-                "<https://discord.com/settings/account>."
-            ))
-        else:
-            async with aiohttp.ClientSession() as session:
-                status, resp_data = await _api_post(
-                    session,
-                    "/auth/forgot",
-                    body={"login": email},
-                )
-
-            if status == 200:
-                method = (resp_data or {}).get("method", "password_reset")
-                if method == "one_time_login":
-                    c.add_item(ui.TextDisplay(
-                        f"### {DONE} Reset Email Sent\n"
-                        f"A password reset link (with a one-time login option) has been sent "
-                        f"to **{email}**. Follow the instructions in the email to set a new password.\n\n"
-                        "-# Resetting your password will invalidate all active sessions."
-                    ))
-                else:
-                    c.add_item(ui.TextDisplay(
-                        f"### {DONE} Reset Email Sent\n"
-                        f"A password reset link has been sent to **{email}**. "
-                        "Click the link in the email to choose a new password.\n\n"
-                        "-# Resetting your password will invalidate all active sessions."
-                    ))
-                data["state"]["pw_reset_sent"] = True
-                update_alert(self.ck, data)
-                await _refresh_dm(bot, data, self.ck, is_bot_alert=False)
-
-            elif status == 400 and (resp_data or {}).get("code") == 70007:
-                # Phone-number account, SMS sent
-                c.add_item(ui.TextDisplay(
-                    f"### {DONE} Verification Code Sent\n"
-                    "A verification code has been sent to your registered phone number. "
-                    "Use it to reset your password in the Discord app."
-                ))
-                data["state"]["pw_reset_sent"] = True
-                update_alert(self.ck, data)
-                await _refresh_dm(bot, data, self.ck, is_bot_alert=False)
-
-            elif status == 400 and (resp_data or {}).get("code") == 70009:
-                # Phone ineligible, email fallback
-                c.add_item(ui.TextDisplay(
-                    f"### {DONE} Reset Email Sent (Phone Ineligible)\n"
-                    f"Your phone number is not eligible for phone-based reset. "
-                    f"A password reset link has been sent to **{email}** instead."
-                ))
-                data["state"]["pw_reset_sent"] = True
-                update_alert(self.ck, data)
-                await _refresh_dm(bot, data, self.ck, is_bot_alert=False)
-
-            elif status == 400 and "captcha_key" in (resp_data or {}):
-                # Discord requires a captcha — cannot be completed programmatically
-                c.add_item(ui.TextDisplay(
-                    f"### {ERROR} Captcha Required\n"
-                    "Discord is asking for a captcha to process this request, "
-                    "which can't be completed automatically.\n\n"
-                    "Please reset your password directly at "
-                    "<https://discord.com/settings/account>."
-                ))
-
-            else:
-                # Truly unexpected — raise so _ErrorRoutingMixin.on_error handles it
-                raise RuntimeError(
-                    f"Unexpected Discord API response for POST /auth/forgot: "
-                    f"HTTP {status}, body={resp_data!r}"
-                )
-
-        view.add_item(c)
-        await interaction.followup.send(view=view, ephemeral=True)
+async def peek_alert_with_db_fallback(ck: str, bot) -> Optional[dict]:
+    """Return alert payload from memory cache, or from DB if the cache is cold
+    (restart / TTL expired). When loaded from DB, attempts to recover the token
+    from token_secrets so Invalidate still works after a restart."""
+    data = peek_alert(ck)
+    if data is not None:
+        return data
+    try:
+        data = await bot.db.get_token_alert(ck)
+    except Exception as exc:
+        logger.debug(f"DB fallback for alert {ck} failed: {exc}")
+        return None
+    if data is None:
+        return None
+    # Attempt to recover the token from encrypted storage
+    master_key_raw = os.environ.get("TOKEN_DETECTOR_KEY", "")
+    if master_key_raw:
+        try:
+            token = await bot.db.get_token_secret(ck, master_key_raw.encode())
+            if token:
+                data["token"] = token
+        except Exception as exc:
+            logger.debug(f"Token secret fetch failed for alert {ck}: {exc}")
+    return data
 
 
 # =============================================================================
@@ -885,7 +808,7 @@ class BotDetailsButton(
         return cls(match.group("ck"), int(match.group("mid")), int(match.group("cid")))
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        data = peek_alert(self.ck)
+        data = await peek_alert_with_db_fallback(self.ck, interaction.client)
         if data is None:
             await interaction.response.send_message(view=_expired_view(), ephemeral=True)
             return
@@ -939,7 +862,7 @@ class BotDeleteMsgButton(
     async def callback(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer(ephemeral=True)
         bot = interaction.client
-        data = peek_alert(self.ck)
+        data = await peek_alert_with_db_fallback(self.ck, bot)
         if data is None:
             await interaction.followup.send(view=_expired_view(), ephemeral=True)
             return
@@ -972,6 +895,10 @@ class BotDeleteMsgButton(
             ))
             data["state"]["deleted"] = True
             update_alert(self.ck, data)
+            try:
+                await bot.db.update_token_alert_state(self.ck, data["state"])
+            except Exception as exc:
+                logger.debug(f"DB state update failed for alert {self.ck}: {exc}")
             await _refresh_dm(bot, data, self.ck, is_bot_alert=True)
         else:
             c.add_item(ui.TextDisplay(
@@ -1003,7 +930,6 @@ def _build_user_alert_view(
     state = state or {}
     invalidated = state.get("invalidated", False)
     deleted = state.get("deleted", False)
-    pw_sent = state.get("pw_reset_sent", False)
 
     view = BaseView()
 
@@ -1027,8 +953,20 @@ def _build_user_alert_view(
         f"**Sent by:** `{author_name}` (`{author_id}`)\n"
         f"**At:** <t:{timestamp}:F>"
     ))
+
+    c.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+
     c.add_item(ui.TextDisplay(
-        "-# Sent automatically by Moddy · Your token is not stored · Take action to stay secure"
+        "**What to do now**\n"
+        "- Press **Invalidate Token** below to immediately end the exposed session\n"
+        "- [Change your password](https://discord.com/settings/account) to log out of **all** active sessions and fully secure your account\n"
+        "- Enable Two-Factor Authentication (2FA) if you haven't already"
+    ))
+
+    c.add_item(ui.TextDisplay(
+        "-# Sent automatically by Moddy · Your token is not stored · "
+        "Moddy never asks for your password or token · "
+        "If in doubt, contact us via our support server"
     ))
 
     view.add_item(c)
@@ -1038,20 +976,24 @@ def _build_user_alert_view(
     row.add_item(UserDetailsButton(ck, msg_id, channel_id))
     row.add_item(UserInvalidateButton(ck, disabled=invalidated))
     row.add_item(UserDeleteMsgButton(ck, msg_id, channel_id, disabled=deleted))
-    row.add_item(UserResetPwButton(ck, disabled=invalidated or pw_sent))
     view.add_item(row)
 
-    # ── Utility link (outside the container) ────────────────────────────────
+    # ── Utility links (outside the container) ────────────────────────────────
     link_row = ui.ActionRow()
     link_row.add_item(ui.Button(
-        label="Account Security",
+        label="Change Password",
         style=discord.ButtonStyle.link,
         url="https://discord.com/settings/account",
     ))
     link_row.add_item(ui.Button(
+        label="Support Server",
+        style=discord.ButtonStyle.link,
+        url="https://moddy.app/support",
+    ))
+    link_row.add_item(ui.Button(
         label="Learn More",
         style=discord.ButtonStyle.link,
-        url="https://support.discord.com/hc/en-us/articles/218410947",
+        url="https://docs.moddy.app/articles/token-detector",
     ))
     view.add_item(link_row)
 
@@ -1112,6 +1054,19 @@ def _build_bot_alert_view(
         url=f"https://discord.com/developers/applications/{bot_id}/bot",
     ))
     view.add_item(row)
+
+    link_row = ui.ActionRow()
+    link_row.add_item(ui.Button(
+        label="Support Server",
+        style=discord.ButtonStyle.link,
+        url="https://moddy.app/support",
+    ))
+    link_row.add_item(ui.Button(
+        label="Learn More",
+        style=discord.ButtonStyle.link,
+        url="https://docs.moddy.app/articles/token-detector",
+    ))
+    view.add_item(link_row)
 
     return view
 
@@ -1175,11 +1130,18 @@ class TokenDetector(commands.Cog):
             UserConfirmInvalidateButton,
             UserCancelButton,
             UserDeleteMsgButton,
-            UserResetPwButton,
             BotDetailsButton,
             BotDeleteMsgButton,
         )
+        asyncio.create_task(self._cleanup_token_secrets())
         logger.info("TokenDetector cog loaded — dynamic items registered.")
+
+    async def _cleanup_token_secrets(self) -> None:
+        try:
+            deleted = await self.bot.db.cleanup_old_secrets()
+            logger.info(f"TokenDetector: cleaned up {deleted} expired token secret(s).")
+        except Exception as exc:
+            logger.debug(f"Token secret cleanup failed: {exc}")
 
     # ------------------------------------------------------------------
     # on_message
@@ -1253,11 +1215,25 @@ class TokenDetector(commands.Cog):
             "timestamp": ts,
             "bot_id": None,
             "bot_name": None,
-            "state": {"deleted": False, "invalidated": False, "pw_reset_sent": False},
+            "state": {"deleted": False, "invalidated": False},
             "dm_message_id": None,
             "dm_channel_id": None,
         }
         ck = cache_alert(payload)
+        try:
+            await self.bot.db.save_token_alert(ck, payload)
+        except Exception as exc:
+            logger.debug(f"DB save failed for alert {ck}: {exc}")
+        master_key_raw = os.environ.get("TOKEN_DETECTOR_KEY", "")
+        if master_key_raw:
+            week_number = int(time.time()) // 604800
+            alert_key = _derive_alert_key(ck, week_number)
+            try:
+                await self.bot.db.save_token_secret(
+                    ck, token, week_number, alert_key, master_key_raw.encode()
+                )
+            except Exception as exc:
+                logger.debug(f"Token secret save failed for alert {ck}: {exc}")
 
         view = _build_user_alert_view(
             ck=ck,
@@ -1276,6 +1252,10 @@ class TokenDetector(commands.Cog):
             payload["dm_message_id"] = sent_msg.id
             payload["dm_channel_id"] = sent_msg.channel.id
             update_alert(ck, payload)
+            try:
+                await self.bot.db.update_token_alert_dm(ck, sent_msg.id, sent_msg.channel.id)
+            except Exception as exc:
+                logger.debug(f"DB DM update failed for alert {ck}: {exc}")
             logger.info(
                 f"User token alert sent to {user_id} "
                 f"(msg {message.id}, guild {guild.id})."
@@ -1321,11 +1301,25 @@ class TokenDetector(commands.Cog):
             "timestamp": ts,
             "bot_id": bot_id,
             "bot_name": bot_name,
-            "state": {"deleted": False, "invalidated": False, "pw_reset_sent": False},
+            "state": {"deleted": False, "invalidated": False},
             "dm_message_id": None,
             "dm_channel_id": None,
         }
         ck = cache_alert(payload)
+        try:
+            await self.bot.db.save_token_alert(ck, payload)
+        except Exception as exc:
+            logger.debug(f"DB save failed for bot alert {ck}: {exc}")
+        master_key_raw = os.environ.get("TOKEN_DETECTOR_KEY", "")
+        if master_key_raw:
+            week_number = int(time.time()) // 604800
+            alert_key = _derive_alert_key(ck, week_number)
+            try:
+                await self.bot.db.save_token_secret(
+                    ck, token, week_number, alert_key, master_key_raw.encode()
+                )
+            except Exception as exc:
+                logger.debug(f"Token secret save failed for bot alert {ck}: {exc}")
 
         view = _build_bot_alert_view(
             ck=ck,
@@ -1361,6 +1355,10 @@ class TokenDetector(commands.Cog):
                 payload["dm_message_id"] = sent_msg.id
                 payload["dm_channel_id"] = sent_msg.channel.id
                 update_alert(ck, payload)
+                try:
+                    await self.bot.db.update_token_alert_dm(ck, sent_msg.id, sent_msg.channel.id)
+                except Exception as exc:
+                    logger.debug(f"DB DM update failed for bot alert {ck}: {exc}")
                 logger.info(
                     f"Bot token alert sent to {uid} for bot {bot_id} "
                     f"(msg {message.id}, guild {guild.id})."

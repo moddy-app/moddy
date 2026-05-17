@@ -10,6 +10,29 @@ Cette documentation explique la structure de la base de données PostgreSQL de M
 4. [Syntaxe PostgreSQL et JSONB](#syntaxe-postgresql-et-jsonb)
 5. [Exemples de requêtes utiles](#exemples-de-requêtes-utiles)
 
+### 11. Table `token_secrets`
+
+Encrypted token storage for the Token Detector cog. Enables the "Invalidate Token" button to work across bot restarts.
+
+**Security design:** Double-lock scheme — the row is only decryptable if you have both the `ck` (embedded in the button `custom_id`) AND the `TOKEN_DETECTOR_KEY` env var. Neither alone is sufficient.
+
+**Columns:**
+- `ck` (VARCHAR(10), PRIMARY KEY) — cache key, matches `token_alerts.ck`
+- `encrypted_token` (BYTEA) — AES-256-GCM encrypted token (`nonce[12] + ciphertext+tag`)
+- `user_id_hmac` (BYTEA) — HMAC-SHA256(master_key, `{ck}_userid`) — not used for decryption, reserved for audit
+- `week_number` (INTEGER) — Unix week number at alert creation time (used to re-derive the alert key)
+- `created_at` (TIMESTAMPTZ) — creation timestamp
+
+**Key derivation:**
+```python
+alert_key = HMAC-SHA256(TOKEN_DETECTOR_KEY, f"{ck}_{week_number}")  # 32-byte AES key
+```
+If `TOKEN_DETECTOR_KEY` is rotated after a week boundary, old secrets become unreadable (progressive inaccessibility). This is intentional.
+
+**Retention:** Rows are deleted on successful token invalidation (`delete_token_secret`) or by the 7-day cleanup task (`cleanup_old_secrets`) that runs on each `cog_load`.
+
+**Repository:** `db/repositories/token_secrets.py` — `TokenSecretRepository`
+
 ---
 
 ## Connexion à la base de données
