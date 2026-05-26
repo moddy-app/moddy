@@ -22,6 +22,7 @@ from db.repositories.moderation import ModerationRepository
 from db.repositories.saved_roles import SavedRolesRepository
 from db.repositories.token_alerts import TokenAlertRepository
 from db.repositories.token_secrets import TokenSecretRepository
+from db.repositories.subscription import SubscriptionRepository
 
 logger = logging.getLogger('moddy.database')
 
@@ -44,6 +45,7 @@ class ModdyDatabase(
     SavedRolesRepository,
     TokenAlertRepository,
     TokenSecretRepository,
+    SubscriptionRepository,
 ):
     """Gestionnaire principal de la base de données"""
 
