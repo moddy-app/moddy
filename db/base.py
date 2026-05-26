@@ -591,6 +591,57 @@ class ModdyDatabase(
                 ON token_secrets(created_at)
             """)
 
+            # Migration: Add subscription columns to users if they don't exist
+            await conn.execute("""
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'users'
+                        AND column_name = 'subscription_tier'
+                    ) THEN
+                        ALTER TABLE users ADD COLUMN subscription_tier TEXT;
+                    END IF;
+
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'users'
+                        AND column_name = 'subscription_expires_at'
+                    ) THEN
+                        ALTER TABLE users ADD COLUMN subscription_expires_at TIMESTAMPTZ;
+                    END IF;
+                END $$;
+            """)
+
+            # Subscription plans catalogue
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS subscription_plans (
+                    id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    is_active BOOLEAN DEFAULT TRUE
+                )
+            """)
+
+            await conn.execute("""
+                INSERT INTO subscription_plans (id, name) VALUES ('max', 'Moddy Max')
+                ON CONFLICT (id) DO NOTHING
+            """)
+
+            # Servers linked to a user's subscription
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS subscription_servers (
+                    user_id TEXT NOT NULL,
+                    server_id TEXT NOT NULL,
+                    added_at TIMESTAMPTZ DEFAULT NOW(),
+                    PRIMARY KEY (user_id, server_id)
+                )
+            """)
+
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_subscription_servers_user_id
+                ON subscription_servers(user_id)
+            """)
+
             logger.info("[OK] Tables initialisées")
 
     async def cleanup_old_errors(self, days: int = 30):
