@@ -1,112 +1,140 @@
 """
-Commande /subscription — affiche le statut Premium de l'utilisateur.
-Les données sont lues directement depuis la base de données partagée.
-Les détails complets (factures, période de renouvellement) sont sur le dashboard.
+/subscription command — displays the user's subscription status.
+Reads from Redis cache (sub:user:{id}) with DB fallback.
+The bot never modifies subscription data.
 """
+
+import logging
+from datetime import timezone
 
 import discord
 from discord import app_commands, ui
 from discord.ext import commands
-import logging
 
 from cogs.error_handler import BaseView
+from utils.components_v2 import create_error_message
+from utils.emojis import PREMIUM, GREEN_STATUS, RED_STATUS, DONE
 from utils.i18n import t
-from utils.emojis import PREMIUM, WARNING, GREEN_STATUS, RED_STATUS, INFO, ERROR
+from utils.subscription import get_subscription
 
 logger = logging.getLogger('moddy.cogs.subscription')
 
 
 class SubscriptionView(BaseView):
-    """Vue Components V2 pour le statut d'abonnement."""
+    """Components V2 view for the /subscription command."""
 
-    def __init__(self, bot, user_id: int, is_premium: bool, stripe_customer_id: str | None):
+    def __init__(self, bot, user_id: int, sub: dict | None, servers: list, locale: str):
         super().__init__(timeout=300)
         self.bot = bot
         self.user_id = user_id
-        self.is_premium = is_premium
-        self.stripe_customer_id = stripe_customer_id
-        self._build_view()
+        self.sub = sub
+        self.servers = servers
+        self.locale = locale
+        self._build()
 
-    def _build_view(self):
+    def _build(self):
         self.clear_items()
         container = ui.Container()
 
-        container.add_item(ui.TextDisplay(f"### {PREMIUM} Your Subscription"))
+        container.add_item(ui.TextDisplay(
+            t('commands.subscription.title', locale=self.locale,
+              premium=PREMIUM)
+        ))
+        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
-        if self.is_premium:
+        if self.sub and self.sub.get('is_active'):
+            tier = self.sub.get('tier') or 'Moddy Max'
             container.add_item(ui.TextDisplay(
-                f"{GREEN_STATUS} **Active Subscription**\n"
-                "-# Your account has an active Moddy Premium subscription."
+                t('commands.subscription.active', locale=self.locale,
+                  green=GREEN_STATUS, tier=tier)
             ))
-            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-            container.add_item(ui.TextDisplay(
-                "For billing details, invoices and renewal date, visit your dashboard."
-            ))
+
+            expires_at = self.sub.get('expires_at')
+            if expires_at:
+                ts = int(expires_at.astimezone(timezone.utc).timestamp())
+                container.add_item(ui.TextDisplay(
+                    t('commands.subscription.expires', locale=self.locale,
+                      date=f"<t:{ts}:D>")
+                ))
+
+            if self.sub.get('stripe_customer_id'):
+                container.add_item(ui.TextDisplay(
+                    t('commands.subscription.stripe_linked', locale=self.locale,
+                      done=DONE)
+                ))
         else:
             container.add_item(ui.TextDisplay(
-                f"{RED_STATUS} **No Active Subscription**\n"
-                "-# You don't have an active Moddy Premium subscription."
+                t('commands.subscription.inactive', locale=self.locale,
+                  red=RED_STATUS)
             ))
-            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+
+        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+
+        count = len(self.servers)
+        container.add_item(ui.TextDisplay(
+            t('commands.subscription.servers_title', locale=self.locale,
+              count=count)
+        ))
+
+        if self.servers:
+            lines = "\n".join(
+                t('commands.subscription.server_entry', locale=self.locale,
+                  server_id=s['server_id'])
+                for s in self.servers
+            )
+            container.add_item(ui.TextDisplay(lines))
+        else:
             container.add_item(ui.TextDisplay(
-                "**Subscribe to Moddy Premium** to unlock exclusive features!\n"
-                "-# Visit our website to get started."
+                t('commands.subscription.servers_empty', locale=self.locale)
             ))
 
         self.add_item(container)
 
         row = ui.ActionRow()
         row.add_item(ui.Button(
-            label="Dashboard",
-            url="https://moddy.app/dashboard",
+            label=t('commands.subscription.manage_button', locale=self.locale),
+            url="https://dashboard.moddy.app/billing",
             style=discord.ButtonStyle.link,
         ))
         self.add_item(row)
 
 
 class Subscription(commands.Cog):
-    """Commandes liées aux abonnements Premium."""
+    """Subscription status command."""
 
     def __init__(self, bot):
         self.bot = bot
 
     @app_commands.command(
         name="subscription",
-        description="View your Moddy Premium subscription status"
+        description="View your Moddy subscription status",
     )
     @app_commands.allowed_installs(guilds=True, users=True)
     @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
     async def subscription(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
 
-        is_premium = False
-        stripe_customer_id = None
+        locale = str(interaction.locale)
+        user_id = interaction.user.id
 
-        if self.bot.db:
-            try:
-                is_premium = await self.bot.db.has_attribute('user', interaction.user.id, 'PREMIUM')
-                user_data = await self.bot.db.get_user(interaction.user.id)
-                stripe_customer_id = user_data.get('stripe_customer_id') if user_data else None
-            except Exception as e:
-                logger.error(f"DB error for user {interaction.user.id}: {e}", exc_info=True)
-                await interaction.followup.send(
-                    view=_error_view(),
-                    ephemeral=True,
-                )
-                return
+        try:
+            sub = await get_subscription(self.bot, user_id)
+            servers = []
+            if self.bot.db:
+                servers = await self.bot.db.get_subscription_servers(user_id)
+        except Exception as e:
+            logger.error(f"Subscription fetch error for {user_id}: {e}", exc_info=True)
+            await interaction.followup.send(
+                view=create_error_message(
+                    "Error",
+                    t('commands.subscription.error', locale=locale),
+                ),
+                ephemeral=True,
+            )
+            return
 
-        view = SubscriptionView(self.bot, interaction.user.id, is_premium, stripe_customer_id)
+        view = SubscriptionView(self.bot, user_id, sub, servers, locale)
         await interaction.followup.send(view=view, ephemeral=True)
-        logger.info(f"Subscription status shown for user {interaction.user.id} (premium={is_premium})")
-
-
-def _error_view():
-    """Vue d'erreur simple."""
-    from utils.components_v2 import create_error_message
-    return create_error_message(
-        "Error",
-        "Unable to retrieve your subscription status. Please try again later.",
-    )
 
 
 async def setup(bot):

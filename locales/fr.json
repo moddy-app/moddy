@@ -1,5 +1,18 @@
 {
   "commands": {
+    "subscription": {
+      "description": "Affiche ton statut d'abonnement Moddy",
+      "title": "### {premium} Ton abonnement",
+      "active": "{green} **Abonnement actif**\n-# Ton abonnement **{tier}** est actif.",
+      "inactive": "{red} **Aucun abonnement actif**\n-# Tu n'as pas d'abonnement Moddy actif.",
+      "expires": "**Expire le :** `{date}`",
+      "stripe_linked": "{done} Compte Stripe lié",
+      "servers_title": "**Serveurs liés :** `{count}/5`",
+      "servers_empty": "-# Aucun serveur lié à ton abonnement.",
+      "server_entry": "- `{server_id}`",
+      "manage_button": "Gérer mon abonnement",
+      "error": "Impossible de récupérer ton statut d'abonnement. Réessaie plus tard."
+    },
     "ping": {
       "description": "Vérifie la latence et le statut du bot",
       "response": {

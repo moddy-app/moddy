@@ -52,7 +52,9 @@ moddy/
 │   ├── cog_manager.py         #   Hot-reload / disable cogs
 │   ├── console_logger.py      #   Console logging
 │   ├── dev_logger.py          #   Dev logging
-│   └── dev_tools.py           #   Developer tools
+│   ├── dev_tools.py           #   Developer tools
+│   ├── subscription.py        #   /subscription command (user subscription status)
+│   └── staff_subscription.py  #   /staff subscription-info command (staff view)
 │
 ├── modules/                   # Server-level configurable features
 │   ├── module_manager.py      #   ModuleManager + ModuleBase class
@@ -82,6 +84,7 @@ moddy/
 │       ├── reminders.py, saved_messages.py, saved_roles.py
 │       ├── moderation.py, interserver.py, attributes.py
 │       ├── token_alerts.py, token_secrets.py
+│       ├── subscription.py    #   Subscription read-only queries
 │       └── _utils.py
 │
 ├── utils/                     # Utility modules
@@ -89,6 +92,7 @@ moddy/
 │   ├── emojis.py              #   Emoji constants
 │   ├── components_v2.py       #   V2 helper functions (create_error_message, etc.)
 │   ├── staff_permissions.py   #   Permission system
+│   ├── subscription.py        #   Subscription helper (is_subscribed, get_subscription)
 │   ├── staff_logger.py        #   Staff action logging
 │   ├── staff_role_permissions.py
 │   ├── staff_help_view.py
@@ -220,6 +224,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | Document | When to Read |
 |---|---|
 | [docs/BACKEND-INTEGRATION.md](docs/BACKEND-INTEGRATION.md) | Bot ↔ Backend integration (Redis, Pub/Sub, Streams, `/status`) |
+| [docs/SUBSCRIPTION_SCHEMA.md](docs/SUBSCRIPTION_SCHEMA.md) | Subscription DB schema, Redis cache contract, Pub/Sub events |
 | [docs/RAILWAY.md](docs/RAILWAY.md) | Environment variables, deployment, troubleshooting |
 
 ### Other

@@ -1,5 +1,18 @@
 {
   "commands": {
+    "subscription": {
+      "description": "View your Moddy subscription status",
+      "title": "### {premium} Your Subscription",
+      "active": "{green} **Active Subscription**\n-# Your **{tier}** subscription is active.",
+      "inactive": "{red} **No Active Subscription**\n-# You don't have an active Moddy subscription.",
+      "expires": "**Expires:** `{date}`",
+      "stripe_linked": "{done} Stripe account linked",
+      "servers_title": "**Linked servers:** `{count}/5`",
+      "servers_empty": "-# No servers are linked to your subscription.",
+      "server_entry": "- `{server_id}`",
+      "manage_button": "Manage my subscription",
+      "error": "Unable to retrieve your subscription status. Please try again later."
+    },
     "ping": {
       "description": "Check the bot's latency and status",
       "response": {

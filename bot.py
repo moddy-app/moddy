@@ -212,24 +212,126 @@ class ModdyBot(commands.Bot):
             self.redis = None
 
     async def _listen_pubsub(self):
-        """Listen to Redis Pub/Sub channel moddy:bot (non-critical backend notifications)."""
+        """Listen to Redis Pub/Sub channels (non-critical backend notifications)."""
         import json
         while True:
             try:
                 pubsub = self.redis.pubsub()
-                await pubsub.subscribe("moddy:bot")
-                logger.info("Pub/Sub subscribed to moddy:bot")
+                await pubsub.subscribe("moddy:bot", "moddy:subscription:updates")
+                logger.info("Pub/Sub subscribed to moddy:bot and moddy:subscription:updates")
                 async for message in pubsub.listen():
                     if message["type"] != "message":
                         continue
                     try:
                         data = json.loads(message["data"])
-                        await self._handle_bot_event(data)
+                        channel = message.get("channel", "")
+                        if channel == "moddy:subscription:updates":
+                            await self._handle_subscription_event(data)
+                        else:
+                            await self._handle_bot_event(data)
                     except Exception as e:
                         logger.error(f"[PubSub] Error handling message: {e}")
             except Exception as e:
                 logger.error(f"[PubSub] Connection error: {e}")
                 await asyncio.sleep(5)
+
+    async def _handle_subscription_event(self, data: dict):
+        """Handle events from the moddy:subscription:updates channel."""
+        from utils.subscription import invalidate_cache
+        event_type = data.get("type")
+        user_id_raw = data.get("user_id")
+
+        if not user_id_raw:
+            logger.warning(f"[SubPubSub] Missing user_id in event: {data}")
+            return
+
+        try:
+            user_id = int(user_id_raw)
+        except (ValueError, TypeError):
+            logger.warning(f"[SubPubSub] Invalid user_id: {user_id_raw}")
+            return
+
+        if event_type == "refresh":
+            await invalidate_cache(self, user_id)
+            logger.info(f"[SubPubSub] Cache invalidated for user {user_id}")
+
+        elif event_type == "notify_payment_late":
+            await invalidate_cache(self, user_id)
+            await self._send_subscription_dm(user_id, "payment_late")
+
+        elif event_type == "notify_subscription_started":
+            tier = data.get("tier")
+            await invalidate_cache(self, user_id)
+            await self._send_subscription_dm(user_id, "subscription_started", tier=tier)
+
+        elif event_type == "notify_subscription_renewed":
+            tier = data.get("tier")
+            await invalidate_cache(self, user_id)
+            await self._send_subscription_dm(user_id, "subscription_renewed", tier=tier)
+
+        else:
+            logger.debug(f"[SubPubSub] Unknown subscription event type: {event_type}")
+
+    async def _send_subscription_dm(self, user_id: int, event: str, tier: str | None = None):
+        """Send a DM to a user for a subscription lifecycle event."""
+        import discord
+        from discord import ui
+        from utils.emojis import PREMIUM, WARNING, GREEN_STATUS
+
+        try:
+            user = await self.fetch_user(user_id)
+        except discord.NotFound:
+            logger.warning(f"[SubDM] User {user_id} not found, cannot send DM")
+            return
+        except Exception as e:
+            logger.error(f"[SubDM] Error fetching user {user_id}: {e}")
+            return
+
+        tier_label = tier or "Moddy Max"
+
+        if event == "subscription_started":
+            content = (
+                f"### {PREMIUM} Abonnement activé\n"
+                f"{GREEN_STATUS} Ton abonnement **{tier_label}** est maintenant actif. Merci pour ton soutien !\n\n"
+                "-# Gère ton abonnement sur [dashboard.moddy.app/billing](https://dashboard.moddy.app/billing)"
+            )
+        elif event == "subscription_renewed":
+            content = (
+                f"### {PREMIUM} Abonnement renouvelé\n"
+                f"{GREEN_STATUS} Ton abonnement **{tier_label}** a été renouvelé avec succès.\n\n"
+                "-# Gère ton abonnement sur [dashboard.moddy.app/billing](https://dashboard.moddy.app/billing)"
+            )
+        elif event == "payment_late":
+            content = (
+                f"### {WARNING} Problème de paiement\n"
+                "Un problème est survenu lors du renouvellement de ton abonnement.\n"
+                "Merci de mettre à jour tes informations de paiement pour maintenir l'accès.\n\n"
+                "-# Gère ton abonnement sur [dashboard.moddy.app/billing](https://dashboard.moddy.app/billing)"
+            )
+        else:
+            return
+
+        container = ui.Container()
+        container.add_item(ui.TextDisplay(content))
+
+        view = ui.LayoutView()
+        view.add_item(container)
+
+        row = ui.ActionRow()
+        row.add_item(ui.Button(
+            label="Gérer mon abonnement",
+            url="https://dashboard.moddy.app/billing",
+            style=discord.ButtonStyle.link,
+        ))
+        view.add_item(row)
+
+        try:
+            await user.send(view=view)
+            logger.info(f"[SubDM] Sent {event} DM to user {user_id}")
+        except discord.Forbidden:
+            logger.info(f"[SubDM] Cannot DM user {user_id} (DMs closed)")
+        except Exception as e:
+            logger.error(f"[SubDM] Error sending DM to user {user_id}: {e}")
 
     async def _handle_bot_event(self, data: dict):
         """Route Pub/Sub events from the backend."""
