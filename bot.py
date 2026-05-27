@@ -269,6 +269,26 @@ class ModdyBot(commands.Bot):
             await invalidate_cache(self, user_id)
             await self._send_subscription_dm(user_id, "subscription_renewed", tier=tier)
 
+        elif event_type == "notify_subscription_cancelled":
+            tier = data.get("tier")
+            await invalidate_cache(self, user_id)
+            await self._send_subscription_dm(user_id, "subscription_cancelled", tier=tier)
+
+        elif event_type == "notify_subscription_updated":
+            tier = data.get("tier")
+            await invalidate_cache(self, user_id)
+            await self._send_subscription_dm(user_id, "subscription_updated", tier=tier)
+
+        elif event_type == "notify_subscription_upgraded":
+            tier = data.get("tier")
+            await invalidate_cache(self, user_id)
+            await self._send_subscription_dm(user_id, "subscription_upgraded", tier=tier)
+
+        elif event_type == "notify_subscription_downgraded":
+            tier = data.get("tier")
+            await invalidate_cache(self, user_id)
+            await self._send_subscription_dm(user_id, "subscription_downgraded", tier=tier)
+
         else:
             logger.debug(f"[SubPubSub] Unknown subscription event type: {event_type}")
 
@@ -276,7 +296,6 @@ class ModdyBot(commands.Bot):
         """Send a DM to a user for a subscription lifecycle event."""
         import discord
         from discord import ui
-        from utils.emojis import PREMIUM, WARNING, GREEN_STATUS
 
         try:
             user = await self.fetch_user(user_id)
@@ -287,43 +306,161 @@ class ModdyBot(commands.Bot):
             logger.error(f"[SubDM] Error fetching user {user_id}: {e}")
             return
 
-        tier_label = tier or "Moddy Max"
+        MANAGE_URL = "https://dashboard.moddy.app/billing"
+        SELECT_URL = "https://dashboard.moddy.app/select-premium-servers"
+        SUPPORT_URL = "https://moddy.app/support"
+        ACCENT = discord.Colour(0x245F9F)
+
+        def _action_row(include_select: bool = False) -> ui.ActionRow:
+            row = ui.ActionRow()
+            row.add_item(ui.Button(
+                url=MANAGE_URL,
+                style=discord.ButtonStyle.link,
+                label="Manage subscription",
+            ))
+            if include_select:
+                row.add_item(ui.Button(
+                    url=SELECT_URL,
+                    style=discord.ButtonStyle.link,
+                    label="Select servers",
+                ))
+            row.add_item(ui.Button(
+                url=SUPPORT_URL,
+                style=discord.ButtonStyle.link,
+                label="Support",
+            ))
+            return row
 
         if event == "subscription_started":
-            content = (
-                f"### {PREMIUM} Abonnement activé\n"
-                f"{GREEN_STATUS} Ton abonnement **{tier_label}** est maintenant actif. Merci pour ton soutien !\n\n"
-                "-# Gère ton abonnement sur [dashboard.moddy.app/billing](https://dashboard.moddy.app/billing)"
+            container = ui.Container(
+                ui.TextDisplay(
+                    "### <a:GemStone_animated:1509243505845731389> Welcome to Moddy Max !\n"
+                    "Your Moddy Max subscription is now active ! Your servers are in good hands.\n"
+                    "Your support truly warms our hearts <3\n"
+                ),
+                ui.MediaGallery(
+                    discord.MediaGalleryItem(
+                        media="https://files.catbox.moe/vdqse1.gif",
+                    ),
+                ),
+                ui.Separator(visible=True, spacing=discord.SeparatorSpacing.small),
+                ui.TextDisplay(
+                    "-# You now have access to premium features everywhere on Discord as a personal app "
+                    "and on 5 servers of your choice. Use </subscription:1459599678139011357> for details. "
+                    "Need help? Contact our [support](https://moddy.app/support).\n"
+                ),
+                accent_colour=ACCENT,
             )
+            view = ui.LayoutView()
+            view.add_item(container)
+            view.add_item(_action_row(include_select=True))
+
         elif event == "subscription_renewed":
-            content = (
-                f"### {PREMIUM} Abonnement renouvelé\n"
-                f"{GREEN_STATUS} Ton abonnement **{tier_label}** a été renouvelé avec succès.\n\n"
-                "-# Gère ton abonnement sur [dashboard.moddy.app/billing](https://dashboard.moddy.app/billing)"
+            from utils.emojis import PREMIUM
+            container = ui.Container(
+                ui.TextDisplay(
+                    f"### {PREMIUM} Subscription renewed\n"
+                    "Your **Moddy Max** subscription has been successfully renewed. Thanks for your continued support !\n"
+                ),
+                ui.Separator(visible=True, spacing=discord.SeparatorSpacing.small),
+                ui.TextDisplay(
+                    "-# Your premium access continues uninterrupted. Use </subscription:1459599678139011357> for details.\n"
+                ),
+                accent_colour=ACCENT,
             )
+            view = ui.LayoutView()
+            view.add_item(container)
+            view.add_item(_action_row(include_select=False))
+
+        elif event == "subscription_cancelled":
+            from utils.emojis import PREMIUM
+            container = ui.Container(
+                ui.TextDisplay(
+                    f"### {PREMIUM} Subscription cancelled\n"
+                    "Your **Moddy Max** subscription has been cancelled.\n"
+                    "You'll keep access until the end of your current billing period.\n"
+                ),
+                ui.Separator(visible=True, spacing=discord.SeparatorSpacing.small),
+                ui.TextDisplay(
+                    "-# You can reactivate your subscription at any time from the dashboard. Need help? Contact our [support](https://moddy.app/support).\n"
+                ),
+                accent_colour=ACCENT,
+            )
+            view = ui.LayoutView()
+            view.add_item(container)
+            view.add_item(_action_row(include_select=False))
+
+        elif event == "subscription_updated":
+            from utils.emojis import PREMIUM
+            container = ui.Container(
+                ui.TextDisplay(
+                    f"### {PREMIUM} Subscription updated\n"
+                    "Your **Moddy Max** subscription has been updated.\n"
+                ),
+                ui.Separator(visible=True, spacing=discord.SeparatorSpacing.small),
+                ui.TextDisplay(
+                    "-# Use </subscription:1459599678139011357> to see your current subscription details.\n"
+                ),
+                accent_colour=ACCENT,
+            )
+            view = ui.LayoutView()
+            view.add_item(container)
+            view.add_item(_action_row(include_select=False))
+
+        elif event == "subscription_upgraded":
+            from utils.emojis import PREMIUM
+            container = ui.Container(
+                ui.TextDisplay(
+                    f"### {PREMIUM} Subscription upgraded\n"
+                    "Your subscription has been upgraded to **Moddy Max** ! Enjoy your new premium features.\n"
+                ),
+                ui.Separator(visible=True, spacing=discord.SeparatorSpacing.small),
+                ui.TextDisplay(
+                    "-# Use </subscription:1459599678139011357> to see your current subscription details.\n"
+                ),
+                accent_colour=ACCENT,
+            )
+            view = ui.LayoutView()
+            view.add_item(container)
+            view.add_item(_action_row(include_select=True))
+
+        elif event == "subscription_downgraded":
+            from utils.emojis import PREMIUM
+            container = ui.Container(
+                ui.TextDisplay(
+                    f"### {PREMIUM} Subscription changed\n"
+                    "Your **Moddy Max** subscription plan has been changed.\n"
+                ),
+                ui.Separator(visible=True, spacing=discord.SeparatorSpacing.small),
+                ui.TextDisplay(
+                    "-# Use </subscription:1459599678139011357> to see your current subscription details. Need help? Contact our [support](https://moddy.app/support).\n"
+                ),
+                accent_colour=ACCENT,
+            )
+            view = ui.LayoutView()
+            view.add_item(container)
+            view.add_item(_action_row(include_select=False))
+
         elif event == "payment_late":
-            content = (
-                f"### {WARNING} Problème de paiement\n"
-                "Un problème est survenu lors du renouvellement de ton abonnement.\n"
-                "Merci de mettre à jour tes informations de paiement pour maintenir l'accès.\n\n"
-                "-# Gère ton abonnement sur [dashboard.moddy.app/billing](https://dashboard.moddy.app/billing)"
+            from utils.emojis import PREMIUM
+            container = ui.Container(
+                ui.TextDisplay(
+                    f"### {PREMIUM} Payment issue\n"
+                    "There was a problem renewing your **Moddy Max** subscription.\n"
+                    "Please update your payment information to maintain access.\n"
+                ),
+                ui.Separator(visible=True, spacing=discord.SeparatorSpacing.small),
+                ui.TextDisplay(
+                    "-# Update your billing details from the dashboard. Need help? Contact our [support](https://moddy.app/support).\n"
+                ),
+                accent_colour=ACCENT,
             )
+            view = ui.LayoutView()
+            view.add_item(container)
+            view.add_item(_action_row(include_select=False))
+
         else:
             return
-
-        container = ui.Container()
-        container.add_item(ui.TextDisplay(content))
-
-        view = ui.LayoutView()
-        view.add_item(container)
-
-        row = ui.ActionRow()
-        row.add_item(ui.Button(
-            label="Gérer mon abonnement",
-            url="https://dashboard.moddy.app/billing",
-            style=discord.ButtonStyle.link,
-        ))
-        view.add_item(row)
 
         try:
             await user.send(view=view)

@@ -209,6 +209,10 @@ class DeveloperCommands(StaffCommandsCog):
             await self.handle_presence_command(message, args)
         elif command_name == "sub-refresh":
             await self.handle_sub_refresh_command(message, args)
+        elif command_name == "redirect":
+            await self.handle_redirect_command(message, args)
+        elif command_name == "banner":
+            await self.handle_banner_command(message, args)
         else:
             view = create_error_message("Unknown Command", f"Developer command `{command_name}` not found.")
             await self.reply_with_tracking(message, view)
@@ -1112,6 +1116,548 @@ class DeveloperCommands(StaffCommandsCog):
             f"Subscription Redis cache cleared for user `{user_id}`.\nNext `/subscription` call will fetch fresh data from the DB.",
         )
         await self.reply_with_tracking(message, view)
+
+
+    async def handle_redirect_command(self, message: discord.Message, args: str):
+        """
+        Handle d.redirect command — manage redirect links table.
+        Subcommands: add <domain> <path> <description>, list, info <id>, delete <id>
+        """
+        if staff_logger:
+            await staff_logger.log_command("d", "redirect", message.author, args=args or "no args")
+
+        if not args or not args.strip():
+            view = create_error_message(
+                "Invalid Usage",
+                "**Subcommands:**\n"
+                "`d.redirect add <domain> <path> <description>`\n"
+                "`d.redirect list`\n"
+                "`d.redirect info <id>`\n"
+                "`d.redirect delete <id>`"
+            )
+            await self.reply_with_tracking(message, view)
+            return
+
+        parts = args.strip().split(None, 1)
+        subcmd = parts[0].lower()
+        sub_args = parts[1].strip() if len(parts) > 1 else ""
+
+        bot_db = self.bot.db
+        if not bot_db:
+            await self.reply_with_tracking(message, create_error_message("Database Unavailable", "Database is not connected."))
+            return
+
+        if subcmd == "add":
+            sub_parts = sub_args.split(None, 2)
+            if len(sub_parts) < 3:
+                view = create_error_message(
+                    "Invalid Usage",
+                    "**Usage:** `d.redirect add <domain> <path> <description>`\n"
+                    "**Example:** `d.redirect add moddy.app /privacy Privacy policy page`"
+                )
+                await self.reply_with_tracking(message, view)
+                return
+
+            domain, path, description = sub_parts[0], sub_parts[1], sub_parts[2]
+            try:
+                row = await bot_db.add_redirect(domain, path, description, message.author.id)
+                path_display = row['path']
+                view = create_success_message(
+                    "Redirect Added",
+                    f"**ID:** `{row['id']}`\n**URL:** `{row['domain']}{path_display}`\n**Description:** {row['description']}",
+                    footer=None,
+                )
+            except Exception as e:
+                view = create_error_message("Error", f"Failed to add redirect: `{str(e)[:300]}`")
+            await self.reply_with_tracking(message, view)
+
+        elif subcmd == "list":
+            try:
+                rows = await bot_db.list_redirects()
+            except Exception as e:
+                await self.reply_with_tracking(message, create_error_message("Error", str(e)[:300]))
+                return
+
+            if not rows:
+                await self.reply_with_tracking(message, create_info_message("Redirect Links", "No redirect links found."))
+                return
+
+            container = ui.Container()
+            container.add_item(ui.TextDisplay(f"### {EMOJIS['web']} Redirect Links\n**Total:** `{len(rows)}`"))
+            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+            lines = [f"`{r['id']}` **{r['domain']}{r['path']}**\n-# {r['description']}" for r in rows[:20]]
+            container.add_item(ui.TextDisplay("\n\n".join(lines)))
+            view = ui.LayoutView()
+            view.add_item(container)
+            await self.reply_with_tracking(message, view)
+
+        elif subcmd == "info":
+            if not sub_args:
+                await self.reply_with_tracking(message, create_error_message("Invalid Usage", "**Usage:** `d.redirect info <id>`"))
+                return
+            try:
+                rid = int(sub_args.strip())
+                row = await bot_db.get_redirect(rid)
+            except ValueError:
+                await self.reply_with_tracking(message, create_error_message("Invalid ID", "Provide a numeric ID."))
+                return
+            except Exception as e:
+                await self.reply_with_tracking(message, create_error_message("Error", str(e)[:300]))
+                return
+
+            if not row:
+                await self.reply_with_tracking(message, create_error_message("Not Found", f"No redirect with ID `{rid}`."))
+                return
+
+            ts = int(row['added_at'].timestamp()) if row['added_at'] else 0
+            view = create_info_message(
+                "Redirect Info",
+                f"**ID:** `{row['id']}`\n"
+                f"**URL:** `{row['domain']}{row['path']}`\n"
+                f"**Description:** {row['description']}\n"
+                f"**Added by:** <@{row['added_by']}>\n"
+                f"**Added:** <t:{ts}:R>",
+            )
+            await self.reply_with_tracking(message, view)
+
+        elif subcmd == "delete":
+            if not sub_args:
+                await self.reply_with_tracking(message, create_error_message("Invalid Usage", "**Usage:** `d.redirect delete <id>`"))
+                return
+            try:
+                rid = int(sub_args.strip())
+                row = await bot_db.get_redirect(rid)
+            except ValueError:
+                await self.reply_with_tracking(message, create_error_message("Invalid ID", "Provide a numeric ID."))
+                return
+            except Exception as e:
+                await self.reply_with_tracking(message, create_error_message("Error", str(e)[:300]))
+                return
+
+            if not row:
+                await self.reply_with_tracking(message, create_error_message("Not Found", f"No redirect with ID `{rid}`."))
+                return
+
+            try:
+                deleted = await bot_db.delete_redirect(rid)
+            except Exception as e:
+                await self.reply_with_tracking(message, create_error_message("Error", str(e)[:300]))
+                return
+
+            if deleted:
+                view = create_success_message("Redirect Deleted", f"Redirect `{rid}` (`{row['domain']}{row['path']}`) has been deleted.", footer=None)
+            else:
+                view = create_error_message("Not Found", f"No redirect with ID `{rid}`.")
+            await self.reply_with_tracking(message, view)
+
+        else:
+            view = create_error_message("Unknown Subcommand", f"Unknown subcommand `{subcmd}`. Use `add`, `list`, `info`, or `delete`.")
+            await self.reply_with_tracking(message, view)
+
+    async def handle_banner_command(self, message: discord.Message, args: str):
+        """
+        Handle d.banner command — manage site/dashboard banners.
+        Subcommands: add, list, info <id>, activate <id>, deactivate, edit <id>, delete <id>
+        """
+        if staff_logger:
+            await staff_logger.log_command("d", "banner", message.author, args=args or "no args")
+
+        VALID_TYPES = ('announcement', 'incident', 'maintenance', 'information', 'warning', 'resolved')
+
+        if not args or not args.strip():
+            view = create_error_message(
+                "Invalid Usage",
+                "**Subcommands:**\n"
+                "`d.banner add` — create a new banner (choose typed or custom)\n"
+                "`d.banner list` — list all banners\n"
+                "`d.banner info <id>` — show banner details\n"
+                "`d.banner activate <id>` — activate a banner\n"
+                "`d.banner deactivate` — deactivate the current banner\n"
+                "`d.banner edit <id>` — edit a banner\n"
+                "`d.banner delete <id>` — delete a banner"
+            )
+            await self.reply_with_tracking(message, view)
+            return
+
+        parts = args.strip().split(None, 1)
+        subcmd = parts[0].lower()
+        sub_args = parts[1].strip() if len(parts) > 1 else ""
+
+        bot_db = self.bot.db
+        if not bot_db:
+            await self.reply_with_tracking(message, create_error_message("Database Unavailable", "Database is not connected."))
+            return
+
+        if subcmd == "add":
+            await self._banner_add_flow(message, bot_db, banner_id=None, prefill=None)
+
+        elif subcmd == "list":
+            try:
+                rows = await bot_db.list_banners()
+            except Exception as e:
+                await self.reply_with_tracking(message, create_error_message("Error", str(e)[:300]))
+                return
+
+            if not rows:
+                await self.reply_with_tracking(message, create_info_message("Banners", "No banners found."))
+                return
+
+            container = ui.Container()
+            container.add_item(ui.TextDisplay(f"### {EMOJIS['info']} Banners\n**Total:** `{len(rows)}`"))
+            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+            lines = []
+            for r in rows[:20]:
+                status = "**[ACTIVE]** " if r['is_active'] else ""
+                kind = r['type'] or "custom"
+                lines.append(f"`{r['id']}` {status}**{kind}** — {r['message'][:60]}{'...' if len(r['message']) > 60 else ''}")
+            container.add_item(ui.TextDisplay("\n".join(lines)))
+            view = ui.LayoutView()
+            view.add_item(container)
+            await self.reply_with_tracking(message, view)
+
+        elif subcmd == "info":
+            if not sub_args:
+                await self.reply_with_tracking(message, create_error_message("Invalid Usage", "**Usage:** `d.banner info <id>`"))
+                return
+            try:
+                bid = int(sub_args.strip())
+                row = await bot_db.get_banner(bid)
+            except ValueError:
+                await self.reply_with_tracking(message, create_error_message("Invalid ID", "Provide a numeric ID."))
+                return
+            except Exception as e:
+                await self.reply_with_tracking(message, create_error_message("Error", str(e)[:300]))
+                return
+
+            if not row:
+                await self.reply_with_tracking(message, create_error_message("Not Found", f"No banner with ID `{bid}`."))
+                return
+
+            created_ts = int(row['created_at'].timestamp()) if row['created_at'] else 0
+            updated_ts = int(row['updated_at'].timestamp()) if row['updated_at'] else 0
+            kind = row['type'] or "custom"
+            active_str = "Yes" if row['is_active'] else "No"
+            detail = (
+                f"**ID:** `{row['id']}`\n"
+                f"**Active:** {active_str}\n"
+                f"**Type:** {kind}\n"
+            )
+            if row['type'] is None:
+                detail += f"**Color:** `{row['color']}`\n**Icon SVG:** *present*\n"
+            detail += (
+                f"**Dashboard:** {'Yes' if row['show_dashboard'] else 'No'} | **Website:** {'Yes' if row['show_website'] else 'No'}\n"
+                f"**Created:** <t:{created_ts}:R> | **Updated:** <t:{updated_ts}:R>\n\n"
+                f"**Message:**\n{row['message'][:500]}"
+            )
+            view = create_info_message("Banner Info", detail)
+            await self.reply_with_tracking(message, view)
+
+        elif subcmd == "activate":
+            if not sub_args:
+                await self.reply_with_tracking(message, create_error_message("Invalid Usage", "**Usage:** `d.banner activate <id>`"))
+                return
+            try:
+                bid = int(sub_args.strip())
+                ok = await bot_db.activate_banner(bid)
+            except ValueError:
+                await self.reply_with_tracking(message, create_error_message("Invalid ID", "Provide a numeric ID."))
+                return
+            except Exception as e:
+                await self.reply_with_tracking(message, create_error_message("Error", str(e)[:300]))
+                return
+
+            if ok:
+                view = create_success_message("Banner Activated", f"Banner `{bid}` is now active. All other banners have been deactivated.", footer=None)
+            else:
+                view = create_error_message("Not Found", f"No banner with ID `{bid}`.")
+            await self.reply_with_tracking(message, view)
+
+        elif subcmd == "deactivate":
+            try:
+                count = await bot_db.deactivate_banner()
+            except Exception as e:
+                await self.reply_with_tracking(message, create_error_message("Error", str(e)[:300]))
+                return
+
+            if count:
+                view = create_success_message("Banner Deactivated", "The active banner has been deactivated.", footer=None)
+            else:
+                view = create_info_message("No Active Banner", "There is no active banner to deactivate.")
+            await self.reply_with_tracking(message, view)
+
+        elif subcmd == "edit":
+            if not sub_args:
+                await self.reply_with_tracking(message, create_error_message("Invalid Usage", "**Usage:** `d.banner edit <id>`"))
+                return
+            try:
+                bid = int(sub_args.strip())
+                row = await bot_db.get_banner(bid)
+            except ValueError:
+                await self.reply_with_tracking(message, create_error_message("Invalid ID", "Provide a numeric ID."))
+                return
+            except Exception as e:
+                await self.reply_with_tracking(message, create_error_message("Error", str(e)[:300]))
+                return
+
+            if not row:
+                await self.reply_with_tracking(message, create_error_message("Not Found", f"No banner with ID `{bid}`."))
+                return
+
+            await self._banner_add_flow(message, bot_db, banner_id=bid, prefill=row)
+
+        elif subcmd == "delete":
+            if not sub_args:
+                await self.reply_with_tracking(message, create_error_message("Invalid Usage", "**Usage:** `d.banner delete <id>`"))
+                return
+            try:
+                bid = int(sub_args.strip())
+                row = await bot_db.get_banner(bid)
+            except ValueError:
+                await self.reply_with_tracking(message, create_error_message("Invalid ID", "Provide a numeric ID."))
+                return
+            except Exception as e:
+                await self.reply_with_tracking(message, create_error_message("Error", str(e)[:300]))
+                return
+
+            if not row:
+                await self.reply_with_tracking(message, create_error_message("Not Found", f"No banner with ID `{bid}`."))
+                return
+
+            try:
+                deleted = await bot_db.delete_banner(bid)
+            except Exception as e:
+                await self.reply_with_tracking(message, create_error_message("Error", str(e)[:300]))
+                return
+
+            if deleted:
+                view = create_success_message("Banner Deleted", f"Banner `{bid}` has been deleted.", footer=None)
+            else:
+                view = create_error_message("Not Found", f"No banner with ID `{bid}`.")
+            await self.reply_with_tracking(message, view)
+
+        else:
+            view = create_error_message("Unknown Subcommand", f"Unknown subcommand `{subcmd}`.")
+            await self.reply_with_tracking(message, view)
+
+    async def _banner_add_flow(self, message: discord.Message, bot_db, banner_id, prefill):
+        """Show the typed/custom banner selection, then open the appropriate modal."""
+        is_edit = banner_id is not None
+        is_custom = prefill and prefill.get('type') is None if prefill else False
+
+        container = ui.Container()
+        container.add_item(ui.TextDisplay(
+            f"### {EMOJIS['info']} {'Edit' if is_edit else 'Add'} Banner\n"
+            "Choose the banner kind:"
+        ))
+        view = BannerTypeSelectView(self.bot, message.author.id, bot_db, banner_id, prefill)
+        view.add_item(container)
+        await self.reply_with_tracking(message, view)
+
+
+class BannerTypeSelectView(BaseView):
+    """View for selecting typed vs custom banner kind."""
+
+    def __init__(self, bot, author_id: int, bot_db, banner_id, prefill):
+        super().__init__(timeout=120)
+        self.bot = bot
+        self.author_id = author_id
+        self.bot_db = bot_db
+        self.banner_id = banner_id
+        self.prefill = prefill
+        self._build()
+
+    def _build(self):
+        self.clear_items()
+        container = ui.Container()
+        container.add_item(ui.TextDisplay(
+            f"### {EMOJIS['info']} Banner Type\nSelect the kind of banner to create:"
+        ))
+        self.add_item(container)
+
+        row = ui.ActionRow()
+        typed_btn = ui.Button(label="Typed Banner", style=discord.ButtonStyle.primary)
+        typed_btn.callback = self._on_typed
+        row.add_item(typed_btn)
+
+        custom_btn = ui.Button(label="Custom Banner", style=discord.ButtonStyle.secondary)
+        custom_btn.callback = self._on_custom
+        row.add_item(custom_btn)
+        self.add_item(row)
+
+    async def _check_author(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id != self.author_id:
+            await interaction.response.send_message("This menu is not for you.", ephemeral=True)
+            return False
+        return True
+
+    async def _on_typed(self, interaction: discord.Interaction):
+        if not await self._check_author(interaction):
+            return
+        modal = TypedBannerModal(self.bot_db, self.banner_id, self.prefill)
+        await interaction.response.send_modal(modal)
+
+    async def _on_custom(self, interaction: discord.Interaction):
+        if not await self._check_author(interaction):
+            return
+        modal = CustomBannerModal(self.bot_db, self.banner_id, self.prefill)
+        await interaction.response.send_modal(modal)
+
+
+class TypedBannerModal(discord.ui.Modal, title="Typed Banner"):
+    """Modal for creating/editing a typed banner."""
+
+    VALID_TYPES = ('announcement', 'incident', 'maintenance', 'information', 'warning', 'resolved')
+
+    banner_type = discord.ui.TextInput(
+        label="Type",
+        placeholder="announcement | incident | maintenance | information | warning | resolved",
+        max_length=20,
+    )
+    message = discord.ui.TextInput(
+        label="Message (Markdown supported)",
+        style=discord.TextStyle.paragraph,
+        max_length=1000,
+    )
+    show_dashboard = discord.ui.TextInput(
+        label="Show on Dashboard? (yes/no)",
+        placeholder="yes",
+        default="yes",
+        max_length=3,
+    )
+    show_website = discord.ui.TextInput(
+        label="Show on Website? (yes/no)",
+        placeholder="yes",
+        default="yes",
+        max_length=3,
+    )
+
+    def __init__(self, bot_db, banner_id, prefill):
+        super().__init__()
+        self.bot_db = bot_db
+        self.banner_id = banner_id
+        if prefill:
+            if prefill.get('type'):
+                self.banner_type.default = prefill['type']
+            if prefill.get('message'):
+                self.message.default = prefill['message']
+            self.show_dashboard.default = "yes" if prefill.get('show_dashboard', True) else "no"
+            self.show_website.default = "yes" if prefill.get('show_website', True) else "no"
+
+    async def on_submit(self, interaction: discord.Interaction):
+        btype = self.banner_type.value.strip().lower()
+        if btype not in self.VALID_TYPES:
+            await interaction.response.send_message(
+                f"Invalid type `{btype}`. Must be one of: {', '.join(self.VALID_TYPES)}",
+                ephemeral=True,
+            )
+            return
+
+        msg = self.message.value.strip()
+        dash = self.show_dashboard.value.strip().lower() in ('yes', 'y', '1', 'true')
+        web = self.show_website.value.strip().lower() in ('yes', 'y', '1', 'true')
+
+        try:
+            if self.banner_id is not None:
+                row = await self.bot_db.update_banner(self.banner_id, msg, btype, None, None, dash, web)
+                label = f"Banner `{self.banner_id}` updated."
+            else:
+                row = await self.bot_db.create_banner(msg, btype, None, None, dash, web)
+                label = f"Banner `{row['id']}` created."
+        except Exception as e:
+            await interaction.response.send_message(f"Error: `{str(e)[:300]}`", ephemeral=True)
+            return
+
+        container = discord.ui.Container()
+        container.add_item(discord.ui.TextDisplay(
+            f"{EMOJIS['done']} **{label}**\n"
+            f"**Type:** {btype} | **Dashboard:** {'Yes' if dash else 'No'} | **Website:** {'Yes' if web else 'No'}\n"
+            f"**Message:** {msg[:200]}"
+        ))
+        view = discord.ui.LayoutView()
+        view.add_item(container)
+        await interaction.response.send_message(view=view, ephemeral=True)
+
+
+class CustomBannerModal(discord.ui.Modal, title="Custom Banner"):
+    """Modal for creating/editing a custom banner (icon_svg + color)."""
+
+    message = discord.ui.TextInput(
+        label="Message (Markdown supported)",
+        style=discord.TextStyle.paragraph,
+        max_length=1000,
+    )
+    icon_svg = discord.ui.TextInput(
+        label="Icon SVG (raw SVG string)",
+        style=discord.TextStyle.paragraph,
+        max_length=2000,
+    )
+    color = discord.ui.TextInput(
+        label="Color (hex #RRGGBB)",
+        placeholder="#5865F2",
+        max_length=7,
+    )
+    show_dashboard = discord.ui.TextInput(
+        label="Show on Dashboard? (yes/no)",
+        placeholder="yes",
+        default="yes",
+        max_length=3,
+    )
+    show_website = discord.ui.TextInput(
+        label="Show on Website? (yes/no)",
+        placeholder="yes",
+        default="yes",
+        max_length=3,
+    )
+
+    def __init__(self, bot_db, banner_id, prefill):
+        super().__init__()
+        self.bot_db = bot_db
+        self.banner_id = banner_id
+        if prefill:
+            if prefill.get('message'):
+                self.message.default = prefill['message']
+            if prefill.get('icon_svg'):
+                self.icon_svg.default = prefill['icon_svg']
+            if prefill.get('color'):
+                self.color.default = prefill['color']
+            self.show_dashboard.default = "yes" if prefill.get('show_dashboard', True) else "no"
+            self.show_website.default = "yes" if prefill.get('show_website', True) else "no"
+
+    async def on_submit(self, interaction: discord.Interaction):
+        import re
+        msg = self.message.value.strip()
+        svg = self.icon_svg.value.strip()
+        color_val = self.color.value.strip()
+        dash = self.show_dashboard.value.strip().lower() in ('yes', 'y', '1', 'true')
+        web = self.show_website.value.strip().lower() in ('yes', 'y', '1', 'true')
+
+        if not re.fullmatch(r'#[0-9A-Fa-f]{6}', color_val):
+            await interaction.response.send_message(
+                f"Invalid color `{color_val}`. Use hex format `#RRGGBB`.",
+                ephemeral=True,
+            )
+            return
+
+        try:
+            if self.banner_id is not None:
+                row = await self.bot_db.update_banner(self.banner_id, msg, None, svg, color_val, dash, web)
+                label = f"Banner `{self.banner_id}` updated."
+            else:
+                row = await self.bot_db.create_banner(msg, None, svg, color_val, dash, web)
+                label = f"Banner `{row['id']}` created."
+        except Exception as e:
+            await interaction.response.send_message(f"Error: `{str(e)[:300]}`", ephemeral=True)
+            return
+
+        container = discord.ui.Container()
+        container.add_item(discord.ui.TextDisplay(
+            f"{EMOJIS['done']} **{label}**\n"
+            f"**Type:** custom | **Color:** {color_val} | **Dashboard:** {'Yes' if dash else 'No'} | **Website:** {'Yes' if web else 'No'}\n"
+            f"**Message:** {msg[:200]}"
+        ))
+        view = discord.ui.LayoutView()
+        view.add_item(container)
+        await interaction.response.send_message(view=view, ephemeral=True)
 
 
 async def setup(bot):

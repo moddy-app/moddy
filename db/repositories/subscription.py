@@ -28,7 +28,8 @@ class SubscriptionRepository:
                 """
                 SELECT subscription_tier,
                        subscription_expires_at,
-                       stripe_customer_id
+                       stripe_customer_id,
+                       subscription_interval
                 FROM users
                 WHERE user_id = $1
                 """,
@@ -51,6 +52,7 @@ class SubscriptionRepository:
             'tier': tier,
             'expires_at': expires_at,
             'stripe_customer_id': row['stripe_customer_id'],
+            'subscription_interval': row['subscription_interval'],
             'is_active': is_active,
         }
 
