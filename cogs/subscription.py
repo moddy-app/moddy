@@ -13,11 +13,15 @@ from discord.ext import commands
 
 from cogs.error_handler import BaseView
 from utils.components_v2 import create_error_message
-from utils.emojis import PREMIUM, GREEN_STATUS, RED_STATUS, DONE
+from utils.emojis import PREMIUM
 from utils.i18n import t
 from utils.subscription import get_subscription
 
 logger = logging.getLogger('moddy.cogs.subscription')
+
+MANAGE_URL = "https://dashboard.moddy.app/billing"
+SELECT_URL = "https://dashboard.moddy.app/select-premium-servers"
+SUPPORT_URL = "https://moddy.app/support"
 
 
 class SubscriptionView(BaseView):
@@ -36,65 +40,73 @@ class SubscriptionView(BaseView):
         self.clear_items()
         container = ui.Container()
 
-        container.add_item(ui.TextDisplay(
-            t('commands.subscription.title', locale=self.locale,
-              premium=PREMIUM)
-        ))
+        container.add_item(ui.TextDisplay(f"### {PREMIUM} Your Subscription"))
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
-        if self.sub and self.sub.get('is_active'):
-            tier = self.sub.get('tier') or 'Moddy Max'
-            container.add_item(ui.TextDisplay(
-                t('commands.subscription.active', locale=self.locale,
-                  green=GREEN_STATUS, tier=tier)
-            ))
+        is_active = self.sub and self.sub.get('is_active')
+
+        if is_active:
+            interval = self.sub.get('subscription_interval')
+            if interval == 'year':
+                interval_label = 'Annual'
+            elif interval == 'month':
+                interval_label = 'Monthly'
+            else:
+                interval_label = None
+
+            lines = [
+                f"* **Plan:** Max",
+            ]
+            if interval_label:
+                lines.append(f"* **Type:** {interval_label}")
 
             expires_at = self.sub.get('expires_at')
             if expires_at:
                 ts = int(expires_at.astimezone(timezone.utc).timestamp())
-                container.add_item(ui.TextDisplay(
-                    t('commands.subscription.expires', locale=self.locale,
-                      date=f"<t:{ts}:D>")
-                ))
+                lines.append(f"* **Expires:** <t:{ts}:R>")
 
-            if self.sub.get('stripe_customer_id'):
+            stripe_id = self.sub.get('stripe_customer_id')
+            if stripe_id:
+                lines.append(f"* **Stripe Customer ID:** `{stripe_id}`")
+
+            container.add_item(ui.TextDisplay("\n".join(lines)))
+
+            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+
+            count = len(self.servers)
+            container.add_item(ui.TextDisplay(f"**Linked servers:** `{count}/5`"))
+
+            if self.servers:
+                lines_srv = "\n".join(f"- `{s['server_id']}`" for s in self.servers)
+                container.add_item(ui.TextDisplay(lines_srv))
+            else:
                 container.add_item(ui.TextDisplay(
-                    t('commands.subscription.stripe_linked', locale=self.locale,
-                      done=DONE)
+                    "-# No servers are linked to your subscription."
                 ))
         else:
             container.add_item(ui.TextDisplay(
-                t('commands.subscription.inactive', locale=self.locale,
-                  red=RED_STATUS)
-            ))
-
-        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-
-        count = len(self.servers)
-        container.add_item(ui.TextDisplay(
-            t('commands.subscription.servers_title', locale=self.locale,
-              count=count)
-        ))
-
-        if self.servers:
-            lines = "\n".join(
-                t('commands.subscription.server_entry', locale=self.locale,
-                  server_id=s['server_id'])
-                for s in self.servers
-            )
-            container.add_item(ui.TextDisplay(lines))
-        else:
-            container.add_item(ui.TextDisplay(
-                t('commands.subscription.servers_empty', locale=self.locale)
+                "-# You don't have an active Moddy subscription.\n"
+                "-# Visit [moddy.app](https://moddy.app) to learn more about Moddy Max."
             ))
 
         self.add_item(container)
 
         row = ui.ActionRow()
         row.add_item(ui.Button(
-            label=t('commands.subscription.manage_button', locale=self.locale),
-            url="https://dashboard.moddy.app/billing",
+            url=MANAGE_URL,
             style=discord.ButtonStyle.link,
+            label="Manage subscription",
+        ))
+        if is_active:
+            row.add_item(ui.Button(
+                url=SELECT_URL,
+                style=discord.ButtonStyle.link,
+                label="Select servers",
+            ))
+        row.add_item(ui.Button(
+            url=SUPPORT_URL,
+            style=discord.ButtonStyle.link,
+            label="Support",
         ))
         self.add_item(row)
 
@@ -120,7 +132,7 @@ class Subscription(commands.Cog):
         try:
             sub = await get_subscription(self.bot, user_id)
             servers = []
-            if self.bot.db:
+            if self.bot.db and sub and sub.get('is_active'):
                 servers = await self.bot.db.get_subscription_servers(user_id)
         except Exception as e:
             logger.error(f"Subscription fetch error for {user_id}: {e}", exc_info=True)

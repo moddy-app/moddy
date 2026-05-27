@@ -23,6 +23,8 @@ from db.repositories.saved_roles import SavedRolesRepository
 from db.repositories.token_alerts import TokenAlertRepository
 from db.repositories.token_secrets import TokenSecretRepository
 from db.repositories.subscription import SubscriptionRepository
+from db.repositories.redirects import RedirectRepository
+from db.repositories.banners import BannerRepository
 
 logger = logging.getLogger('moddy.database')
 
@@ -46,6 +48,8 @@ class ModdyDatabase(
     TokenAlertRepository,
     TokenSecretRepository,
     SubscriptionRepository,
+    RedirectRepository,
+    BannerRepository,
 ):
     """Gestionnaire principal de la base de données"""
 
@@ -640,6 +644,61 @@ class ModdyDatabase(
             await conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_subscription_servers_user_id
                 ON subscription_servers(user_id)
+            """)
+
+            # Redirect links table
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS redirect_links (
+                    id SERIAL PRIMARY KEY,
+                    domain TEXT NOT NULL,
+                    path TEXT NOT NULL,
+                    description TEXT NOT NULL,
+                    added_by BIGINT NOT NULL,
+                    added_at TIMESTAMPTZ DEFAULT NOW(),
+                    UNIQUE (domain, path)
+                )
+            """)
+
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_redirect_links_domain ON redirect_links(domain)
+            """)
+
+            # Banners table
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS banners (
+                    id SERIAL PRIMARY KEY,
+                    message TEXT NOT NULL,
+                    type TEXT CHECK (type IN ('announcement', 'incident', 'maintenance', 'information', 'warning', 'resolved')),
+                    icon_svg TEXT,
+                    color VARCHAR(7),
+                    show_dashboard BOOLEAN NOT NULL DEFAULT TRUE,
+                    show_website BOOLEAN NOT NULL DEFAULT TRUE,
+                    is_active BOOLEAN NOT NULL DEFAULT FALSE,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ DEFAULT NOW(),
+                    CONSTRAINT banners_type_or_custom CHECK (
+                        (type IS NOT NULL AND icon_svg IS NULL AND color IS NULL)
+                        OR (type IS NULL AND icon_svg IS NOT NULL AND color IS NOT NULL)
+                    )
+                )
+            """)
+
+            await conn.execute("""
+                CREATE UNIQUE INDEX IF NOT EXISTS idx_banners_single_active
+                ON banners (is_active) WHERE is_active = TRUE
+            """)
+
+            # Migration: add subscription_interval column to users if missing
+            await conn.execute("""
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'users' AND column_name = 'subscription_interval'
+                    ) THEN
+                        ALTER TABLE users ADD COLUMN subscription_interval TEXT;
+                    END IF;
+                END $$;
             """)
 
             logger.info("[OK] Tables initialisées")
