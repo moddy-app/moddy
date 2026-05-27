@@ -207,6 +207,8 @@ class DeveloperCommands(StaffCommandsCog):
             await self.handle_cogs_command(message, args)
         elif command_name == "presence":
             await self.handle_presence_command(message, args)
+        elif command_name == "sub-refresh":
+            await self.handle_sub_refresh_command(message, args)
         else:
             view = create_error_message("Unknown Command", f"Developer command `{command_name}` not found.")
             await self.reply_with_tracking(message, view)
@@ -1074,6 +1076,40 @@ class DeveloperCommands(StaffCommandsCog):
             "Loaded Cogs",
             f"**{len(cog_names)}** cog(s) loaded:\n\n{listing}",
             footer=f"Requested by {message.author}"
+        )
+        await self.reply_with_tracking(message, view)
+
+
+    async def handle_sub_refresh_command(self, message: discord.Message, args: str):
+        """
+        Handle d.sub-refresh command - Invalidate subscription Redis cache for a user
+        Usage: <@bot> d.sub-refresh <user_id>
+        """
+        from utils.subscription import invalidate_cache
+
+        if staff_logger:
+            await staff_logger.log_command("d", "sub-refresh", message.author)
+
+        if not args:
+            view = create_error_message(
+                "Missing Argument",
+                "**Usage:** `d.sub-refresh <user_id>`",
+            )
+            await self.reply_with_tracking(message, view)
+            return
+
+        try:
+            user_id = int(args.strip())
+        except ValueError:
+            view = create_error_message("Invalid Argument", f"Invalid user ID: `{args.strip()}`")
+            await self.reply_with_tracking(message, view)
+            return
+
+        await invalidate_cache(self.bot, user_id)
+
+        view = create_success_message(
+            "Cache Invalidated",
+            f"Subscription Redis cache cleared for user `{user_id}`.\nNext `/subscription` call will fetch fresh data from the DB.",
         )
         await self.reply_with_tracking(message, view)
 

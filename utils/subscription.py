@@ -66,7 +66,10 @@ async def get_subscription(bot, user_id: int) -> Optional[Dict[str, Any]]:
         logger.error(f"[Subscription] DB read error for {user_id}: {e}")
         return None
 
-    if data and bot.redis:
+    if data and data.get('is_active') and bot.redis:
+        # Only cache active subscriptions. Inactive results are never cached so that
+        # a newly-created subscription is always visible on the next read even if the
+        # Pub/Sub invalidation message was missed (fire-and-forget).
         try:
             payload = {
                 'tier': data['tier'],
