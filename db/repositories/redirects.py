@@ -1,10 +1,9 @@
 """
 Redirect links repository.
-Manages short/vanity redirect links (domain + path → description).
+Manages short/vanity redirect links (domain + path → target URL).
 """
 
 import logging
-from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger('moddy.database.redirects')
@@ -17,6 +16,7 @@ class RedirectRepository:
         self,
         domain: str,
         path: str,
+        target: str,
         description: str,
         added_by: int,
     ) -> Dict[str, Any]:
@@ -25,25 +25,25 @@ class RedirectRepository:
         async with self.pool.acquire() as conn:
             row = await conn.fetchrow(
                 """
-                INSERT INTO redirect_links (domain, path, description, added_by, added_at)
-                VALUES ($1, $2, $3, $4, NOW())
-                RETURNING id, domain, path, description, added_by, added_at
+                INSERT INTO redirect_links (domain, path, target, description, added_by, added_at)
+                VALUES ($1, $2, $3, $4, $5, NOW())
+                RETURNING id, domain, path, target, description, added_by, added_at
                 """,
-                domain, path, description, added_by,
+                domain, path, target, description, added_by,
             )
         return dict(row)
 
     async def list_redirects(self) -> List[Dict[str, Any]]:
         async with self.pool.acquire() as conn:
             rows = await conn.fetch(
-                "SELECT id, domain, path, description, added_by, added_at FROM redirect_links ORDER BY added_at DESC"
+                "SELECT id, domain, path, target, description, added_by, added_at FROM redirect_links ORDER BY added_at DESC"
             )
         return [dict(r) for r in rows]
 
     async def get_redirect(self, redirect_id: int) -> Optional[Dict[str, Any]]:
         async with self.pool.acquire() as conn:
             row = await conn.fetchrow(
-                "SELECT id, domain, path, description, added_by, added_at FROM redirect_links WHERE id = $1",
+                "SELECT id, domain, path, target, description, added_by, added_at FROM redirect_links WHERE id = $1",
                 redirect_id,
             )
         return dict(row) if row else None

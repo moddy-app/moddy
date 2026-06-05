@@ -1130,7 +1130,7 @@ class DeveloperCommands(StaffCommandsCog):
             view = create_error_message(
                 "Invalid Usage",
                 "**Subcommands:**\n"
-                "`d.redirect add <domain> <path> <description>`\n"
+                "`d.redirect add <domain> <path> <target> <description>`\n"
                 "`d.redirect list`\n"
                 "`d.redirect info <id>`\n"
                 "`d.redirect delete <id>`"
@@ -1148,23 +1148,22 @@ class DeveloperCommands(StaffCommandsCog):
             return
 
         if subcmd == "add":
-            sub_parts = sub_args.split(None, 2)
-            if len(sub_parts) < 3:
+            sub_parts = sub_args.split(None, 3)
+            if len(sub_parts) < 4:
                 view = create_error_message(
                     "Invalid Usage",
-                    "**Usage:** `d.redirect add <domain> <path> <description>`\n"
-                    "**Example:** `d.redirect add moddy.app /privacy Privacy policy page`"
+                    "**Usage:** `d.redirect add <domain> <path> <target> <description>`\n"
+                    "**Example:** `d.redirect add moddy.app /privacy https://docs.moddy.app/privacy Privacy policy page`"
                 )
                 await self.reply_with_tracking(message, view)
                 return
 
-            domain, path, description = sub_parts[0], sub_parts[1], sub_parts[2]
+            domain, path, target, description = sub_parts[0], sub_parts[1], sub_parts[2], sub_parts[3]
             try:
-                row = await bot_db.add_redirect(domain, path, description, message.author.id)
-                path_display = row['path']
+                row = await bot_db.add_redirect(domain, path, target, description, message.author.id)
                 view = create_success_message(
                     "Redirect Added",
-                    f"**ID:** `{row['id']}`\n**URL:** `{row['domain']}{path_display}`\n**Description:** {row['description']}",
+                    f"**ID:** `{row['id']}`\n**Source:** `{row['domain']}{row['path']}`\n**Target:** `{row['target']}`\n**Description:** {row['description']}",
                     footer=None,
                 )
             except Exception as e:
@@ -1185,7 +1184,7 @@ class DeveloperCommands(StaffCommandsCog):
             container = ui.Container()
             container.add_item(ui.TextDisplay(f"### {EMOJIS['web']} Redirect Links\n**Total:** `{len(rows)}`"))
             container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-            lines = [f"`{r['id']}` **{r['domain']}{r['path']}**\n-# {r['description']}" for r in rows[:20]]
+            lines = [f"`{r['id']}` **{r['domain']}{r['path']}** → `{r['target']}`\n-# {r['description']}" for r in rows[:20]]
             container.add_item(ui.TextDisplay("\n\n".join(lines)))
             view = ui.LayoutView()
             view.add_item(container)
@@ -1213,7 +1212,8 @@ class DeveloperCommands(StaffCommandsCog):
             view = create_info_message(
                 "Redirect Info",
                 f"**ID:** `{row['id']}`\n"
-                f"**URL:** `{row['domain']}{row['path']}`\n"
+                f"**Source:** `{row['domain']}{row['path']}`\n"
+                f"**Target:** `{row['target']}`\n"
                 f"**Description:** {row['description']}\n"
                 f"**Added by:** <@{row['added_by']}>\n"
                 f"**Added:** <t:{ts}:R>",

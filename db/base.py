@@ -652,6 +652,7 @@ class ModdyDatabase(
                     id SERIAL PRIMARY KEY,
                     domain TEXT NOT NULL,
                     path TEXT NOT NULL,
+                    target TEXT NOT NULL DEFAULT '',
                     description TEXT NOT NULL,
                     added_by BIGINT NOT NULL,
                     added_at TIMESTAMPTZ DEFAULT NOW(),
