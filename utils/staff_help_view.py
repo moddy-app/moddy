@@ -107,7 +107,7 @@ COMMAND_CATEGORIES = {
             ("d.presence [status] [text]", "Change the bot's presence/status"),
             ("d.setup-announcements [guild_id]", "Setup announcement channel following for a guild"),
             ("d.sub-refresh [user_id]", "Invalidate subscription Redis cache for a user"),
-            ("d.redirect add [domain] [path] [description]", "Add a redirect link"),
+            ("d.redirect add [domain] [path] [target] [description]", "Add a redirect link"),
             ("d.redirect list", "List all redirect links"),
             ("d.redirect info [id]", "Show details of a redirect link"),
             ("d.redirect delete [id]", "Delete a redirect link"),

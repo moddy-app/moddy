@@ -652,6 +652,7 @@ class ModdyDatabase(
                     id SERIAL PRIMARY KEY,
                     domain TEXT NOT NULL,
                     path TEXT NOT NULL,
+                    target TEXT NOT NULL DEFAULT '',
                     description TEXT NOT NULL,
                     added_by BIGINT NOT NULL,
                     added_at TIMESTAMPTZ DEFAULT NOW(),
@@ -661,6 +662,17 @@ class ModdyDatabase(
 
             await conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_redirect_links_domain ON redirect_links(domain)
+            """)
+
+            await conn.execute("""
+                DO $$ BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'redirect_links' AND column_name = 'target'
+                    ) THEN
+                        ALTER TABLE redirect_links ADD COLUMN target TEXT NOT NULL DEFAULT '';
+                    END IF;
+                END $$;
             """)
 
             # Banners table
