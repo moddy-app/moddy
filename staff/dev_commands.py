@@ -11,6 +11,8 @@ import logging
 from datetime import datetime, timezone
 import sys
 import os
+import random
+import string
 
 from utils.staff_permissions import staff_permissions, CommandType
 from database import db
@@ -1130,7 +1132,8 @@ class DeveloperCommands(StaffCommandsCog):
             view = create_error_message(
                 "Invalid Usage",
                 "**Subcommands:**\n"
-                "`d.redirect add <domain> <path> <target> <description>`\n"
+                "`d.redirect add` — open modal to create a redirect\n"
+                "`d.redirect edit <id>` — open modal to edit a redirect\n"
                 "`d.redirect list`\n"
                 "`d.redirect info <id>`\n"
                 "`d.redirect delete <id>`"
@@ -1148,26 +1151,26 @@ class DeveloperCommands(StaffCommandsCog):
             return
 
         if subcmd == "add":
-            sub_parts = sub_args.split(None, 3)
-            if len(sub_parts) < 4:
-                view = create_error_message(
-                    "Invalid Usage",
-                    "**Usage:** `d.redirect add <domain> <path> <target> <description>`\n"
-                    "**Example:** `d.redirect add moddy.app /privacy https://docs.moddy.app/privacy Privacy policy page`"
-                )
-                await self.reply_with_tracking(message, view)
-                return
+            view = RedirectModalView(self.bot, message.author.id, bot_db)
+            await self.reply_with_tracking(message, view)
 
-            domain, path, target, description = sub_parts[0], sub_parts[1], sub_parts[2], sub_parts[3]
+        elif subcmd == "edit":
+            if not sub_args:
+                await self.reply_with_tracking(message, create_error_message("Invalid Usage", "**Usage:** `d.redirect edit <id>`"))
+                return
             try:
-                row = await bot_db.add_redirect(domain, path, target, description, message.author.id)
-                view = create_success_message(
-                    "Redirect Added",
-                    f"**ID:** `{row['id']}`\n**Source:** `{row['domain']}{row['path']}`\n**Target:** `{row['target']}`\n**Description:** {row['description']}",
-                    footer=None,
-                )
+                rid = int(sub_args.strip())
+                row = await bot_db.get_redirect(rid)
+            except ValueError:
+                await self.reply_with_tracking(message, create_error_message("Invalid ID", "Provide a numeric ID."))
+                return
             except Exception as e:
-                view = create_error_message("Error", f"Failed to add redirect: `{str(e)[:300]}`")
+                await self.reply_with_tracking(message, create_error_message("Error", str(e)[:300]))
+                return
+            if not row:
+                await self.reply_with_tracking(message, create_error_message("Not Found", f"No redirect with ID `{rid}`."))
+                return
+            view = RedirectModalView(self.bot, message.author.id, bot_db, redirect_id=rid, prefill=row)
             await self.reply_with_tracking(message, view)
 
         elif subcmd == "list":
@@ -1452,6 +1455,120 @@ class DeveloperCommands(StaffCommandsCog):
         view = BannerTypeSelectView(self.bot, message.author.id, bot_db, banner_id, prefill)
         view.add_item(container)
         await self.reply_with_tracking(message, view)
+
+
+def _random_path(length: int = 6) -> str:
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+
+
+class RedirectModal(discord.ui.Modal):
+    """Modal for creating or editing a redirect link."""
+
+    def __init__(self, bot_db, redirect_id=None, prefill=None):
+        title = "Edit Redirect" if redirect_id is not None else "Add Redirect"
+        super().__init__(title=title)
+        self.bot_db = bot_db
+        self.redirect_id = redirect_id
+
+        self.domain_input = ui.TextInput(
+            label="Domain",
+            placeholder="moddy.app",
+            default=prefill['domain'] if prefill else "",
+            max_length=100,
+        )
+        self.path_input = ui.TextInput(
+            label="Path (starts with /)",
+            placeholder="/abc123",
+            default=prefill['path'] if prefill else f"/{_random_path()}",
+            max_length=100,
+        )
+        self.target_input = ui.TextInput(
+            label="Target URL",
+            placeholder="https://docs.moddy.app/...",
+            default=prefill['target'] if prefill else "",
+            max_length=500,
+        )
+        self.description_input = ui.TextInput(
+            label="Description",
+            placeholder="Short description of this redirect",
+            default=prefill['description'] if prefill else "",
+            max_length=200,
+        )
+        self.add_item(self.domain_input)
+        self.add_item(self.path_input)
+        self.add_item(self.target_input)
+        self.add_item(self.description_input)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        domain = self.domain_input.value.strip()
+        path = self.path_input.value.strip()
+        target = self.target_input.value.strip()
+        description = self.description_input.value.strip()
+
+        try:
+            if self.redirect_id is not None:
+                row = await self.bot_db.update_redirect(self.redirect_id, domain, path, target, description)
+                label = "Redirect Updated"
+            else:
+                row = await self.bot_db.add_redirect(domain, path, target, description, interaction.user.id)
+                label = "Redirect Added"
+        except Exception as e:
+            await interaction.response.send_message(f"Error: `{str(e)[:300]}`", ephemeral=True)
+            return
+
+        container = ui.Container()
+        container.add_item(ui.TextDisplay(
+            f"### {EMOJIS['done']} {label}\n"
+            f"**ID:** `{row['id']}`\n"
+            f"**Source:** `{row['domain']}{row['path']}`\n"
+            f"**Target:** `{row['target']}`\n"
+            f"**Description:** {row['description']}"
+        ))
+        view = ui.LayoutView()
+        view.add_item(container)
+        await interaction.response.send_message(view=view, ephemeral=True)
+
+    async def on_error(self, interaction: discord.Interaction, error: Exception):
+        await interaction.response.send_message(f"An error occurred: `{str(error)[:300]}`", ephemeral=True)
+
+
+class RedirectModalView(BaseView):
+    """View that sends a button to open the redirect add/edit modal."""
+
+    def __init__(self, bot, author_id: int, bot_db, redirect_id=None, prefill=None):
+        super().__init__(timeout=120)
+        self.bot = bot
+        self.author_id = author_id
+        self.bot_db = bot_db
+        self.redirect_id = redirect_id
+        self.prefill = prefill
+        self._build()
+
+    def _build(self):
+        self.clear_items()
+        if self.redirect_id is None:
+            title = f"### {EMOJIS['web']} Add Redirect\nClick the button to fill in the redirect details."
+            btn_label = "Open Modal"
+        else:
+            title = f"### {EMOJIS['edit']} Edit Redirect `{self.redirect_id}`\nClick the button to edit this redirect."
+            btn_label = "Edit Redirect"
+
+        container = ui.Container()
+        container.add_item(ui.TextDisplay(title))
+        self.add_item(container)
+
+        row = ui.ActionRow()
+        btn = ui.Button(label=btn_label, style=discord.ButtonStyle.primary)
+        btn.callback = self._open_modal
+        row.add_item(btn)
+        self.add_item(row)
+
+    async def _open_modal(self, interaction: discord.Interaction):
+        if interaction.user.id != self.author_id:
+            await interaction.response.send_message("This menu is not for you.", ephemeral=True)
+            return
+        modal = RedirectModal(self.bot_db, self.redirect_id, self.prefill)
+        await interaction.response.send_modal(modal)
 
 
 class BannerTypeSelectView(BaseView):

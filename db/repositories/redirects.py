@@ -48,6 +48,28 @@ class RedirectRepository:
             )
         return dict(row) if row else None
 
+    async def update_redirect(
+        self,
+        redirect_id: int,
+        domain: str,
+        path: str,
+        target: str,
+        description: str,
+    ) -> Optional[Dict[str, Any]]:
+        if not path.startswith('/'):
+            path = '/' + path
+        async with self.pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                UPDATE redirect_links
+                SET domain = $1, path = $2, target = $3, description = $4
+                WHERE id = $5
+                RETURNING id, domain, path, target, description, added_by, added_at
+                """,
+                domain, path, target, description, redirect_id,
+            )
+        return dict(row) if row else None
+
     async def delete_redirect(self, redirect_id: int) -> bool:
         async with self.pool.acquire() as conn:
             result = await conn.execute(
