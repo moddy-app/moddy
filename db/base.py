@@ -25,6 +25,7 @@ from db.repositories.token_secrets import TokenSecretRepository
 from db.repositories.subscription import SubscriptionRepository
 from db.repositories.redirects import RedirectRepository
 from db.repositories.banners import BannerRepository
+from db.repositories.forms import FormsRepository
 
 logger = logging.getLogger('moddy.database')
 
@@ -50,6 +51,7 @@ class ModdyDatabase(
     SubscriptionRepository,
     RedirectRepository,
     BannerRepository,
+    FormsRepository,
 ):
     """Gestionnaire principal de la base de données"""
 
@@ -711,6 +713,55 @@ class ModdyDatabase(
                         ALTER TABLE users ADD COLUMN subscription_interval TEXT;
                     END IF;
                 END $$;
+            """)
+
+            # --- Tally forms ---
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS forms (
+                    form_id        TEXT        PRIMARY KEY,
+                    title          TEXT        NOT NULL,
+                    signing_secret TEXT        NOT NULL,
+                    created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+            """)
+
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS submissions (
+                    submission_id  TEXT        PRIMARY KEY,
+                    form_id        TEXT        NOT NULL REFERENCES forms(form_id) ON DELETE CASCADE,
+                    discord_id     BIGINT      NOT NULL,
+                    status         TEXT        NOT NULL DEFAULT 'pending'
+                                               CHECK (status IN ('pending', 'done', 'rejected')),
+                    note           TEXT,
+                    created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+            """)
+
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_submissions_form_id
+                ON submissions(form_id)
+            """)
+
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_submissions_discord_id
+                ON submissions(discord_id)
+            """)
+
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS answers (
+                    id             SERIAL      PRIMARY KEY,
+                    submission_id  TEXT        NOT NULL REFERENCES submissions(submission_id) ON DELETE CASCADE,
+                    form_id        TEXT        NOT NULL,
+                    key            TEXT        NOT NULL,
+                    type           TEXT        NOT NULL,
+                    label          TEXT        NOT NULL,
+                    value          TEXT
+                )
+            """)
+
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_answers_submission_id
+                ON answers(submission_id)
             """)
 
             logger.info("[OK] Tables initialisées")
