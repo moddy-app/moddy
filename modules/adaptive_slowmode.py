@@ -1,10 +1,11 @@
 """
 Module Adaptive Slowmode
-Adjusts channel slowmode automatically based on message activity using
-EWMA baselines and hysteresis to prevent oscillation.
+Adjusts per-channel slowmode automatically based on message activity.
+Each monitored channel has its own min/max delay and sensitivity settings.
 """
 
 import asyncio
+import copy
 import time
 from collections import deque
 from dataclasses import dataclass, field
@@ -63,15 +64,28 @@ class ChannelState:
 class AdaptiveSlowmodeModule(ModuleBase):
     """
     Automatically adjusts per-channel slowmode based on real-time activity.
+    Each monitored channel has independent min/max delay and sensitivity settings.
 
     Algorithm:
       1. Count messages in a 60-second rolling window, weighted by unique authors.
       2. Maintain a per-channel EWMA baseline representing "normal" activity.
       3. Compute ratio = current_activity / baseline.
-      4. Map ratio to a slowmode level (0–5) using configurable sensitivity thresholds,
+      4. Map ratio to a slowmode level (0–5) using per-channel sensitivity thresholds,
          with hysteresis to prevent threshold oscillation.
       5. Apply level changes: fast rise (30 s cooldown), slow descent
          (one step every 5 min).
+
+    Config structure (stored in guilds.data.modules.adaptive_slowmode):
+      {
+        "channels": {
+          "<channel_id>": {
+            "min_delay":  0,
+            "max_delay":  120,
+            "sensitivity": "medium"
+          },
+          ...
+        }
+      }
     """
 
     MODULE_ID = "adaptive_slowmode"
@@ -82,10 +96,8 @@ class AdaptiveSlowmodeModule(ModuleBase):
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)
 
-        self.channel_ids: List[int] = []
-        self.min_delay: int = 0
-        self.max_delay: int = 120
-        self.sensitivity: str = "medium"
+        # channel_id (int) → {"min_delay", "max_delay", "sensitivity"}
+        self.channels_config: Dict[int, Dict[str, Any]] = {}
 
         self._channel_states: Dict[int, ChannelState] = {}
         self._task: Optional[asyncio.Task] = None
@@ -97,47 +109,39 @@ class AdaptiveSlowmodeModule(ModuleBase):
     async def load_config(self, config_data: Dict[str, Any]) -> bool:
         try:
             self.config = config_data
-            self.channel_ids = list(config_data.get("channel_ids", []))
-            self.min_delay = int(config_data.get("min_delay", 0))
-            self.max_delay = int(config_data.get("max_delay", 120))
-            self.sensitivity = config_data.get("sensitivity", "medium")
 
-            # Create state entries for new channels, remove stale ones.
-            for ch_id in self.channel_ids:
-                self._channel_states.setdefault(ch_id, ChannelState())
+            raw_channels = config_data.get("channels", {})
+            # JSON keys are always strings — normalise to int keys.
+            self.channels_config = {int(k): v for k, v in raw_channels.items()}
+
+            # Sync channel states: remove stale, add missing.
             for ch_id in list(self._channel_states):
-                if ch_id not in self.channel_ids:
+                if ch_id not in self.channels_config:
                     del self._channel_states[ch_id]
+            for ch_id in self.channels_config:
+                self._channel_states.setdefault(ch_id, ChannelState())
 
-            self.enabled = bool(self.channel_ids)
+            self.enabled = bool(self.channels_config)
             return True
         except Exception as e:
             logger.error(f"Error loading adaptive_slowmode config: {e}")
             return False
 
     async def validate_config(self, config_data: Dict[str, Any]) -> tuple[bool, Optional[str]]:
-        channel_ids = config_data.get("channel_ids", [])
-        if not channel_ids:
+        channels = config_data.get("channels", {})
+        if not channels:
             return False, "Au moins un salon est requis"
-
-        min_delay = config_data.get("min_delay", 0)
-        max_delay = config_data.get("max_delay", 120)
-
-        if not isinstance(min_delay, int) or not (0 <= min_delay <= 21600):
-            return False, "Le délai minimum doit être entre 0 et 21600 secondes"
-        if not isinstance(max_delay, int) or not (1 <= max_delay <= 21600):
-            return False, "Le délai maximum doit être entre 1 et 21600 secondes"
-        if min_delay >= max_delay:
-            return False, "Le délai maximum doit être supérieur au délai minimum"
-
-        if config_data.get("sensitivity", "medium") not in SENSITIVITY_THRESHOLDS:
-            return False, "Sensibilité invalide"
 
         guild = self.bot.get_guild(self.guild_id)
         if not guild:
             return False, "Serveur introuvable"
 
-        for ch_id in channel_ids:
+        for ch_id_str, ch_cfg in channels.items():
+            try:
+                ch_id = int(ch_id_str)
+            except (ValueError, TypeError):
+                return False, f"ID de salon invalide : `{ch_id_str}`"
+
             channel = guild.get_channel(ch_id)
             if not channel:
                 return False, f"Salon `{ch_id}` introuvable"
@@ -146,15 +150,22 @@ class AdaptiveSlowmodeModule(ModuleBase):
             if not channel.permissions_for(guild.me).manage_channels:
                 return False, f"Permission **Gérer les salons** manquante sur {channel.mention}"
 
+            min_delay = ch_cfg.get("min_delay", 0)
+            max_delay = ch_cfg.get("max_delay", 120)
+
+            if not isinstance(min_delay, int) or not (0 <= min_delay <= 21600):
+                return False, f"Délai minimum invalide pour {channel.mention}"
+            if not isinstance(max_delay, int) or not (1 <= max_delay <= 21600):
+                return False, f"Délai maximum invalide pour {channel.mention}"
+            if min_delay >= max_delay:
+                return False, f"Le délai maximum doit être supérieur au minimum pour {channel.mention}"
+            if ch_cfg.get("sensitivity", "medium") not in SENSITIVITY_THRESHOLDS:
+                return False, f"Sensibilité invalide pour {channel.mention}"
+
         return True, None
 
     def get_default_config(self) -> Dict[str, Any]:
-        return {
-            "channel_ids": [],
-            "min_delay": 0,
-            "max_delay": 120,
-            "sensitivity": "medium",
-        }
+        return {"channels": {}}
 
     # -------------------------------------------------------------------------
     # Lifecycle hooks
@@ -172,7 +183,7 @@ class AdaptiveSlowmodeModule(ModuleBase):
 
     async def on_message(self, message: discord.Message):
         """Record a message in the rolling window for its channel."""
-        if message.channel.id not in self.channel_ids:
+        if message.channel.id not in self.channels_config:
             return
         state = self._channel_states.setdefault(message.channel.id, ChannelState())
         state.message_log.append((time.monotonic(), message.author.id))
@@ -217,9 +228,12 @@ class AdaptiveSlowmodeModule(ModuleBase):
         if not guild:
             return
 
-        thresholds = SENSITIVITY_THRESHOLDS.get(self.sensitivity, SENSITIVITY_THRESHOLDS["medium"])
+        for ch_id, ch_cfg in self.channels_config.items():
+            min_delay  = ch_cfg.get("min_delay", 0)
+            max_delay  = ch_cfg.get("max_delay", 120)
+            sensitivity = ch_cfg.get("sensitivity", "medium")
+            thresholds = SENSITIVITY_THRESHOLDS.get(sensitivity, SENSITIVITY_THRESHOLDS["medium"])
 
-        for ch_id in self.channel_ids:
             state = self._channel_states.setdefault(ch_id, ChannelState())
 
             channel = guild.get_channel(ch_id)
@@ -255,48 +269,42 @@ class AdaptiveSlowmodeModule(ModuleBase):
             going_up = target > state.current_level
 
             if going_up:
-                # Jump directly to the target level on the way up.
                 apply_level = target
-                cooldown = INCREASE_COOLDOWN
-                last_edit = state.last_increase_time
+                cooldown   = INCREASE_COOLDOWN
+                last_edit  = state.last_increase_time
             else:
-                # Step down one level at a time on the way down.
                 apply_level = state.current_level - 1
-                cooldown = DECREASE_COOLDOWN
-                last_edit = state.last_decrease_time
+                cooldown   = DECREASE_COOLDOWN
+                last_edit  = state.last_decrease_time
 
             if now - last_edit >= cooldown:
-                new_delay = self._level_to_delay(apply_level)
+                new_delay = self._level_to_delay(apply_level, min_delay, max_delay)
                 await self._apply_slowmode(channel, new_delay, state, apply_level, going_up, now)
 
     @staticmethod
     def _compute_target_level(ratio: float, current_level: int, thresholds: List[float]) -> int:
         """Return the target level for a given ratio, applying hysteresis on the way down."""
-        # Natural level: the highest threshold the ratio satisfies.
         natural = sum(1 for thr in thresholds if ratio >= thr)
 
-        # Hysteresis guard: only step down if ratio is well below the current up-threshold.
         if natural < current_level and current_level > 0:
             down_threshold = thresholds[current_level - 1] * HYSTERESIS_FACTOR
             if ratio >= down_threshold:
-                return current_level  # Not low enough yet — hold position.
+                return current_level
 
         return natural
 
-    def _level_to_delay(self, level: int) -> int:
+    @staticmethod
+    def _level_to_delay(level: int, min_delay: int, max_delay: int) -> int:
         """Map a level (0–5) to a valid Discord slowmode delay within [min_delay, max_delay]."""
         if level <= 0:
-            return self.min_delay
+            return min_delay
         if level >= 5:
-            return self.max_delay
+            return max_delay
 
-        # Build a sorted list of valid Discord values strictly between min and max.
-        candidates = [v for v in VALID_SLOWMODE if self.min_delay < v < self.max_delay]
-
+        candidates = [v for v in VALID_SLOWMODE if min_delay < v < max_delay]
         if not candidates:
-            return self.max_delay
+            return max_delay
 
-        # Distribute levels 1–4 across the candidate list.
         step = len(candidates) / 4.0
         idx = min(int((level - 1) * step), len(candidates) - 1)
         return candidates[idx]
@@ -330,8 +338,8 @@ class AdaptiveSlowmodeModule(ModuleBase):
 
             arrow = "↑" if going_up else "↓"
             logger.info(
-                f"[Guild {self.guild_id}] #{channel.name}: slowmode → {delay}s "
-                f"(level {new_level} {arrow})"
+                f"[Guild {self.guild_id}] #{channel.name}: "
+                f"slowmode → {delay}s (level {new_level} {arrow})"
             )
 
         except discord.Forbidden:

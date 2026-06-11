@@ -886,37 +886,49 @@
       "description": "Ajuste automatiquement le slowmode selon l'activité",
       "config": {
         "title": "Configuration du Adaptive Slowmode",
-        "description": "Surveillez des salons et laissez Moddy ajuster leur slowmode automatiquement selon l'activité en temps réel.",
-        "channels": {
+        "description": "Surveillez des salons et laissez Moddy ajuster leur slowmode automatiquement selon l'activité en temps réel. Chaque salon a ses propres paramètres.",
+        "channel_list": {
           "section_title": "Salons surveillés",
-          "section_description": "Salons dont le slowmode sera géré automatiquement par Moddy",
-          "placeholder": "Sélectionnez des salons textuels"
+          "empty": "Aucun salon configuré. Ajoutez-en un avec le bouton ci-dessous.",
+          "add_button": "Ajouter un salon",
+          "edit_button": "Modifier",
+          "remove_button": "Retirer"
         },
-        "min_delay": {
-          "section_title": "Délai minimum",
-          "section_description": "Slowmode appliqué quand l'activité est normale (0 = aucun slowmode)",
-          "edit_button": "Modifier"
-        },
-        "max_delay": {
-          "section_title": "Délai maximum",
-          "section_description": "Slowmode maximal applicable lors des pics d'activité (en secondes)",
-          "edit_button": "Modifier"
-        },
-        "sensitivity": {
-          "section_title": "Sensibilité",
-          "section_description": "Détermine le seuil d'activité nécessaire pour déclencher une hausse du slowmode",
-          "placeholder": "Sélectionnez une sensibilité",
-          "low": {
-            "label": "Faible",
-            "description": "Se déclenche uniquement lors de pics d'activité importants"
+        "channel_settings": {
+          "title_add": "Nouveau salon",
+          "title_edit": "Modifier le salon",
+          "already_configured": "Ce salon est déjà configuré. Utilisez le bouton Modifier pour l'éditer.",
+          "channel": {
+            "section_title": "Salon",
+            "section_description": "Salon textuel dont le slowmode sera géré automatiquement",
+            "placeholder": "Sélectionnez un salon textuel"
           },
-          "medium": {
-            "label": "Normale",
-            "description": "Équilibre entre réactivité et stabilité (recommandé)"
+          "min_delay": {
+            "section_title": "Délai minimum",
+            "section_description": "Slowmode appliqué lors d'une activité normale (0 = aucun slowmode)",
+            "edit_button": "Modifier"
           },
-          "high": {
-            "label": "Haute",
-            "description": "Très réactif, s'adapte dès les premières hausses d'activité"
+          "max_delay": {
+            "section_title": "Délai maximum",
+            "section_description": "Slowmode maximal applicable lors des pics d'activité (en secondes)",
+            "edit_button": "Modifier"
+          },
+          "sensitivity": {
+            "section_title": "Sensibilité",
+            "section_description": "Détermine le seuil d'activité nécessaire pour déclencher une hausse du slowmode",
+            "placeholder": "Sélectionnez une sensibilité",
+            "low": {
+              "label": "Faible",
+              "description": "Se déclenche uniquement lors de pics d'activité importants"
+            },
+            "medium": {
+              "label": "Normale",
+              "description": "Équilibre entre réactivité et stabilité (recommandé)"
+            },
+            "high": {
+              "label": "Haute",
+              "description": "Très réactif, s'adapte dès les premières hausses d'activité"
+            }
           }
         },
         "delay_modal": {
