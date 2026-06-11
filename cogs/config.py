@@ -176,6 +176,15 @@ class ConfigMainView(BaseView):
                 self.locale,
                 module_config
             )
+        elif module_id == 'adaptive_slowmode':
+            from modules.configs.adaptive_slowmode_config import AdaptiveSlowmodeConfigView
+            config_view = AdaptiveSlowmodeConfigView(
+                self.bot,
+                self.guild_id,
+                self.user_id,
+                self.locale,
+                module_config
+            )
         # Ajouter d'autres modules ici au fur et à mesure
         # elif module_id == 'ticket':
         #     from modules.configs.ticket_config import TicketConfigView

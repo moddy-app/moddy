@@ -63,9 +63,11 @@ moddy/
 │   ├── auto_role.py           #   Auto role assignment
 │   ├── auto_restore_roles.py  #   Role restoration on rejoin
 │   ├── starboard.py           #   Reaction-based starboard
+│   ├── adaptive_slowmode.py   #   Adaptive slowmode (EWMA + hysteresis)
 │   ├── interserver.py         #   Inter-server message relay
 │   ├── youtube_notifications.py
 │   └── configs/               #   Components V2 config UIs per module
+│       ├── adaptive_slowmode_config.py
 │
 ├── staff/                     # Staff/dev command system (prefix-based)
 │   ├── base.py                #   Base classes for staff commands

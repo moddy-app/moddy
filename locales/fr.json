@@ -881,6 +881,54 @@
         }
       }
     },
+    "adaptive_slowmode": {
+      "name": "Adaptive Slowmode",
+      "description": "Ajuste automatiquement le slowmode selon l'activité",
+      "config": {
+        "title": "Configuration du Adaptive Slowmode",
+        "description": "Surveillez des salons et laissez Moddy ajuster leur slowmode automatiquement selon l'activité en temps réel.",
+        "channels": {
+          "section_title": "Salons surveillés",
+          "section_description": "Salons dont le slowmode sera géré automatiquement par Moddy",
+          "placeholder": "Sélectionnez des salons textuels"
+        },
+        "min_delay": {
+          "section_title": "Délai minimum",
+          "section_description": "Slowmode appliqué quand l'activité est normale (0 = aucun slowmode)",
+          "edit_button": "Modifier"
+        },
+        "max_delay": {
+          "section_title": "Délai maximum",
+          "section_description": "Slowmode maximal applicable lors des pics d'activité (en secondes)",
+          "edit_button": "Modifier"
+        },
+        "sensitivity": {
+          "section_title": "Sensibilité",
+          "section_description": "Détermine le seuil d'activité nécessaire pour déclencher une hausse du slowmode",
+          "placeholder": "Sélectionnez une sensibilité",
+          "low": {
+            "label": "Faible",
+            "description": "Se déclenche uniquement lors de pics d'activité importants"
+          },
+          "medium": {
+            "label": "Normale",
+            "description": "Équilibre entre réactivité et stabilité (recommandé)"
+          },
+          "high": {
+            "label": "Haute",
+            "description": "Très réactif, s'adapte dès les premières hausses d'activité"
+          }
+        },
+        "delay_modal": {
+          "min_label": "Délai minimum (secondes)",
+          "max_label": "Délai maximum (secondes)",
+          "error_invalid": "Veuillez entrer un nombre entier valide",
+          "error_range": "La valeur doit être entre 0 et 21600 secondes",
+          "error_min_gte_max": "Le délai minimum doit être inférieur au délai maximum",
+          "error_max_lte_min": "Le délai maximum doit être supérieur au délai minimum"
+        }
+      }
+    },
     "youtube_notifications": {
       "name": "YouTube Notifications",
       "description": "Notifications en temps réel pour les vidéos YouTube",

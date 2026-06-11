@@ -123,6 +123,19 @@ class ModuleEvents(commands.Cog):
         except Exception as e:
             logger.error(f"Error in on_message for guild {message.guild.id}: {e}", exc_info=True)
 
+        try:
+            # Adaptive Slowmode: record the message in the rolling window
+            slowmode_module = await self.bot.module_manager.get_module_instance(
+                message.guild.id,
+                'adaptive_slowmode'
+            )
+
+            if slowmode_module and slowmode_module.enabled:
+                await slowmode_module.on_message(message)
+
+        except Exception as e:
+            logger.error(f"Error in on_message (adaptive_slowmode) for guild {message.guild.id}: {e}", exc_info=True)
+
     @commands.Cog.listener()
     async def on_message_delete(self, message: discord.Message):
         """

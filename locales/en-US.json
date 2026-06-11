@@ -882,6 +882,54 @@
         }
       }
     },
+    "adaptive_slowmode": {
+      "name": "Adaptive Slowmode",
+      "description": "Automatically adjusts slowmode based on channel activity",
+      "config": {
+        "title": "Adaptive Slowmode Configuration",
+        "description": "Monitor channels and let Moddy automatically adjust their slowmode based on real-time activity.",
+        "channels": {
+          "section_title": "Monitored channels",
+          "section_description": "Channels whose slowmode will be managed automatically by Moddy",
+          "placeholder": "Select text channels"
+        },
+        "min_delay": {
+          "section_title": "Minimum delay",
+          "section_description": "Slowmode applied during normal activity (0 = no slowmode)",
+          "edit_button": "Edit"
+        },
+        "max_delay": {
+          "section_title": "Maximum delay",
+          "section_description": "Maximum slowmode applied during activity peaks (in seconds)",
+          "edit_button": "Edit"
+        },
+        "sensitivity": {
+          "section_title": "Sensitivity",
+          "section_description": "Determines how much activity is needed to trigger a slowmode increase",
+          "placeholder": "Select a sensitivity level",
+          "low": {
+            "label": "Low",
+            "description": "Only triggers during significant activity peaks"
+          },
+          "medium": {
+            "label": "Normal",
+            "description": "Balanced between reactivity and stability (recommended)"
+          },
+          "high": {
+            "label": "High",
+            "description": "Very reactive, adapts as soon as activity starts rising"
+          }
+        },
+        "delay_modal": {
+          "min_label": "Minimum delay (seconds)",
+          "max_label": "Maximum delay (seconds)",
+          "error_invalid": "Please enter a valid integer",
+          "error_range": "Value must be between 0 and 21600 seconds",
+          "error_min_gte_max": "Minimum delay must be less than maximum delay",
+          "error_max_lte_min": "Maximum delay must be greater than minimum delay"
+        }
+      }
+    },
     "youtube_notifications": {
       "name": "YouTube Notifications",
       "description": "Real-time notifications for YouTube videos",
