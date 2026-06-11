@@ -13,7 +13,7 @@ logger = logging.getLogger('moddy.cogs.linear_tracker')
 
 TEAM_GUILD_ID = 1394001780148535387
 LINEAR_BASE_URL = "https://linear.app/moddyapp/issue/"
-MDY_PATTERN = re.compile(r'\bMDY-(\d+)\b', re.IGNORECASE)
+MDY_PATTERN = re.compile(r'\bMDY-(\d{1,7})\b', re.IGNORECASE)
 MAX_BUTTONS_PER_ROW = 5
 
 
