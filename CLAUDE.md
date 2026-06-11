@@ -335,7 +335,7 @@ If you create a new system or feature that doesn't fit any existing doc, create 
 
 ---
 
-## Session Logs
+## Session Logs :
 
 After each work session, create a summary in `docs/sessions/` with the format:
 ```
