@@ -887,37 +887,49 @@
       "description": "Automatically adjusts slowmode based on channel activity",
       "config": {
         "title": "Adaptive Slowmode Configuration",
-        "description": "Monitor channels and let Moddy automatically adjust their slowmode based on real-time activity.",
-        "channels": {
+        "description": "Monitor channels and let Moddy automatically adjust their slowmode based on real-time activity. Each channel has its own settings.",
+        "channel_list": {
           "section_title": "Monitored channels",
-          "section_description": "Channels whose slowmode will be managed automatically by Moddy",
-          "placeholder": "Select text channels"
+          "empty": "No channels configured yet. Add one with the button below.",
+          "add_button": "Add a channel",
+          "edit_button": "Edit",
+          "remove_button": "Remove"
         },
-        "min_delay": {
-          "section_title": "Minimum delay",
-          "section_description": "Slowmode applied during normal activity (0 = no slowmode)",
-          "edit_button": "Edit"
-        },
-        "max_delay": {
-          "section_title": "Maximum delay",
-          "section_description": "Maximum slowmode applied during activity peaks (in seconds)",
-          "edit_button": "Edit"
-        },
-        "sensitivity": {
-          "section_title": "Sensitivity",
-          "section_description": "Determines how much activity is needed to trigger a slowmode increase",
-          "placeholder": "Select a sensitivity level",
-          "low": {
-            "label": "Low",
-            "description": "Only triggers during significant activity peaks"
+        "channel_settings": {
+          "title_add": "New channel",
+          "title_edit": "Edit channel",
+          "already_configured": "This channel is already configured. Use the Edit button to modify it.",
+          "channel": {
+            "section_title": "Channel",
+            "section_description": "Text channel whose slowmode will be automatically managed",
+            "placeholder": "Select a text channel"
           },
-          "medium": {
-            "label": "Normal",
-            "description": "Balanced between reactivity and stability (recommended)"
+          "min_delay": {
+            "section_title": "Minimum delay",
+            "section_description": "Slowmode applied during normal activity (0 = no slowmode)",
+            "edit_button": "Edit"
           },
-          "high": {
-            "label": "High",
-            "description": "Very reactive, adapts as soon as activity starts rising"
+          "max_delay": {
+            "section_title": "Maximum delay",
+            "section_description": "Maximum slowmode applied during activity peaks (in seconds)",
+            "edit_button": "Edit"
+          },
+          "sensitivity": {
+            "section_title": "Sensitivity",
+            "section_description": "Determines how much activity is needed to trigger a slowmode increase",
+            "placeholder": "Select a sensitivity level",
+            "low": {
+              "label": "Low",
+              "description": "Only triggers during significant activity peaks"
+            },
+            "medium": {
+              "label": "Normal",
+              "description": "Balanced between reactivity and stability (recommended)"
+            },
+            "high": {
+              "label": "High",
+              "description": "Very reactive, adapts as soon as activity starts rising"
+            }
           }
         },
         "delay_modal": {
