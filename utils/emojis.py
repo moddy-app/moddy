@@ -23,7 +23,6 @@ RED_STATUS = "<:red_status:1450929038758772940>"
 
 # Actions
 ADD = "<:add:1439697866049323090>"
-REMOVE = "<:remove:1398729478435393598>"
 EDIT = "<:edit:1401600709824086169>"
 DELETE = "<:delete:1401600770431909939>"
 SAVE = "<:save:1444101502154182778>"
@@ -138,7 +137,6 @@ EMOJIS = {
     "error": ERROR,
     # Actions
     "add": ADD,
-    "remove": REMOVE,
     "edit": EDIT,
     # Bot
     "moddy": MODDY,
