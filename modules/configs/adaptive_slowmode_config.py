@@ -13,7 +13,7 @@ import logging
 
 from utils.i18n import t
 from cogs.error_handler import BaseView, BaseModal
-from utils.emojis import TIME, REQUIRED_FIELDS, EDIT, BACK, SAVE, UNDONE, DELETE, ADD, REMOVE
+from utils.emojis import TIME, REQUIRED_FIELDS, EDIT, BACK, SAVE, UNDONE, DELETE, ADD
 
 logger = logging.getLogger('moddy.modules.adaptive_slowmode_config')
 
@@ -451,7 +451,7 @@ class AdaptiveSlowmodeConfigView(BaseView):
                 remove_btn = ui.Button(
                     label=t("modules.adaptive_slowmode.config.channel_list.remove_button", locale=self.locale),
                     style=discord.ButtonStyle.danger,
-                    emoji=discord.PartialEmoji.from_str(REMOVE),
+                    emoji=discord.PartialEmoji.from_str(DELETE),
                 )
                 remove_btn.callback = self._make_remove_cb(ch_id_str)
                 row.add_item(remove_btn)

@@ -122,10 +122,43 @@ class AdaptiveSlowmodeModule(ModuleBase):
                 self._channel_states.setdefault(ch_id, ChannelState())
 
             self.enabled = bool(self.channels_config)
+
+            # Apply min_delay to each channel immediately on config (re)load.
+            if self.channels_config:
+                asyncio.create_task(self._apply_min_delays())
+
             return True
         except Exception as e:
             logger.error(f"Error loading adaptive_slowmode config: {e}")
             return False
+
+    async def _apply_min_delays(self):
+        """Set each channel's current slowmode to its configured min_delay on load."""
+        guild = self.bot.get_guild(self.guild_id)
+        if not guild:
+            return
+        for ch_id, ch_cfg in self.channels_config.items():
+            min_delay = ch_cfg.get("min_delay", 0)
+            channel = guild.get_channel(ch_id)
+            if not channel or not isinstance(channel, discord.TextChannel):
+                continue
+            if channel.slowmode_delay == min_delay:
+                continue
+            try:
+                await channel.edit(
+                    slowmode_delay=min_delay,
+                    reason="Adaptive Slowmode: application du délai minimal après mise à jour de la config",
+                )
+                state = self._channel_states.setdefault(ch_id, ChannelState())
+                state.current_level = 0
+                logger.info(
+                    f"[Guild {self.guild_id}] #{channel.name}: "
+                    f"min_delay applied → {min_delay}s"
+                )
+            except (discord.Forbidden, discord.HTTPException) as e:
+                logger.warning(
+                    f"[Guild {self.guild_id}] Could not apply min_delay on #{channel.name}: {e}"
+                )
 
     async def validate_config(self, config_data: Dict[str, Any]) -> tuple[bool, Optional[str]]:
         channels = config_data.get("channels", {})
