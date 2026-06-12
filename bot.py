@@ -1230,6 +1230,9 @@ class ModdyBot(commands.Bot):
             self.tree.clear_commands(guild=guild)
             await self.tree.sync(guild=guild)
             logger.info(f"Commands cleared for guild {guild.name} ({guild.id})")
+        except discord.Forbidden:
+            # Bot was kicked — no longer has access to sync commands, this is expected
+            logger.debug(f"[SKIP] Cannot clear commands for guild {guild.id}: bot no longer has access (kicked)")
         except Exception as e:
             logger.error(f"[FAIL] Error clearing commands for guild {guild.id}: {e}")
 
