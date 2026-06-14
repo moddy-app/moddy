@@ -77,6 +77,35 @@ WEBHOOK = "<:webhook:1438636058660045041>"
 STAFF = "<:staff:1398729432759476245>"
 
 # =============================================================================
+# SOCIAL PLATFORMS (Social Notifications module)
+# -----------------------------------------------------------------------------
+# NOTE: These are PLACEHOLDER ids — replace each one with the real custom emoji
+# for the platform. Everything in the codebase references these constants, so
+# updating the id here propagates everywhere. Also update PLATFORM_EMOJIS below
+# stays in sync automatically (it references the constants).
+# =============================================================================
+SOCIAL = "<:web:1398729801061240883>"           # generic "social notifications" icon (placeholder — no custom emoji yet)
+YOUTUBE = "<:youtube:1515511923066671185>"
+TWITCH = "<:twitch:1515511921938399343>"
+BLUESKY = "<:bluesky:1515511920235516024>"
+RSS = "<:rss:1515511923951534160>"
+INSTAGRAM = "<:web:1398729801061240883>"         # TODO replace with <:instagram:...> (platform is future/disabled)
+
+# platform id -> emoji (single source of truth used by the module + config UI)
+PLATFORM_EMOJIS = {
+    "youtube": YOUTUBE,
+    "twitch": TWITCH,
+    "bluesky": BLUESKY,
+    "rss": RSS,
+    "instagram": INSTAGRAM,
+}
+
+
+def get_platform_emoji(platform: str) -> str:
+    """Return the custom emoji for a social platform (falls back to SOCIAL)."""
+    return PLATFORM_EMOJIS.get(platform, SOCIAL)
+
+# =============================================================================
 # STAFF & MODDY BADGES
 # =============================================================================
 

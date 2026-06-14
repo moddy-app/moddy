@@ -942,56 +942,132 @@
         }
       }
     },
-    "youtube_notifications": {
-      "name": "YouTube Notifications",
-      "description": "Real-time notifications for YouTube videos",
+    "social_notifications": {
+      "description": "Get notified when social accounts post new content (YouTube, Twitch, Bluesky, RSS…)",
+      "platforms": {
+        "youtube": "YouTube",
+        "twitch": "Twitch",
+        "bluesky": "Bluesky",
+        "rss": "RSS feed",
+        "instagram": "Instagram"
+      },
       "config": {
-        "title": "YouTube Notifications Configuration",
-        "description": "Configure real-time notifications for YouTube videos via WebSub. Receive instant alerts when a channel posts a new video.",
-        "subscriptions": {
-          "title": "Followed YouTube Channels",
-          "count": "{count} channel(s) followed",
-          "empty": "No YouTube channels are currently followed. Add one with the button below!"
-        },
-        "buttons": {
-          "add": "Add Channel",
-          "confirm": "Confirm"
-        },
-        "add": {
-          "channel_label": "YouTube Channel",
-          "channel_placeholder": "@username or channel ID",
-          "message_label": "Notification Message",
-          "message_placeholder": "A new video has been posted: [video_link]",
-          "message_default": "A new video has been posted: [video_link]",
-          "select_title": "Configure Notification",
-          "youtube_channel": "YouTube Channel",
-          "discord_channel": "Discord Channel",
-          "discord_channel_description": "Select the channel where notifications will be posted",
-          "channel_placeholder": "Select a channel",
-          "roles": "Roles to Mention",
-          "roles_description": "Select roles to mention in notifications (optional)",
-          "roles_placeholder": "Select roles (optional)",
-          "success": "<:done:1398729525277229066> YouTube channel successfully added!",
-          "error": {
-            "invalid_channel": "<:error:1444049460924776478> Invalid YouTube channel ID or username."
-          }
-        },
-        "edit": {
-          "title": "Edit YouTube Subscription",
-          "channel": "YouTube Channel",
-          "current_message": "Current Message",
-          "edit_message": "Edit Message",
-          "discord_channel": "Discord Channel",
-          "discord_channel_description": "Select the channel where notifications will be posted",
-          "channel_placeholder": "Select a channel",
-          "roles": "Roles to Mention",
-          "roles_description": "Select roles to mention in notifications",
-          "roles_placeholder": "Select roles (optional)",
-          "message_label": "Notification Message",
-          "message_placeholder": "A new video has been posted: [video_link]",
-          "saved": "<:done:1398729525277229066> Changes saved!",
-          "deleted": "<:delete:1401600770431909939> Subscription deleted!"
+        "title": "Social Notifications",
+        "description": "Follow social accounts and post an alert in your server whenever they publish something new.",
+        "premium_note": "Premium server: new content is checked at the fastest rate available.",
+        "free_note": "New content is checked regularly — upgrade to Premium for faster checks.",
+        "service_down": "**The notification service is currently unreachable.** You can still edit your configuration, but changes may take a moment to apply.",
+        "manage_placeholder": "Select a subscription to manage",
+        "list": {
+          "title": "Followed accounts",
+          "count": "{count} account(s) followed",
+          "roles": "{count} role(s) pinged",
+          "paused": "paused",
+          "empty": "No account followed yet. Add one to start receiving notifications.",
+          "more": "… and {count} more"
         }
+      },
+      "buttons": {
+        "add": "Add",
+        "confirm": "Confirm"
+      },
+      "add": {
+        "title": "Add a subscription",
+        "description": "Choose a platform, a channel, optional roles to ping, and the account to follow.",
+        "soon": "soon",
+        "platform": {
+          "title": "Platform",
+          "description": "The social platform to follow.",
+          "placeholder": "Select a platform"
+        },
+        "platform_disabled": "This platform isn't available yet — it's coming soon!",
+        "channel": {
+          "title": "Channel",
+          "description": "Where notifications will be posted.",
+          "placeholder": "Select a channel"
+        },
+        "roles": {
+          "title": "Roles to ping",
+          "description": "Optional — these roles are mentioned on each notification.",
+          "placeholder": "Select roles (optional)"
+        },
+        "source": {
+          "title": "Account to follow",
+          "description": "Handle, username, channel or feed URL — depends on the platform.",
+          "current": "Current:",
+          "not_set": "*not set*",
+          "message_set": "Custom message set.",
+          "button": "Set account & message"
+        },
+        "modal": {
+          "title": "Account to follow",
+          "identifier_label": "Account",
+          "identifier_placeholder": "@handle, channel URL, RSS feed URL…",
+          "message_label": "Custom message (optional)",
+          "message_placeholder": "Use {author}, {title}, {url}, {platform}. Leave empty for the default."
+        },
+        "success": "<:done:1398729525277229066> Now following **{name}**!"
+      },
+      "manage": {
+        "channel": {
+          "title": "Channel",
+          "description": "Where notifications are posted.",
+          "placeholder": "Select a channel"
+        },
+        "roles": {
+          "title": "Roles to ping",
+          "description": "These roles are mentioned on each notification.",
+          "placeholder": "Select roles (optional)"
+        },
+        "message": {
+          "title": "Custom message",
+          "current": "Current:",
+          "none": "*default message*",
+          "button": "Edit message",
+          "modal_title": "Custom message",
+          "label": "Message",
+          "placeholder": "Use {author}, {title}, {url}, {platform}. Leave empty for the default."
+        },
+        "pause": "Pause",
+        "resume": "Resume",
+        "remove": "Remove",
+        "removed": "<:delete:1401600770431909939> Subscription removed.",
+        "updated": "<:done:1398729525277229066> Updated."
+      },
+      "notify": {
+        "type": {
+          "video": "New video",
+          "live": "Live now",
+          "post": "New post",
+          "article": "New article",
+          "default": "New content"
+        },
+        "open": {
+          "video": "Watch",
+          "live": "Watch live",
+          "post": "View post",
+          "article": "Read article",
+          "default": "Open"
+        },
+        "default_caption": "**{author}** just posted something new!"
+      },
+      "errors": {
+        "unknown_platform": "<:error:1444049460924776478> Invalid platform.",
+        "platform_disabled": "<:warning:1446108410092195902> This platform isn't available yet — coming soon!",
+        "missing_identifier": "<:error:1444049460924776478> Please provide an account to follow.",
+        "channel_not_found": "<:error:1444049460924776478> Account not found — double-check the name or URL.",
+        "user_not_found": "<:error:1444049460924776478> Account not found — double-check the name or URL.",
+        "handle_not_found": "<:error:1444049460924776478> Account not found — double-check the name or URL.",
+        "unsafe_url": "<:error:1444049460924776478> This URL isn't allowed.",
+        "no_entries": "<:warning:1446108410092195902> This feed doesn't contain anything yet.",
+        "fetch_failed": "<:error:1444049460924776478> Couldn't reach the account right now. Please try again.",
+        "bad_status": "<:error:1444049460924776478> Couldn't reach the account right now. Please try again.",
+        "not_supported": "<:warning:1446108410092195902> This connector isn't available.",
+        "twitch_not_configured": "<:error:1444049460924776478> Twitch isn't configured on our side. Please contact support.",
+        "twitch_auth_failed": "<:error:1444049460924776478> Twitch authentication failed. Please contact support.",
+        "timeout": "<:error:1444049460924776478> The notification service took too long to respond. Please try again.",
+        "service_unavailable": "<:error:1444049460924776478> The notification service is currently unavailable. Please try again later.",
+        "internal_error": "<:error:1444049460924776478> Something went wrong. Please try again."
       }
     }
   },

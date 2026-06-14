@@ -41,7 +41,7 @@ moddy/
 │   ├── saved_messages.py      #   Message bookmarking
 │   ├── translate.py           #   /translate (DeepL)
 │   ├── webhook.py             #   Webhook management
-│   ├── youtube_websub.py      #   YouTube notifications
+│   ├── social_notifications.py #  Social notifications dispatch + feeds service wiring
 │   ├── interserver_commands.py #  Inter-server commands
 │   ├── ping.py, user.py, avatar.py, banner.py, roll.py, moddy.py
 │   ├── subscription.py        #   Premium features
@@ -65,9 +65,10 @@ moddy/
 │   ├── starboard.py           #   Reaction-based starboard
 │   ├── adaptive_slowmode.py   #   Adaptive slowmode (EWMA + hysteresis)
 │   ├── interserver.py         #   Inter-server message relay
-│   ├── youtube_notifications.py
+│   ├── social_notifications.py #  Social notifications (via moddy-feeds service)
 │   └── configs/               #   Components V2 config UIs per module
 │       ├── adaptive_slowmode_config.py
+│       ├── social_notifications_config.py
 │
 ├── staff/                     # Staff/dev command system (prefix-based)
 │   ├── base.py                #   Base classes for staff commands
@@ -87,6 +88,7 @@ moddy/
 │       ├── moderation.py, interserver.py, attributes.py
 │       ├── token_alerts.py, token_secrets.py
 │       ├── subscription.py    #   Subscription read-only queries
+│       ├── social.py          #   Social notifications subscriptions
 │       └── _utils.py
 │
 ├── utils/                     # Utility modules
@@ -106,6 +108,7 @@ moddy/
 │
 ├── services/                  # External service clients
 │   ├── backend_client.py      #   Backend HTTP client
+│   ├── feeds_client.py        #   moddy-feeds Redis client (social notifications)
 │   └── railway_diagnostic.py  #   Railway diagnostics
 │
 ├── internal_api/              # FastAPI internal API
@@ -226,6 +229,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | Document | When to Read |
 |---|---|
 | [docs/BACKEND-INTEGRATION.md](docs/BACKEND-INTEGRATION.md) | Bot ↔ Backend integration (Redis, Pub/Sub, Streams, `/status`) |
+| [docs/SOCIAL_NOTIFICATIONS.md](docs/SOCIAL_NOTIFICATIONS.md) | Social Notifications module + `moddy-feeds` Redis contract (what the backend must mirror) |
 | [docs/SUBSCRIPTION_SCHEMA.md](docs/SUBSCRIPTION_SCHEMA.md) | Subscription DB schema, Redis cache contract, Pub/Sub events |
 | [docs/RAILWAY.md](docs/RAILWAY.md) | Environment variables, deployment, troubleshooting |
 

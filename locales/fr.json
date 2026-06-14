@@ -941,56 +941,132 @@
         }
       }
     },
-    "youtube_notifications": {
-      "name": "YouTube Notifications",
-      "description": "Notifications en temps réel pour les vidéos YouTube",
+    "social_notifications": {
+      "description": "Soyez notifié quand des comptes sociaux publient du nouveau contenu (YouTube, Twitch, Bluesky, RSS…)",
+      "platforms": {
+        "youtube": "YouTube",
+        "twitch": "Twitch",
+        "bluesky": "Bluesky",
+        "rss": "Flux RSS",
+        "instagram": "Instagram"
+      },
       "config": {
-        "title": "Configuration des notifications YouTube",
-        "description": "Configurez les notifications en temps réel pour les vidéos YouTube via WebSub. Recevez des alertes instantanées quand une chaîne publie une nouvelle vidéo.",
-        "subscriptions": {
-          "title": "Chaînes YouTube suivies",
-          "count": "{count} chaîne(s) suivie(s)",
-          "empty": "Aucune chaîne YouTube n'est actuellement suivie. Ajoutez-en une avec le bouton ci-dessous !"
-        },
-        "buttons": {
-          "add": "Ajouter une chaîne",
-          "confirm": "Confirmer"
-        },
-        "add": {
-          "channel_label": "Chaîne YouTube",
-          "channel_placeholder": "@username ou ID de chaîne",
-          "message_label": "Message de notification",
-          "message_placeholder": "Une nouvelle vidéo : [video_link]",
-          "message_default": "Une nouvelle vidéo a été publiée : [video_link]",
-          "select_title": "Configurer la notification",
-          "youtube_channel": "Chaîne YouTube",
-          "discord_channel": "Salon Discord",
-          "discord_channel_description": "Sélectionnez le salon où seront postées les notifications",
-          "channel_placeholder": "Sélectionnez un salon",
-          "roles": "Rôles à mentionner",
-          "roles_description": "Sélectionnez les rôles à mentionner dans les notifications (optionnel)",
-          "roles_placeholder": "Sélectionnez des rôles (optionnel)",
-          "success": "<:done:1398729525277229066> Chaîne YouTube ajoutée avec succès !",
-          "error": {
-            "invalid_channel": "<:error:1444049460924776478> ID ou nom d'utilisateur de chaîne YouTube invalide."
-          }
-        },
-        "edit": {
-          "title": "Modifier l'abonnement YouTube",
-          "channel": "Chaîne YouTube",
-          "current_message": "Message actuel",
-          "edit_message": "Modifier le message",
-          "discord_channel": "Salon Discord",
-          "discord_channel_description": "Sélectionnez le salon où seront postées les notifications",
-          "channel_placeholder": "Sélectionnez un salon",
-          "roles": "Rôles à mentionner",
-          "roles_description": "Sélectionnez les rôles à mentionner dans les notifications",
-          "roles_placeholder": "Sélectionnez des rôles (optionnel)",
-          "message_label": "Message de notification",
-          "message_placeholder": "Une nouvelle vidéo : [video_link]",
-          "saved": "<:done:1398729525277229066> Modifications enregistrées !",
-          "deleted": "<:delete:1401600770431909939> Abonnement supprimé !"
+        "title": "Notifications Sociales",
+        "description": "Suivez des comptes sociaux et publiez une alerte dans votre serveur dès qu'ils publient du nouveau contenu.",
+        "premium_note": "Serveur Premium : le nouveau contenu est vérifié à la fréquence la plus rapide disponible.",
+        "free_note": "Le nouveau contenu est vérifié régulièrement — passez Premium pour des vérifications plus rapides.",
+        "service_down": "**Le service de notifications est actuellement injoignable.** Vous pouvez toujours modifier votre configuration, mais les changements peuvent mettre un instant à s'appliquer.",
+        "manage_placeholder": "Sélectionnez un abonnement à gérer",
+        "list": {
+          "title": "Comptes suivis",
+          "count": "{count} compte(s) suivi(s)",
+          "roles": "{count} rôle(s) mentionné(s)",
+          "paused": "en pause",
+          "empty": "Aucun compte suivi pour le moment. Ajoutez-en un pour commencer à recevoir des notifications.",
+          "more": "… et {count} de plus"
         }
+      },
+      "buttons": {
+        "add": "Ajouter",
+        "confirm": "Confirmer"
+      },
+      "add": {
+        "title": "Ajouter un abonnement",
+        "description": "Choisissez une plateforme, un salon, des rôles à mentionner (optionnel) et le compte à suivre.",
+        "soon": "bientôt",
+        "platform": {
+          "title": "Plateforme",
+          "description": "La plateforme sociale à suivre.",
+          "placeholder": "Sélectionnez une plateforme"
+        },
+        "platform_disabled": "Cette plateforme n'est pas encore disponible — elle arrive bientôt !",
+        "channel": {
+          "title": "Salon",
+          "description": "Où les notifications seront publiées.",
+          "placeholder": "Sélectionnez un salon"
+        },
+        "roles": {
+          "title": "Rôles à mentionner",
+          "description": "Optionnel — ces rôles seront mentionnés à chaque notification.",
+          "placeholder": "Sélectionnez des rôles (optionnel)"
+        },
+        "source": {
+          "title": "Compte à suivre",
+          "description": "Pseudo, identifiant, URL de chaîne ou de flux — selon la plateforme.",
+          "current": "Actuel :",
+          "not_set": "*non défini*",
+          "message_set": "Message personnalisé défini.",
+          "button": "Définir le compte & le message"
+        },
+        "modal": {
+          "title": "Compte à suivre",
+          "identifier_label": "Compte",
+          "identifier_placeholder": "@pseudo, URL de chaîne, URL de flux RSS…",
+          "message_label": "Message personnalisé (optionnel)",
+          "message_placeholder": "Utilisez {author}, {title}, {url}, {platform}. Laissez vide pour le message par défaut."
+        },
+        "success": "<:done:1398729525277229066> Vous suivez maintenant **{name}** !"
+      },
+      "manage": {
+        "channel": {
+          "title": "Salon",
+          "description": "Où les notifications sont publiées.",
+          "placeholder": "Sélectionnez un salon"
+        },
+        "roles": {
+          "title": "Rôles à mentionner",
+          "description": "Ces rôles sont mentionnés à chaque notification.",
+          "placeholder": "Sélectionnez des rôles (optionnel)"
+        },
+        "message": {
+          "title": "Message personnalisé",
+          "current": "Actuel :",
+          "none": "*message par défaut*",
+          "button": "Modifier le message",
+          "modal_title": "Message personnalisé",
+          "label": "Message",
+          "placeholder": "Utilisez {author}, {title}, {url}, {platform}. Laissez vide pour le message par défaut."
+        },
+        "pause": "Mettre en pause",
+        "resume": "Reprendre",
+        "remove": "Supprimer",
+        "removed": "<:delete:1401600770431909939> Abonnement supprimé.",
+        "updated": "<:done:1398729525277229066> Mis à jour."
+      },
+      "notify": {
+        "type": {
+          "video": "Nouvelle vidéo",
+          "live": "En direct",
+          "post": "Nouveau post",
+          "article": "Nouvel article",
+          "default": "Nouveau contenu"
+        },
+        "open": {
+          "video": "Regarder",
+          "live": "Regarder le live",
+          "post": "Voir le post",
+          "article": "Lire l'article",
+          "default": "Ouvrir"
+        },
+        "default_caption": "**{author}** vient de publier du nouveau contenu !"
+      },
+      "errors": {
+        "unknown_platform": "<:error:1444049460924776478> Plateforme invalide.",
+        "platform_disabled": "<:warning:1446108410092195902> Cette plateforme n'est pas encore disponible — bientôt !",
+        "missing_identifier": "<:error:1444049460924776478> Veuillez indiquer un compte à suivre.",
+        "channel_not_found": "<:error:1444049460924776478> Compte introuvable — vérifiez le nom ou l'URL.",
+        "user_not_found": "<:error:1444049460924776478> Compte introuvable — vérifiez le nom ou l'URL.",
+        "handle_not_found": "<:error:1444049460924776478> Compte introuvable — vérifiez le nom ou l'URL.",
+        "unsafe_url": "<:error:1444049460924776478> Cette URL n'est pas autorisée.",
+        "no_entries": "<:warning:1446108410092195902> Ce flux ne contient rien pour le moment.",
+        "fetch_failed": "<:error:1444049460924776478> Impossible de joindre le compte pour le moment. Réessayez.",
+        "bad_status": "<:error:1444049460924776478> Impossible de joindre le compte pour le moment. Réessayez.",
+        "not_supported": "<:warning:1446108410092195902> Ce connecteur n'est pas disponible.",
+        "twitch_not_configured": "<:error:1444049460924776478> Twitch n'est pas configuré de notre côté. Contactez le support.",
+        "twitch_auth_failed": "<:error:1444049460924776478> L'authentification Twitch a échoué. Contactez le support.",
+        "timeout": "<:error:1444049460924776478> Le service de notifications a mis trop de temps à répondre. Réessayez.",
+        "service_unavailable": "<:error:1444049460924776478> Le service de notifications est actuellement indisponible. Réessayez plus tard.",
+        "internal_error": "<:error:1444049460924776478> Une erreur est survenue. Réessayez."
       }
     }
   },

@@ -26,6 +26,7 @@ from db.repositories.subscription import SubscriptionRepository
 from db.repositories.redirects import RedirectRepository
 from db.repositories.banners import BannerRepository
 from db.repositories.forms import FormsRepository
+from db.repositories.social import SocialSubscriptionsRepository
 
 logger = logging.getLogger('moddy.database')
 
@@ -52,6 +53,7 @@ class ModdyDatabase(
     RedirectRepository,
     BannerRepository,
     FormsRepository,
+    SocialSubscriptionsRepository,
 ):
     """Gestionnaire principal de la base de données"""
 
@@ -762,6 +764,41 @@ class ModdyDatabase(
             await conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_answers_submission_id
                 ON answers(submission_id)
+            """)
+
+            # --- Social notifications (Social Notifications module) ---
+            # One row per (guild, platform, target). target_id is the CANONICAL
+            # id resolved by the moddy-feeds service. A target may be followed by
+            # many guilds; the (platform, target_id) index powers event dispatch.
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS social_subscriptions (
+                    id BIGSERIAL PRIMARY KEY,
+                    guild_id BIGINT NOT NULL,
+                    platform TEXT NOT NULL,
+                    target_id TEXT NOT NULL,
+                    identifier TEXT,
+                    display_name TEXT,
+                    avatar_url TEXT,
+                    channel_id BIGINT NOT NULL,
+                    message TEXT,
+                    mention_role_ids BIGINT[] NOT NULL DEFAULT '{}',
+                    poll_interval INTEGER,
+                    enabled BOOLEAN NOT NULL DEFAULT TRUE,
+                    created_by BIGINT,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ DEFAULT NOW(),
+                    UNIQUE (guild_id, platform, target_id)
+                )
+            """)
+
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_social_subscriptions_target
+                ON social_subscriptions(platform, target_id)
+            """)
+
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_social_subscriptions_guild
+                ON social_subscriptions(guild_id)
             """)
 
             logger.info("[OK] Tables initialisées")

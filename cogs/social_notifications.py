@@ -1,0 +1,184 @@
+"""
+Social Notifications cog.
+
+Wires the Social Notifications module together:
+  - owns the :class:`FeedsClient` (Redis transport to ``moddy-feeds``),
+  - dispatches incoming notification events to every guild that follows a target,
+  - centralises the subscribe / unsubscribe business logic enforced by the
+    integration contract (subscribe on first follow, unsubscribe only when the
+    last guild drops a target, relaxed poll interval otherwise),
+  - cleans up a guild's subscriptions when the bot is removed from it.
+
+The configuration UI (``modules/configs/social_notifications_config.py``) calls
+back into this cog so the contract logic lives in exactly one place.
+"""
+
+import logging
+from typing import Any, Dict, Optional, Tuple
+
+import discord
+from discord.ext import commands
+
+from services.feeds_client import FeedsClient
+from modules.social_notifications import (
+    build_notification_view,
+    desired_poll_interval,
+)
+
+logger = logging.getLogger('moddy.cogs.social_notifications')
+
+# For realtime platforms the poll interval is ignored by the service, but we
+# still must send *some* value on a partial unsubscribe so the target is kept
+# alive (an omitted interval means "remove the target").
+REALTIME_KEEP_INTERVAL = 60
+
+
+class SocialNotifications(commands.Cog):
+    """Owns the feeds client and dispatches social notifications."""
+
+    def __init__(self, bot):
+        self.bot = bot
+        self.feeds = FeedsClient(bot)
+        # Expose for the configuration views.
+        bot.feeds_client = self.feeds
+
+    async def cog_load(self):
+        try:
+            await self.feeds.start(self._dispatch_event)
+        except Exception as e:
+            logger.error(f"[Social] Failed to start feeds client: {e}", exc_info=True)
+
+    async def cog_unload(self):
+        await self.feeds.stop()
+
+    # ------------------------------------------------------------------ #
+    # Business logic (called by the config UI and guild events)
+    # ------------------------------------------------------------------ #
+    async def add_subscription(
+        self,
+        *,
+        guild: discord.Guild,
+        platform: str,
+        identifier: str,
+        channel_id: int,
+        role_ids: Optional[list] = None,
+        message: Optional[str] = None,
+        created_by: Optional[int] = None,
+    ) -> Tuple[bool, Dict[str, Any]]:
+        """Resolve a target via the service then persist the subscription.
+
+        Returns ``(ok, reply)`` where ``reply`` is the service response dict
+        (on success it carries ``target_id``/``display_name``/``avatar_url``).
+        """
+        is_premium = False
+        try:
+            is_premium = await self.bot.db.has_attribute('guild', guild.id, 'PREMIUM')
+        except Exception:
+            pass
+
+        poll = desired_poll_interval(platform, is_premium)
+        reply = await self.feeds.subscribe(platform, identifier, poll)
+
+        if not reply.get("ok"):
+            return False, reply
+
+        target_id = reply.get("target_id")
+        if not target_id:
+            return False, {"ok": False, "error": "internal_error"}
+
+        await self.bot.db.add_social_subscription(
+            guild_id=guild.id,
+            platform=platform,
+            target_id=target_id,
+            channel_id=channel_id,
+            identifier=identifier,
+            display_name=reply.get("display_name"),
+            avatar_url=reply.get("avatar_url"),
+            message=message,
+            mention_role_ids=role_ids or [],
+            poll_interval=poll,
+            created_by=created_by,
+        )
+        return True, reply
+
+    async def remove_subscription(self, guild_id: int, platform: str, target_id: str) -> None:
+        """Delete a guild's subscription and reconcile with the service."""
+        await self.bot.db.remove_social_subscription(guild_id, platform, target_id)
+        await self._reconcile_target(platform, target_id)
+
+    async def _reconcile_target(self, platform: str, target_id: str) -> None:
+        """Tell the service whether a target should be kept or removed.
+
+        Must be called AFTER the guild's row has been deleted from the DB.
+        """
+        remaining = await self.bot.db.count_target_guilds(platform, target_id)
+        if remaining == 0:
+            # No guild left -> fully remove the target.
+            await self.feeds.unsubscribe(platform, target_id)
+            return
+
+        # Other guilds still follow it: keep it alive with the most demanding
+        # (smallest) remaining interval. We must ALWAYS pass a non-None interval
+        # here — omitting it would tell the service to remove the target. For
+        # realtime platforms (no stored interval) the value is just a sentinel
+        # the service ignores.
+        min_interval = await self.bot.db.get_target_min_poll_interval(platform, target_id)
+        if min_interval is None:
+            min_interval = REALTIME_KEEP_INTERVAL
+        await self.feeds.unsubscribe(platform, target_id, poll_interval=min_interval)
+
+    # ------------------------------------------------------------------ #
+    # Dispatch
+    # ------------------------------------------------------------------ #
+    async def _dispatch_event(self, event: Dict[str, Any]) -> None:
+        """Send a notification event to every guild that follows the target."""
+        platform = event.get("platform")
+        target_id = event.get("target_id")
+        if not platform or not target_id:
+            return
+
+        followers = await self.bot.db.get_target_followers(platform, target_id)
+        if not followers:
+            return
+
+        for sub in followers:
+            guild = self.bot.get_guild(sub["guild_id"])
+            if not guild:
+                continue
+            channel = guild.get_channel(sub["channel_id"])
+            if not isinstance(channel, (discord.TextChannel, discord.Thread)):
+                continue
+
+            locale = str(guild.preferred_locale) if guild.preferred_locale else 'en-US'
+            try:
+                view, allowed = build_notification_view(event, sub, locale)
+                await channel.send(view=view, allowed_mentions=allowed)
+            except discord.Forbidden:
+                logger.warning(
+                    f"[Social] Missing permissions to post in channel {sub['channel_id']} "
+                    f"(guild {sub['guild_id']})"
+                )
+            except Exception as e:
+                logger.error(
+                    f"[Social] Failed to dispatch event to guild {sub['guild_id']}: {e}",
+                    exc_info=True,
+                )
+
+    # ------------------------------------------------------------------ #
+    # Guild cleanup
+    # ------------------------------------------------------------------ #
+    @commands.Cog.listener()
+    async def on_guild_remove(self, guild: discord.Guild):
+        """Drop a guild's subscriptions and reconcile each affected target."""
+        try:
+            pairs = await self.bot.db.delete_guild_social_subscriptions(guild.id)
+            for platform, target_id in pairs:
+                await self._reconcile_target(platform, target_id)
+            if pairs:
+                logger.info(f"[Social] Cleaned up {len(pairs)} subscriptions for guild {guild.id}")
+        except Exception as e:
+            logger.error(f"[Social] Error cleaning up guild {guild.id}: {e}", exc_info=True)
+
+
+async def setup(bot):
+    await bot.add_cog(SocialNotifications(bot))

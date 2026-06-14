@@ -167,14 +167,13 @@ class ConfigMainView(BaseView):
                 self.locale,
                 module_config
             )
-        elif module_id == 'youtube_notifications':
-            from modules.configs.youtube_notifications_config import YoutubeNotificationsConfigView
-            config_view = YoutubeNotificationsConfigView(
+        elif module_id == 'social_notifications':
+            from modules.configs.social_notifications_config import SocialNotificationsConfigView
+            config_view = await SocialNotificationsConfigView.create(
                 self.bot,
                 self.guild_id,
                 self.user_id,
-                self.locale,
-                module_config
+                self.locale
             )
         elif module_id == 'adaptive_slowmode':
             from modules.configs.adaptive_slowmode_config import AdaptiveSlowmodeConfigView
