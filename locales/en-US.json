@@ -971,10 +971,44 @@
         "add": "Add",
         "confirm": "Confirm"
       },
+      "account": {
+        "modal_title": "Account to follow",
+        "label": "Account",
+        "description": "Handle, username, channel or feed URL — depends on the platform.",
+        "placeholder": "@handle, channel URL, RSS feed URL…",
+        "title": "Account to follow",
+        "section_description": "The account whose new content triggers notifications.",
+        "current": "Current:",
+        "not_set": "*not set*",
+        "button": "Set account"
+      },
+      "customize": {
+        "modal_title": "Customize the message",
+        "title": "Message",
+        "section_description": "The full notification message, including its title.",
+        "message_label": "Message",
+        "message_description": "Full text — include the title with ##, # or ###.",
+        "color_label": "Accent color (hex)",
+        "color_description": "Like #FF0000. Leave empty for the platform color.",
+        "display_label": "Display options",
+        "option_avatar": "Show profile picture as thumbnail",
+        "option_media": "Show media preview",
+        "placeholders_header": "Available placeholders:",
+        "ph_author": "Author",
+        "ph_title": "Title",
+        "ph_platform": "Platform",
+        "ph_url": "Link",
+        "ph_timestamp": "Date — e.g. <t:{timestamp}:R>",
+        "button": "Customize message",
+        "default_state": "Using the default message",
+        "custom_state": "Custom message set"
+      },
       "add": {
         "title": "Add a subscription",
         "description": "Choose a platform, a channel, optional roles to ping, and the account to follow.",
         "soon": "soon",
+        "limit_free": "Free servers can follow {max} account per platform — upgrade to Premium for 5.",
+        "limit_premium": "Premium: up to {max} accounts per platform.",
         "platform": {
           "title": "Platform",
           "description": "The social platform to follow.",
@@ -1067,6 +1101,9 @@
         "twitch_auth_failed": "<:error:1444049460924776478> Twitch authentication failed. Please contact support.",
         "timeout": "<:error:1444049460924776478> The notification service took too long to respond. Please try again.",
         "service_unavailable": "<:error:1444049460924776478> The notification service is currently unavailable. Please try again later.",
+        "no_permission": "<:error:1444049460924776478> You need the **Manage Server** permission to configure this.",
+        "limit_reached_free": "<:warning:1446108410092195902> Free servers can follow only **1 account per platform**. Remove one or upgrade to Premium to follow up to 5.",
+        "limit_reached_premium": "<:warning:1446108410092195902> You've reached the maximum of **5 accounts per platform** for this server.",
         "internal_error": "<:error:1444049460924776478> Something went wrong. Please try again."
       }
     }

@@ -26,13 +26,17 @@ backend so both sides agree — see docs/SOCIAL_NOTIFICATIONS.md.
 """
 
 import logging
+import time
 from typing import Any, Dict, List, Optional
 
 import discord
 from discord import ui
 
 from modules.module_manager import ModuleBase
-from utils.emojis import SOCIAL, get_platform_emoji
+from utils.emojis import (
+    SOCIAL, get_platform_emoji,
+    YOUTUBE, TWITCH, BLUESKY, RSS, INSTAGRAM,
+)
 from utils.i18n import t
 
 logger = logging.getLogger('moddy.modules.social_notifications')
@@ -43,12 +47,18 @@ logger = logging.getLogger('moddy.modules.social_notifications')
 # --------------------------------------------------------------------------- #
 # ``realtime`` platforms ignore poll_interval (the service pushes in real time).
 # ``disabled`` platforms are not yet available on the service side.
+# ``avatar`` / ``media`` describe which optional visuals a platform can provide:
+#   - ``avatar``: the author profile picture (rendered as a Section thumbnail),
+#   - ``media``:  a large preview/cover (rendered as a MediaGallery).
+# These gate the two "display option" checkboxes in the config modal.
+# ``color`` is the platform's brand colour, used as the notification accent
+# (the coloured bar on the left of the Components V2 container) by default.
 PLATFORMS: Dict[str, Dict[str, Any]] = {
-    "youtube": {"realtime": False, "disabled": False, "color": 0xFF0000},
-    "twitch": {"realtime": False, "disabled": False, "color": 0x9146FF},
-    "bluesky": {"realtime": True, "disabled": False, "color": 0x1185FE},
-    "rss": {"realtime": False, "disabled": False, "color": 0xEE802F},
-    "instagram": {"realtime": False, "disabled": True, "color": 0xE1306C},
+    "youtube": {"realtime": False, "disabled": False, "color": 0xFF0000, "avatar": True, "media": True},
+    "twitch": {"realtime": False, "disabled": False, "color": 0x9146FF, "avatar": True, "media": True},
+    "bluesky": {"realtime": True, "disabled": False, "color": 0x1185FE, "avatar": True, "media": False},
+    "rss": {"realtime": False, "disabled": False, "color": 0xEE802F, "avatar": False, "media": False},
+    "instagram": {"realtime": False, "disabled": True, "color": 0xE1306C, "avatar": True, "media": True},
 }
 
 # Order shown in the platform picker.
@@ -65,11 +75,72 @@ POLL_INTERVALS: Dict[str, Dict[str, int]] = {
     "instagram": {"premium": 600, "free": 1800},
 }
 
-# Supported message-template placeholders.
-MESSAGE_PLACEHOLDERS = ("{author}", "{title}", "{url}", "{link}", "{platform}")
+# Supported message-template placeholders (all platforms understand these,
+# but some values may be empty on platforms that don't expose them — see
+# ``PLATFORM_PLACEHOLDERS`` for the per-platform availability shown in the UI).
+MESSAGE_PLACEHOLDERS = ("{author}", "{title}", "{url}", "{link}", "{platform}", "{timestamp}")
+
+# Placeholders advertised in the customization modal, per platform. ``{timestamp}``
+# is always available (it falls back to the dispatch time). ``{url}`` and
+# ``{platform}`` are always available too.
+PLATFORM_PLACEHOLDERS: Dict[str, List[str]] = {
+    "youtube": ["{author}", "{title}", "{url}", "{platform}", "{timestamp}"],
+    "twitch": ["{author}", "{title}", "{url}", "{platform}", "{timestamp}"],
+    "bluesky": ["{author}", "{url}", "{platform}", "{timestamp}"],
+    "rss": ["{title}", "{url}", "{platform}", "{timestamp}"],
+    "instagram": ["{author}", "{url}", "{platform}", "{timestamp}"],
+}
 
 MAX_MESSAGE_LENGTH = 1500
-MAX_CONTENT_PREVIEW = 500
+
+# Per-platform subscription quota: how many distinct accounts a guild may follow
+# on a single platform. Premium guilds get a higher cap.
+# >>> KEEP IN SYNC WITH THE BACKEND <<<
+FREE_PER_PLATFORM_LIMIT = 1
+PREMIUM_PER_PLATFORM_LIMIT = 5
+
+
+def platform_subscription_limit(is_premium: bool) -> int:
+    """Max accounts a guild may follow per platform (premium vs free)."""
+    return PREMIUM_PER_PLATFORM_LIMIT if is_premium else FREE_PER_PLATFORM_LIMIT
+
+
+# Default message templates (English). The title is part of the message itself
+# (``##`` heading with the platform emoji) so the whole notification is fully
+# customizable. ``str`` concatenation keeps the ``{placeholder}`` braces literal
+# while still interpolating the emoji constants.
+DEFAULT_MESSAGES: Dict[str, str] = {
+    "youtube": (
+        "## " + YOUTUBE + " New video!\n"
+        "{author} just posted a new video on {platform}: « {title} »\n"
+        "{url}\n"
+        "-# <t:{timestamp}:R>"
+    ),
+    "twitch": (
+        "## " + TWITCH + " Live now!\n"
+        "{author} is now live on {platform}: « {title} »\n"
+        "{url}\n"
+        "-# <t:{timestamp}:R>"
+    ),
+    "bluesky": (
+        "## " + BLUESKY + " New post!\n"
+        "{author} just posted on {platform}.\n"
+        "{url}\n"
+        "-# <t:{timestamp}:R>"
+    ),
+    "rss": (
+        "## " + RSS + " New article!\n"
+        "A new article was published: « {title} »\n"
+        "{url}\n"
+        "-# <t:{timestamp}:R>"
+    ),
+    "instagram": (
+        "## " + INSTAGRAM + " New post!\n"
+        "{author} just shared a new post on {platform}.\n"
+        "{url}\n"
+        "-# <t:{timestamp}:R>"
+    ),
+}
 
 
 def is_realtime(platform: str) -> bool:
@@ -78,6 +149,31 @@ def is_realtime(platform: str) -> bool:
 
 def is_platform_disabled(platform: str) -> bool:
     return PLATFORMS.get(platform, {}).get("disabled", False)
+
+
+def platform_color(platform: str) -> int:
+    """Brand colour used as the notification accent for a platform."""
+    return PLATFORMS.get(platform, {}).get("color", 0x5865F2)
+
+
+def supports_avatar(platform: str) -> bool:
+    """Whether the platform exposes an author avatar (pp as a thumbnail)."""
+    return PLATFORMS.get(platform, {}).get("avatar", False)
+
+
+def supports_media(platform: str) -> bool:
+    """Whether the platform exposes a large preview/cover (media gallery)."""
+    return PLATFORMS.get(platform, {}).get("media", False)
+
+
+def get_default_message(platform: str) -> str:
+    """Pre-filled message template shown when a subscription has none."""
+    return DEFAULT_MESSAGES.get(platform, DEFAULT_MESSAGES["rss"])
+
+
+def platform_placeholders(platform: str) -> List[str]:
+    """Placeholders advertised in the customization modal for a platform."""
+    return PLATFORM_PLACEHOLDERS.get(platform, ["{title}", "{url}", "{platform}", "{timestamp}"])
 
 
 def desired_poll_interval(platform: str, is_premium: bool) -> Optional[int]:
@@ -115,15 +211,30 @@ class SocialNotificationsModule(ModuleBase):
 # --------------------------------------------------------------------------- #
 # Notification rendering (Components V2)
 # --------------------------------------------------------------------------- #
+def _resolve_timestamp(event: Dict[str, Any]) -> int:
+    """Best-effort unix timestamp (seconds) for the ``{timestamp}`` placeholder.
+
+    Falls back to the dispatch time when the event carries no usable date.
+    """
+    for key in ("timestamp", "published_at", "published", "created_at"):
+        value = event.get(key)
+        if isinstance(value, (int, float)):
+            return int(value)
+        if isinstance(value, str) and value.isdigit():
+            return int(value)
+    return int(time.time())
+
+
 def _format_message_template(template: str, event: Dict[str, Any]) -> str:
-    """Substitute supported placeholders inside a custom message template."""
-    url = event.get("url", "")
+    """Substitute supported placeholders inside a message template."""
+    url = event.get("url", "") or ""
     replacements = {
-        "{author}": event.get("author_name", ""),
-        "{title}": event.get("title", ""),
+        "{author}": event.get("author_name", "") or "",
+        "{title}": event.get("title", "") or "",
         "{url}": url,
         "{link}": url,
-        "{platform}": event.get("platform", "").capitalize(),
+        "{platform}": (event.get("platform", "") or "").capitalize(),
+        "{timestamp}": str(_resolve_timestamp(event)),
     }
     for key, value in replacements.items():
         template = template.replace(key, str(value))
@@ -137,84 +248,62 @@ def build_notification_view(
 ) -> tuple[ui.LayoutView, discord.AllowedMentions]:
     """Build the Components V2 notification message for one guild.
 
-    Returns ``(view, allowed_mentions)``. Optional event fields are accessed
-    with ``.get()`` (they may be omitted by the service).
+    The container holds **only** the user's message (their custom template or
+    the platform default) — no extra bot-authored text. Optional visuals:
+      - the author avatar as a Section thumbnail (if enabled + available),
+      - a large media preview as a MediaGallery (if enabled + available).
+
+    Role mentions are placed **outside** the container, above it. The accent
+    colour is the subscription's ``embed_color`` or the platform default.
+
+    Returns ``(view, allowed_mentions)``.
     """
     platform = event.get("platform", "")
-    etype = event.get("type") or "default"
-    meta = PLATFORMS.get(platform, {})
-    emoji = get_platform_emoji(platform)
 
-    author = event.get("author_name") or subscription.get("display_name") or platform.capitalize()
-    title = event.get("title")
-    content = event.get("content")
-    url = event.get("url")
-    thumbnail = event.get("thumbnail")
+    media = event.get("thumbnail")
     avatar = event.get("author_avatar") or subscription.get("avatar_url")
 
-    type_label = t(f"modules.social_notifications.notify.type.{etype}", locale=locale)
-    if type_label.startswith("["):  # missing key -> fallback
-        type_label = t("modules.social_notifications.notify.type.default", locale=locale)
+    # Message: user's custom template, or the platform default. This is the
+    # ONLY text rendered in the notification.
+    template = subscription.get("message") or get_default_message(platform)
+    text = _format_message_template(template, event).strip()
 
-    container = ui.Container(accent_colour=discord.Colour(meta.get("color", 0x5865F2)))
+    color_int = subscription.get("embed_color")
+    if color_int is None:
+        color_int = platform_color(platform)
 
-    # 1. Role mentions (must live inside the container to ping in a LayoutView).
+    show_avatar = bool(
+        subscription.get("show_avatar", True) and supports_avatar(platform) and avatar
+    )
+    show_media = bool(
+        subscription.get("show_media", True) and supports_media(platform) and media
+    )
+
+    view = ui.LayoutView(timeout=None)
+
+    # 1. Role mentions — OUTSIDE the container, above it.
     role_ids = subscription.get("mention_role_ids") or []
     if role_ids:
         mentions = " ".join(f"<@&{rid}>" for rid in role_ids)
-        container.add_item(ui.TextDisplay(mentions))
+        view.add_item(ui.TextDisplay(mentions))
 
-    # 2. Header: platform emoji + event type.
-    container.add_item(ui.TextDisplay(f"### {emoji} {type_label}"))
+    container = ui.Container(accent_colour=discord.Colour(color_int))
 
-    # 3. Caption: custom message template, or a sensible default.
-    custom = subscription.get("message")
-    if custom:
-        caption = _format_message_template(custom, event)
-    else:
-        caption = t(
-            "modules.social_notifications.notify.default_caption",
-            locale=locale,
-            author=author,
-        )
-    if caption:
-        container.add_item(ui.TextDisplay(caption))
+    # 2. The message. With the avatar as a Section thumbnail (top, beside the
+    #    text — same integration pattern as /user) when enabled.
+    if text:
+        if show_avatar:
+            container.add_item(
+                ui.Section(ui.TextDisplay(text), accessory=ui.Thumbnail(media=avatar))
+            )
+        else:
+            container.add_item(ui.TextDisplay(text))
 
-    # 4. Author + title, with the author avatar as a thumbnail accessory.
-    title_line = f"[**{discord.utils.escape_markdown(title)}**]({url})" if title and url else (
-        f"**{discord.utils.escape_markdown(title)}**" if title else ""
-    )
-    section_texts = [ui.TextDisplay(f"-# {discord.utils.escape_markdown(author)}")]
-    if title_line:
-        section_texts.append(ui.TextDisplay(title_line))
-    if avatar:
-        container.add_item(ui.Section(*section_texts, accessory=ui.Thumbnail(media=avatar)))
-    else:
-        for item in section_texts:
-            container.add_item(item)
+    # 3. Large media preview (video/stream cover) at the bottom.
+    if show_media:
+        container.add_item(ui.MediaGallery(discord.MediaGalleryItem(media=media)))
 
-    # 5. Content preview.
-    if content:
-        preview = content.strip()
-        if len(preview) > MAX_CONTENT_PREVIEW:
-            preview = preview[:MAX_CONTENT_PREVIEW].rstrip() + "…"
-        container.add_item(ui.TextDisplay(preview))
-
-    # 6. Large media (thumbnail/cover).
-    if thumbnail:
-        container.add_item(ui.MediaGallery(discord.MediaGalleryItem(media=thumbnail)))
-
-    view = ui.LayoutView(timeout=None)
     view.add_item(container)
-
-    # 7. Link button (open the post on the platform).
-    if url:
-        open_label = t(f"modules.social_notifications.notify.open.{etype}", locale=locale)
-        if open_label.startswith("["):
-            open_label = t("modules.social_notifications.notify.open.default", locale=locale)
-        row = ui.ActionRow()
-        row.add_item(ui.Button(label=open_label, style=discord.ButtonStyle.link, url=url))
-        view.add_item(row)
 
     allowed = discord.AllowedMentions(everyone=False, users=False, roles=bool(role_ids))
     return view, allowed
