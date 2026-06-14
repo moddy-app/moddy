@@ -92,6 +92,14 @@ one for free guilds.
 | bluesky | realtime | realtime | interval ignored |
 
 - Premium status = guild attribute `PREMIUM`.
+- **Per-platform quota:** a guild may follow **1 account per platform** (free) or
+  **5 per platform** (premium) — `modules/social_notifications.py::platform_subscription_limit`.
+  Enforced in `cogs/social_notifications.py::add_subscription` (re-adding an
+  already-followed target is an update and is always allowed; a *new* target over
+  the cap is rejected with error `limit_reached_free` / `limit_reached_premium`
+  and the just-issued service subscription is reconciled). A backend writing the
+  table directly (Option B) MUST enforce the same cap. **Keep these numbers in
+  sync with the backend.**
 - Bluesky is realtime: the bot omits `poll_interval` on subscribe.
 - **Shared target:** on partial unsubscribe (one guild drops a still-followed
   target), the bot sends the smallest remaining `poll_interval` so the target is

@@ -93,6 +93,17 @@ PLATFORM_PLACEHOLDERS: Dict[str, List[str]] = {
 
 MAX_MESSAGE_LENGTH = 1500
 
+# Per-platform subscription quota: how many distinct accounts a guild may follow
+# on a single platform. Premium guilds get a higher cap.
+# >>> KEEP IN SYNC WITH THE BACKEND <<<
+FREE_PER_PLATFORM_LIMIT = 1
+PREMIUM_PER_PLATFORM_LIMIT = 5
+
+
+def platform_subscription_limit(is_premium: bool) -> int:
+    """Max accounts a guild may follow per platform (premium vs free)."""
+    return PREMIUM_PER_PLATFORM_LIMIT if is_premium else FREE_PER_PLATFORM_LIMIT
+
 
 # Default message templates (English). The title is part of the message itself
 # (``##`` heading with the platform emoji) so the whole notification is fully

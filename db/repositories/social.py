@@ -218,6 +218,22 @@ class SocialSubscriptionsRepository:
             logger.error(f"[ERROR] count_social_subscriptions failed: {e}", exc_info=True)
             return 0
 
+    async def count_platform_subscriptions(self, guild_id: int, platform: str) -> int:
+        """Count how many accounts a guild follows on a given platform (quota)."""
+        try:
+            async with self.pool.acquire() as conn:
+                count = await conn.fetchval(
+                    """
+                    SELECT COUNT(*) FROM social_subscriptions
+                    WHERE guild_id = $1 AND platform = $2
+                    """,
+                    guild_id, platform,
+                )
+            return count or 0
+        except Exception as e:
+            logger.error(f"[ERROR] count_platform_subscriptions failed: {e}", exc_info=True)
+            return 0
+
     async def get_target_followers(self, platform: str, target_id: str) -> List[Dict[str, Any]]:
         """All *enabled* subscriptions following a target — used to dispatch an event."""
         try:

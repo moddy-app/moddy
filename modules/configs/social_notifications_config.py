@@ -34,6 +34,7 @@ from modules.social_notifications import (
     SUPPORTED_PLATFORMS,
     MAX_MESSAGE_LENGTH,
     is_platform_disabled,
+    platform_subscription_limit,
     supports_avatar,
     supports_media,
     platform_color,
@@ -430,8 +431,14 @@ class SocialNotificationsConfigView(BaseView):
     async def on_add(self, interaction: discord.Interaction):
         if not await _check_perms(interaction):
             return
+        bot = interaction.client
         locale = i18n.get_user_locale(interaction)
-        add_view = AddSubscriptionView(interaction.client, interaction.guild_id, locale)
+        is_premium = False
+        try:
+            is_premium = await bot.db.has_attribute('guild', interaction.guild_id, 'PREMIUM')
+        except Exception:
+            pass
+        add_view = AddSubscriptionView(bot, interaction.guild_id, locale, is_premium)
         await interaction.response.edit_message(view=add_view)
 
     async def on_manage_select(self, interaction: discord.Interaction):
@@ -471,11 +478,13 @@ class SocialNotificationsConfigView(BaseView):
 class AddSubscriptionView(BaseView):
     """Guided flow to add a new subscription. Auth: Manage Server."""
 
-    def __init__(self, bot=None, guild_id: Optional[int] = None, locale: str = "en-US"):
+    def __init__(self, bot=None, guild_id: Optional[int] = None, locale: str = "en-US",
+                 is_premium: bool = False):
         super().__init__()  # timeout=None
         self.bot = bot
         self.guild_id = guild_id
         self.locale = locale
+        self.is_premium = is_premium
 
         self.platform: Optional[str] = None
         self.channel_id: Optional[int] = None
@@ -510,9 +519,12 @@ class AddSubscriptionView(BaseView):
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
         # 1. Platform.
+        limit = platform_subscription_limit(self.is_premium)
+        limit_key = 'add.limit_premium' if self.is_premium else 'add.limit_free'
         container.add_item(ui.TextDisplay(
             f"**{t('modules.social_notifications.add.platform.title', locale=self.locale)}**{REQUIRED_FIELDS}\n"
-            f"-# {t('modules.social_notifications.add.platform.description', locale=self.locale)}"
+            f"-# {t('modules.social_notifications.add.platform.description', locale=self.locale)}\n"
+            f"-# {t(f'modules.social_notifications.{limit_key}', locale=self.locale, max=limit)}"
         ))
         platform_row = ui.ActionRow()
         platform_options = []

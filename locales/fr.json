@@ -1006,6 +1006,8 @@
         "title": "Ajouter un abonnement",
         "description": "Choisissez une plateforme, un salon, des rôles à mentionner (optionnel) et le compte à suivre.",
         "soon": "bientôt",
+        "limit_free": "Les serveurs gratuits peuvent suivre {max} compte par plateforme — passez Premium pour en suivre 5.",
+        "limit_premium": "Premium : jusqu'à {max} comptes par plateforme.",
         "platform": {
           "title": "Plateforme",
           "description": "La plateforme sociale à suivre.",
@@ -1099,6 +1101,8 @@
         "timeout": "<:error:1444049460924776478> Le service de notifications a mis trop de temps à répondre. Réessayez.",
         "service_unavailable": "<:error:1444049460924776478> Le service de notifications est actuellement indisponible. Réessayez plus tard.",
         "no_permission": "<:error:1444049460924776478> Vous avez besoin de la permission **Gérer le serveur** pour configurer ceci.",
+        "limit_reached_free": "<:warning:1446108410092195902> Les serveurs gratuits ne peuvent suivre qu'**1 compte par plateforme**. Retirez-en un ou passez Premium pour en suivre jusqu'à 5.",
+        "limit_reached_premium": "<:warning:1446108410092195902> Vous avez atteint le maximum de **5 comptes par plateforme** pour ce serveur.",
         "internal_error": "<:error:1444049460924776478> Une erreur est survenue. Réessayez."
       }
     }

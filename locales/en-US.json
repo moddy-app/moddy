@@ -1007,6 +1007,8 @@
         "title": "Add a subscription",
         "description": "Choose a platform, a channel, optional roles to ping, and the account to follow.",
         "soon": "soon",
+        "limit_free": "Free servers can follow {max} account per platform — upgrade to Premium for 5.",
+        "limit_premium": "Premium: up to {max} accounts per platform.",
         "platform": {
           "title": "Platform",
           "description": "The social platform to follow.",
@@ -1100,6 +1102,8 @@
         "timeout": "<:error:1444049460924776478> The notification service took too long to respond. Please try again.",
         "service_unavailable": "<:error:1444049460924776478> The notification service is currently unavailable. Please try again later.",
         "no_permission": "<:error:1444049460924776478> You need the **Manage Server** permission to configure this.",
+        "limit_reached_free": "<:warning:1446108410092195902> Free servers can follow only **1 account per platform**. Remove one or upgrade to Premium to follow up to 5.",
+        "limit_reached_premium": "<:warning:1446108410092195902> You've reached the maximum of **5 accounts per platform** for this server.",
         "internal_error": "<:error:1444049460924776478> Something went wrong. Please try again."
       }
     }

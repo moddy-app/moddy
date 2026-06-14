@@ -23,6 +23,7 @@ from services.feeds_client import FeedsClient
 from modules.social_notifications import (
     build_notification_view,
     desired_poll_interval,
+    platform_subscription_limit,
 )
 
 logger = logging.getLogger('moddy.cogs.social_notifications')
@@ -79,6 +80,12 @@ class SocialNotifications(commands.Cog):
         except Exception:
             pass
 
+        # Per-platform quota (free vs premium). Measured BEFORE resolving so we
+        # can short-circuit; the "update an already-followed target" case is
+        # allowed below even when at the cap.
+        limit = platform_subscription_limit(is_premium)
+        existing_count = await self.bot.db.count_platform_subscriptions(guild.id, platform)
+
         poll = desired_poll_interval(platform, is_premium)
         reply = await self.feeds.subscribe(platform, identifier, poll)
 
@@ -88,6 +95,16 @@ class SocialNotifications(commands.Cog):
         target_id = reply.get("target_id")
         if not target_id:
             return False, {"ok": False, "error": "internal_error"}
+
+        # Enforce the quota. Re-adding a target the guild already follows is an
+        # update (always allowed); a *new* target over the cap is rejected — and
+        # we reconcile so the just-issued service subscription isn't orphaned.
+        if existing_count >= limit:
+            already = await self.bot.db.get_social_subscription(guild.id, platform, target_id)
+            if not already:
+                await self._reconcile_target(platform, target_id)
+                code = "limit_reached_premium" if is_premium else "limit_reached_free"
+                return False, {"ok": False, "error": code, "limit": limit}
 
         await self.bot.db.add_social_subscription(
             guild_id=guild.id,
