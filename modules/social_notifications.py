@@ -64,6 +64,16 @@ PLATFORMS: Dict[str, Dict[str, Any]] = {
 # Order shown in the platform picker.
 SUPPORTED_PLATFORMS: List[str] = ["youtube", "twitch", "bluesky", "rss", "instagram"]
 
+# Maps a platform to the i18n ``notify.open.<type>`` label used on the link
+# button under the notification (e.g. youtube -> "Watch", rss -> "Read article").
+PLATFORM_OPEN_TYPE: Dict[str, str] = {
+    "youtube": "video",
+    "twitch": "live",
+    "bluesky": "post",
+    "rss": "article",
+    "instagram": "post",
+}
+
 # Requested poll interval (seconds) per platform, by tier.
 # premium = fastest the platform allows; free = slower but still reasonable.
 # Realtime platforms (bluesky) are omitted — interval is ignored by the service.
@@ -260,6 +270,7 @@ def build_notification_view(
     """
     platform = event.get("platform", "")
 
+    url = event.get("url")
     media = event.get("thumbnail")
     avatar = event.get("author_avatar") or subscription.get("avatar_url")
 
@@ -304,6 +315,17 @@ def build_notification_view(
         container.add_item(ui.MediaGallery(discord.MediaGalleryItem(media=media)))
 
     view.add_item(container)
+
+    # 4. Link button under the container — always present when we have a URL,
+    #    with a platform-adapted label (reuses the notify.open.* labels).
+    if url:
+        open_type = PLATFORM_OPEN_TYPE.get(platform, "default")
+        open_label = t(f"modules.social_notifications.notify.open.{open_type}", locale=locale)
+        if open_label.startswith("["):  # missing key -> fallback
+            open_label = t("modules.social_notifications.notify.open.default", locale=locale)
+        row = ui.ActionRow()
+        row.add_item(ui.Button(label=open_label, style=discord.ButtonStyle.link, url=url))
+        view.add_item(row)
 
     allowed = discord.AllowedMentions(everyone=False, users=False, roles=bool(role_ids))
     return view, allowed
