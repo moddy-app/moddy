@@ -148,7 +148,10 @@ When the bot posts a notification it builds (Components V2):
      `TextDisplay`;
    - a `MediaGallery` with the large media when `show_media` is on and media
      exists.
-3. **No other text.** No buttons.
+3. **No other text** inside the container.
+4. A single **link `Button` below the container** (when the event has a URL),
+   labelled per platform (youtube=Watch, twitch=Watch live, bluesky/instagram=
+   View post, rss=Read article — the `notify.open.*` i18n labels).
 
 Platform brand colours (defaults): youtube `#FF0000`, twitch `#9146FF`,
 bluesky `#1185FE`, rss `#EE802F`, instagram `#E1306C`.
