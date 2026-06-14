@@ -130,14 +130,50 @@ to do anything for the bot to work. Optional backend integrations:
 
 ---
 
-## 6. Backend write-path (managing subscriptions directly)
+## 6. Backend integration
 
-The `social_subscriptions` table is shared bot ⇄ backend. **Whoever writes a row
-is responsible for issuing the matching Redis command** — the bot does NOT
-reconcile rows written by the backend. The bot does **not cache** this table
-(it re-reads on every event and every `/config` open), so backend writes are
-picked up immediately for dispatch; no Pub/Sub invalidation is needed for the
-table itself.
+There are two ways for the backend to create/edit subscriptions. **Option A
+(delegation) is recommended** — it avoids duplicating any logic.
+
+### Option A — Delegate to the bot via `moddy:tasks` (recommended)
+
+The backend pushes a task on the existing `moddy:tasks` stream and the bot does
+everything (resolve via the service, write the DB row, reconcile on remove). The
+backend never touches Redis `feeds:*` nor the `social_subscriptions` table.
+
+Task message (`XADD moddy:tasks type=<...> guild_id=<id> payload=<json>`):
+
+| `type` | `payload` |
+|---|---|
+| `social_subscribe` | `{request_id?, platform, identifier, channel_id, role_ids?, message?, created_by?}` |
+| `social_unsubscribe` / `social_remove` | `{request_id?, platform, target_id}` |
+| `social_update` | `{request_id?, platform, target_id, channel_id?, message?, mention_role_ids?, enabled?}` (DB-only) |
+
+The bot publishes the **result** back on the `moddy:dashboard` Pub/Sub channel,
+correlated by `request_id`:
+
+```json
+{ "type": "social_subscribe_result", "request_id": "…", "guild_id": 123,
+  "ok": true, "platform": "youtube", "target_id": "UC…",
+  "display_name": "MrBeast", "avatar_url": "https://…" }
+```
+On failure: `{ "ok": false, "error": "<code>" }` (service error codes from §2, plus
+`guild_not_found`, `missing_fields`, `module_unavailable`, `unknown_action`,
+`internal_error`). Handled in `bot.py::_process_social_task` →
+`cogs/social_notifications.py::SocialNotifications.handle_backend_task`.
+
+> With Option A the backend has **zero** duplicated logic: poll-interval policy,
+> canonical resolution and reconcile all stay in the bot.
+
+### Option B — Write the table directly
+
+Only if you deliberately want the backend to own the write. Then it must mirror
+everything below. The `social_subscriptions` table is shared bot ⇄ backend.
+**Whoever writes a row is responsible for issuing the matching Redis command** —
+the bot does NOT reconcile rows written by the backend. The bot does **not
+cache** this table (it re-reads on every event and every `/config` open), so
+backend writes are picked up immediately for dispatch; no Pub/Sub invalidation
+is needed for the table itself.
 
 ### Column semantics (writer contract)
 

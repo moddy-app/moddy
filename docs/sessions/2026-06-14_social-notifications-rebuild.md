@@ -46,6 +46,17 @@ over shared Redis (replacing the old YouTube-only WebSub implementation).
   platform's fastest allowed, free = slower but reasonable. Values documented in
   SOCIAL_NOTIFICATIONS.md and `POLL_INTERVALS` — to be mirrored in the backend.
 
+## Addendum — backend delegation via `moddy:tasks`
+
+To avoid the backend duplicating the subscribe/DB logic, the bot now accepts
+delegated actions on the existing `moddy:tasks` stream:
+`social_subscribe` / `social_unsubscribe` / `social_remove` / `social_update`.
+`bot.py::_process_social_task` routes them to
+`SocialNotifications.handle_backend_task(...)` and publishes the result back on
+`moddy:dashboard` (correlated by `request_id`). The backend never touches the
+`feeds:*` streams or the table in this mode. Documented in
+SOCIAL_NOTIFICATIONS.md §6 (Option A).
+
 ## Known follow-ups
 - **Platform emojis are placeholders** (`utils/emojis.py`: `YOUTUBE`, `TWITCH`,
   `BLUESKY`, `RSS`, `INSTAGRAM`, `SOCIAL`). Replace the ids with the real custom

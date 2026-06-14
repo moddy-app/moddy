@@ -554,8 +554,41 @@ class ModdyBot(commands.Bot):
                         await guild.system_channel.send(message_text)
                     except Exception as e:
                         logger.warning(f"[Stream] Could not send announcement to {guild.id}: {e}")
+
+        elif task_type in ("social_subscribe", "social_unsubscribe", "social_remove", "social_update"):
+            # Social Notifications: the backend delegates subscription actions to
+            # the bot so the subscribe/DB logic lives in a single place.
+            await self._process_social_task(task_type, guild_id, payload)
+
         else:
             logger.warning(f"[Stream] Unknown task type: {task_type}")
+
+    async def _process_social_task(self, task_type: str, guild_id: int, payload: dict):
+        """Run a Social Notifications action requested by the backend and
+        publish the result back on the `moddy:dashboard` Pub/Sub channel,
+        correlated by the optional `request_id` from the payload."""
+        import json
+        action = task_type.replace("social_", "")  # subscribe|unsubscribe|remove|update
+        cog = self.get_cog("SocialNotifications")
+        if not cog:
+            result = {"ok": False, "error": "module_unavailable"}
+        else:
+            try:
+                result = await cog.handle_backend_task(action, guild_id, payload)
+            except Exception as e:
+                logger.error(f"[Stream] Social task '{task_type}' failed: {e}", exc_info=True)
+                result = {"ok": False, "error": "internal_error"}
+
+        if self.redis:
+            try:
+                await self.redis.publish("moddy:dashboard", json.dumps({
+                    "type": f"{task_type}_result",
+                    "request_id": payload.get("request_id"),
+                    "guild_id": guild_id,
+                    **result,
+                }))
+            except Exception as e:
+                logger.error(f"[Stream] Could not publish social task result: {e}")
 
     async def setup_hook(self):
         """Called once on bot startup"""

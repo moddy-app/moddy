@@ -127,6 +127,72 @@ class SocialNotifications(commands.Cog):
             min_interval = REALTIME_KEEP_INTERVAL
         await self.feeds.unsubscribe(platform, target_id, poll_interval=min_interval)
 
+    async def handle_backend_task(self, action: str, guild_id: int, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute a subscription action requested by the backend (moddy:tasks).
+
+        Centralises the contract so the backend never has to duplicate the
+        subscribe/DB logic — it just pushes a task. Returns a result dict that
+        the bot relays on `moddy:dashboard` (correlated by ``request_id``).
+
+        Supported actions / payload fields:
+          - ``subscribe``:   platform, identifier, channel_id, role_ids?, message?, created_by?
+          - ``unsubscribe`` / ``remove``: platform, target_id
+          - ``update``:      platform, target_id, + any of channel_id, message,
+                             mention_role_ids, enabled (DB-only)
+        """
+        platform = payload.get("platform")
+
+        if action == "subscribe":
+            guild = self.bot.get_guild(guild_id)
+            if not guild:
+                return {"ok": False, "error": "guild_not_found"}
+            if not platform or not payload.get("identifier") or not payload.get("channel_id"):
+                return {"ok": False, "error": "missing_fields"}
+            ok, reply = await self.add_subscription(
+                guild=guild,
+                platform=platform,
+                identifier=str(payload["identifier"]),
+                channel_id=int(payload["channel_id"]),
+                role_ids=[int(r) for r in payload.get("role_ids", [])],
+                message=payload.get("message"),
+                created_by=payload.get("created_by"),
+            )
+            return {
+                "ok": ok,
+                "platform": platform,
+                "target_id": reply.get("target_id"),
+                "display_name": reply.get("display_name"),
+                "avatar_url": reply.get("avatar_url"),
+                "error": reply.get("error"),
+            }
+
+        if action in ("unsubscribe", "remove"):
+            target_id = payload.get("target_id")
+            if not platform or not target_id:
+                return {"ok": False, "error": "missing_fields"}
+            await self.remove_subscription(guild_id, platform, str(target_id))
+            return {"ok": True, "removed": True, "platform": platform, "target_id": target_id}
+
+        if action == "update":
+            target_id = payload.get("target_id")
+            if not platform or not target_id:
+                return {"ok": False, "error": "missing_fields"}
+            fields: Dict[str, Any] = {}
+            if "channel_id" in payload and payload["channel_id"] is not None:
+                fields["channel_id"] = int(payload["channel_id"])
+            if "message" in payload:
+                fields["message"] = payload["message"]
+            if "mention_role_ids" in payload:
+                fields["mention_role_ids"] = [int(r) for r in payload["mention_role_ids"]]
+            if "enabled" in payload:
+                fields["enabled"] = bool(payload["enabled"])
+            if not fields:
+                return {"ok": False, "error": "missing_fields"}
+            ok = await self.bot.db.update_social_subscription(guild_id, platform, str(target_id), **fields)
+            return {"ok": ok, "platform": platform, "target_id": target_id}
+
+        return {"ok": False, "error": "unknown_action"}
+
     # ------------------------------------------------------------------ #
     # Dispatch
     # ------------------------------------------------------------------ #
