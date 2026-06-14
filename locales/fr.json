@@ -970,6 +970,38 @@
         "add": "Ajouter",
         "confirm": "Confirmer"
       },
+      "account": {
+        "modal_title": "Compte à suivre",
+        "label": "Compte",
+        "description": "Pseudo, identifiant, URL de chaîne ou de flux — selon la plateforme.",
+        "placeholder": "@pseudo, URL de chaîne, URL de flux RSS…",
+        "title": "Compte à suivre",
+        "section_description": "Le compte dont le nouveau contenu déclenche les notifications.",
+        "current": "Actuel :",
+        "not_set": "*non défini*",
+        "button": "Définir le compte"
+      },
+      "customize": {
+        "modal_title": "Personnaliser le message",
+        "title": "Message",
+        "section_description": "Le message de notification complet, titre inclus.",
+        "message_label": "Message",
+        "message_description": "Texte complet — incluez le titre avec ##, # ou ###.",
+        "color_label": "Couleur d'accent (hex)",
+        "color_description": "Comme #FF0000. Laissez vide pour la couleur de la plateforme.",
+        "display_label": "Options d'affichage",
+        "option_avatar": "Afficher la photo de profil en miniature",
+        "option_media": "Afficher l'aperçu média",
+        "placeholders_header": "Variables disponibles :",
+        "ph_author": "Auteur",
+        "ph_title": "Titre",
+        "ph_platform": "Plateforme",
+        "ph_url": "Lien",
+        "ph_timestamp": "Date — ex. <t:{timestamp}:R>",
+        "button": "Personnaliser le message",
+        "default_state": "Message par défaut utilisé",
+        "custom_state": "Message personnalisé défini"
+      },
       "add": {
         "title": "Ajouter un abonnement",
         "description": "Choisissez une plateforme, un salon, des rôles à mentionner (optionnel) et le compte à suivre.",
@@ -1066,6 +1098,7 @@
         "twitch_auth_failed": "<:error:1444049460924776478> L'authentification Twitch a échoué. Contactez le support.",
         "timeout": "<:error:1444049460924776478> Le service de notifications a mis trop de temps à répondre. Réessayez.",
         "service_unavailable": "<:error:1444049460924776478> Le service de notifications est actuellement indisponible. Réessayez plus tard.",
+        "no_permission": "<:error:1444049460924776478> Vous avez besoin de la permission **Gérer le serveur** pour configurer ceci.",
         "internal_error": "<:error:1444049460924776478> Une erreur est survenue. Réessayez."
       }
     }

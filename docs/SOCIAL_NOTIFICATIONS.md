@@ -31,11 +31,18 @@ does not. The module still appears in `/config` via a thin `ModuleBase` shell.
 ```
 id, guild_id, platform, target_id (CANONICAL), identifier (raw input),
 display_name, avatar_url, channel_id, message (custom template, nullable),
+embed_color INTEGER (accent colour, nullable = platform default),
+show_avatar BOOLEAN (author pp as thumbnail), show_media BOOLEAN (large preview),
 mention_role_ids BIGINT[], poll_interval, enabled, created_by, timestamps
 UNIQUE (guild_id, platform, target_id)
 INDEX (platform, target_id)   -- dispatch
 INDEX (guild_id)              -- config panel
 ```
+
+> **Schema update (2026-06-14):** `embed_color`, `show_avatar`, `show_media`
+> were added for the fully-customizable notification message. The bot creates
+> them via `ADD COLUMN IF NOT EXISTS`; a backend writing the table directly
+> (Option B) must mirror them.
 
 We always store the **canonical** `target_id` returned by the service, never
 the raw user input.
@@ -145,9 +152,9 @@ Task message (`XADD moddy:tasks type=<...> guild_id=<id> payload=<json>`):
 
 | `type` | `payload` |
 |---|---|
-| `social_subscribe` | `{request_id?, platform, identifier, channel_id, role_ids?, message?, created_by?}` |
+| `social_subscribe` | `{request_id?, platform, identifier, channel_id, role_ids?, message?, embed_color?, show_avatar?, show_media?, created_by?}` |
 | `social_unsubscribe` / `social_remove` | `{request_id?, platform, target_id}` |
-| `social_update` | `{request_id?, platform, target_id, channel_id?, message?, mention_role_ids?, enabled?}` (DB-only) |
+| `social_update` | `{request_id?, platform, target_id, channel_id?, message?, embed_color?, show_avatar?, show_media?, mention_role_ids?, enabled?}` (DB-only) |
 
 The bot publishes the **result** back on the `moddy:dashboard` Pub/Sub channel,
 correlated by `request_id`:
@@ -184,8 +191,11 @@ is needed for the table itself.
 | `identifier` | raw user input (display / fallback only) |
 | `display_name`, `avatar_url` | from the service reply (optional) |
 | `channel_id` | target Discord text/announcement channel (required) |
-| `message` | custom template ≤ 1500 chars, `NULL` = localized default. Placeholders: `{author}` `{title}` `{url}`/`{link}` `{platform}` |
-| `mention_role_ids` | `BIGINT[]` roles to ping (`{}` = none) |
+| `message` | custom template ≤ 1500 chars **including the title** (markdown `##`/`#`/`###`), `NULL` = platform default template. Placeholders: `{author}` `{title}` `{url}`/`{link}` `{platform}` `{timestamp}` (some are empty on platforms that don't expose them) |
+| `embed_color` | `INTEGER` accent colour (the container's left bar). `NULL` = platform brand colour |
+| `show_avatar` | `BOOLEAN` — render the author pp as a Section thumbnail (ignored where the platform has no avatar) |
+| `show_media` | `BOOLEAN` — render the large media/cover as a MediaGallery (ignored where the platform has no media) |
+| `mention_role_ids` | `BIGINT[]` roles to ping (`{}` = none). Rendered **outside** the container, above it |
 | `poll_interval` | the interval **this guild requested** (premium vs free, §3); `NULL` for realtime/default. Used by `MIN()` on unsubscribe |
 | `enabled` | `false` = paused (dispatch skips it, target stays subscribed) |
 
@@ -247,5 +257,18 @@ deletes a guild's data, it must run flow C for each `(platform, target_id)` too.
 
 ## 7. Custom message placeholders
 
-A subscription's optional custom message supports: `{author}`, `{title}`,
-`{url}` / `{link}`, `{platform}`. Empty ⇒ a localized default caption is used.
+A subscription's message is **fully customizable** and contains the title itself
+(markdown heading). When `message` is `NULL`, a **per-platform default template**
+is used (`modules/social_notifications.py::DEFAULT_MESSAGES`) — title in `##`
+with the platform emoji, English copy.
+
+Supported placeholders: `{author}`, `{title}`, `{url}` / `{link}`, `{platform}`,
+`{timestamp}`. `{timestamp}` is a unix epoch (from the event, falling back to
+dispatch time) meant to be wrapped by the user as `<t:{timestamp}:R>`. Some
+placeholders are empty on platforms that don't expose them (e.g. no `{title}` on
+Bluesky, no `{author}` on RSS) — `modules/social_notifications.py::PLATFORM_PLACEHOLDERS`
+is the per-platform availability list shown in the customization modal.
+
+The notification container renders **only** the user's message (no extra
+bot-authored text). The author avatar (`show_avatar`) and the large media
+preview (`show_media`) are optional and platform-gated.

@@ -781,6 +781,9 @@ class ModdyDatabase(
                     avatar_url TEXT,
                     channel_id BIGINT NOT NULL,
                     message TEXT,
+                    embed_color INTEGER,
+                    show_avatar BOOLEAN NOT NULL DEFAULT TRUE,
+                    show_media BOOLEAN NOT NULL DEFAULT TRUE,
                     mention_role_ids BIGINT[] NOT NULL DEFAULT '{}',
                     poll_interval INTEGER,
                     enabled BOOLEAN NOT NULL DEFAULT TRUE,
@@ -789,6 +792,15 @@ class ModdyDatabase(
                     updated_at TIMESTAMPTZ DEFAULT NOW(),
                     UNIQUE (guild_id, platform, target_id)
                 )
+            """)
+
+            # Idempotent migrations so pre-existing tables gain the new
+            # message-customization columns (embed_color / show_avatar / show_media).
+            await conn.execute("""
+                ALTER TABLE social_subscriptions
+                    ADD COLUMN IF NOT EXISTS embed_color INTEGER,
+                    ADD COLUMN IF NOT EXISTS show_avatar BOOLEAN NOT NULL DEFAULT TRUE,
+                    ADD COLUMN IF NOT EXISTS show_media BOOLEAN NOT NULL DEFAULT TRUE
             """)
 
             await conn.execute("""

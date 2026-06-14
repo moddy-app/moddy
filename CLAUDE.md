@@ -188,6 +188,11 @@ moddy/
 - For expected errors: use `create_error_message()` / `create_success_message()` from `utils/components_v2.py`
 
 ### 8. Persistent Views
+- **ALWAYS make buttons and components persistent.** Every interactive component
+  (buttons, selects) MUST have a stable, namespaced `custom_id` and live on a
+  `timeout=None` view so it never dies — neither after a timeout nor after a bot
+  restart. Shipping a view whose buttons stop working after a restart is not
+  acceptable; follow the contract below.
 - `BaseView` defaults to `timeout=None` — views never expire in memory
 - To make a view survive a **bot restart**:
   1. Set `__persistent__ = True` on the class

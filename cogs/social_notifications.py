@@ -63,6 +63,9 @@ class SocialNotifications(commands.Cog):
         channel_id: int,
         role_ids: Optional[list] = None,
         message: Optional[str] = None,
+        embed_color: Optional[int] = None,
+        show_avatar: bool = True,
+        show_media: bool = True,
         created_by: Optional[int] = None,
     ) -> Tuple[bool, Dict[str, Any]]:
         """Resolve a target via the service then persist the subscription.
@@ -95,6 +98,9 @@ class SocialNotifications(commands.Cog):
             display_name=reply.get("display_name"),
             avatar_url=reply.get("avatar_url"),
             message=message,
+            embed_color=embed_color,
+            show_avatar=show_avatar,
+            show_media=show_media,
             mention_role_ids=role_ids or [],
             poll_interval=poll,
             created_by=created_by,
@@ -155,6 +161,9 @@ class SocialNotifications(commands.Cog):
                 channel_id=int(payload["channel_id"]),
                 role_ids=[int(r) for r in payload.get("role_ids", [])],
                 message=payload.get("message"),
+                embed_color=payload.get("embed_color"),
+                show_avatar=bool(payload.get("show_avatar", True)),
+                show_media=bool(payload.get("show_media", True)),
                 created_by=payload.get("created_by"),
             )
             return {
@@ -182,6 +191,12 @@ class SocialNotifications(commands.Cog):
                 fields["channel_id"] = int(payload["channel_id"])
             if "message" in payload:
                 fields["message"] = payload["message"]
+            if "embed_color" in payload:
+                fields["embed_color"] = payload["embed_color"]
+            if "show_avatar" in payload:
+                fields["show_avatar"] = bool(payload["show_avatar"])
+            if "show_media" in payload:
+                fields["show_media"] = bool(payload["show_media"])
             if "mention_role_ids" in payload:
                 fields["mention_role_ids"] = [int(r) for r in payload["mention_role_ids"]]
             if "enabled" in payload:

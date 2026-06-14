@@ -1,5 +1,6 @@
 # Core Discord.py
-discord.py==2.6.3
+# 2.7+ required for Modals V2 Checkbox / CheckboxGroup (Social Notifications).
+discord.py==2.7.1
 
 # Environment variables
 python-dotenv==1.0.1

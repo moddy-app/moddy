@@ -26,6 +26,9 @@ logger = logging.getLogger('moddy.database')
 _UPDATABLE_COLUMNS = {
     "channel_id",
     "message",
+    "embed_color",
+    "show_avatar",
+    "show_media",
     "mention_role_ids",
     "poll_interval",
     "enabled",
@@ -47,6 +50,9 @@ def _row_to_dict(row) -> Dict[str, Any]:
         "avatar_url": row["avatar_url"],
         "channel_id": row["channel_id"],
         "message": row["message"],
+        "embed_color": row["embed_color"],
+        "show_avatar": row["show_avatar"],
+        "show_media": row["show_media"],
         "mention_role_ids": list(row["mention_role_ids"] or []),
         "poll_interval": row["poll_interval"],
         "enabled": row["enabled"],
@@ -68,6 +74,9 @@ class SocialSubscriptionsRepository:
         display_name: Optional[str] = None,
         avatar_url: Optional[str] = None,
         message: Optional[str] = None,
+        embed_color: Optional[int] = None,
+        show_avatar: bool = True,
+        show_media: bool = True,
         mention_role_ids: Optional[List[int]] = None,
         poll_interval: Optional[int] = None,
         created_by: Optional[int] = None,
@@ -83,16 +92,20 @@ class SocialSubscriptionsRepository:
                     """
                     INSERT INTO social_subscriptions (
                         guild_id, platform, target_id, identifier, display_name,
-                        avatar_url, channel_id, message, mention_role_ids,
-                        poll_interval, enabled, created_by, created_at, updated_at
+                        avatar_url, channel_id, message, embed_color, show_avatar,
+                        show_media, mention_role_ids, poll_interval, enabled,
+                        created_by, created_at, updated_at
                     )
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, TRUE, $11, NOW(), NOW())
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, TRUE, $14, NOW(), NOW())
                     ON CONFLICT (guild_id, platform, target_id) DO UPDATE SET
                         identifier = EXCLUDED.identifier,
                         display_name = EXCLUDED.display_name,
                         avatar_url = EXCLUDED.avatar_url,
                         channel_id = EXCLUDED.channel_id,
                         message = EXCLUDED.message,
+                        embed_color = EXCLUDED.embed_color,
+                        show_avatar = EXCLUDED.show_avatar,
+                        show_media = EXCLUDED.show_media,
                         mention_role_ids = EXCLUDED.mention_role_ids,
                         poll_interval = EXCLUDED.poll_interval,
                         enabled = TRUE,
@@ -100,8 +113,8 @@ class SocialSubscriptionsRepository:
                     RETURNING *
                     """,
                     guild_id, platform, target_id, identifier, display_name,
-                    avatar_url, channel_id, message, list(mention_role_ids or []),
-                    poll_interval, created_by,
+                    avatar_url, channel_id, message, embed_color, show_avatar,
+                    show_media, list(mention_role_ids or []), poll_interval, created_by,
                 )
                 return _row_to_dict(row) if row else None
         except Exception as e:
