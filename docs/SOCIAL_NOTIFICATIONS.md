@@ -130,7 +130,86 @@ to do anything for the bot to work. Optional backend integrations:
 
 ---
 
-## 6. Custom message placeholders
+## 6. Backend write-path (managing subscriptions directly)
+
+The `social_subscriptions` table is shared bot ⇄ backend. **Whoever writes a row
+is responsible for issuing the matching Redis command** — the bot does NOT
+reconcile rows written by the backend. The bot does **not cache** this table
+(it re-reads on every event and every `/config` open), so backend writes are
+picked up immediately for dispatch; no Pub/Sub invalidation is needed for the
+table itself.
+
+### Column semantics (writer contract)
+
+| Column | Rule |
+|---|---|
+| `platform` | one of `youtube`/`twitch`/`bluesky`/`rss`/`instagram` (instagram → service returns `platform_disabled`) |
+| `target_id` | ALWAYS the **canonical** id from the service reply — never the raw user input |
+| `identifier` | raw user input (display / fallback only) |
+| `display_name`, `avatar_url` | from the service reply (optional) |
+| `channel_id` | target Discord text/announcement channel (required) |
+| `message` | custom template ≤ 1500 chars, `NULL` = localized default. Placeholders: `{author}` `{title}` `{url}`/`{link}` `{platform}` |
+| `mention_role_ids` | `BIGINT[]` roles to ping (`{}` = none) |
+| `poll_interval` | the interval **this guild requested** (premium vs free, §3); `NULL` for realtime/default. Used by `MIN()` on unsubscribe |
+| `enabled` | `false` = paused (dispatch skips it, target stays subscribed) |
+
+Uniqueness `(guild_id, platform, target_id)`: re-inserting updates the row and
+resets `enabled = TRUE`.
+
+### A. Add / update — resolve via the service FIRST
+
+1. `poll = premium ? POLL_INTERVALS[platform].premium : .free` (`NULL` for bluesky).
+2. `XADD feeds:commands {action:"subscribe", platform, identifier, poll_interval:poll?}`, await reply (`request_id`, 10 s).
+3. `ok=false` ⇒ show the error, write nothing.
+4. `ok=true` ⇒ upsert with the canonical `target_id`:
+
+```sql
+INSERT INTO social_subscriptions
+  (guild_id, platform, target_id, identifier, display_name, avatar_url,
+   channel_id, message, mention_role_ids, poll_interval, enabled, created_by,
+   created_at, updated_at)
+VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::bigint[],$10,TRUE,$11,NOW(),NOW())
+ON CONFLICT (guild_id, platform, target_id) DO UPDATE SET
+  identifier=EXCLUDED.identifier, display_name=EXCLUDED.display_name,
+  avatar_url=EXCLUDED.avatar_url, channel_id=EXCLUDED.channel_id,
+  message=EXCLUDED.message, mention_role_ids=EXCLUDED.mention_role_ids,
+  poll_interval=EXCLUDED.poll_interval, enabled=TRUE, updated_at=NOW();
+```
+
+> Store the **requested** interval (not the clamped value echoed by the service),
+> so the cross-guild `MIN()` stays correct.
+
+### B. Edit channel / roles / message / pause — DB only
+
+No Redis command (target stays subscribed). `enabled=false` to pause, `true` to resume.
+
+### C. Remove — DB then reconcile with the service
+
+```sql
+DELETE FROM social_subscriptions WHERE guild_id=$1 AND platform=$2 AND target_id=$3;
+
+SELECT COUNT(*)        FROM social_subscriptions WHERE platform=$1 AND target_id=$2;                       -- remaining
+SELECT MIN(poll_interval) FROM social_subscriptions WHERE platform=$1 AND target_id=$2
+       AND poll_interval IS NOT NULL;                                                                       -- min_interval
+```
+- `remaining = 0` ⇒ `unsubscribe` **without** `poll_interval` (service removes the target).
+- `remaining > 0` ⇒ `unsubscribe` **with** `poll_interval = min_interval` (or sentinel `60` if `NULL`). **Never omit it here**, or the target is removed for every other guild.
+
+### D. Bot/guild removal
+
+The bot already runs flow C per target on `on_guild_remove`. If the backend
+deletes a guild's data, it must run flow C for each `(platform, target_id)` too.
+
+### Pitfalls
+
+- ❌ Never store raw input in `target_id`. ❌ Never write the table without the
+  matching Redis command (except B). ❌ Never omit `poll_interval` on a *partial*
+  unsubscribe. ✅ `enabled=false` to pause without touching the service.
+  ✅ Discord ids as `BIGINT`, timestamps UTC.
+
+---
+
+## 7. Custom message placeholders
 
 A subscription's optional custom message supports: `{author}`, `{title}`,
 `{url}` / `{link}`, `{platform}`. Empty ⇒ a localized default caption is used.
