@@ -24,6 +24,7 @@ from modules.social_notifications import (
     build_notification_view,
     desired_poll_interval,
     platform_subscription_limit,
+    normalize_identifier,
 )
 
 logger = logging.getLogger('moddy.cogs.social_notifications')
@@ -74,9 +75,12 @@ class SocialNotifications(commands.Cog):
         Returns ``(ok, reply)`` where ``reply`` is the service response dict
         (on success it carries ``target_id``/``display_name``/``avatar_url``).
         """
+        # Normalize a pasted profile URL into a clean handle (idempotent).
+        identifier = normalize_identifier(platform, identifier)
+
         is_premium = False
         try:
-            is_premium = await self.bot.db.has_attribute('guild', guild.id, 'PREMIUM')
+            is_premium = await self.bot.db.is_guild_premium(guild.id)
         except Exception:
             pass
 
