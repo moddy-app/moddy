@@ -34,6 +34,7 @@ from modules.social_notifications import (
     SUPPORTED_PLATFORMS,
     MAX_MESSAGE_LENGTH,
     is_platform_disabled,
+    normalize_identifier,
     platform_subscription_limit,
     supports_avatar,
     supports_media,
@@ -314,7 +315,7 @@ class SocialNotificationsConfigView(BaseView):
         try:
             if getattr(bot, "feeds_client", None):
                 service_alive = await bot.feeds_client.is_service_alive()
-            is_premium = await bot.db.has_attribute('guild', guild_id, 'PREMIUM')
+            is_premium = await bot.db.is_guild_premium(guild_id)
         except Exception:
             pass
         return cls(bot, guild_id, user_id, locale, subscriptions, service_alive, is_premium)
@@ -435,7 +436,7 @@ class SocialNotificationsConfigView(BaseView):
         locale = i18n.get_user_locale(interaction)
         is_premium = False
         try:
-            is_premium = await bot.db.has_attribute('guild', interaction.guild_id, 'PREMIUM')
+            is_premium = await bot.db.is_guild_premium(interaction.guild_id)
         except Exception:
             pass
         add_view = AddSubscriptionView(bot, interaction.guild_id, locale, is_premium)
@@ -686,7 +687,8 @@ class AddSubscriptionView(BaseView):
         await interaction.response.send_modal(modal)
 
     async def _on_account_set(self, interaction: discord.Interaction, identifier: str):
-        self.identifier = identifier or None
+        # Turn a pasted profile URL into a clean handle right away.
+        self.identifier = normalize_identifier(self.platform or "", identifier) or None
         self._build_view()
         await interaction.response.edit_message(view=self)
 

@@ -69,3 +69,31 @@ class SubscriptionRepository:
                 str(user_id),
             )
         return [{'server_id': r['server_id'], 'added_at': r['added_at']} for r in rows]
+
+    async def is_guild_premium(self, guild_id: int) -> bool:
+        """Whether a guild is linked to an active subscription (premium).
+
+        A guild is premium when it appears in ``subscription_servers`` for a user
+        whose subscription is active (has a tier and is not expired). This is the
+        source of truth for premium — there is no per-guild ``PREMIUM`` attribute.
+        """
+        try:
+            async with self.pool.acquire() as conn:
+                val = await conn.fetchval(
+                    """
+                    SELECT EXISTS (
+                        SELECT 1
+                        FROM subscription_servers ss
+                        JOIN users u ON u.user_id = ss.user_id::bigint
+                        WHERE ss.server_id = $1
+                          AND u.subscription_tier IS NOT NULL
+                          AND (u.subscription_expires_at IS NULL
+                               OR u.subscription_expires_at > NOW())
+                    )
+                    """,
+                    str(guild_id),
+                )
+            return bool(val)
+        except Exception as e:
+            logger.error(f"[ERROR] is_guild_premium failed: {e}", exc_info=True)
+            return False

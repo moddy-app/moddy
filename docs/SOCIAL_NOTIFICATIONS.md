@@ -91,7 +91,9 @@ one for free guilds.
 | instagram (future) | **600 s** | **1800 s** | 600 / 86400 / 1800 |
 | bluesky | realtime | realtime | interval ignored |
 
-- Premium status = guild attribute `PREMIUM`.
+- **Premium status** = the guild is linked to an **active subscription**
+  (`subscription_servers` joined with `users`, via `db.is_guild_premium`). There
+  is **no** per-guild `PREMIUM` attribute — do not use one.
 - **Per-platform quota:** a guild may follow **1 account per platform** (free) or
   **5 per platform** (premium) — `modules/social_notifications.py::platform_subscription_limit`.
   Enforced in `cogs/social_notifications.py::add_subscription` (re-adding an

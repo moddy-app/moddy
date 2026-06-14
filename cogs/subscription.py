@@ -77,8 +77,13 @@ class SubscriptionView(BaseView):
             container.add_item(ui.TextDisplay(f"**Linked servers:** `{count}/5`"))
 
             if self.servers:
-                lines_srv = "\n".join(f"- `{s['server_id']}`" for s in self.servers)
-                container.add_item(ui.TextDisplay(lines_srv))
+                lines = []
+                for s in self.servers:
+                    sid = s['server_id']
+                    guild = self.bot.get_guild(int(sid)) if str(sid).isdigit() else None
+                    name = guild.name if guild else "Unknown server"
+                    lines.append(f"- **{discord.utils.escape_markdown(name)}** (`{sid}`)")
+                container.add_item(ui.TextDisplay("\n".join(lines)))
             else:
                 container.add_item(ui.TextDisplay(
                     "-# No servers are linked to your subscription."
