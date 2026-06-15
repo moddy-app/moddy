@@ -85,7 +85,7 @@ A guild may follow a limited number of **distinct accounts per platform**:
 | Tier | Accounts per platform |
 |---|---|
 | Free | **1** |
-| Premium (`PREMIUM` guild attribute) | **5** |
+| Premium (active linked subscription) | **5** |
 
 Source of truth: `modules/social_notifications.py::platform_subscription_limit`
 (`FREE_PER_PLATFORM_LIMIT = 1`, `PREMIUM_PER_PLATFORM_LIMIT = 5`).
