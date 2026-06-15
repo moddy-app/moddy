@@ -63,6 +63,19 @@ and `NULL` means the **platform default template** (no longer a localized
 caption). Backend Option A (`moddy:tasks`) passthrough fields added:
 `embed_color`, `show_avatar`, `show_media` on `social_subscribe` / `social_update`.
 
+## Addendum — fixes (same session)
+- **Premium detection fixed:** the quota used `has_attribute('guild', …, 'PREMIUM')`
+  which is never set. Premium is subscription-based — added
+  `db.is_guild_premium(guild_id)` (`subscription_servers` JOIN `users` on
+  `user_id`, active tier check) and used it everywhere (cog + config). Doc
+  corrected (no per-guild `PREMIUM` attribute).
+- **Identifier normalization:** `normalize_identifier(platform, raw)` turns a
+  pasted profile URL into a clean handle (`youtube.com/@x` → `@x`, `twitch.tv/x`
+  → `x`, `bsky.app/profile/x` → `x`; RSS kept verbatim). Applied in the account
+  modal and in `add_subscription` (idempotent, covers backend tasks).
+- **/subscription:** linked servers now show **name + (`id`)** instead of just
+  the id (`cogs/subscription.py`).
+
 ## Known follow-ups
 - Could not runtime-test the discord UI here (discord.py not installed in the
   session env); Modals V2 / Checkbox usage follows `docs/MODALS_V2.md`.

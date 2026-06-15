@@ -28,6 +28,7 @@ backend so both sides agree — see docs/SOCIAL_NOTIFICATIONS.md.
 import logging
 import time
 from typing import Any, Dict, List, Optional
+from urllib.parse import urlparse
 
 import discord
 from discord import ui
@@ -184,6 +185,59 @@ def get_default_message(platform: str) -> str:
 def platform_placeholders(platform: str) -> List[str]:
     """Placeholders advertised in the customization modal for a platform."""
     return PLATFORM_PLACEHOLDERS.get(platform, ["{title}", "{url}", "{platform}", "{timestamp}"])
+
+
+def normalize_identifier(platform: str, raw: str) -> str:
+    """Extract a clean handle/identifier from a pasted profile URL.
+
+    The user can paste a full URL (e.g. ``https://www.youtube.com/@juthing_jm``)
+    and we turn it into the canonical-ish handle (``@juthing_jm``) per platform.
+    Bare handles are returned untouched. RSS feeds are kept **verbatim** (the
+    identifier *is* the feed URL). Idempotent — safe to call more than once.
+    """
+    s = (raw or "").strip()
+    if not s or platform == "rss":
+        return s
+
+    # Parse as a URL only when it looks like one.
+    host, segments = "", []
+    if s.startswith("http://") or s.startswith("https://") or "/" in s:
+        candidate = s if s.startswith(("http://", "https://")) else "https://" + s
+        try:
+            parsed = urlparse(candidate)
+            host = (parsed.netloc or "").lower()
+            segments = [seg for seg in (parsed.path or "").split("/") if seg]
+        except Exception:
+            host, segments = "", []
+
+    if platform == "youtube":
+        if "youtu" in host and segments:
+            first = segments[0]
+            if first.startswith("@"):
+                return first
+            if first.lower() in ("channel", "c", "user") and len(segments) >= 2:
+                return segments[1]
+            return first
+        return s
+
+    if platform == "twitch":
+        if "twitch.tv" in host and segments:
+            return segments[0]
+        return s.lstrip("@")
+
+    if platform == "bluesky":
+        if "bsky" in host and segments:
+            if segments[0].lower() == "profile" and len(segments) >= 2:
+                return segments[1]
+            return segments[-1]
+        return s.lstrip("@")
+
+    if platform == "instagram":
+        if "instagram.com" in host and segments:
+            return segments[0]
+        return s.lstrip("@")
+
+    return s
 
 
 def desired_poll_interval(platform: str, is_premium: bool) -> Optional[int]:

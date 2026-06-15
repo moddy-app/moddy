@@ -85,10 +85,15 @@ A guild may follow a limited number of **distinct accounts per platform**:
 | Tier | Accounts per platform |
 |---|---|
 | Free | **1** |
-| Premium (`PREMIUM` guild attribute) | **5** |
+| Premium (active linked subscription) | **5** |
 
 Source of truth: `modules/social_notifications.py::platform_subscription_limit`
 (`FREE_PER_PLATFORM_LIMIT = 1`, `PREMIUM_PER_PLATFORM_LIMIT = 5`).
+
+**Premium detection** = the guild is linked to an active subscription, i.e. it
+appears in `subscription_servers` for a user whose `users.subscription_tier` is
+set and not expired (`db.is_guild_premium`). There is **no** per-guild `PREMIUM`
+attribute — the dashboard/backend must use the same subscription-link definition.
 
 Enforcement (bot, in `add_subscription` — also covers backend Option A tasks):
 1. Count existing rows for `(guild_id, platform)`.
@@ -157,6 +162,22 @@ Platform brand colours (defaults): youtube `#FF0000`, twitch `#9146FF`,
 bluesky `#1185FE`, rss `#EE802F`, instagram `#E1306C`.
 
 ---
+
+## 6b. Identifier normalization (NEW)
+
+`add_subscription` now runs `modules/social_notifications.py::normalize_identifier`
+on the raw input so a pasted profile URL becomes the handle before resolution:
+
+| Platform | Input | Stored `identifier` |
+|---|---|---|
+| youtube | `https://www.youtube.com/@juthing_jm` | `@juthing_jm` |
+| youtube | `youtube.com/channel/UC…` | `UC…` |
+| twitch | `https://twitch.tv/name` | `name` |
+| bluesky | `https://bsky.app/profile/h.bsky.social` | `h.bsky.social` |
+| rss | (any feed URL) | kept verbatim |
+
+Bare handles are left untouched; the function is idempotent. The dashboard should
+apply the same normalization so the displayed handle matches the bot.
 
 ## 7. Dependency
 
