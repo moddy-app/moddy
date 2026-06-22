@@ -103,6 +103,8 @@ class TeamCommands(StaffCommandsCog):
             await self.handle_user_command(message, args)
         elif command_name == "server":
             await self.handle_server_command(message, args)
+        elif command_name == "subscription":
+            await self.handle_subscription_command(message, args)
         else:
             view = create_error_message(
                 "Unknown Command",
@@ -708,6 +710,112 @@ class TeamCommands(StaffCommandsCog):
         view = create_info_message(
             f"Server Information - {guild.name}",
             f"Detailed information about **{guild.name}**",
+            fields=fields
+        )
+
+        await self.reply_with_tracking(message, view)
+
+
+    async def handle_subscription_command(self, message: discord.Message, args: str):
+        """
+        Handle t.subscription command - View a user's subscription details
+        Usage: <@1373916203814490194> t.subscription [user_id or @user]
+        """
+        if staff_logger:
+            await staff_logger.log_command("t", "subscription", message.author, args=args)
+
+        if not args:
+            view = create_error_message(
+                "Invalid Usage",
+                "**Usage:** `<@1373916203814490194> t.subscription [user_id]` or `<@1373916203814490194> t.subscription @user`\n\nProvide a user ID or mention."
+            )
+            await message.reply(view=view, mention_author=False)
+            return
+
+        user_id = parse_user_id(args)
+        if user_id is None:
+            view = create_error_message(
+                "Invalid User ID",
+                "Please provide a valid user ID or mention a user."
+            )
+            await message.reply(view=view, mention_author=False)
+            return
+
+        try:
+            user = await self.bot.fetch_user(user_id)
+        except discord.NotFound:
+            view = create_error_message(
+                "User Not Found",
+                f"Could not find a user with ID `{user_id}`."
+            )
+            await message.reply(view=view, mention_author=False)
+            return
+        except Exception as e:
+            logger.error(f"Error fetching user {user_id}: {e}")
+            view = create_error_message("Error", f"Failed to fetch user: {str(e)}")
+            await message.reply(view=view, mention_author=False)
+            return
+
+        from utils.subscription import get_subscription
+        from datetime import timezone
+
+        try:
+            sub = await get_subscription(self.bot, user_id)
+            servers = []
+            if self.bot.db:
+                servers = await self.bot.db.get_subscription_servers(user_id)
+        except Exception as e:
+            logger.error(f"Subscription fetch error for {user_id}: {e}", exc_info=True)
+            view = create_error_message("Error", "Failed to fetch subscription data.")
+            await message.reply(view=view, mention_author=False)
+            return
+
+        fields = []
+
+        fields.append({
+            'name': f"{EMOJIS['user']} User",
+            'value': f"**Username:** {user}\n**ID:** `{user.id}`"
+        })
+
+        is_active = sub and sub.get('is_active')
+        tier = (sub.get('tier') or 'Moddy Max') if sub else '-'
+        status_emoji = EMOJIS.get('green_status', '🟢') if is_active else EMOJIS.get('red_status', '🔴')
+        fields.append({
+            'name': "Subscription",
+            'value': f"{status_emoji} {'Active' if is_active else 'Inactive'}" + (f" — tier: `{tier}`" if is_active else "")
+        })
+
+        expires_at = sub.get('expires_at') if sub else None
+        if expires_at:
+            ts = int(expires_at.astimezone(timezone.utc).timestamp())
+            fields.append({
+                'name': "Expires",
+                'value': f"`{expires_at.strftime('%Y-%m-%d %H:%M UTC')}` (<t:{ts}:R>)"
+            })
+        else:
+            fields.append({'name': "Expires", 'value': "`-`"})
+
+        stripe_id = sub.get('stripe_customer_id') if sub else None
+        fields.append({
+            'name': "Stripe Customer ID",
+            'value': f"`{stripe_id}`" if stripe_id else "`-`"
+        })
+
+        count = len(servers)
+        server_lines = [f"`{count}/5` linked server(s)"]
+        for s in servers:
+            added = s['added_at']
+            ts = int(added.astimezone(timezone.utc).timestamp()) if added else 0
+            server_lines.append(f"• `{s['server_id']}` — added <t:{ts}:D>")
+
+        fields.append({
+            'name': "Linked Servers",
+            'value': "\n".join(server_lines) if servers else "`0/5` — none"
+        })
+
+        view = create_info_message(
+            f"Subscription — {user}",
+            f"Subscription details for **{user}** (`{user.id}`)",
             fields=fields
         )
 

@@ -53,8 +53,7 @@ moddy/
 │   ├── console_logger.py      #   Console logging
 │   ├── dev_logger.py          #   Dev logging
 │   ├── dev_tools.py           #   Developer tools
-│   ├── subscription.py        #   /subscription command (user subscription status)
-│   └── staff_subscription.py  #   /staff subscription-info command (staff view)
+│   └── subscription.py        #   /subscription command (user subscription status)
 │
 ├── modules/                   # Server-level configurable features
 │   ├── module_manager.py      #   ModuleManager + ModuleBase class
