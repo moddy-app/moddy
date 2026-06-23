@@ -78,6 +78,12 @@ class TeamCommands(StaffCommandsCog):
         if command_type != CommandType.TEAM:
             return
 
+        # Defer to the new staff framework for commands that have been migrated
+        # there (avoids double-dispatch during the staff-commands redesign).
+        router = self.bot.get_cog("StaffCommandsRouter")
+        if router and (command_type.value, command_name) in getattr(router, "message_index", {}):
+            return
+
         # Check permissions
         allowed, reason = await staff_permissions.check_command_permission(
             message.author.id, command_type, command_name

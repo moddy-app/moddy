@@ -59,9 +59,13 @@ KIND_EMOJIS = {
 }
 
 
-def colour(kind: str) -> discord.Colour:
-    """Return a :class:`discord.Colour` for a message kind or hex int."""
-    value = KIND_COLOURS.get(kind, kind if isinstance(kind, int) else COLORS["neutral"])
+def colour(kind) -> discord.Colour:
+    """Return a :class:`discord.Colour` for a message kind, COLORS key or hex int."""
+    if isinstance(kind, discord.Colour):
+        return kind
+    if isinstance(kind, int):
+        return discord.Colour(kind)
+    value = KIND_COLOURS.get(kind) or COLORS.get(kind) or COLORS["neutral"]
     return discord.Colour(value)
 
 

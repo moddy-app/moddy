@@ -1165,7 +1165,8 @@
       "not_your_menu": "Ce menu ne t'est pas destiné.",
       "confirm": "Confirmer",
       "cancel": "Annuler",
-      "cancelled": "Annulé"
+      "cancelled": "Annulé",
+      "affiliation": "Affilié à {orgs}"
     },
     "dev": {
       "db_unavailable": "La base de données n'est pas connectée.",
@@ -1294,6 +1295,80 @@
         "done": "Annonces configurées pour {name} ({id}).",
         "fail_title": "Échec de la configuration",
         "fail": "Impossible de configurer les annonces pour {name}."
+      }
+    },
+    "team": {
+      "server_notfound_title": "Serveur introuvable",
+      "server_notfound": "Moddy n'est pas dans un serveur avec l'id {id}.",
+      "user_notfound_title": "Utilisateur introuvable",
+      "user_notfound": "Aucun utilisateur trouvé avec l'id {id}.",
+      "attributes": "Attributs",
+      "none": "Aucun",
+      "invite": {
+        "title": "Invitation au serveur",
+        "open": "Ouvrir l'invitation",
+        "fail_title": "Impossible de créer l'invitation",
+        "no_perm": "Moddy ne peut pas créer d'invitations dans {name}."
+      },
+      "server": {
+        "title": "Serveur — {name}",
+        "basic": "Informations générales",
+        "name": "Nom",
+        "owner": "Propriétaire",
+        "created": "Créé",
+        "members": "Membres",
+        "total": "Total",
+        "humans": "Humains",
+        "bots": "Bots",
+        "channels": "Salons",
+        "categories": "Catégories",
+        "roles": "Rôles",
+        "boost": "Boost",
+        "level": "Niveau",
+        "boosts": "Boosts",
+        "features": "Fonctionnalités"
+      },
+      "user": {
+        "title": "Informations utilisateur",
+        "basic": "Informations générales",
+        "username": "Nom d'utilisateur",
+        "bot": "Bot",
+        "created": "Créé",
+        "shared": "Serveurs en commun",
+        "first_seen": "Première apparition"
+      },
+      "mutual": {
+        "title": "Serveurs en commun ({count})",
+        "none_title": "Aucun serveur en commun",
+        "none": "Moddy ne partage aucun serveur avec {user}.",
+        "top_role": "Rôle le plus haut",
+        "perms": "Permissions clés",
+        "no_perms": "Aucune"
+      },
+      "subscription": {
+        "title": "Abonnement",
+        "status": "Statut",
+        "active": "Actif",
+        "inactive": "Inactif",
+        "expires": "Expire",
+        "linked": "serveur(s) lié(s)",
+        "servers": "Serveurs liés",
+        "fetch_fail": "Impossible de récupérer les données d'abonnement."
+      },
+      "flex": {
+        "not_staff_title": "Pas membre du staff",
+        "not_staff": "Tu n'as aucun rôle staff dans l'équipe Moddy.",
+        "message": "fait partie de l'équipe Moddy en tant que {role}",
+        "disclaimer": "Les membres de l'équipe Moddy sont autorisés à agir sur ton serveur. Ce message prévient l'usurpation d'identité.",
+        "no_perm": "Je ne peux pas envoyer ou supprimer de messages dans ce salon.",
+        "roles": {
+          "developer": "développeur",
+          "manager": "manager",
+          "mod_supervisor": "superviseur de modération",
+          "member": "membre",
+          "support": "agent de support",
+          "moderator": "modérateur"
+        }
       }
     }
   }

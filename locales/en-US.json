@@ -1166,7 +1166,8 @@
       "not_your_menu": "This menu isn't for you.",
       "confirm": "Confirm",
       "cancel": "Cancel",
-      "cancelled": "Cancelled"
+      "cancelled": "Cancelled",
+      "affiliation": "Affiliated with {orgs}"
     },
     "dev": {
       "db_unavailable": "The database is not connected.",
@@ -1295,6 +1296,80 @@
         "done": "Set up announcements for {name} ({id}).",
         "fail_title": "Setup Failed",
         "fail": "Could not set up announcements for {name}."
+      }
+    },
+    "team": {
+      "server_notfound_title": "Server Not Found",
+      "server_notfound": "Moddy is not in a server with id {id}.",
+      "user_notfound_title": "User Not Found",
+      "user_notfound": "No user found with id {id}.",
+      "attributes": "Attributes",
+      "none": "None",
+      "invite": {
+        "title": "Server Invite",
+        "open": "Open Invite",
+        "fail_title": "Cannot Create Invite",
+        "no_perm": "Moddy can't create invites in {name}."
+      },
+      "server": {
+        "title": "Server — {name}",
+        "basic": "Basic Information",
+        "name": "Name",
+        "owner": "Owner",
+        "created": "Created",
+        "members": "Members",
+        "total": "Total",
+        "humans": "Humans",
+        "bots": "Bots",
+        "channels": "Channels",
+        "categories": "Categories",
+        "roles": "Roles",
+        "boost": "Boost",
+        "level": "Level",
+        "boosts": "Boosts",
+        "features": "Features"
+      },
+      "user": {
+        "title": "User Information",
+        "basic": "Basic Information",
+        "username": "Username",
+        "bot": "Bot",
+        "created": "Created",
+        "shared": "Shared Servers",
+        "first_seen": "First Seen"
+      },
+      "mutual": {
+        "title": "Mutual Servers ({count})",
+        "none_title": "No Mutual Servers",
+        "none": "Moddy shares no servers with {user}.",
+        "top_role": "Top Role",
+        "perms": "Key Permissions",
+        "no_perms": "None"
+      },
+      "subscription": {
+        "title": "Subscription",
+        "status": "Status",
+        "active": "Active",
+        "inactive": "Inactive",
+        "expires": "Expires",
+        "linked": "linked server(s)",
+        "servers": "Linked Servers",
+        "fetch_fail": "Failed to fetch subscription data."
+      },
+      "flex": {
+        "not_staff_title": "Not a Staff Member",
+        "not_staff": "You don't have any staff role in the Moddy team.",
+        "message": "is a {role} of the Moddy Team",
+        "disclaimer": "Moddy team members are authorized to take action on your server. This message prevents identity theft.",
+        "no_perm": "I can't send or delete messages in this channel.",
+        "roles": {
+          "developer": "developer",
+          "manager": "manager",
+          "mod_supervisor": "moderation supervisor",
+          "member": "member",
+          "support": "support agent",
+          "moderator": "moderator"
+        }
       }
     }
   }
