@@ -14,8 +14,7 @@ class UserCommand(StaffCommand):
     name = "user"
     description = "Detailed info about a user (Discord + Moddy data)."
     options = [
-        SlashOption("user", "user", "Target user.", required=False),
-        SlashOption("user_id", "string", "Target user id (if not using the picker).", required=False),
+        SlashOption("user", "user", "Target user.", required=True),
     ]
 
     def parse_message(self, raw: str) -> dict:

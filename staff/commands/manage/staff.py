@@ -57,7 +57,7 @@ class StaffManagerPanel(BaseView):
         loc = self.locale
         container = design.make_container("primary")
         container.add_item(ui.TextDisplay(
-            f"{design.title_line(emojis.STAFF, t('staff.manage.staff.title', locale=loc))}\n"
+            f"{design.title_line(emojis.MODDYTEAM_BADGE, t('staff.manage.staff.title', locale=loc))}\n"
             f"{self.target.mention} (`{self.target.id}`)\n"
             f"-# {t('staff.manage.staff.subtitle', locale=loc)}"
         ))
@@ -250,8 +250,7 @@ class StaffPanelCommand(StaffCommand):
     aliases = ("rank", "setstaff")
     description = "Manage a member's staff roles and permissions."
     options = [
-        SlashOption("user", "user", "Member to manage.", required=False),
-        SlashOption("user_id", "string", "Member id (optional).", required=False),
+        SlashOption("user", "user", "Member to manage.", required=True),
     ]
 
     def parse_message(self, raw: str) -> dict:

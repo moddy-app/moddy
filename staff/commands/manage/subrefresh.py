@@ -11,13 +11,12 @@ from utils.i18n import t
 @staff_command
 class SubRefreshCommand(StaffCommand):
     command_type = CommandType.MANAGEMENT
-    name = "subrefresh"
-    aliases = ("sub-refresh", "sub_refresh")
+    name = "refresh_subscription"
+    aliases = ("subrefresh", "sub-refresh", "sub_refresh")
     permission = "stripe_manage"
     description = "Invalidate a user's subscription cache (forces a fresh DB read)."
     options = [
-        SlashOption("user", "user", "Target user.", required=False),
-        SlashOption("user_id", "string", "Target user id.", required=False),
+        SlashOption("user", "user", "Target user.", required=True),
     ]
 
     def parse_message(self, raw: str) -> dict:

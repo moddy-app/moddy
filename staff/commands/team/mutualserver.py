@@ -31,11 +31,11 @@ def _key_perms(member: discord.Member, locale: str) -> str:
 @staff_command
 class MutualServerCommand(StaffCommand):
     command_type = CommandType.TEAM
-    name = "mutualserver"
+    name = "mutual_servers"
+    aliases = ("mutualserver",)
     description = "List servers shared between Moddy and a user."
     options = [
-        SlashOption("user", "user", "Target user.", required=False),
-        SlashOption("user_id", "string", "Target user id.", required=False),
+        SlashOption("user", "user", "Target user.", required=True),
     ]
 
     def parse_message(self, raw: str) -> dict:

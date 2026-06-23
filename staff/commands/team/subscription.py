@@ -24,8 +24,7 @@ class SubscriptionCommand(StaffCommand):
     name = "subscription"
     description = "View a user's subscription details."
     options = [
-        SlashOption("user", "user", "Target user.", required=False),
-        SlashOption("user_id", "string", "Target user id.", required=False),
+        SlashOption("user", "user", "Target user.", required=True),
     ]
 
     def parse_message(self, raw: str) -> dict:

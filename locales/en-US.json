@@ -1387,7 +1387,9 @@
           "mod": "Moderation",
           "sup": "Support",
           "com": "Communication"
-        }
+        },
+        "count": "{count} command(s)",
+        "placeholder": "Choose a department…"
       }
     },
     "mod": {
