@@ -1487,6 +1487,10 @@
         "import_bad_json": "JSON invalide — un tableau d'entrées est attendu.",
         "import_summary": "{ok} ok, {err} erreur(s)",
         "import_title": "Import de badges"
+      },
+      "subrefresh": {
+        "title": "Cache d'abonnement rafraîchi",
+        "done": "Cache d'abonnement vidé pour {id}. La prochaine lecture récupérera des données fraîches depuis la base."
       }
     }
   }

@@ -215,8 +215,6 @@ class DeveloperCommands(StaffCommandsCog):
             await self.handle_cogs_command(message, args)
         elif command_name == "presence":
             await self.handle_presence_command(message, args)
-        elif command_name == "sub-refresh":
-            await self.handle_sub_refresh_command(message, args)
         elif command_name == "redirect":
             await self.handle_redirect_command(message, args)
         elif command_name == "banner":

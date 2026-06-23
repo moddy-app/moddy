@@ -1488,6 +1488,10 @@
         "import_bad_json": "Invalid JSON — expected an array of entries.",
         "import_summary": "{ok} ok, {err} error(s)",
         "import_title": "Badge Import"
+      },
+      "subrefresh": {
+        "title": "Subscription Cache Refreshed",
+        "done": "Cleared the subscription cache for {id}. The next read will fetch fresh data from the database."
       }
     }
   }
