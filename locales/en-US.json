@@ -1456,6 +1456,38 @@
         "confirm": "Remove {user} from the staff team? All their roles and permissions will be revoked.",
         "done_title": "Staff Member Removed",
         "done": "{user} has been removed from the staff team."
+      },
+      "staff": {
+        "title": "Staff Management",
+        "subtitle": "Assign roles and configure permissions, then save.",
+        "roles": "Roles",
+        "roles_hint": "Select which roles this member holds.",
+        "roles_placeholder": "Select roles…",
+        "common": "Common Permissions",
+        "perms": "Permissions",
+        "perms_hint": "Pick a scope, then choose the permissions to grant.",
+        "scope_placeholder": "Configure permissions for…",
+        "perms_placeholder": "Select permissions…",
+        "save": "Save",
+        "remove": "Remove from staff",
+        "cannot_assign": "You can't assign: {roles}.",
+        "removed_title": "Removed From Staff",
+        "removed": "{user} has been removed from the staff team.",
+        "saved_title": "Staff Updated",
+        "saved": "{user}'s roles and permissions were saved.",
+        "bot_title": "Invalid Target",
+        "bot": "Bots can't be added to the staff team."
+      },
+      "badge": {
+        "removed_title": "Badge Removed",
+        "removed": "Removed the {key} badge from {user}.",
+        "assigned_title": "Badge Assigned",
+        "assigned": "Assigned the {key} badge to {user}.",
+        "orgs": "Organisation(s): {orgs}",
+        "import_fail_title": "Import Error",
+        "import_bad_json": "Invalid JSON — expected an array of entries.",
+        "import_summary": "{ok} ok, {err} error(s)",
+        "import_title": "Badge Import"
       }
     }
   }

@@ -81,7 +81,9 @@ moddy/
 │   │   └── parsing.py         #     Arg helpers (user/guild id)
 │   ├── commands/dev/          #   One file per command — migrated /dev commands
 │   ├── commands/team/         #   One file per command — migrated /team commands
-│   ├── staff_manager.py       #   m. commands (rank, unrank, etc.) — legacy
+│   ├── commands/mod/          #   /mod commands + case/ sub-group
+│   ├── commands/manage/       #   /manage commands (unified staff panel, badge…)
+│   ├── staff_manager.py       #   m. commands — legacy (migrated → commands/manage)
 │   ├── dev_commands.py        #   d. commands not yet migrated (redirect, banner…)
 │   ├── team_commands.py       #   t. commands — legacy (only t.help remains)
 │   ├── moderator_commands.py  #   mod. commands (blacklist, etc.) — legacy

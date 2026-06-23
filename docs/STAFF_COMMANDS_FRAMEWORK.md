@@ -122,19 +122,27 @@ arguments (used by `sql` and `jsk`). Commands must **not** log themselves.
 
 ## Migration status
 
-- ✅ **Framework** — complete.
-- ✅ **`/dev` group** — migrated: `reload, shutdown, stats, sql, jsk, error,
-  sync, serverlist, disable, enable, disabled, cogs, presence, announcements,
-  official`.
-- ✅ **`/team` group** — migrated: `invite, server, user, mutualserver, flex,
-  subscription`. `serverinfo` was **merged** into `server` (kept as a message
-  alias). `help` stays on the legacy cog until all groups are migrated.
-- ⏳ **Legacy (still on the old message-only cogs)** — `t.help`, `staff_manager`,
-  `moderator_commands`, `support_commands`, `communication_commands`,
-  `case_commands`, and the dev `redirect` / `banner` / `sub-refresh` commands
-  (the latter to be **recategorized** out of dev into proper departments with
-  the new permission nodes; `subscription` may move to `/support` gated by
-  `subscription_view`).
+- ✅ **Framework** — complete (flat + sub-group commands, `ConfirmView`,
+  `open_modal`, OFFICIAL-only sync, granular permission nodes).
+- ✅ **`/dev`** — `reload, shutdown, stats, sql, jsk, error, sync, serverlist,
+  disable, enable, disabled, cogs, presence, announcements, official`.
+- ✅ **`/team`** — `invite, server, user, mutualserver, flex, subscription`.
+  `serverinfo` was **merged** into `server` (kept as a message alias).
+- ✅ **`/mod`** — `interserver_info, interserver_delete`, and the `case`
+  sub-group (`create, view, list, edit, close, note`). `edit/close/note` were
+  **broken on message** (couldn't open a modal) — now fixed via `open_modal`.
+- ✅ **`/manage`** — `staff` (unified **rank + setstaff** panel; message aliases
+  `rank`/`setstaff`), `staffinfo`, `list` (alias `stafflist`), `unrank`,
+  `badge` (slash single-user; message also supports bulk `import`).
+- ⚪ **`/support` / `/com`** — no unique commands to migrate yet (only legacy
+  placeholder `help`); `support.subscription` is covered by `/team subscription`.
+- ⏳ **Still on legacy** — `t.help`; the dev `redirect` / `banner` /
+  `sub-refresh` commands, to be **recategorized** out of dev into proper
+  departments using the new permission nodes (`redirect_manage`,
+  `banner_manage`, `stripe_manage`).
+
+**Message commands are always rendered in English** (no per-user language
+signal on a message); slash commands use ``interaction.locale``.
 
 During migration, a command handled by the framework is skipped by its legacy
 cog (guard in `staff/dev_commands.py`), so there is never a double response.

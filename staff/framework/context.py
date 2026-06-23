@@ -26,13 +26,12 @@ from cogs.error_handler import BaseView
 
 
 def resolve_message_locale(bot, user_id: int, guild: Optional[discord.Guild]) -> str:
-    """Best-effort locale for a message command (no ``interaction.locale``).
+    """Locale for a message command.
 
-    Falls back to the guild's preferred locale, then English. Slash commands
-    use the real ``interaction.locale`` instead.
+    Message commands carry no per-user language signal, so they are always
+    rendered in English for now. Slash commands use the real
+    ``interaction.locale``.
     """
-    if guild is not None and getattr(guild, "preferred_locale", None):
-        return str(guild.preferred_locale)
     return "en-US"
 
 

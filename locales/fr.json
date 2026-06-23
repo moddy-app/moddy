@@ -1455,6 +1455,38 @@
         "confirm": "Retirer {user} de l'équipe staff ? Tous ses rôles et permissions seront révoqués.",
         "done_title": "Membre retiré",
         "done": "{user} a été retiré de l'équipe staff."
+      },
+      "staff": {
+        "title": "Gestion du staff",
+        "subtitle": "Attribue des rôles et configure les permissions, puis enregistre.",
+        "roles": "Rôles",
+        "roles_hint": "Sélectionne les rôles de ce membre.",
+        "roles_placeholder": "Sélectionner des rôles…",
+        "common": "Permissions communes",
+        "perms": "Permissions",
+        "perms_hint": "Choisis une portée, puis les permissions à accorder.",
+        "scope_placeholder": "Configurer les permissions pour…",
+        "perms_placeholder": "Sélectionner des permissions…",
+        "save": "Enregistrer",
+        "remove": "Retirer du staff",
+        "cannot_assign": "Tu ne peux pas attribuer : {roles}.",
+        "removed_title": "Retiré du staff",
+        "removed": "{user} a été retiré de l'équipe staff.",
+        "saved_title": "Staff mis à jour",
+        "saved": "Les rôles et permissions de {user} ont été enregistrés.",
+        "bot_title": "Cible invalide",
+        "bot": "Les bots ne peuvent pas être ajoutés à l'équipe staff."
+      },
+      "badge": {
+        "removed_title": "Badge retiré",
+        "removed": "Badge {key} retiré de {user}.",
+        "assigned_title": "Badge attribué",
+        "assigned": "Badge {key} attribué à {user}.",
+        "orgs": "Organisation(s) : {orgs}",
+        "import_fail_title": "Erreur d'import",
+        "import_bad_json": "JSON invalide — un tableau d'entrées est attendu.",
+        "import_summary": "{ok} ok, {err} erreur(s)",
+        "import_title": "Import de badges"
       }
     }
   }
