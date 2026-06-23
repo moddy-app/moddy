@@ -108,7 +108,7 @@ class StaffCommandsRouter(StaffCommandsCog):
         command_type, command_name, args = parsed
 
         # Only handle types owned by the new framework; legacy cogs handle others.
-        if command_type not in self.owned_types:
+        if command_type.value not in self.owned_types:
             return
 
         # Flat command, or a sub-group command (`mod.case create ...`).
