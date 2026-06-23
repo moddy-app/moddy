@@ -1140,5 +1140,427 @@
     "hu": "Hongrois",
     "uk": "Ukrainien",
     "bg": "Bulgare"
+  },
+  "staff": {
+    "common": {
+      "permission_denied": {
+        "title": "Permission refusée",
+        "description": "Tu n'as pas la permission d'utiliser cette commande."
+      },
+      "invalid_usage": {
+        "title": "Utilisation invalide"
+      },
+      "error": {
+        "title": "Une erreur est survenue",
+        "description": "Une erreur inattendue s'est produite pendant l'exécution. Elle a été enregistrée."
+      },
+      "unknown_command": {
+        "title": "Commande inconnue",
+        "description": "La commande staff `{command}` est introuvable."
+      },
+      "modal_prompt": {
+        "title": "Encore une étape",
+        "description": "Clique sur le bouton ci-dessous pour ouvrir le formulaire."
+      },
+      "not_your_menu": "Ce menu ne t'est pas destiné.",
+      "confirm": "Confirmer",
+      "cancel": "Annuler",
+      "cancelled": "Annulé",
+      "affiliation": "Affilié à {orgs}",
+      "cancelled_desc": "Aucune modification n'a été effectuée.",
+      "unknown_subcommand": {
+        "title": "Sous-commande inconnue",
+        "description": "`{group}` n'a pas cette sous-commande. Disponibles : {subs}."
+      }
+    },
+    "dev": {
+      "db_unavailable": "La base de données n'est pas connectée.",
+      "cogmanager_missing": "Le CogManager n'est pas chargé.",
+      "shutdown": {
+        "title": "Arrêt en cours",
+        "description": "Moddy s'arrête…"
+      },
+      "stats": {
+        "title": "Statistiques Moddy",
+        "description": "Métriques en temps réel.",
+        "bot": "Bot",
+        "latency": "Latence",
+        "uptime": "Disponibilité",
+        "discord": "Discord",
+        "guilds": "Serveurs",
+        "users": "Utilisateurs",
+        "commands": "Commandes",
+        "database": "Base de données",
+        "errors": "Erreurs",
+        "system": "Système",
+        "extensions": "Extensions"
+      },
+      "cogs": {
+        "title": "Cogs chargés",
+        "total": "{count} cog(s) chargé(s)",
+        "enabled": "Activé",
+        "disabled": "Désactivé",
+        "none": "Aucun cog chargé."
+      },
+      "disabled": {
+        "title": "Cogs désactivés",
+        "count": "{count} cog(s) désactivé(s)",
+        "none_title": "Aucun cog désactivé",
+        "none_description": "Tous les cogs sont actuellement activés."
+      },
+      "reload": {
+        "loading_title": "Rechargement",
+        "loading_all": "Rechargement de toutes les extensions…",
+        "reloaded": "Rechargées ({count})",
+        "failed": "Échecs ({count})",
+        "done_title": "Rechargement terminé",
+        "done_ok": "Toutes les extensions ont été rechargées.",
+        "done_errors": "Certaines extensions n'ont pas pu être rechargées.",
+        "single_ok_title": "Extension rechargée",
+        "single_ok": "{ext} rechargée avec succès.",
+        "single_fail_title": "Échec du rechargement",
+        "single_fail": "Impossible de recharger {ext}."
+      },
+      "disable": {
+        "title": "Cog désactivé",
+        "fail_title": "Désactivation impossible"
+      },
+      "enable": {
+        "title": "Cog activé",
+        "fail_title": "Activation impossible"
+      },
+      "presence": {
+        "title": "Présence mise à jour",
+        "usage": "**Usage :** `d.presence <statut> [activité]`\nStatuts : {options}",
+        "updated": "Présence changée en **{status}**.",
+        "activity": "Activité"
+      },
+      "error": {
+        "title": "Erreur {code}",
+        "subtitle": "Détails de l'erreur enregistrée (source : {source}).",
+        "notfound_title": "Erreur introuvable",
+        "notfound": "Aucune erreur trouvée avec le code {code}.",
+        "details": "Détails",
+        "message": "Message",
+        "context": "Contexte",
+        "no_context": "Aucune information de contexte disponible.",
+        "occurred": "Survenue"
+      },
+      "serverlist": {
+        "title": "Liste des serveurs",
+        "total": "{count} serveurs",
+        "page": "Page {current}/{total}",
+        "empty": "Aucun serveur trouvé.",
+        "members": "Membres",
+        "joined": "Rejoint"
+      },
+      "sql": {
+        "done_title": "Requête exécutée",
+        "no_rows": "Aucune ligne retournée.",
+        "rows": "**{count}** ligne(s) retournée(s).",
+        "result": "Résultat",
+        "fail_title": "Échec de la requête",
+        "danger_title": "Requête dangereuse",
+        "danger_description": "Cette requête peut modifier ou détruire des données. Confirme pour l'exécuter.",
+        "cancelled": "Exécution de la requête annulée."
+      },
+      "jsk": {
+        "no_output": "Exécuté avec succès (aucune sortie).",
+        "done_title": "Code exécuté",
+        "fail_title": "Échec de l'exécution",
+        "modal_title": "Eval Python",
+        "modal_label": "Code",
+        "modal_hint": "Python — async/await supporté. Vars : bot, db, guild, channel…",
+        "open_button": "Ouvrir l'éditeur"
+      },
+      "sync": {
+        "loading_title": "Synchronisation",
+        "loading": "Synchronisation des commandes avec Discord…",
+        "done_title": "Commandes synchronisées",
+        "global_done": "**{count}** commande(s) globale(s) synchronisée(s).",
+        "guilds_done": "Arbres de commandes resynchronisés pour **{count}** serveur(s).",
+        "guild_done": "Commandes resynchronisées pour {name}.",
+        "invalid_title": "Cible invalide",
+        "invalid": "Fournis `global`, `guilds`, ou un id de serveur valide.",
+        "fail_title": "Échec de la synchronisation"
+      },
+      "official": {
+        "title": "Serveur officiel",
+        "added": "{name} ({id}) est maintenant un serveur Moddy **officiel**. Les commandes staff y sont disponibles.",
+        "removed": "{name} ({id}) n'est plus un serveur Moddy officiel. Les commandes staff ont été retirées.",
+        "not_present": "Moddy n'est pas dans ce serveur ; le changement est enregistré et s'appliquera s'il le rejoint.",
+        "sync_failed": "Enregistré, mais la resynchronisation a échoué — lance `/dev sync <guild_id>` manuellement."
+      },
+      "announcements": {
+        "notfound_title": "Serveur introuvable",
+        "notfound": "Impossible de trouver un serveur avec l'id {id}.",
+        "loading_title": "Configuration des annonces",
+        "loading": "Configuration du salon d'annonces pour {name}…",
+        "done_title": "Annonces prêtes",
+        "done": "Annonces configurées pour {name} ({id}).",
+        "fail_title": "Échec de la configuration",
+        "fail": "Impossible de configurer les annonces pour {name}."
+      }
+    },
+    "team": {
+      "server_notfound_title": "Serveur introuvable",
+      "server_notfound": "Moddy n'est pas dans un serveur avec l'id {id}.",
+      "user_notfound_title": "Utilisateur introuvable",
+      "user_notfound": "Aucun utilisateur trouvé avec l'id {id}.",
+      "attributes": "Attributs",
+      "none": "Aucun",
+      "invite": {
+        "title": "Invitation au serveur",
+        "open": "Ouvrir l'invitation",
+        "fail_title": "Impossible de créer l'invitation",
+        "no_perm": "Moddy ne peut pas créer d'invitations dans {name}."
+      },
+      "server": {
+        "title": "Serveur — {name}",
+        "basic": "Informations générales",
+        "name": "Nom",
+        "owner": "Propriétaire",
+        "created": "Créé",
+        "members": "Membres",
+        "total": "Total",
+        "humans": "Humains",
+        "bots": "Bots",
+        "channels": "Salons",
+        "categories": "Catégories",
+        "roles": "Rôles",
+        "boost": "Boost",
+        "level": "Niveau",
+        "boosts": "Boosts",
+        "features": "Fonctionnalités"
+      },
+      "user": {
+        "title": "Informations utilisateur",
+        "basic": "Informations générales",
+        "username": "Nom d'utilisateur",
+        "bot": "Bot",
+        "created": "Créé",
+        "shared": "Serveurs en commun",
+        "first_seen": "Première apparition"
+      },
+      "mutual": {
+        "title": "Serveurs en commun ({count})",
+        "none_title": "Aucun serveur en commun",
+        "none": "Moddy ne partage aucun serveur avec {user}.",
+        "top_role": "Rôle le plus haut",
+        "perms": "Permissions clés",
+        "no_perms": "Aucune"
+      },
+      "subscription": {
+        "title": "Abonnement",
+        "status": "Statut",
+        "active": "Actif",
+        "inactive": "Inactif",
+        "expires": "Expire",
+        "linked": "serveur(s) lié(s)",
+        "servers": "Serveurs liés",
+        "fetch_fail": "Impossible de récupérer les données d'abonnement."
+      },
+      "flex": {
+        "not_staff_title": "Pas membre du staff",
+        "not_staff": "Tu n'as aucun rôle staff dans l'équipe Moddy.",
+        "message": "fait partie de l'équipe Moddy en tant que {role}",
+        "disclaimer": "Les membres de l'équipe Moddy sont autorisés à agir sur ton serveur. Ce message prévient l'usurpation d'identité.",
+        "no_perm": "Je ne peux pas envoyer ou supprimer de messages dans ce salon.",
+        "roles": {
+          "developer": "développeur",
+          "manager": "manager",
+          "mod_supervisor": "superviseur de modération",
+          "member": "membre",
+          "support": "agent de support",
+          "moderator": "modérateur"
+        }
+      },
+      "help": {
+        "title": "Commandes staff",
+        "subtitle": "Les commandes que tu peux utiliser, par département.",
+        "empty": "Tu n'as accès à aucune commande staff.",
+        "groups": {
+          "d": "Développeur",
+          "t": "Équipe",
+          "m": "Gestion",
+          "mod": "Modération",
+          "sup": "Support",
+          "com": "Communication"
+        }
+      }
+    },
+    "mod": {
+      "interserver": {
+        "notfound_title": "Message introuvable",
+        "notfound": "Aucun message inter-serveur trouvé avec l'id {id}.",
+        "no_content": "Aucun contenu",
+        "author": "Auteur",
+        "origin": "Origine",
+        "content": "Contenu",
+        "meta": "Détails",
+        "timestamp": "Envoyé",
+        "status": "Statut",
+        "team_msg": "Message de l'équipe Moddy",
+        "relayed": "Relayé vers",
+        "info_title": "Message inter-serveur {id}",
+        "already_deleted_title": "Déjà supprimé",
+        "already_deleted": "Le message {id} est déjà supprimé.",
+        "deleted_title": "Message supprimé",
+        "deleted": "Le message inter-serveur {id} a été retiré de tous les serveurs ({count} copies).",
+        "confirm_title": "Supprimer le message inter-serveur ?",
+        "confirm": "Cette action supprime définitivement le message {id} de tous les serveurs où il a été relayé."
+      },
+      "case": {
+        "usage_target": "Fournis une cible : un utilisateur (mention/id) ou `guild <guild_id>`.",
+        "invalid_id_title": "ID de dossier invalide",
+        "invalid_id": "Un id de dossier est un code hexadécimal de 8 caractères (ex. `DAEABDF6`).",
+        "notfound_title": "Dossier introuvable",
+        "notfound": "Aucun dossier trouvé avec l'id {id}.",
+        "staff_target_title": "Cible interdite",
+        "staff_target": "Tu ne peux pas créer de dossier de modération pour un membre du staff.",
+        "type": "Type",
+        "sanction": "Sanction",
+        "status": "Statut",
+        "target": "Cible",
+        "reason": "Raison",
+        "created_by": "Créé par",
+        "evidence": "Preuves",
+        "duration": "Durée",
+        "closed": "Clôturé",
+        "close_reason": "Raison de clôture",
+        "notes": "Notes staff",
+        "notes_count": "{count} note(s)",
+        "case_title": "Dossier #{id}",
+        "list_empty_title": "Aucun dossier",
+        "list_empty": "Aucun dossier de modération trouvé pour {name}.",
+        "list_title": "Dossiers — {name}",
+        "list_count": "Affichage de {shown} dossier(s) sur {total}",
+        "list_more": "Utilise case view <id> pour le détail complet.",
+        "closed_title": "Dossier clôturé",
+        "closed_edit": "Le dossier {id} est clôturé et ne peut pas être modifié.",
+        "already_closed": "Le dossier {id} est déjà clôturé.",
+        "edit_done_title": "Dossier mis à jour",
+        "edit_done": "Le dossier {id} a été mis à jour.",
+        "edit_button": "Modifier le dossier",
+        "close_done_title": "Dossier clôturé",
+        "close_done": "Le dossier {id} a été clôturé.",
+        "close_button": "Clôturer le dossier",
+        "note_done_title": "Note ajoutée",
+        "note_done": "Note staff ajoutée au dossier {id}.",
+        "note_button": "Ajouter une note"
+      }
+    },
+    "manage": {
+      "not_staff_title": "Pas membre du staff",
+      "not_staff": "{user} n'est pas membre du staff.",
+      "hierarchy": "Tu ne peux modifier que les membres du staff sous ton niveau hiérarchique.",
+      "list": {
+        "title": "Équipe staff Moddy",
+        "empty": "Aucun membre du staff trouvé.",
+        "total": "{count} membre(s) du staff"
+      },
+      "info": {
+        "title": "Membre du staff",
+        "roles": "Rôles",
+        "no_roles": "Aucun rôle",
+        "permissions": "Permissions accordées",
+        "joined": "Arrivée dans le staff",
+        "updated": "Dernière mise à jour"
+      },
+      "unrank": {
+        "confirm_title": "Retirer du staff ?",
+        "confirm": "Retirer {user} de l'équipe staff ? Tous ses rôles et permissions seront révoqués.",
+        "done_title": "Membre retiré",
+        "done": "{user} a été retiré de l'équipe staff."
+      },
+      "staff": {
+        "title": "Gestion du staff",
+        "subtitle": "Attribue des rôles et configure les permissions, puis enregistre.",
+        "roles": "Rôles",
+        "roles_hint": "Sélectionne les rôles de ce membre.",
+        "roles_placeholder": "Sélectionner des rôles…",
+        "common": "Permissions communes",
+        "perms": "Permissions",
+        "perms_hint": "Choisis une portée, puis les permissions à accorder.",
+        "scope_placeholder": "Configurer les permissions pour…",
+        "perms_placeholder": "Sélectionner des permissions…",
+        "save": "Enregistrer",
+        "remove": "Retirer du staff",
+        "cannot_assign": "Tu ne peux pas attribuer : {roles}.",
+        "removed_title": "Retiré du staff",
+        "removed": "{user} a été retiré de l'équipe staff.",
+        "saved_title": "Staff mis à jour",
+        "saved": "Les rôles et permissions de {user} ont été enregistrés.",
+        "bot_title": "Cible invalide",
+        "bot": "Les bots ne peuvent pas être ajoutés à l'équipe staff."
+      },
+      "badge": {
+        "removed_title": "Badge retiré",
+        "removed": "Badge {key} retiré de {user}.",
+        "assigned_title": "Badge attribué",
+        "assigned": "Badge {key} attribué à {user}.",
+        "orgs": "Organisation(s) : {orgs}",
+        "import_fail_title": "Erreur d'import",
+        "import_bad_json": "JSON invalide — un tableau d'entrées est attendu.",
+        "import_summary": "{ok} ok, {err} erreur(s)",
+        "import_title": "Import de badges"
+      },
+      "subrefresh": {
+        "title": "Cache d'abonnement rafraîchi",
+        "done": "Cache d'abonnement vidé pour {id}. La prochaine lecture récupérera des données fraîches depuis la base."
+      },
+      "redirect": {
+        "modal_add": "Ajouter une redirection",
+        "modal_edit": "Modifier la redirection",
+        "domain": "Domaine",
+        "path": "Chemin (commence par /)",
+        "target": "URL cible",
+        "description": "Description",
+        "added": "Redirection ajoutée",
+        "updated": "Redirection mise à jour",
+        "notfound_title": "Redirection introuvable",
+        "notfound": "Aucune redirection avec l'id {id}.",
+        "list_title": "Liens de redirection",
+        "empty": "Aucun lien de redirection trouvé.",
+        "total": "{count} lien(s)",
+        "deleted_title": "Redirection supprimée",
+        "deleted": "La redirection {id} ({src}) a été supprimée.",
+        "confirm_title": "Supprimer la redirection ?",
+        "confirm": "Supprimer définitivement la redirection {src} ?"
+      },
+      "banner": {
+        "typed": "Bannière typée",
+        "custom": "Bannière personnalisée",
+        "choose_title": "Nouvelle bannière",
+        "choose": "Choisis le type de bannière ci-dessous.",
+        "type": "Type",
+        "message": "Message",
+        "icon": "Icône SVG",
+        "color": "Couleur (hex #RRGGBB)",
+        "visibility": "Visibilité",
+        "dashboard": "Afficher sur le dashboard",
+        "website": "Afficher sur le site",
+        "saved": "Bannière enregistrée",
+        "bad_color": "Couleur {color} invalide. Utilise #RRGGBB.",
+        "notfound_title": "Bannière introuvable",
+        "notfound": "Aucune bannière avec l'id {id}.",
+        "list_title": "Bannières",
+        "empty": "Aucune bannière trouvée.",
+        "total": "{count} bannière(s)",
+        "info_title": "Bannière #{id}",
+        "active": "Active",
+        "kind": "Type",
+        "activated_title": "Bannière activée",
+        "activated": "La bannière {id} est maintenant en ligne (les autres sont désactivées).",
+        "deactivated_title": "Bannière désactivée",
+        "deactivated": "La bannière active a été désactivée.",
+        "none_active_title": "Aucune bannière active",
+        "none_active": "Il n'y a aucune bannière active à désactiver.",
+        "deleted_title": "Bannière supprimée",
+        "deleted": "La bannière {id} a été supprimée.",
+        "confirm_title": "Supprimer la bannière ?",
+        "confirm": "Supprimer définitivement la bannière {id} ?"
+      }
+    }
   }
 }

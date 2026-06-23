@@ -1141,5 +1141,427 @@
     "hu": "Hungarian",
     "uk": "Ukrainian",
     "bg": "Bulgarian"
+  },
+  "staff": {
+    "common": {
+      "permission_denied": {
+        "title": "Permission Denied",
+        "description": "You don't have permission to use this command."
+      },
+      "invalid_usage": {
+        "title": "Invalid Usage"
+      },
+      "error": {
+        "title": "Something Went Wrong",
+        "description": "An unexpected error occurred while running this command. It has been logged."
+      },
+      "unknown_command": {
+        "title": "Unknown Command",
+        "description": "Staff command `{command}` was not found."
+      },
+      "modal_prompt": {
+        "title": "One More Step",
+        "description": "Click the button below to open the form."
+      },
+      "not_your_menu": "This menu isn't for you.",
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "cancelled": "Cancelled",
+      "affiliation": "Affiliated with {orgs}",
+      "cancelled_desc": "No changes were made.",
+      "unknown_subcommand": {
+        "title": "Unknown Subcommand",
+        "description": "`{group}` has no subcommand for that. Available: {subs}."
+      }
+    },
+    "dev": {
+      "db_unavailable": "The database is not connected.",
+      "cogmanager_missing": "The CogManager is not loaded.",
+      "shutdown": {
+        "title": "Shutting Down",
+        "description": "Moddy is shutting down…"
+      },
+      "stats": {
+        "title": "Moddy Statistics",
+        "description": "Live runtime metrics.",
+        "bot": "Bot",
+        "latency": "Latency",
+        "uptime": "Uptime",
+        "discord": "Discord",
+        "guilds": "Guilds",
+        "users": "Users",
+        "commands": "Commands",
+        "database": "Database",
+        "errors": "Errors",
+        "system": "System",
+        "extensions": "Extensions"
+      },
+      "cogs": {
+        "title": "Loaded Cogs",
+        "total": "{count} cog(s) loaded",
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "none": "No cogs loaded."
+      },
+      "disabled": {
+        "title": "Disabled Cogs",
+        "count": "{count} cog(s) disabled",
+        "none_title": "No Disabled Cogs",
+        "none_description": "All cogs are currently enabled."
+      },
+      "reload": {
+        "loading_title": "Reloading",
+        "loading_all": "Reloading all extensions…",
+        "reloaded": "Reloaded ({count})",
+        "failed": "Failed ({count})",
+        "done_title": "Reload Complete",
+        "done_ok": "All extensions reloaded successfully.",
+        "done_errors": "Some extensions failed to reload.",
+        "single_ok_title": "Extension Reloaded",
+        "single_ok": "Successfully reloaded {ext}.",
+        "single_fail_title": "Reload Failed",
+        "single_fail": "Failed to reload {ext}."
+      },
+      "disable": {
+        "title": "Cog Disabled",
+        "fail_title": "Cannot Disable"
+      },
+      "enable": {
+        "title": "Cog Enabled",
+        "fail_title": "Cannot Enable"
+      },
+      "presence": {
+        "title": "Presence Updated",
+        "usage": "**Usage:** `d.presence <status> [activity]`\nStatuses: {options}",
+        "updated": "Presence changed to **{status}**.",
+        "activity": "Activity"
+      },
+      "error": {
+        "title": "Error {code}",
+        "subtitle": "Logged error details (source: {source}).",
+        "notfound_title": "Error Not Found",
+        "notfound": "No error found with code {code}.",
+        "details": "Details",
+        "message": "Message",
+        "context": "Context",
+        "no_context": "No context information available.",
+        "occurred": "Occurred"
+      },
+      "serverlist": {
+        "title": "Server List",
+        "total": "{count} servers",
+        "page": "Page {current}/{total}",
+        "empty": "No servers found.",
+        "members": "Members",
+        "joined": "Joined"
+      },
+      "sql": {
+        "done_title": "Query Executed",
+        "no_rows": "No rows returned.",
+        "rows": "**{count}** row(s) returned.",
+        "result": "Result",
+        "fail_title": "Query Failed",
+        "danger_title": "Dangerous Query",
+        "danger_description": "This query may modify or destroy data. Confirm to run it.",
+        "cancelled": "Query execution cancelled."
+      },
+      "jsk": {
+        "no_output": "Executed successfully (no output).",
+        "done_title": "Code Executed",
+        "fail_title": "Execution Failed",
+        "modal_title": "Python Eval",
+        "modal_label": "Code",
+        "modal_hint": "Python — async/await supported. Vars: bot, db, guild, channel…",
+        "open_button": "Open Editor"
+      },
+      "sync": {
+        "loading_title": "Syncing",
+        "loading": "Synchronizing application commands with Discord…",
+        "done_title": "Commands Synced",
+        "global_done": "Synced **{count}** global command(s).",
+        "guilds_done": "Re-synced command trees for **{count}** server(s).",
+        "guild_done": "Re-synced commands for {name}.",
+        "invalid_title": "Invalid Target",
+        "invalid": "Provide `global`, `guilds`, or a valid guild id.",
+        "fail_title": "Sync Failed"
+      },
+      "official": {
+        "title": "Official Server",
+        "added": "{name} ({id}) is now an **official** Moddy server. Staff slash commands are available there.",
+        "removed": "{name} ({id}) is no longer an official Moddy server. Staff slash commands were removed.",
+        "not_present": "Moddy is not currently in this server; the change is saved and applies if it joins.",
+        "sync_failed": "Saved, but the command re-sync failed — run `/dev sync <guild_id>` manually."
+      },
+      "announcements": {
+        "notfound_title": "Guild Not Found",
+        "notfound": "Could not find a guild with id {id}.",
+        "loading_title": "Setting Up Announcements",
+        "loading": "Setting up the announcement channel for {name}…",
+        "done_title": "Announcements Ready",
+        "done": "Set up announcements for {name} ({id}).",
+        "fail_title": "Setup Failed",
+        "fail": "Could not set up announcements for {name}."
+      }
+    },
+    "team": {
+      "server_notfound_title": "Server Not Found",
+      "server_notfound": "Moddy is not in a server with id {id}.",
+      "user_notfound_title": "User Not Found",
+      "user_notfound": "No user found with id {id}.",
+      "attributes": "Attributes",
+      "none": "None",
+      "invite": {
+        "title": "Server Invite",
+        "open": "Open Invite",
+        "fail_title": "Cannot Create Invite",
+        "no_perm": "Moddy can't create invites in {name}."
+      },
+      "server": {
+        "title": "Server — {name}",
+        "basic": "Basic Information",
+        "name": "Name",
+        "owner": "Owner",
+        "created": "Created",
+        "members": "Members",
+        "total": "Total",
+        "humans": "Humans",
+        "bots": "Bots",
+        "channels": "Channels",
+        "categories": "Categories",
+        "roles": "Roles",
+        "boost": "Boost",
+        "level": "Level",
+        "boosts": "Boosts",
+        "features": "Features"
+      },
+      "user": {
+        "title": "User Information",
+        "basic": "Basic Information",
+        "username": "Username",
+        "bot": "Bot",
+        "created": "Created",
+        "shared": "Shared Servers",
+        "first_seen": "First Seen"
+      },
+      "mutual": {
+        "title": "Mutual Servers ({count})",
+        "none_title": "No Mutual Servers",
+        "none": "Moddy shares no servers with {user}.",
+        "top_role": "Top Role",
+        "perms": "Key Permissions",
+        "no_perms": "None"
+      },
+      "subscription": {
+        "title": "Subscription",
+        "status": "Status",
+        "active": "Active",
+        "inactive": "Inactive",
+        "expires": "Expires",
+        "linked": "linked server(s)",
+        "servers": "Linked Servers",
+        "fetch_fail": "Failed to fetch subscription data."
+      },
+      "flex": {
+        "not_staff_title": "Not a Staff Member",
+        "not_staff": "You don't have any staff role in the Moddy team.",
+        "message": "is a {role} of the Moddy Team",
+        "disclaimer": "Moddy team members are authorized to take action on your server. This message prevents identity theft.",
+        "no_perm": "I can't send or delete messages in this channel.",
+        "roles": {
+          "developer": "developer",
+          "manager": "manager",
+          "mod_supervisor": "moderation supervisor",
+          "member": "member",
+          "support": "support agent",
+          "moderator": "moderator"
+        }
+      },
+      "help": {
+        "title": "Staff Commands",
+        "subtitle": "Commands you can use, by department.",
+        "empty": "You don't have access to any staff command.",
+        "groups": {
+          "d": "Developer",
+          "t": "Team",
+          "m": "Management",
+          "mod": "Moderation",
+          "sup": "Support",
+          "com": "Communication"
+        }
+      }
+    },
+    "mod": {
+      "interserver": {
+        "notfound_title": "Message Not Found",
+        "notfound": "No inter-server message found with id {id}.",
+        "no_content": "No content",
+        "author": "Author",
+        "origin": "Origin",
+        "content": "Content",
+        "meta": "Details",
+        "timestamp": "Sent",
+        "status": "Status",
+        "team_msg": "Moddy Team Message",
+        "relayed": "Relayed to",
+        "info_title": "Inter-Server Message {id}",
+        "already_deleted_title": "Already Deleted",
+        "already_deleted": "Message {id} is already deleted.",
+        "deleted_title": "Message Deleted",
+        "deleted": "Inter-server message {id} was removed from all servers ({count} copies).",
+        "confirm_title": "Delete Inter-Server Message?",
+        "confirm": "This permanently deletes message {id} from every server it was relayed to."
+      },
+      "case": {
+        "usage_target": "Provide a target: a user (mention/id) or `guild <guild_id>`.",
+        "invalid_id_title": "Invalid Case ID",
+        "invalid_id": "A case id is an 8-character hex code (e.g. `DAEABDF6`).",
+        "notfound_title": "Case Not Found",
+        "notfound": "No case found with id {id}.",
+        "staff_target_title": "Cannot Target Staff",
+        "staff_target": "You cannot create a moderation case for a staff member.",
+        "type": "Type",
+        "sanction": "Sanction",
+        "status": "Status",
+        "target": "Target",
+        "reason": "Reason",
+        "created_by": "Created by",
+        "evidence": "Evidence",
+        "duration": "Duration",
+        "closed": "Closed",
+        "close_reason": "Close reason",
+        "notes": "Staff notes",
+        "notes_count": "{count} note(s)",
+        "case_title": "Case #{id}",
+        "list_empty_title": "No Cases",
+        "list_empty": "No moderation cases found for {name}.",
+        "list_title": "Cases — {name}",
+        "list_count": "Showing {shown} of {total} case(s)",
+        "list_more": "Use case view <id> for full details.",
+        "closed_title": "Case Closed",
+        "closed_edit": "Case {id} is closed and cannot be edited.",
+        "already_closed": "Case {id} is already closed.",
+        "edit_done_title": "Case Updated",
+        "edit_done": "Case {id} has been updated.",
+        "edit_button": "Edit Case",
+        "close_done_title": "Case Closed",
+        "close_done": "Case {id} has been closed.",
+        "close_button": "Close Case",
+        "note_done_title": "Note Added",
+        "note_done": "Staff note added to case {id}.",
+        "note_button": "Add Note"
+      }
+    },
+    "manage": {
+      "not_staff_title": "Not a Staff Member",
+      "not_staff": "{user} is not a staff member.",
+      "hierarchy": "You can only modify staff members below your hierarchy level.",
+      "list": {
+        "title": "Moddy Staff Team",
+        "empty": "No staff members found.",
+        "total": "{count} staff member(s)"
+      },
+      "info": {
+        "title": "Staff Member",
+        "roles": "Roles",
+        "no_roles": "No roles",
+        "permissions": "Granted Permissions",
+        "joined": "Joined Staff",
+        "updated": "Last Updated"
+      },
+      "unrank": {
+        "confirm_title": "Remove From Staff?",
+        "confirm": "Remove {user} from the staff team? All their roles and permissions will be revoked.",
+        "done_title": "Staff Member Removed",
+        "done": "{user} has been removed from the staff team."
+      },
+      "staff": {
+        "title": "Staff Management",
+        "subtitle": "Assign roles and configure permissions, then save.",
+        "roles": "Roles",
+        "roles_hint": "Select which roles this member holds.",
+        "roles_placeholder": "Select roles…",
+        "common": "Common Permissions",
+        "perms": "Permissions",
+        "perms_hint": "Pick a scope, then choose the permissions to grant.",
+        "scope_placeholder": "Configure permissions for…",
+        "perms_placeholder": "Select permissions…",
+        "save": "Save",
+        "remove": "Remove from staff",
+        "cannot_assign": "You can't assign: {roles}.",
+        "removed_title": "Removed From Staff",
+        "removed": "{user} has been removed from the staff team.",
+        "saved_title": "Staff Updated",
+        "saved": "{user}'s roles and permissions were saved.",
+        "bot_title": "Invalid Target",
+        "bot": "Bots can't be added to the staff team."
+      },
+      "badge": {
+        "removed_title": "Badge Removed",
+        "removed": "Removed the {key} badge from {user}.",
+        "assigned_title": "Badge Assigned",
+        "assigned": "Assigned the {key} badge to {user}.",
+        "orgs": "Organisation(s): {orgs}",
+        "import_fail_title": "Import Error",
+        "import_bad_json": "Invalid JSON — expected an array of entries.",
+        "import_summary": "{ok} ok, {err} error(s)",
+        "import_title": "Badge Import"
+      },
+      "subrefresh": {
+        "title": "Subscription Cache Refreshed",
+        "done": "Cleared the subscription cache for {id}. The next read will fetch fresh data from the database."
+      },
+      "redirect": {
+        "modal_add": "Add Redirect",
+        "modal_edit": "Edit Redirect",
+        "domain": "Domain",
+        "path": "Path (starts with /)",
+        "target": "Target URL",
+        "description": "Description",
+        "added": "Redirect Added",
+        "updated": "Redirect Updated",
+        "notfound_title": "Redirect Not Found",
+        "notfound": "No redirect with id {id}.",
+        "list_title": "Redirect Links",
+        "empty": "No redirect links found.",
+        "total": "{count} link(s)",
+        "deleted_title": "Redirect Deleted",
+        "deleted": "Redirect {id} ({src}) was deleted.",
+        "confirm_title": "Delete Redirect?",
+        "confirm": "Permanently delete the redirect {src}?"
+      },
+      "banner": {
+        "typed": "Typed Banner",
+        "custom": "Custom Banner",
+        "choose_title": "New Banner",
+        "choose": "Choose the banner kind below.",
+        "type": "Type",
+        "message": "Message",
+        "icon": "Icon SVG",
+        "color": "Color (hex #RRGGBB)",
+        "visibility": "Visibility",
+        "dashboard": "Show on dashboard",
+        "website": "Show on website",
+        "saved": "Banner Saved",
+        "bad_color": "Invalid color {color}. Use #RRGGBB.",
+        "notfound_title": "Banner Not Found",
+        "notfound": "No banner with id {id}.",
+        "list_title": "Banners",
+        "empty": "No banners found.",
+        "total": "{count} banner(s)",
+        "info_title": "Banner #{id}",
+        "active": "Active",
+        "kind": "Kind",
+        "activated_title": "Banner Activated",
+        "activated": "Banner {id} is now live (all others deactivated).",
+        "deactivated_title": "Banner Deactivated",
+        "deactivated": "The active banner has been deactivated.",
+        "none_active_title": "No Active Banner",
+        "none_active": "There is no active banner to deactivate.",
+        "deleted_title": "Banner Deleted",
+        "deleted": "Banner {id} has been deleted.",
+        "confirm_title": "Delete Banner?",
+        "confirm": "Permanently delete banner {id}?"
+      }
+    }
   }
 }

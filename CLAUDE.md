@@ -69,15 +69,22 @@ moddy/
 │       ├── adaptive_slowmode_config.py
 │       ├── social_notifications_config.py
 │
-├── staff/                     # Staff/dev command system (prefix-based)
-│   ├── base.py                #   Base classes for staff commands
-│   ├── staff_manager.py       #   m. commands (rank, unrank, etc.)
-│   ├── dev_commands.py        #   d. commands (reload, sql, stats, etc.)
-│   ├── team_commands.py       #   t. commands (common staff)
-│   ├── moderator_commands.py  #   mod. commands (blacklist, etc.)
-│   ├── support_commands.py    #   sup. commands
-│   ├── communication_commands.py  # com. commands
-│   └── case_commands.py       #   Case management
+├── staff/                     # Staff/dev command system (message + slash)
+│   ├── base.py                #   StaffCommandsCog (auto-delete tracking)
+│   ├── staff_commands.py      #   Entrypoint extension for the new framework
+│   ├── framework/             #   Scalable dual message+slash engine (see docs)
+│   │   ├── cog.py             #     Dispatcher: routing, perms, logging, incognito
+│   │   ├── command.py         #     StaffCommand base + SlashOption + registry
+│   │   ├── context.py         #     StaffContext (unifies message + slash)
+│   │   ├── registry.py        #     Discovery + dynamic /dev,/team… group build
+│   │   ├── design.py          #     Standardized Components V2 panels (accents)
+│   │   └── parsing.py         #     Arg helpers (user/guild id)
+│   ├── commands/dev/          #   /dev commands (one file each)
+│   ├── commands/team/         #   /team commands (incl. help)
+│   ├── commands/mod/          #   /mod commands + case/ sub-group
+│   ├── commands/manage/       #   /manage commands (staff panel, badge, redirect/, banner/…)
+│   ├── support_commands.py    #   sup. commands — legacy (not yet migrated)
+│   └── communication_commands.py  # com. commands — legacy (not yet migrated)
 │
 ├── db/                        # Database layer (repository pattern)
 │   ├── base.py                #   ModdyDatabase core class

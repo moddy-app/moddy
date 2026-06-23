@@ -1,5 +1,12 @@
 # MODDY Staff Permissions System
 
+> **Note (2026-06):** the staff *commands* were rebuilt on a new dual
+> message + slash framework — see **[STAFF_COMMANDS_FRAMEWORK.md](STAFF_COMMANDS_FRAMEWORK.md)**.
+> Slash commands (`/dev`, `/team`, `/mod`, `/manage`) are synced only to
+> OFFICIAL servers; message commands (`d.`, `t.`, `mod.`, `m.`) work everywhere.
+> The **roles & permissions model** described below is still current; only the
+> `sup.` and `com.` commands remain on the legacy cogs.
+
 ## Overview
 
 The MODDY staff system provides a comprehensive role-based permission system for managing staff members with different levels of access and responsibilities.

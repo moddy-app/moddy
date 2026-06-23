@@ -63,6 +63,13 @@ MANAGER_PERMISSIONS = [
     "stafflist",     # View staff list
     "staffinfo",     # View staff information
     "badge_manage",  # Manage user verification badges
+    # Operations / platform permissions. These let non-dev staff run commands
+    # that historically lived under the dev prefix only "out of laziness".
+    # A staff command declares the node it needs via StaffCommand.permission.
+    "redirect_manage",      # Manage redirect links (moddy.app/...)
+    "banner_manage",        # Manage site/dashboard banners
+    "stripe_manage",        # Manage Stripe / billing operations
+    "official_manage",      # Mark/unmark OFFICIAL Moddy servers
 ]
 
 # Map role names to their available permissions
@@ -117,6 +124,12 @@ def get_permission_label(permission: str) -> str:
         "stafflist": "View Staff List",
         "staffinfo": "View Staff Information",
         "badge_manage": "Manage User Verification Badges",
+
+        # Operations / platform
+        "redirect_manage": "Manage Redirect Links",
+        "banner_manage": "Manage Site Banners",
+        "stripe_manage": "Manage Stripe / Billing",
+        "official_manage": "Manage Official Servers",
     }
     return labels.get(permission, permission.replace("_", " ").title())
 
