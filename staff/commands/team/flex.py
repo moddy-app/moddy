@@ -6,13 +6,15 @@ import discord
 from discord import ui
 
 from staff.framework import StaffCommand, staff_command, design, CommandType
-from staff.framework import badges
-from utils import emojis
 from utils.i18n import t
 from utils.staff_permissions import staff_permissions
 from cogs.error_handler import BaseView
 
 logger = logging.getLogger("moddy.staff.team.flex")
+
+# Exact flex design (see request): Moddy square icon + accent colour 27391.
+MODDY_ICON = "<:ModdyIconCarre:1517239121322578090>"
+FLEX_ACCENT = 27391
 
 ROLE_KEY = {
     "Dev": "developer",
@@ -44,18 +46,18 @@ class FlexCommand(StaffCommand):
 
         role_key = ROLE_KEY.get(roles[0].value, "member")
         role_display = t(f"staff.team.flex.roles.{role_key}", locale=locale)
-        badge = badges.role_badge(roles[0].value)
 
         view = BaseView()
-        container = design.make_container("success")
+        container = design.make_container(FLEX_ACCENT)
         container.add_item(ui.TextDisplay(
-            f"{emojis.VERIFIED} {ctx.author.mention} "
-            f"{t('staff.team.flex.message', locale=locale, role=role_display)} {badge}".rstrip()
+            f"### **{MODDY_ICON} {ctx.author.mention} "
+            f"{t('staff.team.flex.message', locale=locale, role=role_display)}**"
         ))
         container.add_item(ui.TextDisplay(
-            f"-# {t('staff.team.flex.disclaimer', locale=locale)}\n"
+            f"-# {t('staff.team.flex.authorized', locale=locale)}\n"
+            f"-# {t('staff.team.flex.prevent', locale=locale)}\n"
             "-# [Report Staff](https://moddy.app/report-staff) • "
-            "[Support](https://moddy.app/support) • [Documentation](https://docs.moddy.app/)"
+            "[Support](https://moddy.app/support) • [Documentation](https://moddy.app/docs-flex)"
         ))
         view.add_item(container)
 

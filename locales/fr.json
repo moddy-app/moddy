@@ -1373,7 +1373,9 @@
           "member": "membre",
           "support": "agent de support",
           "moderator": "modérateur"
-        }
+        },
+        "authorized": "L'équipe Moddy est autorisée à agir sur ton serveur.",
+        "prevent": "Ce message a été envoyé pour prévenir l'usurpation d'identité."
       },
       "help": {
         "title": "Commandes staff",
