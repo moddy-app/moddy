@@ -117,12 +117,24 @@ class StaffCommandsRouter(StaffCommandsCog):
         if command is None:
             bucket = self.subgroup_index.get((command_type.value, command_name))
             if not bucket:
-                return  # not migrated — let the legacy cog handle it
+                # Owned type but unknown command — the legacy cog is gone.
+                await self.reply_with_tracking(message, design.error(
+                    t("staff.common.unknown_command.title", locale="en-US"),
+                    t("staff.common.unknown_command.description", locale="en-US",
+                      command=f"{command_type.value}.{command_name}"),
+                ))
+                return
             parts = (args or "").split(maxsplit=1)
             sub = parts[0].lower() if parts else ""
             raw_args = parts[1] if len(parts) > 1 else ""
             command = bucket.get(sub)
             if command is None:
+                subs = ", ".join(f"`{s}`" for s in sorted({c.name for c in bucket.values()}))
+                await self.reply_with_tracking(message, design.error(
+                    t("staff.common.unknown_subcommand.title", locale="en-US"),
+                    t("staff.common.unknown_subcommand.description", locale="en-US",
+                      group=f"{command_type.value}.{command_name}", subs=subs),
+                ))
                 return
 
         allowed, reason = await self._has_permission(command, message.author.id)

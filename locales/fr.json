@@ -1167,7 +1167,11 @@
       "cancel": "Annuler",
       "cancelled": "Annulé",
       "affiliation": "Affilié à {orgs}",
-      "cancelled_desc": "Aucune modification n'a été effectuée."
+      "cancelled_desc": "Aucune modification n'a été effectuée.",
+      "unknown_subcommand": {
+        "title": "Sous-commande inconnue",
+        "description": "`{group}` n'a pas cette sous-commande. Disponibles : {subs}."
+      }
     },
     "dev": {
       "db_unavailable": "La base de données n'est pas connectée.",
@@ -1369,6 +1373,19 @@
           "member": "membre",
           "support": "agent de support",
           "moderator": "modérateur"
+        }
+      },
+      "help": {
+        "title": "Commandes staff",
+        "subtitle": "Les commandes que tu peux utiliser, par département.",
+        "empty": "Tu n'as accès à aucune commande staff.",
+        "groups": {
+          "d": "Développeur",
+          "t": "Équipe",
+          "m": "Gestion",
+          "mod": "Modération",
+          "sup": "Support",
+          "com": "Communication"
         }
       }
     },

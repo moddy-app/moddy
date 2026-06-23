@@ -1168,7 +1168,11 @@
       "cancel": "Cancel",
       "cancelled": "Cancelled",
       "affiliation": "Affiliated with {orgs}",
-      "cancelled_desc": "No changes were made."
+      "cancelled_desc": "No changes were made.",
+      "unknown_subcommand": {
+        "title": "Unknown Subcommand",
+        "description": "`{group}` has no subcommand for that. Available: {subs}."
+      }
     },
     "dev": {
       "db_unavailable": "The database is not connected.",
@@ -1370,6 +1374,19 @@
           "member": "member",
           "support": "support agent",
           "moderator": "moderator"
+        }
+      },
+      "help": {
+        "title": "Staff Commands",
+        "subtitle": "Commands you can use, by department.",
+        "empty": "You don't have access to any staff command.",
+        "groups": {
+          "d": "Developer",
+          "t": "Team",
+          "m": "Management",
+          "mod": "Moderation",
+          "sup": "Support",
+          "com": "Communication"
         }
       }
     },
