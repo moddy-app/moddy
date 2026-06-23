@@ -80,7 +80,12 @@ class StaffCommandsRouter(StaffCommandsCog):
         return True, ""
 
     async def _has_node(self, user_id: int, node: str) -> bool:
+        # Super-admin, devs and Managers are not gated by granular nodes.
         if user_id == staff_permissions.SUPER_ADMIN_ID or self.bot.is_developer(user_id):
+            return True
+        from utils.staff_permissions import StaffRole
+        roles = await staff_permissions.get_user_roles(user_id)
+        if StaffRole.MANAGER in roles:
             return True
         if not self.bot.db:
             return False
