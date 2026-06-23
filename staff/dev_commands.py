@@ -215,8 +215,6 @@ class DeveloperCommands(StaffCommandsCog):
             await self.handle_cogs_command(message, args)
         elif command_name == "presence":
             await self.handle_presence_command(message, args)
-        elif command_name == "banner":
-            await self.handle_banner_command(message, args)
         else:
             view = create_error_message("Unknown Command", f"Developer command `{command_name}` not found.")
             await self.reply_with_tracking(message, view)

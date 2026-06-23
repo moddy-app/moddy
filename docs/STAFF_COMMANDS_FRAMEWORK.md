@@ -133,13 +133,16 @@ arguments (used by `sql` and `jsk`). Commands must **not** log themselves.
   **broken on message** (couldn't open a modal) — now fixed via `open_modal`.
 - ✅ **`/manage`** — `staff` (unified **rank + setstaff** panel; message aliases
   `rank`/`setstaff`), `staffinfo`, `list` (alias `stafflist`), `unrank`,
-  `badge` (slash single-user; message also supports bulk `import`).
+  `badge` (slash single-user; message also supports bulk `import`),
+  `subrefresh` (Stripe cache, `stripe_manage`), the `redirect` sub-group
+  (`add/edit/list/delete`, `redirect_manage`) and the `banner` sub-group
+  (`add/edit/list/info/activate/deactivate/delete`, `banner_manage`).
+  `redirect` / `banner` / `subrefresh` were **recategorized out of `/dev`**.
 - ⚪ **`/support` / `/com`** — no unique commands to migrate yet (only legacy
   placeholder `help`); `support.subscription` is covered by `/team subscription`.
-- ⏳ **Still on legacy** — `t.help`; the dev `redirect` / `banner` /
-  `sub-refresh` commands, to be **recategorized** out of dev into proper
-  departments using the new permission nodes (`redirect_manage`,
-  `banner_manage`, `stripe_manage`).
+- ⏳ **Still on legacy** — only `t.help` (a cross-group help; rebuilt once every
+  group is migrated). `staff/dev_commands.py` no longer routes any command and
+  can be removed in a later cleanup.
 
 **Message commands are always rendered in English** (no per-user language
 signal on a message); slash commands use ``interaction.locale``.
