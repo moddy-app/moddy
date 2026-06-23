@@ -97,6 +97,11 @@ class ModdyBot(commands.Bot):
         # Cache pour les commandes guild-only (NE JAMAIS les remettre dans l'arbre global)
         self._guild_only_commands = []
 
+        # Staff slash command groups (/dev, /team, ...). Published by the staff
+        # framework cog; synced ONLY to OFFICIAL guilds. Never added to the
+        # global tree, so they can never leak to non-official servers.
+        self.staff_slash_groups = []
+
         # Serveur HTTP interne pour /status
         self.internal_api_server = None
         self.internal_api_thread = None
@@ -726,9 +731,39 @@ class ModdyBot(commands.Bot):
         except Exception as e:
             logger.error(f"[FAIL] Error syncing commands: {e}")
 
+    async def get_official_guild_ids(self) -> set:
+        """Return the set of guild ids flagged with the OFFICIAL attribute.
+
+        Staff slash commands (/dev, /team, ...) are synced to these guilds only.
+        Toggle a guild's status with the ``official`` staff command.
+        """
+        if not self.db:
+            return set()
+        try:
+            ids = await self.db.get_guilds_with_attribute("OFFICIAL")
+            return set(ids)
+        except Exception as e:
+            logger.error(f"[FAIL] Could not fetch OFFICIAL guilds: {e}")
+            return set()
+
+    def _register_guild_command_set(self, guild: discord.Guild, official_ids: set):
+        """(Re)build the per-guild command tree: guild-only commands for every
+        guild, plus the staff slash groups for OFFICIAL guilds only."""
+        self.tree.clear_commands(guild=guild)
+
+        # Guild-only commands (e.g. /config) for every server with Moddy.
+        for command in self._guild_only_commands:
+            self.tree.add_command(command, guild=guild)
+
+        # Staff command groups only on OFFICIAL servers.
+        if guild.id in official_ids:
+            for group in (self.staff_slash_groups or []):
+                self.tree.add_command(group, guild=guild)
+
     async def sync_all_guild_commands(self):
         """
-        Synchronise les commandes guild-only pour TOUS les serveurs.
+        Synchronise les commandes guild-only pour TOUS les serveurs, et les
+        commandes staff (/dev, /team, ...) pour les serveurs OFFICIELS uniquement.
         Appelé dans on_ready() quand self.guilds est disponible.
 
         IMPORTANT: Ne PAS copier les commandes globales avec copy_global_to()
@@ -736,22 +771,16 @@ class ModdyBot(commands.Bot):
         Les commandes globales sont déjà synchronisées globalement et disponibles partout.
         """
         try:
+            official_ids = await self.get_official_guild_ids()
             # Synchroniser les commandes guild-only dans chaque serveur
             guild_count = 0
             for guild in self.guilds:
                 try:
                     # IMPORTANT: Clear d'abord toutes les commandes de ce serveur
-                    # Cela supprime les anciennes commandes synchronisées avec copy_global_to()
-                    # et permet à Discord de réutiliser les commandes globales
-                    self.tree.clear_commands(guild=guild)
+                    # puis ajoute guild-only (+ staff groups si serveur officiel).
+                    self._register_guild_command_set(guild, official_ids)
 
-                    # Ajouter UNIQUEMENT les guild-only à ce serveur (pas les globales)
-                    # Les commandes globales sont déjà disponibles partout sans copy_global_to()
-                    if self._guild_only_commands:
-                        for command in self._guild_only_commands:
-                            self.tree.add_command(command, guild=guild)
-
-                    # Sync les guild-only pour ce serveur (ou sync vide si pas de guild-only)
+                    # Sync les commandes de ce serveur (ou sync vide si rien)
                     await self.tree.sync(guild=guild)
 
                     guild_count += 1
@@ -780,19 +809,11 @@ class ModdyBot(commands.Bot):
             guild: Le serveur pour lequel synchroniser les commandes
         """
         try:
-            # IMPORTANT: Clear d'abord toutes les commandes de ce serveur
-            # Cela supprime les anciennes commandes synchronisées avec copy_global_to()
-            # et permet à Discord de réutiliser les commandes globales
-            self.tree.clear_commands(guild=guild)
+            # Clear puis ajoute guild-only (+ staff groups si serveur officiel).
+            official_ids = await self.get_official_guild_ids()
+            self._register_guild_command_set(guild, official_ids)
 
-            # Ajouter UNIQUEMENT les guild-only à ce serveur (pas les globales)
-            # Les commandes globales sont déjà disponibles partout sans copy_global_to()
-            # Utilise le cache self._guild_only_commands car elles ne sont plus dans l'arbre global
-            if self._guild_only_commands:
-                for command in self._guild_only_commands:
-                    self.tree.add_command(command, guild=guild)
-
-            # Synchroniser les guild-only pour ce serveur (ou sync vide si pas de guild-only)
+            # Synchroniser les commandes pour ce serveur (ou sync vide si rien)
             await self.tree.sync(guild=guild)
 
             logger.info(f"Commands synced for {guild.name} ({guild.id})")

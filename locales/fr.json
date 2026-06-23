@@ -1140,5 +1140,161 @@
     "hu": "Hongrois",
     "uk": "Ukrainien",
     "bg": "Bulgare"
+  },
+  "staff": {
+    "common": {
+      "permission_denied": {
+        "title": "Permission refusée",
+        "description": "Tu n'as pas la permission d'utiliser cette commande."
+      },
+      "invalid_usage": {
+        "title": "Utilisation invalide"
+      },
+      "error": {
+        "title": "Une erreur est survenue",
+        "description": "Une erreur inattendue s'est produite pendant l'exécution. Elle a été enregistrée."
+      },
+      "unknown_command": {
+        "title": "Commande inconnue",
+        "description": "La commande staff `{command}` est introuvable."
+      },
+      "modal_prompt": {
+        "title": "Encore une étape",
+        "description": "Clique sur le bouton ci-dessous pour ouvrir le formulaire."
+      },
+      "not_your_menu": "Ce menu ne t'est pas destiné.",
+      "confirm": "Confirmer",
+      "cancel": "Annuler",
+      "cancelled": "Annulé"
+    },
+    "dev": {
+      "db_unavailable": "La base de données n'est pas connectée.",
+      "cogmanager_missing": "Le CogManager n'est pas chargé.",
+      "shutdown": {
+        "title": "Arrêt en cours",
+        "description": "Moddy s'arrête…"
+      },
+      "stats": {
+        "title": "Statistiques Moddy",
+        "description": "Métriques en temps réel.",
+        "bot": "Bot",
+        "latency": "Latence",
+        "uptime": "Disponibilité",
+        "discord": "Discord",
+        "guilds": "Serveurs",
+        "users": "Utilisateurs",
+        "commands": "Commandes",
+        "database": "Base de données",
+        "errors": "Erreurs",
+        "system": "Système",
+        "extensions": "Extensions"
+      },
+      "cogs": {
+        "title": "Cogs chargés",
+        "total": "{count} cog(s) chargé(s)",
+        "enabled": "Activé",
+        "disabled": "Désactivé",
+        "none": "Aucun cog chargé."
+      },
+      "disabled": {
+        "title": "Cogs désactivés",
+        "count": "{count} cog(s) désactivé(s)",
+        "none_title": "Aucun cog désactivé",
+        "none_description": "Tous les cogs sont actuellement activés."
+      },
+      "reload": {
+        "loading_title": "Rechargement",
+        "loading_all": "Rechargement de toutes les extensions…",
+        "reloaded": "Rechargées ({count})",
+        "failed": "Échecs ({count})",
+        "done_title": "Rechargement terminé",
+        "done_ok": "Toutes les extensions ont été rechargées.",
+        "done_errors": "Certaines extensions n'ont pas pu être rechargées.",
+        "single_ok_title": "Extension rechargée",
+        "single_ok": "{ext} rechargée avec succès.",
+        "single_fail_title": "Échec du rechargement",
+        "single_fail": "Impossible de recharger {ext}."
+      },
+      "disable": {
+        "title": "Cog désactivé",
+        "fail_title": "Désactivation impossible"
+      },
+      "enable": {
+        "title": "Cog activé",
+        "fail_title": "Activation impossible"
+      },
+      "presence": {
+        "title": "Présence mise à jour",
+        "usage": "**Usage :** `d.presence <statut> [activité]`\nStatuts : {options}",
+        "updated": "Présence changée en **{status}**.",
+        "activity": "Activité"
+      },
+      "error": {
+        "title": "Erreur {code}",
+        "subtitle": "Détails de l'erreur enregistrée (source : {source}).",
+        "notfound_title": "Erreur introuvable",
+        "notfound": "Aucune erreur trouvée avec le code {code}.",
+        "details": "Détails",
+        "message": "Message",
+        "context": "Contexte",
+        "no_context": "Aucune information de contexte disponible.",
+        "occurred": "Survenue"
+      },
+      "serverlist": {
+        "title": "Liste des serveurs",
+        "total": "{count} serveurs",
+        "page": "Page {current}/{total}",
+        "empty": "Aucun serveur trouvé.",
+        "members": "Membres",
+        "joined": "Rejoint"
+      },
+      "sql": {
+        "done_title": "Requête exécutée",
+        "no_rows": "Aucune ligne retournée.",
+        "rows": "**{count}** ligne(s) retournée(s).",
+        "result": "Résultat",
+        "fail_title": "Échec de la requête",
+        "danger_title": "Requête dangereuse",
+        "danger_description": "Cette requête peut modifier ou détruire des données. Confirme pour l'exécuter.",
+        "cancelled": "Exécution de la requête annulée."
+      },
+      "jsk": {
+        "no_output": "Exécuté avec succès (aucune sortie).",
+        "done_title": "Code exécuté",
+        "fail_title": "Échec de l'exécution",
+        "modal_title": "Eval Python",
+        "modal_label": "Code",
+        "modal_hint": "Python — async/await supporté. Vars : bot, db, guild, channel…",
+        "open_button": "Ouvrir l'éditeur"
+      },
+      "sync": {
+        "loading_title": "Synchronisation",
+        "loading": "Synchronisation des commandes avec Discord…",
+        "done_title": "Commandes synchronisées",
+        "global_done": "**{count}** commande(s) globale(s) synchronisée(s).",
+        "guilds_done": "Arbres de commandes resynchronisés pour **{count}** serveur(s).",
+        "guild_done": "Commandes resynchronisées pour {name}.",
+        "invalid_title": "Cible invalide",
+        "invalid": "Fournis `global`, `guilds`, ou un id de serveur valide.",
+        "fail_title": "Échec de la synchronisation"
+      },
+      "official": {
+        "title": "Serveur officiel",
+        "added": "{name} ({id}) est maintenant un serveur Moddy **officiel**. Les commandes staff y sont disponibles.",
+        "removed": "{name} ({id}) n'est plus un serveur Moddy officiel. Les commandes staff ont été retirées.",
+        "not_present": "Moddy n'est pas dans ce serveur ; le changement est enregistré et s'appliquera s'il le rejoint.",
+        "sync_failed": "Enregistré, mais la resynchronisation a échoué — lance `/dev sync <guild_id>` manuellement."
+      },
+      "announcements": {
+        "notfound_title": "Serveur introuvable",
+        "notfound": "Impossible de trouver un serveur avec l'id {id}.",
+        "loading_title": "Configuration des annonces",
+        "loading": "Configuration du salon d'annonces pour {name}…",
+        "done_title": "Annonces prêtes",
+        "done": "Annonces configurées pour {name} ({id}).",
+        "fail_title": "Échec de la configuration",
+        "fail": "Impossible de configurer les annonces pour {name}."
+      }
+    }
   }
 }

@@ -1141,5 +1141,161 @@
     "hu": "Hungarian",
     "uk": "Ukrainian",
     "bg": "Bulgarian"
+  },
+  "staff": {
+    "common": {
+      "permission_denied": {
+        "title": "Permission Denied",
+        "description": "You don't have permission to use this command."
+      },
+      "invalid_usage": {
+        "title": "Invalid Usage"
+      },
+      "error": {
+        "title": "Something Went Wrong",
+        "description": "An unexpected error occurred while running this command. It has been logged."
+      },
+      "unknown_command": {
+        "title": "Unknown Command",
+        "description": "Staff command `{command}` was not found."
+      },
+      "modal_prompt": {
+        "title": "One More Step",
+        "description": "Click the button below to open the form."
+      },
+      "not_your_menu": "This menu isn't for you.",
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "cancelled": "Cancelled"
+    },
+    "dev": {
+      "db_unavailable": "The database is not connected.",
+      "cogmanager_missing": "The CogManager is not loaded.",
+      "shutdown": {
+        "title": "Shutting Down",
+        "description": "Moddy is shutting down…"
+      },
+      "stats": {
+        "title": "Moddy Statistics",
+        "description": "Live runtime metrics.",
+        "bot": "Bot",
+        "latency": "Latency",
+        "uptime": "Uptime",
+        "discord": "Discord",
+        "guilds": "Guilds",
+        "users": "Users",
+        "commands": "Commands",
+        "database": "Database",
+        "errors": "Errors",
+        "system": "System",
+        "extensions": "Extensions"
+      },
+      "cogs": {
+        "title": "Loaded Cogs",
+        "total": "{count} cog(s) loaded",
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "none": "No cogs loaded."
+      },
+      "disabled": {
+        "title": "Disabled Cogs",
+        "count": "{count} cog(s) disabled",
+        "none_title": "No Disabled Cogs",
+        "none_description": "All cogs are currently enabled."
+      },
+      "reload": {
+        "loading_title": "Reloading",
+        "loading_all": "Reloading all extensions…",
+        "reloaded": "Reloaded ({count})",
+        "failed": "Failed ({count})",
+        "done_title": "Reload Complete",
+        "done_ok": "All extensions reloaded successfully.",
+        "done_errors": "Some extensions failed to reload.",
+        "single_ok_title": "Extension Reloaded",
+        "single_ok": "Successfully reloaded {ext}.",
+        "single_fail_title": "Reload Failed",
+        "single_fail": "Failed to reload {ext}."
+      },
+      "disable": {
+        "title": "Cog Disabled",
+        "fail_title": "Cannot Disable"
+      },
+      "enable": {
+        "title": "Cog Enabled",
+        "fail_title": "Cannot Enable"
+      },
+      "presence": {
+        "title": "Presence Updated",
+        "usage": "**Usage:** `d.presence <status> [activity]`\nStatuses: {options}",
+        "updated": "Presence changed to **{status}**.",
+        "activity": "Activity"
+      },
+      "error": {
+        "title": "Error {code}",
+        "subtitle": "Logged error details (source: {source}).",
+        "notfound_title": "Error Not Found",
+        "notfound": "No error found with code {code}.",
+        "details": "Details",
+        "message": "Message",
+        "context": "Context",
+        "no_context": "No context information available.",
+        "occurred": "Occurred"
+      },
+      "serverlist": {
+        "title": "Server List",
+        "total": "{count} servers",
+        "page": "Page {current}/{total}",
+        "empty": "No servers found.",
+        "members": "Members",
+        "joined": "Joined"
+      },
+      "sql": {
+        "done_title": "Query Executed",
+        "no_rows": "No rows returned.",
+        "rows": "**{count}** row(s) returned.",
+        "result": "Result",
+        "fail_title": "Query Failed",
+        "danger_title": "Dangerous Query",
+        "danger_description": "This query may modify or destroy data. Confirm to run it.",
+        "cancelled": "Query execution cancelled."
+      },
+      "jsk": {
+        "no_output": "Executed successfully (no output).",
+        "done_title": "Code Executed",
+        "fail_title": "Execution Failed",
+        "modal_title": "Python Eval",
+        "modal_label": "Code",
+        "modal_hint": "Python — async/await supported. Vars: bot, db, guild, channel…",
+        "open_button": "Open Editor"
+      },
+      "sync": {
+        "loading_title": "Syncing",
+        "loading": "Synchronizing application commands with Discord…",
+        "done_title": "Commands Synced",
+        "global_done": "Synced **{count}** global command(s).",
+        "guilds_done": "Re-synced command trees for **{count}** server(s).",
+        "guild_done": "Re-synced commands for {name}.",
+        "invalid_title": "Invalid Target",
+        "invalid": "Provide `global`, `guilds`, or a valid guild id.",
+        "fail_title": "Sync Failed"
+      },
+      "official": {
+        "title": "Official Server",
+        "added": "{name} ({id}) is now an **official** Moddy server. Staff slash commands are available there.",
+        "removed": "{name} ({id}) is no longer an official Moddy server. Staff slash commands were removed.",
+        "not_present": "Moddy is not currently in this server; the change is saved and applies if it joins.",
+        "sync_failed": "Saved, but the command re-sync failed — run `/dev sync <guild_id>` manually."
+      },
+      "announcements": {
+        "notfound_title": "Guild Not Found",
+        "notfound": "Could not find a guild with id {id}.",
+        "loading_title": "Setting Up Announcements",
+        "loading": "Setting up the announcement channel for {name}…",
+        "done_title": "Announcements Ready",
+        "done": "Set up announcements for {name} ({id}).",
+        "fail_title": "Setup Failed",
+        "fail": "Could not set up announcements for {name}."
+      }
+    }
   }
 }

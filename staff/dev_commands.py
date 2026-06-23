@@ -160,6 +160,12 @@ class DeveloperCommands(StaffCommandsCog):
         if command_type != CommandType.DEV:
             return
 
+        # Defer to the new staff framework for commands that have been migrated
+        # there (avoids double-dispatch during the staff-commands redesign).
+        router = self.bot.get_cog("StaffCommandsRouter")
+        if router and (command_type.value, command_name) in getattr(router, "message_index", {}):
+            return
+
         # Log the command attempt
         logger.info(f"🔧 Dev command '{command_name}' attempted by {message.author} ({message.author.id})")
 
