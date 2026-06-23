@@ -97,7 +97,8 @@ class JskModal(BaseModal):
 @staff_command
 class JskCommand(StaffCommand):
     command_type = CommandType.DEV
-    name = "jsk"
+    name = "eval"
+    aliases = ("jsk",)
     description = "Evaluate Python code in the bot runtime."
     sensitive = True
 

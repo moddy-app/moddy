@@ -6,6 +6,7 @@ import discord
 from discord import ui
 
 from staff.framework import StaffCommand, staff_command, design, CommandType
+from staff.framework import badges
 from utils import emojis
 from utils.i18n import t
 from utils.staff_permissions import staff_permissions
@@ -43,12 +44,13 @@ class FlexCommand(StaffCommand):
 
         role_key = ROLE_KEY.get(roles[0].value, "member")
         role_display = t(f"staff.team.flex.roles.{role_key}", locale=locale)
+        badge = badges.role_badge(roles[0].value)
 
         view = BaseView()
         container = design.make_container("success")
         container.add_item(ui.TextDisplay(
             f"{emojis.VERIFIED} {ctx.author.mention} "
-            f"{t('staff.team.flex.message', locale=locale, role=role_display)}"
+            f"{t('staff.team.flex.message', locale=locale, role=role_display)} {badge}".rstrip()
         ))
         container.add_item(ui.TextDisplay(
             f"-# {t('staff.team.flex.disclaimer', locale=locale)}\n"

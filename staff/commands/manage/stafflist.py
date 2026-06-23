@@ -46,6 +46,6 @@ class StaffListCommand(StaffCommand):
             t("staff.manage.list.title", locale=locale),
             f"**{t('staff.manage.list.total', locale=locale, count=len(members))}**",
             fields=fields,
-            emoji=emojis.STAFF,
+            emoji=emojis.MODDYTEAM_BADGE,
             accent="primary",
         ))

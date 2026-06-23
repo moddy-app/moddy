@@ -1386,7 +1386,9 @@
           "mod": "Modération",
           "sup": "Support",
           "com": "Communication"
-        }
+        },
+        "count": "{count} commande(s)",
+        "placeholder": "Choisis un département…"
       }
     },
     "mod": {

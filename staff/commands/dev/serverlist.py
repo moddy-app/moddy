@@ -85,7 +85,8 @@ class ServerListView(BaseView):
 @staff_command
 class ServerListCommand(StaffCommand):
     command_type = CommandType.DEV
-    name = "serverlist"
+    name = "servers"
+    aliases = ("serverlist",)
     description = "Paginated list of every server Moddy is in."
 
     async def execute(self, ctx):

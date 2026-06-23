@@ -16,8 +16,7 @@ class StaffInfoCommand(StaffCommand):
     name = "staffinfo"
     description = "Show information about a staff member (defaults to you)."
     options = [
-        SlashOption("user", "user", "Staff member (optional).", required=False),
-        SlashOption("user_id", "string", "Staff member id (optional).", required=False),
+        SlashOption("user", "user", "Staff member (defaults to you).", required=False),
     ]
 
     def parse_message(self, raw: str) -> dict:
@@ -61,7 +60,7 @@ class StaffInfoCommand(StaffCommand):
             role_lines.append(f"{badges.role_badge(role.value)} {get_role_display_name(role.value)}")
 
         fields = [{
-            "name": f"{emojis.STAFF} {t('staff.manage.info.roles', locale=locale)}",
+            "name": f"{emojis.MODDYTEAM_BADGE} {t('staff.manage.info.roles', locale=locale)}",
             "value": "\n".join(role_lines) if role_lines else f"-# {t('staff.manage.info.no_roles', locale=locale)}",
         }]
 
@@ -86,6 +85,6 @@ class StaffInfoCommand(StaffCommand):
             t("staff.manage.info.title", locale=locale),
             f"{rendered} (`{user.id}`)",
             fields=fields,
-            emoji=emojis.STAFF,
+            emoji=emojis.MODDYTEAM_BADGE,
             accent="primary",
         ))

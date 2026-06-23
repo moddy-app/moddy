@@ -18,8 +18,7 @@ class UnrankCommand(StaffCommand):
     name = "unrank"
     description = "Remove a member from the staff team."
     options = [
-        SlashOption("user", "user", "Member to remove.", required=False),
-        SlashOption("user_id", "string", "Member id (optional).", required=False),
+        SlashOption("user", "user", "Member to remove.", required=True),
     ]
 
     def parse_message(self, raw: str) -> dict:
