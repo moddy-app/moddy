@@ -1374,7 +1374,9 @@
           "member": "member",
           "support": "support agent",
           "moderator": "moderator"
-        }
+        },
+        "authorized": "Moddy team are authorized to take action on your server.",
+        "prevent": "This message was sent to prevent identity theft."
       },
       "help": {
         "title": "Staff Commands",
