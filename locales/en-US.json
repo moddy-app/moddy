@@ -1492,6 +1492,25 @@
       "subrefresh": {
         "title": "Subscription Cache Refreshed",
         "done": "Cleared the subscription cache for {id}. The next read will fetch fresh data from the database."
+      },
+      "redirect": {
+        "modal_add": "Add Redirect",
+        "modal_edit": "Edit Redirect",
+        "domain": "Domain",
+        "path": "Path (starts with /)",
+        "target": "Target URL",
+        "description": "Description",
+        "added": "Redirect Added",
+        "updated": "Redirect Updated",
+        "notfound_title": "Redirect Not Found",
+        "notfound": "No redirect with id {id}.",
+        "list_title": "Redirect Links",
+        "empty": "No redirect links found.",
+        "total": "{count} link(s)",
+        "deleted_title": "Redirect Deleted",
+        "deleted": "Redirect {id} ({src}) was deleted.",
+        "confirm_title": "Delete Redirect?",
+        "confirm": "Permanently delete the redirect {src}?"
       }
     }
   }

@@ -1491,6 +1491,25 @@
       "subrefresh": {
         "title": "Cache d'abonnement rafraîchi",
         "done": "Cache d'abonnement vidé pour {id}. La prochaine lecture récupérera des données fraîches depuis la base."
+      },
+      "redirect": {
+        "modal_add": "Ajouter une redirection",
+        "modal_edit": "Modifier la redirection",
+        "domain": "Domaine",
+        "path": "Chemin (commence par /)",
+        "target": "URL cible",
+        "description": "Description",
+        "added": "Redirection ajoutée",
+        "updated": "Redirection mise à jour",
+        "notfound_title": "Redirection introuvable",
+        "notfound": "Aucune redirection avec l'id {id}.",
+        "list_title": "Liens de redirection",
+        "empty": "Aucun lien de redirection trouvé.",
+        "total": "{count} lien(s)",
+        "deleted_title": "Redirection supprimée",
+        "deleted": "La redirection {id} ({src}) a été supprimée.",
+        "confirm_title": "Supprimer la redirection ?",
+        "confirm": "Supprimer définitivement la redirection {src} ?"
       }
     }
   }
