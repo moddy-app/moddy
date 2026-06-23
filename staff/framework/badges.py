@@ -14,7 +14,28 @@ from typing import Optional, Tuple
 
 import discord
 
-from utils.emojis import get_user_verification_badge, format_verification_badge
+from utils.emojis import (
+    get_user_verification_badge, format_verification_badge,
+    DEV_BADGE, MANAGER_BADGE, MOD_SUPERVISOR_BADGE, COMMUNICATION_SUPERVISOR_BADGE,
+    SUPPORT_SUPERVISOR_BADGE, MODERATOR_BADGE, COMMUNICATION_BADGE, SUPPORTAGENT_BADGE,
+)
+
+# Staff role value -> badge emoji.
+STAFF_ROLE_BADGES = {
+    "Dev": DEV_BADGE,
+    "Manager": MANAGER_BADGE,
+    "Supervisor_Mod": MOD_SUPERVISOR_BADGE,
+    "Supervisor_Com": COMMUNICATION_SUPERVISOR_BADGE,
+    "Supervisor_Sup": SUPPORT_SUPERVISOR_BADGE,
+    "Moderator": MODERATOR_BADGE,
+    "Communication": COMMUNICATION_BADGE,
+    "Support": SUPPORTAGENT_BADGE,
+}
+
+
+def role_badge(role_value: str) -> str:
+    """Return the badge emoji for a staff role value (empty string if unknown)."""
+    return STAFF_ROLE_BADGES.get(role_value, "")
 
 
 async def fetch_verification(bot, user_id: int) -> Tuple[dict, dict]:

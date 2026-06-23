@@ -1166,7 +1166,8 @@
       "confirm": "Confirmer",
       "cancel": "Annuler",
       "cancelled": "Annulé",
-      "affiliation": "Affilié à {orgs}"
+      "affiliation": "Affilié à {orgs}",
+      "cancelled_desc": "Aucune modification n'a été effectuée."
     },
     "dev": {
       "db_unavailable": "La base de données n'est pas connectée.",
@@ -1369,6 +1370,52 @@
           "support": "agent de support",
           "moderator": "modérateur"
         }
+      }
+    },
+    "mod": {
+      "interserver": {
+        "notfound_title": "Message introuvable",
+        "notfound": "Aucun message inter-serveur trouvé avec l'id {id}.",
+        "no_content": "Aucun contenu",
+        "author": "Auteur",
+        "origin": "Origine",
+        "content": "Contenu",
+        "meta": "Détails",
+        "timestamp": "Envoyé",
+        "status": "Statut",
+        "team_msg": "Message de l'équipe Moddy",
+        "relayed": "Relayé vers",
+        "info_title": "Message inter-serveur {id}",
+        "already_deleted_title": "Déjà supprimé",
+        "already_deleted": "Le message {id} est déjà supprimé.",
+        "deleted_title": "Message supprimé",
+        "deleted": "Le message inter-serveur {id} a été retiré de tous les serveurs ({count} copies).",
+        "confirm_title": "Supprimer le message inter-serveur ?",
+        "confirm": "Cette action supprime définitivement le message {id} de tous les serveurs où il a été relayé."
+      }
+    },
+    "manage": {
+      "not_staff_title": "Pas membre du staff",
+      "not_staff": "{user} n'est pas membre du staff.",
+      "hierarchy": "Tu ne peux modifier que les membres du staff sous ton niveau hiérarchique.",
+      "list": {
+        "title": "Équipe staff Moddy",
+        "empty": "Aucun membre du staff trouvé.",
+        "total": "{count} membre(s) du staff"
+      },
+      "info": {
+        "title": "Membre du staff",
+        "roles": "Rôles",
+        "no_roles": "Aucun rôle",
+        "permissions": "Permissions accordées",
+        "joined": "Arrivée dans le staff",
+        "updated": "Dernière mise à jour"
+      },
+      "unrank": {
+        "confirm_title": "Retirer du staff ?",
+        "confirm": "Retirer {user} de l'équipe staff ? Tous ses rôles et permissions seront révoqués.",
+        "done_title": "Membre retiré",
+        "done": "{user} a été retiré de l'équipe staff."
       }
     }
   }

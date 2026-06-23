@@ -163,7 +163,7 @@ class DeveloperCommands(StaffCommandsCog):
         # Defer to the new staff framework for commands that have been migrated
         # there (avoids double-dispatch during the staff-commands redesign).
         router = self.bot.get_cog("StaffCommandsRouter")
-        if router and (command_type.value, command_name) in getattr(router, "message_index", {}):
+        if router and hasattr(router, "is_migrated") and router.is_migrated(command_type.value, command_name):
             return
 
         # Log the command attempt

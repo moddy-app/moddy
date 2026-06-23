@@ -48,6 +48,11 @@ class ModeratorCommands(StaffCommandsCog):
         if command_type != CommandType.MODERATOR:
             return
 
+        # Defer migrated commands to the new staff framework.
+        router = self.bot.get_cog("StaffCommandsRouter")
+        if router and hasattr(router, "is_migrated") and router.is_migrated(command_type.value, command_name):
+            return
+
         # Check permissions
         allowed, reason = await staff_permissions.check_command_permission(
             message.author.id, command_type, command_name

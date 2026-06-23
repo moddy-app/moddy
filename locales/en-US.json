@@ -1167,7 +1167,8 @@
       "confirm": "Confirm",
       "cancel": "Cancel",
       "cancelled": "Cancelled",
-      "affiliation": "Affiliated with {orgs}"
+      "affiliation": "Affiliated with {orgs}",
+      "cancelled_desc": "No changes were made."
     },
     "dev": {
       "db_unavailable": "The database is not connected.",
@@ -1370,6 +1371,52 @@
           "support": "support agent",
           "moderator": "moderator"
         }
+      }
+    },
+    "mod": {
+      "interserver": {
+        "notfound_title": "Message Not Found",
+        "notfound": "No inter-server message found with id {id}.",
+        "no_content": "No content",
+        "author": "Author",
+        "origin": "Origin",
+        "content": "Content",
+        "meta": "Details",
+        "timestamp": "Sent",
+        "status": "Status",
+        "team_msg": "Moddy Team Message",
+        "relayed": "Relayed to",
+        "info_title": "Inter-Server Message {id}",
+        "already_deleted_title": "Already Deleted",
+        "already_deleted": "Message {id} is already deleted.",
+        "deleted_title": "Message Deleted",
+        "deleted": "Inter-server message {id} was removed from all servers ({count} copies).",
+        "confirm_title": "Delete Inter-Server Message?",
+        "confirm": "This permanently deletes message {id} from every server it was relayed to."
+      }
+    },
+    "manage": {
+      "not_staff_title": "Not a Staff Member",
+      "not_staff": "{user} is not a staff member.",
+      "hierarchy": "You can only modify staff members below your hierarchy level.",
+      "list": {
+        "title": "Moddy Staff Team",
+        "empty": "No staff members found.",
+        "total": "{count} staff member(s)"
+      },
+      "info": {
+        "title": "Staff Member",
+        "roles": "Roles",
+        "no_roles": "No roles",
+        "permissions": "Granted Permissions",
+        "joined": "Joined Staff",
+        "updated": "Last Updated"
+      },
+      "unrank": {
+        "confirm_title": "Remove From Staff?",
+        "confirm": "Remove {user} from the staff team? All their roles and permissions will be revoked.",
+        "done_title": "Staff Member Removed",
+        "done": "{user} has been removed from the staff team."
       }
     }
   }

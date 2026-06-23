@@ -34,6 +34,7 @@ class StaffCommandsRouter(StaffCommandsCog):
     def __init__(self, bot):
         super().__init__(bot)
         self.message_index = {}
+        self.subgroup_index = {}
         self.groups = []
         # Types fully owned by the new framework. Message commands of these
         # types are handled here; legacy cogs keep handling the rest.
@@ -42,13 +43,22 @@ class StaffCommandsRouter(StaffCommandsCog):
     async def setup(self):
         """Discover commands and register the slash groups on the bot."""
         registry.discover_commands()
-        self.message_index, self.groups = registry.build(self.bot, self._run_slash)
-        self.owned_types = {cmd.command_type for cmd in self.message_index.values()}
+        self.message_index, self.subgroup_index, self.groups = registry.build(self.bot, self._run_slash)
+        self.owned_types = {ct for (ct, _) in self.message_index} | {ct for (ct, _) in self.subgroup_index}
         self.bot.staff_slash_groups = self.groups
-        logger.info(
-            "Staff router ready: %d command(s), %d slash group(s)",
-            len({id(c) for c in self.message_index.values()}), len(self.groups),
-        )
+        all_cmds = set(map(id, self.message_index.values()))
+        for bucket in self.subgroup_index.values():
+            all_cmds |= set(map(id, bucket.values()))
+        logger.info("Staff router ready: %d command(s), %d slash group(s)", len(all_cmds), len(self.groups))
+
+    def is_migrated(self, type_value: str, command_name: str) -> bool:
+        """True if a (type, name) command has been migrated to the framework.
+
+        Legacy cogs call this to defer migrated commands and avoid double
+        dispatch. ``command_name`` may be a flat command or a sub-group name.
+        """
+        return ((type_value, command_name) in self.message_index
+                or (type_value, command_name) in self.subgroup_index)
 
     async def cog_unload(self):
         # Drop our slash groups so a reload doesn't leave stale references.
@@ -96,10 +106,19 @@ class StaffCommandsRouter(StaffCommandsCog):
         if command_type not in self.owned_types:
             return
 
+        # Flat command, or a sub-group command (`mod.case create ...`).
         command = self.message_index.get((command_type.value, command_name))
+        raw_args = args
         if command is None:
-            # Not migrated yet — let the legacy cog for this type handle it.
-            return
+            bucket = self.subgroup_index.get((command_type.value, command_name))
+            if not bucket:
+                return  # not migrated — let the legacy cog handle it
+            parts = (args or "").split(maxsplit=1)
+            sub = parts[0].lower() if parts else ""
+            raw_args = parts[1] if len(parts) > 1 else ""
+            command = bucket.get(sub)
+            if command is None:
+                return
 
         allowed, reason = await self._has_permission(command, message.author.id)
         if not allowed:
@@ -107,10 +126,10 @@ class StaffCommandsRouter(StaffCommandsCog):
             return
 
         try:
-            options = command.parse_message(args)
+            options = command.parse_message(raw_args)
         except Exception:
             options = {}
-        ctx = StaffContext.from_message(self.bot, command, message, options, args, cog=self)
+        ctx = StaffContext.from_message(self.bot, command, message, options, raw_args, cog=self)
         await self._invoke(command, ctx)
 
     # --- slash transport ---------------------------------------------------

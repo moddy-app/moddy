@@ -31,4 +31,12 @@ __all__ = [
     "parse_user_id",
     "parse_guild_id",
     "CommandType",
+    "ConfirmView",
 ]
+
+
+def __getattr__(name):  # lazy to avoid an import cycle (views imports design)
+    if name == "ConfirmView":
+        from staff.framework.views import ConfirmView
+        return ConfirmView
+    raise AttributeError(name)

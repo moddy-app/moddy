@@ -116,11 +116,12 @@ def _build_app_command(command: StaffCommand, runner: Callable) -> app_commands.
     )
 
 
-def build(bot, runner: Callable) -> Tuple[Dict[Tuple[str, str], StaffCommand], List[app_commands.Group]]:
-    """Instantiate commands and build the message index + slash groups.
+def build(bot, runner: Callable):
+    """Instantiate commands and build the message indexes + slash groups.
 
-    Returns ``(message_index, groups)`` where ``message_index`` is keyed by
-    ``(command_type_value, name_or_alias)``.
+    Returns ``(flat_index, subgroup_index, groups)``:
+    - ``flat_index``    keyed by ``(type_value, name_or_alias)``
+    - ``subgroup_index`` keyed by ``(type_value, group_name)`` -> ``{sub: cmd}``
     """
     instances: List[StaffCommand] = []
     for cls in get_registered_commands():
@@ -129,27 +130,42 @@ def build(bot, runner: Callable) -> Tuple[Dict[Tuple[str, str], StaffCommand], L
         except Exception as exc:  # pragma: no cover - defensive
             logger.error("Failed to instantiate staff command %s: %s", cls, exc, exc_info=True)
 
-    # Message routing index (name + aliases).
-    message_index: Dict[Tuple[str, str], StaffCommand] = {}
-    for cmd in instances:
-        key_type = cmd.command_type.value
-        message_index[(key_type, cmd.name)] = cmd
-        for alias in getattr(cmd, "aliases", ()):
-            message_index[(key_type, alias)] = cmd
-
-    # Slash groups, one per type that has at least one command.
+    flat_index: Dict[Tuple[str, str], StaffCommand] = {}
+    subgroup_index: Dict[Tuple[str, str], Dict[str, StaffCommand]] = {}
     groups: List[app_commands.Group] = []
+
     for ctype, members in _group_by_type(instances).items():
         name, desc = SLASH_GROUPS[ctype]
         group = app_commands.Group(name=name, description=desc, guild_only=True)
+        subgroups: Dict[str, app_commands.Group] = {}
+
         for cmd in members:
             try:
-                group.add_command(_build_app_command(cmd, runner))
+                app_cmd = _build_app_command(cmd, runner)
             except Exception as exc:  # pragma: no cover - defensive
                 logger.error("Failed to build slash command /%s %s: %s", name, cmd.name, exc, exc_info=True)
+                continue
+
+            if cmd.group:
+                sub = subgroups.get(cmd.group)
+                if sub is None:
+                    sub = app_commands.Group(name=cmd.group, description=(cmd.group_description or "…")[:100])
+                    subgroups[cmd.group] = sub
+                    group.add_command(sub)
+                sub.add_command(app_cmd)
+                bucket = subgroup_index.setdefault((ctype.value, cmd.group), {})
+                bucket[cmd.name] = cmd
+                for alias in getattr(cmd, "aliases", ()):
+                    bucket[alias] = cmd
+            else:
+                group.add_command(app_cmd)
+                flat_index[(ctype.value, cmd.name)] = cmd
+                for alias in getattr(cmd, "aliases", ()):
+                    flat_index[(ctype.value, alias)] = cmd
+
         groups.append(group)
 
-    return message_index, groups
+    return flat_index, subgroup_index, groups
 
 
 def _group_by_type(instances: List[StaffCommand]) -> Dict[CommandType, List[StaffCommand]]:

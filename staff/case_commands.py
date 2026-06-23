@@ -59,6 +59,11 @@ class CaseCommands(StaffCommandsCog):
         if not command_name.startswith("case"):
             return
 
+        # Defer to the new staff framework once the case group is migrated.
+        router = self.bot.get_cog("StaffCommandsRouter")
+        if router and hasattr(router, "is_migrated") and router.is_migrated(command_type.value, command_name):
+            return
+
         # Check permissions for moderator commands
         allowed, reason = await staff_permissions.check_command_permission(
             message.author.id, command_type, command_name

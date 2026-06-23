@@ -63,6 +63,11 @@ class StaffCommand:
     command_type: CommandType = CommandType.DEV
     #: Command name (slash subcommand + message ``<type>.<name>``).
     name: str = ""
+    #: Optional slash sub-group (e.g. "case" -> ``/mod case create`` and the
+    #: message form ``mod.case create``). ``None`` = top-level under the type.
+    group: Optional[str] = None
+    #: English description for the sub-group (shown once per group).
+    group_description: str = "…"
     #: Short English description shown in the Discord command list.
     description: str = "…"
     #: Optional extra message aliases.
