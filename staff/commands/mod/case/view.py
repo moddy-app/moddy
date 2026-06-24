@@ -1,9 +1,8 @@
-"""`/mod case view` — show a moderation case by id."""
+"""`/mod case view` — show a moderation case (sidebar + timeline) by reference."""
 
 from staff.framework import StaffCommand, SlashOption, staff_command, design, CommandType
-from staff.commands.mod.case._shared import validate_case_id, build_case_panel
+from staff.commands.mod.case._shared import validate_reference, load_case, build_case_panel
 from utils.i18n import t
-from utils.moderation_cases import ModerationCase
 
 
 @staff_command
@@ -13,23 +12,23 @@ class CaseViewCommand(StaffCommand):
     group_description = "Moderation case management"
     name = "view"
     permission = "case_view"
-    description = "View a moderation case by id."
+    description = "View a moderation case by reference."
     options = [
-        SlashOption("case_id", "string", "The 8-character case id.", required=True),
+        SlashOption("reference", "string", "The public case reference (e.g. A7F2K9).", required=True),
     ]
 
     async def execute(self, ctx):
-        case_id, error = validate_case_id(ctx.opt("case_id"), ctx.locale)
+        reference, error = validate_reference(ctx.opt("reference"), ctx.locale)
         if error:
             await ctx.send(view=error)
             return
 
-        case_dict = await ctx.bot.db.get_moderation_case(case_id)
-        if not case_dict:
+        case = await load_case(ctx.bot, reference)
+        if not case:
             await ctx.send(view=design.error(
                 t("staff.mod.case.notfound_title", locale=ctx.locale),
-                t("staff.mod.case.notfound", locale=ctx.locale, id=f"`{case_id}`"),
+                t("staff.mod.case.notfound", locale=ctx.locale, id=f"`{reference}`"),
             ))
             return
 
-        await ctx.send(view=await build_case_panel(ctx, ModerationCase.from_db(case_dict)))
+        await ctx.send(view=build_case_panel(ctx, case))

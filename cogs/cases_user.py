@@ -1,244 +1,170 @@
 """
-User Cases Command
-Allows users to view their own moderation cases
+User Cases command.
+
+Lets a user view their own moderation cases (subject = their Discord account).
+Internal staff notes are never shown. Read-only, paginated, ephemeral.
 """
+
+import logging
+from typing import List
 
 import discord
 from discord import app_commands, ui
 from discord.ext import commands
-from typing import Optional, List
-import logging
-from datetime import datetime, timezone
 
-from database import db
 from cogs.error_handler import BaseView
-from utils.moderation_cases import (
-    CaseType, SanctionType, CaseStatus, EntityType, ModerationCase,
-    get_sanction_name, get_sanction_emoji
-)
-from utils.emojis import EMOJIS
+from config import COLORS
+from utils import emojis
+from utils.i18n import t, get_locale
+from utils.moderation_cases import Case, SanctionStatus, EventType
 
 logger = logging.getLogger('moddy.cases_user')
 
 
-class CaseDetailView(BaseView):
-    """View for displaying case details to users"""
+class UserCasesView(BaseView):
+    """Paginated, read-only view of a user's own cases."""
 
-    def __init__(self, bot, user_id: int, cases: List[dict]):
+    def __init__(self, bot, user_id: int, cases: List[Case], locale: str):
         super().__init__(timeout=180)
         self.bot = bot
         self.user_id = user_id
         self.cases = cases
-        self.current_page = 0
+        self.locale = locale
+        self.page = 0
+        self._build()
 
-        self._build_view()
-
-    def _build_view(self):
-        """Build the view with current case"""
+    def _build(self):
         self.clear_items()
+        case = self.cases[self.page]
+        accent = COLORS["info"] if case.is_open else COLORS["neutral"]
+        container = ui.Container(accent_colour=discord.Colour(accent))
 
-        if not self.cases:
-            container = ui.Container()
-            container.add_item(ui.TextDisplay(f"### {EMOJIS['info']} Your Cases"))
-            container.add_item(ui.TextDisplay(
-                "You have no moderation cases on record.\n"
-                "-# This is a good thing!"
-            ))
-            self.add_item(container)
-            return
-
-        # Get current case
-        case_dict = self.cases[self.current_page]
-        case = ModerationCase.from_db(case_dict)
-
-        container = ui.Container()
-
-        # Title
-        status_emoji = "🟢" if case.status == CaseStatus.OPEN else "🔴"
+        status_dot = emojis.GREEN_STATUS if case.is_open else emojis.RED_STATUS
         container.add_item(ui.TextDisplay(
-            f"### {case.get_sanction_emoji()} Case #{case.case_id}\n"
-            f"{status_emoji} **Status:** {case.status.value.title()}"
+            f"### {case.type_emoji()} {t('commands.cases.case_title', locale=self.locale, id=case.reference)}\n"
+            f"{status_dot} **{t('commands.cases.status', locale=self.locale)}:** "
+            f"`{t('commands.cases.status_value.' + case.status.value, locale=self.locale)}`"
+        ))
+        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+
+        container.add_item(ui.TextDisplay(
+            f"**{t('commands.cases.type', locale=self.locale)}:** "
+            f"`{t('commands.cases.type_value.' + case.type.value, locale=self.locale)}`\n"
+            f"**{t('commands.cases.opened', locale=self.locale)}:** <t:{int(case.created_at.timestamp())}:F>"
+        ))
+        container.add_item(ui.TextDisplay(
+            f"**{t('commands.cases.reason', locale=self.locale)}:**\n{case.reason[:600]}"
         ))
 
-        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-
-        # Case details
-        case_type_name = "Inter-Server" if case.case_type == CaseType.INTERSERVER else "Global Bot"
-        details = (
-            f"**Type:** {case_type_name}\n"
-            f"**Sanction:** {case.get_sanction_name()}\n"
-            f"**Created:** <t:{int(case.created_at.timestamp())}:F>\n"
-        )
-
-        if case.duration:
-            hours = case.duration / 3600
-            details += f"**Duration:** {hours:.1f} hours\n"
-
-        container.add_item(ui.TextDisplay(details))
-
-        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-
-        # Reason
-        container.add_item(ui.TextDisplay(f"**Reason:**\n{case.reason}"))
-
-        # Evidence (if any)
-        if case.evidence:
+        # Sanctions.
+        if case.sanctions:
             container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-            container.add_item(ui.TextDisplay(f"**Evidence:**\n{case.evidence[:500]}"))
+            container.add_item(ui.TextDisplay(f"**{t('commands.cases.sanctions', locale=self.locale)}**"))
+            for s in case.sanctions:
+                dot = emojis.GREEN_STATUS if s.status == SanctionStatus.ACTIVE else emojis.RED_STATUS
+                action = t('commands.cases.action.' + s.action.value, locale=self.locale)
+                line = f"{dot} {s.emoji()} **{action}** • `{t('commands.cases.sanction_status.' + s.status.value, locale=self.locale)}`"
+                if s.expires_at and s.status == SanctionStatus.ACTIVE:
+                    line += f" • {emojis.TIME} <t:{int(s.expires_at.timestamp())}:R>"
+                container.add_item(ui.TextDisplay(line))
 
-        # Close info (if closed)
-        if case.status == CaseStatus.CLOSED and case.closed_at:
+        # Public timeline (no internal notes).
+        public = [e for e in case.events if e.type == EventType.COMMENT]
+        if public:
             container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-            close_info = f"**Closed:** <t:{int(case.closed_at.timestamp())}:F>"
-            if case.close_reason:
-                close_info += f"\n**Close Reason:** {case.close_reason}"
-            container.add_item(ui.TextDisplay(close_info))
+            container.add_item(ui.TextDisplay(f"**{t('commands.cases.comments', locale=self.locale)}**"))
+            for e in public[-5:]:
+                container.add_item(ui.TextDisplay(f"-# <t:{int(e.created_at.timestamp())}:R>\n{e.content or ''}"))
 
-        # Navigation buttons (if multiple cases)
+        # Pagination.
         if len(self.cases) > 1:
             container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-
-            nav_row = ui.ActionRow()
-
-            # Previous button
+            container.add_item(ui.TextDisplay(
+                f"-# {t('commands.cases.page', locale=self.locale, current=self.page + 1, total=len(self.cases))}"
+            ))
+            row = ui.ActionRow()
             prev_btn = ui.Button(
-                label="Previous",
                 style=discord.ButtonStyle.secondary,
-                emoji=EMOJIS['back'],
-                disabled=self.current_page == 0
+                emoji=discord.PartialEmoji.from_str(emojis.BACK),
+                disabled=self.page == 0,
             )
-            prev_btn.callback = self.on_previous
-            nav_row.add_item(prev_btn)
-
-            # Page indicator
-            page_info = f"Case {self.current_page + 1} of {len(self.cases)}"
-            container.add_item(ui.TextDisplay(f"-# {page_info}"))
-
-            # Next button
+            prev_btn.callback = self._prev
+            row.add_item(prev_btn)
             next_btn = ui.Button(
-                label="Next",
                 style=discord.ButtonStyle.secondary,
-                emoji=EMOJIS['next'],
-                disabled=self.current_page >= len(self.cases) - 1
+                emoji=discord.PartialEmoji.from_str(emojis.NEXT),
+                disabled=self.page >= len(self.cases) - 1,
             )
-            next_btn.callback = self.on_next
-            nav_row.add_item(next_btn)
-
-            container.add_item(nav_row)
+            next_btn.callback = self._next
+            row.add_item(next_btn)
+            container.add_item(row)
 
         self.add_item(container)
 
-    async def on_previous(self, interaction: discord.Interaction):
-        """Go to previous case"""
+    async def _guard(self, interaction: discord.Interaction) -> bool:
         if interaction.user.id != self.user_id:
             await interaction.response.send_message(
-                f"{EMOJIS['error']} This is not your cases view.",
-                ephemeral=True
-            )
-            return
+                t("commands.cases.not_yours", locale=self.locale), ephemeral=True)
+            return False
+        return True
 
-        self.current_page = max(0, self.current_page - 1)
-        self._build_view()
+    async def _prev(self, interaction: discord.Interaction):
+        if not await self._guard(interaction):
+            return
+        self.page = max(0, self.page - 1)
+        self._build()
         await interaction.response.edit_message(view=self)
 
-    async def on_next(self, interaction: discord.Interaction):
-        """Go to next case"""
-        if interaction.user.id != self.user_id:
-            await interaction.response.send_message(
-                f"{EMOJIS['error']} This is not your cases view.",
-                ephemeral=True
-            )
+    async def _next(self, interaction: discord.Interaction):
+        if not await self._guard(interaction):
             return
-
-        self.current_page = min(len(self.cases) - 1, self.current_page + 1)
-        self._build_view()
+        self.page = min(len(self.cases) - 1, self.page + 1)
+        self._build()
         await interaction.response.edit_message(view=self)
 
 
 class CasesUserCog(commands.Cog):
-    """User command to view their own cases"""
+    """User command to view their own cases."""
 
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(
-        name="cases",
-        description="View your moderation cases"
-    )
+    @app_commands.command(name="cases", description="View your moderation cases")
     @app_commands.allowed_installs(guilds=True, users=True)
     @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
-    async def cases_command(
-        self,
-        interaction: discord.Interaction,
-        status: Optional[str] = None
-    ):
-        """
-        View your moderation cases
-
-        Args:
-            status: Filter by status (open/closed) - optional
-        """
+    async def cases_command(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
+        locale = get_locale(interaction)
 
         try:
-            # Get user cases
-            cases = await db.get_entity_cases(
-                entity_type='user',
-                entity_id=interaction.user.id,
-                status=status
+            rows = await self.bot.db.list_subject_cases(
+                'discord_user', interaction.user.id, limit=25,
             )
 
-            # Filter out staff notes (users shouldn't see them)
-            for case in cases:
-                case['staff_notes'] = []  # Remove staff notes
-
-            if not cases:
-                # No cases found
-                container = ui.Container()
-                container.add_item(ui.TextDisplay(f"### {EMOJIS['info']} Your Cases"))
-
-                if status:
-                    message = f"You have no {status} moderation cases."
-                else:
-                    message = "You have no moderation cases on record.\n-# This is a good thing!"
-
-                container.add_item(ui.TextDisplay(message))
-
+            if not rows:
                 view = BaseView()
+                container = ui.Container(accent_colour=discord.Colour(COLORS["success"]))
+                container.add_item(ui.TextDisplay(
+                    f"### {emojis.DONE} {t('commands.cases.empty_title', locale=locale)}"
+                ))
+                container.add_item(ui.TextDisplay(t('commands.cases.empty', locale=locale)))
                 view.add_item(container)
-
                 await interaction.followup.send(view=view, ephemeral=True)
                 return
 
-            # Show cases with navigation
-            view = CaseDetailView(
-                bot=self.bot,
-                user_id=interaction.user.id,
-                cases=cases
-            )
+            cases: List[Case] = []
+            for row in rows:
+                data = await self.bot.db.get_case_by_id(row["id"])
+                if data:
+                    cases.append(Case.from_db(data["case"], data["sanctions"], data["events"]))
 
+            view = UserCasesView(self.bot, interaction.user.id, cases, locale)
             await interaction.followup.send(view=view, ephemeral=True)
 
         except Exception as e:
             logger.error(f"Error fetching cases for user {interaction.user.id}: {e}", exc_info=True)
             await interaction.followup.send(
-                f"{EMOJIS['error']} An error occurred while fetching your cases. Please try again later.",
-                ephemeral=True
-            )
-
-    @cases_command.autocomplete('status')
-    async def cases_status_autocomplete(
-        self,
-        interaction: discord.Interaction,
-        current: str
-    ) -> List[app_commands.Choice[str]]:
-        """Autocomplete for status parameter"""
-        statuses = ['open', 'closed']
-        return [
-            app_commands.Choice(name=status.title(), value=status)
-            for status in statuses
-            if current.lower() in status.lower()
-        ]
+                t("commands.cases.error", locale=locale), ephemeral=True)
 
 
 async def setup(bot):

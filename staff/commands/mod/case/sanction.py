@@ -1,22 +1,21 @@
-"""`/mod case edit` — edit the reason of a moderation case (opens a modal)."""
+"""`/mod case sanction` — add a new sanction to an existing case."""
 
 import discord
 
 from staff.framework import StaffCommand, SlashOption, staff_command, design, CommandType
 from staff.commands.mod.case._shared import validate_reference, load_case, build_case_panel
-from utils import emojis
 from utils.i18n import t
-from utils.case_management_views import EditReasonModal
+from utils.case_management_views import AddSanctionView
 
 
 @staff_command
-class CaseEditCommand(StaffCommand):
+class CaseSanctionCommand(StaffCommand):
     command_type = CommandType.MODERATOR
     group = "case"
     group_description = "Moderation case management"
-    name = "edit"
-    permission = "case_edit"
-    description = "Edit the reason of a moderation case."
+    name = "sanction"
+    permission = "case_sanction"
+    description = "Add a new sanction to an existing case."
     options = [
         SlashOption("reference", "string", "The public case reference.", required=True),
     ]
@@ -41,15 +40,8 @@ class CaseEditCommand(StaffCommand):
             updated = await load_case(ctx.bot, reference)
             await interaction.followup.send(view=build_case_panel(ctx, updated), ephemeral=True)
 
-        def factory():
-            modal = EditReasonModal(
-                bot=ctx.bot, staff_id=ctx.author.id, case_id=case.id,
-                reference=reference, current_reason=case.reason,
-                locale=locale, on_done=_on_done,
-            )
-            return modal
-
-        await ctx.open_modal(
-            factory, label=t("staff.mod.case.edit_title", locale=locale), emoji=emojis.EDIT,
-            prompt_title=t("staff.mod.case.edit_title", locale=locale),
+        view = AddSanctionView(
+            bot=ctx.bot, staff_id=ctx.author.id, case_id=case.id, reference=reference,
+            case_type=case.type, locale=locale, on_done=_on_done,
         )
+        await ctx.send(view=view)

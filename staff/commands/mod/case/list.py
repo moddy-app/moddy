@@ -1,10 +1,10 @@
 """`/mod case list` — list moderation cases for a user or guild."""
 
 from staff.framework import StaffCommand, SlashOption, staff_command, design, CommandType
-from staff.commands.mod.case._shared import resolve_entity
+from staff.commands.mod.case._shared import resolve_subject
 from utils import emojis
 from utils.i18n import t
-from utils.moderation_cases import ModerationCase, CaseStatus
+from utils.moderation_cases import CaseStatus, get_case_type_emoji, CaseType
 
 
 @staff_command
@@ -21,36 +21,40 @@ class CaseListCommand(StaffCommand):
     ]
 
     async def execute(self, ctx):
-        entity_type, entity_id, entity_name, error = await resolve_entity(ctx)
+        subject_type, subject_id, subject_name, error = await resolve_subject(ctx)
         if error:
             await ctx.send(view=error)
             return
 
-        cases = await ctx.bot.db.get_entity_cases(entity_type=entity_type.value, entity_id=entity_id)
-        if not cases:
+        rows = await ctx.bot.db.list_subject_cases(subject_type.value, subject_id, limit=25)
+        total = await ctx.bot.db.count_subject_cases(subject_type.value, subject_id)
+        if not rows:
             await ctx.send(view=design.info(
                 t("staff.mod.case.list_empty_title", locale=ctx.locale),
-                t("staff.mod.case.list_empty", locale=ctx.locale, name=f"**{entity_name}**"),
+                t("staff.mod.case.list_empty", locale=ctx.locale, name=f"**{subject_name}**"),
             ))
             return
 
         lines = []
-        for case_dict in cases[:10]:
-            case = ModerationCase.from_db(case_dict)
-            dot = emojis.GREEN_STATUS if case.status == CaseStatus.OPEN else emojis.RED_STATUS
+        for row in rows[:15]:
+            status = CaseStatus(row["status"])
+            dot = emojis.GREEN_STATUS if status == CaseStatus.OPEN else emojis.RED_STATUS
+            type_emoji = get_case_type_emoji(CaseType(row["type"]))
+            created_ts = int(row["created_at"].timestamp())
+            type_label = t("staff.mod.case.type_value." + row["type"], locale=ctx.locale)
+            reference = row["reference"]
             lines.append(
-                f"{dot} **#{case.case_id}** — {case.get_sanction_emoji()} {case.get_sanction_name()} "
-                f"(<t:{int(case.created_at.timestamp())}:R>)"
+                f"{dot} {type_emoji} **{reference}** `{type_label}` • <t:{created_ts}:R>"
             )
 
         body = "\n".join(lines)
-        if len(cases) > 10:
+        if total > 15:
             body += f"\n-# {t('staff.mod.case.list_more', locale=ctx.locale)}"
 
         await ctx.send(view=design.panel(
             "info",
-            t("staff.mod.case.list_title", locale=ctx.locale, name=entity_name),
-            f"**{t('staff.mod.case.list_count', locale=ctx.locale, shown=min(10, len(cases)), total=len(cases))}**\n\n{body}",
+            t("staff.mod.case.list_title", locale=ctx.locale, name=subject_name),
+            f"**{t('staff.mod.case.list_count', locale=ctx.locale, shown=min(15, len(rows)), total=total)}**\n\n{body}",
             emoji=emojis.BLACKLIST,
             accent="error",
         ))

@@ -1,11 +1,12 @@
-"""`/mod case note` — add an internal staff note to a case (opens a modal)."""
+"""`/mod case note` — add a comment or internal note to a case's timeline."""
 
 import discord
 
 from staff.framework import StaffCommand, SlashOption, staff_command, design, CommandType
-from staff.commands.mod.case._shared import validate_case_id
+from staff.commands.mod.case._shared import validate_reference, load_case
 from utils import emojis
 from utils.i18n import t
+from utils.case_management_views import CaseCommentModal, CaseNoteModal
 
 
 @staff_command
@@ -15,40 +16,48 @@ class CaseNoteCommand(StaffCommand):
     group_description = "Moderation case management"
     name = "note"
     permission = "case_note"
-    description = "Add an internal staff note to a case."
+    description = "Add a comment or internal note to a case timeline."
     options = [
-        SlashOption("case_id", "string", "The 8-character case id.", required=True),
+        SlashOption("reference", "string", "The public case reference.", required=True),
+        SlashOption(
+            "internal", "boolean",
+            "Internal staff note (hidden from the subject). Default: a public comment.",
+            required=False,
+        ),
     ]
 
     async def execute(self, ctx):
-        case_id, error = validate_case_id(ctx.opt("case_id"), ctx.locale)
+        reference, error = validate_reference(ctx.opt("reference"), ctx.locale)
         if error:
             await ctx.send(view=error)
             return
 
-        case_dict = await ctx.bot.db.get_moderation_case(case_id)
-        if not case_dict:
+        case = await load_case(ctx.bot, reference)
+        if not case:
             await ctx.send(view=design.error(
                 t("staff.mod.case.notfound_title", locale=ctx.locale),
-                t("staff.mod.case.notfound", locale=ctx.locale, id=f"`{case_id}`"),
+                t("staff.mod.case.notfound", locale=ctx.locale, id=f"`{reference}`"),
             ))
             return
 
         locale = ctx.locale
+        internal = bool(ctx.opt("internal"))
+        modal_cls = CaseNoteModal if internal else CaseCommentModal
 
         async def _on_done(interaction: discord.Interaction):
+            title = "staff.mod.case.note_done_title" if internal else "staff.mod.case.comment_done_title"
+            body = "staff.mod.case.note_done" if internal else "staff.mod.case.comment_done"
             await interaction.followup.send(view=design.success(
-                t("staff.mod.case.note_done_title", locale=locale),
-                t("staff.mod.case.note_done", locale=locale, id=f"`{case_id}`"),
+                t(title, locale=locale), t(body, locale=locale, id=f"`{reference}`"),
             ), ephemeral=True)
 
         def factory():
-            from utils.case_management_views import AddCaseNoteModal
-            modal = AddCaseNoteModal(case_id=case_id, staff_id=ctx.author.id, callback_func=_on_done)
-            modal.bot = ctx.bot
-            return modal
+            return modal_cls(
+                bot=ctx.bot, staff_id=ctx.author.id, case_id=case.id,
+                reference=reference, locale=locale, on_done=_on_done,
+            )
 
+        label = t("staff.mod.case.note_label" if internal else "staff.mod.case.comment_label", locale=locale)
         await ctx.open_modal(
-            factory, label=t("staff.mod.case.note_button", locale=locale), emoji=emojis.NOTE,
-            prompt_title=t("staff.mod.case.note_button", locale=locale),
+            factory, label=label, emoji=emojis.NOTE, prompt_title=label,
         )

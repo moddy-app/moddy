@@ -550,12 +550,13 @@ class InterServerModule(ModuleBase):
             return
 
         try:
-            # Vérifie si l'utilisateur est blacklisté de l'inter-serveur via le système de cases
-            from utils.moderation_cases import SanctionType
+            # Vérifie si l'utilisateur est blacklisté de l'inter-serveur via le
+            # système de cases : un ban actif sur une case de type "network".
             is_blacklisted = await self.bot.db.has_active_sanction(
-                'user',
+                'discord_user',
                 message.author.id,
-                SanctionType.INTERSERVER_BLACKLIST.value
+                case_type='network',
+                action='ban',
             )
             if is_blacklisted:
                 await message.add_reaction(UNDONE)

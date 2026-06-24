@@ -83,6 +83,8 @@ class ModdyBot(commands.Bot):
         self.launch_time = datetime.now(timezone.utc)
         self._start_time = None  # Set in setup_hook once event loop is running
         self.db = None  # ModdyDatabase instance
+        from services.case_service import CaseService
+        self.cases = CaseService(self)  # scalable sanction -> case entry point
         self.redis = None  # Redis client (shared with backend)
         self._dev_team_ids: Set[int] = set()
         self.maintenance_mode = False
@@ -677,6 +679,7 @@ class ModdyBot(commands.Bot):
 
         # Start background tasks
         self.status_update.start()
+        self.case_expiry.start()
 
         # Sync slash commands
         if DEBUG:
@@ -1510,6 +1513,24 @@ class ModdyBot(commands.Bot):
         """Wait for the bot to be ready before starting the task"""
         await self.wait_until_ready()
 
+    @tasks.loop(minutes=2)
+    async def case_expiry(self):
+        """Expire temporary moderation sanctions whose deadline has passed.
+
+        Flips each due sanction to ``expired``, logs the timeline event and
+        recomputes the parent case status (see db/repositories/moderation.py).
+        """
+        if not self.db:
+            return
+        try:
+            await self.db.expire_due_sanctions()
+        except Exception as e:
+            logger.error(f"Error expiring moderation sanctions: {e}", exc_info=True)
+
+    @case_expiry.before_loop
+    async def before_case_expiry(self):
+        await self.wait_until_ready()
+
     async def close(self):
         """Cleanly closing the bot"""
         logger.info("Shutting down...")
@@ -1517,6 +1538,8 @@ class ModdyBot(commands.Bot):
         # Stop tasks BEFORE closing
         if self.status_update.is_running():
             self.status_update.cancel()
+        if self.case_expiry.is_running():
+            self.case_expiry.cancel()
 
         # Wait a bit for tasks to finish
         await asyncio.sleep(0.1)

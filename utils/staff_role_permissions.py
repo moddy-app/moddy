@@ -18,9 +18,10 @@ MODERATOR_PERMISSIONS = [
     "case_create",            # Create moderation cases
     "case_view",              # View moderation cases
     "case_list",              # List moderation cases
-    "case_edit",              # Edit moderation cases
-    "case_close",             # Close moderation cases
-    "case_note",              # Add notes to cases
+    "case_edit",              # Edit a case (reason)
+    "case_close",             # Close / reopen moderation cases
+    "case_note",              # Add comments / internal notes to cases
+    "case_sanction",          # Add / revoke sanctions on a case
     "interserver_info",       # View inter-server message info
     "interserver_delete",     # Delete inter-server messages
 ]
@@ -95,9 +96,10 @@ def get_permission_label(permission: str) -> str:
         "case_create": "Create Moderation Cases",
         "case_view": "View Moderation Cases",
         "case_list": "List Moderation Cases",
-        "case_edit": "Edit Moderation Cases",
-        "case_close": "Close Moderation Cases",
-        "case_note": "Add Notes to Cases",
+        "case_edit": "Edit Case Reason",
+        "case_close": "Close / Reopen Cases",
+        "case_note": "Comment / Note on Cases",
+        "case_sanction": "Add / Revoke Sanctions",
         "interserver_info": "Inter-Server Message Info",
         "interserver_delete": "Delete Inter-Server Messages",
 

@@ -1,22 +1,22 @@
-"""`/mod case edit` — edit the reason of a moderation case (opens a modal)."""
+"""`/mod case revoke` — revoke an active sanction of a case."""
 
 import discord
 
 from staff.framework import StaffCommand, SlashOption, staff_command, design, CommandType
 from staff.commands.mod.case._shared import validate_reference, load_case, build_case_panel
-from utils import emojis
 from utils.i18n import t
-from utils.case_management_views import EditReasonModal
+from utils.moderation_cases import SanctionStatus
+from utils.case_management_views import RevokeSanctionView
 
 
 @staff_command
-class CaseEditCommand(StaffCommand):
+class CaseRevokeCommand(StaffCommand):
     command_type = CommandType.MODERATOR
     group = "case"
     group_description = "Moderation case management"
-    name = "edit"
-    permission = "case_edit"
-    description = "Edit the reason of a moderation case."
+    name = "revoke"
+    permission = "case_sanction"
+    description = "Revoke an active sanction of a case."
     options = [
         SlashOption("reference", "string", "The public case reference.", required=True),
     ]
@@ -35,21 +35,25 @@ class CaseEditCommand(StaffCommand):
             ))
             return
 
+        active = [
+            {"id": s.id, "action": s.action.value}
+            for s in case.sanctions if s.status == SanctionStatus.ACTIVE
+        ]
+        if not active:
+            await ctx.send(view=design.warning(
+                t("staff.mod.case.no_active_title", locale=ctx.locale),
+                t("staff.mod.case.no_active", locale=ctx.locale, id=f"`{reference}`"),
+            ))
+            return
+
         locale = ctx.locale
 
         async def _on_done(interaction: discord.Interaction):
             updated = await load_case(ctx.bot, reference)
             await interaction.followup.send(view=build_case_panel(ctx, updated), ephemeral=True)
 
-        def factory():
-            modal = EditReasonModal(
-                bot=ctx.bot, staff_id=ctx.author.id, case_id=case.id,
-                reference=reference, current_reason=case.reason,
-                locale=locale, on_done=_on_done,
-            )
-            return modal
-
-        await ctx.open_modal(
-            factory, label=t("staff.mod.case.edit_title", locale=locale), emoji=emojis.EDIT,
-            prompt_title=t("staff.mod.case.edit_title", locale=locale),
+        view = RevokeSanctionView(
+            bot=ctx.bot, staff_id=ctx.author.id, reference=reference,
+            sanctions=active, locale=locale, on_done=_on_done,
         )
+        await ctx.send(view=view)

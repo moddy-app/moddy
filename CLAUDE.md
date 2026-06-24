@@ -46,8 +46,9 @@ moddy/
 │   ├── ping.py, user.py, avatar.py, banner.py, roll.py, moddy.py
 │   ├── subscription.py        #   Premium features
 │   ├── preferences.py         #   User preferences
-│   ├── blacklist_check.py     #   Blacklist validation
-│   ├── cases_user.py          #   User moderation cases view
+│   ├── blacklist_check.py     #   Blacklist validation (reads the cases system)
+│   ├── cases_user.py          #   User moderation cases view (/cases)
+│   ├── case_sync.py           #   Auto-records guild sanctions as cases (audit log)
 │   ├── auto_restore_roles_commands.py
 │   ├── cog_manager.py         #   Hot-reload / disable cogs
 │   ├── console_logger.py      #   Console logging
@@ -106,8 +107,8 @@ moddy/
 │   ├── staff_logger.py        #   Staff action logging
 │   ├── staff_role_permissions.py
 │   ├── staff_help_view.py
-│   ├── case_management_views.py
-│   ├── moderation_cases.py
+│   ├── case_management_views.py #  Cases Views/Modals (create, sanction, comment…)
+│   ├── moderation_cases.py    #   Cases domain model + enums + reference gen
 │   ├── embeds.py
 │   ├── announcement_setup.py
 │   └── incognito.py
@@ -115,6 +116,7 @@ moddy/
 ├── services/                  # External service clients
 │   ├── backend_client.py      #   Backend HTTP client
 │   ├── feeds_client.py        #   moddy-feeds Redis client (social notifications)
+│   ├── case_service.py        #   Scalable sanction→case entry point (source registry)
 │   └── railway_diagnostic.py  #   Railway diagnostics
 │
 ├── internal_api/              # FastAPI internal API
@@ -234,6 +236,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/COMMANDS.md](docs/COMMANDS.md) | Creating or modifying slash commands |
 | [docs/MODULE_SYSTEM.md](docs/MODULE_SYSTEM.md) | Creating or modifying server modules |
 | [docs/STAFF_SYSTEM.md](docs/STAFF_SYSTEM.md) | Staff/dev commands, permissions, roles |
+| [docs/MODERATION_CASES.md](docs/MODERATION_CASES.md) | Moderation cases/sanctions, the case service & sources, auto-sync |
 | [docs/DATABASE.md](docs/DATABASE.md) | Database schema, queries, repository pattern |
 
 ### Infrastructure
