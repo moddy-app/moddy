@@ -28,7 +28,7 @@ def _parse_input(raw: str):
 
 
 async def _find_app_emoji(bot, name, emoji_id):
-    for e in await bot.application.fetch_emojis():
+    for e in await bot.fetch_application_emojis():
         if emoji_id and e.id == emoji_id:
             return e
         if name and e.name.lower() == name.lower():
@@ -88,7 +88,7 @@ class EmojiReplaceCommand(StaffCommand):
             return
 
         try:
-            new = await ctx.bot.application.create_emoji(name=old_name, image=image_bytes)
+            new = await ctx.bot.create_application_emoji(name=old_name, image=image_bytes)
         except Exception as exc:
             await ctx.send(view=_plain(
                 f"Old emoji deleted but failed to create new one: `{exc}`\n"
