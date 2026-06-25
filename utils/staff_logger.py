@@ -65,6 +65,17 @@ class StaffLogger:
             error_message: Error message if command failed
             additional_info: Additional information to log
         """
+        # Technical log (webhook-based, separate channel) — independent of the
+        # legacy in-server channel embed below.
+        tech = getattr(self.bot, "tech_logger", None)
+        if tech:
+            await tech.log_staff_command(
+                command_type, command_name, executor,
+                args=args,
+                guild=target_server,
+                success=success,
+            )
+
         channel = await self.get_log_channel()
         if not channel:
             return
@@ -176,6 +187,16 @@ class StaffLogger:
             success: Whether the action succeeded
             additional_info: Additional information to log
         """
+        # Technical log (webhook-based, separate channel)
+        tech = getattr(self.bot, "tech_logger", None)
+        if tech:
+            await tech.log_staff_action(
+                action, executor, description,
+                target=target,
+                success=success,
+                additional_info=additional_info,
+            )
+
         channel = await self.get_log_channel()
         if not channel:
             return

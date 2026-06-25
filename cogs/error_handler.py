@@ -683,6 +683,11 @@ class ErrorTracker(commands.Cog):
 
         await channel.send(content=content, embed=embed)
 
+        # Technical log (webhook-based, dedicated error feed)
+        tech = getattr(self.bot, "tech_logger", None)
+        if tech:
+            await tech.log_error(error_code, error_details, is_fatal=is_fatal)
+
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):
         """Handles command errors"""
