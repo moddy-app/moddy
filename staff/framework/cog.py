@@ -167,7 +167,8 @@ class StaffCommandsRouter(StaffCommandsCog):
         if staff_logger:
             try:
                 await staff_logger.log_command(
-                    command.command_type.value, command.name, ctx.author, args=command.log_args(ctx)
+                    command.command_type.value, command.name, ctx.author,
+                    args=command.log_args(ctx), target_server=ctx.guild,
                 )
             except Exception as exc:  # pragma: no cover - logging must never break commands
                 logger.debug("staff log failed for %s.%s: %s", command.command_type.value, command.name, exc)

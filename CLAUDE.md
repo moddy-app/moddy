@@ -51,6 +51,7 @@ moddy/
 │   ├── auto_restore_roles_commands.py
 │   ├── cog_manager.py         #   Hot-reload / disable cogs
 │   ├── console_logger.py      #   Console logging
+│   ├── command_logger.py      #   Non-staff command usage → technical webhook logs
 │   ├── dev_logger.py          #   Dev logging
 │   ├── dev_tools.py           #   Developer tools
 │   └── subscription.py        #   /subscription command (user subscription status)
@@ -103,7 +104,8 @@ moddy/
 │   ├── components_v2.py       #   V2 helper functions (create_error_message, etc.)
 │   ├── staff_permissions.py   #   Permission system
 │   ├── subscription.py        #   Subscription helper (is_subscribed, get_subscription)
-│   ├── staff_logger.py        #   Staff action logging
+│   ├── staff_logger.py        #   Staff action logging (also feeds technical webhook logs)
+│   ├── tech_logger.py         #   Technical staff logs via webhooks (Components V2, per-event channels)
 │   ├── staff_role_permissions.py
 │   ├── staff_help_view.py
 │   ├── case_management_views.py
@@ -234,6 +236,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/COMMANDS.md](docs/COMMANDS.md) | Creating or modifying slash commands |
 | [docs/MODULE_SYSTEM.md](docs/MODULE_SYSTEM.md) | Creating or modifying server modules |
 | [docs/STAFF_SYSTEM.md](docs/STAFF_SYSTEM.md) | Staff/dev commands, permissions, roles |
+| [docs/TECHNICAL_LOGS.md](docs/TECHNICAL_LOGS.md) | Internal technical staff logs (webhook-based, per-event channels) |
 | [docs/DATABASE.md](docs/DATABASE.md) | Database schema, queries, repository pattern |
 
 ### Infrastructure

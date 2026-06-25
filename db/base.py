@@ -3,6 +3,7 @@ Core database class for Moddy.
 ModdyDatabase inherits from all repository mixins.
 """
 
+import asyncio
 import asyncpg
 import json
 import copy
@@ -60,6 +61,13 @@ class ModdyDatabase(
     def __init__(self, database_url: str = None):
         self.pool: Optional[asyncpg.Pool] = None
         self.database_url = database_url or "postgresql://moddy:password@localhost/moddy"
+        # Optional async hooks for technical logging of important writes.
+        # Set by the bot once the tech logger is ready (see bot.setup_hook).
+        # Signature: on_attribute_change(entity_type, entity_id, attribute,
+        #                                old_value, new_value, changed_by, reason)
+        #            on_data_change(table, entity_id, path, value)
+        self.on_attribute_change = None
+        self.on_data_change = None
 
     def _parse_jsonb(self, value: Any) -> dict:
         """Parse JSONB value that can be either a dict or a JSON string"""
@@ -184,6 +192,13 @@ class ModdyDatabase(
             else:
                 logger.error(f"[DB] [ERROR] Verification failed! No data found for {id_column} {entity_id}")
                 raise Exception("Data verification failed: no data in database")
+
+        # Technical-log hook (best-effort, never blocks the write)
+        if self.on_data_change:
+            try:
+                asyncio.create_task(self.on_data_change(table, entity_id, path, value))
+            except Exception as exc:
+                logger.debug(f"[DB] on_data_change hook failed: {exc}")
 
     async def _init_tables(self):
         """Creates tables if they do not exist"""
