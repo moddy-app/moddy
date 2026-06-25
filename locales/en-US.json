@@ -608,17 +608,17 @@
       },
       "save": {
         "success": "<:done:1398729525277229066> Configuration saved successfully!",
-        "error": "<:error:1444049460924776478> Error while saving: {error}"
+        "error": "<:error:1519790252594827264> Error while saving: {error}"
       },
       "delete": {
         "success": "<:delete:1401600770431909939> Configuration deleted successfully!",
-        "error": "<:error:1444049460924776478> Error while deleting."
+        "error": "<:error:1519790252594827264> Error while deleting."
       },
       "errors": {
-        "guild_only": "<:error:1444049460924776478> This command can only be used on a server.",
-        "bot_not_in_guild": "<:error:1444049460924776478> Moddy must be present on this server to use this command.",
-        "wrong_user": "<:error:1444049460924776478> Only the user who started the configuration can use this interface.",
-        "no_user_perms": "<:error:1444049460924776478> You must have the **Manage Server** permission to use this command.",
+        "guild_only": "<:error:1519790252594827264> This command can only be used on a server.",
+        "bot_not_in_guild": "<:error:1519790252594827264> Moddy must be present on this server to use this command.",
+        "wrong_user": "<:error:1519790252594827264> Only the user who started the configuration can use this interface.",
+        "no_user_perms": "<:error:1519790252594827264> You must have the **Manage Server** permission to use this command.",
         "required_fields": "<:undone:1398729502028333218> **Invalid configuration** - The following fields must be filled:\n• {fields}",
         "channel_not_found": "Channel not found",
         "no_admin_perms": {
@@ -764,8 +764,8 @@
         }
       },
       "welcome_dm": {
-        "title": "### <:groups:1446127489842806967> Inter-Server Channel",
-        "body": "<:web:1398729801061240883> This is an international inter-server channel connecting multiple Discord servers.\n<:book:1446557736350388364> Please follow the Inter-Server Guidelines and Discord's Terms of Service.\n<:verified:1398729677601902635> This channel is moderated by Moddy's moderation team.\n<:flag:1446197210198048778> To report a message to our team, join our support server or use /interserver report.\n\n-# You're receiving this message because you sent your first message in an inter-server channel."
+        "title": "### <:groups:1519789805456724049> Inter-Server Channel",
+        "body": "<:web:1398729801061240883> This is an international inter-server channel connecting multiple Discord servers.\n<:book:1519788969691316467> Please follow the Inter-Server Guidelines and Discord's Terms of Service.\n<:verified:1398729677601902635> This channel is moderated by Moddy's moderation team.\n<:flag:1519789496181461183> To report a message to our team, join our support server or use /interserver report.\n\n-# You're receiving this message because you sent your first message in an inter-server channel."
       },
       "channel_description": "🌐 Inter-Server Channel | Connect with users from multiple Discord servers | Follow the Inter-Server Guidelines (https://moddy.app/interserver-guidelines) | Moderated by Moddy Team | Report: /interserver report"
     },
@@ -856,10 +856,10 @@
       },
       "commands": {
         "error": {
-          "no_manager": "<:error:1444049460924776478> The module manager is not available.",
-          "not_configured": "<:error:1444049460924776478> The Auto Restore Roles module is not configured on this server.",
-          "not_enabled": "<:error:1444049460924776478> The Auto Restore Roles module is not enabled on this server.",
-          "internal": "<:error:1444049460924776478> An internal error occurred."
+          "no_manager": "<:error:1519790252594827264> The module manager is not available.",
+          "not_configured": "<:error:1519790252594827264> The Auto Restore Roles module is not configured on this server.",
+          "not_enabled": "<:error:1519790252594827264> The Auto Restore Roles module is not enabled on this server.",
+          "internal": "<:error:1519790252594827264> An internal error occurred."
         },
         "clear": {
           "no_roles": "<:info:1401614681440784477> User {user} has no saved roles.",
@@ -871,7 +871,7 @@
           "no_roles_found": "No roles found",
           "success_title": "Roles deleted",
           "success_description": "Saved roles for {user} have been successfully deleted.",
-          "error": "<:error:1444049460924776478> Unable to delete saved roles."
+          "error": "<:error:1519790252594827264> Unable to delete saved roles."
         },
         "view": {
           "no_saved_roles": "<:info:1401614681440784477> No users have saved roles on this server.",
@@ -1086,25 +1086,25 @@
         "default_caption": "**{author}** just posted something new!"
       },
       "errors": {
-        "unknown_platform": "<:error:1444049460924776478> Invalid platform.",
-        "platform_disabled": "<:warning:1446108410092195902> This platform isn't available yet — coming soon!",
-        "missing_identifier": "<:error:1444049460924776478> Please provide an account to follow.",
-        "channel_not_found": "<:error:1444049460924776478> Account not found — double-check the name or URL.",
-        "user_not_found": "<:error:1444049460924776478> Account not found — double-check the name or URL.",
-        "handle_not_found": "<:error:1444049460924776478> Account not found — double-check the name or URL.",
-        "unsafe_url": "<:error:1444049460924776478> This URL isn't allowed.",
-        "no_entries": "<:warning:1446108410092195902> This feed doesn't contain anything yet.",
-        "fetch_failed": "<:error:1444049460924776478> Couldn't reach the account right now. Please try again.",
-        "bad_status": "<:error:1444049460924776478> Couldn't reach the account right now. Please try again.",
-        "not_supported": "<:warning:1446108410092195902> This connector isn't available.",
-        "twitch_not_configured": "<:error:1444049460924776478> Twitch isn't configured on our side. Please contact support.",
-        "twitch_auth_failed": "<:error:1444049460924776478> Twitch authentication failed. Please contact support.",
-        "timeout": "<:error:1444049460924776478> The notification service took too long to respond. Please try again.",
-        "service_unavailable": "<:error:1444049460924776478> The notification service is currently unavailable. Please try again later.",
-        "no_permission": "<:error:1444049460924776478> You need the **Manage Server** permission to configure this.",
-        "limit_reached_free": "<:warning:1446108410092195902> Free servers can follow only **1 account per platform**. Remove one or upgrade to Premium to follow up to 5.",
-        "limit_reached_premium": "<:warning:1446108410092195902> You've reached the maximum of **5 accounts per platform** for this server.",
-        "internal_error": "<:error:1444049460924776478> Something went wrong. Please try again."
+        "unknown_platform": "<:error:1519790252594827264> Invalid platform.",
+        "platform_disabled": "<:warning:1519789903100121139> This platform isn't available yet — coming soon!",
+        "missing_identifier": "<:error:1519790252594827264> Please provide an account to follow.",
+        "channel_not_found": "<:error:1519790252594827264> Account not found — double-check the name or URL.",
+        "user_not_found": "<:error:1519790252594827264> Account not found — double-check the name or URL.",
+        "handle_not_found": "<:error:1519790252594827264> Account not found — double-check the name or URL.",
+        "unsafe_url": "<:error:1519790252594827264> This URL isn't allowed.",
+        "no_entries": "<:warning:1519789903100121139> This feed doesn't contain anything yet.",
+        "fetch_failed": "<:error:1519790252594827264> Couldn't reach the account right now. Please try again.",
+        "bad_status": "<:error:1519790252594827264> Couldn't reach the account right now. Please try again.",
+        "not_supported": "<:warning:1519789903100121139> This connector isn't available.",
+        "twitch_not_configured": "<:error:1519790252594827264> Twitch isn't configured on our side. Please contact support.",
+        "twitch_auth_failed": "<:error:1519790252594827264> Twitch authentication failed. Please contact support.",
+        "timeout": "<:error:1519790252594827264> The notification service took too long to respond. Please try again.",
+        "service_unavailable": "<:error:1519790252594827264> The notification service is currently unavailable. Please try again later.",
+        "no_permission": "<:error:1519790252594827264> You need the **Manage Server** permission to configure this.",
+        "limit_reached_free": "<:warning:1519789903100121139> Free servers can follow only **1 account per platform**. Remove one or upgrade to Premium to follow up to 5.",
+        "limit_reached_premium": "<:warning:1519789903100121139> You've reached the maximum of **5 accounts per platform** for this server.",
+        "internal_error": "<:error:1519790252594827264> Something went wrong. Please try again."
       }
     }
   },

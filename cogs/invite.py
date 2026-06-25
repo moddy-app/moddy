@@ -63,7 +63,7 @@ class InviteView(BaseView):
         """Add buttons for guild invite (outside container, below)"""
         button_row = ui.ActionRow()
         server_info_btn = ui.Button(
-            emoji=discord.PartialEmoji.from_str("<:server:1464693264773939319>"),
+            emoji=discord.PartialEmoji.from_str("<:server:1519788576420921476>"),
             label=t('commands.invite.view.guild.show_server_info', locale=self.locale),
             style=discord.ButtonStyle.primary
         )
@@ -394,7 +394,7 @@ class ServerInfoView(BaseView):
 
         # Title
         container.add_item(ui.TextDisplay(
-            f"### <:server:1464693264773939319> {t('commands.invite.view.server_info.title', locale=self.locale)}"
+            f"### <:server:1519788576420921476> {t('commands.invite.view.server_info.title', locale=self.locale)}"
         ))
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))

@@ -607,17 +607,17 @@
       },
       "save": {
         "success": "<:done:1398729525277229066> Configuration enregistrée avec succès !",
-        "error": "<:error:1444049460924776478> Erreur lors de l'enregistrement : {error}"
+        "error": "<:error:1519790252594827264> Erreur lors de l'enregistrement : {error}"
       },
       "delete": {
         "success": "<:delete:1401600770431909939> Configuration supprimée avec succès !",
-        "error": "<:error:1444049460924776478> Erreur lors de la suppression."
+        "error": "<:error:1519790252594827264> Erreur lors de la suppression."
       },
       "errors": {
-        "guild_only": "<:error:1444049460924776478> Cette commande ne peut être utilisée que sur un serveur.",
-        "bot_not_in_guild": "<:error:1444049460924776478> Moddy doit être présent sur ce serveur pour utiliser cette commande.",
-        "wrong_user": "<:error:1444049460924776478> Seul l'utilisateur qui a lancé la configuration peut utiliser cette interface.",
-        "no_user_perms": "<:error:1444049460924776478> Vous devez avoir la permission **Gérer le serveur** pour utiliser cette commande.",
+        "guild_only": "<:error:1519790252594827264> Cette commande ne peut être utilisée que sur un serveur.",
+        "bot_not_in_guild": "<:error:1519790252594827264> Moddy doit être présent sur ce serveur pour utiliser cette commande.",
+        "wrong_user": "<:error:1519790252594827264> Seul l'utilisateur qui a lancé la configuration peut utiliser cette interface.",
+        "no_user_perms": "<:error:1519790252594827264> Vous devez avoir la permission **Gérer le serveur** pour utiliser cette commande.",
         "required_fields": "<:undone:1398729502028333218> **Configuration invalide** - Les champs suivants doivent être remplis :\n• {fields}",
         "channel_not_found": "Salon introuvable",
         "no_admin_perms": {
@@ -763,8 +763,8 @@
         }
       },
       "welcome_dm": {
-        "title": "### <:groups:1446127489842806967> Salon Inter-Serveur",
-        "body": "<:web:1398729801061240883> Ceci est un salon inter-serveur francophone connectant plusieurs serveurs Discord.\n<:book:1446557736350388364> Veuillez respecter les Règles Inter-Serveur et les Conditions d'Utilisation de Discord.\n<:verified:1398729677601902635> Ce salon est modéré par l'équipe de modération de Moddy.\n<:flag:1446197210198048778> Pour signaler un message à notre équipe, rejoignez notre serveur de support ou utilisez /interserver report.\n\n-# Vous recevez ce message car vous avez envoyé votre premier message dans un salon inter-serveur."
+        "title": "### <:groups:1519789805456724049> Salon Inter-Serveur",
+        "body": "<:web:1398729801061240883> Ceci est un salon inter-serveur francophone connectant plusieurs serveurs Discord.\n<:book:1519788969691316467> Veuillez respecter les Règles Inter-Serveur et les Conditions d'Utilisation de Discord.\n<:verified:1398729677601902635> Ce salon est modéré par l'équipe de modération de Moddy.\n<:flag:1519789496181461183> Pour signaler un message à notre équipe, rejoignez notre serveur de support ou utilisez /interserver report.\n\n-# Vous recevez ce message car vous avez envoyé votre premier message dans un salon inter-serveur."
       },
       "channel_description": "🌐 Salon Inter-Serveur | Connectez-vous avec des utilisateurs de plusieurs serveurs Discord | Respectez les Règles Inter-Serveur (https://moddy.app/interserver-guidelines) | Modéré par l'équipe Moddy | Signalement : /interserver report"
     },
@@ -855,10 +855,10 @@
       },
       "commands": {
         "error": {
-          "no_manager": "<:error:1444049460924776478> Le gestionnaire de modules n'est pas disponible.",
-          "not_configured": "<:error:1444049460924776478> Le module Auto Restore Roles n'est pas configuré sur ce serveur.",
-          "not_enabled": "<:error:1444049460924776478> Le module Auto Restore Roles n'est pas activé sur ce serveur.",
-          "internal": "<:error:1444049460924776478> Une erreur interne s'est produite."
+          "no_manager": "<:error:1519790252594827264> Le gestionnaire de modules n'est pas disponible.",
+          "not_configured": "<:error:1519790252594827264> Le module Auto Restore Roles n'est pas configuré sur ce serveur.",
+          "not_enabled": "<:error:1519790252594827264> Le module Auto Restore Roles n'est pas activé sur ce serveur.",
+          "internal": "<:error:1519790252594827264> Une erreur interne s'est produite."
         },
         "clear": {
           "no_roles": "<:info:1401614681440784477> L'utilisateur {user} n'a aucun rôle sauvegardé.",
@@ -870,7 +870,7 @@
           "no_roles_found": "Aucun rôle trouvé",
           "success_title": "Rôles supprimés",
           "success_description": "Les rôles sauvegardés de {user} ont été supprimés avec succès.",
-          "error": "<:error:1444049460924776478> Impossible de supprimer les rôles sauvegardés."
+          "error": "<:error:1519790252594827264> Impossible de supprimer les rôles sauvegardés."
         },
         "view": {
           "no_saved_roles": "<:info:1401614681440784477> Aucun utilisateur n'a de rôles sauvegardés sur ce serveur.",
@@ -1085,25 +1085,25 @@
         "default_caption": "**{author}** vient de publier du nouveau contenu !"
       },
       "errors": {
-        "unknown_platform": "<:error:1444049460924776478> Plateforme invalide.",
-        "platform_disabled": "<:warning:1446108410092195902> Cette plateforme n'est pas encore disponible — bientôt !",
-        "missing_identifier": "<:error:1444049460924776478> Veuillez indiquer un compte à suivre.",
-        "channel_not_found": "<:error:1444049460924776478> Compte introuvable — vérifiez le nom ou l'URL.",
-        "user_not_found": "<:error:1444049460924776478> Compte introuvable — vérifiez le nom ou l'URL.",
-        "handle_not_found": "<:error:1444049460924776478> Compte introuvable — vérifiez le nom ou l'URL.",
-        "unsafe_url": "<:error:1444049460924776478> Cette URL n'est pas autorisée.",
-        "no_entries": "<:warning:1446108410092195902> Ce flux ne contient rien pour le moment.",
-        "fetch_failed": "<:error:1444049460924776478> Impossible de joindre le compte pour le moment. Réessayez.",
-        "bad_status": "<:error:1444049460924776478> Impossible de joindre le compte pour le moment. Réessayez.",
-        "not_supported": "<:warning:1446108410092195902> Ce connecteur n'est pas disponible.",
-        "twitch_not_configured": "<:error:1444049460924776478> Twitch n'est pas configuré de notre côté. Contactez le support.",
-        "twitch_auth_failed": "<:error:1444049460924776478> L'authentification Twitch a échoué. Contactez le support.",
-        "timeout": "<:error:1444049460924776478> Le service de notifications a mis trop de temps à répondre. Réessayez.",
-        "service_unavailable": "<:error:1444049460924776478> Le service de notifications est actuellement indisponible. Réessayez plus tard.",
-        "no_permission": "<:error:1444049460924776478> Vous avez besoin de la permission **Gérer le serveur** pour configurer ceci.",
-        "limit_reached_free": "<:warning:1446108410092195902> Les serveurs gratuits ne peuvent suivre qu'**1 compte par plateforme**. Retirez-en un ou passez Premium pour en suivre jusqu'à 5.",
-        "limit_reached_premium": "<:warning:1446108410092195902> Vous avez atteint le maximum de **5 comptes par plateforme** pour ce serveur.",
-        "internal_error": "<:error:1444049460924776478> Une erreur est survenue. Réessayez."
+        "unknown_platform": "<:error:1519790252594827264> Plateforme invalide.",
+        "platform_disabled": "<:warning:1519789903100121139> Cette plateforme n'est pas encore disponible — bientôt !",
+        "missing_identifier": "<:error:1519790252594827264> Veuillez indiquer un compte à suivre.",
+        "channel_not_found": "<:error:1519790252594827264> Compte introuvable — vérifiez le nom ou l'URL.",
+        "user_not_found": "<:error:1519790252594827264> Compte introuvable — vérifiez le nom ou l'URL.",
+        "handle_not_found": "<:error:1519790252594827264> Compte introuvable — vérifiez le nom ou l'URL.",
+        "unsafe_url": "<:error:1519790252594827264> Cette URL n'est pas autorisée.",
+        "no_entries": "<:warning:1519789903100121139> Ce flux ne contient rien pour le moment.",
+        "fetch_failed": "<:error:1519790252594827264> Impossible de joindre le compte pour le moment. Réessayez.",
+        "bad_status": "<:error:1519790252594827264> Impossible de joindre le compte pour le moment. Réessayez.",
+        "not_supported": "<:warning:1519789903100121139> Ce connecteur n'est pas disponible.",
+        "twitch_not_configured": "<:error:1519790252594827264> Twitch n'est pas configuré de notre côté. Contactez le support.",
+        "twitch_auth_failed": "<:error:1519790252594827264> L'authentification Twitch a échoué. Contactez le support.",
+        "timeout": "<:error:1519790252594827264> Le service de notifications a mis trop de temps à répondre. Réessayez.",
+        "service_unavailable": "<:error:1519790252594827264> Le service de notifications est actuellement indisponible. Réessayez plus tard.",
+        "no_permission": "<:error:1519790252594827264> Vous avez besoin de la permission **Gérer le serveur** pour configurer ceci.",
+        "limit_reached_free": "<:warning:1519789903100121139> Les serveurs gratuits ne peuvent suivre qu'**1 compte par plateforme**. Retirez-en un ou passez Premium pour en suivre jusqu'à 5.",
+        "limit_reached_premium": "<:warning:1519789903100121139> Vous avez atteint le maximum de **5 comptes par plateforme** pour ce serveur.",
+        "internal_error": "<:error:1519790252594827264> Une erreur est survenue. Réessayez."
       }
     }
   },
