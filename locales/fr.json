@@ -16,8 +16,8 @@
     "ping": {
       "description": "Vérifie la latence et le statut du bot",
       "response": {
-        "title": "<:network_ping:1439055098096521359> Statut du bot",
-        "main_info": "{status_emoji} **{status}**\n\n<:network_ping:1439055098096521359> **API Discord :** `{api_latency}ms`\n<:network_ping:1439055098096521359> **Temps de réponse :** {message_latency}",
+        "title": "<:network_ping:1519792879613247540> Statut du bot",
+        "main_info": "{status_emoji} **{status}**\n\n<:network_ping:1519792879613247540> **API Discord :** `{api_latency}ms`\n<:network_ping:1519792879613247540> **Temps de réponse :** {message_latency}",
         "system_details": "**Shard :** `{shard_id}/{total_shards}`\n**Uptime :** `{uptime}` {uptime_timestamp}\n**Version :** `{version}`\n**Serveurs :** `{guild_count}`\n**Utilisateurs :** `{user_count}`"
       },
       "status": {
@@ -65,7 +65,7 @@
         "incognito": "Rendre la réponse visible uniquement pour vous"
       },
       "view": {
-        "title": "### <:face:1439042029198770289> Avatar de **{name}**{badge}",
+        "title": "### <:face:1519793231699775578> Avatar de **{name}**{badge}",
         "username": "Nom d'utilisateur :",
         "user_id": "ID :",
         "bot": "Bot :",
@@ -120,7 +120,7 @@
         "incognito": "Rendre la réponse visible uniquement pour vous"
       },
       "view": {
-        "title": "### <:random:1439043225741557820> Lancer de dé",
+        "title": "### <:random:1519793103563788390> Lancer de dé",
         "result": "**Résultat :** `{result}`",
         "range": "-# Dé à {max} faces (1-{max})"
       }
@@ -314,7 +314,7 @@
         "current": "Votre fuseau horaire actuel : **{timezone}**"
       },
       "add": {
-        "title": "### <:notifications:1402261437493022775> Rappel créé",
+        "title": "### <:notifications:1519793619861508147> Rappel créé",
         "description": "Je vous rappellerai :\n> {message}",
         "time_field": "**Quand :** {time}",
         "relative_field": "**Dans :** {relative}",
@@ -322,7 +322,7 @@
         "location_channel": "**Où :** <#{channel_id}>"
       },
       "manage": {
-        "title": "### <:notifications:1402261437493022775> Vos rappels",
+        "title": "### <:notifications:1519793619861508147> Vos rappels",
         "no_reminders": "Vous n'avez aucun rappel à venir.",
         "reminder_item": "{message} | #{id}\n-# {relative} • {time}",
         "reminder_item_channel": "{message} | #{id}\n-# {relative} • {time} • <#{channel_id}>",
@@ -371,7 +371,7 @@
         "generic": "<:undone:1398729502028333218> Une erreur est survenue : {error}"
       },
       "notification": {
-        "title": "### <:notifications:1402261437493022775> Rappel",
+        "title": "### <:notifications:1519793619861508147> Rappel",
         "description": "{message}",
         "footer": "Créé {time}",
         "late_notice": "-# Ce rappel a été retardé en raison d'une maintenance du bot."
@@ -415,7 +415,7 @@
         "refresh": "Actualiser"
       },
       "info": {
-        "title": "### <:webhook:1438636058660045041> Informations du Webhook",
+        "title": "### <:webhook:1519793325329219675> Informations du Webhook",
         "instruction": "-# Utilisez les boutons ci-dessous pour gérer ce webhook",
         "fields": {
           "name": "**Nom :** `{name}`",
@@ -577,7 +577,7 @@
     "loading": "<a:loading:1455219844080336907> Chargement...",
     "success": "<:done:1398729525277229066> Succès !",
     "error": "<:undone:1398729502028333218> Erreur",
-    "info": "<:info:1401614681440784477> Information",
+    "info": "<:info:1519793991045091388> Information",
     "warning": "<:warning:1398729560895422505> Avertissement",
     "yes": "Oui",
     "no": "Non",
@@ -861,7 +861,7 @@
           "internal": "<:error:1519790252594827264> Une erreur interne s'est produite."
         },
         "clear": {
-          "no_roles": "<:info:1401614681440784477> L'utilisateur {user} n'a aucun rôle sauvegardé.",
+          "no_roles": "<:info:1519793991045091388> L'utilisateur {user} n'a aucun rôle sauvegardé.",
           "confirm_title": "Confirmation de suppression",
           "confirm_description": "Voulez-vous vraiment supprimer les rôles sauvegardés de {user} ?",
           "user_field": "Utilisateur",
@@ -873,7 +873,7 @@
           "error": "<:error:1519790252594827264> Impossible de supprimer les rôles sauvegardés."
         },
         "view": {
-          "no_saved_roles": "<:info:1401614681440784477> Aucun utilisateur n'a de rôles sauvegardés sur ce serveur.",
+          "no_saved_roles": "<:info:1519793991045091388> Aucun utilisateur n'a de rôles sauvegardés sur ce serveur.",
           "title": "Utilisateurs avec rôles sauvegardés",
           "description": "{count} utilisateur(s) ont des rôles en attente de restauration",
           "user_info": "{role_count} rôle(s) sauvegardé(s)",

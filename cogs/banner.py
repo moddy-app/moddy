@@ -58,7 +58,7 @@ class BannerView(BaseView):
 
         if not banner_hash:
             # User has no custom banner
-            container.add_item(ui.TextDisplay(f"### <:banner:1439659080472989726> {title_text}"))
+            container.add_item(ui.TextDisplay(f"### <:banner:1519792732716007634> {title_text}"))
             container.add_item(ui.TextDisplay(i18n.get("commands.banner.errors.no_banner", locale=self.locale)))
             self.add_item(container)
             return
@@ -71,7 +71,7 @@ class BannerView(BaseView):
         banner_url_display = f"{banner_url_base}?size=600"
 
         # Add title
-        container.add_item(ui.TextDisplay(f"### <:banner:1439659080472989726> {title_text}"))
+        container.add_item(ui.TextDisplay(f"### <:banner:1519792732716007634> {title_text}"))
 
         # Add MediaGallery with banner URL (600px)
         container.add_item(

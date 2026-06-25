@@ -16,8 +16,8 @@
     "ping": {
       "description": "Check the bot's latency and status",
       "response": {
-        "title": "<:network_ping:1439055098096521359> Bot Status",
-        "main_info": "{status_emoji} **{status}**\n\n<:network_ping:1439055098096521359> **Discord API:** `{api_latency}ms`\n<:network_ping:1439055098096521359> **Response Time:** {message_latency}",
+        "title": "<:network_ping:1519792879613247540> Bot Status",
+        "main_info": "{status_emoji} **{status}**\n\n<:network_ping:1519792879613247540> **Discord API:** `{api_latency}ms`\n<:network_ping:1519792879613247540> **Response Time:** {message_latency}",
         "system_details": "**Shard:** `{shard_id}/{total_shards}`\n**Uptime:** `{uptime}` {uptime_timestamp}\n**Version:** `{version}`\n**Servers:** `{guild_count}`\n**Users:** `{user_count}`"
       },
       "status": {
@@ -65,7 +65,7 @@
         "incognito": "Make response visible only to you"
       },
       "view": {
-        "title": "### <:face:1439042029198770289> **{name}**'s Avatar{badge}",
+        "title": "### <:face:1519793231699775578> **{name}**'s Avatar{badge}",
         "username": "Username:",
         "user_id": "ID:",
         "bot": "Bot:",
@@ -120,7 +120,7 @@
         "incognito": "Make response visible only to you"
       },
       "view": {
-        "title": "### <:random:1439043225741557820> Dice Roll",
+        "title": "### <:random:1519793103563788390> Dice Roll",
         "result": "**Result:** `{result}`",
         "range": "-# {max}-sided die (1-{max})"
       }
@@ -314,7 +314,7 @@
         "current": "Your current timezone: **{timezone}**"
       },
       "add": {
-        "title": "### <:notifications:1402261437493022775> Reminder Created",
+        "title": "### <:notifications:1519793619861508147> Reminder Created",
         "description": "I will remind you:\n> {message}",
         "time_field": "**When:** {time}",
         "relative_field": "**In:** {relative}",
@@ -323,7 +323,7 @@
         "footer": "Reminder #{id}"
       },
       "manage": {
-        "title": "### <:notifications:1402261437493022775> Your Reminders",
+        "title": "### <:notifications:1519793619861508147> Your Reminders",
         "no_reminders": "You don't have any upcoming reminders.",
         "reminder_item": "{message} | #{id}\n-# {relative} • {time}",
         "reminder_item_channel": "{message} | #{id}\n-# {relative} • {time} • <#{channel_id}>",
@@ -372,7 +372,7 @@
         "generic": "<:undone:1398729502028333218> An error occurred: {error}"
       },
       "notification": {
-        "title": "### <:notifications:1402261437493022775> Reminder",
+        "title": "### <:notifications:1519793619861508147> Reminder",
         "description": "{message}",
         "footer": "Created {time}",
         "late_notice": "-# This reminder was delayed due to bot maintenance."
@@ -416,7 +416,7 @@
         "refresh": "Refresh"
       },
       "info": {
-        "title": "### <:webhook:1438636058660045041> Webhook Information",
+        "title": "### <:webhook:1519793325329219675> Webhook Information",
         "instruction": "-# Use the buttons below to manage this webhook",
         "fields": {
           "name": "**Name:** `{name}`",
@@ -578,7 +578,7 @@
     "loading": "<a:loading:1455219844080336907> Loading...",
     "success": "<:done:1398729525277229066> Success!",
     "error": "<:undone:1398729502028333218> Error",
-    "info": "<:info:1401614681440784477> Information",
+    "info": "<:info:1519793991045091388> Information",
     "warning": "<:warning:1398729560895422505> Warning",
     "yes": "Yes",
     "no": "No",
@@ -862,7 +862,7 @@
           "internal": "<:error:1519790252594827264> An internal error occurred."
         },
         "clear": {
-          "no_roles": "<:info:1401614681440784477> User {user} has no saved roles.",
+          "no_roles": "<:info:1519793991045091388> User {user} has no saved roles.",
           "confirm_title": "Deletion confirmation",
           "confirm_description": "Are you sure you want to delete the saved roles for {user}?",
           "user_field": "User",
@@ -874,7 +874,7 @@
           "error": "<:error:1519790252594827264> Unable to delete saved roles."
         },
         "view": {
-          "no_saved_roles": "<:info:1401614681440784477> No users have saved roles on this server.",
+          "no_saved_roles": "<:info:1519793991045091388> No users have saved roles on this server.",
           "title": "Users with saved roles",
           "description": "{count} user(s) have roles pending restoration",
           "user_info": "{role_count} saved role(s)",

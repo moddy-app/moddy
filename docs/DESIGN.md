@@ -76,7 +76,7 @@ class MyView(BaseView):
 - Success: `<:done:1398729525277229066>`
 - Error: `<:error:1519790252594827264>`
 - Warning: `<:warning:1519789903100121139>`
-- Info: `<:info:1401614681440784477>`
+- Info: `<:info:1519793991045091388>`
 - Settings: `<:settings:1398729549323440208>`
 - User: `<:user:1398729712204779571>`
 - Save: `<:save:1444101502154182778>`

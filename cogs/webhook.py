@@ -67,7 +67,7 @@ class WebhookView(BaseView):
         send_btn = ui.Button(
             label=i18n.get("commands.webhook.buttons.send", locale=self.locale),
             style=discord.ButtonStyle.success,
-            emoji="<:send:1438635645147938926>",
+            emoji="<:send:1519793414185553940>",
             custom_id="send_webhook"
         )
         send_btn.callback = self.show_send_modal

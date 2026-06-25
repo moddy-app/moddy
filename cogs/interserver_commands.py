@@ -330,7 +330,7 @@ class InterServerCommands(commands.GroupCog, name="interserver"):
             def __init__(self):
                 super().__init__()
                 container = ui.Container(
-                    ui.TextDisplay(content=f"### <:info:1401614681440784477> Inter-Server Message Info"),
+                    ui.TextDisplay(content=f"### <:info:1519793991045091388> Inter-Server Message Info"),
                     ui.TextDisplay(content=f"**Moddy ID:** `{moddy_id}`\n**Author:** {author_info}\n**Original Server:** {guild_info}\n**Sent:** {timestamp_str}\n**Relayed to:** {relayed_count} servers\n**Status:** {msg_data['status']}\n**Moddy Team Message:** {'✅ Yes' if msg_data.get('is_moddy_team') else '❌ No'}\n\n**Content:**\n{msg_data['content'][:500] if msg_data['content'] else '*No content*'}"),
                 )
                 self.add_item(container)
