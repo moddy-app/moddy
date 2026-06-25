@@ -524,7 +524,7 @@
         "invalid_id": "<:undone:1398729502028333218> Invalid ID. Please enter a number."
       },
       "library": {
-        "title": "### <:message:1443749710073696286> Message Library ({count})",
+        "title": "### <:message:1519790643784843416> Message Library ({count})",
         "empty": "Your library is empty.\nUse the **Save Message** context menu on a message to save it!",
         "page_label": "Page {page}/{total}"
       },

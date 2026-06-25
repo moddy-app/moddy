@@ -184,7 +184,7 @@ class EmojiNavigationView(BaseView):
 
             # Next button
             next_btn = ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:next:1443745574972031067>"),
+                emoji=discord.PartialEmoji.from_str("<:next:1519791619526754354>"),
                 style=discord.ButtonStyle.secondary,
                 disabled=(self.current_index == len(self.emoji_list) - 1),
                 custom_id="next_emoji_btn"

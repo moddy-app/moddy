@@ -523,7 +523,7 @@
         "invalid_id": "<:undone:1398729502028333218> ID invalide. Veuillez entrer un nombre."
       },
       "library": {
-        "title": "### <:message:1443749710073696286> Bibliothèque de messages ({count})",
+        "title": "### <:message:1519790643784843416> Bibliothèque de messages ({count})",
         "empty": "Votre bibliothèque est vide.\nUtilisez le menu contextuel **Save Message** sur un message pour le sauvegarder !",
         "page_label": "Page {page}/{total}"
       },

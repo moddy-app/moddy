@@ -415,7 +415,7 @@ class UserInfoView(BaseView):
                 desc_btn = ui.Button(
                     label=i18n.get("commands.user.buttons.description", locale=self.locale),
                     style=discord.ButtonStyle.secondary,
-                    emoji="<:text:1439692405317046372>",
+                    emoji="<:text:1519791921462120601>",
                     custom_id="description"
                 )
                 desc_btn.callback = self.on_description_click

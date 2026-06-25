@@ -404,7 +404,7 @@ class SavedMessagesLibraryView(LayoutView):
                         note_preview = msg['note'][:80]
                         if len(msg['note']) > 80:
                             note_preview += "..."
-                        msg_line += f"\n-# <:note:1443749708857085982> {note_preview}"
+                        msg_line += f"\n-# <:note:1519790932663468184> {note_preview}"
                     else:
                         msg_line += f"\n-# ID Discord: `{msg['message_id']}`"
 
@@ -415,7 +415,7 @@ class SavedMessagesLibraryView(LayoutView):
                 # Bouton pour sélectionner un message
                 view_row = ui.ActionRow()
                 view_btn = ui.Button(
-                    emoji=discord.PartialEmoji.from_str("<:search:1443752796460552232>"),
+                    emoji=discord.PartialEmoji.from_str("<:search:1519790418290675822>"),
                     label=t("commands.saved_messages.buttons.view_message", locale=self.locale),
                     style=discord.ButtonStyle.primary,
                     custom_id="view_msg_btn"
@@ -451,7 +451,7 @@ class SavedMessagesLibraryView(LayoutView):
 
                     # Bouton Next
                     next_btn = ui.Button(
-                        emoji=discord.PartialEmoji.from_str("<:next:1443745574972031067>"),
+                        emoji=discord.PartialEmoji.from_str("<:next:1519791619526754354>"),
                         style=discord.ButtonStyle.secondary,
                         disabled=(self.page + 1) * 10 >= self.total_count,
                         custom_id="next_btn"

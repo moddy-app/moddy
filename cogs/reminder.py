@@ -574,7 +574,7 @@ class RemindersManageView(LayoutView):
 
             # Add button
             add_btn = discord.ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:add:1439697866049323090>"),
+                emoji=discord.PartialEmoji.from_str("<:add:1519791773235413022>"),
                 label=t("commands.reminder.buttons.add", locale=self.locale),
                 style=discord.ButtonStyle.success,
                 custom_id="add_btn"

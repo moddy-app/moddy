@@ -103,7 +103,7 @@ class InviteView(BaseView):
 
         # Title
         container.add_item(ui.TextDisplay(
-            f"### <:search:1443752796460552232> {t('commands.invite.view.guild.title', locale=self.locale)}"
+            f"### <:search:1519790418290675822> {t('commands.invite.view.guild.title', locale=self.locale)}"
         ))
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
@@ -177,7 +177,7 @@ class InviteView(BaseView):
 
         # Title
         container.add_item(ui.TextDisplay(
-            f"### <:message:1443749710073696286> {t('commands.invite.view.group_dm.title', locale=self.locale)}"
+            f"### <:message:1519790643784843416> {t('commands.invite.view.group_dm.title', locale=self.locale)}"
         ))
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
