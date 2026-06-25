@@ -425,36 +425,32 @@ class ErrorView(ui.LayoutView):
         self.build_view()
 
     def build_view(self):
-        """Builds the error view with Components V2"""
-        # Create main container
-        container = ui.Container()
-
-        # Add error title with emoji
-        container.add_item(
-            ui.TextDisplay(f"### <:error:1519790252594827264> An Error Occurred")
-        )
-
-        # Add error message with code
-        container.add_item(
-            ui.TextDisplay(
-                f"**Error Code:** `{self.error_code}`\n\n"
-                "This error has been automatically logged and will be reviewed by our team.\n"
-                "If the problem persists, please contact support with this error code."
-            )
-        )
-
-        # Add button row with support link
-        button_row = ui.ActionRow()
-        support_btn = ui.Button(
-            label="Support Server",
-            style=discord.ButtonStyle.link,
-            url="https://moddy.app/support"
-        )
-        button_row.add_item(support_btn)
-        container.add_item(button_row)
-
-        # Add container to view
+        container = ui.Container(accent_color=discord.Colour(14296871))
+        container.add_item(ui.TextDisplay(
+            "### <:FrameBug:1519805334988787843> Something went wrong..."
+        ))
+        container.add_item(ui.TextDisplay(
+            f"**Error Code:** ``{self.error_code}``"
+        ))
+        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+        container.add_item(ui.TextDisplay(
+            "-# This error has been automatically logged and will be reviewed by our team.\n"
+            "-# If the problem persists, please contact support with this error code."
+        ))
         self.add_item(container)
+
+        btn_row = ui.ActionRow()
+        btn_row.add_item(ui.Button(
+            label="Support",
+            style=discord.ButtonStyle.link,
+            url="https://moddy.app/support",
+        ))
+        btn_row.add_item(ui.Button(
+            label="Status",
+            style=discord.ButtonStyle.link,
+            url="https://status.moddy.app",
+        ))
+        self.add_item(btn_row)
 
 
 class ErrorTracker(commands.Cog):
