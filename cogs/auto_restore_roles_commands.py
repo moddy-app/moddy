@@ -85,7 +85,7 @@ class AutoRestoreRolesCommands(commands.Cog):
 
             # Crée un embed avec les informations
             embed = discord.Embed(
-                title=f"<:history:1401600464587456512> {t('modules.auto_restore_roles.commands.clear.confirm_title', locale=locale)}",
+                title=f"<:history:1519796822963392755> {t('modules.auto_restore_roles.commands.clear.confirm_title', locale=locale)}",
                 description=t('modules.auto_restore_roles.commands.clear.confirm_description', locale=locale, user=user.mention),
                 color=0xFF5555
             )
@@ -192,7 +192,7 @@ class AutoRestoreRolesCommands(commands.Cog):
             # Crée un embed avec la liste
             saved_count = len(all_saved_roles)
             embed = discord.Embed(
-                title=f"<:history:1401600464587456512> {t('modules.auto_restore_roles.commands.view.title', locale=locale)}",
+                title=f"<:history:1519796822963392755> {t('modules.auto_restore_roles.commands.view.title', locale=locale)}",
                 description=t('modules.auto_restore_roles.commands.view.description', locale=locale, count=saved_count),
                 color=0x5865F2
             )

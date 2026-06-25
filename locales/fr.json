@@ -327,7 +327,7 @@
         "reminder_item": "{message} | #{id}\n-# {relative} • {time}",
         "reminder_item_channel": "{message} | #{id}\n-# {relative} • {time} • <#{channel_id}>",
         "footer": "-# {count} rappel(s) à venir • Fuseau : {timezone}",
-        "history_title": "### <:history:1401600464587456512> Rappels passés",
+        "history_title": "### <:history:1519796822963392755> Rappels passés",
         "history_empty": "Vous n'avez aucun rappel passé.",
         "history_item": "{message} | #{id}\n-# Envoyé {time}",
         "history_item_failed": "{message} | #{id}\n-# Échec d'envoi {time}",

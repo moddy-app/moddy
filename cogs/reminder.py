@@ -606,7 +606,7 @@ class RemindersManageView(LayoutView):
 
             # History button
             history_btn = discord.ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:history:1401600464587456512>"),
+                emoji=discord.PartialEmoji.from_str("<:history:1519796822963392755>"),
                 label=t("commands.reminder.buttons.history", locale=self.locale),
                 style=discord.ButtonStyle.secondary,
                 custom_id="history_btn"

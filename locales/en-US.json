@@ -328,7 +328,7 @@
         "reminder_item": "{message} | #{id}\n-# {relative} • {time}",
         "reminder_item_channel": "{message} | #{id}\n-# {relative} • {time} • <#{channel_id}>",
         "footer": "-# {count} upcoming reminder(s) • Timezone: {timezone}",
-        "history_title": "### <:history:1401600464587456512> Past Reminders",
+        "history_title": "### <:history:1519796822963392755> Past Reminders",
         "history_empty": "You don't have any past reminders.",
         "history_item": "{message} | #{id}\n-# Sent {time}",
         "history_item_failed": "{message} | #{id}\n-# Failed to send {time}",
