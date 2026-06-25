@@ -74,8 +74,8 @@ class MyView(BaseView):
 
 **Common Emojis:**
 - Success: `<:done:1398729525277229066>`
-- Error: `<:error:1444049460924776478>`
-- Warning: `<:warning:1446108410092195902>`
+- Error: `<:error:1519790252594827264>`
+- Warning: `<:warning:1519789903100121139>`
 - Info: `<:info:1401614681440784477>`
 - Settings: `<:settings:1398729549323440208>`
 - User: `<:user:1398729712204779571>`
@@ -105,10 +105,10 @@ Titles **MUST** always use `###` (heading 3) format with an emoji prefix:
 
 **✅ Examples:**
 ```markdown
-### <:groups:1446127489842806967> Inter-Server Configuration
+### <:groups:1519789805456724049> Inter-Server Configuration
 ### <:user:1398729712204779571> User Information
 ### <:settings:1398729549323440208> Server Settings
-### <:star:1446267438671859832> Starboard Configuration
+### <:star:1519789099286925406> Starboard Configuration
 ```
 
 **❌ Wrong:**
@@ -420,7 +420,7 @@ Use the warning emoji for critical information:
 
 ```python
 container.add_item(ui.TextDisplay(
-    f"<:warning:1446108410092195902> **Security Warning**\n"
+    f"<:warning:1519789903100121139> **Security Warning**\n"
     f"-# Messages from other servers will be visible to your members"
 ))
 ```
@@ -595,7 +595,7 @@ class ExampleConfigView(BaseView):
 
         # Warning
         container.add_item(ui.TextDisplay(
-            f"<:warning:1446108410092195902> **{t('modules.example.config.warning.title', locale=self.locale)}**\n"
+            f"<:warning:1519789903100121139> **{t('modules.example.config.warning.title', locale=self.locale)}**\n"
             f"-# {t('modules.example.config.warning.description', locale=self.locale)}"
         ))
 

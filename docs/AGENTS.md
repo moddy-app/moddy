@@ -72,8 +72,8 @@ Full list in [EMOJIS.md](EMOJIS.md). Most commonly used:
 |---|---|---|
 | Success | done | `<:done:1398729525277229066>` |
 | Error/Cancel | undone | `<:undone:1398729502028333218>` |
-| Error (red) | error | `<:error:1444049460924776478>` |
-| Warning | warning | `<:warning:1446108410092195902>` |
+| Error (red) | error | `<:error:1519790252594827264>` |
+| Warning | warning | `<:warning:1519789903100121139>` |
 | Info | info | `<:info:1401614681440784477>` |
 | Settings | settings | `<:settings:1398729549323440208>` |
 | User | user | `<:user:1398729712204779571>` |
