@@ -231,7 +231,7 @@
       },
       "loading": "<a:loading:1395047662092550194> **Récupération des informations de l'utilisateur...**",
       "view": {
-        "title": "### <:user:1398729712204779571> Informations sur **{name}**{badge}",
+        "title": "### <:user:1519798911517196511> Informations sur **{name}**{badge}",
         "display_name": "Nom d'affichage",
         "username": "Nom d'utilisateur",
         "id": "ID",
@@ -281,11 +281,11 @@
         }
       },
       "avatar": {
-        "title": "<:user:1398729712204779571> Avatar de {username}",
+        "title": "<:user:1519798911517196511> Avatar de {username}",
         "download": "Télécharger l'avatar"
       },
       "banner": {
-        "title": "<:user:1398729712204779571> Bannière de {username}",
+        "title": "<:user:1519798911517196511> Bannière de {username}",
         "download": "Télécharger la bannière"
       },
       "errors": {
@@ -307,7 +307,7 @@
         "incognito": "Rendre la réponse visible uniquement pour vous"
       },
       "timezone_setup": {
-        "title": "### <:time:1398729780723060736> Configuration du fuseau horaire",
+        "title": "### <:time:1519798202990330087> Configuration du fuseau horaire",
         "description": "Avant de créer votre premier rappel, veuillez sélectionner votre fuseau horaire.\nCela garantira que vos rappels sont envoyés à l'heure correcte.",
         "placeholder": "Sélectionnez votre fuseau horaire...",
         "success": "Fuseau horaire défini sur **{timezone}** ! Vous pouvez maintenant créer des rappels.",
@@ -389,7 +389,7 @@
         "back": "Retour"
       },
       "timezone": {
-        "title": "### <:time:1398729780723060736> Réglages du fuseau horaire",
+        "title": "### <:time:1519798202990330087> Réglages du fuseau horaire",
         "label": "**Sélectionnez votre fuseau horaire :**",
         "current": "Fuseau horaire actuel : **{timezone}**",
         "placeholder": "Sélectionnez votre fuseau horaire...",
@@ -764,7 +764,7 @@
       },
       "welcome_dm": {
         "title": "### <:groups:1519789805456724049> Salon Inter-Serveur",
-        "body": "<:web:1398729801061240883> Ceci est un salon inter-serveur francophone connectant plusieurs serveurs Discord.\n<:book:1519788969691316467> Veuillez respecter les Règles Inter-Serveur et les Conditions d'Utilisation de Discord.\n<:verified:1398729677601902635> Ce salon est modéré par l'équipe de modération de Moddy.\n<:flag:1519789496181461183> Pour signaler un message à notre équipe, rejoignez notre serveur de support ou utilisez /interserver report.\n\n-# Vous recevez ce message car vous avez envoyé votre premier message dans un salon inter-serveur."
+        "body": "<:web:1519798069191901254> Ceci est un salon inter-serveur francophone connectant plusieurs serveurs Discord.\n<:book:1519788969691316467> Veuillez respecter les Règles Inter-Serveur et les Conditions d'Utilisation de Discord.\n<:verified:1519799054631043332> Ce salon est modéré par l'équipe de modération de Moddy.\n<:flag:1519789496181461183> Pour signaler un message à notre équipe, rejoignez notre serveur de support ou utilisez /interserver report.\n\n-# Vous recevez ce message car vous avez envoyé votre premier message dans un salon inter-serveur."
       },
       "channel_description": "🌐 Salon Inter-Serveur | Connectez-vous avec des utilisateurs de plusieurs serveurs Discord | Respectez les Règles Inter-Serveur (https://moddy.app/interserver-guidelines) | Modéré par l'équipe Moddy | Signalement : /interserver report"
     },

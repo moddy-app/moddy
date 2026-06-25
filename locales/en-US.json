@@ -231,7 +231,7 @@
       },
       "loading": "<a:loading:1395047662092550194> **Fetching user information...**",
       "view": {
-        "title": "### <:user:1398729712204779571> Information about **{name}**{badge}",
+        "title": "### <:user:1519798911517196511> Information about **{name}**{badge}",
         "display_name": "Display name",
         "username": "Username",
         "id": "ID",
@@ -281,11 +281,11 @@
         }
       },
       "avatar": {
-        "title": "<:user:1398729712204779571> {username}'s Avatar",
+        "title": "<:user:1519798911517196511> {username}'s Avatar",
         "download": "Download avatar"
       },
       "banner": {
-        "title": "<:user:1398729712204779571> {username}'s Banner",
+        "title": "<:user:1519798911517196511> {username}'s Banner",
         "download": "Download banner"
       },
       "errors": {
@@ -307,7 +307,7 @@
         "incognito": "Make response visible only to you"
       },
       "timezone_setup": {
-        "title": "### <:time:1398729780723060736> Timezone Setup",
+        "title": "### <:time:1519798202990330087> Timezone Setup",
         "description": "Before creating your first reminder, please select your timezone.\nThis will ensure your reminders are sent at the correct time.",
         "placeholder": "Select your timezone...",
         "success": "Timezone set to **{timezone}**! You can now create reminders.",
@@ -390,7 +390,7 @@
         "back": "Back"
       },
       "timezone": {
-        "title": "### <:time:1398729780723060736> Timezone Settings",
+        "title": "### <:time:1519798202990330087> Timezone Settings",
         "label": "**Select your timezone:**",
         "current": "Current timezone: **{timezone}**",
         "placeholder": "Select your timezone...",
@@ -765,7 +765,7 @@
       },
       "welcome_dm": {
         "title": "### <:groups:1519789805456724049> Inter-Server Channel",
-        "body": "<:web:1398729801061240883> This is an international inter-server channel connecting multiple Discord servers.\n<:book:1519788969691316467> Please follow the Inter-Server Guidelines and Discord's Terms of Service.\n<:verified:1398729677601902635> This channel is moderated by Moddy's moderation team.\n<:flag:1519789496181461183> To report a message to our team, join our support server or use /interserver report.\n\n-# You're receiving this message because you sent your first message in an inter-server channel."
+        "body": "<:web:1519798069191901254> This is an international inter-server channel connecting multiple Discord servers.\n<:book:1519788969691316467> Please follow the Inter-Server Guidelines and Discord's Terms of Service.\n<:verified:1519799054631043332> This channel is moderated by Moddy's moderation team.\n<:flag:1519789496181461183> To report a message to our team, join our support server or use /interserver report.\n\n-# You're receiving this message because you sent your first message in an inter-server channel."
       },
       "channel_description": "🌐 Inter-Server Channel | Connect with users from multiple Discord servers | Follow the Inter-Server Guidelines (https://moddy.app/interserver-guidelines) | Moderated by Moddy Team | Report: /interserver report"
     },

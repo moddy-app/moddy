@@ -228,7 +228,7 @@ class InviteView(BaseView):
 
         # Title
         container.add_item(ui.TextDisplay(
-            f"### <:user:1398729712204779571> {t('commands.invite.view.friend.title', locale=self.locale)}"
+            f"### <:user:1519798911517196511> {t('commands.invite.view.friend.title', locale=self.locale)}"
         ))
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))

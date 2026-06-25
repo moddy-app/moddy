@@ -44,14 +44,14 @@ TOGGLE_OFF = "<:toggle_off:1446267399786594514>"
 REQUIRED_FIELDS = "<:required_fields:1446549185385074769>"
 
 # Objects / Concepts
-USER = "<:user:1398729712204779571>"
+USER = "<:user:1519798911517196511>"
 DEV = "<:dev:1398729645557285066>"
 MODDY = "<:moddy:1396880909117947924>"
 MODDY_ALT = "<:moddy:1451280939412881508>"
 BLACKLIST = "<:blacklist:1519797375470669944>"
-TIME = "<:time:1398729780723060736>"
+TIME = "<:time:1519798202990330087>"
 SNOWFLAKE = "<:snowflake:1519797680069541999>"
-WEB = "<:web:1398729801061240883>"
+WEB = "<:web:1519798069191901254>"
 HISTORY = "<:history:1519796822963392755>"
 BOOK = "<:book:1519788969691316467>"
 CODE = "<:code:1519794490750271641>"
@@ -71,7 +71,7 @@ EMOJI = "<:emoji:1398729407065100359>"
 PREMIUM = "<:premium:1519795224493424893>"
 SUPPORT = "<:support:1519797524813185164>"
 BALANCE = "<:balance:1398729232862941445>"
-MANAGE_USER = "<:manageuser:1398729745293774919>"
+MANAGE_USER = "<:manageuser:1519798563880698066>"
 BANNER = "<:banner:1519792732716007634>"
 TEXT = "<:text:1519791921462120601>"
 TRANSLATE = "<:translate:1398720130950627600>"
@@ -86,12 +86,12 @@ STAFF = "<:staff:1398729432759476245>"
 # updating the id here propagates everywhere. Also update PLATFORM_EMOJIS below
 # stays in sync automatically (it references the constants).
 # =============================================================================
-SOCIAL = "<:web:1398729801061240883>"           # generic "social notifications" icon (placeholder — no custom emoji yet)
+SOCIAL = "<:web:1519798069191901254>"           # generic "social notifications" icon (placeholder — no custom emoji yet)
 YOUTUBE = "<:youtube:1515511923066671185>"
 TWITCH = "<:twitch:1515511921938399343>"
 BLUESKY = "<:bluesky:1515511920235516024>"
 RSS = "<:rss:1519788506980028477>"
-INSTAGRAM = "<:web:1398729801061240883>"         # TODO replace with <:instagram:...> (platform is future/disabled)
+INSTAGRAM = "<:web:1519798069191901254>"         # TODO replace with <:instagram:...> (platform is future/disabled)
 
 # platform id -> emoji (single source of truth used by the module + config UI)
 PLATFORM_EMOJIS = {

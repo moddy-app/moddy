@@ -78,7 +78,7 @@ class MyView(BaseView):
 - Warning: `<:warning:1519789903100121139>`
 - Info: `<:info:1519793991045091388>`
 - Settings: `<:settings:1398729549323440208>`
-- User: `<:user:1398729712204779571>`
+- User: `<:user:1519798911517196511>`
 - Save: `<:save:1444101502154182778>`
 - Back: `<:back:1519795556665397431>`
 - Delete: `<:delete:1519795753164210447>`
@@ -106,7 +106,7 @@ Titles **MUST** always use `###` (heading 3) format with an emoji prefix:
 **✅ Examples:**
 ```markdown
 ### <:groups:1519789805456724049> Inter-Server Configuration
-### <:user:1398729712204779571> User Information
+### <:user:1519798911517196511> User Information
 ### <:settings:1398729549323440208> Server Settings
 ### <:star:1519789099286925406> Starboard Configuration
 ```
