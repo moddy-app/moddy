@@ -35,7 +35,7 @@ async def _resolve_emoji(bot, raw: str):
         return pe, f"<:{name}:{emoji_id}>"
 
     # Name or ID only — need to look up the application emoji list.
-    for e in await bot.application.fetch_emojis():
+    for e in await bot.fetch_application_emojis():
         if emoji_id and e.id == emoji_id:
             pe = discord.PartialEmoji(name=e.name, id=e.id)
             return pe, f"<:{e.name}:{e.id}>"
