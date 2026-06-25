@@ -262,7 +262,7 @@
         "banner": "Bannière"
       },
       "bot_info": {
-        "title": "<:code:1401610523803652196> Informations du bot - {name}",
+        "title": "<:code:1519794490750271641> Informations du bot - {name}",
         "fields": {
           "description": "Description",
           "server_count": "Nombre de serveurs",
@@ -610,7 +610,7 @@
         "error": "<:error:1519790252594827264> Erreur lors de l'enregistrement : {error}"
       },
       "delete": {
-        "success": "<:delete:1401600770431909939> Configuration supprimée avec succès !",
+        "success": "<:delete:1519795753164210447> Configuration supprimée avec succès !",
         "error": "<:error:1519790252594827264> Erreur lors de la suppression."
       },
       "errors": {
@@ -1064,7 +1064,7 @@
         "pause": "Mettre en pause",
         "resume": "Reprendre",
         "remove": "Supprimer",
-        "removed": "<:delete:1401600770431909939> Abonnement supprimé.",
+        "removed": "<:delete:1519795753164210447> Abonnement supprimé.",
         "updated": "<:done:1398729525277229066> Mis à jour."
       },
       "notify": {

@@ -84,7 +84,7 @@ class AttributionView(BaseView):
         # Back button (persistent — stable custom_id)
         back_row = ui.ActionRow()
         back_btn = ui.Button(
-            emoji=discord.PartialEmoji.from_str("<:back:1401600847733067806>"),
+            emoji=discord.PartialEmoji.from_str("<:back:1519795556665397431>"),
             label=t('commands.moddy.buttons.back', locale=self.locale),
             style=discord.ButtonStyle.secondary,
             custom_id=_CID_ATTRIBUTION_BACK,
@@ -149,7 +149,7 @@ class WeSupportView(BaseView):
         # Back button (persistent — stable custom_id)
         back_row = ui.ActionRow()
         back_btn = ui.Button(
-            emoji=discord.PartialEmoji.from_str("<:back:1401600847733067806>"),
+            emoji=discord.PartialEmoji.from_str("<:back:1519795556665397431>"),
             label=t('commands.moddy.buttons.back', locale=self.locale),
             style=discord.ButtonStyle.secondary,
             custom_id=_CID_WE_SUPPORT_BACK,

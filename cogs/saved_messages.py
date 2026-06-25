@@ -345,7 +345,7 @@ class SavedMessagesLibraryView(LayoutView):
 
             # Bouton Back
             back_btn = ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:back:1401600847733067806>"),
+                emoji=discord.PartialEmoji.from_str("<:back:1519795556665397431>"),
                 label=t("commands.saved_messages.buttons.back", locale=self.locale),
                 style=discord.ButtonStyle.secondary,
                 custom_id="back_btn"
@@ -355,7 +355,7 @@ class SavedMessagesLibraryView(LayoutView):
 
             # Bouton Edit Note
             edit_btn = ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:edit:1401600709824086169>"),
+                emoji=discord.PartialEmoji.from_str("<:edit:1519795936568676383>"),
                 label=t("commands.saved_messages.buttons.edit_note", locale=self.locale),
                 style=discord.ButtonStyle.primary,
                 custom_id="edit_note_btn"
@@ -365,7 +365,7 @@ class SavedMessagesLibraryView(LayoutView):
 
             # Bouton Export JSON
             export_btn = ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:data_object:1401600908323852318>"),
+                emoji=discord.PartialEmoji.from_str("<:data_object:1519795407453159474>"),
                 label=t("commands.saved_messages.buttons.export_json", locale=self.locale),
                 style=discord.ButtonStyle.secondary,
                 custom_id="export_json_btn"
@@ -375,7 +375,7 @@ class SavedMessagesLibraryView(LayoutView):
 
             # Bouton Delete
             delete_btn = ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:delete:1401600770431909939>"),
+                emoji=discord.PartialEmoji.from_str("<:delete:1519795753164210447>"),
                 label=t("commands.saved_messages.buttons.delete", locale=self.locale),
                 style=discord.ButtonStyle.danger,
                 custom_id="delete_btn"
@@ -431,7 +431,7 @@ class SavedMessagesLibraryView(LayoutView):
 
                     # Bouton Previous
                     prev_btn = ui.Button(
-                        emoji=discord.PartialEmoji.from_str("<:back:1401600847733067806>"),
+                        emoji=discord.PartialEmoji.from_str("<:back:1519795556665397431>"),
                         style=discord.ButtonStyle.secondary,
                         disabled=self.page == 0,
                         custom_id="prev_btn"

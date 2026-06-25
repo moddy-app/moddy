@@ -165,7 +165,7 @@ class EmojiNavigationView(BaseView):
 
             # Previous button
             prev_btn = ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:back:1401600847733067806>"),
+                emoji=discord.PartialEmoji.from_str("<:back:1519795556665397431>"),
                 style=discord.ButtonStyle.secondary,
                 disabled=(self.current_index == 0),
                 custom_id="prev_emoji_btn"

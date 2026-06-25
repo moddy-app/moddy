@@ -80,8 +80,8 @@ class MyView(BaseView):
 - Settings: `<:settings:1398729549323440208>`
 - User: `<:user:1398729712204779571>`
 - Save: `<:save:1444101502154182778>`
-- Back: `<:back:1401600847733067806>`
-- Delete: `<:delete:1401600770431909939>`
+- Back: `<:back:1519795556665397431>`
+- Delete: `<:delete:1519795753164210447>`
 - Cancel: `<:undone:1398729502028333218>`
 - Required: `<:required_fields:1446549185385074769>`
 
@@ -315,7 +315,7 @@ class ModuleConfigView(BaseView):
 **Always provide these buttons:**
 
 1. **Back Button** - Return to main menu
-   - Emoji: `<:back:1401600847733067806>`
+   - Emoji: `<:back:1519795556665397431>`
    - Style: `secondary`
    - Disabled when changes are pending
 
@@ -328,7 +328,7 @@ class ModuleConfigView(BaseView):
    - Style: `danger`
 
 4. **Delete Button** - Remove configuration (only shown when no changes and config exists)
-   - Emoji: `<:delete:1401600770431909939>`
+   - Emoji: `<:delete:1519795753164210447>`
    - Style: `danger`
 
 **Example:**
@@ -339,7 +339,7 @@ def _add_action_buttons(self):
 
     # Back button (disabled if changes pending)
     back_btn = ui.Button(
-        emoji=discord.PartialEmoji.from_str("<:back:1401600847733067806>"),
+        emoji=discord.PartialEmoji.from_str("<:back:1519795556665397431>"),
         label=t('modules.config.buttons.back', locale=self.locale),
         style=discord.ButtonStyle.secondary,
         disabled=self.has_changes
@@ -608,7 +608,7 @@ class ExampleConfigView(BaseView):
 
         # Back button
         back_btn = ui.Button(
-            emoji=discord.PartialEmoji.from_str("<:back:1401600847733067806>"),
+            emoji=discord.PartialEmoji.from_str("<:back:1519795556665397431>"),
             label=t('modules.config.buttons.back', locale=self.locale),
             style=discord.ButtonStyle.secondary,
             disabled=self.has_changes
@@ -638,7 +638,7 @@ class ExampleConfigView(BaseView):
             if self.has_existing_config:
                 # Delete button
                 delete_btn = ui.Button(
-                    emoji=discord.PartialEmoji.from_str("<:delete:1401600770431909939>"),
+                    emoji=discord.PartialEmoji.from_str("<:delete:1519795753164210447>"),
                     label=t('modules.config.buttons.delete', locale=self.locale),
                     style=discord.ButtonStyle.danger
                 )

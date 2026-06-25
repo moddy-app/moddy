@@ -72,7 +72,7 @@ class InviteView(BaseView):
 
         # TEMP: Raw data button for debugging
         raw_btn = ui.Button(
-            emoji=discord.PartialEmoji.from_str("<:code:1401610523803652196>"),
+            emoji=discord.PartialEmoji.from_str("<:code:1519794490750271641>"),
             label="Raw Data",
             style=discord.ButtonStyle.secondary
         )
@@ -85,7 +85,7 @@ class InviteView(BaseView):
         """Add raw data button only (for non-guild invites)"""
         button_row = ui.ActionRow()
         raw_btn = ui.Button(
-            emoji=discord.PartialEmoji.from_str("<:code:1401610523803652196>"),
+            emoji=discord.PartialEmoji.from_str("<:code:1519794490750271641>"),
             label="Raw Data",
             style=discord.ButtonStyle.secondary
         )
@@ -487,7 +487,7 @@ class ServerInfoView(BaseView):
         # Add back button (outside container, below)
         button_row = ui.ActionRow()
         back_btn = ui.Button(
-            emoji=discord.PartialEmoji.from_str("<:back:1401600847733067806>"),
+            emoji=discord.PartialEmoji.from_str("<:back:1519795556665397431>"),
             label=t('commands.invite.view.server_info.back', locale=self.locale),
             style=discord.ButtonStyle.secondary
         )
