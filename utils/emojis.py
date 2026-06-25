@@ -9,8 +9,8 @@ To change an emoji, update it in this file — it will propagate everywhere.
 # =============================================================================
 
 # Status indicators
-DONE = "<:done:1398729525277229066>"
-UNDONE = "<:undone:1398729502028333218>"
+DONE = "<:done:1519800188925902881>"
+UNDONE = "<:undone:1519800313324896327>"
 ERROR = "<:error:1519790252594827264>"
 WARNING = "<:warning:1519789903100121139>"
 INFO = "<:info:1519793991045091388>"
@@ -37,7 +37,7 @@ DOWNLOAD = "<:download:1519796568255889578>"
 REPLY = "<:reply:1519790151130415154>"
 
 # Navigation / UI
-SETTINGS = "<:settings:1398729549323440208>"
+SETTINGS = "<:settings:1519800032499339354>"
 COMMANDS = "<:commands:1519794878933106830>"
 TOGGLE_ON = "<:toogle_on:1446267419034386473>"
 TOGGLE_OFF = "<:toggle_off:1446267399786594514>"
@@ -67,7 +67,7 @@ WAVING_HAND = "<:waving_hand:1519789691711393982>"
 FLAG = "<:flag:1519789496181461183>"
 AT = "<:at:1519789374898700289>"
 STAR = "<:star:1519789099286925406>"
-EMOJI = "<:emoji:1398729407065100359>"
+EMOJI = "<:emoji:1519800926636867675>"
 PREMIUM = "<:premium:1519795224493424893>"
 SUPPORT = "<:support:1519797524813185164>"
 BALANCE = "<:balance:1398729232862941445>"

@@ -121,7 +121,7 @@ class AutoRestoreRolesCommands(commands.Cog):
 
             if success:
                 embed.color = 0x00FF00
-                embed.title = f"<:done:1398729525277229066> {t('modules.auto_restore_roles.commands.clear.success_title', locale=locale)}"
+                embed.title = f"<:done:1519800188925902881> {t('modules.auto_restore_roles.commands.clear.success_title', locale=locale)}"
                 embed.description = t('modules.auto_restore_roles.commands.clear.success_description', locale=locale, user=user.mention)
                 await interaction.response.send_message(embed=embed, ephemeral=True)
                 logger.info(f"Cleared saved roles for user {user.id} in guild {interaction.guild.id} by admin {interaction.user.id}")

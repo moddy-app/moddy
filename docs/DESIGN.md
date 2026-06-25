@@ -47,7 +47,7 @@ class MyView(BaseView):
 
         container = ui.Container()
         container.add_item(ui.TextDisplay(
-            "### <:settings:1398729549323440208> Configuration"
+            "### <:settings:1519800032499339354> Configuration"
         ))
         container.add_item(ui.TextDisplay(
             "Configure your server settings below."
@@ -63,7 +63,7 @@ class MyView(BaseView):
 ### **ONLY use custom emojis from `/docs/EMOJIS.md`**
 
 **✅ DO:**
-- Use bot's custom emojis: `<:done:1398729525277229066>`
+- Use bot's custom emojis: `<:done:1519800188925902881>`
 - Use flag emojis for languages: 🇬🇧 🇫🇷 🇪🇸
 - Reference `/docs/EMOJIS.md` for the full list
 
@@ -73,16 +73,16 @@ class MyView(BaseView):
 - Hardcode emoji IDs without checking the documentation
 
 **Common Emojis:**
-- Success: `<:done:1398729525277229066>`
+- Success: `<:done:1519800188925902881>`
 - Error: `<:error:1519790252594827264>`
 - Warning: `<:warning:1519789903100121139>`
 - Info: `<:info:1519793991045091388>`
-- Settings: `<:settings:1398729549323440208>`
+- Settings: `<:settings:1519800032499339354>`
 - User: `<:user:1519798911517196511>`
 - Save: `<:save:1444101502154182778>`
 - Back: `<:back:1519795556665397431>`
 - Delete: `<:delete:1519795753164210447>`
-- Cancel: `<:undone:1398729502028333218>`
+- Cancel: `<:undone:1519800313324896327>`
 - Required: `<:required_fields:1446549185385074769>`
 
 **Why custom emojis?**
@@ -107,7 +107,7 @@ Titles **MUST** always use `###` (heading 3) format with an emoji prefix:
 ```markdown
 ### <:groups:1519789805456724049> Inter-Server Configuration
 ### <:user:1519798911517196511> User Information
-### <:settings:1398729549323440208> Server Settings
+### <:settings:1519800032499339354> Server Settings
 ### <:star:1519789099286925406> Starboard Configuration
 ```
 
@@ -324,7 +324,7 @@ class ModuleConfigView(BaseView):
    - Style: `success`
 
 3. **Cancel Button** - Discard changes (only shown when changes exist)
-   - Emoji: `<:undone:1398729502028333218>`
+   - Emoji: `<:undone:1519800313324896327>`
    - Style: `danger`
 
 4. **Delete Button** - Remove configuration (only shown when no changes and config exists)
@@ -359,7 +359,7 @@ def _add_action_buttons(self):
 
         # Cancel button
         cancel_btn = ui.Button(
-            emoji=discord.PartialEmoji.from_str("<:undone:1398729502028333218>"),
+            emoji=discord.PartialEmoji.from_str("<:undone:1519800313324896327>"),
             label=t('modules.config.buttons.cancel', locale=self.locale),
             style=discord.ButtonStyle.danger
         )
@@ -554,7 +554,7 @@ class ExampleConfigView(BaseView):
 
         # Title with emoji (### format)
         container.add_item(ui.TextDisplay(
-            f"### <:settings:1398729549323440208> {t('modules.example.config.title', locale=self.locale)}"
+            f"### <:settings:1519800032499339354> {t('modules.example.config.title', locale=self.locale)}"
         ))
 
         # Description
@@ -628,7 +628,7 @@ class ExampleConfigView(BaseView):
 
             # Cancel button
             cancel_btn = ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:undone:1398729502028333218>"),
+                emoji=discord.PartialEmoji.from_str("<:undone:1519800313324896327>"),
                 label=t('modules.config.buttons.cancel', locale=self.locale),
                 style=discord.ButtonStyle.danger
             )

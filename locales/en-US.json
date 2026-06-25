@@ -84,8 +84,8 @@
         "download": "Download"
       },
       "errors": {
-        "not_found": "<:undone:1398729502028333218> **User Not Found**\n\nCould not fetch information for this user.",
-        "no_banner": "<:undone:1398729502028333218> This user doesn't have a banner."
+        "not_found": "<:undone:1519800313324896327> **User Not Found**\n\nCould not fetch information for this user.",
+        "no_banner": "<:undone:1519800313324896327> This user doesn't have a banner."
       }
     },
     "emoji": {
@@ -103,12 +103,12 @@
         "animated": "Animated"
       },
       "errors": {
-        "invalid_emoji": "<:undone:1398729502028333218> **Invalid Emoji**\n\nPlease provide a valid custom Discord emoji.\n\n**Valid formats:**\n• `<:emoji_name:emoji_id>`\n• `<a:emoji_name:emoji_id>` (animated)",
-        "default_emoji": "<:undone:1398729502028333218> **Default Emoji**\n\nThis command only works with custom Discord emojis.\nDefault Unicode emojis like {emoji} cannot be analyzed."
+        "invalid_emoji": "<:undone:1519800313324896327> **Invalid Emoji**\n\nPlease provide a valid custom Discord emoji.\n\n**Valid formats:**\n• `<:emoji_name:emoji_id>`\n• `<a:emoji_name:emoji_id>` (animated)",
+        "default_emoji": "<:undone:1519800313324896327> **Default Emoji**\n\nThis command only works with custom Discord emojis.\nDefault Unicode emojis like {emoji} cannot be analyzed."
       },
       "context_menu": {
         "loading": "<a:loading:1395047662092550194> **Extracting {count} emoji(s) from message...**",
-        "no_emojis": "<:undone:1398729502028333218> **No Custom Emojis**\n\nThis message doesn't contain any custom Discord emojis.",
+        "no_emojis": "<:undone:1519800313324896327> **No Custom Emojis**\n\nThis message doesn't contain any custom Discord emojis.",
         "navigation": "Emoji {current} of {total}",
         "author_only": "Only the command author can use these navigation buttons."
       }
@@ -176,12 +176,12 @@
         }
       },
       "errors": {
-        "not_found": "<:undone:1398729502028333218> **Invite Not Found**\n\nThe invite code `{code}` is invalid, expired, or doesn't exist.",
-        "rate_limit": "<:undone:1398729502028333218> **Rate Limit**\n\nToo many requests. Please try again later.",
-        "api_error": "<:undone:1398729502028333218> **API Error**\n\nFailed to fetch invite information. Status: `{status}`",
-        "network_error": "<:undone:1398729502028333218> **Network Error**\n\nCouldn't connect to Discord API. Please try again.",
-        "generic": "<:undone:1398729502028333218> **Error**\n\nAn error occurred: `{error}`",
-        "unknown_type": "<:undone:1398729502028333218> **Unknown Invite Type**\n\nThis invite type (`{type}`) is not recognized."
+        "not_found": "<:undone:1519800313324896327> **Invite Not Found**\n\nThe invite code `{code}` is invalid, expired, or doesn't exist.",
+        "rate_limit": "<:undone:1519800313324896327> **Rate Limit**\n\nToo many requests. Please try again later.",
+        "api_error": "<:undone:1519800313324896327> **API Error**\n\nFailed to fetch invite information. Status: `{status}`",
+        "network_error": "<:undone:1519800313324896327> **Network Error**\n\nCouldn't connect to Discord API. Please try again.",
+        "generic": "<:undone:1519800313324896327> **Error**\n\nAn error occurred: `{error}`",
+        "unknown_type": "<:undone:1519800313324896327> **Unknown Invite Type**\n\nThis invite type (`{type}`) is not recognized."
       }
     },
     "moddy": {
@@ -289,12 +289,12 @@
         "download": "Download banner"
       },
       "errors": {
-        "not_found": "<:undone:1398729502028333218> **User Not Found**\n\nCould not fetch information for this user.",
-        "author_only": "<:undone:1398729502028333218> You can't use these buttons, they belong to another user.",
-        "no_avatar": "<:undone:1398729502028333218> This user doesn't have a custom avatar.",
-        "no_banner": "<:undone:1398729502028333218> This user doesn't have a banner.",
-        "no_description": "<:undone:1398729502028333218> This bot doesn't have a description.",
-        "generic": "<:undone:1398729502028333218> **Error**\n\nAn error occurred: `{error}`"
+        "not_found": "<:undone:1519800313324896327> **User Not Found**\n\nCould not fetch information for this user.",
+        "author_only": "<:undone:1519800313324896327> You can't use these buttons, they belong to another user.",
+        "no_avatar": "<:undone:1519800313324896327> This user doesn't have a custom avatar.",
+        "no_banner": "<:undone:1519800313324896327> This user doesn't have a banner.",
+        "no_description": "<:undone:1519800313324896327> This bot doesn't have a description.",
+        "generic": "<:undone:1519800313324896327> **Error**\n\nAn error occurred: `{error}`"
       }
     },
     "reminder": {
@@ -356,20 +356,20 @@
         "select_reminder_delete": "Select a reminder to delete..."
       },
       "success": {
-        "created": "<:done:1398729525277229066> Reminder #{id} created.",
-        "deleted": "<:done:1398729525277229066> Reminder #{id} deleted.",
-        "edited": "<:done:1398729525277229066> Reminder #{id} updated.",
-        "timezone_changed": "<:done:1398729525277229066> Timezone changed to **{timezone}**."
+        "created": "<:done:1519800188925902881> Reminder #{id} created.",
+        "deleted": "<:done:1519800188925902881> Reminder #{id} deleted.",
+        "edited": "<:done:1519800188925902881> Reminder #{id} updated.",
+        "timezone_changed": "<:done:1519800188925902881> Timezone changed to **{timezone}**."
       },
       "errors": {
-        "invalid_time": "<:undone:1398729502028333218> Invalid time format. Examples: `1h30m`, `2d`, `tomorrow 3pm`, `25/12 9:00`",
-        "past_time": "<:undone:1398729502028333218> The specified time is in the past.",
-        "too_long": "<:undone:1398729502028333218> The reminder message is too long (max 1000 characters).",
-        "max_reminders": "<:undone:1398729502028333218> You have too many reminders (max 50).",
-        "not_found": "<:undone:1398729502028333218> Reminder not found.",
-        "author_only": "<:undone:1398729502028333218> You can't use these buttons, they belong to another user.",
-        "no_dm": "<:undone:1398729502028333218> I couldn't send you a DM. Please enable DMs from server members.",
-        "generic": "<:undone:1398729502028333218> An error occurred: {error}"
+        "invalid_time": "<:undone:1519800313324896327> Invalid time format. Examples: `1h30m`, `2d`, `tomorrow 3pm`, `25/12 9:00`",
+        "past_time": "<:undone:1519800313324896327> The specified time is in the past.",
+        "too_long": "<:undone:1519800313324896327> The reminder message is too long (max 1000 characters).",
+        "max_reminders": "<:undone:1519800313324896327> You have too many reminders (max 50).",
+        "not_found": "<:undone:1519800313324896327> Reminder not found.",
+        "author_only": "<:undone:1519800313324896327> You can't use these buttons, they belong to another user.",
+        "no_dm": "<:undone:1519800313324896327> I couldn't send you a DM. Please enable DMs from server members.",
+        "generic": "<:undone:1519800313324896327> An error occurred: {error}"
       },
       "notification": {
         "title": "### <:notifications:1519793619861508147> Reminder",
@@ -383,7 +383,7 @@
       "params": {
         "incognito": "Make response visible only to you"
       },
-      "title": "### <:settings:1398729549323440208> Preferences",
+      "title": "### <:settings:1519800032499339354> Preferences",
       "main_description": "Customize your Moddy experience.",
       "buttons": {
         "manage_timezone": "Manage timezone",
@@ -394,12 +394,12 @@
         "label": "**Select your timezone:**",
         "current": "Current timezone: **{timezone}**",
         "placeholder": "Select your timezone...",
-        "success": "<:done:1398729525277229066> Timezone changed to **{timezone}**.",
+        "success": "<:done:1519800188925902881> Timezone changed to **{timezone}**.",
         "auto_detected": "auto-detected"
       },
       "footer": "-# Tip: Your timezone affects reminder times.",
       "errors": {
-        "author_only": "<:undone:1398729502028333218> You can't use these buttons, they belong to another user."
+        "author_only": "<:undone:1519800313324896327> You can't use these buttons, they belong to another user."
       }
     },
     "webhook": {
@@ -512,16 +512,16 @@
         "id_label": "Moddy message ID"
       },
       "success": {
-        "saved": "<:done:1398729525277229066> Message saved successfully! ID: #{id}",
-        "deleted": "<:done:1398729525277229066> Message removed from your library.",
-        "note_updated": "<:done:1398729525277229066> Note updated successfully!",
-        "exported": "<:done:1398729525277229066> JSON data exported!"
+        "saved": "<:done:1519800188925902881> Message saved successfully! ID: #{id}",
+        "deleted": "<:done:1519800188925902881> Message removed from your library.",
+        "note_updated": "<:done:1519800188925902881> Note updated successfully!",
+        "exported": "<:done:1519800188925902881> JSON data exported!"
       },
       "errors": {
-        "max_messages": "<:undone:1398729502028333218> You've reached the limit of 500 saved messages.",
+        "max_messages": "<:undone:1519800313324896327> You've reached the limit of 500 saved messages.",
         "author_only": "Only the command author can use this interface.",
-        "not_found": "<:undone:1398729502028333218> Message not found in your library.",
-        "invalid_id": "<:undone:1398729502028333218> Invalid ID. Please enter a number."
+        "not_found": "<:undone:1519800313324896327> Message not found in your library.",
+        "invalid_id": "<:undone:1519800313324896327> Invalid ID. Please enter a number."
       },
       "library": {
         "title": "### <:message:1519790643784843416> Message Library ({count})",
@@ -576,8 +576,8 @@
   },
   "common": {
     "loading": "<a:loading:1455219844080336907> Loading...",
-    "success": "<:done:1398729525277229066> Success!",
-    "error": "<:undone:1398729502028333218> Error",
+    "success": "<:done:1519800188925902881> Success!",
+    "error": "<:undone:1519800313324896327> Error",
     "info": "<:info:1519793991045091388> Information",
     "warning": "<:warning:1398729560895422505> Warning",
     "yes": "Yes",
@@ -607,7 +607,7 @@
         "delete": "Delete configuration"
       },
       "save": {
-        "success": "<:done:1398729525277229066> Configuration saved successfully!",
+        "success": "<:done:1519800188925902881> Configuration saved successfully!",
         "error": "<:error:1519790252594827264> Error while saving: {error}"
       },
       "delete": {
@@ -619,7 +619,7 @@
         "bot_not_in_guild": "<:error:1519790252594827264> Moddy must be present on this server to use this command.",
         "wrong_user": "<:error:1519790252594827264> Only the user who started the configuration can use this interface.",
         "no_user_perms": "<:error:1519790252594827264> You must have the **Manage Server** permission to use this command.",
-        "required_fields": "<:undone:1398729502028333218> **Invalid configuration** - The following fields must be filled:\n• {fields}",
+        "required_fields": "<:undone:1519800313324896327> **Invalid configuration** - The following fields must be filled:\n• {fields}",
         "channel_not_found": "Channel not found",
         "no_admin_perms": {
           "title": "Insufficient Permissions",
@@ -1040,7 +1040,7 @@
           "message_label": "Custom message (optional)",
           "message_placeholder": "Use {author}, {title}, {url}, {platform}. Leave empty for the default."
         },
-        "success": "<:done:1398729525277229066> Now following **{name}**!"
+        "success": "<:done:1519800188925902881> Now following **{name}**!"
       },
       "manage": {
         "channel": {
@@ -1066,7 +1066,7 @@
         "resume": "Resume",
         "remove": "Remove",
         "removed": "<:delete:1519795753164210447> Subscription removed.",
-        "updated": "<:done:1398729525277229066> Updated."
+        "updated": "<:done:1519800188925902881> Updated."
       },
       "notify": {
         "type": {

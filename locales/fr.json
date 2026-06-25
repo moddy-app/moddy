@@ -84,8 +84,8 @@
         "download": "Télécharger"
       },
       "errors": {
-        "not_found": "<:undone:1398729502028333218> **Utilisateur introuvable**\n\nImpossible de récupérer les informations de cet utilisateur.",
-        "no_banner": "<:undone:1398729502028333218> Cet utilisateur n'a pas de bannière."
+        "not_found": "<:undone:1519800313324896327> **Utilisateur introuvable**\n\nImpossible de récupérer les informations de cet utilisateur.",
+        "no_banner": "<:undone:1519800313324896327> Cet utilisateur n'a pas de bannière."
       }
     },
     "emoji": {
@@ -103,12 +103,12 @@
         "animated": "Animé"
       },
       "errors": {
-        "invalid_emoji": "<:undone:1398729502028333218> **Émoji invalide**\n\nVeuillez fournir un émoji Discord personnalisé valide.\n\n**Formats valides :**\n• `<:emoji_name:emoji_id>`\n• `<a:emoji_name:emoji_id>` (animé)",
-        "default_emoji": "<:undone:1398729502028333218> **Émoji par défaut**\n\nCette commande ne fonctionne qu'avec les émojis Discord personnalisés.\nLes émojis Unicode par défaut comme {emoji} ne peuvent pas être analysés."
+        "invalid_emoji": "<:undone:1519800313324896327> **Émoji invalide**\n\nVeuillez fournir un émoji Discord personnalisé valide.\n\n**Formats valides :**\n• `<:emoji_name:emoji_id>`\n• `<a:emoji_name:emoji_id>` (animé)",
+        "default_emoji": "<:undone:1519800313324896327> **Émoji par défaut**\n\nCette commande ne fonctionne qu'avec les émojis Discord personnalisés.\nLes émojis Unicode par défaut comme {emoji} ne peuvent pas être analysés."
       },
       "context_menu": {
         "loading": "<a:loading:1395047662092550194> **Extraction de {count} émoji(s) du message...**",
-        "no_emojis": "<:undone:1398729502028333218> **Aucun émoji personnalisé**\n\nCe message ne contient aucun émoji Discord personnalisé.",
+        "no_emojis": "<:undone:1519800313324896327> **Aucun émoji personnalisé**\n\nCe message ne contient aucun émoji Discord personnalisé.",
         "navigation": "Émoji {current} sur {total}",
         "author_only": "Seul l'auteur de la commande peut utiliser ces boutons de navigation."
       }
@@ -176,12 +176,12 @@
         }
       },
       "errors": {
-        "not_found": "<:undone:1398729502028333218> **Invitation introuvable**\n\nLe code d'invitation `{code}` est invalide, expiré ou n'existe pas.",
-        "rate_limit": "<:undone:1398729502028333218> **Limite atteinte**\n\nTrop de requêtes. Veuillez réessayer plus tard.",
-        "api_error": "<:undone:1398729502028333218> **Erreur API**\n\nImpossible de récupérer les informations de l'invitation. Statut : `{status}`",
-        "network_error": "<:undone:1398729502028333218> **Erreur réseau**\n\nImpossible de se connecter à l'API Discord. Veuillez réessayer.",
-        "generic": "<:undone:1398729502028333218> **Erreur**\n\nUne erreur est survenue : `{error}`",
-        "unknown_type": "<:undone:1398729502028333218> **Type d'invitation inconnu**\n\nCe type d'invitation (`{type}`) n'est pas reconnu."
+        "not_found": "<:undone:1519800313324896327> **Invitation introuvable**\n\nLe code d'invitation `{code}` est invalide, expiré ou n'existe pas.",
+        "rate_limit": "<:undone:1519800313324896327> **Limite atteinte**\n\nTrop de requêtes. Veuillez réessayer plus tard.",
+        "api_error": "<:undone:1519800313324896327> **Erreur API**\n\nImpossible de récupérer les informations de l'invitation. Statut : `{status}`",
+        "network_error": "<:undone:1519800313324896327> **Erreur réseau**\n\nImpossible de se connecter à l'API Discord. Veuillez réessayer.",
+        "generic": "<:undone:1519800313324896327> **Erreur**\n\nUne erreur est survenue : `{error}`",
+        "unknown_type": "<:undone:1519800313324896327> **Type d'invitation inconnu**\n\nCe type d'invitation (`{type}`) n'est pas reconnu."
       }
     },
     "moddy": {
@@ -289,12 +289,12 @@
         "download": "Télécharger la bannière"
       },
       "errors": {
-        "not_found": "<:undone:1398729502028333218> **Utilisateur introuvable**\n\nImpossible de récupérer les informations de cet utilisateur.",
-        "author_only": "<:undone:1398729502028333218> Vous ne pouvez pas utiliser ces boutons, ils appartiennent à un autre utilisateur.",
-        "no_avatar": "<:undone:1398729502028333218> Cet utilisateur n'a pas d'avatar personnalisé.",
-        "no_banner": "<:undone:1398729502028333218> Cet utilisateur n'a pas de bannière.",
-        "no_description": "<:undone:1398729502028333218> Ce bot n'a pas de description.",
-        "generic": "<:undone:1398729502028333218> **Erreur**\n\nUne erreur est survenue : `{error}`"
+        "not_found": "<:undone:1519800313324896327> **Utilisateur introuvable**\n\nImpossible de récupérer les informations de cet utilisateur.",
+        "author_only": "<:undone:1519800313324896327> Vous ne pouvez pas utiliser ces boutons, ils appartiennent à un autre utilisateur.",
+        "no_avatar": "<:undone:1519800313324896327> Cet utilisateur n'a pas d'avatar personnalisé.",
+        "no_banner": "<:undone:1519800313324896327> Cet utilisateur n'a pas de bannière.",
+        "no_description": "<:undone:1519800313324896327> Ce bot n'a pas de description.",
+        "generic": "<:undone:1519800313324896327> **Erreur**\n\nUne erreur est survenue : `{error}`"
       }
     },
     "reminder": {
@@ -355,20 +355,20 @@
         "select_reminder_delete": "Sélectionnez un rappel à supprimer..."
       },
       "success": {
-        "created": "<:done:1398729525277229066> Rappel #{id} créé.",
-        "deleted": "<:done:1398729525277229066> Rappel #{id} supprimé.",
-        "edited": "<:done:1398729525277229066> Rappel #{id} mis à jour.",
-        "timezone_changed": "<:done:1398729525277229066> Fuseau horaire changé en **{timezone}**."
+        "created": "<:done:1519800188925902881> Rappel #{id} créé.",
+        "deleted": "<:done:1519800188925902881> Rappel #{id} supprimé.",
+        "edited": "<:done:1519800188925902881> Rappel #{id} mis à jour.",
+        "timezone_changed": "<:done:1519800188925902881> Fuseau horaire changé en **{timezone}**."
       },
       "errors": {
-        "invalid_time": "<:undone:1398729502028333218> Format de temps invalide. Exemples : `1h30m`, `2j`, `demain 15h`, `25/12 9:00`",
-        "past_time": "<:undone:1398729502028333218> L'heure spécifiée est dans le passé.",
-        "too_long": "<:undone:1398729502028333218> Le message du rappel est trop long (max 1000 caractères).",
-        "max_reminders": "<:undone:1398729502028333218> Vous avez trop de rappels (max 50).",
-        "not_found": "<:undone:1398729502028333218> Rappel introuvable.",
-        "author_only": "<:undone:1398729502028333218> Vous ne pouvez pas utiliser ces boutons, ils appartiennent à un autre utilisateur.",
-        "no_dm": "<:undone:1398729502028333218> Je n'ai pas pu vous envoyer un MP. Veuillez activer les MP des membres du serveur.",
-        "generic": "<:undone:1398729502028333218> Une erreur est survenue : {error}"
+        "invalid_time": "<:undone:1519800313324896327> Format de temps invalide. Exemples : `1h30m`, `2j`, `demain 15h`, `25/12 9:00`",
+        "past_time": "<:undone:1519800313324896327> L'heure spécifiée est dans le passé.",
+        "too_long": "<:undone:1519800313324896327> Le message du rappel est trop long (max 1000 caractères).",
+        "max_reminders": "<:undone:1519800313324896327> Vous avez trop de rappels (max 50).",
+        "not_found": "<:undone:1519800313324896327> Rappel introuvable.",
+        "author_only": "<:undone:1519800313324896327> Vous ne pouvez pas utiliser ces boutons, ils appartiennent à un autre utilisateur.",
+        "no_dm": "<:undone:1519800313324896327> Je n'ai pas pu vous envoyer un MP. Veuillez activer les MP des membres du serveur.",
+        "generic": "<:undone:1519800313324896327> Une erreur est survenue : {error}"
       },
       "notification": {
         "title": "### <:notifications:1519793619861508147> Rappel",
@@ -382,7 +382,7 @@
       "params": {
         "incognito": "Rendre la réponse visible uniquement pour vous"
       },
-      "title": "### <:settings:1398729549323440208> Préférences",
+      "title": "### <:settings:1519800032499339354> Préférences",
       "main_description": "Personnalisez votre expérience Moddy.",
       "buttons": {
         "manage_timezone": "Gérer le fuseau horaire",
@@ -393,12 +393,12 @@
         "label": "**Sélectionnez votre fuseau horaire :**",
         "current": "Fuseau horaire actuel : **{timezone}**",
         "placeholder": "Sélectionnez votre fuseau horaire...",
-        "success": "<:done:1398729525277229066> Fuseau horaire changé en **{timezone}**.",
+        "success": "<:done:1519800188925902881> Fuseau horaire changé en **{timezone}**.",
         "auto_detected": "auto-détecté"
       },
       "footer": "-# Astuce : Votre fuseau horaire affecte les heures des rappels.",
       "errors": {
-        "author_only": "<:undone:1398729502028333218> Vous ne pouvez pas utiliser ces boutons, ils appartiennent à un autre utilisateur."
+        "author_only": "<:undone:1519800313324896327> Vous ne pouvez pas utiliser ces boutons, ils appartiennent à un autre utilisateur."
       }
     },
     "webhook": {
@@ -511,16 +511,16 @@
         "id_label": "ID du message Moddy"
       },
       "success": {
-        "saved": "<:done:1398729525277229066> Message sauvegardé avec succès ! ID: #{id}",
-        "deleted": "<:done:1398729525277229066> Message supprimé de votre bibliothèque.",
-        "note_updated": "<:done:1398729525277229066> Note mise à jour avec succès !",
-        "exported": "<:done:1398729525277229066> Données JSON exportées !"
+        "saved": "<:done:1519800188925902881> Message sauvegardé avec succès ! ID: #{id}",
+        "deleted": "<:done:1519800188925902881> Message supprimé de votre bibliothèque.",
+        "note_updated": "<:done:1519800188925902881> Note mise à jour avec succès !",
+        "exported": "<:done:1519800188925902881> Données JSON exportées !"
       },
       "errors": {
-        "max_messages": "<:undone:1398729502028333218> Vous avez atteint la limite de 500 messages sauvegardés.",
+        "max_messages": "<:undone:1519800313324896327> Vous avez atteint la limite de 500 messages sauvegardés.",
         "author_only": "Seul l'auteur de la commande peut utiliser cette interface.",
-        "not_found": "<:undone:1398729502028333218> Message introuvable dans votre bibliothèque.",
-        "invalid_id": "<:undone:1398729502028333218> ID invalide. Veuillez entrer un nombre."
+        "not_found": "<:undone:1519800313324896327> Message introuvable dans votre bibliothèque.",
+        "invalid_id": "<:undone:1519800313324896327> ID invalide. Veuillez entrer un nombre."
       },
       "library": {
         "title": "### <:message:1519790643784843416> Bibliothèque de messages ({count})",
@@ -575,8 +575,8 @@
   },
   "common": {
     "loading": "<a:loading:1455219844080336907> Chargement...",
-    "success": "<:done:1398729525277229066> Succès !",
-    "error": "<:undone:1398729502028333218> Erreur",
+    "success": "<:done:1519800188925902881> Succès !",
+    "error": "<:undone:1519800313324896327> Erreur",
     "info": "<:info:1519793991045091388> Information",
     "warning": "<:warning:1398729560895422505> Avertissement",
     "yes": "Oui",
@@ -606,7 +606,7 @@
         "delete": "Supprimer la configuration"
       },
       "save": {
-        "success": "<:done:1398729525277229066> Configuration enregistrée avec succès !",
+        "success": "<:done:1519800188925902881> Configuration enregistrée avec succès !",
         "error": "<:error:1519790252594827264> Erreur lors de l'enregistrement : {error}"
       },
       "delete": {
@@ -618,7 +618,7 @@
         "bot_not_in_guild": "<:error:1519790252594827264> Moddy doit être présent sur ce serveur pour utiliser cette commande.",
         "wrong_user": "<:error:1519790252594827264> Seul l'utilisateur qui a lancé la configuration peut utiliser cette interface.",
         "no_user_perms": "<:error:1519790252594827264> Vous devez avoir la permission **Gérer le serveur** pour utiliser cette commande.",
-        "required_fields": "<:undone:1398729502028333218> **Configuration invalide** - Les champs suivants doivent être remplis :\n• {fields}",
+        "required_fields": "<:undone:1519800313324896327> **Configuration invalide** - Les champs suivants doivent être remplis :\n• {fields}",
         "channel_not_found": "Salon introuvable",
         "no_admin_perms": {
           "title": "Permissions insuffisantes",
@@ -1039,7 +1039,7 @@
           "message_label": "Message personnalisé (optionnel)",
           "message_placeholder": "Utilisez {author}, {title}, {url}, {platform}. Laissez vide pour le message par défaut."
         },
-        "success": "<:done:1398729525277229066> Vous suivez maintenant **{name}** !"
+        "success": "<:done:1519800188925902881> Vous suivez maintenant **{name}** !"
       },
       "manage": {
         "channel": {
@@ -1065,7 +1065,7 @@
         "resume": "Reprendre",
         "remove": "Supprimer",
         "removed": "<:delete:1519795753164210447> Abonnement supprimé.",
-        "updated": "<:done:1398729525277229066> Mis à jour."
+        "updated": "<:done:1519800188925902881> Mis à jour."
       },
       "notify": {
         "type": {

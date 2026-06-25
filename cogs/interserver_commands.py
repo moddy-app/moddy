@@ -366,7 +366,7 @@ class ProcessedModal(BaseModal, title="Report Processing"):
             def __init__(self, moddy_id: str, processed_by: discord.User, actions: str):
                 super().__init__()
                 container = ui.Container(
-                    ui.TextDisplay(content=f"### <:done:1398729525277229066> Report Processed"),
+                    ui.TextDisplay(content=f"### <:done:1519800188925902881> Report Processed"),
                     ui.TextDisplay(content=f"**Moddy ID:** `{moddy_id}`\n**Processed by:** {processed_by.mention}\n**Actions taken:**\n{actions}"),
                 )
                 self.add_item(container)
