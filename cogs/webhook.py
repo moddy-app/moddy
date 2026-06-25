@@ -75,7 +75,7 @@ class WebhookView(BaseView):
         refresh_btn = ui.Button(
             label=i18n.get("commands.webhook.buttons.refresh", locale=self.locale),
             style=discord.ButtonStyle.secondary,
-            emoji="<:sync:1398729150885269546>",
+            emoji="<:sync:1519802581893775383>",
             custom_id="refresh_webhook"
         )
         refresh_btn.callback = self.refresh_webhook

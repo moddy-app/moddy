@@ -39,7 +39,7 @@
       },
       "translating": "Traduction en cours...",
       "response": {
-        "title": "<:translate:1398720130950627600> Traduction",
+        "title": "<:translate:1519802660856008834> Traduction",
         "from_field": "Langue détectée : {language}",
         "to_field": "Traduit en : {language}",
         "footer": "{char_count} caractères • DeepL API"
@@ -52,7 +52,7 @@
         "api_error": "Impossible de contacter l'API de traduction"
       },
       "view": {
-        "title": "### <:translate:1398720130950627600> Traduction de texte",
+        "title": "### <:translate:1519802660856008834> Traduction de texte",
         "placeholder": "Traduire dans une autre langue",
         "author_only": "Seul l'auteur de la commande peut utiliser ce menu."
       },
