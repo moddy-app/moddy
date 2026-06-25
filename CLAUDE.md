@@ -169,7 +169,7 @@ moddy/
 
 ### 5. Title Format
 - Titles in Components V2 must use: `### <:emoji:id> Title Text`
-- Example: `### <:settings:1398729549323440208> Configuration`
+- Example: `### <:settings:1519800032499339354> Configuration`
 
 ### 6. Dynamic Values in Backticks
 - Wrap all dynamic/user-specific data in backticks: `` f"**User:** `{user.id}`" ``

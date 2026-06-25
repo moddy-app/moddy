@@ -381,7 +381,7 @@ class UserInfoView(BaseView):
             bot_info_btn = ui.Button(
                 label=i18n.get("commands.user.buttons.bot_info", locale=self.locale),
                 style=discord.ButtonStyle.primary,
-                emoji="<:extension:1439692401760272435>",
+                emoji="<:extension:1519792289625538713>",
                 custom_id="bot_info"
             )
             bot_info_btn.callback = self.on_bot_info_click
@@ -391,7 +391,7 @@ class UserInfoView(BaseView):
         avatar_btn = ui.Button(
             label=i18n.get("commands.user.buttons.avatar", locale=self.locale),
             style=discord.ButtonStyle.secondary,
-            emoji="<:face:1439042029198770289>",
+            emoji="<:face:1519793231699775578>",
             custom_id="avatar"
         )
         avatar_btn.callback = self.on_avatar_click
@@ -402,7 +402,7 @@ class UserInfoView(BaseView):
             banner_btn = ui.Button(
                 label=i18n.get("commands.user.buttons.banner", locale=self.locale),
                 style=discord.ButtonStyle.secondary,
-                emoji="<:banner:1439659080472989726>",
+                emoji="<:banner:1519792732716007634>",
                 custom_id="banner"
             )
             banner_btn.callback = self.on_banner_click
@@ -415,7 +415,7 @@ class UserInfoView(BaseView):
                 desc_btn = ui.Button(
                     label=i18n.get("commands.user.buttons.description", locale=self.locale),
                     style=discord.ButtonStyle.secondary,
-                    emoji="<:text:1439692405317046372>",
+                    emoji="<:text:1519791921462120601>",
                     custom_id="description"
                 )
                 desc_btn.callback = self.on_description_click
@@ -447,7 +447,7 @@ class UserInfoView(BaseView):
 
         # Title
         bot_name = self.bot_data.get("name", "Unknown")
-        title = f"### <:extension:1439692401760272435> Bot Information - **{bot_name}**"
+        title = f"### <:extension:1519792289625538713> Bot Information - **{bot_name}**"
         bot_container.add_item(ui.TextDisplay(title))
 
         # Build info lines

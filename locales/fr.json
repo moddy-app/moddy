@@ -16,8 +16,8 @@
     "ping": {
       "description": "Vérifie la latence et le statut du bot",
       "response": {
-        "title": "<:network_ping:1439055098096521359> Statut du bot",
-        "main_info": "{status_emoji} **{status}**\n\n<:network_ping:1439055098096521359> **API Discord :** `{api_latency}ms`\n<:network_ping:1439055098096521359> **Temps de réponse :** {message_latency}",
+        "title": "<:network_ping:1519792879613247540> Statut du bot",
+        "main_info": "{status_emoji} **{status}**\n\n<:network_ping:1519792879613247540> **API Discord :** `{api_latency}ms`\n<:network_ping:1519792879613247540> **Temps de réponse :** {message_latency}",
         "system_details": "**Shard :** `{shard_id}/{total_shards}`\n**Uptime :** `{uptime}` {uptime_timestamp}\n**Version :** `{version}`\n**Serveurs :** `{guild_count}`\n**Utilisateurs :** `{user_count}`"
       },
       "status": {
@@ -39,7 +39,7 @@
       },
       "translating": "Traduction en cours...",
       "response": {
-        "title": "<:translate:1398720130950627600> Traduction",
+        "title": "<:translate:1519802660856008834> Traduction",
         "from_field": "Langue détectée : {language}",
         "to_field": "Traduit en : {language}",
         "footer": "{char_count} caractères • DeepL API"
@@ -52,7 +52,7 @@
         "api_error": "Impossible de contacter l'API de traduction"
       },
       "view": {
-        "title": "### <:translate:1398720130950627600> Traduction de texte",
+        "title": "### <:translate:1519802660856008834> Traduction de texte",
         "placeholder": "Traduire dans une autre langue",
         "author_only": "Seul l'auteur de la commande peut utiliser ce menu."
       },
@@ -65,7 +65,7 @@
         "incognito": "Rendre la réponse visible uniquement pour vous"
       },
       "view": {
-        "title": "### <:face:1439042029198770289> Avatar de **{name}**{badge}",
+        "title": "### <:face:1519793231699775578> Avatar de **{name}**{badge}",
         "username": "Nom d'utilisateur :",
         "user_id": "ID :",
         "bot": "Bot :",
@@ -84,8 +84,8 @@
         "download": "Télécharger"
       },
       "errors": {
-        "not_found": "<:undone:1398729502028333218> **Utilisateur introuvable**\n\nImpossible de récupérer les informations de cet utilisateur.",
-        "no_banner": "<:undone:1398729502028333218> Cet utilisateur n'a pas de bannière."
+        "not_found": "<:undone:1519800313324896327> **Utilisateur introuvable**\n\nImpossible de récupérer les informations de cet utilisateur.",
+        "no_banner": "<:undone:1519800313324896327> Cet utilisateur n'a pas de bannière."
       }
     },
     "emoji": {
@@ -103,12 +103,12 @@
         "animated": "Animé"
       },
       "errors": {
-        "invalid_emoji": "<:undone:1398729502028333218> **Émoji invalide**\n\nVeuillez fournir un émoji Discord personnalisé valide.\n\n**Formats valides :**\n• `<:emoji_name:emoji_id>`\n• `<a:emoji_name:emoji_id>` (animé)",
-        "default_emoji": "<:undone:1398729502028333218> **Émoji par défaut**\n\nCette commande ne fonctionne qu'avec les émojis Discord personnalisés.\nLes émojis Unicode par défaut comme {emoji} ne peuvent pas être analysés."
+        "invalid_emoji": "<:undone:1519800313324896327> **Émoji invalide**\n\nVeuillez fournir un émoji Discord personnalisé valide.\n\n**Formats valides :**\n• `<:emoji_name:emoji_id>`\n• `<a:emoji_name:emoji_id>` (animé)",
+        "default_emoji": "<:undone:1519800313324896327> **Émoji par défaut**\n\nCette commande ne fonctionne qu'avec les émojis Discord personnalisés.\nLes émojis Unicode par défaut comme {emoji} ne peuvent pas être analysés."
       },
       "context_menu": {
         "loading": "<a:loading:1395047662092550194> **Extraction de {count} émoji(s) du message...**",
-        "no_emojis": "<:undone:1398729502028333218> **Aucun émoji personnalisé**\n\nCe message ne contient aucun émoji Discord personnalisé.",
+        "no_emojis": "<:undone:1519800313324896327> **Aucun émoji personnalisé**\n\nCe message ne contient aucun émoji Discord personnalisé.",
         "navigation": "Émoji {current} sur {total}",
         "author_only": "Seul l'auteur de la commande peut utiliser ces boutons de navigation."
       }
@@ -120,7 +120,7 @@
         "incognito": "Rendre la réponse visible uniquement pour vous"
       },
       "view": {
-        "title": "### <:random:1439043225741557820> Lancer de dé",
+        "title": "### <:random:1519793103563788390> Lancer de dé",
         "result": "**Résultat :** `{result}`",
         "range": "-# Dé à {max} faces (1-{max})"
       }
@@ -176,12 +176,12 @@
         }
       },
       "errors": {
-        "not_found": "<:undone:1398729502028333218> **Invitation introuvable**\n\nLe code d'invitation `{code}` est invalide, expiré ou n'existe pas.",
-        "rate_limit": "<:undone:1398729502028333218> **Limite atteinte**\n\nTrop de requêtes. Veuillez réessayer plus tard.",
-        "api_error": "<:undone:1398729502028333218> **Erreur API**\n\nImpossible de récupérer les informations de l'invitation. Statut : `{status}`",
-        "network_error": "<:undone:1398729502028333218> **Erreur réseau**\n\nImpossible de se connecter à l'API Discord. Veuillez réessayer.",
-        "generic": "<:undone:1398729502028333218> **Erreur**\n\nUne erreur est survenue : `{error}`",
-        "unknown_type": "<:undone:1398729502028333218> **Type d'invitation inconnu**\n\nCe type d'invitation (`{type}`) n'est pas reconnu."
+        "not_found": "<:undone:1519800313324896327> **Invitation introuvable**\n\nLe code d'invitation `{code}` est invalide, expiré ou n'existe pas.",
+        "rate_limit": "<:undone:1519800313324896327> **Limite atteinte**\n\nTrop de requêtes. Veuillez réessayer plus tard.",
+        "api_error": "<:undone:1519800313324896327> **Erreur API**\n\nImpossible de récupérer les informations de l'invitation. Statut : `{status}`",
+        "network_error": "<:undone:1519800313324896327> **Erreur réseau**\n\nImpossible de se connecter à l'API Discord. Veuillez réessayer.",
+        "generic": "<:undone:1519800313324896327> **Erreur**\n\nUne erreur est survenue : `{error}`",
+        "unknown_type": "<:undone:1519800313324896327> **Type d'invitation inconnu**\n\nCe type d'invitation (`{type}`) n'est pas reconnu."
       }
     },
     "moddy": {
@@ -231,7 +231,7 @@
       },
       "loading": "<a:loading:1395047662092550194> **Récupération des informations de l'utilisateur...**",
       "view": {
-        "title": "### <:user:1398729712204779571> Informations sur **{name}**{badge}",
+        "title": "### <:user:1519798911517196511> Informations sur **{name}**{badge}",
         "display_name": "Nom d'affichage",
         "username": "Nom d'utilisateur",
         "id": "ID",
@@ -262,7 +262,7 @@
         "banner": "Bannière"
       },
       "bot_info": {
-        "title": "<:code:1401610523803652196> Informations du bot - {name}",
+        "title": "<:code:1519794490750271641> Informations du bot - {name}",
         "fields": {
           "description": "Description",
           "server_count": "Nombre de serveurs",
@@ -281,20 +281,20 @@
         }
       },
       "avatar": {
-        "title": "<:user:1398729712204779571> Avatar de {username}",
+        "title": "<:user:1519798911517196511> Avatar de {username}",
         "download": "Télécharger l'avatar"
       },
       "banner": {
-        "title": "<:user:1398729712204779571> Bannière de {username}",
+        "title": "<:user:1519798911517196511> Bannière de {username}",
         "download": "Télécharger la bannière"
       },
       "errors": {
-        "not_found": "<:undone:1398729502028333218> **Utilisateur introuvable**\n\nImpossible de récupérer les informations de cet utilisateur.",
-        "author_only": "<:undone:1398729502028333218> Vous ne pouvez pas utiliser ces boutons, ils appartiennent à un autre utilisateur.",
-        "no_avatar": "<:undone:1398729502028333218> Cet utilisateur n'a pas d'avatar personnalisé.",
-        "no_banner": "<:undone:1398729502028333218> Cet utilisateur n'a pas de bannière.",
-        "no_description": "<:undone:1398729502028333218> Ce bot n'a pas de description.",
-        "generic": "<:undone:1398729502028333218> **Erreur**\n\nUne erreur est survenue : `{error}`"
+        "not_found": "<:undone:1519800313324896327> **Utilisateur introuvable**\n\nImpossible de récupérer les informations de cet utilisateur.",
+        "author_only": "<:undone:1519800313324896327> Vous ne pouvez pas utiliser ces boutons, ils appartiennent à un autre utilisateur.",
+        "no_avatar": "<:undone:1519800313324896327> Cet utilisateur n'a pas d'avatar personnalisé.",
+        "no_banner": "<:undone:1519800313324896327> Cet utilisateur n'a pas de bannière.",
+        "no_description": "<:undone:1519800313324896327> Ce bot n'a pas de description.",
+        "generic": "<:undone:1519800313324896327> **Erreur**\n\nUne erreur est survenue : `{error}`"
       }
     },
     "reminder": {
@@ -307,14 +307,14 @@
         "incognito": "Rendre la réponse visible uniquement pour vous"
       },
       "timezone_setup": {
-        "title": "### <:time:1398729780723060736> Configuration du fuseau horaire",
+        "title": "### <:time:1519798202990330087> Configuration du fuseau horaire",
         "description": "Avant de créer votre premier rappel, veuillez sélectionner votre fuseau horaire.\nCela garantira que vos rappels sont envoyés à l'heure correcte.",
         "placeholder": "Sélectionnez votre fuseau horaire...",
         "success": "Fuseau horaire défini sur **{timezone}** ! Vous pouvez maintenant créer des rappels.",
         "current": "Votre fuseau horaire actuel : **{timezone}**"
       },
       "add": {
-        "title": "### <:notifications:1402261437493022775> Rappel créé",
+        "title": "### <:notifications:1519793619861508147> Rappel créé",
         "description": "Je vous rappellerai :\n> {message}",
         "time_field": "**Quand :** {time}",
         "relative_field": "**Dans :** {relative}",
@@ -322,12 +322,12 @@
         "location_channel": "**Où :** <#{channel_id}>"
       },
       "manage": {
-        "title": "### <:notifications:1402261437493022775> Vos rappels",
+        "title": "### <:notifications:1519793619861508147> Vos rappels",
         "no_reminders": "Vous n'avez aucun rappel à venir.",
         "reminder_item": "{message} | #{id}\n-# {relative} • {time}",
         "reminder_item_channel": "{message} | #{id}\n-# {relative} • {time} • <#{channel_id}>",
         "footer": "-# {count} rappel(s) à venir • Fuseau : {timezone}",
-        "history_title": "### <:history:1401600464587456512> Rappels passés",
+        "history_title": "### <:history:1519796822963392755> Rappels passés",
         "history_empty": "Vous n'avez aucun rappel passé.",
         "history_item": "{message} | #{id}\n-# Envoyé {time}",
         "history_item_failed": "{message} | #{id}\n-# Échec d'envoi {time}",
@@ -355,23 +355,23 @@
         "select_reminder_delete": "Sélectionnez un rappel à supprimer..."
       },
       "success": {
-        "created": "<:done:1398729525277229066> Rappel #{id} créé.",
-        "deleted": "<:done:1398729525277229066> Rappel #{id} supprimé.",
-        "edited": "<:done:1398729525277229066> Rappel #{id} mis à jour.",
-        "timezone_changed": "<:done:1398729525277229066> Fuseau horaire changé en **{timezone}**."
+        "created": "<:done:1519800188925902881> Rappel #{id} créé.",
+        "deleted": "<:done:1519800188925902881> Rappel #{id} supprimé.",
+        "edited": "<:done:1519800188925902881> Rappel #{id} mis à jour.",
+        "timezone_changed": "<:done:1519800188925902881> Fuseau horaire changé en **{timezone}**."
       },
       "errors": {
-        "invalid_time": "<:undone:1398729502028333218> Format de temps invalide. Exemples : `1h30m`, `2j`, `demain 15h`, `25/12 9:00`",
-        "past_time": "<:undone:1398729502028333218> L'heure spécifiée est dans le passé.",
-        "too_long": "<:undone:1398729502028333218> Le message du rappel est trop long (max 1000 caractères).",
-        "max_reminders": "<:undone:1398729502028333218> Vous avez trop de rappels (max 50).",
-        "not_found": "<:undone:1398729502028333218> Rappel introuvable.",
-        "author_only": "<:undone:1398729502028333218> Vous ne pouvez pas utiliser ces boutons, ils appartiennent à un autre utilisateur.",
-        "no_dm": "<:undone:1398729502028333218> Je n'ai pas pu vous envoyer un MP. Veuillez activer les MP des membres du serveur.",
-        "generic": "<:undone:1398729502028333218> Une erreur est survenue : {error}"
+        "invalid_time": "<:undone:1519800313324896327> Format de temps invalide. Exemples : `1h30m`, `2j`, `demain 15h`, `25/12 9:00`",
+        "past_time": "<:undone:1519800313324896327> L'heure spécifiée est dans le passé.",
+        "too_long": "<:undone:1519800313324896327> Le message du rappel est trop long (max 1000 caractères).",
+        "max_reminders": "<:undone:1519800313324896327> Vous avez trop de rappels (max 50).",
+        "not_found": "<:undone:1519800313324896327> Rappel introuvable.",
+        "author_only": "<:undone:1519800313324896327> Vous ne pouvez pas utiliser ces boutons, ils appartiennent à un autre utilisateur.",
+        "no_dm": "<:undone:1519800313324896327> Je n'ai pas pu vous envoyer un MP. Veuillez activer les MP des membres du serveur.",
+        "generic": "<:undone:1519800313324896327> Une erreur est survenue : {error}"
       },
       "notification": {
-        "title": "### <:notifications:1402261437493022775> Rappel",
+        "title": "### <:notifications:1519793619861508147> Rappel",
         "description": "{message}",
         "footer": "Créé {time}",
         "late_notice": "-# Ce rappel a été retardé en raison d'une maintenance du bot."
@@ -382,23 +382,23 @@
       "params": {
         "incognito": "Rendre la réponse visible uniquement pour vous"
       },
-      "title": "### <:settings:1398729549323440208> Préférences",
+      "title": "### <:settings:1519800032499339354> Préférences",
       "main_description": "Personnalisez votre expérience Moddy.",
       "buttons": {
         "manage_timezone": "Gérer le fuseau horaire",
         "back": "Retour"
       },
       "timezone": {
-        "title": "### <:time:1398729780723060736> Réglages du fuseau horaire",
+        "title": "### <:time:1519798202990330087> Réglages du fuseau horaire",
         "label": "**Sélectionnez votre fuseau horaire :**",
         "current": "Fuseau horaire actuel : **{timezone}**",
         "placeholder": "Sélectionnez votre fuseau horaire...",
-        "success": "<:done:1398729525277229066> Fuseau horaire changé en **{timezone}**.",
+        "success": "<:done:1519800188925902881> Fuseau horaire changé en **{timezone}**.",
         "auto_detected": "auto-détecté"
       },
       "footer": "-# Astuce : Votre fuseau horaire affecte les heures des rappels.",
       "errors": {
-        "author_only": "<:undone:1398729502028333218> Vous ne pouvez pas utiliser ces boutons, ils appartiennent à un autre utilisateur."
+        "author_only": "<:undone:1519800313324896327> Vous ne pouvez pas utiliser ces boutons, ils appartiennent à un autre utilisateur."
       }
     },
     "webhook": {
@@ -415,7 +415,7 @@
         "refresh": "Actualiser"
       },
       "info": {
-        "title": "### <:webhook:1438636058660045041> Informations du Webhook",
+        "title": "### <:webhook:1519793325329219675> Informations du Webhook",
         "instruction": "-# Utilisez les boutons ci-dessous pour gérer ce webhook",
         "fields": {
           "name": "**Nom :** `{name}`",
@@ -511,19 +511,19 @@
         "id_label": "ID du message Moddy"
       },
       "success": {
-        "saved": "<:done:1398729525277229066> Message sauvegardé avec succès ! ID: #{id}",
-        "deleted": "<:done:1398729525277229066> Message supprimé de votre bibliothèque.",
-        "note_updated": "<:done:1398729525277229066> Note mise à jour avec succès !",
-        "exported": "<:done:1398729525277229066> Données JSON exportées !"
+        "saved": "<:done:1519800188925902881> Message sauvegardé avec succès ! ID: #{id}",
+        "deleted": "<:done:1519800188925902881> Message supprimé de votre bibliothèque.",
+        "note_updated": "<:done:1519800188925902881> Note mise à jour avec succès !",
+        "exported": "<:done:1519800188925902881> Données JSON exportées !"
       },
       "errors": {
-        "max_messages": "<:undone:1398729502028333218> Vous avez atteint la limite de 500 messages sauvegardés.",
+        "max_messages": "<:undone:1519800313324896327> Vous avez atteint la limite de 500 messages sauvegardés.",
         "author_only": "Seul l'auteur de la commande peut utiliser cette interface.",
-        "not_found": "<:undone:1398729502028333218> Message introuvable dans votre bibliothèque.",
-        "invalid_id": "<:undone:1398729502028333218> ID invalide. Veuillez entrer un nombre."
+        "not_found": "<:undone:1519800313324896327> Message introuvable dans votre bibliothèque.",
+        "invalid_id": "<:undone:1519800313324896327> ID invalide. Veuillez entrer un nombre."
       },
       "library": {
-        "title": "### <:message:1443749710073696286> Bibliothèque de messages ({count})",
+        "title": "### <:message:1519790643784843416> Bibliothèque de messages ({count})",
         "empty": "Votre bibliothèque est vide.\nUtilisez le menu contextuel **Save Message** sur un message pour le sauvegarder !",
         "page_label": "Page {page}/{total}"
       },
@@ -575,9 +575,9 @@
   },
   "common": {
     "loading": "<a:loading:1455219844080336907> Chargement...",
-    "success": "<:done:1398729525277229066> Succès !",
-    "error": "<:undone:1398729502028333218> Erreur",
-    "info": "<:info:1401614681440784477> Information",
+    "success": "<:done:1519800188925902881> Succès !",
+    "error": "<:undone:1519800313324896327> Erreur",
+    "info": "<:info:1519793991045091388> Information",
     "warning": "<:warning:1398729560895422505> Avertissement",
     "yes": "Oui",
     "no": "Non",
@@ -606,19 +606,19 @@
         "delete": "Supprimer la configuration"
       },
       "save": {
-        "success": "<:done:1398729525277229066> Configuration enregistrée avec succès !",
-        "error": "<:error:1444049460924776478> Erreur lors de l'enregistrement : {error}"
+        "success": "<:done:1519800188925902881> Configuration enregistrée avec succès !",
+        "error": "<:error:1519790252594827264> Erreur lors de l'enregistrement : {error}"
       },
       "delete": {
-        "success": "<:delete:1401600770431909939> Configuration supprimée avec succès !",
-        "error": "<:error:1444049460924776478> Erreur lors de la suppression."
+        "success": "<:delete:1519795753164210447> Configuration supprimée avec succès !",
+        "error": "<:error:1519790252594827264> Erreur lors de la suppression."
       },
       "errors": {
-        "guild_only": "<:error:1444049460924776478> Cette commande ne peut être utilisée que sur un serveur.",
-        "bot_not_in_guild": "<:error:1444049460924776478> Moddy doit être présent sur ce serveur pour utiliser cette commande.",
-        "wrong_user": "<:error:1444049460924776478> Seul l'utilisateur qui a lancé la configuration peut utiliser cette interface.",
-        "no_user_perms": "<:error:1444049460924776478> Vous devez avoir la permission **Gérer le serveur** pour utiliser cette commande.",
-        "required_fields": "<:undone:1398729502028333218> **Configuration invalide** - Les champs suivants doivent être remplis :\n• {fields}",
+        "guild_only": "<:error:1519790252594827264> Cette commande ne peut être utilisée que sur un serveur.",
+        "bot_not_in_guild": "<:error:1519790252594827264> Moddy doit être présent sur ce serveur pour utiliser cette commande.",
+        "wrong_user": "<:error:1519790252594827264> Seul l'utilisateur qui a lancé la configuration peut utiliser cette interface.",
+        "no_user_perms": "<:error:1519790252594827264> Vous devez avoir la permission **Gérer le serveur** pour utiliser cette commande.",
+        "required_fields": "<:undone:1519800313324896327> **Configuration invalide** - Les champs suivants doivent être remplis :\n• {fields}",
         "channel_not_found": "Salon introuvable",
         "no_admin_perms": {
           "title": "Permissions insuffisantes",
@@ -763,8 +763,8 @@
         }
       },
       "welcome_dm": {
-        "title": "### <:groups:1446127489842806967> Salon Inter-Serveur",
-        "body": "<:web:1398729801061240883> Ceci est un salon inter-serveur francophone connectant plusieurs serveurs Discord.\n<:book:1446557736350388364> Veuillez respecter les Règles Inter-Serveur et les Conditions d'Utilisation de Discord.\n<:verified:1398729677601902635> Ce salon est modéré par l'équipe de modération de Moddy.\n<:flag:1446197210198048778> Pour signaler un message à notre équipe, rejoignez notre serveur de support ou utilisez /interserver report.\n\n-# Vous recevez ce message car vous avez envoyé votre premier message dans un salon inter-serveur."
+        "title": "### <:groups:1519789805456724049> Salon Inter-Serveur",
+        "body": "<:web:1519798069191901254> Ceci est un salon inter-serveur francophone connectant plusieurs serveurs Discord.\n<:book:1519788969691316467> Veuillez respecter les Règles Inter-Serveur et les Conditions d'Utilisation de Discord.\n<:verified:1519799054631043332> Ce salon est modéré par l'équipe de modération de Moddy.\n<:flag:1519789496181461183> Pour signaler un message à notre équipe, rejoignez notre serveur de support ou utilisez /interserver report.\n\n-# Vous recevez ce message car vous avez envoyé votre premier message dans un salon inter-serveur."
       },
       "channel_description": "🌐 Salon Inter-Serveur | Connectez-vous avec des utilisateurs de plusieurs serveurs Discord | Respectez les Règles Inter-Serveur (https://moddy.app/interserver-guidelines) | Modéré par l'équipe Moddy | Signalement : /interserver report"
     },
@@ -855,13 +855,13 @@
       },
       "commands": {
         "error": {
-          "no_manager": "<:error:1444049460924776478> Le gestionnaire de modules n'est pas disponible.",
-          "not_configured": "<:error:1444049460924776478> Le module Auto Restore Roles n'est pas configuré sur ce serveur.",
-          "not_enabled": "<:error:1444049460924776478> Le module Auto Restore Roles n'est pas activé sur ce serveur.",
-          "internal": "<:error:1444049460924776478> Une erreur interne s'est produite."
+          "no_manager": "<:error:1519790252594827264> Le gestionnaire de modules n'est pas disponible.",
+          "not_configured": "<:error:1519790252594827264> Le module Auto Restore Roles n'est pas configuré sur ce serveur.",
+          "not_enabled": "<:error:1519790252594827264> Le module Auto Restore Roles n'est pas activé sur ce serveur.",
+          "internal": "<:error:1519790252594827264> Une erreur interne s'est produite."
         },
         "clear": {
-          "no_roles": "<:info:1401614681440784477> L'utilisateur {user} n'a aucun rôle sauvegardé.",
+          "no_roles": "<:info:1519793991045091388> L'utilisateur {user} n'a aucun rôle sauvegardé.",
           "confirm_title": "Confirmation de suppression",
           "confirm_description": "Voulez-vous vraiment supprimer les rôles sauvegardés de {user} ?",
           "user_field": "Utilisateur",
@@ -870,10 +870,10 @@
           "no_roles_found": "Aucun rôle trouvé",
           "success_title": "Rôles supprimés",
           "success_description": "Les rôles sauvegardés de {user} ont été supprimés avec succès.",
-          "error": "<:error:1444049460924776478> Impossible de supprimer les rôles sauvegardés."
+          "error": "<:error:1519790252594827264> Impossible de supprimer les rôles sauvegardés."
         },
         "view": {
-          "no_saved_roles": "<:info:1401614681440784477> Aucun utilisateur n'a de rôles sauvegardés sur ce serveur.",
+          "no_saved_roles": "<:info:1519793991045091388> Aucun utilisateur n'a de rôles sauvegardés sur ce serveur.",
           "title": "Utilisateurs avec rôles sauvegardés",
           "description": "{count} utilisateur(s) ont des rôles en attente de restauration",
           "user_info": "{role_count} rôle(s) sauvegardé(s)",
@@ -1039,7 +1039,7 @@
           "message_label": "Message personnalisé (optionnel)",
           "message_placeholder": "Utilisez {author}, {title}, {url}, {platform}. Laissez vide pour le message par défaut."
         },
-        "success": "<:done:1398729525277229066> Vous suivez maintenant **{name}** !"
+        "success": "<:done:1519800188925902881> Vous suivez maintenant **{name}** !"
       },
       "manage": {
         "channel": {
@@ -1064,8 +1064,8 @@
         "pause": "Mettre en pause",
         "resume": "Reprendre",
         "remove": "Supprimer",
-        "removed": "<:delete:1401600770431909939> Abonnement supprimé.",
-        "updated": "<:done:1398729525277229066> Mis à jour."
+        "removed": "<:delete:1519795753164210447> Abonnement supprimé.",
+        "updated": "<:done:1519800188925902881> Mis à jour."
       },
       "notify": {
         "type": {
@@ -1085,25 +1085,25 @@
         "default_caption": "**{author}** vient de publier du nouveau contenu !"
       },
       "errors": {
-        "unknown_platform": "<:error:1444049460924776478> Plateforme invalide.",
-        "platform_disabled": "<:warning:1446108410092195902> Cette plateforme n'est pas encore disponible — bientôt !",
-        "missing_identifier": "<:error:1444049460924776478> Veuillez indiquer un compte à suivre.",
-        "channel_not_found": "<:error:1444049460924776478> Compte introuvable — vérifiez le nom ou l'URL.",
-        "user_not_found": "<:error:1444049460924776478> Compte introuvable — vérifiez le nom ou l'URL.",
-        "handle_not_found": "<:error:1444049460924776478> Compte introuvable — vérifiez le nom ou l'URL.",
-        "unsafe_url": "<:error:1444049460924776478> Cette URL n'est pas autorisée.",
-        "no_entries": "<:warning:1446108410092195902> Ce flux ne contient rien pour le moment.",
-        "fetch_failed": "<:error:1444049460924776478> Impossible de joindre le compte pour le moment. Réessayez.",
-        "bad_status": "<:error:1444049460924776478> Impossible de joindre le compte pour le moment. Réessayez.",
-        "not_supported": "<:warning:1446108410092195902> Ce connecteur n'est pas disponible.",
-        "twitch_not_configured": "<:error:1444049460924776478> Twitch n'est pas configuré de notre côté. Contactez le support.",
-        "twitch_auth_failed": "<:error:1444049460924776478> L'authentification Twitch a échoué. Contactez le support.",
-        "timeout": "<:error:1444049460924776478> Le service de notifications a mis trop de temps à répondre. Réessayez.",
-        "service_unavailable": "<:error:1444049460924776478> Le service de notifications est actuellement indisponible. Réessayez plus tard.",
-        "no_permission": "<:error:1444049460924776478> Vous avez besoin de la permission **Gérer le serveur** pour configurer ceci.",
-        "limit_reached_free": "<:warning:1446108410092195902> Les serveurs gratuits ne peuvent suivre qu'**1 compte par plateforme**. Retirez-en un ou passez Premium pour en suivre jusqu'à 5.",
-        "limit_reached_premium": "<:warning:1446108410092195902> Vous avez atteint le maximum de **5 comptes par plateforme** pour ce serveur.",
-        "internal_error": "<:error:1444049460924776478> Une erreur est survenue. Réessayez."
+        "unknown_platform": "<:error:1519790252594827264> Plateforme invalide.",
+        "platform_disabled": "<:warning:1519789903100121139> Cette plateforme n'est pas encore disponible — bientôt !",
+        "missing_identifier": "<:error:1519790252594827264> Veuillez indiquer un compte à suivre.",
+        "channel_not_found": "<:error:1519790252594827264> Compte introuvable — vérifiez le nom ou l'URL.",
+        "user_not_found": "<:error:1519790252594827264> Compte introuvable — vérifiez le nom ou l'URL.",
+        "handle_not_found": "<:error:1519790252594827264> Compte introuvable — vérifiez le nom ou l'URL.",
+        "unsafe_url": "<:error:1519790252594827264> Cette URL n'est pas autorisée.",
+        "no_entries": "<:warning:1519789903100121139> Ce flux ne contient rien pour le moment.",
+        "fetch_failed": "<:error:1519790252594827264> Impossible de joindre le compte pour le moment. Réessayez.",
+        "bad_status": "<:error:1519790252594827264> Impossible de joindre le compte pour le moment. Réessayez.",
+        "not_supported": "<:warning:1519789903100121139> Ce connecteur n'est pas disponible.",
+        "twitch_not_configured": "<:error:1519790252594827264> Twitch n'est pas configuré de notre côté. Contactez le support.",
+        "twitch_auth_failed": "<:error:1519790252594827264> L'authentification Twitch a échoué. Contactez le support.",
+        "timeout": "<:error:1519790252594827264> Le service de notifications a mis trop de temps à répondre. Réessayez.",
+        "service_unavailable": "<:error:1519790252594827264> Le service de notifications est actuellement indisponible. Réessayez plus tard.",
+        "no_permission": "<:error:1519790252594827264> Vous avez besoin de la permission **Gérer le serveur** pour configurer ceci.",
+        "limit_reached_free": "<:warning:1519789903100121139> Les serveurs gratuits ne peuvent suivre qu'**1 compte par plateforme**. Retirez-en un ou passez Premium pour en suivre jusqu'à 5.",
+        "limit_reached_premium": "<:warning:1519789903100121139> Vous avez atteint le maximum de **5 comptes par plateforme** pour ce serveur.",
+        "internal_error": "<:error:1519790252594827264> Une erreur est survenue. Réessayez."
       }
     }
   },

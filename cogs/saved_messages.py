@@ -345,7 +345,7 @@ class SavedMessagesLibraryView(LayoutView):
 
             # Bouton Back
             back_btn = ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:back:1401600847733067806>"),
+                emoji=discord.PartialEmoji.from_str("<:back:1519795556665397431>"),
                 label=t("commands.saved_messages.buttons.back", locale=self.locale),
                 style=discord.ButtonStyle.secondary,
                 custom_id="back_btn"
@@ -355,7 +355,7 @@ class SavedMessagesLibraryView(LayoutView):
 
             # Bouton Edit Note
             edit_btn = ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:edit:1401600709824086169>"),
+                emoji=discord.PartialEmoji.from_str("<:edit:1519795936568676383>"),
                 label=t("commands.saved_messages.buttons.edit_note", locale=self.locale),
                 style=discord.ButtonStyle.primary,
                 custom_id="edit_note_btn"
@@ -365,7 +365,7 @@ class SavedMessagesLibraryView(LayoutView):
 
             # Bouton Export JSON
             export_btn = ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:data_object:1401600908323852318>"),
+                emoji=discord.PartialEmoji.from_str("<:data_object:1519795407453159474>"),
                 label=t("commands.saved_messages.buttons.export_json", locale=self.locale),
                 style=discord.ButtonStyle.secondary,
                 custom_id="export_json_btn"
@@ -375,7 +375,7 @@ class SavedMessagesLibraryView(LayoutView):
 
             # Bouton Delete
             delete_btn = ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:delete:1401600770431909939>"),
+                emoji=discord.PartialEmoji.from_str("<:delete:1519795753164210447>"),
                 label=t("commands.saved_messages.buttons.delete", locale=self.locale),
                 style=discord.ButtonStyle.danger,
                 custom_id="delete_btn"
@@ -404,7 +404,7 @@ class SavedMessagesLibraryView(LayoutView):
                         note_preview = msg['note'][:80]
                         if len(msg['note']) > 80:
                             note_preview += "..."
-                        msg_line += f"\n-# <:note:1443749708857085982> {note_preview}"
+                        msg_line += f"\n-# <:note:1519790932663468184> {note_preview}"
                     else:
                         msg_line += f"\n-# ID Discord: `{msg['message_id']}`"
 
@@ -415,7 +415,7 @@ class SavedMessagesLibraryView(LayoutView):
                 # Bouton pour sélectionner un message
                 view_row = ui.ActionRow()
                 view_btn = ui.Button(
-                    emoji=discord.PartialEmoji.from_str("<:search:1443752796460552232>"),
+                    emoji=discord.PartialEmoji.from_str("<:search:1519790418290675822>"),
                     label=t("commands.saved_messages.buttons.view_message", locale=self.locale),
                     style=discord.ButtonStyle.primary,
                     custom_id="view_msg_btn"
@@ -431,7 +431,7 @@ class SavedMessagesLibraryView(LayoutView):
 
                     # Bouton Previous
                     prev_btn = ui.Button(
-                        emoji=discord.PartialEmoji.from_str("<:back:1401600847733067806>"),
+                        emoji=discord.PartialEmoji.from_str("<:back:1519795556665397431>"),
                         style=discord.ButtonStyle.secondary,
                         disabled=self.page == 0,
                         custom_id="prev_btn"
@@ -451,7 +451,7 @@ class SavedMessagesLibraryView(LayoutView):
 
                     # Bouton Next
                     next_btn = ui.Button(
-                        emoji=discord.PartialEmoji.from_str("<:next:1443745574972031067>"),
+                        emoji=discord.PartialEmoji.from_str("<:next:1519791619526754354>"),
                         style=discord.ButtonStyle.secondary,
                         disabled=(self.page + 1) * 10 >= self.total_count,
                         custom_id="next_btn"

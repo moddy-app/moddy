@@ -49,7 +49,7 @@ class ConfigMainView(BaseView):
 
         # Titre et message de bienvenue
         container.add_item(ui.TextDisplay(
-            f"### <:settings:1398729549323440208> {t('modules.config.main.title', locale=self.locale)}"
+            f"### <:settings:1519800032499339354> {t('modules.config.main.title', locale=self.locale)}"
         ))
         container.add_item(ui.TextDisplay(
             f"\n{t('modules.config.main.description', locale=self.locale)}"

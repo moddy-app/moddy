@@ -220,7 +220,7 @@ class WelcomeDmConfigView(BaseView):
             edit_color_btn = ui.Button(
                 label=t('modules.welcome_dm.config.embed.edit_color', locale=self.locale),
                 style=discord.ButtonStyle.primary,
-                emoji=discord.PartialEmoji.from_str("<:color:1398729435565396008>"),
+                emoji=discord.PartialEmoji.from_str("<:color:1519800727231266858>"),
                 custom_id="edit_embed_color"
             )
             edit_color_btn.callback = self.on_edit_embed_color

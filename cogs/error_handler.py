@@ -431,7 +431,7 @@ class ErrorView(ui.LayoutView):
 
         # Add error title with emoji
         container.add_item(
-            ui.TextDisplay(f"### <:error:1444049460924776478> An Error Occurred")
+            ui.TextDisplay(f"### <:error:1519790252594827264> An Error Occurred")
         )
 
         # Add error message with code
@@ -862,7 +862,7 @@ class ErrorTracker(commands.Cog):
                     super().__init__(timeout=None)
                     container = ui.Container()
                     container.add_item(
-                        ui.TextDisplay(f"### <:error:1444049460924776478> Insufficient Permissions")
+                        ui.TextDisplay(f"### <:error:1519790252594827264> Insufficient Permissions")
                     )
                     container.add_item(
                         ui.TextDisplay("You don't have the necessary permissions to execute this command.")

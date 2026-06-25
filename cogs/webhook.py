@@ -51,7 +51,7 @@ class WebhookView(BaseView):
         delete_btn = ui.Button(
             label=i18n.get("commands.webhook.buttons.delete", locale=self.locale),
             style=discord.ButtonStyle.danger,
-            emoji="<:delete:1401600770431909939>",
+            emoji="<:delete:1519795753164210447>",
             custom_id="delete_webhook"
         )
         delete_btn.callback = self.delete_webhook
@@ -59,7 +59,7 @@ class WebhookView(BaseView):
         edit_btn = ui.Button(
             label=i18n.get("commands.webhook.buttons.edit", locale=self.locale),
             style=discord.ButtonStyle.primary,
-            emoji="<:edit:1401600709824086169>",
+            emoji="<:edit:1519795936568676383>",
             custom_id="edit_webhook"
         )
         edit_btn.callback = self.show_edit_modal
@@ -67,7 +67,7 @@ class WebhookView(BaseView):
         send_btn = ui.Button(
             label=i18n.get("commands.webhook.buttons.send", locale=self.locale),
             style=discord.ButtonStyle.success,
-            emoji="<:send:1438635645147938926>",
+            emoji="<:send:1519793414185553940>",
             custom_id="send_webhook"
         )
         send_btn.callback = self.show_send_modal
@@ -75,7 +75,7 @@ class WebhookView(BaseView):
         refresh_btn = ui.Button(
             label=i18n.get("commands.webhook.buttons.refresh", locale=self.locale),
             style=discord.ButtonStyle.secondary,
-            emoji="<:sync:1398729150885269546>",
+            emoji="<:sync:1519802581893775383>",
             custom_id="refresh_webhook"
         )
         refresh_btn.callback = self.refresh_webhook
