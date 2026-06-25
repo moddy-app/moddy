@@ -72,8 +72,8 @@ class EmojiReplaceCommand(StaffCommand):
             await ctx.send(view=_plain(f"No application emoji found matching `{raw}`."))
             return
 
-        old_syntax = f"<:{old.name}:{old.id}>"
         old_name = old.name
+        old_id = old.id
 
         try:
             image_bytes = await attachment.read()
@@ -84,7 +84,7 @@ class EmojiReplaceCommand(StaffCommand):
         try:
             await old.delete()
         except Exception as exc:
-            await ctx.send(view=_plain(f"Failed to delete `{old_syntax}`: `{exc}`"))
+            await ctx.send(view=_plain(f"Failed to delete `{old_name}` (`{old_id}`): `{exc}`"))
             return
 
         try:
@@ -92,18 +92,17 @@ class EmojiReplaceCommand(StaffCommand):
         except Exception as exc:
             await ctx.send(view=_plain(
                 f"Old emoji deleted but failed to create new one: `{exc}`\n"
-                f"-# Old syntax was: `{old_syntax}`"
+                f"-# Was: `{old_name}: {old_id}`"
             ))
             return
 
-        new_syntax = f"<:{new.name}:{new.id}>"
-        log_line = f"{old_syntax} -> {new_syntax}"
+        log_line = f"{old_name}: {old_id} -> {new.id}"
 
         ch = ctx.bot.get_channel(_LOG_CHANNEL_ID)
         if ch:
             try:
-                await ch.send(log_line)
+                await ch.send(f"`{log_line}`")
             except Exception:
                 pass
 
-        await ctx.send(view=_plain(f"Done. Logged:\n`{log_line}`"))
+        await ctx.send(view=_plain(f"Done.\n`{log_line}`"))
