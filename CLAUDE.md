@@ -3,7 +3,7 @@
 > This file is the primary entry point for AI agents (Claude Code, Copilot, etc.) working on the Moddy project.
 > It provides a complete overview of the project architecture, conventions, and pointers to detailed documentation.
 
----
+--- 
 
 ## Project Overview
 
