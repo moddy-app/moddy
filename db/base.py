@@ -474,74 +474,134 @@ class ModdyDatabase(
                 END $$;
             """)
 
-            # Table des cases de modération
+            # ----------------------------------------------------------------
+            # Moderation cases (case / sanction / event model).
+            # See docs/MODERATION_CASES.md. A case is a moderation folder
+            # decoupled from the Discord context: subject / issuer / scope are
+            # each a (*_type, *_id) couple so new kinds can be added without a
+            # structural migration.
+            # ----------------------------------------------------------------
+
+            # ENUM types (idempotent — Postgres has no CREATE TYPE IF NOT EXISTS).
             await conn.execute("""
-                CREATE TABLE IF NOT EXISTS moderation_cases (
-                    case_id VARCHAR(8) PRIMARY KEY,
-                    case_type VARCHAR(20) NOT NULL,
-                    sanction_type VARCHAR(50) NOT NULL,
-                    entity_type VARCHAR(10) NOT NULL CHECK (entity_type IN ('user', 'guild')),
-                    entity_id BIGINT NOT NULL,
-                    status VARCHAR(20) NOT NULL DEFAULT 'open',
-                    reason TEXT NOT NULL,
-                    evidence TEXT,
-                    duration INTEGER,
-                    staff_notes JSONB DEFAULT '[]'::jsonb,
-                    created_by BIGINT,
-                    created_at TIMESTAMPTZ DEFAULT NOW(),
-                    updated_by BIGINT,
-                    updated_at TIMESTAMPTZ DEFAULT NOW(),
-                    closed_by BIGINT,
-                    closed_at TIMESTAMPTZ,
-                    close_reason TEXT
+                DO $$ BEGIN
+                    CREATE TYPE case_type AS ENUM ('global', 'network', 'guild', 'platform', 'external');
+                EXCEPTION WHEN duplicate_object THEN null; END $$;
+            """)
+            await conn.execute("""
+                DO $$ BEGIN
+                    CREATE TYPE subject_type AS ENUM ('discord_user', 'discord_guild', 'moddy_user', 'external');
+                EXCEPTION WHEN duplicate_object THEN null; END $$;
+            """)
+            await conn.execute("""
+                DO $$ BEGIN
+                    CREATE TYPE issuer_type AS ENUM ('discord_user', 'moddy_staff', 'automod', 'system', 'external');
+                EXCEPTION WHEN duplicate_object THEN null; END $$;
+            """)
+            await conn.execute("""
+                DO $$ BEGIN
+                    CREATE TYPE scope_type AS ENUM ('discord_guild', 'network', 'platform', 'external_service');
+                EXCEPTION WHEN duplicate_object THEN null; END $$;
+            """)
+            await conn.execute("""
+                DO $$ BEGIN
+                    CREATE TYPE case_status AS ENUM ('open', 'closed');
+                EXCEPTION WHEN duplicate_object THEN null; END $$;
+            """)
+            await conn.execute("""
+                DO $$ BEGIN
+                    CREATE TYPE sanction_action AS ENUM ('warn', 'mute', 'ban', 'kick', 'restrict', 'revoke_access');
+                EXCEPTION WHEN duplicate_object THEN null; END $$;
+            """)
+            await conn.execute("""
+                DO $$ BEGIN
+                    CREATE TYPE sanction_status AS ENUM ('active', 'expired', 'revoked');
+                EXCEPTION WHEN duplicate_object THEN null; END $$;
+            """)
+            await conn.execute("""
+                DO $$ BEGIN
+                    CREATE TYPE event_type AS ENUM (
+                        'comment', 'evidence', 'note',
+                        'sanction_added', 'sanction_revoked', 'sanction_expired',
+                        'status_change'
+                    );
+                EXCEPTION WHEN duplicate_object THEN null; END $$;
+            """)
+            await conn.execute("""
+                DO $$ BEGIN
+                    CREATE TYPE author_type AS ENUM ('discord_user', 'moddy_staff', 'system');
+                EXCEPTION WHEN duplicate_object THEN null; END $$;
+            """)
+
+            # Drop the legacy single-table cases system (replaced by the model
+            # below). Old moderation data is not migrated — the schemas are
+            # incompatible and the legacy table was already truncate-on-migrate.
+            await conn.execute("DROP TABLE IF EXISTS moderation_cases CASCADE")
+
+            # cases — the folder
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS cases (
+                    id            UUID PRIMARY KEY,
+                    reference     TEXT NOT NULL UNIQUE,
+                    type          case_type NOT NULL,
+                    subject_type  subject_type NOT NULL,
+                    subject_id    TEXT NOT NULL,
+                    issuer_type   issuer_type NOT NULL,
+                    issuer_id     TEXT,
+                    scope_type    scope_type NOT NULL,
+                    scope_id      TEXT,
+                    reason        TEXT NOT NULL,
+                    status        case_status NOT NULL DEFAULT 'open',
+                    status_locked BOOLEAN NOT NULL DEFAULT FALSE,
+                    group_id      UUID,
+                    created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+                    updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
                 )
             """)
 
-            # Migration: Convert case_id from SERIAL to VARCHAR(8)
+            # case_sanctions — the sanctions (one case may carry several)
             await conn.execute("""
-                DO $$
-                BEGIN
-                    -- Check if case_id is still an integer type
-                    IF EXISTS (
-                        SELECT 1 FROM information_schema.columns
-                        WHERE table_name = 'moderation_cases'
-                        AND column_name = 'case_id'
-                        AND data_type IN ('integer', 'bigint')
-                    ) THEN
-                        -- Drop all existing cases (they use old system)
-                        TRUNCATE TABLE moderation_cases;
-
-                        -- Drop the sequence if it exists
-                        DROP SEQUENCE IF EXISTS moderation_cases_case_id_seq CASCADE;
-
-                        -- Alter the column type
-                        ALTER TABLE moderation_cases
-                        ALTER COLUMN case_id TYPE VARCHAR(8);
-
-                        RAISE NOTICE 'Migrated case_id from SERIAL to VARCHAR(8)';
-                    END IF;
-                END $$;
+                CREATE TABLE IF NOT EXISTS case_sanctions (
+                    id              UUID PRIMARY KEY,
+                    case_id         UUID NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+                    action          sanction_action NOT NULL,
+                    expires_at      TIMESTAMPTZ,
+                    status          sanction_status NOT NULL DEFAULT 'active',
+                    issued_by_type  issuer_type NOT NULL,
+                    issued_by_id    TEXT,
+                    note            TEXT,
+                    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+                    revoked_at      TIMESTAMPTZ,
+                    revoked_by_type issuer_type,
+                    revoked_by_id   TEXT
+                )
             """)
 
+            # case_events — the chronological timeline
             await conn.execute("""
-                CREATE INDEX IF NOT EXISTS idx_moderation_cases_entity
-                ON moderation_cases(entity_type, entity_id)
+                CREATE TABLE IF NOT EXISTS case_events (
+                    id           UUID PRIMARY KEY,
+                    case_id      UUID NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+                    type         event_type NOT NULL,
+                    author_type  author_type,
+                    author_id    TEXT,
+                    content      TEXT,
+                    payload      JSONB,
+                    created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+                )
             """)
 
+            # Indexes (lookups, subject/scope history, group, expiry, timeline).
+            await conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_cases_reference ON cases (reference)")
+            await conn.execute("CREATE INDEX IF NOT EXISTS idx_cases_subject ON cases (subject_type, subject_id)")
+            await conn.execute("CREATE INDEX IF NOT EXISTS idx_cases_scope ON cases (scope_type, scope_id)")
+            await conn.execute("CREATE INDEX IF NOT EXISTS idx_cases_group ON cases (group_id) WHERE group_id IS NOT NULL")
+            await conn.execute("CREATE INDEX IF NOT EXISTS idx_sanctions_case ON case_sanctions (case_id)")
             await conn.execute("""
-                CREATE INDEX IF NOT EXISTS idx_moderation_cases_status
-                ON moderation_cases(status)
+                CREATE INDEX IF NOT EXISTS idx_sanctions_expiry ON case_sanctions (expires_at)
+                WHERE status = 'active' AND expires_at IS NOT NULL
             """)
-
-            await conn.execute("""
-                CREATE INDEX IF NOT EXISTS idx_moderation_cases_type
-                ON moderation_cases(case_type, sanction_type)
-            """)
-
-            await conn.execute("""
-                CREATE INDEX IF NOT EXISTS idx_moderation_cases_created_at
-                ON moderation_cases(created_at DESC)
-            """)
+            await conn.execute("CREATE INDEX IF NOT EXISTS idx_events_case_time ON case_events (case_id, created_at)")
 
             # Table des rôles sauvegardés (Auto Restore Roles module)
             await conn.execute("""

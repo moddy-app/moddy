@@ -1,213 +1,321 @@
 """
-Moderation Cases System - Models and Enums
-Unified sanction system for MODDY bot
+Moderation Cases System — domain model & enums.
+
+A **case** is a moderation folder, intentionally decoupled from the Discord
+context: it may concern a regular guild, the Moddy inter-server network, the
+Moddy platform itself, or an external moderation service.
+
+Three notions must never be confused:
+- ``subject``  : who/what the case is about (the sanctioned user/guild).
+- ``issuer``   : who created the case.
+- ``scope``    : *where* the case applies.
+
+Every actor/target is referenced by a ``*_type`` (enum describing the nature of
+the identifier) + ``*_id`` (the value, stored as TEXT). This makes the model
+extensible without structural migrations.
+
+A case carries one or more **sanctions** (each with its own lifecycle) and a
+chronological **event timeline** (comments, evidence, system events).
+
+This module is pure Python (no discord import) so it can be shared by the bot,
+the internal API and any worker.
 """
 
+from __future__ import annotations
+
+import secrets
+from dataclasses import dataclass, field
+from datetime import datetime
 from enum import Enum
-from typing import Optional, Dict, Any, List
-from datetime import datetime, timezone
-import logging
+from typing import Any, Dict, List, Optional
 
-from utils.emojis import SANCTION_EMOJIS as _EMOJI_SANCTION_EMOJIS, SANCTION_EMOJI_DEFAULT
-
-logger = logging.getLogger('moddy.moderation_cases')
-
-
-class CaseType(Enum):
-    """Type of moderation case"""
-    INTERSERVER = "interserver"  # Inter-server sanctions
-    GLOBAL = "global"  # Global bot sanctions
+from utils.emojis import (
+    SANCTION_ACTION_EMOJIS,
+    SANCTION_ACTION_EMOJI_DEFAULT,
+    CASE_TYPE_EMOJIS,
+    CASE_TYPE_EMOJI_DEFAULT,
+)
 
 
-class SanctionType(Enum):
-    """Types of sanctions available"""
-    # Inter-server sanctions
-    INTERSERVER_WARN = "interserver_warn"
-    INTERSERVER_TIMEOUT = "interserver_timeout"
-    INTERSERVER_BLACKLIST = "interserver_blacklist"
+# =============================================================================
+# ENUMS  (mirror the PostgreSQL ENUM types — keep values in sync with db/base)
+# =============================================================================
 
-    # Global bot sanctions
-    GLOBAL_WARN = "global_warn"
-    GLOBAL_LIMITED = "global_limited"  # Very limited bot usage
-    GLOBAL_BLACKLIST = "global_blacklist"
-
-
-class CaseStatus(Enum):
-    """Status of a case"""
-    OPEN = "open"  # Case is active
-    CLOSED = "closed"  # Case is closed (sanction revoked)
-
-
-class EntityType(Enum):
-    """Type of entity the case applies to"""
-    USER = "user"
+class CaseType(str, Enum):
+    """Where the case conceptually lives."""
+    GLOBAL = "global"
+    NETWORK = "network"
     GUILD = "guild"
+    PLATFORM = "platform"
+    EXTERNAL = "external"
 
 
-# Mapping case types to available sanctions
-CASE_TYPE_SANCTIONS = {
-    CaseType.INTERSERVER: [
-        SanctionType.INTERSERVER_WARN,
-        SanctionType.INTERSERVER_TIMEOUT,
-        SanctionType.INTERSERVER_BLACKLIST
+class SubjectType(str, Enum):
+    """Nature of the case subject (who/what is sanctioned)."""
+    DISCORD_USER = "discord_user"
+    DISCORD_GUILD = "discord_guild"
+    MODDY_USER = "moddy_user"
+    EXTERNAL = "external"
+
+
+class IssuerType(str, Enum):
+    """Nature of the actor that created the case / posted a sanction."""
+    DISCORD_USER = "discord_user"
+    MODDY_STAFF = "moddy_staff"
+    AUTOMOD = "automod"
+    SYSTEM = "system"
+    EXTERNAL = "external"
+
+
+class ScopeType(str, Enum):
+    """Where the case applies."""
+    DISCORD_GUILD = "discord_guild"
+    NETWORK = "network"
+    PLATFORM = "platform"
+    EXTERNAL_SERVICE = "external_service"
+
+
+class CaseStatus(str, Enum):
+    """Binary case status."""
+    OPEN = "open"
+    CLOSED = "closed"
+
+
+class SanctionAction(str, Enum):
+    """The kind of sanction applied. Extensible."""
+    WARN = "warn"
+    MUTE = "mute"
+    BAN = "ban"
+    KICK = "kick"
+    RESTRICT = "restrict"
+    REVOKE_ACCESS = "revoke_access"
+
+
+class SanctionStatus(str, Enum):
+    """Lifecycle of an individual sanction."""
+    ACTIVE = "active"
+    EXPIRED = "expired"
+    REVOKED = "revoked"
+
+
+class EventType(str, Enum):
+    """Timeline entry kind."""
+    COMMENT = "comment"
+    EVIDENCE = "evidence"
+    NOTE = "note"
+    SANCTION_ADDED = "sanction_added"
+    SANCTION_REVOKED = "sanction_revoked"
+    SANCTION_EXPIRED = "sanction_expired"
+    STATUS_CHANGE = "status_change"
+
+
+class AuthorType(str, Enum):
+    """Author of a timeline event."""
+    DISCORD_USER = "discord_user"
+    MODDY_STAFF = "moddy_staff"
+    SYSTEM = "system"
+
+
+# `trigger` values stored in a status_change event payload.
+class StatusTrigger(str, Enum):
+    MANUAL = "manual"
+    EXPIRATION = "expiration"
+    REVOCATION = "revocation"
+    SYSTEM = "system"
+
+
+# =============================================================================
+# REFERENCE GENERATION
+# =============================================================================
+
+# Unambiguous uppercase alphabet (no O/0, no I/1).
+REFERENCE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
+REFERENCE_LENGTH = 6
+
+
+def generate_reference(length: int = REFERENCE_LENGTH) -> str:
+    """Generate a random public case reference (e.g. ``A7F2K9``).
+
+    Uniqueness is enforced by the UNIQUE constraint on ``cases.reference``;
+    callers retry generation on a collision (see ModerationRepository).
+    """
+    return "".join(secrets.choice(REFERENCE_ALPHABET) for _ in range(length))
+
+
+# =============================================================================
+# DISPLAY HELPERS
+# =============================================================================
+
+# Available sanction actions per case type. Used to build selection UIs.
+CASE_TYPE_ACTIONS: Dict[CaseType, List[SanctionAction]] = {
+    CaseType.GLOBAL: [SanctionAction.WARN, SanctionAction.RESTRICT, SanctionAction.BAN],
+    CaseType.PLATFORM: [SanctionAction.WARN, SanctionAction.RESTRICT, SanctionAction.BAN],
+    CaseType.NETWORK: [SanctionAction.WARN, SanctionAction.MUTE, SanctionAction.BAN],
+    CaseType.GUILD: [
+        SanctionAction.WARN, SanctionAction.MUTE, SanctionAction.KICK,
+        SanctionAction.BAN, SanctionAction.RESTRICT,
     ],
-    CaseType.GLOBAL: [
-        SanctionType.GLOBAL_WARN,
-        SanctionType.GLOBAL_LIMITED,
-        SanctionType.GLOBAL_BLACKLIST
-    ]
+    CaseType.EXTERNAL: list(SanctionAction),
 }
 
-
-# Sanction names for display (English)
-SANCTION_NAMES = {
-    SanctionType.INTERSERVER_WARN: "Inter-Server Warning",
-    SanctionType.INTERSERVER_TIMEOUT: "Inter-Server Time-Out",
-    SanctionType.INTERSERVER_BLACKLIST: "Inter-Server Blacklist",
-    SanctionType.GLOBAL_WARN: "Global Warning",
-    SanctionType.GLOBAL_LIMITED: "Limited Bot Access",
-    SanctionType.GLOBAL_BLACKLIST: "Global Blacklist"
-}
+# Sanction actions that accept a temporary duration (``expires_at``).
+TEMPORARY_ACTIONS = {SanctionAction.MUTE, SanctionAction.BAN, SanctionAction.RESTRICT}
 
 
-# Sanction descriptions
-SANCTION_DESCRIPTIONS = {
-    SanctionType.INTERSERVER_WARN: "Warning for inter-server chat violations",
-    SanctionType.INTERSERVER_TIMEOUT: "Temporary timeout from inter-server chat",
-    SanctionType.INTERSERVER_BLACKLIST: "Permanent ban from inter-server chat",
-    SanctionType.GLOBAL_WARN: "Warning for bot usage violations",
-    SanctionType.GLOBAL_LIMITED: "Very limited access to bot features",
-    SanctionType.GLOBAL_BLACKLIST: "Complete ban from using the bot"
-}
+def get_available_actions(case_type: CaseType) -> List[SanctionAction]:
+    """Return the sanction actions allowed for a case type."""
+    return CASE_TYPE_ACTIONS.get(case_type, list(SanctionAction))
 
 
-# Sanction emojis - built from centralized registry
-SANCTION_EMOJIS = {
-    SanctionType(k.lower()): v
-    for k, v in _EMOJI_SANCTION_EMOJIS.items()
-}
+def get_action_emoji(action: SanctionAction) -> str:
+    """Return the emoji for a sanction action."""
+    return SANCTION_ACTION_EMOJIS.get(action.value, SANCTION_ACTION_EMOJI_DEFAULT)
 
 
-def get_sanction_emoji(sanction_type: SanctionType) -> str:
-    """Get emoji for a sanction type"""
-    return SANCTION_EMOJIS.get(sanction_type, SANCTION_EMOJI_DEFAULT)
+def get_case_type_emoji(case_type: CaseType) -> str:
+    """Return the emoji for a case type."""
+    return CASE_TYPE_EMOJIS.get(case_type.value, CASE_TYPE_EMOJI_DEFAULT)
 
 
-def get_sanction_name(sanction_type: SanctionType) -> str:
-    """Get display name for a sanction type"""
-    return SANCTION_NAMES.get(sanction_type, sanction_type.value)
+def _coerce(enum_cls, value):
+    """Coerce a raw value (str / enum) into ``enum_cls`` (or ``None``)."""
+    if value is None:
+        return None
+    if isinstance(value, enum_cls):
+        return value
+    return enum_cls(value)
 
 
-def get_sanction_description(sanction_type: SanctionType) -> str:
-    """Get description for a sanction type"""
-    return SANCTION_DESCRIPTIONS.get(sanction_type, "")
+# =============================================================================
+# DATACLASSES
+# =============================================================================
 
-
-def get_available_sanctions(case_type: CaseType) -> List[SanctionType]:
-    """Get available sanctions for a case type"""
-    return CASE_TYPE_SANCTIONS.get(case_type, [])
-
-
-def validate_sanction_for_case_type(case_type: CaseType, sanction_type: SanctionType) -> bool:
-    """Validate that a sanction type is valid for a case type"""
-    available = CASE_TYPE_SANCTIONS.get(case_type, [])
-    return sanction_type in available
-
-
-class ModerationCase:
-    """Represents a moderation case"""
-
-    def __init__(
-        self,
-        case_id: str,
-        case_type: CaseType,
-        sanction_type: SanctionType,
-        entity_type: EntityType,
-        entity_id: int,
-        status: CaseStatus,
-        reason: str,
-        evidence: Optional[str] = None,
-        duration: Optional[int] = None,  # Duration in seconds for timeout
-        staff_notes: Optional[List[Dict[str, Any]]] = None,
-        created_by: int = None,
-        created_at: datetime = None,
-        updated_by: int = None,
-        updated_at: datetime = None,
-        closed_by: int = None,
-        closed_at: datetime = None,
-        close_reason: Optional[str] = None
-    ):
-        self.case_id = case_id
-        self.case_type = case_type if isinstance(case_type, CaseType) else CaseType(case_type)
-        self.sanction_type = sanction_type if isinstance(sanction_type, SanctionType) else SanctionType(sanction_type)
-        self.entity_type = entity_type if isinstance(entity_type, EntityType) else EntityType(entity_type)
-        self.entity_id = entity_id
-        self.status = status if isinstance(status, CaseStatus) else CaseStatus(status)
-        self.reason = reason
-        self.evidence = evidence
-        self.duration = duration
-        self.staff_notes = staff_notes or []
-        self.created_by = created_by
-        self.created_at = created_at or datetime.now(timezone.utc)
-        self.updated_by = updated_by
-        self.updated_at = updated_at or datetime.now(timezone.utc)
-        self.closed_by = closed_by
-        self.closed_at = closed_at
-        self.close_reason = close_reason
+@dataclass
+class Sanction:
+    """A single sanction attached to a case."""
+    id: str
+    case_id: str
+    action: SanctionAction
+    status: SanctionStatus
+    issued_by_type: IssuerType
+    issued_by_id: Optional[str]
+    expires_at: Optional[datetime] = None
+    note: Optional[str] = None
+    created_at: Optional[datetime] = None
+    revoked_at: Optional[datetime] = None
+    revoked_by_type: Optional[IssuerType] = None
+    revoked_by_id: Optional[str] = None
 
     @classmethod
-    def from_db(cls, row: Dict[str, Any]) -> 'ModerationCase':
-        """Create a ModerationCase from a database row"""
+    def from_db(cls, row: Dict[str, Any]) -> "Sanction":
         return cls(
-            case_id=row['case_id'],
-            case_type=CaseType(row['case_type']),
-            sanction_type=SanctionType(row['sanction_type']),
-            entity_type=EntityType(row['entity_type']),
-            entity_id=row['entity_id'],
-            status=CaseStatus(row['status']),
-            reason=row['reason'],
-            evidence=row.get('evidence'),
-            duration=row.get('duration'),
-            staff_notes=row.get('staff_notes', []),
-            created_by=row.get('created_by'),
-            created_at=row.get('created_at'),
-            updated_by=row.get('updated_by'),
-            updated_at=row.get('updated_at'),
-            closed_by=row.get('closed_by'),
-            closed_at=row.get('closed_at'),
-            close_reason=row.get('close_reason')
+            id=str(row["id"]),
+            case_id=str(row["case_id"]),
+            action=_coerce(SanctionAction, row["action"]),
+            status=_coerce(SanctionStatus, row["status"]),
+            issued_by_type=_coerce(IssuerType, row["issued_by_type"]),
+            issued_by_id=row.get("issued_by_id"),
+            expires_at=row.get("expires_at"),
+            note=row.get("note"),
+            created_at=row.get("created_at"),
+            revoked_at=row.get("revoked_at"),
+            revoked_by_type=_coerce(IssuerType, row.get("revoked_by_type")),
+            revoked_by_id=row.get("revoked_by_id"),
         )
 
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert case to dictionary"""
-        return {
-            'case_id': self.case_id,
-            'case_type': self.case_type.value,
-            'sanction_type': self.sanction_type.value,
-            'entity_type': self.entity_type.value,
-            'entity_id': self.entity_id,
-            'status': self.status.value,
-            'reason': self.reason,
-            'evidence': self.evidence,
-            'duration': self.duration,
-            'staff_notes': self.staff_notes,
-            'created_by': self.created_by,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_by': self.updated_by,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
-            'closed_by': self.closed_by,
-            'closed_at': self.closed_at.isoformat() if self.closed_at else None,
-            'close_reason': self.close_reason
-        }
-
+    @property
     def is_active(self) -> bool:
-        """Check if case is currently active"""
+        return self.status == SanctionStatus.ACTIVE
+
+    @property
+    def is_permanent(self) -> bool:
+        return self.expires_at is None
+
+    def emoji(self) -> str:
+        return get_action_emoji(self.action)
+
+
+@dataclass
+class CaseEvent:
+    """A single timeline entry."""
+    id: str
+    case_id: str
+    type: EventType
+    created_at: datetime
+    author_type: Optional[AuthorType] = None
+    author_id: Optional[str] = None
+    content: Optional[str] = None
+    payload: Optional[Dict[str, Any]] = None
+
+    @classmethod
+    def from_db(cls, row: Dict[str, Any]) -> "CaseEvent":
+        return cls(
+            id=str(row["id"]),
+            case_id=str(row["case_id"]),
+            type=_coerce(EventType, row["type"]),
+            created_at=row["created_at"],
+            author_type=_coerce(AuthorType, row.get("author_type")),
+            author_id=row.get("author_id"),
+            content=row.get("content"),
+            payload=row.get("payload") or None,
+        )
+
+
+@dataclass
+class Case:
+    """A moderation case (folder)."""
+    id: str
+    reference: str
+    type: CaseType
+    subject_type: SubjectType
+    subject_id: str
+    issuer_type: IssuerType
+    issuer_id: Optional[str]
+    scope_type: ScopeType
+    scope_id: Optional[str]
+    reason: str
+    status: CaseStatus
+    status_locked: bool = False
+    group_id: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    sanctions: List[Sanction] = field(default_factory=list)
+    events: List[CaseEvent] = field(default_factory=list)
+
+    @classmethod
+    def from_db(
+        cls,
+        row: Dict[str, Any],
+        sanctions: Optional[List[Dict[str, Any]]] = None,
+        events: Optional[List[Dict[str, Any]]] = None,
+    ) -> "Case":
+        return cls(
+            id=str(row["id"]),
+            reference=row["reference"],
+            type=_coerce(CaseType, row["type"]),
+            subject_type=_coerce(SubjectType, row["subject_type"]),
+            subject_id=row["subject_id"],
+            issuer_type=_coerce(IssuerType, row["issuer_type"]),
+            issuer_id=row.get("issuer_id"),
+            scope_type=_coerce(ScopeType, row["scope_type"]),
+            scope_id=row.get("scope_id"),
+            reason=row["reason"],
+            status=_coerce(CaseStatus, row["status"]),
+            status_locked=bool(row.get("status_locked", False)),
+            group_id=str(row["group_id"]) if row.get("group_id") else None,
+            created_at=row.get("created_at"),
+            updated_at=row.get("updated_at"),
+            sanctions=[Sanction.from_db(s) for s in (sanctions or [])],
+            events=[CaseEvent.from_db(e) for e in (events or [])],
+        )
+
+    @property
+    def is_open(self) -> bool:
         return self.status == CaseStatus.OPEN
 
-    def get_sanction_emoji(self) -> str:
-        """Get emoji for this case's sanction"""
-        return get_sanction_emoji(self.sanction_type)
+    @property
+    def active_sanctions(self) -> List[Sanction]:
+        return [s for s in self.sanctions if s.is_active]
 
-    def get_sanction_name(self) -> str:
-        """Get display name for this case's sanction"""
-        return get_sanction_name(self.sanction_type)
+    def type_emoji(self) -> str:
+        return get_case_type_emoji(self.type)

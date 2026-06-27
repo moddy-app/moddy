@@ -288,16 +288,26 @@ AUTO_MODDY_BADGES = {
     "VERIFIED": CERTIF_BADGE,
 }
 
-# Sanction type emojis (moderation cases)
-SANCTION_EMOJIS = {
-    "INTERSERVER_WARN": "\u26a0\ufe0f",
-    "INTERSERVER_TIMEOUT": "\u23f1\ufe0f",
-    "INTERSERVER_BLACKLIST": "\U0001f6ab",
-    "GLOBAL_WARN": "\u26a0\ufe0f",
-    "GLOBAL_LIMITED": "\u26d4",
-    "GLOBAL_BLACKLIST": "\U0001f6ab",
+# Sanction action emojis (moderation cases). Keyed by SanctionAction value.
+SANCTION_ACTION_EMOJIS = {
+    "warn": WARNING,
+    "mute": TIME,
+    "ban": BLACKLIST,
+    "kick": LOGOUT,
+    "restrict": UNDONE,
+    "revoke_access": DELETE,
 }
-SANCTION_EMOJI_DEFAULT = "\U0001f4cb"
+SANCTION_ACTION_EMOJI_DEFAULT = NOTE
+
+# Case type emojis (moderation cases). Keyed by CaseType value.
+CASE_TYPE_EMOJIS = {
+    "global": MODDY,
+    "platform": MODDY,
+    "network": WEB,
+    "guild": GROUPS,
+    "external": WEB,
+}
+CASE_TYPE_EMOJI_DEFAULT = INFO
 
 
 # =============================================================================
