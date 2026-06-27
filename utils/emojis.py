@@ -46,7 +46,8 @@ REQUIRED_FIELDS = "<:required_fields:1446549185385074769>"
 # Objects / Concepts
 USER = "<:user:1519798911517196511>"
 DEV = "<:dev:1398729645557285066>"
-MODDY = "<:moddy:1396880909117947924>"
+MODDY = "<:ModdyIcon:1517239367184285909>"
+MODDY_SQUARE = "<:ModdyIconCarre:1517239121322578090>"  # rounded-square variant
 MODDY_ALT = "<:moddy:1451280939412881508>"
 BLACKLIST = "<:blacklist:1519797375470669944>"
 TIME = "<:time:1519798202990330087>"
@@ -171,6 +172,7 @@ EMOJIS = {
     "edit": EDIT,
     # Bot
     "moddy": MODDY,
+    "moddy_square": MODDY_SQUARE,
     "developer": DEV,
     "staff": STAFF,
     "ping": SUPPORT,

@@ -31,7 +31,7 @@ from discord import ui, SeparatorSpacing
 
 from config import LOG_WEBHOOKS, LOG_WEBHOOK_DEFAULT, ENV_MODE
 from utils.emojis import (
-    DONE, UNDONE, ADD, LOGOUT, MODDY, BUG, STAFF, SETTINGS, COMMANDS,
+    DONE, UNDONE, ADD, LOGOUT, MODDY, BUG, MODDYTEAM_BADGE, SETTINGS, COMMANDS,
     SAVE, MANAGE_USER, BLACKLIST, TIME, PAUSE,
 )
 
@@ -169,9 +169,26 @@ class TechLogger:
             bots = sum(1 for m in guild.members if m.bot) if guild.members else None
             members = guild.member_count or 0
             owner = f"`{guild.owner}`" if guild.owner else "unknown"
+
+            # Who added Moddy (requires View Audit Log permission).
+            added_by = None
+            try:
+                async for entry in guild.audit_logs(limit=8, action=discord.AuditLogAction.bot_add):
+                    if entry.target and self.bot.user and entry.target.id == self.bot.user.id:
+                        added_by = entry.user
+                        break
+            except (discord.Forbidden, discord.HTTPException):
+                pass
+
             lines = [
                 f"**Guild** `{guild.name}` `{guild.id}`",
                 f"**Owner** {owner} `{guild.owner_id}`",
+            ]
+            if added_by:
+                lines.append(f"**Added by** `{added_by}` `{added_by.id}`")
+            else:
+                lines.append("**Added by** `unknown` (no audit log access)")
+            lines += [
                 f"**Members** `{members}`"
                 + (f" • humans `{humans}` / bots `{bots}`" if humans is not None else ""),
                 f"**Created** <t:{int(guild.created_at.timestamp())}:R>",
@@ -322,7 +339,7 @@ class TechLogger:
             if args:
                 lines.append(f"**Args** `{_trunc(args, 200)}`")
             lines.append(f"{_b(success)} **Executed**")
-            view = self._card("staff_command", STAFF, "Staff Command", lines)
+            view = self._card("staff_command", MODDYTEAM_BADGE, "Staff Command", lines)
             await self._dispatch("staff_command", view)
         except Exception as exc:
             logger.warning("log_staff_command failed: %s", exc)
