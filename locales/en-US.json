@@ -1654,6 +1654,52 @@
         "confirm_title": "Delete Banner?",
         "confirm": "Permanently delete banner {id}?"
       }
+    },
+    "moderation": {
+      "modal": {
+        "title_ban": "Ban",
+        "title_mute": "Timeout",
+        "title_warn": "Warn",
+        "users_label": "Target users",
+        "users_description": "Select users to sanction",
+        "reason_label": "Reason",
+        "reason_placeholder": "Enter the reason for this sanction...",
+        "duration_label": "Duration",
+        "duration_placeholder": "e.g. 7d, 24h, 30m — leave empty for permanent",
+        "duration_description": "Leave empty or write \"permanent\" for no expiry",
+        "evidence_label": "Evidence",
+        "evidence_description": "Files will be accessible to the sanctioned user",
+        "notify_dm_label": "Notify user(s) by DM"
+      },
+      "confirm": {
+        "action_ban": "banned",
+        "action_mute": "timed out",
+        "action_warn": "warned",
+        "reason": "Reason",
+        "duration": "Duration",
+        "case_id": "Case ID",
+        "permanent": "Permanent",
+        "users_sanctioned": "users"
+      },
+      "dm": {
+        "ban_title": "You got banned :(",
+        "mute_title": "You have been timed out :(",
+        "warn_title": "You got warned :(",
+        "reason": "Reason",
+        "responsible": "Responsible",
+        "expires": "Automatically expires",
+        "permanent": "Never (permanent)",
+        "case_id": "Case ID",
+        "sent_by": "Sent by [**{guild}**]({guild_url}) (`{guild_id}`)"
+      },
+      "errors": {
+        "invalid_duration_title": "Invalid Duration",
+        "invalid_duration": "Use formats like `7d`, `24h`, `30m`, or leave empty for permanent.",
+        "no_users_title": "No Users Selected",
+        "no_users": "Please select at least one user to sanction.",
+        "all_failed_title": "Action Failed",
+        "all_failed": "The sanction could not be applied. Check the bot's permissions."
+      }
     }
   }
 }

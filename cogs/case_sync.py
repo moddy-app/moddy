@@ -15,6 +15,7 @@ not this cog.
 """
 
 import logging
+import time
 
 import discord
 from discord.ext import commands
@@ -29,6 +30,16 @@ class CaseSync(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+
+    def _is_moddy_initiated(self, guild_id: int, user_id: int, action: str) -> bool:
+        """Return True if Moddy itself initiated this sanction (prevents double case recording)."""
+        store = getattr(self.bot, "_moddy_initiated_sanctions", {})
+        key = (guild_id, user_id, action)
+        ts = store.get(key)
+        if ts is not None and (time.time() - ts) < 10:
+            store.pop(key, None)
+            return True
+        return False
 
     def _issuer(self, moderator: discord.abc.User):
         """Map the audit-log actor to (issuer_type, issuer_id)."""
@@ -60,6 +71,8 @@ class CaseSync(commands.Cog):
         try:
             A = discord.AuditLogAction
             if action == A.ban:
+                if self._is_moddy_initiated(guild.id, target_id, "ban"):
+                    return
                 await self.bot.cases.record_sanction(
                     "guild", subject_id=target_id, action="ban", reason=reason,
                     issuer_type=issuer_type, issuer_id=issuer_id, scope_id=guild.id,
@@ -90,6 +103,8 @@ class CaseSync(commands.Cog):
         now = discord.utils.utcnow()
         if after is not None and after > now:
             # Timeout set / extended -> active mute with an expiry.
+            if self._is_moddy_initiated(guild.id, target_id, "mute"):
+                return
             await self.bot.cases.record_sanction(
                 "guild", subject_id=target_id, action="mute", reason=reason,
                 issuer_type=issuer_type, issuer_id=issuer_id, scope_id=guild.id,

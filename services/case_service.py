@@ -124,6 +124,7 @@ class CaseService:
         expires_at: Optional[datetime] = None,
         note: Optional[str] = None,
         link_open: bool = True,
+        group_id=None,
     ) -> Optional[Dict]:
         """Record a sanction, opening or extending the matching case.
 
@@ -170,6 +171,7 @@ class CaseService:
             action=action_value,
             sanction_expires_at=expires_at,
             sanction_note=note,
+            group_id=group_id,
         )
         result["created"] = True
         return result
