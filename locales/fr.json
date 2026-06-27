@@ -591,6 +591,52 @@
       "empty_title": "Aucun dossier",
       "empty": "Tu n'as aucun dossier de modération enregistré.\n-# C'est une bonne nouvelle !",
       "error": "Une erreur est survenue lors de la récupération de tes dossiers. Réessaie plus tard."
+    },
+    "moderation": {
+      "modal": {
+        "title_ban": "Bannissement",
+        "title_mute": "Expiration du droit de parole",
+        "title_warn": "Avertissement",
+        "users_label": "Utilisateurs ciblés",
+        "users_description": "Sélectionne les utilisateurs à sanctionner",
+        "reason_label": "Raison",
+        "reason_placeholder": "Entre la raison de cette sanction...",
+        "duration_label": "Durée",
+        "duration_placeholder": "ex. 7d, 24h, 30m — vide = permanent",
+        "duration_description": "Laisse vide ou écris \"permanent\" pour aucune expiration",
+        "evidence_label": "Preuves",
+        "evidence_description": "Les fichiers seront accessibles à l'utilisateur sanctionné",
+        "notify_dm_label": "Notifier les utilisateur(s) par MP"
+      },
+      "confirm": {
+        "action_ban": "banni",
+        "action_mute": "mis en sourdine",
+        "action_warn": "averti",
+        "reason": "Raison",
+        "duration": "Durée",
+        "case_id": "ID du cas",
+        "permanent": "Permanent",
+        "users_sanctioned": "utilisateurs"
+      },
+      "dm": {
+        "ban_title": "Tu as été banni :(",
+        "mute_title": "Tu as été mis en sourdine :(",
+        "warn_title": "Tu as reçu un avertissement :(",
+        "reason": "Raison",
+        "responsible": "Responsable",
+        "expires": "Expire automatiquement",
+        "permanent": "Jamais (permanent)",
+        "case_id": "ID du cas",
+        "sent_by": "Envoyé par [**{guild}**]({guild_url}) (`{guild_id}`)"
+      },
+      "errors": {
+        "invalid_duration_title": "Durée invalide",
+        "invalid_duration": "Utilise des formats comme `7d`, `24h`, `30m`, ou laisse vide pour permanent.",
+        "no_users_title": "Aucun utilisateur sélectionné",
+        "no_users": "Sélectionne au moins un utilisateur à sanctionner.",
+        "all_failed_title": "Échec de l'action",
+        "all_failed": "La sanction n'a pas pu être appliquée. Vérifie les permissions du bot."
+      }
     }
   },
   "errors": {
@@ -1652,52 +1698,6 @@
         "deleted": "La bannière {id} a été supprimée.",
         "confirm_title": "Supprimer la bannière ?",
         "confirm": "Supprimer définitivement la bannière {id} ?"
-      }
-    },
-    "moderation": {
-      "modal": {
-        "title_ban": "Bannissement",
-        "title_mute": "Expiration du droit de parole",
-        "title_warn": "Avertissement",
-        "users_label": "Utilisateurs ciblés",
-        "users_description": "Sélectionne les utilisateurs à sanctionner",
-        "reason_label": "Raison",
-        "reason_placeholder": "Entre la raison de cette sanction...",
-        "duration_label": "Durée",
-        "duration_placeholder": "ex. 7d, 24h, 30m — vide = permanent",
-        "duration_description": "Laisse vide ou écris \"permanent\" pour aucune expiration",
-        "evidence_label": "Preuves",
-        "evidence_description": "Les fichiers seront accessibles à l'utilisateur sanctionné",
-        "notify_dm_label": "Notifier les utilisateur(s) par MP"
-      },
-      "confirm": {
-        "action_ban": "banni",
-        "action_mute": "mis en sourdine",
-        "action_warn": "averti",
-        "reason": "Raison",
-        "duration": "Durée",
-        "case_id": "ID du cas",
-        "permanent": "Permanent",
-        "users_sanctioned": "utilisateurs"
-      },
-      "dm": {
-        "ban_title": "Tu as été banni :(",
-        "mute_title": "Tu as été mis en sourdine :(",
-        "warn_title": "Tu as reçu un avertissement :(",
-        "reason": "Raison",
-        "responsible": "Responsable",
-        "expires": "Expire automatiquement",
-        "permanent": "Jamais (permanent)",
-        "case_id": "ID du cas",
-        "sent_by": "Envoyé par [**{guild}**]({guild_url}) (`{guild_id}`)"
-      },
-      "errors": {
-        "invalid_duration_title": "Durée invalide",
-        "invalid_duration": "Utilise des formats comme `7d`, `24h`, `30m`, ou laisse vide pour permanent.",
-        "no_users_title": "Aucun utilisateur sélectionné",
-        "no_users": "Sélectionne au moins un utilisateur à sanctionner.",
-        "all_failed_title": "Échec de l'action",
-        "all_failed": "La sanction n'a pas pu être appliquée. Vérifie les permissions du bot."
       }
     }
   }
