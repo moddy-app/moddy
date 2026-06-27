@@ -69,8 +69,10 @@ dependency.
 | **Sanction service (scalable entry point)** | `services/case_service.py` |
 | Auto-sync from Discord events | `cogs/case_sync.py` |
 | Staff commands `/mod case …` | `staff/commands/mod/case/` |
-| Interactive views/modals | `utils/case_management_views.py` |
+| Interactive views/modals (staff) | `utils/case_management_views.py` |
+| User/server cases browser (Components V2 + Modals V2) | `utils/cases_views.py` |
 | User command `/cases` | `cogs/cases_user.py` |
+| Server command `/sanctions` | `cogs/cases_server.py` |
 | Periodic expiry job | `bot.py::case_expiry` (every 2 min) |
 
 ---
@@ -180,7 +182,42 @@ driven by the manual sources in the registry, so it scales automatically.
 
 ---
 
-## 7. Notes / open points
+## 7. User-facing browsers (`/cases` & `/sanctions`)
+
+Two commands expose the cases system to non-staff, both built on the single
+reusable `CasesBrowserView` in `utils/cases_views.py` (Components V2 list +
+detail screens, filters collected through a **Modal** — Modals V2):
+
+| Command | Scope of the query | Who | Capabilities |
+|---|---|---|---|
+| `/cases` | subject = the caller (`discord_user`), any scope | anyone | **read-only**, all servers combined |
+| `/sanctions` | scope = the current guild (`discord_guild`) | guild moderators | read **+ full case management** |
+
+**List screen** — paginated overview (`PAGE_SIZE = 5`). A single *Filters*
+button opens a modal to set: status (open/closed), sanction type, period
+(24h / 7d / 30d / 90d), and a context filter (a server in `/cases`, a user in
+`/sanctions`). A select opens any listed case ("zoom").
+
+**Detail screen** — the full folder (fields, reason, sanctions, public
+comments). Internal Moddy-staff notes (`event_type = note`) are **never** shown
+here. In `/sanctions` the moderator gets every case action — add sanction,
+revoke sanction, comment, edit reason, close/reopen — recorded with
+`author/issuer = discord_user` (the moderator), never `moddy_staff`. `/cases`
+shows no action buttons.
+
+`/sanctions` is guild-only and requires a moderation permission in the guild
+(ban / kick / timeout members, or manage server / administrator); only
+guild-scoped cases are reachable, so guild moderators can never touch
+`global`/`platform` (Moddy-team) cases.
+
+Backing repository queries (`db/repositories/moderation.py`): `search_cases`
+(filtered + paginated, carries `actions` and `has_active` per row),
+`count_cases`, and `list_subject_scopes` (servers a subject has cases in, for
+the `/cases` server filter).
+
+---
+
+## 8. Notes / open points
 
 - **Deletion**: FKs use `ON DELETE CASCADE`; no command deletes cases (moderation
   history is preserved). Soft-delete can be added later if needed.

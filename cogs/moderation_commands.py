@@ -445,6 +445,7 @@ class ModerationCommands(commands.Cog):
         description="Ban one or more users from the server.",
     )
     @app_commands.guild_only()
+    @app_commands.default_permissions(ban_members=True)
     @app_commands.describe(
         user="User to ban (optional — you can add more in the modal)",
         incognito="Show the confirmation only to you (default: True)",
@@ -477,6 +478,7 @@ class ModerationCommands(commands.Cog):
         description="Timeout (mute) one or more members.",
     )
     @app_commands.guild_only()
+    @app_commands.default_permissions(moderate_members=True)
     @app_commands.describe(
         user="User to timeout (optional — you can add more in the modal)",
         incognito="Show the confirmation only to you (default: True)",
@@ -509,6 +511,7 @@ class ModerationCommands(commands.Cog):
         description="Warn one or more users.",
     )
     @app_commands.guild_only()
+    @app_commands.default_permissions(moderate_members=True)
     @app_commands.describe(
         user="User to warn (optional — you can add more in the modal)",
         incognito="Show the confirmation only to you (default: True)",
