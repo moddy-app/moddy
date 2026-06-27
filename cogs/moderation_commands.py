@@ -324,7 +324,7 @@ class SanctionModal(BaseModal):
 
             guild_name = self.guild.name
             guild_id = self.guild.id
-            guild_url = f"https://discord.com/channels/{guild_id}/"
+            guild_url = f"https://discord.com/channels/{guild_id}"
 
             text = (
                 f"### {sanction_emoji} {title}\n"
