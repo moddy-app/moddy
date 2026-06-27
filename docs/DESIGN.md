@@ -47,7 +47,7 @@ class MyView(BaseView):
 
         container = ui.Container()
         container.add_item(ui.TextDisplay(
-            "### <:settings:1398729549323440208> Configuration"
+            "### <:settings:1519800032499339354> Configuration"
         ))
         container.add_item(ui.TextDisplay(
             "Configure your server settings below."
@@ -63,7 +63,7 @@ class MyView(BaseView):
 ### **ONLY use custom emojis from `/docs/EMOJIS.md`**
 
 **✅ DO:**
-- Use bot's custom emojis: `<:done:1398729525277229066>`
+- Use bot's custom emojis: `<:done:1519800188925902881>`
 - Use flag emojis for languages: 🇬🇧 🇫🇷 🇪🇸
 - Reference `/docs/EMOJIS.md` for the full list
 
@@ -73,16 +73,16 @@ class MyView(BaseView):
 - Hardcode emoji IDs without checking the documentation
 
 **Common Emojis:**
-- Success: `<:done:1398729525277229066>`
-- Error: `<:error:1444049460924776478>`
-- Warning: `<:warning:1446108410092195902>`
-- Info: `<:info:1401614681440784477>`
-- Settings: `<:settings:1398729549323440208>`
-- User: `<:user:1398729712204779571>`
+- Success: `<:done:1519800188925902881>`
+- Error: `<:error:1519790252594827264>`
+- Warning: `<:warning:1519789903100121139>`
+- Info: `<:info:1519793991045091388>`
+- Settings: `<:settings:1519800032499339354>`
+- User: `<:user:1519798911517196511>`
 - Save: `<:save:1444101502154182778>`
-- Back: `<:back:1401600847733067806>`
-- Delete: `<:delete:1401600770431909939>`
-- Cancel: `<:undone:1398729502028333218>`
+- Back: `<:back:1519795556665397431>`
+- Delete: `<:delete:1519795753164210447>`
+- Cancel: `<:undone:1519800313324896327>`
 - Required: `<:required_fields:1446549185385074769>`
 
 **Why custom emojis?**
@@ -105,10 +105,10 @@ Titles **MUST** always use `###` (heading 3) format with an emoji prefix:
 
 **✅ Examples:**
 ```markdown
-### <:groups:1446127489842806967> Inter-Server Configuration
-### <:user:1398729712204779571> User Information
-### <:settings:1398729549323440208> Server Settings
-### <:star:1446267438671859832> Starboard Configuration
+### <:groups:1519789805456724049> Inter-Server Configuration
+### <:user:1519798911517196511> User Information
+### <:settings:1519800032499339354> Server Settings
+### <:star:1519789099286925406> Starboard Configuration
 ```
 
 **❌ Wrong:**
@@ -315,7 +315,7 @@ class ModuleConfigView(BaseView):
 **Always provide these buttons:**
 
 1. **Back Button** - Return to main menu
-   - Emoji: `<:back:1401600847733067806>`
+   - Emoji: `<:back:1519795556665397431>`
    - Style: `secondary`
    - Disabled when changes are pending
 
@@ -324,11 +324,11 @@ class ModuleConfigView(BaseView):
    - Style: `success`
 
 3. **Cancel Button** - Discard changes (only shown when changes exist)
-   - Emoji: `<:undone:1398729502028333218>`
+   - Emoji: `<:undone:1519800313324896327>`
    - Style: `danger`
 
 4. **Delete Button** - Remove configuration (only shown when no changes and config exists)
-   - Emoji: `<:delete:1401600770431909939>`
+   - Emoji: `<:delete:1519795753164210447>`
    - Style: `danger`
 
 **Example:**
@@ -339,7 +339,7 @@ def _add_action_buttons(self):
 
     # Back button (disabled if changes pending)
     back_btn = ui.Button(
-        emoji=discord.PartialEmoji.from_str("<:back:1401600847733067806>"),
+        emoji=discord.PartialEmoji.from_str("<:back:1519795556665397431>"),
         label=t('modules.config.buttons.back', locale=self.locale),
         style=discord.ButtonStyle.secondary,
         disabled=self.has_changes
@@ -359,7 +359,7 @@ def _add_action_buttons(self):
 
         # Cancel button
         cancel_btn = ui.Button(
-            emoji=discord.PartialEmoji.from_str("<:undone:1398729502028333218>"),
+            emoji=discord.PartialEmoji.from_str("<:undone:1519800313324896327>"),
             label=t('modules.config.buttons.cancel', locale=self.locale),
             style=discord.ButtonStyle.danger
         )
@@ -420,7 +420,7 @@ Use the warning emoji for critical information:
 
 ```python
 container.add_item(ui.TextDisplay(
-    f"<:warning:1446108410092195902> **Security Warning**\n"
+    f"<:warning:1519789903100121139> **Security Warning**\n"
     f"-# Messages from other servers will be visible to your members"
 ))
 ```
@@ -554,7 +554,7 @@ class ExampleConfigView(BaseView):
 
         # Title with emoji (### format)
         container.add_item(ui.TextDisplay(
-            f"### <:settings:1398729549323440208> {t('modules.example.config.title', locale=self.locale)}"
+            f"### <:settings:1519800032499339354> {t('modules.example.config.title', locale=self.locale)}"
         ))
 
         # Description
@@ -595,7 +595,7 @@ class ExampleConfigView(BaseView):
 
         # Warning
         container.add_item(ui.TextDisplay(
-            f"<:warning:1446108410092195902> **{t('modules.example.config.warning.title', locale=self.locale)}**\n"
+            f"<:warning:1519789903100121139> **{t('modules.example.config.warning.title', locale=self.locale)}**\n"
             f"-# {t('modules.example.config.warning.description', locale=self.locale)}"
         ))
 
@@ -608,7 +608,7 @@ class ExampleConfigView(BaseView):
 
         # Back button
         back_btn = ui.Button(
-            emoji=discord.PartialEmoji.from_str("<:back:1401600847733067806>"),
+            emoji=discord.PartialEmoji.from_str("<:back:1519795556665397431>"),
             label=t('modules.config.buttons.back', locale=self.locale),
             style=discord.ButtonStyle.secondary,
             disabled=self.has_changes
@@ -628,7 +628,7 @@ class ExampleConfigView(BaseView):
 
             # Cancel button
             cancel_btn = ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:undone:1398729502028333218>"),
+                emoji=discord.PartialEmoji.from_str("<:undone:1519800313324896327>"),
                 label=t('modules.config.buttons.cancel', locale=self.locale),
                 style=discord.ButtonStyle.danger
             )
@@ -638,7 +638,7 @@ class ExampleConfigView(BaseView):
             if self.has_existing_config:
                 # Delete button
                 delete_btn = ui.Button(
-                    emoji=discord.PartialEmoji.from_str("<:delete:1401600770431909939>"),
+                    emoji=discord.PartialEmoji.from_str("<:delete:1519795753164210447>"),
                     label=t('modules.config.buttons.delete', locale=self.locale),
                     style=discord.ButtonStyle.danger
                 )

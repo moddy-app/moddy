@@ -530,7 +530,7 @@ class RemindersManageView(LayoutView):
             # Back button
             back_row = discord.ui.ActionRow()
             back_btn = discord.ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:back:1401600847733067806>"),
+                emoji=discord.PartialEmoji.from_str("<:back:1519795556665397431>"),
                 label=t("commands.reminder.buttons.back", locale=self.locale),
                 style=discord.ButtonStyle.secondary,
                 custom_id="back_btn"
@@ -574,7 +574,7 @@ class RemindersManageView(LayoutView):
 
             # Add button
             add_btn = discord.ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:add:1439697866049323090>"),
+                emoji=discord.PartialEmoji.from_str("<:add:1519791773235413022>"),
                 label=t("commands.reminder.buttons.add", locale=self.locale),
                 style=discord.ButtonStyle.success,
                 custom_id="add_btn"
@@ -584,7 +584,7 @@ class RemindersManageView(LayoutView):
 
             # Edit button (disabled if no reminders)
             edit_btn = discord.ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:edit:1401600709824086169>"),
+                emoji=discord.PartialEmoji.from_str("<:edit:1519795936568676383>"),
                 label=t("commands.reminder.buttons.edit", locale=self.locale),
                 style=discord.ButtonStyle.primary,
                 custom_id="edit_btn",
@@ -595,7 +595,7 @@ class RemindersManageView(LayoutView):
 
             # Delete button (disabled if no reminders)
             delete_btn = discord.ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:delete:1401600770431909939>"),
+                emoji=discord.PartialEmoji.from_str("<:delete:1519795753164210447>"),
                 label=t("commands.reminder.buttons.delete", locale=self.locale),
                 style=discord.ButtonStyle.danger,
                 custom_id="delete_btn",
@@ -606,7 +606,7 @@ class RemindersManageView(LayoutView):
 
             # History button
             history_btn = discord.ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:history:1401600464587456512>"),
+                emoji=discord.PartialEmoji.from_str("<:history:1519796822963392755>"),
                 label=t("commands.reminder.buttons.history", locale=self.locale),
                 style=discord.ButtonStyle.secondary,
                 custom_id="history_btn"

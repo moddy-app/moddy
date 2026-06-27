@@ -3,7 +3,7 @@
 > This file is the primary entry point for AI agents (Claude Code, Copilot, etc.) working on the Moddy project.
 > It provides a complete overview of the project architecture, conventions, and pointers to detailed documentation.
 
----
+--- 
 
 ## Project Overview
 
@@ -52,6 +52,7 @@ moddy/
 │   ├── auto_restore_roles_commands.py
 │   ├── cog_manager.py         #   Hot-reload / disable cogs
 │   ├── console_logger.py      #   Console logging
+│   ├── command_logger.py      #   Non-staff command usage → technical webhook logs
 │   ├── dev_logger.py          #   Dev logging
 │   ├── dev_tools.py           #   Developer tools
 │   └── subscription.py        #   /subscription command (user subscription status)
@@ -104,7 +105,8 @@ moddy/
 │   ├── components_v2.py       #   V2 helper functions (create_error_message, etc.)
 │   ├── staff_permissions.py   #   Permission system
 │   ├── subscription.py        #   Subscription helper (is_subscribed, get_subscription)
-│   ├── staff_logger.py        #   Staff action logging
+│   ├── staff_logger.py        #   Staff action logging (also feeds technical webhook logs)
+│   ├── tech_logger.py         #   Technical staff logs via webhooks (Components V2, per-event channels)
 │   ├── staff_role_permissions.py
 │   ├── staff_help_view.py
 │   ├── case_management_views.py #  Cases Views/Modals (create, sanction, comment…)
@@ -171,7 +173,7 @@ moddy/
 
 ### 5. Title Format
 - Titles in Components V2 must use: `### <:emoji:id> Title Text`
-- Example: `### <:settings:1398729549323440208> Configuration`
+- Example: `### <:settings:1519800032499339354> Configuration`
 
 ### 6. Dynamic Values in Backticks
 - Wrap all dynamic/user-specific data in backticks: `` f"**User:** `{user.id}`" ``
@@ -237,6 +239,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/MODULE_SYSTEM.md](docs/MODULE_SYSTEM.md) | Creating or modifying server modules |
 | [docs/STAFF_SYSTEM.md](docs/STAFF_SYSTEM.md) | Staff/dev commands, permissions, roles |
 | [docs/MODERATION_CASES.md](docs/MODERATION_CASES.md) | Moderation cases/sanctions, the case service & sources, auto-sync |
+| [docs/TECHNICAL_LOGS.md](docs/TECHNICAL_LOGS.md) | Internal technical staff logs (webhook-based, per-event channels) |
 | [docs/DATABASE.md](docs/DATABASE.md) | Database schema, queries, repository pattern |
 
 ### Infrastructure

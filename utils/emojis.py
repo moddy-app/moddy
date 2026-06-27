@@ -9,11 +9,11 @@ To change an emoji, update it in this file — it will propagate everywhere.
 # =============================================================================
 
 # Status indicators
-DONE = "<:done:1398729525277229066>"
-UNDONE = "<:undone:1398729502028333218>"
-ERROR = "<:error:1444049460924776478>"
-WARNING = "<:warning:1446108410092195902>"
-INFO = "<:info:1401614681440784477>"
+DONE = "<:done:1519800188925902881>"
+UNDONE = "<:undone:1519800313324896327>"
+ERROR = "<:error:1519790252594827264>"
+WARNING = "<:warning:1519789903100121139>"
+INFO = "<:info:1519793991045091388>"
 LOADING = "<a:loading:1455219844080336907>"
 
 # Status dots
@@ -22,60 +22,61 @@ YELLOW_STATUS = "<:yellow_status:1450929037542166669>"
 RED_STATUS = "<:red_status:1450929038758772940>"
 
 # Actions
-ADD = "<:add:1439697866049323090>"
-EDIT = "<:edit:1401600709824086169>"
-DELETE = "<:delete:1401600770431909939>"
+ADD = "<:add:1519791773235413022>"
+EDIT = "<:edit:1519795936568676383>"
+DELETE = "<:delete:1519795753164210447>"
 SAVE = "<:save:1444101502154182778>"
-SEARCH = "<:search:1443752796460552232>"
-SYNC = "<:sync:1398729150885269546>"
-BACK = "<:back:1401600847733067806>"
-NEXT = "<:next:1443745574972031067>"
-PAUSE = "<:pause:1515790316282576937>"
-PLAY = "<:play:1515790314692935922>"
-LOGOUT = "<:logout:1401603690858676224>"
-DOWNLOAD = "<:download:1401600503867248730>"
-REPLY = "<:reply:1444821779444138146>"
+SEARCH = "<:search:1519790418290675822>"
+SYNC = "<:sync:1519802581893775383>"
+BACK = "<:back:1519795556665397431>"
+NEXT = "<:next:1519791619526754354>"
+PAUSE = "<:pause:1519787332801269811>"
+PLAY = "<:play:1519787501789773996>"
+LOGOUT = "<:logout:1519795093605974098>"
+DOWNLOAD = "<:download:1519796568255889578>"
+REPLY = "<:reply:1519790151130415154>"
 
 # Navigation / UI
-SETTINGS = "<:settings:1398729549323440208>"
-COMMANDS = "<:commands:1401610449136648283>"
+SETTINGS = "<:settings:1519800032499339354>"
+COMMANDS = "<:commands:1519794878933106830>"
 TOGGLE_ON = "<:toogle_on:1446267419034386473>"
 TOGGLE_OFF = "<:toggle_off:1446267399786594514>"
 REQUIRED_FIELDS = "<:required_fields:1446549185385074769>"
 
 # Objects / Concepts
-USER = "<:user:1398729712204779571>"
+USER = "<:user:1519798911517196511>"
 DEV = "<:dev:1398729645557285066>"
-MODDY = "<:moddy:1396880909117947924>"
+MODDY = "<:ModdyIcon:1517239367184285909>"
+MODDY_SQUARE = "<:ModdyIconCarre:1517239121322578090>"  # rounded-square variant
 MODDY_ALT = "<:moddy:1451280939412881508>"
-BLACKLIST = "<:blacklist:1401596866478477363>"
-TIME = "<:time:1398729780723060736>"
-SNOWFLAKE = "<:snowflake:1398729841938792458>"
-WEB = "<:web:1398729801061240883>"
-HISTORY = "<:history:1401600464587456512>"
-BOOK = "<:book:1446557736350388364>"
-CODE = "<:code:1401610523803652196>"
-BUG = "<:bug:1401614189482475551>"
+BLACKLIST = "<:blacklist:1519797375470669944>"
+TIME = "<:time:1519798202990330087>"
+SNOWFLAKE = "<:snowflake:1519797680069541999>"
+WEB = "<:web:1519798069191901254>"
+HISTORY = "<:history:1519796822963392755>"
+BOOK = "<:book:1519788969691316467>"
+CODE = "<:code:1519794490750271641>"
+BUG = "<:bug:1519794242296483952>"
 VERIFIED = "<:verified:1495533349266264230>"
 VERIFIED_ORG = "<:verified_org:1495537358337081465>"
 VERIFIED_ORG_MEMBER = "<:verified:1495533349266264230>"  # same visual as VERIFIED
 MINI_VERIFIED = "<:miniverified:1439667456737280021>"
-NOTE = "<:note:1443749708857085982>"
-MESSAGE = "<:message:1443749710073696286>"
-GROUPS = "<:groups:1446127489842806967>"
-WAVING_HAND = "<:waving_hand:1446127491004760184>"
-FLAG = "<:flag:1446197210198048778>"
-AT = "<:at:1446199071013470319>"
-STAR = "<:star:1446267438671859832>"
-EMOJI = "<:emoji:1398729407065100359>"
-PREMIUM = "<:premium:1401602724801548381>"
-SUPPORT = "<:support:1398734366670065726>"
-BALANCE = "<:balance:1398729232862941445>"
-MANAGE_USER = "<:manageuser:1398729745293774919>"
-BANNER = "<:banner:1439659080472989726>"
-TEXT = "<:text:1439692405317046372>"
-TRANSLATE = "<:translate:1398720130950627600>"
-WEBHOOK = "<:webhook:1438636058660045041>"
+NOTE = "<:note:1519790932663468184>"
+MESSAGE = "<:message:1519790643784843416>"
+GROUPS = "<:groups:1519789805456724049>"
+WAVING_HAND = "<:waving_hand:1519789691711393982>"
+FLAG = "<:flag:1519789496181461183>"
+AT = "<:at:1519789374898700289>"
+STAR = "<:star:1519789099286925406>"
+EMOJI = "<:emoji:1519800926636867675>"
+PREMIUM = "<:premium:1519795224493424893>"
+SUPPORT = "<:support:1519797524813185164>"
+BALANCE = "<:balance:1519801728961351730>"
+MANAGE_USER = "<:manageuser:1519798563880698066>"
+BANNER = "<:banner:1519792732716007634>"
+TEXT = "<:text:1519791921462120601>"
+TRANSLATE = "<:translate:1519802660856008834>"
+WEBHOOK = "<:webhook:1519793325329219675>"
 STAFF = "<:staff:1398729432759476245>"
 
 # =============================================================================
@@ -86,12 +87,12 @@ STAFF = "<:staff:1398729432759476245>"
 # updating the id here propagates everywhere. Also update PLATFORM_EMOJIS below
 # stays in sync automatically (it references the constants).
 # =============================================================================
-SOCIAL = "<:web:1398729801061240883>"           # generic "social notifications" icon (placeholder — no custom emoji yet)
+SOCIAL = "<:web:1519798069191901254>"           # generic "social notifications" icon (placeholder — no custom emoji yet)
 YOUTUBE = "<:youtube:1515511923066671185>"
 TWITCH = "<:twitch:1515511921938399343>"
 BLUESKY = "<:bluesky:1515511920235516024>"
-RSS = "<:rss:1515511923951534160>"
-INSTAGRAM = "<:web:1398729801061240883>"         # TODO replace with <:instagram:...> (platform is future/disabled)
+RSS = "<:rss:1519788506980028477>"
+INSTAGRAM = "<:web:1519798069191901254>"         # TODO replace with <:instagram:...> (platform is future/disabled)
 
 # platform id -> emoji (single source of truth used by the module + config UI)
 PLATFORM_EMOJIS = {
@@ -171,6 +172,7 @@ EMOJIS = {
     "edit": EDIT,
     # Bot
     "moddy": MODDY,
+    "moddy_square": MODDY_SQUARE,
     "developer": DEV,
     "staff": STAFF,
     "ping": SUPPORT,

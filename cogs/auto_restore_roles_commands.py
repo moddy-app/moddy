@@ -85,7 +85,7 @@ class AutoRestoreRolesCommands(commands.Cog):
 
             # Crée un embed avec les informations
             embed = discord.Embed(
-                title=f"<:history:1401600464587456512> {t('modules.auto_restore_roles.commands.clear.confirm_title', locale=locale)}",
+                title=f"<:history:1519796822963392755> {t('modules.auto_restore_roles.commands.clear.confirm_title', locale=locale)}",
                 description=t('modules.auto_restore_roles.commands.clear.confirm_description', locale=locale, user=user.mention),
                 color=0xFF5555
             )
@@ -121,7 +121,7 @@ class AutoRestoreRolesCommands(commands.Cog):
 
             if success:
                 embed.color = 0x00FF00
-                embed.title = f"<:done:1398729525277229066> {t('modules.auto_restore_roles.commands.clear.success_title', locale=locale)}"
+                embed.title = f"<:done:1519800188925902881> {t('modules.auto_restore_roles.commands.clear.success_title', locale=locale)}"
                 embed.description = t('modules.auto_restore_roles.commands.clear.success_description', locale=locale, user=user.mention)
                 await interaction.response.send_message(embed=embed, ephemeral=True)
                 logger.info(f"Cleared saved roles for user {user.id} in guild {interaction.guild.id} by admin {interaction.user.id}")
@@ -192,7 +192,7 @@ class AutoRestoreRolesCommands(commands.Cog):
             # Crée un embed avec la liste
             saved_count = len(all_saved_roles)
             embed = discord.Embed(
-                title=f"<:history:1401600464587456512> {t('modules.auto_restore_roles.commands.view.title', locale=locale)}",
+                title=f"<:history:1519796822963392755> {t('modules.auto_restore_roles.commands.view.title', locale=locale)}",
                 description=t('modules.auto_restore_roles.commands.view.description', locale=locale, count=saved_count),
                 color=0x5865F2
             )

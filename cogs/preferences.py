@@ -153,7 +153,7 @@ class PreferencesView(LayoutView):
         # Manage timezone button
         btn_row = discord.ui.ActionRow()
         tz_btn = discord.ui.Button(
-            emoji=discord.PartialEmoji.from_str("<:time:1398729780723060736>"),
+            emoji=discord.PartialEmoji.from_str("<:time:1519798202990330087>"),
             label=t("commands.preferences.buttons.manage_timezone", locale=self.locale),
             style=discord.ButtonStyle.primary,
             custom_id="timezone_btn"
@@ -187,7 +187,7 @@ class PreferencesView(LayoutView):
         # Back button
         back_btn_row = discord.ui.ActionRow()
         back_btn = discord.ui.Button(
-            emoji=discord.PartialEmoji.from_str("<:back:1401600847733067806>"),
+            emoji=discord.PartialEmoji.from_str("<:back:1519795556665397431>"),
             label=t("commands.preferences.buttons.back", locale=self.locale),
             style=discord.ButtonStyle.secondary,
             custom_id="back_btn"

@@ -58,6 +58,38 @@ DEEPL_API_KEY: str = os.environ.get("DEEPL_API_KEY", "")
 TOKEN_DETECTOR_KEY: str = os.environ.get("TOKEN_DETECTOR_KEY", "")
 
 # =============================================================================
+# TECHNICAL LOGS (internal staff webhooks)
+# =============================================================================
+# Internal technical logs are NOT sent by the bot itself but through Discord
+# webhooks, one channel per event type. Each category reads its own webhook URL
+# from a Railway environment variable. Any category left unset silently falls
+# back to LOG_WEBHOOK_DEFAULT (and if that is unset too, the category is muted).
+# See docs/TECHNICAL_LOGS.md for the full contract.
+
+# category -> environment variable name
+LOG_WEBHOOK_ENV = {
+    "guild_join": "LOG_WEBHOOK_GUILD_JOIN",
+    "guild_remove": "LOG_WEBHOOK_GUILD_REMOVE",
+    "error": "LOG_WEBHOOK_ERROR",
+    "lifecycle": "LOG_WEBHOOK_LIFECYCLE",      # startup / shutdown / health
+    "staff_command": "LOG_WEBHOOK_STAFF_COMMAND",
+    "staff_action": "LOG_WEBHOOK_STAFF_ACTION",
+    "command": "LOG_WEBHOOK_COMMAND",          # non-staff command usage
+    "database": "LOG_WEBHOOK_DATABASE",        # config changes / important writes
+    "security": "LOG_WEBHOOK_SECURITY",        # blacklist blocks & sensitive events
+}
+
+# Resolved category -> webhook URL (only those actually configured)
+LOG_WEBHOOKS = {
+    category: os.environ.get(env_var, "").strip()
+    for category, env_var in LOG_WEBHOOK_ENV.items()
+    if os.environ.get(env_var, "").strip()
+}
+
+# Optional single fallback webhook for any category without a dedicated URL
+LOG_WEBHOOK_DEFAULT: str = os.environ.get("LOG_WEBHOOK_DEFAULT", "").strip()
+
+# =============================================================================
 # PARAMÈTRES DU BOT
 # =============================================================================
 

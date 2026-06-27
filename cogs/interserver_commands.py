@@ -330,7 +330,7 @@ class InterServerCommands(commands.GroupCog, name="interserver"):
             def __init__(self):
                 super().__init__()
                 container = ui.Container(
-                    ui.TextDisplay(content=f"### <:info:1401614681440784477> Inter-Server Message Info"),
+                    ui.TextDisplay(content=f"### <:info:1519793991045091388> Inter-Server Message Info"),
                     ui.TextDisplay(content=f"**Moddy ID:** `{moddy_id}`\n**Author:** {author_info}\n**Original Server:** {guild_info}\n**Sent:** {timestamp_str}\n**Relayed to:** {relayed_count} servers\n**Status:** {msg_data['status']}\n**Moddy Team Message:** {'✅ Yes' if msg_data.get('is_moddy_team') else '❌ No'}\n\n**Content:**\n{msg_data['content'][:500] if msg_data['content'] else '*No content*'}"),
                 )
                 self.add_item(container)
@@ -366,7 +366,7 @@ class ProcessedModal(BaseModal, title="Report Processing"):
             def __init__(self, moddy_id: str, processed_by: discord.User, actions: str):
                 super().__init__()
                 container = ui.Container(
-                    ui.TextDisplay(content=f"### <:done:1398729525277229066> Report Processed"),
+                    ui.TextDisplay(content=f"### <:done:1519800188925902881> Report Processed"),
                     ui.TextDisplay(content=f"**Moddy ID:** `{moddy_id}`\n**Processed by:** {processed_by.mention}\n**Actions taken:**\n{actions}"),
                 )
                 self.add_item(container)

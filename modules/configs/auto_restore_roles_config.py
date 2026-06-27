@@ -100,7 +100,7 @@ class AutoRestoreRolesConfigView(BaseView):
                     label=t('modules.auto_restore_roles.config.mode.only.label', locale=self.locale),
                     value=AutoRestoreRolesModule.MODE_ONLY,
                     description=t('modules.auto_restore_roles.config.mode.only.description', locale=self.locale),
-                    emoji="<:label:1398729473649676440>",
+                    emoji="<:label:1519800544456343744>",
                     default=self.working_config['mode'] == AutoRestoreRolesModule.MODE_ONLY
                 )
             ]

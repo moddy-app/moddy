@@ -63,7 +63,7 @@ class InviteView(BaseView):
         """Add buttons for guild invite (outside container, below)"""
         button_row = ui.ActionRow()
         server_info_btn = ui.Button(
-            emoji=discord.PartialEmoji.from_str("<:server:1464693264773939319>"),
+            emoji=discord.PartialEmoji.from_str("<:server:1519788576420921476>"),
             label=t('commands.invite.view.guild.show_server_info', locale=self.locale),
             style=discord.ButtonStyle.primary
         )
@@ -72,7 +72,7 @@ class InviteView(BaseView):
 
         # TEMP: Raw data button for debugging
         raw_btn = ui.Button(
-            emoji=discord.PartialEmoji.from_str("<:code:1401610523803652196>"),
+            emoji=discord.PartialEmoji.from_str("<:code:1519794490750271641>"),
             label="Raw Data",
             style=discord.ButtonStyle.secondary
         )
@@ -85,7 +85,7 @@ class InviteView(BaseView):
         """Add raw data button only (for non-guild invites)"""
         button_row = ui.ActionRow()
         raw_btn = ui.Button(
-            emoji=discord.PartialEmoji.from_str("<:code:1401610523803652196>"),
+            emoji=discord.PartialEmoji.from_str("<:code:1519794490750271641>"),
             label="Raw Data",
             style=discord.ButtonStyle.secondary
         )
@@ -103,7 +103,7 @@ class InviteView(BaseView):
 
         # Title
         container.add_item(ui.TextDisplay(
-            f"### <:search:1443752796460552232> {t('commands.invite.view.guild.title', locale=self.locale)}"
+            f"### <:search:1519790418290675822> {t('commands.invite.view.guild.title', locale=self.locale)}"
         ))
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
@@ -177,7 +177,7 @@ class InviteView(BaseView):
 
         # Title
         container.add_item(ui.TextDisplay(
-            f"### <:message:1443749710073696286> {t('commands.invite.view.group_dm.title', locale=self.locale)}"
+            f"### <:message:1519790643784843416> {t('commands.invite.view.group_dm.title', locale=self.locale)}"
         ))
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
@@ -228,7 +228,7 @@ class InviteView(BaseView):
 
         # Title
         container.add_item(ui.TextDisplay(
-            f"### <:user:1398729712204779571> {t('commands.invite.view.friend.title', locale=self.locale)}"
+            f"### <:user:1519798911517196511> {t('commands.invite.view.friend.title', locale=self.locale)}"
         ))
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
@@ -394,7 +394,7 @@ class ServerInfoView(BaseView):
 
         # Title
         container.add_item(ui.TextDisplay(
-            f"### <:server:1464693264773939319> {t('commands.invite.view.server_info.title', locale=self.locale)}"
+            f"### <:server:1519788576420921476> {t('commands.invite.view.server_info.title', locale=self.locale)}"
         ))
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
@@ -487,7 +487,7 @@ class ServerInfoView(BaseView):
         # Add back button (outside container, below)
         button_row = ui.ActionRow()
         back_btn = ui.Button(
-            emoji=discord.PartialEmoji.from_str("<:back:1401600847733067806>"),
+            emoji=discord.PartialEmoji.from_str("<:back:1519795556665397431>"),
             label=t('commands.invite.view.server_info.back', locale=self.locale),
             style=discord.ButtonStyle.secondary
         )

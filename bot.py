@@ -626,6 +626,16 @@ class ModdyBot(commands.Bot):
         init_staff_logger(self)
         logger.info("Staff logger ready")
 
+        # Initialize technical logger (webhook-based internal staff logs)
+        logger.info("Initializing technical logger...")
+        from utils.tech_logger import init_tech_logger
+        init_tech_logger(self)
+        # Wire DB write hooks so important writes are logged to the webhooks.
+        if self.db:
+            self.db.on_attribute_change = self.tech_logger.log_attribute_change
+            self.db.on_data_change = self.tech_logger.log_data_change
+        logger.info("Technical logger ready")
+
         # Initialize module manager
         logger.info("Initializing module manager...")
         self.module_manager = ModuleManager(self)
@@ -1182,6 +1192,21 @@ class ModdyBot(commands.Bot):
             logger.warning(f"Some checks failed: {', '.join(failed)}")
         logger.info("=" * 50)
 
+        # 7. Technical log: bot startup health report (webhook)
+        if getattr(self, "tech_logger", None):
+            import time as _time
+            boot_seconds = None
+            if self._start_time:
+                boot_seconds = _time.time() - self._start_time
+            await self.tech_logger.log_startup(
+                results,
+                version=self.version,
+                latency_ms=round(self.latency * 1000) if self.latency else None,
+                guild_count=len(self.guilds),
+                user_count=len(self.users),
+                boot_seconds=boot_seconds,
+            )
+
     async def on_guild_join(self, guild: discord.Guild):
         """When the bot joins a server"""
         logger.info(f"New server: {guild.name} ({guild.id})")
@@ -1228,6 +1253,18 @@ class ModdyBot(commands.Bot):
                             ping_dev=False
                         )
 
+                    # Technical log (security feed)
+                    if getattr(self, "tech_logger", None):
+                        await self.tech_logger.log_security(
+                            "Join Blocked — Blacklisted Owner",
+                            [
+                                f"**Guild** `{guild.name}` `{guild.id}`",
+                                f"**Owner** `{guild.owner}` `{guild.owner_id}`",
+                                f"**Members** `{guild.member_count or 0}`",
+                                f"**Action** `bot left automatically`",
+                            ],
+                        )
+
                     return
 
                 # If not blacklisted, continue normally
@@ -1243,6 +1280,10 @@ class ModdyBot(commands.Bot):
                 await self.redis.delete("moddy:bot_guilds")
             except Exception as e:
                 logger.warning(f"[WARN] Could not invalidate Redis cache on guild join: {e}")
+
+        # Technical log: bot added to a server
+        if getattr(self, "tech_logger", None):
+            await self.tech_logger.log_guild_join(guild)
 
         # Synchronize commands for this new guild
         # This ensures guild-only commands (/config) are available in this server
@@ -1268,6 +1309,10 @@ class ModdyBot(commands.Bot):
 
         # Clean the cache
         self.prefix_cache.pop(guild.id, None)
+
+        # Technical log: bot removed from a server
+        if getattr(self, "tech_logger", None):
+            await self.tech_logger.log_guild_remove(guild)
 
         # Invalidate backend Redis cache
         if self.redis:
@@ -1534,6 +1579,14 @@ class ModdyBot(commands.Bot):
     async def close(self):
         """Cleanly closing the bot"""
         logger.info("Shutting down...")
+
+        # Technical log: bot shutting down (best-effort, before sessions close)
+        if getattr(self, "tech_logger", None):
+            try:
+                await self.tech_logger.log_shutdown()
+                await self.tech_logger.close()
+            except Exception as e:
+                logger.error(f"[FAIL] Error sending shutdown log: {e}")
 
         # Stop tasks BEFORE closing
         if self.status_update.is_running():

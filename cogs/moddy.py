@@ -45,7 +45,7 @@ class AttributionView(BaseView):
 
         # Title
         container.add_item(ui.TextDisplay(
-            f"### <:attribution:1451293906175262871> {t('commands.moddy.attribution.title', locale=self.locale)}"
+            f"### <:attribution:1519788726476079104> {t('commands.moddy.attribution.title', locale=self.locale)}"
         ))
 
         # Description
@@ -84,7 +84,7 @@ class AttributionView(BaseView):
         # Back button (persistent — stable custom_id)
         back_row = ui.ActionRow()
         back_btn = ui.Button(
-            emoji=discord.PartialEmoji.from_str("<:back:1401600847733067806>"),
+            emoji=discord.PartialEmoji.from_str("<:back:1519795556665397431>"),
             label=t('commands.moddy.buttons.back', locale=self.locale),
             style=discord.ButtonStyle.secondary,
             custom_id=_CID_ATTRIBUTION_BACK,
@@ -129,7 +129,7 @@ class WeSupportView(BaseView):
 
         # Title
         container.add_item(ui.TextDisplay(
-            f"### <:favorite:1451293904329769081> {t('commands.moddy.we_support.title', locale=self.locale)}"
+            f"### <:favorite:1519788838292295781> {t('commands.moddy.we_support.title', locale=self.locale)}"
         ))
 
         # Description
@@ -149,7 +149,7 @@ class WeSupportView(BaseView):
         # Back button (persistent — stable custom_id)
         back_row = ui.ActionRow()
         back_btn = ui.Button(
-            emoji=discord.PartialEmoji.from_str("<:back:1401600847733067806>"),
+            emoji=discord.PartialEmoji.from_str("<:back:1519795556665397431>"),
             label=t('commands.moddy.buttons.back', locale=self.locale),
             style=discord.ButtonStyle.secondary,
             custom_id=_CID_WE_SUPPORT_BACK,
@@ -254,7 +254,7 @@ class ModdyMainView(BaseView):
         buttons_row = ui.ActionRow()
 
         attribution_btn = ui.Button(
-            emoji=discord.PartialEmoji.from_str("<:attribution:1451293906175262871>"),
+            emoji=discord.PartialEmoji.from_str("<:attribution:1519788726476079104>"),
             label=t('commands.moddy.buttons.attribution', locale=self.locale),
             style=discord.ButtonStyle.secondary,
             custom_id=_CID_MAIN_ATTRIBUTION,
@@ -263,7 +263,7 @@ class ModdyMainView(BaseView):
         buttons_row.add_item(attribution_btn)
 
         we_support_btn = ui.Button(
-            emoji=discord.PartialEmoji.from_str("<:favorite:1451293904329769081>"),
+            emoji=discord.PartialEmoji.from_str("<:favorite:1519788838292295781>"),
             label=t('commands.moddy.buttons.we_support', locale=self.locale),
             style=discord.ButtonStyle.secondary,
             custom_id=_CID_MAIN_WE_SUPPORT,

@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 from typing import Any, Optional, Union
@@ -74,6 +75,16 @@ class AttributeRepository:
                 str(value) if value is not None else None,
                 changed_by, reason
             )
+
+        # Technical-log hook (best-effort, runs outside the connection block)
+        hook = getattr(self, "on_attribute_change", None)
+        if hook:
+            try:
+                asyncio.create_task(
+                    hook(entity_type, entity_id, attribute, old_value, value, changed_by, reason)
+                )
+            except Exception as exc:
+                logger.debug(f"on_attribute_change hook failed: {exc}")
 
     async def has_attribute(self, entity_type: str, entity_id: int, attribute: str) -> bool:
         """Vérifie si une entité a un attribut spécifique"""

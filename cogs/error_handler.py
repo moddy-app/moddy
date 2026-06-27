@@ -425,36 +425,32 @@ class ErrorView(ui.LayoutView):
         self.build_view()
 
     def build_view(self):
-        """Builds the error view with Components V2"""
-        # Create main container
-        container = ui.Container()
-
-        # Add error title with emoji
-        container.add_item(
-            ui.TextDisplay(f"### <:error:1444049460924776478> An Error Occurred")
-        )
-
-        # Add error message with code
-        container.add_item(
-            ui.TextDisplay(
-                f"**Error Code:** `{self.error_code}`\n\n"
-                "This error has been automatically logged and will be reviewed by our team.\n"
-                "If the problem persists, please contact support with this error code."
-            )
-        )
-
-        # Add button row with support link
-        button_row = ui.ActionRow()
-        support_btn = ui.Button(
-            label="Support Server",
-            style=discord.ButtonStyle.link,
-            url="https://moddy.app/support"
-        )
-        button_row.add_item(support_btn)
-        container.add_item(button_row)
-
-        # Add container to view
+        container = ui.Container(accent_color=discord.Colour(14296871))
+        container.add_item(ui.TextDisplay(
+            "### <:FrameBug:1519805334988787843> Something went wrong..."
+        ))
+        container.add_item(ui.TextDisplay(
+            f"**Error Code:** ``{self.error_code}``"
+        ))
+        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+        container.add_item(ui.TextDisplay(
+            "-# This error has been automatically logged and will be reviewed by our team.\n"
+            "-# If the problem persists, please contact support with this error code."
+        ))
         self.add_item(container)
+
+        btn_row = ui.ActionRow()
+        btn_row.add_item(ui.Button(
+            label="Support",
+            style=discord.ButtonStyle.link,
+            url="https://moddy.app/support",
+        ))
+        btn_row.add_item(ui.Button(
+            label="Status",
+            style=discord.ButtonStyle.link,
+            url="https://status.moddy.app",
+        ))
+        self.add_item(btn_row)
 
 
 class ErrorTracker(commands.Cog):
@@ -687,6 +683,11 @@ class ErrorTracker(commands.Cog):
 
         await channel.send(content=content, embed=embed)
 
+        # Technical log (webhook-based, dedicated error feed)
+        tech = getattr(self.bot, "tech_logger", None)
+        if tech:
+            await tech.log_error(error_code, error_details, is_fatal=is_fatal)
+
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):
         """Handles command errors"""
@@ -862,7 +863,7 @@ class ErrorTracker(commands.Cog):
                     super().__init__(timeout=None)
                     container = ui.Container()
                     container.add_item(
-                        ui.TextDisplay(f"### <:error:1444049460924776478> Insufficient Permissions")
+                        ui.TextDisplay(f"### <:error:1519790252594827264> Insufficient Permissions")
                     )
                     container.add_item(
                         ui.TextDisplay("You don't have the necessary permissions to execute this command.")

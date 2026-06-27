@@ -45,6 +45,7 @@ _ANNOTATIONS = {
     "member": discord.Member,
     "channel": discord.abc.GuildChannel,
     "role": discord.Role,
+    "attachment": discord.Attachment,
 }
 
 
