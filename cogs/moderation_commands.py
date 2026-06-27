@@ -25,7 +25,7 @@ from utils.i18n import t, get_locale
 
 logger = logging.getLogger("moddy.moderation_commands")
 
-MODDY_APP_URL = "https://moddy.app"
+MODDY_CASE_URL = "https://moddy.app/cases?{ref}"
 
 # Accent colours for DM messages
 _DM_ACCENT_WARN = 0xF28500
@@ -332,7 +332,7 @@ class SanctionModal(BaseModal):
                 f"> **{t('commands.moderation.dm.responsible', locale=dm_locale)}:** <@{self.mod.id}>\n"
                 f"> **{t('commands.moderation.dm.expires', locale=dm_locale)}:** {expires_text}\n"
                 f"> **{t('commands.moderation.dm.case_id', locale=dm_locale)}:**"
-                f" [``{reference}``]({MODDY_APP_URL})\n"
+                f" [``{reference}``]({MODDY_CASE_URL.format(ref=reference)})\n"
                 f"-# {t('commands.moderation.dm.sent_by', locale=dm_locale, guild=guild_name, guild_id=guild_id, guild_url=guild_url)}"
             )
 
@@ -377,7 +377,7 @@ class SanctionModal(BaseModal):
                 f"### {emojis.CHECK} {user.mention} **{action_label}**\n"
                 f"> **{t('commands.moderation.confirm.reason', locale=self.locale)}:** {reason}\n"
                 f"> **{t('commands.moderation.confirm.duration', locale=self.locale)}:** {exp_text}\n"
-                f"> **{t('commands.moderation.confirm.case_id', locale=self.locale)}:** [``{ref}``]({MODDY_APP_URL})"
+                f"> **{t('commands.moderation.confirm.case_id', locale=self.locale)}:** [``{ref}``]({MODDY_CASE_URL.format(ref=ref)})"
             )
         else:
             lines = [
@@ -390,7 +390,7 @@ class SanctionModal(BaseModal):
                 user = r["user"]
                 case = r["case"]
                 ref = case["reference"] if case else "N/A"
-                lines.append(f"- {user.mention} → [``{ref}``]({MODDY_APP_URL})")
+                lines.append(f"- {user.mention} → [``{ref}``]({MODDY_CASE_URL.format(ref=ref)})")
             text = "\n".join(lines)
 
         view = BaseView()
