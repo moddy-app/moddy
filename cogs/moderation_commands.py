@@ -239,6 +239,15 @@ async def _fetch_recent_user_messages(
         collected.extend(chunk)
         if len(collected) >= max_messages:
             break
+
+    # Merge deleted messages from the in-memory cache (deduplicated by content)
+    deleted = _get_deleted_for_user(guild.id, user.id, cutoff)
+    existing = set(collected)
+    for msg in deleted:
+        if msg not in existing:
+            collected.append(msg)
+            existing.add(msg)
+
     return collected[:max_messages]
 
 
@@ -721,6 +730,45 @@ async def _resolve_incognito(bot, user_id: int, default: bool = True) -> bool:
 
 
 # ---------------------------------------------------------------------------
+# Deleted-message cache
+# ---------------------------------------------------------------------------
+# Stores (user_id, content, deleted_at) per guild for up to 24 h so the AI
+# can also consider messages the user deleted before the mod ran the command.
+# Keyed by guild_id; capped at 500 entries per guild to bound memory usage.
+
+_DELETED_CACHE: dict[int, list[tuple[int, str, datetime]]] = {}
+_DELETED_CACHE_MAX = 500
+
+
+def _cache_deleted(guild_id: int, user_id: int, content: str) -> None:
+    if not content.strip():
+        return
+    now = datetime.now(timezone.utc)
+    bucket = _DELETED_CACHE.setdefault(guild_id, [])
+    bucket.append((user_id, content[:500], now))
+    if len(bucket) > _DELETED_CACHE_MAX:
+        del bucket[: len(bucket) - _DELETED_CACHE_MAX]
+
+
+def _get_deleted_for_user(
+    guild_id: int, user_id: int, cutoff: datetime
+) -> List[str]:
+    bucket = _DELETED_CACHE.get(guild_id)
+    if not bucket:
+        return []
+    # Prune stale entries in-place while collecting
+    kept: list[tuple[int, str, datetime]] = []
+    found: List[str] = []
+    for entry in bucket:
+        if entry[2] >= cutoff:
+            kept.append(entry)
+            if entry[0] == user_id:
+                found.append(entry[1])
+    _DELETED_CACHE[guild_id] = kept
+    return found
+
+
+# ---------------------------------------------------------------------------
 # Cog
 # ---------------------------------------------------------------------------
 
@@ -729,6 +777,12 @@ class ModerationCommands(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+
+    @commands.Cog.listener()
+    async def on_message_delete(self, message: discord.Message) -> None:
+        if message.guild is None or message.author.bot:
+            return
+        _cache_deleted(message.guild.id, message.author.id, message.content)
 
     # ── /ban ─────────────────────────────────────────────────────────────────
 
