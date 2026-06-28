@@ -68,9 +68,17 @@ moddy/
 │   ├── adaptive_slowmode.py   #   Adaptive slowmode (EWMA + hysteresis)
 │   ├── interserver.py         #   Inter-server message relay
 │   ├── social_notifications.py #  Social notifications (via moddy-feeds service)
+│   ├── automod.py             #   AI automod (applies decisions, cases+evidence, scalable features)
 │   └── configs/               #   Components V2 config UIs per module
 │       ├── adaptive_slowmode_config.py
 │       ├── social_notifications_config.py
+│       ├── automod_config.py
+│
+├── automod/                   # AI automod DETECTION pipeline (decides only; no side effects)
+│   ├── engine.py              #   Shared per-bot orchestrator (funnel entry)
+│   ├── prefiltre.py / triviaux.py / blocklist.py / embeddings.py / nano.py
+│   ├── normalize.py / injection.py / rules_check.py / schemas.py / constants.py
+│   └── data/references.json   #   Embedding reference phrases (FR + EN)
 │
 ├── staff/                     # Staff/dev command system (message + slash)
 │   ├── base.py                #   StaffCommandsCog (auto-delete tracking)
@@ -255,6 +263,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 |---|---|
 | [docs/COMMANDS.md](docs/COMMANDS.md) | Creating or modifying slash commands |
 | [docs/MODULE_SYSTEM.md](docs/MODULE_SYSTEM.md) | Creating or modifying server modules |
+| [docs/AUTOMOD.md](docs/AUTOMOD.md) | AI automod — detection pipeline, nano decider, scalable features, rules safety check |
 | [docs/STAFF_SYSTEM.md](docs/STAFF_SYSTEM.md) | Staff/dev commands, permissions, roles |
 | [docs/MODERATION_CASES.md](docs/MODERATION_CASES.md) | Moderation cases/sanctions, the case service & sources, auto-sync |
 | [docs/TECHNICAL_LOGS.md](docs/TECHNICAL_LOGS.md) | Internal technical staff logs (webhook-based, per-event channels) |

@@ -948,6 +948,11 @@ class ModdyDatabase(
                 ("user",   "translation", "default", -1),
                 ("global", "ban_reason",  "default", -1),
                 ("global", "translation", "default", -1),
+                # Automod (AI message moderation) — unlimited by default,
+                # tighten per-guild via quota_overrides.
+                ("guild",  "automod_decision",    "default", -1),
+                ("global", "automod_decision",    "default", -1),
+                ("guild",  "automod_rules_check", "default", -1),
             ]:
                 await conn.execute(
                     """

@@ -1275,6 +1275,52 @@
         "limit_reached_premium": "<:warning:1519789903100121139> Vous avez atteint le maximum de **5 comptes par plateforme** pour ce serveur.",
         "internal_error": "<:error:1519790252594827264> Une erreur est survenue. Réessayez."
       }
+    },
+    "automod": {
+      "description": "Modération automatique des messages problématiques (IA)",
+      "config": {
+        "title": "Automod",
+        "description": "Modération assistée par IA. Analyse les messages, détecte insultes, harcèlement, haine, menaces et incitations, puis applique les sanctions et enregistre des cases avec preuves.",
+        "module_state": "Module",
+        "feature_content": "Détection de contenu (insultes & messages problématiques)",
+        "feature_content_desc": "Analyse les messages via IA (regex → embedding → décision).",
+        "ignore_mods": "Ignorer les modérateurs",
+        "state": {
+          "on": "Activé",
+          "off": "Désactivé"
+        },
+        "buttons": {
+          "toggle_module": "Module",
+          "toggle_content": "Détection contenu",
+          "toggle_ignore_mods": "Ignorer mods",
+          "edit_rules": "Règlement"
+        },
+        "rules": {
+          "section_title": "Règlement du serveur",
+          "empty": "Aucun règlement défini. L'IA utilisera des standards de modération raisonnables.",
+          "modal_label": "Règlement du serveur",
+          "modal_placeholder": "Décris les règles de ton serveur (respect, pas d'insultes…).",
+          "saved_pending": "<:done:1519800188925902881> Règlement vérifié et accepté. N'oublie pas d'enregistrer.",
+          "error_unsafe": "<:error:1519790252594827264> Ce règlement a été refusé : il ressemble à une tentative de manipulation de l'IA. Raison : {reason}",
+          "error_too_long": "<:error:1519790252594827264> Le règlement est trop long (max 3000 caractères).",
+          "error_unavailable": "<:warning:1519789903100121139> Impossible de vérifier le règlement pour le moment (service IA indisponible). Réessaie plus tard."
+        },
+        "log_channel": {
+          "section_title": "Salon de logs",
+          "section_description": "Salon où Automod publiera ses décisions.",
+          "placeholder": "Choisis un salon de logs"
+        },
+        "exempt_roles": {
+          "section_title": "Rôles exemptés",
+          "section_description": "Les membres ayant ces rôles ne sont pas analysés.",
+          "placeholder": "Choisis des rôles à exempter"
+        },
+        "exempt_channels": {
+          "section_title": "Salons exemptés",
+          "section_description": "Les messages dans ces salons ne sont pas analysés.",
+          "placeholder": "Choisis des salons à exempter"
+        }
+      }
     }
   },
   "languages": {

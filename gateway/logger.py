@@ -4,7 +4,7 @@ import json
 import logging
 import time
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Any, Optional
 
 from .spec import CallSpec
 from .config import GatewayConfig
@@ -72,8 +72,16 @@ class GatewayLogger:
         tokens_completion: int = 0,
         tokens_total: int = 0,
         error_type: Optional[str] = None,
+        request_payload: Optional[dict] = None,
+        response_data: Any = None,
     ) -> None:
-        """Buffer a log entry and fire the staff webhook."""
+        """Buffer a log entry and fire the staff webhook.
+
+        ``request_payload`` (the prompt sent) and ``response_data`` (the raw
+        response) are forwarded to the webhook only — they are attached there as
+        text files and are intentionally NOT persisted in the Redis buffer / PG
+        table to keep those lean.
+        """
         cost = _estimate_cost(
             self._config, spec.provider, spec.model, tokens_prompt, tokens_completion
         )
@@ -109,12 +117,22 @@ class GatewayLogger:
         # Real-time webhook (best-effort, fire-and-forget)
         if self._tech_logger:
             asyncio.create_task(
-                self._safe_webhook(entry), name="gateway-webhook-log"
+                self._safe_webhook(entry, request_payload, response_data),
+                name="gateway-webhook-log",
             )
 
-    async def _safe_webhook(self, entry: dict) -> None:
+    async def _safe_webhook(
+        self,
+        entry: dict,
+        request_payload: Optional[dict] = None,
+        response_data: Any = None,
+    ) -> None:
         try:
-            await self._tech_logger.log_api_call(entry)
+            await self._tech_logger.log_api_call(
+                entry,
+                request_payload=request_payload,
+                response_data=response_data,
+            )
         except Exception as exc:
             logger.debug("Webhook log failed: %s", exc)
 
