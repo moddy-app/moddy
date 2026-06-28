@@ -127,22 +127,57 @@ def _case_type_emoji_safe(type_value: str) -> str:
 # Browser view
 # --------------------------------------------------------------------------- #
 
+# Namespaced custom_id constants for persistent dispatch. Two modes share one
+# class — the mode is encoded in the custom_id so each shell only catches its
+# own clicks.
+_CID_PREFIX = "moddy:cases:browser"
+
+# List-screen custom_ids (per mode).
+_CID_LIST_PREV = f"{_CID_PREFIX}:prev:{{mode}}"
+_CID_LIST_NEXT = f"{_CID_PREFIX}:next:{{mode}}"
+_CID_LIST_PAGE = f"{_CID_PREFIX}:page:{{mode}}"
+_CID_LIST_FILTERS = f"{_CID_PREFIX}:filters:{{mode}}"
+_CID_LIST_RESET = f"{_CID_PREFIX}:reset:{{mode}}"
+_CID_LIST_OPEN = f"{_CID_PREFIX}:open:{{mode}}"
+
+# Detail-screen custom_ids (per mode).
+_CID_DETAIL_BACK = f"{_CID_PREFIX}:back:{{mode}}"
+_CID_DETAIL_ADD = f"{_CID_PREFIX}:add:{{mode}}"
+_CID_DETAIL_REVOKE = f"{_CID_PREFIX}:revoke:{{mode}}"
+_CID_DETAIL_TOGGLE = f"{_CID_PREFIX}:toggle:{{mode}}"
+_CID_DETAIL_COMMENT = f"{_CID_PREFIX}:comment:{{mode}}"
+_CID_DETAIL_EDIT = f"{_CID_PREFIX}:edit:{{mode}}"
+_CID_DETAIL_EVIDENCE = f"{_CID_PREFIX}:evidence:{{mode}}"
+
+
 class CasesBrowserView(BaseView):
-    """Filterable, paginated browser over moderation cases."""
+    """Filterable, paginated browser over moderation cases.
+
+    Persistent: yes. Auth: in user mode, owner-only (viewer_id derived from the
+    interaction); in server mode, ``Manage Messages`` minimum + per-action
+    permission for mutations. State (filters, page, detail) lives in memory —
+    a fresh shell after a bot restart rebuilds an empty list view and asks the
+    user to re-open a case for detail mutations, per ``docs/PERSISTENT_VIEWS``
+    "working-copy" guidance.
+    """
+
+    __persistent__ = True
 
     def __init__(
         self,
-        bot,
+        bot=None,
         *,
-        mode: str,
-        viewer_id: int,
-        locale: str,
+        mode: str = "server",
+        viewer_id: Optional[int] = None,
+        locale: str = "en-US",
         subject_type: Optional[str] = None,
         subject_id: Optional[int] = None,
         scope_type: Optional[str] = None,
         scope_id: Optional[int] = None,
     ):
-        super().__init__(timeout=300)
+        # No timeout — every interactive component is registered with a stable
+        # custom_id, so the view survives both inactivity and a bot restart.
+        super().__init__(timeout=None)
         self.bot = bot
         self.mode = mode  # "user" | "server"
         self.viewer_id = viewer_id
@@ -170,6 +205,108 @@ class CasesBrowserView(BaseView):
 
         # Detail screen state (None => list screen).
         self.detail: Optional[Case] = None
+
+        # On the persistent shell (no bot, no anchor) we still need to register
+        # the navigation buttons so discord.py can dispatch clicks after a
+        # restart. Live instances build through `refresh()` / `show_detail()`.
+        if self.bot is None:
+            self._build_shell()
+
+    # --------------------------------------------------------------- shell
+    def _build_shell(self):
+        """Build a minimal child set so discord.py registers our custom_ids."""
+        self.clear_items()
+        nav = ui.ActionRow()
+        for cid in (
+            _CID_LIST_PREV.format(mode=self.mode),
+            _CID_LIST_PAGE.format(mode=self.mode),
+            _CID_LIST_NEXT.format(mode=self.mode),
+            _CID_LIST_FILTERS.format(mode=self.mode),
+            _CID_LIST_RESET.format(mode=self.mode),
+        ):
+            btn = ui.Button(style=discord.ButtonStyle.secondary, label=" ", custom_id=cid)
+            btn.callback = self._on_shell_click
+            nav.add_item(btn)
+        self.add_item(nav)
+        # Open select shell.
+        open_sel = ui.Select(
+            custom_id=_CID_LIST_OPEN.format(mode=self.mode),
+            placeholder=" ",
+            options=[discord.SelectOption(label="-", value="-")],
+        )
+        open_sel.callback = self._on_shell_open
+        open_row = ui.ActionRow()
+        open_row.add_item(open_sel)
+        self.add_item(open_row)
+        # Detail-screen shells.
+        det = ui.ActionRow()
+        for cid in (
+            _CID_DETAIL_BACK.format(mode=self.mode),
+            _CID_DETAIL_ADD.format(mode=self.mode),
+            _CID_DETAIL_REVOKE.format(mode=self.mode),
+            _CID_DETAIL_TOGGLE.format(mode=self.mode),
+            _CID_DETAIL_COMMENT.format(mode=self.mode),
+        ):
+            b = ui.Button(style=discord.ButtonStyle.secondary, label=" ", custom_id=cid)
+            b.callback = self._on_shell_click
+            det.add_item(b)
+        self.add_item(det)
+        det2 = ui.ActionRow()
+        for cid in (
+            _CID_DETAIL_EDIT.format(mode=self.mode),
+            _CID_DETAIL_EVIDENCE.format(mode=self.mode),
+        ):
+            b = ui.Button(style=discord.ButtonStyle.secondary, label=" ", custom_id=cid)
+            b.callback = self._on_shell_click
+            det2.add_item(b)
+        self.add_item(det2)
+
+    async def _on_shell_click(self, interaction: discord.Interaction):
+        """After-restart fallback: rebuild a fresh list view from interaction."""
+        await self._rehydrate_and_list(interaction)
+
+    async def _on_shell_open(self, interaction: discord.Interaction):
+        """After-restart fallback for the open-select: jump to the chosen case."""
+        values = interaction.data.get("values") or []
+        if not values or values[0] == "-":
+            await self._rehydrate_and_list(interaction)
+            return
+        await self._rehydrate_and_detail(interaction, values[0])
+
+    @staticmethod
+    def _make_live_from_interaction(interaction: discord.Interaction, mode: str) -> "CasesBrowserView":
+        """Build a fresh live browser anchored to this interaction's context."""
+        from utils.i18n import i18n as _i18n
+        locale = _i18n.get_user_locale(interaction)
+        bot = interaction.client
+        if mode == "user":
+            return CasesBrowserView(
+                bot, mode="user", viewer_id=interaction.user.id, locale=locale,
+                subject_type="discord_user", subject_id=interaction.user.id,
+            )
+        return CasesBrowserView(
+            bot, mode="server", viewer_id=interaction.user.id, locale=locale,
+            scope_type="discord_guild", scope_id=interaction.guild_id,
+        )
+
+    async def _rehydrate_and_list(self, interaction: discord.Interaction):
+        view = self._make_live_from_interaction(interaction, self.mode)
+        await view._reload()
+        await interaction.response.edit_message(view=view)
+
+    async def _rehydrate_and_detail(self, interaction: discord.Interaction, case_id: str):
+        view = self._make_live_from_interaction(interaction, self.mode)
+        try:
+            await view.show_detail(interaction, case_id)
+        except Exception:
+            await view._rehydrate_and_list(interaction)
+
+    @classmethod
+    def register_persistent(cls, bot) -> None:
+        """Auth model: user-mode shell = owner-only (re-checked from interaction);
+        server-mode shell = Manage Messages (re-checked from interaction)."""
+        bot.add_view(cls(mode="user"))
+        bot.add_view(cls(mode="server"))
 
     @property
     def can_manage(self) -> bool:
@@ -268,21 +405,20 @@ class CasesBrowserView(BaseView):
         self.detail = None
         container = ui.Container(accent_colour=discord.Colour(COLORS["info"]))
 
-        # Header.
+        # Header — same heading for both modes ("Cases"), with the folders emoji.
+        title = t("commands.cases.browser.title", locale=self.locale)
         if self.mode == "server":
-            title = t("commands.cases.browser.server_title", locale=self.locale)
             subtitle = t("commands.cases.browser.server_subtitle", locale=self.locale)
         else:
-            title = t("commands.cases.browser.user_title", locale=self.locale)
             subtitle = t("commands.cases.browser.user_subtitle", locale=self.locale)
-        container.add_item(ui.TextDisplay(f"### {emojis.BLACKLIST} {title}"))
+        container.add_item(ui.TextDisplay(f"### {emojis.FOLDERS} {title}"))
         container.add_item(ui.TextDisplay(f"-# {subtitle}"))
 
         # Active-filters summary.
         summary = self._filter_summary()
         if summary:
             container.add_item(ui.TextDisplay(
-                f"-# {emojis.SEARCH} **{t('commands.cases.browser.active_filters', locale=self.locale)}:** {summary}"
+                f"-# {emojis.FILTER} **{t('commands.cases.browser.active_filters', locale=self.locale)}:** {summary}"
             ))
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
@@ -297,15 +433,18 @@ class CasesBrowserView(BaseView):
             for row in self.rows:
                 container.add_item(ui.TextDisplay(self._list_line(row)))
 
-        # Footer: count + page.
+        # Footer: total count only — the page number lives in the nav bar.
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-        total_pages = max(1, (self.total + PAGE_SIZE - 1) // PAGE_SIZE)
         container.add_item(ui.TextDisplay(
             f"-# {t('commands.cases.browser.results', locale=self.locale, count=self.total)}"
-            f" • {t('commands.cases.browser.page', locale=self.locale, current=self.page + 1, total=total_pages)}"
         ))
 
-        # Open-a-case select (current page only).
+        self.add_item(container)
+
+        # Components below the container (per design): the "open case" select,
+        # then the pagination + filter buttons.
+        total_pages = max(1, (self.total + PAGE_SIZE - 1) // PAGE_SIZE)
+
         if self.rows:
             open_row = ui.ActionRow()
             open_opts = []
@@ -314,51 +453,67 @@ class CasesBrowserView(BaseView):
                 open_opts.append(discord.SelectOption(
                     label=row["reference"],
                     value=str(row["id"]),
-                    emoji=discord.PartialEmoji.from_str(_case_type_emoji_safe(row["type"])),
+                    emoji=discord.PartialEmoji.from_str(emojis.FOLDER),
                     description=desc,
                 ))
             open_sel = ui.Select(
+                custom_id=_CID_LIST_OPEN.format(mode=self.mode),
                 placeholder=t("commands.cases.browser.open_placeholder", locale=self.locale),
                 options=open_opts, min_values=1, max_values=1,
             )
             open_sel.callback = self._on_open
             open_row.add_item(open_sel)
-            container.add_item(open_row)
+            self.add_item(open_row)
 
-        # Navigation row: prev / next / filters / reset.
+        # Pagination row — |<-| 1/3 |->|. The middle button is the page
+        # indicator, disabled by design.
         nav = ui.ActionRow()
         prev_btn = ui.Button(
+            custom_id=_CID_LIST_PREV.format(mode=self.mode),
             style=discord.ButtonStyle.secondary,
             emoji=discord.PartialEmoji.from_str(emojis.BACK),
             disabled=self.page == 0,
         )
         prev_btn.callback = self._on_prev
         nav.add_item(prev_btn)
+
+        page_indicator = ui.Button(
+            custom_id=_CID_LIST_PAGE.format(mode=self.mode),
+            style=discord.ButtonStyle.secondary,
+            label=f"{self.page + 1}/{total_pages}",
+            disabled=True,
+        )
+        nav.add_item(page_indicator)
+
         next_btn = ui.Button(
+            custom_id=_CID_LIST_NEXT.format(mode=self.mode),
             style=discord.ButtonStyle.secondary,
             emoji=discord.PartialEmoji.from_str(emojis.NEXT),
             disabled=self.page >= total_pages - 1,
         )
         next_btn.callback = self._on_next
         nav.add_item(next_btn)
+
         filters_btn = ui.Button(
+            custom_id=_CID_LIST_FILTERS.format(mode=self.mode),
             style=discord.ButtonStyle.primary,
             label=t("commands.cases.browser.filters_button", locale=self.locale),
-            emoji=discord.PartialEmoji.from_str(emojis.SETTINGS),
+            emoji=discord.PartialEmoji.from_str(emojis.FILTER),
         )
         filters_btn.callback = self._on_filters
         nav.add_item(filters_btn)
+
         if self._has_active_filters():
             reset_btn = ui.Button(
+                custom_id=_CID_LIST_RESET.format(mode=self.mode),
                 style=discord.ButtonStyle.danger,
                 label=t("commands.cases.browser.reset", locale=self.locale),
                 emoji=discord.PartialEmoji.from_str(emojis.UNDONE),
             )
             reset_btn.callback = self._on_reset
             nav.add_item(reset_btn)
-        container.add_item(nav)
 
-        self.add_item(container)
+        self.add_item(nav)
 
     def _has_active_filters(self) -> bool:
         return any([
@@ -420,15 +575,18 @@ class CasesBrowserView(BaseView):
     def _build_detail(self):
         self.clear_items()
         case = self.detail
-        accent = COLORS["info"] if case.is_open else COLORS["neutral"]
+        # Container accent reflects the case state (green = open, red = closed)
+        # — same colour language as the list dots.
+        accent = COLORS["success"] if case.is_open else COLORS["error"]
         container = ui.Container(accent_colour=discord.Colour(accent))
 
-        status_dot = emojis.GREEN_STATUS if case.is_open else emojis.RED_STATUS
+        # Header (folder emoji, no status dot before the field — the accent bar
+        # already carries the state).
         container.add_item(ui.TextDisplay(
-            f"### {case.type_emoji()} {t('commands.cases.case_title', locale=self.locale, id=case.reference)}"
+            f"### {emojis.FOLDER} {t('commands.cases.case_title', locale=self.locale, id=case.reference)}"
         ))
         container.add_item(ui.TextDisplay(
-            f"{status_dot} **{t('commands.cases.status', locale=self.locale)}:** "
+            f"**{t('commands.cases.status', locale=self.locale)}:** "
             f"`{t('commands.cases.status_value.' + case.status.value, locale=self.locale)}`"
         ))
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
@@ -454,7 +612,8 @@ class CasesBrowserView(BaseView):
             f"**{t('commands.cases.reason', locale=self.locale)}:**\n{case.reason[:800]}"
         ))
 
-        # Sanctions.
+        # Sanctions — no inline action emoji here; the bold action name is
+        # enough, and the status dot is kept to read the state quickly.
         if case.sanctions:
             container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
             container.add_item(ui.TextDisplay(f"**{t('commands.cases.sanctions', locale=self.locale)}**"))
@@ -462,7 +621,7 @@ class CasesBrowserView(BaseView):
                 dot = emojis.GREEN_STATUS if s.status == SanctionStatus.ACTIVE else emojis.RED_STATUS
                 action = t("commands.cases.action." + s.action.value, locale=self.locale)
                 line = (
-                    f"{dot} {s.emoji()} **{action}** • "
+                    f"{dot} **{action}** • "
                     f"`{t('commands.cases.sanction_status.' + s.status.value, locale=self.locale)}`"
                 )
                 if s.expires_at and s.status == SanctionStatus.ACTIVE:
@@ -480,69 +639,107 @@ class CasesBrowserView(BaseView):
         else:
             container.add_item(ui.TextDisplay(f"-# {t('commands.cases.browser.no_comments', locale=self.locale)}"))
 
-        # Action buttons. In server mode the moderator gets every case action
-        # (add/revoke sanction, comment, edit reason, close/reopen); a full
-        # management row plus a navigation row. In user mode it is read-only.
+        self.add_item(container)
+
+        # Action buttons sit OUTSIDE the container.
         if self.can_manage:
-            mgmt = ui.ActionRow()
+            # Row 1 — destructive / state-changing actions.
+            row1 = ui.ActionRow()
 
             add_btn = ui.Button(
-                style=discord.ButtonStyle.danger,
+                custom_id=_CID_DETAIL_ADD.format(mode=self.mode),
+                style=discord.ButtonStyle.secondary,
                 label=t("commands.cases.browser.action_add_sanction", locale=self.locale),
                 emoji=discord.PartialEmoji.from_str(emojis.ADD),
             )
             add_btn.callback = self._on_add_sanction
-            mgmt.add_item(add_btn)
+            row1.add_item(add_btn)
 
             revoke_btn = ui.Button(
-                style=discord.ButtonStyle.secondary,
+                custom_id=_CID_DETAIL_REVOKE.format(mode=self.mode),
+                style=discord.ButtonStyle.success,
                 label=t("commands.cases.browser.action_revoke", locale=self.locale),
                 emoji=discord.PartialEmoji.from_str(emojis.UNDONE),
             )
             revoke_btn.callback = self._on_revoke
-            mgmt.add_item(revoke_btn)
+            row1.add_item(revoke_btn)
+
+            toggle_label = "action_close" if case.is_open else "action_reopen"
+            toggle_btn = ui.Button(
+                custom_id=_CID_DETAIL_TOGGLE.format(mode=self.mode),
+                style=discord.ButtonStyle.success,
+                label=t(f"commands.cases.browser.{toggle_label}", locale=self.locale),
+                emoji=discord.PartialEmoji.from_str(emojis.DONE if case.is_open else emojis.SYNC),
+            )
+            toggle_btn.callback = self._on_toggle_status
+            row1.add_item(toggle_btn)
+
+            self.add_item(row1)
+
+            # Row 2 — non-destructive case-content actions.
+            row2 = ui.ActionRow()
 
             comment_btn = ui.Button(
+                custom_id=_CID_DETAIL_COMMENT.format(mode=self.mode),
                 style=discord.ButtonStyle.primary,
                 label=t("commands.cases.browser.action_comment", locale=self.locale),
                 emoji=discord.PartialEmoji.from_str(emojis.MESSAGE),
             )
             comment_btn.callback = self._on_comment
-            mgmt.add_item(comment_btn)
+            row2.add_item(comment_btn)
 
             edit_btn = ui.Button(
+                custom_id=_CID_DETAIL_EDIT.format(mode=self.mode),
                 style=discord.ButtonStyle.secondary,
                 label=t("commands.cases.browser.action_edit", locale=self.locale),
                 emoji=discord.PartialEmoji.from_str(emojis.EDIT),
             )
             edit_btn.callback = self._on_edit
-            mgmt.add_item(edit_btn)
+            row2.add_item(edit_btn)
 
-            toggle_label = "action_close" if case.is_open else "action_reopen"
-            toggle_btn = ui.Button(
-                style=discord.ButtonStyle.success if not case.is_open else discord.ButtonStyle.secondary,
-                label=t(f"commands.cases.browser.{toggle_label}", locale=self.locale),
-                emoji=discord.PartialEmoji.from_str(emojis.DONE if case.is_open else emojis.SYNC),
+            evidence_btn = ui.Button(
+                custom_id=_CID_DETAIL_EVIDENCE.format(mode=self.mode),
+                style=discord.ButtonStyle.secondary,
+                label=t("commands.cases.browser.action_evidence", locale=self.locale),
+                emoji=discord.PartialEmoji.from_str(emojis.IMAGE),
             )
-            toggle_btn.callback = self._on_toggle_status
-            mgmt.add_item(toggle_btn)
+            evidence_btn.callback = self._on_evidence
+            row2.add_item(evidence_btn)
 
-            container.add_item(mgmt)
+            self.add_item(row2)
 
+        # Nav row — Back to list (both modes).
         nav_row = ui.ActionRow()
         back_btn = ui.Button(
+            custom_id=_CID_DETAIL_BACK.format(mode=self.mode),
             style=discord.ButtonStyle.secondary,
             label=t("commands.cases.browser.back", locale=self.locale),
             emoji=discord.PartialEmoji.from_str(emojis.BACK),
         )
         back_btn.callback = self._on_back
         nav_row.add_item(back_btn)
-        container.add_item(nav_row)
 
-        self.add_item(container)
+        # In user mode, the evidence button still has a place (read-only view).
+        if not self.can_manage:
+            evidence_btn = ui.Button(
+                custom_id=_CID_DETAIL_EVIDENCE.format(mode=self.mode),
+                style=discord.ButtonStyle.secondary,
+                label=t("commands.cases.browser.action_evidence", locale=self.locale),
+                emoji=discord.PartialEmoji.from_str(emojis.IMAGE),
+            )
+            evidence_btn.callback = self._on_evidence
+            nav_row.add_item(evidence_btn)
+
+        self.add_item(nav_row)
 
     # --------------------------------------------------------------- guards
     async def _guard(self, interaction: discord.Interaction) -> bool:
+        # On a fresh shell (post-restart), viewer_id is unknown — accept the
+        # click; the per-mode auth is then enforced by the rehydrate flow
+        # (user mode anchors to interaction.user.id, server mode re-checks
+        # Manage Messages from interaction.user).
+        if self.viewer_id is None:
+            return True
         if interaction.user.id != self.viewer_id:
             await interaction.response.send_message(
                 t("commands.cases.not_yours", locale=self.locale), ephemeral=True)
@@ -553,17 +750,26 @@ class CasesBrowserView(BaseView):
     async def _on_prev(self, interaction: discord.Interaction):
         if not await self._guard(interaction):
             return
+        if self.bot is None:
+            await self._rehydrate_and_list(interaction)
+            return
         self.page = max(0, self.page - 1)
         await self.refresh(interaction)
 
     async def _on_next(self, interaction: discord.Interaction):
         if not await self._guard(interaction):
             return
+        if self.bot is None:
+            await self._rehydrate_and_list(interaction)
+            return
         self.page += 1
         await self.refresh(interaction)
 
     async def _on_reset(self, interaction: discord.Interaction):
         if not await self._guard(interaction):
+            return
+        if self.bot is None:
+            await self._rehydrate_and_list(interaction)
             return
         self.f_status = None
         self.f_action = None
@@ -577,16 +783,26 @@ class CasesBrowserView(BaseView):
     async def _on_filters(self, interaction: discord.Interaction):
         if not await self._guard(interaction):
             return
+        if self.bot is None:
+            await self._rehydrate_and_list(interaction)
+            return
         await interaction.response.send_modal(CaseFilterModal(self))
 
     async def _on_open(self, interaction: discord.Interaction):
         if not await self._guard(interaction):
             return
-        await self.show_detail(interaction, interaction.data["values"][0])
+        case_id = interaction.data["values"][0]
+        if self.bot is None:
+            await self._rehydrate_and_detail(interaction, case_id)
+            return
+        await self.show_detail(interaction, case_id)
 
     # ------------------------------------------------- detail callbacks
     async def _on_back(self, interaction: discord.Interaction):
         if not await self._guard(interaction):
+            return
+        if self.bot is None:
+            await self._rehydrate_and_list(interaction)
             return
         await self.refresh(interaction)
 
@@ -601,17 +817,26 @@ class CasesBrowserView(BaseView):
     async def _on_comment(self, interaction: discord.Interaction):
         if not await self._guard(interaction) or not await self._require_manage(interaction):
             return
+        if self.detail is None:
+            await self._rehydrate_and_list(interaction)
+            return
         await interaction.response.send_modal(
             CaseCommentModalV2(self, self.detail))
 
     async def _on_edit(self, interaction: discord.Interaction):
         if not await self._guard(interaction) or not await self._require_manage(interaction):
             return
+        if self.detail is None:
+            await self._rehydrate_and_list(interaction)
+            return
         await interaction.response.send_modal(
             CaseEditReasonModalV2(self, self.detail))
 
     async def _on_add_sanction(self, interaction: discord.Interaction):
         if not await self._guard(interaction) or not await self._require_manage(interaction):
+            return
+        if self.detail is None:
+            await self._rehydrate_and_list(interaction)
             return
         # Only offer sanction kinds this member is actually allowed to issue.
         allowed = [
@@ -628,6 +853,9 @@ class CasesBrowserView(BaseView):
 
     async def _on_revoke(self, interaction: discord.Interaction):
         if not await self._guard(interaction) or not await self._require_manage(interaction):
+            return
+        if self.detail is None:
+            await self._rehydrate_and_list(interaction)
             return
         active = [s for s in self.detail.sanctions if s.status == SanctionStatus.ACTIVE]
         if not active:
@@ -648,12 +876,66 @@ class CasesBrowserView(BaseView):
     async def _on_toggle_status(self, interaction: discord.Interaction):
         if not await self._guard(interaction) or not await self._require_manage(interaction):
             return
+        if self.detail is None:
+            await self._rehydrate_and_list(interaction)
+            return
         case = self.detail
         new_status = "closed" if case.is_open else "open"
         await self.bot.db.set_status_manual(
             _uuid.UUID(case.id), new_status, "discord_user", interaction.user.id,
         )
         await self.show_detail(interaction, case.id)
+
+    async def _on_evidence(self, interaction: discord.Interaction):
+        """Send the evidence attached to the case as an ephemeral followup.
+
+        Evidence lives in the timeline as ``evidence`` events whose ``payload``
+        carries a URL (and optional kind). When the URL looks like media we add
+        it to a ``MediaGallery``; everything else is listed as a clickable URL.
+        """
+        if not await self._guard(interaction):
+            return
+        if self.detail is None:
+            await self._rehydrate_and_list(interaction)
+            return
+        case = self.detail
+        evidence = [e for e in case.events if e.type == EventType.EVIDENCE]
+        urls = []
+        for e in evidence:
+            url = (e.payload or {}).get("url")
+            if url:
+                urls.append((url, (e.payload or {}).get("kind") or "evidence", e.created_at))
+
+        view = BaseView()
+        container = ui.Container(accent_colour=discord.Colour(COLORS["info"]))
+        container.add_item(ui.TextDisplay(
+            f"### {emojis.IMAGE} {t('commands.cases.browser.evidence_title', locale=self.locale, id=case.reference)}"
+        ))
+        if not urls:
+            container.add_item(ui.TextDisplay(
+                f"-# {t('commands.cases.browser.no_evidence', locale=self.locale)}"
+            ))
+            view.add_item(container)
+            await interaction.response.send_message(view=view, ephemeral=True)
+            return
+
+        media_exts = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".mp4", ".webm", ".mov")
+        media_urls = [u for u, _, _ in urls if u.lower().split("?")[0].endswith(media_exts)]
+        link_lines = [
+            f"-# `{kind}` • {_ts(at)}\n[{url}]({url})"
+            for url, kind, at in urls if url not in media_urls
+        ]
+        if link_lines:
+            container.add_item(ui.TextDisplay("\n".join(link_lines)))
+        view.add_item(container)
+
+        if media_urls:
+            gallery = ui.MediaGallery(
+                *[discord.MediaGalleryItem(media=u) for u in media_urls[:10]]
+            )
+            view.add_item(gallery)
+
+        await interaction.response.send_message(view=view, ephemeral=True)
 
 
 # --------------------------------------------------------------------------- #

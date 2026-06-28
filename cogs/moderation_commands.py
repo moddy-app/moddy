@@ -1,5 +1,5 @@
 """
-Moderation Commands — /ban, /mute, /warn
+Moderation Commands — /ban, /kick, /mute, /warn
 
 Guild-only slash commands that open a V2 Modal to collect sanction details,
 then apply the Discord action and record a case via the case system.
@@ -89,6 +89,63 @@ def _make_error_view(title: str, desc: str) -> BaseView:
     )
     view.add_item(container)
     return view
+
+
+def _hierarchy_check(
+    guild: discord.Guild,
+    moderator: discord.Member,
+    target: Union[discord.Member, discord.User],
+    action: str,
+    locale: str,
+) -> Optional[BaseView]:
+    """Validate that the moderator and the bot can sanction ``target``.
+
+    Returns ``None`` when everything is fine, or a ready-to-send error view
+    explaining what's wrong. Permissions enforced by ``default_permissions`` are
+    not re-checked here — only role-hierarchy and self/owner constraints, which
+    Discord cannot enforce at the slash-command level.
+    """
+    # The guild owner can never be sanctioned.
+    if target.id == guild.owner_id:
+        return _make_error_view(
+            t("commands.moderation.errors.cannot_target_owner_title", locale=locale),
+            t("commands.moderation.errors.cannot_target_owner", locale=locale),
+        )
+
+    # Self-sanction makes no sense.
+    if target.id == moderator.id:
+        return _make_error_view(
+            t("commands.moderation.errors.cannot_target_self_title", locale=locale),
+            t("commands.moderation.errors.cannot_target_self", locale=locale),
+        )
+
+    # Hierarchy checks only apply when the target is still in the guild
+    # (a ban can be issued against a user who already left — there's no role to
+    # compare). For warns we still want a present-member check so warnings stay
+    # meaningful, but a ban against an outside user is allowed to go through.
+    if not isinstance(target, discord.Member):
+        return None
+
+    # The moderator cannot sanction someone equal or higher in the hierarchy
+    # (the guild owner already short-circuited above).
+    if moderator.id != guild.owner_id and moderator.top_role <= target.top_role:
+        return _make_error_view(
+            t("commands.moderation.errors.member_hierarchy_title", locale=locale),
+            t("commands.moderation.errors.member_hierarchy", locale=locale),
+        )
+
+    # The bot needs to be strictly above the target to execute the Discord
+    # action. Warn is a no-op on Discord's side, so the bot hierarchy is
+    # irrelevant for it.
+    if action != "warn":
+        me = guild.me
+        if me is not None and me.top_role <= target.top_role:
+            return _make_error_view(
+                t("commands.moderation.errors.bot_hierarchy_title", locale=locale),
+                t("commands.moderation.errors.bot_hierarchy", locale=locale),
+            )
+
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -207,6 +264,15 @@ class SanctionModal(BaseModal):
             )
             return
 
+        # Re-validate hierarchy for every selected target. The slash-command
+        # decorator only sees the first target — extra ones added in the modal
+        # need explicit checks. Any failure aborts the whole sanction.
+        for user in users:
+            err = _hierarchy_check(self.guild, self.mod, user, self.action, self.locale)
+            if err is not None:
+                await interaction.followup.send(view=err, ephemeral=True)
+                return
+
         expires_at = (datetime.now(timezone.utc) + duration) if duration is not None else None
 
         # Group ID links cases together when sanctioning multiple users
@@ -283,6 +349,10 @@ class SanctionModal(BaseModal):
                 # Discord timeout: max 28 days
                 effective = min(duration, timedelta(days=28)) if duration else timedelta(days=28)
                 await user.timeout(effective, reason=reason[:512])
+            elif self.action == "kick":
+                if not isinstance(user, discord.Member):
+                    return False
+                await user.kick(reason=reason[:512])
             # warn: no Discord action — case + DM only
             return True
         except discord.Forbidden:
@@ -307,12 +377,14 @@ class SanctionModal(BaseModal):
                 "ban": _DM_ACCENT_BAN,
                 "mute": _DM_ACCENT_MUTE,
                 "warn": _DM_ACCENT_WARN,
+                "kick": _DM_ACCENT_BAN,
             }.get(self.action, _DM_ACCENT_BAN)
 
             sanction_emoji = {
                 "ban": emojis.LEGAL,
                 "mute": emojis.MIC_OFF,
                 "warn": emojis.WARNING,
+                "kick": emojis.LOGOUT,
             }.get(self.action, emojis.WARNING)
 
             title = t(f"commands.moderation.dm.{self.action}_title", locale=dm_locale)
@@ -433,7 +505,7 @@ async def _resolve_incognito(bot, user_id: int, default: bool = True) -> bool:
 # ---------------------------------------------------------------------------
 
 class ModerationCommands(commands.Cog):
-    """Guild-only moderation slash commands: /ban, /mute, /warn."""
+    """Guild-only moderation slash commands: /ban, /kick, /mute, /warn."""
 
     def __init__(self, bot):
         self.bot = bot
@@ -457,12 +529,51 @@ class ModerationCommands(commands.Cog):
         incognito: Optional[bool] = None,
     ):
         locale = get_locale(interaction)
+        err = _hierarchy_check(interaction.guild, interaction.user, user, "ban", locale)
+        if err is not None:
+            await interaction.response.send_message(view=err, ephemeral=True)
+            return
         if incognito is None:
             incognito = await _resolve_incognito(self.bot, interaction.user.id, default=True)
-        initial = [user]
         modal = SanctionModal(
             action="ban",
-            initial_users=initial,
+            initial_users=[user],
+            incognito=incognito,
+            guild=interaction.guild,
+            mod=interaction.user,
+            bot=self.bot,
+            locale=locale,
+        )
+        await interaction.response.send_modal(modal)
+
+    # ── /kick ────────────────────────────────────────────────────────────────
+
+    @app_commands.command(
+        name="kick",
+        description="Kick one or more members from the server.",
+    )
+    @app_commands.guild_only()
+    @app_commands.default_permissions(kick_members=True)
+    @app_commands.describe(
+        user="User to kick (you can add more in the modal)",
+        incognito="Show the confirmation only to you (default: True)",
+    )
+    async def kick(
+        self,
+        interaction: discord.Interaction,
+        user: discord.Member,
+        incognito: Optional[bool] = None,
+    ):
+        locale = get_locale(interaction)
+        err = _hierarchy_check(interaction.guild, interaction.user, user, "kick", locale)
+        if err is not None:
+            await interaction.response.send_message(view=err, ephemeral=True)
+            return
+        if incognito is None:
+            incognito = await _resolve_incognito(self.bot, interaction.user.id, default=True)
+        modal = SanctionModal(
+            action="kick",
+            initial_users=[user],
             incognito=incognito,
             guild=interaction.guild,
             mod=interaction.user,
@@ -490,6 +601,10 @@ class ModerationCommands(commands.Cog):
         incognito: Optional[bool] = None,
     ):
         locale = get_locale(interaction)
+        err = _hierarchy_check(interaction.guild, interaction.user, user, "mute", locale)
+        if err is not None:
+            await interaction.response.send_message(view=err, ephemeral=True)
+            return
         if incognito is None:
             incognito = await _resolve_incognito(self.bot, interaction.user.id, default=True)
         initial = [user]
@@ -523,6 +638,10 @@ class ModerationCommands(commands.Cog):
         incognito: Optional[bool] = None,
     ):
         locale = get_locale(interaction)
+        err = _hierarchy_check(interaction.guild, interaction.user, user, "warn", locale)
+        if err is not None:
+            await interaction.response.send_message(view=err, ephemeral=True)
+            return
         if incognito is None:
             incognito = await _resolve_incognito(self.bot, interaction.user.id, default=True)
         initial = [user]

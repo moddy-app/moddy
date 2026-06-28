@@ -74,6 +74,61 @@ Added `@app_commands.default_permissions(...)` so Discord enforces access
   list and on modal submit.
 - `/ban` `/mute` `/warn`: `user` argument is now **mandatory**.
 
+## Follow-up #2 (same session — UX & permissions polish)
+
+### Cases browser UI overhaul
+- Header emoji is now `<:folders:…>` (list) / `<:folder:…>` (detail). Open-select
+  options use the folder emoji too.
+- Filters button uses `<:filter:…>`; evidence button uses `<:image:…>`.
+- Pagination redesigned: `|←| n/N |→|` — the page indicator is a disabled
+  button. All buttons sit **outside** the container.
+- Detail screen: container accent reflects the case state (green = open,
+  red = closed). The status emoji prefix on the status field was dropped; the
+  per-sanction action emoji was dropped on each sanction line.
+- Detail-screen action layout: row 1 = Add sanction · Revoke (green) · Close
+  (green) ; row 2 = Comment · Edit reason · Evidence ; row 3 = Back.
+- The "Back to list" label is now just "Back" / "Retour".
+- Same look applied to `/mycases` (read-only — only Evidence + Back).
+- Title is shared "Cases" / "Dossiers" for both commands.
+
+### Persistence (now MANDATORY per CLAUDE.md)
+- `CasesBrowserView` is fully persistent: `__persistent__ = True`, every button
+  and select carries a stable namespaced `custom_id`
+  (`moddy:cases:browser:<action>:<mode>`).
+- A shell (`bot=None`) is registered for each mode in
+  `utils/persistent_views.py`. After a bot restart, any click rebuilds a fresh
+  live view from the interaction's user/guild context. Detail-screen mutations
+  rehydrate to the list view (per `docs/PERSISTENT_VIEWS.md` "working-copy"
+  rule).
+- CLAUDE.md §8 hardened: "MANDATORY — no exceptions". Will be enforced in review.
+
+### Sanctions commands
+- New `/kick` (Kick Members permission, modal flow identical to /ban /mute
+  /warn). DM accent + emoji wired (`LOGOUT`).
+- The `incognito` argument stays optional on every sanction command (defaults
+  to the user's incognito preference, falling back to True).
+- Hierarchy & owner safeguards on every command: the moderator's top role must
+  be strictly above the target's, the bot's top role must be above the target's
+  (skipped for `warn` — no Discord action), and the guild owner / self can
+  never be targeted. Enforced once on slash-command entry **and** again at
+  modal submit (so users added inside the modal can't bypass it).
+- `SanctionAction.RESTRICT` dropped from the GUILD picker (`CASE_TYPE_ACTIONS`)
+  — guild scope only carries warn / mute / kick / ban. Global / platform still
+  support restrict via the case service.
+
+### Permission model on `/cases` (server)
+- `default_permissions(manage_messages=True)` + bot-side **Manage Messages**
+  minimum to view / comment / edit / close.
+- Per-action Discord permission to add/revoke a sanction
+  (`SANCTION_PERMISSION`): ban → Ban Members, kick → Kick Members,
+  warn/mute → Timeout Members. Enforced both when offering actions and at
+  modal submit.
+
+### Misc
+- Ban sanction emoji updated to `:legal:` (was `:blacklist:`).
+- New helper `_perm_error()` + i18n keys for hierarchy / permission errors
+  (`moderation.errors.*`, `cases.browser.*`).
+
 ## Known issues / follow-ups
 - Could not run the bot here (no `discord` package in the sandbox); changes are
   `py_compile`-clean and JSON validated. Worth a live smoke test of the Modals

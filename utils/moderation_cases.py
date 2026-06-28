@@ -153,7 +153,7 @@ CASE_TYPE_ACTIONS: Dict[CaseType, List[SanctionAction]] = {
     CaseType.NETWORK: [SanctionAction.WARN, SanctionAction.MUTE, SanctionAction.BAN],
     CaseType.GUILD: [
         SanctionAction.WARN, SanctionAction.MUTE, SanctionAction.KICK,
-        SanctionAction.BAN, SanctionAction.RESTRICT,
+        SanctionAction.BAN,
     ],
     CaseType.EXTERNAL: list(SanctionAction),
 }
