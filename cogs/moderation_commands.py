@@ -445,20 +445,21 @@ class ModerationCommands(commands.Cog):
         description="Ban one or more users from the server.",
     )
     @app_commands.guild_only()
+    @app_commands.default_permissions(ban_members=True)
     @app_commands.describe(
-        user="User to ban (optional — you can add more in the modal)",
+        user="User to ban (you can add more in the modal)",
         incognito="Show the confirmation only to you (default: True)",
     )
     async def ban(
         self,
         interaction: discord.Interaction,
-        user: Optional[discord.Member] = None,
+        user: discord.Member,
         incognito: Optional[bool] = None,
     ):
         locale = get_locale(interaction)
         if incognito is None:
             incognito = await _resolve_incognito(self.bot, interaction.user.id, default=True)
-        initial = [user] if user else []
+        initial = [user]
         modal = SanctionModal(
             action="ban",
             initial_users=initial,
@@ -477,20 +478,21 @@ class ModerationCommands(commands.Cog):
         description="Timeout (mute) one or more members.",
     )
     @app_commands.guild_only()
+    @app_commands.default_permissions(moderate_members=True)
     @app_commands.describe(
-        user="User to timeout (optional — you can add more in the modal)",
+        user="User to timeout (you can add more in the modal)",
         incognito="Show the confirmation only to you (default: True)",
     )
     async def mute(
         self,
         interaction: discord.Interaction,
-        user: Optional[discord.Member] = None,
+        user: discord.Member,
         incognito: Optional[bool] = None,
     ):
         locale = get_locale(interaction)
         if incognito is None:
             incognito = await _resolve_incognito(self.bot, interaction.user.id, default=True)
-        initial = [user] if user else []
+        initial = [user]
         modal = SanctionModal(
             action="mute",
             initial_users=initial,
@@ -509,20 +511,21 @@ class ModerationCommands(commands.Cog):
         description="Warn one or more users.",
     )
     @app_commands.guild_only()
+    @app_commands.default_permissions(moderate_members=True)
     @app_commands.describe(
-        user="User to warn (optional — you can add more in the modal)",
+        user="User to warn (you can add more in the modal)",
         incognito="Show the confirmation only to you (default: True)",
     )
     async def warn(
         self,
         interaction: discord.Interaction,
-        user: Optional[discord.Member] = None,
+        user: discord.Member,
         incognito: Optional[bool] = None,
     ):
         locale = get_locale(interaction)
         if incognito is None:
             incognito = await _resolve_incognito(self.bot, interaction.user.id, default=True)
-        initial = [user] if user else []
+        initial = [user]
         modal = SanctionModal(
             action="warn",
             initial_users=initial,

@@ -255,6 +255,147 @@ class ModerationRepository:
             )
             return [dict(r) for r in rows]
 
+    # ------------------------------------------------------- filtered browse
+    @staticmethod
+    def _case_filters(
+        *,
+        subject_type: Optional[str], subject_id: Optional[Union[str, int]],
+        scope_type: Optional[str], scope_id: Optional[Union[str, int]],
+        status: Optional[str], case_type: Optional[str], action: Optional[str],
+        since: Optional[datetime], until: Optional[datetime],
+    ) -> tuple:
+        """Build the shared WHERE clauses + params for the case browser.
+
+        Returns ``(conds: list[str], params: list)``. Each filter is optional so
+        the same builder powers ``search_cases`` (paged rows) and
+        ``count_cases`` (total) with identical semantics.
+        """
+        conds: List[str] = []
+        params: List[Any] = []
+
+        if subject_type is not None and subject_id is not None:
+            params.append(subject_type)
+            st = len(params)
+            params.append(str(subject_id))
+            si = len(params)
+            conds.append(f"c.subject_type = ${st}::subject_type AND c.subject_id = ${si}")
+        if scope_type is not None and scope_id is not None:
+            params.append(scope_type)
+            sct = len(params)
+            params.append(str(scope_id))
+            sci = len(params)
+            conds.append(f"c.scope_type = ${sct}::scope_type AND c.scope_id = ${sci}")
+        if status:
+            params.append(status)
+            conds.append(f"c.status = ${len(params)}::case_status")
+        if case_type:
+            params.append(case_type)
+            conds.append(f"c.type = ${len(params)}::case_type")
+        if action:
+            params.append(action)
+            conds.append(
+                "EXISTS (SELECT 1 FROM case_sanctions s "
+                f"WHERE s.case_id = c.id AND s.action = ${len(params)}::sanction_action)"
+            )
+        if since is not None:
+            params.append(since)
+            conds.append(f"c.created_at >= ${len(params)}")
+        if until is not None:
+            params.append(until)
+            conds.append(f"c.created_at <= ${len(params)}")
+
+        return conds, params
+
+    async def search_cases(
+        self,
+        *,
+        subject_type: Optional[str] = None,
+        subject_id: Optional[Union[str, int]] = None,
+        scope_type: Optional[str] = None,
+        scope_id: Optional[Union[str, int]] = None,
+        status: Optional[str] = None,
+        case_type: Optional[str] = None,
+        action: Optional[str] = None,
+        since: Optional[datetime] = None,
+        until: Optional[datetime] = None,
+        limit: int = 6,
+        offset: int = 0,
+    ) -> List[Dict[str, Any]]:
+        """Filtered, paginated case listing (most recent first).
+
+        Each row carries two computed helpers used by the browser UI:
+        ``actions`` (distinct sanction actions on the case) and ``has_active``
+        (whether any sanction is currently active). One query, no N+1.
+        """
+        conds, params = self._case_filters(
+            subject_type=subject_type, subject_id=subject_id,
+            scope_type=scope_type, scope_id=scope_id, status=status,
+            case_type=case_type, action=action, since=since, until=until,
+        )
+        where_sql = (" WHERE " + " AND ".join(conds)) if conds else ""
+        params.append(limit)
+        lim = len(params)
+        params.append(offset)
+        off = len(params)
+        query = f"""
+            SELECT c.*,
+              COALESCE((SELECT array_agg(DISTINCT s.action::text)
+                        FROM case_sanctions s WHERE s.case_id = c.id), '{{}}') AS actions,
+              EXISTS(SELECT 1 FROM case_sanctions s
+                     WHERE s.case_id = c.id AND s.status = 'active'::sanction_status) AS has_active
+            FROM cases c
+            {where_sql}
+            ORDER BY c.created_at DESC
+            LIMIT ${lim} OFFSET ${off}
+        """
+        async with self.pool.acquire() as conn:
+            rows = await conn.fetch(query, *params)
+            return [dict(r) for r in rows]
+
+    async def count_cases(
+        self,
+        *,
+        subject_type: Optional[str] = None,
+        subject_id: Optional[Union[str, int]] = None,
+        scope_type: Optional[str] = None,
+        scope_id: Optional[Union[str, int]] = None,
+        status: Optional[str] = None,
+        case_type: Optional[str] = None,
+        action: Optional[str] = None,
+        since: Optional[datetime] = None,
+        until: Optional[datetime] = None,
+    ) -> int:
+        """Total number of cases matching the same filters as ``search_cases``."""
+        conds, params = self._case_filters(
+            subject_type=subject_type, subject_id=subject_id,
+            scope_type=scope_type, scope_id=scope_id, status=status,
+            case_type=case_type, action=action, since=since, until=until,
+        )
+        where_sql = (" WHERE " + " AND ".join(conds)) if conds else ""
+        query = f"SELECT COUNT(*) FROM cases c{where_sql}"
+        async with self.pool.acquire() as conn:
+            return await conn.fetchval(query, *params)
+
+    async def list_subject_scopes(
+        self, subject_type: str, subject_id: Union[str, int],
+    ) -> List[Dict[str, Any]]:
+        """Distinct scopes a subject has cases in, with per-scope counts.
+
+        Powers the "filter by server" picker of the personal cases browser.
+        """
+        async with self.pool.acquire() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT scope_type, scope_id, COUNT(*) AS count
+                FROM cases
+                WHERE subject_type = $1::subject_type AND subject_id = $2
+                GROUP BY scope_type, scope_id
+                ORDER BY count DESC
+                """,
+                subject_type, str(subject_id),
+            )
+            return [dict(r) for r in rows]
+
     # --------------------------------------------------------------- mutators
     async def update_case_reason(self, case_id: uuid.UUID, reason: str) -> bool:
         async with self.pool.acquire() as conn:

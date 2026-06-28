@@ -47,7 +47,8 @@ moddy/
 │   ├── subscription.py        #   Premium features
 │   ├── preferences.py         #   User preferences
 │   ├── blacklist_check.py     #   Blacklist validation (reads the cases system)
-│   ├── cases_user.py          #   User moderation cases view (/cases)
+│   ├── cases_user.py          #   Personal cases browser (/mycases — all servers, filters, read-only)
+│   ├── cases_server.py        #   Server cases browser (/cases — guild scope, mod actions, perms)
 │   ├── case_sync.py           #   Auto-records guild sanctions as cases (audit log)
 │   ├── auto_restore_roles_commands.py
 │   ├── cog_manager.py         #   Hot-reload / disable cogs

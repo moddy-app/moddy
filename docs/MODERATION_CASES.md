@@ -69,8 +69,10 @@ dependency.
 | **Sanction service (scalable entry point)** | `services/case_service.py` |
 | Auto-sync from Discord events | `cogs/case_sync.py` |
 | Staff commands `/mod case …` | `staff/commands/mod/case/` |
-| Interactive views/modals | `utils/case_management_views.py` |
-| User command `/cases` | `cogs/cases_user.py` |
+| Interactive views/modals (staff) | `utils/case_management_views.py` |
+| User/server cases browser (Components V2 + Modals V2) | `utils/cases_views.py` |
+| Personal command `/mycases` | `cogs/cases_user.py` |
+| Server command `/cases` | `cogs/cases_server.py` |
 | Periodic expiry job | `bot.py::case_expiry` (every 2 min) |
 
 ---
@@ -180,7 +182,52 @@ driven by the manual sources in the registry, so it scales automatically.
 
 ---
 
-## 7. Notes / open points
+## 7. User-facing browsers (`/mycases` & `/cases`)
+
+Two commands expose the cases system to non-staff, both built on the single
+reusable `CasesBrowserView` in `utils/cases_views.py` (Components V2 list +
+detail screens, filters collected through a **Modal** — Modals V2):
+
+| Command | Scope of the query | Who | Capabilities |
+|---|---|---|---|
+| `/mycases` | subject = the caller (`discord_user`), any scope | anyone | **read-only**, all servers combined |
+| `/cases` | scope = the current guild (`discord_guild`) | guild moderators | read **+ full case management** |
+
+Both accept an optional `case` argument — a public reference (e.g. `A7F2K9`)
+that opens straight to that case's detail screen. The reference is scope-checked
+(`/cases` only resolves cases of the current guild, `/mycases` only the
+caller's own), so it can never reach an out-of-scope case (a mismatch is
+reported as "not found").
+
+**List screen** — paginated overview (`PAGE_SIZE = 5`). A single *Filters*
+button opens a modal to set: status (open/closed), sanction type, period
+(24h / 7d / 30d / 90d), and a context filter (a server in `/mycases`, a user in
+`/cases`). A select opens any listed case ("zoom").
+
+**Detail screen** — the full folder (fields, reason, sanctions, public
+comments). Internal Moddy-staff notes (`event_type = note`) are **never** shown
+here. In `/cases` the moderator gets every case action — add sanction,
+revoke sanction, comment, edit reason, close/reopen — recorded with
+`author/issuer = discord_user` (the moderator), never `moddy_staff`. `/mycases`
+shows no action buttons.
+
+**Permissions** — `/cases` is guild-only, gated by Discord's
+`default_permissions(manage_messages=True)` plus a bot-side check: viewing /
+commenting / editing / closing needs **Manage Messages** (or Administrator).
+Adding or revoking a sanction additionally needs the permission specific to that
+action (`SANCTION_PERMISSION` in `utils/cases_views.py`): Ban Members for a ban,
+Kick Members for a kick, Timeout Members for warn / mute / restrict. Only
+guild-scoped cases are reachable, so guild moderators can never touch
+`global`/`platform` (Moddy-team) cases.
+
+Backing repository queries (`db/repositories/moderation.py`): `search_cases`
+(filtered + paginated, carries `actions` and `has_active` per row),
+`count_cases`, and `list_subject_scopes` (servers a subject has cases in, for
+the `/mycases` server filter).
+
+---
+
+## 8. Notes / open points
 
 - **Deletion**: FKs use `ON DELETE CASCADE`; no command deletes cases (moderation
   history is preserved). Soft-delete can be added later if needed.
