@@ -81,6 +81,10 @@ TEXT = "<:text:1519791921462120601>"
 TRANSLATE = "<:translate:1519802660856008834>"
 WEBHOOK = "<:webhook:1519793325329219675>"
 STAFF = "<:staff:1398729432759476245>"
+FILTER = "<:filter:1520586655180783666>"
+FOLDER = "<:folder:1520590405043880107>"
+FOLDERS = "<:folders:1520590403533934713>"
+IMAGE = "<:image:1520593192892764260>"
 
 # =============================================================================
 # SOCIAL PLATFORMS (Social Notifications module)
@@ -295,7 +299,7 @@ AUTO_MODDY_BADGES = {
 SANCTION_ACTION_EMOJIS = {
     "warn": WARNING,
     "mute": TIME,
-    "ban": BLACKLIST,
+    "ban": LEGAL,
     "kick": LOGOUT,
     "restrict": UNDONE,
     "revoke_access": DELETE,

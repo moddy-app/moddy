@@ -216,9 +216,21 @@ shows no action buttons.
 commenting / editing / closing needs **Manage Messages** (or Administrator).
 Adding or revoking a sanction additionally needs the permission specific to that
 action (`SANCTION_PERMISSION` in `utils/cases_views.py`): Ban Members for a ban,
-Kick Members for a kick, Timeout Members for warn / mute / restrict. Only
-guild-scoped cases are reachable, so guild moderators can never touch
-`global`/`platform` (Moddy-team) cases.
+Kick Members for a kick, Timeout Members for warn / mute. Only guild-scoped
+cases are reachable, so guild moderators can never touch `global`/`platform`
+(Moddy-team) cases.
+
+**Persistence** — `CasesBrowserView` is a fully persistent view registered for
+both modes (`user` and `server`) in
+[`utils/persistent_views.py`](../utils/persistent_views.py). Every button and
+select carries a stable, mode-namespaced `custom_id` (`moddy:cases:browser:…`).
+The view survives both inactivity (`timeout=None`) and bot restarts: a fresh
+shell rebuilds an empty list view from the interaction's user/guild context.
+Filter, page and detail state held in memory are lost on restart — this matches
+the documented "working-copy / pending edits" guidance and the user re-applies
+filters on the next click. Detail-screen mutations (comment, edit, revoke,
+add sanction, close/reopen) require a live detail; the shell auto-rehydrates to
+the list view so the user can re-open the case.
 
 Backing repository queries (`db/repositories/moderation.py`): `search_cases`
 (filtered + paginated, carries `actions` and `has_active` per row),
