@@ -1281,46 +1281,69 @@
       "description": "Automatic moderation of problematic messages (AI)",
       "config": {
         "title": "Automod",
-        "description": "AI-assisted moderation. Analyzes messages, detects insults, harassment, hate, threats and incitement, then applies sanctions and records cases with evidence.",
-        "module_state": "Module",
-        "feature_content": "Content detection (insults & problematic messages)",
-        "feature_content_desc": "Analyzes messages via AI (regex → embedding → decision).",
-        "ignore_mods": "Ignore moderators",
+        "description": "AI-assisted moderation: detects insults, harassment, hate, threats and incitement, then applies sanctions and keeps a record in cases with evidence.",
+        "summary_active": "<:green_status:1450929035428495505> **Automod active** — messages are being analyzed.",
+        "summary_inactive": "<:red_status:1450929038758772940> **Automod inactive**",
+        "summary_need_module": "Enable the module to start.",
+        "summary_need_content": "Enable at least one detection to start.",
+        "section_status": "Status",
+        "module_label": "Automod module",
+        "module_desc": "Main automod switch.",
+        "content_label": "Content detection",
+        "content_desc": "Insults, harassment, hate, threats, incitement (AI analysis).",
         "state": {
           "on": "Enabled",
           "off": "Disabled"
         },
+        "section_rules": "Server rules",
+        "section_logs": "Log channel",
+        "section_exemptions": "Exemptions",
+        "section_options": "Options",
         "buttons": {
-          "toggle_module": "Module",
-          "toggle_content": "Content detection",
-          "toggle_ignore_mods": "Ignore mods",
-          "edit_rules": "Rules"
+          "enable_module": "Enable module",
+          "disable_module": "Disable module",
+          "enable_content": "Enable detection",
+          "disable_content": "Disable detection",
+          "enable_ignore": "Enable",
+          "disable_ignore": "Disable",
+          "edit_rules": "Edit rules"
         },
         "rules": {
-          "section_title": "Server rules",
-          "empty": "No rules set. The AI will use reasonable moderation standards.",
+          "desc": "Guides the AI when judging messages. Verified against injection attempts before being saved.",
+          "current": "Current",
+          "empty": "No rules set — the AI uses reasonable moderation standards.",
           "modal_label": "Server rules",
           "modal_placeholder": "Describe your server's rules (respect, no insults…).",
-          "saved_pending": "<:done:1519800188925902881> Rules verified and accepted. Don't forget to save.",
-          "error_unsafe": "<:error:1519790252594827264> These rules were rejected: they look like an attempt to manipulate the AI. Reason: {reason}",
+          "checking": "<a:loading:1455219844080336907> Verifying the rules with the AI…",
+          "error_unsafe": "<:error:1519790252594827264> Rules rejected: they look like an attempt to manipulate the AI.\n-# Reason: {reason}",
           "error_too_long": "<:error:1519790252594827264> The rules are too long (max 3000 characters).",
-          "error_unavailable": "<:warning:1519789903100121139> Unable to verify the rules right now (AI service unavailable). Try again later."
+          "error_unavailable": "<:warning:1519789903100121139> Unable to verify the rules right now (AI service unavailable). Try again later.",
+          "saved": "<:done:1519800188925902881> Rules verified and saved.",
+          "cleared": "<:done:1519800188925902881> Rules cleared."
         },
         "log_channel": {
-          "section_title": "Log channel",
-          "section_description": "Channel where Automod will post its decisions.",
-          "placeholder": "Pick a log channel"
+          "desc": "Channel where Automod will post its decisions. (optional)",
+          "placeholder": "Pick a log channel",
+          "current": "Current channel",
+          "none": "No channel set"
         },
         "exempt_roles": {
-          "section_title": "Exempt roles",
-          "section_description": "Members with these roles are not analyzed.",
-          "placeholder": "Pick roles to exempt"
+          "label": "Exempt roles",
+          "desc": "Members with these roles are never analyzed.",
+          "placeholder": "Pick roles to exempt",
+          "none": "No exempt roles"
         },
         "exempt_channels": {
-          "section_title": "Exempt channels",
-          "section_description": "Messages in these channels are not analyzed.",
-          "placeholder": "Pick channels to exempt"
-        }
+          "label": "Exempt channels",
+          "desc": "Messages in these channels are not analyzed.",
+          "placeholder": "Pick channels to exempt",
+          "none": "No exempt channels"
+        },
+        "ignore_mods": {
+          "label": "Ignore moderators",
+          "desc": "Don't analyze members who can manage messages."
+        },
+        "apply_hint": "Changes are applied immediately."
       }
     }
   },

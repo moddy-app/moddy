@@ -1280,46 +1280,69 @@
       "description": "Modération automatique des messages problématiques (IA)",
       "config": {
         "title": "Automod",
-        "description": "Modération assistée par IA. Analyse les messages, détecte insultes, harcèlement, haine, menaces et incitations, puis applique les sanctions et enregistre des cases avec preuves.",
-        "module_state": "Module",
-        "feature_content": "Détection de contenu (insultes & messages problématiques)",
-        "feature_content_desc": "Analyse les messages via IA (regex → embedding → décision).",
-        "ignore_mods": "Ignorer les modérateurs",
+        "description": "Modération assistée par IA : détecte insultes, harcèlement, haine, menaces et incitations, puis applique les sanctions et garde une trace dans les cases avec preuves.",
+        "summary_active": "<:green_status:1450929035428495505> **Automod actif** — les messages sont analysés.",
+        "summary_inactive": "<:red_status:1450929038758772940> **Automod inactif**",
+        "summary_need_module": "Active le module pour démarrer.",
+        "summary_need_content": "Active au moins une détection pour démarrer.",
+        "section_status": "État",
+        "module_label": "Module Automod",
+        "module_desc": "Interrupteur principal de l'automod.",
+        "content_label": "Détection de contenu",
+        "content_desc": "Insultes, harcèlement, haine, menaces, incitations (analyse IA).",
         "state": {
           "on": "Activé",
           "off": "Désactivé"
         },
+        "section_rules": "Règlement du serveur",
+        "section_logs": "Salon de logs",
+        "section_exemptions": "Exemptions",
+        "section_options": "Options",
         "buttons": {
-          "toggle_module": "Module",
-          "toggle_content": "Détection contenu",
-          "toggle_ignore_mods": "Ignorer mods",
-          "edit_rules": "Règlement"
+          "enable_module": "Activer le module",
+          "disable_module": "Désactiver le module",
+          "enable_content": "Activer la détection",
+          "disable_content": "Désactiver la détection",
+          "enable_ignore": "Activer",
+          "disable_ignore": "Désactiver",
+          "edit_rules": "Modifier le règlement"
         },
         "rules": {
-          "section_title": "Règlement du serveur",
-          "empty": "Aucun règlement défini. L'IA utilisera des standards de modération raisonnables.",
+          "desc": "Guide l'IA pour juger les messages. Vérifié contre les tentatives d'injection avant d'être enregistré.",
+          "current": "Actuel",
+          "empty": "Aucun règlement défini — l'IA applique des standards de modération raisonnables.",
           "modal_label": "Règlement du serveur",
           "modal_placeholder": "Décris les règles de ton serveur (respect, pas d'insultes…).",
-          "saved_pending": "<:done:1519800188925902881> Règlement vérifié et accepté. N'oublie pas d'enregistrer.",
-          "error_unsafe": "<:error:1519790252594827264> Ce règlement a été refusé : il ressemble à une tentative de manipulation de l'IA. Raison : {reason}",
+          "checking": "<a:loading:1455219844080336907> Vérification du règlement par l'IA…",
+          "error_unsafe": "<:error:1519790252594827264> Règlement refusé : il ressemble à une tentative de manipulation de l'IA.\n-# Raison : {reason}",
           "error_too_long": "<:error:1519790252594827264> Le règlement est trop long (max 3000 caractères).",
-          "error_unavailable": "<:warning:1519789903100121139> Impossible de vérifier le règlement pour le moment (service IA indisponible). Réessaie plus tard."
+          "error_unavailable": "<:warning:1519789903100121139> Impossible de vérifier le règlement pour le moment (service IA indisponible). Réessaie plus tard.",
+          "saved": "<:done:1519800188925902881> Règlement vérifié et enregistré.",
+          "cleared": "<:done:1519800188925902881> Règlement effacé."
         },
         "log_channel": {
-          "section_title": "Salon de logs",
-          "section_description": "Salon où Automod publiera ses décisions.",
-          "placeholder": "Choisis un salon de logs"
+          "desc": "Salon où Automod publiera ses décisions. (optionnel)",
+          "placeholder": "Choisis un salon de logs",
+          "current": "Salon actuel",
+          "none": "Aucun salon défini"
         },
         "exempt_roles": {
-          "section_title": "Rôles exemptés",
-          "section_description": "Les membres ayant ces rôles ne sont pas analysés.",
-          "placeholder": "Choisis des rôles à exempter"
+          "label": "Rôles exemptés",
+          "desc": "Les membres ayant ces rôles ne sont jamais analysés.",
+          "placeholder": "Choisis des rôles à exempter",
+          "none": "Aucun rôle exempté"
         },
         "exempt_channels": {
-          "section_title": "Salons exemptés",
-          "section_description": "Les messages dans ces salons ne sont pas analysés.",
-          "placeholder": "Choisis des salons à exempter"
-        }
+          "label": "Salons exemptés",
+          "desc": "Les messages dans ces salons ne sont pas analysés.",
+          "placeholder": "Choisis des salons à exempter",
+          "none": "Aucun salon exempté"
+        },
+        "ignore_mods": {
+          "label": "Ignorer les modérateurs",
+          "desc": "Ne pas analyser les membres pouvant gérer les messages."
+        },
+        "apply_hint": "Les changements sont appliqués immédiatement."
       }
     }
   },

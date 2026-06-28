@@ -119,6 +119,16 @@ on.
   (`bot.db.add_event`).
 - A Components V2 card is posted to the configured log channel.
 
+### Config UI
+
+`modules/configs/automod_config.py` is a **persistent, immediate-apply** panel
+(see [PERSISTENT_VIEWS.md](PERSISTENT_VIEWS.md)): every toggle / select / rules
+edit saves straight to the DB and re-renders — no Save/Cancel step. All
+components have static namespaced custom_ids (`moddy:automod:cfg:*`), the view
+never times out, and a shell is registered so it survives restarts. Auth is
+**Manage Server**, re-checked on every click; callbacks re-derive context from
+`interaction` + the DB (never from `self`).
+
 ### Server rules safety check
 
 When an admin edits the rules in `/config`, the text is run past the AI
