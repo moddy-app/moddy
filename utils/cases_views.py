@@ -64,8 +64,49 @@ PERIODS: Dict[str, Optional[int]] = {
 }
 
 
+# Discord guild permission required to issue / lift each sanction action.
+# Administrators bypass this map. Members with only "manage_messages" may view
+# and comment/edit/close, but need the specific permission to add or revoke a
+# sanction of a given kind.
+SANCTION_PERMISSION: Dict[SanctionAction, str] = {
+    SanctionAction.WARN: "moderate_members",
+    SanctionAction.MUTE: "moderate_members",
+    SanctionAction.KICK: "kick_members",
+    SanctionAction.BAN: "ban_members",
+    SanctionAction.RESTRICT: "moderate_members",
+    SanctionAction.REVOKE_ACCESS: "moderate_members",
+}
+
+
+def can_view_server_cases(member: discord.Member) -> bool:
+    """Minimum permission to open the server cases browser: Manage Messages."""
+    p = member.guild_permissions
+    return p.administrator or p.manage_messages
+
+
+def _can_issue_action(member: discord.Member, action: SanctionAction) -> bool:
+    """Whether a member holds the specific permission for a sanction action."""
+    p = member.guild_permissions
+    if p.administrator:
+        return True
+    return getattr(p, SANCTION_PERMISSION.get(action, "moderate_members"), False)
+
+
 def _ts(dt: Optional[datetime], style: str = "R") -> str:
     return f"<t:{int(dt.timestamp())}:{style}>" if dt else "—"
+
+
+def _perm_error(locale: str) -> BaseView:
+    """Standard 'missing permission' panel for case mutations."""
+    view = BaseView()
+    container = ui.Container(accent_colour=discord.Colour(COLORS["error"]))
+    container.add_item(ui.TextDisplay(
+        f"### {emojis.ERROR} {t('commands.cases.browser.permission_denied_title', locale=locale)}"
+    ))
+    container.add_item(ui.TextDisplay(
+        t("commands.cases.browser.action_permission_denied", locale=locale)))
+    view.add_item(container)
+    return view
 
 
 def _action_emoji_safe(action_value: str) -> str:
@@ -194,6 +235,32 @@ class CasesBrowserView(BaseView):
         self.detail = Case.from_db(data["case"], data["sanctions"], data["events"])
         self._build_detail()
         await interaction.response.edit_message(view=self)
+
+    async def open_reference(self, reference: str) -> bool:
+        """Render the detail screen for a case given by its public reference.
+
+        Returns ``False`` (treated as "not found") when the reference does not
+        resolve **or** the case falls outside this browser's scope — so a
+        moderator can never reach another guild's case, and a member can never
+        reach someone else's case, through the optional ``case`` parameter.
+        """
+        data = await self.bot.db.get_case_by_reference(reference)
+        if not data:
+            return False
+        case = Case.from_db(data["case"], data["sanctions"], data["events"])
+
+        if self.mode == "server":
+            if not (case.scope_type.value == self.base_scope_type
+                    and str(case.scope_id) == str(self.base_scope_id)):
+                return False
+        else:
+            if not (case.subject_type.value == self.base_subject_type
+                    and str(case.subject_id) == str(self.base_subject_id)):
+                return False
+
+        self.detail = case
+        self._build_detail()
+        return True
 
     # ----------------------------------------------------------- list screen
     def _build_list(self):
@@ -523,26 +590,44 @@ class CasesBrowserView(BaseView):
             return
         await self.refresh(interaction)
 
+    async def _require_manage(self, interaction: discord.Interaction) -> bool:
+        """Re-check the baseline (Manage Messages) before any mutation."""
+        member = interaction.user
+        if isinstance(member, discord.Member) and can_view_server_cases(member):
+            return True
+        await interaction.response.send_message(view=_perm_error(self.locale), ephemeral=True)
+        return False
+
     async def _on_comment(self, interaction: discord.Interaction):
-        if not await self._guard(interaction):
+        if not await self._guard(interaction) or not await self._require_manage(interaction):
             return
         await interaction.response.send_modal(
             CaseCommentModalV2(self, self.detail))
 
     async def _on_edit(self, interaction: discord.Interaction):
-        if not await self._guard(interaction):
+        if not await self._guard(interaction) or not await self._require_manage(interaction):
             return
         await interaction.response.send_modal(
             CaseEditReasonModalV2(self, self.detail))
 
     async def _on_add_sanction(self, interaction: discord.Interaction):
-        if not await self._guard(interaction):
+        if not await self._guard(interaction) or not await self._require_manage(interaction):
+            return
+        # Only offer sanction kinds this member is actually allowed to issue.
+        allowed = [
+            a for a in get_available_actions(self.detail.type)
+            if _can_issue_action(interaction.user, a)
+        ]
+        if not allowed:
+            await interaction.response.send_message(
+                t("commands.cases.browser.no_permitted_actions", locale=self.locale),
+                ephemeral=True)
             return
         await interaction.response.send_modal(
-            CaseAddSanctionModalV2(self, self.detail))
+            CaseAddSanctionModalV2(self, self.detail, allowed))
 
     async def _on_revoke(self, interaction: discord.Interaction):
-        if not await self._guard(interaction):
+        if not await self._guard(interaction) or not await self._require_manage(interaction):
             return
         active = [s for s in self.detail.sanctions if s.status == SanctionStatus.ACTIVE]
         if not active:
@@ -550,11 +635,18 @@ class CasesBrowserView(BaseView):
                 t("commands.cases.browser.no_active_sanctions", locale=self.locale),
                 ephemeral=True)
             return
+        # Only sanctions whose kind this member may lift.
+        permitted = [s for s in active if _can_issue_action(interaction.user, s.action)]
+        if not permitted:
+            await interaction.response.send_message(
+                t("commands.cases.browser.no_permitted_actions", locale=self.locale),
+                ephemeral=True)
+            return
         await interaction.response.send_modal(
-            CaseRevokeModalV2(self, self.detail, active))
+            CaseRevokeModalV2(self, self.detail, permitted))
 
     async def _on_toggle_status(self, interaction: discord.Interaction):
-        if not await self._guard(interaction):
+        if not await self._guard(interaction) or not await self._require_manage(interaction):
             return
         case = self.detail
         new_status = "closed" if case.is_open else "open"
@@ -776,7 +868,7 @@ def _parse_duration_hours(raw: Optional[str]) -> Optional[datetime]:
 class CaseAddSanctionModalV2(BaseModal):
     """Add a sanction to a case (records on the folder, author = moderator)."""
 
-    def __init__(self, browser: CasesBrowserView, case: Case):
+    def __init__(self, browser: CasesBrowserView, case: Case, allowed: list):
         loc = browser.locale
         super().__init__(
             title=t("commands.cases.browser.add_sanction_title", locale=loc)[:45],
@@ -791,7 +883,7 @@ class CaseAddSanctionModalV2(BaseModal):
                 value=a.value,
                 emoji=discord.PartialEmoji.from_str(get_action_emoji(a)),
             )
-            for a in get_available_actions(case.type)
+            for a in allowed
         ]
         self.action_label = ui.Label(
             text=t("commands.cases.browser.sanction_action_label", locale=loc)[:45],
@@ -819,6 +911,10 @@ class CaseAddSanctionModalV2(BaseModal):
 
     async def on_submit(self, interaction: discord.Interaction):
         action = SanctionAction(self.action_label.component.values[0])
+
+        if not isinstance(interaction.user, discord.Member) or not _can_issue_action(interaction.user, action):
+            await interaction.response.send_message(view=_perm_error(self.browser.locale), ephemeral=True)
+            return
 
         expires_at = None
         if action in TEMPORARY_ACTIONS:
@@ -866,6 +962,14 @@ class CaseRevokeModalV2(BaseModal):
 
     async def on_submit(self, interaction: discord.Interaction):
         sanction_id = _uuid.UUID(self.sanction_label.component.values[0])
+        # Re-check the specific permission for the targeted sanction's action.
+        target = next((s for s in self.case.sanctions if str(s.id) == str(sanction_id)), None)
+        if target is not None and (
+            not isinstance(interaction.user, discord.Member)
+            or not _can_issue_action(interaction.user, target.action)
+        ):
+            await interaction.response.send_message(view=_perm_error(self.browser.locale), ephemeral=True)
+            return
         await self.browser.bot.db.revoke_sanction(
             sanction_id, "discord_user", interaction.user.id)
         await self.browser.show_detail(interaction, self.case.id)

@@ -60,6 +60,20 @@ Added `@app_commands.default_permissions(...)` so Discord enforces access
   records it on the case folder; it does not perform the Discord action. Actual
   enforcement stays with `/ban` `/mute` `/warn` (auto-synced via audit log).
 
+## Follow-up (same session)
+- Renamed commands: personal `/cases` → **`/mycases`**; server `/sanctions` →
+  **`/cases`**.
+- Both commands gained an optional `case` argument (public reference) that opens
+  straight to the case detail, scope-checked so it can't reach out-of-scope
+  cases (`CasesBrowserView.open_reference`).
+- `/cases` (server) permission model reworked: `default_permissions(
+  manage_messages=True)` + bot-side **Manage Messages** minimum to view/comment/
+  edit/close; per-action Discord permission to add/revoke a sanction
+  (`SANCTION_PERMISSION`: ban→Ban Members, kick→Kick Members,
+  warn/mute/restrict→Timeout Members), enforced both when building the action
+  list and on modal submit.
+- `/ban` `/mute` `/warn`: `user` argument is now **mandatory**.
+
 ## Known issues / follow-ups
 - Could not run the bot here (no `discord` package in the sandbox); changes are
   `py_compile`-clean and JSON validated. Worth a live smoke test of the Modals
