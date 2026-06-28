@@ -43,3 +43,6 @@ sentry-sdk==2.18.0
 # Token encryption for token_detector cog
 cryptography>=42.0.0
 
+# OpenAI API
+openai>=1.0.0
+

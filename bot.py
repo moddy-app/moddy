@@ -85,6 +85,8 @@ class ModdyBot(commands.Bot):
         self.db = None  # ModdyDatabase instance
         from services.case_service import CaseService
         self.cases = CaseService(self)  # scalable sanction -> case entry point
+        from services.openai_client import OpenAIClient
+        self.openai = OpenAIClient(self)
         self.redis = None  # Redis client (shared with backend)
         self._dev_team_ids: Set[int] = set()
         self.maintenance_mode = False
@@ -649,6 +651,9 @@ class ModdyBot(commands.Bot):
         # Set start time for /status uptime metric
         import time as _time
         self._start_time = _time.time()
+
+        # Initialize OpenAI client
+        await self.openai.start()
 
         # Connect to Redis
         if REDIS_URL:
@@ -1596,6 +1601,9 @@ class ModdyBot(commands.Bot):
 
         # Wait a bit for tasks to finish
         await asyncio.sleep(0.1)
+
+        # Close OpenAI client
+        await self.openai.stop()
 
         # Close Redis connection
         if self.redis:

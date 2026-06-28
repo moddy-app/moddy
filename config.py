@@ -53,6 +53,9 @@ REDIS_PASSWORD: Optional[str] = os.environ.get("REDIS_PASSWORD") or None
 # DeepL API pour les traductions - Variable Railway: DEEPL_API_KEY
 DEEPL_API_KEY: str = os.environ.get("DEEPL_API_KEY", "")
 
+# OpenAI API - Variable Railway: OPENAI_API_KEY
+OPENAI_API_KEY: str = os.environ.get("OPENAI_API_KEY", "")
+
 # Fernet key for token_detector in-memory cache encryption - Variable Railway: TOKEN_DETECTOR_KEY
 # Generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
 TOKEN_DETECTOR_KEY: str = os.environ.get("TOKEN_DETECTOR_KEY", "")
@@ -200,6 +203,9 @@ def validate_config():
 
     if not DEEPL_API_KEY:
         print("[WARN] DEEPL_API_KEY not configured - translate command disabled")
+
+    if not OPENAI_API_KEY:
+        print("[WARN] OPENAI_API_KEY not configured - OpenAI features disabled")
 
     if DEBUG:
         print("Debug mode enabled")
