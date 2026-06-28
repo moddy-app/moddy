@@ -32,7 +32,7 @@ from discord import ui, SeparatorSpacing
 from config import LOG_WEBHOOKS, LOG_WEBHOOK_DEFAULT, ENV_MODE
 from utils.emojis import (
     DONE, UNDONE, ADD, LOGOUT, MODDY, BUG, MODDYTEAM_BADGE, SETTINGS, COMMANDS,
-    SAVE, MANAGE_USER, BLACKLIST, TIME, PAUSE,
+    SAVE, MANAGE_USER, BLACKLIST, TIME, PAUSE, CODE,
 )
 
 logger = logging.getLogger("moddy.tech_logger")
@@ -50,6 +50,7 @@ _ACCENTS = {
     "command": 0x5865F2,        # blue
     "database": 0xFEE75C,       # yellow
     "security": 0xED4245,       # red
+    "api_call": 0x99AAB5,       # grey (high-volume, neutral)
 }
 
 # Webhook display name per category (helps when several feeds are watched).
@@ -63,6 +64,7 @@ _USERNAMES = {
     "command": "Moddy • Commands",
     "database": "Moddy • Database",
     "security": "Moddy • Security",
+    "api_call": "Moddy • API Gateway",
 }
 
 
@@ -474,6 +476,58 @@ class TechLogger:
             await self._dispatch("security", view)
         except Exception as exc:
             logger.warning("log_security failed: %s", exc)
+
+    # ---------------------------------------------------------- api gateway
+
+    async def log_api_call(self, entry: dict) -> None:
+        """Log every outbound API call from the gateway (success or failure).
+
+        ``entry`` is the dict produced by GatewayLogger.record().
+        This method always routes through the standard _card / _dispatch
+        pipeline so it appears in the configured api_call webhook channel.
+        """
+        try:
+            provider = entry.get("provider", "?")
+            operation = entry.get("operation", "?")
+            call_type = entry.get("call_type", "?")
+            success = entry.get("success", False)
+            latency_ms = entry.get("latency_ms", 0)
+            attempts = entry.get("attempts", 1)
+            tokens_total = entry.get("tokens_total") or 0
+            error_type = entry.get("error_type")
+            model = entry.get("model")
+            guild_id = entry.get("guild_id")
+            user_id = entry.get("user_id")
+            cost = entry.get("estimated_cost")
+            cid = _trunc(entry.get("correlation_id", "?"), 36)
+
+            title = f"API Call — {provider}/{operation}"
+            status = f"{_b(success)} **{'OK' if success else 'FAILED'}**"
+            if error_type:
+                status += f" `{error_type}`"
+            status += f" • `{latency_ms}ms`"
+            if attempts > 1:
+                status += f" • {attempts} attempts"
+
+            lines = [
+                f"**Type** `{call_type}` • **Model** `{model or 'N/A'}`",
+                status,
+            ]
+            if tokens_total:
+                lines.append(
+                    f"**Tokens** `{tokens_total}`"
+                    + (f" • **Cost** `${cost:.6f}`" if cost else "")
+                )
+            if guild_id:
+                lines.append(f"**Guild** `{guild_id}`")
+            if user_id:
+                lines.append(f"**User** `{user_id}`")
+            lines.append(f"**CID** `{cid}`")
+
+            view = self._card("api_call", CODE, title, lines)
+            await self._dispatch("api_call", view)
+        except Exception as exc:
+            logger.warning("log_api_call failed: %s", exc)
 
 
 def init_tech_logger(bot) -> TechLogger:

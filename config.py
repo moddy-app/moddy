@@ -80,6 +80,7 @@ LOG_WEBHOOK_ENV = {
     "command": "LOG_WEBHOOK_COMMAND",          # non-staff command usage
     "database": "LOG_WEBHOOK_DATABASE",        # config changes / important writes
     "security": "LOG_WEBHOOK_SECURITY",        # blacklist blocks & sensitive events
+    "api_call": "LOG_WEBHOOK_API_CALL",        # gateway: every outbound API call
 }
 
 # Resolved category -> webhook URL (only those actually configured)

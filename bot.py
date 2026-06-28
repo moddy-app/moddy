@@ -85,8 +85,8 @@ class ModdyBot(commands.Bot):
         self.db = None  # ModdyDatabase instance
         from services.case_service import CaseService
         self.cases = CaseService(self)  # scalable sanction -> case entry point
-        from services.openai_client import OpenAIClient
-        self.openai = OpenAIClient(self)
+        from gateway import Gateway
+        self.gateway = Gateway()
         self.redis = None  # Redis client (shared with backend)
         self._dev_team_ids: Set[int] = set()
         self.maintenance_mode = False
@@ -652,14 +652,23 @@ class ModdyBot(commands.Bot):
         import time as _time
         self._start_time = _time.time()
 
-        # Initialize OpenAI client
-        await self.openai.start()
-
         # Connect to Redis
         if REDIS_URL:
             await self._setup_redis()
         else:
             logger.warning("[WARN] REDIS_URL not set - Redis features disabled")
+
+        # Initialize API gateway (requires Redis + DB pool)
+        logger.info("Starting API gateway...")
+        try:
+            await self.gateway.start(
+                redis=self.redis,
+                pool=self.db.pool if self.db else None,
+                tech_logger=getattr(self, "tech_logger", None),
+            )
+            logger.info("API gateway ready")
+        except Exception as e:
+            logger.error(f"[FAIL] API gateway startup error: {e}")
 
         # Add before_invoke check for prefix commands cog disable
         @self.before_invoke
@@ -1602,8 +1611,8 @@ class ModdyBot(commands.Bot):
         # Wait a bit for tasks to finish
         await asyncio.sleep(0.1)
 
-        # Close OpenAI client
-        await self.openai.stop()
+        # Stop API gateway (flushes log buffer)
+        await self.gateway.stop()
 
         # Close Redis connection
         if self.redis:

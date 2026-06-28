@@ -274,13 +274,13 @@ async def _get_ai_suggested_reason(
     """Ask OpenAI to suggest a sanction reason based on the user's recent messages.
 
     Returns the suggested reason string, or None when:
-    - OpenAI is unavailable
+    - Gateway / OpenAI is unavailable
     - No messages were found
     - The model found no clear reason (NO_REASON)
     - The model detected a prompt injection attempt (INJECTION_DETECTED)
     - Any timeout or error occurred
     """
-    if not bot.openai.available:
+    if not getattr(bot, "gateway", None) or not bot.gateway.openai_available():
         return None
 
     language = _suggestion_language(guild)
@@ -332,22 +332,18 @@ async def _get_ai_suggested_reason(
     )
 
     try:
-        from services.openai_client import OpenAIContext
+        from gateway import QuotaTarget
 
         result = await asyncio.wait_for(
-            bot.openai.complete_text(
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
+            bot.gateway.ai.chat(
+                system=system_prompt,
+                user=user_prompt,
                 model=_AI_MODEL,
-                context=OpenAIContext(
-                    guild_id=guild.id,
-                    user_id=user.id,
-                    extra={"feature": "sanction_reason_suggestion", "action": action},
-                ),
-                max_tokens=150,
                 temperature=0.3,
+                max_tokens=150,
+                quota=[QuotaTarget.guild(guild.id, "ban_reason")],
+                call_type="ban_reason",
+                metadata={"guild_id": guild.id, "user_id": user.id},
             ),
             timeout=1.8,
         )
@@ -358,7 +354,7 @@ async def _get_ai_suggested_reason(
         logger.debug("[AI reason] OpenAI call failed: %s", exc)
         return None
 
-    result = (result or "").strip()
+    result = (str(result) if result is not None else "").strip()
 
     if not result or result == _AI_SENTINEL_NO_REASON:
         return None
