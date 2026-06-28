@@ -449,7 +449,25 @@ class CasesBrowserView(BaseView):
             open_row = ui.ActionRow()
             open_opts = []
             for row in self.rows:
-                desc = (row.get("reason") or "").replace("\n", " ")[:90] or None
+                reason_preview = (row.get("reason") or "").replace("\n", " ")
+                if self.mode == "server":
+                    subject_id = row.get("subject_id")
+                    if subject_id and row.get("subject_type") == "discord_user":
+                        cached = self.bot.get_user(int(subject_id)) if self.bot else None
+                        subject_str = f"@{cached.name}" if cached else f"@{subject_id}"
+                    else:
+                        subject_str = str(subject_id) if subject_id else "?"
+                    context_str = subject_str
+                else:
+                    scope_type = row.get("scope_type")
+                    scope_id = row.get("scope_id")
+                    if scope_type == "discord_guild" and scope_id and self.bot:
+                        guild = self.bot.get_guild(int(scope_id)) if str(scope_id).isdigit() else None
+                        context_str = guild.name if guild else str(scope_id)
+                    else:
+                        context_str = str(scope_id) if scope_id else "?"
+                combined = f"{context_str} • {reason_preview}" if reason_preview else context_str
+                desc = combined[:100] or None
                 open_opts.append(discord.SelectOption(
                     label=row["reference"],
                     value=str(row["id"]),
@@ -543,6 +561,9 @@ class CasesBrowserView(BaseView):
         actions = row.get("actions") or []
         labels = " ".join(_action_emoji_safe(a) for a in actions)
 
+        # Prefix with type emoji only when non-empty (guild type has none).
+        type_prefix = f"{type_emoji} " if type_emoji else ""
+
         if self.mode == "server":
             who = f"<@{row['subject_id']}>" if row["subject_type"] == "discord_user" else f"`{row['subject_id']}`"
             context = f"{t('commands.cases.browser.subject_user', locale=self.locale)}: {who}"
@@ -554,18 +575,19 @@ class CasesBrowserView(BaseView):
             reason = reason[:77] + "…"
 
         line = (
-            f"{dot} {type_emoji} **`{ref}`** {labels}\n"
+            f"{dot} {type_prefix}**`{ref}`** {labels}\n"
             f"-# {context} • {_ts(row.get('created_at'))}"
         )
         if reason:
-            line += f"\n-# {reason}"
+            line += f"\n-# **{t('commands.cases.reason', locale=self.locale)}:** {reason}"
         return line
 
-    def _scope_label(self, scope_type: Optional[str], scope_id: Optional[str]) -> str:
+    def _scope_label(self, scope_type: Optional[str], scope_id: Optional[str], with_id: bool = False) -> str:
         if scope_type == "discord_guild" and scope_id:
             guild = self.bot.get_guild(int(scope_id)) if str(scope_id).isdigit() else None
             if guild:
-                return f"**{guild.name}**"
+                base = f"**{guild.name}**"
+                return f"{base} (`{scope_id}`)" if with_id else base
             return t("commands.cases.browser.unknown_server", locale=self.locale, id=scope_id)
         if scope_type:
             return f"`{t('commands.cases.browser.scope.' + scope_type, locale=self.locale)}`"
@@ -599,7 +621,7 @@ class CasesBrowserView(BaseView):
         if self.mode == "user":
             fields += (
                 f"**{t('commands.cases.browser.scope_field', locale=self.locale)}:** "
-                f"{self._scope_label(case.scope_type.value, case.scope_id)}\n"
+                f"{self._scope_label(case.scope_type.value, case.scope_id, with_id=True)}\n"
             )
         if self.mode == "server":
             subj = f"<@{case.subject_id}>" if case.subject_type.value == "discord_user" else f"`{case.subject_id}`"
@@ -628,27 +650,28 @@ class CasesBrowserView(BaseView):
                     line += f" • {emojis.TIME} {_ts(s.expires_at)}"
                 container.add_item(ui.TextDisplay(line))
 
-        # Public comments (never internal notes).
-        comments = [e for e in case.events if e.type == EventType.COMMENT]
-        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-        container.add_item(ui.TextDisplay(f"**{t('commands.cases.comments', locale=self.locale)}**"))
-        if comments:
-            for e in comments[-5:]:
-                author = f"<@{e.author_id}> • " if e.author_id else ""
-                container.add_item(ui.TextDisplay(f"-# {author}{_ts(e.created_at)}\n{e.content or ''}"))
-        else:
-            container.add_item(ui.TextDisplay(f"-# {t('commands.cases.browser.no_comments', locale=self.locale)}"))
+        # Comments are private — only server moderators can see them.
+        if self.mode == "server":
+            comments = [e for e in case.events if e.type == EventType.COMMENT]
+            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+            container.add_item(ui.TextDisplay(f"**{t('commands.cases.comments', locale=self.locale)}**"))
+            if comments:
+                for e in comments[-5:]:
+                    author = f"<@{e.author_id}> • " if e.author_id else ""
+                    container.add_item(ui.TextDisplay(f"-# {author}{_ts(e.created_at)}\n{e.content or ''}"))
+            else:
+                container.add_item(ui.TextDisplay(f"-# {t('commands.cases.browser.no_comments', locale=self.locale)}"))
 
-        self.add_item(container)
+        has_evidence = any(e.type == EventType.EVIDENCE for e in case.events)
 
-        # Action buttons sit OUTSIDE the container.
+        # Server-mode action rows go INSIDE the container.
         if self.can_manage:
-            # Row 1 — destructive / state-changing actions.
+            # Row 1 — state-changing actions (no grey buttons).
             row1 = ui.ActionRow()
 
             add_btn = ui.Button(
                 custom_id=_CID_DETAIL_ADD.format(mode=self.mode),
-                style=discord.ButtonStyle.secondary,
+                style=discord.ButtonStyle.primary,
                 label=t("commands.cases.browser.action_add_sanction", locale=self.locale),
                 emoji=discord.PartialEmoji.from_str(emojis.ADD),
             )
@@ -657,7 +680,7 @@ class CasesBrowserView(BaseView):
 
             revoke_btn = ui.Button(
                 custom_id=_CID_DETAIL_REVOKE.format(mode=self.mode),
-                style=discord.ButtonStyle.success,
+                style=discord.ButtonStyle.danger,
                 label=t("commands.cases.browser.action_revoke", locale=self.locale),
                 emoji=discord.PartialEmoji.from_str(emojis.UNDONE),
             )
@@ -674,7 +697,7 @@ class CasesBrowserView(BaseView):
             toggle_btn.callback = self._on_toggle_status
             row1.add_item(toggle_btn)
 
-            self.add_item(row1)
+            container.add_item(row1)
 
             # Row 2 — non-destructive case-content actions.
             row2 = ui.ActionRow()
@@ -690,7 +713,7 @@ class CasesBrowserView(BaseView):
 
             edit_btn = ui.Button(
                 custom_id=_CID_DETAIL_EDIT.format(mode=self.mode),
-                style=discord.ButtonStyle.secondary,
+                style=discord.ButtonStyle.primary,
                 label=t("commands.cases.browser.action_edit", locale=self.locale),
                 emoji=discord.PartialEmoji.from_str(emojis.EDIT),
             )
@@ -699,16 +722,19 @@ class CasesBrowserView(BaseView):
 
             evidence_btn = ui.Button(
                 custom_id=_CID_DETAIL_EVIDENCE.format(mode=self.mode),
-                style=discord.ButtonStyle.secondary,
+                style=discord.ButtonStyle.primary,
                 label=t("commands.cases.browser.action_evidence", locale=self.locale),
                 emoji=discord.PartialEmoji.from_str(emojis.IMAGE),
+                disabled=not has_evidence,
             )
             evidence_btn.callback = self._on_evidence
             row2.add_item(evidence_btn)
 
-            self.add_item(row2)
+            container.add_item(row2)
 
-        # Nav row — Back to list (both modes).
+        self.add_item(container)
+
+        # Nav row — Back to list only (outside the container).
         nav_row = ui.ActionRow()
         back_btn = ui.Button(
             custom_id=_CID_DETAIL_BACK.format(mode=self.mode),
@@ -719,13 +745,14 @@ class CasesBrowserView(BaseView):
         back_btn.callback = self._on_back
         nav_row.add_item(back_btn)
 
-        # In user mode, the evidence button still has a place (read-only view).
+        # In user mode, evidence button is in the nav row (read-only view).
         if not self.can_manage:
             evidence_btn = ui.Button(
                 custom_id=_CID_DETAIL_EVIDENCE.format(mode=self.mode),
                 style=discord.ButtonStyle.secondary,
                 label=t("commands.cases.browser.action_evidence", locale=self.locale),
                 emoji=discord.PartialEmoji.from_str(emojis.IMAGE),
+                disabled=not has_evidence,
             )
             evidence_btn.callback = self._on_evidence
             nav_row.add_item(evidence_btn)

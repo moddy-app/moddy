@@ -204,12 +204,13 @@ button opens a modal to set: status (open/closed), sanction type, period
 (24h / 7d / 30d / 90d), and a context filter (a server in `/mycases`, a user in
 `/cases`). A select opens any listed case ("zoom").
 
-**Detail screen** — the full folder (fields, reason, sanctions, public
-comments). Internal Moddy-staff notes (`event_type = note`) are **never** shown
-here. In `/cases` the moderator gets every case action — add sanction,
-revoke sanction, comment, edit reason, close/reopen — recorded with
+**Detail screen** — the full folder (fields, reason, sanctions). In `/cases`
+the moderator additionally sees public comments and gets every case action — add
+sanction, revoke sanction, comment, edit reason, close/reopen — recorded with
 `author/issuer = discord_user` (the moderator), never `moddy_staff`. `/mycases`
-shows no action buttons.
+shows **no comments and no action buttons**: comments (`event_type = comment`)
+are private and only visible to guild moderators via `/cases`; internal
+Moddy-staff notes (`event_type = note`) are **never** shown in either command.
 
 **Permissions** — `/cases` is guild-only, gated by Discord's
 `default_permissions(manage_messages=True)` plus a bot-side check: viewing /
