@@ -32,6 +32,7 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     # Imported lazily so this module can be imported before cogs are loaded.
     from cogs.moddy import ModdyMainView, AttributionView, WeSupportView
     from modules.configs.social_notifications_config import SocialNotificationsConfigView
+    from modules.configs.automod_config import AutomodConfigView
     from utils.cases_views import CasesBrowserView
 
     return [
@@ -41,6 +42,7 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         WeSupportView,
         # Group 2 — /config module panels (guild permission auth)
         SocialNotificationsConfigView,
+        AutomodConfigView,
         # Group 3 — /cases & /mycases (per-mode auth)
         CasesBrowserView,
     ]
