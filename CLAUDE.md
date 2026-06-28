@@ -247,6 +247,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 ### Infrastructure
 | Document | When to Read |
 |---|---|
+| [docs/OPENAI.md](docs/OPENAI.md) | OpenAI API integration — `bot.openai`, hooks, quota extension points |
 | [docs/BACKEND-INTEGRATION.md](docs/BACKEND-INTEGRATION.md) | Bot ↔ Backend integration (Redis, Pub/Sub, Streams, `/status`) |
 | [docs/SOCIAL_NOTIFICATIONS.md](docs/SOCIAL_NOTIFICATIONS.md) | Social Notifications module + `moddy-feeds` Redis contract (what the backend must mirror) |
 | [docs/SOCIAL_NOTIFICATIONS_CHANGES_2026-06-14.md](docs/SOCIAL_NOTIFICATIONS_CHANGES_2026-06-14.md) | Backend/dashboard change spec: customizable message columns, quota, error codes, task fields |
