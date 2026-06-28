@@ -311,7 +311,7 @@ CASE_TYPE_EMOJIS = {
     "global": MODDY,
     "platform": MODDY,
     "network": WEB,
-    "guild": GROUPS,
+    "guild": "",
     "external": WEB,
 }
 CASE_TYPE_EMOJI_DEFAULT = INFO

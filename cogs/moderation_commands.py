@@ -40,6 +40,20 @@ _CONFIRM_ACCENT = 0x38B04B
 # Helpers
 # ---------------------------------------------------------------------------
 
+def _build_discord_reason(
+    case_ref: str,
+    mod: discord.abc.User,
+    expires_at: Optional[datetime],
+    reason: str,
+) -> str:
+    """Build the formatted reason string for Discord audit logs."""
+    expiry = (
+        expires_at.strftime("%Y-%m-%d %H:%M UTC") if expires_at else "Permanent"
+    )
+    formatted = f"[{case_ref}] @{mod.name} ({expiry}) : {reason}"
+    return formatted[:512]
+
+
 def _parse_duration(raw: str) -> Optional[timedelta]:
     """Parse strings like '7d', '24h', '30m', '1w' into a timedelta.
 
@@ -550,7 +564,13 @@ class SanctionModal(BaseModal):
         except Exception as exc:
             logger.error("Failed to record case for %s in guild %s: %s", user.id, self.guild.id, exc)
 
-        discord_ok = await self._discord_action(user, reason, duration)
+        discord_reason = _build_discord_reason(
+            case_result["reference"] if case_result else "?",
+            self.mod,
+            expires_at,
+            reason,
+        )
+        discord_ok = await self._discord_action(user, discord_reason, duration)
 
         if notify_dm and case_result:
             guild_locale = _guild_locale(self.guild)
