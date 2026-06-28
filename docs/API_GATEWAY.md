@@ -151,6 +151,9 @@ ON CONFLICT (scope, key, type) DO UPDATE SET daily_limit = EXCLUDED.daily_limit;
 | `embed` | openai/embed | — | ❌ |
 | `translation` | deepl/translate | user | ✅ |
 | `chatbot` | openai/chat | guild + user | ✅ |
+| `automod_embed` | openai/embed | — | ❌ |
+| `automod_decision` | openai/chat | guild | ✅ |
+| `automod_rules_check` | openai/chat | guild | ✅ |
 
 ---
 
@@ -180,7 +183,9 @@ Override via env vars: `GATEWAY_TIMEOUT_EMBED`, `GATEWAY_TIMEOUT_CHAT`, `GATEWAY
 ## Logging
 
 ### Staff webhook (`api_call` category)
-Every call fires `bot.tech_logger.log_api_call(entry)` — this uses the standard `TechLogger._card / _dispatch` pipeline, routing to the `LOG_WEBHOOK_API_CALL` webhook (falls back to `LOG_WEBHOOK_DEFAULT`).
+Every call fires `bot.tech_logger.log_api_call(entry, request_payload=…, response_data=…)` — this uses the standard `TechLogger._card / _dispatch` pipeline, routing to the `LOG_WEBHOOK_API_CALL` webhook (falls back to `LOG_WEBHOOK_DEFAULT`).
+
+The webhook message **attaches two text files**: `prompt_<cid>.txt` (the request that was sent — chat messages are rendered as `===== SYSTEM/USER =====` sections; other payloads as pretty JSON) and `response_<cid>.txt` (the raw response; bulky embedding vectors are summarized, not dumped). Files are capped at 200k chars and referenced by Components V2 `File` items on the card. The prompt/response are forwarded to the webhook **only** — they are not persisted in the Redis buffer or the `api_calls` PG table.
 
 ### PG table (`api_calls`)
 All calls are buffered in a Redis list (`gateway:log_buffer`) and flushed to the `api_calls` PG table every 5 seconds by a background task. The hot path never touches PG directly.

@@ -1,0 +1,111 @@
+{
+  "_comment": "Embedding reference phrases for semantic toxicity detection (step 4). Bilingual FR+EN. These capture toxicity WITHOUT explicit keywords (veiled threats, 'polite' harassment, calmly-worded incitement) that the regex blocklist cannot. Embedded once at startup via bot.gateway.ai.embed and kept in memory. Coverage of these references directly conditions the system's recall: a toxicity type absent here may slip under the threshold and never reach nano. Extend with real server data over time.",
+  "categories": {
+    "insultes": {
+      "exemples": [
+        "tu es vraiment le pire être humain que j'ai jamais croisé",
+        "personne ici ne te supporte, t'es juste pathétique",
+        "t'es trop bête pour comprendre quoi que ce soit",
+        "arrête de parler, tu te ridiculises à chaque message",
+        "t'as vraiment le cerveau d'un enfant de cinq ans",
+        "tu es une honte ambulante, dégage de ce serveur",
+        "t'es tellement nul que c'en est gênant pour tout le monde",
+        "you are honestly the dumbest person in this server",
+        "nobody respects you, you're a complete waste of space",
+        "shut up already, every word you type is embarrassing",
+        "you have the intelligence of a rock, it's sad",
+        "you're worthless and everyone here knows it",
+        "go away, no one wants you in this community",
+        "what a pathetic excuse for a human being you are"
+      ]
+    },
+    "harcelement": {
+      "exemples": [
+        "je vais continuer à te harceler jusqu'à ce que tu partes",
+        "on va tous se liguer contre toi jusqu'à ce que tu craques",
+        "à chaque fois que tu écris on va te rappeler à quel point tu es nul",
+        "tu ne peux pas te cacher, je te suivrai sur tous les serveurs",
+        "regardez-le, riez tous de lui, il le mérite",
+        "tu reçois encore des messages? attends de voir ce qui t'attend",
+        "tout le monde te déteste ici, accepte-le et disparais",
+        "we are all going to make your life here miserable",
+        "i'll keep messaging you until you finally break down",
+        "let's all pile on this guy until he leaves for good",
+        "everyone point and laugh at this clown",
+        "you can block me but i'll just make new accounts to reach you",
+        "we found your other accounts, you can't escape us",
+        "keep crying, it only makes us want to target you more"
+      ]
+    },
+    "haine_discrimination": {
+      "exemples": [
+        "les gens de ta race ne devraient pas avoir le droit de parler",
+        "retourne dans ton pays, on ne veut pas de gens comme toi",
+        "ta religion est une maladie qu'il faut éradiquer",
+        "les personnes comme toi ne méritent aucun droit",
+        "c'est normal de détester les gens à cause de leur couleur de peau",
+        "ton orientation sexuelle est une abomination contre nature",
+        "on devrait interdire ton peuple de vivre parmi nous",
+        "people of your kind don't deserve basic human rights",
+        "go back to where you came from, we don't want your type here",
+        "your whole religion is a disease that needs to be wiped out",
+        "it's perfectly fine to hate someone for the color of their skin",
+        "people like you are subhuman and should be removed",
+        "your sexuality is an abomination and you should be ashamed",
+        "an entire group of people deserves to be exterminated"
+      ]
+    },
+    "menaces": {
+      "exemples": [
+        "fais attention en sortant de chez toi ce soir",
+        "j'ai ton adresse et je vais venir te rendre une petite visite",
+        "tu ferais mieux de surveiller tes arrières à partir de maintenant",
+        "ce qui va t'arriver, tu ne l'oublieras jamais",
+        "je connais ton vrai nom et où tu travailles, réfléchis bien",
+        "tu vas regretter d'avoir dit ça, crois-moi",
+        "j'espère pour toi qu'on ne se croisera jamais dans la vraie vie",
+        "you better watch your back when you leave the house tonight",
+        "i have your address and i might just pay you a visit",
+        "what's coming to you is something you'll never forget",
+        "i know your real name and where you work, think carefully",
+        "you're going to regret saying that, i promise you",
+        "accidents happen to people who talk too much, be careful",
+        "i hope for your sake we never meet in real life"
+      ]
+    },
+    "incitation_automutilation": {
+      "exemples": [
+        "le monde serait meilleur sans toi, tu devrais disparaître",
+        "tu devrais en finir avec ta vie, personne ne te regrettera",
+        "honnêtement, fais-nous tous une faveur et arrête de respirer",
+        "tu ne sers à rien, autant tout arrêter maintenant",
+        "personne ne pleurerait si tu n'étais plus là demain",
+        "tu mériterais de te faire du mal après ce que tu as dit",
+        "ta vie n'a aucune valeur, pourquoi tu continues à vivre",
+        "the world would genuinely be better off without you in it",
+        "you should just end it all, no one would miss you",
+        "do everyone a favor and stop breathing already",
+        "nobody would cry if you weren't here tomorrow",
+        "you're useless, you might as well give up on life",
+        "you deserve to hurt yourself after what you said",
+        "your life is worthless, why do you even keep going"
+      ]
+    },
+    "contenu_sexuel": {
+      "exemples": [
+        "envoie-moi des photos de toi sans vêtements maintenant",
+        "décris-moi en détail ce que tu porterais pour moi",
+        "je n'arrête pas de penser à ton corps de manière explicite",
+        "tu serais tellement mieux si tu m'envoyais des contenus intimes",
+        "arrête de refuser et montre-moi ton corps",
+        "je vais te décrire des choses sexuelles que tu n'as pas demandées",
+        "send me pictures of yourself with no clothes on right now",
+        "describe in detail what you'd wear just for me",
+        "i can't stop thinking about your body in explicit ways",
+        "stop saying no and just show me your body",
+        "you'd be so much better if you sent me intimate content",
+        "let me describe some sexual things you never asked to hear"
+      ]
+    }
+  }
+}

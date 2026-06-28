@@ -184,6 +184,15 @@ class ConfigMainView(BaseView):
                 self.locale,
                 module_config
             )
+        elif module_id == 'automod':
+            from modules.configs.automod_config import AutomodConfigView
+            config_view = AutomodConfigView(
+                self.bot,
+                self.guild_id,
+                self.user_id,
+                self.locale,
+                module_config
+            )
         # Ajouter d'autres modules ici au fur et à mesure
         # elif module_id == 'ticket':
         #     from modules.configs.ticket_config import TicketConfigView

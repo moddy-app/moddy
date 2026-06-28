@@ -62,6 +62,7 @@ class GatewayExecutor:
         attempts = 0
         tokens = (0, 0, 0)
         error_type: Optional[str] = None
+        response_data: Any = None
 
         try:
             adapter_result, attempts = await retry_with_backoff(
@@ -79,6 +80,7 @@ class GatewayExecutor:
                 adapter_result.tokens_completion,
                 adapter_result.tokens_total,
             )
+            response_data = adapter_result.data
 
             # 3. Consume quotas on success
             if spec.quota:
@@ -104,6 +106,8 @@ class GatewayExecutor:
                     tokens_completion=tokens[1],
                     tokens_total=tokens[2],
                     error_type=error_type,
+                    request_payload=spec.payload,
+                    response_data=response_data,
                 )
             except Exception as log_exc:
                 logger.debug("Logger.record failed: %s", log_exc)

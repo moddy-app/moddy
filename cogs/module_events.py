@@ -136,6 +136,19 @@ class ModuleEvents(commands.Cog):
         except Exception as e:
             logger.error(f"Error in on_message (adaptive_slowmode) for guild {message.guild.id}: {e}", exc_info=True)
 
+        try:
+            # Automod: run the message through the AI moderation pipeline
+            automod_module = await self.bot.module_manager.get_module_instance(
+                message.guild.id,
+                'automod'
+            )
+
+            if automod_module and automod_module.enabled:
+                await automod_module.on_message(message)
+
+        except Exception as e:
+            logger.error(f"Error in on_message (automod) for guild {message.guild.id}: {e}", exc_info=True)
+
     @commands.Cog.listener()
     async def on_message_delete(self, message: discord.Message):
         """

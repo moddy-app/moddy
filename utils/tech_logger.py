@@ -20,6 +20,8 @@ an event handler, so every public method swallows its own exceptions.
 from __future__ import annotations
 
 import asyncio
+import io
+import json
 import logging
 import time
 from datetime import datetime, timezone
@@ -100,7 +102,14 @@ class TechLogger:
     def _url_for(self, category: str) -> Optional[str]:
         return self._urls.get(category) or LOG_WEBHOOK_DEFAULT or None
 
-    async def _dispatch(self, category: str, view: ui.LayoutView, *, allow_mentions: bool = False):
+    async def _dispatch(
+        self,
+        category: str,
+        view: ui.LayoutView,
+        *,
+        allow_mentions: bool = False,
+        files: Optional[list[discord.File]] = None,
+    ):
         """Send a Components V2 view through the category webhook (best-effort)."""
         url = self._url_for(category)
         if not url:
@@ -116,12 +125,15 @@ class TechLogger:
                 discord.AllowedMentions(users=True, everyone=False, roles=False)
                 if allow_mentions else discord.AllowedMentions.none()
             )
-            await webhook.send(
-                view=view,
-                username=_USERNAMES.get(category, "Moddy • Logs"),
-                avatar_url=avatar,
-                allowed_mentions=mentions,
-            )
+            kwargs: dict = {
+                "view": view,
+                "username": _USERNAMES.get(category, "Moddy • Logs"),
+                "avatar_url": avatar,
+                "allowed_mentions": mentions,
+            }
+            if files:
+                kwargs["files"] = files
+            await webhook.send(**kwargs)
         except Exception as exc:  # never let logging break the caller
             logger.warning("Tech log dispatch failed (%s): %s", category, exc)
 
@@ -135,8 +147,13 @@ class TechLogger:
         subtitle: Optional[str] = None,
         footer_extra: Optional[str] = None,
         prefix_mention: Optional[str] = None,
+        attachment_names: Optional[list[str]] = None,
     ) -> ui.LayoutView:
-        """Build a standardized, compact technical log card."""
+        """Build a standardized, compact technical log card.
+
+        ``attachment_names`` adds Components V2 File items referencing
+        ``attachment://<name>`` so the uploaded files show up on the message.
+        """
         view = ui.LayoutView(timeout=None)
         container = ui.Container(accent_colour=discord.Colour(_ACCENTS.get(accent_key, 0x5865F2)))
 
@@ -150,6 +167,10 @@ class TechLogger:
         if body_lines:
             container.add_item(ui.Separator(spacing=SeparatorSpacing.small))
             container.add_item(ui.TextDisplay("\n".join(body_lines)))
+
+        if attachment_names:
+            for name in attachment_names:
+                container.add_item(ui.File(f"attachment://{name}"))
 
         footer = f"-# {TIME} <t:{_ts()}:F> • `{ENV_MODE}`"
         if footer_extra:
@@ -479,10 +500,67 @@ class TechLogger:
 
     # ---------------------------------------------------------- api gateway
 
-    async def log_api_call(self, entry: dict) -> None:
+    # Hard cap on attached file size (chars). Discord allows multi-MB files;
+    # we cap well under that to keep the feed snappy.
+    _MAX_FILE_CHARS = 200_000
+
+    @staticmethod
+    def _format_request(payload: Any) -> str:
+        """Render the request payload (the prompt sent) as readable text."""
+        if not payload:
+            return ""
+        if isinstance(payload, dict):
+            messages = payload.get("messages")
+            if isinstance(messages, list):
+                parts = []
+                for m in messages:
+                    role = str(m.get("role", "?")).upper()
+                    parts.append(f"===== {role} =====\n{m.get('content', '')}")
+                extra = {k: v for k, v in payload.items() if k != "messages"}
+                if extra:
+                    parts.append("===== PARAMS =====\n"
+                                 + json.dumps(extra, ensure_ascii=False, indent=2))
+                return "\n\n".join(parts)
+            return json.dumps(payload, ensure_ascii=False, indent=2)
+        return str(payload)
+
+    @staticmethod
+    def _format_response(data: Any) -> str:
+        """Render the response as readable text (summarize bulky embeddings)."""
+        if data is None:
+            return ""
+        if isinstance(data, str):
+            return data
+        if isinstance(data, dict):
+            return json.dumps(data, ensure_ascii=False, indent=2)
+        if isinstance(data, list):
+            # Embedding responses: list of float vectors — summarize, don't dump.
+            if data and isinstance(data[0], (list, tuple)):
+                dim = len(data[0]) if data[0] else 0
+                return f"{len(data)} embedding vector(s), dimension {dim} (vectors omitted)"
+            return json.dumps(data, ensure_ascii=False, indent=2)
+        return str(data)
+
+    def _make_file(self, text: str, filename: str) -> Optional[discord.File]:
+        if not text:
+            return None
+        if len(text) > self._MAX_FILE_CHARS:
+            text = text[: self._MAX_FILE_CHARS] + "\n\n…[truncated]"
+        buffer = io.BytesIO(text.encode("utf-8"))
+        return discord.File(buffer, filename=filename)
+
+    async def log_api_call(
+        self,
+        entry: dict,
+        *,
+        request_payload: Any = None,
+        response_data: Any = None,
+    ) -> None:
         """Log every outbound API call from the gateway (success or failure).
 
-        ``entry`` is the dict produced by GatewayLogger.record().
+        ``entry`` is the dict produced by GatewayLogger.record(). The prompt
+        sent (``request_payload``) and the raw response (``response_data``) are
+        attached to the webhook message as two text files.
         This method always routes through the standard _card / _dispatch
         pipeline so it appears in the configured api_call webhook channel.
         """
@@ -524,8 +602,28 @@ class TechLogger:
                 lines.append(f"**User** `{user_id}`")
             lines.append(f"**CID** `{cid}`")
 
-            view = self._card("api_call", CODE, title, lines)
-            await self._dispatch("api_call", view)
+            # Build the prompt / response text files.
+            short_cid = str(entry.get("correlation_id", "log")).replace("-", "")[:8] or "log"
+            files: list[discord.File] = []
+            attachment_names: list[str] = []
+
+            req_text = self._format_request(request_payload)
+            req_file = self._make_file(req_text, f"prompt_{short_cid}.txt")
+            if req_file:
+                files.append(req_file)
+                attachment_names.append(req_file.filename)
+
+            resp_text = self._format_response(response_data)
+            resp_file = self._make_file(resp_text, f"response_{short_cid}.txt")
+            if resp_file:
+                files.append(resp_file)
+                attachment_names.append(resp_file.filename)
+
+            view = self._card(
+                "api_call", CODE, title, lines,
+                attachment_names=attachment_names or None,
+            )
+            await self._dispatch("api_call", view, files=files or None)
         except Exception as exc:
             logger.warning("log_api_call failed: %s", exc)
 
