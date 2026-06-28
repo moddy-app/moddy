@@ -116,6 +116,22 @@ moddy/
 │   ├── announcement_setup.py
 │   └── incognito.py
 │
+├── gateway/                   # Centralized API gateway (ALL external API calls go here)
+│   ├── __init__.py            #   Gateway class (bot.gateway) — public surface
+│   ├── config.py              #   GatewayConfig (from env vars)
+│   ├── errors.py              #   Typed error hierarchy
+│   ├── spec.py                #   CallSpec, QuotaTarget, QuotaScope
+│   ├── quota.py               #   QuotaManager (Redis daily counters + PG limits)
+│   ├── resilience.py          #   CircuitBreaker + retry/backoff
+│   ├── logger.py              #   Buffered PG logging + staff webhook per call
+│   ├── executor.py            #   GatewayExecutor (single execution path)
+│   ├── adapters/              #   Provider adapters
+│   │   ├── openai.py          #     embed + chat
+│   │   └── deepl.py           #     translate
+│   └── clients/               #   High-level clients
+│       ├── ai.py              #     bot.gateway.ai
+│       └── translation.py     #     bot.gateway.translation
+│
 ├── services/                  # External service clients
 │   ├── backend_client.py      #   Backend HTTP client
 │   ├── feeds_client.py        #   moddy-feeds Redis client (social notifications)
@@ -247,7 +263,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 ### Infrastructure
 | Document | When to Read |
 |---|---|
-| [docs/OPENAI.md](docs/OPENAI.md) | OpenAI API integration — `bot.openai`, hooks, quota extension points |
+| [docs/API_GATEWAY.md](docs/API_GATEWAY.md) | API Gateway — all external API calls (OpenAI, DeepL), quotas, resilience, logging |
 | [docs/BACKEND-INTEGRATION.md](docs/BACKEND-INTEGRATION.md) | Bot ↔ Backend integration (Redis, Pub/Sub, Streams, `/status`) |
 | [docs/SOCIAL_NOTIFICATIONS.md](docs/SOCIAL_NOTIFICATIONS.md) | Social Notifications module + `moddy-feeds` Redis contract (what the backend must mirror) |
 | [docs/SOCIAL_NOTIFICATIONS_CHANGES_2026-06-14.md](docs/SOCIAL_NOTIFICATIONS_CHANGES_2026-06-14.md) | Backend/dashboard change spec: customizable message columns, quota, error codes, task fields |

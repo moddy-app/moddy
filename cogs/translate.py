@@ -1,6 +1,6 @@
 """
 Translate command for Moddy
-Uses the DeepL API to translate text with automatic detection
+Uses the DeepL API via the centralized gateway.
 """
 
 import discord
@@ -8,14 +8,13 @@ from discord import app_commands, ui
 from cogs.error_handler import BaseView
 from discord.ext import commands
 from typing import Optional
-import aiohttp
 import re
 from datetime import datetime, timedelta
 import asyncio
 
 from utils.embeds import ModdyEmbed, ModdyResponse, ModdyColors
 from utils.incognito import add_incognito_option, get_incognito_setting
-from config import COLORS, DEEPL_API_KEY
+from config import COLORS
 from utils.i18n import i18n
 
 
@@ -148,17 +147,15 @@ class TranslateView(BaseView):
 
         await interaction.response.defer()
 
-        # Use the translation function of the cog
         translator = self.bot.get_cog("Translate")
         if translator:
-            translated = await translator.translate_text(self.original_text, new_lang)
-
-            if translated:
-                # Update the view with the new language
+            result = await translator.translate_via_gateway(
+                self.original_text, new_lang, user_id=interaction.user.id
+            )
+            if result:
                 self.current_to_lang = new_lang
-                self.translated_text = translated
+                self.translated_text = result["text"]
                 self.build_view()
-
                 await interaction.edit_original_response(view=self)
             else:
                 error_msg = i18n.get("common.error", locale=self.locale)
@@ -166,13 +163,12 @@ class TranslateView(BaseView):
 
 
 class Translate(commands.Cog):
-    """Translation system using DeepL"""
+    """Translation system using DeepL (via the API gateway)."""
 
     def __init__(self, bot):
         self.bot = bot
-        self.deepl_api_key = DEEPL_API_KEY  # Retrieved from config.py
-        self.user_usage = {}  # Dict to track usage per user
-        self.max_uses_per_minute = 20  # Maximum 20 uses per minute per user
+        self.user_usage = {}  # in-memory per-minute rate limiter (20 req/min/user)
+        self.max_uses_per_minute = 20
 
         # Create and add context menu command
         self.translate_message_menu = app_commands.ContextMenu(
@@ -309,60 +305,26 @@ class Translate(commands.Cog):
         self.user_usage[user_id].append(now)
         return True, 0
 
-    async def translate_text(self, text: str, target_lang: str) -> Optional[str]:
-        """Calls the DeepL API to translate the text"""
+    async def translate_via_gateway(
+        self,
+        text: str,
+        target_lang: str,
+        *,
+        user_id: int,
+    ) -> Optional[dict]:
+        """Translate using the gateway. Returns {'text': ..., 'detected_source_language': ...}."""
         try:
-            # DeepL API URL (free)
-            url = "https://api-free.deepl.com/v2/translate"
-
-            headers = {
-                "Authorization": f"DeepL-Auth-Key {self.deepl_api_key}"
-            }
-
-            data = {
-                "text": text,
-                "target_lang": target_lang
-            }
-
-            async with aiohttp.ClientSession() as session:
-                async with session.post(url, headers=headers, data=data) as response:
-                    if response.status == 200:
-                        result = await response.json()
-                        return result["translations"][0]["text"]
-                    else:
-                        return None
-
-        except Exception as e:
+            from gateway import QuotaTarget
+            return await self.bot.gateway.translation.translate(
+                text,
+                target_lang,
+                quota=[QuotaTarget.user(user_id, "translation")],
+                call_type="translation",
+                metadata={"user_id": user_id},
+            )
+        except Exception as exc:
             import logging
-            logger = logging.getLogger('moddy')
-            logger.error(f"DeepL translation error: {e}")
-            return None
-
-    async def detect_language(self, text: str) -> Optional[str]:
-        """Detects the language of the text with DeepL"""
-        try:
-            # DeepL automatically detects the source language
-            # We make a translation request to EN to get the source language
-            url = "https://api-free.deepl.com/v2/translate"
-
-            headers = {
-                "Authorization": f"DeepL-Auth-Key {self.deepl_api_key}"
-            }
-
-            data = {
-                "text": text,
-                "target_lang": "EN-US"
-            }
-
-            async with aiohttp.ClientSession() as session:
-                async with session.post(url, headers=headers, data=data) as response:
-                    if response.status == 200:
-                        result = await response.json()
-                        return result["translations"][0]["detected_source_language"]
-                    else:
-                        return None
-
-        except Exception:
+            logging.getLogger("moddy.translate").error("Gateway translate failed: %s", exc)
             return None
 
     def locale_to_deepl_lang(self, locale: str) -> str:
@@ -445,6 +407,13 @@ class Translate(commands.Cog):
             # Use user's Discord locale
             target_lang = self.locale_to_deepl_lang(str(interaction.locale))
 
+        # Check that the gateway / DeepL is available
+        if not getattr(self.bot, "gateway", None) or not self.bot.gateway.deepl_available():
+            error_msg = i18n.get("commands.translate.errors.api_error", locale=locale)
+            error_embed = ModdyResponse.error(i18n.get("common.error", locale=locale), error_msg)
+            await interaction.response.send_message(embed=error_embed, ephemeral=True)
+            return
+
         # Loading message with animated emoji
         loading_msg = i18n.get("commands.translate.translating", locale=locale)
         await interaction.response.send_message(
@@ -452,14 +421,15 @@ class Translate(commands.Cog):
             ephemeral=ephemeral
         )
 
-        # Detect the source language
-        source_lang = await self.detect_language(sanitized_text)
+        # Single gateway call — DeepL returns text + detected source language together
+        result = await self.translate_via_gateway(
+            sanitized_text, target_lang, user_id=interaction.user.id
+        )
 
-        # Translate the text
-        translated = await self.translate_text(sanitized_text, target_lang)
+        if result:
+            source_lang = result.get("detected_source_language") or "?"
+            translated = result["text"]
 
-        if translated and source_lang:
-            # Create the view with the re-translation menu
             view = TranslateView(
                 self.bot,
                 sanitized_text,
@@ -469,11 +439,8 @@ class Translate(commands.Cog):
                 locale,
                 interaction.user
             )
-
             await interaction.edit_original_response(content=None, embed=None, view=view)
-
         else:
-            # Translation error
             error_msg = i18n.get("commands.translate.errors.api_error", locale=locale)
             error_embed = ModdyResponse.error(i18n.get("common.error", locale=locale), error_msg)
             await interaction.edit_original_response(embed=error_embed)

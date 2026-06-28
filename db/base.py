@@ -888,6 +888,76 @@ class ModdyDatabase(
                 ON social_subscriptions(guild_id)
             """)
 
+            # --- API Gateway tables ---
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS api_calls (
+                    id                BIGSERIAL   PRIMARY KEY,
+                    correlation_id    TEXT        NOT NULL,
+                    call_type         TEXT        NOT NULL,
+                    provider          TEXT        NOT NULL,
+                    operation         TEXT        NOT NULL,
+                    model             TEXT,
+                    guild_id          BIGINT,
+                    user_id           BIGINT,
+                    quota_targets     JSONB,
+                    tokens_prompt     INTEGER     NOT NULL DEFAULT 0,
+                    tokens_completion INTEGER     NOT NULL DEFAULT 0,
+                    tokens_total      INTEGER     NOT NULL DEFAULT 0,
+                    latency_ms        INTEGER     NOT NULL DEFAULT 0,
+                    attempts          INTEGER     NOT NULL DEFAULT 1,
+                    success           BOOLEAN     NOT NULL,
+                    error_type        TEXT,
+                    estimated_cost    NUMERIC(12,8),
+                    created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
+                )
+            """)
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_api_calls_correlation
+                ON api_calls(correlation_id)
+            """)
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_api_calls_guild
+                ON api_calls(guild_id, created_at)
+            """)
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_api_calls_type
+                ON api_calls(call_type, created_at)
+            """)
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS quota_limits (
+                    scope        TEXT    NOT NULL,
+                    type         TEXT    NOT NULL,
+                    tier         TEXT    NOT NULL DEFAULT 'default',
+                    daily_limit  INTEGER NOT NULL DEFAULT -1,
+                    PRIMARY KEY (scope, type, tier)
+                )
+            """)
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS quota_overrides (
+                    scope        TEXT    NOT NULL,
+                    key          TEXT    NOT NULL,
+                    type         TEXT    NOT NULL,
+                    daily_limit  INTEGER NOT NULL,
+                    PRIMARY KEY (scope, key, type)
+                )
+            """)
+            # Seed default limits (all unlimited — tighten via quota_overrides per guild/user)
+            for scope, qtype, tier, limit in [
+                ("guild",  "ban_reason",  "default", -1),
+                ("guild",  "chatbot",     "default", -1),
+                ("user",   "translation", "default", -1),
+                ("global", "ban_reason",  "default", -1),
+                ("global", "translation", "default", -1),
+            ]:
+                await conn.execute(
+                    """
+                    INSERT INTO quota_limits (scope, type, tier, daily_limit)
+                    VALUES ($1, $2, $3, $4)
+                    ON CONFLICT (scope, type, tier) DO NOTHING
+                    """,
+                    scope, qtype, tier, limit,
+                )
+
             logger.info("[OK] Tables initialisées")
 
     async def cleanup_old_errors(self, days: int = 30):
