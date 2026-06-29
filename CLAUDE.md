@@ -103,6 +103,7 @@ moddy/
 │       ├── users.py, guilds.py, staff.py, errors.py
 │       ├── reminders.py, saved_messages.py, saved_roles.py
 │       ├── moderation.py, interserver.py, attributes.py
+│       ├── appeals.py           #   Automod sanction appeals (case_appeals)
 │       ├── token_alerts.py, token_secrets.py
 │       ├── subscription.py    #   Subscription read-only queries
 │       ├── social.py          #   Social notifications subscriptions
@@ -119,6 +120,7 @@ moddy/
 │   ├── staff_role_permissions.py
 │   ├── staff_help_view.py
 │   ├── case_management_views.py #  Cases Views/Modals (create, sanction, comment…)
+│   ├── appeal_views.py        #   Automod appeal UI (DM buttons + reviewer panels, persistent)
 │   ├── moderation_cases.py    #   Cases domain model + enums + reference gen
 │   ├── embeds.py
 │   ├── announcement_setup.py
@@ -144,6 +146,7 @@ moddy/
 │   ├── backend_client.py      #   Backend HTTP client
 │   ├── feeds_client.py        #   moddy-feeds Redis client (social notifications)
 │   ├── case_service.py        #   Scalable sanction→case entry point (source registry)
+│   ├── appeal_service.py      #   Automod sanction appeals (server / Moddy team, binding)
 │   └── railway_diagnostic.py  #   Railway diagnostics
 │
 ├── internal_api/              # FastAPI internal API

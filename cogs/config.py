@@ -189,6 +189,7 @@ class ConfigMainView(BaseView):
             config_view = AutomodConfigView(
                 self.bot,
                 self.guild_id,
+                self.user_id,
                 self.locale,
                 module_config
             )

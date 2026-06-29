@@ -1377,7 +1377,8 @@
           "cleared": "<:done:1519800188925902881> Indications effacées.",
           "error_unsafe": "<:error:1519790252594827264> Indications refusées : elles ressemblent à une tentative de manipulation de l'IA.\n-# Raison : {reason}",
           "error_too_long": "<:error:1519790252594827264> Les indications sont trop longues (max 3000 caractères).",
-          "error_unavailable": "<:warning:1519789903100121139> Impossible de vérifier les indications pour le moment (service IA indisponible). Réessaie plus tard."
+          "error_unavailable": "<:warning:1519789903100121139> Impossible de vérifier les indications pour le moment (service IA indisponible). Réessaie plus tard.",
+          "checked": "<:done:1519800188925902881> Indications vérifiées et enregistrées dans la copie de travail. Clique sur Enregistrer pour appliquer."
         }
       },
       "action": {
