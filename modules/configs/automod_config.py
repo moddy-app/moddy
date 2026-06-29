@@ -27,7 +27,7 @@ from utils.i18n import t, i18n
 from cogs.error_handler import BaseView, BaseModal
 from utils.emojis import (
     FILTER, BOOK, BACK, DELETE, MESSAGE, GROUPS, SETTINGS, WARNING, SAVE,
-    UNDONE, REQUIRED_FIELDS, STAFF, GREEN_STATUS, RED_STATUS,
+    UNDONE, REQUIRED_FIELDS, MANAGE_USER, GREEN_STATUS, RED_STATUS,
 )
 from automod.rules_check import validate_rules, MAX_RULES_LENGTH
 from automod import constants as ac
@@ -236,7 +236,7 @@ class AutomodConfigView(BaseView):
                     label=t("modules.automod.config.ignore_mods.label", locale=self.locale),
                     value="ignore",
                     description=t("modules.automod.config.ignore_mods.desc", locale=self.locale)[:100],
-                    emoji=discord.PartialEmoji.from_str(STAFF),
+                    emoji=discord.PartialEmoji.from_str(MANAGE_USER),
                     default=ignore_on,
                 ),
             ],
