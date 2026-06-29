@@ -111,13 +111,14 @@ class ModerationRepository:
                     raise RuntimeError("Could not generate a unique case reference")
 
                 # Optionally add the first sanction + its event (same tx).
+                sanction_id = None
                 if action is not None:
-                    await self._insert_sanction(
+                    sanction_id = await self._insert_sanction(
                         conn, case_id, action, issued_by_type, issued_by_id,
                         sanction_expires_at, sanction_note,
                     )
 
-        return {"id": case_id, "reference": reference}
+        return {"id": case_id, "reference": reference, "sanction_id": sanction_id}
 
     async def _insert_sanction(
         self, conn, case_id, action, issued_by_type, issued_by_id,
@@ -685,6 +686,46 @@ class ModerationRepository:
                 params.append(action)
             query += ")"
             return await conn.fetchval(query, *params)
+
+    async def list_automod_evidence_message_ids(
+        self,
+        subject_id: Union[str, int],
+        guild_id: Union[str, int],
+        limit: int = 25,
+    ) -> List[Dict[str, Any]]:
+        """Message ids already moderated by automod for a subject in a guild.
+
+        Reads ``evidence`` events tagged ``payload.source = 'automod'`` on the
+        subject's guild cases. Feeds nano's ``messages_deja_moderes`` so it never
+        re-sanctions the current message for conduct already actioned earlier.
+        Each item: ``{"id": <message_id>, "extrait": <short content>}``.
+        """
+        async with self.pool.acquire() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT e.payload, e.content, e.created_at
+                FROM case_events e
+                JOIN cases c ON c.id = e.case_id
+                WHERE c.subject_type = 'discord_user'::subject_type
+                  AND c.subject_id = $1
+                  AND c.scope_type = 'discord_guild'::scope_type
+                  AND c.scope_id = $2
+                  AND e.type = 'evidence'::event_type
+                  AND e.payload ->> 'source' = 'automod'
+                  AND e.payload ->> 'message_id' IS NOT NULL
+                ORDER BY e.created_at DESC
+                LIMIT $3
+                """,
+                str(subject_id), str(guild_id), limit,
+            )
+        out: List[Dict[str, Any]] = []
+        for r in rows:
+            payload = self._parse_jsonb(r["payload"]) if r["payload"] else {}
+            mid = payload.get("message_id")
+            if not mid:
+                continue
+            out.append({"id": str(mid), "extrait": (payload.get("extrait") or "")[:120]})
+        return out
 
     async def get_active_subject_sanctions(
         self, subject_type: str, subject_id: Union[str, int],

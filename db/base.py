@@ -20,6 +20,7 @@ from db.repositories.reminders import ReminderRepository
 from db.repositories.saved_messages import SavedMessageRepository
 from db.repositories.interserver import InterserverRepository
 from db.repositories.moderation import ModerationRepository
+from db.repositories.appeals import AppealRepository
 from db.repositories.saved_roles import SavedRolesRepository
 from db.repositories.token_alerts import TokenAlertRepository
 from db.repositories.token_secrets import TokenSecretRepository
@@ -47,6 +48,7 @@ class ModdyDatabase(
     SavedMessageRepository,
     InterserverRepository,
     ModerationRepository,
+    AppealRepository,
     SavedRolesRepository,
     TokenAlertRepository,
     TokenSecretRepository,
@@ -602,6 +604,39 @@ class ModdyDatabase(
                 WHERE status = 'active' AND expires_at IS NOT NULL
             """)
             await conn.execute("CREATE INDEX IF NOT EXISTS idx_events_case_time ON case_events (case_id, created_at)")
+
+            # case_appeals — a sanctioned user's appeal of an automod sanction.
+            # route: 'server' (guild mods) | 'team' (Moddy team).
+            # status: pending | accepted | refused | transformed | cancelled.
+            # Status is a plain TEXT+CHECK (not a PG enum) to stay migration-free.
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS case_appeals (
+                    id              UUID PRIMARY KEY,
+                    case_id         UUID NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+                    sanction_id     UUID,
+                    subject_id      TEXT NOT NULL,
+                    guild_id        TEXT NOT NULL,
+                    action          TEXT,
+                    route           TEXT NOT NULL,
+                    status          TEXT NOT NULL DEFAULT 'pending'
+                        CHECK (status IN ('pending','accepted','refused','transformed','cancelled')),
+                    reason          TEXT,
+                    decided_by_type TEXT,
+                    decided_by_id   TEXT,
+                    decision_note   TEXT,
+                    new_action      TEXT,
+                    dm_channel_id   TEXT,
+                    dm_message_id   TEXT,
+                    review_channel_id TEXT,
+                    review_message_id TEXT,
+                    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+                    decided_at      TIMESTAMPTZ
+                )
+            """)
+            await conn.execute("CREATE INDEX IF NOT EXISTS idx_appeals_case ON case_appeals (case_id)")
+            await conn.execute("CREATE INDEX IF NOT EXISTS idx_appeals_subject ON case_appeals (subject_id)")
+            await conn.execute("CREATE INDEX IF NOT EXISTS idx_appeals_status ON case_appeals (status)")
+            await conn.execute("CREATE INDEX IF NOT EXISTS idx_appeals_sanction ON case_appeals (sanction_id)")
 
             # Table des rôles sauvegardés (Auto Restore Roles module)
             await conn.execute("""

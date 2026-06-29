@@ -145,6 +145,7 @@ class ContentModerationFeature(AutomodFeature):
             fetch_context=self.module.make_context_loader(message),
             is_bot=message.author.bot,
             is_system=message.type not in (discord.MessageType.default, discord.MessageType.reply),
+            severity=self.module.severity,
         )
         if decision is not None:
             decisions.append(decision)
@@ -184,6 +185,7 @@ class ContentModerationFeature(AutomodFeature):
                 author_history=history,
                 fetch_context=self.module.make_context_loader(msg),
                 force_nano=True,   # already flagged → straight to nano
+                severity=self.module.severity,
             )
             # Do NOT recurse into this decision's a_reverifier (one level only).
             if decision is not None:
@@ -213,8 +215,9 @@ class AutomodModule(ModuleBase):
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)
         self.rules: str = ""
-        self.log_channel_id: Optional[int] = None
+        self.notify_channel_id: Optional[int] = None
         self.ignore_moderators: bool = True
+        self.severity: int = ac.SEVERITY_DEFAULT
         self._features: Dict[str, AutomodFeature] = {}
         self._warmup_task: Optional[asyncio.Task] = None
 
@@ -223,9 +226,12 @@ class AutomodModule(ModuleBase):
     async def load_config(self, config_data: Dict[str, Any]) -> bool:
         try:
             self.config = config_data or {}
-            self.rules = str(self.config.get("rules", "") or "")
-            self.log_channel_id = self.config.get("log_channel_id")
+            # "indications" replaces the legacy "rules" key (read both).
+            self.rules = str(self.config.get("indications", self.config.get("rules", "")) or "")
+            # "notify_channel_id" replaces the legacy "log_channel_id".
+            self.notify_channel_id = self.config.get("notify_channel_id", self.config.get("log_channel_id"))
             self.ignore_moderators = bool(self.config.get("ignore_moderators", True))
+            self.severity = ac.clamp_severity(self.config.get("severity", ac.SEVERITY_DEFAULT))
 
             features_cfg = self.config.get("features", {}) or {}
             self._features = {}
@@ -235,7 +241,9 @@ class AutomodModule(ModuleBase):
 
             module_on = bool(self.config.get("enabled", False))
             any_feature_on = any(f.enabled for f in self._features.values())
-            self.enabled = module_on and any_feature_on
+            # The alert channel is MANDATORY: automod does not run without it.
+            has_channel = self.notify_channel_id is not None
+            self.enabled = module_on and any_feature_on and has_channel
             return True
         except Exception as e:
             logger.error("Error loading automod config: %s", e, exc_info=True)
@@ -246,15 +254,19 @@ class AutomodModule(ModuleBase):
         if not guild:
             return False, "Serveur introuvable"
 
-        log_channel_id = config_data.get("log_channel_id")
-        if log_channel_id is not None:
-            channel = guild.get_channel(int(log_channel_id))
+        notify_channel_id = config_data.get("notify_channel_id", config_data.get("log_channel_id"))
+        if notify_channel_id is not None:
+            channel = guild.get_channel(int(notify_channel_id))
             if not channel or not isinstance(channel, discord.TextChannel):
-                return False, "Salon de logs invalide"
+                return False, "Salon d'alertes invalide"
 
-        rules = config_data.get("rules", "")
-        if rules and len(rules) > 3000:
-            return False, "Le règlement est trop long (max 3000 caractères)"
+        indications = config_data.get("indications", config_data.get("rules", ""))
+        if indications and len(indications) > 3000:
+            return False, "Les indications sont trop longues (max 3000 caractères)"
+
+        severity = config_data.get("severity")
+        if severity is not None and ac.clamp_severity(severity) != int(severity):
+            return False, "Niveau de sévérité invalide (1 à 5)"
 
         features_cfg = config_data.get("features", {}) or {}
         for fid in features_cfg:
@@ -265,9 +277,10 @@ class AutomodModule(ModuleBase):
     def get_default_config(self) -> Dict[str, Any]:
         return {
             "enabled": False,
-            "rules": "",
-            "log_channel_id": None,
+            "indications": "",
+            "notify_channel_id": None,
             "ignore_moderators": True,
+            "severity": ac.SEVERITY_DEFAULT,
             "features": {
                 "content": {
                     "enabled": False,
@@ -354,7 +367,12 @@ class AutomodModule(ModuleBase):
         return loader
 
     async def build_author_history(self, user_id: int) -> AuthorHistory:
-        """Fetch the author's case/sanction history from the DB."""
+        """Fetch the author's case/sanction history from the DB.
+
+        Includes ``messages_deja_moderes`` (messages this author already had
+        actioned by automod in this guild) so nano never re-sanctions the
+        current message for conduct already handled in an earlier one.
+        """
         if not self.bot.db:
             return AuthorHistory()
         try:
@@ -370,7 +388,14 @@ class AutomodModule(ModuleBase):
                     "date": created.strftime("%Y-%m-%d") if created else "",
                     "raison": (s.get("note") or "")[:120],
                 })
-            return AuthorHistory(cases_total=int(total or 0), sanctions_recentes=recent)
+            already = await self.bot.db.list_automod_evidence_message_ids(
+                user_id, self.guild_id, limit=25,
+            )
+            return AuthorHistory(
+                cases_total=int(total or 0),
+                sanctions_recentes=recent,
+                messages_deja_moderes=already,
+            )
         except Exception as e:
             logger.error("automod: failed to build author history: %s", e)
             return AuthorHistory()
@@ -433,51 +458,82 @@ class AutomodModule(ModuleBase):
             except (discord.Forbidden, discord.HTTPException):
                 pass
 
-        # 3. Record the case + evidence for every sanction action.
-        await self._record_case(message, decision, applied)
+        # A warn carries no Discord-side action but IS a recorded sanction —
+        # surface it so the notification doesn't read "aucune".
+        if "warn" in actions and "warn" not in applied:
+            applied.append("warn")
 
-        # 4. Log to the configured channel.
-        await self._log_decision(message, decision, applied)
+        # 3. Record the case (official cases system) + attach the message as
+        #    evidence, then resolve the primary sanction for the appeal DM.
+        case_ref, case_id, primary_action, primary_sanction_id = \
+            await self._record_case(message, decision)
 
-    async def _record_case(self, message: discord.Message, decision: Decision, applied: List[str]):
-        """Open/extend a guild case for the sanctions and attach evidence."""
+        # 4. Notify the server in the mandatory alert channel.
+        await self._notify_channel(message, decision, applied, case_ref)
+
+        # 5. DM the sanctioned member (like a manual mod action) with the
+        #    appeal buttons — only when a real sanction was opened.
+        if case_id is not None and primary_action is not None and member is not None:
+            await self._send_sanction_dm(
+                member, case_id, case_ref, primary_action, primary_sanction_id, decision,
+            )
+
+    async def _record_case(self, message: discord.Message, decision: Decision):
+        """Open/extend a guild case for the sanctions and attach evidence.
+
+        Returns ``(case_ref, case_id, primary_action, primary_sanction_id)`` so
+        the caller can DM the member an appealable notice. ``primary_action`` is
+        the most punitive recorded sanction (ban > mute > warn).
+        """
         if not getattr(self.bot, "cases", None):
-            return
+            return None, None, None, None
 
-        # Determine which decided actions are real sanctions.
+        # Decided actions that are real sanctions (deletion is not a sanction).
         sanction_actions = [
-            _ACTION_TO_SANCTION[a]
-            for a in decision.actions
-            if _ACTION_TO_SANCTION.get(a) is not None
+            a for a in decision.actions if _ACTION_TO_SANCTION.get(a) is not None
         ]
         if not sanction_actions:
-            return  # deletion-only: no case folder
+            return None, None, None, None  # deletion-only: no case folder
 
-        case_ref = None
-        case_id = None
-        for sanction in sanction_actions:
+        # Factual reason (issuer already identifies automod — no "[Automod]" noise).
+        case_reason = (decision.raison or decision.categorie or "Message problématique")[:480]
+        extrait = (message.content or "")[:1500]
+
+        case_ref = case_id = None
+        # Track the primary (most punitive) sanction for the DM / appeal.
+        order = {"ban": 3, "mute": 2, "warn": 1}
+        primary_action = None
+        primary_sanction_id = None
+        for action in sanction_actions:
             result = await self.bot.cases.record_sanction(
                 "guild",
                 subject_id=int(decision.auteur_id),
-                action=sanction,
-                reason=f"[Automod] {decision.raison}"[:480],
+                action=_ACTION_TO_SANCTION[action],
+                reason=case_reason,
                 issuer_type=IssuerType.AUTOMOD,
                 issuer_id=self.bot.user.id if self.bot.user else None,
                 scope_id=self.guild_id,
                 note=f"Automod · {decision.categorie} · {decision.gravite}",
             )
-            if result:
-                case_id = result["id"]
-                case_ref = result["reference"]
+            if not result:
+                continue
+            case_id = result["id"]
+            case_ref = result["reference"]
+            if primary_action is None or order.get(action, 0) > order.get(primary_action, 0):
+                primary_action = action
+                primary_sanction_id = result.get("sanction_id")
 
         # Attach the offending message as evidence on the case.
         if case_id is not None:
+            jump = getattr(message, "jump_url", "")
             evidence = (
-                f"Message de `{decision.auteur_id}` dans <#{message.channel.id}> :\n"
-                f"> {(message.content or '')[:1500]}\n\n"
+                f"Message de <@{decision.auteur_id}> (`{decision.auteur_id}`) dans "
+                f"<#{message.channel.id}> :\n"
+                f"> {extrait or '*(vide)*'}\n\n"
                 f"Détection : `{decision.signal_source}` · catégorie `{decision.categorie}` "
-                f"· score `{decision.score_detecteur:.2f}` · confiance `{decision.confiance}`\n"
-                f"Actions IA : {', '.join(decision.actions)}"
+                f"· gravité `{decision.gravite}` · score `{decision.score_detecteur:.2f}` "
+                f"· confiance `{decision.confiance}`"
+                + (f"\n[Aller au message]({jump})" if jump else "")
             )
             try:
                 await self.bot.db.add_event(
@@ -489,6 +545,10 @@ class AutomodModule(ModuleBase):
                         "source": "automod",
                         "message_id": decision.message_id,
                         "channel_id": message.channel.id,
+                        "jump_url": jump,
+                        "extrait": extrait,
+                        "raison": decision.raison,
+                        "explication": decision.explication,
                         "signal_source": decision.signal_source,
                         "categorie": decision.categorie,
                         "gravite": decision.gravite,
@@ -500,11 +560,46 @@ class AutomodModule(ModuleBase):
             except Exception as e:
                 logger.error("automod: failed to attach evidence to case %s: %s", case_ref, e)
 
-    async def _log_decision(self, message: discord.Message, decision: Decision, applied: List[str]):
-        if not self.log_channel_id:
+        return case_ref, case_id, primary_action, primary_sanction_id
+
+    def _dm_locale(self, guild: Optional[discord.Guild]) -> str:
+        """Pick a DM locale from the guild's preferred locale (fr / en-US)."""
+        try:
+            pref = str(getattr(guild, "preferred_locale", "") or "")
+        except Exception:
+            pref = ""
+        return "fr" if pref.lower().startswith("fr") else "en-US"
+
+    async def _send_sanction_dm(self, member: discord.Member, case_id, case_ref: str,
+                                primary_action: str, primary_sanction_id, decision: Decision):
+        """DM the member their sanction with Server / Moddy-team appeal buttons."""
+        if not primary_sanction_id:
+            return  # cannot offer an appeal without a sanction to target
+        from utils.appeal_views import build_sanction_dm_view
+        locale = self._dm_locale(member.guild)
+        guild_name = member.guild.name if member.guild else ""
+        view = build_sanction_dm_view(
+            locale=locale,
+            guild_name=guild_name,
+            case_ref=case_ref or "—",
+            action=primary_action,
+            reason=decision.raison,
+            explication=decision.explication,
+            case_id=str(case_id),
+            sanction_id=str(primary_sanction_id),
+        )
+        try:
+            await member.send(view=view)
+        except (discord.Forbidden, discord.HTTPException):
+            pass  # closed DMs — the case + channel notification still stand
+
+    async def _notify_channel(self, message: discord.Message, decision: Decision,
+                              applied: List[str], case_ref: Optional[str]):
+        """Post the decision to the mandatory server alert channel."""
+        if not self.notify_channel_id:
             return
         guild = message.guild
-        channel = guild.get_channel(int(self.log_channel_id)) if guild else None
+        channel = guild.get_channel(int(self.notify_channel_id)) if guild else None
         if not channel or not isinstance(channel, discord.TextChannel):
             return
         me = guild.me
@@ -512,8 +607,9 @@ class AutomodModule(ModuleBase):
             return
 
         from discord import ui
-        from utils.emojis import FILTER, WARNING
+        from utils.emojis import FILTER, WARNING, INFO
 
+        applied_txt = ", ".join(applied) if applied else "détection seule"
         view = ui.LayoutView(timeout=None)
         container = ui.Container()
         container.add_item(ui.TextDisplay(f"### {FILTER} Automod"))
@@ -527,8 +623,10 @@ class AutomodModule(ModuleBase):
         if message.content:
             container.add_item(ui.TextDisplay(f"> {message.content[:500]}"))
         container.add_item(ui.TextDisplay(
-            f"-# {WARNING} **Raison :** {decision.raison}\n"
-            f"-# **Actions appliquées :** {', '.join(applied) if applied else 'aucune'}"
+            f"{WARNING} **Raison :** {decision.raison or '—'}\n"
+            + (f"-# {decision.explication}\n" if decision.explication else "")
+            + f"-# **Actions :** {applied_txt}"
+            + (f" · **Case :** `{case_ref}`" if case_ref else "")
         ))
         view.add_item(container)
         try:

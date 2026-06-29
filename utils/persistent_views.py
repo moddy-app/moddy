@@ -34,6 +34,7 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     from modules.configs.social_notifications_config import SocialNotificationsConfigView
     from modules.configs.automod_config import AutomodConfigView
     from utils.cases_views import CasesBrowserView
+    from utils.appeal_views import AppealPersistence
 
     return [
         # Group 1 — /moddy (public informational, no user auth)
@@ -45,6 +46,8 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         AutomodConfigView,
         # Group 3 — /cases & /mycases (per-mode auth)
         CasesBrowserView,
+        # Group 4 — automod sanction appeals (dynamic items)
+        AppealPersistence,
     ]
 
 
