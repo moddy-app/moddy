@@ -38,7 +38,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 import discord
@@ -418,13 +418,11 @@ class AutomodModule(ModuleBase):
         member = guild.get_member(int(decision.auteur_id)) if guild else None
         me = guild.me if guild else None
         actions = decision.actions
-        reason = f"[Automod] {decision.raison}"[:480] or "[Automod]"
 
         applied: List[str] = []
 
-        # 1. Delete the offending message.
+        # 1. Delete the offending message (no case needed for this).
         if "supprimer" in actions:
-            # Resolve the right message: target may be a re-verified one.
             target_msg = message if str(message.id) == decision.message_id else None
             if target_msg is None:
                 try:
@@ -438,22 +436,33 @@ class AutomodModule(ModuleBase):
                 except (discord.NotFound, discord.Forbidden, discord.HTTPException):
                     pass
 
-        # 2. Ban (takes precedence over mute).
+        # 2. Record the case FIRST so the Discord audit-log reason can carry the
+        #    public case reference, exactly like a manual sanction.
+        mute_expires = None
+        if "mute" in actions and "ban" not in actions:
+            mute_expires = datetime.now(timezone.utc) + _MUTE_DURATIONS.get(
+                decision.gravite, timedelta(hours=1))
+        case_ref, case_id, primary_action, primary_sanction_id = \
+            await self._record_case(message, decision, mute_expires)
+
+        # 3. Apply the Discord-side sanction with the standardized reason.
         can_act = member is not None and me is not None and member != guild.owner \
             and (me.top_role > member.top_role)
 
         if "ban" in actions and can_act and me.guild_permissions.ban_members:
+            audit = self._audit_reason(case_ref, None, decision.raison)
             try:
                 self._mark_moddy_initiated(member.id, "ban")
-                await guild.ban(member, reason=reason, delete_message_days=0)
+                await guild.ban(member, reason=audit, delete_message_days=0)
                 applied.append("ban")
             except (discord.Forbidden, discord.HTTPException):
                 pass
         elif "mute" in actions and can_act and me.guild_permissions.moderate_members:
             duration = _MUTE_DURATIONS.get(decision.gravite, timedelta(hours=1))
+            audit = self._audit_reason(case_ref, mute_expires, decision.raison)
             try:
                 self._mark_moddy_initiated(member.id, "mute")
-                await member.timeout(duration, reason=reason)
+                await member.timeout(duration, reason=audit)
                 applied.append("mute")
             except (discord.Forbidden, discord.HTTPException):
                 pass
@@ -462,11 +471,6 @@ class AutomodModule(ModuleBase):
         # surface it so the notification doesn't read "aucune".
         if "warn" in actions and "warn" not in applied:
             applied.append("warn")
-
-        # 3. Record the case (official cases system) + attach the message as
-        #    evidence, then resolve the primary sanction for the appeal DM.
-        case_ref, case_id, primary_action, primary_sanction_id = \
-            await self._record_case(message, decision)
 
         # 4. Notify the server in the mandatory alert channel.
         await self._notify_channel(message, decision, applied, case_ref)
@@ -478,7 +482,18 @@ class AutomodModule(ModuleBase):
                 member, case_id, case_ref, primary_action, primary_sanction_id, decision,
             )
 
-    async def _record_case(self, message: discord.Message, decision: Decision):
+    def _audit_reason(self, case_ref: Optional[str], expires_at, reason: str) -> str:
+        """Discord audit-log reason, identical in shape to manual sanctions.
+
+        Mirrors ``cogs.moderation_commands._build_discord_reason``:
+        ``[<ref>] @<mod> (<expiry>) : <reason>``.
+        """
+        ref = case_ref or "Automod"
+        mod_name = self.bot.user.name if self.bot.user else "Moddy"
+        expiry = expires_at.strftime("%Y-%m-%d %H:%M UTC") if expires_at else "Permanent"
+        return f"[{ref}] @{mod_name} ({expiry}) : {reason}"[:512]
+
+    async def _record_case(self, message: discord.Message, decision: Decision, mute_expires=None):
         """Open/extend a guild case for the sanctions and attach evidence.
 
         Returns ``(case_ref, case_id, primary_action, primary_sanction_id)`` so
@@ -505,6 +520,9 @@ class AutomodModule(ModuleBase):
         primary_action = None
         primary_sanction_id = None
         for action in sanction_actions:
+            # A timed mute carries its expiry on the case sanction too, so the
+            # case auto-expires in step with the Discord timeout.
+            expires_at = mute_expires if action == "mute" else None
             result = await self.bot.cases.record_sanction(
                 "guild",
                 subject_id=int(decision.auteur_id),
@@ -513,6 +531,7 @@ class AutomodModule(ModuleBase):
                 issuer_type=IssuerType.AUTOMOD,
                 issuer_id=self.bot.user.id if self.bot.user else None,
                 scope_id=self.guild_id,
+                expires_at=expires_at,
                 note=f"Automod · {decision.categorie} · {decision.gravite}",
             )
             if not result:

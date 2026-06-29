@@ -1306,7 +1306,8 @@
           "disable_content": "Disable detection",
           "enable_ignore": "Enable",
           "disable_ignore": "Disable",
-          "edit_rules": "Edit rules"
+          "edit_rules": "Edit rules",
+          "edit_indications": "Edit guidance"
         },
         "rules": {
           "desc": "Guides the AI when judging messages. Verified against injection attempts before being saved.",
@@ -1343,7 +1344,115 @@
           "label": "Ignore moderators",
           "desc": "Don't analyze members who can manage messages."
         },
-        "apply_hint": "Changes are applied immediately."
+        "apply_hint": "Changes are applied immediately.",
+        "summary_need_channel": "Set the **alert channel** (required) to start.",
+        "section_notify": "Alert channel",
+        "notify": {
+          "desc": "Channel where Automod notifies the server of every action. Required.",
+          "placeholder": "Pick the alert channel…",
+          "current": "Current:",
+          "missing": "No channel set — automod won't run until one is set."
+        },
+        "section_severity": "Severity level",
+        "severity": {
+          "desc": "The higher the level, the more sensitive and severe automod is.",
+          "current": "Current level:",
+          "placeholder": "Pick a level (1 to 5)…",
+          "option": "Level {n}",
+          "level_1": "Very lenient — only blatant, serious cases.",
+          "level_2": "Lenient — lets mild casual language through.",
+          "level_3": "Balanced — reasonable moderation (recommended).",
+          "level_4": "Strict — also acts on subtle cases, harsher sanctions.",
+          "level_5": "Very strict — minimal tolerance, severe sanctions."
+        },
+        "section_indications": "Automod guidance",
+        "indications": {
+          "desc": "Guides the AI when judging messages. Checked against injection attempts before saving.",
+          "current": "Current",
+          "empty": "No guidance — the AI applies reasonable moderation standards.",
+          "modal_title": "Automod guidance",
+          "modal_label": "Guidance",
+          "modal_desc": "What the AI should watch for / tolerate on your server.",
+          "modal_placeholder": "E.g.: no insults or harassment, humor is tolerated…",
+          "saved": "<:done:1519800188925902881> Guidance checked and saved.",
+          "cleared": "<:done:1519800188925902881> Guidance cleared.",
+          "error_unsafe": "<:error:1519790252594827264> Guidance rejected: it looks like an attempt to manipulate the AI.\n-# Reason: {reason}",
+          "error_too_long": "<:error:1519790252594827264> The guidance is too long (max 3000 characters).",
+          "error_unavailable": "<:warning:1519789903100121139> Can't verify the guidance right now (AI service unavailable). Try again later."
+        }
+      },
+      "action": {
+        "warn": "Warning",
+        "mute": "Timeout",
+        "ban": "Ban",
+        "kick": "Kick",
+        "supprimer": "Deletion"
+      },
+      "dm": {
+        "title": "Automatic sanction",
+        "intro": "A moderation action was applied on {guild}.",
+        "action": "Sanction",
+        "reason": "Reason",
+        "case": "Case",
+        "appeal_state": "Appeal status",
+        "appeal_hint": "You can appeal this sanction below.",
+        "appeal_server": "Appeal to the server",
+        "appeal_team": "Appeal to the Moddy team"
+      },
+      "appeal": {
+        "status": {
+          "pending": "Pending",
+          "accepted": "Accepted",
+          "refused": "Refused",
+          "transformed": "Transformed",
+          "cancelled": "Cancelled"
+        },
+        "modal": {
+          "title": "Appeal",
+          "label": "Why are you contesting?",
+          "desc": "Explain your situation clearly and calmly.",
+          "placeholder": "Describe why this sanction seems unfair…"
+        },
+        "opened_title": "Appeal sent",
+        "opened_server": "Your appeal was sent to the server moderators. You'll be notified of the decision.",
+        "opened_team": "Your appeal was sent to the Moddy team. You'll be notified of the decision.",
+        "error": {
+          "title": "Cannot appeal",
+          "already": "An appeal is already in progress for this sanction.",
+          "handled": "This appeal has already been handled.",
+          "no_perms": "You don't have permission to handle this appeal.",
+          "not_found": "Case not found.",
+          "unavailable": "Service unavailable, try again later."
+        },
+        "button": {
+          "accept": "Accept",
+          "refuse": "Refuse",
+          "transform": "Transform"
+        },
+        "review": {
+          "title_team": "Appeal — Moddy team",
+          "title_server": "Appeal — server",
+          "member": "Member",
+          "server": "Server",
+          "case": "Case",
+          "sanction": "Sanction",
+          "motive": "Reason",
+          "evidence": "Evidence",
+          "user_says": "User's message",
+          "outcome": "Decision",
+          "decided_by": "Decided by"
+        },
+        "transform": {
+          "title": "Transform the sanction",
+          "label": "New sanction",
+          "note": "Note (optional)"
+        },
+        "dm_outcome_title": "Decision on your appeal",
+        "dm_outcome": "Your appeal regarding {guild} was handled: **{status}**.",
+        "server_opened_title": "Appeal in progress",
+        "server_opened": "{user} appealed to the Moddy team (case {case}).",
+        "server_decided_title": "Appeal handled",
+        "server_decided": "{user}'s appeal ({route}) was handled: **{status}**."
       }
     }
   },
@@ -1379,7 +1488,8 @@
     "ro": "Romanian",
     "hu": "Hungarian",
     "uk": "Ukrainian",
-    "bg": "Bulgarian"
+    "bg": "Bulgarian",
+    "lmo": "Lombard"
   },
   "staff": {
     "common": {

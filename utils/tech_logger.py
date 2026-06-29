@@ -534,10 +534,21 @@ class TechLogger:
         if isinstance(data, dict):
             return json.dumps(data, ensure_ascii=False, indent=2)
         if isinstance(data, list):
-            # Embedding responses: list of float vectors — summarize, don't dump.
+            # Embedding responses: list of float vectors. Dumping 1536 floats is
+            # useless noise, but a bare "(vectors omitted)" hides the real
+            # answer — so show a readable preview per vector (first dims + norm).
             if data and isinstance(data[0], (list, tuple)):
+                import math
                 dim = len(data[0]) if data[0] else 0
-                return f"{len(data)} embedding vector(s), dimension {dim} (vectors omitted)"
+                lines = [f"{len(data)} embedding vector(s), dimension {dim}"]
+                for i, vec in enumerate(data[:8]):
+                    preview = ", ".join(f"{float(x):.4f}" for x in vec[:8])
+                    norm = math.sqrt(sum(float(x) * float(x) for x in vec)) if vec else 0.0
+                    more = ", …" if dim > 8 else ""
+                    lines.append(f"[{i}] norm={norm:.4f} | [{preview}{more}]")
+                if len(data) > 8:
+                    lines.append(f"… (+{len(data) - 8} more vectors)")
+                return "\n".join(lines)
             return json.dumps(data, ensure_ascii=False, indent=2)
         return str(data)
 

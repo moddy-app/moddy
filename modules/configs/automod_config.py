@@ -1,18 +1,22 @@
 """
 Configuration UI for the Automod module (`/config`).
 
-This panel is **live / immediate-apply**: every toggle, select and the rules
-editor persist straight to the DB and re-render from it — there is no Save /
-Cancel step. That keeps the UX dead simple and makes the view naturally
-**persistent** (see docs/PERSISTENT_VIEWS.md): every component has a stable,
-namespaced ``custom_id``, the view never times out, and a shell instance is
-registered so clicks keep working after a bot restart. Callbacks re-derive all
-context (`bot`, `guild_id`, `locale`) from ``interaction`` + the DB — never from
-``self``. Auth: **Manage Server** in the guild, checked on every interaction.
+Rebuilt to be **simple and immediate-apply**: every toggle / select / the
+indications editor persists straight to the DB and re-renders from it — no
+Save / Cancel step. That keeps the view naturally **persistent** (see
+docs/PERSISTENT_VIEWS.md): every component has a stable, namespaced
+``custom_id``, the view never times out, and a shell instance is registered so
+clicks keep working after a restart. Callbacks re-derive all context
+(`bot`, `guild_id`, `locale`) from ``interaction`` + the DB — never from
+``self``. Auth: **Manage Server**, re-checked on every interaction.
 
-The server rules are AI-validated against prompt injection (`automod.rules_check`)
-**before** being saved, because they are embedded verbatim into the moderation
-engine's system prompt.
+Two things matter for correctness:
+
+* The **alert channel is mandatory** — automod does not run without it, so the
+  panel makes it the first required field and warns until it is set.
+* The **indications** (ex-"règlement") are AI-validated against prompt injection
+  (`automod.rules_check`) **before** being saved, because they are embedded
+  verbatim into the moderation engine's system prompt.
 """
 
 import copy
@@ -25,23 +29,22 @@ from discord import ui
 from utils.i18n import t, i18n
 from cogs.error_handler import BaseView, BaseModal
 from utils.emojis import (
-    FILTER, BOOK, BACK, DELETE, MESSAGE, GROUPS,
-    TOGGLE_ON, TOGGLE_OFF,
+    FILTER, BOOK, BACK, DELETE, MESSAGE, GROUPS, SETTINGS, WARNING,
+    REQUIRED_FIELDS, TOGGLE_ON, TOGGLE_OFF,
 )
 from automod.rules_check import validate_rules, MAX_RULES_LENGTH
+from automod import constants as ac
 
 logger = logging.getLogger("moddy.modules.automod_config")
 
-# --------------------------------------------------------------------------- #
-# Namespaced custom_id constants (persistent dispatch).
-# Format: moddy:automod:cfg:<action>. Guild context is re-derived from
+# Namespaced custom_ids (persistent dispatch). Guild context is re-derived from
 # ``interaction.guild_id`` so the ids stay static (one shell, all guilds).
-# --------------------------------------------------------------------------- #
 _CID_TOGGLE_MODULE = "moddy:automod:cfg:toggle_module"
 _CID_TOGGLE_CONTENT = "moddy:automod:cfg:toggle_content"
 _CID_TOGGLE_IGNORE = "moddy:automod:cfg:toggle_ignore"
-_CID_EDIT_RULES = "moddy:automod:cfg:edit_rules"
-_CID_LOG_CHANNEL = "moddy:automod:cfg:log_channel"
+_CID_EDIT_INDICATIONS = "moddy:automod:cfg:edit_indications"
+_CID_NOTIFY_CHANNEL = "moddy:automod:cfg:notify_channel"
+_CID_SEVERITY = "moddy:automod:cfg:severity"
 _CID_EXEMPT_ROLES = "moddy:automod:cfg:exempt_roles"
 _CID_EXEMPT_CHANNELS = "moddy:automod:cfg:exempt_channels"
 _CID_BACK = "moddy:automod:cfg:back"
@@ -49,9 +52,10 @@ _CID_RESET = "moddy:automod:cfg:reset"
 
 _DEFAULT_CONFIG = {
     "enabled": False,
-    "rules": "",
-    "log_channel_id": None,
+    "indications": "",
+    "notify_channel_id": None,
     "ignore_moderators": True,
+    "severity": ac.SEVERITY_DEFAULT,
     "features": {
         "content": {"enabled": False, "exempt_roles": [], "exempt_channels": []},
     },
@@ -64,9 +68,11 @@ def _deep_default(current: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     if not current:
         return cfg
     cfg["enabled"] = bool(current.get("enabled", False))
-    cfg["rules"] = str(current.get("rules", "") or "")
-    cfg["log_channel_id"] = current.get("log_channel_id")
+    # Read legacy keys ("rules", "log_channel_id") transparently.
+    cfg["indications"] = str(current.get("indications", current.get("rules", "")) or "")
+    cfg["notify_channel_id"] = current.get("notify_channel_id", current.get("log_channel_id"))
     cfg["ignore_moderators"] = bool(current.get("ignore_moderators", True))
+    cfg["severity"] = ac.clamp_severity(current.get("severity", ac.SEVERITY_DEFAULT))
     content = (current.get("features", {}) or {}).get("content", {}) or {}
     cfg["features"]["content"] = {
         "enabled": bool(content.get("enabled", False)),
@@ -114,56 +120,56 @@ async def _save_and_render(interaction: discord.Interaction, cfg: Dict[str, Any]
 
 
 # --------------------------------------------------------------------------- #
-# Rules modal (AI-validated). Modals are one-shot, not persisted.
+# Indications modal (AI-validated). Modals are one-shot, not persisted.
 # --------------------------------------------------------------------------- #
-class RulesModal(BaseModal, title="Règlement du serveur"):
+class IndicationsModal(BaseModal):
     def __init__(self, bot, guild_id: int, locale: str, current: str):
-        super().__init__(timeout=600)
+        super().__init__(title=t("modules.automod.config.indications.modal_title", locale=locale)[:45])
         self.bot = bot
         self.guild_id = guild_id
         self.locale = locale
-
-        self.rules_input = ui.TextInput(
-            label=t("modules.automod.config.rules.modal_label", locale=locale)[:45],
-            placeholder=t("modules.automod.config.rules.modal_placeholder", locale=locale)[:100],
-            default=current[:MAX_RULES_LENGTH] if current else None,
-            style=discord.TextStyle.paragraph,
-            max_length=MAX_RULES_LENGTH,
-            required=False,
+        self.field = ui.Label(
+            text=t("modules.automod.config.indications.modal_label", locale=locale)[:45],
+            description=t("modules.automod.config.indications.modal_desc", locale=locale)[:100],
+            component=ui.TextInput(
+                placeholder=t("modules.automod.config.indications.modal_placeholder", locale=locale)[:100],
+                default=current[:MAX_RULES_LENGTH] if current else None,
+                style=discord.TextStyle.paragraph,
+                max_length=MAX_RULES_LENGTH,
+                required=False,
+            ),
         )
-        self.add_item(self.rules_input)
+        self.add_item(self.field)
 
     async def on_submit(self, interaction: discord.Interaction):
         locale = i18n.get_user_locale(interaction)
-        text = (self.rules_input.value or "").strip()
+        text = (self.field.component.value or "").strip()
         cfg = await _load_config(self.bot, self.guild_id)
 
-        # Clearing the rules needs no AI call.
-        if not text:
-            cfg["rules"] = ""
+        if not text:  # clearing needs no AI call
+            cfg["indications"] = ""
             await _save_and_render(interaction, cfg)
             await interaction.followup.send(
-                t("modules.automod.config.rules.cleared", locale=locale), ephemeral=True
+                t("modules.automod.config.indications.cleared", locale=locale), ephemeral=True
             )
             return
 
-        # The AI safety check can take >1s → defer (panel update).
         await interaction.response.defer()
         safe, reason = await validate_rules(self.bot, self.guild_id, text)
         if not safe:
             if reason == "too_long":
-                msg = t("modules.automod.config.rules.error_too_long", locale=locale)
+                msg = t("modules.automod.config.indications.error_too_long", locale=locale)
             elif reason == "unavailable":
-                msg = t("modules.automod.config.rules.error_unavailable", locale=locale)
+                msg = t("modules.automod.config.indications.error_unavailable", locale=locale)
             else:
-                msg = t("modules.automod.config.rules.error_unsafe", locale=locale, reason=reason or "—")
+                msg = t("modules.automod.config.indications.error_unsafe", locale=locale, reason=reason or "—")
             await interaction.followup.send(msg, ephemeral=True)
             return
 
-        cfg["rules"] = text
+        cfg["indications"] = text
         await _save_and_render(interaction, cfg)
         await interaction.followup.send(
-            t("modules.automod.config.rules.saved", locale=locale), ephemeral=True
+            t("modules.automod.config.indications.saved", locale=locale), ephemeral=True
         )
 
 
@@ -205,7 +211,8 @@ class AutomodConfigView(BaseView):
         module_on = self.config["enabled"]
         content_on = self._content["enabled"]
         ignore_on = self.config["ignore_moderators"]
-        running = module_on and content_on
+        has_channel = self.config.get("notify_channel_id") is not None
+        running = module_on and content_on and has_channel
 
         # Header
         container.add_item(ui.TextDisplay(
@@ -221,7 +228,12 @@ class AutomodConfigView(BaseView):
                 t("modules.automod.config.summary_active", locale=self.locale)
             ))
         else:
-            hint_key = ("summary_need_module" if not module_on else "summary_need_content")
+            if not has_channel:
+                hint_key = "summary_need_channel"
+            elif not module_on:
+                hint_key = "summary_need_module"
+            else:
+                hint_key = "summary_need_content"
             container.add_item(ui.TextDisplay(
                 f"{t('modules.automod.config.summary_inactive', locale=self.locale)}\n"
                 f"-# {t(f'modules.automod.config.{hint_key}', locale=self.locale)}"
@@ -234,7 +246,6 @@ class AutomodConfigView(BaseView):
             f"**{t('modules.automod.config.section_status', locale=self.locale)}**\n"
             f"{self._toggle(module_on)} **{t('modules.automod.config.module_label', locale=self.locale)}** "
             f"· {self._state(module_on)}\n"
-            f"-# {t('modules.automod.config.module_desc', locale=self.locale)}\n"
             f"{self._toggle(content_on)} **{t('modules.automod.config.content_label', locale=self.locale)}** "
             f"· {self._state(content_on)}\n"
             f"-# {t('modules.automod.config.content_desc', locale=self.locale)}"
@@ -262,46 +273,84 @@ class AutomodConfigView(BaseView):
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
-        # --- Rules section ---
-        rules = self.config.get("rules", "")
-        if rules:
-            preview = rules[:180] + ("…" if len(rules) > 180 else "")
-            rules_state = f"-# {t('modules.automod.config.rules.current', locale=self.locale)} : {preview}"
-        else:
-            rules_state = f"-# {t('modules.automod.config.rules.empty', locale=self.locale)}"
+        # --- Alert channel (REQUIRED) ---
+        chan = None
+        if self.bot and self.guild_id and self.config.get("notify_channel_id"):
+            chan = self.bot.get_channel(int(self.config["notify_channel_id"]))
+        chan_state = (f"-# {t('modules.automod.config.notify.current', locale=self.locale)} {chan.mention}"
+                      if chan else f"-# {WARNING} {t('modules.automod.config.notify.missing', locale=self.locale)}")
         container.add_item(ui.TextDisplay(
-            f"{BOOK} **{t('modules.automod.config.section_rules', locale=self.locale)}**\n"
-            f"-# {t('modules.automod.config.rules.desc', locale=self.locale)}\n"
-            f"{rules_state}"
+            f"{MESSAGE} **{t('modules.automod.config.section_notify', locale=self.locale)}**{REQUIRED_FIELDS}\n"
+            f"-# {t('modules.automod.config.notify.desc', locale=self.locale)}\n"
+            f"{chan_state}"
         ))
-        rules_row = ui.ActionRow()
-        rules_btn = ui.Button(
-            label=t("modules.automod.config.buttons.edit_rules", locale=self.locale),
+        notify_row = ui.ActionRow()
+        notify_select = ui.ChannelSelect(
+            placeholder=t("modules.automod.config.notify.placeholder", locale=self.locale),
+            channel_types=[discord.ChannelType.text, discord.ChannelType.news],
+            min_values=0, max_values=1, custom_id=_CID_NOTIFY_CHANNEL,
+        )
+        self._apply_channel_defaults(notify_select, [self.config.get("notify_channel_id")])
+        notify_select.callback = self.on_notify_channel
+        notify_row.add_item(notify_select)
+        container.add_item(notify_row)
+
+        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+
+        # --- Severity ---
+        severity = self.config.get("severity", ac.SEVERITY_DEFAULT)
+        container.add_item(ui.TextDisplay(
+            f"{SETTINGS} **{t('modules.automod.config.section_severity', locale=self.locale)}**\n"
+            f"-# {t('modules.automod.config.severity.desc', locale=self.locale)}\n"
+            f"-# {t('modules.automod.config.severity.current', locale=self.locale)} "
+            f"**{severity}/5** — {t(f'modules.automod.config.severity.level_{severity}', locale=self.locale)}"
+        ))
+        sev_row = ui.ActionRow()
+        sev_select = ui.Select(
+            placeholder=t("modules.automod.config.severity.placeholder", locale=self.locale),
+            min_values=1, max_values=1, custom_id=_CID_SEVERITY,
+            options=[
+                discord.SelectOption(
+                    label=t("modules.automod.config.severity.option", locale=self.locale, n=n),
+                    value=str(n),
+                    description=t(f"modules.automod.config.severity.level_{n}", locale=self.locale)[:100],
+                    default=(n == severity),
+                )
+                for n in range(ac.SEVERITY_MIN, ac.SEVERITY_MAX + 1)
+            ],
+        )
+        sev_select.callback = self.on_severity
+        sev_row.add_item(sev_select)
+        container.add_item(sev_row)
+
+        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+
+        # --- Indications (ex-Règlement) ---
+        indications = self.config.get("indications", "")
+        if indications:
+            preview = indications[:180] + ("…" if len(indications) > 180 else "")
+            ind_state = f"-# {t('modules.automod.config.indications.current', locale=self.locale)} : {preview}"
+        else:
+            ind_state = f"-# {t('modules.automod.config.indications.empty', locale=self.locale)}"
+        container.add_item(ui.TextDisplay(
+            f"{BOOK} **{t('modules.automod.config.section_indications', locale=self.locale)}**\n"
+            f"-# {t('modules.automod.config.indications.desc', locale=self.locale)}\n"
+            f"{ind_state}"
+        ))
+        ind_row = ui.ActionRow()
+        ind_btn = ui.Button(
+            label=t("modules.automod.config.buttons.edit_indications", locale=self.locale),
             style=discord.ButtonStyle.primary,
             emoji=discord.PartialEmoji.from_str(BOOK),
-            custom_id=_CID_EDIT_RULES,
+            custom_id=_CID_EDIT_INDICATIONS,
         )
-        rules_btn.callback = self.on_edit_rules
-        rules_row.add_item(rules_btn)
-        container.add_item(rules_row)
+        ind_btn.callback = self.on_edit_indications
+        ind_row.add_item(ind_btn)
+        container.add_item(ind_row)
 
-        # --- Log channel section ---
-        container.add_item(ui.TextDisplay(
-            f"{MESSAGE} **{t('modules.automod.config.section_logs', locale=self.locale)}**\n"
-            f"-# {t('modules.automod.config.log_channel.desc', locale=self.locale)}"
-        ))
-        log_row = ui.ActionRow()
-        log_select = ui.ChannelSelect(
-            placeholder=t("modules.automod.config.log_channel.placeholder", locale=self.locale),
-            channel_types=[discord.ChannelType.text, discord.ChannelType.news],
-            min_values=0, max_values=1, custom_id=_CID_LOG_CHANNEL,
-        )
-        self._apply_channel_defaults(log_select, [self.config.get("log_channel_id")])
-        log_select.callback = self.on_log_channel
-        log_row.add_item(log_select)
-        container.add_item(log_row)
+        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
-        # --- Exemptions section ---
+        # --- Exemptions ---
         container.add_item(ui.TextDisplay(
             f"{GROUPS} **{t('modules.automod.config.section_exemptions', locale=self.locale)}**\n"
             f"**{t('modules.automod.config.exempt_roles.label', locale=self.locale)}**\n"
@@ -333,7 +382,9 @@ class AutomodConfigView(BaseView):
         chan_row.add_item(chan_select)
         container.add_item(chan_row)
 
-        # --- Options section ---
+        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+
+        # --- Options ---
         container.add_item(ui.TextDisplay(
             f"**{t('modules.automod.config.section_options', locale=self.locale)}**\n"
             f"{self._toggle(ignore_on)} **{t('modules.automod.config.ignore_mods.label', locale=self.locale)}** "
@@ -367,9 +418,6 @@ class AutomodConfigView(BaseView):
         )
         back_btn.callback = self.on_back
         bottom.add_item(back_btn)
-        # Always present (even when there's nothing saved yet) so its custom_id
-        # is registered on the persistent shell and keeps dispatching after a
-        # restart. Disabled when there is no stored config to remove.
         reset_btn = ui.Button(
             emoji=discord.PartialEmoji.from_str(DELETE),
             label=t("modules.config.buttons.delete", locale=self.locale),
@@ -424,12 +472,21 @@ class AutomodConfigView(BaseView):
         cfg["ignore_moderators"] = not cfg["ignore_moderators"]
         await _save_and_render(interaction, cfg)
 
-    async def on_log_channel(self, interaction: discord.Interaction):
+    async def on_notify_channel(self, interaction: discord.Interaction):
         if not await _check_perms(interaction):
             return
         cfg = await _load_config(interaction.client, interaction.guild_id)
         values = interaction.data.get("values", [])
-        cfg["log_channel_id"] = int(values[0]) if values else None
+        cfg["notify_channel_id"] = int(values[0]) if values else None
+        await _save_and_render(interaction, cfg)
+
+    async def on_severity(self, interaction: discord.Interaction):
+        if not await _check_perms(interaction):
+            return
+        cfg = await _load_config(interaction.client, interaction.guild_id)
+        values = interaction.data.get("values", [])
+        if values:
+            cfg["severity"] = ac.clamp_severity(values[0])
         await _save_and_render(interaction, cfg)
 
     async def on_exempt_roles(self, interaction: discord.Interaction):
@@ -446,12 +503,12 @@ class AutomodConfigView(BaseView):
         cfg["features"]["content"]["exempt_channels"] = [int(v) for v in interaction.data.get("values", [])]
         await _save_and_render(interaction, cfg)
 
-    async def on_edit_rules(self, interaction: discord.Interaction):
+    async def on_edit_indications(self, interaction: discord.Interaction):
         if not await _check_perms(interaction):
             return
         locale = i18n.get_user_locale(interaction)
         cfg = await _load_config(interaction.client, interaction.guild_id)
-        modal = RulesModal(interaction.client, interaction.guild_id, locale, cfg.get("rules", ""))
+        modal = IndicationsModal(interaction.client, interaction.guild_id, locale, cfg.get("indications", ""))
         await interaction.response.send_modal(modal)
 
     async def on_reset(self, interaction: discord.Interaction):
