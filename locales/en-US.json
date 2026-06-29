@@ -1380,6 +1380,10 @@
           "error_too_long": "<:error:1519790252594827264> The guidance is too long (max 3000 characters).",
           "error_unavailable": "<:warning:1519789903100121139> Can't verify the guidance right now (AI service unavailable). Try again later.",
           "checked": "<:done:1519800188925902881> Guidance checked and added to the working copy. Press Save to apply."
+        },
+        "status_hint": "Check/uncheck in the menu below to enable or disable.",
+        "activations": {
+          "placeholder": "Enable / disable…"
         }
       },
       "action": {

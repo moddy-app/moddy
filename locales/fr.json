@@ -1379,6 +1379,10 @@
           "error_too_long": "<:error:1519790252594827264> Les indications sont trop longues (max 3000 caractères).",
           "error_unavailable": "<:warning:1519789903100121139> Impossible de vérifier les indications pour le moment (service IA indisponible). Réessaie plus tard.",
           "checked": "<:done:1519800188925902881> Indications vérifiées et enregistrées dans la copie de travail. Clique sur Enregistrer pour appliquer."
+        },
+        "status_hint": "Coche/décoche dans le menu ci-dessous pour activer ou désactiver.",
+        "activations": {
+          "placeholder": "Activer / désactiver…"
         }
       },
       "action": {

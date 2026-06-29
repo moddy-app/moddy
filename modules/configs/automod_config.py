@@ -27,7 +27,7 @@ from utils.i18n import t, i18n
 from cogs.error_handler import BaseView, BaseModal
 from utils.emojis import (
     FILTER, BOOK, BACK, DELETE, MESSAGE, GROUPS, SETTINGS, WARNING, SAVE,
-    UNDONE, REQUIRED_FIELDS, TOGGLE_ON, TOGGLE_OFF,
+    UNDONE, REQUIRED_FIELDS, STAFF, GREEN_STATUS, RED_STATUS,
 )
 from automod.rules_check import validate_rules, MAX_RULES_LENGTH
 from automod import constants as ac
@@ -148,8 +148,8 @@ class AutomodConfigView(BaseView):
     def _content(self) -> Dict[str, Any]:
         return self.working_config["features"]["content"]
 
-    def _toggle(self, value: bool) -> str:
-        return TOGGLE_ON if value else TOGGLE_OFF
+    def _dot(self, value: bool) -> str:
+        return GREEN_STATUS if value else RED_STATUS
 
     def _state(self, value: bool) -> str:
         key = "modules.automod.config.state.on" if value else "modules.automod.config.state.off"
@@ -202,33 +202,48 @@ class AutomodConfigView(BaseView):
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
-        # --- Status section ---
+        # --- Status section: a single checkbox-style multi-select ---
         container.add_item(ui.TextDisplay(
             f"**{t('modules.automod.config.section_status', locale=self.locale)}**\n"
-            f"{self._toggle(module_on)} **{t('modules.automod.config.module_label', locale=self.locale)}** "
+            f"{self._dot(module_on)} **{t('modules.automod.config.module_label', locale=self.locale)}** "
             f"· {self._state(module_on)}\n"
-            f"{self._toggle(content_on)} **{t('modules.automod.config.content_label', locale=self.locale)}** "
+            f"{self._dot(content_on)} **{t('modules.automod.config.content_label', locale=self.locale)}** "
             f"· {self._state(content_on)}\n"
-            f"-# {t('modules.automod.config.content_desc', locale=self.locale)}"
+            f"{self._dot(ignore_on)} **{t('modules.automod.config.ignore_mods.label', locale=self.locale)}** "
+            f"· {self._state(ignore_on)}\n"
+            f"-# {t('modules.automod.config.status_hint', locale=self.locale)}"
         ))
-        status_row = ui.ActionRow()
-        module_btn = ui.Button(
-            label=t(f"modules.automod.config.buttons.{'disable' if module_on else 'enable'}_module",
-                    locale=self.locale),
-            style=discord.ButtonStyle.secondary if module_on else discord.ButtonStyle.success,
-            emoji=discord.PartialEmoji.from_str(self._toggle(module_on)),
+        act_row = ui.ActionRow()
+        act_select = ui.Select(
+            placeholder=t("modules.automod.config.activations.placeholder", locale=self.locale),
+            min_values=0, max_values=3,
+            options=[
+                discord.SelectOption(
+                    label=t("modules.automod.config.module_label", locale=self.locale),
+                    value="module",
+                    description=t("modules.automod.config.module_desc", locale=self.locale)[:100],
+                    emoji=discord.PartialEmoji.from_str(FILTER),
+                    default=module_on,
+                ),
+                discord.SelectOption(
+                    label=t("modules.automod.config.content_label", locale=self.locale),
+                    value="content",
+                    description=t("modules.automod.config.content_desc", locale=self.locale)[:100],
+                    emoji=discord.PartialEmoji.from_str(MESSAGE),
+                    default=content_on,
+                ),
+                discord.SelectOption(
+                    label=t("modules.automod.config.ignore_mods.label", locale=self.locale),
+                    value="ignore",
+                    description=t("modules.automod.config.ignore_mods.desc", locale=self.locale)[:100],
+                    emoji=discord.PartialEmoji.from_str(STAFF),
+                    default=ignore_on,
+                ),
+            ],
         )
-        module_btn.callback = self.on_toggle_module
-        status_row.add_item(module_btn)
-        content_btn = ui.Button(
-            label=t(f"modules.automod.config.buttons.{'disable' if content_on else 'enable'}_content",
-                    locale=self.locale),
-            style=discord.ButtonStyle.secondary if content_on else discord.ButtonStyle.success,
-            emoji=discord.PartialEmoji.from_str(self._toggle(content_on)),
-        )
-        content_btn.callback = self.on_toggle_content
-        status_row.add_item(content_btn)
-        container.add_item(status_row)
+        act_select.callback = self.on_activations
+        act_row.add_item(act_select)
+        container.add_item(act_row)
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
@@ -340,26 +355,6 @@ class AutomodConfigView(BaseView):
         chan_row.add_item(chan_select)
         container.add_item(chan_row)
 
-        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-
-        # --- Options ---
-        container.add_item(ui.TextDisplay(
-            f"**{t('modules.automod.config.section_options', locale=self.locale)}**\n"
-            f"{self._toggle(ignore_on)} **{t('modules.automod.config.ignore_mods.label', locale=self.locale)}** "
-            f"· {self._state(ignore_on)}\n"
-            f"-# {t('modules.automod.config.ignore_mods.desc', locale=self.locale)}"
-        ))
-        opt_row = ui.ActionRow()
-        ignore_btn = ui.Button(
-            label=t(f"modules.automod.config.buttons.{'disable' if ignore_on else 'enable'}_ignore",
-                    locale=self.locale),
-            style=discord.ButtonStyle.secondary,
-            emoji=discord.PartialEmoji.from_str(self._toggle(ignore_on)),
-        )
-        ignore_btn.callback = self.on_toggle_ignore
-        opt_row.add_item(ignore_btn)
-        container.add_item(opt_row)
-
         self.add_item(container)
         self._add_action_buttons()
 
@@ -424,24 +419,13 @@ class AutomodConfigView(BaseView):
         await interaction.response.edit_message(view=self)
 
     # -- edit callbacks (mutate working copy) ---------------------------- #
-    async def on_toggle_module(self, interaction: discord.Interaction):
+    async def on_activations(self, interaction: discord.Interaction):
         if not await self._check_user(interaction):
             return
-        self.working_config["enabled"] = not self.working_config["enabled"]
-        self.has_changes = True
-        await self._rerender(interaction)
-
-    async def on_toggle_content(self, interaction: discord.Interaction):
-        if not await self._check_user(interaction):
-            return
-        self._content["enabled"] = not self._content["enabled"]
-        self.has_changes = True
-        await self._rerender(interaction)
-
-    async def on_toggle_ignore(self, interaction: discord.Interaction):
-        if not await self._check_user(interaction):
-            return
-        self.working_config["ignore_moderators"] = not self.working_config["ignore_moderators"]
+        selected = set(interaction.data.get("values", []))
+        self.working_config["enabled"] = "module" in selected
+        self._content["enabled"] = "content" in selected
+        self.working_config["ignore_moderators"] = "ignore" in selected
         self.has_changes = True
         await self._rerender(interaction)
 
