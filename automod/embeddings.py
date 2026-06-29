@@ -20,59 +20,33 @@ from __future__ import annotations
 import json
 import logging
 import math
-import re
 from pathlib import Path
 from typing import Awaitable, Callable, List, Optional, Tuple
 
 from . import constants
-from .normalize import collapse_repeats
+from .normalize import collapse_repeats, normalize_spaced
 
 logger = logging.getLogger("moddy.automod.embeddings")
 
 _REFERENCES_PATH = Path(__file__).parent / "data" / "references.json"
 
-# Long messages are split into segments so a toxic phrase diluted inside a long
-# or spammy blob is still scored on its own. Tunables are intentionally small to
-# bound the per-message embedding cost (one batch call covers all segments).
-_MAX_SEGMENTS = 8
-_SEGMENT_TRIGGER_LEN = 180      # below this, score the whole message in one shot
-_SENTENCE_SPLIT_RE = re.compile(r"[.!?\n]+")
-_WINDOW_WORDS = 16
-
 
 def _segment(content: str) -> List[str]:
-    """Return up to ``_MAX_SEGMENTS`` candidate texts to score for one message.
+    """Return the texts to embed for one message (usually just the message).
 
-    Always includes the full content and a repeat-collapsed rendering; for long
-    content it adds sentence chunks and sliding word-windows. Duplicates and
-    empties are removed while preserving order.
+    A spammed/concatenated message ("je vais te tuer" ×40) embeds poorly: the
+    repetition dilutes the vector below threshold. So we only do something extra
+    **when an actual repetition is detected** — in that case we additionally
+    embed the single de-duplicated unit, scored on its own. Normal messages
+    cost exactly one embedding, as before.
     """
     candidates: List[str] = [content]
+    norm = normalize_spaced(content)
     collapsed = collapse_repeats(content)
-    if collapsed and collapsed != content:
+    # A genuine repetition shrank the text → score the bare unit too.
+    if collapsed and collapsed != norm and len(collapsed) < len(norm):
         candidates.append(collapsed)
-
-    if len(content) >= _SEGMENT_TRIGGER_LEN:
-        for sentence in _SENTENCE_SPLIT_RE.split(content):
-            s = sentence.strip()
-            if s:
-                candidates.append(s)
-        words = content.split()
-        for i in range(0, len(words), _WINDOW_WORDS):
-            window = " ".join(words[i:i + _WINDOW_WORDS]).strip()
-            if window:
-                candidates.append(window)
-
-    seen: set = set()
-    out: List[str] = []
-    for c in candidates:
-        c = c.strip()
-        if c and c not in seen:
-            seen.add(c)
-            out.append(c)
-        if len(out) >= _MAX_SEGMENTS:
-            break
-    return out
+    return candidates
 
 # An embed function: takes a list of texts, returns a list of vectors.
 EmbedFn = Callable[[List[str]], Awaitable[List[List[float]]]]

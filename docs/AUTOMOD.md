@@ -164,10 +164,12 @@ still read transparently.
 
 `automod/normalize.collapse_repeats` reduces a repeated word/phrase or a
 separator-free repeated unit back to one occurrence ("je vais te tuer" ×40 →
-"je vais te tuer"). The blocklist matches both the plain and the collapsed
-form, and the embedder **segments** long messages (sentences + windows + the
-collapsed form) and takes the **max** cosine, so a toxic phrase diluted in a
-long/spam blob is still caught.
+"je vais te tuer"). The blocklist matches both the plain and the collapsed form.
+For the embedder, a spammed message embeds poorly (the repetition dilutes the
+vector below threshold), so `embeddings.score` stays cheap — **one** embedding
+for a normal message — and **only when an actual repetition is detected** it
+additionally embeds the single de-duplicated unit and takes the **max** cosine.
+No blind windowing of long messages.
 
 ### Config UI
 
