@@ -106,6 +106,24 @@
         "you'd be so much better if you sent me intimate content",
         "let me describe some sexual things you never asked to hear"
       ]
+    },
+    "doxxing": {
+      "exemples": [
+        "je vais balancer ton adresse à tout le monde",
+        "donne-moi ton adresse ou je la trouve moi-même",
+        "je connais ton vrai nom et où tu habites",
+        "je vais publier ton IP et ta localisation",
+        "envoie ta vraie identité sinon je te dox",
+        "je vais leak toutes tes infos personnelles",
+        "ton adresse exacte est sur le point d'être révélée",
+        "je vais divulguer ton numéro et ton adresse",
+        "i am going to leak your home address",
+        "i found your ip and i will post it publicly",
+        "tell me your real name or i will expose you",
+        "i know exactly where you live and i will share it",
+        "i will dox you and post all your personal info",
+        "your address and phone number are about to be leaked"
+      ]
     }
   }
 }

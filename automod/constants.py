@@ -11,6 +11,34 @@ calibrated against real server traffic — see ``docs/AUTOMOD.md``.
 # Below it, the message is dropped (no decision).
 SEUIL_EMBEDDING: float = 0.45
 
+# Per-guild severity dial (1 = lenient, 5 = strict). It scales BOTH detection
+# sensitivity (the embedding threshold below) and how harsh nano is told to be.
+SEVERITY_DEFAULT: int = 3
+SEVERITY_MIN: int = 1
+SEVERITY_MAX: int = 5
+# Lower threshold = more messages reach nano. Higher severity → lower threshold.
+SEVERITY_EMBEDDING_THRESHOLDS = {
+    1: 0.62,
+    2: 0.54,
+    3: 0.47,
+    4: 0.41,
+    5: 0.35,
+}
+
+
+def clamp_severity(value) -> int:
+    """Coerce an arbitrary value into the 1–5 severity range (default 3)."""
+    try:
+        v = int(value)
+    except (TypeError, ValueError):
+        return SEVERITY_DEFAULT
+    return max(SEVERITY_MIN, min(SEVERITY_MAX, v))
+
+
+def embedding_threshold_for(severity: int) -> float:
+    """Embedding routing threshold for a given severity level."""
+    return SEVERITY_EMBEDDING_THRESHOLDS.get(clamp_severity(severity), SEUIL_EMBEDDING)
+
 # Embedding model used for both the references and incoming messages.
 EMBEDDING_MODEL: str = "text-embedding-3-small"
 

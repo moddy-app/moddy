@@ -88,14 +88,19 @@ class AutomodEngine:
         is_bot: bool = False,
         is_system: bool = False,
         force_nano: bool = False,
+        severity: int = constants.SEVERITY_DEFAULT,
     ) -> Optional[Decision]:
         """Run a message through the funnel and return a Decision or None.
 
         ``force_nano`` short-circuits the detectors and sends the message
         straight to nano with ``source=signalé_par_nano`` — used by the caller
         to re-analyse messages flagged in ``a_reverifier``.
+
+        ``severity`` (1–5) scales both the embedding routing threshold and how
+        strict nano is instructed to be.
         """
         correlation_id = str(uuid.uuid4())
+        severity = constants.clamp_severity(severity)
 
         if force_nano:
             signal = Signal(
@@ -107,6 +112,7 @@ class AutomodEngine:
                 target, signal, guild_id=guild_id, guild_name=guild_name,
                 rules=rules, author_history=author_history,
                 fetch_context=fetch_context, correlation_id=correlation_id,
+                severity=severity,
             )
 
         # Step 1 — pre-filter.
@@ -131,16 +137,18 @@ class AutomodEngine:
                 target, signal, guild_id=guild_id, guild_name=guild_name,
                 rules=rules, author_history=author_history,
                 fetch_context=fetch_context, correlation_id=correlation_id,
+                severity=severity,
             )
 
-        # Step 4 — embedding.
+        # Step 4 — embedding (threshold scales with severity).
         if not await self.ensure_ready():
             return None  # graceful degradation: embeddings unavailable
         scored = await self.embeddings.score(target.content)
         if scored is None:
             return None
         score, categorie = scored
-        if not EmbeddingEngine.passes_threshold(score):
+        threshold = constants.embedding_threshold_for(severity)
+        if not EmbeddingEngine.passes_threshold(score, threshold):
             return None
         signal = Signal(
             source=constants.SOURCE_EMBEDDING,
@@ -153,6 +161,7 @@ class AutomodEngine:
             target, signal, guild_id=guild_id, guild_name=guild_name,
             rules=rules, author_history=author_history,
             fetch_context=fetch_context, correlation_id=correlation_id,
+            severity=severity,
         )
 
     async def _judge(
@@ -166,6 +175,7 @@ class AutomodEngine:
         author_history: AuthorHistory,
         fetch_context: ContextFn,
         correlation_id: str,
+        severity: int = constants.SEVERITY_DEFAULT,
     ) -> Decision:
         return await nano.juger(
             target,
@@ -175,6 +185,7 @@ class AutomodEngine:
             history=author_history,
             chat_fn=self._make_chat_fn(guild_id, correlation_id),
             fetch_context=fetch_context,
+            severite=severity,
         )
 
 

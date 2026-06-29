@@ -24,10 +24,29 @@ from pathlib import Path
 from typing import Awaitable, Callable, List, Optional, Tuple
 
 from . import constants
+from .normalize import collapse_repeats, normalize_spaced
 
 logger = logging.getLogger("moddy.automod.embeddings")
 
 _REFERENCES_PATH = Path(__file__).parent / "data" / "references.json"
+
+
+def _segment(content: str) -> List[str]:
+    """Return the texts to embed for one message (usually just the message).
+
+    A spammed/concatenated message ("je vais te tuer" ×40) embeds poorly: the
+    repetition dilutes the vector below threshold. So we only do something extra
+    **when an actual repetition is detected** — in that case we additionally
+    embed the single de-duplicated unit, scored on its own. Normal messages
+    cost exactly one embedding, as before.
+    """
+    candidates: List[str] = [content]
+    norm = normalize_spaced(content)
+    collapsed = collapse_repeats(content)
+    # A genuine repetition shrank the text → score the bare unit too.
+    if collapsed and collapsed != norm and len(collapsed) < len(norm):
+        candidates.append(collapsed)
+    return candidates
 
 # An embed function: takes a list of texts, returns a list of vectors.
 EmbedFn = Callable[[List[str]], Awaitable[List[List[float]]]]
@@ -89,22 +108,31 @@ class EmbeddingEngine:
         return True
 
     async def score(self, content: str) -> Optional[Tuple[float, str]]:
-        """Return (max_cosine, best_category) or None if scoring unavailable."""
+        """Return (max_cosine, best_category) or None if scoring unavailable.
+
+        Long content is segmented (sentences + windows + de-spammed form) and
+        the **max** cosine across every segment is returned, so a toxic phrase
+        buried in or diluted by a long/spam message is still caught.
+        """
         if not self._ready:
             return None
-        vectors = await self._embed_fn([content])
+        segments = _segment(content)
+        if not segments:
+            return None
+        vectors = await self._embed_fn(segments)
         if not vectors:
             return None
-        query = _normalize_vec(vectors[0])
         best_score = -1.0
         best_cat = ""
-        for vec, cat in zip(self._ref_vectors, self._ref_categories):
-            sim = _dot(vec, query)
-            if sim > best_score:
-                best_score = sim
-                best_cat = cat
+        for raw in vectors:
+            query = _normalize_vec(raw)
+            for vec, cat in zip(self._ref_vectors, self._ref_categories):
+                sim = _dot(vec, query)
+                if sim > best_score:
+                    best_score = sim
+                    best_cat = cat
         return best_score, best_cat
 
     @staticmethod
-    def passes_threshold(score: float) -> bool:
-        return score >= constants.SEUIL_EMBEDDING
+    def passes_threshold(score: float, threshold: Optional[float] = None) -> bool:
+        return score >= (constants.SEUIL_EMBEDDING if threshold is None else threshold)

@@ -25,6 +25,11 @@ DEBUG: bool = os.environ.get("DEBUG", "False").lower() in ("true", "1", "yes", "
 dev_ids_str = os.environ.get("DEVELOPER_IDS", "")
 DEVELOPER_IDS: List[int] = [int(id.strip()) for id in dev_ids_str.split(",") if id.strip()]
 
+# Moddy team guild + the channel where automod sanction appeals routed to the
+# Moddy team are reviewed by staff.
+MODDY_TEAM_GUILD_ID: int = int(os.environ.get("MODDY_GUILD_ID", "1394001780148535387"))
+MODDY_APPEAL_CHANNEL_ID: int = int(os.environ.get("MODDY_APPEAL_CHANNEL_ID", "1521246998127317114"))
+
 # =============================================================================
 # BASE DE DONNÉES
 # =============================================================================

@@ -67,6 +67,8 @@ dependency.
 | Repository (create / sanctions / events / status recompute / expiry) | `db/repositories/moderation.py` |
 | Schema | `db/base.py` |
 | **Sanction service (scalable entry point)** | `services/case_service.py` |
+| **Appeal service + repo (automod sanction appeals)** | `services/appeal_service.py`, `db/repositories/appeals.py` |
+| Appeal UI (DM buttons + reviewer panels) | `utils/appeal_views.py` |
 | Auto-sync from Discord events | `cogs/case_sync.py` |
 | Staff commands `/mod case …` | `staff/commands/mod/case/` |
 | Interactive views/modals (staff) | `utils/case_management_views.py` |
@@ -248,3 +250,31 @@ the `/mycases` server filter).
   (e.g. network ban + platform ban) is modelled as linked cases sharing a
   `group_id`.
 - **Evidence**: stored as `evidence` timeline events with a URL in `payload`.
+
+---
+
+## 9. Automod integration & appeals
+
+Automod is a first-class issuer in the cases system. Every automod sanction is a
+**guild case** opened through `bot.cases.record_sanction(source="guild",
+issuer_type=AUTOMOD, …)` with the **factual reason** as the case reason and the
+offending message attached as an `evidence` event (extract, jump URL,
+`explication`, signal/score/confidence). The case is recorded **before** the
+Discord action so the audit-log reason matches manual sanctions
+(`[<REF>] @Moddy (<expiry>) : <reason>`), and a timed mute carries its
+`expires_at`.
+
+A sanctioned member can **appeal** (see [AUTOMOD.md](AUTOMOD.md) §7):
+
+- `case_appeals` (`db/repositories/appeals.py`) is the queryable state machine:
+  `route` (`server` | `team`), `status` (`pending` / `accepted` / `refused` /
+  `transformed` / `cancelled`), the targeted sanction and the rendered message
+  ids. Status is a TEXT+CHECK column (no new PG enum).
+- `services/appeal_service.AppealService` (`bot.appeals`) opens and **decides**
+  appeals. A decision is binding: **accept** revokes the sanction via
+  `bot.cases.revoke_sanction` and reverses the Discord action; **transform**
+  revokes + records a replacement; **refuse** keeps it. Each step writes a
+  `comment` event to the case timeline, so the whole appeal is visible in
+  `/cases`.
+- The UI (`utils/appeal_views.py`) is fully persistent `DynamicItem` buttons +
+  Modals V2, registered via `AppealPersistence`.

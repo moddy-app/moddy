@@ -153,11 +153,14 @@ class CaseService:
                 spec.case_type.value, spec.scope_type.value, scope_id,
             )
             if existing:
-                await self.db.add_sanction(
+                sanction_id = await self.db.add_sanction(
                     existing["id"], action_value, issuer_type_value, issuer_id,
                     expires_at=expires_at, note=note,
                 )
-                return {"id": existing["id"], "reference": existing["reference"], "created": False}
+                return {
+                    "id": existing["id"], "reference": existing["reference"],
+                    "created": False, "sanction_id": sanction_id,
+                }
 
         result = await self.db.create_case(
             case_type=spec.case_type.value,

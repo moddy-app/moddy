@@ -36,11 +36,16 @@ class AuthorHistory:
     cases_total: int = 0
     # Each item: {"type": str, "date": "YYYY-MM-DD", "raison": str}
     sanctions_recentes: List[dict] = field(default_factory=list)
+    # Messages of this author that ALREADY received a sanction (so nano never
+    # re-punishes the current message for conduct that belongs to an earlier
+    # one). Each item: {"id": str, "extrait": str}.
+    messages_deja_moderes: List[dict] = field(default_factory=list)
 
     def to_payload(self) -> dict:
         return {
             "cases_total": self.cases_total,
             "sanctions_recentes": self.sanctions_recentes,
+            "messages_deja_moderes": self.messages_deja_moderes,
         }
 
 
@@ -77,7 +82,8 @@ class Decision:
     actions: List[str]          # ⊆ {"ban", "mute", "warn", "supprimer"}
     categorie: str
     gravite: str                # basse | moyenne | haute | critique
-    raison: str
+    raison: str                 # FACTUAL only: what the message contains / which rule it breaks
+    explication: str            # 1–2 sentences: WHY this decision (the reasoning)
     confiance: str              # low | medium | high
     signal_source: str          # "regex" | "embedding" | "signalé_par_nano"
     score_detecteur: float      # detector input score

@@ -1305,7 +1305,8 @@
           "disable_content": "Désactiver la détection",
           "enable_ignore": "Activer",
           "disable_ignore": "Désactiver",
-          "edit_rules": "Modifier le règlement"
+          "edit_rules": "Modifier le règlement",
+          "edit_indications": "Modifier les indications"
         },
         "rules": {
           "desc": "Guide l'IA pour juger les messages. Vérifié contre les tentatives d'injection avant d'être enregistré.",
@@ -1342,7 +1343,120 @@
           "label": "Ignorer les modérateurs",
           "desc": "Ne pas analyser les membres pouvant gérer les messages."
         },
-        "apply_hint": "Les changements sont appliqués immédiatement."
+        "apply_hint": "Les changements sont appliqués immédiatement.",
+        "summary_need_channel": "Définis le **salon d'alertes** (obligatoire) pour démarrer.",
+        "section_notify": "Salon d'alertes",
+        "notify": {
+          "desc": "Salon où Automod prévient le serveur de chaque action. Obligatoire.",
+          "placeholder": "Choisir le salon d'alertes…",
+          "current": "Actuel :",
+          "missing": "Aucun salon défini — l'automod ne tournera pas tant qu'il manque."
+        },
+        "section_severity": "Niveau de sévérité",
+        "severity": {
+          "desc": "Plus le niveau est haut, plus l'automod est sensible et sévère.",
+          "current": "Niveau actuel :",
+          "placeholder": "Choisir un niveau (1 à 5)…",
+          "option": "Niveau {n}",
+          "level_1": "Très indulgent — seulement les cas graves et flagrants.",
+          "level_2": "Indulgent — laisse passer le langage familier léger.",
+          "level_3": "Équilibré — modération raisonnable (recommandé).",
+          "level_4": "Strict — agit aussi sur les cas subtils, sanctions plus dures.",
+          "level_5": "Très strict — tolérance minimale, sanctions sévères."
+        },
+        "section_indications": "Indications pour l'automod",
+        "indications": {
+          "desc": "Guident l'IA pour juger les messages. Vérifiées contre les tentatives d'injection avant enregistrement.",
+          "current": "Actuelles",
+          "empty": "Aucune indication — l'IA applique des standards de modération raisonnables.",
+          "modal_title": "Indications pour l'automod",
+          "modal_label": "Indications",
+          "modal_desc": "Ce que l'IA doit surveiller / tolérer sur ton serveur.",
+          "modal_placeholder": "Ex. : pas d'insultes ni de harcèlement, l'humour est toléré…",
+          "saved": "<:done:1519800188925902881> Indications vérifiées et enregistrées.",
+          "cleared": "<:done:1519800188925902881> Indications effacées.",
+          "error_unsafe": "<:error:1519790252594827264> Indications refusées : elles ressemblent à une tentative de manipulation de l'IA.\n-# Raison : {reason}",
+          "error_too_long": "<:error:1519790252594827264> Les indications sont trop longues (max 3000 caractères).",
+          "error_unavailable": "<:warning:1519789903100121139> Impossible de vérifier les indications pour le moment (service IA indisponible). Réessaie plus tard.",
+          "checked": "<:done:1519800188925902881> Indications vérifiées et enregistrées dans la copie de travail. Clique sur Enregistrer pour appliquer."
+        },
+        "status_hint": "Coche/décoche dans le menu ci-dessous pour activer ou désactiver.",
+        "activations": {
+          "placeholder": "Activer / désactiver…"
+        }
+      },
+      "action": {
+        "warn": "Avertissement",
+        "mute": "Exclusion temporaire",
+        "ban": "Bannissement",
+        "kick": "Expulsion",
+        "supprimer": "Suppression"
+      },
+      "dm": {
+        "title": "Sanction automatique",
+        "intro": "Une action de modération a été appliquée sur {guild}.",
+        "action": "Sanction",
+        "reason": "Raison",
+        "case": "Dossier",
+        "appeal_state": "Statut de l'appel",
+        "appeal_hint": "Tu peux faire appel de cette sanction ci-dessous.",
+        "appeal_server": "Faire appel au serveur",
+        "appeal_team": "Faire appel à l'équipe Moddy"
+      },
+      "appeal": {
+        "status": {
+          "pending": "En attente",
+          "accepted": "Accepté",
+          "refused": "Refusé",
+          "transformed": "Transformé",
+          "cancelled": "Annulé"
+        },
+        "modal": {
+          "title": "Faire appel",
+          "label": "Pourquoi contestes-tu ?",
+          "desc": "Explique clairement et calmement ta situation.",
+          "placeholder": "Décris pourquoi cette sanction te semble injuste…"
+        },
+        "opened_title": "Appel envoyé",
+        "opened_server": "Ton appel a été transmis aux modérateurs du serveur. Tu seras prévenu de la décision.",
+        "opened_team": "Ton appel a été transmis à l'équipe Moddy. Tu seras prévenu de la décision.",
+        "error": {
+          "title": "Appel impossible",
+          "already": "Un appel est déjà en cours pour cette sanction.",
+          "handled": "Cet appel a déjà été traité.",
+          "no_perms": "Tu n'as pas la permission de traiter cet appel.",
+          "not_found": "Dossier introuvable.",
+          "unavailable": "Service indisponible, réessaie plus tard."
+        },
+        "button": {
+          "accept": "Accepter",
+          "refuse": "Refuser",
+          "transform": "Transformer"
+        },
+        "review": {
+          "title_team": "Appel — équipe Moddy",
+          "title_server": "Appel — serveur",
+          "member": "Membre",
+          "server": "Serveur",
+          "case": "Dossier",
+          "sanction": "Sanction",
+          "motive": "Raison",
+          "evidence": "Preuve",
+          "user_says": "Message de l'utilisateur",
+          "outcome": "Décision",
+          "decided_by": "Décidé par"
+        },
+        "transform": {
+          "title": "Transformer la sanction",
+          "label": "Nouvelle sanction",
+          "note": "Note (facultatif)"
+        },
+        "dm_outcome_title": "Décision sur ton appel",
+        "dm_outcome": "Ton appel concernant {guild} a été traité : **{status}**.",
+        "server_opened_title": "Appel en cours",
+        "server_opened": "{user} a fait appel auprès de l'équipe Moddy (dossier {case}).",
+        "server_decided_title": "Appel traité",
+        "server_decided": "L'appel de {user} ({route}) a été traité : **{status}**."
       }
     }
   },
@@ -1378,7 +1492,8 @@
     "ro": "Roumain",
     "hu": "Hongrois",
     "uk": "Ukrainien",
-    "bg": "Bulgare"
+    "bg": "Bulgare",
+    "lmo": "Lombard"
   },
   "staff": {
     "common": {

@@ -85,6 +85,8 @@ class ModdyBot(commands.Bot):
         self.db = None  # ModdyDatabase instance
         from services.case_service import CaseService
         self.cases = CaseService(self)  # scalable sanction -> case entry point
+        from services.appeal_service import AppealService
+        self.appeals = AppealService(self)  # sanction appeals (server / Moddy team)
         from gateway import Gateway
         self.gateway = Gateway()
         self.redis = None  # Redis client (shared with backend)
