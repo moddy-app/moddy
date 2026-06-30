@@ -127,6 +127,42 @@ class AppealRepository:
                 *params,
             )
 
+    async def set_claim(
+        self,
+        appeal_id: Union[str, uuid.UUID],
+        *,
+        claimed_by_id: Optional[Union[str, int]],
+    ) -> Optional[Dict[str, Any]]:
+        """Claim (or release, when ``claimed_by_id`` is None) a pending appeal.
+
+        Claiming only succeeds while the appeal is still pending and either
+        unclaimed or already held by the same reviewer. Returns the updated row
+        or None when the claim could not be taken.
+        """
+        async with self.pool.acquire() as conn:
+            if claimed_by_id is None:
+                row = await conn.fetchrow(
+                    """
+                    UPDATE case_appeals
+                    SET claimed_by_id = NULL, claimed_at = NULL
+                    WHERE id = $1 AND status = 'pending'
+                    RETURNING *
+                    """,
+                    uuid.UUID(str(appeal_id)),
+                )
+            else:
+                row = await conn.fetchrow(
+                    """
+                    UPDATE case_appeals
+                    SET claimed_by_id = $2, claimed_at = now()
+                    WHERE id = $1 AND status = 'pending'
+                      AND (claimed_by_id IS NULL OR claimed_by_id = $2)
+                    RETURNING *
+                    """,
+                    uuid.UUID(str(appeal_id)), str(claimed_by_id),
+                )
+            return dict(row) if row else None
+
     async def set_decision(
         self,
         appeal_id: Union[str, uuid.UUID],

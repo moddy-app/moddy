@@ -1453,25 +1453,66 @@
           "handled": "This appeal has already been handled.",
           "no_perms": "You don't have permission to handle this appeal.",
           "not_found": "Case not found.",
-          "unavailable": "Service unavailable, try again later."
+          "unavailable": "Service unavailable, try again later.",
+          "claim_first": "Claim this appeal before deciding on it.",
+          "not_claimer": "This appeal is claimed by another reviewer.",
+          "invite_failed": "Couldn't create a server invite (missing permission or no usable channel)."
         },
         "button": {
           "accept": "Accept",
+          "decline": "Decline",
+          "claim": "Claim",
+          "invite": "Invite",
           "refuse": "Refuse",
           "transform": "Transform"
         },
         "review": {
-          "title_team": "Appeal — Moddy team",
-          "title_server": "Appeal — server",
+          "title_team": "Automod Appeal",
+          "title_server": "Automod Appeal",
+          "user": "User",
+          "display_name": "Display name",
+          "username": "Username",
+          "id": "ID",
+          "guild": "Guild",
+          "name": "Name",
+          "members": "Members",
           "member": "Member",
           "server": "Server",
           "case": "Case",
+          "actions": "Action(s)",
           "sanction": "Sanction",
           "motive": "Reason",
+          "explanation": "Explanation",
+          "created": "Created",
           "evidence": "Evidence",
-          "user_says": "User's message",
+          "proof": "Proof",
+          "technical": "Technical information",
+          "case_uuid": "Case UUID",
+          "appeal_id": "Appeal ID",
+          "user_says": "User's appeal",
           "outcome": "Decision",
-          "decided_by": "Decided by"
+          "decided_by": "Decided by",
+          "claimed_by": "Claimed by",
+          "claimed": "Claimed"
+        },
+        "accept_choice": {
+          "title": "Accept the appeal",
+          "prompt": "Fully cancel the sanction, or modify the case (change the sanction, duration or reason)?",
+          "full": "Full cancellation",
+          "modify": "Modify the case"
+        },
+        "modify": {
+          "title": "Modify the case",
+          "action": "New sanction",
+          "duration": "Duration (hours)",
+          "duration_hint": "Leave empty for permanent.",
+          "reason": "Reason",
+          "note": "Note (optional)",
+          "invalid_duration": "The duration must be a whole number of hours."
+        },
+        "invite": {
+          "title": "Server invite",
+          "body": "Here is a one-time invite to **{guild}** so you can investigate:\n{url}"
         },
         "transform": {
           "title": "Transform the sanction",

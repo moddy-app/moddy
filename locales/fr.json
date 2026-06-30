@@ -1452,25 +1452,66 @@
           "handled": "Cet appel a déjà été traité.",
           "no_perms": "Tu n'as pas la permission de traiter cet appel.",
           "not_found": "Dossier introuvable.",
-          "unavailable": "Service indisponible, réessaie plus tard."
+          "unavailable": "Service indisponible, réessaie plus tard.",
+          "claim_first": "Réclame cet appel avant de le traiter.",
+          "not_claimer": "Cet appel est réclamé par un autre modérateur.",
+          "invite_failed": "Impossible de créer une invitation (permission manquante ou aucun salon utilisable)."
         },
         "button": {
           "accept": "Accepter",
+          "decline": "Refuser",
+          "claim": "Réclamer",
+          "invite": "Inviter",
           "refuse": "Refuser",
           "transform": "Transformer"
         },
         "review": {
-          "title_team": "Appel — équipe Moddy",
-          "title_server": "Appel — serveur",
+          "title_team": "Appel Automod",
+          "title_server": "Appel Automod",
+          "user": "Utilisateur",
+          "display_name": "Nom affiché",
+          "username": "Nom d'utilisateur",
+          "id": "ID",
+          "guild": "Serveur",
+          "name": "Nom",
+          "members": "Membres",
           "member": "Membre",
           "server": "Serveur",
           "case": "Dossier",
+          "actions": "Action(s)",
           "sanction": "Sanction",
           "motive": "Raison",
+          "explanation": "Explication",
+          "created": "Créé",
           "evidence": "Preuve",
-          "user_says": "Message de l'utilisateur",
+          "proof": "Preuve",
+          "technical": "Informations techniques",
+          "case_uuid": "UUID du dossier",
+          "appeal_id": "ID de l'appel",
+          "user_says": "Appel de l'utilisateur",
           "outcome": "Décision",
-          "decided_by": "Décidé par"
+          "decided_by": "Décidé par",
+          "claimed_by": "Réclamé par",
+          "claimed": "Réclamé"
+        },
+        "accept_choice": {
+          "title": "Accepter l'appel",
+          "prompt": "Annuler totalement la sanction, ou modifier le dossier (changer la sanction, la durée ou la raison) ?",
+          "full": "Annulation totale",
+          "modify": "Modifier le dossier"
+        },
+        "modify": {
+          "title": "Modifier le dossier",
+          "action": "Nouvelle sanction",
+          "duration": "Durée (heures)",
+          "duration_hint": "Laisse vide pour permanent.",
+          "reason": "Raison",
+          "note": "Note (facultatif)",
+          "invalid_duration": "La durée doit être un nombre entier d'heures."
+        },
+        "invite": {
+          "title": "Invitation au serveur",
+          "body": "Voici une invitation à usage unique vers **{guild}** pour enquêter :\n{url}"
         },
         "transform": {
           "title": "Transformer la sanction",
