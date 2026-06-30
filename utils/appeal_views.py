@@ -33,11 +33,16 @@ from discord import ui
 from cogs.error_handler import BaseView, BaseModal
 from utils.i18n import t, i18n
 from utils.emojis import (
-    FILTER, WARNING, DONE, ERROR, UNDONE, EDIT, TIME, GROUPS, MESSAGE, STAFF,
-    MODDY, INFO, LEGAL, BACK, SANCTION_ACTION_EMOJIS,
+    SHIELD, WARNING, DONE, ERROR, UNDONE, EDIT, TIME, GROUPS, MESSAGE, STAFF,
+    MODDY, INFO, LEGAL, BACK, HAND, LINK, PENDING, SANCTION_ACTION_EMOJIS,
+    get_sanction_dm_emoji, get_sanction_accent,
 )
+from utils.automod_render import is_long, make_text_file
 
 logger = logging.getLogger("moddy.appeal_views")
+
+# Public case URL (same shape as the manual sanction DMs).
+_CASE_URL = "https://moddy.app/cases?{ref}"
 
 # UUID fragment used in custom_id templates.
 _UUID = r"[0-9a-fA-F-]{36}"
@@ -47,11 +52,20 @@ _TRANSFORM_ACTIONS = ["warn", "mute", "kick", "ban"]
 
 # Status → (emoji, i18n key) for rendering an appeal outcome.
 _STATUS_RENDER = {
-    "pending": (TIME, "modules.automod.appeal.status.pending"),
+    "pending": (PENDING, "modules.automod.appeal.status.pending"),
     "accepted": (DONE, "modules.automod.appeal.status.accepted"),
-    "refused": (ERROR, "modules.automod.appeal.status.refused"),
+    "refused": (UNDONE, "modules.automod.appeal.status.refused"),
     "transformed": (EDIT, "modules.automod.appeal.status.transformed"),
     "cancelled": (UNDONE, "modules.automod.appeal.status.cancelled"),
+}
+
+# Status → accent colour for the appeal-status panel on the member DM.
+_STATUS_ACCENT = {
+    "pending": 0x3661FF,
+    "accepted": 0x57F287,
+    "refused": 0xED4245,
+    "transformed": 0xFEE75C,
+    "cancelled": 0x99AAB5,
 }
 
 
@@ -73,50 +87,114 @@ def build_sanction_dm_view(
     explication: str,
     case_id: str,
     sanction_id: str,
+    guild_id: Optional[int] = None,
+    expires_at=None,
+    proof_text: Optional[str] = None,
+    proof_author: Optional[str] = None,
+    proof_message_id: Optional[str] = None,
+    proof_ts: Optional[int] = None,
     appeal_status: Optional[str] = None,
     appeal_route: Optional[str] = None,
-) -> BaseView:
-    """The DM a sanctioned member receives. Shows the sanction + appeal buttons.
+    decided: Optional[dict] = None,
+):
+    """The DM a sanctioned member receives — styled like a manual sanction DM.
 
-    When ``appeal_status`` is set, the buttons are replaced by a status line so
-    the member can follow the appeal's progress on the same message.
+    Returns ``(view, files)``: ``files`` carries the offending message as a
+    ``.txt`` attachment when it is too long to quote inline. The accent colour
+    and the title icon follow the sanction (orange warn / red ban…).
+
+    Three states share one layout:
+    * no appeal yet → the sanction block + the two appeal buttons;
+    * appeal pending/decided → a coloured status panel (no buttons), and when
+      the appeal was accepted the sanction block is struck through.
     """
     view = BaseView()
-    c = ui.Container()
-    c.add_item(ui.TextDisplay(
-        f"### {FILTER} {t('modules.automod.dm.title', locale=locale)}"
-    ))
-    c.add_item(ui.TextDisplay(
-        t("modules.automod.dm.intro", locale=locale, guild=f"**{guild_name}**")
-    ))
-    c.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-    c.add_item(ui.TextDisplay(
-        f"{_action_emoji(action)} **{t('modules.automod.dm.action', locale=locale)} :** "
-        f"`{t('modules.automod.action.' + action, locale=locale)}`\n"
-        f"**{t('modules.automod.dm.reason', locale=locale)} :** {reason or '—'}\n"
-        f"-# {t('modules.automod.dm.case', locale=locale)} `{case_ref}`"
-    ))
+    files = []
+    accent = get_sanction_accent(action)
+    icon = get_sanction_dm_emoji(action)
+    struck = (decided or {}).get("status") == "accepted"
+
+    def _s(text: str) -> str:
+        return f"~~{text}~~" if struck else text
+
+    # — Sanction block —
+    _title_key = f"modules.automod.dm.title_{action}"
+    title = t(_title_key, locale=locale)
+    if title.startswith("["):  # missing key → generic fallback
+        title = t("modules.automod.dm.title", locale=locale)
+    expires_txt = (f"<t:{int(expires_at.timestamp())}:R>" if expires_at
+                   else t("modules.automod.dm.permanent", locale=locale))
+    lines = [
+        f"### {icon} {title}",
+        f"- **{t('modules.automod.dm.reason', locale=locale)}:** {reason or '—'}",
+    ]
     if explication:
-        c.add_item(ui.TextDisplay(f"-# {explication}"))
+        lines.append(f"- **{t('modules.automod.dm.explanation', locale=locale)}:** {explication}")
+    lines.append(
+        f"- **{t('modules.automod.dm.responsible', locale=locale)}:** "
+        f"{t('modules.automod.dm.responsible_value', locale=locale)}")
+    lines.append(f"- **{t('modules.automod.dm.expires', locale=locale)}:** {expires_txt}")
+
+    c = ui.Container(accent_colour=discord.Colour(accent))
+    c.add_item(ui.TextDisplay(_s("\n".join(lines))))
+    case_link = f"[``{case_ref}``](<{_CASE_URL.format(ref=case_ref)}>)"
+    footer = f"- **{t('modules.automod.dm.case', locale=locale)}:** {case_link}"
+    if guild_id:
+        footer += (f"\n-# {t('modules.automod.dm.sent_by', locale=locale, guild=guild_name, guild_id=guild_id)}")
+    c.add_item(ui.TextDisplay(footer))
+
+    if not appeal_status:
+        c.add_item(ui.TextDisplay(f"-# {t('modules.automod.dm.appeal_hint', locale=locale)}"))
     view.add_item(c)
 
+    # — Appeal status panel (coloured) or the appeal buttons —
     if appeal_status:
-        emoji, key = _STATUS_RENDER.get(appeal_status, (TIME, "modules.automod.appeal.status.pending"))
-        info = ui.Container()
-        info.add_item(ui.TextDisplay(
-            f"{emoji} **{t('modules.automod.dm.appeal_state', locale=locale)} :** "
-            f"{t(key, locale=locale)}"
+        emoji, key = _STATUS_RENDER.get(appeal_status, _STATUS_RENDER["pending"])
+        panel = ui.Container(accent_colour=discord.Colour(_STATUS_ACCENT.get(appeal_status, 0x3661FF)))
+        panel.add_item(ui.TextDisplay(
+            f"**{t('modules.automod.dm.appeal_state', locale=locale)}:**\n"
+            f"{emoji} {t(key, locale=locale)}"
         ))
-        view.add_item(info)
+        route = (decided or {}).get("route") or appeal_route
+        extra = []
+        if route:
+            route_key = ("modules.automod.dm.appeal_team" if route == "team"
+                         else "modules.automod.dm.appeal_server")
+            extra.append(f"-# {t(route_key, locale=locale)}")
+        if (decided or {}).get("new_action"):
+            extra.append(
+                f"-# → `{t('modules.automod.action.' + decided['new_action'], locale=locale)}`")
+        if extra:
+            panel.add_item(ui.TextDisplay("\n".join(extra)))
+        view.add_item(panel)
     else:
-        c.add_item(ui.TextDisplay(
-            f"-# {t('modules.automod.dm.appeal_hint', locale=locale)}"
-        ))
         row = ui.ActionRow()
         row.add_item(AppealNewButton("s", case_id, sanction_id, locale=locale))
         row.add_item(AppealNewButton("t", case_id, sanction_id, locale=locale))
         view.add_item(row)
-    return view
+
+    # — Offending message (proof), spoilered; long content → file —
+    if proof_text:
+        meta = (f"-# {t('modules.automod.log.message_id', locale=locale)} : ``{proof_message_id}``"
+                if proof_message_id else "")
+        ts_part = f" — <t:{proof_ts}:S>" if proof_ts else ""
+        head = f"**{proof_author or '—'}**{ts_part}"
+        proof = ui.Container(spoiler=True)
+        if is_long(proof_text):
+            fname = f"message_{proof_message_id or 'content'}.txt"
+            files.append(make_text_file(proof_text, fname))
+            proof.add_item(ui.TextDisplay(head))
+            proof.add_item(ui.File(f"attachment://{fname}"))
+            if meta:
+                proof.add_item(ui.TextDisplay(meta))
+        else:
+            body = f"{head}\n> {proof_text}"
+            if meta:
+                body += f"\n{meta}"
+            proof.add_item(ui.TextDisplay(body))
+        view.add_item(proof)
+
+    return view, files
 
 
 def build_review_view(
@@ -421,7 +499,16 @@ class AppealDecisionButton(
 # =========================================================================== #
 
 async def _can_review(interaction: discord.Interaction, appeal: dict) -> bool:
-    """Server route → guild Manage Messages; team route → Moddy staff."""
+    """Server route → guild Manage Messages; team route → Moddy staff.
+
+    In every case the appellant can never review their own appeal.
+    """
+    # Nobody handles their own appeal (server or team route).
+    try:
+        if interaction.user.id == int(appeal.get("subject_id") or 0):
+            return False
+    except (TypeError, ValueError):
+        pass
     if appeal["route"] == "server":
         perms = getattr(interaction.user, "guild_permissions", None)
         if perms is None:

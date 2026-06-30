@@ -254,8 +254,11 @@ class AppealService:
             reason=case["case"].get("reason") or "", explication=self._explication(case),
             evidence=self._evidence(case), appeal_reason=reason,
         )
+        # A server-routed appeal is reviewed in the alert channel → reply to the
+        # original automod log message so the thread of events stays linked.
+        reference = self._reply_reference(channel, case) if appeal["route"] != "team" else None
         try:
-            msg = await channel.send(view=view)
+            msg = await channel.send(view=view, reference=reference)
             await self.db.update_message_refs(
                 appeal["id"], review_channel_id=channel.id, review_message_id=msg.id,
             )
@@ -310,16 +313,28 @@ class AppealService:
             case = await self.db.get_case_by_id(_as_uuid(appeal["case_id"]))
         ref = case["case"]["reference"] if case else "—"
         reason = (case["case"].get("reason") if case else "") or ""
-        view = build_sanction_dm_view(
-            locale=locale, guild_name=self._guild_name(appeal), case_ref=ref,
+        proof = self._proof(case)
+        # The member DM is rendered in the member's (guild) language.
+        dm_locale = self._dm_locale(appeal)
+        decided_full = dict(decided) if decided else None
+        if decided_full is not None:
+            decided_full.setdefault("route", appeal["route"])
+        view, _files = build_sanction_dm_view(
+            locale=dm_locale, guild_name=self._guild_name(appeal),
+            guild_id=int(appeal["guild_id"]), case_ref=ref,
             action=appeal.get("action") or "warn", reason=reason,
             explication=self._explication(case) if case else "",
             case_id=str(appeal["case_id"]), sanction_id=str(appeal.get("sanction_id") or ""),
-            appeal_status=status, appeal_route=appeal["route"],
+            expires_at=self._sanction_expiry(case, appeal.get("sanction_id")),
+            proof_text=proof.get("text"), proof_author=proof.get("author"),
+            proof_message_id=proof.get("message_id"), proof_ts=proof.get("ts"),
+            appeal_status=status, appeal_route=appeal["route"], decided=decided_full,
         )
+        # Editing keeps the original attachment (deterministic filename), so we
+        # don't need to re-upload the proof file on a status refresh.
         await self._edit_stored(ch_id, msg_id, view)
         if notify and decided:
-            await self._dm_outcome(int(appeal["subject_id"]), appeal, decided, locale)
+            await self._dm_outcome(int(appeal["subject_id"]), appeal, decided, dm_locale)
 
     async def _dm_outcome(self, user_id: int, appeal: dict, decided: dict, locale: str):
         from utils.components_v2 import create_info_message
@@ -350,7 +365,7 @@ class AppealService:
               user=f"<@{appeal['subject_id']}>", case=f"`{case['case']['reference']}`"),
         )
         try:
-            await channel.send(view=view)
+            await channel.send(view=view, reference=self._reply_reference(channel, case))
         except (discord.Forbidden, discord.HTTPException):
             pass
 
@@ -370,8 +385,9 @@ class AppealService:
               user=f"<@{appeal['subject_id']}>", route=appeal["route"],
               status=t(key, locale=_PANEL_LOCALE)) + extra,
         )
+        case = await self.db.get_case_by_id(_as_uuid(appeal["case_id"]))
         try:
-            await channel.send(view=view)
+            await channel.send(view=view, reference=self._reply_reference(channel, case))
         except (discord.Forbidden, discord.HTTPException):
             pass
 
@@ -407,6 +423,18 @@ class AppealService:
         guild = self.bot.get_guild(int(appeal["guild_id"]))
         return guild.name if guild else str(appeal["guild_id"])
 
+    def _dm_locale(self, appeal: dict) -> str:
+        """Member-facing DM locale: the guild's language (Community) or English."""
+        guild = self.bot.get_guild(int(appeal["guild_id"]))
+        try:
+            features = set(getattr(guild, "features", []) or [])
+            if "COMMUNITY" not in features:
+                return "en-US"
+            pref = str(getattr(guild, "preferred_locale", "") or "")
+        except Exception:
+            return "en-US"
+        return "fr" if pref.lower().startswith("fr") else "en-US"
+
     @staticmethod
     def _explication(case: Optional[dict]) -> str:
         if not case:
@@ -415,6 +443,59 @@ class AppealService:
             if ev.get("type") == "evidence" and (ev.get("payload") or {}).get("explication"):
                 return ev["payload"]["explication"]
         return ""
+
+    @staticmethod
+    def _proof(case: Optional[dict]) -> dict:
+        """The offending-message proof for the DM, from the automod evidence."""
+        if not case:
+            return {}
+        for ev in reversed(case.get("events", [])):
+            p = ev.get("payload") or {}
+            if ev.get("type") == "evidence" and p.get("source") == "automod":
+                return {
+                    "text": p.get("extrait") or None,
+                    "author": p.get("author_name"),
+                    "message_id": str(p["message_id"]) if p.get("message_id") else None,
+                    "ts": p.get("ts"),
+                }
+        return {}
+
+    @staticmethod
+    def _sanction_expiry(case: Optional[dict], sanction_id):
+        """The ``expires_at`` of the appealed sanction (or None)."""
+        if not case or not sanction_id:
+            return None
+        for s in case.get("sanctions", []):
+            if str(s.get("id")) == str(sanction_id):
+                return s.get("expires_at")
+        return None
+
+    def _log_ref(self, case: Optional[dict]):
+        """The (channel_id, message_id) of the original automod log, if stored."""
+        if not case:
+            return None, None
+        for ev in reversed(case.get("events", [])):
+            p = ev.get("payload") or {}
+            if p.get("kind") == "automod_log" and p.get("message_id"):
+                return p.get("channel_id"), p.get("message_id")
+        return None, None
+
+    def _reply_reference(self, channel, case: Optional[dict]):
+        """A MessageReference to the original automod log (same channel), or None.
+
+        Lets appeal updates posted in the alert channel reply to the original
+        automod decision so the whole story is one linked thread.
+        """
+        ch_id, msg_id = self._log_ref(case)
+        if not msg_id or not channel or str(ch_id) != str(getattr(channel, "id", "")):
+            return None
+        try:
+            return discord.MessageReference(
+                message_id=int(msg_id), channel_id=int(channel.id),
+                fail_if_not_exists=False,
+            )
+        except (ValueError, TypeError):
+            return None
 
     @staticmethod
     def _evidence(case: Optional[dict]) -> str:
