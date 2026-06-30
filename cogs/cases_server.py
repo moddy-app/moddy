@@ -56,38 +56,31 @@ class CasesServerCog(commands.Cog):
 
         await interaction.response.defer(ephemeral=True)
 
-        try:
-            view = CasesBrowserView(
-                self.bot,
-                mode="server",
-                viewer_id=interaction.user.id,
-                locale=locale,
-                scope_type="discord_guild",
-                scope_id=interaction.guild.id,
-            )
+        # Unexpected errors propagate to the centralized app-command error
+        # handler (see CLAUDE.md) instead of being masked by a generic message.
+        view = CasesBrowserView(
+            self.bot,
+            mode="server",
+            viewer_id=interaction.user.id,
+            locale=locale,
+            scope_type="discord_guild",
+            scope_id=interaction.guild.id,
+        )
 
-            # Optional: jump straight to a case by reference.
-            if case:
-                opened = await view.open_reference(case.strip())
-                if not opened:
-                    await interaction.followup.send(view=design.error(
-                        t("commands.cases.browser.not_found_title", locale=locale),
-                        t("commands.cases.browser.not_found", locale=locale, id=f"`{case.strip()}`"),
-                    ), ephemeral=True)
-                    return
-                await interaction.followup.send(view=view, ephemeral=True)
+        # Optional: jump straight to a case by reference.
+        if case:
+            opened = await view.open_reference(case.strip())
+            if not opened:
+                await interaction.followup.send(view=design.error(
+                    t("commands.cases.browser.not_found_title", locale=locale),
+                    t("commands.cases.browser.not_found", locale=locale, id=f"`{case.strip()}`"),
+                ), ephemeral=True)
                 return
-
-            await view.refresh()
             await interaction.followup.send(view=view, ephemeral=True)
+            return
 
-        except Exception as e:
-            logger.error(
-                f"Error fetching cases for guild {interaction.guild.id}: {e}",
-                exc_info=True,
-            )
-            await interaction.followup.send(
-                t("commands.cases.error", locale=locale), ephemeral=True)
+        await view.refresh()
+        await interaction.followup.send(view=view, ephemeral=True)
 
 
 async def setup(bot):

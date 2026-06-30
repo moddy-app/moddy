@@ -168,6 +168,8 @@ class ModuleManager:
         Returns:
             Liste de dictionnaires avec les informations des modules
         """
+        # Sort by display name so the /config module picker is stable across
+        # restarts (filesystem glob discovery order is not deterministic).
         return [
             {
                 'id': module_class.MODULE_ID,
@@ -175,7 +177,10 @@ class ModuleManager:
                 'description': module_class.MODULE_DESCRIPTION,
                 'emoji': module_class.MODULE_EMOJI
             }
-            for module_class in self.registered_modules.values()
+            for module_class in sorted(
+                self.registered_modules.values(),
+                key=lambda m: m.MODULE_NAME.lower(),
+            )
         ]
 
     async def get_module_instance(self, guild_id: int, module_id: str) -> Optional[ModuleBase]:
@@ -429,7 +434,8 @@ class ModuleManager:
         logger.info("Discovering modules...")
 
         # Parcourt tous les fichiers Python dans le dossier modules
-        for file in modules_dir.glob("*.py"):
+        # (trié pour un ordre de découverte déterministe)
+        for file in sorted(modules_dir.glob("*.py")):
             # Ignore les fichiers spéciaux
             if file.name.startswith("_") or file.name == "module_manager.py":
                 continue

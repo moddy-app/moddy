@@ -1584,9 +1584,31 @@ class ModdyBot(commands.Bot):
         if not self.db:
             return
         try:
-            await self.db.expire_due_sanctions()
+            expired = await self.db.expire_due_sanctions()
         except Exception as e:
             logger.error(f"Error expiring moderation sanctions: {e}", exc_info=True)
+            return
+
+        # Reverse the Discord side of any expired guild ban (temporary bans):
+        # a timeout (mute) is auto-cleared by Discord, but a ban must be lifted
+        # explicitly when its case sanction expires.
+        for row in expired or []:
+            try:
+                if row.get("action") != "ban" or row.get("case_type") != "guild":
+                    continue
+                if row.get("scope_type") != "discord_guild" or not row.get("scope_id"):
+                    continue
+                guild = self.get_guild(int(row["scope_id"]))
+                if guild is None or not guild.me.guild_permissions.ban_members:
+                    continue
+                await guild.unban(
+                    discord.Object(id=int(row["subject_id"])),
+                    reason="[Automod] temporary ban expired",
+                )
+            except (discord.NotFound, discord.Forbidden, discord.HTTPException):
+                continue
+            except Exception as e:
+                logger.error(f"Error reversing expired sanction: {e}", exc_info=True)
 
     @case_expiry.before_loop
     async def before_case_expiry(self):

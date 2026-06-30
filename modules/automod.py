@@ -146,6 +146,7 @@ class ContentModerationFeature(AutomodFeature):
             is_bot=message.author.bot,
             is_system=message.type not in (discord.MessageType.default, discord.MessageType.reply),
             severity=self.module.severity,
+            response_language=self.module.response_language(message.guild),
         )
         if decision is not None:
             decisions.append(decision)
@@ -186,6 +187,7 @@ class ContentModerationFeature(AutomodFeature):
                 fetch_context=self.module.make_context_loader(msg),
                 force_nano=True,   # already flagged → straight to nano
                 severity=self.module.severity,
+                response_language=self.module.response_language(origin.guild),
             )
             # Do NOT recurse into this decision's a_reverifier (one level only).
             if decision is not None:
@@ -210,7 +212,7 @@ class AutomodModule(ModuleBase):
     MODULE_ID = "automod"
     MODULE_NAME = "Automod"
     MODULE_DESCRIPTION = "Modération automatique des messages problématiques (IA)"
-    MODULE_EMOJI = "<:filter:1520586655180783666>"
+    MODULE_EMOJI = "<:shield:1521471376815292498>"
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)
@@ -438,19 +440,16 @@ class AutomodModule(ModuleBase):
 
         # 2. Record the case FIRST so the Discord audit-log reason can carry the
         #    public case reference, exactly like a manual sanction.
-        mute_expires = None
-        if "mute" in actions and "ban" not in actions:
-            mute_expires = datetime.now(timezone.utc) + _MUTE_DURATIONS.get(
-                decision.gravite, timedelta(hours=1))
         case_ref, case_id, primary_action, primary_sanction_id = \
-            await self._record_case(message, decision, mute_expires)
+            await self._record_case(message, decision)
 
         # 3. Apply the Discord-side sanction with the standardized reason.
         can_act = member is not None and me is not None and member != guild.owner \
             and (me.top_role > member.top_role)
 
         if "ban" in actions and can_act and me.guild_permissions.ban_members:
-            audit = self._audit_reason(case_ref, None, decision.raison)
+            ban_expires = self._expiry_for(decision, "ban")
+            audit = self._audit_reason(case_ref, ban_expires, decision.raison)
             try:
                 self._mark_moddy_initiated(member.id, "ban")
                 await guild.ban(member, reason=audit, delete_message_days=0)
@@ -458,8 +457,10 @@ class AutomodModule(ModuleBase):
             except (discord.Forbidden, discord.HTTPException):
                 pass
         elif "mute" in actions and can_act and me.guild_permissions.moderate_members:
-            duration = _MUTE_DURATIONS.get(decision.gravite, timedelta(hours=1))
-            audit = self._audit_reason(case_ref, mute_expires, decision.raison)
+            duration = self._duration_td(decision) or _MUTE_DURATIONS.get(
+                decision.gravite, timedelta(hours=1))
+            audit = self._audit_reason(
+                case_ref, datetime.now(timezone.utc) + duration, decision.raison)
             try:
                 self._mark_moddy_initiated(member.id, "mute")
                 await member.timeout(duration, reason=audit)
@@ -482,6 +483,30 @@ class AutomodModule(ModuleBase):
                 member, case_id, case_ref, primary_action, primary_sanction_id, decision,
             )
 
+    # Discord timeout / temporary sanction max (28 days).
+    _MAX_DURATION = timedelta(days=28)
+
+    def _duration_td(self, decision: Decision) -> Optional[timedelta]:
+        """nano-decided sanction duration (clamped), or None for permanent."""
+        hours = getattr(decision, "duree_heures", 0) or 0
+        if hours <= 0:
+            return None
+        return min(timedelta(hours=hours), self._MAX_DURATION)
+
+    def _expiry_for(self, decision: Decision, action: str):
+        """Absolute ``expires_at`` for a sanction action (or None = permanent).
+
+        A mute is always temporary (Discord timeouts require a duration); ban
+        and warn are permanent unless nano set an explicit duration.
+        """
+        td = self._duration_td(decision)
+        if action == "mute":
+            return datetime.now(timezone.utc) + (
+                td or _MUTE_DURATIONS.get(decision.gravite, timedelta(hours=1)))
+        if action in ("ban", "warn") and td is not None:
+            return datetime.now(timezone.utc) + td
+        return None
+
     def _audit_reason(self, case_ref: Optional[str], expires_at, reason: str) -> str:
         """Discord audit-log reason, identical in shape to manual sanctions.
 
@@ -493,8 +518,13 @@ class AutomodModule(ModuleBase):
         expiry = expires_at.strftime("%Y-%m-%d %H:%M UTC") if expires_at else "Permanent"
         return f"[{ref}] @{mod_name} ({expiry}) : {reason}"[:512]
 
-    async def _record_case(self, message: discord.Message, decision: Decision, mute_expires=None):
-        """Open/extend a guild case for the sanctions and attach evidence.
+    async def _record_case(self, message: discord.Message, decision: Decision):
+        """Open ONE guild case for this incident, attach its sanctions + evidence.
+
+        Each automod incident is its own case: the first sanction opens a fresh
+        case (``link_open=False``) and any further sanctions of the same decision
+        are added to *that* case. This avoids every future automod action piling
+        onto one ever-open folder (which also kept reusing the same reference).
 
         Returns ``(case_ref, case_id, primary_action, primary_sanction_id)`` so
         the caller can DM the member an appealable notice. ``primary_action`` is
@@ -503,44 +533,56 @@ class AutomodModule(ModuleBase):
         if not getattr(self.bot, "cases", None):
             return None, None, None, None
 
-        # Decided actions that are real sanctions (deletion is not a sanction).
-        sanction_actions = [
-            a for a in decision.actions if _ACTION_TO_SANCTION.get(a) is not None
-        ]
+        # Decided actions that are real sanctions (deletion is not a sanction),
+        # ordered most-punitive first so the case opens on the primary sanction.
+        order = {"ban": 3, "mute": 2, "warn": 1}
+        sanction_actions = sorted(
+            [a for a in decision.actions if _ACTION_TO_SANCTION.get(a) is not None],
+            key=lambda a: order.get(a, 0), reverse=True,
+        )
         if not sanction_actions:
             return None, None, None, None  # deletion-only: no case folder
 
         # Factual reason (issuer already identifies automod — no "[Automod]" noise).
         case_reason = (decision.raison or decision.categorie or "Message problématique")[:480]
         extrait = (message.content or "")[:1500]
+        note = f"Automod · {decision.categorie} · {decision.gravite}"
 
         case_ref = case_id = None
-        # Track the primary (most punitive) sanction for the DM / appeal.
-        order = {"ban": 3, "mute": 2, "warn": 1}
         primary_action = None
         primary_sanction_id = None
-        for action in sanction_actions:
-            # A timed mute carries its expiry on the case sanction too, so the
-            # case auto-expires in step with the Discord timeout.
-            expires_at = mute_expires if action == "mute" else None
-            result = await self.bot.cases.record_sanction(
-                "guild",
-                subject_id=int(decision.auteur_id),
-                action=_ACTION_TO_SANCTION[action],
-                reason=case_reason,
-                issuer_type=IssuerType.AUTOMOD,
-                issuer_id=self.bot.user.id if self.bot.user else None,
-                scope_id=self.guild_id,
-                expires_at=expires_at,
-                note=f"Automod · {decision.categorie} · {decision.gravite}",
-            )
-            if not result:
-                continue
-            case_id = result["id"]
-            case_ref = result["reference"]
-            if primary_action is None or order.get(action, 0) > order.get(primary_action, 0):
+        for idx, action in enumerate(sanction_actions):
+            expires_at = self._expiry_for(decision, action)
+            if idx == 0:
+                # First sanction → open a brand-new case for this incident.
+                result = await self.bot.cases.record_sanction(
+                    "guild",
+                    subject_id=int(decision.auteur_id),
+                    action=_ACTION_TO_SANCTION[action],
+                    reason=case_reason,
+                    issuer_type=IssuerType.AUTOMOD,
+                    issuer_id=self.bot.user.id if self.bot.user else None,
+                    scope_id=self.guild_id,
+                    expires_at=expires_at,
+                    note=note,
+                    link_open=False,
+                )
+                if not result:
+                    continue
+                case_id = result["id"]
+                case_ref = result["reference"]
                 primary_action = action
                 primary_sanction_id = result.get("sanction_id")
+            else:
+                # Further sanctions of the SAME decision → same case folder.
+                if case_id is None:
+                    continue
+                await self.bot.db.add_sanction(
+                    case_id, _ACTION_TO_SANCTION[action].value,
+                    IssuerType.AUTOMOD.value,
+                    self.bot.user.id if self.bot.user else None,
+                    expires_at=expires_at, note=note,
+                )
 
         # Attach the offending message as evidence on the case.
         if case_id is not None:
@@ -581,13 +623,30 @@ class AutomodModule(ModuleBase):
 
         return case_ref, case_id, primary_action, primary_sanction_id
 
-    def _dm_locale(self, guild: Optional[discord.Guild]) -> str:
-        """Pick a DM locale from the guild's preferred locale (fr / en-US)."""
+    def guild_locale(self, guild: Optional[discord.Guild]) -> str:
+        """The locale automod speaks in this guild.
+
+        Uses the guild's preferred locale **only when Community is enabled**
+        (that's when Discord lets the server pick a real language); otherwise we
+        have no reliable language signal, so we default to English.
+        """
         try:
+            features = set(getattr(guild, "features", []) or [])
+            if "COMMUNITY" not in features:
+                return "en-US"
             pref = str(getattr(guild, "preferred_locale", "") or "")
         except Exception:
-            pref = ""
+            return "en-US"
         return "fr" if pref.lower().startswith("fr") else "en-US"
+
+    # Backwards-compatible alias used by the DM/notification helpers.
+    def _dm_locale(self, guild: Optional[discord.Guild]) -> str:
+        return self.guild_locale(guild)
+
+    def response_language(self, guild: Optional[discord.Guild]) -> str:
+        """Language name the AI writes its reason/explanation in."""
+        from automod.nano import response_language_name
+        return response_language_name(self.guild_locale(guild))
 
     async def _send_sanction_dm(self, member: discord.Member, case_id, case_ref: str,
                                 primary_action: str, primary_sanction_id, decision: Decision):

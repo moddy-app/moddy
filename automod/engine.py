@@ -89,6 +89,7 @@ class AutomodEngine:
         is_system: bool = False,
         force_nano: bool = False,
         severity: int = constants.SEVERITY_DEFAULT,
+        response_language: str = "English",
     ) -> Optional[Decision]:
         """Run a message through the funnel and return a Decision or None.
 
@@ -97,7 +98,8 @@ class AutomodEngine:
         to re-analyse messages flagged in ``a_reverifier``.
 
         ``severity`` (1–5) scales both the embedding routing threshold and how
-        strict nano is instructed to be.
+        strict nano is instructed to be. ``response_language`` is the language
+        nano writes its user-facing reason/explanation in (the server's tongue).
         """
         correlation_id = str(uuid.uuid4())
         severity = constants.clamp_severity(severity)
@@ -112,7 +114,7 @@ class AutomodEngine:
                 target, signal, guild_id=guild_id, guild_name=guild_name,
                 rules=rules, author_history=author_history,
                 fetch_context=fetch_context, correlation_id=correlation_id,
-                severity=severity,
+                severity=severity, response_language=response_language,
             )
 
         # Step 1 — pre-filter.
@@ -137,7 +139,7 @@ class AutomodEngine:
                 target, signal, guild_id=guild_id, guild_name=guild_name,
                 rules=rules, author_history=author_history,
                 fetch_context=fetch_context, correlation_id=correlation_id,
-                severity=severity,
+                severity=severity, response_language=response_language,
             )
 
         # Step 4 — embedding (threshold scales with severity).
@@ -161,7 +163,7 @@ class AutomodEngine:
             target, signal, guild_id=guild_id, guild_name=guild_name,
             rules=rules, author_history=author_history,
             fetch_context=fetch_context, correlation_id=correlation_id,
-            severity=severity,
+            severity=severity, response_language=response_language,
         )
 
     async def _judge(
@@ -176,6 +178,7 @@ class AutomodEngine:
         fetch_context: ContextFn,
         correlation_id: str,
         severity: int = constants.SEVERITY_DEFAULT,
+        response_language: str = "English",
     ) -> Decision:
         return await nano.juger(
             target,
@@ -186,6 +189,7 @@ class AutomodEngine:
             chat_fn=self._make_chat_fn(guild_id, correlation_id),
             fetch_context=fetch_context,
             severite=severity,
+            response_language=response_language,
         )
 
 

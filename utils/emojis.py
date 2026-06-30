@@ -85,6 +85,10 @@ FILTER = "<:filter:1520586655180783666>"
 FOLDER = "<:folder:1520590405043880107>"
 FOLDERS = "<:folders:1520590403533934713>"
 IMAGE = "<:image:1520593192892764260>"
+SHIELD = "<:shield:1521471376815292498>"   # automod icon
+HAND = "<:hand:1521517865348632706>"       # appeal "claim" button
+LINK = "<:link:1521517863607734385>"       # appeal "invite" button
+PENDING = "<:pending:1521282587962900611>"  # appeal "pending" status
 
 # =============================================================================
 # SOCIAL PLATFORMS (Social Notifications module)

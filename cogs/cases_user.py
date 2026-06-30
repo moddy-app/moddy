@@ -37,45 +37,42 @@ class CasesUserCog(commands.Cog):
         await interaction.response.defer(ephemeral=True)
         locale = get_locale(interaction)
 
-        try:
-            view = CasesBrowserView(
-                self.bot,
-                mode="user",
-                viewer_id=interaction.user.id,
-                locale=locale,
-                subject_type="discord_user",
-                subject_id=interaction.user.id,
-            )
+        # Unexpected errors are intentionally NOT swallowed here: they propagate
+        # to the centralized app-command error handler (see CLAUDE.md), which
+        # logs them, files an error code and shows the standard error view.
+        view = CasesBrowserView(
+            self.bot,
+            mode="user",
+            viewer_id=interaction.user.id,
+            locale=locale,
+            subject_type="discord_user",
+            subject_id=interaction.user.id,
+        )
 
-            # Optional: jump straight to a case by reference.
-            if case:
-                opened = await view.open_reference(case.strip())
-                if not opened:
-                    await interaction.followup.send(view=_not_found(locale, case), ephemeral=True)
-                    return
-                await interaction.followup.send(view=view, ephemeral=True)
+        # Optional: jump straight to a case by reference.
+        if case:
+            opened = await view.open_reference(case.strip())
+            if not opened:
+                await interaction.followup.send(view=_not_found(locale, case), ephemeral=True)
                 return
-
-            await view.refresh()
-
-            # Friendly empty state when the member has no cases at all.
-            if view.total == 0 and not view._has_active_filters():
-                empty = BaseView()
-                container = ui.Container(accent_colour=discord.Colour(COLORS["success"]))
-                container.add_item(ui.TextDisplay(
-                    f"### {emojis.DONE} {t('commands.cases.empty_title', locale=locale)}"
-                ))
-                container.add_item(ui.TextDisplay(t('commands.cases.empty', locale=locale)))
-                empty.add_item(container)
-                await interaction.followup.send(view=empty, ephemeral=True)
-                return
-
             await interaction.followup.send(view=view, ephemeral=True)
+            return
 
-        except Exception as e:
-            logger.error(f"Error fetching cases for user {interaction.user.id}: {e}", exc_info=True)
-            await interaction.followup.send(
-                t("commands.cases.error", locale=locale), ephemeral=True)
+        await view.refresh()
+
+        # Friendly empty state when the member has no cases at all.
+        if view.total == 0 and not view._has_active_filters():
+            empty = BaseView()
+            container = ui.Container(accent_colour=discord.Colour(COLORS["success"]))
+            container.add_item(ui.TextDisplay(
+                f"### {emojis.DONE} {t('commands.cases.empty_title', locale=locale)}"
+            ))
+            container.add_item(ui.TextDisplay(t('commands.cases.empty', locale=locale)))
+            empty.add_item(container)
+            await interaction.followup.send(view=empty, ephemeral=True)
+            return
+
+        await interaction.followup.send(view=view, ephemeral=True)
 
 
 def _not_found(locale: str, reference: str) -> BaseView:

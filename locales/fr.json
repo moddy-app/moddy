@@ -656,6 +656,7 @@
         "scope_field": "Serveur",
         "unknown_server": "Serveur inconnu (`{id}`)",
         "no_comments": "Aucun commentaire public.",
+        "more_items": "+{count} de plus…",
         "permission_denied_title": "Permissions manquantes",
         "permission_denied": "Tu as besoin de permissions de modération (bannir, expulser, exclure temporairement, ou gérer le serveur) pour consulter les sanctions de ce serveur.",
         "guild_only": "Cette commande ne peut être utilisée que dans un serveur.",

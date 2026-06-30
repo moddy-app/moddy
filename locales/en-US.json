@@ -657,6 +657,7 @@
         "scope_field": "Server",
         "unknown_server": "Unknown server (`{id}`)",
         "no_comments": "No public comments.",
+        "more_items": "+{count} more…",
         "permission_denied_title": "Missing Permissions",
         "permission_denied": "You need moderation permissions (ban, kick, timeout members, or manage server) to view this server's sanctions.",
         "guild_only": "This command can only be used in a server.",
