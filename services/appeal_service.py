@@ -35,9 +35,11 @@ logger = logging.getLogger("moddy.appeal_service")
 # transform time, so a transform→mute uses a sane default).
 _TRANSFORM_MUTE_DURATION = timedelta(hours=1)
 
-# Panels shown to moderators / Moddy staff are rendered in Moddy's primary
-# language; the member DM uses the member's own locale.
-_PANEL_LOCALE = "fr"
+# Fallback panel language. The actual panel/notification language is resolved
+# per appeal: team-route review is always English; server-route review follows
+# the guild's language (see AppealService._panel_locale). The member DM uses the
+# member's own (guild) locale.
+_PANEL_LOCALE = "en-US"
 
 
 class AppealService:
@@ -167,7 +169,7 @@ class AppealService:
         # Update reviewer panel (the message the button lives on).
         await self._ack_review(interaction, appeal, decided)
         # Update the member DM + send them an outcome notice.
-        await self._refresh_dm(appeal, None, status=status, locale=_PANEL_LOCALE, notify=True, decided=decided)
+        await self._refresh_dm(appeal, None, status=status, locale=self._panel_locale(appeal), notify=True, decided=decided)
         # Inform the server.
         await self._notify_server_decided(appeal, decided)
 
@@ -228,11 +230,12 @@ class AppealService:
         case = await self.db.get_case_by_id(_as_uuid(appeal["case_id"]))
         ctx = await self._review_context(appeal, case)
         view, _files = build_review_view(
-            locale=_PANEL_LOCALE, route=appeal["route"], appeal_id=str(appeal["id"]),
+            locale=self._panel_locale(appeal), route=appeal["route"], appeal_id=str(appeal["id"]),
             subject=ctx["subject"], guild=ctx["guild"], case=ctx["case"],
             appeal_reason=appeal.get("reason") or "",
             claimed_by=_int_or_none(appeal.get("claimed_by_id")),
             technical=ctx["technical"], proof=ctx["proof"],
+            context_text=ctx["context_text"],
         )
         try:
             if not interaction.response.is_done():
@@ -266,19 +269,39 @@ class AppealService:
         case_row = (case or {}).get("case", {})
         actions = sorted({s["action"] for s in (case or {}).get("sanctions", [])})
         created = case_row.get("created_at")
+        expires = self._sanction_expiry(case, appeal.get("sanction_id"))
         case_block = {
             "ref": case_row.get("reference"),
             "actions": actions,
             "reason": case_row.get("reason"),
             "explication": self._explication(case),
             "created_ts": int(created.timestamp()) if created else None,
+            "expires_ts": int(expires.timestamp()) if expires else None,
         }
         technical = {
             "case_uuid": str(appeal["case_id"]),
             "appeal_id": str(appeal["id"]),
         }
         return {"subject": subject, "guild": guild_block, "case": case_block,
-                "technical": technical, "proof": self._proof(case)}
+                "technical": technical, "proof": self._proof(case),
+                "context_text": self._context_text(case)}
+
+    def _panel_locale(self, appeal: dict) -> str:
+        """Reviewer-panel language: team route → English; server route → guild."""
+        if appeal.get("route") == "team":
+            return "en-US"
+        return self._dm_locale(appeal)
+
+    @staticmethod
+    def _context_text(case: Optional[dict]) -> Optional[str]:
+        """The stored channel context (what nano saw), for the panel .txt file."""
+        if not case:
+            return None
+        for ev in reversed(case.get("events", [])):
+            p = ev.get("payload") or {}
+            if ev.get("type") == "evidence" and p.get("source") == "automod" and p.get("context_text"):
+                return p["context_text"]
+        return None
 
     # ============================================================ internals
     def _sanction_action(self, case: dict, sanction_id: str) -> Optional[str]:
@@ -374,10 +397,11 @@ class AppealService:
             return
         ctx = await self._review_context(appeal, case)
         view, files = build_review_view(
-            locale=_PANEL_LOCALE, route=appeal["route"], appeal_id=str(appeal["id"]),
+            locale=self._panel_locale(appeal), route=appeal["route"], appeal_id=str(appeal["id"]),
             subject=ctx["subject"], guild=ctx["guild"], case=ctx["case"],
             appeal_reason=reason, claimed_by=_int_or_none(appeal.get("claimed_by_id")),
             technical=ctx["technical"], proof=ctx["proof"],
+            context_text=ctx["context_text"],
         )
         # A server-routed appeal is reviewed in the alert channel → reply to the
         # original automod log message so the thread of events stays linked.
@@ -409,11 +433,12 @@ class AppealService:
         case = await self.db.get_case_by_id(_as_uuid(appeal["case_id"]))
         ctx = await self._review_context(appeal, case)
         view, _files = build_review_view(
-            locale=_PANEL_LOCALE, route=appeal["route"], appeal_id=str(appeal["id"]),
+            locale=self._panel_locale(appeal), route=appeal["route"], appeal_id=str(appeal["id"]),
             subject=ctx["subject"], guild=ctx["guild"], case=ctx["case"],
             appeal_reason=appeal.get("reason") or "",
             claimed_by=_int_or_none(appeal.get("claimed_by_id")),
-            technical=ctx["technical"], proof=ctx["proof"], decided=decided,
+            technical=ctx["technical"], proof=ctx["proof"],
+            context_text=ctx["context_text"], decided=decided,
         )
         # The decision can come from the panel button (Decline), an ephemeral
         # choice button (Accept → full) or a modal (Accept → modify). In every
@@ -493,8 +518,8 @@ class AppealService:
             return
         from utils.components_v2 import create_info_message
         view = create_info_message(
-            t("modules.automod.appeal.server_opened_title", locale=_PANEL_LOCALE),
-            t("modules.automod.appeal.server_opened", locale=_PANEL_LOCALE,
+            t("modules.automod.appeal.server_opened_title", locale=self._panel_locale(appeal)),
+            t("modules.automod.appeal.server_opened", locale=self._panel_locale(appeal),
               user=f"<@{appeal['subject_id']}>", case=f"`{case['case']['reference']}`"),
         )
         try:
@@ -511,12 +536,12 @@ class AppealService:
         key = f"modules.automod.appeal.status.{decided['status']}"
         extra = ""
         if decided.get("new_action"):
-            extra = " → `" + t("modules.automod.action." + decided["new_action"], locale=_PANEL_LOCALE) + "`"
+            extra = " → `" + t("modules.automod.action." + decided["new_action"], locale=self._panel_locale(appeal)) + "`"
         view = create_info_message(
-            t("modules.automod.appeal.server_decided_title", locale=_PANEL_LOCALE),
-            t("modules.automod.appeal.server_decided", locale=_PANEL_LOCALE,
+            t("modules.automod.appeal.server_decided_title", locale=self._panel_locale(appeal)),
+            t("modules.automod.appeal.server_decided", locale=self._panel_locale(appeal),
               user=f"<@{appeal['subject_id']}>", route=appeal["route"],
-              status=t(key, locale=_PANEL_LOCALE)) + extra,
+              status=t(key, locale=self._panel_locale(appeal))) + extra,
         )
         case = await self.db.get_case_by_id(_as_uuid(appeal["case_id"]))
         try:
