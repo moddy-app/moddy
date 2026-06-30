@@ -910,6 +910,30 @@ class ErrorTracker(commands.Cog):
                 pass
             return
 
+        # Argument that couldn't be resolved (e.g. a username typed where a
+        # Member/User is expected) — a user mistake, not a bug. Show a friendly
+        # message instead of an error code.
+        if isinstance(error, discord.app_commands.TransformerError):
+            class NotFoundView(ui.LayoutView):
+                def __init__(self):
+                    super().__init__(timeout=None)
+                    container = ui.Container()
+                    container.add_item(ui.TextDisplay(
+                        f"### <:warning:1519789903100121139> Couldn't find that"))
+                    container.add_item(ui.TextDisplay(
+                        f"`{str(error.value)[:80]}` doesn't match a member or user I can see. "
+                        f"Try mentioning them or using their ID."))
+                    self.add_item(container)
+
+            try:
+                if interaction.response.is_done():
+                    await interaction.followup.send(view=NotFoundView(), ephemeral=True)
+                else:
+                    await interaction.response.send_message(view=NotFoundView(), ephemeral=True)
+            except discord.HTTPException:
+                pass
+            return
+
         # For all other errors, log them
         actual_error = error.original if hasattr(error, 'original') else error
         error_code = self.generate_error_code(actual_error)
@@ -976,6 +1000,57 @@ class ErrorTracker(commands.Cog):
             import logging
             logger = logging.getLogger('moddy')
             logger.error(f"Failed to send app command error to user: {send_error}")
+
+
+async def report_component_error(
+    interaction: "discord.Interaction", error: Exception, source: str
+) -> None:
+    """Route an unexpected error from a standalone component to the central handler.
+
+    ``discord.ui.DynamicItem`` callbacks that are dispatched without a live
+    ``BaseView`` (persistent buttons registered via ``add_dynamic_items``) never
+    reach :meth:`BaseView.on_error`. Wrap such callbacks and call this so an
+    unknown error still gets an error code, a Sentry capture, a Discord log and
+    a user-facing ``ErrorView`` — exactly like every other UI error.
+    """
+    error_tb = ''.join(traceback.format_exception(type(error), error, error.__traceback__))
+    logger.error(f"Component error in {source} - {error_tb.replace(chr(10), ' ⮐ ')}")
+
+    bot = interaction.client
+    tracker = bot.get_cog('ErrorTracker') if bot else None
+    if tracker:
+        error_code = tracker.generate_error_code(error)
+        error_details = tracker.format_error_details(error)
+        error_details.update({
+            "command": f"Component:{source}",
+            "user": f"{interaction.user} ({interaction.user.id})",
+            "guild": f"{interaction.guild.name} ({interaction.guild.id})" if interaction.guild else "DM",
+            "channel": f"#{interaction.channel.name}" if hasattr(interaction.channel, 'name') else "DM",
+        })
+        sentry_event_id = capture_error_to_sentry(error, {
+            'error_type': 'Component Error', 'error_code': error_code, 'source': source,
+            'user_id': interaction.user.id if interaction.user else None,
+            'guild_id': interaction.guild.id if interaction.guild else None,
+        })
+        if sentry_event_id:
+            error_details['sentry_event_id'] = sentry_event_id
+        tracker.store_error(error_code, error_details)
+        await tracker.store_error_db(error_code, error_details)
+        if sentry_event_id and bot.db:
+            asyncio.create_task(tracker._update_sentry_issue_id(error_code, sentry_event_id))
+        await tracker.send_error_log(error_code, error_details, False)
+        view = ErrorView(error_code)
+    else:
+        view = None
+
+    try:
+        if view is not None:
+            if interaction.response.is_done():
+                await interaction.followup.send(view=view, ephemeral=True)
+            else:
+                await interaction.response.send_message(view=view, ephemeral=True)
+    except discord.HTTPException as send_error:
+        logger.error(f"CRITICAL: Failed to send component error view: {send_error}")
 
 
 async def setup(bot):

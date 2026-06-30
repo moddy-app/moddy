@@ -625,6 +625,8 @@ class ModdyDatabase(
                     decided_by_id   TEXT,
                     decision_note   TEXT,
                     new_action      TEXT,
+                    claimed_by_id   TEXT,
+                    claimed_at      TIMESTAMPTZ,
                     dm_channel_id   TEXT,
                     dm_message_id   TEXT,
                     review_channel_id TEXT,
@@ -632,6 +634,19 @@ class ModdyDatabase(
                     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
                     decided_at      TIMESTAMPTZ
                 )
+            """)
+            # Migration: add the claim columns to pre-existing tables.
+            await conn.execute("""
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name='case_appeals' AND column_name='claimed_by_id'
+                    ) THEN
+                        ALTER TABLE case_appeals ADD COLUMN claimed_by_id TEXT;
+                        ALTER TABLE case_appeals ADD COLUMN claimed_at TIMESTAMPTZ;
+                    END IF;
+                END $$;
             """)
             await conn.execute("CREATE INDEX IF NOT EXISTS idx_appeals_case ON case_appeals (case_id)")
             await conn.execute("CREATE INDEX IF NOT EXISTS idx_appeals_subject ON case_appeals (subject_id)")

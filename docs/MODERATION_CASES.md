@@ -259,10 +259,21 @@ Automod is a first-class issuer in the cases system. Every automod sanction is a
 **guild case** opened through `bot.cases.record_sanction(source="guild",
 issuer_type=AUTOMOD, …)` with the **factual reason** as the case reason and the
 offending message attached as an `evidence` event (extract, jump URL,
-`explication`, signal/score/confidence). The case is recorded **before** the
-Discord action so the audit-log reason matches manual sanctions
-(`[<REF>] @Moddy (<expiry>) : <reason>`), and a timed mute carries its
-`expires_at`.
+`explication`, signal/score/confidence, author name + timestamp, and the id of
+the server log message). The case is recorded **before** the Discord action so
+the audit-log reason matches manual sanctions
+(`[<REF>] @Moddy (<expiry>) : <reason>`).
+
+**One case per incident.** Automod opens a fresh case for each decision
+(`link_open=False`) instead of appending to a subject's existing open case — so
+references no longer get reused and a single case never accumulates dozens of
+sanctions. When a decision carries several actions (e.g. `delete` + `warn`),
+they are recorded on that one case.
+
+**Expiring sanctions.** nano may return `duree_heures` so warns / mutes / bans
+can be temporary. A mute uses it as the timeout length; a ban becomes a *temp
+ban* whose `expires_at` is honoured by `bot.case_expiry`, which lifts the
+Discord ban when the sanction expires (mutes are auto-cleared by Discord).
 
 A sanctioned member can **appeal** (see [AUTOMOD.md](AUTOMOD.md) §7):
 

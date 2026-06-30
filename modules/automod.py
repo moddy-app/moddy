@@ -146,6 +146,7 @@ class ContentModerationFeature(AutomodFeature):
             is_bot=message.author.bot,
             is_system=message.type not in (discord.MessageType.default, discord.MessageType.reply),
             severity=self.module.severity,
+            response_language=self.module.response_language(message.guild),
         )
         if decision is not None:
             decisions.append(decision)
@@ -186,6 +187,7 @@ class ContentModerationFeature(AutomodFeature):
                 fetch_context=self.module.make_context_loader(msg),
                 force_nano=True,   # already flagged → straight to nano
                 severity=self.module.severity,
+                response_language=self.module.response_language(origin.guild),
             )
             # Do NOT recurse into this decision's a_reverifier (one level only).
             if decision is not None:
@@ -210,7 +212,7 @@ class AutomodModule(ModuleBase):
     MODULE_ID = "automod"
     MODULE_NAME = "Automod"
     MODULE_DESCRIPTION = "Modération automatique des messages problématiques (IA)"
-    MODULE_EMOJI = "<:filter:1520586655180783666>"
+    MODULE_EMOJI = "<:shield:1521471376815292498>"
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)
@@ -438,19 +440,16 @@ class AutomodModule(ModuleBase):
 
         # 2. Record the case FIRST so the Discord audit-log reason can carry the
         #    public case reference, exactly like a manual sanction.
-        mute_expires = None
-        if "mute" in actions and "ban" not in actions:
-            mute_expires = datetime.now(timezone.utc) + _MUTE_DURATIONS.get(
-                decision.gravite, timedelta(hours=1))
         case_ref, case_id, primary_action, primary_sanction_id = \
-            await self._record_case(message, decision, mute_expires)
+            await self._record_case(message, decision)
 
         # 3. Apply the Discord-side sanction with the standardized reason.
         can_act = member is not None and me is not None and member != guild.owner \
             and (me.top_role > member.top_role)
 
         if "ban" in actions and can_act and me.guild_permissions.ban_members:
-            audit = self._audit_reason(case_ref, None, decision.raison)
+            ban_expires = self._expiry_for(decision, "ban")
+            audit = self._audit_reason(case_ref, ban_expires, decision.raison)
             try:
                 self._mark_moddy_initiated(member.id, "ban")
                 await guild.ban(member, reason=audit, delete_message_days=0)
@@ -458,8 +457,10 @@ class AutomodModule(ModuleBase):
             except (discord.Forbidden, discord.HTTPException):
                 pass
         elif "mute" in actions and can_act and me.guild_permissions.moderate_members:
-            duration = _MUTE_DURATIONS.get(decision.gravite, timedelta(hours=1))
-            audit = self._audit_reason(case_ref, mute_expires, decision.raison)
+            duration = self._duration_td(decision) or _MUTE_DURATIONS.get(
+                decision.gravite, timedelta(hours=1))
+            audit = self._audit_reason(
+                case_ref, datetime.now(timezone.utc) + duration, decision.raison)
             try:
                 self._mark_moddy_initiated(member.id, "mute")
                 await member.timeout(duration, reason=audit)
@@ -472,15 +473,51 @@ class AutomodModule(ModuleBase):
         if "warn" in actions and "warn" not in applied:
             applied.append("warn")
 
-        # 4. Notify the server in the mandatory alert channel.
-        await self._notify_channel(message, decision, applied, case_ref)
+        # 4. Notify the server in the mandatory alert channel, then remember the
+        #    log message on the case so later appeal updates reply to it.
+        log_msg = await self._notify_channel(message, decision, applied, case_ref, primary_action)
+        if log_msg is not None and case_id is not None:
+            try:
+                await self.bot.db.add_event(
+                    case_id, EventType.EVIDENCE.value,
+                    author_type=AuthorType.SYSTEM.value,
+                    payload={"kind": "automod_log",
+                             "channel_id": log_msg.channel.id,
+                             "message_id": log_msg.id},
+                )
+            except Exception as e:
+                logger.debug("automod: could not store log ref: %s", e)
 
         # 5. DM the sanctioned member (like a manual mod action) with the
         #    appeal buttons — only when a real sanction was opened.
         if case_id is not None and primary_action is not None and member is not None:
             await self._send_sanction_dm(
-                member, case_id, case_ref, primary_action, primary_sanction_id, decision,
+                member, case_id, case_ref, primary_action, primary_sanction_id, decision, message,
             )
+
+    # Discord timeout / temporary sanction max (28 days).
+    _MAX_DURATION = timedelta(days=28)
+
+    def _duration_td(self, decision: Decision) -> Optional[timedelta]:
+        """nano-decided sanction duration (clamped), or None for permanent."""
+        hours = getattr(decision, "duree_heures", 0) or 0
+        if hours <= 0:
+            return None
+        return min(timedelta(hours=hours), self._MAX_DURATION)
+
+    def _expiry_for(self, decision: Decision, action: str):
+        """Absolute ``expires_at`` for a sanction action (or None = permanent).
+
+        A mute is always temporary (Discord timeouts require a duration); ban
+        and warn are permanent unless nano set an explicit duration.
+        """
+        td = self._duration_td(decision)
+        if action == "mute":
+            return datetime.now(timezone.utc) + (
+                td or _MUTE_DURATIONS.get(decision.gravite, timedelta(hours=1)))
+        if action in ("ban", "warn") and td is not None:
+            return datetime.now(timezone.utc) + td
+        return None
 
     def _audit_reason(self, case_ref: Optional[str], expires_at, reason: str) -> str:
         """Discord audit-log reason, identical in shape to manual sanctions.
@@ -493,8 +530,13 @@ class AutomodModule(ModuleBase):
         expiry = expires_at.strftime("%Y-%m-%d %H:%M UTC") if expires_at else "Permanent"
         return f"[{ref}] @{mod_name} ({expiry}) : {reason}"[:512]
 
-    async def _record_case(self, message: discord.Message, decision: Decision, mute_expires=None):
-        """Open/extend a guild case for the sanctions and attach evidence.
+    async def _record_case(self, message: discord.Message, decision: Decision):
+        """Open ONE guild case for this incident, attach its sanctions + evidence.
+
+        Each automod incident is its own case: the first sanction opens a fresh
+        case (``link_open=False``) and any further sanctions of the same decision
+        are added to *that* case. This avoids every future automod action piling
+        onto one ever-open folder (which also kept reusing the same reference).
 
         Returns ``(case_ref, case_id, primary_action, primary_sanction_id)`` so
         the caller can DM the member an appealable notice. ``primary_action`` is
@@ -503,44 +545,56 @@ class AutomodModule(ModuleBase):
         if not getattr(self.bot, "cases", None):
             return None, None, None, None
 
-        # Decided actions that are real sanctions (deletion is not a sanction).
-        sanction_actions = [
-            a for a in decision.actions if _ACTION_TO_SANCTION.get(a) is not None
-        ]
+        # Decided actions that are real sanctions (deletion is not a sanction),
+        # ordered most-punitive first so the case opens on the primary sanction.
+        order = {"ban": 3, "mute": 2, "warn": 1}
+        sanction_actions = sorted(
+            [a for a in decision.actions if _ACTION_TO_SANCTION.get(a) is not None],
+            key=lambda a: order.get(a, 0), reverse=True,
+        )
         if not sanction_actions:
             return None, None, None, None  # deletion-only: no case folder
 
         # Factual reason (issuer already identifies automod — no "[Automod]" noise).
         case_reason = (decision.raison or decision.categorie or "Message problématique")[:480]
         extrait = (message.content or "")[:1500]
+        note = f"Automod · {decision.categorie} · {decision.gravite}"
 
         case_ref = case_id = None
-        # Track the primary (most punitive) sanction for the DM / appeal.
-        order = {"ban": 3, "mute": 2, "warn": 1}
         primary_action = None
         primary_sanction_id = None
-        for action in sanction_actions:
-            # A timed mute carries its expiry on the case sanction too, so the
-            # case auto-expires in step with the Discord timeout.
-            expires_at = mute_expires if action == "mute" else None
-            result = await self.bot.cases.record_sanction(
-                "guild",
-                subject_id=int(decision.auteur_id),
-                action=_ACTION_TO_SANCTION[action],
-                reason=case_reason,
-                issuer_type=IssuerType.AUTOMOD,
-                issuer_id=self.bot.user.id if self.bot.user else None,
-                scope_id=self.guild_id,
-                expires_at=expires_at,
-                note=f"Automod · {decision.categorie} · {decision.gravite}",
-            )
-            if not result:
-                continue
-            case_id = result["id"]
-            case_ref = result["reference"]
-            if primary_action is None or order.get(action, 0) > order.get(primary_action, 0):
+        for idx, action in enumerate(sanction_actions):
+            expires_at = self._expiry_for(decision, action)
+            if idx == 0:
+                # First sanction → open a brand-new case for this incident.
+                result = await self.bot.cases.record_sanction(
+                    "guild",
+                    subject_id=int(decision.auteur_id),
+                    action=_ACTION_TO_SANCTION[action],
+                    reason=case_reason,
+                    issuer_type=IssuerType.AUTOMOD,
+                    issuer_id=self.bot.user.id if self.bot.user else None,
+                    scope_id=self.guild_id,
+                    expires_at=expires_at,
+                    note=note,
+                    link_open=False,
+                )
+                if not result:
+                    continue
+                case_id = result["id"]
+                case_ref = result["reference"]
                 primary_action = action
                 primary_sanction_id = result.get("sanction_id")
+            else:
+                # Further sanctions of the SAME decision → same case folder.
+                if case_id is None:
+                    continue
+                await self.bot.db.add_sanction(
+                    case_id, _ACTION_TO_SANCTION[action].value,
+                    IssuerType.AUTOMOD.value,
+                    self.bot.user.id if self.bot.user else None,
+                    expires_at=expires_at, note=note,
+                )
 
         # Attach the offending message as evidence on the case.
         if case_id is not None:
@@ -566,6 +620,8 @@ class AutomodModule(ModuleBase):
                         "channel_id": message.channel.id,
                         "jump_url": jump,
                         "extrait": extrait,
+                        "author_name": getattr(message.author, "display_name", str(message.author)),
+                        "ts": int(message.created_at.timestamp()),
                         "raison": decision.raison,
                         "explication": decision.explication,
                         "signal_source": decision.signal_source,
@@ -581,74 +637,140 @@ class AutomodModule(ModuleBase):
 
         return case_ref, case_id, primary_action, primary_sanction_id
 
-    def _dm_locale(self, guild: Optional[discord.Guild]) -> str:
-        """Pick a DM locale from the guild's preferred locale (fr / en-US)."""
+    def guild_locale(self, guild: Optional[discord.Guild]) -> str:
+        """The locale automod speaks in this guild.
+
+        Uses the guild's preferred locale **only when Community is enabled**
+        (that's when Discord lets the server pick a real language); otherwise we
+        have no reliable language signal, so we default to English.
+        """
         try:
+            features = set(getattr(guild, "features", []) or [])
+            if "COMMUNITY" not in features:
+                return "en-US"
             pref = str(getattr(guild, "preferred_locale", "") or "")
         except Exception:
-            pref = ""
+            return "en-US"
         return "fr" if pref.lower().startswith("fr") else "en-US"
 
+    # Backwards-compatible alias used by the DM/notification helpers.
+    def _dm_locale(self, guild: Optional[discord.Guild]) -> str:
+        return self.guild_locale(guild)
+
+    def response_language(self, guild: Optional[discord.Guild]) -> str:
+        """Language name the AI writes its reason/explanation in."""
+        from automod.nano import response_language_name
+        return response_language_name(self.guild_locale(guild))
+
     async def _send_sanction_dm(self, member: discord.Member, case_id, case_ref: str,
-                                primary_action: str, primary_sanction_id, decision: Decision):
+                                primary_action: str, primary_sanction_id, decision: Decision,
+                                message: Optional[discord.Message] = None):
         """DM the member their sanction with Server / Moddy-team appeal buttons."""
         if not primary_sanction_id:
             return  # cannot offer an appeal without a sanction to target
         from utils.appeal_views import build_sanction_dm_view
-        locale = self._dm_locale(member.guild)
-        guild_name = member.guild.name if member.guild else ""
-        view = build_sanction_dm_view(
+        guild = member.guild
+        locale = self.guild_locale(guild)
+        content = (message.content or "") if message else ""
+        view, files = build_sanction_dm_view(
             locale=locale,
-            guild_name=guild_name,
+            guild_name=guild.name if guild else "",
+            guild_id=guild.id if guild else None,
             case_ref=case_ref or "—",
             action=primary_action,
             reason=decision.raison,
             explication=decision.explication,
             case_id=str(case_id),
             sanction_id=str(primary_sanction_id),
+            expires_at=self._expiry_for(decision, primary_action),
+            proof_text=content or None,
+            proof_author=getattr(message.author, "display_name", None) if message else None,
+            proof_message_id=str(message.id) if message else None,
+            proof_ts=int(message.created_at.timestamp()) if message else None,
         )
         try:
-            await member.send(view=view)
+            await member.send(view=view, files=files)
         except (discord.Forbidden, discord.HTTPException):
             pass  # closed DMs — the case + channel notification still stand
 
     async def _notify_channel(self, message: discord.Message, decision: Decision,
-                              applied: List[str], case_ref: Optional[str]):
-        """Post the decision to the mandatory server alert channel."""
+                              applied: List[str], case_ref: Optional[str],
+                              primary_action: Optional[str] = None):
+        """Post the decision to the mandatory server alert channel.
+
+        Returns the sent message (or None) so the caller can link it to the
+        case. The accent colour follows the sanction (orange warn / red ban…),
+        the offending message is quoted in a spoiler, and a long message is
+        attached as a ``.txt`` file instead of being truncated.
+        """
         if not self.notify_channel_id:
-            return
+            return None
         guild = message.guild
         channel = guild.get_channel(int(self.notify_channel_id)) if guild else None
         if not channel or not isinstance(channel, discord.TextChannel):
-            return
+            return None
         me = guild.me
         if not channel.permissions_for(me).send_messages:
-            return
+            return None
 
         from discord import ui
-        from utils.emojis import FILTER, WARNING, INFO
+        from utils.emojis import SHIELD, get_sanction_accent
+        from utils.automod_render import is_long, make_text_file
+        from config import COLORS
 
-        applied_txt = ", ".join(applied) if applied else "détection seule"
+        locale = self.guild_locale(guild)
+        accent = get_sanction_accent(primary_action) if primary_action else COLORS["warning"]
+
+        def _label(a: str) -> str:
+            return t(f"modules.automod.action.{a}", locale=locale)
+
+        actions_txt = ", ".join(_label(a) for a in applied) if applied \
+            else t("modules.automod.log.detection_only", locale=locale)
+
         view = ui.LayoutView(timeout=None)
-        container = ui.Container()
-        container.add_item(ui.TextDisplay(f"### {FILTER} Automod"))
+        container = ui.Container(accent_colour=discord.Colour(accent))
         container.add_item(ui.TextDisplay(
-            f"**Auteur :** <@{decision.auteur_id}> (`{decision.auteur_id}`)\n"
-            f"**Salon :** <#{message.channel.id}>\n"
-            f"**Catégorie :** `{decision.categorie}` · **Gravité :** `{decision.gravite}`\n"
-            f"**Détection :** `{decision.signal_source}` (score `{decision.score_detecteur:.2f}`, "
-            f"confiance `{decision.confiance}`)"
-        ))
-        if message.content:
-            container.add_item(ui.TextDisplay(f"> {message.content[:500]}"))
+            f"### {SHIELD} {t('modules.automod.log.title', locale=locale)}"))
+        body = (
+            f"- **{t('modules.automod.log.author', locale=locale)} :** "
+            f"<@{decision.auteur_id}> (`{decision.auteur_id}`)\n"
+            f"- **{t('modules.automod.log.channel', locale=locale)} :** <#{message.channel.id}>\n"
+            f"- **{t('modules.automod.log.actions', locale=locale)} :** {actions_txt}\n"
+            f"- **{t('modules.automod.log.reason', locale=locale)} :** {decision.raison or '—'}"
+        )
+        if decision.explication:
+            body += (f"\n- **{t('modules.automod.log.explanation', locale=locale)} :** "
+                     f"{decision.explication}")
+        if case_ref:
+            body += f"\n- **{t('modules.automod.log.case', locale=locale)} :** `{case_ref}`"
+        container.add_item(ui.TextDisplay(body))
         container.add_item(ui.TextDisplay(
-            f"{WARNING} **Raison :** {decision.raison or '—'}\n"
-            + (f"-# {decision.explication}\n" if decision.explication else "")
-            + f"-# **Actions :** {applied_txt}"
-            + (f" · **Case :** `{case_ref}`" if case_ref else "")
-        ))
+            f"-# {t('modules.automod.log.appeal_hint', locale=locale)}"))
         view.add_item(container)
+
+        # Offending message — spoilered, attached as a file when too long.
+        files: List[discord.File] = []
+        content = message.content or ""
+        deleted = "supprimer" in applied
+        ts = int(message.created_at.timestamp())
+        author_name = getattr(message.author, "display_name", str(message.author))
+        meta = f"-# {t('modules.automod.log.message_id', locale=locale)} : ``{message.id}``"
+        if deleted:
+            meta += f" · {t('modules.automod.log.deleted', locale=locale)}"
+
+        quote = ui.Container(accent_colour=discord.Colour(accent), spoiler=True)
+        if content and is_long(content):
+            fname = f"message_{message.id}.txt"
+            files.append(make_text_file(content, fname))
+            quote.add_item(ui.TextDisplay(f"**{author_name}** — <t:{ts}:S>"))
+            quote.add_item(ui.File(f"attachment://{fname}"))
+            quote.add_item(ui.TextDisplay(meta))
+        else:
+            shown = content if content else "*…*"
+            quote.add_item(ui.TextDisplay(f"**{author_name}** — <t:{ts}:S>\n> {shown}\n{meta}"))
+        view.add_item(quote)
+
         try:
-            await channel.send(view=view)
+            return await channel.send(view=view, files=files)
         except (discord.Forbidden, discord.HTTPException):
-            pass
+            return None

@@ -54,6 +54,13 @@ logger = logging.getLogger("moddy.cases_browser")
 # How many cases are shown per list page.
 PAGE_SIZE = 5
 
+# Detail-screen caps. A Components V2 ``LayoutView`` allows at most 40 nested
+# components; we render sanctions and comments as combined TextDisplays, but we
+# still cap the lines so a heavily-used case stays readable (and well under the
+# ceiling whatever the rendering strategy).
+_MAX_DETAIL_SANCTIONS = 12
+_MAX_DETAIL_COMMENTS = 5
+
 # Period filter values -> lookback window in hours (None = all time).
 PERIODS: Dict[str, Optional[int]] = {
     "all": None,
@@ -626,20 +633,26 @@ class CasesBrowserView(BaseView):
         if self.mode == "server":
             subj = f"<@{case.subject_id}>" if case.subject_type.value == "discord_user" else f"`{case.subject_id}`"
             fields += f"**{t('commands.cases.browser.subject_user', locale=self.locale)}:** {subj} (`{case.subject_id}`)\n"
-            if case.issuer_id and case.issuer_type.value in ("discord_user", "moddy_staff"):
-                fields += f"**{t('commands.cases.browser.issued_by', locale=self.locale)}:** <@{case.issuer_id}>\n"
+            issued_label = t('commands.cases.browser.issued_by', locale=self.locale)
+            if case.issuer_type.value == "automod":
+                fields += f"**{issued_label}:** {emojis.SHIELD} Moddy Automod\n"
+            elif case.issuer_id and case.issuer_type.value in ("discord_user", "moddy_staff"):
+                fields += f"**{issued_label}:** <@{case.issuer_id}>\n"
         fields += f"**{t('commands.cases.opened', locale=self.locale)}:** {_ts(case.created_at, 'F')}"
         container.add_item(ui.TextDisplay(fields))
         container.add_item(ui.TextDisplay(
             f"**{t('commands.cases.reason', locale=self.locale)}:**\n{case.reason[:800]}"
         ))
 
-        # Sanctions — no inline action emoji here; the bold action name is
-        # enough, and the status dot is kept to read the state quickly.
+        # Sanctions — rendered as ONE combined TextDisplay (not one child per
+        # sanction) so a long-lived case with many sanctions can never blow past
+        # the 40-component LayoutView ceiling. Newest first, capped.
         if case.sanctions:
             container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
             container.add_item(ui.TextDisplay(f"**{t('commands.cases.sanctions', locale=self.locale)}**"))
-            for s in case.sanctions:
+            shown = list(reversed(case.sanctions))[:_MAX_DETAIL_SANCTIONS]
+            lines: List[str] = []
+            for s in shown:
                 dot = emojis.GREEN_STATUS if s.status == SanctionStatus.ACTIVE else emojis.RED_STATUS
                 action = t("commands.cases.action." + s.action.value, locale=self.locale)
                 line = (
@@ -648,17 +661,31 @@ class CasesBrowserView(BaseView):
                 )
                 if s.expires_at and s.status == SanctionStatus.ACTIVE:
                     line += f" • {emojis.TIME} {_ts(s.expires_at)}"
-                container.add_item(ui.TextDisplay(line))
+                lines.append(line)
+            hidden = len(case.sanctions) - len(shown)
+            if hidden > 0:
+                lines.append(f"-# {t('commands.cases.browser.more_items', locale=self.locale, count=hidden)}")
+            container.add_item(ui.TextDisplay("\n".join(lines)))
 
-        # Comments are private — only server moderators can see them.
+        # Comments are private — only server moderators can see them. One
+        # combined TextDisplay, capped, for the same child-count reason.
         if self.mode == "server":
             comments = [e for e in case.events if e.type == EventType.COMMENT]
             container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
             container.add_item(ui.TextDisplay(f"**{t('commands.cases.comments', locale=self.locale)}**"))
             if comments:
-                for e in comments[-5:]:
+                shown_c = comments[-_MAX_DETAIL_COMMENTS:]
+                hidden_c = len(comments) - len(shown_c)
+                blocks: List[str] = []
+                if hidden_c > 0:
+                    blocks.append(f"-# {t('commands.cases.browser.more_items', locale=self.locale, count=hidden_c)}")
+                for e in shown_c:
                     author = f"<@{e.author_id}> • " if e.author_id else ""
-                    container.add_item(ui.TextDisplay(f"-# {author}{_ts(e.created_at)}\n{e.content or ''}"))
+                    body = (e.content or "").strip()
+                    if len(body) > 300:
+                        body = body[:297] + "…"
+                    blocks.append(f"-# {author}{_ts(e.created_at)}\n{body}")
+                container.add_item(ui.TextDisplay("\n".join(blocks)))
             else:
                 container.add_item(ui.TextDisplay(f"-# {t('commands.cases.browser.no_comments', locale=self.locale)}"))
 

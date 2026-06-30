@@ -550,21 +550,28 @@ class ModerationRepository:
         )
 
     # ----------------------------------------------------------- expiry job
-    async def expire_due_sanctions(self) -> int:
+    async def expire_due_sanctions(self) -> List[Dict[str, Any]]:
         """Expire temporary sanctions whose ``expires_at`` has passed.
 
-        Returns the number of sanctions expired. Intended to be called by a
-        periodic task. Each expiry logs an event and recomputes case status.
+        Returns the list of expired sanctions (each a dict with ``action``,
+        ``case_type``, ``subject_type``, ``subject_id``, ``scope_type`` and
+        ``scope_id``) so the caller can reverse the matching Discord action
+        (e.g. unban a temporary ban). Each expiry logs an event and recomputes
+        the parent case status.
         """
+        expired: List[Dict[str, Any]] = []
         async with self.pool.acquire() as conn:
             due = await conn.fetch(
                 """
-                SELECT id, case_id, action FROM case_sanctions
-                WHERE status = 'active'::sanction_status
-                  AND expires_at IS NOT NULL AND expires_at <= now()
+                SELECT s.id, s.case_id, s.action,
+                       c.type AS case_type, c.subject_type, c.subject_id,
+                       c.scope_type, c.scope_id
+                FROM case_sanctions s
+                JOIN cases c ON c.id = s.case_id
+                WHERE s.status = 'active'::sanction_status
+                  AND s.expires_at IS NOT NULL AND s.expires_at <= now()
                 """
             )
-            count = 0
             for row in due:
                 async with conn.transaction():
                     updated = await conn.execute(
@@ -583,10 +590,10 @@ class ModerationRepository:
                         payload={"sanction_id": str(row["id"]), "action": row["action"]},
                     )
                     await self._recompute_status(conn, row["case_id"], StatusTrigger.EXPIRATION)
-                    count += 1
-            if count:
-                logger.info("[Cases] Expired %d sanction(s)", count)
-            return count
+                    expired.append(dict(row))
+            if expired:
+                logger.info("[Cases] Expired %d sanction(s)", len(expired))
+            return expired
 
     # ------------------------------------------------------ source linking
     async def find_open_case(

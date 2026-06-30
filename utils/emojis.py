@@ -85,6 +85,10 @@ FILTER = "<:filter:1520586655180783666>"
 FOLDER = "<:folder:1520590405043880107>"
 FOLDERS = "<:folders:1520590403533934713>"
 IMAGE = "<:image:1520593192892764260>"
+SHIELD = "<:shield:1521471376815292498>"   # automod icon
+HAND = "<:hand:1521517865348632706>"       # appeal "claim" button
+LINK = "<:link:1521517863607734385>"       # appeal "invite" button
+PENDING = "<:pending:1521282587962900611>"  # appeal "pending" status
 
 # =============================================================================
 # SOCIAL PLATFORMS (Social Notifications module)
@@ -305,6 +309,39 @@ SANCTION_ACTION_EMOJIS = {
     "revoke_access": DELETE,
 }
 SANCTION_ACTION_EMOJI_DEFAULT = NOTE
+
+# Sanction → title icon for member-facing DMs / server logs. Matches the manual
+# sanction DMs (cogs/moderation_commands.py) so automod looks identical.
+SANCTION_DM_EMOJIS = {
+    "warn": WARNING,
+    "mute": MIC_OFF,
+    "ban": LEGAL,
+    "kick": LOGOUT,
+    "restrict": UNDONE,
+    "revoke_access": DELETE,
+}
+
+# Sanction → accent colour for DM / log panels (same palette as manual
+# sanctions): orange for a warn, red for the punitive actions.
+SANCTION_ACCENT_COLORS = {
+    "warn": 0xF28500,
+    "mute": 0xDA3E27,
+    "ban": 0xDA3E27,
+    "kick": 0xDA3E27,
+    "restrict": 0xF28500,
+    "revoke_access": 0xDA3E27,
+}
+SANCTION_ACCENT_DEFAULT = 0xF28500
+
+
+def get_sanction_dm_emoji(action: str) -> str:
+    """Title icon for a sanction action in a member-facing message."""
+    return SANCTION_DM_EMOJIS.get(action or "", WARNING)
+
+
+def get_sanction_accent(action: str) -> int:
+    """Accent colour (int) for a sanction action in a DM / log panel."""
+    return SANCTION_ACCENT_COLORS.get(action or "", SANCTION_ACCENT_DEFAULT)
 
 # Case type emojis (moderation cases). Keyed by CaseType value.
 CASE_TYPE_EMOJIS = {

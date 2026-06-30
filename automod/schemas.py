@@ -88,3 +88,4 @@ class Decision:
     signal_source: str          # "regex" | "embedding" | "signalé_par_nano"
     score_detecteur: float      # detector input score
     a_reverifier: List[str] = field(default_factory=list)
+    duree_heures: int = 0       # temporary-sanction duration in hours (0 = permanent)
