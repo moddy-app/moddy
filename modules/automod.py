@@ -48,6 +48,7 @@ from automod import (
     get_engine, Decision, TargetMessage, ContextMessage, AuthorHistory,
 )
 from automod import constants as ac
+from utils.i18n import t
 from utils.moderation_cases import IssuerType, SanctionAction, EventType, AuthorType
 
 logger = logging.getLogger("moddy.modules.automod")
