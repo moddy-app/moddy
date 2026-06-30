@@ -26,8 +26,9 @@ from discord import ui
 from utils.i18n import t, i18n
 from cogs.error_handler import BaseView, BaseModal
 from utils.emojis import (
-    FILTER, BOOK, BACK, DELETE, MESSAGE, GROUPS, SETTINGS, WARNING, SAVE,
-    UNDONE, REQUIRED_FIELDS, MANAGE_USER, GREEN_STATUS, RED_STATUS,
+    SHIELD, BOOK, BACK, DELETE, MESSAGE, GROUPS, SETTINGS, WARNING, SAVE,
+    UNDONE, REQUIRED_FIELDS, MANAGE_USER, GREEN_STATUS, RED_STATUS, TOGGLE_ON,
+    TOGGLE_OFF,
 )
 from automod.rules_check import validate_rules, MAX_RULES_LENGTH
 from automod import constants as ac
@@ -176,55 +177,52 @@ class AutomodConfigView(BaseView):
         has_channel = cfg.get("notify_channel_id") is not None
         running = module_on and content_on and has_channel
 
-        # Header
+        # ── Header + one-line status ──────────────────────────────────────
         container.add_item(ui.TextDisplay(
-            f"### {FILTER} {t('modules.automod.config.title', locale=self.locale)}"
+            f"### {SHIELD} {t('modules.automod.config.title', locale=self.locale)}"
         ))
         container.add_item(ui.TextDisplay(
             t("modules.automod.config.description", locale=self.locale)
         ))
-
         if running:
             container.add_item(ui.TextDisplay(
                 t("modules.automod.config.summary_active", locale=self.locale)
             ))
         else:
-            if not has_channel:
-                hint_key = "summary_need_channel"
-            elif not module_on:
-                hint_key = "summary_need_module"
-            else:
-                hint_key = "summary_need_content"
+            hint_key = ("summary_need_channel" if not has_channel
+                        else "summary_need_module" if not module_on
+                        else "summary_need_content")
             container.add_item(ui.TextDisplay(
                 f"{t('modules.automod.config.summary_inactive', locale=self.locale)}\n"
                 f"-# {t(f'modules.automod.config.{hint_key}', locale=self.locale)}"
             ))
 
+        # ── Module on/off — a single toggle button (exception to selects) ──
+        toggle_row = ui.ActionRow()
+        toggle_btn = ui.Button(
+            label=t(
+                "modules.automod.config.buttons."
+                + ("disable_module" if module_on else "enable_module"),
+                locale=self.locale,
+            ),
+            style=discord.ButtonStyle.danger if module_on else discord.ButtonStyle.success,
+            emoji=discord.PartialEmoji.from_str(TOGGLE_ON if module_on else TOGGLE_OFF),
+        )
+        toggle_btn.callback = self.on_toggle_module
+        toggle_row.add_item(toggle_btn)
+        container.add_item(toggle_row)
+
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
-        # --- Status section: a single checkbox-style multi-select ---
+        # ── Options (the remaining toggles, picked in one select) ─────────
         container.add_item(ui.TextDisplay(
-            f"**{t('modules.automod.config.section_status', locale=self.locale)}**\n"
-            f"{self._dot(module_on)} **{t('modules.automod.config.module_label', locale=self.locale)}** "
-            f"· {self._state(module_on)}\n"
-            f"{self._dot(content_on)} **{t('modules.automod.config.content_label', locale=self.locale)}** "
-            f"· {self._state(content_on)}\n"
-            f"{self._dot(ignore_on)} **{t('modules.automod.config.ignore_mods.label', locale=self.locale)}** "
-            f"· {self._state(ignore_on)}\n"
-            f"-# {t('modules.automod.config.status_hint', locale=self.locale)}"
+            f"{SETTINGS} **{t('modules.automod.config.section_options', locale=self.locale)}**"
         ))
-        act_row = ui.ActionRow()
-        act_select = ui.Select(
+        opt_row = ui.ActionRow()
+        opt_select = ui.Select(
             placeholder=t("modules.automod.config.activations.placeholder", locale=self.locale),
-            min_values=0, max_values=3,
+            min_values=0, max_values=2,
             options=[
-                discord.SelectOption(
-                    label=t("modules.automod.config.module_label", locale=self.locale),
-                    value="module",
-                    description=t("modules.automod.config.module_desc", locale=self.locale)[:100],
-                    emoji=discord.PartialEmoji.from_str(FILTER),
-                    default=module_on,
-                ),
                 discord.SelectOption(
                     label=t("modules.automod.config.content_label", locale=self.locale),
                     value="content",
@@ -241,22 +239,16 @@ class AutomodConfigView(BaseView):
                 ),
             ],
         )
-        act_select.callback = self.on_activations
-        act_row.add_item(act_select)
-        container.add_item(act_row)
+        opt_select.callback = self.on_activations
+        opt_row.add_item(opt_select)
+        container.add_item(opt_row)
 
-        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-
-        # --- Alert channel (REQUIRED) ---
-        chan = None
-        if cfg.get("notify_channel_id"):
-            chan = self.bot.get_channel(int(cfg["notify_channel_id"]))
-        chan_state = (f"-# {t('modules.automod.config.notify.current', locale=self.locale)} {chan.mention}"
-                      if chan else f"-# {WARNING} {t('modules.automod.config.notify.missing', locale=self.locale)}")
+        # ── Alert channel (REQUIRED) ──────────────────────────────────────
+        warn_line = ("" if has_channel
+                     else f"\n-# {WARNING} {t('modules.automod.config.notify.missing', locale=self.locale)}")
         container.add_item(ui.TextDisplay(
             f"{MESSAGE} **{t('modules.automod.config.section_notify', locale=self.locale)}**{REQUIRED_FIELDS}\n"
-            f"-# {t('modules.automod.config.notify.desc', locale=self.locale)}\n"
-            f"{chan_state}"
+            f"-# {t('modules.automod.config.notify.desc', locale=self.locale)}{warn_line}"
         ))
         notify_row = ui.ActionRow()
         notify_select = ui.ChannelSelect(
@@ -269,15 +261,11 @@ class AutomodConfigView(BaseView):
         notify_row.add_item(notify_select)
         container.add_item(notify_row)
 
-        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-
-        # --- Severity ---
+        # ── Severity (the select shows the current level) ─────────────────
         severity = cfg.get("severity", ac.SEVERITY_DEFAULT)
         container.add_item(ui.TextDisplay(
             f"{SETTINGS} **{t('modules.automod.config.section_severity', locale=self.locale)}**\n"
-            f"-# {t('modules.automod.config.severity.desc', locale=self.locale)}\n"
-            f"-# {t('modules.automod.config.severity.current', locale=self.locale)} "
-            f"**{severity}/5** — {t(f'modules.automod.config.severity.level_{severity}', locale=self.locale)}"
+            f"-# {t('modules.automod.config.severity.desc', locale=self.locale)}"
         ))
         sev_row = ui.ActionRow()
         sev_select = ui.Select(
@@ -297,9 +285,7 @@ class AutomodConfigView(BaseView):
         sev_row.add_item(sev_select)
         container.add_item(sev_row)
 
-        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-
-        # --- Indications (ex-Règlement) ---
+        # ── Guidance (button+modal → keep a preview, can't show it inline) ─
         indications = cfg.get("indications", "")
         if indications:
             preview = indications[:180] + ("…" if len(indications) > 180 else "")
@@ -314,19 +300,16 @@ class AutomodConfigView(BaseView):
         ind_row = ui.ActionRow()
         ind_btn = ui.Button(
             label=t("modules.automod.config.buttons.edit_indications", locale=self.locale),
-            style=discord.ButtonStyle.primary,
+            style=discord.ButtonStyle.secondary,
             emoji=discord.PartialEmoji.from_str(BOOK),
         )
         ind_btn.callback = self.on_edit_indications
         ind_row.add_item(ind_btn)
         container.add_item(ind_row)
 
-        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-
-        # --- Exemptions ---
+        # ── Exemptions (selects show what's chosen) ───────────────────────
         container.add_item(ui.TextDisplay(
             f"{GROUPS} **{t('modules.automod.config.section_exemptions', locale=self.locale)}**\n"
-            f"**{t('modules.automod.config.exempt_roles.label', locale=self.locale)}**\n"
             f"-# {t('modules.automod.config.exempt_roles.desc', locale=self.locale)}"
         ))
         roles_row = ui.ActionRow()
@@ -340,7 +323,6 @@ class AutomodConfigView(BaseView):
         container.add_item(roles_row)
 
         container.add_item(ui.TextDisplay(
-            f"**{t('modules.automod.config.exempt_channels.label', locale=self.locale)}**\n"
             f"-# {t('modules.automod.config.exempt_channels.desc', locale=self.locale)}"
         ))
         chan_row = ui.ActionRow()
@@ -419,11 +401,17 @@ class AutomodConfigView(BaseView):
         await interaction.response.edit_message(view=self)
 
     # -- edit callbacks (mutate working copy) ---------------------------- #
+    async def on_toggle_module(self, interaction: discord.Interaction):
+        if not await self._check_user(interaction):
+            return
+        self.working_config["enabled"] = not self.working_config["enabled"]
+        self.has_changes = True
+        await self._rerender(interaction)
+
     async def on_activations(self, interaction: discord.Interaction):
         if not await self._check_user(interaction):
             return
         selected = set(interaction.data.get("values", []))
-        self.working_config["enabled"] = "module" in selected
         self._content["enabled"] = "content" in selected
         self.working_config["ignore_moderators"] = "ignore" in selected
         self.has_changes = True
