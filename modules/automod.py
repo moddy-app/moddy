@@ -369,6 +369,28 @@ class AutomodModule(ModuleBase):
 
         return loader
 
+    async def _build_context_text(self, message: discord.Message, n: int = 15) -> str:
+        """Snapshot of the channel context (what nano sees) for the appeal file.
+
+        Oldest → newest preceding messages, then the offending message marked
+        with ``>>>``. Stored on the case so reviewers get the full picture.
+        """
+        lines: List[str] = []
+        try:
+            async for prev in message.channel.history(limit=n, before=message):
+                if not (prev.content or "").strip():
+                    continue
+                name = getattr(prev.author, "display_name", str(prev.author))
+                stamp = prev.created_at.strftime("%Y-%m-%d %H:%M")
+                lines.append(f"[{stamp}] {name} ({prev.author.id}): {prev.content}")
+        except (discord.Forbidden, discord.HTTPException):
+            lines = []
+        lines.reverse()
+        name = getattr(message.author, "display_name", str(message.author))
+        stamp = message.created_at.strftime("%Y-%m-%d %H:%M")
+        lines.append(f"[{stamp}] >>> {name} ({message.author.id}): {message.content}")
+        return "\n".join(lines)
+
     async def build_author_history(self, user_id: int) -> AuthorHistory:
         """Fetch the author's case/sanction history from the DB.
 
@@ -600,6 +622,7 @@ class AutomodModule(ModuleBase):
         # Attach the offending message as evidence on the case.
         if case_id is not None:
             jump = getattr(message, "jump_url", "")
+            context_text = await self._build_context_text(message)
             evidence = (
                 f"Message de <@{decision.auteur_id}> (`{decision.auteur_id}`) dans "
                 f"<#{message.channel.id}> :\n"
@@ -623,6 +646,7 @@ class AutomodModule(ModuleBase):
                         "extrait": extrait,
                         "author_name": getattr(message.author, "display_name", str(message.author)),
                         "ts": int(message.created_at.timestamp()),
+                        "context_text": context_text,
                         "raison": decision.raison,
                         "explication": decision.explication,
                         "signal_source": decision.signal_source,

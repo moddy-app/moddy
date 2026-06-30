@@ -138,19 +138,19 @@ def build_sanction_dm_view(
         f"{t('modules.automod.dm.responsible_value', locale=locale)}")
     lines.append(f"- **{t('modules.automod.dm.expires', locale=locale)}:** {expires_txt}")
 
-    c = ui.Container(accent_colour=discord.Colour(accent))
-    c.add_item(ui.TextDisplay(_s("\n".join(lines))))
+    # Keep the sanction lines + case/sent-by in ONE TextDisplay so there is no
+    # empty line between "Automatically expires" and "Case ID". Only the
+    # sanction lines are struck through when the appeal is accepted.
     case_link = f"[``{case_ref}``](<{_CASE_URL.format(ref=case_ref)}>)"
-    footer = f"- **{t('modules.automod.dm.case', locale=locale)}:** {case_link}"
+    block = _s("\n".join(lines)) + f"\n- **{t('modules.automod.dm.case', locale=locale)}:** {case_link}"
     if guild_id:
-        footer += (f"\n-# {t('modules.automod.dm.sent_by', locale=locale, guild=guild_name, guild_id=guild_id)}")
-    c.add_item(ui.TextDisplay(footer))
+        block += f"\n-# {t('modules.automod.dm.sent_by', locale=locale, guild=guild_name, guild_id=guild_id)}"
 
-    if not appeal_status:
-        c.add_item(ui.TextDisplay(f"-# {t('modules.automod.dm.appeal_hint', locale=locale)}"))
+    c = ui.Container(accent_colour=discord.Colour(accent))
+    c.add_item(ui.TextDisplay(block))
     view.add_item(c)
 
-    # — Appeal status panel (coloured) or the appeal buttons —
+    # — Appeal status panel (coloured), shown above the proof —
     if appeal_status:
         emoji, key = _STATUS_RENDER.get(appeal_status, _STATUS_RENDER["pending"])
         panel = ui.Container(accent_colour=discord.Colour(_STATUS_ACCENT.get(appeal_status, 0x3661FF)))
@@ -170,11 +170,6 @@ def build_sanction_dm_view(
         if extra:
             panel.add_item(ui.TextDisplay("\n".join(extra)))
         view.add_item(panel)
-    else:
-        row = ui.ActionRow()
-        row.add_item(AppealNewButton("s", case_id, sanction_id, locale=locale))
-        row.add_item(AppealNewButton("t", case_id, sanction_id, locale=locale))
-        view.add_item(row)
 
     # — Offending message (proof), spoilered; long content → file —
     if proof_text:
@@ -197,6 +192,13 @@ def build_sanction_dm_view(
             proof.add_item(ui.TextDisplay(body))
         view.add_item(proof)
 
+    # — Appeal buttons (BELOW the proof), only while no appeal exists yet —
+    if not appeal_status:
+        row = ui.ActionRow()
+        row.add_item(AppealNewButton("s", case_id, sanction_id, locale=locale))
+        row.add_item(AppealNewButton("t", case_id, sanction_id, locale=locale))
+        view.add_item(row)
+
     return view, files
 
 
@@ -217,6 +219,7 @@ def build_review_view(
     claimed_by: Optional[int] = None,
     technical: Optional[dict] = None,
     proof: Optional[dict] = None,
+    context_text: Optional[str] = None,
     decided: Optional[dict] = None,
 ):
     """The reviewer panel (server mods or Moddy team).
@@ -273,6 +276,9 @@ def build_review_view(
     if case.get("created_ts"):
         case_lines.append(
             f"- {t('modules.automod.appeal.review.created', locale=locale)}: <t:{case['created_ts']}:R>")
+    if case.get("expires_ts"):
+        case_lines.append(
+            f"- {t('modules.automod.appeal.review.expires', locale=locale)}: <t:{case['expires_ts']}:R>")
     c.add_item(ui.TextDisplay("\n".join(case_lines)))
 
     # User's appeal text
@@ -326,19 +332,28 @@ def build_review_view(
             pc.add_item(ui.TextDisplay(body))
         view.add_item(pc)
 
+    # Channel context, attached as a .txt file (both team and server panels).
+    if context_text:
+        fname = f"context_{(technical or {}).get('case_uuid') or appeal_id}.txt"
+        files.append(make_text_file(context_text, fname))
+        cc = ui.Container()
+        cc.add_item(ui.TextDisplay(f"**{t('modules.automod.appeal.review.context', locale=locale)}:**"))
+        cc.add_item(ui.File(f"attachment://{fname}"))
+        view.add_item(cc)
+
     if decided:
         return view, files
 
-    # Buttons. Row 1: Claim / Invite. Row 2: Accept / Decline (active once claimed).
+    # All buttons on one row. Invite is team-only (server mods are already in
+    # the guild, so it has no use there). Accept/Decline unlock once claimed.
     claimed = claimed_by is not None
-    row1 = ui.ActionRow()
-    row1.add_item(AppealClaimButton(appeal_id, claimed=claimed, locale=locale))
-    row1.add_item(AppealInviteButton(appeal_id, locale=locale))
-    view.add_item(row1)
-    row2 = ui.ActionRow()
-    row2.add_item(AppealDecisionButton("accept", appeal_id, locale=locale, disabled=not claimed))
-    row2.add_item(AppealDecisionButton("decline", appeal_id, locale=locale, disabled=not claimed))
-    view.add_item(row2)
+    row = ui.ActionRow()
+    row.add_item(AppealClaimButton(appeal_id, claimed=claimed, locale=locale))
+    if is_team:
+        row.add_item(AppealInviteButton(appeal_id, locale=locale))
+    row.add_item(AppealDecisionButton("accept", appeal_id, locale=locale, disabled=not claimed))
+    row.add_item(AppealDecisionButton("decline", appeal_id, locale=locale, disabled=not claimed))
+    view.add_item(row)
     return view, files
 
 
@@ -530,11 +545,11 @@ class AppealNewButton(
         is_team = route == "t"
         label_key = ("modules.automod.dm.appeal_team" if is_team
                      else "modules.automod.dm.appeal_server")
+        # No emoji on the appeal buttons (intentional exception).
         super().__init__(
             ui.Button(
                 label=t(label_key, locale=locale)[:80],
                 style=discord.ButtonStyle.primary if is_team else discord.ButtonStyle.secondary,
-                emoji=discord.PartialEmoji.from_str(MODDY if is_team else GROUPS),
                 custom_id=f"moddy:apl:new:{route}:{case_id}:{sanction_id}",
             )
         )
@@ -779,17 +794,31 @@ class AppealAcceptChoiceButton(
 # Permission gate
 # =========================================================================== #
 
+async def _is_developer(bot, user_id: int) -> bool:
+    """A Moddy developer / super admin (allowed to bypass the self-appeal block)."""
+    try:
+        from utils.staff_permissions import StaffPermissionManager
+        mgr = StaffPermissionManager(bot)
+        if user_id == getattr(mgr, "SUPER_ADMIN_ID", 0):
+            return True
+        return user_id in getattr(bot, "_dev_team_ids", set())
+    except Exception as e:
+        logger.error("appeal: developer check failed: %s", e)
+        return False
+
+
 async def _can_review(interaction: discord.Interaction, appeal: dict) -> bool:
     """Server route → guild Manage Messages; team route → Moddy staff.
 
-    In every case the appellant can never review their own appeal.
+    The appellant can never review their own appeal — **except developers**,
+    who may bypass that block (server or team route).
     """
-    # Nobody handles their own appeal (server or team route).
     try:
-        if interaction.user.id == int(appeal.get("subject_id") or 0):
-            return False
+        is_subject = interaction.user.id == int(appeal.get("subject_id") or 0)
     except (TypeError, ValueError):
-        pass
+        is_subject = False
+    if is_subject and not await _is_developer(interaction.client, interaction.user.id):
+        return False
     if appeal["route"] == "server":
         perms = getattr(interaction.user, "guild_permissions", None)
         if perms is None:

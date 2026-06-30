@@ -630,6 +630,12 @@ class CasesBrowserView(BaseView):
                 f"**{t('commands.cases.browser.scope_field', locale=self.locale)}:** "
                 f"{self._scope_label(case.scope_type.value, case.scope_id, with_id=True)}\n"
             )
+            # Surface automod-issued cases so the member knows it's automated.
+            if case.issuer_type.value == "automod":
+                fields += (
+                    f"**{t('commands.cases.browser.issued_by', locale=self.locale)}:** "
+                    f"{emojis.SHIELD} Moddy Automod\n"
+                )
         if self.mode == "server":
             subj = f"<@{case.subject_id}>" if case.subject_type.value == "discord_user" else f"`{case.subject_id}`"
             fields += f"**{t('commands.cases.browser.subject_user', locale=self.locale)}:** {subj} (`{case.subject_id}`)\n"
@@ -643,6 +649,25 @@ class CasesBrowserView(BaseView):
         container.add_item(ui.TextDisplay(
             f"**{t('commands.cases.reason', locale=self.locale)}:**\n{case.reason[:800]}"
         ))
+
+        # Automod proof — the offending message, shown to both browsers.
+        proof_ev = next(
+            (e for e in case.events
+             if e.type == EventType.EVIDENCE and (e.payload or {}).get("source") == "automod"),
+            None,
+        )
+        if proof_ev:
+            payload = proof_ev.payload or {}
+            extrait = (payload.get("extrait") or "").strip()
+            if extrait:
+                if len(extrait) > 500:
+                    extrait = extrait[:497] + "…"
+                quoted = extrait.replace("\n", "\n> ")
+                author = payload.get("author_name")
+                head = f"-# {author}\n" if author else ""
+                container.add_item(ui.TextDisplay(
+                    f"**{t('commands.cases.browser.proof', locale=self.locale)}:**\n{head}> {quoted}"
+                ))
 
         # Sanctions — rendered as ONE combined TextDisplay (not one child per
         # sanction) so a long-lived case with many sanctions can never blow past
