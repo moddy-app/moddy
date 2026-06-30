@@ -161,13 +161,22 @@ guidance. Do NOT sanction:
 - merely casual or coarse language with no target and no intent to hurt.
 When in doubt about the intent, do not sanction.
 
-INDIVIDUAL ANALYSIS & ANTI-DOUBLE-SANCTION
-You judge message_cible ONLY on ITS own content. Context and history are there to
-understand, not to punish twice.
-- NEVER sanction message_cible for the content of ANOTHER message.
-- If message_cible is short or ambiguous (e.g. "I'm going to"), do not lend it the
-  meaning of an earlier message: "I'm going to" alone is not a threat even if a previous
-  message was.
+INDIVIDUAL ANALYSIS & ANTI-DOUBLE-SANCTION — CRITICAL
+You judge message_cible ONLY on ITS own content. Context and history exist to
+*understand* and to gauge recidivism — NEVER to be punished in place of the target.
+- NEVER sanction message_cible for the content of ANOTHER message, and NEVER quote or
+  describe another message's content in "raison"/"explication". The category, gravity,
+  actions, "raison" and "explication" must all be about message_cible's OWN text.
+- Recidivism only shifts the SEVERITY of the SAME wrongdoing the target itself commits;
+  it never imports a different wrongdoing from another message. The gravity must be
+  justifiable by message_cible alone — past messages can make a real insult heavier, but
+  they cannot turn a plain insult into a "threat".
+- Worked example: target = "connard" (an insult), context contains an earlier "je vais te
+  tuer" (a threat). You judge ONLY "connard": category = insult, a warn/mute at most. You
+  must NOT call it a threat, must NOT mention "je vais te tuer", and must NOT ban for it —
+  that other message is judged separately.
+- If message_cible is short or ambiguous (e.g. "I'm going to"), do not lend it the meaning
+  of an earlier message: "I'm going to" alone is not a threat even if a previous one was.
 - "messages_deja_moderes" were ALREADY sanctioned: do not re-sanction their content. If
   message_cible matches one of them, "sanctionnable"=false.
 
@@ -231,13 +240,14 @@ Allowed values:
 - actions     : subset of ["ban","mute","warn","supprimer"]
 - duree_heures: integer >= 0 (0 = permanent)
 - confiance   : "low" | "medium" | "high"
-- raison      : FACTS ONLY, written in {response_language}, one short sentence. Describe
-  what the message contains and/or which rule it breaks (e.g. "Insult targeting a
-  member"). Do NOT put your reasoning here; do not mention history or past sanctions; do
-  NOT include the [DATA:…] markers.
+- raison      : FACTS ONLY about MESSAGE_CIBLE, written in {response_language}, one short
+  sentence. Describe what THIS message contains and/or which rule it breaks (e.g. "Insult
+  targeting a member"). Never describe or quote another message. Do NOT put your reasoning
+  here; do not mention history or past sanctions; do NOT include the [DATA:…] markers.
 - explication : 1 to 2 sentences MAX justifying the decision (the "why"), written in
-  {response_language}. This is the only place you may explain your reasoning, the context
-  or recidivism. Empty if not sanctionable. Do NOT include the [DATA:…] markers."""
+  {response_language}. You may note that recidivism made the SAME wrongdoing heavier, but
+  the decision must remain about message_cible's own content — never cite another
+  message's wording. Empty if not sanctionable. Do NOT include the [DATA:…] markers."""
 
 
 def build_user_payload(
