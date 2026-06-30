@@ -633,8 +633,11 @@ class CasesBrowserView(BaseView):
         if self.mode == "server":
             subj = f"<@{case.subject_id}>" if case.subject_type.value == "discord_user" else f"`{case.subject_id}`"
             fields += f"**{t('commands.cases.browser.subject_user', locale=self.locale)}:** {subj} (`{case.subject_id}`)\n"
-            if case.issuer_id and case.issuer_type.value in ("discord_user", "moddy_staff"):
-                fields += f"**{t('commands.cases.browser.issued_by', locale=self.locale)}:** <@{case.issuer_id}>\n"
+            issued_label = t('commands.cases.browser.issued_by', locale=self.locale)
+            if case.issuer_type.value == "automod":
+                fields += f"**{issued_label}:** {emojis.SHIELD} Moddy Automod\n"
+            elif case.issuer_id and case.issuer_type.value in ("discord_user", "moddy_staff"):
+                fields += f"**{issued_label}:** <@{case.issuer_id}>\n"
         fields += f"**{t('commands.cases.opened', locale=self.locale)}:** {_ts(case.created_at, 'F')}"
         container.add_item(ui.TextDisplay(fields))
         container.add_item(ui.TextDisplay(

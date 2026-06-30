@@ -910,6 +910,30 @@ class ErrorTracker(commands.Cog):
                 pass
             return
 
+        # Argument that couldn't be resolved (e.g. a username typed where a
+        # Member/User is expected) — a user mistake, not a bug. Show a friendly
+        # message instead of an error code.
+        if isinstance(error, discord.app_commands.TransformerError):
+            class NotFoundView(ui.LayoutView):
+                def __init__(self):
+                    super().__init__(timeout=None)
+                    container = ui.Container()
+                    container.add_item(ui.TextDisplay(
+                        f"### <:warning:1519789903100121139> Couldn't find that"))
+                    container.add_item(ui.TextDisplay(
+                        f"`{str(error.value)[:80]}` doesn't match a member or user I can see. "
+                        f"Try mentioning them or using their ID."))
+                    self.add_item(container)
+
+            try:
+                if interaction.response.is_done():
+                    await interaction.followup.send(view=NotFoundView(), ephemeral=True)
+                else:
+                    await interaction.response.send_message(view=NotFoundView(), ephemeral=True)
+            except discord.HTTPException:
+                pass
+            return
+
         # For all other errors, log them
         actual_error = error.original if hasattr(error, 'original') else error
         error_code = self.generate_error_code(actual_error)
