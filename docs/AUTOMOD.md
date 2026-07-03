@@ -86,18 +86,21 @@ The verdict separates **facts** from **reasoning** (two distinct fields on
   / break a rule. Humour, irony, quotes, self-deprecation, song lyrics, mere
   casual swearing with no target → not sanctionnable. The detector is only a
   suspicion.
-- **Independent category, no rubber-stamping**: the signal's `categorie` is a
-  routing guess (surface similarity, not meaning) — nano must decide the real
-  `categorie` itself from the literal text, and is free to disagree with it
-  entirely (including `sanctionnable=false`). A short/ordinary word/phrase
-  (e.g. "stop", "arrête") is never evidence of a category just because the
-  detector routed it there.
+- **Cold judgement, no signal leaked to nano**: the `signal` (source / category
+  / score) that routed the message here is **never included in nano's user
+  payload** — nano only ever sees `message_cible`, `severite`,
+  `historique_auteur` and `contexte`. There is nothing to rubber-stamp: nano
+  reads the message with no prior suspicion and decides `categorie` and
+  `confiance` from scratch. `signal` stays purely internal (routing, the
+  evidence text, `Decision.signal_source` / `score_detecteur`).
 - **No hallucinated grounds**: `raison`/`categorie` must describe only what is
   literally written in `message_cible`. nano must never invent an insult,
-  threat, or incitement that isn't in the text — not from the signal's
-  category, not from history, not from an earlier message's pattern. Any
-  speculative wording ("suggests", "context suggesting…") in `raison` means the
-  message wasn't actually sanctionable.
+  threat, or incitement that isn't in the text — not from history, not from an
+  earlier message's pattern. Any speculative wording ("suggests", "context
+  suggesting…") in `raison` means the message wasn't actually sanctionable.
+- **Self-harm — high bar**: an ordinary word/imperative on its own ("stop" /
+  "arrête") is never, by itself, incitement to self-harm — it needs an
+  unmistakable, explicit self-harm meaning in the literal text.
 - **Individual judgement**: nano judges the target message on **its own content
   only**. A short/ambiguous message ("je vais") is not a threat just because an
   earlier message was. The author's `messages_deja_moderes` (messages already
