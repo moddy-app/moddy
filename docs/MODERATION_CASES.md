@@ -102,7 +102,7 @@ Two sources ship today (`SOURCES` registry):
 | key | case_type | scope | created by | actions |
 |---|---|---|---|---|
 | `global` | `global` | `platform` | Moddy staff (manual) | warn, restrict, ban |
-| `guild` | `guild` | the server | auto (Discord events) | warn, mute, kick, ban |
+| `guild` | `guild` | the server | auto (Discord events) | warn, mute, ban |
 
 `global` covers **Moddy-team blacklists and global sanctions** (a `ban` here is a
 full bot blacklist — `cogs/blacklist_check.py` reads it). `guild` covers
@@ -147,20 +147,22 @@ instead of opening a second folder (`link_open=True`).
 
 ## 5. Auto-recording guild sanctions
 
-`cogs/case_sync.py` listens to `on_audit_log_entry_create` so a ban / kick /
-timeout on **any** server Moddy is in opens a case automatically — **even when
-the action did not go through Moddy**. The audit log gives the real moderator and
+`cogs/case_sync.py` listens to `on_audit_log_entry_create` so a ban / timeout
+on **any** server Moddy is in opens a case automatically — **even when the
+action did not go through Moddy**. The audit log gives the real moderator and
 reason. Lifts (unban, timeout cleared) revoke the matching active sanction, which
 lets the case auto-close.
 
 Requires the bot to have **View Audit Log** in the guild. Bot targets are
 ignored.
 
+Kicks are **not** recorded as cases — `/kick` still performs the Discord
+action (and DMs the member) but no longer opens/appends a case.
+
 | Audit action | Effect |
 |---|---|
 | `ban` | record `guild` / `ban` |
 | `unban` | revoke active `guild` / `ban` |
-| `kick` | record `guild` / `kick` |
 | `member_update` (timeout set) | record `guild` / `mute` with `expires_at` |
 | `member_update` (timeout cleared) | revoke active `guild` / `mute` |
 
@@ -219,9 +221,8 @@ Moddy-staff notes (`event_type = note`) are **never** shown in either command.
 commenting / editing / closing needs **Manage Messages** (or Administrator).
 Adding or revoking a sanction additionally needs the permission specific to that
 action (`SANCTION_PERMISSION` in `utils/cases_views.py`): Ban Members for a ban,
-Kick Members for a kick, Timeout Members for warn / mute. Only guild-scoped
-cases are reachable, so guild moderators can never touch `global`/`platform`
-(Moddy-team) cases.
+Timeout Members for warn / mute. Only guild-scoped cases are reachable, so
+guild moderators can never touch `global` (Moddy-team) cases.
 
 **Persistence** — `CasesBrowserView` is a fully persistent view registered for
 both modes (`user` and `server`) in

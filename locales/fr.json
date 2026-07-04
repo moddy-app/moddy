@@ -566,7 +566,6 @@
         "global": "Global",
         "network": "Réseau",
         "guild": "Serveur",
-        "platform": "Plateforme",
         "external": "Externe"
       },
       "opened": "Ouvert le",
@@ -576,7 +575,6 @@
         "warn": "Avertissement",
         "mute": "Mute",
         "ban": "Bannissement",
-        "kick": "Expulsion",
         "restrict": "Restriction",
         "revoke_access": "Révoquer l'accès"
       },
@@ -1858,7 +1856,6 @@
           "global": "Global",
           "network": "Réseau",
           "guild": "Serveur",
-          "platform": "Plateforme",
           "external": "Externe"
         },
         "subject": "Sujet",
@@ -1877,7 +1874,6 @@
           "warn": "Avertissement",
           "mute": "Mute",
           "ban": "Bannissement",
-          "kick": "Expulsion",
           "restrict": "Restriction",
           "revoke_access": "Révoquer l'accès"
         },

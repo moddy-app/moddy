@@ -13,9 +13,9 @@ table, nothing else to touch.
 Two sources ship today:
 
 - ``global`` — Moddy-wide sanctions (Moddy-team blacklists, global sanctions).
-- ``guild``  — per-server sanctions (bans / mutes / kicks), typically
-  auto-recorded from Discord audit-log events even when the action did not go
-  through Moddy itself.
+- ``guild``  — per-server sanctions (bans / mutes), typically auto-recorded
+  from Discord audit-log events even when the action did not go through Moddy
+  itself.
 
 The service de-duplicates by default: a new sanction for a subject that already
 has an *open* case of the same (type, scope) is appended to that case instead
@@ -70,10 +70,7 @@ SOURCES: Dict[str, CaseSource] = {
         case_type=CaseType.GUILD,
         scope_type=ScopeType.DISCORD_GUILD,
         subject_type=SubjectType.DISCORD_USER,
-        actions=[
-            SanctionAction.WARN, SanctionAction.MUTE,
-            SanctionAction.KICK, SanctionAction.BAN,
-        ],
+        actions=[SanctionAction.WARN, SanctionAction.MUTE, SanctionAction.BAN],
         manual=False,            # opened automatically from Discord events
         requires_scope_id=True,
     ),

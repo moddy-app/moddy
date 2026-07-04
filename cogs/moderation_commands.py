@@ -544,33 +544,31 @@ class SanctionModal(BaseModal):
             self.bot._moddy_initiated_sanctions = {}
         self.bot._moddy_initiated_sanctions[(self.guild.id, user.id, self.action)] = time.time()
 
+        # Kick is a plain Discord action — it is no longer recorded as a case.
         case_result = None
-        try:
-            case_result = await self.bot.cases.record_sanction(
-                "guild",
-                subject_id=user.id,
-                action=self.action,
-                reason=reason,
-                issuer_type="discord_user",
-                issuer_id=self.mod.id,
-                scope_id=self.guild.id,
-                expires_at=expires_at,
-                group_id=group_id,
-            )
-        except Exception as exc:
-            logger.error("Failed to record case for %s in guild %s: %s", user.id, self.guild.id, exc)
+        if self.action != "kick":
+            try:
+                case_result = await self.bot.cases.record_sanction(
+                    "guild",
+                    subject_id=user.id,
+                    action=self.action,
+                    reason=reason,
+                    issuer_type="discord_user",
+                    issuer_id=self.mod.id,
+                    scope_id=self.guild.id,
+                    expires_at=expires_at,
+                    group_id=group_id,
+                )
+            except Exception as exc:
+                logger.error("Failed to record case for %s in guild %s: %s", user.id, self.guild.id, exc)
 
-        discord_reason = _build_discord_reason(
-            case_result["reference"] if case_result else "?",
-            self.mod,
-            expires_at,
-            reason,
-        )
+        reference = case_result["reference"] if case_result else "N/A"
+        discord_reason = _build_discord_reason(reference, self.mod, expires_at, reason)
         discord_ok = await self._discord_action(user, discord_reason, duration)
 
-        if notify_dm and case_result:
+        if notify_dm:
             guild_locale = _guild_locale(self.guild)
-            await self._send_dm(user, reason, expires_at, case_result["reference"], guild_locale, attachments)
+            await self._send_dm(user, reason, expires_at, reference, guild_locale, attachments)
 
         return {"user": user, "case": case_result, "discord_ok": discord_ok}
 

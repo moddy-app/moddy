@@ -487,7 +487,7 @@ class ModdyDatabase(
             # ENUM types (idempotent — Postgres has no CREATE TYPE IF NOT EXISTS).
             await conn.execute("""
                 DO $$ BEGIN
-                    CREATE TYPE case_type AS ENUM ('global', 'network', 'guild', 'platform', 'external');
+                    CREATE TYPE case_type AS ENUM ('global', 'network', 'guild', 'external');
                 EXCEPTION WHEN duplicate_object THEN null; END $$;
             """)
             await conn.execute("""
@@ -512,7 +512,7 @@ class ModdyDatabase(
             """)
             await conn.execute("""
                 DO $$ BEGIN
-                    CREATE TYPE sanction_action AS ENUM ('warn', 'mute', 'ban', 'kick', 'restrict', 'revoke_access');
+                    CREATE TYPE sanction_action AS ENUM ('warn', 'mute', 'ban', 'restrict', 'revoke_access');
                 EXCEPTION WHEN duplicate_object THEN null; END $$;
             """)
             await conn.execute("""

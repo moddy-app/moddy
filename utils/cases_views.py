@@ -78,7 +78,6 @@ PERIODS: Dict[str, Optional[int]] = {
 SANCTION_PERMISSION: Dict[SanctionAction, str] = {
     SanctionAction.WARN: "moderate_members",
     SanctionAction.MUTE: "moderate_members",
-    SanctionAction.KICK: "kick_members",
     SanctionAction.BAN: "ban_members",
     SanctionAction.RESTRICT: "moderate_members",
     SanctionAction.REVOKE_ACCESS: "moderate_members",
