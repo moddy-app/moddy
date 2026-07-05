@@ -562,6 +562,9 @@ class SanctionModal(BaseModal):
             except Exception as exc:
                 logger.error("Failed to record case for %s in guild %s: %s", user.id, self.guild.id, exc)
 
+        if case_result and attachments:
+            await self._attach_evidence(case_result["id"], attachments)
+
         reference = case_result["reference"] if case_result else "N/A"
         discord_reason = _build_discord_reason(reference, self.mod, expires_at, reason)
         discord_ok = await self._discord_action(user, discord_reason, duration)
@@ -571,6 +574,27 @@ class SanctionModal(BaseModal):
             await self._send_dm(user, reason, expires_at, reference, guild_locale, attachments)
 
         return {"user": user, "case": case_result, "discord_ok": discord_ok}
+
+    async def _attach_evidence(self, case_id, attachments: List[discord.Attachment]) -> None:
+        """Record uploaded evidence files as `evidence` timeline events on the case."""
+        for att in attachments[:10]:
+            content_type = att.content_type or ""
+            if content_type.startswith("image/"):
+                kind = "image"
+            elif content_type.startswith("video/"):
+                kind = "video"
+            else:
+                kind = "evidence"
+            try:
+                await self.bot.db.add_event(
+                    case_id,
+                    "evidence",
+                    author_type="discord_user",
+                    author_id=self.mod.id,
+                    payload={"url": att.url, "kind": kind},
+                )
+            except Exception as exc:
+                logger.error("Failed to attach evidence to case %s: %s", case_id, exc)
 
     async def _discord_action(
         self,
