@@ -289,7 +289,20 @@ the `/mycases` server filter).
 - **Multi-scope**: a case has a single scope. A single affair spanning scopes
   (e.g. network ban + platform ban) is modelled as linked cases sharing a
   `group_id`.
-- **Evidence**: stored as `evidence` timeline events with a URL in `payload`.
+- **Evidence**: stored as `evidence` timeline events, in two payload shapes:
+  - a plain link — `{"url": ..., "kind": "image"|"video"|"evidence"}` (manual
+    sanction attachments, `cogs/moderation_commands.py::_attach_evidence`);
+  - a Discord message — `{"kind": "message_link", "jump_url", "channel_id",
+    "message_id", "content", "author_id", "author_name", "attachments", "ts"}`,
+    added via the "Ajouter une preuve" action in `/cases`
+    (`utils/cases_views.py::CaseAddEvidenceModalV2`). The message is fetched
+    and **snapshotted at add-time** — `content`/`author`/`attachments` are
+    saved into the payload, so the evidence stays readable in `/cases` even if
+    the message is later deleted (there is no way to recover it after the
+    fact, so this only protects messages attached *before* deletion).
+  Automod's own evidence event (`modules/automod.py`) uses neither shape (no
+  `url`) — it's read directly by the log/appeal flow, not by `/cases`'s
+  evidence popup.
 
 ---
 
