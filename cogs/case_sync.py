@@ -1,10 +1,10 @@
 """
 Case sync — auto-records guild sanctions as cases from Discord events.
 
-When a ban / kick / timeout happens on a server Moddy is in, a moderation case
-is opened automatically through :class:`CaseService` — even when the action did
+When a ban / timeout happens on a server Moddy is in, a moderation case is
+opened automatically through :class:`CaseService` — even when the action did
 not go through Moddy. We listen to the guild audit log so the real moderator
-and reason are captured.
+and reason are captured. Kicks are not recorded as cases.
 
 Lifts (unban, timeout cleared) revoke the matching active sanction, which lets
 the case auto-close once nothing is active.
@@ -81,11 +81,6 @@ class CaseSync(commands.Cog):
                 await self.bot.cases.revoke_sanction(
                     "guild", subject_id=target_id, action="ban", scope_id=guild.id,
                     by_type=issuer_type, by_id=issuer_id,
-                )
-            elif action == A.kick:
-                await self.bot.cases.record_sanction(
-                    "guild", subject_id=target_id, action="kick", reason=reason,
-                    issuer_type=issuer_type, issuer_id=issuer_id, scope_id=guild.id,
                 )
             elif action == A.member_update:
                 await self._handle_timeout(entry, guild, target_id, reason, issuer_type, issuer_id)

@@ -97,17 +97,13 @@ class BlacklistCheck(commands.Cog):
         if user_id in self.blacklist_cache:
             return self.blacklist_cache[user_id]
 
-        # Sinon vérifie la DB — un ban actif sur une case de type "global" ou
-        # "platform" équivaut à une blacklist complète du bot.
+        # Sinon vérifie la DB — un ban actif sur une case de type "global"
+        # équivaut à une blacklist complète du bot.
         if self.bot.db:
             try:
                 is_bl = await self.bot.db.has_active_sanction(
                     'discord_user', user_id, case_type='global', action='ban',
                 )
-                if not is_bl:
-                    is_bl = await self.bot.db.has_active_sanction(
-                        'discord_user', user_id, case_type='platform', action='ban',
-                    )
                 self.blacklist_cache[user_id] = is_bl
                 return is_bl
             except Exception:

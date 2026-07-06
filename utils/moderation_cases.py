@@ -46,7 +46,6 @@ class CaseType(str, Enum):
     GLOBAL = "global"
     NETWORK = "network"
     GUILD = "guild"
-    PLATFORM = "platform"
     EXTERNAL = "external"
 
 
@@ -86,7 +85,6 @@ class SanctionAction(str, Enum):
     WARN = "warn"
     MUTE = "mute"
     BAN = "ban"
-    KICK = "kick"
     RESTRICT = "restrict"
     REVOKE_ACCESS = "revoke_access"
 
@@ -149,12 +147,8 @@ def generate_reference(length: int = REFERENCE_LENGTH) -> str:
 # Available sanction actions per case type. Used to build selection UIs.
 CASE_TYPE_ACTIONS: Dict[CaseType, List[SanctionAction]] = {
     CaseType.GLOBAL: [SanctionAction.WARN, SanctionAction.RESTRICT, SanctionAction.BAN],
-    CaseType.PLATFORM: [SanctionAction.WARN, SanctionAction.RESTRICT, SanctionAction.BAN],
     CaseType.NETWORK: [SanctionAction.WARN, SanctionAction.MUTE, SanctionAction.BAN],
-    CaseType.GUILD: [
-        SanctionAction.WARN, SanctionAction.MUTE, SanctionAction.KICK,
-        SanctionAction.BAN,
-    ],
+    CaseType.GUILD: [SanctionAction.WARN, SanctionAction.MUTE, SanctionAction.BAN],
     CaseType.EXTERNAL: list(SanctionAction),
 }
 

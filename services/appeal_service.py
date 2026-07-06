@@ -368,8 +368,6 @@ class AppealService:
         try:
             if action == "ban" and me.guild_permissions.ban_members:
                 await guild.ban(discord.Object(id=subject_id), reason=reason, delete_message_days=0)
-            elif action == "kick" and member is not None and me.guild_permissions.kick_members:
-                await member.kick(reason=reason)
             elif action == "mute" and member is not None and me.guild_permissions.moderate_members:
                 await member.timeout(mute_for, reason=reason)
             # warn: no Discord action

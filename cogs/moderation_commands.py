@@ -96,6 +96,91 @@ def _expires_text(expires_at: Optional[datetime], locale: str) -> str:
     return f"<t:{int(expires_at.timestamp())}:R>"
 
 
+def _parse_iso(value: Optional[str]) -> Optional[datetime]:
+    """Parse an ISO 8601 timestamp (as sent by the backend). Naive datetimes
+    are assumed UTC. Returns ``None`` on missing/invalid input."""
+    if not value:
+        return None
+    try:
+        dt = datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+
+
+async def _send_sanction_dm(
+    guild: discord.Guild,
+    mod_id: int,
+    action: str,
+    user: Union[discord.Member, discord.User],
+    reason: str,
+    expires_at: Optional[datetime],
+    reference: str,
+    dm_locale: str,
+    attachments: Optional[List[discord.Attachment]] = None,
+) -> None:
+    """Send a sanction DM notification to the sanctioned user.
+
+    Shared by the manual /ban /mute /warn modal and the backend-dashboard
+    sanction handler so both produce an identical DM.
+    """
+    try:
+        accent = {
+            "ban": _DM_ACCENT_BAN,
+            "mute": _DM_ACCENT_MUTE,
+            "warn": _DM_ACCENT_WARN,
+            "kick": _DM_ACCENT_BAN,
+        }.get(action, _DM_ACCENT_BAN)
+
+        sanction_emoji = {
+            "ban": emojis.LEGAL,
+            "mute": emojis.MIC_OFF,
+            "warn": emojis.WARNING,
+            "kick": emojis.LOGOUT,
+        }.get(action, emojis.WARNING)
+
+        title = t(f"commands.moderation.dm.{action}_title", locale=dm_locale)
+
+        if expires_at:
+            expires_text = f"<t:{int(expires_at.timestamp())}:R>"
+        else:
+            expires_text = t("commands.moderation.dm.permanent", locale=dm_locale)
+
+        guild_name = guild.name
+        guild_id = guild.id
+        guild_url = f"https://discord.com/channels/{guild_id}"
+
+        text = (
+            f"### {sanction_emoji} {title}\n"
+            f"> **{t('commands.moderation.dm.reason', locale=dm_locale)}:** {reason}\n"
+            f"> **{t('commands.moderation.dm.responsible', locale=dm_locale)}:** <@{mod_id}>\n"
+            f"> **{t('commands.moderation.dm.expires', locale=dm_locale)}:** {expires_text}\n"
+            f"> **{t('commands.moderation.dm.case_id', locale=dm_locale)}:**"
+            f" [``{reference}``]({MODDY_CASE_URL.format(ref=reference)})\n"
+            f"-# {t('commands.moderation.dm.sent_by', locale=dm_locale, guild=guild_name, guild_id=guild_id, guild_url=guild_url)}"
+        )
+
+        dm_view = BaseView()
+        container = ui.Container(
+            ui.TextDisplay(text),
+            accent_colour=discord.Colour(accent),
+        )
+        dm_view.add_item(container)
+
+        # Evidence files as a media gallery (images / videos)
+        if attachments:
+            gallery = ui.MediaGallery(
+                *[discord.MediaGalleryItem(media=att.url) for att in attachments[:10]]
+            )
+            dm_view.add_item(gallery)
+
+        await user.send(view=dm_view)
+    except discord.Forbidden:
+        pass  # DMs disabled
+    except Exception as exc:
+        logger.warning("Could not send DM to %s: %s", user.id, exc)
+
+
 def _make_error_view(title: str, desc: str) -> BaseView:
     view = BaseView()
     container = ui.Container(
@@ -544,35 +629,57 @@ class SanctionModal(BaseModal):
             self.bot._moddy_initiated_sanctions = {}
         self.bot._moddy_initiated_sanctions[(self.guild.id, user.id, self.action)] = time.time()
 
+        # Kick is a plain Discord action — it is no longer recorded as a case.
         case_result = None
-        try:
-            case_result = await self.bot.cases.record_sanction(
-                "guild",
-                subject_id=user.id,
-                action=self.action,
-                reason=reason,
-                issuer_type="discord_user",
-                issuer_id=self.mod.id,
-                scope_id=self.guild.id,
-                expires_at=expires_at,
-                group_id=group_id,
-            )
-        except Exception as exc:
-            logger.error("Failed to record case for %s in guild %s: %s", user.id, self.guild.id, exc)
+        if self.action != "kick":
+            try:
+                case_result = await self.bot.cases.record_sanction(
+                    "guild",
+                    subject_id=user.id,
+                    action=self.action,
+                    reason=reason,
+                    issuer_type="discord_user",
+                    issuer_id=self.mod.id,
+                    scope_id=self.guild.id,
+                    expires_at=expires_at,
+                    group_id=group_id,
+                )
+            except Exception as exc:
+                logger.error("Failed to record case for %s in guild %s: %s", user.id, self.guild.id, exc)
 
-        discord_reason = _build_discord_reason(
-            case_result["reference"] if case_result else "?",
-            self.mod,
-            expires_at,
-            reason,
-        )
+        if case_result and attachments:
+            await self._attach_evidence(case_result["id"], attachments)
+
+        reference = case_result["reference"] if case_result else "N/A"
+        discord_reason = _build_discord_reason(reference, self.mod, expires_at, reason)
         discord_ok = await self._discord_action(user, discord_reason, duration)
 
-        if notify_dm and case_result:
+        if notify_dm:
             guild_locale = _guild_locale(self.guild)
-            await self._send_dm(user, reason, expires_at, case_result["reference"], guild_locale, attachments)
+            await self._send_dm(user, reason, expires_at, reference, guild_locale, attachments)
 
         return {"user": user, "case": case_result, "discord_ok": discord_ok}
+
+    async def _attach_evidence(self, case_id, attachments: List[discord.Attachment]) -> None:
+        """Record uploaded evidence files as `evidence` timeline events on the case."""
+        for att in attachments[:10]:
+            content_type = att.content_type or ""
+            if content_type.startswith("image/"):
+                kind = "image"
+            elif content_type.startswith("video/"):
+                kind = "video"
+            else:
+                kind = "evidence"
+            try:
+                await self.bot.db.add_event(
+                    case_id,
+                    "evidence",
+                    author_type="discord_user",
+                    author_id=self.mod.id,
+                    payload={"url": att.url, "kind": kind},
+                )
+            except Exception as exc:
+                logger.error("Failed to attach evidence to case %s: %s", case_id, exc)
 
     async def _discord_action(
         self,
@@ -617,61 +724,10 @@ class SanctionModal(BaseModal):
         attachments: List[discord.Attachment],
     ):
         """Send a sanction DM notification to the sanctioned user."""
-        try:
-            accent = {
-                "ban": _DM_ACCENT_BAN,
-                "mute": _DM_ACCENT_MUTE,
-                "warn": _DM_ACCENT_WARN,
-                "kick": _DM_ACCENT_BAN,
-            }.get(self.action, _DM_ACCENT_BAN)
-
-            sanction_emoji = {
-                "ban": emojis.LEGAL,
-                "mute": emojis.MIC_OFF,
-                "warn": emojis.WARNING,
-                "kick": emojis.LOGOUT,
-            }.get(self.action, emojis.WARNING)
-
-            title = t(f"commands.moderation.dm.{self.action}_title", locale=dm_locale)
-
-            if expires_at:
-                expires_text = f"<t:{int(expires_at.timestamp())}:R>"
-            else:
-                expires_text = t("commands.moderation.dm.permanent", locale=dm_locale)
-
-            guild_name = self.guild.name
-            guild_id = self.guild.id
-            guild_url = f"https://discord.com/channels/{guild_id}"
-
-            text = (
-                f"### {sanction_emoji} {title}\n"
-                f"> **{t('commands.moderation.dm.reason', locale=dm_locale)}:** {reason}\n"
-                f"> **{t('commands.moderation.dm.responsible', locale=dm_locale)}:** <@{self.mod.id}>\n"
-                f"> **{t('commands.moderation.dm.expires', locale=dm_locale)}:** {expires_text}\n"
-                f"> **{t('commands.moderation.dm.case_id', locale=dm_locale)}:**"
-                f" [``{reference}``]({MODDY_CASE_URL.format(ref=reference)})\n"
-                f"-# {t('commands.moderation.dm.sent_by', locale=dm_locale, guild=guild_name, guild_id=guild_id, guild_url=guild_url)}"
-            )
-
-            dm_view = BaseView()
-            container = ui.Container(
-                ui.TextDisplay(text),
-                accent_colour=discord.Colour(accent),
-            )
-            dm_view.add_item(container)
-
-            # Evidence files as a media gallery (images / videos)
-            if attachments:
-                gallery = ui.MediaGallery(
-                    *[discord.MediaGalleryItem(media=att.url) for att in attachments[:10]]
-                )
-                dm_view.add_item(gallery)
-
-            await user.send(view=dm_view)
-        except discord.Forbidden:
-            pass  # DMs disabled
-        except Exception as exc:
-            logger.warning("Could not send DM to %s: %s", user.id, exc)
+        await _send_sanction_dm(
+            self.guild, self.mod.id, self.action,
+            user, reason, expires_at, reference, dm_locale, attachments,
+        )
 
     # ── Confirmation panel ───────────────────────────────────────────────────
 
@@ -967,6 +1023,172 @@ class ModerationCommands(commands.Cog):
             prefill_reason=prefill_reason,
         )
         await interaction.response.send_modal(modal)
+
+    # ── Backend dashboard tasks (moddy:tasks) ───────────────────────────────
+    # A dashboard sanction on a guild case is executed here, exactly like a
+    # manual /ban /mute /warn: same audit reason, same DM, same DB write. This
+    # keeps case_add_sanction/case_revoke_sanction indistinguishable from a
+    # sanction issued from Discord itself.
+
+    _BACKEND_SANCTION_ACTIONS = {"warn", "mute", "ban"}
+
+    async def handle_backend_task(self, action: str, guild_id: int, payload: dict) -> dict:
+        """Execute a case sanction task requested by the backend dashboard.
+
+        ``action`` is ``"add_sanction"`` or ``"revoke_sanction"`` (mapped from
+        the ``case_add_sanction`` / ``case_revoke_sanction`` moddy:tasks
+        types). Returns a result dict relayed on ``moddy:dashboard``,
+        correlated by the payload's ``request_id``.
+        """
+        if action == "add_sanction":
+            return await self._backend_add_sanction(guild_id, payload)
+        if action == "revoke_sanction":
+            return await self._backend_revoke_sanction(guild_id, payload)
+        return {"ok": False, "error": "unknown_action"}
+
+    async def _backend_add_sanction(self, guild_id: int, payload: dict) -> dict:
+        action = payload.get("action")
+        case_id_raw = payload.get("case_id")
+        if action not in self._BACKEND_SANCTION_ACTIONS or not case_id_raw:
+            return {"ok": False, "error": "missing_fields"}
+
+        try:
+            case_uuid = uuid.UUID(str(case_id_raw))
+        except ValueError:
+            return {"ok": False, "error": "case_not_found"}
+
+        data = await self.bot.db.get_case_by_id(case_uuid)
+        if not data:
+            return {"ok": False, "error": "case_not_found"}
+        case_row = data["case"]
+        if case_row["type"] != "guild" or str(case_row["scope_id"]) != str(guild_id):
+            return {"ok": False, "error": "case_not_found"}
+
+        guild = self.bot.get_guild(guild_id)
+        if guild is None:
+            return {"ok": False, "error": "discord_error"}
+
+        subject_id = int(case_row["subject_id"])
+        issuer_id = payload.get("issuer_id")
+        expires_at = _parse_iso(payload.get("expires_at"))
+        member = guild.get_member(subject_id)
+
+        mod_name = "Moddy"
+        try:
+            if issuer_id:
+                moderator = self.bot.get_user(int(issuer_id)) or await self.bot.fetch_user(int(issuer_id))
+                if moderator:
+                    mod_name = moderator.name
+        except Exception:
+            pass
+
+        expiry_text = expires_at.strftime("%Y-%m-%d %H:%M UTC") if expires_at else "Permanent"
+        discord_reason = f"[{case_row['reference']}] @{mod_name} ({expiry_text}) : {case_row['reason']}"[:512]
+
+        # Mark as Moddy-initiated so case_sync's audit-log listener does not
+        # double-record this action as a separate case.
+        if not hasattr(self.bot, "_moddy_initiated_sanctions"):
+            self.bot._moddy_initiated_sanctions = {}
+
+        try:
+            if action == "ban":
+                self.bot._moddy_initiated_sanctions[(guild_id, subject_id, "ban")] = time.time()
+                await guild.ban(discord.Object(id=subject_id), reason=discord_reason, delete_message_seconds=0)
+            elif action == "mute":
+                if member is None:
+                    return {"ok": False, "error": "discord_error"}
+                if not expires_at or expires_at <= datetime.now(timezone.utc):
+                    return {"ok": False, "error": "missing_fields"}
+                self.bot._moddy_initiated_sanctions[(guild_id, subject_id, "mute")] = time.time()
+                duration = min(expires_at - datetime.now(timezone.utc), timedelta(days=28))
+                await member.timeout(duration, reason=discord_reason)
+            # warn: no Discord action
+        except discord.Forbidden:
+            return {"ok": False, "error": "missing_permissions"}
+        except discord.HTTPException:
+            return {"ok": False, "error": "discord_error"}
+
+        try:
+            await self.bot.db.add_sanction(
+                case_uuid, action, "discord_user", issuer_id,
+                expires_at=expires_at, note=payload.get("note"),
+            )
+        except Exception as exc:
+            logger.error("Backend add_sanction failed for case %s: %s", case_uuid, exc)
+            return {"ok": False, "error": "bot_error"}
+
+        dm_target = member
+        if dm_target is None:
+            try:
+                dm_target = await self.bot.fetch_user(subject_id)
+            except Exception:
+                dm_target = None
+        if dm_target is not None and issuer_id:
+            await _send_sanction_dm(
+                guild, int(issuer_id), action, dm_target,
+                case_row["reason"], expires_at, case_row["reference"],
+                _guild_locale(guild),
+            )
+
+        full = await self.bot.db.get_case_by_id(case_uuid)
+        return {"ok": True, "case": full}
+
+    async def _backend_revoke_sanction(self, guild_id: int, payload: dict) -> dict:
+        case_id_raw = payload.get("case_id")
+        sanction_id_raw = payload.get("sanction_id")
+        if not case_id_raw or not sanction_id_raw:
+            return {"ok": False, "error": "missing_fields"}
+
+        try:
+            case_uuid = uuid.UUID(str(case_id_raw))
+            sanction_uuid = uuid.UUID(str(sanction_id_raw))
+        except ValueError:
+            return {"ok": False, "error": "case_not_found"}
+
+        data = await self.bot.db.get_case_by_id(case_uuid)
+        if not data:
+            return {"ok": False, "error": "case_not_found"}
+        case_row = data["case"]
+        if case_row["type"] != "guild" or str(case_row["scope_id"]) != str(guild_id):
+            return {"ok": False, "error": "case_not_found"}
+
+        sanction_row = next(
+            (s for s in data["sanctions"]
+             if str(s["id"]) == str(sanction_uuid) and s["status"] == "active"),
+            None,
+        )
+        if sanction_row is None:
+            return {"ok": False, "error": "sanction_not_found"}
+
+        guild = self.bot.get_guild(guild_id)
+        subject_id = int(case_row["subject_id"])
+        action = sanction_row["action"]
+
+        if guild is not None:
+            try:
+                if action == "ban":
+                    await guild.unban(discord.Object(id=subject_id), reason="Revoked from dashboard")
+                elif action == "mute":
+                    member = guild.get_member(subject_id)
+                    if member is not None:
+                        await member.timeout(None, reason="Revoked from dashboard")
+            except discord.Forbidden:
+                return {"ok": False, "error": "missing_permissions"}
+            except discord.HTTPException:
+                return {"ok": False, "error": "discord_error"}
+
+        try:
+            revoked = await self.bot.db.revoke_sanction(
+                sanction_uuid, "discord_user", payload.get("actor_id"),
+            )
+        except Exception as exc:
+            logger.error("Backend revoke_sanction failed for sanction %s: %s", sanction_uuid, exc)
+            return {"ok": False, "error": "bot_error"}
+        if not revoked:
+            return {"ok": False, "error": "sanction_not_found"}
+
+        full = await self.bot.db.get_case_by_id(case_uuid)
+        return {"ok": True, "case": full}
 
 
 async def setup(bot):

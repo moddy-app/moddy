@@ -102,7 +102,7 @@ Two sources ship today (`SOURCES` registry):
 | key | case_type | scope | created by | actions |
 |---|---|---|---|---|
 | `global` | `global` | `platform` | Moddy staff (manual) | warn, restrict, ban |
-| `guild` | `guild` | the server | auto (Discord events) | warn, mute, kick, ban |
+| `guild` | `guild` | the server | auto (Discord events) | warn, mute, ban |
 
 `global` covers **Moddy-team blacklists and global sanctions** (a `ban` here is a
 full bot blacklist — `cogs/blacklist_check.py` reads it). `guild` covers
@@ -143,24 +143,65 @@ await bot.cases.revoke_sanction(
 already has an *open* case of the same `(type, scope)` is appended to that case
 instead of opening a second folder (`link_open=True`).
 
+### 4.2 Backend dashboard — guild sanctions over `moddy:tasks`
+
+The dashboard can add/revoke a sanction on an existing **guild** case without
+touching Discord itself: it pushes a task on the `moddy:tasks` stream and the
+bot executes the Discord action (ban / timeout) + the DB write, then replies
+on `moddy:dashboard` correlated by `request_id` (see
+[docs/BACKEND-INTEGRATION.md](BACKEND-INTEGRATION.md) §4-5 for the transport).
+
+Handled in `cogs/moderation_commands.py::ModerationCommands.handle_backend_task`,
+dispatched from `bot.py::_process_case_task`:
+
+| Task type | Payload | Effect |
+|---|---|---|
+| `case_add_sanction` | `case_id`, `action` (warn/mute/ban — no kick), `expires_at?`, `note?`, `issuer_id`, `request_id` | Discord action + DM + `db.add_sanction` on the existing case |
+| `case_revoke_sanction` | `case_id`, `sanction_id`, `note?`, `actor_id`, `request_id` | Reverses the Discord action + `db.revoke_sanction` |
+
+The reply is `{"type": "<task_type>_result", "request_id", "guild_id", "ok": bool, "case": <assembled case>}` on success, or `"error"` (`case_not_found` /
+`sanction_not_found` / `missing_permissions` / `discord_error` / `bot_error` /
+`missing_fields`) on failure.
+
+Bans/mutes issued this way mark `bot._moddy_initiated_sanctions` first, so
+`cogs/case_sync.py`'s audit-log listener does not double-record them as a
+second case.
+
+### 4.3 Blacklist cache invalidation — `moddy:blacklist:updates`
+
+`cogs/blacklist_check.py::BlacklistCheck.blacklist_cache` is an in-memory,
+TTL-less cache of "is this user globally blacklisted" (an active `global` /
+`ban` case). Since the backend can create/revoke that case directly in DB, it
+publishes on `moddy:blacklist:updates` (backend → bot, fire-and-forget) so the
+bot drops the stale entry:
+
+```json
+{ "type": "refresh", "user_id": "123456789012345678" }
+```
+
+Handled in `bot.py::_handle_blacklist_event` (subscribed alongside `moddy:bot`
+and `moddy:subscription:updates` in `_listen_pubsub`).
+
 ---
 
 ## 5. Auto-recording guild sanctions
 
-`cogs/case_sync.py` listens to `on_audit_log_entry_create` so a ban / kick /
-timeout on **any** server Moddy is in opens a case automatically — **even when
-the action did not go through Moddy**. The audit log gives the real moderator and
+`cogs/case_sync.py` listens to `on_audit_log_entry_create` so a ban / timeout
+on **any** server Moddy is in opens a case automatically — **even when the
+action did not go through Moddy**. The audit log gives the real moderator and
 reason. Lifts (unban, timeout cleared) revoke the matching active sanction, which
 lets the case auto-close.
 
 Requires the bot to have **View Audit Log** in the guild. Bot targets are
 ignored.
 
+Kicks are **not** recorded as cases — `/kick` still performs the Discord
+action (and DMs the member) but no longer opens/appends a case.
+
 | Audit action | Effect |
 |---|---|
 | `ban` | record `guild` / `ban` |
 | `unban` | revoke active `guild` / `ban` |
-| `kick` | record `guild` / `kick` |
 | `member_update` (timeout set) | record `guild` / `mute` with `expires_at` |
 | `member_update` (timeout cleared) | revoke active `guild` / `mute` |
 
@@ -219,9 +260,8 @@ Moddy-staff notes (`event_type = note`) are **never** shown in either command.
 commenting / editing / closing needs **Manage Messages** (or Administrator).
 Adding or revoking a sanction additionally needs the permission specific to that
 action (`SANCTION_PERMISSION` in `utils/cases_views.py`): Ban Members for a ban,
-Kick Members for a kick, Timeout Members for warn / mute. Only guild-scoped
-cases are reachable, so guild moderators can never touch `global`/`platform`
-(Moddy-team) cases.
+Timeout Members for warn / mute. Only guild-scoped cases are reachable, so
+guild moderators can never touch `global` (Moddy-team) cases.
 
 **Persistence** — `CasesBrowserView` is a fully persistent view registered for
 both modes (`user` and `server`) in
@@ -249,7 +289,20 @@ the `/mycases` server filter).
 - **Multi-scope**: a case has a single scope. A single affair spanning scopes
   (e.g. network ban + platform ban) is modelled as linked cases sharing a
   `group_id`.
-- **Evidence**: stored as `evidence` timeline events with a URL in `payload`.
+- **Evidence**: stored as `evidence` timeline events, in two payload shapes:
+  - a plain link — `{"url": ..., "kind": "image"|"video"|"evidence"}` (manual
+    sanction attachments, `cogs/moderation_commands.py::_attach_evidence`);
+  - a Discord message — `{"kind": "message_link", "jump_url", "channel_id",
+    "message_id", "content", "author_id", "author_name", "attachments", "ts"}`,
+    added via the "Ajouter une preuve" action in `/cases`
+    (`utils/cases_views.py::CaseAddEvidenceModalV2`). The message is fetched
+    and **snapshotted at add-time** — `content`/`author`/`attachments` are
+    saved into the payload, so the evidence stays readable in `/cases` even if
+    the message is later deleted (there is no way to recover it after the
+    fact, so this only protects messages attached *before* deletion).
+  Automod's own evidence event (`modules/automod.py`) uses neither shape (no
+  `url`) — it's read directly by the log/appeal flow, not by `/cases`'s
+  evidence popup.
 
 ---
 

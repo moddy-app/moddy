@@ -26,6 +26,7 @@ persistent), mirroring the existing case-management flows.
 from __future__ import annotations
 
 import logging
+import re
 import uuid as _uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
@@ -78,7 +79,6 @@ PERIODS: Dict[str, Optional[int]] = {
 SANCTION_PERMISSION: Dict[SanctionAction, str] = {
     SanctionAction.WARN: "moderate_members",
     SanctionAction.MUTE: "moderate_members",
-    SanctionAction.KICK: "kick_members",
     SanctionAction.BAN: "ban_members",
     SanctionAction.RESTRICT: "moderate_members",
     SanctionAction.REVOKE_ACCESS: "moderate_members",
@@ -155,6 +155,13 @@ _CID_DETAIL_TOGGLE = f"{_CID_PREFIX}:toggle:{{mode}}"
 _CID_DETAIL_COMMENT = f"{_CID_PREFIX}:comment:{{mode}}"
 _CID_DETAIL_EDIT = f"{_CID_PREFIX}:edit:{{mode}}"
 _CID_DETAIL_EVIDENCE = f"{_CID_PREFIX}:evidence:{{mode}}"
+_CID_DETAIL_ADD_EVIDENCE = f"{_CID_PREFIX}:evidence_add:{{mode}}"
+
+# Discord message link — https://discord.com/channels/<guild>/<channel>/<message>
+_MESSAGE_LINK_RE = re.compile(
+    r"^https?://(?:(?:ptb|canary)\.)?discord(?:app)?\.com/channels/"
+    r"(?P<guild_id>\d+)/(?P<channel_id>\d+)/(?P<message_id>\d+)/?$"
+)
 
 
 class CasesBrowserView(BaseView):
@@ -782,6 +789,15 @@ class CasesBrowserView(BaseView):
             evidence_btn.callback = self._on_evidence
             row2.add_item(evidence_btn)
 
+            add_evidence_btn = ui.Button(
+                custom_id=_CID_DETAIL_ADD_EVIDENCE.format(mode=self.mode),
+                style=discord.ButtonStyle.secondary,
+                label=t("commands.cases.browser.action_add_evidence", locale=self.locale),
+                emoji=discord.PartialEmoji.from_str(emojis.ADD),
+            )
+            add_evidence_btn.callback = self._on_add_evidence
+            row2.add_item(add_evidence_btn)
+
             container.add_item(row2)
 
         self.add_item(container)
@@ -911,6 +927,15 @@ class CasesBrowserView(BaseView):
         await interaction.response.send_modal(
             CaseEditReasonModalV2(self, self.detail))
 
+    async def _on_add_evidence(self, interaction: discord.Interaction):
+        if not await self._guard(interaction) or not await self._require_manage(interaction):
+            return
+        if self.detail is None:
+            await self._rehydrate_and_list(interaction)
+            return
+        await interaction.response.send_modal(
+            CaseAddEvidenceModalV2(self, self.detail))
+
     async def _on_add_sanction(self, interaction: discord.Interaction):
         if not await self._guard(interaction) or not await self._require_manage(interaction):
             return
@@ -968,9 +993,13 @@ class CasesBrowserView(BaseView):
     async def _on_evidence(self, interaction: discord.Interaction):
         """Send the evidence attached to the case as an ephemeral followup.
 
-        Evidence lives in the timeline as ``evidence`` events whose ``payload``
-        carries a URL (and optional kind). When the URL looks like media we add
-        it to a ``MediaGallery``; everything else is listed as a clickable URL.
+        Evidence lives in the timeline as ``evidence`` events. Two shapes:
+        - a plain URL (+ optional ``kind``) — media goes in a ``MediaGallery``,
+          everything else is a clickable link;
+        - ``kind == "message_link"`` — a Discord message attached via "Ajouter
+          une preuve", rendered from its saved snapshot (content, author,
+          attachments) so it stays readable even if the message was since
+          deleted.
         """
         if not await self._guard(interaction):
             return
@@ -979,24 +1008,52 @@ class CasesBrowserView(BaseView):
             return
         case = self.detail
         evidence = [e for e in case.events if e.type == EventType.EVIDENCE]
-        urls = []
+
+        urls: List[tuple] = []
+        message_blocks: List[str] = []
         for e in evidence:
-            url = (e.payload or {}).get("url")
+            payload = e.payload or {}
+            if payload.get("kind") == "message_link":
+                author = payload.get("author_name") or "?"
+                author_id = payload.get("author_id")
+                channel_id = payload.get("channel_id")
+                content = (payload.get("content") or "").strip()
+                if len(content) > 500:
+                    content = content[:497] + "…"
+                block = (
+                    f"-# {_ts(e.created_at)}\n"
+                    f"**{author}**" + (f" (`{author_id}`)" if author_id else "")
+                    + (f" {t('commands.cases.browser.evidence_in_channel', locale=self.locale, channel_id=channel_id)}" if channel_id else "")
+                    + f" :\n> {content or t('commands.cases.browser.evidence_empty_message', locale=self.locale)}"
+                )
+                jump = payload.get("jump_url")
+                if jump:
+                    block += f"\n[{t('commands.cases.browser.evidence_go_to_message', locale=self.locale)}]({jump})"
+                message_blocks.append(block)
+                for att_url in payload.get("attachments") or []:
+                    urls.append((att_url, "attachment", e.created_at))
+                continue
+
+            url = payload.get("url")
             if url:
-                urls.append((url, (e.payload or {}).get("kind") or "evidence", e.created_at))
+                urls.append((url, payload.get("kind") or "evidence", e.created_at))
 
         view = BaseView()
         container = ui.Container(accent_colour=discord.Colour(COLORS["info"]))
         container.add_item(ui.TextDisplay(
             f"### {emojis.IMAGE} {t('commands.cases.browser.evidence_title', locale=self.locale, id=case.reference)}"
         ))
-        if not urls:
+
+        if not urls and not message_blocks:
             container.add_item(ui.TextDisplay(
                 f"-# {t('commands.cases.browser.no_evidence', locale=self.locale)}"
             ))
             view.add_item(container)
             await interaction.response.send_message(view=view, ephemeral=True)
             return
+
+        if message_blocks:
+            container.add_item(ui.TextDisplay("\n\n".join(message_blocks)))
 
         media_exts = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".mp4", ".webm", ".mov")
         media_urls = [u for u, _, _ in urls if u.lower().split("?")[0].endswith(media_exts)]
@@ -1210,6 +1267,87 @@ class CaseEditReasonModalV2(BaseModal):
         if new_reason and new_reason != self.case.reason:
             await self.browser.bot.db.update_case_reason(
                 _uuid.UUID(self.case.id), new_reason)
+        await self.browser.show_detail(interaction, self.case.id)
+
+
+class CaseAddEvidenceModalV2(BaseModal):
+    """Attach a Discord message as evidence on a case.
+
+    The message is fetched and its content/author/attachments are snapshotted
+    into the event payload immediately, so the evidence stays readable even if
+    the message is deleted afterwards (there is no other way to recover it).
+    """
+
+    def __init__(self, browser: CasesBrowserView, case: Case):
+        loc = browser.locale
+        super().__init__(
+            title=t("commands.cases.browser.action_add_evidence", locale=loc)[:45],
+            timeout=300,
+        )
+        self.browser = browser
+        self.case = case
+        self.link = ui.Label(
+            text=t("commands.cases.browser.evidence_link_label", locale=loc)[:45],
+            description=t("commands.cases.browser.evidence_link_description", locale=loc)[:100],
+            component=ui.TextInput(style=discord.TextStyle.short, required=True, max_length=200),
+        )
+        self.add_item(self.link)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        loc = self.browser.locale
+        raw = (self.link.component.value or "").strip()
+        match = _MESSAGE_LINK_RE.match(raw)
+        if not match:
+            await interaction.response.send_message(
+                t("commands.cases.browser.evidence_link_invalid", locale=loc), ephemeral=True)
+            return
+
+        link_guild_id = match.group("guild_id")
+        if self.case.scope_id and link_guild_id != str(self.case.scope_id):
+            await interaction.response.send_message(
+                t("commands.cases.browser.evidence_wrong_server", locale=loc), ephemeral=True)
+            return
+
+        bot = self.browser.bot
+        channel_id = int(match.group("channel_id"))
+        message_id = int(match.group("message_id"))
+        guild = bot.get_guild(int(link_guild_id))
+
+        message = None
+        if guild is not None:
+            channel = guild.get_channel(channel_id) or guild.get_thread(channel_id)
+            if channel is None:
+                try:
+                    channel = await bot.fetch_channel(channel_id)
+                except Exception:
+                    channel = None
+            if channel is not None:
+                try:
+                    message = await channel.fetch_message(message_id)
+                except (discord.NotFound, discord.Forbidden, discord.HTTPException):
+                    message = None
+
+        if message is None:
+            await interaction.response.send_message(
+                t("commands.cases.browser.evidence_message_not_found", locale=loc), ephemeral=True)
+            return
+
+        payload = {
+            "kind": "message_link",
+            "jump_url": message.jump_url,
+            "channel_id": channel_id,
+            "message_id": message_id,
+            "content": message.content or "",
+            "author_id": message.author.id,
+            "author_name": str(message.author),
+            "attachments": [a.url for a in message.attachments],
+            "ts": int(message.created_at.timestamp()),
+        }
+        await bot.db.add_event(
+            _uuid.UUID(self.case.id), "evidence",
+            author_type="discord_user", author_id=interaction.user.id,
+            payload=payload,
+        )
         await self.browser.show_detail(interaction, self.case.id)
 
 

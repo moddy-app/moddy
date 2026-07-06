@@ -51,7 +51,7 @@ _CASE_URL = "https://moddy.app/cases?{ref}"
 _UUID = r"[0-9a-fA-F-]{36}"
 
 # Sanction actions a reviewer may transform an automod sanction into.
-_TRANSFORM_ACTIONS = ["warn", "mute", "kick", "ban"]
+_TRANSFORM_ACTIONS = ["warn", "mute", "ban"]
 
 # Status → (emoji, i18n key) for rendering an appeal outcome.
 _STATUS_RENDER = {

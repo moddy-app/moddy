@@ -304,7 +304,6 @@ SANCTION_ACTION_EMOJIS = {
     "warn": WARNING,
     "mute": TIME,
     "ban": LEGAL,
-    "kick": LOGOUT,
     "restrict": UNDONE,
     "revoke_access": DELETE,
 }
@@ -316,7 +315,6 @@ SANCTION_DM_EMOJIS = {
     "warn": WARNING,
     "mute": MIC_OFF,
     "ban": LEGAL,
-    "kick": LOGOUT,
     "restrict": UNDONE,
     "revoke_access": DELETE,
 }
@@ -327,7 +325,6 @@ SANCTION_ACCENT_COLORS = {
     "warn": 0xF28500,
     "mute": 0xDA3E27,
     "ban": 0xDA3E27,
-    "kick": 0xDA3E27,
     "restrict": 0xF28500,
     "revoke_access": 0xDA3E27,
 }
@@ -346,7 +343,6 @@ def get_sanction_accent(action: str) -> int:
 # Case type emojis (moderation cases). Keyed by CaseType value.
 CASE_TYPE_EMOJIS = {
     "global": MODDY,
-    "platform": MODDY,
     "network": WEB,
     "guild": "",
     "external": WEB,
