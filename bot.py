@@ -228,8 +228,13 @@ class ModdyBot(commands.Bot):
         while True:
             try:
                 pubsub = self.redis.pubsub()
-                await pubsub.subscribe("moddy:bot", "moddy:subscription:updates")
-                logger.info("Pub/Sub subscribed to moddy:bot and moddy:subscription:updates")
+                await pubsub.subscribe(
+                    "moddy:bot", "moddy:subscription:updates", "moddy:blacklist:updates",
+                )
+                logger.info(
+                    "Pub/Sub subscribed to moddy:bot, moddy:subscription:updates "
+                    "and moddy:blacklist:updates"
+                )
                 async for message in pubsub.listen():
                     if message["type"] != "message":
                         continue
@@ -238,6 +243,8 @@ class ModdyBot(commands.Bot):
                         channel = message.get("channel", "")
                         if channel == "moddy:subscription:updates":
                             await self._handle_subscription_event(data)
+                        elif channel == "moddy:blacklist:updates":
+                            await self._handle_blacklist_event(data)
                         else:
                             await self._handle_bot_event(data)
                     except Exception as e:
@@ -481,6 +488,29 @@ class ModdyBot(commands.Bot):
         except Exception as e:
             logger.error(f"[SubDM] Error sending DM to user {user_id}: {e}")
 
+    async def _handle_blacklist_event(self, data: dict):
+        """Handle events from the moddy:blacklist:updates channel.
+
+        The backend now creates/revokes global blacklist cases (case
+        ``global`` + sanction ``ban``) directly in DB. The bot's
+        ``BlacklistCheck`` cog caches the result in memory with no TTL, so it
+        must be told to drop the entry whenever the backend mutates it.
+        """
+        event_type = data.get("type")
+        user_id_raw = data.get("user_id")
+        if event_type != "refresh" or not user_id_raw:
+            return
+        try:
+            user_id = int(user_id_raw)
+        except (ValueError, TypeError):
+            logger.warning(f"[BlacklistPubSub] Invalid user_id: {user_id_raw}")
+            return
+
+        cog = self.get_cog("BlacklistCheck")
+        if cog:
+            cog.blacklist_cache.pop(user_id, None)
+            logger.info(f"[BlacklistPubSub] Cache invalidated for user {user_id}")
+
     async def _handle_bot_event(self, data: dict):
         """Route Pub/Sub events from the backend."""
         event_type = data.get("type")
@@ -571,6 +601,12 @@ class ModdyBot(commands.Bot):
             # the bot so the subscribe/DB logic lives in a single place.
             await self._process_social_task(task_type, guild_id, payload)
 
+        elif task_type in ("case_add_sanction", "case_revoke_sanction"):
+            # Moderation cases: the backend delegates guild sanctions to the
+            # bot so the Discord action (ban/timeout) and the case DB write
+            # stay in one place, exactly like a manual /ban /mute /warn.
+            await self._process_case_task(task_type, guild_id, payload)
+
         else:
             logger.warning(f"[Stream] Unknown task type: {task_type}")
 
@@ -600,6 +636,33 @@ class ModdyBot(commands.Bot):
                 }))
             except Exception as e:
                 logger.error(f"[Stream] Could not publish social task result: {e}")
+
+    async def _process_case_task(self, task_type: str, guild_id: int, payload: dict):
+        """Run a guild-case sanction action requested by the backend dashboard
+        and publish the result back on `moddy:dashboard`, correlated by the
+        optional `request_id` from the payload."""
+        import json
+        action = "add_sanction" if task_type == "case_add_sanction" else "revoke_sanction"
+        cog = self.get_cog("ModerationCommands")
+        if not cog:
+            result = {"ok": False, "error": "module_unavailable"}
+        else:
+            try:
+                result = await cog.handle_backend_task(action, guild_id, payload)
+            except Exception as e:
+                logger.error(f"[Stream] Case task '{task_type}' failed: {e}", exc_info=True)
+                result = {"ok": False, "error": "bot_error"}
+
+        if self.redis:
+            try:
+                await self.redis.publish("moddy:dashboard", json.dumps({
+                    "type": f"{task_type}_result",
+                    "request_id": payload.get("request_id"),
+                    "guild_id": guild_id,
+                    **result,
+                }, default=str))
+            except Exception as e:
+                logger.error(f"[Stream] Could not publish case task result: {e}")
 
     async def setup_hook(self):
         """Called once on bot startup"""

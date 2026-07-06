@@ -143,6 +143,45 @@ await bot.cases.revoke_sanction(
 already has an *open* case of the same `(type, scope)` is appended to that case
 instead of opening a second folder (`link_open=True`).
 
+### 4.2 Backend dashboard — guild sanctions over `moddy:tasks`
+
+The dashboard can add/revoke a sanction on an existing **guild** case without
+touching Discord itself: it pushes a task on the `moddy:tasks` stream and the
+bot executes the Discord action (ban / timeout) + the DB write, then replies
+on `moddy:dashboard` correlated by `request_id` (see
+[docs/BACKEND-INTEGRATION.md](BACKEND-INTEGRATION.md) §4-5 for the transport).
+
+Handled in `cogs/moderation_commands.py::ModerationCommands.handle_backend_task`,
+dispatched from `bot.py::_process_case_task`:
+
+| Task type | Payload | Effect |
+|---|---|---|
+| `case_add_sanction` | `case_id`, `action` (warn/mute/ban — no kick), `expires_at?`, `note?`, `issuer_id`, `request_id` | Discord action + DM + `db.add_sanction` on the existing case |
+| `case_revoke_sanction` | `case_id`, `sanction_id`, `note?`, `actor_id`, `request_id` | Reverses the Discord action + `db.revoke_sanction` |
+
+The reply is `{"type": "<task_type>_result", "request_id", "guild_id", "ok": bool, "case": <assembled case>}` on success, or `"error"` (`case_not_found` /
+`sanction_not_found` / `missing_permissions` / `discord_error` / `bot_error` /
+`missing_fields`) on failure.
+
+Bans/mutes issued this way mark `bot._moddy_initiated_sanctions` first, so
+`cogs/case_sync.py`'s audit-log listener does not double-record them as a
+second case.
+
+### 4.3 Blacklist cache invalidation — `moddy:blacklist:updates`
+
+`cogs/blacklist_check.py::BlacklistCheck.blacklist_cache` is an in-memory,
+TTL-less cache of "is this user globally blacklisted" (an active `global` /
+`ban` case). Since the backend can create/revoke that case directly in DB, it
+publishes on `moddy:blacklist:updates` (backend → bot, fire-and-forget) so the
+bot drops the stale entry:
+
+```json
+{ "type": "refresh", "user_id": "123456789012345678" }
+```
+
+Handled in `bot.py::_handle_blacklist_event` (subscribed alongside `moddy:bot`
+and `moddy:subscription:updates` in `_listen_pubsub`).
+
 ---
 
 ## 5. Auto-recording guild sanctions
