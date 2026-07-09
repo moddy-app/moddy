@@ -44,6 +44,12 @@ from utils.announcement_setup import setup_announcement_channel
 
 logger = logging.getLogger('moddy')
 
+# Branded display name style (font/effect/color) applied to Moddy's own
+# member profile whenever it joins a new server. Requires "Change Nickname".
+NAME_STYLE_FONT_ID = 11
+NAME_STYLE_EFFECT_ID = 5
+NAME_STYLE_COLORS = [0x0004FF]
+
 
 class ModdyBot(commands.Bot):
     """Main Moddy class"""
@@ -1286,6 +1292,24 @@ class ModdyBot(commands.Bot):
                 boot_seconds=boot_seconds,
             )
 
+    async def apply_name_style(self, guild_id: int) -> bool:
+        """Apply Moddy's branded display name font/effect/color to its own member profile in a guild"""
+        route = discord.http.Route(
+            "PATCH", "/guilds/{guild_id}/members/@me", guild_id=guild_id
+        )
+        try:
+            await self.http.request(route, json={
+                "display_name_font_id": NAME_STYLE_FONT_ID,
+                "display_name_effect_id": NAME_STYLE_EFFECT_ID,
+                "display_name_colors": NAME_STYLE_COLORS,
+            })
+            return True
+        except discord.Forbidden:
+            logger.warning(f"[WARN] name_style: missing Change Nickname permission in {guild_id}")
+        except discord.HTTPException as e:
+            logger.warning(f"[WARN] name_style: failed on {guild_id} — {e}")
+        return False
+
     async def on_guild_join(self, guild: discord.Guild):
         """When the bot joins a server"""
         logger.info(f"New server: {guild.name} ({guild.id})")
@@ -1371,6 +1395,12 @@ class ModdyBot(commands.Bot):
             logger.info(f"Commands synchronized for new guild {guild.name} ({guild.id})")
         except Exception as e:
             logger.error(f"[FAIL] Error syncing commands for new guild {guild.id}: {e}")
+
+        # Apply Moddy's branded name style (font/effect/color) to its own profile
+        try:
+            await self.apply_name_style(guild.id)
+        except Exception as e:
+            logger.error(f"[FAIL] Error applying name style for new guild {guild.id}: {e}")
 
         # Setup announcement channel following
         try:
