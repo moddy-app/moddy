@@ -32,7 +32,7 @@ message → 1.pre-filter → 2.trivial allowlist → 3.regex blocklist ─match�
 | 1. pre-filter | `prefiltre.py` | free | bot / system / empty → STOP |
 | 2. trivial allowlist | `triviaux.py` | free | "ok", "mdr", "gg"… → STOP |
 | 3. regex blocklist | `blocklist.py` | free | match → nano (`source=regex`), **skips embedding** |
-| 4. embedding | `embeddings.py` | 1 embed call | `score ≥ SEUIL_EMBEDDING` → nano (`source=embedding`); else STOP |
+| 4. embedding | `embeddings.py` | 1 embed call (cached) | `score ≥ SEUIL_EMBEDDING` → nano (`source=embedding`); else STOP |
 | 5. nano | `nano.py` | 1–3 chat calls | **the only decider** → `Decision` |
 
 Only **nano decides**. Regex and embedding merely *route*. Output is a
@@ -256,8 +256,19 @@ Seeded unlimited in `db/base.py`; tighten per-guild via `quota_overrides`.
 
 > **Volume note:** every non-trivial, non-blocklisted message triggers one
 > embedding call (and the gateway logs every call to the `api_call` webhook with
-> prompt/response files attached). Consider the optional cache/batch
-> optimizations (see the processing spec) before enabling at very large scale.
+> prompt/response files attached).
+>
+> **Embedding score cache (`automod/cache.py`).** The reference vectors are
+> embedded once per process and never change, so a message's cosine score is
+> deterministic for the process lifetime. `EmbeddingEngine.score()` therefore
+> memoises `(score, category)` on the exact message text in a bounded LRU+TTL
+> cache, and coalesces concurrent identical requests (**single-flight**). Net
+> effect: a raid or copypasta flood — by construction the same text repeated N
+> times — costs **one** embedding call instead of N, whether the duplicates
+> arrive back-to-back (cache hit) or all at once (single-flight). It is purely
+> an optimization: identical input → identical output, so it can never change a
+> decision. Tune it via `EMBED_CACHE_*` in `constants.py`; inspect it live via
+> `bot._automod_engine.cache_stats()` (hits / misses / evictions / hit_rate).
 
 ---
 
@@ -267,6 +278,9 @@ Seeded unlimited in `db/base.py`; tighten per-guild via `quota_overrides`.
 |---|---|---|
 | `SEUIL_EMBEDDING` | 0.45 | **Yes**, on real messages (per-guild via `severity`) |
 | `SEVERITY_DEFAULT` / `SEVERITY_EMBEDDING_THRESHOLDS` | 3 / {1:.62…5:.35} | the per-guild 1–5 dial → threshold + nano strictness |
+| `EMBED_CACHE_ENABLED` | `True` | leave on; disable only to A/B the savings |
+| `EMBED_CACHE_MAX_ENTRIES` | 4096 | raise for very high distinct-message volume |
+| `EMBED_CACHE_TTL_SECONDS` | 1800 | defensive freshness bound (`0` = never expire) |
 | `CONTEXTE_INITIAL` | 12 | by channel density |
 | `CONTEXTE_MAX` | 40 | cost / injection ceiling |
 | `ROUNDS_MAX` | 3 | anti-loop |

@@ -78,6 +78,7 @@ moddy/
 │   ├── engine.py              #   Shared per-bot orchestrator (funnel entry)
 │   ├── prefiltre.py / triviaux.py / blocklist.py / embeddings.py / nano.py
 │   ├── normalize.py / injection.py / rules_check.py / schemas.py / constants.py
+│   ├── cache.py               #   LRU+TTL score cache (embedding de-duplication)
 │   └── data/references.json   #   Embedding reference phrases (FR + EN)
 │
 ├── staff/                     # Staff/dev command system (message + slash)
@@ -161,6 +162,8 @@ moddy/
 │
 ├── docs/                      # Documentation (see below)
 └── tests/                     # Test files
+    └── automod/               #   pytest suite for the pure-Python detection core
+                               #   (`pip install -r requirements-dev.txt && pytest`)
 ```
 
 ---
