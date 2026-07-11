@@ -328,6 +328,85 @@ can be temporary. A mute uses it as the timeout length; a ban becomes a *temp
 ban* whose `expires_at` is honoured by `bot.case_expiry`, which lifts the
 Discord ban when the sanction expires (mutes are auto-cleared by Discord).
 
+### 9.1 Automod `case_events` payload format (for backend/dashboard)
+
+Every automod decision writes **two** `case_events` rows (both `type = evidence`,
+`author_type = system`, `author_id = NULL`). Consumers reading `case_events` for
+a `guild` case whose issuer is automod should expect **both** shapes below —
+match on `payload.kind` (or presence of `payload.source`) to tell them apart.
+
+**1. The evidence event** — written first, one per case, `content` is a
+human-readable summary and `payload` carries the structured detection data:
+
+```json
+{
+  "type": "evidence",
+  "author_type": "system",
+  "author_id": null,
+  "content": "Message de <@123...> (`123...`) dans <#456...> :\n> extrait du message\n\nDétection : `nano` · catégorie `spam` · gravité `2` · score `0.87` · confiance `high`\n[Aller au message](https://discord.com/channels/...)",
+  "payload": {
+    "source": "automod",
+    "message_id": "111111111111111111",
+    "channel_id": "222222222222222222",
+    "jump_url": "https://discord.com/channels/<guild>/<channel>/<message>",
+    "extrait": "the offending message text (may be truncated upstream)",
+    "author_name": "display name of the sanctioned member",
+    "ts": 1752235200,
+    "context_text": "[2026-07-11 14:02] Alice (123...): salut tout le monde\n[2026-07-11 14:03] Bob (234...): ça va toi ?\n[2026-07-11 14:04] >>> Charlie (345...): message fautif",
+    "raison": "factual reason string (same one used as the case reason / audit-log reason)",
+    "explication": "optional longer AI explanation, may be null/absent",
+    "signal_source": "nano | blocklist | embeddings | ...",
+    "categorie": "detector category string",
+    "gravite": 2,
+    "score_detecteur": 0.87,
+    "confiance": "low | medium | high",
+    "actions": ["delete", "warn"]
+  }
+}
+```
+
+Field notes:
+- `message_id` / `channel_id` are the **offending message's** ids, as strings
+  (Discord snowflakes — always treat as string/int64, never parse as a JS
+  `number`).
+- `context_text` is a **single plain-text blob**, not a structured array: one
+  line per message, oldest → newest, format `[YYYY-MM-DD HH:MM] Name (id): content`,
+  up to the 15 non-empty messages preceding the offending one, which is always
+  the last line and prefixed with `>>>`. Empty messages (no text content, e.g.
+  attachment-only) are skipped and don't count toward the 15. If the bot lacks
+  permission to read history, this is just the `>>>` line alone.
+- `explication` / `gravite` / `score_detecteur` / `confiance` mirror the AI
+  decision (`automod/schemas.py::Decision`) and may be absent depending on the
+  detector that fired.
+- `actions` is the full list of actions the decision carried (before
+  Discord-permission filtering), not just the one applied.
+
+**2. The log-message pointer event** — written second (only if the alert
+channel post succeeded), a lightweight reference with no `content`:
+
+```json
+{
+  "type": "evidence",
+  "author_type": "system",
+  "author_id": null,
+  "content": null,
+  "payload": {
+    "kind": "automod_log",
+    "channel_id": "333333333333333333",
+    "message_id": "444444444444444444"
+  }
+}
+```
+
+`channel_id` / `message_id` here point at the Components V2 message Moddy
+posted in the guild's configured automod alert channel (`notify_channel_id`,
+see [AUTOMOD.md](AUTOMOD.md)) — **one message per case**, later reused as the
+target when an appeal outcome needs to reply/edit it. This event is purely a
+pointer: it carries none of the detection detail (that's all in event #1
+above), and the rendered log message content itself is **not** persisted
+verbatim anywhere — the dashboard must reconstruct a human view from event #1's
+`payload`, not by fetching the Discord message.
+
 A sanctioned member can **appeal** (see [AUTOMOD.md](AUTOMOD.md) §7):
 
 - `case_appeals` (`db/repositories/appeals.py`) is the queryable state machine:
