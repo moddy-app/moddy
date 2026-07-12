@@ -80,6 +80,10 @@ moddy/
 │   ├── normalize.py / injection.py / rules_check.py / schemas.py / constants.py
 │   ├── bareme.py              #   Deterministic sanction scale (cran ladder + recidivism)
 │   ├── cache.py               #   LRU+TTL score cache (embedding de-duplication)
+│   ├── eval/                  #   Regression harness (golden set, offline runner, shadow annotations)
+│   │   ├── golden.jsonl / fixtures.json / golden_baseline.json
+│   │   ├── run.py             #     Offline runner (--replay/--live, CI gate on faux_positif_reel)
+│   │   └── import_candidates.py #   annotated candidates → golden JSONL (make eval-import)
 │   └── data/references.json   #   Embedding reference phrases (FR + EN)
 │
 ├── staff/                     # Staff/dev command system (message + slash)
@@ -106,6 +110,7 @@ moddy/
 │       ├── reminders.py, saved_messages.py, saved_roles.py
 │       ├── moderation.py, interserver.py, attributes.py
 │       ├── appeals.py           #   Automod sanction appeals (case_appeals)
+│       ├── eval_candidates.py   #   Automod eval/annotation corpus (automod_eval_candidates)
 │       ├── token_alerts.py, token_secrets.py
 │       ├── subscription.py    #   Subscription read-only queries
 │       ├── social.py          #   Social notifications subscriptions
@@ -123,6 +128,7 @@ moddy/
 │   ├── staff_help_view.py
 │   ├── case_management_views.py #  Cases Views/Modals (create, sanction, comment…)
 │   ├── appeal_views.py        #   Automod appeal UI (DM buttons + reviewer panels, persistent)
+│   ├── automod_shadow_views.py #  Automod shadow-mode SIMULATION card + annotation buttons (persistent)
 │   ├── moderation_cases.py    #   Cases domain model + enums + reference gen
 │   ├── embeds.py
 │   ├── announcement_setup.py

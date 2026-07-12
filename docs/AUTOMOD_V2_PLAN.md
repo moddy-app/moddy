@@ -10,7 +10,7 @@
 |---|---|---|---|---|
 | 1 | Grounding & contrat de verdict v2 | ✅ Terminée | 2026-07-12 | Garde-fous grounding déterministes, prompt nano v2, contrat `citation`/`cible`, historique retiré du payload nano, temp 0.0. Tests : `tests/automod/test_nano_grounding.py`. |
 | 2 | Barème déterministe & moteur de récidive | ✅ Terminée | 2026-07-12 | `automod/bareme.py` pur (ladder + plancher + récidive à demi-vie + modulateurs + kill-switch), `db.list_member_sanctions` (fiabilité dérivée de l'issuer + appel, sans migration), module applique le cran (nano ne décide plus les actions), breakdown sur carte + timeline, config `max_action`/`langue_serveur`, appel accepté → poids 0 + purge `messages_deja_moderes`. Tests : `tests/automod/test_bareme.py` (36 cas). |
-| 3 | Harnais de régression & shadow mode | ⬜ À faire | — | — |
+| 3 | Harnais de régression & shadow mode | ✅ Terminée | 2026-07-12 | Golden set `automod/eval/golden.jsonl` (62 cas), runner offline `automod/eval/run.py` (`--replay`/`--live`, précision/rappel/F1 + matrice de confusion + diff baseline), `golden_baseline.json` commitée, **gate CI** : régression `faux_positif_reel` ⇒ exit≠0. Shadow mode `dry_run` : carte SIMULATION + 3 boutons d'annotation persistants → `automod_eval_candidates`, `make eval-import`. Tests : `tests/automod/test_eval_harness.py` (13 cas). |
 | 4 | Coûts & anti-fragmentation | ⬜ À faire | — | — |
 | 5 | Graphe relationnel & réaction de la cible | ⬜ À faire | — | — |
 | 6 | Routing par difficulté (nano → mini) | ⬜ À faire | — | — |
@@ -85,6 +85,54 @@ récidive.
 
 **Suites (pour S3) :** golden set + runner offline + shadow mode ; le breakdown et les composantes
 du barème sont déjà prêts à alimenter les annotations.
+
+### Journal de session 3 (2026-07-12)
+
+**Livré :**
+- `automod/eval/golden.jsonl` — **62 cas** labellisés (8 few-shots, faux positifs réels connus
+  « je suis con »/« arrête stp »/citations/paroles/juron sans cible, vrais positifs de chaque
+  catégorie, tentatives d'injection, messages EN, barre haute self-harm). Chaque cas : `attendu`
+  (`sanctionnable` + `categorie`/`gravite_min`), `tags` (dont `faux_positif_reel`), `origine`.
+- `automod/eval/fixtures.json` — sorties modèle enregistrées (score embedding + verdict nano brut)
+  par id de cas, pour un `--replay` **hors-ligne, gratuit, déterministe** en CI. Généré consistant
+  avec le routing réel (préfiltre/triviaux/blocklist).
+- `automod/eval/run.py` — runner qui rejoue tout le funnel (préfiltre → triviaux → blocklist →
+  embedding → nano → **grounding** → barème). Sortie : précision/rappel/F1, rappel par catégorie,
+  matrice de confusion, diff vs `golden_baseline.json`. **Gate CI** : `exit≠0` si un cas
+  `faux_positif_reel` redevient sanctionnable. Modes `--replay` (défaut) / `--live` (vrai
+  `bot.gateway`, `--update-fixtures`). Décide seulement — aucune sanction, aucune écriture DB.
+- `automod/eval/golden_baseline.json` — baseline commitée (précision/rappel = 1.0 sur le corpus).
+- **Shadow mode** : config `dry_run` (module + UI `/config` section Options, « Mode simulation »).
+  `modules/automod.py::_notify_shadow` court-circuite l'application (aucun delete/sanction/case/DM)
+  et poste une **carte SIMULATION** avec breakdown barème + 3 boutons d'annotation persistants
+  (`utils/automod_shadow_views.py`, `DynamicItem` enregistrés dans `utils/persistent_views.py`).
+- `automod_eval_candidates` (table `db/base.py` + repo `db/repositories/eval_candidates.py`) :
+  corpus d'annotation alimenté par les cartes shadow (et, à terme, les corrections humaines).
+  `automod/eval/import_candidates.py` + `make eval-import` → JSONL golden pour revue manuelle.
+- i18n `modules.automod.shadow.*` + `modules.automod.config.dry_run.*` (fr + en-US).
+- `Makefile` (`test`, `eval`, `eval-baseline`, `eval-live`, `eval-import`).
+- Tests : `tests/automod/test_eval_harness.py` (13 cas ; corpus ≥60, cohérence fixtures, replay ==
+  baseline, gate FP, round-trip vrai positif, cas grounding rejetés).
+
+**Décisions :**
+- **`--replay` par fixtures enregistrées** plutôt que rejouer les vrais appels : la CI reste
+  gratuite, déterministe et sans réseau, tout en exerçant *pour de vrai* les couches déterministes
+  que le harnais protège (garde grounding, normalisation de catégorie, barème). Un changement de
+  *prompt* se re-mesure en `--live`.
+- **Gate CI étroit et bruyant** : seul un `faux_positif_reel` qui redevient sanctionnable casse le
+  build (plan §3.2). Les autres changements de verdict sont **rapportés** (diff baseline) mais pas
+  bloquants — `make eval-baseline` acte une amélioration voulue.
+- **Fixtures de hallucination** sur les cas `faux_positif_reel` synthétiques : le verdict nano
+  enregistré sanctionne (citation absente / cible incohérente / raison spéculative) et c'est la
+  garde grounding qui le doit l'annuler — désactiver la garde fait resurgir 7 faux positifs et casse
+  la CI (prouvé par le test).
+- **Boutons d'annotation = `DynamicItem` persistants**, id de candidat encodé dans le `custom_id`,
+  carte reconstruite depuis la ligne DB après redémarrage (contrat persistant du repo).
+- **`source_fiabilite` / précédents** : le corpus `automod_eval_candidates` est déjà la matière
+  première des précédents serveur (S7) — schéma prêt (embedding réutilisable côté S7).
+
+**Suites (pour S4) :** cache de verdicts nano + agrégation anti-fragmentation + budget guard ; le
+runner S3 sert désormais de filet pour mesurer chaque optimisation sans régression FP.
 
 <!-- ======================================================================= -->
 
@@ -599,10 +647,10 @@ Format, un cas par ligne :
 
 ## Critères de fin
 
-- [ ] Golden set ≥ 60 cas, runner `--replay` vert en CI.
-- [ ] Baseline commitée ; régression sur `faux_positif_reel` = CI rouge.
-- [ ] Shadow mode fonctionnel + boutons d'annotation persistants.
-- [ ] `AUTOMOD.md` : nouvelle section "Évaluation".
+- [x] Golden set ≥ 60 cas (62), runner `--replay` vert en CI.
+- [x] Baseline commitée ; régression sur `faux_positif_reel` = CI rouge.
+- [x] Shadow mode fonctionnel + boutons d'annotation persistants.
+- [x] `AUTOMOD.md` : nouvelle section "Évaluation".
 
 ---
 ---

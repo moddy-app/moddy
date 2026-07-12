@@ -1,0 +1,333 @@
+{
+ "cases": {
+  "gs-0001": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0002": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0003": {
+   "categorie": "insulte",
+   "sanctionnable": true
+  },
+  "gs-0004": {
+   "categorie": "menace",
+   "sanctionnable": true
+  },
+  "gs-0005": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0006": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0007": {
+   "categorie": "incitation_automutilation",
+   "sanctionnable": true
+  },
+  "gs-0008": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0010": {
+   "categorie": "insulte",
+   "sanctionnable": false
+  },
+  "gs-0011": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0012": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0013": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0014": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0015": {
+   "categorie": "insulte",
+   "sanctionnable": false
+  },
+  "gs-0016": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0017": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0020": {
+   "categorie": "insulte",
+   "sanctionnable": true
+  },
+  "gs-0021": {
+   "categorie": "menace",
+   "sanctionnable": true
+  },
+  "gs-0022": {
+   "categorie": "insulte",
+   "sanctionnable": true
+  },
+  "gs-0023": {
+   "categorie": "haine_discrimination",
+   "sanctionnable": true
+  },
+  "gs-0024": {
+   "categorie": "harcelement_sexuel",
+   "sanctionnable": true
+  },
+  "gs-0025": {
+   "categorie": "doxxing",
+   "sanctionnable": true
+  },
+  "gs-0026": {
+   "categorie": "arnaque_scam",
+   "sanctionnable": true
+  },
+  "gs-0027": {
+   "categorie": "harcelement",
+   "sanctionnable": true
+  },
+  "gs-0028": {
+   "categorie": "insulte",
+   "sanctionnable": true
+  },
+  "gs-0029": {
+   "categorie": "menace",
+   "sanctionnable": true
+  },
+  "gs-0040": {
+   "categorie": "insulte",
+   "sanctionnable": false
+  },
+  "gs-0041": {
+   "categorie": "menace",
+   "sanctionnable": false
+  },
+  "gs-0042": {
+   "categorie": "insulte",
+   "sanctionnable": false
+  },
+  "gs-0043": {
+   "categorie": "menace",
+   "sanctionnable": false
+  },
+  "gs-0050": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0051": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0052": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0060": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0061": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0070": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0071": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0072": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0073": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0074": {
+   "categorie": "insulte",
+   "sanctionnable": true
+  },
+  "gs-0080": {
+   "categorie": "insulte",
+   "sanctionnable": true
+  },
+  "gs-0081": {
+   "categorie": "menace",
+   "sanctionnable": true
+  },
+  "gs-0082": {
+   "categorie": "insulte",
+   "sanctionnable": false
+  },
+  "gs-0083": {
+   "categorie": "incitation_automutilation",
+   "sanctionnable": true
+  },
+  "gs-0084": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0085": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0090": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0091": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0100": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0101": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0110": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0111": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0112": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0113": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0114": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0115": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0120": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0121": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0122": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0123": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0130": {
+   "categorie": "insulte",
+   "sanctionnable": true
+  },
+  "gs-0131": {
+   "categorie": "",
+   "sanctionnable": false
+  }
+ },
+ "changed_vs_baseline": [],
+ "confusion": {
+  "arnaque_scam": {
+   "arnaque_scam": 1
+  },
+  "aucune": {
+   "aucune": 37,
+   "insulte": 5,
+   "menace": 2
+  },
+  "doxxing": {
+   "doxxing": 1
+  },
+  "haine_discrimination": {
+   "haine_discrimination": 1
+  },
+  "harcelement": {
+   "harcelement": 1
+  },
+  "harcelement_sexuel": {
+   "harcelement_sexuel": 1
+  },
+  "incitation_automutilation": {
+   "incitation_automutilation": 2
+  },
+  "insulte": {
+   "insulte": 7
+  },
+  "menace": {
+   "menace": 4
+  }
+ },
+ "counts": {
+  "fn": 0,
+  "fp": 0,
+  "tn": 44,
+  "total": 62,
+  "tp": 18
+ },
+ "fp_reels_regressed": [],
+ "generated_at": "2026-07-12T21:19:35.702270+00:00",
+ "metrics": {
+  "f1": 1.0,
+  "precision": 1.0,
+  "recall": 1.0
+ },
+ "mode": "replay",
+ "per_category": {
+  "arnaque_scam": {
+   "correct": 1,
+   "support": 1
+  },
+  "doxxing": {
+   "correct": 1,
+   "support": 1
+  },
+  "haine_discrimination": {
+   "correct": 1,
+   "support": 1
+  },
+  "harcelement": {
+   "correct": 1,
+   "support": 1
+  },
+  "harcelement_sexuel": {
+   "correct": 1,
+   "support": 1
+  },
+  "incitation_automutilation": {
+   "correct": 2,
+   "support": 2
+  },
+  "insulte": {
+   "correct": 7,
+   "support": 7
+  },
+  "menace": {
+   "correct": 4,
+   "support": 4
+  }
+ }
+}

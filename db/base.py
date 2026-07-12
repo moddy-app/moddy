@@ -21,6 +21,7 @@ from db.repositories.saved_messages import SavedMessageRepository
 from db.repositories.interserver import InterserverRepository
 from db.repositories.moderation import ModerationRepository
 from db.repositories.appeals import AppealRepository
+from db.repositories.eval_candidates import EvalCandidateRepository
 from db.repositories.saved_roles import SavedRolesRepository
 from db.repositories.token_alerts import TokenAlertRepository
 from db.repositories.token_secrets import TokenSecretRepository
@@ -49,6 +50,7 @@ class ModdyDatabase(
     InterserverRepository,
     ModerationRepository,
     AppealRepository,
+    EvalCandidateRepository,
     SavedRolesRepository,
     TokenAlertRepository,
     TokenSecretRepository,
@@ -652,6 +654,41 @@ class ModdyDatabase(
             await conn.execute("CREATE INDEX IF NOT EXISTS idx_appeals_subject ON case_appeals (subject_id)")
             await conn.execute("CREATE INDEX IF NOT EXISTS idx_appeals_status ON case_appeals (status)")
             await conn.execute("CREATE INDEX IF NOT EXISTS idx_appeals_sanction ON case_appeals (sanction_id)")
+
+            # automod_eval_candidates — the annotation corpus that feeds the
+            # offline golden set (automod/eval). A row is created for every
+            # shadow-mode (dry_run) card and every human correction (accepted
+            # appeal, "false positive" button). `verdict_humain` is filled when a
+            # moderator annotates the card; `imported` flips once the candidate
+            # has been folded into golden.jsonl (`make eval-import`). See
+            # docs/AUTOMOD.md (Évaluation) and docs/AUTOMOD_V2_PLAN.md (Session 3).
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS automod_eval_candidates (
+                    id             UUID PRIMARY KEY,
+                    guild_id       BIGINT NOT NULL,
+                    channel_id     BIGINT,
+                    message_id     BIGINT,
+                    author_id      BIGINT,
+                    contenu        TEXT,
+                    contexte       JSONB,
+                    verdict        JSONB,
+                    cran           INTEGER,
+                    bareme         JSONB,
+                    source         TEXT NOT NULL,
+                    verdict_humain TEXT
+                        CHECK (verdict_humain IN ('correct','faux_positif','disproportionne')),
+                    annotated_by   BIGINT,
+                    imported       BOOLEAN NOT NULL DEFAULT FALSE,
+                    created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+                    annotated_at   TIMESTAMPTZ
+                )
+            """)
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_eval_candidates_guild "
+                "ON automod_eval_candidates (guild_id, created_at)")
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_eval_candidates_pending "
+                "ON automod_eval_candidates (imported) WHERE imported = FALSE")
 
             # Table des rôles sauvegardés (Auto Restore Roles module)
             await conn.execute("""

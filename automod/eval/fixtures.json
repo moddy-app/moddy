@@ -1,0 +1,889 @@
+{
+ "gs-0001": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "",
+   "cible": "auteur_lui_meme",
+   "citation": "",
+   "confiance": "low",
+   "explication": "",
+   "gravite": "basse",
+   "nb_messages_supplementaires": 0,
+   "raison": "",
+   "sanctionnable": false
+  }
+ },
+ "gs-0002": {
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "",
+   "cible": "membre",
+   "citation": "",
+   "confiance": "low",
+   "explication": "",
+   "gravite": "basse",
+   "nb_messages_supplementaires": 0,
+   "raison": "",
+   "sanctionnable": false
+  }
+ },
+ "gs-0003": {
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "insulte",
+   "cible": "membre",
+   "citation": "ferme ta gueule connard",
+   "confiance": "high",
+   "explication": "",
+   "gravite": "moyenne",
+   "nb_messages_supplementaires": 0,
+   "raison": "Contenu problématique.",
+   "sanctionnable": true
+  }
+ },
+ "gs-0004": {
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "menace",
+   "cible": "membre",
+   "citation": "je vais te tuer",
+   "confiance": "high",
+   "explication": "",
+   "gravite": "haute",
+   "nb_messages_supplementaires": 0,
+   "raison": "Contenu problématique.",
+   "sanctionnable": true
+  }
+ },
+ "gs-0005": {
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "",
+   "cible": "aucune",
+   "citation": "",
+   "confiance": "low",
+   "explication": "",
+   "gravite": "basse",
+   "nb_messages_supplementaires": 0,
+   "raison": "",
+   "sanctionnable": false
+  }
+ },
+ "gs-0006": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "",
+   "cible": "membre",
+   "citation": "",
+   "confiance": "low",
+   "explication": "",
+   "gravite": "basse",
+   "nb_messages_supplementaires": 0,
+   "raison": "",
+   "sanctionnable": false
+  }
+ },
+ "gs-0007": {
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "incitation_automutilation",
+   "cible": "membre",
+   "citation": "pends-toi personne te regretterait",
+   "confiance": "high",
+   "explication": "",
+   "gravite": "critique",
+   "nb_messages_supplementaires": 0,
+   "raison": "Contenu problématique.",
+   "sanctionnable": true
+  }
+ },
+ "gs-0008": {
+  "embedding": {
+   "score": 0.0
+  }
+ },
+ "gs-0010": {
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "insulte",
+   "cible": "auteur_lui_meme",
+   "citation": "je suis trop con",
+   "confiance": "high",
+   "explication": "",
+   "gravite": "moyenne",
+   "nb_messages_supplementaires": 0,
+   "raison": "Contenu problématique.",
+   "sanctionnable": true
+  }
+ },
+ "gs-0011": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "",
+   "cible": "membre",
+   "citation": "",
+   "confiance": "low",
+   "explication": "",
+   "gravite": "basse",
+   "nb_messages_supplementaires": 0,
+   "raison": "",
+   "sanctionnable": false
+  }
+ },
+ "gs-0012": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "",
+   "cible": "aucune",
+   "citation": "",
+   "confiance": "low",
+   "explication": "",
+   "gravite": "basse",
+   "nb_messages_supplementaires": 0,
+   "raison": "",
+   "sanctionnable": false
+  }
+ },
+ "gs-0013": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "",
+   "cible": "aucune",
+   "citation": "",
+   "confiance": "low",
+   "explication": "",
+   "gravite": "basse",
+   "nb_messages_supplementaires": 0,
+   "raison": "",
+   "sanctionnable": false
+  }
+ },
+ "gs-0014": {
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "",
+   "cible": "aucune",
+   "citation": "",
+   "confiance": "low",
+   "explication": "",
+   "gravite": "basse",
+   "nb_messages_supplementaires": 0,
+   "raison": "",
+   "sanctionnable": false
+  }
+ },
+ "gs-0015": {
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "insulte",
+   "cible": "aucune",
+   "citation": "con à battre",
+   "confiance": "high",
+   "explication": "",
+   "gravite": "moyenne",
+   "nb_messages_supplementaires": 0,
+   "raison": "Contenu problématique.",
+   "sanctionnable": true
+  }
+ },
+ "gs-0016": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "",
+   "cible": "aucune",
+   "citation": "",
+   "confiance": "low",
+   "explication": "",
+   "gravite": "basse",
+   "nb_messages_supplementaires": 0,
+   "raison": "",
+   "sanctionnable": false
+  }
+ },
+ "gs-0017": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "",
+   "cible": "aucune",
+   "citation": "",
+   "confiance": "low",
+   "explication": "",
+   "gravite": "basse",
+   "nb_messages_supplementaires": 0,
+   "raison": "",
+   "sanctionnable": false
+  }
+ },
+ "gs-0020": {
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "insulte",
+   "cible": "membre",
+   "citation": "t'es qu'une sale merde",
+   "confiance": "high",
+   "explication": "",
+   "gravite": "haute",
+   "nb_messages_supplementaires": 0,
+   "raison": "Contenu problématique.",
+   "sanctionnable": true
+  }
+ },
+ "gs-0021": {
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "menace",
+   "cible": "membre",
+   "citation": "je vais venir chez toi",
+   "confiance": "high",
+   "explication": "",
+   "gravite": "haute",
+   "nb_messages_supplementaires": 0,
+   "raison": "Contenu problématique.",
+   "sanctionnable": true
+  }
+ },
+ "gs-0022": {
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "insulte",
+   "cible": "membre",
+   "citation": "espèce de fils de pute",
+   "confiance": "high",
+   "explication": "",
+   "gravite": "haute",
+   "nb_messages_supplementaires": 0,
+   "raison": "Contenu problématique.",
+   "sanctionnable": true
+  }
+ },
+ "gs-0023": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "haine_discrimination",
+   "cible": "groupe",
+   "citation": "devraient dégager de ce serveur",
+   "confiance": "high",
+   "explication": "",
+   "gravite": "haute",
+   "nb_messages_supplementaires": 0,
+   "raison": "Contenu problématique.",
+   "sanctionnable": true
+  }
+ },
+ "gs-0024": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "harcelement_sexuel",
+   "cible": "membre",
+   "citation": "envoie moi des photos de toi",
+   "confiance": "high",
+   "explication": "",
+   "gravite": "haute",
+   "nb_messages_supplementaires": 0,
+   "raison": "Contenu problématique.",
+   "sanctionnable": true
+  }
+ },
+ "gs-0025": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "doxxing",
+   "cible": "membre",
+   "citation": "son vrai nom et son numéro",
+   "confiance": "high",
+   "explication": "",
+   "gravite": "haute",
+   "nb_messages_supplementaires": 0,
+   "raison": "Contenu problématique.",
+   "sanctionnable": true
+  }
+ },
+ "gs-0026": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "arnaque_scam",
+   "cible": "groupe",
+   "citation": "récupérer tes nitro gratuites",
+   "confiance": "high",
+   "explication": "",
+   "gravite": "moyenne",
+   "nb_messages_supplementaires": 0,
+   "raison": "Contenu problématique.",
+   "sanctionnable": true
+  }
+ },
+ "gs-0027": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "harcelement",
+   "cible": "membre",
+   "citation": "casse toi et reviens jamais",
+   "confiance": "high",
+   "explication": "",
+   "gravite": "haute",
+   "nb_messages_supplementaires": 0,
+   "raison": "Contenu problématique.",
+   "sanctionnable": true
+  }
+ },
+ "gs-0028": {
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "insulte",
+   "cible": "membre",
+   "citation": "espèce de gros débile mental",
+   "confiance": "high",
+   "explication": "",
+   "gravite": "moyenne",
+   "nb_messages_supplementaires": 0,
+   "raison": "Contenu problématique.",
+   "sanctionnable": true
+  }
+ },
+ "gs-0029": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "menace",
+   "cible": "membre",
+   "citation": "je vais te retrouver",
+   "confiance": "high",
+   "explication": "",
+   "gravite": "haute",
+   "nb_messages_supplementaires": 0,
+   "raison": "Contenu problématique.",
+   "sanctionnable": true
+  }
+ },
+ "gs-0040": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "insulte",
+   "cible": "membre",
+   "citation": "connard",
+   "confiance": "high",
+   "explication": "",
+   "gravite": "moyenne",
+   "nb_messages_supplementaires": 0,
+   "raison": "Contenu problématique.",
+   "sanctionnable": true
+  }
+ },
+ "gs-0041": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "menace",
+   "cible": "membre",
+   "citation": "je vais te tuer",
+   "confiance": "high",
+   "explication": "",
+   "gravite": "haute",
+   "nb_messages_supplementaires": 0,
+   "raison": "Contenu problématique.",
+   "sanctionnable": true
+  }
+ },
+ "gs-0042": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "insulte",
+   "cible": "membre",
+   "citation": "t'es vraiment le meilleur",
+   "confiance": "high",
+   "explication": "",
+   "gravite": "moyenne",
+   "nb_messages_supplementaires": 0,
+   "raison": "This suggests the author might be hostile.",
+   "sanctionnable": true
+  }
+ },
+ "gs-0043": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "menace",
+   "cible": "aucune",
+   "citation": "je déteste",
+   "confiance": "high",
+   "explication": "",
+   "gravite": "moyenne",
+   "nb_messages_supplementaires": 0,
+   "raison": "Contenu problématique.",
+   "sanctionnable": true
+  }
+ },
+ "gs-0050": {
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "",
+   "cible": "aucune",
+   "citation": "",
+   "confiance": "low",
+   "explication": "",
+   "gravite": "basse",
+   "nb_messages_supplementaires": 0,
+   "raison": "",
+   "sanctionnable": false
+  }
+ },
+ "gs-0051": {
+  "embedding": {
+   "score": 0.0
+  }
+ },
+ "gs-0052": {
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "",
+   "cible": "aucune",
+   "citation": "",
+   "confiance": "low",
+   "explication": "",
+   "gravite": "basse",
+   "nb_messages_supplementaires": 0,
+   "raison": "",
+   "sanctionnable": false
+  }
+ },
+ "gs-0060": {
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "",
+   "cible": "membre",
+   "citation": "",
+   "confiance": "low",
+   "explication": "",
+   "gravite": "basse",
+   "nb_messages_supplementaires": 0,
+   "raison": "",
+   "sanctionnable": false
+  }
+ },
+ "gs-0061": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "",
+   "cible": "membre",
+   "citation": "",
+   "confiance": "low",
+   "explication": "",
+   "gravite": "basse",
+   "nb_messages_supplementaires": 0,
+   "raison": "",
+   "sanctionnable": false
+  }
+ },
+ "gs-0070": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "",
+   "cible": "aucune",
+   "citation": "",
+   "confiance": "low",
+   "explication": "",
+   "gravite": "basse",
+   "nb_messages_supplementaires": 0,
+   "raison": "",
+   "sanctionnable": false
+  }
+ },
+ "gs-0071": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "",
+   "cible": "aucune",
+   "citation": "",
+   "confiance": "low",
+   "explication": "",
+   "gravite": "basse",
+   "nb_messages_supplementaires": 0,
+   "raison": "",
+   "sanctionnable": false
+  }
+ },
+ "gs-0072": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "",
+   "cible": "aucune",
+   "citation": "",
+   "confiance": "low",
+   "explication": "",
+   "gravite": "basse",
+   "nb_messages_supplementaires": 0,
+   "raison": "",
+   "sanctionnable": false
+  }
+ },
+ "gs-0073": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "",
+   "cible": "aucune",
+   "citation": "",
+   "confiance": "low",
+   "explication": "",
+   "gravite": "basse",
+   "nb_messages_supplementaires": 0,
+   "raison": "",
+   "sanctionnable": false
+  }
+ },
+ "gs-0074": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "insulte",
+   "cible": "membre",
+   "citation": "you're a stupid piece of garbage mod",
+   "confiance": "high",
+   "explication": "",
+   "gravite": "moyenne",
+   "nb_messages_supplementaires": 0,
+   "raison": "Contenu problématique.",
+   "sanctionnable": true
+  }
+ },
+ "gs-0080": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "insulte",
+   "cible": "membre",
+   "citation": "you're such an idiot",
+   "confiance": "high",
+   "explication": "",
+   "gravite": "moyenne",
+   "nb_messages_supplementaires": 0,
+   "raison": "Contenu problématique.",
+   "sanctionnable": true
+  }
+ },
+ "gs-0081": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "menace",
+   "cible": "membre",
+   "citation": "i'm gonna find you and hurt you",
+   "confiance": "high",
+   "explication": "",
+   "gravite": "haute",
+   "nb_messages_supplementaires": 0,
+   "raison": "Contenu problématique.",
+   "sanctionnable": true
+  }
+ },
+ "gs-0082": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "insulte",
+   "cible": "auteur_lui_meme",
+   "citation": "i'm such an idiot",
+   "confiance": "high",
+   "explication": "",
+   "gravite": "moyenne",
+   "nb_messages_supplementaires": 0,
+   "raison": "Contenu problématique.",
+   "sanctionnable": true
+  }
+ },
+ "gs-0083": {
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "incitation_automutilation",
+   "cible": "membre",
+   "citation": "kys already nobody would care",
+   "confiance": "high",
+   "explication": "",
+   "gravite": "critique",
+   "nb_messages_supplementaires": 0,
+   "raison": "Contenu problématique.",
+   "sanctionnable": true
+  }
+ },
+ "gs-0084": {
+  "embedding": {
+   "score": 0.0
+  }
+ },
+ "gs-0085": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "",
+   "cible": "aucune",
+   "citation": "",
+   "confiance": "low",
+   "explication": "",
+   "gravite": "basse",
+   "nb_messages_supplementaires": 0,
+   "raison": "",
+   "sanctionnable": false
+  }
+ },
+ "gs-0090": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "",
+   "cible": "aucune",
+   "citation": "",
+   "confiance": "low",
+   "explication": "",
+   "gravite": "basse",
+   "nb_messages_supplementaires": 0,
+   "raison": "",
+   "sanctionnable": false
+  }
+ },
+ "gs-0091": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "",
+   "cible": "aucune",
+   "citation": "",
+   "confiance": "low",
+   "explication": "",
+   "gravite": "basse",
+   "nb_messages_supplementaires": 0,
+   "raison": "",
+   "sanctionnable": false
+  }
+ },
+ "gs-0100": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "",
+   "cible": "membre",
+   "citation": "",
+   "confiance": "low",
+   "explication": "",
+   "gravite": "basse",
+   "nb_messages_supplementaires": 0,
+   "raison": "",
+   "sanctionnable": false
+  }
+ },
+ "gs-0101": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "",
+   "cible": "membre",
+   "citation": "",
+   "confiance": "low",
+   "explication": "",
+   "gravite": "basse",
+   "nb_messages_supplementaires": 0,
+   "raison": "",
+   "sanctionnable": false
+  }
+ },
+ "gs-0110": {
+  "stop": true
+ },
+ "gs-0111": {
+  "stop": true
+ },
+ "gs-0112": {
+  "stop": true
+ },
+ "gs-0113": {
+  "stop": true
+ },
+ "gs-0114": {
+  "stop": true
+ },
+ "gs-0115": {
+  "stop": true
+ },
+ "gs-0120": {
+  "embedding": {
+   "score": 0.0
+  }
+ },
+ "gs-0121": {
+  "embedding": {
+   "score": 0.0
+  }
+ },
+ "gs-0122": {
+  "embedding": {
+   "score": 0.0
+  }
+ },
+ "gs-0123": {
+  "embedding": {
+   "score": 0.0
+  }
+ },
+ "gs-0130": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "insulte",
+   "cible": "membre",
+   "citation": "t'es lourd toi",
+   "confiance": "low",
+   "explication": "",
+   "gravite": "basse",
+   "nb_messages_supplementaires": 0,
+   "raison": "Contenu problématique.",
+   "sanctionnable": true
+  }
+ },
+ "gs-0131": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "",
+   "cible": "membre",
+   "citation": "",
+   "confiance": "low",
+   "explication": "",
+   "gravite": "basse",
+   "nb_messages_supplementaires": 0,
+   "raison": "",
+   "sanctionnable": false
+  }
+ }
+}
