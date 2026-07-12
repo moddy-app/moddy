@@ -35,7 +35,7 @@ memoise it:
 ### 2. First automated test suite for the detection core
 
 There was **no** automated test suite for the pure-Python, Discord-agnostic
-automod pipeline. Added `tests/automod/` (pytest, 101 tests):
+automod pipeline. Added `tests/automod/` (pytest, 147 tests):
 
 - `test_normalize.py` — accent/leet folding, repeat collapse, de-spam.
 - `test_prefiltre.py` — bot/system/empty short-circuits.
@@ -51,20 +51,27 @@ automod pipeline. Added `tests/automod/` (pytest, 101 tests):
 - `test_engine.py` — funnel routing: trivial & blocklist **skip** the embedding
   step, embedding above/below threshold, `force_nano`, and a 5×-flood → 1 embed
   call integration test.
+- `test_injection.py` — nonce randomness/shape + that a forged close marker
+  survives only as inert fenced data (the prompt-injection guarantee).
+- `test_nano.py` — the **decision contract**: `parse_verdict` coercion (allowed
+  actions/gravite/confiance, duration clamp, others→str, besoin-context clears
+  the sanction), **fence-marker stripping** from user-facing fields, the payload
+  carrying **no** detector signal (nano judges cold), and the bounded `juger`
+  loop (rounds cap, context-budget stop, chat-error → safe non-sanction).
 
 Tooling: `pytest.ini` (asyncio auto mode), `requirements-dev.txt`, root
 `conftest.py` (repo root on `sys.path`).
 
 ## Files
 
-- Added: `automod/cache.py`, `tests/automod/test_*.py` (7 files), `pytest.ini`,
+- Added: `automod/cache.py`, `tests/automod/test_*.py` (9 files), `pytest.ini`,
   `requirements-dev.txt`, `conftest.py`, this log.
 - Modified: `automod/embeddings.py`, `automod/constants.py`, `automod/engine.py`,
   `docs/AUTOMOD.md`, `CLAUDE.md`.
 
 ## Verification
 
-`pytest` → **102 passed** (101 automod + the pre-existing `test_embeds.py`). The
+`pytest` → **147 passed** (146 automod + the pre-existing `test_embeds.py`). The
 baseline detection tests were written **before** the cache and still pass
 unchanged afterwards, which is the proof that the cache is behavior-preserving.
 
