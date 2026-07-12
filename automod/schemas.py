@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Optional
 
 
 @dataclass
@@ -75,12 +75,12 @@ class BlocklistEntry:
 
 @dataclass
 class Decision:
-    """The pipeline's output contract (see docs/AUTOMOD.md §7)."""
+    """The pipeline's output contract (see docs/AUTOMOD.md §2)."""
     message_id: str
     auteur_id: str
     sanctionnable: bool
-    actions: List[str]          # ⊆ {"ban", "mute", "warn", "supprimer"}
-    categorie: str
+    actions: List[str]          # ⊆ {"ban", "mute", "warn", "supprimer"}  # TODO(session2): moves to the barème
+    categorie: str              # canonical FR category (see nano.CATEGORIES)
     gravite: str                # basse | moyenne | haute | critique
     raison: str                 # FACTUAL only: what the message contains / which rule it breaks
     explication: str            # 1–2 sentences: WHY this decision (the reasoning)
@@ -88,4 +88,11 @@ class Decision:
     signal_source: str          # "regex" | "embedding" | "signalé_par_nano"
     score_detecteur: float      # detector input score
     a_reverifier: List[str] = field(default_factory=list)
-    duree_heures: int = 0       # temporary-sanction duration in hours (0 = permanent)
+    duree_heures: int = 0       # temporary-sanction duration in hours (0 = permanent)  # TODO(session2)
+    # v2 grounding contract (docs/AUTOMOD.md §2).
+    citation: str = ""          # verbatim substring of the target that justifies the category
+    cible: str = "aucune"       # "membre" | "auteur_lui_meme" | "groupe" | "aucune"
+    # Set when a deterministic grounding guard voided an otherwise-sanctionnable
+    # verdict (motif, e.g. "grounding_citation_absente"). None when clean. Kept
+    # for logs / the alert card so avoided false positives are observable.
+    rejet_grounding: Optional[str] = None

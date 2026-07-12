@@ -64,10 +64,13 @@ EMBED_CACHE_TTL_SECONDS: float = 1800.0  # 30 minutes
 
 # --- nano (step 5) ----------------------------------------------------------
 
-# nano model + sampling. Low temperature for stable decisions.
+# nano model + sampling. This is classification, not generation: temperature 0
+# removes needless randomness from what should be a deterministic verdict.
 NANO_MODEL: str = "gpt-4.1-nano"
-NANO_TEMPERATURE: float = 0.2
-NANO_MAX_TOKENS: int = 400
+NANO_TEMPERATURE: float = 0.0
+# The v2 verdict contract is lean (no free-form ladder reasoning), so 300 tokens
+# is comfortably enough for the JSON object.
+NANO_MAX_TOKENS: int = 300
 
 # Context window sizing (messages preceding the target, same channel).
 CONTEXTE_INITIAL: int = 12     # first call
@@ -90,6 +93,32 @@ CALL_TYPE_EMBED: str = "automod_embed"
 SOURCE_REGEX: str = "regex"
 SOURCE_EMBEDDING: str = "embedding"
 SOURCE_NANO_FLAG: str = "signalé_par_nano"
+
+
+# --- Verdict categories (canonical FR set, v2 contract) ---------------------
+#
+# nano's v2 contract emits one of these canonical French categories. The legacy
+# detector/blocklist categories (``insultes``, ``menaces``, ``contenu_sexuel``…)
+# and any old values stored on existing cases are folded onto this set via
+# ``nano.CATEGORIE_ALIASES`` / ``nano.normalize_categorie`` so nothing needs a
+# manual data migration.
+CATEGORIES = (
+    "insulte",
+    "menace",
+    "harcelement",
+    "harcelement_sexuel",
+    "haine_discrimination",
+    "incitation_automutilation",
+    "doxxing",
+    "arnaque_scam",
+    "violation_indications",
+)
+
+# Categories that structurally require a victim: an insult/threat/harassment
+# with no target (or aimed at the author themselves) is not a real violation.
+CATEGORIES_AVEC_VICTIME = frozenset({
+    "insulte", "menace", "harcelement", "harcelement_sexuel",
+})
 
 
 # --- Gravity → indicative confidence map (regex signals) --------------------
