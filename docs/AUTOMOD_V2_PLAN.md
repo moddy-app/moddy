@@ -11,7 +11,7 @@
 | 1 | Grounding & contrat de verdict v2 | ✅ Terminée | 2026-07-12 | Garde-fous grounding déterministes, prompt nano v2, contrat `citation`/`cible`, historique retiré du payload nano, temp 0.0. Tests : `tests/automod/test_nano_grounding.py`. |
 | 2 | Barème déterministe & moteur de récidive | ✅ Terminée | 2026-07-12 | `automod/bareme.py` pur (ladder + plancher + récidive à demi-vie + modulateurs + kill-switch), `db.list_member_sanctions` (fiabilité dérivée de l'issuer + appel, sans migration), module applique le cran (nano ne décide plus les actions), breakdown sur carte + timeline, config `max_action`/`langue_serveur`, appel accepté → poids 0 + purge `messages_deja_moderes`. Tests : `tests/automod/test_bareme.py` (36 cas). |
 | 3 | Harnais de régression & shadow mode | ✅ Terminée | 2026-07-12 | Golden set `automod/eval/golden.jsonl` (62 cas), runner offline `automod/eval/run.py` (`--replay`/`--live`, précision/rappel/F1 + matrice de confusion + diff baseline), `golden_baseline.json` commitée, **gate CI** : régression `faux_positif_reel` ⇒ exit≠0. Shadow mode `dry_run` : carte SIMULATION + 3 boutons d'annotation persistants → `automod_eval_candidates`, `make eval-import`. Tests : `tests/automod/test_eval_harness.py` (13 cas). |
-| 4 | Coûts & anti-fragmentation | ⬜ À faire | — | — |
+| 4 | Coûts & anti-fragmentation | ✅ Terminée | 2026-07-12 | Cache de verdicts nano (per-guild, TTL 600 s, LRU 2048, single-flight) → raid copypasta = 1 appel ; agrégation par auteur (buffer Redis 45 s, concat routée sur blocklist+embedding, `agregat_de` sur la Decision + prompt) ; budget guard par guild (compteur Redis/jour, cap 300, mode dégradé sans coupure + carte one-off) ; clé du cache embedding normalisée (§4.4) + troncature à 1500 c. Tests : `test_verdict_cache.py`, `test_aggregation.py`, `test_budget_guard.py` (+ embeddings). Runner S3 vert (aucune régression FP). |
 | 5 | Graphe relationnel & réaction de la cible | ⬜ À faire | — | — |
 | 6 | Routing par difficulté (nano → mini) | ⬜ À faire | — | — |
 | 7 | Précédents serveur (jurisprudence RAG) | ⬜ À faire | — | — |
@@ -133,6 +133,52 @@ du barème sont déjà prêts à alimenter les annotations.
 
 **Suites (pour S4) :** cache de verdicts nano + agrégation anti-fragmentation + budget guard ; le
 runner S3 sert désormais de filet pour mesurer chaque optimisation sans régression FP.
+
+### Journal de session 4 (2026-07-12)
+
+**Livré :**
+- `automod/constants.py` — constantes S4 : `PREFILTRE_MAX_CHARS=1500`, cache verdicts
+  (`VERDICT_CACHE_*`), agrégation (`AGGREGATION_*`), budget guard
+  (`NANO_DAILY_SOFT_CAP=300`, `NANO_DEGRADED_SCORE_MARGIN=0.10`, `BUDGET_KEY_TTL_SECONDS`).
+- `automod/engine.py` — refactor du funnel en primitives réutilisables (`_route_message` /
+  `_route_semantic`) + `_decide` (probe cache gratuit → budget gate → `_nano_call`).
+  **Cache de verdicts** per-guild (clé `sha256(guild + collapse_repeats(texte))`, TTL 600 s,
+  LRU 2048, single-flight) : ne mémorise que la *qualification* (le barème est recalculé).
+  **Agrégation** par `(guild, channel, auteur)` via `bot.redis` (buffer glissant 45 s, concat
+  routée sur blocklist+embedding uniquement, anti-double-jugement par set Redis). **Budget
+  guard** par guild (compteur Redis/jour, cap configurable via `automod:budget:cap:{guild}`,
+  mode dégradé : regex ou embedding ≥ seuil+0.10, jamais de coupure sèche ; carte one-off via
+  `pop_budget_notice`). Diagnostics : `verdict_cache_stats()`, `budget_stats()`.
+- `automod/embeddings.py` — clé de cache = forme collapsed/normalisée (`cache_key`, §4.4) →
+  "aaaa"/"aaaaa" et "Con"/"con" partagent l'entrée ; troncature des messages > 1500 c à leur
+  forme collapsed avant embedding.
+- `automod/nano.py` + `schemas.py` — contrat d'agrégat : `build_system_prompt(is_agregat=)`
+  ajoute la règle *AGGREGATED MESSAGE*, `build_user_payload(agregat_de=)` marque
+  `message_cible.agregat_de`, `juger(agregat_de=)` pose `Decision.agregat_de` /
+  `agregat_contenu`.
+- `modules/automod.py` — `analyze(channel_id=…)` (active l'agrégation) ; suppression étendue à
+  tous les fragments (`_delete_offending`) ; evidence/carte affichent le texte agrégé ; carte
+  « budget IA du jour atteint » one-off (`_notify_budget_reduced`, i18n `budget.*`).
+- i18n `modules.automod.budget.{title,body}` (fr + en-US).
+- Tests : `tests/automod/test_verdict_cache.py` (7 cas), `test_aggregation.py` (5),
+  `test_budget_guard.py` (9), + cache-key/troncature dans `test_embeddings.py`. 198 verts au
+  total ; runner S3 `--replay` toujours 1.0/1.0 (aucune régression FP).
+
+**Décisions :**
+- **Probe cache AVANT le budget guard** : une qualification déjà en cache est servie
+  gratuitement même quand la guild est au-dessus de son budget (cohérence + économie).
+- **Le barème n'est jamais caché** : seule la qualification l'est. Même texte + même guild ⇒
+  même qualification (correct par construction) ; la récidive de l'auteur, elle, diffère.
+- **Budget cap configurable en Redis** (`automod:budget:cap:{guild}`) plutôt qu'une nouvelle
+  colonne : zéro migration, ops-friendly, indépendant des quotas gateway (qui restent gérés par
+  `QuotaManager`). Le TODO plan « via `quota_overrides` » est satisfait par cet override.
+- **Agrégation gated sur `bot.redis`** : sans Redis, le comportement message-par-message est
+  strictement inchangé (aucune régression sur un déploiement sans Redis).
+- **Anti-double-jugement** : dès qu'un fragment atteint nano individuellement, tout agrégat de
+  sa fenêtre est sauté (set Redis `automod:agg:judged:*`), évitant de sanctionner deux fois.
+
+**Suites (pour S5) :** graphe relationnel + réaction de la cible (le budget guard compte déjà
+les appels nano, prêt à absorber le coût mini de S6 avec un poids ×4).
 
 <!-- ======================================================================= -->
 
@@ -734,10 +780,10 @@ un `SEUIL_EMBEDDING` mal calibré ou un raid sans cache — d'où 4.1 + 4.3.
 
 ## Critères de fin
 
-- [ ] Cache verdicts + stats live, testé (hit sur texte identique, miss inter-guild).
-- [ ] Agrégation fenêtre : test "je vais / te / retrouver" → détecté ; fragments innocents → rien.
-- [ ] Budget guard testé (cap atteint ⇒ mode dégradé, pas de coupure sèche).
-- [ ] Tableau de coûts dans `AUTOMOD.md`.
+- [x] Cache verdicts + stats live, testé (hit sur texte identique, miss inter-guild).
+- [x] Agrégation fenêtre : test "je vais / te / retrouver" → détecté ; fragments innocents → rien.
+- [x] Budget guard testé (cap atteint ⇒ mode dégradé, pas de coupure sèche).
+- [x] Tableau de coûts dans `AUTOMOD.md`.
 
 ---
 ---

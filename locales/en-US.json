@@ -1570,6 +1570,10 @@
         "review_hint": "Heavy AI-decided sanction — a moderator can review it.",
         "bounds": "Bounds 0–7"
       },
+      "budget": {
+        "title": "Daily AI budget reached",
+        "body": "The automod's daily AI-analysis quota ({cap}) has been reached for today. Flagrant cases (explicit terms, content well above the threshold) are still handled and deleted, but the AI's sensitivity is reduced until tomorrow. This message is shown only once per day."
+      },
       "shadow": {
         "badge": "SIMULATION — no action applied",
         "would_apply": "Simulated sanction",

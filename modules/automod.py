@@ -159,6 +159,7 @@ class ContentModerationFeature(AutomodFeature):
             is_system=message.type not in (discord.MessageType.default, discord.MessageType.reply),
             severity=self.module.severity,
             response_language=self.module.response_language(message.guild),
+            channel_id=message.channel.id,
         )
         if decision is not None:
             decisions.append(decision)
@@ -383,6 +384,14 @@ class AutomodModule(ModuleBase):
                         self.guild_id, e, exc_info=True,
                     )
 
+        # Budget guard (session 4): if this guild has just crossed its daily nano
+        # soft cap, post a one-off notice that sensitivity is reduced for today.
+        try:
+            if get_engine(self.bot).pop_budget_notice(self.guild_id):
+                await self._notify_budget_reduced(message.guild)
+        except Exception as e:
+            logger.debug("automod: budget notice failed (guild %s): %s", self.guild_id, e)
+
     # -- Providers for the pipeline ----------------------------------------
 
     def make_context_loader(self, message: discord.Message):
@@ -558,6 +567,34 @@ class AutomodModule(ModuleBase):
             self.bot._moddy_initiated_sanctions = store
         store[(self.guild_id, user_id, action)] = time.time()
 
+    async def _delete_offending(self, message: discord.Message,
+                                decision: Decision) -> bool:
+        """Delete the offending message and every aggregated fragment.
+
+        Returns True if at least one message was deleted. For a normal decision
+        this is just ``decision.message_id``; for an aggregate (fragmented
+        harassment) it is every id in ``decision.agregat_de``.
+        """
+        ids: List[str] = []
+        for raw in [decision.message_id, *getattr(decision, "agregat_de", [])]:
+            if raw and raw not in ids:
+                ids.append(raw)
+
+        deleted_any = False
+        for raw_id in ids:
+            msg = message if str(message.id) == raw_id else None
+            if msg is None:
+                try:
+                    msg = await message.channel.fetch_message(int(raw_id))
+                except (discord.NotFound, discord.Forbidden, discord.HTTPException, ValueError):
+                    continue
+            try:
+                await msg.delete()
+                deleted_any = True
+            except (discord.NotFound, discord.Forbidden, discord.HTTPException):
+                continue
+        return deleted_any
+
     async def apply_decision(self, message: discord.Message, decision: Decision):
         if not decision.sanctionnable:
             return
@@ -585,20 +622,12 @@ class AutomodModule(ModuleBase):
 
         applied: List[str] = []
 
-        # 1. Delete the offending message (no case needed for this).
+        # 1. Delete the offending message(s) (no case needed for this). An
+        #    aggregate decision (fragmented harassment) carries every fragment id
+        #    in `agregat_de`; all of them go.
         if "supprimer" in actions:
-            target_msg = message if str(message.id) == decision.message_id else None
-            if target_msg is None:
-                try:
-                    target_msg = await message.channel.fetch_message(int(decision.message_id))
-                except (discord.NotFound, discord.Forbidden, discord.HTTPException):
-                    target_msg = None
-            if target_msg is not None:
-                try:
-                    await target_msg.delete()
-                    applied.append("supprimer")
-                except (discord.NotFound, discord.Forbidden, discord.HTTPException):
-                    pass
+            if await self._delete_offending(message, decision):
+                applied.append("supprimer")
 
         # 2. Record the case FIRST so the Discord audit-log reason can carry the
         #    public case reference, exactly like a manual sanction.
@@ -720,7 +749,9 @@ class AutomodModule(ModuleBase):
 
         # Factual reason (issuer already identifies automod — no "[Automod]" noise).
         case_reason = (decision.raison or decision.categorie or "Message problématique")[:480]
-        extrait = (message.content or "")[:1500]
+        # An aggregate decision judged the concatenation of several fragments;
+        # show that combined text as the evidence extract.
+        extrait = (getattr(decision, "agregat_contenu", "") or message.content or "")[:1500]
         note = f"Automod · {decision.categorie} · {decision.gravite}"
 
         case_ref = case_id = None
@@ -970,6 +1001,40 @@ class AutomodModule(ModuleBase):
         except (discord.Forbidden, discord.HTTPException):
             return
 
+    async def _notify_budget_reduced(self, guild: Optional[discord.Guild]):
+        """Post a one-off 'AI budget reached — reduced sensitivity' card.
+
+        Fired at most once per guild per UTC day (the engine gates it): past the
+        daily nano soft cap the funnel keeps deleting flagrant cases but stops
+        spending AI calls on borderline ones. Purely informational.
+        """
+        if not self.notify_channel_id or guild is None:
+            return
+        channel = guild.get_channel(int(self.notify_channel_id))
+        if not channel or not isinstance(channel, discord.TextChannel):
+            return
+        me = guild.me
+        if not me or not channel.permissions_for(me).send_messages:
+            return
+
+        from discord import ui
+        from utils.emojis import SHIELD
+        from config import COLORS
+
+        locale = self.guild_locale(guild)
+        view = ui.LayoutView(timeout=None)
+        container = ui.Container(accent_colour=discord.Colour(COLORS["warning"]))
+        container.add_item(ui.TextDisplay(
+            f"### {SHIELD} {t('modules.automod.budget.title', locale=locale)}"))
+        container.add_item(ui.TextDisplay(
+            t("modules.automod.budget.body", locale=locale,
+              cap=ac.NANO_DAILY_SOFT_CAP)))
+        view.add_item(container)
+        try:
+            await channel.send(view=view)
+        except (discord.Forbidden, discord.HTTPException):
+            return
+
     async def _notify_channel(self, message: discord.Message, decision: Decision,
                               applied: List[str], case_ref: Optional[str],
                               primary_action: Optional[str] = None,
@@ -1038,9 +1103,10 @@ class AutomodModule(ModuleBase):
             f"-# {t('modules.automod.log.appeal_hint', locale=locale)}"))
         view.add_item(container)
 
-        # Offending message — spoilered, attached as a file when too long.
+        # Offending message — spoilered, attached as a file when too long. For an
+        # aggregate, show the concatenated fragments that were judged together.
         files: List[discord.File] = []
-        content = message.content or ""
+        content = getattr(decision, "agregat_contenu", "") or message.content or ""
         deleted = "supprimer" in applied
         ts = int(message.created_at.timestamp())
         author_name = getattr(message.author, "display_name", str(message.author))

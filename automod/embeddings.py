@@ -33,6 +33,17 @@ logger = logging.getLogger("moddy.automod.embeddings")
 _REFERENCES_PATH = Path(__file__).parent / "data" / "references.json"
 
 
+def cache_key(content: str) -> str:
+    """The key a message's score is memoised under.
+
+    Collapsing + normalisation run **before** the key is derived (session 4.4)
+    so a padded/repeated variant of a message shares its cache entry: "aaaa" and
+    "aaaaa" both key onto "a", "Con" and "con" onto "con". Falls back to the raw
+    text when normalisation empties it (e.g. an emoji-only message).
+    """
+    return collapse_repeats(content) or content
+
+
 def _segment(content: str) -> List[str]:
     """Return the texts to embed for one message (usually just the message).
 
@@ -41,10 +52,17 @@ def _segment(content: str) -> List[str]:
     **when an actual repetition is detected** — in that case we additionally
     embed the single de-duplicated unit, scored on its own. Normal messages
     cost exactly one embedding, as before.
+
+    A message longer than ``PREFILTRE_MAX_CHARS`` is embedded as its de-spammed
+    (collapsed) form only, truncated to the cap: a wall of text never needs its
+    full length embedded, and the toxic phrase, if any, survives collapsing.
     """
-    candidates: List[str] = [content]
     norm = normalize_spaced(content)
     collapsed = collapse_repeats(content)
+    if len(content) > constants.PREFILTRE_MAX_CHARS:
+        reduced = (collapsed or norm or content)[: constants.PREFILTRE_MAX_CHARS]
+        return [reduced] if reduced else []
+    candidates: List[str] = [content]
     # A genuine repetition shrank the text → score the bare unit too.
     if collapsed and collapsed != norm and len(collapsed) < len(norm):
         candidates.append(collapsed)
@@ -157,23 +175,27 @@ class EmbeddingEngine:
         if not self._ready:
             return None
 
-        cached = self._cache.get(content)
+        # The cache key is the collapsed/normalised form (session 4.4), so padded
+        # or re-cased variants of a message share one entry and one embed call.
+        key = cache_key(content)
+
+        cached = self._cache.get(key)
         if cached is not MISS:
             return cached
 
         # Coalesce a burst of identical in-flight requests onto one computation.
-        pending = self._inflight.get(content)
+        pending = self._inflight.get(key)
         if pending is not None:
             return await pending
 
         loop = asyncio.get_event_loop()
         future: "asyncio.Future" = loop.create_future()
         future.add_done_callback(_retrieve_result)
-        self._inflight[content] = future
+        self._inflight[key] = future
         try:
             result = await self._compute_score(content)
         except BaseException as exc:  # propagate to this caller and any waiters
-            self._inflight.pop(content, None)
+            self._inflight.pop(key, None)
             if not future.done():
                 future.set_exception(exc)
             raise
@@ -181,8 +203,8 @@ class EmbeddingEngine:
             # Only cache real results — never a transient None (not-ready / empty
             # embedding response), so a blip doesn't get pinned in the cache.
             if result is not None:
-                self._cache.set(content, result)
-            self._inflight.pop(content, None)
+                self._cache.set(key, result)
+            self._inflight.pop(key, None)
             if not future.done():
                 future.set_result(result)
             return result
