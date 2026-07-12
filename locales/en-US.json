@@ -1393,6 +1393,21 @@
         "status_hint": "Check/uncheck in the menu below to enable or disable.",
         "activations": {
           "placeholder": "Enable / disable…"
+        },
+        "section_limits": "Limits & language",
+        "max_action": {
+          "desc": "The most severe action the automod is allowed to apply.",
+          "placeholder": "Maximum action…",
+          "option_warn": "Warn at most",
+          "option_mute": "Mute at most",
+          "option_ban": "Ban allowed"
+        },
+        "language": {
+          "desc": "Language of sanction messages (reason, member DM).",
+          "placeholder": "Sanction language…",
+          "auto": "Automatic (server language)",
+          "fr": "French",
+          "en": "English"
         }
       },
       "action": {
@@ -1535,6 +1550,20 @@
         "server_opened": "{user} appealed to the Moddy team (case {case}).",
         "server_decided_title": "Appeal handled",
         "server_decided": "{user}'s appeal ({route}) was handled: **{status}**."
+      },
+      "bareme": {
+        "title": "Scale: {sanction} (rung {cran})",
+        "cran": "rung {n}",
+        "floor": "Floor",
+        "recidivism": "Recidivism",
+        "severity": "Server severity",
+        "confidence": "Confidence cap",
+        "veteran": "Tenure (clean record)",
+        "fresh_account": "New account",
+        "ceiling": "Server ceiling",
+        "disabled_category": "Disabled category",
+        "review_hint": "Heavy AI-decided sanction — a moderator can review it.",
+        "bounds": "Bounds 0–7"
       }
     }
   },
