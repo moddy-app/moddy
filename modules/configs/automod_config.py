@@ -41,6 +41,8 @@ _DEFAULT_CONFIG = {
     "notify_channel_id": None,
     "ignore_moderators": True,
     "severity": ac.SEVERITY_DEFAULT,
+    "max_action": "ban",
+    "langue_serveur": "auto",
     "features": {
         "content": {"enabled": False, "exempt_roles": [], "exempt_channels": []},
     },
@@ -58,6 +60,10 @@ def _deep_default(current: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     cfg["notify_channel_id"] = current.get("notify_channel_id", current.get("log_channel_id"))
     cfg["ignore_moderators"] = bool(current.get("ignore_moderators", True))
     cfg["severity"] = ac.clamp_severity(current.get("severity", ac.SEVERITY_DEFAULT))
+    max_action = str(current.get("max_action", "ban") or "ban")
+    cfg["max_action"] = max_action if max_action in ("warn", "mute", "ban") else "ban"
+    langue = str(current.get("langue_serveur", "auto") or "auto")
+    cfg["langue_serveur"] = langue if langue in ("auto", "fr", "en-US") else "auto"
     content = (current.get("features", {}) or {}).get("content", {}) or {}
     cfg["features"]["content"] = {
         "enabled": bool(content.get("enabled", False)),
@@ -285,6 +291,48 @@ class AutomodConfigView(BaseView):
         sev_row.add_item(sev_select)
         container.add_item(sev_row)
 
+        # ── Limits & language (max sanction the automod may apply + DM tongue) ─
+        container.add_item(ui.TextDisplay(
+            f"{SETTINGS} **{t('modules.automod.config.section_limits', locale=self.locale)}**\n"
+            f"-# {t('modules.automod.config.max_action.desc', locale=self.locale)}"
+        ))
+        max_action = cfg.get("max_action", "ban")
+        maxa_row = ui.ActionRow()
+        maxa_select = ui.Select(
+            placeholder=t("modules.automod.config.max_action.placeholder", locale=self.locale),
+            min_values=1, max_values=1,
+            options=[
+                discord.SelectOption(
+                    label=t(f"modules.automod.config.max_action.option_{v}", locale=self.locale),
+                    value=v, default=(v == max_action),
+                )
+                for v in ("warn", "mute", "ban")
+            ],
+        )
+        maxa_select.callback = self.on_max_action
+        maxa_row.add_item(maxa_select)
+        container.add_item(maxa_row)
+
+        container.add_item(ui.TextDisplay(
+            f"-# {t('modules.automod.config.language.desc', locale=self.locale)}"
+        ))
+        langue = cfg.get("langue_serveur", "auto")
+        lang_row = ui.ActionRow()
+        lang_select = ui.Select(
+            placeholder=t("modules.automod.config.language.placeholder", locale=self.locale),
+            min_values=1, max_values=1,
+            options=[
+                discord.SelectOption(
+                    label=t(f"modules.automod.config.language.{key}", locale=self.locale),
+                    value=value, default=(value == langue),
+                )
+                for key, value in (("auto", "auto"), ("fr", "fr"), ("en", "en-US"))
+            ],
+        )
+        lang_select.callback = self.on_language
+        lang_row.add_item(lang_select)
+        container.add_item(lang_row)
+
         # ── Guidance (button+modal → keep a preview, can't show it inline) ─
         indications = cfg.get("indications", "")
         if indications:
@@ -431,6 +479,24 @@ class AutomodConfigView(BaseView):
         values = interaction.data.get("values", [])
         if values:
             self.working_config["severity"] = ac.clamp_severity(values[0])
+        self.has_changes = True
+        await self._rerender(interaction)
+
+    async def on_max_action(self, interaction: discord.Interaction):
+        if not await self._check_user(interaction):
+            return
+        values = interaction.data.get("values", [])
+        if values and values[0] in ("warn", "mute", "ban"):
+            self.working_config["max_action"] = values[0]
+        self.has_changes = True
+        await self._rerender(interaction)
+
+    async def on_language(self, interaction: discord.Interaction):
+        if not await self._check_user(interaction):
+            return
+        values = interaction.data.get("values", [])
+        if values and values[0] in ("auto", "fr", "en-US"):
+            self.working_config["langue_serveur"] = values[0]
         self.has_changes = True
         await self._rerender(interaction)
 

@@ -1392,6 +1392,21 @@
         "status_hint": "Coche/décoche dans le menu ci-dessous pour activer ou désactiver.",
         "activations": {
           "placeholder": "Activer / désactiver…"
+        },
+        "section_limits": "Limites & langue",
+        "max_action": {
+          "desc": "Action la plus sévère que l'automod peut appliquer.",
+          "placeholder": "Action maximale…",
+          "option_warn": "Avertissement au maximum",
+          "option_mute": "Exclusion au maximum",
+          "option_ban": "Bannissement autorisé"
+        },
+        "language": {
+          "desc": "Langue des messages de sanction (raison, DM du membre).",
+          "placeholder": "Langue des sanctions…",
+          "auto": "Automatique (langue du serveur)",
+          "fr": "Français",
+          "en": "Anglais"
         }
       },
       "action": {
@@ -1534,6 +1549,20 @@
         "server_opened": "{user} a fait appel auprès de l'équipe Moddy (dossier {case}).",
         "server_decided_title": "Appel traité",
         "server_decided": "L'appel de {user} ({route}) a été traité : **{status}**."
+      },
+      "bareme": {
+        "title": "Barème : {sanction} (cran {cran})",
+        "cran": "cran {n}",
+        "floor": "Plancher",
+        "recidivism": "Récidive",
+        "severity": "Sévérité serveur",
+        "confidence": "Plafond de confiance",
+        "veteran": "Ancienneté (casier vierge)",
+        "fresh_account": "Compte récent",
+        "ceiling": "Plafond du serveur",
+        "disabled_category": "Catégorie désactivée",
+        "review_hint": "Sanction lourde décidée par l'IA — un modérateur peut la réviser.",
+        "bounds": "Bornes 0–7"
       }
     }
   },

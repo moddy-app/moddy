@@ -9,7 +9,7 @@
 | # | Session | État | Date | Commit / notes |
 |---|---|---|---|---|
 | 1 | Grounding & contrat de verdict v2 | ✅ Terminée | 2026-07-12 | Garde-fous grounding déterministes, prompt nano v2, contrat `citation`/`cible`, historique retiré du payload nano, temp 0.0. Tests : `tests/automod/test_nano_grounding.py`. |
-| 2 | Barème déterministe & moteur de récidive | ⬜ À faire | — | — |
+| 2 | Barème déterministe & moteur de récidive | ✅ Terminée | 2026-07-12 | `automod/bareme.py` pur (ladder + plancher + récidive à demi-vie + modulateurs + kill-switch), `db.list_member_sanctions` (fiabilité dérivée de l'issuer + appel, sans migration), module applique le cran (nano ne décide plus les actions), breakdown sur carte + timeline, config `max_action`/`langue_serveur`, appel accepté → poids 0 + purge `messages_deja_moderes`. Tests : `tests/automod/test_bareme.py` (36 cas). |
 | 3 | Harnais de régression & shadow mode | ⬜ À faire | — | — |
 | 4 | Coûts & anti-fragmentation | ⬜ À faire | — | — |
 | 5 | Graphe relationnel & réaction de la cible | ⬜ À faire | — | — |
@@ -43,6 +43,48 @@
 **Suites (pour S2) :** brancher le barème déterministe, réintroduire la sévérité comme modulateur
 de cran, retirer `actions`/`duree_heures` du contrat nano, consommer `history` dans le moteur de
 récidive.
+
+### Journal de session 2 (2026-07-12)
+
+**Livré :**
+- `automod/bareme.py` — module **pur** : `LADDER` (cran → actions/durée), `PLANCHER`
+  (catégorie×gravité), moteur de récidive à points pondérés + décroissance demi-vie 45 j
+  (`points_actifs`/`crans_recidive`, `POIDS_SOURCE`, `MULT_MEME_CATEGORIE`), modulateurs dans
+  l'ordre §2.4 (sévérité, plafond confiance, bonus vétéran, malus compte neuf, plafond
+  `max_action`), kill-switch `categories_desactivees`, sortie `ResultatBareme` avec
+  `composantes` (breakdown explicable, somme = cran) + flag `needs_review` (cran ≥ 6).
+- `db/repositories/moderation.py` — `list_member_sanctions(guild, user, since)` renvoyant
+  `{action, categorie, gravite, date, source_fiabilite}` ; `source_fiabilite` **dérivée** de
+  `issued_by_type` + dernier statut d'appel (`case_appeals`) — aucune migration. Exclusion des
+  cases à appel accepté dans `list_automod_evidence_message_ids` (purge `messages_deja_moderes`).
+- `automod/nano.py` + `schemas.py` — `actions`/`duree_heures` **retirés** du contrat nano
+  (prompt, `parse_verdict`, `_DEFAULT_VERDICT`, `_reject`, `juger`). `Decision.actions` reste
+  mais est désormais rempli par le barème côté module.
+- `modules/automod.py` — `_compute_bareme` (charge l'historique 180 j, l'ancienneté du membre,
+  la config), applique le cran (écrase `decision.actions`/`duree_heures`), breakdown localisé sur
+  la carte d'alerte + payload d'evidence (`cran`, `points_recidive`, `bareme`). Config
+  `max_action`/`langue_serveur`/`categories_desactivees` chargée + validée ; `guild_locale`
+  honore `langue_serveur`.
+- `modules/configs/automod_config.py` — section **Limites & langue** (selects `max_action` +
+  `langue_serveur`).
+- i18n `modules.automod.bareme.*` + `modules.automod.config.{section_limits,max_action,language}`
+  (fr + en-US).
+- Tests : `tests/automod/test_bareme.py` (36 cas table-driven) ; S1 adaptés (nano ne porte plus
+  d'actions).
+
+**Décisions :**
+- **`source_fiabilite` dérivée, pas stockée.** Plutôt que muter la sanction sur décision d'appel
+  (schéma), on la dérive à la lecture depuis `issued_by_type` + `case_appeals.status`. Idem pour
+  la purge de `messages_deja_moderes` (exclusion des cases à appel accepté dans la requête).
+  Résultat identique au plan (§2.5) mais **sans migration** — `AppealService.decide` écrit déjà
+  le statut, donc rien à ajouter côté service.
+- **Gravité de secours** pour les sanctions manuelles sans evidence automod : `warn→basse`,
+  `mute→moyenne`, `ban→haute` (le barème a toujours besoin d'une gravité pour pondérer).
+- **`needs_review`** = cran ≥ 6 (préparation S6 : confirmation mini). Aujourd'hui c'est un simple
+  encart « Réviser » sur la carte.
+
+**Suites (pour S3) :** golden set + runner offline + shadow mode ; le breakdown et les composantes
+du barème sont déjà prêts à alimenter les annotations.
 
 <!-- ======================================================================= -->
 
@@ -498,12 +540,12 @@ refusé sur gravité haute, plafond guild, bornes 0–7. Le module ne doit plus 
 
 ## Critères de fin
 
-- [ ] `automod/bareme.py` pur et testé (≥15 cas verts).
-- [ ] `modules/automod.py` applique le cran, plus le verdict nano.
-- [ ] Appels acceptés purgent points + `messages_deja_moderes`.
-- [ ] Breakdown du calcul visible sur la carte d'alerte + timeline.
-- [ ] Config : `max_action` + `langue_serveur` dans l'UI `/config`.
-- [ ] `AUTOMOD.md` mis à jour.
+- [x] `automod/bareme.py` pur et testé (36 cas verts, ≥15 requis).
+- [x] `modules/automod.py` applique le cran, plus le verdict nano.
+- [x] Appels acceptés purgent points + `messages_deja_moderes` (dérivé, sans migration).
+- [x] Breakdown du calcul visible sur la carte d'alerte + timeline.
+- [x] Config : `max_action` + `langue_serveur` dans l'UI `/config`.
+- [x] `AUTOMOD.md` mis à jour.
 
 ---
 ---

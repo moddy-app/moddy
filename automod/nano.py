@@ -46,14 +46,9 @@ ChatFn = Callable[[str, str], Awaitable[dict]]
 # A context loader: (n) -> the n messages preceding the target, oldest first.
 ContextFn = Callable[[int], Awaitable[List[ContextMessage]]]
 
-_ALLOWED_ACTIONS = {"ban", "mute", "warn", "supprimer"}  # TODO(session2): to the barème
 _ALLOWED_GRAVITE = {"basse", "moyenne", "haute", "critique"}
 _ALLOWED_CONFIANCE = {"low", "medium", "high"}
 _ALLOWED_CIBLE = {"membre", "auteur_lui_meme", "groupe", "aucune"}
-
-# Upper bound for a model-decided sanction duration (Discord timeout caps at 28
-# days; we apply the same ceiling to every temporary sanction).
-_MAX_DUREE_HEURES = 24 * 28
 
 # Canonical FR category set (v2 contract) + folding of the legacy detector /
 # stored values onto it. See docs/AUTOMOD.md §2. Anything unknown folds to "".
@@ -89,10 +84,9 @@ _DEFAULT_VERDICT = {
     "sanctionnable": False,
     "categorie": "",
     "gravite": "basse",
-    # TODO(session2): `actions` / `duree_heures` leave the nano contract for the
-    # deterministic barème. Kept for now so the module can still apply sanctions.
-    "actions": [],
-    "duree_heures": 0,
+    # v2 (session 2): nano no longer decides `actions` / `duree_heures`. It only
+    # QUALIFIES (categorie + gravite + confiance); the deterministic barème
+    # (automod/bareme.py) computes the sanction from that qualification.
     "citation": "",
     "cible": "aucune",
     "raison": "",
@@ -252,11 +246,15 @@ NEED MORE CONTEXT
 If context is insufficient, besoin_plus_contexte=true and nb_messages_supplementaires
 between 1 and {restant}; leave verdict fields at defaults.
 
+YOU DO NOT DECIDE THE SANCTION
+You only qualify the message (categorie + gravite + confiance). The punishment
+(warn / mute / ban / duration) is computed by a deterministic system from your
+qualification and the member's history. Do not mention or choose any punishment.
+
 STRICT OUTPUT FORMAT
 Respond ONLY with a valid JSON object with EXACTLY these keys:
 {{"besoin_plus_contexte": false, "nb_messages_supplementaires": 0,
  "sanctionnable": false, "categorie": "", "gravite": "basse",
- "actions": [], "duree_heures": 0,
  "citation": "", "cible": "aucune", "raison": "", "explication": "",
  "confiance": "low", "autres_messages_a_verifier": []}}
 Allowed values:
@@ -267,9 +265,6 @@ Allowed values:
 - cible     : "membre" | "auteur_lui_meme" | "groupe" | "aucune"
 - confiance : "low" | "medium" | "high"
 - citation  : exact verbatim substring of message_cible (no [DATA:…] markers)
-- actions   : subset of ["ban","mute","warn","supprimer"] (proportionate; always add
-              "supprimer" when you sanction the content)
-- duree_heures: integer >= 0 (0 = permanent), <= { _MAX_DUREE_HEURES }
 - raison    : FACTS ONLY, one short sentence, written in {response_language}, shown to the
               sanctioned member. No speculation ("suggests", "could imply"), no history,
               no reasoning. Do NOT include the [DATA:…] markers.
@@ -332,18 +327,6 @@ def parse_verdict(raw: dict) -> dict:
     gravite = raw.get("gravite", "basse")
     verdict["gravite"] = gravite if gravite in _ALLOWED_GRAVITE else "basse"
 
-    actions = raw.get("actions", [])
-    if isinstance(actions, list):
-        verdict["actions"] = [a for a in actions if a in _ALLOWED_ACTIONS]
-    else:
-        verdict["actions"] = []
-
-    try:
-        duree = int(raw.get("duree_heures", 0) or 0)
-    except (TypeError, ValueError):
-        duree = 0
-    verdict["duree_heures"] = max(0, min(duree, _MAX_DUREE_HEURES))
-
     # Category is coerced onto the canonical FR set (legacy values folded).
     verdict["categorie"] = normalize_categorie(raw.get("categorie", ""))
 
@@ -371,8 +354,6 @@ def parse_verdict(raw: dict) -> dict:
     # A verdict asking for more context carries no sanction.
     if verdict["besoin_plus_contexte"]:
         verdict["sanctionnable"] = False
-        verdict["actions"] = []
-        verdict["duree_heures"] = 0
 
     return verdict
 
@@ -385,8 +366,6 @@ def _reject(verdict: dict, motif: str) -> dict:
     this is free evaluation data on avoided false positives.
     """
     verdict["sanctionnable"] = False
-    verdict["actions"] = []
-    verdict["duree_heures"] = 0
     verdict["rejet_grounding"] = motif
     return verdict
 
@@ -474,11 +453,14 @@ async def juger(
             verdict["rejet_grounding"], verdict.get("categorie") or "-", target.id,
         )
 
+    # v2 (session 2): nano no longer decides `actions` / `duree_heures`. They are
+    # left empty here and filled by the deterministic barème in the module, from
+    # the qualification (categorie / gravite / confiance) below.
     return Decision(
         message_id=target.id,
         auteur_id=target.author_id,
         sanctionnable=verdict["sanctionnable"],
-        actions=verdict["actions"],
+        actions=[],
         categorie=verdict["categorie"] or normalize_categorie(signal.categorie),
         gravite=verdict["gravite"],
         raison=verdict["raison"],
@@ -487,7 +469,7 @@ async def juger(
         signal_source=signal.source,
         score_detecteur=signal.score_confiance,
         a_reverifier=verdict["autres_messages_a_verifier"],
-        duree_heures=verdict["duree_heures"],
+        duree_heures=0,
         citation=verdict["citation"],
         cible=verdict["cible"],
         rejet_grounding=verdict["rejet_grounding"],

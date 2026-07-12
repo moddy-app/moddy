@@ -20,9 +20,13 @@ Config (stored in ``guilds.data.modules.automod``)::
 
     {
       "enabled": true,
-      "rules": "server rules text (AI-validated for prompt injection)",
-      "log_channel_id": 123 | null,
+      "indications": "server guidance (AI-validated for prompt injection)",
+      "notify_channel_id": 123 | null,
       "ignore_moderators": true,
+      "severity": 3,                     # 1–5 detection/severity dial
+      "max_action": "ban",              # barème hard ceiling: warn|mute|ban
+      "langue_serveur": "auto",         # sanction language: auto|fr|en-US
+      "categories_desactivees": [],      # kill-switched AI categories
       "features": {
         "content": {
           "enabled": true,
@@ -31,6 +35,12 @@ Config (stored in ``guilds.data.modules.automod``)::
         }
       }
     }
+
+The sanction itself is not decided by nano: the detection pipeline only
+*qualifies* the message (category + gravity + confidence) and the deterministic
+barème (``automod/bareme.py``) computes the sanction cran from that
+qualification, the member's recidivism history and the guild config. See
+``docs/AUTOMOD.md`` §2bis.
 """
 
 from __future__ import annotations
@@ -48,6 +58,7 @@ from automod import (
     get_engine, Decision, TargetMessage, ContextMessage, AuthorHistory,
 )
 from automod import constants as ac
+from automod import bareme as ab
 from utils.i18n import t
 from utils.moderation_cases import IssuerType, SanctionAction, EventType, AuthorType
 
@@ -221,6 +232,10 @@ class AutomodModule(ModuleBase):
         self.notify_channel_id: Optional[int] = None
         self.ignore_moderators: bool = True
         self.severity: int = ac.SEVERITY_DEFAULT
+        # v2 barème knobs (session 2).
+        self.max_action: str = "ban"          # "warn" | "mute" | "ban"
+        self.langue_serveur: str = "auto"      # "auto" | "fr" | "en-US"
+        self.categories_desactivees: List[str] = []
         self._features: Dict[str, AutomodFeature] = {}
         self._warmup_task: Optional[asyncio.Task] = None
 
@@ -235,6 +250,15 @@ class AutomodModule(ModuleBase):
             self.notify_channel_id = self.config.get("notify_channel_id", self.config.get("log_channel_id"))
             self.ignore_moderators = bool(self.config.get("ignore_moderators", True))
             self.severity = ac.clamp_severity(self.config.get("severity", ac.SEVERITY_DEFAULT))
+
+            # v2 barème config.
+            max_action = str(self.config.get("max_action", "ban") or "ban")
+            self.max_action = max_action if max_action in ("warn", "mute", "ban") else "ban"
+            lang = str(self.config.get("langue_serveur", "auto") or "auto")
+            self.langue_serveur = lang if lang in ("auto", "fr", "en-US") else "auto"
+            self.categories_desactivees = [
+                str(c) for c in (self.config.get("categories_desactivees", []) or [])
+            ]
 
             features_cfg = self.config.get("features", {}) or {}
             self._features = {}
@@ -271,6 +295,14 @@ class AutomodModule(ModuleBase):
         if severity is not None and ac.clamp_severity(severity) != int(severity):
             return False, "Niveau de sévérité invalide (1 à 5)"
 
+        max_action = config_data.get("max_action")
+        if max_action is not None and max_action not in ("warn", "mute", "ban"):
+            return False, "Action maximale invalide"
+
+        langue = config_data.get("langue_serveur")
+        if langue is not None and langue not in ("auto", "fr", "en-US"):
+            return False, "Langue invalide"
+
         features_cfg = config_data.get("features", {}) or {}
         for fid in features_cfg:
             if fid not in FEATURE_CLASSES:
@@ -284,6 +316,9 @@ class AutomodModule(ModuleBase):
             "notify_channel_id": None,
             "ignore_moderators": True,
             "severity": ac.SEVERITY_DEFAULT,
+            "max_action": "ban",
+            "langue_serveur": "auto",
+            "categories_desactivees": [],
             "features": {
                 "content": {
                     "enabled": False,
@@ -425,6 +460,89 @@ class AutomodModule(ModuleBase):
             logger.error("automod: failed to build author history: %s", e)
             return AuthorHistory()
 
+    # -- Barème (deterministic sanction scale) -----------------------------
+
+    async def _member_sanctions(self, user_id: int) -> List[ab.SanctionPassee]:
+        """Recidivism input for the barème: this member's recent guild sanctions.
+
+        180 days is enough — past that the half-life decay (0.5^4 ≈ 6 %) makes a
+        sanction negligible. The current message is NOT here yet (the case is
+        recorded *after* the barème runs), so it never inflates its own cran.
+        """
+        if not self.bot.db:
+            return []
+        try:
+            since = datetime.now(timezone.utc) - timedelta(days=180)
+            rows = await self.bot.db.list_member_sanctions(
+                self.guild_id, user_id, since=since,
+            )
+        except Exception as e:
+            logger.error("automod: failed to load member sanctions: %s", e)
+            return []
+        out: List[ab.SanctionPassee] = []
+        for r in rows:
+            out.append(ab.SanctionPassee(
+                categorie=r.get("categorie") or "",
+                gravite=r.get("gravite") or "moyenne",
+                date=r.get("date") or datetime.now(timezone.utc),
+                source_fiabilite=r.get("source_fiabilite") or "automod",
+            ))
+        return out
+
+    async def _compute_bareme(self, message: discord.Message,
+                              decision: Decision) -> ab.ResultatBareme:
+        """Compute the deterministic cran (sanction) for a qualified decision."""
+        sanctions = await self._member_sanctions(int(decision.auteur_id))
+
+        member = message.guild.get_member(int(decision.auteur_id)) if message.guild else None
+        anciennete = 0.0
+        joined = getattr(member, "joined_at", None) if member else None
+        if joined is not None:
+            anciennete = max(0.0, (datetime.now(timezone.utc) - joined).total_seconds() / 86400.0)
+
+        config = ab.ConfigBareme(
+            max_action=self.max_action,
+            categories_desactivees=tuple(self.categories_desactivees),
+        )
+        return ab.calculer(
+            decision, sanctions, ab.MembreInfo(anciennete_jours=anciennete),
+            severite_guild=self.severity, config=config,
+        )
+
+    # Component code → i18n key suffix for the sanction breakdown card.
+    _BAREME_LABELS = {
+        "plancher": "floor",
+        "recidive": "recidivism",
+        "severite": "severity",
+        "confiance": "confidence",
+        "veteran": "veteran",
+        "compte_recent": "fresh_account",
+        "plafond": "ceiling",
+        "categorie_desactivee": "disabled_category",
+        "borne": "bounds",
+    }
+
+    def _bareme_breakdown(self, bareme: ab.ResultatBareme, locale: str) -> str:
+        """A localized, line-by-line explanation of how the cran was reached."""
+        lines: List[str] = []
+        for c in bareme.composantes:
+            label = t(f"modules.automod.bareme.{self._BAREME_LABELS.get(c.code, c.code)}",
+                      locale=locale)
+            if c.code == "plancher":
+                amount = t("modules.automod.bareme.cran", locale=locale, n=c.delta)
+            else:
+                amount = f"{'+' if c.delta >= 0 else ''}{c.delta}"
+            detail = f" ({c.detail})" if c.detail else ""
+            lines.append(f"- {label}{detail} · {amount}")
+        return "\n".join(lines)
+
+    def _sanction_name(self, bareme: ab.ResultatBareme, locale: str) -> str:
+        """Human name of the applied sanction (most punitive action)."""
+        for a in ("ban", "mute", "warn"):
+            if a in bareme.actions:
+                return t(f"modules.automod.action.{a}", locale=locale)
+        return t("modules.automod.action.supprimer", locale=locale)
+
     # -- Decision application ----------------------------------------------
 
     def _mark_moddy_initiated(self, user_id: int, action: str):
@@ -436,7 +554,16 @@ class AutomodModule(ModuleBase):
         store[(self.guild_id, user_id, action)] = time.time()
 
     async def apply_decision(self, message: discord.Message, decision: Decision):
-        if not decision.sanctionnable or not decision.actions:
+        if not decision.sanctionnable:
+            return
+
+        # v2 (session 2): nano only QUALIFIED the message; the deterministic
+        # barème computes the sanction (cran → actions + duration) from the
+        # qualification, the member's recidivism history and the guild config.
+        bareme = await self._compute_bareme(message, decision)
+        decision.actions = list(bareme.actions)
+        decision.duree_heures = bareme.duree_heures or 0
+        if not decision.actions:
             return
 
         guild = message.guild
@@ -464,7 +591,7 @@ class AutomodModule(ModuleBase):
         # 2. Record the case FIRST so the Discord audit-log reason can carry the
         #    public case reference, exactly like a manual sanction.
         case_ref, case_id, primary_action, primary_sanction_id = \
-            await self._record_case(message, decision)
+            await self._record_case(message, decision, bareme)
 
         # 3. Apply the Discord-side sanction with the standardized reason.
         can_act = member is not None and me is not None and member != guild.owner \
@@ -498,7 +625,7 @@ class AutomodModule(ModuleBase):
 
         # 4. Notify the server in the mandatory alert channel, then remember the
         #    log message on the case so later appeal updates reply to it.
-        log_msg = await self._notify_channel(message, decision, applied, case_ref, primary_action)
+        log_msg = await self._notify_channel(message, decision, applied, case_ref, primary_action, bareme)
         if log_msg is not None and case_id is not None:
             try:
                 await self.bot.db.add_event(
@@ -553,7 +680,8 @@ class AutomodModule(ModuleBase):
         expiry = expires_at.strftime("%Y-%m-%d %H:%M UTC") if expires_at else "Permanent"
         return f"[{ref}] @{mod_name} ({expiry}) : {reason}"[:512]
 
-    async def _record_case(self, message: discord.Message, decision: Decision):
+    async def _record_case(self, message: discord.Message, decision: Decision,
+                           bareme: Optional[ab.ResultatBareme] = None):
         """Open ONE guild case for this incident, attach its sanctions + evidence.
 
         Each automod incident is its own case: the first sanction opens a fresh
@@ -657,6 +785,17 @@ class AutomodModule(ModuleBase):
                         "score_detecteur": round(decision.score_detecteur, 4),
                         "confiance": decision.confiance,
                         "actions": decision.actions,
+                        # Deterministic barème breakdown (session 2): the cran and
+                        # every component that produced it, so the timeline can
+                        # explain the sanction line by line.
+                        **({
+                            "cran": bareme.cran,
+                            "points_recidive": round(bareme.points_recidive, 2),
+                            "bareme": [
+                                {"code": c.code, "delta": c.delta, "detail": c.detail}
+                                for c in bareme.composantes
+                            ],
+                        } if bareme is not None else {}),
                     },
                 )
             except Exception as e:
@@ -667,10 +806,14 @@ class AutomodModule(ModuleBase):
     def guild_locale(self, guild: Optional[discord.Guild]) -> str:
         """The locale automod speaks in this guild.
 
-        Uses the guild's preferred locale **only when Community is enabled**
-        (that's when Discord lets the server pick a real language); otherwise we
-        have no reliable language signal, so we default to English.
+        An explicit ``langue_serveur`` config override (``fr`` / ``en-US``) wins;
+        otherwise (``auto``) we use the guild's preferred locale **only when
+        Community is enabled** (that's when Discord lets the server pick a real
+        language), and default to English when there is no reliable signal.
         """
+        override = getattr(self, "langue_serveur", "auto")
+        if override in ("fr", "en-US"):
+            return override
         try:
             features = set(getattr(guild, "features", []) or [])
             if "COMMUNITY" not in features:
@@ -722,7 +865,8 @@ class AutomodModule(ModuleBase):
 
     async def _notify_channel(self, message: discord.Message, decision: Decision,
                               applied: List[str], case_ref: Optional[str],
-                              primary_action: Optional[str] = None):
+                              primary_action: Optional[str] = None,
+                              bareme: Optional[ab.ResultatBareme] = None):
         """Post the decision to the mandatory server alert channel.
 
         Returns the sent message (or None) so the caller can link it to the
@@ -771,6 +915,18 @@ class AutomodModule(ModuleBase):
         if case_ref:
             body += f"\n- **{t('modules.automod.log.case', locale=locale)} :** `{case_ref}`"
         container.add_item(ui.TextDisplay(body))
+
+        # Deterministic barème breakdown: explain the sanction line by line.
+        if bareme is not None and bareme.composantes:
+            sanction_name = self._sanction_name(bareme, locale)
+            header = t("modules.automod.bareme.title", locale=locale,
+                       sanction=sanction_name, cran=bareme.cran)
+            container.add_item(ui.TextDisplay(
+                f"**{header}**\n{self._bareme_breakdown(bareme, locale)}"))
+            if bareme.needs_review:
+                container.add_item(ui.TextDisplay(
+                    f"-# {t('modules.automod.bareme.review_hint', locale=locale)}"))
+
         container.add_item(ui.TextDisplay(
             f"-# {t('modules.automod.log.appeal_hint', locale=locale)}"))
         view.add_item(container)

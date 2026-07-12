@@ -88,9 +88,10 @@ that is the deterministic barème's job (session 2). The key v2 fields:
 | `explication` | 1–2 sentences justifying the decision (the *why*). Stored on the evidence event + logs. |
 | `confiance` | `low` \| `medium` \| `high`. |
 
-> `actions` / `duree_heures` are **still emitted** by nano as a temporary bridge
-> (marked `# TODO(session2)` in the code) so sanctions keep applying until the
-> barème lands; session 2 removes them from this contract.
+> **`actions` / `duree_heures` are gone from the nano contract (v2, session 2).**
+> nano no longer decides *any* punishment — it only qualifies. The sanction is
+> computed by the deterministic **barème** (§2bis). The pipeline leaves
+> `Decision.actions` empty; the module fills it from the barème's cran.
 
 **Canonical categories** (`automod.constants.CATEGORIES`): `insulte`, `menace`,
 `harcelement`, `harcelement_sexuel`, `haine_discrimination`,
@@ -153,6 +154,75 @@ reduce surface and impact while the deterministic layers (regex) keep working.
 
 ---
 
+## 2bis. The barème — deterministic sanction scale (`automod/bareme.py`)
+
+nano **qualifies**; the **barème computes the sanction**. It is a pure module
+(no I/O, no Discord, no DB — fully table-testable): given the same verdict, the
+same recidivism history and the same guild config it always returns the same
+*cran* (rung) plus a line-by-line breakdown of how it got there. The module
+(`modules/automod.py`) gathers the inputs and translates the cran into Discord
+actions.
+
+### The ladder (`LADDER`)
+
+Every sanction is one rung on a single scale. `supprimer` is **always** included
+(in the `content` feature the message is always the problem).
+
+| Cran | Sanction | actions | duree_heures |
+|---|---|---|---|
+| 0 | deletion only | `["supprimer"]` | — |
+| 1 | warn | `["warn","supprimer"]` | 0 |
+| 2–6 | mute (2h→12h→48h→168h→672h) | `["mute","supprimer"]` | 2 … 672 |
+| 7 | ban | `["ban","supprimer"]` | 0 (permanent) |
+
+### How a cran is computed (`bareme.calculer`)
+
+1. **Floor** `PLANCHER[(categorie, gravite)]` — the "cold" first-offence policy.
+2. **Recidivism** `+ crans_recidive(points_actifs(...))` — past sanctions are
+   **weighted points** (`POINTS_GRAVITE`) that **decay exponentially** (half-life
+   45 days), scaled by source reliability (`POIDS_SOURCE`) and ×1.5 for a repeat
+   in the **same category**. Thresholds: ≥5 pts → +1, ≥15 → +2, ≥40 → +3.
+3. **Guild severity (1–5)** — global shift `{1:-1, 5:+1}`.
+4. **Confidence cap** — `low` ⇒ at most a warn (cran 1); `medium` ⇒ never a mute
+   >48h nor a ban (cran ≤ 4).
+5. **Veteran clemency** (−1) — ≥90 days on the server, clean record, gravity
+   `basse`/`moyenne` only; **never** for sensitive categories.
+6. **Fresh-account malus** (+1) — <7 days on the server.
+7. **Guild ceiling** — `max_action` (`warn`/`mute`/`ban`) caps the cran
+   (`PLAFOND_CONFIG`). Deletion always survives the ceiling.
+8. Clamp to 0–7.
+
+**Source reliability** (`POIDS_SOURCE`): `manuel` 1.5, `automod_confirme` 1.25
+(appeal **refused** — a human confirmed it), `automod` 1.0, `automod_appel_accepte`
+**0.0** (appeal **accepted** — a proven false positive never counts). The module
+derives it per past sanction from the issuer + the appeal state
+(`db.list_member_sanctions`).
+
+**Kill-switch** (`categories_desactivees`): a guild can opt a category out of AI
+sanctioning entirely — it is capped to deletion only (cran 0).
+
+### Explainability
+
+`ResultatBareme.composantes` lists every step (`plancher`, `recidive`,
+`severite`, `confiance`, `veteran`, `compte_recent`, `plafond`, …) with its
+signed delta; the deltas sum to the final cran. The module renders this as a
+breakdown on the alert card and stores it on the case evidence (`payload.bareme`
+/ `payload.cran`) so the timeline explains the sanction line by line — no other
+automod on the market does this. A cran ≥ 6 decided purely by automod sets
+`needs_review` (a "Réviser" highlight today; session-6 mini confirmation later).
+
+### Recidivism data (`db.list_member_sanctions`)
+
+`list_member_sanctions(guild_id, user_id, since=now-180d)` returns
+`{action, categorie, gravite, date, source_fiabilite}` per past guild sanction.
+`categorie`/`gravite` come from the automod evidence event (else derived from the
+action for manual sanctions). **No migration needed**: `source_fiabilite` is
+derived live from `case_sanctions.issued_by_type` + the latest `case_appeals`
+status. An **accepted appeal** additionally drops the message from
+`messages_deja_moderes` (it was not at fault).
+
+---
+
 ## 3. The module (`modules/automod.py`)
 
 `MODULE_ID = "automod"`. Config stored in `guilds.data.modules.automod`:
@@ -179,12 +249,23 @@ on **and** `notify_channel_id` is set — the **alert channel is mandatory**
 (automod never runs without it). Legacy keys `rules` / `log_channel_id` are
 still read transparently.
 
-- **`severity`** (1–5) scales **both** detection sensitivity (the embedding
-  threshold, see `constants.embedding_threshold_for`) and how strict nano is
-  told to be. Default 3.
+- **`severity`** (1–5) scales detection sensitivity (the embedding threshold,
+  see `constants.embedding_threshold_for`) and is the barème's global cran shift.
+  Default 3.
 - **`indications`** (ex-`rules`) is the guidance fed to nano's system prompt.
+- **`max_action`** (`warn`/`mute`/`ban`, default `ban`) is the barème's hard
+  ceiling — a server can forbid the automod from ever muting/banning.
+- **`langue_serveur`** (`auto`/`fr`/`en-US`, default `auto`) overrides the
+  language of the sanction reason / member DM (auto = derive from the guild).
+- **`categories_desactivees`** (list) kill-switches AI sanctioning per category.
 
 ### Applying a decision
+
+The module runs the **barème** first (`_compute_bareme`): it loads the member's
+recent guild sanctions (`list_member_sanctions`, 180 d), their server tenure and
+the guild config, computes the cran and **overwrites `decision.actions` /
+`decision.duree_heures`** from it. nano's qualification is the only thing read
+from the pipeline. Then:
 
 - `supprimer` → delete the message.
 - `ban` (precedence) / `mute` (Discord timeout, duration by gravity) → applied
@@ -225,7 +306,8 @@ removes the stored config, **Back** returns to the module list (disabled while
 there are unsaved changes). The view has a 300 s timeout and is opened fresh by
 `/config` (it is **not** a persistent view — consistent with the other module
 panels). Sections: **État**, **Salon d'alertes** (required), **Sévérité** (1–5),
-**Indications** (replaces "Règlement"), **Exemptions**, **Options**.
+**Limites & langue** (`max_action` + `langue_serveur`), **Indications**
+(replaces "Règlement"), **Exemptions**, **Options**.
 
 ### Indications safety check
 
@@ -316,3 +398,15 @@ Seeded unlimited in `db/base.py`; tighten per-guild via `quota_overrides`.
 | `ROUNDS_MAX` | 3 | anti-loop |
 | `NANO_TEMPERATURE` | 0.0 | classification → deterministic |
 | `NANO_MAX_TOKENS` | 300 | lean v2 contract |
+
+### Barème tunables (`automod/bareme.py`)
+
+| Constant | Default | Meaning |
+|---|---|---|
+| `PLANCHER` | table | floor cran per (category, gravity) |
+| `POINTS_GRAVITE` | basse 1 / moyenne 3 / haute 7 / critique 15 | recidivism points per gravity |
+| `DEMI_VIE_JOURS` | 45 | points half-life (decay) |
+| `POIDS_SOURCE` | manuel 1.5 … appel accepté 0 | source-reliability weight |
+| `MULT_MEME_CATEGORIE` | 1.5 | same-category repeat multiplier |
+| `PLAFOND_CONFIG` | warn 1 / mute 6 / ban 7 | guild `max_action` cran ceiling |
+| `CATEGORIES_SENSIBLES` | self-harm/doxxing/sexual | no veteran clemency at haute+ |

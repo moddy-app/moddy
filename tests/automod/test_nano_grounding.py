@@ -36,8 +36,6 @@ def _raw(**overrides):
         "sanctionnable": True,
         "categorie": "insulte",
         "gravite": "moyenne",
-        "actions": ["warn", "supprimer"],
-        "duree_heures": 0,
         "citation": "",
         "cible": "membre",
         "raison": "Insulte visant un membre",
@@ -118,7 +116,9 @@ class TestGroundingRoundTrip:
         assert decision.rejet_grounding is None
         assert decision.categorie == "insulte"
         assert decision.cible == "membre"
-        assert "supprimer" in decision.actions
+        # v2: nano no longer decides actions — the barème owns them. The pipeline
+        # leaves them empty; the module fills them from the computed cran.
+        assert decision.actions == []
 
 
 # --- Unit-level guards ------------------------------------------------------ #
@@ -168,9 +168,13 @@ class TestParseVerdict:
         v = parse_verdict(_raw(categorie="banana"))
         assert v["categorie"] == ""
 
-    def test_actions_still_parsed_for_session2_bridge(self):
-        v = parse_verdict(_raw(actions=["ban", "nope", "supprimer"]))
-        assert v["actions"] == ["ban", "supprimer"]
+    def test_actions_and_duree_dropped_from_nano_contract(self):
+        # v2 (session 2): nano no longer decides the sanction. Even if a stray
+        # `actions` / `duree_heures` shows up in the raw output, parse_verdict
+        # ignores it — the barème is the only source of the sanction.
+        v = parse_verdict(_raw(actions=["ban", "supprimer"], duree_heures=48))
+        assert "actions" not in v
+        assert "duree_heures" not in v
 
 
 class TestNormalizeCategorie:
