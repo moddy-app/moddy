@@ -43,6 +43,25 @@ def embedding_threshold_for(severity: int) -> float:
 EMBEDDING_MODEL: str = "text-embedding-3-small"
 
 
+# --- Embedding score cache (step 4 de-duplication) --------------------------
+#
+# The reference vectors are embedded once per process and never change, so the
+# score of a given message is deterministic for the process lifetime. Caching it
+# collapses repeated/identical messages (raid spam, copypasta floods) onto a
+# single embedding call, and in-flight identical requests are additionally
+# coalesced (single-flight) so a burst of N identical messages costs one call,
+# not N. Purely an optimization — it can never change a decision, only avoid a
+# redundant embedding call. See docs/AUTOMOD.md §5 (Volume note).
+EMBED_CACHE_ENABLED: bool = True
+# Hard cap on cached message scores (LRU eviction past this). ~4k short strings
+# is a few hundred KB — negligible, and comfortably covers a busy server's
+# working set of distinct messages.
+EMBED_CACHE_MAX_ENTRIES: int = 4096
+# Defensive freshness bound; correctness does not depend on it (the score is
+# stable for the process lifetime). ``0`` disables expiry.
+EMBED_CACHE_TTL_SECONDS: float = 1800.0  # 30 minutes
+
+
 # --- nano (step 5) ----------------------------------------------------------
 
 # nano model + sampling. Low temperature for stable decisions.

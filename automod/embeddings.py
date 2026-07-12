@@ -17,13 +17,15 @@ dependency-free — no numpy.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import math
 from pathlib import Path
-from typing import Awaitable, Callable, List, Optional, Tuple
+from typing import Awaitable, Callable, Dict, List, Optional, Tuple
 
 from . import constants
+from .cache import MISS, LruTtlCache
 from .normalize import collapse_repeats, normalize_spaced
 
 logger = logging.getLogger("moddy.automod.embeddings")
@@ -63,18 +65,56 @@ def _dot(a: List[float], b: List[float]) -> float:
     return sum(x * y for x, y in zip(a, b))
 
 
+def _retrieve_result(fut: "asyncio.Future") -> None:
+    """Done-callback that marks a single-flight future's result as retrieved.
+
+    Guarantees the "Future exception was never retrieved" warning never fires
+    when a scoring computation raised and no waiter happened to be attached.
+    """
+    if not fut.cancelled():
+        fut.exception()  # retrieving is enough; the value/None is discarded
+
+
 class EmbeddingEngine:
     """Holds the normalized reference vectors and scores incoming messages."""
 
-    def __init__(self, embed_fn: EmbedFn):
+    def __init__(
+        self,
+        embed_fn: EmbedFn,
+        *,
+        cache: Optional[LruTtlCache] = None,
+    ):
         self._embed_fn = embed_fn
         self._ref_vectors: List[List[float]] = []
         self._ref_categories: List[str] = []
         self._ready = False
+        # Score cache: exact message text → (score, category). Deterministic for
+        # the process lifetime (references are embedded once), so memoising it is
+        # safe and never alters a decision. ``None`` builds the default cache
+        # from constants; a disabled cache is a max_entries=0 instance (no-op).
+        if cache is None:
+            cache = LruTtlCache(
+                max_entries=(
+                    constants.EMBED_CACHE_MAX_ENTRIES
+                    if constants.EMBED_CACHE_ENABLED
+                    else 0
+                ),
+                ttl_seconds=constants.EMBED_CACHE_TTL_SECONDS,
+            )
+        self._cache: LruTtlCache = cache
+        # Single-flight: coalesce concurrent identical scoring requests (a burst
+        # of identical raid messages) onto one embedding call.
+        self._inflight: Dict[str, "asyncio.Future"] = {}
 
     @property
     def ready(self) -> bool:
         return self._ready
+
+    def cache_stats(self) -> dict:
+        """Score-cache counters plus the current in-flight coalescing count."""
+        stats = self._cache.stats()
+        stats["inflight"] = len(self._inflight)
+        return stats
 
     @staticmethod
     def load_reference_texts() -> Tuple[List[str], List[str]]:
@@ -109,6 +149,46 @@ class EmbeddingEngine:
 
     async def score(self, content: str) -> Optional[Tuple[float, str]]:
         """Return (max_cosine, best_category) or None if scoring unavailable.
+
+        Results are memoised on the exact message text (deterministic for the
+        process lifetime) and concurrent identical requests are coalesced onto a
+        single embedding call, so repeated/flooded messages cost one call, not N.
+        """
+        if not self._ready:
+            return None
+
+        cached = self._cache.get(content)
+        if cached is not MISS:
+            return cached
+
+        # Coalesce a burst of identical in-flight requests onto one computation.
+        pending = self._inflight.get(content)
+        if pending is not None:
+            return await pending
+
+        loop = asyncio.get_event_loop()
+        future: "asyncio.Future" = loop.create_future()
+        future.add_done_callback(_retrieve_result)
+        self._inflight[content] = future
+        try:
+            result = await self._compute_score(content)
+        except BaseException as exc:  # propagate to this caller and any waiters
+            self._inflight.pop(content, None)
+            if not future.done():
+                future.set_exception(exc)
+            raise
+        else:
+            # Only cache real results — never a transient None (not-ready / empty
+            # embedding response), so a blip doesn't get pinned in the cache.
+            if result is not None:
+                self._cache.set(content, result)
+            self._inflight.pop(content, None)
+            if not future.done():
+                future.set_result(result)
+            return result
+
+    async def _compute_score(self, content: str) -> Optional[Tuple[float, str]]:
+        """Embed ``content`` and return (max_cosine, best_category) or None.
 
         Long content is segmented (sentences + windows + de-spammed form) and
         the **max** cosine across every segment is returned, so a toxic phrase

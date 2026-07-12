@@ -66,6 +66,13 @@ class AutomodEngine:
 
         return chat_fn
 
+    def cache_stats(self) -> dict:
+        """Embedding score-cache counters (hits/misses/evictions/hit rate).
+
+        Useful for a staff diagnostic to gauge how much the cache is saving.
+        """
+        return self.embeddings.cache_stats()
+
     async def ensure_ready(self) -> bool:
         """Embed the reference phrases once (lazy). Returns readiness."""
         try:
