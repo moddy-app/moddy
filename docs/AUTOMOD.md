@@ -54,13 +54,14 @@ Only **nano decides**. Regex and embedding merely *route*. Output is a
 
 ---
 
-## 2. nano (the decider)
+## 2. nano (the decider) — v2 grounded verdict contract
 
 | Param | Value |
 |---|---|
 | model | `gpt-4.1-nano` |
 | response | `json_object` (json_mode) |
-| temperature | `0.2` |
+| temperature | `0.0` (classification, not generation) |
+| max tokens | `300` |
 | context | `CONTEXTE_INITIAL=12`, `CONTEXTE_MAX=40`, `ROUNDS_MAX=3` |
 
 - **Instructions** live only in the `system` message; **data** only in the
@@ -68,47 +69,76 @@ Only **nano decides**. Regex and embedding merely *route*. Output is a
 - nano can ask for more context (bounded loop) and can **flag other authors'
   messages** (`autres_messages_a_verifier`) without deciding for them — the
   module re-submits each as a new target (`force_nano=True`, one level deep).
-- Actions are **combinable**: `["supprimer", "warn"]`, `["ban"]`, …
+- The prompt is built from contrasted **few-shot examples** (`nano.build_system_prompt`),
+  not abstract rules: self-deprecation, reciprocal banter, quotes, "arrête stp",
+  and genuine insults/threats are each shown explicitly.
 
-### Decision contract — `raison` vs `explication`
+### The verdict contract (what nano returns)
 
-The verdict separates **facts** from **reasoning** (two distinct fields on
-`Decision`):
+nano **qualifies** the message; it no longer decides the sanction on its own —
+that is the deterministic barème's job (session 2). The key v2 fields:
 
 | field | content |
 |---|---|
-| `raison` | **facts only** — what the message contains / which rule it breaks, one short sentence. No reasoning, no history. This is what is stored as the case reason and shown to the member. |
-| `explication` | 1–2 sentences justifying the decision (the *why*, context, real recidivism). Stored on the evidence event + shown in logs. |
+| `citation` | **verbatim substring** of `message_cible` that, alone, justifies `categorie`. Mandatory when `sanctionnable=true`. |
+| `cible` | who the message targets: `"membre"` \| `"auteur_lui_meme"` \| `"groupe"` \| `"aucune"`. |
+| `categorie` | one of the **canonical FR categories** (below). |
+| `gravite` | `basse` \| `moyenne` \| `haute` \| `critique`. |
+| `raison` | **facts only**, one short sentence, in the server's language. No speculation, no history. Case reason + shown to the member. |
+| `explication` | 1–2 sentences justifying the decision (the *why*). Stored on the evidence event + logs. |
+| `confiance` | `low` \| `medium` \| `high`. |
 
-### Intent-to-harm + anti-double-sanction (in the system prompt)
+> `actions` / `duree_heures` are **still emitted** by nano as a temporary bridge
+> (marked `# TODO(session2)` in the code) so sanctions keep applying until the
+> barème lands; session 2 removes them from this contract.
 
-- **Intent required**: nano only sanctions when there is genuine intent to harm
-  / break a rule. Humour, irony, quotes, self-deprecation, song lyrics, mere
-  casual swearing with no target → not sanctionnable. The detector is only a
-  suspicion.
-- **Cold judgement, no signal leaked to nano**: the `signal` (source / category
-  / score) that routed the message here is **never included in nano's user
-  payload** — nano only ever sees `message_cible`, `severite`,
-  `historique_auteur` and `contexte`. There is nothing to rubber-stamp: nano
-  reads the message with no prior suspicion and decides `categorie` and
-  `confiance` from scratch. `signal` stays purely internal (routing, the
-  evidence text, `Decision.signal_source` / `score_detecteur`).
-- **No hallucinated grounds**: `raison`/`categorie` must describe only what is
-  literally written in `message_cible`. nano must never invent an insult,
-  threat, or incitement that isn't in the text — not from history, not from an
-  earlier message's pattern. Any speculative wording ("suggests", "context
-  suggesting…") in `raison` means the message wasn't actually sanctionable.
+**Canonical categories** (`automod.constants.CATEGORIES`): `insulte`, `menace`,
+`harcelement`, `harcelement_sexuel`, `haine_discrimination`,
+`incitation_automutilation`, `doxxing`, `arnaque_scam`, `violation_indications`.
+Legacy detector/stored values (`insultes`, `menaces`, `contenu_sexuel`…) fold
+onto this set via `nano.CATEGORIE_ALIASES` / `nano.normalize_categorie` — no data
+migration needed.
+
+### Grounding — deterministic guards (`nano.validate_grounding`)
+
+After nano answers, **`validate_grounding(verdict, target.content)`** runs as the
+last, non-negotiable filter before a verdict can carry a sanction. It makes a
+hallucinated verdict *mechanically impossible*. Any failure ⇒ `sanctionnable=false`,
+`actions=[]`, and the motif is recorded on `Decision.rejet_grounding` (never raises):
+
+1. **`grounding_citation_absente`** — the `citation` is empty, contains echoed
+   `[DATA:…]` markers, or is not a verbatim substring of the (fence-stripped)
+   message. Comparison is case- and accent-insensitive with collapsed whitespace
+   (`nano._norm`), so only real hallucinated *content* is rejected, not casing.
+2. **`grounding_cible_incoherente`** — a victim-requiring category (`insulte`,
+   `menace`, `harcelement`, `harcelement_sexuel`) with `cible` = `aucune` or
+   `auteur_lui_meme`. Self-deprecation ("je suis con") can never be an insult.
+3. **`grounding_raison_speculative`** — `raison` contains speculative wording
+   (`suggests`, `pourrait`, `semble`, `could imply`…): if nano is only guessing,
+   the message is not sanctionnable.
+
+Every rejection is logged (`logger.info`, tag `grounding_rejected`, → webhook
+logs) — free evaluation data on avoided false positives. The motif is also kept
+on the `Decision` for the alert card / case timeline.
+
+### Cold judgement — no signal, no history leaked to nano
+
+- **No routing signal**: the `signal` (source / category / score) that routed the
+  message here is **never** in nano's user payload. There is nothing to
+  rubber-stamp: nano reads the message cold and sets `categorie` / `confiance`
+  from scratch. `signal` stays internal (routing, evidence text,
+  `Decision.signal_source` / `score_detecteur`).
+- **No author history (v2)**: `historique_auteur` and `severite` were **removed**
+  from nano's payload — the author's history was contaminating the *culpability*
+  judgement (nano is asked "is this message a violation?", not "is this member a
+  repeat offender?"). Recidivism and severity become deterministic inputs to the
+  session-2 barème. `build_author_history` / `AuthorHistory` still flow through the
+  pipeline for the barème's benefit; they are simply no longer serialised to nano.
 - **Self-harm — high bar**: an ordinary word/imperative on its own ("stop" /
-  "arrête") is never, by itself, incitement to self-harm — it needs an
-  unmistakable, explicit self-harm meaning in the literal text.
-- **Individual judgement**: nano judges the target message on **its own content
-  only**. A short/ambiguous message ("je vais") is not a threat just because an
-  earlier message was. The author's `messages_deja_moderes` (messages already
-  actioned by automod, sourced from the case timeline via
-  `db.list_automod_evidence_message_ids`) are passed so nano never re-punishes
-  conduct already handled in an earlier message.
-- **Severity**: the guild's `severite` (1–5) is injected as an explicit
-  strictness instruction.
+  "arrête") is never, by itself, incitement to self-harm.
+- **Severity**: in v2, the guild's `severite` (1–5) drives the **embedding routing
+  threshold** (detection sensitivity) only; nano's own strictness dial is gone.
+  It returns as a deterministic cran modulator in the session-2 barème.
 
 ### Anti-prompt-injection (defence in layers)
 
@@ -284,4 +314,5 @@ Seeded unlimited in `db/base.py`; tighten per-guild via `quota_overrides`.
 | `CONTEXTE_INITIAL` | 12 | by channel density |
 | `CONTEXTE_MAX` | 40 | cost / injection ceiling |
 | `ROUNDS_MAX` | 3 | anti-loop |
-| `NANO_TEMPERATURE` | 0.2 | decision stability |
+| `NANO_TEMPERATURE` | 0.0 | classification → deterministic |
+| `NANO_MAX_TOKENS` | 300 | lean v2 contract |

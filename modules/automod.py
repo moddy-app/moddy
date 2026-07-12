@@ -649,6 +649,8 @@ class AutomodModule(ModuleBase):
                         "context_text": context_text,
                         "raison": decision.raison,
                         "explication": decision.explication,
+                        "citation": decision.citation,
+                        "cible": decision.cible,
                         "signal_source": decision.signal_source,
                         "categorie": decision.categorie,
                         "gravite": decision.gravite,
