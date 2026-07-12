@@ -1,0 +1,39 @@
+name: tests
+
+# Runs the automated test suite for the pure-Python, Discord-agnostic parts of
+# the bot (currently the automod detection core). These tests need no Discord
+# gateway, database, or API keys, so CI stays fast and secret-free.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Cancel superseded runs on the same ref to save CI minutes.
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  automod:
+    name: automod core
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dev dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Run automod test suite
+        run: pytest tests/automod -q

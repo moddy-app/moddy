@@ -62,10 +62,18 @@ automod pipeline. Added `tests/automod/` (pytest, 147 tests):
 Tooling: `pytest.ini` (asyncio auto mode), `requirements-dev.txt`, root
 `conftest.py` (repo root on `sys.path`).
 
+### 3. CI (`.github/workflows/tests.yml`)
+
+The repo had no CI. Added a lightweight GitHub Actions workflow that runs on
+push-to-main and every pull request: it installs `requirements-dev.txt` and runs
+`pytest tests/automod`. The automod core is pure-Python (no Discord gateway, DB
+or API keys), so CI is fast and secret-free — and the tests above now actually
+**gate regressions** instead of only guarding locally.
+
 ## Files
 
 - Added: `automod/cache.py`, `tests/automod/test_*.py` (9 files), `pytest.ini`,
-  `requirements-dev.txt`, `conftest.py`, this log.
+  `requirements-dev.txt`, `conftest.py`, `.github/workflows/tests.yml`, this log.
 - Modified: `automod/embeddings.py`, `automod/constants.py`, `automod/engine.py`,
   `docs/AUTOMOD.md`, `CLAUDE.md`.
 
