@@ -234,6 +234,7 @@ status. An **accepted appeal** additionally drops the message from
   "notify_channel_id": 123,
   "ignore_moderators": true,
   "severity": 3,
+  "dry_run": false,
   "features": {
     "content": {
       "enabled": true,
@@ -258,6 +259,10 @@ still read transparently.
 - **`langue_serveur`** (`auto`/`fr`/`en-US`, default `auto`) overrides the
   language of the sanction reason / member DM (auto = derive from the guild).
 - **`categories_desactivees`** (list) kill-switches AI sanctioning per category.
+- **`dry_run`** (bool, default `false`) is **shadow mode** (§8): the whole funnel
+  and barème run but **nothing is applied** — no delete/warn/mute/ban, no case, no
+  DM. A **SIMULATION** card is posted instead, carrying annotation buttons that
+  feed the evaluation corpus. Recommended for a server's first week.
 
 ### Applying a decision
 
@@ -265,7 +270,12 @@ The module runs the **barème** first (`_compute_bareme`): it loads the member's
 recent guild sanctions (`list_member_sanctions`, 180 d), their server tenure and
 the guild config, computes the cran and **overwrites `decision.actions` /
 `decision.duree_heures`** from it. nano's qualification is the only thing read
-from the pipeline. Then:
+from the pipeline.
+
+**Shadow mode short-circuit:** if the guild has `dry_run` on, the module stops
+right here — it records an eval candidate and posts the SIMULATION card
+(`_notify_shadow`), and returns **before** any delete/case/DM. Everything below
+only runs in normal (non-shadow) mode. Then:
 
 - `supprimer` → delete the message.
 - `ban` (precedence) / `mute` (Discord timeout, duration by gravity) → applied
@@ -410,3 +420,101 @@ Seeded unlimited in `db/base.py`; tighten per-guild via `quota_overrides`.
 | `MULT_MEME_CATEGORIE` | 1.5 | same-category repeat multiplier |
 | `PLAFOND_CONFIG` | warn 1 / mute 6 / ban 7 | guild `max_action` cran ceiling |
 | `CATEGORIES_SENSIBLES` | self-harm/doxxing/sexual | no veteran clemency at haute+ |
+
+---
+
+## 8. Évaluation — regression harness & shadow mode (`automod/eval/`)
+
+> The point: prove a change **improves** the automod instead of moving the
+> problem, and roll it out on a live server with **zero risk** while it calibrates.
+
+### 8.1 Golden set (`automod/eval/golden.jsonl`)
+
+A committed corpus of labelled cases, one JSON object per line:
+
+```json
+{"id": "gs-0003", "contenu": "ferme ta gueule connard", "contexte": ["…"],
+ "attendu": {"sanctionnable": true, "categorie": "insulte", "gravite_min": "moyenne"},
+ "tags": ["insulte_directe", "few_shot"], "origine": "few_shot_3"}
+```
+
+- `attendu` carries `sanctionnable` (always), and optionally `categorie` and
+  `gravite_min` for sanctionnable cases.
+- `tags` classify the case; **`faux_positif_reel`** marks a known real false
+  positive — the harness's protected set (see the gate below).
+- Seeded with 60+ cases: the 8 calibrated few-shots, the real false positives
+  ("je suis con", "arrête stp", quotes, lyrics, casual swearing), varied true
+  positives across every category, prompt-injection attempts, and English
+  messages. It grows continuously from the annotation flow (§8.4).
+
+### 8.2 Offline runner (`python -m automod.eval.run`)
+
+Replays the **whole funnel** (prefilter → trivial → blocklist → embedding →
+nano → grounding → barème) over the golden set. Two modes:
+
+| mode | model calls | cost | use |
+|---|---|---|---|
+| `--replay` (default) | from `fixtures.json` (recorded scores + verdicts) | free, deterministic | **CI + pytest** |
+| `--live` | real `bot.gateway` (embeddings + nano) | a few cents | re-measure after a prompt change; `--update-fixtures` refreshes the corpus |
+
+It reports precision / recall / F1, a per-category confusion matrix, and the
+cases whose verdict changed vs the committed **baseline**
+(`golden_baseline.json`). It only **decides** — never applies a sanction, never
+touches the DB.
+
+**The CI gate.** The runner exits non-zero iff a case tagged
+`faux_positif_reel` becomes sanctionnable again. So weakening the grounding
+guard (session 1) or a category map turns CI **red** — the known false positives
+can never silently regress. `tests/automod/test_eval_harness.py` asserts this
+end to end (clean replay matches the baseline; disabling `validate_grounding`
+resurrects the false positives and trips the gate).
+
+Common commands (also in the `Makefile`):
+
+```bash
+make eval               # replay + baseline diff (exit≠0 on FP regression)
+make eval-baseline      # refresh golden_baseline.json from the current replay
+make eval-live          # real gateway run; refresh baseline + fixtures
+```
+
+Why `--replay` is trustworthy for code changes: the fixtures record the model
+outputs, so the deterministic layers the harness protects (grounding guards,
+category normalisation, the barème) are exercised for real; only a *prompt*
+change needs `--live` to re-measure.
+
+### 8.3 Shadow mode (`dry_run`)
+
+A guild can run the whole system with **nothing applied**. With `dry_run: true`
+the funnel and barème run exactly as normal, but instead of acting the module
+posts a **SIMULATION** card to the alert channel (badge *"SIMULATION — aucune
+action appliquée"*) showing the sanction that *would* have been taken and its
+barème breakdown. **No delete, no warn/mute/ban, no case, no DM.** Toggle it in
+`/config` (Automod → Options, "Mode simulation", recommended the first week).
+
+The card carries three **persistent** annotation buttons — **✅ Correct**,
+**❌ Faux positif**, **⚠️ Disproportionné** (`utils/automod_shadow_views.py`,
+`DynamicItem`s registered in `utils/persistent_views.py`). A moderator's click
+(requires *manage messages*) records their ruling onto the candidate and
+re-renders the card in place. The buttons survive a bot restart: their
+`custom_id` encodes the candidate id and the card is rebuilt from the DB row.
+
+### 8.4 Annotation corpus (`automod_eval_candidates`)
+
+Every shadow card — and, over time, every human correction (accepted appeal,
+"false positive" click) — writes a row to `automod_eval_candidates`
+(`db/repositories/eval_candidates.py`): the message, its context, the verdict,
+the cran + barème breakdown, and (once annotated) the moderator's ruling.
+
+`make eval-import` (`python -m automod.eval.import_candidates`, needs
+`DATABASE_URL`) turns the **annotated** candidates into golden-shaped JSONL on
+stdout, for a curator to review and fold into `golden.jsonl`:
+
+| ruling | expected verdict | tag |
+|---|---|---|
+| `correct` | `sanctionnable: true` (+ category) | `from_annotation` |
+| `faux_positif` | `sanctionnable: false` | `faux_positif_reel` |
+| `disproportionne` | `sanctionnable: true` | `disproportionne` (barème signal) |
+
+This is the loop that keeps the golden set — and the whole harness — grounded in
+real server traffic. It is also the raw material for per-server precedents
+(session 7).

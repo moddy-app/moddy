@@ -28,7 +28,7 @@ from cogs.error_handler import BaseView, BaseModal
 from utils.emojis import (
     SHIELD, BOOK, BACK, DELETE, MESSAGE, GROUPS, SETTINGS, WARNING, SAVE,
     UNDONE, REQUIRED_FIELDS, MANAGE_USER, GREEN_STATUS, RED_STATUS, TOGGLE_ON,
-    TOGGLE_OFF,
+    TOGGLE_OFF, SEARCH,
 )
 from automod.rules_check import validate_rules, MAX_RULES_LENGTH
 from automod import constants as ac
@@ -43,6 +43,7 @@ _DEFAULT_CONFIG = {
     "severity": ac.SEVERITY_DEFAULT,
     "max_action": "ban",
     "langue_serveur": "auto",
+    "dry_run": False,
     "features": {
         "content": {"enabled": False, "exempt_roles": [], "exempt_channels": []},
     },
@@ -64,6 +65,7 @@ def _deep_default(current: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     cfg["max_action"] = max_action if max_action in ("warn", "mute", "ban") else "ban"
     langue = str(current.get("langue_serveur", "auto") or "auto")
     cfg["langue_serveur"] = langue if langue in ("auto", "fr", "en-US") else "auto"
+    cfg["dry_run"] = bool(current.get("dry_run", False))
     content = (current.get("features", {}) or {}).get("content", {}) or {}
     cfg["features"]["content"] = {
         "enabled": bool(content.get("enabled", False)),
@@ -224,10 +226,11 @@ class AutomodConfigView(BaseView):
         container.add_item(ui.TextDisplay(
             f"{SETTINGS} **{t('modules.automod.config.section_options', locale=self.locale)}**"
         ))
+        dry_run_on = bool(cfg.get("dry_run", False))
         opt_row = ui.ActionRow()
         opt_select = ui.Select(
             placeholder=t("modules.automod.config.activations.placeholder", locale=self.locale),
-            min_values=0, max_values=2,
+            min_values=0, max_values=3,
             options=[
                 discord.SelectOption(
                     label=t("modules.automod.config.content_label", locale=self.locale),
@@ -243,11 +246,21 @@ class AutomodConfigView(BaseView):
                     emoji=discord.PartialEmoji.from_str(MANAGE_USER),
                     default=ignore_on,
                 ),
+                discord.SelectOption(
+                    label=t("modules.automod.config.dry_run.label", locale=self.locale),
+                    value="dry_run",
+                    description=t("modules.automod.config.dry_run.desc", locale=self.locale)[:100],
+                    emoji=discord.PartialEmoji.from_str(SEARCH),
+                    default=dry_run_on,
+                ),
             ],
         )
         opt_select.callback = self.on_activations
         opt_row.add_item(opt_select)
         container.add_item(opt_row)
+        if dry_run_on:
+            container.add_item(ui.TextDisplay(
+                f"-# {SEARCH} {t('modules.automod.config.dry_run.active', locale=self.locale)}"))
 
         # ── Alert channel (REQUIRED) ──────────────────────────────────────
         warn_line = ("" if has_channel
@@ -462,6 +475,7 @@ class AutomodConfigView(BaseView):
         selected = set(interaction.data.get("values", []))
         self._content["enabled"] = "content" in selected
         self.working_config["ignore_moderators"] = "ignore" in selected
+        self.working_config["dry_run"] = "dry_run" in selected
         self.has_changes = True
         await self._rerender(interaction)
 

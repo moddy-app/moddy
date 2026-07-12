@@ -1407,6 +1407,11 @@
           "auto": "Automatique (langue du serveur)",
           "fr": "Français",
           "en": "Anglais"
+        },
+        "dry_run": {
+          "label": "Mode simulation",
+          "desc": "Détecte et affiche, mais n'applique aucune sanction (recommandé la première semaine)",
+          "active": "Mode simulation actif : les sanctions sont affichées mais jamais appliquées."
         }
       },
       "action": {
@@ -1563,6 +1568,26 @@
         "disabled_category": "Catégorie désactivée",
         "review_hint": "Sanction lourde décidée par l'IA — un modérateur peut la réviser.",
         "bounds": "Bornes 0–7"
+      },
+      "shadow": {
+        "badge": "SIMULATION — aucune action appliquée",
+        "would_apply": "Sanction simulée",
+        "annotate_hint": "Modérateurs : cette décision est-elle correcte ?",
+        "button": {
+          "ok": "Correct",
+          "fp": "Faux positif",
+          "disp": "Disproportionné"
+        },
+        "annotated": {
+          "correct": "Jugé correct",
+          "faux_positif": "Jugé faux positif",
+          "disproportionne": "Jugé disproportionné"
+        },
+        "error": {
+          "title": "Action impossible",
+          "no_perms": "Seuls les modérateurs (gérer les messages) peuvent annoter une simulation.",
+          "gone": "Cette simulation n'existe plus."
+        }
       }
     }
   },

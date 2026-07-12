@@ -236,6 +236,9 @@ class AutomodModule(ModuleBase):
         self.max_action: str = "ban"          # "warn" | "mute" | "ban"
         self.langue_serveur: str = "auto"      # "auto" | "fr" | "en-US"
         self.categories_desactivees: List[str] = []
+        # Shadow mode (session 3): run the full funnel but apply nothing — post a
+        # SIMULATION card with annotation buttons instead of sanctioning.
+        self.dry_run: bool = False
         self._features: Dict[str, AutomodFeature] = {}
         self._warmup_task: Optional[asyncio.Task] = None
 
@@ -259,6 +262,7 @@ class AutomodModule(ModuleBase):
             self.categories_desactivees = [
                 str(c) for c in (self.config.get("categories_desactivees", []) or [])
             ]
+            self.dry_run = bool(self.config.get("dry_run", False))
 
             features_cfg = self.config.get("features", {}) or {}
             self._features = {}
@@ -319,6 +323,7 @@ class AutomodModule(ModuleBase):
             "max_action": "ban",
             "langue_serveur": "auto",
             "categories_desactivees": [],
+            "dry_run": False,
             "features": {
                 "content": {
                     "enabled": False,
@@ -564,6 +569,13 @@ class AutomodModule(ModuleBase):
         decision.actions = list(bareme.actions)
         decision.duree_heures = bareme.duree_heures or 0
         if not decision.actions:
+            return
+
+        # Shadow mode (session 3): run the whole funnel + barème but apply NOTHING
+        # — no delete, no sanction, no case, no DM. Post a SIMULATION card with
+        # annotation buttons that feed the eval corpus instead.
+        if self.dry_run:
+            await self._notify_shadow(message, decision, bareme)
             return
 
         guild = message.guild
@@ -862,6 +874,101 @@ class AutomodModule(ModuleBase):
             await member.send(view=view, files=files)
         except (discord.Forbidden, discord.HTTPException):
             pass  # closed DMs — the case + channel notification still stand
+
+    async def _shadow_context(self, message: discord.Message, n: int = 8) -> List[str]:
+        """A short snapshot of preceding messages, stored on the eval candidate."""
+        out: List[str] = []
+        try:
+            async for prev in message.channel.history(limit=n, before=message):
+                if not (prev.content or "").strip():
+                    continue
+                out.append(prev.content[:300])
+        except (discord.Forbidden, discord.HTTPException):
+            return []
+        out.reverse()
+        return out
+
+    async def _notify_shadow(self, message: discord.Message, decision: Decision,
+                             bareme: ab.ResultatBareme):
+        """Shadow mode: record an eval candidate + post a SIMULATION card.
+
+        Applies nothing (no delete/sanction/case/DM). The card carries persistent
+        ✅/❌/⚠️ annotation buttons that write a moderator's ruling back onto the
+        candidate — the annotation flow that feeds the golden set (session 3) and,
+        later, per-server precedents (session 7).
+        """
+        if not self.notify_channel_id:
+            return
+        guild = message.guild
+        channel = guild.get_channel(int(self.notify_channel_id)) if guild else None
+        if not channel or not isinstance(channel, discord.TextChannel):
+            return
+        me = guild.me
+        if not channel.permissions_for(me).send_messages:
+            return
+
+        locale = self.guild_locale(guild)
+        verdict_payload = {
+            "sanctionnable": True,
+            "categorie": decision.categorie,
+            "gravite": decision.gravite,
+            "confiance": decision.confiance,
+            "citation": decision.citation,
+            "cible": decision.cible,
+            "raison": decision.raison,
+            "explication": decision.explication,
+            "signal_source": decision.signal_source,
+            "score": round(decision.score_detecteur, 4),
+            "actions": list(decision.actions),
+            "locale": locale,
+        }
+        bareme_payload = {
+            "cran": bareme.cran,
+            "duree_heures": bareme.duree_heures,
+            "needs_review": bareme.needs_review,
+            "actions": list(bareme.actions),
+            "points_recidive": round(bareme.points_recidive, 2),
+            "composantes": [
+                {"code": c.code, "delta": c.delta, "detail": c.detail}
+                for c in bareme.composantes
+            ],
+        }
+        contexte = await self._shadow_context(message)
+
+        candidate_id = None
+        if getattr(self.bot, "db", None):
+            candidate_id = await self.bot.db.create_eval_candidate(
+                guild_id=self.guild_id,
+                source="shadow_button",
+                contenu=message.content or "",
+                contexte=contexte,
+                verdict=verdict_payload,
+                cran=bareme.cran,
+                bareme=bareme_payload,
+                channel_id=message.channel.id,
+                message_id=message.id,
+                author_id=int(decision.auteur_id),
+            )
+
+        from utils.automod_shadow_views import render_shadow_card
+        candidate = {
+            "id": candidate_id,
+            "guild_id": self.guild_id,
+            "channel_id": message.channel.id,
+            "message_id": message.id,
+            "author_id": int(decision.auteur_id),
+            "contenu": message.content or "",
+            "contexte": contexte,
+            "verdict": verdict_payload,
+            "cran": bareme.cran,
+            "bareme": bareme_payload,
+            "verdict_humain": None,
+            "annotated_by": None,
+        }
+        try:
+            await channel.send(view=render_shadow_card(candidate))
+        except (discord.Forbidden, discord.HTTPException):
+            return
 
     async def _notify_channel(self, message: discord.Message, decision: Decision,
                               applied: List[str], case_ref: Optional[str],

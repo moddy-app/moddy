@@ -1408,6 +1408,11 @@
           "auto": "Automatic (server language)",
           "fr": "French",
           "en": "English"
+        },
+        "dry_run": {
+          "label": "Simulation mode",
+          "desc": "Detects and shows, but applies no sanction (recommended for the first week)",
+          "active": "Simulation mode on: sanctions are shown but never applied."
         }
       },
       "action": {
@@ -1564,6 +1569,26 @@
         "disabled_category": "Disabled category",
         "review_hint": "Heavy AI-decided sanction — a moderator can review it.",
         "bounds": "Bounds 0–7"
+      },
+      "shadow": {
+        "badge": "SIMULATION — no action applied",
+        "would_apply": "Simulated sanction",
+        "annotate_hint": "Moderators: is this decision correct?",
+        "button": {
+          "ok": "Correct",
+          "fp": "False positive",
+          "disp": "Disproportionate"
+        },
+        "annotated": {
+          "correct": "Judged correct",
+          "faux_positif": "Judged false positive",
+          "disproportionne": "Judged disproportionate"
+        },
+        "error": {
+          "title": "Cannot do that",
+          "no_perms": "Only moderators (manage messages) can annotate a simulation.",
+          "gone": "This simulation no longer exists."
+        }
       }
     }
   },
