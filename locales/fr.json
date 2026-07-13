@@ -1569,6 +1569,10 @@
         "review_hint": "Sanction lourde décidée par l'IA — un modérateur peut la réviser.",
         "bounds": "Bornes 0–7"
       },
+      "budget": {
+        "title": "Budget IA du jour atteint",
+        "body": "Le quota quotidien d'analyses IA de l'automod ({cap}) est atteint pour aujourd'hui. Les cas manifestes (mots explicites, contenus très proches du seuil) restent traités et supprimés, mais la sensibilité de l'IA est réduite jusqu'à demain. Ce message n'apparaît qu'une fois par jour."
+      },
       "shadow": {
         "badge": "SIMULATION — aucune action appliquée",
         "would_apply": "Sanction simulée",

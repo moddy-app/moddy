@@ -7,17 +7,44 @@ author history, context) are passed per call. This is the scalable seam: a guild
 module owns *configuration and actions*, the engine owns *detection*.
 
 All external calls go through ``bot.gateway`` (quotas, resilience, logging).
+
+Cost controls (session 4)
+-------------------------
+Three mechanisms, all off the hot path for a normal message and none adding an
+AI call:
+
+* **Verdict cache** — the nano *qualification* (sanctionnable / categorie /
+  gravite / citation / cible) is memoised per (guild, collapsed-text) with a
+  short TTL and single-flight, so a copypasta raid that reaches nano costs one
+  chat call, not N. The barème (cran + recidivism) is always recomputed.
+* **Author aggregation** — a short Redis buffer per (guild, channel, author)
+  lets the pipeline judge the *concatenation* of consecutive fragments when a
+  message stops before nano, catching fragmented harassment ("je vais" / "te" /
+  "retrouver"). The concat is only routed through the cheap steps.
+* **Budget guard** — a Redis daily counter per guild bounds real nano calls;
+  past the soft cap the funnel degrades (nano reserved for flagrant cases) but
+  never goes blind.
+
+Redis is optional: without it the verdict cache and single-flight still work
+(in-process), while aggregation and the budget guard are simply inert.
 """
 
 from __future__ import annotations
 
+import asyncio
+import hashlib
+import json
 import logging
+import time
 import uuid
-from typing import Awaitable, Callable, List, Optional
+from datetime import datetime, timezone
+from typing import Awaitable, Callable, Dict, List, Optional, Set, Tuple
 
 from . import constants, nano
 from .blocklist import get_blocklist
-from .embeddings import EmbeddingEngine
+from .cache import MISS, LruTtlCache
+from .embeddings import EmbeddingEngine, _retrieve_result
+from .normalize import collapse_repeats
 from .prefiltre import pre_filter
 from .schemas import Signal, Decision, TargetMessage, ContextMessage, AuthorHistory
 from .triviaux import est_trivial
@@ -34,6 +61,28 @@ class AutomodEngine:
         self.bot = bot
         self.blocklist = get_blocklist()
         self.embeddings = EmbeddingEngine(self._embed)
+
+        # Verdict cache: (guild, collapsed-text) → qualification dict. Same text +
+        # same guild ⇒ same qualification, so memoising is safe (the barème, which
+        # differs per author, is recomputed downstream). Disabled ⇒ max_entries=0.
+        self._verdict_cache: LruTtlCache = LruTtlCache(
+            max_entries=(
+                constants.VERDICT_CACHE_MAX_ENTRIES
+                if constants.VERDICT_CACHE_ENABLED
+                else 0
+            ),
+            ttl_seconds=constants.VERDICT_CACHE_TTL_SECONDS,
+        )
+        # Single-flight: coalesce concurrent identical qualifications onto one call.
+        self._verdict_inflight: Dict[str, "asyncio.Future"] = {}
+
+        # Budget guard bookkeeping (process-local observability; the authoritative
+        # counter lives in Redis so it is shared across shards / restarts).
+        self._budget_calls = 0          # real nano calls counted this process
+        self._budget_dropped = 0        # nano-bound messages dropped over budget
+        self._budget_degraded: Set[Tuple[int, str]] = set()   # (guild, day) degraded
+        self._budget_notified: Set[Tuple[int, str]] = set()   # (guild, day) card sent
+        self._budget_notice_pending: Set[int] = set()          # guilds the module owes a card
 
     # -- Gateway-backed primitives -----------------------------------------
 
@@ -66,12 +115,28 @@ class AutomodEngine:
 
         return chat_fn
 
-    def cache_stats(self) -> dict:
-        """Embedding score-cache counters (hits/misses/evictions/hit rate).
+    # -- Diagnostics -------------------------------------------------------
 
-        Useful for a staff diagnostic to gauge how much the cache is saving.
-        """
+    def cache_stats(self) -> dict:
+        """Embedding score-cache counters (hits/misses/evictions/hit rate)."""
         return self.embeddings.cache_stats()
+
+    def verdict_cache_stats(self) -> dict:
+        """nano verdict-cache counters plus the in-flight coalescing count."""
+        stats = self._verdict_cache.stats()
+        stats["inflight"] = len(self._verdict_inflight)
+        return stats
+
+    def budget_stats(self) -> dict:
+        """Per-guild nano budget guard counters (this process + today's guilds)."""
+        day = self._utc_day()
+        return {
+            "soft_cap": constants.NANO_DAILY_SOFT_CAP,
+            "nano_calls": self._budget_calls,
+            "dropped": self._budget_dropped,
+            "degraded_guilds": sorted(
+                {g for (g, d) in self._budget_degraded if d == day}),
+        }
 
     async def ensure_ready(self) -> bool:
         """Embed the reference phrases once (lazy). Returns readiness."""
@@ -97,6 +162,7 @@ class AutomodEngine:
         force_nano: bool = False,
         severity: int = constants.SEVERITY_DEFAULT,
         response_language: str = "English",
+        channel_id: Optional[int] = None,
     ) -> Optional[Decision]:
         """Run a message through the funnel and return a Decision or None.
 
@@ -104,9 +170,10 @@ class AutomodEngine:
         straight to nano with ``source=signalé_par_nano`` — used by the caller
         to re-analyse messages flagged in ``a_reverifier``.
 
-        ``severity`` (1–5) scales both the embedding routing threshold and how
-        strict nano is instructed to be. ``response_language`` is the language
-        nano writes its user-facing reason/explanation in (the server's tongue).
+        ``channel_id`` (optional) enables the author-aggregation window: when a
+        message stops before nano, the pipeline may re-route the concatenation of
+        the author's recent fragments (fragmented-harassment detection). Requires
+        ``bot.redis``; without it aggregation is simply skipped.
         """
         correlation_id = str(uuid.uuid4())
         severity = constants.clamp_severity(severity)
@@ -117,61 +184,171 @@ class AutomodEngine:
                 categorie="",
                 score_confiance=0.0,
             )
-            return await self._judge(
+            return await self._decide(
                 target, signal, guild_id=guild_id, guild_name=guild_name,
                 rules=rules, author_history=author_history,
                 fetch_context=fetch_context, correlation_id=correlation_id,
                 severity=severity, response_language=response_language,
             )
 
+        # Buffer this message for the aggregation window BEFORE routing, so a
+        # later fragment can reassemble the sequence including this one.
+        if channel_id is not None:
+            await self._agg_push(guild_id, channel_id, target)
+
+        signal = await self._route_message(
+            target.content, is_bot=is_bot, is_system=is_system, severity=severity)
+
+        if signal is not None:
+            # Reached nano on its own → mark it judged so the aggregate skips it.
+            if channel_id is not None:
+                await self._agg_mark_judged(
+                    guild_id, channel_id, target.author_id, [str(target.id)])
+            return await self._decide(
+                target, signal, guild_id=guild_id, guild_name=guild_name,
+                rules=rules, author_history=author_history,
+                fetch_context=fetch_context, correlation_id=correlation_id,
+                severity=severity, response_language=response_language,
+            )
+
+        # Stopped before nano → try the fragmented-harassment aggregate.
+        if channel_id is not None:
+            return await self._maybe_aggregate(
+                target, guild_id=guild_id, channel_id=channel_id,
+                guild_name=guild_name, rules=rules, author_history=author_history,
+                fetch_context=fetch_context, correlation_id=correlation_id,
+                severity=severity, response_language=response_language,
+            )
+        return None
+
+    # -- Routing (steps 1–4, produce a Signal or None) ---------------------
+
+    async def _route_message(
+        self, content: str, *, is_bot: bool, is_system: bool, severity: int,
+    ) -> Optional[Signal]:
+        """Steps 1–4 for a single message. Returns the nano-routing Signal or None."""
         # Step 1 — pre-filter.
-        if not pre_filter(target.content, is_bot=is_bot, is_system=is_system):
+        if not pre_filter(content, is_bot=is_bot, is_system=is_system):
             return None
-
         # Step 2 — trivial allowlist.
-        if est_trivial(target.content):
+        if est_trivial(content):
             return None
+        return await self._route_semantic(content, severity)
 
+    async def _route_semantic(self, content: str, severity: int) -> Optional[Signal]:
+        """Steps 3–4 only (regex blocklist + embedding). Shared with aggregation.
+
+        The aggregate path reuses exactly these two cheap steps on the
+        concatenation, skipping the (single-message) pre-filter / trivial guards.
+        """
         # Step 3 — regex blocklist.
-        entry = self.blocklist.match(target.content)
+        entry = self.blocklist.match(content)
         if entry is not None:
-            signal = Signal(
+            return Signal(
                 source=constants.SOURCE_REGEX,
                 categorie=entry.categorie,
                 score_confiance=constants.GRAVITE_TO_SCORE.get(
-                    entry.gravite_indicative, 0.7
-                ),
+                    entry.gravite_indicative, 0.7),
             )
-            return await self._judge(
-                target, signal, guild_id=guild_id, guild_name=guild_name,
-                rules=rules, author_history=author_history,
-                fetch_context=fetch_context, correlation_id=correlation_id,
-                severity=severity, response_language=response_language,
-            )
-
         # Step 4 — embedding (threshold scales with severity).
         if not await self.ensure_ready():
             return None  # graceful degradation: embeddings unavailable
-        scored = await self.embeddings.score(target.content)
+        scored = await self.embeddings.score(content)
         if scored is None:
             return None
         score, categorie = scored
         threshold = constants.embedding_threshold_for(severity)
         if not EmbeddingEngine.passes_threshold(score, threshold):
             return None
-        signal = Signal(
+        return Signal(
             source=constants.SOURCE_EMBEDDING,
             categorie=categorie,
             score_confiance=score,
         )
 
-        # Step 5 — nano.
-        return await self._judge(
-            target, signal, guild_id=guild_id, guild_name=guild_name,
-            rules=rules, author_history=author_history,
-            fetch_context=fetch_context, correlation_id=correlation_id,
-            severity=severity, response_language=response_language,
+    # -- Decision (budget gate + verdict cache + nano) ---------------------
+
+    async def _decide(
+        self,
+        target: TargetMessage,
+        signal: Signal,
+        *,
+        guild_id: int,
+        guild_name: str,
+        rules: str,
+        author_history: AuthorHistory,
+        fetch_context: ContextFn,
+        correlation_id: str,
+        severity: int,
+        response_language: str,
+        agregat_de: Optional[List[str]] = None,
+    ) -> Optional[Decision]:
+        """Turn a routing Signal into a Decision, spending at most one nano call.
+
+        Order: a **free** verdict-cache probe (and single-flight join) first, so a
+        cached qualification is served even when the guild is over budget; only a
+        genuine miss consults the budget guard before spending a nano call.
+        """
+        key = self._verdict_key(guild_id, target.content)
+
+        cached = self._verdict_cache.get(key)
+        if cached is not MISS:
+            return self._decision_from_qualif(cached, target, signal, agregat_de)
+
+        pending = self._verdict_inflight.get(key)
+        if pending is not None:
+            qualif = await pending
+            if qualif is None:
+                return None
+            return self._decision_from_qualif(qualif, target, signal, agregat_de)
+
+        # A real nano call is about to happen → consult the budget guard.
+        if not await self._budget_allows(guild_id, signal, severity):
+            self._budget_dropped += 1
+            return None
+
+        return await self._nano_call(
+            key, target, signal, guild_id=guild_id, guild_name=guild_name,
+            rules=rules, author_history=author_history, fetch_context=fetch_context,
+            correlation_id=correlation_id, severity=severity,
+            response_language=response_language, agregat_de=agregat_de,
         )
+
+    async def _nano_call(
+        self, key: str, target: TargetMessage, signal: Signal, *,
+        guild_id: int, guild_name: str, rules: str,
+        author_history: AuthorHistory, fetch_context: ContextFn,
+        correlation_id: str, severity: int, response_language: str,
+        agregat_de: Optional[List[str]],
+    ) -> Optional[Decision]:
+        """Real nano call, wrapped in single-flight + cache-fill + budget count."""
+        loop = asyncio.get_event_loop()
+        future: "asyncio.Future" = loop.create_future()
+        future.add_done_callback(_retrieve_result)
+        self._verdict_inflight[key] = future
+        try:
+            decision = await self._judge(
+                target, signal, guild_id=guild_id, guild_name=guild_name,
+                rules=rules, author_history=author_history,
+                fetch_context=fetch_context, correlation_id=correlation_id,
+                severity=severity, response_language=response_language,
+                agregat_de=agregat_de,
+            )
+        except BaseException as exc:  # propagate to caller and any waiters
+            self._verdict_inflight.pop(key, None)
+            if not future.done():
+                future.set_exception(exc)
+            raise
+        else:
+            qualif = self._qualif_from_decision(decision)
+            if qualif is not None:
+                self._verdict_cache.set(key, qualif)
+            await self._budget_increment(guild_id)
+            self._budget_calls += 1
+            self._verdict_inflight.pop(key, None)
+            if not future.done():
+                future.set_result(qualif)
+            return decision
 
     async def _judge(
         self,
@@ -186,6 +363,7 @@ class AutomodEngine:
         correlation_id: str,
         severity: int = constants.SEVERITY_DEFAULT,
         response_language: str = "English",
+        agregat_de: Optional[List[str]] = None,
     ) -> Decision:
         return await nano.juger(
             target,
@@ -197,6 +375,279 @@ class AutomodEngine:
             fetch_context=fetch_context,
             severite=severity,
             response_language=response_language,
+            agregat_de=agregat_de,
+        )
+
+    # -- Verdict cache helpers ---------------------------------------------
+
+    def _verdict_key(self, guild_id: int, content: str) -> str:
+        """Per-guild cache key over the collapsed/normalised message text.
+
+        Collapsing runs before hashing so a padded/re-cased copypasta shares one
+        entry; the guild id keeps guidance/severity differences from colliding.
+        """
+        collapsed = collapse_repeats(content) or content
+        raw = f"{guild_id}\x00{collapsed}"
+        return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+    @staticmethod
+    def _qualif_from_decision(decision) -> Optional[dict]:
+        """Extract the cacheable qualification from a Decision (None if not one)."""
+        if not isinstance(decision, Decision):
+            return None
+        return {
+            "sanctionnable": decision.sanctionnable,
+            "categorie": decision.categorie,
+            "gravite": decision.gravite,
+            "raison": decision.raison,
+            "explication": decision.explication,
+            "confiance": decision.confiance,
+            "citation": decision.citation,
+            "cible": decision.cible,
+            "rejet_grounding": decision.rejet_grounding,
+        }
+
+    @staticmethod
+    def _decision_from_qualif(
+        q: dict, target: TargetMessage, signal: Signal,
+        agregat_de: Optional[List[str]] = None,
+    ) -> Decision:
+        """Rebuild a Decision from a cached qualification + this message/signal.
+
+        ``a_reverifier`` is deliberately NOT restored (it references context
+        message ids specific to the original message); a cache hit yields the same
+        qualification, not the same neighbouring-message flags.
+        """
+        return Decision(
+            message_id=target.id,
+            auteur_id=target.author_id,
+            sanctionnable=q["sanctionnable"],
+            actions=[],
+            categorie=q["categorie"] or nano.normalize_categorie(signal.categorie),
+            gravite=q["gravite"],
+            raison=q["raison"],
+            explication=q["explication"],
+            confiance=q["confiance"],
+            signal_source=signal.source,
+            score_detecteur=signal.score_confiance,
+            a_reverifier=[],
+            duree_heures=0,
+            citation=q["citation"],
+            cible=q["cible"],
+            rejet_grounding=q["rejet_grounding"],
+            agregat_de=[str(x) for x in agregat_de] if agregat_de else [],
+            agregat_contenu=target.content if agregat_de else "",
+        )
+
+    # -- Budget guard ------------------------------------------------------
+
+    def _redis(self):
+        return getattr(self.bot, "redis", None)
+
+    @staticmethod
+    def _utc_day() -> str:
+        return datetime.now(timezone.utc).strftime("%Y%m%d")
+
+    async def _budget_used(self, guild_id: int) -> int:
+        r = self._redis()
+        if r is None:
+            return 0
+        try:
+            v = await r.get(f"automod:budget:{guild_id}:{self._utc_day()}")
+            return int(v) if v else 0
+        except Exception:
+            return 0
+
+    async def _budget_cap(self, guild_id: int) -> int:
+        """Soft cap for a guild — a Redis per-guild override, else the constant."""
+        r = self._redis()
+        if r is not None:
+            try:
+                v = await r.get(f"automod:budget:cap:{guild_id}")
+                if v is not None and str(v) != "":
+                    return int(v)
+            except Exception:
+                pass
+        return constants.NANO_DAILY_SOFT_CAP
+
+    async def _budget_increment(self, guild_id: int) -> None:
+        r = self._redis()
+        if r is None:
+            return
+        try:
+            key = f"automod:budget:{guild_id}:{self._utc_day()}"
+            await r.incr(key)
+            await r.expire(key, constants.BUDGET_KEY_TTL_SECONDS)
+        except Exception:
+            pass
+
+    async def _budget_allows(self, guild_id: int, signal: Signal, severity: int) -> bool:
+        """Whether a nano call may be spent for this message right now.
+
+        Without Redis the guard is inert (always allow). Under the soft cap:
+        allow. Over it, degrade — only a regex hit or an embedding score
+        comfortably above threshold gets a call; everything else is dropped (no
+        hard cut-off, the funnel simply loses sensitivity).
+        """
+        r = self._redis()
+        if r is None:
+            return True
+        cap = await self._budget_cap(guild_id)
+        if cap <= 0:
+            return True  # 0 / negative = unlimited
+        used = await self._budget_used(guild_id)
+        if used < cap:
+            return True
+
+        # Over the soft cap → degraded mode.
+        self._mark_degraded(guild_id)
+        if signal.source == constants.SOURCE_REGEX:
+            return True
+        if signal.source == constants.SOURCE_EMBEDDING:
+            threshold = constants.embedding_threshold_for(severity)
+            if signal.score_confiance >= threshold + constants.NANO_DEGRADED_SCORE_MARGIN:
+                return True
+        return False
+
+    def _mark_degraded(self, guild_id: int) -> None:
+        day = self._utc_day()
+        self._budget_degraded.add((guild_id, day))
+        if (guild_id, day) not in self._budget_notified:
+            self._budget_notified.add((guild_id, day))
+            self._budget_notice_pending.add(guild_id)
+
+    def pop_budget_notice(self, guild_id: int) -> bool:
+        """True once per (guild, day) when it first crosses into degraded mode.
+
+        The module calls this and, on True, posts the one-off "AI budget reached,
+        reduced sensitivity" card to the alert channel.
+        """
+        if guild_id in self._budget_notice_pending:
+            self._budget_notice_pending.discard(guild_id)
+            return True
+        return False
+
+    # -- Author aggregation (fragmented harassment) ------------------------
+
+    @staticmethod
+    def _agg_buf_key(guild_id: int, channel_id: int, author_id) -> str:
+        return f"automod:agg:buf:{guild_id}:{channel_id}:{author_id}"
+
+    @staticmethod
+    def _agg_judged_key(guild_id: int, channel_id: int, author_id) -> str:
+        return f"automod:agg:judged:{guild_id}:{channel_id}:{author_id}"
+
+    async def _agg_push(self, guild_id: int, channel_id: int,
+                        target: TargetMessage) -> None:
+        r = self._redis()
+        if r is None or not constants.AGGREGATION_ENABLED:
+            return
+        key = self._agg_buf_key(guild_id, channel_id, target.author_id)
+        entry = json.dumps({"id": str(target.id), "c": target.content,
+                            "ts": time.time()})
+        try:
+            await r.lpush(key, entry)
+            await r.ltrim(key, 0, constants.AGGREGATION_MAX_MESSAGES - 1)
+            await r.expire(key, constants.AGGREGATION_WINDOW_SECONDS)
+        except Exception:
+            pass
+
+    async def _agg_recent(self, guild_id: int, channel_id: int,
+                          author_id) -> List[dict]:
+        """The author's buffered messages within the window, oldest → newest."""
+        r = self._redis()
+        if r is None:
+            return []
+        key = self._agg_buf_key(guild_id, channel_id, author_id)
+        try:
+            raw = await r.lrange(key, 0, constants.AGGREGATION_MAX_MESSAGES - 1)
+        except Exception:
+            return []
+        now = time.time()
+        items: List[dict] = []
+        for s in raw or []:
+            try:
+                o = json.loads(s)
+            except Exception:
+                continue
+            if now - float(o.get("ts", 0)) <= constants.AGGREGATION_WINDOW_SECONDS:
+                items.append(o)
+        items.reverse()  # LPUSH stores newest-first → oldest-first
+        return items
+
+    async def _agg_judged(self, guild_id: int, channel_id: int,
+                          author_id) -> Set[str]:
+        r = self._redis()
+        if r is None:
+            return set()
+        try:
+            members = await r.smembers(
+                self._agg_judged_key(guild_id, channel_id, author_id))
+        except Exception:
+            return set()
+        return {m.decode() if isinstance(m, bytes) else str(m) for m in (members or [])}
+
+    async def _agg_mark_judged(self, guild_id: int, channel_id: int,
+                               author_id, ids: List[str]) -> None:
+        r = self._redis()
+        if r is None or not ids:
+            return
+        key = self._agg_judged_key(guild_id, channel_id, author_id)
+        try:
+            await r.sadd(key, *[str(i) for i in ids])
+            await r.expire(key, constants.AGGREGATION_WINDOW_SECONDS)
+        except Exception:
+            pass
+
+    async def _maybe_aggregate(
+        self,
+        target: TargetMessage,
+        *,
+        guild_id: int,
+        channel_id: int,
+        guild_name: str,
+        rules: str,
+        author_history: AuthorHistory,
+        fetch_context: ContextFn,
+        correlation_id: str,
+        severity: int,
+        response_language: str,
+    ) -> Optional[Decision]:
+        """Re-route the author's recent fragments as one concatenated message.
+
+        Only fires when the single message already stopped before nano, the
+        buffer holds ≥ ``AGGREGATION_MIN_MESSAGES`` fragments within the window,
+        none of which was already judged individually (anti double-jeopardy), and
+        the concatenation routes through the cheap steps (blocklist / embedding).
+        """
+        if not constants.AGGREGATION_ENABLED or self._redis() is None:
+            return None
+        author_id = target.author_id
+        items = await self._agg_recent(guild_id, channel_id, author_id)
+        if len(items) < constants.AGGREGATION_MIN_MESSAGES:
+            return None
+        frag_ids = [str(o.get("id")) for o in items]
+
+        judged = await self._agg_judged(guild_id, channel_id, author_id)
+        if judged & set(frag_ids):
+            return None  # a fragment already reached nano on its own → skip
+
+        concat = "\n".join(str(o.get("c", "")) for o in items)
+        signal = await self._route_semantic(concat, severity)
+        if signal is None:
+            return None
+
+        # The aggregate is about to spend a nano call → don't let the same
+        # fragments trigger it again.
+        await self._agg_mark_judged(guild_id, channel_id, author_id, frag_ids)
+
+        agg_target = TargetMessage(
+            id=str(target.id), author_id=author_id, content=concat)
+        return await self._decide(
+            agg_target, signal, guild_id=guild_id, guild_name=guild_name,
+            rules=rules, author_history=author_history, fetch_context=fetch_context,
+            correlation_id=correlation_id, severity=severity,
+            response_language=response_language, agregat_de=frag_ids,
         )
 
 

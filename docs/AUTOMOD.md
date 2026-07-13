@@ -391,6 +391,79 @@ Seeded unlimited in `db/base.py`; tighten per-guild via `quota_overrides`.
 > an optimization: identical input → identical output, so it can never change a
 > decision. Tune it via `EMBED_CACHE_*` in `constants.py`; inspect it live via
 > `bot._automod_engine.cache_stats()` (hits / misses / evictions / hit_rate).
+>
+> The cache key is the **collapsed/normalised** form of the message (session 4.4,
+> `embeddings.cache_key`), so a padded or re-cased duplicate ("aaaa" / "aaaaa",
+> "Con" / "con") shares one entry and one call. A message longer than
+> `PREFILTRE_MAX_CHARS` (1500) is embedded as its collapsed form, truncated to
+> the cap — a wall of text never needs its full length embedded.
+
+### 5.1 Verdict cache (nano de-duplication)
+
+Symmetric to the embedding cache but on nano's **qualification**. Same text in
+the same guild yields the same qualification (guidance / severity are per-guild,
+so the key is `sha256(guild_id + collapse_repeats(text))`), which makes the
+qualification safe to memoise: a copypasta raid that reaches nano costs **one**
+chat call, not N. Only the qualification (sanctionnable / categorie / gravite /
+citation / cible / raison / explication / confiance / grounding motif) is cached
+— the **barème** (cran + recidivism) is recomputed every time, because the
+author's history differs per message. `a_reverifier` is context-specific and is
+**never** restored from the cache.
+
+- Short TTL (`VERDICT_CACHE_TTL_SECONDS = 600`, guidance can change), LRU bounded
+  (`VERDICT_CACHE_MAX_ENTRIES = 2048`), single-flighted like the embedding cache.
+- A **free** cache probe runs *before* the budget guard, so a cached "yes" or
+  "no" is served even when the guild is over its daily budget.
+- Inspect live via `bot._automod_engine.verdict_cache_stats()`.
+
+### 5.2 Author aggregation (fragmented harassment)
+
+"je vais" / "te" / "retrouver" split across three messages clears the funnel —
+each fragment is empty on its own. A short **Redis** buffer per
+`(guild, channel, author)` (`AGGREGATION_WINDOW_SECONDS = 45`, cap
+`AGGREGATION_MAX_MESSAGES = 6`) lets the pipeline judge the **concatenation**
+when a message stops before nano and the buffer holds ≥ 2 recent fragments:
+
+- The concat is routed through the **cheap steps only** (blocklist + embedding);
+  nano runs only if the combined text actually routes.
+- The nano payload marks it (`message_cible.agregat_de = [ids…]`) and the system
+  prompt gains an *AGGREGATED MESSAGE* rule so nano judges the reassembled text.
+  The `Decision` carries `agregat_de` (every fragment id) and `agregat_contenu`
+  (the combined text); the module deletes **all N** fragments.
+- **Anti double-jeopardy**: if any fragment already reached nano individually
+  (tracked in a short Redis set), the aggregate is skipped.
+- Requires `bot.redis`; without it aggregation is simply inert (the funnel is
+  unchanged). Pass `channel_id` to `engine.analyze` to enable it.
+
+### 5.3 Per-guild budget guard
+
+A safety net on the bill, independent of the gateway quotas. A Redis counter
+`automod:budget:{guild}:{utc-day}` is bumped on every **real** nano call
+(`NANO_DAILY_SOFT_CAP = 300`, overridable per guild via
+`automod:budget:cap:{guild}`). Past the cap the funnel **degrades, never
+cuts**: nano is reserved for the flagrant cases — a regex hit, or an embedding
+score ≥ `threshold + NANO_DEGRADED_SCORE_MARGIN` (0.10) — and everything else is
+dropped before the call. The guild is posted a **one-off** "AI budget reached —
+reduced sensitivity" card (gated by `engine.pop_budget_notice(guild_id)`, at most
+once per UTC day). A cache hit never counts against the budget. Inspect via
+`bot._automod_engine.budget_stats()` (soft_cap / nano_calls / dropped /
+degraded_guilds). Without `bot.redis` the guard is inert.
+
+### 5.4 Cost order of magnitude
+
+For **1M messages/month** on an active server, at `gpt-4.1-nano`
+(~$0.10/M in, $0.40/M out) and `text-embedding-3-small` (~$0.02/M):
+
+| Stage | Estimated volume | Cost/month |
+|---|---|---|
+| Pre-filter + trivial (free) | 100 % → stops ~55 % | $0 |
+| Embeddings (~25 tok/msg, ~30 % cache hit) | ~450k msgs | **≈ $0.20** |
+| Nano (~2 % cross the threshold, ~1200 in / 120 out) | ~9k calls | **≈ $1.50** |
+| Mini (session 6, ~5 % of nano verdicts) | ~450 calls | ≈ $0.80 |
+
+The dangerous line item is **not** the unit price — it is a mis-calibrated
+`SEUIL_EMBEDDING` or a raid with no cache. Hence the verdict cache (5.1) and the
+budget guard (5.3): they bound exactly those two failure modes.
 
 ---
 
@@ -408,6 +481,21 @@ Seeded unlimited in `db/base.py`; tighten per-guild via `quota_overrides`.
 | `ROUNDS_MAX` | 3 | anti-loop |
 | `NANO_TEMPERATURE` | 0.0 | classification → deterministic |
 | `NANO_MAX_TOKENS` | 300 | lean v2 contract |
+| `PREFILTRE_MAX_CHARS` | 1500 | embed input cap (collapsed-form truncation) |
+
+### Cost-control tunables (session 4, `automod/constants.py`)
+
+| Constant | Default | Meaning |
+|---|---|---|
+| `VERDICT_CACHE_ENABLED` | `True` | leave on; disable only to A/B the savings |
+| `VERDICT_CACHE_MAX_ENTRIES` | 2048 | LRU cap on cached nano qualifications |
+| `VERDICT_CACHE_TTL_SECONDS` | 600 | short freshness bound (guidance can change) |
+| `AGGREGATION_ENABLED` | `True` | fragmented-harassment aggregation (needs Redis) |
+| `AGGREGATION_WINDOW_SECONDS` | 45 | sliding buffer window per (guild, channel, author) |
+| `AGGREGATION_MAX_MESSAGES` | 6 | fragments kept in the buffer |
+| `AGGREGATION_MIN_MESSAGES` | 2 | minimum fragments before an aggregate is attempted |
+| `NANO_DAILY_SOFT_CAP` | 300 | per-guild daily nano calls before degraded mode |
+| `NANO_DEGRADED_SCORE_MARGIN` | 0.10 | over-cap: embedding must clear `threshold + margin` |
 
 ### Barème tunables (`automod/bareme.py`)
 

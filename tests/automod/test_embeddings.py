@@ -172,6 +172,44 @@ class TestScoreCache:
         assert engine.cache_stats()["inflight"] == 0
         assert engine.cache_stats()["size"] == 0
 
+class TestNormalizedCacheKey:
+    """Session 4.4 — the score cache keys on the collapsed/normalised form."""
+
+    async def test_recased_variant_shares_cache_entry(self):
+        engine, calls = ready_engine(
+            mapping={"Sale Con": [1.0, 0.0]},
+            refs=[([1.0, 0.0], "insultes")],
+        )
+        s1 = await engine.score("Sale Con")
+        s2 = await engine.score("sale con")   # same collapsed key → cache hit
+        assert s1 == s2
+        assert len(calls) == 1
+        assert engine.cache_stats()["hits"] == 1
+
+    async def test_repetition_padding_shares_cache_entry(self):
+        from automod.embeddings import cache_key
+        assert cache_key("aaaa") == cache_key("aaaaa")  # both collapse to "a"
+        engine, calls = ready_engine(
+            mapping={"aaaa": [1.0, 0.0]},
+            refs=[([1.0, 0.0], "insultes")],
+        )
+        await engine.score("aaaa")
+        await engine.score("aaaaa")
+        assert len(calls) == 1  # padded duplicate served from cache
+
+    async def test_long_message_truncated_to_collapsed_form(self):
+        from automod import constants
+        from automod.embeddings import _segment
+        # A repetitive wall collapses to its unit.
+        segs = _segment("spam " * 1000)
+        assert len(segs) == 1 and len(segs[0]) <= constants.PREFILTRE_MAX_CHARS
+        # A long, non-repetitive message is truncated to the cap.
+        big = " ".join(str(i) for i in range(1000))  # >1500 chars, non-periodic
+        segs = _segment(big)
+        assert len(segs) == 1 and len(segs[0]) <= constants.PREFILTRE_MAX_CHARS
+
+
+class TestScoreCacheConcurrency:
     async def test_single_flight_coalesces_concurrent_requests(self):
         started = asyncio.Event()
         release = asyncio.Event()

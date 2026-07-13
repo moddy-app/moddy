@@ -99,3 +99,10 @@ class Decision:
     # verdict (motif, e.g. "grounding_citation_absente"). None when clean. Kept
     # for logs / the alert card so avoided false positives are observable.
     rejet_grounding: Optional[str] = None
+    # Anti-fragmentation (session 4): when this decision was reached by judging
+    # the CONCATENATION of several consecutive messages by the same author
+    # (fragmented harassment), these carry the fragment message ids the caller
+    # must act on (delete all N) and the combined text that was judged. Empty for
+    # an ordinary single-message decision.
+    agregat_de: List[str] = field(default_factory=list)
+    agregat_contenu: str = ""

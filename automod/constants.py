@@ -62,6 +62,15 @@ EMBED_CACHE_MAX_ENTRIES: int = 4096
 EMBED_CACHE_TTL_SECONDS: float = 1800.0  # 30 minutes
 
 
+# --- Pre-filter (step 1) ----------------------------------------------------
+#
+# A message longer than this is truncated to its de-spammed (collapsed) form
+# before embedding: a wall of text (or a repetition flood) never needs its full
+# length embedded — the toxic phrase, if any, survives collapsing. Keeps the
+# embed input bounded and the embedding-cache key stable across paddings.
+PREFILTRE_MAX_CHARS: int = 1500
+
+
 # --- nano (step 5) ----------------------------------------------------------
 
 # nano model + sampling. This is classification, not generation: temperature 0
@@ -76,6 +85,50 @@ NANO_MAX_TOKENS: int = 300
 CONTEXTE_INITIAL: int = 12     # first call
 CONTEXTE_MAX: int = 40         # absolute ceiling (cost + injection surface)
 ROUNDS_MAX: int = 3            # max nano calls per message (1 initial + 2 re-asks)
+
+
+# --- Verdict cache (step 5 de-duplication, session 4) -----------------------
+#
+# Symmetric to the embedding score cache but on nano *qualifications*. Same text
+# in the same guild yields the same qualification (sanctionnable / categorie /
+# gravite / citation / cible), so a copypasta raid that reaches nano costs ONE
+# chat call instead of N. Only the qualification is cached — the barème (cran +
+# recidivism) is recomputed every time, since the author's history differs. The
+# cache is per-guild (guidance / severity differ per guild), short-lived, LRU
+# bounded and single-flighted, exactly like the embedding cache. See
+# docs/AUTOMOD.md §5.1.
+VERDICT_CACHE_ENABLED: bool = True
+VERDICT_CACHE_MAX_ENTRIES: int = 2048
+VERDICT_CACHE_TTL_SECONDS: float = 600.0  # 10 minutes (guidance can change)
+
+
+# --- Author aggregation window (anti-fragmentation, session 4) --------------
+#
+# Fragmented harassment ("je vais" / "te" / "retrouver" in three messages)
+# individually clears the funnel — each fragment is empty on its own. A short
+# sliding Redis buffer per (guild, channel, author) lets the pipeline judge the
+# CONCATENATION when a message stops before nano and the buffer holds enough
+# recent fragments. The concat is only routed through the cheap steps
+# (blocklist + embedding); nano runs only if the combined text actually routes.
+AGGREGATION_ENABLED: bool = True
+AGGREGATION_WINDOW_SECONDS: int = 45
+AGGREGATION_MAX_MESSAGES: int = 6
+AGGREGATION_MIN_MESSAGES: int = 2
+
+
+# --- Per-guild budget guard (session 4) -------------------------------------
+#
+# A safety net on the bill, independent of the gateway quotas. A Redis counter
+# per (guild, UTC day) is bumped on every real nano call. Past the soft cap the
+# funnel keeps running (embeddings are cents) but nano is reserved for the
+# flagrant cases only — a regex hit, or an embedding score comfortably above the
+# routing threshold (+ ``NANO_DEGRADED_SCORE_MARGIN``). No hard cut-off: the
+# system degrades, it never goes blind. See docs/AUTOMOD.md §5.2.
+NANO_DAILY_SOFT_CAP: int = 300
+NANO_DEGRADED_SCORE_MARGIN: float = 0.10
+# TTL on the daily counter key (48h so a key set just before UTC midnight still
+# rotates cleanly), mirroring the gateway quota counters.
+BUDGET_KEY_TTL_SECONDS: int = 172800
 
 
 # --- Gateway call types -----------------------------------------------------
