@@ -193,6 +193,8 @@ class ConfigMainView(BaseView):
                 self.locale,
                 module_config
             )
+            # Session 7: load the learned-precedents count before first render.
+            await config_view.load_precedent_stats()
         # Ajouter d'autres modules ici au fur et à mesure
         # elif module_id == 'ticket':
         #     from modules.configs.ticket_config import TicketConfigView

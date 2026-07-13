@@ -14,7 +14,7 @@
 | 4 | Coûts & anti-fragmentation | ✅ Terminée | 2026-07-12 | Cache de verdicts nano (per-guild, TTL 600 s, LRU 2048, single-flight) → raid copypasta = 1 appel ; agrégation par auteur (buffer Redis 45 s, concat routée sur blocklist+embedding, `agregat_de` sur la Decision + prompt) ; budget guard par guild (compteur Redis/jour, cap 300, mode dégradé sans coupure + carte one-off) ; clé du cache embedding normalisée (§4.4) + troncature à 1500 c. Tests : `test_verdict_cache.py`, `test_aggregation.py`, `test_budget_guard.py` (+ embeddings). Runner S3 vert (aucune régression FP). |
 | 5 | Graphe relationnel & réaction de la cible | ✅ Terminée | 2026-07-13 | `automod/relations.py` pur (score familiarité décroissant demi-vie 30 j + classifieur `reaction_cible` 4 signaux + `RelationStore` Redis TTL 60 j, inerte sans Redis), listeners passifs (reply/mention → interactions/réciprocité, réaction rire → +positif via `on_reaction_add` cache-only ~0 coût), fenêtre d'observation 20 s (`relation_fn` lazy appelée juste avant nano, skip sur regex flagrant), injection `message_cible.relation` + bloc RELATION système (2 few-shots) montré seulement si relation présente, verdict jamais caché quand relation, garde-fous §5.4 (familiarité atténue seulement ; ignorée pour haine/automutilation/harcèlement_sexuel en haute+). Golden +6 cas relation (banter vs inconnus, détresse, garde-fou haine). Tests : `test_relations.py` (21), `test_relation_reaction.py` (10). 229 verts, runner S3 vert (1.0/1.0). |
 | 6 | Routing par difficulté (nano → mini) | ✅ Terminée | 2026-07-13 | `automod/routing.py` pur (`difficulte` → `evident`/`ambigu` : regex flagrant, ≤3 mots, familiarité haute/moyenne, marqueurs de rire, zone grise ±0.05 ; gratuit, aucun appel), routage engine `evident`→nano / `ambigu`→**mini** (`gpt-4.1-mini`, contexte ×2, `Decision.decideur`), confirmation obligatoire des sanctions lourdes (cran ≥ 6 décidées par nano) via `engine.confirm_heavy`→`nano.confirmer` (binaire, fail-safe), refus ⇒ `bareme.appliquer_non_confirme` plafonne à cran 4 (mute 48 h, jamais de ban) + carte « dégradé après revue », budget guard étendu aux appels mini ×4 (`incrby`). Marqueurs de rire centralisés (`RIRE_MOTS`/`RIRE_EMOJIS`, source unique partagée S5/S6). Call types seedés `automod_decision_mini` + `automod_confirm`. Runner S3 reporte la difficulté (banter→ambigu). Tests : `test_routing.py` (14), `test_confirmation.py` (20), harness routing (3). **266 verts**, runner `--replay` 1.0/1.0. |
-| 7 | Précédents serveur (jurisprudence RAG) | ⬜ À faire | — | — |
+| 7 | Précédents serveur (jurisprudence RAG) | ✅ Terminée | 2026-07-13 | `automod/precedents.py` pur (cosine + `match` top-3 ≥ 0.80 + `deterministic_shortcut` ≥ 0.97 `non_sanctionnable` + `to_prompt_payload`), table `automod_precedents` (embedding float32-BYTEA, sans pgvector) + repo (`add`/`list`/`count`/`last_at`/`delete` + éviction cap 500), `services/precedent_service.py` (record embeddé 1 fois via gateway + cache guild 300 s + provider lazy `get_vector`). Engine : `precedents_fn` lazy avant l'appel, raccourci `stop_reason=precedent` (aucun appel), injection `precedents_serveur` + bloc système SERVER PRECEDENTS (fencé, jamais d'override gravité haute+). `embed_query` réutilise le vecteur du funnel (0 appel sur le chemin embedding). Alimentation : appel accepté/refusé (appeal_service) + boutons shadow ✅/❌. UI `/config` : section Précédents (compte + dernier) + navigateur paginé avec suppression unitaire. Golden +4 cas (`gs-0300..0303`, précédent non_sanct / renfort sanct / garde-fou gravité haute) + fixtures + baseline. Tests : `test_precedents.py` (15 : matcher pur, raccourci, packing BYTEA, câblage engine injection/stop, réutilisation du vecteur). **281 verts**, runner `--replay` 1.0/1.0. |
 | 8 | Feature `situation` (harcèlement diffus) | ⬜ À faire | — | — |
 
 ### Journal de session 1 (2026-07-12)
@@ -302,6 +302,83 @@ les appels nano, prêt à absorber le coût mini de S6 avec un poids ×4).
 
 **Suites (pour S7/S8) :** précédents serveur (RAG) réutilisant l'embedding déjà
 calculé ; feature `situation` (harcèlement diffus) branchée sur mini (S6) en shadow.
+
+### Journal de session 7 (2026-07-13)
+
+**Livré :**
+- `automod/precedents.py` — module **pur** : `Precedent`/`PrecedentMatch`,
+  `cosine` (dot de vecteurs normalisés), `match` (top-K ≥ seuil, trié),
+  `deterministic_shortcut` (top ≥ 0.97 **et** `non_sanctionnable` ⇒ stop),
+  `to_prompt_payload`. Aucune I/O.
+- `automod/constants.py` — constantes S7 (`PRECEDENTS_ENABLED`, `PRECEDENT_TOP_K=3`,
+  `PRECEDENT_MIN_SIMILARITE=0.80`, `PRECEDENT_STRONG_SIMILARITE=0.85`,
+  `PRECEDENT_SHORTCUT_SIMILARITE=0.97`, `PRECEDENT_MAX_PER_GUILD=500`,
+  `PRECEDENT_CACHE_TTL_SECONDS=300`, `PRECEDENT_QUERY_VECTOR_CACHE=256`, labels
+  verdict/source).
+- `automod/embeddings.py` — capture du **vecteur primaire** normalisé pendant le
+  scoring (petit cache borné) + `embed_query(content)` : réutilise ce vecteur
+  (0 appel sur le chemin embedding) ou embed une fois (chemin regex, seulement si
+  la guild a des précédents). Marche avant `ensure_ready` (pas de références
+  requises pour embedder un message seul).
+- `automod/engine.py` — `PrecedentsFn`/`VectorFn`, `precedents_fn` sur
+  `analyze`/`_decide`. Avant le budget/nano : `_message_vector` (lazy),
+  `precedents_fn(get_vector)` → `deterministic_shortcut` ⇒ `_precedent_stop_decision`
+  (non sanctionnable, `precedent_applique`, `stop_reason=precedent`, aucun appel),
+  sinon `to_prompt_payload` injecté jusqu'à `nano.juger`.
+- `automod/nano.py` — `PRECEDENTS_PROMPT_BLOCK` (bloc système « trusted server
+  moderators », poids fort > 0.85, jamais d'override gravité haute+),
+  `build_user_payload(precedents=)` pose `precedents_serveur` (message **fencé**),
+  `build_system_prompt(bloc_precedents=)`, `juger(precedents=)` (bloc montré
+  uniquement si présents). `Decision.precedent_applique`.
+- `db/base.py` + `db/repositories/precedents.py` — table `automod_precedents`
+  (embedding **float32-BYTEA**, sans pgvector, cosine en Python), repo
+  `add_precedent` (+ éviction cap 500), `list_precedents` (unpack vecteurs),
+  `count`/`last_at`/`delete`, `pack_vector`/`unpack_vector`. Enregistré dans
+  `ModdyDatabase`.
+- `services/precedent_service.py` (`bot.precedents`) — `record` (embed 1× via
+  gateway + store), cache guild TTL 300 s, `make_provider` (lazy : n'embed que si
+  la guild a des précédents), `invalidate`.
+- Alimentation : `services/appeal_service.py` (accept → `non_sanctionnable`,
+  refuse → `sanctionnable` ; transform ignoré) via l'extrait automod du case ;
+  `utils/automod_shadow_views.py` (bouton ❌ → `non_sanctionnable`, ✅ →
+  `sanctionnable`). `modules/automod.py` : `make_precedents_provider` câblé sur
+  `analyze`.
+- UI : `modules/configs/automod_config.py` section **Précédents** (compte +
+  dernier, `load_precedent_stats` appelé par `cogs/config.py`) + bouton **Voir** →
+  `modules/configs/automod_precedents_view.py` (liste paginée + suppression
+  unitaire, invalide le cache). i18n `modules.automod.config.precedents.*` +
+  `section_precedents` + `buttons.view_precedents` (fr + en-US).
+- `automod/eval/run.py` — `GoldenCase.precedents` (inerte en `--replay`, wrappé en
+  `precedents_fn` en `--live`). Golden +4 (`gs-0300..0303`) + fixtures + baseline.
+- Tests : `tests/automod/test_precedents.py` (15). **281 verts**, runner
+  `--replay` toujours 1.0/1.0.
+- Docs : `AUTOMOD.md` (§2quinquies + tunables), `CLAUDE.md` (structure).
+
+**Décisions :**
+- **Séparation respectée.** Le matcher est **pur** (`automod/`) ; le vecteur du
+  message est produit par le pipeline (réutilisé du funnel) ; le **stockage,
+  l'embedding d'un précédent et le cache** vivent dans le service (I/O), servis à
+  l'engine via un callback lazy — exactement comme `fetch_context`/`relation_fn`.
+- **« Zéro appel » au jugement.** Le vecteur du message est capturé pendant le
+  scoring embedding et réutilisé ; le provider n'appelle `get_vector` que si la
+  guild a réellement des précédents, donc un serveur sans jurisprudence ne paie
+  aucun embed supplémentaire. Un précédent enregistré coûte **un** embed (rare,
+  déclenché par un humain).
+- **Pas de pgvector.** Embedding stocké en float32-BYTEA, cosine en Python (≤ 500
+  vecteurs/guild, chargés une fois par fenêtre de 300 s) — zéro dépendance
+  d'extension, cohérent avec le reste du package sans numpy.
+- **Raccourci unidirectionnel.** Seul un précédent `non_sanctionnable` ≥ 0.97
+  court-circuite (économie + cohérence) ; un précédent `sanctionnable` repasse par
+  le modèle car le barème/récidive doit être recalculé pour l'auteur courant.
+- **Garde-fou gravité.** Les précédents n'annulent jamais un contenu réellement
+  haute/critique (bloc système + cas golden `gs-0303`).
+- **Précédent fencé.** Le texte d'un précédent est du message utilisateur : il est
+  fencé comme tout `contenu`, même s'il est présenté comme donnée serveur de
+  confiance (réduction de la surface d'injection).
+
+**Suites (pour S8) :** feature `situation` (harcèlement diffus) — nouvelle
+`AutomodFeature` sur mini, en shadow forcé ; réutilise l'agrégation S4 et le
+routing S6.
 
 <!-- ======================================================================= -->
 
@@ -1139,10 +1216,10 @@ Bouton "Voir" → liste paginée avec suppression unitaire (un précédent erron
 
 ## Critères de fin
 
-- [ ] Table + repo + alimentation branchée sur appeals et boutons.
-- [ ] Injection top-3 + raccourci 0.97 testés (fixtures d'embeddings).
-- [ ] UI admin de consultation/purge.
-- [ ] Golden set : 4 cas "précédent" ajoutés, runner vert.
+- [x] Table + repo + alimentation branchée sur appeals et boutons.
+- [x] Injection top-3 + raccourci 0.97 testés (fixtures d'embeddings).
+- [x] UI admin de consultation/purge.
+- [x] Golden set : 4 cas "précédent" ajoutés, runner vert.
 
 ---
 ---

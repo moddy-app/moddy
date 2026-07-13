@@ -1315,7 +1315,8 @@
           "enable_ignore": "Activer",
           "disable_ignore": "Désactiver",
           "edit_rules": "Modifier le règlement",
-          "edit_indications": "Modifier les indications"
+          "edit_indications": "Modifier les indications",
+          "view_precedents": "Voir les précédents"
         },
         "rules": {
           "desc": "Guide l'IA pour juger les messages. Vérifié contre les tentatives d'injection avant d'être enregistré.",
@@ -1412,6 +1413,22 @@
           "label": "Mode simulation",
           "desc": "Détecte et affiche, mais n'applique aucune sanction (recommandé la première semaine)",
           "active": "Mode simulation actif : les sanctions sont affichées mais jamais appliquées."
+        },
+        "section_precedents": "Précédents",
+        "precedents": {
+          "title": "Précédents appris",
+          "desc": "L'automod apprend la culture de ton serveur à partir de tes décisions (appels tranchés, annotations en mode simulation).",
+          "empty": "Aucun précédent appris pour l'instant.",
+          "count": "**{n}** précédent(s) appris",
+          "last": "dernier :",
+          "page": "page {current}/{total}",
+          "prev": "Précédent",
+          "next": "Suivant",
+          "verdict_not": "non sanctionnable",
+          "verdict_yes": "sanctionnable",
+          "delete_placeholder": "Supprimer un précédent erroné…",
+          "delete_option": "Supprimer le précédent {n}",
+          "deleted": "Précédent supprimé."
         }
       },
       "action": {

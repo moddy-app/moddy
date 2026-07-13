@@ -115,3 +115,8 @@ class Decision:
     # token instead of the model's self-report. Interface only — left None until
     # the gateway can supply logprobs.
     confiance_calibree: Optional[float] = None
+    # Server precedents (session 7): set when a near-identical `non_sanctionnable`
+    # precedent short-circuited the decision before any model call (deterministic
+    # shortcut, §7.3). Carries {similarite, message} for logs / the card. None
+    # when no precedent shortcut fired.
+    precedent_applique: Optional[dict] = None

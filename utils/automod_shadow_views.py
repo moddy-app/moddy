@@ -210,8 +210,39 @@ class ShadowAnnotateButton(
                 ephemeral=True)
             return
 
+        # Session 7: a ✅/❌ ruling on a shadow card is a human precedent — feed it
+        # so the automod learns this server's local culture. "disproportionné" is
+        # a barème signal, not a sanctionnable/not ruling, so it is not a precedent.
+        await self._feed_precedent(bot, row)
+
         # Re-render the card in place (buttons → the recorded ruling).
         await interaction.response.edit_message(view=render_shadow_card(row))
+
+    @staticmethod
+    async def _feed_precedent(bot, row: Dict[str, Any]) -> None:
+        """Record a server precedent from a shadow-card ruling (best-effort)."""
+        from automod import constants as ac
+        mapping = {
+            "correct": (ac.PRECEDENT_SANCTIONNABLE, ac.PRECEDENT_SOURCE_BOUTON_OK),
+            "faux_positif": (ac.PRECEDENT_NON_SANCTIONNABLE, ac.PRECEDENT_SOURCE_BOUTON_FP),
+        }
+        entry = mapping.get(row.get("verdict_humain"))
+        svc = getattr(bot, "precedents", None)
+        if entry is None or svc is None:
+            return
+        verdict_humain, source = entry
+        verdict = row.get("verdict") or {}
+        try:
+            await svc.record(
+                int(row.get("guild_id")),
+                row.get("contenu") or "",
+                verdict_humain,
+                source=source,
+                categorie=verdict.get("categorie") or "",
+                gravite=verdict.get("gravite") or "",
+            )
+        except Exception as e:  # noqa: BLE001 — precedent feeding is best-effort
+            logger.debug("shadow precedent feed failed: %s", e)
 
 
 class ShadowAnnotationPersistence(BaseView):

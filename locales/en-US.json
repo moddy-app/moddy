@@ -1316,7 +1316,8 @@
           "enable_ignore": "Enable",
           "disable_ignore": "Disable",
           "edit_rules": "Edit rules",
-          "edit_indications": "Edit guidance"
+          "edit_indications": "Edit guidance",
+          "view_precedents": "View precedents"
         },
         "rules": {
           "desc": "Guides the AI when judging messages. Verified against injection attempts before being saved.",
@@ -1413,6 +1414,22 @@
           "label": "Simulation mode",
           "desc": "Detects and shows, but applies no sanction (recommended for the first week)",
           "active": "Simulation mode on: sanctions are shown but never applied."
+        },
+        "section_precedents": "Precedents",
+        "precedents": {
+          "title": "Learned precedents",
+          "desc": "The automod learns your server's culture from your decisions (decided appeals, shadow-mode annotations).",
+          "empty": "No precedents learned yet.",
+          "count": "**{n}** precedent(s) learned",
+          "last": "last:",
+          "page": "page {current}/{total}",
+          "prev": "Previous",
+          "next": "Next",
+          "verdict_not": "not sanctionable",
+          "verdict_yes": "sanctionable",
+          "delete_placeholder": "Delete a wrong precedent…",
+          "delete_option": "Delete precedent {n}",
+          "deleted": "Precedent deleted."
         }
       },
       "action": {

@@ -993,5 +993,68 @@
    "raison": "",
    "sanctionnable": false
   }
+ },
+ "gs-0300": {
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "",
+   "cible": "aucune",
+   "citation": "",
+   "confiance": "high",
+   "explication": "",
+   "gravite": "basse",
+   "nb_messages_supplementaires": 0,
+   "raison": "",
+   "sanctionnable": false
+  }
+ },
+ "gs-0301": {
+  "embedding": {
+   "score": 0.5
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "",
+   "cible": "aucune",
+   "citation": "",
+   "confiance": "high",
+   "explication": "",
+   "gravite": "basse",
+   "nb_messages_supplementaires": 0,
+   "raison": "",
+   "sanctionnable": false
+  }
+ },
+ "gs-0302": {
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "insulte",
+   "cible": "membre",
+   "citation": "va te faire enculer",
+   "confiance": "high",
+   "explication": "",
+   "gravite": "moyenne",
+   "nb_messages_supplementaires": 0,
+   "raison": "",
+   "sanctionnable": true
+  }
+ },
+ "gs-0303": {
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "menace",
+   "cible": "membre",
+   "citation": "je vais te tuer",
+   "confiance": "high",
+   "explication": "",
+   "gravite": "haute",
+   "nb_messages_supplementaires": 0,
+   "raison": "",
+   "sanctionnable": true
+  }
  }
 }
