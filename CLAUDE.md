@@ -133,11 +133,12 @@ moddy/
 │   ├── tech_logger.py         #   Technical staff logs via webhooks (Components V2, per-event channels)
 │   ├── staff_role_permissions.py
 │   ├── staff_help_view.py
-│   ├── case_management_views.py #  Cases Views/Modals (create, sanction, comment…)
-│   ├── automod_shadow_views.py #  Shadow (dry_run) simulation card + annotation buttons
+│   ├── case_management_views.py #  Cases Views/Modals (create, sanction, comment…) — staff
+│   ├── cases_views.py         #   /cases & /mycases browser (CasesBrowserView, persistent)
+│   ├── automod_shadow_views.py #  Automod shadow-mode (dry_run) SIMULATION card + annotation buttons (persistent)
 │   ├── automod_situation_views.py #  Diffuse-harassment (situation) SIMULATION card (S8)
+│   ├── automod_render.py      #   Shared automod card helpers (barème breakdown, sanction name/accent)
 │   ├── appeal_views.py        #   Automod appeal UI (DM buttons + reviewer panels, persistent)
-│   ├── automod_shadow_views.py #  Automod shadow-mode SIMULATION card + annotation buttons (persistent)
 │   ├── moderation_cases.py    #   Cases domain model + enums + reference gen
 │   ├── embeds.py
 │   ├── announcement_setup.py

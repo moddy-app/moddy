@@ -43,6 +43,9 @@ _DEFAULT_CONFIG = {
     "severity": ac.SEVERITY_DEFAULT,
     "max_action": "ban",
     "langue_serveur": "auto",
+    # Kill-switched AI categories (ops/backend-set; no UI selector yet). Carried
+    # through the working copy so a Save from this panel never wipes it.
+    "categories_desactivees": [],
     "dry_run": False,
     "features": {
         "content": {"enabled": False, "exempt_roles": [], "exempt_channels": []},
@@ -67,6 +70,11 @@ def _deep_default(current: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     cfg["max_action"] = max_action if max_action in ("warn", "mute", "ban") else "ban"
     langue = str(current.get("langue_serveur", "auto") or "auto")
     cfg["langue_serveur"] = langue if langue in ("auto", "fr", "en-US") else "auto"
+    # Preserve any ops/backend-set kill-switch list (no UI selector yet) so
+    # saving the panel does not silently drop it from the stored config.
+    cfg["categories_desactivees"] = [
+        str(c) for c in (current.get("categories_desactivees", []) or [])
+    ]
     cfg["dry_run"] = bool(current.get("dry_run", False))
     content = (current.get("features", {}) or {}).get("content", {}) or {}
     cfg["features"]["content"] = {
