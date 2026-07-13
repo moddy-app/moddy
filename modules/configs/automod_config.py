@@ -149,7 +149,28 @@ class AutomodConfigView(BaseView):
         self.current_config = _deep_default(current_config)
         self.working_config = copy.deepcopy(self.current_config)
         self.has_changes = False
+        # Session 7: learned server precedents (loaded lazily via
+        # ``load_precedent_stats`` before the panel is first shown).
+        self._precedent_count: Optional[int] = None
+        self._precedent_last = None
 
+        self._build_view()
+
+    async def load_precedent_stats(self):
+        """Load the guild's precedent count + last date, then rebuild the panel.
+
+        Called by the opener before the panel is first shown (the view is built
+        synchronously in ``__init__``, so the DB read happens here). Best-effort:
+        a failure just leaves the count unknown.
+        """
+        db = getattr(self.bot, "db", None)
+        if not ac.PRECEDENTS_ENABLED or db is None:
+            return
+        try:
+            self._precedent_count = await db.count_precedents(self.guild_id)
+            self._precedent_last = await db.last_precedent_at(self.guild_id)
+        except Exception:  # noqa: BLE001 — the panel works fine without the count
+            return
         self._build_view()
 
     # -- helpers --------------------------------------------------------- #
@@ -368,6 +389,39 @@ class AutomodConfigView(BaseView):
         ind_row.add_item(ind_btn)
         container.add_item(ind_row)
 
+        # ── Learned precedents (server jurisprudence, session 7) ──────────
+        if ac.PRECEDENTS_ENABLED:
+            count = self._precedent_count
+            if count is None:
+                prec_line = t("modules.automod.config.precedents.desc", locale=self.locale)
+            elif count == 0:
+                prec_line = (
+                    f"{t('modules.automod.config.precedents.desc', locale=self.locale)}\n"
+                    f"-# {t('modules.automod.config.precedents.empty', locale=self.locale)}")
+            else:
+                last = ""
+                if self._precedent_last is not None:
+                    try:
+                        last = f" · {t('modules.automod.config.precedents.last', locale=self.locale)} <t:{int(self._precedent_last.timestamp())}:R>"
+                    except Exception:  # noqa: BLE001
+                        last = ""
+                prec_line = (
+                    f"{t('modules.automod.config.precedents.desc', locale=self.locale)}\n"
+                    f"-# {t('modules.automod.config.precedents.count', locale=self.locale, n=count)}{last}")
+            container.add_item(ui.TextDisplay(
+                f"{SEARCH} **{t('modules.automod.config.section_precedents', locale=self.locale)}**\n"
+                f"-# {prec_line}"))
+            if count:
+                prec_row = ui.ActionRow()
+                prec_btn = ui.Button(
+                    label=t("modules.automod.config.buttons.view_precedents", locale=self.locale),
+                    style=discord.ButtonStyle.secondary,
+                    emoji=discord.PartialEmoji.from_str(SEARCH),
+                )
+                prec_btn.callback = self.on_view_precedents
+                prec_row.add_item(prec_btn)
+                container.add_item(prec_row)
+
         # ── Exemptions (selects show what's chosen) ───────────────────────
         container.add_item(ui.TextDisplay(
             f"{GROUPS} **{t('modules.automod.config.section_exemptions', locale=self.locale)}**\n"
@@ -534,6 +588,15 @@ class AutomodConfigView(BaseView):
         await interaction.response.send_modal(
             IndicationsModal(self, self.working_config.get("indications", ""))
         )
+
+    async def on_view_precedents(self, interaction: discord.Interaction):
+        if not await self._check_user(interaction):
+            return
+        from modules.configs.automod_precedents_view import AutomodPrecedentsView
+        view = AutomodPrecedentsView(self.bot, self.guild_id, self.user_id,
+                                     self.locale, parent=self)
+        await view.load()
+        await interaction.response.edit_message(view=view)
 
     # -- action buttons -------------------------------------------------- #
     async def on_save(self, interaction: discord.Interaction):

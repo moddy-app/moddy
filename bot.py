@@ -93,6 +93,8 @@ class ModdyBot(commands.Bot):
         self.cases = CaseService(self)  # scalable sanction -> case entry point
         from services.appeal_service import AppealService
         self.appeals = AppealService(self)  # sanction appeals (server / Moddy team)
+        from services.precedent_service import PrecedentService
+        self.precedents = PrecedentService(self)  # automod server precedents (RAG)
         from gateway import Gateway
         self.gateway = Gateway()
         self.redis = None  # Redis client (shared with backend)

@@ -123,6 +123,15 @@ class EmbeddingEngine:
         # Single-flight: coalesce concurrent identical scoring requests (a burst
         # of identical raid messages) onto one embedding call.
         self._inflight: Dict[str, "asyncio.Future"] = {}
+        # Session 7: a small bounded cache of the PRIMARY message vector captured
+        # while scoring, so the precedent query reuses the funnel's embedding
+        # instead of paying a second call. Vectors are large (~1536 floats), so
+        # this is deliberately tiny — it only has to cover the in-flight message
+        # between routing (score) and the decision step (precedent match).
+        self._vector_cache: LruTtlCache = LruTtlCache(
+            max_entries=constants.PRECEDENT_QUERY_VECTOR_CACHE,
+            ttl_seconds=constants.PRECEDENT_CACHE_TTL_SECONDS,
+        )
 
     @property
     def ready(self) -> bool:
@@ -224,6 +233,9 @@ class EmbeddingEngine:
         vectors = await self._embed_fn(segments)
         if not vectors:
             return None
+        # Session 7: stash the normalised PRIMARY vector so a later precedent
+        # query (same message) reuses it without a second embedding call.
+        self._vector_cache.set(cache_key(content), _normalize_vec(vectors[0]))
         best_score = -1.0
         best_cat = ""
         for raw in vectors:
@@ -234,6 +246,35 @@ class EmbeddingEngine:
                     best_score = sim
                     best_cat = cat
         return best_score, best_cat
+
+    async def embed_query(self, content: str) -> Optional[List[float]]:
+        """Return the **normalised** primary embedding vector of ``content``.
+
+        Used by the server-precedents matcher (session 7). Reuses the vector
+        captured while scoring when available (the common path: a message routed
+        by embedding was already embedded), so no extra call is paid there. A
+        message routed by regex (never embedded) pays one embedding call here —
+        but only when the guild actually has precedents to match against, so the
+        cost is bounded to servers that have taught the bot something. Needs no
+        reference vectors (it embeds the message alone), so it works even before
+        ``ensure_ready``. Returns ``None`` if the embedding is unavailable.
+        """
+        key = cache_key(content)
+        cached = self._vector_cache.get(key)
+        if cached is not MISS:
+            return cached
+        segments = _segment(content)
+        if not segments:
+            return None
+        try:
+            vectors = await self._embed_fn([segments[0]])
+        except Exception:  # noqa: BLE001 — precedents are best-effort
+            return None
+        if not vectors:
+            return None
+        vec = _normalize_vec(vectors[0])
+        self._vector_cache.set(key, vec)
+        return vec
 
     @staticmethod
     def passes_threshold(score: float, threshold: Optional[float] = None) -> bool:

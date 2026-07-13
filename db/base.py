@@ -22,6 +22,7 @@ from db.repositories.interserver import InterserverRepository
 from db.repositories.moderation import ModerationRepository
 from db.repositories.appeals import AppealRepository
 from db.repositories.eval_candidates import EvalCandidateRepository
+from db.repositories.precedents import PrecedentRepository
 from db.repositories.saved_roles import SavedRolesRepository
 from db.repositories.token_alerts import TokenAlertRepository
 from db.repositories.token_secrets import TokenSecretRepository
@@ -51,6 +52,7 @@ class ModdyDatabase(
     ModerationRepository,
     AppealRepository,
     EvalCandidateRepository,
+    PrecedentRepository,
     SavedRolesRepository,
     TokenAlertRepository,
     TokenSecretRepository,
@@ -689,6 +691,33 @@ class ModdyDatabase(
             await conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_eval_candidates_pending "
                 "ON automod_eval_candidates (imported) WHERE imported = FALSE")
+
+            # automod_precedents — per-server jurisprudence (session 7). Every
+            # human ruling (accepted/refused appeal, shadow "faux positif" /
+            # "correct" click) is stored here with the message embedding ALREADY
+            # computed by the funnel, so the automod learns the server's local
+            # culture with no fine-tuning. Matched (cosine) against a new message
+            # before the decision call. `embedding` is a float32-packed BYTEA of
+            # the normalised vector (pgvector-free; cosine is a dot product in
+            # Python). Capped at PRECEDENT_MAX_PER_GUILD, oldest evicted. See
+            # docs/AUTOMOD.md §2quinquies and docs/AUTOMOD_V2_PLAN.md (Session 7).
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS automod_precedents (
+                    id             BIGSERIAL PRIMARY KEY,
+                    guild_id       BIGINT NOT NULL,
+                    contenu_norm   TEXT NOT NULL,
+                    embedding      BYTEA NOT NULL,
+                    verdict_humain TEXT NOT NULL
+                        CHECK (verdict_humain IN ('non_sanctionnable','sanctionnable')),
+                    categorie      TEXT,
+                    gravite        TEXT,
+                    source         TEXT NOT NULL,
+                    created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+                )
+            """)
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_automod_precedents_guild "
+                "ON automod_precedents (guild_id, created_at)")
 
             # Table des rôles sauvegardés (Auto Restore Roles module)
             await conn.execute("""

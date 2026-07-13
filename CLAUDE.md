@@ -73,12 +73,14 @@ moddy/
 │       ├── adaptive_slowmode_config.py
 │       ├── social_notifications_config.py
 │       ├── automod_config.py
+│       ├── automod_precedents_view.py  # Learned-precedents browser (S7)
 │
 ├── automod/                   # AI automod DETECTION pipeline (decides only; no side effects)
 │   ├── engine.py              #   Shared per-bot orchestrator (funnel entry)
 │   ├── prefiltre.py / triviaux.py / blocklist.py / embeddings.py / nano.py
 │   ├── relations.py           #   Relationship graph + target-reaction signals (familiarity)
 │   ├── routing.py             #   Difficulty router (nano→mini) + heavy-sanction confirm (S6)
+│   ├── precedents.py          #   Server precedents matcher (jurisprudence RAG, pure) (S7)
 │   ├── normalize.py / injection.py / rules_check.py / schemas.py / constants.py
 │   ├── bareme.py              #   Deterministic sanction scale (cran ladder + recidivism)
 │   ├── cache.py               #   LRU+TTL score cache (embedding de-duplication)
@@ -113,6 +115,7 @@ moddy/
 │       ├── moderation.py, interserver.py, attributes.py
 │       ├── appeals.py           #   Automod sanction appeals (case_appeals)
 │       ├── eval_candidates.py   #   Automod eval/annotation corpus (automod_eval_candidates)
+│       ├── precedents.py        #   Automod server precedents (automod_precedents, RAG)
 │       ├── token_alerts.py, token_secrets.py
 │       ├── subscription.py    #   Subscription read-only queries
 │       ├── social.py          #   Social notifications subscriptions
@@ -157,6 +160,7 @@ moddy/
 │   ├── feeds_client.py        #   moddy-feeds Redis client (social notifications)
 │   ├── case_service.py        #   Scalable sanction→case entry point (source registry)
 │   ├── appeal_service.py      #   Automod sanction appeals (server / Moddy team, binding)
+│   ├── precedent_service.py   #   Automod server precedents (record + serve, RAG)
 │   └── railway_diagnostic.py  #   Railway diagnostics
 │
 ├── internal_api/              # FastAPI internal API

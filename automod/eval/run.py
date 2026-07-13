@@ -85,6 +85,10 @@ class GoldenCase:
     # injected into nano on a --live run. Inert under --replay (nano isn't rerun;
     # the fixture already encodes the relation-aware verdict).
     relation: Optional[Dict[str, Any]] = None
+    # Session 7: optional server precedents (past messages + human ruling +
+    # similarity) injected into nano on a --live run. Inert under --replay (the
+    # fixture already encodes the precedent-aware verdict), exactly like relation.
+    precedents: Optional[List[Dict[str, Any]]] = None
 
 
 @dataclass
@@ -172,6 +176,7 @@ def load_golden(path: str = GOLDEN_PATH) -> List[GoldenCase]:
                 tags=obj.get("tags", []) or [],
                 origine=obj.get("origine", ""),
                 relation=obj.get("relation"),
+                precedents=obj.get("precedents"),
             ))
     return cases
 
@@ -315,6 +320,26 @@ async def live_case(engine, case: GoldenCase, *, severity: int = _NEUTRAL_SEVERI
         async def relation_fn(_observe, _rel=case.relation):
             return dict(_rel)
 
+    # Session 7: precedents are provided pre-matched by the golden case (message,
+    # verdict, similarity). We wrap them as PrecedentMatch objects so --live
+    # exercises the injection / shortcut paths without a DB or real embeddings of
+    # past messages. Inert under --replay (this function is --live only).
+    precedents_fn = None
+    if case.precedents:
+        from automod import precedents as _ap
+
+        async def precedents_fn(_get_vec, _pre=case.precedents):
+            return [
+                _ap.PrecedentMatch(
+                    _ap.Precedent(
+                        id=str(i), message=p.get("message", ""),
+                        verdict_humain=p.get("verdict_moderateurs", ""),
+                        vector=[]),
+                    similarite=float(p.get("similarite", 0.0)),
+                )
+                for i, p in enumerate(_pre)
+            ]
+
     decision = await engine.analyze(
         target,
         guild_id=0,
@@ -324,6 +349,7 @@ async def live_case(engine, case: GoldenCase, *, severity: int = _NEUTRAL_SEVERI
         fetch_context=fetch_context,
         severity=severity,
         relation_fn=relation_fn,
+        precedents_fn=precedents_fn,
     )
 
     fixture: Dict[str, Any] = {}

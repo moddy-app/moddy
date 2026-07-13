@@ -373,6 +373,93 @@ are counted but **not** budget-gated (correctness over economy).
 
 ---
 
+## 2quinquies. Server precedents — jurisprudence RAG (`automod/precedents.py`)
+
+nano judges the text; the barème scales the sanction; the relation graph reads
+the pair. Session 7 adds the last missing axis: **this server's own culture**.
+Every human ruling the system already produces — an accepted/refused appeal, a
+shadow `✅`/`❌` click — is stored as a **precedent** (the message + the final
+human verdict + the embedding the funnel already computed). Before a decision
+call, the current message is matched against the guild's precedents; strong
+matches are handed to nano/mini as trusted server data, and a near-identical
+human "not sanctionable" ruling short-circuits the call entirely. No
+fine-tuning, no new model — the bot learns each server's local norms from the
+corrections its moderators are already making.
+
+The ranking + shortcut logic is **pure and table-tested** (`automod/precedents.py`):
+it receives an already-computed query vector and the guild's already-loaded
+precedents and returns ranked matches. Storage/loading and the one-off embedding
+of a recorded precedent live in `services/precedent_service.py`; capturing the
+message embedding lives in the engine — the pipeline still only *decides*.
+
+### Storage (`automod_precedents`, `db/repositories/precedents.py`)
+
+| column | meaning |
+|---|---|
+| `guild_id` | the server |
+| `contenu_norm` | `collapse_repeats(normalize(message))` — for display / dedup |
+| `embedding` | the **normalised** message vector, float32-packed BYTEA (no pgvector needed — cosine is a dot product in Python) |
+| `verdict_humain` | `non_sanctionnable` \| `sanctionnable` |
+| `categorie` / `gravite` | from the automod evidence (when known) |
+| `source` | `appel_accepte` \| `appel_refuse` \| `bouton_fp` \| `bouton_ok` |
+
+Fed by (everything already exists after S2/S3): **accept appeal** → a
+`non_sanctionnable` precedent; **refuse appeal** → `sanctionnable` (human
+confirmed); shadow **❌ faux positif** → `non_sanctionnable`; shadow **✅ correct**
+→ `sanctionnable`. A *transform* appeal is ambiguous (the sanction changed, not
+the sanctionable/not call) and is **not** recorded. The embedding is computed
+once, at record time, through `bot.gateway` (`automod_embed`, not quota-gated).
+Capped at `PRECEDENT_MAX_PER_GUILD` (500) — the oldest are evicted, so storage is
+bounded and self-maintaining.
+
+### Injection & the deterministic shortcut (`§7.2` / `§7.3`)
+
+Right before the decision call the engine gets the message's **normalised
+embedding** — reusing the vector captured while the funnel scored it, so a message
+routed by embedding pays **zero** extra call; a regex-routed message pays one
+embedding **only when the guild actually has precedents** (a lazy `get_vector`
+the provider calls only when its precedent set is non-empty). Cosine picks the
+top `PRECEDENT_TOP_K` (3) matches at or above `PRECEDENT_MIN_SIMILARITE` (0.80):
+
+- **Shortcut (`≥ PRECEDENT_SHORTCUT_SIMILARITE` = 0.97, `non_sanctionnable`)** →
+  the funnel **stops before any model call** (`stop_reason=precedent`), returning
+  a not-sanctionable `Decision` carrying `precedent_applique` for the logs. A
+  human already ruled near-identical text on this exact server — replaying the
+  model would only risk contradicting them and cost a call. Only the
+  not-sanctionable direction short-circuits (a "sanctionable" precedent still
+  goes through the model — the barème/recidivism must be recomputed).
+- **Injection** → the top matches are added to nano/mini's payload as
+  `precedents_serveur` (message fenced like any untrusted content, plus the human
+  ruling and the similarity), and a trusted **SERVER PRECEDENTS** system block
+  tells the model to give them strong weight above `PRECEDENT_STRONG_SIMILARITE`
+  (0.85), especially toward not sanctioning. **Precedents never override
+  genuinely gravite haute/critique content** (real threats / hate / doxxing /
+  self-harm) — the block says so and the golden set asserts it.
+
+Precedents are served through a short in-process cache
+(`PRECEDENT_CACHE_TTL_SECONDS`, 300 s) so matching stays in-process and DB load
+is one query per guild per window. Without a DB the whole feature is inert.
+
+### Admin visibility (`§7.4`)
+
+`/config → Automod → Précédents` shows the learned-precedent count (and the last
+date) and a **Voir** button opening a paginated browser with per-item deletion —
+a wrong precedent can always be purged (it also busts the service cache).
+
+### Tunables (session 7, `automod/constants.py`)
+
+| Constant | Default | Meaning |
+|---|---|---|
+| `PRECEDENTS_ENABLED` | `True` | server precedents (needs a DB) |
+| `PRECEDENT_TOP_K` | 3 | matches injected into the decision prompt |
+| `PRECEDENT_MIN_SIMILARITE` | 0.80 | minimum cosine to inject a precedent |
+| `PRECEDENT_STRONG_SIMILARITE` | 0.85 | above this the prompt gives strong weight |
+| `PRECEDENT_SHORTCUT_SIMILARITE` | 0.97 | a `non_sanctionnable` match this close stops before the model |
+| `PRECEDENT_MAX_PER_GUILD` | 500 | per-guild cap (oldest evicted) |
+| `PRECEDENT_CACHE_TTL_SECONDS` | 300 | in-process freshness of a guild's precedent set |
+
+---
+
 ## 3. The module (`modules/automod.py`)
 
 `MODULE_ID = "automod"`. Config stored in `guilds.data.modules.automod`:

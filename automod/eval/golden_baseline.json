@@ -271,6 +271,22 @@
   "gs-0205": {
    "categorie": "",
    "sanctionnable": false
+  },
+  "gs-0300": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0301": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0302": {
+   "categorie": "insulte",
+   "sanctionnable": true
+  },
+  "gs-0303": {
+   "categorie": "menace",
+   "sanctionnable": true
   }
  },
  "changed_vs_baseline": [
@@ -280,15 +296,7 @@
     "sanctionnable": false
    },
    "change": "new",
-   "id": "gs-0200"
-  },
-  {
-   "after": {
-    "categorie": "insulte",
-    "sanctionnable": true
-   },
-   "change": "new",
-   "id": "gs-0201"
+   "id": "gs-0300"
   },
   {
    "after": {
@@ -296,7 +304,7 @@
     "sanctionnable": false
    },
    "change": "new",
-   "id": "gs-0202"
+   "id": "gs-0301"
   },
   {
    "after": {
@@ -304,23 +312,15 @@
     "sanctionnable": true
    },
    "change": "new",
-   "id": "gs-0203"
+   "id": "gs-0302"
   },
   {
    "after": {
-    "categorie": "haine_discrimination",
+    "categorie": "menace",
     "sanctionnable": true
    },
    "change": "new",
-   "id": "gs-0204"
-  },
-  {
-   "after": {
-    "categorie": "",
-    "sanctionnable": false
-   },
-   "change": "new",
-   "id": "gs-0205"
+   "id": "gs-0303"
   }
  ],
  "confusion": {
@@ -328,7 +328,7 @@
    "arnaque_scam": 1
   },
   "aucune": {
-   "aucune": 40,
+   "aucune": 42,
    "insulte": 5,
    "menace": 2
   },
@@ -348,21 +348,21 @@
    "incitation_automutilation": 2
   },
   "insulte": {
-   "insulte": 9
+   "insulte": 10
   },
   "menace": {
-   "menace": 4
+   "menace": 5
   }
  },
  "counts": {
   "fn": 0,
   "fp": 0,
-  "tn": 47,
-  "total": 68,
-  "tp": 21
+  "tn": 49,
+  "total": 72,
+  "tp": 23
  },
  "fp_reels_regressed": [],
- "generated_at": "2026-07-13T08:46:03.586906+00:00",
+ "generated_at": "2026-07-13T15:45:37.308042+00:00",
  "metrics": {
   "f1": 1.0,
   "precision": 1.0,
@@ -395,12 +395,12 @@
    "support": 2
   },
   "insulte": {
-   "correct": 9,
-   "support": 9
+   "correct": 10,
+   "support": 10
   },
   "menace": {
-   "correct": 4,
-   "support": 4
+   "correct": 5,
+   "support": 5
   }
  }
 }

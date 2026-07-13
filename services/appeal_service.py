@@ -157,6 +157,16 @@ class AppealService:
         except Exception as e:
             logger.error("appeal %s effect failed: %s", appeal_id, e, exc_info=True)
 
+        # Session 7: an appeal ruling is a strong human precedent — accept →
+        # non_sanctionnable (proven false positive), refuse → sanctionnable
+        # (human-confirmed). A transform is ambiguous (the sanction changed, not
+        # the sanctionnable/not call) so it is not recorded as a precedent.
+        if decision in ("accept", "refuse"):
+            try:
+                await self._feed_precedent(appeal, accepted=(decision == "accept"))
+            except Exception as e:  # noqa: BLE001 — precedents are best-effort
+                logger.debug("appeal %s precedent feed failed: %s", appeal_id, e)
+
         # Timeline trace.
         await self._timeline(
             appeal["case_id"], EventType.COMMENT.value, self._author_type(by_type), by_id,
@@ -291,6 +301,46 @@ class AppealService:
         if appeal.get("route") == "team":
             return "en-US"
         return self._dm_locale(appeal)
+
+    @staticmethod
+    def _automod_extract(case: Optional[dict]):
+        """The moderated message + its category/gravity from automod evidence.
+
+        Returns ``(extrait, categorie, gravite)`` or None. Used to feed a server
+        precedent (session 7): the message text is embedded and stored with the
+        human ruling so the automod learns the server's local culture.
+        """
+        if not case:
+            return None
+        for ev in reversed(case.get("events", [])):
+            p = ev.get("payload") or {}
+            if ev.get("type") == "evidence" and p.get("source") == "automod":
+                extrait = p.get("extrait") or ""
+                if extrait:
+                    return extrait, p.get("categorie") or "", p.get("gravite") or ""
+        return None
+
+    async def _feed_precedent(self, appeal: dict, *, accepted: bool) -> None:
+        """Record a server precedent from an appeal ruling (best-effort)."""
+        svc = getattr(self.bot, "precedents", None)
+        if svc is None:
+            return
+        case = await self.db.get_case_by_id(_as_uuid(appeal["case_id"]))
+        info = self._automod_extract(case)
+        if not info:
+            return
+        extrait, categorie, gravite = info
+        from automod import constants as ac
+        if accepted:
+            verdict, source = (ac.PRECEDENT_NON_SANCTIONNABLE,
+                               ac.PRECEDENT_SOURCE_APPEL_ACCEPTE)
+        else:
+            verdict, source = (ac.PRECEDENT_SANCTIONNABLE,
+                               ac.PRECEDENT_SOURCE_APPEL_REFUSE)
+        await svc.record(
+            int(appeal["guild_id"]), extrait, verdict,
+            source=source, categorie=categorie, gravite=gravite,
+        )
 
     @staticmethod
     def _context_text(case: Optional[dict]) -> Optional[str]:

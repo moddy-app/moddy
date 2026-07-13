@@ -239,6 +239,45 @@ RIRE_EMOJIS = ("😂", "🤣", "😭", "💀", "😹")
 RIRE_MARQUEURS = frozenset(RIRE_MOTS | set(RIRE_EMOJIS))
 
 
+# --- Server precedents (jurisprudence RAG, session 7) -----------------------
+#
+# The automod learns each server's LOCAL culture from human corrections, with no
+# fine-tuning. Every human ruling (accepted/refused appeal, shadow "faux positif"
+# / "correct" click) is stored as a **precedent**: the message, the human verdict
+# and the embedding ALREADY computed by the funnel (reused, zero extra call at
+# judgment time). Before a decision call, the current message's embedding is
+# matched (cosine) against the guild's precedents; strong matches are injected
+# into nano/mini as TRUSTED server data, and a near-identical "non_sanctionnable"
+# precedent short-circuits the call entirely. See docs/AUTOMOD.md §2quinquies.
+PRECEDENTS_ENABLED: bool = True
+# How many top matches are injected into the decision prompt.
+PRECEDENT_TOP_K: int = 3
+# Minimum cosine similarity for a precedent to be injected at all.
+PRECEDENT_MIN_SIMILARITE: float = 0.80
+# Above this the prompt tells nano to give the precedent STRONG weight.
+PRECEDENT_STRONG_SIMILARITE: float = 0.85
+# At/above this, a "non_sanctionnable" precedent STOPS the funnel before the
+# decision call (a human already ruled on near-identical text — no need to pay).
+PRECEDENT_SHORTCUT_SIMILARITE: float = 0.97
+# Hard cap of stored precedents per guild (oldest evicted past this).
+PRECEDENT_MAX_PER_GUILD: int = 500
+# In-process TTL of a guild's precedent set (service-side cache; bounds DB load
+# to one query per guild per window while keeping matching in-process).
+PRECEDENT_CACHE_TTL_SECONDS: float = 300.0
+# Bounded cache of the primary message embedding captured during scoring, so the
+# precedent query reuses the funnel's embedding instead of paying a second call.
+PRECEDENT_QUERY_VECTOR_CACHE: int = 256
+
+# Human verdict labels stored on a precedent.
+PRECEDENT_NON_SANCTIONNABLE: str = "non_sanctionnable"
+PRECEDENT_SANCTIONNABLE: str = "sanctionnable"
+# Where a precedent came from (for observability / admin display).
+PRECEDENT_SOURCE_APPEL_ACCEPTE: str = "appel_accepte"
+PRECEDENT_SOURCE_APPEL_REFUSE: str = "appel_refuse"
+PRECEDENT_SOURCE_BOUTON_FP: str = "bouton_fp"
+PRECEDENT_SOURCE_BOUTON_OK: str = "bouton_ok"
+
+
 # --- Gateway call types -----------------------------------------------------
 
 # Quota-gated chat call for a moderation decision (per guild).

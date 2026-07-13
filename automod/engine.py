@@ -40,7 +40,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Awaitable, Callable, Dict, List, Optional, Set, Tuple
 
-from . import constants, nano, routing
+from . import constants, nano, precedents as ap, routing
 from .blocklist import get_blocklist
 from .cache import MISS, LruTtlCache
 from .embeddings import EmbeddingEngine, _retrieve_result
@@ -57,6 +57,14 @@ ContextFn = Callable[[int], Awaitable[List[ContextMessage]]]
 # it may spend the reaction-observation window (False for flagrant regex hits).
 # Returns the relation dict (familiarite + reaction_cible…) or None.
 RelationFn = Callable[[bool], Awaitable[Optional[dict]]]
+# Session 7: a provider of the guild's matched server precedents. It is handed a
+# lazy async ``get_vector`` (the message's normalised embedding) so a guild with
+# no precedents can return early WITHOUT paying an embedding call. Returns the
+# ranked ``PrecedentMatch`` list (strongest first) — the engine then decides
+# whether to short-circuit (a near-identical human "non_sanctionnable" ruling) or
+# to inject them into the decision prompt.
+VectorFn = Callable[[], Awaitable[Optional[List[float]]]]
+PrecedentsFn = Callable[[VectorFn], Awaitable[List["ap.PrecedentMatch"]]]
 
 
 class AutomodEngine:
@@ -180,6 +188,7 @@ class AutomodEngine:
         response_language: str = "English",
         channel_id: Optional[int] = None,
         relation_fn: Optional[RelationFn] = None,
+        precedents_fn: Optional[PrecedentsFn] = None,
     ) -> Optional[Decision]:
         """Run a message through the funnel and return a Decision or None.
 
@@ -213,7 +222,7 @@ class AutomodEngine:
                 rules=rules, author_history=author_history,
                 fetch_context=fetch_context, correlation_id=correlation_id,
                 severity=severity, response_language=response_language,
-                relation_fn=relation_fn,
+                relation_fn=relation_fn, precedents_fn=precedents_fn,
             )
 
         # Buffer this message for the aggregation window BEFORE routing, so a
@@ -234,7 +243,7 @@ class AutomodEngine:
                 rules=rules, author_history=author_history,
                 fetch_context=fetch_context, correlation_id=correlation_id,
                 severity=severity, response_language=response_language,
-                relation_fn=relation_fn,
+                relation_fn=relation_fn, precedents_fn=precedents_fn,
             )
 
         # Stopped before nano → try the fragmented-harassment aggregate.
@@ -309,6 +318,7 @@ class AutomodEngine:
         response_language: str,
         agregat_de: Optional[List[str]] = None,
         relation_fn: Optional[RelationFn] = None,
+        precedents_fn: Optional[PrecedentsFn] = None,
     ) -> Optional[Decision]:
         """Turn a routing Signal into a Decision, spending at most one nano call.
 
@@ -335,6 +345,32 @@ class AutomodEngine:
                 if qualif is None:
                     return None
                 return self._decision_from_qualif(qualif, target, signal, agregat_de)
+
+        # Session 7: server precedents. A guild that has taught the bot from its
+        # own human rulings gets those matched against this message BEFORE the
+        # (paid) decision call — cheaper and more consistent than replaying the
+        # model. A near-identical human "non_sanctionnable" ruling stops here (no
+        # model call at all, not even budget-gated); otherwise the strongest
+        # matches are handed to nano/mini as trusted server data. The query
+        # vector is provided lazily, so a guild with no precedents never pays an
+        # embedding call for this.
+        precedents_payload: List[dict] = []
+        if precedents_fn is not None:
+            async def _get_vector() -> Optional[List[float]]:
+                return await self._message_vector(target.content)
+            try:
+                matches = await precedents_fn(_get_vector)
+            except Exception as e:
+                logger.debug("automod: precedents provider failed: %s", e)
+                matches = []
+            shortcut = ap.deterministic_shortcut(matches)
+            if shortcut is not None:
+                logger.info(
+                    "automod stop_reason=precedent similarite=%.3f message_id=%s",
+                    shortcut.similarite, target.id)
+                return self._precedent_stop_decision(
+                    target, signal, shortcut, agregat_de)
+            precedents_payload = ap.to_prompt_payload(matches)
 
         # A real nano call is about to happen → consult the budget guard.
         if not await self._budget_allows(guild_id, signal, severity):
@@ -363,6 +399,7 @@ class AutomodEngine:
             correlation_id=correlation_id, severity=severity,
             response_language=response_language, agregat_de=agregat_de,
             relation=relation, cacheable=cacheable, niveau=niveau,
+            precedents=precedents_payload,
         )
 
     @staticmethod
@@ -387,6 +424,7 @@ class AutomodEngine:
         relation: Optional[dict] = None,
         cacheable: bool = True,
         niveau: str = constants.DIFFICULTE_EVIDENT,
+        precedents: Optional[List[dict]] = None,
     ) -> Optional[Decision]:
         """Real decision call, wrapped in single-flight + cache-fill + budget count.
 
@@ -407,6 +445,7 @@ class AutomodEngine:
                 fetch_context=fetch_context, correlation_id=correlation_id,
                 severity=severity, response_language=response_language,
                 agregat_de=agregat_de, relation=relation, niveau=niveau,
+                precedents=precedents,
             )
         except BaseException as exc:  # propagate to caller and any waiters
             if future is not None:
@@ -445,6 +484,7 @@ class AutomodEngine:
         agregat_de: Optional[List[str]] = None,
         relation: Optional[dict] = None,
         niveau: str = constants.DIFFICULTE_EVIDENT,
+        precedents: Optional[List[dict]] = None,
     ) -> Decision:
         # Session 6: an ``ambigu`` message is routed to the smarter, pricier mini
         # (same v2 contract, ×2 context); ``evident`` stays on nano. The Decision
@@ -471,8 +511,63 @@ class AutomodEngine:
             response_language=response_language,
             agregat_de=agregat_de,
             relation=relation,
+            precedents=precedents,
             contexte_initial=routing.contexte_initial_for(niveau),
             decideur=decideur,
+        )
+
+    # -- Server precedents (session 7) -------------------------------------
+
+    async def _message_vector(self, content: str) -> Optional[List[float]]:
+        """The normalised embedding of the current message, for precedent match.
+
+        Reuses the vector captured while the funnel scored this message; a
+        regex-routed message (never embedded) pays one embedding call here. Never
+        raises — a failure just means no precedent matching for this message.
+        """
+        try:
+            return await self.embeddings.embed_query(content)
+        except Exception as e:  # noqa: BLE001 — precedents are best-effort
+            logger.debug("automod: message embedding for precedents failed: %s", e)
+            return None
+
+    @staticmethod
+    def _precedent_stop_decision(
+        target: TargetMessage, signal: Signal,
+        shortcut: "ap.PrecedentMatch",
+        agregat_de: Optional[List[str]] = None,
+    ) -> Decision:
+        """A non-sanctionnable Decision produced by the precedent shortcut (§7.3).
+
+        A human already ruled near-identical text ``non_sanctionnable`` on this
+        server, so the funnel stops before any model call. The decision carries
+        ``precedent_applique`` for the logs / alert card so the shortcut is
+        observable; it is deliberately not verdict-cached (cheap to recompute and
+        the underlying precedents can change).
+        """
+        return Decision(
+            message_id=target.id,
+            auteur_id=target.author_id,
+            sanctionnable=False,
+            actions=[],
+            categorie=nano.normalize_categorie(signal.categorie),
+            gravite="basse",
+            raison="",
+            explication="",
+            confiance="high",
+            signal_source=signal.source,
+            score_detecteur=signal.score_confiance,
+            a_reverifier=[],
+            duree_heures=0,
+            citation="",
+            cible="aucune",
+            agregat_de=[str(x) for x in agregat_de] if agregat_de else [],
+            agregat_contenu=target.content if agregat_de else "",
+            precedent_applique={
+                "similarite": round(float(shortcut.similarite), 4),
+                "message": (shortcut.precedent.message or "")[:200],
+                "verdict": shortcut.precedent.verdict_humain,
+            },
         )
 
     # -- Heavy-sanction confirmation (session 6.3) -------------------------

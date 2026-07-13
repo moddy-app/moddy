@@ -164,6 +164,9 @@ class ContentModerationFeature(AutomodFeature):
             # Session 5: trusted relationship block (familiarity + target
             # reaction) when this message has an identifiable target.
             relation_fn=self.module.make_relation_provider(message),
+            # Session 7: server precedents — match this message against the
+            # guild's past human rulings (learned local culture).
+            precedents_fn=self.module.make_precedents_provider(),
         )
         if decision is not None:
             decisions.append(decision)
@@ -582,6 +585,20 @@ class AutomodModule(ModuleBase):
             return ar.build_relation_payload(counters, reaction_cible)
 
         return provider
+
+    def make_precedents_provider(self):
+        """Build the lazy ``precedents_fn`` for the pipeline, or None.
+
+        Delegates to the shared :class:`PrecedentService`, which matches this
+        message against the guild's learned human rulings (session 7). Returns
+        None (no precedent block) when precedents are disabled or there is no DB.
+        """
+        if not ac.PRECEDENTS_ENABLED:
+            return None
+        svc = getattr(self.bot, "precedents", None)
+        if svc is None:
+            return None
+        return svc.make_provider(self.guild_id)
 
     async def _observe_target_reaction(self, message: discord.Message,
                                        target_id: int) -> str:
