@@ -59,6 +59,7 @@ from automod import (
 )
 from automod import constants as ac
 from automod import bareme as ab
+from automod import relations as ar
 from utils.i18n import t
 from utils.moderation_cases import IssuerType, SanctionAction, EventType, AuthorType
 
@@ -160,6 +161,9 @@ class ContentModerationFeature(AutomodFeature):
             severity=self.module.severity,
             response_language=self.module.response_language(message.guild),
             channel_id=message.channel.id,
+            # Session 5: trusted relationship block (familiarity + target
+            # reaction) when this message has an identifiable target.
+            relation_fn=self.module.make_relation_provider(message),
         )
         if decision is not None:
             decisions.append(decision)
@@ -358,6 +362,14 @@ class AutomodModule(ModuleBase):
         if not isinstance(message.author, discord.Member):
             return
 
+        # Session 5: feed the relationship graph passively (reply / mention).
+        # Done before the moderator exemption so familiarity is built even for
+        # messages we will not moderate — it is trusted context, not a sanction.
+        try:
+            await self._feed_relations(message)
+        except Exception as e:
+            logger.debug("automod: relation feed failed (guild %s): %s", self.guild_id, e)
+
         # Global moderator exemption.
         if self.ignore_moderators and message.author.guild_permissions.manage_messages:
             return
@@ -473,6 +485,132 @@ class AutomodModule(ModuleBase):
         except Exception as e:
             logger.error("automod: failed to build author history: %s", e)
             return AuthorHistory()
+
+    # -- Relationship graph & target reaction (session 5) ------------------
+
+    def _relation_store(self) -> ar.RelationStore:
+        """A fresh store bound to the bot's Redis client (inert without it)."""
+        return ar.RelationStore(getattr(self.bot, "redis", None))
+
+    def _identify_target(self, message: discord.Message) -> Optional[int]:
+        """The single member this message is aimed at (reply target or mention).
+
+        Returns None when there is no unambiguous human target — a broadcast or a
+        message mentioning several people carries no "how did the target react"
+        signal, so no relation block is built.
+        """
+        author_id = message.author.id
+        ref = getattr(message, "reference", None)
+        resolved = getattr(ref, "resolved", None) if ref else None
+        if isinstance(resolved, discord.Message):
+            ra = resolved.author
+            if ra and not ra.bot and ra.id != author_id:
+                return ra.id
+        humans = [u for u in getattr(message, "mentions", [])
+                  if not u.bot and u.id != author_id]
+        if len(humans) == 1:
+            return humans[0].id
+        return None
+
+    async def _feed_relations(self, message: discord.Message) -> None:
+        """Passively record reply / mention interactions for the pair graph."""
+        store = self._relation_store()
+        if store.redis is None or not ac.RELATION_ENABLED:
+            return
+        author_id = message.author.id
+        targets = set()
+        ref = getattr(message, "reference", None)
+        resolved = getattr(ref, "resolved", None) if ref else None
+        if isinstance(resolved, discord.Message):
+            ra = resolved.author
+            if ra and not ra.bot and ra.id != author_id:
+                targets.add(ra.id)
+        for u in getattr(message, "mentions", []):
+            if not u.bot and u.id != author_id:
+                targets.add(u.id)
+        for tid in targets:
+            await store.record_message(self.guild_id, author_id, tid)
+
+    async def on_reaction(self, reaction: discord.Reaction, user) -> None:
+        """A friendly / laughter reaction on another member's message (~0 cost).
+
+        Wired through the non-raw ``on_reaction_add`` listener, which only fires
+        for messages already in the cache — so this never costs an API fetch.
+        """
+        if getattr(user, "bot", False):
+            return
+        if not ac.RELATION_ENABLED:
+            return
+        msg = reaction.message
+        author = msg.author if msg else None
+        if not author or getattr(author, "bot", False) or author.id == user.id:
+            return
+        if not getattr(msg, "guild", None) or msg.guild.id != self.guild_id:
+            return
+        if not ar.is_positive_emoji(str(reaction.emoji)):
+            return
+        store = self._relation_store()
+        if store.redis is None:
+            return
+        await store.record_positive_reaction(self.guild_id, user.id, author.id)
+
+    def make_relation_provider(self, message: discord.Message):
+        """Build the lazy ``relation_fn`` for the pipeline, or None.
+
+        Returns None when there is no identifiable target or no Redis: the
+        pipeline then judges the message with no relation block (strictly — a
+        missing relation can only make nano stricter, never laxer).
+        """
+        if not ac.RELATION_ENABLED:
+            return None
+        store = self._relation_store()
+        if store.redis is None:
+            return None
+        target_id = self._identify_target(message)
+        if target_id is None:
+            return None
+        author_id = message.author.id
+
+        async def provider(observe_reaction: bool) -> Optional[dict]:
+            counters = await store.get(self.guild_id, author_id, target_id)
+            reaction_cible = ac.REACTION_AUCUNE
+            if observe_reaction:
+                try:
+                    reaction_cible = await self._observe_target_reaction(message, target_id)
+                except Exception as e:
+                    logger.debug("automod: reaction observation failed: %s", e)
+            return ar.build_relation_payload(counters, reaction_cible)
+
+        return provider
+
+    async def _observe_target_reaction(self, message: discord.Message,
+                                       target_id: int) -> str:
+        """Wait the reaction window, then classify how the target reacted.
+
+        Observes the target's replies after the offending message: laughter →
+        ``banter_reciproque``; a reply that itself trips the blocklist →
+        ``conflit_reciproque``; the target having left the channel/guild →
+        ``detresse_possible``; nothing → ``aucune``. The 20 s latency on an
+        automod sanction is invisible to users and worth a lot of precision.
+        """
+        await asyncio.sleep(ac.REACTION_WAIT_SECONDS)
+        replies: List[str] = []
+        try:
+            async for m in message.channel.history(limit=15, after=message):
+                if int(m.author.id) == int(target_id) and (m.content or "").strip():
+                    replies.append(m.content)
+        except (discord.Forbidden, discord.HTTPException):
+            pass
+
+        target_gone = False
+        guild = message.guild
+        if guild is not None and guild.get_member(int(target_id)) is None:
+            target_gone = True
+
+        engine = get_engine(self.bot)
+        aggressive = sum(1 for r in replies if engine.blocklist.match(r) is not None)
+        return ar.classify_target_reaction(
+            replies, target_gone=target_gone, aggressive_hits=aggressive)
 
     # -- Barème (deterministic sanction scale) -----------------------------
 

@@ -14,6 +14,8 @@ class FakeRedis:
         self.kv: Dict[str, str] = {}
         self.lists: Dict[str, List[str]] = {}
         self.sets: Dict[str, Set[str]] = {}
+        self.hashes: Dict[str, Dict[str, str]] = {}
+        self.expires: Dict[str, int] = {}
 
     async def get(self, key):
         return self.kv.get(key)
@@ -27,7 +29,32 @@ class FakeRedis:
         return int(self.kv[key])
 
     async def expire(self, key, ttl):
+        self.expires[key] = ttl
         return True
+
+    # -- hashes --
+    async def hincrby(self, key, field, amount=1):
+        h = self.hashes.setdefault(key, {})
+        h[field] = str(int(h.get(field, "0")) + int(amount))
+        return int(h[field])
+
+    async def hset(self, key, field, value):
+        h = self.hashes.setdefault(key, {})
+        h[field] = str(value)
+        return 1
+
+    async def hsetnx(self, key, field, value):
+        h = self.hashes.setdefault(key, {})
+        if field in h:
+            return 0
+        h[field] = str(value)
+        return 1
+
+    async def hget(self, key, field):
+        return self.hashes.get(key, {}).get(field)
+
+    async def hgetall(self, key):
+        return dict(self.hashes.get(key, {}))
 
     async def lpush(self, key, *values):
         lst = self.lists.setdefault(key, [])
@@ -58,4 +85,6 @@ class FakeRedis:
             self.kv.pop(k, None)
             self.lists.pop(k, None)
             self.sets.pop(k, None)
+            self.hashes.pop(k, None)
+            self.expires.pop(k, None)
         return True

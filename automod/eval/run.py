@@ -79,6 +79,10 @@ class GoldenCase:
     attendu: Dict[str, Any] = field(default_factory=dict)
     tags: List[str] = field(default_factory=list)
     origine: str = ""
+    # Session 5: an optional trusted relation block (familiarite + reaction_cible)
+    # injected into nano on a --live run. Inert under --replay (nano isn't rerun;
+    # the fixture already encodes the relation-aware verdict).
+    relation: Optional[Dict[str, Any]] = None
 
 
 @dataclass
@@ -161,6 +165,7 @@ def load_golden(path: str = GOLDEN_PATH) -> List[GoldenCase]:
                 attendu=obj.get("attendu", {}) or {},
                 tags=obj.get("tags", []) or [],
                 origine=obj.get("origine", ""),
+                relation=obj.get("relation"),
             ))
     return cases
 
@@ -288,6 +293,12 @@ async def live_case(engine, case: GoldenCase, *, severity: int = _NEUTRAL_SEVERI
         return ctx[-n:] if n < len(ctx) else list(ctx)
 
     target = TargetMessage(id=case.id, author_id="0", content=case.contenu)
+
+    relation_fn = None
+    if case.relation:
+        async def relation_fn(_observe, _rel=case.relation):
+            return dict(_rel)
+
     decision = await engine.analyze(
         target,
         guild_id=0,
@@ -296,6 +307,7 @@ async def live_case(engine, case: GoldenCase, *, severity: int = _NEUTRAL_SEVERI
         author_history=AuthorHistory(),
         fetch_context=fetch_context,
         severity=severity,
+        relation_fn=relation_fn,
     )
 
     fixture: Dict[str, Any] = {}

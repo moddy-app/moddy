@@ -12,7 +12,7 @@
 | 2 | Barème déterministe & moteur de récidive | ✅ Terminée | 2026-07-12 | `automod/bareme.py` pur (ladder + plancher + récidive à demi-vie + modulateurs + kill-switch), `db.list_member_sanctions` (fiabilité dérivée de l'issuer + appel, sans migration), module applique le cran (nano ne décide plus les actions), breakdown sur carte + timeline, config `max_action`/`langue_serveur`, appel accepté → poids 0 + purge `messages_deja_moderes`. Tests : `tests/automod/test_bareme.py` (36 cas). |
 | 3 | Harnais de régression & shadow mode | ✅ Terminée | 2026-07-12 | Golden set `automod/eval/golden.jsonl` (62 cas), runner offline `automod/eval/run.py` (`--replay`/`--live`, précision/rappel/F1 + matrice de confusion + diff baseline), `golden_baseline.json` commitée, **gate CI** : régression `faux_positif_reel` ⇒ exit≠0. Shadow mode `dry_run` : carte SIMULATION + 3 boutons d'annotation persistants → `automod_eval_candidates`, `make eval-import`. Tests : `tests/automod/test_eval_harness.py` (13 cas). |
 | 4 | Coûts & anti-fragmentation | ✅ Terminée | 2026-07-12 | Cache de verdicts nano (per-guild, TTL 600 s, LRU 2048, single-flight) → raid copypasta = 1 appel ; agrégation par auteur (buffer Redis 45 s, concat routée sur blocklist+embedding, `agregat_de` sur la Decision + prompt) ; budget guard par guild (compteur Redis/jour, cap 300, mode dégradé sans coupure + carte one-off) ; clé du cache embedding normalisée (§4.4) + troncature à 1500 c. Tests : `test_verdict_cache.py`, `test_aggregation.py`, `test_budget_guard.py` (+ embeddings). Runner S3 vert (aucune régression FP). |
-| 5 | Graphe relationnel & réaction de la cible | ⬜ À faire | — | — |
+| 5 | Graphe relationnel & réaction de la cible | ✅ Terminée | 2026-07-13 | `automod/relations.py` pur (score familiarité décroissant demi-vie 30 j + classifieur `reaction_cible` 4 signaux + `RelationStore` Redis TTL 60 j, inerte sans Redis), listeners passifs (reply/mention → interactions/réciprocité, réaction rire → +positif via `on_reaction_add` cache-only ~0 coût), fenêtre d'observation 20 s (`relation_fn` lazy appelée juste avant nano, skip sur regex flagrant), injection `message_cible.relation` + bloc RELATION système (2 few-shots) montré seulement si relation présente, verdict jamais caché quand relation, garde-fous §5.4 (familiarité atténue seulement ; ignorée pour haine/automutilation/harcèlement_sexuel en haute+). Golden +6 cas relation (banter vs inconnus, détresse, garde-fou haine). Tests : `test_relations.py` (21), `test_relation_reaction.py` (10). 229 verts, runner S3 vert (1.0/1.0). |
 | 6 | Routing par difficulté (nano → mini) | ⬜ À faire | — | — |
 | 7 | Précédents serveur (jurisprudence RAG) | ⬜ À faire | — | — |
 | 8 | Feature `situation` (harcèlement diffus) | ⬜ À faire | — | — |
@@ -179,6 +179,62 @@ runner S3 sert désormais de filet pour mesurer chaque optimisation sans régres
 
 **Suites (pour S5) :** graphe relationnel + réaction de la cible (le budget guard compte déjà
 les appels nano, prêt à absorber le coût mini de S6 avec un poids ×4).
+
+### Journal de session 5 (2026-07-13)
+
+**Livré :**
+- `automod/relations.py` — module **pur** côté logique : `familiarite(counters, now)`
+  (score `interactions + 2·mutuelles + 3·réactions` × décroissance demi-vie 30 j, seuils
+  40/12/3 + ancienneté ≥ 7 j pour `haute`), `classify_target_reaction(...)` (4 signaux
+  `banter_reciproque`/`conflit_reciproque`/`detresse_possible`/`aucune`, détresse prioritaire,
+  rire > agression), `is_positive_emoji`, `build_relation_payload`. `RelationStore` (Redis) :
+  clé `rel:{guild}:{min}:{max}`, `record_message` (interactions + réciprocité via horodatages
+  dirigés `lc:{uid}` dans la fenêtre 5 min), `record_positive_reaction`, TTL 60 j ; **inerte
+  sans Redis**.
+- `automod/constants.py` — constantes S5 (`RELATION_*`, `REACTION_WAIT_SECONDS=20`,
+  `REACTION_SKIP_SCORE=0.85`, `FAMILIARITE_*`, `REACTION_*`, `CATEGORIES_RELATION_IGNOREE`).
+- `automod/nano.py` — `RELATION_PROMPT_BLOCK` (bloc système « trusted server data » + 2 few-shots
+  banter/inconnus), `build_user_payload(relation=)` pose `message_cible.relation`,
+  `juger(relation=)` montre le bloc **uniquement** si relation présente.
+- `automod/engine.py` — `RelationFn` + `analyze(relation_fn=)` : provider lazy appelé **juste
+  avant** l'appel nano (la fenêtre 20 s n'est payée que sur le chemin qui dépense un appel),
+  `_should_observe_reaction(signal)` (skip sur regex flagrant ≥ 0.85), verdict **jamais caché**
+  quand relation (cache + single-flight bypassés), provider en échec ⇒ dégrade sans relation.
+- `modules/automod.py` — `_feed_relations` (reply/mention, avant l'exemption modo),
+  `on_reaction` (réaction rire/positive, cache-only), `make_relation_provider` (cible = reply ou
+  mention unique humaine), `_observe_target_reaction` (attente 20 s + scan des réponses de la
+  cible + départ salon/guild → détresse + hits blocklist → conflit).
+- `cogs/module_events.py` — listener `on_reaction_add` (non-raw, cache-only, ~0 coût) →
+  `automod.on_reaction`.
+- `automod/eval/run.py` — champ `relation` optionnel sur `GoldenCase`, branché en `--live`
+  (inerte en `--replay`). Golden +6 cas (`gs-0200`..`gs-0205`) + fixtures + baseline régénérée.
+- Tests : `tests/automod/test_relations.py` (21), `tests/automod/test_relation_reaction.py` (10) ;
+  `_redis_stub.py` étendu (hash ops + TTL). **229 verts**, runner S3 `--replay` toujours 1.0/1.0.
+- Docs : `AUTOMOD.md` (§2ter relation + tunables), `CLAUDE.md` (structure).
+
+**Décisions :**
+- **Séparation respectée.** Le pipeline `automod/` **décide** ; toute I/O Discord (identifier la
+  cible, attendre 20 s, observer les réponses, quitter le salon) vit dans le **module** et est
+  injectée via un callback `relation_fn` (exactement comme `fetch_context`). Le store Redis est
+  côté `automod/` (comme l'agrégation/budget de S4) mais alimenté par le module.
+- **Provider lazy, pas de coût sur le chemin froid.** `relation_fn` n'est appelé qu'une fois le
+  budget guard franchi et un appel nano garanti — la latence 20 s ne touche jamais les messages
+  arrêtés avant nano.
+- **Relation jamais cachée.** `reaction_cible` est spécifique au message ; un même texte à deux
+  moments peut avoir des réactions différentes. Le cache de verdicts S4 est donc **contourné**
+  quand `relation_fn` est fourni (correctness > économie ; les cibles sont un cas minoritaire).
+- **Réaction positive via `on_reaction_add` non-raw** (cache-only) plutôt que `raw` : pas de
+  fetch de message → coût réellement ~0, au prix de ne compter que les réactions sur messages en
+  cache (acceptable, c'est du signal passif).
+- **Garde-fous §5.4 côté prompt + code** : la familiarité n'atténue que (jamais nourrie au
+  barème), et les catégories sensibles en haute+ ignorent la relation (bloc système explicite +
+  `CATEGORIES_RELATION_IGNOREE` exporté).
+- **Détection « supprime ses propres messages »** approximée par « la cible a quitté le salon/la
+  guild » (détectable de façon fiable et gratuite) ; la suppression fine de messages est laissée
+  best-effort (non bloquant pour les 4 classes, `detresse_possible` reste atteignable).
+
+**Suites (pour S6) :** routing nano→mini (le graphe relationnel alimente déjà la difficulté
+`ambigu` de §6.1 : `familiarite in (haute, moyenne)` et marqueurs de rire).
 
 <!-- ======================================================================= -->
 
@@ -873,9 +929,9 @@ texte entre inconnus).
 
 ## Critères de fin
 
-- [ ] Compteurs relationnels alimentés par les listeners, TTL 60 j, testés.
-- [ ] Attente réaction 20 s + les 4 classifications, testées (mock des events).
-- [ ] Payload + prompt enrichis ; golden set étendu avec 6 cas "relation" ; le runner S3
+- [x] Compteurs relationnels alimentés par les listeners, TTL 60 j, testés.
+- [x] Attente réaction 20 s + les 4 classifications, testées (mock des events).
+- [x] Payload + prompt enrichis ; golden set étendu avec 6 cas "relation" ; le runner S3
       montre une amélioration sur les tags `banter` sans régression ailleurs.
 
 ---
