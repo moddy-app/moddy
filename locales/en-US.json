@@ -1567,7 +1567,9 @@
         "fresh_account": "New account",
         "ceiling": "Server ceiling",
         "disabled_category": "Disabled category",
+        "unconfirmed": "AI confirmation refused",
         "review_hint": "Heavy AI-decided sanction — a moderator can review it.",
+        "review_hint_unconfirmed": "Heavy AI-proposed sanction, downgraded after review — a moderator can review it.",
         "bounds": "Bounds 0–7"
       },
       "budget": {

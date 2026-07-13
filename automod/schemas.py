@@ -106,3 +106,12 @@ class Decision:
     # an ordinary single-message decision.
     agregat_de: List[str] = field(default_factory=list)
     agregat_contenu: str = ""
+    # Difficulty routing (session 6): which model produced this verdict —
+    # "nano" (evident) or "mini" (ambigu). Drives the heavy-sanction confirmation
+    # (§6.3): only a nano-decided heavy cran needs a mini senior review.
+    decideur: str = "nano"
+    # Calibrated confidence (annexe A.2, TODO): if the gateway ever exposes token
+    # logprobs, derive confidence from the probability of the `sanctionnable`
+    # token instead of the model's self-report. Interface only — left None until
+    # the gateway can supply logprobs.
+    confiance_calibree: Optional[float] = None

@@ -28,6 +28,10 @@ class FakeRedis:
         self.kv[key] = str(int(self.kv.get(key, "0")) + 1)
         return int(self.kv[key])
 
+    async def incrby(self, key, amount=1):
+        self.kv[key] = str(int(self.kv.get(key, "0")) + int(amount))
+        return int(self.kv[key])
+
     async def expire(self, key, ttl):
         self.expires[key] = ttl
         return True

@@ -65,6 +65,26 @@ def normalize_trivial(text: str) -> str:
     return _repeat_re.sub(r"\1", text.lower().strip())
 
 
+def has_laughter(text: str) -> bool:
+    """Whether ``text`` carries a laughter marker (word or emoji form).
+
+    The single laughter detector, shared by the relationship/target-reaction
+    classifier (``relations.py``, §5.2) and the difficulty router
+    (``routing.py``, §6.1) — both read the same markers from ``constants`` so they
+    can never drift apart. Word markers are matched against the spaced-normalised
+    text (so "mdrrrr" → "mdr" and accents/case don't matter); emoji markers are
+    matched on the raw text (normalisation strips them).
+    """
+    from . import constants
+    if not text:
+        return False
+    for e in constants.RIRE_EMOJIS:
+        if e in text:
+            return True
+    tokens = set(normalize_spaced(text).split())
+    return bool(tokens & constants.RIRE_MOTS)
+
+
 # --- Repeat / concatenation de-spam --------------------------------------- #
 # Defeats evasion by repetition: "je vais te tuer" repeated 40× (with or without
 # separators) must collapse back to a single occurrence so the word-boundary

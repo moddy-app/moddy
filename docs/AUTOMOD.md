@@ -302,6 +302,77 @@ block are inert and the pipeline behaves exactly as before session 5.
 
 ---
 
+## 2quater. Difficulty routing — nano → mini (`automod/routing.py`)
+
+Session 6 puts the expensive model only where it earns its keep: subtle cases and
+heavy sanctions. Structurally it **routes before it judges** rather than judging
+then second-guessing.
+
+### The router (`routing.difficulte`) — free, pure
+
+Before spending a decision call, a **free heuristic** labels the message
+`evident` or `ambigu` (no AI call to route). It is a pure function of the message
+text, the routing `Signal` and the optional trusted `relation` block:
+
+```python
+difficulte(contenu, signal, relation, severity) -> "evident" | "ambigu"
+# ambigu when: very short (≤ 3 words) · familiarite in (haute, moyenne) ·
+#              a laughter marker (mdr / lol / 😂 …) · embedding score in the
+#              grey zone (±0.05 of the routing threshold).
+# a flagrant regex hit (indicative score ≥ threshold + 0.15) short-circuits to
+# evident first (a clear-cut slur / threat needs no expensive re-read).
+```
+
+Laughter markers come from the **single source of truth** `constants.RIRE_MOTS` /
+`RIRE_EMOJIS` (via `normalize.has_laughter`), shared with the target-reaction
+classifier (§2ter) so the two never drift.
+
+### Routing policy (`§6.2`)
+
+| difficulté | decider | model | context |
+|---|---|---|---|
+| `evident` | nano (current behaviour) | `gpt-4.1-nano` | `CONTEXTE_INITIAL` |
+| `ambigu` | **mini** | `gpt-4.1-mini` | `CONTEXTE_INITIAL × 2` |
+
+Same v2 prompt / contract — only the model, the initial context window and the
+call_type (`automod_decision_mini`) differ. The `Decision` records which model
+decided it (`decideur = "nano" | "mini"`). If the heuristics ever plateau, a
+3-token nano "evident/ambigu" pre-call is the planned upgrade (TODO, not built).
+
+### Mandatory confirmation of heavy sanctions (`§6.3`)
+
+Independently of routing: when the deterministic barème returns a **heavy cran
+(≥ `CONFIRM_CRAN_THRESHOLD` = 6, i.e. mute 672 h / ban)** *and* the decider was
+**nano**, the module requires a **binary mini senior review**
+(`engine.confirm_heavy` → `nano.confirmer`, call_type `automod_confirm`) before
+applying it:
+
+```text
+SYSTEM: senior moderator, answer ONLY {"confirme": bool, "motif": "…"}.
+Confirm ONLY if the literal text unambiguously justifies the category AND its
+severity. Any doubt / need for context => confirme=false.
+```
+
+- **`confirme=false`** (or a failed call — **fail-safe**) → the cran is capped to
+  `CONFIRM_UNCONFIRMED_CRAN` (= 4, mute 48 h) by `bareme.appliquer_non_confirme`,
+  a `confirmation_refusee` line is added to the breakdown, and the alert card
+  shows the *"heavy sanction proposed, downgraded after AI review — a moderator
+  can review it"* hint. **A human always keeps the last word** via the existing
+  review affordance. An unconfirmed heavy sanction can therefore **never** be a
+  ban — it is mechanically impossible.
+- A **mini-decided** verdict is trusted as-is (it is already the smart model);
+  so is any cran below the threshold.
+
+### Cost (`§6.4`)
+
+`ambigu` routing + confirmations are a small fraction of decision calls (~5–10 %)
+and are already bounded by the §5.3 budget guard — mini calls are counted with a
+**×4 weight** (`MINI_BUDGET_WEIGHT`) in the per-guild daily counter, reflecting
+their ~4× unit price. Heavy-sanction confirmations are rare by construction and
+are counted but **not** budget-gated (correctness over economy).
+
+---
+
 ## 3. The module (`modules/automod.py`)
 
 `MODULE_ID = "automod"`. Config stored in `guilds.data.modules.automod`:
@@ -450,10 +521,14 @@ application / case / logging path — nothing else changes.
 | call_type | op | quota | gated |
 |---|---|---|:--:|
 | `automod_embed` | openai/embed | — | ❌ |
-| `automod_decision` | openai/chat | guild | ✅ |
+| `automod_decision` | openai/chat (nano) | guild | ✅ |
+| `automod_decision_mini` | openai/chat (mini) | guild | ✅ |
+| `automod_confirm` | openai/chat (mini) | guild | ✅ |
 | `automod_rules_check` | openai/chat | guild | ✅ |
 
 Seeded unlimited in `db/base.py`; tighten per-guild via `quota_overrides`.
+`automod_decision_mini` (ambiguous cases) and `automod_confirm` (heavy-sanction
+confirmation) are the **session-6** routing calls — see §2quater.
 
 > **Volume note:** every non-trivial, non-blocklisted message triggers one
 > embedding call (and the gateway logs every call to the `api_call` webhook with
@@ -589,6 +664,20 @@ budget guard (5.3): they bound exactly those two failure modes.
 | `REACTION_WAIT_SECONDS` | 20 | verdict deferral to observe the target's reaction |
 | `REACTION_SKIP_SCORE` | 0.85 | flagrant regex gravity that skips the wait (immediate verdict) |
 | `CATEGORIES_RELATION_IGNOREE` | hate/self-harm/sexual | relation ignored for these at haute+ |
+
+### Difficulty-routing tunables (session 6, `automod/constants.py`)
+
+| Constant | Default | Meaning |
+|---|---|---|
+| `MINI_MODEL` | `gpt-4.1-mini` | model for `ambigu` cases + heavy-sanction confirmation |
+| `ROUTING_EVIDENT_REGEX_MARGIN` | 0.15 | regex indicative score above `threshold + this` ⇒ evident |
+| `ROUTING_AMBIGU_MAX_WORDS` | 3 | messages this short ⇒ ambigu (mini) |
+| `ROUTING_GRAY_ZONE_MARGIN` | 0.05 | embedding score within this of threshold ⇒ ambigu |
+| `AMBIGU_CONTEXT_MULTIPLIER` | 2 | ambigu messages get ×2 initial context |
+| `CONFIRM_CRAN_THRESHOLD` | 6 | cran ≥ this decided by nano needs mini confirmation |
+| `CONFIRM_UNCONFIRMED_CRAN` | 4 | cran cap when a heavy sanction is not confirmed (mute 48h) |
+| `MINI_BUDGET_WEIGHT` | 4 | budget-guard weight of a mini call (routing + confirm) |
+| `RIRE_MOTS` / `RIRE_EMOJIS` | sets | laughter markers, shared with §2ter (single source of truth) |
 
 ### Barème tunables (`automod/bareme.py`)
 

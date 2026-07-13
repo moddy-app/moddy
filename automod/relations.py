@@ -24,21 +24,17 @@ from dataclasses import dataclass
 from typing import Iterable, List, Optional
 
 from . import constants
-from .normalize import normalize_spaced
+from .normalize import has_laughter as _has_laughter
 
 # --------------------------------------------------------------------------- #
-# Laughter / positive-reaction markers
+# Positive-reaction markers
 # --------------------------------------------------------------------------- #
-
-# Word-form laughter markers (matched against the spaced-normalised text, which
-# de-accents and collapses "mdrrrr" → "mdr", "hahaha" runs, etc.).
-_WORD_LAUGHTER = frozenset({
-    "mdr", "ptdr", "lol", "lil", "lmao", "lmfao", "jpp", "xd",
-    "haha", "ahah", "hahah", "hihi", "jsp", "jppp",
-})
-# Emoji laughter markers (checked against the raw text — normalisation strips
-# non-alphanumerics, so emojis never survive it).
-_EMOJI_LAUGHTER = ("😂", "🤣", "😭", "💀", "😹")
+#
+# The laughter *markers* themselves (word + emoji forms) live in
+# ``constants.RIRE_MOTS`` / ``RIRE_EMOJIS`` — the single source of truth shared
+# with the difficulty router (§6.1). ``normalize.has_laughter`` is the one
+# detector both call. Only the friendly-*reaction* set (a superset that also
+# counts 👍❤️… as a positive signal on a message) is local to this module.
 
 # Positive / laughter reactions that count as a friendly signal on a message
 # (plan §5.1: 😂 👍 ❤️ 😭 …). Kept small and unambiguous.
@@ -50,17 +46,6 @@ _POSITIVE_REACTIONS = frozenset({
 def is_positive_emoji(emoji: str) -> bool:
     """True if a reaction emoji is a friendly / laughter signal (unicode only)."""
     return bool(emoji) and emoji in _POSITIVE_REACTIONS
-
-
-def _has_laughter(text: str) -> bool:
-    """Whether a reply carries a laughter marker (word or emoji form)."""
-    if not text:
-        return False
-    for e in _EMOJI_LAUGHTER:
-        if e in text:
-            return True
-    tokens = set(normalize_spaced(text).split())
-    return bool(tokens & _WORD_LAUGHTER)
 
 
 def classify_target_reaction(

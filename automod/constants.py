@@ -182,10 +182,71 @@ CATEGORIES_RELATION_IGNOREE = frozenset({
 })
 
 
+# --- Difficulty routing (nano → mini, session 6) ----------------------------
+#
+# Put the expensive model only where it earns its keep: ambiguous cases and heavy
+# sanctions. A **free** heuristic (``automod/routing.py``) classifies each message
+# that reaches the decision step as ``evident`` or ``ambigu`` BEFORE spending a
+# call; ``evident`` goes to nano (current behaviour), ``ambigu`` to the smarter,
+# pricier ``mini`` with twice the context. No AI call is spent to route. See
+# docs/AUTOMOD.md §2quater and docs/AUTOMOD_V2_PLAN.md (Session 6).
+MINI_MODEL: str = "gpt-4.1-mini"
+# A mini chat is lean like nano's v2 contract (same JSON verdict) — 300 is plenty.
+MINI_MAX_TOKENS: int = 300
+
+DIFFICULTE_EVIDENT: str = "evident"
+DIFFICULTE_AMBIGU: str = "ambigu"
+
+# A flagrant regex hit whose indicative score clears ``threshold + this`` is
+# obviously ``evident`` (a clear-cut slur / threat needs no expensive re-read).
+ROUTING_EVIDENT_REGEX_MARGIN: float = 0.15
+# Messages this short carry too little to judge cheaply → ``ambigu`` (mini).
+ROUTING_AMBIGU_MAX_WORDS: int = 3
+# An embedding score sitting within this band of the routing threshold is in the
+# grey zone → ``ambigu`` (mini) rather than a coin-flip nano verdict.
+ROUTING_GRAY_ZONE_MARGIN: float = 0.05
+# ``ambigu`` messages are judged with this multiple of the initial context.
+AMBIGU_CONTEXT_MULTIPLIER: int = 2
+
+# --- Heavy-sanction confirmation (session 6.3) ------------------------------
+#
+# Independently of routing: a heavy sanction (cran ≥ threshold) decided by nano
+# must be confirmed by a binary ``mini`` senior review before it is applied. A
+# refusal caps the cran to ``CONFIRM_UNCONFIRMED_CRAN`` (mute 48 h) and flags the
+# card for a human — a human always keeps the last word.
+CONFIRM_CRAN_THRESHOLD: int = 6
+CONFIRM_UNCONFIRMED_CRAN: int = 4
+CONFIRM_MAX_TOKENS: int = 120
+# Mini calls (ambigu routing + confirmations) are counted with this weight in the
+# per-guild budget guard: they are ~4× the price of a nano call.
+MINI_BUDGET_WEIGHT: int = 4
+
+
+# --- Laughter markers (single source of truth, session 6 / annexe A.3) ------
+#
+# Used by BOTH the difficulty router (``routing.py``, §6.1) and the target-reaction
+# classifier (``relations.py``, §5.2). One source of truth avoids the two drifting
+# apart. Word markers are matched against the spaced-normalised text (de-accented,
+# repeats collapsed so "mdrrrr" → "mdr"); emoji markers are matched on the raw text
+# (normalisation strips non-alphanumerics, so an emoji never survives it).
+RIRE_MOTS = frozenset({
+    "mdr", "ptdr", "lol", "lil", "lmao", "lmfao", "jpp", "jppp", "xd",
+    "haha", "ahah", "hahah", "hihi", "jsp",
+})
+RIRE_EMOJIS = ("😂", "🤣", "😭", "💀", "😹")
+# Combined view (annexe A.3): a single "RIRE_MARQUEURS" surface for callers that
+# just want "is there any laughter marker here".
+RIRE_MARQUEURS = frozenset(RIRE_MOTS | set(RIRE_EMOJIS))
+
+
 # --- Gateway call types -----------------------------------------------------
 
 # Quota-gated chat call for a moderation decision (per guild).
 CALL_TYPE_DECISION: str = "automod_decision"
+# Quota-gated chat call for an AMBIGU moderation decision, routed to mini (§6.2).
+CALL_TYPE_DECISION_MINI: str = "automod_decision_mini"
+# Quota-gated binary mini confirmation of a heavy nano sanction (§6.3).
+CALL_TYPE_CONFIRM: str = "automod_confirm"
 # Quota-gated chat call for validating a server's rules text.
 CALL_TYPE_RULES_CHECK: str = "automod_rules_check"
 # Embedding call (not quota-gated, see API_GATEWAY.md).

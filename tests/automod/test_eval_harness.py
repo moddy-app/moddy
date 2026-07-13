@@ -149,6 +149,40 @@ class TestRegressionGate:
 
 
 # --------------------------------------------------------------------------- #
+# Difficulty routing (session 6)
+# --------------------------------------------------------------------------- #
+
+class TestRouting:
+    def test_banter_cases_route_to_mini(self, golden, fixtures):
+        """Banter / relation cases that reach the decider are judged by mini.
+
+        This is the session-6 lever: the subtle "humour vs harm" cases are exactly
+        the ones the smart model should see. It is wired into the runner so a
+        --live run can show the gain; here we assert the routing itself.
+        """
+        report = R.run_eval(golden=golden, fixtures=fixtures)
+        res = {r.id: r for r in report.results}
+        for cid in ("gs-0061", "gs-0205"):  # banter (one with a relation block)
+            assert cid in res
+            assert res[cid].difficulte == "ambigu", \
+                f"{cid} (banter) should route to mini"
+
+    def test_routing_reports_only_for_decider_cases(self, golden, fixtures):
+        report = R.run_eval(golden=golden, fixtures=fixtures)
+        for r in report.results:
+            # A case stopped before the decider carries no difficulty label.
+            if r.stop_reason != "nano":
+                assert r.difficulte is None
+            else:
+                assert r.difficulte in ("evident", "ambigu")
+
+    def test_routing_does_not_touch_the_baseline(self, golden, fixtures, baseline):
+        """The router is informational offline — it must not move any verdict."""
+        report = R.run_eval(golden=golden, fixtures=fixtures, baseline=baseline)
+        assert report.changed_vs_baseline == []
+
+
+# --------------------------------------------------------------------------- #
 # Baseline round-trip
 # --------------------------------------------------------------------------- #
 

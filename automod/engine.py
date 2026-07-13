@@ -40,7 +40,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Awaitable, Callable, Dict, List, Optional, Set, Tuple
 
-from . import constants, nano
+from . import constants, nano, routing
 from .blocklist import get_blocklist
 from .cache import MISS, LruTtlCache
 from .embeddings import EmbeddingEngine, _retrieve_result
@@ -100,19 +100,30 @@ class AutomodEngine:
             metadata={"feature": "automod"},
         )
 
-    def _make_chat_fn(self, guild_id: int, correlation_id: str):
+    def _make_chat_fn(
+        self, guild_id: int, correlation_id: str, *,
+        model: str = constants.NANO_MODEL,
+        call_type: str = constants.CALL_TYPE_DECISION,
+        max_tokens: int = constants.NANO_MAX_TOKENS,
+    ):
+        """A gateway-backed chat function for the decision/confirmation calls.
+
+        The model / call_type are parametrised so the same path serves nano
+        (evident), mini (ambigu, session 6.2) and the mini confirmation (§6.3);
+        the quota is always scoped to the guild under the call's own type.
+        """
         from gateway import QuotaTarget
 
         async def chat_fn(system: str, user: str) -> dict:
             result = await self.bot.gateway.ai.chat(
                 system=system,
                 user=user,
-                model=constants.NANO_MODEL,
+                model=model,
                 json_mode=True,
                 temperature=constants.NANO_TEMPERATURE,
-                max_tokens=constants.NANO_MAX_TOKENS,
-                quota=[QuotaTarget.guild(guild_id, constants.CALL_TYPE_DECISION)],
-                call_type=constants.CALL_TYPE_DECISION,
+                max_tokens=max_tokens,
+                quota=[QuotaTarget.guild(guild_id, call_type)],
+                call_type=call_type,
                 correlation_id=correlation_id,
                 metadata={"feature": "automod", "guild_id": guild_id},
             )
@@ -341,12 +352,17 @@ class AutomodEngine:
                 logger.debug("automod: relation provider failed: %s", e)
                 relation = None
 
+        # Session 6: free difficulty routing — an ``ambigu`` message (very short,
+        # banter between regulars, laughter, grey-zone score) is judged by the
+        # smarter, pricier mini with ×2 context; ``evident`` stays on nano.
+        niveau = routing.difficulte(target.content, signal, relation, severity=severity)
+
         return await self._nano_call(
             key, target, signal, guild_id=guild_id, guild_name=guild_name,
             rules=rules, author_history=author_history, fetch_context=fetch_context,
             correlation_id=correlation_id, severity=severity,
             response_language=response_language, agregat_de=agregat_de,
-            relation=relation, cacheable=cacheable,
+            relation=relation, cacheable=cacheable, niveau=niveau,
         )
 
     @staticmethod
@@ -370,11 +386,13 @@ class AutomodEngine:
         agregat_de: Optional[List[str]],
         relation: Optional[dict] = None,
         cacheable: bool = True,
+        niveau: str = constants.DIFFICULTE_EVIDENT,
     ) -> Optional[Decision]:
-        """Real nano call, wrapped in single-flight + cache-fill + budget count.
+        """Real decision call, wrapped in single-flight + cache-fill + budget count.
 
         ``cacheable=False`` (a relation-carrying message) skips both the cache
         fill and the single-flight bookkeeping — the verdict is message-specific.
+        ``niveau`` picks the model (nano vs mini) and the budget weight (§6).
         """
         future: Optional["asyncio.Future"] = None
         if cacheable:
@@ -388,7 +406,7 @@ class AutomodEngine:
                 rules=rules, author_history=author_history,
                 fetch_context=fetch_context, correlation_id=correlation_id,
                 severity=severity, response_language=response_language,
-                agregat_de=agregat_de, relation=relation,
+                agregat_de=agregat_de, relation=relation, niveau=niveau,
             )
         except BaseException as exc:  # propagate to caller and any waiters
             if future is not None:
@@ -400,7 +418,10 @@ class AutomodEngine:
             qualif = self._qualif_from_decision(decision)
             if cacheable and qualif is not None:
                 self._verdict_cache.set(key, qualif)
-            await self._budget_increment(guild_id)
+            # A mini (ambigu) call weighs ×4 in the daily budget (§6.4).
+            weight = (constants.MINI_BUDGET_WEIGHT
+                      if routing.is_ambigu(niveau) else 1)
+            await self._budget_increment(guild_id, weight)
             self._budget_calls += 1
             if future is not None:
                 self._verdict_inflight.pop(key, None)
@@ -423,20 +444,77 @@ class AutomodEngine:
         response_language: str = "English",
         agregat_de: Optional[List[str]] = None,
         relation: Optional[dict] = None,
+        niveau: str = constants.DIFFICULTE_EVIDENT,
     ) -> Decision:
+        # Session 6: an ``ambigu`` message is routed to the smarter, pricier mini
+        # (same v2 contract, ×2 context); ``evident`` stays on nano. The Decision
+        # records which model decided it (``decideur``) so the module knows whether
+        # a heavy sanction still needs the mini confirmation (§6.3).
+        if routing.is_ambigu(niveau):
+            model, call_type = constants.MINI_MODEL, constants.CALL_TYPE_DECISION_MINI
+            max_tokens, decideur = constants.MINI_MAX_TOKENS, "mini"
+        else:
+            model, call_type = constants.NANO_MODEL, constants.CALL_TYPE_DECISION
+            max_tokens, decideur = constants.NANO_MAX_TOKENS, "nano"
+        chat_fn = self._make_chat_fn(
+            guild_id, correlation_id, model=model, call_type=call_type,
+            max_tokens=max_tokens)
         return await nano.juger(
             target,
             signal,
             guild_name=guild_name,
             rules=rules,
             history=author_history,
-            chat_fn=self._make_chat_fn(guild_id, correlation_id),
+            chat_fn=chat_fn,
             fetch_context=fetch_context,
             severite=severity,
             response_language=response_language,
             agregat_de=agregat_de,
             relation=relation,
+            contexte_initial=routing.contexte_initial_for(niveau),
+            decideur=decideur,
         )
+
+    # -- Heavy-sanction confirmation (session 6.3) -------------------------
+
+    async def confirm_heavy(
+        self,
+        target: TargetMessage,
+        decision: Decision,
+        *,
+        guild_id: int,
+        fetch_context: ContextFn,
+        response_language: str = "English",
+        correlation_id: Optional[str] = None,
+    ) -> Tuple[bool, str]:
+        """Binary mini senior review of a heavy nano decision (§6.3).
+
+        Returns ``(confirme, motif)``. The call spends one mini chat (counted ×4
+        in the budget guard, like an ambigu routing call) and is **fail-safe**: a
+        failed / malformed response is a refusal, so a doubtful heavy sanction is
+        capped and handed to a human rather than applied. Heavy sanctions are rare
+        by construction, so this is not budget-gated — correctness over economy.
+        """
+        correlation_id = correlation_id or str(uuid.uuid4())
+        chat_fn = self._make_chat_fn(
+            guild_id, correlation_id,
+            model=constants.MINI_MODEL,
+            call_type=constants.CALL_TYPE_CONFIRM,
+            max_tokens=constants.CONFIRM_MAX_TOKENS,
+        )
+        verdict_junior = {
+            "categorie": decision.categorie,
+            "gravite": decision.gravite,
+            "citation": decision.citation,
+        }
+        result = await nano.confirmer(
+            target, verdict_junior,
+            chat_fn=chat_fn, fetch_context=fetch_context,
+            response_language=response_language,
+        )
+        await self._budget_increment(guild_id, constants.MINI_BUDGET_WEIGHT)
+        self._budget_calls += 1
+        return bool(result.get("confirme", False)), str(result.get("motif", ""))
 
     # -- Verdict cache helpers ---------------------------------------------
 
@@ -465,6 +543,7 @@ class AutomodEngine:
             "citation": decision.citation,
             "cible": decision.cible,
             "rejet_grounding": decision.rejet_grounding,
+            "decideur": decision.decideur,
         }
 
     @staticmethod
@@ -497,6 +576,7 @@ class AutomodEngine:
             rejet_grounding=q["rejet_grounding"],
             agregat_de=[str(x) for x in agregat_de] if agregat_de else [],
             agregat_contenu=target.content if agregat_de else "",
+            decideur=q.get("decideur", "nano"),
         )
 
     # -- Budget guard ------------------------------------------------------
@@ -530,13 +610,18 @@ class AutomodEngine:
                 pass
         return constants.NANO_DAILY_SOFT_CAP
 
-    async def _budget_increment(self, guild_id: int) -> None:
+    async def _budget_increment(self, guild_id: int, weight: int = 1) -> None:
         r = self._redis()
         if r is None:
             return
         try:
             key = f"automod:budget:{guild_id}:{self._utc_day()}"
-            await r.incr(key)
+            # A mini call (ambigu routing / confirmation) weighs ×4 (§6.4).
+            if weight and weight != 1 and hasattr(r, "incrby"):
+                await r.incrby(key, int(weight))
+            else:
+                for _ in range(max(1, int(weight))):
+                    await r.incr(key)
             await r.expire(key, constants.BUDGET_KEY_TTL_SECONDS)
         except Exception:
             pass
