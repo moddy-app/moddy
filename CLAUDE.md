@@ -77,6 +77,8 @@ moddy/
 │
 ├── automod/                   # AI automod DETECTION pipeline (decides only; no side effects)
 │   ├── engine.py              #   Shared per-bot orchestrator (funnel entry)
+│   ├── situation.py           #   Diffuse-harassment friction machine + mini analyst (S8)
+│   ├── relations.py / routing.py / precedents.py / bareme.py
 │   ├── prefiltre.py / triviaux.py / blocklist.py / embeddings.py / nano.py
 │   ├── relations.py           #   Relationship graph + target-reaction signals (familiarity)
 │   ├── routing.py             #   Difficulty router (nano→mini) + heavy-sanction confirm (S6)
@@ -132,6 +134,8 @@ moddy/
 │   ├── staff_role_permissions.py
 │   ├── staff_help_view.py
 │   ├── case_management_views.py #  Cases Views/Modals (create, sanction, comment…)
+│   ├── automod_shadow_views.py #  Shadow (dry_run) simulation card + annotation buttons
+│   ├── automod_situation_views.py #  Diffuse-harassment (situation) SIMULATION card (S8)
 │   ├── appeal_views.py        #   Automod appeal UI (DM buttons + reviewer panels, persistent)
 │   ├── automod_shadow_views.py #  Automod shadow-mode SIMULATION card + annotation buttons (persistent)
 │   ├── moderation_cases.py    #   Cases domain model + enums + reference gen

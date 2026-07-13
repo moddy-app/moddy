@@ -15,7 +15,7 @@
 | 5 | Graphe relationnel & réaction de la cible | ✅ Terminée | 2026-07-13 | `automod/relations.py` pur (score familiarité décroissant demi-vie 30 j + classifieur `reaction_cible` 4 signaux + `RelationStore` Redis TTL 60 j, inerte sans Redis), listeners passifs (reply/mention → interactions/réciprocité, réaction rire → +positif via `on_reaction_add` cache-only ~0 coût), fenêtre d'observation 20 s (`relation_fn` lazy appelée juste avant nano, skip sur regex flagrant), injection `message_cible.relation` + bloc RELATION système (2 few-shots) montré seulement si relation présente, verdict jamais caché quand relation, garde-fous §5.4 (familiarité atténue seulement ; ignorée pour haine/automutilation/harcèlement_sexuel en haute+). Golden +6 cas relation (banter vs inconnus, détresse, garde-fou haine). Tests : `test_relations.py` (21), `test_relation_reaction.py` (10). 229 verts, runner S3 vert (1.0/1.0). |
 | 6 | Routing par difficulté (nano → mini) | ✅ Terminée | 2026-07-13 | `automod/routing.py` pur (`difficulte` → `evident`/`ambigu` : regex flagrant, ≤3 mots, familiarité haute/moyenne, marqueurs de rire, zone grise ±0.05 ; gratuit, aucun appel), routage engine `evident`→nano / `ambigu`→**mini** (`gpt-4.1-mini`, contexte ×2, `Decision.decideur`), confirmation obligatoire des sanctions lourdes (cran ≥ 6 décidées par nano) via `engine.confirm_heavy`→`nano.confirmer` (binaire, fail-safe), refus ⇒ `bareme.appliquer_non_confirme` plafonne à cran 4 (mute 48 h, jamais de ban) + carte « dégradé après revue », budget guard étendu aux appels mini ×4 (`incrby`). Marqueurs de rire centralisés (`RIRE_MOTS`/`RIRE_EMOJIS`, source unique partagée S5/S6). Call types seedés `automod_decision_mini` + `automod_confirm`. Runner S3 reporte la difficulté (banter→ambigu). Tests : `test_routing.py` (14), `test_confirmation.py` (20), harness routing (3). **266 verts**, runner `--replay` 1.0/1.0. |
 | 7 | Précédents serveur (jurisprudence RAG) | ✅ Terminée | 2026-07-13 | `automod/precedents.py` pur (cosine + `match` top-3 ≥ 0.80 + `deterministic_shortcut` ≥ 0.97 `non_sanctionnable` + `to_prompt_payload`), table `automod_precedents` (embedding float32-BYTEA, sans pgvector) + repo (`add`/`list`/`count`/`last_at`/`delete` + éviction cap 500), `services/precedent_service.py` (record embeddé 1 fois via gateway + cache guild 300 s + provider lazy `get_vector`). Engine : `precedents_fn` lazy avant l'appel, raccourci `stop_reason=precedent` (aucun appel), injection `precedents_serveur` + bloc système SERVER PRECEDENTS (fencé, jamais d'override gravité haute+). `embed_query` réutilise le vecteur du funnel (0 appel sur le chemin embedding). Alimentation : appel accepté/refusé (appeal_service) + boutons shadow ✅/❌. UI `/config` : section Précédents (compte + dernier) + navigateur paginé avec suppression unitaire. Golden +4 cas (`gs-0300..0303`, précédent non_sanct / renfort sanct / garde-fou gravité haute) + fixtures + baseline. Tests : `test_precedents.py` (15 : matcher pur, raccourci, packing BYTEA, câblage engine injection/stop, réutilisation du vecteur). **281 verts**, runner `--replay` 1.0/1.0. |
-| 8 | Feature `situation` (harcèlement diffus) | ⬜ À faire | — | — |
+| 8 | Feature `situation` (harcèlement diffus) | ✅ Terminée | 2026-07-13 | `automod/situation.py` pur (friction `decayed` demi-vie 20 min + `crosses` pair/agrégat, contrat analyste `parse_situation` fail-safe, `FrictionStore` Redis pair+agrégat+cooldown, inerte sans Redis). Nouvelle `AutomodFeature` `situation` **shadow forcé** : alimentée par le score sous-seuil `[0.25, seuil)` (via `engine.friction_probe`, 0 appel réutilise le cache embedding) + verdicts non_sanct `cible=membre` ; seuils 1.5 (pair) / 2.5 (dogpiling) → `engine.analyze_situation` (**mini**, `automod_situation`, ×4 budget, non gated) sur la séquence 45 min (cap 30) ; carte SIMULATION dédiée (`utils/automod_situation_views.py`) réutilisant les boutons d'annotation S3 (`source=situation`, jamais de précédent). Config `features.situation` + option UI. Seed `automod_situation`. Docs `AUTOMOD.md` §4 réécrit (features + situation). Tests : `test_situation.py` (33). **314 verts**, runner `--replay` 1.0/1.0. |
 
 ### Journal de session 1 (2026-07-12)
 
@@ -379,6 +379,74 @@ calculé ; feature `situation` (harcèlement diffus) branchée sur mini (S6) en 
 **Suites (pour S8) :** feature `situation` (harcèlement diffus) — nouvelle
 `AutomodFeature` sur mini, en shadow forcé ; réutilise l'agrégation S4 et le
 routing S6.
+
+### Journal de session 8 (2026-07-13)
+
+**Livré :**
+- `automod/situation.py` — module **pur** côté logique + store Redis :
+  `decayed(value, last_ts, now)` (friction ×0.5 toutes les 20 min),
+  `crosses(pair, agg)` (pair > agrégat), contrat analyste
+  `build_situation_system_prompt` / `build_situation_user_payload` (chaque
+  `contenu` **fencé**) / `parse_situation` (**fail-safe** : tout malformé ou
+  `situation` inconnue ⇒ `rien`, participants/rôles filtrés) / `analyser(...)`
+  (prend un `chat_fn` injecté, `rien` sur séquence vide ou appel raté).
+  `FrictionStore` (Redis) : clés `friction:{g}:{c}:{a}->{t}` (pair) +
+  `friction:agg:{g}:{c}:{t}` (agrégat entrant, dogpiling) + `friction:cd:...`
+  (cooldown), score décayé à la lecture **et** à l'écriture, TTL 2 h,
+  **inerte sans Redis**.
+- `automod/constants.py` — constantes S8 (`SITUATION_*`, `FRICTION_*`,
+  `SITUATION_CLASSES`/`SITUATION_ROLES`, `CALL_TYPE_SITUATION`).
+- `automod/engine.py` — `friction_probe(content, severity, …)` : rejoue les
+  étapes gratuites (préfiltre/triviaux) puis renvoie le **score embedding même
+  sous le seuil** (cache réutilisé ⇒ 0 appel quand `content` a déjà scoré) ;
+  `None` sur hit blocklist (cas flagrant = affaire de `content`) ou trivial.
+  `analyze_situation(cible, sequence, …)` : **mini** (`automod_situation`),
+  compté **×4** au budget guard (comme la confirmation), **non** budget-gated,
+  `rien` (0 appel) sur séquence vide.
+- `modules/automod.py` — `SituationFeature` (shadow forcé, `process` renvoie
+  toujours `[]`) : feed #1 (score sous-seuil `[0.25, seuil)` avec cible) dans
+  `process`, feed #2 (verdict non_sanct `cible=membre`) depuis la boucle
+  `on_message`. Helpers `_friction_store`, `_situation_feed` (add + trigger),
+  `_maybe_trigger_situation` (cooldown posé **avant** l'appel),
+  `_collect_situation_sequence` (fenêtre 45 min, cap 30, oldest→newest),
+  `_run_situation_analysis`, `_notify_situation` (candidat d'éval
+  `source=situation` + carte). `features.situation` dans
+  `get_default_config`.
+- `utils/automod_situation_views.py` — `render_situation_card` (Components V2 :
+  schéma, gravité, cible, résumé, participants+rôles, liens messages clés,
+  badge SIMULATION) réutilisant `ShadowAnnotateButton` (persistant, déjà
+  enregistré). `utils/automod_shadow_views.py` — dispatch `_render_for`
+  (situation vs sanction) + `_feed_precedent` **skip** pour `source=situation`.
+- `modules/configs/automod_config.py` — option **Situations** (4ᵉ toggle,
+  `max_values=4`), `features.situation` dans le défaut + `_deep_default`.
+- `db/base.py` — seed `automod_situation` (guild + global).
+- i18n `modules.automod.situation.*` (schéma/rôles/labels) +
+  `config.situation_{label,desc,active}` (fr + en-US).
+- Tests : `tests/automod/test_situation.py` (33 : décroissance, seuils,
+  parse fail-safe, prompt fencé, `FrictionStore` pair/agrégat/dogpiling/decay/
+  cooldown, `friction_probe` sous-seuil + None, `analyze_situation` mini ×4).
+  **314 verts**, runner `--replay` toujours 1.0/1.0.
+- Docs : `AUTOMOD.md` (§4 réécrit = features + `situation`, §5 call type, §6
+  tunables), `CLAUDE.md` (structure).
+
+**Décisions :**
+- **Séparation respectée.** `automod/situation.py` **décide** (arithmétique
+  pure + contrat analyste + store Redis, comme S4/S5) ; toute I/O Discord
+  (identifier la cible, collecter la séquence, poster la carte) vit dans le
+  **module**. L'appel mini vit dans l'**engine** (`analyze_situation`), comme
+  `confirm_heavy`.
+- **Shadow forcé, pas de sanction en v1.** Même `dry_run=false`, une situation
+  ne produit qu'une carte SIMULATION + annotations — on constitue d'abord le
+  golden set « situations ». Le plancher barème `("harcelement", gravite)` est
+  déjà prêt pour l'activation future.
+- **Coût ≈ 0 au feed.** `friction_probe` réutilise le score embedding déjà
+  calculé par `content` (cache) ; un hit blocklist ou trivial ne paie aucun
+  embed. Seul le franchissement de seuil (rare) paie **un** appel mini, ×4.
+- **Cooldown avant l'appel** pour qu'un fil houleux ne déclenche pas une analyse
+  par message ; le franchissement dogpiling est capté via un compteur agrégé
+  dédié (pas de SCAN Redis).
+- **Annotation ≠ précédent.** Une situation est un motif multi-messages, pas un
+  jugement sanctionnable/non d'un message unique : `_feed_precedent` l'ignore.
 
 <!-- ======================================================================= -->
 

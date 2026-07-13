@@ -40,7 +40,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Awaitable, Callable, Dict, List, Optional, Set, Tuple
 
-from . import constants, nano, precedents as ap, routing
+from . import constants, nano, precedents as ap, routing, situation as asit
 from .blocklist import get_blocklist
 from .cache import MISS, LruTtlCache
 from .embeddings import EmbeddingEngine, _retrieve_result
@@ -610,6 +610,78 @@ class AutomodEngine:
         await self._budget_increment(guild_id, constants.MINI_BUDGET_WEIGHT)
         self._budget_calls += 1
         return bool(result.get("confirme", False)), str(result.get("motif", ""))
+
+    # -- Situation feature — diffuse harassment (session 8) ----------------
+
+    async def friction_probe(
+        self, content: str, *, severity: int = constants.SEVERITY_DEFAULT,
+        is_bot: bool = False, is_system: bool = False,
+    ) -> Optional[float]:
+        """Toxicity score of a message for the diffuse-harassment friction machine.
+
+        Runs the cheap funnel gates (pre-filter, trivial allowlist) and returns
+        the embedding cosine score **even below** the nano routing threshold —
+        that sub-threshold band is exactly the signal the funnel discards today
+        and the friction machine consumes (§8.1). A flagrant regex hit returns
+        ``None`` (that is a real detection the content feature already owns, not
+        diffuse friction). The embedding score is served from the shared score
+        cache, so when the content funnel already scored this message it costs
+        **zero** extra call. Never raises — a failure just means no friction.
+        """
+        severity = constants.clamp_severity(severity)
+        try:
+            if not pre_filter(content, is_bot=is_bot, is_system=is_system):
+                return None
+            if est_trivial(content):
+                return None
+            # A flagrant explicit hit is not diffuse friction — the content funnel
+            # owns it (it routes straight to a decision, skipping embedding).
+            if self.blocklist.match(content) is not None:
+                return None
+            if not await self.ensure_ready():
+                return None
+            scored = await self.embeddings.score(content)
+        except Exception as e:  # noqa: BLE001 — friction is best-effort
+            logger.debug("automod: friction probe failed: %s", e)
+            return None
+        if scored is None:
+            return None
+        return float(scored[0])
+
+    async def analyze_situation(
+        self,
+        cible_presumee: str,
+        sequence: List[dict],
+        *,
+        guild_id: int,
+        response_language: str = "English",
+        correlation_id: Optional[str] = None,
+    ) -> "asit.SituationVerdict":
+        """Judge a diffuse-harassment SEQUENCE on ``mini`` (session 8, §8.2).
+
+        The trigger is rare by construction (a friction threshold crossing), so
+        — like the heavy-sanction confirmation — this spends one mini call that is
+        **counted ×4** in the per-guild budget guard but is **not** budget-gated
+        (correctness over economy). The sequence is collected by the module
+        (Discord I/O); this method only builds the prompt, calls the model and
+        parses it — the pipeline still only decides.
+        """
+        if not sequence:
+            return asit.SituationVerdict(situation=constants.SITUATION_RIEN)
+        correlation_id = correlation_id or str(uuid.uuid4())
+        chat_fn = self._make_chat_fn(
+            guild_id, correlation_id,
+            model=constants.MINI_MODEL,
+            call_type=constants.CALL_TYPE_SITUATION,
+            max_tokens=constants.SITUATION_MAX_TOKENS,
+        )
+        verdict = await asit.analyser(
+            cible_presumee, sequence,
+            chat_fn=chat_fn, response_language=response_language,
+        )
+        await self._budget_increment(guild_id, constants.MINI_BUDGET_WEIGHT)
+        self._budget_calls += 1
+        return verdict
 
     # -- Verdict cache helpers ---------------------------------------------
 

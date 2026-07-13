@@ -60,6 +60,7 @@ from automod import (
 from automod import constants as ac
 from automod import bareme as ab
 from automod import relations as ar
+from automod import situation as asit
 from utils.i18n import t
 from utils.moderation_cases import IssuerType, SanctionAction, EventType, AuthorType
 
@@ -216,8 +217,60 @@ class ContentModerationFeature(AutomodFeature):
         return out
 
 
+class SituationFeature(AutomodFeature):
+    """Diffuse harassment (session 8) — judges the PATTERN, not one message.
+
+    A friction state machine (``automod/situation.py``, Redis-backed) accumulates
+    the *sub-threshold* signal the content funnel throws away today: a message
+    whose toxicity score sits in ``[FRICTION_MIN_SCORE, routing threshold)`` with
+    an identifiable target (fed here) plus non-sanctionnable ``cible=membre``
+    verdicts (fed by the module from the content feature's output). When a target
+    crosses a friction threshold — sustained one-on-one or dogpiling — one
+    ``mini`` call judges the whole sequence.
+
+    **Forced shadow mode (v1):** this never applies a sanction. ``process`` always
+    returns ``[]``; a detected situation posts its own SIMULATION card with
+    annotation buttons (like ``dry_run``) — the raw material for a future
+    "situations" golden set. See docs/AUTOMOD.md §4 / docs/AUTOMOD_V2_PLAN.md §8.
+    """
+
+    feature_id = "situation"
+
+    async def process(self, message: discord.Message) -> List[Decision]:
+        if not ac.SITUATION_ENABLED:
+            return []
+        module = self.module
+        store = module._friction_store()
+        if store.redis is None:
+            return []  # inert without Redis (like the relationship graph)
+        target_id = module._identify_target(message)
+        if target_id is None:
+            return []  # no identifiable target → no directed friction to build
+
+        engine = get_engine(self.bot)
+        score = await engine.friction_probe(
+            message.content or "",
+            severity=module.severity,
+            is_bot=message.author.bot,
+            is_system=message.type not in (
+                discord.MessageType.default, discord.MessageType.reply),
+        )
+        threshold = ac.embedding_threshold_for(module.severity)
+        # Only the sub-threshold band feeds friction (at/above it the content
+        # funnel already judged the message). A miss still checks the trigger, so
+        # dogpiling from OTHER authors can fire on this message too.
+        amount = score if (score is not None
+                           and ac.FRICTION_MIN_SCORE <= score < threshold) else 0.0
+        await module._situation_feed(message, target_id, amount)
+        return []
+
+
 FEATURE_CLASSES = {
     ContentModerationFeature.feature_id: ContentModerationFeature,
+    # Session 8: diffuse-harassment analysis (forced shadow). Registered AFTER
+    # `content` so the content verdict for a message is available to feed the
+    # friction machine before `situation` checks the trigger.
+    SituationFeature.feature_id: SituationFeature,
     # Future: "anti_link": AntiLinkFeature, "anti_spam": AntiSpamFeature, ...
 }
 
@@ -338,6 +391,12 @@ class AutomodModule(ModuleBase):
                     "exempt_roles": [],
                     "exempt_channels": [],
                 },
+                # Session 8: diffuse-harassment analysis (forced shadow mode).
+                "situation": {
+                    "enabled": False,
+                    "exempt_roles": [],
+                    "exempt_channels": [],
+                },
             },
         }
 
@@ -391,6 +450,15 @@ class AutomodModule(ModuleBase):
                 )
                 continue
             for decision in decisions:
+                # Session 8: a non-sanctionnable verdict that still targets a
+                # member is "tension without infraction" — feed it to the friction
+                # machine so diffuse harassment (many such messages) can surface.
+                if (not decision.sanctionnable and decision.cible == "membre"
+                        and self._situation_active()):
+                    try:
+                        await self._situation_note_verdict(message, decision)
+                    except Exception as e:
+                        logger.debug("automod: situation verdict feed failed: %s", e)
                 try:
                     await self.apply_decision(message, decision)
                 except Exception as e:
@@ -628,6 +696,183 @@ class AutomodModule(ModuleBase):
         aggressive = sum(1 for r in replies if engine.blocklist.match(r) is not None)
         return ar.classify_target_reaction(
             replies, target_gone=target_gone, aggressive_hits=aggressive)
+
+    # -- Situation feature — diffuse harassment (session 8) ----------------
+
+    def _friction_store(self) -> asit.FrictionStore:
+        """A fresh friction store bound to the bot's Redis client (inert without it)."""
+        return asit.FrictionStore(getattr(self.bot, "redis", None))
+
+    def _situation_active(self) -> bool:
+        """Whether the (forced-shadow) situation feature is on for this guild."""
+        feat = self._features.get(SituationFeature.feature_id)
+        return bool(ac.SITUATION_ENABLED and feat is not None and feat.enabled)
+
+    async def _situation_feed(self, message: discord.Message, target_id: int,
+                              amount: float) -> None:
+        """Add ``amount`` friction for ``author -> target`` then check the trigger.
+
+        ``amount`` may be 0 (no new contribution): the trigger is still evaluated,
+        so friction accumulated from other authors / earlier messages on the same
+        target can fire on this message (dogpiling).
+        """
+        store = self._friction_store()
+        if store.redis is None:
+            return
+        await store.add(self.guild_id, message.channel.id,
+                        message.author.id, target_id, amount)
+        await self._maybe_trigger_situation(message, target_id)
+
+    async def _situation_note_verdict(self, message: discord.Message,
+                                      decision: Decision) -> None:
+        """Feed a non-sanctionnable ``cible=membre`` content verdict as friction."""
+        target_id = self._identify_target(message)
+        if target_id is None:
+            return
+        amount = max(ac.FRICTION_MIN_SCORE,
+                     float(getattr(decision, "score_detecteur", 0.0) or 0.0))
+        await self._situation_feed(message, target_id, amount)
+
+    async def _maybe_trigger_situation(self, message: discord.Message,
+                                       target_id: int) -> None:
+        """Analyse the sequence if this target crossed a friction threshold.
+
+        A cooldown (set *before* the analysis) prevents a heated thread from
+        firing an analysis on every subsequent message.
+        """
+        store = self._friction_store()
+        if store.redis is None:
+            return
+        channel_id = message.channel.id
+        if await store.in_cooldown(self.guild_id, channel_id, target_id):
+            return
+        pair = await store.pair_score(self.guild_id, channel_id,
+                                      message.author.id, target_id)
+        agg = await store.aggregate_score(self.guild_id, channel_id, target_id)
+        triggered, _kind = asit.crosses(pair, agg)
+        if not triggered:
+            return
+        await store.set_cooldown(self.guild_id, channel_id, target_id)
+        try:
+            await self._run_situation_analysis(message, target_id)
+        except Exception as e:
+            logger.error("automod: situation analysis failed (guild %s): %s",
+                         self.guild_id, e, exc_info=True)
+
+    async def _collect_situation_sequence(self, message: discord.Message
+                                          ) -> List[Dict[str, Any]]:
+        """Messages exchanged in the channel over the recent window (oldest→newest).
+
+        Capped at ``SITUATION_SEQUENCE_MAX``. Bots and empty messages are skipped;
+        the concatenated pattern is what the analyst judges.
+        """
+        cutoff = datetime.now(timezone.utc) - timedelta(
+            minutes=ac.SITUATION_SEQUENCE_MINUTES)
+        items: List[Dict[str, Any]] = []
+        try:
+            # Most-recent messages first (the escalation that triggered us), then
+            # reversed to oldest→newest for the analyst. A larger scan window is
+            # capped after filtering so a burst of bot/empty messages can't starve
+            # the sequence.
+            async for m in message.channel.history(limit=ac.SITUATION_SEQUENCE_MAX * 2):
+                if m.created_at < cutoff:
+                    break
+                if m.author.bot or not (m.content or "").strip():
+                    continue
+                items.append({
+                    "id": str(m.id),
+                    "auteur_id": str(m.author.id),
+                    "contenu": m.content,
+                })
+                if len(items) >= ac.SITUATION_SEQUENCE_MAX:
+                    break
+        except (discord.Forbidden, discord.HTTPException):
+            return []
+        items.reverse()  # oldest → newest
+        return items
+
+    async def _run_situation_analysis(self, message: discord.Message,
+                                      target_id: int) -> None:
+        """Collect the sequence, run the mini analyst, post a card if it's real."""
+        sequence = await self._collect_situation_sequence(message)
+        if len(sequence) < 2:
+            return  # nothing to see a pattern in
+        engine = get_engine(self.bot)
+        verdict = await engine.analyze_situation(
+            str(target_id), sequence,
+            guild_id=self.guild_id,
+            response_language=self.response_language(message.guild),
+        )
+        if not verdict.actionnable:
+            return
+        await self._notify_situation(message, target_id, verdict, sequence)
+
+    async def _notify_situation(self, message: discord.Message, target_id: int,
+                                verdict: "asit.SituationVerdict",
+                                sequence: List[Dict[str, Any]]) -> None:
+        """Record a situation eval candidate + post its SIMULATION card.
+
+        v1 is forced shadow: nothing is sanctioned. The card carries the same
+        persistent ✅/❌/⚠️ annotation buttons as ``dry_run`` (they annotate the
+        eval candidate), so a moderator's ruling feeds a future situations corpus.
+        """
+        if not self.notify_channel_id:
+            return
+        guild = message.guild
+        channel = guild.get_channel(int(self.notify_channel_id)) if guild else None
+        if not channel or not isinstance(channel, discord.TextChannel):
+            return
+        me = guild.me
+        if not me or not channel.permissions_for(me).send_messages:
+            return
+
+        locale = self.guild_locale(guild)
+        verdict_payload = {
+            "kind": "situation",
+            "situation": verdict.situation,
+            "gravite": verdict.gravite,
+            "cible": str(target_id),
+            "resume": verdict.resume,
+            "participants": [
+                {"auteur_id": p.auteur_id, "role": p.role}
+                for p in verdict.participants
+            ],
+            "messages_cles": list(verdict.messages_cles),
+            "locale": locale,
+        }
+        contexte = [str(m.get("contenu", ""))[:300] for m in sequence][-8:]
+
+        candidate_id = None
+        if getattr(self.bot, "db", None):
+            candidate_id = await self.bot.db.create_eval_candidate(
+                guild_id=self.guild_id,
+                source="situation",
+                contenu=verdict.resume or "",
+                contexte=contexte,
+                verdict=verdict_payload,
+                channel_id=message.channel.id,
+                message_id=message.id,
+                author_id=int(target_id),
+            )
+
+        from utils.automod_situation_views import render_situation_card
+        candidate = {
+            "id": candidate_id,
+            "guild_id": self.guild_id,
+            "channel_id": message.channel.id,
+            "message_id": message.id,
+            "author_id": int(target_id),
+            "contenu": verdict.resume or "",
+            "contexte": contexte,
+            "verdict": verdict_payload,
+            "verdict_humain": None,
+            "annotated_by": None,
+            "source": "situation",
+        }
+        try:
+            await channel.send(view=render_situation_card(candidate))
+        except (discord.Forbidden, discord.HTTPException):
+            return
 
     # -- Barème (deterministic sanction scale) -----------------------------
 

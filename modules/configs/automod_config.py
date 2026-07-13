@@ -46,6 +46,8 @@ _DEFAULT_CONFIG = {
     "dry_run": False,
     "features": {
         "content": {"enabled": False, "exempt_roles": [], "exempt_channels": []},
+        # Session 8: diffuse-harassment analysis (forced shadow mode).
+        "situation": {"enabled": False, "exempt_roles": [], "exempt_channels": []},
     },
 }
 
@@ -71,6 +73,12 @@ def _deep_default(current: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         "enabled": bool(content.get("enabled", False)),
         "exempt_roles": list(content.get("exempt_roles", [])),
         "exempt_channels": list(content.get("exempt_channels", [])),
+    }
+    situation = (current.get("features", {}) or {}).get("situation", {}) or {}
+    cfg["features"]["situation"] = {
+        "enabled": bool(situation.get("enabled", False)),
+        "exempt_roles": list(situation.get("exempt_roles", [])),
+        "exempt_channels": list(situation.get("exempt_channels", [])),
     }
     return cfg
 
@@ -178,6 +186,10 @@ class AutomodConfigView(BaseView):
     def _content(self) -> Dict[str, Any]:
         return self.working_config["features"]["content"]
 
+    @property
+    def _situation(self) -> Dict[str, Any]:
+        return self.working_config["features"]["situation"]
+
     def _dot(self, value: bool) -> str:
         return GREEN_STATUS if value else RED_STATUS
 
@@ -248,10 +260,11 @@ class AutomodConfigView(BaseView):
             f"{SETTINGS} **{t('modules.automod.config.section_options', locale=self.locale)}**"
         ))
         dry_run_on = bool(cfg.get("dry_run", False))
+        situation_on = self._situation["enabled"]
         opt_row = ui.ActionRow()
         opt_select = ui.Select(
             placeholder=t("modules.automod.config.activations.placeholder", locale=self.locale),
-            min_values=0, max_values=3,
+            min_values=0, max_values=4,
             options=[
                 discord.SelectOption(
                     label=t("modules.automod.config.content_label", locale=self.locale),
@@ -259,6 +272,13 @@ class AutomodConfigView(BaseView):
                     description=t("modules.automod.config.content_desc", locale=self.locale)[:100],
                     emoji=discord.PartialEmoji.from_str(MESSAGE),
                     default=content_on,
+                ),
+                discord.SelectOption(
+                    label=t("modules.automod.config.situation_label", locale=self.locale),
+                    value="situation",
+                    description=t("modules.automod.config.situation_desc", locale=self.locale)[:100],
+                    emoji=discord.PartialEmoji.from_str(GROUPS),
+                    default=situation_on,
                 ),
                 discord.SelectOption(
                     label=t("modules.automod.config.ignore_mods.label", locale=self.locale),
@@ -279,6 +299,9 @@ class AutomodConfigView(BaseView):
         opt_select.callback = self.on_activations
         opt_row.add_item(opt_select)
         container.add_item(opt_row)
+        if situation_on:
+            container.add_item(ui.TextDisplay(
+                f"-# {GROUPS} {t('modules.automod.config.situation_active', locale=self.locale)}"))
         if dry_run_on:
             container.add_item(ui.TextDisplay(
                 f"-# {SEARCH} {t('modules.automod.config.dry_run.active', locale=self.locale)}"))
@@ -528,6 +551,7 @@ class AutomodConfigView(BaseView):
             return
         selected = set(interaction.data.get("values", []))
         self._content["enabled"] = "content" in selected
+        self._situation["enabled"] = "situation" in selected
         self.working_config["ignore_moderators"] = "ignore" in selected
         self.working_config["dry_run"] = "dry_run" in selected
         self.has_changes = True

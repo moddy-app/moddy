@@ -149,6 +149,20 @@ def _primary_action(actions: List[str]) -> Optional[str]:
     return None
 
 
+def _render_for(candidate: Dict[str, Any]) -> ui.LayoutView:
+    """Pick the card renderer for a candidate row (sanction vs situation).
+
+    A session-8 diffuse-harassment candidate (``source == "situation"`` /
+    ``verdict.kind == "situation"``) uses its own card; everything else is a
+    ``dry_run`` sanction simulation.
+    """
+    verdict = candidate.get("verdict") or {}
+    if candidate.get("source") == "situation" or verdict.get("kind") == "situation":
+        from utils.automod_situation_views import render_situation_card
+        return render_situation_card(candidate)
+    return render_shadow_card(candidate)
+
+
 # --------------------------------------------------------------------------- #
 # Annotation button (DynamicItem, persistent)
 # --------------------------------------------------------------------------- #
@@ -215,13 +229,18 @@ class ShadowAnnotateButton(
         # a barème signal, not a sanctionnable/not ruling, so it is not a precedent.
         await self._feed_precedent(bot, row)
 
-        # Re-render the card in place (buttons → the recorded ruling).
-        await interaction.response.edit_message(view=render_shadow_card(row))
+        # Re-render the card in place (buttons → the recorded ruling). A session-8
+        # "situation" candidate uses its own card renderer.
+        await interaction.response.edit_message(view=_render_for(row))
 
     @staticmethod
     async def _feed_precedent(bot, row: Dict[str, Any]) -> None:
         """Record a server precedent from a shadow-card ruling (best-effort)."""
         from automod import constants as ac
+        # A session-8 "situation" candidate is a multi-message PATTERN ruling, not
+        # a single-message sanctionnable/not call — it is not a server precedent.
+        if row.get("source") == "situation":
+            return
         mapping = {
             "correct": (ac.PRECEDENT_SANCTIONNABLE, ac.PRECEDENT_SOURCE_BOUTON_OK),
             "faux_positif": (ac.PRECEDENT_NON_SANCTIONNABLE, ac.PRECEDENT_SOURCE_BOUTON_FP),
