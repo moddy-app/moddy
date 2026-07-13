@@ -278,6 +278,59 @@ PRECEDENT_SOURCE_BOUTON_FP: str = "bouton_fp"
 PRECEDENT_SOURCE_BOUTON_OK: str = "bouton_ok"
 
 
+# --- Situation feature — diffuse harassment (session 8) ---------------------
+#
+# What no per-message verdict ever sees: 15 individually-anodyne messages that,
+# together, are harassment or dogpiling. A friction state machine (Redis, per
+# directed pair `author -> target`) accumulates the SUB-THRESHOLD signal the
+# funnel throws away today — a message whose toxicity score sits in
+# [FRICTION_MIN_SCORE, routing threshold) with an identifiable target — plus
+# non-sanctionnable `cible=membre` verdicts (nano saw tension, no infraction).
+# The state decays (half-life 20 min, TTL 2 h). Crossing a threshold triggers ONE
+# ``mini`` call that judges the whole SEQUENCE (not a single message). Shipped in
+# FORCED shadow mode for its first version — it only ever posts a SIMULATION card
+# with annotation buttons, never a sanction. See docs/AUTOMOD.md §4 and
+# docs/AUTOMOD_V2_PLAN.md (Session 8).
+SITUATION_ENABLED: bool = True
+# Lower bound of the sub-threshold band fed to the friction machine (a score
+# below this is noise; at or above the routing threshold the content funnel
+# already handles the message).
+FRICTION_MIN_SCORE: float = 0.25
+# Friction decay: ×0.5 every 20 minutes (half-life), self-expiring after 2 h.
+FRICTION_HALFLIFE_SECONDS: float = 1200.0
+FRICTION_TTL_SECONDS: int = 7200
+# Trigger thresholds: a single directed pair (sustained one-on-one targeting) or
+# the aggregate incoming friction on one target (dogpiling — several authors, none
+# individually over the pair threshold).
+FRICTION_PAIR_THRESHOLD: float = 1.5
+FRICTION_AGG_THRESHOLD: float = 2.5
+# After a target triggers an analysis, suppress re-analysing that target for this
+# long, so a single heated thread does not post a card on every message.
+SITUATION_COOLDOWN_SECONDS: int = 1800
+# Sequence collection: messages exchanged over this window (minutes), capped.
+SITUATION_SEQUENCE_MINUTES: int = 45
+SITUATION_SEQUENCE_MAX: int = 30
+# The situation analyst runs on ``mini`` (ambiguous by nature); its output is a
+# small JSON object, so a modest token budget is plenty.
+SITUATION_MAX_TOKENS: int = 400
+
+# Situation classifications returned by the analyst.
+SITUATION_HARCELEMENT: str = "harcelement_soutenu"   # sustained targeting of one member
+SITUATION_DOGPILING: str = "dogpiling"               # several members piling on one
+SITUATION_CONFLIT: str = "conflit_mutuel"            # two members escalating mutually
+SITUATION_RIEN: str = "rien"                         # normal heated chat / banter
+SITUATION_CLASSES = (
+    SITUATION_HARCELEMENT, SITUATION_DOGPILING, SITUATION_CONFLIT, SITUATION_RIEN,
+)
+# Participant roles in a situation.
+SITUATION_ROLE_HARCELEUR: str = "harceleur"
+SITUATION_ROLE_PARTICIPANT: str = "participant"
+SITUATION_ROLE_CIBLE: str = "cible"
+SITUATION_ROLES = (
+    SITUATION_ROLE_HARCELEUR, SITUATION_ROLE_PARTICIPANT, SITUATION_ROLE_CIBLE,
+)
+
+
 # --- Gateway call types -----------------------------------------------------
 
 # Quota-gated chat call for a moderation decision (per guild).
@@ -286,6 +339,8 @@ CALL_TYPE_DECISION: str = "automod_decision"
 CALL_TYPE_DECISION_MINI: str = "automod_decision_mini"
 # Quota-gated binary mini confirmation of a heavy nano sanction (§6.3).
 CALL_TYPE_CONFIRM: str = "automod_confirm"
+# Quota-gated mini analysis of a diffuse-harassment SEQUENCE (session 8, §8.2).
+CALL_TYPE_SITUATION: str = "automod_situation"
 # Quota-gated chat call for validating a server's rules text.
 CALL_TYPE_RULES_CHECK: str = "automod_rules_check"
 # Embedding call (not quota-gated, see API_GATEWAY.md).

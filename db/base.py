@@ -1073,6 +1073,9 @@ class ModdyDatabase(
                 ("global", "automod_decision_mini",  "default", -1),
                 ("guild",  "automod_confirm",        "default", -1),
                 ("global", "automod_confirm",        "default", -1),
+                # Session 8 — diffuse-harassment sequence analysis (mini).
+                ("guild",  "automod_situation",      "default", -1),
+                ("global", "automod_situation",      "default", -1),
                 ("guild",  "automod_rules_check",    "default", -1),
             ]:
                 await conn.execute(
