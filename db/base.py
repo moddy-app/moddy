@@ -1037,9 +1037,14 @@ class ModdyDatabase(
                 ("global", "translation", "default", -1),
                 # Automod (AI message moderation) — unlimited by default,
                 # tighten per-guild via quota_overrides.
-                ("guild",  "automod_decision",    "default", -1),
-                ("global", "automod_decision",    "default", -1),
-                ("guild",  "automod_rules_check", "default", -1),
+                ("guild",  "automod_decision",       "default", -1),
+                ("global", "automod_decision",       "default", -1),
+                # Session 6 — difficulty routing (mini) + heavy-sanction confirm.
+                ("guild",  "automod_decision_mini",  "default", -1),
+                ("global", "automod_decision_mini",  "default", -1),
+                ("guild",  "automod_confirm",        "default", -1),
+                ("global", "automod_confirm",        "default", -1),
+                ("guild",  "automod_rules_check",    "default", -1),
             ]:
                 await conn.execute(
                     """

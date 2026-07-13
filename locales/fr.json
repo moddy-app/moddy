@@ -1566,7 +1566,9 @@
         "fresh_account": "Compte récent",
         "ceiling": "Plafond du serveur",
         "disabled_category": "Catégorie désactivée",
+        "unconfirmed": "Confirmation IA refusée",
         "review_hint": "Sanction lourde décidée par l'IA — un modérateur peut la réviser.",
+        "review_hint_unconfirmed": "Sanction lourde proposée par l'IA, dégradée après revue — un modérateur peut la réviser.",
         "bounds": "Bornes 0–7"
       },
       "budget": {

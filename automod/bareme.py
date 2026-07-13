@@ -329,6 +329,35 @@ def calculer(
 
 
 # ---------------------------------------------------------------------------
+# 6. Heavy-sanction confirmation downgrade (session 6.3)
+# ---------------------------------------------------------------------------
+
+def appliquer_non_confirme(res: ResultatBareme) -> ResultatBareme:
+    """Cap an UNCONFIRMED heavy sanction to ``CONFIRM_UNCONFIRMED_CRAN`` (mute 48h).
+
+    Called by the module when a heavy (cran ≥ 6) nano decision failed the mini
+    senior review (§6.3): the proposed ban/max-mute is degraded to a bounded mute
+    and a human keeps the last word via the alert card's review affordance. A
+    ``confirmation_refusee`` line is appended so the breakdown stays honest, and
+    ``needs_review`` stays set so the card still flags it for a moderator. A
+    sanction already at/under the cap is returned unchanged.
+    """
+    from . import constants
+    cap = constants.CONFIRM_UNCONFIRMED_CRAN
+    if res.cran <= cap:
+        return res
+    composantes = list(res.composantes)
+    composantes.append(Composante("confirmation_refusee", cap - res.cran, ""))
+    actions, duree = ladder_for(cap)
+    return ResultatBareme(
+        cran=cap, actions=actions, duree_heures=duree,
+        categorie=res.categorie, gravite=res.gravite,
+        points_recidive=res.points_recidive, composantes=composantes,
+        needs_review=True,
+    )
+
+
+# ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 

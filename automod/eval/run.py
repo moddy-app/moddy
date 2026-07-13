@@ -42,8 +42,10 @@ from typing import Any, Dict, List, Optional, Tuple
 from automod import bareme as ab
 from automod import constants as ac
 from automod import nano
+from automod import routing
 from automod.blocklist import get_blocklist
 from automod.prefiltre import pre_filter
+from automod.schemas import Signal
 from automod.triviaux import est_trivial
 
 # ---------------------------------------------------------------------------
@@ -98,6 +100,10 @@ class CaseResult:
     stop_reason: str = ""          # where the funnel stopped ("nano" = reached nano)
     rejet_grounding: Optional[str] = None
     cran: Optional[int] = None
+    # Session 6: the difficulty the router would assign this case ("evident" →
+    # nano, "ambigu" → mini). Reported for context (not in the baseline key), so a
+    # --live run can show banter/ambigu cases routing to the smarter model.
+    difficulte: Optional[str] = None
     # Evaluation flags.
     sanct_correct: bool = True     # predicted matches expected sanctionnable
     categorie_ok: Optional[bool] = None
@@ -211,10 +217,13 @@ def replay_case(case: GoldenCase, fixture: Dict[str, Any],
     if est_trivial(case.contenu):
         return _stopped("trivial")
 
-    reached_nano = False
     # Step 3 — regex blocklist (routes straight to nano, skipping embedding).
-    if blocklist.match(case.contenu) is not None:
-        reached_nano = True
+    entry = blocklist.match(case.contenu)
+    if entry is not None:
+        signal = Signal(
+            source=ac.SOURCE_REGEX, categorie=entry.categorie,
+            score_confiance=ac.GRAVITE_TO_SCORE.get(entry.gravite_indicative, 0.7),
+        )
     else:
         # Step 4 — embedding routing (score recorded in the fixture).
         embed = (fixture or {}).get("embedding") or {}
@@ -222,17 +231,21 @@ def replay_case(case: GoldenCase, fixture: Dict[str, Any],
         threshold = ac.embedding_threshold_for(severity)
         if score < threshold:
             return _stopped("embedding_low")
-        reached_nano = True
+        signal = Signal(source=ac.SOURCE_EMBEDDING, categorie="",
+                        score_confiance=score)
 
-    if not reached_nano:
-        return _stopped("stopped")
+    # Session 6: the difficulty the router would assign (nano vs mini). Purely
+    # informational here — the replay reuses recorded verdicts, so routing never
+    # changes the offline outcome; it lets a --live run steer the smart model.
+    niveau = routing.difficulte(case.contenu, signal, case.relation, severity=severity)
 
     # Step 5 — nano (recorded raw verdict) + deterministic grounding guards.
     raw = (fixture or {}).get("nano")
     if raw is None:
         # No recorded verdict for a case that reaches nano: cannot replay it.
         # Treat as not-sanctionnable but flag the missing fixture in stop_reason.
-        return _mk_result(case, False, "", "basse", "missing_nano_fixture")
+        return _mk_result(case, False, "", "basse", "missing_nano_fixture",
+                          difficulte=niveau)
 
     verdict = nano.parse_verdict(raw)
     verdict = nano.validate_grounding(verdict, case.contenu)
@@ -242,12 +255,14 @@ def replay_case(case: GoldenCase, fixture: Dict[str, Any],
     gravite = verdict["gravite"] or "basse"
     cran = _apply_bareme(categorie, gravite, verdict["confiance"]) if sanctionnable else None
     return _mk_result(case, sanctionnable, categorie, gravite, "nano",
-                      rejet=verdict.get("rejet_grounding"), cran=cran)
+                      rejet=verdict.get("rejet_grounding"), cran=cran,
+                      difficulte=niveau)
 
 
 def _mk_result(case: GoldenCase, sanctionnable: bool, categorie: str,
                gravite: str, stop_reason: str, *,
-               rejet: Optional[str] = None, cran: Optional[int] = None) -> CaseResult:
+               rejet: Optional[str] = None, cran: Optional[int] = None,
+               difficulte: Optional[str] = None) -> CaseResult:
     exp_s = case.attendu.get("sanctionnable")
     exp_c = case.attendu.get("categorie")
     r = CaseResult(
@@ -260,6 +275,7 @@ def _mk_result(case: GoldenCase, sanctionnable: bool, categorie: str,
         stop_reason=stop_reason,
         rejet_grounding=rejet,
         cran=cran,
+        difficulte=difficulte,
     )
     if exp_s is not None:
         r.sanct_correct = (sanctionnable == bool(exp_s))
@@ -468,6 +484,12 @@ def _print_report(report: EvalReport) -> None:
         print("  per-category recall:")
         for cat, b in sorted(report.per_category.items()):
             print(f"    - {cat:26s} {b['correct']}/{b['support']}")
+    # Session 6: how the router split the cases that reach the decider.
+    routed = [r for r in report.results if r.difficulte]
+    if routed:
+        ambigu = sum(1 for r in routed if r.difficulte == ac.DIFFICULTE_AMBIGU)
+        print(f"  routing: {ambigu} ambigu (mini) / {len(routed) - ambigu} "
+              f"evident (nano)  [{len(routed)} reached decider]")
     if report.changed_vs_baseline:
         print(f"  changed vs baseline: {len(report.changed_vs_baseline)}")
         for ch in report.changed_vs_baseline:

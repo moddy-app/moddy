@@ -13,7 +13,7 @@
 | 3 | Harnais de régression & shadow mode | ✅ Terminée | 2026-07-12 | Golden set `automod/eval/golden.jsonl` (62 cas), runner offline `automod/eval/run.py` (`--replay`/`--live`, précision/rappel/F1 + matrice de confusion + diff baseline), `golden_baseline.json` commitée, **gate CI** : régression `faux_positif_reel` ⇒ exit≠0. Shadow mode `dry_run` : carte SIMULATION + 3 boutons d'annotation persistants → `automod_eval_candidates`, `make eval-import`. Tests : `tests/automod/test_eval_harness.py` (13 cas). |
 | 4 | Coûts & anti-fragmentation | ✅ Terminée | 2026-07-12 | Cache de verdicts nano (per-guild, TTL 600 s, LRU 2048, single-flight) → raid copypasta = 1 appel ; agrégation par auteur (buffer Redis 45 s, concat routée sur blocklist+embedding, `agregat_de` sur la Decision + prompt) ; budget guard par guild (compteur Redis/jour, cap 300, mode dégradé sans coupure + carte one-off) ; clé du cache embedding normalisée (§4.4) + troncature à 1500 c. Tests : `test_verdict_cache.py`, `test_aggregation.py`, `test_budget_guard.py` (+ embeddings). Runner S3 vert (aucune régression FP). |
 | 5 | Graphe relationnel & réaction de la cible | ✅ Terminée | 2026-07-13 | `automod/relations.py` pur (score familiarité décroissant demi-vie 30 j + classifieur `reaction_cible` 4 signaux + `RelationStore` Redis TTL 60 j, inerte sans Redis), listeners passifs (reply/mention → interactions/réciprocité, réaction rire → +positif via `on_reaction_add` cache-only ~0 coût), fenêtre d'observation 20 s (`relation_fn` lazy appelée juste avant nano, skip sur regex flagrant), injection `message_cible.relation` + bloc RELATION système (2 few-shots) montré seulement si relation présente, verdict jamais caché quand relation, garde-fous §5.4 (familiarité atténue seulement ; ignorée pour haine/automutilation/harcèlement_sexuel en haute+). Golden +6 cas relation (banter vs inconnus, détresse, garde-fou haine). Tests : `test_relations.py` (21), `test_relation_reaction.py` (10). 229 verts, runner S3 vert (1.0/1.0). |
-| 6 | Routing par difficulté (nano → mini) | ⬜ À faire | — | — |
+| 6 | Routing par difficulté (nano → mini) | ✅ Terminée | 2026-07-13 | `automod/routing.py` pur (`difficulte` → `evident`/`ambigu` : regex flagrant, ≤3 mots, familiarité haute/moyenne, marqueurs de rire, zone grise ±0.05 ; gratuit, aucun appel), routage engine `evident`→nano / `ambigu`→**mini** (`gpt-4.1-mini`, contexte ×2, `Decision.decideur`), confirmation obligatoire des sanctions lourdes (cran ≥ 6 décidées par nano) via `engine.confirm_heavy`→`nano.confirmer` (binaire, fail-safe), refus ⇒ `bareme.appliquer_non_confirme` plafonne à cran 4 (mute 48 h, jamais de ban) + carte « dégradé après revue », budget guard étendu aux appels mini ×4 (`incrby`). Marqueurs de rire centralisés (`RIRE_MOTS`/`RIRE_EMOJIS`, source unique partagée S5/S6). Call types seedés `automod_decision_mini` + `automod_confirm`. Runner S3 reporte la difficulté (banter→ambigu). Tests : `test_routing.py` (14), `test_confirmation.py` (20), harness routing (3). **266 verts**, runner `--replay` 1.0/1.0. |
 | 7 | Précédents serveur (jurisprudence RAG) | ⬜ À faire | — | — |
 | 8 | Feature `situation` (harcèlement diffus) | ⬜ À faire | — | — |
 
@@ -235,6 +235,73 @@ les appels nano, prêt à absorber le coût mini de S6 avec un poids ×4).
 
 **Suites (pour S6) :** routing nano→mini (le graphe relationnel alimente déjà la difficulté
 `ambigu` de §6.1 : `familiarite in (haute, moyenne)` et marqueurs de rire).
+
+### Journal de session 6 (2026-07-13)
+
+**Livré :**
+- `automod/routing.py` — module **pur** : `difficulte(contenu, signal, relation, severity)`
+  → `evident` | `ambigu`. Ordre : regex flagrant (`score ≥ seuil + 0.15`) ⇒ evident ;
+  puis ambigu si ≤ 3 mots, `familiarite in (haute, moyenne)`, marqueur de rire, ou
+  score embedding en zone grise (`|score − seuil| ≤ 0.05`). Helpers `is_ambigu`,
+  `contexte_initial_for` (×2, plafonné à `CONTEXTE_MAX`). Aucun appel IA pour router.
+- `automod/constants.py` — `MINI_MODEL="gpt-4.1-mini"`, `CALL_TYPE_DECISION_MINI`,
+  `CALL_TYPE_CONFIRM`, `MINI_BUDGET_WEIGHT=4`, constantes routing (`ROUTING_*`,
+  `AMBIGU_CONTEXT_MULTIPLIER=2`), confirmation (`CONFIRM_CRAN_THRESHOLD=6`,
+  `CONFIRM_UNCONFIRMED_CRAN=4`, `CONFIRM_MAX_TOKENS`), et **marqueurs de rire
+  centralisés** `RIRE_MOTS`/`RIRE_EMOJIS`/`RIRE_MARQUEURS` (source unique, annexe A.3).
+- `automod/normalize.py` — `has_laughter(text)` (détecteur unique mot+emoji, lit
+  `constants`), consommé par `routing.py` (§6.1) **et** `relations.py` (§5.2, qui
+  délègue désormais son `_has_laughter`).
+- `automod/engine.py` — routage dans `_decide` (`niveau` calculé après relation),
+  `_judge` choisit modèle/contexte/`decideur` selon `evident`/`ambigu`,
+  `_make_chat_fn(model, call_type, max_tokens)` paramétré, budget guard étendu
+  (`_budget_increment(weight)` via `incrby`, mini ×4). Nouvelle méthode
+  `confirm_heavy(target, decision, …)` (mini, `automod_confirm`, ×4, fail-safe,
+  non budget-gated). `decideur` porté par la qualif en cache.
+- `automod/nano.py` — `juger(contexte_initial, decideur)` ; contrat de confirmation
+  binaire : `build_confirm_system_prompt`, `build_confirm_user_payload`,
+  `parse_confirmation` (fail-safe : tout malformé ⇒ refus), `confirmer(…)`.
+- `automod/schemas.py` — `Decision.decideur` ("nano"/"mini") + `confiance_calibree`
+  (interface annexe A.2, laissée `None` tant que le gateway n'expose pas les logprobs).
+- `automod/bareme.py` — `appliquer_non_confirme(res)` : plafonne un cran ≥ seuil
+  non confirmé à `CONFIRM_UNCONFIRMED_CRAN` (mute 48 h, **jamais de ban**), ligne
+  `confirmation_refusee`, `needs_review` conservé.
+- `modules/automod.py` — `_maybe_confirm_heavy` appelé après le barème (avant le
+  short-circuit `dry_run`, pour une simulation fidèle) : si `cran ≥ 6` et
+  `decideur == "nano"`, confirme via l'engine ; refus ⇒ downgrade. Carte : hint
+  dédié `review_hint_unconfirmed`. `_BAREME_LABELS += confirmation_refusee`.
+- `db/base.py` — seed `automod_decision_mini` + `automod_confirm` (guild + global).
+- i18n `modules.automod.bareme.{unconfirmed, review_hint_unconfirmed}` (fr + en-US).
+- `automod/eval/run.py` — `CaseResult.difficulte` reporté par cas (hors baseline),
+  synthèse routing dans le rapport ; le runner exerce donc le router hors-ligne.
+- Tests : `test_routing.py` (14), `test_confirmation.py` (20), harness routing (3).
+  `_redis_stub.py` += `incrby`. **266 verts**, runner `--replay` toujours 1.0/1.0.
+- Docs : `AUTOMOD.md` (§2quater + call types + tunables), `CLAUDE.md` (structure).
+
+**Décisions :**
+- **Séparation respectée.** Le router est **pur** (`automod/`, décide *comment*
+  juger) ; le choix de modèle/contexte est exécuté par l'engine (qui dépense les
+  appels). La **confirmation** est déclenchée par le module (il calcule le cran
+  via le barème) mais **l'appel IA vit dans l'engine** (`confirm_heavy`) — toute
+  I/O gateway reste côté détection, comme `fetch_context`/`relation_fn`.
+- **Router gratuit, pas d'appel IA pour router** (plan §6.1). Le pré-call nano
+  3-tokens reste un TODO (heuristiques + golden set d'abord).
+- **Confirmation fail-safe + non budget-gated.** Un appel raté = refus (on
+  dégrade vers un mute borné, jamais un ban à l'aveugle) ; les crans ≥ 6 sont
+  rares, donc on confirme toujours (correction > économie) tout en les **comptant**
+  ×4 dans le budget (plan §6.4).
+- **« Cran ≥ 6 sans confirmation impossible »** est garanti mécaniquement :
+  `appliquer_non_confirme` ne peut produire qu'un mute 48 h — testé (`"ban" not in
+  actions`). Une décision **mini** (`ambigu`) n'est pas re-confirmée (déjà le modèle
+  intelligent).
+- **Marqueurs de rire = une seule source de vérité** (`constants`), pour que le
+  router (§6.1) et la réaction cible (§5.2) ne divergent jamais (annexe A.3).
+- **Gain S6 offline = observabilité**, pas mutation : en `--replay` les verdicts
+  viennent des fixtures, donc le routage ne change aucun résultat (baseline
+  inchangée) ; il est reporté par cas et se mesure vraiment en `--live`.
+
+**Suites (pour S7/S8) :** précédents serveur (RAG) réutilisant l'embedding déjà
+calculé ; feature `situation` (harcèlement diffus) branchée sur mini (S6) en shadow.
 
 <!-- ======================================================================= -->
 
@@ -994,10 +1061,12 @@ plafonnée par le budget guard (S4 — étendre le compteur aux appels mini avec
 
 ## Critères de fin
 
-- [ ] Router heuristique testé (table-driven, ≥10 cas).
-- [ ] call_types `automod_decision_mini` + `automod_confirm` seedés, gateway OK.
-- [ ] Cran ≥6 sans confirmation ⇒ impossible (test).
-- [ ] Runner S3 : gain mesurable sur les tags `ambigu`/`banter` du golden set.
+- [x] Router heuristique testé (table-driven, 14 cas ≥ 10 requis).
+- [x] call_types `automod_decision_mini` + `automod_confirm` seedés, gateway OK.
+- [x] Cran ≥6 sans confirmation ⇒ impossible (`appliquer_non_confirme` ⇒ cran 4,
+      jamais de ban ; `confirm_heavy` fail-safe).
+- [x] Runner S3 : la difficulté est reportée par cas ; les cas `banter`/`relation`
+      routent vers mini (`ambigu`) — gain mesurable en `--live`, baseline inchangée.
 
 ---
 ---

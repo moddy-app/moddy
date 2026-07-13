@@ -661,6 +661,47 @@ class AutomodModule(ModuleBase):
             severite_guild=self.severity, config=config,
         )
 
+    async def _maybe_confirm_heavy(self, message: discord.Message,
+                                   decision: Decision,
+                                   bareme: ab.ResultatBareme) -> ab.ResultatBareme:
+        """Confirm a heavy nano sanction via mini, or cap it (session 6.3).
+
+        A cran ≥ ``CONFIRM_CRAN_THRESHOLD`` produced by nano is not applied until
+        a binary mini senior review confirms the literal text justifies it. On a
+        refusal (or a failed call — fail-safe) the sanction is downgraded to
+        ``CONFIRM_UNCONFIRMED_CRAN`` (mute 48 h) and the card flags it for a human.
+        A mini-decided verdict is trusted as-is (it is already the smart model);
+        so is anything below the threshold.
+        """
+        if bareme.cran < ac.CONFIRM_CRAN_THRESHOLD:
+            return bareme
+        if getattr(decision, "decideur", "nano") != "nano":
+            return bareme  # mini already judged it — no second opinion needed
+        try:
+            engine = get_engine(self.bot)
+            target = TargetMessage(
+                id=str(decision.message_id),
+                author_id=str(decision.auteur_id),
+                content=getattr(decision, "agregat_contenu", "") or message.content or "",
+            )
+            confirme, motif = await engine.confirm_heavy(
+                target, decision,
+                guild_id=self.guild_id,
+                fetch_context=self.make_context_loader(message),
+                response_language=self.response_language(message.guild),
+            )
+        except Exception as e:
+            logger.error("automod: heavy-sanction confirmation failed: %s", e)
+            confirme, motif = False, ""
+
+        if confirme:
+            return bareme
+        logger.info(
+            "automod confirm_refused message_id=%s categorie=%s cran=%s motif=%s",
+            decision.message_id, decision.categorie, bareme.cran, motif or "-",
+        )
+        return ab.appliquer_non_confirme(bareme)
+
     # Component code → i18n key suffix for the sanction breakdown card.
     _BAREME_LABELS = {
         "plancher": "floor",
@@ -672,6 +713,7 @@ class AutomodModule(ModuleBase):
         "plafond": "ceiling",
         "categorie_desactivee": "disabled_category",
         "borne": "bounds",
+        "confirmation_refusee": "unconfirmed",
     }
 
     def _bareme_breakdown(self, bareme: ab.ResultatBareme, locale: str) -> str:
@@ -741,6 +783,14 @@ class AutomodModule(ModuleBase):
         # barème computes the sanction (cran → actions + duration) from the
         # qualification, the member's recidivism history and the guild config.
         bareme = await self._compute_bareme(message, decision)
+
+        # Session 6.3: a heavy sanction (cran ≥ threshold) decided by nano must
+        # pass a binary mini senior review before it is applied. A refusal caps
+        # the cran (mute 48 h) and flags the card — a human keeps the last word.
+        # Skipped when mini already decided it (ambigu path is already the smart
+        # model) or in the kill-switch/deletion-only case.
+        bareme = await self._maybe_confirm_heavy(message, decision, bareme)
+
         decision.actions = list(bareme.actions)
         decision.duree_heures = bareme.duree_heures or 0
         if not decision.actions:
@@ -1234,8 +1284,15 @@ class AutomodModule(ModuleBase):
             container.add_item(ui.TextDisplay(
                 f"**{header}**\n{self._bareme_breakdown(bareme, locale)}"))
             if bareme.needs_review:
+                # A cran downgraded by an unconfirmed heavy sanction (§6.3) gets a
+                # dedicated hint ("ban proposed, degraded after AI review"); an
+                # otherwise-heavy automod cran gets the plain review hint.
+                downgraded = any(c.code == "confirmation_refusee"
+                                 for c in bareme.composantes)
+                hint_key = ("bareme.review_hint_unconfirmed" if downgraded
+                            else "bareme.review_hint")
                 container.add_item(ui.TextDisplay(
-                    f"-# {t('modules.automod.bareme.review_hint', locale=locale)}"))
+                    f"-# {t(f'modules.automod.{hint_key}', locale=locale)}"))
 
         container.add_item(ui.TextDisplay(
             f"-# {t('modules.automod.log.appeal_hint', locale=locale)}"))
