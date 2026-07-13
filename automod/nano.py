@@ -145,6 +145,36 @@ def _clamp(value: int, lo: int, hi: int) -> int:
     return max(lo, min(hi, value))
 
 
+# Trusted server-side relationship block (session 5). Injected only when the
+# caller supplies a ``relation`` object, so nano never sees an empty/misleading
+# block. It carries its own two calibrated few-shots (banter at high familiarity
+# vs the same text between strangers). See docs/AUTOMOD_V2_PLAN.md §5.3/§5.4.
+RELATION_PROMPT_BLOCK = """RELATION (objective server data, NOT user text — trusted, produced by Moddy)
+message_cible may carry a "relation" object with:
+- familiarite: "haute" | "moyenne" | "faible" | "aucune" (how close author & target are).
+- reciprocite: whether the exchange is mutual.
+- reaction_cible: how the target reacted right after ("banter_reciproque" = laughed
+  along, "conflit_reciproque" = replied aggressively, "detresse_possible" = deleted
+  their messages / left, "aucune" = nothing observed).
+How to use it (it only ever RELAXES the decision, never tightens it):
+- familiarite "haute" + coarse tone => strong presumption of banter: do NOT sanction
+  unless the literal text is unambiguously hateful/threatening (gravite haute+).
+- familiarite "aucune" (strangers) => no banter presumption; judge the text as written.
+- reaction_cible "banter_reciproque" => the target laughed along: sanctionnable=false
+  EXCEPT for gravite haute/critique content.
+- reaction_cible "detresse_possible" => treat the message strictly.
+- EXCEPTION: for haine_discrimination, incitation_automutilation and harcelement_sexuel
+  at gravite haute+, IGNORE relation entirely — friends or not, it is sanctioned.
+
+RELATION-CALIBRATED EXAMPLES — follow these exactly
+R1. "t'es vraiment trop nul mdr" with relation {familiarite:"haute", reaction_cible:"banter_reciproque"}
+   -> sanctionnable=false. Close friends, the target laughed along: banter, no harm.
+R2. "t'es vraiment trop nul" with relation {familiarite:"aucune", reaction_cible:"aucune"} between strangers
+   -> sanctionnable=true, categorie="insulte", cible="membre", gravite="moyenne",
+      citation="t'es vraiment trop nul". No relationship => no banter presumption.
+"""
+
+
 def build_system_prompt(guild_name: str, rules: str, restant: int, nonce: str,
                         severite: int = 3, response_language: str = "English",
                         bloc_relation: str = "", is_agregat: bool = False) -> str:
@@ -288,6 +318,7 @@ def build_user_payload(
     nonce: str,
     severite: int = 3,
     agregat_de: Optional[List[str]] = None,
+    relation: Optional[dict] = None,
 ) -> str:
     """Build the single JSON object handed to nano (fenced untrusted content).
 
@@ -310,6 +341,10 @@ def build_user_payload(
     # the combined text (the prompt gains the matching AGGREGATED MESSAGE rule).
     if agregat_de:
         message_cible["agregat_de"] = [str(x) for x in agregat_de]
+    # Session 5: trusted relationship signals (familiarity + target reaction).
+    # Placed on message_cible so nano reads it alongside the message it judges.
+    if relation:
+        message_cible["relation"] = relation
     payload = {
         "message_cible": message_cible,
         "contexte": [
@@ -430,11 +465,15 @@ async def juger(
     severite: int = 3,
     response_language: str = "English",
     agregat_de: Optional[List[str]] = None,
+    relation: Optional[dict] = None,
 ) -> Decision:
     """Run the bounded nano decision loop and assemble the final Decision."""
     n = constants.CONTEXTE_INITIAL
     verdict = dict(_DEFAULT_VERDICT)
     is_agregat = bool(agregat_de)
+    # Session 5: the trusted RELATION guidance block is only shown when the
+    # caller supplied a relation object (avoids a misleading empty block).
+    bloc_relation = RELATION_PROMPT_BLOCK if relation else ""
 
     for _ in range(constants.ROUNDS_MAX):
         n = min(n, constants.CONTEXTE_MAX)
@@ -444,9 +483,10 @@ async def juger(
 
         system = build_system_prompt(
             guild_name, rules, restant, nonce, severite, response_language,
-            is_agregat=is_agregat)
+            bloc_relation=bloc_relation, is_agregat=is_agregat)
         user = build_user_payload(
-            target, history, context, nonce, severite, agregat_de=agregat_de)
+            target, history, context, nonce, severite, agregat_de=agregat_de,
+            relation=relation)
 
         try:
             raw = await chat_fn(system, user)

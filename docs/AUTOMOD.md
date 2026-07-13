@@ -223,6 +223,85 @@ status. An **accepted appeal** additionally drops the message from
 
 ---
 
+## 2ter. Relationship graph & target reaction (`automod/relations.py`)
+
+nano judges text; text alone never carries the two facts that separate humour
+from a will to harm: **who is talking to whom** (familiarity) and **how the
+target reacted**. Session 5 feeds nano both, as **trusted server data** (not user
+text), so "t'es trop nul mdr" between two regulars who banter constantly is not
+treated like the same words fired at a stranger.
+
+This lives in `automod/relations.py`. The scoring (`familiarite`) and the reaction
+classifier (`classify_target_reaction`) are **pure and table-tested**; only
+`RelationStore` touches Redis and is **inert without it** (a missing relation can
+only make nano *stricter*, never laxer).
+
+### Familiarity (`familiarite`) — passive per-pair counters
+
+A Redis hash per unordered pair `rel:{guild}:{min}:{max}` accumulates, fed by
+**existing listeners at ~0 cost** (no API fetch):
+
+- a **reply / mention** from A to B → `interactions += 1` (and, if B had addressed
+  A within `RELATION_MUTUAL_WINDOW_SECONDS` = 5 min, `reponses_mutuelles += 1`);
+- a **laughter / friendly reaction** (`😂 👍 ❤️ 😭 …`) from B on A's message →
+  `reactions_positives += 1` (via the non-raw `on_reaction_add`, which only fires
+  for cached messages — so it never costs a fetch).
+
+On read the counters **decay** (half-life 30 days) into one readable level:
+
+```
+score = (interactions + 2·mutual + 3·positive) · 0.5**(days_since_last / 30)
+haute  : score ≥ 40 AND pair ≥ 7 days old
+moyenne: score ≥ 12
+faible : score ≥ 3
+aucune : otherwise
+```
+
+The pair hash carries a **60-day TTL** — no global graph to maintain, it
+self-expires. Only aggregate counters are stored, never message content.
+
+### Target reaction (`classify_target_reaction`) — the post-message window
+
+When a message reaches nano with an **identifiable target** (reply target or a
+single human mention), the module defers the verdict by
+`REACTION_WAIT_SECONDS` = 20 s (async, invisible to users) and observes the
+target's replies, classifying into `reaction_cible`:
+
+| observation in the window | signal |
+|---|---|
+| target deleted their messages / left the channel | `detresse_possible` |
+| a reply carries a laughter marker (`mdr`, `lol`, `😂`, "tg toi-même mdr"…) | `banter_reciproque` |
+| a reply itself trips the blocklist, no laughter | `conflit_reciproque` |
+| nothing | `aucune` |
+
+`detresse_possible` wins over everything; laughter beats aggression. **Exception:**
+a flagrant regex hit (indicative gravity ≥ `REACTION_SKIP_SCORE`, e.g. a death
+threat or doxxing) skips the wait for an **immediate** verdict.
+
+### Injection & guardrails
+
+The engine calls a lazy `relation_fn` **right before the nano call** (so the 20 s
+wait is only paid on the path that actually spends a call) and passes the result
+into nano's payload as `message_cible.relation`
+(`{familiarite, interactions_30j, reciprocite, reaction_cible}`). The system
+prompt gains a **trusted RELATION block** (with two calibrated few-shots: banter
+at high familiarity vs the same text between strangers) — shown **only** when a
+relation is present.
+
+- Familiarity **only ever attenuates** a verdict, never aggravates (aggravation is
+  the barème's fresh-account malus, §2bis).
+- For `haine_discrimination`, `incitation_automutilation` and
+  `harcelement_sexuel` at gravity **haute+**, relation is **ignored** — friends or
+  not, it goes (`CATEGORIES_RELATION_IGNOREE`, mirrored in the prompt).
+- A relation-carrying message is **never verdict-cached** (the reaction is
+  specific to this message); a broken provider degrades to *no relation* — nano
+  simply judges the text on its own.
+
+Requires `bot.redis`; without it the graph, the reaction window and the whole
+block are inert and the pipeline behaves exactly as before session 5.
+
+---
+
 ## 3. The module (`modules/automod.py`)
 
 `MODULE_ID = "automod"`. Config stored in `guilds.data.modules.automod`:
@@ -496,6 +575,20 @@ budget guard (5.3): they bound exactly those two failure modes.
 | `AGGREGATION_MIN_MESSAGES` | 2 | minimum fragments before an aggregate is attempted |
 | `NANO_DAILY_SOFT_CAP` | 300 | per-guild daily nano calls before degraded mode |
 | `NANO_DEGRADED_SCORE_MARGIN` | 0.10 | over-cap: embedding must clear `threshold + margin` |
+
+### Relationship / reaction tunables (session 5, `automod/constants.py`)
+
+| Constant | Default | Meaning |
+|---|---|---|
+| `RELATION_ENABLED` | `True` | familiarity graph + target-reaction window (needs Redis) |
+| `RELATION_TTL_SECONDS` | 60 d | per-pair hash TTL (self-expiring, no global graph) |
+| `RELATION_DECAY_HALFLIFE_DAYS` | 30 | familiarity score half-life |
+| `RELATION_MUTUAL_WINDOW_SECONDS` | 300 | a reply back within this counts as reciprocal |
+| `RELATION_MIN_AGE_DAYS_FOR_HAUTE` | 7 | "haute" also requires the pair to be this old |
+| `RELATION_SCORE_{HAUTE,MOYENNE,FAIBLE}` | 40 / 12 / 3 | weighted+decayed familiarity thresholds |
+| `REACTION_WAIT_SECONDS` | 20 | verdict deferral to observe the target's reaction |
+| `REACTION_SKIP_SCORE` | 0.85 | flagrant regex gravity that skips the wait (immediate verdict) |
+| `CATEGORIES_RELATION_IGNOREE` | hate/self-harm/sexual | relation ignored for these at haute+ |
 
 ### Barème tunables (`automod/bareme.py`)
 

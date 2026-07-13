@@ -131,6 +131,57 @@ NANO_DEGRADED_SCORE_MARGIN: float = 0.10
 BUDGET_KEY_TTL_SECONDS: int = 172800
 
 
+# --- Relationship graph & target reaction (session 5) -----------------------
+#
+# Two facts the raw text never carries: WHO talks to WHOM (familiarity) and HOW
+# the target reacted. Per-pair counters are fed passively by existing listeners
+# (reply / mention / positive reaction, ~0 cost), stored in Redis with a 60-day
+# TTL, and decayed on read (half-life 30 days). A short post-message window then
+# observes the target and classifies its reaction. Both are injected into nano's
+# payload as TRUSTED server data — not user text — so nano can tell humour from
+# genuine intent to harm. See docs/AUTOMOD.md §2ter and docs/AUTOMOD_V2_PLAN.md
+# (Session 5). Familiarity only ever ATTENUATES a verdict (never aggravates).
+RELATION_ENABLED: bool = True
+# 60-day TTL on the per-pair hash — no global graph to maintain, it self-expires.
+RELATION_TTL_SECONDS: int = 60 * 86400
+# Score half-life: a pair that stops interacting fades over ~a month.
+RELATION_DECAY_HALFLIFE_DAYS: float = 30.0
+# A reply back within this window counts as a mutual (reciprocal) exchange.
+RELATION_MUTUAL_WINDOW_SECONDS: int = 300  # 5 minutes
+# "haute" familiarity additionally requires the pair to be at least this old
+# (a burst of interactions on day one is not yet a real relationship).
+RELATION_MIN_AGE_DAYS_FOR_HAUTE: float = 7.0
+# Weighted, decayed score thresholds (score = interactions + 2·mutual + 3·positive).
+RELATION_SCORE_HAUTE: float = 40.0
+RELATION_SCORE_MOYENNE: float = 12.0
+RELATION_SCORE_FAIBLE: float = 3.0
+
+# Familiarity levels (derived from the score above).
+FAMILIARITE_HAUTE: str = "haute"
+FAMILIARITE_MOYENNE: str = "moyenne"
+FAMILIARITE_FAIBLE: str = "faible"
+FAMILIARITE_AUCUNE: str = "aucune"
+
+# Target-reaction observation: defer the verdict this long (asyncio, cancellable)
+# to see how the target reacted before judging. Invisible latency, high precision.
+REACTION_WAIT_SECONDS: int = 20
+# Skip the wait for a flagrant regex hit (death threat / doxxing): a high
+# indicative gravity means an immediate verdict, no 20-second observation.
+REACTION_SKIP_SCORE: float = 0.85
+
+# reaction_cible classifications (how the target reacted in the window).
+REACTION_BANTER: str = "banter_reciproque"      # laughed along
+REACTION_CONFLIT: str = "conflit_reciproque"     # replied on the same aggressive tone
+REACTION_DETRESSE: str = "detresse_possible"     # deleted own messages / left the channel
+REACTION_AUCUNE: str = "aucune"                  # nothing observable
+
+# Categories where familiarity / banter is IGNORED at gravite haute+ — friends or
+# not, this goes (mirrors the barème's CATEGORIES_SENSIBLES intent).
+CATEGORIES_RELATION_IGNOREE = frozenset({
+    "haine_discrimination", "incitation_automutilation", "harcelement_sexuel",
+})
+
+
 # --- Gateway call types -----------------------------------------------------
 
 # Quota-gated chat call for a moderation decision (per guild).

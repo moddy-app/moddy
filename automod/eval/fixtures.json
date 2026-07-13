@@ -885,5 +885,113 @@
    "raison": "",
    "sanctionnable": false
   }
+ },
+ "gs-0200": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "",
+   "cible": "membre",
+   "citation": "",
+   "confiance": "low",
+   "explication": "",
+   "gravite": "basse",
+   "nb_messages_supplementaires": 0,
+   "raison": "",
+   "sanctionnable": false
+  }
+ },
+ "gs-0201": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "insulte",
+   "cible": "membre",
+   "citation": "t'es vraiment trop nul",
+   "confiance": "high",
+   "explication": "insulte visant un membre",
+   "gravite": "moyenne",
+   "nb_messages_supplementaires": 0,
+   "raison": "insulte directe",
+   "sanctionnable": true
+  }
+ },
+ "gs-0202": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "",
+   "cible": "membre",
+   "citation": "",
+   "confiance": "low",
+   "explication": "",
+   "gravite": "basse",
+   "nb_messages_supplementaires": 0,
+   "raison": "",
+   "sanctionnable": false
+  }
+ },
+ "gs-0203": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "insulte",
+   "cible": "membre",
+   "citation": "t'es qu'un raté",
+   "confiance": "high",
+   "explication": "insulte visant un membre",
+   "gravite": "moyenne",
+   "nb_messages_supplementaires": 0,
+   "raison": "insulte directe",
+   "sanctionnable": true
+  }
+ },
+ "gs-0204": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "haine_discrimination",
+   "cible": "groupe",
+   "citation": "retourne dans ton pays",
+   "confiance": "high",
+   "explication": "propos haineux visant une origine",
+   "gravite": "haute",
+   "nb_messages_supplementaires": 0,
+   "raison": "propos discriminatoires",
+   "sanctionnable": true
+  }
+ },
+ "gs-0205": {
+  "embedding": {
+   "score": 0.9
+  },
+  "nano": {
+   "autres_messages_a_verifier": [],
+   "besoin_plus_contexte": false,
+   "categorie": "",
+   "cible": "membre",
+   "citation": "",
+   "confiance": "low",
+   "explication": "",
+   "gravite": "basse",
+   "nb_messages_supplementaires": 0,
+   "raison": "",
+   "sanctionnable": false
+  }
  }
 }

@@ -52,6 +52,11 @@ from .triviaux import est_trivial
 logger = logging.getLogger("moddy.automod.engine")
 
 ContextFn = Callable[[int], Awaitable[List[ContextMessage]]]
+# Session 5: an async provider of the trusted `relation` block. The engine calls
+# it lazily — only when a nano call is actually about to happen — passing whether
+# it may spend the reaction-observation window (False for flagrant regex hits).
+# Returns the relation dict (familiarite + reaction_cible…) or None.
+RelationFn = Callable[[bool], Awaitable[Optional[dict]]]
 
 
 class AutomodEngine:
@@ -163,6 +168,7 @@ class AutomodEngine:
         severity: int = constants.SEVERITY_DEFAULT,
         response_language: str = "English",
         channel_id: Optional[int] = None,
+        relation_fn: Optional[RelationFn] = None,
     ) -> Optional[Decision]:
         """Run a message through the funnel and return a Decision or None.
 
@@ -174,6 +180,13 @@ class AutomodEngine:
         message stops before nano, the pipeline may re-route the concatenation of
         the author's recent fragments (fragmented-harassment detection). Requires
         ``bot.redis``; without it aggregation is simply skipped.
+
+        ``relation_fn`` (optional, session 5) supplies the trusted relationship
+        block (familiarity + target reaction) for a message with an identifiable
+        target. It is called lazily, right before the nano call, so the (up to
+        20-second) reaction-observation window is only ever paid on the path that
+        actually spends a nano call. A relation-carrying decision is **never**
+        verdict-cached (the reaction is specific to this message).
         """
         correlation_id = str(uuid.uuid4())
         severity = constants.clamp_severity(severity)
@@ -189,6 +202,7 @@ class AutomodEngine:
                 rules=rules, author_history=author_history,
                 fetch_context=fetch_context, correlation_id=correlation_id,
                 severity=severity, response_language=response_language,
+                relation_fn=relation_fn,
             )
 
         # Buffer this message for the aggregation window BEFORE routing, so a
@@ -209,6 +223,7 @@ class AutomodEngine:
                 rules=rules, author_history=author_history,
                 fetch_context=fetch_context, correlation_id=correlation_id,
                 severity=severity, response_language=response_language,
+                relation_fn=relation_fn,
             )
 
         # Stopped before nano → try the fragmented-harassment aggregate.
@@ -282,37 +297,70 @@ class AutomodEngine:
         severity: int,
         response_language: str,
         agregat_de: Optional[List[str]] = None,
+        relation_fn: Optional[RelationFn] = None,
     ) -> Optional[Decision]:
         """Turn a routing Signal into a Decision, spending at most one nano call.
 
         Order: a **free** verdict-cache probe (and single-flight join) first, so a
         cached qualification is served even when the guild is over budget; only a
         genuine miss consults the budget guard before spending a nano call.
+
+        When ``relation_fn`` is supplied (session 5) the verdict cache and
+        single-flight are bypassed entirely: the relation block (and especially
+        ``reaction_cible``) is specific to this message, so its verdict must never
+        be shared with, or reused by, another message of the same text.
         """
         key = self._verdict_key(guild_id, target.content)
+        cacheable = relation_fn is None
 
-        cached = self._verdict_cache.get(key)
-        if cached is not MISS:
-            return self._decision_from_qualif(cached, target, signal, agregat_de)
+        if cacheable:
+            cached = self._verdict_cache.get(key)
+            if cached is not MISS:
+                return self._decision_from_qualif(cached, target, signal, agregat_de)
 
-        pending = self._verdict_inflight.get(key)
-        if pending is not None:
-            qualif = await pending
-            if qualif is None:
-                return None
-            return self._decision_from_qualif(qualif, target, signal, agregat_de)
+            pending = self._verdict_inflight.get(key)
+            if pending is not None:
+                qualif = await pending
+                if qualif is None:
+                    return None
+                return self._decision_from_qualif(qualif, target, signal, agregat_de)
 
         # A real nano call is about to happen → consult the budget guard.
         if not await self._budget_allows(guild_id, signal, severity):
             self._budget_dropped += 1
             return None
 
+        # Session 5: build the trusted relation block right before nano (so the
+        # reaction-observation window is only paid on the nano path). A flagrant
+        # regex hit skips the observation wait for an immediate verdict.
+        relation: Optional[dict] = None
+        if relation_fn is not None:
+            try:
+                relation = await relation_fn(self._should_observe_reaction(signal))
+            except Exception as e:
+                logger.debug("automod: relation provider failed: %s", e)
+                relation = None
+
         return await self._nano_call(
             key, target, signal, guild_id=guild_id, guild_name=guild_name,
             rules=rules, author_history=author_history, fetch_context=fetch_context,
             correlation_id=correlation_id, severity=severity,
             response_language=response_language, agregat_de=agregat_de,
+            relation=relation, cacheable=cacheable,
         )
+
+    @staticmethod
+    def _should_observe_reaction(signal: Signal) -> bool:
+        """Whether to spend the target-reaction window before judging.
+
+        Skipped for a flagrant regex hit (high indicative gravity — a death
+        threat / doxxing): those warrant an immediate verdict, not a 20-second
+        wait. Everything else observes the target first.
+        """
+        if signal.source == constants.SOURCE_REGEX \
+                and signal.score_confiance >= constants.REACTION_SKIP_SCORE:
+            return False
+        return True
 
     async def _nano_call(
         self, key: str, target: TargetMessage, signal: Signal, *,
@@ -320,34 +368,44 @@ class AutomodEngine:
         author_history: AuthorHistory, fetch_context: ContextFn,
         correlation_id: str, severity: int, response_language: str,
         agregat_de: Optional[List[str]],
+        relation: Optional[dict] = None,
+        cacheable: bool = True,
     ) -> Optional[Decision]:
-        """Real nano call, wrapped in single-flight + cache-fill + budget count."""
-        loop = asyncio.get_event_loop()
-        future: "asyncio.Future" = loop.create_future()
-        future.add_done_callback(_retrieve_result)
-        self._verdict_inflight[key] = future
+        """Real nano call, wrapped in single-flight + cache-fill + budget count.
+
+        ``cacheable=False`` (a relation-carrying message) skips both the cache
+        fill and the single-flight bookkeeping — the verdict is message-specific.
+        """
+        future: Optional["asyncio.Future"] = None
+        if cacheable:
+            loop = asyncio.get_event_loop()
+            future = loop.create_future()
+            future.add_done_callback(_retrieve_result)
+            self._verdict_inflight[key] = future
         try:
             decision = await self._judge(
                 target, signal, guild_id=guild_id, guild_name=guild_name,
                 rules=rules, author_history=author_history,
                 fetch_context=fetch_context, correlation_id=correlation_id,
                 severity=severity, response_language=response_language,
-                agregat_de=agregat_de,
+                agregat_de=agregat_de, relation=relation,
             )
         except BaseException as exc:  # propagate to caller and any waiters
-            self._verdict_inflight.pop(key, None)
-            if not future.done():
-                future.set_exception(exc)
+            if future is not None:
+                self._verdict_inflight.pop(key, None)
+                if not future.done():
+                    future.set_exception(exc)
             raise
         else:
             qualif = self._qualif_from_decision(decision)
-            if qualif is not None:
+            if cacheable and qualif is not None:
                 self._verdict_cache.set(key, qualif)
             await self._budget_increment(guild_id)
             self._budget_calls += 1
-            self._verdict_inflight.pop(key, None)
-            if not future.done():
-                future.set_result(qualif)
+            if future is not None:
+                self._verdict_inflight.pop(key, None)
+                if not future.done():
+                    future.set_result(qualif)
             return decision
 
     async def _judge(
@@ -364,6 +422,7 @@ class AutomodEngine:
         severity: int = constants.SEVERITY_DEFAULT,
         response_language: str = "English",
         agregat_de: Optional[List[str]] = None,
+        relation: Optional[dict] = None,
     ) -> Decision:
         return await nano.juger(
             target,
@@ -376,6 +435,7 @@ class AutomodEngine:
             severite=severity,
             response_language=response_language,
             agregat_de=agregat_de,
+            relation=relation,
         )
 
     # -- Verdict cache helpers ---------------------------------------------

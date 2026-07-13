@@ -77,6 +77,7 @@ moddy/
 ├── automod/                   # AI automod DETECTION pipeline (decides only; no side effects)
 │   ├── engine.py              #   Shared per-bot orchestrator (funnel entry)
 │   ├── prefiltre.py / triviaux.py / blocklist.py / embeddings.py / nano.py
+│   ├── relations.py           #   Relationship graph + target-reaction signals (familiarity)
 │   ├── normalize.py / injection.py / rules_check.py / schemas.py / constants.py
 │   ├── bareme.py              #   Deterministic sanction scale (cran ladder + recidivism)
 │   ├── cache.py               #   LRU+TTL score cache (embedding de-duplication)

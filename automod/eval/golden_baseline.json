@@ -247,15 +247,88 @@
   "gs-0131": {
    "categorie": "",
    "sanctionnable": false
+  },
+  "gs-0200": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0201": {
+   "categorie": "insulte",
+   "sanctionnable": true
+  },
+  "gs-0202": {
+   "categorie": "",
+   "sanctionnable": false
+  },
+  "gs-0203": {
+   "categorie": "insulte",
+   "sanctionnable": true
+  },
+  "gs-0204": {
+   "categorie": "haine_discrimination",
+   "sanctionnable": true
+  },
+  "gs-0205": {
+   "categorie": "",
+   "sanctionnable": false
   }
  },
- "changed_vs_baseline": [],
+ "changed_vs_baseline": [
+  {
+   "after": {
+    "categorie": "",
+    "sanctionnable": false
+   },
+   "change": "new",
+   "id": "gs-0200"
+  },
+  {
+   "after": {
+    "categorie": "insulte",
+    "sanctionnable": true
+   },
+   "change": "new",
+   "id": "gs-0201"
+  },
+  {
+   "after": {
+    "categorie": "",
+    "sanctionnable": false
+   },
+   "change": "new",
+   "id": "gs-0202"
+  },
+  {
+   "after": {
+    "categorie": "insulte",
+    "sanctionnable": true
+   },
+   "change": "new",
+   "id": "gs-0203"
+  },
+  {
+   "after": {
+    "categorie": "haine_discrimination",
+    "sanctionnable": true
+   },
+   "change": "new",
+   "id": "gs-0204"
+  },
+  {
+   "after": {
+    "categorie": "",
+    "sanctionnable": false
+   },
+   "change": "new",
+   "id": "gs-0205"
+  }
+ ],
  "confusion": {
   "arnaque_scam": {
    "arnaque_scam": 1
   },
   "aucune": {
-   "aucune": 37,
+   "aucune": 40,
    "insulte": 5,
    "menace": 2
   },
@@ -263,7 +336,7 @@
    "doxxing": 1
   },
   "haine_discrimination": {
-   "haine_discrimination": 1
+   "haine_discrimination": 2
   },
   "harcelement": {
    "harcelement": 1
@@ -275,7 +348,7 @@
    "incitation_automutilation": 2
   },
   "insulte": {
-   "insulte": 7
+   "insulte": 9
   },
   "menace": {
    "menace": 4
@@ -284,12 +357,12 @@
  "counts": {
   "fn": 0,
   "fp": 0,
-  "tn": 44,
-  "total": 62,
-  "tp": 18
+  "tn": 47,
+  "total": 68,
+  "tp": 21
  },
  "fp_reels_regressed": [],
- "generated_at": "2026-07-12T21:19:35.702270+00:00",
+ "generated_at": "2026-07-13T08:46:03.586906+00:00",
  "metrics": {
   "f1": 1.0,
   "precision": 1.0,
@@ -306,8 +379,8 @@
    "support": 1
   },
   "haine_discrimination": {
-   "correct": 1,
-   "support": 1
+   "correct": 2,
+   "support": 2
   },
   "harcelement": {
    "correct": 1,
@@ -322,8 +395,8 @@
    "support": 2
   },
   "insulte": {
-   "correct": 7,
-   "support": 7
+   "correct": 9,
+   "support": 9
   },
   "menace": {
    "correct": 4,
