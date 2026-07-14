@@ -323,10 +323,11 @@ references no longer get reused and a single case never accumulates dozens of
 sanctions. When a decision carries several actions (e.g. `delete` + `warn`),
 they are recorded on that one case.
 
-**Expiring sanctions.** nano may return `duree_heures` so warns / mutes / bans
-can be temporary. A mute uses it as the timeout length; a ban becomes a *temp
-ban* whose `expires_at` is honoured by `bot.case_expiry`, which lifts the
-Discord ban when the sanction expires (mutes are auto-cleared by Discord).
+**Expiring sanctions.** The deterministic **barème** (not nano — session 2)
+computes the sanction and its `duree_heures`, so warns / mutes / bans can be
+temporary. A mute uses it as the timeout length; a ban becomes a *temp ban*
+whose `expires_at` is honoured by `bot.case_expiry`, which lifts the Discord ban
+when the sanction expires (mutes are auto-cleared by Discord).
 
 A sanctioned member can **appeal** (see [AUTOMOD.md](AUTOMOD.md) §7):
 
@@ -342,3 +343,20 @@ A sanctioned member can **appeal** (see [AUTOMOD.md](AUTOMOD.md) §7):
   `/cases`.
 - The UI (`utils/appeal_views.py`) is fully persistent `DynamicItem` buttons +
   Modals V2, registered via `AppealPersistence`.
+
+**Appeal outcomes feed the automod back.** An appeal decision is not just
+reverted on Discord — it also reshapes future automod behaviour, with **no
+schema change** (both effects are *derived* at read time):
+
+- **Recidivism weighting (barème, session 2).** `db.list_member_sanctions`
+  derives each past sanction's `source_fiabilite` from the issuer + the latest
+  appeal status: an **accepted** appeal → `automod_appel_accepte` (weighted 0 —
+  a proven false positive never counts against the member), a **refused** appeal
+  → `automod_confirme` (a human confirmed it, weighted above a plain automod
+  sanction). An accepted appeal additionally drops the moderated message from
+  `messages_deja_moderes` (`list_automod_evidence_message_ids`).
+- **Server precedents (RAG, session 7).** `AppealService._feed_precedent` records
+  the moderated message as a precedent through `bot.precedents`: **accept** →
+  `non_sanctionnable`, **refuse** → `sanctionnable`. A **transform** ruling is
+  ambiguous (the sanction changed, not the sanctionable/not call) and is **not**
+  recorded. See [AUTOMOD.md](AUTOMOD.md) §2quinquies.

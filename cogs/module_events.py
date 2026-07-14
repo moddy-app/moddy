@@ -150,6 +150,30 @@ class ModuleEvents(commands.Cog):
             logger.error(f"Error in on_message (automod) for guild {message.guild.id}: {e}", exc_info=True)
 
     @commands.Cog.listener()
+    async def on_reaction_add(self, reaction: discord.Reaction, user):
+        """Cached-message reaction → feed the automod relationship graph (~0 cost).
+
+        Uses the non-raw event so it only fires for messages already in the
+        cache: recording a friendly / laughter reaction never costs an API fetch.
+        """
+        if getattr(user, "bot", False):
+            return
+        msg = reaction.message
+        if not getattr(msg, "guild", None):
+            return
+        if not self.bot.module_manager:
+            return
+        try:
+            automod_module = await self.bot.module_manager.get_module_instance(
+                msg.guild.id, 'automod')
+            if automod_module and automod_module.enabled:
+                await automod_module.on_reaction(reaction, user)
+        except Exception as e:
+            logger.error(
+                f"Error in on_reaction_add (automod) for guild {msg.guild.id}: {e}",
+                exc_info=True)
+
+    @commands.Cog.listener()
     async def on_message_delete(self, message: discord.Message):
         """
         Événement déclenché quand un message est supprimé

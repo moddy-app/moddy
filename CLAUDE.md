@@ -73,12 +73,23 @@ moddy/
 │       ├── adaptive_slowmode_config.py
 │       ├── social_notifications_config.py
 │       ├── automod_config.py
+│       ├── automod_precedents_view.py  # Learned-precedents browser (S7)
 │
 ├── automod/                   # AI automod DETECTION pipeline (decides only; no side effects)
 │   ├── engine.py              #   Shared per-bot orchestrator (funnel entry)
+│   ├── situation.py           #   Diffuse-harassment friction machine + mini analyst (S8)
+│   ├── relations.py / routing.py / precedents.py / bareme.py
 │   ├── prefiltre.py / triviaux.py / blocklist.py / embeddings.py / nano.py
+│   ├── relations.py           #   Relationship graph + target-reaction signals (familiarity)
+│   ├── routing.py             #   Difficulty router (nano→mini) + heavy-sanction confirm (S6)
+│   ├── precedents.py          #   Server precedents matcher (jurisprudence RAG, pure) (S7)
 │   ├── normalize.py / injection.py / rules_check.py / schemas.py / constants.py
+│   ├── bareme.py              #   Deterministic sanction scale (cran ladder + recidivism)
 │   ├── cache.py               #   LRU+TTL score cache (embedding de-duplication)
+│   ├── eval/                  #   Regression harness (golden set, offline runner, shadow annotations)
+│   │   ├── golden.jsonl / fixtures.json / golden_baseline.json
+│   │   ├── run.py             #     Offline runner (--replay/--live, CI gate on faux_positif_reel)
+│   │   └── import_candidates.py #   annotated candidates → golden JSONL (make eval-import)
 │   └── data/references.json   #   Embedding reference phrases (FR + EN)
 │
 ├── staff/                     # Staff/dev command system (message + slash)
@@ -105,6 +116,8 @@ moddy/
 │       ├── reminders.py, saved_messages.py, saved_roles.py
 │       ├── moderation.py, interserver.py, attributes.py
 │       ├── appeals.py           #   Automod sanction appeals (case_appeals)
+│       ├── eval_candidates.py   #   Automod eval/annotation corpus (automod_eval_candidates)
+│       ├── precedents.py        #   Automod server precedents (automod_precedents, RAG)
 │       ├── token_alerts.py, token_secrets.py
 │       ├── subscription.py    #   Subscription read-only queries
 │       ├── social.py          #   Social notifications subscriptions
@@ -120,7 +133,11 @@ moddy/
 │   ├── tech_logger.py         #   Technical staff logs via webhooks (Components V2, per-event channels)
 │   ├── staff_role_permissions.py
 │   ├── staff_help_view.py
-│   ├── case_management_views.py #  Cases Views/Modals (create, sanction, comment…)
+│   ├── case_management_views.py #  Cases Views/Modals (create, sanction, comment…) — staff
+│   ├── cases_views.py         #   /cases & /mycases browser (CasesBrowserView, persistent)
+│   ├── automod_shadow_views.py #  Automod shadow-mode (dry_run) SIMULATION card + annotation buttons (persistent)
+│   ├── automod_situation_views.py #  Diffuse-harassment (situation) SIMULATION card (S8)
+│   ├── automod_render.py      #   Shared automod card helpers (barème breakdown, sanction name/accent)
 │   ├── appeal_views.py        #   Automod appeal UI (DM buttons + reviewer panels, persistent)
 │   ├── moderation_cases.py    #   Cases domain model + enums + reference gen
 │   ├── embeds.py
@@ -148,6 +165,7 @@ moddy/
 │   ├── feeds_client.py        #   moddy-feeds Redis client (social notifications)
 │   ├── case_service.py        #   Scalable sanction→case entry point (source registry)
 │   ├── appeal_service.py      #   Automod sanction appeals (server / Moddy team, binding)
+│   ├── precedent_service.py   #   Automod server precedents (record + serve, RAG)
 │   └── railway_diagnostic.py  #   Railway diagnostics
 │
 ├── internal_api/              # FastAPI internal API

@@ -1315,7 +1315,8 @@
           "enable_ignore": "Activer",
           "disable_ignore": "Désactiver",
           "edit_rules": "Modifier le règlement",
-          "edit_indications": "Modifier les indications"
+          "edit_indications": "Modifier les indications",
+          "view_precedents": "Voir les précédents"
         },
         "rules": {
           "desc": "Guide l'IA pour juger les messages. Vérifié contre les tentatives d'injection avant d'être enregistré.",
@@ -1392,7 +1393,46 @@
         "status_hint": "Coche/décoche dans le menu ci-dessous pour activer ou désactiver.",
         "activations": {
           "placeholder": "Activer / désactiver…"
-        }
+        },
+        "section_limits": "Limites & langue",
+        "max_action": {
+          "desc": "Action la plus sévère que l'automod peut appliquer.",
+          "placeholder": "Action maximale…",
+          "option_warn": "Avertissement au maximum",
+          "option_mute": "Exclusion au maximum",
+          "option_ban": "Bannissement autorisé"
+        },
+        "language": {
+          "desc": "Langue des messages de sanction (raison, DM du membre).",
+          "placeholder": "Langue des sanctions…",
+          "auto": "Automatique (langue du serveur)",
+          "fr": "Français",
+          "en": "Anglais"
+        },
+        "dry_run": {
+          "label": "Mode simulation",
+          "desc": "Détecte et affiche, mais n'applique aucune sanction (recommandé la première semaine)",
+          "active": "Mode simulation actif : les sanctions sont affichées mais jamais appliquées."
+        },
+        "section_precedents": "Précédents",
+        "precedents": {
+          "title": "Précédents appris",
+          "desc": "L'automod apprend la culture de ton serveur à partir de tes décisions (appels tranchés, annotations en mode simulation).",
+          "empty": "Aucun précédent appris pour l'instant.",
+          "count": "**{n}** précédent(s) appris",
+          "last": "dernier :",
+          "page": "page {current}/{total}",
+          "prev": "Précédent",
+          "next": "Suivant",
+          "verdict_not": "non sanctionnable",
+          "verdict_yes": "sanctionnable",
+          "delete_placeholder": "Supprimer un précédent erroné…",
+          "delete_option": "Supprimer le précédent {n}",
+          "deleted": "Précédent supprimé."
+        },
+        "situation_label": "Situations (harcèlement diffus)",
+        "situation_desc": "Détecte le harcèlement multi-messages et le dogpiling (mode simulation)",
+        "situation_active": "Situations : analyse en simulation — aucune sanction automatique appliquée"
       },
       "action": {
         "warn": "Avertissement",
@@ -1534,6 +1574,67 @@
         "server_opened": "{user} a fait appel auprès de l'équipe Moddy (dossier {case}).",
         "server_decided_title": "Appel traité",
         "server_decided": "L'appel de {user} ({route}) a été traité : **{status}**."
+      },
+      "bareme": {
+        "title": "Barème : {sanction} (cran {cran})",
+        "cran": "cran {n}",
+        "floor": "Plancher",
+        "recidivism": "Récidive",
+        "severity": "Sévérité serveur",
+        "confidence": "Plafond de confiance",
+        "veteran": "Ancienneté (casier vierge)",
+        "fresh_account": "Compte récent",
+        "ceiling": "Plafond du serveur",
+        "disabled_category": "Catégorie désactivée",
+        "unconfirmed": "Confirmation IA refusée",
+        "review_hint": "Sanction lourde décidée par l'IA — un modérateur peut la réviser.",
+        "review_hint_unconfirmed": "Sanction lourde proposée par l'IA, dégradée après revue — un modérateur peut la réviser.",
+        "bounds": "Bornes 0–7"
+      },
+      "budget": {
+        "title": "Budget IA du jour atteint",
+        "body": "Le quota quotidien d'analyses IA de l'automod ({cap}) est atteint pour aujourd'hui. Les cas manifestes (mots explicites, contenus très proches du seuil) restent traités et supprimés, mais la sensibilité de l'IA est réduite jusqu'à demain. Ce message n'apparaît qu'une fois par jour."
+      },
+      "shadow": {
+        "badge": "SIMULATION — aucune action appliquée",
+        "would_apply": "Sanction simulée",
+        "annotate_hint": "Modérateurs : cette décision est-elle correcte ?",
+        "button": {
+          "ok": "Correct",
+          "fp": "Faux positif",
+          "disp": "Disproportionné"
+        },
+        "annotated": {
+          "correct": "Jugé correct",
+          "faux_positif": "Jugé faux positif",
+          "disproportionne": "Jugé disproportionné"
+        },
+        "error": {
+          "title": "Action impossible",
+          "no_perms": "Seuls les modérateurs (gérer les messages) peuvent annoter une simulation.",
+          "gone": "Cette simulation n'existe plus."
+        }
+      },
+      "situation": {
+        "title": "Situation détectée",
+        "pattern": "Schéma",
+        "gravity": "Gravité",
+        "target": "Cible présumée",
+        "summary": "Résumé",
+        "participants": "Participants",
+        "key_messages": "Messages clés",
+        "shadow_hint": "Détection multi-messages — v1 en simulation, aucune sanction appliquée.",
+        "type": {
+          "harcelement_soutenu": "Harcèlement soutenu (ciblage d'un membre)",
+          "dogpiling": "Dogpiling (plusieurs membres sur une cible)",
+          "conflit_mutuel": "Conflit mutuel (escalade réciproque)",
+          "rien": "Rien (discussion animée / vannes)"
+        },
+        "role": {
+          "harceleur": "harceleur",
+          "participant": "participant",
+          "cible": "cible"
+        }
       }
     }
   },

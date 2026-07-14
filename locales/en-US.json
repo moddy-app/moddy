@@ -1316,7 +1316,8 @@
           "enable_ignore": "Enable",
           "disable_ignore": "Disable",
           "edit_rules": "Edit rules",
-          "edit_indications": "Edit guidance"
+          "edit_indications": "Edit guidance",
+          "view_precedents": "View precedents"
         },
         "rules": {
           "desc": "Guides the AI when judging messages. Verified against injection attempts before being saved.",
@@ -1393,7 +1394,46 @@
         "status_hint": "Check/uncheck in the menu below to enable or disable.",
         "activations": {
           "placeholder": "Enable / disable…"
-        }
+        },
+        "section_limits": "Limits & language",
+        "max_action": {
+          "desc": "The most severe action the automod is allowed to apply.",
+          "placeholder": "Maximum action…",
+          "option_warn": "Warn at most",
+          "option_mute": "Mute at most",
+          "option_ban": "Ban allowed"
+        },
+        "language": {
+          "desc": "Language of sanction messages (reason, member DM).",
+          "placeholder": "Sanction language…",
+          "auto": "Automatic (server language)",
+          "fr": "French",
+          "en": "English"
+        },
+        "dry_run": {
+          "label": "Simulation mode",
+          "desc": "Detects and shows, but applies no sanction (recommended for the first week)",
+          "active": "Simulation mode on: sanctions are shown but never applied."
+        },
+        "section_precedents": "Precedents",
+        "precedents": {
+          "title": "Learned precedents",
+          "desc": "The automod learns your server's culture from your decisions (decided appeals, shadow-mode annotations).",
+          "empty": "No precedents learned yet.",
+          "count": "**{n}** precedent(s) learned",
+          "last": "last:",
+          "page": "page {current}/{total}",
+          "prev": "Previous",
+          "next": "Next",
+          "verdict_not": "not sanctionable",
+          "verdict_yes": "sanctionable",
+          "delete_placeholder": "Delete a wrong precedent…",
+          "delete_option": "Delete precedent {n}",
+          "deleted": "Precedent deleted."
+        },
+        "situation_label": "Situations (diffuse harassment)",
+        "situation_desc": "Detects multi-message harassment and dogpiling (simulation mode)",
+        "situation_active": "Situations: analysing in simulation — no automatic sanction applied"
       },
       "action": {
         "warn": "Warning",
@@ -1535,6 +1575,67 @@
         "server_opened": "{user} appealed to the Moddy team (case {case}).",
         "server_decided_title": "Appeal handled",
         "server_decided": "{user}'s appeal ({route}) was handled: **{status}**."
+      },
+      "bareme": {
+        "title": "Scale: {sanction} (rung {cran})",
+        "cran": "rung {n}",
+        "floor": "Floor",
+        "recidivism": "Recidivism",
+        "severity": "Server severity",
+        "confidence": "Confidence cap",
+        "veteran": "Tenure (clean record)",
+        "fresh_account": "New account",
+        "ceiling": "Server ceiling",
+        "disabled_category": "Disabled category",
+        "unconfirmed": "AI confirmation refused",
+        "review_hint": "Heavy AI-decided sanction — a moderator can review it.",
+        "review_hint_unconfirmed": "Heavy AI-proposed sanction, downgraded after review — a moderator can review it.",
+        "bounds": "Bounds 0–7"
+      },
+      "budget": {
+        "title": "Daily AI budget reached",
+        "body": "The automod's daily AI-analysis quota ({cap}) has been reached for today. Flagrant cases (explicit terms, content well above the threshold) are still handled and deleted, but the AI's sensitivity is reduced until tomorrow. This message is shown only once per day."
+      },
+      "shadow": {
+        "badge": "SIMULATION — no action applied",
+        "would_apply": "Simulated sanction",
+        "annotate_hint": "Moderators: is this decision correct?",
+        "button": {
+          "ok": "Correct",
+          "fp": "False positive",
+          "disp": "Disproportionate"
+        },
+        "annotated": {
+          "correct": "Judged correct",
+          "faux_positif": "Judged false positive",
+          "disproportionne": "Judged disproportionate"
+        },
+        "error": {
+          "title": "Cannot do that",
+          "no_perms": "Only moderators (manage messages) can annotate a simulation.",
+          "gone": "This simulation no longer exists."
+        }
+      },
+      "situation": {
+        "title": "Situation detected",
+        "pattern": "Pattern",
+        "gravity": "Severity",
+        "target": "Presumed target",
+        "summary": "Summary",
+        "participants": "Participants",
+        "key_messages": "Key messages",
+        "shadow_hint": "Multi-message detection — v1 in simulation, no sanction applied.",
+        "type": {
+          "harcelement_soutenu": "Sustained harassment (targeting one member)",
+          "dogpiling": "Dogpiling (several members on one target)",
+          "conflit_mutuel": "Mutual conflict (reciprocal escalation)",
+          "rien": "Nothing (heated chat / banter)"
+        },
+        "role": {
+          "harceleur": "harasser",
+          "participant": "participant",
+          "cible": "target"
+        }
       }
     }
   },

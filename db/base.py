@@ -21,6 +21,8 @@ from db.repositories.saved_messages import SavedMessageRepository
 from db.repositories.interserver import InterserverRepository
 from db.repositories.moderation import ModerationRepository
 from db.repositories.appeals import AppealRepository
+from db.repositories.eval_candidates import EvalCandidateRepository
+from db.repositories.precedents import PrecedentRepository
 from db.repositories.saved_roles import SavedRolesRepository
 from db.repositories.token_alerts import TokenAlertRepository
 from db.repositories.token_secrets import TokenSecretRepository
@@ -49,6 +51,8 @@ class ModdyDatabase(
     InterserverRepository,
     ModerationRepository,
     AppealRepository,
+    EvalCandidateRepository,
+    PrecedentRepository,
     SavedRolesRepository,
     TokenAlertRepository,
     TokenSecretRepository,
@@ -653,6 +657,68 @@ class ModdyDatabase(
             await conn.execute("CREATE INDEX IF NOT EXISTS idx_appeals_status ON case_appeals (status)")
             await conn.execute("CREATE INDEX IF NOT EXISTS idx_appeals_sanction ON case_appeals (sanction_id)")
 
+            # automod_eval_candidates — the annotation corpus that feeds the
+            # offline golden set (automod/eval). A row is created for every
+            # shadow-mode (dry_run) card and every human correction (accepted
+            # appeal, "false positive" button). `verdict_humain` is filled when a
+            # moderator annotates the card; `imported` flips once the candidate
+            # has been folded into golden.jsonl (`make eval-import`). See
+            # docs/AUTOMOD.md (Évaluation) and docs/AUTOMOD_V2_PLAN.md (Session 3).
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS automod_eval_candidates (
+                    id             UUID PRIMARY KEY,
+                    guild_id       BIGINT NOT NULL,
+                    channel_id     BIGINT,
+                    message_id     BIGINT,
+                    author_id      BIGINT,
+                    contenu        TEXT,
+                    contexte       JSONB,
+                    verdict        JSONB,
+                    cran           INTEGER,
+                    bareme         JSONB,
+                    source         TEXT NOT NULL,
+                    verdict_humain TEXT
+                        CHECK (verdict_humain IN ('correct','faux_positif','disproportionne')),
+                    annotated_by   BIGINT,
+                    imported       BOOLEAN NOT NULL DEFAULT FALSE,
+                    created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+                    annotated_at   TIMESTAMPTZ
+                )
+            """)
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_eval_candidates_guild "
+                "ON automod_eval_candidates (guild_id, created_at)")
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_eval_candidates_pending "
+                "ON automod_eval_candidates (imported) WHERE imported = FALSE")
+
+            # automod_precedents — per-server jurisprudence (session 7). Every
+            # human ruling (accepted/refused appeal, shadow "faux positif" /
+            # "correct" click) is stored here with the message embedding ALREADY
+            # computed by the funnel, so the automod learns the server's local
+            # culture with no fine-tuning. Matched (cosine) against a new message
+            # before the decision call. `embedding` is a float32-packed BYTEA of
+            # the normalised vector (pgvector-free; cosine is a dot product in
+            # Python). Capped at PRECEDENT_MAX_PER_GUILD, oldest evicted. See
+            # docs/AUTOMOD.md §2quinquies and docs/AUTOMOD_V2_PLAN.md (Session 7).
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS automod_precedents (
+                    id             BIGSERIAL PRIMARY KEY,
+                    guild_id       BIGINT NOT NULL,
+                    contenu_norm   TEXT NOT NULL,
+                    embedding      BYTEA NOT NULL,
+                    verdict_humain TEXT NOT NULL
+                        CHECK (verdict_humain IN ('non_sanctionnable','sanctionnable')),
+                    categorie      TEXT,
+                    gravite        TEXT,
+                    source         TEXT NOT NULL,
+                    created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+                )
+            """)
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_automod_precedents_guild "
+                "ON automod_precedents (guild_id, created_at)")
+
             # Table des rôles sauvegardés (Auto Restore Roles module)
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS saved_roles (
@@ -1000,9 +1066,17 @@ class ModdyDatabase(
                 ("global", "translation", "default", -1),
                 # Automod (AI message moderation) — unlimited by default,
                 # tighten per-guild via quota_overrides.
-                ("guild",  "automod_decision",    "default", -1),
-                ("global", "automod_decision",    "default", -1),
-                ("guild",  "automod_rules_check", "default", -1),
+                ("guild",  "automod_decision",       "default", -1),
+                ("global", "automod_decision",       "default", -1),
+                # Session 6 — difficulty routing (mini) + heavy-sanction confirm.
+                ("guild",  "automod_decision_mini",  "default", -1),
+                ("global", "automod_decision_mini",  "default", -1),
+                ("guild",  "automod_confirm",        "default", -1),
+                ("global", "automod_confirm",        "default", -1),
+                # Session 8 — diffuse-harassment sequence analysis (mini).
+                ("guild",  "automod_situation",      "default", -1),
+                ("global", "automod_situation",      "default", -1),
+                ("guild",  "automod_rules_check",    "default", -1),
             ]:
                 await conn.execute(
                     """

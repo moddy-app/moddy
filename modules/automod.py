@@ -20,9 +20,13 @@ Config (stored in ``guilds.data.modules.automod``)::
 
     {
       "enabled": true,
-      "rules": "server rules text (AI-validated for prompt injection)",
-      "log_channel_id": 123 | null,
+      "indications": "server guidance (AI-validated for prompt injection)",
+      "notify_channel_id": 123 | null,
       "ignore_moderators": true,
+      "severity": 3,                     # 1–5 detection/severity dial
+      "max_action": "ban",              # barème hard ceiling: warn|mute|ban
+      "langue_serveur": "auto",         # sanction language: auto|fr|en-US
+      "categories_desactivees": [],      # kill-switched AI categories
       "features": {
         "content": {
           "enabled": true,
@@ -31,6 +35,12 @@ Config (stored in ``guilds.data.modules.automod``)::
         }
       }
     }
+
+The sanction itself is not decided by nano: the detection pipeline only
+*qualifies* the message (category + gravity + confidence) and the deterministic
+barème (``automod/bareme.py``) computes the sanction cran from that
+qualification, the member's recidivism history and the guild config. See
+``docs/AUTOMOD.md`` §2bis.
 """
 
 from __future__ import annotations
@@ -48,6 +58,9 @@ from automod import (
     get_engine, Decision, TargetMessage, ContextMessage, AuthorHistory,
 )
 from automod import constants as ac
+from automod import bareme as ab
+from automod import relations as ar
+from automod import situation as asit
 from utils.i18n import t
 from utils.moderation_cases import IssuerType, SanctionAction, EventType, AuthorType
 
@@ -148,6 +161,13 @@ class ContentModerationFeature(AutomodFeature):
             is_system=message.type not in (discord.MessageType.default, discord.MessageType.reply),
             severity=self.module.severity,
             response_language=self.module.response_language(message.guild),
+            channel_id=message.channel.id,
+            # Session 5: trusted relationship block (familiarity + target
+            # reaction) when this message has an identifiable target.
+            relation_fn=self.module.make_relation_provider(message),
+            # Session 7: server precedents — match this message against the
+            # guild's past human rulings (learned local culture).
+            precedents_fn=self.module.make_precedents_provider(),
         )
         if decision is not None:
             decisions.append(decision)
@@ -197,8 +217,60 @@ class ContentModerationFeature(AutomodFeature):
         return out
 
 
+class SituationFeature(AutomodFeature):
+    """Diffuse harassment (session 8) — judges the PATTERN, not one message.
+
+    A friction state machine (``automod/situation.py``, Redis-backed) accumulates
+    the *sub-threshold* signal the content funnel throws away today: a message
+    whose toxicity score sits in ``[FRICTION_MIN_SCORE, routing threshold)`` with
+    an identifiable target (fed here) plus non-sanctionnable ``cible=membre``
+    verdicts (fed by the module from the content feature's output). When a target
+    crosses a friction threshold — sustained one-on-one or dogpiling — one
+    ``mini`` call judges the whole sequence.
+
+    **Forced shadow mode (v1):** this never applies a sanction. ``process`` always
+    returns ``[]``; a detected situation posts its own SIMULATION card with
+    annotation buttons (like ``dry_run``) — the raw material for a future
+    "situations" golden set. See docs/AUTOMOD.md §4 / docs/AUTOMOD_V2_PLAN.md §8.
+    """
+
+    feature_id = "situation"
+
+    async def process(self, message: discord.Message) -> List[Decision]:
+        if not ac.SITUATION_ENABLED:
+            return []
+        module = self.module
+        store = module._friction_store()
+        if store.redis is None:
+            return []  # inert without Redis (like the relationship graph)
+        target_id = module._identify_target(message)
+        if target_id is None:
+            return []  # no identifiable target → no directed friction to build
+
+        engine = get_engine(self.bot)
+        score = await engine.friction_probe(
+            message.content or "",
+            severity=module.severity,
+            is_bot=message.author.bot,
+            is_system=message.type not in (
+                discord.MessageType.default, discord.MessageType.reply),
+        )
+        threshold = ac.embedding_threshold_for(module.severity)
+        # Only the sub-threshold band feeds friction (at/above it the content
+        # funnel already judged the message). A miss still checks the trigger, so
+        # dogpiling from OTHER authors can fire on this message too.
+        amount = score if (score is not None
+                           and ac.FRICTION_MIN_SCORE <= score < threshold) else 0.0
+        await module._situation_feed(message, target_id, amount)
+        return []
+
+
 FEATURE_CLASSES = {
     ContentModerationFeature.feature_id: ContentModerationFeature,
+    # Session 8: diffuse-harassment analysis (forced shadow). Registered AFTER
+    # `content` so the content verdict for a message is available to feed the
+    # friction machine before `situation` checks the trigger.
+    SituationFeature.feature_id: SituationFeature,
     # Future: "anti_link": AntiLinkFeature, "anti_spam": AntiSpamFeature, ...
 }
 
@@ -221,6 +293,13 @@ class AutomodModule(ModuleBase):
         self.notify_channel_id: Optional[int] = None
         self.ignore_moderators: bool = True
         self.severity: int = ac.SEVERITY_DEFAULT
+        # v2 barème knobs (session 2).
+        self.max_action: str = "ban"          # "warn" | "mute" | "ban"
+        self.langue_serveur: str = "auto"      # "auto" | "fr" | "en-US"
+        self.categories_desactivees: List[str] = []
+        # Shadow mode (session 3): run the full funnel but apply nothing — post a
+        # SIMULATION card with annotation buttons instead of sanctioning.
+        self.dry_run: bool = False
         self._features: Dict[str, AutomodFeature] = {}
         self._warmup_task: Optional[asyncio.Task] = None
 
@@ -235,6 +314,16 @@ class AutomodModule(ModuleBase):
             self.notify_channel_id = self.config.get("notify_channel_id", self.config.get("log_channel_id"))
             self.ignore_moderators = bool(self.config.get("ignore_moderators", True))
             self.severity = ac.clamp_severity(self.config.get("severity", ac.SEVERITY_DEFAULT))
+
+            # v2 barème config.
+            max_action = str(self.config.get("max_action", "ban") or "ban")
+            self.max_action = max_action if max_action in ("warn", "mute", "ban") else "ban"
+            lang = str(self.config.get("langue_serveur", "auto") or "auto")
+            self.langue_serveur = lang if lang in ("auto", "fr", "en-US") else "auto"
+            self.categories_desactivees = [
+                str(c) for c in (self.config.get("categories_desactivees", []) or [])
+            ]
+            self.dry_run = bool(self.config.get("dry_run", False))
 
             features_cfg = self.config.get("features", {}) or {}
             self._features = {}
@@ -271,6 +360,14 @@ class AutomodModule(ModuleBase):
         if severity is not None and ac.clamp_severity(severity) != int(severity):
             return False, "Niveau de sévérité invalide (1 à 5)"
 
+        max_action = config_data.get("max_action")
+        if max_action is not None and max_action not in ("warn", "mute", "ban"):
+            return False, "Action maximale invalide"
+
+        langue = config_data.get("langue_serveur")
+        if langue is not None and langue not in ("auto", "fr", "en-US"):
+            return False, "Langue invalide"
+
         features_cfg = config_data.get("features", {}) or {}
         for fid in features_cfg:
             if fid not in FEATURE_CLASSES:
@@ -284,8 +381,18 @@ class AutomodModule(ModuleBase):
             "notify_channel_id": None,
             "ignore_moderators": True,
             "severity": ac.SEVERITY_DEFAULT,
+            "max_action": "ban",
+            "langue_serveur": "auto",
+            "categories_desactivees": [],
+            "dry_run": False,
             "features": {
                 "content": {
+                    "enabled": False,
+                    "exempt_roles": [],
+                    "exempt_channels": [],
+                },
+                # Session 8: diffuse-harassment analysis (forced shadow mode).
+                "situation": {
                     "enabled": False,
                     "exempt_roles": [],
                     "exempt_channels": [],
@@ -317,6 +424,14 @@ class AutomodModule(ModuleBase):
         if not isinstance(message.author, discord.Member):
             return
 
+        # Session 5: feed the relationship graph passively (reply / mention).
+        # Done before the moderator exemption so familiarity is built even for
+        # messages we will not moderate — it is trusted context, not a sanction.
+        try:
+            await self._feed_relations(message)
+        except Exception as e:
+            logger.debug("automod: relation feed failed (guild %s): %s", self.guild_id, e)
+
         # Global moderator exemption.
         if self.ignore_moderators and message.author.guild_permissions.manage_messages:
             return
@@ -335,6 +450,15 @@ class AutomodModule(ModuleBase):
                 )
                 continue
             for decision in decisions:
+                # Session 8: a non-sanctionnable verdict that still targets a
+                # member is "tension without infraction" — feed it to the friction
+                # machine so diffuse harassment (many such messages) can surface.
+                if (not decision.sanctionnable and decision.cible == "membre"
+                        and self._situation_active()):
+                    try:
+                        await self._situation_note_verdict(message, decision)
+                    except Exception as e:
+                        logger.debug("automod: situation verdict feed failed: %s", e)
                 try:
                     await self.apply_decision(message, decision)
                 except Exception as e:
@@ -342,6 +466,14 @@ class AutomodModule(ModuleBase):
                         "automod apply_decision failed (guild %s): %s",
                         self.guild_id, e, exc_info=True,
                     )
+
+        # Budget guard (session 4): if this guild has just crossed its daily nano
+        # soft cap, post a one-off notice that sensitivity is reduced for today.
+        try:
+            if get_engine(self.bot).pop_budget_notice(self.guild_id):
+                await self._notify_budget_reduced(message.guild)
+        except Exception as e:
+            logger.debug("automod: budget notice failed (guild %s): %s", self.guild_id, e)
 
     # -- Providers for the pipeline ----------------------------------------
 
@@ -425,6 +557,448 @@ class AutomodModule(ModuleBase):
             logger.error("automod: failed to build author history: %s", e)
             return AuthorHistory()
 
+    # -- Relationship graph & target reaction (session 5) ------------------
+
+    def _relation_store(self) -> ar.RelationStore:
+        """A fresh store bound to the bot's Redis client (inert without it)."""
+        return ar.RelationStore(getattr(self.bot, "redis", None))
+
+    def _identify_target(self, message: discord.Message) -> Optional[int]:
+        """The single member this message is aimed at (reply target or mention).
+
+        Returns None when there is no unambiguous human target — a broadcast or a
+        message mentioning several people carries no "how did the target react"
+        signal, so no relation block is built.
+        """
+        author_id = message.author.id
+        ref = getattr(message, "reference", None)
+        resolved = getattr(ref, "resolved", None) if ref else None
+        if isinstance(resolved, discord.Message):
+            ra = resolved.author
+            if ra and not ra.bot and ra.id != author_id:
+                return ra.id
+        humans = [u for u in getattr(message, "mentions", [])
+                  if not u.bot and u.id != author_id]
+        if len(humans) == 1:
+            return humans[0].id
+        return None
+
+    async def _feed_relations(self, message: discord.Message) -> None:
+        """Passively record reply / mention interactions for the pair graph."""
+        store = self._relation_store()
+        if store.redis is None or not ac.RELATION_ENABLED:
+            return
+        author_id = message.author.id
+        targets = set()
+        ref = getattr(message, "reference", None)
+        resolved = getattr(ref, "resolved", None) if ref else None
+        if isinstance(resolved, discord.Message):
+            ra = resolved.author
+            if ra and not ra.bot and ra.id != author_id:
+                targets.add(ra.id)
+        for u in getattr(message, "mentions", []):
+            if not u.bot and u.id != author_id:
+                targets.add(u.id)
+        for tid in targets:
+            await store.record_message(self.guild_id, author_id, tid)
+
+    async def on_reaction(self, reaction: discord.Reaction, user) -> None:
+        """A friendly / laughter reaction on another member's message (~0 cost).
+
+        Wired through the non-raw ``on_reaction_add`` listener, which only fires
+        for messages already in the cache — so this never costs an API fetch.
+        """
+        if getattr(user, "bot", False):
+            return
+        if not ac.RELATION_ENABLED:
+            return
+        msg = reaction.message
+        author = msg.author if msg else None
+        if not author or getattr(author, "bot", False) or author.id == user.id:
+            return
+        if not getattr(msg, "guild", None) or msg.guild.id != self.guild_id:
+            return
+        if not ar.is_positive_emoji(str(reaction.emoji)):
+            return
+        store = self._relation_store()
+        if store.redis is None:
+            return
+        await store.record_positive_reaction(self.guild_id, user.id, author.id)
+
+    def make_relation_provider(self, message: discord.Message):
+        """Build the lazy ``relation_fn`` for the pipeline, or None.
+
+        Returns None when there is no identifiable target or no Redis: the
+        pipeline then judges the message with no relation block (strictly — a
+        missing relation can only make nano stricter, never laxer).
+        """
+        if not ac.RELATION_ENABLED:
+            return None
+        store = self._relation_store()
+        if store.redis is None:
+            return None
+        target_id = self._identify_target(message)
+        if target_id is None:
+            return None
+        author_id = message.author.id
+
+        async def provider(observe_reaction: bool) -> Optional[dict]:
+            counters = await store.get(self.guild_id, author_id, target_id)
+            reaction_cible = ac.REACTION_AUCUNE
+            if observe_reaction:
+                try:
+                    reaction_cible = await self._observe_target_reaction(message, target_id)
+                except Exception as e:
+                    logger.debug("automod: reaction observation failed: %s", e)
+            return ar.build_relation_payload(counters, reaction_cible)
+
+        return provider
+
+    def make_precedents_provider(self):
+        """Build the lazy ``precedents_fn`` for the pipeline, or None.
+
+        Delegates to the shared :class:`PrecedentService`, which matches this
+        message against the guild's learned human rulings (session 7). Returns
+        None (no precedent block) when precedents are disabled or there is no DB.
+        """
+        if not ac.PRECEDENTS_ENABLED:
+            return None
+        svc = getattr(self.bot, "precedents", None)
+        if svc is None:
+            return None
+        return svc.make_provider(self.guild_id)
+
+    async def _observe_target_reaction(self, message: discord.Message,
+                                       target_id: int) -> str:
+        """Wait the reaction window, then classify how the target reacted.
+
+        Observes the target's replies after the offending message: laughter →
+        ``banter_reciproque``; a reply that itself trips the blocklist →
+        ``conflit_reciproque``; the target having left the channel/guild →
+        ``detresse_possible``; nothing → ``aucune``. The 20 s latency on an
+        automod sanction is invisible to users and worth a lot of precision.
+        """
+        await asyncio.sleep(ac.REACTION_WAIT_SECONDS)
+        replies: List[str] = []
+        try:
+            async for m in message.channel.history(limit=15, after=message):
+                if int(m.author.id) == int(target_id) and (m.content or "").strip():
+                    replies.append(m.content)
+        except (discord.Forbidden, discord.HTTPException):
+            pass
+
+        target_gone = False
+        guild = message.guild
+        if guild is not None and guild.get_member(int(target_id)) is None:
+            target_gone = True
+
+        engine = get_engine(self.bot)
+        aggressive = sum(1 for r in replies if engine.blocklist.match(r) is not None)
+        return ar.classify_target_reaction(
+            replies, target_gone=target_gone, aggressive_hits=aggressive)
+
+    # -- Situation feature — diffuse harassment (session 8) ----------------
+
+    def _friction_store(self) -> asit.FrictionStore:
+        """A fresh friction store bound to the bot's Redis client (inert without it)."""
+        return asit.FrictionStore(getattr(self.bot, "redis", None))
+
+    def _situation_active(self) -> bool:
+        """Whether the (forced-shadow) situation feature is on for this guild."""
+        feat = self._features.get(SituationFeature.feature_id)
+        return bool(ac.SITUATION_ENABLED and feat is not None and feat.enabled)
+
+    async def _situation_feed(self, message: discord.Message, target_id: int,
+                              amount: float) -> None:
+        """Add ``amount`` friction for ``author -> target`` then check the trigger.
+
+        ``amount`` may be 0 (no new contribution): the trigger is still evaluated,
+        so friction accumulated from other authors / earlier messages on the same
+        target can fire on this message (dogpiling).
+        """
+        store = self._friction_store()
+        if store.redis is None:
+            return
+        await store.add(self.guild_id, message.channel.id,
+                        message.author.id, target_id, amount)
+        await self._maybe_trigger_situation(message, target_id)
+
+    async def _situation_note_verdict(self, message: discord.Message,
+                                      decision: Decision) -> None:
+        """Feed a non-sanctionnable ``cible=membre`` content verdict as friction."""
+        target_id = self._identify_target(message)
+        if target_id is None:
+            return
+        amount = max(ac.FRICTION_MIN_SCORE,
+                     float(getattr(decision, "score_detecteur", 0.0) or 0.0))
+        await self._situation_feed(message, target_id, amount)
+
+    async def _maybe_trigger_situation(self, message: discord.Message,
+                                       target_id: int) -> None:
+        """Analyse the sequence if this target crossed a friction threshold.
+
+        A cooldown (set *before* the analysis) prevents a heated thread from
+        firing an analysis on every subsequent message.
+        """
+        store = self._friction_store()
+        if store.redis is None:
+            return
+        channel_id = message.channel.id
+        if await store.in_cooldown(self.guild_id, channel_id, target_id):
+            return
+        pair = await store.pair_score(self.guild_id, channel_id,
+                                      message.author.id, target_id)
+        agg = await store.aggregate_score(self.guild_id, channel_id, target_id)
+        triggered, _kind = asit.crosses(pair, agg)
+        if not triggered:
+            return
+        await store.set_cooldown(self.guild_id, channel_id, target_id)
+        try:
+            await self._run_situation_analysis(message, target_id)
+        except Exception as e:
+            logger.error("automod: situation analysis failed (guild %s): %s",
+                         self.guild_id, e, exc_info=True)
+
+    async def _collect_situation_sequence(self, message: discord.Message
+                                          ) -> List[Dict[str, Any]]:
+        """Messages exchanged in the channel over the recent window (oldest→newest).
+
+        Capped at ``SITUATION_SEQUENCE_MAX``. Bots and empty messages are skipped;
+        the concatenated pattern is what the analyst judges.
+        """
+        cutoff = datetime.now(timezone.utc) - timedelta(
+            minutes=ac.SITUATION_SEQUENCE_MINUTES)
+        items: List[Dict[str, Any]] = []
+        try:
+            # Most-recent messages first (the escalation that triggered us), then
+            # reversed to oldest→newest for the analyst. A larger scan window is
+            # capped after filtering so a burst of bot/empty messages can't starve
+            # the sequence.
+            async for m in message.channel.history(limit=ac.SITUATION_SEQUENCE_MAX * 2):
+                if m.created_at < cutoff:
+                    break
+                if m.author.bot or not (m.content or "").strip():
+                    continue
+                items.append({
+                    "id": str(m.id),
+                    "auteur_id": str(m.author.id),
+                    "contenu": m.content,
+                })
+                if len(items) >= ac.SITUATION_SEQUENCE_MAX:
+                    break
+        except (discord.Forbidden, discord.HTTPException):
+            return []
+        items.reverse()  # oldest → newest
+        return items
+
+    async def _run_situation_analysis(self, message: discord.Message,
+                                      target_id: int) -> None:
+        """Collect the sequence, run the mini analyst, post a card if it's real."""
+        sequence = await self._collect_situation_sequence(message)
+        if len(sequence) < 2:
+            return  # nothing to see a pattern in
+        engine = get_engine(self.bot)
+        verdict = await engine.analyze_situation(
+            str(target_id), sequence,
+            guild_id=self.guild_id,
+            response_language=self.response_language(message.guild),
+        )
+        if not verdict.actionnable:
+            return
+        await self._notify_situation(message, target_id, verdict, sequence)
+
+    async def _notify_situation(self, message: discord.Message, target_id: int,
+                                verdict: "asit.SituationVerdict",
+                                sequence: List[Dict[str, Any]]) -> None:
+        """Record a situation eval candidate + post its SIMULATION card.
+
+        v1 is forced shadow: nothing is sanctioned. The card carries the same
+        persistent ✅/❌/⚠️ annotation buttons as ``dry_run`` (they annotate the
+        eval candidate), so a moderator's ruling feeds a future situations corpus.
+        """
+        if not self.notify_channel_id:
+            return
+        guild = message.guild
+        channel = guild.get_channel(int(self.notify_channel_id)) if guild else None
+        if not channel or not isinstance(channel, discord.TextChannel):
+            return
+        me = guild.me
+        if not me or not channel.permissions_for(me).send_messages:
+            return
+
+        locale = self.guild_locale(guild)
+        verdict_payload = {
+            "kind": "situation",
+            "situation": verdict.situation,
+            "gravite": verdict.gravite,
+            "cible": str(target_id),
+            "resume": verdict.resume,
+            "participants": [
+                {"auteur_id": p.auteur_id, "role": p.role}
+                for p in verdict.participants
+            ],
+            "messages_cles": list(verdict.messages_cles),
+            "locale": locale,
+        }
+        contexte = [str(m.get("contenu", ""))[:300] for m in sequence][-8:]
+
+        candidate_id = None
+        if getattr(self.bot, "db", None):
+            candidate_id = await self.bot.db.create_eval_candidate(
+                guild_id=self.guild_id,
+                source="situation",
+                contenu=verdict.resume or "",
+                contexte=contexte,
+                verdict=verdict_payload,
+                channel_id=message.channel.id,
+                message_id=message.id,
+                author_id=int(target_id),
+            )
+
+        from utils.automod_situation_views import render_situation_card
+        candidate = {
+            "id": candidate_id,
+            "guild_id": self.guild_id,
+            "channel_id": message.channel.id,
+            "message_id": message.id,
+            "author_id": int(target_id),
+            "contenu": verdict.resume or "",
+            "contexte": contexte,
+            "verdict": verdict_payload,
+            "verdict_humain": None,
+            "annotated_by": None,
+            "source": "situation",
+        }
+        try:
+            await channel.send(view=render_situation_card(candidate))
+        except (discord.Forbidden, discord.HTTPException):
+            return
+
+    # -- Barème (deterministic sanction scale) -----------------------------
+
+    async def _member_sanctions(self, user_id: int) -> List[ab.SanctionPassee]:
+        """Recidivism input for the barème: this member's recent guild sanctions.
+
+        180 days is enough — past that the half-life decay (0.5^4 ≈ 6 %) makes a
+        sanction negligible. The current message is NOT here yet (the case is
+        recorded *after* the barème runs), so it never inflates its own cran.
+        """
+        if not self.bot.db:
+            return []
+        try:
+            since = datetime.now(timezone.utc) - timedelta(days=180)
+            rows = await self.bot.db.list_member_sanctions(
+                self.guild_id, user_id, since=since,
+            )
+        except Exception as e:
+            logger.error("automod: failed to load member sanctions: %s", e)
+            return []
+        out: List[ab.SanctionPassee] = []
+        for r in rows:
+            out.append(ab.SanctionPassee(
+                categorie=r.get("categorie") or "",
+                gravite=r.get("gravite") or "moyenne",
+                date=r.get("date") or datetime.now(timezone.utc),
+                source_fiabilite=r.get("source_fiabilite") or "automod",
+            ))
+        return out
+
+    async def _compute_bareme(self, message: discord.Message,
+                              decision: Decision) -> ab.ResultatBareme:
+        """Compute the deterministic cran (sanction) for a qualified decision."""
+        sanctions = await self._member_sanctions(int(decision.auteur_id))
+
+        member = message.guild.get_member(int(decision.auteur_id)) if message.guild else None
+        anciennete = 0.0
+        joined = getattr(member, "joined_at", None) if member else None
+        if joined is not None:
+            anciennete = max(0.0, (datetime.now(timezone.utc) - joined).total_seconds() / 86400.0)
+
+        config = ab.ConfigBareme(
+            max_action=self.max_action,
+            categories_desactivees=tuple(self.categories_desactivees),
+        )
+        return ab.calculer(
+            decision, sanctions, ab.MembreInfo(anciennete_jours=anciennete),
+            severite_guild=self.severity, config=config,
+        )
+
+    async def _maybe_confirm_heavy(self, message: discord.Message,
+                                   decision: Decision,
+                                   bareme: ab.ResultatBareme) -> ab.ResultatBareme:
+        """Confirm a heavy nano sanction via mini, or cap it (session 6.3).
+
+        A cran ≥ ``CONFIRM_CRAN_THRESHOLD`` produced by nano is not applied until
+        a binary mini senior review confirms the literal text justifies it. On a
+        refusal (or a failed call — fail-safe) the sanction is downgraded to
+        ``CONFIRM_UNCONFIRMED_CRAN`` (mute 48 h) and the card flags it for a human.
+        A mini-decided verdict is trusted as-is (it is already the smart model);
+        so is anything below the threshold.
+        """
+        if bareme.cran < ac.CONFIRM_CRAN_THRESHOLD:
+            return bareme
+        if getattr(decision, "decideur", "nano") != "nano":
+            return bareme  # mini already judged it — no second opinion needed
+        try:
+            engine = get_engine(self.bot)
+            target = TargetMessage(
+                id=str(decision.message_id),
+                author_id=str(decision.auteur_id),
+                content=getattr(decision, "agregat_contenu", "") or message.content or "",
+            )
+            confirme, motif = await engine.confirm_heavy(
+                target, decision,
+                guild_id=self.guild_id,
+                fetch_context=self.make_context_loader(message),
+                response_language=self.response_language(message.guild),
+            )
+        except Exception as e:
+            logger.error("automod: heavy-sanction confirmation failed: %s", e)
+            confirme, motif = False, ""
+
+        if confirme:
+            return bareme
+        logger.info(
+            "automod confirm_refused message_id=%s categorie=%s cran=%s motif=%s",
+            decision.message_id, decision.categorie, bareme.cran, motif or "-",
+        )
+        return ab.appliquer_non_confirme(bareme)
+
+    # Component code → i18n key suffix for the sanction breakdown card.
+    _BAREME_LABELS = {
+        "plancher": "floor",
+        "recidive": "recidivism",
+        "severite": "severity",
+        "confiance": "confidence",
+        "veteran": "veteran",
+        "compte_recent": "fresh_account",
+        "plafond": "ceiling",
+        "categorie_desactivee": "disabled_category",
+        "borne": "bounds",
+        "confirmation_refusee": "unconfirmed",
+    }
+
+    def _bareme_breakdown(self, bareme: ab.ResultatBareme, locale: str) -> str:
+        """A localized, line-by-line explanation of how the cran was reached."""
+        lines: List[str] = []
+        for c in bareme.composantes:
+            label = t(f"modules.automod.bareme.{self._BAREME_LABELS.get(c.code, c.code)}",
+                      locale=locale)
+            if c.code == "plancher":
+                amount = t("modules.automod.bareme.cran", locale=locale, n=c.delta)
+            else:
+                amount = f"{'+' if c.delta >= 0 else ''}{c.delta}"
+            detail = f" ({c.detail})" if c.detail else ""
+            lines.append(f"- {label}{detail} · {amount}")
+        return "\n".join(lines)
+
+    def _sanction_name(self, bareme: ab.ResultatBareme, locale: str) -> str:
+        """Human name of the applied sanction (most punitive action)."""
+        for a in ("ban", "mute", "warn"):
+            if a in bareme.actions:
+                return t(f"modules.automod.action.{a}", locale=locale)
+        return t("modules.automod.action.supprimer", locale=locale)
+
     # -- Decision application ----------------------------------------------
 
     def _mark_moddy_initiated(self, user_id: int, action: str):
@@ -435,8 +1009,60 @@ class AutomodModule(ModuleBase):
             self.bot._moddy_initiated_sanctions = store
         store[(self.guild_id, user_id, action)] = time.time()
 
+    async def _delete_offending(self, message: discord.Message,
+                                decision: Decision) -> bool:
+        """Delete the offending message and every aggregated fragment.
+
+        Returns True if at least one message was deleted. For a normal decision
+        this is just ``decision.message_id``; for an aggregate (fragmented
+        harassment) it is every id in ``decision.agregat_de``.
+        """
+        ids: List[str] = []
+        for raw in [decision.message_id, *getattr(decision, "agregat_de", [])]:
+            if raw and raw not in ids:
+                ids.append(raw)
+
+        deleted_any = False
+        for raw_id in ids:
+            msg = message if str(message.id) == raw_id else None
+            if msg is None:
+                try:
+                    msg = await message.channel.fetch_message(int(raw_id))
+                except (discord.NotFound, discord.Forbidden, discord.HTTPException, ValueError):
+                    continue
+            try:
+                await msg.delete()
+                deleted_any = True
+            except (discord.NotFound, discord.Forbidden, discord.HTTPException):
+                continue
+        return deleted_any
+
     async def apply_decision(self, message: discord.Message, decision: Decision):
-        if not decision.sanctionnable or not decision.actions:
+        if not decision.sanctionnable:
+            return
+
+        # v2 (session 2): nano only QUALIFIED the message; the deterministic
+        # barème computes the sanction (cran → actions + duration) from the
+        # qualification, the member's recidivism history and the guild config.
+        bareme = await self._compute_bareme(message, decision)
+
+        # Session 6.3: a heavy sanction (cran ≥ threshold) decided by nano must
+        # pass a binary mini senior review before it is applied. A refusal caps
+        # the cran (mute 48 h) and flags the card — a human keeps the last word.
+        # Skipped when mini already decided it (ambigu path is already the smart
+        # model) or in the kill-switch/deletion-only case.
+        bareme = await self._maybe_confirm_heavy(message, decision, bareme)
+
+        decision.actions = list(bareme.actions)
+        decision.duree_heures = bareme.duree_heures or 0
+        if not decision.actions:
+            return
+
+        # Shadow mode (session 3): run the whole funnel + barème but apply NOTHING
+        # — no delete, no sanction, no case, no DM. Post a SIMULATION card with
+        # annotation buttons that feed the eval corpus instead.
+        if self.dry_run:
+            await self._notify_shadow(message, decision, bareme)
             return
 
         guild = message.guild
@@ -446,25 +1072,17 @@ class AutomodModule(ModuleBase):
 
         applied: List[str] = []
 
-        # 1. Delete the offending message (no case needed for this).
+        # 1. Delete the offending message(s) (no case needed for this). An
+        #    aggregate decision (fragmented harassment) carries every fragment id
+        #    in `agregat_de`; all of them go.
         if "supprimer" in actions:
-            target_msg = message if str(message.id) == decision.message_id else None
-            if target_msg is None:
-                try:
-                    target_msg = await message.channel.fetch_message(int(decision.message_id))
-                except (discord.NotFound, discord.Forbidden, discord.HTTPException):
-                    target_msg = None
-            if target_msg is not None:
-                try:
-                    await target_msg.delete()
-                    applied.append("supprimer")
-                except (discord.NotFound, discord.Forbidden, discord.HTTPException):
-                    pass
+            if await self._delete_offending(message, decision):
+                applied.append("supprimer")
 
         # 2. Record the case FIRST so the Discord audit-log reason can carry the
         #    public case reference, exactly like a manual sanction.
         case_ref, case_id, primary_action, primary_sanction_id = \
-            await self._record_case(message, decision)
+            await self._record_case(message, decision, bareme)
 
         # 3. Apply the Discord-side sanction with the standardized reason.
         can_act = member is not None and me is not None and member != guild.owner \
@@ -498,7 +1116,7 @@ class AutomodModule(ModuleBase):
 
         # 4. Notify the server in the mandatory alert channel, then remember the
         #    log message on the case so later appeal updates reply to it.
-        log_msg = await self._notify_channel(message, decision, applied, case_ref, primary_action)
+        log_msg = await self._notify_channel(message, decision, applied, case_ref, primary_action, bareme)
         if log_msg is not None and case_id is not None:
             try:
                 await self.bot.db.add_event(
@@ -553,7 +1171,8 @@ class AutomodModule(ModuleBase):
         expiry = expires_at.strftime("%Y-%m-%d %H:%M UTC") if expires_at else "Permanent"
         return f"[{ref}] @{mod_name} ({expiry}) : {reason}"[:512]
 
-    async def _record_case(self, message: discord.Message, decision: Decision):
+    async def _record_case(self, message: discord.Message, decision: Decision,
+                           bareme: Optional[ab.ResultatBareme] = None):
         """Open ONE guild case for this incident, attach its sanctions + evidence.
 
         Each automod incident is its own case: the first sanction opens a fresh
@@ -580,7 +1199,9 @@ class AutomodModule(ModuleBase):
 
         # Factual reason (issuer already identifies automod — no "[Automod]" noise).
         case_reason = (decision.raison or decision.categorie or "Message problématique")[:480]
-        extrait = (message.content or "")[:1500]
+        # An aggregate decision judged the concatenation of several fragments;
+        # show that combined text as the evidence extract.
+        extrait = (getattr(decision, "agregat_contenu", "") or message.content or "")[:1500]
         note = f"Automod · {decision.categorie} · {decision.gravite}"
 
         case_ref = case_id = None
@@ -649,12 +1270,25 @@ class AutomodModule(ModuleBase):
                         "context_text": context_text,
                         "raison": decision.raison,
                         "explication": decision.explication,
+                        "citation": decision.citation,
+                        "cible": decision.cible,
                         "signal_source": decision.signal_source,
                         "categorie": decision.categorie,
                         "gravite": decision.gravite,
                         "score_detecteur": round(decision.score_detecteur, 4),
                         "confiance": decision.confiance,
                         "actions": decision.actions,
+                        # Deterministic barème breakdown (session 2): the cran and
+                        # every component that produced it, so the timeline can
+                        # explain the sanction line by line.
+                        **({
+                            "cran": bareme.cran,
+                            "points_recidive": round(bareme.points_recidive, 2),
+                            "bareme": [
+                                {"code": c.code, "delta": c.delta, "detail": c.detail}
+                                for c in bareme.composantes
+                            ],
+                        } if bareme is not None else {}),
                     },
                 )
             except Exception as e:
@@ -665,10 +1299,14 @@ class AutomodModule(ModuleBase):
     def guild_locale(self, guild: Optional[discord.Guild]) -> str:
         """The locale automod speaks in this guild.
 
-        Uses the guild's preferred locale **only when Community is enabled**
-        (that's when Discord lets the server pick a real language); otherwise we
-        have no reliable language signal, so we default to English.
+        An explicit ``langue_serveur`` config override (``fr`` / ``en-US``) wins;
+        otherwise (``auto``) we use the guild's preferred locale **only when
+        Community is enabled** (that's when Discord lets the server pick a real
+        language), and default to English when there is no reliable signal.
         """
+        override = getattr(self, "langue_serveur", "auto")
+        if override in ("fr", "en-US"):
+            return override
         try:
             features = set(getattr(guild, "features", []) or [])
             if "COMMUNITY" not in features:
@@ -718,9 +1356,139 @@ class AutomodModule(ModuleBase):
         except (discord.Forbidden, discord.HTTPException):
             pass  # closed DMs — the case + channel notification still stand
 
+    async def _shadow_context(self, message: discord.Message, n: int = 8) -> List[str]:
+        """A short snapshot of preceding messages, stored on the eval candidate."""
+        out: List[str] = []
+        try:
+            async for prev in message.channel.history(limit=n, before=message):
+                if not (prev.content or "").strip():
+                    continue
+                out.append(prev.content[:300])
+        except (discord.Forbidden, discord.HTTPException):
+            return []
+        out.reverse()
+        return out
+
+    async def _notify_shadow(self, message: discord.Message, decision: Decision,
+                             bareme: ab.ResultatBareme):
+        """Shadow mode: record an eval candidate + post a SIMULATION card.
+
+        Applies nothing (no delete/sanction/case/DM). The card carries persistent
+        ✅/❌/⚠️ annotation buttons that write a moderator's ruling back onto the
+        candidate — the annotation flow that feeds the golden set (session 3) and,
+        later, per-server precedents (session 7).
+        """
+        if not self.notify_channel_id:
+            return
+        guild = message.guild
+        channel = guild.get_channel(int(self.notify_channel_id)) if guild else None
+        if not channel or not isinstance(channel, discord.TextChannel):
+            return
+        me = guild.me
+        if not channel.permissions_for(me).send_messages:
+            return
+
+        locale = self.guild_locale(guild)
+        verdict_payload = {
+            "sanctionnable": True,
+            "categorie": decision.categorie,
+            "gravite": decision.gravite,
+            "confiance": decision.confiance,
+            "citation": decision.citation,
+            "cible": decision.cible,
+            "raison": decision.raison,
+            "explication": decision.explication,
+            "signal_source": decision.signal_source,
+            "score": round(decision.score_detecteur, 4),
+            "actions": list(decision.actions),
+            "locale": locale,
+        }
+        bareme_payload = {
+            "cran": bareme.cran,
+            "duree_heures": bareme.duree_heures,
+            "needs_review": bareme.needs_review,
+            "actions": list(bareme.actions),
+            "points_recidive": round(bareme.points_recidive, 2),
+            "composantes": [
+                {"code": c.code, "delta": c.delta, "detail": c.detail}
+                for c in bareme.composantes
+            ],
+        }
+        contexte = await self._shadow_context(message)
+
+        candidate_id = None
+        if getattr(self.bot, "db", None):
+            candidate_id = await self.bot.db.create_eval_candidate(
+                guild_id=self.guild_id,
+                source="shadow_button",
+                contenu=message.content or "",
+                contexte=contexte,
+                verdict=verdict_payload,
+                cran=bareme.cran,
+                bareme=bareme_payload,
+                channel_id=message.channel.id,
+                message_id=message.id,
+                author_id=int(decision.auteur_id),
+            )
+
+        from utils.automod_shadow_views import render_shadow_card
+        candidate = {
+            "id": candidate_id,
+            "guild_id": self.guild_id,
+            "channel_id": message.channel.id,
+            "message_id": message.id,
+            "author_id": int(decision.auteur_id),
+            "contenu": message.content or "",
+            "contexte": contexte,
+            "verdict": verdict_payload,
+            "cran": bareme.cran,
+            "bareme": bareme_payload,
+            "verdict_humain": None,
+            "annotated_by": None,
+        }
+        try:
+            await channel.send(view=render_shadow_card(candidate))
+        except (discord.Forbidden, discord.HTTPException):
+            return
+
+    async def _notify_budget_reduced(self, guild: Optional[discord.Guild]):
+        """Post a one-off 'AI budget reached — reduced sensitivity' card.
+
+        Fired at most once per guild per UTC day (the engine gates it): past the
+        daily nano soft cap the funnel keeps deleting flagrant cases but stops
+        spending AI calls on borderline ones. Purely informational.
+        """
+        if not self.notify_channel_id or guild is None:
+            return
+        channel = guild.get_channel(int(self.notify_channel_id))
+        if not channel or not isinstance(channel, discord.TextChannel):
+            return
+        me = guild.me
+        if not me or not channel.permissions_for(me).send_messages:
+            return
+
+        from discord import ui
+        from utils.emojis import SHIELD
+        from config import COLORS
+
+        locale = self.guild_locale(guild)
+        view = ui.LayoutView(timeout=None)
+        container = ui.Container(accent_colour=discord.Colour(COLORS["warning"]))
+        container.add_item(ui.TextDisplay(
+            f"### {SHIELD} {t('modules.automod.budget.title', locale=locale)}"))
+        container.add_item(ui.TextDisplay(
+            t("modules.automod.budget.body", locale=locale,
+              cap=ac.NANO_DAILY_SOFT_CAP)))
+        view.add_item(container)
+        try:
+            await channel.send(view=view)
+        except (discord.Forbidden, discord.HTTPException):
+            return
+
     async def _notify_channel(self, message: discord.Message, decision: Decision,
                               applied: List[str], case_ref: Optional[str],
-                              primary_action: Optional[str] = None):
+                              primary_action: Optional[str] = None,
+                              bareme: Optional[ab.ResultatBareme] = None):
         """Post the decision to the mandatory server alert channel.
 
         Returns the sent message (or None) so the caller can link it to the
@@ -769,13 +1537,33 @@ class AutomodModule(ModuleBase):
         if case_ref:
             body += f"\n- **{t('modules.automod.log.case', locale=locale)} :** `{case_ref}`"
         container.add_item(ui.TextDisplay(body))
+
+        # Deterministic barème breakdown: explain the sanction line by line.
+        if bareme is not None and bareme.composantes:
+            sanction_name = self._sanction_name(bareme, locale)
+            header = t("modules.automod.bareme.title", locale=locale,
+                       sanction=sanction_name, cran=bareme.cran)
+            container.add_item(ui.TextDisplay(
+                f"**{header}**\n{self._bareme_breakdown(bareme, locale)}"))
+            if bareme.needs_review:
+                # A cran downgraded by an unconfirmed heavy sanction (§6.3) gets a
+                # dedicated hint ("ban proposed, degraded after AI review"); an
+                # otherwise-heavy automod cran gets the plain review hint.
+                downgraded = any(c.code == "confirmation_refusee"
+                                 for c in bareme.composantes)
+                hint_key = ("bareme.review_hint_unconfirmed" if downgraded
+                            else "bareme.review_hint")
+                container.add_item(ui.TextDisplay(
+                    f"-# {t(f'modules.automod.{hint_key}', locale=locale)}"))
+
         container.add_item(ui.TextDisplay(
             f"-# {t('modules.automod.log.appeal_hint', locale=locale)}"))
         view.add_item(container)
 
-        # Offending message — spoilered, attached as a file when too long.
+        # Offending message — spoilered, attached as a file when too long. For an
+        # aggregate, show the concatenated fragments that were judged together.
         files: List[discord.File] = []
-        content = message.content or ""
+        content = getattr(decision, "agregat_contenu", "") or message.content or ""
         deleted = "supprimer" in applied
         ts = int(message.created_at.timestamp())
         author_name = getattr(message.author, "display_name", str(message.author))

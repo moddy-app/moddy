@@ -720,6 +720,13 @@ class ModerationRepository:
                   AND e.type = 'evidence'::event_type
                   AND e.payload ->> 'source' = 'automod'
                   AND e.payload ->> 'message_id' IS NOT NULL
+                  -- A sanction whose appeal was ACCEPTED was a false positive:
+                  -- drop its message so it never counts as "already moderated".
+                  AND NOT EXISTS (
+                      SELECT 1 FROM case_appeals ap
+                      JOIN case_sanctions s2 ON s2.id = ap.sanction_id
+                      WHERE s2.case_id = c.id AND ap.status = 'accepted'
+                  )
                 ORDER BY e.created_at DESC
                 LIMIT $3
                 """,
@@ -733,6 +740,90 @@ class ModerationRepository:
                 continue
             out.append({"id": str(mid), "extrait": (payload.get("extrait") or "")[:120]})
         return out
+
+    # Fallback gravity when a manual sanction carries no automod evidence to
+    # read a gravity from (the barème still needs one to weigh recidivism).
+    _GRAVITE_PAR_ACTION = {"warn": "basse", "mute": "moyenne", "ban": "haute"}
+
+    async def list_member_sanctions(
+        self,
+        guild_id: Union[str, int],
+        user_id: Union[str, int],
+        *,
+        since: Optional[datetime] = None,
+        limit: int = 100,
+    ) -> List[Dict[str, Any]]:
+        """Recidivism input for the automod barème (session 2).
+
+        Returns the member's guild sanctions since ``since`` as dicts
+        ``{action, categorie, gravite, date, source_fiabilite}``. ``categorie`` /
+        ``gravite`` come from the automod evidence event (else derived from the
+        action); ``source_fiabilite`` is derived from the issuer + the appeal
+        state so the barème can weight each past sanction:
+
+        * automod sanction, appeal **accepted** → ``automod_appel_accepte`` (a
+          proven false positive; the barème weights it 0).
+        * automod sanction, appeal **refused**  → ``automod_confirme`` (a human
+          confirmed it; weighted above a plain automod sanction).
+        * automod sanction, no ruling           → ``automod``.
+        * human-issued sanction                 → ``manuel``.
+        """
+        async with self.pool.acquire() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT s.id, s.action::text AS action, s.created_at,
+                       s.issued_by_type::text AS issued_by_type,
+                       (SELECT e.payload FROM case_events e
+                          WHERE e.case_id = c.id AND e.type = 'evidence'::event_type
+                            AND e.payload ->> 'source' = 'automod'
+                          ORDER BY e.created_at ASC LIMIT 1) AS evidence,
+                       (SELECT a.status FROM case_appeals a
+                          WHERE a.sanction_id = s.id
+                          ORDER BY a.created_at DESC LIMIT 1) AS appeal_status
+                FROM case_sanctions s
+                JOIN cases c ON c.id = s.case_id
+                WHERE c.subject_type = 'discord_user'::subject_type
+                  AND c.subject_id = $1
+                  AND c.scope_type = 'discord_guild'::scope_type
+                  AND c.scope_id = $2
+                  AND c.type = 'guild'::case_type
+                  AND ($3::timestamptz IS NULL OR s.created_at >= $3)
+                ORDER BY s.created_at DESC
+                LIMIT $4
+                """,
+                str(user_id), str(guild_id), since, limit,
+            )
+
+        out: List[Dict[str, Any]] = []
+        for r in rows:
+            evidence = self._parse_jsonb(r["evidence"]) if r["evidence"] else {}
+            action = r["action"]
+            categorie = (evidence.get("categorie") or "") if evidence else ""
+            gravite = (evidence.get("gravite") if evidence else None) \
+                or self._GRAVITE_PAR_ACTION.get(action, "moyenne")
+            out.append({
+                "action": action,
+                "categorie": categorie,
+                "gravite": gravite,
+                "date": r["created_at"],
+                "source_fiabilite": self._derive_source_fiabilite(
+                    r["issued_by_type"], r["appeal_status"]),
+            })
+        return out
+
+    @staticmethod
+    def _derive_source_fiabilite(issued_by_type: Optional[str],
+                                 appeal_status: Optional[str]) -> str:
+        """Map (issuer, appeal state) onto a barème reliability weight key."""
+        if issued_by_type == "automod":
+            if appeal_status == "accepted":
+                return "automod_appel_accepte"
+            if appeal_status == "refused":
+                return "automod_confirme"
+            return "automod"
+        if issued_by_type in ("discord_user", "moddy_staff"):
+            return "manuel"
+        return "automod"
 
     async def get_active_subject_sanctions(
         self, subject_type: str, subject_id: Union[str, int],

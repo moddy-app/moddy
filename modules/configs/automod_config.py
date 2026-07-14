@@ -28,7 +28,7 @@ from cogs.error_handler import BaseView, BaseModal
 from utils.emojis import (
     SHIELD, BOOK, BACK, DELETE, MESSAGE, GROUPS, SETTINGS, WARNING, SAVE,
     UNDONE, REQUIRED_FIELDS, MANAGE_USER, GREEN_STATUS, RED_STATUS, TOGGLE_ON,
-    TOGGLE_OFF,
+    TOGGLE_OFF, SEARCH,
 )
 from automod.rules_check import validate_rules, MAX_RULES_LENGTH
 from automod import constants as ac
@@ -41,8 +41,16 @@ _DEFAULT_CONFIG = {
     "notify_channel_id": None,
     "ignore_moderators": True,
     "severity": ac.SEVERITY_DEFAULT,
+    "max_action": "ban",
+    "langue_serveur": "auto",
+    # Kill-switched AI categories (ops/backend-set; no UI selector yet). Carried
+    # through the working copy so a Save from this panel never wipes it.
+    "categories_desactivees": [],
+    "dry_run": False,
     "features": {
         "content": {"enabled": False, "exempt_roles": [], "exempt_channels": []},
+        # Session 8: diffuse-harassment analysis (forced shadow mode).
+        "situation": {"enabled": False, "exempt_roles": [], "exempt_channels": []},
     },
 }
 
@@ -58,11 +66,27 @@ def _deep_default(current: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     cfg["notify_channel_id"] = current.get("notify_channel_id", current.get("log_channel_id"))
     cfg["ignore_moderators"] = bool(current.get("ignore_moderators", True))
     cfg["severity"] = ac.clamp_severity(current.get("severity", ac.SEVERITY_DEFAULT))
+    max_action = str(current.get("max_action", "ban") or "ban")
+    cfg["max_action"] = max_action if max_action in ("warn", "mute", "ban") else "ban"
+    langue = str(current.get("langue_serveur", "auto") or "auto")
+    cfg["langue_serveur"] = langue if langue in ("auto", "fr", "en-US") else "auto"
+    # Preserve any ops/backend-set kill-switch list (no UI selector yet) so
+    # saving the panel does not silently drop it from the stored config.
+    cfg["categories_desactivees"] = [
+        str(c) for c in (current.get("categories_desactivees", []) or [])
+    ]
+    cfg["dry_run"] = bool(current.get("dry_run", False))
     content = (current.get("features", {}) or {}).get("content", {}) or {}
     cfg["features"]["content"] = {
         "enabled": bool(content.get("enabled", False)),
         "exempt_roles": list(content.get("exempt_roles", [])),
         "exempt_channels": list(content.get("exempt_channels", [])),
+    }
+    situation = (current.get("features", {}) or {}).get("situation", {}) or {}
+    cfg["features"]["situation"] = {
+        "enabled": bool(situation.get("enabled", False)),
+        "exempt_roles": list(situation.get("exempt_roles", [])),
+        "exempt_channels": list(situation.get("exempt_channels", [])),
     }
     return cfg
 
@@ -141,13 +165,38 @@ class AutomodConfigView(BaseView):
         self.current_config = _deep_default(current_config)
         self.working_config = copy.deepcopy(self.current_config)
         self.has_changes = False
+        # Session 7: learned server precedents (loaded lazily via
+        # ``load_precedent_stats`` before the panel is first shown).
+        self._precedent_count: Optional[int] = None
+        self._precedent_last = None
 
+        self._build_view()
+
+    async def load_precedent_stats(self):
+        """Load the guild's precedent count + last date, then rebuild the panel.
+
+        Called by the opener before the panel is first shown (the view is built
+        synchronously in ``__init__``, so the DB read happens here). Best-effort:
+        a failure just leaves the count unknown.
+        """
+        db = getattr(self.bot, "db", None)
+        if not ac.PRECEDENTS_ENABLED or db is None:
+            return
+        try:
+            self._precedent_count = await db.count_precedents(self.guild_id)
+            self._precedent_last = await db.last_precedent_at(self.guild_id)
+        except Exception:  # noqa: BLE001 — the panel works fine without the count
+            return
         self._build_view()
 
     # -- helpers --------------------------------------------------------- #
     @property
     def _content(self) -> Dict[str, Any]:
         return self.working_config["features"]["content"]
+
+    @property
+    def _situation(self) -> Dict[str, Any]:
+        return self.working_config["features"]["situation"]
 
     def _dot(self, value: bool) -> str:
         return GREEN_STATUS if value else RED_STATUS
@@ -218,10 +267,12 @@ class AutomodConfigView(BaseView):
         container.add_item(ui.TextDisplay(
             f"{SETTINGS} **{t('modules.automod.config.section_options', locale=self.locale)}**"
         ))
+        dry_run_on = bool(cfg.get("dry_run", False))
+        situation_on = self._situation["enabled"]
         opt_row = ui.ActionRow()
         opt_select = ui.Select(
             placeholder=t("modules.automod.config.activations.placeholder", locale=self.locale),
-            min_values=0, max_values=2,
+            min_values=0, max_values=4,
             options=[
                 discord.SelectOption(
                     label=t("modules.automod.config.content_label", locale=self.locale),
@@ -231,17 +282,37 @@ class AutomodConfigView(BaseView):
                     default=content_on,
                 ),
                 discord.SelectOption(
+                    label=t("modules.automod.config.situation_label", locale=self.locale),
+                    value="situation",
+                    description=t("modules.automod.config.situation_desc", locale=self.locale)[:100],
+                    emoji=discord.PartialEmoji.from_str(GROUPS),
+                    default=situation_on,
+                ),
+                discord.SelectOption(
                     label=t("modules.automod.config.ignore_mods.label", locale=self.locale),
                     value="ignore",
                     description=t("modules.automod.config.ignore_mods.desc", locale=self.locale)[:100],
                     emoji=discord.PartialEmoji.from_str(MANAGE_USER),
                     default=ignore_on,
                 ),
+                discord.SelectOption(
+                    label=t("modules.automod.config.dry_run.label", locale=self.locale),
+                    value="dry_run",
+                    description=t("modules.automod.config.dry_run.desc", locale=self.locale)[:100],
+                    emoji=discord.PartialEmoji.from_str(SEARCH),
+                    default=dry_run_on,
+                ),
             ],
         )
         opt_select.callback = self.on_activations
         opt_row.add_item(opt_select)
         container.add_item(opt_row)
+        if situation_on:
+            container.add_item(ui.TextDisplay(
+                f"-# {GROUPS} {t('modules.automod.config.situation_active', locale=self.locale)}"))
+        if dry_run_on:
+            container.add_item(ui.TextDisplay(
+                f"-# {SEARCH} {t('modules.automod.config.dry_run.active', locale=self.locale)}"))
 
         # ── Alert channel (REQUIRED) ──────────────────────────────────────
         warn_line = ("" if has_channel
@@ -285,6 +356,48 @@ class AutomodConfigView(BaseView):
         sev_row.add_item(sev_select)
         container.add_item(sev_row)
 
+        # ── Limits & language (max sanction the automod may apply + DM tongue) ─
+        container.add_item(ui.TextDisplay(
+            f"{SETTINGS} **{t('modules.automod.config.section_limits', locale=self.locale)}**\n"
+            f"-# {t('modules.automod.config.max_action.desc', locale=self.locale)}"
+        ))
+        max_action = cfg.get("max_action", "ban")
+        maxa_row = ui.ActionRow()
+        maxa_select = ui.Select(
+            placeholder=t("modules.automod.config.max_action.placeholder", locale=self.locale),
+            min_values=1, max_values=1,
+            options=[
+                discord.SelectOption(
+                    label=t(f"modules.automod.config.max_action.option_{v}", locale=self.locale),
+                    value=v, default=(v == max_action),
+                )
+                for v in ("warn", "mute", "ban")
+            ],
+        )
+        maxa_select.callback = self.on_max_action
+        maxa_row.add_item(maxa_select)
+        container.add_item(maxa_row)
+
+        container.add_item(ui.TextDisplay(
+            f"-# {t('modules.automod.config.language.desc', locale=self.locale)}"
+        ))
+        langue = cfg.get("langue_serveur", "auto")
+        lang_row = ui.ActionRow()
+        lang_select = ui.Select(
+            placeholder=t("modules.automod.config.language.placeholder", locale=self.locale),
+            min_values=1, max_values=1,
+            options=[
+                discord.SelectOption(
+                    label=t(f"modules.automod.config.language.{key}", locale=self.locale),
+                    value=value, default=(value == langue),
+                )
+                for key, value in (("auto", "auto"), ("fr", "fr"), ("en", "en-US"))
+            ],
+        )
+        lang_select.callback = self.on_language
+        lang_row.add_item(lang_select)
+        container.add_item(lang_row)
+
         # ── Guidance (button+modal → keep a preview, can't show it inline) ─
         indications = cfg.get("indications", "")
         if indications:
@@ -306,6 +419,39 @@ class AutomodConfigView(BaseView):
         ind_btn.callback = self.on_edit_indications
         ind_row.add_item(ind_btn)
         container.add_item(ind_row)
+
+        # ── Learned precedents (server jurisprudence, session 7) ──────────
+        if ac.PRECEDENTS_ENABLED:
+            count = self._precedent_count
+            if count is None:
+                prec_line = t("modules.automod.config.precedents.desc", locale=self.locale)
+            elif count == 0:
+                prec_line = (
+                    f"{t('modules.automod.config.precedents.desc', locale=self.locale)}\n"
+                    f"-# {t('modules.automod.config.precedents.empty', locale=self.locale)}")
+            else:
+                last = ""
+                if self._precedent_last is not None:
+                    try:
+                        last = f" · {t('modules.automod.config.precedents.last', locale=self.locale)} <t:{int(self._precedent_last.timestamp())}:R>"
+                    except Exception:  # noqa: BLE001
+                        last = ""
+                prec_line = (
+                    f"{t('modules.automod.config.precedents.desc', locale=self.locale)}\n"
+                    f"-# {t('modules.automod.config.precedents.count', locale=self.locale, n=count)}{last}")
+            container.add_item(ui.TextDisplay(
+                f"{SEARCH} **{t('modules.automod.config.section_precedents', locale=self.locale)}**\n"
+                f"-# {prec_line}"))
+            if count:
+                prec_row = ui.ActionRow()
+                prec_btn = ui.Button(
+                    label=t("modules.automod.config.buttons.view_precedents", locale=self.locale),
+                    style=discord.ButtonStyle.secondary,
+                    emoji=discord.PartialEmoji.from_str(SEARCH),
+                )
+                prec_btn.callback = self.on_view_precedents
+                prec_row.add_item(prec_btn)
+                container.add_item(prec_row)
 
         # ── Exemptions (selects show what's chosen) ───────────────────────
         container.add_item(ui.TextDisplay(
@@ -413,7 +559,9 @@ class AutomodConfigView(BaseView):
             return
         selected = set(interaction.data.get("values", []))
         self._content["enabled"] = "content" in selected
+        self._situation["enabled"] = "situation" in selected
         self.working_config["ignore_moderators"] = "ignore" in selected
+        self.working_config["dry_run"] = "dry_run" in selected
         self.has_changes = True
         await self._rerender(interaction)
 
@@ -431,6 +579,24 @@ class AutomodConfigView(BaseView):
         values = interaction.data.get("values", [])
         if values:
             self.working_config["severity"] = ac.clamp_severity(values[0])
+        self.has_changes = True
+        await self._rerender(interaction)
+
+    async def on_max_action(self, interaction: discord.Interaction):
+        if not await self._check_user(interaction):
+            return
+        values = interaction.data.get("values", [])
+        if values and values[0] in ("warn", "mute", "ban"):
+            self.working_config["max_action"] = values[0]
+        self.has_changes = True
+        await self._rerender(interaction)
+
+    async def on_language(self, interaction: discord.Interaction):
+        if not await self._check_user(interaction):
+            return
+        values = interaction.data.get("values", [])
+        if values and values[0] in ("auto", "fr", "en-US"):
+            self.working_config["langue_serveur"] = values[0]
         self.has_changes = True
         await self._rerender(interaction)
 
@@ -454,6 +620,15 @@ class AutomodConfigView(BaseView):
         await interaction.response.send_modal(
             IndicationsModal(self, self.working_config.get("indications", ""))
         )
+
+    async def on_view_precedents(self, interaction: discord.Interaction):
+        if not await self._check_user(interaction):
+            return
+        from modules.configs.automod_precedents_view import AutomodPrecedentsView
+        view = AutomodPrecedentsView(self.bot, self.guild_id, self.user_id,
+                                     self.locale, parent=self)
+        await view.load()
+        await interaction.response.edit_message(view=view)
 
     # -- action buttons -------------------------------------------------- #
     async def on_save(self, interaction: discord.Interaction):
