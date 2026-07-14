@@ -1350,10 +1350,10 @@ compté ×4 dans le budget guard.
 
 ## Critères de fin
 
-- [ ] `AutomodFeature` `situation` enregistrée, config `features.situation` + UI.
-- [ ] Machine à friction testée (decay, dogpiling agrégé, TTL).
-- [ ] Prompt situation + parsing + carte shadow + annotations.
-- [ ] Documenté dans `AUTOMOD.md` §4 comme premier exemple de feature additionnelle.
+- [x] `AutomodFeature` `situation` enregistrée, config `features.situation` + UI.
+- [x] Machine à friction testée (decay, dogpiling agrégé, TTL).
+- [x] Prompt situation + parsing + carte shadow + annotations.
+- [x] Documenté dans `AUTOMOD.md` §4 comme premier exemple de feature additionnelle.
 
 ---
 ---
