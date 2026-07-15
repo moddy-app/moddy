@@ -60,6 +60,7 @@ CATEGORIE_ALIASES = {
     "vulgarite": "insulte",
     "menaces": "menace",
     "threats": "menace",
+    "violence": "menace",
     "harassment": "harcelement",
     "contenu_sexuel": "harcelement_sexuel",
     "sexual_harassment": "harcelement_sexuel",
