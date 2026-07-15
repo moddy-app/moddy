@@ -41,7 +41,20 @@
         "shut your mouth",
         "what a loser",
         "you disgust me",
-        "nobody likes you"
+        "nobody likes you",
+        "je sais pas comment tu fais pour être aussi useless",
+        "à chaque fois que tu ouvres la bouche tu dis une connerie",
+        "t'es le genre de personne qu'on oublie direct, tellement t'es fade",
+        "ton avis intéresse strictement personne ici",
+        "tu devrais avoir honte de te montrer avec une tête pareille",
+        "même un poisson rouge réfléchit mieux que toi",
+        "c'est fou d'être aussi lourd, tu te rends même pas compte",
+        "arrête de ramener ta fraise, personne t'écoute",
+        "how are you this useless at everything you touch",
+        "every time you type my brain cells die a little",
+        "you're the human equivalent of a participation trophy",
+        "even a goldfish has a longer attention span than you",
+        "you bring nothing to the table except secondhand embarrassment"
       ]
     },
     "harcelement": {
@@ -82,7 +95,19 @@
         "we'll hunt you down",
         "get out and never come back",
         "you're not welcome here",
-        "we'll never leave you alone"
+        "we'll never leave you alone",
+        "on va spam ta dm jusqu'à ce que tu bloques tout le monde",
+        "chaque photo que tu postes on va la tourner en ridicule",
+        "j'ai prévenu mes potes, on va tous te tomber dessus ce soir",
+        "tu croyais qu'on avait oublié? on fait que commencer",
+        "à force de te signaler tu vas finir par disparaître",
+        "on connaît tes horaires de connexion, on t'attend à chaque fois",
+        "reviens sur ton autre compte, on le repérera aussi",
+        "we already told the whole group to come after you tonight",
+        "thought we forgot about you? we're just getting started",
+        "we know exactly when you log on, we'll be waiting each time",
+        "mass report incoming, enjoy losing this account too",
+        "make a new alt, we'll sniff it out just like the last one"
       ]
     },
     "haine_discrimination": {
@@ -123,7 +148,19 @@
         "your kind is disgusting",
         "you people are parasites",
         "we don't want your type",
-        "your race is inferior"
+        "your race is inferior",
+        "on voit bien d'où tu viens rien qu'à ta façon d'écrire",
+        "c'est culturel chez vous d'être comme ça, c'est connu",
+        "franchement vous ramenez que des problèmes partout où vous allez",
+        "à votre place je resterais discret, on aime pas trop les vôtres ici",
+        "ce genre de croyances devrait être interdit tout simplement",
+        "les gens de ton bord finissent tous de la même façon",
+        "tu peux pas comprendre, t'es pas vraiment de chez nous",
+        "we can always tell what you are just by how you type",
+        "it's cultural with your people, everyone knows that",
+        "your lot only ever brings trouble wherever you show up",
+        "beliefs like yours should just be banned outright",
+        "you wouldn't get it, you're not really one of us"
       ]
     },
     "menaces": {
@@ -177,7 +214,19 @@
         "you'll regret this",
         "i know where to find you",
         "you'll see soon enough",
-        "we'll meet again"
+        "we'll meet again",
+        "j'espère pour toi que nos chemins se croiseront jamais",
+        "continue comme ça et tu verras ce qui se passe",
+        "profite bien de ton petit confort, ça va pas durer",
+        "t'as intérêt à faire très attention à partir de maintenant",
+        "je suis quelqu'un de très patient, je sais attendre le bon moment",
+        "un jour tu baisseras ta garde, et je serai là",
+        "fais tes prières ce soir",
+        "keep it up and see what happens to you",
+        "you should be a lot more careful from now on",
+        "i'm a very patient person, i know how to wait",
+        "one day you'll slip up, and i'll be right there",
+        "you'd better say your prayers tonight"
       ]
     },
     "incitation_automutilation": {
@@ -217,7 +266,18 @@
         "no one would miss you",
         "the world is better without you",
         "give up, it's pointless",
-        "you have no reason to stay"
+        "you have no reason to stay",
+        "franchement à ta place j'aurais déjà abandonné depuis longtemps",
+        "tu fais que souffrir, pourquoi tu t'infliges ça encore",
+        "y'a des gens qui sont juste pas faits pour vivre, comme toi",
+        "arrête de faire semblant que ça va, on sait tous comment ça finit",
+        "personne viendrait à ton enterrement de toute façon",
+        "tu serais tellement plus tranquille si tu lâchais tout",
+        "honestly if i were you i'd have thrown in the towel ages ago",
+        "some people just aren't built to be here, like you",
+        "stop pretending you're fine, we all know how this ends",
+        "you'd finally be at peace if you just let go of everything",
+        "no one would even show up to your funeral anyway"
       ]
     },
     "contenu_sexuel": {
@@ -245,7 +305,18 @@
         "bet you look good underneath all that",
         "send something spicy, don't be shy",
         "i'd love to see more of you if you know what i mean",
-        "we could have some fun together if you let me"
+        "we could have some fun together if you let me",
+        "t'es majeure au moins? parce que j'ai des idées",
+        "raconte-moi ce que tu portes là tout de suite",
+        "je continue de t'envoyer ça même si tu réponds pas",
+        "allez sois cool, un petit décolleté ça coûte rien",
+        "j'ai bien vu ta photo de profil, ça donne des idées",
+        "on passe en privé, j'ai des trucs à te montrer",
+        "you're old enough right, because i've got ideas",
+        "tell me exactly what you're wearing right now",
+        "i'll keep sending you this even if you don't reply",
+        "come on, a little cleavage never hurt anyone",
+        "let's move to dms, i've got some things to show you"
       ]
     },
     "doxxing": {
@@ -275,7 +346,18 @@
         "i have your ip",
         "found your real name",
         "i know your address",
-        "your info is going public"
+        "your info is going public",
+        "j'ai croisé tes infos avec ton pseudo, c'est bon je t'ai",
+        "ton numéro finit par 42 hein, je continue?",
+        "je poste ta tronche dans tous les serveurs",
+        "un pote à moi bosse à la mairie, on va vite savoir qui t'es",
+        "ta géoloc était activée sur ta story, mauvaise idée",
+        "je vais tag ta famille sous tes messages",
+        "cross-referenced your handle, got everything on you now",
+        "your number ends in 42 right, want me to keep going",
+        "posting your face in every server you're in",
+        "you left your location on in that story, big mistake",
+        "i'll tag your family under all your messages"
       ]
     },
     "violence": {
@@ -309,7 +391,20 @@
         "someone should really beat him senseless",
         "i want to watch you suffer",
         "he deserves to get his skull cracked open",
-        "i'll put you in the hospital"
+        "i'll put you in the hospital",
+        "je vais te faire bouffer tes dents",
+        "tu vas ramasser tes membres par terre",
+        "je vais t'ouvrir en deux comme un poisson",
+        "quelqu'un devrait lui rouler dessus tiens",
+        "je t'attends à la sortie avec deux potes",
+        "tu vas cracher du sang quand j'en aurai fini",
+        "faut le brûler ce genre de personne",
+        "je vais te briser chaque os un par un",
+        "i'll make you eat your own teeth",
+        "you'll be picking your limbs off the floor",
+        "someone should just run him over honestly",
+        "i'll be waiting outside with a couple of friends",
+        "you'll be coughing up blood when i'm done with you"
       ]
     }
   }
