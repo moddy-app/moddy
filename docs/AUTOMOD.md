@@ -42,8 +42,12 @@ Only **nano decides**. Regex and embedding merely *route*. Output is a
 
 - `automod/data/references.json` — embedding reference phrases per category
   (insults, harassment, hate/discrimination, threats, self-harm incitement,
-  sexual harassment). These capture toxicity **without keywords**. Their
-  coverage directly conditions recall.
+  sexual harassment, violence). Each category mixes long, explicit examples
+  with **short, keyword-free** ones (e.g. "je vais te retrouver") so brief
+  veiled toxicity clears the threshold too. The `violence` reference category
+  folds onto the canonical `menace` verdict via `nano.CATEGORIE_ALIASES`.
+  These capture toxicity **without keywords**. Their coverage directly
+  conditions recall.
 - The trivial allowlist (`triviaux.py`) and the regex blocklist (`blocklist.py`)
   are inline Python data (regex / sets), also FR + EN.
 
