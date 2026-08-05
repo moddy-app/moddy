@@ -59,10 +59,19 @@
       "deepl_attribution": "Translated by **DeepL**"
     },
     "text_tools": {
-      "ai_notice": "-# Your text is sent to OpenAI (ChatGPT) to be processed. Mentions are stripped from the result.",
+      "ai_notice": "-# Your text is sent to OpenAI (ChatGPT) to be processed. Do not include any personal or sensitive data. [Privacy policy](https://moddy.app/privacy)",
+      "menu": {
+        "title": "AI text tools",
+        "label": "Text",
+        "placeholder": "The text to process...",
+        "action": "What do you want to do?",
+        "action_placeholder": "Pick an action",
+        "fix": "Fix",
+        "rephrase": "Rephrase",
+        "summarize": "Summarize"
+      },
       "errors": {
         "no_text": "No text provided.",
-        "too_long": "The text is too long (maximum {limit} characters).",
         "no_content": "This message has no text to process.",
         "rate_limit": "Limit reached! Maximum 10 uses per minute. Try again in {seconds} seconds.",
         "unavailable": "The AI is unavailable right now. Try again later.",
@@ -78,12 +87,11 @@
       "modal": {
         "title": "Fix a text",
         "label": "Text to fix",
-        "description": "Spelling, grammar, punctuation and accents.",
         "placeholder": "Paste the text to fix here..."
       },
       "result": {
         "title": "### <:text:1519791921462120601> Corrected text",
-        "footer": "-# <:text:1519791921462120601> Corrected by **ChatGPT**"
+        "footer": "-# Corrected by **ChatGPT**"
       }
     },
     "rephrase": {
@@ -95,7 +103,6 @@
       "modal": {
         "title": "Rephrase a text",
         "label": "Text to rephrase",
-        "description": "The meaning stays the same, only the wording changes.",
         "placeholder": "Paste the text to rephrase here...",
         "style": "Rephrasing style",
         "style_placeholder": "Pick a style"
@@ -109,9 +116,9 @@
         "concise": "Concise"
       },
       "result": {
-        "title": "### <:edit:1519795936568676383> Rephrased text",
+        "title": "### <:text:1519791921462120601> Rephrased text",
         "style": "-# Style: **{style}**",
-        "footer": "-# <:text:1519791921462120601> Rephrased by **ChatGPT**"
+        "footer": "-# Rephrased by **ChatGPT**"
       }
     },
     "summarize": {
@@ -123,7 +130,6 @@
       "modal": {
         "title": "Summarize a text",
         "label": "Text to summarize",
-        "description": "Keeps only what matters.",
         "placeholder": "Paste the text to summarize here...",
         "length": "Summary length",
         "length_placeholder": "Pick a length"
@@ -134,9 +140,9 @@
         "bullets": "Key points (list)"
       },
       "result": {
-        "title": "### <:note:1519790932663468184> Summary",
+        "title": "### <:text:1519791921462120601> Summary",
         "length": "-# Length: **{length}**",
-        "footer": "-# <:text:1519791921462120601> Summarized by **ChatGPT**"
+        "footer": "-# Summarized by **ChatGPT**"
       }
     },
     "avatar": {
