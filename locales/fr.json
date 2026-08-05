@@ -59,10 +59,19 @@
       "deepl_attribution": "Traduit par **DeepL**"
     },
     "text_tools": {
-      "ai_notice": "-# Ton texte est envoyé à OpenAI (ChatGPT) pour être traité. Les mentions sont retirées de la réponse.",
+      "ai_notice": "-# Ton texte est envoyé à OpenAI (ChatGPT) pour être traité. N'y mets aucune donnée personnelle ou sensible. [Politique de confidentialité](https://moddy.app/privacy)",
+      "menu": {
+        "title": "Outils IA",
+        "label": "Texte",
+        "placeholder": "Le texte à traiter...",
+        "action": "Que veux-tu faire ?",
+        "action_placeholder": "Choisis une action",
+        "fix": "Corriger",
+        "rephrase": "Reformuler",
+        "summarize": "Résumer"
+      },
       "errors": {
         "no_text": "Aucun texte fourni.",
-        "too_long": "Le texte est trop long (maximum {limit} caractères).",
         "no_content": "Ce message n'a aucun texte à traiter.",
         "rate_limit": "Limite atteinte ! Maximum 10 utilisations par minute. Réessaie dans {seconds} secondes.",
         "unavailable": "L'IA est indisponible pour le moment. Réessaie plus tard.",
@@ -78,12 +87,11 @@
       "modal": {
         "title": "Corriger un texte",
         "label": "Texte à corriger",
-        "description": "Orthographe, grammaire, ponctuation et accents.",
         "placeholder": "Colle ici le texte à corriger..."
       },
       "result": {
         "title": "### <:text:1519791921462120601> Texte corrigé",
-        "footer": "-# <:text:1519791921462120601> Corrigé par **ChatGPT**"
+        "footer": "-# Corrigé par **ChatGPT**"
       }
     },
     "rephrase": {
@@ -95,7 +103,6 @@
       "modal": {
         "title": "Reformuler un texte",
         "label": "Texte à reformuler",
-        "description": "Le sens reste identique, seule la formulation change.",
         "placeholder": "Colle ici le texte à reformuler...",
         "style": "Style de reformulation",
         "style_placeholder": "Choisis un style"
@@ -109,9 +116,9 @@
         "concise": "Concis"
       },
       "result": {
-        "title": "### <:edit:1519795936568676383> Texte reformulé",
+        "title": "### <:text:1519791921462120601> Texte reformulé",
         "style": "-# Style : **{style}**",
-        "footer": "-# <:text:1519791921462120601> Reformulé par **ChatGPT**"
+        "footer": "-# Reformulé par **ChatGPT**"
       }
     },
     "summarize": {
@@ -123,7 +130,6 @@
       "modal": {
         "title": "Résumer un texte",
         "label": "Texte à résumer",
-        "description": "Garde uniquement les points essentiels.",
         "placeholder": "Colle ici le texte à résumer...",
         "length": "Longueur du résumé",
         "length_placeholder": "Choisis une longueur"
@@ -134,9 +140,9 @@
         "bullets": "Points clés (liste)"
       },
       "result": {
-        "title": "### <:note:1519790932663468184> Résumé",
+        "title": "### <:text:1519791921462120601> Résumé",
         "length": "-# Longueur : **{length}**",
-        "footer": "-# <:text:1519791921462120601> Résumé par **ChatGPT**"
+        "footer": "-# Résumé par **ChatGPT**"
       }
     },
     "avatar": {
