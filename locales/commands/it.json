@@ -1,0 +1,254 @@
+{
+  "common": {
+    "parameters": {
+      "incognito": {
+        "name": "incognito",
+        "description": "Rendi la risposta visibile solo a te"
+      },
+      "user": {
+        "name": "utente",
+        "description": "L'utente interessato"
+      },
+      "case": {
+        "name": "caso",
+        "description": "Facoltativo: apri un caso specifico tramite il suo riferimento (es. A7F2K9)"
+      },
+      "message_id": {
+        "name": "id-messaggio",
+        "description": "L'ID del messaggio (ID Moddy come F6ZEU3VS o ID Discord)"
+      }
+    }
+  },
+  "context_menus": {
+    "Save Message": {
+      "name": "Salva messaggio"
+    },
+    "Get Emojis": {
+      "name": "Ottieni emoji"
+    },
+    "Translate": {
+      "name": "Traduci"
+    },
+    "AI text tools": {
+      "name": "Strumenti di testo IA"
+    }
+  },
+  "commands": {
+    "ping": {
+      "name": "ping",
+      "description": "Controlla la latenza e lo stato del bot"
+    },
+    "user": {
+      "name": "utente",
+      "description": "Mostra informazioni dettagliate su un utente Discord",
+      "parameters": {
+        "user": {
+          "name": "utente",
+          "description": "L'utente da consultare"
+        }
+      }
+    },
+    "avatar": {
+      "name": "avatar",
+      "description": "Mostra l'avatar di un utente",
+      "parameters": {
+        "user": {
+          "name": "utente",
+          "description": "L'utente di cui vuoi vedere l'avatar"
+        }
+      }
+    },
+    "banner": {
+      "name": "banner",
+      "description": "Mostra il banner di un utente",
+      "parameters": {
+        "user": {
+          "name": "utente",
+          "description": "L'utente di cui vuoi vedere il banner"
+        }
+      }
+    },
+    "emoji": {
+      "name": "emoji",
+      "description": "Mostra informazioni su un emoji Discord",
+      "parameters": {
+        "emoji": {
+          "name": "emoji",
+          "description": "L'emoji da consultare"
+        }
+      }
+    },
+    "roll": {
+      "name": "dado",
+      "description": "Lancia un dado casuale",
+      "parameters": {
+        "max": {
+          "name": "max",
+          "description": "Valore massimo del dado (facoltativo, 6 di default)"
+        }
+      }
+    },
+    "invite": {
+      "name": "invito",
+      "description": "Mostra informazioni su un invito Discord",
+      "parameters": {
+        "invite_code": {
+          "name": "codice-invito",
+          "description": "Il codice o il link di invito Discord"
+        }
+      }
+    },
+    "webhook": {
+      "name": "webhook",
+      "description": "Ispeziona e gestisci i webhook Discord",
+      "parameters": {
+        "webhook": {
+          "name": "webhook",
+          "description": "URL del webhook o ID/Token"
+        }
+      }
+    },
+    "translate": {
+      "name": "traduci",
+      "description": "Traduce un testo in un'altra lingua",
+      "parameters": {
+        "text": {
+          "name": "testo",
+          "description": "Il testo da tradurre"
+        },
+        "to": {
+          "name": "in",
+          "description": "Lingua di destinazione (facoltativo, la tua lingua Discord)"
+        }
+      }
+    },
+    "library": {
+      "name": "libreria",
+      "description": "Consulta la tua libreria di messaggi salvati"
+    },
+    "reminder-add": {
+      "name": "promemoria-aggiungi",
+      "description": "Aggiunge un nuovo promemoria",
+      "parameters": {
+        "message": {
+          "name": "messaggio",
+          "description": "Cosa devo ricordarti?"
+        },
+        "time": {
+          "name": "tempo",
+          "description": "Quando ricordartelo (es. 1h30m, 2d, domani 15:00)"
+        },
+        "send_here": {
+          "name": "invia-qui",
+          "description": "Invia il promemoria in questo canale invece che in DM"
+        }
+      }
+    },
+    "reminders": {
+      "name": "promemoria",
+      "description": "Gestisci i tuoi promemoria"
+    },
+    "preferences": {
+      "name": "preferenze",
+      "description": "Gestisci le tue preferenze personali"
+    },
+    "moddy": {
+      "name": "moddy",
+      "description": "Scopri di più su Moddy"
+    },
+    "subscription": {
+      "name": "abbonamento",
+      "description": "Consulta lo stato del tuo abbonamento Moddy"
+    },
+    "mycases": {
+      "name": "i-miei-casi",
+      "description": "Esplora i tuoi casi di moderazione su tutti i server"
+    },
+    "fix": {
+      "name": "correggi",
+      "description": "Corregge l'ortografia e la grammatica di un testo"
+    },
+    "rephrase": {
+      "name": "riformula",
+      "description": "Riformula un testo nello stile che preferisci"
+    },
+    "summarize": {
+      "name": "riassumi",
+      "description": "Riassume un testo"
+    },
+    "config": {
+      "name": "config",
+      "description": "Configura i moduli del server"
+    },
+    "cases": {
+      "name": "casi",
+      "description": "Esplora i casi di moderazione emessi in questo server"
+    },
+    "clear-saved-roles": {
+      "name": "cancella-ruoli-salvati",
+      "description": "Cancella i ruoli salvati di un utente che ha lasciato il server",
+      "parameters": {
+        "user": {
+          "name": "utente",
+          "description": "L'utente di cui cancellare i ruoli salvati"
+        }
+      }
+    },
+    "view-saved-roles": {
+      "name": "mostra-ruoli-salvati",
+      "description": "Mostra tutti gli utenti con ruoli salvati in questo server"
+    },
+    "ban": {
+      "name": "banna",
+      "description": "Banna uno o più utenti dal server",
+      "parameters": {
+        "user": {
+          "name": "utente",
+          "description": "Utente da bannare (puoi aggiungerne altri nel modulo)"
+        }
+      }
+    },
+    "kick": {
+      "name": "espelli",
+      "description": "Espelle uno o più membri dal server",
+      "parameters": {
+        "user": {
+          "name": "utente",
+          "description": "Utente da espellere (puoi aggiungerne altri nel modulo)"
+        }
+      }
+    },
+    "mute": {
+      "name": "silenzia",
+      "description": "Silenzia (timeout) uno o più membri",
+      "parameters": {
+        "user": {
+          "name": "utente",
+          "description": "Utente da silenziare (puoi aggiungerne altri nel modulo)"
+        }
+      }
+    },
+    "warn": {
+      "name": "avverti",
+      "description": "Avverte uno o più utenti",
+      "parameters": {
+        "user": {
+          "name": "utente",
+          "description": "Utente da avvertire (puoi aggiungerne altri nel modulo)"
+        }
+      }
+    },
+    "interserver": {
+      "name": "interserver",
+      "description": "Gestisci i messaggi tra server"
+    },
+    "interserver report": {
+      "name": "segnala",
+      "description": "Segnala un messaggio tra server al team di moderazione"
+    },
+    "interserver info": {
+      "name": "info",
+      "description": "Ottiene informazioni su un messaggio tra server"
+    }
+  }
+}

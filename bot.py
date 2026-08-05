@@ -33,6 +33,8 @@ from utils.emojis import EMOJIS, ERROR as ERROR_EMOJI
 from database import setup_database, db
 # Import du nouveau système i18n
 from utils.i18n import i18n
+# Slash command name/description localization (see docs/COMMAND_LOCALIZATION.md)
+from utils.command_translator import ModdyCommandTranslator
 # Import du système de permissions staff
 from utils.staff_permissions import setup_staff_permissions
 # Import du système de logging staff
@@ -690,6 +692,16 @@ class ModdyBot(commands.Bot):
         logger.info("Loading i18n system...")
         i18n.load_translations()
         logger.info(f"i18n loaded with {len(i18n.supported_locales)} languages")
+
+        # Attach the command translator: Discord then shows every slash command
+        # name/description in the user's own language. Translations are only
+        # applied when the tree is synced, so this must run before sync_commands().
+        logger.info("Loading slash command localizations...")
+        self.command_translator = ModdyCommandTranslator()
+        await self.tree.set_translator(self.command_translator)
+        logger.info(
+            f"Command localizations ready ({len(self.command_translator.supported_locales)} locales)"
+        )
 
         # Initialize staff permissions system
         logger.info("Initializing staff permissions system...")

@@ -1,0 +1,254 @@
+{
+  "common": {
+    "parameters": {
+      "incognito": {
+        "name": "dolt",
+        "description": "Visa svaret endast för dig"
+      },
+      "user": {
+        "name": "användare",
+        "description": "Berörd användare"
+      },
+      "case": {
+        "name": "ärende",
+        "description": "Valfritt: öppna ett visst ärende med dess referens (t.ex. A7F2K9)"
+      },
+      "message_id": {
+        "name": "meddelande-id",
+        "description": "Meddelandets ID (Moddy-ID som F6ZEU3VS eller Discord-ID)"
+      }
+    }
+  },
+  "context_menus": {
+    "Save Message": {
+      "name": "Spara meddelande"
+    },
+    "Get Emojis": {
+      "name": "Hämta emojis"
+    },
+    "Translate": {
+      "name": "Översätt"
+    },
+    "AI text tools": {
+      "name": "AI-textverktyg"
+    }
+  },
+  "commands": {
+    "ping": {
+      "name": "ping",
+      "description": "Visar botens svarstid och status"
+    },
+    "user": {
+      "name": "användare",
+      "description": "Visar detaljerad information om en Discord-användare",
+      "parameters": {
+        "user": {
+          "name": "användare",
+          "description": "Användaren att slå upp"
+        }
+      }
+    },
+    "avatar": {
+      "name": "avatar",
+      "description": "Visar en användares avatar",
+      "parameters": {
+        "user": {
+          "name": "användare",
+          "description": "Användaren vars avatar du vill se"
+        }
+      }
+    },
+    "banner": {
+      "name": "banner",
+      "description": "Visar en användares banner",
+      "parameters": {
+        "user": {
+          "name": "användare",
+          "description": "Användaren vars banner du vill se"
+        }
+      }
+    },
+    "emoji": {
+      "name": "emoji",
+      "description": "Visar information om en Discord-emoji",
+      "parameters": {
+        "emoji": {
+          "name": "emoji",
+          "description": "Emojin att slå upp"
+        }
+      }
+    },
+    "roll": {
+      "name": "tärning",
+      "description": "Kastar en slumpmässig tärning",
+      "parameters": {
+        "max": {
+          "name": "max",
+          "description": "Tärningens högsta värde (valfritt, standard 6)"
+        }
+      }
+    },
+    "invite": {
+      "name": "inbjudan",
+      "description": "Visar information om en Discord-inbjudan",
+      "parameters": {
+        "invite_code": {
+          "name": "inbjudningskod",
+          "description": "Discord-inbjudningskod eller länk"
+        }
+      }
+    },
+    "webhook": {
+      "name": "webhook",
+      "description": "Granska och hantera Discord-webhooks",
+      "parameters": {
+        "webhook": {
+          "name": "webhook",
+          "description": "Webhook-URL eller ID/Token"
+        }
+      }
+    },
+    "translate": {
+      "name": "översätt",
+      "description": "Översätter text till ett annat språk",
+      "parameters": {
+        "text": {
+          "name": "text",
+          "description": "Texten som ska översättas"
+        },
+        "to": {
+          "name": "till",
+          "description": "Målspråk (valfritt, ditt Discord-språk som standard)"
+        }
+      }
+    },
+    "library": {
+      "name": "bibliotek",
+      "description": "Visa ditt bibliotek med sparade meddelanden"
+    },
+    "reminder-add": {
+      "name": "påminnelse-lägg-till",
+      "description": "Lägger till en ny påminnelse",
+      "parameters": {
+        "message": {
+          "name": "meddelande",
+          "description": "Vad ska jag påminna dig om?"
+        },
+        "time": {
+          "name": "tid",
+          "description": "När du ska påminnas (t.ex. 1h30m, 2d, imorgon 15:00)"
+        },
+        "send_here": {
+          "name": "skicka-här",
+          "description": "Skicka påminnelsen i den här kanalen i stället för DM"
+        }
+      }
+    },
+    "reminders": {
+      "name": "påminnelser",
+      "description": "Hantera dina påminnelser"
+    },
+    "preferences": {
+      "name": "inställningar",
+      "description": "Hantera dina personliga inställningar"
+    },
+    "moddy": {
+      "name": "moddy",
+      "description": "Läs mer om Moddy"
+    },
+    "subscription": {
+      "name": "prenumeration",
+      "description": "Visa status för din Moddy-prenumeration"
+    },
+    "mycases": {
+      "name": "mina-ärenden",
+      "description": "Bläddra bland dina moderationsärenden på alla servrar"
+    },
+    "fix": {
+      "name": "rätta",
+      "description": "Rättar stavning och grammatik i en text"
+    },
+    "rephrase": {
+      "name": "omformulera",
+      "description": "Omformulerar en text i den stil du väljer"
+    },
+    "summarize": {
+      "name": "sammanfatta",
+      "description": "Sammanfattar en text"
+    },
+    "config": {
+      "name": "konfigurera",
+      "description": "Konfigurera serverns moduler"
+    },
+    "cases": {
+      "name": "ärenden",
+      "description": "Bläddra bland moderationsärenden på den här servern"
+    },
+    "clear-saved-roles": {
+      "name": "rensa-sparade-roller",
+      "description": "Rensar sparade roller för en användare som lämnat servern",
+      "parameters": {
+        "user": {
+          "name": "användare",
+          "description": "Användaren vars sparade roller ska rensas"
+        }
+      }
+    },
+    "view-saved-roles": {
+      "name": "visa-sparade-roller",
+      "description": "Visar alla användare med sparade roller på den här servern"
+    },
+    "ban": {
+      "name": "banna",
+      "description": "Bannar en eller flera användare från servern",
+      "parameters": {
+        "user": {
+          "name": "användare",
+          "description": "Användare att banna (du kan lägga till fler i formuläret)"
+        }
+      }
+    },
+    "kick": {
+      "name": "sparka",
+      "description": "Sparkar ut en eller flera medlemmar från servern",
+      "parameters": {
+        "user": {
+          "name": "användare",
+          "description": "Användare att sparka (du kan lägga till fler i formuläret)"
+        }
+      }
+    },
+    "mute": {
+      "name": "tysta",
+      "description": "Tystar (timeout) en eller flera medlemmar",
+      "parameters": {
+        "user": {
+          "name": "användare",
+          "description": "Användare att tysta (du kan lägga till fler i formuläret)"
+        }
+      }
+    },
+    "warn": {
+      "name": "varna",
+      "description": "Varnar en eller flera användare",
+      "parameters": {
+        "user": {
+          "name": "användare",
+          "description": "Användare att varna (du kan lägga till fler i formuläret)"
+        }
+      }
+    },
+    "interserver": {
+      "name": "interserver",
+      "description": "Hantera meddelanden mellan servrar"
+    },
+    "interserver report": {
+      "name": "rapportera",
+      "description": "Rapporterar ett meddelande mellan servrar till moderationsteamet"
+    },
+    "interserver info": {
+      "name": "info",
+      "description": "Ger information om ett meddelande mellan servrar"
+    }
+  }
+}

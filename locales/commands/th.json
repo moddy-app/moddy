@@ -1,0 +1,254 @@
+{
+  "common": {
+    "parameters": {
+      "incognito": {
+        "name": "ส่วนตัว",
+        "description": "แสดงคำตอบเฉพาะคุณเท่านั้น"
+      },
+      "user": {
+        "name": "ผู้ใช้",
+        "description": "ผู้ใช้ที่ต้องการ"
+      },
+      "case": {
+        "name": "เคส",
+        "description": "ไม่บังคับ: เปิดเคสที่ต้องการด้วยรหัสอ้างอิง (เช่น A7F2K9)"
+      },
+      "message_id": {
+        "name": "ไอดีข้อความ",
+        "description": "ไอดีข้อความ (ไอดี Moddy เช่น F6ZEU3VS หรือไอดี Discord)"
+      }
+    }
+  },
+  "context_menus": {
+    "Save Message": {
+      "name": "บันทึกข้อความ"
+    },
+    "Get Emojis": {
+      "name": "ดึงอิโมจิ"
+    },
+    "Translate": {
+      "name": "แปล"
+    },
+    "AI text tools": {
+      "name": "เครื่องมือข้อความ AI"
+    }
+  },
+  "commands": {
+    "ping": {
+      "name": "ปิง",
+      "description": "ตรวจสอบความหน่วงและสถานะของบอท"
+    },
+    "user": {
+      "name": "ผู้ใช้",
+      "description": "แสดงข้อมูลโดยละเอียดของผู้ใช้ Discord",
+      "parameters": {
+        "user": {
+          "name": "ผู้ใช้",
+          "description": "ผู้ใช้ที่ต้องการดู"
+        }
+      }
+    },
+    "avatar": {
+      "name": "อวาตาร์",
+      "description": "แสดงอวาตาร์ของผู้ใช้",
+      "parameters": {
+        "user": {
+          "name": "ผู้ใช้",
+          "description": "ผู้ใช้ที่ต้องการดูอวาตาร์"
+        }
+      }
+    },
+    "banner": {
+      "name": "แบนเนอร์",
+      "description": "แสดงแบนเนอร์ของผู้ใช้",
+      "parameters": {
+        "user": {
+          "name": "ผู้ใช้",
+          "description": "ผู้ใช้ที่ต้องการดูแบนเนอร์"
+        }
+      }
+    },
+    "emoji": {
+      "name": "อิโมจิ",
+      "description": "แสดงข้อมูลเกี่ยวกับอิโมจิของ Discord",
+      "parameters": {
+        "emoji": {
+          "name": "อิโมจิ",
+          "description": "อิโมจิที่ต้องการดู"
+        }
+      }
+    },
+    "roll": {
+      "name": "ทอยลูกเต๋า",
+      "description": "ทอยลูกเต๋าแบบสุ่ม",
+      "parameters": {
+        "max": {
+          "name": "สูงสุด",
+          "description": "ค่าสูงสุดของลูกเต๋า (ไม่บังคับ ค่าเริ่มต้น 6)"
+        }
+      }
+    },
+    "invite": {
+      "name": "คำเชิญ",
+      "description": "แสดงข้อมูลเกี่ยวกับคำเชิญของ Discord",
+      "parameters": {
+        "invite_code": {
+          "name": "รหัสเชิญ",
+          "description": "รหัสหรือลิงก์คำเชิญของ Discord"
+        }
+      }
+    },
+    "webhook": {
+      "name": "เว็บฮุก",
+      "description": "ตรวจสอบและจัดการเว็บฮุกของ Discord",
+      "parameters": {
+        "webhook": {
+          "name": "เว็บฮุก",
+          "description": "URL ของเว็บฮุก หรือ ID/โทเคน"
+        }
+      }
+    },
+    "translate": {
+      "name": "แปล",
+      "description": "แปลข้อความเป็นภาษาอื่น",
+      "parameters": {
+        "text": {
+          "name": "ข้อความ",
+          "description": "ข้อความที่ต้องการแปล"
+        },
+        "to": {
+          "name": "เป็นภาษา",
+          "description": "ภาษาปลายทาง (ไม่บังคับ ค่าเริ่มต้นคือภาษา Discord ของคุณ)"
+        }
+      }
+    },
+    "library": {
+      "name": "คลังข้อความ",
+      "description": "ดูคลังข้อความที่คุณบันทึกไว้"
+    },
+    "reminder-add": {
+      "name": "เตือน-เพิ่ม",
+      "description": "เพิ่มการเตือนความจำใหม่",
+      "parameters": {
+        "message": {
+          "name": "ข้อความ",
+          "description": "ให้เตือนคุณเรื่องอะไร?"
+        },
+        "time": {
+          "name": "เวลา",
+          "description": "เตือนเมื่อไหร่ (เช่น 1h30m, 2d, พรุ่งนี้ 15:00)"
+        },
+        "send_here": {
+          "name": "ส่งที่นี่",
+          "description": "ส่งการเตือนในช่องนี้แทนการส่ง DM"
+        }
+      }
+    },
+    "reminders": {
+      "name": "รายการเตือน",
+      "description": "จัดการการเตือนความจำของคุณ"
+    },
+    "preferences": {
+      "name": "การตั้งค่าส่วนตัว",
+      "description": "จัดการการตั้งค่าส่วนตัวของคุณ"
+    },
+    "moddy": {
+      "name": "moddy",
+      "description": "เรียนรู้เพิ่มเติมเกี่ยวกับ Moddy"
+    },
+    "subscription": {
+      "name": "การสมัครสมาชิก",
+      "description": "ดูสถานะการสมัครสมาชิก Moddy ของคุณ"
+    },
+    "mycases": {
+      "name": "เคสของฉัน",
+      "description": "ดูเคสการจัดการของคุณในทุกเซิร์ฟเวอร์"
+    },
+    "fix": {
+      "name": "แก้คำผิด",
+      "description": "แก้ไขการสะกดและไวยากรณ์ของข้อความ"
+    },
+    "rephrase": {
+      "name": "เรียบเรียงใหม่",
+      "description": "เรียบเรียงข้อความใหม่ตามสไตล์ที่คุณเลือก"
+    },
+    "summarize": {
+      "name": "สรุป",
+      "description": "สรุปข้อความ"
+    },
+    "config": {
+      "name": "ตั้งค่า",
+      "description": "ตั้งค่าโมดูลของเซิร์ฟเวอร์"
+    },
+    "cases": {
+      "name": "เคส",
+      "description": "ดูเคสการจัดการที่ออกในเซิร์ฟเวอร์นี้"
+    },
+    "clear-saved-roles": {
+      "name": "ล้างบทบาทที่บันทึก",
+      "description": "ล้างบทบาทที่บันทึกไว้ของผู้ใช้ที่ออกจากเซิร์ฟเวอร์",
+      "parameters": {
+        "user": {
+          "name": "ผู้ใช้",
+          "description": "ผู้ใช้ที่ต้องการล้างบทบาทที่บันทึกไว้"
+        }
+      }
+    },
+    "view-saved-roles": {
+      "name": "ดูบทบาทที่บันทึก",
+      "description": "แสดงผู้ใช้ทั้งหมดที่มีบทบาทบันทึกไว้ในเซิร์ฟเวอร์นี้"
+    },
+    "ban": {
+      "name": "แบน",
+      "description": "แบนผู้ใช้หนึ่งคนหรือมากกว่าออกจากเซิร์ฟเวอร์",
+      "parameters": {
+        "user": {
+          "name": "ผู้ใช้",
+          "description": "ผู้ใช้ที่จะแบน (เพิ่มคนอื่นได้ในฟอร์ม)"
+        }
+      }
+    },
+    "kick": {
+      "name": "เตะ",
+      "description": "เตะสมาชิกหนึ่งคนหรือมากกว่าออกจากเซิร์ฟเวอร์",
+      "parameters": {
+        "user": {
+          "name": "ผู้ใช้",
+          "description": "ผู้ใช้ที่จะเตะ (เพิ่มคนอื่นได้ในฟอร์ม)"
+        }
+      }
+    },
+    "mute": {
+      "name": "ปิดเสียง",
+      "description": "ไทม์เอาต์ (ปิดเสียง) สมาชิกหนึ่งคนหรือมากกว่า",
+      "parameters": {
+        "user": {
+          "name": "ผู้ใช้",
+          "description": "ผู้ใช้ที่จะปิดเสียง (เพิ่มคนอื่นได้ในฟอร์ม)"
+        }
+      }
+    },
+    "warn": {
+      "name": "เตือน",
+      "description": "เตือนผู้ใช้หนึ่งคนหรือมากกว่า",
+      "parameters": {
+        "user": {
+          "name": "ผู้ใช้",
+          "description": "ผู้ใช้ที่จะเตือน (เพิ่มคนอื่นได้ในฟอร์ม)"
+        }
+      }
+    },
+    "interserver": {
+      "name": "ข้ามเซิร์ฟเวอร์",
+      "description": "จัดการข้อความข้ามเซิร์ฟเวอร์"
+    },
+    "interserver report": {
+      "name": "รายงาน",
+      "description": "รายงานข้อความข้ามเซิร์ฟเวอร์ให้ทีมผู้ดูแล"
+    },
+    "interserver info": {
+      "name": "ข้อมูล",
+      "description": "ดูข้อมูลของข้อความข้ามเซิร์ฟเวอร์"
+    }
+  }
+}

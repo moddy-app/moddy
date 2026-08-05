@@ -1,0 +1,254 @@
+{
+  "common": {
+    "parameters": {
+      "incognito": {
+        "name": "privačiai",
+        "description": "Rodyti atsakymą tik tau"
+      },
+      "user": {
+        "name": "vartotojas",
+        "description": "Susijęs vartotojas"
+      },
+      "case": {
+        "name": "byla",
+        "description": "Neprivaloma: atidaryti konkrečią bylą pagal jos numerį (pvz. A7F2K9)"
+      },
+      "message_id": {
+        "name": "žinutės-id",
+        "description": "Žinutės ID (Moddy ID kaip F6ZEU3VS arba Discord ID)"
+      }
+    }
+  },
+  "context_menus": {
+    "Save Message": {
+      "name": "Išsaugoti žinutę"
+    },
+    "Get Emojis": {
+      "name": "Gauti jaustukus"
+    },
+    "Translate": {
+      "name": "Versti"
+    },
+    "AI text tools": {
+      "name": "DI teksto įrankiai"
+    }
+  },
+  "commands": {
+    "ping": {
+      "name": "ping",
+      "description": "Parodo boto atsako laiką ir būseną"
+    },
+    "user": {
+      "name": "vartotojas",
+      "description": "Parodo išsamią informaciją apie Discord vartotoją",
+      "parameters": {
+        "user": {
+          "name": "vartotojas",
+          "description": "Vartotojas, kurio informacijos ieškai"
+        }
+      }
+    },
+    "avatar": {
+      "name": "avataras",
+      "description": "Parodo vartotojo avatarą",
+      "parameters": {
+        "user": {
+          "name": "vartotojas",
+          "description": "Vartotojas, kurio avatarą nori pamatyti"
+        }
+      }
+    },
+    "banner": {
+      "name": "baneris",
+      "description": "Parodo vartotojo banerį",
+      "parameters": {
+        "user": {
+          "name": "vartotojas",
+          "description": "Vartotojas, kurio banerį nori pamatyti"
+        }
+      }
+    },
+    "emoji": {
+      "name": "jaustukas",
+      "description": "Parodo informaciją apie Discord jaustuką",
+      "parameters": {
+        "emoji": {
+          "name": "jaustukas",
+          "description": "Jaustukas, kurio informacijos ieškai"
+        }
+      }
+    },
+    "roll": {
+      "name": "kauliukas",
+      "description": "Meta atsitiktinį kauliuką",
+      "parameters": {
+        "max": {
+          "name": "maks",
+          "description": "Didžiausia kauliuko reikšmė (neprivaloma, numatyta 6)"
+        }
+      }
+    },
+    "invite": {
+      "name": "pakvietimas",
+      "description": "Parodo informaciją apie Discord pakvietimą",
+      "parameters": {
+        "invite_code": {
+          "name": "pakvietimo-kodas",
+          "description": "Discord pakvietimo kodas arba nuoroda"
+        }
+      }
+    },
+    "webhook": {
+      "name": "webhook",
+      "description": "Peržiūrėti ir tvarkyti Discord webhookus",
+      "parameters": {
+        "webhook": {
+          "name": "webhook",
+          "description": "Webhook URL arba ID/Žetonas"
+        }
+      }
+    },
+    "translate": {
+      "name": "versti",
+      "description": "Išverčia tekstą į kitą kalbą",
+      "parameters": {
+        "text": {
+          "name": "tekstas",
+          "description": "Tekstas, kurį reikia išversti"
+        },
+        "to": {
+          "name": "į",
+          "description": "Kalba, į kurią versti (neprivaloma, numatyta tavo Discord kalba)"
+        }
+      }
+    },
+    "library": {
+      "name": "biblioteka",
+      "description": "Peržiūrėk išsaugotų žinučių biblioteką"
+    },
+    "reminder-add": {
+      "name": "priminimas-pridėti",
+      "description": "Prideda naują priminimą",
+      "parameters": {
+        "message": {
+          "name": "žinutė",
+          "description": "Ką tau priminti?"
+        },
+        "time": {
+          "name": "laikas",
+          "description": "Kada priminti (pvz. 1h30m, 2d, rytoj 15:00)"
+        },
+        "send_here": {
+          "name": "siųsti-čia",
+          "description": "Siųsti priminimą į šį kanalą, o ne į privačias žinutes"
+        }
+      }
+    },
+    "reminders": {
+      "name": "priminimai",
+      "description": "Tvarkyk savo priminimus"
+    },
+    "preferences": {
+      "name": "nustatymai",
+      "description": "Tvarkyk savo asmeninius nustatymus"
+    },
+    "moddy": {
+      "name": "moddy",
+      "description": "Sužinok daugiau apie Moddy"
+    },
+    "subscription": {
+      "name": "prenumerata",
+      "description": "Peržiūrėk savo Moddy prenumeratos būseną"
+    },
+    "mycases": {
+      "name": "mano-bylos",
+      "description": "Peržiūrėk savo moderavimo bylas visuose serveriuose"
+    },
+    "fix": {
+      "name": "taisyti",
+      "description": "Ištaiso teksto rašybą ir gramatiką"
+    },
+    "rephrase": {
+      "name": "performuluoti",
+      "description": "Performuluoja tekstą pasirinktu stiliumi"
+    },
+    "summarize": {
+      "name": "santrauka",
+      "description": "Sutrumpina tekstą į santrauką"
+    },
+    "config": {
+      "name": "konfigūracija",
+      "description": "Serverio modulių konfigūracija"
+    },
+    "cases": {
+      "name": "bylos",
+      "description": "Peržiūrėk šiame serveryje sukurtas moderavimo bylas"
+    },
+    "clear-saved-roles": {
+      "name": "išvalyti-įrašytas-roles",
+      "description": "Ištrina serverį palikusio vartotojo įrašytas roles",
+      "parameters": {
+        "user": {
+          "name": "vartotojas",
+          "description": "Vartotojas, kurio įrašytas roles reikia ištrinti"
+        }
+      }
+    },
+    "view-saved-roles": {
+      "name": "rodyti-įrašytas-roles",
+      "description": "Parodo visus vartotojus su įrašytomis rolėmis šiame serveryje"
+    },
+    "ban": {
+      "name": "užblokuoti",
+      "description": "Užblokuoja vieną ar daugiau vartotojų serveryje",
+      "parameters": {
+        "user": {
+          "name": "vartotojas",
+          "description": "Vartotojas, kurį užblokuoti (formoje gali pridėti daugiau)"
+        }
+      }
+    },
+    "kick": {
+      "name": "išmesti",
+      "description": "Išmeta vieną ar daugiau narių iš serverio",
+      "parameters": {
+        "user": {
+          "name": "vartotojas",
+          "description": "Vartotojas, kurį išmesti (formoje gali pridėti daugiau)"
+        }
+      }
+    },
+    "mute": {
+      "name": "nutildyti",
+      "description": "Nutildo (timeout) vieną ar daugiau narių",
+      "parameters": {
+        "user": {
+          "name": "vartotojas",
+          "description": "Vartotojas, kurį nutildyti (formoje gali pridėti daugiau)"
+        }
+      }
+    },
+    "warn": {
+      "name": "įspėti",
+      "description": "Įspėja vieną ar daugiau vartotojų",
+      "parameters": {
+        "user": {
+          "name": "vartotojas",
+          "description": "Vartotojas, kurį įspėti (formoje gali pridėti daugiau)"
+        }
+      }
+    },
+    "interserver": {
+      "name": "tarpserverinis",
+      "description": "Tvarkyti žinutes tarp serverių"
+    },
+    "interserver report": {
+      "name": "pranešti",
+      "description": "Praneša apie žinutę tarp serverių moderavimo komandai"
+    },
+    "interserver info": {
+      "name": "info",
+      "description": "Pateikia informaciją apie žinutę tarp serverių"
+    }
+  }
+}

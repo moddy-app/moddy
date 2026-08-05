@@ -1,0 +1,254 @@
+{
+  "common": {
+    "parameters": {
+      "incognito": {
+        "name": "inkognito",
+        "description": "Antwort nur für dich sichtbar machen"
+      },
+      "user": {
+        "name": "benutzer",
+        "description": "Der betroffene Benutzer"
+      },
+      "case": {
+        "name": "fall",
+        "description": "Optional: einen bestimmten Fall direkt über seine Referenz öffnen (z. B. A7F2K9)"
+      },
+      "message_id": {
+        "name": "nachrichten-id",
+        "description": "Die Nachrichten-ID (Moddy-ID wie F6ZEU3VS oder Discord-ID)"
+      }
+    }
+  },
+  "context_menus": {
+    "Save Message": {
+      "name": "Nachricht speichern"
+    },
+    "Get Emojis": {
+      "name": "Emojis abrufen"
+    },
+    "Translate": {
+      "name": "Übersetzen"
+    },
+    "AI text tools": {
+      "name": "KI-Textwerkzeuge"
+    }
+  },
+  "commands": {
+    "ping": {
+      "name": "ping",
+      "description": "Zeigt Latenz und Status des Bots an"
+    },
+    "user": {
+      "name": "benutzer",
+      "description": "Zeigt detaillierte Informationen zu einem Discord-Benutzer",
+      "parameters": {
+        "user": {
+          "name": "benutzer",
+          "description": "Der abzufragende Benutzer"
+        }
+      }
+    },
+    "avatar": {
+      "name": "avatar",
+      "description": "Zeigt den Avatar eines Benutzers",
+      "parameters": {
+        "user": {
+          "name": "benutzer",
+          "description": "Der Benutzer, dessen Avatar du sehen möchtest"
+        }
+      }
+    },
+    "banner": {
+      "name": "banner",
+      "description": "Zeigt das Banner eines Benutzers",
+      "parameters": {
+        "user": {
+          "name": "benutzer",
+          "description": "Der Benutzer, dessen Banner du sehen möchtest"
+        }
+      }
+    },
+    "emoji": {
+      "name": "emoji",
+      "description": "Zeigt Informationen zu einem Discord-Emoji",
+      "parameters": {
+        "emoji": {
+          "name": "emoji",
+          "description": "Das abzufragende Emoji"
+        }
+      }
+    },
+    "roll": {
+      "name": "würfeln",
+      "description": "Wirft einen zufälligen Würfel",
+      "parameters": {
+        "max": {
+          "name": "max",
+          "description": "Höchster Würfelwert (optional, Standard 6)"
+        }
+      }
+    },
+    "invite": {
+      "name": "einladung",
+      "description": "Zeigt Informationen zu einer Discord-Einladung",
+      "parameters": {
+        "invite_code": {
+          "name": "einladungscode",
+          "description": "Der Discord-Einladungscode oder -Link"
+        }
+      }
+    },
+    "webhook": {
+      "name": "webhook",
+      "description": "Discord-Webhooks prüfen und verwalten",
+      "parameters": {
+        "webhook": {
+          "name": "webhook",
+          "description": "Webhook-URL oder ID/Token"
+        }
+      }
+    },
+    "translate": {
+      "name": "übersetzen",
+      "description": "Übersetzt einen Text in eine andere Sprache",
+      "parameters": {
+        "text": {
+          "name": "text",
+          "description": "Der zu übersetzende Text"
+        },
+        "to": {
+          "name": "nach",
+          "description": "Zielsprache (optional, standardmäßig deine Discord-Sprache)"
+        }
+      }
+    },
+    "library": {
+      "name": "bibliothek",
+      "description": "Zeigt deine Bibliothek gespeicherter Nachrichten"
+    },
+    "reminder-add": {
+      "name": "erinnerung-hinzufügen",
+      "description": "Fügt eine neue Erinnerung hinzu",
+      "parameters": {
+        "message": {
+          "name": "nachricht",
+          "description": "Woran soll ich dich erinnern?"
+        },
+        "time": {
+          "name": "zeit",
+          "description": "Wann erinnert werden soll (z. B. 1h30m, 2d, morgen 15 Uhr)"
+        },
+        "send_here": {
+          "name": "hier-senden",
+          "description": "Erinnerung in diesem Kanal statt per DM senden"
+        }
+      }
+    },
+    "reminders": {
+      "name": "erinnerungen",
+      "description": "Verwalte deine Erinnerungen"
+    },
+    "preferences": {
+      "name": "einstellungen",
+      "description": "Verwalte deine persönlichen Einstellungen"
+    },
+    "moddy": {
+      "name": "moddy",
+      "description": "Mehr über Moddy erfahren"
+    },
+    "subscription": {
+      "name": "abonnement",
+      "description": "Zeigt den Status deines Moddy-Abonnements"
+    },
+    "mycases": {
+      "name": "meine-fälle",
+      "description": "Durchsuche deine Moderationsfälle auf allen Servern"
+    },
+    "fix": {
+      "name": "korrigieren",
+      "description": "Korrigiert Rechtschreibung und Grammatik eines Textes"
+    },
+    "rephrase": {
+      "name": "umformulieren",
+      "description": "Formuliert einen Text im gewünschten Stil um"
+    },
+    "summarize": {
+      "name": "zusammenfassen",
+      "description": "Fasst einen Text zusammen"
+    },
+    "config": {
+      "name": "konfig",
+      "description": "Konfiguriert die Servermodule"
+    },
+    "cases": {
+      "name": "fälle",
+      "description": "Durchsuche die auf diesem Server erstellten Moderationsfälle"
+    },
+    "clear-saved-roles": {
+      "name": "gespeicherte-rollen-löschen",
+      "description": "Löscht die gespeicherten Rollen eines Benutzers, der den Server verlassen hat",
+      "parameters": {
+        "user": {
+          "name": "benutzer",
+          "description": "Der Benutzer, dessen gespeicherte Rollen gelöscht werden sollen"
+        }
+      }
+    },
+    "view-saved-roles": {
+      "name": "gespeicherte-rollen-anzeigen",
+      "description": "Zeigt alle Benutzer mit gespeicherten Rollen auf diesem Server"
+    },
+    "ban": {
+      "name": "bannen",
+      "description": "Bannt einen oder mehrere Benutzer vom Server",
+      "parameters": {
+        "user": {
+          "name": "benutzer",
+          "description": "Zu bannender Benutzer (weitere im Formular möglich)"
+        }
+      }
+    },
+    "kick": {
+      "name": "kicken",
+      "description": "Kickt ein oder mehrere Mitglieder vom Server",
+      "parameters": {
+        "user": {
+          "name": "benutzer",
+          "description": "Zu kickender Benutzer (weitere im Formular möglich)"
+        }
+      }
+    },
+    "mute": {
+      "name": "stummschalten",
+      "description": "Schaltet ein oder mehrere Mitglieder stumm (Timeout)",
+      "parameters": {
+        "user": {
+          "name": "benutzer",
+          "description": "Stummzuschaltender Benutzer (weitere im Formular möglich)"
+        }
+      }
+    },
+    "warn": {
+      "name": "verwarnen",
+      "description": "Verwarnt einen oder mehrere Benutzer",
+      "parameters": {
+        "user": {
+          "name": "benutzer",
+          "description": "Zu verwarnender Benutzer (weitere im Formular möglich)"
+        }
+      }
+    },
+    "interserver": {
+      "name": "interserver",
+      "description": "Verwaltet serverübergreifende Nachrichten"
+    },
+    "interserver report": {
+      "name": "melden",
+      "description": "Meldet eine serverübergreifende Nachricht an das Moderationsteam"
+    },
+    "interserver info": {
+      "name": "info",
+      "description": "Zeigt Informationen zu einer serverübergreifenden Nachricht"
+    }
+  }
+}

@@ -1,0 +1,254 @@
+{
+  "common": {
+    "parameters": {
+      "incognito": {
+        "name": "シークレット",
+        "description": "自分だけに表示する"
+      },
+      "user": {
+        "name": "ユーザー",
+        "description": "対象のユーザー"
+      },
+      "case": {
+        "name": "ケース",
+        "description": "任意：参照番号でケースを直接開く（例 A7F2K9）"
+      },
+      "message_id": {
+        "name": "メッセージid",
+        "description": "メッセージID（F6ZEU3VS のような Moddy ID または Discord ID）"
+      }
+    }
+  },
+  "context_menus": {
+    "Save Message": {
+      "name": "メッセージを保存"
+    },
+    "Get Emojis": {
+      "name": "絵文字を取得"
+    },
+    "Translate": {
+      "name": "翻訳"
+    },
+    "AI text tools": {
+      "name": "AIテキストツール"
+    }
+  },
+  "commands": {
+    "ping": {
+      "name": "ping",
+      "description": "ボットのレイテンシとステータスを確認します"
+    },
+    "user": {
+      "name": "ユーザー",
+      "description": "Discord ユーザーの詳細情報を表示します",
+      "parameters": {
+        "user": {
+          "name": "ユーザー",
+          "description": "調べるユーザー"
+        }
+      }
+    },
+    "avatar": {
+      "name": "アバター",
+      "description": "ユーザーのアバターを表示します",
+      "parameters": {
+        "user": {
+          "name": "ユーザー",
+          "description": "アバターを表示するユーザー"
+        }
+      }
+    },
+    "banner": {
+      "name": "バナー",
+      "description": "ユーザーのバナーを表示します",
+      "parameters": {
+        "user": {
+          "name": "ユーザー",
+          "description": "バナーを表示するユーザー"
+        }
+      }
+    },
+    "emoji": {
+      "name": "絵文字",
+      "description": "Discord の絵文字の情報を表示します",
+      "parameters": {
+        "emoji": {
+          "name": "絵文字",
+          "description": "調べる絵文字"
+        }
+      }
+    },
+    "roll": {
+      "name": "サイコロ",
+      "description": "ランダムにサイコロを振ります",
+      "parameters": {
+        "max": {
+          "name": "最大値",
+          "description": "サイコロの最大値（任意、既定は 6）"
+        }
+      }
+    },
+    "invite": {
+      "name": "招待",
+      "description": "Discord の招待の情報を表示します",
+      "parameters": {
+        "invite_code": {
+          "name": "招待コード",
+          "description": "Discord の招待コードまたはリンク"
+        }
+      }
+    },
+    "webhook": {
+      "name": "ウェブフック",
+      "description": "Discord のウェブフックを確認・管理します",
+      "parameters": {
+        "webhook": {
+          "name": "ウェブフック",
+          "description": "ウェブフックの URL または ID/トークン"
+        }
+      }
+    },
+    "translate": {
+      "name": "翻訳",
+      "description": "テキストを別の言語に翻訳します",
+      "parameters": {
+        "text": {
+          "name": "テキスト",
+          "description": "翻訳するテキスト"
+        },
+        "to": {
+          "name": "翻訳先",
+          "description": "翻訳先の言語（任意、既定は Discord の言語）"
+        }
+      }
+    },
+    "library": {
+      "name": "ライブラリ",
+      "description": "保存したメッセージのライブラリを表示します"
+    },
+    "reminder-add": {
+      "name": "リマインダー追加",
+      "description": "新しいリマインダーを追加します",
+      "parameters": {
+        "message": {
+          "name": "メッセージ",
+          "description": "何をお知らせしますか？"
+        },
+        "time": {
+          "name": "時間",
+          "description": "通知するタイミング（例 1h30m、2d、明日15時）"
+        },
+        "send_here": {
+          "name": "ここに送信",
+          "description": "DM ではなくこのチャンネルに送信する"
+        }
+      }
+    },
+    "reminders": {
+      "name": "リマインダー一覧",
+      "description": "リマインダーを管理します"
+    },
+    "preferences": {
+      "name": "環境設定",
+      "description": "個人の設定を管理します"
+    },
+    "moddy": {
+      "name": "moddy",
+      "description": "Moddy について詳しく見る"
+    },
+    "subscription": {
+      "name": "サブスクリプション",
+      "description": "Moddy のサブスクリプション状況を表示します"
+    },
+    "mycases": {
+      "name": "自分のケース",
+      "description": "すべてのサーバーにおける自分のモデレーションケースを閲覧します"
+    },
+    "fix": {
+      "name": "校正",
+      "description": "テキストの誤字と文法を修正します"
+    },
+    "rephrase": {
+      "name": "言い換え",
+      "description": "選んだスタイルでテキストを言い換えます"
+    },
+    "summarize": {
+      "name": "要約",
+      "description": "テキストを要約します"
+    },
+    "config": {
+      "name": "サーバー設定",
+      "description": "サーバーのモジュールを設定します"
+    },
+    "cases": {
+      "name": "ケース",
+      "description": "このサーバーで作成されたモデレーションケースを閲覧します"
+    },
+    "clear-saved-roles": {
+      "name": "保存ロール削除",
+      "description": "サーバーを退出したユーザーの保存されたロールを削除します",
+      "parameters": {
+        "user": {
+          "name": "ユーザー",
+          "description": "保存ロールを削除するユーザー"
+        }
+      }
+    },
+    "view-saved-roles": {
+      "name": "保存ロール一覧",
+      "description": "このサーバーで保存されたロールを持つユーザーを表示します"
+    },
+    "ban": {
+      "name": "バン",
+      "description": "1人以上のユーザーをサーバーからバンします",
+      "parameters": {
+        "user": {
+          "name": "ユーザー",
+          "description": "バンするユーザー（フォームで追加可能）"
+        }
+      }
+    },
+    "kick": {
+      "name": "キック",
+      "description": "1人以上のメンバーをサーバーからキックします",
+      "parameters": {
+        "user": {
+          "name": "ユーザー",
+          "description": "キックするユーザー（フォームで追加可能）"
+        }
+      }
+    },
+    "mute": {
+      "name": "ミュート",
+      "description": "1人以上のメンバーをタイムアウト（ミュート）します",
+      "parameters": {
+        "user": {
+          "name": "ユーザー",
+          "description": "ミュートするユーザー（フォームで追加可能）"
+        }
+      }
+    },
+    "warn": {
+      "name": "警告",
+      "description": "1人以上のユーザーに警告します",
+      "parameters": {
+        "user": {
+          "name": "ユーザー",
+          "description": "警告するユーザー（フォームで追加可能）"
+        }
+      }
+    },
+    "interserver": {
+      "name": "インターサーバー",
+      "description": "サーバー間メッセージを管理します"
+    },
+    "interserver report": {
+      "name": "通報",
+      "description": "サーバー間メッセージをモデレーションチームに通報します"
+    },
+    "interserver info": {
+      "name": "情報",
+      "description": "サーバー間メッセージの情報を取得します"
+    }
+  }
+}

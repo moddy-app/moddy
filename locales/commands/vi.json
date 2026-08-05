@@ -1,0 +1,254 @@
+{
+  "common": {
+    "parameters": {
+      "incognito": {
+        "name": "riêng-tư",
+        "description": "Chỉ hiển thị phản hồi cho bạn"
+      },
+      "user": {
+        "name": "người-dùng",
+        "description": "Người dùng liên quan"
+      },
+      "case": {
+        "name": "hồ-sơ",
+        "description": "Tùy chọn: mở một hồ sơ cụ thể bằng mã tham chiếu (ví dụ A7F2K9)"
+      },
+      "message_id": {
+        "name": "id-tin-nhắn",
+        "description": "ID tin nhắn (ID Moddy như F6ZEU3VS hoặc ID Discord)"
+      }
+    }
+  },
+  "context_menus": {
+    "Save Message": {
+      "name": "Lưu tin nhắn"
+    },
+    "Get Emojis": {
+      "name": "Lấy emoji"
+    },
+    "Translate": {
+      "name": "Dịch"
+    },
+    "AI text tools": {
+      "name": "Công cụ văn bản AI"
+    }
+  },
+  "commands": {
+    "ping": {
+      "name": "ping",
+      "description": "Kiểm tra độ trễ và trạng thái của bot"
+    },
+    "user": {
+      "name": "người-dùng",
+      "description": "Hiển thị thông tin chi tiết về một người dùng Discord",
+      "parameters": {
+        "user": {
+          "name": "người-dùng",
+          "description": "Người dùng cần tra cứu"
+        }
+      }
+    },
+    "avatar": {
+      "name": "ảnh-đại-diện",
+      "description": "Hiển thị ảnh đại diện của một người dùng",
+      "parameters": {
+        "user": {
+          "name": "người-dùng",
+          "description": "Người dùng bạn muốn xem ảnh đại diện"
+        }
+      }
+    },
+    "banner": {
+      "name": "ảnh-bìa",
+      "description": "Hiển thị ảnh bìa của một người dùng",
+      "parameters": {
+        "user": {
+          "name": "người-dùng",
+          "description": "Người dùng bạn muốn xem ảnh bìa"
+        }
+      }
+    },
+    "emoji": {
+      "name": "emoji",
+      "description": "Hiển thị thông tin về một emoji Discord",
+      "parameters": {
+        "emoji": {
+          "name": "emoji",
+          "description": "Emoji cần tra cứu"
+        }
+      }
+    },
+    "roll": {
+      "name": "xúc-xắc",
+      "description": "Tung một viên xúc xắc ngẫu nhiên",
+      "parameters": {
+        "max": {
+          "name": "tối-đa",
+          "description": "Giá trị lớn nhất của xúc xắc (tùy chọn, mặc định 6)"
+        }
+      }
+    },
+    "invite": {
+      "name": "lời-mời",
+      "description": "Hiển thị thông tin về một lời mời Discord",
+      "parameters": {
+        "invite_code": {
+          "name": "mã-mời",
+          "description": "Mã hoặc liên kết mời Discord"
+        }
+      }
+    },
+    "webhook": {
+      "name": "webhook",
+      "description": "Kiểm tra và quản lý webhook Discord",
+      "parameters": {
+        "webhook": {
+          "name": "webhook",
+          "description": "URL webhook hoặc ID/Token"
+        }
+      }
+    },
+    "translate": {
+      "name": "dịch",
+      "description": "Dịch văn bản sang ngôn ngữ khác",
+      "parameters": {
+        "text": {
+          "name": "văn-bản",
+          "description": "Văn bản cần dịch"
+        },
+        "to": {
+          "name": "sang",
+          "description": "Ngôn ngữ đích (tùy chọn, mặc định là ngôn ngữ Discord của bạn)"
+        }
+      }
+    },
+    "library": {
+      "name": "thư-viện",
+      "description": "Xem thư viện tin nhắn đã lưu của bạn"
+    },
+    "reminder-add": {
+      "name": "nhắc-nhở-thêm",
+      "description": "Thêm một lời nhắc mới",
+      "parameters": {
+        "message": {
+          "name": "nội-dung",
+          "description": "Tôi cần nhắc bạn điều gì?"
+        },
+        "time": {
+          "name": "thời-gian",
+          "description": "Khi nào nhắc (ví dụ 1h30m, 2d, ngày mai 15:00)"
+        },
+        "send_here": {
+          "name": "gửi-tại-đây",
+          "description": "Gửi lời nhắc trong kênh này thay vì tin nhắn riêng"
+        }
+      }
+    },
+    "reminders": {
+      "name": "nhắc-nhở",
+      "description": "Quản lý các lời nhắc của bạn"
+    },
+    "preferences": {
+      "name": "tùy-chọn",
+      "description": "Quản lý tùy chọn cá nhân của bạn"
+    },
+    "moddy": {
+      "name": "moddy",
+      "description": "Tìm hiểu thêm về Moddy"
+    },
+    "subscription": {
+      "name": "gói-đăng-ký",
+      "description": "Xem trạng thái gói đăng ký Moddy của bạn"
+    },
+    "mycases": {
+      "name": "hồ-sơ-của-tôi",
+      "description": "Xem các hồ sơ kiểm duyệt của bạn trên mọi máy chủ"
+    },
+    "fix": {
+      "name": "sửa-lỗi",
+      "description": "Sửa chính tả và ngữ pháp của một đoạn văn bản"
+    },
+    "rephrase": {
+      "name": "diễn-đạt-lại",
+      "description": "Diễn đạt lại văn bản theo phong cách bạn chọn"
+    },
+    "summarize": {
+      "name": "tóm-tắt",
+      "description": "Tóm tắt một đoạn văn bản"
+    },
+    "config": {
+      "name": "cấu-hình",
+      "description": "Cấu hình các mô-đun của máy chủ"
+    },
+    "cases": {
+      "name": "hồ-sơ",
+      "description": "Xem các hồ sơ kiểm duyệt được tạo trên máy chủ này"
+    },
+    "clear-saved-roles": {
+      "name": "xóa-vai-trò-đã-lưu",
+      "description": "Xóa các vai trò đã lưu của người dùng đã rời máy chủ",
+      "parameters": {
+        "user": {
+          "name": "người-dùng",
+          "description": "Người dùng cần xóa vai trò đã lưu"
+        }
+      }
+    },
+    "view-saved-roles": {
+      "name": "xem-vai-trò-đã-lưu",
+      "description": "Xem tất cả người dùng có vai trò đã lưu trên máy chủ này"
+    },
+    "ban": {
+      "name": "cấm",
+      "description": "Cấm một hoặc nhiều người dùng khỏi máy chủ",
+      "parameters": {
+        "user": {
+          "name": "người-dùng",
+          "description": "Người dùng cần cấm (có thể thêm nữa trong biểu mẫu)"
+        }
+      }
+    },
+    "kick": {
+      "name": "đuổi",
+      "description": "Đuổi một hoặc nhiều thành viên khỏi máy chủ",
+      "parameters": {
+        "user": {
+          "name": "người-dùng",
+          "description": "Người dùng cần đuổi (có thể thêm nữa trong biểu mẫu)"
+        }
+      }
+    },
+    "mute": {
+      "name": "cấm-chat",
+      "description": "Cấm chat (timeout) một hoặc nhiều thành viên",
+      "parameters": {
+        "user": {
+          "name": "người-dùng",
+          "description": "Người dùng cần cấm chat (có thể thêm nữa)"
+        }
+      }
+    },
+    "warn": {
+      "name": "cảnh-cáo",
+      "description": "Cảnh cáo một hoặc nhiều người dùng",
+      "parameters": {
+        "user": {
+          "name": "người-dùng",
+          "description": "Người dùng cần cảnh cáo (có thể thêm nữa)"
+        }
+      }
+    },
+    "interserver": {
+      "name": "liên-máy-chủ",
+      "description": "Quản lý tin nhắn liên máy chủ"
+    },
+    "interserver report": {
+      "name": "báo-cáo",
+      "description": "Báo cáo một tin nhắn liên máy chủ cho đội kiểm duyệt"
+    },
+    "interserver info": {
+      "name": "thông-tin",
+      "description": "Xem thông tin về một tin nhắn liên máy chủ"
+    }
+  }
+}

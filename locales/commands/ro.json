@@ -1,0 +1,254 @@
+{
+  "common": {
+    "parameters": {
+      "incognito": {
+        "name": "incognito",
+        "description": "Afișează răspunsul doar pentru tine"
+      },
+      "user": {
+        "name": "utilizator",
+        "description": "Utilizatorul vizat"
+      },
+      "case": {
+        "name": "caz",
+        "description": "Opțional: deschide un caz anume după referința lui (ex. A7F2K9)"
+      },
+      "message_id": {
+        "name": "id-mesaj",
+        "description": "ID-ul mesajului (ID Moddy precum F6ZEU3VS sau ID Discord)"
+      }
+    }
+  },
+  "context_menus": {
+    "Save Message": {
+      "name": "Salvează mesajul"
+    },
+    "Get Emojis": {
+      "name": "Obține emoji"
+    },
+    "Translate": {
+      "name": "Tradu"
+    },
+    "AI text tools": {
+      "name": "Instrumente text AI"
+    }
+  },
+  "commands": {
+    "ping": {
+      "name": "ping",
+      "description": "Verifică latența și starea botului"
+    },
+    "user": {
+      "name": "utilizator",
+      "description": "Afișează informații detaliate despre un utilizator Discord",
+      "parameters": {
+        "user": {
+          "name": "utilizator",
+          "description": "Utilizatorul căutat"
+        }
+      }
+    },
+    "avatar": {
+      "name": "avatar",
+      "description": "Afișează avatarul unui utilizator",
+      "parameters": {
+        "user": {
+          "name": "utilizator",
+          "description": "Utilizatorul al cărui avatar vrei să îl vezi"
+        }
+      }
+    },
+    "banner": {
+      "name": "banner",
+      "description": "Afișează bannerul unui utilizator",
+      "parameters": {
+        "user": {
+          "name": "utilizator",
+          "description": "Utilizatorul al cărui banner vrei să îl vezi"
+        }
+      }
+    },
+    "emoji": {
+      "name": "emoji",
+      "description": "Afișează informații despre un emoji Discord",
+      "parameters": {
+        "emoji": {
+          "name": "emoji",
+          "description": "Emoji-ul căutat"
+        }
+      }
+    },
+    "roll": {
+      "name": "zar",
+      "description": "Aruncă un zar aleatoriu",
+      "parameters": {
+        "max": {
+          "name": "max",
+          "description": "Valoarea maximă a zarului (opțional, implicit 6)"
+        }
+      }
+    },
+    "invite": {
+      "name": "invitație",
+      "description": "Afișează informații despre o invitație Discord",
+      "parameters": {
+        "invite_code": {
+          "name": "cod-invitație",
+          "description": "Codul sau linkul de invitație Discord"
+        }
+      }
+    },
+    "webhook": {
+      "name": "webhook",
+      "description": "Inspectează și gestionează webhookurile Discord",
+      "parameters": {
+        "webhook": {
+          "name": "webhook",
+          "description": "URL-ul webhookului sau ID/Token"
+        }
+      }
+    },
+    "translate": {
+      "name": "tradu",
+      "description": "Traduce un text în altă limbă",
+      "parameters": {
+        "text": {
+          "name": "text",
+          "description": "Textul de tradus"
+        },
+        "to": {
+          "name": "în",
+          "description": "Limba țintă (opțional, implicit limba ta din Discord)"
+        }
+      }
+    },
+    "library": {
+      "name": "bibliotecă",
+      "description": "Vezi biblioteca ta de mesaje salvate"
+    },
+    "reminder-add": {
+      "name": "memento-adaugă",
+      "description": "Adaugă un memento nou",
+      "parameters": {
+        "message": {
+          "name": "mesaj",
+          "description": "Ce să îți amintesc?"
+        },
+        "time": {
+          "name": "timp",
+          "description": "Când să îți amintesc (ex. 1h30m, 2d, mâine 15:00)"
+        },
+        "send_here": {
+          "name": "trimite-aici",
+          "description": "Trimite mementoul pe acest canal în loc de DM"
+        }
+      }
+    },
+    "reminders": {
+      "name": "mementouri",
+      "description": "Gestionează mementourile tale"
+    },
+    "preferences": {
+      "name": "preferințe",
+      "description": "Gestionează preferințele tale personale"
+    },
+    "moddy": {
+      "name": "moddy",
+      "description": "Află mai multe despre Moddy"
+    },
+    "subscription": {
+      "name": "abonament",
+      "description": "Vezi starea abonamentului tău Moddy"
+    },
+    "mycases": {
+      "name": "cazurile-mele",
+      "description": "Răsfoiește cazurile tale de moderare de pe toate serverele"
+    },
+    "fix": {
+      "name": "corectează",
+      "description": "Corectează ortografia și gramatica unui text"
+    },
+    "rephrase": {
+      "name": "reformulează",
+      "description": "Reformulează un text în stilul ales de tine"
+    },
+    "summarize": {
+      "name": "rezumă",
+      "description": "Rezumă un text"
+    },
+    "config": {
+      "name": "configurare",
+      "description": "Configurează modulele serverului"
+    },
+    "cases": {
+      "name": "cazuri",
+      "description": "Răsfoiește cazurile de moderare emise pe acest server"
+    },
+    "clear-saved-roles": {
+      "name": "șterge-roluri-salvate",
+      "description": "Șterge rolurile salvate ale unui utilizator care a părăsit serverul",
+      "parameters": {
+        "user": {
+          "name": "utilizator",
+          "description": "Utilizatorul ale cărui roluri salvate trebuie șterse"
+        }
+      }
+    },
+    "view-saved-roles": {
+      "name": "vezi-roluri-salvate",
+      "description": "Afișează toți utilizatorii cu roluri salvate pe acest server"
+    },
+    "ban": {
+      "name": "banează",
+      "description": "Banează unul sau mai mulți utilizatori de pe server",
+      "parameters": {
+        "user": {
+          "name": "utilizator",
+          "description": "Utilizatorul de banat (poți adăuga alții în formular)"
+        }
+      }
+    },
+    "kick": {
+      "name": "dă-afară",
+      "description": "Dă afară unul sau mai mulți membri de pe server",
+      "parameters": {
+        "user": {
+          "name": "utilizator",
+          "description": "Utilizatorul de dat afară (poți adăuga alții în formular)"
+        }
+      }
+    },
+    "mute": {
+      "name": "amuțește",
+      "description": "Amuțește (timeout) unul sau mai mulți membri",
+      "parameters": {
+        "user": {
+          "name": "utilizator",
+          "description": "Utilizatorul de amuțit (poți adăuga alții în formular)"
+        }
+      }
+    },
+    "warn": {
+      "name": "avertizează",
+      "description": "Avertizează unul sau mai mulți utilizatori",
+      "parameters": {
+        "user": {
+          "name": "utilizator",
+          "description": "Utilizatorul de avertizat (poți adăuga alții în formular)"
+        }
+      }
+    },
+    "interserver": {
+      "name": "interserver",
+      "description": "Gestionează mesajele dintre servere"
+    },
+    "interserver report": {
+      "name": "raportează",
+      "description": "Raportează un mesaj dintre servere echipei de moderare"
+    },
+    "interserver info": {
+      "name": "info",
+      "description": "Obține informații despre un mesaj dintre servere"
+    }
+  }
+}

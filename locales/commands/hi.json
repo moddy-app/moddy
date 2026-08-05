@@ -1,0 +1,254 @@
+{
+  "common": {
+    "parameters": {
+      "incognito": {
+        "name": "गुप्त",
+        "description": "उत्तर केवल आपको दिखाएँ"
+      },
+      "user": {
+        "name": "उपयोगकर्ता",
+        "description": "संबंधित उपयोगकर्ता"
+      },
+      "case": {
+        "name": "मामला",
+        "description": "वैकल्पिक: संदर्भ संख्या से कोई मामला सीधे खोलें (जैसे A7F2K9)"
+      },
+      "message_id": {
+        "name": "संदेश-आईडी",
+        "description": "संदेश की आईडी (F6ZEU3VS जैसी Moddy आईडी या Discord आईडी)"
+      }
+    }
+  },
+  "context_menus": {
+    "Save Message": {
+      "name": "संदेश सहेजें"
+    },
+    "Get Emojis": {
+      "name": "इमोजी प्राप्त करें"
+    },
+    "Translate": {
+      "name": "अनुवाद करें"
+    },
+    "AI text tools": {
+      "name": "एआई टेक्स्ट टूल"
+    }
+  },
+  "commands": {
+    "ping": {
+      "name": "पिंग",
+      "description": "बॉट की लेटेंसी और स्थिति जाँचें"
+    },
+    "user": {
+      "name": "उपयोगकर्ता",
+      "description": "किसी Discord उपयोगकर्ता की विस्तृत जानकारी दिखाता है",
+      "parameters": {
+        "user": {
+          "name": "उपयोगकर्ता",
+          "description": "जिस उपयोगकर्ता की जानकारी चाहिए"
+        }
+      }
+    },
+    "avatar": {
+      "name": "अवतार",
+      "description": "किसी उपयोगकर्ता का अवतार दिखाता है",
+      "parameters": {
+        "user": {
+          "name": "उपयोगकर्ता",
+          "description": "जिसका अवतार आप देखना चाहते हैं"
+        }
+      }
+    },
+    "banner": {
+      "name": "बैनर",
+      "description": "किसी उपयोगकर्ता का बैनर दिखाता है",
+      "parameters": {
+        "user": {
+          "name": "उपयोगकर्ता",
+          "description": "जिसका बैनर आप देखना चाहते हैं"
+        }
+      }
+    },
+    "emoji": {
+      "name": "इमोजी",
+      "description": "किसी Discord इमोजी की जानकारी दिखाता है",
+      "parameters": {
+        "emoji": {
+          "name": "इमोजी",
+          "description": "जिस इमोजी की जानकारी चाहिए"
+        }
+      }
+    },
+    "roll": {
+      "name": "पासा",
+      "description": "एक यादृच्छिक पासा फेंकता है",
+      "parameters": {
+        "max": {
+          "name": "अधिकतम",
+          "description": "पासे का अधिकतम मान (वैकल्पिक, डिफ़ॉल्ट 6)"
+        }
+      }
+    },
+    "invite": {
+      "name": "निमंत्रण",
+      "description": "किसी Discord निमंत्रण की जानकारी दिखाता है",
+      "parameters": {
+        "invite_code": {
+          "name": "निमंत्रण-कोड",
+          "description": "Discord निमंत्रण कोड या लिंक"
+        }
+      }
+    },
+    "webhook": {
+      "name": "वेबहुक",
+      "description": "Discord वेबहुक देखें और प्रबंधित करें",
+      "parameters": {
+        "webhook": {
+          "name": "वेबहुक",
+          "description": "वेबहुक URL या ID/टोकन"
+        }
+      }
+    },
+    "translate": {
+      "name": "अनुवाद",
+      "description": "किसी पाठ का दूसरी भाषा में अनुवाद करता है",
+      "parameters": {
+        "text": {
+          "name": "पाठ",
+          "description": "अनुवाद किया जाने वाला पाठ"
+        },
+        "to": {
+          "name": "भाषा",
+          "description": "लक्ष्य भाषा (वैकल्पिक, डिफ़ॉल्ट रूप से आपकी Discord भाषा)"
+        }
+      }
+    },
+    "library": {
+      "name": "लाइब्रेरी",
+      "description": "आपके सहेजे गए संदेशों की लाइब्रेरी देखें"
+    },
+    "reminder-add": {
+      "name": "अनुस्मारक-जोड़ें",
+      "description": "नया अनुस्मारक जोड़ता है",
+      "parameters": {
+        "message": {
+          "name": "संदेश",
+          "description": "मैं आपको किस बारे में याद दिलाऊँ?"
+        },
+        "time": {
+          "name": "समय",
+          "description": "कब याद दिलाना है (जैसे 1h30m, 2d, कल 3 बजे)"
+        },
+        "send_here": {
+          "name": "यहाँ-भेजें",
+          "description": "अनुस्मारक DM के बजाय इसी चैनल में भेजें"
+        }
+      }
+    },
+    "reminders": {
+      "name": "अनुस्मारक",
+      "description": "अपने अनुस्मारक प्रबंधित करें"
+    },
+    "preferences": {
+      "name": "प्राथमिकताएँ",
+      "description": "अपनी व्यक्तिगत प्राथमिकताएँ प्रबंधित करें"
+    },
+    "moddy": {
+      "name": "moddy",
+      "description": "Moddy के बारे में और जानें"
+    },
+    "subscription": {
+      "name": "सदस्यता",
+      "description": "अपनी Moddy सदस्यता की स्थिति देखें"
+    },
+    "mycases": {
+      "name": "मेरे-मामले",
+      "description": "सभी सर्वरों पर अपने मॉडरेशन मामले देखें"
+    },
+    "fix": {
+      "name": "सुधारें",
+      "description": "किसी पाठ की वर्तनी और व्याकरण सुधारता है"
+    },
+    "rephrase": {
+      "name": "पुनर्लेखन",
+      "description": "आपकी पसंद की शैली में पाठ को दोबारा लिखता है"
+    },
+    "summarize": {
+      "name": "सारांश",
+      "description": "किसी पाठ का सारांश बनाता है"
+    },
+    "config": {
+      "name": "कॉन्फ़िग",
+      "description": "सर्वर मॉड्यूल कॉन्फ़िगर करें"
+    },
+    "cases": {
+      "name": "मामले",
+      "description": "इस सर्वर पर जारी मॉडरेशन मामले देखें"
+    },
+    "clear-saved-roles": {
+      "name": "सहेजी-भूमिकाएँ-हटाएँ",
+      "description": "सर्वर छोड़ चुके उपयोगकर्ता की सहेजी गई भूमिकाएँ हटाता है",
+      "parameters": {
+        "user": {
+          "name": "उपयोगकर्ता",
+          "description": "जिसकी सहेजी गई भूमिकाएँ हटानी हैं"
+        }
+      }
+    },
+    "view-saved-roles": {
+      "name": "सहेजी-भूमिकाएँ-देखें",
+      "description": "इस सर्वर पर सहेजी गई भूमिकाओं वाले सभी उपयोगकर्ता दिखाता है"
+    },
+    "ban": {
+      "name": "प्रतिबंध",
+      "description": "एक या अधिक उपयोगकर्ताओं को सर्वर से प्रतिबंधित करता है",
+      "parameters": {
+        "user": {
+          "name": "उपयोगकर्ता",
+          "description": "प्रतिबंधित किया जाने वाला उपयोगकर्ता (और भी जोड़ सकते हैं)"
+        }
+      }
+    },
+    "kick": {
+      "name": "निकालें",
+      "description": "एक या अधिक सदस्यों को सर्वर से निकालता है",
+      "parameters": {
+        "user": {
+          "name": "उपयोगकर्ता",
+          "description": "निकाला जाने वाला उपयोगकर्ता (और भी जोड़ सकते हैं)"
+        }
+      }
+    },
+    "mute": {
+      "name": "म्यूट",
+      "description": "एक या अधिक सदस्यों को टाइमआउट (म्यूट) करता है",
+      "parameters": {
+        "user": {
+          "name": "उपयोगकर्ता",
+          "description": "म्यूट किया जाने वाला उपयोगकर्ता (और भी जोड़ सकते हैं)"
+        }
+      }
+    },
+    "warn": {
+      "name": "चेतावनी",
+      "description": "एक या अधिक उपयोगकर्ताओं को चेतावनी देता है",
+      "parameters": {
+        "user": {
+          "name": "उपयोगकर्ता",
+          "description": "चेतावनी पाने वाला उपयोगकर्ता (और भी जोड़ सकते हैं)"
+        }
+      }
+    },
+    "interserver": {
+      "name": "अंतरसर्वर",
+      "description": "अंतर-सर्वर संदेश प्रबंधित करें"
+    },
+    "interserver report": {
+      "name": "रिपोर्ट",
+      "description": "किसी अंतर-सर्वर संदेश की रिपोर्ट मॉडरेशन टीम को करें"
+    },
+    "interserver info": {
+      "name": "जानकारी",
+      "description": "किसी अंतर-सर्वर संदेश की जानकारी प्राप्त करें"
+    }
+  }
+}

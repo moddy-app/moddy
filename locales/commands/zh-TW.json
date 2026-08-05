@@ -1,0 +1,254 @@
+{
+  "common": {
+    "parameters": {
+      "incognito": {
+        "name": "私密",
+        "description": "僅自己可見"
+      },
+      "user": {
+        "name": "使用者",
+        "description": "目標使用者"
+      },
+      "case": {
+        "name": "案件",
+        "description": "選填：透過編號直接開啟某個案件（例如 A7F2K9）"
+      },
+      "message_id": {
+        "name": "訊息id",
+        "description": "訊息 ID（如 F6ZEU3VS 的 Moddy ID 或 Discord ID）"
+      }
+    }
+  },
+  "context_menus": {
+    "Save Message": {
+      "name": "儲存訊息"
+    },
+    "Get Emojis": {
+      "name": "取得表情符號"
+    },
+    "Translate": {
+      "name": "翻譯"
+    },
+    "AI text tools": {
+      "name": "AI 文字工具"
+    }
+  },
+  "commands": {
+    "ping": {
+      "name": "延遲",
+      "description": "查看機器人的延遲與狀態"
+    },
+    "user": {
+      "name": "使用者",
+      "description": "顯示 Discord 使用者的詳細資訊",
+      "parameters": {
+        "user": {
+          "name": "使用者",
+          "description": "要查詢的使用者"
+        }
+      }
+    },
+    "avatar": {
+      "name": "頭像",
+      "description": "顯示使用者的頭像",
+      "parameters": {
+        "user": {
+          "name": "使用者",
+          "description": "要查看頭像的使用者"
+        }
+      }
+    },
+    "banner": {
+      "name": "橫幅",
+      "description": "顯示使用者的橫幅",
+      "parameters": {
+        "user": {
+          "name": "使用者",
+          "description": "要查看橫幅的使用者"
+        }
+      }
+    },
+    "emoji": {
+      "name": "表情符號",
+      "description": "顯示 Discord 表情符號的資訊",
+      "parameters": {
+        "emoji": {
+          "name": "表情符號",
+          "description": "要查詢的表情符號"
+        }
+      }
+    },
+    "roll": {
+      "name": "擲骰",
+      "description": "隨機擲一顆骰子",
+      "parameters": {
+        "max": {
+          "name": "最大值",
+          "description": "骰子的最大值（選填，預設 6）"
+        }
+      }
+    },
+    "invite": {
+      "name": "邀請",
+      "description": "顯示 Discord 邀請的資訊",
+      "parameters": {
+        "invite_code": {
+          "name": "邀請碼",
+          "description": "Discord 邀請碼或連結"
+        }
+      }
+    },
+    "webhook": {
+      "name": "網路鉤子",
+      "description": "查看並管理 Discord 網路鉤子",
+      "parameters": {
+        "webhook": {
+          "name": "網路鉤子",
+          "description": "網路鉤子 URL 或 ID/權杖"
+        }
+      }
+    },
+    "translate": {
+      "name": "翻譯",
+      "description": "將文字翻譯成另一種語言",
+      "parameters": {
+        "text": {
+          "name": "文字",
+          "description": "要翻譯的文字"
+        },
+        "to": {
+          "name": "目標語言",
+          "description": "目標語言（選填，預設使用你的 Discord 語言）"
+        }
+      }
+    },
+    "library": {
+      "name": "收藏庫",
+      "description": "查看你已儲存的訊息收藏庫"
+    },
+    "reminder-add": {
+      "name": "提醒-新增",
+      "description": "新增一個提醒",
+      "parameters": {
+        "message": {
+          "name": "訊息",
+          "description": "需要我提醒你什麼？"
+        },
+        "time": {
+          "name": "時間",
+          "description": "提醒時間（例如 1h30m、2d、明天 15:00）"
+        },
+        "send_here": {
+          "name": "傳送到本頻道",
+          "description": "在本頻道傳送提醒，而不是私訊"
+        }
+      }
+    },
+    "reminders": {
+      "name": "提醒列表",
+      "description": "管理你的提醒"
+    },
+    "preferences": {
+      "name": "偏好設定",
+      "description": "管理你的個人偏好設定"
+    },
+    "moddy": {
+      "name": "moddy",
+      "description": "了解更多關於 Moddy 的資訊"
+    },
+    "subscription": {
+      "name": "訂閱",
+      "description": "查看你的 Moddy 訂閱狀態"
+    },
+    "mycases": {
+      "name": "我的案件",
+      "description": "瀏覽你在所有伺服器的處分案件"
+    },
+    "fix": {
+      "name": "校正",
+      "description": "修正文字的拼寫與文法"
+    },
+    "rephrase": {
+      "name": "改寫",
+      "description": "依你選擇的風格改寫文字"
+    },
+    "summarize": {
+      "name": "摘要",
+      "description": "總結一段文字"
+    },
+    "config": {
+      "name": "設定",
+      "description": "設定伺服器模組"
+    },
+    "cases": {
+      "name": "案件",
+      "description": "瀏覽本伺服器的處分案件"
+    },
+    "clear-saved-roles": {
+      "name": "清除已儲存身分組",
+      "description": "清除已離開伺服器使用者的已儲存身分組",
+      "parameters": {
+        "user": {
+          "name": "使用者",
+          "description": "要清除已儲存身分組的使用者"
+        }
+      }
+    },
+    "view-saved-roles": {
+      "name": "查看已儲存身分組",
+      "description": "顯示本伺服器所有擁有已儲存身分組的使用者"
+    },
+    "ban": {
+      "name": "封鎖",
+      "description": "從伺服器封鎖一位或多位使用者",
+      "parameters": {
+        "user": {
+          "name": "使用者",
+          "description": "要封鎖的使用者（可在表單中新增更多）"
+        }
+      }
+    },
+    "kick": {
+      "name": "踢出",
+      "description": "將一位或多位成員踢出伺服器",
+      "parameters": {
+        "user": {
+          "name": "使用者",
+          "description": "要踢出的使用者（可在表單中新增更多）"
+        }
+      }
+    },
+    "mute": {
+      "name": "禁言",
+      "description": "對一位或多位成員執行逾時（禁言）",
+      "parameters": {
+        "user": {
+          "name": "使用者",
+          "description": "要禁言的使用者（可在表單中新增更多）"
+        }
+      }
+    },
+    "warn": {
+      "name": "警告",
+      "description": "警告一位或多位使用者",
+      "parameters": {
+        "user": {
+          "name": "使用者",
+          "description": "要警告的使用者（可在表單中新增更多）"
+        }
+      }
+    },
+    "interserver": {
+      "name": "跨伺服器",
+      "description": "管理跨伺服器訊息"
+    },
+    "interserver report": {
+      "name": "檢舉",
+      "description": "向審核團隊檢舉一則跨伺服器訊息"
+    },
+    "interserver info": {
+      "name": "資訊",
+      "description": "取得跨伺服器訊息的資訊"
+    }
+  }
+}

@@ -1,0 +1,254 @@
+{
+  "common": {
+    "parameters": {
+      "incognito": {
+        "name": "gizli",
+        "description": "Yanıtı yalnızca sana göster"
+      },
+      "user": {
+        "name": "kullanıcı",
+        "description": "İlgili kullanıcı"
+      },
+      "case": {
+        "name": "vaka",
+        "description": "İsteğe bağlı: bir vakayı referansıyla doğrudan aç (ör. A7F2K9)"
+      },
+      "message_id": {
+        "name": "mesaj-kimliği",
+        "description": "Mesaj kimliği (F6ZEU3VS gibi Moddy kimliği veya Discord kimliği)"
+      }
+    }
+  },
+  "context_menus": {
+    "Save Message": {
+      "name": "Mesajı kaydet"
+    },
+    "Get Emojis": {
+      "name": "Emojileri al"
+    },
+    "Translate": {
+      "name": "Çevir"
+    },
+    "AI text tools": {
+      "name": "Yapay zeka metin araçları"
+    }
+  },
+  "commands": {
+    "ping": {
+      "name": "ping",
+      "description": "Botun gecikmesini ve durumunu gösterir"
+    },
+    "user": {
+      "name": "kullanıcı",
+      "description": "Bir Discord kullanıcısı hakkında ayrıntılı bilgi gösterir",
+      "parameters": {
+        "user": {
+          "name": "kullanıcı",
+          "description": "Bilgisi görüntülenecek kullanıcı"
+        }
+      }
+    },
+    "avatar": {
+      "name": "avatar",
+      "description": "Bir kullanıcının avatarını gösterir",
+      "parameters": {
+        "user": {
+          "name": "kullanıcı",
+          "description": "Avatarını görmek istediğin kullanıcı"
+        }
+      }
+    },
+    "banner": {
+      "name": "banner",
+      "description": "Bir kullanıcının bannerını gösterir",
+      "parameters": {
+        "user": {
+          "name": "kullanıcı",
+          "description": "Bannerını görmek istediğin kullanıcı"
+        }
+      }
+    },
+    "emoji": {
+      "name": "emoji",
+      "description": "Bir Discord emojisi hakkında bilgi gösterir",
+      "parameters": {
+        "emoji": {
+          "name": "emoji",
+          "description": "Bilgisi görüntülenecek emoji"
+        }
+      }
+    },
+    "roll": {
+      "name": "zar",
+      "description": "Rastgele bir zar atar",
+      "parameters": {
+        "max": {
+          "name": "maks",
+          "description": "Zarın en yüksek değeri (isteğe bağlı, varsayılan 6)"
+        }
+      }
+    },
+    "invite": {
+      "name": "davet",
+      "description": "Bir Discord daveti hakkında bilgi gösterir",
+      "parameters": {
+        "invite_code": {
+          "name": "davet-kodu",
+          "description": "Discord davet kodu veya bağlantısı"
+        }
+      }
+    },
+    "webhook": {
+      "name": "webhook",
+      "description": "Discord webhooklarını incele ve yönet",
+      "parameters": {
+        "webhook": {
+          "name": "webhook",
+          "description": "Webhook URL'si veya ID/Token"
+        }
+      }
+    },
+    "translate": {
+      "name": "çevir",
+      "description": "Bir metni başka bir dile çevirir",
+      "parameters": {
+        "text": {
+          "name": "metin",
+          "description": "Çevrilecek metin"
+        },
+        "to": {
+          "name": "hedef",
+          "description": "Hedef dil (isteğe bağlı, varsayılan olarak Discord dilin)"
+        }
+      }
+    },
+    "library": {
+      "name": "kütüphane",
+      "description": "Kaydettiğin mesaj kütüphaneni görüntüle"
+    },
+    "reminder-add": {
+      "name": "hatırlatıcı-ekle",
+      "description": "Yeni bir hatırlatıcı ekler",
+      "parameters": {
+        "message": {
+          "name": "mesaj",
+          "description": "Sana neyi hatırlatayım?"
+        },
+        "time": {
+          "name": "zaman",
+          "description": "Ne zaman hatırlatılacak (ör. 1h30m, 2d, yarın 15:00)"
+        },
+        "send_here": {
+          "name": "burada-gönder",
+          "description": "Hatırlatıcıyı DM yerine bu kanalda gönder"
+        }
+      }
+    },
+    "reminders": {
+      "name": "hatırlatıcılar",
+      "description": "Hatırlatıcılarını yönet"
+    },
+    "preferences": {
+      "name": "tercihler",
+      "description": "Kişisel tercihlerini yönet"
+    },
+    "moddy": {
+      "name": "moddy",
+      "description": "Moddy hakkında daha fazla bilgi edin"
+    },
+    "subscription": {
+      "name": "abonelik",
+      "description": "Moddy aboneliğinin durumunu görüntüle"
+    },
+    "mycases": {
+      "name": "vakalarım",
+      "description": "Tüm sunuculardaki moderasyon vakalarını incele"
+    },
+    "fix": {
+      "name": "düzelt",
+      "description": "Bir metnin yazım ve dil bilgisini düzeltir"
+    },
+    "rephrase": {
+      "name": "yeniden-yaz",
+      "description": "Bir metni seçtiğin üslupla yeniden yazar"
+    },
+    "summarize": {
+      "name": "özetle",
+      "description": "Bir metni özetler"
+    },
+    "config": {
+      "name": "yapılandır",
+      "description": "Sunucu modüllerini yapılandır"
+    },
+    "cases": {
+      "name": "vakalar",
+      "description": "Bu sunucuda oluşturulan moderasyon vakalarını incele"
+    },
+    "clear-saved-roles": {
+      "name": "kayıtlı-rolleri-temizle",
+      "description": "Sunucudan ayrılan bir kullanıcının kayıtlı rollerini temizler",
+      "parameters": {
+        "user": {
+          "name": "kullanıcı",
+          "description": "Kayıtlı rolleri temizlenecek kullanıcı"
+        }
+      }
+    },
+    "view-saved-roles": {
+      "name": "kayıtlı-rolleri-gör",
+      "description": "Bu sunucuda kayıtlı rolleri olan tüm kullanıcıları gösterir"
+    },
+    "ban": {
+      "name": "yasakla",
+      "description": "Bir veya daha fazla kullanıcıyı sunucudan yasaklar",
+      "parameters": {
+        "user": {
+          "name": "kullanıcı",
+          "description": "Yasaklanacak kullanıcı (formda başkalarını da ekleyebilirsin)"
+        }
+      }
+    },
+    "kick": {
+      "name": "at",
+      "description": "Bir veya daha fazla üyeyi sunucudan atar",
+      "parameters": {
+        "user": {
+          "name": "kullanıcı",
+          "description": "Atılacak kullanıcı (formda başkalarını da ekleyebilirsin)"
+        }
+      }
+    },
+    "mute": {
+      "name": "sustur",
+      "description": "Bir veya daha fazla üyeyi susturur (timeout)",
+      "parameters": {
+        "user": {
+          "name": "kullanıcı",
+          "description": "Susturulacak kullanıcı (formda başkalarını da ekleyebilirsin)"
+        }
+      }
+    },
+    "warn": {
+      "name": "uyar",
+      "description": "Bir veya daha fazla kullanıcıyı uyarır",
+      "parameters": {
+        "user": {
+          "name": "kullanıcı",
+          "description": "Uyarılacak kullanıcı (formda başkalarını da ekleyebilirsin)"
+        }
+      }
+    },
+    "interserver": {
+      "name": "sunucularası",
+      "description": "Sunucular arası mesajları yönet"
+    },
+    "interserver report": {
+      "name": "bildir",
+      "description": "Sunucular arası bir mesajı moderasyon ekibine bildirir"
+    },
+    "interserver info": {
+      "name": "bilgi",
+      "description": "Sunucular arası bir mesaj hakkında bilgi verir"
+    }
+  }
+}

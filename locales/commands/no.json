@@ -1,0 +1,254 @@
+{
+  "common": {
+    "parameters": {
+      "incognito": {
+        "name": "skjult",
+        "description": "Vis svaret kun for deg"
+      },
+      "user": {
+        "name": "bruker",
+        "description": "Den aktuelle brukeren"
+      },
+      "case": {
+        "name": "sak",
+        "description": "Valgfritt: åpne en bestemt sak via referansen (f.eks. A7F2K9)"
+      },
+      "message_id": {
+        "name": "melding-id",
+        "description": "Meldingens ID (Moddy-ID som F6ZEU3VS eller Discord-ID)"
+      }
+    }
+  },
+  "context_menus": {
+    "Save Message": {
+      "name": "Lagre melding"
+    },
+    "Get Emojis": {
+      "name": "Hent emojier"
+    },
+    "Translate": {
+      "name": "Oversett"
+    },
+    "AI text tools": {
+      "name": "KI-tekstverktøy"
+    }
+  },
+  "commands": {
+    "ping": {
+      "name": "ping",
+      "description": "Viser botens svartid og status"
+    },
+    "user": {
+      "name": "bruker",
+      "description": "Viser detaljert informasjon om en Discord-bruker",
+      "parameters": {
+        "user": {
+          "name": "bruker",
+          "description": "Brukeren som skal slås opp"
+        }
+      }
+    },
+    "avatar": {
+      "name": "avatar",
+      "description": "Viser avataren til en bruker",
+      "parameters": {
+        "user": {
+          "name": "bruker",
+          "description": "Brukeren du vil se avataren til"
+        }
+      }
+    },
+    "banner": {
+      "name": "banner",
+      "description": "Viser banneret til en bruker",
+      "parameters": {
+        "user": {
+          "name": "bruker",
+          "description": "Brukeren du vil se banneret til"
+        }
+      }
+    },
+    "emoji": {
+      "name": "emoji",
+      "description": "Viser informasjon om en Discord-emoji",
+      "parameters": {
+        "emoji": {
+          "name": "emoji",
+          "description": "Emojien som skal slås opp"
+        }
+      }
+    },
+    "roll": {
+      "name": "terning",
+      "description": "Kaster en tilfeldig terning",
+      "parameters": {
+        "max": {
+          "name": "maks",
+          "description": "Terningens høyeste verdi (valgfritt, standard 6)"
+        }
+      }
+    },
+    "invite": {
+      "name": "invitasjon",
+      "description": "Viser informasjon om en Discord-invitasjon",
+      "parameters": {
+        "invite_code": {
+          "name": "invitasjonskode",
+          "description": "Discord-invitasjonskode eller lenke"
+        }
+      }
+    },
+    "webhook": {
+      "name": "webhook",
+      "description": "Undersøk og administrer Discord-webhooks",
+      "parameters": {
+        "webhook": {
+          "name": "webhook",
+          "description": "Webhook-URL eller ID/Token"
+        }
+      }
+    },
+    "translate": {
+      "name": "oversett",
+      "description": "Oversetter tekst til et annet språk",
+      "parameters": {
+        "text": {
+          "name": "tekst",
+          "description": "Teksten som skal oversettes"
+        },
+        "to": {
+          "name": "til",
+          "description": "Målspråk (valgfritt, Discord-språket ditt som standard)"
+        }
+      }
+    },
+    "library": {
+      "name": "bibliotek",
+      "description": "Se biblioteket med lagrede meldinger"
+    },
+    "reminder-add": {
+      "name": "påminnelse-legg-til",
+      "description": "Legger til en ny påminnelse",
+      "parameters": {
+        "message": {
+          "name": "melding",
+          "description": "Hva skal jeg minne deg om?"
+        },
+        "time": {
+          "name": "tid",
+          "description": "Når du skal minnes (f.eks. 1h30m, 2d, i morgen 15:00)"
+        },
+        "send_here": {
+          "name": "send-her",
+          "description": "Send påminnelsen i denne kanalen i stedet for DM"
+        }
+      }
+    },
+    "reminders": {
+      "name": "påminnelser",
+      "description": "Administrer påminnelsene dine"
+    },
+    "preferences": {
+      "name": "innstillinger",
+      "description": "Administrer dine personlige innstillinger"
+    },
+    "moddy": {
+      "name": "moddy",
+      "description": "Lær mer om Moddy"
+    },
+    "subscription": {
+      "name": "abonnement",
+      "description": "Se statusen på Moddy-abonnementet ditt"
+    },
+    "mycases": {
+      "name": "mine-saker",
+      "description": "Bla gjennom moderasjonssakene dine på alle servere"
+    },
+    "fix": {
+      "name": "rett",
+      "description": "Retter staving og grammatikk i en tekst"
+    },
+    "rephrase": {
+      "name": "omformuler",
+      "description": "Omformulerer en tekst i stilen du velger"
+    },
+    "summarize": {
+      "name": "oppsummer",
+      "description": "Oppsummerer en tekst"
+    },
+    "config": {
+      "name": "konfigurer",
+      "description": "Konfigurer serverens moduler"
+    },
+    "cases": {
+      "name": "saker",
+      "description": "Bla gjennom moderasjonssaker opprettet på denne serveren"
+    },
+    "clear-saved-roles": {
+      "name": "tøm-lagrede-roller",
+      "description": "Tømmer lagrede roller for en bruker som har forlatt serveren",
+      "parameters": {
+        "user": {
+          "name": "bruker",
+          "description": "Brukeren som skal få lagrede roller tømt"
+        }
+      }
+    },
+    "view-saved-roles": {
+      "name": "vis-lagrede-roller",
+      "description": "Viser alle brukere med lagrede roller på denne serveren"
+    },
+    "ban": {
+      "name": "utesteng",
+      "description": "Utestenger en eller flere brukere fra serveren",
+      "parameters": {
+        "user": {
+          "name": "bruker",
+          "description": "Bruker som skal utestenges (du kan legge til flere i skjemaet)"
+        }
+      }
+    },
+    "kick": {
+      "name": "kast-ut",
+      "description": "Kaster ut ett eller flere medlemmer fra serveren",
+      "parameters": {
+        "user": {
+          "name": "bruker",
+          "description": "Bruker som skal kastes ut (du kan legge til flere i skjemaet)"
+        }
+      }
+    },
+    "mute": {
+      "name": "demp",
+      "description": "Gir ett eller flere medlemmer timeout (demping)",
+      "parameters": {
+        "user": {
+          "name": "bruker",
+          "description": "Bruker som skal dempes (du kan legge til flere i skjemaet)"
+        }
+      }
+    },
+    "warn": {
+      "name": "advar",
+      "description": "Advarer en eller flere brukere",
+      "parameters": {
+        "user": {
+          "name": "bruker",
+          "description": "Bruker som skal advares (du kan legge til flere i skjemaet)"
+        }
+      }
+    },
+    "interserver": {
+      "name": "interserver",
+      "description": "Administrer meldinger mellom servere"
+    },
+    "interserver report": {
+      "name": "rapporter",
+      "description": "Rapporterer en melding mellom servere til moderasjonsteamet"
+    },
+    "interserver info": {
+      "name": "info",
+      "description": "Gir informasjon om en melding mellom servere"
+    }
+  }
+}
