@@ -154,6 +154,13 @@ ON CONFLICT (scope, key, type) DO UPDATE SET daily_limit = EXCLUDED.daily_limit;
 | `automod_embed` | openai/embed | — | ❌ |
 | `automod_decision` | openai/chat | guild | ✅ |
 | `automod_rules_check` | openai/chat | guild | ✅ |
+| `text_fix` | openai/chat (`gpt-4.1-nano`) | user + guild | ✅ |
+| `text_rephrase` | openai/chat (`gpt-4.1-mini`) | user + guild | ✅ |
+| `text_summarize` | openai/chat (`gpt-4.1-mini`) | user + guild | ✅ |
+
+> `text_*` calls come from `cogs/text_tools.py` (`/fix`, `/rephrase`, `/summarize`).
+> The guild target is only added when the command runs inside a server — in DMs
+> and user-installed contexts only the user bucket is debited.
 
 ---
 
