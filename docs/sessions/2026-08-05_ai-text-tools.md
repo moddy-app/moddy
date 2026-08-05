@@ -16,9 +16,10 @@ command (opening a Modal V2) and as a message context menu:
 - `/rephrase` adds a style select (`neutral`, `professional`, `formal`,
   `friendly`, `casual`, `concise`); `/summarize` adds a length select
   (`short`, `medium`, `bullets`).
-- `Fix text` corrects the target message directly; `Rephrase text` and
-  `Summarize text` open their modal pre-filled with the message content so the
-  user can still pick a preset.
+- Uniform entry-point behaviour: the slash command (no argument) opens an empty
+  modal, the context menu opens the same modal pre-filled with the message
+  content, so the user can always edit the text and pick a preset before the
+  call is made.
 - Output is a Components V2 card ending with
   `-# <:text:…> Corrected by **ChatGPT**` (localized per command).
 

@@ -19,9 +19,15 @@ piece of text through OpenAI:
 Each one also exists as a **message context menu**: `Fix text`, `Rephrase text`,
 `Summarize text`.
 
-- `Fix text` corrects the target message straight away (ephemeral).
-- `Rephrase text` / `Summarize text` open their modal **pre-filled** with the
-  message content, so the user still picks a style / a length.
+The behaviour is uniform across the three commands:
+
+| Entry point | Result |
+|---|---|
+| Slash command (no argument) | Opens an **empty** modal |
+| Message context menu | Opens the **same modal, pre-filled** with the message content (always ephemeral) |
+
+Pre-filling rather than running straight away means the user can still edit the
+text and pick a style / a length before the call is made.
 
 ---
 

@@ -183,7 +183,8 @@ class _BaseTextModal(BaseModal):
 class FixModal(_BaseTextModal):
     """Modal V2 collecting the text to correct."""
 
-    def __init__(self, cog: "TextTools", *, locale: str, ephemeral: bool):
+    def __init__(self, cog: "TextTools", *, locale: str, ephemeral: bool,
+                 default: Optional[str] = None):
         super().__init__(
             cog,
             locale=locale,
@@ -192,6 +193,7 @@ class FixModal(_BaseTextModal):
             label_key="commands.fix.modal.label",
             desc_key="commands.fix.modal.description",
             placeholder_key="commands.fix.modal.placeholder",
+            default=default,
         )
         self.add_notice()
 
@@ -651,11 +653,14 @@ class TextTools(commands.Cog):
         return content
 
     async def fix_context_menu(self, interaction: discord.Interaction, message: discord.Message):
-        """Corrects an existing message directly (always ephemeral)."""
+        """Opens the fix modal pre-filled with the message, so the user can edit it first."""
         content = await self._menu_content(interaction, message)
         if content is None:
             return
-        await self.run_fix(interaction, content, ephemeral=True)
+        locale = i18n.get_user_locale(interaction)
+        await interaction.response.send_modal(
+            FixModal(self, locale=locale, ephemeral=True, default=content)
+        )
 
     async def rephrase_context_menu(self, interaction: discord.Interaction,
                                     message: discord.Message):
