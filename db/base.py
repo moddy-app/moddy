@@ -1077,6 +1077,17 @@ class ModdyDatabase(
                 ("guild",  "automod_situation",      "default", -1),
                 ("global", "automod_situation",      "default", -1),
                 ("guild",  "automod_rules_check",    "default", -1),
+                # AI text tools (/fix, /rephrase, /summarize) — per-user and
+                # per-guild buckets, unlimited by default.
+                ("user",   "text_fix",        "default", -1),
+                ("guild",  "text_fix",        "default", -1),
+                ("global", "text_fix",        "default", -1),
+                ("user",   "text_rephrase",   "default", -1),
+                ("guild",  "text_rephrase",   "default", -1),
+                ("global", "text_rephrase",   "default", -1),
+                ("user",   "text_summarize",  "default", -1),
+                ("guild",  "text_summarize",  "default", -1),
+                ("global", "text_summarize",  "default", -1),
             ]:
                 await conn.execute(
                     """

@@ -33,6 +33,8 @@ class GatewayConfig:
         ("openai", "text-embedding-3-small", "input"): 0.02,
         ("openai", "gpt-4.1-nano", "input"): 0.10,
         ("openai", "gpt-4.1-nano", "output"): 0.40,
+        ("openai", "gpt-4.1-mini", "input"): 0.40,
+        ("openai", "gpt-4.1-mini", "output"): 1.60,
         ("openai", "gpt-4o-mini", "input"): 0.15,
         ("openai", "gpt-4o-mini", "output"): 0.60,
     })

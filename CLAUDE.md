@@ -40,6 +40,7 @@ moddy/
 │   ├── reminder.py            #   /reminder command
 │   ├── saved_messages.py      #   Message bookmarking
 │   ├── translate.py           #   /translate (DeepL)
+│   ├── text_tools.py          #   /fix, /rephrase, /summarize (OpenAI, Modal V2 + context menus)
 │   ├── webhook.py             #   Webhook management
 │   ├── social_notifications.py #  Social notifications dispatch + feeds service wiring
 │   ├── interserver_commands.py #  Inter-server commands
@@ -278,6 +279,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 |---|---|
 | [docs/DESIGN.md](docs/DESIGN.md) | Any UI/UX work, configuration panels, interactive components |
 | [docs/COMPONENTS_V2.md](docs/COMPONENTS_V2.md) | Any code that creates Discord UI elements |
+| [docs/MODALS_V2.md](docs/MODALS_V2.md) | Any code that builds a Modal (Label / TextDisplay / Select in modals) |
 | [docs/PERSISTENT_VIEWS.md](docs/PERSISTENT_VIEWS.md) | Any view that should survive a bot restart (most views) |
 | [docs/ERROR_HANDLING.md](docs/ERROR_HANDLING.md) | Any code with Views, Modals, or error handling |
 | [docs/EMOJIS.md](docs/EMOJIS.md) | When you need to use an emoji/icon |
@@ -286,6 +288,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | Document | When to Read |
 |---|---|
 | [docs/COMMANDS.md](docs/COMMANDS.md) | Creating or modifying slash commands |
+| [docs/TEXT_TOOLS.md](docs/TEXT_TOOLS.md) | AI text tools — `/fix`, `/rephrase`, `/summarize` (models, presets, mention stripping) |
 | [docs/MODULE_SYSTEM.md](docs/MODULE_SYSTEM.md) | Creating or modifying server modules |
 | [docs/AUTOMOD.md](docs/AUTOMOD.md) | AI automod — detection pipeline, nano decider, scalable features, rules safety check |
 | [docs/STAFF_SYSTEM.md](docs/STAFF_SYSTEM.md) | Staff/dev commands, permissions, roles |

@@ -58,6 +58,87 @@
       },
       "deepl_attribution": "Traduit par **DeepL**"
     },
+    "text_tools": {
+      "ai_notice": "-# Ton texte est envoyé à OpenAI (ChatGPT) pour être traité. Les mentions sont retirées de la réponse.",
+      "errors": {
+        "no_text": "Aucun texte fourni.",
+        "too_long": "Le texte est trop long (maximum {limit} caractères).",
+        "no_content": "Ce message n'a aucun texte à traiter.",
+        "rate_limit": "Limite atteinte ! Maximum 10 utilisations par minute. Réessaie dans {seconds} secondes.",
+        "unavailable": "L'IA est indisponible pour le moment. Réessaie plus tard.",
+        "api_error": "Impossible de contacter l'IA. Réessaie plus tard."
+      }
+    },
+    "fix": {
+      "description": "Corrige l'orthographe et la grammaire d'un texte",
+      "params": {
+        "incognito": "Rendre la réponse visible uniquement pour toi"
+      },
+      "working": "Correction en cours...",
+      "modal": {
+        "title": "Corriger un texte",
+        "label": "Texte à corriger",
+        "description": "Orthographe, grammaire, ponctuation et accents.",
+        "placeholder": "Colle ici le texte à corriger..."
+      },
+      "result": {
+        "title": "### <:text:1519791921462120601> Texte corrigé",
+        "footer": "-# <:text:1519791921462120601> Corrigé par **ChatGPT**"
+      }
+    },
+    "rephrase": {
+      "description": "Reformule un texte dans le style de ton choix",
+      "params": {
+        "incognito": "Rendre la réponse visible uniquement pour toi"
+      },
+      "working": "Reformulation en cours...",
+      "modal": {
+        "title": "Reformuler un texte",
+        "label": "Texte à reformuler",
+        "description": "Le sens reste identique, seule la formulation change.",
+        "placeholder": "Colle ici le texte à reformuler...",
+        "style": "Style de reformulation",
+        "style_placeholder": "Choisis un style"
+      },
+      "styles": {
+        "neutral": "Normal",
+        "professional": "Professionnel",
+        "formal": "Formel",
+        "friendly": "Amical",
+        "casual": "Décontracté",
+        "concise": "Concis"
+      },
+      "result": {
+        "title": "### <:edit:1519795936568676383> Texte reformulé",
+        "style": "-# Style : **{style}**",
+        "footer": "-# <:text:1519791921462120601> Reformulé par **ChatGPT**"
+      }
+    },
+    "summarize": {
+      "description": "Résume un texte",
+      "params": {
+        "incognito": "Rendre la réponse visible uniquement pour toi"
+      },
+      "working": "Résumé en cours...",
+      "modal": {
+        "title": "Résumer un texte",
+        "label": "Texte à résumer",
+        "description": "Garde uniquement les points essentiels.",
+        "placeholder": "Colle ici le texte à résumer...",
+        "length": "Longueur du résumé",
+        "length_placeholder": "Choisis une longueur"
+      },
+      "lengths": {
+        "short": "Court (1 à 2 phrases)",
+        "medium": "Moyen (un paragraphe)",
+        "bullets": "Points clés (liste)"
+      },
+      "result": {
+        "title": "### <:note:1519790932663468184> Résumé",
+        "length": "-# Longueur : **{length}**",
+        "footer": "-# <:text:1519791921462120601> Résumé par **ChatGPT**"
+      }
+    },
     "avatar": {
       "description": "Affiche l'avatar d'un utilisateur",
       "params": {

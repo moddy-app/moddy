@@ -58,6 +58,87 @@
       },
       "deepl_attribution": "Translated by **DeepL**"
     },
+    "text_tools": {
+      "ai_notice": "-# Your text is sent to OpenAI (ChatGPT) to be processed. Mentions are stripped from the result.",
+      "errors": {
+        "no_text": "No text provided.",
+        "too_long": "The text is too long (maximum {limit} characters).",
+        "no_content": "This message has no text to process.",
+        "rate_limit": "Limit reached! Maximum 10 uses per minute. Try again in {seconds} seconds.",
+        "unavailable": "The AI is unavailable right now. Try again later.",
+        "api_error": "Could not reach the AI. Try again later."
+      }
+    },
+    "fix": {
+      "description": "Fix the spelling and grammar of a text",
+      "params": {
+        "incognito": "Make response visible only to you"
+      },
+      "working": "Fixing your text...",
+      "modal": {
+        "title": "Fix a text",
+        "label": "Text to fix",
+        "description": "Spelling, grammar, punctuation and accents.",
+        "placeholder": "Paste the text to fix here..."
+      },
+      "result": {
+        "title": "### <:text:1519791921462120601> Corrected text",
+        "footer": "-# <:text:1519791921462120601> Corrected by **ChatGPT**"
+      }
+    },
+    "rephrase": {
+      "description": "Rephrase a text in the style of your choice",
+      "params": {
+        "incognito": "Make response visible only to you"
+      },
+      "working": "Rephrasing your text...",
+      "modal": {
+        "title": "Rephrase a text",
+        "label": "Text to rephrase",
+        "description": "The meaning stays the same, only the wording changes.",
+        "placeholder": "Paste the text to rephrase here...",
+        "style": "Rephrasing style",
+        "style_placeholder": "Pick a style"
+      },
+      "styles": {
+        "neutral": "Normal",
+        "professional": "Professional",
+        "formal": "Formal",
+        "friendly": "Friendly",
+        "casual": "Casual",
+        "concise": "Concise"
+      },
+      "result": {
+        "title": "### <:edit:1519795936568676383> Rephrased text",
+        "style": "-# Style: **{style}**",
+        "footer": "-# <:text:1519791921462120601> Rephrased by **ChatGPT**"
+      }
+    },
+    "summarize": {
+      "description": "Summarize a text",
+      "params": {
+        "incognito": "Make response visible only to you"
+      },
+      "working": "Summarizing your text...",
+      "modal": {
+        "title": "Summarize a text",
+        "label": "Text to summarize",
+        "description": "Keeps only what matters.",
+        "placeholder": "Paste the text to summarize here...",
+        "length": "Summary length",
+        "length_placeholder": "Pick a length"
+      },
+      "lengths": {
+        "short": "Short (1 to 2 sentences)",
+        "medium": "Medium (one paragraph)",
+        "bullets": "Key points (list)"
+      },
+      "result": {
+        "title": "### <:note:1519790932663468184> Summary",
+        "length": "-# Length: **{length}**",
+        "footer": "-# <:text:1519791921462120601> Summarized by **ChatGPT**"
+      }
+    },
     "avatar": {
       "description": "Display a user's avatar",
       "params": {
