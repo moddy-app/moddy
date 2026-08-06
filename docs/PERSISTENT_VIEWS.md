@@ -1493,3 +1493,37 @@ view keeps `timeout=300`; it is not added to `_collect_persistent_view_classes()
 This is a considered exclusion, not an oversight — flagging explicitly in
 case a future pass assumes every view touched by this migration ended up
 persistent.
+
+### Step 12 — `AutomodAIConfigView` (`AutomodAIPrecedentsView` deliberately excluded)
+
+The largest panel (14 children). Same `check_guild_perms` +
+fresh-instance-per-callback + `is_shell` pattern as every prior guild config
+panel, applied across the module toggle, the 3-way options select, notify
+channel, severity, max action, language, exempt roles/channels, and the
+conditionally-shown "view precedents" button (only rendered when a
+precedent count is known and non-zero — needed the same `is_shell` escape
+hatch as Step 8's save/cancel/delete buttons).
+
+`IndicationsModal` previously took the whole `parent: AutomodAIConfigView`
+and wrote into `parent.working_config` / called
+`parent._build_view()` / resent `view=parent` directly — the same
+mutate-and-resend-self hazard as Step 8's `StarboardConfigView` modals, just
+on a bigger panel. Fixed the same way: the modal now takes the working_config
+draft as a plain dict plus the view's `_rebuild` bound method (which,
+notably, doesn't read any `self` state itself — it only closes over
+`interaction` — so handing it out from a possibly-shared `self` is safe).
+
+`AutomodAIPrecedentsView` (opened from the "view precedents" button):
+**not** made persistent, matching `AdaptiveSlowmodeChannelConfigView` from
+Step 11. Its rows are cheap to re-fetch (Appendix B.1.d already says so),
+but it is only ever reached via a live click from an already-open
+`AutomodAIConfigView` — never independently, never registered — so there is
+no restart-survival requirement for it specifically; a dead restart just
+means the user re-clicks "view precedents" from the (now-refreshed) parent
+panel. Its `parent=None` default (Appendix B.1.b: "already optional") and
+the existing DB-rebuild fallback in `on_back` were left as-is — they already
+implement B.1.b's proposed fix and didn't need touching. `on_view_precedents`
+was updated to stop passing `parent=self` at all, since the callback that
+opens it already only has `interaction`-derived state to hand over (there is
+no live `self` worth keeping a reference to once the auth model no longer
+depends on it).
