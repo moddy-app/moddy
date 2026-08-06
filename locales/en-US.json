@@ -165,7 +165,7 @@
         "user": "The user whose banner you want to see",
         "incognito": "Make response visible only to you"
       },
-      "loading": "<a:loading:1395047662092550194> **Fetching banner...**",
+      "loading": "<a:spinner:1534857169667883078> **Fetching banner...**",
       "view": {
         "title": "**{name}**'s Banner{badge}",
         "download": "Download"
@@ -181,7 +181,7 @@
         "emoji": "The emoji to lookup",
         "incognito": "Make response visible only to you"
       },
-      "loading": "<a:loading:1395047662092550194> **Fetching emoji information...**",
+      "loading": "<a:spinner:1534857169667883078> **Fetching emoji information...**",
       "view": {
         "title": "Emoji **{name}**",
         "name": "Name",
@@ -194,7 +194,7 @@
         "default_emoji": "<:undone:1519800313324896327> **Default Emoji**\n\nThis command only works with custom Discord emojis.\nDefault Unicode emojis like {emoji} cannot be analyzed."
       },
       "context_menu": {
-        "loading": "<a:loading:1395047662092550194> **Extracting {count} emoji(s) from message...**",
+        "loading": "<a:spinner:1534857169667883078> **Extracting {count} emoji(s) from message...**",
         "no_emojis": "<:undone:1519800313324896327> **No Custom Emojis**\n\nThis message doesn't contain any custom Discord emojis.",
         "navigation": "Emoji {current} of {total}",
         "author_only": "Only the command author can use these navigation buttons."
@@ -218,7 +218,7 @@
         "invite_code": "The Discord invite code (e.g., 'discord' or 'https://discord.gg/discord')",
         "incognito": "Make response visible only to you"
       },
-      "loading": "<a:loading:1395047662092550194> **Fetching invite information...**",
+      "loading": "<a:spinner:1534857169667883078> **Fetching invite information...**",
       "view": {
         "guild": {
           "title": "Invite Information",
@@ -316,7 +316,7 @@
         "user": "The user to lookup (defaults to yourself)",
         "incognito": "Make response visible only to you"
       },
-      "loading": "<a:loading:1395047662092550194> **Fetching user information...**",
+      "loading": "<a:spinner:1534857169667883078> **Fetching user information...**",
       "view": {
         "title": "### <:user:1519798911517196511> Information about **{name}**{badge}",
         "display_name": "Display name",
@@ -495,7 +495,7 @@
         "webhook": "Webhook URL or ID/Token",
         "incognito": "Make response visible only to you"
       },
-      "loading": "<a:loading:1395047662092550194> **Fetching webhook information...**",
+      "loading": "<a:spinner:1534857169667883078> **Fetching webhook information...**",
       "buttons": {
         "delete": "Delete",
         "edit": "Edit",
@@ -841,7 +841,7 @@
     }
   },
   "common": {
-    "loading": "<a:loading:1455219844080336907> Loading...",
+    "loading": "<a:spinner:1534857169667883078> Loading...",
     "success": "<:done:1519800188925902881> Success!",
     "error": "<:undone:1519800313324896327> Error",
     "info": "<:info:1519793991045091388> Information",
@@ -1412,7 +1412,7 @@
           "empty": "No rules set — the AI uses reasonable moderation standards.",
           "modal_label": "Server rules",
           "modal_placeholder": "Describe your server's rules (respect, no insults…).",
-          "checking": "<a:loading:1455219844080336907> Verifying the rules with the AI…",
+          "checking": "<a:spinner:1534857169667883078> Verifying the rules with the AI…",
           "error_unsafe": "<:error:1519790252594827264> Rules rejected: they look like an attempt to manipulate the AI.\n-# Reason: {reason}",
           "error_too_long": "<:error:1519790252594827264> The rules are too long (max 3000 characters).",
           "error_unavailable": "<:warning:1519789903100121139> Unable to verify the rules right now (AI service unavailable). Try again later.",
