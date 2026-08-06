@@ -351,6 +351,57 @@ CASE_TYPE_EMOJI_DEFAULT = INFO
 
 
 # =============================================================================
+# STANDARD (DISCORD-PROVIDED) UNICODE EMOJI VALIDATION
+# =============================================================================
+# Used by modules (e.g. Starboard) that must only accept reactions/config
+# values among the Unicode emojis Discord itself provides — never a custom
+# guild emoji. `discord.PartialEmoji.is_unicode_emoji()` only tells us the
+# value isn't a `<:name:id>` custom emoji, it doesn't verify the string is
+# an actual emoji, so we range-check the codepoints ourselves.
+
+_STANDARD_EMOJI_UNICODE_RANGES = (
+    (0x1F300, 0x1FAFF),  # Misc pictographs, emoticons, transport, symbols & pictographs extended-A
+    (0x2600, 0x27BF),    # Misc symbols & dingbats
+    (0x2300, 0x23FF),    # Misc technical (⌚ ⏰ ⏳ …)
+    (0x2B00, 0x2BFF),    # Misc symbols & arrows (⭐ ⚡ ➡️ …)
+    (0x2190, 0x21FF),    # Arrows
+    (0x1F1E6, 0x1F1FF),  # Regional indicator symbols (used in flag sequences)
+)
+
+
+def _is_standard_emoji_codepoint(codepoint: int) -> bool:
+    return any(low <= codepoint <= high for low, high in _STANDARD_EMOJI_UNICODE_RANGES)
+
+
+def is_standard_discord_emoji(value: str) -> bool:
+    """Check that `value` is a single Discord-standard Unicode emoji.
+
+    Rejects custom/guild emojis (``<:name:id>``) and arbitrary text. Handles
+    the variation selector (``️``), flag sequences (pairs of regional
+    indicators), keycap sequences (``#``/``*``/digit + combining keycap) and
+    ZWJ sequences (e.g. family/profession emojis).
+    """
+    if not value:
+        return False
+
+    stripped = value.replace('️', '')  # variation selector-16
+
+    # Keycap sequence: 0-9 / # / * + combining enclosing keycap (U+20E3)
+    if len(stripped) == 2 and stripped[1] == '⃣' and (stripped[0].isdigit() or stripped[0] in '#*'):
+        return True
+
+    # Flag sequence: pair of regional indicator symbols
+    if len(stripped) == 2 and all(0x1F1E6 <= ord(c) <= 0x1F1FF for c in stripped):
+        return True
+
+    # Simple emoji or ZWJ sequence (ZWJ = U+200D, e.g. family/profession emojis)
+    for part in stripped.split('‍'):
+        if len(part) != 1 or not _is_standard_emoji_codepoint(ord(part)):
+            return False
+    return True
+
+
+# =============================================================================
 # VERIFICATION BADGE UTILITIES
 # =============================================================================
 

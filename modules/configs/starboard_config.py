@@ -10,9 +10,48 @@ import logging
 
 from utils.i18n import t
 from cogs.error_handler import BaseView, BaseModal
-from utils.emojis import STAR, REQUIRED_FIELDS, EDIT, BACK, SAVE, UNDONE, DELETE
+from utils.emojis import STAR, REQUIRED_FIELDS, EDIT, BACK, SAVE, UNDONE, DELETE, is_standard_discord_emoji
 
 logger = logging.getLogger('moddy.modules.starboard_config')
+
+
+class EmojiModal(BaseModal, title="Émoji de réaction"):
+    """Modal pour éditer l'émoji de réaction du starboard"""
+
+    def __init__(self, locale: str, current_value: str, callback_func):
+        super().__init__(timeout=300)
+        self.locale = locale
+        self.callback_func = callback_func
+
+        self.emoji_input = ui.TextInput(
+            label=t('modules.starboard.config.emoji.modal.label', locale=locale),
+            placeholder=t('modules.starboard.config.emoji.modal.placeholder', locale=locale),
+            default=current_value,
+            style=discord.TextStyle.short,
+            max_length=8,
+            required=True
+        )
+        self.add_item(self.emoji_input)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        value = self.emoji_input.value.strip()
+
+        partial_emoji = discord.PartialEmoji.from_str(value)
+        if partial_emoji.is_custom_emoji():
+            await interaction.response.send_message(
+                t('modules.starboard.config.emoji.modal.error_custom', locale=self.locale),
+                ephemeral=True
+            )
+            return
+
+        if not is_standard_discord_emoji(value):
+            await interaction.response.send_message(
+                t('modules.starboard.config.emoji.modal.error_invalid', locale=self.locale),
+                ephemeral=True
+            )
+            return
+
+        await self.callback_func(interaction, value)
 
 
 class ReactionCountModal(BaseModal, title="Nombre de réactions"):
@@ -143,6 +182,26 @@ class StarboardConfigView(BaseView):
 
         container.add_item(reaction_row)
 
+        # Reaction emoji configuration (standard Discord emojis only, no custom emoji)
+        container.add_item(ui.TextDisplay(
+            f"**{t('modules.starboard.config.emoji.section_title', locale=self.locale)}**\n"
+            f"-# {t('modules.starboard.config.emoji.section_description', locale=self.locale)}\n"
+            f"-# {t('modules.config.current_value', locale=self.locale)} {self.working_config['emoji']}"
+        ))
+
+        emoji_row = ui.ActionRow()
+
+        edit_emoji_btn = ui.Button(
+            label=t('modules.starboard.config.emoji.edit_button', locale=self.locale),
+            style=discord.ButtonStyle.primary,
+            emoji=discord.PartialEmoji.from_str(EDIT),
+            custom_id="edit_emoji"
+        )
+        edit_emoji_btn.callback = self.on_edit_emoji
+        emoji_row.add_item(edit_emoji_btn)
+
+        container.add_item(emoji_row)
+
         self.add_item(container)
 
         # Add action buttons at the bottom
@@ -230,6 +289,26 @@ class StarboardConfigView(BaseView):
     async def _on_reaction_count_edited(self, interaction: discord.Interaction, new_count: int):
         """Callback after reaction count edit"""
         self.working_config['reaction_count'] = new_count
+        self.has_changes = True
+        self._build_view()
+        await interaction.response.edit_message(view=self)
+
+    async def on_edit_emoji(self, interaction: discord.Interaction):
+        """Edit reaction emoji"""
+        if not await self.check_user(interaction):
+            return
+
+        modal = EmojiModal(
+            self.locale,
+            self.working_config['emoji'],
+            self._on_emoji_edited
+        )
+        modal.bot = self.bot  # Set bot for error handling
+        await interaction.response.send_modal(modal)
+
+    async def _on_emoji_edited(self, interaction: discord.Interaction, new_emoji: str):
+        """Callback after reaction emoji edit"""
+        self.working_config['emoji'] = new_emoji
         self.has_changes = True
         self._build_view()
         await interaction.response.edit_message(view=self)

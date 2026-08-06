@@ -1048,7 +1048,7 @@
         },
         "reaction_count": {
           "section_title": "Required reaction count",
-          "section_description": "Number of ⭐ reactions needed for a message to appear in the starboard",
+          "section_description": "Number of reactions needed for a message to appear in the starboard",
           "edit_button": "Edit threshold",
           "modal": {
             "label": "Reaction count",
@@ -1056,7 +1056,22 @@
             "error_range": "Reaction count must be between 1 and 100",
             "error_invalid": "Please enter a valid number"
           }
+        },
+        "emoji": {
+          "section_title": "Reaction emoji",
+          "section_description": "Standard Discord emoji to react with to trigger the starboard (custom emojis are not allowed)",
+          "edit_button": "Edit emoji",
+          "modal": {
+            "label": "Emoji",
+            "placeholder": "⭐",
+            "error_custom": "Custom emojis are not allowed, please choose a standard Discord emoji",
+            "error_invalid": "Invalid emoji, please enter a standard Discord emoji"
+          }
         }
+      },
+      "message": {
+        "title": "Starboard",
+        "jump_button": "Jump to message"
       }
     },
     "auto_role": {

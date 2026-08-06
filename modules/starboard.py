@@ -7,7 +7,11 @@ from typing import Dict, Any, Optional
 import logging
 
 from modules.module_manager import ModuleBase
-from utils.emojis import STAR, MESSAGE, TEXT
+from utils.emojis import (
+    STAR, is_standard_discord_emoji,
+    get_user_verification_badge, format_verification_badge,
+)
+from utils.i18n import t
 
 logger = logging.getLogger('moddy.modules.starboard')
 
@@ -15,8 +19,9 @@ logger = logging.getLogger('moddy.modules.starboard')
 class StarboardModule(ModuleBase):
     """
     Module de starboard (tableau d'honneur)
-    Envoie automatiquement les messages qui reçoivent un nombre X de réactions étoiles
-    dans un salon dédié avec le contenu, l'auteur, le nombre de réactions et le lien
+    Forward automatiquement les messages qui reçoivent un nombre X de réactions
+    (un émoji standard Discord, configurable) dans un salon dédié, avec un
+    compteur de réactions et un lien vers le message d'origine.
     """
 
     MODULE_ID = "starboard"
@@ -31,8 +36,8 @@ class StarboardModule(ModuleBase):
         self.channel_id: Optional[int] = None
 
         # Starboard configuration
-        self.reaction_count: int = 5  # Number of star reactions required
-        self.emoji: str = "⭐"  # Star emoji
+        self.reaction_count: int = 5  # Number of reactions required
+        self.emoji: str = "⭐"  # Standard Discord unicode emoji that triggers the starboard
 
         # Track sent starboard messages to update them in real-time
         # Format: {original_message_id: starboard_message_id}
@@ -82,9 +87,6 @@ class StarboardModule(ModuleBase):
             if not perms.send_messages:
                 return False, f"Je n'ai pas la permission d'envoyer des messages dans {channel.mention}"
 
-            if not perms.embed_links:
-                return False, f"Je n'ai pas la permission d'envoyer des embeds dans {channel.mention}"
-
         except Exception as e:
             return False, f"Erreur de validation du salon : {str(e)}"
 
@@ -92,6 +94,19 @@ class StarboardModule(ModuleBase):
         reaction_count = config_data.get('reaction_count', 5)
         if not isinstance(reaction_count, int) or reaction_count < 1 or reaction_count > 100:
             return False, "Le nombre de réactions doit être entre 1 et 100"
+
+        # Validate the reaction emoji: only standard Discord emojis are accepted,
+        # never a custom/guild emoji.
+        emoji = config_data.get('emoji', "⭐")
+        if not isinstance(emoji, str) or not emoji:
+            return False, "Un émoji de réaction est requis"
+
+        partial_emoji = discord.PartialEmoji.from_str(emoji)
+        if partial_emoji.is_custom_emoji():
+            return False, "Seuls les émojis standards de Discord sont autorisés (pas d'émoji personnalisé)"
+
+        if not is_standard_discord_emoji(emoji):
+            return False, "Émoji invalide, veuillez choisir un émoji standard de Discord"
 
         return True, None
 
@@ -111,8 +126,9 @@ class StarboardModule(ModuleBase):
         if not self.enabled or not self.channel_id:
             return
 
-        # Only track star emoji
-        if str(payload.emoji) != self.emoji:
+        # Only standard Discord emojis can trigger the starboard, and only the
+        # one configured for this server.
+        if payload.emoji.is_custom_emoji() or str(payload.emoji) != self.emoji:
             return
 
         try:
@@ -136,12 +152,8 @@ class StarboardModule(ModuleBase):
                 logger.warning(f"Message {payload.message_id} not found")
                 return
 
-            # Count star reactions
-            star_count = 0
-            for reaction in message.reactions:
-                if str(reaction.emoji) == self.emoji:
-                    star_count = reaction.count
-                    break
+            # Count reactions matching the configured emoji
+            star_count = self._count_reactions(message)
 
             # Check if we should send/update starboard entry
             if star_count >= self.reaction_count:
@@ -160,8 +172,7 @@ class StarboardModule(ModuleBase):
         if not self.enabled or not self.channel_id:
             return
 
-        # Only track star emoji
-        if str(payload.emoji) != self.emoji:
+        if payload.emoji.is_custom_emoji() or str(payload.emoji) != self.emoji:
             return
 
         # Check if this message has a starboard entry
@@ -184,12 +195,7 @@ class StarboardModule(ModuleBase):
             except discord.NotFound:
                 return
 
-            # Count star reactions
-            star_count = 0
-            for reaction in message.reactions:
-                if str(reaction.emoji) == self.emoji:
-                    star_count = reaction.count
-                    break
+            star_count = self._count_reactions(message)
 
             # Update or remove starboard entry
             if star_count >= self.reaction_count:
@@ -200,6 +206,68 @@ class StarboardModule(ModuleBase):
 
         except Exception as e:
             logger.error(f"Error updating starboard on reaction remove: {e}", exc_info=True)
+
+    def _count_reactions(self, message: discord.Message) -> int:
+        """Count how many times the configured (standard) emoji was used on this message"""
+        for reaction in message.reactions:
+            if not reaction.is_custom_emoji() and str(reaction.emoji) == self.emoji:
+                return reaction.count
+        return 0
+
+    async def _get_locale(self) -> str:
+        """Locale used for the starboard message's static UI strings (title, jump button)"""
+        try:
+            guild = self.bot.get_guild(self.guild_id)
+            return str(guild.preferred_locale) if guild and guild.preferred_locale else 'en-US'
+        except Exception:
+            return 'en-US'
+
+    async def _get_author_badge(self, author: discord.abc.User) -> str:
+        """Verification badge (hyperlinked) for the original message's author"""
+        try:
+            user_db_data = await self.bot.db.get_user(author.id)
+            moddy_attributes = user_db_data.get('attributes', {}) if user_db_data else {}
+        except Exception:
+            moddy_attributes = {}
+
+        public_flags_value = author.public_flags.value if hasattr(author, 'public_flags') else 0
+        badge_emoji, _org_names, _tier = get_user_verification_badge(
+            {'public_flags': public_flags_value}, moddy_attributes
+        )
+        return format_verification_badge(badge_emoji)
+
+    async def _build_starboard_view(self, message: discord.Message, star_count: int) -> discord.ui.LayoutView:
+        """Build the Components V2 card sent alongside the forwarded message"""
+        locale = await self._get_locale()
+        badge = await self._get_author_badge(message.author)
+
+        view = discord.ui.LayoutView(timeout=None)
+
+        view.add_item(discord.ui.TextDisplay(
+            f"### {STAR} {t('modules.starboard.message.title', locale=locale)}\n"
+            f"@**{message.author.display_name}**{badge} :"
+        ))
+
+        row = discord.ui.ActionRow()
+
+        count_button = discord.ui.Button(
+            style=discord.ButtonStyle.secondary,
+            label=str(star_count),
+            emoji=self.emoji,
+            disabled=True,
+            custom_id=f"moddy:starboard:count:{message.id}"
+        )
+        row.add_item(count_button)
+
+        jump_button = discord.ui.Button(
+            style=discord.ButtonStyle.link,
+            label=t('modules.starboard.message.jump_button', locale=locale),
+            url=message.jump_url
+        )
+        row.add_item(jump_button)
+
+        view.add_item(row)
+        return view
 
     async def _update_starboard(self, message: discord.Message, star_count: int):
         """
@@ -214,31 +282,38 @@ class StarboardModule(ModuleBase):
             logger.warning(f"Starboard channel {self.channel_id} not found or not a text channel")
             return
 
-        # Create embed
-        embed = await self._create_starboard_embed(message, star_count)
-
         # Check if we already have a starboard message for this
         if message.id in self.starboard_messages:
-            # Update existing message
+            # Update existing message (only the reaction counter changes)
             try:
                 starboard_msg_id = self.starboard_messages[message.id]
                 starboard_msg = await starboard_channel.fetch_message(starboard_msg_id)
-                await starboard_msg.edit(embed=embed)
+                view = await self._build_starboard_view(message, star_count)
+                await starboard_msg.edit(view=view)
                 logger.info(f"Updated starboard message for {message.id} (stars: {star_count})")
             except discord.NotFound:
                 # Message was deleted, create a new one
                 del self.starboard_messages[message.id]
-                await self._create_starboard_message(starboard_channel, message, embed)
+                await self._create_starboard_message(starboard_channel, message, star_count)
         else:
             # Create new starboard message
-            await self._create_starboard_message(starboard_channel, message, embed)
+            await self._create_starboard_message(starboard_channel, message, star_count)
 
     async def _create_starboard_message(self, channel: discord.TextChannel,
-                                       original_message: discord.Message, embed: discord.Embed):
-        """Create a new starboard message"""
+                                         original_message: discord.Message, star_count: int):
+        """Forward the original message to the starboard channel with the reaction card"""
         try:
-            # Send the starboard message
-            starboard_msg = await channel.send(embed=embed)
+            view = await self._build_starboard_view(original_message, star_count)
+
+            reference = discord.MessageReference(
+                message_id=original_message.id,
+                channel_id=original_message.channel.id,
+                guild_id=self.guild_id,
+                fail_if_not_exists=False,
+                type=discord.MessageReferenceType.forward,
+            )
+
+            starboard_msg = await channel.send(view=view, reference=reference)
 
             # Track it for future updates
             self.starboard_messages[original_message.id] = starboard_msg.id
@@ -246,6 +321,8 @@ class StarboardModule(ModuleBase):
             logger.info(f"Created starboard message for {original_message.id}")
         except discord.Forbidden:
             logger.warning(f"Missing permissions to send starboard message in guild {self.guild_id}")
+        except discord.HTTPException as e:
+            logger.error(f"Error forwarding message {original_message.id} to starboard: {e}")
         except Exception as e:
             logger.error(f"Error creating starboard message: {e}", exc_info=True)
 
@@ -273,63 +350,3 @@ class StarboardModule(ModuleBase):
             del self.starboard_messages[message.id]
         except Exception as e:
             logger.error(f"Error removing starboard message: {e}", exc_info=True)
-
-    async def _create_starboard_embed(self, message: discord.Message, star_count: int) -> discord.Embed:
-        """Create an embed for a starboard entry"""
-
-        # Create base embed with message content
-        embed = discord.Embed(
-            description=message.content if message.content else "*Pas de contenu texte*",
-            color=0xFFAC33,  # Gold color for starboard
-            timestamp=message.created_at
-        )
-
-        # Set author (message author)
-        embed.set_author(
-            name=message.author.display_name,
-            icon_url=message.author.display_avatar.url
-        )
-
-        # Add star count and jump link
-        embed.add_field(
-            name=f"{self.emoji} Réactions",
-            value=f"**{star_count}** {self.emoji}",
-            inline=True
-        )
-
-        embed.add_field(
-            name=f"{MESSAGE} Message",
-            value=f"[Aller au message]({message.jump_url})",
-            inline=True
-        )
-
-        embed.add_field(
-            name=f"{TEXT} Salon",
-            value=message.channel.mention,
-            inline=True
-        )
-
-        # Add image if the message has one
-        if message.attachments:
-            # Get the first image attachment
-            for attachment in message.attachments:
-                if attachment.content_type and attachment.content_type.startswith('image/'):
-                    embed.set_image(url=attachment.url)
-                    break
-
-        # Add embed image if the message has embeds with images
-        if not embed.image and message.embeds:
-            for msg_embed in message.embeds:
-                if msg_embed.image:
-                    embed.set_image(url=msg_embed.image.url)
-                    break
-                elif msg_embed.thumbnail:
-                    embed.set_thumbnail(url=msg_embed.thumbnail.url)
-                    break
-
-        # Add footer
-        embed.set_footer(
-            text=f"ID: {message.id}"
-        )
-
-        return embed
