@@ -417,7 +417,7 @@ class Translate(commands.Cog):
         # Loading message with animated emoji
         loading_msg = i18n.get("commands.translate.translating", locale=locale)
         await interaction.response.send_message(
-            content=f"<a:loading:1395047662092550194> **{loading_msg}**",
+            content=f"<a:spinner:1534857169667883078> **{loading_msg}**",
             ephemeral=ephemeral
         )
 
