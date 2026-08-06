@@ -28,7 +28,7 @@ class SubscriptionView(BaseView):
     """Components V2 view for the /subscription command."""
 
     def __init__(self, bot, user_id: int, sub: dict | None, servers: list, locale: str):
-        super().__init__(timeout=300)
+        super().__init__()  # timeout=None — all children are URL/link buttons, nothing to expire
         self.bot = bot
         self.user_id = user_id
         self.sub = sub

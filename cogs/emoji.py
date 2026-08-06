@@ -21,7 +21,7 @@ class EmojiView(BaseView):
     """View to display emoji information using Components V2"""
 
     def __init__(self, emoji_data: dict, locale: str, bot=None):
-        super().__init__(timeout=180)
+        super().__init__()  # timeout=None — no interactive children, nothing to expire
         self.bot = bot
         self.emoji_data = emoji_data
         self.locale = locale
