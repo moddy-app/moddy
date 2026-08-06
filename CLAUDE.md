@@ -126,6 +126,7 @@ moddy/
 │
 ├── utils/                     # Utility modules
 │   ├── i18n.py                #   Internationalization system
+│   ├── command_translator.py  #   Slash command name/description localization (32 locales)
 │   ├── emojis.py              #   Emoji constants
 │   ├── components_v2.py       #   V2 helper functions (create_error_message, etc.)
 │   ├── staff_permissions.py   #   Permission system
@@ -177,7 +178,9 @@ moddy/
 ├── schemas/                   # Data schemas
 ├── locales/                   # i18n translation files
 │   ├── fr.json                #   French (primary)
-│   └── en-US.json             #   English
+│   ├── en-US.json             #   English
+│   └── commands/              #   Slash command names + descriptions, one file per
+│                              #   Discord locale (fr.json, de.json, ja.json… 32 total)
 │
 ├── docs/                      # Documentation (see below)
 └── tests/                     # Test files
@@ -220,6 +223,10 @@ moddy/
 - **ALL** user-facing text must use the i18n system
 - `from utils.i18n import t` → `t('key.path', locale=locale)`
 - Translation files: `/locales/fr.json` and `/locales/en-US.json`
+- **Command names and descriptions** are localized separately (Discord shows them
+  in the user's own language): declare the command in English in the cog, then add
+  its key to every `/locales/commands/<locale>.json`
+- See → [docs/COMMAND_LOCALIZATION.md](docs/COMMAND_LOCALIZATION.md)
 
 ### 5. Title Format
 - Titles in Components V2 must use: `### <:emoji:id> Title Text`
@@ -288,6 +295,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | Document | When to Read |
 |---|---|
 | [docs/COMMANDS.md](docs/COMMANDS.md) | Creating or modifying slash commands |
+| [docs/COMMAND_LOCALIZATION.md](docs/COMMAND_LOCALIZATION.md) | Translating slash command names/descriptions (32 Discord locales) |
 | [docs/TEXT_TOOLS.md](docs/TEXT_TOOLS.md) | AI text tools — `/fix`, `/rephrase`, `/summarize` (models, presets, mention stripping) |
 | [docs/MODULE_SYSTEM.md](docs/MODULE_SYSTEM.md) | Creating or modifying server modules |
 | [docs/AUTOMOD.md](docs/AUTOMOD.md) | AI automod — detection pipeline, nano decider, scalable features, rules safety check |
@@ -380,6 +388,8 @@ from config import IS_DEV, IS_PROD, IS_MAINTENANCE, ENV_MODE
 3. Use `BaseView` for any UI
 4. Use i18n for all text
 5. Use custom emojis only
+6. Add the command name/description to `/locales/commands/*.json`
+   (see [docs/COMMAND_LOCALIZATION.md](docs/COMMAND_LOCALIZATION.md))
 
 ### New Server Module
 1. Read [docs/MODULE_SYSTEM.md](docs/MODULE_SYSTEM.md)

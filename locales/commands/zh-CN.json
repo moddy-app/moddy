@@ -1,0 +1,254 @@
+{
+  "common": {
+    "parameters": {
+      "incognito": {
+        "name": "私密",
+        "description": "仅自己可见"
+      },
+      "user": {
+        "name": "用户",
+        "description": "目标用户"
+      },
+      "case": {
+        "name": "案件",
+        "description": "可选：通过编号直接打开某个案件（例如 A7F2K9）"
+      },
+      "message_id": {
+        "name": "消息id",
+        "description": "消息 ID（如 F6ZEU3VS 的 Moddy ID 或 Discord ID）"
+      }
+    }
+  },
+  "context_menus": {
+    "Save Message": {
+      "name": "保存消息"
+    },
+    "Get Emojis": {
+      "name": "获取表情"
+    },
+    "Translate": {
+      "name": "翻译"
+    },
+    "AI text tools": {
+      "name": "AI 文本工具"
+    }
+  },
+  "commands": {
+    "ping": {
+      "name": "延迟",
+      "description": "查看机器人的延迟和状态"
+    },
+    "user": {
+      "name": "用户",
+      "description": "显示 Discord 用户的详细信息",
+      "parameters": {
+        "user": {
+          "name": "用户",
+          "description": "要查询的用户"
+        }
+      }
+    },
+    "avatar": {
+      "name": "头像",
+      "description": "显示用户的头像",
+      "parameters": {
+        "user": {
+          "name": "用户",
+          "description": "要查看头像的用户"
+        }
+      }
+    },
+    "banner": {
+      "name": "横幅",
+      "description": "显示用户的横幅",
+      "parameters": {
+        "user": {
+          "name": "用户",
+          "description": "要查看横幅的用户"
+        }
+      }
+    },
+    "emoji": {
+      "name": "表情",
+      "description": "显示 Discord 表情的信息",
+      "parameters": {
+        "emoji": {
+          "name": "表情",
+          "description": "要查询的表情"
+        }
+      }
+    },
+    "roll": {
+      "name": "掷骰",
+      "description": "随机掷一个骰子",
+      "parameters": {
+        "max": {
+          "name": "最大值",
+          "description": "骰子的最大值（可选，默认 6）"
+        }
+      }
+    },
+    "invite": {
+      "name": "邀请",
+      "description": "显示 Discord 邀请的信息",
+      "parameters": {
+        "invite_code": {
+          "name": "邀请码",
+          "description": "Discord 邀请码或链接"
+        }
+      }
+    },
+    "webhook": {
+      "name": "网络钩子",
+      "description": "查看并管理 Discord 网络钩子",
+      "parameters": {
+        "webhook": {
+          "name": "网络钩子",
+          "description": "网络钩子 URL 或 ID/令牌"
+        }
+      }
+    },
+    "translate": {
+      "name": "翻译",
+      "description": "将文本翻译成另一种语言",
+      "parameters": {
+        "text": {
+          "name": "文本",
+          "description": "要翻译的文本"
+        },
+        "to": {
+          "name": "目标语言",
+          "description": "目标语言（可选，默认使用你的 Discord 语言）"
+        }
+      }
+    },
+    "library": {
+      "name": "收藏库",
+      "description": "查看你保存的消息收藏库"
+    },
+    "reminder-add": {
+      "name": "提醒-添加",
+      "description": "添加一个新的提醒",
+      "parameters": {
+        "message": {
+          "name": "消息",
+          "description": "需要我提醒你什么？"
+        },
+        "time": {
+          "name": "时间",
+          "description": "提醒时间（例如 1h30m、2d、明天 15:00）"
+        },
+        "send_here": {
+          "name": "发送到本频道",
+          "description": "在本频道发送提醒，而不是私信"
+        }
+      }
+    },
+    "reminders": {
+      "name": "提醒列表",
+      "description": "管理你的提醒"
+    },
+    "preferences": {
+      "name": "偏好设置",
+      "description": "管理你的个人偏好设置"
+    },
+    "moddy": {
+      "name": "moddy",
+      "description": "了解更多关于 Moddy 的信息"
+    },
+    "subscription": {
+      "name": "订阅",
+      "description": "查看你的 Moddy 订阅状态"
+    },
+    "mycases": {
+      "name": "我的案件",
+      "description": "浏览你在所有服务器的处罚案件"
+    },
+    "fix": {
+      "name": "纠错",
+      "description": "修正文本的拼写和语法"
+    },
+    "rephrase": {
+      "name": "改写",
+      "description": "按你选择的风格改写文本"
+    },
+    "summarize": {
+      "name": "摘要",
+      "description": "总结一段文本"
+    },
+    "config": {
+      "name": "配置",
+      "description": "配置服务器模块"
+    },
+    "cases": {
+      "name": "案件",
+      "description": "浏览本服务器的处罚案件"
+    },
+    "clear-saved-roles": {
+      "name": "清除已保存身份组",
+      "description": "清除已退出服务器用户的已保存身份组",
+      "parameters": {
+        "user": {
+          "name": "用户",
+          "description": "要清除已保存身份组的用户"
+        }
+      }
+    },
+    "view-saved-roles": {
+      "name": "查看已保存身份组",
+      "description": "显示本服务器所有拥有已保存身份组的用户"
+    },
+    "ban": {
+      "name": "封禁",
+      "description": "从服务器封禁一名或多名用户",
+      "parameters": {
+        "user": {
+          "name": "用户",
+          "description": "要封禁的用户（可在表单中添加更多）"
+        }
+      }
+    },
+    "kick": {
+      "name": "踢出",
+      "description": "将一名或多名成员踢出服务器",
+      "parameters": {
+        "user": {
+          "name": "用户",
+          "description": "要踢出的用户（可在表单中添加更多）"
+        }
+      }
+    },
+    "mute": {
+      "name": "禁言",
+      "description": "对一名或多名成员执行超时（禁言）",
+      "parameters": {
+        "user": {
+          "name": "用户",
+          "description": "要禁言的用户（可在表单中添加更多）"
+        }
+      }
+    },
+    "warn": {
+      "name": "警告",
+      "description": "警告一名或多名用户",
+      "parameters": {
+        "user": {
+          "name": "用户",
+          "description": "要警告的用户（可在表单中添加更多）"
+        }
+      }
+    },
+    "interserver": {
+      "name": "跨服务器",
+      "description": "管理跨服务器消息"
+    },
+    "interserver report": {
+      "name": "举报",
+      "description": "向审核团队举报一条跨服务器消息"
+    },
+    "interserver info": {
+      "name": "信息",
+      "description": "获取跨服务器消息的信息"
+    }
+  }
+}

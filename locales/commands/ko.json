@@ -1,0 +1,254 @@
+{
+  "common": {
+    "parameters": {
+      "incognito": {
+        "name": "비밀",
+        "description": "나에게만 응답을 표시합니다"
+      },
+      "user": {
+        "name": "사용자",
+        "description": "대상 사용자"
+      },
+      "case": {
+        "name": "사건",
+        "description": "선택 사항: 참조 번호로 특정 사건 열기 (예: A7F2K9)"
+      },
+      "message_id": {
+        "name": "메시지id",
+        "description": "메시지 ID (F6ZEU3VS 같은 Moddy ID 또는 Discord ID)"
+      }
+    }
+  },
+  "context_menus": {
+    "Save Message": {
+      "name": "메시지 저장"
+    },
+    "Get Emojis": {
+      "name": "이모지 가져오기"
+    },
+    "Translate": {
+      "name": "번역"
+    },
+    "AI text tools": {
+      "name": "AI 텍스트 도구"
+    }
+  },
+  "commands": {
+    "ping": {
+      "name": "핑",
+      "description": "봇의 지연 시간과 상태를 확인합니다"
+    },
+    "user": {
+      "name": "사용자",
+      "description": "디스코드 사용자에 대한 자세한 정보를 표시합니다",
+      "parameters": {
+        "user": {
+          "name": "사용자",
+          "description": "조회할 사용자"
+        }
+      }
+    },
+    "avatar": {
+      "name": "아바타",
+      "description": "사용자의 아바타를 표시합니다",
+      "parameters": {
+        "user": {
+          "name": "사용자",
+          "description": "아바타를 볼 사용자"
+        }
+      }
+    },
+    "banner": {
+      "name": "배너",
+      "description": "사용자의 배너를 표시합니다",
+      "parameters": {
+        "user": {
+          "name": "사용자",
+          "description": "배너를 볼 사용자"
+        }
+      }
+    },
+    "emoji": {
+      "name": "이모지",
+      "description": "디스코드 이모지 정보를 표시합니다",
+      "parameters": {
+        "emoji": {
+          "name": "이모지",
+          "description": "조회할 이모지"
+        }
+      }
+    },
+    "roll": {
+      "name": "주사위",
+      "description": "무작위로 주사위를 굴립니다",
+      "parameters": {
+        "max": {
+          "name": "최대값",
+          "description": "주사위 최대값 (선택 사항, 기본값 6)"
+        }
+      }
+    },
+    "invite": {
+      "name": "초대",
+      "description": "디스코드 초대 정보를 표시합니다",
+      "parameters": {
+        "invite_code": {
+          "name": "초대코드",
+          "description": "디스코드 초대 코드 또는 링크"
+        }
+      }
+    },
+    "webhook": {
+      "name": "웹후크",
+      "description": "디스코드 웹후크를 확인하고 관리합니다",
+      "parameters": {
+        "webhook": {
+          "name": "웹후크",
+          "description": "웹후크 URL 또는 ID/토큰"
+        }
+      }
+    },
+    "translate": {
+      "name": "번역",
+      "description": "텍스트를 다른 언어로 번역합니다",
+      "parameters": {
+        "text": {
+          "name": "텍스트",
+          "description": "번역할 텍스트"
+        },
+        "to": {
+          "name": "대상언어",
+          "description": "대상 언어 (선택 사항, 기본값은 디스코드 언어)"
+        }
+      }
+    },
+    "library": {
+      "name": "보관함",
+      "description": "저장한 메시지 보관함을 확인합니다"
+    },
+    "reminder-add": {
+      "name": "알림-추가",
+      "description": "새 알림을 추가합니다",
+      "parameters": {
+        "message": {
+          "name": "메시지",
+          "description": "무엇을 알려드릴까요?"
+        },
+        "time": {
+          "name": "시간",
+          "description": "알릴 시점 (예: 1h30m, 2d, 내일 오후 3시)"
+        },
+        "send_here": {
+          "name": "여기로-보내기",
+          "description": "DM 대신 이 채널로 알림 보내기"
+        }
+      }
+    },
+    "reminders": {
+      "name": "알림목록",
+      "description": "알림을 관리합니다"
+    },
+    "preferences": {
+      "name": "환경설정",
+      "description": "개인 환경설정을 관리합니다"
+    },
+    "moddy": {
+      "name": "moddy",
+      "description": "Moddy에 대해 더 알아보기"
+    },
+    "subscription": {
+      "name": "구독",
+      "description": "Moddy 구독 상태를 확인합니다"
+    },
+    "mycases": {
+      "name": "내-사건",
+      "description": "모든 서버의 내 모더레이션 사건을 살펴봅니다"
+    },
+    "fix": {
+      "name": "맞춤법",
+      "description": "텍스트의 맞춤법과 문법을 교정합니다"
+    },
+    "rephrase": {
+      "name": "재작성",
+      "description": "원하는 스타일로 텍스트를 다시 표현합니다"
+    },
+    "summarize": {
+      "name": "요약",
+      "description": "텍스트를 요약합니다"
+    },
+    "config": {
+      "name": "설정",
+      "description": "서버 모듈을 설정합니다"
+    },
+    "cases": {
+      "name": "사건",
+      "description": "이 서버에서 발생한 모더레이션 사건을 살펴봅니다"
+    },
+    "clear-saved-roles": {
+      "name": "저장역할-삭제",
+      "description": "서버를 나간 사용자의 저장된 역할을 삭제합니다",
+      "parameters": {
+        "user": {
+          "name": "사용자",
+          "description": "저장된 역할을 삭제할 사용자"
+        }
+      }
+    },
+    "view-saved-roles": {
+      "name": "저장역할-보기",
+      "description": "이 서버에서 저장된 역할이 있는 모든 사용자를 표시합니다"
+    },
+    "ban": {
+      "name": "차단",
+      "description": "한 명 이상의 사용자를 서버에서 차단합니다",
+      "parameters": {
+        "user": {
+          "name": "사용자",
+          "description": "차단할 사용자 (양식에서 추가 가능)"
+        }
+      }
+    },
+    "kick": {
+      "name": "추방",
+      "description": "한 명 이상의 멤버를 서버에서 추방합니다",
+      "parameters": {
+        "user": {
+          "name": "사용자",
+          "description": "추방할 사용자 (양식에서 추가 가능)"
+        }
+      }
+    },
+    "mute": {
+      "name": "뮤트",
+      "description": "한 명 이상의 멤버를 타임아웃(뮤트)합니다",
+      "parameters": {
+        "user": {
+          "name": "사용자",
+          "description": "뮤트할 사용자 (양식에서 추가 가능)"
+        }
+      }
+    },
+    "warn": {
+      "name": "경고",
+      "description": "한 명 이상의 사용자에게 경고합니다",
+      "parameters": {
+        "user": {
+          "name": "사용자",
+          "description": "경고할 사용자 (양식에서 추가 가능)"
+        }
+      }
+    },
+    "interserver": {
+      "name": "서버간",
+      "description": "서버 간 메시지를 관리합니다"
+    },
+    "interserver report": {
+      "name": "신고",
+      "description": "서버 간 메시지를 모더레이션 팀에 신고합니다"
+    },
+    "interserver info": {
+      "name": "정보",
+      "description": "서버 간 메시지에 대한 정보를 가져옵니다"
+    }
+  }
+}

@@ -1,0 +1,254 @@
+{
+  "common": {
+    "parameters": {
+      "incognito": {
+        "name": "skrytě",
+        "description": "Zobrazit odpověď jen tobě"
+      },
+      "user": {
+        "name": "uživatel",
+        "description": "Dotčený uživatel"
+      },
+      "case": {
+        "name": "případ",
+        "description": "Volitelné: otevřít konkrétní případ podle jeho značky (např. A7F2K9)"
+      },
+      "message_id": {
+        "name": "id-zprávy",
+        "description": "ID zprávy (Moddy ID jako F6ZEU3VS nebo Discord ID)"
+      }
+    }
+  },
+  "context_menus": {
+    "Save Message": {
+      "name": "Uložit zprávu"
+    },
+    "Get Emojis": {
+      "name": "Získat emoji"
+    },
+    "Translate": {
+      "name": "Přeložit"
+    },
+    "AI text tools": {
+      "name": "Textové nástroje AI"
+    }
+  },
+  "commands": {
+    "ping": {
+      "name": "ping",
+      "description": "Zobrazí odezvu a stav bota"
+    },
+    "user": {
+      "name": "uživatel",
+      "description": "Zobrazí podrobné informace o uživateli Discordu",
+      "parameters": {
+        "user": {
+          "name": "uživatel",
+          "description": "Uživatel k zobrazení"
+        }
+      }
+    },
+    "avatar": {
+      "name": "avatar",
+      "description": "Zobrazí avatar uživatele",
+      "parameters": {
+        "user": {
+          "name": "uživatel",
+          "description": "Uživatel, jehož avatar chceš vidět"
+        }
+      }
+    },
+    "banner": {
+      "name": "banner",
+      "description": "Zobrazí banner uživatele",
+      "parameters": {
+        "user": {
+          "name": "uživatel",
+          "description": "Uživatel, jehož banner chceš vidět"
+        }
+      }
+    },
+    "emoji": {
+      "name": "emoji",
+      "description": "Zobrazí informace o emoji Discordu",
+      "parameters": {
+        "emoji": {
+          "name": "emoji",
+          "description": "Emoji k zobrazení"
+        }
+      }
+    },
+    "roll": {
+      "name": "kostka",
+      "description": "Hodí náhodnou kostkou",
+      "parameters": {
+        "max": {
+          "name": "max",
+          "description": "Nejvyšší hodnota kostky (volitelné, výchozí 6)"
+        }
+      }
+    },
+    "invite": {
+      "name": "pozvánka",
+      "description": "Zobrazí informace o pozvánce na Discord",
+      "parameters": {
+        "invite_code": {
+          "name": "kód-pozvánky",
+          "description": "Kód nebo odkaz pozvánky na Discord"
+        }
+      }
+    },
+    "webhook": {
+      "name": "webhook",
+      "description": "Prohlížení a správa webhooků Discordu",
+      "parameters": {
+        "webhook": {
+          "name": "webhook",
+          "description": "URL webhooku nebo ID/Token"
+        }
+      }
+    },
+    "translate": {
+      "name": "přeložit",
+      "description": "Přeloží text do jiného jazyka",
+      "parameters": {
+        "text": {
+          "name": "text",
+          "description": "Text k překladu"
+        },
+        "to": {
+          "name": "do",
+          "description": "Cílový jazyk (volitelné, výchozí je tvůj jazyk Discordu)"
+        }
+      }
+    },
+    "library": {
+      "name": "knihovna",
+      "description": "Zobrazí tvou knihovnu uložených zpráv"
+    },
+    "reminder-add": {
+      "name": "připomínka-přidat",
+      "description": "Přidá novou připomínku",
+      "parameters": {
+        "message": {
+          "name": "zpráva",
+          "description": "Co ti mám připomenout?"
+        },
+        "time": {
+          "name": "čas",
+          "description": "Kdy připomenout (např. 1h30m, 2d, zítra 15:00)"
+        },
+        "send_here": {
+          "name": "poslat-sem",
+          "description": "Poslat připomínku do tohoto kanálu místo do DM"
+        }
+      }
+    },
+    "reminders": {
+      "name": "připomínky",
+      "description": "Spravuj své připomínky"
+    },
+    "preferences": {
+      "name": "předvolby",
+      "description": "Spravuj své osobní předvolby"
+    },
+    "moddy": {
+      "name": "moddy",
+      "description": "Zjisti více o Moddy"
+    },
+    "subscription": {
+      "name": "předplatné",
+      "description": "Zobrazí stav tvého předplatného Moddy"
+    },
+    "mycases": {
+      "name": "moje-případy",
+      "description": "Procházej své moderační případy na všech serverech"
+    },
+    "fix": {
+      "name": "opravit",
+      "description": "Opraví pravopis a gramatiku textu"
+    },
+    "rephrase": {
+      "name": "přeformulovat",
+      "description": "Přeformuluje text ve zvoleném stylu"
+    },
+    "summarize": {
+      "name": "shrnout",
+      "description": "Shrne text"
+    },
+    "config": {
+      "name": "konfigurace",
+      "description": "Nastavení modulů serveru"
+    },
+    "cases": {
+      "name": "případy",
+      "description": "Procházej moderační případy vydané na tomto serveru"
+    },
+    "clear-saved-roles": {
+      "name": "smazat-uložené-role",
+      "description": "Smaže uložené role uživatele, který opustil server",
+      "parameters": {
+        "user": {
+          "name": "uživatel",
+          "description": "Uživatel, jehož uložené role se mají smazat"
+        }
+      }
+    },
+    "view-saved-roles": {
+      "name": "zobrazit-uložené-role",
+      "description": "Zobrazí všechny uživatele s uloženými rolemi na tomto serveru"
+    },
+    "ban": {
+      "name": "zabanovat",
+      "description": "Zabanuje jednoho nebo více uživatelů na serveru",
+      "parameters": {
+        "user": {
+          "name": "uživatel",
+          "description": "Uživatel k zabanování (další můžeš přidat ve formuláři)"
+        }
+      }
+    },
+    "kick": {
+      "name": "vyhodit",
+      "description": "Vyhodí jednoho nebo více členů ze serveru",
+      "parameters": {
+        "user": {
+          "name": "uživatel",
+          "description": "Uživatel k vyhození (další můžeš přidat ve formuláři)"
+        }
+      }
+    },
+    "mute": {
+      "name": "umlčet",
+      "description": "Umlčí (timeout) jednoho nebo více členů",
+      "parameters": {
+        "user": {
+          "name": "uživatel",
+          "description": "Uživatel k umlčení (další můžeš přidat ve formuláři)"
+        }
+      }
+    },
+    "warn": {
+      "name": "varovat",
+      "description": "Varuje jednoho nebo více uživatelů",
+      "parameters": {
+        "user": {
+          "name": "uživatel",
+          "description": "Uživatel k varování (další můžeš přidat ve formuláři)"
+        }
+      }
+    },
+    "interserver": {
+      "name": "meziserver",
+      "description": "Správa zpráv mezi servery"
+    },
+    "interserver report": {
+      "name": "nahlásit",
+      "description": "Nahlásí zprávu mezi servery moderátorskému týmu"
+    },
+    "interserver info": {
+      "name": "info",
+      "description": "Zobrazí informace o zprávě mezi servery"
+    }
+  }
+}

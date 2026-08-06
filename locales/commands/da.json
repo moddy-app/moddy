@@ -1,0 +1,254 @@
+{
+  "common": {
+    "parameters": {
+      "incognito": {
+        "name": "skjult",
+        "description": "Vis kun svaret for dig"
+      },
+      "user": {
+        "name": "bruger",
+        "description": "Den berørte bruger"
+      },
+      "case": {
+        "name": "sag",
+        "description": "Valgfrit: åbn en bestemt sag via dens reference (f.eks. A7F2K9)"
+      },
+      "message_id": {
+        "name": "besked-id",
+        "description": "Beskedens ID (Moddy-ID som F6ZEU3VS eller Discord-ID)"
+      }
+    }
+  },
+  "context_menus": {
+    "Save Message": {
+      "name": "Gem besked"
+    },
+    "Get Emojis": {
+      "name": "Hent emojis"
+    },
+    "Translate": {
+      "name": "Oversæt"
+    },
+    "AI text tools": {
+      "name": "AI-tekstværktøjer"
+    }
+  },
+  "commands": {
+    "ping": {
+      "name": "ping",
+      "description": "Viser bottens svartid og status"
+    },
+    "user": {
+      "name": "bruger",
+      "description": "Viser detaljerede oplysninger om en Discord-bruger",
+      "parameters": {
+        "user": {
+          "name": "bruger",
+          "description": "Brugeren der skal slås op"
+        }
+      }
+    },
+    "avatar": {
+      "name": "avatar",
+      "description": "Viser en brugers avatar",
+      "parameters": {
+        "user": {
+          "name": "bruger",
+          "description": "Brugeren hvis avatar du vil se"
+        }
+      }
+    },
+    "banner": {
+      "name": "banner",
+      "description": "Viser en brugers banner",
+      "parameters": {
+        "user": {
+          "name": "bruger",
+          "description": "Brugeren hvis banner du vil se"
+        }
+      }
+    },
+    "emoji": {
+      "name": "emoji",
+      "description": "Viser oplysninger om en Discord-emoji",
+      "parameters": {
+        "emoji": {
+          "name": "emoji",
+          "description": "Emojien der skal slås op"
+        }
+      }
+    },
+    "roll": {
+      "name": "terning",
+      "description": "Kaster en tilfældig terning",
+      "parameters": {
+        "max": {
+          "name": "maks",
+          "description": "Terningens højeste værdi (valgfrit, standard 6)"
+        }
+      }
+    },
+    "invite": {
+      "name": "invitation",
+      "description": "Viser oplysninger om en Discord-invitation",
+      "parameters": {
+        "invite_code": {
+          "name": "invitationskode",
+          "description": "Discord-invitationskode eller link"
+        }
+      }
+    },
+    "webhook": {
+      "name": "webhook",
+      "description": "Undersøg og administrer Discord-webhooks",
+      "parameters": {
+        "webhook": {
+          "name": "webhook",
+          "description": "Webhook-URL eller ID/Token"
+        }
+      }
+    },
+    "translate": {
+      "name": "oversæt",
+      "description": "Oversætter tekst til et andet sprog",
+      "parameters": {
+        "text": {
+          "name": "tekst",
+          "description": "Teksten der skal oversættes"
+        },
+        "to": {
+          "name": "til",
+          "description": "Målsprog (valgfrit, dit Discord-sprog som standard)"
+        }
+      }
+    },
+    "library": {
+      "name": "bibliotek",
+      "description": "Se dit bibliotek med gemte beskeder"
+    },
+    "reminder-add": {
+      "name": "påmindelse-tilføj",
+      "description": "Tilføjer en ny påmindelse",
+      "parameters": {
+        "message": {
+          "name": "besked",
+          "description": "Hvad skal jeg minde dig om?"
+        },
+        "time": {
+          "name": "tid",
+          "description": "Hvornår du skal mindes (f.eks. 1h30m, 2d, i morgen 15:00)"
+        },
+        "send_here": {
+          "name": "send-her",
+          "description": "Send påmindelsen i denne kanal i stedet for DM"
+        }
+      }
+    },
+    "reminders": {
+      "name": "påmindelser",
+      "description": "Administrer dine påmindelser"
+    },
+    "preferences": {
+      "name": "indstillinger",
+      "description": "Administrer dine personlige indstillinger"
+    },
+    "moddy": {
+      "name": "moddy",
+      "description": "Læs mere om Moddy"
+    },
+    "subscription": {
+      "name": "abonnement",
+      "description": "Se status for dit Moddy-abonnement"
+    },
+    "mycases": {
+      "name": "mine-sager",
+      "description": "Gennemse dine moderationssager på alle servere"
+    },
+    "fix": {
+      "name": "ret",
+      "description": "Retter stavning og grammatik i en tekst"
+    },
+    "rephrase": {
+      "name": "omformuler",
+      "description": "Omformulerer en tekst i den stil du vælger"
+    },
+    "summarize": {
+      "name": "opsummer",
+      "description": "Opsummerer en tekst"
+    },
+    "config": {
+      "name": "konfigurer",
+      "description": "Konfigurer serverens moduler"
+    },
+    "cases": {
+      "name": "sager",
+      "description": "Gennemse moderationssager oprettet på denne server"
+    },
+    "clear-saved-roles": {
+      "name": "ryd-gemte-roller",
+      "description": "Rydder gemte roller for en bruger der har forladt serveren",
+      "parameters": {
+        "user": {
+          "name": "bruger",
+          "description": "Brugeren hvis gemte roller skal ryddes"
+        }
+      }
+    },
+    "view-saved-roles": {
+      "name": "vis-gemte-roller",
+      "description": "Viser alle brugere med gemte roller på denne server"
+    },
+    "ban": {
+      "name": "bandlys",
+      "description": "Bandlyser en eller flere brugere fra serveren",
+      "parameters": {
+        "user": {
+          "name": "bruger",
+          "description": "Bruger der skal bandlyses (du kan tilføje flere i formularen)"
+        }
+      }
+    },
+    "kick": {
+      "name": "spark",
+      "description": "Sparker et eller flere medlemmer ud af serveren",
+      "parameters": {
+        "user": {
+          "name": "bruger",
+          "description": "Bruger der skal sparkes (du kan tilføje flere i formularen)"
+        }
+      }
+    },
+    "mute": {
+      "name": "mute",
+      "description": "Giver et eller flere medlemmer timeout (mute)",
+      "parameters": {
+        "user": {
+          "name": "bruger",
+          "description": "Bruger der skal mutes (du kan tilføje flere i formularen)"
+        }
+      }
+    },
+    "warn": {
+      "name": "advar",
+      "description": "Advarer en eller flere brugere",
+      "parameters": {
+        "user": {
+          "name": "bruger",
+          "description": "Bruger der skal advares (du kan tilføje flere i formularen)"
+        }
+      }
+    },
+    "interserver": {
+      "name": "interserver",
+      "description": "Administrer beskeder mellem servere"
+    },
+    "interserver report": {
+      "name": "rapporter",
+      "description": "Rapporterer en besked mellem servere til moderationsteamet"
+    },
+    "interserver info": {
+      "name": "info",
+      "description": "Giver oplysninger om en besked mellem servere"
+    }
+  }
+}

@@ -1,0 +1,254 @@
+{
+  "common": {
+    "parameters": {
+      "incognito": {
+        "name": "rejtett",
+        "description": "A válasz csak neked látszik"
+      },
+      "user": {
+        "name": "felhasználó",
+        "description": "Az érintett felhasználó"
+      },
+      "case": {
+        "name": "ügy",
+        "description": "Opcionális: adott ügy megnyitása a hivatkozásával (pl. A7F2K9)"
+      },
+      "message_id": {
+        "name": "üzenet-azonosító",
+        "description": "Az üzenet azonosítója (Moddy ID mint F6ZEU3VS vagy Discord ID)"
+      }
+    }
+  },
+  "context_menus": {
+    "Save Message": {
+      "name": "Üzenet mentése"
+    },
+    "Get Emojis": {
+      "name": "Emojik lekérése"
+    },
+    "Translate": {
+      "name": "Fordítás"
+    },
+    "AI text tools": {
+      "name": "MI szövegeszközök"
+    }
+  },
+  "commands": {
+    "ping": {
+      "name": "ping",
+      "description": "Megmutatja a bot késleltetését és állapotát"
+    },
+    "user": {
+      "name": "felhasználó",
+      "description": "Részletes információt mutat egy Discord-felhasználóról",
+      "parameters": {
+        "user": {
+          "name": "felhasználó",
+          "description": "A lekérdezendő felhasználó"
+        }
+      }
+    },
+    "avatar": {
+      "name": "avatar",
+      "description": "Megmutatja egy felhasználó profilképét",
+      "parameters": {
+        "user": {
+          "name": "felhasználó",
+          "description": "A felhasználó, akinek a profilképét látni szeretnéd"
+        }
+      }
+    },
+    "banner": {
+      "name": "banner",
+      "description": "Megmutatja egy felhasználó bannerét",
+      "parameters": {
+        "user": {
+          "name": "felhasználó",
+          "description": "A felhasználó, akinek a bannerét látni szeretnéd"
+        }
+      }
+    },
+    "emoji": {
+      "name": "emoji",
+      "description": "Információt mutat egy Discord-emojiról",
+      "parameters": {
+        "emoji": {
+          "name": "emoji",
+          "description": "A lekérdezendő emoji"
+        }
+      }
+    },
+    "roll": {
+      "name": "kocka",
+      "description": "Dob egy véletlenszerű kockát",
+      "parameters": {
+        "max": {
+          "name": "max",
+          "description": "A kocka legnagyobb értéke (opcionális, alapértelmezés 6)"
+        }
+      }
+    },
+    "invite": {
+      "name": "meghívó",
+      "description": "Információt mutat egy Discord-meghívóról",
+      "parameters": {
+        "invite_code": {
+          "name": "meghívó-kód",
+          "description": "A Discord meghívókódja vagy linkje"
+        }
+      }
+    },
+    "webhook": {
+      "name": "webhook",
+      "description": "Discord-webhookok megtekintése és kezelése",
+      "parameters": {
+        "webhook": {
+          "name": "webhook",
+          "description": "A webhook URL-je vagy ID/Token"
+        }
+      }
+    },
+    "translate": {
+      "name": "fordítás",
+      "description": "Lefordít egy szöveget másik nyelvre",
+      "parameters": {
+        "text": {
+          "name": "szöveg",
+          "description": "A lefordítandó szöveg"
+        },
+        "to": {
+          "name": "nyelv",
+          "description": "Célnyelv (opcionális, alapértelmezés a Discord-nyelved)"
+        }
+      }
+    },
+    "library": {
+      "name": "könyvtár",
+      "description": "Megnyitja a mentett üzeneteid könyvtárát"
+    },
+    "reminder-add": {
+      "name": "emlékeztető-hozzáadás",
+      "description": "Új emlékeztetőt ad hozzá",
+      "parameters": {
+        "message": {
+          "name": "üzenet",
+          "description": "Mire emlékeztesselek?"
+        },
+        "time": {
+          "name": "idő",
+          "description": "Mikor emlékeztessen (pl. 1h30m, 2d, holnap 15:00)"
+        },
+        "send_here": {
+          "name": "ide-küldés",
+          "description": "Az emlékeztető ebbe a csatornába érkezzen, ne DM-be"
+        }
+      }
+    },
+    "reminders": {
+      "name": "emlékeztetők",
+      "description": "Kezeld az emlékeztetőidet"
+    },
+    "preferences": {
+      "name": "beállítások",
+      "description": "Kezeld a személyes beállításaidat"
+    },
+    "moddy": {
+      "name": "moddy",
+      "description": "Tudj meg többet a Moddyról"
+    },
+    "subscription": {
+      "name": "előfizetés",
+      "description": "Megmutatja a Moddy-előfizetésed állapotát"
+    },
+    "mycases": {
+      "name": "ügyeim",
+      "description": "Böngészd a moderációs ügyeidet az összes szerveren"
+    },
+    "fix": {
+      "name": "javítás",
+      "description": "Kijavítja egy szöveg helyesírását és nyelvtanát"
+    },
+    "rephrase": {
+      "name": "átfogalmazás",
+      "description": "Átfogalmaz egy szöveget az általad választott stílusban"
+    },
+    "summarize": {
+      "name": "összefoglalás",
+      "description": "Összefoglal egy szöveget"
+    },
+    "config": {
+      "name": "konfiguráció",
+      "description": "A szerver moduljainak beállítása"
+    },
+    "cases": {
+      "name": "ügyek",
+      "description": "Böngészd az ezen a szerveren kiadott moderációs ügyeket"
+    },
+    "clear-saved-roles": {
+      "name": "mentett-rangok-törlése",
+      "description": "Törli a szervert elhagyó felhasználó mentett rangjait",
+      "parameters": {
+        "user": {
+          "name": "felhasználó",
+          "description": "A felhasználó, akinek a mentett rangjait törölni kell"
+        }
+      }
+    },
+    "view-saved-roles": {
+      "name": "mentett-rangok-listája",
+      "description": "Megmutatja az összes felhasználót mentett rangokkal ezen a szerveren"
+    },
+    "ban": {
+      "name": "kitiltás",
+      "description": "Kitilt egy vagy több felhasználót a szerverről",
+      "parameters": {
+        "user": {
+          "name": "felhasználó",
+          "description": "A kitiltandó felhasználó (továbbiakat az űrlapon adhatsz meg)"
+        }
+      }
+    },
+    "kick": {
+      "name": "kirúgás",
+      "description": "Kirúg egy vagy több tagot a szerverről",
+      "parameters": {
+        "user": {
+          "name": "felhasználó",
+          "description": "A kirúgandó felhasználó (továbbiakat az űrlapon adhatsz meg)"
+        }
+      }
+    },
+    "mute": {
+      "name": "némítás",
+      "description": "Némít (timeout) egy vagy több tagot",
+      "parameters": {
+        "user": {
+          "name": "felhasználó",
+          "description": "A némítandó felhasználó (továbbiakat az űrlapon adhatsz meg)"
+        }
+      }
+    },
+    "warn": {
+      "name": "figyelmeztetés",
+      "description": "Figyelmeztet egy vagy több felhasználót",
+      "parameters": {
+        "user": {
+          "name": "felhasználó",
+          "description": "A figyelmeztetendő felhasználó (továbbiakat is megadhatsz)"
+        }
+      }
+    },
+    "interserver": {
+      "name": "szerverközi",
+      "description": "Szerverek közötti üzenetek kezelése"
+    },
+    "interserver report": {
+      "name": "jelentés",
+      "description": "Jelent egy szerverek közötti üzenetet a moderátorcsapatnak"
+    },
+    "interserver info": {
+      "name": "infó",
+      "description": "Információt ad egy szerverek közötti üzenetről"
+    }
+  }
+}

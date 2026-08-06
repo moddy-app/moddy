@@ -1,0 +1,254 @@
+{
+  "common": {
+    "parameters": {
+      "incognito": {
+        "name": "incognito",
+        "description": "Maak het antwoord alleen voor jou zichtbaar"
+      },
+      "user": {
+        "name": "gebruiker",
+        "description": "De betrokken gebruiker"
+      },
+      "case": {
+        "name": "dossier",
+        "description": "Optioneel: open een specifiek dossier via de referentie (bijv. A7F2K9)"
+      },
+      "message_id": {
+        "name": "bericht-id",
+        "description": "De bericht-ID (Moddy-ID zoals F6ZEU3VS of Discord-ID)"
+      }
+    }
+  },
+  "context_menus": {
+    "Save Message": {
+      "name": "Bericht opslaan"
+    },
+    "Get Emojis": {
+      "name": "Emoji's ophalen"
+    },
+    "Translate": {
+      "name": "Vertalen"
+    },
+    "AI text tools": {
+      "name": "AI-teksthulpmiddelen"
+    }
+  },
+  "commands": {
+    "ping": {
+      "name": "ping",
+      "description": "Controleer de latentie en status van de bot"
+    },
+    "user": {
+      "name": "gebruiker",
+      "description": "Toont gedetailleerde informatie over een Discord-gebruiker",
+      "parameters": {
+        "user": {
+          "name": "gebruiker",
+          "description": "De op te zoeken gebruiker"
+        }
+      }
+    },
+    "avatar": {
+      "name": "avatar",
+      "description": "Toont de avatar van een gebruiker",
+      "parameters": {
+        "user": {
+          "name": "gebruiker",
+          "description": "De gebruiker wiens avatar je wilt zien"
+        }
+      }
+    },
+    "banner": {
+      "name": "banner",
+      "description": "Toont de banner van een gebruiker",
+      "parameters": {
+        "user": {
+          "name": "gebruiker",
+          "description": "De gebruiker wiens banner je wilt zien"
+        }
+      }
+    },
+    "emoji": {
+      "name": "emoji",
+      "description": "Toont informatie over een Discord-emoji",
+      "parameters": {
+        "emoji": {
+          "name": "emoji",
+          "description": "De op te zoeken emoji"
+        }
+      }
+    },
+    "roll": {
+      "name": "dobbelen",
+      "description": "Gooit een willekeurige dobbelsteen",
+      "parameters": {
+        "max": {
+          "name": "max",
+          "description": "Maximale waarde van de dobbelsteen (optioneel, standaard 6)"
+        }
+      }
+    },
+    "invite": {
+      "name": "uitnodiging",
+      "description": "Toont informatie over een Discord-uitnodiging",
+      "parameters": {
+        "invite_code": {
+          "name": "uitnodigingscode",
+          "description": "De Discord-uitnodigingscode of -link"
+        }
+      }
+    },
+    "webhook": {
+      "name": "webhook",
+      "description": "Discord-webhooks bekijken en beheren",
+      "parameters": {
+        "webhook": {
+          "name": "webhook",
+          "description": "Webhook-URL of ID/Token"
+        }
+      }
+    },
+    "translate": {
+      "name": "vertalen",
+      "description": "Vertaalt tekst naar een andere taal",
+      "parameters": {
+        "text": {
+          "name": "tekst",
+          "description": "De te vertalen tekst"
+        },
+        "to": {
+          "name": "naar",
+          "description": "Doeltaal (optioneel, standaard je Discord-taal)"
+        }
+      }
+    },
+    "library": {
+      "name": "bibliotheek",
+      "description": "Bekijk je bibliotheek met opgeslagen berichten"
+    },
+    "reminder-add": {
+      "name": "herinnering-toevoegen",
+      "description": "Voegt een nieuwe herinnering toe",
+      "parameters": {
+        "message": {
+          "name": "bericht",
+          "description": "Waaraan moet ik je herinneren?"
+        },
+        "time": {
+          "name": "tijd",
+          "description": "Wanneer herinneren (bijv. 1h30m, 2d, morgen 15:00)"
+        },
+        "send_here": {
+          "name": "hier-sturen",
+          "description": "Stuur de herinnering in dit kanaal in plaats van via DM"
+        }
+      }
+    },
+    "reminders": {
+      "name": "herinneringen",
+      "description": "Beheer je herinneringen"
+    },
+    "preferences": {
+      "name": "voorkeuren",
+      "description": "Beheer je persoonlijke voorkeuren"
+    },
+    "moddy": {
+      "name": "moddy",
+      "description": "Kom meer te weten over Moddy"
+    },
+    "subscription": {
+      "name": "abonnement",
+      "description": "Bekijk de status van je Moddy-abonnement"
+    },
+    "mycases": {
+      "name": "mijn-dossiers",
+      "description": "Blader door je moderatiedossiers op alle servers"
+    },
+    "fix": {
+      "name": "corrigeren",
+      "description": "Corrigeert de spelling en grammatica van een tekst"
+    },
+    "rephrase": {
+      "name": "herformuleren",
+      "description": "Herformuleert een tekst in de stijl van je keuze"
+    },
+    "summarize": {
+      "name": "samenvatten",
+      "description": "Vat een tekst samen"
+    },
+    "config": {
+      "name": "config",
+      "description": "Configureert de servermodules"
+    },
+    "cases": {
+      "name": "dossiers",
+      "description": "Blader door de moderatiedossiers van deze server"
+    },
+    "clear-saved-roles": {
+      "name": "opgeslagen-rollen-wissen",
+      "description": "Wist de opgeslagen rollen van een gebruiker die de server heeft verlaten",
+      "parameters": {
+        "user": {
+          "name": "gebruiker",
+          "description": "De gebruiker wiens opgeslagen rollen gewist moeten worden"
+        }
+      }
+    },
+    "view-saved-roles": {
+      "name": "opgeslagen-rollen-tonen",
+      "description": "Toont alle gebruikers met opgeslagen rollen op deze server"
+    },
+    "ban": {
+      "name": "verbannen",
+      "description": "Verbant een of meer gebruikers van de server",
+      "parameters": {
+        "user": {
+          "name": "gebruiker",
+          "description": "Te verbannen gebruiker (je kunt er meer toevoegen)"
+        }
+      }
+    },
+    "kick": {
+      "name": "kicken",
+      "description": "Kickt een of meer leden van de server",
+      "parameters": {
+        "user": {
+          "name": "gebruiker",
+          "description": "Te kicken gebruiker (je kunt er meer toevoegen)"
+        }
+      }
+    },
+    "mute": {
+      "name": "dempen",
+      "description": "Dempt (timeout) een of meer leden",
+      "parameters": {
+        "user": {
+          "name": "gebruiker",
+          "description": "Te dempen gebruiker (je kunt er meer toevoegen)"
+        }
+      }
+    },
+    "warn": {
+      "name": "waarschuwen",
+      "description": "Waarschuwt een of meer gebruikers",
+      "parameters": {
+        "user": {
+          "name": "gebruiker",
+          "description": "Te waarschuwen gebruiker (je kunt er meer toevoegen)"
+        }
+      }
+    },
+    "interserver": {
+      "name": "interserver",
+      "description": "Beheert berichten tussen servers"
+    },
+    "interserver report": {
+      "name": "melden",
+      "description": "Meldt een bericht tussen servers bij het moderatieteam"
+    },
+    "interserver info": {
+      "name": "info",
+      "description": "Geeft informatie over een bericht tussen servers"
+    }
+  }
+}

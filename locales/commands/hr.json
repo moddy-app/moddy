@@ -1,0 +1,254 @@
+{
+  "common": {
+    "parameters": {
+      "incognito": {
+        "name": "skriveno",
+        "description": "Prikaži odgovor samo tebi"
+      },
+      "user": {
+        "name": "korisnik",
+        "description": "Korisnik na kojeg se odnosi"
+      },
+      "case": {
+        "name": "slučaj",
+        "description": "Neobavezno: otvori određeni slučaj prema oznaci (npr. A7F2K9)"
+      },
+      "message_id": {
+        "name": "id-poruke",
+        "description": "ID poruke (Moddy ID poput F6ZEU3VS ili Discord ID)"
+      }
+    }
+  },
+  "context_menus": {
+    "Save Message": {
+      "name": "Spremi poruku"
+    },
+    "Get Emojis": {
+      "name": "Dohvati emoji"
+    },
+    "Translate": {
+      "name": "Prevedi"
+    },
+    "AI text tools": {
+      "name": "AI alati za tekst"
+    }
+  },
+  "commands": {
+    "ping": {
+      "name": "ping",
+      "description": "Prikazuje latenciju i status bota"
+    },
+    "user": {
+      "name": "korisnik",
+      "description": "Prikazuje detaljne informacije o Discord korisniku",
+      "parameters": {
+        "user": {
+          "name": "korisnik",
+          "description": "Korisnik za pregled"
+        }
+      }
+    },
+    "avatar": {
+      "name": "avatar",
+      "description": "Prikazuje avatar korisnika",
+      "parameters": {
+        "user": {
+          "name": "korisnik",
+          "description": "Korisnik čiji avatar želiš vidjeti"
+        }
+      }
+    },
+    "banner": {
+      "name": "baner",
+      "description": "Prikazuje baner korisnika",
+      "parameters": {
+        "user": {
+          "name": "korisnik",
+          "description": "Korisnik čiji baner želiš vidjeti"
+        }
+      }
+    },
+    "emoji": {
+      "name": "emoji",
+      "description": "Prikazuje informacije o Discord emojiju",
+      "parameters": {
+        "emoji": {
+          "name": "emoji",
+          "description": "Emoji za pregled"
+        }
+      }
+    },
+    "roll": {
+      "name": "kocka",
+      "description": "Baca nasumičnu kocku",
+      "parameters": {
+        "max": {
+          "name": "max",
+          "description": "Najveća vrijednost kocke (neobavezno, zadano 6)"
+        }
+      }
+    },
+    "invite": {
+      "name": "pozivnica",
+      "description": "Prikazuje informacije o Discord pozivnici",
+      "parameters": {
+        "invite_code": {
+          "name": "kod-pozivnice",
+          "description": "Kod ili poveznica Discord pozivnice"
+        }
+      }
+    },
+    "webhook": {
+      "name": "webhook",
+      "description": "Pregled i upravljanje Discord webhookovima",
+      "parameters": {
+        "webhook": {
+          "name": "webhook",
+          "description": "URL webhooka ili ID/Token"
+        }
+      }
+    },
+    "translate": {
+      "name": "prevedi",
+      "description": "Prevodi tekst na drugi jezik",
+      "parameters": {
+        "text": {
+          "name": "tekst",
+          "description": "Tekst za prijevod"
+        },
+        "to": {
+          "name": "na",
+          "description": "Ciljni jezik (neobavezno, zadano tvoj Discord jezik)"
+        }
+      }
+    },
+    "library": {
+      "name": "knjižnica",
+      "description": "Pogledaj svoju knjižnicu spremljenih poruka"
+    },
+    "reminder-add": {
+      "name": "podsjetnik-dodaj",
+      "description": "Dodaje novi podsjetnik",
+      "parameters": {
+        "message": {
+          "name": "poruka",
+          "description": "Na što da te podsjetim?"
+        },
+        "time": {
+          "name": "vrijeme",
+          "description": "Kada podsjetiti (npr. 1h30m, 2d, sutra 15:00)"
+        },
+        "send_here": {
+          "name": "pošalji-ovdje",
+          "description": "Pošalji podsjetnik na ovaj kanal umjesto u DM"
+        }
+      }
+    },
+    "reminders": {
+      "name": "podsjetnici",
+      "description": "Upravljaj svojim podsjetnicima"
+    },
+    "preferences": {
+      "name": "postavke",
+      "description": "Upravljaj svojim osobnim postavkama"
+    },
+    "moddy": {
+      "name": "moddy",
+      "description": "Saznaj više o Moddyju"
+    },
+    "subscription": {
+      "name": "pretplata",
+      "description": "Pogledaj status svoje Moddy pretplate"
+    },
+    "mycases": {
+      "name": "moji-slučajevi",
+      "description": "Pregledaj svoje moderatorske slučajeve na svim poslužiteljima"
+    },
+    "fix": {
+      "name": "ispravi",
+      "description": "Ispravlja pravopis i gramatiku teksta"
+    },
+    "rephrase": {
+      "name": "preoblikuj",
+      "description": "Preoblikuje tekst u stilu koji odabereš"
+    },
+    "summarize": {
+      "name": "sažmi",
+      "description": "Sažima tekst"
+    },
+    "config": {
+      "name": "konfiguracija",
+      "description": "Konfiguracija modula poslužitelja"
+    },
+    "cases": {
+      "name": "slučajevi",
+      "description": "Pregledaj moderatorske slučajeve ovog poslužitelja"
+    },
+    "clear-saved-roles": {
+      "name": "obriši-spremljene-uloge",
+      "description": "Briše spremljene uloge korisnika koji je napustio poslužitelj",
+      "parameters": {
+        "user": {
+          "name": "korisnik",
+          "description": "Korisnik čije spremljene uloge treba obrisati"
+        }
+      }
+    },
+    "view-saved-roles": {
+      "name": "prikaži-spremljene-uloge",
+      "description": "Prikazuje sve korisnike sa spremljenim ulogama na ovom poslužitelju"
+    },
+    "ban": {
+      "name": "zabrani",
+      "description": "Zabranjuje pristup jednom ili više korisnika",
+      "parameters": {
+        "user": {
+          "name": "korisnik",
+          "description": "Korisnik za zabranu (možeš dodati još u obrascu)"
+        }
+      }
+    },
+    "kick": {
+      "name": "izbaci",
+      "description": "Izbacuje jednog ili više članova s poslužitelja",
+      "parameters": {
+        "user": {
+          "name": "korisnik",
+          "description": "Korisnik za izbacivanje (možeš dodati još u obrascu)"
+        }
+      }
+    },
+    "mute": {
+      "name": "utišaj",
+      "description": "Utišava (timeout) jednog ili više članova",
+      "parameters": {
+        "user": {
+          "name": "korisnik",
+          "description": "Korisnik za utišavanje (možeš dodati još u obrascu)"
+        }
+      }
+    },
+    "warn": {
+      "name": "upozori",
+      "description": "Upozorava jednog ili više korisnika",
+      "parameters": {
+        "user": {
+          "name": "korisnik",
+          "description": "Korisnik za upozorenje (možeš dodati još u obrascu)"
+        }
+      }
+    },
+    "interserver": {
+      "name": "međuposlužitelj",
+      "description": "Upravljanje porukama između poslužitelja"
+    },
+    "interserver report": {
+      "name": "prijavi",
+      "description": "Prijavljuje poruku između poslužitelja timu za moderaciju"
+    },
+    "interserver info": {
+      "name": "info",
+      "description": "Daje informacije o poruci između poslužitelja"
+    }
+  }
+}

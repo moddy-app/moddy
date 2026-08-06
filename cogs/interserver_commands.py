@@ -23,8 +23,8 @@ ENGLISH_LOG_CHANNEL_ID = 1446555149031047388  # Logs anglais
 FRENCH_LOG_CHANNEL_ID = 1446555476044284045  # Logs français
 
 
-class InterServerCommands(commands.GroupCog, name="interserver"):
-    """Commandes pour gérer les messages inter-serveur"""
+class InterServerCommands(commands.GroupCog, name="interserver", description="Manage inter-server messages"):
+    """Inter-server message commands (report / info)"""
 
     def __init__(self, bot):
         self.bot = bot

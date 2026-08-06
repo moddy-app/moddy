@@ -321,6 +321,41 @@ async def setup(bot):
 
 ---
 
+## Localisation du nom et de la description
+
+Le `name` et la `description` déclarés dans le cog sont **toujours en anglais** :
+ce sont les identifiants techniques. Discord affiche ensuite à chaque
+utilisateur la variante correspondant à sa langue, grâce au `Translator`
+branché sur l'arbre de commandes.
+
+```python
+# Déclaration : anglais, comme d'habitude
+@app_commands.command(name="avatar", description="Display a user's avatar")
+@app_commands.describe(user="The user whose avatar you want to see")
+async def avatar_command(self, interaction, user: discord.User):
+    ...
+```
+
+```json
+// locales/commands/fr.json
+"avatar": {
+  "name": "avatar",
+  "description": "Affiche l'avatar d'un utilisateur",
+  "parameters": {
+    "user": { "name": "utilisateur", "description": "L'utilisateur dont vous voulez voir l'avatar" }
+  }
+}
+```
+
+Après avoir créé une commande, ajoutez sa clé dans les fichiers
+`locales/commands/*.json` (32 locales Discord) puis lancez
+`pytest tests/test_command_localizations.py`. Sans entrée, la commande reste
+affichée en anglais — rien ne casse.
+
+Détails complets → [COMMAND_LOCALIZATION.md](COMMAND_LOCALIZATION.md)
+
+---
+
 ## Bonnes Pratiques
 
 ### ✅ DO (À FAIRE)

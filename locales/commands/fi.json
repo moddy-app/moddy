@@ -1,0 +1,254 @@
+{
+  "common": {
+    "parameters": {
+      "incognito": {
+        "name": "piilotettu",
+        "description": "Näytä vastaus vain sinulle"
+      },
+      "user": {
+        "name": "käyttäjä",
+        "description": "Kyseessä oleva käyttäjä"
+      },
+      "case": {
+        "name": "tapaus",
+        "description": "Valinnainen: avaa tietty tapaus sen viitteellä (esim. A7F2K9)"
+      },
+      "message_id": {
+        "name": "viestin-tunnus",
+        "description": "Viestin tunnus (Moddy-tunnus kuten F6ZEU3VS tai Discord-tunnus)"
+      }
+    }
+  },
+  "context_menus": {
+    "Save Message": {
+      "name": "Tallenna viesti"
+    },
+    "Get Emojis": {
+      "name": "Hae emojit"
+    },
+    "Translate": {
+      "name": "Käännä"
+    },
+    "AI text tools": {
+      "name": "Tekoälyn tekstityökalut"
+    }
+  },
+  "commands": {
+    "ping": {
+      "name": "ping",
+      "description": "Näyttää botin viiveen ja tilan"
+    },
+    "user": {
+      "name": "käyttäjä",
+      "description": "Näyttää yksityiskohtaiset tiedot Discord-käyttäjästä",
+      "parameters": {
+        "user": {
+          "name": "käyttäjä",
+          "description": "Haettava käyttäjä"
+        }
+      }
+    },
+    "avatar": {
+      "name": "avatar",
+      "description": "Näyttää käyttäjän profiilikuvan",
+      "parameters": {
+        "user": {
+          "name": "käyttäjä",
+          "description": "Käyttäjä, jonka profiilikuvan haluat nähdä"
+        }
+      }
+    },
+    "banner": {
+      "name": "banneri",
+      "description": "Näyttää käyttäjän bannerin",
+      "parameters": {
+        "user": {
+          "name": "käyttäjä",
+          "description": "Käyttäjä, jonka bannerin haluat nähdä"
+        }
+      }
+    },
+    "emoji": {
+      "name": "emoji",
+      "description": "Näyttää tiedot Discord-emojista",
+      "parameters": {
+        "emoji": {
+          "name": "emoji",
+          "description": "Haettava emoji"
+        }
+      }
+    },
+    "roll": {
+      "name": "noppa",
+      "description": "Heittää satunnaisen nopan",
+      "parameters": {
+        "max": {
+          "name": "maks",
+          "description": "Nopan suurin arvo (valinnainen, oletus 6)"
+        }
+      }
+    },
+    "invite": {
+      "name": "kutsu",
+      "description": "Näyttää tiedot Discord-kutsusta",
+      "parameters": {
+        "invite_code": {
+          "name": "kutsukoodi",
+          "description": "Discord-kutsukoodi tai -linkki"
+        }
+      }
+    },
+    "webhook": {
+      "name": "webhook",
+      "description": "Tarkastele ja hallitse Discord-webhookeja",
+      "parameters": {
+        "webhook": {
+          "name": "webhook",
+          "description": "Webhookin URL tai ID/Token"
+        }
+      }
+    },
+    "translate": {
+      "name": "käännä",
+      "description": "Kääntää tekstin toiselle kielelle",
+      "parameters": {
+        "text": {
+          "name": "teksti",
+          "description": "Käännettävä teksti"
+        },
+        "to": {
+          "name": "kielelle",
+          "description": "Kohdekieli (valinnainen, oletuksena Discord-kielesi)"
+        }
+      }
+    },
+    "library": {
+      "name": "kirjasto",
+      "description": "Näytä tallennettujen viestiesi kirjasto"
+    },
+    "reminder-add": {
+      "name": "muistutus-lisää",
+      "description": "Lisää uuden muistutuksen",
+      "parameters": {
+        "message": {
+          "name": "viesti",
+          "description": "Mistä muistutan sinua?"
+        },
+        "time": {
+          "name": "aika",
+          "description": "Milloin muistutetaan (esim. 1h30m, 2d, huomenna 15:00)"
+        },
+        "send_here": {
+          "name": "lähetä-tänne",
+          "description": "Lähetä muistutus tälle kanavalle yksityisviestin sijaan"
+        }
+      }
+    },
+    "reminders": {
+      "name": "muistutukset",
+      "description": "Hallitse muistutuksiasi"
+    },
+    "preferences": {
+      "name": "asetukset",
+      "description": "Hallitse henkilökohtaisia asetuksiasi"
+    },
+    "moddy": {
+      "name": "moddy",
+      "description": "Lue lisää Moddysta"
+    },
+    "subscription": {
+      "name": "tilaus",
+      "description": "Näytä Moddy-tilauksesi tila"
+    },
+    "mycases": {
+      "name": "omat-tapaukset",
+      "description": "Selaa moderointitapauksiasi kaikilla palvelimilla"
+    },
+    "fix": {
+      "name": "korjaa",
+      "description": "Korjaa tekstin oikeinkirjoituksen ja kieliopin"
+    },
+    "rephrase": {
+      "name": "muotoile-uudelleen",
+      "description": "Muotoilee tekstin uudelleen valitsemassasi tyylissä"
+    },
+    "summarize": {
+      "name": "tiivistä",
+      "description": "Tiivistää tekstin"
+    },
+    "config": {
+      "name": "määritä",
+      "description": "Määritä palvelimen moduulit"
+    },
+    "cases": {
+      "name": "tapaukset",
+      "description": "Selaa tällä palvelimella luotuja moderointitapauksia"
+    },
+    "clear-saved-roles": {
+      "name": "tyhjennä-tallennetut-roolit",
+      "description": "Tyhjentää palvelimelta lähteneen käyttäjän tallennetut roolit",
+      "parameters": {
+        "user": {
+          "name": "käyttäjä",
+          "description": "Käyttäjä, jonka tallennetut roolit tyhjennetään"
+        }
+      }
+    },
+    "view-saved-roles": {
+      "name": "näytä-tallennetut-roolit",
+      "description": "Näyttää kaikki käyttäjät, joilla on tallennettuja rooleja"
+    },
+    "ban": {
+      "name": "porttikielto",
+      "description": "Antaa porttikiellon yhdelle tai useammalle käyttäjälle",
+      "parameters": {
+        "user": {
+          "name": "käyttäjä",
+          "description": "Porttikiellon saava käyttäjä (voit lisätä muita lomakkeella)"
+        }
+      }
+    },
+    "kick": {
+      "name": "potkaise",
+      "description": "Potkaisee yhden tai useamman jäsenen pois palvelimelta",
+      "parameters": {
+        "user": {
+          "name": "käyttäjä",
+          "description": "Potkaistava käyttäjä (voit lisätä muita lomakkeella)"
+        }
+      }
+    },
+    "mute": {
+      "name": "mykistä",
+      "description": "Mykistää (timeout) yhden tai useamman jäsenen",
+      "parameters": {
+        "user": {
+          "name": "käyttäjä",
+          "description": "Mykistettävä käyttäjä (voit lisätä muita lomakkeella)"
+        }
+      }
+    },
+    "warn": {
+      "name": "varoita",
+      "description": "Varoittaa yhtä tai useampaa käyttäjää",
+      "parameters": {
+        "user": {
+          "name": "käyttäjä",
+          "description": "Varoitettava käyttäjä (voit lisätä muita lomakkeella)"
+        }
+      }
+    },
+    "interserver": {
+      "name": "palvelinten-välinen",
+      "description": "Hallitse palvelinten välisiä viestejä"
+    },
+    "interserver report": {
+      "name": "ilmoita",
+      "description": "Ilmoittaa palvelinten välisestä viestistä moderointitiimille"
+    },
+    "interserver info": {
+      "name": "tiedot",
+      "description": "Antaa tietoja palvelinten välisestä viestistä"
+    }
+  }
+}

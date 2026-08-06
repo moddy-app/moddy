@@ -1,0 +1,254 @@
+{
+  "common": {
+    "parameters": {
+      "incognito": {
+        "name": "pribadi",
+        "description": "Tampilkan balasan hanya untuk kamu"
+      },
+      "user": {
+        "name": "pengguna",
+        "description": "Pengguna yang dimaksud"
+      },
+      "case": {
+        "name": "kasus",
+        "description": "Opsional: buka kasus tertentu lewat referensinya (mis. A7F2K9)"
+      },
+      "message_id": {
+        "name": "id-pesan",
+        "description": "ID pesan (ID Moddy seperti F6ZEU3VS atau ID Discord)"
+      }
+    }
+  },
+  "context_menus": {
+    "Save Message": {
+      "name": "Simpan pesan"
+    },
+    "Get Emojis": {
+      "name": "Ambil emoji"
+    },
+    "Translate": {
+      "name": "Terjemahkan"
+    },
+    "AI text tools": {
+      "name": "Alat teks AI"
+    }
+  },
+  "commands": {
+    "ping": {
+      "name": "ping",
+      "description": "Cek latensi dan status bot"
+    },
+    "user": {
+      "name": "pengguna",
+      "description": "Menampilkan informasi lengkap tentang pengguna Discord",
+      "parameters": {
+        "user": {
+          "name": "pengguna",
+          "description": "Pengguna yang ingin dilihat"
+        }
+      }
+    },
+    "avatar": {
+      "name": "avatar",
+      "description": "Menampilkan avatar seorang pengguna",
+      "parameters": {
+        "user": {
+          "name": "pengguna",
+          "description": "Pengguna yang avatarnya ingin kamu lihat"
+        }
+      }
+    },
+    "banner": {
+      "name": "banner",
+      "description": "Menampilkan banner seorang pengguna",
+      "parameters": {
+        "user": {
+          "name": "pengguna",
+          "description": "Pengguna yang bannernya ingin kamu lihat"
+        }
+      }
+    },
+    "emoji": {
+      "name": "emoji",
+      "description": "Menampilkan informasi tentang emoji Discord",
+      "parameters": {
+        "emoji": {
+          "name": "emoji",
+          "description": "Emoji yang ingin dilihat"
+        }
+      }
+    },
+    "roll": {
+      "name": "dadu",
+      "description": "Melempar dadu secara acak",
+      "parameters": {
+        "max": {
+          "name": "maks",
+          "description": "Nilai maksimum dadu (opsional, standarnya 6)"
+        }
+      }
+    },
+    "invite": {
+      "name": "undangan",
+      "description": "Menampilkan informasi tentang undangan Discord",
+      "parameters": {
+        "invite_code": {
+          "name": "kode-undangan",
+          "description": "Kode atau tautan undangan Discord"
+        }
+      }
+    },
+    "webhook": {
+      "name": "webhook",
+      "description": "Memeriksa dan mengelola webhook Discord",
+      "parameters": {
+        "webhook": {
+          "name": "webhook",
+          "description": "URL webhook atau ID/Token"
+        }
+      }
+    },
+    "translate": {
+      "name": "terjemahkan",
+      "description": "Menerjemahkan teks ke bahasa lain",
+      "parameters": {
+        "text": {
+          "name": "teks",
+          "description": "Teks yang akan diterjemahkan"
+        },
+        "to": {
+          "name": "ke",
+          "description": "Bahasa tujuan (opsional, standarnya bahasa Discord kamu)"
+        }
+      }
+    },
+    "library": {
+      "name": "pustaka",
+      "description": "Lihat pustaka pesan tersimpan kamu"
+    },
+    "reminder-add": {
+      "name": "pengingat-tambah",
+      "description": "Menambahkan pengingat baru",
+      "parameters": {
+        "message": {
+          "name": "pesan",
+          "description": "Apa yang harus saya ingatkan?"
+        },
+        "time": {
+          "name": "waktu",
+          "description": "Kapan diingatkan (mis. 1h30m, 2d, besok 15:00)"
+        },
+        "send_here": {
+          "name": "kirim-di-sini",
+          "description": "Kirim pengingat di kanal ini alih-alih lewat DM"
+        }
+      }
+    },
+    "reminders": {
+      "name": "pengingat",
+      "description": "Kelola pengingat kamu"
+    },
+    "preferences": {
+      "name": "preferensi",
+      "description": "Kelola preferensi pribadi kamu"
+    },
+    "moddy": {
+      "name": "moddy",
+      "description": "Pelajari lebih lanjut tentang Moddy"
+    },
+    "subscription": {
+      "name": "langganan",
+      "description": "Lihat status langganan Moddy kamu"
+    },
+    "mycases": {
+      "name": "kasus-saya",
+      "description": "Telusuri kasus moderasi kamu di semua server"
+    },
+    "fix": {
+      "name": "perbaiki",
+      "description": "Memperbaiki ejaan dan tata bahasa sebuah teks"
+    },
+    "rephrase": {
+      "name": "ubah-kalimat",
+      "description": "Menulis ulang teks dengan gaya pilihan kamu"
+    },
+    "summarize": {
+      "name": "ringkas",
+      "description": "Meringkas sebuah teks"
+    },
+    "config": {
+      "name": "konfigurasi",
+      "description": "Konfigurasi modul server"
+    },
+    "cases": {
+      "name": "kasus",
+      "description": "Telusuri kasus moderasi yang dibuat di server ini"
+    },
+    "clear-saved-roles": {
+      "name": "hapus-peran-tersimpan",
+      "description": "Menghapus peran tersimpan dari pengguna yang keluar dari server",
+      "parameters": {
+        "user": {
+          "name": "pengguna",
+          "description": "Pengguna yang peran tersimpannya akan dihapus"
+        }
+      }
+    },
+    "view-saved-roles": {
+      "name": "lihat-peran-tersimpan",
+      "description": "Menampilkan semua pengguna dengan peran tersimpan di server ini"
+    },
+    "ban": {
+      "name": "blokir",
+      "description": "Memblokir satu atau beberapa pengguna dari server",
+      "parameters": {
+        "user": {
+          "name": "pengguna",
+          "description": "Pengguna yang akan diblokir (bisa tambah lagi di formulir)"
+        }
+      }
+    },
+    "kick": {
+      "name": "keluarkan",
+      "description": "Mengeluarkan satu atau beberapa anggota dari server",
+      "parameters": {
+        "user": {
+          "name": "pengguna",
+          "description": "Pengguna yang akan dikeluarkan (bisa tambah lagi di formulir)"
+        }
+      }
+    },
+    "mute": {
+      "name": "bisukan",
+      "description": "Membisukan (timeout) satu atau beberapa anggota",
+      "parameters": {
+        "user": {
+          "name": "pengguna",
+          "description": "Pengguna yang akan dibisukan (bisa tambah lagi di formulir)"
+        }
+      }
+    },
+    "warn": {
+      "name": "peringatkan",
+      "description": "Memberi peringatan kepada satu atau beberapa pengguna",
+      "parameters": {
+        "user": {
+          "name": "pengguna",
+          "description": "Pengguna yang akan diperingatkan (bisa tambah lagi)"
+        }
+      }
+    },
+    "interserver": {
+      "name": "antarserver",
+      "description": "Kelola pesan antarserver"
+    },
+    "interserver report": {
+      "name": "laporkan",
+      "description": "Laporkan pesan antarserver ke tim moderasi"
+    },
+    "interserver info": {
+      "name": "info",
+      "description": "Dapatkan informasi tentang pesan antarserver"
+    }
+  }
+}

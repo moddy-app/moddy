@@ -1,0 +1,254 @@
+{
+  "common": {
+    "parameters": {
+      "incognito": {
+        "name": "incognito",
+        "description": "Rendre la réponse visible uniquement pour vous"
+      },
+      "user": {
+        "name": "utilisateur",
+        "description": "L'utilisateur concerné"
+      },
+      "case": {
+        "name": "dossier",
+        "description": "Optionnel : ouvrir directement un dossier via sa référence (ex. A7F2K9)"
+      },
+      "message_id": {
+        "name": "id-message",
+        "description": "L'ID du message (ID Moddy comme F6ZEU3VS ou ID Discord)"
+      }
+    }
+  },
+  "context_menus": {
+    "Save Message": {
+      "name": "Sauvegarder le message"
+    },
+    "Get Emojis": {
+      "name": "Récupérer les emojis"
+    },
+    "Translate": {
+      "name": "Traduire"
+    },
+    "AI text tools": {
+      "name": "Outils de texte IA"
+    }
+  },
+  "commands": {
+    "ping": {
+      "name": "ping",
+      "description": "Vérifie la latence et l'état du bot"
+    },
+    "user": {
+      "name": "utilisateur",
+      "description": "Affiche des informations détaillées sur un utilisateur Discord",
+      "parameters": {
+        "user": {
+          "name": "utilisateur",
+          "description": "L'utilisateur à consulter"
+        }
+      }
+    },
+    "avatar": {
+      "name": "avatar",
+      "description": "Affiche l'avatar d'un utilisateur",
+      "parameters": {
+        "user": {
+          "name": "utilisateur",
+          "description": "L'utilisateur dont vous voulez voir l'avatar"
+        }
+      }
+    },
+    "banner": {
+      "name": "bannière",
+      "description": "Affiche la bannière d'un utilisateur",
+      "parameters": {
+        "user": {
+          "name": "utilisateur",
+          "description": "L'utilisateur dont vous voulez voir la bannière"
+        }
+      }
+    },
+    "emoji": {
+      "name": "emoji",
+      "description": "Affiche des informations sur un emoji Discord",
+      "parameters": {
+        "emoji": {
+          "name": "emoji",
+          "description": "L'emoji à consulter"
+        }
+      }
+    },
+    "roll": {
+      "name": "dé",
+      "description": "Lance un dé aléatoire",
+      "parameters": {
+        "max": {
+          "name": "max",
+          "description": "Valeur maximale du dé (optionnel, 6 par défaut)"
+        }
+      }
+    },
+    "invite": {
+      "name": "invitation",
+      "description": "Affiche des informations sur une invitation Discord",
+      "parameters": {
+        "invite_code": {
+          "name": "code-invitation",
+          "description": "Le code ou le lien d'invitation Discord"
+        }
+      }
+    },
+    "webhook": {
+      "name": "webhook",
+      "description": "Inspecte et gère les webhooks Discord",
+      "parameters": {
+        "webhook": {
+          "name": "webhook",
+          "description": "URL du webhook ou ID/Token"
+        }
+      }
+    },
+    "translate": {
+      "name": "traduire",
+      "description": "Traduit un texte dans une autre langue",
+      "parameters": {
+        "text": {
+          "name": "texte",
+          "description": "Le texte à traduire"
+        },
+        "to": {
+          "name": "vers",
+          "description": "Langue cible (optionnel, votre langue Discord par défaut)"
+        }
+      }
+    },
+    "library": {
+      "name": "bibliothèque",
+      "description": "Consulte votre bibliothèque de messages sauvegardés"
+    },
+    "reminder-add": {
+      "name": "rappel-ajouter",
+      "description": "Ajoute un nouveau rappel",
+      "parameters": {
+        "message": {
+          "name": "message",
+          "description": "Que dois-je vous rappeler ?"
+        },
+        "time": {
+          "name": "délai",
+          "description": "Quand vous rappeler (ex. 1h30m, 2d, demain 15h)"
+        },
+        "send_here": {
+          "name": "envoyer-ici",
+          "description": "Envoyer le rappel dans ce salon plutôt qu'en MP"
+        }
+      }
+    },
+    "reminders": {
+      "name": "rappels",
+      "description": "Gère vos rappels"
+    },
+    "preferences": {
+      "name": "préférences",
+      "description": "Gère vos préférences personnelles"
+    },
+    "moddy": {
+      "name": "moddy",
+      "description": "En savoir plus sur Moddy"
+    },
+    "subscription": {
+      "name": "abonnement",
+      "description": "Consulte l'état de votre abonnement Moddy"
+    },
+    "mycases": {
+      "name": "mes-dossiers",
+      "description": "Parcourez vos dossiers de modération sur tous les serveurs"
+    },
+    "fix": {
+      "name": "corriger",
+      "description": "Corrige l'orthographe et la grammaire d'un texte"
+    },
+    "rephrase": {
+      "name": "reformuler",
+      "description": "Reformule un texte dans le style de votre choix"
+    },
+    "summarize": {
+      "name": "résumer",
+      "description": "Résume un texte"
+    },
+    "config": {
+      "name": "config",
+      "description": "Configure les modules du serveur"
+    },
+    "cases": {
+      "name": "dossiers",
+      "description": "Parcourez les dossiers de modération émis sur ce serveur"
+    },
+    "clear-saved-roles": {
+      "name": "effacer-rôles-sauvegardés",
+      "description": "Efface les rôles sauvegardés d'un utilisateur ayant quitté le serveur",
+      "parameters": {
+        "user": {
+          "name": "utilisateur",
+          "description": "L'utilisateur dont les rôles sauvegardés doivent être effacés"
+        }
+      }
+    },
+    "view-saved-roles": {
+      "name": "voir-rôles-sauvegardés",
+      "description": "Affiche tous les utilisateurs ayant des rôles sauvegardés sur ce serveur"
+    },
+    "ban": {
+      "name": "bannir",
+      "description": "Bannit un ou plusieurs utilisateurs du serveur",
+      "parameters": {
+        "user": {
+          "name": "utilisateur",
+          "description": "Utilisateur à bannir (vous pourrez en ajouter d'autres)"
+        }
+      }
+    },
+    "kick": {
+      "name": "expulser",
+      "description": "Expulse un ou plusieurs membres du serveur",
+      "parameters": {
+        "user": {
+          "name": "utilisateur",
+          "description": "Utilisateur à expulser (vous pourrez en ajouter d'autres)"
+        }
+      }
+    },
+    "mute": {
+      "name": "muet",
+      "description": "Rend muet (timeout) un ou plusieurs membres",
+      "parameters": {
+        "user": {
+          "name": "utilisateur",
+          "description": "Utilisateur à rendre muet (vous pourrez en ajouter d'autres)"
+        }
+      }
+    },
+    "warn": {
+      "name": "avertir",
+      "description": "Avertit un ou plusieurs utilisateurs",
+      "parameters": {
+        "user": {
+          "name": "utilisateur",
+          "description": "Utilisateur à avertir (vous pourrez en ajouter d'autres)"
+        }
+      }
+    },
+    "interserver": {
+      "name": "interserveur",
+      "description": "Gère les messages inter-serveurs"
+    },
+    "interserver report": {
+      "name": "signaler",
+      "description": "Signale un message inter-serveur à l'équipe de modération"
+    },
+    "interserver info": {
+      "name": "info",
+      "description": "Obtient des informations sur un message inter-serveur"
+    }
+  }
+}

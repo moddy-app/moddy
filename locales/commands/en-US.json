@@ -1,0 +1,254 @@
+{
+  "common": {
+    "parameters": {
+      "incognito": {
+        "name": "incognito",
+        "description": "Make response visible only to you"
+      },
+      "user": {
+        "name": "user",
+        "description": "The user to target"
+      },
+      "case": {
+        "name": "case",
+        "description": "Optional: open a specific case directly by its reference (e.g. A7F2K9)"
+      },
+      "message_id": {
+        "name": "message_id",
+        "description": "The message ID (Moddy ID like F6ZEU3VS or Discord message ID)"
+      }
+    }
+  },
+  "context_menus": {
+    "Save Message": {
+      "name": "Save Message"
+    },
+    "Get Emojis": {
+      "name": "Get Emojis"
+    },
+    "Translate": {
+      "name": "Translate"
+    },
+    "AI text tools": {
+      "name": "AI text tools"
+    }
+  },
+  "commands": {
+    "ping": {
+      "name": "ping",
+      "description": "Check the bot's latency and status"
+    },
+    "user": {
+      "name": "user",
+      "description": "Display detailed information about a Discord user",
+      "parameters": {
+        "user": {
+          "name": "user",
+          "description": "The user to lookup"
+        }
+      }
+    },
+    "avatar": {
+      "name": "avatar",
+      "description": "Display a user's avatar",
+      "parameters": {
+        "user": {
+          "name": "user",
+          "description": "The user whose avatar you want to see"
+        }
+      }
+    },
+    "banner": {
+      "name": "banner",
+      "description": "Display a user's banner",
+      "parameters": {
+        "user": {
+          "name": "user",
+          "description": "The user whose banner you want to see"
+        }
+      }
+    },
+    "emoji": {
+      "name": "emoji",
+      "description": "Display information about a Discord emoji",
+      "parameters": {
+        "emoji": {
+          "name": "emoji",
+          "description": "The emoji to lookup"
+        }
+      }
+    },
+    "roll": {
+      "name": "roll",
+      "description": "Roll a random dice",
+      "parameters": {
+        "max": {
+          "name": "max",
+          "description": "Maximum dice value (optional, defaults to 6)"
+        }
+      }
+    },
+    "invite": {
+      "name": "invite",
+      "description": "Lookup information about a Discord invite",
+      "parameters": {
+        "invite_code": {
+          "name": "invite_code",
+          "description": "The Discord invite code or link"
+        }
+      }
+    },
+    "webhook": {
+      "name": "webhook",
+      "description": "Inspect and manage Discord webhooks",
+      "parameters": {
+        "webhook": {
+          "name": "webhook",
+          "description": "Webhook URL or ID/Token"
+        }
+      }
+    },
+    "translate": {
+      "name": "translate",
+      "description": "Translate text to another language",
+      "parameters": {
+        "text": {
+          "name": "text",
+          "description": "The text to translate"
+        },
+        "to": {
+          "name": "to",
+          "description": "Target language (optional, uses your Discord language by default)"
+        }
+      }
+    },
+    "library": {
+      "name": "library",
+      "description": "View your saved messages library"
+    },
+    "reminder-add": {
+      "name": "reminder-add",
+      "description": "Add a new reminder",
+      "parameters": {
+        "message": {
+          "name": "message",
+          "description": "What should I remind you?"
+        },
+        "time": {
+          "name": "time",
+          "description": "When to remind (e.g. 1h30m, 2d, tomorrow 3pm)"
+        },
+        "send_here": {
+          "name": "send_here",
+          "description": "Send reminder in this channel instead of DM"
+        }
+      }
+    },
+    "reminders": {
+      "name": "reminders",
+      "description": "Manage your reminders"
+    },
+    "preferences": {
+      "name": "preferences",
+      "description": "Manage your personal preferences"
+    },
+    "moddy": {
+      "name": "moddy",
+      "description": "Learn more about Moddy"
+    },
+    "subscription": {
+      "name": "subscription",
+      "description": "View your Moddy subscription status"
+    },
+    "mycases": {
+      "name": "mycases",
+      "description": "Browse your moderation cases across all servers"
+    },
+    "fix": {
+      "name": "fix",
+      "description": "Fix the spelling and grammar of a text"
+    },
+    "rephrase": {
+      "name": "rephrase",
+      "description": "Rephrase a text in the style of your choice"
+    },
+    "summarize": {
+      "name": "summarize",
+      "description": "Summarize a text"
+    },
+    "config": {
+      "name": "config",
+      "description": "Configure server modules"
+    },
+    "cases": {
+      "name": "cases",
+      "description": "Browse the moderation cases issued in this server"
+    },
+    "clear-saved-roles": {
+      "name": "clear-saved-roles",
+      "description": "Clear saved roles for a user who left the server",
+      "parameters": {
+        "user": {
+          "name": "user",
+          "description": "The user whose saved roles should be cleared"
+        }
+      }
+    },
+    "view-saved-roles": {
+      "name": "view-saved-roles",
+      "description": "View all users with saved roles in this server"
+    },
+    "ban": {
+      "name": "ban",
+      "description": "Ban one or more users from the server",
+      "parameters": {
+        "user": {
+          "name": "user",
+          "description": "User to ban (you can add more in the modal)"
+        }
+      }
+    },
+    "kick": {
+      "name": "kick",
+      "description": "Kick one or more members from the server",
+      "parameters": {
+        "user": {
+          "name": "user",
+          "description": "User to kick (you can add more in the modal)"
+        }
+      }
+    },
+    "mute": {
+      "name": "mute",
+      "description": "Timeout (mute) one or more members",
+      "parameters": {
+        "user": {
+          "name": "user",
+          "description": "User to timeout (you can add more in the modal)"
+        }
+      }
+    },
+    "warn": {
+      "name": "warn",
+      "description": "Warn one or more users",
+      "parameters": {
+        "user": {
+          "name": "user",
+          "description": "User to warn (you can add more in the modal)"
+        }
+      }
+    },
+    "interserver": {
+      "name": "interserver",
+      "description": "Manage inter-server messages"
+    },
+    "interserver report": {
+      "name": "report",
+      "description": "Report an inter-server message to the moderation team"
+    },
+    "interserver info": {
+      "name": "info",
+      "description": "Get information about an inter-server message"
+    }
+  }
+}
