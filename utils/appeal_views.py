@@ -55,11 +55,11 @@ _TRANSFORM_ACTIONS = ["warn", "mute", "ban"]
 
 # Status → (emoji, i18n key) for rendering an appeal outcome.
 _STATUS_RENDER = {
-    "pending": (PENDING, "modules.automod.appeal.status.pending"),
-    "accepted": (DONE, "modules.automod.appeal.status.accepted"),
-    "refused": (UNDONE, "modules.automod.appeal.status.refused"),
-    "transformed": (EDIT, "modules.automod.appeal.status.transformed"),
-    "cancelled": (UNDONE, "modules.automod.appeal.status.cancelled"),
+    "pending": (PENDING, "modules.automod_ai.appeal.status.pending"),
+    "accepted": (DONE, "modules.automod_ai.appeal.status.accepted"),
+    "refused": (UNDONE, "modules.automod_ai.appeal.status.refused"),
+    "transformed": (EDIT, "modules.automod_ai.appeal.status.transformed"),
+    "cancelled": (UNDONE, "modules.automod_ai.appeal.status.cancelled"),
 }
 
 # Status → accent colour for the appeal-status panel on the member DM.
@@ -121,30 +121,30 @@ def build_sanction_dm_view(
         return f"~~{text}~~" if struck else text
 
     # — Sanction block —
-    _title_key = f"modules.automod.dm.title_{action}"
+    _title_key = f"modules.automod_ai.dm.title_{action}"
     title = t(_title_key, locale=locale)
     if title.startswith("["):  # missing key → generic fallback
-        title = t("modules.automod.dm.title", locale=locale)
+        title = t("modules.automod_ai.dm.title", locale=locale)
     expires_txt = (f"<t:{int(expires_at.timestamp())}:R>" if expires_at
-                   else t("modules.automod.dm.permanent", locale=locale))
+                   else t("modules.automod_ai.dm.permanent", locale=locale))
     lines = [
         f"### {icon} {title}",
-        f"- **{t('modules.automod.dm.reason', locale=locale)}:** {reason or '—'}",
+        f"- **{t('modules.automod_ai.dm.reason', locale=locale)}:** {reason or '—'}",
     ]
     if explication:
-        lines.append(f"- **{t('modules.automod.dm.explanation', locale=locale)}:** {explication}")
+        lines.append(f"- **{t('modules.automod_ai.dm.explanation', locale=locale)}:** {explication}")
     lines.append(
-        f"- **{t('modules.automod.dm.responsible', locale=locale)}:** "
-        f"{t('modules.automod.dm.responsible_value', locale=locale)}")
-    lines.append(f"- **{t('modules.automod.dm.expires', locale=locale)}:** {expires_txt}")
+        f"- **{t('modules.automod_ai.dm.responsible', locale=locale)}:** "
+        f"{t('modules.automod_ai.dm.responsible_value', locale=locale)}")
+    lines.append(f"- **{t('modules.automod_ai.dm.expires', locale=locale)}:** {expires_txt}")
 
     # Keep the sanction lines + case/sent-by in ONE TextDisplay so there is no
     # empty line between "Automatically expires" and "Case ID". Only the
     # sanction lines are struck through when the appeal is accepted.
     case_link = f"[``{case_ref}``](<{_CASE_URL.format(ref=case_ref)}>)"
-    block = _s("\n".join(lines)) + f"\n- **{t('modules.automod.dm.case', locale=locale)}:** {case_link}"
+    block = _s("\n".join(lines)) + f"\n- **{t('modules.automod_ai.dm.case', locale=locale)}:** {case_link}"
     if guild_id:
-        block += f"\n-# {t('modules.automod.dm.sent_by', locale=locale, guild=guild_name, guild_id=guild_id)}"
+        block += f"\n-# {t('modules.automod_ai.dm.sent_by', locale=locale, guild=guild_name, guild_id=guild_id)}"
 
     c = ui.Container(accent_colour=discord.Colour(accent))
     c.add_item(ui.TextDisplay(block))
@@ -155,25 +155,25 @@ def build_sanction_dm_view(
         emoji, key = _STATUS_RENDER.get(appeal_status, _STATUS_RENDER["pending"])
         panel = ui.Container(accent_colour=discord.Colour(_STATUS_ACCENT.get(appeal_status, 0x3661FF)))
         panel.add_item(ui.TextDisplay(
-            f"**{t('modules.automod.dm.appeal_state', locale=locale)}:**\n"
+            f"**{t('modules.automod_ai.dm.appeal_state', locale=locale)}:**\n"
             f"{emoji} {t(key, locale=locale)}"
         ))
         route = (decided or {}).get("route") or appeal_route
         extra = []
         if route:
-            route_key = ("modules.automod.dm.appeal_team" if route == "team"
-                         else "modules.automod.dm.appeal_server")
+            route_key = ("modules.automod_ai.dm.appeal_team" if route == "team"
+                         else "modules.automod_ai.dm.appeal_server")
             extra.append(f"-# {t(route_key, locale=locale)}")
         if (decided or {}).get("new_action"):
             extra.append(
-                f"-# → `{t('modules.automod.action.' + decided['new_action'], locale=locale)}`")
+                f"-# → `{t('modules.automod_ai.action.' + decided['new_action'], locale=locale)}`")
         if extra:
             panel.add_item(ui.TextDisplay("\n".join(extra)))
         view.add_item(panel)
 
     # — Offending message (proof), spoilered; long content → file —
     if proof_text:
-        meta = (f"-# {t('modules.automod.log.message_id', locale=locale)} : ``{proof_message_id}``"
+        meta = (f"-# {t('modules.automod_ai.log.message_id', locale=locale)} : ``{proof_message_id}``"
                 if proof_message_id else "")
         ts_part = f" — <t:{proof_ts}:S>" if proof_ts else ""
         head = f"**{proof_author or '—'}**{ts_part}"
@@ -238,86 +238,86 @@ def build_review_view(
 
     view = BaseView()
     c = ui.Container(accent_colour=discord.Colour(accent))
-    head = (t("modules.automod.appeal.review.title_team", locale=locale) if is_team
-            else t("modules.automod.appeal.review.title_server", locale=locale))
+    head = (t("modules.automod_ai.appeal.review.title_team", locale=locale) if is_team
+            else t("modules.automod_ai.appeal.review.title_server", locale=locale))
     c.add_item(ui.TextDisplay(f"### {SHIELD} {head}"))
 
     # User
     c.add_item(ui.TextDisplay(
-        f"**{t('modules.automod.appeal.review.user', locale=locale)}:**\n"
-        f"- {t('modules.automod.appeal.review.display_name', locale=locale)}: {subject.get('display') or '—'}\n"
-        f"- {t('modules.automod.appeal.review.username', locale=locale)}: {subject.get('username') or '—'}\n"
-        f"- {t('modules.automod.appeal.review.id', locale=locale)}: ``{subject.get('id')}``"
+        f"**{t('modules.automod_ai.appeal.review.user', locale=locale)}:**\n"
+        f"- {t('modules.automod_ai.appeal.review.display_name', locale=locale)}: {subject.get('display') or '—'}\n"
+        f"- {t('modules.automod_ai.appeal.review.username', locale=locale)}: {subject.get('username') or '—'}\n"
+        f"- {t('modules.automod_ai.appeal.review.id', locale=locale)}: ``{subject.get('id')}``"
     ))
 
     # Guild (members only on the team panel)
     guild_lines = [
-        f"**{t('modules.automod.appeal.review.guild', locale=locale)}:**",
-        f"- {t('modules.automod.appeal.review.name', locale=locale)}: {guild.get('name') or '—'}",
-        f"- {t('modules.automod.appeal.review.id', locale=locale)}: ``{guild.get('id')}``",
+        f"**{t('modules.automod_ai.appeal.review.guild', locale=locale)}:**",
+        f"- {t('modules.automod_ai.appeal.review.name', locale=locale)}: {guild.get('name') or '—'}",
+        f"- {t('modules.automod_ai.appeal.review.id', locale=locale)}: ``{guild.get('id')}``",
     ]
     if is_team and guild.get("members") is not None:
         guild_lines.append(
-            f"- {t('modules.automod.appeal.review.members', locale=locale)}: {guild['members']}")
+            f"- {t('modules.automod_ai.appeal.review.members', locale=locale)}: {guild['members']}")
     c.add_item(ui.TextDisplay("\n".join(guild_lines)))
 
     # Case
     actions = case.get("actions") or []
-    actions_txt = ", ".join(t("modules.automod.action." + a, locale=locale) for a in actions) or "—"
+    actions_txt = ", ".join(t("modules.automod_ai.action." + a, locale=locale) for a in actions) or "—"
     case_lines = [
-        f"**{t('modules.automod.appeal.review.case', locale=locale)}:**",
+        f"**{t('modules.automod_ai.appeal.review.case', locale=locale)}:**",
         f"- REF: ``{case.get('ref')}``",
-        f"- {t('modules.automod.appeal.review.actions', locale=locale)}: {actions_txt}",
-        f"- {t('modules.automod.appeal.review.motive', locale=locale)}: {case.get('reason') or '—'}",
+        f"- {t('modules.automod_ai.appeal.review.actions', locale=locale)}: {actions_txt}",
+        f"- {t('modules.automod_ai.appeal.review.motive', locale=locale)}: {case.get('reason') or '—'}",
     ]
     if case.get("explication"):
         case_lines.append(
-            f"- {t('modules.automod.appeal.review.explanation', locale=locale)}: {case['explication']}")
+            f"- {t('modules.automod_ai.appeal.review.explanation', locale=locale)}: {case['explication']}")
     if case.get("created_ts"):
         case_lines.append(
-            f"- {t('modules.automod.appeal.review.created', locale=locale)}: <t:{case['created_ts']}:R>")
+            f"- {t('modules.automod_ai.appeal.review.created', locale=locale)}: <t:{case['created_ts']}:R>")
     if case.get("expires_ts"):
         case_lines.append(
-            f"- {t('modules.automod.appeal.review.expires', locale=locale)}: <t:{case['expires_ts']}:R>")
+            f"- {t('modules.automod_ai.appeal.review.expires', locale=locale)}: <t:{case['expires_ts']}:R>")
     c.add_item(ui.TextDisplay("\n".join(case_lines)))
 
     # User's appeal text
     c.add_item(ui.TextDisplay(
-        f"{MESSAGE} **{t('modules.automod.appeal.review.user_says', locale=locale)}:**\n"
+        f"{MESSAGE} **{t('modules.automod_ai.appeal.review.user_says', locale=locale)}:**\n"
         f">>> {(appeal_reason or '—')[:1000]}"
     ))
 
     # Technical info — team only
     if is_team and technical:
         c.add_item(ui.TextDisplay(
-            f"**{t('modules.automod.appeal.review.technical', locale=locale)}:**\n"
-            f"- {t('modules.automod.appeal.review.case_uuid', locale=locale)}: ``{technical.get('case_uuid')}``\n"
-            f"- {t('modules.automod.appeal.review.appeal_id', locale=locale)}: ``{technical.get('appeal_id')}``"
+            f"**{t('modules.automod_ai.appeal.review.technical', locale=locale)}:**\n"
+            f"- {t('modules.automod_ai.appeal.review.case_uuid', locale=locale)}: ``{technical.get('case_uuid')}``\n"
+            f"- {t('modules.automod_ai.appeal.review.appeal_id', locale=locale)}: ``{technical.get('appeal_id')}``"
         ))
 
     # Claim / outcome footer
     if decided:
-        emoji, key = _STATUS_RENDER.get(decided["status"], (INFO, "modules.automod.appeal.status.pending"))
-        line = f"{emoji} **{t('modules.automod.appeal.review.outcome', locale=locale)}:** {t(key, locale=locale)}"
+        emoji, key = _STATUS_RENDER.get(decided["status"], (INFO, "modules.automod_ai.appeal.status.pending"))
+        line = f"{emoji} **{t('modules.automod_ai.appeal.review.outcome', locale=locale)}:** {t(key, locale=locale)}"
         if decided.get("new_action"):
-            line += f" → `{t('modules.automod.action.' + decided['new_action'], locale=locale)}`"
+            line += f" → `{t('modules.automod_ai.action.' + decided['new_action'], locale=locale)}`"
         c.add_item(ui.TextDisplay(line))
         if decided.get("by_id"):
             c.add_item(ui.TextDisplay(
-                f"-# {t('modules.automod.appeal.review.decided_by', locale=locale)} <@{decided['by_id']}>"))
+                f"-# {t('modules.automod_ai.appeal.review.decided_by', locale=locale)} <@{decided['by_id']}>"))
     elif claimed_by:
         c.add_item(ui.TextDisplay(
-            f"-# {HAND} {t('modules.automod.appeal.review.claimed_by', locale=locale)} <@{claimed_by}>"))
+            f"-# {HAND} {t('modules.automod_ai.appeal.review.claimed_by', locale=locale)} <@{claimed_by}>"))
     view.add_item(c)
 
     # Proof (spoiler; long → file)
     if proof and proof.get("text"):
-        meta = (f"-# {t('modules.automod.log.message_id', locale=locale)} : ``{proof.get('message_id')}``"
+        meta = (f"-# {t('modules.automod_ai.log.message_id', locale=locale)} : ``{proof.get('message_id')}``"
                 if proof.get("message_id") else "")
         ts_part = f" — <t:{proof['ts']}:S>" if proof.get("ts") else ""
         head_line = f"**{proof.get('author') or '—'}**{ts_part}"
         pc = ui.Container(spoiler=True)
-        pc.add_item(ui.TextDisplay(f"**{t('modules.automod.appeal.review.proof', locale=locale)}:**"))
+        pc.add_item(ui.TextDisplay(f"**{t('modules.automod_ai.appeal.review.proof', locale=locale)}:**"))
         if is_long(proof["text"]):
             fname = f"proof_{proof.get('message_id') or 'content'}.txt"
             files.append(make_text_file(proof["text"], fname))
@@ -337,7 +337,7 @@ def build_review_view(
         fname = f"context_{(technical or {}).get('case_uuid') or appeal_id}.txt"
         files.append(make_text_file(context_text, fname))
         cc = ui.Container()
-        cc.add_item(ui.TextDisplay(f"**{t('modules.automod.appeal.review.context', locale=locale)}:**"))
+        cc.add_item(ui.TextDisplay(f"**{t('modules.automod_ai.appeal.review.context', locale=locale)}:**"))
         cc.add_item(ui.File(f"attachment://{fname}"))
         view.add_item(cc)
 
@@ -366,7 +366,7 @@ class AppealReasonModal(BaseModal):
 
     def __init__(self, route: str, case_id: str, sanction_id: str, locale: str,
                  dm_channel_id: Optional[int] = None, dm_message_id: Optional[int] = None):
-        super().__init__(title=t("modules.automod.appeal.modal.title", locale=locale)[:45])
+        super().__init__(title=t("modules.automod_ai.appeal.modal.title", locale=locale)[:45])
         self.route = route
         self.case_id = case_id
         self.sanction_id = sanction_id
@@ -374,13 +374,13 @@ class AppealReasonModal(BaseModal):
         self.dm_channel_id = dm_channel_id
         self.dm_message_id = dm_message_id
         self.reason = ui.Label(
-            text=t("modules.automod.appeal.modal.label", locale=locale)[:45],
-            description=t("modules.automod.appeal.modal.desc", locale=locale)[:100],
+            text=t("modules.automod_ai.appeal.modal.label", locale=locale)[:45],
+            description=t("modules.automod_ai.appeal.modal.desc", locale=locale)[:100],
             component=ui.TextInput(
                 style=discord.TextStyle.paragraph,
                 max_length=1000,
                 required=True,
-                placeholder=t("modules.automod.appeal.modal.placeholder", locale=locale)[:100],
+                placeholder=t("modules.automod_ai.appeal.modal.placeholder", locale=locale)[:100],
             ),
         )
         self.add_item(self.reason)
@@ -406,18 +406,18 @@ class AppealReasonModal(BaseModal):
             from utils.components_v2 import create_error_message
             await interaction.followup.send(
                 view=create_error_message(
-                    t("modules.automod.appeal.error.title", locale=self.locale),
-                    t(f"modules.automod.appeal.error.{status}", locale=self.locale),
+                    t("modules.automod_ai.appeal.error.title", locale=self.locale),
+                    t(f"modules.automod_ai.appeal.error.{status}", locale=self.locale),
                 ),
                 ephemeral=True,
             )
             return
         from utils.components_v2 import create_success_message
-        key = ("modules.automod.appeal.opened_team" if self.route == "t"
-               else "modules.automod.appeal.opened_server")
+        key = ("modules.automod_ai.appeal.opened_team" if self.route == "t"
+               else "modules.automod_ai.appeal.opened_server")
         await interaction.followup.send(
             view=create_success_message(
-                t("modules.automod.appeal.opened_title", locale=self.locale),
+                t("modules.automod_ai.appeal.opened_title", locale=self.locale),
                 t(key, locale=self.locale),
             ),
             ephemeral=True,
@@ -429,15 +429,15 @@ class ModifyCaseModal(BaseModal):
     case reason and an optional note. Applied as a binding ``transform``."""
 
     def __init__(self, appeal_id: str, current_action: str, current_reason: str, locale: str):
-        super().__init__(title=t("modules.automod.appeal.modify.title", locale=locale)[:45])
+        super().__init__(title=t("modules.automod_ai.appeal.modify.title", locale=locale)[:45])
         self.appeal_id = appeal_id
         self.locale = locale
         self.action = ui.Label(
-            text=t("modules.automod.appeal.modify.action", locale=locale)[:45],
+            text=t("modules.automod_ai.appeal.modify.action", locale=locale)[:45],
             component=ui.Select(
                 options=[
                     discord.SelectOption(
-                        label=t("modules.automod.action." + a, locale=locale),
+                        label=t("modules.automod_ai.action." + a, locale=locale),
                         value=a,
                         emoji=discord.PartialEmoji.from_str(_action_emoji(a)),
                         default=(a == current_action),
@@ -448,21 +448,21 @@ class ModifyCaseModal(BaseModal):
             ),
         )
         self.duration = ui.Label(
-            text=t("modules.automod.appeal.modify.duration", locale=locale)[:45],
-            description=t("modules.automod.appeal.modify.duration_hint", locale=locale)[:100],
+            text=t("modules.automod_ai.appeal.modify.duration", locale=locale)[:45],
+            description=t("modules.automod_ai.appeal.modify.duration_hint", locale=locale)[:100],
             component=ui.TextInput(
                 style=discord.TextStyle.short, required=False, max_length=6, placeholder="24",
             ),
         )
         self.reason = ui.Label(
-            text=t("modules.automod.appeal.modify.reason", locale=locale)[:45],
+            text=t("modules.automod_ai.appeal.modify.reason", locale=locale)[:45],
             component=ui.TextInput(
                 style=discord.TextStyle.paragraph, required=False, max_length=1000,
                 default=(current_reason or "")[:1000],
             ),
         )
         self.note = ui.Label(
-            text=t("modules.automod.appeal.modify.note", locale=locale)[:45],
+            text=t("modules.automod_ai.appeal.modify.note", locale=locale)[:45],
             component=ui.TextInput(
                 style=discord.TextStyle.short, required=False, max_length=300,
             ),
@@ -480,8 +480,8 @@ class ModifyCaseModal(BaseModal):
             from utils.components_v2 import create_error_message
             await interaction.response.send_message(
                 view=create_error_message(
-                    t("modules.automod.appeal.error.title", locale=self.locale),
-                    t("modules.automod.appeal.modify.invalid_duration", locale=self.locale),
+                    t("modules.automod_ai.appeal.error.title", locale=self.locale),
+                    t("modules.automod_ai.appeal.modify.invalid_duration", locale=self.locale),
                 ), ephemeral=True)
             return
         duration_hours = int(raw) if raw.isdigit() else None
@@ -505,8 +505,8 @@ def build_accept_choice_view(appeal_id: str, locale: str) -> BaseView:
     view = BaseView()
     c = ui.Container(accent_colour=discord.Colour(_REVIEW_CLAIMED))
     c.add_item(ui.TextDisplay(
-        f"### {DONE} {t('modules.automod.appeal.accept_choice.title', locale=locale)}"))
-    c.add_item(ui.TextDisplay(t("modules.automod.appeal.accept_choice.prompt", locale=locale)))
+        f"### {DONE} {t('modules.automod_ai.appeal.accept_choice.title', locale=locale)}"))
+    c.add_item(ui.TextDisplay(t("modules.automod_ai.appeal.accept_choice.prompt", locale=locale)))
     view.add_item(c)
     row = ui.ActionRow()
     row.add_item(AppealAcceptChoiceButton("full", appeal_id, locale=locale))
@@ -543,8 +543,8 @@ class AppealNewButton(
 
     def __init__(self, route: str, case_id: str, sanction_id: str, locale: str = "fr"):
         is_team = route == "t"
-        label_key = ("modules.automod.dm.appeal_team" if is_team
-                     else "modules.automod.dm.appeal_server")
+        label_key = ("modules.automod_ai.dm.appeal_team" if is_team
+                     else "modules.automod_ai.dm.appeal_server")
         # No emoji on the appeal buttons (intentional exception).
         super().__init__(
             ui.Button(
@@ -569,8 +569,8 @@ class AppealNewButton(
             from utils.components_v2 import create_warning_message
             await interaction.response.send_message(
                 view=create_warning_message(
-                    t("modules.automod.appeal.error.title", locale=locale),
-                    t("modules.automod.appeal.error.already", locale=locale),
+                    t("modules.automod_ai.appeal.error.title", locale=locale),
+                    t("modules.automod_ai.appeal.error.already", locale=locale),
                 ),
                 ephemeral=True,
             )
@@ -591,15 +591,15 @@ async def _guard_review(interaction: discord.Interaction, appeal: Optional[dict]
     if not appeal or appeal["status"] != "pending":
         await interaction.response.send_message(
             view=create_warning_message(
-                t("modules.automod.appeal.error.title", locale=locale),
-                t("modules.automod.appeal.error.handled", locale=locale)),
+                t("modules.automod_ai.appeal.error.title", locale=locale),
+                t("modules.automod_ai.appeal.error.handled", locale=locale)),
             ephemeral=True)
         return False
     if not await _can_review(interaction, appeal):
         await interaction.response.send_message(
             view=create_error_message(
-                t("modules.automod.appeal.error.title", locale=locale),
-                t("modules.automod.appeal.error.no_perms", locale=locale)),
+                t("modules.automod_ai.appeal.error.title", locale=locale),
+                t("modules.automod_ai.appeal.error.no_perms", locale=locale)),
             ephemeral=True)
         return False
     return True
@@ -612,15 +612,15 @@ async def _require_claimer(interaction: discord.Interaction, appeal: dict, local
     if not claimed_by:
         await interaction.response.send_message(
             view=create_warning_message(
-                t("modules.automod.appeal.error.title", locale=locale),
-                t("modules.automod.appeal.error.claim_first", locale=locale)),
+                t("modules.automod_ai.appeal.error.title", locale=locale),
+                t("modules.automod_ai.appeal.error.claim_first", locale=locale)),
             ephemeral=True)
         return False
     if str(claimed_by) != str(interaction.user.id):
         await interaction.response.send_message(
             view=create_warning_message(
-                t("modules.automod.appeal.error.title", locale=locale),
-                t("modules.automod.appeal.error.not_claimer", locale=locale)),
+                t("modules.automod_ai.appeal.error.title", locale=locale),
+                t("modules.automod_ai.appeal.error.not_claimer", locale=locale)),
             ephemeral=True)
         return False
     return True
@@ -633,8 +633,8 @@ class AppealClaimButton(
     """Claim (assign) an appeal to the acting reviewer."""
 
     def __init__(self, appeal_id: str, claimed: bool = False, locale: str = "fr"):
-        label_key = ("modules.automod.appeal.review.claimed" if claimed
-                     else "modules.automod.appeal.button.claim")
+        label_key = ("modules.automod_ai.appeal.review.claimed" if claimed
+                     else "modules.automod_ai.appeal.button.claim")
         super().__init__(
             ui.Button(
                 label=t(label_key, locale=locale)[:80],
@@ -670,7 +670,7 @@ class AppealInviteButton(
     def __init__(self, appeal_id: str, locale: str = "fr"):
         super().__init__(
             ui.Button(
-                label=t("modules.automod.appeal.button.invite", locale=locale)[:80],
+                label=t("modules.automod_ai.appeal.button.invite", locale=locale)[:80],
                 style=discord.ButtonStyle.secondary,
                 emoji=discord.PartialEmoji.from_str(LINK),
                 custom_id=f"moddy:apl:invite:{appeal_id}",
@@ -693,8 +693,8 @@ class AppealInviteButton(
             from utils.components_v2 import create_error_message
             await interaction.response.send_message(
                 view=create_error_message(
-                    t("modules.automod.appeal.error.title", locale=locale),
-                    t("modules.automod.appeal.error.no_perms", locale=locale)),
+                    t("modules.automod_ai.appeal.error.title", locale=locale),
+                    t("modules.automod_ai.appeal.error.no_perms", locale=locale)),
                 ephemeral=True)
             return
         await bot.appeals.invite(interaction=interaction, appeal_id=self.appeal_id)
@@ -712,7 +712,7 @@ class AppealDecisionButton(
     def __init__(self, decision: str, appeal_id: str, locale: str = "fr", disabled: bool = False):
         super().__init__(
             ui.Button(
-                label=t(f"modules.automod.appeal.button.{decision}", locale=locale)[:80],
+                label=t(f"modules.automod_ai.appeal.button.{decision}", locale=locale)[:80],
                 style=self._STYLE[decision],
                 emoji=discord.PartialEmoji.from_str(self._EMOJI[decision]),
                 custom_id=f"moddy:apl:dec:{decision}:{appeal_id}",
@@ -754,8 +754,8 @@ class AppealAcceptChoiceButton(
 
     def __init__(self, choice: str, appeal_id: str, locale: str = "fr"):
         is_full = choice == "full"
-        label_key = ("modules.automod.appeal.accept_choice.full" if is_full
-                     else "modules.automod.appeal.accept_choice.modify")
+        label_key = ("modules.automod_ai.appeal.accept_choice.full" if is_full
+                     else "modules.automod_ai.appeal.accept_choice.modify")
         super().__init__(
             ui.Button(
                 label=t(label_key, locale=locale)[:80],

@@ -2,7 +2,7 @@
 shortcut, the embedding-vector reuse, and the engine wiring (injection + stop).
 
 Everything is offline: the embeddings are controlled (no gateway), nano's
-``_judge`` is stubbed. See docs/AUTOMOD.md §2quinquies.
+``_judge`` is stubbed. See docs/AUTOMOD_AI.md §2quinquies.
 """
 
 import importlib.util

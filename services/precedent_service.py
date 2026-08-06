@@ -12,7 +12,7 @@ service owns the *I/O* side that the pipeline must not touch:
   one query per guild per window.
 
 It never decides anything — the engine applies the shortcut / injection. See
-docs/AUTOMOD.md §2quinquies.
+docs/AUTOMOD_AI.md §2quinquies.
 """
 
 from __future__ import annotations

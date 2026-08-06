@@ -4,9 +4,9 @@ Moddy AI Automod — message processing pipeline.
 Strict scope: take a message, run it through the funnel, and — when needed —
 produce a moderation :class:`Decision`. This package **decides**; it never
 applies sanctions, never writes to a database, never executes anything. The
-caller (``modules/automod.py``) consumes the :class:`Decision` and acts on it.
+caller (``modules/automod_ai.py``) consumes the :class:`Decision` and acts on it.
 
-Funnel order (see ``docs/AUTOMOD.md``):
+Funnel order (see ``docs/AUTOMOD_AI.md``):
 
     1. pre-filter        (bot / system / empty -> STOP)
     2. trivial allowlist ("ok", "mdr", "gg"…    -> STOP)
@@ -22,7 +22,7 @@ imported here.
 The package is intentionally **scalable**: the funnel above is the
 ``content`` detector (insults / problematic messages). Future detectors
 (anti-link, anti-invite, anti-spam, anti-raid) plug in as additional automod
-*features* in ``modules/automod.py`` without touching this package.
+*features* in ``modules/automod_ai.py`` without touching this package.
 """
 
 from .schemas import (

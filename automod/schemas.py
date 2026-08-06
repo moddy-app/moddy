@@ -75,7 +75,7 @@ class BlocklistEntry:
 
 @dataclass
 class Decision:
-    """The pipeline's output contract (see docs/AUTOMOD.md §2)."""
+    """The pipeline's output contract (see docs/AUTOMOD_AI.md §2)."""
     message_id: str
     auteur_id: str
     sanctionnable: bool
@@ -92,7 +92,7 @@ class Decision:
     score_detecteur: float      # detector input score
     a_reverifier: List[str] = field(default_factory=list)
     duree_heures: int = 0       # sanction duration in hours (0 = permanent); barème-owned in v2
-    # v2 grounding contract (docs/AUTOMOD.md §2).
+    # v2 grounding contract (docs/AUTOMOD_AI.md §2).
     citation: str = ""          # verbatim substring of the target that justifies the category
     cible: str = "aucune"       # "membre" | "auteur_lui_meme" | "groupe" | "aucune"
     # Set when a deterministic grounding guard voided an otherwise-sanctionnable

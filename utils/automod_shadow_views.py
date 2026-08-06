@@ -80,30 +80,30 @@ def render_shadow_card(candidate: Dict[str, Any]) -> ui.LayoutView:
 
     # Header + SIMULATION badge.
     container.add_item(ui.TextDisplay(
-        f"### {SHIELD} {t('modules.automod.log.title', locale=locale)}"))
+        f"### {SHIELD} {t('modules.automod_ai.log.title', locale=locale)}"))
     container.add_item(ui.TextDisplay(
-        f"{SEARCH} **{t('modules.automod.shadow.badge', locale=locale)}**"))
+        f"{SEARCH} **{t('modules.automod_ai.shadow.badge', locale=locale)}**"))
 
     author_id = candidate.get("author_id")
     channel_id = candidate.get("channel_id")
     body = (
-        f"- **{t('modules.automod.log.author', locale=locale)} :** "
+        f"- **{t('modules.automod_ai.log.author', locale=locale)} :** "
         f"<@{author_id}> (`{author_id}`)\n"
-        f"- **{t('modules.automod.log.channel', locale=locale)} :** <#{channel_id}>\n"
-        f"- **{t('modules.automod.shadow.would_apply', locale=locale)} :** "
+        f"- **{t('modules.automod_ai.log.channel', locale=locale)} :** <#{channel_id}>\n"
+        f"- **{t('modules.automod_ai.shadow.would_apply', locale=locale)} :** "
         f"{sanction_name(actions, locale)}\n"
-        f"- **{t('modules.automod.log.reason', locale=locale)} :** "
+        f"- **{t('modules.automod_ai.log.reason', locale=locale)} :** "
         f"{verdict.get('raison') or '—'}"
     )
     if verdict.get("explication"):
-        body += (f"\n- **{t('modules.automod.log.explanation', locale=locale)} :** "
+        body += (f"\n- **{t('modules.automod_ai.log.explanation', locale=locale)} :** "
                  f"{verdict['explication']}")
     container.add_item(ui.TextDisplay(body))
 
     # Barème breakdown (the would-be sanction, explained line by line).
     composantes = bareme.get("composantes") or []
     if composantes:
-        header = t("modules.automod.bareme.title", locale=locale,
+        header = t("modules.automod_ai.bareme.title", locale=locale,
                    sanction=sanction_name(actions, locale),
                    cran=bareme.get("cran", 0))
         container.add_item(ui.TextDisplay(
@@ -115,7 +115,7 @@ def render_shadow_card(candidate: Dict[str, Any]) -> ui.LayoutView:
     quote = ui.Container(accent_colour=discord.Colour(accent), spoiler=True)
     quote.add_item(ui.TextDisplay(
         f"> {preview or '*…*'}\n"
-        f"-# {t('modules.automod.log.message_id', locale=locale)} : "
+        f"-# {t('modules.automod_ai.log.message_id', locale=locale)} : "
         f"``{candidate.get('message_id')}``"))
 
     view.add_item(container)
@@ -127,12 +127,12 @@ def render_shadow_card(candidate: Dict[str, Any]) -> ui.LayoutView:
         # Resolved: show who ruled what, no buttons.
         emoji = _VERDICT_BY_CODE.get(_CODE_BY_VERDICT.get(annotated, ""), (None, "•"))[1]
         by = candidate.get("annotated_by")
-        line = t(f"modules.automod.shadow.annotated.{annotated}", locale=locale)
+        line = t(f"modules.automod_ai.shadow.annotated.{annotated}", locale=locale)
         by_txt = f" — <@{by}>" if by else ""
         container.add_item(ui.TextDisplay(f"{emoji} **{line}**{by_txt}"))
     elif candidate_id:
         container.add_item(ui.TextDisplay(
-            f"-# {t('modules.automod.shadow.annotate_hint', locale=locale)}"))
+            f"-# {t('modules.automod_ai.shadow.annotate_hint', locale=locale)}"))
         row = ui.ActionRow()
         row.add_item(ShadowAnnotateButton("ok", candidate_id, locale))
         row.add_item(ShadowAnnotateButton("fp", candidate_id, locale))
@@ -147,20 +147,6 @@ def _primary_action(actions: List[str]) -> Optional[str]:
         if a in (actions or []):
             return a
     return None
-
-
-def _render_for(candidate: Dict[str, Any]) -> ui.LayoutView:
-    """Pick the card renderer for a candidate row (sanction vs situation).
-
-    A session-8 diffuse-harassment candidate (``source == "situation"`` /
-    ``verdict.kind == "situation"``) uses its own card; everything else is a
-    ``dry_run`` sanction simulation.
-    """
-    verdict = candidate.get("verdict") or {}
-    if candidate.get("source") == "situation" or verdict.get("kind") == "situation":
-        from utils.automod_situation_views import render_situation_card
-        return render_situation_card(candidate)
-    return render_shadow_card(candidate)
 
 
 # --------------------------------------------------------------------------- #
@@ -183,7 +169,7 @@ class ShadowAnnotateButton(
         human, emoji = _VERDICT_BY_CODE[code]
         super().__init__(
             ui.Button(
-                label=t(f"modules.automod.shadow.button.{code}", locale=locale)[:80],
+                label=t(f"modules.automod_ai.shadow.button.{code}", locale=locale)[:80],
                 style=self._STYLE[code],
                 emoji=discord.PartialEmoji.from_str(emoji),
                 custom_id=f"moddy:amev:{code}:{candidate_id}",
@@ -207,8 +193,8 @@ class ShadowAnnotateButton(
             from utils.components_v2 import create_error_message
             await interaction.response.send_message(
                 view=create_error_message(
-                    t("modules.automod.shadow.error.title", locale=locale),
-                    t("modules.automod.shadow.error.no_perms", locale=locale)),
+                    t("modules.automod_ai.shadow.error.title", locale=locale),
+                    t("modules.automod_ai.shadow.error.no_perms", locale=locale)),
                 ephemeral=True)
             return
 
@@ -219,8 +205,8 @@ class ShadowAnnotateButton(
             from utils.components_v2 import create_error_message
             await interaction.response.send_message(
                 view=create_error_message(
-                    t("modules.automod.shadow.error.title", locale=locale),
-                    t("modules.automod.shadow.error.gone", locale=locale)),
+                    t("modules.automod_ai.shadow.error.title", locale=locale),
+                    t("modules.automod_ai.shadow.error.gone", locale=locale)),
                 ephemeral=True)
             return
 
@@ -229,18 +215,13 @@ class ShadowAnnotateButton(
         # a barème signal, not a sanctionnable/not ruling, so it is not a precedent.
         await self._feed_precedent(bot, row)
 
-        # Re-render the card in place (buttons → the recorded ruling). A session-8
-        # "situation" candidate uses its own card renderer.
-        await interaction.response.edit_message(view=_render_for(row))
+        # Re-render the card in place (buttons → the recorded ruling).
+        await interaction.response.edit_message(view=render_shadow_card(row))
 
     @staticmethod
     async def _feed_precedent(bot, row: Dict[str, Any]) -> None:
         """Record a server precedent from a shadow-card ruling (best-effort)."""
         from automod import constants as ac
-        # A session-8 "situation" candidate is a multi-message PATTERN ruling, not
-        # a single-message sanctionnable/not call — it is not a server precedent.
-        if row.get("source") == "situation":
-            return
         mapping = {
             "correct": (ac.PRECEDENT_SANCTIONNABLE, ac.PRECEDENT_SOURCE_BOUTON_OK),
             "faux_positif": (ac.PRECEDENT_NON_SANCTIONNABLE, ac.PRECEDENT_SOURCE_BOUTON_FP),

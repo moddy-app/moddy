@@ -34,7 +34,7 @@ def make_text_file(content: str, filename: str) -> discord.File:
 # Barème breakdown rendering (shared by the alert card + the shadow card)
 # --------------------------------------------------------------------------- #
 
-# Component machine code → i18n key suffix under ``modules.automod.bareme.*``.
+# Component machine code → i18n key suffix under ``modules.automod_ai.bareme.*``.
 BAREME_LABELS = {
     "plancher": "floor",
     "recidive": "recidivism",
@@ -69,9 +69,9 @@ def bareme_breakdown(composantes, locale: str) -> str:
         code = _comp_field(c, "code") or ""
         delta = _comp_field(c, "delta") or 0
         detail = _comp_field(c, "detail") or ""
-        label = t(f"modules.automod.bareme.{BAREME_LABELS.get(code, code)}", locale=locale)
+        label = t(f"modules.automod_ai.bareme.{BAREME_LABELS.get(code, code)}", locale=locale)
         if code == "plancher":
-            amount = t("modules.automod.bareme.cran", locale=locale, n=delta)
+            amount = t("modules.automod_ai.bareme.cran", locale=locale, n=delta)
         else:
             amount = f"{'+' if delta >= 0 else ''}{delta}"
         suffix = f" ({detail})" if detail else ""
@@ -86,5 +86,5 @@ def sanction_name(actions, locale: str) -> str:
     actions = actions or []
     for a in ("ban", "mute", "warn"):
         if a in actions:
-            return t(f"modules.automod.action.{a}", locale=locale)
-    return t("modules.automod.action.supprimer", locale=locale)
+            return t(f"modules.automod_ai.action.{a}", locale=locale)
+    return t("modules.automod_ai.action.supprimer", locale=locale)

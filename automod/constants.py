@@ -2,7 +2,7 @@
 Tunable constants for the automod pipeline.
 
 All of these are starting values. ``SEUIL_EMBEDDING`` in particular must be
-calibrated against real server traffic — see ``docs/AUTOMOD.md``.
+calibrated against real server traffic — see ``docs/AUTOMOD_AI.md``.
 """
 
 # --- Embedding (step 4) -----------------------------------------------------
@@ -51,7 +51,7 @@ EMBEDDING_MODEL: str = "text-embedding-3-small"
 # single embedding call, and in-flight identical requests are additionally
 # coalesced (single-flight) so a burst of N identical messages costs one call,
 # not N. Purely an optimization — it can never change a decision, only avoid a
-# redundant embedding call. See docs/AUTOMOD.md §5 (Volume note).
+# redundant embedding call. See docs/AUTOMOD_AI.md §5 (Volume note).
 EMBED_CACHE_ENABLED: bool = True
 # Hard cap on cached message scores (LRU eviction past this). ~4k short strings
 # is a few hundred KB — negligible, and comfortably covers a busy server's
@@ -96,7 +96,7 @@ ROUNDS_MAX: int = 3            # max nano calls per message (1 initial + 2 re-as
 # recidivism) is recomputed every time, since the author's history differs. The
 # cache is per-guild (guidance / severity differ per guild), short-lived, LRU
 # bounded and single-flighted, exactly like the embedding cache. See
-# docs/AUTOMOD.md §5.1.
+# docs/AUTOMOD_AI.md §5.1.
 VERDICT_CACHE_ENABLED: bool = True
 VERDICT_CACHE_MAX_ENTRIES: int = 2048
 VERDICT_CACHE_TTL_SECONDS: float = 600.0  # 10 minutes (guidance can change)
@@ -123,7 +123,7 @@ AGGREGATION_MIN_MESSAGES: int = 2
 # funnel keeps running (embeddings are cents) but nano is reserved for the
 # flagrant cases only — a regex hit, or an embedding score comfortably above the
 # routing threshold (+ ``NANO_DEGRADED_SCORE_MARGIN``). No hard cut-off: the
-# system degrades, it never goes blind. See docs/AUTOMOD.md §5.2.
+# system degrades, it never goes blind. See docs/AUTOMOD_AI.md §5.2.
 NANO_DAILY_SOFT_CAP: int = 300
 NANO_DEGRADED_SCORE_MARGIN: float = 0.10
 # TTL on the daily counter key (48h so a key set just before UTC midnight still
@@ -139,7 +139,7 @@ BUDGET_KEY_TTL_SECONDS: int = 172800
 # TTL, and decayed on read (half-life 30 days). A short post-message window then
 # observes the target and classifies its reaction. Both are injected into nano's
 # payload as TRUSTED server data — not user text — so nano can tell humour from
-# genuine intent to harm. See docs/AUTOMOD.md §2ter and docs/AUTOMOD_V2_PLAN.md
+# genuine intent to harm. See docs/AUTOMOD_AI.md §2ter and docs/AUTOMOD_V2_PLAN.md
 # (Session 5). Familiarity only ever ATTENUATES a verdict (never aggravates).
 RELATION_ENABLED: bool = True
 # 60-day TTL on the per-pair hash — no global graph to maintain, it self-expires.
@@ -189,7 +189,7 @@ CATEGORIES_RELATION_IGNOREE = frozenset({
 # that reaches the decision step as ``evident`` or ``ambigu`` BEFORE spending a
 # call; ``evident`` goes to nano (current behaviour), ``ambigu`` to the smarter,
 # pricier ``mini`` with twice the context. No AI call is spent to route. See
-# docs/AUTOMOD.md §2quater and docs/AUTOMOD_V2_PLAN.md (Session 6).
+# docs/AUTOMOD_AI.md §2quater and docs/AUTOMOD_V2_PLAN.md (Session 6).
 MINI_MODEL: str = "gpt-4.1-mini"
 # A mini chat is lean like nano's v2 contract (same JSON verdict) — 300 is plenty.
 MINI_MAX_TOKENS: int = 300
@@ -248,7 +248,7 @@ RIRE_MARQUEURS = frozenset(RIRE_MOTS | set(RIRE_EMOJIS))
 # judgment time). Before a decision call, the current message's embedding is
 # matched (cosine) against the guild's precedents; strong matches are injected
 # into nano/mini as TRUSTED server data, and a near-identical "non_sanctionnable"
-# precedent short-circuits the call entirely. See docs/AUTOMOD.md §2quinquies.
+# precedent short-circuits the call entirely. See docs/AUTOMOD_AI.md §2quinquies.
 PRECEDENTS_ENABLED: bool = True
 # How many top matches are injected into the decision prompt.
 PRECEDENT_TOP_K: int = 3
@@ -278,59 +278,6 @@ PRECEDENT_SOURCE_BOUTON_FP: str = "bouton_fp"
 PRECEDENT_SOURCE_BOUTON_OK: str = "bouton_ok"
 
 
-# --- Situation feature — diffuse harassment (session 8) ---------------------
-#
-# What no per-message verdict ever sees: 15 individually-anodyne messages that,
-# together, are harassment or dogpiling. A friction state machine (Redis, per
-# directed pair `author -> target`) accumulates the SUB-THRESHOLD signal the
-# funnel throws away today — a message whose toxicity score sits in
-# [FRICTION_MIN_SCORE, routing threshold) with an identifiable target — plus
-# non-sanctionnable `cible=membre` verdicts (nano saw tension, no infraction).
-# The state decays (half-life 20 min, TTL 2 h). Crossing a threshold triggers ONE
-# ``mini`` call that judges the whole SEQUENCE (not a single message). Shipped in
-# FORCED shadow mode for its first version — it only ever posts a SIMULATION card
-# with annotation buttons, never a sanction. See docs/AUTOMOD.md §4 and
-# docs/AUTOMOD_V2_PLAN.md (Session 8).
-SITUATION_ENABLED: bool = True
-# Lower bound of the sub-threshold band fed to the friction machine (a score
-# below this is noise; at or above the routing threshold the content funnel
-# already handles the message).
-FRICTION_MIN_SCORE: float = 0.25
-# Friction decay: ×0.5 every 20 minutes (half-life), self-expiring after 2 h.
-FRICTION_HALFLIFE_SECONDS: float = 1200.0
-FRICTION_TTL_SECONDS: int = 7200
-# Trigger thresholds: a single directed pair (sustained one-on-one targeting) or
-# the aggregate incoming friction on one target (dogpiling — several authors, none
-# individually over the pair threshold).
-FRICTION_PAIR_THRESHOLD: float = 1.5
-FRICTION_AGG_THRESHOLD: float = 2.5
-# After a target triggers an analysis, suppress re-analysing that target for this
-# long, so a single heated thread does not post a card on every message.
-SITUATION_COOLDOWN_SECONDS: int = 1800
-# Sequence collection: messages exchanged over this window (minutes), capped.
-SITUATION_SEQUENCE_MINUTES: int = 45
-SITUATION_SEQUENCE_MAX: int = 30
-# The situation analyst runs on ``mini`` (ambiguous by nature); its output is a
-# small JSON object, so a modest token budget is plenty.
-SITUATION_MAX_TOKENS: int = 400
-
-# Situation classifications returned by the analyst.
-SITUATION_HARCELEMENT: str = "harcelement_soutenu"   # sustained targeting of one member
-SITUATION_DOGPILING: str = "dogpiling"               # several members piling on one
-SITUATION_CONFLIT: str = "conflit_mutuel"            # two members escalating mutually
-SITUATION_RIEN: str = "rien"                         # normal heated chat / banter
-SITUATION_CLASSES = (
-    SITUATION_HARCELEMENT, SITUATION_DOGPILING, SITUATION_CONFLIT, SITUATION_RIEN,
-)
-# Participant roles in a situation.
-SITUATION_ROLE_HARCELEUR: str = "harceleur"
-SITUATION_ROLE_PARTICIPANT: str = "participant"
-SITUATION_ROLE_CIBLE: str = "cible"
-SITUATION_ROLES = (
-    SITUATION_ROLE_HARCELEUR, SITUATION_ROLE_PARTICIPANT, SITUATION_ROLE_CIBLE,
-)
-
-
 # --- Gateway call types -----------------------------------------------------
 
 # Quota-gated chat call for a moderation decision (per guild).
@@ -339,8 +286,6 @@ CALL_TYPE_DECISION: str = "automod_decision"
 CALL_TYPE_DECISION_MINI: str = "automod_decision_mini"
 # Quota-gated binary mini confirmation of a heavy nano sanction (§6.3).
 CALL_TYPE_CONFIRM: str = "automod_confirm"
-# Quota-gated mini analysis of a diffuse-harassment SEQUENCE (session 8, §8.2).
-CALL_TYPE_SITUATION: str = "automod_situation"
 # Quota-gated chat call for validating a server's rules text.
 CALL_TYPE_RULES_CHECK: str = "automod_rules_check"
 # Embedding call (not quota-gated, see API_GATEWAY.md).

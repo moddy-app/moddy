@@ -69,16 +69,15 @@ moddy/
 │   ├── adaptive_slowmode.py   #   Adaptive slowmode (EWMA + hysteresis)
 │   ├── interserver.py         #   Inter-server message relay
 │   ├── social_notifications.py #  Social notifications (via moddy-feeds service)
-│   ├── automod.py             #   AI automod (applies decisions, cases+evidence, scalable features)
+│   ├── automod_ai.py          #   Automod AI (applies decisions, cases+evidence, scalable features)
 │   └── configs/               #   Components V2 config UIs per module
 │       ├── adaptive_slowmode_config.py
 │       ├── social_notifications_config.py
-│       ├── automod_config.py
-│       ├── automod_precedents_view.py  # Learned-precedents browser (S7)
+│       ├── automod_ai_config.py
+│       ├── automod_ai_precedents_view.py  # Learned-precedents browser (S7)
 │
-├── automod/                   # AI automod DETECTION pipeline (decides only; no side effects)
+├── automod/                   # Automod AI DETECTION pipeline (decides only; no side effects)
 │   ├── engine.py              #   Shared per-bot orchestrator (funnel entry)
-│   ├── situation.py           #   Diffuse-harassment friction machine + mini analyst (S8)
 │   ├── relations.py / routing.py / precedents.py / bareme.py
 │   ├── prefiltre.py / triviaux.py / blocklist.py / embeddings.py / nano.py
 │   ├── relations.py           #   Relationship graph + target-reaction signals (familiarity)
@@ -138,7 +137,6 @@ moddy/
 │   ├── case_management_views.py #  Cases Views/Modals (create, sanction, comment…) — staff
 │   ├── cases_views.py         #   /cases & /mycases browser (CasesBrowserView, persistent)
 │   ├── automod_shadow_views.py #  Automod shadow-mode (dry_run) SIMULATION card + annotation buttons (persistent)
-│   ├── automod_situation_views.py #  Diffuse-harassment (situation) SIMULATION card (S8)
 │   ├── automod_render.py      #   Shared automod card helpers (barème breakdown, sanction name/accent)
 │   ├── appeal_views.py        #   Automod appeal UI (DM buttons + reviewer panels, persistent)
 │   ├── moderation_cases.py    #   Cases domain model + enums + reference gen
@@ -298,7 +296,8 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/COMMAND_LOCALIZATION.md](docs/COMMAND_LOCALIZATION.md) | Translating slash command names/descriptions (32 Discord locales) |
 | [docs/TEXT_TOOLS.md](docs/TEXT_TOOLS.md) | AI text tools — `/fix`, `/rephrase`, `/summarize` (models, presets, mention stripping) |
 | [docs/MODULE_SYSTEM.md](docs/MODULE_SYSTEM.md) | Creating or modifying server modules |
-| [docs/AUTOMOD.md](docs/AUTOMOD.md) | AI automod — detection pipeline, nano decider, scalable features, rules safety check |
+| [docs/AUTOMOD_AI.md](docs/AUTOMOD_AI.md) | Automod AI — detection pipeline, nano decider, scalable features, rules safety check |
+| [docs/AUTOMOD_AI_CONFIG.md](docs/AUTOMOD_AI_CONFIG.md) | Automod AI configuration schema in DB (backend / dashboard integration) |
 | [docs/STAFF_SYSTEM.md](docs/STAFF_SYSTEM.md) | Staff/dev commands, permissions, roles |
 | [docs/MODERATION_CASES.md](docs/MODERATION_CASES.md) | Moderation cases/sanctions, the case service & sources, auto-sync |
 | [docs/TECHNICAL_LOGS.md](docs/TECHNICAL_LOGS.md) | Internal technical staff logs (webhook-based, per-event channels) |

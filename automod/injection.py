@@ -1,5 +1,5 @@
 """
-Anti-prompt-injection helpers (defence layer C3 in docs/AUTOMOD.md).
+Anti-prompt-injection helpers (defence layer C3 in docs/AUTOMOD_AI.md).
 
 User content reaches nano: it is the main attack surface. We wrap every piece
 of untrusted ``contenu`` in a marker carrying a per-request random nonce, and we

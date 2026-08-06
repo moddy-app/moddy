@@ -1372,7 +1372,7 @@
         "internal_error": "<:error:1519790252594827264> Une erreur est survenue. Réessayez."
       }
     },
-    "automod": {
+    "automod_ai": {
       "description": "Modération automatique des messages problématiques (IA)",
       "config": {
         "title": "Automod",
@@ -1516,10 +1516,7 @@
           "delete_placeholder": "Supprimer un précédent erroné…",
           "delete_option": "Supprimer le précédent {n}",
           "deleted": "Précédent supprimé."
-        },
-        "situation_label": "Situations (harcèlement diffus)",
-        "situation_desc": "Détecte le harcèlement multi-messages et le dogpiling (mode simulation)",
-        "situation_active": "Situations : analyse en simulation — aucune sanction automatique appliquée"
+        }
       },
       "action": {
         "warn": "Avertissement",
@@ -1700,27 +1697,6 @@
           "title": "Action impossible",
           "no_perms": "Seuls les modérateurs (gérer les messages) peuvent annoter une simulation.",
           "gone": "Cette simulation n'existe plus."
-        }
-      },
-      "situation": {
-        "title": "Situation détectée",
-        "pattern": "Schéma",
-        "gravity": "Gravité",
-        "target": "Cible présumée",
-        "summary": "Résumé",
-        "participants": "Participants",
-        "key_messages": "Messages clés",
-        "shadow_hint": "Détection multi-messages — v1 en simulation, aucune sanction appliquée.",
-        "type": {
-          "harcelement_soutenu": "Harcèlement soutenu (ciblage d'un membre)",
-          "dogpiling": "Dogpiling (plusieurs membres sur une cible)",
-          "conflit_mutuel": "Conflit mutuel (escalade réciproque)",
-          "rien": "Rien (discussion animée / vannes)"
-        },
-        "role": {
-          "harceleur": "harceleur",
-          "participant": "participant",
-          "cible": "cible"
         }
       }
     }

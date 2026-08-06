@@ -33,7 +33,7 @@ from utils.emojis import (
 from automod.rules_check import validate_rules, MAX_RULES_LENGTH
 from automod import constants as ac
 
-logger = logging.getLogger("moddy.modules.automod_config")
+logger = logging.getLogger("moddy.modules.automod_ai_config")
 
 _DEFAULT_CONFIG = {
     "enabled": False,
@@ -49,8 +49,6 @@ _DEFAULT_CONFIG = {
     "dry_run": False,
     "features": {
         "content": {"enabled": False, "exempt_roles": [], "exempt_channels": []},
-        # Session 8: diffuse-harassment analysis (forced shadow mode).
-        "situation": {"enabled": False, "exempt_roles": [], "exempt_channels": []},
     },
 }
 
@@ -82,12 +80,6 @@ def _deep_default(current: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         "exempt_roles": list(content.get("exempt_roles", [])),
         "exempt_channels": list(content.get("exempt_channels", [])),
     }
-    situation = (current.get("features", {}) or {}).get("situation", {}) or {}
-    cfg["features"]["situation"] = {
-        "enabled": bool(situation.get("enabled", False)),
-        "exempt_roles": list(situation.get("exempt_roles", [])),
-        "exempt_channels": list(situation.get("exempt_channels", [])),
-    }
     return cfg
 
 
@@ -95,17 +87,17 @@ def _deep_default(current: Optional[Dict[str, Any]]) -> Dict[str, Any]:
 # Indications modal (AI-validated). Writes into the parent's working copy.
 # --------------------------------------------------------------------------- #
 class IndicationsModal(BaseModal):
-    def __init__(self, parent: "AutomodConfigView", current: str):
+    def __init__(self, parent: "AutomodAIConfigView", current: str):
         locale = parent.locale
-        super().__init__(title=t("modules.automod.config.indications.modal_title", locale=locale)[:45])
+        super().__init__(title=t("modules.automod_ai.config.indications.modal_title", locale=locale)[:45])
         self.bot = parent.bot
         self.parent_view = parent
         self.locale = locale
         self.field = ui.Label(
-            text=t("modules.automod.config.indications.modal_label", locale=locale)[:45],
-            description=t("modules.automod.config.indications.modal_desc", locale=locale)[:100],
+            text=t("modules.automod_ai.config.indications.modal_label", locale=locale)[:45],
+            description=t("modules.automod_ai.config.indications.modal_desc", locale=locale)[:100],
             component=ui.TextInput(
-                placeholder=t("modules.automod.config.indications.modal_placeholder", locale=locale)[:100],
+                placeholder=t("modules.automod_ai.config.indications.modal_placeholder", locale=locale)[:100],
                 default=current[:MAX_RULES_LENGTH] if current else None,
                 style=discord.TextStyle.paragraph,
                 max_length=MAX_RULES_LENGTH,
@@ -130,11 +122,11 @@ class IndicationsModal(BaseModal):
         safe, reason = await validate_rules(self.bot, parent.guild_id, text)
         if not safe:
             if reason == "too_long":
-                msg = t("modules.automod.config.indications.error_too_long", locale=locale)
+                msg = t("modules.automod_ai.config.indications.error_too_long", locale=locale)
             elif reason == "unavailable":
-                msg = t("modules.automod.config.indications.error_unavailable", locale=locale)
+                msg = t("modules.automod_ai.config.indications.error_unavailable", locale=locale)
             else:
-                msg = t("modules.automod.config.indications.error_unsafe", locale=locale, reason=reason or "—")
+                msg = t("modules.automod_ai.config.indications.error_unsafe", locale=locale, reason=reason or "—")
             await interaction.followup.send(msg, ephemeral=True)
             return
 
@@ -143,14 +135,14 @@ class IndicationsModal(BaseModal):
         parent._build_view()
         await interaction.edit_original_response(view=parent)
         await interaction.followup.send(
-            t("modules.automod.config.indications.checked", locale=locale), ephemeral=True
+            t("modules.automod_ai.config.indications.checked", locale=locale), ephemeral=True
         )
 
 
 # --------------------------------------------------------------------------- #
 # Main config view
 # --------------------------------------------------------------------------- #
-class AutomodConfigView(BaseView):
+class AutomodAIConfigView(BaseView):
     """Automod configuration panel (standard Save/Cancel pattern)."""
 
     def __init__(self, bot, guild_id: int, user_id: int, locale: str = "en-US",
@@ -194,15 +186,11 @@ class AutomodConfigView(BaseView):
     def _content(self) -> Dict[str, Any]:
         return self.working_config["features"]["content"]
 
-    @property
-    def _situation(self) -> Dict[str, Any]:
-        return self.working_config["features"]["situation"]
-
     def _dot(self, value: bool) -> str:
         return GREEN_STATUS if value else RED_STATUS
 
     def _state(self, value: bool) -> str:
-        key = "modules.automod.config.state.on" if value else "modules.automod.config.state.off"
+        key = "modules.automod_ai.config.state.on" if value else "modules.automod_ai.config.state.off"
         return t(key, locale=self.locale)
 
     async def _check_user(self, interaction: discord.Interaction) -> bool:
@@ -228,29 +216,29 @@ class AutomodConfigView(BaseView):
 
         # ── Header + one-line status ──────────────────────────────────────
         container.add_item(ui.TextDisplay(
-            f"### {SHIELD} {t('modules.automod.config.title', locale=self.locale)}"
+            f"### {SHIELD} {t('modules.automod_ai.config.title', locale=self.locale)}"
         ))
         container.add_item(ui.TextDisplay(
-            t("modules.automod.config.description", locale=self.locale)
+            t("modules.automod_ai.config.description", locale=self.locale)
         ))
         if running:
             container.add_item(ui.TextDisplay(
-                t("modules.automod.config.summary_active", locale=self.locale)
+                t("modules.automod_ai.config.summary_active", locale=self.locale)
             ))
         else:
             hint_key = ("summary_need_channel" if not has_channel
                         else "summary_need_module" if not module_on
                         else "summary_need_content")
             container.add_item(ui.TextDisplay(
-                f"{t('modules.automod.config.summary_inactive', locale=self.locale)}\n"
-                f"-# {t(f'modules.automod.config.{hint_key}', locale=self.locale)}"
+                f"{t('modules.automod_ai.config.summary_inactive', locale=self.locale)}\n"
+                f"-# {t(f'modules.automod_ai.config.{hint_key}', locale=self.locale)}"
             ))
 
         # ── Module on/off — a single toggle button (exception to selects) ──
         toggle_row = ui.ActionRow()
         toggle_btn = ui.Button(
             label=t(
-                "modules.automod.config.buttons."
+                "modules.automod_ai.config.buttons."
                 + ("disable_module" if module_on else "enable_module"),
                 locale=self.locale,
             ),
@@ -265,40 +253,32 @@ class AutomodConfigView(BaseView):
 
         # ── Options (the remaining toggles, picked in one select) ─────────
         container.add_item(ui.TextDisplay(
-            f"{SETTINGS} **{t('modules.automod.config.section_options', locale=self.locale)}**"
+            f"{SETTINGS} **{t('modules.automod_ai.config.section_options', locale=self.locale)}**"
         ))
         dry_run_on = bool(cfg.get("dry_run", False))
-        situation_on = self._situation["enabled"]
         opt_row = ui.ActionRow()
         opt_select = ui.Select(
-            placeholder=t("modules.automod.config.activations.placeholder", locale=self.locale),
-            min_values=0, max_values=4,
+            placeholder=t("modules.automod_ai.config.activations.placeholder", locale=self.locale),
+            min_values=0, max_values=3,
             options=[
                 discord.SelectOption(
-                    label=t("modules.automod.config.content_label", locale=self.locale),
+                    label=t("modules.automod_ai.config.content_label", locale=self.locale),
                     value="content",
-                    description=t("modules.automod.config.content_desc", locale=self.locale)[:100],
+                    description=t("modules.automod_ai.config.content_desc", locale=self.locale)[:100],
                     emoji=discord.PartialEmoji.from_str(MESSAGE),
                     default=content_on,
                 ),
                 discord.SelectOption(
-                    label=t("modules.automod.config.situation_label", locale=self.locale),
-                    value="situation",
-                    description=t("modules.automod.config.situation_desc", locale=self.locale)[:100],
-                    emoji=discord.PartialEmoji.from_str(GROUPS),
-                    default=situation_on,
-                ),
-                discord.SelectOption(
-                    label=t("modules.automod.config.ignore_mods.label", locale=self.locale),
+                    label=t("modules.automod_ai.config.ignore_mods.label", locale=self.locale),
                     value="ignore",
-                    description=t("modules.automod.config.ignore_mods.desc", locale=self.locale)[:100],
+                    description=t("modules.automod_ai.config.ignore_mods.desc", locale=self.locale)[:100],
                     emoji=discord.PartialEmoji.from_str(MANAGE_USER),
                     default=ignore_on,
                 ),
                 discord.SelectOption(
-                    label=t("modules.automod.config.dry_run.label", locale=self.locale),
+                    label=t("modules.automod_ai.config.dry_run.label", locale=self.locale),
                     value="dry_run",
-                    description=t("modules.automod.config.dry_run.desc", locale=self.locale)[:100],
+                    description=t("modules.automod_ai.config.dry_run.desc", locale=self.locale)[:100],
                     emoji=discord.PartialEmoji.from_str(SEARCH),
                     default=dry_run_on,
                 ),
@@ -307,23 +287,20 @@ class AutomodConfigView(BaseView):
         opt_select.callback = self.on_activations
         opt_row.add_item(opt_select)
         container.add_item(opt_row)
-        if situation_on:
-            container.add_item(ui.TextDisplay(
-                f"-# {GROUPS} {t('modules.automod.config.situation_active', locale=self.locale)}"))
         if dry_run_on:
             container.add_item(ui.TextDisplay(
-                f"-# {SEARCH} {t('modules.automod.config.dry_run.active', locale=self.locale)}"))
+                f"-# {SEARCH} {t('modules.automod_ai.config.dry_run.active', locale=self.locale)}"))
 
         # ── Alert channel (REQUIRED) ──────────────────────────────────────
         warn_line = ("" if has_channel
-                     else f"\n-# {WARNING} {t('modules.automod.config.notify.missing', locale=self.locale)}")
+                     else f"\n-# {WARNING} {t('modules.automod_ai.config.notify.missing', locale=self.locale)}")
         container.add_item(ui.TextDisplay(
-            f"{MESSAGE} **{t('modules.automod.config.section_notify', locale=self.locale)}**{REQUIRED_FIELDS}\n"
-            f"-# {t('modules.automod.config.notify.desc', locale=self.locale)}{warn_line}"
+            f"{MESSAGE} **{t('modules.automod_ai.config.section_notify', locale=self.locale)}**{REQUIRED_FIELDS}\n"
+            f"-# {t('modules.automod_ai.config.notify.desc', locale=self.locale)}{warn_line}"
         ))
         notify_row = ui.ActionRow()
         notify_select = ui.ChannelSelect(
-            placeholder=t("modules.automod.config.notify.placeholder", locale=self.locale),
+            placeholder=t("modules.automod_ai.config.notify.placeholder", locale=self.locale),
             channel_types=[discord.ChannelType.text, discord.ChannelType.news],
             min_values=0, max_values=1,
         )
@@ -335,18 +312,18 @@ class AutomodConfigView(BaseView):
         # ── Severity (the select shows the current level) ─────────────────
         severity = cfg.get("severity", ac.SEVERITY_DEFAULT)
         container.add_item(ui.TextDisplay(
-            f"{SETTINGS} **{t('modules.automod.config.section_severity', locale=self.locale)}**\n"
-            f"-# {t('modules.automod.config.severity.desc', locale=self.locale)}"
+            f"{SETTINGS} **{t('modules.automod_ai.config.section_severity', locale=self.locale)}**\n"
+            f"-# {t('modules.automod_ai.config.severity.desc', locale=self.locale)}"
         ))
         sev_row = ui.ActionRow()
         sev_select = ui.Select(
-            placeholder=t("modules.automod.config.severity.placeholder", locale=self.locale),
+            placeholder=t("modules.automod_ai.config.severity.placeholder", locale=self.locale),
             min_values=1, max_values=1,
             options=[
                 discord.SelectOption(
-                    label=t("modules.automod.config.severity.option", locale=self.locale, n=n),
+                    label=t("modules.automod_ai.config.severity.option", locale=self.locale, n=n),
                     value=str(n),
-                    description=t(f"modules.automod.config.severity.level_{n}", locale=self.locale)[:100],
+                    description=t(f"modules.automod_ai.config.severity.level_{n}", locale=self.locale)[:100],
                     default=(n == severity),
                 )
                 for n in range(ac.SEVERITY_MIN, ac.SEVERITY_MAX + 1)
@@ -358,17 +335,17 @@ class AutomodConfigView(BaseView):
 
         # ── Limits & language (max sanction the automod may apply + DM tongue) ─
         container.add_item(ui.TextDisplay(
-            f"{SETTINGS} **{t('modules.automod.config.section_limits', locale=self.locale)}**\n"
-            f"-# {t('modules.automod.config.max_action.desc', locale=self.locale)}"
+            f"{SETTINGS} **{t('modules.automod_ai.config.section_limits', locale=self.locale)}**\n"
+            f"-# {t('modules.automod_ai.config.max_action.desc', locale=self.locale)}"
         ))
         max_action = cfg.get("max_action", "ban")
         maxa_row = ui.ActionRow()
         maxa_select = ui.Select(
-            placeholder=t("modules.automod.config.max_action.placeholder", locale=self.locale),
+            placeholder=t("modules.automod_ai.config.max_action.placeholder", locale=self.locale),
             min_values=1, max_values=1,
             options=[
                 discord.SelectOption(
-                    label=t(f"modules.automod.config.max_action.option_{v}", locale=self.locale),
+                    label=t(f"modules.automod_ai.config.max_action.option_{v}", locale=self.locale),
                     value=v, default=(v == max_action),
                 )
                 for v in ("warn", "mute", "ban")
@@ -379,16 +356,16 @@ class AutomodConfigView(BaseView):
         container.add_item(maxa_row)
 
         container.add_item(ui.TextDisplay(
-            f"-# {t('modules.automod.config.language.desc', locale=self.locale)}"
+            f"-# {t('modules.automod_ai.config.language.desc', locale=self.locale)}"
         ))
         langue = cfg.get("langue_serveur", "auto")
         lang_row = ui.ActionRow()
         lang_select = ui.Select(
-            placeholder=t("modules.automod.config.language.placeholder", locale=self.locale),
+            placeholder=t("modules.automod_ai.config.language.placeholder", locale=self.locale),
             min_values=1, max_values=1,
             options=[
                 discord.SelectOption(
-                    label=t(f"modules.automod.config.language.{key}", locale=self.locale),
+                    label=t(f"modules.automod_ai.config.language.{key}", locale=self.locale),
                     value=value, default=(value == langue),
                 )
                 for key, value in (("auto", "auto"), ("fr", "fr"), ("en", "en-US"))
@@ -402,17 +379,17 @@ class AutomodConfigView(BaseView):
         indications = cfg.get("indications", "")
         if indications:
             preview = indications[:180] + ("…" if len(indications) > 180 else "")
-            ind_state = f"-# {t('modules.automod.config.indications.current', locale=self.locale)} : {preview}"
+            ind_state = f"-# {t('modules.automod_ai.config.indications.current', locale=self.locale)} : {preview}"
         else:
-            ind_state = f"-# {t('modules.automod.config.indications.empty', locale=self.locale)}"
+            ind_state = f"-# {t('modules.automod_ai.config.indications.empty', locale=self.locale)}"
         container.add_item(ui.TextDisplay(
-            f"{BOOK} **{t('modules.automod.config.section_indications', locale=self.locale)}**\n"
-            f"-# {t('modules.automod.config.indications.desc', locale=self.locale)}\n"
+            f"{BOOK} **{t('modules.automod_ai.config.section_indications', locale=self.locale)}**\n"
+            f"-# {t('modules.automod_ai.config.indications.desc', locale=self.locale)}\n"
             f"{ind_state}"
         ))
         ind_row = ui.ActionRow()
         ind_btn = ui.Button(
-            label=t("modules.automod.config.buttons.edit_indications", locale=self.locale),
+            label=t("modules.automod_ai.config.buttons.edit_indications", locale=self.locale),
             style=discord.ButtonStyle.secondary,
             emoji=discord.PartialEmoji.from_str(BOOK),
         )
@@ -424,28 +401,28 @@ class AutomodConfigView(BaseView):
         if ac.PRECEDENTS_ENABLED:
             count = self._precedent_count
             if count is None:
-                prec_line = t("modules.automod.config.precedents.desc", locale=self.locale)
+                prec_line = t("modules.automod_ai.config.precedents.desc", locale=self.locale)
             elif count == 0:
                 prec_line = (
-                    f"{t('modules.automod.config.precedents.desc', locale=self.locale)}\n"
-                    f"-# {t('modules.automod.config.precedents.empty', locale=self.locale)}")
+                    f"{t('modules.automod_ai.config.precedents.desc', locale=self.locale)}\n"
+                    f"-# {t('modules.automod_ai.config.precedents.empty', locale=self.locale)}")
             else:
                 last = ""
                 if self._precedent_last is not None:
                     try:
-                        last = f" · {t('modules.automod.config.precedents.last', locale=self.locale)} <t:{int(self._precedent_last.timestamp())}:R>"
+                        last = f" · {t('modules.automod_ai.config.precedents.last', locale=self.locale)} <t:{int(self._precedent_last.timestamp())}:R>"
                     except Exception:  # noqa: BLE001
                         last = ""
                 prec_line = (
-                    f"{t('modules.automod.config.precedents.desc', locale=self.locale)}\n"
-                    f"-# {t('modules.automod.config.precedents.count', locale=self.locale, n=count)}{last}")
+                    f"{t('modules.automod_ai.config.precedents.desc', locale=self.locale)}\n"
+                    f"-# {t('modules.automod_ai.config.precedents.count', locale=self.locale, n=count)}{last}")
             container.add_item(ui.TextDisplay(
-                f"{SEARCH} **{t('modules.automod.config.section_precedents', locale=self.locale)}**\n"
+                f"{SEARCH} **{t('modules.automod_ai.config.section_precedents', locale=self.locale)}**\n"
                 f"-# {prec_line}"))
             if count:
                 prec_row = ui.ActionRow()
                 prec_btn = ui.Button(
-                    label=t("modules.automod.config.buttons.view_precedents", locale=self.locale),
+                    label=t("modules.automod_ai.config.buttons.view_precedents", locale=self.locale),
                     style=discord.ButtonStyle.secondary,
                     emoji=discord.PartialEmoji.from_str(SEARCH),
                 )
@@ -455,12 +432,12 @@ class AutomodConfigView(BaseView):
 
         # ── Exemptions (selects show what's chosen) ───────────────────────
         container.add_item(ui.TextDisplay(
-            f"{GROUPS} **{t('modules.automod.config.section_exemptions', locale=self.locale)}**\n"
-            f"-# {t('modules.automod.config.exempt_roles.desc', locale=self.locale)}"
+            f"{GROUPS} **{t('modules.automod_ai.config.section_exemptions', locale=self.locale)}**\n"
+            f"-# {t('modules.automod_ai.config.exempt_roles.desc', locale=self.locale)}"
         ))
         roles_row = ui.ActionRow()
         roles_select = ui.RoleSelect(
-            placeholder=t("modules.automod.config.exempt_roles.placeholder", locale=self.locale),
+            placeholder=t("modules.automod_ai.config.exempt_roles.placeholder", locale=self.locale),
             min_values=0, max_values=25,
         )
         self._apply_role_defaults(roles_select, self._content.get("exempt_roles", []))
@@ -469,11 +446,11 @@ class AutomodConfigView(BaseView):
         container.add_item(roles_row)
 
         container.add_item(ui.TextDisplay(
-            f"-# {t('modules.automod.config.exempt_channels.desc', locale=self.locale)}"
+            f"-# {t('modules.automod_ai.config.exempt_channels.desc', locale=self.locale)}"
         ))
         chan_row = ui.ActionRow()
         chan_select = ui.ChannelSelect(
-            placeholder=t("modules.automod.config.exempt_channels.placeholder", locale=self.locale),
+            placeholder=t("modules.automod_ai.config.exempt_channels.placeholder", locale=self.locale),
             channel_types=[discord.ChannelType.text, discord.ChannelType.news,
                            discord.ChannelType.public_thread, discord.ChannelType.private_thread],
             min_values=0, max_values=25,
@@ -559,7 +536,6 @@ class AutomodConfigView(BaseView):
             return
         selected = set(interaction.data.get("values", []))
         self._content["enabled"] = "content" in selected
-        self._situation["enabled"] = "situation" in selected
         self.working_config["ignore_moderators"] = "ignore" in selected
         self.working_config["dry_run"] = "dry_run" in selected
         self.has_changes = True
@@ -624,8 +600,8 @@ class AutomodConfigView(BaseView):
     async def on_view_precedents(self, interaction: discord.Interaction):
         if not await self._check_user(interaction):
             return
-        from modules.configs.automod_precedents_view import AutomodPrecedentsView
-        view = AutomodPrecedentsView(self.bot, self.guild_id, self.user_id,
+        from modules.configs.automod_ai_precedents_view import AutomodAIPrecedentsView
+        view = AutomodAIPrecedentsView(self.bot, self.guild_id, self.user_id,
                                      self.locale, parent=self)
         await view.load()
         await interaction.response.edit_message(view=view)
@@ -635,7 +611,7 @@ class AutomodConfigView(BaseView):
         if not await self._check_user(interaction):
             return
         success, error = await self.bot.module_manager.save_module_config(
-            self.guild_id, "automod", self.working_config
+            self.guild_id, "automod_ai", self.working_config
         )
         if not success:
             await interaction.response.send_message(
@@ -661,7 +637,7 @@ class AutomodConfigView(BaseView):
     async def on_delete(self, interaction: discord.Interaction):
         if not await self._check_user(interaction):
             return
-        await self.bot.module_manager.delete_module_config(self.guild_id, "automod")
+        await self.bot.module_manager.delete_module_config(self.guild_id, "automod_ai")
         self.current_config = _deep_default(None)
         self.working_config = copy.deepcopy(self.current_config)
         self.has_existing_config = False

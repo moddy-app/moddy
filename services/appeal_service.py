@@ -207,8 +207,8 @@ class AppealService:
         try:
             await interaction.response.send_message(
                 view=create_info_message(
-                    t("modules.automod.appeal.invite.title", locale=locale),
-                    t("modules.automod.appeal.invite.body", locale=locale, url=url, guild=guild.name),
+                    t("modules.automod_ai.appeal.invite.title", locale=locale),
+                    t("modules.automod_ai.appeal.invite.body", locale=locale, url=url, guild=guild.name),
                 ),
                 ephemeral=True,
             )
@@ -498,9 +498,9 @@ class AppealService:
         from utils.components_v2 import create_success_message
         from utils.i18n import i18n as _i18n
         loc = _i18n.get_user_locale(interaction)
-        key = f"modules.automod.appeal.status.{decided['status']}"
+        key = f"modules.automod_ai.appeal.status.{decided['status']}"
         ack = create_success_message(
-            t("modules.automod.appeal.review.outcome", locale=loc),
+            t("modules.automod_ai.appeal.review.outcome", locale=loc),
             t(key, locale=loc))
         try:
             if not interaction.response.is_done():
@@ -546,11 +546,11 @@ class AppealService:
         from utils.components_v2 import create_info_message
         try:
             user = self.bot.get_user(user_id) or await self.bot.fetch_user(user_id)
-            key = f"modules.automod.appeal.status.{decided['status']}"
-            body = t("modules.automod.appeal.dm_outcome", locale=locale,
+            key = f"modules.automod_ai.appeal.status.{decided['status']}"
+            body = t("modules.automod_ai.appeal.dm_outcome", locale=locale,
                      status=t(key, locale=locale), guild=self._guild_name(appeal))
             await user.send(view=create_info_message(
-                t("modules.automod.appeal.dm_outcome_title", locale=locale), body))
+                t("modules.automod_ai.appeal.dm_outcome_title", locale=locale), body))
         except (discord.Forbidden, discord.HTTPException):
             pass
 
@@ -566,8 +566,8 @@ class AppealService:
             return
         from utils.components_v2 import create_info_message
         view = create_info_message(
-            t("modules.automod.appeal.server_opened_title", locale=self._panel_locale(appeal)),
-            t("modules.automod.appeal.server_opened", locale=self._panel_locale(appeal),
+            t("modules.automod_ai.appeal.server_opened_title", locale=self._panel_locale(appeal)),
+            t("modules.automod_ai.appeal.server_opened", locale=self._panel_locale(appeal),
               user=f"<@{appeal['subject_id']}>", case=f"`{case['case']['reference']}`"),
         )
         try:
@@ -581,13 +581,13 @@ class AppealService:
         if channel is None:
             return
         from utils.components_v2 import create_info_message
-        key = f"modules.automod.appeal.status.{decided['status']}"
+        key = f"modules.automod_ai.appeal.status.{decided['status']}"
         extra = ""
         if decided.get("new_action"):
-            extra = " → `" + t("modules.automod.action." + decided["new_action"], locale=self._panel_locale(appeal)) + "`"
+            extra = " → `" + t("modules.automod_ai.action." + decided["new_action"], locale=self._panel_locale(appeal)) + "`"
         view = create_info_message(
-            t("modules.automod.appeal.server_decided_title", locale=self._panel_locale(appeal)),
-            t("modules.automod.appeal.server_decided", locale=self._panel_locale(appeal),
+            t("modules.automod_ai.appeal.server_decided_title", locale=self._panel_locale(appeal)),
+            t("modules.automod_ai.appeal.server_decided", locale=self._panel_locale(appeal),
               user=f"<@{appeal['subject_id']}>", route=appeal["route"],
               status=t(key, locale=self._panel_locale(appeal))) + extra,
         )
@@ -614,8 +614,8 @@ class AppealService:
         locale = _i18n.get_user_locale(interaction)
         maker = create_error_message if error else create_warning_message
         view = maker(
-            t("modules.automod.appeal.error.title", locale=locale),
-            t(f"modules.automod.appeal.error.{key}", locale=locale),
+            t("modules.automod_ai.appeal.error.title", locale=locale),
+            t(f"modules.automod_ai.appeal.error.{key}", locale=locale),
         )
         try:
             if not interaction.response.is_done():
