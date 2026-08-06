@@ -1276,3 +1276,36 @@ reminders, user_tz, …)` shell-first signature (`user_id` before `locale`
 before `reminders`, so the persistent-view contract's
 `(bot=None, user_id=None, locale="en-US", …)` shape holds); a positional
 call would have silently swapped `reminders` and `locale`.
+
+### Status as of this pass (branch `claude/persistent-views-migration-nph7ok`)
+
+Completed: Steps 0-7 (test harness; `AddSubscriptionView` /
+`ManageSubscriptionView`; timeout cleanups; shared i18n key; the three
+`LayoutView` re-parents; Step 5 logged as deferred, no code change;
+`PreferencesView`; `RemindersManageView`). `tests/test_persistent_views.py`
+is green after every commit, one step per commit as required.
+
+Not started: Steps 8-15 (small guild config panels; the colliding welcome
+pair; `ConfigMainView`; adaptive slowmode; automod config; case management;
+staff read-only views; `StaffManagerPanel`), plus the "Deferred / not in
+this migration" row (`ReportView`, `TranslateView`, `StaffHelpView`) and
+`EmojiNavigationView` / `SavedMessagesLibraryView` from Step 7's own group
+(only `RemindersManageView` was completed there — Appendix C names it as
+the one to do "first and literally"; the other two build on the same
+pattern with added pagination/re-scan concerns and were not reached this
+session). None of these were attempted, so none are half-migrated — every
+view not mentioned as "Completed" above is byte-for-byte what it was on
+`main` before this branch: still using its original un-namespaced
+custom_ids, still absent from the persistent view registry. Whoever
+continues this migration should start at Step 8 (or finish Step 7's
+`EmojiNavigationView`/`SavedMessagesLibraryView`) with a fresh read of
+Appendix B for those specific views before writing code — several already
+had stale assumptions corrected in the log entries above (B.1.a's
+`working_config` shape, B.2's DynamicItem list, and B.3's unguarded-`self.bot`
+table are the ones most likely to have drifted further).
+
+**Step 15 (`StaffManagerPanel`) was not reached.** Restating Appendix E's
+own instruction for whoever does reach it: it grants and revokes staff
+permissions, a dispatch bug there is a privilege-escalation bug, and per
+the operating instructions for this migration pass it **must be reviewed by
+a human before merge** — more so than every other step.
