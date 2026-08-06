@@ -9,30 +9,41 @@ from discord.ext import commands
 from typing import Optional
 import logging
 
-from utils.i18n import t
+from utils.i18n import i18n, t
 from utils.emojis import EMOJIS
 from cogs.error_handler import BaseView
+from modules.configs._common import check_guild_perms
 
 logger = logging.getLogger('moddy.cogs.config')
+
+_CID_MODULE_SELECT = "moddy:config:main:module_select"
 
 
 class ConfigMainView(BaseView):
     """
     Vue principale de la commande /config
     Affiche la liste des modules disponibles et permet d'accéder à leur configuration
+
+    Persistent: yes. Auth: Manage Server in the guild (checked on every
+    click via check_guild_perms — NOT via a stored user_id, which cannot
+    survive a restarted shell).
     """
 
-    def __init__(self, bot, guild_id: int, user_id: int, locale: str):
+    __persistent__ = True
+
+    def __init__(self, bot=None, guild_id: Optional[int] = None, user_id: Optional[int] = None,
+                 locale: str = "en-US"):
         """
         Initialise la vue principale
 
         Args:
             bot: Instance du bot
             guild_id: ID du serveur
-            user_id: ID de l'utilisateur qui configure
+            user_id: ID de l'utilisateur qui configure (informational only —
+                not used for authorization, see check_guild_perms)
             locale: Langue de l'utilisateur
         """
-        super().__init__(timeout=300)
+        super().__init__()  # timeout=None
         # Set bot for error handling
         self.bot = bot
         self.guild_id = guild_id
@@ -57,6 +68,21 @@ class ConfigMainView(BaseView):
 
         # Menu déroulant pour sélectionner un module
         select_row = ui.ActionRow()
+
+        if self.bot is None:
+            # Registration shell: no live module_manager to list modules
+            # from. Register the custom_id anyway (disabled placeholder) so
+            # a real message's select still dispatches after a restart.
+            module_select = ui.Select(
+                placeholder=t('modules.config.main.select_placeholder', locale=self.locale),
+                options=[discord.SelectOption(label="—", value="none")],
+                min_values=1, max_values=1, custom_id=_CID_MODULE_SELECT, disabled=True,
+            )
+            module_select.callback = self.on_module_select
+            select_row.add_item(module_select)
+            container.add_item(select_row)
+            self.add_item(container)
+            return
 
         # Récupère la liste des modules disponibles
         available_modules = self.bot.module_manager.get_available_modules()
@@ -88,7 +114,8 @@ class ConfigMainView(BaseView):
             placeholder=t('modules.config.main.select_placeholder', locale=self.locale),
             options=options,
             min_values=1,
-            max_values=1
+            max_values=1,
+            custom_id=_CID_MODULE_SELECT,
         )
         module_select.callback = self.on_module_select
         select_row.add_item(module_select)
@@ -98,8 +125,13 @@ class ConfigMainView(BaseView):
 
     async def on_module_select(self, interaction: discord.Interaction):
         """Callback quand un module est sélectionné"""
-        if not await self.check_user(interaction):
+        if not await check_guild_perms(interaction):
             return
+
+        bot = interaction.client
+        guild_id = interaction.guild_id
+        user_id = interaction.user.id
+        locale = i18n.get_user_locale(interaction)
 
         # Récupère le module sélectionné
         module_id = interaction.data['values'][0]
@@ -108,7 +140,7 @@ class ConfigMainView(BaseView):
         await interaction.response.defer()
 
         # Récupère la configuration actuelle du module
-        module_config = await self.bot.module_manager.get_module_config(self.guild_id, module_id)
+        module_config = await bot.module_manager.get_module_config(guild_id, module_id)
 
         # Import dynamique de la vue de configuration correspondante
         config_view = None
@@ -116,81 +148,81 @@ class ConfigMainView(BaseView):
         if module_id == 'welcome_channel':
             from modules.configs.welcome_channel_config import WelcomeChannelConfigView
             config_view = WelcomeChannelConfigView(
-                self.bot,
-                self.guild_id,
-                self.user_id,
-                self.locale,
+                bot,
+                guild_id,
+                user_id,
+                locale,
                 module_config
             )
         elif module_id == 'welcome_dm':
             from modules.configs.welcome_dm_config import WelcomeDmConfigView
             config_view = WelcomeDmConfigView(
-                self.bot,
-                self.guild_id,
-                self.user_id,
-                self.locale,
+                bot,
+                guild_id,
+                user_id,
+                locale,
                 module_config
             )
         elif module_id == 'interserver':
             from modules.configs.interserver_config import InterServerConfigView
             config_view = InterServerConfigView(
-                self.bot,
-                self.guild_id,
-                self.user_id,
-                self.locale,
+                bot,
+                guild_id,
+                user_id,
+                locale,
                 module_config
             )
         elif module_id == 'starboard':
             from modules.configs.starboard_config import StarboardConfigView
             config_view = StarboardConfigView(
-                self.bot,
-                self.guild_id,
-                self.user_id,
-                self.locale,
+                bot,
+                guild_id,
+                user_id,
+                locale,
                 module_config
             )
         elif module_id == 'auto_restore_roles':
             from modules.configs.auto_restore_roles_config import AutoRestoreRolesConfigView
             config_view = AutoRestoreRolesConfigView(
-                self.bot,
-                self.guild_id,
-                self.user_id,
-                self.locale,
+                bot,
+                guild_id,
+                user_id,
+                locale,
                 module_config
             )
         elif module_id == 'auto_role':
             from modules.configs.auto_role_config import AutoRoleConfigView
             config_view = AutoRoleConfigView(
-                self.bot,
-                self.guild_id,
-                self.user_id,
-                self.locale,
+                bot,
+                guild_id,
+                user_id,
+                locale,
                 module_config
             )
         elif module_id == 'social_notifications':
             from modules.configs.social_notifications_config import SocialNotificationsConfigView
             config_view = await SocialNotificationsConfigView.create(
-                self.bot,
-                self.guild_id,
-                self.user_id,
-                self.locale
+                bot,
+                guild_id,
+                user_id,
+                locale
             )
         elif module_id == 'adaptive_slowmode':
             from modules.configs.adaptive_slowmode_config import AdaptiveSlowmodeConfigView
             config_view = AdaptiveSlowmodeConfigView(
-                self.bot,
-                self.guild_id,
-                self.user_id,
-                self.locale,
+                bot,
+                guild_id,
+                user_id,
+                locale,
                 module_config
             )
         elif module_id == 'automod_ai':
             from modules.configs.automod_ai_config import AutomodAIConfigView
             config_view = AutomodAIConfigView(
-                self.bot,
-                self.guild_id,
-                self.user_id,
-                self.locale,
+                bot,
+                guild_id,
+                user_id,
+                locale,
                 module_config
             )
             # Session 7: load the learned-precedents count before first render.
@@ -206,23 +238,18 @@ class ConfigMainView(BaseView):
         else:
             # Module non implémenté
             await interaction.followup.send(
-                t('modules.config.main.not_implemented', locale=self.locale, module_name=module_id),
+                t('modules.config.main.not_implemented', locale=locale, module_name=module_id),
                 ephemeral=True
             )
-
-    async def check_user(self, interaction: discord.Interaction) -> bool:
-        """Vérifie que c'est le bon utilisateur"""
-        if interaction.user.id != self.user_id:
-            await interaction.response.send_message(
-                t('modules.config.errors.wrong_user', locale=self.locale),
-                ephemeral=True
-            )
-            return False
-        return True
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         """Vérifie les permissions pour chaque interaction"""
-        return await self.check_user(interaction)
+        return await check_guild_perms(interaction)
+
+    @classmethod
+    def register_persistent(cls, bot) -> None:
+        """Auth model: Manage Server in the guild (checked on every click)."""
+        bot.add_view(cls())
 
 
 class Config(commands.Cog):

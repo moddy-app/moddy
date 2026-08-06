@@ -43,6 +43,7 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     from modules.configs.starboard_config import StarboardConfigView
     from modules.configs.welcome_channel_config import WelcomeChannelConfigView
     from modules.configs.welcome_dm_config import WelcomeDmConfigView
+    from cogs.config import ConfigMainView
     from utils.cases_views import CasesBrowserView
     from utils.appeal_views import AppealPersistence
     from utils.automod_shadow_views import ShadowAnnotationPersistence
@@ -76,6 +77,8 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         # Group 10 — /config welcome pair (colliding custom_ids, must move together)
         WelcomeChannelConfigView,
         WelcomeDmConfigView,
+        # Group 11 — /config router (guild permission auth)
+        ConfigMainView,
     ]
 
 

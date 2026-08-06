@@ -1437,3 +1437,19 @@ closure-over-locally-fetched-`working_config` pattern introduced for
 `on_edit_*` re-derives `working_config` via `_fresh_working_config`
 immediately before opening the modal, so the modal's `_on_submit` closure
 never touches `self`.
+
+### Step 10 — `ConfigMainView`
+
+The router every panel's Back button returns to. Its `_build_view` calls
+`self.bot.module_manager.get_available_modules()` unguarded (Appendix B.3) —
+fixed with the `if self.bot is None:` shell branch, matching
+`SocialNotificationsConfigView`'s existing precedent for a select with no
+live data source: a single disabled placeholder option, custom_id still
+registered. `on_module_select`'s long `if/elif` chain constructing each
+module's config view previously read `self.bot`/`self.guild_id`/
+`self.user_id`/`self.locale` — replaced with `bot`/`guild_id`/`user_id`/
+`locale` local variables re-derived from `interaction` at the top of the
+callback, so the router doesn't propagate a potentially-stale `self` into
+every child panel it opens. No `working_config` here (the router holds no
+editable state), so no `_rebuild`/`_fresh_working_config` pair was needed —
+just the auth model swap and the is-shell guard.
