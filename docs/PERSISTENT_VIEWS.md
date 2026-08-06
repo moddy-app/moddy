@@ -1453,3 +1453,43 @@ callback, so the router doesn't propagate a potentially-stale `self` into
 every child panel it opens. No `working_config` here (the router holds no
 editable state), so no `_rebuild`/`_fresh_working_config` pair was needed —
 just the auth model swap and the is-shell guard.
+
+### Step 11 — Adaptive slowmode (`AdaptiveSlowmodeConfigView`, `AdaptiveSlowmodeChannelConfigView`)
+
+**`AdaptiveSlowmodeConfigView`** (the channel list): same `check_guild_perms`
++ fresh-instance-per-callback + `is_shell` pattern as Steps 8-10, plus a new
+`SlowmodeListButton` `DynamicItem` for the per-row Edit/Remove buttons —
+these needed a `DynamicItem` (unlike every other button on this and prior
+panels) because the target `channel_id` is per-row state, not something
+already on the interaction (Appendix B.2). `DynamicItem` registration is
+class-level (`bot.add_dynamic_items(SlowmodeListButton)`), so unlike the
+static-custom_id buttons it does *not* need the `is_shell`-renders-everything
+trick — the item class's template governs dispatch regardless of how many
+channel rows the shell happens to render (zero, on a bare shell with no
+guild context).
+
+**`AdaptiveSlowmodeChannelConfigView`** (add/edit one channel): this is the
+view Appendix B.1.b calls "the hardest case in the repo" — a required
+`parent_view: AdaptiveSlowmodeConfigView` positional with no default,
+because Back/Save call `self.parent_view._build_view()` /
+`self.parent_view.working_config[...] = ...` directly on that live object.
+Followed B.1.b's own proposed fix exactly: dropped `parent_view` entirely;
+the constructor now takes the parent's `working_config` as a **plain dict**
+(not a view reference) plus `has_existing_config`, and Back/Save each
+construct a **fresh** `AdaptiveSlowmodeConfigView` to return to, rather than
+reaching back into a parent instance that might not even be the one that
+opened this wizard (see the Step 8 writeup on why mutating a possibly-shared
+instance is unsafe).
+
+Given that fix, `AdaptiveSlowmodeChannelConfigView` no longer *needs* a
+parent_view reference — but it is still **not** made persistent. Rationale:
+everything it edits (`min_delay`/`max_delay`/`sensitivity` for one channel,
+and whether a channel has even been picked yet in add mode) is an unsaved
+draft that isn't written to the DB until the *parent* list view's own Save
+button is clicked — the same "nothing to recover, restart the wizard"
+situation as `CaseCreationView` (Appendix B.1.c). Its buttons/selects
+therefore keep their auto-generated (non-namespaced) custom_ids and the
+view keeps `timeout=300`; it is not added to `_collect_persistent_view_classes()`.
+This is a considered exclusion, not an oversight — flagging explicitly in
+case a future pass assumes every view touched by this migration ended up
+persistent.

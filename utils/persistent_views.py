@@ -44,6 +44,7 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     from modules.configs.welcome_channel_config import WelcomeChannelConfigView
     from modules.configs.welcome_dm_config import WelcomeDmConfigView
     from cogs.config import ConfigMainView
+    from modules.configs.adaptive_slowmode_config import AdaptiveSlowmodeConfigView
     from utils.cases_views import CasesBrowserView
     from utils.appeal_views import AppealPersistence
     from utils.automod_shadow_views import ShadowAnnotationPersistence
@@ -79,6 +80,10 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         WelcomeDmConfigView,
         # Group 11 — /config router (guild permission auth)
         ConfigMainView,
+        # Group 12 — /config adaptive slowmode panel (guild permission +
+        # channel-scoped dynamic items; AdaptiveSlowmodeChannelConfigView
+        # is deliberately excluded, see docs/PERSISTENT_VIEWS.md Step 11)
+        AdaptiveSlowmodeConfigView,
     ]
 
 

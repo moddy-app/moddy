@@ -117,6 +117,7 @@ def _dynamic_item_cases():
     from cogs.preferences import PreferencesManageButton, TimezoneSelect
     from cogs.reminder import ReminderManageButton
     from cogs.saved_messages import SavedMessagesListButton, SavedMessagesDetailButton
+    from modules.configs.adaptive_slowmode_config import SlowmodeListButton
     _U = "0f7d9c62-3b4e-4a1f-9c2d-5e6f70819a2b"
     _SNOWFLAKE = 123456789012345678
     return [
@@ -131,6 +132,7 @@ def _dynamic_item_cases():
         (ReminderManageButton, ("add", _SNOWFLAKE)),
         (SavedMessagesListButton, ("view", _SNOWFLAKE, 0)),
         (SavedMessagesDetailButton, ("back", _SNOWFLAKE, 42, 0)),
+        (SlowmodeListButton, ("edit", _SNOWFLAKE)),
     ]
 
 
