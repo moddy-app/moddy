@@ -40,8 +40,11 @@ class StarboardModule(ModuleBase):
         self.emoji: str = "⭐"  # Standard Discord unicode emoji that triggers the starboard
 
         # Track sent starboard messages to update them in real-time
-        # Format: {original_message_id: starboard_message_id}
-        self.starboard_messages: Dict[int, int] = {}
+        # Discord rejects any extra content/components on a forward message
+        # (error 160011), so each entry is actually 3 separate messages sent
+        # in order: title card, forward, buttons card.
+        # Format: {original_message_id: {'title': id, 'forward': id, 'buttons': id}}
+        self.starboard_messages: Dict[int, Dict[str, int]] = {}
 
     async def load_config(self, config_data: Dict[str, Any]) -> bool:
         """Load configuration from DB"""
@@ -236,18 +239,23 @@ class StarboardModule(ModuleBase):
         )
         return format_verification_badge(badge_emoji)
 
-    async def _build_starboard_view(self, message: discord.Message, star_count: int) -> discord.ui.LayoutView:
-        """Build the Components V2 card sent alongside the forwarded message"""
+    async def _build_title_view(self, message: discord.Message) -> discord.ui.LayoutView:
+        """Build the title card (sent before the forward)"""
         locale = await self._get_locale()
         badge = await self._get_author_badge(message.author)
 
         view = discord.ui.LayoutView(timeout=None)
-
         view.add_item(discord.ui.TextDisplay(
             f"### {STAR} {t('modules.starboard.message.title', locale=locale)}\n"
             f"@**{message.author.display_name}**{badge} :"
         ))
+        return view
 
+    async def _build_buttons_view(self, message: discord.Message, star_count: int) -> discord.ui.LayoutView:
+        """Build the counter/jump-link card (sent after the forward)"""
+        locale = await self._get_locale()
+
+        view = discord.ui.LayoutView(timeout=None)
         row = discord.ui.ActionRow()
 
         count_button = discord.ui.Button(
@@ -282,28 +290,33 @@ class StarboardModule(ModuleBase):
             logger.warning(f"Starboard channel {self.channel_id} not found or not a text channel")
             return
 
-        # Check if we already have a starboard message for this
+        # Check if we already have a starboard entry for this message
         if message.id in self.starboard_messages:
-            # Update existing message (only the reaction counter changes)
+            # Only the buttons card (reaction counter) needs updating
             try:
-                starboard_msg_id = self.starboard_messages[message.id]
-                starboard_msg = await starboard_channel.fetch_message(starboard_msg_id)
-                view = await self._build_starboard_view(message, star_count)
-                await starboard_msg.edit(view=view)
+                buttons_msg_id = self.starboard_messages[message.id]['buttons']
+                buttons_msg = await starboard_channel.fetch_message(buttons_msg_id)
+                view = await self._build_buttons_view(message, star_count)
+                await buttons_msg.edit(view=view)
                 logger.info(f"Updated starboard message for {message.id} (stars: {star_count})")
             except discord.NotFound:
-                # Message was deleted, create a new one
+                # Entry was (partially) deleted, recreate it
                 del self.starboard_messages[message.id]
                 await self._create_starboard_message(starboard_channel, message, star_count)
         else:
-            # Create new starboard message
+            # Create new starboard entry
             await self._create_starboard_message(starboard_channel, message, star_count)
 
     async def _create_starboard_message(self, channel: discord.TextChannel,
                                          original_message: discord.Message, star_count: int):
-        """Forward the original message to the starboard channel with the reaction card"""
+        """
+        Post a starboard entry: title card, then the forwarded message, then the
+        counter/jump-link card. Discord rejects any extra content/components on
+        a forward message (error 160011), so these MUST be 3 separate messages.
+        """
         try:
-            view = await self._build_starboard_view(original_message, star_count)
+            title_view = await self._build_title_view(original_message)
+            title_msg = await channel.send(view=title_view)
 
             reference = discord.MessageReference(
                 message_id=original_message.id,
@@ -312,13 +325,19 @@ class StarboardModule(ModuleBase):
                 fail_if_not_exists=False,
                 type=discord.MessageReferenceType.forward,
             )
+            forward_msg = await channel.send(reference=reference)
 
-            starboard_msg = await channel.send(view=view, reference=reference)
+            buttons_view = await self._build_buttons_view(original_message, star_count)
+            buttons_msg = await channel.send(view=buttons_view)
 
-            # Track it for future updates
-            self.starboard_messages[original_message.id] = starboard_msg.id
+            # Track them for future updates/removal
+            self.starboard_messages[original_message.id] = {
+                'title': title_msg.id,
+                'forward': forward_msg.id,
+                'buttons': buttons_msg.id,
+            }
 
-            logger.info(f"Created starboard message for {original_message.id}")
+            logger.info(f"Created starboard entry for {original_message.id}")
         except discord.Forbidden:
             logger.warning(f"Missing permissions to send starboard message in guild {self.guild_id}")
         except discord.HTTPException as e:
@@ -327,7 +346,7 @@ class StarboardModule(ModuleBase):
             logger.error(f"Error creating starboard message: {e}", exc_info=True)
 
     async def _remove_starboard(self, message: discord.Message):
-        """Remove a message from starboard"""
+        """Remove a starboard entry (title card + forward + buttons card)"""
         if message.id not in self.starboard_messages:
             return
 
@@ -339,14 +358,15 @@ class StarboardModule(ModuleBase):
         if not starboard_channel or not isinstance(starboard_channel, discord.TextChannel):
             return
 
-        try:
-            starboard_msg_id = self.starboard_messages[message.id]
-            starboard_msg = await starboard_channel.fetch_message(starboard_msg_id)
-            await starboard_msg.delete()
-            del self.starboard_messages[message.id]
-            logger.info(f"Removed starboard message for {message.id}")
-        except discord.NotFound:
-            # Already deleted
-            del self.starboard_messages[message.id]
-        except Exception as e:
-            logger.error(f"Error removing starboard message: {e}", exc_info=True)
+        entry = self.starboard_messages[message.id]
+        for msg_id in entry.values():
+            try:
+                starboard_msg = await starboard_channel.fetch_message(msg_id)
+                await starboard_msg.delete()
+            except discord.NotFound:
+                pass
+            except Exception as e:
+                logger.error(f"Error removing starboard message {msg_id}: {e}", exc_info=True)
+
+        del self.starboard_messages[message.id]
+        logger.info(f"Removed starboard entry for {message.id}")
