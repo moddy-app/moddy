@@ -838,6 +838,10 @@
     "argument": {
       "title": "Missing Argument",
       "description": "The argument `{argument}` is required"
+    },
+    "not_your_message": {
+      "title": "Not your message",
+      "description": "<:undone:1519800313324896327> You can't use these buttons, they belong to another user."
     }
   },
   "common": {
