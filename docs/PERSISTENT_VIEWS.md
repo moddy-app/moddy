@@ -1132,3 +1132,86 @@ After every numbered step: run
 into one commit, even when both are one-liners — the duplicate-custom_id test
 is the one most likely to fail, and a single-step commit says immediately
 which view introduced the clash.
+
+---
+
+## Migration log
+
+Running log of the overnight migration pass (2026-08-06,
+branch `claude/persistent-views-migration-nph7ok`). Each entry is a decision
+that either wasn't fully specified by this doc or was explicitly marked
+NEEDS DECISION / UNKNOWN and therefore intentionally not resolved here.
+
+### Step 0 — Test harness
+Created `tests/test_persistent_views.py` exactly per Appendix D.3. It failed
+to even collect on unmodified `main`: `config.py` calls `sys.exit(1)` at
+import time when `DISCORD_TOKEN` is unset, which aborts pytest collection
+before a single test runs. Fixed by setting a placeholder
+`DISCORD_TOKEN` in `conftest.py` (`os.environ.setdefault`, never overrides a
+real value). This was not covered by Appendix D.1's "facts" table — the
+table says discord.py isn't installed by `requirements-dev.txt`, but doesn't
+mention the config import crash. Judged safe/necessary since it blocks
+every subsequent step, not a scope change to the views themselves.
+All 42 tests passed against the 7 already-registered classes before any
+view was touched, confirming the spec matches today's code.
+
+### Step 1 — `AddSubscriptionView` / `ManageSubscriptionView`
+Appendix B.3 says both have unguarded `self.bot.get_channel(...)` /
+`self.bot.get_guild(...)` calls in `AddSubscriptionView._build_view`. On
+inspection ([modules/configs/social_notifications_config.py:565](../modules/configs/social_notifications_config.py),
+line 583) both call sites are already wrapped in
+`if self.channel_id and self.bot:` / `if self.role_ids and self.bot:` — a
+bare shell (`channel_id=None`, `role_ids=[]`) never reaches them. Appendix
+B.3 appears stale (fixed since the recon pass); no code change was needed
+there, only adding `__persistent__` + `register_persistent` to both classes
+and the registry entry.
+
+### Step 4 — Re-parenting the three `LayoutView` orphans
+Mechanical: `LayoutView` → `BaseView`, dropped the now-unused `LayoutView`
+import where nothing else in the file used it (`preferences.py`,
+`saved_messages.py`; `reminder.py` still constructs bare `LayoutView()`
+instances elsewhere for DM messages, so that import stayed). No behaviour
+decision beyond what the doc already specifies.
+
+### Step 5 — `/moddy`-adjacent public views: NOT migrated, deferred
+Appendix E lists this step as "Low" risk with `ModdyMainView` as the worked
+example. On inspection none of the three views actually fit that shape:
+
+- **`InviteView` / `ServerInfoView`** ([cogs/invite.py](../cogs/invite.py)) —
+  `invite_data` is fetched once from Discord's public invite API at command
+  time and held only in memory (Appendix B.1.c). Making the view persistent
+  means either (a) encoding the invite code in every button's custom_id and
+  re-calling the Discord API on every click after a restart, which is a real
+  behavioural/cost change the doc explicitly declines to pre-decide
+  ("if judged too heavy, exclude both"), or (b) the `# TEMP` Raw Data button
+  ([cogs/invite.py:73](../cogs/invite.py), duplicated at
+  [cogs/invite.py:84-94](../cogs/invite.py)) — explicitly listed as
+  `UNKNOWN — needs human input` in Appendix B.5.6, which this migration was
+  told not to resolve. Since the Raw Data button has no `custom_id` today,
+  giving every *other* button on the same view a `custom_id` while leaving
+  it alone would still leave the view non-persistent
+  (`discord.ui.View.is_persistent()` requires every dispatchable child to
+  have one) — so there is no partial migration available here that doesn't
+  first resolve the flagged decision. **Left as-is** (still `timeout=180`,
+  not registered). This is the "preserve current behaviour" default per the
+  operating instructions for this pass, not a judgment that the doc's "Low"
+  risk rating was wrong for the general case.
+- **`UserInfoView`** ([cogs/user.py:42](../cogs/user.py)) — not flagged
+  anywhere in Appendix B, but on inspection its four buttons
+  (`bot_info`/`avatar`/`banner`/`description`, un-namespaced custom_ids
+  already, [cogs/user.py:381-425](../cogs/user.py)) all render from
+  `self.user_data` / `self.bot_data` / `self.moddy_attributes` /
+  `self.user_verification_data` — a snapshot fetched once via Discord's
+  public user API plus `bot.db.get_user()` at command invocation, not
+  reconstructible from `interaction` alone. Persisting it correctly would
+  require encoding the target `user_id` in a `DynamicItem` and
+  re-running the full data-gathering pipeline that today lives in the
+  `/user` command handler, inside the callback — a genuine refactor, not a
+  mechanical one, and out of scope for a "Low risk" step. **NEEDS DECISION**
+  (new, not previously flagged): whether that re-fetch cost is acceptable
+  per click. Left as-is (`timeout=180`, not registered) pending that call.
+
+No files changed in this step beyond this log entry — there was no safe
+subset of the three views to migrate without deciding one of the open
+questions above. Continuing to Step 6 per the "commit what works, log the
+rest, move on" instruction.
