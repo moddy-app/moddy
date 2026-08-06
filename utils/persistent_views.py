@@ -37,6 +37,10 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     from modules.configs.social_notifications_config import (
         SocialNotificationsConfigView, AddSubscriptionView, ManageSubscriptionView,
     )
+    from modules.configs.interserver_config import InterServerConfigView
+    from modules.configs.auto_role_config import AutoRoleConfigView
+    from modules.configs.auto_restore_roles_config import AutoRestoreRolesConfigView
+    from modules.configs.starboard_config import StarboardConfigView
     from utils.cases_views import CasesBrowserView
     from utils.appeal_views import AppealPersistence
     from utils.automod_shadow_views import ShadowAnnotationPersistence
@@ -62,6 +66,11 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         RemindersManageView,
         # Group 8 — /library (owner-only dynamic items)
         SavedMessagesLibraryView,
+        # Group 9 — /config small guild panels (guild permission auth)
+        InterServerConfigView,
+        AutoRoleConfigView,
+        AutoRestoreRolesConfigView,
+        StarboardConfigView,
     ]
 
 

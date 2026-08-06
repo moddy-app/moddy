@@ -8,20 +8,37 @@ from discord import ui
 from typing import Optional, Dict, Any
 import logging
 
-from utils.i18n import t
+from utils.i18n import i18n, t
 from cogs.error_handler import BaseView
 from utils.emojis import HISTORY, REQUIRED_FIELDS, DONE, DELETE, BACK, SAVE, UNDONE
+from modules.configs._common import check_guild_perms
 
 logger = logging.getLogger('moddy.modules.auto_restore_roles_config')
+
+_CID_MODE = "moddy:autorestore:config:mode"
+_CID_EXCLUDED_ROLES = "moddy:autorestore:config:excluded_roles"
+_CID_INCLUDED_ROLES = "moddy:autorestore:config:included_roles"
+_CID_LOG_CHANNEL = "moddy:autorestore:config:log_channel"
+_CID_BACK = "moddy:autorestore:config:back"
+_CID_SAVE = "moddy:autorestore:config:save"
+_CID_CANCEL = "moddy:autorestore:config:cancel"
+_CID_DELETE = "moddy:autorestore:config:delete"
 
 
 class AutoRestoreRolesConfigView(BaseView):
     """
     Interface de configuration du module Auto Restore Roles
+
+    Persistent: yes. Auth: Manage Server in the guild (checked on every
+    click via check_guild_perms — NOT via a stored user_id, which cannot
+    survive a restarted shell).
     """
 
-    def __init__(self, bot, guild_id: int, user_id: int, locale: str, current_config: Optional[Dict[str, Any]] = None):
-        super().__init__(timeout=300)
+    __persistent__ = True
+
+    def __init__(self, bot=None, guild_id: Optional[int] = None, user_id: Optional[int] = None,
+                 locale: str = "en-US", current_config: Optional[Dict[str, Any]] = None):
+        super().__init__()  # timeout=None
         self.bot = bot
         self.guild_id = guild_id
         self.user_id = user_id
@@ -103,20 +120,26 @@ class AutoRestoreRolesConfigView(BaseView):
                     emoji="<:label:1519800544456343744>",
                     default=self.working_config['mode'] == AutoRestoreRolesModule.MODE_ONLY
                 )
-            ]
+            ],
+            custom_id=_CID_MODE,
         )
         mode_select.callback = self.on_mode_select
         mode_row.add_item(mode_select)
         container.add_item(mode_row)
 
+        # Registration shell (self.bot is None): render EVERY mode-dependent
+        # selector regardless of the current mode, so a click on a live
+        # message in a different mode still has its custom_id registered.
+        is_shell = self.bot is None
+
         # Excluded roles selector (visible only in EXCEPT mode)
-        if self.working_config['mode'] == AutoRestoreRolesModule.MODE_EXCEPT:
+        if self.working_config['mode'] == AutoRestoreRolesModule.MODE_EXCEPT or is_shell:
             container.add_item(ui.TextDisplay(
                 f"**{t('modules.auto_restore_roles.config.excluded_roles.section_title', locale=self.locale)}**{REQUIRED_FIELDS}\n"
                 f"-# {t('modules.auto_restore_roles.config.excluded_roles.section_description', locale=self.locale)}"
             ))
 
-            if self.working_config.get('excluded_roles'):
+            if self.working_config.get('excluded_roles') and self.bot is not None:
                 # Show current excluded roles
                 excluded_role_names = []
                 guild = self.bot.get_guild(self.guild_id)
@@ -135,11 +158,12 @@ class AutoRestoreRolesConfigView(BaseView):
             excluded_select = ui.RoleSelect(
                 placeholder=t('modules.auto_restore_roles.config.excluded_roles.placeholder', locale=self.locale),
                 min_values=0,
-                max_values=25
+                max_values=25,
+                custom_id=_CID_EXCLUDED_ROLES,
             )
 
             # Pre-select current excluded roles
-            if self.working_config.get('excluded_roles'):
+            if self.working_config.get('excluded_roles') and self.bot is not None:
                 guild = self.bot.get_guild(self.guild_id)
                 if guild:
                     default_roles = []
@@ -155,13 +179,13 @@ class AutoRestoreRolesConfigView(BaseView):
             container.add_item(excluded_row)
 
         # Included roles selector (visible only in ONLY mode)
-        if self.working_config['mode'] == AutoRestoreRolesModule.MODE_ONLY:
+        if self.working_config['mode'] == AutoRestoreRolesModule.MODE_ONLY or is_shell:
             container.add_item(ui.TextDisplay(
                 f"**{t('modules.auto_restore_roles.config.included_roles.section_title', locale=self.locale)}**{REQUIRED_FIELDS}\n"
                 f"-# {t('modules.auto_restore_roles.config.included_roles.section_description', locale=self.locale)}"
             ))
 
-            if self.working_config.get('included_roles'):
+            if self.working_config.get('included_roles') and self.bot is not None:
                 # Show current included roles
                 included_role_names = []
                 guild = self.bot.get_guild(self.guild_id)
@@ -180,11 +204,12 @@ class AutoRestoreRolesConfigView(BaseView):
             included_select = ui.RoleSelect(
                 placeholder=t('modules.auto_restore_roles.config.included_roles.placeholder', locale=self.locale),
                 min_values=0,
-                max_values=25
+                max_values=25,
+                custom_id=_CID_INCLUDED_ROLES,
             )
 
             # Pre-select current included roles
-            if self.working_config.get('included_roles'):
+            if self.working_config.get('included_roles') and self.bot is not None:
                 guild = self.bot.get_guild(self.guild_id)
                 if guild:
                     default_roles = []
@@ -210,11 +235,12 @@ class AutoRestoreRolesConfigView(BaseView):
             placeholder=t('modules.auto_restore_roles.config.log_channel.placeholder', locale=self.locale),
             channel_types=[discord.ChannelType.text],
             min_values=0,
-            max_values=1
+            max_values=1,
+            custom_id=_CID_LOG_CHANNEL,
         )
 
         # Pre-select current log channel if set
-        if self.working_config.get('log_channel_id'):
+        if self.working_config.get('log_channel_id') and self.bot is not None:
             channel = self.bot.get_channel(self.working_config['log_channel_id'])
             if channel:
                 log_channel_select.default_values = [channel]
@@ -235,17 +261,23 @@ class AutoRestoreRolesConfigView(BaseView):
             emoji=discord.PartialEmoji.from_str(BACK),
             label=t('modules.config.buttons.back', locale=self.locale),
             style=discord.ButtonStyle.secondary,
+            custom_id=_CID_BACK,
             disabled=self.has_changes
         )
         back_btn.callback = self.on_back
         button_row.add_item(back_btn)
 
-        if self.has_changes:
+        # Registration shell (self.bot is None): register EVERY button's
+        # custom_id regardless of has_changes/has_existing_config.
+        is_shell = self.bot is None
+
+        if self.has_changes or is_shell:
             # Save button
             save_btn = ui.Button(
                 emoji=discord.PartialEmoji.from_str(SAVE),
                 label=t('modules.config.buttons.save', locale=self.locale),
-                style=discord.ButtonStyle.success
+                style=discord.ButtonStyle.success,
+                custom_id=_CID_SAVE,
             )
             save_btn.callback = self.on_save
             button_row.add_item(save_btn)
@@ -254,168 +286,179 @@ class AutoRestoreRolesConfigView(BaseView):
             cancel_btn = ui.Button(
                 emoji=discord.PartialEmoji.from_str(UNDONE),
                 label=t('modules.config.buttons.cancel', locale=self.locale),
-                style=discord.ButtonStyle.danger
+                style=discord.ButtonStyle.danger,
+                custom_id=_CID_CANCEL,
             )
             cancel_btn.callback = self.on_cancel
             button_row.add_item(cancel_btn)
-        else:
-            if self.has_existing_config:
-                # Delete button
-                delete_btn = ui.Button(
-                    emoji=discord.PartialEmoji.from_str(DELETE),
-                    label=t('modules.config.buttons.delete', locale=self.locale),
-                    style=discord.ButtonStyle.danger
-                )
-                delete_btn.callback = self.on_delete
-                button_row.add_item(delete_btn)
+        if (not self.has_changes and self.has_existing_config) or is_shell:
+            # Delete button
+            delete_btn = ui.Button(
+                emoji=discord.PartialEmoji.from_str(DELETE),
+                label=t('modules.config.buttons.delete', locale=self.locale),
+                style=discord.ButtonStyle.danger,
+                custom_id=_CID_DELETE,
+            )
+            delete_btn.callback = self.on_delete
+            button_row.add_item(delete_btn)
 
         self.add_item(button_row)
 
+    def _is_live_for(self, interaction: discord.Interaction) -> bool:
+        return self.bot is not None and self.guild_id == interaction.guild_id
+
+    async def _fresh_working_config(self, interaction: discord.Interaction) -> Dict[str, Any]:
+        if self._is_live_for(interaction):
+            return self.working_config.copy()
+        bot = interaction.client
+        from modules.auto_restore_roles import AutoRestoreRolesModule
+        default_config = AutoRestoreRolesModule(bot, interaction.guild_id).get_default_config()
+        saved = await bot.module_manager.get_module_config(interaction.guild_id, 'auto_restore_roles')
+        if saved and (
+            saved.get('mode') != default_config.get('mode')
+            or saved.get('log_channel_id') is not None
+            or saved.get('excluded_roles') or saved.get('included_roles')
+        ):
+            default_config.update(saved)
+        return default_config
+
+    async def _rebuild(self, interaction: discord.Interaction, working_config: Dict[str, Any],
+                        has_changes: bool) -> "AutoRestoreRolesConfigView":
+        bot = interaction.client
+        locale = i18n.get_user_locale(interaction)
+        saved = await bot.module_manager.get_module_config(interaction.guild_id, 'auto_restore_roles')
+        view = AutoRestoreRolesConfigView(bot, interaction.guild_id, interaction.user.id, locale, current_config=saved)
+        view.working_config = working_config
+        view.has_changes = has_changes
+        view._build_view()
+        return view
+
     async def on_mode_select(self, interaction: discord.Interaction):
         """Callback quand le mode est sélectionné"""
-        if not await self.check_user(interaction):
+        if not await check_guild_perms(interaction):
             return
 
+        working_config = await self._fresh_working_config(interaction)
         selected_mode = interaction.data['values'][0]
-        self.working_config['mode'] = selected_mode
-
-        # Reset role lists when changing mode
+        working_config['mode'] = selected_mode
         if selected_mode != 'except':
-            self.working_config['excluded_roles'] = []
+            working_config['excluded_roles'] = []
         if selected_mode != 'only':
-            self.working_config['included_roles'] = []
+            working_config['included_roles'] = []
 
-        self.has_changes = True
-        self._build_view()
-        await interaction.response.edit_message(view=self)
+        view = await self._rebuild(interaction, working_config, has_changes=True)
+        await interaction.response.edit_message(view=view)
 
     async def on_excluded_roles_select(self, interaction: discord.Interaction):
         """Callback quand les rôles exclus sont sélectionnés"""
-        if not await self.check_user(interaction):
+        if not await check_guild_perms(interaction):
             return
 
+        working_config = await self._fresh_working_config(interaction)
         if interaction.data['values']:
-            role_ids = [int(role_id) for role_id in interaction.data['values']]
-            self.working_config['excluded_roles'] = role_ids
+            working_config['excluded_roles'] = [int(role_id) for role_id in interaction.data['values']]
         else:
-            self.working_config['excluded_roles'] = []
+            working_config['excluded_roles'] = []
 
-        self.has_changes = True
-        self._build_view()
-        await interaction.response.edit_message(view=self)
+        view = await self._rebuild(interaction, working_config, has_changes=True)
+        await interaction.response.edit_message(view=view)
 
     async def on_included_roles_select(self, interaction: discord.Interaction):
         """Callback quand les rôles inclus sont sélectionnés"""
-        if not await self.check_user(interaction):
+        if not await check_guild_perms(interaction):
             return
 
+        working_config = await self._fresh_working_config(interaction)
         if interaction.data['values']:
-            role_ids = [int(role_id) for role_id in interaction.data['values']]
-            self.working_config['included_roles'] = role_ids
+            working_config['included_roles'] = [int(role_id) for role_id in interaction.data['values']]
         else:
-            self.working_config['included_roles'] = []
+            working_config['included_roles'] = []
 
-        self.has_changes = True
-        self._build_view()
-        await interaction.response.edit_message(view=self)
+        view = await self._rebuild(interaction, working_config, has_changes=True)
+        await interaction.response.edit_message(view=view)
 
     async def on_log_channel_select(self, interaction: discord.Interaction):
         """Callback quand le salon de logs est sélectionné"""
-        if not await self.check_user(interaction):
+        if not await check_guild_perms(interaction):
             return
 
+        working_config = await self._fresh_working_config(interaction)
         if interaction.data['values']:
-            channel_id = int(interaction.data['values'][0])
-            self.working_config['log_channel_id'] = channel_id
+            working_config['log_channel_id'] = int(interaction.data['values'][0])
         else:
-            self.working_config['log_channel_id'] = None
+            working_config['log_channel_id'] = None
 
-        self.has_changes = True
-        self._build_view()
-        await interaction.response.edit_message(view=self)
+        view = await self._rebuild(interaction, working_config, has_changes=True)
+        await interaction.response.edit_message(view=view)
 
     async def on_save(self, interaction: discord.Interaction):
         """Sauvegarde la configuration"""
-        if not await self.check_user(interaction):
+        if not await check_guild_perms(interaction):
             return
 
         await interaction.response.defer()
 
-        module_manager = self.bot.module_manager
-        success, error_msg = await module_manager.save_module_config(
-            self.guild_id, 'auto_restore_roles', self.working_config
+        bot = interaction.client
+        locale = i18n.get_user_locale(interaction)
+        working_config = await self._fresh_working_config(interaction)
+
+        success, error_msg = await bot.module_manager.save_module_config(
+            interaction.guild_id, 'auto_restore_roles', working_config
         )
 
         if success:
-            self.current_config = self.working_config.copy()
-            self.has_changes = False
-            self.has_existing_config = True
-            self._build_view()
-            await interaction.followup.send(
-                t('modules.config.save.success', locale=self.locale),
-                ephemeral=True
-            )
-            await interaction.edit_original_response(view=self)
+            view = AutoRestoreRolesConfigView(bot, interaction.guild_id, interaction.user.id, locale,
+                                               current_config=working_config)
+            await interaction.followup.send(t('modules.config.save.success', locale=locale), ephemeral=True)
+            await interaction.edit_original_response(view=view)
         else:
             await interaction.followup.send(
-                t('modules.config.save.error', locale=self.locale, error=error_msg),
-                ephemeral=True
+                t('modules.config.save.error', locale=locale, error=error_msg), ephemeral=True,
             )
 
     async def on_cancel(self, interaction: discord.Interaction):
         """Annule les modifications"""
-        if not await self.check_user(interaction):
+        if not await check_guild_perms(interaction):
             return
 
-        self.working_config = self.current_config.copy()
-        self.has_changes = False
-        self._build_view()
-        await interaction.response.edit_message(view=self)
+        bot = interaction.client
+        locale = i18n.get_user_locale(interaction)
+        saved = await bot.module_manager.get_module_config(interaction.guild_id, 'auto_restore_roles')
+        view = AutoRestoreRolesConfigView(bot, interaction.guild_id, interaction.user.id, locale, current_config=saved)
+        await interaction.response.edit_message(view=view)
 
     async def on_delete(self, interaction: discord.Interaction):
         """Supprime la configuration"""
-        if not await self.check_user(interaction):
+        if not await check_guild_perms(interaction):
             return
 
         await interaction.response.defer()
 
-        module_manager = self.bot.module_manager
-        success = await module_manager.delete_module_config(self.guild_id, 'auto_restore_roles')
+        bot = interaction.client
+        locale = i18n.get_user_locale(interaction)
+        success = await bot.module_manager.delete_module_config(interaction.guild_id, 'auto_restore_roles')
 
         if success:
-            from modules.auto_restore_roles import AutoRestoreRolesModule
-            default_config = AutoRestoreRolesModule(self.bot, self.guild_id).get_default_config()
-            self.current_config = default_config
-            self.working_config = default_config.copy()
-            self.has_changes = False
-            self.has_existing_config = False
-            self._build_view()
-            await interaction.followup.send(
-                t('modules.config.delete.success', locale=self.locale),
-                ephemeral=True
-            )
-            await interaction.edit_original_response(view=self)
+            view = AutoRestoreRolesConfigView(bot, interaction.guild_id, interaction.user.id, locale, current_config=None)
+            await interaction.followup.send(t('modules.config.delete.success', locale=locale), ephemeral=True)
+            await interaction.edit_original_response(view=view)
         else:
-            await interaction.followup.send(
-                t('modules.config.delete.error', locale=self.locale),
-                ephemeral=True
-            )
+            await interaction.followup.send(t('modules.config.delete.error', locale=locale), ephemeral=True)
 
     async def on_back(self, interaction: discord.Interaction):
         """Retourne au menu principal"""
-        if not await self.check_user(interaction):
+        if not await check_guild_perms(interaction):
             return
 
         from cogs.config import ConfigMainView
-        main_view = ConfigMainView(self.bot, self.guild_id, self.user_id, self.locale)
+        locale = i18n.get_user_locale(interaction)
+        main_view = ConfigMainView(interaction.client, interaction.guild_id, interaction.user.id, locale)
         await interaction.response.edit_message(view=main_view)
 
-    async def check_user(self, interaction: discord.Interaction) -> bool:
-        """Vérifie que c'est le bon utilisateur"""
-        if interaction.user.id != self.user_id:
-            await interaction.response.send_message(
-                t('modules.config.errors.wrong_user', locale=self.locale),
-                ephemeral=True
-            )
-            return False
-        return True
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        return await check_guild_perms(interaction)
+
+    @classmethod
+    def register_persistent(cls, bot) -> None:
+        """Auth model: Manage Server in the guild (checked on every click)."""
+        bot.add_view(cls())

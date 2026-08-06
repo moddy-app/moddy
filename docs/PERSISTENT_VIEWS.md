@@ -1347,3 +1347,74 @@ short-lived lookup card, same call as Step 5's `InviteView`. Left as-is
 
 `tests/test_persistent_views.py` now covers `SavedMessagesLibraryView` and
 both its `DynamicItem`s (72 tests, still green).
+
+### Step 8 — Small guild config panels (`AutoRoleConfigView`, `AutoRestoreRolesConfigView`, `StarboardConfigView`, `InterServerConfigView`)
+
+All four follow the identical `current_config`/`working_config`/`has_changes`
+shape (Appendix B.1.a). Per Appendix B.2/B.5, none need a `DynamicItem` —
+`interaction.guild_id` is already on the interaction, so a static namespaced
+`custom_id` plus a re-checked `manage_guild` permission is enough. Added a
+shared `modules/configs/_common.py::check_guild_perms(interaction)` (reused
+by all four, and by every later config-panel step) instead of duplicating
+the same guild-permission check four more times — a deliberate deviation
+from the "copy the tiny helper per file" convention used for
+`_guarded`/`_reject_if_not_owner`, because this one is truly identical logic
+with no per-file variation, not merely similarly-shaped.
+
+**Two correctness bugs found while doing this, not called out anywhere in
+Appendix A/B/C, and both are structural — every guild config panel migrated
+in this and later steps needed the same two fixes:**
+
+1. **Mutate-and-resend-self is unsafe for a registered persistent view.**
+   The pre-migration pattern was `self.working_config[...] = x;
+   self._build_view(); await interaction.response.edit_message(view=self)`.
+   That's fine for a live, per-message view instance — but
+   `register_persistent` registers exactly **one** shared instance via
+   `bot.add_view(cls())`, and discord.py falls back to dispatching clicks on
+   *any* message whose specific view isn't in its in-memory cache (always
+   true right after a restart, for every guild) to that **same** shared
+   object. If the callback mutates `self` in place, two different guilds
+   whose config panels both fall back to the shell in the same window would
+   be editing the same Python object's `working_config` — one guild's
+   in-progress edit becoming visible on another guild's message. Fixed by
+   never resending `view=self`: every callback now derives a **new**
+   `FooConfigView(...)` instance from `interaction` (fresh `bot`,
+   `guild_id`, `user_id`, `locale`) and edits with that. A `_is_live_for()` /
+   `_fresh_working_config()` pair on each view decides whether `self`'s
+   in-memory `working_config` is trustworthy (it is, if `self.guild_id`
+   still matches `interaction.guild_id` — i.e. this really is the live
+   per-message instance) or must be reloaded from the DB (it's the shared
+   shell, or a stale instance for a different guild). This is the same
+   discipline `SocialNotificationsConfigView` already used (`_render_main`
+   always builds fresh via `.create()`) — it just wasn't written down as a
+   rule anywhere, so it would have been easy to silently reintroduce per
+   step. Confirmed retroactively that Steps 6-7's `DynamicItem`-based views
+   (`PreferencesView`, `RemindersManageView`, `SavedMessagesLibraryView`)
+   don't have this problem at all: `bot.add_dynamic_items()` registers the
+   *item class* and its `from_custom_id` template, not a shared instance, so
+   there is no single shared object to leak state through.
+
+2. **A conditionally-rendered button/select's custom_id is only known to
+   discord.py if the registered shell instance happens to include it.**
+   `back`/`save`/`cancel`/`delete` only appear in `_add_action_buttons()`
+   depending on `has_changes`/`has_existing_config`; the mode-dependent role
+   selectors in `AutoRestoreRolesConfigView` only appear for one `mode` at a
+   time. A bare shell built with the class's defaults
+   (`has_changes=False`, `has_existing_config=False`, `mode='all'`) would
+   therefore never register `_CID_SAVE`/`_CID_CANCEL`/`_CID_DELETE` or the
+   excluded/included role selects at all — a live message showing "Save" +
+   "Cancel" (because a real user has unsaved edits) would dispatch nowhere
+   after a restart, failing exactly the case persistence exists to fix.
+   Fixed with an `is_shell = self.bot is None` escape hatch at each
+   conditional: the shell renders **every** variant of every conditional
+   item (all four buttons together, both role selectors together) purely so
+   their custom_ids get registered — this instance is never actually sent
+   to a user, only used for `bot.add_view()`. `SocialNotificationsConfigView`
+   already had one instance of this exact fix (the placeholder `manage_select`
+   when `self.bot is None`); it just wasn't generalized into a named pattern
+   anywhere in this doc.
+
+Given both bugs are structural rather than per-view, whoever does Steps
+9-15 should apply `_is_live_for`/`_fresh_working_config`/`_rebuild` plus the
+`is_shell` conditional-registration escape hatch as a matter of course, not
+re-derive them from scratch each time.
