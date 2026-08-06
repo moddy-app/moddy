@@ -1215,3 +1215,31 @@ No files changed in this step beyond this log entry — there was no safe
 subset of the three views to migrate without deciding one of the open
 questions above. Continuing to Step 6 per the "commit what works, log the
 rest, move on" instruction.
+
+### Step 6 — `PreferencesView`
+Appendix E's own step title says "Owner-only, no `DynamicItem` needed", but
+Appendix B.2 explicitly lists `PreferencesView` as requiring one ("the same
+button constant would otherwise be shared by every user's card"). Went with
+B.2 plus cookbook step 6, which is more specific — a static custom_id would
+make every user's Manage Timezone button collide on the same
+`(component_type, custom_id)` key, and `interaction_check` comparing against
+`self.user_id` breaks entirely on a restarted shell (`self.user_id is None`).
+Implemented `PreferencesManageButton` and `TimezoneSelect` as
+`DynamicItem`s encoding `owner_id`, following Appendix C's shape (including
+the `_guarded` wrapper and `_reject_if_not_owner` ephemeral rejection using
+the new `errors.not_your_message` key from Step 3).
+
+**Deviation from Appendix C's literal template**: C's worked example uses
+`\d{17,20}` (a real Discord snowflake) in the regex, and the reference
+`RemindersManageView` code builds its shell buttons with
+`self.owner_id or 0`. Those two don't compose: `"0"` is a 1-digit string and
+does not match `\d{17,20}}`, so instantiating a bare shell with the literal
+template raises `ValueError` inside `discord.ui.DynamicItem.__init__`
+(`item custom_id 'moddy:pref:manage:timezone:0' must match the template`) —
+`test_shell_constructs` fails immediately. Relaxed both templates in
+`cogs/preferences.py` to `\d{1,20}` so the `0` placeholder used for a
+bare/default-constructed shell still matches, while every real click still
+carries a real snowflake (1-20 digits already covers the full snowflake
+range plus the placeholder). This is a correction, not a reinterpretation —
+worth flagging in case Appendix C's template is copied literally into a
+later step (7, 13) and hits the same failure.

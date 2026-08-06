@@ -31,6 +31,7 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     """
     # Imported lazily so this module can be imported before cogs are loaded.
     from cogs.moddy import ModdyMainView, AttributionView, WeSupportView
+    from cogs.preferences import PreferencesView
     from modules.configs.social_notifications_config import (
         SocialNotificationsConfigView, AddSubscriptionView, ManageSubscriptionView,
     )
@@ -53,6 +54,8 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         AppealPersistence,
         # Group 5 — automod shadow-mode annotation buttons (dynamic items)
         ShadowAnnotationPersistence,
+        # Group 6 — /preferences (owner-only dynamic items)
+        PreferencesView,
     ]
 
 
