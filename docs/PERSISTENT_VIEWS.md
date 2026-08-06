@@ -1418,3 +1418,22 @@ Given both bugs are structural rather than per-view, whoever does Steps
 9-15 should apply `_is_live_for`/`_fresh_working_config`/`_rebuild` plus the
 `is_shell` conditional-registration escape hatch as a matter of course, not
 re-derive them from scratch each time.
+
+### Step 9 — `WelcomeChannelConfigView` + `WelcomeDmConfigView` (colliding pair, one commit)
+
+Same `_is_live_for`/`_fresh_working_config`/`_rebuild` + `is_shell`
+conditional-registration pattern as Step 8, applied to both views in a
+single commit per Appendix E's rule 3 ("never register a colliding pair
+separately"). Verified after the rename that the two namespaces
+(`moddy:welcomechan:config:*` vs `moddy:welcomedm:config:*`) produce zero
+overlapping custom_ids — this is exactly the collision
+`test_no_duplicate_custom_ids_across_registered_views` exists to catch
+(previously both used bare `"edit_embed_title"`, `"toggle_thumbnail"`, etc.,
+per Appendix B.5.1).
+
+Modal-driven fields (message, embed title/description/color) use the same
+closure-over-locally-fetched-`working_config` pattern introduced for
+`StarboardConfigView` in Step 8, not a `self`-bound callback — each
+`on_edit_*` re-derives `working_config` via `_fresh_working_config`
+immediately before opening the modal, so the modal's `_on_submit` closure
+never touches `self`.

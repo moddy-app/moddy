@@ -8,11 +8,26 @@ from discord import ui
 from typing import Optional, Dict, Any
 import logging
 
-from utils.i18n import t
+from utils.i18n import i18n, t
 from cogs.error_handler import BaseView, BaseModal
 from utils.emojis import WAVING_HAND, REQUIRED_FIELDS, EDIT, DONE, UNDONE, BACK, SAVE, DELETE
+from modules.configs._common import check_guild_perms
 
 logger = logging.getLogger('moddy.modules.welcome_channel_config')
+
+_CID_CHANNEL = "moddy:welcomechan:config:channel"
+_CID_EDIT_MESSAGE = "moddy:welcomechan:config:edit_message"
+_CID_TOGGLE_MENTION = "moddy:welcomechan:config:toggle_mention"
+_CID_TOGGLE_EMBED = "moddy:welcomechan:config:toggle_embed"
+_CID_EDIT_EMBED_TITLE = "moddy:welcomechan:config:edit_embed_title"
+_CID_EDIT_EMBED_COLOR = "moddy:welcomechan:config:edit_embed_color"
+_CID_EDIT_EMBED_DESC = "moddy:welcomechan:config:edit_embed_description"
+_CID_TOGGLE_THUMBNAIL = "moddy:welcomechan:config:toggle_thumbnail"
+_CID_TOGGLE_AUTHOR = "moddy:welcomechan:config:toggle_author"
+_CID_BACK = "moddy:welcomechan:config:back"
+_CID_SAVE = "moddy:welcomechan:config:save"
+_CID_CANCEL = "moddy:welcomechan:config:cancel"
+_CID_DELETE = "moddy:welcomechan:config:delete"
 
 
 class MessageEditModal(BaseModal, title="Modifier le message"):
@@ -119,10 +134,17 @@ class EmbedColorModal(BaseModal, title="Modifier la couleur de l'embed"):
 class WelcomeChannelConfigView(BaseView):
     """
     Interface de configuration du module Welcome Channel
+
+    Persistent: yes. Auth: Manage Server in the guild (checked on every
+    click via check_guild_perms — NOT via a stored user_id, which cannot
+    survive a restarted shell).
     """
 
-    def __init__(self, bot, guild_id: int, user_id: int, locale: str, current_config: Optional[Dict[str, Any]] = None):
-        super().__init__(timeout=300)
+    __persistent__ = True
+
+    def __init__(self, bot=None, guild_id: Optional[int] = None, user_id: Optional[int] = None,
+                 locale: str = "en-US", current_config: Optional[Dict[str, Any]] = None):
+        super().__init__()  # timeout=None
         self.bot = bot
         self.guild_id = guild_id
         self.user_id = user_id
@@ -176,11 +198,12 @@ class WelcomeChannelConfigView(BaseView):
             placeholder=t('modules.welcome_channel.config.channel.placeholder', locale=self.locale),
             channel_types=[discord.ChannelType.text],
             min_values=0,
-            max_values=1
+            max_values=1,
+            custom_id=_CID_CHANNEL,
         )
 
         # Pre-select current channel if set
-        if self.working_config.get('channel_id'):
+        if self.working_config.get('channel_id') and self.bot is not None:
             channel = self.bot.get_channel(self.working_config['channel_id'])
             if channel:
                 channel_select.default_values = [channel]
@@ -203,7 +226,7 @@ class WelcomeChannelConfigView(BaseView):
             label=t('modules.welcome_channel.config.message.edit_button', locale=self.locale),
             style=discord.ButtonStyle.primary,
             emoji=discord.PartialEmoji.from_str(EDIT),
-            custom_id="edit_message"
+            custom_id=_CID_EDIT_MESSAGE
         )
         edit_message_btn.callback = self.on_edit_message
         message_row.add_item(edit_message_btn)
@@ -212,7 +235,7 @@ class WelcomeChannelConfigView(BaseView):
             label=t('modules.welcome_channel.config.message.mention_user', locale=self.locale),
             style=discord.ButtonStyle.success if self.working_config['mention_user'] else discord.ButtonStyle.secondary,
             emoji=discord.PartialEmoji.from_str(DONE if self.working_config['mention_user'] else UNDONE),
-            custom_id="toggle_mention"
+            custom_id=_CID_TOGGLE_MENTION
         )
         mention_btn.callback = self.on_toggle_mention
         message_row.add_item(mention_btn)
@@ -230,14 +253,19 @@ class WelcomeChannelConfigView(BaseView):
             label=t('modules.welcome_channel.config.embed.toggle', locale=self.locale),
             style=discord.ButtonStyle.success if self.working_config['embed_enabled'] else discord.ButtonStyle.secondary,
             emoji=discord.PartialEmoji.from_str(DONE if self.working_config['embed_enabled'] else UNDONE),
-            custom_id="toggle_embed"
+            custom_id=_CID_TOGGLE_EMBED
         )
         embed_btn.callback = self.on_toggle_embed
         embed_toggle_row.add_item(embed_btn)
         container.add_item(embed_toggle_row)
 
+        # Registration shell (self.bot is None): render the embed-only
+        # section regardless of embed_enabled, so a live message with the
+        # embed enabled still has those custom_ids registered post-restart.
+        is_shell = self.bot is None
+
         # Embed options (only if embed enabled)
-        if self.working_config['embed_enabled']:
+        if self.working_config['embed_enabled'] or is_shell:
             # Buttons for title and color
             embed_row1 = ui.ActionRow()
 
@@ -245,7 +273,7 @@ class WelcomeChannelConfigView(BaseView):
                 label=t('modules.welcome_channel.config.embed.edit_title', locale=self.locale),
                 style=discord.ButtonStyle.primary,
                 emoji=discord.PartialEmoji.from_str(EDIT),
-                custom_id="edit_embed_title"
+                custom_id=_CID_EDIT_EMBED_TITLE
             )
             edit_title_btn.callback = self.on_edit_embed_title
             embed_row1.add_item(edit_title_btn)
@@ -254,7 +282,7 @@ class WelcomeChannelConfigView(BaseView):
                 label=t('modules.welcome_channel.config.embed.edit_color', locale=self.locale),
                 style=discord.ButtonStyle.primary,
                 emoji=discord.PartialEmoji.from_str("<:color:1519800727231266858>"),
-                custom_id="edit_embed_color"
+                custom_id=_CID_EDIT_EMBED_COLOR
             )
             edit_color_btn.callback = self.on_edit_embed_color
             embed_row1.add_item(edit_color_btn)
@@ -268,7 +296,7 @@ class WelcomeChannelConfigView(BaseView):
                 label=t('modules.welcome_channel.config.embed.edit_description', locale=self.locale),
                 style=discord.ButtonStyle.primary,
                 emoji=discord.PartialEmoji.from_str(EDIT),
-                custom_id="edit_embed_description"
+                custom_id=_CID_EDIT_EMBED_DESC
             )
             edit_desc_btn.callback = self.on_edit_embed_description
             embed_row2.add_item(edit_desc_btn)
@@ -282,7 +310,7 @@ class WelcomeChannelConfigView(BaseView):
                 label=t('modules.welcome_channel.config.embed.thumbnail', locale=self.locale),
                 style=discord.ButtonStyle.success if self.working_config['embed_thumbnail_enabled'] else discord.ButtonStyle.secondary,
                 emoji=discord.PartialEmoji.from_str(DONE if self.working_config['embed_thumbnail_enabled'] else UNDONE),
-                custom_id="toggle_thumbnail"
+                custom_id=_CID_TOGGLE_THUMBNAIL
             )
             thumbnail_btn.callback = self.on_toggle_thumbnail
             embed_row3.add_item(thumbnail_btn)
@@ -291,7 +319,7 @@ class WelcomeChannelConfigView(BaseView):
                 label=t('modules.welcome_channel.config.embed.author', locale=self.locale),
                 style=discord.ButtonStyle.success if self.working_config['embed_author_enabled'] else discord.ButtonStyle.secondary,
                 emoji=discord.PartialEmoji.from_str(DONE if self.working_config['embed_author_enabled'] else UNDONE),
-                custom_id="toggle_author"
+                custom_id=_CID_TOGGLE_AUTHOR
             )
             author_btn.callback = self.on_toggle_author
             embed_row3.add_item(author_btn)
@@ -312,19 +340,23 @@ class WelcomeChannelConfigView(BaseView):
             emoji=discord.PartialEmoji.from_str(BACK),
             label=t('modules.config.buttons.back', locale=self.locale),
             style=discord.ButtonStyle.secondary,
-            custom_id="back_btn",
+            custom_id=_CID_BACK,
             disabled=self.has_changes
         )
         back_btn.callback = self.on_back
         button_row.add_item(back_btn)
 
+        # Registration shell (self.bot is None): register EVERY button's
+        # custom_id regardless of has_changes/has_existing_config.
+        is_shell = self.bot is None
+
         # Save button (only if changes)
-        if self.has_changes:
+        if self.has_changes or is_shell:
             save_btn = ui.Button(
                 emoji=discord.PartialEmoji.from_str(SAVE),
                 label=t('modules.config.buttons.save', locale=self.locale),
                 style=discord.ButtonStyle.success,
-                custom_id="save_btn"
+                custom_id=_CID_SAVE
             )
             save_btn.callback = self.on_save
             button_row.add_item(save_btn)
@@ -334,257 +366,248 @@ class WelcomeChannelConfigView(BaseView):
                 emoji=discord.PartialEmoji.from_str(UNDONE),
                 label=t('modules.config.buttons.cancel', locale=self.locale),
                 style=discord.ButtonStyle.danger,
-                custom_id="cancel_btn"
+                custom_id=_CID_CANCEL
             )
             cancel_btn.callback = self.on_cancel
             button_row.add_item(cancel_btn)
-        else:
+        if (not self.has_changes and self.has_existing_config) or is_shell:
             # Delete button (if config exists)
-            if self.has_existing_config:
-                delete_btn = ui.Button(
-                    emoji=discord.PartialEmoji.from_str(DELETE),
-                    label=t('modules.config.buttons.delete', locale=self.locale),
-                    style=discord.ButtonStyle.danger,
-                    custom_id="delete_btn"
-                )
-                delete_btn.callback = self.on_delete
-                button_row.add_item(delete_btn)
+            delete_btn = ui.Button(
+                emoji=discord.PartialEmoji.from_str(DELETE),
+                label=t('modules.config.buttons.delete', locale=self.locale),
+                style=discord.ButtonStyle.danger,
+                custom_id=_CID_DELETE
+            )
+            delete_btn.callback = self.on_delete
+            button_row.add_item(delete_btn)
 
         self.add_item(button_row)
+
+    # === persistence helpers ===
+
+    def _is_live_for(self, interaction: discord.Interaction) -> bool:
+        return self.bot is not None and self.guild_id == interaction.guild_id
+
+    async def _fresh_working_config(self, interaction: discord.Interaction) -> Dict[str, Any]:
+        if self._is_live_for(interaction):
+            return self.working_config.copy()
+        bot = interaction.client
+        from modules.welcome_channel import WelcomeChannelModule
+        default_config = WelcomeChannelModule(bot, interaction.guild_id).get_default_config()
+        saved = await bot.module_manager.get_module_config(interaction.guild_id, 'welcome_channel')
+        if saved and saved.get('channel_id') is not None:
+            default_config.update(saved)
+        return default_config
+
+    async def _rebuild(self, interaction: discord.Interaction, working_config: Dict[str, Any],
+                        has_changes: bool) -> "WelcomeChannelConfigView":
+        """Always construct a NEW view instance rather than mutate/resend
+        self — self may be the single shared shell serving every guild after
+        a restart."""
+        bot = interaction.client
+        locale = i18n.get_user_locale(interaction)
+        saved = await bot.module_manager.get_module_config(interaction.guild_id, 'welcome_channel')
+        view = WelcomeChannelConfigView(bot, interaction.guild_id, interaction.user.id, locale, current_config=saved)
+        view.working_config = working_config
+        view.has_changes = has_changes
+        view._build_view()
+        return view
 
     # === CALLBACKS ===
 
     async def on_channel_select(self, interaction: discord.Interaction):
         """Channel selector callback"""
-        if not await self.check_user(interaction):
+        if not await check_guild_perms(interaction):
             return
 
+        working_config = await self._fresh_working_config(interaction)
         if interaction.data['values']:
-            channel_id = int(interaction.data['values'][0])
-            self.working_config['channel_id'] = channel_id
+            working_config['channel_id'] = int(interaction.data['values'][0])
         else:
-            self.working_config['channel_id'] = None
+            working_config['channel_id'] = None
 
-        self.has_changes = True
-        self._build_view()
-        await interaction.response.edit_message(view=self)
+        view = await self._rebuild(interaction, working_config, has_changes=True)
+        await interaction.response.edit_message(view=view)
 
     async def on_edit_message(self, interaction: discord.Interaction):
         """Edit message"""
-        if not await self.check_user(interaction):
+        if not await check_guild_perms(interaction):
             return
 
-        modal = MessageEditModal(
-            self.locale,
-            self.working_config['message_template'],
-            self._on_message_edited
-        )
-        modal.bot = self.bot  # Set bot for error handling
-        await interaction.response.send_modal(modal)
+        working_config = await self._fresh_working_config(interaction)
+        locale = i18n.get_user_locale(interaction)
 
-    async def _on_message_edited(self, interaction: discord.Interaction, new_message: str):
-        """Callback after message edit"""
-        self.working_config['message_template'] = new_message
-        self.has_changes = True
-        self._build_view()
-        await interaction.response.edit_message(view=self)
+        async def _on_submit(modal_interaction: discord.Interaction, new_message: str):
+            working_config['message_template'] = new_message
+            view = await self._rebuild(modal_interaction, working_config, has_changes=True)
+            await modal_interaction.response.edit_message(view=view)
+
+        modal = MessageEditModal(locale, working_config['message_template'], _on_submit)
+        modal.bot = interaction.client
+        await interaction.response.send_modal(modal)
 
     async def on_toggle_mention(self, interaction: discord.Interaction):
         """Toggle mention"""
-        if not await self.check_user(interaction):
+        if not await check_guild_perms(interaction):
             return
 
-        self.working_config['mention_user'] = not self.working_config['mention_user']
-        self.has_changes = True
-        self._build_view()
-        await interaction.response.edit_message(view=self)
+        working_config = await self._fresh_working_config(interaction)
+        working_config['mention_user'] = not working_config['mention_user']
+        view = await self._rebuild(interaction, working_config, has_changes=True)
+        await interaction.response.edit_message(view=view)
 
     async def on_toggle_embed(self, interaction: discord.Interaction):
         """Toggle embed"""
-        if not await self.check_user(interaction):
+        if not await check_guild_perms(interaction):
             return
 
-        self.working_config['embed_enabled'] = not self.working_config['embed_enabled']
-        self.has_changes = True
-        self._build_view()
-        await interaction.response.edit_message(view=self)
+        working_config = await self._fresh_working_config(interaction)
+        working_config['embed_enabled'] = not working_config['embed_enabled']
+        view = await self._rebuild(interaction, working_config, has_changes=True)
+        await interaction.response.edit_message(view=view)
 
     async def on_edit_embed_title(self, interaction: discord.Interaction):
         """Edit embed title"""
-        if not await self.check_user(interaction):
+        if not await check_guild_perms(interaction):
             return
 
-        modal = EmbedTitleModal(
-            self.locale,
-            self.working_config['embed_title'],
-            self._on_embed_title_edited
-        )
-        modal.bot = self.bot  # Set bot for error handling
-        await interaction.response.send_modal(modal)
+        working_config = await self._fresh_working_config(interaction)
+        locale = i18n.get_user_locale(interaction)
 
-    async def _on_embed_title_edited(self, interaction: discord.Interaction, new_title: str):
-        """Callback after embed title edit"""
-        self.working_config['embed_title'] = new_title
-        self.has_changes = True
-        self._build_view()
-        await interaction.response.edit_message(view=self)
+        async def _on_submit(modal_interaction: discord.Interaction, new_title: str):
+            working_config['embed_title'] = new_title
+            view = await self._rebuild(modal_interaction, working_config, has_changes=True)
+            await modal_interaction.response.edit_message(view=view)
+
+        modal = EmbedTitleModal(locale, working_config['embed_title'], _on_submit)
+        modal.bot = interaction.client
+        await interaction.response.send_modal(modal)
 
     async def on_edit_embed_description(self, interaction: discord.Interaction):
         """Edit embed description"""
-        if not await self.check_user(interaction):
+        if not await check_guild_perms(interaction):
             return
 
-        modal = EmbedDescriptionModal(
-            self.locale,
-            self.working_config.get('embed_description'),
-            self._on_embed_description_edited
-        )
-        modal.bot = self.bot  # Set bot for error handling
-        await interaction.response.send_modal(modal)
+        working_config = await self._fresh_working_config(interaction)
+        locale = i18n.get_user_locale(interaction)
 
-    async def _on_embed_description_edited(self, interaction: discord.Interaction, new_desc: Optional[str]):
-        """Callback after embed description edit"""
-        self.working_config['embed_description'] = new_desc
-        self.has_changes = True
-        self._build_view()
-        await interaction.response.edit_message(view=self)
+        async def _on_submit(modal_interaction: discord.Interaction, new_desc: Optional[str]):
+            working_config['embed_description'] = new_desc
+            view = await self._rebuild(modal_interaction, working_config, has_changes=True)
+            await modal_interaction.response.edit_message(view=view)
+
+        modal = EmbedDescriptionModal(locale, working_config.get('embed_description'), _on_submit)
+        modal.bot = interaction.client
+        await interaction.response.send_modal(modal)
 
     async def on_edit_embed_color(self, interaction: discord.Interaction):
         """Edit embed color"""
-        if not await self.check_user(interaction):
+        if not await check_guild_perms(interaction):
             return
 
-        modal = EmbedColorModal(
-            self.locale,
-            self.working_config['embed_color'],
-            self._on_embed_color_edited
-        )
-        modal.bot = self.bot  # Set bot for error handling
-        await interaction.response.send_modal(modal)
+        working_config = await self._fresh_working_config(interaction)
+        locale = i18n.get_user_locale(interaction)
 
-    async def _on_embed_color_edited(self, interaction: discord.Interaction, new_color: int):
-        """Callback after embed color edit"""
-        self.working_config['embed_color'] = new_color
-        self.has_changes = True
-        self._build_view()
-        await interaction.response.edit_message(view=self)
+        async def _on_submit(modal_interaction: discord.Interaction, new_color: int):
+            working_config['embed_color'] = new_color
+            view = await self._rebuild(modal_interaction, working_config, has_changes=True)
+            await modal_interaction.response.edit_message(view=view)
+
+        modal = EmbedColorModal(locale, working_config['embed_color'], _on_submit)
+        modal.bot = interaction.client
+        await interaction.response.send_modal(modal)
 
     async def on_toggle_thumbnail(self, interaction: discord.Interaction):
         """Toggle thumbnail"""
-        if not await self.check_user(interaction):
+        if not await check_guild_perms(interaction):
             return
 
-        self.working_config['embed_thumbnail_enabled'] = not self.working_config['embed_thumbnail_enabled']
-        self.has_changes = True
-        self._build_view()
-        await interaction.response.edit_message(view=self)
+        working_config = await self._fresh_working_config(interaction)
+        working_config['embed_thumbnail_enabled'] = not working_config['embed_thumbnail_enabled']
+        view = await self._rebuild(interaction, working_config, has_changes=True)
+        await interaction.response.edit_message(view=view)
 
     async def on_toggle_author(self, interaction: discord.Interaction):
         """Toggle author"""
-        if not await self.check_user(interaction):
+        if not await check_guild_perms(interaction):
             return
 
-        self.working_config['embed_author_enabled'] = not self.working_config['embed_author_enabled']
-        self.has_changes = True
-        self._build_view()
-        await interaction.response.edit_message(view=self)
+        working_config = await self._fresh_working_config(interaction)
+        working_config['embed_author_enabled'] = not working_config['embed_author_enabled']
+        view = await self._rebuild(interaction, working_config, has_changes=True)
+        await interaction.response.edit_message(view=view)
 
     # === ACTION BUTTON CALLBACKS ===
 
     async def on_back(self, interaction: discord.Interaction):
         """Return to main menu"""
-        if not await self.check_user(interaction):
+        if not await check_guild_perms(interaction):
             return
 
         from cogs.config import ConfigMainView
-        main_view = ConfigMainView(self.bot, self.guild_id, self.user_id, self.locale)
+        locale = i18n.get_user_locale(interaction)
+        main_view = ConfigMainView(interaction.client, interaction.guild_id, interaction.user.id, locale)
         await interaction.response.edit_message(view=main_view)
 
     async def on_save(self, interaction: discord.Interaction):
         """Save configuration"""
-        if not await self.check_user(interaction):
+        if not await check_guild_perms(interaction):
             return
 
         await interaction.response.defer()
 
-        module_manager = self.bot.module_manager
+        bot = interaction.client
+        locale = i18n.get_user_locale(interaction)
+        working_config = await self._fresh_working_config(interaction)
 
-        success, error_msg = await module_manager.save_module_config(
-            self.guild_id,
-            'welcome_channel',
-            self.working_config
+        success, error_msg = await bot.module_manager.save_module_config(
+            interaction.guild_id, 'welcome_channel', working_config,
         )
 
         if success:
-            self.current_config = self.working_config.copy()
-            self.has_changes = False
-            self.has_existing_config = True
-
-            self._build_view()
-
-            await interaction.followup.send(
-                t('modules.config.save.success', locale=self.locale),
-                ephemeral=True
-            )
-            await interaction.edit_original_response(view=self)
+            view = WelcomeChannelConfigView(bot, interaction.guild_id, interaction.user.id, locale,
+                                             current_config=working_config)
+            await interaction.followup.send(t('modules.config.save.success', locale=locale), ephemeral=True)
+            await interaction.edit_original_response(view=view)
         else:
             await interaction.followup.send(
-                t('modules.config.save.error', locale=self.locale, error=error_msg),
-                ephemeral=True
+                t('modules.config.save.error', locale=locale, error=error_msg), ephemeral=True,
             )
 
     async def on_cancel(self, interaction: discord.Interaction):
         """Cancel changes"""
-        if not await self.check_user(interaction):
+        if not await check_guild_perms(interaction):
             return
 
-        self.working_config = self.current_config.copy()
-        self.has_changes = False
-
-        self._build_view()
-        await interaction.response.edit_message(view=self)
+        bot = interaction.client
+        locale = i18n.get_user_locale(interaction)
+        saved = await bot.module_manager.get_module_config(interaction.guild_id, 'welcome_channel')
+        view = WelcomeChannelConfigView(bot, interaction.guild_id, interaction.user.id, locale, current_config=saved)
+        await interaction.response.edit_message(view=view)
 
     async def on_delete(self, interaction: discord.Interaction):
         """Delete configuration"""
-        if not await self.check_user(interaction):
+        if not await check_guild_perms(interaction):
             return
 
         await interaction.response.defer()
 
-        module_manager = self.bot.module_manager
-
-        success = await module_manager.delete_module_config(self.guild_id, 'welcome_channel')
+        bot = interaction.client
+        locale = i18n.get_user_locale(interaction)
+        success = await bot.module_manager.delete_module_config(interaction.guild_id, 'welcome_channel')
 
         if success:
-            from modules.welcome_channel import WelcomeChannelModule
-            self.current_config = WelcomeChannelModule(self.bot, self.guild_id).get_default_config()
-            self.working_config = self.current_config.copy()
-            self.has_changes = False
-            self.has_existing_config = False
-
-            self._build_view()
-
-            await interaction.followup.send(
-                t('modules.config.delete.success', locale=self.locale),
-                ephemeral=True
-            )
-            await interaction.edit_original_response(view=self)
+            view = WelcomeChannelConfigView(bot, interaction.guild_id, interaction.user.id, locale, current_config=None)
+            await interaction.followup.send(t('modules.config.delete.success', locale=locale), ephemeral=True)
+            await interaction.edit_original_response(view=view)
         else:
-            await interaction.followup.send(
-                t('modules.config.delete.error', locale=self.locale),
-                ephemeral=True
-            )
-
-    async def check_user(self, interaction: discord.Interaction) -> bool:
-        """Check if the user is the one who started the config"""
-        if interaction.user.id != self.user_id:
-            await interaction.response.send_message(
-                t('modules.config.errors.wrong_user', locale=self.locale),
-                ephemeral=True
-            )
-            return False
-        return True
+            await interaction.followup.send(t('modules.config.delete.error', locale=locale), ephemeral=True)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         """Check permissions for each interaction"""
-        return await self.check_user(interaction)
+        return await check_guild_perms(interaction)
+
+    @classmethod
+    def register_persistent(cls, bot) -> None:
+        """Auth model: Manage Server in the guild (checked on every click)."""
+        bot.add_view(cls())
