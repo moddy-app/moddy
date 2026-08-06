@@ -1565,3 +1565,32 @@ identical callable-parameter shape. A real fix (e.g. replacing the callable
 with a small enum of "what to do when done" that a `DynamicItem` callback
 could re-derive and act on) is a refactor of the staff mod-case command
 flow, not a mechanical migration step — out of scope here.
+
+### Step 14 — Staff read-only views (`HelpView`, `ServerListView`; `EmojiPreviewView` excluded)
+
+**`HelpView`**: the department listing is the caller's own
+permission-filtered command set (`router._has_permission` re-run per
+command against `ctx.author.id`), not something read from a fixed table —
+so "cheap to re-derive" (Appendix B.1.d) meant extracting the data-gathering
+loop out of `HelpCommand.execute` into a shared `_build_help_data(bot,
+author_id)` function, callable identically from the command and from a
+restarted shell's click. `HelpDeptSelect` is a `DynamicItem` encoding
+`owner_id` (Appendix B.2 — this is owner-only, not staff-rank re-checked;
+the code already only ever compared `interaction.user.id` to `author_id`,
+so this migration preserves that, not Appendix A.1's suggested "Staff rank"
+label for this view, which doesn't match what the code actually does).
+
+**`ServerListView`**: `guilds` is trivially re-derivable from `bot.guilds`
+(Appendix B.1.d, already flagged). `ServerListNavButton` is a `DynamicItem`
+encoding `owner_id` + the **target** page (not the current page), same
+"bake the destination into the button" trick as `SavedMessagesListButton`
+in Step 7 — no page-tracking state needs to survive anywhere, live or
+restarted.
+
+**`EmojiPreviewView`**: **not** migrated. Its own class docstring already
+states "Non-persistent preview view. Temporary by design." — confirmed
+accurate: every button/select on it calls the same `_noop` handler that
+just says "this is a preview," and its only state (`partial_emoji`,
+`emoji_str`) is a one-off developer lookup with nothing to reconstruct from
+DB or interaction. This is the file-level equivalent of an Appendix B.4
+exclusion; left completely untouched.

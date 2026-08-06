@@ -46,6 +46,8 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     from cogs.config import ConfigMainView
     from modules.configs.adaptive_slowmode_config import AdaptiveSlowmodeConfigView
     from modules.configs.automod_ai_config import AutomodAIConfigView
+    from staff.commands.team.help import HelpView
+    from staff.commands.dev.serverlist import ServerListView
     from utils.cases_views import CasesBrowserView
     from utils.appeal_views import AppealPersistence
     from utils.automod_shadow_views import ShadowAnnotationPersistence
@@ -89,6 +91,11 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         # AutomodAIPrecedentsView is deliberately excluded, see
         # docs/PERSISTENT_VIEWS.md Step 12)
         AutomodAIConfigView,
+        # Group 14 — staff read-only views (owner-scoped dynamic items;
+        # EmojiPreviewView is deliberately excluded — "Non-persistent...
+        # Temporary by design" per its own docstring)
+        HelpView,
+        ServerListView,
     ]
 
 
