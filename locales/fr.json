@@ -840,7 +840,7 @@
     }
   },
   "common": {
-    "loading": "<a:loading:1455219844080336907> Chargement...",
+    "loading": "<a:spinner:1534857169667883078> Chargement...",
     "success": "<:done:1519800188925902881> Succès !",
     "error": "<:undone:1519800313324896327> Erreur",
     "info": "<:info:1519793991045091388> Information",
@@ -1411,7 +1411,7 @@
           "empty": "Aucun règlement défini — l'IA applique des standards de modération raisonnables.",
           "modal_label": "Règlement du serveur",
           "modal_placeholder": "Décris les règles de ton serveur (respect, pas d'insultes…).",
-          "checking": "<a:loading:1455219844080336907> Vérification du règlement par l'IA…",
+          "checking": "<a:spinner:1534857169667883078> Vérification du règlement par l'IA…",
           "error_unsafe": "<:error:1519790252594827264> Règlement refusé : il ressemble à une tentative de manipulation de l'IA.\n-# Raison : {reason}",
           "error_too_long": "<:error:1519790252594827264> Le règlement est trop long (max 3000 caractères).",
           "error_unavailable": "<:warning:1519789903100121139> Impossible de vérifier le règlement pour le moment (service IA indisponible). Réessaie plus tard.",

@@ -841,7 +841,7 @@
     }
   },
   "common": {
-    "loading": "<a:loading:1455219844080336907> Loading...",
+    "loading": "<a:spinner:1534857169667883078> Loading...",
     "success": "<:done:1519800188925902881> Success!",
     "error": "<:undone:1519800313324896327> Error",
     "info": "<:info:1519793991045091388> Information",
@@ -1412,7 +1412,7 @@
           "empty": "No rules set — the AI uses reasonable moderation standards.",
           "modal_label": "Server rules",
           "modal_placeholder": "Describe your server's rules (respect, no insults…).",
-          "checking": "<a:loading:1455219844080336907> Verifying the rules with the AI…",
+          "checking": "<a:spinner:1534857169667883078> Verifying the rules with the AI…",
           "error_unsafe": "<:error:1519790252594827264> Rules rejected: they look like an attempt to manipulate the AI.\n-# Reason: {reason}",
           "error_too_long": "<:error:1519790252594827264> The rules are too long (max 3000 characters).",
           "error_unavailable": "<:warning:1519789903100121139> Unable to verify the rules right now (AI service unavailable). Try again later.",

@@ -81,7 +81,7 @@ Full list in [EMOJIS.md](EMOJIS.md). Most commonly used:
 | Back | back | `<:back:1519795556665397431>` |
 | Delete | delete | `<:delete:1519795753164210447>` |
 | Required field | required_fields | `<:required_fields:1446549185385074769>` |
-| Loading | loading | `<a:loading:1455219844080336907>` |
+| Loading | loading | `<a:spinner:1534857169667883078>` |
 | Premium | premium | `<:premium:1519795224493424893>` |
 
 **Rule:** Never use Unicode emojis (except country flags). Always use custom emojis from `/utils/emojis.py`.
