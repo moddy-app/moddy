@@ -1527,3 +1527,41 @@ was updated to stop passing `parent=self` at all, since the callback that
 opens it already only has `interaction`-derived state to hand over (there is
 no live `self` worth keeping a reference to once the auth model no longer
 depends on it).
+
+### Step 13 — Case management: NOT migrated, deferred
+
+`utils/case_management_views.py`'s own module docstring already states the
+design intent: "These are short-lived, author-scoped, ephemeral staff flows
+(timeout-based, not persistent — they wrap in-memory callbacks, mirroring
+the existing staff `_ModalButtonView` pattern)." On inspection this is
+accurate and load-bearing, not just stale documentation: `CaseCreationView`,
+`AddSanctionView`, and `RevokeSanctionView` are all constructed with an
+`on_created`/`on_done` **Python callable** parameter
+([utils/case_management_views.py:73](../utils/case_management_views.py),
+:285, :390) supplied by whichever staff command opened them — the same
+"behaviour is a callable with no stable identity, not serialisable into a
+custom_id" shape Appendix B.4 already uses to permanently exclude
+`ConfirmView` and `_ModalButtonView`. There is no `custom_id` that could
+encode "call this specific staff command's continuation after a restart";
+the callback simply would not exist anymore in a fresh process.
+
+`AddSanctionView`/`RevokeSanctionView` are otherwise clean `DynamicItem`
+candidates keyed on `case_id`/sanction `reference` per Appendix B.2 and
+Appendix E's own note — but that only addresses *authorization*, not the
+`on_done` callable each one is built with, which is the actual blocker.
+Migrating just the auth model while leaving the callback parameter would
+still crash a restarted shell's dispatch the moment it tried to invoke a
+callable that no longer exists.
+
+Given this is a correctness blocker the doc itself half-flags ("may be
+better left non-persistent... decide before starting") and this migration's
+mandate not to make product/architecture calls beyond what's written down,
+**left all three views untouched**: no `custom_id`s, no `__persistent__`,
+not in the registry, `timeout=300`/`600` unchanged. Same accepted-loss
+rationale as `CaseCreationView` already gets in Appendix B.1.c ("a
+partially-built moderation case must not be silently resurrected") — now
+applied to `AddSanctionView`/`RevokeSanctionView` too, since they share the
+identical callable-parameter shape. A real fix (e.g. replacing the callable
+with a small enum of "what to do when done" that a `DynamicItem` callback
+could re-derive and act on) is a refactor of the staff mod-case command
+flow, not a mechanical migration step — out of scope here.
