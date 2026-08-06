@@ -1309,3 +1309,41 @@ own instruction for whoever does reach it: it grants and revokes staff
 permissions, a dispatch bug there is a privilege-escalation bug, and per
 the operating instructions for this migration pass it **must be reviewed by
 a human before merge** — more so than every other step.
+
+### Step 7 (continued) — `SavedMessagesLibraryView` done, `EmojiNavigationView` deferred
+
+**`SavedMessagesLibraryView`**: fully DB-backed (list + detail screens), so
+migrated per Appendix C/B.2 like `RemindersManageView`. Two `DynamicItem`
+classes: `SavedMessagesListButton` (`view`/`prev`/`next`/`pageinfo`, template
+`moddy:svm:manage:<action>:<owner>:<page>`) and `SavedMessagesDetailButton`
+(`back`/`edit_note`/`export`/`delete`, template
+`moddy:svm:manage:<action>:<owner>:<saved_id>:<page>`). Notable choice: the
+target page is baked directly into each nav button at render time
+(`prev` encodes `page-1`, `next` encodes `page+1`) instead of encoding the
+*current* page and subtracting/adding in the callback — removes the need to
+track "current page" as separate mutable state anywhere, live view or shell
+alike. `ViewMessageModal`/`EditNoteModal` lost their `parent_view` the same
+way `ReminderAddModal` did in Step 7's first half — replaced with
+`_refresh_library_card(bot, owner_id, locale, channel_id, message_id, …)`
+keyed on plain IDs captured off the interaction that opened the modal.
+
+**`EmojiNavigationView`**: NOT migrated, deferred. Appendix B.1.c's proposed
+fix — "re-scan the guild's emojis on click (cheap, `guild.emojis` is
+cached)" — does not match what this view actually shows: `emoji_list` here
+is not `guild.emojis`, it's the result of regex-extracting `<:name:id>`
+mentions out of one specific *message's content*
+([cogs/emoji.py:321-364](../cogs/emoji.py), the "Get Emojis" context menu),
+each entry additionally requiring a per-emoji HTTP call
+(`check_if_animated`, [cogs/emoji.py:294](../cogs/emoji.py)) to determine if
+it's a GIF. Reconstructing this on a restarted shell would mean encoding the
+source message's `channel_id`/`message_id` in every Prev/Next click,
+re-fetching that message, re-running the regex, and re-issuing one HTTP
+request per emoji found — real per-click cost for a view whose current
+`timeout=180` already caps its lifetime to three minutes and whose command
+is ephemeral/single-use. Judged not worth the reconstruction cost for a
+short-lived lookup card, same call as Step 5's `InviteView`. Left as-is
+(`timeout=180`, not registered); the row in Appendix B.1.c should read "not
+`guild.emojis`, see Migration log" for whoever revisits this.
+
+`tests/test_persistent_views.py` now covers `SavedMessagesLibraryView` and
+both its `DynamicItem`s (72 tests, still green).

@@ -33,6 +33,7 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     from cogs.moddy import ModdyMainView, AttributionView, WeSupportView
     from cogs.preferences import PreferencesView
     from cogs.reminder import RemindersManageView
+    from cogs.saved_messages import SavedMessagesLibraryView
     from modules.configs.social_notifications_config import (
         SocialNotificationsConfigView, AddSubscriptionView, ManageSubscriptionView,
     )
@@ -59,6 +60,8 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         PreferencesView,
         # Group 7 — /reminders manage (owner-only dynamic items)
         RemindersManageView,
+        # Group 8 — /library (owner-only dynamic items)
+        SavedMessagesLibraryView,
     ]
 
 

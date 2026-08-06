@@ -116,6 +116,7 @@ def _dynamic_item_cases():
     )
     from cogs.preferences import PreferencesManageButton, TimezoneSelect
     from cogs.reminder import ReminderManageButton
+    from cogs.saved_messages import SavedMessagesListButton, SavedMessagesDetailButton
     _U = "0f7d9c62-3b4e-4a1f-9c2d-5e6f70819a2b"
     _SNOWFLAKE = 123456789012345678
     return [
@@ -128,6 +129,8 @@ def _dynamic_item_cases():
         (PreferencesManageButton, ("timezone", _SNOWFLAKE)),
         (TimezoneSelect, (_SNOWFLAKE,)),
         (ReminderManageButton, ("add", _SNOWFLAKE)),
+        (SavedMessagesListButton, ("view", _SNOWFLAKE, 0)),
+        (SavedMessagesDetailButton, ("back", _SNOWFLAKE, 42, 0)),
     ]
 
 
