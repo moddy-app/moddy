@@ -14,6 +14,7 @@ from discord import app_commands, ui
 from discord.ext import commands, tasks
 from discord.ui import LayoutView, Container, TextDisplay, Separator
 from discord import SeparatorSpacing
+from cogs.error_handler import BaseView
 
 from utils.i18n import t
 from cogs.error_handler import BaseModal
@@ -475,7 +476,7 @@ class ReminderSelectForDelete(ui.Select):
             await self.parent_view.refresh(interaction)
 
 
-class RemindersManageView(LayoutView):
+class RemindersManageView(BaseView):
     """Main view for managing reminders"""
 
     def __init__(self, bot, user_id: int, reminders: List[Dict], locale: str,

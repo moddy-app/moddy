@@ -5,10 +5,11 @@ Allows users to customize their experience
 import discord
 from discord import app_commands, ui
 from discord.ext import commands
-from discord.ui import LayoutView, Container, TextDisplay, Separator
+from discord.ui import Container, TextDisplay, Separator
 from discord import SeparatorSpacing
 from typing import Optional
 
+from cogs.error_handler import BaseView
 from utils.i18n import t
 
 # Common timezones for selection
@@ -107,7 +108,7 @@ class TimezoneSelect(ui.Select):
         )
 
 
-class PreferencesView(LayoutView):
+class PreferencesView(BaseView):
     """Main preferences view"""
 
     def __init__(self, bot, user_id: int, locale: str, user_data: dict):

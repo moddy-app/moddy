@@ -6,8 +6,9 @@ Allows users to save messages to a personal library via context menu
 import discord
 from discord import app_commands, ui
 from discord.ext import commands
-from discord.ui import LayoutView, Container, TextDisplay, Separator
+from discord.ui import Container, TextDisplay, Separator
 from discord import SeparatorSpacing
+from cogs.error_handler import BaseView
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 import logging
@@ -219,7 +220,7 @@ class ViewMessageModal(ui.Modal):
         await self.parent_view.refresh(interaction, show_detail=True, detail_id=msg_id)
 
 
-class SavedMessagesLibraryView(LayoutView):
+class SavedMessagesLibraryView(BaseView):
     """Main view for browsing the saved messages library"""
 
     def __init__(self, bot, user_id: int, messages: List[Dict], locale: str,
