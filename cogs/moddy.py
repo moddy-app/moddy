@@ -200,7 +200,7 @@ class ModdyMainView(BaseView):
 
         # Title
         container.add_item(ui.TextDisplay(
-            f"### <:moddy:1451280939412881508> {t('commands.moddy.title', locale=self.locale)}"
+            f"### {EMOJIS['moddy_square']} {t('commands.moddy.title', locale=self.locale)}"
         ))
 
         # Bio description
