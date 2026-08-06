@@ -1243,3 +1243,36 @@ carries a real snowflake (1-20 digits already covers the full snowflake
 range plus the placeholder). This is a correction, not a reinterpretation —
 worth flagging in case Appendix C's template is copied literally into a
 later step (7, 13) and hits the same failure.
+
+### Step 7 — `RemindersManageView` (Appendix C, literal)
+Implemented `ReminderManageButton` following Appendix C's worked example
+almost verbatim (`_guarded`, `from_custom_id`, per-button owner check), with
+the same `\d{1,20}` correction from Step 6 applied to `_CID_REM_TEMPLATE`.
+
+One structural difference from the C.2 sample code, required by Appendix
+B.1.b for this exact view: `ReminderAddModal`, `ReminderEditModal`,
+`ReminderSelectForEdit` and `ReminderSelectForDelete` previously took a
+`parent_view` — a live `RemindersManageView` Python object — and called
+`parent_view.refresh(interaction)` on completion, which in turn used a
+stashed `self.original_interaction` to `edit_original_response`. That
+`original_interaction` is exactly the kind of state Appendix B.1.b says
+cannot survive a restart, and the whole `parent_view` chain only exists to
+carry it. Replaced all four with a `_refresh_manage_card(bot, owner_id,
+locale, channel_id, message_id)` helper keyed on the plain `channel_id` /
+`message_id` of the card message (captured off the button-click
+`interaction` at modal/select creation time, not off a view instance), which
+re-fetches reminders from the DB and edits the message via
+`channel.get_partial_message(message_id).edit(...)`. This works identically
+whether the manage card's original view object is still alive or the
+process restarted in between, which the old `parent_view` chain did not.
+
+`RemindersManageView.build_for(bot, user_id, locale, show_history=...)` is
+the fetch-fresh-then-render entry point the History/Back actions and the
+`/reminders` command now share, mirroring `build_for` in Appendix C.2. The
+`/reminders` command call site was also fixed to pass constructor args as
+keywords — the old positional order was `(bot, user_id, reminders, locale,
+user_tz, …)`, which does not match the new `(bot, user_id, locale,
+reminders, user_tz, …)` shell-first signature (`user_id` before `locale`
+before `reminders`, so the persistent-view contract's
+`(bot=None, user_id=None, locale="en-US", …)` shape holds); a positional
+call would have silently swapped `reminders` and `locale`.

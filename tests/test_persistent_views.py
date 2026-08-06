@@ -115,6 +115,7 @@ def _dynamic_item_cases():
         AppealDecisionButton, AppealAcceptChoiceButton,
     )
     from cogs.preferences import PreferencesManageButton, TimezoneSelect
+    from cogs.reminder import ReminderManageButton
     _U = "0f7d9c62-3b4e-4a1f-9c2d-5e6f70819a2b"
     _SNOWFLAKE = 123456789012345678
     return [
@@ -126,7 +127,7 @@ def _dynamic_item_cases():
         (AppealAcceptChoiceButton, ("full", _U)),
         (PreferencesManageButton, ("timezone", _SNOWFLAKE)),
         (TimezoneSelect, (_SNOWFLAKE,)),
-        # (ReminderManageButton, ("add", 123456789012345678)),  # Appendix C
+        (ReminderManageButton, ("add", _SNOWFLAKE)),
     ]
 
 

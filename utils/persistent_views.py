@@ -32,6 +32,7 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     # Imported lazily so this module can be imported before cogs are loaded.
     from cogs.moddy import ModdyMainView, AttributionView, WeSupportView
     from cogs.preferences import PreferencesView
+    from cogs.reminder import RemindersManageView
     from modules.configs.social_notifications_config import (
         SocialNotificationsConfigView, AddSubscriptionView, ManageSubscriptionView,
     )
@@ -56,6 +57,8 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         ShadowAnnotationPersistence,
         # Group 6 — /preferences (owner-only dynamic items)
         PreferencesView,
+        # Group 7 — /reminders manage (owner-only dynamic items)
+        RemindersManageView,
     ]
 
 
