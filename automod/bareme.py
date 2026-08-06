@@ -8,11 +8,11 @@ guild config, the barème always returns the same *cran* (rung) on a single
 sanction ladder, together with a line-by-line breakdown of how it got there.
 
 The module is **pure**: no I/O, no Discord, no DB. The caller
-(``modules/automod.py``) gathers the inputs (the member's past sanctions, their
+(``modules/automod_ai.py``) gathers the inputs (the member's past sanctions, their
 age on the server, the guild severity/config) and translates the returned cran
 into Discord actions. This keeps the whole thing table-testable to a dry.
 
-See docs/AUTOMOD.md §2bis and docs/AUTOMOD_V2_PLAN.md (Session 2).
+See docs/AUTOMOD_AI.md §2bis and docs/AUTOMOD_V2_PLAN.md (Session 2).
 """
 
 from __future__ import annotations

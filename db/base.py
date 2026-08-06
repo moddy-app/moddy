@@ -663,7 +663,7 @@ class ModdyDatabase(
             # appeal, "false positive" button). `verdict_humain` is filled when a
             # moderator annotates the card; `imported` flips once the candidate
             # has been folded into golden.jsonl (`make eval-import`). See
-            # docs/AUTOMOD.md (Évaluation) and docs/AUTOMOD_V2_PLAN.md (Session 3).
+            # docs/AUTOMOD_AI.md (Évaluation) and docs/AUTOMOD_V2_PLAN.md (Session 3).
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS automod_eval_candidates (
                     id             UUID PRIMARY KEY,
@@ -700,7 +700,7 @@ class ModdyDatabase(
             # before the decision call. `embedding` is a float32-packed BYTEA of
             # the normalised vector (pgvector-free; cosine is a dot product in
             # Python). Capped at PRECEDENT_MAX_PER_GUILD, oldest evicted. See
-            # docs/AUTOMOD.md §2quinquies and docs/AUTOMOD_V2_PLAN.md (Session 7).
+            # docs/AUTOMOD_AI.md §2quinquies and docs/AUTOMOD_V2_PLAN.md (Session 7).
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS automod_precedents (
                     id             BIGSERIAL PRIMARY KEY,
@@ -1073,9 +1073,6 @@ class ModdyDatabase(
                 ("global", "automod_decision_mini",  "default", -1),
                 ("guild",  "automod_confirm",        "default", -1),
                 ("global", "automod_confirm",        "default", -1),
-                # Session 8 — diffuse-harassment sequence analysis (mini).
-                ("guild",  "automod_situation",      "default", -1),
-                ("global", "automod_situation",      "default", -1),
                 ("guild",  "automod_rules_check",    "default", -1),
                 # AI text tools (/fix, /rephrase, /summarize) — per-user and
                 # per-guild buckets, unlimited by default.

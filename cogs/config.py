@@ -184,9 +184,9 @@ class ConfigMainView(BaseView):
                 self.locale,
                 module_config
             )
-        elif module_id == 'automod':
-            from modules.configs.automod_config import AutomodConfigView
-            config_view = AutomodConfigView(
+        elif module_id == 'automod_ai':
+            from modules.configs.automod_ai_config import AutomodAIConfigView
+            config_view = AutomodAIConfigView(
                 self.bot,
                 self.guild_id,
                 self.user_id,

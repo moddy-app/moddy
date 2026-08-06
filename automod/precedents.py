@@ -15,7 +15,7 @@ does no I/O, no Discord, no DB, no embedding call. It receives an already-comput
 (normalised) query vector plus the guild's already-loaded precedents and returns
 ranked matches. Storage/loading lives in the repository/service; capturing the
 message embedding lives in the engine — this file only ranks and decides *how*
-the matches inform the verdict. See docs/AUTOMOD.md §2quinquies.
+the matches inform the verdict. See docs/AUTOMOD_AI.md §2quinquies.
 """
 
 from __future__ import annotations

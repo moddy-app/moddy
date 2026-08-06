@@ -15,7 +15,7 @@
 | 5 | Graphe relationnel & réaction de la cible | ✅ Terminée | 2026-07-13 | `automod/relations.py` pur (score familiarité décroissant demi-vie 30 j + classifieur `reaction_cible` 4 signaux + `RelationStore` Redis TTL 60 j, inerte sans Redis), listeners passifs (reply/mention → interactions/réciprocité, réaction rire → +positif via `on_reaction_add` cache-only ~0 coût), fenêtre d'observation 20 s (`relation_fn` lazy appelée juste avant nano, skip sur regex flagrant), injection `message_cible.relation` + bloc RELATION système (2 few-shots) montré seulement si relation présente, verdict jamais caché quand relation, garde-fous §5.4 (familiarité atténue seulement ; ignorée pour haine/automutilation/harcèlement_sexuel en haute+). Golden +6 cas relation (banter vs inconnus, détresse, garde-fou haine). Tests : `test_relations.py` (21), `test_relation_reaction.py` (10). 229 verts, runner S3 vert (1.0/1.0). |
 | 6 | Routing par difficulté (nano → mini) | ✅ Terminée | 2026-07-13 | `automod/routing.py` pur (`difficulte` → `evident`/`ambigu` : regex flagrant, ≤3 mots, familiarité haute/moyenne, marqueurs de rire, zone grise ±0.05 ; gratuit, aucun appel), routage engine `evident`→nano / `ambigu`→**mini** (`gpt-4.1-mini`, contexte ×2, `Decision.decideur`), confirmation obligatoire des sanctions lourdes (cran ≥ 6 décidées par nano) via `engine.confirm_heavy`→`nano.confirmer` (binaire, fail-safe), refus ⇒ `bareme.appliquer_non_confirme` plafonne à cran 4 (mute 48 h, jamais de ban) + carte « dégradé après revue », budget guard étendu aux appels mini ×4 (`incrby`). Marqueurs de rire centralisés (`RIRE_MOTS`/`RIRE_EMOJIS`, source unique partagée S5/S6). Call types seedés `automod_decision_mini` + `automod_confirm`. Runner S3 reporte la difficulté (banter→ambigu). Tests : `test_routing.py` (14), `test_confirmation.py` (20), harness routing (3). **266 verts**, runner `--replay` 1.0/1.0. |
 | 7 | Précédents serveur (jurisprudence RAG) | ✅ Terminée | 2026-07-13 | `automod/precedents.py` pur (cosine + `match` top-3 ≥ 0.80 + `deterministic_shortcut` ≥ 0.97 `non_sanctionnable` + `to_prompt_payload`), table `automod_precedents` (embedding float32-BYTEA, sans pgvector) + repo (`add`/`list`/`count`/`last_at`/`delete` + éviction cap 500), `services/precedent_service.py` (record embeddé 1 fois via gateway + cache guild 300 s + provider lazy `get_vector`). Engine : `precedents_fn` lazy avant l'appel, raccourci `stop_reason=precedent` (aucun appel), injection `precedents_serveur` + bloc système SERVER PRECEDENTS (fencé, jamais d'override gravité haute+). `embed_query` réutilise le vecteur du funnel (0 appel sur le chemin embedding). Alimentation : appel accepté/refusé (appeal_service) + boutons shadow ✅/❌. UI `/config` : section Précédents (compte + dernier) + navigateur paginé avec suppression unitaire. Golden +4 cas (`gs-0300..0303`, précédent non_sanct / renfort sanct / garde-fou gravité haute) + fixtures + baseline. Tests : `test_precedents.py` (15 : matcher pur, raccourci, packing BYTEA, câblage engine injection/stop, réutilisation du vecteur). **281 verts**, runner `--replay` 1.0/1.0. |
-| 8 | Feature `situation` (harcèlement diffus) | ✅ Terminée | 2026-07-13 | `automod/situation.py` pur (friction `decayed` demi-vie 20 min + `crosses` pair/agrégat, contrat analyste `parse_situation` fail-safe, `FrictionStore` Redis pair+agrégat+cooldown, inerte sans Redis). Nouvelle `AutomodFeature` `situation` **shadow forcé** : alimentée par le score sous-seuil `[0.25, seuil)` (via `engine.friction_probe`, 0 appel réutilise le cache embedding) + verdicts non_sanct `cible=membre` ; seuils 1.5 (pair) / 2.5 (dogpiling) → `engine.analyze_situation` (**mini**, `automod_situation`, ×4 budget, non gated) sur la séquence 45 min (cap 30) ; carte SIMULATION dédiée (`utils/automod_situation_views.py`) réutilisant les boutons d'annotation S3 (`source=situation`, jamais de précédent). Config `features.situation` + option UI. Seed `automod_situation`. Docs `AUTOMOD.md` §4 réécrit (features + situation). Tests : `test_situation.py` (33). **314 verts**, runner `--replay` 1.0/1.0. |
+| 8 | Feature `situation` (harcèlement diffus) | ❌ Retirée (2026-08-06) | 2026-07-13 | `automod/situation.py` pur (friction `decayed` demi-vie 20 min + `crosses` pair/agrégat, contrat analyste `parse_situation` fail-safe, `FrictionStore` Redis pair+agrégat+cooldown, inerte sans Redis). Nouvelle `AutomodFeature` `situation` **shadow forcé** : alimentée par le score sous-seuil `[0.25, seuil)` (via `engine.friction_probe`, 0 appel réutilise le cache embedding) + verdicts non_sanct `cible=membre` ; seuils 1.5 (pair) / 2.5 (dogpiling) → `engine.analyze_situation` (**mini**, `automod_situation`, ×4 budget, non gated) sur la séquence 45 min (cap 30) ; carte SIMULATION dédiée (`utils/automod_situation_views.py`) réutilisant les boutons d'annotation S3 (`source=situation`, jamais de précédent). Config `features.situation` + option UI. Seed `automod_situation`. Docs `AUTOMOD.md` §4 réécrit (features + situation). Tests : `test_situation.py` (33). **314 verts**, runner `--replay` 1.0/1.0. |
 
 ### Journal de session 1 (2026-07-12)
 
@@ -29,7 +29,7 @@
 - `automod/constants.py` — `NANO_TEMPERATURE = 0.0`, `NANO_MAX_TOKENS = 300`, set de catégories
   canoniques exporté.
 - `tests/automod/test_nano_grounding.py` — 7+ cas couvrant les 7 scénarios exigés (§1.4).
-- `docs/AUTOMOD.md` — §2 réécrit (contrat v2, garde grounding, catégories canoniques).
+- `docs/AUTOMOD_AI.md` — §2 réécrit (contrat v2, garde grounding, catégories canoniques).
 
 **Décisions :**
 - Le bloc de sévérité disparaît du prompt nano (la sévérité ne pilote plus que le seuil
@@ -60,12 +60,12 @@ récidive.
 - `automod/nano.py` + `schemas.py` — `actions`/`duree_heures` **retirés** du contrat nano
   (prompt, `parse_verdict`, `_DEFAULT_VERDICT`, `_reject`, `juger`). `Decision.actions` reste
   mais est désormais rempli par le barème côté module.
-- `modules/automod.py` — `_compute_bareme` (charge l'historique 180 j, l'ancienneté du membre,
+- `modules/automod_ai.py` — `_compute_bareme` (charge l'historique 180 j, l'ancienneté du membre,
   la config), applique le cran (écrase `decision.actions`/`duree_heures`), breakdown localisé sur
   la carte d'alerte + payload d'evidence (`cran`, `points_recidive`, `bareme`). Config
   `max_action`/`langue_serveur`/`categories_desactivees` chargée + validée ; `guild_locale`
   honore `langue_serveur`.
-- `modules/configs/automod_config.py` — section **Limites & langue** (selects `max_action` +
+- `modules/configs/automod_ai_config.py` — section **Limites & langue** (selects `max_action` +
   `langue_serveur`).
 - i18n `modules.automod.bareme.*` + `modules.automod.config.{section_limits,max_action,language}`
   (fr + en-US).
@@ -103,7 +103,7 @@ du barème sont déjà prêts à alimenter les annotations.
   `bot.gateway`, `--update-fixtures`). Décide seulement — aucune sanction, aucune écriture DB.
 - `automod/eval/golden_baseline.json` — baseline commitée (précision/rappel = 1.0 sur le corpus).
 - **Shadow mode** : config `dry_run` (module + UI `/config` section Options, « Mode simulation »).
-  `modules/automod.py::_notify_shadow` court-circuite l'application (aucun delete/sanction/case/DM)
+  `modules/automod_ai.py::_notify_shadow` court-circuite l'application (aucun delete/sanction/case/DM)
   et poste une **carte SIMULATION** avec breakdown barème + 3 boutons d'annotation persistants
   (`utils/automod_shadow_views.py`, `DynamicItem` enregistrés dans `utils/persistent_views.py`).
 - `automod_eval_candidates` (table `db/base.py` + repo `db/repositories/eval_candidates.py`) :
@@ -156,7 +156,7 @@ runner S3 sert désormais de filet pour mesurer chaque optimisation sans régres
   ajoute la règle *AGGREGATED MESSAGE*, `build_user_payload(agregat_de=)` marque
   `message_cible.agregat_de`, `juger(agregat_de=)` pose `Decision.agregat_de` /
   `agregat_contenu`.
-- `modules/automod.py` — `analyze(channel_id=…)` (active l'agrégation) ; suppression étendue à
+- `modules/automod_ai.py` — `analyze(channel_id=…)` (active l'agrégation) ; suppression étendue à
   tous les fragments (`_delete_offending`) ; evidence/carte affichent le texte agrégé ; carte
   « budget IA du jour atteint » one-off (`_notify_budget_reduced`, i18n `budget.*`).
 - i18n `modules.automod.budget.{title,body}` (fr + en-US).
@@ -200,7 +200,7 @@ les appels nano, prêt à absorber le coût mini de S6 avec un poids ×4).
   avant** l'appel nano (la fenêtre 20 s n'est payée que sur le chemin qui dépense un appel),
   `_should_observe_reaction(signal)` (skip sur regex flagrant ≥ 0.85), verdict **jamais caché**
   quand relation (cache + single-flight bypassés), provider en échec ⇒ dégrade sans relation.
-- `modules/automod.py` — `_feed_relations` (reply/mention, avant l'exemption modo),
+- `modules/automod_ai.py` — `_feed_relations` (reply/mention, avant l'exemption modo),
   `on_reaction` (réaction rire/positive, cache-only), `make_relation_provider` (cible = reply ou
   mention unique humaine), `_observe_target_reaction` (attente 20 s + scan des réponses de la
   cible + départ salon/guild → détresse + hits blocklist → conflit).
@@ -266,7 +266,7 @@ les appels nano, prêt à absorber le coût mini de S6 avec un poids ×4).
 - `automod/bareme.py` — `appliquer_non_confirme(res)` : plafonne un cran ≥ seuil
   non confirmé à `CONFIRM_UNCONFIRMED_CRAN` (mute 48 h, **jamais de ban**), ligne
   `confirmation_refusee`, `needs_review` conservé.
-- `modules/automod.py` — `_maybe_confirm_heavy` appelé après le barème (avant le
+- `modules/automod_ai.py` — `_maybe_confirm_heavy` appelé après le barème (avant le
   short-circuit `dry_run`, pour une simulation fidèle) : si `cran ≥ 6` et
   `decideur == "nano"`, confirme via l'engine ; refus ⇒ downgrade. Carte : hint
   dédié `review_hint_unconfirmed`. `_BAREME_LABELS += confirmation_refusee`.
@@ -341,11 +341,11 @@ calculé ; feature `situation` (harcèlement diffus) branchée sur mini (S6) en 
 - Alimentation : `services/appeal_service.py` (accept → `non_sanctionnable`,
   refuse → `sanctionnable` ; transform ignoré) via l'extrait automod du case ;
   `utils/automod_shadow_views.py` (bouton ❌ → `non_sanctionnable`, ✅ →
-  `sanctionnable`). `modules/automod.py` : `make_precedents_provider` câblé sur
+  `sanctionnable`). `modules/automod_ai.py` : `make_precedents_provider` câblé sur
   `analyze`.
-- UI : `modules/configs/automod_config.py` section **Précédents** (compte +
+- UI : `modules/configs/automod_ai_config.py` section **Précédents** (compte +
   dernier, `load_precedent_stats` appelé par `cogs/config.py`) + bouton **Voir** →
-  `modules/configs/automod_precedents_view.py` (liste paginée + suppression
+  `modules/configs/automod_ai_precedents_view.py` (liste paginée + suppression
   unitaire, invalide le cache). i18n `modules.automod.config.precedents.*` +
   `section_precedents` + `buttons.view_precedents` (fr + en-US).
 - `automod/eval/run.py` — `GoldenCase.precedents` (inerte en `--replay`, wrappé en
@@ -382,6 +382,10 @@ routing S6.
 
 ### Journal de session 8 (2026-07-13)
 
+> **Retirée le 2026-08-06.** La feature `situation` a été entièrement supprimée
+> du code, de la config et de la DB (elle restait en shadow forcé et ne
+> justifiait pas sa complexité). Ce journal est conservé à titre historique.
+
 **Livré :**
 - `automod/situation.py` — module **pur** côté logique + store Redis :
   `decayed(value, last_ts, now)` (friction ×0.5 toutes les 20 min),
@@ -403,7 +407,7 @@ routing S6.
   `analyze_situation(cible, sequence, …)` : **mini** (`automod_situation`),
   compté **×4** au budget guard (comme la confirmation), **non** budget-gated,
   `rien` (0 appel) sur séquence vide.
-- `modules/automod.py` — `SituationFeature` (shadow forcé, `process` renvoie
+- `modules/automod_ai.py` — `SituationFeature` (shadow forcé, `process` renvoie
   toujours `[]`) : feed #1 (score sous-seuil `[0.25, seuil)` avec cible) dans
   `process`, feed #2 (verdict non_sanct `cible=membre`) depuis la boucle
   `on_message`. Helpers `_friction_store`, `_situation_feed` (add + trigger),
@@ -417,7 +421,7 @@ routing S6.
   badge SIMULATION) réutilisant `ShadowAnnotateButton` (persistant, déjà
   enregistré). `utils/automod_shadow_views.py` — dispatch `_render_for`
   (situation vs sanction) + `_feed_precedent` **skip** pour `source=situation`.
-- `modules/configs/automod_config.py` — option **Situations** (4ᵉ toggle,
+- `modules/configs/automod_ai_config.py` — option **Situations** (4ᵉ toggle,
   `max_values=4`), `features.situation` dans le défaut + `_deep_default`.
 - `db/base.py` — seed `automod_situation` (guild + global).
 - i18n `modules.automod.situation.*` (schéma/rôles/labels) +
@@ -456,7 +460,7 @@ routing S6.
 >
 > **Contraintes globales, valables pour TOUTES les sessions :**
 > - Tout appel externe passe par `bot.gateway` (jamais de SDK provider direct).
-> - Le pipeline (`automod/`) **décide seulement** ; le module (`modules/automod.py`) **applique**.
+> - Le pipeline (`automod/`) **décide seulement** ; le module (`modules/automod_ai.py`) **applique**.
 >   Ne jamais violer cette séparation.
 > - Budget : le système doit tenir des milliers de messages/jour par guild sans explosion de coût.
 >   Chaque session qui ajoute un appel IA doit ajouter le garde-fou de coût correspondant.
@@ -718,10 +722,10 @@ décroissance temporelle — plus jamais une intuition floue du modèle.
 ## Fichiers touchés
 
 - **Nouveau** : `automod/bareme.py` (pur, sans I/O — testable à sec)
-- `modules/automod.py` (application : appelle le barème, plus nano pour les actions)
+- `modules/automod_ai.py` (application : appelle le barème, plus nano pour les actions)
 - `db/repositories/…` (requête agrégée des points de récidive)
 - `services/appeal_service.py` (purge des points sur appel accepté)
-- `modules/configs/automod_config.py` (langue serveur si pas fait en S1)
+- `modules/configs/automod_ai_config.py` (langue serveur si pas fait en S1)
 - tests : `tests/automod/test_bareme.py`
 
 ## 2.1 L'échelle de crans (ladder)
@@ -903,7 +907,7 @@ refusé sur gravité haute, plafond guild, bornes 0–7. Le module ne doit plus 
 ## Critères de fin
 
 - [x] `automod/bareme.py` pur et testé (36 cas verts, ≥15 requis).
-- [x] `modules/automod.py` applique le cran, plus le verdict nano.
+- [x] `modules/automod_ai.py` applique le cran, plus le verdict nano.
 - [x] Appels acceptés purgent points + `messages_deja_moderes` (dérivé, sans migration).
 - [x] Breakdown du calcul visible sur la carte d'alerte + timeline.
 - [x] Config : `max_action` + `langue_serveur` dans l'UI `/config`.

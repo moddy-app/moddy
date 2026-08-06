@@ -13,6 +13,15 @@ import inspect
 
 logger = logging.getLogger('moddy.modules')
 
+# Modules whose MODULE_ID changed: the stored config key is migrated in place the
+# first time a guild is loaded, so a rename never orphans an existing setup.
+# old module id -> new module id
+LEGACY_MODULE_IDS: Dict[str, str] = {
+    # The AI automod became "automod_ai" when a classic (rule-based) automod
+    # module was planned under the "automod" name.
+    'automod': 'automod_ai',
+}
+
 
 class ModuleBase(ABC):
     """
@@ -195,9 +204,11 @@ class ModuleManager:
             Instance du module ou None si non trouvé
         """
         if guild_id not in self.active_modules:
-            return None
+            # Cache vidé (ex. event Pub/Sub "module_updated" du dashboard) :
+            # on relit la config depuis la DB au lieu de rester aveugle.
+            await self.load_guild_modules(guild_id)
 
-        return self.active_modules[guild_id].get(module_id)
+        return self.active_modules.get(guild_id, {}).get(module_id)
 
     async def load_guild_modules(self, guild_id: int):
         """
@@ -214,6 +225,9 @@ class ModuleManager:
             # Récupère les données du serveur
             guild_data = await self.bot.db.get_guild(guild_id)
             modules_config = guild_data.get('data', {}).get('modules', {})
+
+            # Migre les configurations stockées sous un ancien module id
+            modules_config = await self._migrate_legacy_ids(guild_id, modules_config)
 
             # Initialise le dictionnaire pour ce serveur
             if guild_id not in self.active_modules:
@@ -245,6 +259,32 @@ class ModuleManager:
 
         except Exception as e:
             logger.error(f"[FAIL] Error loading modules for guild {guild_id}: {e}", exc_info=True)
+
+    async def _migrate_legacy_ids(self, guild_id: int,
+                                  modules_config: Dict[str, Any]) -> Dict[str, Any]:
+        """Rewrite configs stored under a renamed module id (in DB and in memory).
+
+        A renamed module would otherwise silently lose its stored configuration
+        (the old key is no longer a registered module, so it is skipped). The
+        migration runs once per guild: the old key is copied to the new id and
+        then emptied. An existing config under the new id always wins.
+        """
+        migrated = dict(modules_config)
+        for old_id, new_id in LEGACY_MODULE_IDS.items():
+            legacy = migrated.get(old_id)
+            if not legacy or migrated.get(new_id):
+                continue
+            try:
+                await self.bot.db.update_guild_data(guild_id, f"modules.{new_id}", legacy)
+                await self.bot.db.update_guild_data(guild_id, f"modules.{old_id}", {})
+            except Exception as e:
+                logger.error(f"[FAIL] Could not migrate module {old_id} -> {new_id} "
+                             f"for guild {guild_id}: {e}")
+                continue
+            migrated[new_id] = legacy
+            migrated.pop(old_id, None)
+            logger.info(f"Migrated module config {old_id} -> {new_id} for guild {guild_id}")
+        return migrated
 
     async def unload_guild_modules(self, guild_id: int):
         """Remove guild module cache so next access reloads from DB."""
@@ -403,7 +443,14 @@ class ModuleManager:
         try:
             guild_data = await self.bot.db.get_guild(guild_id)
             modules_config = guild_data.get('data', {}).get('modules', {})
-            return modules_config.get(module_id)
+            config = modules_config.get(module_id)
+            if config:
+                return config
+            # Fall back to a not-yet-migrated legacy key (see LEGACY_MODULE_IDS).
+            for old_id, new_id in LEGACY_MODULE_IDS.items():
+                if new_id == module_id and modules_config.get(old_id):
+                    return modules_config[old_id]
+            return config
         except Exception as e:
             logger.error(f"[FAIL] Error getting module config: {e}", exc_info=True)
             return None

@@ -300,7 +300,7 @@ the `/mycases` server filter).
     saved into the payload, so the evidence stays readable in `/cases` even if
     the message is later deleted (there is no way to recover it after the
     fact, so this only protects messages attached *before* deletion).
-  Automod's own evidence event (`modules/automod.py`) uses neither shape (no
+  Automod's own evidence event (`modules/automod_ai.py`) uses neither shape (no
   `url`) — it's read directly by the log/appeal flow, not by `/cases`'s
   evidence popup.
 

@@ -2,7 +2,7 @@
 Learned-precedents browser for the Automod `/config` panel (session 7).
 
 Lists the server precedents the automod has learned from human rulings (accepted
-/ refused appeals, shadow ``✅``/``❌`` clicks — see docs/AUTOMOD.md §2quinquies),
+/ refused appeals, shadow ``✅``/``❌`` clicks — see docs/AUTOMOD_AI.md §2quinquies),
 paginated, with per-item deletion so a wrong precedent can be purged. Opened from
 the Automod config panel's "Précédents" section; **Back** returns to it.
 
@@ -28,7 +28,7 @@ _PER_PAGE = 5
 _PREVIEW = 120
 
 
-class AutomodPrecedentsView(BaseView):
+class AutomodAIPrecedentsView(BaseView):
     """Paginated, deletable list of a guild's learned precedents."""
 
     def __init__(self, bot, guild_id: int, user_id: int, locale: str = "en-US",
@@ -74,9 +74,9 @@ class AutomodPrecedentsView(BaseView):
         return True
 
     def _verdict_label(self, verdict: str) -> str:
-        key = ("modules.automod.config.precedents.verdict_not"
+        key = ("modules.automod_ai.config.precedents.verdict_not"
                if verdict == "non_sanctionnable"
-               else "modules.automod.config.precedents.verdict_yes")
+               else "modules.automod_ai.config.precedents.verdict_yes")
         return t(key, locale=self.locale)
 
     # -- build ---------------------------------------------------------- #
@@ -84,18 +84,18 @@ class AutomodPrecedentsView(BaseView):
         self.clear_items()
         container = ui.Container()
         container.add_item(ui.TextDisplay(
-            f"### {SHIELD} {t('modules.automod.config.precedents.title', locale=self.locale)}"))
+            f"### {SHIELD} {t('modules.automod_ai.config.precedents.title', locale=self.locale)}"))
 
         if not self.rows:
             container.add_item(ui.TextDisplay(
-                t("modules.automod.config.precedents.empty", locale=self.locale)))
+                t("modules.automod_ai.config.precedents.empty", locale=self.locale)))
             self.add_item(container)
             self._add_nav(has_items=False)
             return
 
         container.add_item(ui.TextDisplay(
-            f"-# {t('modules.automod.config.precedents.count', locale=self.locale, n=len(self.rows))}"
-            f" · {t('modules.automod.config.precedents.page', locale=self.locale, current=self.page + 1, total=self._pages())}"))
+            f"-# {t('modules.automod_ai.config.precedents.count', locale=self.locale, n=len(self.rows))}"
+            f" · {t('modules.automod_ai.config.precedents.page', locale=self.locale, current=self.page + 1, total=self._pages())}"))
 
         page_rows = self._page_rows()
         for i, r in enumerate(page_rows, start=1):
@@ -113,11 +113,11 @@ class AutomodPrecedentsView(BaseView):
         # Delete select (one of the current page's precedents).
         del_row = ui.ActionRow()
         del_select = ui.Select(
-            placeholder=t("modules.automod.config.precedents.delete_placeholder", locale=self.locale),
+            placeholder=t("modules.automod_ai.config.precedents.delete_placeholder", locale=self.locale),
             min_values=0, max_values=1,
             options=[
                 discord.SelectOption(
-                    label=t("modules.automod.config.precedents.delete_option",
+                    label=t("modules.automod_ai.config.precedents.delete_option",
                             locale=self.locale, n=self.page * _PER_PAGE + i),
                     value=str(r.get("id")),
                     emoji=discord.PartialEmoji.from_str(DELETE),
@@ -144,7 +144,7 @@ class AutomodPrecedentsView(BaseView):
         if has_items and self._pages() > 1:
             prev_btn = ui.Button(
                 emoji=discord.PartialEmoji.from_str(BACK),
-                label=t("modules.automod.config.precedents.prev", locale=self.locale),
+                label=t("modules.automod_ai.config.precedents.prev", locale=self.locale),
                 style=discord.ButtonStyle.secondary,
                 disabled=(self.page == 0),
             )
@@ -152,7 +152,7 @@ class AutomodPrecedentsView(BaseView):
             nav.add_item(prev_btn)
             next_btn = ui.Button(
                 emoji=discord.PartialEmoji.from_str(NEXT),
-                label=t("modules.automod.config.precedents.next", locale=self.locale),
+                label=t("modules.automod_ai.config.precedents.next", locale=self.locale),
                 style=discord.ButtonStyle.secondary,
                 disabled=(self.page >= self._pages() - 1),
             )
@@ -198,7 +198,7 @@ class AutomodPrecedentsView(BaseView):
         self._build_view()
         await interaction.response.edit_message(view=self)
         await interaction.followup.send(
-            t("modules.automod.config.precedents.deleted", locale=self.locale),
+            t("modules.automod_ai.config.precedents.deleted", locale=self.locale),
             ephemeral=True)
 
     async def on_back(self, interaction: discord.Interaction):
@@ -206,8 +206,8 @@ class AutomodPrecedentsView(BaseView):
             return
         parent = self.parent_view
         if parent is None:
-            from modules.configs.automod_config import AutomodConfigView
-            parent = AutomodConfigView(self.bot, self.guild_id, self.user_id,
+            from modules.configs.automod_ai_config import AutomodAIConfigView
+            parent = AutomodAIConfigView(self.bot, self.guild_id, self.user_id,
                                        self.locale)
         # Refresh the count shown on the parent panel after any deletions.
         if hasattr(parent, "load_precedent_stats"):

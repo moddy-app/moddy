@@ -1,14 +1,14 @@
-# Moddy — Automod (AI message moderation)
+# Moddy — Automod AI (AI message moderation)
 
-> Read this before touching the `automod/` package, `modules/automod.py`, or
-> `modules/configs/automod_config.py`.
+> Read this before touching the `automod/` package, `modules/automod_ai.py`, or
+> `modules/configs/automod_ai_config.py`.
 
 The automod is split in two clean halves:
 
 | Half | Where | Responsibility |
 |---|---|---|
 | **Detection pipeline** | `automod/` (root package, like `gateway/`) | Take a message → run the funnel → produce a `Decision` (or `None`). **Decides only.** Never applies anything, never touches the DB. |
-| **Caller / module** | `modules/automod.py` | Owns configuration, **applies** decisions (delete/warn/mute/ban), records cases + evidence, logs, re-submits flagged messages. |
+| **Caller / module** | `modules/automod_ai.py` | Owns configuration, **applies** decisions (delete/warn/mute/ban), records cases + evidence, logs, re-submits flagged messages. |
 
 Every external call (embeddings + nano chat + rules safety check) goes through
 **`bot.gateway`** — never a provider SDK. See [API_GATEWAY.md](API_GATEWAY.md).
@@ -160,7 +160,7 @@ nano **qualifies**; the **barème computes the sanction**. It is a pure module
 (no I/O, no Discord, no DB — fully table-testable): given the same verdict, the
 same recidivism history and the same guild config it always returns the same
 *cran* (rung) plus a line-by-line breakdown of how it got there. The module
-(`modules/automod.py`) gathers the inputs and translates the cran into Discord
+(`modules/automod_ai.py`) gathers the inputs and translates the cran into Discord
 actions.
 
 ### The ladder (`LADDER`)
@@ -460,9 +460,14 @@ a wrong precedent can always be purged (it also busts the service cache).
 
 ---
 
-## 3. The module (`modules/automod.py`)
+## 3. The module (`modules/automod_ai.py`)
 
-`MODULE_ID = "automod"`. Config stored in `guilds.data.modules.automod`:
+`MODULE_ID = "automod_ai"` (module name **Automod AI**). Config stored in
+`guilds.data.modules.automod_ai`. A config still stored under the historical
+`automod` key is migrated to `automod_ai` on the next guild load
+(`ModuleManager.LEGACY_MODULE_IDS`), so the classic (non-AI) automod module can
+take the `automod` id later. Full schema (for the dashboard / backend) →
+[AUTOMOD_AI_CONFIG.md](AUTOMOD_AI_CONFIG.md).
 
 ```json
 {
@@ -477,11 +482,6 @@ a wrong precedent can always be purged (it also busts the service cache).
       "enabled": true,
       "exempt_roles": [111, 222],
       "exempt_channels": [333]
-    },
-    "situation": {
-      "enabled": false,
-      "exempt_roles": [],
-      "exempt_channels": []
     }
   }
 }
@@ -551,7 +551,7 @@ No blind windowing of long messages.
 
 ### Config UI
 
-`modules/configs/automod_config.py` follows the **standard module pattern**
+`modules/configs/automod_ai_config.py` follows the **standard module pattern**
 (like the other `modules/configs/*`): a **working copy** is edited in memory and
 written to the DB only on **Save**; **Cancel** discards pending edits, **Delete**
 removes the stored config, **Back** returns to the module list (disabled while
@@ -591,7 +591,7 @@ panel and the member's DM, and the server is always informed. State lives in the
 
 ---
 
-## 4. Scalability — features (and the `situation` detector, session 8)
+## 4. Scalability — features
 
 The module dispatches each message to a set of **features**
 (`AutomodFeature`). Each has a `feature_id`, an `async process(message) ->
@@ -603,64 +603,13 @@ anti-raid later, follow the same three steps.
 
 ### 4.1 `content` — the AI funnel
 
-The original feature: insults / problematic messages via the funnel of §1 →
+The only feature today: insults / problematic messages via the funnel of §1 →
 `Decision` → barème → sanction.
 
-### 4.2 `situation` — diffuse harassment (the first additional feature)
-
-`content` judges **one message**. `situation` judges the **pattern**: fifteen
-individually-anodyne messages that together are sustained harassment or
-dogpiling — something no per-message verdict can ever see. It is the reference
-example of §4 and is shipped in **forced shadow mode** (v1): it **never**
-applies a sanction, it only posts a SIMULATION card with annotation buttons.
-
-**The friction state machine (`automod/situation.py`, Redis-backed).** A
-directed per-pair state `friction:{guild}:{channel}:{author}->{target}`
-accumulates the signal the funnel *throws away* today:
-
-- a message whose toxicity **score sits in `[FRICTION_MIN_SCORE (0.25),
-  routing threshold)`** with an identifiable target (reply / mention) —
-  `engine.friction_probe` returns that sub-threshold embedding score, reusing
-  the funnel's cached score so it costs **zero** extra call;
-- a **non-sanctionnable `cible="membre"` verdict** — nano saw tension without an
-  infraction (fed by the module from the `content` feature's output).
-
-The score **decays ×0.5 every 20 min** (half-life, `decayed()`), self-expiring
-after 2 h. A parallel per-target aggregate
-`friction:agg:{guild}:{channel}:{target}` sums **all** incoming friction, so
-five authors at 0.6 each on one target (**dogpiling**) is a strong signal even
-though no single pair is. Both the arithmetic (`decayed`, `crosses`) are pure
-and table-tested; only `FrictionStore` touches Redis and is **inert without
-it** (no Redis ⇒ no situation detection, never a sanction).
-
-**Trigger & sequence analysis (`§8.2`).** When a pair score crosses
-`FRICTION_PAIR_THRESHOLD` (1.5) or the aggregate crosses `FRICTION_AGG_THRESHOLD`
-(2.5), the module collects the messages exchanged over the last
-`SITUATION_SEQUENCE_MINUTES` (45, cap `SITUATION_SEQUENCE_MAX` = 30) and calls
-**mini** (`engine.analyze_situation`, not nano — this is *ambiguous by nature*)
-with a dedicated prompt that judges the sequence and returns
-`{situation, gravite, participants, messages_cles, resume}`. `situation` is one
-of `harcelement_soutenu` | `dogpiling` | `conflit_mutuel` | `rien`; the parse is
-**fail-safe** (anything malformed ⇒ `rien`). A `SITUATION_COOLDOWN_SECONDS`
-(30 min) marker per target — set *before* the call — stops a heated thread from
-firing an analysis on every message.
-
-**Application (`§8.3`) — forced shadow.** `situation != "rien"` posts a
-**SIMULATION** card (`utils/automod_situation_views.py`) to the alert channel:
-the pattern, gravity, presumed target, participants (roles), a summary and jump
-links to the key messages, plus the same persistent ✅/❌/⚠️ annotation buttons
-as `dry_run` (they write onto the `automod_eval_candidates` row, `source =
-"situation"`). **No sanction is ever applied in v1**, even when `dry_run` is
-off — sanctioning situations will be enabled in a future iteration once a
-"situations" golden set has been built from these annotations. The barème's
-`("harcelement", gravite)` floor is already there for that day. A situation
-annotation is **not** fed as a server precedent (it is a multi-message pattern,
-not a single-message ruling).
-
-**Cost (`§8.4`).** The trigger is driven by data already computed (existing
-embedding scores). Only a threshold crossing costs one mini call — rare by
-construction — and it is **counted ×4** in the budget guard (like the
-heavy-sanction confirmation), though not budget-gated.
+> A `situation` feature (diffuse harassment / dogpiling, judged on a friction
+> state machine + a `mini` sequence analyst) existed until 2026-08 and was
+> removed: it never applied anything (forced shadow mode) and did not earn its
+> complexity. Nothing of it remains in the code, config or DB.
 
 ---
 
@@ -672,7 +621,6 @@ heavy-sanction confirmation), though not budget-gated.
 | `automod_decision` | openai/chat (nano) | guild | ✅ |
 | `automod_decision_mini` | openai/chat (mini) | guild | ✅ |
 | `automod_confirm` | openai/chat (mini) | guild | ✅ |
-| `automod_situation` | openai/chat (mini) | guild | ✅ |
 | `automod_rules_check` | openai/chat | guild | ✅ |
 
 Seeded unlimited in `db/base.py`; tighten per-guild via `quota_overrides`.
@@ -827,20 +775,6 @@ budget guard (5.3): they bound exactly those two failure modes.
 | `CONFIRM_UNCONFIRMED_CRAN` | 4 | cran cap when a heavy sanction is not confirmed (mute 48h) |
 | `MINI_BUDGET_WEIGHT` | 4 | budget-guard weight of a mini call (routing + confirm) |
 | `RIRE_MOTS` / `RIRE_EMOJIS` | sets | laughter markers, shared with §2ter (single source of truth) |
-
-### Situation / diffuse-harassment tunables (session 8, `automod/constants.py`)
-
-| Constant | Default | Meaning |
-|---|---|---|
-| `SITUATION_ENABLED` | `True` | diffuse-harassment feature (needs Redis; forced shadow) |
-| `FRICTION_MIN_SCORE` | 0.25 | lower bound of the sub-threshold band fed to the friction machine |
-| `FRICTION_HALFLIFE_SECONDS` | 1200 | friction decay half-life (×0.5 every 20 min) |
-| `FRICTION_TTL_SECONDS` | 7200 | friction state TTL (2 h, self-expiring) |
-| `FRICTION_PAIR_THRESHOLD` | 1.5 | directed-pair score that triggers an analysis (one-on-one) |
-| `FRICTION_AGG_THRESHOLD` | 2.5 | per-target aggregate score that triggers (dogpiling) |
-| `SITUATION_COOLDOWN_SECONDS` | 1800 | suppress re-analysing a target for this long after a trigger |
-| `SITUATION_SEQUENCE_MINUTES` / `_MAX` | 45 / 30 | sequence collection window + message cap |
-| `SITUATION_MAX_TOKENS` | 400 | mini analyst output budget |
 
 ### Barème tunables (`automod/bareme.py`)
 

@@ -1388,7 +1388,7 @@
         "internal_error": "<:error:1519790252594827264> Something went wrong. Please try again."
       }
     },
-    "automod": {
+    "automod_ai": {
       "description": "Automatic moderation of problematic messages (AI)",
       "config": {
         "title": "Automod",
@@ -1532,10 +1532,7 @@
           "delete_placeholder": "Delete a wrong precedent…",
           "delete_option": "Delete precedent {n}",
           "deleted": "Precedent deleted."
-        },
-        "situation_label": "Situations (diffuse harassment)",
-        "situation_desc": "Detects multi-message harassment and dogpiling (simulation mode)",
-        "situation_active": "Situations: analysing in simulation — no automatic sanction applied"
+        }
       },
       "action": {
         "warn": "Warning",
@@ -1716,27 +1713,6 @@
           "title": "Cannot do that",
           "no_perms": "Only moderators (manage messages) can annotate a simulation.",
           "gone": "This simulation no longer exists."
-        }
-      },
-      "situation": {
-        "title": "Situation detected",
-        "pattern": "Pattern",
-        "gravity": "Severity",
-        "target": "Presumed target",
-        "summary": "Summary",
-        "participants": "Participants",
-        "key_messages": "Key messages",
-        "shadow_hint": "Multi-message detection — v1 in simulation, no sanction applied.",
-        "type": {
-          "harcelement_soutenu": "Sustained harassment (targeting one member)",
-          "dogpiling": "Dogpiling (several members on one target)",
-          "conflit_mutuel": "Mutual conflict (reciprocal escalation)",
-          "rien": "Nothing (heated chat / banter)"
-        },
-        "role": {
-          "harceleur": "harasser",
-          "participant": "participant",
-          "cible": "target"
         }
       }
     }

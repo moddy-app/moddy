@@ -2,7 +2,7 @@
 Server-precedents repository (session 7).
 
 Stores the per-guild jurisprudence that lets the automod learn a server's local
-culture from its human rulings — see docs/AUTOMOD.md §2quinquies. Each row is a
+culture from its human rulings — see docs/AUTOMOD_AI.md §2quinquies. Each row is a
 past message together with the FINAL human verdict and the **normalised** message
 embedding (the one the funnel already computed at detection time), packed as
 float32 bytes so no pgvector extension is required — cosine similarity is a plain

@@ -140,7 +140,7 @@ class ModuleEvents(commands.Cog):
             # Automod: run the message through the AI moderation pipeline
             automod_module = await self.bot.module_manager.get_module_instance(
                 message.guild.id,
-                'automod'
+                'automod_ai'
             )
 
             if automod_module and automod_module.enabled:
@@ -165,7 +165,7 @@ class ModuleEvents(commands.Cog):
             return
         try:
             automod_module = await self.bot.module_manager.get_module_instance(
-                msg.guild.id, 'automod')
+                msg.guild.id, 'automod_ai')
             if automod_module and automod_module.enabled:
                 await automod_module.on_reaction(reaction, user)
         except Exception as e:
