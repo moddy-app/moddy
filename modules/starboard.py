@@ -2,6 +2,7 @@
 Module Starboard - Système de tableau d'honneur pour messages populaires
 """
 
+import re
 import discord
 from typing import Dict, Any, Optional
 import logging
@@ -15,6 +16,39 @@ from utils.i18n import t
 
 logger = logging.getLogger('moddy.modules.starboard')
 
+# Gold accent used for the starboard embed's side bar, matching the star theme.
+STARBOARD_EMBED_COLOR = 0xFFAC33
+
+_IMAGE_EXTENSIONS = ('.png', '.jpg', '.jpeg', '.gif', '.webp')
+_IMAGE_URL_RE = re.compile(
+    r'https?://\S+?\.(?:png|jpe?g|gif|webp)(?:\?\S*)?',
+    re.IGNORECASE,
+)
+
+
+class _StarboardJumpView(discord.ui.View):
+    """
+    Plain (non-Components-V2, non-persistent) view holding only the
+    "jump to message" link button.
+
+    This intentionally does NOT inherit from `BaseView`: `BaseView` is a
+    `ui.LayoutView` (Components V2), and Discord rejects any message that
+    combines the IS_COMPONENTS_V2 flag with a classic `discord.Embed` —
+    which the starboard card needs (see module docstring / CLAUDE.md
+    exception below). A link-only button has no callback and carries no
+    state, so per docs/PERSISTENT_VIEWS.md ("Deliberate exclusions") it
+    needs neither error-handler wrapping nor persistent registration —
+    `bot.add_view()` on a link-only view is a no-op.
+    """
+
+    def __init__(self, jump_url: str, label: str):
+        super().__init__(timeout=None)
+        self.add_item(discord.ui.Button(
+            style=discord.ButtonStyle.link,
+            label=label,
+            url=jump_url,
+        ))
+
 
 class StarboardModule(ModuleBase):
     """
@@ -22,6 +56,13 @@ class StarboardModule(ModuleBase):
     Forward automatiquement les messages qui reçoivent un nombre X de réactions
     (un émoji standard Discord, configurable) dans un salon dédié, avec un
     compteur de réactions et un lien vers le message d'origine.
+
+    CLAUDE.md exception: the starred message is rendered as a real
+    `discord.Embed` (not Components V2), matching the Starboard-app look the
+    feature is styled after (colored side bar, author avatar/name, native
+    timestamp). This is a deliberate, explicit exception to the project's
+    "Components V2 only" rule, scoped to this one card. See
+    `_build_embed()` / `_StarboardJumpView` for the implementation notes.
     """
 
     MODULE_ID = "starboard"
@@ -39,12 +80,9 @@ class StarboardModule(ModuleBase):
         self.reaction_count: int = 5  # Number of reactions required
         self.emoji: str = "⭐"  # Standard Discord unicode emoji that triggers the starboard
 
-        # Track sent starboard messages to update them in real-time
-        # Discord rejects any extra content/components on a forward message
-        # (error 160011), so each entry is actually 3 separate messages sent
-        # in order: title card, forward, buttons card.
-        # Format: {original_message_id: {'title': id, 'forward': id, 'buttons': id}}
-        self.starboard_messages: Dict[int, Dict[str, int]] = {}
+        # Track sent starboard messages to update them in real-time.
+        # Format: {original_message_id: starboard_message_id}
+        self.starboard_messages: Dict[int, int] = {}
 
     async def load_config(self, config_data: Dict[str, Any]) -> bool:
         """Load configuration from DB"""
@@ -218,7 +256,7 @@ class StarboardModule(ModuleBase):
         return 0
 
     async def _get_locale(self) -> str:
-        """Locale used for the starboard message's static UI strings (title, jump button)"""
+        """Locale used for the starboard message's static UI strings (jump button)"""
         try:
             guild = self.bot.get_guild(self.guild_id)
             return str(guild.preferred_locale) if guild and guild.preferred_locale else 'en-US'
@@ -239,43 +277,66 @@ class StarboardModule(ModuleBase):
         )
         return format_verification_badge(badge_emoji)
 
-    async def _build_title_view(self, message: discord.Message) -> discord.ui.LayoutView:
-        """Build the title card (sent before the forward)"""
-        locale = await self._get_locale()
+    def _find_image_url(self, message: discord.Message) -> Optional[str]:
+        """
+        Find an image to show on the starboard embed: the first image
+        attachment if there is one, otherwise the first bare image URL found
+        in the message content (e.g. a pasted image link).
+        """
+        for attachment in message.attachments:
+            content_type = attachment.content_type or ""
+            if content_type.startswith("image/"):
+                return attachment.url
+            if attachment.filename.lower().endswith(_IMAGE_EXTENSIONS):
+                return attachment.url
+
+        if message.content:
+            match = _IMAGE_URL_RE.search(message.content)
+            if match:
+                return match.group(0)
+
+        return None
+
+    async def _build_embed(self, message: discord.Message) -> discord.Embed:
+        """
+        Build the starred message's embed: author avatar/name, original text
+        (mentions never ping — Discord never notifies from mentions inside an
+        embed, only from the plain message content), image if any, and the
+        original message's native timestamp.
+        """
         badge = await self._get_author_badge(message.author)
 
-        view = discord.ui.LayoutView(timeout=None)
-        view.add_item(discord.ui.TextDisplay(
-            f"### {STAR} {t('modules.starboard.message.title', locale=locale)}\n"
-            f"@**{message.author.display_name}**{badge} :"
-        ))
-        return view
+        description = message.content or ""
+        if badge:
+            description = f"{badge}\n{description}" if description else badge
 
-    async def _build_buttons_view(self, message: discord.Message, star_count: int) -> discord.ui.LayoutView:
-        """Build the counter/jump-link card (sent after the forward)"""
+        embed = discord.Embed(
+            description=description,
+            color=STARBOARD_EMBED_COLOR,
+            timestamp=message.created_at,
+        )
+        embed.set_author(
+            name=message.author.display_name,
+            icon_url=message.author.display_avatar.url,
+        )
+
+        image_url = self._find_image_url(message)
+        if image_url:
+            embed.set_image(url=image_url)
+
+        return embed
+
+    def _build_content(self, channel: discord.abc.GuildChannel, star_count: int) -> str:
+        """Top content line: reaction emoji, count, and origin channel"""
+        return f"{self.emoji} `{star_count}` | {channel.mention}"
+
+    async def _build_jump_view(self, message: discord.Message) -> _StarboardJumpView:
+        """Build the "jump to message" link button (see `_StarboardJumpView`)"""
         locale = await self._get_locale()
-
-        view = discord.ui.LayoutView(timeout=None)
-        row = discord.ui.ActionRow()
-
-        count_button = discord.ui.Button(
-            style=discord.ButtonStyle.secondary,
-            label=str(star_count),
-            emoji=self.emoji,
-            disabled=True,
-            custom_id=f"moddy:starboard:count:{message.id}"
-        )
-        row.add_item(count_button)
-
-        jump_button = discord.ui.Button(
-            style=discord.ButtonStyle.link,
+        return _StarboardJumpView(
+            jump_url=message.jump_url,
             label=t('modules.starboard.message.jump_button', locale=locale),
-            url=message.jump_url
         )
-        row.add_item(jump_button)
-
-        view.add_item(row)
-        return view
 
     async def _update_starboard(self, message: discord.Message, star_count: int):
         """
@@ -292,15 +353,15 @@ class StarboardModule(ModuleBase):
 
         # Check if we already have a starboard entry for this message
         if message.id in self.starboard_messages:
-            # Only the buttons card (reaction counter) needs updating
+            # Only the top content line (reaction counter) needs updating
             try:
-                buttons_msg_id = self.starboard_messages[message.id]['buttons']
-                buttons_msg = await starboard_channel.fetch_message(buttons_msg_id)
-                view = await self._build_buttons_view(message, star_count)
-                await buttons_msg.edit(view=view)
+                starboard_msg_id = self.starboard_messages[message.id]
+                starboard_msg = await starboard_channel.fetch_message(starboard_msg_id)
+                content = self._build_content(message.channel, star_count)
+                await starboard_msg.edit(content=content, allowed_mentions=discord.AllowedMentions.none())
                 logger.info(f"Updated starboard message for {message.id} (stars: {star_count})")
             except discord.NotFound:
-                # Entry was (partially) deleted, recreate it
+                # Entry was deleted, recreate it
                 del self.starboard_messages[message.id]
                 await self._create_starboard_message(starboard_channel, message, star_count)
         else:
@@ -310,43 +371,38 @@ class StarboardModule(ModuleBase):
     async def _create_starboard_message(self, channel: discord.TextChannel,
                                          original_message: discord.Message, star_count: int):
         """
-        Post a starboard entry: title card, then the forwarded message, then the
-        counter/jump-link card. Discord rejects any extra content/components on
-        a forward message (error 160011), so these MUST be 3 separate messages.
+        Post a starboard entry: a content line (reaction count + origin
+        channel), the starred message rendered as an embed (see CLAUDE.md
+        exception note on the class docstring), and a jump-to-message link
+        button. `AllowedMentions.none()` on the content line and the fact
+        that mentions inside embeds never notify anyone together ensure
+        nothing in the starred message can ping.
         """
         try:
-            title_view = await self._build_title_view(original_message)
-            title_msg = await channel.send(view=title_view)
+            content = self._build_content(original_message.channel, star_count)
+            embed = await self._build_embed(original_message)
+            view = await self._build_jump_view(original_message)
 
-            reference = discord.MessageReference(
-                message_id=original_message.id,
-                channel_id=original_message.channel.id,
-                guild_id=self.guild_id,
-                fail_if_not_exists=False,
-                type=discord.MessageReferenceType.forward,
+            starboard_msg = await channel.send(
+                content=content,
+                embed=embed,
+                view=view,
+                allowed_mentions=discord.AllowedMentions.none(),
             )
-            forward_msg = await channel.send(reference=reference)
 
-            buttons_view = await self._build_buttons_view(original_message, star_count)
-            buttons_msg = await channel.send(view=buttons_view)
-
-            # Track them for future updates/removal
-            self.starboard_messages[original_message.id] = {
-                'title': title_msg.id,
-                'forward': forward_msg.id,
-                'buttons': buttons_msg.id,
-            }
+            # Track it for future updates/removal
+            self.starboard_messages[original_message.id] = starboard_msg.id
 
             logger.info(f"Created starboard entry for {original_message.id}")
         except discord.Forbidden:
             logger.warning(f"Missing permissions to send starboard message in guild {self.guild_id}")
         except discord.HTTPException as e:
-            logger.error(f"Error forwarding message {original_message.id} to starboard: {e}")
+            logger.error(f"Error sending starboard message for {original_message.id}: {e}")
         except Exception as e:
             logger.error(f"Error creating starboard message: {e}", exc_info=True)
 
     async def _remove_starboard(self, message: discord.Message):
-        """Remove a starboard entry (title card + forward + buttons card)"""
+        """Remove a starboard entry"""
         if message.id not in self.starboard_messages:
             return
 
@@ -358,15 +414,14 @@ class StarboardModule(ModuleBase):
         if not starboard_channel or not isinstance(starboard_channel, discord.TextChannel):
             return
 
-        entry = self.starboard_messages[message.id]
-        for msg_id in entry.values():
-            try:
-                starboard_msg = await starboard_channel.fetch_message(msg_id)
-                await starboard_msg.delete()
-            except discord.NotFound:
-                pass
-            except Exception as e:
-                logger.error(f"Error removing starboard message {msg_id}: {e}", exc_info=True)
+        msg_id = self.starboard_messages[message.id]
+        try:
+            starboard_msg = await starboard_channel.fetch_message(msg_id)
+            await starboard_msg.delete()
+        except discord.NotFound:
+            pass
+        except Exception as e:
+            logger.error(f"Error removing starboard message {msg_id}: {e}", exc_info=True)
 
         del self.starboard_messages[message.id]
         logger.info(f"Removed starboard entry for {message.id}")

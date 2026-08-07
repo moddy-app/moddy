@@ -401,6 +401,12 @@ was easier not to" is not one.
   children are `ButtonStyle.link` buttons (e.g. `SubscriptionView`) —
   `bot.add_view()` on these is a no-op. Do not add `__persistent__`; there
   is nothing to register.
+- **`modules/starboard.py::_StarboardJumpView`** — a link-only button (jump
+  to the starred message), same "nothing to register" case as above. It
+  also does not inherit `BaseView`: the starboard card is sent as a real
+  `discord.Embed` (documented CLAUDE.md exception, see the module's
+  docstring), and Discord rejects combining the `IS_COMPONENTS_V2` flag
+  (which `BaseView`/`ui.LayoutView` always sets) with a classic embed.
 
 ---
 
