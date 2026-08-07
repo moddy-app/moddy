@@ -1,238 +1,311 @@
 """
-Module Welcome Channel - Message de bienvenue dans un salon public
+Welcome Channel module — welcome messages posted in public channels.
+
+Rework (Components V2)
+----------------------
+The module used to configure a single channel and an optional ``discord.Embed``.
+It now stores a **list** of welcome messages (max ``MAX_WELCOME_MESSAGES`` per
+guild, all users combined), each one rendering as a Components V2 container:
+
+  - a fully customizable message (placeholders such as ``{user}``, ``{server}``…),
+  - an accent colour (the coloured bar on the left of the container),
+  - its own target channel,
+  - an individual enabled/paused switch.
+
+Configuration lives in ``guilds.data.modules.welcome_channel`` (JSONB) — see
+docs/WELCOME_MESSAGES.md for the full schema and the backend/dashboard contract.
+
+Legacy (v1) configurations are migrated on read by :func:`normalize_config`, so
+a guild that configured the old single-channel + embed version keeps its channel
+and its message text.
 """
 
-import discord
-from typing import Dict, Any, Optional
 import logging
+import secrets
+import time
+from typing import Any, Dict, List, Optional, Tuple
+
+import discord
+from discord import ui
 
 from modules.module_manager import ModuleBase
 from utils.emojis import WAVING_HAND
+from utils.i18n import t
 
 logger = logging.getLogger('moddy.modules.welcome_channel')
 
 
+# --------------------------------------------------------------------------- #
+# Limits & constants
+# --------------------------------------------------------------------------- #
+# Hard cap on welcome messages per guild — ALL users combined, not per user.
+# >>> KEEP IN SYNC WITH THE BACKEND (dashboard enforces the same cap) <<<
+MAX_WELCOME_MESSAGES = 5
+
+# Max length of a single welcome message template.
+MAX_MESSAGE_LENGTH = 1500
+
+# Accent colour used when a message defines none (Discord blurple).
+DEFAULT_ACCENT_COLOR = 0x5865F2
+
+# Current config schema version stored in the DB.
+CONFIG_VERSION = 2
+
+# Placeholders understood inside a welcome message template. Substitution is
+# done with plain ``str.replace`` (never ``str.format``) so a user typing a
+# stray ``{`` in their message can never raise.
+PLACEHOLDERS: Tuple[str, ...] = (
+    "{server}",         # server name
+    "{user}",           # user mention
+    "{display_name}",   # user display name (nickname / global name)
+    "{username}",       # user account name
+    "{member_count}",   # member count after the join
+    "{timestamp}",      # join time, unix seconds — use as <t:{timestamp}:R>
+)
+
+# Channel types a welcome message may target.
+CHANNEL_TYPES = [discord.ChannelType.text, discord.ChannelType.news]
+
+
+def get_default_message(locale: str = 'en-US') -> str:
+    """The pre-filled welcome message, translated.
+
+    Fetched WITHOUT kwargs so the literal ``{placeholder}`` braces survive
+    (``i18n.t`` only runs ``str.format`` when kwargs are passed).
+    """
+    return t('modules.welcome_channel.default_message', locale=locale)
+
+
+def new_message_id() -> str:
+    """Stable, collision-resistant id for a welcome message entry."""
+    return f"wm_{secrets.token_hex(4)}"
+
+
+# --------------------------------------------------------------------------- #
+# Config normalization (v1 -> v2)
+# --------------------------------------------------------------------------- #
+def normalize_config(raw: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """Return the v2 config shape, migrating a legacy v1 config if needed.
+
+    v1 stored a single ``channel_id`` + ``message_template`` (+ embed_* keys
+    that the rework drops). It becomes a one-entry ``messages`` list so an
+    existing guild never loses its welcome channel. Pure function: it does not
+    write anything back — the migrated shape is persisted the next time the
+    guild saves from ``/config``.
+    """
+    if not raw:
+        return {'version': CONFIG_VERSION, 'messages': []}
+
+    messages = raw.get('messages')
+    if isinstance(messages, list):
+        return {
+            'version': CONFIG_VERSION,
+            'messages': [_normalize_entry(e) for e in messages if isinstance(e, dict)],
+        }
+
+    # --- legacy v1 ---
+    channel_id = raw.get('channel_id')
+    if not channel_id:
+        return {'version': CONFIG_VERSION, 'messages': []}
+
+    return {
+        'version': CONFIG_VERSION,
+        'messages': [_normalize_entry({
+            'id': new_message_id(),
+            'channel_id': channel_id,
+            'message': raw.get('message_template') or get_default_message(),
+            'accent_color': raw.get('embed_color') or DEFAULT_ACCENT_COLOR,
+            'enabled': True,
+        })],
+    }
+
+
+def _normalize_entry(entry: Dict[str, Any]) -> Dict[str, Any]:
+    """Fill in the defaults of a single welcome-message entry."""
+    accent = entry.get('accent_color')
+    if not isinstance(accent, int):
+        accent = None
+    return {
+        'id': entry.get('id') or new_message_id(),
+        'channel_id': entry.get('channel_id'),
+        'message': entry.get('message') or '',
+        'accent_color': accent,
+        'enabled': bool(entry.get('enabled', True)),
+        'created_by': entry.get('created_by'),
+        'created_at': entry.get('created_at'),
+    }
+
+
+def entry_accent_color(entry: Dict[str, Any]) -> int:
+    """Accent colour of an entry, falling back to the module default."""
+    accent = entry.get('accent_color')
+    return accent if isinstance(accent, int) else DEFAULT_ACCENT_COLOR
+
+
+# --------------------------------------------------------------------------- #
+# Rendering (Components V2)
+# --------------------------------------------------------------------------- #
+def format_message(template: str, member: discord.Member,
+                   guild: discord.Guild) -> str:
+    """Substitute the supported placeholders inside a message template."""
+    joined_at = getattr(member, 'joined_at', None)
+    timestamp = int(joined_at.timestamp()) if joined_at else int(time.time())
+
+    replacements = {
+        "{server}": guild.name,
+        "{user}": member.mention,
+        "{display_name}": member.display_name,
+        "{username}": member.name,
+        "{member_count}": str(guild.member_count or 0),
+        "{timestamp}": str(timestamp),
+    }
+    for key, value in replacements.items():
+        template = template.replace(key, str(value))
+    return template
+
+
+def build_welcome_view(entry: Dict[str, Any], member: discord.Member,
+                       guild: discord.Guild) -> Tuple[ui.LayoutView, discord.AllowedMentions]:
+    """Build the Components V2 message for one welcome entry.
+
+    The container holds **only** the guild's own text — no bot-authored extras —
+    inside an accent-coloured container. Returns ``(view, allowed_mentions)``.
+    """
+    text = format_message(entry.get('message') or '', member, guild).strip()
+
+    view = ui.LayoutView(timeout=None)
+    container = ui.Container(accent_colour=discord.Colour(entry_accent_color(entry)))
+    container.add_item(ui.TextDisplay(text or member.mention))
+    view.add_item(container)
+
+    # Only the joining member may be pinged: never roles, never @everyone.
+    allowed = discord.AllowedMentions(everyone=False, roles=False, users=[member])
+    return view, allowed
+
+
+# --------------------------------------------------------------------------- #
+# Module
+# --------------------------------------------------------------------------- #
 class WelcomeChannelModule(ModuleBase):
-    """
-    Module de messages de bienvenue dans un salon public
-    Envoie un message personnalisé dans un salon quand un nouveau membre rejoint
-    """
+    """Posts one or more welcome messages when a member joins the guild."""
 
     MODULE_ID = "welcome_channel"
     MODULE_NAME = "Welcome Channel"
-    MODULE_DESCRIPTION = "Message de bienvenue dans un salon public"
+    MODULE_DESCRIPTION = "Welcome messages posted in public channels"
     MODULE_EMOJI = WAVING_HAND
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)
-
-        # Channel configuration
-        self.channel_id: Optional[int] = None
-
-        # Message configuration
-        self.message_template: str = "Bienvenue {user} sur le serveur !"
-        self.mention_user: bool = True
-
-        # Embed configuration
-        self.embed_enabled: bool = False
-        self.embed_title: str = "Bienvenue !"
-        self.embed_description: Optional[str] = None
-        self.embed_color: int = 0x5865F2
-        self.embed_footer: Optional[str] = None
-        self.embed_image_url: Optional[str] = None
-        self.embed_thumbnail_enabled: bool = True
-        self.embed_author_enabled: bool = False
+        self.messages: List[Dict[str, Any]] = []
 
     async def load_config(self, config_data: Dict[str, Any]) -> bool:
-        """Charge la configuration depuis la DB"""
         try:
-            self.config = config_data
-
-            # Channel configuration
-            self.channel_id = config_data.get('channel_id')
-
-            # Message configuration
-            self.message_template = config_data.get('message_template', "Bienvenue {user} sur le serveur !")
-            self.mention_user = config_data.get('mention_user', True)
-
-            # Embed configuration
-            self.embed_enabled = config_data.get('embed_enabled', False)
-            self.embed_title = config_data.get('embed_title', "Bienvenue !")
-            self.embed_description = config_data.get('embed_description')
-            self.embed_color = config_data.get('embed_color', 0x5865F2)
-            self.embed_footer = config_data.get('embed_footer')
-            self.embed_image_url = config_data.get('embed_image_url')
-            self.embed_thumbnail_enabled = config_data.get('embed_thumbnail_enabled', True)
-            self.embed_author_enabled = config_data.get('embed_author_enabled', False)
-
-            # Module is enabled if channel is configured
-            self.enabled = self.channel_id is not None
-
+            normalized = normalize_config(config_data)
+            self.config = normalized
+            self.messages = normalized['messages']
+            # Active as soon as at least one message is enabled and targets a channel.
+            self.enabled = any(
+                m.get('enabled', True) and m.get('channel_id') for m in self.messages
+            )
             return True
         except Exception as e:
-            logger.error(f"Error loading welcome_channel config: {e}")
+            logger.error(f"Error loading welcome_channel config: {e}", exc_info=True)
             return False
 
     async def validate_config(self, config_data: Dict[str, Any]) -> tuple[bool, Optional[str]]:
-        """Valide la configuration"""
-        # Channel ID is required
-        if not config_data.get('channel_id'):
-            return False, "Un salon est requis pour le message de bienvenue"
+        """Validate the whole message list (channels, permissions, lengths)."""
+        guild = self.bot.get_guild(self.guild_id)
+        if not guild:
+            return False, t('modules.welcome_channel.errors.guild_not_found',
+                            locale=self._locale())
 
-        # Verify channel exists and bot has permissions
-        try:
-            guild = self.bot.get_guild(self.guild_id)
-            if not guild:
-                return False, "Serveur introuvable"
+        locale = self._locale()
+        messages = normalize_config(config_data)['messages']
 
-            channel = guild.get_channel(config_data['channel_id'])
+        if len(messages) > MAX_WELCOME_MESSAGES:
+            return False, t('modules.welcome_channel.errors.too_many',
+                            locale=locale, max=MAX_WELCOME_MESSAGES)
+
+        seen_ids = set()
+        for entry in messages:
+            if entry['id'] in seen_ids:
+                return False, t('modules.welcome_channel.errors.duplicate_id', locale=locale)
+            seen_ids.add(entry['id'])
+
+            channel_id = entry.get('channel_id')
+            if not channel_id:
+                return False, t('modules.welcome_channel.errors.channel_required', locale=locale)
+
+            channel = guild.get_channel(channel_id)
             if not channel:
-                return False, "Salon introuvable"
-
+                return False, t('modules.welcome_channel.errors.channel_not_found', locale=locale)
+            # Announcement channels are TextChannel subclasses in discord.py,
+            # so this covers both types offered by the channel picker.
             if not isinstance(channel, discord.TextChannel):
-                return False, "Le salon doit être un salon textuel"
+                return False, t('modules.welcome_channel.errors.channel_type', locale=locale)
 
-            # Check permissions
             perms = channel.permissions_for(guild.me)
-            if not perms.send_messages:
-                return False, f"Je n'ai pas la permission d'envoyer des messages dans {channel.mention}"
+            if not perms.send_messages or not perms.view_channel:
+                return False, t('modules.welcome_channel.errors.no_send_permission',
+                                locale=locale, channel=channel.mention)
 
-            if config_data.get('embed_enabled', False) and not perms.embed_links:
-                return False, f"Je n'ai pas la permission d'envoyer des embeds dans {channel.mention}"
+            message = (entry.get('message') or '').strip()
+            if not message:
+                return False, t('modules.welcome_channel.errors.empty_message', locale=locale)
+            if len(message) > MAX_MESSAGE_LENGTH:
+                return False, t('modules.welcome_channel.errors.message_too_long',
+                                locale=locale, max=MAX_MESSAGE_LENGTH)
 
-        except Exception as e:
-            return False, f"Erreur de validation du salon : {str(e)}"
-
-        # Validate message template
-        template = config_data.get('message_template', '')
-        if not template or len(template.strip()) == 0:
-            return False, "Le message de bienvenue ne peut pas être vide"
-        if len(template) > 2000:
-            return False, "Le message de bienvenue ne peut pas dépasser 2000 caractères"
-
-        # Validate embed settings
-        if config_data.get('embed_enabled'):
-            if 'embed_title' in config_data and len(config_data['embed_title']) > 256:
-                return False, "Le titre de l'embed ne peut pas dépasser 256 caractères"
-            if 'embed_description' in config_data and config_data['embed_description']:
-                if len(config_data['embed_description']) > 4096:
-                    return False, "La description de l'embed ne peut pas dépasser 4096 caractères"
-            if 'embed_footer' in config_data and config_data['embed_footer']:
-                if len(config_data['embed_footer']) > 2048:
-                    return False, "Le footer de l'embed ne peut pas dépasser 2048 caractères"
-            if 'embed_image_url' in config_data and config_data['embed_image_url']:
-                url = config_data['embed_image_url']
-                if not url.startswith(('http://', 'https://')):
-                    return False, "L'URL de l'image doit commencer par http:// ou https://"
-            if 'embed_color' in config_data:
-                color = config_data['embed_color']
-                if not isinstance(color, int) or color < 0 or color > 0xFFFFFF:
-                    return False, "La couleur de l'embed est invalide"
+            accent = entry.get('accent_color')
+            if accent is not None and (not isinstance(accent, int) or not 0 <= accent <= 0xFFFFFF):
+                return False, t('modules.welcome_channel.errors.invalid_color', locale=locale)
 
         return True, None
 
     def get_default_config(self) -> Dict[str, Any]:
-        """Retourne la configuration par défaut"""
-        return {
-            'channel_id': None,
-            'message_template': "Bienvenue {user} sur le serveur !",
-            'mention_user': True,
-            'embed_enabled': False,
-            'embed_title': "Bienvenue !",
-            'embed_description': None,
-            'embed_color': 0x5865F2,
-            'embed_footer': None,
-            'embed_image_url': None,
-            'embed_thumbnail_enabled': True,
-            'embed_author_enabled': False
-        }
+        return {'version': CONFIG_VERSION, 'messages': []}
 
-    async def on_member_join(self, member: discord.Member):
-        """
-        Appelé quand un membre rejoint le serveur
-        Envoie le message de bienvenue dans le salon configuré
-        """
-        if not self.enabled or not self.channel_id:
-            return
-
+    def _locale(self) -> str:
+        """Guild locale, used for validation errors raised outside an interaction."""
         try:
             guild = self.bot.get_guild(self.guild_id)
-            if not guild:
-                return
+            if guild and guild.preferred_locale:
+                return str(guild.preferred_locale)
+        except Exception:
+            pass
+        return 'en-US'
 
-            channel = guild.get_channel(self.channel_id)
-            if not channel or not isinstance(channel, discord.TextChannel):
-                logger.warning(f"Welcome channel {self.channel_id} not found or not a text channel")
-                return
+    async def on_member_join(self, member: discord.Member):
+        """Post every enabled welcome message for the joining member."""
+        if not self.enabled:
+            return
 
-            # Prepare message variables
-            user_mention = member.mention if self.mention_user else member.name
-            message_content = self.message_template.format(
-                user=user_mention,
-                username=member.name,
-                server=guild.name,
-                member_count=guild.member_count
-            )
+        guild = self.bot.get_guild(self.guild_id)
+        if not guild:
+            return
 
-            # Send with or without embed
-            if self.embed_enabled:
-                embed = self._create_embed(member, guild, message_content)
+        for entry in self.messages:
+            if not entry.get('enabled', True) or not entry.get('channel_id'):
+                continue
+            try:
+                channel = guild.get_channel(entry['channel_id'])
+                if not isinstance(channel, discord.TextChannel):
+                    logger.warning(
+                        f"Welcome channel {entry['channel_id']} not found or not a text "
+                        f"channel (guild {self.guild_id})"
+                    )
+                    continue
 
-                # Send with content if no custom embed description
-                if self.embed_description:
-                    await channel.send(embed=embed)
-                else:
-                    await channel.send(content=message_content, embed=embed)
-            else:
-                await channel.send(message_content)
-
-            logger.info(f"✅ Channel welcome sent for {member.name} in channel {self.channel_id} (guild {self.guild_id})")
-
-        except discord.Forbidden:
-            logger.warning(f"Missing permissions to send channel welcome in guild {self.guild_id}")
-        except Exception as e:
-            logger.error(f"Error sending channel welcome: {e}", exc_info=True)
-
-    def _create_embed(self, member: discord.Member, guild: discord.Guild, default_message: str) -> discord.Embed:
-        """Create an embed for welcome message"""
-        user_ref = member.mention if self.mention_user else member.name
-        embed_desc = self.embed_description if self.embed_description else default_message
-        embed_desc = embed_desc.format(
-            user=user_ref,
-            username=member.name,
-            server=guild.name,
-            member_count=guild.member_count
-        )
-
-        embed = discord.Embed(
-            title=self.embed_title,
-            description=embed_desc,
-            color=self.embed_color
-        )
-
-        # Add author if enabled
-        if self.embed_author_enabled:
-            embed.set_author(
-                name=member.display_name,
-                icon_url=member.display_avatar.url
-            )
-
-        # Add thumbnail if enabled
-        if self.embed_thumbnail_enabled:
-            embed.set_thumbnail(url=member.display_avatar.url)
-
-        # Add image if URL provided
-        if self.embed_image_url:
-            embed.set_image(url=self.embed_image_url)
-
-        # Add footer if provided
-        if self.embed_footer:
-            footer_text = self.embed_footer.format(
-                user=user_ref,
-                username=member.name,
-                server=guild.name,
-                member_count=guild.member_count
-            )
-            embed.set_footer(text=footer_text)
-
-        return embed
+                view, allowed = build_welcome_view(entry, member, guild)
+                await channel.send(view=view, allowed_mentions=allowed)
+                logger.info(
+                    f"Channel welcome sent for {member.id} in channel {entry['channel_id']} "
+                    f"(guild {self.guild_id}, message {entry['id']})"
+                )
+            except discord.Forbidden:
+                logger.warning(
+                    f"Missing permissions to send channel welcome in guild {self.guild_id} "
+                    f"(channel {entry.get('channel_id')})"
+                )
+            except Exception as e:
+                logger.error(f"Error sending channel welcome: {e}", exc_info=True)

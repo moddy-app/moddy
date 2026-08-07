@@ -42,7 +42,9 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     from modules.configs.auto_restore_roles_config import AutoRestoreRolesConfigView
     from modules.configs.starboard_config import StarboardConfigView
     from modules.starboard import StarboardCardPersistence
-    from modules.configs.welcome_channel_config import WelcomeChannelConfigView
+    from modules.configs.welcome_channel_config import (
+        WelcomeChannelConfigView, AddWelcomeMessageView, ManageWelcomeMessageView,
+    )
     from modules.configs.welcome_dm_config import WelcomeDmConfigView
     from cogs.config import ConfigMainView
     from modules.configs.adaptive_slowmode_config import AdaptiveSlowmodeConfigView
@@ -84,8 +86,11 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         # card message itself carries a real discord.Embed, see
         # modules/starboard.py's CLAUDE.md exception note)
         StarboardCardPersistence,
-        # Group 10 — /config welcome pair (colliding custom_ids, must move together)
+        # Group 10 — /config welcome panels. The channel module owns three
+        # views (list / add / manage), like Social Notifications.
         WelcomeChannelConfigView,
+        AddWelcomeMessageView,
+        ManageWelcomeMessageView,
         WelcomeDmConfigView,
         # Group 11 — /config router (guild permission auth)
         ConfigMainView,

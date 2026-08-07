@@ -147,12 +147,11 @@ class ConfigMainView(BaseView):
 
         if module_id == 'welcome_channel':
             from modules.configs.welcome_channel_config import WelcomeChannelConfigView
-            config_view = WelcomeChannelConfigView(
+            config_view = await WelcomeChannelConfigView.create(
                 bot,
                 guild_id,
                 user_id,
-                locale,
-                module_config
+                locale
             )
         elif module_id == 'welcome_dm':
             from modules.configs.welcome_dm_config import WelcomeDmConfigView

@@ -907,48 +907,79 @@
     },
     "welcome_channel": {
       "name": "Willkommenskanal",
-      "description": "Willkommensnachricht in einem öffentlichen Kanal",
+      "description": "Willkommensnachrichten in öffentlichen Kanälen",
+      "default_message": "Willkommen {user} auf **{server}**!\n-# Er/sie ist das **{member_count}**. Mitglied",
       "config": {
-        "title": "Konfiguration des Willkommenskanals",
-        "description": "Konfiguriere die Willkommensnachricht, die in einem öffentlichen Kanal gesendet wird, wenn ein neues Mitglied dem Server beitritt.",
-        "channel": {
-          "placeholder": "Wähle einen Kanal",
-          "section_title": "Willkommenskanal",
-          "section_description": "Wähle den Kanal, in dem Willkommensnachrichten gesendet werden"
-        },
-        "message": {
-          "section_title": "Willkommensnachricht",
-          "section_description": "Passe die Nachricht an. Verfügbare Variablen: {user}, {username}, {server}, {member_count}",
-          "edit_button": "Nachricht bearbeiten",
-          "mention_user": "Nutzer erwähnen",
-          "modal": {
-            "label": "Willkommensnachricht",
-            "placeholder": "Willkommen {user} auf {server}!"
-          }
-        },
-        "embed": {
-          "section_title": "Embed-Optionen",
-          "section_description": "Passe das Erscheinungsbild des Embeds an",
-          "toggle": "Embed aktivieren",
-          "edit_title": "Titel bearbeiten",
-          "edit_description": "Beschreibung bearbeiten",
-          "edit_color": "Farbe bearbeiten",
-          "thumbnail": "Avatar anzeigen",
-          "author": "Als Autor anzeigen",
-          "title_modal": {
-            "label": "Embed-Titel",
-            "placeholder": "Willkommen!"
-          },
-          "description_modal": {
-            "label": "Embed-Beschreibung",
-            "placeholder": "Leer lassen, um die Willkommensnachricht zu verwenden"
-          },
-          "color_modal": {
-            "label": "Embed-Farbe (Hex)",
-            "placeholder": "#5865F2",
-            "error": "Ungültige Farbe! Verwende das Format #RRGGBB"
-          }
+        "title": "Willkommensnachrichten",
+        "description": "Sendet eine Willkommensnachricht in einen Kanal, wenn ein Mitglied dem Server beitritt.",
+        "limit": "Bis zu {max} Willkommensnachrichten pro Server.",
+        "manage_placeholder": "Eine Willkommensnachricht verwalten",
+        "list": {
+          "title": "Eingerichtete Nachrichten",
+          "count": "{count}/{max} Willkommensnachricht(en)",
+          "empty": "Noch keine Willkommensnachricht. Füge eine hinzu, um zu starten.",
+          "paused": "Pausiert"
         }
+      },
+      "buttons": {
+        "add": "Hinzufügen",
+        "confirm": "Nachricht hinzufügen"
+      },
+      "add": {
+        "title": "Neue Willkommensnachricht",
+        "description": "Wähle den Kanal und passe die Nachricht für neue Mitglieder an.",
+        "channel": {
+          "title": "Kanal",
+          "description": "Der Kanal, in den die Nachricht gesendet wird",
+          "placeholder": "Kanal auswählen"
+        },
+        "success": "Willkommensnachricht hinzugefügt."
+      },
+      "customize": {
+        "title": "Nachricht",
+        "section_description": "Der gesendete Text und seine Akzentfarbe",
+        "button": "Nachricht anpassen",
+        "default_state": "Standardnachricht",
+        "custom_state": "Angepasste Nachricht",
+        "modal_title": "Nachricht anpassen",
+        "message_label": "Nachricht",
+        "message_description": "Vollständiger Text — Titel mit ##, # oder ### einfügen.",
+        "color_label": "Akzentfarbe (Hex)",
+        "color_description": "Wie #FF0000. Leer lassen für die Standardfarbe.",
+        "placeholders_header": "Verfügbare Platzhalter:",
+        "ph_server": "Servername",
+        "ph_user": "Erwähnung des Nutzers",
+        "ph_display_name": "Anzeigename",
+        "ph_username": "Benutzername",
+        "ph_member_count": "Mitgliederzahl",
+        "ph_timestamp": "Beitrittsdatum — z. B. <t:{timestamp}:R>"
+      },
+      "manage": {
+        "title": "Willkommensnachricht",
+        "paused_notice": "Diese Nachricht ist pausiert: Sie wird neuen Mitgliedern nicht gesendet.",
+        "preview_title": "Aktuelle Nachricht",
+        "preview_description": "Der gespeicherte Text, Platzhalter unverändert",
+        "channel": {
+          "title": "Kanal",
+          "description": "Der Kanal, in den die Nachricht gesendet wird",
+          "placeholder": "Kanal auswählen"
+        },
+        "pause": "Pausieren",
+        "resume": "Fortsetzen",
+        "remove": "Entfernen",
+        "removed": "Willkommensnachricht entfernt."
+      },
+      "errors": {
+        "guild_not_found": "Server nicht gefunden",
+        "too_many": "Du kannst auf diesem Server nicht mehr als {max} Willkommensnachrichten haben",
+        "duplicate_id": "Zwei Willkommensnachrichten haben dieselbe Kennung",
+        "channel_required": "Jede Willkommensnachricht benötigt einen Kanal",
+        "channel_not_found": "Kanal nicht gefunden",
+        "channel_type": "Der Kanal muss ein Textkanal sein",
+        "no_send_permission": "Ich habe keine Berechtigung, Nachrichten in {channel} zu senden",
+        "empty_message": "Die Willkommensnachricht darf nicht leer sein",
+        "message_too_long": "Die Willkommensnachricht darf {max} Zeichen nicht überschreiten",
+        "invalid_color": "Die Akzentfarbe ist ungültig"
       }
     },
     "welcome_dm": {

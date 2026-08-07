@@ -906,48 +906,79 @@
     },
     "welcome_channel": {
       "name": "Welcome Channel",
-      "description": "Message de bienvenue dans un salon public",
+      "description": "Messages de bienvenue dans des salons publics",
+      "default_message": "Bienvenue à {user} sur **{server}** !\n-# Il/elle est le **{member_count}**ᵉ membre",
       "config": {
-        "title": "Configuration du Welcome Channel",
-        "description": "Configurez le message de bienvenue envoyé dans un salon public quand un nouveau membre rejoint le serveur.",
-        "channel": {
-          "placeholder": "Sélectionnez un salon",
-          "section_title": "Salon de bienvenue",
-          "section_description": "Sélectionnez le salon où seront envoyés les messages de bienvenue"
-        },
-        "message": {
-          "section_title": "Message de bienvenue",
-          "section_description": "Personnalisez le message. Variables disponibles : {user}, {username}, {server}, {member_count}",
-          "edit_button": "Modifier le message",
-          "mention_user": "Mentionner l'utilisateur",
-          "modal": {
-            "label": "Message de bienvenue",
-            "placeholder": "Bienvenue {user} sur {server} !"
-          }
-        },
-        "embed": {
-          "section_title": "Options d'embed",
-          "section_description": "Personnalisez l'apparence de l'embed",
-          "toggle": "Activer l'embed",
-          "edit_title": "Modifier le titre",
-          "edit_description": "Modifier la description",
-          "edit_color": "Modifier la couleur",
-          "thumbnail": "Afficher l'avatar",
-          "author": "Afficher comme auteur",
-          "title_modal": {
-            "label": "Titre de l'embed",
-            "placeholder": "Bienvenue !"
-          },
-          "description_modal": {
-            "label": "Description de l'embed",
-            "placeholder": "Laissez vide pour utiliser le message de bienvenue"
-          },
-          "color_modal": {
-            "label": "Couleur de l'embed (hex)",
-            "placeholder": "#5865F2",
-            "error": "Couleur invalide ! Utilisez le format #RRGGBB"
-          }
+        "title": "Messages de bienvenue",
+        "description": "Envoie un message de bienvenue dans un salon quand un membre rejoint le serveur.",
+        "limit": "Jusqu'à {max} messages de bienvenue par serveur.",
+        "manage_placeholder": "Gérer un message de bienvenue",
+        "list": {
+          "title": "Messages configurés",
+          "count": "{count}/{max} message(s) de bienvenue",
+          "empty": "Aucun message de bienvenue pour l'instant. Ajoute-en un pour commencer.",
+          "paused": "En pause"
         }
+      },
+      "buttons": {
+        "add": "Ajouter",
+        "confirm": "Ajouter le message"
+      },
+      "add": {
+        "title": "Nouveau message de bienvenue",
+        "description": "Choisis le salon puis personnalise le message envoyé aux nouveaux membres.",
+        "channel": {
+          "title": "Salon",
+          "description": "Le salon où le message sera envoyé",
+          "placeholder": "Sélectionne un salon"
+        },
+        "success": "Message de bienvenue ajouté."
+      },
+      "customize": {
+        "title": "Message",
+        "section_description": "Le texte envoyé, avec sa couleur de liseré",
+        "button": "Personnaliser le message",
+        "default_state": "Message par défaut",
+        "custom_state": "Message personnalisé",
+        "modal_title": "Personnaliser le message",
+        "message_label": "Message",
+        "message_description": "Texte complet — inclus le titre avec ##, # ou ###.",
+        "color_label": "Couleur du liseré (hex)",
+        "color_description": "Comme #FF0000. Laisse vide pour la couleur par défaut.",
+        "placeholders_header": "Variables disponibles :",
+        "ph_server": "Nom du serveur",
+        "ph_user": "Mention de l'utilisateur",
+        "ph_display_name": "Nom d'affichage",
+        "ph_username": "Pseudo",
+        "ph_member_count": "Nombre de membres",
+        "ph_timestamp": "Date d'arrivée — ex. <t:{timestamp}:R>"
+      },
+      "manage": {
+        "title": "Message de bienvenue",
+        "paused_notice": "Ce message est en pause : il n'est pas envoyé aux nouveaux membres.",
+        "preview_title": "Message actuel",
+        "preview_description": "Le texte tel qu'il est enregistré, variables non remplacées",
+        "channel": {
+          "title": "Salon",
+          "description": "Le salon où le message est envoyé",
+          "placeholder": "Sélectionne un salon"
+        },
+        "pause": "Mettre en pause",
+        "resume": "Réactiver",
+        "remove": "Supprimer",
+        "removed": "Message de bienvenue supprimé."
+      },
+      "errors": {
+        "guild_not_found": "Serveur introuvable",
+        "too_many": "Tu ne peux pas avoir plus de {max} messages de bienvenue sur ce serveur",
+        "duplicate_id": "Deux messages de bienvenue portent le même identifiant",
+        "channel_required": "Un salon est requis pour chaque message de bienvenue",
+        "channel_not_found": "Salon introuvable",
+        "channel_type": "Le salon doit être un salon textuel",
+        "no_send_permission": "Je n'ai pas la permission d'envoyer des messages dans {channel}",
+        "empty_message": "Le message de bienvenue ne peut pas être vide",
+        "message_too_long": "Le message de bienvenue ne peut pas dépasser {max} caractères",
+        "invalid_color": "La couleur du liseré est invalide"
       }
     },
     "welcome_dm": {
