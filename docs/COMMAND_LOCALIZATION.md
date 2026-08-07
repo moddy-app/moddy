@@ -3,7 +3,8 @@
 > Ce document décrit comment le **nom** et la **description** des commandes
 > slash de Moddy sont traduits dans la langue Discord de l'utilisateur.
 > Pour le **contenu** des réponses (textes affichés après exécution), voir le
-> système i18n classique (`utils/i18n.py`, `locales/fr.json`, `locales/en-US.json`).
+> système i18n classique (`utils/i18n.py`, `locales/fr.json`, `locales/en-US.json`,
+> `locales/es-ES.json`, `locales/pt-BR.json`, `locales/de.json`).
 
 ---
 

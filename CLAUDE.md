@@ -16,7 +16,7 @@
 | Database | PostgreSQL (asyncpg) |
 | HTTP Server | FastAPI + Uvicorn (health checks + internal API) |
 | Hosting | Railway (containerized) |
-| i18n | JSON-based (French + English) |
+| i18n | JSON-based (French, English, Spanish, Portuguese, German) |
 | Error Tracking | Centralized handler + database logging |
 | License | CC BY-NC-SA 4.0 |
 
@@ -223,7 +223,8 @@ moddy/
 ### 4. Internationalization (i18n)
 - **ALL** user-facing text must use the i18n system
 - `from utils.i18n import t` → `t('key.path', locale=locale)`
-- Translation files: `/locales/fr.json` and `/locales/en-US.json`
+- Translation files: `/locales/fr.json`, `/locales/en-US.json`, `/locales/es-ES.json`,
+  `/locales/pt-BR.json`, `/locales/de.json`
 - **Command names and descriptions** are localized separately (Discord shows them
   in the user's own language): declare the command in English in the cog, then add
   its key to every `/locales/commands/<locale>.json`
