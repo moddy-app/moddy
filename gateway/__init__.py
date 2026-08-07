@@ -37,7 +37,11 @@ from .errors import (
 )
 from .spec import CallSpec, QuotaTarget, QuotaScope, QuotaPlan
 
-logger = logging.getLogger("moddy.gateway")
+# Named `_log`, not `logger` — `Gateway.start()` below does
+# `from .logger import GatewayLogger`, and that import binds the
+# `gateway.logger` submodule onto this package's namespace, which would
+# silently overwrite a global literally named `logger`.
+_log = logging.getLogger("moddy.gateway")
 
 __all__ = [
     "Gateway",
@@ -101,9 +105,9 @@ class Gateway:
                 await adapter.start()
                 self._adapters["openai"] = adapter
             except Exception as exc:
-                logger.error("OpenAI adapter failed to start: %s", exc)
+                _log.error("OpenAI adapter failed to start: %s", exc)
         else:
-            logger.warning("OPENAI_API_KEY not set — OpenAI adapter disabled")
+            _log.warning("OPENAI_API_KEY not set — OpenAI adapter disabled")
 
         if self.config.deepl_api_key:
             try:
@@ -113,9 +117,9 @@ class Gateway:
                 await adapter.start()
                 self._adapters["deepl"] = adapter
             except Exception as exc:
-                logger.error("DeepL adapter failed to start: %s", exc)
+                _log.error("DeepL adapter failed to start: %s", exc)
         else:
-            logger.warning("DEEPL_API_KEY not set — DeepL adapter disabled")
+            _log.warning("DEEPL_API_KEY not set — DeepL adapter disabled")
 
         self._executor = GatewayExecutor(
             adapters=self._adapters,
@@ -130,7 +134,7 @@ class Gateway:
 
         self._gw_logger.start()
         self._started = True
-        logger.info(
+        _log.info(
             "Gateway started — adapters: %s",
             list(self._adapters) or ["none"],
         )
@@ -142,9 +146,9 @@ class Gateway:
             try:
                 await adapter.stop()
             except Exception as exc:
-                logger.warning("Error stopping %s adapter: %s", name, exc)
+                _log.warning("Error stopping %s adapter: %s", name, exc)
         self._started = False
-        logger.info("Gateway stopped")
+        _log.info("Gateway stopped")
 
     @property
     def available(self) -> bool:
