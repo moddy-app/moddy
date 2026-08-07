@@ -349,12 +349,14 @@ container.add_item(select)
 
 La carte de message du **Starboard** est un cas exceptionnel, explicitement
 demandé : elle utilise un vrai `discord.Embed()` (barre latérale colorée,
-avatar + nom en en-tête, timestamp natif) plutôt que Components V2, pour
+avatar + nom en footer, timestamp natif) plutôt que Components V2, pour
 reproduire le rendu d'une app Starboard classique. Discord interdit de
 combiner un embed avec le flag `IS_COMPONENTS_V2` (donc `BaseView`/
 `ui.LayoutView`) sur le même message — les boutons (compteur de réactions +
 "aller au message") vivent donc dans un `discord.ui.View` classique
-(`_StarboardCardView`), pas un `BaseView`. Voir le docstring de `StarboardModule` et
+(`_StarboardCardView`), pas un `BaseView`. Toujours par demande explicite,
+cette carte n'applique pas non plus la règle #7 (badge de vérification) :
+aucun badge n'y est affiché. Voir le docstring de `StarboardModule` et
 [docs/PERSISTENT_VIEWS.md](PERSISTENT_VIEWS.md) (section "Deliberate
 exclusions") pour le détail. Ne pas reproduire ce pattern ailleurs sans la
 même justification explicite.

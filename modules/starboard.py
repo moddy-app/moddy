@@ -12,10 +12,7 @@ import discord
 
 from cogs.error_handler import BaseView
 from modules.module_manager import ModuleBase
-from utils.emojis import (
-    STAR, is_standard_discord_emoji,
-    get_user_verification_badge, format_verification_badge,
-)
+from utils.emojis import STAR, is_standard_discord_emoji
 from utils.i18n import t, i18n
 
 logger = logging.getLogger('moddy.modules.starboard')
@@ -29,16 +26,47 @@ _IMAGE_URL_RE = re.compile(
     re.IGNORECASE,
 )
 _URL_RE = re.compile(r'https?://\S+', re.IGNORECASE)
-_OG_IMAGE_RE = [
-    re.compile(
-        rf'<meta[^>]+(?:property|name)=["\']{re.escape(prop)}["\'][^>]+content=["\']([^"\']+)["\']',
-        re.IGNORECASE,
-    )
-    for prop in ('og:image', 'og:image:secure_url', 'twitter:image')
-]
+_META_TAG_RE = re.compile(r'<meta\b[^>]*>', re.IGNORECASE)
+_META_ATTR_RE = re.compile(r'''([a-zA-Z][\w:-]*)\s*=\s*(?:"([^"]*)"|'([^']*)')''')
+_OG_IMAGE_PROPS = ('og:image:secure_url', 'og:image', 'twitter:image', 'twitter:image:src')
 _LINK_PREVIEW_TIMEOUT = aiohttp.ClientTimeout(total=5)
-_LINK_PREVIEW_MAX_BYTES = 200_000
-_LINK_PREVIEW_HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; Moddybot/1.0; +https://moddy.app)"}
+_LINK_PREVIEW_MAX_BYTES = 300_000
+# Many sites (Tenor, Klipy, Giphy, ...) special-case Discord's own crawler UA
+# to serve pre-rendered OpenGraph tags for rich link unfurls, even when the
+# page itself is a JS-rendered SPA for regular browsers. Mimicking it here
+# gets us the same treatment.
+_LINK_PREVIEW_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)",
+    "Accept": "text/html,application/xhtml+xml",
+}
+
+
+def _extract_meta_content(html: str, props: tuple) -> Optional[str]:
+    """
+    Find the `content` of the first `<meta>` tag whose `property`/`name`
+    matches one of `props` (checked in order), regardless of attribute
+    order or quoting. A small hand-rolled parser instead of a regex per
+    property, since attribute order in the wild is inconsistent
+    (`content` before `property` is common).
+    """
+    best_by_prop: Dict[str, str] = {}
+    for tag_match in _META_TAG_RE.finditer(html):
+        tag = tag_match.group(0)
+        attrs = {}
+        for attr_match in _META_ATTR_RE.finditer(tag):
+            key = attr_match.group(1).lower()
+            value = attr_match.group(2) if attr_match.group(2) is not None else attr_match.group(3)
+            attrs[key] = value
+
+        prop = attrs.get('property') or attrs.get('name')
+        content = attrs.get('content')
+        if prop and content and prop.lower() in props and prop.lower() not in best_by_prop:
+            best_by_prop[prop.lower()] = content
+
+    for prop in props:
+        if prop in best_by_prop:
+            return best_by_prop[prop]
+    return None
 
 
 def _report_dynamic_item_error(interaction: discord.Interaction, error: Exception, source: str):
@@ -192,9 +220,11 @@ async def _fetch_link_preview_image(url: str) -> Optional[str]:
         async with aiohttp.ClientSession(timeout=_LINK_PREVIEW_TIMEOUT) as session:
             async with session.get(url, headers=_LINK_PREVIEW_HEADERS) as response:
                 if response.status != 200:
+                    logger.debug(f"Starboard link preview: {url} returned HTTP {response.status}")
                     return None
                 content_type = response.headers.get("Content-Type", "")
-                if "text/html" not in content_type:
+                if "html" not in content_type:
+                    logger.debug(f"Starboard link preview: {url} is not HTML ({content_type!r})")
                     return None
                 raw = await response.content.read(_LINK_PREVIEW_MAX_BYTES)
     except Exception as e:
@@ -202,15 +232,18 @@ async def _fetch_link_preview_image(url: str) -> Optional[str]:
         return None
 
     html = raw.decode("utf-8", errors="ignore")
-    for pattern in _OG_IMAGE_RE:
-        match = pattern.search(html)
-        if match:
-            candidate = match.group(1)
-            if candidate.startswith("//"):
-                candidate = f"https:{candidate}"
-            return candidate
+    candidate = _extract_meta_content(html, _OG_IMAGE_PROPS)
+    if not candidate:
+        logger.debug(f"Starboard link preview: no og:image/twitter:image meta tag found for {url}")
+        return None
 
-    return None
+    if candidate.startswith("//"):
+        candidate = f"https:{candidate}"
+    elif candidate.startswith("/"):
+        from urllib.parse import urljoin
+        candidate = urljoin(url, candidate)
+
+    return candidate
 
 
 class StarboardModule(ModuleBase):
@@ -220,12 +253,14 @@ class StarboardModule(ModuleBase):
     (un émoji standard Discord, configurable) dans un salon dédié, avec un
     compteur de réactions et un lien vers le message d'origine.
 
-    CLAUDE.md exception: the starred message is rendered as a real
-    `discord.Embed` (not Components V2), matching the Starboard-app look the
-    feature is styled after (colored side bar, author avatar/name, native
-    timestamp). This is a deliberate, explicit exception to the project's
-    "Components V2 only" rule, scoped to this one card. See
-    `_build_embed()` / `_StarboardCardView` for the implementation notes.
+    CLAUDE.md exceptions (both explicit, scoped to this one card):
+    - The starred message is rendered as a real `discord.Embed` (not
+      Components V2), matching the Starboard-app look the feature is styled
+      after (colored side bar, footer avatar/name, native timestamp). See
+      `_build_embed()` / `_StarboardCardView` for the implementation notes.
+    - Rule #7 (verification badge next to a displayed username) is
+      deliberately NOT applied on this card — no badge is shown here, by
+      request.
     """
 
     MODULE_ID = "starboard"
@@ -426,22 +461,6 @@ class StarboardModule(ModuleBase):
         except Exception:
             return 'en-US'
 
-    async def _get_author_badge(self, author: discord.abc.User) -> str:
-        """Verification badge (hyperlinked) for the original message's author"""
-        try:
-            user_db_data = await self.bot.db.get_user(author.id)
-            moddy_attributes = user_db_data.get('attributes', {}) if user_db_data else {}
-            user_verification_data = (user_db_data.get('data', {}) or {}).get('verification', {}) if user_db_data else {}
-        except Exception:
-            moddy_attributes = {}
-            user_verification_data = {}
-
-        public_flags_value = author.public_flags.value if hasattr(author, 'public_flags') else 0
-        badge_emoji, _org_names, _tier = get_user_verification_badge(
-            {'public_flags': public_flags_value}, moddy_attributes, user_verification_data
-        )
-        return format_verification_badge(badge_emoji)
-
     async def _find_image_url(self, message: discord.Message) -> Optional[str]:
         """
         Find an image to show on the starboard embed:
@@ -473,30 +492,23 @@ class StarboardModule(ModuleBase):
 
     async def _build_embed(self, message: discord.Message) -> discord.Embed:
         """
-        Build the starred message's embed: author avatar/name, original text
-        (mentions never ping — Discord never notifies from mentions inside an
-        embed, only from the plain message content), image if any, and the
-        original message's native timestamp.
+        Build the starred message's embed: original text (mentions never
+        ping — Discord never notifies from mentions inside an embed, only
+        from the plain message content), image if any, the author's name in
+        the footer, and the original message's native timestamp.
+
+        By explicit request, this card does NOT show the verification badge
+        (rule #7 is intentionally not applied here — see the module
+        docstring's CLAUDE.md exception) and shows the author's name only
+        once, in the footer, rather than duplicating it in an author header.
         """
-        badge = await self._get_author_badge(message.author)
-
-        # Embed `author` names are plain text (no markdown/links), so the
-        # hyperlinked verification badge can't live there — it's shown as a
-        # bold-name + badge line at the top of the description instead,
-        # matching the "**{name}**{badge}" format from CLAUDE.md rule #7.
-        description_lines = []
-        if badge:
-            description_lines.append(f"**{message.author.display_name}**{badge}")
-        if message.content:
-            description_lines.append(message.content)
-
         embed = discord.Embed(
-            description="\n".join(description_lines),
+            description=message.content or "",
             color=STARBOARD_EMBED_COLOR,
             timestamp=message.created_at,
         )
-        embed.set_author(
-            name=message.author.display_name,
+        embed.set_footer(
+            text=message.author.display_name,
             icon_url=message.author.display_avatar.url,
         )
 
