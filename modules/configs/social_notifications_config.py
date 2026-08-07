@@ -86,6 +86,8 @@ _CID_MANAGE_BACK = "moddy:social:manage:back"
 # Helpers
 # --------------------------------------------------------------------------- #
 def _platform_label(platform: str, locale: str) -> str:
+    if not platform:
+        return ""
     return t(f"modules.social_notifications.platforms.{platform}", locale=locale)
 
 
