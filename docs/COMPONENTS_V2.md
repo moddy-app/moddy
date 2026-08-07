@@ -349,7 +349,7 @@ container.add_item(select)
 
 La carte de message du **Starboard** est un cas exceptionnel, explicitement
 demandé : elle utilise un vrai `discord.Embed()` (barre latérale colorée,
-avatar + nom en footer, timestamp natif) plutôt que Components V2, pour
+avatar + nom en en-tête, timestamp natif) plutôt que Components V2, pour
 reproduire le rendu d'une app Starboard classique. Discord interdit de
 combiner un embed avec le flag `IS_COMPONENTS_V2` (donc `BaseView`/
 `ui.LayoutView`) sur le même message — les boutons (compteur de réactions +

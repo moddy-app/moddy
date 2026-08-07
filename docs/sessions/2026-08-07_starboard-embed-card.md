@@ -162,3 +162,63 @@ share page) showed nothing, the top content line was unwanted, and a new
       environment (no `discord.py` installed) — please run in CI before
       merging, especially to confirm the new `DynamicItem` template doesn't
       collide with existing custom_ids.
+
+---
+
+## Round 3 — name in header, and actually fixing GIF link previews
+
+Round 2 shipped a badge + a link-preview scrape; both were wrong in
+practice. Corrections, after reproducing the failures against the real
+sites instead of reasoning about them:
+
+### Root causes found (measured, not guessed)
+
+1. **`await response.content.read(N)` is not "read N bytes."**
+   `aiohttp.StreamReader.read(n)` returns whatever is *currently buffered*,
+   up to n. Fetching the same klipy page twice returned 34,157 bytes and
+   then 14,977 bytes of a 182,044-byte document — a nondeterministic
+   prefix. Any `<meta>` tag past that prefix is invisible to the scraper.
+   Fixed by reading with `iter_chunked()` in a loop up to the byte cap.
+2. **klipy 403s an unknown crawler UA.** The round-2 UA
+   (`Moddybot/1.0`) got `HTTP 403` from klipy; Discord's own crawler UA
+   (`Discordbot/2.0`) gets `200`. (Round 2 had already switched to the
+   Discord UA for a different reason — this confirms it was necessary.)
+3. **The whole scraping approach was the wrong primary mechanism.**
+   Tenor returned a perfectly good `og:image` to *both* UAs and the
+   round-2 regex extracted it correctly — so scraping was never the real
+   blocker, it was just fragile in ways that were hard to see.
+
+### Changes Made
+
+- `modules/starboard.py`:
+  - **`_image_from_discord_embeds()` (new, primary path)**: when a message
+    contains a link, Discord already unfurls it and attaches its own embed
+    with the image resolved to a URL it is guaranteed to render. The module
+    now reads `message.embeds[*].image/.thumbnail` first. Zero network
+    calls, no UA/403/HTML-parsing fragility, and the result matches exactly
+    what the user already sees on the original message. Tenor GIFs arrive
+    as `gifv` (a `video` embed that can't be replayed inside our embed),
+    but their `thumbnail` is the animated GIF, so it works as-is.
+  - The OG/Twitter-card scrape is kept as a **last-resort fallback** only,
+    with the truncated-read bug fixed.
+  - **Author name moved back to the header** (`embed.set_author()`), per
+    request — round 2's footer placement was wrong. Still no verification
+    badge, and still shown only once (no duplicate name).
+- `docs/COMPONENTS_V2.md` — reverted the "footer" wording back to header.
+
+### Verification
+
+- Fetched both real URLs (klipy + tenor share pages) directly and confirmed
+  the `og:image`/`twitter:image` tags exist and what each UA receives.
+- Ran the module's actual `_fetch_link_preview_image()` against both live
+  URLs 3× each: 3/3 deterministic hits on both, where the pre-fix code
+  returned a variable-length prefix.
+
+### Known Issues / Follow-ups
+
+- [ ] `_image_from_discord_embeds()` depends on Discord having unfurled the
+      link by the time the message is starred. In practice the message must
+      accumulate `reaction_count` reactions first and is re-fetched fresh,
+      so the unfurl is always attached by then — but if a future change
+      lowers the threshold to 1, a very fast reaction could in principle
+      beat the unfurl. The scrape fallback covers that case.
