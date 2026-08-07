@@ -907,48 +907,79 @@
     },
     "welcome_channel": {
       "name": "Welcome Channel",
-      "description": "Welcome message in a public channel",
+      "description": "Welcome messages in public channels",
+      "default_message": "Welcome {user} to **{server}**!\n-# They are the **{member_count}**th member",
       "config": {
-        "title": "Welcome Channel Configuration",
-        "description": "Configure the welcome message sent in a public channel when a new member joins the server.",
-        "channel": {
-          "placeholder": "Select a channel",
-          "section_title": "Welcome channel",
-          "section_description": "Select the channel where welcome messages will be sent"
-        },
-        "message": {
-          "section_title": "Welcome message",
-          "section_description": "Customize the message. Available variables: {user}, {username}, {server}, {member_count}",
-          "edit_button": "Edit message",
-          "mention_user": "Mention user",
-          "modal": {
-            "label": "Welcome message",
-            "placeholder": "Welcome {user} to {server}!"
-          }
-        },
-        "embed": {
-          "section_title": "Embed options",
-          "section_description": "Customize the embed appearance",
-          "toggle": "Enable embed",
-          "edit_title": "Edit title",
-          "edit_description": "Edit description",
-          "edit_color": "Edit color",
-          "thumbnail": "Show avatar",
-          "author": "Show as author",
-          "title_modal": {
-            "label": "Embed title",
-            "placeholder": "Welcome!"
-          },
-          "description_modal": {
-            "label": "Embed description",
-            "placeholder": "Leave empty to use the welcome message"
-          },
-          "color_modal": {
-            "label": "Embed color (hex)",
-            "placeholder": "#5865F2",
-            "error": "Invalid color! Use the #RRGGBB format"
-          }
+        "title": "Welcome messages",
+        "description": "Send a welcome message in a channel when a member joins the server.",
+        "limit": "Up to {max} welcome messages per server.",
+        "manage_placeholder": "Manage a welcome message",
+        "list": {
+          "title": "Configured messages",
+          "count": "{count}/{max} welcome message(s)",
+          "empty": "No welcome message yet. Add one to get started.",
+          "paused": "Paused"
         }
+      },
+      "buttons": {
+        "add": "Add",
+        "confirm": "Add message"
+      },
+      "add": {
+        "title": "New welcome message",
+        "description": "Pick the channel, then customize the message sent to new members.",
+        "channel": {
+          "title": "Channel",
+          "description": "The channel the message will be sent in",
+          "placeholder": "Select a channel"
+        },
+        "success": "Welcome message added."
+      },
+      "customize": {
+        "title": "Message",
+        "section_description": "The text that gets sent, and its accent colour",
+        "button": "Customize the message",
+        "default_state": "Default message",
+        "custom_state": "Custom message",
+        "modal_title": "Customize the message",
+        "message_label": "Message",
+        "message_description": "Full text — include the title with ##, # or ###.",
+        "color_label": "Accent color (hex)",
+        "color_description": "Like #FF0000. Leave empty for the default color.",
+        "placeholders_header": "Available placeholders:",
+        "ph_server": "Server name",
+        "ph_user": "User mention",
+        "ph_display_name": "Display name",
+        "ph_username": "Username",
+        "ph_member_count": "Member count",
+        "ph_timestamp": "Join date — e.g. <t:{timestamp}:R>"
+      },
+      "manage": {
+        "title": "Welcome message",
+        "paused_notice": "This message is paused: it is not sent to new members.",
+        "preview_title": "Current message",
+        "preview_description": "The text as stored, with placeholders left as-is",
+        "channel": {
+          "title": "Channel",
+          "description": "The channel the message is sent in",
+          "placeholder": "Select a channel"
+        },
+        "pause": "Pause",
+        "resume": "Resume",
+        "remove": "Remove",
+        "removed": "Welcome message removed."
+      },
+      "errors": {
+        "guild_not_found": "Server not found",
+        "too_many": "You cannot have more than {max} welcome messages in this server",
+        "duplicate_id": "Two welcome messages share the same identifier",
+        "channel_required": "Every welcome message needs a channel",
+        "channel_not_found": "Channel not found",
+        "channel_type": "The channel must be a text channel",
+        "no_send_permission": "I don't have permission to send messages in {channel}",
+        "empty_message": "The welcome message cannot be empty",
+        "message_too_long": "The welcome message cannot exceed {max} characters",
+        "invalid_color": "The accent color is invalid"
       }
     },
     "welcome_dm": {

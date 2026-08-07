@@ -27,19 +27,25 @@ class ModuleEvents(commands.Cog):
         if not self.bot.module_manager:
             return
 
-        try:
-            # Récupère l'instance du module Welcome pour ce serveur
-            welcome_module = await self.bot.module_manager.get_module_instance(
-                member.guild.id,
-                'welcome'
-            )
+        # Welcome Channel + Welcome DM. The channel module used to be dispatched
+        # under the id 'welcome', which no registered module has ever answered to
+        # (its MODULE_ID is 'welcome_channel'), so channel welcomes never fired.
+        for module_id in ('welcome_channel', 'welcome_dm'):
+            try:
+                welcome_module = await self.bot.module_manager.get_module_instance(
+                    member.guild.id,
+                    module_id
+                )
 
-            # Si le module est actif, appelle sa méthode
-            if welcome_module and welcome_module.enabled:
-                await welcome_module.on_member_join(member)
+                # Si le module est actif, appelle sa méthode
+                if welcome_module and welcome_module.enabled:
+                    await welcome_module.on_member_join(member)
 
-        except Exception as e:
-            logger.error(f"Error in on_member_join for guild {member.guild.id}: {e}", exc_info=True)
+            except Exception as e:
+                logger.error(
+                    f"Error in on_member_join ({module_id}) for guild {member.guild.id}: {e}",
+                    exc_info=True
+                )
 
         try:
             # Récupère l'instance du module Auto Restore Roles pour ce serveur

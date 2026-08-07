@@ -907,48 +907,79 @@
     },
     "welcome_channel": {
       "name": "Canal de bienvenida",
-      "description": "Mensaje de bienvenida en un canal público",
+      "description": "Mensajes de bienvenida en canales públicos",
+      "default_message": "¡Bienvenido/a {user} a **{server}**!\n-# Es el/la miembro n.º **{member_count}**",
       "config": {
-        "title": "Configuración del canal de bienvenida",
-        "description": "Configura el mensaje de bienvenida enviado en un canal público cuando un nuevo miembro se une al servidor.",
-        "channel": {
-          "placeholder": "Selecciona un canal",
-          "section_title": "Canal de bienvenida",
-          "section_description": "Selecciona el canal donde se enviarán los mensajes de bienvenida"
-        },
-        "message": {
-          "section_title": "Mensaje de bienvenida",
-          "section_description": "Personaliza el mensaje. Variables disponibles: {user}, {username}, {server}, {member_count}",
-          "edit_button": "Editar mensaje",
-          "mention_user": "Mencionar al usuario",
-          "modal": {
-            "label": "Mensaje de bienvenida",
-            "placeholder": "¡Bienvenido {user} a {server}!"
-          }
-        },
-        "embed": {
-          "section_title": "Opciones del embed",
-          "section_description": "Personaliza la apariencia del embed",
-          "toggle": "Activar embed",
-          "edit_title": "Editar título",
-          "edit_description": "Editar descripción",
-          "edit_color": "Editar color",
-          "thumbnail": "Mostrar avatar",
-          "author": "Mostrar como autor",
-          "title_modal": {
-            "label": "Título del embed",
-            "placeholder": "¡Bienvenido!"
-          },
-          "description_modal": {
-            "label": "Descripción del embed",
-            "placeholder": "Déjalo vacío para usar el mensaje de bienvenida"
-          },
-          "color_modal": {
-            "label": "Color del embed (hex)",
-            "placeholder": "#5865F2",
-            "error": "¡Color no válido! Usa el formato #RRGGBB"
-          }
+        "title": "Mensajes de bienvenida",
+        "description": "Envía un mensaje de bienvenida en un canal cuando un miembro entra al servidor.",
+        "limit": "Hasta {max} mensajes de bienvenida por servidor.",
+        "manage_placeholder": "Gestionar un mensaje de bienvenida",
+        "list": {
+          "title": "Mensajes configurados",
+          "count": "{count}/{max} mensaje(s) de bienvenida",
+          "empty": "Todavía no hay mensajes de bienvenida. Añade uno para empezar.",
+          "paused": "En pausa"
         }
+      },
+      "buttons": {
+        "add": "Añadir",
+        "confirm": "Añadir mensaje"
+      },
+      "add": {
+        "title": "Nuevo mensaje de bienvenida",
+        "description": "Elige el canal y personaliza el mensaje enviado a los nuevos miembros.",
+        "channel": {
+          "title": "Canal",
+          "description": "El canal donde se enviará el mensaje",
+          "placeholder": "Selecciona un canal"
+        },
+        "success": "Mensaje de bienvenida añadido."
+      },
+      "customize": {
+        "title": "Mensaje",
+        "section_description": "El texto enviado y su color de acento",
+        "button": "Personalizar el mensaje",
+        "default_state": "Mensaje predeterminado",
+        "custom_state": "Mensaje personalizado",
+        "modal_title": "Personalizar el mensaje",
+        "message_label": "Mensaje",
+        "message_description": "Texto completo — incluye el título con ##, # o ###.",
+        "color_label": "Color de acento (hex)",
+        "color_description": "Como #FF0000. Déjalo vacío para el color predeterminado.",
+        "placeholders_header": "Variables disponibles:",
+        "ph_server": "Nombre del servidor",
+        "ph_user": "Mención del usuario",
+        "ph_display_name": "Nombre visible",
+        "ph_username": "Nombre de usuario",
+        "ph_member_count": "Número de miembros",
+        "ph_timestamp": "Fecha de entrada — p. ej. <t:{timestamp}:R>"
+      },
+      "manage": {
+        "title": "Mensaje de bienvenida",
+        "paused_notice": "Este mensaje está en pausa: no se envía a los nuevos miembros.",
+        "preview_title": "Mensaje actual",
+        "preview_description": "El texto tal como está guardado, sin sustituir las variables",
+        "channel": {
+          "title": "Canal",
+          "description": "El canal donde se envía el mensaje",
+          "placeholder": "Selecciona un canal"
+        },
+        "pause": "Pausar",
+        "resume": "Reanudar",
+        "remove": "Eliminar",
+        "removed": "Mensaje de bienvenida eliminado."
+      },
+      "errors": {
+        "guild_not_found": "Servidor no encontrado",
+        "too_many": "No puedes tener más de {max} mensajes de bienvenida en este servidor",
+        "duplicate_id": "Dos mensajes de bienvenida comparten el mismo identificador",
+        "channel_required": "Cada mensaje de bienvenida necesita un canal",
+        "channel_not_found": "Canal no encontrado",
+        "channel_type": "El canal debe ser un canal de texto",
+        "no_send_permission": "No tengo permiso para enviar mensajes en {channel}",
+        "empty_message": "El mensaje de bienvenida no puede estar vacío",
+        "message_too_long": "El mensaje de bienvenida no puede superar los {max} caracteres",
+        "invalid_color": "El color de acento no es válido"
       }
     },
     "welcome_dm": {

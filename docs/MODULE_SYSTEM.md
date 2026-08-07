@@ -401,33 +401,37 @@ Si votre module nécessite des événements Discord, ajoutez-les dans `/cogs/mod
 
 ---
 
-## Exemple complet : Module Welcome
+## Exemple complet : Module Welcome Channel
 
-Le module Welcome est un exemple complet incluant :
+Le module Welcome Channel est un exemple complet incluant :
 
 ### Fichiers
 
-- `/modules/welcome.py` - Logique métier
-- `/modules/configs/welcome_config.py` - Interface de configuration
+- `/modules/welcome_channel.py` - Logique métier (`MODULE_ID = "welcome_channel"`)
+- `/modules/configs/welcome_channel_config.py` - Interface de configuration
 - `/cogs/module_events.py` - Event listener `on_member_join`
 
 ### Fonctionnalités
 
-- Envoie un message de bienvenue personnalisable
-- Supporte les embeds
-- Variables dynamiques : `{user}`, `{username}`, `{server}`, `{member_count}`
-- Validation du salon et des permissions
-- Configuration sauvegardée en DB
+- Jusqu'à **5 messages de bienvenue** par serveur, chacun dans son propre salon
+- Rendu en **Composants V2** (container + liseré de couleur) — pas d'embed
+- Message personnalisé via un **Modal V2** (texte + couleur d'accent)
+- Variables dynamiques : `{server}`, `{user}`, `{display_name}`, `{username}`,
+  `{member_count}`, `{timestamp}`
+- Validation du salon et des permissions à chaque sauvegarde
+- Migration automatique de l'ancienne configuration (v1) à la lecture
 
 ### Flux d'utilisation
 
 1. Admin utilise `/config`
-2. Sélectionne "Welcome"
-3. Choisit un salon via le ChannelSelect
-4. Configure le message (TODO : ajouter modal pour éditer le message)
-5. Active l'embed si souhaité
-6. Clique sur "Enregistrer"
-7. Quand un membre rejoint → message automatique envoyé
+2. Sélectionne "Welcome Channel"
+3. Clique sur « Ajouter », choisit un salon via le ChannelSelect
+4. Personnalise le message dans le modal (texte + couleur)
+5. Confirme → le message est enregistré et validé immédiatement
+6. Quand un membre rejoint → chaque message actif est envoyé dans son salon
+
+> Schéma DB complet et contrat backend/dashboard :
+> [WELCOME_MESSAGES.md](WELCOME_MESSAGES.md)
 
 ---
 

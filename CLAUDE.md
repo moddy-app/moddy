@@ -61,7 +61,7 @@ moddy/
 │
 ├── modules/                   # Server-level configurable features
 │   ├── module_manager.py      #   ModuleManager + ModuleBase class
-│   ├── welcome_channel.py     #   Welcome message in channel
+│   ├── welcome_channel.py     #   Welcome messages in channels (up to 5, Components V2)
 │   ├── welcome_dm.py          #   Welcome DM to new members
 │   ├── auto_role.py           #   Auto role assignment
 │   ├── auto_restore_roles.py  #   Role restoration on rejoin
@@ -75,6 +75,7 @@ moddy/
 │       ├── social_notifications_config.py
 │       ├── automod_ai_config.py
 │       ├── automod_ai_precedents_view.py  # Learned-precedents browser (S7)
+│       ├── welcome_channel_config.py      # Welcome messages list + add/manage (Modal V2)
 │
 ├── automod/                   # Automod AI DETECTION pipeline (decides only; no side effects)
 │   ├── engine.py              #   Shared per-bot orchestrator (funnel entry)
@@ -324,6 +325,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/COMMAND_LOCALIZATION.md](docs/COMMAND_LOCALIZATION.md) | Translating slash command names/descriptions (32 Discord locales) |
 | [docs/TEXT_TOOLS.md](docs/TEXT_TOOLS.md) | AI text tools — `/fix`, `/rephrase`, `/summarize` (models, presets, mention stripping) |
 | [docs/MODULE_SYSTEM.md](docs/MODULE_SYSTEM.md) | Creating or modifying server modules |
+| [docs/WELCOME_MESSAGES.md](docs/WELCOME_MESSAGES.md) | Welcome messages module — config schema, placeholders, backend/dashboard contract |
 | [docs/AUTOMOD_AI.md](docs/AUTOMOD_AI.md) | Automod AI — detection pipeline, nano decider, scalable features, rules safety check |
 | [docs/AUTOMOD_AI_CONFIG.md](docs/AUTOMOD_AI_CONFIG.md) | Automod AI configuration schema in DB (backend / dashboard integration) |
 | [docs/STAFF_SYSTEM.md](docs/STAFF_SYSTEM.md) | Staff/dev commands, permissions, roles |
