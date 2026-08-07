@@ -226,7 +226,17 @@ async def _fetch_link_preview_image(url: str) -> Optional[str]:
                 if "html" not in content_type:
                     logger.debug(f"Starboard link preview: {url} is not HTML ({content_type!r})")
                     return None
-                raw = await response.content.read(_LINK_PREVIEW_MAX_BYTES)
+                # NOT `content.read(N)` — StreamReader.read(n) returns only
+                # what is currently buffered, so a single call yields a short,
+                # nondeterministic prefix of the page and the <meta> tags can
+                # fall outside it. Read in a loop up to the cap instead.
+                chunks, total = [], 0
+                async for chunk in response.content.iter_chunked(16_384):
+                    chunks.append(chunk)
+                    total += len(chunk)
+                    if total >= _LINK_PREVIEW_MAX_BYTES:
+                        break
+                raw = b"".join(chunks)
     except Exception as e:
         logger.debug(f"Starboard link preview fetch failed for {url}: {e}")
         return None
@@ -256,8 +266,8 @@ class StarboardModule(ModuleBase):
     CLAUDE.md exceptions (both explicit, scoped to this one card):
     - The starred message is rendered as a real `discord.Embed` (not
       Components V2), matching the Starboard-app look the feature is styled
-      after (colored side bar, footer avatar/name, native timestamp). See
-      `_build_embed()` / `_StarboardCardView` for the implementation notes.
+      after (colored side bar, author avatar/name header, native timestamp).
+      See `_build_embed()` / `_StarboardCardView` for the implementation notes.
     - Rule #7 (verification badge next to a displayed username) is
       deliberately NOT applied on this card — no badge is shown here, by
       request.
@@ -461,14 +471,40 @@ class StarboardModule(ModuleBase):
         except Exception:
             return 'en-US'
 
+    @staticmethod
+    def _image_from_discord_embeds(message: discord.Message) -> Optional[str]:
+        """
+        Reuse the preview Discord itself already resolved for the message's
+        links.
+
+        When someone posts a Tenor/Klipy/Giphy-style link, Discord unfurls it
+        and attaches its own embed to the message, with the image already
+        resolved to a URL it is guaranteed to render. Reading that is both
+        more reliable and far cheaper than re-fetching and scraping the page
+        ourselves — the site may block/altered-serve our crawler, and the
+        message is fetched fresh (so by the time it has enough reactions to
+        reach the starboard, the unfurl is long since attached).
+
+        `video`-type embeds (Tenor GIFs arrive as `gifv`) can't be replayed
+        inside our own embed, but their `thumbnail` is the animated GIF, so
+        it is used as-is.
+        """
+        for embed in message.embeds:
+            for candidate in (embed.image, embed.thumbnail):
+                url = getattr(candidate, 'url', None)
+                if url:
+                    return url
+        return None
+
     async def _find_image_url(self, message: discord.Message) -> Optional[str]:
         """
         Find an image to show on the starboard embed:
         1. The first image attachment, if there is one.
         2. Otherwise, the first bare image URL found in the message content.
-        3. Otherwise, if the message content contains any link, try fetching
-           its OpenGraph/Twitter-card image (e.g. a GIF site's share page
-           that isn't itself a direct image URL).
+        3. Otherwise, the image Discord already resolved when it unfurled a
+           link in the message (see `_image_from_discord_embeds`).
+        4. Otherwise, as a last resort, fetch the link ourselves and read its
+           OpenGraph/Twitter-card image.
         """
         for attachment in message.attachments:
             content_type = attachment.content_type or ""
@@ -484,6 +520,10 @@ class StarboardModule(ModuleBase):
         if match:
             return match.group(0)
 
+        from_discord = self._image_from_discord_embeds(message)
+        if from_discord:
+            return from_discord
+
         url_match = _URL_RE.search(message.content)
         if url_match:
             return await _fetch_link_preview_image(url_match.group(0))
@@ -492,23 +532,23 @@ class StarboardModule(ModuleBase):
 
     async def _build_embed(self, message: discord.Message) -> discord.Embed:
         """
-        Build the starred message's embed: original text (mentions never
-        ping — Discord never notifies from mentions inside an embed, only
-        from the plain message content), image if any, the author's name in
-        the footer, and the original message's native timestamp.
+        Build the starred message's embed: the author's name/avatar in the
+        header, the original text (mentions never ping — Discord never
+        notifies from mentions inside an embed, only from the plain message
+        content), the image if any, and the original message's native
+        timestamp.
 
         By explicit request, this card does NOT show the verification badge
         (rule #7 is intentionally not applied here — see the module
-        docstring's CLAUDE.md exception) and shows the author's name only
-        once, in the footer, rather than duplicating it in an author header.
+        docstring's CLAUDE.md exception).
         """
         embed = discord.Embed(
             description=message.content or "",
             color=STARBOARD_EMBED_COLOR,
             timestamp=message.created_at,
         )
-        embed.set_footer(
-            text=message.author.display_name,
+        embed.set_author(
+            name=message.author.display_name,
             icon_url=message.author.display_avatar.url,
         )
 
