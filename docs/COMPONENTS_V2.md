@@ -343,4 +343,19 @@ container.add_item(select)
 * On place **l’ActionRow dans un `ui.Container`**.
 * On affiche la UI via **`ui.LayoutView` + `container.add_item()`**.
 
+---
+
+# ⚠️ Exception documentée : `modules/starboard.py`
+
+La carte de message du **Starboard** est un cas exceptionnel, explicitement
+demandé : elle utilise un vrai `discord.Embed()` (barre latérale colorée,
+avatar + nom en en-tête, timestamp natif) plutôt que Components V2, pour
+reproduire le rendu d'une app Starboard classique. Discord interdit de
+combiner un embed avec le flag `IS_COMPONENTS_V2` (donc `BaseView`/
+`ui.LayoutView`) sur le même message — le bouton "aller au message" y est
+donc un `discord.ui.View` classique (`_StarboardJumpView`), pas un
+`BaseView`. Voir le docstring de `StarboardModule` et
+[docs/PERSISTENT_VIEWS.md](PERSISTENT_VIEWS.md) (section "Deliberate
+exclusions") pour le détail. Ne pas reproduire ce pattern ailleurs sans la
+même justification explicite.
 -
