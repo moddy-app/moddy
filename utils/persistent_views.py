@@ -41,6 +41,7 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     from modules.configs.auto_role_config import AutoRoleConfigView
     from modules.configs.auto_restore_roles_config import AutoRestoreRolesConfigView
     from modules.configs.starboard_config import StarboardConfigView
+    from modules.starboard import StarboardCardPersistence
     from modules.configs.welcome_channel_config import WelcomeChannelConfigView
     from modules.configs.welcome_dm_config import WelcomeDmConfigView
     from cogs.config import ConfigMainView
@@ -79,6 +80,10 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         AutoRoleConfigView,
         AutoRestoreRolesConfigView,
         StarboardConfigView,
+        # Group 9b — starboard card reactors button (dynamic items; the
+        # card message itself carries a real discord.Embed, see
+        # modules/starboard.py's CLAUDE.md exception note)
+        StarboardCardPersistence,
         # Group 10 — /config welcome pair (colliding custom_ids, must move together)
         WelcomeChannelConfigView,
         WelcomeDmConfigView,

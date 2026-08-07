@@ -401,12 +401,21 @@ was easier not to" is not one.
   children are `ButtonStyle.link` buttons (e.g. `SubscriptionView`) —
   `bot.add_view()` on these is a no-op. Do not add `__persistent__`; there
   is nothing to register.
-- **`modules/starboard.py::_StarboardJumpView`** — a link-only button (jump
-  to the starred message), same "nothing to register" case as above. It
-  also does not inherit `BaseView`: the starboard card is sent as a real
-  `discord.Embed` (documented CLAUDE.md exception, see the module's
-  docstring), and Discord rejects combining the `IS_COMPONENTS_V2` flag
-  (which `BaseView`/`ui.LayoutView` always sets) with a classic embed.
+- **`modules/starboard.py::_StarboardCardView`** — the view itself is a
+  plain, non-`BaseView` container for two children: a `ButtonStyle.link`
+  jump button (nothing to register — "zero interactive children" case
+  above applies to link buttons) and `_StarboardReactorsButton`, a
+  persistent `DynamicItem` (`template=r"moddy:starboard:reactors:..."`)
+  registered separately via `StarboardCardPersistence.register_persistent`
+  (`bot.add_dynamic_items(...)`, same pattern as
+  `utils/appeal_views.py::AppealPersistence`). Neither child needs
+  `_StarboardCardView` itself to be persistent or a `BaseView`: the
+  starboard card is sent with a real `discord.Embed` (documented CLAUDE.md
+  exception, see the module's docstring), and Discord rejects combining the
+  `IS_COMPONENTS_V2` flag (which `BaseView`/`ui.LayoutView` always sets)
+  with a classic embed. `_StarboardReactorsButton`'s callback is guarded
+  with `report_component_error` instead of a live view's `on_error`, same
+  as the appeal buttons.
 
 ---
 
