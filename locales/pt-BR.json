@@ -1,0 +1,2233 @@
+{
+  "commands": {
+    "subscription": {
+      "description": "Veja o status da sua assinatura Moddy",
+      "title": "### {premium} Sua Assinatura",
+      "active": "{green} **Assinatura Ativa**\n-# Sua assinatura **{tier}** está ativa.",
+      "inactive": "{red} **Nenhuma Assinatura Ativa**\n-# Você não tem uma assinatura Moddy ativa.",
+      "expires": "**Expira em:** `{date}`",
+      "stripe_linked": "{done} Conta Stripe vinculada",
+      "servers_title": "**Servidores vinculados:** `{count}/5`",
+      "servers_empty": "-# Nenhum servidor está vinculado à sua assinatura.",
+      "server_entry": "- `{server_id}`",
+      "manage_button": "Gerenciar minha assinatura",
+      "error": "Não foi possível obter o status da sua assinatura. Tente novamente mais tarde."
+    },
+    "ping": {
+      "description": "Verifica a latência e o status do bot",
+      "response": {
+        "title": "<:network_ping:1519792879613247540> Status do Bot",
+        "main_info": "{status_emoji} **{status}**\n\n<:network_ping:1519792879613247540> **API do Discord:** `{api_latency}ms`\n<:network_ping:1519792879613247540> **Tempo de resposta:** {message_latency}",
+        "system_details": "**Shard:** `{shard_id}/{total_shards}`\n**Tempo ativo:** `{uptime}` {uptime_timestamp}\n**Versão:** `{version}`\n**Servidores:** `{guild_count}`\n**Usuários:** `{user_count}`"
+      },
+      "status": {
+        "excellent": "Conexão Excelente",
+        "good": "Boa Conexão",
+        "poor": "Conexão Fraca"
+      },
+      "buttons": {
+        "support": "Servidor de Suporte",
+        "status": "Página de Status"
+      }
+    },
+    "translate": {
+      "description": "Traduz um texto para outro idioma",
+      "params": {
+        "text": "O texto a ser traduzido",
+        "to": "Idioma de destino (opcional, usa seu idioma do Discord por padrão)",
+        "incognito": "Torna a resposta visível apenas para você"
+      },
+      "translating": "Traduzindo...",
+      "response": {
+        "title": "<:translate:1519802660856008834> Tradução",
+        "from_field": "Idioma detectado: {language}",
+        "to_field": "Traduzido para: {language}",
+        "footer": "{char_count} caracteres • API DeepL"
+      },
+      "errors": {
+        "rate_limit": "Limite atingido! Máximo de 20 traduções por minuto. Tente novamente em {seconds} segundos",
+        "too_long": "O texto é muito longo (máximo de 3000 caracteres)",
+        "no_text": "Nenhum texto fornecido para traduzir",
+        "no_content": "Esta mensagem não tem conteúdo para traduzir",
+        "api_error": "Não foi possível contatar a API de tradução"
+      },
+      "view": {
+        "title": "### <:translate:1519802660856008834> Tradução de texto",
+        "placeholder": "Traduzir para outro idioma",
+        "author_only": "Apenas o autor do comando pode usar este menu."
+      },
+      "deepl_attribution": "Traduzido por **DeepL**"
+    },
+    "text_tools": {
+      "ai_notice": "-# Seu texto é enviado à OpenAI (ChatGPT) para ser processado. Não inclua dados pessoais ou sensíveis. [Política de privacidade](https://moddy.app/privacy)",
+      "menu": {
+        "title": "Ferramentas de texto com IA",
+        "label": "Texto",
+        "placeholder": "O texto a ser processado...",
+        "action": "O que você quer fazer?",
+        "action_placeholder": "Escolha uma ação",
+        "fix": "Corrigir",
+        "rephrase": "Reformular",
+        "summarize": "Resumir"
+      },
+      "errors": {
+        "no_text": "Nenhum texto fornecido.",
+        "no_content": "Esta mensagem não tem texto para processar.",
+        "rate_limit": "Limite atingido! Máximo de 10 usos por minuto. Tente novamente em {seconds} segundos.",
+        "unavailable": "A IA está indisponível no momento. Tente novamente mais tarde.",
+        "api_error": "Não foi possível contatar a IA. Tente novamente mais tarde."
+      }
+    },
+    "fix": {
+      "description": "Corrige a ortografia e a gramática de um texto",
+      "params": {
+        "incognito": "Torna a resposta visível apenas para você"
+      },
+      "working": "Corrigindo seu texto...",
+      "modal": {
+        "title": "Corrigir um texto",
+        "label": "Texto a corrigir",
+        "placeholder": "Cole aqui o texto a ser corrigido..."
+      },
+      "result": {
+        "title": "### <:text:1519791921462120601> Texto corrigido",
+        "footer": "-# Corrigido pelo **ChatGPT**"
+      }
+    },
+    "rephrase": {
+      "description": "Reformula um texto no estilo de sua escolha",
+      "params": {
+        "incognito": "Torna a resposta visível apenas para você"
+      },
+      "working": "Reformulando seu texto...",
+      "modal": {
+        "title": "Reformular um texto",
+        "label": "Texto a reformular",
+        "placeholder": "Cole aqui o texto a ser reformulado...",
+        "style": "Estilo de reformulação",
+        "style_placeholder": "Escolha um estilo"
+      },
+      "styles": {
+        "neutral": "Normal",
+        "professional": "Profissional",
+        "formal": "Formal",
+        "friendly": "Amigável",
+        "casual": "Casual",
+        "concise": "Conciso"
+      },
+      "result": {
+        "title": "### <:text:1519791921462120601> Texto reformulado",
+        "style": "-# Estilo: **{style}**",
+        "footer": "-# Reformulado pelo **ChatGPT**"
+      }
+    },
+    "summarize": {
+      "description": "Resume um texto",
+      "params": {
+        "incognito": "Torna a resposta visível apenas para você"
+      },
+      "working": "Resumindo seu texto...",
+      "modal": {
+        "title": "Resumir um texto",
+        "label": "Texto a resumir",
+        "placeholder": "Cole aqui o texto a ser resumido...",
+        "length": "Tamanho do resumo",
+        "length_placeholder": "Escolha um tamanho"
+      },
+      "lengths": {
+        "short": "Curto (1 a 2 frases)",
+        "medium": "Médio (um parágrafo)",
+        "bullets": "Pontos-chave (lista)"
+      },
+      "result": {
+        "title": "### <:text:1519791921462120601> Resumo",
+        "length": "-# Tamanho: **{length}**",
+        "footer": "-# Resumido pelo **ChatGPT**"
+      }
+    },
+    "avatar": {
+      "description": "Exibe o avatar de um usuário",
+      "params": {
+        "user": "O usuário cujo avatar você quer ver",
+        "incognito": "Torna a resposta visível apenas para você"
+      },
+      "view": {
+        "title": "### <:face:1519793231699775578> Avatar de **{name}**{badge}",
+        "username": "Nome de usuário:",
+        "user_id": "ID:",
+        "bot": "Bot:",
+        "links": "Baixar avatar:"
+      }
+    },
+    "banner": {
+      "description": "Exibe o banner de um usuário",
+      "params": {
+        "user": "O usuário cujo banner você quer ver",
+        "incognito": "Torna a resposta visível apenas para você"
+      },
+      "loading": "<a:spinner:1534857169667883078> **Buscando banner...**",
+      "view": {
+        "title": "Banner de **{name}**{badge}",
+        "download": "Baixar"
+      },
+      "errors": {
+        "not_found": "<:undone:1519800313324896327> **Usuário Não Encontrado**\n\nNão foi possível obter informações deste usuário.",
+        "no_banner": "<:undone:1519800313324896327> Este usuário não tem banner."
+      }
+    },
+    "emoji": {
+      "description": "Exibe informações sobre um emoji do Discord",
+      "params": {
+        "emoji": "O emoji a consultar",
+        "incognito": "Torna a resposta visível apenas para você"
+      },
+      "loading": "<a:spinner:1534857169667883078> **Buscando informações do emoji...**",
+      "view": {
+        "title": "Emoji **{name}**",
+        "name": "Nome",
+        "id": "ID",
+        "created": "Criado em",
+        "animated": "Animado"
+      },
+      "errors": {
+        "invalid_emoji": "<:undone:1519800313324896327> **Emoji Inválido**\n\nForneça um emoji personalizado válido do Discord.\n\n**Formatos válidos:**\n• `<:nome_emoji:id_emoji>`\n• `<a:nome_emoji:id_emoji>` (animado)",
+        "default_emoji": "<:undone:1519800313324896327> **Emoji Padrão**\n\nEste comando só funciona com emojis personalizados do Discord.\nEmojis Unicode padrão como {emoji} não podem ser analisados."
+      },
+      "context_menu": {
+        "loading": "<a:spinner:1534857169667883078> **Extraindo {count} emoji(s) da mensagem...**",
+        "no_emojis": "<:undone:1519800313324896327> **Nenhum Emoji Personalizado**\n\nEsta mensagem não contém nenhum emoji personalizado do Discord.",
+        "navigation": "Emoji {current} de {total}",
+        "author_only": "Apenas o autor do comando pode usar estes botões de navegação."
+      }
+    },
+    "roll": {
+      "description": "Rola um dado aleatório",
+      "params": {
+        "max": "Valor máximo do dado (opcional, padrão 6)",
+        "incognito": "Torna a resposta visível apenas para você"
+      },
+      "view": {
+        "title": "### <:random:1519793103563788390> Rolagem de Dado",
+        "result": "**Resultado:** `{result}`",
+        "range": "-# Dado de {max} lados (1-{max})"
+      }
+    },
+    "invite": {
+      "description": "Consulta informações sobre um convite do Discord",
+      "params": {
+        "invite_code": "O código de convite do Discord (ex: 'discord' ou 'https://discord.gg/discord')",
+        "incognito": "Torna a resposta visível apenas para você"
+      },
+      "loading": "<a:spinner:1534857169667883078> **Buscando informações do convite...**",
+      "view": {
+        "guild": {
+          "title": "Informações do Convite",
+          "name": "Nome do Servidor",
+          "id": "ID do Servidor",
+          "description": "Descrição",
+          "members": "Membros",
+          "online": "Online",
+          "channel": "Canal",
+          "channel_type": "Tipo de Canal",
+          "inviter": "Convidado por",
+          "inviter_id": "ID de quem convidou",
+          "expires": "Expira em",
+          "features": "Recursos do Servidor",
+          "verification": "Nível de Verificação",
+          "nsfw": "Servidor NSFW",
+          "invite_code": "Código do Convite",
+          "invite_id": "ID do Convite",
+          "boost": "Impulso do Servidor",
+          "images": "Imagens",
+          "show_server_info": "Ver informações do servidor"
+        },
+        "server_info": {
+          "title": "Informações do Servidor",
+          "back": "Voltar"
+        },
+        "group_dm": {
+          "title": "Convite de Chat em Grupo",
+          "name": "Nome do Grupo",
+          "id": "ID do Grupo",
+          "members": "Membros",
+          "inviter": "Convidado por",
+          "inviter_id": "ID de quem convidou",
+          "invite_code": "Código do Convite"
+        },
+        "friend": {
+          "title": "Convite de Amigo",
+          "display_name": "Nome de Exibição",
+          "username": "Nome de Usuário",
+          "id": "ID do Usuário",
+          "invite_code": "Código do Convite"
+        }
+      },
+      "errors": {
+        "not_found": "<:undone:1519800313324896327> **Convite Não Encontrado**\n\nO código de convite `{code}` é inválido, expirou ou não existe.",
+        "rate_limit": "<:undone:1519800313324896327> **Limite de Requisições**\n\nMuitas requisições. Tente novamente mais tarde.",
+        "api_error": "<:undone:1519800313324896327> **Erro de API**\n\nFalha ao buscar informações do convite. Status: `{status}`",
+        "network_error": "<:undone:1519800313324896327> **Erro de Rede**\n\nNão foi possível conectar à API do Discord. Tente novamente.",
+        "generic": "<:undone:1519800313324896327> **Erro**\n\nOcorreu um erro: `{error}`",
+        "unknown_type": "<:undone:1519800313324896327> **Tipo de Convite Desconhecido**\n\nEste tipo de convite (`{type}`) não é reconhecido."
+      }
+    },
+    "moddy": {
+      "description": "Saiba mais sobre o Moddy",
+      "title": "Sobre o Moddy",
+      "bio": "Moddy é um poderoso bot do Discord criado para melhorar seu servidor com recursos avançados de moderação, utilidades e entretenimento. Construído com foco em confiabilidade e facilidade de uso, o Moddy ajuda administradores de servidor a criar comunidades melhores.",
+      "bot_info": {
+        "title": "Informações do Bot",
+        "version": "Versão",
+        "servers": "Servidores",
+        "users": "Usuários"
+      },
+      "links": {
+        "title": "Links"
+      },
+      "footer": {
+        "rights": "Todos os direitos reservados. Desenvolvido por [@**juthing**](https://github.com/juthing/)",
+        "disclaimer": "O Moddy não é afiliado à Discord Inc."
+      },
+      "buttons": {
+        "attribution": "Créditos",
+        "we_support": "Nós apoiamos",
+        "back": "Voltar"
+      },
+      "attribution": {
+        "title": "Créditos",
+        "description": "Esta página lista todos os projetos, ferramentas e recursos que usamos ou que inspiraram o desenvolvimento do Moddy. Muito obrigado aos seus criadores pelo trabalho!",
+        "google_fonts": "Todos os ícones/emojis que você vê no bot vêm do Google Fonts.",
+        "discordpy": "Todo o nosso bot é desenvolvido com discord.py.",
+        "userdoccers": "Esta documentação nos fornece endpoints não documentados para melhorar a experiência no Moddy.",
+        "railway": "Hospedamos o Moddy na infraestrutura da Railway."
+      },
+      "we_support": {
+        "title": "Nós apoiamos",
+        "description": "Aqui você encontra projetos que gostamos e queremos destacar. Isso não é uma parceria, apenas iniciativas que achamos interessantes e que valem a pena apoiar.",
+        "empty": "Nenhum projeto para exibir ainda. Volte mais tarde!"
+      },
+      "errors": {
+        "wrong_user": "Apenas o autor do comando pode usar estes botões."
+      }
+    },
+    "user": {
+      "description": "Exibe informações detalhadas sobre um usuário do Discord",
+      "params": {
+        "user": "O usuário a consultar (padrão: você mesmo)",
+        "incognito": "Torna a resposta visível apenas para você"
+      },
+      "loading": "<a:spinner:1534857169667883078> **Buscando informações do usuário...**",
+      "view": {
+        "title": "### <:user:1519798911517196511> Informações sobre **{name}**{badge}",
+        "display_name": "Nome de exibição",
+        "username": "Nome de usuário",
+        "id": "ID",
+        "badges": "Emblemas",
+        "moddy_badges": "Emblemas Moddy",
+        "created": "Criado em",
+        "banner_color": "Cor do banner",
+        "clan": "Clã",
+        "avatar_decoration": "Decoração de avatar",
+        "nameplate": "Nameplate",
+        "bot": "Bot",
+        "badges_learn_more": "Saiba mais",
+        "spammer": "Spammer",
+        "provisional_account": "Conta Provisória",
+        "discord_employee_notice": "Esta pessoa é funcionária do Discord",
+        "moddy_team_notice": "Esta pessoa faz parte da equipe Moddy",
+        "verified_org_member_notice": "Esta pessoa é afiliada a {org_name}",
+        "verified_org_member_no_org_notice": "Esta conta é membro verificado de uma organização",
+        "verified_org_notice": "Esta conta é uma organização verificada",
+        "verified_date": "Verificado em {date}",
+        "verified_learn_more": "Saiba mais"
+      },
+      "buttons": {
+        "bot_info": "Info do Bot",
+        "add_bot": "Adicionar Bot",
+        "description": "Descrição",
+        "avatar": "Avatar",
+        "banner": "Banner"
+      },
+      "bot_info": {
+        "title": "<:code:1519794490750271641> Informações do Bot - {name}",
+        "fields": {
+          "description": "Descrição",
+          "server_count": "Número de Servidores",
+          "public": "Bot Público",
+          "verified": "Bot Verificado",
+          "support_server": "Servidor de Suporte",
+          "support_server_id": "ID do Servidor de Suporte",
+          "http_interactions": "Interações HTTP",
+          "global_commands": "Comandos Globais",
+          "intents": "Intents"
+        },
+        "intents": {
+          "presence": "Presença",
+          "guild_members": "Membros do Servidor",
+          "message_content": "Conteúdo de Mensagens"
+        }
+      },
+      "avatar": {
+        "title": "<:user:1519798911517196511> Avatar de {username}",
+        "download": "Baixar avatar"
+      },
+      "banner": {
+        "title": "<:user:1519798911517196511> Banner de {username}",
+        "download": "Baixar banner"
+      },
+      "errors": {
+        "not_found": "<:undone:1519800313324896327> **Usuário Não Encontrado**\n\nNão foi possível obter informações deste usuário.",
+        "author_only": "<:undone:1519800313324896327> Você não pode usar estes botões, eles pertencem a outro usuário.",
+        "no_avatar": "<:undone:1519800313324896327> Este usuário não tem um avatar personalizado.",
+        "no_banner": "<:undone:1519800313324896327> Este usuário não tem banner.",
+        "no_description": "<:undone:1519800313324896327> Este bot não tem descrição.",
+        "generic": "<:undone:1519800313324896327> **Erro**\n\nOcorreu um erro: `{error}`"
+      }
+    },
+    "reminder": {
+      "description": "Adiciona um novo lembrete",
+      "manage_description": "Gerencia seus lembretes",
+      "params": {
+        "message": "O que devo lembrar você?",
+        "time": "Quando lembrar (ex: 1h30m, 2d, amanhã às 15h)",
+        "send_here": "Enviar o lembrete neste canal em vez de no DM",
+        "incognito": "Torna a resposta visível apenas para você"
+      },
+      "timezone_setup": {
+        "title": "### <:time:1519798202990330087> Configuração de Fuso Horário",
+        "description": "Antes de criar seu primeiro lembrete, selecione seu fuso horário.\nIsso garantirá que seus lembretes sejam enviados na hora correta.",
+        "placeholder": "Selecione seu fuso horário...",
+        "success": "Fuso horário definido como **{timezone}**! Agora você pode criar lembretes.",
+        "current": "Seu fuso horário atual: **{timezone}**"
+      },
+      "add": {
+        "title": "### <:notifications:1519793619861508147> Lembrete Criado",
+        "description": "Vou lembrar você:\n> {message}",
+        "time_field": "**Quando:** {time}",
+        "relative_field": "**Em:** {relative}",
+        "location_dm": "**Onde:** Mensagem Direta",
+        "location_channel": "**Onde:** <#{channel_id}>",
+        "footer": "Lembrete #{id}"
+      },
+      "manage": {
+        "title": "### <:notifications:1519793619861508147> Seus Lembretes",
+        "no_reminders": "Você não tem lembretes futuros.",
+        "reminder_item": "{message} | #{id}\n-# {relative} • {time}",
+        "reminder_item_channel": "{message} | #{id}\n-# {relative} • {time} • <#{channel_id}>",
+        "footer": "-# {count} lembrete(s) futuro(s) • Fuso horário: {timezone}",
+        "history_title": "### <:history:1519796822963392755> Lembretes Anteriores",
+        "history_empty": "Você não tem lembretes anteriores.",
+        "history_item": "{message} | #{id}\n-# Enviado {time}",
+        "history_item_failed": "{message} | #{id}\n-# Falha ao enviar {time}",
+        "history_footer": "-# {count} lembrete(s) anterior(es)"
+      },
+      "buttons": {
+        "add": "Adicionar",
+        "edit": "Editar",
+        "delete": "Excluir",
+        "timezone": "Fuso horário",
+        "history": "Histórico",
+        "back": "Voltar"
+      },
+      "modals": {
+        "add_title": "Novo Lembrete",
+        "add_message_label": "Mensagem",
+        "add_message_placeholder": "O que devo lembrar você?",
+        "add_time_label": "Quando",
+        "add_time_placeholder": "ex: 1h30m, 2d, amanhã às 15h, 25/12 9:00",
+        "edit_title": "Editar Lembrete",
+        "edit_message_label": "Mensagem",
+        "edit_time_label": "Novo horário (deixe em branco para manter o atual)",
+        "select_reminder": "Selecione um lembrete...",
+        "select_reminder_edit": "Selecione um lembrete para editar...",
+        "select_reminder_delete": "Selecione um lembrete para excluir..."
+      },
+      "success": {
+        "created": "<:done:1519800188925902881> Lembrete #{id} criado.",
+        "deleted": "<:done:1519800188925902881> Lembrete #{id} excluído.",
+        "edited": "<:done:1519800188925902881> Lembrete #{id} atualizado.",
+        "timezone_changed": "<:done:1519800188925902881> Fuso horário alterado para **{timezone}**."
+      },
+      "errors": {
+        "invalid_time": "<:undone:1519800313324896327> Formato de horário inválido. Exemplos: `1h30m`, `2d`, `amanhã às 15h`, `25/12 9:00`",
+        "past_time": "<:undone:1519800313324896327> O horário especificado está no passado.",
+        "too_long": "<:undone:1519800313324896327> A mensagem do lembrete é muito longa (máx. 1000 caracteres).",
+        "max_reminders": "<:undone:1519800313324896327> Você tem lembretes demais (máx. 50).",
+        "not_found": "<:undone:1519800313324896327> Lembrete não encontrado.",
+        "author_only": "<:undone:1519800313324896327> Você não pode usar estes botões, eles pertencem a outro usuário.",
+        "no_dm": "<:undone:1519800313324896327> Não consegui te enviar uma DM. Ative as DMs de membros do servidor.",
+        "generic": "<:undone:1519800313324896327> Ocorreu um erro: {error}"
+      },
+      "notification": {
+        "title": "### <:notifications:1519793619861508147> Lembrete",
+        "description": "{message}",
+        "footer": "Criado {time}",
+        "late_notice": "-# Este lembrete foi atrasado devido a manutenção do bot."
+      }
+    },
+    "preferences": {
+      "description": "Gerencia suas preferências pessoais",
+      "params": {
+        "incognito": "Torna a resposta visível apenas para você"
+      },
+      "title": "### <:settings:1519800032499339354> Preferências",
+      "main_description": "Personalize sua experiência com o Moddy.",
+      "buttons": {
+        "manage_timezone": "Gerenciar fuso horário",
+        "back": "Voltar"
+      },
+      "timezone": {
+        "title": "### <:time:1519798202990330087> Configurações de Fuso Horário",
+        "label": "**Selecione seu fuso horário:**",
+        "current": "Fuso horário atual: **{timezone}**",
+        "placeholder": "Selecione seu fuso horário...",
+        "success": "<:done:1519800188925902881> Fuso horário alterado para **{timezone}**.",
+        "auto_detected": "detectado automaticamente"
+      },
+      "footer": "-# Dica: seu fuso horário afeta os horários dos lembretes.",
+      "errors": {
+        "author_only": "<:undone:1519800313324896327> Você não pode usar estes botões, eles pertencem a outro usuário."
+      }
+    },
+    "webhook": {
+      "description": "Inspeciona e gerencia webhooks do Discord",
+      "params": {
+        "webhook": "URL do webhook ou ID/Token",
+        "incognito": "Torna a resposta visível apenas para você"
+      },
+      "loading": "<a:spinner:1534857169667883078> **Buscando informações do webhook...**",
+      "buttons": {
+        "delete": "Excluir",
+        "edit": "Editar",
+        "send": "Enviar Mensagem",
+        "refresh": "Atualizar"
+      },
+      "info": {
+        "title": "### <:webhook:1519793325329219675> Informações do Webhook",
+        "instruction": "-# Use os botões abaixo para gerenciar este webhook",
+        "fields": {
+          "name": "**Nome:** `{name}`",
+          "id": "**ID:** `{id}`",
+          "type": "**Tipo:** `{type}`",
+          "channel": "**Canal:** <#{channel_id}>",
+          "guild_id": "**ID do Servidor:** `{guild_id}`",
+          "avatar": "**Avatar:** [Ver]({url})"
+        }
+      },
+      "types": {
+        "incoming": "Webhook de Entrada",
+        "follower": "Seguidor de Canal",
+        "application": "Aplicativo",
+        "unknown": "Desconhecido"
+      },
+      "errors": {
+        "invalid_webhook": {
+          "title": "Webhook Inválido",
+          "description": "Forneça uma URL de webhook ou ID/Token válido.\n\n**Formatos válidos:**\n• `https://discord.com/api/webhooks/ID/TOKEN`\n• `ID/TOKEN`"
+        },
+        "not_found": {
+          "title": "Webhook Não Encontrado",
+          "description": "Não foi possível obter informações do webhook. Ele pode ser inválido ou ter sido excluído."
+        },
+        "url_not_found": {
+          "title": "Erro",
+          "description": "URL do webhook não encontrada."
+        },
+        "author_only": "Você não pode usar estes botões, eles pertencem a outro usuário.",
+        "generic": {
+          "title": "Erro",
+          "description": "Ocorreu um erro:\n```{error}```"
+        }
+      },
+      "delete": {
+        "success": {
+          "title": "Webhook Excluído",
+          "description": "O webhook **{name}** foi excluído com sucesso."
+        },
+        "failed": {
+          "title": "Falha na Exclusão",
+          "description": "Não foi possível excluir o webhook. Status: {status}\n```{error}```"
+        }
+      },
+      "edit": {
+        "modal_title": "Editar Webhook",
+        "name_label": "Nome do Webhook",
+        "name_placeholder": "Digite o novo nome do webhook",
+        "success": {
+          "title": "Webhook Atualizado",
+          "description": "O webhook foi renomeado para **{name}**."
+        },
+        "failed": {
+          "title": "Falha na Atualização",
+          "description": "Não foi possível atualizar o webhook. Status: {status}\n```{error}```"
+        }
+      },
+      "send": {
+        "modal_title": "Enviar Mensagem via Webhook",
+        "message_label": "Conteúdo da Mensagem",
+        "message_placeholder": "Digite a mensagem a ser enviada",
+        "username_label": "Substituir Nome de Usuário (Opcional)",
+        "username_placeholder": "Deixe em branco para usar o nome padrão do webhook",
+        "success": {
+          "title": "Mensagem Enviada",
+          "description": "Sua mensagem foi enviada com sucesso via webhook!"
+        },
+        "failed": {
+          "title": "Falha no Envio",
+          "description": "Não foi possível enviar a mensagem. Status: {status}\n```{error}```"
+        }
+      },
+      "refresh": {
+        "success": {
+          "title": "Atualizado",
+          "description": "As informações do webhook foram atualizadas."
+        },
+        "failed": {
+          "title": "Falha na Atualização",
+          "description": "Não foi possível atualizar o webhook. Status: {status}"
+        }
+      }
+    },
+    "saved_messages": {
+      "description": "Biblioteca de mensagens salvas",
+      "modals": {
+        "add_note_title": "Adicionar uma nota",
+        "edit_note_title": "Editar nota",
+        "view_title": "Ver uma mensagem",
+        "note_label": "Nota (opcional)",
+        "note_placeholder": "Adicione uma nota para lembrar desta mensagem...",
+        "id_label": "ID da mensagem Moddy"
+      },
+      "success": {
+        "saved": "<:done:1519800188925902881> Mensagem salva com sucesso! ID: #{id}",
+        "deleted": "<:done:1519800188925902881> Mensagem removida da sua biblioteca.",
+        "note_updated": "<:done:1519800188925902881> Nota atualizada com sucesso!",
+        "exported": "<:done:1519800188925902881> Dados JSON exportados!"
+      },
+      "errors": {
+        "max_messages": "<:undone:1519800313324896327> Você atingiu o limite de 500 mensagens salvas.",
+        "author_only": "Apenas o autor do comando pode usar esta interface.",
+        "not_found": "<:undone:1519800313324896327> Mensagem não encontrada na sua biblioteca.",
+        "invalid_id": "<:undone:1519800313324896327> ID inválido. Digite um número."
+      },
+      "library": {
+        "title": "### <:message:1519790643784843416> Biblioteca de Mensagens ({count})",
+        "empty": "Sua biblioteca está vazia.\nUse o menu de contexto **Salvar Mensagem** em uma mensagem para salvá-la!",
+        "page_label": "Página {page}/{total}"
+      },
+      "detail": {
+        "title": "**Detalhes da Mensagem**",
+        "moddy_id": "ID MODDY",
+        "saved_date": "Data de Salvamento",
+        "note": "Nota",
+        "message_id": "ID da Mensagem",
+        "channel_id": "ID do Canal",
+        "guild_id": "ID do Servidor",
+        "author_id": "ID do Autor",
+        "username": "Nome de Usuário",
+        "author_mention": "Menção do Autor",
+        "send_date": "Data de Envio",
+        "content": "Conteúdo",
+        "attachments": "Anexos",
+        "embeds": "Embeds",
+        "message_url": "URL da Mensagem",
+        "jump_to_message": "Ir para a mensagem",
+        "none": "Nenhum"
+      },
+      "buttons": {
+        "edit_note": "Editar nota",
+        "delete": "Excluir",
+        "back": "Voltar",
+        "view_message": "Ver uma mensagem",
+        "export_json": "Exportar JSON"
+      }
+    },
+    "cases": {
+      "case_title": "Caso {id}",
+      "status": "Status",
+      "status_value": {
+        "open": "Aberto",
+        "closed": "Fechado"
+      },
+      "type": "Tipo",
+      "type_value": {
+        "global": "Global",
+        "network": "Rede",
+        "guild": "Servidor",
+        "external": "Externo"
+      },
+      "opened": "Aberto em",
+      "reason": "Motivo",
+      "sanctions": "Sanções",
+      "action": {
+        "warn": "Advertência",
+        "mute": "Silenciamento",
+        "ban": "Banimento",
+        "restrict": "Restrição",
+        "revoke_access": "Revogação de Acesso"
+      },
+      "sanction_status": {
+        "active": "Ativa",
+        "expired": "Expirada",
+        "revoked": "Revogada"
+      },
+      "comments": "Comentários",
+      "page": "Caso {current} de {total}",
+      "not_yours": "Esta não é sua visualização de casos.",
+      "empty_title": "Nenhum Caso",
+      "empty": "Você não tem nenhum caso de moderação registrado.\n-# Isso é ótimo!",
+      "error": "Ocorreu um erro ao buscar seus casos. Tente novamente mais tarde.",
+      "browser": {
+        "title": "Casos",
+        "user_subtitle": "Todas as sanções vinculadas à sua conta, em todos os servidores.",
+        "server_subtitle": "Todas as sanções emitidas aqui.",
+        "reset": "Redefinir filtros",
+        "filters_button": "Filtros",
+        "filters_title": "Filtrar casos",
+        "active_filters": "Filtros ativos",
+        "status_label": "Status",
+        "action_label": "Tipo de sanção",
+        "period_label": "Período",
+        "server_label": "Servidor",
+        "user_label": "Usuário",
+        "user_label_hint": "Deixe em branco para mostrar todos os usuários",
+        "action_comment": "Comentar",
+        "action_edit": "Editar motivo",
+        "action_close": "Fechar caso",
+        "action_reopen": "Reabrir caso",
+        "action_add_sanction": "Adicionar sanção",
+        "action_revoke": "Revogar sanção",
+        "comment_prompt": "Seu comentário",
+        "reason_prompt": "Motivo do caso",
+        "add_sanction_title": "Adicionar uma sanção",
+        "revoke_title": "Revogar uma sanção",
+        "sanction_action_label": "Sanção",
+        "sanction_note_label": "Nota (opcional)",
+        "sanction_duration_label": "Duração em horas (opcional)",
+        "sanction_duration_hint": "Apenas para sanções temporárias — deixe em branco para permanente",
+        "revoke_select_label": "Sanção a revogar",
+        "no_active_sanctions": "Este caso não tem sanção ativa para revogar.",
+        "invalid_duration": "Duração inválida. Insira um número de horas ou deixe em branco.",
+        "not_found_title": "Caso Não Encontrado",
+        "not_found": "Nenhum caso correspondente a {id} foi encontrado aqui. Verifique a referência e tente novamente.",
+        "no_permitted_actions": "Você não tem a permissão necessária para nenhuma sanção deste caso.",
+        "action_permission_denied": "Falta a você a permissão do Discord necessária para esta ação (ex: Banir Membros para gerenciar um banimento).",
+        "status_placeholder": "Filtrar por status",
+        "action_placeholder": "Filtrar por tipo de sanção",
+        "period_placeholder": "Filtrar por período",
+        "server_placeholder": "Filtrar por servidor",
+        "user_placeholder": "Filtrar por usuário",
+        "open_placeholder": "Abra um caso para ver todos os detalhes",
+        "all_status": "Todos os status",
+        "all_actions": "Todos os tipos de sanção",
+        "all_periods": "Todo o período",
+        "all_servers": "Todos os servidores",
+        "period": {
+          "1d": "Últimas 24 horas",
+          "7d": "Últimos 7 dias",
+          "30d": "Últimos 30 dias",
+          "90d": "Últimos 90 dias"
+        },
+        "results": "{count} caso(s)",
+        "page": "Página {current}/{total}",
+        "empty": "Nenhum caso registrado ainda.",
+        "empty_filtered": "Nenhum caso corresponde aos seus filtros.",
+        "back": "Voltar",
+        "action_evidence": "Evidências",
+        "action_add_evidence": "Adicionar evidência",
+        "evidence_title": "Evidências — Caso {id}",
+        "no_evidence": "Nenhuma evidência foi anexada a este caso.",
+        "evidence_link_label": "Link da mensagem",
+        "evidence_link_description": "Cole um link de mensagem do Discord (clique com o botão direito > Copiar Link da Mensagem)",
+        "evidence_link_invalid": "<:error:1519790252594827264> Este não é um link de mensagem do Discord válido.",
+        "evidence_wrong_server": "<:error:1519790252594827264> Esta mensagem não é deste servidor.",
+        "evidence_message_not_found": "<:error:1519790252594827264> Mensagem não encontrada — verifique o link ou as permissões do bot naquele canal.",
+        "evidence_go_to_message": "Ir para a mensagem",
+        "evidence_in_channel": "em <#{channel_id}>",
+        "evidence_empty_message": "*(mensagem vazia)*",
+        "in_server": "Em",
+        "subject_user": "Usuário",
+        "issued_by": "Emitido por",
+        "scope_field": "Servidor",
+        "unknown_server": "Servidor desconhecido (`{id}`)",
+        "no_comments": "Nenhum comentário público.",
+        "more_items": "+{count} mais…",
+        "proof": "Mensagem em questão",
+        "permission_denied_title": "Permissões Insuficientes",
+        "permission_denied": "Você precisa de permissões de moderação (banir, expulsar, silenciar membros ou gerenciar servidor) para ver as sanções deste servidor.",
+        "guild_only": "Este comando só pode ser usado em um servidor.",
+        "scope": {
+          "discord_guild": "Servidor",
+          "network": "Rede",
+          "platform": "Moddy",
+          "external_service": "Externo"
+        }
+      }
+    },
+    "moderation": {
+      "modal": {
+        "title_ban": "Banir",
+        "title_mute": "Silenciar",
+        "title_warn": "Advertir",
+        "title_kick": "Expulsar",
+        "users_label": "Usuários alvo",
+        "users_description": "Selecione os usuários a sancionar",
+        "reason_label": "Motivo",
+        "reason_placeholder": "Digite o motivo desta sanção...",
+        "duration_label": "Duração",
+        "duration_placeholder": "ex: 7d, 24h, 30m — deixe em branco para permanente",
+        "duration_description": "Deixe em branco ou escreva \"permanente\" para não expirar",
+        "evidence_label": "Evidência",
+        "evidence_description": "Os arquivos ficarão acessíveis ao usuário sancionado",
+        "notify_dm_label": "Notificar usuário(s) por DM"
+      },
+      "confirm": {
+        "action_ban": "banido(s)",
+        "action_mute": "silenciado(s)",
+        "action_warn": "advertido(s)",
+        "action_kick": "expulso(s)",
+        "reason": "Motivo",
+        "duration": "Duração",
+        "case_id": "ID do Caso",
+        "permanent": "Permanente",
+        "users_sanctioned": "usuários"
+      },
+      "dm": {
+        "ban_title": "Você foi banido :(",
+        "mute_title": "Você foi silenciado :(",
+        "warn_title": "Você recebeu uma advertência :(",
+        "kick_title": "Você foi expulso :(",
+        "reason": "Motivo",
+        "responsible": "Responsável",
+        "expires": "Expira automaticamente",
+        "permanent": "Nunca (permanente)",
+        "case_id": "ID do Caso",
+        "sent_by": "Enviado por [**{guild}**]({guild_url}) (`{guild_id}`)"
+      },
+      "errors": {
+        "invalid_duration_title": "Duração Inválida",
+        "invalid_duration": "Use formatos como `7d`, `24h`, `30m`, ou deixe em branco para permanente.",
+        "no_users_title": "Nenhum Usuário Selecionado",
+        "no_users": "Selecione pelo menos um usuário para sancionar.",
+        "all_failed_title": "Ação Falhou",
+        "all_failed": "Não foi possível aplicar a sanção. Verifique as permissões do bot.",
+        "cannot_target_self_title": "Alvo Inválido",
+        "cannot_target_self": "Você não pode sancionar a si mesmo.",
+        "cannot_target_owner_title": "Alvo Inválido",
+        "cannot_target_owner": "O dono do servidor não pode ser sancionado.",
+        "member_hierarchy_title": "Hierarquia de Cargos",
+        "member_hierarchy": "Seu cargo mais alto deve estar acima do cargo mais alto do alvo.",
+        "bot_hierarchy_title": "Hierarquia do Bot",
+        "bot_hierarchy": "O cargo mais alto do Moddy deve estar acima do cargo mais alto do alvo para executar esta ação."
+      }
+    }
+  },
+  "errors": {
+    "generic": {
+      "title": "Ocorreu um erro",
+      "description": "**Código de Erro:** `{error_code}`\n\nEste erro foi registrado e será analisado.\nVocê pode fornecer este código ao desenvolvedor, se necessário."
+    },
+    "permissions": {
+      "title": "Permissões Insuficientes",
+      "description": "Permissões faltando: `{permissions}`"
+    },
+    "cooldown": {
+      "title": "Tempo de Espera Ativo",
+      "description": "Tente novamente em `{time}` segundos"
+    },
+    "argument": {
+      "title": "Argumento Faltando",
+      "description": "O argumento `{argument}` é obrigatório"
+    },
+    "not_your_message": {
+      "title": "Esta não é sua mensagem",
+      "description": "<:undone:1519800313324896327> Você não pode usar estes botões, eles pertencem a outro usuário."
+    }
+  },
+  "common": {
+    "loading": "<a:spinner:1534857169667883078> Carregando...",
+    "success": "<:done:1519800188925902881> Sucesso!",
+    "error": "<:undone:1519800313324896327> Erro",
+    "info": "<:info:1519793991045091388> Informação",
+    "warning": "<:warning:1398729560895422505> Aviso",
+    "yes": "Sim",
+    "no": "Não",
+    "unknown": "Desconhecido",
+    "none": "Nenhum"
+  },
+  "modules": {
+    "config": {
+      "main": {
+        "title": "Painel de Configuração",
+        "description": "Bem-vindo ao painel de configuração do Moddy! Selecione um módulo abaixo para configurar suas opções.",
+        "select_placeholder": "Selecione um módulo para configurar",
+        "no_modules": "Nenhum módulo disponível no momento.",
+        "hint": "Selecione um módulo para acessar sua configuração detalhada.",
+        "not_implemented": "A configuração do módulo **{module_name}** ainda não está disponível."
+      },
+      "status": {
+        "label": "Status do módulo:",
+        "enabled": "Ativado",
+        "disabled": "Desativado"
+      },
+      "buttons": {
+        "back": "Voltar",
+        "save": "Salvar",
+        "cancel": "Cancelar",
+        "delete": "Excluir configuração"
+      },
+      "save": {
+        "success": "<:done:1519800188925902881> Configuração salva com sucesso!",
+        "error": "<:error:1519790252594827264> Erro ao salvar: {error}"
+      },
+      "delete": {
+        "success": "<:delete:1519795753164210447> Configuração excluída com sucesso!",
+        "error": "<:error:1519790252594827264> Erro ao excluir."
+      },
+      "errors": {
+        "guild_only": "<:error:1519790252594827264> Este comando só pode ser usado em um servidor.",
+        "bot_not_in_guild": "<:error:1519790252594827264> O Moddy precisa estar presente neste servidor para usar este comando.",
+        "wrong_user": "<:error:1519790252594827264> Apenas o usuário que iniciou a configuração pode usar esta interface.",
+        "no_user_perms": "<:error:1519790252594827264> Você precisa da permissão **Gerenciar Servidor** para usar este comando.",
+        "required_fields": "<:undone:1519800313324896327> **Configuração inválida** - Os seguintes campos devem ser preenchidos:\n• {fields}",
+        "channel_not_found": "Canal não encontrado",
+        "no_admin_perms": {
+          "title": "Permissões Insuficientes",
+          "description": "O Moddy precisa de **permissões de administrador** para gerenciar os módulos do servidor.\n\nReconvide o bot com as permissões corretas.",
+          "button": "Reconvidar o Moddy"
+        },
+        "dev_only": {
+          "title": "Recurso em Desenvolvimento",
+          "description": "Os módulos de servidor estão atualmente em desenvolvimento e disponíveis apenas para membros da equipe Moddy e beta testers.\n\nEntre no nosso servidor de suporte para saber mais e participar dos testes!",
+          "button": "Entrar no Servidor de Suporte"
+        }
+      },
+      "current_value": "Valor atual:",
+      "not_configured": "Não configurado"
+    },
+    "welcome_channel": {
+      "name": "Canal de Boas-vindas",
+      "description": "Mensagem de boas-vindas em um canal público",
+      "config": {
+        "title": "Configuração do Canal de Boas-vindas",
+        "description": "Configure a mensagem de boas-vindas enviada em um canal público quando um novo membro entra no servidor.",
+        "channel": {
+          "placeholder": "Selecione um canal",
+          "section_title": "Canal de boas-vindas",
+          "section_description": "Selecione o canal onde as mensagens de boas-vindas serão enviadas"
+        },
+        "message": {
+          "section_title": "Mensagem de boas-vindas",
+          "section_description": "Personalize a mensagem. Variáveis disponíveis: {user}, {username}, {server}, {member_count}",
+          "edit_button": "Editar mensagem",
+          "mention_user": "Mencionar usuário",
+          "modal": {
+            "label": "Mensagem de boas-vindas",
+            "placeholder": "Bem-vindo(a) {user} ao {server}!"
+          }
+        },
+        "embed": {
+          "section_title": "Opções do embed",
+          "section_description": "Personalize a aparência do embed",
+          "toggle": "Ativar embed",
+          "edit_title": "Editar título",
+          "edit_description": "Editar descrição",
+          "edit_color": "Editar cor",
+          "thumbnail": "Mostrar avatar",
+          "author": "Mostrar como autor",
+          "title_modal": {
+            "label": "Título do embed",
+            "placeholder": "Bem-vindo(a)!"
+          },
+          "description_modal": {
+            "label": "Descrição do embed",
+            "placeholder": "Deixe em branco para usar a mensagem de boas-vindas"
+          },
+          "color_modal": {
+            "label": "Cor do embed (hex)",
+            "placeholder": "#5865F2",
+            "error": "Cor inválida! Use o formato #RRGGBB"
+          }
+        }
+      }
+    },
+    "welcome_dm": {
+      "name": "Boas-vindas por DM",
+      "description": "Mensagem de boas-vindas por mensagem privada",
+      "config": {
+        "title": "Configuração de Boas-vindas por DM",
+        "description": "Configure a mensagem de boas-vindas enviada de forma privada (DM) aos novos membros.",
+        "message": {
+          "section_title": "Mensagem de boas-vindas",
+          "section_description": "Personalize a mensagem. Variáveis disponíveis: {user}, {username}, {server}, {member_count}",
+          "edit_button": "Editar mensagem",
+          "modal": {
+            "label": "Mensagem de boas-vindas",
+            "placeholder": "Bem-vindo(a) ao {server}!"
+          }
+        },
+        "embed": {
+          "section_title": "Opções do embed",
+          "section_description": "Personalize a aparência do embed",
+          "toggle": "Ativar embed",
+          "edit_title": "Editar título",
+          "edit_description": "Editar descrição",
+          "edit_color": "Editar cor",
+          "thumbnail": "Mostrar avatar",
+          "author": "Mostrar como autor",
+          "title_modal": {
+            "label": "Título do embed",
+            "placeholder": "Bem-vindo(a)!"
+          },
+          "description_modal": {
+            "label": "Descrição do embed",
+            "placeholder": "Deixe em branco para usar a mensagem de boas-vindas"
+          },
+          "color_modal": {
+            "label": "Cor do embed (hex)",
+            "placeholder": "#5865F2",
+            "error": "Cor inválida! Use o formato #RRGGBB"
+          }
+        }
+      }
+    },
+    "interserver": {
+      "name": "Inter-Servidor",
+      "description": "Conecta vários servidores por meio de canais dedicados",
+      "config": {
+        "title": "Configuração do Módulo Inter-Servidor",
+        "description": "Conecte seu servidor com outros servidores do Discord para criar um portal de comunicação entre servidores.",
+        "channel": {
+          "section_title": "Canal inter-servidor",
+          "section_description": "Selecione o canal que será conectado a outros servidores",
+          "placeholder": "Selecione um canal"
+        },
+        "channel_id": {
+          "section_title": "Canal inter-servidor"
+        },
+        "type": {
+          "section_title": "Tipo de inter-servidor",
+          "section_description": "Escolha qual inter-servidor você quer participar",
+          "placeholder": "Selecione um tipo",
+          "english": "Inter-servidor em inglês",
+          "english_desc": "Participe do inter-servidor internacional em inglês",
+          "french": "Inter-servidor em francês",
+          "french_desc": "Participe do inter-servidor de língua francesa"
+        },
+        "interserver_type": {
+          "section_title": "Tipo de inter-servidor"
+        },
+        "options": {
+          "section_title": "Opções de exibição",
+          "section_description": "Configure como as mensagens são exibidas em outros servidores",
+          "placeholder": "Selecione as opções a ativar",
+          "show_server_name": "Mostrar nome do servidor",
+          "show_server_name_desc": "Adiciona o nome do servidor ao lado do nome de usuário",
+          "show_avatar": "Mostrar avatar",
+          "show_avatar_desc": "Exibe o avatar do autor original",
+          "allowed_mentions": "Permitir menções",
+          "allowed_mentions_desc": "Permite @menções em mensagens inter-servidor"
+        },
+        "warning": {
+          "title": "Aviso de segurança",
+          "description": "As mensagens enviadas neste canal ficarão visíveis para todos os servidores conectados. Certifique-se de que seus membros entendam isso."
+        }
+      },
+      "welcome_dm": {
+        "title": "### <:groups:1519789805456724049> Canal Inter-Servidor",
+        "body": "<:web:1519798069191901254> Este é um canal inter-servidor internacional que conecta vários servidores do Discord.\n<:book:1519788969691316467> Siga as Diretrizes do Inter-Servidor e os Termos de Serviço do Discord.\n<:verified:1519799054631043332> Este canal é moderado pela equipe de moderação do Moddy.\n<:flag:1519789496181461183> Para denunciar uma mensagem à nossa equipe, entre no nosso servidor de suporte ou use /interserver report.\n\n-# Você está recebendo esta mensagem porque enviou sua primeira mensagem em um canal inter-servidor."
+      },
+      "channel_description": "🌐 Canal Inter-Servidor | Conecte-se com usuários de vários servidores do Discord | Siga as Diretrizes do Inter-Servidor (https://moddy.app/interserver-guidelines) | Moderado pela Equipe Moddy | Denunciar: /interserver report"
+    },
+    "starboard": {
+      "name": "Starboard",
+      "description": "Mural de destaque para mensagens populares",
+      "config": {
+        "title": "Configuração do Starboard",
+        "description": "Configure o starboard que exibe automaticamente mensagens com muitas reações de estrela.",
+        "channel": {
+          "section_title": "Canal do starboard",
+          "section_description": "Selecione o canal onde as mensagens populares serão exibidas",
+          "placeholder": "Selecione um canal"
+        },
+        "reaction_count": {
+          "section_title": "Quantidade de reações necessária",
+          "section_description": "Número de reações necessário para uma mensagem aparecer no starboard",
+          "edit_button": "Editar limite",
+          "modal": {
+            "label": "Quantidade de reações",
+            "placeholder": "5",
+            "error_range": "A quantidade de reações deve estar entre 1 e 100",
+            "error_invalid": "Digite um número válido"
+          }
+        },
+        "emoji": {
+          "section_title": "Emoji de reação",
+          "section_description": "Emoji padrão do Discord com o qual reagir para ativar o starboard (emojis personalizados não são permitidos)",
+          "edit_button": "Editar emoji",
+          "modal": {
+            "label": "Emoji",
+            "placeholder": "⭐",
+            "error_custom": "Emojis personalizados não são permitidos, escolha um emoji padrão do Discord",
+            "error_invalid": "Emoji inválido, digite um emoji padrão do Discord"
+          }
+        }
+      },
+      "message": {
+        "title": "Starboard",
+        "jump_button": "Ir para a mensagem"
+      }
+    },
+    "auto_role": {
+      "name": "Cargo Automático",
+      "description": "Atribui cargos automaticamente aos novos membros",
+      "config": {
+        "title": "Configuração de Cargo Automático",
+        "description": "Configure a atribuição automática de cargos para novos membros e bots que entrarem no seu servidor.",
+        "member_roles": {
+          "section_title": "Cargos para usuários",
+          "section_description": "Cargos que serão atribuídos automaticamente aos usuários que entrarem no servidor",
+          "placeholder": "Selecione os cargos para usuários"
+        },
+        "bot_roles": {
+          "section_title": "Cargos para bots",
+          "section_description": "Cargos que serão atribuídos automaticamente aos bots que entrarem no servidor",
+          "placeholder": "Selecione os cargos para bots"
+        }
+      }
+    },
+    "auto_restore_roles": {
+      "name": "Restauração Automática de Cargos",
+      "description": "Restaura automaticamente os cargos de usuários que retornam",
+      "config": {
+        "title": "Restauração Automática de Cargos",
+        "description": "Configure a restauração automática de cargos quando um usuário que saiu do servidor retorna.",
+        "mode": {
+          "section_title": "Modo de salvamento",
+          "section_description": "Escolha quais cargos devem ser salvos",
+          "placeholder": "Selecione um modo",
+          "all": {
+            "label": "Todos os cargos",
+            "description": "Salva todos os cargos do usuário"
+          },
+          "except": {
+            "label": "Todos exceto alguns cargos",
+            "description": "Salva todos os cargos, exceto os selecionados"
+          },
+          "only": {
+            "label": "Apenas alguns cargos",
+            "description": "Salva apenas os cargos selecionados"
+          }
+        },
+        "excluded_roles": {
+          "section_title": "Cargos a excluir",
+          "section_description": "Selecione os cargos que NÃO serão salvos",
+          "placeholder": "Selecione os cargos a excluir"
+        },
+        "included_roles": {
+          "section_title": "Cargos a incluir",
+          "section_description": "Selecione os cargos que serão salvos",
+          "placeholder": "Selecione os cargos a incluir"
+        },
+        "log_channel": {
+          "section_title": "Canal de registro",
+          "section_description": "Canal onde os registros de salvamento e restauração serão enviados (opcional)",
+          "placeholder": "Selecione um canal de registro"
+        },
+        "saved_info": {
+          "title": "Cargos salvos",
+          "description": "{count} usuário(s) têm cargos salvos aguardando restauração"
+        }
+      },
+      "commands": {
+        "error": {
+          "no_manager": "<:error:1519790252594827264> O gerenciador de módulos não está disponível.",
+          "not_configured": "<:error:1519790252594827264> O módulo de Restauração Automática de Cargos não está configurado neste servidor.",
+          "not_enabled": "<:error:1519790252594827264> O módulo de Restauração Automática de Cargos não está ativado neste servidor.",
+          "internal": "<:error:1519790252594827264> Ocorreu um erro interno."
+        },
+        "clear": {
+          "no_roles": "<:info:1519793991045091388> O usuário {user} não tem cargos salvos.",
+          "confirm_title": "Confirmação de exclusão",
+          "confirm_description": "Tem certeza de que deseja excluir os cargos salvos de {user}?",
+          "user_field": "Usuário",
+          "roles_field": "Cargos salvos ({count})",
+          "saved_at_field": "Salvo em",
+          "no_roles_found": "Nenhum cargo encontrado",
+          "success_title": "Cargos excluídos",
+          "success_description": "Os cargos salvos de {user} foram excluídos com sucesso.",
+          "error": "<:error:1519790252594827264> Não foi possível excluir os cargos salvos."
+        },
+        "view": {
+          "no_saved_roles": "<:info:1519793991045091388> Nenhum usuário tem cargos salvos neste servidor.",
+          "title": "Usuários com cargos salvos",
+          "description": "{count} usuário(s) têm cargos aguardando restauração",
+          "user_info": "{role_count} cargo(s) salvo(s)",
+          "saved_at": "Salvo em"
+        }
+      }
+    },
+    "adaptive_slowmode": {
+      "name": "Slowmode Adaptativo",
+      "description": "Ajusta automaticamente o slowmode com base na atividade do canal",
+      "config": {
+        "title": "Configuração do Slowmode Adaptativo",
+        "description": "Monitore canais e deixe o Moddy ajustar automaticamente o slowmode com base na atividade em tempo real. Cada canal tem suas próprias configurações.",
+        "channel_list": {
+          "section_title": "Canais monitorados",
+          "empty": "Nenhum canal configurado ainda. Adicione um com o botão abaixo.",
+          "add_button": "Adicionar um canal",
+          "edit_button": "Editar",
+          "remove_button": "Remover"
+        },
+        "channel_settings": {
+          "title_add": "Novo canal",
+          "title_edit": "Editar canal",
+          "already_configured": "Este canal já está configurado. Use o botão Editar para modificá-lo.",
+          "channel": {
+            "section_title": "Canal",
+            "section_description": "Canal de texto cujo slowmode será gerenciado automaticamente",
+            "placeholder": "Selecione um canal de texto"
+          },
+          "min_delay": {
+            "section_title": "Atraso mínimo",
+            "section_description": "Slowmode aplicado durante atividade normal (0 = sem slowmode)",
+            "edit_button": "Editar"
+          },
+          "max_delay": {
+            "section_title": "Atraso máximo",
+            "section_description": "Slowmode máximo aplicado durante picos de atividade (em segundos)",
+            "edit_button": "Editar"
+          },
+          "sensitivity": {
+            "section_title": "Sensibilidade",
+            "section_description": "Determina quanta atividade é necessária para aumentar o slowmode",
+            "placeholder": "Selecione um nível de sensibilidade",
+            "low": {
+              "label": "Baixa",
+              "description": "Só é ativado durante picos de atividade significativos"
+            },
+            "medium": {
+              "label": "Normal",
+              "description": "Equilíbrio entre reatividade e estabilidade (recomendado)"
+            },
+            "high": {
+              "label": "Alta",
+              "description": "Muito reativo, se adapta assim que a atividade começa a subir"
+            }
+          }
+        },
+        "delay_modal": {
+          "min_label": "Atraso mínimo (segundos)",
+          "max_label": "Atraso máximo (segundos)",
+          "error_invalid": "Digite um número inteiro válido",
+          "error_range": "O valor deve estar entre 0 e 21600 segundos",
+          "error_min_gte_max": "O atraso mínimo deve ser menor que o atraso máximo",
+          "error_max_lte_min": "O atraso máximo deve ser maior que o atraso mínimo"
+        }
+      }
+    },
+    "social_notifications": {
+      "description": "Receba notificações quando contas sociais publicarem conteúdo novo (YouTube, Twitch, Bluesky, RSS…)",
+      "platforms": {
+        "youtube": "YouTube",
+        "twitch": "Twitch",
+        "bluesky": "Bluesky",
+        "rss": "Feed RSS",
+        "instagram": "Instagram"
+      },
+      "config": {
+        "title": "Notificações Sociais",
+        "description": "Siga contas sociais e publique um alerta no seu servidor sempre que elas postarem algo novo.",
+        "premium_note": "Servidor Premium: o conteúdo novo é verificado na taxa mais rápida disponível.",
+        "free_note": "O conteúdo novo é verificado regularmente — faça upgrade para o Premium para verificações mais rápidas.",
+        "service_down": "**O serviço de notificações está atualmente inacessível.** Você ainda pode editar sua configuração, mas as alterações podem demorar para ser aplicadas.",
+        "manage_placeholder": "Selecione uma inscrição para gerenciar",
+        "list": {
+          "title": "Contas seguidas",
+          "count": "{count} conta(s) seguida(s)",
+          "roles": "{count} cargo(s) mencionado(s)",
+          "paused": "pausado",
+          "empty": "Nenhuma conta seguida ainda. Adicione uma para começar a receber notificações.",
+          "more": "… e mais {count}"
+        }
+      },
+      "buttons": {
+        "add": "Adicionar",
+        "confirm": "Confirmar"
+      },
+      "account": {
+        "modal_title": "Conta a seguir",
+        "label": "Conta",
+        "description": "Handle, nome de usuário, canal ou URL do feed — depende da plataforma.",
+        "placeholder": "@handle, URL do canal, URL do feed RSS…",
+        "title": "Conta a seguir",
+        "section_description": "A conta cujo conteúdo novo aciona as notificações.",
+        "current": "Atual:",
+        "not_set": "*não definido*",
+        "button": "Definir conta"
+      },
+      "customize": {
+        "modal_title": "Personalizar a mensagem",
+        "title": "Mensagem",
+        "section_description": "A mensagem de notificação completa, incluindo o título.",
+        "message_label": "Mensagem",
+        "message_description": "Texto completo — inclua o título com ##, # ou ###.",
+        "color_label": "Cor de destaque (hex)",
+        "color_description": "Como #FF0000. Deixe em branco para usar a cor da plataforma.",
+        "display_label": "Opções de exibição",
+        "option_avatar": "Mostrar foto de perfil como miniatura",
+        "option_media": "Mostrar prévia de mídia",
+        "placeholders_header": "Marcadores disponíveis:",
+        "ph_author": "Autor",
+        "ph_title": "Título",
+        "ph_platform": "Plataforma",
+        "ph_url": "Link",
+        "ph_timestamp": "Data — ex: <t:{timestamp}:R>",
+        "button": "Personalizar mensagem",
+        "default_state": "Usando a mensagem padrão",
+        "custom_state": "Mensagem personalizada definida"
+      },
+      "add": {
+        "title": "Adicionar uma inscrição",
+        "description": "Escolha uma plataforma, um canal, cargos opcionais para mencionar e a conta a seguir.",
+        "soon": "em breve",
+        "limit_free": "Servidores gratuitos podem seguir {max} conta por plataforma — faça upgrade para o Premium para 5.",
+        "limit_premium": "Premium: até {max} contas por plataforma.",
+        "platform": {
+          "title": "Plataforma",
+          "description": "A plataforma social a seguir.",
+          "placeholder": "Selecione uma plataforma"
+        },
+        "platform_disabled": "Esta plataforma ainda não está disponível — em breve!",
+        "channel": {
+          "title": "Canal",
+          "description": "Onde as notificações serão publicadas.",
+          "placeholder": "Selecione um canal"
+        },
+        "roles": {
+          "title": "Cargos a mencionar",
+          "description": "Opcional — esses cargos são mencionados em cada notificação.",
+          "placeholder": "Selecione os cargos (opcional)"
+        },
+        "source": {
+          "title": "Conta a seguir",
+          "description": "Handle, nome de usuário, canal ou URL do feed — depende da plataforma.",
+          "current": "Atual:",
+          "not_set": "*não definido*",
+          "message_set": "Mensagem personalizada definida.",
+          "button": "Definir conta e mensagem"
+        },
+        "modal": {
+          "title": "Conta a seguir",
+          "identifier_label": "Conta",
+          "identifier_placeholder": "@handle, URL do canal, URL do feed RSS…",
+          "message_label": "Mensagem personalizada (opcional)",
+          "message_placeholder": "Use {author}, {title}, {url}, {platform}. Deixe em branco para usar o padrão."
+        },
+        "success": "<:done:1519800188925902881> Agora seguindo **{name}**!"
+      },
+      "manage": {
+        "channel": {
+          "title": "Canal",
+          "description": "Onde as notificações são publicadas.",
+          "placeholder": "Selecione um canal"
+        },
+        "roles": {
+          "title": "Cargos a mencionar",
+          "description": "Esses cargos são mencionados em cada notificação.",
+          "placeholder": "Selecione os cargos (opcional)"
+        },
+        "message": {
+          "title": "Mensagem personalizada",
+          "current": "Atual:",
+          "none": "*mensagem padrão*",
+          "button": "Editar mensagem",
+          "modal_title": "Mensagem personalizada",
+          "label": "Mensagem",
+          "placeholder": "Use {author}, {title}, {url}, {platform}. Deixe em branco para usar o padrão."
+        },
+        "pause": "Pausar",
+        "resume": "Retomar",
+        "remove": "Remover",
+        "removed": "<:delete:1519795753164210447> Inscrição removida.",
+        "updated": "<:done:1519800188925902881> Atualizado."
+      },
+      "notify": {
+        "type": {
+          "video": "Novo vídeo",
+          "live": "Ao vivo agora",
+          "post": "Nova postagem",
+          "article": "Novo artigo",
+          "default": "Novo conteúdo"
+        },
+        "open": {
+          "video": "Assistir",
+          "live": "Assistir ao vivo",
+          "post": "Ver postagem",
+          "article": "Ler artigo",
+          "default": "Abrir"
+        },
+        "default_caption": "**{author}** acabou de postar algo novo!"
+      },
+      "errors": {
+        "unknown_platform": "<:error:1519790252594827264> Plataforma inválida.",
+        "platform_disabled": "<:warning:1519789903100121139> Esta plataforma ainda não está disponível — em breve!",
+        "missing_identifier": "<:error:1519790252594827264> Forneça uma conta para seguir.",
+        "channel_not_found": "<:error:1519790252594827264> Conta não encontrada — verifique o nome ou a URL.",
+        "user_not_found": "<:error:1519790252594827264> Conta não encontrada — verifique o nome ou a URL.",
+        "handle_not_found": "<:error:1519790252594827264> Conta não encontrada — verifique o nome ou a URL.",
+        "unsafe_url": "<:error:1519790252594827264> Esta URL não é permitida.",
+        "no_entries": "<:warning:1519789903100121139> Este feed ainda não tem nada.",
+        "fetch_failed": "<:error:1519790252594827264> Não foi possível acessar a conta no momento. Tente novamente.",
+        "bad_status": "<:error:1519790252594827264> Não foi possível acessar a conta no momento. Tente novamente.",
+        "not_supported": "<:warning:1519789903100121139> Este conector não está disponível.",
+        "twitch_not_configured": "<:error:1519790252594827264> O Twitch não está configurado do nosso lado. Entre em contato com o suporte.",
+        "twitch_auth_failed": "<:error:1519790252594827264> Falha na autenticação do Twitch. Entre em contato com o suporte.",
+        "timeout": "<:error:1519790252594827264> O serviço de notificações demorou demais para responder. Tente novamente.",
+        "service_unavailable": "<:error:1519790252594827264> O serviço de notificações está indisponível no momento. Tente novamente mais tarde.",
+        "no_permission": "<:error:1519790252594827264> Você precisa da permissão **Gerenciar Servidor** para configurar isso.",
+        "limit_reached_free": "<:warning:1519789903100121139> Servidores gratuitos podem seguir apenas **1 conta por plataforma**. Remova uma ou faça upgrade para o Premium para seguir até 5.",
+        "limit_reached_premium": "<:warning:1519789903100121139> Você atingiu o máximo de **5 contas por plataforma** para este servidor.",
+        "internal_error": "<:error:1519790252594827264> Algo deu errado. Tente novamente."
+      }
+    },
+    "automod_ai": {
+      "description": "Moderação automática de mensagens problemáticas (IA)",
+      "config": {
+        "title": "Automod",
+        "description": "Moderação assistida por IA: detecta insultos, assédio, discurso de ódio, ameaças e incitação, então aplica sanções e mantém um registro nos casos com evidências.",
+        "summary_active": "<:green_status:1450929035428495505> **Automod ativo** — as mensagens estão sendo analisadas.",
+        "summary_inactive": "<:red_status:1450929038758772940> **Automod inativo**",
+        "summary_need_module": "Ative o módulo para começar.",
+        "summary_need_content": "Ative pelo menos uma detecção para começar.",
+        "section_status": "Status",
+        "module_label": "Módulo Automod",
+        "module_desc": "Interruptor principal do automod.",
+        "content_label": "Detecção de conteúdo",
+        "content_desc": "Insultos, assédio, discurso de ódio, ameaças, incitação (análise por IA).",
+        "state": {
+          "on": "Ativado",
+          "off": "Desativado"
+        },
+        "section_rules": "Regras do servidor",
+        "section_logs": "Canal de registro",
+        "section_exemptions": "Isenções",
+        "section_options": "Opções",
+        "buttons": {
+          "enable_module": "Ativar módulo",
+          "disable_module": "Desativar módulo",
+          "enable_content": "Ativar detecção",
+          "disable_content": "Desativar detecção",
+          "enable_ignore": "Ativar",
+          "disable_ignore": "Desativar",
+          "edit_rules": "Editar regras",
+          "edit_indications": "Editar orientações",
+          "view_precedents": "Ver precedentes"
+        },
+        "rules": {
+          "desc": "Orienta a IA ao julgar mensagens. Verificado contra tentativas de injeção antes de ser salvo.",
+          "current": "Atual",
+          "empty": "Nenhuma regra definida — a IA usa padrões de moderação razoáveis.",
+          "modal_label": "Regras do servidor",
+          "modal_placeholder": "Descreva as regras do seu servidor (respeito, sem insultos…).",
+          "checking": "<a:spinner:1534857169667883078> Verificando as regras com a IA…",
+          "error_unsafe": "<:error:1519790252594827264> Regras rejeitadas: parecem uma tentativa de manipular a IA.\n-# Motivo: {reason}",
+          "error_too_long": "<:error:1519790252594827264> As regras são muito longas (máx. 3000 caracteres).",
+          "error_unavailable": "<:warning:1519789903100121139> Não é possível verificar as regras no momento (serviço de IA indisponível). Tente novamente mais tarde.",
+          "saved": "<:done:1519800188925902881> Regras verificadas e salvas.",
+          "cleared": "<:done:1519800188925902881> Regras apagadas."
+        },
+        "log_channel": {
+          "desc": "Canal onde o Automod publicará suas decisões. (opcional)",
+          "placeholder": "Escolha um canal de registro",
+          "current": "Canal atual",
+          "none": "Nenhum canal definido"
+        },
+        "exempt_roles": {
+          "label": "Cargos isentos",
+          "desc": "Membros com esses cargos nunca são analisados.",
+          "placeholder": "Escolha os cargos a isentar",
+          "none": "Nenhum cargo isento"
+        },
+        "exempt_channels": {
+          "label": "Canais isentos",
+          "desc": "Mensagens nesses canais não são analisadas.",
+          "placeholder": "Escolha os canais a isentar",
+          "none": "Nenhum canal isento"
+        },
+        "ignore_mods": {
+          "label": "Ignorar moderadores",
+          "desc": "Não analisar membros que podem gerenciar mensagens."
+        },
+        "apply_hint": "As alterações são aplicadas imediatamente.",
+        "summary_need_channel": "Defina o **canal de alerta** (obrigatório) para começar.",
+        "section_notify": "Canal de alerta",
+        "notify": {
+          "desc": "Canal onde o Automod notifica o servidor sobre cada ação. Obrigatório.",
+          "placeholder": "Escolha o canal de alerta…",
+          "current": "Atual:",
+          "missing": "Nenhum canal definido — o automod não funcionará até que um seja definido."
+        },
+        "section_severity": "Nível de severidade",
+        "severity": {
+          "desc": "Quanto mais alto o nível, mais sensível e severo é o automod.",
+          "current": "Nível atual:",
+          "placeholder": "Escolha um nível (1 a 5)…",
+          "option": "Nível {n}",
+          "level_1": "Muito leniente — apenas casos evidentes e graves.",
+          "level_2": "Leniente — deixa passar linguagem casual leve.",
+          "level_3": "Equilibrado — moderação razoável (recomendado).",
+          "level_4": "Rigoroso — também age em casos sutis, sanções mais duras.",
+          "level_5": "Muito rigoroso — tolerância mínima, sanções severas."
+        },
+        "section_indications": "Orientações do Automod",
+        "indications": {
+          "desc": "Orienta a IA ao julgar mensagens. Verificado contra tentativas de injeção antes de salvar.",
+          "current": "Atual",
+          "empty": "Nenhuma orientação — a IA aplica padrões de moderação razoáveis.",
+          "modal_title": "Orientações do Automod",
+          "modal_label": "Orientação",
+          "modal_desc": "O que a IA deve observar/tolerar no seu servidor.",
+          "modal_placeholder": "Ex.: sem insultos ou assédio, humor é tolerado…",
+          "saved": "<:done:1519800188925902881> Orientação verificada e salva.",
+          "cleared": "<:done:1519800188925902881> Orientação apagada.",
+          "error_unsafe": "<:error:1519790252594827264> Orientação rejeitada: parece uma tentativa de manipular a IA.\n-# Motivo: {reason}",
+          "error_too_long": "<:error:1519790252594827264> A orientação é muito longa (máx. 3000 caracteres).",
+          "error_unavailable": "<:warning:1519789903100121139> Não é possível verificar a orientação no momento (serviço de IA indisponível). Tente novamente mais tarde.",
+          "checked": "<:done:1519800188925902881> Orientação verificada e adicionada à cópia de trabalho. Pressione Salvar para aplicar."
+        },
+        "status_hint": "Marque/desmarque no menu abaixo para ativar ou desativar.",
+        "activations": {
+          "placeholder": "Ativar / desativar…"
+        },
+        "section_limits": "Limites e idioma",
+        "max_action": {
+          "desc": "A ação mais severa que o automod pode aplicar.",
+          "placeholder": "Ação máxima…",
+          "option_warn": "No máximo advertência",
+          "option_mute": "No máximo silenciamento",
+          "option_ban": "Banimento permitido"
+        },
+        "language": {
+          "desc": "Idioma das mensagens de sanção (motivo, DM ao membro).",
+          "placeholder": "Idioma da sanção…",
+          "auto": "Automático (idioma do servidor)",
+          "fr": "Francês",
+          "en": "Inglês"
+        },
+        "dry_run": {
+          "label": "Modo simulação",
+          "desc": "Detecta e mostra, mas não aplica nenhuma sanção (recomendado na primeira semana)",
+          "active": "Modo simulação ativo: as sanções são mostradas, mas nunca aplicadas."
+        },
+        "section_precedents": "Precedentes",
+        "precedents": {
+          "title": "Precedentes aprendidos",
+          "desc": "O automod aprende a cultura do seu servidor a partir das suas decisões (apelações decididas, anotações do modo simulação).",
+          "empty": "Nenhum precedente aprendido ainda.",
+          "count": "**{n}** precedente(s) aprendido(s)",
+          "last": "último:",
+          "page": "página {current}/{total}",
+          "prev": "Anterior",
+          "next": "Próximo",
+          "verdict_not": "não sancionável",
+          "verdict_yes": "sancionável",
+          "delete_placeholder": "Excluir um precedente incorreto…",
+          "delete_option": "Excluir precedente {n}",
+          "deleted": "Precedente excluído."
+        }
+      },
+      "action": {
+        "warn": "Advertência",
+        "mute": "Silenciamento",
+        "ban": "Banimento",
+        "kick": "Expulsão",
+        "supprimer": "Exclusão"
+      },
+      "log": {
+        "title": "Automod",
+        "author": "Autor",
+        "channel": "Canal",
+        "actions": "Ações",
+        "reason": "Motivo",
+        "explanation": "Explicação",
+        "case": "Caso",
+        "appeal_hint": "O membro pode contestar esta decisão junto à equipe Moddy ou à sua equipe de moderação.",
+        "detection_only": "Somente detecção",
+        "deleted": "Excluída",
+        "message_id": "ID da Mensagem"
+      },
+      "dm": {
+        "title": "Sanção automática",
+        "title_warn": "Você recebeu uma advertência :(",
+        "title_mute": "Você foi silenciado",
+        "title_ban": "Você foi banido",
+        "title_kick": "Você foi expulso",
+        "intro": "Uma ação de moderação foi aplicada em {guild}.",
+        "action": "Sanção",
+        "reason": "Motivo",
+        "explanation": "Explicação",
+        "responsible": "Responsável",
+        "responsible_value": "Automod do Moddy",
+        "expires": "Expira automaticamente",
+        "permanent": "Nunca (permanente)",
+        "sent_by": "Enviado por [**{guild}**](<https://discord.com/channels/{guild_id}>) (`{guild_id}`)",
+        "case": "ID do Caso",
+        "appeal_state": "Status do recurso",
+        "appeal_more": "Mais informações",
+        "appeal_decided_by": "Tratado por",
+        "appeal_hint": "Você pode recorrer desta sanção abaixo.",
+        "appeal_server": "Recorrer ao servidor",
+        "appeal_team": "Recorrer à equipe Moddy"
+      },
+      "appeal": {
+        "status": {
+          "pending": "Pendente",
+          "accepted": "Aceito",
+          "refused": "Recusado",
+          "transformed": "Transformado",
+          "cancelled": "Cancelado"
+        },
+        "modal": {
+          "title": "Recurso",
+          "label": "Por que você está contestando?",
+          "desc": "Explique sua situação de forma clara e calma.",
+          "placeholder": "Descreva por que esta sanção parece injusta…"
+        },
+        "opened_title": "Recurso enviado",
+        "opened_server": "Seu recurso foi enviado aos moderadores do servidor. Você será notificado da decisão.",
+        "opened_team": "Seu recurso foi enviado à equipe Moddy. Você será notificado da decisão.",
+        "error": {
+          "title": "Não é possível recorrer",
+          "already": "Já há um recurso em andamento para esta sanção.",
+          "handled": "Este recurso já foi tratado.",
+          "no_perms": "Você não tem permissão para tratar este recurso.",
+          "not_found": "Caso não encontrado.",
+          "unavailable": "Serviço indisponível, tente novamente mais tarde.",
+          "claim_first": "Assuma este recurso antes de decidir sobre ele.",
+          "not_claimer": "Este recurso está sendo tratado por outro revisor.",
+          "invite_failed": "Não foi possível criar um convite do servidor (permissão faltando ou nenhum canal utilizável)."
+        },
+        "button": {
+          "accept": "Aceitar",
+          "decline": "Recusar",
+          "claim": "Assumir",
+          "invite": "Convidar",
+          "refuse": "Recusar",
+          "transform": "Transformar"
+        },
+        "review": {
+          "title_team": "Recurso de Automod",
+          "title_server": "Recurso de Automod",
+          "user": "Usuário",
+          "display_name": "Nome de exibição",
+          "username": "Nome de usuário",
+          "id": "ID",
+          "guild": "Servidor",
+          "name": "Nome",
+          "members": "Membros",
+          "member": "Membro",
+          "server": "Servidor",
+          "case": "Caso",
+          "actions": "Ação(ões)",
+          "sanction": "Sanção",
+          "motive": "Motivo",
+          "explanation": "Explicação",
+          "created": "Criado em",
+          "expires": "Expira em",
+          "evidence": "Evidência",
+          "proof": "Prova",
+          "context": "Contexto",
+          "technical": "Informações técnicas",
+          "case_uuid": "UUID do Caso",
+          "appeal_id": "ID do Recurso",
+          "user_says": "Recurso do usuário",
+          "outcome": "Decisão",
+          "decided_by": "Decidido por",
+          "claimed_by": "Assumido por",
+          "claimed": "Assumido"
+        },
+        "accept_choice": {
+          "title": "Aceitar o recurso",
+          "prompt": "Cancelar totalmente a sanção, ou modificar o caso (alterar a sanção, duração ou motivo)?",
+          "full": "Cancelamento total",
+          "modify": "Modificar o caso"
+        },
+        "modify": {
+          "title": "Modificar o caso",
+          "action": "Nova sanção",
+          "duration": "Duração (horas)",
+          "duration_hint": "Deixe em branco para permanente.",
+          "reason": "Motivo",
+          "note": "Nota (opcional)",
+          "invalid_duration": "A duração deve ser um número inteiro de horas."
+        },
+        "invite": {
+          "title": "Convite do servidor",
+          "body": "Aqui está um convite de uso único para **{guild}** para que você possa investigar:\n{url}"
+        },
+        "transform": {
+          "title": "Transformar a sanção",
+          "label": "Nova sanção",
+          "note": "Nota (opcional)"
+        },
+        "dm_outcome_title": "Decisão sobre seu recurso",
+        "dm_outcome": "Seu recurso relativo a {guild} foi tratado: **{status}**.",
+        "server_opened_title": "Recurso em andamento",
+        "server_opened": "{user} recorreu à equipe Moddy (caso {case}).",
+        "server_decided_title": "Recurso tratado",
+        "server_decided": "O recurso de {user} ({route}) foi tratado: **{status}**."
+      },
+      "bareme": {
+        "title": "Escala: {sanction} (nível {cran})",
+        "cran": "nível {n}",
+        "floor": "Piso",
+        "recidivism": "Reincidência",
+        "severity": "Severidade do servidor",
+        "confidence": "Limite de confiança",
+        "veteran": "Antiguidade (histórico limpo)",
+        "fresh_account": "Conta nova",
+        "ceiling": "Teto do servidor",
+        "disabled_category": "Categoria desativada",
+        "unconfirmed": "Confirmação da IA recusada",
+        "review_hint": "Sanção severa decidida pela IA — um moderador pode revisá-la.",
+        "review_hint_unconfirmed": "Sanção severa proposta pela IA, rebaixada após revisão — um moderador pode revisá-la.",
+        "bounds": "Limites 0–7"
+      },
+      "budget": {
+        "title": "Orçamento diário de IA atingido",
+        "body": "A cota diária de análises por IA do automod ({cap}) foi atingida por hoje. Casos flagrantes (termos explícitos, conteúdo bem acima do limite) ainda são tratados e excluídos, mas a sensibilidade da IA fica reduzida até amanhã. Esta mensagem é exibida apenas uma vez por dia."
+      },
+      "shadow": {
+        "badge": "SIMULAÇÃO — nenhuma ação aplicada",
+        "would_apply": "Sanção simulada",
+        "annotate_hint": "Moderadores: esta decisão está correta?",
+        "button": {
+          "ok": "Correto",
+          "fp": "Falso positivo",
+          "disp": "Desproporcional"
+        },
+        "annotated": {
+          "correct": "Julgado correto",
+          "faux_positif": "Julgado falso positivo",
+          "disproportionne": "Julgado desproporcional"
+        },
+        "error": {
+          "title": "Não é possível fazer isso",
+          "no_perms": "Apenas moderadores (gerenciar mensagens) podem anotar uma simulação.",
+          "gone": "Esta simulação não existe mais."
+        }
+      }
+    }
+  },
+  "languages": {
+    "en-US": "Inglês (EUA)",
+    "en-us": "Inglês (EUA)",
+    "en-GB": "Inglês (Reino Unido)",
+    "en-gb": "Inglês (Reino Unido)",
+    "fr": "Francês",
+    "de": "Alemão",
+    "es-ES": "Espanhol",
+    "es-es": "Espanhol",
+    "it": "Italiano",
+    "pt-BR": "Português (BR)",
+    "pt-br": "Português (BR)",
+    "pt-PT": "Português",
+    "pt-pt": "Português",
+    "nl": "Holandês",
+    "pl": "Polonês",
+    "ru": "Russo",
+    "ja": "Japonês",
+    "zh-CN": "Chinês (Simplificado)",
+    "zh-cn": "Chinês (Simplificado)",
+    "ko": "Coreano",
+    "tr": "Turco",
+    "sv-SE": "Sueco",
+    "sv-se": "Sueco",
+    "da": "Dinamarquês",
+    "no": "Norueguês",
+    "fi": "Finlandês",
+    "el": "Grego",
+    "cs": "Tcheco",
+    "ro": "Romeno",
+    "hu": "Húngaro",
+    "uk": "Ucraniano",
+    "bg": "Búlgaro",
+    "lmo": "Lombardo"
+  },
+  "staff": {
+    "common": {
+      "permission_denied": {
+        "title": "Permissão Negada",
+        "description": "Você não tem permissão para usar este comando."
+      },
+      "invalid_usage": {
+        "title": "Uso Inválido"
+      },
+      "error": {
+        "title": "Algo Deu Errado",
+        "description": "Ocorreu um erro inesperado ao executar este comando. Ele foi registrado."
+      },
+      "unknown_command": {
+        "title": "Comando Desconhecido",
+        "description": "O comando de staff `{command}` não foi encontrado."
+      },
+      "modal_prompt": {
+        "title": "Mais Um Passo",
+        "description": "Clique no botão abaixo para abrir o formulário."
+      },
+      "not_your_menu": "Este menu não é para você.",
+      "confirm": "Confirmar",
+      "cancel": "Cancelar",
+      "cancelled": "Cancelado",
+      "affiliation": "Afiliado a {orgs}",
+      "cancelled_desc": "Nenhuma alteração foi feita.",
+      "unknown_subcommand": {
+        "title": "Subcomando Desconhecido",
+        "description": "`{group}` não tem subcomando para isso. Disponíveis: {subs}."
+      }
+    },
+    "dev": {
+      "db_unavailable": "O banco de dados não está conectado.",
+      "cogmanager_missing": "O CogManager não está carregado.",
+      "shutdown": {
+        "title": "Encerrando",
+        "description": "O Moddy está sendo encerrado…"
+      },
+      "stats": {
+        "title": "Estatísticas do Moddy",
+        "description": "Métricas de execução em tempo real.",
+        "bot": "Bot",
+        "latency": "Latência",
+        "uptime": "Tempo ativo",
+        "discord": "Discord",
+        "guilds": "Servidores",
+        "users": "Usuários",
+        "commands": "Comandos",
+        "database": "Banco de dados",
+        "errors": "Erros",
+        "system": "Sistema",
+        "extensions": "Extensões"
+      },
+      "cogs": {
+        "title": "Cogs Carregados",
+        "total": "{count} cog(s) carregado(s)",
+        "enabled": "Ativado",
+        "disabled": "Desativado",
+        "none": "Nenhum cog carregado."
+      },
+      "disabled": {
+        "title": "Cogs Desativados",
+        "count": "{count} cog(s) desativado(s)",
+        "none_title": "Nenhum Cog Desativado",
+        "none_description": "Todos os cogs estão atualmente ativados."
+      },
+      "reload": {
+        "loading_title": "Recarregando",
+        "loading_all": "Recarregando todas as extensões…",
+        "reloaded": "Recarregado(s) ({count})",
+        "failed": "Falhou(aram) ({count})",
+        "done_title": "Recarregamento Concluído",
+        "done_ok": "Todas as extensões foram recarregadas com sucesso.",
+        "done_errors": "Algumas extensões falharam ao recarregar.",
+        "single_ok_title": "Extensão Recarregada",
+        "single_ok": "{ext} recarregada com sucesso.",
+        "single_fail_title": "Falha ao Recarregar",
+        "single_fail": "Falha ao recarregar {ext}."
+      },
+      "disable": {
+        "title": "Cog Desativado",
+        "fail_title": "Não É Possível Desativar"
+      },
+      "enable": {
+        "title": "Cog Ativado",
+        "fail_title": "Não É Possível Ativar"
+      },
+      "presence": {
+        "title": "Presença Atualizada",
+        "usage": "**Uso:** `d.presence <status> [atividade]`\nStatus: {options}",
+        "updated": "Presença alterada para **{status}**.",
+        "activity": "Atividade"
+      },
+      "error": {
+        "title": "Erro {code}",
+        "subtitle": "Detalhes do erro registrado (origem: {source}).",
+        "notfound_title": "Erro Não Encontrado",
+        "notfound": "Nenhum erro encontrado com o código {code}.",
+        "details": "Detalhes",
+        "message": "Mensagem",
+        "context": "Contexto",
+        "no_context": "Nenhuma informação de contexto disponível.",
+        "occurred": "Ocorrido em"
+      },
+      "serverlist": {
+        "title": "Lista de Servidores",
+        "total": "{count} servidores",
+        "page": "Página {current}/{total}",
+        "empty": "Nenhum servidor encontrado.",
+        "members": "Membros",
+        "joined": "Entrou em"
+      },
+      "sql": {
+        "done_title": "Consulta Executada",
+        "no_rows": "Nenhuma linha retornada.",
+        "rows": "**{count}** linha(s) retornada(s).",
+        "result": "Resultado",
+        "fail_title": "Falha na Consulta",
+        "danger_title": "Consulta Perigosa",
+        "danger_description": "Esta consulta pode modificar ou destruir dados. Confirme para executá-la.",
+        "cancelled": "Execução da consulta cancelada."
+      },
+      "jsk": {
+        "no_output": "Executado com sucesso (sem saída).",
+        "done_title": "Código Executado",
+        "fail_title": "Falha na Execução",
+        "modal_title": "Avaliação Python",
+        "modal_label": "Código",
+        "modal_hint": "Python — async/await suportado. Variáveis: bot, db, guild, channel…",
+        "open_button": "Abrir Editor"
+      },
+      "sync": {
+        "loading_title": "Sincronizando",
+        "loading": "Sincronizando comandos de aplicativo com o Discord…",
+        "done_title": "Comandos Sincronizados",
+        "global_done": "**{count}** comando(s) global(is) sincronizado(s).",
+        "guilds_done": "Árvores de comando ressincronizadas para **{count}** servidor(es).",
+        "guild_done": "Comandos ressincronizados para {name}.",
+        "invalid_title": "Alvo Inválido",
+        "invalid": "Forneça `global`, `guilds`, ou um ID de servidor válido.",
+        "fail_title": "Falha na Sincronização"
+      },
+      "official": {
+        "title": "Servidor Oficial",
+        "added": "{name} ({id}) agora é um servidor **oficial** do Moddy. Os comandos de staff estão disponíveis lá.",
+        "removed": "{name} ({id}) não é mais um servidor oficial do Moddy. Os comandos de staff foram removidos.",
+        "not_present": "O Moddy não está presente neste servidor no momento; a alteração foi salva e será aplicada caso ele entre.",
+        "sync_failed": "Salvo, mas a ressincronização de comandos falhou — execute `/dev sync <guild_id>` manualmente."
+      },
+      "announcements": {
+        "notfound_title": "Servidor Não Encontrado",
+        "notfound": "Não foi possível encontrar um servidor com o id {id}.",
+        "loading_title": "Configurando Anúncios",
+        "loading": "Configurando o canal de anúncios para {name}…",
+        "done_title": "Anúncios Prontos",
+        "done": "Anúncios configurados para {name} ({id}).",
+        "fail_title": "Falha na Configuração",
+        "fail": "Não foi possível configurar anúncios para {name}."
+      }
+    },
+    "team": {
+      "server_notfound_title": "Servidor Não Encontrado",
+      "server_notfound": "O Moddy não está em um servidor com o id {id}.",
+      "user_notfound_title": "Usuário Não Encontrado",
+      "user_notfound": "Nenhum usuário encontrado com o id {id}.",
+      "attributes": "Atributos",
+      "none": "Nenhum",
+      "invite": {
+        "title": "Convite do Servidor",
+        "open": "Abrir Convite",
+        "fail_title": "Não É Possível Criar Convite",
+        "no_perm": "O Moddy não pode criar convites em {name}."
+      },
+      "server": {
+        "title": "Servidor — {name}",
+        "basic": "Informações Básicas",
+        "name": "Nome",
+        "owner": "Dono",
+        "created": "Criado em",
+        "members": "Membros",
+        "total": "Total",
+        "humans": "Humanos",
+        "bots": "Bots",
+        "channels": "Canais",
+        "categories": "Categorias",
+        "roles": "Cargos",
+        "boost": "Impulso",
+        "level": "Nível",
+        "boosts": "Impulsos",
+        "features": "Recursos"
+      },
+      "user": {
+        "title": "Informações do Usuário",
+        "basic": "Informações Básicas",
+        "username": "Nome de Usuário",
+        "bot": "Bot",
+        "created": "Criado em",
+        "shared": "Servidores em Comum",
+        "first_seen": "Visto pela Primeira Vez"
+      },
+      "mutual": {
+        "title": "Servidores em Comum ({count})",
+        "none_title": "Nenhum Servidor em Comum",
+        "none": "O Moddy não compartilha nenhum servidor com {user}.",
+        "top_role": "Cargo Principal",
+        "perms": "Permissões Principais",
+        "no_perms": "Nenhuma"
+      },
+      "subscription": {
+        "title": "Assinatura",
+        "status": "Status",
+        "active": "Ativa",
+        "inactive": "Inativa",
+        "expires": "Expira em",
+        "linked": "servidor(es) vinculado(s)",
+        "servers": "Servidores Vinculados",
+        "fetch_fail": "Falha ao buscar dados da assinatura."
+      },
+      "flex": {
+        "not_staff_title": "Não É Membro da Equipe",
+        "not_staff": "Você não tem nenhum cargo de staff na equipe Moddy.",
+        "message": "é {role} da Equipe Moddy",
+        "disclaimer": "Membros da equipe Moddy estão autorizados a agir no seu servidor. Esta mensagem previne roubo de identidade.",
+        "no_perm": "Não consigo enviar ou excluir mensagens neste canal.",
+        "roles": {
+          "developer": "desenvolvedor",
+          "manager": "gerente",
+          "mod_supervisor": "supervisor de moderação",
+          "member": "membro",
+          "support": "agente de suporte",
+          "moderator": "moderador"
+        },
+        "authorized": "A equipe Moddy está autorizada a agir no seu servidor.",
+        "prevent": "Esta mensagem foi enviada para prevenir roubo de identidade."
+      },
+      "help": {
+        "title": "Comandos de Staff",
+        "subtitle": "Comandos que você pode usar, por departamento.",
+        "empty": "Você não tem acesso a nenhum comando de staff.",
+        "groups": {
+          "d": "Desenvolvimento",
+          "t": "Equipe",
+          "m": "Gerenciamento",
+          "mod": "Moderação",
+          "sup": "Suporte",
+          "com": "Comunicação"
+        },
+        "count": "{count} comando(s)",
+        "placeholder": "Escolha um departamento…"
+      }
+    },
+    "mod": {
+      "interserver": {
+        "notfound_title": "Mensagem Não Encontrada",
+        "notfound": "Nenhuma mensagem inter-servidor encontrada com o id {id}.",
+        "no_content": "Sem conteúdo",
+        "author": "Autor",
+        "origin": "Origem",
+        "content": "Conteúdo",
+        "meta": "Detalhes",
+        "timestamp": "Enviado em",
+        "status": "Status",
+        "team_msg": "Mensagem da Equipe Moddy",
+        "relayed": "Retransmitido para",
+        "info_title": "Mensagem Inter-Servidor {id}",
+        "already_deleted_title": "Já Excluída",
+        "already_deleted": "A mensagem {id} já está excluída.",
+        "deleted_title": "Mensagem Excluída",
+        "deleted": "A mensagem inter-servidor {id} foi removida de todos os servidores ({count} cópias).",
+        "confirm_title": "Excluir Mensagem Inter-Servidor?",
+        "confirm": "Isso exclui permanentemente a mensagem {id} de todos os servidores para onde foi retransmitida."
+      },
+      "case": {
+        "usage_target": "Forneça um alvo: um usuário (menção/id) ou `guild <guild_id>`.",
+        "invalid_id_title": "Referência de Caso Inválida",
+        "invalid_id": "Uma referência de caso é um código de {length} caracteres (ex: `A7F2K9`).",
+        "notfound_title": "Caso Não Encontrado",
+        "notfound": "Nenhum caso encontrado com a referência {id}.",
+        "staff_target_title": "Não É Possível Visar um Membro da Equipe",
+        "staff_target": "Você não pode abrir um caso de moderação para um membro da equipe.",
+        "case_title": "Caso {id}",
+        "status": "Status",
+        "status_value": {
+          "open": "Aberto",
+          "closed": "Fechado"
+        },
+        "locked": "Bloqueado",
+        "type": "Tipo",
+        "type_value": {
+          "global": "Global",
+          "network": "Rede",
+          "guild": "Servidor",
+          "external": "Externo"
+        },
+        "subject": "Sujeito",
+        "scope": "Escopo",
+        "issuer": "Emissor",
+        "reason": "Motivo",
+        "reason_placeholder": "Forneça um motivo claro para este caso...",
+        "sanctions": "Sanções",
+        "no_sanctions": "Nenhuma sanção neste caso.",
+        "timeline": "Linha do tempo",
+        "timeline_more": "+{count} evento(s) anterior(es)",
+        "permanent": "Permanente",
+        "by": "por",
+        "system": "Sistema",
+        "action": {
+          "warn": "Advertência",
+          "mute": "Silenciamento",
+          "ban": "Banimento",
+          "restrict": "Restrição",
+          "revoke_access": "Revogação de Acesso"
+        },
+        "evt": {
+          "sanction_added": "Sanção adicionada: **{action}**",
+          "sanction_revoked": "Sanção revogada",
+          "sanction_expired": "Sanção expirada: **{action}**",
+          "status_change": "Status: `{frm}` → `{to}` (`{trigger}`)"
+        },
+        "create_title": "Abrir Caso de Moderação",
+        "create_hint": "Selecione um tipo de caso e uma primeira sanção.",
+        "create_button": "Abrir Caso",
+        "create_done_title": "Caso Aberto",
+        "create_done": "O caso {id} foi aberto.",
+        "select_type": "Selecione o tipo de caso...",
+        "select_action": "Selecione a sanção...",
+        "select_sanction": "Selecione a sanção a revogar...",
+        "duration_hours": "Duração (horas, em branco = permanente)",
+        "invalid_duration_title": "Duração Inválida",
+        "invalid_duration": "Forneça um número positivo de horas, ou deixe em branco para uma sanção permanente.",
+        "sanction_note": "Nota (opcional)",
+        "add_sanction_title": "Adicionar Sanção — {id}",
+        "add_sanction_modal": "Adicionar Sanção",
+        "sanction_added_title": "Sanção Adicionada",
+        "sanction_added": "Uma sanção foi adicionada ao caso {id}.",
+        "revoke_title": "Revogar Sanção — {id}",
+        "revoke_failed_title": "Falha na Revogação",
+        "revoke_failed": "Essa sanção não está mais ativa.",
+        "revoke_done_title": "Sanção Revogada",
+        "revoke_done": "Uma sanção do caso {id} foi revogada.",
+        "no_active_title": "Nenhuma Sanção Ativa",
+        "no_active": "O caso {id} não tem sanção ativa para revogar.",
+        "comment_title": "Adicionar Comentário",
+        "comment_label": "Comentário",
+        "comment_done_title": "Comentário Adicionado",
+        "comment_done": "Seu comentário foi adicionado ao caso {id}.",
+        "note_title": "Adicionar Nota Interna",
+        "note_label": "Nota interna",
+        "note_done_title": "Nota Adicionada",
+        "note_done": "Nota interna adicionada ao caso {id}.",
+        "edit_title": "Editar Motivo",
+        "edit_done_title": "Caso Atualizado",
+        "edit_done": "O caso {id} foi atualizado.",
+        "list_empty_title": "Nenhum Caso",
+        "list_empty": "Nenhum caso de moderação encontrado para {name}.",
+        "list_title": "Casos — {name}",
+        "list_count": "Mostrando {shown} de {total} caso(s)",
+        "list_more": "Use /mod case view <referência> para ver todos os detalhes."
+      }
+    },
+    "manage": {
+      "not_staff_title": "Não É Membro da Equipe",
+      "not_staff": "{user} não é membro da equipe.",
+      "hierarchy": "Você só pode modificar membros da equipe abaixo do seu nível de hierarquia.",
+      "list": {
+        "title": "Equipe Moddy",
+        "empty": "Nenhum membro da equipe encontrado.",
+        "total": "{count} membro(s) da equipe"
+      },
+      "info": {
+        "title": "Membro da Equipe",
+        "roles": "Cargos",
+        "no_roles": "Nenhum cargo",
+        "permissions": "Permissões Concedidas",
+        "joined": "Entrou na Equipe",
+        "updated": "Última Atualização"
+      },
+      "unrank": {
+        "confirm_title": "Remover da Equipe?",
+        "confirm": "Remover {user} da equipe? Todos os seus cargos e permissões serão revogados.",
+        "done_title": "Membro da Equipe Removido",
+        "done": "{user} foi removido da equipe."
+      },
+      "staff": {
+        "title": "Gerenciamento de Equipe",
+        "subtitle": "Atribua cargos e configure permissões, depois salve.",
+        "roles": "Cargos",
+        "roles_hint": "Selecione quais cargos este membro possui.",
+        "roles_placeholder": "Selecione os cargos…",
+        "common": "Permissões Comuns",
+        "perms": "Permissões",
+        "perms_hint": "Escolha um escopo, depois selecione as permissões a conceder.",
+        "scope_placeholder": "Configurar permissões para…",
+        "perms_placeholder": "Selecione as permissões…",
+        "save": "Salvar",
+        "remove": "Remover da equipe",
+        "cannot_assign": "Você não pode atribuir: {roles}.",
+        "removed_title": "Removido da Equipe",
+        "removed": "{user} foi removido da equipe.",
+        "saved_title": "Equipe Atualizada",
+        "saved": "Os cargos e permissões de {user} foram salvos.",
+        "bot_title": "Alvo Inválido",
+        "bot": "Bots não podem ser adicionados à equipe."
+      },
+      "badge": {
+        "removed_title": "Emblema Removido",
+        "removed": "Emblema {key} removido de {user}.",
+        "assigned_title": "Emblema Atribuído",
+        "assigned": "Emblema {key} atribuído a {user}.",
+        "orgs": "Organização(ões): {orgs}",
+        "import_fail_title": "Erro de Importação",
+        "import_bad_json": "JSON inválido — esperava-se um array de entradas.",
+        "import_summary": "{ok} ok, {err} erro(s)",
+        "import_title": "Importação de Emblema"
+      },
+      "subrefresh": {
+        "title": "Cache de Assinatura Atualizado",
+        "done": "O cache de assinatura de {id} foi limpo. A próxima leitura buscará dados atualizados do banco de dados."
+      },
+      "redirect": {
+        "modal_add": "Adicionar Redirecionamento",
+        "modal_edit": "Editar Redirecionamento",
+        "domain": "Domínio",
+        "path": "Caminho (começa com /)",
+        "target": "URL de Destino",
+        "description": "Descrição",
+        "added": "Redirecionamento Adicionado",
+        "updated": "Redirecionamento Atualizado",
+        "notfound_title": "Redirecionamento Não Encontrado",
+        "notfound": "Nenhum redirecionamento com o id {id}.",
+        "list_title": "Links de Redirecionamento",
+        "empty": "Nenhum link de redirecionamento encontrado.",
+        "total": "{count} link(s)",
+        "deleted_title": "Redirecionamento Excluído",
+        "deleted": "O redirecionamento {id} ({src}) foi excluído.",
+        "confirm_title": "Excluir Redirecionamento?",
+        "confirm": "Excluir permanentemente o redirecionamento {src}?"
+      },
+      "banner": {
+        "typed": "Banner com Texto",
+        "custom": "Banner Personalizado",
+        "choose_title": "Novo Banner",
+        "choose": "Escolha o tipo de banner abaixo.",
+        "type": "Tipo",
+        "message": "Mensagem",
+        "icon": "Ícone SVG",
+        "color": "Cor (hex #RRGGBB)",
+        "visibility": "Visibilidade",
+        "dashboard": "Mostrar no painel",
+        "website": "Mostrar no site",
+        "saved": "Banner Salvo",
+        "bad_color": "Cor inválida {color}. Use #RRGGBB.",
+        "notfound_title": "Banner Não Encontrado",
+        "notfound": "Nenhum banner com o id {id}.",
+        "list_title": "Banners",
+        "empty": "Nenhum banner encontrado.",
+        "total": "{count} banner(s)",
+        "info_title": "Banner #{id}",
+        "active": "Ativo",
+        "kind": "Tipo",
+        "activated_title": "Banner Ativado",
+        "activated": "O banner {id} agora está ativo (todos os outros foram desativados).",
+        "deactivated_title": "Banner Desativado",
+        "deactivated": "O banner ativo foi desativado.",
+        "none_active_title": "Nenhum Banner Ativo",
+        "none_active": "Não há banner ativo para desativar.",
+        "deleted_title": "Banner Excluído",
+        "deleted": "O banner {id} foi excluído.",
+        "confirm_title": "Excluir Banner?",
+        "confirm": "Excluir permanentemente o banner {id}?"
+      }
+    }
+  }
+}
