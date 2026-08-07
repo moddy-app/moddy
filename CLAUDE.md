@@ -169,8 +169,9 @@ moddy/
 │   └── railway_diagnostic.py  #   Railway diagnostics
 │
 ├── internal_api/              # FastAPI internal API
-│   ├── server.py              #   FastAPI app + /health endpoint
+│   ├── server.py              #   FastAPI app + /health, /ping, /status + router wiring
 │   ├── routes/                #   API route handlers
+│   │   └── automod.py         #     POST /automod/rules_check (indications safety check)
 │   └── middleware/             #   Auth middleware
 │
 ├── schemas/                   # Data schemas
@@ -182,8 +183,10 @@ moddy/
 │
 ├── docs/                      # Documentation (see below)
 └── tests/                     # Test files
-    └── automod/               #   pytest suite for the pure-Python detection core
-                               #   (`pip install -r requirements-dev.txt && pytest`)
+    ├── automod/               #   pytest suite for the pure-Python detection core
+    │                          #   (`pip install -r requirements-dev.txt && pytest`)
+    └── internal_api/          #   pytest suite for the internal API routes
+                               #   (FastAPI TestClient, bot + gateway stubbed)
 ```
 
 ---

@@ -569,6 +569,18 @@ accepted into the working copy, because the indications are embedded verbatim
 into nano's system prompt. The check **fails closed**: if the AI is unavailable,
 the text is rejected.
 
+The same check is exposed to the backend over the internal API so the dashboard
+runs the identical guard instead of re-implementing it:
+
+```
+POST {BOT_INTERNAL_URL}/automod/rules_check
+{ "guild_id": "…", "indications": "…" }  →  { "ok": true } | { "ok": false, "reason": "…" }
+```
+
+See `internal_api/routes/automod.py` and
+[AUTOMOD_AI_CONFIG.md § 6](AUTOMOD_AI_CONFIG.md#6-indications-safety-check) for
+the full contract (error codes, locales, fail-closed semantics).
+
 ## 7. Appeals
 
 When automod opens a sanction case it DMs the member a notice (like a manual mod

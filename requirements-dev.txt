@@ -6,3 +6,7 @@
 
 pytest>=8.0.0
 pytest-asyncio>=0.23.0
+
+# tests/internal_api/ drives the FastAPI app through starlette's TestClient,
+# which needs httpx (fastapi itself comes from requirements.txt).
+httpx>=0.27.0

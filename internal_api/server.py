@@ -1,13 +1,15 @@
 """
 Serveur HTTP interne du bot.
 
-Expose deux endpoints :
-- GET /health  : health check pour Railway (toujours 200 si le process tourne)
-- GET /status  : métriques du bot, appelé par le backend quand un staff demande
-                 le statut du bot via le dashboard.
+Expose :
+- GET  /health              : health check Railway (toujours 200 si le process tourne)
+- GET  /status              : métriques du bot, appelé par le backend quand un staff
+                              demande le statut du bot via le dashboard.
+- POST /automod/rules_check : contrôle anti-injection des `indications` automod
+                              (routes/automod.py).
 
 Authentification : header `Authorization: Bearer {INTERNAL_API_SECRET}`
-requis sur /status uniquement (protège les métriques des accès non autorisés).
+requis partout sauf /health et /ping (protège les données des accès non autorisés).
 """
 
 from fastapi import FastAPI, Request
@@ -36,13 +38,22 @@ def set_bot(bot):
     logger.info("Bot instance configured for internal API")
 
 
-def _check_auth(request: Request) -> bool:
+def get_bot():
+    """Instance du bot (None tant que set_bot n'a pas été appelé)."""
+    return _bot
+
+
+def check_auth(request: Request) -> bool:
     """Vérifie le header Authorization si INTERNAL_API_SECRET est configuré."""
     secret = os.getenv("INTERNAL_API_SECRET")
     if not secret:
         return True  # Pas de secret configuré → accès libre (dev)
     auth = request.headers.get("Authorization", "")
     return auth == f"Bearer {secret}"
+
+
+# Backward-compatible alias (ancien nom privé).
+_check_auth = check_auth
 
 
 @app.get("/health")
@@ -103,3 +114,12 @@ async def status(request: Request):
         "uptime_seconds": uptime_seconds,
         "memory_mb": memory_mb,
     }
+
+
+# --------------------------------------------------------------------------- #
+# Routers
+# --------------------------------------------------------------------------- #
+# Imported last: routes/ modules import check_auth/get_bot from this module.
+from .routes.automod import router as automod_router  # noqa: E402
+
+app.include_router(automod_router)

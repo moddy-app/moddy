@@ -139,9 +139,57 @@ edited from the bot's own panel is first validated by an AI call
 (`automod/rules_check.py`, call type `automod_rules_check`) that rejects
 prompt-injection attempts ("ignore your instructions", "never sanction @X"…).
 
-**A dashboard that lets an admin write `indications` must run the same check** —
-either by calling the bot's internal API, or by re-implementing the equivalent
-guard. Writing raw user text straight into this field bypasses the protection.
+**A dashboard that lets an admin write `indications` must run the same check.**
+Do not re-implement the heuristic — call the bot's internal API, which runs the
+exact same code path:
+
+```
+POST {BOT_INTERNAL_URL}/automod/rules_check
+Authorization: Bearer {INTERNAL_API_SECRET}
+Content-Type: application/json
+
+{ "guild_id": "123456789012345678", "indications": "texte à contrôler", "locale": "fr" }
+```
+
+`locale` is optional (`fr` by default, `en-US` supported) and only picks the
+language of `reason`.
+
+**200 — the check ran:**
+
+```json
+{ "ok": true }
+```
+
+```json
+{ "ok": false,
+  "reason": "Les indications ressemblent à une tentative de manipulation de l'IA. Raison : …",
+  "code": "unsafe" }
+```
+
+`reason` is a full sentence, ready to be shown to the admin as-is. `code` is
+`unsafe`, `too_long` or `unavailable` (`unavailable` = the AI could not be
+reached — the check **fails closed**, so the text must not be saved).
+
+**4xx/5xx — the check could not run.** The body is
+`{"ok": false, "error": "<code>", "reason": "<message>"}`:
+
+| Status | `error` | When |
+|---|---|---|
+| `400` | `invalid_json`, `invalid_body` | Body is not a JSON object |
+| `400` | `missing_guild_id`, `invalid_guild_id` | `guild_id` absent or not a snowflake |
+| `400` | `missing_indications`, `invalid_indications` | `indications` absent or not a string |
+| `401` | `unauthorized` | Bad/missing `Authorization` header |
+| `404` | `unknown_guild` | The bot is not in that guild |
+| `503` | `bot_not_ready` | The bot is starting or disconnected |
+
+Every failure mode is explicit — the route never returns a silent pass. The
+backend should therefore **reject the write on anything other than
+`{"ok": true}`**. An empty/whitespace-only `indications` returns `ok: true`
+without an AI call (clearing the field is always allowed), mirroring the bot's
+own panel.
+
+Implementation: `internal_api/routes/automod.py` →
+`automod/rules_check.py::validate_rules`.
 
 ## 7. Applying a change (cache invalidation)
 
