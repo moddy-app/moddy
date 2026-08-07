@@ -48,6 +48,7 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     from modules.configs.automod_ai_config import AutomodAIConfigView
     from staff.commands.team.help import HelpView
     from staff.commands.dev.serverlist import ServerListView
+    from staff.commands.manage.staff import StaffManagerPanel
     from utils.cases_views import CasesBrowserView
     from utils.appeal_views import AppealPersistence
     from utils.automod_shadow_views import ShadowAnnotationPersistence
@@ -96,6 +97,10 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         # Temporary by design" per its own docstring)
         HelpView,
         ServerListView,
+        # Group 15 — /manage staff panel (owner-scoped dynamic items).
+        # HIGH PRIVILEGE — grants/revokes staff roles. See
+        # docs/PERSISTENT_VIEWS.md Step 15: requires human review before merge.
+        StaffManagerPanel,
     ]
 
 

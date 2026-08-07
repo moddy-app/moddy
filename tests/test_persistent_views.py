@@ -120,8 +120,12 @@ def _dynamic_item_cases():
     from modules.configs.adaptive_slowmode_config import SlowmodeListButton
     from staff.commands.team.help import HelpDeptSelect
     from staff.commands.dev.serverlist import ServerListNavButton
+    from staff.commands.manage.staff import (
+        StaffPanelRolesSelect, StaffPanelScopeSelect, StaffPanelPermsSelect, StaffPanelActionButton,
+    )
     _U = "0f7d9c62-3b4e-4a1f-9c2d-5e6f70819a2b"
     _SNOWFLAKE = 123456789012345678
+    _SNOWFLAKE2 = 987654321098765432
     return [
         (ShadowAnnotateButton, ("ok", _U)),
         (AppealNewButton, ("s", _U, _U)),
@@ -137,6 +141,10 @@ def _dynamic_item_cases():
         (SlowmodeListButton, ("edit", _SNOWFLAKE)),
         (HelpDeptSelect, (_SNOWFLAKE,)),
         (ServerListNavButton, ("prev", _SNOWFLAKE, 2)),
+        (StaffPanelRolesSelect, (_SNOWFLAKE, _SNOWFLAKE2)),
+        (StaffPanelScopeSelect, (_SNOWFLAKE, _SNOWFLAKE2)),
+        (StaffPanelPermsSelect, (_SNOWFLAKE, _SNOWFLAKE2, "Supervisor_Mod")),
+        (StaffPanelActionButton, ("save", _SNOWFLAKE, _SNOWFLAKE2)),
     ]
 
 

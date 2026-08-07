@@ -1277,39 +1277,6 @@ before `reminders`, so the persistent-view contract's
 `(bot=None, user_id=None, locale="en-US", …)` shape holds); a positional
 call would have silently swapped `reminders` and `locale`.
 
-### Status as of this pass (branch `claude/persistent-views-migration-nph7ok`)
-
-Completed: Steps 0-7 (test harness; `AddSubscriptionView` /
-`ManageSubscriptionView`; timeout cleanups; shared i18n key; the three
-`LayoutView` re-parents; Step 5 logged as deferred, no code change;
-`PreferencesView`; `RemindersManageView`). `tests/test_persistent_views.py`
-is green after every commit, one step per commit as required.
-
-Not started: Steps 8-15 (small guild config panels; the colliding welcome
-pair; `ConfigMainView`; adaptive slowmode; automod config; case management;
-staff read-only views; `StaffManagerPanel`), plus the "Deferred / not in
-this migration" row (`ReportView`, `TranslateView`, `StaffHelpView`) and
-`EmojiNavigationView` / `SavedMessagesLibraryView` from Step 7's own group
-(only `RemindersManageView` was completed there — Appendix C names it as
-the one to do "first and literally"; the other two build on the same
-pattern with added pagination/re-scan concerns and were not reached this
-session). None of these were attempted, so none are half-migrated — every
-view not mentioned as "Completed" above is byte-for-byte what it was on
-`main` before this branch: still using its original un-namespaced
-custom_ids, still absent from the persistent view registry. Whoever
-continues this migration should start at Step 8 (or finish Step 7's
-`EmojiNavigationView`/`SavedMessagesLibraryView`) with a fresh read of
-Appendix B for those specific views before writing code — several already
-had stale assumptions corrected in the log entries above (B.1.a's
-`working_config` shape, B.2's DynamicItem list, and B.3's unguarded-`self.bot`
-table are the ones most likely to have drifted further).
-
-**Step 15 (`StaffManagerPanel`) was not reached.** Restating Appendix E's
-own instruction for whoever does reach it: it grants and revokes staff
-permissions, a dispatch bug there is a privilege-escalation bug, and per
-the operating instructions for this migration pass it **must be reviewed by
-a human before merge** — more so than every other step.
-
 ### Step 7 (continued) — `SavedMessagesLibraryView` done, `EmojiNavigationView` deferred
 
 **`SavedMessagesLibraryView`**: fully DB-backed (list + detail screens), so
@@ -1594,3 +1561,148 @@ just says "this is a preview," and its only state (`partial_emoji`,
 `emoji_str`) is a one-off developer lookup with nothing to reconstruct from
 DB or interaction. This is the file-level equivalent of an Appendix B.4
 exclusion; left completely untouched.
+
+### Step 15 — `StaffManagerPanel` — **HIGH PRIVILEGE, NEEDS HUMAN REVIEW BEFORE MERGE**
+
+Grants and revokes staff roles and permissions. Migrated per the operating
+instructions for this pass ("do it like the others, but flag it"), not
+skipped — but this is the one step in the whole migration where a
+mechanical port was not possible, and the resulting behaviour change should
+be read carefully before this lands anywhere real.
+
+**What changed and why, in order of discovery:**
+
+1. **`target`/`modifier` are `discord.User` objects** (Appendix B.1.c) —
+   fixed the expected way: encode `target_id` + `modifier_id` in every
+   item's `custom_id` (`moddy:staffpanel:<action>:<target>:<modifier>`,
+   `permscope` variant additionally carries the lowercased scope) and
+   re-fetch both via `bot.fetch_user()` on every click. `modifier_id` is
+   encoded too, not just inferred from the clicker, to preserve the
+   original "not your menu" semantics for a stale/shared shell.
+
+2. **A structural discovery, not specific to this view but most consequential
+   here**: `discord.py` registers `DynamicItem`s by **class**, not by living
+   instance (`discord/ui/view.py::View.add_view`: `if isinstance(item,
+   DynamicItem): self._dynamic_items[pattern] = item.__class__` — the
+   specific instance is discarded). `dispatch_view` unconditionally runs
+   `dispatch_dynamic_items()` first, which always reconstructs via
+   `from_custom_id()`. **This means every DynamicItem callback in this
+   entire migration reconstructs from scratch on every single click — live
+   session or restarted shell, no difference.** Every other `DynamicItem`
+   written in this migration (Steps 6, 7, 11, 14) already happened to be
+   correct under this constraint because each one's callback only ever
+   needed the clicked value plus a fresh DB read — never a *previous
+   click's* in-memory state. `StaffManagerPanel` is the one view whose
+   pre-migration design actively relied on exactly that: pick roles, switch
+   scope, edit permissions for one role, switch scope again, edit another
+   role's permissions, *then* click Save — accumulating unsaved edits
+   across several clicks in `self` before a single commit. That flow is not
+   implementable with `DynamicItem`s at all, restart or not, without
+   external scratch storage (e.g. a drafts table) to carry state between
+   clicks — out of scope for this migration.
+
+3. **Resolution**: changed the panel to apply every change immediately.
+   `StaffPanelRolesSelect` writes the new role list (and prunes/seeds
+   `role_permissions` for kept/added roles) to the DB the moment it's
+   changed, re-running `can_assign_role` per role exactly as before.
+   `StaffPanelPermsSelect` writes its scope's permission list to the DB the
+   moment it's changed (the scope is in its own custom_id, so it never
+   guesses which role a submitted permission list belongs to).
+   `StaffPanelScopeSelect` stays read-only (just changes which permission
+   set is displayed). **Save no longer performs a write** — it re-reads the
+   current DB state and shows the same confirmation card as before,
+   because there is nothing left to commit. Remove is unchanged (was always
+   immediate). This is a real, user-visible behaviour change: permissions
+   now take effect per-click instead of only after Save, which is arguably
+   safer (no way to "forget" to save a role grant) but is a genuine product
+   decision, not a mechanical port, and should be confirmed rather than
+   assumed correct.
+
+4. Everything else follows the established pattern: `check`-equivalent is
+   `_reject_if_not_modifier` (owner/modifier-only, matching the
+   pre-migration `_guard`'s exact semantics, not tightened to re-verify
+   staff rank on every click since the original never did either);
+   `_guarded` wraps every callback for central error-handler routing; the
+   registration shell (`StaffManagerPanel()` with `target=None`) renders a
+   single placeholder line since every real control is a `DynamicItem`
+   registered by class, not by the shell's rendered contents.
+
+**Flagging per the operating instructions for this migration pass: this
+view grants and revokes staff permissions. A dispatch bug here is a
+privilege-escalation bug, and the immediate-apply behaviour change in point
+3 above is a product decision made under migration constraints, not a
+foregone conclusion. Do not merge this step without a human reviewing
+`staff/commands/manage/staff.py` specifically.**
+
+---
+
+## Final status (branch `claude/persistent-views-migration-nph7ok`)
+
+**All 16 numbered steps of Appendix E (0-15) are complete**, one commit per
+step, `tests/test_persistent_views.py` green after every commit (139 tests
+at the end of Step 15, up from the 42 that covered the 7 already-registered
+classes before this pass started).
+
+**Persistent (registered) as of Step 15**: `ModdyMainView`, `AttributionView`,
+`WeSupportView`, `SocialNotificationsConfigView`, `AddSubscriptionView`,
+`ManageSubscriptionView`, `CasesBrowserView`, `AppealPersistence`,
+`ShadowAnnotationPersistence`, `PreferencesView`, `RemindersManageView`,
+`SavedMessagesLibraryView`, `InterServerConfigView`, `AutoRoleConfigView`,
+`AutoRestoreRolesConfigView`, `StarboardConfigView`,
+`WelcomeChannelConfigView`, `WelcomeDmConfigView`, `ConfigMainView`,
+`AdaptiveSlowmodeConfigView`, `AutomodAIConfigView`, `HelpView`,
+`ServerListView`, `StaffManagerPanel` (24 view classes, several with
+multiple `DynamicItem` subclasses alongside them).
+
+**Deliberately NOT migrated**, each with reasoning in the corresponding
+step's log entry above — not omissions:
+- `InviteView` / `ServerInfoView` / `UserInfoView` (Step 5) — blocked on the
+  explicitly-flagged Raw Data NEEDS DECISION plus a real re-fetch cost
+  tradeoff neither this migration nor the doc pre-decided.
+- `EmojiNavigationView` (Step 7) — B.1.c's proposed fix doesn't match what
+  the view actually holds (message-scoped emoji mentions + per-emoji HTTP
+  calls, not `guild.emojis`); not worth the reconstruction cost for an
+  ephemeral lookup card.
+- `AdaptiveSlowmodeChannelConfigView` (Step 11) — pure unsaved-draft wizard,
+  same accepted loss as `CaseCreationView`; the `parent_view` blocker itself
+  *was* fixed (dropped in favor of a plain dict).
+- `AutomodAIPrecedentsView` (Step 12) — only ever reached via a live click
+  from an open `AutomodAIConfigView`, rows cheap to re-fetch, `parent=None`
+  fallback already correct.
+- `CaseCreationView` / `AddSanctionView` / `RevokeSanctionView` (Step 13) —
+  all three take an `on_done`/`on_created` Python callable, the same
+  no-stable-identity shape Appendix B.4 already excludes `ConfirmView` and
+  `_ModalButtonView` for. Confirmed by the module's own docstring.
+- `EmojiPreviewView` (Step 14) — its own docstring already says
+  "Non-persistent... Temporary by design"; confirmed accurate.
+- Every view already listed under Appendix E's own "Deferred / not in this
+  migration" and "Never" rows (`ReportView`, `TranslateView`,
+  `StaffHelpView`, `SqlConfirmView`, `ConfirmView`, `_ModalButtonView`,
+  `WebhookView`, `ErrorView`, `FallbackErrorView`, `PermissionErrorView`,
+  `CooldownErrorView`, `NotFoundView`, all `BaseModal` subclasses) — never
+  touched, per the explicit instruction not to resolve NEEDS DECISION/UNKNOWN
+  items in this pass.
+
+**Corrections made to this document along the way** (all cross-referenced
+from their step's log entry, not repeated here): Appendix D.1's test-setup
+facts were missing the `DISCORD_TOKEN`-at-import crash (Step 0); Appendix
+C's literal `\d{17,20}` template breaks `test_shell_constructs` for a
+default-constructed shell and needed relaxing to `\d{1,20}` everywhere it
+was reused (first hit: Step 6); Appendix E's own Step 6 heading
+("no DynamicItem needed") contradicted Appendix B.2's row for the same view
+(Step 6); two structural bugs not mentioned anywhere in Appendix A/B/C — the
+shared-shell mutate-and-resend-`self` hazard, and conditionally-rendered
+items never getting registered on a default-state shell — affect every
+`working_config`-style guild panel and are written up once in Step 8 rather
+than repeated in Steps 9-12; and Step 15 surfaces the biggest one:
+`discord.py` registers `DynamicItem`s by class, not by live instance, so
+*every* `DynamicItem` callback in this migration reconstructs from scratch
+on every click, restart or not — harmless everywhere else, but incompatible
+with `StaffManagerPanel`'s original stage-then-Save editing flow, which is
+why that panel's permissions now apply immediately instead (see Step 15,
+flagged for mandatory human review).
+
+**Nothing here should be treated as a substitute for the human review Step
+15 explicitly asks for.** Everything else is a normal, mechanical
+persistent-view migration and should be reviewable the same way as any
+other PR in this repo.
