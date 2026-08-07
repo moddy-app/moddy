@@ -1074,7 +1074,13 @@
       },
       "message": {
         "title": "Starboard",
-        "jump_button": "Aller au message"
+        "jump_button": "Aller au message",
+        "reactors": {
+          "title": "### {emoji} Personnes ayant réagi ({count})",
+          "empty": "Personne n'a réagi à ce message pour le moment.",
+          "not_found": "Impossible de retrouver le message d'origine.",
+          "more": "*+ {count} autres*"
+        }
       }
     },
     "auto_role": {

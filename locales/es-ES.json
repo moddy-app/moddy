@@ -1075,7 +1075,13 @@
       },
       "message": {
         "title": "Tablón de destacados",
-        "jump_button": "Ir al mensaje"
+        "jump_button": "Ir al mensaje",
+        "reactors": {
+          "title": "### {emoji} Personas que reaccionaron ({count})",
+          "empty": "Nadie ha reaccionado a este mensaje todavía.",
+          "not_found": "No se pudo encontrar el mensaje original.",
+          "more": "*+ {count} más*"
+        }
       }
     },
     "auto_role": {

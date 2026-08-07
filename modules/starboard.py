@@ -3,16 +3,20 @@ Module Starboard - Système de tableau d'honneur pour messages populaires
 """
 
 import re
-import discord
-from typing import Dict, Any, Optional
+import asyncio
 import logging
+from typing import Dict, Any, Optional
 
+import aiohttp
+import discord
+
+from cogs.error_handler import BaseView
 from modules.module_manager import ModuleBase
 from utils.emojis import (
     STAR, is_standard_discord_emoji,
     get_user_verification_badge, format_verification_badge,
 )
-from utils.i18n import t
+from utils.i18n import t, i18n
 
 logger = logging.getLogger('moddy.modules.starboard')
 
@@ -24,30 +28,189 @@ _IMAGE_URL_RE = re.compile(
     r'https?://\S+?\.(?:png|jpe?g|gif|webp)(?:\?\S*)?',
     re.IGNORECASE,
 )
+_URL_RE = re.compile(r'https?://\S+', re.IGNORECASE)
+_OG_IMAGE_RE = [
+    re.compile(
+        rf'<meta[^>]+(?:property|name)=["\']{re.escape(prop)}["\'][^>]+content=["\']([^"\']+)["\']',
+        re.IGNORECASE,
+    )
+    for prop in ('og:image', 'og:image:secure_url', 'twitter:image')
+]
+_LINK_PREVIEW_TIMEOUT = aiohttp.ClientTimeout(total=5)
+_LINK_PREVIEW_MAX_BYTES = 200_000
+_LINK_PREVIEW_HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; Moddybot/1.0; +https://moddy.app)"}
 
 
-class _StarboardJumpView(discord.ui.View):
+def _report_dynamic_item_error(interaction: discord.Interaction, error: Exception, source: str):
+    """Route a DynamicItem callback error to the central handler (fire-and-forget)."""
+    from cogs.error_handler import report_component_error
+    asyncio.create_task(report_component_error(interaction, error, source))
+
+
+class _StarboardReactorsButton(
+    discord.ui.DynamicItem[discord.ui.Button],
+    template=r"moddy:starboard:reactors:(?P<channel_id>\d+):(?P<message_id>\d+):(?P<emoji>.+)",
+):
     """
-    Plain (non-Components-V2, non-persistent) view holding only the
+    Persistent button showing the reaction count. Clicking it lists (ephemeral)
+    who reacted with the configured emoji.
+
+    This lives on the same message as `_StarboardCardView`'s link button, next
+    to a real `discord.Embed` — see the module docstring for why that message
+    cannot use `BaseView`. Its callback is guarded with
+    `report_component_error` instead of a `BaseView.on_error`, matching the
+    pattern already used by other persistent `DynamicItem`s that ship without
+    a live view (see `utils/appeal_views.py`).
+    """
+
+    def __init__(self, channel_id: int, message_id: int, emoji: str, count: int):
+        super().__init__(
+            discord.ui.Button(
+                style=discord.ButtonStyle.secondary,
+                label=str(count),
+                emoji=emoji,
+                custom_id=f"moddy:starboard:reactors:{channel_id}:{message_id}:{emoji}",
+            )
+        )
+        self.channel_id = channel_id
+        self.message_id = message_id
+        self.emoji = emoji
+
+    @classmethod
+    async def from_custom_id(cls, interaction: discord.Interaction, item: discord.ui.Button, match: re.Match):
+        return cls(
+            channel_id=int(match["channel_id"]),
+            message_id=int(match["message_id"]),
+            emoji=match["emoji"],
+            count=0,  # Placeholder — the already-sent button keeps its rendered label.
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        try:
+            await self._show_reactors(interaction)
+        except Exception as e:
+            _report_dynamic_item_error(interaction, e, self.__class__.__name__)
+
+    async def _show_reactors(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        locale = i18n.get_user_locale(interaction)
+
+        channel = interaction.guild.get_channel(self.channel_id) if interaction.guild else None
+        if channel is None:
+            await interaction.followup.send(
+                t('modules.starboard.message.reactors.not_found', locale=locale), ephemeral=True
+            )
+            return
+
+        try:
+            message = await channel.fetch_message(self.message_id)
+        except (discord.NotFound, discord.Forbidden):
+            await interaction.followup.send(
+                t('modules.starboard.message.reactors.not_found', locale=locale), ephemeral=True
+            )
+            return
+
+        reaction = discord.utils.find(
+            lambda r: not r.is_custom_emoji() and str(r.emoji) == self.emoji, message.reactions
+        )
+        if reaction is None:
+            await interaction.followup.send(
+                t('modules.starboard.message.reactors.empty', locale=locale), ephemeral=True
+            )
+            return
+
+        users = [user async for user in reaction.users() if not user.bot]
+        if not users:
+            await interaction.followup.send(
+                t('modules.starboard.message.reactors.empty', locale=locale), ephemeral=True
+            )
+            return
+
+        max_shown = 40
+        lines = [f"- {user.mention}" for user in users[:max_shown]]
+        if len(users) > max_shown:
+            lines.append(t(
+                'modules.starboard.message.reactors.more', locale=locale,
+                count=f"`{len(users) - max_shown}`",
+            ))
+
+        title = t(
+            'modules.starboard.message.reactors.title', locale=locale,
+            emoji=self.emoji, count=f"`{len(users)}`",
+        )
+        await interaction.followup.send(
+            f"{title}\n" + "\n".join(lines),
+            ephemeral=True,
+            allowed_mentions=discord.AllowedMentions.none(),
+        )
+
+
+class StarboardCardPersistence(BaseView):
+    """Marker view used only to register the starboard card's dynamic items at startup."""
+
+    __persistent__ = True
+
+    @classmethod
+    def register_persistent(cls, bot) -> None:
+        bot.add_dynamic_items(_StarboardReactorsButton)
+
+
+class _StarboardCardView(discord.ui.View):
+    """
+    Plain (non-Components-V2) view holding the reactors button and the
     "jump to message" link button.
 
     This intentionally does NOT inherit from `BaseView`: `BaseView` is a
     `ui.LayoutView` (Components V2), and Discord rejects any message that
     combines the IS_COMPONENTS_V2 flag with a classic `discord.Embed` —
-    which the starboard card needs (see module docstring / CLAUDE.md
-    exception below). A link-only button has no callback and carries no
-    state, so per docs/PERSISTENT_VIEWS.md ("Deliberate exclusions") it
-    needs neither error-handler wrapping nor persistent registration —
-    `bot.add_view()` on a link-only view is a no-op.
+    which the starboard card needs (see module docstring). The jump button
+    is a link with no callback (nothing to guard or persist); the reactors
+    button is a persistent `DynamicItem` whose errors are separately routed
+    to `report_component_error` — see `_StarboardReactorsButton`. So this
+    view itself needs neither error-handler wrapping nor registration.
     """
 
-    def __init__(self, jump_url: str, label: str):
+    def __init__(self, channel_id: int, message_id: int, emoji: str, count: int,
+                 jump_url: str, jump_label: str):
         super().__init__(timeout=None)
+        self.add_item(_StarboardReactorsButton(channel_id, message_id, emoji, count))
         self.add_item(discord.ui.Button(
             style=discord.ButtonStyle.link,
-            label=label,
+            label=jump_label,
             url=jump_url,
         ))
+
+
+async def _fetch_link_preview_image(url: str) -> Optional[str]:
+    """
+    Best-effort OpenGraph/Twitter-card image lookup for a bare link that
+    isn't itself a direct image URL (e.g. a GIF site's share page). Used as
+    a fallback so starred messages that are "just a link" still show a
+    preview, matching what Discord's own link unfurling would show.
+    """
+    try:
+        async with aiohttp.ClientSession(timeout=_LINK_PREVIEW_TIMEOUT) as session:
+            async with session.get(url, headers=_LINK_PREVIEW_HEADERS) as response:
+                if response.status != 200:
+                    return None
+                content_type = response.headers.get("Content-Type", "")
+                if "text/html" not in content_type:
+                    return None
+                raw = await response.content.read(_LINK_PREVIEW_MAX_BYTES)
+    except Exception as e:
+        logger.debug(f"Starboard link preview fetch failed for {url}: {e}")
+        return None
+
+    html = raw.decode("utf-8", errors="ignore")
+    for pattern in _OG_IMAGE_RE:
+        match = pattern.search(html)
+        if match:
+            candidate = match.group(1)
+            if candidate.startswith("//"):
+                candidate = f"https:{candidate}"
+            return candidate
+
+    return None
 
 
 class StarboardModule(ModuleBase):
@@ -62,7 +225,7 @@ class StarboardModule(ModuleBase):
     feature is styled after (colored side bar, author avatar/name, native
     timestamp). This is a deliberate, explicit exception to the project's
     "Components V2 only" rule, scoped to this one card. See
-    `_build_embed()` / `_StarboardJumpView` for the implementation notes.
+    `_build_embed()` / `_StarboardCardView` for the implementation notes.
     """
 
     MODULE_ID = "starboard"
@@ -268,20 +431,25 @@ class StarboardModule(ModuleBase):
         try:
             user_db_data = await self.bot.db.get_user(author.id)
             moddy_attributes = user_db_data.get('attributes', {}) if user_db_data else {}
+            user_verification_data = (user_db_data.get('data', {}) or {}).get('verification', {}) if user_db_data else {}
         except Exception:
             moddy_attributes = {}
+            user_verification_data = {}
 
         public_flags_value = author.public_flags.value if hasattr(author, 'public_flags') else 0
         badge_emoji, _org_names, _tier = get_user_verification_badge(
-            {'public_flags': public_flags_value}, moddy_attributes
+            {'public_flags': public_flags_value}, moddy_attributes, user_verification_data
         )
         return format_verification_badge(badge_emoji)
 
-    def _find_image_url(self, message: discord.Message) -> Optional[str]:
+    async def _find_image_url(self, message: discord.Message) -> Optional[str]:
         """
-        Find an image to show on the starboard embed: the first image
-        attachment if there is one, otherwise the first bare image URL found
-        in the message content (e.g. a pasted image link).
+        Find an image to show on the starboard embed:
+        1. The first image attachment, if there is one.
+        2. Otherwise, the first bare image URL found in the message content.
+        3. Otherwise, if the message content contains any link, try fetching
+           its OpenGraph/Twitter-card image (e.g. a GIF site's share page
+           that isn't itself a direct image URL).
         """
         for attachment in message.attachments:
             content_type = attachment.content_type or ""
@@ -290,10 +458,16 @@ class StarboardModule(ModuleBase):
             if attachment.filename.lower().endswith(_IMAGE_EXTENSIONS):
                 return attachment.url
 
-        if message.content:
-            match = _IMAGE_URL_RE.search(message.content)
-            if match:
-                return match.group(0)
+        if not message.content:
+            return None
+
+        match = _IMAGE_URL_RE.search(message.content)
+        if match:
+            return match.group(0)
+
+        url_match = _URL_RE.search(message.content)
+        if url_match:
+            return await _fetch_link_preview_image(url_match.group(0))
 
         return None
 
@@ -306,12 +480,18 @@ class StarboardModule(ModuleBase):
         """
         badge = await self._get_author_badge(message.author)
 
-        description = message.content or ""
+        # Embed `author` names are plain text (no markdown/links), so the
+        # hyperlinked verification badge can't live there — it's shown as a
+        # bold-name + badge line at the top of the description instead,
+        # matching the "**{name}**{badge}" format from CLAUDE.md rule #7.
+        description_lines = []
         if badge:
-            description = f"{badge}\n{description}" if description else badge
+            description_lines.append(f"**{message.author.display_name}**{badge}")
+        if message.content:
+            description_lines.append(message.content)
 
         embed = discord.Embed(
-            description=description,
+            description="\n".join(description_lines),
             color=STARBOARD_EMBED_COLOR,
             timestamp=message.created_at,
         )
@@ -320,22 +500,22 @@ class StarboardModule(ModuleBase):
             icon_url=message.author.display_avatar.url,
         )
 
-        image_url = self._find_image_url(message)
+        image_url = await self._find_image_url(message)
         if image_url:
             embed.set_image(url=image_url)
 
         return embed
 
-    def _build_content(self, channel: discord.abc.GuildChannel, star_count: int) -> str:
-        """Top content line: reaction emoji, count, and origin channel"""
-        return f"{self.emoji} `{star_count}` | {channel.mention}"
-
-    async def _build_jump_view(self, message: discord.Message) -> _StarboardJumpView:
-        """Build the "jump to message" link button (see `_StarboardJumpView`)"""
+    async def _build_view(self, message: discord.Message, star_count: int) -> _StarboardCardView:
+        """Build the reactors-count button + "jump to message" link button (see `_StarboardCardView`)"""
         locale = await self._get_locale()
-        return _StarboardJumpView(
+        return _StarboardCardView(
+            channel_id=message.channel.id,
+            message_id=message.id,
+            emoji=self.emoji,
+            count=star_count,
             jump_url=message.jump_url,
-            label=t('modules.starboard.message.jump_button', locale=locale),
+            jump_label=t('modules.starboard.message.jump_button', locale=locale),
         )
 
     async def _update_starboard(self, message: discord.Message, star_count: int):
@@ -353,12 +533,12 @@ class StarboardModule(ModuleBase):
 
         # Check if we already have a starboard entry for this message
         if message.id in self.starboard_messages:
-            # Only the top content line (reaction counter) needs updating
+            # Only the reactors-count button needs updating
             try:
                 starboard_msg_id = self.starboard_messages[message.id]
                 starboard_msg = await starboard_channel.fetch_message(starboard_msg_id)
-                content = self._build_content(message.channel, star_count)
-                await starboard_msg.edit(content=content, allowed_mentions=discord.AllowedMentions.none())
+                view = await self._build_view(message, star_count)
+                await starboard_msg.edit(view=view)
                 logger.info(f"Updated starboard message for {message.id} (stars: {star_count})")
             except discord.NotFound:
                 # Entry was deleted, recreate it
@@ -371,20 +551,17 @@ class StarboardModule(ModuleBase):
     async def _create_starboard_message(self, channel: discord.TextChannel,
                                          original_message: discord.Message, star_count: int):
         """
-        Post a starboard entry: a content line (reaction count + origin
-        channel), the starred message rendered as an embed (see CLAUDE.md
-        exception note on the class docstring), and a jump-to-message link
-        button. `AllowedMentions.none()` on the content line and the fact
-        that mentions inside embeds never notify anyone together ensure
-        nothing in the starred message can ping.
+        Post a starboard entry: the starred message rendered as an embed
+        (see CLAUDE.md exception note on the class docstring), a reactors
+        button, and a jump-to-message link button. `AllowedMentions.none()`
+        and the fact that mentions inside embeds never notify anyone
+        together ensure nothing in the starred message can ping.
         """
         try:
-            content = self._build_content(original_message.channel, star_count)
             embed = await self._build_embed(original_message)
-            view = await self._build_jump_view(original_message)
+            view = await self._build_view(original_message, star_count)
 
             starboard_msg = await channel.send(
-                content=content,
                 embed=embed,
                 view=view,
                 allowed_mentions=discord.AllowedMentions.none(),
