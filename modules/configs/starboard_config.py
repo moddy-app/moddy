@@ -8,11 +8,20 @@ from discord import ui
 from typing import Optional, Dict, Any
 import logging
 
-from utils.i18n import t
+from utils.i18n import i18n, t
 from cogs.error_handler import BaseView, BaseModal
 from utils.emojis import STAR, REQUIRED_FIELDS, EDIT, BACK, SAVE, UNDONE, DELETE, is_standard_discord_emoji
+from modules.configs._common import check_guild_perms
 
 logger = logging.getLogger('moddy.modules.starboard_config')
+
+_CID_CHANNEL = "moddy:starboard:config:channel"
+_CID_EDIT_COUNT = "moddy:starboard:config:edit_count"
+_CID_EDIT_EMOJI = "moddy:starboard:config:edit_emoji"
+_CID_BACK = "moddy:starboard:config:back"
+_CID_SAVE = "moddy:starboard:config:save"
+_CID_CANCEL = "moddy:starboard:config:cancel"
+_CID_DELETE = "moddy:starboard:config:delete"
 
 
 class EmojiModal(BaseModal, title="Émoji de réaction"):
@@ -92,10 +101,17 @@ class ReactionCountModal(BaseModal, title="Nombre de réactions"):
 class StarboardConfigView(BaseView):
     """
     Interface de configuration du module Starboard
+
+    Persistent: yes. Auth: Manage Server in the guild (checked on every
+    click via check_guild_perms — NOT via a stored user_id, which cannot
+    survive a restarted shell).
     """
 
-    def __init__(self, bot, guild_id: int, user_id: int, locale: str, current_config: Optional[Dict[str, Any]] = None):
-        super().__init__(timeout=300)
+    __persistent__ = True
+
+    def __init__(self, bot=None, guild_id: Optional[int] = None, user_id: Optional[int] = None,
+                 locale: str = "en-US", current_config: Optional[Dict[str, Any]] = None):
+        super().__init__()  # timeout=None
         self.bot = bot
         self.guild_id = guild_id
         self.user_id = user_id
@@ -149,11 +165,12 @@ class StarboardConfigView(BaseView):
             placeholder=t('modules.starboard.config.channel.placeholder', locale=self.locale),
             channel_types=[discord.ChannelType.text],
             min_values=0,
-            max_values=1
+            max_values=1,
+            custom_id=_CID_CHANNEL,
         )
 
         # Pre-select current channel if set
-        if self.working_config.get('channel_id'):
+        if self.working_config.get('channel_id') and self.bot is not None:
             channel = self.bot.get_channel(self.working_config['channel_id'])
             if channel:
                 channel_select.default_values = [channel]
@@ -175,7 +192,7 @@ class StarboardConfigView(BaseView):
             label=t('modules.starboard.config.reaction_count.edit_button', locale=self.locale),
             style=discord.ButtonStyle.primary,
             emoji=discord.PartialEmoji.from_str(EDIT),
-            custom_id="edit_reaction_count"
+            custom_id=_CID_EDIT_COUNT
         )
         edit_count_btn.callback = self.on_edit_reaction_count
         reaction_row.add_item(edit_count_btn)
@@ -195,7 +212,7 @@ class StarboardConfigView(BaseView):
             label=t('modules.starboard.config.emoji.edit_button', locale=self.locale),
             style=discord.ButtonStyle.primary,
             emoji=discord.PartialEmoji.from_str(EDIT),
-            custom_id="edit_emoji"
+            custom_id=_CID_EDIT_EMOJI
         )
         edit_emoji_btn.callback = self.on_edit_emoji
         emoji_row.add_item(edit_emoji_btn)
@@ -216,19 +233,23 @@ class StarboardConfigView(BaseView):
             emoji=discord.PartialEmoji.from_str(BACK),
             label=t('modules.config.buttons.back', locale=self.locale),
             style=discord.ButtonStyle.secondary,
-            custom_id="back_btn",
+            custom_id=_CID_BACK,
             disabled=self.has_changes
         )
         back_btn.callback = self.on_back
         button_row.add_item(back_btn)
 
+        # Registration shell (self.bot is None): register EVERY button's
+        # custom_id regardless of has_changes/has_existing_config.
+        is_shell = self.bot is None
+
         # Save button (only if changes)
-        if self.has_changes:
+        if self.has_changes or is_shell:
             save_btn = ui.Button(
                 emoji=discord.PartialEmoji.from_str(SAVE),
                 label=t('modules.config.buttons.save', locale=self.locale),
                 style=discord.ButtonStyle.success,
-                custom_id="save_btn"
+                custom_id=_CID_SAVE
             )
             save_btn.callback = self.on_save
             button_row.add_item(save_btn)
@@ -238,177 +259,174 @@ class StarboardConfigView(BaseView):
                 emoji=discord.PartialEmoji.from_str(UNDONE),
                 label=t('modules.config.buttons.cancel', locale=self.locale),
                 style=discord.ButtonStyle.danger,
-                custom_id="cancel_btn"
+                custom_id=_CID_CANCEL
             )
             cancel_btn.callback = self.on_cancel
             button_row.add_item(cancel_btn)
-        else:
+        if (not self.has_changes and self.has_existing_config) or is_shell:
             # Delete button (if config exists)
-            if self.has_existing_config:
-                delete_btn = ui.Button(
-                    emoji=discord.PartialEmoji.from_str(DELETE),
-                    label=t('modules.config.buttons.delete', locale=self.locale),
-                    style=discord.ButtonStyle.danger,
-                    custom_id="delete_btn"
-                )
-                delete_btn.callback = self.on_delete
-                button_row.add_item(delete_btn)
+            delete_btn = ui.Button(
+                emoji=discord.PartialEmoji.from_str(DELETE),
+                label=t('modules.config.buttons.delete', locale=self.locale),
+                style=discord.ButtonStyle.danger,
+                custom_id=_CID_DELETE
+            )
+            delete_btn.callback = self.on_delete
+            button_row.add_item(delete_btn)
 
         self.add_item(button_row)
+
+    # === persistence helpers ===
+
+    def _is_live_for(self, interaction: discord.Interaction) -> bool:
+        return self.bot is not None and self.guild_id == interaction.guild_id
+
+    async def _fresh_working_config(self, interaction: discord.Interaction) -> Dict[str, Any]:
+        if self._is_live_for(interaction):
+            return self.working_config.copy()
+        bot = interaction.client
+        from modules.starboard import StarboardModule
+        default_config = StarboardModule(bot, interaction.guild_id).get_default_config()
+        saved = await bot.module_manager.get_module_config(interaction.guild_id, 'starboard')
+        if saved and saved.get('channel_id') is not None:
+            default_config.update(saved)
+        return default_config
+
+    async def _rebuild(self, interaction: discord.Interaction, working_config: Dict[str, Any],
+                        has_changes: bool) -> "StarboardConfigView":
+        """Always construct a NEW view instance rather than mutate/resend
+        self — self may be the single shared shell serving every guild after
+        a restart."""
+        bot = interaction.client
+        locale = i18n.get_user_locale(interaction)
+        saved = await bot.module_manager.get_module_config(interaction.guild_id, 'starboard')
+        view = StarboardConfigView(bot, interaction.guild_id, interaction.user.id, locale, current_config=saved)
+        view.working_config = working_config
+        view.has_changes = has_changes
+        view._build_view()
+        return view
 
     # === CALLBACKS ===
 
     async def on_channel_select(self, interaction: discord.Interaction):
         """Channel selector callback"""
-        if not await self.check_user(interaction):
+        if not await check_guild_perms(interaction):
             return
 
+        working_config = await self._fresh_working_config(interaction)
         if interaction.data['values']:
-            channel_id = int(interaction.data['values'][0])
-            self.working_config['channel_id'] = channel_id
+            working_config['channel_id'] = int(interaction.data['values'][0])
         else:
-            self.working_config['channel_id'] = None
+            working_config['channel_id'] = None
 
-        self.has_changes = True
-        self._build_view()
-        await interaction.response.edit_message(view=self)
+        view = await self._rebuild(interaction, working_config, has_changes=True)
+        await interaction.response.edit_message(view=view)
 
     async def on_edit_reaction_count(self, interaction: discord.Interaction):
         """Edit reaction count"""
-        if not await self.check_user(interaction):
+        if not await check_guild_perms(interaction):
             return
 
-        modal = ReactionCountModal(
-            self.locale,
-            self.working_config['reaction_count'],
-            self._on_reaction_count_edited
-        )
-        modal.bot = self.bot  # Set bot for error handling
-        await interaction.response.send_modal(modal)
+        working_config = await self._fresh_working_config(interaction)
+        locale = i18n.get_user_locale(interaction)
 
-    async def _on_reaction_count_edited(self, interaction: discord.Interaction, new_count: int):
-        """Callback after reaction count edit"""
-        self.working_config['reaction_count'] = new_count
-        self.has_changes = True
-        self._build_view()
-        await interaction.response.edit_message(view=self)
+        async def _on_submit(modal_interaction: discord.Interaction, new_count: int):
+            working_config['reaction_count'] = new_count
+            view = await self._rebuild(modal_interaction, working_config, has_changes=True)
+            await modal_interaction.response.edit_message(view=view)
+
+        modal = ReactionCountModal(locale, working_config['reaction_count'], _on_submit)
+        modal.bot = interaction.client
+        await interaction.response.send_modal(modal)
 
     async def on_edit_emoji(self, interaction: discord.Interaction):
         """Edit reaction emoji"""
-        if not await self.check_user(interaction):
+        if not await check_guild_perms(interaction):
             return
 
-        modal = EmojiModal(
-            self.locale,
-            self.working_config['emoji'],
-            self._on_emoji_edited
-        )
-        modal.bot = self.bot  # Set bot for error handling
-        await interaction.response.send_modal(modal)
+        working_config = await self._fresh_working_config(interaction)
+        locale = i18n.get_user_locale(interaction)
 
-    async def _on_emoji_edited(self, interaction: discord.Interaction, new_emoji: str):
-        """Callback after reaction emoji edit"""
-        self.working_config['emoji'] = new_emoji
-        self.has_changes = True
-        self._build_view()
-        await interaction.response.edit_message(view=self)
+        async def _on_submit(modal_interaction: discord.Interaction, new_emoji: str):
+            working_config['emoji'] = new_emoji
+            view = await self._rebuild(modal_interaction, working_config, has_changes=True)
+            await modal_interaction.response.edit_message(view=view)
+
+        modal = EmojiModal(locale, working_config['emoji'], _on_submit)
+        modal.bot = interaction.client
+        await interaction.response.send_modal(modal)
 
     # === ACTION BUTTON CALLBACKS ===
 
     async def on_back(self, interaction: discord.Interaction):
         """Return to main menu"""
-        if not await self.check_user(interaction):
+        if not await check_guild_perms(interaction):
             return
 
         from cogs.config import ConfigMainView
-        main_view = ConfigMainView(self.bot, self.guild_id, self.user_id, self.locale)
+        locale = i18n.get_user_locale(interaction)
+        main_view = ConfigMainView(interaction.client, interaction.guild_id, interaction.user.id, locale)
         await interaction.response.edit_message(view=main_view)
 
     async def on_save(self, interaction: discord.Interaction):
         """Save configuration"""
-        if not await self.check_user(interaction):
+        if not await check_guild_perms(interaction):
             return
 
         await interaction.response.defer()
 
-        module_manager = self.bot.module_manager
+        bot = interaction.client
+        locale = i18n.get_user_locale(interaction)
+        working_config = await self._fresh_working_config(interaction)
 
-        success, error_msg = await module_manager.save_module_config(
-            self.guild_id,
-            'starboard',
-            self.working_config
+        success, error_msg = await bot.module_manager.save_module_config(
+            interaction.guild_id, 'starboard', working_config,
         )
 
         if success:
-            self.current_config = self.working_config.copy()
-            self.has_changes = False
-            self.has_existing_config = True
-
-            self._build_view()
-
-            await interaction.followup.send(
-                t('modules.config.save.success', locale=self.locale),
-                ephemeral=True
-            )
-            await interaction.edit_original_response(view=self)
+            view = StarboardConfigView(bot, interaction.guild_id, interaction.user.id, locale,
+                                        current_config=working_config)
+            await interaction.followup.send(t('modules.config.save.success', locale=locale), ephemeral=True)
+            await interaction.edit_original_response(view=view)
         else:
             await interaction.followup.send(
-                t('modules.config.save.error', locale=self.locale, error=error_msg),
-                ephemeral=True
+                t('modules.config.save.error', locale=locale, error=error_msg), ephemeral=True,
             )
 
     async def on_cancel(self, interaction: discord.Interaction):
         """Cancel changes"""
-        if not await self.check_user(interaction):
+        if not await check_guild_perms(interaction):
             return
 
-        self.working_config = self.current_config.copy()
-        self.has_changes = False
-
-        self._build_view()
-        await interaction.response.edit_message(view=self)
+        bot = interaction.client
+        locale = i18n.get_user_locale(interaction)
+        saved = await bot.module_manager.get_module_config(interaction.guild_id, 'starboard')
+        view = StarboardConfigView(bot, interaction.guild_id, interaction.user.id, locale, current_config=saved)
+        await interaction.response.edit_message(view=view)
 
     async def on_delete(self, interaction: discord.Interaction):
         """Delete configuration"""
-        if not await self.check_user(interaction):
+        if not await check_guild_perms(interaction):
             return
 
         await interaction.response.defer()
 
-        module_manager = self.bot.module_manager
-
-        success = await module_manager.delete_module_config(self.guild_id, 'starboard')
+        bot = interaction.client
+        locale = i18n.get_user_locale(interaction)
+        success = await bot.module_manager.delete_module_config(interaction.guild_id, 'starboard')
 
         if success:
-            from modules.starboard import StarboardModule
-            self.current_config = StarboardModule(self.bot, self.guild_id).get_default_config()
-            self.working_config = self.current_config.copy()
-            self.has_changes = False
-            self.has_existing_config = False
-
-            self._build_view()
-
-            await interaction.followup.send(
-                t('modules.config.delete.success', locale=self.locale),
-                ephemeral=True
-            )
-            await interaction.edit_original_response(view=self)
+            view = StarboardConfigView(bot, interaction.guild_id, interaction.user.id, locale, current_config=None)
+            await interaction.followup.send(t('modules.config.delete.success', locale=locale), ephemeral=True)
+            await interaction.edit_original_response(view=view)
         else:
-            await interaction.followup.send(
-                t('modules.config.delete.error', locale=self.locale),
-                ephemeral=True
-            )
-
-    async def check_user(self, interaction: discord.Interaction) -> bool:
-        """Check if the user is the one who started the config"""
-        if interaction.user.id != self.user_id:
-            await interaction.response.send_message(
-                t('modules.config.errors.wrong_user', locale=self.locale),
-                ephemeral=True
-            )
-            return False
-        return True
+            await interaction.followup.send(t('modules.config.delete.error', locale=locale), ephemeral=True)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         """Check permissions for each interaction"""
-        return await self.check_user(interaction)
+        return await check_guild_perms(interaction)
+
+    @classmethod
+    def register_persistent(cls, bot) -> None:
+        """Auth model: Manage Server in the guild (checked on every click)."""
+        bot.add_view(cls())

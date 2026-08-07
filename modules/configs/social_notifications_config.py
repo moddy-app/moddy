@@ -477,7 +477,16 @@ class SocialNotificationsConfigView(BaseView):
 # Add subscription
 # =========================================================================== #
 class AddSubscriptionView(BaseView):
-    """Guided flow to add a new subscription. Auth: Manage Server."""
+    """Guided flow to add a new subscription. Auth: Manage Server.
+
+    Persistent: yes. The in-progress wizard state (platform/channel/roles
+    picked so far) is not persisted anywhere — on a restart the shell
+    rebuilds an empty form, same as CaseCreationView (see PERSISTENT_VIEWS.md
+    Appendix B.1.c). Every callback already re-checks _check_perms(interaction)
+    on every click, so no auth state depends on self either.
+    """
+
+    __persistent__ = True
 
     def __init__(self, bot=None, guild_id: Optional[int] = None, locale: str = "en-US",
                  is_premium: bool = False):
@@ -767,6 +776,11 @@ class AddSubscriptionView(BaseView):
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         return await _check_perms(interaction)
 
+    @classmethod
+    def register_persistent(cls, bot) -> None:
+        """Auth model: Manage Server in the guild (checked on every click)."""
+        bot.add_view(cls())
+
 
 # =========================================================================== #
 # Manage subscription
@@ -775,7 +789,16 @@ class ManageSubscriptionView(BaseView):
     """Edit channel / roles / message, pause or remove an existing subscription.
 
     Auth: Manage Server.
+
+    Persistent: yes. ``self.sub`` (the subscription row shown) is not
+    reconstructible from a bare custom_id — same accepted-loss UX as
+    AddSubscriptionView: the shell renders an empty card and every callback
+    re-checks _check_perms(interaction), so a click on a stale shell is safe,
+    it just has nothing to show until the user re-opens the manage panel from
+    the main config view.
     """
+
+    __persistent__ = True
 
     def __init__(self, bot=None, guild_id: Optional[int] = None, locale: str = "en-US",
                  subscription: Optional[Dict[str, Any]] = None):
@@ -965,3 +988,8 @@ class ManageSubscriptionView(BaseView):
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         return await _check_perms(interaction)
+
+    @classmethod
+    def register_persistent(cls, bot) -> None:
+        """Auth model: Manage Server in the guild (checked on every click)."""
+        bot.add_view(cls())

@@ -252,22 +252,46 @@ moddy/
 - For "unexpected" errors in cogs/modules: let the global error handler manage them
 - For expected errors: use `create_error_message()` / `create_success_message()` from `utils/components_v2.py`
 
-### 8. Persistent Views — **MANDATORY**
-- **ALL interactive components MUST be persistent. No exceptions.** Every button
-  and every select MUST have a stable, namespaced `custom_id` and live on a
-  `timeout=None` view so it never dies — neither after a timeout nor after a bot
-  restart. Shipping a view whose buttons stop working after a restart (or after
-  a few minutes of inactivity) is **not acceptable** and will be rejected in
-  review. Follow the contract below.
-- `BaseView` defaults to `timeout=None` — views never expire in memory
+### 8. Persistent Views — **MANDATORY, NO EXCEPTIONS**
+- **You MUST use persistent views for EVERY interactive Discord component,
+  in every cog, module, and staff command — always, without exception.**
+  Every button, select, and `DynamicItem` MUST have a stable, namespaced
+  `custom_id` and live on a `timeout=None` view so it never dies — neither
+  after a timeout nor after a bot restart. This is not a per-feature
+  judgment call: **writing a new interactive view that is not persistent is
+  a bug**, exactly like using `discord.Embed()` instead of Components V2 or
+  hardcoding a user-facing string instead of using i18n. Shipping a view
+  whose buttons stop working after a restart (or after a few minutes of
+  inactivity) is **not acceptable** and will be rejected in review.
+- The **only** acceptable exceptions are the ones explicitly listed and
+  justified in [docs/PERSISTENT_VIEWS.md → "Deliberate exclusions"](docs/PERSISTENT_VIEWS.md)
+  (modals, error-recovery views, secret-displaying views, in-memory-callback
+  confirm dialogs, and similar). If you believe a new view needs to be
+  excluded, add it to that section with the same level of concrete
+  justification as the existing entries — do not silently skip persistence.
+- `BaseView` defaults to `timeout=None` — views never expire in memory.
 - To make a view survive a **bot restart**:
   1. Set `__persistent__ = True` on the class
   2. Give every interactive child a stable, namespaced `custom_id` (`moddy:<cog>:<view>:<action>`)
   3. Make `__init__` safely accept `bot=None` / default args so a "shell" can be instantiated
-  4. Implement `register_persistent(cls, bot)` (usually `bot.add_view(cls())`)
-  5. Add the class to `utils/persistent_views.py::_collect_persistent_view_classes()`
-- Callbacks on persistent views must re-derive state from `interaction` (not `self`) — after a restart, `self` is the shell
-- See → [docs/PERSISTENT_VIEWS.md](docs/PERSISTENT_VIEWS.md)
+  4. For owner-scoped, guild-mismatched, or entity-scoped state (a `user_id`,
+     a `case_id`, a page number, …), use a `DynamicItem` subclass with a
+     `template=` regex — a static custom_id alone is only enough when
+     `interaction.guild_id`/`interaction.user.id` already provide the auth
+     context (typical guild config panels)
+  5. Implement `register_persistent(cls, bot)` (`bot.add_view(cls())` for a
+     regular view, `bot.add_dynamic_items(ItemClass)` for a `DynamicItem`)
+  6. Add the class to `utils/persistent_views.py::_collect_persistent_view_classes()`
+- Callbacks on persistent views must re-derive state from `interaction` (not
+  `self`) — after a restart, `self` is the shell, and a `DynamicItem`
+  reconstructs from scratch on **every single click**, not just after a
+  restart.
+- Before opening a PR that adds or touches a view, run
+  `python3 -m pytest tests/test_persistent_views.py -q` — it asserts every
+  registered view is actually persistent and that no two views collide on a
+  `custom_id`. A view is not done until this suite covers it.
+- See → [docs/PERSISTENT_VIEWS.md](docs/PERSISTENT_VIEWS.md) for the full
+  contract, the custom_id convention, auth models, and worked examples.
 
 ### 9. Language
 - Code comments, commits, PRs: **English only**

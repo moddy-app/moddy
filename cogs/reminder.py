@@ -14,8 +14,10 @@ from discord import app_commands, ui
 from discord.ext import commands, tasks
 from discord.ui import LayoutView, Container, TextDisplay, Separator
 from discord import SeparatorSpacing
+from cogs.error_handler import BaseView
 
-from utils.i18n import t
+from utils.i18n import i18n, t
+from utils.components_v2 import create_error_message
 from cogs.error_handler import BaseModal
 
 logger = logging.getLogger('moddy.reminder')
@@ -252,16 +254,99 @@ def format_datetime_for_user(dt: datetime, user_tz: ZoneInfo, locale: str = "en"
     return local_dt.strftime("%m/%d/%Y %I:%M %p")
 
 
+# --------------------------------------------------------------------------- #
+# custom_id template
+#
+#   moddy:rem:manage:<action>:<owner_id>
+#
+# `owner_id` is the user the card was rendered FOR. It is compared against
+# interaction.user.id on every click. A Discord snowflake is public
+# information already visible in the message, so encoding it leaks nothing.
+#
+# \d{1,20} rather than a tighter \d{17,20} snowflake range: a bare shell
+# (owner_id defaulting to 0) must still match its own template — see
+# docs/PERSISTENT_VIEWS.md Migration log, Step 6.
+# --------------------------------------------------------------------------- #
+
+_REM_ACTIONS = "add|edit|delete|history|back"
+_CID_REM_TEMPLATE = rf"moddy:rem:manage:(?P<action>{_REM_ACTIONS}):(?P<owner>\d{{1,20}})"
+
+
+def _guarded(callback):
+    """Route DynamicItem callback errors to the central error handler.
+
+    A DynamicItem dispatched via ``bot.add_dynamic_items`` has no live
+    ``BaseView``, so ``BaseView.on_error`` never fires. Copied from
+    ``utils/appeal_views.py``.
+    """
+    async def wrapper(self, interaction: discord.Interaction):
+        try:
+            await callback(self, interaction)
+        except Exception as e:  # noqa: BLE001 — funnel everything to the handler
+            from cogs.error_handler import report_component_error
+            await report_component_error(interaction, e, self.__class__.__name__)
+    return wrapper
+
+
+async def _reject_if_not_owner(interaction: discord.Interaction, owner_id: int) -> bool:
+    """Return True (and answer ephemerally) if the clicker is not the owner."""
+    if interaction.user.id == owner_id:
+        return False
+    locale = i18n.get_user_locale(interaction)
+    await interaction.response.send_message(
+        view=create_error_message(
+            t("errors.not_your_message.title", locale=locale),
+            t("errors.not_your_message.description", locale=locale),
+        ),
+        ephemeral=True,
+    )
+    return True
+
+
+async def _refresh_manage_card(bot, owner_id: int, locale: str,
+                                channel_id: Optional[int], message_id: Optional[int],
+                                *, show_history: bool = False):
+    """Rebuild the /reminders manage card in place from fresh DB state.
+
+    Keyed on (channel_id, message_id) rather than a live view or interaction
+    object, so it works the same whether the card was just opened or the bot
+    restarted in between (docs/PERSISTENT_VIEWS.md Appendix B.1.b: replace a
+    parent_view reference with a rebuild-from-DB helper).
+    """
+    if not channel_id or not message_id:
+        return
+    channel = bot.get_channel(channel_id)
+    if channel is None:
+        try:
+            channel = await bot.fetch_channel(channel_id)
+        except Exception:
+            return
+    reminders = await bot.db.get_user_reminders(owner_id)
+    user_tz = await get_user_timezone(bot, owner_id, locale)
+    past = await bot.db.get_user_past_reminders(owner_id) if show_history else []
+    view = RemindersManageView(
+        bot, owner_id, locale, reminders=reminders, user_tz=user_tz,
+        show_history=show_history, past_reminders=past,
+    )
+    try:
+        await channel.get_partial_message(message_id).edit(view=view)
+    except Exception:
+        pass
+
+
 class ReminderAddModal(BaseModal):
     """Modal for adding a new reminder"""
 
-    def __init__(self, locale: str, bot, channel_id: int = None, guild_id: int = None, parent_view=None):
+    def __init__(self, locale: str, bot, channel_id: int = None, guild_id: int = None,
+                 owner_id: int = None, card_channel_id: int = None, card_message_id: int = None):
         super().__init__(title=t("commands.reminder.modals.add_title", locale=locale))
         self.locale = locale
         self.bot = bot
         self.channel_id = channel_id
         self.guild_id = guild_id
-        self.parent_view = parent_view
+        self.owner_id = owner_id
+        self.card_channel_id = card_channel_id
+        self.card_message_id = card_message_id
 
         self.message_input = ui.TextInput(
             label=t("commands.reminder.modals.add_message_label", locale=locale),
@@ -328,20 +413,24 @@ class ReminderAddModal(BaseModal):
             ephemeral=True
         )
 
-        # Refresh the parent view if it exists
-        if self.parent_view:
-            await self.parent_view.refresh(interaction)
+        if self.owner_id is not None:
+            await _refresh_manage_card(
+                self.bot, self.owner_id, self.locale, self.card_channel_id, self.card_message_id,
+            )
 
 
 class ReminderEditModal(BaseModal):
     """Modal for editing a reminder"""
 
-    def __init__(self, locale: str, bot, reminder: Dict, parent_view=None):
+    def __init__(self, locale: str, bot, reminder: Dict, owner_id: int = None,
+                 card_channel_id: int = None, card_message_id: int = None):
         super().__init__(title=t("commands.reminder.modals.edit_title", locale=locale))
         self.locale = locale
         self.bot = bot
         self.reminder = reminder
-        self.parent_view = parent_view
+        self.owner_id = owner_id
+        self.card_channel_id = card_channel_id
+        self.card_message_id = card_message_id
 
         self.message_input = ui.TextInput(
             label=t("commands.reminder.modals.edit_message_label", locale=locale),
@@ -398,19 +487,23 @@ class ReminderEditModal(BaseModal):
             ephemeral=True
         )
 
-        # Refresh the parent view if it exists
-        if self.parent_view:
-            await self.parent_view.refresh(interaction)
+        if self.owner_id is not None:
+            await _refresh_manage_card(
+                self.bot, self.owner_id, self.locale, self.card_channel_id, self.card_message_id,
+            )
 
 
 class ReminderSelectForEdit(ui.Select):
     """Select menu for choosing a reminder to edit"""
 
-    def __init__(self, reminders: List[Dict], locale: str, bot, parent_view=None):
+    def __init__(self, reminders: List[Dict], locale: str, bot, owner_id: int = None,
+                 card_channel_id: int = None, card_message_id: int = None):
         self.reminders_map = {str(r['id']): r for r in reminders}
         self.locale = locale
         self.bot = bot
-        self.parent_view = parent_view
+        self.owner_id = owner_id
+        self.card_channel_id = card_channel_id
+        self.card_message_id = card_message_id
 
         options = []
         for reminder in reminders[:25]:
@@ -431,18 +524,25 @@ class ReminderSelectForEdit(ui.Select):
     async def callback(self, interaction: discord.Interaction):
         reminder = self.reminders_map.get(self.values[0])
         if reminder:
-            modal = ReminderEditModal(self.locale, self.bot, reminder, self.parent_view)
+            modal = ReminderEditModal(
+                self.locale, self.bot, reminder,
+                owner_id=self.owner_id, card_channel_id=self.card_channel_id,
+                card_message_id=self.card_message_id,
+            )
             await interaction.response.send_modal(modal)
 
 
 class ReminderSelectForDelete(ui.Select):
     """Select menu for choosing a reminder to delete"""
 
-    def __init__(self, reminders: List[Dict], locale: str, bot, parent_view=None):
+    def __init__(self, reminders: List[Dict], locale: str, bot, owner_id: int = None,
+                 card_channel_id: int = None, card_message_id: int = None):
         self.reminders_map = {str(r['id']): r for r in reminders}
         self.locale = locale
         self.bot = bot
-        self.parent_view = parent_view
+        self.owner_id = owner_id
+        self.card_channel_id = card_channel_id
+        self.card_message_id = card_message_id
 
         options = []
         for reminder in reminders[:25]:
@@ -470,28 +570,151 @@ class ReminderSelectForDelete(ui.Select):
             ephemeral=True
         )
 
-        # Refresh the parent view if it exists
-        if self.parent_view:
-            await self.parent_view.refresh(interaction)
+        if self.owner_id is not None:
+            await _refresh_manage_card(
+                self.bot, self.owner_id, self.locale, self.card_channel_id, self.card_message_id,
+            )
 
 
-class RemindersManageView(LayoutView):
-    """Main view for managing reminders"""
+class ReminderManageButton(ui.DynamicItem[ui.Button], template=_CID_REM_TEMPLATE):
+    """One button on the /reminders manage card. Auth: owner only.
 
-    def __init__(self, bot, user_id: int, reminders: List[Dict], locale: str,
-                 user_tz: ZoneInfo, show_history: bool = False, past_reminders: List[Dict] = None,
-                 original_interaction: discord.Interaction = None):
-        super().__init__(timeout=300)
+    The owner id is encoded in the custom_id so a restarted bot can still
+    tell the card's owner from a passer-by clicking someone else's buttons.
+    """
+
+    _STYLE = {
+        "add":     discord.ButtonStyle.success,
+        "edit":    discord.ButtonStyle.primary,
+        "delete":  discord.ButtonStyle.danger,
+        "history": discord.ButtonStyle.secondary,
+        "back":    discord.ButtonStyle.secondary,
+    }
+    _EMOJI = {
+        "add":     "<:add:1519791773235413022>",
+        "edit":    "<:edit:1519795936568676383>",
+        "delete":  "<:delete:1519795753164210447>",
+        "history": "<:history:1519796822963392755>",
+        "back":    "<:back:1519795556665397431>",
+    }
+    _LABEL_KEY = {
+        "add":     "commands.reminder.buttons.add",
+        "edit":    "commands.reminder.buttons.edit",
+        "delete":  "commands.reminder.buttons.delete",
+        "history": "commands.reminder.buttons.history",
+        "back":    "commands.reminder.buttons.back",
+    }
+
+    def __init__(self, action: str, owner_id: int, *,
+                 locale: str = "en-US", disabled: bool = False):
+        super().__init__(
+            ui.Button(
+                label=t(self._LABEL_KEY[action], locale=locale)[:80],
+                style=self._STYLE[action],
+                emoji=discord.PartialEmoji.from_str(self._EMOJI[action]),
+                custom_id=f"moddy:rem:manage:{action}:{owner_id}",
+                disabled=disabled,
+            )
+        )
+        self.action = action
+        self.owner_id = owner_id
+
+    @classmethod
+    async def from_custom_id(cls, interaction: discord.Interaction,
+                              item: ui.Button, match: "re.Match"):
+        """Rebuild the item from the clicked custom_id.
+
+        Runs on EVERY click once the item is registered — the live instance is
+        not reused. Kept cheap and side-effect free: no DB, no API calls.
+        Locale is deliberately re-derived here, never encoded in the id.
+        """
+        return cls(
+            match["action"],
+            int(match["owner"]),
+            locale=i18n.get_user_locale(interaction),
+        )
+
+    @_guarded
+    async def callback(self, interaction: discord.Interaction):
+        if await _reject_if_not_owner(interaction, self.owner_id):
+            return
+
+        # Re-derive EVERYTHING from the interaction — there is no live view.
+        bot = interaction.client
+        locale = i18n.get_user_locale(interaction)
+        owner_id = interaction.user.id
+        channel_id = interaction.channel_id
+        message_id = interaction.message.id if interaction.message else None
+
+        if self.action == "add":
+            await interaction.response.send_modal(
+                ReminderAddModal(
+                    locale, bot, owner_id=owner_id,
+                    card_channel_id=channel_id, card_message_id=message_id,
+                )
+            )
+            return
+
+        if self.action in ("edit", "delete"):
+            reminders = await bot.db.get_user_reminders(owner_id)
+            if not reminders:
+                return
+            select_view = LayoutView()
+            container = Container()
+            select_cls = ReminderSelectForEdit if self.action == "edit" else ReminderSelectForDelete
+            key = "commands.reminder.modals.select_reminder_edit" if self.action == "edit" \
+                else "commands.reminder.modals.select_reminder_delete"
+            container.add_item(TextDisplay(t(key, locale=locale)))
+            row = discord.ui.ActionRow()
+            row.add_item(select_cls(
+                reminders, locale, bot, owner_id=owner_id,
+                card_channel_id=channel_id, card_message_id=message_id,
+            ))
+            container.add_item(row)
+            select_view.add_item(container)
+            await interaction.response.send_message(view=select_view, ephemeral=True)
+            return
+
+        # "history" and "back" both just re-render the card in place.
+        view = await RemindersManageView.build_for(
+            bot, owner_id, locale, show_history=(self.action == "history")
+        )
+        await interaction.response.edit_message(view=view)
+
+
+class RemindersManageView(BaseView):
+    """/reminders manage card. Persistent: yes (via ReminderManageButton).
+
+    Auth: owner only — enforced per-button by the encoded owner_id, NOT by
+    interaction_check (which cannot work on a restarted shell).
+    """
+
+    __persistent__ = True
+
+    def __init__(self, bot=None, user_id: Optional[int] = None, locale: str = "en-US",
+                 reminders: Optional[List[Dict]] = None, user_tz: Optional[ZoneInfo] = None,
+                 show_history: bool = False, past_reminders: Optional[List[Dict]] = None):
+        super().__init__()  # timeout=None
         self.bot = bot
         self.user_id = user_id
         self.locale = locale
-        self.user_tz = user_tz
+        self.user_tz = user_tz or ZoneInfo("UTC")
         self.show_history = show_history
-        self.reminders = reminders
+        self.reminders = reminders or []
         self.past_reminders = past_reminders or []
-        self.original_interaction = original_interaction
 
         self._build_view()
+
+    @classmethod
+    async def build_for(cls, bot, user_id: int, locale: str, *,
+                         show_history: bool = False) -> "RemindersManageView":
+        """Fetch fresh state and return a rendered view. The ONLY constructor
+        callers should use for a real card — it guarantees the data is not a
+        stale snapshot."""
+        reminders = await bot.db.get_user_reminders(user_id)
+        past = await bot.db.get_user_past_reminders(user_id) if show_history else []
+        user_tz = await get_user_timezone(bot, user_id, locale)
+        return cls(bot, user_id, locale, reminders, user_tz, show_history, past)
 
     def _build_view(self):
         # Clear existing items
@@ -529,14 +752,7 @@ class RemindersManageView(LayoutView):
 
             # Back button
             back_row = discord.ui.ActionRow()
-            back_btn = discord.ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:back:1519795556665397431>"),
-                label=t("commands.reminder.buttons.back", locale=self.locale),
-                style=discord.ButtonStyle.secondary,
-                custom_id="back_btn"
-            )
-            back_btn.callback = self.back_callback
-            back_row.add_item(back_btn)
+            back_row.add_item(ReminderManageButton("back", self.user_id or 0, locale=self.locale))
             container.add_item(back_row)
         else:
             # Main reminders view
@@ -571,128 +787,21 @@ class RemindersManageView(LayoutView):
 
             # Action buttons row 1
             btn_row1 = discord.ui.ActionRow()
-
-            # Add button
-            add_btn = discord.ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:add:1519791773235413022>"),
-                label=t("commands.reminder.buttons.add", locale=self.locale),
-                style=discord.ButtonStyle.success,
-                custom_id="add_btn"
-            )
-            add_btn.callback = self.add_callback
-            btn_row1.add_item(add_btn)
-
-            # Edit button (disabled if no reminders)
-            edit_btn = discord.ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:edit:1519795936568676383>"),
-                label=t("commands.reminder.buttons.edit", locale=self.locale),
-                style=discord.ButtonStyle.primary,
-                custom_id="edit_btn",
-                disabled=len(self.reminders) == 0
-            )
-            edit_btn.callback = self.edit_callback
-            btn_row1.add_item(edit_btn)
-
-            # Delete button (disabled if no reminders)
-            delete_btn = discord.ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:delete:1519795753164210447>"),
-                label=t("commands.reminder.buttons.delete", locale=self.locale),
-                style=discord.ButtonStyle.danger,
-                custom_id="delete_btn",
-                disabled=len(self.reminders) == 0
-            )
-            delete_btn.callback = self.delete_callback
-            btn_row1.add_item(delete_btn)
-
-            # History button
-            history_btn = discord.ui.Button(
-                emoji=discord.PartialEmoji.from_str("<:history:1519796822963392755>"),
-                label=t("commands.reminder.buttons.history", locale=self.locale),
-                style=discord.ButtonStyle.secondary,
-                custom_id="history_btn"
-            )
-            history_btn.callback = self.history_callback
-            btn_row1.add_item(history_btn)
-
+            btn_row1.add_item(ReminderManageButton("add", self.user_id or 0, locale=self.locale))
+            btn_row1.add_item(ReminderManageButton(
+                "edit", self.user_id or 0, locale=self.locale, disabled=not self.reminders))
+            btn_row1.add_item(ReminderManageButton(
+                "delete", self.user_id or 0, locale=self.locale, disabled=not self.reminders))
+            btn_row1.add_item(ReminderManageButton("history", self.user_id or 0, locale=self.locale))
             container.add_item(btn_row1)
 
         self.add_item(container)
 
-    async def refresh(self, interaction: discord.Interaction):
-        """Refresh the view with updated data"""
-        # Fetch fresh data
-        self.reminders = await self.bot.db.get_user_reminders(self.user_id)
-        self.user_tz = await get_user_timezone(self.bot, self.user_id, self.locale)
-
-        # Rebuild the view
-        self._build_view()
-
-        # Update the original message
-        if self.original_interaction:
-            try:
-                await self.original_interaction.edit_original_response(view=self)
-            except Exception:
-                pass
-
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        if interaction.user.id != self.user_id:
-            await interaction.response.send_message(
-                t("commands.reminder.errors.author_only", interaction),
-                ephemeral=True
-            )
-            return False
-        return True
-
-    async def add_callback(self, interaction: discord.Interaction):
-        modal = ReminderAddModal(self.locale, self.bot, parent_view=self)
-        await interaction.response.send_modal(modal)
-
-    async def edit_callback(self, interaction: discord.Interaction):
-        if not self.reminders:
-            return
-
-        view = LayoutView()
-        container = Container()
-        container.add_item(TextDisplay(t("commands.reminder.modals.select_reminder_edit", locale=self.locale)))
-
-        row = discord.ui.ActionRow()
-        select = ReminderSelectForEdit(self.reminders, self.locale, self.bot, parent_view=self)
-        row.add_item(select)
-        container.add_item(row)
-
-        view.add_item(container)
-        await interaction.response.send_message(view=view, ephemeral=True)
-
-    async def delete_callback(self, interaction: discord.Interaction):
-        if not self.reminders:
-            return
-
-        view = LayoutView()
-        container = Container()
-        container.add_item(TextDisplay(t("commands.reminder.modals.select_reminder_delete", locale=self.locale)))
-
-        row = discord.ui.ActionRow()
-        select = ReminderSelectForDelete(self.reminders, self.locale, self.bot, parent_view=self)
-        row.add_item(select)
-        container.add_item(row)
-
-        view.add_item(container)
-        await interaction.response.send_message(view=view, ephemeral=True)
-
-    async def history_callback(self, interaction: discord.Interaction):
-        past = await self.bot.db.get_user_past_reminders(self.user_id)
-
-        # Create new view with history
-        self.show_history = True
-        self.past_reminders = past
-        self._build_view()
-        await interaction.response.edit_message(view=self)
-
-    async def back_callback(self, interaction: discord.Interaction):
-        # Return to main view
-        self.show_history = False
-        self._build_view()
-        await interaction.response.edit_message(view=self)
+    @classmethod
+    def register_persistent(cls, bot) -> None:
+        """Auth model: owner only — owner_id is encoded in each button's
+        custom_id and compared to interaction.user.id on click."""
+        bot.add_dynamic_items(ReminderManageButton)
 
 
 class Reminder(commands.Cog):
@@ -939,10 +1048,9 @@ class Reminder(commands.Cog):
         view = RemindersManageView(
             self.bot,
             interaction.user.id,
+            i18n.get_user_locale(interaction),
             reminders,
-            str(interaction.locale),
             user_tz,
-            original_interaction=interaction
         )
 
         await interaction.response.send_message(view=view, ephemeral=ephemeral)

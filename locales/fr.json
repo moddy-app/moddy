@@ -837,6 +837,10 @@
     "argument": {
       "title": "Argument manquant",
       "description": "L'argument `{argument}` est requis"
+    },
+    "not_your_message": {
+      "title": "Ce n'est pas votre message",
+      "description": "<:undone:1519800313324896327> Vous ne pouvez pas utiliser ces boutons, ils appartiennent à un autre utilisateur."
     }
   },
   "common": {
