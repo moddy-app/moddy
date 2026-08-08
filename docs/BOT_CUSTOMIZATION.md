@@ -107,7 +107,7 @@ server. Only the *user portion* is stored in the DB and shown back in the
 modal, so the suffix never gets duplicated when a server edits its bio.
 
 The 190-character member-bio budget is shared: `MAX_BIO_LENGTH` is
-`190 - len(attribution) - len("\n\n")` = **136** characters for the server.
+`190 - len(attribution) - len("\n")` = **137** characters for the server.
 `tests/test_bot_customization.py` pins that arithmetic — if the attribution
 text changes, the test is what catches the overflow.
 

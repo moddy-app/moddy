@@ -56,7 +56,7 @@ a cached `utils.subscription.is_guild_premium` helper and wired the existing
   stored by Discord; the name style is not guaranteed to survive a restart, so
   `resync_style()` re-applies it once per process per guild.
 - **Only the user portion of the bio is stored**, so the attribution suffix is
-  never duplicated when a server re-edits its bio. `MAX_BIO_LENGTH` (136) is
+  never duplicated when a server re-edits its bio. `MAX_BIO_LENGTH` (137) is
   derived from the 190-char limit minus the suffix, and a test pins the
   arithmetic so a longer attribution text fails loudly.
 - **Premium is re-checked on the modal submit**, not just when rendering the

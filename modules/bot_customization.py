@@ -56,7 +56,7 @@ MAX_BIO_TOTAL_LENGTH = 190
 # The attribution line appended to every customized bio. Servers cannot remove
 # it — it is re-appended on every write.
 BIO_ATTRIBUTION = "<a:Rocket:1535783839870353499> Powered by @**Moddy**"
-BIO_SEPARATOR = "\n\n"
+BIO_SEPARATOR = "\n"
 MAX_BIO_LENGTH = MAX_BIO_TOTAL_LENGTH - len(BIO_ATTRIBUTION) - len(BIO_SEPARATOR)
 
 # Avatar upload guard rails. Discord accepts a bit more, but a server-supplied
