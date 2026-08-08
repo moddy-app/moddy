@@ -31,6 +31,9 @@
     },
     "AI text tools": {
       "name": "AI 텍스트 도구"
+    },
+    "Transcribe": {
+      "name": "받아쓰기"
     }
   },
   "commands": {

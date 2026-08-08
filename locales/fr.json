@@ -1755,6 +1755,42 @@
           "gone": "Cette simulation n'existe plus."
         }
       }
+    },
+    "voice_transcription": {
+      "name": "Transcription vocale",
+      "description": "Transcrit les messages vocaux en texte",
+      "config": {
+        "title": "Transcription vocale",
+        "description": "Moddy propose une transcription écrite sous les messages vocaux du serveur.",
+        "status": {
+          "section_title": "Statut",
+          "section_description": "Active ou désactive la transcription des messages vocaux",
+          "enabled": "Activé",
+          "disabled": "Désactivé",
+          "enable": "Activer",
+          "disable": "Désactiver"
+        },
+        "mode": {
+          "section_title": "Mode",
+          "section_description": "Choisis si la transcription est proposée par un bouton ou publiée automatiquement",
+          "placeholder": "Choisis un mode",
+          "button": {
+            "label": "Bouton de transcription",
+            "description": "Un bouton est ajouté sous chaque message vocal"
+          },
+          "auto": {
+            "label": "Transcription automatique",
+            "description": "La transcription est publiée sans attendre un clic"
+          }
+        },
+        "channels": {
+          "section_title": "Salons concernés",
+          "section_description": "Laisse vide pour couvrir tous les salons du serveur",
+          "placeholder": "Tous les salons",
+          "all": "Tous les salons",
+          "selected": "{count} salon(s)"
+        }
+      }
     }
   },
   "languages": {
@@ -2265,6 +2301,26 @@
         "confirm_title": "Supprimer la bannière ?",
         "confirm": "Supprimer définitivement la bannière {id} ?"
       }
+    }
+  },
+  "transcription": {
+    "title": "Transcription",
+    "loading": "Transcription en cours",
+    "button": "Transcrire",
+    "requested_by": "demandé par {user}",
+    "truncated": "Transcription trop longue, elle a été coupée.",
+    "error_title": "Transcription impossible",
+    "errors": {
+      "no_audio": "Ce message ne contient aucun audio à transcrire.",
+      "too_large": "Ce fichier audio est trop lourd (maximum {size} Mo).",
+      "too_long": "Cet audio est trop long (maximum {minutes} minutes).",
+      "unavailable": "La transcription est momentanément indisponible, réessaye dans quelques instants.",
+      "rate_limited": "Trop de transcriptions en cours, réessaye dans {seconds} secondes.",
+      "quota": "La limite de transcriptions est atteinte pour aujourd'hui.",
+      "in_progress": "Ce message est déjà en cours de transcription.",
+      "download_failed": "Impossible de récupérer le fichier audio.",
+      "empty": "Aucune parole n'a été détectée dans cet audio.",
+      "failed": "La transcription a échoué, réessaye dans quelques instants."
     }
   }
 }

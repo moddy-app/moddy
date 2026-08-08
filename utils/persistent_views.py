@@ -55,6 +55,8 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     from utils.cases_views import CasesBrowserView
     from utils.appeal_views import AppealPersistence
     from utils.automod_shadow_views import ShadowAnnotationPersistence
+    from utils.transcription_views import TranscriptionPersistence
+    from modules.configs.voice_transcription_config import VoiceTranscriptionConfigView
 
     return [
         # Group 1 — /moddy (public informational, no user auth)
@@ -98,6 +100,11 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         # channel-scoped dynamic items; AdaptiveSlowmodeChannelConfigView
         # is deliberately excluded, see docs/PERSISTENT_VIEWS.md Step 11)
         AdaptiveSlowmodeConfigView,
+        # Group 12b — /config voice transcription panel (guild permission auth)
+        VoiceTranscriptionConfigView,
+        # Group 12c — the "Transcribe" button posted under voice messages
+        # (dynamic item, public: anyone who sees the voice message may click)
+        TranscriptionPersistence,
         # Group 13 — /config automod AI panel (guild permission auth;
         # AutomodAIPrecedentsView is deliberately excluded, see
         # docs/PERSISTENT_VIEWS.md Step 12)

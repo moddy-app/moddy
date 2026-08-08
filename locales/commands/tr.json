@@ -31,6 +31,9 @@
     },
     "AI text tools": {
       "name": "Yapay zeka metin araçları"
+    },
+    "Transcribe": {
+      "name": "Yazıya dök"
     }
   },
   "commands": {

@@ -155,6 +155,20 @@ class ModuleEvents(commands.Cog):
         except Exception as e:
             logger.error(f"Error in on_message (automod) for guild {message.guild.id}: {e}", exc_info=True)
 
+        try:
+            # Voice Transcription: offer (or post) a transcription under a
+            # voice message
+            transcription_module = await self.bot.module_manager.get_module_instance(
+                message.guild.id,
+                'voice_transcription'
+            )
+
+            if transcription_module and transcription_module.enabled:
+                await transcription_module.on_message(message)
+
+        except Exception as e:
+            logger.error(f"Error in on_message (voice_transcription) for guild {message.guild.id}: {e}", exc_info=True)
+
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction: discord.Reaction, user):
         """Cached-message reaction → feed the automod relationship graph (~0 cost).

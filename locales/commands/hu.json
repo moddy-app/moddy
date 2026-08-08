@@ -31,6 +31,9 @@
     },
     "AI text tools": {
       "name": "MI szövegeszközök"
+    },
+    "Transcribe": {
+      "name": "Átirat készítése"
     }
   },
   "commands": {

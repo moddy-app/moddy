@@ -24,6 +24,32 @@ class RateLimitError(GatewayError):
         super().__init__(msg)
 
 
+class ModelRateLimitError(GatewayError):
+    """Our own provider-account limit would be breached — the call was not made.
+
+    Raised by ``gateway.ratelimit.RateLimiter`` *before* contacting the
+    provider, unlike ``RateLimitError`` which reports a provider-side 429.
+    """
+
+    def __init__(
+        self,
+        provider: str,
+        model: str,
+        rule: str,
+        limit: int,
+        retry_after: Optional[float] = None,
+    ):
+        self.provider = provider
+        self.model = model
+        self.rule = rule
+        self.limit = limit
+        self.retry_after = retry_after
+        msg = f"Rate limit {rule!r} reached for {provider}/{model} (limit {limit})"
+        if retry_after:
+            msg += f" — resets in {retry_after:.0f}s"
+        super().__init__(msg)
+
+
 class APIUnavailableError(GatewayError):
     def __init__(self, provider: str):
         self.provider = provider

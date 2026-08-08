@@ -215,6 +215,15 @@ class ConfigMainView(BaseView):
                 locale,
                 module_config
             )
+        elif module_id == 'voice_transcription':
+            from modules.configs.voice_transcription_config import VoiceTranscriptionConfigView
+            config_view = VoiceTranscriptionConfigView(
+                bot,
+                guild_id,
+                user_id,
+                locale,
+                module_config
+            )
         elif module_id == 'automod_ai':
             from modules.configs.automod_ai_config import AutomodAIConfigView
             config_view = AutomodAIConfigView(

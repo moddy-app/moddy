@@ -97,6 +97,8 @@ class ModdyBot(commands.Bot):
         self.appeals = AppealService(self)  # sanction appeals (server / Moddy team)
         from services.precedent_service import PrecedentService
         self.precedents = PrecedentService(self)  # automod server precedents (RAG)
+        from services.transcription_service import TranscriptionService
+        self.transcription = TranscriptionService(self)  # voice message speech-to-text
         from gateway import Gateway
         self.gateway = Gateway()
         self.redis = None  # Redis client (shared with backend)

@@ -31,6 +31,9 @@
     },
     "AI text tools": {
       "name": "KI-Textwerkzeuge"
+    },
+    "Transcribe": {
+      "name": "Transkribieren"
     }
   },
   "commands": {

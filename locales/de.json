@@ -1756,6 +1756,42 @@
           "gone": "Diese Simulation existiert nicht mehr."
         }
       }
+    },
+    "voice_transcription": {
+      "name": "Sprachtranskription",
+      "description": "Wandelt Sprachnachrichten in Text um",
+      "config": {
+        "title": "Sprachtranskription",
+        "description": "Moddy bietet unter den Sprachnachrichten des Servers eine schriftliche Transkription an.",
+        "status": {
+          "section_title": "Status",
+          "section_description": "Transkription von Sprachnachrichten ein- oder ausschalten",
+          "enabled": "Aktiviert",
+          "disabled": "Deaktiviert",
+          "enable": "Aktivieren",
+          "disable": "Deaktivieren"
+        },
+        "mode": {
+          "section_title": "Modus",
+          "section_description": "Lege fest, ob die Transkription per Button angeboten oder automatisch gepostet wird",
+          "placeholder": "Modus wählen",
+          "button": {
+            "label": "Transkriptions-Button",
+            "description": "Unter jeder Sprachnachricht erscheint ein Button"
+          },
+          "auto": {
+            "label": "Automatische Transkription",
+            "description": "Die Transkription wird ohne Klick gepostet"
+          }
+        },
+        "channels": {
+          "section_title": "Kanäle",
+          "section_description": "Leer lassen, um alle Kanäle des Servers abzudecken",
+          "placeholder": "Alle Kanäle",
+          "all": "Alle Kanäle",
+          "selected": "{count} Kanal/Kanäle"
+        }
+      }
     }
   },
   "languages": {
@@ -2266,6 +2302,26 @@
         "confirm_title": "Banner löschen?",
         "confirm": "Banner {id} dauerhaft löschen?"
       }
+    }
+  },
+  "transcription": {
+    "title": "Transkription",
+    "loading": "Transkribiere",
+    "button": "Transkribieren",
+    "requested_by": "angefordert von {user}",
+    "truncated": "Die Transkription war zu lang und wurde gekürzt.",
+    "error_title": "Transkription fehlgeschlagen",
+    "errors": {
+      "no_audio": "Diese Nachricht enthält kein Audio zum Transkribieren.",
+      "too_large": "Diese Audiodatei ist zu groß (maximal {size} MB).",
+      "too_long": "Dieses Audio ist zu lang (maximal {minutes} Minuten).",
+      "unavailable": "Die Transkription ist momentan nicht verfügbar, versuche es gleich noch einmal.",
+      "rate_limited": "Zu viele Transkriptionen gerade, versuche es in {seconds} Sekunden erneut.",
+      "quota": "Das Transkriptions-Limit für heute ist erreicht.",
+      "in_progress": "Diese Nachricht wird bereits transkribiert.",
+      "download_failed": "Die Audiodatei konnte nicht geladen werden.",
+      "empty": "In diesem Audio wurde keine Sprache erkannt.",
+      "failed": "Die Transkription ist fehlgeschlagen, versuche es gleich noch einmal."
     }
   }
 }

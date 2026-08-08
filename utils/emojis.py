@@ -15,6 +15,9 @@ ERROR = "<:error:1519790252594827264>"
 WARNING = "<:warning:1519789903100121139>"
 INFO = "<:info:1519793991045091388>"
 LOADING = "<a:spinner:1534857169667883078>"
+# Animated "the bot is working on it" mascot — used for AI processing states
+# (voice transcription), where the plain spinner reads as a generic loader.
+ROBOT_WORKING = "<a:Robot:1535676980605878312>"
 
 # Status dots
 GREEN_STATUS = "<:green_status:1450929035428495505>"
@@ -75,6 +78,7 @@ BALANCE = "<:balance:1519801728961351730>"
 MANAGE_USER = "<:manageuser:1519798563880698066>"
 LEGAL = "<:legal:1519801263397539890>"
 MIC_OFF = "<:mic_off:1520555496665255936>"
+VOICE_CHAT = "<:voice_chat:1535700758601666672>"  # voice transcription module
 CHECK = "<:check_100dp_FFFFFF_FILL1_wght700:1519751484517122088>"
 BANNER = "<:banner:1519792732716007634>"
 TEXT = "<:text:1519791921462120601>"
@@ -173,6 +177,7 @@ EMOJIS = {
     "done": DONE,
     "undone": UNDONE,
     "loading": LOADING,
+    "robot_working": ROBOT_WORKING,
     # Icons
     "settings": SETTINGS,
     "info": INFO,
@@ -230,6 +235,7 @@ EMOJIS = {
     "text": TEXT,
     "translate": TRANSLATE,
     "webhook": WEBHOOK,
+    "voice_chat": VOICE_CHAT,
     # Status dots
     "green_status": GREEN_STATUS,
     "yellow_status": YELLOW_STATUS,

@@ -31,6 +31,9 @@
     },
     "AI text tools": {
       "name": "Tekoälyn tekstityökalut"
+    },
+    "Transcribe": {
+      "name": "Litteroi"
     }
   },
   "commands": {

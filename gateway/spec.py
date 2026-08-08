@@ -39,11 +39,21 @@ QuotaPlan = list[QuotaTarget]
 
 @dataclass
 class CallSpec:
-    provider: str           # "openai" | "deepl"
-    operation: str          # "embed" | "chat" | "translate"
+    provider: str           # "openai" | "deepl" | "groq"
+    operation: str          # "embed" | "chat" | "translate" | "transcribe"
     model: Optional[str]    # "text-embedding-3-small" | "gpt-4.1-nano" | None
     payload: dict
     quota: QuotaPlan        # [] = not quota-gated
     call_type: str          # "ban_reason" | "translation" | …
     correlation_id: str
     metadata: dict = field(default_factory=dict)
+
+    # Provider-account rate limiting (gateway/ratelimit.py). Cost of this call
+    # per unit, e.g. {"requests": 1, "audio_seconds": 12.5}. Empty = not rate
+    # limited. Estimates are fine: the adapter can report the real cost and the
+    # executor reconciles the reservation afterwards.
+    rate_cost: dict = field(default_factory=dict)
+
+    # Binary body (audio file, …). Deliberately kept OUT of `payload` because
+    # `payload` is forwarded verbatim to the staff webhook log as JSON.
+    binary: Optional[bytes] = None

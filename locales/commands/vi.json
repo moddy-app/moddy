@@ -31,6 +31,9 @@
     },
     "AI text tools": {
       "name": "Công cụ văn bản AI"
+    },
+    "Transcribe": {
+      "name": "Chuyển thành văn bản"
     }
   },
   "commands": {

@@ -31,6 +31,9 @@
     },
     "AI text tools": {
       "name": "एआई टेक्स्ट टूल"
+    },
+    "Transcribe": {
+      "name": "प्रतिलेखन करें"
     }
   },
   "commands": {
