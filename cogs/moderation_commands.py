@@ -286,7 +286,9 @@ _LOCALE_TO_LANGUAGE: dict[str, str] = {
 
 _AI_SENTINEL_NO_REASON = "NO_REASON"
 _AI_SENTINEL_INJECTION = "INJECTION_DETECTED"
-_AI_TOTAL_TIMEOUT = 2.5  # seconds — must leave room for send_modal within the 3 s window
+_AI_TOTAL_TIMEOUT = 2.8  # seconds — must leave room for send_modal within the 3 s window
+_AI_FETCH_TIMEOUT = 1.2  # seconds — budget for the message-history scan
+_AI_CHAT_MIN_TIMEOUT = 1.0  # seconds — floor left for the OpenAI call, even if the fetch was slow
 _AI_MODEL = "gpt-4.1-nano"
 
 
@@ -377,10 +379,11 @@ async def _get_ai_suggested_reason(
     }
     action_label = action_labels.get(action, action)
 
+    fetch_start = time.monotonic()
     try:
         messages_content = await asyncio.wait_for(
             _fetch_recent_user_messages(guild, user),
-            timeout=1.5,
+            timeout=_AI_FETCH_TIMEOUT,
         )
     except asyncio.TimeoutError:
         logger.debug("[AI reason] message fetch timed out for user %s", user.id)
@@ -388,6 +391,12 @@ async def _get_ai_suggested_reason(
     except Exception as exc:
         logger.debug("[AI reason] message fetch error: %s", exc)
         return None
+
+    # Allocate whatever remains of the total budget to the OpenAI call, with a
+    # floor — otherwise a slow-but-within-budget fetch starves the AI call and
+    # it gets cut off by the outer _AI_TOTAL_TIMEOUT before it can even try.
+    elapsed = time.monotonic() - fetch_start
+    chat_timeout = max(_AI_CHAT_MIN_TIMEOUT, _AI_TOTAL_TIMEOUT - elapsed - 0.2)
 
     if not messages_content:
         return None
@@ -430,7 +439,7 @@ async def _get_ai_suggested_reason(
                 call_type="ban_reason",
                 metadata={"guild_id": guild.id, "user_id": user.id},
             ),
-            timeout=1.8,
+            timeout=chat_timeout,
         )
     except asyncio.TimeoutError:
         logger.debug("[AI reason] OpenAI call timed out for user %s", user.id)
