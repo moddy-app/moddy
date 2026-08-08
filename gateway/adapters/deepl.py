@@ -1,4 +1,5 @@
 from __future__ import annotations
+import json
 import logging
 from typing import Optional
 
@@ -52,8 +53,11 @@ class DeepLAdapter(BaseAdapter):
             f"{self._base_url}/translate", data=form
         ) as resp:
             await self._raise_for_status(resp)
-            data = await resp.json()
+            raw_body = await resp.text()
 
+        logger.debug("DeepL raw response for %r -> %s: %s", p["text"], p["target_lang"], raw_body)
+
+        data = json.loads(raw_body)
         translation = data["translations"][0]
         return AdapterResult(
             data={
