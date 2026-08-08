@@ -15,11 +15,28 @@ recording a precedent).
 
 from __future__ import annotations
 
+import array
 import logging
 import struct
+import sys
 from typing import Any, Dict, List, Optional, Sequence, Union
 
 logger = logging.getLogger("moddy.database")
+
+# Vectors are held in memory as float32 ``array.array`` rather than ``list[float]``.
+# The on-disk format is already float32, so this loses no precision — a plain list
+# unpacks each component into a distinct 64-bit Python float object, which costs
+# ~49 KB per 1536-dim vector against ~6 KB for the array (8x). With up to
+# PRECEDENT_MAX_PER_GUILD vectors cached per guild, that difference dominates the
+# bot's resident memory. ``array.array`` is a Sequence, so it supports len(),
+# iteration, indexing and zip() — everything the pure matcher in
+# ``automod/precedents.py`` needs — and empty arrays are falsy like empty lists.
+VECTOR_TYPECODE = "f"
+
+
+def empty_vector() -> "array.array":
+    """A shared-shape empty float32 vector (the 'no embedding' value)."""
+    return array.array(VECTOR_TYPECODE)
 
 # Allowed human verdicts (mirror the CHECK constraint in db/base.py).
 PRECEDENT_VERDICTS = ("non_sanctionnable", "sanctionnable")
@@ -30,15 +47,27 @@ def pack_vector(vector: Sequence[float]) -> bytes:
     return struct.pack(f"<{len(vector)}f", *[float(x) for x in vector])
 
 
-def unpack_vector(blob: Union[bytes, memoryview, None]) -> List[float]:
-    """Unpack float32 BYTEA back into a Python float list (empty on failure)."""
+def unpack_vector(blob: Union[bytes, memoryview, None]) -> "array.array":
+    """Unpack float32 BYTEA into a float32 ``array.array`` (empty on failure).
+
+    Returns an ``array.array('f')`` rather than a ``list[float]``: the stored
+    bytes are float32 already, so nothing is lost, and the array holds the
+    components as packed machine floats instead of ~1536 separate Python float
+    objects (see :data:`VECTOR_TYPECODE`).
+    """
     if not blob:
-        return []
+        return empty_vector()
     try:
         raw = bytes(blob)
-        return list(struct.unpack(f"<{len(raw) // 4}f", raw))
+        if len(raw) % 4:  # not a whole number of float32 — treat as corrupt
+            return empty_vector()
+        vec = array.array(VECTOR_TYPECODE)
+        vec.frombytes(raw)
+        if sys.byteorder != "little":  # on-disk format is little-endian ('<f')
+            vec.byteswap()
+        return vec
     except Exception:  # noqa: BLE001 — a corrupt row must not break matching
-        return []
+        return empty_vector()
 
 
 class PrecedentRepository:

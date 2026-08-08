@@ -20,10 +20,15 @@ the matches inform the verdict. See docs/AUTOMOD_AI.md §2quinquies.
 
 from __future__ import annotations
 
+import array
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List, Optional, Sequence
 
 from . import constants
+
+
+def _empty_vector() -> "array.array":
+    return array.array("f")
 
 
 @dataclass
@@ -32,11 +37,15 @@ class Precedent:
 
     ``vector`` is the **normalised** embedding of the message (unit length), so a
     cosine similarity against another normalised vector is a plain dot product.
+    It is a float32 ``array.array`` rather than a ``list[float]`` — same precision
+    as the on-disk format, ~8x less memory, and a drop-in Sequence for the
+    matching below. Any Sequence of floats still works here; the type is only a
+    memory choice, never a correctness one.
     """
     id: str
     message: str                 # the (normalised) message text, for display
     verdict_humain: str          # "non_sanctionnable" | "sanctionnable"
-    vector: List[float] = field(default_factory=list)
+    vector: Sequence[float] = field(default_factory=_empty_vector)
     categorie: str = ""
     gravite: str = ""
     source: str = ""
@@ -49,11 +58,11 @@ class PrecedentMatch:
     similarite: float
 
 
-def _dot(a: List[float], b: List[float]) -> float:
+def _dot(a: Sequence[float], b: Sequence[float]) -> float:
     return sum(x * y for x, y in zip(a, b))
 
 
-def cosine(query_vec: List[float], vector: List[float]) -> float:
+def cosine(query_vec: Sequence[float], vector: Sequence[float]) -> float:
     """Cosine similarity of two **normalised** vectors (a plain dot product).
 
     Both operands are expected to be unit-normalised (the engine normalises the
@@ -66,7 +75,7 @@ def cosine(query_vec: List[float], vector: List[float]) -> float:
 
 
 def match(
-    query_vec: List[float],
+    query_vec: Sequence[float],
     precedents: List[Precedent],
     *,
     top_k: Optional[int] = None,

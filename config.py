@@ -37,9 +37,12 @@ MODDY_APPEAL_CHANNEL_ID: int = int(os.environ.get("MODDY_APPEAL_CHANNEL_ID", "15
 # URL de connexion PostgreSQL - Variable Railway: DATABASE_URL
 DATABASE_URL: Optional[str] = os.environ.get("DATABASE_URL")
 
-# Pool de connexions
+# Pool de connexions — utilisé par db/base.py::connect().
+# Chaque connexion asyncpg garde un cache de requêtes préparées et ses buffers,
+# côté bot comme côté Postgres (service Railway facturé séparément). À l'échelle
+# actuelle le pool n'est jamais saturé, d'où des défauts volontairement bas.
 DB_POOL_MIN_SIZE: int = int(os.environ.get("DB_POOL_MIN_SIZE", "1"))
-DB_POOL_MAX_SIZE: int = int(os.environ.get("DB_POOL_MAX_SIZE", "10"))
+DB_POOL_MAX_SIZE: int = int(os.environ.get("DB_POOL_MAX_SIZE", "8"))
 
 # =============================================================================
 # REDIS

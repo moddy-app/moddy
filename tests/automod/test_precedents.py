@@ -5,6 +5,7 @@ Everything is offline: the embeddings are controlled (no gateway), nano's
 ``_judge`` is stubbed. See docs/AUTOMOD_AI.md §2quinquies.
 """
 
+import array
 import importlib.util
 import os
 import types
@@ -106,8 +107,19 @@ class TestVectorPacking:
         assert out == pytest.approx(vec, abs=1e-6)
 
     def test_unpack_none_is_empty(self):
-        assert unpack_vector(None) == []
-        assert unpack_vector(b"") == []
+        # unpack_vector returns a float32 array.array, not a list — an empty one
+        # is falsy and len()-zero, which is all the matcher relies on.
+        assert len(unpack_vector(None)) == 0
+        assert len(unpack_vector(b"")) == 0
+        assert not unpack_vector(None)
+
+    def test_unpack_returns_float32_array(self):
+        vec = unpack_vector(pack_vector([0.1, -0.2, 0.33]))
+        assert isinstance(vec, array.array)
+        assert vec.typecode == "f"
+
+    def test_unpack_rejects_truncated_blob(self):
+        assert len(unpack_vector(pack_vector([0.1, 0.2])[:-1])) == 0
 
 
 # --------------------------------------------------------------------------- #

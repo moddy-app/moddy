@@ -57,11 +57,19 @@ class ModdyBot(commands.Bot):
     """Main Moddy class"""
 
     def __init__(self):
-        # Required intents
+        # Required intents. `presences` stays off (Intents.default() excludes it):
+        # nothing reads member presence from the gateway — /invite takes its online
+        # count from the REST API's approximate_presence_count instead.
         intents = discord.Intents.default()
         intents.message_content = True
         intents.guilds = True
         intents.members = True
+
+        # Cache joined members (get_member() is used across appeals, automod,
+        # interserver, reminders and the staff commands) but not voice state:
+        # there is no on_voice_state_update listener anywhere in the codebase, so
+        # the voice cache is paid for and never read.
+        member_cache_flags = discord.MemberCacheFlags(joined=True, voice=False)
 
         # Configure HTTP client timeout to prevent timeout errors
         # Especially important in containerized environments (Docker/Railway)
@@ -83,7 +91,16 @@ class ModdyBot(commands.Bot):
             activity=discord.CustomActivity(name=bot_status) if bot_status else None,
             status=discord.Status.online,
             case_insensitive=True,
-            max_messages=10000,
+            # Global (all-guild) message cache, evicted by count, not by age.
+            # Its only consumers are the non-raw on_message_delete listeners
+            # (interserver relay cleanup, staff auto-delete, the deleted-message
+            # content cache behind the AI-suggested sanction reason) and the
+            # non-raw on_reaction_add feeding the automod relationship graph
+            # (REACTION_WAIT_SECONDS = 20). All of those act on messages seconds
+            # to minutes old, so 10000 was far past the useful window while
+            # costing ~1.5-3 KB per resident Message.
+            max_messages=5000,
+            member_cache_flags=member_cache_flags,
             http_timeout=http_timeout  # Apply custom timeout
         )
 

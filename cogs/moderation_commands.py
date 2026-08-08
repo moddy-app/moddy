@@ -806,20 +806,53 @@ async def _resolve_incognito(bot, user_id: int, default: bool = True) -> bool:
 # ---------------------------------------------------------------------------
 # Stores (user_id, content, deleted_at) per guild for up to 24 h so the AI
 # can also consider messages the user deleted before the mod ran the command.
-# Keyed by guild_id; capped at 500 entries per guild to bound memory usage.
+# Keyed by guild_id; capped per guild to bound memory usage.
+#
+# Expiry used to be enforced on read only, and reads only happen when a mod
+# actually runs /ban, /kick, /mute or /warn — so a guild that never gets a
+# sanction command kept its full bucket resident for the process lifetime.
+# Entries are now purged on write as well: the guild being written to is pruned
+# every time, and every other guild is swept at most once per _SWEEP_INTERVAL,
+# which keeps the amortised cost of a message deletion negligible.
 
 _DELETED_CACHE: dict[int, list[tuple[int, str, datetime]]] = {}
-_DELETED_CACHE_MAX = 500
+_DELETED_CACHE_MAX = 300
+_DELETED_CACHE_TTL = timedelta(hours=24)  # matches the consumer's lookback
+_DELETED_SWEEP_INTERVAL = timedelta(minutes=10)
+_last_deleted_sweep = datetime.min.replace(tzinfo=timezone.utc)
+
+
+def _prune_bucket(
+    bucket: list[tuple[int, str, datetime]], cutoff: datetime
+) -> list[tuple[int, str, datetime]]:
+    """Entries newer than ``cutoff``, capped to the most recent _DELETED_CACHE_MAX."""
+    kept = [entry for entry in bucket if entry[2] >= cutoff]
+    return kept[-_DELETED_CACHE_MAX:] if len(kept) > _DELETED_CACHE_MAX else kept
+
+
+def _sweep_deleted_cache(now: datetime) -> None:
+    """Drop expired entries across every guild, and guilds left with nothing."""
+    global _last_deleted_sweep
+    if now - _last_deleted_sweep < _DELETED_SWEEP_INTERVAL:
+        return
+    _last_deleted_sweep = now
+    cutoff = now - _DELETED_CACHE_TTL
+    for guild_id in list(_DELETED_CACHE):
+        kept = _prune_bucket(_DELETED_CACHE[guild_id], cutoff)
+        if kept:
+            _DELETED_CACHE[guild_id] = kept
+        else:
+            del _DELETED_CACHE[guild_id]
 
 
 def _cache_deleted(guild_id: int, user_id: int, content: str) -> None:
     if not content.strip():
         return
     now = datetime.now(timezone.utc)
+    _sweep_deleted_cache(now)
     bucket = _DELETED_CACHE.setdefault(guild_id, [])
     bucket.append((user_id, content[:500], now))
-    if len(bucket) > _DELETED_CACHE_MAX:
-        del bucket[: len(bucket) - _DELETED_CACHE_MAX]
+    _DELETED_CACHE[guild_id] = _prune_bucket(bucket, now - _DELETED_CACHE_TTL)
 
 
 def _get_deleted_for_user(
@@ -836,7 +869,10 @@ def _get_deleted_for_user(
             kept.append(entry)
             if entry[0] == user_id:
                 found.append(entry[1])
-    _DELETED_CACHE[guild_id] = kept
+    if kept:
+        _DELETED_CACHE[guild_id] = kept
+    else:
+        _DELETED_CACHE.pop(guild_id, None)
     return found
 
 

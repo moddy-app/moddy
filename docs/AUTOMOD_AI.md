@@ -412,6 +412,23 @@ once, at record time, through `bot.gateway` (`automod_embed`, not quota-gated).
 Capped at `PRECEDENT_MAX_PER_GUILD` (500) — the oldest are evicted, so storage is
 bounded and self-maintaining.
 
+#### In-memory representation
+
+Every embedding vector the bot keeps alive is a **float32 `array.array`**, never a
+`list[float]`: `unpack_vector()` (repository) and `_normalize_vec()`
+(`automod/embeddings.py`) are the two points that produce them. A 1536-dim vector
+costs ~6.6 KB as an array against ~49 KB as a list of Python floats (7.4×), and
+since the on-disk format is float32 already, **no precision is lost** — the
+measured drift on a cosine is ~4e-9, against thresholds at 0.80/0.85/0.97. The
+matcher takes any `Sequence[float]`, so this is purely a memory choice.
+
+This matters because `PrecedentService._cache` holds up to
+`PRECEDENT_MAX_PER_GUILD` vectors **per guild**: 24.6 MB/guild as lists, 3.3 MB as
+arrays. That cache is also swept on every load (`_evict_expired`) — its
+`PRECEDENT_CACHE_TTL_SECONDS` TTL used to be enforced on read only, and only for
+the guild being read, so a guild that used the automod once kept its vectors
+resident for the whole process lifetime.
+
 ### Injection & the deterministic shortcut (`§7.2` / `§7.3`)
 
 Right before the decision call the engine gets the message's **normalised

@@ -64,6 +64,25 @@ async with pool.acquire() as connection:
     result = await connection.fetch('SELECT * FROM users WHERE user_id = $1', user_id)
 ```
 
+### Pool de connexions du bot
+
+Le pool du bot est créé dans `db/base.py::connect()` et **dimensionné depuis
+`config.py`**, donc pilotable par variables d'environnement Railway :
+
+| Variable | Défaut | Rôle |
+|---|---|---|
+| `DB_POOL_MIN_SIZE` | `1` | Connexions maintenues ouvertes en permanence |
+| `DB_POOL_MAX_SIZE` | `8` | Plafond de connexions simultanées |
+
+Les défauts sont volontairement bas : chaque connexion asyncpg porte un cache de
+requêtes préparées et ses buffers, côté bot **comme côté Postgres** (service
+Railway facturé séparément), et à l'échelle actuelle le pool n'est jamais saturé.
+Augmente `DB_POOL_MAX_SIZE` si tu observes de l'attente sur `pool.acquire()`.
+
+> Historique : ces valeurs étaient hardcodées à `5`/`20` dans `db/base.py`, ce qui
+> écrasait silencieusement les variables d'environnement. Elles sont maintenant
+> aliasées depuis `config.py` — ne les redéfinis pas en dur ici.
+
 ---
 
 ## Structure des tables
