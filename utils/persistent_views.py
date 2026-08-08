@@ -57,6 +57,7 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     from utils.automod_shadow_views import ShadowAnnotationPersistence
     from utils.transcription_views import TranscriptionPersistence
     from modules.configs.voice_transcription_config import VoiceTranscriptionConfigView
+    from modules.configs.bot_customization_config import BotCustomizationConfigView
 
     return [
         # Group 1 — /moddy (public informational, no user auth)
@@ -105,6 +106,9 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         # Group 12c — the "Transcribe" button posted under voice messages
         # (dynamic item, public: anyone who sees the voice message may click)
         TranscriptionPersistence,
+        # Group 12d — /config bot customization panel (guild permission auth;
+        # its two modals are excluded like every other modal)
+        BotCustomizationConfigView,
         # Group 13 — /config automod AI panel (guild permission auth;
         # AutomodAIPrecedentsView is deliberately excluded, see
         # docs/PERSISTENT_VIEWS.md Step 12)

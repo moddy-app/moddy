@@ -1792,6 +1792,99 @@
           "selected": "{count} canal(es)"
         }
       }
+    },
+    "bot_customization": {
+      "name": "Personalización del bot",
+      "description": "Personaliza la identidad de Moddy en este servidor",
+      "config": {
+        "title": "Personalización del bot",
+        "description": "Haz que Moddy tenga el aspecto de tu servidor. Estos ajustes solo se aplican aquí.",
+        "not_set": "Sin definir",
+        "custom": "Personalizado"
+      },
+      "identity": {
+        "section_title": "Identidad",
+        "section_description": "Apodo, avatar y biografía de Moddy en este servidor",
+        "modal_title": "Identidad de Moddy",
+        "nickname_label": "Apodo",
+        "nickname_description": "Déjalo vacío para restaurar el nombre original",
+        "bio_label": "Biografía",
+        "bio_description": "{max} caracteres como máximo, vacío para eliminarla",
+        "avatar_label": "Avatar",
+        "avatar_description": "PNG, JPEG, GIF o WEBP — 8 MB como máximo",
+        "attribution_note": "-# La biografía siempre termina con la línea <a:Rocket:1535783839870353499> Powered by @**Moddy**, que no se puede quitar.",
+        "edit": "Editar identidad",
+        "reset": "Restablecer"
+      },
+      "premium": {
+        "title": "Función premium",
+        "description": "Personalizar el apodo, el avatar y la biografía de Moddy está reservado a los servidores premium.",
+        "locked": "El apodo, el avatar y la biografía requieren una suscripción Moddy Max en este servidor.",
+        "button": "Obtener premium"
+      },
+      "style": {
+        "section_title": "Estilo del nombre",
+        "section_description": "Fuente, efecto y colores aplicados al nombre mostrado de Moddy",
+        "free_note": "Disponible en todos los servidores, sin suscripción.",
+        "modal_title": "Estilo del nombre",
+        "font_label": "Fuente",
+        "font_placeholder": "Elige una fuente",
+        "effect_label": "Efecto",
+        "effect_placeholder": "Elige un efecto",
+        "colors_label": "Colores",
+        "color1_label": "Color 1",
+        "color1_description": "Formato hexadecimal, por ejemplo #5865F2",
+        "color2_label": "Color 2",
+        "color2_description": "Solo para el degradado (color de la derecha)",
+        "none": "Ninguno",
+        "edit": "Editar estilo",
+        "reset": "Restablecer",
+        "effects": {
+          "gradient": {
+            "label": "Degradado",
+            "description": "Transición entre dos colores, de izquierda a derecha"
+          },
+          "neon": {
+            "label": "Neón",
+            "description": "Contorno luminoso alrededor de las letras"
+          },
+          "toon": {
+            "label": "Toon",
+            "description": "Relleno suave con un contorno marcado"
+          },
+          "pop": {
+            "label": "Pop",
+            "description": "Sombra de color detrás de las letras"
+          }
+        }
+      },
+      "applied": {
+        "title": "Personalización aplicada",
+        "description": "Los cambios ya son visibles en este servidor."
+      },
+      "reset": {
+        "title": "Personalización restablecida",
+        "description": "Moddy ha recuperado su aspecto original en este servidor."
+      },
+      "errors": {
+        "title": "No se pudo personalizar",
+        "premium_required": "Esta opción está reservada a los servidores premium.",
+        "nickname_too_long": "El apodo supera los 32 caracteres.",
+        "bio_too_long": "La biografía es demasiado larga.",
+        "invalid_color": "Color no válido: usa un formato hexadecimal como #5865F2.",
+        "invalid_font": "Fuente desconocida.",
+        "invalid_effect": "Efecto desconocido.",
+        "gradient_needs_two_colors": "El degradado necesita exactamente dos colores.",
+        "effect_needs_color": "Este efecto necesita al menos un color.",
+        "invalid_image_type": "Formato de imagen no compatible: usa PNG, JPEG, GIF o WEBP.",
+        "image_too_large": "La imagen supera los 8 MB.",
+        "image_download_failed": "No se pudo descargar la imagen.",
+        "missing_permissions": "Moddy no tiene permiso para editar su perfil aquí.",
+        "rate_limited": "Demasiados cambios seguidos, inténtalo de nuevo en un momento.",
+        "rejected_by_discord": "Discord rechazó estos valores.",
+        "discord_error": "Discord no pudo aplicar este cambio.",
+        "save_failed": "El cambio se aplicó pero no se pudo guardar."
+      }
     }
   },
   "languages": {

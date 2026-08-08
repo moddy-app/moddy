@@ -1792,6 +1792,99 @@
           "selected": "{count} channel(s)"
         }
       }
+    },
+    "bot_customization": {
+      "name": "Bot Customization",
+      "description": "Customize Moddy's identity on this server",
+      "config": {
+        "title": "Bot Customization",
+        "description": "Make Moddy look like it belongs to your server. These settings only apply here.",
+        "not_set": "Not set",
+        "custom": "Custom"
+      },
+      "identity": {
+        "section_title": "Identity",
+        "section_description": "Moddy's nickname, avatar and bio on this server",
+        "modal_title": "Moddy's identity",
+        "nickname_label": "Nickname",
+        "nickname_description": "Leave empty to restore the original name",
+        "bio_label": "Bio",
+        "bio_description": "{max} characters max, leave empty to remove it",
+        "avatar_label": "Avatar",
+        "avatar_description": "PNG, JPEG, GIF or WEBP — 8 MB max",
+        "attribution_note": "-# The bio always ends with the <a:Rocket:1535783839870353499> Powered by @**Moddy** line, which cannot be removed.",
+        "edit": "Edit identity",
+        "reset": "Reset"
+      },
+      "premium": {
+        "title": "Premium feature",
+        "description": "Customizing Moddy's nickname, avatar and bio is reserved for premium servers.",
+        "locked": "Nickname, avatar and bio require a Moddy Max subscription on this server.",
+        "button": "Get premium"
+      },
+      "style": {
+        "section_title": "Name style",
+        "section_description": "Font, effect and colours applied to Moddy's display name",
+        "free_note": "Available on every server, no subscription needed.",
+        "modal_title": "Name style",
+        "font_label": "Font",
+        "font_placeholder": "Pick a font",
+        "effect_label": "Effect",
+        "effect_placeholder": "Pick an effect",
+        "colors_label": "Colours",
+        "color1_label": "Colour 1",
+        "color1_description": "Hexadecimal format, for example #5865F2",
+        "color2_label": "Colour 2",
+        "color2_description": "Gradient only (the right-hand colour)",
+        "none": "None",
+        "edit": "Edit style",
+        "reset": "Reset",
+        "effects": {
+          "gradient": {
+            "label": "Gradient",
+            "description": "Fades between two colours, left to right"
+          },
+          "neon": {
+            "label": "Neon",
+            "description": "Glowing outline around the letters"
+          },
+          "toon": {
+            "label": "Toon",
+            "description": "Light fill with a strong outline"
+          },
+          "pop": {
+            "label": "Pop",
+            "description": "Coloured drop shadow behind the letters"
+          }
+        }
+      },
+      "applied": {
+        "title": "Customization applied",
+        "description": "The changes are already visible on this server."
+      },
+      "reset": {
+        "title": "Customization reset",
+        "description": "Moddy is back to its original look on this server."
+      },
+      "errors": {
+        "title": "Customization failed",
+        "premium_required": "This option is reserved for premium servers.",
+        "nickname_too_long": "The nickname is longer than 32 characters.",
+        "bio_too_long": "The bio is too long.",
+        "invalid_color": "Invalid colour: use a hexadecimal format such as #5865F2.",
+        "invalid_font": "Unknown font.",
+        "invalid_effect": "Unknown effect.",
+        "gradient_needs_two_colors": "The gradient effect requires exactly two colours.",
+        "effect_needs_color": "This effect requires at least one colour.",
+        "invalid_image_type": "Unsupported image format: use PNG, JPEG, GIF or WEBP.",
+        "image_too_large": "The image is larger than 8 MB.",
+        "image_download_failed": "The image could not be downloaded.",
+        "missing_permissions": "Moddy is not allowed to edit its own profile here.",
+        "rate_limited": "Too many changes in a row, try again in a moment.",
+        "rejected_by_discord": "Discord rejected these values.",
+        "discord_error": "Discord could not apply this change.",
+        "save_failed": "The change was applied but could not be saved."
+      }
     }
   },
   "languages": {

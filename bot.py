@@ -554,11 +554,13 @@ class ModdyBot(commands.Bot):
                 except Exception as e:
                     logger.error(f"[PubSub] Error reloading modules for guild {guild_id}: {e}")
 
-        elif event_type == "premium_activated":
-            logger.info(f"[PubSub] Premium activated for guild {guild_id}")
-
-        elif event_type == "premium_deactivated":
-            logger.info(f"[PubSub] Premium deactivated for guild {guild_id}")
+        elif event_type in ("premium_activated", "premium_deactivated"):
+            # Guild premium is cached in Redis (utils.subscription.is_guild_premium);
+            # drop the entry so the next gate check sees the new state.
+            if guild_id:
+                from utils.subscription import invalidate_guild_cache
+                await invalidate_guild_cache(self, int(guild_id))
+            logger.info(f"[PubSub] {event_type} for guild {guild_id}")
 
         elif event_type == "payment_failed":
             user_id = data.get("user_id")
@@ -630,6 +632,12 @@ class ModdyBot(commands.Bot):
             # the bot so the subscribe/DB logic lives in a single place.
             await self._process_social_task(task_type, guild_id, payload)
 
+        elif task_type == "bot_customization_update":
+            # Bot Customization: the dashboard cannot call Discord's
+            # "modify current member" endpoint itself (it is the bot's own
+            # profile), so it delegates the change to the bot.
+            await self._process_bot_customization_task(guild_id, payload)
+
         elif task_type in ("case_add_sanction", "case_revoke_sanction"):
             # Moderation cases: the backend delegates guild sanctions to the
             # bot so the Discord action (ban/timeout) and the case DB write
@@ -665,6 +673,45 @@ class ModdyBot(commands.Bot):
                 }))
             except Exception as e:
                 logger.error(f"[Stream] Could not publish social task result: {e}")
+
+    async def _process_bot_customization_task(self, guild_id: int, payload: dict):
+        """Apply a Bot Customization change requested by the dashboard and
+        publish the result back on `moddy:dashboard`, correlated by the
+        optional `request_id` from the payload."""
+        import json
+        result: dict
+        if not guild_id or not self.get_guild(guild_id):
+            result = {"ok": False, "error": "guild_not_found"}
+        else:
+            try:
+                from modules.bot_customization import (
+                    MODULE_ID, BotCustomizationModule, CustomizationError,
+                )
+                module = await self.module_manager.get_module_instance(guild_id, MODULE_ID)
+                if module is None:
+                    # No stored configuration yet — build a bare instance so a
+                    # first-time dashboard change still works.
+                    module = BotCustomizationModule(self, guild_id)
+                    await module.load_config(
+                        await self.module_manager.get_module_config(guild_id, MODULE_ID) or {}
+                    )
+                result = await module.handle_backend_task(payload)
+            except CustomizationError as e:
+                result = {"ok": False, "error": e.code, "detail": e.detail}
+            except Exception as e:
+                logger.error(f"[Stream] Bot customization task failed: {e}", exc_info=True)
+                result = {"ok": False, "error": "internal_error"}
+
+        if self.redis:
+            try:
+                await self.redis.publish("moddy:dashboard", json.dumps({
+                    "type": "bot_customization_update_result",
+                    "request_id": payload.get("request_id"),
+                    "guild_id": guild_id,
+                    **result,
+                }))
+            except Exception as e:
+                logger.error(f"[Stream] Could not publish bot customization result: {e}")
 
     async def _process_case_task(self, task_type: str, guild_id: int, payload: dict):
         """Run a guild-case sanction action requested by the backend dashboard
