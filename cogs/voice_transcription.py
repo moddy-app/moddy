@@ -22,10 +22,10 @@ from discord.ext import commands
 from utils.i18n import i18n
 from utils.transcription_views import (
     NO_MENTIONS,
+    build_transcription_message,
     card_locale,
     render_error_card,
     render_loading_card,
-    render_transcription_card,
 )
 
 logger = logging.getLogger("moddy.voice_transcription")
@@ -93,16 +93,11 @@ class VoiceTranscription(commands.Cog):
             )
             return
 
+        view, files = build_transcription_message(
+            result, locale=public_locale, requester_id=interaction.user.id
+        )
         await interaction.edit_original_response(
-            view=render_transcription_card(
-                text=result.text,
-                locale=public_locale,
-                duration=result.duration,
-                language=result.language,
-                requester_id=interaction.user.id,
-                truncated=result.truncated,
-            ),
-            allowed_mentions=NO_MENTIONS,
+            view=view, attachments=files, allowed_mentions=NO_MENTIONS,
         )
 
 

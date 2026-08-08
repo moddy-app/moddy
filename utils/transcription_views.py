@@ -22,14 +22,16 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Optional
+from typing import List, Optional, Tuple
 
 import discord
 from discord import ui
 
 from cogs.error_handler import BaseView
 from config import COLORS
-from utils.emojis import ROBOT_WORKING, TIME, VOICE_CHAT, WARNING
+# Generic text-to-file helper, shared with the automod cards.
+from utils.automod_render import make_text_file
+from utils.emojis import DOWNLOAD, ROBOT_WORKING, TIME, VOICE_CHAT
 from utils.i18n import i18n, t
 
 logger = logging.getLogger("moddy.transcription_views")
@@ -41,6 +43,10 @@ ACCENT = COLORS["primary"]
 NO_MENTIONS = discord.AllowedMentions.none()
 
 _CID_PREFIX = "moddy:vtr:go"
+
+# Name of the .txt carrying the full text of a transcription too long to fit in
+# a card. Referenced by the card as `attachment://<this>`, so both must match.
+TRANSCRIPT_FILE_NAME = "transcription.txt"
 
 
 def _guarded(callback):
@@ -168,9 +174,12 @@ def render_transcription_card(
     container.add_item(ui.TextDisplay(text))
 
     if truncated:
+        # The card keeps what fits; the whole thing travels as a .txt right
+        # underneath, so a 20-minute recording never loses a sentence.
         container.add_item(ui.TextDisplay(
-            f"-# {WARNING} {t('transcription.truncated', locale=locale)}"
+            f"-# {DOWNLOAD} {t('transcription.truncated', locale=locale)}"
         ))
+        container.add_item(ui.File(f"attachment://{TRANSCRIPT_FILE_NAME}"))
 
     meta = [f"{TIME} `{format_duration(duration)}`"]
     language_name = format_language(language, locale)
@@ -183,6 +192,33 @@ def render_transcription_card(
 
     view.add_item(container)
     return view
+
+
+def build_transcription_message(
+    result,
+    *,
+    locale: str,
+    requester_id: Optional[int] = None,
+) -> Tuple[ui.LayoutView, List[discord.File]]:
+    """Card + attachments for a finished transcription.
+
+    The single place the three call sites (context menu, button, automatic
+    mode) go through, so the .txt fallback can never be wired on one path and
+    forgotten on another. ``result`` is a
+    ``services.transcription_service.TranscriptionResult``.
+    """
+    view = render_transcription_card(
+        text=result.text,
+        locale=locale,
+        duration=result.duration,
+        language=result.language,
+        requester_id=requester_id,
+        truncated=result.truncated,
+    )
+    files: List[discord.File] = []
+    if result.truncated:
+        files.append(make_text_file(result.full_text or result.text, TRANSCRIPT_FILE_NAME))
+    return view, files
 
 
 def render_error_card(code: str, locale: str, **params) -> ui.LayoutView:
@@ -258,16 +294,11 @@ class TranscribeButton(
             await self._restore(interaction, exc.code, **exc.params)
             return
 
+        view, files = build_transcription_message(
+            result, locale=public_locale, requester_id=interaction.user.id
+        )
         await interaction.edit_original_response(
-            view=render_transcription_card(
-                text=result.text,
-                locale=public_locale,
-                duration=result.duration,
-                language=result.language,
-                requester_id=interaction.user.id,
-                truncated=result.truncated,
-            ),
-            allowed_mentions=NO_MENTIONS,
+            view=view, attachments=files, allowed_mentions=NO_MENTIONS,
         )
 
     async def _fetch_message(self, bot) -> Optional[discord.Message]:

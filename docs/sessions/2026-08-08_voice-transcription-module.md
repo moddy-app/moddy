@@ -42,8 +42,9 @@ Model: `whisper-large-v3-turbo` via Groq (`GROQ_API_KEY`).
 - `services/transcription_service.py` **(new)** — attachment discovery, guard
   rails (25 MB, 30 min, in-flight de-duplication, an off-by-default per-user
   throttle) and typed failures (`ErrorCode`). Single entry point for both UIs.
-- `utils/transcription_views.py` **(new)** — loading / result / error cards and
-  the persistent `TranscribeButton` (`DynamicItem`).
+- `utils/transcription_views.py` **(new)** — loading / result / error cards, the
+  `.txt` fallback for long transcriptions and the persistent `TranscribeButton`
+  (`DynamicItem`).
 - `cogs/voice_transcription.py` **(new)** — the `Transcribe` context menu
   (global, DMs and user installs included).
 - `modules/voice_transcription.py` **(new)** — the server module
@@ -70,7 +71,7 @@ Model: `whisper-large-v3-turbo` via Groq (`GROQ_API_KEY`).
 - `tests/gateway/test_ratelimit.py`, `tests/gateway/test_executor_ratelimit.py`,
   `tests/gateway/test_gateway_config.py`, `tests/test_transcription.py`;
   `TranscribeButton` added to `tests/test_persistent_views.py`.
-  Full suite: 675 passed.
+  Full suite: 680 passed.
 
 ## Decisions & Rationale
 
@@ -93,6 +94,10 @@ Model: `whisper-large-v3-turbo` via Groq (`GROQ_API_KEY`).
   transcription is for the channel; every send/edit uses
   `AllowedMentions.none()`, so nothing the model writes can ping. Rendered as
   plain text (no code fence) so it reads like a message.
+- **A card never loses a word.** Past 3 500 characters the card keeps a readable
+  preview and the full transcription rides along as a `.txt`. All three call
+  sites go through `build_transcription_message()`, so the fallback cannot be
+  wired on one path and forgotten on another.
 - **Auto mode fails silently** — deleting its placeholder rather than posting an
   error in the channel on every hiccup. The failure is in the logs and `api_calls`.
 - **`Transcribe` takes the fifth and last context menu slot** (Save Message,
@@ -101,8 +106,9 @@ Model: `whisper-large-v3-turbo` via Groq (`GROQ_API_KEY`).
 
 ## Known Issues / Follow-ups
 
-- [ ] Long transcriptions are truncated at 3 500 characters with a notice; a
-      `.txt` attachment fallback would be nicer for 20-minute recordings.
+- [x] Long transcriptions: the card shows the first 3 500 characters and the
+      complete text ships as a `transcription.txt` attachment
+      (`build_transcription_message()`), so a 20-minute recording loses nothing.
 - [ ] Duration for non-voice-message audio attachments is estimated from file
       size (~128 kbps) until the provider answers — fine for accounting, but it
       means the 30-minute guard is approximate for those.

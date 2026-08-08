@@ -37,7 +37,11 @@ Public cards speak the **server's** language (`card_locale()`), since they stay
 in the channel for everyone; ephemeral errors speak the clicker's.
 
 The transcription is rendered as plain text — **not** inside a code fence, so
-it reads like a message. Every send and edit passes
+it reads like a message. Past **3 500 characters** the card keeps a readable
+preview and the complete text is attached as `transcription.txt`; the three
+call sites all build their message through
+`utils/transcription_views.py::build_transcription_message()`, which is the
+only place that decides between inline and attachment. Every send and edit passes
 `discord.AllowedMentions.none()`: whatever the model transcribes (`@everyone`,
 a user mention read out loud, …) can never notify anyone.
 

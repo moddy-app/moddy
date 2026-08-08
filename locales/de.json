@@ -2309,7 +2309,7 @@
     "loading": "Transkribiere",
     "button": "Transkribieren",
     "requested_by": "angefordert von {user}",
-    "truncated": "Die Transkription war zu lang und wurde gekürzt.",
+    "truncated": "Die Transkription war zu lang — der vollständige Text hängt an.",
     "error_title": "Transkription fehlgeschlagen",
     "errors": {
       "no_audio": "Diese Nachricht enthält kein Audio zum Transkribieren.",

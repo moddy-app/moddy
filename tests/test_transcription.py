@@ -11,12 +11,14 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 import pytest
+from discord import ui
 
 from services.transcription_service import (
     ErrorCode,
     MAX_DURATION_SECONDS,
     MAX_FILE_BYTES,
     TranscriptionError,
+    TranscriptionResult,
     TranscriptionService,
     attachment_duration,
     find_audio_attachment,
@@ -24,6 +26,8 @@ from services.transcription_service import (
 )
 from utils.transcription_views import (
     NO_MENTIONS,
+    TRANSCRIPT_FILE_NAME,
+    build_transcription_message,
     card_locale,
     format_duration,
     format_language,
@@ -206,9 +210,33 @@ def test_no_transcription_can_ping_anyone():
     assert "@everyone" in rendered(view)  # kept verbatim, just never resolved
 
 
-def test_a_truncated_transcription_says_so():
+def test_a_truncated_card_says_so_and_points_at_the_attachment():
     view = render_transcription_card(text="…", locale="fr", truncated=True)
-    assert "coupée" in rendered(view)
+    text = rendered(view)
+    assert "pièce jointe" in text
+    files = [item for item in view.walk_children() if isinstance(item, ui.File)]
+    assert [f.media.url for f in files] == [f"attachment://{TRANSCRIPT_FILE_NAME}"]
+
+
+def test_a_long_transcription_ships_its_full_text_as_a_txt():
+    result = TranscriptionResult(
+        text="a" * 3500 + "…", full_text="a" * 5000, duration=90.0, truncated=True,
+    )
+    view, files = build_transcription_message(result, locale="fr", requester_id=7)
+
+    assert len(files) == 1
+    assert files[0].filename == TRANSCRIPT_FILE_NAME
+    assert files[0].fp.read().decode("utf-8") == "a" * 5000
+    # The card still shows the inline preview, so the text is readable at a glance.
+    assert "a" * 100 in rendered(view)
+
+
+def test_a_short_transcription_carries_no_attachment():
+    result = TranscriptionResult(text="salut", full_text="salut", duration=2.0)
+    view, files = build_transcription_message(result, locale="fr")
+
+    assert files == []
+    assert not [item for item in view.walk_children() if isinstance(item, ui.File)]
 
 
 def test_the_loading_card_uses_the_animated_robot():

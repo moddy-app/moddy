@@ -25,8 +25,8 @@ from utils.emojis import VOICE_CHAT
 from utils.transcription_views import (
     NO_MENTIONS,
     TranscribePromptView,
+    build_transcription_message,
     render_loading_card,
-    render_transcription_card,
 )
 
 logger = logging.getLogger("moddy.modules.voice_transcription")
@@ -175,17 +175,11 @@ class VoiceTranscriptionModule(ModuleBase):
                 await self._delete_quietly(placeholder)
             return
 
+        # requester_id stays None — nobody asked, it is automatic.
+        view, files = build_transcription_message(result, locale=locale)
         try:
             await placeholder.edit(
-                view=render_transcription_card(
-                    text=result.text,
-                    locale=locale,
-                    duration=result.duration,
-                    language=result.language,
-                    requester_id=None,  # nobody asked — it is automatic
-                    truncated=result.truncated,
-                ),
-                allowed_mentions=NO_MENTIONS,
+                view=view, attachments=files, allowed_mentions=NO_MENTIONS,
             )
         except discord.HTTPException as e:
             logger.warning(f"Could not post transcription in guild {self.guild_id}: {e}")

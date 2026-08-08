@@ -2308,7 +2308,7 @@
     "loading": "Transcription en cours",
     "button": "Transcrire",
     "requested_by": "demandé par {user}",
-    "truncated": "Transcription trop longue, elle a été coupée.",
+    "truncated": "Transcription trop longue : le texte complet est en pièce jointe.",
     "error_title": "Transcription impossible",
     "errors": {
       "no_audio": "Ce message ne contient aucun audio à transcrire.",

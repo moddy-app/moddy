@@ -96,7 +96,10 @@ class TranscriptionError(Exception):
 
 @dataclass
 class TranscriptionResult:
+    #: What the card shows inline — cut short when the audio was long.
     text: str
+    #: The complete transcription, always. Shipped as a .txt when `truncated`.
+    full_text: str = ""
     language: Optional[str] = None
     duration: float = 0.0
     truncated: bool = False
@@ -200,17 +203,20 @@ class TranscriptionService:
         finally:
             self._in_flight.discard(message.id)
 
-        text = (transcription.text or "").strip()
-        if not text:
+        full_text = (transcription.text or "").strip()
+        if not full_text:
             raise TranscriptionError(ErrorCode.EMPTY)
 
-        truncated = len(text) > max_characters
-        if truncated:
-            text = text[:max_characters].rstrip() + "…"
+        # A long recording does not lose a word: the card shows what fits and
+        # the complete text rides along as a .txt attachment (see
+        # utils/transcription_views.py::build_transcription_message).
+        truncated = len(full_text) > max_characters
+        text = full_text[:max_characters].rstrip() + "…" if truncated else full_text
 
         self._record_use(requester_id)
         return TranscriptionResult(
             text=text,
+            full_text=full_text,
             language=transcription.language,
             duration=transcription.duration or duration_hint,
             truncated=truncated,
