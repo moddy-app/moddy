@@ -41,6 +41,7 @@ moddy/
 │   ├── saved_messages.py      #   Message bookmarking
 │   ├── translate.py           #   /translate (DeepL)
 │   ├── text_tools.py          #   /fix, /rephrase, /summarize (OpenAI, Modal V2 + context menus)
+│   ├── voice_transcription.py #   "Transcribe" context menu (Groq Whisper)
 │   ├── webhook.py             #   Webhook management
 │   ├── social_notifications.py #  Social notifications dispatch + feeds service wiring
 │   ├── interserver_commands.py #  Inter-server commands
@@ -70,12 +71,14 @@ moddy/
 │   ├── interserver.py         #   Inter-server message relay
 │   ├── social_notifications.py #  Social notifications (via moddy-feeds service)
 │   ├── automod_ai.py          #   Automod AI (applies decisions, cases+evidence, scalable features)
+│   ├── voice_transcription.py #   Voice message transcription (button or automatic)
 │   └── configs/               #   Components V2 config UIs per module
 │       ├── adaptive_slowmode_config.py
 │       ├── social_notifications_config.py
 │       ├── automod_ai_config.py
 │       ├── automod_ai_precedents_view.py  # Learned-precedents browser (S7)
 │       ├── welcome_channel_config.py      # Welcome messages list + add/manage (Modal V2)
+│       ├── voice_transcription_config.py  # Voice transcription (status, mode, channels)
 │
 ├── automod/                   # Automod AI DETECTION pipeline (decides only; no side effects)
 │   ├── engine.py              #   Shared per-bot orchestrator (funnel entry)
@@ -139,6 +142,7 @@ moddy/
 │   ├── cases_views.py         #   /cases & /mycases browser (CasesBrowserView, persistent)
 │   ├── automod_shadow_views.py #  Automod shadow-mode (dry_run) SIMULATION card + annotation buttons (persistent)
 │   ├── automod_render.py      #   Shared automod card helpers (barème breakdown, sanction name/accent)
+│   ├── transcription_views.py #   Voice transcription cards + persistent Transcribe button
 │   ├── appeal_views.py        #   Automod appeal UI (DM buttons + reviewer panels, persistent)
 │   ├── moderation_cases.py    #   Cases domain model + enums + reference gen
 │   ├── embeds.py
@@ -151,15 +155,18 @@ moddy/
 │   ├── errors.py              #   Typed error hierarchy
 │   ├── spec.py                #   CallSpec, QuotaTarget, QuotaScope
 │   ├── quota.py               #   QuotaManager (Redis daily counters + PG limits)
+│   ├── ratelimit.py           #   RateLimiter (provider-account windows: rpm, audio sec/h…)
 │   ├── resilience.py          #   CircuitBreaker + retry/backoff
 │   ├── logger.py              #   Buffered PG logging + staff webhook per call
 │   ├── executor.py            #   GatewayExecutor (single execution path)
 │   ├── adapters/              #   Provider adapters
 │   │   ├── openai.py          #     embed + chat
-│   │   └── deepl.py           #     translate
+│   │   ├── deepl.py           #     translate
+│   │   └── groq.py            #     transcribe (whisper-large-v3-turbo)
 │   └── clients/               #   High-level clients
 │       ├── ai.py              #     bot.gateway.ai
-│       └── translation.py     #     bot.gateway.translation
+│       ├── translation.py     #     bot.gateway.translation
+│       └── transcription.py   #     bot.gateway.transcription
 │
 ├── services/                  # External service clients
 │   ├── backend_client.py      #   Backend HTTP client
@@ -167,6 +174,7 @@ moddy/
 │   ├── case_service.py        #   Scalable sanction→case entry point (source registry)
 │   ├── appeal_service.py      #   Automod sanction appeals (server / Moddy team, binding)
 │   ├── precedent_service.py   #   Automod server precedents (record + serve, RAG)
+│   ├── transcription_service.py #  Voice/audio speech-to-text (shared by cog + module)
 │   └── railway_diagnostic.py  #   Railway diagnostics
 │
 ├── internal_api/              # FastAPI internal API
@@ -186,8 +194,10 @@ moddy/
 └── tests/                     # Test files
     ├── automod/               #   pytest suite for the pure-Python detection core
     │                          #   (`pip install -r requirements-dev.txt && pytest`)
-    └── internal_api/          #   pytest suite for the internal API routes
-                               #   (FastAPI TestClient, bot + gateway stubbed)
+    ├── internal_api/          #   pytest suite for the internal API routes
+    │                          #   (FastAPI TestClient, bot + gateway stubbed)
+    ├── gateway/               #   Provider rate limits + executor reservation lifecycle
+    └── test_transcription.py  #   Voice transcription helpers, guard rails, cards
 ```
 
 ---
@@ -324,6 +334,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/COMMANDS.md](docs/COMMANDS.md) | Creating or modifying slash commands |
 | [docs/COMMAND_LOCALIZATION.md](docs/COMMAND_LOCALIZATION.md) | Translating slash command names/descriptions (32 Discord locales) |
 | [docs/TEXT_TOOLS.md](docs/TEXT_TOOLS.md) | AI text tools — `/fix`, `/rephrase`, `/summarize` (models, presets, mention stripping) |
+| [docs/VOICE_TRANSCRIPTION.md](docs/VOICE_TRANSCRIPTION.md) | Voice transcription — context menu, module, Groq Whisper, cost control |
 | [docs/MODULE_SYSTEM.md](docs/MODULE_SYSTEM.md) | Creating or modifying server modules |
 | [docs/WELCOME_MESSAGES.md](docs/WELCOME_MESSAGES.md) | Welcome messages module — config schema, placeholders, backend/dashboard contract |
 | [docs/AUTOMOD_AI.md](docs/AUTOMOD_AI.md) | Automod AI — detection pipeline, nano decider, scalable features, rules safety check |
@@ -336,7 +347,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 ### Infrastructure
 | Document | When to Read |
 |---|---|
-| [docs/API_GATEWAY.md](docs/API_GATEWAY.md) | API Gateway — all external API calls (OpenAI, DeepL), quotas, resilience, logging |
+| [docs/API_GATEWAY.md](docs/API_GATEWAY.md) | API Gateway — all external API calls (OpenAI, DeepL, Groq), quotas, provider rate limits, resilience, logging |
 | [docs/BACKEND-INTEGRATION.md](docs/BACKEND-INTEGRATION.md) | Bot ↔ Backend integration (Redis, Pub/Sub, Streams, `/status`) |
 | [docs/SOCIAL_NOTIFICATIONS.md](docs/SOCIAL_NOTIFICATIONS.md) | Social Notifications module + `moddy-feeds` Redis contract (what the backend must mirror) |
 | [docs/SOCIAL_NOTIFICATIONS_CHANGES_2026-06-14.md](docs/SOCIAL_NOTIFICATIONS_CHANGES_2026-06-14.md) | Backend/dashboard change spec: customizable message columns, quota, error codes, task fields |

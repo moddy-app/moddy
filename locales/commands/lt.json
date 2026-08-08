@@ -31,6 +31,9 @@
     },
     "AI text tools": {
       "name": "DI teksto įrankiai"
+    },
+    "Transcribe": {
+      "name": "Transkribuoti"
     }
   },
   "commands": {

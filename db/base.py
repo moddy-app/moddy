@@ -1089,6 +1089,13 @@ class ModdyDatabase(
                 ("user",   "text_summarize",  "default", -1),
                 ("guild",  "text_summarize",  "default", -1),
                 ("global", "text_summarize",  "default", -1),
+                # Voice transcription (Groq Whisper). Unlimited per guild/user
+                # for now — the binding cap is the provider-account rate limit
+                # in gateway/config.py. Tighten a specific server or user with a
+                # quota_overrides row, no code change needed.
+                ("user",   "voice_transcription", "default", -1),
+                ("guild",  "voice_transcription", "default", -1),
+                ("global", "voice_transcription", "default", -1),
             ]:
                 await conn.execute(
                     """

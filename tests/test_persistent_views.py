@@ -110,6 +110,7 @@ async def test_no_duplicate_custom_ids_across_registered_views():
 
 def _dynamic_item_cases():
     from utils.automod_shadow_views import ShadowAnnotateButton
+    from utils.transcription_views import TranscribeButton
     from utils.appeal_views import (
         AppealNewButton, AppealClaimButton, AppealInviteButton,
         AppealDecisionButton, AppealAcceptChoiceButton,
@@ -128,6 +129,7 @@ def _dynamic_item_cases():
     _SNOWFLAKE2 = 987654321098765432
     return [
         (ShadowAnnotateButton, ("ok", _U)),
+        (TranscribeButton, (_SNOWFLAKE, _SNOWFLAKE2)),
         (AppealNewButton, ("s", _U, _U)),
         (AppealClaimButton, (_U,)),
         (AppealInviteButton, (_U,)),

@@ -401,6 +401,18 @@ was easier not to" is not one.
   children are `ButtonStyle.link` buttons (e.g. `SubscriptionView`) —
   `bot.add_view()` on these is a no-op. Do not add `__persistent__`; there
   is nothing to register.
+- **`utils/transcription_views.py::TranscribePromptView`** — the one-button
+  message posted under a voice message. It is a `BaseView` with
+  `timeout=None` whose only child is `TranscribeButton`, a persistent
+  `DynamicItem` (`template=r"moddy:vtr:go:<channel_id>:<message_id>"`)
+  registered separately through `TranscriptionPersistence`
+  (`bot.add_dynamic_items(...)`, same marker-view pattern as
+  `AppealPersistence`). Registering the wrapper as a shell would be
+  meaningless — it carries no state and cannot be built without a message id,
+  while the button reconstructs itself from its custom_id on every click.
+  The result cards (`render_transcription_card`, `render_loading_card`,
+  `render_error_card`) have zero interactive children, so the "nothing to
+  register" case above applies to them.
 - **`modules/starboard.py::_StarboardCardView`** — the view itself is a
   plain, non-`BaseView` container for two children: a `ButtonStyle.link`
   jump button (nothing to register — "zero interactive children" case

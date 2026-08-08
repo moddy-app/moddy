@@ -1756,6 +1756,42 @@
           "gone": "This simulation no longer exists."
         }
       }
+    },
+    "voice_transcription": {
+      "name": "Voice Transcription",
+      "description": "Turns voice messages into text",
+      "config": {
+        "title": "Voice Transcription",
+        "description": "Moddy offers a written transcription under the server's voice messages.",
+        "status": {
+          "section_title": "Status",
+          "section_description": "Turn voice message transcription on or off",
+          "enabled": "Enabled",
+          "disabled": "Disabled",
+          "enable": "Enable",
+          "disable": "Disable"
+        },
+        "mode": {
+          "section_title": "Mode",
+          "section_description": "Choose whether the transcription is offered through a button or posted automatically",
+          "placeholder": "Pick a mode",
+          "button": {
+            "label": "Transcription button",
+            "description": "A button is added under every voice message"
+          },
+          "auto": {
+            "label": "Automatic transcription",
+            "description": "The transcription is posted without waiting for a click"
+          }
+        },
+        "channels": {
+          "section_title": "Channels",
+          "section_description": "Leave empty to cover every channel of the server",
+          "placeholder": "All channels",
+          "all": "All channels",
+          "selected": "{count} channel(s)"
+        }
+      }
     }
   },
   "languages": {
@@ -2266,6 +2302,26 @@
         "confirm_title": "Delete Banner?",
         "confirm": "Permanently delete banner {id}?"
       }
+    }
+  },
+  "transcription": {
+    "title": "Transcription",
+    "loading": "Transcribing",
+    "button": "Transcribe",
+    "requested_by": "requested by {user}",
+    "truncated": "The transcription was too long to fit — the full text is attached.",
+    "error_title": "Transcription failed",
+    "errors": {
+      "no_audio": "This message has no audio to transcribe.",
+      "too_large": "This audio file is too heavy (maximum {size} MB).",
+      "too_long": "This audio is too long (maximum {minutes} minutes).",
+      "unavailable": "Transcription is momentarily unavailable, try again in a moment.",
+      "rate_limited": "Too many transcriptions right now, try again in {seconds} seconds.",
+      "quota": "The transcription limit has been reached for today.",
+      "in_progress": "This message is already being transcribed.",
+      "download_failed": "The audio file could not be downloaded.",
+      "empty": "No speech was detected in this audio.",
+      "failed": "The transcription failed, try again in a moment."
     }
   }
 }

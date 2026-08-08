@@ -1,6 +1,6 @@
 # Moddy — API Gateway
 
-> **Read this before writing any code that calls OpenAI, DeepL, or any future external API.**
+> **Read this before writing any code that calls OpenAI, DeepL, Groq, or any future external API.**
 > No module calls provider APIs directly. Everything goes through `bot.gateway`.
 
 ---
@@ -11,12 +11,14 @@ The `gateway/` package is a centralized, in-process API library shared by the Di
 It enforces a single execution pipeline for every outbound API call:
 
 ```
-quota check → resilience (timeout / retry / circuit breaker) → provider call → quota consume → log
+quota check → rate-limit reservation → resilience (timeout / retry / circuit breaker)
+    → provider call → quota consume + rate-limit reconciliation → log
 ```
 
 This guarantees:
 - **Every call is logged** — both to the staff webhook (`api_call` category) and to the `api_calls` PG table.
 - **Quotas are enforced** before any provider is contacted.
+- **Our provider-account limits are never breached** (requests/minute, audio-seconds/hour, …).
 - **Failures are typed** — consumers never see raw provider exceptions.
 - **One source of truth** for all external API state (circuit breakers, quota counters in Redis).
 
@@ -59,6 +61,19 @@ out = await bot.gateway.translation.translate(
 )
 # out: {"text": "...", "detected_source_language": "FR"}
 
+# Speech-to-text (Groq Whisper) — `duration_hint` is what the audio-seconds
+# rate limit reserves; the exact duration reported by the model reconciles it.
+result = await bot.gateway.transcription.transcribe(
+    audio_bytes,
+    filename="voice-message.ogg",
+    content_type="audio/ogg",
+    duration_hint=12.4,
+    quota=[QuotaTarget.user(user.id, "voice_transcription")],
+    call_type="voice_transcription",
+    metadata={"guild_id": guild.id, "user_id": user.id},
+)
+# result: Transcription(text=..., language=..., duration=...)
+
 # Availability check (for graceful degradation)
 available = await bot.gateway.quota_available(QuotaTarget.guild(guild.id, "ban_reason"))
 ```
@@ -74,16 +89,19 @@ gateway/
 ├── errors.py            # Typed error hierarchy
 ├── spec.py              # CallSpec, QuotaTarget, QuotaScope
 ├── quota.py             # QuotaManager (Redis counters + PG limits)
+├── ratelimit.py         # RateLimiter (provider-account windows, weighted units)
 ├── resilience.py        # CircuitBreaker + retry/backoff
 ├── logger.py            # GatewayLogger (Redis buffer → PG + webhook)
 ├── executor.py          # GatewayExecutor (single execution path)
 ├── adapters/
 │   ├── base.py          # AbstractAdapter + AdapterResult
 │   ├── openai.py        # OpenAIAdapter (embed + chat)
-│   └── deepl.py         # DeepLAdapter (translate)
+│   ├── deepl.py         # DeepLAdapter (translate)
+│   └── groq.py          # GroqAdapter (transcribe)
 └── clients/
     ├── ai.py            # AIClient (gw.ai.embed, gw.ai.chat)
-    └── translation.py   # TranslationClient (gw.translation.translate)
+    ├── translation.py   # TranslationClient (gw.translation.translate)
+    └── transcription.py # TranscriptionClient (gw.transcription.transcribe)
 ```
 
 The `Gateway` is instantiated in `bot.__init__` and started in `setup_hook` after Redis and the DB pool are ready.
@@ -133,6 +151,7 @@ Limits are cached in memory with a 60-second TTL to avoid PG hits on the hot pat
 | `translation` | user | -1 |
 | `translation` | global | -1 |
 | `chatbot` | guild | -1 |
+| `voice_transcription` | user / guild / global | -1 |
 
 To add a limit for a specific guild:
 ```sql
@@ -158,9 +177,54 @@ ON CONFLICT (scope, key, type) DO UPDATE SET daily_limit = EXCLUDED.daily_limit;
 | `text_rephrase` | openai/chat (`gpt-4.1-mini`) | user + guild | ✅ |
 | `text_summarize` | openai/chat (`gpt-4.1-mini`) | user + guild | ✅ |
 
+| `voice_transcription` | groq/transcribe (`whisper-large-v3-turbo`) | user + guild | ✅ |
+
 > `text_*` calls come from `cogs/text_tools.py` (`/fix`, `/rephrase`, `/summarize`).
 > The guild target is only added when the command runs inside a server — in DMs
 > and user-installed contexts only the user bucket is debited.
+>
+> `voice_transcription` comes from `services/transcription_service.py`
+> (see [VOICE_TRANSCRIPTION.md](VOICE_TRANSCRIPTION.md)). Same rule for the
+> guild target; it is additionally capped by the provider rate limits below.
+
+---
+
+## Provider Rate Limits
+
+Quotas answer "may this *guild/user* spend one more call today?".
+`gateway/ratelimit.py` answers a different question: **"would this call breach
+the limit our provider account is capped at?"** — global, per `(provider, model)`,
+several windows at once, metered in arbitrary units.
+
+Rules live in `gateway/config.py` and mirror the provider console:
+
+| Provider / model | Rule | Limit | Window | Env override |
+|---|---|---|---|---|
+| groq / `whisper-large-v3-turbo` | `rpm` | 20 requests | 1 min | `GROQ_WHISPER_RPM` |
+| | `rpd` | 2 000 requests | 1 day | `GROQ_WHISPER_RPD` |
+| | `ash` | 7 200 audio seconds | 1 hour | `GROQ_WHISPER_AUDIO_SECONDS_PER_HOUR` |
+| | `asd` | 28 800 audio seconds | 1 day | `GROQ_WHISPER_AUDIO_SECONDS_PER_DAY` |
+
+How it works:
+- Fixed windows in Redis (`ratelimit:{provider}:{model}:{rule}:{window}`), shared across shards.
+- A call **reserves** its cost before the provider is contacted (atomic `INCRBYFLOAT`,
+  rolled back if it breached) — concurrent calls cannot collectively overshoot.
+- The reservation is **released** when the call fails, and **reconciled** when the
+  provider reports the real cost (audio duration is estimated before, measured after).
+- Redis unavailable ⇒ **fail open**. A limiter that cannot count must never take a feature down.
+
+Breaching one raises `ModelRateLimitError` (`.rule`, `.limit`, `.retry_after`)
+**without contacting the provider**.
+
+### Adding limits for a new model
+```python
+# gateway/config.py
+def _default_model_rate_limits():
+    return {
+        ("groq", "whisper-large-v3-turbo"): _whisper_turbo_rules(),
+        ("myprovider", "my-model"): [RateRule("rpm", UNIT_REQUESTS, MINUTE, 100)],
+    }
+```
 
 ---
 
@@ -170,8 +234,10 @@ ON CONFLICT (scope, key, type) DO UPDATE SET daily_limit = EXCLUDED.daily_limit;
 - `embed`: 10s
 - `chat`: 30s
 - `translate`: 15s
+- `transcribe`: 90s (uploads a file and processes minutes of audio)
 
-Override via env vars: `GATEWAY_TIMEOUT_EMBED`, `GATEWAY_TIMEOUT_CHAT`, `GATEWAY_TIMEOUT_TRANSLATE`.
+Override via env vars: `GATEWAY_TIMEOUT_EMBED`, `GATEWAY_TIMEOUT_CHAT`,
+`GATEWAY_TIMEOUT_TRANSLATE`, `GATEWAY_TIMEOUT_TRANSCRIBE`.
 
 ### Retry + backoff
 - 3 retries by default (configurable via `GATEWAY_MAX_RETRIES`)
@@ -212,7 +278,8 @@ Consumers catch `GatewayError` or its subclasses — never raw provider exceptio
 from gateway import (
     GatewayError,         # base — catch-all
     QuotaExceededError,   # .target: QuotaTarget that was exceeded
-    RateLimitError,       # .provider, .retry_after
+    RateLimitError,       # .provider, .retry_after — provider-side 429
+    ModelRateLimitError,  # .rule, .limit, .retry_after — OUR limit, call not made
     APIUnavailableError,  # .provider — circuit open or retries exhausted
     GatewayTimeoutError,  # call timed out
     ProviderError,        # .provider, .status, .body — unrecoverable HTTP error
@@ -243,10 +310,16 @@ except (APIUnavailableError, GatewayError):
 |----------|---------|-------------|
 | `OPENAI_API_KEY` | — | Required for AI features |
 | `DEEPL_API_KEY` | — | Required for translation |
+| `GROQ_API_KEY` | — | Required for voice transcription |
 | `DEEPL_FREE` | `true` | Use free-tier DeepL endpoint |
 | `GATEWAY_TIMEOUT_EMBED` | `10` | Embed timeout (seconds) |
 | `GATEWAY_TIMEOUT_CHAT` | `30` | Chat timeout (seconds) |
 | `GATEWAY_TIMEOUT_TRANSLATE` | `15` | Translate timeout (seconds) |
+| `GATEWAY_TIMEOUT_TRANSCRIBE` | `90` | Transcribe timeout (seconds) |
+| `GROQ_WHISPER_RPM` | `20` | Whisper requests per minute (provider account) |
+| `GROQ_WHISPER_RPD` | `2000` | Whisper requests per day |
+| `GROQ_WHISPER_AUDIO_SECONDS_PER_HOUR` | `7200` | Whisper audio seconds per hour |
+| `GROQ_WHISPER_AUDIO_SECONDS_PER_DAY` | `28800` | Whisper audio seconds per day |
 | `GATEWAY_MAX_RETRIES` | `3` | Max retry attempts |
 | `GATEWAY_RETRY_BASE_DELAY` | `0.5` | Retry base delay (seconds) |
 | `GATEWAY_CB_FAILURE_THRESHOLD` | `5` | Circuit breaker failure count |

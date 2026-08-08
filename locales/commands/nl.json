@@ -31,6 +31,9 @@
     },
     "AI text tools": {
       "name": "AI-teksthulpmiddelen"
+    },
+    "Transcribe": {
+      "name": "Transcriberen"
     }
   },
   "commands": {

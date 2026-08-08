@@ -60,6 +60,14 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 ### DEEPL_API_KEY
 **Valeur :** Clé API DeepL (optionnel — désactive `/translate` si absent)
 
+### GROQ_API_KEY
+**Valeur :** Clé API Groq (optionnel — désactive la transcription vocale si absent)
+**Note :** Les limites du compte Groq (requêtes/minute, secondes d'audio/heure…)
+sont configurées dans `gateway/config.py` et surchargeables via
+`GROQ_WHISPER_RPM`, `GROQ_WHISPER_RPD`, `GROQ_WHISPER_AUDIO_SECONDS_PER_HOUR`,
+`GROQ_WHISPER_AUDIO_SECONDS_PER_DAY` — voir
+[VOICE_TRANSCRIPTION.md](VOICE_TRANSCRIPTION.md)
+
 ## Checklist Railway
 
 - [ ] `DISCORD_TOKEN`

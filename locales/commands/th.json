@@ -31,6 +31,9 @@
     },
     "AI text tools": {
       "name": "เครื่องมือข้อความ AI"
+    },
+    "Transcribe": {
+      "name": "ถอดเสียงเป็นข้อความ"
     }
   },
   "commands": {

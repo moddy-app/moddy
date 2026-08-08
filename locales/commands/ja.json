@@ -31,6 +31,9 @@
     },
     "AI text tools": {
       "name": "AIテキストツール"
+    },
+    "Transcribe": {
+      "name": "文字起こし"
     }
   },
   "commands": {

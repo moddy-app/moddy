@@ -31,6 +31,9 @@
     },
     "AI text tools": {
       "name": "ИИ инструменти за текст"
+    },
+    "Transcribe": {
+      "name": "Транскрибиране"
     }
   },
   "commands": {

@@ -5,7 +5,9 @@ from typing import Any
 
 class AdapterResult:
     """Normalized result from any provider call."""
-    __slots__ = ("data", "tokens_prompt", "tokens_completion", "tokens_total")
+    __slots__ = (
+        "data", "tokens_prompt", "tokens_completion", "tokens_total", "rate_cost",
+    )
 
     def __init__(
         self,
@@ -13,11 +15,16 @@ class AdapterResult:
         tokens_prompt: int = 0,
         tokens_completion: int = 0,
         tokens_total: int = 0,
+        rate_cost: Any = None,
     ):
         self.data = data
         self.tokens_prompt = tokens_prompt
         self.tokens_completion = tokens_completion
         self.tokens_total = tokens_total
+        # Real cost of the call per rate-limit unit, when the provider reports
+        # it (e.g. the exact audio duration). The executor reconciles the
+        # reservation taken before the call with this. None = estimate was final.
+        self.rate_cost = rate_cost
 
 
 class BaseAdapter(ABC):

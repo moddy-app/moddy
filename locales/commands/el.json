@@ -31,6 +31,9 @@
     },
     "AI text tools": {
       "name": "Εργαλεία κειμένου AI"
+    },
+    "Transcribe": {
+      "name": "Μεταγραφή"
     }
   },
   "commands": {

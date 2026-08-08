@@ -1756,6 +1756,42 @@
           "gone": "Esta simulación ya no existe."
         }
       }
+    },
+    "voice_transcription": {
+      "name": "Transcripción de voz",
+      "description": "Convierte los mensajes de voz en texto",
+      "config": {
+        "title": "Transcripción de voz",
+        "description": "Moddy ofrece una transcripción escrita bajo los mensajes de voz del servidor.",
+        "status": {
+          "section_title": "Estado",
+          "section_description": "Activa o desactiva la transcripción de los mensajes de voz",
+          "enabled": "Activado",
+          "disabled": "Desactivado",
+          "enable": "Activar",
+          "disable": "Desactivar"
+        },
+        "mode": {
+          "section_title": "Modo",
+          "section_description": "Elige si la transcripción se ofrece con un botón o se publica automáticamente",
+          "placeholder": "Elige un modo",
+          "button": {
+            "label": "Botón de transcripción",
+            "description": "Se añade un botón bajo cada mensaje de voz"
+          },
+          "auto": {
+            "label": "Transcripción automática",
+            "description": "La transcripción se publica sin esperar un clic"
+          }
+        },
+        "channels": {
+          "section_title": "Canales",
+          "section_description": "Déjalo vacío para cubrir todos los canales del servidor",
+          "placeholder": "Todos los canales",
+          "all": "Todos los canales",
+          "selected": "{count} canal(es)"
+        }
+      }
     }
   },
   "languages": {
@@ -2266,6 +2302,26 @@
         "confirm_title": "¿Eliminar banner?",
         "confirm": "¿Eliminar permanentemente el banner {id}?"
       }
+    }
+  },
+  "transcription": {
+    "title": "Transcripción",
+    "loading": "Transcribiendo",
+    "button": "Transcribir",
+    "requested_by": "solicitado por {user}",
+    "truncated": "La transcripción era demasiado larga: el texto completo está adjunto.",
+    "error_title": "No se pudo transcribir",
+    "errors": {
+      "no_audio": "Este mensaje no contiene audio que transcribir.",
+      "too_large": "Este archivo de audio es demasiado pesado (máximo {size} MB).",
+      "too_long": "Este audio es demasiado largo (máximo {minutes} minutos).",
+      "unavailable": "La transcripción no está disponible ahora mismo, inténtalo en unos instantes.",
+      "rate_limited": "Demasiadas transcripciones ahora mismo, inténtalo en {seconds} segundos.",
+      "quota": "Se ha alcanzado el límite de transcripciones de hoy.",
+      "in_progress": "Este mensaje ya se está transcribiendo.",
+      "download_failed": "No se ha podido descargar el archivo de audio.",
+      "empty": "No se ha detectado ninguna voz en este audio.",
+      "failed": "La transcripción ha fallado, inténtalo en unos instantes."
     }
   }
 }
