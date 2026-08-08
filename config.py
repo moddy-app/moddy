@@ -89,6 +89,8 @@ LOG_WEBHOOK_ENV = {
     "database": "LOG_WEBHOOK_DATABASE",        # config changes / important writes
     "security": "LOG_WEBHOOK_SECURITY",        # blacklist blocks & sensitive events
     "api_call": "LOG_WEBHOOK_API_CALL",        # gateway: every outbound API call
+    # bot identity changed on a server (nickname / avatar / bio / name style)
+    "bot_customization": "LOG_WEBHOOK_BOT_CUSTOMIZATION",
 }
 
 # Resolved category -> webhook URL (only those actually configured)

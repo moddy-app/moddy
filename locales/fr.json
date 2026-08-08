@@ -1791,6 +1791,99 @@
           "selected": "{count} salon(s)"
         }
       }
+    },
+    "bot_customization": {
+      "name": "Personnalisation du bot",
+      "description": "Personnalise l'identité de Moddy sur ce serveur",
+      "config": {
+        "title": "Personnalisation du bot",
+        "description": "Donne à Moddy l'apparence de ton serveur. Ces réglages ne s'appliquent qu'ici.",
+        "not_set": "Non défini",
+        "custom": "Personnalisé"
+      },
+      "identity": {
+        "section_title": "Identité",
+        "section_description": "Pseudo, avatar et bio de Moddy sur ce serveur",
+        "modal_title": "Identité de Moddy",
+        "nickname_label": "Pseudo",
+        "nickname_description": "Laisse vide pour revenir au nom d'origine",
+        "bio_label": "Bio",
+        "bio_description": "{max} caractères maximum, laisse vide pour la retirer",
+        "avatar_label": "Avatar",
+        "avatar_description": "PNG, JPEG, GIF ou WEBP — 8 Mo maximum",
+        "attribution_note": "-# La bio se termine toujours par la ligne <a:Rocket:1535783839870353499> Powered by @**Moddy**, elle ne peut pas être retirée.",
+        "edit": "Modifier l'identité",
+        "reset": "Réinitialiser"
+      },
+      "premium": {
+        "title": "Fonctionnalité premium",
+        "description": "La personnalisation du pseudo, de l'avatar et de la bio de Moddy est réservée aux serveurs premium.",
+        "locked": "Le pseudo, l'avatar et la bio nécessitent un abonnement Moddy Max sur ce serveur.",
+        "button": "Passer en premium"
+      },
+      "style": {
+        "section_title": "Style du pseudo",
+        "section_description": "Police, effet et couleurs appliqués au nom affiché de Moddy",
+        "free_note": "Disponible sur tous les serveurs, sans abonnement.",
+        "modal_title": "Style du pseudo",
+        "font_label": "Police",
+        "font_placeholder": "Choisis une police",
+        "effect_label": "Effet",
+        "effect_placeholder": "Choisis un effet",
+        "colors_label": "Couleurs",
+        "color1_label": "Couleur 1",
+        "color1_description": "Format hexadécimal, par exemple #5865F2",
+        "color2_label": "Couleur 2",
+        "color2_description": "Uniquement pour le dégradé (couleur de droite)",
+        "none": "Aucun",
+        "edit": "Modifier le style",
+        "reset": "Réinitialiser",
+        "effects": {
+          "gradient": {
+            "label": "Dégradé",
+            "description": "Dégradé entre deux couleurs, de gauche à droite"
+          },
+          "neon": {
+            "label": "Néon",
+            "description": "Contour lumineux autour des lettres"
+          },
+          "toon": {
+            "label": "Toon",
+            "description": "Remplissage léger avec un contour marqué"
+          },
+          "pop": {
+            "label": "Pop",
+            "description": "Ombre portée colorée derrière les lettres"
+          }
+        }
+      },
+      "applied": {
+        "title": "Personnalisation appliquée",
+        "description": "Les changements sont visibles immédiatement sur ce serveur."
+      },
+      "reset": {
+        "title": "Personnalisation réinitialisée",
+        "description": "Moddy a retrouvé son apparence d'origine sur ce serveur."
+      },
+      "errors": {
+        "title": "Personnalisation impossible",
+        "premium_required": "Cette option est réservée aux serveurs premium.",
+        "nickname_too_long": "Le pseudo dépasse 32 caractères.",
+        "bio_too_long": "La bio est trop longue.",
+        "invalid_color": "Couleur invalide : utilise un format hexadécimal comme #5865F2.",
+        "invalid_font": "Police inconnue.",
+        "invalid_effect": "Effet inconnu.",
+        "gradient_needs_two_colors": "Le dégradé nécessite exactement deux couleurs.",
+        "effect_needs_color": "Cet effet nécessite au moins une couleur.",
+        "invalid_image_type": "Format d'image non supporté : utilise un PNG, JPEG, GIF ou WEBP.",
+        "image_too_large": "L'image dépasse 8 Mo.",
+        "image_download_failed": "Impossible de télécharger l'image.",
+        "missing_permissions": "Moddy n'a pas la permission de modifier son profil ici.",
+        "rate_limited": "Trop de modifications d'affilée, réessaie dans quelques instants.",
+        "rejected_by_discord": "Discord a refusé ces valeurs.",
+        "discord_error": "Discord n'a pas pu appliquer ce changement.",
+        "save_failed": "Le changement a été appliqué mais n'a pas pu être enregistré."
+      }
     }
   },
   "languages": {

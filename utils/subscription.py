@@ -3,6 +3,17 @@ Subscription helper — gate commands/modules on active subscriptions.
 
 Read strategy: Redis cache first (key sub:user:{user_id}), DB fallback.
 The bot never writes subscription data; only the backend does.
+
+Two scopes live here:
+
+- **User subscription** (``get_subscription`` / ``is_subscribed``): does *this
+  user* pay? Gates personal-app features.
+- **Guild premium** (``is_guild_premium``): is *this server* covered by
+  somebody's subscription? A subscriber picks up to N servers on the
+  dashboard, which fills ``subscription_servers``. This — not a ``PREMIUM``
+  attribute — is the source of truth for premium server features.
+
+See ``docs/PREMIUM.md``.
 """
 
 import json
@@ -13,10 +24,18 @@ from typing import Any, Dict, Optional
 logger = logging.getLogger('moddy.subscription')
 
 _CACHE_KEY = "sub:user:{user_id}"
+_GUILD_CACHE_KEY = "sub:guild:{guild_id}"
+# Short TTL: the backend also invalidates explicitly on premium_activated /
+# premium_deactivated, the TTL is only there so a missed event self-heals.
+_GUILD_CACHE_TTL = 300
 
 
 def _cache_key(user_id: int) -> str:
     return _CACHE_KEY.format(user_id=user_id)
+
+
+def _guild_cache_key(guild_id: int) -> str:
+    return _GUILD_CACHE_KEY.format(guild_id=guild_id)
 
 
 def _ttl_seconds(expires_at: Optional[datetime]) -> Optional[int]:
@@ -92,6 +111,50 @@ async def is_subscribed(bot, user_id: int) -> bool:
     """Return True if the user has an active subscription."""
     sub = await get_subscription(bot, user_id)
     return bool(sub and sub.get('is_active'))
+
+
+async def is_guild_premium(bot, guild_id: int) -> bool:
+    """Return True if this guild is covered by an active subscription.
+
+    Redis-cached (``sub:guild:{guild_id}``, 5 min) on top of
+    ``db.is_guild_premium``, because premium is checked on hot paths (every
+    module config panel render, every dashboard task).
+    """
+    if bot.redis:
+        try:
+            raw = await bot.redis.get(_guild_cache_key(guild_id))
+            if raw is not None:
+                return raw == "1"
+        except Exception as e:
+            logger.warning(f"[Subscription] Redis read error for guild {guild_id}: {e}")
+
+    if not bot.db:
+        return False
+
+    try:
+        premium = await bot.db.is_guild_premium(guild_id)
+    except Exception as e:
+        logger.error(f"[Subscription] DB read error for guild {guild_id}: {e}")
+        return False
+
+    if bot.redis:
+        try:
+            await bot.redis.setex(
+                _guild_cache_key(guild_id), _GUILD_CACHE_TTL, "1" if premium else "0",
+            )
+        except Exception as e:
+            logger.warning(f"[Subscription] Redis write error for guild {guild_id}: {e}")
+
+    return bool(premium)
+
+
+async def invalidate_guild_cache(bot, guild_id: int) -> None:
+    """Evict the cached premium state of a guild (backend Pub/Sub events)."""
+    if bot.redis:
+        try:
+            await bot.redis.delete(_guild_cache_key(guild_id))
+        except Exception as e:
+            logger.warning(f"[Subscription] Guild cache invalidation error for {guild_id}: {e}")
 
 
 async def invalidate_cache(bot, user_id: int) -> None:

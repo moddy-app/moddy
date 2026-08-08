@@ -34,7 +34,7 @@ from discord import ui, SeparatorSpacing
 from config import LOG_WEBHOOKS, LOG_WEBHOOK_DEFAULT, ENV_MODE
 from utils.emojis import (
     DONE, UNDONE, ADD, LOGOUT, MODDY, BUG, MODDYTEAM_BADGE, SETTINGS, COMMANDS,
-    SAVE, MANAGE_USER, BLACKLIST, TIME, PAUSE, CODE,
+    SAVE, MANAGE_USER, BLACKLIST, TIME, PAUSE, CODE, MODDY_SQUARE,
 )
 
 logger = logging.getLogger("moddy.tech_logger")
@@ -53,6 +53,7 @@ _ACCENTS = {
     "database": 0xFEE75C,       # yellow
     "security": 0xED4245,       # red
     "api_call": 0x99AAB5,       # grey (high-volume, neutral)
+    "bot_customization": 0x245F9F,  # premium blue
 }
 
 # Webhook display name per category (helps when several feeds are watched).
@@ -67,6 +68,7 @@ _USERNAMES = {
     "database": "Moddy • Database",
     "security": "Moddy • Security",
     "api_call": "Moddy • API Gateway",
+    "bot_customization": "Moddy • Bot Customization",
 }
 
 
@@ -487,6 +489,39 @@ class TechLogger:
             await self._dispatch("database", view)
         except Exception as exc:
             logger.warning("log_data_change failed: %s", exc)
+
+    # --------------------------------------------------- bot customization
+
+    async def log_bot_customization(
+        self,
+        *,
+        guild_id: int,
+        guild_name: Optional[str],
+        changes: dict,
+        actor_id: Optional[int] = None,
+        source: str = "config",
+        success: bool = True,
+        error: Optional[str] = None,
+    ):
+        """A server changed Moddy's per-guild identity (nickname / avatar /
+        bio / name style). Every attempt is logged, successful or not."""
+        try:
+            lines = [
+                f"**Guild** `{guild_name or '?'}` `{guild_id}`",
+                f"**Source** `{source}`"
+                + (f" • **By** `{actor_id}`" if actor_id else " • **By** `system`"),
+            ]
+            for field, value in list(changes.items())[:8]:
+                lines.append(f"**{field}** `{_trunc(value, 150)}`")
+            lines.append(f"{_b(success)} **Applied**")
+            if error:
+                lines.append(f"**Error** `{_trunc(error, 200)}`")
+            view = self._card(
+                "bot_customization", MODDY_SQUARE, "Bot Customization", lines,
+            )
+            await self._dispatch("bot_customization", view)
+        except Exception as exc:
+            logger.warning("log_bot_customization failed: %s", exc)
 
     # ------------------------------------------------------------- security
 

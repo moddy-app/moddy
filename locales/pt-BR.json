@@ -1792,6 +1792,99 @@
           "selected": "{count} canal(is)"
         }
       }
+    },
+    "bot_customization": {
+      "name": "Personalização do bot",
+      "description": "Personalize a identidade do Moddy neste servidor",
+      "config": {
+        "title": "Personalização do bot",
+        "description": "Deixe o Moddy com a cara do seu servidor. Estas configurações valem só aqui.",
+        "not_set": "Não definido",
+        "custom": "Personalizado"
+      },
+      "identity": {
+        "section_title": "Identidade",
+        "section_description": "Apelido, avatar e bio do Moddy neste servidor",
+        "modal_title": "Identidade do Moddy",
+        "nickname_label": "Apelido",
+        "nickname_description": "Deixe vazio para voltar ao nome original",
+        "bio_label": "Bio",
+        "bio_description": "{max} caracteres no máximo, vazio para remover",
+        "avatar_label": "Avatar",
+        "avatar_description": "PNG, JPEG, GIF ou WEBP — 8 MB no máximo",
+        "attribution_note": "-# A bio sempre termina com a linha <a:Rocket:1535783839870353499> Powered by @**Moddy**, que não pode ser removida.",
+        "edit": "Editar identidade",
+        "reset": "Redefinir"
+      },
+      "premium": {
+        "title": "Recurso premium",
+        "description": "Personalizar o apelido, o avatar e a bio do Moddy é exclusivo dos servidores premium.",
+        "locked": "Apelido, avatar e bio exigem uma assinatura Moddy Max neste servidor.",
+        "button": "Assinar premium"
+      },
+      "style": {
+        "section_title": "Estilo do nome",
+        "section_description": "Fonte, efeito e cores aplicados ao nome exibido do Moddy",
+        "free_note": "Disponível em todos os servidores, sem assinatura.",
+        "modal_title": "Estilo do nome",
+        "font_label": "Fonte",
+        "font_placeholder": "Escolha uma fonte",
+        "effect_label": "Efeito",
+        "effect_placeholder": "Escolha um efeito",
+        "colors_label": "Cores",
+        "color1_label": "Cor 1",
+        "color1_description": "Formato hexadecimal, por exemplo #5865F2",
+        "color2_label": "Cor 2",
+        "color2_description": "Apenas para o degradê (cor da direita)",
+        "none": "Nenhum",
+        "edit": "Editar estilo",
+        "reset": "Redefinir",
+        "effects": {
+          "gradient": {
+            "label": "Degradê",
+            "description": "Transição entre duas cores, da esquerda para a direita"
+          },
+          "neon": {
+            "label": "Neon",
+            "description": "Contorno luminoso ao redor das letras"
+          },
+          "toon": {
+            "label": "Toon",
+            "description": "Preenchimento leve com contorno marcante"
+          },
+          "pop": {
+            "label": "Pop",
+            "description": "Sombra colorida atrás das letras"
+          }
+        }
+      },
+      "applied": {
+        "title": "Personalização aplicada",
+        "description": "As mudanças já aparecem neste servidor."
+      },
+      "reset": {
+        "title": "Personalização redefinida",
+        "description": "O Moddy voltou à aparência original neste servidor."
+      },
+      "errors": {
+        "title": "Não foi possível personalizar",
+        "premium_required": "Esta opção é exclusiva dos servidores premium.",
+        "nickname_too_long": "O apelido passa de 32 caracteres.",
+        "bio_too_long": "A bio é longa demais.",
+        "invalid_color": "Cor inválida: use um formato hexadecimal como #5865F2.",
+        "invalid_font": "Fonte desconhecida.",
+        "invalid_effect": "Efeito desconhecido.",
+        "gradient_needs_two_colors": "O degradê precisa de exatamente duas cores.",
+        "effect_needs_color": "Este efeito precisa de pelo menos uma cor.",
+        "invalid_image_type": "Formato de imagem não suportado: use PNG, JPEG, GIF ou WEBP.",
+        "image_too_large": "A imagem passa de 8 MB.",
+        "image_download_failed": "Não foi possível baixar a imagem.",
+        "missing_permissions": "O Moddy não tem permissão para editar o próprio perfil aqui.",
+        "rate_limited": "Muitas mudanças seguidas, tente de novo em instantes.",
+        "rejected_by_discord": "O Discord recusou estes valores.",
+        "discord_error": "O Discord não conseguiu aplicar esta mudança.",
+        "save_failed": "A mudança foi aplicada mas não pôde ser salva."
+      }
     }
   },
   "languages": {

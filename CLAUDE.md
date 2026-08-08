@@ -71,6 +71,7 @@ moddy/
 │   ├── interserver.py         #   Inter-server message relay
 │   ├── social_notifications.py #  Social notifications (via moddy-feeds service)
 │   ├── automod_ai.py          #   Automod AI (applies decisions, cases+evidence, scalable features)
+│   ├── bot_customization.py   #   Bot identity per guild (nick/avatar/bio premium + name style free)
 │   ├── voice_transcription.py #   Voice message transcription (button or automatic)
 │   └── configs/               #   Components V2 config UIs per module
 │       ├── adaptive_slowmode_config.py
@@ -79,6 +80,7 @@ moddy/
 │       ├── automod_ai_precedents_view.py  # Learned-precedents browser (S7)
 │       ├── welcome_channel_config.py      # Welcome messages list + add/manage (Modal V2)
 │       ├── voice_transcription_config.py  # Voice transcription (status, mode, channels)
+│       ├── bot_customization_config.py    # Bot customization (identity Modal V2 + name style)
 │
 ├── automod/                   # Automod AI DETECTION pipeline (decides only; no side effects)
 │   ├── engine.py              #   Shared per-bot orchestrator (funnel entry)
@@ -123,7 +125,7 @@ moddy/
 │       ├── eval_candidates.py   #   Automod eval/annotation corpus (automod_eval_candidates)
 │       ├── precedents.py        #   Automod server precedents (automod_precedents, RAG)
 │       ├── token_alerts.py, token_secrets.py
-│       ├── subscription.py    #   Subscription read-only queries
+│       ├── subscription.py    #   Subscription read-only queries (incl. is_guild_premium)
 │       ├── social.py          #   Social notifications subscriptions
 │       └── _utils.py
 │
@@ -133,7 +135,7 @@ moddy/
 │   ├── emojis.py              #   Emoji constants
 │   ├── components_v2.py       #   V2 helper functions (create_error_message, etc.)
 │   ├── staff_permissions.py   #   Permission system
-│   ├── subscription.py        #   Subscription helper (is_subscribed, get_subscription)
+│   ├── subscription.py        #   Subscription helper (is_subscribed, is_guild_premium…)
 │   ├── staff_logger.py        #   Staff action logging (also feeds technical webhook logs)
 │   ├── tech_logger.py         #   Technical staff logs via webhooks (Components V2, per-event channels)
 │   ├── staff_role_permissions.py
@@ -197,6 +199,7 @@ moddy/
     ├── internal_api/          #   pytest suite for the internal API routes
     │                          #   (FastAPI TestClient, bot + gateway stubbed)
     ├── gateway/               #   Provider rate limits + executor reservation lifecycle
+    ├── test_bot_customization.py  # Bot customization validation (bio budget, styles)
     └── test_transcription.py  #   Voice transcription helpers, guard rails, cards
 ```
 
@@ -339,6 +342,8 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/WELCOME_MESSAGES.md](docs/WELCOME_MESSAGES.md) | Welcome messages module — config schema, placeholders, backend/dashboard contract |
 | [docs/AUTOMOD_AI.md](docs/AUTOMOD_AI.md) | Automod AI — detection pipeline, nano decider, scalable features, rules safety check |
 | [docs/AUTOMOD_AI_CONFIG.md](docs/AUTOMOD_AI_CONFIG.md) | Automod AI configuration schema in DB (backend / dashboard integration) |
+| [docs/BOT_CUSTOMIZATION.md](docs/BOT_CUSTOMIZATION.md) | Bot Customization — per-guild nickname/avatar/bio + name styles, Redis dashboard contract |
+| [docs/PREMIUM.md](docs/PREMIUM.md) | **Premium gating** — how to check whether a server (or a user) is premium |
 | [docs/STAFF_SYSTEM.md](docs/STAFF_SYSTEM.md) | Staff/dev commands, permissions, roles |
 | [docs/MODERATION_CASES.md](docs/MODERATION_CASES.md) | Moderation cases/sanctions, the case service & sources, auto-sync |
 | [docs/TECHNICAL_LOGS.md](docs/TECHNICAL_LOGS.md) | Internal technical staff logs (webhook-based, per-event channels) |

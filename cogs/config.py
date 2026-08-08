@@ -224,6 +224,14 @@ class ConfigMainView(BaseView):
                 locale,
                 module_config
             )
+        elif module_id == 'bot_customization':
+            from modules.configs.bot_customization_config import BotCustomizationConfigView
+            config_view = await BotCustomizationConfigView.create(
+                bot,
+                guild_id,
+                user_id,
+                locale
+            )
         elif module_id == 'automod_ai':
             from modules.configs.automod_ai_config import AutomodAIConfigView
             config_view = AutomodAIConfigView(

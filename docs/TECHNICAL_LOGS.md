@@ -37,6 +37,7 @@ Each category reads its own webhook URL. Any category left unset falls back to
 | `command` | `LOG_WEBHOOK_COMMAND` | Non-staff command usage (slash, context-menu, prefix) |
 | `database` | `LOG_WEBHOOK_DATABASE` | Config changes / important DB writes |
 | `security` | `LOG_WEBHOOK_SECURITY` | Sensitive events (blacklist blocks, blacklist attribute…) |
+| `bot_customization` | `LOG_WEBHOOK_BOT_CUSTOMIZATION` | Moddy's per-guild identity changed (nickname / avatar / bio / name style) |
 | _fallback_ | `LOG_WEBHOOK_DEFAULT` | Used for any category without a dedicated URL |
 
 Mapping lives in [`config.py`](../config.py) (`LOG_WEBHOOK_ENV` → `LOG_WEBHOOKS`).
@@ -58,6 +59,7 @@ Mapping lives in [`config.py`](../config.py) (`LOG_WEBHOOK_ENV` → `LOG_WEBHOOK
 | Non-staff commands | `cogs/command_logger.py` | `log_command` |
 | Attribute writes (blacklist, premium, official, verified…) | `db.set_attribute` hook | `log_attribute_change` |
 | Config / module writes | `db._update_entity_data` hook | `log_data_change` |
+| Bot identity changed on a guild | `modules/bot_customization.apply_customization` | `log_bot_customization` |
 
 ### DB write hooks
 
