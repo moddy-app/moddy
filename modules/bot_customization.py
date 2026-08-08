@@ -8,15 +8,15 @@ server never sees the customization of this one.
 Two tiers:
 
 - **Premium** (guild linked to an active subscription, see ``docs/PREMIUM.md``):
-  nickname, avatar and bio. The bio always keeps a trailing attribution line
+  nickname, avatar, banner and bio. The bio keeps a trailing attribution line
   (``Powered by @**Moddy**``) which the server cannot remove.
 - **Free**: the *name style* (font, effect, colours) applied to the bot's
   display name. This is the undocumented ``display_name_font_id`` /
   ``display_name_effect_id`` / ``display_name_colors`` trio — see
   ``docs/BOT_CUSTOMIZATION.md``.
 
-Persistence asymmetry, and why ``resync_style`` exists: nickname, avatar and
-bio are stored by Discord and survive anything. The name style does **not**
+Persistence asymmetry, and why ``resync_style`` exists: nickname, avatar,
+banner and bio are stored by Discord and survive anything. The name style does **not**
 reliably survive a bot restart, so it is re-applied once per process the first
 time the module is loaded for a guild.
 
@@ -56,13 +56,14 @@ MAX_BIO_TOTAL_LENGTH = 190
 # The attribution line appended to every customized bio. Servers cannot remove
 # it — it is re-appended on every write.
 BIO_ATTRIBUTION = "<a:Rocket:1535783839870353499> Powered by @**Moddy**"
-BIO_SEPARATOR = "\n\n"
+BIO_SEPARATOR = "\n"
 MAX_BIO_LENGTH = MAX_BIO_TOTAL_LENGTH - len(BIO_ATTRIBUTION) - len(BIO_SEPARATOR)
 
-# Avatar upload guard rails. Discord accepts a bit more, but a server-supplied
-# file is downloaded into memory before being base64-encoded, so we stay low.
-MAX_AVATAR_BYTES = 8 * 1024 * 1024
-ALLOWED_AVATAR_TYPES = {
+# Avatar / banner upload guard rails. Discord accepts a bit more, but a
+# server-supplied file is downloaded into memory before being base64-encoded,
+# so we stay low.
+MAX_IMAGE_BYTES = 8 * 1024 * 1024
+ALLOWED_IMAGE_TYPES = {
     "image/png": "png",
     "image/jpeg": "jpeg",
     "image/jpg": "jpeg",
@@ -225,7 +226,7 @@ def style_is_empty(style: Optional[Dict[str, Any]]) -> bool:
 def to_data_uri(data: bytes, content_type: str) -> str:
     """Build the ``data:image/png;base64,…`` URI Discord expects."""
     mime = content_type.split(";")[0].strip().lower()
-    if mime not in ALLOWED_AVATAR_TYPES:
+    if mime not in ALLOWED_IMAGE_TYPES:
         raise CustomizationError("invalid_image_type", mime)
     encoded = base64.b64encode(data).decode("ascii")
     return f"data:{mime};base64,{encoded}"
@@ -240,13 +241,13 @@ async def download_image(url: str) -> Tuple[bytes, str]:
                 if response.status != 200:
                     raise CustomizationError("image_download_failed", str(response.status))
                 content_type = (response.headers.get("Content-Type") or "").split(";")[0].strip().lower()
-                if content_type not in ALLOWED_AVATAR_TYPES:
+                if content_type not in ALLOWED_IMAGE_TYPES:
                     raise CustomizationError("invalid_image_type", content_type or "unknown")
                 length = response.headers.get("Content-Length")
-                if length and int(length) > MAX_AVATAR_BYTES:
+                if length and int(length) > MAX_IMAGE_BYTES:
                     raise CustomizationError("image_too_large", length)
-                data = await response.content.read(MAX_AVATAR_BYTES + 1)
-                if len(data) > MAX_AVATAR_BYTES:
+                data = await response.content.read(MAX_IMAGE_BYTES + 1)
+                if len(data) > MAX_IMAGE_BYTES:
                     raise CustomizationError("image_too_large", str(len(data)))
                 return data, content_type
     except CustomizationError:
@@ -272,6 +273,7 @@ class BotCustomizationModule(ModuleBase):
         self.nickname: Optional[str] = None
         self.bio: Optional[str] = None
         self.avatar_hash: Optional[str] = None
+        self.banner_hash: Optional[str] = None
         self.style: Dict[str, Any] = {"font_id": None, "effect_id": None, "colors": []}
 
     # ----------------------------------------------------------------- #
@@ -284,6 +286,8 @@ class BotCustomizationModule(ModuleBase):
             "bio": None,
             "avatar_hash": None,
             "avatar_source": None,
+            "banner_hash": None,
+            "banner_source": None,
             "style": {"font_id": None, "effect_id": None, "colors": []},
             "updated_at": None,
             "updated_by": None,
@@ -295,6 +299,7 @@ class BotCustomizationModule(ModuleBase):
             self.nickname = self.config.get("nickname")
             self.bio = self.config.get("bio")
             self.avatar_hash = self.config.get("avatar_hash")
+            self.banner_hash = self.config.get("banner_hash")
             raw_style = self.config.get("style") or {}
             self.style = {
                 "font_id": raw_style.get("font_id"),
@@ -304,7 +309,7 @@ class BotCustomizationModule(ModuleBase):
             # "Configured" is what makes the module active — there is no
             # separate on/off switch, an empty configuration is simply off.
             self.enabled = bool(
-                self.nickname or self.bio or self.avatar_hash
+                self.nickname or self.bio or self.avatar_hash or self.banner_hash
                 or not style_is_empty(self.style)
             )
             return True
@@ -363,6 +368,8 @@ class BotCustomizationModule(ModuleBase):
         bio: Any = UNSET,
         avatar: Any = UNSET,          # (bytes, content_type) tuple, or None to remove
         avatar_source: Optional[str] = None,   # bookkeeping only (dashboard URL)
+        banner: Any = UNSET,          # same shape as avatar
+        banner_source: Optional[str] = None,
         style: Any = UNSET,
         actor_id: Optional[int] = None,
         source: str = "config",
@@ -397,18 +404,23 @@ class BotCustomizationModule(ModuleBase):
             changes["bio"] = bio or "reset"
             config["bio"] = bio
 
-        if not isinstance(avatar, _Unset):
-            if avatar is None:
-                payload["avatar"] = None
-                changes["avatar"] = "reset"
-                config["avatar_hash"] = None
-                config["avatar_source"] = None
+        # Avatar and banner are the same kind of field (a data URI or null),
+        # so they share one code path.
+        images = {"avatar": (avatar, avatar_source), "banner": (banner, banner_source)}
+        for field, (image, _url) in images.items():
+            if isinstance(image, _Unset):
+                continue
+            if image is None:
+                payload[field] = None
+                changes[field] = "reset"
+                config[f"{field}_hash"] = None
+                config[f"{field}_source"] = None
             else:
-                data, content_type = avatar
-                if len(data) > MAX_AVATAR_BYTES:
+                data, content_type = image
+                if len(data) > MAX_IMAGE_BYTES:
                     raise CustomizationError("image_too_large", str(len(data)))
-                payload["avatar"] = to_data_uri(data, content_type)
-                changes["avatar"] = f"{len(data)} bytes ({content_type})"
+                payload[field] = to_data_uri(data, content_type)
+                changes[field] = f"{len(data)} bytes ({content_type})"
 
         if not isinstance(style, _Unset):
             normalized = normalize_style(style)
@@ -435,9 +447,11 @@ class BotCustomizationModule(ModuleBase):
                             source=source, error=f"{error}: {exc}")
             raise CustomizationError(error, str(exc))
 
-        if not isinstance(avatar, _Unset) and avatar is not None:
-            config["avatar_hash"] = (member_data or {}).get("avatar")
-            config["avatar_source"] = avatar_source
+        for field, (image, url) in images.items():
+            if isinstance(image, _Unset) or image is None:
+                continue
+            config[f"{field}_hash"] = (member_data or {}).get(field)
+            config[f"{field}_source"] = url
 
         config["updated_at"] = datetime.now(timezone.utc).isoformat()
         config["updated_by"] = actor_id
@@ -497,7 +511,9 @@ class BotCustomizationModule(ModuleBase):
             actor_id = None
 
         kwargs: Dict[str, Any] = {}
-        wants_premium = any(k in payload for k in ("nickname", "bio", "avatar_url"))
+        wants_premium = any(
+            k in payload for k in ("nickname", "bio", "avatar_url", "banner_url")
+        )
         if wants_premium and not await is_guild_premium(self.bot, self.guild_id):
             return {"ok": False, "error": "premium_required"}
 
@@ -505,10 +521,13 @@ class BotCustomizationModule(ModuleBase):
             kwargs["nickname"] = payload["nickname"]
         if "bio" in payload:
             kwargs["bio"] = payload["bio"]
-        if "avatar_url" in payload:
-            url = payload["avatar_url"]
-            kwargs["avatar"] = None if not url else await download_image(url)
-            kwargs["avatar_source"] = url or None
+        for field in ("avatar", "banner"):
+            key = f"{field}_url"
+            if key not in payload:
+                continue
+            url = payload[key]
+            kwargs[field] = None if not url else await download_image(url)
+            kwargs[f"{field}_source"] = url or None
         if "style" in payload:
             kwargs["style"] = payload["style"]
 
@@ -527,6 +546,7 @@ class BotCustomizationModule(ModuleBase):
             "nickname": config.get("nickname"),
             "bio": config.get("bio"),
             "avatar_hash": config.get("avatar_hash"),
+            "banner_hash": config.get("banner_hash"),
             "style": config.get("style"),
         }
 

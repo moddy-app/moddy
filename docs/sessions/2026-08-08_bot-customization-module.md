@@ -5,9 +5,9 @@
 New server module **`bot_customization`**: a server can make Moddy look like
 its own bot, per-guild.
 
-- **Premium** (guild covered by an active subscription): nickname, avatar, bio.
-  The bio always keeps a trailing `<a:Rocket:…> Powered by @**Moddy**` line that
-  the server cannot remove.
+- **Premium** (guild covered by an active subscription): nickname, avatar,
+  banner, bio. The bio always keeps a trailing `<a:Rocket:…> Powered by
+  @**Moddy**` line that the server cannot remove.
 - **Free**: the name style (font, effect, colours) applied to the bot's display
   name, via the undocumented `display_name_font_id` / `display_name_effect_id` /
   `display_name_colors` fields.
@@ -56,7 +56,7 @@ a cached `utils.subscription.is_guild_premium` helper and wired the existing
   stored by Discord; the name style is not guaranteed to survive a restart, so
   `resync_style()` re-applies it once per process per guild.
 - **Only the user portion of the bio is stored**, so the attribution suffix is
-  never duplicated when a server re-edits its bio. `MAX_BIO_LENGTH` (136) is
+  never duplicated when a server re-edits its bio. `MAX_BIO_LENGTH` (137) is
   derived from the 190-char limit minus the suffix, and a test pins the
   arithmetic so a longer attribution text fails loudly.
 - **Premium is re-checked on the modal submit**, not just when rendering the
@@ -66,10 +66,17 @@ a cached `utils.subscription.is_guild_premium` helper and wired the existing
 - **Locked, not hidden**, for non-premium servers: the identity section renders
   with a lock note and a dashboard link.
 
+## Follow-up commits
+
+- Single newline (not double) before the attribution line — the double one
+  rendered an empty line in the bio. `MAX_BIO_LENGTH` 136 → 137.
+- **Banner** added alongside the avatar. Avatar and banner now share one code
+  path in `apply_customization` (`MAX_IMAGE_BYTES`, `ALLOWED_IMAGE_TYPES`), and
+  the identity modal is at Discord's ceiling of 5 top-level components, so the
+  attribution warning moved from the modal to the panel.
+
 ## Follow-ups
 
-- **Banner** is supported by the endpoint and would be a two-line change in the
-  write path, but was out of the requested scope.
 - **No automatic revert on premium loss**: the stored identity stays applied and
   the panel just locks. A backend sweep on `premium_deactivated` would be needed.
 - The 190-character member-bio limit is assumed from Discord's user-bio limit;
