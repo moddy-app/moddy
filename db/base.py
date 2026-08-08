@@ -10,6 +10,7 @@ import copy
 import logging
 from typing import Optional, Dict, Any, List
 
+from config import DB_POOL_MIN_SIZE, DB_POOL_MAX_SIZE
 from db.repositories._utils import set_nested_value
 from db.repositories.errors import ErrorRepository
 from db.repositories.users import UserRepository
@@ -34,9 +35,12 @@ from db.repositories.social import SocialSubscriptionsRepository
 
 logger = logging.getLogger('moddy.database')
 
-# Connection pool configuration
-POOL_MIN_SIZE = 5
-POOL_MAX_SIZE = 20
+# Connection pool configuration.
+# Aliased from config.py so DB_POOL_MIN_SIZE / DB_POOL_MAX_SIZE are actually
+# honoured — these used to be hardcoded here (5/20), which silently overrode the
+# environment variables and left the config module's values dead.
+POOL_MIN_SIZE = DB_POOL_MIN_SIZE
+POOL_MAX_SIZE = DB_POOL_MAX_SIZE
 COMMAND_TIMEOUT = 60
 
 

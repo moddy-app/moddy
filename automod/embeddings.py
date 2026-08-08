@@ -17,12 +17,13 @@ dependency-free — no numpy.
 
 from __future__ import annotations
 
+import array
 import asyncio
 import json
 import logging
 import math
 from pathlib import Path
-from typing import Awaitable, Callable, Dict, List, Optional, Tuple
+from typing import Awaitable, Callable, Dict, List, Optional, Sequence, Tuple
 
 from . import constants
 from .cache import MISS, LruTtlCache
@@ -72,14 +73,23 @@ def _segment(content: str) -> List[str]:
 EmbedFn = Callable[[List[str]], Awaitable[List[List[float]]]]
 
 
-def _normalize_vec(vec: List[float]) -> List[float]:
+def _normalize_vec(vec: Sequence[float]) -> "array.array":
+    """Unit-normalise a vector into a **float32** ``array.array``.
+
+    Every vector this engine keeps alive (the reference vectors, the cached
+    query vectors) goes through here, so this is the single point that decides
+    their in-memory representation. float32 is the same precision the precedents
+    are stored with on disk, and it costs ~8x less RAM than a list of Python
+    floats; the resulting rounding is ~1e-6 on a dot product, far below any
+    similarity threshold in :mod:`automod.constants`.
+    """
     norm = math.sqrt(sum(x * x for x in vec))
     if norm == 0.0:
-        return vec
-    return [x / norm for x in vec]
+        return array.array("f", vec)
+    return array.array("f", [x / norm for x in vec])
 
 
-def _dot(a: List[float], b: List[float]) -> float:
+def _dot(a: Sequence[float], b: Sequence[float]) -> float:
     return sum(x * y for x, y in zip(a, b))
 
 
@@ -103,7 +113,7 @@ class EmbeddingEngine:
         cache: Optional[LruTtlCache] = None,
     ):
         self._embed_fn = embed_fn
-        self._ref_vectors: List[List[float]] = []
+        self._ref_vectors: List["array.array"] = []
         self._ref_categories: List[str] = []
         self._ready = False
         # Score cache: exact message text → (score, category). Deterministic for
@@ -247,7 +257,7 @@ class EmbeddingEngine:
                     best_cat = cat
         return best_score, best_cat
 
-    async def embed_query(self, content: str) -> Optional[List[float]]:
+    async def embed_query(self, content: str) -> Optional["array.array"]:
         """Return the **normalised** primary embedding vector of ``content``.
 
         Used by the server-precedents matcher (session 7). Reuses the vector

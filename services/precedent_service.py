@@ -34,6 +34,10 @@ class PrecedentService:
         self.bot = bot
         # guild_id -> (expiry_ts, list[Precedent]). Short TTL: a freshly recorded
         # precedent is visible within PRECEDENT_CACHE_TTL_SECONDS everywhere.
+        # Expired guilds are swept out on every load (see _evict_expired) — this
+        # holds up to PRECEDENT_MAX_PER_GUILD embedding vectors per guild, so
+        # letting stale entries linger is the single largest memory leak-shaped
+        # cost in the bot even though nothing here actually leaks.
         self._cache: dict[int, tuple[float, List[ap.Precedent]]] = {}
 
     # -- Recording (from a human ruling) -----------------------------------
@@ -89,11 +93,27 @@ class PrecedentService:
 
     # -- Serving (to the engine) -------------------------------------------
 
+    def _evict_expired(self, now: float) -> None:
+        """Drop every guild whose cached precedents have passed their TTL.
+
+        The TTL alone was only enforced on read, and only for the guild being
+        read — so a guild that used the automod once kept its slice of vectors
+        resident for the whole process lifetime. Sweeping on every load bounds
+        the cache to the guilds actually active within the TTL window, which is
+        what makes it a cache rather than an ever-growing table. The sweep is
+        O(cached guilds), i.e. tens of entries, on a path that is already about
+        to hit the database.
+        """
+        stale = [gid for gid, (expiry, _) in self._cache.items() if expiry <= now]
+        for gid in stale:
+            del self._cache[gid]
+
     async def _guild_precedents(self, guild_id: int) -> List[ap.Precedent]:
         now = time.time()
         entry = self._cache.get(guild_id)
         if entry is not None and entry[0] > now:
             return entry[1]
+        self._evict_expired(now)
         pres: List[ap.Precedent] = []
         try:
             rows = await self.bot.db.list_precedents(
@@ -102,7 +122,9 @@ class PrecedentService:
             logger.error("precedent load failed (guild %s): %s", guild_id, e)
             rows = []
         for r in rows:
-            vector = r.get("vector") or []
+            # float32 array.array straight from the repository — never copied
+            # into a list, which would undo the memory saving row by row.
+            vector = r.get("vector")
             if not vector:
                 continue
             pres.append(ap.Precedent(
