@@ -3,10 +3,14 @@ Configuration UI for the Bot Customization module.
 
 Two sections, two tiers:
 
-- **Identity** (premium only): nickname, avatar and bio, all edited from a
-  single Modal V2 — the avatar goes through a ``FileUpload`` component, so the
-  server uploads an image instead of pasting a URL. Non-premium servers see the
-  section locked with a link to the dashboard.
+- **Identity** (premium only): nickname, bio, avatar and banner, all edited
+  from a single Modal V2 — the images go through ``FileUpload`` components, so
+  the server uploads a file instead of pasting a URL. Non-premium servers see
+  the section locked with a link to the dashboard.
+
+  The modal is at Discord's hard ceiling of 5 top-level components (3 inputs +
+  2 uploads); the attribution warning therefore lives on the panel, not in the
+  modal.
 - **Name style** (free for everyone): font + effect + colours.
 
 There is no draft/save cycle here: a modal submit patches Discord immediately
@@ -29,7 +33,7 @@ from modules.bot_customization import (
     EFFECT_KEYS,
     EFFECTS,
     FONTS,
-    MAX_AVATAR_BYTES,
+    MAX_IMAGE_BYTES,
     MAX_BIO_LENGTH,
     MAX_NICKNAME_LENGTH,
     MODULE_ID,
@@ -42,7 +46,8 @@ from modules.bot_customization import (
 from modules.configs._common import check_guild_perms
 from utils.components_v2 import create_error_message, create_success_message
 from utils.emojis import (
-    AT, BACK, DELETE, EDIT, IMAGE, MODDY_SQUARE, NOTE, PREMIUM, STAR, UNDONE,
+    AT, BACK, BANNER, DELETE, EDIT, IMAGE, MODDY_SQUARE, NOTE, PREMIUM, STAR,
+    UNDONE,
 )
 from utils.i18n import i18n, t
 
@@ -61,13 +66,16 @@ DASHBOARD_URL = "https://dashboard.moddy.app/select-premium-servers"
 NONE_VALUE = "none"
 
 
-def _guild_avatar_url(bot, guild_id: int, avatar_hash: str) -> Optional[str]:
-    """CDN URL of the bot's per-guild avatar (not exposed by discord.py)."""
-    if not bot or not bot.user or not avatar_hash:
+def _guild_asset_url(bot, guild_id: int, kind: str, asset_hash: str) -> Optional[str]:
+    """CDN URL of the bot's per-guild avatar/banner (not exposed by discord.py).
+
+    ``kind`` is ``avatars`` or ``banners``.
+    """
+    if not bot or not bot.user or not asset_hash:
         return None
-    ext = "gif" if avatar_hash.startswith("a_") else "png"
+    ext = "gif" if asset_hash.startswith("a_") else "png"
     return (f"https://cdn.discordapp.com/guilds/{guild_id}/users/"
-            f"{bot.user.id}/avatars/{avatar_hash}.{ext}?size=256")
+            f"{bot.user.id}/{kind}/{asset_hash}.{ext}?size=256")
 
 
 # =========================================================================== #
@@ -75,7 +83,7 @@ def _guild_avatar_url(bot, guild_id: int, avatar_hash: str) -> Optional[str]:
 # =========================================================================== #
 
 class BotIdentityModal(BaseModal):
-    """Nickname + bio + avatar upload, premium only."""
+    """Nickname + bio + avatar + banner upload, premium only."""
 
     def __init__(self, bot, locale: str, config: Dict[str, Any]):
         super().__init__(
@@ -117,10 +125,11 @@ class BotIdentityModal(BaseModal):
             component=self.avatar_input,
         ))
 
-        # The attribution line is not negotiable — say so before submit rather
-        # than surprising the server afterwards.
-        self.add_item(ui.TextDisplay(
-            t('modules.bot_customization.identity.attribution_note', locale=locale)
+        self.banner_input = ui.FileUpload(min_values=0, max_values=1, required=False)
+        self.add_item(ui.Label(
+            text=t('modules.bot_customization.identity.banner_label', locale=locale),
+            description=t('modules.bot_customization.identity.banner_description', locale=locale),
+            component=self.banner_input,
         ))
 
     async def on_submit(self, interaction: discord.Interaction):
@@ -128,7 +137,8 @@ class BotIdentityModal(BaseModal):
             interaction,
             nickname=self.nickname_input.value,
             bio=self.bio_input.value,
-            attachments=list(self.avatar_input.values or []),
+            avatars=list(self.avatar_input.values or []),
+            banners=list(self.banner_input.values or []),
         )
 
 
@@ -248,7 +258,7 @@ async def _get_module(bot, guild_id: int) -> BotCustomizationModule:
 
 
 async def _read_attachment(attachment: discord.Attachment) -> tuple[bytes, str]:
-    if attachment.size > MAX_AVATAR_BYTES:
+    if attachment.size > MAX_IMAGE_BYTES:
         raise CustomizationError("image_too_large", str(attachment.size))
     content_type = (attachment.content_type or "").split(";")[0].strip().lower()
     data = await attachment.read()
@@ -256,7 +266,8 @@ async def _read_attachment(attachment: discord.Attachment) -> tuple[bytes, str]:
 
 
 async def _submit_identity(interaction: discord.Interaction, *, nickname: str,
-                           bio: str, attachments: List[discord.Attachment]):
+                           bio: str, avatars: List[discord.Attachment],
+                           banners: List[discord.Attachment]):
     if not await check_guild_perms(interaction):
         return
 
@@ -279,8 +290,12 @@ async def _submit_identity(interaction: discord.Interaction, *, nickname: str,
 
     kwargs: Dict[str, Any] = {"nickname": nickname, "bio": bio}
     try:
-        if attachments:
-            kwargs["avatar"] = await _read_attachment(attachments[0])
+        # An empty upload keeps the current image — removing one is what the
+        # Reset button is for.
+        if avatars:
+            kwargs["avatar"] = await _read_attachment(avatars[0])
+        if banners:
+            kwargs["banner"] = await _read_attachment(banners[0])
         await module.apply_customization(
             actor_id=interaction.user.id, source="config", **kwargs
         )
@@ -424,7 +439,9 @@ class BotCustomizationConfigView(BaseView):
         nickname = self.config.get("nickname")
         bio = self.config.get("bio")
         avatar_hash = self.config.get("avatar_hash")
+        banner_hash = self.config.get("banner_hash")
         none_label = t('modules.bot_customization.config.not_set', locale=self.locale)
+        custom_label = t('modules.bot_customization.config.custom', locale=self.locale)
 
         body = (
             f"**{PREMIUM} {t('modules.bot_customization.identity.section_title', locale=self.locale)}**\n"
@@ -432,12 +449,14 @@ class BotCustomizationConfigView(BaseView):
             f"{AT} **{t('modules.bot_customization.identity.nickname_label', locale=self.locale)}** — "
             f"`{nickname or none_label}`\n"
             f"{IMAGE} **{t('modules.bot_customization.identity.avatar_label', locale=self.locale)}** — "
-            f"`{t('modules.bot_customization.config.custom', locale=self.locale) if avatar_hash else none_label}`\n"
+            f"`{custom_label if avatar_hash else none_label}`\n"
+            f"{BANNER} **{t('modules.bot_customization.identity.banner_label', locale=self.locale)}** — "
+            f"`{custom_label if banner_hash else none_label}`\n"
             f"{NOTE} **{t('modules.bot_customization.identity.bio_label', locale=self.locale)}** — "
             f"`{bio or none_label}`"
         )
 
-        avatar_url = _guild_avatar_url(self.bot, self.guild_id, avatar_hash) if avatar_hash else None
+        avatar_url = _guild_asset_url(self.bot, self.guild_id, "avatars", avatar_hash)
         if avatar_url:
             container.add_item(ui.Section(
                 ui.TextDisplay(body),
@@ -445,6 +464,19 @@ class BotCustomizationConfigView(BaseView):
             ))
         else:
             container.add_item(ui.TextDisplay(body))
+
+        # The banner is wide — it gets the full-width gallery, not a thumbnail.
+        banner_url = _guild_asset_url(self.bot, self.guild_id, "banners", banner_hash)
+        if banner_url:
+            container.add_item(ui.MediaGallery(
+                discord.MediaGalleryItem(media=banner_url),
+            ))
+
+        # The attribution line is not negotiable — say so here, since the modal
+        # has no room left for a note.
+        container.add_item(ui.TextDisplay(
+            t('modules.bot_customization.identity.attribution_note', locale=self.locale)
+        ))
 
         # Registration shell (bot is None): render both branches' buttons so
         # discord.py learns every custom_id — see docs/PERSISTENT_VIEWS.md.
@@ -466,7 +498,7 @@ class BotCustomizationConfigView(BaseView):
                 style=discord.ButtonStyle.secondary,
                 emoji=discord.PartialEmoji.from_str(UNDONE),
                 custom_id=_CID_RESET_IDENTITY,
-                disabled=not (nickname or bio or avatar_hash) and not is_shell,
+                disabled=not (nickname or bio or avatar_hash or banner_hash) and not is_shell,
             )
             reset_btn.callback = self.on_reset_identity
             row.add_item(reset_btn)
@@ -547,7 +579,8 @@ class BotCustomizationConfigView(BaseView):
         is_shell = self.bot is None
         has_config = bool(
             self.config.get("nickname") or self.config.get("bio")
-            or self.config.get("avatar_hash") or not style_is_empty(self.style)
+            or self.config.get("avatar_hash") or self.config.get("banner_hash")
+            or not style_is_empty(self.style)
         )
         if has_config or is_shell:
             delete_btn = ui.Button(
@@ -616,7 +649,8 @@ class BotCustomizationConfigView(BaseView):
 
         kwargs: Dict[str, Any] = {}
         if identity:
-            kwargs.update({"nickname": None, "bio": None, "avatar": None})
+            kwargs.update({"nickname": None, "bio": None,
+                           "avatar": None, "banner": None})
         if style:
             kwargs["style"] = None
 

@@ -1804,7 +1804,7 @@
       },
       "identity": {
         "section_title": "Identidade",
-        "section_description": "Apelido, avatar e bio do Moddy neste servidor",
+        "section_description": "Apelido, avatar, banner e bio do Moddy neste servidor",
         "modal_title": "Identidade do Moddy",
         "nickname_label": "Apelido",
         "nickname_description": "Deixe vazio para voltar ao nome original",
@@ -1812,14 +1812,16 @@
         "bio_description": "{max} caracteres no máximo, vazio para remover",
         "avatar_label": "Avatar",
         "avatar_description": "PNG, JPEG, GIF ou WEBP — 8 MB no máximo",
+        "banner_label": "Banner",
+        "banner_description": "PNG, JPEG, GIF ou WEBP — 8 MB no máximo",
         "attribution_note": "-# A bio sempre termina com a linha <a:Rocket:1535783839870353499> Powered by @**Moddy**, que não pode ser removida.",
         "edit": "Editar identidade",
         "reset": "Redefinir"
       },
       "premium": {
         "title": "Recurso premium",
-        "description": "Personalizar o apelido, o avatar e a bio do Moddy é exclusivo dos servidores premium.",
-        "locked": "Apelido, avatar e bio exigem uma assinatura Moddy Max neste servidor.",
+        "description": "Personalizar o apelido, o avatar, o banner e a bio do Moddy é exclusivo dos servidores premium.",
+        "locked": "Apelido, avatar, banner e bio exigem uma assinatura Moddy Max neste servidor.",
         "button": "Assinar premium"
       },
       "style": {

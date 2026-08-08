@@ -7,6 +7,7 @@ server never sees another server's customization.
 |---|---|---|
 | Nickname | ❌ | ✅ |
 | Avatar | ❌ | ✅ |
+| Banner | ❌ | ✅ |
 | Bio | ❌ | ✅ |
 | Name style (font, effect, colours) | ✅ | ✅ |
 
@@ -44,7 +45,7 @@ the server's own audit log — not just in our technical logs.
 |---|---|---|
 | `nick` | `?string` | max 32 chars. Requires `CHANGE_NICKNAME`. |
 | `avatar` | `?string` | [data URI, base64](https://docs.discord.com/developers/reference#image-data) |
-| `banner` | `?string` | data URI — **not exposed by the module** (see *Not implemented* below) |
+| `banner` | `?string` | data URI, same handling as `avatar` |
 | `bio` | `?string` | member bio, 190 chars including our attribution line |
 
 ### Undocumented fields — name styles
@@ -90,7 +91,8 @@ Gotchas, all encoded in `normalize_style` / `_style_payload`:
 - **There is no GET.** The active style cannot be read back from Discord, which
   is why we store it (see the schema below).
 - The style does **not** reliably survive a bot restart, unlike the nickname,
-  the avatar and the bio which Discord stores. Hence `resync_style()`.
+  the avatar, the banner and the bio which Discord stores. Hence
+  `resync_style()`.
 
 ---
 
@@ -126,6 +128,8 @@ out of customization is not carrying our line.
   "bio": "Le bot de notre serveur",
   "avatar_hash": "a_1c9e…",
   "avatar_source": null,
+  "banner_hash": "b_77f2…",
+  "banner_source": null,
   "style": { "font_id": 7, "effect_id": 2, "colors": [16711680, 255] },
   "updated_at": "2026-08-08T14:31:07+00:00",
   "updated_by": 942386103000000000
@@ -136,16 +140,16 @@ out of customization is not carrying our line.
 |---|---|
 | `nickname` | user-set nickname, `null` = Moddy's default name |
 | `bio` | **user portion only**, attribution excluded |
-| `avatar_hash` | hash returned by the API — used to build the CDN preview URL. The image itself is never stored. |
-| `avatar_source` | last source URL for a dashboard-set avatar, informational |
+| `avatar_hash` / `banner_hash` | hashes returned by the API — used to build the CDN preview URLs. The images themselves are never stored. |
+| `avatar_source` / `banner_source` | last source URL for a dashboard-set image, informational |
 | `style.colors` | 24-bit ints (not hex strings) |
 
 The module is `enabled` when any of these is set — there is no separate on/off
 switch, an empty configuration is simply off.
 
-Guild avatar preview URL:
+Guild asset preview URLs:
 `https://cdn.discordapp.com/guilds/{guild_id}/users/{bot_id}/avatars/{hash}.png`
-(`.gif` when the hash starts with `a_`).
+and `…/banners/{hash}.png` (`.gif` when the hash starts with `a_`).
 
 ---
 
@@ -155,7 +159,8 @@ Everything — `/config`, the dashboard, a reset — goes through
 
 ```python
 await module.apply_customization(
-    nickname=..., bio=..., avatar=(bytes, content_type), style={...},
+    nickname=..., bio=..., avatar=(bytes, content_type),
+    banner=(bytes, content_type), style={...},
     actor_id=..., source="config" | "dashboard",
 )
 ```
@@ -180,7 +185,7 @@ for the dashboard:
 `rejected_by_discord`, `discord_error`, `save_failed`, `empty_update`,
 `guild_not_found`, `internal_error`.
 
-### Avatar guard rails
+### Image guard rails (avatar and banner)
 
 - allowed: `image/png`, `image/jpeg`, `image/gif`, `image/webp`
 - max **8 MiB**, enforced on the attachment size *and* on the downloaded bytes
@@ -214,9 +219,10 @@ See [TECHNICAL_LOGS.md](TECHNICAL_LOGS.md).
   would be lying. The panel therefore has no Save/Cancel, only Edit / Reset per
   section and a global Reset.
 - **Identity modal** (premium): nickname `TextInput`, bio `TextInput`
-  (paragraph), avatar `FileUpload`, plus a `TextDisplay` warning about the
-  attribution line. Leaving the upload empty keeps the current avatar — use
-  *Reset* to remove it.
+  (paragraph), avatar `FileUpload`, banner `FileUpload`. That is Discord's hard
+  ceiling of 5 top-level components, so the attribution warning lives on the
+  panel instead of in the modal. Leaving an upload empty keeps the current
+  image — use *Reset* to remove it.
 - **Style modal** (everyone): font `Select`, effect `Select`, two colour
   `TextInput`s. Colour 2 is only read by the gradient effect.
 - Non-premium servers see the identity section rendered but **locked**, with a
@@ -249,11 +255,21 @@ and `BotCustomizationModule.handle_backend_task`.
 
 Task (stream `moddy:tasks`):
 
+```
+XADD moddy:tasks * type bot_customization_update guild_id 123456789 payload '<json>'
+```
+
+with `payload` being:
+
 ```json
 {
-  "type": "bot_customization_update",
-  "guild_id": "123456789",
-  "payload": "{\"request_id\":\"…\",\"actor_id\":\"…\",\"nickname\":\"Guardian\",\"style\":{...}}"
+  "request_id": "b3f1a2c4-…",
+  "actor_id": "942386103000000000",
+  "nickname": "Guardian",
+  "bio": "Le bot de notre serveur",
+  "avatar_url": "https://cdn.dashboard.moddy.app/uploads/abc.png",
+  "banner_url": "https://cdn.dashboard.moddy.app/uploads/def.png",
+  "style": { "font_id": 7, "effect_id": 2, "colors": ["#FF0000", "#0000FF"] }
 }
 ```
 
@@ -263,7 +279,8 @@ Result (channel `moddy:dashboard`):
 {
   "type": "bot_customization_update_result",
   "request_id": "…", "guild_id": 123456789,
-  "ok": true, "nickname": "Guardian", "avatar_hash": "a_1c9e…", "style": {...}
+  "ok": true, "nickname": "Guardian", "avatar_hash": "a_1c9e…",
+  "banner_hash": "b_77f2…", "style": {...}
 }
 ```
 
@@ -275,8 +292,6 @@ task — the backend's check is a UX filter, not a trust boundary.
 
 ## Not implemented (deliberately)
 
-- **Banner.** The endpoint supports `banner`, and the module's write path would
-  take it with a two-line change, but it was not part of the requested scope.
 - **Automatic revert on premium loss.** When a guild stops being premium the
   stored identity stays applied; the panel simply locks. Reverting would need a
   backend-driven sweep on `premium_deactivated`.
