@@ -107,7 +107,7 @@ feature).
 
 | Feature | Free | Premium |
 |---|---|---|
-| Bot Customization — nickname / avatar / bio | ❌ | ✅ |
+| Bot Customization — nickname / avatar / banner / bio | ❌ | ✅ |
 | Bot Customization — name style (font, effect, colours) | ✅ | ✅ |
 | Social Notifications — accounts per platform | `FREE_PER_PLATFORM_LIMIT` | `PREMIUM_PER_PLATFORM_LIMIT` |
 | Social Notifications — poll interval | slow tier | fast tier |
