@@ -2477,7 +2477,8 @@
     "join_refused": {
       "user": {
         "title": "Moddy n'a pas pu rester",
-        "description": "Votre compte est suspendu : Moddy ne peut pas être ajouté à un serveur. Le bot a quitté le serveur immédiatement."
+        "description_suspended": "Votre compte est suspendu : Moddy ne peut pas être ajouté à un serveur. Le bot a quitté le serveur immédiatement.",
+        "description_limited": "Votre compte est limité : Moddy ne peut pas être ajouté à un nouveau serveur. Le bot a quitté le serveur immédiatement. Les serveurs où Moddy était déjà en place continuent de fonctionner."
       },
       "guild": {
         "title": "Moddy n'a pas pu rester",

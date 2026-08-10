@@ -145,6 +145,42 @@ SUSPENDED_ALLOWED_CUSTOM_IDS = (
 )
 
 
+# --------------------------------------------------------------------------- #
+# Joining a server
+# --------------------------------------------------------------------------- #
+
+def decide_join_refusal(
+    *,
+    guild_level: "GlobalLevel",
+    owner_level: "GlobalLevel",
+    inviter_level: "GlobalLevel" = None,
+) -> Optional[str]:
+    """Whether Moddy may stay in a server it was just added to.
+
+    Three ways a join is refused — returns which one applies, or ``None``:
+
+    - ``"guild"``   — the **server itself** is suspended; it lost every service.
+    - ``"owner"``   — its **owner** is globally sanctioned.
+    - ``"inviter"`` — the **person who added the bot** is globally sanctioned.
+
+    A *limited* person is refused just like a suspended one: a limitation
+    freezes growth (no premium, no new modules), and bringing Moddy into
+    another server is exactly that kind of growth. A *limited server* is **not**
+    refused — its existing setup keeps working, so evicting the bot would break
+    what the limitation is meant to preserve.
+
+    Kept pure so the policy lives in one readable place, independent of how the
+    levels were resolved.
+    """
+    if guild_level is GlobalLevel.SUSPENDED:
+        return "guild"
+    if at_least(owner_level, GlobalLevel.LIMITED):
+        return "owner"
+    if inviter_level is not None and at_least(inviter_level, GlobalLevel.LIMITED):
+        return "inviter"
+    return None
+
+
 def is_command_allowed_when_suspended(command_name: Optional[str]) -> bool:
     """Whether a suspended user may still run this slash command."""
     if not command_name:

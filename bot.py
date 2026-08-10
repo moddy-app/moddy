@@ -1418,71 +1418,138 @@ class ModdyBot(commands.Bot):
             logger.warning(f"[WARN] name_style: failed on {guild_id} — {e}")
         return False
 
+    async def _resolve_inviter(self, guild: discord.Guild) -> Optional[discord.User]:
+        """Who actually added Moddy to this server.
+
+        Read from the audit log, which is the only place Discord exposes it —
+        best-effort: the entry may not be written yet, and Moddy may not have
+        View Audit Log on a brand-new server. Returns ``None`` when unknown.
+        """
+        try:
+            async for entry in guild.audit_logs(
+                limit=5, action=discord.AuditLogAction.bot_add
+            ):
+                target_id = getattr(entry.target, "id", None)
+                if target_id == self.user.id:
+                    return entry.user
+        except (discord.Forbidden, discord.HTTPException, AttributeError):
+            pass
+        return None
+
+    async def _check_join_allowed(self, guild: discord.Guild) -> Optional[dict]:
+        """Decide whether Moddy may stay in a server it was just added to.
+
+        Resolves the three levels the policy needs and hands them to
+        ``global_sanctions.decide_join_refusal``, which holds the rule itself.
+
+        Returns ``None`` when the join is fine, otherwise a dict describing the
+        refusal: ``{"reason", "level", "guild_suspended", "notify_user"}``.
+        """
+        guild_level = await global_sanctions.get_guild_level(self, guild.id)
+        owner_level = await global_sanctions.get_user_level(self, guild.owner_id)
+
+        # Who actually clicked "Add to server" — unknown on a server whose
+        # audit log Moddy cannot read, in which case only the owner is checked.
+        inviter = await self._resolve_inviter(guild)
+        if inviter is not None and inviter.id == guild.owner_id:
+            inviter = None
+        inviter_level = (
+            await global_sanctions.get_user_level(self, inviter.id)
+            if inviter is not None else None
+        )
+
+        reason = global_sanctions.decide_join_refusal(
+            guild_level=guild_level,
+            owner_level=owner_level,
+            inviter_level=inviter_level,
+        )
+        if reason is None:
+            return None
+
+        level, notify_user = {
+            "guild": (guild_level, guild.owner),
+            "owner": (owner_level, guild.owner),
+            "inviter": (inviter_level, inviter),
+        }[reason]
+
+        return {
+            "reason": reason,
+            "level": level,
+            "guild_suspended": reason == "guild",
+            "notify_user": notify_user,
+        }
+
+    async def _refuse_guild_join(self, guild: discord.Guild, refusal: dict) -> None:
+        """Leave a server Moddy may not stay in, and tell the right person why."""
+        reason = refusal["reason"]
+        level = refusal["level"]
+        logger.warning(
+            f"[WARN] Add attempt blocked — {reason} is `{level.value}` "
+            f"(guild {guild.id}, owner {guild.owner_id})"
+        )
+
+        # Tell whoever caused the refusal, if their DMs allow it.
+        target = refusal.get("notify_user")
+        if target is not None:
+            try:
+                from utils.global_sanction_views import build_guild_join_refusal
+                await target.send(view=build_guild_join_refusal(
+                    level=level,
+                    guild_name=guild.name,
+                    guild_id=guild.id,
+                    guild_suspended=refusal["guild_suspended"],
+                ))
+            except Exception:
+                pass
+
+        await guild.leave()
+
+        if log_cog := self.get_cog("LoggingSystem"):
+            try:
+                await log_cog.log_critical(
+                    title="Join Blocked - Global Sanction",
+                    description=(
+                        f"**Server:** {guild.name} (`{guild.id}`)\n"
+                        f"**Owner:** {guild.owner} (`{guild.owner_id}`)\n"
+                        f"**Members:** {guild.member_count}\n"
+                        f"**Sanctioned:** {reason} (`{level.value}`)\n"
+                        f"**Action:** Bot left automatically"
+                    ),
+                    ping_dev=False
+                )
+            except Exception:
+                pass
+
+        # Technical log (security feed)
+        if getattr(self, "tech_logger", None):
+            try:
+                await self.tech_logger.log_security(
+                    "Join Blocked — Global Sanction",
+                    [
+                        f"**Guild** `{guild.name}` `{guild.id}`",
+                        f"**Owner** `{guild.owner}` `{guild.owner_id}`",
+                        f"**Members** `{guild.member_count or 0}`",
+                        f"**Sanctioned** `{reason}` `{level.value}`",
+                        f"**Action** `bot left automatically`",
+                    ],
+                )
+            except Exception:
+                pass
+
     async def on_guild_join(self, guild: discord.Guild):
         """When the bot joins a server"""
         logger.info(f"New server: {guild.name} ({guild.id})")
 
-        # A suspended owner — or a suspended server — gets no Moddy at all.
+        # Refuse the join when a global sanction says Moddy has no business
+        # being here (see _check_join_allowed).
         if self.db:
             try:
-                owner_suspended = await global_sanctions.is_suspended(
-                    self, user_id=guild.owner_id)
-                guild_suspended = await global_sanctions.is_suspended(
-                    self, guild_id=guild.id)
-
-                if owner_suspended or guild_suspended:
-                    subject = "owner" if owner_suspended else "guild"
-                    logger.warning(
-                        f"[WARN] Add attempt blocked — suspended {subject} "
-                        f"(guild {guild.id}, owner {guild.owner_id})"
-                    )
-
-                    # Tell the owner why, if their DMs allow it.
-                    try:
-                        from utils.global_sanction_views import build_guild_join_refusal
-                        from utils.global_sanctions import GlobalLevel
-                        await guild.owner.send(view=build_guild_join_refusal(
-                            level=GlobalLevel.SUSPENDED,
-                            guild_name=guild.name,
-                            guild_id=guild.id,
-                            guild_suspended=guild_suspended and not owner_suspended,
-                        ))
-                    except Exception:
-                        pass
-
-                    # Leave the server
-                    await guild.leave()
-
-                    # Log the action
-                    if log_cog := self.get_cog("LoggingSystem"):
-                        await log_cog.log_critical(
-                            title="Join Blocked - Suspended Subject",
-                            description=(
-                                f"**Server:** {guild.name} (`{guild.id}`)\n"
-                                f"**Owner:** {guild.owner} (`{guild.owner_id}`)\n"
-                                f"**Members:** {guild.member_count}\n"
-                                f"**Suspended:** {subject}\n"
-                                f"**Action:** Bot left automatically"
-                            ),
-                            ping_dev=False
-                        )
-
-                    # Technical log (security feed)
-                    if getattr(self, "tech_logger", None):
-                        await self.tech_logger.log_security(
-                            "Join Blocked — Global Suspension",
-                            [
-                                f"**Guild** `{guild.name}` `{guild.id}`",
-                                f"**Owner** `{guild.owner}` `{guild.owner_id}`",
-                                f"**Members** `{guild.member_count or 0}`",
-                                f"**Suspended** `{subject}`",
-                                f"**Action** `bot left automatically`",
-                            ],
-                        )
-
+                refusal = await self._check_join_allowed(guild)
+                if refusal is not None:
+                    await self._refuse_guild_join(guild, refusal)
                     return
 
-                # Not suspended — continue normally.
+                # Nothing blocking — continue normally.
                 # Create the server entry in the guilds table
                 await self.db.get_guild(guild.id)  # This creates the entry if it doesn't exist
 

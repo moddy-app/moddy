@@ -101,7 +101,7 @@ the bot.
 | Slash commands (`tree.interaction_check`) | `bot.py::_global_sanction_check` | blocked | — |
 | Buttons / selects / modals (`on_interaction`) | `bot.py::_check_suspension_and_respond` | blocked | — |
 | Prefix commands | `cogs/blacklist_check.py` | blocked | — |
-| Bot added to a server | `bot.py::on_guild_join` | bot leaves | — |
+| Bot added to a server | `bot.py::on_guild_join` | bot leaves | bot leaves (person only, see §9bis) |
 | Premium (user + guild) | `utils/subscription.py` | off | off |
 | Configuring a **new** module | `modules/module_manager.py::_blocked_as_new_module` | refused | refused |
 | Automod AI | `modules/automod_ai.py::on_message` | off | off |
@@ -219,9 +219,40 @@ in `bot.py` consult them **before** any DB lookup:
 | `moddy:moddy:*` components | the informational panel |
 
 Everything else — commands, buttons, prefix commands — is refused with the
-suspension panel. Adding the bot to a server is refused too: `on_guild_join`
-leaves immediately and DMs the owner
-(`build_guild_join_refusal`).
+suspension panel.
+
+---
+
+## 9bis. Refusing to join a server
+
+`on_guild_join` decides whether Moddy may stay. The rule itself is one pure
+function, `global_sanctions.decide_join_refusal()`; `bot.py` only resolves the
+levels and acts on the verdict. Three ways a join is refused:
+
+| Refusal | Condition | Who is DMed |
+|---|---|---|
+| `guild` | the **server** is suspended | the owner |
+| `owner` | the **owner** is limited **or** suspended | the owner |
+| `inviter` | whoever **added the bot** is limited **or** suspended | the inviter |
+
+Two asymmetries are deliberate:
+
+- **A limitation is enough to refuse a person.** A limitation freezes growth —
+  no premium, no new modules — and bringing Moddy into another server is
+  exactly that kind of growth. A `warn` refuses nothing.
+- **A limited *server* keeps Moddy.** Its existing setup must keep working;
+  evicting the bot would break precisely what the limitation preserves. Only a
+  suspended server is left.
+
+The inviter comes from the audit log (`AuditLogAction.bot_add`), the only place
+Discord exposes it. It is **best-effort**: on a server where Moddy has no
+View Audit Log permission the inviter is unknown, and only the owner is
+checked — an unreadable audit log never refuses an otherwise legitimate join.
+
+The refusal DM names the reason: a limited account and a suspended one get
+different wording (`join_refused.user.description_limited` /
+`_suspended`), and a suspended server gets its own
+(`join_refused.guild.description`).
 
 ---
 

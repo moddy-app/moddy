@@ -367,3 +367,62 @@ async def test_nothing_due_is_a_no_op(service):
     before = len(redis.published)
     assert await svc.run_due() == 0
     assert len(redis.published) == before
+
+
+# ------------------------------------------------------- the guild-join gate
+
+def _decide(guild="none", owner="none", inviter=None):
+    return gs.decide_join_refusal(
+        guild_level=GlobalLevel(guild),
+        owner_level=GlobalLevel(owner),
+        inviter_level=GlobalLevel(inviter) if inviter is not None else None,
+    )
+
+
+def test_a_clean_join_is_allowed():
+    assert _decide() is None
+
+
+def test_a_suspended_owner_blocks_the_join():
+    assert _decide(owner="suspended") == "owner"
+
+
+def test_a_limited_owner_blocks_the_join_too():
+    # A limitation freezes growth, and a new server is growth.
+    assert _decide(owner="limited") == "owner"
+
+
+def test_a_warned_owner_does_not_block_the_join():
+    assert _decide(owner="warn") is None
+
+
+def test_a_sanctioned_inviter_blocks_the_join():
+    assert _decide(inviter="limited") == "inviter"
+    assert _decide(inviter="suspended") == "inviter"
+
+
+def test_a_warned_inviter_does_not_block_the_join():
+    assert _decide(inviter="warn") is None
+
+
+def test_an_unknown_inviter_does_not_block_a_clean_join():
+    # The audit log may be unreadable — that must not refuse a legitimate join.
+    assert _decide(inviter=None) is None
+
+
+def test_a_suspended_server_blocks_the_join():
+    assert _decide(guild="suspended") == "guild"
+
+
+def test_a_limited_server_keeps_moddy():
+    # A limitation reduces service; it does not evict the bot.
+    assert _decide(guild="limited") is None
+
+
+def test_the_server_is_reported_before_the_people():
+    # When everything is sanctioned at once, the server is the root cause.
+    assert _decide(guild="suspended", owner="suspended", inviter="limited") == "guild"
+
+
+def test_the_owner_is_reported_before_the_inviter():
+    assert _decide(owner="limited", inviter="suspended") == "owner"

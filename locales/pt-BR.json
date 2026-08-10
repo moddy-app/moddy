@@ -2478,7 +2478,8 @@
     "join_refused": {
       "user": {
         "title": "A Moddy não pôde ficar",
-        "description": "A sua conta está suspensa, por isso a Moddy não pode ser adicionada a um servidor. Saiu do servidor imediatamente."
+        "description_suspended": "A sua conta está suspensa, por isso a Moddy não pode ser adicionada a um servidor. Saiu do servidor imediatamente.",
+        "description_limited": "A sua conta está limitada, por isso a Moddy não pode ser adicionada a um servidor novo. Saiu do servidor imediatamente. Os servidores onde a Moddy já estava configurada continuam a funcionar."
       },
       "guild": {
         "title": "A Moddy não pôde ficar",

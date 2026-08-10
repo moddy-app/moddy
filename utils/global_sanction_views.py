@@ -221,20 +221,31 @@ def build_guild_join_refusal(
     *, level: GlobalLevel, guild_name: str, guild_id: int,
     guild_suspended: bool, locale: str = NOTICE_LOCALE,
 ) -> BaseView:
-    """DM sent to an owner when Moddy refuses to stay in a server.
+    """DM sent when Moddy refuses to stay in a server.
 
-    A suspended user cannot bring Moddy anywhere, and a suspended server cannot
-    have it back — either way the bot leaves immediately and says why.
+    Three refusals share this panel: a **suspended server**, and a **globally
+    sanctioned person** — the owner or whoever added the bot. A limitation is
+    enough for the two person-shaped cases: it freezes growth, and bringing
+    Moddy somewhere new is growth. Either way the bot leaves immediately and
+    says why, to the person it concerns.
     """
     view = BaseView()
     container = _container(level)
-    key = "guild" if guild_suspended else "user"
+
+    if guild_suspended:
+        title_key = "global_sanctions.join_refused.guild.title"
+        body_key = "global_sanctions.join_refused.guild.description"
+    else:
+        title_key = "global_sanctions.join_refused.user.title"
+        # A limited account and a suspended one are refused for different
+        # reasons — say which one applies.
+        suffix = "limited" if level is GlobalLevel.LIMITED else "suspended"
+        body_key = f"global_sanctions.join_refused.user.description_{suffix}"
+
     container.add_item(ui.TextDisplay(
-        f"### {emojis.LOGOUT} {t(f'global_sanctions.join_refused.{key}.title', locale=locale)}"
+        f"### {emojis.LOGOUT} {t(title_key, locale=locale)}"
     ))
-    container.add_item(ui.TextDisplay(
-        t(f"global_sanctions.join_refused.{key}.description", locale=locale)
-    ))
+    container.add_item(ui.TextDisplay(t(body_key, locale=locale)))
     container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
     container.add_item(ui.TextDisplay(
         f"**{t('global_sanctions.join_refused.server', locale=locale)}:** "

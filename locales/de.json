@@ -2478,7 +2478,8 @@
     "join_refused": {
       "user": {
         "title": "Moddy konnte nicht bleiben",
-        "description": "Dein Konto ist gesperrt, daher kann Moddy keinem Server hinzugefügt werden. Der Bot hat den Server sofort verlassen."
+        "description_suspended": "Dein Konto ist gesperrt, daher kann Moddy keinem Server hinzugefügt werden. Der Bot hat den Server sofort verlassen.",
+        "description_limited": "Dein Konto ist eingeschränkt, daher kann Moddy keinem neuen Server hinzugefügt werden. Der Bot hat den Server sofort verlassen. Server, auf denen Moddy bereits eingerichtet war, laufen weiter."
       },
       "guild": {
         "title": "Moddy konnte nicht bleiben",

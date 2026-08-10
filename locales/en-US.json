@@ -2478,7 +2478,8 @@
     "join_refused": {
       "user": {
         "title": "Moddy could not stay",
-        "description": "Your account is suspended, so Moddy cannot be added to a server. It has left the server immediately."
+        "description_suspended": "Your account is suspended, so Moddy cannot be added to a server. It has left the server immediately.",
+        "description_limited": "Your account is limited, so Moddy cannot be added to a new server. It has left the server immediately. Servers where Moddy was already set up keep working."
       },
       "guild": {
         "title": "Moddy could not stay",

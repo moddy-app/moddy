@@ -59,6 +59,21 @@ Allowlists in `utils/global_sanctions.py`, consulted by the interaction gates
 (`moddy:apl:*`), the personal cases browser (`…:user` only, never the guild
 one) and the `/moddy` panel.
 
+### Refusing to join a server
+
+`on_guild_join` now refuses three ways instead of two, with the policy as a
+pure function (`global_sanctions.decide_join_refusal`):
+
+- the **server** is suspended (a *limited* server keeps Moddy — its existing
+  setup must keep working);
+- the **owner** is limited **or** suspended;
+- the **person who added the bot** is limited **or** suspended, resolved from
+  the audit log (`AuditLogAction.bot_add`), best-effort — an unreadable audit
+  log never refuses a legitimate join.
+
+A limitation is enough to refuse a person because it freezes growth, and a new
+server is growth. The refusal DM names which case applies.
+
 ### Backend events — `moddy:sanctions`
 
 `global_sanction_applied` / `enforcement_halted` / `enforcement_executed` /
@@ -69,7 +84,7 @@ one) and the `/moddy` panel.
 
 - New: `services/global_sanction_service.py`, `utils/global_sanction_views.py`,
   `db/repositories/enforcements.py`, `staff/commands/mod/global_sanction/`
-  (5 commands + `_shared.py`), `tests/test_global_sanction_flow.py` (30 tests)
+  (5 commands + `_shared.py`), `tests/test_global_sanction_flow.py` (41 tests)
 - `bot.py` (service, sweeper, allowlists, join refusal), `db/base.py` (table),
   `db/repositories/moderation.py` (group queries),
   `utils/global_sanctions.py` (accents, emojis, allowlists),
@@ -77,7 +92,7 @@ one) and the `/moddy` panel.
   `staff/framework/cog.py`, `utils/persistent_views.py`
 - `locales/*.json` — `global_sanctions.notice/halt/join_refused/staff`,
   fully translated in the 5 supported languages
-- Docs: `GLOBAL_SANCTIONS.md` (§6–10), `DATABASE.md`,
+- Docs: `GLOBAL_SANCTIONS.md` (§6–11), `DATABASE.md`,
   `STAFF_COMMANDS_FRAMEWORK.md`, `CLAUDE.md`
 
 ## Decisions
