@@ -22,6 +22,8 @@ MODERATOR_PERMISSIONS = [
     "case_close",             # Close / reopen moderation cases
     "case_note",              # Add comments / internal notes to cases
     "case_sanction",          # Add / revoke sanctions on a case
+    "global_sanction",        # Apply / lift Moddy-team global sanctions
+    "global_enforcement",     # Stop a global sanction enforcement countdown
     "interserver_info",       # View inter-server message info
     "interserver_delete",     # Delete inter-server messages
 ]
@@ -100,6 +102,8 @@ def get_permission_label(permission: str) -> str:
         "case_close": "Close / Reopen Cases",
         "case_note": "Comment / Note on Cases",
         "case_sanction": "Add / Revoke Sanctions",
+        "global_sanction": "Apply / Lift Global Sanctions",
+        "global_enforcement": "Halt Global Enforcement Countdown",
         "interserver_info": "Inter-Server Message Info",
         "interserver_delete": "Delete Inter-Server Messages",
 

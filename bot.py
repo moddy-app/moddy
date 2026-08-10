@@ -115,6 +115,9 @@ class ModdyBot(commands.Bot):
         self.cases = CaseService(self)  # scalable sanction -> case entry point
         from services.appeal_service import AppealService
         self.appeals = AppealService(self)  # sanction appeals (server / Moddy team)
+        from services.global_sanction_service import GlobalSanctionService
+        # Moddy-team global sanctions: grouped cases, one notice, one countdown
+        self.global_sanctions = GlobalSanctionService(self)
         from services.precedent_service import PrecedentService
         self.precedents = PrecedentService(self)  # automod server precedents (RAG)
         from services.transcription_service import TranscriptionService
@@ -871,6 +874,7 @@ class ModdyBot(commands.Bot):
         # Start background tasks
         self.status_update.start()
         self.case_expiry.start()
+        self.enforcement_sweep.start()
 
         # Sync slash commands
         if DEBUG:
@@ -1435,9 +1439,14 @@ class ModdyBot(commands.Bot):
 
                     # Tell the owner why, if their DMs allow it.
                     try:
-                        locale = str(guild.preferred_locale) if guild.preferred_locale else 'en-US'
-                        await guild.owner.send(view=create_suspension_message(
-                            locale, guild=guild_suspended and not owner_suspended))
+                        from utils.global_sanction_views import build_guild_join_refusal
+                        from utils.global_sanctions import GlobalLevel
+                        await guild.owner.send(view=build_guild_join_refusal(
+                            level=GlobalLevel.SUSPENDED,
+                            guild_name=guild.name,
+                            guild_id=guild.id,
+                            guild_suspended=guild_suspended and not owner_suspended,
+                        ))
                     except Exception:
                         pass
 
@@ -1557,7 +1566,11 @@ class ModdyBot(commands.Bot):
         Retourne False ou lève une exception pour bloquer l'exécution.
 
         Une suspension globale (case ``global`` + sanction ``ban``) sur
-        l'utilisateur **ou** sur le serveur coupe tout accès à Moddy.
+        l'utilisateur **ou** sur le serveur coupe tout accès à Moddy — sauf
+        les commandes d'information listées dans
+        ``global_sanctions.SUSPENDED_ALLOWED_COMMANDS`` (``/mycases``,
+        ``/moddy``…) : un suspendu doit pouvoir lire ses cases, comprendre la
+        sanction et faire appel.
         """
         if not self.db or interaction.user.bot:
             return True  # Autorise si pas de DB ou si c'est un bot
@@ -1573,13 +1586,18 @@ class ModdyBot(commands.Bot):
             return False
 
         try:
-            user_suspended = await global_sanctions.is_suspended(
-                self, user_id=interaction.user.id)
-            guild_suspended = (
-                not user_suspended
-                and interaction.guild_id is not None
-                and await global_sanctions.is_suspended(self, guild_id=interaction.guild_id)
-            )
+            command_name = interaction.command.qualified_name if interaction.command else None
+            if global_sanctions.is_command_allowed_when_suspended(command_name):
+                # Informational commands stay reachable under a suspension.
+                user_suspended = guild_suspended = False
+            else:
+                user_suspended = await global_sanctions.is_suspended(
+                    self, user_id=interaction.user.id)
+                guild_suspended = (
+                    not user_suspended
+                    and interaction.guild_id is not None
+                    and await global_sanctions.is_suspended(self, guild_id=interaction.guild_id)
+                )
 
             if user_suspended or guild_suspended:
                 # Components V2 panel explaining the suspension.
@@ -1656,11 +1674,19 @@ class ModdyBot(commands.Bot):
         Vérifie si l'utilisateur (ou son serveur) est suspendu globalement et
         répond si c'est le cas.
         Retourne True si l'interaction est bloquée, False sinon.
+
+        Les composants d'appel (``moddy:apl:*``), le navigateur ``/mycases`` et
+        le panneau ``/moddy`` restent cliquables : sans eux, un suspendu ne
+        pourrait pas contester sa sanction.
         """
         if not self.db or interaction.user.bot:
             return False
 
         try:
+            custom_id = (interaction.data or {}).get("custom_id") if hasattr(interaction, "data") else None
+            if global_sanctions.is_component_allowed_when_suspended(custom_id):
+                return False
+
             user_suspended = await global_sanctions.is_suspended(
                 self, user_id=interaction.user.id)
             guild_suspended = (
@@ -1837,6 +1863,29 @@ class ModdyBot(commands.Bot):
     async def before_case_expiry(self):
         await self.wait_until_ready()
 
+    @tasks.loop(minutes=5)
+    async def enforcement_sweep(self):
+        """Run the deferred consequences of global sanctions whose grace period
+        has elapsed without an appeal.
+
+        The subject was given 48h in their notice DM to appeal; past that,
+        Moddy leaves the suspended servers and the backend is told to cancel
+        the subscription and purge what it must (see
+        ``services/global_sanction_service.py``).
+        """
+        if not self.db:
+            return
+        try:
+            executed = await self.global_sanctions.run_due()
+            if executed:
+                logger.info(f"[Enforcement] Executed {executed} global sanction group(s)")
+        except Exception as e:
+            logger.error(f"Error sweeping global sanction enforcements: {e}", exc_info=True)
+
+    @enforcement_sweep.before_loop
+    async def before_enforcement_sweep(self):
+        await self.wait_until_ready()
+
     async def close(self):
         """Cleanly closing the bot"""
         logger.info("Shutting down...")
@@ -1854,6 +1903,8 @@ class ModdyBot(commands.Bot):
             self.status_update.cancel()
         if self.case_expiry.is_running():
             self.case_expiry.cancel()
+        if self.enforcement_sweep.is_running():
+            self.enforcement_sweep.cancel()
 
         # Wait a bit for tasks to finish
         await asyncio.sleep(0.1)

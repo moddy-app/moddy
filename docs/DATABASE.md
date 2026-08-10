@@ -491,6 +491,35 @@ Messages du système inter-serveur.
 
 ---
 
+### 10. Table `case_enforcements`
+
+Le **compte à rebours d'appel** d'un *groupe* de sanctions globales. Une
+infraction produit souvent plusieurs cases (l'utilisateur *et* son serveur) :
+les conséquences irréversibles — résiliation de l'abonnement sans remboursement,
+départ de Moddy du serveur, suppression des données — sont différées de 48h pour
+laisser le temps de faire appel. Une ligne par groupe, jamais par case.
+
+**Colonnes:**
+- `group_id` (UUID, PRIMARY KEY) - Le `cases.group_id` concerné
+- `subject_type` / `subject_id` - Qui a été notifié (l'utilisateur, ou le serveur
+  si la sanction ne visait que des serveurs)
+- `level` (TEXT) - `warn` / `limited` / `suspended`
+- `deadline` (TIMESTAMPTZ) - Échéance annoncée dans le MP
+- `status` (TEXT) - `pending` | `halted` (appel déposé) | `executed` | `cancelled`
+- `premium` (BOOLEAN) - Le sujet payait au moment de la sanction
+- `notified` (BOOLEAN) - Le MP groupé est bien parti
+- `halted_by` / `halted_reason` / `halted_at` - Qui a arrêté le compte à rebours
+- `executed_at` (TIMESTAMPTZ) - Date d'exécution
+- `created_at` / `updated_at`
+
+**Index:**
+- `idx_enforcements_due` sur `deadline` (partiel, `status = 'pending'`)
+- `idx_enforcements_subject` sur `(subject_type, subject_id)`
+
+Voir → [GLOBAL_SANCTIONS.md](GLOBAL_SANCTIONS.md).
+
+---
+
 ## Système d'attributs et de données
 
 Moddy utilise deux types de champs JSONB pour stocker les informations:

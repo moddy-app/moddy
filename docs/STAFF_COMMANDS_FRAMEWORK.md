@@ -155,8 +155,13 @@ Permission checks are centralized in the dispatcher (`staff/framework/cog.py`):
    (`utils/staff_role_permissions.py`) — devs and super-admin bypass all nodes.
 
 Available permission nodes: `stripe_manage`, `redirect_manage`, `banner_manage`,
-`official_manage`. Nodes let a command live in a non-dev department (e.g.
-`/manage`) while still being gated beyond the base role check.
+`official_manage`, `global_sanction`, `global_enforcement`. Nodes let a command
+live in a non-dev department (e.g. `/manage`) while still being gated beyond the
+base role check.
+
+The node check lives in `utils/staff_permissions.has_staff_node(bot, user_id,
+node)`, shared with persistent components that must re-derive authorization on
+every click (a button outlives the panel that carried it).
 
 ---
 
@@ -224,6 +229,7 @@ arguments (used by `sql` and `jsk`). **Commands must not log themselves.**
 | `interserver_info` | Info on an interserver channel |
 | `interserver_delete` | Delete an interserver channel |
 | `case create/view/list/edit/close/note` | Moderation case management |
+| `global apply/view/halt/lift/pending` | Moddy-team global sanctions (grouped cases, appeal countdown) |
 
 ### `/support` / `/com`
 
@@ -249,7 +255,7 @@ staff/
 │   ├── dev/               # /dev commands (one file each)
 │   ├── team/              # /team commands
 │   ├── manage/            # /manage commands (+ redirect/ and banner/ sub-dirs)
-│   └── mod/               # /mod commands (+ case/ sub-dir)
+│   └── mod/               # /mod commands (+ case/ and global_sanction/ sub-dirs)
 ├── base.py                # StaffCommandsCog base (auto-delete tracking)
 ├── staff_commands.py      # Entry point extension loaded by the bot
 ├── support_commands.py    # /sup legacy placeholder

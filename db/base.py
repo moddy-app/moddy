@@ -22,6 +22,7 @@ from db.repositories.saved_messages import SavedMessageRepository
 from db.repositories.interserver import InterserverRepository
 from db.repositories.moderation import ModerationRepository
 from db.repositories.appeals import AppealRepository
+from db.repositories.enforcements import EnforcementRepository
 from db.repositories.eval_candidates import EvalCandidateRepository
 from db.repositories.precedents import PrecedentRepository
 from db.repositories.saved_roles import SavedRolesRepository
@@ -55,6 +56,7 @@ class ModdyDatabase(
     InterserverRepository,
     ModerationRepository,
     AppealRepository,
+    EnforcementRepository,
     EvalCandidateRepository,
     PrecedentRepository,
     SavedRolesRepository,
@@ -660,6 +662,38 @@ class ModdyDatabase(
             await conn.execute("CREATE INDEX IF NOT EXISTS idx_appeals_subject ON case_appeals (subject_id)")
             await conn.execute("CREATE INDEX IF NOT EXISTS idx_appeals_status ON case_appeals (status)")
             await conn.execute("CREATE INDEX IF NOT EXISTS idx_appeals_sanction ON case_appeals (sanction_id)")
+
+            # case_enforcements — the appeal countdown of a global sanction
+            # *group*. When the Moddy team sanctions someone, the consequences
+            # that are not immediate (subscription cancellation, leaving the
+            # sanctioned servers, deleting their data) are deferred by a grace
+            # period so the subject can appeal. One row per case group.
+            # status: pending | halted (an appeal was filed) | executed | cancelled.
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS case_enforcements (
+                    group_id      UUID PRIMARY KEY,
+                    subject_type  subject_type NOT NULL,
+                    subject_id    TEXT NOT NULL,
+                    level         TEXT NOT NULL,
+                    deadline      TIMESTAMPTZ NOT NULL,
+                    status        TEXT NOT NULL DEFAULT 'pending'
+                        CHECK (status IN ('pending','halted','executed','cancelled')),
+                    premium       BOOLEAN NOT NULL DEFAULT FALSE,
+                    notified      BOOLEAN NOT NULL DEFAULT FALSE,
+                    halted_by     TEXT,
+                    halted_reason TEXT,
+                    halted_at     TIMESTAMPTZ,
+                    executed_at   TIMESTAMPTZ,
+                    created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+                    updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+                )
+            """)
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_enforcements_due "
+                "ON case_enforcements (deadline) WHERE status = 'pending'")
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_enforcements_subject "
+                "ON case_enforcements (subject_type, subject_id)")
 
             # automod_eval_candidates — the annotation corpus that feeds the
             # offline golden set (automod/eval). A row is created for every

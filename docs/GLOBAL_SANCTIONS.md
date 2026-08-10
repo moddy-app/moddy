@@ -132,10 +132,122 @@ it keeps the full action list in its filters.
 
 ---
 
-## 6. Backend contract
+## 6. Case groups — one infraction, several cases
 
-The backend can create/revoke global cases straight in DB. It must then publish
-on `moddy:blacklist:updates` so the bot drops its cached level:
+A breach rarely hits one subject. Shutting down a raid means sanctioning the
+**user** *and* the **server** they run — two cases, one infraction. That is what
+`cases.group_id` is for, and global sanctions lean on it heavily:
+
+- `/mod global apply` opens **one case per target, all sharing a fresh
+  `group_id`**, with the same level and reason.
+- The subject gets **one** notice DM listing every case of the group — never one
+  DM per case.
+- Every follow-up command (`view`, `halt`, `lift`) takes a **group id or any
+  case reference inside it**, so staff never have to remember which is which.
+- `db.list_group_cases(group_id)` and `db.get_case_group_id(reference)` are the
+  two queries behind all of it.
+
+Groups are the existing `group_id` column — no new mechanism was added for this.
+
+---
+
+## 7. Staff commands (`/mod global`)
+
+| Command | Permission | Purpose |
+|---|---|---|
+| `apply` | `global_sanction` | Sanction a user and/or servers as one group |
+| `view` | `case_view` | Group status: level, cases, countdown |
+| `halt` | `global_enforcement` | Stop the countdown — an appeal was filed |
+| `lift` | `global_sanction` | Revoke the whole group and cancel the countdown |
+| `pending` | `case_list` | The enforcement queue, soonest deadline first |
+
+`apply` takes only the **targets** (`user`, `guilds` — ids separated by commas
+or spaces); a **Modals V2** form collects the level (a `Select`), the reason, an
+optional duration and the grace period. Five top-level components, one
+submission, one grouped sanction.
+
+`view` and the apply recap render the group panel, which carries a live
+**Halt countdown** button — a persistent `DynamicItem`
+(`moddy:gsanc:halt:<group_id>`) that re-derives the staff permission from the
+interaction on every click, so it keeps working after a restart.
+
+Every panel wears the **accent colour of its level** — yellow (warn), orange
+(limited), red (suspended) — so severity reads before the text does.
+
+---
+
+## 8. The appeal countdown
+
+Some consequences of a global sanction are irreversible, so they are **deferred
+by 48h** (`ENFORCEMENT_GRACE_HOURS`) to give the subject a chance to appeal:
+
+| Level | Immediate | Deferred (48h, unless appealed) |
+|---|---|---|
+| Warn | — | — |
+| Limited | premium off, no new modules, automod off | subscription cancelled without refund (if premium) |
+| Suspended | no access at all | subscription cancelled without refund (if premium) **+ Moddy leaves the sanctioned servers, stored data may be dropped** |
+
+The schedule is one `case_enforcements` row **per group**
+(`db/repositories/enforcements.py`), with a status of `pending` → `halted` (an
+appeal was filed) / `executed` / `cancelled` (the sanction was lifted).
+
+- The notice DM states the deadline and how to stop it (moddy.app/support).
+- `bot.enforcement_sweep` (every 5 min) claims due rows **atomically**
+  (`UPDATE … FOR UPDATE SKIP LOCKED`), so a restart mid-sweep can never
+  execute a group twice.
+- On execution the bot leaves the suspended servers itself and publishes the
+  billing/data side for the backend to run.
+
+A guild-only sanction still schedules a countdown — otherwise Moddy would never
+leave the server it just suspended. Its notice goes to the server owner.
+
+---
+
+## 9. What a suspended user can still do
+
+A suspension cuts off the product, not the person's ability to contest it.
+`utils/global_sanctions.py` holds the two allowlists, and the interaction gates
+in `bot.py` consult them **before** any DB lookup:
+
+| Still allowed | Why |
+|---|---|
+| `/mycases` | read their own cases and their references |
+| `/moddy` | reach support, terms and legal links |
+| `/ping` | check whether the bot is even up |
+| `moddy:apl:*` components | file and follow an automod appeal |
+| `moddy:cases:browser:*:user` | the personal cases browser (never the guild one) |
+| `moddy:moddy:*` components | the informational panel |
+
+Everything else — commands, buttons, prefix commands — is refused with the
+suspension panel. Adding the bot to a server is refused too: `on_guild_join`
+leaves immediately and DMs the owner
+(`build_guild_join_refusal`).
+
+---
+
+## 10. Backend contract
+
+Two channels, one in each direction.
+
+### Bot → backend: `moddy:sanctions`
+
+Published by `services/global_sanction_service.py` on every state change, so
+the backend can run billing, data retention and dashboards. Every event carries
+`type` and an ISO-8601 `ts`.
+
+| `type` | When | Backend must |
+|---|---|---|
+| `global_sanction_applied` | A group is opened | Record it; a `warn` needs nothing else |
+| `enforcement_halted` | An appeal stopped the countdown | Cancel any scheduled billing action |
+| `enforcement_executed` | The grace period elapsed | **Cancel the subscription without refund** (`cancel_subscription`), purge `purge_guild_data` |
+| `global_sanction_lifted` | The whole group was revoked | Undo/skip whatever was pending |
+
+See §5 of the backend integration notes below for the full payloads.
+
+### Backend → bot: `moddy:blacklist:updates`
+
+When the backend writes a global case straight in DB, it must tell the bot to
+drop its cached level:
 
 ```json
 { "type": "refresh", "user_id": "123456789012345678" }
@@ -147,7 +259,7 @@ Sending neither id clears the whole cache. Handled in
 
 ---
 
-## 7. Migration from the legacy attribute
+## 11. Migration from the legacy attribute
 
 Global sanctions used to be a `BLACKLISTED` attribute on `users` / `guilds`.
 That attribute **no longer exists anywhere in the code**.

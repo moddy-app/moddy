@@ -93,6 +93,76 @@ LEVEL_TO_ACTION: Dict[GlobalLevel, str] = {
 }
 
 
+# --------------------------------------------------------------------------- #
+# Presentation — the accent bar and icon of each level
+# --------------------------------------------------------------------------- #
+
+#: Accent colour of a level, from mildest to heaviest. Panels about a global
+#: sanction take the accent of the level they are about, so the severity reads
+#: at a glance before a single word is parsed.
+LEVEL_ACCENTS: Dict[GlobalLevel, int] = {
+    GlobalLevel.NONE: 0x99AAB5,       # neutral grey
+    GlobalLevel.WARN: 0xFEE75C,       # yellow
+    GlobalLevel.LIMITED: 0xF28500,    # orange
+    GlobalLevel.SUSPENDED: 0xDA3E27,  # red
+}
+
+
+def level_accent(level: GlobalLevel) -> int:
+    """Accent colour (hex int) for a global sanction level."""
+    return LEVEL_ACCENTS.get(level, LEVEL_ACCENTS[GlobalLevel.NONE])
+
+
+def level_emoji(level: GlobalLevel) -> str:
+    """Custom emoji announcing a global sanction level."""
+    from utils.emojis import WARNING, UNDONE, LEGAL, INFO
+    return {
+        GlobalLevel.WARN: WARNING,
+        GlobalLevel.LIMITED: UNDONE,
+        GlobalLevel.SUSPENDED: LEGAL,
+    }.get(level, INFO)
+
+
+# --------------------------------------------------------------------------- #
+# What a suspended subject may still do
+# --------------------------------------------------------------------------- #
+
+#: Slash commands a suspended user keeps access to. A suspension cuts off the
+#: product, not the person's ability to understand and contest it: they must
+#: still be able to read their own cases, reach support and appeal.
+SUSPENDED_ALLOWED_COMMANDS = frozenset({
+    "mycases",   # read their own moderation cases (and their references)
+    "moddy",     # about panel: support, terms, legal links
+    "ping",      # is the bot even up
+})
+
+#: Component ``custom_id`` prefixes a suspended user may still click. Same
+#: reasoning: appeal buttons, their own cases browser, and the /moddy panel.
+SUSPENDED_ALLOWED_CUSTOM_IDS = (
+    "moddy:apl:",                 # automod sanction appeals (DM buttons)
+    "moddy:cases:browser:",       # /mycases (user mode) — see is_command_allowed
+    "moddy:moddy:",               # /moddy informational panel
+)
+
+
+def is_command_allowed_when_suspended(command_name: Optional[str]) -> bool:
+    """Whether a suspended user may still run this slash command."""
+    if not command_name:
+        return False
+    # Sub-commands arrive as "group sub" — the root name is what we gate on.
+    return command_name.split(" ")[0] in SUSPENDED_ALLOWED_COMMANDS
+
+
+def is_component_allowed_when_suspended(custom_id: Optional[str]) -> bool:
+    """Whether a suspended user may still click this component."""
+    if not custom_id:
+        return False
+    if custom_id.startswith("moddy:cases:browser:"):
+        # Only the personal browser (`/mycases`), never the guild one.
+        return custom_id.endswith(":user")
+    return custom_id.startswith(SUSPENDED_ALLOWED_CUSTOM_IDS)
+
+
 def level_from_actions(actions: Iterable[str]) -> GlobalLevel:
     """Resolve the highest level out of a list of active sanction actions."""
     level = GlobalLevel.NONE

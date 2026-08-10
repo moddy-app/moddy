@@ -110,7 +110,7 @@ moddy/
 │   │   └── parsing.py         #     Arg helpers (user/guild id)
 │   ├── commands/dev/          #   /dev commands (one file each)
 │   ├── commands/team/         #   /team commands (incl. help)
-│   ├── commands/mod/          #   /mod commands + case/ sub-group
+│   ├── commands/mod/          #   /mod commands + case/ and global/ sub-groups
 │   ├── commands/manage/       #   /manage commands (staff panel, badge, redirect/, banner/…)
 │   ├── support_commands.py    #   sup. commands — legacy (not yet migrated)
 │   └── communication_commands.py  # com. commands — legacy (not yet migrated)
@@ -122,6 +122,7 @@ moddy/
 │       ├── reminders.py, saved_messages.py, saved_roles.py
 │       ├── moderation.py, interserver.py, attributes.py
 │       ├── appeals.py           #   Automod sanction appeals (case_appeals)
+│       ├── enforcements.py      #   Global sanction appeal countdowns (case_enforcements)
 │       ├── eval_candidates.py   #   Automod eval/annotation corpus (automod_eval_candidates)
 │       ├── precedents.py        #   Automod server precedents (automod_precedents, RAG)
 │       ├── token_alerts.py, token_secrets.py
@@ -148,6 +149,7 @@ moddy/
 │   ├── appeal_views.py        #   Automod appeal UI (DM buttons + reviewer panels, persistent)
 │   ├── moderation_cases.py    #   Cases domain model + enums + reference gen
 │   ├── global_sanctions.py    #   Global (Moddy-team) sanction levels: warn/limited/suspended
+│   ├── global_sanction_views.py #  Global sanction UI (notice DMs, staff panels, Modals V2)
 │   ├── embeds.py
 │   ├── announcement_setup.py
 │   └── incognito.py
@@ -175,6 +177,7 @@ moddy/
 │   ├── backend_client.py      #   Backend HTTP client
 │   ├── feeds_client.py        #   moddy-feeds Redis client (social notifications)
 │   ├── case_service.py        #   Scalable sanction→case entry point (source registry)
+│   ├── global_sanction_service.py # Global sanctions: grouped cases, notice DM, 48h countdown, Redis
 │   ├── appeal_service.py      #   Automod sanction appeals (server / Moddy team, binding)
 │   ├── precedent_service.py   #   Automod server precedents (record + serve, RAG)
 │   ├── transcription_service.py #  Voice/audio speech-to-text (shared by cog + module)
@@ -201,6 +204,7 @@ moddy/
     │                          #   (FastAPI TestClient, bot + gateway stubbed)
     ├── gateway/               #   Provider rate limits + executor reservation lifecycle
     ├── test_global_sanctions.py   # Global sanction levels, cache TTL, user/guild context
+    ├── test_global_sanction_flow.py # Groups, notices, countdown, Redis events, allowlists
     ├── test_bot_customization.py  # Bot customization validation (bio budget, styles)
     └── test_transcription.py  #   Voice transcription helpers, guard rails, cards
 ```

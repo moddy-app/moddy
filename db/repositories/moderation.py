@@ -694,6 +694,42 @@ class ModerationRepository:
             query += ")"
             return await conn.fetchval(query, *params)
 
+    async def list_group_cases(
+        self, group_id: Union[str, uuid.UUID]
+    ) -> List[Dict[str, Any]]:
+        """Every case sharing a ``group_id``, with its sanctions.
+
+        A single infraction usually spans several cases — the offending user
+        *and* their server — linked by one group. The group is what the subject
+        is notified about and what staff commands act on as a whole.
+        """
+        if isinstance(group_id, str):
+            group_id = uuid.UUID(group_id)
+        async with self.pool.acquire() as conn:
+            rows = await conn.fetch(
+                "SELECT * FROM cases WHERE group_id = $1 ORDER BY created_at",
+                group_id,
+            )
+            out: List[Dict[str, Any]] = []
+            for row in rows:
+                sanctions = await conn.fetch(
+                    "SELECT * FROM case_sanctions WHERE case_id = $1 ORDER BY created_at",
+                    row["id"],
+                )
+                case = dict(row)
+                case["sanctions"] = [dict(s) for s in sanctions]
+                out.append(case)
+        return out
+
+    async def get_case_group_id(
+        self, reference: str
+    ) -> Optional[uuid.UUID]:
+        """Group of the case behind a public reference (``None`` if ungrouped)."""
+        async with self.pool.acquire() as conn:
+            return await conn.fetchval(
+                "SELECT group_id FROM cases WHERE reference = $1", reference.upper()
+            )
+
     async def list_active_global_actions(
         self,
         subject_type: str,
