@@ -2283,7 +2283,8 @@
         "list_empty": "Nenhum caso de moderação encontrado para {name}.",
         "list_title": "Casos — {name}",
         "list_count": "Mostrando {shown} de {total} caso(s)",
-        "list_more": "Use /mod case view <referência> para ver todos os detalhes."
+        "list_more": "Use /mod case view <referência> para ver todos os detalhes.",
+        "no_source": "Nenhum tipo de sanção se aplica a este tipo de sujeito."
       }
     },
     "manage": {
@@ -2417,6 +2418,39 @@
       "download_failed": "Não foi possível baixar o arquivo de áudio.",
       "empty": "Nenhuma fala foi detectada neste áudio.",
       "failed": "A transcrição falhou, tente novamente em instantes."
+    }
+  },
+  "global_sanctions": {
+    "suspended": {
+      "user": {
+        "title": "Conta suspensa",
+        "description": "Você não tem mais acesso a nenhum serviço da Moddy: sua conta foi suspensa pela nossa equipe."
+      },
+      "guild": {
+        "title": "Servidor suspenso",
+        "description": "Este servidor não tem mais acesso a nenhum serviço da Moddy: ele foi suspenso pela nossa equipe."
+      },
+      "appeal_hint": "Se você acredita que isso é um erro, pode solicitar uma revisão.",
+      "appeal_button": "Solicitar revisão"
+    },
+    "limited": {
+      "user": {
+        "title": "Conta limitada",
+        "description": "Sua conta está sob limitação: o premium está desativado e você não pode mais configurar novos módulos."
+      },
+      "guild": {
+        "title": "Servidor limitado",
+        "description": "Este servidor está sob limitação: o premium está desativado, o automod de IA está desligado e nenhum novo módulo pode ser configurado."
+      },
+      "banner_title": "Limitação em vigor",
+      "no_new_modules": "Os módulos já configurados continuam editáveis, mas nenhum novo módulo pode ser configurado enquanto a limitação estiver ativa.",
+      "appeal_hint": "Se você acredita que isso é um erro, pode solicitar uma revisão.",
+      "appeal_button": "Solicitar revisão"
+    },
+    "level": {
+      "warn": "Advertência global",
+      "limited": "Limitado",
+      "suspended": "Suspenso"
     }
   }
 }

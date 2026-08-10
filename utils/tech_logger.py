@@ -447,13 +447,17 @@ class TechLogger:
         changed_by: Optional[int],
         reason: Optional[str],
     ):
-        """Important DB write: a user/guild attribute changed (blacklist, premium,
-        verified, official, staff, …)."""
+        """Important DB write: a user/guild attribute changed (premium, verified,
+        official, staff, …).
+
+        Global sanctions are **not** attributes any more — they live in the
+        cases system (``utils/global_sanctions.py``) and are logged as cases.
+        """
         try:
             # Security-sensitive attributes get the security feed + red accent.
-            sensitive = attribute.upper() in {"BLACKLISTED", "OFFICIAL", "VERIFIED", "VERIFIED_ORG", "PREMIUM", "BETA"}
-            accent = "security" if attribute.upper() == "BLACKLISTED" else "database"
-            emoji = BLACKLIST if attribute.upper() == "BLACKLISTED" else MANAGE_USER
+            sensitive = attribute.upper() in {"OFFICIAL", "VERIFIED", "VERIFIED_ORG", "PREMIUM", "BETA"}
+            accent = "database"
+            emoji = MANAGE_USER
             old_disp = "—" if old_value is None else f"`{_trunc(old_value, 60)}`"
             new_disp = "removed" if new_value is None else f"`{_trunc(new_value, 60)}`"
             lines = [

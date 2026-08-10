@@ -30,9 +30,11 @@ from utils.moderation_cases import (
     SanctionAction,
     get_available_actions,
     get_action_emoji,
+    get_action_label_key,
     TEMPORARY_ACTIONS,
 )
 from services.case_service import SOURCES, CaseSource
+from utils import global_sanctions
 
 logger = logging.getLogger('moddy.case_management')
 
@@ -41,9 +43,28 @@ logger = logging.getLogger('moddy.case_management')
 # Helpers
 # --------------------------------------------------------------------------- #
 
-def _manual_sources() -> List[CaseSource]:
-    """Sources a moderator may open by hand (no required external scope)."""
-    return [s for s in SOURCES.values() if s.manual and not s.requires_scope_id]
+def _manual_sources(subject_type: Optional[SubjectType] = None) -> List[CaseSource]:
+    """Sources a moderator may open by hand for this kind of subject.
+
+    A source declares the subject nature it applies to, so a guild target never
+    gets offered the user-scoped sources (and vice versa).
+    """
+    return [
+        s for s in SOURCES.values()
+        if s.manual and not s.requires_scope_id
+        and (subject_type is None or s.subject_type == subject_type)
+    ]
+
+
+def _action_label(action: SanctionAction, locale: str,
+                  case_type: Optional[CaseType] = None) -> str:
+    """Staff label of a sanction action, in the vocabulary of its case type.
+
+    A global case speaks in levels (warn / limited / suspended), a guild case in
+    raw actions (warn / mute / ban).
+    """
+    key = get_action_label_key(action, case_type)
+    return t(key or f"staff.mod.case.action.{action.value}", locale=locale)
 
 
 def _parse_duration_hours(raw: Optional[str]) -> Optional[datetime]:
@@ -80,7 +101,7 @@ class CaseCreationView(BaseView):
         self.locale = locale
         self.on_created = on_created
 
-        self.sources = _manual_sources()
+        self.sources = _manual_sources(subject_type)
         self.selected_source: Optional[CaseSource] = self.sources[0] if len(self.sources) == 1 else None
         self.selected_action: Optional[SanctionAction] = None
         self._build()
@@ -95,6 +116,14 @@ class CaseCreationView(BaseView):
             f"**{t('staff.mod.case.subject', locale=self.locale)}:** {self.subject_name}\n"
             f"-# {t('staff.mod.case.create_hint', locale=self.locale)}"
         ))
+
+        # No manual source handles this kind of subject — nothing to offer.
+        if not self.sources:
+            container.add_item(ui.TextDisplay(
+                f"-# {t('staff.mod.case.no_source', locale=self.locale)}"
+            ))
+            self.add_item(container)
+            return
 
         # Source (case type) select — only when more than one manual source.
         if len(self.sources) > 1:
@@ -120,7 +149,7 @@ class CaseCreationView(BaseView):
             action_row = ui.ActionRow()
             action_options = [
                 discord.SelectOption(
-                    label=t(f"staff.mod.case.action.{a.value}", locale=self.locale),
+                    label=_action_label(a, self.locale, self.selected_source.case_type),
                     value=a.value,
                     emoji=discord.PartialEmoji.from_str(get_action_emoji(a)),
                     default=(self.selected_action == a),
@@ -257,6 +286,11 @@ class CaseCreateModal(BaseModal):
             sanction_expires_at=expires_at,
         )
 
+        # A global case changes what the subject is allowed to do right away.
+        if self.source.case_type == CaseType.GLOBAL:
+            global_sanctions.invalidate(
+                self.bot, self.subject_type.value, self.subject_id)
+
         if self.on_created:
             await self.on_created(interaction, result)
         else:
@@ -294,7 +328,7 @@ class AddSanctionView(BaseView):
         row = ui.ActionRow()
         options = [
             discord.SelectOption(
-                label=t(f"staff.mod.case.action.{a.value}", locale=self.locale),
+                label=_action_label(a, self.locale, self.case_type),
                 value=a.value,
                 emoji=discord.PartialEmoji.from_str(get_action_emoji(a)),
             )
@@ -367,6 +401,9 @@ class AddSanctionModal(BaseModal):
             self.case_id, self.action.value, "moddy_staff", self.staff_id,
             expires_at=expires_at, note=(self.note_input.value.strip() or None),
         )
+        # The case subject is not carried here; staff sanctions are rare, so a
+        # full cache clear is cheaper than an extra query.
+        global_sanctions.invalidate(self.bot)
         if self.on_done:
             await self.on_done(interaction)
         else:
@@ -430,6 +467,7 @@ class RevokeSanctionView(BaseView):
                 t("staff.mod.case.revoke_failed", locale=self.locale),
             ), ephemeral=True)
             return
+        global_sanctions.invalidate(self.bot)
         if self.on_done:
             await self.on_done(interaction)
         else:

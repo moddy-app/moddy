@@ -114,10 +114,12 @@ async def _load_messages(bot, guild_id: int) -> List[Dict[str, Any]]:
 
 
 async def _save_messages(bot, guild_id: int,
-                         messages: List[Dict[str, Any]]) -> tuple[bool, Optional[str]]:
+                         messages: List[Dict[str, Any]],
+                         actor_id: Optional[int] = None) -> tuple[bool, Optional[str]]:
     """Persist the whole message list (revalidates + reloads the module)."""
     return await bot.module_manager.save_module_config(
         guild_id, _MODULE_ID, normalize_config({'messages': messages}),
+        actor_id=actor_id,
     )
 
 
@@ -522,7 +524,7 @@ class AddWelcomeMessageView(BaseView):
             'created_at': datetime.now(timezone.utc).isoformat(),
         })
 
-        success, error = await _save_messages(bot, interaction.guild_id, messages)
+        success, error = await _save_messages(bot, interaction.guild_id, messages, interaction.user.id)
         if success:
             await _render_main(interaction)
             await interaction.followup.send(
@@ -687,7 +689,7 @@ class ManageWelcomeMessageView(BaseView):
         if not target:
             return None
         target.update(fields)
-        success, error = await _save_messages(bot, interaction.guild_id, messages)
+        success, error = await _save_messages(bot, interaction.guild_id, messages, interaction.user.id)
         if success:
             self.entry = target
         return success, error
@@ -754,7 +756,7 @@ class ManageWelcomeMessageView(BaseView):
         entry_id = self.entry.get('id')
         messages = [m for m in await _load_messages(bot, interaction.guild_id)
                     if m['id'] != entry_id]
-        success, error = await _save_messages(bot, interaction.guild_id, messages)
+        success, error = await _save_messages(bot, interaction.guild_id, messages, interaction.user.id)
 
         await _render_main(interaction)
         if success:

@@ -1140,10 +1140,16 @@ class ModdyDatabase(
                 WHERE attributes ? 'PREMIUM'
             """)
 
-            # Compte les utilisateurs blacklistés
+            # Compte les utilisateurs suspendus globalement (cases, plus d'attribut)
             stats['blacklisted_users'] = await conn.fetchval("""
-                SELECT COUNT(*) FROM users
-                WHERE attributes ? 'BLACKLISTED'
+                SELECT COUNT(DISTINCT c.subject_id)
+                FROM cases c
+                JOIN case_sanctions s ON s.case_id = c.id
+                WHERE c.type = 'global'::case_type
+                  AND c.subject_type = 'discord_user'::subject_type
+                  AND s.action = 'ban'::sanction_action
+                  AND s.status = 'active'::sanction_status
+                  AND (s.expires_at IS NULL OR s.expires_at > now())
             """)
 
             return stats

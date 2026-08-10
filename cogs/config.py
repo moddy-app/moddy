@@ -11,6 +11,8 @@ import logging
 
 from utils.i18n import i18n, t
 from utils.emojis import EMOJIS
+from utils import global_sanctions
+from utils.components_v2 import create_limited_message
 from cogs.error_handler import BaseView
 from modules.configs._common import check_guild_perms
 
@@ -32,7 +34,7 @@ class ConfigMainView(BaseView):
     __persistent__ = True
 
     def __init__(self, bot=None, guild_id: Optional[int] = None, user_id: Optional[int] = None,
-                 locale: str = "en-US"):
+                 locale: str = "en-US", limited: bool = False):
         """
         Initialise la vue principale
 
@@ -42,6 +44,9 @@ class ConfigMainView(BaseView):
             user_id: ID de l'utilisateur qui configure (informational only —
                 not used for authorization, see check_guild_perms)
             locale: Langue de l'utilisateur
+            limited: Le serveur (ou l'utilisateur) porte une sanction globale
+                "limité" — un bandeau l'annonce, et le module manager refuse
+                de configurer un module qui ne l'a jamais été
         """
         super().__init__()  # timeout=None
         # Set bot for error handling
@@ -49,6 +54,7 @@ class ConfigMainView(BaseView):
         self.guild_id = guild_id
         self.user_id = user_id
         self.locale = locale
+        self.limited = limited
 
         self._build_view()
 
@@ -65,6 +71,13 @@ class ConfigMainView(BaseView):
         container.add_item(ui.TextDisplay(
             f"\n{t('modules.config.main.description', locale=self.locale)}"
         ))
+
+        # Bandeau de sanction globale "limité".
+        if self.limited:
+            container.add_item(ui.TextDisplay(
+                f"\n{EMOJIS['warning']} **{t('global_sanctions.limited.banner_title', locale=self.locale)}**\n"
+                f"-# {t('global_sanctions.limited.no_new_modules', locale=self.locale)}"
+            ))
 
         # Menu déroulant pour sélectionner un module
         select_row = ui.ActionRow()
@@ -141,6 +154,18 @@ class ConfigMainView(BaseView):
 
         # Récupère la configuration actuelle du module
         module_config = await bot.module_manager.get_module_config(guild_id, module_id)
+
+        # Sanction globale "limité" : un module jamais configuré ne peut plus
+        # être mis en place. On le dit tout de suite plutôt qu'à la sauvegarde.
+        if not module_config and await global_sanctions.is_limited(
+            bot, user_id=user_id, guild_id=guild_id
+        ):
+            guild_limited = await global_sanctions.is_limited(bot, guild_id=guild_id)
+            await interaction.followup.send(
+                view=create_limited_message(locale, guild=guild_limited),
+                ephemeral=True,
+            )
+            return
 
         # Import dynamique de la vue de configuration correspondante
         config_view = None
@@ -395,12 +420,19 @@ class Config(commands.Cog):
             )
             return
 
+        # Sanction globale "limité" : les modules déjà configurés restent
+        # modifiables, mais aucun NOUVEAU module ne peut être mis en place.
+        limited = await global_sanctions.is_limited(
+            self.bot, user_id=interaction.user.id, guild_id=interaction.guild.id
+        )
+
         # Affiche le menu principal de configuration
         main_view = ConfigMainView(
             self.bot,
             interaction.guild.id,
             interaction.user.id,
-            str(interaction.locale)
+            str(interaction.locale),
+            limited=limited,
         )
 
         await interaction.response.send_message(

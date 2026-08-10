@@ -301,6 +301,7 @@ class InterServerConfigView(BaseView):
 
         success, error_msg = await bot.module_manager.save_module_config(
             interaction.guild_id, 'interserver', working_config,
+            actor_id=interaction.user.id,
         )
 
         if success:

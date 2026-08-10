@@ -2282,7 +2282,8 @@
         "list_empty": "Aucun dossier de modération trouvé pour {name}.",
         "list_title": "Dossiers — {name}",
         "list_count": "Affichage de {shown} dossier(s) sur {total}",
-        "list_more": "Utilise /mod case view <référence> pour le détail complet."
+        "list_more": "Utilise /mod case view <référence> pour le détail complet.",
+        "no_source": "Aucun type de sanction ne s'applique à ce type de sujet."
       }
     },
     "manage": {
@@ -2416,6 +2417,39 @@
       "download_failed": "Impossible de récupérer le fichier audio.",
       "empty": "Aucune parole n'a été détectée dans cet audio.",
       "failed": "La transcription a échoué, réessaye dans quelques instants."
+    }
+  },
+  "global_sanctions": {
+    "suspended": {
+      "user": {
+        "title": "Compte suspendu",
+        "description": "Vous n'avez plus accès à aucun service Moddy : votre compte a été suspendu par notre équipe."
+      },
+      "guild": {
+        "title": "Serveur suspendu",
+        "description": "Ce serveur n'a plus accès à aucun service Moddy : il a été suspendu par notre équipe."
+      },
+      "appeal_hint": "Si vous pensez qu'il s'agit d'une erreur, vous pouvez demander un réexamen.",
+      "appeal_button": "Demander un réexamen"
+    },
+    "limited": {
+      "user": {
+        "title": "Compte limité",
+        "description": "Votre compte fait l'objet d'une limitation : le premium est désactivé et vous ne pouvez plus configurer de nouveaux modules."
+      },
+      "guild": {
+        "title": "Serveur limité",
+        "description": "Ce serveur fait l'objet d'une limitation : le premium est désactivé, l'automod IA est désactivé et aucun nouveau module ne peut être configuré."
+      },
+      "banner_title": "Limitation en cours",
+      "no_new_modules": "Les modules déjà configurés restent modifiables, mais aucun nouveau module ne peut être mis en place tant que la limitation est active.",
+      "appeal_hint": "Si vous pensez qu'il s'agit d'une erreur, vous pouvez demander un réexamen.",
+      "appeal_button": "Demander un réexamen"
+    },
+    "level": {
+      "warn": "Avertissement global",
+      "limited": "Limité",
+      "suspended": "Suspendu"
     }
   }
 }

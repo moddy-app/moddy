@@ -403,7 +403,8 @@ class AutoRestoreRolesConfigView(BaseView):
         working_config = await self._fresh_working_config(interaction)
 
         success, error_msg = await bot.module_manager.save_module_config(
-            interaction.guild_id, 'auto_restore_roles', working_config
+            interaction.guild_id, 'auto_restore_roles', working_config,
+            actor_id=interaction.user.id,
         )
 
         if success:

@@ -108,7 +108,14 @@ async def get_subscription(bot, user_id: int) -> Optional[Dict[str, Any]]:
 
 
 async def is_subscribed(bot, user_id: int) -> bool:
-    """Return True if the user has an active subscription."""
+    """Return True if the user has an active subscription.
+
+    A global limitation or suspension (Moddy-team sanction) removes premium
+    access, whatever the billing state says — see ``utils/global_sanctions.py``.
+    """
+    from utils import global_sanctions
+    if await global_sanctions.is_limited(bot, user_id=user_id):
+        return False
     sub = await get_subscription(bot, user_id)
     return bool(sub and sub.get('is_active'))
 
@@ -119,7 +126,15 @@ async def is_guild_premium(bot, guild_id: int) -> bool:
     Redis-cached (``sub:guild:{guild_id}``, 5 min) on top of
     ``db.is_guild_premium``, because premium is checked on hot paths (every
     module config panel render, every dashboard task).
+
+    A globally limited or suspended server never counts as premium — the
+    sanction outranks the subscription. That check is not part of the cached
+    value, so lifting the sanction restores premium immediately.
     """
+    from utils import global_sanctions
+    if await global_sanctions.is_limited(bot, guild_id=guild_id):
+        return False
+
     if bot.redis:
         try:
             raw = await bot.redis.get(_guild_cache_key(guild_id))

@@ -141,16 +141,27 @@ Stocke les données des utilisateurs Discord.
 - `TEAM` (bool) - Membre du staff
 - `PREMIUM` (bool) - Utilisateur premium
 - `BETA` (bool) - Testeur beta
-- `BLACKLISTED` (bool) - Utilisateur blacklisté
 - `LANG` (string) - Langue préférée (ex: "FR", "EN")
+
+> **Sanctions globales** — il n'y a **plus** d'attribut `BLACKLISTED`. Les
+> sanctions de l'équipe Moddy (avertissement / limitation / suspension) vivent
+> dans le système de cases (`cases` de type `global`). Voir
+> [GLOBAL_SANCTIONS.md](GLOBAL_SANCTIONS.md).
 
 **Exemple de requête:**
 ```sql
 -- Récupérer un utilisateur
 SELECT * FROM users WHERE user_id = 123456789;
 
--- Vérifier si un utilisateur est blacklisté
-SELECT attributes->'BLACKLISTED' FROM users WHERE user_id = 123456789;
+-- Vérifier si un utilisateur est suspendu globalement (voir GLOBAL_SANCTIONS.md)
+SELECT EXISTS(
+    SELECT 1 FROM cases c
+    JOIN case_sanctions s ON s.case_id = c.id
+    WHERE c.type = 'global' AND c.subject_type = 'discord_user'
+      AND c.subject_id = '123456789'
+      AND s.action = 'ban' AND s.status = 'active'
+      AND (s.expires_at IS NULL OR s.expires_at > now())
+);
 
 -- Récupérer tous les utilisateurs premium
 SELECT user_id FROM users WHERE attributes ? 'PREMIUM';
@@ -176,9 +187,12 @@ Stocke les données des serveurs Discord.
 - `idx_guilds_attributes` (GIN) sur `attributes`
 
 **Attributs courants:**
-- `BLACKLISTED` (bool) - Serveur blacklisté
 - `PREMIUM` (bool) - Serveur premium
 - `BETA` (bool) - Serveur testeur beta
+
+> Comme pour les utilisateurs, un serveur sanctionné par l'équipe Moddy n'a plus
+> d'attribut `BLACKLISTED` : la sanction est une case `global` de sujet
+> `discord_guild`. Voir [GLOBAL_SANCTIONS.md](GLOBAL_SANCTIONS.md).
 
 **Structure de `data`:**
 Le champ `data` contient les configurations des modules activés. Exemple:
@@ -209,8 +223,12 @@ SELECT * FROM guilds WHERE guild_id = 123456789;
 SELECT data->'modules'->'starboard'->>'enabled'
 FROM guilds WHERE guild_id = 123456789;
 
--- Récupérer tous les serveurs blacklistés
-SELECT guild_id FROM guilds WHERE attributes ? 'BLACKLISTED';
+-- Récupérer tous les serveurs suspendus globalement
+SELECT DISTINCT c.subject_id FROM cases c
+JOIN case_sanctions s ON s.case_id = c.id
+WHERE c.type = 'global' AND c.subject_type = 'discord_guild'
+  AND s.action = 'ban' AND s.status = 'active'
+  AND (s.expires_at IS NULL OR s.expires_at > now());
 ```
 
 ---
@@ -377,9 +395,9 @@ SELECT * FROM attribute_changes
 WHERE entity_type = 'user' AND entity_id = 123456789
 ORDER BY changed_at DESC;
 
--- Voir qui a modifié l'attribut BLACKLISTED
+-- Voir qui a modifié l'attribut PREMIUM
 SELECT * FROM attribute_changes
-WHERE attribute_name = 'BLACKLISTED'
+WHERE attribute_name = 'PREMIUM'
 ORDER BY changed_at DESC;
 ```
 

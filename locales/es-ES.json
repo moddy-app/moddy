@@ -2283,7 +2283,8 @@
         "list_empty": "No se encontraron casos de moderación para {name}.",
         "list_title": "Casos — {name}",
         "list_count": "Mostrando {shown} de {total} caso(s)",
-        "list_more": "Usa /mod case view <referencia> para ver todos los detalles."
+        "list_more": "Usa /mod case view <referencia> para ver todos los detalles.",
+        "no_source": "Ningún tipo de sanción se aplica a este tipo de sujeto."
       }
     },
     "manage": {
@@ -2417,6 +2418,39 @@
       "download_failed": "No se ha podido descargar el archivo de audio.",
       "empty": "No se ha detectado ninguna voz en este audio.",
       "failed": "La transcripción ha fallado, inténtalo en unos instantes."
+    }
+  },
+  "global_sanctions": {
+    "suspended": {
+      "user": {
+        "title": "Cuenta suspendida",
+        "description": "Ya no tienes acceso a ningún servicio de Moddy: nuestro equipo ha suspendido tu cuenta."
+      },
+      "guild": {
+        "title": "Servidor suspendido",
+        "description": "Este servidor ya no tiene acceso a ningún servicio de Moddy: nuestro equipo lo ha suspendido."
+      },
+      "appeal_hint": "Si crees que se trata de un error, puedes solicitar una revisión.",
+      "appeal_button": "Solicitar una revisión"
+    },
+    "limited": {
+      "user": {
+        "title": "Cuenta limitada",
+        "description": "Tu cuenta tiene una limitación: el premium está desactivado y ya no puedes configurar nuevos módulos."
+      },
+      "guild": {
+        "title": "Servidor limitado",
+        "description": "Este servidor tiene una limitación: el premium está desactivado, el automod con IA está apagado y no se puede configurar ningún módulo nuevo."
+      },
+      "banner_title": "Limitación activa",
+      "no_new_modules": "Los módulos ya configurados siguen siendo editables, pero no se puede configurar ningún módulo nuevo mientras la limitación esté activa.",
+      "appeal_hint": "Si crees que se trata de un error, puedes solicitar una revisión.",
+      "appeal_button": "Solicitar una revisión"
+    },
+    "level": {
+      "warn": "Aviso global",
+      "limited": "Limitado",
+      "suspended": "Suspendido"
     }
   }
 }

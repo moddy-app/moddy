@@ -10,12 +10,17 @@ Adding a new kind of sanction later is a one-liner: register a new
 :class:`CaseSource` (see :func:`register_source`) — no schema change, no new
 table, nothing else to touch.
 
-Two sources ship today:
+Three sources ship today:
 
-- ``global`` — Moddy-wide sanctions (Moddy-team blacklists, global sanctions).
-- ``guild``  — per-server sanctions (bans / mutes), typically auto-recorded
+- ``global``       — Moddy-team sanctions against a **user**.
+- ``global_guild`` — Moddy-team sanctions against a **server**.
+- ``guild``        — per-server sanctions (bans / mutes), typically auto-recorded
   from Discord audit-log events even when the action did not go through Moddy
   itself.
+
+The two ``global*`` sources carry the three Moddy-team sanction levels — ``warn``
+(informational), ``restrict`` (limited service) and ``ban`` (suspended, no
+access at all). They are resolved through :mod:`utils.global_sanctions`.
 
 The service de-duplicates by default: a new sanction for a subject that already
 has an *open* case of the same (type, scope) is appended to that case instead
@@ -65,6 +70,15 @@ SOURCES: Dict[str, CaseSource] = {
         manual=True,
         requires_scope_id=False,
     ),
+    "global_guild": CaseSource(
+        key="global_guild",
+        case_type=CaseType.GLOBAL,
+        scope_type=ScopeType.PLATFORM,
+        subject_type=SubjectType.DISCORD_GUILD,
+        actions=[SanctionAction.WARN, SanctionAction.RESTRICT, SanctionAction.BAN],
+        manual=True,
+        requires_scope_id=False,
+    ),
     "guild": CaseSource(
         key="guild",
         case_type=CaseType.GUILD,
@@ -107,6 +121,16 @@ class CaseService:
     @property
     def db(self):
         return self.bot.db
+
+    def _invalidate_global(self, spec: CaseSource, subject_id) -> None:
+        """Drop the cached global level of a subject after a global write."""
+        if spec.case_type != CaseType.GLOBAL:
+            return
+        try:
+            from utils import global_sanctions
+            global_sanctions.invalidate(self.bot, spec.subject_type.value, subject_id)
+        except Exception as exc:  # never break a sanction on a cache miss
+            logger.debug("Global sanction cache invalidation failed: %s", exc)
 
     async def record_sanction(
         self,
@@ -154,6 +178,7 @@ class CaseService:
                     existing["id"], action_value, issuer_type_value, issuer_id,
                     expires_at=expires_at, note=note,
                 )
+                self._invalidate_global(spec, subject_id)
                 return {
                     "id": existing["id"], "reference": existing["reference"],
                     "created": False, "sanction_id": sanction_id,
@@ -174,6 +199,7 @@ class CaseService:
             group_id=group_id,
         )
         result["created"] = True
+        self._invalidate_global(spec, subject_id)
         return result
 
     async def revoke_sanction(
@@ -198,8 +224,10 @@ class CaseService:
             return 0
         action_value = action.value if isinstance(action, SanctionAction) else action
         by_type_value = by_type.value if isinstance(by_type, IssuerType) else by_type
-        return await self.db.revoke_active_sanctions_for(
+        revoked = await self.db.revoke_active_sanctions_for(
             spec.subject_type.value, subject_id, spec.case_type.value,
             spec.scope_type.value, str(scope_id) if scope_id is not None else None,
             action_value, by_type_value, by_id,
         )
+        self._invalidate_global(spec, subject_id)
+        return revoked

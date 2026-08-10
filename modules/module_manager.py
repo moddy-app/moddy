@@ -296,7 +296,45 @@ class ModuleManager:
                     pass
             del self.active_modules[guild_id]
 
-    async def save_module_config(self, guild_id: int, module_id: str, config_data: Dict[str, Any]) -> tuple[bool, Optional[str]]:
+    async def _blocked_as_new_module(self, guild_id: int, module_id: str,
+                                     actor_id: Optional[int] = None) -> Optional[str]:
+        """Return an error message when a *new* module may not be configured.
+
+        A global ``limited`` sanction (Moddy-team) leaves the modules a server
+        already configured running, but forbids setting up any module that was
+        never configured before. A ``suspended`` subject is blocked outright by
+        the interaction gate, so it never reaches this point — but the check
+        covers it anyway for the dashboard-driven paths.
+        """
+        from utils import global_sanctions
+        from utils.i18n import t
+
+        try:
+            level = await global_sanctions.get_context_level(
+                self.bot, user_id=actor_id, guild_id=guild_id)
+        except Exception as e:
+            logger.error(f"Global sanction check failed for guild {guild_id}: {e}")
+            return None  # fail open — a lookup error must not break /config
+
+        if not global_sanctions.at_least(level, global_sanctions.GlobalLevel.LIMITED):
+            return None
+
+        # Already configured? Then it is not a new module — let it through.
+        # A deleted config is stored as ``{}``, which counts as "never set up".
+        existing = await self.get_module_config(guild_id, module_id)
+        if existing:
+            return None
+
+        try:
+            guild = self.bot.get_guild(guild_id)
+            locale = str(guild.preferred_locale) if guild and guild.preferred_locale else 'en-US'
+        except Exception:
+            locale = 'en-US'
+        return t('global_sanctions.limited.no_new_modules', locale=locale)
+
+    async def save_module_config(self, guild_id: int, module_id: str,
+                                 config_data: Dict[str, Any],
+                                 actor_id: Optional[int] = None) -> tuple[bool, Optional[str]]:
         """
         Sauvegarde la configuration d'un module dans la DB
 
@@ -304,6 +342,9 @@ class ModuleManager:
             guild_id: ID du serveur
             module_id: ID du module
             config_data: Configuration à sauvegarder
+            actor_id: ID de l'utilisateur à l'origine du changement (optionnel) —
+                une limitation globale le concernant bloque les nouveaux modules
+                comme si le serveur était limité
 
         Returns:
             (success, error_message)
@@ -314,6 +355,12 @@ class ModuleManager:
         # Vérifie que le module existe
         if module_id not in self.registered_modules:
             return False, f"Module {module_id} not found"
+
+        # Sanction globale "limité" : le serveur (ou l'auteur) garde ses modules
+        # déjà configurés mais ne peut plus en configurer de NOUVEAUX.
+        blocked = await self._blocked_as_new_module(guild_id, module_id, actor_id)
+        if blocked:
+            return False, blocked
 
         try:
             # Crée une instance temporaire du module

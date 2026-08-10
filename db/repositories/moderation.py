@@ -694,6 +694,98 @@ class ModerationRepository:
             query += ")"
             return await conn.fetchval(query, *params)
 
+    async def list_active_global_actions(
+        self,
+        subject_type: str,
+        subject_id: Union[str, int],
+    ) -> List[Dict[str, Any]]:
+        """Sanctions currently active on a subject's *global* cases.
+
+        Feeds ``utils.global_sanctions``: the Moddy-team sanction level of a
+        user or a server is derived from these actions (``warn`` / ``restrict``
+        / ``ban``), never from an attribute.
+
+        Each item is ``{"action": str, "expires_at": datetime | None}`` —
+        global sanctions may be temporary, and the caller uses the soonest
+        expiry to bound how long it caches the resolved level.
+        """
+        async with self.pool.acquire() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT s.action::text AS action, s.expires_at
+                FROM case_sanctions s
+                JOIN cases c ON c.id = s.case_id
+                WHERE c.subject_type = $1::subject_type
+                  AND c.subject_id = $2
+                  AND c.type = 'global'::case_type
+                  AND s.status = 'active'::sanction_status
+                  AND (s.expires_at IS NULL OR s.expires_at > now())
+                """,
+                subject_type, str(subject_id),
+            )
+        return [{"action": r["action"], "expires_at": r["expires_at"]} for r in rows]
+
+    async def migrate_legacy_blacklist_attributes(self) -> int:
+        """One-shot migration of the legacy ``BLACKLISTED`` attribute to cases.
+
+        Global sanctions used to be stored as a ``BLACKLISTED`` attribute on
+        ``users`` / ``guilds``. They now live entirely in the cases system, so
+        every remaining attribute is converted into a global ``ban`` case
+        (suspension) and then dropped. Idempotent: a subject that already has
+        an active global ban only loses the attribute.
+
+        Returns the number of subjects migrated.
+        """
+        migrated = 0
+        for table, column, subject_type in (
+            ("users", "user_id", "discord_user"),
+            ("guilds", "guild_id", "discord_guild"),
+        ):
+            try:
+                async with self.pool.acquire() as conn:
+                    rows = await conn.fetch(
+                        f"SELECT {column} AS subject_id FROM {table} "
+                        "WHERE attributes ? 'BLACKLISTED'"
+                    )
+            except Exception as exc:
+                logger.error("Legacy blacklist migration: read failed on %s: %s", table, exc)
+                continue
+
+            for row in rows:
+                subject_id = row["subject_id"]
+                try:
+                    already = await self.has_active_sanction(
+                        subject_type, subject_id, case_type='global', action='ban',
+                    )
+                    if not already:
+                        await self.create_case(
+                            case_type='global',
+                            subject_type=subject_type,
+                            subject_id=subject_id,
+                            issuer_type='system',
+                            issuer_id=None,
+                            scope_type='platform',
+                            scope_id=None,
+                            reason="Migrated from the legacy BLACKLISTED attribute.",
+                            action='ban',
+                        )
+                        migrated += 1
+                    async with self.pool.acquire() as conn:
+                        await conn.execute(
+                            f"UPDATE {table} SET attributes = attributes - 'BLACKLISTED' "
+                            f"WHERE {column} = $1",
+                            subject_id,
+                        )
+                except Exception as exc:
+                    logger.error(
+                        "Legacy blacklist migration failed for %s %s: %s",
+                        subject_type, subject_id, exc,
+                    )
+
+        if migrated:
+            logger.info("Legacy blacklist migration: %s subject(s) converted to global cases", migrated)
+        return migrated
+
     async def list_automod_evidence_message_ids(
         self,
         subject_id: Union[str, int],

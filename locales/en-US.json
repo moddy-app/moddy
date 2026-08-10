@@ -2283,7 +2283,8 @@
         "list_empty": "No moderation cases found for {name}.",
         "list_title": "Cases — {name}",
         "list_count": "Showing {shown} of {total} case(s)",
-        "list_more": "Use /mod case view <reference> for full details."
+        "list_more": "Use /mod case view <reference> for full details.",
+        "no_source": "No sanction kind applies to this kind of subject."
       }
     },
     "manage": {
@@ -2417,6 +2418,39 @@
       "download_failed": "The audio file could not be downloaded.",
       "empty": "No speech was detected in this audio.",
       "failed": "The transcription failed, try again in a moment."
+    }
+  },
+  "global_sanctions": {
+    "suspended": {
+      "user": {
+        "title": "Account suspended",
+        "description": "You no longer have access to any Moddy service: your account has been suspended by our team."
+      },
+      "guild": {
+        "title": "Server suspended",
+        "description": "This server no longer has access to any Moddy service: it has been suspended by our team."
+      },
+      "appeal_hint": "If you believe this is a mistake, you can request a review.",
+      "appeal_button": "Request a review"
+    },
+    "limited": {
+      "user": {
+        "title": "Account limited",
+        "description": "Your account is under a limitation: premium is disabled and you can no longer configure new modules."
+      },
+      "guild": {
+        "title": "Server limited",
+        "description": "This server is under a limitation: premium is disabled, the AI automod is off, and no new module can be configured."
+      },
+      "banner_title": "Limitation in effect",
+      "no_new_modules": "Modules that are already configured stay editable, but no new module can be set up while the limitation is active.",
+      "appeal_hint": "If you believe this is a mistake, you can request a review.",
+      "appeal_button": "Request a review"
+    },
+    "level": {
+      "warn": "Global warning",
+      "limited": "Limited",
+      "suspended": "Suspended"
     }
   }
 }

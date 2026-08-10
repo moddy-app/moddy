@@ -1,38 +1,41 @@
 """
-Système de vérification de blacklist - INTERCEPTION TOTALE
-Bloque TOUTES les interactions des utilisateurs blacklistés AVANT qu'elles n'arrivent à destination
+Global suspension check for prefix commands — INTERCEPTION TOTALE.
 
-Note: L'interception des interactions (slash commands, boutons, modals, selects) se fait
-maintenant directement dans bot.py via on_interaction() pour une efficacité maximale.
+A **suspension** is the heaviest global sanction (a ``ban`` sanction on a
+``global`` case, see ``utils/global_sanctions.py``): the subject — a user or a
+whole server — has access to no Moddy service at all. It replaces the legacy
+``BLACKLISTED`` attribute, which no longer exists.
 
-Ce cog gère:
-- Interception des commandes par préfixe (via process_commands override)
-- Cache de blacklist pour performance
-- Commandes utilitaires pour les devs
+Interactions (slash commands, buttons, modals, selects) are intercepted
+directly in bot.py (``_global_sanction_check`` / ``_check_suspension_and_respond``)
+for maximum efficiency. This cog only covers the prefix-command path, through a
+``process_commands`` override.
 """
 
 import discord
 from discord.ext import commands
-from utils.components_v2 import create_blacklist_message
+
+from utils import global_sanctions
+from utils.components_v2 import create_suspension_message
 from utils.emojis import DONE
 
 
 class BlacklistCheck(commands.Cog):
     """
-    Vérifie le statut blacklist pour les commandes par préfixe.
+    Blocks prefix commands coming from a globally suspended user or server.
 
-    Note: Les interactions (slash commands, boutons, etc.) sont interceptées
-    directement dans bot.py via on_interaction() pour une efficacité maximale.
+    The resolved level is cached by ``utils.global_sanctions`` (short TTL,
+    bounded by the sanction's own expiry), so this adds no query on the hot
+    path.
     """
 
     def __init__(self, bot):
         self.bot = bot
-        self.blacklist_cache = {}  # Cache pour éviter trop de requêtes DB
 
-        # Override la méthode process_commands pour bloquer les commandes par préfixe
+        # Override process_commands to block prefix commands upfront.
         original_process_commands = bot.process_commands
 
-        async def blacklist_aware_process_commands(message):
+        async def suspension_aware_process_commands(message):
             """Intercepte les commandes par préfixe AVANT qu'elles ne soient traitées"""
             if message.author.bot:
                 return await original_process_commands(message)
@@ -45,91 +48,86 @@ class BlacklistCheck(commands.Cog):
             # Vérifie si le message commence par un des préfixes
             is_command = any(message.content.startswith(prefix) for prefix in prefixes)
 
-            # Si ce n'est pas une commande, laisse passer sans vérifier la blacklist
+            # Si ce n'est pas une commande, laisse passer sans vérifier la suspension
             if not is_command:
                 return await original_process_commands(message)
 
-            # C'est une commande, vérifie si l'utilisateur est blacklisté
-            if await self.is_blacklisted(message.author.id):
-                # Envoie le message de blacklist avec Components V2
-                view = create_blacklist_message()
+            # C'est une commande : l'auteur ou son serveur est-il suspendu ?
+            user_suspended = await self.is_suspended(message.author.id)
+            guild_suspended = (
+                not user_suspended
+                and message.guild is not None
+                and await global_sanctions.is_suspended(self.bot, guild_id=message.guild.id)
+            )
+
+            if user_suspended or guild_suspended:
+                locale = 'en-US'
+                if message.guild and message.guild.preferred_locale:
+                    locale = str(message.guild.preferred_locale)
+                view = create_suspension_message(locale, guild=guild_suspended)
 
                 try:
                     await message.reply(
                         view=view,
                         mention_author=False
                     )
-                except:
+                except Exception:
                     try:
                         await message.channel.send(
                             view=view
                         )
-                    except:
+                    except Exception:
                         pass
 
                 # Log l'interaction bloquée
                 if log_cog := self.bot.get_cog("LoggingSystem"):
                     try:
                         await log_cog.log_critical(
-                            title="🚫 Commande Préfixe Blacklistée Bloquée",
+                            title="🚫 Commande Préfixe Bloquée (Suspension Globale)",
                             description=(
                                 f"**Utilisateur:** {message.author.mention} (`{message.author.id}`)\n"
                                 f"**Commande:** {message.content[:100]}\n"
                                 f"**Serveur:** {message.guild.name if message.guild else 'DM'}\n"
+                                f"**Suspendu:** {'serveur' if guild_suspended else 'utilisateur'}\n"
                                 f"**Action:** ✋ Commande par préfixe bloquée AVANT traitement"
                             ),
                             ping_dev=False
                         )
-                    except:
+                    except Exception:
                         pass
 
                 # NE PAS traiter la commande
                 return
 
-            # Si pas blacklisté, traite normalement
+            # Si pas suspendu, traite normalement
             return await original_process_commands(message)
 
-        bot.process_commands = blacklist_aware_process_commands
+        bot.process_commands = suspension_aware_process_commands
 
-    async def is_blacklisted(self, user_id: int) -> bool:
-        """Vérifie si un utilisateur est blacklisté (avec cache)"""
-        # Vérifie le cache d'abord
-        if user_id in self.blacklist_cache:
-            return self.blacklist_cache[user_id]
-
-        # Sinon vérifie la DB — un ban actif sur une case de type "global"
-        # équivaut à une blacklist complète du bot.
-        if self.bot.db:
-            try:
-                is_bl = await self.bot.db.has_active_sanction(
-                    'discord_user', user_id, case_type='global', action='ban',
-                )
-                self.blacklist_cache[user_id] = is_bl
-                return is_bl
-            except Exception:
-                return False
-        return False
+    async def is_suspended(self, user_id: int) -> bool:
+        """Whether this user holds an active global suspension."""
+        return await global_sanctions.is_suspended(self.bot, user_id=user_id)
 
     @commands.command(name="clearcache", aliases=["cc"])
-    async def clear_blacklist_cache(self, ctx):
-        """Vide le cache de blacklist (commande dev)"""
+    async def clear_sanction_cache(self, ctx):
+        """Vide le cache des sanctions globales (commande dev)"""
         if not self.bot.is_developer(ctx.author.id):
             return
 
-        self.blacklist_cache.clear()
-        await ctx.send(f"{DONE} Cache de blacklist vidé")
+        global_sanctions.invalidate(self.bot)
+        await ctx.send(f"{DONE} Cache des sanctions globales vidé")
 
     @commands.command(name="testbl")
-    async def test_blacklist(self, ctx):
-        """Teste le message de blacklist (commande dev)"""
+    async def test_suspension(self, ctx):
+        """Teste le message de suspension (commande dev)"""
         if not self.bot.is_developer(ctx.author.id):
             return
 
-        # Utilise le système Components V2 pour le test
-        view = create_blacklist_message()
+        locale = str(ctx.guild.preferred_locale) if ctx.guild and ctx.guild.preferred_locale else 'en-US'
+        view = create_suspension_message(locale)
 
         await ctx.send(
-            "**[TEST MODE]** Voici ce que verrait un utilisateur blacklisté:",
+            "**[TEST MODE]** Voici ce que verrait un utilisateur suspendu:",
             view=view
         )
 

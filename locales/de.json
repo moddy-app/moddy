@@ -2283,7 +2283,8 @@
         "list_empty": "Keine Moderationsfälle für {name} gefunden.",
         "list_title": "Fälle — {name}",
         "list_count": "{shown} von {total} Fall/Fällen angezeigt",
-        "list_more": "Verwende /mod case view <reference> für vollständige Details."
+        "list_more": "Verwende /mod case view <reference> für vollständige Details.",
+        "no_source": "Für diese Art von Subjekt gibt es keine passende Sanktionsart."
       }
     },
     "manage": {
@@ -2417,6 +2418,39 @@
       "download_failed": "Die Audiodatei konnte nicht geladen werden.",
       "empty": "In diesem Audio wurde keine Sprache erkannt.",
       "failed": "Die Transkription ist fehlgeschlagen, versuche es gleich noch einmal."
+    }
+  },
+  "global_sanctions": {
+    "suspended": {
+      "user": {
+        "title": "Konto gesperrt",
+        "description": "Du hast keinen Zugriff mehr auf Moddy-Dienste: Dein Konto wurde von unserem Team gesperrt."
+      },
+      "guild": {
+        "title": "Server gesperrt",
+        "description": "Dieser Server hat keinen Zugriff mehr auf Moddy-Dienste: Er wurde von unserem Team gesperrt."
+      },
+      "appeal_hint": "Wenn du glaubst, dass es sich um einen Fehler handelt, kannst du eine Überprüfung beantragen.",
+      "appeal_button": "Überprüfung beantragen"
+    },
+    "limited": {
+      "user": {
+        "title": "Konto eingeschränkt",
+        "description": "Für dein Konto gilt eine Einschränkung: Premium ist deaktiviert und du kannst keine neuen Module mehr einrichten."
+      },
+      "guild": {
+        "title": "Server eingeschränkt",
+        "description": "Für diesen Server gilt eine Einschränkung: Premium ist deaktiviert, der KI-Automod ist aus und es kann kein neues Modul eingerichtet werden."
+      },
+      "banner_title": "Einschränkung aktiv",
+      "no_new_modules": "Bereits eingerichtete Module bleiben bearbeitbar, aber solange die Einschränkung gilt, kann kein neues Modul eingerichtet werden.",
+      "appeal_hint": "Wenn du glaubst, dass es sich um einen Fehler handelt, kannst du eine Überprüfung beantragen.",
+      "appeal_button": "Überprüfung beantragen"
+    },
+    "level": {
+      "warn": "Globale Verwarnung",
+      "limited": "Eingeschränkt",
+      "suspended": "Gesperrt"
     }
   }
 }
