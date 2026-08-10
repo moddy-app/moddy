@@ -2283,7 +2283,8 @@
         "list_empty": "No se encontraron casos de moderación para {name}.",
         "list_title": "Casos — {name}",
         "list_count": "Mostrando {shown} de {total} caso(s)",
-        "list_more": "Usa /mod case view <referencia> para ver todos los detalles."
+        "list_more": "Usa /mod case view <referencia> para ver todos los detalles.",
+        "no_source": "Ningún tipo de sanción se aplica a este tipo de sujeto."
       }
     },
     "manage": {
@@ -2417,6 +2418,124 @@
       "download_failed": "No se ha podido descargar el archivo de audio.",
       "empty": "No se ha detectado ninguna voz en este audio.",
       "failed": "La transcripción ha fallado, inténtalo en unos instantes."
+    }
+  },
+  "global_sanctions": {
+    "suspended": {
+      "user": {
+        "title": "Cuenta suspendida",
+        "description": "Ya no tienes acceso a ningún servicio de Moddy: nuestro equipo ha suspendido tu cuenta."
+      },
+      "guild": {
+        "title": "Servidor suspendido",
+        "description": "Este servidor ya no tiene acceso a ningún servicio de Moddy: nuestro equipo lo ha suspendido."
+      },
+      "appeal_hint": "Si crees que se trata de un error, puedes solicitar una revisión.",
+      "appeal_button": "Solicitar una revisión"
+    },
+    "limited": {
+      "user": {
+        "title": "Cuenta limitada",
+        "description": "Tu cuenta tiene una limitación: el premium está desactivado y ya no puedes configurar nuevos módulos."
+      },
+      "guild": {
+        "title": "Servidor limitado",
+        "description": "Este servidor tiene una limitación: el premium está desactivado, el automod con IA está apagado y no se puede configurar ningún módulo nuevo."
+      },
+      "banner_title": "Limitación activa",
+      "no_new_modules": "Los módulos ya configurados siguen siendo editables, pero no se puede configurar ningún módulo nuevo mientras la limitación esté activa.",
+      "appeal_hint": "Si crees que se trata de un error, puedes solicitar una revisión.",
+      "appeal_button": "Solicitar una revisión"
+    },
+    "level": {
+      "warn": "Aviso global",
+      "limited": "Limitado",
+      "suspended": "Suspendido"
+    },
+    "notice": {
+      "title": "Notificación de sanción",
+      "intro": "Nuestro equipo ha tomado medidas sobre tu cuenta tras un incumplimiento de las normas de Moddy. Este mensaje cubre **todos** los casos abiertos por este incidente: no recibirás un mensaje aparte por cada uno.",
+      "level": "Nivel",
+      "reason": "Motivo",
+      "cases": "Casos abiertos",
+      "effects": "Qué cambia esto",
+      "effects_warn": "No se restringe nada. Este aviso queda en tu historial y cuenta si se repite.",
+      "effects_limited": "El premium queda desactivado, el automod con IA se detiene y no se puede configurar ningún módulo nuevo. Los módulos ya configurados siguen funcionando.",
+      "effects_suspended": "No tienes acceso a ningún servicio de Moddy.",
+      "deadline_title": "Acción requerida",
+      "deadline_premium": "De acuerdo con nuestros [Términos del servicio]({terms}), tu suscripción será **cancelada sin reembolso** el {date} ({rel}).",
+      "deadline_suspended": "Moddy **saldrá** de los servidores afectados el {date} ({rel}), y la configuración guardada y otros datos podrán eliminarse.",
+      "deadline_hint": "Presentar una apelación antes de esa fecha detiene esta cuenta atrás.",
+      "footer": "Detalle completo de cada caso: {url}",
+      "button_details": "Ver detalles",
+      "button_appeal": "Apelar",
+      "button_terms": "Términos del servicio"
+    },
+    "halt": {
+      "title": "Apelación recibida",
+      "description": "Hemos recibido tu apelación y la cuenta atrás está detenida mientras nuestro equipo la revisa. La sanción **{level}** sigue vigente hasta que haya una decisión."
+    },
+    "join_refused": {
+      "user": {
+        "title": "Moddy no pudo quedarse",
+        "description_suspended": "Tu cuenta está suspendida, así que Moddy no puede añadirse a un servidor. Ha salido del servidor de inmediato.",
+        "description_limited": "Tu cuenta está limitada, así que Moddy no puede añadirse a un servidor nuevo. Ha salido del servidor de inmediato. Los servidores donde Moddy ya estaba configurado siguen funcionando."
+      },
+      "guild": {
+        "title": "Moddy no pudo quedarse",
+        "description": "Este servidor está suspendido, así que Moddy no puede volver a añadirse. Ha salido del servidor de inmediato."
+      },
+      "server": "Servidor"
+    },
+    "staff": {
+      "apply_title": "Aplicar una sanción global",
+      "apply_button": "Abrir el formulario",
+      "apply_prompt": "Vas a sancionar a:\n{targets}",
+      "targets": "Objetivos",
+      "level_label": "Nivel",
+      "level_hint": "El aviso es informativo; limitado y suspendido restringen el servicio.",
+      "level_desc_warn": "Solo en el historial, no restringe nada.",
+      "level_desc_limited": "Sin premium, sin módulos nuevos, automod apagado.",
+      "level_desc_suspended": "Sin acceso a ningún servicio de Moddy.",
+      "reason_label": "Motivo",
+      "reason_hint": "Se envía tal cual al sujeto. Sé objetivo.",
+      "duration_label": "Duración (horas)",
+      "duration_hint": "Déjalo vacío para una sanción permanente.",
+      "grace_label": "Periodo de gracia (horas)",
+      "grace_hint": "Antes de aplicar las consecuencias diferidas. 48 por defecto, 0 para desactivar.",
+      "invalid_number_title": "Valor no válido",
+      "invalid_number": "La duración y el periodo de gracia deben ser números positivos.",
+      "group_title": "Grupo de sanción global",
+      "group_id": "Grupo",
+      "group_notfound_title": "Grupo no encontrado",
+      "group_notfound": "Ningún grupo de sanción global coincide con ese identificador o referencia de caso.",
+      "countdown": "Cuenta atrás",
+      "countdown_pending": "en curso",
+      "countdown_halted": "detenida (apelación)",
+      "countdown_executed": "ejecutada",
+      "countdown_cancelled": "cancelada",
+      "no_countdown": "Este grupo no tiene cuenta atrás.",
+      "premium_note": "El sujeto es suscriptor de pago: su suscripción está en juego.",
+      "notified_yes": "Se ha avisado al sujeto por MD.",
+      "notified_no": "NO se ha podido avisar al sujeto (MD cerrados o usuario desconocido).",
+      "halt_title": "Detener la cuenta atrás",
+      "halt_button": "Detener la cuenta atrás",
+      "halt_prompt": "Detener la cuenta atrás de este grupo porque se ha presentado una apelación.",
+      "halt_reason_label": "Referencia de la apelación o nota",
+      "halt_reason_hint": "Opcional: se guarda en la cronología de los casos.",
+      "halt_done_title": "Cuenta atrás detenida",
+      "halt_done": "Las consecuencias diferidas quedan en espera y se ha avisado al sujeto.",
+      "halt_failed_title": "Nada que detener",
+      "halt_failed": "Este grupo no tiene una cuenta atrás en curso (ya detenida, ejecutada o nunca programada).",
+      "lift_done_title": "Sanción global levantada",
+      "lift_done": "`{count}` sanción(es) revocada(s) en `{cases}` caso(s), y cuenta atrás cancelada.",
+      "lift_nothing_title": "Nada que levantar",
+      "lift_nothing": "No queda ninguna sanción activa en este grupo.",
+      "pending_title": "Cola de ejecución",
+      "pending_hint": "Grupos de sanción global con cuenta atrás `{status}`, la más próxima primero.",
+      "pending_empty": "Ninguna cuenta atrás en este estado.",
+      "denied_title": "Permiso denegado",
+      "denied": "Necesitas el permiso de sanción global para hacer esto."
     }
   }
 }

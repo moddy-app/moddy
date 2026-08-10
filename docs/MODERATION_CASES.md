@@ -64,6 +64,7 @@ dependency.
 | Layer | File |
 |---|---|
 | Domain model + enums + reference gen | `utils/moderation_cases.py` |
+| **Global (Moddy-team) sanction resolver** | `utils/global_sanctions.py` |
 | Repository (create / sanctions / events / status recompute / expiry) | `db/repositories/moderation.py` |
 | Schema | `db/base.py` |
 | **Sanction service (scalable entry point)** | `services/case_service.py` |
@@ -97,16 +98,23 @@ class CaseSource:
     requires_scope_id: bool  # e.g. the guild id for "guild"
 ```
 
-Two sources ship today (`SOURCES` registry):
+Three sources ship today (`SOURCES` registry):
 
-| key | case_type | scope | created by | actions |
-|---|---|---|---|---|
-| `global` | `global` | `platform` | Moddy staff (manual) | warn, restrict, ban |
-| `guild` | `guild` | the server | auto (Discord events) | warn, mute, ban |
+| key | case_type | subject | scope | created by | actions |
+|---|---|---|---|---|---|
+| `global` | `global` | user | `platform` | Moddy staff (manual) | warn, restrict, ban |
+| `global_guild` | `global` | guild | `platform` | Moddy staff (manual) | warn, restrict, ban |
+| `guild` | `guild` | user | the server | auto (Discord events) | warn, mute, ban |
 
-`global` covers **Moddy-team blacklists and global sanctions** (a `ban` here is a
-full bot blacklist — `cogs/blacklist_check.py` reads it). `guild` covers
-**per-server sanctions**.
+The two `global*` sources carry the **Moddy-team global sanctions** — `warn`
+(informational), `restrict` (limited service) and `ban` (suspended, no access at
+all). They apply to users *and* servers, may be temporary, and are resolved
+through `utils/global_sanctions.py`. See
+[GLOBAL_SANCTIONS.md](GLOBAL_SANCTIONS.md). `guild` covers **per-server
+sanctions**.
+
+`restrict` is a platform-scope sanction only: guild cases never offer it, so
+`/cases` (guild-scoped) neither issues nor filters on it.
 
 ### Adding a new sanction kind
 
@@ -167,20 +175,22 @@ Bans/mutes issued this way mark `bot._moddy_initiated_sanctions` first, so
 `cogs/case_sync.py`'s audit-log listener does not double-record them as a
 second case.
 
-### 4.3 Blacklist cache invalidation — `moddy:blacklist:updates`
+### 4.3 Global sanction cache invalidation — `moddy:blacklist:updates`
 
-`cogs/blacklist_check.py::BlacklistCheck.blacklist_cache` is an in-memory,
-TTL-less cache of "is this user globally blacklisted" (an active `global` /
-`ban` case). Since the backend can create/revoke that case directly in DB, it
-publishes on `moddy:blacklist:updates` (backend → bot, fire-and-forget) so the
-bot drops the stale entry:
+`utils/global_sanctions.py` caches the resolved global level of a user or a
+guild in memory (short TTL, bounded by the sanction's own expiry). Since the
+backend can create/revoke a global case directly in DB, it publishes on
+`moddy:blacklist:updates` (backend → bot, fire-and-forget) so the bot drops the
+stale entry:
 
 ```json
 { "type": "refresh", "user_id": "123456789012345678" }
+{ "type": "refresh", "guild_id": "987654321098765432" }
 ```
 
-Handled in `bot.py::_handle_blacklist_event` (subscribed alongside `moddy:bot`
-and `moddy:subscription:updates` in `_listen_pubsub`).
+Sending neither id clears the whole cache. Handled in
+`bot.py::_handle_blacklist_event` (subscribed alongside `moddy:bot` and
+`moddy:subscription:updates` in `_listen_pubsub`).
 
 ---
 

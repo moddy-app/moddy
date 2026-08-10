@@ -2283,7 +2283,8 @@
         "list_empty": "Keine Moderationsfälle für {name} gefunden.",
         "list_title": "Fälle — {name}",
         "list_count": "{shown} von {total} Fall/Fällen angezeigt",
-        "list_more": "Verwende /mod case view <reference> für vollständige Details."
+        "list_more": "Verwende /mod case view <reference> für vollständige Details.",
+        "no_source": "Für diese Art von Subjekt gibt es keine passende Sanktionsart."
       }
     },
     "manage": {
@@ -2417,6 +2418,124 @@
       "download_failed": "Die Audiodatei konnte nicht geladen werden.",
       "empty": "In diesem Audio wurde keine Sprache erkannt.",
       "failed": "Die Transkription ist fehlgeschlagen, versuche es gleich noch einmal."
+    }
+  },
+  "global_sanctions": {
+    "suspended": {
+      "user": {
+        "title": "Konto gesperrt",
+        "description": "Du hast keinen Zugriff mehr auf Moddy-Dienste: Dein Konto wurde von unserem Team gesperrt."
+      },
+      "guild": {
+        "title": "Server gesperrt",
+        "description": "Dieser Server hat keinen Zugriff mehr auf Moddy-Dienste: Er wurde von unserem Team gesperrt."
+      },
+      "appeal_hint": "Wenn du glaubst, dass es sich um einen Fehler handelt, kannst du eine Überprüfung beantragen.",
+      "appeal_button": "Überprüfung beantragen"
+    },
+    "limited": {
+      "user": {
+        "title": "Konto eingeschränkt",
+        "description": "Für dein Konto gilt eine Einschränkung: Premium ist deaktiviert und du kannst keine neuen Module mehr einrichten."
+      },
+      "guild": {
+        "title": "Server eingeschränkt",
+        "description": "Für diesen Server gilt eine Einschränkung: Premium ist deaktiviert, der KI-Automod ist aus und es kann kein neues Modul eingerichtet werden."
+      },
+      "banner_title": "Einschränkung aktiv",
+      "no_new_modules": "Bereits eingerichtete Module bleiben bearbeitbar, aber solange die Einschränkung gilt, kann kein neues Modul eingerichtet werden.",
+      "appeal_hint": "Wenn du glaubst, dass es sich um einen Fehler handelt, kannst du eine Überprüfung beantragen.",
+      "appeal_button": "Überprüfung beantragen"
+    },
+    "level": {
+      "warn": "Globale Verwarnung",
+      "limited": "Eingeschränkt",
+      "suspended": "Gesperrt"
+    },
+    "notice": {
+      "title": "Sanktionsmitteilung",
+      "intro": "Unser Team hat wegen eines Verstoßes gegen die Moddy-Regeln Maßnahmen gegen dein Konto ergriffen. Diese Nachricht deckt **alle** zu diesem Vorfall eröffneten Fälle ab — du erhältst keine separate Nachricht pro Fall.",
+      "level": "Stufe",
+      "reason": "Grund",
+      "cases": "Eröffnete Fälle",
+      "effects": "Was sich dadurch ändert",
+      "effects_warn": "Nichts wird eingeschränkt. Diese Verwarnung bleibt in deiner Akte und zählt im Wiederholungsfall.",
+      "effects_limited": "Premium ist deaktiviert, der KI-Automod läuft nicht mehr und es kann kein neues Modul eingerichtet werden. Bereits eingerichtete Module laufen weiter.",
+      "effects_suspended": "Du hast keinen Zugriff auf Moddy-Dienste.",
+      "deadline_title": "Handlung erforderlich",
+      "deadline_premium": "Gemäß unseren [Nutzungsbedingungen]({terms}) wird dein Abonnement am {date} ({rel}) **ohne Rückerstattung gekündigt**.",
+      "deadline_suspended": "Moddy **verlässt** die betroffenen Server am {date} ({rel}); gespeicherte Konfigurationen und andere Daten können gelöscht werden.",
+      "deadline_hint": "Ein Einspruch vor diesem Datum stoppt den Countdown.",
+      "footer": "Vollständige Details zu jedem Fall: {url}",
+      "button_details": "Details ansehen",
+      "button_appeal": "Einspruch einlegen",
+      "button_terms": "Nutzungsbedingungen"
+    },
+    "halt": {
+      "title": "Einspruch eingegangen",
+      "description": "Dein Einspruch ist eingegangen und der Countdown ist gestoppt, solange unser Team ihn prüft. Die Sanktion **{level}** bleibt bis zur Entscheidung bestehen."
+    },
+    "join_refused": {
+      "user": {
+        "title": "Moddy konnte nicht bleiben",
+        "description_suspended": "Dein Konto ist gesperrt, daher kann Moddy keinem Server hinzugefügt werden. Der Bot hat den Server sofort verlassen.",
+        "description_limited": "Dein Konto ist eingeschränkt, daher kann Moddy keinem neuen Server hinzugefügt werden. Der Bot hat den Server sofort verlassen. Server, auf denen Moddy bereits eingerichtet war, laufen weiter."
+      },
+      "guild": {
+        "title": "Moddy konnte nicht bleiben",
+        "description": "Dieser Server ist gesperrt, daher kann Moddy nicht erneut hinzugefügt werden. Der Bot hat den Server sofort verlassen."
+      },
+      "server": "Server"
+    },
+    "staff": {
+      "apply_title": "Globale Sanktion anwenden",
+      "apply_button": "Formular öffnen",
+      "apply_prompt": "Du sanktionierst gleich:\n{targets}",
+      "targets": "Ziele",
+      "level_label": "Stufe",
+      "level_hint": "Die Verwarnung ist informativ; eingeschränkt und gesperrt beschränken den Dienst.",
+      "level_desc_warn": "Nur in der Akte — nichts wird eingeschränkt.",
+      "level_desc_limited": "Kein Premium, keine neuen Module, Automod aus.",
+      "level_desc_suspended": "Kein Zugriff auf Moddy-Dienste.",
+      "reason_label": "Grund",
+      "reason_hint": "Wird unverändert an die Person gesendet. Bleib sachlich.",
+      "duration_label": "Dauer (Stunden)",
+      "duration_hint": "Leer lassen für eine dauerhafte Sanktion.",
+      "grace_label": "Karenzzeit (Stunden)",
+      "grace_hint": "Vor den aufgeschobenen Folgen. Standard 48, 0 zum Deaktivieren.",
+      "invalid_number_title": "Ungültiger Wert",
+      "invalid_number": "Dauer und Karenzzeit müssen positive Zahlen sein.",
+      "group_title": "Gruppe globaler Sanktionen",
+      "group_id": "Gruppe",
+      "group_notfound_title": "Gruppe nicht gefunden",
+      "group_notfound": "Keine Sanktionsgruppe passt zu dieser Gruppen-ID oder Fallreferenz.",
+      "countdown": "Countdown",
+      "countdown_pending": "läuft",
+      "countdown_halted": "gestoppt (Einspruch)",
+      "countdown_executed": "ausgeführt",
+      "countdown_cancelled": "abgebrochen",
+      "no_countdown": "Für diese Gruppe läuft kein Countdown.",
+      "premium_note": "Die Person ist zahlender Abonnent — ihr Abonnement steht auf dem Spiel.",
+      "notified_yes": "Die Person wurde per DM benachrichtigt.",
+      "notified_no": "Die Person konnte NICHT benachrichtigt werden (DMs zu oder unbekannt).",
+      "halt_title": "Countdown stoppen",
+      "halt_button": "Countdown stoppen",
+      "halt_prompt": "Den Countdown dieser Gruppe stoppen, weil ein Einspruch eingegangen ist.",
+      "halt_reason_label": "Einspruchsreferenz oder Notiz",
+      "halt_reason_hint": "Optional — wird im Fallverlauf gespeichert.",
+      "halt_done_title": "Countdown gestoppt",
+      "halt_done": "Die aufgeschobenen Folgen sind ausgesetzt und die Person wurde informiert.",
+      "halt_failed_title": "Nichts zu stoppen",
+      "halt_failed": "Diese Gruppe hat keinen laufenden Countdown (bereits gestoppt, ausgeführt oder nie geplant).",
+      "lift_done_title": "Globale Sanktion aufgehoben",
+      "lift_done": "`{count}` Sanktion(en) in `{cases}` Fall/Fällen aufgehoben, Countdown abgebrochen.",
+      "lift_nothing_title": "Nichts aufzuheben",
+      "lift_nothing": "In dieser Gruppe ist keine Sanktion mehr aktiv.",
+      "pending_title": "Vollstreckungswarteschlange",
+      "pending_hint": "Sanktionsgruppen mit Countdown `{status}`, früheste zuerst.",
+      "pending_empty": "Kein Countdown in diesem Status.",
+      "denied_title": "Zugriff verweigert",
+      "denied": "Dafür brauchst du die Berechtigung für globale Sanktionen."
     }
   }
 }

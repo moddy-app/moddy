@@ -2282,7 +2282,8 @@
         "list_empty": "Aucun dossier de modération trouvé pour {name}.",
         "list_title": "Dossiers — {name}",
         "list_count": "Affichage de {shown} dossier(s) sur {total}",
-        "list_more": "Utilise /mod case view <référence> pour le détail complet."
+        "list_more": "Utilise /mod case view <référence> pour le détail complet.",
+        "no_source": "Aucun type de sanction ne s'applique à ce type de sujet."
       }
     },
     "manage": {
@@ -2416,6 +2417,124 @@
       "download_failed": "Impossible de récupérer le fichier audio.",
       "empty": "Aucune parole n'a été détectée dans cet audio.",
       "failed": "La transcription a échoué, réessaye dans quelques instants."
+    }
+  },
+  "global_sanctions": {
+    "suspended": {
+      "user": {
+        "title": "Compte suspendu",
+        "description": "Vous n'avez plus accès à aucun service Moddy : votre compte a été suspendu par notre équipe."
+      },
+      "guild": {
+        "title": "Serveur suspendu",
+        "description": "Ce serveur n'a plus accès à aucun service Moddy : il a été suspendu par notre équipe."
+      },
+      "appeal_hint": "Si vous pensez qu'il s'agit d'une erreur, vous pouvez demander un réexamen.",
+      "appeal_button": "Demander un réexamen"
+    },
+    "limited": {
+      "user": {
+        "title": "Compte limité",
+        "description": "Votre compte fait l'objet d'une limitation : le premium est désactivé et vous ne pouvez plus configurer de nouveaux modules."
+      },
+      "guild": {
+        "title": "Serveur limité",
+        "description": "Ce serveur fait l'objet d'une limitation : le premium est désactivé, l'automod IA est désactivé et aucun nouveau module ne peut être configuré."
+      },
+      "banner_title": "Limitation en cours",
+      "no_new_modules": "Les modules déjà configurés restent modifiables, mais aucun nouveau module ne peut être mis en place tant que la limitation est active.",
+      "appeal_hint": "Si vous pensez qu'il s'agit d'une erreur, vous pouvez demander un réexamen.",
+      "appeal_button": "Demander un réexamen"
+    },
+    "level": {
+      "warn": "Avertissement global",
+      "limited": "Limité",
+      "suspended": "Suspendu"
+    },
+    "notice": {
+      "title": "Notification de sanction",
+      "intro": "Notre équipe a pris une mesure concernant votre compte suite à un manquement aux règles de Moddy. Ce message couvre **toutes** les cases ouvertes pour cet incident — vous ne recevrez pas de message séparé pour chacune.",
+      "level": "Niveau",
+      "reason": "Raison",
+      "cases": "Cases ouvertes",
+      "effects": "Ce que cela change",
+      "effects_warn": "Rien n'est restreint. Cet avertissement reste à votre dossier et compte en cas de récidive.",
+      "effects_limited": "Le premium est désactivé, l'automod IA est coupé et aucun nouveau module ne peut être configuré. Les modules déjà en place continuent de fonctionner.",
+      "effects_suspended": "Vous n'avez accès à aucun service Moddy.",
+      "deadline_title": "Action requise",
+      "deadline_premium": "Conformément à nos [Conditions d'utilisation]({terms}), votre abonnement sera **résilié sans remboursement** le {date} ({rel}).",
+      "deadline_suspended": "Moddy **quittera** le ou les serveurs concernés le {date} ({rel}), et les données de configuration et autres pourront être supprimées.",
+      "deadline_hint": "Faire appel avant cette date arrête ce compte à rebours.",
+      "footer": "Détail complet de chaque case : {url}",
+      "button_details": "Voir le détail",
+      "button_appeal": "Faire appel",
+      "button_terms": "Conditions d'utilisation"
+    },
+    "halt": {
+      "title": "Appel reçu",
+      "description": "Votre appel a bien été reçu et le compte à rebours est arrêté le temps de son examen. La sanction **{level}** reste en vigueur jusqu'à la décision."
+    },
+    "join_refused": {
+      "user": {
+        "title": "Moddy n'a pas pu rester",
+        "description_suspended": "Votre compte est suspendu : Moddy ne peut pas être ajouté à un serveur. Le bot a quitté le serveur immédiatement.",
+        "description_limited": "Votre compte est limité : Moddy ne peut pas être ajouté à un nouveau serveur. Le bot a quitté le serveur immédiatement. Les serveurs où Moddy était déjà en place continuent de fonctionner."
+      },
+      "guild": {
+        "title": "Moddy n'a pas pu rester",
+        "description": "Ce serveur est suspendu : Moddy ne peut pas y être réajouté. Le bot a quitté le serveur immédiatement."
+      },
+      "server": "Serveur"
+    },
+    "staff": {
+      "apply_title": "Appliquer une sanction globale",
+      "apply_button": "Ouvrir le formulaire",
+      "apply_prompt": "Vous êtes sur le point de sanctionner :\n{targets}",
+      "targets": "Cibles",
+      "level_label": "Niveau",
+      "level_hint": "L'avertissement est informatif ; limité et suspendu restreignent le service.",
+      "level_desc_warn": "Au dossier uniquement — rien n'est restreint.",
+      "level_desc_limited": "Pas de premium, pas de nouveaux modules, automod coupé.",
+      "level_desc_suspended": "Aucun accès à un service Moddy.",
+      "reason_label": "Raison",
+      "reason_hint": "Envoyée telle quelle au sujet. Restez factuel.",
+      "duration_label": "Durée (heures)",
+      "duration_hint": "Laisser vide pour une sanction permanente.",
+      "grace_label": "Délai de grâce (heures)",
+      "grace_hint": "Avant les conséquences différées. 48 par défaut, 0 pour désactiver.",
+      "invalid_number_title": "Valeur invalide",
+      "invalid_number": "La durée et le délai de grâce doivent être des nombres positifs.",
+      "group_title": "Groupe de sanction globale",
+      "group_id": "Groupe",
+      "group_notfound_title": "Groupe introuvable",
+      "group_notfound": "Aucun groupe de sanction globale ne correspond à cet identifiant ou à cette référence.",
+      "countdown": "Compte à rebours",
+      "countdown_pending": "en cours",
+      "countdown_halted": "arrêté (appel)",
+      "countdown_executed": "exécuté",
+      "countdown_cancelled": "annulé",
+      "no_countdown": "Aucun compte à rebours pour ce groupe.",
+      "premium_note": "Le sujet est abonné — son abonnement est en jeu.",
+      "notified_yes": "Le sujet a été prévenu en MP.",
+      "notified_no": "Le sujet n'a PAS pu être prévenu (MP fermés ou utilisateur inconnu).",
+      "halt_title": "Arrêter le compte à rebours",
+      "halt_button": "Arrêter le compte à rebours",
+      "halt_prompt": "Arrêter le compte à rebours de ce groupe suite à un appel.",
+      "halt_reason_label": "Référence de l'appel ou note",
+      "halt_reason_hint": "Facultatif — conservé dans la timeline des cases.",
+      "halt_done_title": "Compte à rebours arrêté",
+      "halt_done": "Les conséquences différées sont suspendues et le sujet a été prévenu.",
+      "halt_failed_title": "Rien à arrêter",
+      "halt_failed": "Ce groupe n'a pas de compte à rebours en cours (déjà arrêté, exécuté ou jamais programmé).",
+      "lift_done_title": "Sanction globale levée",
+      "lift_done": "`{count}` sanction(s) révoquée(s) sur `{cases}` case(s), compte à rebours annulé.",
+      "lift_nothing_title": "Rien à lever",
+      "lift_nothing": "Aucune sanction active ne subsiste dans ce groupe.",
+      "pending_title": "File d'exécution",
+      "pending_hint": "Groupes de sanction globale au statut `{status}`, échéance la plus proche d'abord.",
+      "pending_empty": "Aucun compte à rebours dans cet état.",
+      "denied_title": "Permission refusée",
+      "denied": "Vous avez besoin de la permission de sanction globale pour faire cela."
     }
   }
 }

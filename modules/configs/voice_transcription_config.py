@@ -322,6 +322,7 @@ class VoiceTranscriptionConfigView(BaseView):
 
         success, error_msg = await bot.module_manager.save_module_config(
             interaction.guild_id, _MODULE_ID, working_config,
+            actor_id=interaction.user.id,
         )
 
         if success:

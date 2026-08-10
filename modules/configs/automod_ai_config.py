@@ -699,7 +699,8 @@ class AutomodAIConfigView(BaseView):
         working_config = await self._fresh_working_config(interaction)
 
         success, error = await bot.module_manager.save_module_config(
-            interaction.guild_id, "automod_ai", working_config
+            interaction.guild_id, "automod_ai", working_config,
+            actor_id=interaction.user.id,
         )
         if not success:
             await interaction.response.send_message(

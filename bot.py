@@ -30,6 +30,9 @@ from config import (
     ENV_MODE,
 )
 from utils.emojis import EMOJIS, ERROR as ERROR_EMOJI
+
+from utils import global_sanctions
+from utils.components_v2 import create_suspension_message
 from database import setup_database, db
 # Import du nouveau système i18n
 from utils.i18n import i18n
@@ -112,6 +115,9 @@ class ModdyBot(commands.Bot):
         self.cases = CaseService(self)  # scalable sanction -> case entry point
         from services.appeal_service import AppealService
         self.appeals = AppealService(self)  # sanction appeals (server / Moddy team)
+        from services.global_sanction_service import GlobalSanctionService
+        # Moddy-team global sanctions: grouped cases, one notice, one countdown
+        self.global_sanctions = GlobalSanctionService(self)
         from services.precedent_service import PrecedentService
         self.precedents = PrecedentService(self)  # automod server precedents (RAG)
         from services.transcription_service import TranscriptionService
@@ -144,8 +150,8 @@ class ModdyBot(commands.Bot):
         # Configure global error handler
         self.setup_error_handler()
 
-        # INTERCEPTION RADICALE: Configure le check de blacklist global pour toutes les app commands
-        self.tree.interaction_check = self._global_blacklist_check
+        # INTERCEPTION RADICALE: check des sanctions globales pour toutes les app commands
+        self.tree.interaction_check = self._global_sanction_check
 
     def setup_error_handler(self):
         """Configure uncaught error handler"""
@@ -520,25 +526,38 @@ class ModdyBot(commands.Bot):
     async def _handle_blacklist_event(self, data: dict):
         """Handle events from the moddy:blacklist:updates channel.
 
-        The backend now creates/revokes global blacklist cases (case
-        ``global`` + sanction ``ban``) directly in DB. The bot's
-        ``BlacklistCheck`` cog caches the result in memory with no TTL, so it
-        must be told to drop the entry whenever the backend mutates it.
+        The backend creates/revokes **global** cases (Moddy-team sanctions:
+        ``warn`` / ``restrict`` / ``ban``) directly in DB. The bot resolves the
+        level through :mod:`utils.global_sanctions`, which caches it in memory,
+        so it must be told to drop the entry whenever the backend mutates it.
+
+        Payload: ``{"type": "refresh", "user_id": ...}`` or
+        ``{"type": "refresh", "guild_id": ...}``. Sending neither clears the
+        whole cache.
         """
-        event_type = data.get("type")
-        user_id_raw = data.get("user_id")
-        if event_type != "refresh" or not user_id_raw:
-            return
-        try:
-            user_id = int(user_id_raw)
-        except (ValueError, TypeError):
-            logger.warning(f"[BlacklistPubSub] Invalid user_id: {user_id_raw}")
+        if data.get("type") != "refresh":
             return
 
-        cog = self.get_cog("BlacklistCheck")
-        if cog:
-            cog.blacklist_cache.pop(user_id, None)
-            logger.info(f"[BlacklistPubSub] Cache invalidated for user {user_id}")
+        subjects = (
+            (global_sanctions.SUBJECT_USER, data.get("user_id")),
+            (global_sanctions.SUBJECT_GUILD, data.get("guild_id")),
+        )
+        targeted = False
+        for subject_type, raw in subjects:
+            if raw is None:
+                continue
+            try:
+                subject_id = int(raw)
+            except (ValueError, TypeError):
+                logger.warning(f"[GlobalSanctionPubSub] Invalid {subject_type} id: {raw}")
+                continue
+            global_sanctions.invalidate(self, subject_type, subject_id)
+            targeted = True
+            logger.info(f"[GlobalSanctionPubSub] Cache invalidated for {subject_type} {subject_id}")
+
+        if not targeted:
+            global_sanctions.invalidate(self)
+            logger.info("[GlobalSanctionPubSub] Full global sanction cache invalidated")
 
     async def _handle_bot_event(self, data: dict):
         """Route Pub/Sub events from the backend."""
@@ -855,6 +874,7 @@ class ModdyBot(commands.Bot):
         # Start background tasks
         self.status_update.start()
         self.case_expiry.start()
+        self.enforcement_sweep.start()
 
         # Sync slash commands
         if DEBUG:
@@ -1116,6 +1136,14 @@ class ModdyBot(commands.Bot):
 
             # Property for compatibility with old code
             self.db_pool = self.db.pool
+
+            # Global sanctions live in the cases system now. Convert whatever
+            # is left of the legacy BLACKLISTED attribute into a global ban
+            # case, then drop the attribute (idempotent, no-op once done).
+            try:
+                await self.db.migrate_legacy_blacklist_attributes()
+            except Exception as e:
+                logger.error(f"[FAIL] Legacy blacklist migration error: {e}")
 
         except Exception as e:
             logger.error(f"[FAIL] DB connection error: {e}")
@@ -1390,67 +1418,138 @@ class ModdyBot(commands.Bot):
             logger.warning(f"[WARN] name_style: failed on {guild_id} — {e}")
         return False
 
+    async def _resolve_inviter(self, guild: discord.Guild) -> Optional[discord.User]:
+        """Who actually added Moddy to this server.
+
+        Read from the audit log, which is the only place Discord exposes it —
+        best-effort: the entry may not be written yet, and Moddy may not have
+        View Audit Log on a brand-new server. Returns ``None`` when unknown.
+        """
+        try:
+            async for entry in guild.audit_logs(
+                limit=5, action=discord.AuditLogAction.bot_add
+            ):
+                target_id = getattr(entry.target, "id", None)
+                if target_id == self.user.id:
+                    return entry.user
+        except (discord.Forbidden, discord.HTTPException, AttributeError):
+            pass
+        return None
+
+    async def _check_join_allowed(self, guild: discord.Guild) -> Optional[dict]:
+        """Decide whether Moddy may stay in a server it was just added to.
+
+        Resolves the three levels the policy needs and hands them to
+        ``global_sanctions.decide_join_refusal``, which holds the rule itself.
+
+        Returns ``None`` when the join is fine, otherwise a dict describing the
+        refusal: ``{"reason", "level", "guild_suspended", "notify_user"}``.
+        """
+        guild_level = await global_sanctions.get_guild_level(self, guild.id)
+        owner_level = await global_sanctions.get_user_level(self, guild.owner_id)
+
+        # Who actually clicked "Add to server" — unknown on a server whose
+        # audit log Moddy cannot read, in which case only the owner is checked.
+        inviter = await self._resolve_inviter(guild)
+        if inviter is not None and inviter.id == guild.owner_id:
+            inviter = None
+        inviter_level = (
+            await global_sanctions.get_user_level(self, inviter.id)
+            if inviter is not None else None
+        )
+
+        reason = global_sanctions.decide_join_refusal(
+            guild_level=guild_level,
+            owner_level=owner_level,
+            inviter_level=inviter_level,
+        )
+        if reason is None:
+            return None
+
+        level, notify_user = {
+            "guild": (guild_level, guild.owner),
+            "owner": (owner_level, guild.owner),
+            "inviter": (inviter_level, inviter),
+        }[reason]
+
+        return {
+            "reason": reason,
+            "level": level,
+            "guild_suspended": reason == "guild",
+            "notify_user": notify_user,
+        }
+
+    async def _refuse_guild_join(self, guild: discord.Guild, refusal: dict) -> None:
+        """Leave a server Moddy may not stay in, and tell the right person why."""
+        reason = refusal["reason"]
+        level = refusal["level"]
+        logger.warning(
+            f"[WARN] Add attempt blocked — {reason} is `{level.value}` "
+            f"(guild {guild.id}, owner {guild.owner_id})"
+        )
+
+        # Tell whoever caused the refusal, if their DMs allow it.
+        target = refusal.get("notify_user")
+        if target is not None:
+            try:
+                from utils.global_sanction_views import build_guild_join_refusal
+                await target.send(view=build_guild_join_refusal(
+                    level=level,
+                    guild_name=guild.name,
+                    guild_id=guild.id,
+                    guild_suspended=refusal["guild_suspended"],
+                ))
+            except Exception:
+                pass
+
+        await guild.leave()
+
+        if log_cog := self.get_cog("LoggingSystem"):
+            try:
+                await log_cog.log_critical(
+                    title="Join Blocked - Global Sanction",
+                    description=(
+                        f"**Server:** {guild.name} (`{guild.id}`)\n"
+                        f"**Owner:** {guild.owner} (`{guild.owner_id}`)\n"
+                        f"**Members:** {guild.member_count}\n"
+                        f"**Sanctioned:** {reason} (`{level.value}`)\n"
+                        f"**Action:** Bot left automatically"
+                    ),
+                    ping_dev=False
+                )
+            except Exception:
+                pass
+
+        # Technical log (security feed)
+        if getattr(self, "tech_logger", None):
+            try:
+                await self.tech_logger.log_security(
+                    "Join Blocked — Global Sanction",
+                    [
+                        f"**Guild** `{guild.name}` `{guild.id}`",
+                        f"**Owner** `{guild.owner}` `{guild.owner_id}`",
+                        f"**Members** `{guild.member_count or 0}`",
+                        f"**Sanctioned** `{reason}` `{level.value}`",
+                        f"**Action** `bot left automatically`",
+                    ],
+                )
+            except Exception:
+                pass
+
     async def on_guild_join(self, guild: discord.Guild):
         """When the bot joins a server"""
         logger.info(f"New server: {guild.name} ({guild.id})")
 
-        # Check if the server owner is blacklisted
+        # Refuse the join when a global sanction says Moddy has no business
+        # being here (see _check_join_allowed).
         if self.db:
             try:
-                if await self.db.has_attribute('user', guild.owner_id, 'BLACKLISTED'):
-                    logger.warning(f"[WARN] Add attempt by blacklisted user: {guild.owner_id}")
-
-                    # Send a message to the owner if possible
-                    try:
-                        embed = discord.Embed(
-                            description=f"{EMOJIS['undone']} You cannot add Moddy to servers because your account has been blacklisted by our team.",
-                            color=COLORS["error"]
-                        )
-                        embed.set_footer(text=f"User ID: {guild.owner_id}")
-
-                        # Create the button
-                        view = discord.ui.View()
-                        view.add_item(discord.ui.Button(
-                            label="Unblacklist request",
-                            url="https://moddy.app/unbl_request",
-                            style=discord.ButtonStyle.link
-                        ))
-
-                        await guild.owner.send(embed=embed, view=view)
-                    except:
-                        pass
-
-                    # Leave the server
-                    await guild.leave()
-
-                    # Log the action
-                    if log_cog := self.get_cog("LoggingSystem"):
-                        await log_cog.log_critical(
-                            title="Join Blocked - Blacklisted User",
-                            description=(
-                                f"**Server:** {guild.name} (`{guild.id}`)\n"
-                                f"**Owner:** {guild.owner} (`{guild.owner_id}`)\n"
-                                f"**Members:** {guild.member_count}\n"
-                                f"**Action:** Bot left automatically"
-                            ),
-                            ping_dev=False
-                        )
-
-                    # Technical log (security feed)
-                    if getattr(self, "tech_logger", None):
-                        await self.tech_logger.log_security(
-                            "Join Blocked — Blacklisted Owner",
-                            [
-                                f"**Guild** `{guild.name}` `{guild.id}`",
-                                f"**Owner** `{guild.owner}` `{guild.owner_id}`",
-                                f"**Members** `{guild.member_count or 0}`",
-                                f"**Action** `bot left automatically`",
-                            ],
-                        )
-
+                refusal = await self._check_join_allowed(guild)
+                if refusal is not None:
+                    await self._refuse_guild_join(guild, refusal)
                     return
 
-                # If not blacklisted, continue normally
+                # Nothing blocking — continue normally.
                 # Create the server entry in the guilds table
                 await self.db.get_guild(guild.id)  # This creates the entry if it doesn't exist
 
@@ -1527,11 +1626,18 @@ class ModdyBot(commands.Bot):
         except Exception as e:
             logger.error(f"[FAIL] Error clearing commands for guild {guild.id}: {e}")
 
-    async def _global_blacklist_check(self, interaction: discord.Interaction) -> bool:
+    async def _global_sanction_check(self, interaction: discord.Interaction) -> bool:
         """
         Check global pour toutes les app commands (slash commands).
         Appelé automatiquement par discord.py AVANT l'exécution de toute app command.
         Retourne False ou lève une exception pour bloquer l'exécution.
+
+        Une suspension globale (case ``global`` + sanction ``ban``) sur
+        l'utilisateur **ou** sur le serveur coupe tout accès à Moddy — sauf
+        les commandes d'information listées dans
+        ``global_sanctions.SUSPENDED_ALLOWED_COMMANDS`` (``/mycases``,
+        ``/moddy``…) : un suspendu doit pouvoir lire ses cases, comprendre la
+        sanction et faire appel.
         """
         if not self.db or interaction.user.bot:
             return True  # Autorise si pas de DB ou si c'est un bot
@@ -1547,12 +1653,25 @@ class ModdyBot(commands.Bot):
             return False
 
         try:
-            is_blacklisted = await self.db.has_attribute('user', interaction.user.id, 'BLACKLISTED')
+            command_name = interaction.command.qualified_name if interaction.command else None
+            if global_sanctions.is_command_allowed_when_suspended(command_name):
+                # Informational commands stay reachable under a suspension.
+                user_suspended = guild_suspended = False
+            else:
+                user_suspended = await global_sanctions.is_suspended(
+                    self, user_id=interaction.user.id)
+                guild_suspended = (
+                    not user_suspended
+                    and interaction.guild_id is not None
+                    and await global_sanctions.is_suspended(self, guild_id=interaction.guild_id)
+                )
 
-            if is_blacklisted:
-                # Utilise le système Components V2 pour le message de blacklist
-                from utils.components_v2 import create_blacklist_message
-                view = create_blacklist_message()
+            if user_suspended or guild_suspended:
+                # Components V2 panel explaining the suspension.
+                view = create_suspension_message(
+                    str(interaction.locale) if interaction.locale else 'en-US',
+                    guild=guild_suspended,
+                )
 
                 # Répond à l'interaction
                 try:
@@ -1561,29 +1680,30 @@ class ModdyBot(commands.Bot):
                         ephemeral=True
                     )
                 except Exception as e:
-                    logger.error(f"Error sending blacklist message: {e}")
+                    logger.error(f"Error sending suspension message: {e}")
 
                 # Log l'interaction bloquée
                 if log_cog := self.get_cog("LoggingSystem"):
                     try:
                         await log_cog.log_critical(
-                            title="🚫 SLASH COMMAND BLACKLISTÉE BLOQUÉE",
+                            title="🚫 SLASH COMMAND BLOQUÉE (SUSPENSION GLOBALE)",
                             description=(
                                 f"**Utilisateur:** {interaction.user.mention} (`{interaction.user.id}`)\n"
                                 f"**Commande:** {interaction.command.name if interaction.command else 'N/A'}\n"
                                 f"**Serveur:** {interaction.guild.name if interaction.guild else 'DM'}\n"
+                                f"**Suspendu:** {'serveur' if guild_suspended else 'utilisateur'}\n"
                                 f"**Action:** ✋ BLOQUÉE AVANT EXÉCUTION (tree.interaction_check)"
                             ),
                             ping_dev=False
                         )
                     except Exception as e:
-                        logger.error(f"Error logging blacklist: {e}")
+                        logger.error(f"Error logging suspension: {e}")
 
                 # Retourne False pour bloquer l'exécution
                 return False
 
         except Exception as e:
-            logger.error(f"Error checking blacklist in _global_blacklist_check: {e}")
+            logger.error(f"Error checking global sanctions in _global_sanction_check: {e}")
 
         # Check if the command's cog is disabled
         if interaction.command:
@@ -1614,23 +1734,40 @@ class ModdyBot(commands.Bot):
                         pass
                     return False
 
-        return True  # Autorise si pas blacklisté ou en cas d'erreur
+        return True  # Autorise si pas suspendu ou en cas d'erreur
 
-    async def _check_blacklist_and_respond(self, interaction: discord.Interaction) -> bool:
+    async def _check_suspension_and_respond(self, interaction: discord.Interaction) -> bool:
         """
-        Vérifie si un utilisateur est blacklisté et répond si c'est le cas.
-        Retourne True si l'utilisateur est blacklisté (bloqué), False sinon.
+        Vérifie si l'utilisateur (ou son serveur) est suspendu globalement et
+        répond si c'est le cas.
+        Retourne True si l'interaction est bloquée, False sinon.
+
+        Les composants d'appel (``moddy:apl:*``), le navigateur ``/mycases`` et
+        le panneau ``/moddy`` restent cliquables : sans eux, un suspendu ne
+        pourrait pas contester sa sanction.
         """
         if not self.db or interaction.user.bot:
             return False
 
         try:
-            is_blacklisted = await self.db.has_attribute('user', interaction.user.id, 'BLACKLISTED')
+            custom_id = (interaction.data or {}).get("custom_id") if hasattr(interaction, "data") else None
+            if global_sanctions.is_component_allowed_when_suspended(custom_id):
+                return False
 
-            if is_blacklisted:
-                # Utilise le système Components V2 pour le message de blacklist
-                from utils.components_v2 import create_blacklist_message
-                view = create_blacklist_message()
+            user_suspended = await global_sanctions.is_suspended(
+                self, user_id=interaction.user.id)
+            guild_suspended = (
+                not user_suspended
+                and interaction.guild_id is not None
+                and await global_sanctions.is_suspended(self, guild_id=interaction.guild_id)
+            )
+
+            if user_suspended or guild_suspended:
+                # Components V2 panel explaining the suspension.
+                view = create_suspension_message(
+                    str(interaction.locale) if interaction.locale else 'en-US',
+                    guild=guild_suspended,
+                )
 
                 # Répond à l'interaction si pas encore fait
                 try:
@@ -1649,7 +1786,7 @@ class ModdyBot(commands.Bot):
                     except:
                         pass
                 except Exception as e:
-                    logger.error(f"Error sending blacklist message: {e}")
+                    logger.error(f"Error sending suspension message: {e}")
 
                 # Log l'interaction bloquée
                 if log_cog := self.get_cog("LoggingSystem"):
@@ -1661,39 +1798,39 @@ class ModdyBot(commands.Bot):
                             identifier = f"Custom ID: {interaction.data.get('custom_id', 'N/A') if hasattr(interaction, 'data') else 'N/A'}"
 
                         await log_cog.log_critical(
-                            title="🚫 INTERACTION BLACKLISTÉE BLOQUÉE",
+                            title="🚫 INTERACTION BLOQUÉE (SUSPENSION GLOBALE)",
                             description=(
                                 f"**Utilisateur:** {interaction.user.mention} (`{interaction.user.id}`)\n"
                                 f"**Type:** {interaction_type}\n"
                                 f"**{identifier}**\n"
                                 f"**Serveur:** {interaction.guild.name if interaction.guild else 'DM'}\n"
+                                f"**Suspendu:** {'serveur' if guild_suspended else 'utilisateur'}\n"
                                 f"**Action:** ✋ BLOQUÉE AVANT TRAITEMENT"
                             ),
                             ping_dev=False
                         )
                     except Exception as e:
-                        logger.error(f"Error logging blacklist: {e}")
+                        logger.error(f"Error logging suspension: {e}")
 
-                return True  # Utilisateur blacklisté
+                return True  # Suspendu
 
         except Exception as e:
-            logger.error(f"Error checking blacklist: {e}")
+            logger.error(f"Error checking global sanctions: {e}")
 
-        return False  # Pas blacklisté
+        return False  # Pas suspendu
 
     async def on_interaction(self, interaction: discord.Interaction):
         """
         INTERCEPTION pour les composants (boutons, selects, modals).
-        Les slash commands sont gérées par _global_blacklist_check via tree.interaction_check.
+        Les slash commands sont gérées par _global_sanction_check via tree.interaction_check.
         """
-        # Les app commands sont déjà gérées par _global_blacklist_check
+        # Les app commands sont déjà gérées par _global_sanction_check
         if interaction.type == discord.InteractionType.application_command:
             return
 
-        # Pour les composants (boutons, selects, modals), vérifie la blacklist
-        is_blacklisted = await self._check_blacklist_and_respond(interaction)
-        if is_blacklisted:
-            # L'utilisateur est blacklisté, le message a été envoyé
+        # Pour les composants (boutons, selects, modals), vérifie la suspension
+        if await self._check_suspension_and_respond(interaction):
+            # Le sujet est suspendu, le message a été envoyé
             # L'interaction est consommée, on ne fait rien de plus
             return
 
@@ -1767,6 +1904,12 @@ class ModdyBot(commands.Bot):
         # explicitly when its case sanction expires.
         for row in expired or []:
             try:
+                # A temporary global sanction (limitation / suspension) has no
+                # Discord side to reverse — it only has to stop applying.
+                if row.get("case_type") == "global":
+                    subject_type = row.get("subject_type") or global_sanctions.SUBJECT_USER
+                    global_sanctions.invalidate(self, subject_type, row.get("subject_id"))
+                    continue
                 if row.get("action") != "ban" or row.get("case_type") != "guild":
                     continue
                 if row.get("scope_type") != "discord_guild" or not row.get("scope_id"):
@@ -1787,6 +1930,29 @@ class ModdyBot(commands.Bot):
     async def before_case_expiry(self):
         await self.wait_until_ready()
 
+    @tasks.loop(minutes=5)
+    async def enforcement_sweep(self):
+        """Run the deferred consequences of global sanctions whose grace period
+        has elapsed without an appeal.
+
+        The subject was given 48h in their notice DM to appeal; past that,
+        Moddy leaves the suspended servers and the backend is told to cancel
+        the subscription and purge what it must (see
+        ``services/global_sanction_service.py``).
+        """
+        if not self.db:
+            return
+        try:
+            executed = await self.global_sanctions.run_due()
+            if executed:
+                logger.info(f"[Enforcement] Executed {executed} global sanction group(s)")
+        except Exception as e:
+            logger.error(f"Error sweeping global sanction enforcements: {e}", exc_info=True)
+
+    @enforcement_sweep.before_loop
+    async def before_enforcement_sweep(self):
+        await self.wait_until_ready()
+
     async def close(self):
         """Cleanly closing the bot"""
         logger.info("Shutting down...")
@@ -1804,6 +1970,8 @@ class ModdyBot(commands.Bot):
             self.status_update.cancel()
         if self.case_expiry.is_running():
             self.case_expiry.cancel()
+        if self.enforcement_sweep.is_running():
+            self.enforcement_sweep.cancel()
 
         # Wait a bit for tasks to finish
         await asyncio.sleep(0.1)

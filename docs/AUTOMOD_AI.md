@@ -479,6 +479,11 @@ a wrong precedent can always be purged (it also busts the service cache).
 
 ## 3. The module (`modules/automod_ai.py`)
 
+> **Globally limited servers are skipped entirely.** `on_message` returns
+> immediately when the guild carries a global `restrict` (or `ban`) sanction:
+> Moddy does not moderate a community it has itself sanctioned. See
+> [GLOBAL_SANCTIONS.md](GLOBAL_SANCTIONS.md).
+
 `MODULE_ID = "automod_ai"` (module name **Automod AI**). Config stored in
 `guilds.data.modules.automod_ai`. A config still stored under the historical
 `automod` key is migrated to `automod_ai` on the next guild load

@@ -329,6 +329,30 @@ class StaffPermissionManager:
 staff_permissions: Optional[StaffPermissionManager] = None
 
 
+async def has_staff_node(bot, user_id: int, node: str) -> bool:
+    """Whether a staff member holds a fine-grained permission node.
+
+    Shared by the staff dispatcher (``StaffCommand.permission``) and by any
+    persistent component that must re-derive authorization on every click —
+    a button outlives the panel that carried it, so it can never trust
+    anything but the interaction it just received.
+
+    Super-admin, developers and Managers are not gated by granular nodes.
+    """
+    if staff_permissions is None:
+        return False
+    if user_id == staff_permissions.SUPER_ADMIN_ID or bot.is_developer(user_id):
+        return True
+    roles = await staff_permissions.get_user_roles(user_id)
+    if StaffRole.MANAGER in roles:
+        return True
+    if not bot.db:
+        return False
+    perms = await bot.db.get_staff_permissions(user_id)
+    role_perms = perms.get("role_permissions", {}) or {}
+    return any(node in granted for granted in role_perms.values())
+
+
 def setup_staff_permissions(bot):
     """Initialize staff permissions system"""
     global staff_permissions

@@ -2283,7 +2283,8 @@
         "list_empty": "No moderation cases found for {name}.",
         "list_title": "Cases — {name}",
         "list_count": "Showing {shown} of {total} case(s)",
-        "list_more": "Use /mod case view <reference> for full details."
+        "list_more": "Use /mod case view <reference> for full details.",
+        "no_source": "No sanction kind applies to this kind of subject."
       }
     },
     "manage": {
@@ -2417,6 +2418,124 @@
       "download_failed": "The audio file could not be downloaded.",
       "empty": "No speech was detected in this audio.",
       "failed": "The transcription failed, try again in a moment."
+    }
+  },
+  "global_sanctions": {
+    "suspended": {
+      "user": {
+        "title": "Account suspended",
+        "description": "You no longer have access to any Moddy service: your account has been suspended by our team."
+      },
+      "guild": {
+        "title": "Server suspended",
+        "description": "This server no longer has access to any Moddy service: it has been suspended by our team."
+      },
+      "appeal_hint": "If you believe this is a mistake, you can request a review.",
+      "appeal_button": "Request a review"
+    },
+    "limited": {
+      "user": {
+        "title": "Account limited",
+        "description": "Your account is under a limitation: premium is disabled and you can no longer configure new modules."
+      },
+      "guild": {
+        "title": "Server limited",
+        "description": "This server is under a limitation: premium is disabled, the AI automod is off, and no new module can be configured."
+      },
+      "banner_title": "Limitation in effect",
+      "no_new_modules": "Modules that are already configured stay editable, but no new module can be set up while the limitation is active.",
+      "appeal_hint": "If you believe this is a mistake, you can request a review.",
+      "appeal_button": "Request a review"
+    },
+    "level": {
+      "warn": "Global warning",
+      "limited": "Limited",
+      "suspended": "Suspended"
+    },
+    "notice": {
+      "title": "Enforcement notice",
+      "intro": "Our team has taken action on your account following a breach of the Moddy rules. This message covers **every** case opened for this incident — you will not receive a separate message for each one.",
+      "level": "Level",
+      "reason": "Reason",
+      "cases": "Cases opened",
+      "effects": "What this changes",
+      "effects_warn": "Nothing is restricted. This warning stays on your record and counts if it happens again.",
+      "effects_limited": "Premium features are disabled, the AI automod stops running, and no new module can be configured. Modules already set up keep working.",
+      "effects_suspended": "You have no access to any Moddy service.",
+      "deadline_title": "Action required",
+      "deadline_premium": "In accordance with our [Terms of Service]({terms}), your subscription will be **cancelled without refund** on {date} ({rel}).",
+      "deadline_suspended": "Moddy will **leave** the affected server(s) on {date} ({rel}), and stored configuration and other data may be deleted.",
+      "deadline_hint": "Appealing before that date stops this countdown.",
+      "footer": "Full details of every case: {url}",
+      "button_details": "View details",
+      "button_appeal": "Appeal",
+      "button_terms": "Terms of Service"
+    },
+    "halt": {
+      "title": "Appeal received",
+      "description": "Your appeal has been received and the countdown is stopped while our team reviews it. The **{level}** sanction stays in force until a decision is made."
+    },
+    "join_refused": {
+      "user": {
+        "title": "Moddy could not stay",
+        "description_suspended": "Your account is suspended, so Moddy cannot be added to a server. It has left the server immediately.",
+        "description_limited": "Your account is limited, so Moddy cannot be added to a new server. It has left the server immediately. Servers where Moddy was already set up keep working."
+      },
+      "guild": {
+        "title": "Moddy could not stay",
+        "description": "This server is suspended, so Moddy cannot be added back to it. It has left the server immediately."
+      },
+      "server": "Server"
+    },
+    "staff": {
+      "apply_title": "Apply a global sanction",
+      "apply_button": "Open the sanction form",
+      "apply_prompt": "You are about to sanction:\n{targets}",
+      "targets": "Targets",
+      "level_label": "Level",
+      "level_hint": "Warn is informational; limited and suspended restrict the service.",
+      "level_desc_warn": "On the record only — nothing is restricted.",
+      "level_desc_limited": "No premium, no new modules, automod off.",
+      "level_desc_suspended": "No access to any Moddy service.",
+      "reason_label": "Reason",
+      "reason_hint": "Sent to the subject as-is. Be factual.",
+      "duration_label": "Duration (hours)",
+      "duration_hint": "Leave empty for a permanent sanction.",
+      "grace_label": "Grace period (hours)",
+      "grace_hint": "Before the deferred consequences apply. Default 48, 0 to disable.",
+      "invalid_number_title": "Invalid value",
+      "invalid_number": "Duration and grace period must be positive numbers.",
+      "group_title": "Global sanction group",
+      "group_id": "Group",
+      "group_notfound_title": "Group not found",
+      "group_notfound": "No global sanction group matches that group id or case reference.",
+      "countdown": "Countdown",
+      "countdown_pending": "running",
+      "countdown_halted": "halted (appeal)",
+      "countdown_executed": "executed",
+      "countdown_cancelled": "cancelled",
+      "no_countdown": "No enforcement countdown for this group.",
+      "premium_note": "The subject is a paying subscriber — their subscription is at stake.",
+      "notified_yes": "The subject was notified by DM.",
+      "notified_no": "The subject could NOT be notified (DMs closed or unknown user).",
+      "halt_title": "Stop the countdown",
+      "halt_button": "Halt countdown",
+      "halt_prompt": "Stop the enforcement countdown of this group because an appeal was filed.",
+      "halt_reason_label": "Appeal reference or note",
+      "halt_reason_hint": "Optional — kept on the case timeline.",
+      "halt_done_title": "Countdown stopped",
+      "halt_done": "The deferred consequences are on hold and the subject has been told.",
+      "halt_failed_title": "Nothing to stop",
+      "halt_failed": "This group has no running countdown (already halted, executed or never scheduled).",
+      "lift_done_title": "Global sanction lifted",
+      "lift_done": "Revoked `{count}` sanction(s) across `{cases}` case(s), and cancelled the countdown.",
+      "lift_nothing_title": "Nothing to lift",
+      "lift_nothing": "No active sanction remains in this group.",
+      "pending_title": "Enforcement queue",
+      "pending_hint": "Global sanction groups with a `{status}` countdown, soonest first.",
+      "pending_empty": "No countdown in this state.",
+      "denied_title": "Permission denied",
+      "denied": "You need the global sanction permission to do this."
     }
   }
 }

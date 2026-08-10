@@ -137,8 +137,13 @@ async def has_attribute(pool: asyncpg.Pool, table: str, entity_id: int, attr: st
 
 # Exemple
 is_premium = await has_attribute(pool, "guilds", guild_id, "PREMIUM")
-is_blacklisted = await has_attribute(pool, "users", user_id, "BLACKLISTED")
+is_beta = await has_attribute(pool, "users", user_id, "BETA")
 ```
+
+> Les **sanctions globales** (avertissement / limitation / suspension appliqués
+> par l'équipe Moddy) ne sont **pas** des attributs : ce sont des cases de type
+> `global`. Voir [GLOBAL_SANCTIONS.md](GLOBAL_SANCTIONS.md) — et après toute
+> écriture, publier sur `moddy:blacklist:updates` pour invalider le cache du bot.
 
 #### Modifier un attribut
 
@@ -615,7 +620,7 @@ await bot.db_pool.execute(
 
 ### Logger dans attribute_changes
 
-Pour tout changement significatif (PREMIUM, BLACKLISTED, TEAM), insérer un audit log :
+Pour tout changement significatif (PREMIUM, TEAM), insérer un audit log :
 
 ```python
 async def log_attribute_change(
@@ -724,9 +729,9 @@ async def on_member_join(member: discord.Member):
     # Créer l'utilisateur en base si inexistant
     await ensure_user(bot.db_pool, member.id)
 
-    # Vérifier si l'utilisateur est blacklisté
-    blacklisted = await has_attribute(bot.db_pool, "users", member.id, "BLACKLISTED")
-    if blacklisted:
+    # Vérifier si l'utilisateur est suspendu globalement (cases, cf. GLOBAL_SANCTIONS.md)
+    suspended = await has_active_global_ban(bot.db_pool, "discord_user", member.id)
+    if suspended:
         # Action selon la policy (kick, ban, notifier les mods...)
         return
 
@@ -1023,7 +1028,8 @@ ENVIRONMENT=production
 - [ ] Invalidation de `moddy:bot_guilds` sur `on_guild_join` et `on_guild_remove`
 - [ ] Attribut `TEAM` toujours synchronisé avec `staff_permissions` (ajout ET suppression ensemble)
 - [ ] Jamais de `false` stocké dans les attributs JSONB
-- [ ] Audit log dans `attribute_changes` pour PREMIUM, BLACKLISTED, TEAM
+- [ ] Audit log dans `attribute_changes` pour PREMIUM, TEAM
+- [ ] Sanctions globales écrites comme cases `global` (jamais comme attribut) + publication sur `moddy:blacklist:updates`
 - [ ] `log_error` appelé dans les handlers d'exception globaux
 - [ ] IDs Discord stockés en `BIGINT` (jamais en `INTEGER`)
 - [ ] Timestamps toujours en UTC

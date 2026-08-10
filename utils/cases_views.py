@@ -45,6 +45,7 @@ from utils.moderation_cases import (
     EventType,
     SanctionAction,
     get_action_emoji,
+    get_action_label_key,
     get_available_actions,
     get_case_type_emoji,
     TEMPORARY_ACTIONS,
@@ -89,6 +90,29 @@ def can_view_server_cases(member: discord.Member) -> bool:
     """Minimum permission to open the server cases browser: Manage Messages."""
     p = member.guild_permissions
     return p.administrator or p.manage_messages
+
+
+def _action_label(action: SanctionAction, locale: str,
+                  case_type: Optional[CaseType] = None) -> str:
+    """Label of a sanction action in the vocabulary of its case type.
+
+    Global (Moddy-team) cases speak in levels — warn / limited / suspended — so
+    a global ``ban`` reads "Suspended". `/mycases` lists cases of every scope,
+    so it has to pick the right vocabulary per case.
+    """
+    key = get_action_label_key(action, case_type)
+    return t(key or f"commands.cases.action.{action.value}", locale=locale)
+
+
+def _action_filter_label(action_value: str, locale: str) -> str:
+    """Label of an action in a filter, where no case type is known yet.
+
+    ``restrict`` only ever exists on a global case, so it is always named by
+    its global level ("Limited"); the others stay generic.
+    """
+    if action_value == SanctionAction.RESTRICT.value:
+        return t("global_sanctions.level.limited", locale=locale)
+    return t(f"commands.cases.action.{action_value}", locale=locale)
 
 
 def _can_issue_action(member: discord.Member, action: SanctionAction) -> bool:
@@ -558,7 +582,7 @@ class CasesBrowserView(BaseView):
         if self.f_status:
             parts.append(t(f"commands.cases.status_value.{self.f_status}", locale=self.locale))
         if self.f_action:
-            parts.append(t(f"commands.cases.action.{self.f_action}", locale=self.locale))
+            parts.append(_action_filter_label(self.f_action, self.locale))
         if self.f_period != "all":
             parts.append(t(f"commands.cases.browser.period.{self.f_period}", locale=self.locale))
         if self.f_scope_id is not None:
@@ -686,7 +710,7 @@ class CasesBrowserView(BaseView):
             lines: List[str] = []
             for s in shown:
                 dot = emojis.GREEN_STATUS if s.status == SanctionStatus.ACTIVE else emojis.RED_STATUS
-                action = t("commands.cases.action." + s.action.value, locale=self.locale)
+                action = _action_label(s.action, self.locale, case.type)
                 line = (
                     f"{dot} **{action}** • "
                     f"`{t('commands.cases.sanction_status.' + s.status.value, locale=self.locale)}`"
@@ -1115,9 +1139,17 @@ class CaseFilterModal(BaseModal):
             label=t("commands.cases.browser.all_actions", locale=loc),
             value="all", default=browser.f_action is None,
         )]
-        for a in SanctionAction:
+        # In `/cases` (a guild scope) only guild sanctions can ever show up —
+        # `restrict` is a Moddy-team global sanction and would filter on
+        # something the moderator can never see. `/mycases` spans every scope,
+        # including global cases, so it keeps the full list.
+        filterable_actions = (
+            get_available_actions(CaseType.GUILD)
+            if browser.mode == "server" else list(SanctionAction)
+        )
+        for a in filterable_actions:
             action_opts.append(discord.SelectOption(
-                label=t(f"commands.cases.action.{a.value}", locale=loc),
+                label=_action_filter_label(a.value, loc),
                 value=a.value,
                 emoji=discord.PartialEmoji.from_str(get_action_emoji(a)),
                 default=browser.f_action == a.value,

@@ -48,7 +48,7 @@ moddy/
 │   ├── ping.py, user.py, avatar.py, banner.py, roll.py, moddy.py
 │   ├── subscription.py        #   Premium features
 │   ├── preferences.py         #   User preferences
-│   ├── blacklist_check.py     #   Blacklist validation (reads the cases system)
+│   ├── blacklist_check.py     #   Global suspension gate for prefix commands (cases system)
 │   ├── cases_user.py          #   Personal cases browser (/mycases — all servers, filters, read-only)
 │   ├── cases_server.py        #   Server cases browser (/cases — guild scope, mod actions, perms)
 │   ├── case_sync.py           #   Auto-records guild sanctions as cases (audit log)
@@ -110,7 +110,7 @@ moddy/
 │   │   └── parsing.py         #     Arg helpers (user/guild id)
 │   ├── commands/dev/          #   /dev commands (one file each)
 │   ├── commands/team/         #   /team commands (incl. help)
-│   ├── commands/mod/          #   /mod commands + case/ sub-group
+│   ├── commands/mod/          #   /mod commands + case/ and global/ sub-groups
 │   ├── commands/manage/       #   /manage commands (staff panel, badge, redirect/, banner/…)
 │   ├── support_commands.py    #   sup. commands — legacy (not yet migrated)
 │   └── communication_commands.py  # com. commands — legacy (not yet migrated)
@@ -122,6 +122,7 @@ moddy/
 │       ├── reminders.py, saved_messages.py, saved_roles.py
 │       ├── moderation.py, interserver.py, attributes.py
 │       ├── appeals.py           #   Automod sanction appeals (case_appeals)
+│       ├── enforcements.py      #   Global sanction appeal countdowns (case_enforcements)
 │       ├── eval_candidates.py   #   Automod eval/annotation corpus (automod_eval_candidates)
 │       ├── precedents.py        #   Automod server precedents (automod_precedents, RAG)
 │       ├── token_alerts.py, token_secrets.py
@@ -147,6 +148,8 @@ moddy/
 │   ├── transcription_views.py #   Voice transcription cards + persistent Transcribe button
 │   ├── appeal_views.py        #   Automod appeal UI (DM buttons + reviewer panels, persistent)
 │   ├── moderation_cases.py    #   Cases domain model + enums + reference gen
+│   ├── global_sanctions.py    #   Global (Moddy-team) sanction levels: warn/limited/suspended
+│   ├── global_sanction_views.py #  Global sanction UI (notice DMs, staff panels, Modals V2)
 │   ├── embeds.py
 │   ├── announcement_setup.py
 │   └── incognito.py
@@ -174,6 +177,7 @@ moddy/
 │   ├── backend_client.py      #   Backend HTTP client
 │   ├── feeds_client.py        #   moddy-feeds Redis client (social notifications)
 │   ├── case_service.py        #   Scalable sanction→case entry point (source registry)
+│   ├── global_sanction_service.py # Global sanctions: grouped cases, notice DM, 48h countdown, Redis
 │   ├── appeal_service.py      #   Automod sanction appeals (server / Moddy team, binding)
 │   ├── precedent_service.py   #   Automod server precedents (record + serve, RAG)
 │   ├── transcription_service.py #  Voice/audio speech-to-text (shared by cog + module)
@@ -199,6 +203,8 @@ moddy/
     ├── internal_api/          #   pytest suite for the internal API routes
     │                          #   (FastAPI TestClient, bot + gateway stubbed)
     ├── gateway/               #   Provider rate limits + executor reservation lifecycle
+    ├── test_global_sanctions.py   # Global sanction levels, cache TTL, user/guild context
+    ├── test_global_sanction_flow.py # Groups, notices, countdown, Redis events, allowlists
     ├── test_bot_customization.py  # Bot customization validation (bio budget, styles)
     └── test_transcription.py  #   Voice transcription helpers, guard rails, cards
 ```
@@ -346,6 +352,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/PREMIUM.md](docs/PREMIUM.md) | **Premium gating** — how to check whether a server (or a user) is premium |
 | [docs/STAFF_SYSTEM.md](docs/STAFF_SYSTEM.md) | Staff/dev commands, permissions, roles |
 | [docs/MODERATION_CASES.md](docs/MODERATION_CASES.md) | Moderation cases/sanctions, the case service & sources, auto-sync |
+| [docs/GLOBAL_SANCTIONS.md](docs/GLOBAL_SANCTIONS.md) | **Global sanctions** — Moddy-team warn / limited / suspended, on users *and* servers |
 | [docs/TECHNICAL_LOGS.md](docs/TECHNICAL_LOGS.md) | Internal technical staff logs (webhook-based, per-event channels) |
 | [docs/DATABASE.md](docs/DATABASE.md) | Database schema, queries, repository pattern |
 

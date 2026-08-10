@@ -60,6 +60,7 @@ from automod import (
 from automod import constants as ac
 from automod import bareme as ab
 from automod import relations as ar
+from utils import global_sanctions
 from utils.i18n import t
 from utils.moderation_cases import IssuerType, SanctionAction, EventType, AuthorType
 
@@ -363,6 +364,12 @@ class AutomodModule(ModuleBase):
         if message.author.bot or message.webhook_id is not None:
             return
         if not isinstance(message.author, discord.Member):
+            return
+
+        # A globally limited (or suspended) server gets no automod at all:
+        # Moddy stops moderating for a community it has itself sanctioned.
+        # Cached in memory, so this costs nothing on the message hot path.
+        if await global_sanctions.is_limited(self.bot, guild_id=self.guild_id):
             return
 
         # Session 5: feed the relationship graph passively (reply / mention).

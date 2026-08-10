@@ -52,6 +52,11 @@ if not await is_guild_premium(bot, guild_id):
   helper in `utils/subscription.py` adds the Redis cache described below. The
   repository method is the uncached fallback the helper builds on.
 - The bot **never writes** subscription data. Only the backend does.
+- A **global sanction** outranks the subscription: a user or a server that is
+  globally *limited* or *suspended* is never premium, whatever the billing
+  state says. Both helpers check it first, outside the Redis cache, so lifting
+  the sanction restores premium immediately — see
+  [GLOBAL_SANCTIONS.md](GLOBAL_SANCTIONS.md).
 
 ### Redis cache
 

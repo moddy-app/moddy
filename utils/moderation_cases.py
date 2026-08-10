@@ -161,6 +161,30 @@ def get_available_actions(case_type: CaseType) -> List[SanctionAction]:
     return CASE_TYPE_ACTIONS.get(case_type, list(SanctionAction))
 
 
+# Global (Moddy-team) sanctions speak in levels, not in raw actions: a global
+# `ban` is a **suspension**, a global `restrict` is a **limitation**. The
+# mapping mirrors ``utils.global_sanctions.ACTION_TO_LEVEL``.
+GLOBAL_LEVEL_OF_ACTION: Dict[str, str] = {
+    "warn": "warn",
+    "restrict": "limited",
+    "ban": "suspended",
+}
+
+
+def get_action_label_key(action: SanctionAction,
+                         case_type: Optional[CaseType] = None) -> Optional[str]:
+    """i18n key overriding an action's label for global cases.
+
+    Returns ``None`` when the caller should use its own action namespace
+    (``staff.mod.case.action.*``, ``commands.cases.action.*``, …).
+    """
+    if case_type is CaseType.GLOBAL:
+        level = GLOBAL_LEVEL_OF_ACTION.get(action.value)
+        if level:
+            return f"global_sanctions.level.{level}"
+    return None
+
+
 def get_action_emoji(action: SanctionAction) -> str:
     """Return the emoji for a sanction action."""
     return SANCTION_ACTION_EMOJIS.get(action.value, SANCTION_ACTION_EMOJI_DEFAULT)

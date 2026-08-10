@@ -54,6 +54,7 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     from staff.commands.manage.staff import StaffManagerPanel
     from utils.cases_views import CasesBrowserView
     from utils.appeal_views import AppealPersistence
+    from utils.global_sanction_views import GlobalSanctionPersistence
     from utils.automod_shadow_views import ShadowAnnotationPersistence
     from utils.transcription_views import TranscriptionPersistence
     from modules.configs.voice_transcription_config import VoiceTranscriptionConfigView
@@ -72,6 +73,8 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         CasesBrowserView,
         # Group 4 — automod sanction appeals (dynamic items)
         AppealPersistence,
+        # Group 4bis — global sanction staff actions (dynamic items)
+        GlobalSanctionPersistence,
         # Group 5 — automod shadow-mode annotation buttons (dynamic items)
         ShadowAnnotationPersistence,
         # Group 6 — /preferences (owner-only dynamic items)

@@ -14,8 +14,10 @@ from utils.i18n import t
 from utils.moderation_cases import (
     Case,
     SubjectType,
+    SanctionAction,
     SanctionStatus,
     EventType,
+    get_action_label_key,
     REFERENCE_ALPHABET,
     REFERENCE_LENGTH,
 )
@@ -103,9 +105,19 @@ def _ts(dt: Optional[datetime], style: str = "R") -> str:
     return f"<t:{int(dt.timestamp())}:{style}>" if dt else "—"
 
 
-def _sanction_line(s, locale: str) -> str:
+def _action_label(action, locale: str, case_type=None) -> str:
+    """Label of a sanction action in the vocabulary of its case type.
+
+    Global (Moddy-team) cases speak in levels — warn / limited / suspended —
+    so a global ``ban`` reads "Suspended", not "Ban".
+    """
+    key = get_action_label_key(action, case_type)
+    return t(key or f"staff.mod.case.action.{action.value}", locale=locale)
+
+
+def _sanction_line(s, locale: str, case_type=None) -> str:
     status_dot = emojis.GREEN_STATUS if s.status == SanctionStatus.ACTIVE else emojis.RED_STATUS
-    action = t(f"staff.mod.case.action.{s.action.value}", locale=locale)
+    action = _action_label(s.action, locale, case_type)
     parts = [f"{status_dot} {s.emoji()} **{action}**"]
     parts.append(f"`{s.status.value}`")
     if s.expires_at:
@@ -122,7 +134,7 @@ def _sanction_line(s, locale: str) -> str:
     return line
 
 
-def _event_line(e, locale: str) -> str:
+def _event_line(e, locale: str, case_type=None) -> str:
     author = f"<@{e.author_id}>" if e.author_id else t("staff.mod.case.system", locale=locale)
     when = _ts(e.created_at)
     if e.type == EventType.COMMENT:
@@ -135,13 +147,13 @@ def _event_line(e, locale: str) -> str:
         return f"{emojis.FLAG} **{author}** • {when}\n`{kind}` {url}"
     if e.type == EventType.SANCTION_ADDED:
         act = (e.payload or {}).get("action", "")
-        label = t(f"staff.mod.case.action.{act}", locale=locale) if act else ""
+        label = _action_label(SanctionAction(act), locale, case_type) if act else ""
         return f"{emojis.ADD} {t('staff.mod.case.evt.sanction_added', locale=locale, action=label)} • {when}"
     if e.type == EventType.SANCTION_REVOKED:
         return f"{emojis.UNDONE} {t('staff.mod.case.evt.sanction_revoked', locale=locale)} • {author} • {when}"
     if e.type == EventType.SANCTION_EXPIRED:
         act = (e.payload or {}).get("action", "")
-        label = t(f"staff.mod.case.action.{act}", locale=locale) if act else ""
+        label = _action_label(SanctionAction(act), locale, case_type) if act else ""
         return f"{emojis.TIME} {t('staff.mod.case.evt.sanction_expired', locale=locale, action=label)} • {when}"
     if e.type == EventType.STATUS_CHANGE:
         p = e.payload or {}
@@ -195,7 +207,7 @@ def build_case_panel(ctx, case: Case, *, show_internal: bool = True) -> design.B
     if case.sanctions:
         container.add_item(ui.TextDisplay(f"**{t('staff.mod.case.sanctions', locale=locale)}**"))
         for s in case.sanctions:
-            container.add_item(ui.TextDisplay(_sanction_line(s, locale)))
+            container.add_item(ui.TextDisplay(_sanction_line(s, locale, case.type)))
     else:
         container.add_item(ui.TextDisplay(f"-# {t('staff.mod.case.no_sanctions', locale=locale)}"))
 
@@ -211,7 +223,7 @@ def build_case_panel(ctx, case: Case, *, show_internal: bool = True) -> design.B
         if len(events) > len(shown):
             container.add_item(ui.TextDisplay(f"-# {t('staff.mod.case.timeline_more', locale=locale, count=len(events) - len(shown))}"))
         for e in shown:
-            container.add_item(ui.TextDisplay(_event_line(e, locale)))
+            container.add_item(ui.TextDisplay(_event_line(e, locale, case.type)))
 
     view.add_item(container)
     return view
