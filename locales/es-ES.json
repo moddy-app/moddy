@@ -2474,7 +2474,8 @@
       "field_server": "Servidor",
       "field_level": "Nivel",
       "field_reason": "Motivo",
-      "field_case": "Case ID"
+      "field_case": "Case ID",
+      "footnote_deadline_final": "Estas medidas surtirán efecto el **{date}** (**{rel}**)."
     },
     "halt": {
       "title": "Apelación recibida",
@@ -2540,7 +2541,22 @@
       "pending_hint": "Grupos de sanción global con cuenta atrás `{status}`, la más próxima primero.",
       "pending_empty": "Ninguna cuenta atrás en este estado.",
       "denied_title": "Permiso denegado",
-      "denied": "Necesitas el permiso de sanción global para hacer esto."
+      "denied": "Necesitas el permiso de sanción global para hacer esto.",
+      "resume_title": "Reanudar la cuenta atrás",
+      "resume_button": "Reanudar la cuenta atrás",
+      "resume_prompt": "Reanudar la cuenta atrás de este grupo porque la apelación fue rechazada.",
+      "resume_grace_hint": "Nuevo periodo de gracia antes de aplicar. 48 por defecto, 0 para inmediato.",
+      "resume_reason_label": "Referencia de la apelación o nota",
+      "resume_reason_hint": "Opcional: se guarda en la cronología de los casos.",
+      "resume_done_title": "Cuenta atrás reanudada",
+      "resume_done": "Las consecuencias diferidas vuelven a estar programadas y se ha avisado al sujeto.",
+      "resume_failed_title": "Nada que reanudar",
+      "resume_failed": "Este grupo no tiene una cuenta atrás detenida (está en curso, ejecutada o nunca programada)."
+    },
+    "resume": {
+      "title": "Tu apelación ha sido rechazada",
+      "description": "Nuestro equipo ha revisado tu apelación y la ha rechazado. La sanción **{level}** se mantiene, y las medidas en espera vuelven a programarse.",
+      "deadline": "Ahora surtirán efecto el **{date}** (**{rel}**)."
     }
   }
 }

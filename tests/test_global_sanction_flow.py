@@ -139,6 +139,14 @@ class _StubDB:
         row.update(status="halted", halted_by=str(by_id), halted_reason=reason)
         return row
 
+    async def resume_enforcement(self, group_id, deadline):
+        row = self.enforcements.get(str(group_id))
+        if not row or row["status"] != "halted":
+            return None
+        row.update(status="pending", deadline=deadline, halted_by=None,
+                   halted_reason=None, halted_at=None)
+        return row
+
     async def cancel_enforcement(self, group_id):
         row = self.enforcements.get(str(group_id))
         if not row or row["status"] not in ("pending", "halted"):
@@ -587,3 +595,124 @@ def test_the_notice_links_to_violations_and_support():
         cases=[{"reference": "AAA111", "subject_type": "discord_user", "subject_id": "1"}])
     row = [c for c in view.children if isinstance(c, dui.ActionRow)][-1]
     assert [b.url for b in row.children] == [URL_VIOLATIONS, URL_SUPPORT]
+
+
+# --------------------------------------------------------------- resume flow
+
+@pytest.mark.asyncio
+async def test_resume_restarts_a_halted_countdown(service):
+    from services.global_sanction_service import ENFORCEMENT_GRACE_HOURS
+    svc, _, _ = service
+    result = await svc.apply(level=GlobalLevel.SUSPENDED, reason="x", issuer_id=1,
+                             user_id=10, notify=False)
+    await svc.halt(result["group_id"], by_id=99, notify=False)
+
+    row = await svc.resume(result["group_id"], by_id=99, reason="Appeal refused",
+                           notify=False)
+    assert row["status"] == "pending"
+    expected = datetime.now(timezone.utc) + timedelta(hours=ENFORCEMENT_GRACE_HOURS)
+    assert abs((row["deadline"] - expected).total_seconds()) < 60
+
+
+@pytest.mark.asyncio
+async def test_resume_grants_a_fresh_grace_period(service):
+    svc, _, _ = service
+    result = await svc.apply(level=GlobalLevel.SUSPENDED, reason="x", issuer_id=1,
+                             user_id=10, notify=False)
+    await svc.halt(result["group_id"], by_id=99, notify=False)
+
+    row = await svc.resume(result["group_id"], by_id=99, grace_hours=6, notify=False)
+    expected = datetime.now(timezone.utc) + timedelta(hours=6)
+    assert abs((row["deadline"] - expected).total_seconds()) < 60
+
+
+@pytest.mark.asyncio
+async def test_resume_notifies_the_backend(service):
+    svc, _, redis = service
+    result = await svc.apply(level=GlobalLevel.SUSPENDED, reason="x", issuer_id=1,
+                             user_id=10, notify=False)
+    await svc.halt(result["group_id"], by_id=99, notify=False)
+    await svc.resume(result["group_id"], by_id=99, notify=False)
+
+    event = redis.published[-1][1]
+    assert event["type"] == "enforcement_resumed"
+    assert event["resumed_by"] == "99"
+    assert event["deadline"]
+
+
+@pytest.mark.asyncio
+async def test_resuming_a_running_countdown_reports_nothing_to_restart(service):
+    svc, _, _ = service
+    result = await svc.apply(level=GlobalLevel.SUSPENDED, reason="x", issuer_id=1,
+                             user_id=10, notify=False)
+    assert await svc.resume(result["group_id"], by_id=99, notify=False) is None
+
+
+@pytest.mark.asyncio
+async def test_resuming_an_executed_countdown_is_refused(service):
+    svc, db, _ = service
+    result = await svc.apply(level=GlobalLevel.SUSPENDED, reason="x", issuer_id=1,
+                             user_id=10, notify=False)
+    db.enforcements[result["group_id"]]["status"] = "executed"
+    assert await svc.resume(result["group_id"], by_id=99, notify=False) is None
+
+
+@pytest.mark.asyncio
+async def test_a_resumed_countdown_executes_when_due(service):
+    svc, db, redis = service
+    result = await svc.apply(level=GlobalLevel.SUSPENDED, reason="x", issuer_id=1,
+                             user_id=10, notify=False)
+    await svc.halt(result["group_id"], by_id=99, notify=False)
+    await svc.resume(result["group_id"], by_id=99, grace_hours=0, notify=False)
+    db.enforcements[result["group_id"]]["deadline"] = (
+        datetime.now(timezone.utc) - timedelta(seconds=1))
+
+    assert await svc.run_due() == 1
+    assert redis.published[-1][1]["type"] == "enforcement_executed"
+
+
+@pytest.mark.asyncio
+async def test_a_halt_after_a_resume_works_again(service):
+    # A second appeal must be able to freeze the clock again.
+    svc, _, _ = service
+    result = await svc.apply(level=GlobalLevel.SUSPENDED, reason="x", issuer_id=1,
+                             user_id=10, notify=False)
+    await svc.halt(result["group_id"], by_id=99, notify=False)
+    await svc.resume(result["group_id"], by_id=99, notify=False)
+    assert await svc.halt(result["group_id"], by_id=99, notify=False) is not None
+
+
+def test_the_group_panel_offers_halt_while_running_and_resume_once_halted():
+    from utils.global_sanction_views import (
+        build_group_panel, GlobalSanctionHaltButton, GlobalSanctionResumeButton,
+    )
+    import discord.ui as dui
+
+    group = "0e5f6b0a-1111-2222-3333-444455556666"
+    cases = [{"reference": "AAA111", "subject_type": "discord_user", "subject_id": "1"}]
+
+    def _buttons(status):
+        view = build_group_panel(
+            level=GlobalLevel.SUSPENDED, group_id=group, cases=cases,
+            enforcement={"status": status, "deadline": None, "premium": False})
+        rows = [c for c in view.children if isinstance(c, dui.ActionRow)]
+        return [type(i) for r in rows for i in r.children]
+
+    assert _buttons("pending") == [GlobalSanctionHaltButton]
+    assert _buttons("halted") == [GlobalSanctionResumeButton]
+    # Nothing left to do once it fired or was cancelled.
+    assert _buttons("executed") == []
+    assert _buttons("cancelled") == []
+
+
+def test_a_refused_appeal_stops_offering_an_appeal_in_the_footnote():
+    from utils.global_sanction_views import _implications
+
+    _, offered = _implications(level=GlobalLevel.SUSPENDED, premium=False,
+                               has_servers=True, deadline=_SOON, locale="en-US")
+    _, final = _implications(level=GlobalLevel.SUSPENDED, premium=False,
+                             has_servers=True, deadline=_SOON, locale="en-US",
+                             appealable=False)
+    assert "appeal" in offered.lower()
+    assert "appeal" not in final.lower()
+    assert "take effect" in final

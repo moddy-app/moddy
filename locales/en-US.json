@@ -2474,7 +2474,8 @@
       "field_server": "Server",
       "field_level": "Level",
       "field_reason": "Reason",
-      "field_case": "Case ID"
+      "field_case": "Case ID",
+      "footnote_deadline_final": "These measures take effect on **{date}** (**{rel}**)."
     },
     "halt": {
       "title": "Appeal received",
@@ -2540,7 +2541,22 @@
       "pending_hint": "Global sanction groups with a `{status}` countdown, soonest first.",
       "pending_empty": "No countdown in this state.",
       "denied_title": "Permission denied",
-      "denied": "You need the global sanction permission to do this."
+      "denied": "You need the global sanction permission to do this.",
+      "resume_title": "Restart the countdown",
+      "resume_button": "Restart countdown",
+      "resume_prompt": "Restart the enforcement countdown of this group because the appeal was refused.",
+      "resume_grace_hint": "New grace period before the measures apply. Default 48, 0 for immediate.",
+      "resume_reason_label": "Appeal reference or note",
+      "resume_reason_hint": "Optional — kept on the case timeline.",
+      "resume_done_title": "Countdown restarted",
+      "resume_done": "The deferred consequences are scheduled again and the subject has been told.",
+      "resume_failed_title": "Nothing to restart",
+      "resume_failed": "This group has no halted countdown (it is running, executed or was never scheduled)."
+    },
+    "resume": {
+      "title": "Your appeal was refused",
+      "description": "Our team has reviewed your appeal and refused it. The **{level}** sanction stands, and the measures that were on hold are scheduled again.",
+      "deadline": "They now take effect on **{date}** (**{rel}**)."
     }
   }
 }

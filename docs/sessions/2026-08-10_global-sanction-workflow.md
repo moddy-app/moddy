@@ -24,6 +24,7 @@ flow works on `cases.group_id` — the existing column, no new mechanism:
 | `apply` | `global_sanction` | Sanction user and/or servers as one group |
 | `view` | `case_view` | Group status + countdown (live Halt button) |
 | `halt` | `global_enforcement` | Stop the countdown — appeal filed |
+| `resume` | `global_enforcement` | Restart the countdown — appeal refused |
 | `lift` | `global_sanction` | Revoke the whole group, cancel the countdown |
 | `pending` | `case_list` | The enforcement queue |
 
@@ -94,7 +95,7 @@ server is growth. The refusal DM names which case applies.
 
 - New: `services/global_sanction_service.py`, `utils/global_sanction_views.py`,
   `db/repositories/enforcements.py`, `staff/commands/mod/global_sanction/`
-  (5 commands + `_shared.py`), `tests/test_global_sanction_flow.py` (55 tests)
+  (6 commands + `_shared.py`), `tests/test_global_sanction_flow.py` (64 tests)
 - `bot.py` (service, sweeper, allowlists, join refusal), `db/base.py` (table),
   `db/repositories/moderation.py` (group queries),
   `utils/global_sanctions.py` (accents, emojis, allowlists),
@@ -124,12 +125,14 @@ server is growth. The refusal DM names which case applies.
   keyword and could not be imported.
 - **Warn schedules nothing.** It restricts nothing, so there is nothing to
   defer or appeal against.
+- **A resume grants a fresh grace period**, not the remainder of the frozen
+  one. The clock was stopped, the subject is told the new deadline, and
+  tracking a partly-elapsed delay across an arbitrarily long appeal buys
+  nothing. `/mod global resume` closes the appeal loop: halt on filing, resume
+  on refusal, lift on acceptance — cyclable as many times as there are appeals.
 
 ## Follow-ups
 
-- Nothing resumes a halted countdown automatically when an appeal is **refused**
-  — `db.resume_enforcement()` exists but no command calls it yet. A
-  `/mod global resume` would close the loop.
 - The bot leaves suspended guilds but never re-joins if the sanction is lifted
   after execution; the owner has to re-invite.
 - `docs/DATABASE.md` still documents a legacy `moderation_cases` table that the

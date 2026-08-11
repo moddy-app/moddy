@@ -2474,7 +2474,8 @@
       "field_server": "Server",
       "field_level": "Stufe",
       "field_reason": "Grund",
-      "field_case": "Case ID"
+      "field_case": "Case ID",
+      "footnote_deadline_final": "Diese Maßnahmen treten am **{date}** (**{rel}**) in Kraft."
     },
     "halt": {
       "title": "Einspruch eingegangen",
@@ -2540,7 +2541,22 @@
       "pending_hint": "Sanktionsgruppen mit Countdown `{status}`, früheste zuerst.",
       "pending_empty": "Kein Countdown in diesem Status.",
       "denied_title": "Zugriff verweigert",
-      "denied": "Dafür brauchst du die Berechtigung für globale Sanktionen."
+      "denied": "Dafür brauchst du die Berechtigung für globale Sanktionen.",
+      "resume_title": "Countdown neu starten",
+      "resume_button": "Countdown neu starten",
+      "resume_prompt": "Den Countdown dieser Gruppe neu starten, weil der Einspruch abgelehnt wurde.",
+      "resume_grace_hint": "Neue Karenzzeit vor der Anwendung. Standard 48, 0 für sofort.",
+      "resume_reason_label": "Einspruchsreferenz oder Notiz",
+      "resume_reason_hint": "Optional — wird im Fallverlauf gespeichert.",
+      "resume_done_title": "Countdown neu gestartet",
+      "resume_done": "Die aufgeschobenen Folgen sind wieder eingeplant und die Person wurde informiert.",
+      "resume_failed_title": "Nichts neu zu starten",
+      "resume_failed": "Diese Gruppe hat keinen gestoppten Countdown (er läuft, wurde ausgeführt oder nie geplant)."
+    },
+    "resume": {
+      "title": "Dein Einspruch wurde abgelehnt",
+      "description": "Unser Team hat deinen Einspruch geprüft und abgelehnt. Die Sanktion **{level}** bleibt bestehen, und die ausgesetzten Maßnahmen sind wieder eingeplant.",
+      "deadline": "Sie treten nun am **{date}** (**{rel}**) in Kraft."
     }
   }
 }

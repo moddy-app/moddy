@@ -2474,7 +2474,8 @@
       "field_server": "Servidor",
       "field_level": "Nível",
       "field_reason": "Motivo",
-      "field_case": "Case ID"
+      "field_case": "Case ID",
+      "footnote_deadline_final": "Estas medidas produzirão efeito a **{date}** (**{rel}**)."
     },
     "halt": {
       "title": "Recurso recebido",
@@ -2540,7 +2541,22 @@
       "pending_hint": "Grupos de sanção global com contagem `{status}`, a mais próxima primeiro.",
       "pending_empty": "Nenhuma contagem neste estado.",
       "denied_title": "Permissão negada",
-      "denied": "Precisa da permissão de sanção global para fazer isto."
+      "denied": "Precisa da permissão de sanção global para fazer isto.",
+      "resume_title": "Retomar a contagem",
+      "resume_button": "Retomar a contagem",
+      "resume_prompt": "Retomar a contagem decrescente deste grupo porque o recurso foi recusado.",
+      "resume_grace_hint": "Novo período de graça antes da aplicação. 48 por omissão, 0 para imediato.",
+      "resume_reason_label": "Referência do recurso ou nota",
+      "resume_reason_hint": "Opcional — guardado na cronologia dos casos.",
+      "resume_done_title": "Contagem retomada",
+      "resume_done": "As consequências diferidas voltam a estar agendadas e o visado foi avisado.",
+      "resume_failed_title": "Nada para retomar",
+      "resume_failed": "Este grupo não tem contagem parada (está a decorrer, executada ou nunca agendada)."
+    },
+    "resume": {
+      "title": "O seu recurso foi recusado",
+      "description": "A nossa equipa analisou o seu recurso e recusou-o. A sanção **{level}** mantém-se, e as medidas suspensas voltam a estar agendadas.",
+      "deadline": "Produzem agora efeito a **{date}** (**{rel}**)."
     }
   }
 }

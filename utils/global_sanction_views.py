@@ -137,6 +137,7 @@ def _implications(
     has_servers: bool,
     deadline: Optional[datetime],
     locale: str,
+    appealable: bool = True,
 ) -> tuple:
     """Build the "what this means for you" bullets for *this* subject.
 
@@ -145,9 +146,14 @@ def _implications(
     user with no server hears nothing about servers, and legal action is only
     ever mentioned to a suspended one.
 
+    ``appealable=False`` is for a countdown restarted after a **refused**
+    appeal — the deadline footnote must not keep offering an appeal that has
+    already been decided.
+
     Returns ``(bullets_markdown, footnotes_markdown | None)``.
     """
     notes = _Footnotes(locale)
+    deadline_note = "deadline" if appealable else "deadline_final"
     # A warning restricts nothing, so it carries no consequence to defer — and
     # must never threaten a subscription or a server.
     restricts = level in (GlobalLevel.LIMITED, GlobalLevel.SUSPENDED)
@@ -162,15 +168,15 @@ def _implications(
     if premium and restricts:
         if deferred:
             bullets.append(
-                _t("subscription") + f" {notes.mark('deadline')} {notes.mark('terms')}")
+                _t("subscription") + f" {notes.mark(deadline_note)} {notes.mark('terms')}")
         else:
             bullets.append(_t("subscription_now") + f" {notes.mark('terms')}")
 
     # Servers — only if any server is actually involved.
     if level is GlobalLevel.SUSPENDED and has_servers:
         if deferred:
-            bullets.append(_t("servers") + f" {notes.mark('deadline')}")
-            bullets.append(_t("data") + f" {notes.mark('deadline')}")
+            bullets.append(_t("servers") + f" {notes.mark(deadline_note)}")
+            bullets.append(_t("data") + f" {notes.mark(deadline_note)}")
         else:
             bullets.append(_t("servers_now"))
             bullets.append(_t("data_now"))
@@ -315,6 +321,52 @@ def build_halt_notice(
         url=URL_VIOLATIONS, style=discord.ButtonStyle.link,
     ))
     view.add_item(row)
+    return view
+
+
+def build_resume_notice(
+    *, level: GlobalLevel, cases: List[Dict[str, Any]],
+    deadline: Optional[datetime] = None, premium: bool = False,
+    locale: str = NOTICE_LOCALE,
+) -> BaseView:
+    """Told to the subject when their appeal is refused and the clock restarts.
+
+    This is the last thing they hear before the measures apply, so it repeats
+    the new deadline and what is about to happen.
+    """
+    view = BaseView()
+    container = _container(level)
+    container.add_item(ui.TextDisplay(
+        f"### {emojis.TIME} {t('global_sanctions.resume.title', locale=locale)}\n"
+        + t("global_sanctions.resume.description", locale=locale,
+            level=_level_name(level, locale))
+    ))
+
+    if deadline is not None:
+        container.add_item(ui.TextDisplay(
+            t("global_sanctions.resume.deadline", locale=locale,
+              date=_ts(deadline), rel=_ts(deadline, "R"))
+        ))
+
+    body, footnotes = _implications(
+        level=level, premium=premium,
+        has_servers=any(c.get("subject_type") == "discord_guild" for c in cases),
+        deadline=deadline, locale=locale, appealable=False,
+    )
+    container.add_item(ui.TextDisplay(body))
+    if footnotes:
+        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+        container.add_item(ui.TextDisplay(footnotes))
+
+    # Compact reference list — the full per-case cards were in the first
+    # notice; here the subject only needs to know which affair this is.
+    lines = _case_lines(cases)
+    if lines:
+        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+        container.add_item(ui.TextDisplay("\n".join(lines)))
+
+    view.add_item(container)
+    view.add_item(_link_row(locale))
     return view
 
 
@@ -518,6 +570,74 @@ class GlobalSanctionHaltModal(BaseModal):
             ), ephemeral=True)
 
 
+class GlobalSanctionResumeModal(BaseModal):
+    """Restart a halted countdown — the appeal was refused."""
+
+    def __init__(self, *, bot, group_id: str, locale: str = "en-US", on_done=None):
+        super().__init__(
+            title=t("global_sanctions.staff.resume_title", locale=locale)[:45],
+            timeout=600,
+        )
+        self.bot = bot
+        self.group_id = group_id
+        self.locale = locale
+        self.on_done = on_done
+
+        self.grace_label = ui.Label(
+            text=t("global_sanctions.staff.grace_label", locale=locale)[:45],
+            description=t("global_sanctions.staff.resume_grace_hint", locale=locale)[:100],
+            component=ui.TextInput(
+                style=discord.TextStyle.short, required=False,
+                max_length=4, placeholder="48",
+            ),
+        )
+        self.add_item(self.grace_label)
+
+        self.reason_label = ui.Label(
+            text=t("global_sanctions.staff.resume_reason_label", locale=locale)[:45],
+            description=t("global_sanctions.staff.resume_reason_hint", locale=locale)[:100],
+            component=ui.TextInput(
+                style=discord.TextStyle.paragraph, required=False, max_length=500,
+            ),
+        )
+        self.add_item(self.reason_label)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        from services.global_sanction_service import ENFORCEMENT_GRACE_HOURS
+
+        try:
+            grace_hours = _parse_int(
+                self.grace_label.component.value, ENFORCEMENT_GRACE_HOURS)
+        except ValueError:
+            await interaction.response.send_message(view=_error_panel(
+                t("global_sanctions.staff.invalid_number_title", locale=self.locale),
+                t("global_sanctions.staff.invalid_number", locale=self.locale),
+            ), ephemeral=True)
+            return
+
+        await interaction.response.defer(ephemeral=True)
+        reason = (self.reason_label.component.value or "").strip() or None
+        row = await self.bot.global_sanctions.resume(
+            self.group_id, by_id=interaction.user.id,
+            grace_hours=grace_hours, reason=reason,
+        )
+
+        if row is None:
+            await interaction.followup.send(view=_error_panel(
+                t("global_sanctions.staff.resume_failed_title", locale=self.locale),
+                t("global_sanctions.staff.resume_failed", locale=self.locale),
+            ), ephemeral=True)
+            return
+
+        if self.on_done:
+            await self.on_done(interaction, row)
+        else:
+            await interaction.followup.send(view=_success_panel(
+                t("global_sanctions.staff.resume_done_title", locale=self.locale),
+                t("global_sanctions.staff.resume_done", locale=self.locale),
+            ), ephemeral=True)
+
+
 # --------------------------------------------------------------------------- #
 # Staff — group status panel + live actions
 # --------------------------------------------------------------------------- #
@@ -567,10 +687,16 @@ def build_group_panel(
 
     view.add_item(container)
 
-    if actions and enforcement and enforcement.get("status") == "pending":
+    # The one action that makes sense right now, and only that one.
+    if actions and enforcement:
+        status = enforcement.get("status")
         row = ui.ActionRow()
-        row.add_item(GlobalSanctionHaltButton(group_id, locale=locale))
-        view.add_item(row)
+        if status == "pending":
+            row.add_item(GlobalSanctionHaltButton(group_id, locale=locale))
+        elif status == "halted":
+            row.add_item(GlobalSanctionResumeButton(group_id, locale=locale))
+        if row.children:
+            view.add_item(row)
 
     return view
 
@@ -680,6 +806,42 @@ class GlobalSanctionHaltButton(
         ))
 
 
+class GlobalSanctionResumeButton(
+    ui.DynamicItem[ui.Button],
+    template=rf"moddy:gsanc:resume:(?P<group>{_UUID_RE})",
+):
+    """Restart a halted countdown, straight from the status panel."""
+
+    def __init__(self, group_id: str, locale: str = "en-US"):
+        super().__init__(
+            ui.Button(
+                label=t("global_sanctions.staff.resume_button", locale=locale)[:80],
+                style=discord.ButtonStyle.danger,
+                emoji=discord.PartialEmoji.from_str(emojis.TIME),
+                custom_id=f"moddy:gsanc:resume:{group_id}",
+            )
+        )
+        self.group_id = group_id
+
+    @classmethod
+    async def from_custom_id(cls, interaction, item, match: re.Match):
+        return cls(match["group"])
+
+    @_guarded
+    async def callback(self, interaction: discord.Interaction):
+        from utils.i18n import i18n
+        locale = i18n.get_user_locale(interaction)
+        if not await _may_manage(interaction):
+            await interaction.response.send_message(view=_error_panel(
+                t("global_sanctions.staff.denied_title", locale=locale),
+                t("global_sanctions.staff.denied", locale=locale),
+            ), ephemeral=True)
+            return
+        await interaction.response.send_modal(GlobalSanctionResumeModal(
+            bot=interaction.client, group_id=self.group_id, locale=locale,
+        ))
+
+
 class GlobalSanctionPersistence(BaseView):
     """Marker view registering the global sanction dynamic items at startup."""
 
@@ -687,7 +849,10 @@ class GlobalSanctionPersistence(BaseView):
 
     @classmethod
     def register_persistent(cls, bot) -> None:
-        bot.add_dynamic_items(GlobalSanctionHaltButton)
+        bot.add_dynamic_items(
+            GlobalSanctionHaltButton,
+            GlobalSanctionResumeButton,
+        )
 
 
 # --------------------------------------------------------------------------- #

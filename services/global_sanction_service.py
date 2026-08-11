@@ -264,6 +264,51 @@ class GlobalSanctionService:
 
         return row
 
+    # ----------------------------------------------------------------- resume
+
+    async def resume(
+        self, group_id, *, by_id: int, grace_hours: int = ENFORCEMENT_GRACE_HOURS,
+        reason: Optional[str] = None, notify: bool = True,
+    ) -> Optional[Dict[str, Any]]:
+        """Restart a halted countdown because the appeal was refused.
+
+        The counterpart of :meth:`halt`. The subject gets a **fresh** grace
+        period rather than the remainder of the old one — the appeal froze the
+        clock, and they are told the new deadline, so restarting from zero is
+        both simpler and fairer than resuming a partly-elapsed delay.
+
+        Returns the updated enforcement row, or ``None`` when there was no
+        *halted* countdown to restart.
+        """
+        if not self.db:
+            raise RuntimeError("database unavailable")
+
+        deadline = datetime.now(timezone.utc) + timedelta(hours=max(grace_hours, 0))
+        row = await self.db.resume_enforcement(group_id, deadline)
+        if row is None:
+            return None
+
+        await self._publish("enforcement_resumed", {
+            "group_id": str(group_id),
+            "level": row.get("level"),
+            "subject_id": row.get("subject_id"),
+            "premium": bool(row.get("premium")),
+            "resumed_by": str(by_id),
+            "reason": reason,
+            "deadline": self._iso(row.get("deadline")),
+        })
+
+        group_cases = await self.db.list_group_cases(group_id)
+        await self._log_group_event(
+            [self._case_summary(c) for c in group_cases], "enforcement_resumed",
+            reason or "Appeal refused — enforcement countdown restarted.",
+        )
+
+        if notify and row.get("subject_id"):
+            await self._notify_resume(row, group_cases)
+
+        return row
+
     # ---------------------------------------------------------------- execute
 
     async def run_due(self) -> int:
@@ -387,6 +432,25 @@ class GlobalSanctionService:
             user = await self.bot.fetch_user(int(row["subject_id"]))
             await user.send(view=build_halt_notice(
                 level=self._level_of(row), cases=[self._case_summary(c) for c in group_cases],
+            ))
+        except (discord.HTTPException, ValueError, TypeError):
+            pass
+
+    async def _notify_resume(self, row: Dict[str, Any], group_cases: List[Dict[str, Any]]) -> None:
+        """Tell the subject their appeal failed and the clock is running again.
+
+        This is the last warning they get before the measures apply, so the new
+        deadline has to reach them.
+        """
+        from utils.global_sanction_views import build_resume_notice
+
+        try:
+            user = await self.bot.fetch_user(int(row["subject_id"]))
+            await user.send(view=build_resume_notice(
+                level=self._level_of(row),
+                cases=[self._case_summary(c) for c in group_cases],
+                deadline=row.get("deadline"),
+                premium=bool(row.get("premium")),
             ))
         except (discord.HTTPException, ValueError, TypeError):
             pass

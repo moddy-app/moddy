@@ -2473,7 +2473,8 @@
       "field_server": "Serveur",
       "field_level": "Niveau",
       "field_reason": "Raison",
-      "field_case": "Case ID"
+      "field_case": "Case ID",
+      "footnote_deadline_final": "Ces mesures prendront effet le **{date}** (**{rel}**)."
     },
     "halt": {
       "title": "Appel reçu",
@@ -2539,7 +2540,22 @@
       "pending_hint": "Groupes de sanction globale au statut `{status}`, échéance la plus proche d'abord.",
       "pending_empty": "Aucun compte à rebours dans cet état.",
       "denied_title": "Permission refusée",
-      "denied": "Vous avez besoin de la permission de sanction globale pour faire cela."
+      "denied": "Vous avez besoin de la permission de sanction globale pour faire cela.",
+      "resume_title": "Relancer le compte à rebours",
+      "resume_button": "Relancer le compte à rebours",
+      "resume_prompt": "Relancer le compte à rebours de ce groupe suite au refus de l'appel.",
+      "resume_grace_hint": "Nouveau délai avant application. 48 par défaut, 0 pour immédiat.",
+      "resume_reason_label": "Référence de l'appel ou note",
+      "resume_reason_hint": "Facultatif — conservé dans la timeline des cases.",
+      "resume_done_title": "Compte à rebours relancé",
+      "resume_done": "Les conséquences différées sont reprogrammées et le sujet a été prévenu.",
+      "resume_failed_title": "Rien à relancer",
+      "resume_failed": "Ce groupe n'a pas de compte à rebours arrêté (il est en cours, exécuté ou jamais programmé)."
+    },
+    "resume": {
+      "title": "Ton appel a été refusé",
+      "description": "Notre équipe a examiné ton appel et l'a refusé. La sanction **{level}** est maintenue, et les mesures suspendues sont de nouveau programmées.",
+      "deadline": "Elles prendront désormais effet le **{date}** (**{rel}**)."
     }
   }
 }
