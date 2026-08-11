@@ -229,7 +229,7 @@ arguments (used by `sql` and `jsk`). **Commands must not log themselves.**
 | `interserver_info` | Info on an interserver channel |
 | `interserver_delete` | Delete an interserver channel |
 | `case create/view/list/edit/close/note` | Moderation case management |
-| `global apply/view/halt/lift/pending` | Moddy-team global sanctions (grouped cases, appeal countdown) |
+| `global apply/view/halt/resume/lift/pending` | Moddy-team global sanctions (grouped cases, appeal countdown) |
 
 ### `/support` / `/com`
 

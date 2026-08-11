@@ -24,6 +24,7 @@ flow works on `cases.group_id` — the existing column, no new mechanism:
 | `apply` | `global_sanction` | Sanction user and/or servers as one group |
 | `view` | `case_view` | Group status + countdown (live Halt button) |
 | `halt` | `global_enforcement` | Stop the countdown — appeal filed |
+| `resume` | `global_enforcement` | Restart the countdown — appeal refused |
 | `lift` | `global_sanction` | Revoke the whole group, cancel the countdown |
 | `pending` | `case_list` | The enforcement queue |
 
@@ -47,10 +48,20 @@ publishes the billing/data side for the backend.
 
 ### Notices
 
-`utils/global_sanction_views.py`: the grouped notice DM (generic English intro,
-case list, effects, deadline block, Details/Appeal/Terms link buttons), the
-"appeal received" DM, and the guild-join refusal DM. Every panel wears the
-**accent colour of its level** — yellow / orange / red.
+`utils/global_sanction_views.py`: the grouped notice DM, the "appeal received"
+DM, and the guild-join refusal DM. Every container wears the **accent colour of
+its level** — yellow / orange / red.
+
+The notice is one explanatory container + **one container per case** + a
+Details/Appeal link row. Its "what this means for you" list is built from the
+subject's real situation (`_implications`): a warning threatens nothing, a user
+with no subscription hears nothing about billing, a user with no server hears
+nothing about servers, and legal action is only ever mentioned to a suspended
+one. Footnotes are numbered in order of first use so the numbering stays
+contiguous whatever was skipped.
+
+A suspension also costs the subject **every server they own**, not only those
+named in the group — the notice says so and `_execute` does it.
 
 ### What a suspended user keeps
 
@@ -84,7 +95,7 @@ server is growth. The refusal DM names which case applies.
 
 - New: `services/global_sanction_service.py`, `utils/global_sanction_views.py`,
   `db/repositories/enforcements.py`, `staff/commands/mod/global_sanction/`
-  (5 commands + `_shared.py`), `tests/test_global_sanction_flow.py` (41 tests)
+  (6 commands + `_shared.py`), `tests/test_global_sanction_flow.py` (64 tests)
 - `bot.py` (service, sweeper, allowlists, join refusal), `db/base.py` (table),
   `db/repositories/moderation.py` (group queries),
   `utils/global_sanctions.py` (accents, emojis, allowlists),
@@ -114,12 +125,14 @@ server is growth. The refusal DM names which case applies.
   keyword and could not be imported.
 - **Warn schedules nothing.** It restricts nothing, so there is nothing to
   defer or appeal against.
+- **A resume grants a fresh grace period**, not the remainder of the frozen
+  one. The clock was stopped, the subject is told the new deadline, and
+  tracking a partly-elapsed delay across an arbitrarily long appeal buys
+  nothing. `/mod global resume` closes the appeal loop: halt on filing, resume
+  on refusal, lift on acceptance — cyclable as many times as there are appeals.
 
 ## Follow-ups
 
-- Nothing resumes a halted countdown automatically when an appeal is **refused**
-  — `db.resume_enforcement()` exists but no command calls it yet. A
-  `/mod global resume` would close the loop.
 - The bot leaves suspended guilds but never re-joins if the sanction is lifted
   after execution; the owner has to re-invite.
 - `docs/DATABASE.md` still documents a legacy `moderation_cases` table that the

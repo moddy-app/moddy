@@ -2430,8 +2430,7 @@
         "title": "Server suspended",
         "description": "This server no longer has access to any Moddy service: it has been suspended by our team."
       },
-      "appeal_hint": "If you believe this is a mistake, you can request a review.",
-      "appeal_button": "Request a review"
+      "appeal_hint": "If you believe this is a mistake, you can request a review."
     },
     "limited": {
       "user": {
@@ -2444,8 +2443,7 @@
       },
       "banner_title": "Limitation in effect",
       "no_new_modules": "Modules that are already configured stay editable, but no new module can be set up while the limitation is active.",
-      "appeal_hint": "If you believe this is a mistake, you can request a review.",
-      "appeal_button": "Request a review"
+      "appeal_hint": "If you believe this is a mistake, you can request a review."
     },
     "level": {
       "warn": "Global warning",
@@ -2453,23 +2451,31 @@
       "suspended": "Suspended"
     },
     "notice": {
-      "title": "Enforcement notice",
-      "intro": "Our team has taken action on your account following a breach of the Moddy rules. This message covers **every** case opened for this incident — you will not receive a separate message for each one.",
-      "level": "Level",
-      "reason": "Reason",
-      "cases": "Cases opened",
-      "effects": "What this changes",
-      "effects_warn": "Nothing is restricted. This warning stays on your record and counts if it happens again.",
-      "effects_limited": "Premium features are disabled, the AI automod stops running, and no new module can be configured. Modules already set up keep working.",
-      "effects_suspended": "You have no access to any Moddy service.",
-      "deadline_title": "Action required",
-      "deadline_premium": "In accordance with our [Terms of Service]({terms}), your subscription will be **cancelled without refund** on {date} ({rel}).",
-      "deadline_suspended": "Moddy will **leave** the affected server(s) on {date} ({rel}), and stored configuration and other data may be deleted.",
-      "deadline_hint": "Appealing before that date stops this countdown.",
-      "footer": "Full details of every case: {url}",
-      "button_details": "View details",
+      "title": "You are breaking Moddy's rules",
+      "intro": "One or more decisions have been made following a breach of Moddy's rules, concerning you or your servers. You can review the details [**here**]({url}).",
+      "button_details": "Details",
       "button_appeal": "Appeal",
-      "button_terms": "Terms of Service"
+      "appeal": "If you believe this is a mistake, you can appeal on our [**support server**]({url}).",
+      "implies_title": "What this means for you:",
+      "implies_warn": "This warning stays on your record and counts if it happens again",
+      "implies_limited": "Premium features are disabled, the AI automod is off, and you can no longer configure new modules",
+      "implies_suspended": "You no longer have access to any Moddy service",
+      "implies_subscription": "Your subscription will be cancelled without a refund",
+      "implies_subscription_now": "Your subscription is cancelled without a refund",
+      "implies_servers": "Moddy will leave the server(s) concerned as well as your other servers",
+      "implies_servers_now": "Moddy has left the server(s) concerned as well as your other servers",
+      "implies_data": "Stored configuration and other data may be deleted",
+      "implies_data_now": "Stored configuration and other data may be deleted",
+      "implies_legal": "Legal action may be taken",
+      "footnote_deadline": "These measures take effect on **{date}** (**{rel}**). Opening an appeal before that deadline puts the countdown on hold.",
+      "footnote_terms": "In accordance with our [**terms of service**]({terms}).",
+      "footnote_legal": "Depending on the nature of the breach, Moddy reserves the right to take any appropriate legal action and to pass the evidence to the relevant authorities.",
+      "field_user": "User",
+      "field_server": "Server",
+      "field_level": "Level",
+      "field_reason": "Reason",
+      "field_case": "Case ID",
+      "footnote_deadline_final": "These measures take effect on **{date}** (**{rel}**)."
     },
     "halt": {
       "title": "Appeal received",
@@ -2535,7 +2541,22 @@
       "pending_hint": "Global sanction groups with a `{status}` countdown, soonest first.",
       "pending_empty": "No countdown in this state.",
       "denied_title": "Permission denied",
-      "denied": "You need the global sanction permission to do this."
+      "denied": "You need the global sanction permission to do this.",
+      "resume_title": "Restart the countdown",
+      "resume_button": "Restart countdown",
+      "resume_prompt": "Restart the enforcement countdown of this group because the appeal was refused.",
+      "resume_grace_hint": "New grace period before the measures apply. Default 48, 0 for immediate.",
+      "resume_reason_label": "Appeal reference or note",
+      "resume_reason_hint": "Optional — kept on the case timeline.",
+      "resume_done_title": "Countdown restarted",
+      "resume_done": "The deferred consequences are scheduled again and the subject has been told.",
+      "resume_failed_title": "Nothing to restart",
+      "resume_failed": "This group has no halted countdown (it is running, executed or was never scheduled)."
+    },
+    "resume": {
+      "title": "Your appeal was refused",
+      "description": "Our team has reviewed your appeal and refused it. The **{level}** sanction stands, and the measures that were on hold are scheduled again.",
+      "deadline": "They now take effect on **{date}** (**{rel}**)."
     }
   }
 }

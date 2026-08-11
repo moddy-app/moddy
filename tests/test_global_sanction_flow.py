@@ -139,6 +139,14 @@ class _StubDB:
         row.update(status="halted", halted_by=str(by_id), halted_reason=reason)
         return row
 
+    async def resume_enforcement(self, group_id, deadline):
+        row = self.enforcements.get(str(group_id))
+        if not row or row["status"] != "halted":
+            return None
+        row.update(status="pending", deadline=deadline, halted_by=None,
+                   halted_reason=None, halted_at=None)
+        return row
+
     async def cancel_enforcement(self, group_id):
         row = self.enforcements.get(str(group_id))
         if not row or row["status"] not in ("pending", "halted"):
@@ -169,14 +177,26 @@ class _StubDB:
         return due
 
 
+class _StubGuild:
+    def __init__(self, guild_id, owner_id, left):
+        self.id = guild_id
+        self.owner_id = owner_id
+        self._left = left
+
+    async def leave(self):
+        self._left.append(self.id)
+
+
 class _StubBot:
-    def __init__(self, db=None, redis=None):
+    def __init__(self, db=None, redis=None, guilds=()):
         self.db = db
         self.redis = redis
         self.left = []
+        # guilds: iterable of (guild_id, owner_id)
+        self.guilds = [_StubGuild(gid, oid, self.left) for gid, oid in guilds]
 
     def get_guild(self, guild_id):
-        return None
+        return next((g for g in self.guilds if g.id == int(guild_id)), None)
 
     def get_user(self, user_id):
         return None
@@ -185,13 +205,17 @@ class _StubBot:
         raise RuntimeError("no DMs in tests")
 
 
-@pytest.fixture
-def service():
+def _make_service(guilds=()):
     from services.global_sanction_service import GlobalSanctionService
     db, redis = _StubDB(), _StubRedis()
-    bot = _StubBot(db, redis)
+    bot = _StubBot(db, redis, guilds)
     gs.invalidate(bot)
     return GlobalSanctionService(bot), db, redis
+
+
+@pytest.fixture
+def service():
+    return _make_service()
 
 
 # ---------------------------------------------------------------- apply flow
@@ -426,3 +450,269 @@ def test_the_server_is_reported_before_the_people():
 
 def test_the_owner_is_reported_before_the_inviter():
     assert _decide(owner="limited", inviter="suspended") == "owner"
+
+
+# ------------------------------- a suspension costs every server they own
+
+@pytest.mark.asyncio
+async def test_execution_leaves_the_suspended_owner_other_servers():
+    # Server 20 is named in the group; 21 is another one they own. Both go.
+    svc, db, _ = _make_service(guilds=((20, 10), (21, 10), (22, 99)))
+    result = await svc.apply(level=GlobalLevel.SUSPENDED, reason="x", issuer_id=1,
+                             user_id=10, guild_ids=[20], notify=False)
+    db.enforcements[result["group_id"]]["deadline"] = (
+        datetime.now(timezone.utc) - timedelta(seconds=1))
+
+    await svc.run_due()
+    assert sorted(svc.bot.left) == [20, 21]
+
+
+@pytest.mark.asyncio
+async def test_execution_spares_servers_owned_by_someone_else():
+    svc, db, _ = _make_service(guilds=((22, 99),))
+    result = await svc.apply(level=GlobalLevel.SUSPENDED, reason="x", issuer_id=1,
+                             user_id=10, notify=False)
+    db.enforcements[result["group_id"]]["deadline"] = (
+        datetime.now(timezone.utc) - timedelta(seconds=1))
+
+    await svc.run_due()
+    assert svc.bot.left == []
+
+
+@pytest.mark.asyncio
+async def test_a_limitation_never_evicts_the_bot():
+    svc, db, _ = _make_service(guilds=((20, 10),))
+    result = await svc.apply(level=GlobalLevel.LIMITED, reason="x", issuer_id=1,
+                             user_id=10, notify=False)
+    db.enforcements[result["group_id"]]["deadline"] = (
+        datetime.now(timezone.utc) - timedelta(seconds=1))
+
+    await svc.run_due()
+    assert svc.bot.left == []
+
+
+# ------------------------------ the notice says only what actually applies
+
+def _implications_text(level, *, premium=False, has_servers=False, deadline=None):
+    from utils.global_sanction_views import _implications
+    body, footnotes = _implications(
+        level=level, premium=premium, has_servers=has_servers,
+        deadline=deadline, locale="en-US",
+    )
+    return body, footnotes or ""
+
+
+_SOON = datetime.now(timezone.utc) + timedelta(hours=48)
+
+
+def test_a_warning_threatens_nothing():
+    body, notes = _implications_text(GlobalLevel.WARN, premium=True, has_servers=True,
+                                     deadline=_SOON)
+    assert body.count("- ") == 1
+    assert "subscription" not in body.lower()
+    assert "server" not in body.lower()
+    assert "legal" not in body.lower()
+    assert notes == ""
+
+
+def test_only_a_suspension_mentions_legal_action():
+    for level in (GlobalLevel.WARN, GlobalLevel.LIMITED):
+        body, _ = _implications_text(level, deadline=_SOON)
+        assert "legal" not in body.lower()
+    body, _ = _implications_text(GlobalLevel.SUSPENDED, deadline=_SOON)
+    assert "legal" in body.lower()
+
+
+def test_a_user_without_a_subscription_hears_nothing_about_billing():
+    body, notes = _implications_text(GlobalLevel.SUSPENDED, premium=False, deadline=_SOON)
+    assert "subscription" not in body.lower()
+    assert "terms of service" not in notes.lower()
+
+
+def test_a_paying_user_is_told_about_the_cancellation():
+    body, notes = _implications_text(GlobalLevel.SUSPENDED, premium=True, deadline=_SOON)
+    assert "subscription" in body.lower()
+    assert "terms of service" in notes.lower()
+
+
+def test_a_user_without_servers_hears_nothing_about_servers():
+    body, _ = _implications_text(GlobalLevel.SUSPENDED, has_servers=False, deadline=_SOON)
+    assert "server" not in body.lower()
+
+
+def test_a_limitation_never_mentions_leaving_servers():
+    body, _ = _implications_text(GlobalLevel.LIMITED, has_servers=True, deadline=_SOON)
+    assert "leave" not in body.lower()
+
+
+def test_footnotes_are_numbered_in_order_of_first_use():
+    body, notes = _implications_text(GlobalLevel.SUSPENDED, premium=True,
+                                     has_servers=True, deadline=_SOON)
+    assert "¹" in body and "²" in body and "³" in body
+    lines = notes.splitlines()
+    assert len(lines) == 3
+    assert lines[0].startswith("-# ¹") and lines[1].startswith("-# ²")
+    assert lines[2].startswith("-# ³")
+
+
+def test_numbering_stays_contiguous_when_a_note_is_skipped():
+    # No subscription: the "terms" note disappears and legal becomes ².
+    body, notes = _implications_text(GlobalLevel.SUSPENDED, premium=False,
+                                     has_servers=True, deadline=_SOON)
+    assert "³" not in body
+    lines = notes.splitlines()
+    assert len(lines) == 2
+    assert lines[0].startswith("-# ¹") and lines[1].startswith("-# ²")
+
+
+def test_no_deadline_means_no_deadline_footnote():
+    _, notes = _implications_text(GlobalLevel.SUSPENDED, premium=True,
+                                  has_servers=True, deadline=None)
+    assert "take effect" not in notes
+
+
+def test_the_notice_renders_one_container_per_case():
+    from utils.global_sanction_views import build_sanction_notice
+    import discord.ui as dui
+
+    cases = [
+        {"reference": "AAA111", "subject_type": "discord_user", "subject_id": "1"},
+        {"reference": "BBB222", "subject_type": "discord_guild", "subject_id": "2"},
+    ]
+    view = build_sanction_notice(level=GlobalLevel.SUSPENDED, reason="r",
+                                 cases=cases, deadline=_SOON)
+    containers = [c for c in view.children if isinstance(c, dui.Container)]
+    # One explanatory container + one per case.
+    assert len(containers) == 3
+
+
+def test_the_notice_links_to_violations_and_support():
+    from utils.global_sanction_views import build_sanction_notice, URL_VIOLATIONS, URL_SUPPORT
+    import discord.ui as dui
+
+    view = build_sanction_notice(
+        level=GlobalLevel.WARN, reason="r",
+        cases=[{"reference": "AAA111", "subject_type": "discord_user", "subject_id": "1"}])
+    row = [c for c in view.children if isinstance(c, dui.ActionRow)][-1]
+    assert [b.url for b in row.children] == [URL_VIOLATIONS, URL_SUPPORT]
+
+
+# --------------------------------------------------------------- resume flow
+
+@pytest.mark.asyncio
+async def test_resume_restarts_a_halted_countdown(service):
+    from services.global_sanction_service import ENFORCEMENT_GRACE_HOURS
+    svc, _, _ = service
+    result = await svc.apply(level=GlobalLevel.SUSPENDED, reason="x", issuer_id=1,
+                             user_id=10, notify=False)
+    await svc.halt(result["group_id"], by_id=99, notify=False)
+
+    row = await svc.resume(result["group_id"], by_id=99, reason="Appeal refused",
+                           notify=False)
+    assert row["status"] == "pending"
+    expected = datetime.now(timezone.utc) + timedelta(hours=ENFORCEMENT_GRACE_HOURS)
+    assert abs((row["deadline"] - expected).total_seconds()) < 60
+
+
+@pytest.mark.asyncio
+async def test_resume_grants_a_fresh_grace_period(service):
+    svc, _, _ = service
+    result = await svc.apply(level=GlobalLevel.SUSPENDED, reason="x", issuer_id=1,
+                             user_id=10, notify=False)
+    await svc.halt(result["group_id"], by_id=99, notify=False)
+
+    row = await svc.resume(result["group_id"], by_id=99, grace_hours=6, notify=False)
+    expected = datetime.now(timezone.utc) + timedelta(hours=6)
+    assert abs((row["deadline"] - expected).total_seconds()) < 60
+
+
+@pytest.mark.asyncio
+async def test_resume_notifies_the_backend(service):
+    svc, _, redis = service
+    result = await svc.apply(level=GlobalLevel.SUSPENDED, reason="x", issuer_id=1,
+                             user_id=10, notify=False)
+    await svc.halt(result["group_id"], by_id=99, notify=False)
+    await svc.resume(result["group_id"], by_id=99, notify=False)
+
+    event = redis.published[-1][1]
+    assert event["type"] == "enforcement_resumed"
+    assert event["resumed_by"] == "99"
+    assert event["deadline"]
+
+
+@pytest.mark.asyncio
+async def test_resuming_a_running_countdown_reports_nothing_to_restart(service):
+    svc, _, _ = service
+    result = await svc.apply(level=GlobalLevel.SUSPENDED, reason="x", issuer_id=1,
+                             user_id=10, notify=False)
+    assert await svc.resume(result["group_id"], by_id=99, notify=False) is None
+
+
+@pytest.mark.asyncio
+async def test_resuming_an_executed_countdown_is_refused(service):
+    svc, db, _ = service
+    result = await svc.apply(level=GlobalLevel.SUSPENDED, reason="x", issuer_id=1,
+                             user_id=10, notify=False)
+    db.enforcements[result["group_id"]]["status"] = "executed"
+    assert await svc.resume(result["group_id"], by_id=99, notify=False) is None
+
+
+@pytest.mark.asyncio
+async def test_a_resumed_countdown_executes_when_due(service):
+    svc, db, redis = service
+    result = await svc.apply(level=GlobalLevel.SUSPENDED, reason="x", issuer_id=1,
+                             user_id=10, notify=False)
+    await svc.halt(result["group_id"], by_id=99, notify=False)
+    await svc.resume(result["group_id"], by_id=99, grace_hours=0, notify=False)
+    db.enforcements[result["group_id"]]["deadline"] = (
+        datetime.now(timezone.utc) - timedelta(seconds=1))
+
+    assert await svc.run_due() == 1
+    assert redis.published[-1][1]["type"] == "enforcement_executed"
+
+
+@pytest.mark.asyncio
+async def test_a_halt_after_a_resume_works_again(service):
+    # A second appeal must be able to freeze the clock again.
+    svc, _, _ = service
+    result = await svc.apply(level=GlobalLevel.SUSPENDED, reason="x", issuer_id=1,
+                             user_id=10, notify=False)
+    await svc.halt(result["group_id"], by_id=99, notify=False)
+    await svc.resume(result["group_id"], by_id=99, notify=False)
+    assert await svc.halt(result["group_id"], by_id=99, notify=False) is not None
+
+
+def test_the_group_panel_offers_halt_while_running_and_resume_once_halted():
+    from utils.global_sanction_views import (
+        build_group_panel, GlobalSanctionHaltButton, GlobalSanctionResumeButton,
+    )
+    import discord.ui as dui
+
+    group = "0e5f6b0a-1111-2222-3333-444455556666"
+    cases = [{"reference": "AAA111", "subject_type": "discord_user", "subject_id": "1"}]
+
+    def _buttons(status):
+        view = build_group_panel(
+            level=GlobalLevel.SUSPENDED, group_id=group, cases=cases,
+            enforcement={"status": status, "deadline": None, "premium": False})
+        rows = [c for c in view.children if isinstance(c, dui.ActionRow)]
+        return [type(i) for r in rows for i in r.children]
+
+    assert _buttons("pending") == [GlobalSanctionHaltButton]
+    assert _buttons("halted") == [GlobalSanctionResumeButton]
+    # Nothing left to do once it fired or was cancelled.
+    assert _buttons("executed") == []
+    assert _buttons("cancelled") == []
+
+
+def test_a_refused_appeal_stops_offering_an_appeal_in_the_footnote():
+    from utils.global_sanction_views import _implications
+
+    _, offered = _implications(level=GlobalLevel.SUSPENDED, premium=False,
+                               has_servers=True, deadline=_SOON, locale="en-US")
+    _, final = _implications(level=GlobalLevel.SUSPENDED, premium=False,
+                             has_servers=True, deadline=_SOON, locale="en-US",
+                             appealable=False)
+    assert "appeal" in offered.lower()
+    assert "appeal" not in final.lower()
+    assert "take effect" in final

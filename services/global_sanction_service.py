@@ -264,6 +264,51 @@ class GlobalSanctionService:
 
         return row
 
+    # ----------------------------------------------------------------- resume
+
+    async def resume(
+        self, group_id, *, by_id: int, grace_hours: int = ENFORCEMENT_GRACE_HOURS,
+        reason: Optional[str] = None, notify: bool = True,
+    ) -> Optional[Dict[str, Any]]:
+        """Restart a halted countdown because the appeal was refused.
+
+        The counterpart of :meth:`halt`. The subject gets a **fresh** grace
+        period rather than the remainder of the old one — the appeal froze the
+        clock, and they are told the new deadline, so restarting from zero is
+        both simpler and fairer than resuming a partly-elapsed delay.
+
+        Returns the updated enforcement row, or ``None`` when there was no
+        *halted* countdown to restart.
+        """
+        if not self.db:
+            raise RuntimeError("database unavailable")
+
+        deadline = datetime.now(timezone.utc) + timedelta(hours=max(grace_hours, 0))
+        row = await self.db.resume_enforcement(group_id, deadline)
+        if row is None:
+            return None
+
+        await self._publish("enforcement_resumed", {
+            "group_id": str(group_id),
+            "level": row.get("level"),
+            "subject_id": row.get("subject_id"),
+            "premium": bool(row.get("premium")),
+            "resumed_by": str(by_id),
+            "reason": reason,
+            "deadline": self._iso(row.get("deadline")),
+        })
+
+        group_cases = await self.db.list_group_cases(group_id)
+        await self._log_group_event(
+            [self._case_summary(c) for c in group_cases], "enforcement_resumed",
+            reason or "Appeal refused — enforcement countdown restarted.",
+        )
+
+        if notify and row.get("subject_id"):
+            await self._notify_resume(row, group_cases)
+
+        return row
+
     # ---------------------------------------------------------------- execute
 
     async def run_due(self) -> int:
@@ -288,23 +333,35 @@ class GlobalSanctionService:
         group_id = row["group_id"]
         group_cases = await self.db.list_group_cases(group_id)
 
+        # Servers named in the group and suspended…
+        targets: List[int] = [
+            int(case["subject_id"])
+            for case in group_cases
+            if str(case["subject_type"]) == SubjectType.DISCORD_GUILD.value
+            and self._has_active_action(case, "ban")
+        ]
+
+        # …plus every other server the suspended subject owns. A suspension is
+        # "no Moddy at all", and the notice promised exactly that.
+        if row.get("level") == GlobalLevel.SUSPENDED.value and \
+                str(row.get("subject_type")) == SubjectType.DISCORD_USER.value:
+            for guild_id in self.owned_guild_ids(row.get("subject_id")):
+                if guild_id not in targets:
+                    targets.append(guild_id)
+
         left_guilds: List[str] = []
-        for case in group_cases:
-            if str(case["subject_type"]) != SubjectType.DISCORD_GUILD.value:
-                continue
-            if not self._has_active_action(case, "ban"):
-                continue
-            guild = self.bot.get_guild(int(case["subject_id"]))
+        for guild_id in targets:
+            guild = self.bot.get_guild(guild_id)
             if guild is None:
                 continue
             try:
                 await guild.leave()
-                left_guilds.append(str(case["subject_id"]))
+                left_guilds.append(str(guild_id))
                 logger.info("[Enforcement] Left suspended guild %s (group %s)",
-                            case["subject_id"], group_id)
+                            guild_id, group_id)
             except discord.HTTPException as exc:
                 logger.error("[Enforcement] Could not leave guild %s: %s",
-                             case["subject_id"], exc)
+                             guild_id, exc)
 
         await self._publish("enforcement_executed", {
             "group_id": str(group_id),
@@ -346,9 +403,17 @@ class GlobalSanctionService:
             logger.warning("[GlobalSanction] Unknown user %s — no notice sent", user_id)
             return False
 
+        # Whether the notice should talk about servers at all: either the group
+        # hits one, or the subject owns one that a suspension would cost them.
+        has_servers = (
+            any(c.get("subject_type") == SubjectType.DISCORD_GUILD.value for c in cases)
+            or bool(self.owned_guild_ids(user_id))
+        )
+
         view = build_sanction_notice(
             bot=self.bot, level=level, reason=reason, cases=cases,
             deadline=(enforcement or {}).get("deadline"), premium=premium,
+            has_servers=has_servers,
         )
         try:
             await user.send(view=view)
@@ -367,6 +432,25 @@ class GlobalSanctionService:
             user = await self.bot.fetch_user(int(row["subject_id"]))
             await user.send(view=build_halt_notice(
                 level=self._level_of(row), cases=[self._case_summary(c) for c in group_cases],
+            ))
+        except (discord.HTTPException, ValueError, TypeError):
+            pass
+
+    async def _notify_resume(self, row: Dict[str, Any], group_cases: List[Dict[str, Any]]) -> None:
+        """Tell the subject their appeal failed and the clock is running again.
+
+        This is the last warning they get before the measures apply, so the new
+        deadline has to reach them.
+        """
+        from utils.global_sanction_views import build_resume_notice
+
+        try:
+            user = await self.bot.fetch_user(int(row["subject_id"]))
+            await user.send(view=build_resume_notice(
+                level=self._level_of(row),
+                cases=[self._case_summary(c) for c in group_cases],
+                deadline=row.get("deadline"),
+                premium=bool(row.get("premium")),
             ))
         except (discord.HTTPException, ValueError, TypeError):
             pass
@@ -418,6 +502,17 @@ class GlobalSanctionService:
             "status": row.get("status"),
             "premium": bool(row.get("premium")),
         }
+
+    def owned_guild_ids(self, user_id: Optional[int]) -> List[int]:
+        """Servers Moddy is in that this user owns.
+
+        A suspension costs the subject Moddy everywhere, not only on the
+        servers named in the group — the notice says so, and the enforcement
+        does it.
+        """
+        if user_id is None:
+            return []
+        return [g.id for g in self.bot.guilds if g.owner_id == int(user_id)]
 
     def _first_owner(self, guild_ids: Sequence[int]) -> Optional[int]:
         """Owner of the first resolvable server — who to notify and bill."""

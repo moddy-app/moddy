@@ -158,6 +158,7 @@ Groups are the existing `group_id` column — no new mechanism was added for thi
 | `apply` | `global_sanction` | Sanction a user and/or servers as one group |
 | `view` | `case_view` | Group status: level, cases, countdown |
 | `halt` | `global_enforcement` | Stop the countdown — an appeal was filed |
+| `resume` | `global_enforcement` | Restart the countdown — the appeal was refused |
 | `lift` | `global_sanction` | Revoke the whole group and cancel the countdown |
 | `pending` | `case_list` | The enforcement queue, soonest deadline first |
 
@@ -166,13 +167,56 @@ or spaces); a **Modals V2** form collects the level (a `Select`), the reason, an
 optional duration and the grace period. Five top-level components, one
 submission, one grouped sanction.
 
-`view` and the apply recap render the group panel, which carries a live
-**Halt countdown** button — a persistent `DynamicItem`
-(`moddy:gsanc:halt:<group_id>`) that re-derives the staff permission from the
-interaction on every click, so it keeps working after a restart.
+`view` and the apply recap render the group panel, which carries whichever
+action makes sense right now: **Halt countdown** while it runs,
+**Restart countdown** once it is halted, nothing once it fired or was
+cancelled. Both are persistent `DynamicItem`s
+(`moddy:gsanc:halt:<group_id>`, `moddy:gsanc:resume:<group_id>`) that re-derive
+the staff permission from the interaction on every click, so they keep working
+after a restart.
 
 Every panel wears the **accent colour of its level** — yellow (warn), orange
 (limited), red (suspended) — so severity reads before the text does.
+
+---
+
+## 7bis. The notice DM
+
+One DM per group, laid out as:
+
+1. **The explanation** — "You are breaking Moddy's rules", a link to
+   moddy.app/violations, and how to appeal on moddy.app/support.
+2. **"What this means for you"** — a bullet list built from the subject's
+   actual situation (below), with numbered footnotes.
+3. **One container per case** — target, level, reason, case reference.
+4. **Details / Appeal** link buttons.
+
+Every container wears the level's accent colour.
+
+### The implications adapt to the subject
+
+`_implications()` in `utils/global_sanction_views.py` states nothing that does
+not apply:
+
+| Bullet | Shown when |
+|---|---|
+| What the level itself changes | always (one line per level) |
+| Subscription cancelled without refund | the sanction **restricts** (limited/suspended) **and** they actually pay |
+| Moddy leaves the servers | **suspended** **and** a server is involved |
+| Stored data may be deleted | same as above |
+| Legal action may be taken | **suspended** only |
+
+So a warned user sees a single line and no footnote; a suspended user with no
+subscription and no server sees the access line and the legal line, nothing
+else. A warning never threatens a subscription or a server, whatever the
+subject owns.
+
+"A server is involved" means the group hits one **or** the subject owns one —
+a suspension costs them Moddy everywhere, and the enforcement leaves those
+servers too, not only the ones named in the group.
+
+Footnotes are numbered **in order of first use** (`_Footnotes`), so the
+numbering is always contiguous no matter which bullets were skipped.
 
 ---
 
@@ -185,13 +229,22 @@ by 48h** (`ENFORCEMENT_GRACE_HOURS`) to give the subject a chance to appeal:
 |---|---|---|
 | Warn | — | — |
 | Limited | premium off, no new modules, automod off | subscription cancelled without refund (if premium) |
-| Suspended | no access at all | subscription cancelled without refund (if premium) **+ Moddy leaves the sanctioned servers, stored data may be dropped** |
+| Suspended | no access at all | subscription cancelled without refund (if premium) **+ Moddy leaves the sanctioned servers _and every other server the subject owns_, stored data may be dropped** |
 
 The schedule is one `case_enforcements` row **per group**
 (`db/repositories/enforcements.py`), with a status of `pending` → `halted` (an
 appeal was filed) / `executed` / `cancelled` (the sanction was lifted).
 
 - The notice DM states the deadline and how to stop it (moddy.app/support).
+- **An appeal freezes the clock, a refusal restarts it.** `/mod global halt`
+  sets `halted`; `/mod global resume` sets `pending` again with a **fresh**
+  grace period (the clock was frozen, and the subject is told the new deadline,
+  so restarting from zero is simpler and fairer than resuming a partly-elapsed
+  delay). Accepting the appeal is `/mod global lift`, which cancels the
+  countdown outright. A group can cycle halt → resume → halt as many times as
+  there are appeals.
+- The resume notice does **not** offer another appeal in its deadline footnote
+  — that one has already been decided (`_implications(appealable=False)`).
 - `bot.enforcement_sweep` (every 5 min) claims due rows **atomically**
   (`UPDATE … FOR UPDATE SKIP LOCKED`), so a restart mid-sweep can never
   execute a group twice.
@@ -270,6 +323,7 @@ the backend can run billing, data retention and dashboards. Every event carries
 |---|---|---|
 | `global_sanction_applied` | A group is opened | Record it; a `warn` needs nothing else |
 | `enforcement_halted` | An appeal stopped the countdown | Cancel any scheduled billing action |
+| `enforcement_resumed` | The appeal was refused, the clock restarts | Re-arm it for the new `deadline` |
 | `enforcement_executed` | The grace period elapsed | **Cancel the subscription without refund** (`cancel_subscription`), purge `purge_guild_data` |
 | `global_sanction_lifted` | The whole group was revoked | Undo/skip whatever was pending |
 

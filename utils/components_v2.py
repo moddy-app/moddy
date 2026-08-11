@@ -246,6 +246,25 @@ def create_section_with_thumbnail(
     return Section(*items, accessory=Thumbnail(media=thumbnail_url))
 
 
+def _violation_links(locale: str) -> "discord.ui.ActionRow":
+    """The two links a sanctioned subject needs: the detail, and the way to
+    contest it. Same pair everywhere so the exit is always in the same place."""
+    from utils.i18n import t
+
+    row = discord.ui.ActionRow()
+    row.add_item(discord.ui.Button(
+        label=t("global_sanctions.notice.button_details", locale=locale),
+        url="https://moddy.app/violations",
+        style=discord.ButtonStyle.link
+    ))
+    row.add_item(discord.ui.Button(
+        label=t("global_sanctions.notice.button_appeal", locale=locale),
+        url="https://moddy.app/support",
+        style=discord.ButtonStyle.link
+    ))
+    return row
+
+
 def create_suspension_message(locale: str = "en-US", *, guild: bool = False) -> LayoutView:
     """
     Build the "no access to Moddy" panel shown to a suspended subject.
@@ -274,13 +293,7 @@ def create_suspension_message(locale: str = "en-US", *, guild: bool = False) -> 
     ))
     view.add_item(container)
 
-    button_row = discord.ui.ActionRow()
-    button_row.add_item(discord.ui.Button(
-        label=t("global_sanctions.suspended.appeal_button", locale=locale),
-        url="https://moddy.app/unbl_request",
-        style=discord.ButtonStyle.link
-    ))
-    view.add_item(button_row)
+    view.add_item(_violation_links(locale))
 
     return view
 
@@ -309,12 +322,6 @@ def create_limited_message(locale: str = "en-US", *, guild: bool = False) -> Lay
     ))
     view.add_item(container)
 
-    button_row = discord.ui.ActionRow()
-    button_row.add_item(discord.ui.Button(
-        label=t("global_sanctions.limited.appeal_button", locale=locale),
-        url="https://moddy.app/unbl_request",
-        style=discord.ButtonStyle.link
-    ))
-    view.add_item(button_row)
+    view.add_item(_violation_links(locale))
 
     return view
