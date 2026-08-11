@@ -288,23 +288,35 @@ class GlobalSanctionService:
         group_id = row["group_id"]
         group_cases = await self.db.list_group_cases(group_id)
 
+        # Servers named in the group and suspended…
+        targets: List[int] = [
+            int(case["subject_id"])
+            for case in group_cases
+            if str(case["subject_type"]) == SubjectType.DISCORD_GUILD.value
+            and self._has_active_action(case, "ban")
+        ]
+
+        # …plus every other server the suspended subject owns. A suspension is
+        # "no Moddy at all", and the notice promised exactly that.
+        if row.get("level") == GlobalLevel.SUSPENDED.value and \
+                str(row.get("subject_type")) == SubjectType.DISCORD_USER.value:
+            for guild_id in self.owned_guild_ids(row.get("subject_id")):
+                if guild_id not in targets:
+                    targets.append(guild_id)
+
         left_guilds: List[str] = []
-        for case in group_cases:
-            if str(case["subject_type"]) != SubjectType.DISCORD_GUILD.value:
-                continue
-            if not self._has_active_action(case, "ban"):
-                continue
-            guild = self.bot.get_guild(int(case["subject_id"]))
+        for guild_id in targets:
+            guild = self.bot.get_guild(guild_id)
             if guild is None:
                 continue
             try:
                 await guild.leave()
-                left_guilds.append(str(case["subject_id"]))
+                left_guilds.append(str(guild_id))
                 logger.info("[Enforcement] Left suspended guild %s (group %s)",
-                            case["subject_id"], group_id)
+                            guild_id, group_id)
             except discord.HTTPException as exc:
                 logger.error("[Enforcement] Could not leave guild %s: %s",
-                             case["subject_id"], exc)
+                             guild_id, exc)
 
         await self._publish("enforcement_executed", {
             "group_id": str(group_id),
@@ -346,9 +358,17 @@ class GlobalSanctionService:
             logger.warning("[GlobalSanction] Unknown user %s — no notice sent", user_id)
             return False
 
+        # Whether the notice should talk about servers at all: either the group
+        # hits one, or the subject owns one that a suspension would cost them.
+        has_servers = (
+            any(c.get("subject_type") == SubjectType.DISCORD_GUILD.value for c in cases)
+            or bool(self.owned_guild_ids(user_id))
+        )
+
         view = build_sanction_notice(
             bot=self.bot, level=level, reason=reason, cases=cases,
             deadline=(enforcement or {}).get("deadline"), premium=premium,
+            has_servers=has_servers,
         )
         try:
             await user.send(view=view)
@@ -418,6 +438,17 @@ class GlobalSanctionService:
             "status": row.get("status"),
             "premium": bool(row.get("premium")),
         }
+
+    def owned_guild_ids(self, user_id: Optional[int]) -> List[int]:
+        """Servers Moddy is in that this user owns.
+
+        A suspension costs the subject Moddy everywhere, not only on the
+        servers named in the group — the notice says so, and the enforcement
+        does it.
+        """
+        if user_id is None:
+            return []
+        return [g.id for g in self.bot.guilds if g.owner_id == int(user_id)]
 
     def _first_owner(self, guild_ids: Sequence[int]) -> Optional[int]:
         """Owner of the first resolvable server — who to notify and bill."""

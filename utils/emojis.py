@@ -13,6 +13,7 @@ DONE = "<:done:1519800188925902881>"
 UNDONE = "<:undone:1519800313324896327>"
 ERROR = "<:error:1519790252594827264>"
 WARNING = "<:warning:1519789903100121139>"
+EXCLAMATION = "<:exclamation:1536767802139082762>"  # global sanction notices
 INFO = "<:info:1519793991045091388>"
 LOADING = "<a:spinner:1534857169667883078>"
 # Animated "the bot is working on it" mascot — used for AI processing states
@@ -183,6 +184,7 @@ EMOJIS = {
     "settings": SETTINGS,
     "info": INFO,
     "warning": WARNING,
+    "exclamation": EXCLAMATION,
     "error": ERROR,
     # Actions
     "add": ADD,

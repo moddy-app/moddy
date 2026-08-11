@@ -2430,8 +2430,7 @@
         "title": "Servidor suspenso",
         "description": "Este servidor não tem mais acesso a nenhum serviço da Moddy: ele foi suspenso pela nossa equipe."
       },
-      "appeal_hint": "Se você acredita que isso é um erro, pode solicitar uma revisão.",
-      "appeal_button": "Solicitar revisão"
+      "appeal_hint": "Se você acredita que isso é um erro, pode solicitar uma revisão."
     },
     "limited": {
       "user": {
@@ -2444,8 +2443,7 @@
       },
       "banner_title": "Limitação em vigor",
       "no_new_modules": "Os módulos já configurados continuam editáveis, mas nenhum novo módulo pode ser configurado enquanto a limitação estiver ativa.",
-      "appeal_hint": "Se você acredita que isso é um erro, pode solicitar uma revisão.",
-      "appeal_button": "Solicitar revisão"
+      "appeal_hint": "Se você acredita que isso é um erro, pode solicitar uma revisão."
     },
     "level": {
       "warn": "Advertência global",
@@ -2453,23 +2451,30 @@
       "suspended": "Suspenso"
     },
     "notice": {
-      "title": "Aviso de sanção",
-      "intro": "A nossa equipa tomou uma medida sobre a sua conta na sequência de uma violação das regras da Moddy. Esta mensagem abrange **todos** os casos abertos por este incidente — não receberá uma mensagem separada para cada um.",
-      "level": "Nível",
-      "reason": "Motivo",
-      "cases": "Casos abertos",
-      "effects": "O que isto muda",
-      "effects_warn": "Nada fica restrito. Esta advertência fica no seu registo e conta em caso de reincidência.",
-      "effects_limited": "O premium é desativado, o automod de IA para e nenhum módulo novo pode ser configurado. Os módulos já configurados continuam a funcionar.",
-      "effects_suspended": "Não tem acesso a nenhum serviço da Moddy.",
-      "deadline_title": "Ação necessária",
-      "deadline_premium": "Nos termos dos nossos [Termos de Serviço]({terms}), a sua subscrição será **cancelada sem reembolso** a {date} ({rel}).",
-      "deadline_suspended": "A Moddy vai **sair** dos servidores em causa a {date} ({rel}), e a configuração guardada e outros dados poderão ser eliminados.",
-      "deadline_hint": "Recorrer antes dessa data interrompe esta contagem decrescente.",
-      "footer": "Detalhe completo de cada caso: {url}",
-      "button_details": "Ver detalhes",
+      "title": "Você está a infringir as regras da Moddy",
+      "intro": "Foram tomadas uma ou mais decisões na sequência de uma violação das regras da Moddy, sobre si ou sobre os seus servidores. Pode consultar o detalhe [**aqui**]({url}).",
+      "button_details": "Detalhes",
       "button_appeal": "Recorrer",
-      "button_terms": "Termos de Serviço"
+      "appeal": "Se acredita que isto é um erro, pode recorrer no nosso [**servidor de suporte**]({url}).",
+      "implies_title": "O que isto implica para si:",
+      "implies_warn": "Esta advertência fica no seu registo e conta em caso de reincidência",
+      "implies_limited": "O premium está desativado, o automod de IA está desligado e já não pode configurar novos módulos",
+      "implies_suspended": "Já não tem acesso a nenhum serviço da Moddy",
+      "implies_subscription": "A sua subscrição será cancelada sem reembolso",
+      "implies_subscription_now": "A sua subscrição foi cancelada sem reembolso",
+      "implies_servers": "A Moddy vai sair dos servidores em causa e dos seus outros servidores",
+      "implies_servers_now": "A Moddy saiu dos servidores em causa e dos seus outros servidores",
+      "implies_data": "As configurações e outros dados guardados poderão ser eliminados",
+      "implies_data_now": "As configurações e outros dados guardados poderão ser eliminados",
+      "implies_legal": "Podem ser instauradas ações judiciais",
+      "footnote_deadline": "Estas medidas produzirão efeito a **{date}** (**{rel}**). Abrir um recurso antes desse prazo coloca a contagem em pausa.",
+      "footnote_terms": "Nos termos dos nossos [**termos de serviço**]({terms}).",
+      "footnote_legal": "Consoante a natureza da infração, a Moddy reserva-se o direito de intentar qualquer ação legal adequada e de transmitir os elementos às autoridades competentes.",
+      "field_user": "Utilizador",
+      "field_server": "Servidor",
+      "field_level": "Nível",
+      "field_reason": "Motivo",
+      "field_case": "Case ID"
     },
     "halt": {
       "title": "Recurso recebido",

@@ -104,7 +104,7 @@ LEVEL_ACCENTS: Dict[GlobalLevel, int] = {
     GlobalLevel.NONE: 0x99AAB5,       # neutral grey
     GlobalLevel.WARN: 0xFEE75C,       # yellow
     GlobalLevel.LIMITED: 0xF28500,    # orange
-    GlobalLevel.SUSPENDED: 0xDA3E27,  # red
+    GlobalLevel.SUSPENDED: 0xDC2528,  # red
 }
 
 

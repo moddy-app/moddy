@@ -2429,8 +2429,7 @@
         "title": "Serveur suspendu",
         "description": "Ce serveur n'a plus accès à aucun service Moddy : il a été suspendu par notre équipe."
       },
-      "appeal_hint": "Si vous pensez qu'il s'agit d'une erreur, vous pouvez demander un réexamen.",
-      "appeal_button": "Demander un réexamen"
+      "appeal_hint": "Si vous pensez qu'il s'agit d'une erreur, vous pouvez demander un réexamen."
     },
     "limited": {
       "user": {
@@ -2443,8 +2442,7 @@
       },
       "banner_title": "Limitation en cours",
       "no_new_modules": "Les modules déjà configurés restent modifiables, mais aucun nouveau module ne peut être mis en place tant que la limitation est active.",
-      "appeal_hint": "Si vous pensez qu'il s'agit d'une erreur, vous pouvez demander un réexamen.",
-      "appeal_button": "Demander un réexamen"
+      "appeal_hint": "Si vous pensez qu'il s'agit d'une erreur, vous pouvez demander un réexamen."
     },
     "level": {
       "warn": "Avertissement global",
@@ -2452,23 +2450,30 @@
       "suspended": "Suspendu"
     },
     "notice": {
-      "title": "Notification de sanction",
-      "intro": "Notre équipe a pris une mesure concernant votre compte suite à un manquement aux règles de Moddy. Ce message couvre **toutes** les cases ouvertes pour cet incident — vous ne recevrez pas de message séparé pour chacune.",
-      "level": "Niveau",
-      "reason": "Raison",
-      "cases": "Cases ouvertes",
-      "effects": "Ce que cela change",
-      "effects_warn": "Rien n'est restreint. Cet avertissement reste à votre dossier et compte en cas de récidive.",
-      "effects_limited": "Le premium est désactivé, l'automod IA est coupé et aucun nouveau module ne peut être configuré. Les modules déjà en place continuent de fonctionner.",
-      "effects_suspended": "Vous n'avez accès à aucun service Moddy.",
-      "deadline_title": "Action requise",
-      "deadline_premium": "Conformément à nos [Conditions d'utilisation]({terms}), votre abonnement sera **résilié sans remboursement** le {date} ({rel}).",
-      "deadline_suspended": "Moddy **quittera** le ou les serveurs concernés le {date} ({rel}), et les données de configuration et autres pourront être supprimées.",
-      "deadline_hint": "Faire appel avant cette date arrête ce compte à rebours.",
-      "footer": "Détail complet de chaque case : {url}",
-      "button_details": "Voir le détail",
+      "title": "Tu enfreins les règles de Moddy",
+      "intro": "Une ou plusieurs décisions ont été prises suite à un non-respect des règles de Moddy, te concernant ou concernant tes serveurs. Tu peux consulter le détail [**ici**]({url}).",
+      "button_details": "Détails",
       "button_appeal": "Faire appel",
-      "button_terms": "Conditions d'utilisation"
+      "appeal": "Si tu penses qu'il s'agit d'une erreur, tu peux faire appel sur notre [**serveur support**]({url}).",
+      "implies_title": "Ce que ça implique pour toi :",
+      "implies_warn": "Cet avertissement reste à ton dossier et compte en cas de récidive",
+      "implies_limited": "Le premium est désactivé, l'automod IA est coupé et tu ne peux plus configurer de nouveaux modules",
+      "implies_suspended": "Tu n'as plus accès à aucun service de Moddy",
+      "implies_subscription": "Ton abonnement sera résilié sans remboursement",
+      "implies_subscription_now": "Ton abonnement est résilié sans remboursement",
+      "implies_servers": "Moddy quittera le(s) serveur(s) concerné(s) ainsi que tes autres serveurs",
+      "implies_servers_now": "Moddy a quitté le(s) serveur(s) concerné(s) ainsi que tes autres serveurs",
+      "implies_data": "Les configurations et autres données stockées pourront être supprimées",
+      "implies_data_now": "Les configurations et autres données stockées pourront être supprimées",
+      "implies_legal": "Des poursuites judiciaires peuvent être engagées",
+      "footnote_deadline": "Ces mesures prendront effet le **{date}** (**{rel}**). Ouvrir un appel avant cette échéance met le délai en pause.",
+      "footnote_terms": "Conformément à nos [**conditions générales d'utilisation**]({terms}).",
+      "footnote_legal": "Selon la nature de l'infraction, Moddy se réserve le droit d'engager toute action légale appropriée et de transmettre les éléments aux autorités compétentes.",
+      "field_user": "Utilisateur",
+      "field_server": "Serveur",
+      "field_level": "Niveau",
+      "field_reason": "Raison",
+      "field_case": "Case ID"
     },
     "halt": {
       "title": "Appel reçu",

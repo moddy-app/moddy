@@ -176,6 +176,46 @@ Every panel wears the **accent colour of its level** — yellow (warn), orange
 
 ---
 
+## 7bis. The notice DM
+
+One DM per group, laid out as:
+
+1. **The explanation** — "You are breaking Moddy's rules", a link to
+   moddy.app/violations, and how to appeal on moddy.app/support.
+2. **"What this means for you"** — a bullet list built from the subject's
+   actual situation (below), with numbered footnotes.
+3. **One container per case** — target, level, reason, case reference.
+4. **Details / Appeal** link buttons.
+
+Every container wears the level's accent colour.
+
+### The implications adapt to the subject
+
+`_implications()` in `utils/global_sanction_views.py` states nothing that does
+not apply:
+
+| Bullet | Shown when |
+|---|---|
+| What the level itself changes | always (one line per level) |
+| Subscription cancelled without refund | the sanction **restricts** (limited/suspended) **and** they actually pay |
+| Moddy leaves the servers | **suspended** **and** a server is involved |
+| Stored data may be deleted | same as above |
+| Legal action may be taken | **suspended** only |
+
+So a warned user sees a single line and no footnote; a suspended user with no
+subscription and no server sees the access line and the legal line, nothing
+else. A warning never threatens a subscription or a server, whatever the
+subject owns.
+
+"A server is involved" means the group hits one **or** the subject owns one —
+a suspension costs them Moddy everywhere, and the enforcement leaves those
+servers too, not only the ones named in the group.
+
+Footnotes are numbered **in order of first use** (`_Footnotes`), so the
+numbering is always contiguous no matter which bullets were skipped.
+
+---
+
 ## 8. The appeal countdown
 
 Some consequences of a global sanction are irreversible, so they are **deferred
@@ -185,7 +225,7 @@ by 48h** (`ENFORCEMENT_GRACE_HOURS`) to give the subject a chance to appeal:
 |---|---|---|
 | Warn | — | — |
 | Limited | premium off, no new modules, automod off | subscription cancelled without refund (if premium) |
-| Suspended | no access at all | subscription cancelled without refund (if premium) **+ Moddy leaves the sanctioned servers, stored data may be dropped** |
+| Suspended | no access at all | subscription cancelled without refund (if premium) **+ Moddy leaves the sanctioned servers _and every other server the subject owns_, stored data may be dropped** |
 
 The schedule is one `case_enforcements` row **per group**
 (`db/repositories/enforcements.py`), with a status of `pending` → `halted` (an

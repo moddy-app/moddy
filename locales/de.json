@@ -2430,8 +2430,7 @@
         "title": "Server gesperrt",
         "description": "Dieser Server hat keinen Zugriff mehr auf Moddy-Dienste: Er wurde von unserem Team gesperrt."
       },
-      "appeal_hint": "Wenn du glaubst, dass es sich um einen Fehler handelt, kannst du eine Überprüfung beantragen.",
-      "appeal_button": "Überprüfung beantragen"
+      "appeal_hint": "Wenn du glaubst, dass es sich um einen Fehler handelt, kannst du eine Überprüfung beantragen."
     },
     "limited": {
       "user": {
@@ -2444,8 +2443,7 @@
       },
       "banner_title": "Einschränkung aktiv",
       "no_new_modules": "Bereits eingerichtete Module bleiben bearbeitbar, aber solange die Einschränkung gilt, kann kein neues Modul eingerichtet werden.",
-      "appeal_hint": "Wenn du glaubst, dass es sich um einen Fehler handelt, kannst du eine Überprüfung beantragen.",
-      "appeal_button": "Überprüfung beantragen"
+      "appeal_hint": "Wenn du glaubst, dass es sich um einen Fehler handelt, kannst du eine Überprüfung beantragen."
     },
     "level": {
       "warn": "Globale Verwarnung",
@@ -2453,23 +2451,30 @@
       "suspended": "Gesperrt"
     },
     "notice": {
-      "title": "Sanktionsmitteilung",
-      "intro": "Unser Team hat wegen eines Verstoßes gegen die Moddy-Regeln Maßnahmen gegen dein Konto ergriffen. Diese Nachricht deckt **alle** zu diesem Vorfall eröffneten Fälle ab — du erhältst keine separate Nachricht pro Fall.",
-      "level": "Stufe",
-      "reason": "Grund",
-      "cases": "Eröffnete Fälle",
-      "effects": "Was sich dadurch ändert",
-      "effects_warn": "Nichts wird eingeschränkt. Diese Verwarnung bleibt in deiner Akte und zählt im Wiederholungsfall.",
-      "effects_limited": "Premium ist deaktiviert, der KI-Automod läuft nicht mehr und es kann kein neues Modul eingerichtet werden. Bereits eingerichtete Module laufen weiter.",
-      "effects_suspended": "Du hast keinen Zugriff auf Moddy-Dienste.",
-      "deadline_title": "Handlung erforderlich",
-      "deadline_premium": "Gemäß unseren [Nutzungsbedingungen]({terms}) wird dein Abonnement am {date} ({rel}) **ohne Rückerstattung gekündigt**.",
-      "deadline_suspended": "Moddy **verlässt** die betroffenen Server am {date} ({rel}); gespeicherte Konfigurationen und andere Daten können gelöscht werden.",
-      "deadline_hint": "Ein Einspruch vor diesem Datum stoppt den Countdown.",
-      "footer": "Vollständige Details zu jedem Fall: {url}",
-      "button_details": "Details ansehen",
-      "button_appeal": "Einspruch einlegen",
-      "button_terms": "Nutzungsbedingungen"
+      "title": "Du verstößt gegen die Moddy-Regeln",
+      "intro": "Wegen eines Verstoßes gegen die Moddy-Regeln wurden eine oder mehrere Maßnahmen gegen dich oder deine Server ergriffen. Die Details findest du [**hier**]({url}).",
+      "button_details": "Details",
+      "button_appeal": "Einspruch",
+      "appeal": "Wenn du glaubst, dass es sich um einen Fehler handelt, kannst du auf unserem [**Support-Server**]({url}) Einspruch einlegen.",
+      "implies_title": "Was das für dich bedeutet:",
+      "implies_warn": "Diese Verwarnung bleibt in deiner Akte und zählt im Wiederholungsfall",
+      "implies_limited": "Premium ist deaktiviert, der KI-Automod ist aus und du kannst keine neuen Module mehr einrichten",
+      "implies_suspended": "Du hast keinen Zugriff mehr auf Moddy-Dienste",
+      "implies_subscription": "Dein Abonnement wird ohne Rückerstattung gekündigt",
+      "implies_subscription_now": "Dein Abonnement wurde ohne Rückerstattung gekündigt",
+      "implies_servers": "Moddy verlässt die betroffenen Server sowie deine übrigen Server",
+      "implies_servers_now": "Moddy hat die betroffenen Server sowie deine übrigen Server verlassen",
+      "implies_data": "Gespeicherte Konfigurationen und andere Daten können gelöscht werden",
+      "implies_data_now": "Gespeicherte Konfigurationen und andere Daten können gelöscht werden",
+      "implies_legal": "Rechtliche Schritte können eingeleitet werden",
+      "footnote_deadline": "Diese Maßnahmen treten am **{date}** (**{rel}**) in Kraft. Ein Einspruch vor diesem Termin pausiert die Frist.",
+      "footnote_terms": "Gemäß unseren [**Nutzungsbedingungen**]({terms}).",
+      "footnote_legal": "Je nach Art des Verstoßes behält sich Moddy vor, angemessene rechtliche Schritte einzuleiten und die Nachweise an die zuständigen Behörden weiterzugeben.",
+      "field_user": "Benutzer",
+      "field_server": "Server",
+      "field_level": "Stufe",
+      "field_reason": "Grund",
+      "field_case": "Case ID"
     },
     "halt": {
       "title": "Einspruch eingegangen",

@@ -47,10 +47,20 @@ publishes the billing/data side for the backend.
 
 ### Notices
 
-`utils/global_sanction_views.py`: the grouped notice DM (generic English intro,
-case list, effects, deadline block, Details/Appeal/Terms link buttons), the
-"appeal received" DM, and the guild-join refusal DM. Every panel wears the
-**accent colour of its level** — yellow / orange / red.
+`utils/global_sanction_views.py`: the grouped notice DM, the "appeal received"
+DM, and the guild-join refusal DM. Every container wears the **accent colour of
+its level** — yellow / orange / red.
+
+The notice is one explanatory container + **one container per case** + a
+Details/Appeal link row. Its "what this means for you" list is built from the
+subject's real situation (`_implications`): a warning threatens nothing, a user
+with no subscription hears nothing about billing, a user with no server hears
+nothing about servers, and legal action is only ever mentioned to a suspended
+one. Footnotes are numbered in order of first use so the numbering stays
+contiguous whatever was skipped.
+
+A suspension also costs the subject **every server they own**, not only those
+named in the group — the notice says so and `_execute` does it.
 
 ### What a suspended user keeps
 
@@ -84,7 +94,7 @@ server is growth. The refusal DM names which case applies.
 
 - New: `services/global_sanction_service.py`, `utils/global_sanction_views.py`,
   `db/repositories/enforcements.py`, `staff/commands/mod/global_sanction/`
-  (5 commands + `_shared.py`), `tests/test_global_sanction_flow.py` (41 tests)
+  (5 commands + `_shared.py`), `tests/test_global_sanction_flow.py` (55 tests)
 - `bot.py` (service, sweeper, allowlists, join refusal), `db/base.py` (table),
   `db/repositories/moderation.py` (group queries),
   `utils/global_sanctions.py` (accents, emojis, allowlists),
