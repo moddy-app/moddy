@@ -95,7 +95,7 @@ HAND = "<:hand:1521517865348632706>"       # appeal "claim" button
 LINK = "<:link:1521517863607734385>"       # appeal "invite" button
 PENDING = "<:pending:1521282587962900611>"  # appeal "pending" status
 ROCKET = "<a:Rocket:1535783839870353499>"  # bot customization bio attribution
-ALTGUARD = "<a:DisguisedFace:1539334637992550424>"  # AltGuard verification module
+ALTGUARD = "<a:DisguisedFace:1539405255576657981>"  # AltGuard verification panel message
 
 # =============================================================================
 # SOCIAL PLATFORMS (Social Notifications module)

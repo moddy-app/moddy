@@ -87,6 +87,15 @@ class AltGuardPanelView(BaseView):
             t('modules.altguard.panel.description', locale=self.locale)
         ))
 
+        container.add_item(ui.Separator(visible=True, spacing=discord.SeparatorSpacing.small))
+        container.add_item(ui.TextDisplay(
+            f"-# {t('modules.altguard.panel.footer', locale=self.locale, terms=TERMS_URL, privacy=PRIVACY_URL, data=DATA_NOTICE_URL)}"
+        ))
+
+        self.add_item(container)
+
+        # The action sits OUTSIDE the container, under the card, so the button
+        # reads as the call to action rather than as part of the notice.
         button_row = ui.ActionRow()
         verify_btn = ui.Button(
             label=t('modules.altguard.panel.button', locale=self.locale),
@@ -96,14 +105,7 @@ class AltGuardPanelView(BaseView):
         )
         verify_btn.callback = self.on_verify
         button_row.add_item(verify_btn)
-        container.add_item(button_row)
-
-        container.add_item(ui.Separator(visible=True, spacing=discord.SeparatorSpacing.small))
-        container.add_item(ui.TextDisplay(
-            f"-# {t('modules.altguard.panel.footer', locale=self.locale, terms=TERMS_URL, privacy=PRIVACY_URL, data=DATA_NOTICE_URL)}"
-        ))
-
-        self.add_item(container)
+        self.add_item(button_row)
 
     async def on_verify(self, interaction: discord.Interaction) -> None:
         """Open the consent modal. Nothing leaves the bot before it is signed."""
@@ -202,7 +204,8 @@ class AltGuardConsentModal(BaseModal):
         client = getattr(bot, "altguard", None)
         if client is None or not client.configured:
             await interaction.followup.send(
-                view=build_error_card(locale, 'unavailable'), ephemeral=True,
+                view=build_error_card(locale, 'unavailable', code='not_configured'),
+                ephemeral=True,
             )
             return
 
@@ -214,13 +217,15 @@ class AltGuardConsentModal(BaseModal):
                 consent_version=CONSENT_VERSION,
             )
         except AltGuardError as e:
+            # The code is what tells a missing secret from a rejected token
+            # from a dead service — log it in full, show it discreetly.
             logger.warning(
                 f"[AltGuard] Token request failed for {interaction.user.id} "
-                f"in guild {interaction.guild_id}: {e.code}"
+                f"in guild {interaction.guild_id}: {e.code} ({e.message})"
             )
             key = 'rate_limited' if e.code == 'rate_limited' else 'unavailable'
             await interaction.followup.send(
-                view=build_error_card(locale, key, retry_after=e.retry_after),
+                view=build_error_card(locale, key, retry_after=e.retry_after, code=e.code),
                 ephemeral=True,
             )
             return
@@ -288,8 +293,17 @@ def build_link_card(locale: str, *, url: str, expires_at: Optional[str] = None) 
     return view
 
 
-def build_error_card(locale: str, key: str, *, retry_after: Optional[int] = None) -> ui.LayoutView:
-    """An ephemeral failure card. `key` selects the i18n message."""
+def build_error_card(locale: str, key: str, *, retry_after: Optional[int] = None,
+                     code: Optional[str] = None) -> ui.LayoutView:
+    """An ephemeral failure card. `key` selects the i18n message.
+
+    ``code`` is the raw :class:`~services.altguard_client.AltGuardError` code.
+    It is shown as a discreet footer because "the service is not answering"
+    covers half a dozen very different causes (missing secret, rejected token,
+    network, 5xx) and a member reporting the problem to a moderator should be
+    able to say which one. It names no internal host and leaks no signal about
+    the detection itself.
+    """
     view = ui.LayoutView(timeout=None)
     container = ui.Container(accent_colour=ERROR_ACCENT)
 
@@ -302,6 +316,11 @@ def build_error_card(locale: str, key: str, *, retry_after: Optional[int] = None
             'modules.altguard.errors.rate_limited.retry', locale=locale, seconds=retry_after,
         )
     container.add_item(ui.TextDisplay(description))
+
+    if code:
+        container.add_item(ui.TextDisplay(
+            f"-# {t('modules.altguard.errors.code', locale=locale, code=f'`{code}`')}"
+        ))
 
     view.add_item(container)
     return view

@@ -1927,11 +1927,11 @@
         "title": "AltGuard",
         "description": "Para acceder al servidor, debes superar una **verificación anti cuentas múltiples**\nHaz clic en el botón de abajo para generar tu enlace de verificación personal. Es válido 20 minutos y de un solo uso.",
         "button": "Verificarme",
-        "footer": "Al hacer clic en este botón, aceptas nuestras [**Condiciones de uso** (→ moddy.app)]({terms}) y nuestra [**Política de privacidad** (→ moddy.app)]({privacy}). Los datos recogidos en esta verificación están cifrados. [**Más información** (→ moddy.app)]({data})"
+        "footer": "Al hacer clic en este botón, aceptas nuestras [**Condiciones de uso**]({terms}) y nuestra [**Política de privacidad**]({privacy}). Los datos recogidos en esta verificación están cifrados. [**Más información**]({data})"
       },
       "consent": {
         "title": "Verificación AltGuard",
-        "body": "Para detectar cuentas múltiples, la verificación recoge las características de tu navegador, una cookie técnica, tu correo de Discord, la lista de tus servidores y tu dirección IP.\n\nEstos datos están **cifrados**, se usan únicamente para esa detección y se conservan por un tiempo limitado. **El equipo de Moddy y la moderación de este servidor no tienen acceso a ellos**: solo ven el resultado de la verificación.\n\n[**Datos recogidos** (→ moddy.app)]({data}) · [**Condiciones de uso** (→ moddy.app)]({terms}) · [**Política de privacidad** (→ moddy.app)]({privacy})",
+        "body": "Para detectar cuentas múltiples, la verificación recoge las características de tu navegador, una cookie técnica, tu correo de Discord, la lista de tus servidores y tu dirección IP.\n\nEstos datos están **cifrados**, se usan únicamente para esa detección y se conservan por un tiempo limitado.\n\n[**Datos recogidos**]({data}) · [**Condiciones de uso**]({terms}) · [**Política de privacidad**]({privacy})",
         "agree_label": "Consentimiento",
         "agree_description": "Marca las dos casillas para generar tu enlace de verificación.",
         "agree_terms": "Acepto las condiciones de uso y la política de privacidad",
@@ -1971,7 +1971,8 @@
         "bot_target": {
           "title": "Objetivo inválido",
           "description": "Los bots no pasan por la verificación de AltGuard."
-        }
+        },
+        "code": "Código técnico: {code} — comunícalo a la moderación si el problema persiste."
       },
       "manual": {
         "verified": {

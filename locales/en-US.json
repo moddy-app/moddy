@@ -1927,11 +1927,11 @@
         "title": "AltGuard",
         "description": "To access this server, you must pass an **anti multi-account verification**\nClick the button below to generate your personal verification link. It is valid for 20 minutes and single use.",
         "button": "Verify me",
-        "footer": "By clicking this button, you accept our [**Terms of Service** (→ moddy.app)]({terms}) and our [**Privacy Policy** (→ moddy.app)]({privacy}). The data collected for this verification is encrypted. [**Learn more** (→ moddy.app)]({data})"
+        "footer": "By clicking this button, you accept our [**Terms of Service**]({terms}) and our [**Privacy Policy**]({privacy}). The data collected for this verification is encrypted. [**Learn more**]({data})"
       },
       "consent": {
         "title": "AltGuard verification",
-        "body": "To detect multiple accounts, the verification collects your browser characteristics, a technical cookie, your Discord email address, your server list and your IP address.\n\nThis data is **encrypted**, used only for that detection and kept for a limited time. **The Moddy team and this server's moderators have no access to it** — they only see the outcome of the verification.\n\n[**Collected data** (→ moddy.app)]({data}) · [**Terms of Service** (→ moddy.app)]({terms}) · [**Privacy Policy** (→ moddy.app)]({privacy})",
+        "body": "To detect multiple accounts, the verification collects your browser characteristics, a technical cookie, your Discord email address, your server list and your IP address.\n\nThis data is **encrypted**, used only for that detection and kept for a limited time.\n\n[**Collected data**]({data}) · [**Terms of Service**]({terms}) · [**Privacy Policy**]({privacy})",
         "agree_label": "Consent",
         "agree_description": "Tick both boxes to generate your verification link.",
         "agree_terms": "I accept the terms of service and the privacy policy",
@@ -1971,7 +1971,8 @@
         "bot_target": {
           "title": "Invalid target",
           "description": "Bots do not go through the AltGuard verification."
-        }
+        },
+        "code": "Technical code: {code} — pass it on to the moderators if the problem persists."
       },
       "manual": {
         "verified": {
