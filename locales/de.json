@@ -84,11 +84,6 @@
         "incognito": "Antwort nur für dich sichtbar machen"
       },
       "working": "Dein Text wird korrigiert...",
-      "modal": {
-        "title": "Text korrigieren",
-        "label": "Zu korrigierender Text",
-        "placeholder": "Füge hier den zu korrigierenden Text ein..."
-      },
       "result": {
         "title": "### <:text:1519791921462120601> Korrigierter Text",
         "footer": "-# Korrigiert von **ChatGPT**"
@@ -100,13 +95,6 @@
         "incognito": "Antwort nur für dich sichtbar machen"
       },
       "working": "Dein Text wird umformuliert...",
-      "modal": {
-        "title": "Text umformulieren",
-        "label": "Umzuformulierender Text",
-        "placeholder": "Füge hier den umzuformulierenden Text ein...",
-        "style": "Formulierungsstil",
-        "style_placeholder": "Wähle einen Stil"
-      },
       "styles": {
         "neutral": "Normal",
         "professional": "Professionell",
@@ -127,13 +115,6 @@
         "incognito": "Antwort nur für dich sichtbar machen"
       },
       "working": "Dein Text wird zusammengefasst...",
-      "modal": {
-        "title": "Text zusammenfassen",
-        "label": "Zusammenzufassender Text",
-        "placeholder": "Füge hier den zusammenzufassenden Text ein...",
-        "length": "Länge der Zusammenfassung",
-        "length_placeholder": "Wähle eine Länge"
-      },
       "lengths": {
         "short": "Kurz (1 bis 2 Sätze)",
         "medium": "Mittel (ein Absatz)",
