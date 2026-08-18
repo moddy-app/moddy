@@ -98,7 +98,7 @@ class AltGuardPanelView(BaseView):
         button_row.add_item(verify_btn)
         container.add_item(button_row)
 
-        container.add_item(ui.Separator(divider=True, spacing=discord.SeparatorSpacing.small))
+        container.add_item(ui.Separator(visible=True, spacing=discord.SeparatorSpacing.small))
         container.add_item(ui.TextDisplay(
             f"-# {t('modules.altguard.panel.footer', locale=self.locale, terms=TERMS_URL, privacy=PRIVACY_URL, data=DATA_NOTICE_URL)}"
         ))
@@ -279,7 +279,7 @@ def build_link_card(locale: str, *, url: str, expires_at: Optional[str] = None) 
         ))
         container.add_item(row)
 
-    container.add_item(ui.Separator(divider=True, spacing=discord.SeparatorSpacing.small))
+    container.add_item(ui.Separator(visible=True, spacing=discord.SeparatorSpacing.small))
     container.add_item(ui.TextDisplay(
         f"-# {t('modules.altguard.link.footer', locale=locale)}"
     ))
@@ -386,7 +386,7 @@ def build_log_card(
         container.add_item(ui.TextDisplay("\n".join(lines)))
 
         if not enforced:
-            container.add_item(ui.Separator(divider=True, spacing=discord.SeparatorSpacing.small))
+            container.add_item(ui.Separator(visible=True, spacing=discord.SeparatorSpacing.small))
             container.add_item(ui.TextDisplay(
                 f"-# {t('modules.altguard.logs.shadow', locale=locale)}"
             ))

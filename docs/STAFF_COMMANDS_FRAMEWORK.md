@@ -230,6 +230,7 @@ arguments (used by `sql` and `jsk`). **Commands must not log themselves.**
 | `interserver_delete` | Delete an interserver channel |
 | `case create/view/list/edit/close/note` | Moderation case management |
 | `global apply/view/halt/resume/lift/pending` | Moddy-team global sanctions (grouped cases, appeal countdown) |
+| `altguard verify/unverify/refusal` | AltGuard gate overrides + refusal details (`altguard_manage`) — see [ALTGUARD.md](ALTGUARD.md) |
 
 ### `/support` / `/com`
 

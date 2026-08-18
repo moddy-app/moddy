@@ -252,6 +252,30 @@
     "interserver info": {
       "name": "信息",
       "description": "获取跨服务器消息的信息"
+    },
+    "altguard": {
+      "name": "altguard",
+      "description": "管理 AltGuard 多账号验证"
+    },
+    "altguard verify": {
+      "name": "验证",
+      "description": "手动将成员标记为已验证",
+      "parameters": {
+        "member": {
+          "name": "成员",
+          "description": "要放行通过验证的成员"
+        }
+      }
+    },
+    "altguard unverify": {
+      "name": "取消验证",
+      "description": "将成员重新放回验证之后",
+      "parameters": {
+        "member": {
+          "name": "成员",
+          "description": "要取消验证的成员"
+        }
+      }
     }
   }
 }

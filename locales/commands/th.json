@@ -252,6 +252,30 @@
     "interserver info": {
       "name": "ข้อมูล",
       "description": "ดูข้อมูลของข้อความข้ามเซิร์ฟเวอร์"
+    },
+    "altguard": {
+      "name": "altguard",
+      "description": "จัดการการยืนยันตัวตนกันบัญชีซ้ำของ AltGuard"
+    },
+    "altguard verify": {
+      "name": "ยืนยัน",
+      "description": "ทำเครื่องหมายสมาชิกว่ายืนยันแล้วด้วยตนเอง",
+      "parameters": {
+        "member": {
+          "name": "สมาชิก",
+          "description": "สมาชิกที่จะให้ผ่านการยืนยัน"
+        }
+      }
+    },
+    "altguard unverify": {
+      "name": "ยกเลิกการยืนยัน",
+      "description": "ส่งสมาชิกกลับไปรอการยืนยันอีกครั้ง",
+      "parameters": {
+        "member": {
+          "name": "สมาชิก",
+          "description": "สมาชิกที่จะยกเลิกการยืนยัน"
+        }
+      }
     }
   }
 }

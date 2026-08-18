@@ -252,6 +252,30 @@
     "interserver info": {
       "name": "info",
       "description": "Ger information om ett meddelande mellan servrar"
+    },
+    "altguard": {
+      "name": "altguard",
+      "description": "Hanterar AltGuard-verifieringen mot flera konton"
+    },
+    "altguard verify": {
+      "name": "verifiera",
+      "description": "Markerar en medlem som verifierad manuellt",
+      "parameters": {
+        "member": {
+          "name": "medlem",
+          "description": "Medlemmen som ska släppas genom verifieringen"
+        }
+      }
+    },
+    "altguard unverify": {
+      "name": "avverifiera",
+      "description": "Skickar tillbaka en medlem bakom verifieringen",
+      "parameters": {
+        "member": {
+          "name": "medlem",
+          "description": "Medlemmen som ska avverifieras"
+        }
+      }
     }
   }
 }

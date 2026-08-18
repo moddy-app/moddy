@@ -252,6 +252,30 @@
     "interserver info": {
       "name": "thông-tin",
       "description": "Xem thông tin về một tin nhắn liên máy chủ"
+    },
+    "altguard": {
+      "name": "altguard",
+      "description": "Quản lý xác minh chống tài khoản phụ AltGuard"
+    },
+    "altguard verify": {
+      "name": "xác-minh",
+      "description": "Đánh dấu thủ công một thành viên là đã xác minh",
+      "parameters": {
+        "member": {
+          "name": "thành-viên",
+          "description": "Thành viên được cho qua xác minh"
+        }
+      }
+    },
+    "altguard unverify": {
+      "name": "hủy-xác-minh",
+      "description": "Đưa một thành viên trở lại phía sau xác minh",
+      "parameters": {
+        "member": {
+          "name": "thành-viên",
+          "description": "Thành viên bị hủy xác minh"
+        }
+      }
     }
   }
 }

@@ -86,6 +86,8 @@ the event was produced: task queues, command/reply RPC, notification feeds.
 | `moddy:blacklist:updates` | Backend/Bot → Bot | Global-sanction cache invalidation (`bot.py::_handle_blacklist_event`) |
 | `moddy:dashboard` | Bot → Backend | Bot-originated notifications to the dashboard, incl. `social_subscribe_result` etc. |
 | `moddy:sanctions` | Bot → Backend | Global sanction lifecycle events (`apply`/`lift`/`halt`/`resume`/`execute`) — `services/global_sanction_service.py::SANCTION_CHANNEL` |
+| `altguard:verdict` | AltGuard service → Bot | One verdict per finished verification (`bot.py::_handle_altguard_verdict` → `cogs/altguard.py`). `enforced=false` means shadow mode: log, apply nothing — see [ALTGUARD.md](ALTGUARD.md) |
+| `altguard:membership` | Bot → AltGuard service | Membership transitions (`active`/`left`/`kicked`/`banned`) feeding AltGuard's scoring (`services/altguard_client.py`) |
 
 ### Streams
 
@@ -174,4 +176,6 @@ for a new service rather than inventing a new transport style. Checklist:
   replies, queue, backend delegation options).
 - [docs/GLOBAL_SANCTIONS.md](GLOBAL_SANCTIONS.md) — `moddy:sanctions`
   Pub/Sub payloads.
+- [docs/ALTGUARD.md](ALTGUARD.md) — `altguard:verdict` / `altguard:membership`
+  payloads, and the two HTTP endpoints that complete that contract.
 - `gateway/quota.py` — plain-key counter pattern for rate/quota tracking.
