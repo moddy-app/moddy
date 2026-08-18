@@ -1908,11 +1908,11 @@
         "title": "AltGuard",
         "description": "Um auf den Server zuzugreifen, musst du eine **Zweitkonto-Verifizierung** bestehen\nKlicke auf den Button unten, um deinen persönlichen Verifizierungslink zu erzeugen. Er gilt 20 Minuten und ist einmalig nutzbar.",
         "button": "Verifizieren",
-        "footer": "Mit dem Klick auf diesen Button akzeptierst du unsere [**Nutzungsbedingungen** (→ moddy.app)]({terms}) und unsere [**Datenschutzerklärung** (→ moddy.app)]({privacy}). Die für diese Verifizierung erhobenen Daten sind verschlüsselt. [**Mehr erfahren** (→ moddy.app)]({data})"
+        "footer": "Mit dem Klick auf diesen Button akzeptierst du unsere [**Nutzungsbedingungen**]({terms}) und unsere [**Datenschutzerklärung**]({privacy}). Die für diese Verifizierung erhobenen Daten sind verschlüsselt. [**Mehr erfahren**]({data})"
       },
       "consent": {
         "title": "AltGuard-Verifizierung",
-        "body": "Zur Erkennung von Mehrfachkonten erhebt die Verifizierung die Merkmale deines Browsers, ein technisches Cookie, deine Discord-E-Mail-Adresse, die Liste deiner Server und deine IP-Adresse.\n\nDiese Daten sind **verschlüsselt**, werden ausschließlich für diese Erkennung verwendet und nur begrenzt gespeichert. **Das Moddy-Team und die Moderation dieses Servers haben keinen Zugriff darauf** — sie sehen nur das Ergebnis der Verifizierung.\n\n[**Erhobene Daten** (→ moddy.app)]({data}) · [**Nutzungsbedingungen** (→ moddy.app)]({terms}) · [**Datenschutzerklärung** (→ moddy.app)]({privacy})",
+        "body": "Zur Erkennung von Mehrfachkonten erhebt die Verifizierung die Merkmale deines Browsers, ein technisches Cookie, deine Discord-E-Mail-Adresse, die Liste deiner Server und deine IP-Adresse.\n\nDiese Daten sind **verschlüsselt**, werden ausschließlich für diese Erkennung verwendet und nur begrenzt gespeichert.\n\n[**Erhobene Daten**]({data}) · [**Nutzungsbedingungen**]({terms}) · [**Datenschutzerklärung**]({privacy})",
         "agree_label": "Einwilligung",
         "agree_description": "Setze beide Haken, um deinen Verifizierungslink zu erzeugen.",
         "agree_terms": "Ich akzeptiere die Nutzungsbedingungen und die Datenschutzerklärung",
@@ -1952,7 +1952,8 @@
         "bot_target": {
           "title": "Ungültiges Ziel",
           "description": "Bots durchlaufen die AltGuard-Verifizierung nicht."
-        }
+        },
+        "code": "Technischer Code: {code} — gib ihn an die Moderation weiter, wenn das Problem bestehen bleibt."
       },
       "manual": {
         "verified": {

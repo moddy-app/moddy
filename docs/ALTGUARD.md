@@ -100,6 +100,9 @@ a manual verification). A lookup failure **fails closed** — the roles wait.
 
 ## Service contract
 
+> Byte-level reference (headers, exact field types, error-code mapping,
+> reproduction commands): **[ALTGUARD_INTEGRATION.md](ALTGUARD_INTEGRATION.md)**.
+
 Two transports, four messages. `ALTGUARD_BOT_TOKEN` and `ALTGUARD_API_URL` live
 in the environment ([docs/RAILWAY.md](RAILWAY.md)); the Redis is the one the bot
 already uses ([docs/REDIS_COMMUNICATION.md](REDIS_COMMUNICATION.md)).

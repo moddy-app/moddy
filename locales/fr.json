@@ -1907,11 +1907,11 @@
         "title": "AltGuard",
         "description": "Pour accéder au serveur, tu dois valider une **vérification anti double compte**\nClique sur le bouton ci-dessous pour générer ton lien de vérification personnel. Il est valable 20 minutes et à usage unique.",
         "button": "Se vérifier",
-        "footer": "En cliquant sur ce bouton, tu acceptes nos [**Conditions d'utilisation** (→ moddy.app)]({terms}) et notre [**Politique de confidentialité** (→ moddy.app)]({privacy}). Les données collectées dans le cadre de cette vérification sont chiffrées. [**En savoir plus** (→ moddy.app)]({data})"
+        "footer": "En cliquant sur ce bouton, tu acceptes nos [**Conditions d'utilisation**]({terms}) et notre [**Politique de confidentialité**]({privacy}). Les données collectées dans le cadre de cette vérification sont chiffrées. [**En savoir plus**]({data})"
       },
       "consent": {
         "title": "Vérification AltGuard",
-        "body": "Pour détecter les comptes multiples, la vérification collecte les caractéristiques de ton navigateur, un cookie technique, ton adresse e-mail Discord, la liste de tes serveurs et ton adresse IP.\n\nCes données sont **chiffrées**, utilisées uniquement pour cette détection et conservées pour une durée limitée. **L'équipe Moddy et la modération de ce serveur n'y ont pas accès** : elles ne voient que le résultat de la vérification.\n\n[**Données collectées** (→ moddy.app)]({data}) · [**Conditions d'utilisation** (→ moddy.app)]({terms}) · [**Politique de confidentialité** (→ moddy.app)]({privacy})",
+        "body": "Pour détecter les comptes multiples, la vérification collecte les caractéristiques de ton navigateur, un cookie technique, ton adresse e-mail Discord, la liste de tes serveurs et ton adresse IP.\n\nCes données sont **chiffrées**, utilisées uniquement pour cette détection et conservées pour une durée limitée.\n\n[**Données collectées**]({data}) · [**Conditions d'utilisation**]({terms}) · [**Politique de confidentialité**]({privacy})",
         "agree_label": "Consentement",
         "agree_description": "Coche les deux cases pour générer ton lien de vérification.",
         "agree_terms": "J'accepte les conditions d'utilisation et la politique de confidentialité",
@@ -1951,7 +1951,8 @@
         "bot_target": {
           "title": "Cible invalide",
           "description": "Les bots ne passent pas par la vérification AltGuard."
-        }
+        },
+        "code": "Code technique : {code} — communique-le à la modération si le problème persiste."
       },
       "manual": {
         "verified": {

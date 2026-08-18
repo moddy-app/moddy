@@ -1908,11 +1908,11 @@
         "title": "AltGuard",
         "description": "Para acessar o servidor, você precisa passar por uma **verificação anti contas múltiplas**\nClique no botão abaixo para gerar seu link de verificação pessoal. Ele vale 20 minutos e é de uso único.",
         "button": "Verificar-me",
-        "footer": "Ao clicar neste botão, você aceita nossos [**Termos de uso** (→ moddy.app)]({terms}) e nossa [**Política de privacidade** (→ moddy.app)]({privacy}). Os dados coletados nesta verificação são criptografados. [**Saiba mais** (→ moddy.app)]({data})"
+        "footer": "Ao clicar neste botão, você aceita nossos [**Termos de uso**]({terms}) e nossa [**Política de privacidade**]({privacy}). Os dados coletados nesta verificação são criptografados. [**Saiba mais**]({data})"
       },
       "consent": {
         "title": "Verificação AltGuard",
-        "body": "Para detectar contas múltiplas, a verificação coleta as características do seu navegador, um cookie técnico, seu e-mail do Discord, a lista dos seus servidores e seu endereço IP.\n\nEsses dados são **criptografados**, usados apenas para essa detecção e mantidos por um tempo limitado. **A equipe do Moddy e a moderação deste servidor não têm acesso a eles**: elas só veem o resultado da verificação.\n\n[**Dados coletados** (→ moddy.app)]({data}) · [**Termos de uso** (→ moddy.app)]({terms}) · [**Política de privacidade** (→ moddy.app)]({privacy})",
+        "body": "Para detectar contas múltiplas, a verificação coleta as características do seu navegador, um cookie técnico, seu e-mail do Discord, a lista dos seus servidores e seu endereço IP.\n\nEsses dados são **criptografados**, usados apenas para essa detecção e mantidos por um tempo limitado.\n\n[**Dados coletados**]({data}) · [**Termos de uso**]({terms}) · [**Política de privacidade**]({privacy})",
         "agree_label": "Consentimento",
         "agree_description": "Marque as duas caixas para gerar seu link de verificação.",
         "agree_terms": "Aceito os termos de uso e a política de privacidade",
@@ -1952,7 +1952,8 @@
         "bot_target": {
           "title": "Alvo inválido",
           "description": "Bots não passam pela verificação do AltGuard."
-        }
+        },
+        "code": "Código técnico: {code} — informe a moderação se o problema persistir."
       },
       "manual": {
         "verified": {

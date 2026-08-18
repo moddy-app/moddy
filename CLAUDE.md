@@ -324,7 +324,21 @@ moddy/
 - See → [docs/PERSISTENT_VIEWS.md](docs/PERSISTENT_VIEWS.md) for the full
   contract, the custom_id convention, auth models, and worked examples.
 
-### 9. Language
+### 9. "Current value" only when nothing else shows it
+- Do **not** print a `Valeur actuelle : …` / `Current value: …` line under a
+  setting whose control already displays its own state. A `ChannelSelect`,
+  `RoleSelect`, `UserSelect`, `MentionableSelect` or a `Select` with
+  `default=True` on the chosen option all render the current selection
+  themselves — repeating it as text is duplicated, and the two can drift.
+- **Do** show the current value when the setting is edited through something
+  that displays nothing: a Modal (custom message, colour, thresholds…), a
+  toggle button, or a value stored but not represented by any component on
+  the panel.
+- Rule of thumb: if the user can read the answer off the control, the text
+  line is noise; if the control is a button that opens a Modal, the text line
+  is the only way to know what is stored.
+
+### 10. Language
 - Code comments, commits, PRs: **English only**
 - User-facing strings: via i18n (French + English)
 
@@ -354,6 +368,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/MODULE_SYSTEM.md](docs/MODULE_SYSTEM.md) | Creating or modifying server modules |
 | [docs/WELCOME_MESSAGES.md](docs/WELCOME_MESSAGES.md) | Welcome messages module — config schema, placeholders, backend/dashboard contract |
 | [docs/ALTGUARD.md](docs/ALTGUARD.md) | **AltGuard** — anti multi-account verification gate, consent, service contract, staff commands |
+| [docs/ALTGUARD_INTEGRATION.md](docs/ALTGUARD_INTEGRATION.md) | AltGuard ↔ bot exact wire contract — payload types, error codes, debugging |
 | [docs/AUTOMOD_AI.md](docs/AUTOMOD_AI.md) | Automod AI — detection pipeline, nano decider, scalable features, rules safety check |
 | [docs/AUTOMOD_AI_CONFIG.md](docs/AUTOMOD_AI_CONFIG.md) | Automod AI configuration schema in DB (backend / dashboard integration) |
 | [docs/BOT_CUSTOMIZATION.md](docs/BOT_CUSTOMIZATION.md) | Bot Customization — per-guild nickname/avatar/banner/bio + name styles, Redis dashboard contract |

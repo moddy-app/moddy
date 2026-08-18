@@ -89,12 +89,6 @@ class AltGuardConfigView(BaseView):
     # Rendering
     # ----------------------------------------------------------------- #
 
-    def _role_mention(self, role_id: Optional[int]) -> str:
-        return f"<@&{role_id}>" if role_id else t('modules.config.not_configured', locale=self.locale)
-
-    def _channel_mention(self, channel_id: Optional[int]) -> str:
-        return f"<#{channel_id}>" if channel_id else t('modules.config.not_configured', locale=self.locale)
-
     def _build_view(self) -> None:
         self.clear_items()
 
@@ -112,9 +106,7 @@ class AltGuardConfigView(BaseView):
         # --- Verification channel -------------------------------------- #
         container.add_item(ui.TextDisplay(
             f"**{t('modules.altguard.config.channel.section_title', locale=self.locale)}**\n"
-            f"-# {t('modules.altguard.config.channel.section_description', locale=self.locale)}\n"
-            f"-# {t('modules.config.current_value', locale=self.locale)} "
-            f"{self._channel_mention(self.working_config.get('channel_id'))}"
+            f"-# {t('modules.altguard.config.channel.section_description', locale=self.locale)}"
         ))
         container.add_item(self._channel_row(
             _CID_CHANNEL, self.working_config.get('channel_id'),
@@ -125,9 +117,7 @@ class AltGuardConfigView(BaseView):
         # --- Unverified role -------------------------------------------- #
         container.add_item(ui.TextDisplay(
             f"**{t('modules.altguard.config.unverified_role.section_title', locale=self.locale)}**\n"
-            f"-# {t('modules.altguard.config.unverified_role.section_description', locale=self.locale)}\n"
-            f"-# {t('modules.config.current_value', locale=self.locale)} "
-            f"{self._role_mention(self.working_config.get('unverified_role_id'))}"
+            f"-# {t('modules.altguard.config.unverified_role.section_description', locale=self.locale)}"
         ))
         container.add_item(self._role_row(
             _CID_UNVERIFIED, self.working_config.get('unverified_role_id'),
@@ -137,9 +127,7 @@ class AltGuardConfigView(BaseView):
         # --- Verified role ---------------------------------------------- #
         container.add_item(ui.TextDisplay(
             f"**{t('modules.altguard.config.verified_role.section_title', locale=self.locale)}**\n"
-            f"-# {t('modules.altguard.config.verified_role.section_description', locale=self.locale)}\n"
-            f"-# {t('modules.config.current_value', locale=self.locale)} "
-            f"{self._role_mention(self.working_config.get('verified_role_id'))}"
+            f"-# {t('modules.altguard.config.verified_role.section_description', locale=self.locale)}"
         ))
         container.add_item(self._role_row(
             _CID_VERIFIED, self.working_config.get('verified_role_id'),
@@ -172,9 +160,7 @@ class AltGuardConfigView(BaseView):
         # --- Log channel (optional) -------------------------------------- #
         container.add_item(ui.TextDisplay(
             f"**{t('modules.altguard.config.log_channel.section_title', locale=self.locale)}**\n"
-            f"-# {t('modules.altguard.config.log_channel.section_description', locale=self.locale)}\n"
-            f"-# {t('modules.config.current_value', locale=self.locale)} "
-            f"{self._channel_mention(self.working_config.get('log_channel_id'))}"
+            f"-# {t('modules.altguard.config.log_channel.section_description', locale=self.locale)}"
         ))
         container.add_item(self._channel_row(
             _CID_LOG_CHANNEL, self.working_config.get('log_channel_id'),

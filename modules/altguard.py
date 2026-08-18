@@ -36,7 +36,7 @@ from db.repositories.altguard import (
     VERDICT_PASSED, VERDICT_TO_STATUS,
 )
 from modules.module_manager import ModuleBase
-from utils.emojis import ALTGUARD
+from utils.emojis import SHIELD
 
 logger = logging.getLogger('moddy.modules.altguard')
 
@@ -58,7 +58,9 @@ class AltGuardModule(ModuleBase):
     MODULE_ID = MODULE_ID
     MODULE_NAME = "AltGuard"
     MODULE_DESCRIPTION = "Anti multi-account verification before server access"
-    MODULE_EMOJI = ALTGUARD
+    # The /config picker uses the shield (it is a protection module); the
+    # animated AltGuard face is reserved for the panel message itself.
+    MODULE_EMOJI = SHIELD
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)
