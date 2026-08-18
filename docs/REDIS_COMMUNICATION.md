@@ -82,16 +82,16 @@ the event was produced: task queues, command/reply RPC, notification feeds.
 | Channel | Direction | Purpose |
 |---|---|---|
 | `moddy:bot` | Backend → Bot | Generic events: `config_updated`, `module_updated`, `premium_activated`, `payment_failed`, … (`bot.py::_handle_bot_event`) |
-| `moddy:subscription:updates` | Backend → Bot | Premium subscription cache invalidation + DM triggers (`bot.py::_handle_subscription_event`) |
+| `moddy:subscription:updates` | Backend → Bot | Premium subscription cache invalidation + DM triggers: `refresh`, `notify_payment_late`, `notify_subscription_started/renewed/cancelled/updated/upgraded/downgraded` (`bot.py::_handle_subscription_event`) |
 | `moddy:blacklist:updates` | Backend/Bot → Bot | Global-sanction cache invalidation (`bot.py::_handle_blacklist_event`) |
-| `moddy:dashboard` | Bot → Backend | Bot-originated notifications to the dashboard, incl. `social_subscribe_result` etc. |
-| `moddy:sanctions` | Bot → Backend | Global sanction lifecycle events (`apply`/`lift`/`halt`/`resume`/`execute`) — `services/global_sanction_service.py::SANCTION_CHANNEL` |
+| `moddy:dashboard` | Bot → Backend | Bot-originated task results, keyed by `request_id` — `{type}_result` for every `moddy:tasks` task type (`social_subscribe_result`, `bot_customization_update_result`, …) — `bot.py::_process_*_task` |
+| `moddy:sanctions` | Bot → Backend | Global sanction lifecycle events (`global_sanction_applied/lifted`, `enforcement_halted/resumed/executed`), each with an ISO `ts` — `services/global_sanction_service.py::SANCTION_CHANNEL` |
 
 ### Streams
 
 | Stream | Producer | Consumer | Notes |
 |---|---|---|---|
-| `moddy:tasks` | Backend | Bot | Critical guaranteed tasks (`update_panel`, `send_announcement`, `social_subscribe`, …). Plain `XREAD` + `moddy:tasks:last_id` key to resume (`bot.py::_consume_task_stream`) |
+| `moddy:tasks` | Backend | Bot | Critical guaranteed tasks (`update_panel`, `send_announcement`, `social_subscribe/unsubscribe/remove/update`, `bot_customization_update`, `case_add_sanction/revoke_sanction`, …). Plain `XREAD` + `moddy:tasks:last_id` key to resume (`bot.py::_consume_task_stream` / `_process_task`) |
 | `feeds:commands` | Bot | `moddy-feeds` service | `subscribe` / `unsubscribe` commands, correlated by `request_id` |
 | `feeds:replies` | `moddy-feeds` service | Bot | Replies to `feeds:commands`, correlated by `request_id`, 10s timeout (`services/feeds_client.py`) |
 | `notifications:queue` | `moddy-feeds` service | Bot (consumer group `discord-bot`) | Normalized notification events, `XACK`ed unconditionally (service dedups) |
@@ -105,7 +105,14 @@ the event was produced: task queues, command/reply RPC, notification feeds.
 | `moddy:bot_guilds` | Backend (invalidated by Bot) | Guild list cache — bot deletes it on `on_guild_join`/`on_guild_remove` |
 | `moddy:tasks:last_id` | Bot | Resume point for `moddy:tasks` |
 | `feeds:heartbeat` | `moddy-feeds` service | Health check, TTL ~90s |
-| `quota:{scope}:{key}:{type}:{date}` | Bot (`gateway/quota.py`) | Daily API quota counters |
+| `sub:user:{user_id}` | Backend (bot re-writes opportunistically) | Subscription cache — `{tier, expires_at, stripe_customer_id}` JSON, TTL from `expires_at` (`utils/subscription.py`, `docs/SUBSCRIPTION_SCHEMA.md`) |
+| `sub:guild:{guild_id}` | Bot | `is_guild_premium` cache, fixed 300s TTL (`utils/subscription.py`) |
+| `quota:{scope}:{key}:{type}:{date}` | Bot (`gateway/quota.py`) | Daily API quota counters, TTL 48h |
+| `gateway:log_buffer` (LIST) | Bot (`gateway/logger.py`) | Buffered gateway call logs, flushed to PostgreSQL periodically |
+| `automod:budget:{guild_id}:{date}` | Bot (`automod/engine.py`) | Automod AI daily spend budget counter |
+| `automod:agg:buf:{guild}:{channel}:{author}` (LIST) | Bot (`automod/engine.py`) | Message-aggregation buffer for automod, window-TTL'd |
+| `automod:agg:judged:{guild}:{channel}:{author}` (SET) | Bot (`automod/engine.py`) | Dedup of already-judged messages in the aggregation window |
+| `rel:{guild}:{min(a,b)}:{max(a,b)}` (HASH) | Bot (`automod/relations.py`) | Relationship/familiarity graph between two users, 60-day TTL refreshed on write |
 
 ---
 
@@ -156,8 +163,14 @@ for a new service rather than inventing a new transport style. Checklist:
   and whatever a new service picks).
 - `notifications:queue` — the one exception grandfathered in from the feeds
   integration (not `feeds:notifications`); don't reuse it for anything else.
-- `bot:*` — bot-only cache keys with no cross-service meaning (per
-  `docs/BACKEND-INTEGRATION.md` §9).
+- `automod:*`, `rel:*`, `gateway:*` — bot-internal namespaces, each scoped to
+  one subsystem (automod runtime state, gateway log buffer). Follow this
+  pattern for new bot-only state instead of inventing a flat key name.
+- `bot:*` — reserved by `docs/BACKEND-INTEGRATION.md` §9 as the generic
+  bot-only prefix, but not actually used in the current codebase (bot-only
+  state uses subsystem prefixes like `automod:`/`rel:`/`gateway:` instead).
+  A new service can still use it, or a subsystem-specific prefix as above —
+  either way, don't reuse someone else's prefix.
 - JSON payloads on Pub/Sub and Streams commonly carry a `type`/`action` field
   to dispatch on, and a `request_id` when a reply is expected. Discord IDs
   travel as strings in stream fields (`XADD` only accepts strings) — always
