@@ -84,11 +84,6 @@
         "incognito": "Hacer que la respuesta solo sea visible para ti"
       },
       "working": "Corrigiendo tu texto...",
-      "modal": {
-        "title": "Corregir un texto",
-        "label": "Texto a corregir",
-        "placeholder": "Pega aquí el texto a corregir..."
-      },
       "result": {
         "title": "### <:text:1519791921462120601> Texto corregido",
         "footer": "-# Corregido por **ChatGPT**"
@@ -100,13 +95,6 @@
         "incognito": "Hacer que la respuesta solo sea visible para ti"
       },
       "working": "Reformulando tu texto...",
-      "modal": {
-        "title": "Reformular un texto",
-        "label": "Texto a reformular",
-        "placeholder": "Pega aquí el texto a reformular...",
-        "style": "Estilo de reformulación",
-        "style_placeholder": "Elige un estilo"
-      },
       "styles": {
         "neutral": "Normal",
         "professional": "Profesional",
@@ -127,13 +115,6 @@
         "incognito": "Hacer que la respuesta solo sea visible para ti"
       },
       "working": "Resumiendo tu texto...",
-      "modal": {
-        "title": "Resumir un texto",
-        "label": "Texto a resumir",
-        "placeholder": "Pega aquí el texto a resumir...",
-        "length": "Longitud del resumen",
-        "length_placeholder": "Elige una longitud"
-      },
       "lengths": {
         "short": "Corto (1 o 2 frases)",
         "medium": "Medio (un párrafo)",

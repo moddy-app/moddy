@@ -8,7 +8,6 @@ from discord import app_commands, ui
 from cogs.error_handler import BaseView
 from discord.ext import commands
 from typing import Optional
-import aiohttp
 import re
 from datetime import datetime
 
@@ -291,33 +290,6 @@ class Emoji(commands.Cog):
         # Convert to seconds
         return int(timestamp_ms / 1000)
 
-    @staticmethod
-    async def check_if_animated(emoji_id: str) -> bool:
-        """
-        Checks if an emoji is animated by attempting to fetch the GIF version
-
-        Returns:
-            True if animated, False otherwise
-        """
-        gif_url = f"https://cdn.discordapp.com/emojis/{emoji_id}.gif"
-
-        async with aiohttp.ClientSession() as session:
-            async with session.get(gif_url) as resp:
-                # If we get a 200, it's animated
-                # If we get an error response with JSON, it's not animated
-                if resp.status == 200:
-                    return True
-
-                try:
-                    data = await resp.json()
-                    # Discord returns {"message": "Invalid resource..."} for non-animated emojis
-                    if "message" in data and "Invalid resource" in data["message"]:
-                        return False
-                except:
-                    pass
-
-                return False
-
     async def emoji_context_menu_callback(self, interaction: discord.Interaction, message: discord.Message):
         """Context menu command callback to extract and display emojis from a message"""
         # Get the user's locale
@@ -339,17 +311,17 @@ class Emoji(commands.Cog):
         # Process all emojis
         emoji_data_list = []
         for emoji_id, emoji_name, is_animated_format in emoji_list:
-            # Check if emoji is actually animated by trying to fetch the GIF
-            is_animated = await self.check_if_animated(emoji_id)
-
             # Get creation timestamp from snowflake
             created_timestamp = self.snowflake_to_timestamp(emoji_id)
 
-            # Build emoji data
+            # Build emoji data — the "a:" prefix in the emoji's raw format
+            # already reflects its real animation state (Discord encodes it
+            # correctly when the message was written), so trust it directly
+            # instead of probing the CDN.
             emoji_data = {
                 "id": emoji_id,
                 "name": emoji_name,
-                "animated": is_animated,
+                "animated": is_animated_format,
                 "created_at": created_timestamp
             }
             emoji_data_list.append(emoji_data)
@@ -403,17 +375,15 @@ class Emoji(commands.Cog):
 
         emoji_id, emoji_name, is_animated_format = emoji_info
 
-        # Check if emoji is actually animated by trying to fetch the GIF
-        is_animated = await self.check_if_animated(emoji_id)
-
         # Get creation timestamp from snowflake
         created_timestamp = self.snowflake_to_timestamp(emoji_id)
 
-        # Build emoji data
+        # Build emoji data — trust the "a:" prefix from the raw emoji format,
+        # which already reflects the emoji's real animation state.
         emoji_data = {
             "id": emoji_id,
             "name": emoji_name,
-            "animated": is_animated,
+            "animated": is_animated_format,
             "created_at": created_timestamp
         }
 

@@ -25,23 +25,20 @@ that same language. The one exception is `/summarize`, see *Languages* below.
 
 | Entry point | Result |
 |---|---|
-| Slash command (no argument) | Opens an **empty** modal |
+| Slash command | Takes `text` directly as a command option — runs immediately, no modal |
 | `AI text tools` context menu | Opens a modal **pre-filled** with the message (always ephemeral) |
 
-### Slash → Modal V2
+### Slash → direct option
 
-The slash commands take no `text` option: they open a Modal V2
-(see [MODALS_V2.md](MODALS_V2.md)) built from `_BaseTextModal`:
+`/fix`, `/rephrase` and `/summarize` take `text` as a required string option
+(`app_commands.Range[str, 1, MAX_INPUT_LENGTH]`, `MAX_INPUT_LENGTH = 2000`) so
+the whole round trip is a single command — no modal in the way. `/rephrase`
+and `/summarize` add an optional `style` / `length` choice option (defaults to
+`neutral` / `medium`) built from `REPHRASE_STYLES` / `SUMMARY_LENGTHS` via
+`app_commands.choices`.
 
-1. `ui.Label` + `ui.TextInput` (paragraph, `max_length = MAX_INPUT_LENGTH = 2000`)
-2. *(rephrase / summarize only)* `ui.Label` + `ui.Select` — style or length preset
-3. `ui.TextDisplay` — the `commands.text_tools.ai_notice` privacy notice
-
-The length limit lives **only** on the field: Discord refuses an over-long
-submission client-side, so there is no server-side length check.
-
-Modals cannot be persistent (Discord limitation, documented in `BaseModal`), so
-the ephemeral preference is captured at command time and carried into the modal.
+The length limit lives on the option itself: Discord refuses an over-long
+value client-side, so there is no server-side length check.
 
 ### One context menu for three tools
 
@@ -150,9 +147,9 @@ summary is meant to be read, not copy-pasted.
 | Namespace | Contents |
 |---|---|
 | `commands.text_tools` | `ai_notice`, `menu.*` (shared context-menu modal), `errors.*` |
-| `commands.fix` | `description`, `working`, `modal.*`, `result.{title,footer}` |
-| `commands.rephrase` | + `modal.style*`, `styles.*`, `result.style` |
-| `commands.summarize` | + `modal.length*`, `lengths.*`, `result.length` |
+| `commands.fix` | `description`, `working`, `result.{title,footer}` |
+| `commands.rephrase` | + `styles.*`, `result.style` |
+| `commands.summarize` | + `lengths.*`, `result.length` |
 
 ---
 
@@ -161,7 +158,7 @@ summary is meant to be read, not copy-pasted.
 | Situation | Behaviour |
 |---|---|
 | Empty input / empty target message | Ephemeral error card, no API call |
-| Input > 2000 chars | Blocked by the modal field itself, never reaches the bot |
+| Input > 2000 chars | Blocked by the option/field itself, never reaches the bot |
 | OpenAI not configured (`gateway.openai_available()` false) | `errors.unavailable` |
 | Rate limit hit | `errors.rate_limit` with the wait time |
 | Quota exceeded, circuit open, timeout (25 s), empty output | Loading card is replaced by `errors.api_error` |

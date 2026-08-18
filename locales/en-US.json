@@ -84,11 +84,6 @@
         "incognito": "Make response visible only to you"
       },
       "working": "Fixing your text...",
-      "modal": {
-        "title": "Fix a text",
-        "label": "Text to fix",
-        "placeholder": "Paste the text to fix here..."
-      },
       "result": {
         "title": "### <:text:1519791921462120601> Corrected text",
         "footer": "-# Corrected by **ChatGPT**"
@@ -100,13 +95,6 @@
         "incognito": "Make response visible only to you"
       },
       "working": "Rephrasing your text...",
-      "modal": {
-        "title": "Rephrase a text",
-        "label": "Text to rephrase",
-        "placeholder": "Paste the text to rephrase here...",
-        "style": "Rephrasing style",
-        "style_placeholder": "Pick a style"
-      },
       "styles": {
         "neutral": "Normal",
         "professional": "Professional",
@@ -127,13 +115,6 @@
         "incognito": "Make response visible only to you"
       },
       "working": "Summarizing your text...",
-      "modal": {
-        "title": "Summarize a text",
-        "label": "Text to summarize",
-        "placeholder": "Paste the text to summarize here...",
-        "length": "Summary length",
-        "length_placeholder": "Pick a length"
-      },
       "lengths": {
         "short": "Short (1 to 2 sentences)",
         "medium": "Medium (one paragraph)",

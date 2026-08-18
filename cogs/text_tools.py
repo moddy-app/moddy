@@ -6,8 +6,9 @@ Every OpenAI call goes through the centralized gateway (see docs/API_GATEWAY.md)
 - /rephrase  → gpt-4.1-mini  (call_type: text_rephrase)
 - /summarize → gpt-4.1-mini  (call_type: text_summarize)
 
-Each command is available both as a slash command (opens a Modal V2, see
-docs/MODALS_V2.md) and as a message context menu.
+Each command is available both as a slash command (text passed directly as a
+command option) and as a message context menu (opens a Modal V2, see
+docs/MODALS_V2.md, to pick the action/preset on the pre-filled message).
 
 Safety: the input is fenced with a random nonce (anti prompt injection) and,
 for public (non-incognito) answers, every mention-looking token is stripped from
@@ -42,8 +43,10 @@ logger = logging.getLogger("moddy.text_tools")
 # Constants
 # --------------------------------------------------------------------------- #
 
-# Enforced by the modal field itself (TextInput.max_length) — Discord refuses
-# the submission client-side, so no server-side length check is needed.
+# Enforced by the slash command option itself (app_commands.Range) — Discord
+# refuses an over-long value client-side, so no server-side length check is
+# needed for the slash path. The context-menu modal field also caps at this
+# length (TextInput.max_length).
 MAX_INPUT_LENGTH = 2000          # characters accepted as input
 MAX_OUTPUT_LENGTH = 3500         # hard cap before rendering (Discord component limit)
 MAX_USES_PER_MINUTE = 10         # per-user in-memory rate limit
@@ -189,58 +192,6 @@ class _BaseTextModal(BaseModal):
         )
 
 
-class FixModal(_BaseTextModal):
-    """Modal V2 collecting the text to correct."""
-
-    def __init__(self, cog: "TextTools", *, locale: str, ephemeral: bool,
-                 default: Optional[str] = None):
-        super().__init__(
-            cog,
-            locale=locale,
-            ephemeral=ephemeral,
-            title_key="commands.fix.modal.title",
-            label_key="commands.fix.modal.label",
-            placeholder_key="commands.fix.modal.placeholder",
-            default=default,
-        )
-        self.add_notice()
-
-    async def on_submit(self, interaction: discord.Interaction):
-        await self.cog.run_fix(interaction, self.text.component.value, ephemeral=self.ephemeral)
-
-
-class RephraseModal(_BaseTextModal):
-    """Modal V2 collecting the text to rephrase and the target style."""
-
-    def __init__(self, cog: "TextTools", *, locale: str, ephemeral: bool,
-                 default: Optional[str] = None):
-        super().__init__(
-            cog,
-            locale=locale,
-            ephemeral=ephemeral,
-            title_key="commands.rephrase.modal.title",
-            label_key="commands.rephrase.modal.label",
-            placeholder_key="commands.rephrase.modal.placeholder",
-            default=default,
-        )
-        self.style = self._choice_select(
-            label_key="commands.rephrase.modal.style",
-            placeholder_key="commands.rephrase.modal.style_placeholder",
-            options=REPHRASE_STYLES,
-            option_key_prefix="commands.rephrase.styles",
-            default_key="neutral",
-        )
-        self.add_item(self.style)
-        self.add_notice()
-
-    async def on_submit(self, interaction: discord.Interaction):
-        values = self.style.component.values
-        style = values[0] if values else "neutral"
-        await self.cog.run_rephrase(
-            interaction, self.text.component.value, style=style, ephemeral=self.ephemeral
-        )
-
-
 class MenuModal(_BaseTextModal):
     """The one context-menu modal, shared by the three tools.
 
@@ -309,38 +260,6 @@ class MenuModal(_BaseTextModal):
             )
         else:
             await self.cog.run_fix(interaction, text, ephemeral=True)
-
-
-class SummarizeModal(_BaseTextModal):
-    """Modal V2 collecting the text to summarize and the summary length."""
-
-    def __init__(self, cog: "TextTools", *, locale: str, ephemeral: bool,
-                 default: Optional[str] = None):
-        super().__init__(
-            cog,
-            locale=locale,
-            ephemeral=ephemeral,
-            title_key="commands.summarize.modal.title",
-            label_key="commands.summarize.modal.label",
-            placeholder_key="commands.summarize.modal.placeholder",
-            default=default,
-        )
-        self.length = self._choice_select(
-            label_key="commands.summarize.modal.length",
-            placeholder_key="commands.summarize.modal.length_placeholder",
-            options=SUMMARY_LENGTHS,
-            option_key_prefix="commands.summarize.lengths",
-            default_key="medium",
-        )
-        self.add_item(self.length)
-        self.add_notice()
-
-    async def on_submit(self, interaction: discord.Interaction):
-        values = self.length.component.values
-        length = values[0] if values else "medium"
-        await self.cog.run_summarize(
-            interaction, self.text.component.value, length=length, ephemeral=self.ephemeral
-        )
 
 
 # --------------------------------------------------------------------------- #
@@ -415,8 +334,9 @@ class TextTools(commands.Cog):
                          locale: str, *, strip_mentions: bool) -> Optional[str]:
         """Validates input + availability. Returns the text to send, or None.
 
-        The length is already enforced by the modal field (``TextInput.max_length``),
-        so there is no server-side length check here.
+        The length is already enforced by the ``text`` option itself
+        (``app_commands.Range[str, 1, MAX_INPUT_LENGTH]``), so there is no
+        separate server-side length check here.
         """
         text = (text or "").strip()
         if not text:
@@ -707,37 +627,65 @@ class TextTools(commands.Cog):
     @app_commands.command(name="fix", description="Fix the spelling and grammar of a text")
     @app_commands.allowed_installs(guilds=True, users=True)
     @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
-    @app_commands.describe(incognito="Make response visible only to you")
+    @app_commands.describe(
+        text="The text to fix",
+        incognito="Make response visible only to you",
+    )
     @add_incognito_option()
     async def fix_command(self, interaction: discord.Interaction,
+                          text: app_commands.Range[str, 1, MAX_INPUT_LENGTH],
                           incognito: Optional[bool] = None):
-        locale = i18n.get_user_locale(interaction)
-        await interaction.response.send_modal(
-            FixModal(self, locale=locale, ephemeral=get_incognito_setting(interaction))
-        )
+        await self.run_fix(interaction, text, ephemeral=get_incognito_setting(interaction))
 
     @app_commands.command(name="rephrase", description="Rephrase a text in the style of your choice")
     @app_commands.allowed_installs(guilds=True, users=True)
     @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
-    @app_commands.describe(incognito="Make response visible only to you")
+    @app_commands.describe(
+        text="The text to rephrase",
+        style="The target style (defaults to neutral)",
+        incognito="Make response visible only to you",
+    )
+    @app_commands.choices(style=[
+        app_commands.Choice(name="Neutral", value="neutral"),
+        app_commands.Choice(name="Professional", value="professional"),
+        app_commands.Choice(name="Formal", value="formal"),
+        app_commands.Choice(name="Friendly", value="friendly"),
+        app_commands.Choice(name="Casual", value="casual"),
+        app_commands.Choice(name="Concise", value="concise"),
+    ])
     @add_incognito_option()
     async def rephrase_command(self, interaction: discord.Interaction,
+                               text: app_commands.Range[str, 1, MAX_INPUT_LENGTH],
+                               style: Optional[app_commands.Choice[str]] = None,
                                incognito: Optional[bool] = None):
-        locale = i18n.get_user_locale(interaction)
-        await interaction.response.send_modal(
-            RephraseModal(self, locale=locale, ephemeral=get_incognito_setting(interaction))
+        await self.run_rephrase(
+            interaction, text,
+            style=style.value if style else "neutral",
+            ephemeral=get_incognito_setting(interaction),
         )
 
     @app_commands.command(name="summarize", description="Summarize a text")
     @app_commands.allowed_installs(guilds=True, users=True)
     @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
-    @app_commands.describe(incognito="Make response visible only to you")
+    @app_commands.describe(
+        text="The text to summarize",
+        length="The target summary length (defaults to medium)",
+        incognito="Make response visible only to you",
+    )
+    @app_commands.choices(length=[
+        app_commands.Choice(name="Short", value="short"),
+        app_commands.Choice(name="Medium", value="medium"),
+        app_commands.Choice(name="Bullet points", value="bullets"),
+    ])
     @add_incognito_option()
     async def summarize_command(self, interaction: discord.Interaction,
+                                text: app_commands.Range[str, 1, MAX_INPUT_LENGTH],
+                                length: Optional[app_commands.Choice[str]] = None,
                                 incognito: Optional[bool] = None):
-        locale = i18n.get_user_locale(interaction)
-        await interaction.response.send_modal(
-            SummarizeModal(self, locale=locale, ephemeral=get_incognito_setting(interaction))
+        await self.run_summarize(
+            interaction, text,
+            length=length.value if length else "medium",
+            ephemeral=get_incognito_setting(interaction),
         )
 
     # ----------------------------------------------------------------- #
