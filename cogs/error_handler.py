@@ -38,6 +38,14 @@ if SENTRY_DSN:
         # Set profiles_sample_rate to 1.0 to profile 100% of sampled transactions.
         # Adjust this value in production.
         profiles_sample_rate=0.1,  # 10% of sampled transactions
+        # Auto-enabled integrations import their target library at init time
+        # (e.g. the OpenAI integration imports `openai`, which imports its
+        # vendored aiohttp transport). A version mismatch in that import
+        # chain raises before this module even finishes loading, and since
+        # BaseView (defined below) is imported by nearly every cog/module,
+        # that takes the whole bot down. Disable auto-detection so a broken
+        # third-party import can never crash startup.
+        auto_enabling_integrations=False,
     )
     logger.info("Sentry initialized successfully")
 else:
