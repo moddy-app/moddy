@@ -361,6 +361,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 |---|---|
 | [docs/API_GATEWAY.md](docs/API_GATEWAY.md) | API Gateway — all external API calls (OpenAI, DeepL, Groq), quotas, provider rate limits, resilience, logging |
 | [docs/BACKEND-INTEGRATION.md](docs/BACKEND-INTEGRATION.md) | Bot ↔ Backend integration (Redis, Pub/Sub, Streams, `/status`) |
+| [docs/REDIS_COMMUNICATION.md](docs/REDIS_COMMUNICATION.md) | **Redis inter-service communication** — Pub/Sub vs Streams vs plain keys, current channel/stream inventory, checklist for wiring up a new Redis-based service |
 | [docs/SOCIAL_NOTIFICATIONS.md](docs/SOCIAL_NOTIFICATIONS.md) | Social Notifications module + `moddy-feeds` Redis contract (what the backend must mirror) |
 | [docs/SOCIAL_NOTIFICATIONS_CHANGES_2026-06-14.md](docs/SOCIAL_NOTIFICATIONS_CHANGES_2026-06-14.md) | Backend/dashboard change spec: customizable message columns, quota, error codes, task fields |
 | [docs/SUBSCRIPTION_SCHEMA.md](docs/SUBSCRIPTION_SCHEMA.md) | Subscription DB schema, Redis cache contract, Pub/Sub events |
