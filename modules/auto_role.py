@@ -148,10 +148,55 @@ class AutoRoleModule(ModuleBase):
             'bot_roles': []
         }
 
+    async def _altguard_holds_back(self, member: discord.Member) -> bool:
+        """True when AltGuard gates this member and they have not passed yet.
+
+        Handing the auto roles to someone who has not cleared the anti
+        multi-account check would defeat the gate entirely — they would land
+        with the server's regular roles before verifying. Bots are never gated
+        (they cannot click a button), so their roles are applied as usual.
+        The roles are granted later by
+        ``AltGuardModule._run_auto_role`` — the moment the gate opens.
+        """
+        if member.bot:
+            return False
+
+        try:
+            altguard = await self.bot.module_manager.get_module_instance(
+                self.guild_id, 'altguard')
+        except Exception as e:
+            # Fail closed: a lookup error must not silently open the gate.
+            logger.error(f"AltGuard lookup failed for guild {self.guild_id}: {e}")
+            return True
+
+        if not altguard or not altguard.enabled:
+            return False
+
+        return not await altguard.is_verified(member.id)
+
     async def on_member_join(self, member: discord.Member):
         """
         Appelé quand un membre rejoint le serveur
         Attribue les rôles automatiques selon qu'il s'agit d'un bot ou d'un utilisateur
+        """
+        if not self.enabled:
+            return
+
+        if await self._altguard_holds_back(member):
+            logger.debug(
+                f"Auto roles held back for {member.id} in guild {self.guild_id} "
+                f"(AltGuard verification pending)"
+            )
+            return
+
+        await self.apply_roles(member)
+
+    async def apply_roles(self, member: discord.Member):
+        """
+        Attribue les rôles automatiques sans repasser par le gate AltGuard.
+
+        Called directly by the AltGuard module once a member passes the
+        verification, and by :meth:`on_member_join` when no gate applies.
         """
         if not self.enabled:
             return

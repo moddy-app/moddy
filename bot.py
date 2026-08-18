@@ -122,6 +122,9 @@ class ModdyBot(commands.Bot):
         self.precedents = PrecedentService(self)  # automod server precedents (RAG)
         from services.transcription_service import TranscriptionService
         self.transcription = TranscriptionService(self)  # voice message speech-to-text
+        from services.altguard_client import AltGuardClient
+        # AltGuard anti multi-account verification (HTTP + altguard:* Pub/Sub)
+        self.altguard = AltGuardClient(self)
         from gateway import Gateway
         self.gateway = Gateway()
         self.redis = None  # Redis client (shared with backend)
@@ -265,10 +268,11 @@ class ModdyBot(commands.Bot):
                 pubsub = self.redis.pubsub()
                 await pubsub.subscribe(
                     "moddy:bot", "moddy:subscription:updates", "moddy:blacklist:updates",
+                    "altguard:verdict",
                 )
                 logger.info(
-                    "Pub/Sub subscribed to moddy:bot, moddy:subscription:updates "
-                    "and moddy:blacklist:updates"
+                    "Pub/Sub subscribed to moddy:bot, moddy:subscription:updates, "
+                    "moddy:blacklist:updates and altguard:verdict"
                 )
                 async for message in pubsub.listen():
                     if message["type"] != "message":
@@ -280,6 +284,8 @@ class ModdyBot(commands.Bot):
                             await self._handle_subscription_event(data)
                         elif channel == "moddy:blacklist:updates":
                             await self._handle_blacklist_event(data)
+                        elif channel == "altguard:verdict":
+                            await self._handle_altguard_verdict(data)
                         else:
                             await self._handle_bot_event(data)
                     except Exception as e:
@@ -558,6 +564,19 @@ class ModdyBot(commands.Bot):
         if not targeted:
             global_sanctions.invalidate(self)
             logger.info("[GlobalSanctionPubSub] Full global sanction cache invalidated")
+
+    async def _handle_altguard_verdict(self, data: dict):
+        """Handle a message from the ``altguard:verdict`` channel.
+
+        The AltGuard service publishes one verdict per finished verification.
+        All the logic (validation, idempotency, role changes, logging) lives in
+        the AltGuard cog — this only routes.
+        """
+        cog = self.get_cog("AltGuard")
+        if not cog:
+            logger.warning("[AltGuard] Verdict received but the AltGuard cog is not loaded")
+            return
+        await cog.handle_verdict(data)
 
     async def _handle_bot_event(self, data: dict):
         """Route Pub/Sub events from the backend."""
@@ -1978,6 +1997,12 @@ class ModdyBot(commands.Bot):
 
         # Stop API gateway (flushes log buffer)
         await self.gateway.stop()
+
+        # Close the AltGuard HTTP session
+        try:
+            await self.altguard.close()
+        except Exception as e:
+            logger.error(f"[FAIL] Error closing AltGuard client: {e}")
 
         # Close Redis connection
         if self.redis:
