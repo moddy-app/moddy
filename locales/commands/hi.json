@@ -252,6 +252,30 @@
     "interserver info": {
       "name": "जानकारी",
       "description": "किसी अंतर-सर्वर संदेश की जानकारी प्राप्त करें"
+    },
+    "altguard": {
+      "name": "altguard",
+      "description": "AltGuard बहु-खाता सत्यापन प्रबंधित करें"
+    },
+    "altguard verify": {
+      "name": "सत्यापित",
+      "description": "किसी सदस्य को मैन्युअल रूप से सत्यापित चिह्नित करें",
+      "parameters": {
+        "member": {
+          "name": "सदस्य",
+          "description": "वह सदस्य जिसे सत्यापन से गुजरने देना है"
+        }
+      }
+    },
+    "altguard unverify": {
+      "name": "असत्यापित",
+      "description": "किसी सदस्य को फिर से सत्यापन के पीछे भेजें",
+      "parameters": {
+        "member": {
+          "name": "सदस्य",
+          "description": "वह सदस्य जिसका सत्यापन हटाना है"
+        }
+      }
     }
   }
 }

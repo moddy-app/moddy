@@ -252,6 +252,30 @@
     "interserver info": {
       "name": "info",
       "description": "Dapatkan informasi tentang pesan antarserver"
+    },
+    "altguard": {
+      "name": "altguard",
+      "description": "Mengelola verifikasi anti akun ganda AltGuard"
+    },
+    "altguard verify": {
+      "name": "verifikasi",
+      "description": "Menandai anggota sebagai terverifikasi secara manual",
+      "parameters": {
+        "member": {
+          "name": "anggota",
+          "description": "Anggota yang diloloskan dari verifikasi"
+        }
+      }
+    },
+    "altguard unverify": {
+      "name": "batal-verifikasi",
+      "description": "Mengembalikan anggota ke balik verifikasi",
+      "parameters": {
+        "member": {
+          "name": "anggota",
+          "description": "Anggota yang verifikasinya dibatalkan"
+        }
+      }
     }
   }
 }

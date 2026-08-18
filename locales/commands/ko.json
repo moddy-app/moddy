@@ -252,6 +252,30 @@
     "interserver info": {
       "name": "정보",
       "description": "서버 간 메시지에 대한 정보를 가져옵니다"
+    },
+    "altguard": {
+      "name": "altguard",
+      "description": "AltGuard 다중 계정 인증을 관리합니다"
+    },
+    "altguard verify": {
+      "name": "인증",
+      "description": "멤버를 수동으로 인증된 상태로 표시합니다",
+      "parameters": {
+        "member": {
+          "name": "멤버",
+          "description": "인증을 통과시킬 멤버"
+        }
+      }
+    },
+    "altguard unverify": {
+      "name": "인증-해제",
+      "description": "멤버를 다시 인증 대기 상태로 되돌립니다",
+      "parameters": {
+        "member": {
+          "name": "멤버",
+          "description": "인증을 해제할 멤버"
+        }
+      }
     }
   }
 }

@@ -252,6 +252,30 @@
     "interserver info": {
       "name": "info",
       "description": "Daje informacije o poruci između poslužitelja"
+    },
+    "altguard": {
+      "name": "altguard",
+      "description": "Upravlja AltGuard provjerom protiv višestrukih računa"
+    },
+    "altguard verify": {
+      "name": "provjeri",
+      "description": "Ručno označava člana kao provjerenog",
+      "parameters": {
+        "member": {
+          "name": "clan",
+          "description": "Član koji smije proći provjeru"
+        }
+      }
+    },
+    "altguard unverify": {
+      "name": "ponisti-provjeru",
+      "description": "Vraća člana iza provjere",
+      "parameters": {
+        "member": {
+          "name": "clan",
+          "description": "Član kojem se poništava provjera"
+        }
+      }
     }
   }
 }

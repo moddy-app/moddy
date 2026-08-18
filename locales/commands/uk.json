@@ -252,6 +252,30 @@
     "interserver info": {
       "name": "інфо",
       "description": "Показує інформацію про міжсерверне повідомлення"
+    },
+    "altguard": {
+      "name": "altguard",
+      "description": "Керує перевіркою AltGuard на мультиакаунти"
+    },
+    "altguard verify": {
+      "name": "перевірити",
+      "description": "Вручну позначає учасника як перевіреного",
+      "parameters": {
+        "member": {
+          "name": "учасник",
+          "description": "Учасник, якого пропустити через перевірку"
+        }
+      }
+    },
+    "altguard unverify": {
+      "name": "зняти-перевірку",
+      "description": "Повертає учасника за перевірку",
+      "parameters": {
+        "member": {
+          "name": "учасник",
+          "description": "Учасник, з якого зняти перевірку"
+        }
+      }
     }
   }
 }

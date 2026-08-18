@@ -252,6 +252,30 @@
     "interserver info": {
       "name": "bilgi",
       "description": "Sunucular arası bir mesaj hakkında bilgi verir"
+    },
+    "altguard": {
+      "name": "altguard",
+      "description": "AltGuard çoklu hesap doğrulamasını yönetir"
+    },
+    "altguard verify": {
+      "name": "dogrula",
+      "description": "Bir üyeyi elle doğrulanmış olarak işaretler",
+      "parameters": {
+        "member": {
+          "name": "uye",
+          "description": "Doğrulamadan geçirilecek üye"
+        }
+      }
+    },
+    "altguard unverify": {
+      "name": "dogrulamayi-kaldir",
+      "description": "Bir üyeyi yeniden doğrulamanın arkasına gönderir",
+      "parameters": {
+        "member": {
+          "name": "uye",
+          "description": "Doğrulaması kaldırılacak üye"
+        }
+      }
     }
   }
 }

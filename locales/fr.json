@@ -1886,6 +1886,118 @@
         "discord_error": "Discord n'a pas pu appliquer ce changement.",
         "save_failed": "Le changement a été appliqué mais n'a pas pu être enregistré."
       }
+    },
+    "altguard": {
+      "name": "AltGuard",
+      "description": "Vérification anti double compte avant l'accès au serveur",
+      "config": {
+        "title": "Configuration d'AltGuard",
+        "description": "AltGuard bloque les nouveaux arrivants derrière une vérification anti double compte. Le message de vérification est fourni par Moddy : tu choisis seulement où il est publié, les rôles du gate et sa langue.",
+        "channel": {
+          "section_title": "Salon de vérification",
+          "section_description": "Le seul salon visible par le rôle non vérifié. Le message de vérification y est republié à chaque enregistrement.",
+          "placeholder": "Choisis le salon de vérification"
+        },
+        "unverified_role": {
+          "section_title": "Rôle non vérifié",
+          "section_description": "Attribué à l'arrivée. Il ne doit donner accès à aucun salon en dehors du salon de vérification.",
+          "placeholder": "Choisis le rôle non vérifié"
+        },
+        "verified_role": {
+          "section_title": "Rôle vérifié",
+          "section_description": "Attribué dès que la vérification est validée. C'est lui qui ouvre le serveur.",
+          "placeholder": "Choisis le rôle vérifié"
+        },
+        "language": {
+          "section_title": "Langue du message",
+          "section_description": "La formulation est identique partout : seule la langue du message de vérification change.",
+          "placeholder": "Choisis la langue du message"
+        },
+        "log_channel": {
+          "section_title": "Salon de logs (facultatif)",
+          "section_description": "Reçoit les verdicts et les décisions manuelles. Les scores et signaux ne sont visibles que là.",
+          "placeholder": "Choisis le salon de logs"
+        },
+        "permissions_hint": "Moddy a besoin de **Gérer les rôles**, et ses rôles doivent être au-dessus du rôle non vérifié et du rôle vérifié dans la hiérarchie.",
+        "saved_with_panel": "Configuration enregistrée. Le message de vérification a été republié dans le salon.",
+        "saved_without_panel": "Configuration enregistrée, mais le message de vérification n'a pas pu être publié. Vérifie que Moddy peut écrire dans le salon choisi."
+      },
+      "panel": {
+        "title": "AltGuard",
+        "description": "Pour accéder au serveur, tu dois valider une **vérification anti double compte**\nClique sur le bouton ci-dessous pour générer ton lien de vérification personnel. Il est valable 20 minutes et à usage unique.",
+        "button": "Se vérifier",
+        "footer": "En cliquant sur ce bouton, tu acceptes nos [**Conditions d'utilisation** (→ moddy.app)]({terms}) et notre [**Politique de confidentialité** (→ moddy.app)]({privacy}). Les données collectées dans le cadre de cette vérification sont chiffrées. [**En savoir plus** (→ moddy.app)]({data})"
+      },
+      "consent": {
+        "title": "Vérification AltGuard",
+        "body": "Pour détecter les comptes multiples, la vérification collecte les caractéristiques de ton navigateur, un cookie technique, ton adresse e-mail Discord, la liste de tes serveurs et ton adresse IP.\n\nCes données sont **chiffrées**, utilisées uniquement pour cette détection et conservées pour une durée limitée. **L'équipe Moddy et la modération de ce serveur n'y ont pas accès** : elles ne voient que le résultat de la vérification.\n\n[**Données collectées** (→ moddy.app)]({data}) · [**Conditions d'utilisation** (→ moddy.app)]({terms}) · [**Politique de confidentialité** (→ moddy.app)]({privacy})",
+        "agree_label": "Consentement",
+        "agree_description": "Coche les deux cases pour générer ton lien de vérification.",
+        "agree_terms": "J'accepte les conditions d'utilisation et la politique de confidentialité",
+        "agree_processing": "J'accepte le traitement de ces données pour la détection des comptes multiples"
+      },
+      "link": {
+        "title": "Ton lien de vérification",
+        "description": "Ouvre le lien ci-dessous pour terminer ta vérification. Il est **personnel**, à **usage unique**, et ne doit être partagé avec personne.",
+        "expires": "Expire {timestamp}",
+        "button": "Ouvrir la vérification",
+        "footer": "Le rôle est attribué automatiquement dès que la vérification est validée.",
+        "expired": "Lien expiré ? Reclique simplement sur le bouton du salon de vérification."
+      },
+      "errors": {
+        "guild_only": "Cette vérification ne fonctionne que dans un serveur.",
+        "unavailable": {
+          "title": "Vérification indisponible",
+          "description": "Le service de vérification ne répond pas pour le moment. Réessaie dans quelques minutes."
+        },
+        "rate_limited": {
+          "title": "Trop de tentatives",
+          "description": "Tu as demandé trop de liens de vérification en peu de temps.",
+          "retry": "-# Réessaie dans `{seconds}` secondes."
+        },
+        "consent_required": {
+          "title": "Consentement requis",
+          "description": "La vérification ne peut pas démarrer tant que les deux cases ne sont pas cochées."
+        },
+        "no_perms": {
+          "title": "Permission manquante",
+          "description": "Il te faut la permission **Gérer les rôles** pour utiliser cette commande."
+        },
+        "not_configured": {
+          "title": "AltGuard n'est pas configuré",
+          "description": "Configure d'abord le module avec `/config` : salon de vérification, rôle non vérifié et rôle vérifié."
+        },
+        "bot_target": {
+          "title": "Cible invalide",
+          "description": "Les bots ne passent pas par la vérification AltGuard."
+        }
+      },
+      "manual": {
+        "verified": {
+          "title": "Membre vérifié",
+          "description": "{name} (`{id}`) a été vérifié manuellement et a reçu le rôle vérifié."
+        },
+        "unverified": {
+          "title": "Membre dévérifié",
+          "description": "{name} (`{id}`) est de nouveau derrière la vérification."
+        }
+      },
+      "logs": {
+        "verdict": {
+          "passed": "Vérification validée",
+          "flagged": "Vérification suspecte",
+          "blocked": "Vérification refusée"
+        },
+        "member": "Membre",
+        "score": "Score",
+        "reasons": "Signaux",
+        "reference": "Référence",
+        "shadow": "Mode observation : le verdict est journalisé, aucune action n'a été appliquée.",
+        "manual_verify": "Vérification manuelle",
+        "manual_unverify": "Dévérification manuelle",
+        "actor_server": "Modérateur",
+        "actor_moddy": "Équipe Moddy"
+      }
     }
   },
   "languages": {
@@ -1922,7 +2034,18 @@
     "uk": "Ukrainien",
     "bg": "Bulgare",
     "lmo": "Lombard",
-    "wo": "Wolof"
+    "wo": "Wolof",
+    "es-419": "Espagnol (LatAm)",
+    "hi": "Hindi",
+    "hr": "Croate",
+    "id": "Indonésien",
+    "lt": "Lituanien",
+    "th": "Thaï",
+    "vi": "Vietnamien",
+    "zh-TW": "Chinois (Traditionnel)",
+    "zh-tw": "Chinois (Traditionnel)",
+    "is": "Islandais",
+    "Icelandic": "Islandais"
   },
   "staff": {
     "common": {
@@ -2284,6 +2407,34 @@
         "list_count": "Affichage de {shown} dossier(s) sur {total}",
         "list_more": "Utilise /mod case view <référence> pour le détail complet.",
         "no_source": "Aucun type de sanction ne s'applique à ce type de sujet."
+      },
+      "altguard": {
+        "invalid_title": "Arguments invalides",
+        "invalid": "Indique un utilisateur et un serveur : `user` (id ou mention) et `guild` (id du serveur).",
+        "no_guild_title": "Serveur introuvable",
+        "no_guild": "Moddy n'est pas sur le serveur {id}.",
+        "no_member_title": "Membre introuvable",
+        "no_member": "L'utilisateur {id} n'est pas sur ce serveur.",
+        "not_configured_title": "AltGuard n'est pas configuré",
+        "not_configured": "Le serveur {id} n'a pas de configuration AltGuard active.",
+        "verified_title": "Membre vérifié",
+        "verified": "{name} (`{id}`) a été vérifié manuellement sur {guild}.",
+        "unverified_title": "Membre dévérifié",
+        "unverified": "{name} (`{id}`) est de nouveau derrière la vérification sur {guild}.",
+        "refusal_invalid": "Indique l'identifiant de vérification affiché dans les logs AltGuard du serveur.",
+        "refusal_notfound_title": "Vérification introuvable",
+        "refusal_notfound": "Aucune vérification enregistrée avec l'identifiant {id}.",
+        "refusal_title": "Détail d'une vérification",
+        "refusal_description": "Vérification {id}.",
+        "refusal_footer": "Ces informations restent internes : les communiquer au membre lui donnerait de quoi contourner la détection.",
+        "field_member": "Membre",
+        "field_guild": "Serveur",
+        "field_verdict": "Verdict",
+        "field_score": "Score",
+        "field_reasons": "Signaux",
+        "field_enforced": "Appliqué",
+        "field_date": "Date",
+        "field_current": "État actuel"
       }
     },
     "manage": {
@@ -2474,7 +2625,9 @@
       "field_level": "Niveau",
       "field_reason": "Raison",
       "field_case": "Case ID",
-      "footnote_deadline_final": "Ces mesures prendront effet le **{date}** (**{rel}**)."
+      "footnote_deadline_final": "Ces mesures prendront effet le **{date}** (**{rel}**).",
+      "level": "Niveau",
+      "cases": "Dossiers"
     },
     "halt": {
       "title": "Appel reçu",

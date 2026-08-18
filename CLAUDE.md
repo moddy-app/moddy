@@ -44,6 +44,7 @@ moddy/
 │   ├── voice_transcription.py #   "Transcribe" context menu (Groq Whisper)
 │   ├── webhook.py             #   Webhook management
 │   ├── social_notifications.py #  Social notifications dispatch + feeds service wiring
+│   ├── altguard.py            #   AltGuard verdicts, membership events, /altguard verify|unverify
 │   ├── interserver_commands.py #  Inter-server commands
 │   ├── ping.py, user.py, avatar.py, banner.py, roll.py, moddy.py
 │   ├── subscription.py        #   Premium features
@@ -70,11 +71,13 @@ moddy/
 │   ├── adaptive_slowmode.py   #   Adaptive slowmode (EWMA + hysteresis)
 │   ├── interserver.py         #   Inter-server message relay
 │   ├── social_notifications.py #  Social notifications (via moddy-feeds service)
+│   ├── altguard.py            #   AltGuard anti multi-account verification gate
 │   ├── automod_ai.py          #   Automod AI (applies decisions, cases+evidence, scalable features)
 │   ├── bot_customization.py   #   Bot identity per guild (nick/avatar/banner/bio + name style)
 │   ├── voice_transcription.py #   Voice message transcription (button or automatic)
 │   └── configs/               #   Components V2 config UIs per module
 │       ├── adaptive_slowmode_config.py
+│       ├── altguard_config.py             # AltGuard gate (channel, roles, logs, language)
 │       ├── social_notifications_config.py
 │       ├── automod_ai_config.py
 │       ├── automod_ai_precedents_view.py  # Learned-precedents browser (S7)
@@ -110,7 +113,7 @@ moddy/
 │   │   └── parsing.py         #     Arg helpers (user/guild id)
 │   ├── commands/dev/          #   /dev commands (one file each)
 │   ├── commands/team/         #   /team commands (incl. help)
-│   ├── commands/mod/          #   /mod commands + case/ and global/ sub-groups
+│   ├── commands/mod/          #   /mod commands + case/, global/ and altguard/ sub-groups
 │   ├── commands/manage/       #   /manage commands (staff panel, badge, redirect/, banner/…)
 │   ├── support_commands.py    #   sup. commands — legacy (not yet migrated)
 │   └── communication_commands.py  # com. commands — legacy (not yet migrated)
@@ -121,6 +124,7 @@ moddy/
 │       ├── users.py, guilds.py, staff.py, errors.py
 │       ├── reminders.py, saved_messages.py, saved_roles.py
 │       ├── moderation.py, interserver.py, attributes.py
+│       ├── altguard.py          #   AltGuard verifications + gate state (altguard_*)
 │       ├── appeals.py           #   Automod sanction appeals (case_appeals)
 │       ├── enforcements.py      #   Global sanction appeal countdowns (case_enforcements)
 │       ├── eval_candidates.py   #   Automod eval/annotation corpus (automod_eval_candidates)
@@ -143,6 +147,7 @@ moddy/
 │   ├── staff_help_view.py
 │   ├── case_management_views.py #  Cases Views/Modals (create, sanction, comment…) — staff
 │   ├── cases_views.py         #   /cases & /mycases browser (CasesBrowserView, persistent)
+│   ├── altguard_views.py      #   AltGuard panel (persistent), consent Modal V2, link + log cards
 │   ├── automod_shadow_views.py #  Automod shadow-mode (dry_run) SIMULATION card + annotation buttons (persistent)
 │   ├── automod_render.py      #   Shared automod card helpers (barème breakdown, sanction name/accent)
 │   ├── transcription_views.py #   Voice transcription cards + persistent Transcribe button
@@ -174,6 +179,7 @@ moddy/
 │       └── transcription.py   #     bot.gateway.transcription
 │
 ├── services/                  # External service clients
+│   ├── altguard_client.py     #   AltGuard service client (HTTP + altguard:* Pub/Sub)
 │   ├── backend_client.py      #   Backend HTTP client
 │   ├── feeds_client.py        #   moddy-feeds Redis client (social notifications)
 │   ├── case_service.py        #   Scalable sanction→case entry point (source registry)
@@ -203,6 +209,7 @@ moddy/
     ├── internal_api/          #   pytest suite for the internal API routes
     │                          #   (FastAPI TestClient, bot + gateway stubbed)
     ├── gateway/               #   Provider rate limits + executor reservation lifecycle
+    ├── test_altguard.py       #   AltGuard verdicts, gate roles, auto_role hold-back
     ├── test_global_sanctions.py   # Global sanction levels, cache TTL, user/guild context
     ├── test_global_sanction_flow.py # Groups, notices, countdown, Redis events, allowlists
     ├── test_bot_customization.py  # Bot customization validation (bio budget, styles)
@@ -346,6 +353,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/VOICE_TRANSCRIPTION.md](docs/VOICE_TRANSCRIPTION.md) | Voice transcription — context menu, module, Groq Whisper, cost control |
 | [docs/MODULE_SYSTEM.md](docs/MODULE_SYSTEM.md) | Creating or modifying server modules |
 | [docs/WELCOME_MESSAGES.md](docs/WELCOME_MESSAGES.md) | Welcome messages module — config schema, placeholders, backend/dashboard contract |
+| [docs/ALTGUARD.md](docs/ALTGUARD.md) | **AltGuard** — anti multi-account verification gate, consent, service contract, staff commands |
 | [docs/AUTOMOD_AI.md](docs/AUTOMOD_AI.md) | Automod AI — detection pipeline, nano decider, scalable features, rules safety check |
 | [docs/AUTOMOD_AI_CONFIG.md](docs/AUTOMOD_AI_CONFIG.md) | Automod AI configuration schema in DB (backend / dashboard integration) |
 | [docs/BOT_CUSTOMIZATION.md](docs/BOT_CUSTOMIZATION.md) | Bot Customization — per-guild nickname/avatar/banner/bio + name styles, Redis dashboard contract |

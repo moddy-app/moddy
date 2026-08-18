@@ -252,6 +252,30 @@
     "interserver info": {
       "name": "info",
       "description": "Obține informații despre un mesaj dintre servere"
+    },
+    "altguard": {
+      "name": "altguard",
+      "description": "Gestionează verificarea AltGuard împotriva conturilor multiple"
+    },
+    "altguard verify": {
+      "name": "verifica",
+      "description": "Marchează manual un membru ca verificat",
+      "parameters": {
+        "member": {
+          "name": "membru",
+          "description": "Membrul care trece de verificare"
+        }
+      }
+    },
+    "altguard unverify": {
+      "name": "anuleaza-verificarea",
+      "description": "Trimite un membru înapoi în spatele verificării",
+      "parameters": {
+        "member": {
+          "name": "membru",
+          "description": "Membrul căruia i se anulează verificarea"
+        }
+      }
     }
   }
 }

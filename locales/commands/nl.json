@@ -252,6 +252,30 @@
     "interserver info": {
       "name": "info",
       "description": "Geeft informatie over een bericht tussen servers"
+    },
+    "altguard": {
+      "name": "altguard",
+      "description": "Beheert de AltGuard-verificatie tegen meerdere accounts"
+    },
+    "altguard verify": {
+      "name": "verifieren",
+      "description": "Markeert een lid handmatig als geverifieerd",
+      "parameters": {
+        "member": {
+          "name": "lid",
+          "description": "Het lid dat de verificatie mag passeren"
+        }
+      }
+    },
+    "altguard unverify": {
+      "name": "deverifieren",
+      "description": "Zet een lid weer achter de verificatie",
+      "parameters": {
+        "member": {
+          "name": "lid",
+          "description": "Het lid dat gedeverifieerd wordt"
+        }
+      }
     }
   }
 }

@@ -252,6 +252,30 @@
     "interserver info": {
       "name": "tiedot",
       "description": "Antaa tietoja palvelinten välisestä viestistä"
+    },
+    "altguard": {
+      "name": "altguard",
+      "description": "Hallitsee AltGuardin monitilien vahvistusta"
+    },
+    "altguard verify": {
+      "name": "vahvista",
+      "description": "Merkitsee jäsenen vahvistetuksi käsin",
+      "parameters": {
+        "member": {
+          "name": "jasen",
+          "description": "Jäsen, joka päästetään vahvistuksen läpi"
+        }
+      }
+    },
+    "altguard unverify": {
+      "name": "poista-vahvistus",
+      "description": "Palauttaa jäsenen vahvistuksen taakse",
+      "parameters": {
+        "member": {
+          "name": "jasen",
+          "description": "Jäsen, jonka vahvistus poistetaan"
+        }
+      }
     }
   }
 }

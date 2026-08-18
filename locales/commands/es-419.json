@@ -252,6 +252,30 @@
     "interserver info": {
       "name": "info",
       "description": "Obtiene información sobre un mensaje entre servidores"
+    },
+    "altguard": {
+      "name": "altguard",
+      "description": "Gestiona la verificación anti cuentas múltiples AltGuard"
+    },
+    "altguard verify": {
+      "name": "verificar",
+      "description": "Marca manualmente a un miembro como verificado",
+      "parameters": {
+        "member": {
+          "name": "miembro",
+          "description": "El miembro que puede pasar la verificación"
+        }
+      }
+    },
+    "altguard unverify": {
+      "name": "desverificar",
+      "description": "Devuelve a un miembro detrás de la verificación",
+      "parameters": {
+        "member": {
+          "name": "miembro",
+          "description": "El miembro a desverificar"
+        }
+      }
     }
   }
 }
