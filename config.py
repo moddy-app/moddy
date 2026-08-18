@@ -69,6 +69,20 @@ OPENAI_API_KEY: str = os.environ.get("OPENAI_API_KEY", "")
 TOKEN_DETECTOR_KEY: str = os.environ.get("TOKEN_DETECTOR_KEY", "")
 
 # =============================================================================
+# ALTGUARD (anti multi-account verification service)
+# =============================================================================
+# The bot never talks to AltGuard's database: it calls two HTTP endpoints and
+# exchanges two Redis Pub/Sub channels with it (see docs/ALTGUARD.md).
+
+# Base URL of the AltGuard service - Variable Railway: ALTGUARD_API_URL
+ALTGUARD_API_URL: str = os.environ.get(
+    "ALTGUARD_API_URL", "https://verify.moddy.app"
+).rstrip("/")
+
+# Shared secret sent as `Authorization: Bearer` - Variable Railway: ALTGUARD_BOT_TOKEN
+ALTGUARD_BOT_TOKEN: str = os.environ.get("ALTGUARD_BOT_TOKEN", "")
+
+# =============================================================================
 # TECHNICAL LOGS (internal staff webhooks)
 # =============================================================================
 # Internal technical logs are NOT sent by the bot itself but through Discord

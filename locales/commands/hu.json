@@ -252,6 +252,30 @@
     "interserver info": {
       "name": "infó",
       "description": "Információt ad egy szerverek közötti üzenetről"
+    },
+    "altguard": {
+      "name": "altguard",
+      "description": "Az AltGuard többfiókos ellenőrzésének kezelése"
+    },
+    "altguard verify": {
+      "name": "ellenoriz",
+      "description": "Kézzel ellenőrzöttnek jelöl egy tagot",
+      "parameters": {
+        "member": {
+          "name": "tag",
+          "description": "A tag, akit át kell engedni az ellenőrzésen"
+        }
+      }
+    },
+    "altguard unverify": {
+      "name": "ellenorzes-visszavonas",
+      "description": "Visszaküld egy tagot az ellenőrzés mögé",
+      "parameters": {
+        "member": {
+          "name": "tag",
+          "description": "A tag, akinek visszavonják az ellenőrzését"
+        }
+      }
     }
   }
 }

@@ -252,6 +252,30 @@
     "interserver info": {
       "name": "инфо",
       "description": "Показывает информацию о межсерверном сообщении"
+    },
+    "altguard": {
+      "name": "altguard",
+      "description": "Управляет проверкой AltGuard на мультиаккаунты"
+    },
+    "altguard verify": {
+      "name": "проверить",
+      "description": "Вручную помечает участника как проверенного",
+      "parameters": {
+        "member": {
+          "name": "участник",
+          "description": "Участник, которого пропустить через проверку"
+        }
+      }
+    },
+    "altguard unverify": {
+      "name": "снять-проверку",
+      "description": "Возвращает участника за проверку",
+      "parameters": {
+        "member": {
+          "name": "участник",
+          "description": "Участник, с которого снять проверку"
+        }
+      }
     }
   }
 }

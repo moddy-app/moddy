@@ -68,6 +68,16 @@ sont configurées dans `gateway/config.py` et surchargeables via
 `GROQ_WHISPER_AUDIO_SECONDS_PER_DAY` — voir
 [VOICE_TRANSCRIPTION.md](VOICE_TRANSCRIPTION.md)
 
+### ALTGUARD_API_URL
+**Valeur :** URL de base du service AltGuard (défaut : `https://verify.moddy.app`)
+
+### ALTGUARD_BOT_TOKEN
+**Valeur :** Secret partagé envoyé en `Authorization: Bearer` sur
+`/altguard/token` et `/altguard/membership/resync` (obligatoire pour le module
+AltGuard — sans lui, le bouton de vérification répond « service indisponible »).
+Les canaux Redis `altguard:verdict` / `altguard:membership` passent par le Redis
+déjà configuré (`REDIS_URL`), rien à ajouter — voir [ALTGUARD.md](ALTGUARD.md)
+
 ## Checklist Railway
 
 - [ ] `DISCORD_TOKEN`
@@ -79,6 +89,8 @@ sont configurées dans `gateway/config.py` et surchargeables via
 - [ ] `ENV_MODE` → `production`
 - [ ] `DEBUG` → `False`
 - [ ] `BOT_STATUS` (optionnel)
+- [ ] `ALTGUARD_BOT_TOKEN` (optionnel, requis pour le module AltGuard)
+- [ ] `ALTGUARD_API_URL` (optionnel, défaut `https://verify.moddy.app`)
 
 ## Dépannage
 

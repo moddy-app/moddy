@@ -59,6 +59,8 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     from utils.transcription_views import TranscriptionPersistence
     from modules.configs.voice_transcription_config import VoiceTranscriptionConfigView
     from modules.configs.bot_customization_config import BotCustomizationConfigView
+    from modules.configs.altguard_config import AltGuardConfigView
+    from utils.altguard_views import AltGuardPanelView
 
     return [
         # Group 1 — /moddy (public informational, no user auth)
@@ -112,6 +114,12 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         # Group 12d — /config bot customization panel (guild permission auth;
         # its two modals are excluded like every other modal)
         BotCustomizationConfigView,
+        # Group 12e — /config AltGuard panel (guild permission auth) and the
+        # verification panel posted in the guild's verification channel
+        # (public: whoever clicks is the member being verified; its consent
+        # modal is excluded like every other modal)
+        AltGuardConfigView,
+        AltGuardPanelView,
         # Group 13 — /config automod AI panel (guild permission auth;
         # AutomodAIPrecedentsView is deliberately excluded, see
         # docs/PERSISTENT_VIEWS.md Step 12)

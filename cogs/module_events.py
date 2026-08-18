@@ -27,6 +27,23 @@ class ModuleEvents(commands.Cog):
         if not self.bot.module_manager:
             return
 
+        # AltGuard first: it decides whether the member is held behind the
+        # verification gate, and Auto Role below reads that decision.
+        try:
+            altguard_module = await self.bot.module_manager.get_module_instance(
+                member.guild.id,
+                'altguard'
+            )
+
+            if altguard_module and altguard_module.enabled:
+                await altguard_module.on_member_join(member)
+
+        except Exception as e:
+            logger.error(
+                f"Error in on_member_join (altguard) for guild {member.guild.id}: {e}",
+                exc_info=True
+            )
+
         # Welcome Channel + Welcome DM. The channel module used to be dispatched
         # under the id 'welcome', which no registered module has ever answered to
         # (its MODULE_ID is 'welcome_channel'), so channel welcomes never fired.

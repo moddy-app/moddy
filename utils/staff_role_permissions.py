@@ -24,6 +24,7 @@ MODERATOR_PERMISSIONS = [
     "case_sanction",          # Add / revoke sanctions on a case
     "global_sanction",        # Apply / lift Moddy-team global sanctions
     "global_enforcement",     # Stop a global sanction enforcement countdown
+    "altguard_manage",        # Manually (un)verify members + read AltGuard refusals
     "interserver_info",       # View inter-server message info
     "interserver_delete",     # Delete inter-server messages
 ]
@@ -104,6 +105,7 @@ def get_permission_label(permission: str) -> str:
         "case_sanction": "Add / Revoke Sanctions",
         "global_sanction": "Apply / Lift Global Sanctions",
         "global_enforcement": "Halt Global Enforcement Countdown",
+        "altguard_manage": "Manage AltGuard Verifications",
         "interserver_info": "Inter-Server Message Info",
         "interserver_delete": "Delete Inter-Server Messages",
 

@@ -1887,6 +1887,118 @@
         "discord_error": "Discord could not apply this change.",
         "save_failed": "The change was applied but could not be saved."
       }
+    },
+    "altguard": {
+      "name": "AltGuard",
+      "description": "Anti multi-account verification before server access",
+      "config": {
+        "title": "AltGuard configuration",
+        "description": "AltGuard holds newcomers behind an anti multi-account verification. The verification message ships with Moddy: you only choose where it is posted, the gate roles and its language.",
+        "channel": {
+          "section_title": "Verification channel",
+          "section_description": "The only channel the unverified role can see. The verification message is re-posted there on every save.",
+          "placeholder": "Pick the verification channel"
+        },
+        "unverified_role": {
+          "section_title": "Unverified role",
+          "section_description": "Given on join. It must not open any channel other than the verification channel.",
+          "placeholder": "Pick the unverified role"
+        },
+        "verified_role": {
+          "section_title": "Verified role",
+          "section_description": "Given as soon as the verification passes. This is what opens the server.",
+          "placeholder": "Pick the verified role"
+        },
+        "language": {
+          "section_title": "Message language",
+          "section_description": "The wording is the same everywhere: only the language of the verification message changes.",
+          "placeholder": "Pick the message language"
+        },
+        "log_channel": {
+          "section_title": "Log channel (optional)",
+          "section_description": "Receives verdicts and manual decisions. Scores and signals are only visible there.",
+          "placeholder": "Pick the log channel"
+        },
+        "permissions_hint": "Moddy needs **Manage Roles**, and its own roles must sit above both the unverified and the verified role in the hierarchy.",
+        "saved_with_panel": "Configuration saved. The verification message has been re-posted in the channel.",
+        "saved_without_panel": "Configuration saved, but the verification message could not be posted. Check that Moddy can write in the selected channel."
+      },
+      "panel": {
+        "title": "AltGuard",
+        "description": "To access this server, you must pass an **anti multi-account verification**\nClick the button below to generate your personal verification link. It is valid for 20 minutes and single use.",
+        "button": "Verify me",
+        "footer": "By clicking this button, you accept our [**Terms of Service** (→ moddy.app)]({terms}) and our [**Privacy Policy** (→ moddy.app)]({privacy}). The data collected for this verification is encrypted. [**Learn more** (→ moddy.app)]({data})"
+      },
+      "consent": {
+        "title": "AltGuard verification",
+        "body": "To detect multiple accounts, the verification collects your browser characteristics, a technical cookie, your Discord email address, your server list and your IP address.\n\nThis data is **encrypted**, used only for that detection and kept for a limited time. **The Moddy team and this server's moderators have no access to it** — they only see the outcome of the verification.\n\n[**Collected data** (→ moddy.app)]({data}) · [**Terms of Service** (→ moddy.app)]({terms}) · [**Privacy Policy** (→ moddy.app)]({privacy})",
+        "agree_label": "Consent",
+        "agree_description": "Tick both boxes to generate your verification link.",
+        "agree_terms": "I accept the terms of service and the privacy policy",
+        "agree_processing": "I accept the processing of this data for multi-account detection"
+      },
+      "link": {
+        "title": "Your verification link",
+        "description": "Open the link below to complete your verification. It is **personal**, **single use**, and must not be shared with anyone.",
+        "expires": "Expires {timestamp}",
+        "button": "Open the verification",
+        "footer": "The role is granted automatically as soon as the verification passes.",
+        "expired": "Link expired? Just click the button in the verification channel again."
+      },
+      "errors": {
+        "guild_only": "This verification only works inside a server.",
+        "unavailable": {
+          "title": "Verification unavailable",
+          "description": "The verification service is not answering right now. Try again in a few minutes."
+        },
+        "rate_limited": {
+          "title": "Too many attempts",
+          "description": "You asked for too many verification links in a short time.",
+          "retry": "-# Try again in `{seconds}` seconds."
+        },
+        "consent_required": {
+          "title": "Consent required",
+          "description": "The verification cannot start until both boxes are ticked."
+        },
+        "no_perms": {
+          "title": "Missing permission",
+          "description": "You need the **Manage Roles** permission to use this command."
+        },
+        "not_configured": {
+          "title": "AltGuard is not configured",
+          "description": "Configure the module with `/config` first: verification channel, unverified role and verified role."
+        },
+        "bot_target": {
+          "title": "Invalid target",
+          "description": "Bots do not go through the AltGuard verification."
+        }
+      },
+      "manual": {
+        "verified": {
+          "title": "Member verified",
+          "description": "{name} (`{id}`) was verified manually and received the verified role."
+        },
+        "unverified": {
+          "title": "Member un-verified",
+          "description": "{name} (`{id}`) is behind the verification again."
+        }
+      },
+      "logs": {
+        "verdict": {
+          "passed": "Verification passed",
+          "flagged": "Verification flagged",
+          "blocked": "Verification blocked"
+        },
+        "member": "Member",
+        "score": "Score",
+        "reasons": "Signals",
+        "reference": "Reference",
+        "shadow": "Shadow mode: the verdict was logged, no action was applied.",
+        "manual_verify": "Manual verification",
+        "manual_unverify": "Manual un-verification",
+        "actor_server": "Moderator",
+        "actor_moddy": "Moddy team"
+      }
     }
   },
   "languages": {
@@ -1923,7 +2035,18 @@
     "uk": "Ukrainian",
     "bg": "Bulgarian",
     "lmo": "Lombard",
-    "wo": "Wolof"
+    "wo": "Wolof",
+    "es-419": "Spanish (LatAm)",
+    "hi": "Hindi",
+    "hr": "Croatian",
+    "id": "Indonesian",
+    "lt": "Lithuanian",
+    "th": "Thai",
+    "vi": "Vietnamese",
+    "zh-TW": "Chinese (Traditional)",
+    "zh-tw": "Chinese (Traditional)",
+    "is": "Icelandic",
+    "Icelandic": "Icelandic"
   },
   "staff": {
     "common": {
@@ -2285,6 +2408,34 @@
         "list_count": "Showing {shown} of {total} case(s)",
         "list_more": "Use /mod case view <reference> for full details.",
         "no_source": "No sanction kind applies to this kind of subject."
+      },
+      "altguard": {
+        "invalid_title": "Invalid arguments",
+        "invalid": "Provide a user and a server: `user` (id or mention) and `guild` (server id).",
+        "no_guild_title": "Server not found",
+        "no_guild": "Moddy is not on server {id}.",
+        "no_member_title": "Member not found",
+        "no_member": "User {id} is not on that server.",
+        "not_configured_title": "AltGuard is not configured",
+        "not_configured": "Server {id} has no active AltGuard configuration.",
+        "verified_title": "Member verified",
+        "verified": "{name} (`{id}`) was verified manually on {guild}.",
+        "unverified_title": "Member un-verified",
+        "unverified": "{name} (`{id}`) is behind the verification again on {guild}.",
+        "refusal_invalid": "Provide the verification id shown in the server's AltGuard logs.",
+        "refusal_notfound_title": "Verification not found",
+        "refusal_notfound": "No verification recorded with the id {id}.",
+        "refusal_title": "Verification details",
+        "refusal_description": "Verification {id}.",
+        "refusal_footer": "This stays internal: handing it to the member would tell them exactly what to defeat next time.",
+        "field_member": "Member",
+        "field_guild": "Server",
+        "field_verdict": "Verdict",
+        "field_score": "Score",
+        "field_reasons": "Signals",
+        "field_enforced": "Enforced",
+        "field_date": "Date",
+        "field_current": "Current state"
       }
     },
     "manage": {
@@ -2475,7 +2626,9 @@
       "field_level": "Level",
       "field_reason": "Reason",
       "field_case": "Case ID",
-      "footnote_deadline_final": "These measures take effect on **{date}** (**{rel}**)."
+      "footnote_deadline_final": "These measures take effect on **{date}** (**{rel}**).",
+      "level": "Level",
+      "cases": "Cases"
     },
     "halt": {
       "title": "Appeal received",

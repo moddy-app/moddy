@@ -1,0 +1,420 @@
+"""
+AltGuard UI — verification panel, consent modal, link delivery and log cards.
+
+Flow (docs/ALTGUARD.md §"Parcours membre"):
+
+1. :class:`AltGuardPanelView` — the single, permanent message in the
+   verification channel. One button, one job.
+2. :class:`AltGuardConsentModal` — opened by that button. It states what is
+   collected, links the data notice, the terms and the privacy policy, and
+   requires an explicit tick before anything is sent anywhere. The tick is a
+   deliberate, separate act from "I want in": the modal cannot be submitted
+   without it, and closing it sends nothing.
+3. On submit, the bot calls ``POST /altguard/token`` and answers **ephemerally**
+   with the personal link (single use, 20 minutes).
+
+The panel view is persistent (guild-wide, anyone may click — the interaction
+itself identifies the member). The modal is not, per the documented modal
+exclusion in docs/PERSISTENT_VIEWS.md.
+"""
+
+from __future__ import annotations
+
+import logging
+from datetime import datetime, timezone
+from typing import List, Optional
+
+import discord
+from discord import ui
+
+from cogs.error_handler import BaseModal, BaseView
+from utils.emojis import (
+    ALTGUARD, DONE, ERROR, INFO, MANAGE_USER, SHIELD, TIME, WARNING,
+    format_verification_badge, get_user_verification_badge,
+)
+from utils.i18n import i18n, t
+
+logger = logging.getLogger('moddy.utils.altguard_views')
+
+_CID_VERIFY = "moddy:altguard:panel:verify"
+
+# Public documentation surfaced in the consent modal.
+DATA_NOTICE_URL = "https://moddy.app/AltGuard-data"
+TERMS_URL = "https://moddy.app/terms"
+PRIVACY_URL = "https://moddy.app/privacy"
+
+PANEL_ACCENT = discord.Colour(0x5865F2)
+SUCCESS_ACCENT = discord.Colour(0x57F287)
+WARNING_ACCENT = discord.Colour(0xFEE75C)
+ERROR_ACCENT = discord.Colour(0xED4245)
+NEUTRAL_ACCENT = discord.Colour(0x99AAB5)
+
+# Verdict -> (emoji, accent) for the log cards.
+_VERDICT_STYLE = {
+    "passed": (DONE, SUCCESS_ACCENT),
+    "flagged": (WARNING, WARNING_ACCENT),
+    "blocked": (ERROR, ERROR_ACCENT),
+}
+
+
+# ---------------------------------------------------------------------- #
+# Verification panel
+# ---------------------------------------------------------------------- #
+
+class AltGuardPanelView(BaseView):
+    """The verification panel posted in the guild's verification channel.
+
+    Persistent: yes. Auth: public — anyone who can see the channel may click,
+    and the click verifies *that* user. The guild is read from
+    ``interaction.guild_id``, so nothing needs to be encoded in the custom_id.
+    """
+
+    __persistent__ = True
+
+    def __init__(self, locale: str = "en-US"):
+        super().__init__()  # timeout=None
+        self.locale = locale
+        self._build_view()
+
+    def _build_view(self) -> None:
+        self.clear_items()
+
+        container = ui.Container(accent_colour=PANEL_ACCENT)
+        container.add_item(ui.TextDisplay(
+            f"### {ALTGUARD} {t('modules.altguard.panel.title', locale=self.locale)}"
+        ))
+        container.add_item(ui.TextDisplay(
+            t('modules.altguard.panel.description', locale=self.locale)
+        ))
+
+        button_row = ui.ActionRow()
+        verify_btn = ui.Button(
+            label=t('modules.altguard.panel.button', locale=self.locale),
+            style=discord.ButtonStyle.primary,
+            emoji=discord.PartialEmoji.from_str(SHIELD),
+            custom_id=_CID_VERIFY,
+        )
+        verify_btn.callback = self.on_verify
+        button_row.add_item(verify_btn)
+        container.add_item(button_row)
+
+        container.add_item(ui.Separator(visible=True, spacing=discord.SeparatorSpacing.small))
+        container.add_item(ui.TextDisplay(
+            f"-# {t('modules.altguard.panel.footer', locale=self.locale, terms=TERMS_URL, privacy=PRIVACY_URL, data=DATA_NOTICE_URL)}"
+        ))
+
+        self.add_item(container)
+
+    async def on_verify(self, interaction: discord.Interaction) -> None:
+        """Open the consent modal. Nothing leaves the bot before it is signed."""
+        locale = i18n.get_user_locale(interaction)
+
+        if not interaction.guild_id:
+            await interaction.response.send_message(
+                t('modules.altguard.errors.guild_only', locale=locale), ephemeral=True,
+            )
+            return
+
+        await interaction.response.send_modal(AltGuardConsentModal(locale=locale))
+
+    @classmethod
+    def register_persistent(cls, bot) -> None:
+        """Auth model: public — the clicker is the subject of the verification."""
+        bot.add_view(cls())
+
+
+def build_verification_panel(locale: str = "en-US") -> AltGuardPanelView:
+    """The panel message posted (and re-posted) by the module."""
+    return AltGuardPanelView(locale=locale)
+
+
+# ---------------------------------------------------------------------- #
+# Consent modal
+# ---------------------------------------------------------------------- #
+
+class AltGuardConsentModal(BaseModal):
+    """Explicit consent, collected before any call to AltGuard.
+
+    Not persistent — modals never are (docs/PERSISTENT_VIEWS.md, "Deliberate
+    exclusions"). Nothing is lost if the bot restarts while it is open: the
+    member re-opens it from the panel, which is persistent.
+    """
+
+    def __init__(self, locale: str = "en-US"):
+        super().__init__(
+            title=t('modules.altguard.consent.title', locale=locale)[:45],
+            timeout=None,
+        )
+        self.locale = locale
+
+        self.notice = ui.TextDisplay(
+            t('modules.altguard.consent.body', locale=locale,
+              data=DATA_NOTICE_URL, terms=TERMS_URL, privacy=PRIVACY_URL)
+        )
+        self.add_item(self.notice)
+
+        # A CheckboxGroup with min_values=1 and required=True is the officially
+        # supported way to make a tick mandatory (docs/MODALS_V2.md): a bare
+        # Checkbox cannot be required, so the modal would submit unticked.
+        self.agreement = ui.Label(
+            text=t('modules.altguard.consent.agree_label', locale=locale)[:45],
+            description=t('modules.altguard.consent.agree_description', locale=locale)[:100],
+            component=ui.CheckboxGroup(
+                options=[
+                    discord.CheckboxGroupOption(
+                        label=t('modules.altguard.consent.agree_terms', locale=locale)[:100],
+                        value="terms",
+                    ),
+                    discord.CheckboxGroupOption(
+                        label=t('modules.altguard.consent.agree_processing', locale=locale)[:100],
+                        value="processing",
+                    ),
+                ],
+                min_values=2,
+                max_values=2,
+                required=True,
+            ),
+        )
+        self.add_item(self.agreement)
+
+    async def on_submit(self, interaction: discord.Interaction) -> None:
+        from services.altguard_client import AltGuardError, CONSENT_VERSION
+
+        locale = i18n.get_user_locale(interaction)
+        bot = interaction.client
+
+        values = list(self.agreement.component.values or [])
+        if len(values) < 2:
+            # Discord enforces min_values, but never trust the client with a
+            # consent record: refuse rather than call the service.
+            await interaction.response.send_message(
+                view=build_error_card(locale, 'consent_required'), ephemeral=True,
+            )
+            return
+
+        # The consent instant is the submit, not the moment the call succeeds:
+        # it is what the service stores as proof, and it must not be in the
+        # future relative to the request.
+        consent_at = datetime.now(timezone.utc)
+
+        await interaction.response.defer(ephemeral=True, thinking=True)
+
+        client = getattr(bot, "altguard", None)
+        if client is None or not client.configured:
+            await interaction.followup.send(
+                view=build_error_card(locale, 'unavailable'), ephemeral=True,
+            )
+            return
+
+        try:
+            result = await client.create_verification_token(
+                discord_user_id=interaction.user.id,
+                guild_id=interaction.guild_id,
+                consent_at=consent_at,
+                consent_version=CONSENT_VERSION,
+            )
+        except AltGuardError as e:
+            logger.warning(
+                f"[AltGuard] Token request failed for {interaction.user.id} "
+                f"in guild {interaction.guild_id}: {e.code}"
+            )
+            key = 'rate_limited' if e.code == 'rate_limited' else 'unavailable'
+            await interaction.followup.send(
+                view=build_error_card(locale, key, retry_after=e.retry_after),
+                ephemeral=True,
+            )
+            return
+
+        await interaction.followup.send(
+            view=build_link_card(
+                locale,
+                url=result.get("authorization_url", ""),
+                expires_at=result.get("expires_at"),
+            ),
+            ephemeral=True,
+        )
+
+
+# ---------------------------------------------------------------------- #
+# Ephemeral result cards (no interactive children beyond link buttons)
+# ---------------------------------------------------------------------- #
+
+def _parse_expiry(expires_at: Optional[str]) -> Optional[int]:
+    """ISO 8601 -> unix seconds, for a Discord relative timestamp."""
+    if not expires_at:
+        return None
+    try:
+        moment = datetime.fromisoformat(str(expires_at).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return None
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=timezone.utc)
+    return int(moment.timestamp())
+
+
+def build_link_card(locale: str, *, url: str, expires_at: Optional[str] = None) -> ui.LayoutView:
+    """The ephemeral card carrying the member's personal verification link."""
+    view = ui.LayoutView(timeout=None)
+    container = ui.Container(accent_colour=PANEL_ACCENT)
+
+    container.add_item(ui.TextDisplay(
+        f"### {ALTGUARD} {t('modules.altguard.link.title', locale=locale)}"
+    ))
+    container.add_item(ui.TextDisplay(
+        t('modules.altguard.link.description', locale=locale)
+    ))
+
+    expiry = _parse_expiry(expires_at)
+    if expiry:
+        container.add_item(ui.TextDisplay(
+            f"{TIME} {t('modules.altguard.link.expires', locale=locale, timestamp=f'<t:{expiry}:R>')}"
+        ))
+
+    if url:
+        row = ui.ActionRow()
+        row.add_item(ui.Button(
+            label=t('modules.altguard.link.button', locale=locale),
+            style=discord.ButtonStyle.link,
+            url=url,
+        ))
+        container.add_item(row)
+
+    container.add_item(ui.Separator(visible=True, spacing=discord.SeparatorSpacing.small))
+    container.add_item(ui.TextDisplay(
+        f"-# {t('modules.altguard.link.footer', locale=locale)}"
+    ))
+
+    view.add_item(container)
+    return view
+
+
+def build_error_card(locale: str, key: str, *, retry_after: Optional[int] = None) -> ui.LayoutView:
+    """An ephemeral failure card. `key` selects the i18n message."""
+    view = ui.LayoutView(timeout=None)
+    container = ui.Container(accent_colour=ERROR_ACCENT)
+
+    container.add_item(ui.TextDisplay(
+        f"### {ERROR} {t(f'modules.altguard.errors.{key}.title', locale=locale)}"
+    ))
+    description = t(f'modules.altguard.errors.{key}.description', locale=locale)
+    if key == 'rate_limited' and retry_after:
+        description += "\n" + t(
+            'modules.altguard.errors.rate_limited.retry', locale=locale, seconds=retry_after,
+        )
+    container.add_item(ui.TextDisplay(description))
+
+    view.add_item(container)
+    return view
+
+
+# ---------------------------------------------------------------------- #
+# Shared name rendering
+# ---------------------------------------------------------------------- #
+
+async def format_member_name(bot, user: discord.abc.User) -> str:
+    """``**display name**badge`` per the verification-badge rule in CLAUDE.md.
+
+    Falls back to the plain bold name when the database is unreachable — a
+    missing badge is a cosmetic loss, an exception here would break a
+    moderation command.
+    """
+    attributes: dict = {}
+    verification: Optional[dict] = None
+    if getattr(bot, "db", None):
+        try:
+            row = await bot.db.get_user(user.id)
+            attributes = (row or {}).get('attributes', {}) or {}
+            verification = ((row or {}).get('data', {}) or {}).get('verification')
+        except Exception as e:
+            logger.debug(f"[AltGuard] Could not load attributes for {user.id}: {e}")
+
+    name = getattr(user, "global_name", None) or user.name
+    try:
+        public_flags = user.public_flags.value
+    except Exception:
+        public_flags = 0
+
+    badge, _org_names, _tier = get_user_verification_badge(
+        {"public_flags": public_flags}, attributes, verification,
+    )
+    return f"**{name}**{format_verification_badge(badge)}"
+
+
+# ---------------------------------------------------------------------- #
+# Log channel cards
+# ---------------------------------------------------------------------- #
+
+def build_log_card(
+    *,
+    locale: str,
+    kind: str,
+    user_id: int,
+    verdict: Optional[str] = None,
+    score: Optional[int] = None,
+    reasons: Optional[List[str]] = None,
+    enforced: bool = True,
+    verification_id: Optional[str] = None,
+    actor_id: Optional[int] = None,
+    moddy_staff: bool = False,
+) -> ui.LayoutView:
+    """A card for the optional log channel.
+
+    Score and reasons appear **here only** — the guild's moderators are the
+    audience. They are never shown to the verified member, who would otherwise
+    learn exactly which signal to defeat next time.
+    """
+    view = ui.LayoutView(timeout=None)
+
+    if kind == "verdict":
+        emoji, accent = _VERDICT_STYLE.get(verdict or "", (INFO, NEUTRAL_ACCENT))
+        container = ui.Container(accent_colour=accent if enforced else NEUTRAL_ACCENT)
+        container.add_item(ui.TextDisplay(
+            f"### {emoji} {t(f'modules.altguard.logs.verdict.{verdict}', locale=locale)}"
+        ))
+        lines = [
+            f"**{t('modules.altguard.logs.member', locale=locale)}** <@{user_id}> (`{user_id}`)",
+        ]
+        if score is not None:
+            lines.append(f"**{t('modules.altguard.logs.score', locale=locale)}** `{score}`")
+        if reasons:
+            formatted = ", ".join(f"`{reason}`" for reason in reasons)
+            lines.append(f"**{t('modules.altguard.logs.reasons', locale=locale)}** {formatted}")
+        if verification_id:
+            lines.append(
+                f"**{t('modules.altguard.logs.reference', locale=locale)}** `{verification_id}`"
+            )
+        container.add_item(ui.TextDisplay("\n".join(lines)))
+
+        if not enforced:
+            container.add_item(ui.Separator(visible=True, spacing=discord.SeparatorSpacing.small))
+            container.add_item(ui.TextDisplay(
+                f"-# {t('modules.altguard.logs.shadow', locale=locale)}"
+            ))
+
+        view.add_item(container)
+        return view
+
+    # Manual staff decision.
+    is_verify = kind == "manual_verify"
+    container = ui.Container(accent_colour=SUCCESS_ACCENT if is_verify else WARNING_ACCENT)
+    container.add_item(ui.TextDisplay(
+        f"### {MANAGE_USER} "
+        f"{t(f'modules.altguard.logs.{kind}', locale=locale)}"
+    ))
+    actor_label = t(
+        'modules.altguard.logs.actor_moddy' if moddy_staff else 'modules.altguard.logs.actor_server',
+        locale=locale,
+    )
+    container.add_item(ui.TextDisplay(
+        f"**{t('modules.altguard.logs.member', locale=locale)}** <@{user_id}> (`{user_id}`)\n"
+        f"**{actor_label}** <@{actor_id}> (`{actor_id}`)"
+    ))
+    view.add_item(container)
+    return view
+
+
+__all__ = [
+    "AltGuardPanelView", "AltGuardConsentModal", "build_verification_panel",
+    "build_link_card", "build_error_card", "build_log_card", "format_member_name",
+    "DATA_NOTICE_URL", "TERMS_URL", "PRIVACY_URL",
+]

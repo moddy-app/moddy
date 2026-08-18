@@ -33,6 +33,7 @@ from db.repositories.redirects import RedirectRepository
 from db.repositories.banners import BannerRepository
 from db.repositories.forms import FormsRepository
 from db.repositories.social import SocialSubscriptionsRepository
+from db.repositories.altguard import AltGuardRepository
 
 logger = logging.getLogger('moddy.database')
 
@@ -67,6 +68,7 @@ class ModdyDatabase(
     BannerRepository,
     FormsRepository,
     SocialSubscriptionsRepository,
+    AltGuardRepository,
 ):
     """Gestionnaire principal de la base de données"""
 
@@ -756,6 +758,55 @@ class ModdyDatabase(
             await conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_automod_precedents_guild "
                 "ON automod_precedents (guild_id, created_at)")
+
+            # altguard_verifications — one row per verdict published by the
+            # AltGuard service on ``altguard:verdict`` (docs/ALTGUARD.md).
+            # `id` is the service's ``verification_id``: it doubles as the
+            # idempotency key (a replayed Pub/Sub message must not re-apply an
+            # action) and as the public "refusal id" a Moddy staffer looks up
+            # with ``/mod altguard refusal``. `score` and `reasons` are audit
+            # data — they are NEVER shown to the verified user, so the service
+            # keeps no bypass oracle. No personal data beyond the Discord ids,
+            # which are already public on the server.
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS altguard_verifications (
+                    id          TEXT PRIMARY KEY,
+                    guild_id    BIGINT NOT NULL,
+                    user_id     BIGINT NOT NULL,
+                    verdict     TEXT NOT NULL
+                        CHECK (verdict IN ('passed','flagged','blocked')),
+                    score       INTEGER,
+                    reasons     JSONB NOT NULL DEFAULT '[]'::jsonb,
+                    enforced    BOOLEAN NOT NULL DEFAULT TRUE,
+                    created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+                )
+            """)
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_altguard_verifications_member "
+                "ON altguard_verifications (guild_id, user_id, created_at DESC)")
+
+            # altguard_members — the per-guild verification state the bot acts
+            # on: who may keep the verified role, who is still gated. Manual
+            # staff decisions (server mods or the Moddy team) live here too,
+            # with `source` recording who decided.
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS altguard_members (
+                    guild_id        BIGINT NOT NULL,
+                    user_id         BIGINT NOT NULL,
+                    status          TEXT NOT NULL
+                        CHECK (status IN ('pending','verified','flagged','blocked')),
+                    source          TEXT NOT NULL DEFAULT 'service'
+                        CHECK (source IN ('service','server_staff','moddy_staff')),
+                    verification_id TEXT,
+                    decided_by      BIGINT,
+                    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+                    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+                    PRIMARY KEY (guild_id, user_id)
+                )
+            """)
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_altguard_members_status "
+                "ON altguard_members (guild_id, status)")
 
             # Table des rôles sauvegardés (Auto Restore Roles module)
             await conn.execute("""

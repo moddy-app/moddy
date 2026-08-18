@@ -252,6 +252,30 @@
     "interserver info": {
       "name": "info",
       "description": "Zeigt Informationen zu einer serverübergreifenden Nachricht"
+    },
+    "altguard": {
+      "name": "altguard",
+      "description": "Verwaltet die AltGuard-Zweitkonto-Verifizierung"
+    },
+    "altguard verify": {
+      "name": "verifizieren",
+      "description": "Markiert ein Mitglied manuell als verifiziert",
+      "parameters": {
+        "member": {
+          "name": "mitglied",
+          "description": "Das Mitglied, das die Verifizierung passieren darf"
+        }
+      }
+    },
+    "altguard unverify": {
+      "name": "entziehen",
+      "description": "Setzt ein Mitglied wieder hinter die Verifizierung",
+      "parameters": {
+        "member": {
+          "name": "mitglied",
+          "description": "Das Mitglied, dem die Verifizierung entzogen wird"
+        }
+      }
     }
   }
 }

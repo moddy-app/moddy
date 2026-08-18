@@ -252,6 +252,30 @@
     "interserver info": {
       "name": "資訊",
       "description": "取得跨伺服器訊息的資訊"
+    },
+    "altguard": {
+      "name": "altguard",
+      "description": "管理 AltGuard 多帳號驗證"
+    },
+    "altguard verify": {
+      "name": "驗證",
+      "description": "手動將成員標記為已驗證",
+      "parameters": {
+        "member": {
+          "name": "成員",
+          "description": "要放行通過驗證的成員"
+        }
+      }
+    },
+    "altguard unverify": {
+      "name": "取消驗證",
+      "description": "將成員重新放回驗證之後",
+      "parameters": {
+        "member": {
+          "name": "成員",
+          "description": "要取消驗證的成員"
+        }
+      }
     }
   }
 }
