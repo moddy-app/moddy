@@ -464,6 +464,7 @@ def build_log_card(
     verdict: Optional[str] = None,
     score: Optional[int] = None,
     reasons: Optional[List[str]] = None,
+    matches: Optional[List[dict]] = None,
     enforced: bool = True,
     enforced_missing: bool = False,
     verification_id: Optional[str] = None,
@@ -472,9 +473,9 @@ def build_log_card(
 ) -> ui.LayoutView:
     """A card for the optional log channel.
 
-    Score and reasons appear **here only** — the guild's moderators are the
-    audience. They are never shown to the verified member, who would otherwise
-    learn exactly which signal to defeat next time.
+    Score, reasons and matches appear **here only** — the guild's moderators
+    are the audience. They are never shown to the verified member, who would
+    otherwise learn exactly which signal to defeat next time.
     """
     view = ui.LayoutView(timeout=None)
 
@@ -497,6 +498,18 @@ def build_log_card(
                 f"**{t('modules.altguard.logs.reference', locale=locale)}** `{verification_id}`"
             )
         container.add_item(ui.TextDisplay("\n".join(lines)))
+
+        if matches:
+            match_lines = [f"**{t('modules.altguard.logs.matches', locale=locale)}**"]
+            for match in matches:
+                match_reasons = ", ".join(f"`{r}`" for r in match.get("reasons", []))
+                line = f"- <@{match['user_id']}> (`{match['user_id']}`)"
+                if match.get("score") is not None:
+                    line += f" — {t('modules.altguard.logs.score', locale=locale)} `{match['score']}`"
+                if match_reasons:
+                    line += f" — {match_reasons}"
+                match_lines.append(line)
+            container.add_item(ui.TextDisplay("\n".join(match_lines)))
 
         if not enforced:
             container.add_item(ui.Separator(visible=True, spacing=discord.SeparatorSpacing.small))

@@ -1976,6 +1976,7 @@
         "member": "Mitglied",
         "score": "Punktzahl",
         "reasons": "Signale",
+        "matches": "Verknüpfte Konten",
         "reference": "Referenz",
         "shadow": "Beobachtungsmodus: das Ergebnis wurde protokolliert, es wurde nichts angewendet.",
         "manual_verify": "Manuelle Verifizierung",
