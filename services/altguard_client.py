@@ -245,6 +245,20 @@ def parse_verdict(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     if not isinstance(reasons, list):
         reasons = []
 
+    # `enforced` decides whether anything is applied, so an absent field and an
+    # explicit `false` must not look alike in the logs: the first is a service
+    # that forgot the field (and the guild silently never gets its roles), the
+    # second is shadow mode working as intended. Both still default to "apply
+    # nothing" — the guarantee that the bot never sanctions on an ambiguous
+    # payload is worth more than a convenient default.
+    enforced_missing = "enforced" not in data
+    if enforced_missing:
+        logger.warning(
+            "[AltGuard] Verdict %s carries no 'enforced' field — treated as shadow "
+            "mode, nothing will be applied. The service must send it explicitly.",
+            verification_id,
+        )
+
     return {
         "verification_id": str(verification_id),
         "guild_id": guild_id,
@@ -252,7 +266,8 @@ def parse_verdict(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         "verdict": verdict,
         "score": score,
         "reasons": [str(r) for r in reasons],
-        # Shadow mode (enforced=False) is the safe default: an ambiguous
-        # payload logs instead of sanctioning.
         "enforced": bool(data.get("enforced", False)),
+        # Kept so the guild's log card can say "the service never sent the
+        # field" rather than the ambiguous "shadow mode".
+        "enforced_missing": enforced_missing,
     }

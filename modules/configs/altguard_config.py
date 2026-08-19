@@ -379,13 +379,27 @@ class AltGuardConfigView(BaseView):
         module = await bot.module_manager.get_module_instance(interaction.guild_id, MODULE_ID)
         posted = await module.refresh_panel() if module else None
 
+        # Close the gate on every channel. Doing this by hand is how a server
+        # ends up with one channel left open to unverified members, so the
+        # save applies it rather than telling the admin to.
+        recap = await module.sync_channel_permissions() if module else {}
+
         saved = await bot.module_manager.get_module_config(interaction.guild_id, MODULE_ID)
         view = AltGuardConfigView(
             bot, interaction.guild_id, interaction.user.id, locale, current_config=saved,
         )
         message_key = ('modules.altguard.config.saved_with_panel' if posted
                        else 'modules.altguard.config.saved_without_panel')
-        await interaction.followup.send(t(message_key, locale=locale), ephemeral=True)
+        message = t(message_key, locale=locale)
+
+        if recap.get("updated"):
+            message += "\n" + t('modules.altguard.config.permissions_synced',
+                                locale=locale, count=recap["updated"])
+        if recap.get("failed"):
+            message += "\n" + t('modules.altguard.config.permissions_failed',
+                                locale=locale, count=recap["failed"])
+
+        await interaction.followup.send(message, ephemeral=True)
         await interaction.edit_original_response(view=view)
 
     async def on_cancel(self, interaction: discord.Interaction) -> None:

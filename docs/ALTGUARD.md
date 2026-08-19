@@ -32,10 +32,12 @@ would move personal data into the bot is a compliance regression.
    click a button.
 2. **The panel.** One permanent message in the verification channel, with one
    button. Its wording ships with Moddy; a server picks only the language.
-3. **Consent.** The button opens a Modal V2 stating exactly what is collected
-   (browser characteristics, technical cookie, Discord email, server list, IP
-   address), that the data is encrypted, that neither the Moddy team nor the
-   server's moderators can read it, and linking the data notice
+3. **Consent.** A member who already carries the verified role (or is verified
+   in `altguard_members`) is told so and goes no further — no data collected for
+   an answer the server already has. Otherwise the button opens a Modal V2
+   stating exactly what is collected (browser characteristics, technical cookie,
+   Discord email, server list, IP address), that the data is encrypted, and
+   linking the data notice
    (`https://moddy.app/AltGuard-data`), the terms and the privacy policy. Two
    checkboxes must be ticked — a `CheckboxGroup` with `min_values=2` and
    `required=True`, since a bare `Checkbox` cannot be made mandatory
@@ -50,6 +52,16 @@ would move personal data into the bot is a compliance regression.
    `passed` → verified role (+ Auto Role hand-off), `flagged` / `blocked` → the
    member stays behind the gate. Everything is written to the optional log
    channel.
+7. **Answer to the member.** The member is DMed the outcome — passed, pending a
+   human check, or refused — in the guild's panel language (a DM carries no
+   interaction locale). They are the one person who cannot read the log channel,
+   so without this a refusal reads as "the button did nothing". The DM never
+   carries the score or the matched signals. A manual staff decision produces
+   the same kind of DM.
+
+Nothing is applied when the verdict is not `enforced` — see
+[ALTGUARD_INTEGRATION.md §3](ALTGUARD_INTEGRATION.md). If a gate looks live but
+no role ever moves, that field is the first thing to check.
 
 ### What the member never sees
 
@@ -83,10 +95,23 @@ choice is where it lives, not what it says.
 one sent. That is what repairs a panel someone deleted, and the only way a
 language or channel change reaches the message.
 
-**Permissions to set up by hand:** the unverified role must have access to *no*
-channel except the verification channel — Discord permissions are the server's
-own job, the module only warns. Moddy needs **Manage Roles**, with its own role
-above both gate roles.
+### Channel permissions are applied automatically
+
+Saving the configuration runs `sync_channel_permissions()`: every channel gets
+`view_channel=False` for the unverified role, and the verification channel gets
+it back with `send_messages=False` — visible, readable, not writable. Setting
+that by hand is how a server ends up with one forgotten channel wide open.
+
+Only the channels that actually decide visibility are written to: categories,
+channels outside a category, and channels desynchronised from their category. A
+synchronised child inherits its category's denial, so re-writing it would just
+burn rate limit. Channels created **later** are handled by
+`on_guild_channel_create` (`cogs/altguard.py`) — otherwise the gate would
+quietly develop holes over time.
+
+Moddy needs **Manage Roles** (its own role above both gate roles) and **Manage
+Channels**. The save reports how many channels were updated and how many
+failed.
 
 ### Link with Auto Role
 
