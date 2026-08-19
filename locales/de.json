@@ -1902,7 +1902,9 @@
         },
         "permissions_hint": "Moddy braucht **Rollen verwalten**, und seine Rollen müssen in der Hierarchie über der unverifizierten und der verifizierten Rolle stehen.",
         "saved_with_panel": "Konfiguration gespeichert. Die Verifizierungsnachricht wurde im Kanal neu gepostet.",
-        "saved_without_panel": "Konfiguration gespeichert, aber die Verifizierungsnachricht konnte nicht gepostet werden. Prüfe, ob Moddy im gewählten Kanal schreiben darf."
+        "saved_without_panel": "Konfiguration gespeichert, aber die Verifizierungsnachricht konnte nicht gepostet werden. Prüfe, ob Moddy im gewählten Kanal schreiben darf.",
+        "permissions_synced": "-# Berechtigungen auf `{count}` Kanal/Kanälen aktualisiert: Die unverifizierte Rolle sieht nur noch den Verifizierungskanal.",
+        "permissions_failed": "-# `{count}` Kanal/Kanäle konnten nicht geändert werden — prüfe, ob Moddy hoch genug in der Hierarchie steht und Kanäle verwalten darf."
       },
       "panel": {
         "title": "AltGuard",
@@ -1979,7 +1981,39 @@
         "manual_verify": "Manuelle Verifizierung",
         "manual_unverify": "Manueller Entzug",
         "actor_server": "Moderator",
-        "actor_moddy": "Moddy-Team"
+        "actor_moddy": "Moddy-Team",
+        "enforced_missing": "Der Dienst hat das Feld `enforced` nicht gesendet: Es wurde nichts angewendet. Das ist ein Fehler auf Seiten des AltGuard-Dienstes, keine Servereinstellung."
+      },
+      "already_verified": {
+        "title": "Du bist bereits verifiziert",
+        "description": "Deine Zweitkonto-Verifizierung ist auf diesem Server bereits gültig. Du musst nichts wiederholen."
+      },
+      "dm": {
+        "passed": {
+          "title": "Verifizierung bestanden",
+          "description": "Deine Zweitkonto-Verifizierung ist auf {server} gültig. Du hast jetzt Zugriff auf den Server.",
+          "footer": "Willkommen."
+        },
+        "flagged": {
+          "title": "Verifizierung in Prüfung",
+          "description": "Deine Verifizierung auf {server} braucht eine menschliche Prüfung. Ein Moderator des Servers sieht sie sich an.",
+          "footer": "Im Moment musst du nichts weiter tun."
+        },
+        "blocked": {
+          "title": "Verifizierung abgelehnt",
+          "description": "Deine Verifizierung konnte auf {server} nicht bestätigt werden. Dein Zugriff auf den Server bleibt eingeschränkt.",
+          "footer": "Wenn du denkst, dass das ein Fehler ist, wende dich an die Moderation des Servers."
+        },
+        "manual_verify": {
+          "title": "Zugriff gewährt",
+          "description": "Ein Moderator hat dich auf {server} manuell verifiziert. Du hast jetzt Zugriff auf den Server.",
+          "footer": "Willkommen."
+        },
+        "manual_unverify": {
+          "title": "Zugriff entzogen",
+          "description": "Deine Verifizierung wurde auf {server} entzogen. Gehe erneut über den Verifizierungskanal, um den Zugriff zurückzubekommen.",
+          "footer": "Bei Fragen wende dich an die Moderation des Servers."
+        }
       }
     }
   },

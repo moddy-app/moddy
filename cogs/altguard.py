@@ -195,6 +195,19 @@ class AltGuard(commands.Cog):
         return MEMBERSHIP_LEFT, now
 
     @commands.Cog.listener()
+    async def on_guild_channel_create(self, channel: discord.abc.GuildChannel):
+        """Hide a brand-new channel from unverified members.
+
+        The gate is only as tight as its newest channel: without this, every
+        channel created after the setup would be visible to everyone waiting
+        behind it.
+        """
+        module = await self._module(channel.guild.id)
+        if module is None:
+            return
+        await module.sync_channel(channel)
+
+    @commands.Cog.listener()
     async def on_member_ban(self, guild: discord.Guild, user: discord.User):
         if user.bot:
             return

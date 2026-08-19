@@ -181,6 +181,18 @@ The published value must be a **JSON string** (the bot connects with
 | `reasons` | list of strings | stored as `[]` |
 | `enforced` | bool | **defaults to `false`** → logged, nothing applied |
 
+> **`enforced: true` is what applies the roles.** This is the single most
+> common reason a verification "works" end to end and yet the member keeps the
+> unverified role: the verdict arrives, the log card says *shadow mode*, and
+> nothing moves. The bot never infers enforcement — a guild that has not turned
+> it on must not be sanctioned by accident — so the service has to send the
+> field, set to `true`, for every guild whose gate is live.
+>
+> The bot tells the two cases apart:
+> - field **absent** → `WARNING` in the bot log (*"carries no 'enforced' field"*)
+>   and a log card saying the service did not send it. Service-side defect.
+> - field present and `false` → the ordinary *shadow mode* card. Deliberate.
+
 Two consequences worth checking when a verdict "does nothing":
 
 1. **`enforced` must be explicitly `true`** for roles to move. Omitting it is
@@ -225,5 +237,7 @@ needs channel + both roles) is logged at debug level and ignored.
 | code `service_unavailable` | service returned 5xx |
 | code `unexpected_status` | a redirect or an unusual 4xx — often a wrong path returning `404`, or a proxy answering `405` |
 | Card with no button | `200` returned without `authorization_url` |
-| Verdict published, nothing happens | `enforced` not `true`; or same `verification_id` already processed; or the module is not enabled on that guild |
+| Verdict published, log card says *shadow mode*, roles unchanged | `enforced` is `false` or missing — see the callout in §3. The card names which of the two it is |
+| Verdict published, no log card at all | same `verification_id` already processed (idempotency), or the module is not enabled on that guild |
+| Verdict enforced, role still not applied | the member left, or the bot's role sits below the verified role in the hierarchy — the bot logs both |
 | No membership events reaching the service | module disabled on the guild, Redis down, or a different Redis instance on each side |

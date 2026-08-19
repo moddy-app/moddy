@@ -1902,7 +1902,9 @@
         },
         "permissions_hint": "Moddy needs **Manage Roles**, and its own roles must sit above both the unverified and the verified role in the hierarchy.",
         "saved_with_panel": "Configuration saved. The verification message has been re-posted in the channel.",
-        "saved_without_panel": "Configuration saved, but the verification message could not be posted. Check that Moddy can write in the selected channel."
+        "saved_without_panel": "Configuration saved, but the verification message could not be posted. Check that Moddy can write in the selected channel.",
+        "permissions_synced": "-# Permissions updated on `{count}` channel(s): the unverified role now only sees the verification channel.",
+        "permissions_failed": "-# `{count}` channel(s) could not be updated — check that Moddy is high enough in the hierarchy and can manage channels."
       },
       "panel": {
         "title": "AltGuard",
@@ -1979,7 +1981,39 @@
         "manual_verify": "Manual verification",
         "manual_unverify": "Manual un-verification",
         "actor_server": "Moderator",
-        "actor_moddy": "Moddy team"
+        "actor_moddy": "Moddy team",
+        "enforced_missing": "The service did not send the `enforced` field: nothing was applied. This is an AltGuard service-side defect, not a server setting."
+      },
+      "already_verified": {
+        "title": "You are already verified",
+        "description": "Your anti multi-account verification is already valid on this server. There is nothing to redo."
+      },
+      "dm": {
+        "passed": {
+          "title": "Verification passed",
+          "description": "Your anti multi-account verification is valid on {server}. You now have access to the server.",
+          "footer": "Welcome aboard."
+        },
+        "flagged": {
+          "title": "Verification pending review",
+          "description": "Your verification on {server} needs a human check. A server moderator will look at it.",
+          "footer": "There is nothing else for you to do right now."
+        },
+        "blocked": {
+          "title": "Verification refused",
+          "description": "Your verification could not be validated on {server}. Your access to the server stays limited.",
+          "footer": "If you believe this is a mistake, contact the server's moderators."
+        },
+        "manual_verify": {
+          "title": "Access granted",
+          "description": "A moderator verified you manually on {server}. You now have access to the server.",
+          "footer": "Welcome aboard."
+        },
+        "manual_unverify": {
+          "title": "Access revoked",
+          "description": "Your verification was revoked on {server}. Go through the verification channel again to regain access.",
+          "footer": "For any question, contact the server's moderators."
+        }
       }
     }
   },

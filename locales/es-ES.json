@@ -1902,7 +1902,9 @@
         },
         "permissions_hint": "Moddy necesita **Gestionar roles**, y sus roles deben estar por encima del rol no verificado y del rol verificado en la jerarquía.",
         "saved_with_panel": "Configuración guardada. El mensaje de verificación se ha vuelto a publicar en el canal.",
-        "saved_without_panel": "Configuración guardada, pero no se pudo publicar el mensaje de verificación. Comprueba que Moddy pueda escribir en el canal elegido."
+        "saved_without_panel": "Configuración guardada, pero no se pudo publicar el mensaje de verificación. Comprueba que Moddy pueda escribir en el canal elegido.",
+        "permissions_synced": "-# Permisos actualizados en `{count}` canal(es): el rol no verificado solo ve el canal de verificación.",
+        "permissions_failed": "-# No se han podido modificar `{count}` canal(es) — comprueba que Moddy está por encima en la jerarquía y puede gestionar canales."
       },
       "panel": {
         "title": "AltGuard",
@@ -1979,7 +1981,39 @@
         "manual_verify": "Verificación manual",
         "manual_unverify": "Desverificación manual",
         "actor_server": "Moderador",
-        "actor_moddy": "Equipo Moddy"
+        "actor_moddy": "Equipo Moddy",
+        "enforced_missing": "El servicio no ha enviado el campo `enforced`: no se ha aplicado nada. Es un fallo del servicio AltGuard, no una configuración del servidor."
+      },
+      "already_verified": {
+        "title": "Ya estás verificado",
+        "description": "Tu verificación anti cuentas múltiples ya es válida en este servidor. No tienes que repetirla."
+      },
+      "dm": {
+        "passed": {
+          "title": "Verificación superada",
+          "description": "Tu verificación anti cuentas múltiples es válida en {server}. Ya tienes acceso al servidor.",
+          "footer": "Bienvenido."
+        },
+        "flagged": {
+          "title": "Verificación en revisión",
+          "description": "Tu verificación en {server} necesita una revisión humana. Un moderador del servidor la examinará.",
+          "footer": "De momento no tienes que hacer nada más."
+        },
+        "blocked": {
+          "title": "Verificación rechazada",
+          "description": "Tu verificación no ha podido validarse en {server}. Tu acceso al servidor sigue limitado.",
+          "footer": "Si crees que es un error, contacta con la moderación del servidor."
+        },
+        "manual_verify": {
+          "title": "Acceso concedido",
+          "description": "Un moderador te ha verificado manualmente en {server}. Ya tienes acceso al servidor.",
+          "footer": "Bienvenido."
+        },
+        "manual_unverify": {
+          "title": "Acceso retirado",
+          "description": "Se ha retirado tu verificación en {server}. Vuelve a pasar por el canal de verificación para recuperar el acceso.",
+          "footer": "Para cualquier duda, contacta con la moderación del servidor."
+        }
       }
     }
   },

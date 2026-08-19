@@ -187,6 +187,46 @@ class AltGuardModule(ModuleBase):
             return False
         return await self.bot.db.is_altguard_verified(self.guild_id, user_id)
 
+    def has_verified_role(self, member: discord.Member) -> bool:
+        """True when the member already carries the verified role.
+
+        The role is the authority the *server* actually sees. Someone who was
+        given it by hand (or before AltGuard was installed) has no row in
+        ``altguard_members``, and must not be sent through a verification they
+        do not need.
+        """
+        if not self.verified_role_id:
+            return False
+        return any(role.id == self.verified_role_id for role in member.roles)
+
+    async def resolve_member(self, user_id: int) -> Optional[discord.Member]:
+        """Get a member, falling back to the API when the cache misses.
+
+        A verdict typically arrives minutes after the join, by which time the
+        member may have been evicted from the cache (or never entered it, with
+        a partial member cache). ``guild.get_member`` returning ``None`` there
+        used to mean the roles were silently never applied.
+        """
+        guild = self.guild
+        if not guild:
+            return None
+
+        member = guild.get_member(user_id)
+        if member is not None:
+            return member
+
+        try:
+            return await guild.fetch_member(user_id)
+        except discord.NotFound:
+            logger.info(
+                f"[AltGuard] User {user_id} is no longer in guild {self.guild_id}"
+            )
+        except discord.HTTPException as e:
+            logger.error(
+                f"[AltGuard] Could not fetch member {user_id} in guild {self.guild_id}: {e}"
+            )
+        return None
+
     async def _persist(self, updates: Dict[str, Any]) -> None:
         """Write config keys the panel does not own (currently ``message_id``).
 
@@ -202,6 +242,119 @@ class AltGuardModule(ModuleBase):
         self.config = config
         await self.bot.db.update_guild_data(self.guild_id, f"modules.{MODULE_ID}", config)
         await self.load_config(config)
+
+    # ------------------------------------------------------------------ #
+    # Channel permissions
+    # ------------------------------------------------------------------ #
+
+    async def sync_channel_permissions(self) -> Dict[str, int]:
+        """Lock every channel for the unverified role, except the gate.
+
+        The gate only works if the unverified role sees nothing but the
+        verification channel, and asking an admin to set that by hand on every
+        channel is how a server ends up with one forgotten channel wide open.
+
+        Only the channels that actually decide visibility are touched:
+        categories, channels outside a category, and channels whose permissions
+        are desynchronised from their category. A synchronised child inherits
+        its category's denial, so writing the same overwrite on it again would
+        just burn rate limit.
+
+        Returns a ``{"updated": n, "failed": n, "skipped": n}`` recap.
+        """
+        recap = {"updated": 0, "failed": 0, "skipped": 0}
+
+        guild = self.guild
+        role = self._role(self.unverified_role_id)
+        if not guild or role is None:
+            return recap
+
+        verification_channel = guild.get_channel(self.channel_id) if self.channel_id else None
+
+        for channel in guild.channels:
+            is_gate = verification_channel is not None and channel.id == verification_channel.id
+
+            # A synchronised child of a category inherits the denial we write on
+            # the category itself — except the gate, which must be allowed back
+            # explicitly whatever its category says.
+            if not is_gate and channel.category is not None and channel.permissions_synced:
+                recap["skipped"] += 1
+                continue
+
+            if is_gate:
+                # Visible and readable, but not writable: the panel is the only
+                # thing to interact with.
+                overwrite = discord.PermissionOverwrite(
+                    view_channel=True,
+                    read_message_history=True,
+                    send_messages=False,
+                    add_reactions=False,
+                    create_public_threads=False,
+                    create_private_threads=False,
+                    send_messages_in_threads=False,
+                )
+            else:
+                overwrite = discord.PermissionOverwrite(view_channel=False)
+
+            current = channel.overwrites_for(role)
+            if current == overwrite:
+                recap["skipped"] += 1
+                continue
+
+            try:
+                await channel.set_permissions(
+                    role, overwrite=overwrite,
+                    reason="AltGuard: verification gate visibility",
+                )
+                recap["updated"] += 1
+            except discord.Forbidden:
+                recap["failed"] += 1
+                logger.warning(
+                    f"[AltGuard] Missing permissions to lock #{channel.name} "
+                    f"in guild {self.guild_id}"
+                )
+            except discord.HTTPException as e:
+                recap["failed"] += 1
+                logger.error(
+                    f"[AltGuard] Could not lock #{channel.name} in guild {self.guild_id}: {e}"
+                )
+
+        logger.info(
+            f"[AltGuard] Channel permissions synced for guild {self.guild_id}: {recap}"
+        )
+        return recap
+
+    async def sync_channel(self, channel: discord.abc.GuildChannel) -> None:
+        """Apply the gate's visibility rules to a single, newly created channel.
+
+        Without this, every channel created after the setup would be visible to
+        unverified members — the gate would quietly develop holes over time.
+        """
+        role = self._role(self.unverified_role_id)
+        if role is None:
+            return
+
+        # A channel created inside a category inherits the category's denial.
+        if channel.category is not None and channel.permissions_synced:
+            return
+        if self.channel_id and channel.id == self.channel_id:
+            return
+
+        try:
+            await channel.set_permissions(
+                role, overwrite=discord.PermissionOverwrite(view_channel=False),
+                reason="AltGuard: new channel hidden from unverified members",
+            )
+        except discord.Forbidden:
+            logger.warning(
+                f"[AltGuard] Missing permissions to lock new channel {channel.id} "
+                f"in guild {self.guild_id}"
+            )
+        except discord.HTTPException as e:
+            logger.error(
+                f"[AltGuard] Could not lock new channel {channel.id} "
+                f"in guild {self.guild_id}: {e}"
+            )
 
     # ------------------------------------------------------------------ #
     # Verification panel
@@ -337,8 +490,11 @@ class AltGuardModule(ModuleBase):
         decision = verdict['verdict']
         enforced = verdict['enforced']
 
-        guild = self.guild
-        member = guild.get_member(user_id) if guild else None
+        if not enforced:
+            logger.info(
+                f"[AltGuard] Shadow verdict {decision} for user {user_id} in guild "
+                f"{self.guild_id}: logged, nothing applied (enforced=false)"
+            )
 
         if enforced and self.bot.db:
             await self.bot.db.set_altguard_member_status(
@@ -346,13 +502,23 @@ class AltGuardModule(ModuleBase):
                 source=SOURCE_SERVICE, verification_id=verdict['verification_id'],
             )
 
-        if enforced and member is not None:
-            passed = decision == VERDICT_PASSED
-            await self._apply_gate_roles(
-                member, verified=passed, reason=f"AltGuard verdict: {decision}",
-            )
-            if passed:
-                await self._run_auto_role(member)
+        if enforced:
+            # Cache miss is the norm here, not the exception: the verdict lands
+            # minutes after the join. Fetch rather than skip in silence.
+            member = await self.resolve_member(user_id)
+            if member is None:
+                logger.warning(
+                    f"[AltGuard] Verdict {decision} for user {user_id} in guild "
+                    f"{self.guild_id} could not be applied: member not reachable"
+                )
+            else:
+                passed = decision == VERDICT_PASSED
+                await self._apply_gate_roles(
+                    member, verified=passed, reason=f"AltGuard verdict: {decision}",
+                )
+                if passed:
+                    await self._run_auto_role(member)
+                await self.notify_member(member, kind=decision)
 
         await self.log_event(build_log_card(
             locale=self.panel_locale,
@@ -362,6 +528,7 @@ class AltGuardModule(ModuleBase):
             score=verdict['score'],
             reasons=verdict['reasons'],
             enforced=enforced,
+            enforced_missing=verdict.get('enforced_missing', False),
             verification_id=verdict['verification_id'],
         ))
 
@@ -396,6 +563,7 @@ class AltGuardModule(ModuleBase):
             member, verified=True, reason=f"AltGuard: manual verification by {actor_id}",
         )
         await self._run_auto_role(member)
+        await self.notify_member(member, kind="manual_verify")
 
         from utils.altguard_views import build_log_card
         await self.log_event(build_log_card(
@@ -415,12 +583,49 @@ class AltGuardModule(ModuleBase):
         await self._apply_gate_roles(
             member, verified=False, reason=f"AltGuard: manual unverification by {actor_id}",
         )
+        await self.notify_member(member, kind="manual_unverify")
 
         from utils.altguard_views import build_log_card
         await self.log_event(build_log_card(
             locale=self.panel_locale, kind="manual_unverify",
             user_id=member.id, actor_id=actor_id, moddy_staff=moddy_staff,
         ))
+
+    # ------------------------------------------------------------------ #
+    # Member notifications
+    # ------------------------------------------------------------------ #
+
+    async def notify_member(self, member: discord.Member, *, kind: str) -> None:
+        """DM the member the outcome of their verification; never raises.
+
+        The member is the one person who cannot see the log channel, so without
+        this a refusal reads as "the button did nothing". The DM says what
+        happened and what to do next — never the score or the matched signals,
+        which would let someone iterate against the detection.
+
+        The card is rendered in the guild's panel language, like the panel the
+        member just used: their Discord client language is unknown here (a DM
+        carries no interaction locale).
+        """
+        from utils.altguard_views import build_member_dm
+
+        guild = self.guild
+        view = build_member_dm(
+            locale=self.panel_locale,
+            kind=kind,
+            guild_name=guild.name if guild else "",
+        )
+        if view is None:
+            return
+
+        try:
+            await member.send(view=view)
+        except discord.Forbidden:
+            logger.info(
+                f"[AltGuard] Cannot DM {member.id} in guild {self.guild_id} (DMs closed)"
+            )
+        except Exception as e:
+            logger.error(f"[AltGuard] DM failed for {member.id} in guild {self.guild_id}: {e}")
 
     # ------------------------------------------------------------------ #
     # Logging

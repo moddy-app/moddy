@@ -1901,7 +1901,9 @@
         },
         "permissions_hint": "Moddy a besoin de **Gérer les rôles**, et ses rôles doivent être au-dessus du rôle non vérifié et du rôle vérifié dans la hiérarchie.",
         "saved_with_panel": "Configuration enregistrée. Le message de vérification a été republié dans le salon.",
-        "saved_without_panel": "Configuration enregistrée, mais le message de vérification n'a pas pu être publié. Vérifie que Moddy peut écrire dans le salon choisi."
+        "saved_without_panel": "Configuration enregistrée, mais le message de vérification n'a pas pu être publié. Vérifie que Moddy peut écrire dans le salon choisi.",
+        "permissions_synced": "-# Permissions mises à jour sur `{count}` salon(s) : le rôle non vérifié ne voit plus que le salon de vérification.",
+        "permissions_failed": "-# `{count}` salon(s) n'ont pas pu être modifiés — vérifie que Moddy est au-dessus dans la hiérarchie et peut gérer les salons."
       },
       "panel": {
         "title": "AltGuard",
@@ -1978,7 +1980,39 @@
         "manual_verify": "Vérification manuelle",
         "manual_unverify": "Dévérification manuelle",
         "actor_server": "Modérateur",
-        "actor_moddy": "Équipe Moddy"
+        "actor_moddy": "Équipe Moddy",
+        "enforced_missing": "Le service n'a pas envoyé le champ `enforced` : aucune action n'a été appliquée. C'est un défaut côté service AltGuard, pas une configuration du serveur."
+      },
+      "already_verified": {
+        "title": "Tu es déjà vérifié",
+        "description": "Ta vérification anti double compte est déjà validée sur ce serveur. Tu n'as rien à refaire."
+      },
+      "dm": {
+        "passed": {
+          "title": "Vérification validée",
+          "description": "Ta vérification anti double compte est validée sur {server}. Tu as maintenant accès au serveur.",
+          "footer": "Bienvenue parmi nous."
+        },
+        "flagged": {
+          "title": "Vérification en attente",
+          "description": "Ta vérification sur {server} demande un contrôle humain. Un modérateur du serveur va l'examiner.",
+          "footer": "Tu n'as rien d'autre à faire pour le moment."
+        },
+        "blocked": {
+          "title": "Vérification refusée",
+          "description": "Ta vérification n'a pas pu être validée sur {server}. Ton accès au serveur reste limité.",
+          "footer": "Si tu penses qu'il s'agit d'une erreur, contacte la modération du serveur."
+        },
+        "manual_verify": {
+          "title": "Accès accordé",
+          "description": "Un modérateur t'a vérifié manuellement sur {server}. Tu as maintenant accès au serveur.",
+          "footer": "Bienvenue parmi nous."
+        },
+        "manual_unverify": {
+          "title": "Accès retiré",
+          "description": "Ta vérification a été retirée sur {server}. Tu dois repasser par le salon de vérification pour retrouver l'accès.",
+          "footer": "Pour toute question, contacte la modération du serveur."
+        }
       }
     }
   },

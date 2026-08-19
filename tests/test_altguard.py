@@ -44,6 +44,10 @@ class FakeMember:
         self.roles = list(roles)
         self.added = []
         self.removed = []
+        self.dms = []
+
+    async def send(self, *, view=None, **kwargs):
+        self.dms.append(view)
 
     async def add_roles(self, *roles, reason=None):
         self.added.extend(roles)
@@ -55,10 +59,15 @@ class FakeMember:
 
 
 class FakeGuild:
-    def __init__(self, guild_id=1, roles=()):
+    def __init__(self, guild_id=1, roles=(), name="Test Server"):
         self.id = guild_id
+        self.name = name
         self._roles = {role.id: role for role in roles}
         self.channels = {}
+        self.members = {}
+
+    def get_member(self, user_id):
+        return self.members.get(user_id)
 
     def get_role(self, role_id):
         return self._roles.get(role_id)
@@ -147,6 +156,7 @@ def _payload(**overrides):
 def test_parse_verdict_accepts_the_documented_payload():
     parsed = parse_verdict(_payload())
     assert parsed == {
+        "enforced_missing": False,
         "verification_id": "uuid-1",
         "guild_id": 123456789,
         "user_id": 987654321,
@@ -456,3 +466,96 @@ def test_the_consent_modal_requires_both_boxes():
     group = modal.agreement.component
     assert group.required is True
     assert group.min_values == 2 and len(group.options) == 2
+
+
+# ---------------------------------------------- member DM + already verified
+
+def test_a_verdict_is_announced_to_the_member():
+    """The member cannot read the log channel: the DM is their only feedback."""
+    db = FakeDB()
+    unverified, verified = FakeRole(10, "unverified"), FakeRole(11, "verified")
+    module = build_module(unverified=unverified, verified=verified, db=db)
+    member = FakeMember(member_id=42, roles=[unverified])
+    module.bot._guild.get_member = lambda user_id, _m=member: _m if user_id == _m.id else None
+    module._run_auto_role = lambda m: asyncio.sleep(0)
+
+    asyncio.run(module.apply_verdict({
+        "verification_id": "uuid-dm", "guild_id": 1, "user_id": 42,
+        "verdict": "passed", "score": 3, "reasons": [], "enforced": True,
+    }))
+
+    # Rendered in the guild's panel language (the fixture's is "fr"): a DM
+    # carries no interaction locale, so the member's own language is unknown.
+    assert len(member.dms) == 1
+    assert "Vérification validée" in json.dumps(member.dms[0].to_components(),
+                                                ensure_ascii=False)
+
+
+def test_the_member_dm_never_carries_the_score():
+    from utils.altguard_views import build_member_dm
+
+    for kind in ("passed", "flagged", "blocked"):
+        card = build_member_dm(locale="en-US", kind=kind, guild_name="Test")
+        rendered = json.dumps(card.to_components())
+        assert "cookie_match" not in rendered and "62" not in rendered
+
+    assert build_member_dm(locale="en-US", kind="unknown-kind") is None
+
+
+def test_shadow_mode_does_not_dm_the_member():
+    """Nothing was applied, so there is nothing to announce."""
+    db = FakeDB()
+    module = build_module(unverified=FakeRole(10, "unverified"), db=db)
+    member = FakeMember(member_id=42)
+    module.bot._guild.get_member = lambda user_id, _m=member: _m if user_id == _m.id else None
+
+    asyncio.run(module.apply_verdict({
+        "verification_id": "uuid-shadow-dm", "guild_id": 1, "user_id": 42,
+        "verdict": "blocked", "score": 9, "reasons": [], "enforced": False,
+    }))
+
+    assert member.dms == []
+
+
+def test_a_missing_enforced_field_is_flagged_as_a_service_defect():
+    """A service that forgets the field must not look like deliberate shadow mode."""
+    from services.altguard_client import parse_verdict
+
+    parsed = parse_verdict({
+        "verification_id": "uuid-1", "guild_id": 1, "discord_user_id": 42,
+        "verdict": "passed",
+    })
+    assert parsed["enforced"] is False
+    assert parsed["enforced_missing"] is True
+
+    explicit = parse_verdict({
+        "verification_id": "uuid-2", "guild_id": 1, "discord_user_id": 42,
+        "verdict": "passed", "enforced": False,
+    })
+    assert explicit["enforced_missing"] is False
+
+
+def test_the_verified_role_alone_proves_a_member_is_through_the_gate():
+    """A hand-granted role has no DB row; it must still skip the verification."""
+    verified = FakeRole(11, "verified")
+    module = build_module(unverified=FakeRole(10, "unverified"), verified=verified)
+
+    assert module.has_verified_role(FakeMember(member_id=42, roles=[verified])) is True
+    assert module.has_verified_role(FakeMember(member_id=43, roles=[])) is False
+
+
+def test_the_log_card_names_a_missing_enforced_field():
+    """A service defect must not read as deliberate shadow mode."""
+    from utils.altguard_views import build_log_card
+
+    missing = json.dumps(build_log_card(
+        locale="en-US", kind="verdict", user_id=42, verdict="passed", score=1,
+        reasons=[], enforced=False, enforced_missing=True, verification_id="uuid-1",
+    ).to_components())
+    assert "did not send" in missing
+
+    deliberate = json.dumps(build_log_card(
+        locale="en-US", kind="verdict", user_id=42, verdict="passed", score=1,
+        reasons=[], enforced=False, enforced_missing=False, verification_id="uuid-2",
+    ).to_components())
+    assert "did not send" not in deliberate

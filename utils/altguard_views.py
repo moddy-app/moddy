@@ -117,6 +117,15 @@ class AltGuardPanelView(BaseView):
             )
             return
 
+        # Someone already through the gate has nothing to verify: sending them
+        # to the service would collect their data for an answer the server
+        # already has, and burn one of their five hourly attempts.
+        if await _already_verified(interaction):
+            await interaction.response.send_message(
+                view=build_already_verified_card(locale), ephemeral=True,
+            )
+            return
+
         await interaction.response.send_modal(AltGuardConsentModal(locale=locale))
 
     @classmethod
@@ -128,6 +137,29 @@ class AltGuardPanelView(BaseView):
 def build_verification_panel(locale: str = "en-US") -> AltGuardPanelView:
     """The panel message posted (and re-posted) by the module."""
     return AltGuardPanelView(locale=locale)
+
+
+async def _already_verified(interaction: discord.Interaction) -> bool:
+    """Whether the clicker is already through the gate in this guild.
+
+    Two authorities, either one is enough: the verified **role** (what the
+    server actually enforces, and what a manual grant leaves behind) and the
+    stored state. A lookup failure answers ``False`` — being asked to verify
+    once too often is a far smaller problem than a gate that cannot be passed.
+    """
+    bot = interaction.client
+    member = interaction.user
+    try:
+        module = await bot.module_manager.get_module_instance(
+            interaction.guild_id, "altguard")
+        if module is None or not module.enabled:
+            return False
+        if isinstance(member, discord.Member) and module.has_verified_role(member):
+            return True
+        return await module.is_verified(member.id)
+    except Exception as e:
+        logger.error(f"[AltGuard] Verified-state lookup failed for {member.id}: {e}")
+        return False
 
 
 # ---------------------------------------------------------------------- #
@@ -326,6 +358,67 @@ def build_error_card(locale: str, key: str, *, retry_after: Optional[int] = None
     return view
 
 
+def build_already_verified_card(locale: str) -> ui.LayoutView:
+    """Ephemeral answer for a member who is already through the gate."""
+    view = ui.LayoutView(timeout=None)
+    container = ui.Container(accent_colour=SUCCESS_ACCENT)
+    container.add_item(ui.TextDisplay(
+        f"### {DONE} {t('modules.altguard.already_verified.title', locale=locale)}"
+    ))
+    container.add_item(ui.TextDisplay(
+        t('modules.altguard.already_verified.description', locale=locale)
+    ))
+    view.add_item(container)
+    return view
+
+
+# ---------------------------------------------------------------------- #
+# Member DM (the outcome of the verification)
+# ---------------------------------------------------------------------- #
+
+# kind -> (emoji, accent). `flagged` and `blocked` deliberately share a wording
+# that says what happens next without saying what was detected.
+_DM_STYLE = {
+    "passed": (DONE, SUCCESS_ACCENT),
+    "flagged": (WARNING, WARNING_ACCENT),
+    "blocked": (ERROR, ERROR_ACCENT),
+    "manual_verify": (DONE, SUCCESS_ACCENT),
+    "manual_unverify": (WARNING, WARNING_ACCENT),
+}
+
+
+def build_member_dm(*, locale: str, kind: str, guild_name: str = "") -> Optional[ui.LayoutView]:
+    """The DM telling a member how their verification ended.
+
+    Returns ``None`` for an unknown kind rather than sending a broken card.
+    Never carries the score or the matched signals: the member is exactly the
+    person those must not reach.
+    """
+    style = _DM_STYLE.get(kind)
+    if style is None:
+        return None
+    emoji, accent = style
+
+    view = ui.LayoutView(timeout=None)
+    container = ui.Container(accent_colour=accent)
+
+    container.add_item(ui.TextDisplay(
+        f"### {emoji} {t(f'modules.altguard.dm.{kind}.title', locale=locale)}"
+    ))
+    container.add_item(ui.TextDisplay(
+        t(f'modules.altguard.dm.{kind}.description', locale=locale,
+          server=f"**{guild_name}**" if guild_name else "")
+    ))
+
+    container.add_item(ui.Separator(visible=True, spacing=discord.SeparatorSpacing.small))
+    container.add_item(ui.TextDisplay(
+        f"-# {t(f'modules.altguard.dm.{kind}.footer', locale=locale)}"
+    ))
+
+    view.add_item(container)
+    return view
+
+
 # ---------------------------------------------------------------------- #
 # Shared name rendering
 # ---------------------------------------------------------------------- #
@@ -372,6 +465,7 @@ def build_log_card(
     score: Optional[int] = None,
     reasons: Optional[List[str]] = None,
     enforced: bool = True,
+    enforced_missing: bool = False,
     verification_id: Optional[str] = None,
     actor_id: Optional[int] = None,
     moddy_staff: bool = False,
@@ -406,9 +500,12 @@ def build_log_card(
 
         if not enforced:
             container.add_item(ui.Separator(visible=True, spacing=discord.SeparatorSpacing.small))
-            container.add_item(ui.TextDisplay(
-                f"-# {t('modules.altguard.logs.shadow', locale=locale)}"
-            ))
+            # "Shadow mode" is the right wording only when the service said so
+            # deliberately. A missing field is a service-side defect that looks
+            # identical to a moderator, so it gets its own line.
+            key = ('modules.altguard.logs.enforced_missing' if enforced_missing
+                   else 'modules.altguard.logs.shadow')
+            container.add_item(ui.TextDisplay(f"-# {t(key, locale=locale)}"))
 
         view.add_item(container)
         return view
@@ -435,5 +532,6 @@ def build_log_card(
 __all__ = [
     "AltGuardPanelView", "AltGuardConsentModal", "build_verification_panel",
     "build_link_card", "build_error_card", "build_log_card", "format_member_name",
+    "build_member_dm", "build_already_verified_card",
     "DATA_NOTICE_URL", "TERMS_URL", "PRIVACY_URL",
 ]
