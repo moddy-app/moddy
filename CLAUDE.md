@@ -7,7 +7,7 @@
 
 ## Project Overview 
  
-**Moddy** is a production-grade **Discord bot** for community moderation and utilities, built in Python and hosted on **Railway**.
+**Moddy** is a production-grade **Discord bot** for community moderation and utilities, built in Python and hosted on **Railway**
 
 | Key Info | Value |
 |---|---|
