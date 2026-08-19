@@ -163,8 +163,34 @@ def test_parse_verdict_accepts_the_documented_payload():
         "verdict": "passed",
         "score": 62,
         "reasons": ["cookie_match", "gpu_match"],
+        "matches": [],
         "enforced": True,
     }
+
+
+def test_parse_verdict_reads_matches():
+    payload = _payload(verdict="blocked", matches=[
+        {"discord_user_id": 456789123, "score": 62, "reasons": ["cookie_match", "gpu_match"]},
+    ])
+    parsed = parse_verdict(payload)
+    assert parsed["matches"] == [
+        {"user_id": 456789123, "score": 62, "reasons": ["cookie_match", "gpu_match"]},
+    ]
+
+
+def test_parse_verdict_defaults_matches_when_absent():
+    """A bot deployed ahead of the service must not choke on a missing field."""
+    assert parse_verdict(_payload())["matches"] == []
+
+
+def test_parse_verdict_drops_malformed_matches():
+    payload = _payload(matches=[
+        {"discord_user_id": "not-an-id"},
+        "not-a-dict",
+        {"discord_user_id": 111, "score": "n/a", "reasons": "not-a-list"},
+    ])
+    parsed = parse_verdict(payload)
+    assert parsed["matches"] == [{"user_id": 111, "score": None, "reasons": []}]
 
 
 def test_parse_verdict_defaults_to_shadow_mode():
@@ -457,6 +483,30 @@ def test_the_link_card_never_leaks_the_score():
                          verification_id="uuid-1")
     rendered = json.dumps(log.to_components())
     assert "62" in rendered and "cookie_match" in rendered and "uuid-1" in rendered
+
+
+def test_the_log_card_shows_matches():
+    """The audit log is the reason `matches` exists: a moderator undoing a
+    kick needs to see which account it matched with."""
+    from utils.altguard_views import build_log_card
+
+    log = build_log_card(locale="en-US", kind="verdict", user_id=42, verdict="blocked",
+                         score=62, reasons=["cookie_match"],
+                         matches=[{"user_id": 43, "score": 62,
+                                  "reasons": ["cookie_match", "gpu_match"]}],
+                         enforced=True, verification_id="uuid-1")
+    rendered = json.dumps(log.to_components())
+    assert "43" in rendered and "gpu_match" in rendered
+
+
+def test_the_log_card_omits_matches_on_a_pass():
+    from utils.altguard_views import build_log_card
+
+    log = build_log_card(locale="en-US", kind="verdict", user_id=42, verdict="passed",
+                         score=3, reasons=[], matches=[], enforced=True,
+                         verification_id="uuid-1")
+    rendered = json.dumps(log.to_components())
+    assert "Linked accounts" not in rendered
 
 
 def test_the_consent_modal_requires_both_boxes():
