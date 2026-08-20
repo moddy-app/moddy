@@ -155,19 +155,37 @@ class ServiceManager:
         """
         Waits for a service to be ready by checking its health endpoint.
         """
-        import urllib.request
-        import urllib.error
+        import http.client
+        from urllib.parse import urlsplit
+
+        parsed = urlsplit(health_check_url)
+        if (
+            parsed.scheme != "http"
+            or parsed.hostname not in {"localhost", "127.0.0.1", "::1"}
+            or parsed.username is not None
+            or parsed.password is not None
+        ):
+            logger.error("Health checks are restricted to local HTTP services")
+            return False
+        path = parsed.path or "/"
+        if parsed.query:
+            path = f"{path}?{parsed.query}"
 
         start_time = time.time()
 
         while time.time() - start_time < timeout:
+            connection = http.client.HTTPConnection(
+                parsed.hostname, parsed.port or 80, timeout=1
+            )
             try:
-                with urllib.request.urlopen(health_check_url, timeout=1) as response:
-                    if response.status == 200:
-                        return True
-            except (urllib.error.URLError, TimeoutError):
+                connection.request("GET", path)
+                if connection.getresponse().status == 200:
+                    return True
+            except (OSError, TimeoutError, http.client.HTTPException):
                 time.sleep(0.5)
                 continue
+            finally:
+                connection.close()
 
             # Checks if the process is still active
             if name in self.services and self.services[name]['process'].poll() is not None:

@@ -25,12 +25,17 @@ Ce document liste toutes les variables d'environnement à configurer dans Railwa
 
 ### INTERNAL_API_SECRET
 **Valeur :** `<générer-avec-secrets.token_urlsafe(32)>`
-**Description :** Secret optionnel pour protéger l'endpoint `/status` du bot
-**Note :** Si configuré, le backend doit envoyer `Authorization: Bearer <secret>` pour appeler `/status`
+**Description :** Secret obligatoire pour protéger l'endpoint `/status` du bot
+**Note :** Le backend doit envoyer `Authorization: Bearer <secret>` pour appeler `/status`. Le bot refuse maintenant l'accès si le secret est absent.
 **Génération :**
 ```bash
 python -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
+
+### TASK_STREAM_SECRET
+**Valeur :** `<générer-un-secret-différent-avec-secrets.token_urlsafe(32)>`
+**Description :** Secret HMAC partagé avec le backend pour signer les tâches sensibles du stream Redis `moddy:tasks`
+**Note :** Utiliser exactement la même valeur côté bot et backend. Une valeur absente ou trop courte bloque la production et l'exécution des tâches.
 
 ## Discord
 
@@ -84,7 +89,8 @@ déjà configuré (`REDIS_URL`), rien à ajouter — voir [ALTGUARD.md](ALTGUARD
 - [ ] `DATABASE_URL` (partagée avec le backend)
 - [ ] `REDIS_URL` (partagée avec le backend)
 - [ ] `REDIS_PASSWORD` (si Redis avec auth)
-- [ ] `INTERNAL_API_SECRET` (optionnel, protège `/status`)
+- [ ] `INTERNAL_API_SECRET` (obligatoire, protège `/status`)
+- [ ] `TASK_STREAM_SECRET` (obligatoire et partagé avec le backend)
 - [ ] `PORT` → `3000`
 - [ ] `ENV_MODE` → `production`
 - [ ] `DEBUG` → `False`

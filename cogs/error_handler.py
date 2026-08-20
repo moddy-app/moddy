@@ -7,7 +7,7 @@ import discord
 from discord import ui
 from discord.ext import commands
 import traceback
-import hashlib
+import secrets
 import json
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any
@@ -31,7 +31,7 @@ if SENTRY_DSN:
         dsn=SENTRY_DSN,
         # Add data like request headers and IP for users
         # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
-        send_default_pii=True,
+        send_default_pii=False,
         # Set traces_sample_rate to 1.0 to capture 100% of transactions for performance monitoring.
         # Adjust this value in production.
         traces_sample_rate=0.1,  # 10% of transactions
@@ -472,10 +472,9 @@ class ErrorTracker(commands.Cog):
 
     def generate_error_code(self, error: Exception, ctx: Optional[commands.Context] = None) -> str:
         """Generates a unique error code"""
-        # Use the hash of the error + timestamp for uniqueness
-        error_str = f"{type(error).__name__}:{str(error)}:{datetime.now().timestamp()}"
-        hash_obj = hashlib.md5(error_str.encode())
-        return hash_obj.hexdigest()[:8].upper()
+        # Opaque random reference: it neither leaks the error nor relies on a
+        # cryptographically broken digest.
+        return secrets.token_hex(4).upper()
 
     def store_error(self, error_code: str, error_data: Dict[str, Any]):
         """Stores the error in the memory cache"""

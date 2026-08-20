@@ -30,6 +30,7 @@ moddy/
 ├── bot.py                     # ModdyBot class — core bot logic and events
 ├── config.py                  # Configuration from Railway env vars
 ├── database.py                # Database backward-compat shim
+├── moddy/                      # Internal discord.py-compatible framework
 │
 ├── cogs/                      # Discord slash commands and event handlers
 │   ├── error_handler.py       #   Centralized error handler (38KB)
@@ -362,6 +363,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | Document | When to Read |
 |---|---|
 | [docs/COMMANDS.md](docs/COMMANDS.md) | Creating or modifying slash commands |
+| [docs/MODDY_FRAMEWORK.md](docs/MODDY_FRAMEWORK.md) | Internal framework public API and migration |
 | [docs/COMMAND_LOCALIZATION.md](docs/COMMAND_LOCALIZATION.md) | Translating slash command names/descriptions (32 Discord locales) |
 | [docs/TEXT_TOOLS.md](docs/TEXT_TOOLS.md) | AI text tools — `/fix`, `/rephrase`, `/summarize` (models, presets, mention stripping) |
 | [docs/VOICE_TRANSCRIPTION.md](docs/VOICE_TRANSCRIPTION.md) | Voice transcription — context menu, module, Groq Whisper, cost control |

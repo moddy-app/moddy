@@ -139,6 +139,11 @@ class ModdyDatabase(
 
     async def _update_entity_data(self, table: str, id_column: str, entity_id: int, path: str, value: Any):
         """Update a specific part of an entity's data (shared by update_user_data and update_guild_data)"""
+        if (table, id_column) not in {
+            ("users", "user_id"),
+            ("guilds", "guild_id"),
+        }:
+            raise ValueError("Unsupported entity table")
         async with self.pool.acquire() as conn:
             # First, ensure the entity exists
             await conn.execute(f"""

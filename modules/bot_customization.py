@@ -34,11 +34,11 @@ import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
-import aiohttp
 import discord
 
 from modules.module_manager import ModuleBase
 from utils.emojis import MODDY_SQUARE
+from utils.safe_http import UnsafeURL, safe_get_bytes
 
 logger = logging.getLogger("moddy.modules.bot_customization")
 
@@ -234,22 +234,23 @@ def to_data_uri(data: bytes, content_type: str) -> str:
 
 async def download_image(url: str) -> Tuple[bytes, str]:
     """Fetch an image URL, enforcing the type and size guard rails."""
-    timeout = aiohttp.ClientTimeout(total=30)
     try:
-        async with aiohttp.ClientSession(timeout=timeout) as session:
-            async with session.get(url) as response:
-                if response.status != 200:
-                    raise CustomizationError("image_download_failed", str(response.status))
-                content_type = (response.headers.get("Content-Type") or "").split(";")[0].strip().lower()
-                if content_type not in ALLOWED_IMAGE_TYPES:
-                    raise CustomizationError("invalid_image_type", content_type or "unknown")
-                length = response.headers.get("Content-Length")
-                if length and int(length) > MAX_IMAGE_BYTES:
-                    raise CustomizationError("image_too_large", length)
-                data = await response.content.read(MAX_IMAGE_BYTES + 1)
-                if len(data) > MAX_IMAGE_BYTES:
-                    raise CustomizationError("image_too_large", str(len(data)))
-                return data, content_type
+        response = await safe_get_bytes(
+            url,
+            max_bytes=MAX_IMAGE_BYTES,
+            timeout_seconds=30,
+            allowed_content_types=set(ALLOWED_IMAGE_TYPES),
+        )
+        if response.status != 200:
+            raise CustomizationError("image_download_failed", str(response.status))
+        return response.body, response.content_type
+    except UnsafeURL as exc:
+        message = str(exc)
+        if "volumineuse" in message:
+            raise CustomizationError("image_too_large", message) from exc
+        if "type de contenu" in message:
+            raise CustomizationError("invalid_image_type", message) from exc
+        raise CustomizationError("image_download_failed", message) from exc
     except CustomizationError:
         raise
     except Exception as exc:

@@ -54,6 +54,11 @@ REDIS_URL: Optional[str] = os.environ.get("REDIS_URL", "redis://localhost:6379")
 # Mot de passe Redis (optionnel)
 REDIS_PASSWORD: Optional[str] = os.environ.get("REDIS_PASSWORD") or None
 
+# Clé HMAC dédiée aux ordres critiques backend -> bot sur ``moddy:tasks``.
+# Elle doit être différente du mot de passe Redis et partagée uniquement par
+# ces deux services.
+TASK_STREAM_SECRET: str = os.environ.get("TASK_STREAM_SECRET", "")
+
 # =============================================================================
 # API KEYS
 # =============================================================================
@@ -225,6 +230,8 @@ def validate_config():
 
     if not REDIS_URL:
         print("[WARN] REDIS_URL not configured - Redis features disabled")
+    elif len(TASK_STREAM_SECRET) < 32:
+        print("[WARN] TASK_STREAM_SECRET absent ou trop court - tâches backend refusées")
 
     if not DEEPL_API_KEY:
         print("[WARN] DEEPL_API_KEY not configured - translate command disabled")

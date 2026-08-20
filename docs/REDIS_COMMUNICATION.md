@@ -93,7 +93,7 @@ the event was produced: task queues, command/reply RPC, notification feeds.
 
 | Stream | Producer | Consumer | Notes |
 |---|---|---|---|
-| `moddy:tasks` | Backend | Bot | Critical guaranteed tasks (`update_panel`, `send_announcement`, `social_subscribe`, …). Plain `XREAD` + `moddy:tasks:last_id` key to resume (`bot.py::_consume_task_stream`) |
+| `moddy:tasks` | Backend | Bot | Critical guaranteed tasks (`update_panel`, `send_announcement`, `social_subscribe`, …). Every task is HMAC-signed with `TASK_STREAM_SECRET`, timestamped and protected against replay. Plain `XREAD` + `moddy:tasks:last_id` key to resume (`bot.py::_consume_task_stream`) |
 | `feeds:commands` | Bot | `moddy-feeds` service | `subscribe` / `unsubscribe` commands, correlated by `request_id` |
 | `feeds:replies` | `moddy-feeds` service | Bot | Replies to `feeds:commands`, correlated by `request_id`, 10s timeout (`services/feeds_client.py`) |
 | `notifications:queue` | `moddy-feeds` service | Bot (consumer group `discord-bot`) | Normalized notification events, `XACK`ed unconditionally (service dedups) |
@@ -106,6 +106,7 @@ the event was produced: task queues, command/reply RPC, notification feeds.
 | `guild:{id}:config`, `discord:guild:{id}:{info,channels,roles,emojis}` | Backend | Discord/DB cache, short TTL |
 | `moddy:bot_guilds` | Backend (invalidated by Bot) | Guild list cache — bot deletes it on `on_guild_join`/`on_guild_remove` |
 | `moddy:tasks:last_id` | Bot | Resume point for `moddy:tasks` |
+| `moddy:tasks:processed:{task_id}` | Bot | Short-lived replay guard for an authenticated task |
 | `feeds:heartbeat` | `moddy-feeds` service | Health check, TTL ~90s |
 | `quota:{scope}:{key}:{type}:{date}` | Bot (`gateway/quota.py`) | Daily API quota counters |
 
@@ -147,6 +148,14 @@ for a new service rather than inventing a new transport style. Checklist:
 8. Wire the client into the bot once (e.g. in `cogs/<feature>.py`, mirroring
    `cogs/social_notifications.py` owning `FeedsClient`) — don't instantiate
    ad-hoc Redis clients scattered across cogs/modules.
+
+### Security contract for `moddy:tasks`
+
+The backend is the only legitimate producer. It signs a canonical JSON payload
+containing `task_id`, `issued_at`, `type` and the task data with HMAC-SHA256.
+The bot rejects missing or malformed signatures, stale timestamps, duplicate
+`task_id` values and deployments where `TASK_STREAM_SECRET` is shorter than 32
+characters. Rotate this secret on both services together.
 
 ---
 

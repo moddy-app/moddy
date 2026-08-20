@@ -46,6 +46,7 @@ from utils.staff_logger import init_staff_logger
 from modules.module_manager import ModuleManager
 # Import du système de configuration des annonces
 from utils.announcement_setup import setup_announcement_channel
+from moddy import Bot as ModdyFrameworkBot
 
 logger = logging.getLogger('moddy')
 
@@ -56,7 +57,7 @@ NAME_STYLE_EFFECT_ID = 5
 NAME_STYLE_COLORS = [0x0004FF]
 
 
-class ModdyBot(commands.Bot):
+class ModdyBot(ModdyFrameworkBot):
     """Main Moddy class"""
 
     def __init__(self):
@@ -638,7 +639,40 @@ class ModdyBot(commands.Bot):
 
     async def _process_task(self, fields: dict):
         """Process a task from the moddy:tasks stream."""
+        import hashlib
+        import hmac
         import json
+        import time
+        from config import TASK_STREAM_SECRET
+
+        signature = fields.get("signature", "")
+        signed = {
+            key: fields.get(key, "")
+            for key in ("guild_id", "issued_at", "payload", "task_id", "type")
+        }
+        canonical = json.dumps(signed, separators=(",", ":"), sort_keys=True)
+        expected = hmac.new(
+            TASK_STREAM_SECRET.encode(), canonical.encode(), hashlib.sha256
+        ).hexdigest() if len(TASK_STREAM_SECRET) >= 32 else ""
+        try:
+            age = abs(int(time.time()) - int(signed["issued_at"]))
+        except (TypeError, ValueError):
+            age = 10**9
+        if (
+            not expected
+            or not signature
+            or not hmac.compare_digest(signature, expected)
+            or age > 86_400
+            or not signed["task_id"]
+        ):
+            logger.error("[Stream] Unsigned, invalid or expired task rejected")
+            return
+
+        processed_key = f"moddy:tasks:processed:{signed['task_id']}"
+        if await self.redis.get(processed_key):
+            logger.warning("[Stream] Replayed task rejected: %s", signed["task_id"])
+            return
+
         task_type = fields.get("type")
         guild_id = int(fields.get("guild_id", 0))
         payload = json.loads(fields.get("payload", "{}"))
@@ -684,6 +718,10 @@ class ModdyBot(commands.Bot):
 
         else:
             logger.warning(f"[Stream] Unknown task type: {task_type}")
+
+        # Mark only after successful processing so a transient exception can
+        # still be retried by the stream consumer.
+        await self.redis.set(processed_key, "1", ex=7 * 86_400)
 
     async def _process_social_task(self, task_type: str, guild_id: int, payload: dict):
         """Run a Social Notifications action requested by the backend and

@@ -7,28 +7,25 @@ from datetime import datetime
 from typing import Optional
 
 import discord
-from discord import app_commands
-from discord.ext import commands
-from discord.ui import LayoutView, Container, TextDisplay, Separator, ActionRow, Button
 from discord import SeparatorSpacing
 
 from config import COLORS
 from utils.emojis import GREEN_STATUS, YELLOW_STATUS, RED_STATUS
 from utils.i18n import i18n, t
+from moddy import Cog, app_commands
+from moddy.ui import ActionRow, Button, Container, LayoutView, Separator, TextDisplay
 
 
-class PublicPing(commands.Cog):
+class PublicPing(Cog):
     """Commande ping pour tous les utilisateurs"""
 
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(
+    @app_commands.global_command(
         name="ping",
         description="Check the bot's latency and status"
     )
-    @app_commands.allowed_installs(guilds=True, users=True)
-    @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
     @app_commands.describe(
         incognito="Make response visible only to you"
     )
