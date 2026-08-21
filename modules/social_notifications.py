@@ -260,6 +260,7 @@ class SocialNotificationsModule(ModuleBase):
     MODULE_NAME = "Social Notifications"
     MODULE_DESCRIPTION = "Get notified when social accounts post new content"
     MODULE_EMOJI = SOCIAL
+    MODULE_ORDER = 80
 
     async def load_config(self, config_data: Dict[str, Any]) -> bool:
         # Configuration lives in the social_subscriptions table, not JSONB.

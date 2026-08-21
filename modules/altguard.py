@@ -62,6 +62,7 @@ class AltGuardModule(ModuleBase):
     # The /config picker uses the shield (it is a protection module); the
     # animated AltGuard face is reserved for the panel message itself.
     MODULE_EMOJI = SHIELD
+    MODULE_ORDER = 20
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)

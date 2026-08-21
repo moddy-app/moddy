@@ -40,6 +40,11 @@ class ModuleBase(ABC):
     MODULE_NAME: str = "Base Module"  # Nom affiché du module
     MODULE_DESCRIPTION: str = "Base module description"  # Description du module
     MODULE_EMOJI: str = "⚙️"  # Emoji représentant le module
+    # Position dans le menu déroulant /config, du plus important (0) au moins
+    # important. Fixe et explicite — ne dépend ni de l'ordre de découverte
+    # des fichiers (non déterministe) ni du nom affiché (qui varie par
+    # module mais ne reflète pas son importance).
+    MODULE_ORDER: int = 100
 
     def __init__(self, bot, guild_id: int):
         """
@@ -204,8 +209,10 @@ class ModuleManager:
         Returns:
             Liste de dictionnaires avec les informations des modules
         """
-        # Sort by display name so the /config module picker is stable across
-        # restarts (filesystem glob discovery order is not deterministic).
+        # Sort by MODULE_ORDER (most important first) so the /config module
+        # picker has a fixed position per module — not the display name
+        # (which doesn't reflect importance) nor the filesystem discovery
+        # order (which is not deterministic across restarts).
         return [
             {
                 'id': module_class.MODULE_ID,
@@ -215,7 +222,7 @@ class ModuleManager:
             }
             for module_class in sorted(
                 self.registered_modules.values(),
-                key=lambda m: m.MODULE_NAME.lower(),
+                key=lambda m: (m.MODULE_ORDER, m.MODULE_NAME.lower()),
             )
         ]
 

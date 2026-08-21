@@ -46,6 +46,7 @@ class VoiceTranscriptionModule(ModuleBase):
     MODULE_NAME = "Voice Transcription"
     MODULE_DESCRIPTION = "Transcrit les messages vocaux en texte"
     MODULE_EMOJI = VOICE_CHAT
+    MODULE_ORDER = 110
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)
