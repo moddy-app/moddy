@@ -964,42 +964,60 @@
     },
     "welcome_dm": {
       "name": "Welcome DM",
-      "description": "Message de bienvenue en message privé",
+      "description": "Messages de bienvenue en message privé",
+      "default_message": "Bienvenue sur **{server}**, {display_name} !\n-# Tu es le **{member_count}**ᵉ membre à nous rejoindre.",
       "config": {
-        "title": "Configuration du Welcome DM",
-        "description": "Configurez le message de bienvenue envoyé en privé (DM) aux nouveaux membres.",
-        "message": {
-          "section_title": "Message de bienvenue",
-          "section_description": "Personnalisez le message. Variables disponibles : {user}, {username}, {server}, {member_count}",
-          "edit_button": "Modifier le message",
-          "modal": {
-            "label": "Message de bienvenue",
-            "placeholder": "Bienvenue sur le serveur {server} !"
-          }
-        },
-        "embed": {
-          "section_title": "Options d'embed",
-          "section_description": "Personnalisez l'apparence de l'embed",
-          "toggle": "Activer l'embed",
-          "edit_title": "Modifier le titre",
-          "edit_description": "Modifier la description",
-          "edit_color": "Modifier la couleur",
-          "thumbnail": "Afficher l'avatar",
-          "author": "Afficher comme auteur",
-          "title_modal": {
-            "label": "Titre de l'embed",
-            "placeholder": "Bienvenue !"
-          },
-          "description_modal": {
-            "label": "Description de l'embed",
-            "placeholder": "Laissez vide pour utiliser le message de bienvenue"
-          },
-          "color_modal": {
-            "label": "Couleur de l'embed (hex)",
-            "placeholder": "#5865F2",
-            "error": "Couleur invalide ! Utilisez le format #RRGGBB"
-          }
+        "title": "Messages privés de bienvenue",
+        "description": "Envoie un message privé aux nouveaux membres quand ils rejoignent le serveur.",
+        "limit": "Jusqu'à {max} messages privés par serveur.",
+        "manage_placeholder": "Gérer un message privé",
+        "list": {
+          "title": "Messages configurés",
+          "count": "{count}/{max} message(s) privé(s)",
+          "empty": "Aucun message privé pour l'instant. Ajoute-en un pour commencer.",
+          "entry_label": "Message {index}",
+          "paused": "En pause"
         }
+      },
+      "buttons": {
+        "add": "Ajouter"
+      },
+      "add": {
+        "success": "Message privé de bienvenue ajouté."
+      },
+      "customize": {
+        "title": "Message",
+        "section_description": "Le texte envoyé, avec sa couleur de liseré",
+        "button": "Personnaliser le message",
+        "modal_title": "Personnaliser le message",
+        "message_label": "Message",
+        "message_description": "Texte complet — inclus le titre avec ##, # ou ###.",
+        "color_label": "Couleur du liseré (hex)",
+        "color_description": "Comme #FF0000. Laisse vide pour la couleur par défaut.",
+        "placeholders_header": "Variables disponibles :",
+        "ph_server": "Nom du serveur",
+        "ph_user": "Mention de l'utilisateur",
+        "ph_display_name": "Nom d'affichage",
+        "ph_username": "Pseudo",
+        "ph_member_count": "Nombre de membres",
+        "ph_timestamp": "Date d'arrivée — ex. <t:{timestamp}:R>"
+      },
+      "manage": {
+        "title": "Message privé de bienvenue",
+        "paused_notice": "Ce message est en pause : il n'est pas envoyé aux nouveaux membres.",
+        "preview_title": "Message actuel",
+        "preview_description": "Le texte tel qu'il est enregistré, variables non remplacées",
+        "pause": "Mettre en pause",
+        "resume": "Réactiver",
+        "remove": "Supprimer",
+        "removed": "Message privé de bienvenue supprimé."
+      },
+      "errors": {
+        "too_many": "Tu ne peux pas avoir plus de {max} messages privés de bienvenue sur ce serveur",
+        "duplicate_id": "Deux messages privés portent le même identifiant",
+        "empty_message": "Le message de bienvenue ne peut pas être vide",
+        "message_too_long": "Le message de bienvenue ne peut pas dépasser {max} caractères",
+        "invalid_color": "La couleur du liseré est invalide"
       }
     },
     "interserver": {

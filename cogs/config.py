@@ -180,12 +180,11 @@ class ConfigMainView(BaseView):
             )
         elif module_id == 'welcome_dm':
             from modules.configs.welcome_dm_config import WelcomeDmConfigView
-            config_view = WelcomeDmConfigView(
+            config_view = await WelcomeDmConfigView.create(
                 bot,
                 guild_id,
                 user_id,
-                locale,
-                module_config
+                locale
             )
         elif module_id == 'interserver':
             from modules.configs.interserver_config import InterServerConfigView

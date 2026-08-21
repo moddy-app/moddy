@@ -30,6 +30,7 @@ moddy/
 ├── bot.py                     # ModdyBot class — core bot logic and events
 ├── config.py                  # Configuration from Railway env vars
 ├── database.py                # Database backward-compat shim
+├── moddy/                      # Internal discord.py-compatible framework
 │
 ├── cogs/                      # Discord slash commands and event handlers
 │   ├── error_handler.py       #   Centralized error handler (38KB)
@@ -64,7 +65,7 @@ moddy/
 ├── modules/                   # Server-level configurable features
 │   ├── module_manager.py      #   ModuleManager + ModuleBase class
 │   ├── welcome_channel.py     #   Welcome messages in channels (up to 5, Components V2)
-│   ├── welcome_dm.py          #   Welcome DM to new members
+│   ├── welcome_dm.py          #   Welcome DMs to new members (up to 3, Components V2)
 │   ├── auto_role.py           #   Auto role assignment
 │   ├── auto_restore_roles.py  #   Role restoration on rejoin
 │   ├── starboard.py           #   Reaction-based starboard
@@ -82,6 +83,7 @@ moddy/
 │       ├── automod_ai_config.py
 │       ├── automod_ai_precedents_view.py  # Learned-precedents browser (S7)
 │       ├── welcome_channel_config.py      # Welcome messages list + add/manage (Modal V2)
+│       ├── welcome_dm_config.py           # Welcome DMs list + add/manage (Modal V2)
 │       ├── voice_transcription_config.py  # Voice transcription (status, mode, channels)
 │       ├── bot_customization_config.py    # Bot customization (identity Modal V2 + name style)
 │
@@ -157,6 +159,7 @@ moddy/
 │   ├── global_sanction_views.py #  Global sanction UI (notice DMs, staff panels, Modals V2)
 │   ├── embeds.py
 │   ├── announcement_setup.py
+│   ├── task_signature.py      #   moddy:tasks HMAC verification (signature, freshness, anti-replay)
 │   └── incognito.py
 │
 ├── gateway/                   # Centralized API gateway (ALL external API calls go here)
@@ -213,6 +216,7 @@ moddy/
     ├── test_global_sanctions.py   # Global sanction levels, cache TTL, user/guild context
     ├── test_global_sanction_flow.py # Groups, notices, countdown, Redis events, allowlists
     ├── test_bot_customization.py  # Bot customization validation (bio budget, styles)
+    ├── test_task_signature.py #   moddy:tasks HMAC contract (canonicalization, replay, dedup)
     └── test_transcription.py  #   Voice transcription helpers, guard rails, cards
 ```
 
@@ -362,11 +366,13 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | Document | When to Read |
 |---|---|
 | [docs/COMMANDS.md](docs/COMMANDS.md) | Creating or modifying slash commands |
+| [docs/MODDY_FRAMEWORK.md](docs/MODDY_FRAMEWORK.md) | Internal framework public API and migration |
 | [docs/COMMAND_LOCALIZATION.md](docs/COMMAND_LOCALIZATION.md) | Translating slash command names/descriptions (32 Discord locales) |
 | [docs/TEXT_TOOLS.md](docs/TEXT_TOOLS.md) | AI text tools — `/fix`, `/rephrase`, `/summarize` (models, presets, mention stripping) |
 | [docs/VOICE_TRANSCRIPTION.md](docs/VOICE_TRANSCRIPTION.md) | Voice transcription — context menu, module, Groq Whisper, cost control |
 | [docs/MODULE_SYSTEM.md](docs/MODULE_SYSTEM.md) | Creating or modifying server modules |
-| [docs/WELCOME_MESSAGES.md](docs/WELCOME_MESSAGES.md) | Welcome messages module — config schema, placeholders, backend/dashboard contract |
+| [docs/WELCOME_MESSAGES.md](docs/WELCOME_MESSAGES.md) | Welcome messages module (`welcome_channel`) — config schema, placeholders, backend/dashboard contract |
+| [docs/WELCOME_DM.md](docs/WELCOME_DM.md) | Welcome DM module (`welcome_dm`) — config schema, placeholders, backend/dashboard contract |
 | [docs/ALTGUARD.md](docs/ALTGUARD.md) | **AltGuard** — anti multi-account verification gate, consent, service contract, staff commands |
 | [docs/ALTGUARD_INTEGRATION.md](docs/ALTGUARD_INTEGRATION.md) | AltGuard ↔ bot exact wire contract — payload types, error codes, debugging |
 | [docs/AUTOMOD_AI.md](docs/AUTOMOD_AI.md) | Automod AI — detection pipeline, nano decider, scalable features, rules safety check |
@@ -384,9 +390,9 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 |---|---|
 | [docs/API_GATEWAY.md](docs/API_GATEWAY.md) | API Gateway — all external API calls (OpenAI, DeepL, Groq), quotas, provider rate limits, resilience, logging |
 | [docs/BACKEND-INTEGRATION.md](docs/BACKEND-INTEGRATION.md) | Bot ↔ Backend integration (Redis, Pub/Sub, Streams, `/status`) |
+| [docs/TASK_SIGNATURE.md](docs/TASK_SIGNATURE.md) | **`moddy:tasks` HMAC signature** — canonicalization, anti-replay, `TASK_STREAM_SECRET`, deployment order |
 | [docs/REDIS_COMMUNICATION.md](docs/REDIS_COMMUNICATION.md) | **Redis inter-service communication** — Pub/Sub vs Streams vs plain keys, current channel/stream inventory, checklist for wiring up a new Redis-based service |
 | [docs/SOCIAL_NOTIFICATIONS.md](docs/SOCIAL_NOTIFICATIONS.md) | Social Notifications module + `moddy-feeds` Redis contract (what the backend must mirror) |
-| [docs/SOCIAL_NOTIFICATIONS_CHANGES_2026-06-14.md](docs/SOCIAL_NOTIFICATIONS_CHANGES_2026-06-14.md) | Backend/dashboard change spec: customizable message columns, quota, error codes, task fields |
 | [docs/SUBSCRIPTION_SCHEMA.md](docs/SUBSCRIPTION_SCHEMA.md) | Subscription DB schema, Redis cache contract, Pub/Sub events |
 | [docs/RAILWAY.md](docs/RAILWAY.md) | Environment variables, deployment, troubleshooting |
 
@@ -394,6 +400,21 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | Document | When to Read |
 |---|---|
 | [docs/AGENTS.md](docs/AGENTS.md) | Agent system documentation |
+| [docs/STAFF_COMMANDS_FRAMEWORK.md](docs/STAFF_COMMANDS_FRAMEWORK.md) | Staff command engine internals (message + slash from one definition) |
+
+### Archive
+Point-in-time documents kept for reference but superseded or closed —
+audits, dated change specs, one-off schema notes for another service, a
+finished implementation plan. Not part of the day-to-day reading list; check
+here before writing a new one-off doc so it doesn't end up back at the top
+level.
+
+| Document | What it is |
+|---|---|
+| [docs/archive/SECURITY_AUDIT.md](docs/archive/SECURITY_AUDIT.md) | Security audit report (2026-08-20) — findings fixed and residual risks at that date |
+| [docs/archive/SOCIAL_NOTIFICATIONS_CHANGES_2026-06-14.md](docs/archive/SOCIAL_NOTIFICATIONS_CHANGES_2026-06-14.md) | Backend/dashboard change spec (2026-06-14), now folded into [docs/SOCIAL_NOTIFICATIONS.md](docs/SOCIAL_NOTIFICATIONS.md) |
+| [docs/archive/REDIRECTS_BANNERS_SCHEMA.md](docs/archive/REDIRECTS_BANNERS_SCHEMA.md) | `redirect_links`/banners DB schema note written for the backend team |
+| [docs/archive/AUTOMOD_V2_PLAN.md](docs/archive/AUTOMOD_V2_PLAN.md) | Automod v2 implementation plan/progress log — all sessions closed; design rationale still cited from `automod/` code comments |
 
 ### Session Logs
 | Directory | Purpose |

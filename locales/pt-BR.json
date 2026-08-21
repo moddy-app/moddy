@@ -964,43 +964,61 @@
       }
     },
     "welcome_dm": {
-      "name": "Boas-vindas por DM",
-      "description": "Mensagem de boas-vindas por mensagem privada",
+      "name": "DM de boas-vindas",
+      "description": "Mensagens de boas-vindas enviadas no privado",
+      "default_message": "Bem-vindo(a) ao **{server}**, {display_name}!\n-# Você é o(a) **{member_count}**º membro.",
       "config": {
-        "title": "Configuração de Boas-vindas por DM",
-        "description": "Configure a mensagem de boas-vindas enviada de forma privada (DM) aos novos membros.",
-        "message": {
-          "section_title": "Mensagem de boas-vindas",
-          "section_description": "Personalize a mensagem. Variáveis disponíveis: {user}, {username}, {server}, {member_count}",
-          "edit_button": "Editar mensagem",
-          "modal": {
-            "label": "Mensagem de boas-vindas",
-            "placeholder": "Bem-vindo(a) ao {server}!"
-          }
-        },
-        "embed": {
-          "section_title": "Opções do embed",
-          "section_description": "Personalize a aparência do embed",
-          "toggle": "Ativar embed",
-          "edit_title": "Editar título",
-          "edit_description": "Editar descrição",
-          "edit_color": "Editar cor",
-          "thumbnail": "Mostrar avatar",
-          "author": "Mostrar como autor",
-          "title_modal": {
-            "label": "Título do embed",
-            "placeholder": "Bem-vindo(a)!"
-          },
-          "description_modal": {
-            "label": "Descrição do embed",
-            "placeholder": "Deixe em branco para usar a mensagem de boas-vindas"
-          },
-          "color_modal": {
-            "label": "Cor do embed (hex)",
-            "placeholder": "#5865F2",
-            "error": "Cor inválida! Use o formato #RRGGBB"
-          }
+        "title": "Mensagens privadas de boas-vindas",
+        "description": "Envia uma mensagem privada aos novos membros quando eles entram no servidor.",
+        "limit": "Até {max} mensagens privadas por servidor.",
+        "manage_placeholder": "Gerenciar uma mensagem privada",
+        "list": {
+          "title": "Mensagens configuradas",
+          "count": "{count}/{max} mensagem(ns) privada(s)",
+          "empty": "Nenhuma mensagem privada ainda. Adicione uma para começar.",
+          "entry_label": "Mensagem {index}",
+          "paused": "Pausada"
         }
+      },
+      "buttons": {
+        "add": "Adicionar"
+      },
+      "add": {
+        "success": "Mensagem privada de boas-vindas adicionada."
+      },
+      "customize": {
+        "title": "Mensagem",
+        "section_description": "O texto enviado e sua cor de destaque",
+        "button": "Personalizar a mensagem",
+        "modal_title": "Personalizar a mensagem",
+        "message_label": "Mensagem",
+        "message_description": "Texto completo — inclua o título com ##, # ou ###.",
+        "color_label": "Cor de destaque (hex)",
+        "color_description": "Como #FF0000. Deixe vazio para a cor padrão.",
+        "placeholders_header": "Variáveis disponíveis:",
+        "ph_server": "Nome do servidor",
+        "ph_user": "Menção do usuário",
+        "ph_display_name": "Nome de exibição",
+        "ph_username": "Nome de usuário",
+        "ph_member_count": "Número de membros",
+        "ph_timestamp": "Data de entrada — ex.: <t:{timestamp}:R>"
+      },
+      "manage": {
+        "title": "Mensagem privada de boas-vindas",
+        "paused_notice": "Esta mensagem está pausada: ela não é enviada aos novos membros.",
+        "preview_title": "Mensagem atual",
+        "preview_description": "O texto como está salvo, com as variáveis sem substituição",
+        "pause": "Pausar",
+        "resume": "Retomar",
+        "remove": "Remover",
+        "removed": "Mensagem privada de boas-vindas removida."
+      },
+      "errors": {
+        "too_many": "Você não pode ter mais de {max} mensagens privadas de boas-vindas neste servidor",
+        "duplicate_id": "Duas mensagens privadas têm o mesmo identificador",
+        "empty_message": "A mensagem de boas-vindas não pode estar vazia",
+        "message_too_long": "A mensagem de boas-vindas não pode exceder {max} caracteres",
+        "invalid_color": "A cor de destaque é inválida"
       }
     },
     "interserver": {

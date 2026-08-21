@@ -212,3 +212,9 @@ def test_bot_not_ready_returns_503(client, bot):
 def test_authentication_is_required(client, headers):
     resp = _post(client, {"guild_id": str(GUILD_ID), "indications": "x"}, headers=headers)
     assert resp.status_code == 401
+
+
+def test_missing_server_secret_fails_closed(client, monkeypatch):
+    monkeypatch.delenv("INTERNAL_API_SECRET", raising=False)
+    resp = _post(client, {"guild_id": str(GUILD_ID), "indications": "x"})
+    assert resp.status_code == 401

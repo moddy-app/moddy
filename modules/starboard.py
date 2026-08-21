@@ -7,13 +7,13 @@ import asyncio
 import logging
 from typing import Dict, Any, Optional
 
-import aiohttp
 import discord
 
 from cogs.error_handler import BaseView
 from modules.module_manager import ModuleBase
 from utils.emojis import STAR, is_standard_discord_emoji
 from utils.i18n import t, i18n
+from utils.safe_http import UnsafeURL, safe_get_bytes, validate_public_url
 
 logger = logging.getLogger('moddy.modules.starboard')
 
@@ -29,7 +29,6 @@ _URL_RE = re.compile(r'https?://\S+', re.IGNORECASE)
 _META_TAG_RE = re.compile(r'<meta\b[^>]*>', re.IGNORECASE)
 _META_ATTR_RE = re.compile(r'''([a-zA-Z][\w:-]*)\s*=\s*(?:"([^"]*)"|'([^']*)')''')
 _OG_IMAGE_PROPS = ('og:image:secure_url', 'og:image', 'twitter:image', 'twitter:image:src')
-_LINK_PREVIEW_TIMEOUT = aiohttp.ClientTimeout(total=5)
 _LINK_PREVIEW_MAX_BYTES = 300_000
 # Many sites (Tenor, Klipy, Giphy, ...) special-case Discord's own crawler UA
 # to serve pre-rendered OpenGraph tags for rich link unfurls, even when the
@@ -217,26 +216,18 @@ async def _fetch_link_preview_image(url: str) -> Optional[str]:
     preview, matching what Discord's own link unfurling would show.
     """
     try:
-        async with aiohttp.ClientSession(timeout=_LINK_PREVIEW_TIMEOUT) as session:
-            async with session.get(url, headers=_LINK_PREVIEW_HEADERS) as response:
-                if response.status != 200:
-                    logger.debug(f"Starboard link preview: {url} returned HTTP {response.status}")
-                    return None
-                content_type = response.headers.get("Content-Type", "")
-                if "html" not in content_type:
-                    logger.debug(f"Starboard link preview: {url} is not HTML ({content_type!r})")
-                    return None
-                # NOT `content.read(N)` — StreamReader.read(n) returns only
-                # what is currently buffered, so a single call yields a short,
-                # nondeterministic prefix of the page and the <meta> tags can
-                # fall outside it. Read in a loop up to the cap instead.
-                chunks, total = [], 0
-                async for chunk in response.content.iter_chunked(16_384):
-                    chunks.append(chunk)
-                    total += len(chunk)
-                    if total >= _LINK_PREVIEW_MAX_BYTES:
-                        break
-                raw = b"".join(chunks)
+        response = await safe_get_bytes(
+            url,
+            max_bytes=_LINK_PREVIEW_MAX_BYTES,
+            timeout_seconds=5,
+            allowed_content_types={"text/html", "application/xhtml+xml"},
+            headers=_LINK_PREVIEW_HEADERS,
+        )
+        if response.status != 200:
+            logger.debug(f"Starboard link preview: {url} returned HTTP {response.status}")
+            return None
+        raw = response.body
+        final_url = response.final_url
     except Exception as e:
         logger.debug(f"Starboard link preview fetch failed for {url}: {e}")
         return None
@@ -251,7 +242,12 @@ async def _fetch_link_preview_image(url: str) -> Optional[str]:
         candidate = f"https:{candidate}"
     elif candidate.startswith("/"):
         from urllib.parse import urljoin
-        candidate = urljoin(url, candidate)
+        candidate = urljoin(final_url, candidate)
+
+    try:
+        validate_public_url(candidate)
+    except UnsafeURL:
+        return None
 
     return candidate
 

@@ -17,7 +17,7 @@ Two modes:
   the fixtures (``--update-fixtures``). Requires a configured environment.
 
 Either way the runner only **decides** — it never applies a sanction, never
-writes to the DB. See docs/AUTOMOD_AI.md (Évaluation) and docs/AUTOMOD_V2_PLAN.md
+writes to the DB. See docs/AUTOMOD_AI.md (Évaluation) and docs/archive/AUTOMOD_V2_PLAN.md
 (Session 3).
 
 Usage::

@@ -1,7 +1,7 @@
 # Social Notifications — Backend/Dashboard change spec (2026-06-14)
 
 Precise list of what changed in the bot so the **backend** and **dashboard**
-stay in sync. This is a delta on top of [SOCIAL_NOTIFICATIONS.md](SOCIAL_NOTIFICATIONS.md)
+stay in sync. This is a delta on top of [SOCIAL_NOTIFICATIONS.md](../SOCIAL_NOTIFICATIONS.md)
 (the canonical contract) — read both.
 
 > TL;DR: 3 new columns, `message` semantics changed, a per-platform quota,

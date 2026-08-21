@@ -1,123 +1,69 @@
+"""Test manuel des formats Discord via un webhook fourni en environnement."""
+
+import os
+
 import requests
-import json
 
 
-def test_webhook_basic(webhook_url):
-    """Test basique du webhook"""
-    print("🔍 Test 1: Message simple...")
-
-    simple_message = {
-        "content": "✅ Test webhook Moddy - Message simple"
-    }
-
-    response = requests.post(webhook_url, json=simple_message)
+def _send(webhook_url: str, label: str, payload: dict) -> bool:
+    print(f"Test: {label}")
+    response = requests.post(webhook_url, json=payload, timeout=15)
     print(f"Status: {response.status_code}")
-
     if response.status_code == 204:
-        print("✅ Webhook fonctionne !")
         return True
-    else:
-        print(f"❌ Erreur: {response.status_code}")
-        print(response.text)
-        return False
+    print(response.text[:500])
+    return False
 
 
-def test_webhook_embed(webhook_url):
-    """Test avec embed classique"""
-    print("\n🔍 Test 2: Message avec embed...")
+def test_webhook_basic(webhook_url: str) -> bool:
+    return _send(webhook_url, "message simple", {"content": "Test webhook Moddy"})
 
-    embed_message = {
-        "content": "Message avec embed :",
-        "embeds": [
-            {
-                "title": "🤖 Bot Moddy",
+
+def test_webhook_embed(webhook_url: str) -> bool:
+    return _send(
+        webhook_url,
+        "embed",
+        {
+            "content": "Message avec embed :",
+            "embeds": [{
+                "title": "Bot Moddy",
                 "description": "Interface de modération moderne",
                 "color": 0x5865F2,
                 "fields": [
-                    {
-                        "name": "Status",
-                        "value": "✅ Opérationnel",
-                        "inline": True
-                    },
-                    {
-                        "name": "Version",
-                        "value": "2.0",
-                        "inline": True
-                    }
+                    {"name": "Status", "value": "Opérationnel", "inline": True},
+                    {"name": "Version", "value": "2.0", "inline": True},
                 ],
-                "footer": {
-                    "text": "Moddy Bot • Créé par Jules"
-                }
-            }
-        ]
-    }
-
-    response = requests.post(webhook_url, json=embed_message)
-    print(f"Status: {response.status_code}")
-
-    if response.status_code == 204:
-        print("✅ Embed envoyé avec succès !")
-        return True
-    else:
-        print(f"❌ Erreur: {response.status_code}")
-        print(response.text)
-        return False
+                "footer": {"text": "Moddy Bot"},
+            }],
+        },
+    )
 
 
-def test_new_components(webhook_url):
-    """Test avec nouveaux components"""
-    print("\n🔍 Test 3: Nouveaux components...")
-
-    new_components = {
-        "content": "Test nouveaux components :",  # Fallback obligatoire
-        "flags": 32768,
-        "components": [
-            {
+def test_new_components(webhook_url: str) -> bool:
+    return _send(
+        webhook_url,
+        "components V2",
+        {
+            "content": "Test nouveaux components :",
+            "flags": 32768,
+            "components": [{
                 "type": 17,
                 "components": [
-                    {
-                        "type": 10,
-                        "content": "## 🚀 Nouveaux Components Discord\n\nCe message utilise la nouvelle API components !"
-                    },
-                    {
-                        "type": 14  # Separator
-                    },
-                    {
-                        "type": 10,
-                        "content": "*Layout flexible sans bande de couleur*"
-                    }
-                ]
-            }
-        ]
-    }
-
-    response = requests.post(webhook_url, json=new_components)
-    print(f"Status: {response.status_code}")
-
-    if response.status_code == 204:
-        print("✅ Nouveaux components envoyés !")
-        return True
-    else:
-        print(f"❌ Erreur: {response.status_code}")
-        print(response.text)
-        return False
+                    {"type": 10, "content": "## Nouveaux Components Discord"},
+                    {"type": 14},
+                    {"type": 10, "content": "Layout flexible"},
+                ],
+            }],
+        },
+    )
 
 
-def main():
-    """Fonction principale"""
-    print("🤖 === TEST WEBHOOK MODDY === 🤖\n")
-
-    # Ton URL webhook
-    webhook_url = "https://discord.com/api/webhooks/1391424210961694781/dcVCtC52_9soHMB7K5q2tt63Sml_j1cfUIU8XFnOt9WPMBAgGuInXtpcLiSaJ7XAFLzH"
-
-    # Tests progressifs
-    if test_webhook_basic(webhook_url):
-        if test_webhook_embed(webhook_url):
-            test_new_components(webhook_url)
-        else:
-            print("⚠️ Embed ne fonctionne pas, pas la peine de tester les nouveaux components")
-    else:
-        print("❌ Webhook non fonctionnel, vérifie ton URL !")
+def main() -> None:
+    webhook_url = os.environ.get("MODDY_TEST_WEBHOOK_URL", "").strip()
+    if not webhook_url:
+        raise SystemExit("MODDY_TEST_WEBHOOK_URL n'est pas configurée")
+    if test_webhook_basic(webhook_url) and test_webhook_embed(webhook_url):
+        test_new_components(webhook_url)
 
 
 if __name__ == "__main__":

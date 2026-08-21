@@ -45,7 +45,9 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     from modules.configs.welcome_channel_config import (
         WelcomeChannelConfigView, AddWelcomeMessageView, ManageWelcomeMessageView,
     )
-    from modules.configs.welcome_dm_config import WelcomeDmConfigView
+    from modules.configs.welcome_dm_config import (
+        WelcomeDmConfigView, ManageWelcomeDmView,
+    )
     from cogs.config import ConfigMainView
     from modules.configs.adaptive_slowmode_config import AdaptiveSlowmodeConfigView
     from modules.configs.automod_ai_config import AutomodAIConfigView
@@ -95,11 +97,13 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         # modules/starboard.py's CLAUDE.md exception note)
         StarboardCardPersistence,
         # Group 10 — /config welcome panels. The channel module owns three
-        # views (list / add / manage), like Social Notifications.
+        # views (list / add / manage), like Social Notifications; the DM
+        # module owns two (list / manage — "add" is the modal itself).
         WelcomeChannelConfigView,
         AddWelcomeMessageView,
         ManageWelcomeMessageView,
         WelcomeDmConfigView,
+        ManageWelcomeDmView,
         # Group 11 — /config router (guild permission auth)
         ConfigMainView,
         # Group 12 — /config adaptive slowmode panel (guild permission +

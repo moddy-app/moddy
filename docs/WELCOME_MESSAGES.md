@@ -5,6 +5,9 @@
 >
 > Code: `modules/welcome_channel.py` · UI: `modules/configs/welcome_channel_config.py`
 > · dispatch: `cogs/module_events.py` (`on_member_join`)
+>
+> Sibling module: [WELCOME_DM.md](WELCOME_DM.md) (`welcome_dm`) — same schema
+> and same UI grammar, sent in private instead of a channel.
 
 ---
 

@@ -5,7 +5,7 @@ floor per (category, gravity), recidivism decay + weighting, confidence caps,
 veteran clemency, fresh-account malus, the guild ``max_action`` ceiling, the
 category kill-switch and the 0–7 bounds. Session 2 requires ≥15 cases.
 
-See docs/AUTOMOD_AI.md §2bis and docs/AUTOMOD_V2_PLAN.md (Session 2, §2.7).
+See docs/AUTOMOD_AI.md §2bis and docs/archive/AUTOMOD_V2_PLAN.md (Session 2, §2.7).
 """
 
 from dataclasses import dataclass
