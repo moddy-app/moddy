@@ -239,7 +239,117 @@ needs channel + both roles) is logged at debug level and ignored.
 
 ---
 
-## 5. Symptom → cause table
+## 5. Pushing the module configuration from the backend
+
+The AltGuard **service** never sees the guild configuration — channel, roles,
+log channel and panel language are the bot's business, stored as JSONB in
+`guilds.data.modules.altguard` (see [ALTGUARD.md](ALTGUARD.md#configuration)).
+So there is nothing to tell AltGuard when an admin changes it. There *is*
+something to tell the **bot**.
+
+Writing the config row is not enough: half of an AltGuard configuration lives in
+Discord, not in the database. A save through `/config` also re-posts the
+verification panel, denies the unverified role every channel but the gate, and
+hands the guild's membership to the service. A dashboard save that only writes
+the row leaves the gate running on the previous setup — the panel still in the
+old channel, in the old language, the new channels wide open. It looks
+configured and it is not.
+
+### The event
+
+After writing the config, publish on **`moddy:bot`**:
+
+```json
+{"type": "module_updated",
+ "guild_id": "123456789012345678",
+ "module_id": "altguard",
+ "action": "updated",
+ "request_id": "9d1f…"}
+```
+
+| Field | Required | Notes |
+|---|---|---|
+| `type` | yes | `module_updated`, `config_updated`, `module_disabled` or `logging_updated` |
+| `guild_id` | yes | int or numeric string |
+| `module_id` | **yes for AltGuard** | without it the bot only drops its cache and applies nothing in Discord — see below |
+| `action` | no | `updated` (default) or `deleted`. `module_disabled` implies `deleted`; an empty stored config is always read as a deletion whatever this says |
+| `request_id` | no | echoed back on the ack, to correlate |
+
+**`module_id` is what makes the push do the work.** The historical payload
+(`type` + `guild_id`, no `module_id`) is still accepted and still means "drop the
+guild's module cache so the next read sees the new values" — no panel, no
+permissions, no resync. That is fine for a module with no visible state; it is
+not fine for AltGuard.
+
+On receiving the event with `module_id: "altguard"` the bot:
+
+1. re-reads `guilds.data.modules.altguard` from the database;
+2. re-posts the verification panel (delete + send) — the only way a language or
+   channel change reaches the message, and it repairs a deleted panel;
+3. re-applies the channel overwrites for the unverified role across the guild;
+4. resyncs the guild's membership with the service (`POST
+   /altguard/membership/resync`), so a gate that just went live does not wait up
+   to an hour for AltGuard to learn who is already in the guild;
+5. publishes the recap below.
+
+An **incomplete** config (missing channel or either role) disables the gate and
+takes the panel down — a button that cannot work must not stay up. A **deletion**
+takes the panel down and writes nothing back.
+
+### The ack
+
+Published on **`moddy:dashboard`**, so the dashboard can tell the admin whether
+the panel actually went out (posting it needs `Send Messages` in the gate
+channel, and locking channels needs `Manage Roles` — neither is guaranteed):
+
+```json
+{"type": "module_config_applied",
+ "request_id": "9d1f…", "guild_id": 123456789012345678, "module_id": "altguard",
+ "ok": true, "action": "updated", "enabled": true,
+ "panel": "posted", "panel_message_id": "1416…",
+ "permissions": {"updated": 12, "failed": 0, "skipped": 30}}
+```
+
+| Field | Meaning |
+|---|---|
+| `ok` | `false` with an `error` (`unknown_module`, `no_database`, `invalid_config`, `config_unreadable`, `invalid_guild`, `internal_error`) when the reload itself failed |
+| `enabled` | whether the gate is live — `false` means the config is incomplete |
+| `panel` | `posted`, `failed` (no permission to send) or `deleted` |
+| `panel_message_id` | **string** — a snowflake would lose precision as a JSON number |
+| `permissions` | `{updated, failed, skipped}`; a non-zero `failed` means the bot lacks `Manage Roles` on those channels |
+| `hook_error` | present when the Discord-side work raised; the config is stored and loaded regardless |
+
+### Guaranteed delivery
+
+`moddy:bot` is Pub/Sub: a push made while the bot is restarting is **lost**, and
+the guild keeps the old panel until someone saves again. For a change that must
+survive that, use the `moddy:tasks` **stream** instead — same work, replayed
+from `moddy:tasks:last_id`:
+
+```
+XADD moddy:tasks * type update_panel guild_id 123456789012345678 \
+     payload '{"module_id":"altguard","action":"updated","request_id":"9d1f…"}'
+```
+
+The ack is identical. Use the stream for a user-facing save, Pub/Sub for
+low-stakes invalidation.
+
+### Checklist for the backend side
+
+- [ ] The config row is written **before** the event is published (the bot
+      re-reads from the database; it never trusts the payload for values).
+- [ ] `module_id: "altguard"` is included — without it nothing is applied in
+      Discord.
+- [ ] A deletion sends `action: "deleted"` (or `type: "module_disabled"`), and
+      does *not* rely on the bot to clean up after a restart: with a cold cache
+      and an already-emptied config there is nothing left to find the panel by.
+- [ ] `request_id` is set and the `module_config_applied` ack is surfaced —
+      `panel: "failed"` or `permissions.failed > 0` is a missing-permission
+      problem the admin has to fix, and only the ack reveals it.
+
+---
+
+## 6. Symptom → cause table
 
 | What the member/moderator sees | Look at |
 |---|---|
@@ -254,3 +364,7 @@ needs channel + both roles) is logged at debug level and ignored.
 | Verdict published, no log card at all | same `verification_id` already processed (idempotency), or the module is not enabled on that guild |
 | Verdict enforced, role still not applied | the member left, or the bot's role sits below the verified role in the hierarchy — the bot logs both |
 | No membership events reaching the service | module disabled on the guild, Redis down, or a different Redis instance on each side |
+| Config saved on the dashboard, panel still in the old channel/language | the `moddy:bot` event carried no `module_id` (cache dropped, nothing applied), or it was published while the bot was down — see §5 |
+| Config saved, ack says `panel: "failed"` | the bot cannot post in the gate channel |
+| Config saved, ack says `permissions.failed > 0` | the bot lacks `Manage Roles` on those channels; unverified members can still see them |
+| Module deleted on the dashboard, panel still there | the deletion reached a bot with a cold cache and an already-emptied config — nothing left to locate the message by (`cleaned: false` in the ack) |

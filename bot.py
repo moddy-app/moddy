@@ -584,13 +584,11 @@ class ModdyBot(commands.Bot):
         guild_id = data.get("guild_id")
 
         if event_type in ("config_updated", "module_updated", "module_disabled", "logging_updated"):
-            # Invalidate local module cache so next access re-reads from DB
-            if self.module_manager and guild_id:
-                try:
-                    await self.module_manager.unload_guild_modules(guild_id)
-                    logger.info(f"[PubSub] Module cache invalidated for guild {guild_id} ({event_type})")
-                except Exception as e:
-                    logger.error(f"[PubSub] Error reloading modules for guild {guild_id}: {e}")
+            try:
+                guild_id = int(guild_id) if guild_id else 0
+            except (TypeError, ValueError):
+                guild_id = 0
+            await self._handle_module_config_push(event_type, guild_id, data)
 
         elif event_type in ("premium_activated", "premium_deactivated"):
             # Guild premium is cached in Redis (utils.subscription.is_guild_premium);
@@ -606,6 +604,79 @@ class ModdyBot(commands.Bot):
 
         else:
             logger.debug(f"[PubSub] Unknown event type: {event_type}")
+
+    async def _handle_module_config_push(self, event_type: str, guild_id: int, data: dict):
+        """Apply a module configuration the backend/dashboard wrote to the DB.
+
+        Two shapes are accepted on `moddy:bot`, and the difference matters:
+
+        - **with** a `module_id`: the module is reloaded *and* asked to re-apply
+          the visible half of its configuration (`on_external_config_change`) —
+          for AltGuard, re-posting the verification panel, closing every channel
+          to the unverified role and resyncing membership with the service. The
+          recap is published back on `moddy:dashboard` so the dashboard can tell
+          the admin whether the panel actually went out.
+        - **without** a `module_id` (the historical payload): only the guild's
+          module cache is dropped, so the next read picks the new values up. No
+          Discord-side effect is applied — nothing here knows what changed.
+
+        The `module_id` form is the one to use for anything with a panel; see
+        docs/ALTGUARD_INTEGRATION.md.
+        """
+        import json
+        from modules.module_manager import EXTERNAL_DELETED, EXTERNAL_UPDATED
+
+        if not self.module_manager or not guild_id:
+            logger.warning(
+                f"[PubSub] Ignoring {event_type}: no module manager or no guild id"
+            )
+            return
+
+        module_id = data.get("module_id")
+
+        if not module_id:
+            try:
+                await self.module_manager.unload_guild_modules(guild_id)
+                logger.info(
+                    f"[PubSub] Module cache invalidated for guild {guild_id} ({event_type})"
+                )
+            except Exception as e:
+                logger.error(f"[PubSub] Error reloading modules for guild {guild_id}: {e}")
+            return
+
+        # `deleted` is explicit; `module_disabled` means the same thing for a
+        # module whose config was dropped, and reload_module re-checks the stored
+        # config anyway (an empty one is always treated as a deletion).
+        action = data.get("action")
+        if action not in (EXTERNAL_UPDATED, EXTERNAL_DELETED):
+            action = EXTERNAL_DELETED if event_type == "module_disabled" else EXTERNAL_UPDATED
+
+        try:
+            result = await self.module_manager.reload_module(
+                guild_id, str(module_id), action=action,
+            )
+        except Exception as e:
+            logger.error(
+                f"[PubSub] Error applying pushed {module_id} config for guild "
+                f"{guild_id}: {e}", exc_info=True,
+            )
+            result = {"ok": False, "error": "internal_error"}
+
+        logger.info(
+            f"[PubSub] Pushed config applied for {module_id} in guild {guild_id}: {result}"
+        )
+
+        if self.redis:
+            try:
+                await self.redis.publish("moddy:dashboard", json.dumps({
+                    "type": "module_config_applied",
+                    "request_id": data.get("request_id"),
+                    "guild_id": guild_id,
+                    "module_id": module_id,
+                    **result,
+                }))
+            except Exception as e:
+                logger.error(f"[PubSub] Could not publish module config result: {e}")
 
     async def _consume_task_stream(self):
         """Consume Redis Stream moddy:tasks (critical guaranteed tasks from backend)."""
@@ -644,15 +715,14 @@ class ModdyBot(commands.Bot):
         payload = json.loads(fields.get("payload", "{}"))
 
         if task_type == "update_panel":
-            # Reload a module's panel message in Discord
-            if self.module_manager and guild_id:
-                module_id = payload.get("module_id")
-                guild = self.get_guild(guild_id)
-                if guild:
-                    try:
-                        await self.module_manager.reload_module(guild, module_id)
-                    except Exception as e:
-                        logger.error(f"[Stream] Error updating panel for guild {guild_id}: {e}")
+            # Reload a module's config and re-apply its Discord side (panel,
+            # channel overwrites). Same work as the `moddy:bot` push, over the
+            # stream instead: use this one when the change must survive the bot
+            # being down at the moment it is made — Pub/Sub drops it, the stream
+            # replays it from `moddy:tasks:last_id`.
+            await self._handle_module_config_push("module_updated", guild_id, {
+                **payload, "guild_id": guild_id,
+            })
 
         elif task_type == "send_announcement":
             message_text = payload.get("message", "")

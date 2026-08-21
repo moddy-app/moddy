@@ -81,10 +81,10 @@ the event was produced: task queues, command/reply RPC, notification feeds.
 
 | Channel | Direction | Purpose |
 |---|---|---|
-| `moddy:bot` | Backend → Bot | Generic events: `config_updated`, `module_updated`, `premium_activated`, `payment_failed`, … (`bot.py::_handle_bot_event`) |
+| `moddy:bot` | Backend → Bot | Generic events: `config_updated`, `module_updated`, `premium_activated`, `payment_failed`, … (`bot.py::_handle_bot_event`). A config event carrying a `module_id` also re-applies that module's Discord side (panel, permissions) and acks on `moddy:dashboard` — see [ALTGUARD_INTEGRATION.md §5](ALTGUARD_INTEGRATION.md) |
 | `moddy:subscription:updates` | Backend → Bot | Premium subscription cache invalidation + DM triggers (`bot.py::_handle_subscription_event`) |
 | `moddy:blacklist:updates` | Backend/Bot → Bot | Global-sanction cache invalidation (`bot.py::_handle_blacklist_event`) |
-| `moddy:dashboard` | Bot → Backend | Bot-originated notifications to the dashboard, incl. `social_subscribe_result` etc. |
+| `moddy:dashboard` | Bot → Backend | Bot-originated notifications to the dashboard, incl. `social_subscribe_result`, `module_config_applied` etc. |
 | `moddy:sanctions` | Bot → Backend | Global sanction lifecycle events (`apply`/`lift`/`halt`/`resume`/`execute`) — `services/global_sanction_service.py::SANCTION_CHANNEL` |
 | `altguard:verdict` | AltGuard service → Bot | One verdict per finished verification (`bot.py::_handle_altguard_verdict` → `cogs/altguard.py`). `enforced=false` means shadow mode: log, apply nothing — see [ALTGUARD.md](ALTGUARD.md) |
 | `altguard:membership` | Bot → AltGuard service | Membership transitions (`active`/`left`/`kicked`/`banned`) feeding AltGuard's scoring (`services/altguard_client.py`) |
@@ -93,7 +93,7 @@ the event was produced: task queues, command/reply RPC, notification feeds.
 
 | Stream | Producer | Consumer | Notes |
 |---|---|---|---|
-| `moddy:tasks` | Backend | Bot | Critical guaranteed tasks (`update_panel`, `send_announcement`, `social_subscribe`, …). Plain `XREAD` + `moddy:tasks:last_id` key to resume (`bot.py::_consume_task_stream`) |
+| `moddy:tasks` | Backend | Bot | Critical guaranteed tasks (`update_panel`, `send_announcement`, `social_subscribe`, …). Plain `XREAD` + `moddy:tasks:last_id` key to resume (`bot.py::_consume_task_stream`). `update_panel` is the durable twin of a `moddy:bot` config push — use it when a save must survive the bot being down |
 | `feeds:commands` | Bot | `moddy-feeds` service | `subscribe` / `unsubscribe` commands, correlated by `request_id` |
 | `feeds:replies` | `moddy-feeds` service | Bot | Replies to `feeds:commands`, correlated by `request_id`, 10s timeout (`services/feeds_client.py`) |
 | `notifications:queue` | `moddy-feeds` service | Bot (consumer group `discord-bot`) | Normalized notification events, `XACK`ed unconditionally (service dedups) |
