@@ -2496,6 +2496,15 @@
         "done_title": "Staff-Mitglied entfernt",
         "done": "{user} wurde aus dem Staff-Team entfernt."
       },
+      "rank": {
+        "unknown_role_title": "Unbekannte Rolle",
+        "unknown_role": "Ungültige Rolle. Verfügbare Rollen: {roles}.",
+        "already_title": "Rolle bereits vergeben",
+        "already": "{user} hat die Rolle {role} bereits.",
+        "done_title": "Rolle vergeben",
+        "done": "Die Rolle {role} wurde {user} zugewiesen.",
+        "hint": "Nutze `m.staff` für die Berechtigungen und `m.unrank`, um jemanden aus dem Team zu entfernen."
+      },
       "staff": {
         "title": "Staff-Verwaltung",
         "subtitle": "Weise Rollen zu und konfiguriere Berechtigungen, dann speichern.",

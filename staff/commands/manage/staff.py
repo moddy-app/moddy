@@ -4,6 +4,9 @@ Merges the old ``m.rank`` (add) and ``m.setstaff`` (roles + granular
 permissions) into a single intuitive panel: assign roles, configure the
 permissions for each role (and the shared "common" set), then save — or remove
 the member from the team. Works from both message and slash transports.
+
+``m.rank`` is a separate command again (``staff/commands/manage/rank.py``) for
+the one-member/one-role fast path; it no longer aliases this panel.
 """
 
 import json
@@ -46,7 +49,15 @@ ASSIGNABLE_ROLES = [
 # wrong id were ever trusted. See docs/PERSISTENT_VIEWS.md Migration log,
 # Step 15 — THIS VIEW REQUIRES HUMAN REVIEW BEFORE MERGE.
 # --------------------------------------------------------------------------- #
-_CID_TEMPLATE = r"moddy:staffpanel:(?P<action>roles|scope|save|remove):(?P<target>\d{1,20}):(?P<modifier>\d{1,20})"
+# One template PER DynamicItem class. They must not overlap: discord.py keys
+# its dynamic-item registry by compiled pattern and dispatches to the first
+# template that matches, so two classes sharing a pattern means one silently
+# shadows the other and every click on the shadowed control dies with
+# "This interaction failed" (this is exactly what happened to the roles
+# select, which was shadowed by the Save/Remove button).
+_CID_ROLES_TEMPLATE = r"moddy:staffpanel:roles:(?P<target>\d{1,20}):(?P<modifier>\d{1,20})"
+_CID_SCOPE_TEMPLATE = r"moddy:staffpanel:scope:(?P<target>\d{1,20}):(?P<modifier>\d{1,20})"
+_CID_ACTION_TEMPLATE = r"moddy:staffpanel:(?P<action>save|remove):(?P<target>\d{1,20}):(?P<modifier>\d{1,20})"
 
 # The perms select needs a 4th field: which scope ("common" or a role value)
 # its options belong to, since that isn't reconstructible from the
@@ -265,10 +276,10 @@ class StaffManagerPanel(BaseView):
 
 # --------------------------------------------------------------------------- #
 # Dynamic items (persistent). All four encode target_id + modifier_id — see
-# the module-level docstring on _CID_TEMPLATE for why both are required.
+# the module-level custom_id templates block for why both are required.
 # --------------------------------------------------------------------------- #
 
-class StaffPanelRolesSelect(ui.DynamicItem[ui.Select], template=_CID_TEMPLATE):
+class StaffPanelRolesSelect(ui.DynamicItem[ui.Select], template=_CID_ROLES_TEMPLATE):
     """Role-assignment select. Re-checks can_assign_role per role, unchanged
     from the pre-migration behaviour.
 
@@ -357,7 +368,7 @@ class StaffPanelRolesSelect(ui.DynamicItem[ui.Select], template=_CID_TEMPLATE):
         await interaction.response.edit_message(view=view)
 
 
-class StaffPanelScopeSelect(ui.DynamicItem[ui.Select], template=_CID_TEMPLATE):
+class StaffPanelScopeSelect(ui.DynamicItem[ui.Select], template=_CID_SCOPE_TEMPLATE):
     """Picks which role's (or "common") permission set the perms select edits."""
 
     def __init__(self, target_id: int, modifier_id: int, *, locale: str = "en-US",
@@ -462,7 +473,7 @@ class StaffPanelPermsSelect(ui.DynamicItem[ui.Select], template=_CID_PERMS_TEMPL
         await interaction.response.edit_message(view=view)
 
 
-class StaffPanelActionButton(ui.DynamicItem[ui.Button], template=_CID_TEMPLATE):
+class StaffPanelActionButton(ui.DynamicItem[ui.Button], template=_CID_ACTION_TEMPLATE):
     """Save / Remove button."""
 
     _STYLE = {"save": discord.ButtonStyle.success, "remove": discord.ButtonStyle.danger}
@@ -538,7 +549,7 @@ class StaffPanelActionButton(ui.DynamicItem[ui.Button], template=_CID_TEMPLATE):
 class StaffPanelCommand(StaffCommand):
     command_type = CommandType.MANAGEMENT
     name = "staff"
-    aliases = ("rank", "setstaff")
+    aliases = ("setstaff",)
     description = "Manage a member's staff roles and permissions."
     options = [
         SlashOption("user", "user", "Member to manage.", required=True),

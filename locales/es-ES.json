@@ -2496,6 +2496,15 @@
         "done_title": "Miembro del staff eliminado",
         "done": "{user} ha sido eliminado del equipo de staff."
       },
+      "rank": {
+        "unknown_role_title": "Rol desconocido",
+        "unknown_role": "Rol no válido. Roles disponibles: {roles}.",
+        "already_title": "Rol ya asignado",
+        "already": "{user} ya tiene el rol {role}.",
+        "done_title": "Rol asignado",
+        "done": "El rol {role} se ha asignado a {user}.",
+        "hint": "Usa `m.staff` para configurar los permisos y `m.unrank` para quitar del equipo."
+      },
       "staff": {
         "title": "Gestión del staff",
         "subtitle": "Asigna roles y configura permisos, luego guarda.",
