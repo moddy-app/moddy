@@ -22,6 +22,12 @@ LEGACY_MODULE_IDS: Dict[str, str] = {
     'automod': 'automod_ai',
 }
 
+# What a configuration change pushed from outside the bot did to the config.
+# The dashboard writes straight to the DB, so the bot only learns about it from
+# a Redis notification and has to re-derive everything else itself.
+EXTERNAL_UPDATED = "updated"
+EXTERNAL_DELETED = "deleted"
+
 
 class ModuleBase(ABC):
     """
@@ -134,6 +140,27 @@ class ModuleBase(ABC):
     async def on_disable(self):
         """Hook appelé quand le module est désactivé"""
         pass
+
+    async def on_external_config_change(self, action: str) -> Dict[str, Any]:
+        """Apply the Discord-side consequences of a config change made outside the bot.
+
+        The dashboard and the backend write module configurations straight into
+        ``guilds.data.modules.<id>`` and then notify the bot over Redis. Reloading
+        the config is not enough for a module whose configuration is *visible* in
+        Discord: a panel message to re-post, channel overwrites to re-apply, an
+        external service to notify. ``/config`` does that work in its save handler;
+        without this hook the same change coming from the dashboard would update
+        the database and leave Discord showing the previous setup.
+
+        Called by :meth:`ModuleManager.reload_module` after the new configuration
+        has been loaded (``action`` is :data:`EXTERNAL_UPDATED`), or on the outgoing
+        instance just before it is dropped (:data:`EXTERNAL_DELETED`) — in that case
+        the stored config is already gone, so the hook must only clean up Discord
+        and never write anything back.
+
+        Returns a small JSON-serialisable recap relayed to the dashboard.
+        """
+        return {}
 
 
 class ModuleManager:
@@ -285,6 +312,108 @@ class ModuleManager:
             migrated.pop(old_id, None)
             logger.info(f"Migrated module config {old_id} -> {new_id} for guild {guild_id}")
         return migrated
+
+    async def reload_module(self, guild, module_id: str, *,
+                           action: str = EXTERNAL_UPDATED) -> Dict[str, Any]:
+        """Re-read one module's config from the DB and apply the change in Discord.
+
+        This is the entry point for a configuration pushed by the backend or the
+        dashboard (Redis ``module_updated`` event, or the ``update_panel`` task on
+        the ``moddy:tasks`` stream). Dropping the guild cache is not enough on its
+        own: the cache only makes the bot *read* the new values, while the visible
+        half of a configuration — a verification panel, channel overwrites — has to
+        be re-applied, which is what the module's ``on_external_config_change``
+        hook does.
+
+        Args:
+            guild: guild id, or a ``discord.Guild``
+            module_id: module to reload
+            action: :data:`EXTERNAL_UPDATED` or :data:`EXTERNAL_DELETED`
+
+        Returns:
+            ``{"ok": bool, ...}`` — the recap relayed back to the dashboard.
+        """
+        guild_id = getattr(guild, 'id', guild)
+        try:
+            guild_id = int(guild_id)
+        except (TypeError, ValueError):
+            return {"ok": False, "error": "invalid_guild"}
+
+        if module_id not in self.registered_modules:
+            return {"ok": False, "error": "unknown_module"}
+        if not self.bot.db:
+            return {"ok": False, "error": "no_database"}
+
+        try:
+            config = await self.get_module_config(guild_id, module_id) or {}
+        except Exception as e:
+            logger.error(f"[FAIL] Could not read {module_id} config for guild {guild_id}: {e}")
+            return {"ok": False, "error": "config_unreadable"}
+
+        # ``delete_module_config`` stores an empty object rather than removing the
+        # key, so an empty config *is* a deletion however the event labelled it.
+        if not config:
+            action = EXTERNAL_DELETED
+
+        # The outgoing instance still holds what the new config no longer carries
+        # — the id of the panel message to take down. Rebuild one from the stored
+        # config when the cache is cold (a restart between the two events), so a
+        # deletion right after a restart still cleans up Discord.
+        module = self.active_modules.get(guild_id, {}).get(module_id)
+        if module is None and (config or action == EXTERNAL_UPDATED):
+            module = self.registered_modules[module_id](self.bot, guild_id)
+            if config:
+                await module.load_config(config)
+
+        if action == EXTERNAL_DELETED:
+            if module is None:
+                logger.warning(
+                    f"[Modules] {module_id} deleted for guild {guild_id} but no instance "
+                    f"was cached: anything it left in Discord stays there"
+                )
+                return {"ok": True, "action": action, "cleaned": False}
+            recap = await self._run_external_hook(module, action, guild_id, module_id)
+            try:
+                await module.disable()
+            except Exception as e:
+                logger.error(f"[FAIL] Error disabling {module_id} for guild {guild_id}: {e}")
+            self.active_modules.get(guild_id, {}).pop(module_id, None)
+            logger.info(f"Module {module_id} unloaded for guild {guild_id} (external delete)")
+            return {"ok": True, "action": action, "cleaned": True, **recap}
+
+        if not await module.load_config(config):
+            logger.error(f"[FAIL] Could not load pushed {module_id} config for guild {guild_id}")
+            return {"ok": False, "error": "invalid_config"}
+
+        self.active_modules.setdefault(guild_id, {})[module_id] = module
+        if module.enabled:
+            await module.enable()
+        else:
+            await module.disable()
+
+        recap = await self._run_external_hook(module, action, guild_id, module_id)
+        logger.info(
+            f"Module {module_id} reloaded from a pushed config for guild {guild_id} "
+            f"(enabled: {module.enabled})"
+        )
+        return {"ok": True, "action": action, "enabled": module.enabled, **recap}
+
+    async def _run_external_hook(self, module: ModuleBase, action: str,
+                                 guild_id: int, module_id: str) -> Dict[str, Any]:
+        """Run ``on_external_config_change`` without letting it break the reload.
+
+        The config is already stored and loaded by the time the hook runs, so a
+        failure to re-post a panel must be reported, not turned into a failed
+        reload that would leave the bot reading stale values.
+        """
+        try:
+            return await module.on_external_config_change(action) or {}
+        except Exception as e:
+            logger.error(
+                f"[FAIL] {module_id}.on_external_config_change failed for guild "
+                f"{guild_id}: {e}", exc_info=True,
+            )
+            return {"hook_error": str(e)}
 
     async def unload_guild_modules(self, guild_id: int):
         """Remove guild module cache so next access reloads from DB."""

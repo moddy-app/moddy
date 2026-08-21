@@ -111,6 +111,53 @@ async def on_member_join(self, member):
         await welcome_module.on_member_join(member)
 ```
 
+### 3 bis. Quand le backend/dashboard pousse une configuration
+
+Le dashboard écrit directement dans `guilds.data.modules.<id>` puis notifie le
+bot par Redis (`moddy:bot`, ou la tâche `update_panel` du stream `moddy:tasks`
+quand la sauvegarde doit survivre à un redémarrage du bot). Si l'événement porte
+un `module_id`, le bot appelle :
+
+```python
+await bot.module_manager.reload_module(guild_id, module_id, action="updated")
+```
+
+qui relit la config depuis la DB, remet l'instance à jour, puis appelle le hook
+`on_external_config_change(action)` du module.
+
+**Ce hook est à implémenter dès que la configuration d'un module est *visible*
+dans Discord** : un message de panneau à republier, des permissions de salon à
+réappliquer, un service externe à prévenir. Recharger la config ne suffit pas —
+le bot lirait les nouvelles valeurs mais Discord continuerait d'afficher
+l'ancien état. C'est exactement ce que fait le handler `on_save` de `/config` ;
+une sauvegarde venant du dashboard doit aboutir au même état.
+
+```python
+async def on_external_config_change(self, action: str) -> Dict[str, Any]:
+    from modules.module_manager import EXTERNAL_DELETED
+
+    if action == EXTERNAL_DELETED:
+        # La config est déjà supprimée en DB : on nettoie Discord et on
+        # n'écrit RIEN (sinon le module ressuscite à moitié configuré).
+        await self.delete_panel(persist=False)
+        return {"panel": "deleted"}
+
+    message = await self.refresh_panel()
+    return {"panel": "posted" if message else "failed"}
+```
+
+Le dict retourné est relayé au dashboard sur `moddy:dashboard`
+(`module_config_applied`) : y mettre ce qui a pu échouer sans lever d'exception
+(permission manquante pour poster le panneau, salons non verrouillés…), sinon
+l'admin n'a aucun moyen de savoir que sa sauvegarde n'est pas complète. Les
+snowflakes y passent en **string** (JSON arrondit un entier 64 bits).
+
+Une exception dans le hook n'annule pas le rechargement : la config est déjà
+stockée et chargée, l'erreur est renvoyée dans `hook_error`.
+
+Voir l'implémentation de référence : `modules/altguard.py` et
+[ALTGUARD_INTEGRATION.md §5](ALTGUARD_INTEGRATION.md).
+
 ### 4. Stockage en base de données
 
 Les configurations sont stockées dans PostgreSQL :

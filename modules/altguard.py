@@ -162,6 +162,64 @@ class AltGuardModule(ModuleBase):
 
         return True, None
 
+    async def on_external_config_change(self, action: str) -> Dict[str, Any]:
+        """Apply a configuration pushed by the dashboard/backend to Discord.
+
+        ``/config`` does three things on save that a direct database write
+        cannot: it re-posts the panel (the only way a language or channel change
+        ever reaches the message), it closes every channel to the unverified
+        role, and it hands the guild's membership to the service. A dashboard
+        save has to end in the same state, otherwise the gate silently keeps
+        running on the previous setup — the worst failure mode here, since it
+        looks configured and lets people through the old way.
+        """
+        from modules.module_manager import EXTERNAL_DELETED
+
+        if action == EXTERNAL_DELETED:
+            # The stored config is already gone: take the panel down, and write
+            # nothing back (that would resurrect a half-configured module).
+            await self.delete_panel(persist=False)
+            return {"panel": "deleted"}
+
+        if not self.enabled:
+            # Channel or a role missing: there is no gate to advertise, so a
+            # leftover panel would send members to a button that cannot work.
+            await self.delete_panel()
+            return {"panel": "deleted", "enabled": False}
+
+        message = await self.refresh_panel()
+        recap = await self.sync_channel_permissions()
+        await self._resync_membership()
+
+        return {
+            "panel": "posted" if message else "failed",
+            # Snowflakes cross to the dashboard as strings: this recap is
+            # serialised to JSON, where a 64-bit id loses precision.
+            "panel_message_id": str(message.id) if message else None,
+            "permissions": recap,
+        }
+
+    async def _resync_membership(self) -> None:
+        """Hand the guild's current membership to the AltGuard service.
+
+        A gate configured from the dashboard is live immediately, but the
+        service would not know who is already in the guild until the next
+        hourly reconciliation. The cog owns the cache-completeness guard (an
+        incomplete member list would mark real members as ``left``), so the
+        resync goes through it rather than calling the client directly.
+        """
+        cog = self.bot.get_cog("AltGuard") if self.bot else None
+        guild = self.guild
+        if cog is None or guild is None:
+            return
+        try:
+            await cog.resync_guild(guild)
+        except Exception as e:
+            logger.error(
+                f"[AltGuard] Membership resync after a pushed config failed for "
+                f"guild {self.guild_id}: {e}"
+            )
+
     # ------------------------------------------------------------------ #
     # Helpers
     # ------------------------------------------------------------------ #
@@ -393,8 +451,14 @@ class AltGuardModule(ModuleBase):
         await self._persist({'message_id': message.id})
         return message
 
-    async def delete_panel(self) -> None:
-        """Remove the currently stored panel message, if it still exists."""
+    async def delete_panel(self, *, persist: bool = True) -> None:
+        """Remove the currently stored panel message, if it still exists.
+
+        ``persist=False`` is for the case where the configuration has already
+        been dropped from the database (a deletion pushed by the dashboard):
+        writing ``message_id`` back would recreate the config that was just
+        deleted, and the module would come back half-configured.
+        """
         guild = self.guild
         if not guild or not self.message_id or not self.channel_id:
             return
@@ -409,7 +473,10 @@ class AltGuardModule(ModuleBase):
             except Exception as e:
                 logger.debug(f"[AltGuard] Could not delete old panel in guild {self.guild_id}: {e}")
 
-        await self._persist({'message_id': None})
+        if persist:
+            await self._persist({'message_id': None})
+        else:
+            self.message_id = None
 
     # ------------------------------------------------------------------ #
     # Role plumbing

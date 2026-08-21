@@ -236,29 +236,46 @@ class AltGuard(commands.Cog):
             return
 
         for guild in list(self.bot.guilds):
-            module = await self._module(guild.id)
-            if module is None:
-                continue
+            await self.resync_guild(guild)
 
-            # A partially-filled cache would mark real members as `left`, so a
-            # guild whose members are not all cached is skipped this round
-            # rather than reconciled against a lie.
-            if guild.member_count and len(guild.members) < guild.member_count:
-                logger.debug(
-                    f"[AltGuard] Skipping resync for guild {guild.id}: member cache "
-                    f"incomplete ({len(guild.members)}/{guild.member_count})"
-                )
-                continue
+    async def resync_guild(self, guild: discord.Guild) -> bool:
+        """Send one guild's full member list to the service.
 
-            member_ids = [m.id for m in guild.members if not m.bot]
-            try:
-                await client.resync_membership(guild.id, member_ids)
-                logger.info(
-                    f"[AltGuard] Membership resynced for guild {guild.id} "
-                    f"({len(member_ids)} members)"
-                )
-            except Exception as e:
-                logger.error(f"[AltGuard] Resync failed for guild {guild.id}: {e}")
+        Also called right after a configuration is pushed from the dashboard, so
+        a gate that just went live does not wait up to an hour for the service to
+        learn who is already in the guild.
+
+        Returns True when the service acknowledged the reconciliation.
+        """
+        client = self.client
+        if client is None or not client.configured:
+            return False
+
+        module = await self._module(guild.id)
+        if module is None:
+            return False
+
+        # A partially-filled cache would mark real members as `left`, so a
+        # guild whose members are not all cached is skipped this round
+        # rather than reconciled against a lie.
+        if guild.member_count and len(guild.members) < guild.member_count:
+            logger.debug(
+                f"[AltGuard] Skipping resync for guild {guild.id}: member cache "
+                f"incomplete ({len(guild.members)}/{guild.member_count})"
+            )
+            return False
+
+        member_ids = [m.id for m in guild.members if not m.bot]
+        try:
+            reconciled = await client.resync_membership(guild.id, member_ids)
+            logger.info(
+                f"[AltGuard] Membership resynced for guild {guild.id} "
+                f"({len(member_ids)} members)"
+            )
+            return reconciled
+        except Exception as e:
+            logger.error(f"[AltGuard] Resync failed for guild {guild.id}: {e}")
+            return False
 
     @resync_membership.before_loop
     async def before_resync(self):

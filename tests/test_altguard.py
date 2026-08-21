@@ -594,6 +594,99 @@ def test_the_verified_role_alone_proves_a_member_is_through_the_gate():
     assert module.has_verified_role(FakeMember(member_id=43, roles=[])) is False
 
 
+# ------------------------------------------------- pushed config (dashboard)
+
+class RecordingModule(AltGuardModule):
+    """AltGuard with the three Discord-side effects recorded instead of done."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.calls = []
+        self.panel_posted = SimpleNamespace(id=555)
+
+    async def refresh_panel(self):
+        self.calls.append("refresh_panel")
+        return self.panel_posted
+
+    async def delete_panel(self, *, persist=True):
+        self.calls.append(f"delete_panel(persist={persist})")
+
+    async def sync_channel_permissions(self):
+        self.calls.append("sync_channel_permissions")
+        return {"updated": 3, "failed": 0, "skipped": 1}
+
+    async def _resync_membership(self):
+        self.calls.append("resync_membership")
+
+
+def _pushed_module(**config_overrides):
+    guild = FakeGuild(1, [FakeRole(10, "unverified"), FakeRole(11, "verified")])
+    module = RecordingModule(FakeBot(guild=guild, db=FakeDB()), guild.id)
+    config = {
+        "channel_id": 100, "unverified_role_id": 10, "verified_role_id": 11,
+        "log_channel_id": None, "panel_locale": "fr", "message_id": 999,
+    }
+    config.update(config_overrides)
+    asyncio.run(module.load_config(config))
+    return module
+
+
+def test_a_pushed_config_reposts_the_panel_and_closes_the_channels():
+    """A dashboard save must end in the same state as a /config save."""
+    module = _pushed_module()
+
+    recap = asyncio.run(module.on_external_config_change("updated"))
+
+    assert module.calls == [
+        "refresh_panel", "sync_channel_permissions", "resync_membership",
+    ]
+    assert recap["panel"] == "posted"
+    # Snowflakes cross to the dashboard as strings — JSON would round a 64-bit id.
+    assert recap["panel_message_id"] == "555"
+    assert recap["permissions"] == {"updated": 3, "failed": 0, "skipped": 1}
+
+
+def test_a_pushed_deletion_takes_the_panel_down_without_writing_back():
+    """Persisting here would recreate the config that was just deleted."""
+    module = _pushed_module()
+
+    recap = asyncio.run(module.on_external_config_change("deleted"))
+
+    assert module.calls == ["delete_panel(persist=False)"]
+    assert recap == {"panel": "deleted"}
+
+
+def test_a_pushed_incomplete_config_removes_the_panel():
+    """Without a channel there is no gate, so the button must not stay up."""
+    module = _pushed_module(channel_id=None)
+    assert module.enabled is False
+
+    recap = asyncio.run(module.on_external_config_change("updated"))
+
+    assert module.calls == ["delete_panel(persist=True)"]
+    assert recap == {"panel": "deleted", "enabled": False}
+
+
+def test_delete_panel_without_persist_leaves_the_database_alone():
+    """The real delete_panel, not the recording stub: nothing may be written."""
+    writes = []
+
+    class WatchingDB(FakeDB):
+        async def update_guild_data(self, guild_id, path, value):
+            writes.append((path, value))
+
+    module = build_module(db=WatchingDB())
+    module.message_id = 999
+
+    asyncio.run(module.delete_panel(persist=False))
+    assert writes == []
+    assert module.message_id is None
+
+    module.message_id = 999
+    asyncio.run(module.delete_panel(persist=True))
+    assert writes and writes[0][0] == "modules.altguard"
+
+
 def test_the_log_card_names_a_missing_enforced_field():
     """A service defect must not read as deliberate shadow mode."""
     from utils.altguard_views import build_log_card

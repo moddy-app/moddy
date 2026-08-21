@@ -98,6 +98,16 @@ choice is where it lives, not what it says.
 one sent. That is what repairs a panel someone deleted, and the only way a
 language or channel change reaches the message.
 
+### Saving from the dashboard
+
+The dashboard writes the same row and then notifies the bot over Redis. A write
+alone is not a save: the panel, the channel overwrites and the service's view of
+the guild's membership all live outside the database, and none of them would
+move. The notification must carry `module_id: "altguard"` for the bot to
+re-apply them — the recap comes back on `moddy:dashboard`, and it is the only
+place a missing permission shows up. Exact payloads:
+[ALTGUARD_INTEGRATION.md §5](ALTGUARD_INTEGRATION.md).
+
 ### Channel permissions are applied automatically
 
 Saving the configuration runs `sync_channel_permissions()`: every channel gets
