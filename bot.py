@@ -609,8 +609,17 @@ class ModdyBot(ModdyFrameworkBot):
             logger.debug(f"[PubSub] Unknown event type: {event_type}")
 
     async def _consume_task_stream(self):
-        """Consume Redis Stream moddy:tasks (critical guaranteed tasks from backend)."""
-        import json
+        """Consume Redis Stream moddy:tasks (critical guaranteed tasks from backend).
+
+        Every entry is HMAC-verified before it runs (see docs/TASK_SIGNATURE.md):
+        anyone with write access to Redis could otherwise inject a task and have
+        the bot execute it with its own permissions. A rejected entry is skipped
+        and logged, never retried — otherwise an attacker fills the stream with
+        invalid entries and blocks the consumer.
+        """
+        from config import TASK_STREAM_ALLOW_UNSIGNED, TASK_STREAM_SECRET
+        from utils.task_signature import TaskRejected, verify_task
+
         TASK_STREAM = "moddy:tasks"
         LAST_ID_KEY = "moddy:tasks:last_id"
 
@@ -628,50 +637,46 @@ class ModdyBot(ModdyFrameworkBot):
                     for _stream, entries in messages:
                         for entry_id, fields in entries:
                             try:
-                                await self._process_task(fields)
-                                last_id = entry_id
-                                await self.redis.set(LAST_ID_KEY, last_id)
+                                await verify_task(
+                                    fields,
+                                    TASK_STREAM_SECRET,
+                                    self.redis,
+                                    allow_unsigned=TASK_STREAM_ALLOW_UNSIGNED,
+                                )
+                            except TaskRejected as e:
+                                logger.warning(
+                                    f"[Stream] Task {entry_id} rejected "
+                                    f"({e.code}{': ' + e.detail if e.detail else ''}) "
+                                    f"— type={fields.get('type')!r} "
+                                    f"guild_id={fields.get('guild_id')!r}"
+                                )
                             except Exception as e:
-                                logger.error(f"[Stream] Error processing task {entry_id}: {e}")
+                                logger.error(
+                                    f"[Stream] Could not verify task {entry_id}: {e}"
+                                )
+                            else:
+                                try:
+                                    await self._process_task(fields)
+                                except Exception as e:
+                                    logger.error(
+                                        f"[Stream] Error processing task {entry_id}: {e}"
+                                    )
+                            # The resume point always advances: a rejected or
+                            # failing entry must not be replayed forever.
+                            last_id = entry_id
+                            await self.redis.set(LAST_ID_KEY, last_id)
             except Exception as e:
                 logger.error(f"[Stream] Connection error: {e}")
                 await asyncio.sleep(5)
 
     async def _process_task(self, fields: dict):
-        """Process a task from the moddy:tasks stream."""
-        import hashlib
-        import hmac
+        """Process a task from the moddy:tasks stream.
+
+        The entry is already authenticated by `_consume_task_stream` (HMAC,
+        freshness and anti-replay — see utils/task_signature.py). This method
+        must never be called with an unverified entry.
+        """
         import json
-        import time
-        from config import TASK_STREAM_SECRET
-
-        signature = fields.get("signature", "")
-        signed = {
-            key: fields.get(key, "")
-            for key in ("guild_id", "issued_at", "payload", "task_id", "type")
-        }
-        canonical = json.dumps(signed, separators=(",", ":"), sort_keys=True)
-        expected = hmac.new(
-            TASK_STREAM_SECRET.encode(), canonical.encode(), hashlib.sha256
-        ).hexdigest() if len(TASK_STREAM_SECRET) >= 32 else ""
-        try:
-            age = abs(int(time.time()) - int(signed["issued_at"]))
-        except (TypeError, ValueError):
-            age = 10**9
-        if (
-            not expected
-            or not signature
-            or not hmac.compare_digest(signature, expected)
-            or age > 86_400
-            or not signed["task_id"]
-        ):
-            logger.error("[Stream] Unsigned, invalid or expired task rejected")
-            return
-
-        processed_key = f"moddy:tasks:processed:{signed['task_id']}"
-        if await self.redis.get(processed_key):
-            logger.warning("[Stream] Replayed task rejected: %s", signed["task_id"])
-            return
 
         task_type = fields.get("type")
         guild_id = int(fields.get("guild_id", 0))
@@ -718,10 +723,6 @@ class ModdyBot(ModdyFrameworkBot):
 
         else:
             logger.warning(f"[Stream] Unknown task type: {task_type}")
-
-        # Mark only after successful processing so a transient exception can
-        # still be retried by the stream consumer.
-        await self.redis.set(processed_key, "1", ex=7 * 86_400)
 
     async def _process_social_task(self, task_type: str, guild_id: int, payload: dict):
         """Run a Social Notifications action requested by the backend and

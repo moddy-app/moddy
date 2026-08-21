@@ -54,10 +54,19 @@ REDIS_URL: Optional[str] = os.environ.get("REDIS_URL", "redis://localhost:6379")
 # Mot de passe Redis (optionnel)
 REDIS_PASSWORD: Optional[str] = os.environ.get("REDIS_PASSWORD") or None
 
-# Clé HMAC dédiée aux ordres critiques backend -> bot sur ``moddy:tasks``.
-# Elle doit être différente du mot de passe Redis et partagée uniquement par
-# ces deux services.
+# Secret HMAC partagé backend ⇄ bot pour signer les entrées du stream
+# `moddy:tasks` - Variable Railway: TASK_STREAM_SECRET
+# Générer avec: python -c "import secrets; print(secrets.token_urlsafe(48))"
+# NE JAMAIS réutiliser REDIS_PASSWORD : le modèle de menace est précisément
+# celui d'un attaquant qui possède déjà l'accès Redis. Voir docs/TASK_SIGNATURE.md
 TASK_STREAM_SECRET: str = os.environ.get("TASK_STREAM_SECRET", "")
+
+# Fenêtre de déploiement uniquement (docs/TASK_SIGNATURE.md §6) : accepte les
+# entrées non signées tant que le backend ne signe pas encore. À remettre à
+# false dès que le backend est en production.
+TASK_STREAM_ALLOW_UNSIGNED: bool = os.environ.get(
+    "TASK_STREAM_ALLOW_UNSIGNED", "false"
+).lower() in ("true", "1", "yes")
 
 # =============================================================================
 # API KEYS
@@ -230,8 +239,27 @@ def validate_config():
 
     if not REDIS_URL:
         print("[WARN] REDIS_URL not configured - Redis features disabled")
+
+    if not TASK_STREAM_SECRET:
+        print(
+            "[ERROR] TASK_STREAM_SECRET not configured - every moddy:tasks entry "
+            "will be rejected (bot customization, staff announcements, panel "
+            "updates and dashboard sanctions are disabled). Generate one with "
+            "`python -c \"import secrets; print(secrets.token_urlsafe(48))\"` and "
+            "set the SAME value on the bot and the backend."
+        )
     elif len(TASK_STREAM_SECRET) < 32:
-        print("[WARN] TASK_STREAM_SECRET absent ou trop court - tâches backend refusées")
+        print(
+            f"[ERROR] TASK_STREAM_SECRET is too short ({len(TASK_STREAM_SECRET)} "
+            "chars, 32 minimum) - the backend refuses to sign below that length, "
+            "so no task will ever verify."
+        )
+
+    if TASK_STREAM_ALLOW_UNSIGNED:
+        print(
+            "[WARN] TASK_STREAM_ALLOW_UNSIGNED is enabled - unsigned moddy:tasks "
+            "entries are executed. Deployment window only, turn it off."
+        )
 
     if not DEEPL_API_KEY:
         print("[WARN] DEEPL_API_KEY not configured - translate command disabled")

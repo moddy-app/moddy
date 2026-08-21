@@ -65,9 +65,12 @@ no role ever moves, that field is the first thing to check.
 
 ### What the member never sees
 
-`score` and `reasons` are audit data. They appear in the guild's log channel and
-in `/mod altguard refusal`, never in anything the verified member receives. The
-service deliberately withholds them from the browser so a bypass attempt gets no
+`score`, `reasons` and `matches` (the accounts a verification matched with) are
+audit data, never shown to anything the verified member receives. `score` and
+`reasons` appear in the guild's log channel and are persisted, so they also
+show up in `/mod altguard refusal`; `matches` is not persisted — it appears on
+the log card only, at the moment the verdict is applied. The service
+deliberately withholds all three from the browser so a bypass attempt gets no
 oracle; reproducing them bot-side would break the same guarantee.
 
 ---
@@ -165,7 +168,8 @@ members as `left`.
 ```json
 {"verification_id": "uuid", "guild_id": 123, "discord_user_id": 987,
  "verdict": "passed | flagged | blocked", "score": 62,
- "reasons": ["cookie_match"], "enforced": true}
+ "reasons": ["cookie_match"], "enforced": true,
+ "matches": [{"discord_user_id": 456, "score": 62, "reasons": ["cookie_match"]}]}
 ```
 
 Routed by `bot._handle_altguard_verdict` → `AltGuard.handle_verdict`.
@@ -175,9 +179,22 @@ Routed by `bot._handle_altguard_verdict` → `AltGuard.handle_verdict`.
   logs, it never sanctions.
 - `enforced=false` is the service's shadow mode — the verdict is logged and
   nothing is applied: no role change, no message, no state write.
+- `matches` — the accounts the verification matched with, most-linked first,
+  up to five, always `[]` on a `passed` — is read defensively with
+  `verdict.get('matches', [])` and rendered on the log card only (§ "What the
+  member never sees"). Read with `.get(...)` rather than `[...]` so a bot
+  deployed ahead of the service degrades to no matches shown instead of
+  raising.
 - **Idempotency** is the `verification_id` primary key of
   `altguard_verifications`: a replayed message (Redis reconnect, service retry)
   inserts nothing, and processing stops there.
+
+> Since the AltGuard `005` migration, unconfigured guilds send `enforced:
+> true` by default (it used to be `false`), so a verdict starts applying for
+> real, immediately, on every already-configured guild the moment the service
+> deploys. Set `shadow_mode = true` in `altguard.guild_config` to observe a
+> guild before letting it sanction — see
+> [ALTGUARD_INTEGRATION.md](ALTGUARD_INTEGRATION.md).
 
 ### `altguard:membership` (bot → service)
 
@@ -207,6 +224,7 @@ account rejoining) — a resync never resurrects a banned account.
 | `verdict` | `passed` / `flagged` / `blocked` |
 | `score`, `reasons` | audit only — never shown to the member |
 | `enforced` | false = shadow mode |
+| *(not persisted)* `matches` | carried on the verdict payload only, rendered straight to the log card — not stored in this table |
 | `created_at` | |
 
 `altguard_members` — the gate state the bot acts on:

@@ -319,10 +319,19 @@ Le stream `moddy:tasks` contient les **tâches que le bot DOIT exécuter**. Cont
 
 ```
 Clés du message Redis :
-  type     : str   — type de tâche
-  guild_id : str   — ID du serveur (string, convertir en int)
-  payload  : str   — JSON sérialisé avec les détails
+  type      : str   — type de tâche
+  guild_id  : str   — ID du serveur (string, convertir en int)
+  payload   : str   — JSON sérialisé avec les détails
+  task_id   : str   — UUID v4, clé de déduplication
+  issued_at : str   — timestamp Unix en secondes (UTC)
+  signature : str   — HMAC-SHA256 hexadécimal des cinq champs ci-dessus
 ```
+
+> **Signature obligatoire.** Le bot vérifie `signature` avant d'exécuter quoi
+> que ce soit : une entrée non signée, mal signée, périmée ou rejouée est
+> ignorée et loggée en `warning`. Le secret partagé est `TASK_STREAM_SECRET`.
+> Contrat complet (canonicalisation, fenêtre anti-rejeu, ordre de déploiement) :
+> [TASK_SIGNATURE.md](TASK_SIGNATURE.md).
 
 ### Consumer principal
 
@@ -663,6 +672,7 @@ Certaines clés Redis sont partagées entre le backend et le bot. **Le bot doit 
 | `discord:guild:{id}:channels` | 2min | Backend | Salons du serveur |
 | `discord:guild:{id}:roles` | 2min | Backend | Rôles du serveur |
 | `moddy:tasks:last_id` | permanent | Bot | Dernier ID de stream traité |
+| `task:seen:{task_id}` | 10min | Bot | Marqueur anti-rejeu des tâches signées ([TASK_SIGNATURE.md](TASK_SIGNATURE.md)) |
 
 ### Convention pour les clés spécifiques au bot
 
@@ -989,6 +999,7 @@ async def log_error(pool, error: Exception, user_id: int | None = None, guild_id
 | Clé | Type | Description |
 |---|---|---|
 | `moddy:tasks:last_id` | String | Dernier ID de stream consommé |
+| `task:seen:{task_id}` | String | Marqueur anti-rejeu (`SET NX EX 600`) |
 
 ---
 
@@ -1003,6 +1014,12 @@ DATABASE_URL=postgresql://user:password@host:5432/dbname
 # Redis (même que le backend)
 REDIS_URL=redis://host:6379
 REDIS_PASSWORD=
+
+# Signature du stream moddy:tasks — MÊME valeur que le backend, 32 car. min
+# python -c "import secrets; print(secrets.token_urlsafe(48))"
+TASK_STREAM_SECRET=
+# Fenêtre de déploiement uniquement (voir docs/TASK_SIGNATURE.md §6)
+TASK_STREAM_ALLOW_UNSIGNED=false
 
 # Discord
 DISCORD_TOKEN=Bot token du bot

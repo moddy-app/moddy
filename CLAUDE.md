@@ -158,6 +158,7 @@ moddy/
 │   ├── global_sanction_views.py #  Global sanction UI (notice DMs, staff panels, Modals V2)
 │   ├── embeds.py
 │   ├── announcement_setup.py
+│   ├── task_signature.py      #   moddy:tasks HMAC verification (signature, freshness, anti-replay)
 │   └── incognito.py
 │
 ├── gateway/                   # Centralized API gateway (ALL external API calls go here)
@@ -214,6 +215,7 @@ moddy/
     ├── test_global_sanctions.py   # Global sanction levels, cache TTL, user/guild context
     ├── test_global_sanction_flow.py # Groups, notices, countdown, Redis events, allowlists
     ├── test_bot_customization.py  # Bot customization validation (bio budget, styles)
+    ├── test_task_signature.py #   moddy:tasks HMAC contract (canonicalization, replay, dedup)
     └── test_transcription.py  #   Voice transcription helpers, guard rails, cards
 ```
 
@@ -386,9 +388,9 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 |---|---|
 | [docs/API_GATEWAY.md](docs/API_GATEWAY.md) | API Gateway — all external API calls (OpenAI, DeepL, Groq), quotas, provider rate limits, resilience, logging |
 | [docs/BACKEND-INTEGRATION.md](docs/BACKEND-INTEGRATION.md) | Bot ↔ Backend integration (Redis, Pub/Sub, Streams, `/status`) |
+| [docs/TASK_SIGNATURE.md](docs/TASK_SIGNATURE.md) | **`moddy:tasks` HMAC signature** — canonicalization, anti-replay, `TASK_STREAM_SECRET`, deployment order |
 | [docs/REDIS_COMMUNICATION.md](docs/REDIS_COMMUNICATION.md) | **Redis inter-service communication** — Pub/Sub vs Streams vs plain keys, current channel/stream inventory, checklist for wiring up a new Redis-based service |
 | [docs/SOCIAL_NOTIFICATIONS.md](docs/SOCIAL_NOTIFICATIONS.md) | Social Notifications module + `moddy-feeds` Redis contract (what the backend must mirror) |
-| [docs/SOCIAL_NOTIFICATIONS_CHANGES_2026-06-14.md](docs/SOCIAL_NOTIFICATIONS_CHANGES_2026-06-14.md) | Backend/dashboard change spec: customizable message columns, quota, error codes, task fields |
 | [docs/SUBSCRIPTION_SCHEMA.md](docs/SUBSCRIPTION_SCHEMA.md) | Subscription DB schema, Redis cache contract, Pub/Sub events |
 | [docs/RAILWAY.md](docs/RAILWAY.md) | Environment variables, deployment, troubleshooting |
 
@@ -396,6 +398,21 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | Document | When to Read |
 |---|---|
 | [docs/AGENTS.md](docs/AGENTS.md) | Agent system documentation |
+| [docs/STAFF_COMMANDS_FRAMEWORK.md](docs/STAFF_COMMANDS_FRAMEWORK.md) | Staff command engine internals (message + slash from one definition) |
+
+### Archive
+Point-in-time documents kept for reference but superseded or closed —
+audits, dated change specs, one-off schema notes for another service, a
+finished implementation plan. Not part of the day-to-day reading list; check
+here before writing a new one-off doc so it doesn't end up back at the top
+level.
+
+| Document | What it is |
+|---|---|
+| [docs/archive/SECURITY_AUDIT.md](docs/archive/SECURITY_AUDIT.md) | Security audit report (2026-08-20) — findings fixed and residual risks at that date |
+| [docs/archive/SOCIAL_NOTIFICATIONS_CHANGES_2026-06-14.md](docs/archive/SOCIAL_NOTIFICATIONS_CHANGES_2026-06-14.md) | Backend/dashboard change spec (2026-06-14), now folded into [docs/SOCIAL_NOTIFICATIONS.md](docs/SOCIAL_NOTIFICATIONS.md) |
+| [docs/archive/REDIRECTS_BANNERS_SCHEMA.md](docs/archive/REDIRECTS_BANNERS_SCHEMA.md) | `redirect_links`/banners DB schema note written for the backend team |
+| [docs/archive/AUTOMOD_V2_PLAN.md](docs/archive/AUTOMOD_V2_PLAN.md) | Automod v2 implementation plan/progress log — all sessions closed; design rationale still cited from `automod/` code comments |
 
 ### Session Logs
 | Directory | Purpose |

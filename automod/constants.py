@@ -139,7 +139,7 @@ BUDGET_KEY_TTL_SECONDS: int = 172800
 # TTL, and decayed on read (half-life 30 days). A short post-message window then
 # observes the target and classifies its reaction. Both are injected into nano's
 # payload as TRUSTED server data — not user text — so nano can tell humour from
-# genuine intent to harm. See docs/AUTOMOD_AI.md §2ter and docs/AUTOMOD_V2_PLAN.md
+# genuine intent to harm. See docs/AUTOMOD_AI.md §2ter and docs/archive/AUTOMOD_V2_PLAN.md
 # (Session 5). Familiarity only ever ATTENUATES a verdict (never aggravates).
 RELATION_ENABLED: bool = True
 # 60-day TTL on the per-pair hash — no global graph to maintain, it self-expires.
@@ -189,7 +189,7 @@ CATEGORIES_RELATION_IGNOREE = frozenset({
 # that reaches the decision step as ``evident`` or ``ambigu`` BEFORE spending a
 # call; ``evident`` goes to nano (current behaviour), ``ambigu`` to the smarter,
 # pricier ``mini`` with twice the context. No AI call is spent to route. See
-# docs/AUTOMOD_AI.md §2quater and docs/AUTOMOD_V2_PLAN.md (Session 6).
+# docs/AUTOMOD_AI.md §2quater and docs/archive/AUTOMOD_V2_PLAN.md (Session 6).
 MINI_MODEL: str = "gpt-4.1-mini"
 # A mini chat is lean like nano's v2 contract (same JSON verdict) — 300 is plenty.
 MINI_MAX_TOKENS: int = 300

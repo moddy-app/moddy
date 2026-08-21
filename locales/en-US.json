@@ -1976,6 +1976,7 @@
         "member": "Member",
         "score": "Score",
         "reasons": "Signals",
+        "matches": "Linked accounts",
         "reference": "Reference",
         "shadow": "Shadow mode: the verdict was logged, no action was applied.",
         "manual_verify": "Manual verification",

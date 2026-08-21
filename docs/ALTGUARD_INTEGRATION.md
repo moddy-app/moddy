@@ -169,7 +169,9 @@ The published value must be a **JSON string** (the bot connects with
 ```json
 {"verification_id": "3f6c…-uuid", "guild_id": 123456789012345678,
  "discord_user_id": 987654321098765432, "verdict": "passed",
- "score": 62, "reasons": ["cookie_match", "gpu_match"], "enforced": true}
+ "score": 62, "reasons": ["cookie_match", "gpu_match"], "enforced": true,
+ "matches": [{"discord_user_id": 456789123, "score": 62,
+              "reasons": ["cookie_match", "gpu_match"]}]}
 ```
 
 | Field | Accepted | Behaviour when absent/invalid |
@@ -180,6 +182,17 @@ The published value must be a **JSON string** (the bot connects with
 | `score` | int or numeric string | stored as `NULL` |
 | `reasons` | list of strings | stored as `[]` |
 | `enforced` | bool | **defaults to `false`** → logged, nothing applied |
+| `matches` | list of `{discord_user_id, score, reasons}`, up to 5, most-linked first, always `[]` on a `passed` | stored as `[]`; malformed entries are dropped individually |
+
+> **`matches` is audit data for the log channel, nothing else.** It names the
+> accounts a verification matched with, so a moderator can understand a
+> `blocked` verdict and undo it if it's wrong — rendered on the log card, see
+> [docs/ALTGUARD.md](ALTGUARD.md). It is
+> **never** sent to the verified member (DM or ephemeral reply): same reason as
+> `score` and `reasons` — it would tell them exactly which signal to change to
+> pass next time. Read with `payload.get("matches", [])` — the field is always
+> present on the wire, but a bot deployed ahead of the service must not break
+> on its absence.
 
 > **`enforced: true` is what applies the roles.** This is the single most
 > common reason a verification "works" end to end and yet the member keeps the

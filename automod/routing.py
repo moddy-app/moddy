@@ -19,7 +19,7 @@ This module is **pure** (no I/O, no Discord, no gateway): it reads the message
 text, the routing :class:`~automod.schemas.Signal` and the optional trusted
 ``relation`` block, and returns a difficulty label. The engine
 (``automod/engine.py``) owns *acting* on that label (model + context choice).
-See docs/AUTOMOD_AI.md §2quater and docs/AUTOMOD_V2_PLAN.md (Session 6.1/6.2).
+See docs/AUTOMOD_AI.md §2quater and docs/archive/AUTOMOD_V2_PLAN.md (Session 6.1/6.2).
 """
 
 from __future__ import annotations

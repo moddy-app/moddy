@@ -245,6 +245,31 @@ def parse_verdict(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     if not isinstance(reasons, list):
         reasons = []
 
+    # Always present on the wire (`[]` on a `passed`), but read defensively
+    # with `.get` so a bot deployed ahead of the service still works: a
+    # payload without the field just yields no matches, nothing raises.
+    matches = []
+    for entry in (data.get("matches") or []):
+        if not isinstance(entry, dict):
+            continue
+        try:
+            match_user_id = int(entry["discord_user_id"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        match_score = entry.get("score")
+        try:
+            match_score = int(match_score) if match_score is not None else None
+        except (TypeError, ValueError):
+            match_score = None
+        match_reasons = entry.get("reasons") or []
+        if not isinstance(match_reasons, list):
+            match_reasons = []
+        matches.append({
+            "user_id": match_user_id,
+            "score": match_score,
+            "reasons": [str(r) for r in match_reasons],
+        })
+
     # `enforced` decides whether anything is applied, so an absent field and an
     # explicit `false` must not look alike in the logs: the first is a service
     # that forgot the field (and the guild silently never gets its roles), the
@@ -266,6 +291,7 @@ def parse_verdict(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         "verdict": verdict,
         "score": score,
         "reasons": [str(r) for r in reasons],
+        "matches": matches,
         "enforced": bool(data.get("enforced", False)),
         # Kept so the guild's log card can say "the service never sent the
         # field" rather than the ambiguous "shadow mode".
