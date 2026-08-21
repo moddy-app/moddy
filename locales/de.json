@@ -785,6 +785,21 @@
         "case_id": "Fall-ID",
         "sent_by": "Gesendet von [**{guild}**]({guild_url}) (`{guild_id}`)"
       },
+      "expiry_dm": {
+        "title": "Deine Strafe ist abgelaufen",
+        "body": "Die gegen dich erfasste Strafe ist beendet.",
+        "ban_title": "Dein Bann ist abgelaufen",
+        "ban_body": "Dein temporärer Bann wurde aufgehoben — du kannst dem Server wieder beitreten.",
+        "mute_title": "Deine Auszeit ist abgelaufen",
+        "mute_body": "Deine Auszeit ist vorbei — du kannst wieder auf dem Server schreiben.",
+        "warn_title": "Deine Verwarnung ist abgelaufen",
+        "warn_body": "Deine Verwarnung ist abgelaufen und zählt nicht mehr gegen dich.",
+        "expired_at": "Abgelaufen",
+        "case_id": "Fallnummer",
+        "rejoin": "Server wieder beitreten",
+        "invite_note": "Diese Einladung ist einmalig nutzbar und läuft in 7 Tagen ab.",
+        "sent_by": "Gesendet von [**{guild}**]({guild_url}) (`{guild_id}`)"
+      },
       "errors": {
         "invalid_duration_title": "Ungültige Dauer",
         "invalid_duration": "Verwende Formate wie `7d`, `24h`, `30m`, oder lasse das Feld leer für dauerhaft.",

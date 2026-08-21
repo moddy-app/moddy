@@ -119,6 +119,9 @@ class ModdyBot(ModdyFrameworkBot):
         from services.global_sanction_service import GlobalSanctionService
         # Moddy-team global sanctions: grouped cases, one notice, one countdown
         self.global_sanctions = GlobalSanctionService(self)
+        from services.expiration_notifier import ExpirationNotifier
+        # Expired sanctions: lift the Discord action + notify the subject
+        self.expirations = ExpirationNotifier(self)
         from services.precedent_service import PrecedentService
         self.precedents = PrecedentService(self)  # automod server precedents (RAG)
         from services.transcription_service import TranscriptionService
@@ -2017,7 +2020,9 @@ class ModdyBot(ModdyFrameworkBot):
         """Expire temporary moderation sanctions whose deadline has passed.
 
         Flips each due sanction to ``expired``, logs the timeline event and
-        recomputes the parent case status (see db/repositories/moderation.py).
+        recomputes the parent case status (see db/repositories/moderation.py),
+        then hands the expired rows to ``self.expirations`` so the Discord
+        action is reversed and the subject is notified.
         """
         if not self.db:
             return
@@ -2027,32 +2032,11 @@ class ModdyBot(ModdyFrameworkBot):
             logger.error(f"Error expiring moderation sanctions: {e}", exc_info=True)
             return
 
-        # Reverse the Discord side of any expired guild ban (temporary bans):
-        # a timeout (mute) is auto-cleared by Discord, but a ban must be lifted
-        # explicitly when its case sanction expires.
-        for row in expired or []:
-            try:
-                # A temporary global sanction (limitation / suspension) has no
-                # Discord side to reverse — it only has to stop applying.
-                if row.get("case_type") == "global":
-                    subject_type = row.get("subject_type") or global_sanctions.SUBJECT_USER
-                    global_sanctions.invalidate(self, subject_type, row.get("subject_id"))
-                    continue
-                if row.get("action") != "ban" or row.get("case_type") != "guild":
-                    continue
-                if row.get("scope_type") != "discord_guild" or not row.get("scope_id"):
-                    continue
-                guild = self.get_guild(int(row["scope_id"]))
-                if guild is None or not guild.me.guild_permissions.ban_members:
-                    continue
-                await guild.unban(
-                    discord.Object(id=int(row["subject_id"])),
-                    reason="[Automod] temporary ban expired",
-                )
-            except (discord.NotFound, discord.Forbidden, discord.HTTPException):
-                continue
-            except Exception as e:
-                logger.error(f"Error reversing expired sanction: {e}", exc_info=True)
+        # Reverse the Discord side of each expired sanction (a temporary ban has
+        # to be lifted explicitly; a timeout is auto-cleared by Discord) and DM
+        # the subject that it is over — with an invite back when it was a ban.
+        # See services/expiration_notifier.py.
+        await self.expirations.process(expired)
 
     @case_expiry.before_loop
     async def before_case_expiry(self):

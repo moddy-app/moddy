@@ -785,6 +785,21 @@
         "case_id": "Case ID",
         "sent_by": "Sent by [**{guild}**]({guild_url}) (`{guild_id}`)"
       },
+      "expiry_dm": {
+        "title": "Your sanction has expired",
+        "body": "The sanction recorded against you has run out.",
+        "ban_title": "Your ban has expired",
+        "ban_body": "Your temporary ban has been lifted — you can join the server again.",
+        "mute_title": "Your timeout has expired",
+        "mute_body": "Your timeout is over — you can talk in the server again.",
+        "warn_title": "Your warning has expired",
+        "warn_body": "Your warning has expired and no longer counts against you.",
+        "expired_at": "Expired",
+        "case_id": "Case ID",
+        "rejoin": "Rejoin the server",
+        "invite_note": "This invite is single-use and expires in 7 days.",
+        "sent_by": "Sent by [**{guild}**]({guild_url}) (`{guild_id}`)"
+      },
       "errors": {
         "invalid_duration_title": "Invalid Duration",
         "invalid_duration": "Use formats like `7d`, `24h`, `30m`, or leave empty for permanent.",

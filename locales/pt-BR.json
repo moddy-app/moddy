@@ -785,6 +785,21 @@
         "case_id": "ID do Caso",
         "sent_by": "Enviado por [**{guild}**]({guild_url}) (`{guild_id}`)"
       },
+      "expiry_dm": {
+        "title": "Sua sanção expirou",
+        "body": "A sanção registrada contra você chegou ao fim.",
+        "ban_title": "Seu banimento expirou",
+        "ban_body": "Seu banimento temporário foi removido — você pode entrar no servidor novamente.",
+        "mute_title": "Seu castigo expirou",
+        "mute_body": "Seu castigo terminou — você pode falar no servidor novamente.",
+        "warn_title": "Seu aviso expirou",
+        "warn_body": "Seu aviso expirou e não conta mais contra você.",
+        "expired_at": "Expirou",
+        "case_id": "N.º do caso",
+        "rejoin": "Entrar no servidor",
+        "invite_note": "Este convite é de uso único e expira em 7 dias.",
+        "sent_by": "Enviado por [**{guild}**]({guild_url}) (`{guild_id}`)"
+      },
       "errors": {
         "invalid_duration_title": "Duração Inválida",
         "invalid_duration": "Use formatos como `7d`, `24h`, `30m`, ou deixe em branco para permanente.",

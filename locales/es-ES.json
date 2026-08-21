@@ -785,6 +785,21 @@
         "case_id": "ID de caso",
         "sent_by": "Enviado por [**{guild}**]({guild_url}) (`{guild_id}`)"
       },
+      "expiry_dm": {
+        "title": "Tu sanción ha expirado",
+        "body": "La sanción registrada en tu contra ha llegado a su fin.",
+        "ban_title": "Tu expulsión ha expirado",
+        "ban_body": "Tu expulsión temporal ha sido levantada — puedes volver a unirte al servidor.",
+        "mute_title": "Tu aislamiento ha expirado",
+        "mute_body": "Tu aislamiento ha terminado — puedes volver a hablar en el servidor.",
+        "warn_title": "Tu advertencia ha expirado",
+        "warn_body": "Tu advertencia ha expirado y ya no cuenta en tu contra.",
+        "expired_at": "Expirada",
+        "case_id": "N.º de caso",
+        "rejoin": "Volver al servidor",
+        "invite_note": "Esta invitación es de un solo uso y caduca en 7 días.",
+        "sent_by": "Enviado por [**{guild}**]({guild_url}) (`{guild_id}`)"
+      },
       "errors": {
         "invalid_duration_title": "Duración no válida",
         "invalid_duration": "Usa formatos como `7d`, `24h`, `30m`, o déjalo vacío para permanente.",
