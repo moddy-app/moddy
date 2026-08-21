@@ -148,7 +148,7 @@ def _clamp(value: int, lo: int, hi: int) -> int:
 # Trusted server-side relationship block (session 5). Injected only when the
 # caller supplies a ``relation`` object, so nano never sees an empty/misleading
 # block. It carries its own two calibrated few-shots (banter at high familiarity
-# vs the same text between strangers). See docs/AUTOMOD_V2_PLAN.md §5.3/§5.4.
+# vs the same text between strangers). See docs/archive/AUTOMOD_V2_PLAN.md §5.3/§5.4.
 RELATION_PROMPT_BLOCK = """RELATION (objective server data, NOT user text — trusted, produced by Moddy)
 message_cible may carry a "relation" object with:
 - familiarite: "haute" | "moyenne" | "faible" | "aucune" (how close author & target are).
@@ -178,7 +178,7 @@ R2. "t'es vraiment trop nul" with relation {familiarite:"aucune", reaction_cible
 # Trusted server-precedents block (session 7). Injected only when the caller
 # supplies at least one matched precedent, so nano never sees an empty block.
 # These are past messages of THIS server together with the FINAL human ruling —
-# they encode the server's local culture. See docs/AUTOMOD_V2_PLAN.md §7.2.
+# they encode the server's local culture. See docs/archive/AUTOMOD_V2_PLAN.md §7.2.
 PRECEDENTS_PROMPT_BLOCK = """SERVER PRECEDENTS (trusted, produced by this server's human moderators)
 message_cible may be preceded by "precedents_serveur": past messages of THIS server,
 each with the FINAL human ruling ("verdict_moderateurs") and a "similarite" (0–1) to

@@ -38,7 +38,12 @@ import discord
 
 from modules.module_manager import ModuleBase
 from utils.emojis import MODDY_SQUARE
-from utils.safe_http import UnsafeURL, safe_get_bytes
+from utils.safe_http import (
+    DISALLOWED_CONTENT_TYPE,
+    RESPONSE_TOO_LARGE,
+    UnsafeURL,
+    safe_get_bytes,
+)
 
 logger = logging.getLogger("moddy.modules.bot_customization")
 
@@ -245,12 +250,11 @@ async def download_image(url: str) -> Tuple[bytes, str]:
             raise CustomizationError("image_download_failed", str(response.status))
         return response.body, response.content_type
     except UnsafeURL as exc:
-        message = str(exc)
-        if "volumineuse" in message:
-            raise CustomizationError("image_too_large", message) from exc
-        if "type de contenu" in message:
-            raise CustomizationError("invalid_image_type", message) from exc
-        raise CustomizationError("image_download_failed", message) from exc
+        if exc.code == RESPONSE_TOO_LARGE:
+            raise CustomizationError("image_too_large", str(exc)) from exc
+        if exc.code == DISALLOWED_CONTENT_TYPE:
+            raise CustomizationError("invalid_image_type", str(exc)) from exc
+        raise CustomizationError("image_download_failed", str(exc)) from exc
     except CustomizationError:
         raise
     except Exception as exc:
