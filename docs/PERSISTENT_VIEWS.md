@@ -194,7 +194,7 @@ Persistent views cannot remember anything between clicks. That is actually
 
 ### Working-copy / pending edits
 Several guild config panels (e.g. `AutoRoleConfigView`,
-`WelcomeChannelConfigView`) hold a `working_config` with unsaved changes in
+`StarboardConfigView`) hold a `working_config` with unsaved changes in
 memory. After a restart — or when a click falls back to the shared
 registered shell (see the mutate-and-resend gotcha below) — those are lost.
 **Accepted UX**: the view rebuilds from the DB-saved config on the next

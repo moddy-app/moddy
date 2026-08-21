@@ -965,42 +965,60 @@
     },
     "welcome_dm": {
       "name": "Welcome DM",
-      "description": "Welcome message via private message",
+      "description": "Welcome messages sent in private",
+      "default_message": "Welcome to **{server}**, {display_name}!\n-# You are our **{member_count}**th member.",
       "config": {
-        "title": "Welcome DM Configuration",
-        "description": "Configure the welcome message sent privately (DM) to new members.",
-        "message": {
-          "section_title": "Welcome message",
-          "section_description": "Customize the message. Available variables: {user}, {username}, {server}, {member_count}",
-          "edit_button": "Edit message",
-          "modal": {
-            "label": "Welcome message",
-            "placeholder": "Welcome to {server}!"
-          }
-        },
-        "embed": {
-          "section_title": "Embed options",
-          "section_description": "Customize the embed appearance",
-          "toggle": "Enable embed",
-          "edit_title": "Edit title",
-          "edit_description": "Edit description",
-          "edit_color": "Edit color",
-          "thumbnail": "Show avatar",
-          "author": "Show as author",
-          "title_modal": {
-            "label": "Embed title",
-            "placeholder": "Welcome!"
-          },
-          "description_modal": {
-            "label": "Embed description",
-            "placeholder": "Leave empty to use the welcome message"
-          },
-          "color_modal": {
-            "label": "Embed color (hex)",
-            "placeholder": "#5865F2",
-            "error": "Invalid color! Use the #RRGGBB format"
-          }
+        "title": "Welcome DMs",
+        "description": "Send a private message to new members when they join the server.",
+        "limit": "Up to {max} welcome DMs per server.",
+        "manage_placeholder": "Manage a welcome DM",
+        "list": {
+          "title": "Configured messages",
+          "count": "{count}/{max} welcome DM(s)",
+          "empty": "No welcome DM yet. Add one to get started.",
+          "entry_label": "Message {index}",
+          "paused": "Paused"
         }
+      },
+      "buttons": {
+        "add": "Add"
+      },
+      "add": {
+        "success": "Welcome DM added."
+      },
+      "customize": {
+        "title": "Message",
+        "section_description": "The text that gets sent, and its accent colour",
+        "button": "Customize the message",
+        "modal_title": "Customize the message",
+        "message_label": "Message",
+        "message_description": "Full text — include the title with ##, # or ###.",
+        "color_label": "Accent color (hex)",
+        "color_description": "Like #FF0000. Leave empty for the default color.",
+        "placeholders_header": "Available placeholders:",
+        "ph_server": "Server name",
+        "ph_user": "User mention",
+        "ph_display_name": "Display name",
+        "ph_username": "Username",
+        "ph_member_count": "Member count",
+        "ph_timestamp": "Join date — e.g. <t:{timestamp}:R>"
+      },
+      "manage": {
+        "title": "Welcome DM",
+        "paused_notice": "This message is paused: it is not sent to new members.",
+        "preview_title": "Current message",
+        "preview_description": "The text as stored, with placeholders left as-is",
+        "pause": "Pause",
+        "resume": "Resume",
+        "remove": "Remove",
+        "removed": "Welcome DM removed."
+      },
+      "errors": {
+        "too_many": "You cannot have more than {max} welcome DMs in this server",
+        "duplicate_id": "Two welcome DMs share the same identifier",
+        "empty_message": "The welcome message cannot be empty",
+        "message_too_long": "The welcome message cannot exceed {max} characters",
+        "invalid_color": "The accent color is invalid"
       }
     },
     "interserver": {

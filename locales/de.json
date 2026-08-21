@@ -965,42 +965,60 @@
     },
     "welcome_dm": {
       "name": "Willkommens-DM",
-      "description": "Willkommensnachricht per Direktnachricht",
+      "description": "Willkommensnachrichten per Direktnachricht",
+      "default_message": "Willkommen auf **{server}**, {display_name}!\n-# Du bist unser **{member_count}**. Mitglied.",
       "config": {
-        "title": "Konfiguration der Willkommens-DM",
-        "description": "Konfiguriere die Willkommensnachricht, die neuen Mitgliedern privat (per DM) gesendet wird.",
-        "message": {
-          "section_title": "Willkommensnachricht",
-          "section_description": "Passe die Nachricht an. Verfügbare Variablen: {user}, {username}, {server}, {member_count}",
-          "edit_button": "Nachricht bearbeiten",
-          "modal": {
-            "label": "Willkommensnachricht",
-            "placeholder": "Willkommen auf {server}!"
-          }
-        },
-        "embed": {
-          "section_title": "Embed-Optionen",
-          "section_description": "Passe das Erscheinungsbild des Embeds an",
-          "toggle": "Embed aktivieren",
-          "edit_title": "Titel bearbeiten",
-          "edit_description": "Beschreibung bearbeiten",
-          "edit_color": "Farbe bearbeiten",
-          "thumbnail": "Avatar anzeigen",
-          "author": "Als Autor anzeigen",
-          "title_modal": {
-            "label": "Embed-Titel",
-            "placeholder": "Willkommen!"
-          },
-          "description_modal": {
-            "label": "Embed-Beschreibung",
-            "placeholder": "Leer lassen, um die Willkommensnachricht zu verwenden"
-          },
-          "color_modal": {
-            "label": "Embed-Farbe (Hex)",
-            "placeholder": "#5865F2",
-            "error": "Ungültige Farbe! Verwende das Format #RRGGBB"
-          }
+        "title": "Willkommens-Direktnachrichten",
+        "description": "Sendet neuen Mitgliedern eine Direktnachricht, wenn sie dem Server beitreten.",
+        "limit": "Bis zu {max} Direktnachrichten pro Server.",
+        "manage_placeholder": "Eine Direktnachricht verwalten",
+        "list": {
+          "title": "Eingerichtete Nachrichten",
+          "count": "{count}/{max} Direktnachricht(en)",
+          "empty": "Noch keine Direktnachricht. Füge eine hinzu, um zu starten.",
+          "entry_label": "Nachricht {index}",
+          "paused": "Pausiert"
         }
+      },
+      "buttons": {
+        "add": "Hinzufügen"
+      },
+      "add": {
+        "success": "Willkommens-Direktnachricht hinzugefügt."
+      },
+      "customize": {
+        "title": "Nachricht",
+        "section_description": "Der gesendete Text und seine Akzentfarbe",
+        "button": "Nachricht anpassen",
+        "modal_title": "Nachricht anpassen",
+        "message_label": "Nachricht",
+        "message_description": "Vollständiger Text — Titel mit ##, # oder ### einfügen.",
+        "color_label": "Akzentfarbe (Hex)",
+        "color_description": "Wie #FF0000. Leer lassen für die Standardfarbe.",
+        "placeholders_header": "Verfügbare Platzhalter:",
+        "ph_server": "Servername",
+        "ph_user": "Erwähnung des Nutzers",
+        "ph_display_name": "Anzeigename",
+        "ph_username": "Benutzername",
+        "ph_member_count": "Mitgliederzahl",
+        "ph_timestamp": "Beitrittsdatum — z. B. <t:{timestamp}:R>"
+      },
+      "manage": {
+        "title": "Willkommens-Direktnachricht",
+        "paused_notice": "Diese Nachricht ist pausiert: Sie wird neuen Mitgliedern nicht gesendet.",
+        "preview_title": "Aktuelle Nachricht",
+        "preview_description": "Der gespeicherte Text, Platzhalter unverändert",
+        "pause": "Pausieren",
+        "resume": "Fortsetzen",
+        "remove": "Entfernen",
+        "removed": "Willkommens-Direktnachricht entfernt."
+      },
+      "errors": {
+        "too_many": "Du kannst auf diesem Server nicht mehr als {max} Willkommens-Direktnachrichten haben",
+        "duplicate_id": "Zwei Direktnachrichten haben dieselbe Kennung",
+        "empty_message": "Die Willkommensnachricht darf nicht leer sein",
+        "message_too_long": "Die Willkommensnachricht darf {max} Zeichen nicht überschreiten",
+        "invalid_color": "Die Akzentfarbe ist ungültig"
       }
     },
     "interserver": {

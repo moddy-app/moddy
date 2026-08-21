@@ -64,7 +64,7 @@ moddy/
 ├── modules/                   # Server-level configurable features
 │   ├── module_manager.py      #   ModuleManager + ModuleBase class
 │   ├── welcome_channel.py     #   Welcome messages in channels (up to 5, Components V2)
-│   ├── welcome_dm.py          #   Welcome DM to new members
+│   ├── welcome_dm.py          #   Welcome DMs to new members (up to 3, Components V2)
 │   ├── auto_role.py           #   Auto role assignment
 │   ├── auto_restore_roles.py  #   Role restoration on rejoin
 │   ├── starboard.py           #   Reaction-based starboard
@@ -82,6 +82,7 @@ moddy/
 │       ├── automod_ai_config.py
 │       ├── automod_ai_precedents_view.py  # Learned-precedents browser (S7)
 │       ├── welcome_channel_config.py      # Welcome messages list + add/manage (Modal V2)
+│       ├── welcome_dm_config.py           # Welcome DMs list + add/manage (Modal V2)
 │       ├── voice_transcription_config.py  # Voice transcription (status, mode, channels)
 │       ├── bot_customization_config.py    # Bot customization (identity Modal V2 + name style)
 │
@@ -366,7 +367,8 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/TEXT_TOOLS.md](docs/TEXT_TOOLS.md) | AI text tools — `/fix`, `/rephrase`, `/summarize` (models, presets, mention stripping) |
 | [docs/VOICE_TRANSCRIPTION.md](docs/VOICE_TRANSCRIPTION.md) | Voice transcription — context menu, module, Groq Whisper, cost control |
 | [docs/MODULE_SYSTEM.md](docs/MODULE_SYSTEM.md) | Creating or modifying server modules |
-| [docs/WELCOME_MESSAGES.md](docs/WELCOME_MESSAGES.md) | Welcome messages module — config schema, placeholders, backend/dashboard contract |
+| [docs/WELCOME_MESSAGES.md](docs/WELCOME_MESSAGES.md) | Welcome messages module (`welcome_channel`) — config schema, placeholders, backend/dashboard contract |
+| [docs/WELCOME_DM.md](docs/WELCOME_DM.md) | Welcome DM module (`welcome_dm`) — config schema, placeholders, backend/dashboard contract |
 | [docs/ALTGUARD.md](docs/ALTGUARD.md) | **AltGuard** — anti multi-account verification gate, consent, service contract, staff commands |
 | [docs/ALTGUARD_INTEGRATION.md](docs/ALTGUARD_INTEGRATION.md) | AltGuard ↔ bot exact wire contract — payload types, error codes, debugging |
 | [docs/AUTOMOD_AI.md](docs/AUTOMOD_AI.md) | Automod AI — detection pipeline, nano decider, scalable features, rules safety check |
