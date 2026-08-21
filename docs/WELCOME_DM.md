@@ -155,6 +155,9 @@ Errors are returned as localized strings under `modules.welcome_dm.errors.*`.
 
 ## 5. Dashboard / backend integration
 
+> Full backend guide (SQL, JSON/TS types, validation checklist, Pub/Sub
+> payload): [WELCOME_DM_BACKEND.md](WELCOME_DM_BACKEND.md).
+
 - **Read**: `guilds.data.modules.welcome_dm`; apply the v1 fallback of §2.
 - **Write**: replace the whole `welcome_dm` object (the bot always writes the
   full list — there is no per-entry patch endpoint). Keep `version: 2`.

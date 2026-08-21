@@ -369,6 +369,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/MODULE_SYSTEM.md](docs/MODULE_SYSTEM.md) | Creating or modifying server modules |
 | [docs/WELCOME_MESSAGES.md](docs/WELCOME_MESSAGES.md) | Welcome messages module (`welcome_channel`) — config schema, placeholders, backend/dashboard contract |
 | [docs/WELCOME_DM.md](docs/WELCOME_DM.md) | Welcome DM module (`welcome_dm`) — config schema, placeholders, backend/dashboard contract |
+| [docs/WELCOME_DM_BACKEND.md](docs/WELCOME_DM_BACKEND.md) | Welcome DM **backend implementation guide** — SQL, JSON/TS types, validation, `module_updated` payload |
 | [docs/ALTGUARD.md](docs/ALTGUARD.md) | **AltGuard** — anti multi-account verification gate, consent, service contract, staff commands |
 | [docs/ALTGUARD_INTEGRATION.md](docs/ALTGUARD_INTEGRATION.md) | AltGuard ↔ bot exact wire contract — payload types, error codes, debugging |
 | [docs/AUTOMOD_AI.md](docs/AUTOMOD_AI.md) | Automod AI — detection pipeline, nano decider, scalable features, rules safety check |
