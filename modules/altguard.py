@@ -18,9 +18,10 @@ What this module owns:
   ``modules/auto_role.py``, which must not hand out its roles to a human who
   has not passed the gate.
 
-What it deliberately does NOT own: the decision. Score and reasons are audit
-data, never shown to the verified user (that would hand out a bypass oracle).
-See docs/ALTGUARD.md.
+What it deliberately does NOT own: the decision. Score, reasons and matches
+(the accounts a verification matched with) are audit data for the log
+channel only, never shown to the verified user (that would hand out a
+bypass oracle). See docs/ALTGUARD.md.
 """
 
 from __future__ import annotations
@@ -527,6 +528,7 @@ class AltGuardModule(ModuleBase):
             verdict=decision,
             score=verdict['score'],
             reasons=verdict['reasons'],
+            matches=verdict.get('matches', []),
             enforced=enforced,
             enforced_missing=verdict.get('enforced_missing', False),
             verification_id=verdict['verification_id'],

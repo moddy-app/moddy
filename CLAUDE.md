@@ -158,6 +158,7 @@ moddy/
 │   ├── global_sanction_views.py #  Global sanction UI (notice DMs, staff panels, Modals V2)
 │   ├── embeds.py
 │   ├── announcement_setup.py
+│   ├── task_signature.py      #   moddy:tasks HMAC verification (signature, freshness, anti-replay)
 │   └── incognito.py
 │
 ├── gateway/                   # Centralized API gateway (ALL external API calls go here)
@@ -214,6 +215,7 @@ moddy/
     ├── test_global_sanctions.py   # Global sanction levels, cache TTL, user/guild context
     ├── test_global_sanction_flow.py # Groups, notices, countdown, Redis events, allowlists
     ├── test_bot_customization.py  # Bot customization validation (bio budget, styles)
+    ├── test_task_signature.py #   moddy:tasks HMAC contract (canonicalization, replay, dedup)
     └── test_transcription.py  #   Voice transcription helpers, guard rails, cards
 ```
 
@@ -386,6 +388,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 |---|---|
 | [docs/API_GATEWAY.md](docs/API_GATEWAY.md) | API Gateway — all external API calls (OpenAI, DeepL, Groq), quotas, provider rate limits, resilience, logging |
 | [docs/BACKEND-INTEGRATION.md](docs/BACKEND-INTEGRATION.md) | Bot ↔ Backend integration (Redis, Pub/Sub, Streams, `/status`) |
+| [docs/TASK_SIGNATURE.md](docs/TASK_SIGNATURE.md) | **`moddy:tasks` HMAC signature** — canonicalization, anti-replay, `TASK_STREAM_SECRET`, deployment order |
 | [docs/REDIS_COMMUNICATION.md](docs/REDIS_COMMUNICATION.md) | **Redis inter-service communication** — Pub/Sub vs Streams vs plain keys, current channel/stream inventory, checklist for wiring up a new Redis-based service |
 | [docs/SOCIAL_NOTIFICATIONS.md](docs/SOCIAL_NOTIFICATIONS.md) | Social Notifications module + `moddy-feeds` Redis contract (what the backend must mirror) |
 | [docs/SOCIAL_NOTIFICATIONS_CHANGES_2026-06-14.md](docs/SOCIAL_NOTIFICATIONS_CHANGES_2026-06-14.md) | Backend/dashboard change spec: customizable message columns, quota, error codes, task fields |

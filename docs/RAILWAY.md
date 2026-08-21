@@ -21,6 +21,23 @@ Ce document liste toutes les variables d'environnement à configurer dans Railwa
 **Valeur :** `<mot-de-passe-redis>` (optionnel si Redis sans auth)
 **Description :** Mot de passe Redis, si requis
 
+### TASK_STREAM_SECRET
+**Valeur :** `<générer-avec-secrets.token_urlsafe(48)>` (32 caractères minimum)
+**Description :** Secret HMAC partagé backend ⇄ bot signant chaque entrée du
+stream `moddy:tasks`. **Même valeur des deux côtés.** Sans lui, le bot rejette
+toutes les tâches (bot customization, annonces staff, `update_panel`, sanctions
+dashboard) — voir [TASK_SIGNATURE.md](TASK_SIGNATURE.md)
+**Génération :** `python -c "import secrets; print(secrets.token_urlsafe(48))"`
+**Note :** ne **jamais** réutiliser `REDIS_PASSWORD` — le modèle de menace est
+celui d'un attaquant qui a déjà l'accès Redis
+
+### TASK_STREAM_ALLOW_UNSIGNED
+**Valeur :** `false` (défaut)
+**Description :** Fenêtre de déploiement uniquement : accepte les entrées
+`moddy:tasks` **sans** signature tant que le backend ne signe pas encore. Une
+signature erronée reste toujours rejetée. À repasser à `false` dès que le
+backend est en production (voir [TASK_SIGNATURE.md](TASK_SIGNATURE.md) §6)
+
 ## Sécurité de l'API interne
 
 ### INTERNAL_API_SECRET
@@ -90,7 +107,7 @@ déjà configuré (`REDIS_URL`), rien à ajouter — voir [ALTGUARD.md](ALTGUARD
 - [ ] `REDIS_URL` (partagée avec le backend)
 - [ ] `REDIS_PASSWORD` (si Redis avec auth)
 - [ ] `INTERNAL_API_SECRET` (obligatoire, protège `/status`)
-- [ ] `TASK_STREAM_SECRET` (obligatoire et partagé avec le backend)
+- [ ] `TASK_STREAM_SECRET` (obligatoire, identique côté backend — sinon `moddy:tasks` est inopérant)
 - [ ] `PORT` → `3000`
 - [ ] `ENV_MODE` → `production`
 - [ ] `DEBUG` → `False`

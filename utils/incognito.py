@@ -7,6 +7,7 @@ import discord
 from discord import app_commands
 from typing import Optional
 import functools
+import types
 
 
 def add_incognito_option(default_value: bool = True):
@@ -57,7 +58,22 @@ def add_incognito_option(default_value: bool = True):
         wrapper.__annotations__ = func.__annotations__.copy()
         wrapper.__annotations__['incognito'] = Optional[bool]
 
-        return wrapper
+        # discord.py resolves string annotations (PEP 563, used by cogs with
+        # `from __future__ import annotations`) against `callback.__globals__`.
+        # A plain closure's __globals__ is fixed to this module, so a command
+        # parameter annotated with a constant from its own cog module (e.g.
+        # `app_commands.Range[str, 1, MAX_INPUT_LENGTH]`) would fail to resolve
+        # and silently break the whole command tree sync. Rebind the wrapper to
+        # the original callback's globals so lookups happen in the right module.
+        rebound = types.FunctionType(
+            wrapper.__code__, func.__globals__, wrapper.__name__,
+            wrapper.__defaults__, wrapper.__closure__,
+        )
+        rebound = functools.wraps(func)(rebound)
+        rebound.__annotations__ = wrapper.__annotations__
+        rebound.__kwdefaults__ = wrapper.__kwdefaults__
+
+        return rebound
 
     return decorator
 

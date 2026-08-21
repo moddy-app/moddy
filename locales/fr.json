@@ -1975,6 +1975,7 @@
         "member": "Membre",
         "score": "Score",
         "reasons": "Signaux",
+        "matches": "Comptes liés",
         "reference": "Référence",
         "shadow": "Mode observation : le verdict est journalisé, aucune action n'a été appliquée.",
         "manual_verify": "Vérification manuelle",
