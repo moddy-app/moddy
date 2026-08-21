@@ -12,7 +12,7 @@ The module is **pure**: no I/O, no Discord, no DB. The caller
 age on the server, the guild severity/config) and translates the returned cran
 into Discord actions. This keeps the whole thing table-testable to a dry.
 
-See docs/AUTOMOD_AI.md §2bis and docs/AUTOMOD_V2_PLAN.md (Session 2).
+See docs/AUTOMOD_AI.md §2bis and docs/archive/AUTOMOD_V2_PLAN.md (Session 2).
 """
 
 from __future__ import annotations

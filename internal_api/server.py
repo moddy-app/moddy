@@ -14,6 +14,7 @@ requis partout sauf /health et /ping (protège les données des accès non autor
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+import hmac
 import logging
 import os
 import time
@@ -44,12 +45,16 @@ def get_bot():
 
 
 def check_auth(request: Request) -> bool:
-    """Vérifie le header Authorization si INTERNAL_API_SECRET est configuré."""
+    """Vérifie le secret partagé et échoue fermé s'il est absent."""
     secret = os.getenv("INTERNAL_API_SECRET")
     if not secret:
-        return True  # Pas de secret configuré → accès libre (dev)
+        logger.error("INTERNAL_API_SECRET absent: accès interne refusé")
+        return False
     auth = request.headers.get("Authorization", "")
-    return auth == f"Bearer {secret}"
+    scheme, separator, value = auth.partition(" ")
+    if separator != " " or scheme.lower() != "bearer" or not value:
+        return False
+    return hmac.compare_digest(value.encode(), secret.encode())
 
 
 # Backward-compatible alias (ancien nom privé).

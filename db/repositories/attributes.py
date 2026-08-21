@@ -18,6 +18,8 @@ class AttributeRepository:
         Pour les attributs avec valeur : on stocke la valeur (ex: LANG=FR)
         Si value est None, on supprime l'attribut
         """
+        if entity_type not in {'user', 'guild'}:
+            raise ValueError("entity_type must be 'user' or 'guild'")
         table = 'users' if entity_type == 'user' else 'guilds'
 
         async with self.pool.acquire() as conn:

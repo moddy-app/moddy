@@ -139,6 +139,11 @@ class ModdyDatabase(
 
     async def _update_entity_data(self, table: str, id_column: str, entity_id: int, path: str, value: Any):
         """Update a specific part of an entity's data (shared by update_user_data and update_guild_data)"""
+        if (table, id_column) not in {
+            ("users", "user_id"),
+            ("guilds", "guild_id"),
+        }:
+            raise ValueError("Unsupported entity table")
         async with self.pool.acquire() as conn:
             # First, ensure the entity exists
             await conn.execute(f"""
@@ -703,7 +708,7 @@ class ModdyDatabase(
             # appeal, "false positive" button). `verdict_humain` is filled when a
             # moderator annotates the card; `imported` flips once the candidate
             # has been folded into golden.jsonl (`make eval-import`). See
-            # docs/AUTOMOD_AI.md (Évaluation) and docs/AUTOMOD_V2_PLAN.md (Session 3).
+            # docs/AUTOMOD_AI.md (Évaluation) and docs/archive/AUTOMOD_V2_PLAN.md (Session 3).
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS automod_eval_candidates (
                     id             UUID PRIMARY KEY,
@@ -740,7 +745,7 @@ class ModdyDatabase(
             # before the decision call. `embedding` is a float32-packed BYTEA of
             # the normalised vector (pgvector-free; cosine is a dot product in
             # Python). Capped at PRECEDENT_MAX_PER_GUILD, oldest evicted. See
-            # docs/AUTOMOD_AI.md §2quinquies and docs/AUTOMOD_V2_PLAN.md (Session 7).
+            # docs/AUTOMOD_AI.md §2quinquies and docs/archive/AUTOMOD_V2_PLAN.md (Session 7).
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS automod_precedents (
                     id             BIGSERIAL PRIMARY KEY,

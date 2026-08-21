@@ -114,7 +114,7 @@ class StaffCommand:
             raw = " ".join(f"{k}={v}" for k, v in ctx.options.items() if v is not None)
         raw = raw.strip()
         if self.sensitive and raw:
-            return raw[:30] + ("…" if len(raw) > 30 else "")
+            return "[REDACTED]"
         return raw[:100] + ("…" if len(raw) > 100 else "")
 
     @staticmethod
