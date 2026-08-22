@@ -77,6 +77,8 @@ dependency.
 | Personal command `/mycases` | `cogs/cases_user.py` |
 | Server command `/cases` | `cogs/cases_server.py` |
 | Periodic expiry job | `bot.py::case_expiry` (every 2 min) |
+| **Expiration consequences + subject DM** | `services/expiration_notifier.py`, `utils/expiration_views.py` |
+| Shared invite creation | `utils/invites.py` |
 
 ---
 
@@ -292,6 +294,39 @@ the `/mycases` server filter).
 
 ---
 
+### 7bis. Expiration notifications
+
+Every two minutes `bot.py::case_expiry` flips due sanctions to `expired` and
+hands the rows to `bot.expirations`
+(`services/expiration_notifier.py::ExpirationNotifier`), which turns the DB
+change into what the subject actually experiences:
+
+| Expired sanction | Discord side | DM to the subject |
+|---|---|---|
+| `guild` / `ban` | the ban is **lifted** (`guild.unban`) | "your ban expired" + a **Rejoin the server** link button |
+| `guild` / `mute` | nothing — Discord clears the timeout itself | "your timeout is over" |
+| `guild` / `warn` | nothing | "your warning no longer counts" |
+| `global` / * | nothing — no Discord side | none (its own notice flow, see [GLOBAL_SANCTIONS.md](GLOBAL_SANCTIONS.md)) |
+
+The invite is **only** attached to an expired ban — the other actions never
+removed the member from the server — and only when the unban actually
+succeeded, so the DM never promises a way back that does not exist. It is
+built through `utils/invites.py::create_guild_invite` (first channel where
+Moddy holds *Create Invite*; rules → system → any text channel), single-use and
+valid for 7 days.
+
+The card (`utils/expiration_views.py::build_expiration_dm_view`) mirrors the
+sanction DM — same layout, same case link, same `sent by` footer — in green,
+and is written in the guild's `preferred_locale`. It holds only a **link**
+button, which carries no `custom_id` and triggers no interaction, so it stays
+valid forever without being registered as a persistent view.
+
+Nothing here is fatal: closed DMs, a member who left, a guild Moddy was removed
+from or one where it cannot create an invite each degrade to "no notification"
+while the expiry itself stands.
+
+---
+
 ## 8. Notes / open points
 
 - **Deletion**: FKs use `ON DELETE CASCADE`; no command deletes cases (moderation
@@ -337,7 +372,8 @@ they are recorded on that one case.
 computes the sanction and its `duree_heures`, so warns / mutes / bans can be
 temporary. A mute uses it as the timeout length; a ban becomes a *temp ban*
 whose `expires_at` is honoured by `bot.case_expiry`, which lifts the Discord ban
-when the sanction expires (mutes are auto-cleared by Discord).
+when the sanction expires (mutes are auto-cleared by Discord). The member is
+then DMed that the sanction is over — with an invite back for a ban (§7bis).
 
 A sanctioned member can **appeal** (see [AUTOMOD.md](AUTOMOD.md) §7):
 

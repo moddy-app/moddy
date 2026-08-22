@@ -154,6 +154,8 @@ moddy/
 │   ├── automod_render.py      #   Shared automod card helpers (barème breakdown, sanction name/accent)
 │   ├── transcription_views.py #   Voice transcription cards + persistent Transcribe button
 │   ├── appeal_views.py        #   Automod appeal UI (DM buttons + reviewer panels, persistent)
+│   ├── expiration_views.py    #   Sanction-expiration DM (unban/unmute/unwarn + invite)
+│   ├── invites.py             #   Shared guild invite creation (appeals, expirations)
 │   ├── moderation_cases.py    #   Cases domain model + enums + reference gen
 │   ├── global_sanctions.py    #   Global (Moddy-team) sanction levels: warn/limited/suspended
 │   ├── global_sanction_views.py #  Global sanction UI (notice DMs, staff panels, Modals V2)
@@ -186,6 +188,7 @@ moddy/
 │   ├── backend_client.py      #   Backend HTTP client
 │   ├── feeds_client.py        #   moddy-feeds Redis client (social notifications)
 │   ├── case_service.py        #   Scalable sanction→case entry point (source registry)
+│   ├── expiration_notifier.py #   Expired sanctions: lift the ban + DM the subject (invite)
 │   ├── global_sanction_service.py # Global sanctions: grouped cases, notice DM, 48h countdown, Redis
 │   ├── appeal_service.py      #   Automod sanction appeals (server / Moddy team, binding)
 │   ├── precedent_service.py   #   Automod server precedents (record + serve, RAG)
@@ -216,6 +219,7 @@ moddy/
     ├── test_global_sanctions.py   # Global sanction levels, cache TTL, user/guild context
     ├── test_global_sanction_flow.py # Groups, notices, countdown, Redis events, allowlists
     ├── test_bot_customization.py  # Bot customization validation (bio budget, styles)
+    ├── test_expiration_notifications.py # Expired sanctions: unban, invite, DM card
     ├── test_task_signature.py #   moddy:tasks HMAC contract (canonicalization, replay, dedup)
     └── test_transcription.py  #   Voice transcription helpers, guard rails, cards
 ```

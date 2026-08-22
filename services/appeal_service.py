@@ -216,23 +216,11 @@ class AppealService:
             pass
 
     async def _make_invite(self, guild: discord.Guild) -> Optional[str]:
-        me = guild.me
-        candidates = [guild.rules_channel, guild.system_channel]
-        candidates += [c for c in guild.text_channels]
-        for ch in candidates:
-            if ch is None:
-                continue
-            try:
-                if not ch.permissions_for(me).create_instant_invite:
-                    continue
-                invite = await ch.create_invite(
-                    max_age=86400, max_uses=1, unique=True,
-                    reason="[Automod] appeal review — reviewer investigation",
-                )
-                return invite.url
-            except (discord.Forbidden, discord.HTTPException):
-                continue
-        return None
+        from utils.invites import create_guild_invite
+
+        return await create_guild_invite(
+            guild, reason="[Automod] appeal review — reviewer investigation",
+        )
 
     async def _rerender_pending_panel(self, interaction: discord.Interaction, appeal: dict):
         """Rebuild the (still-pending) reviewer panel in place after a claim."""

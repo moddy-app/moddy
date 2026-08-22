@@ -554,17 +554,18 @@ class ModerationRepository:
         """Expire temporary sanctions whose ``expires_at`` has passed.
 
         Returns the list of expired sanctions (each a dict with ``action``,
-        ``case_type``, ``subject_type``, ``subject_id``, ``scope_type`` and
-        ``scope_id``) so the caller can reverse the matching Discord action
-        (e.g. unban a temporary ban). Each expiry logs an event and recomputes
-        the parent case status.
+        ``expires_at``, ``case_type``, ``reference``, ``subject_type``,
+        ``subject_id``, ``scope_type`` and ``scope_id``) so the caller can
+        reverse the matching Discord action (e.g. unban a temporary ban) and
+        notify the subject. Each expiry logs an event and recomputes the parent
+        case status.
         """
         expired: List[Dict[str, Any]] = []
         async with self.pool.acquire() as conn:
             due = await conn.fetch(
                 """
-                SELECT s.id, s.case_id, s.action,
-                       c.type AS case_type, c.subject_type, c.subject_id,
+                SELECT s.id, s.case_id, s.action, s.expires_at,
+                       c.type AS case_type, c.reference, c.subject_type, c.subject_id,
                        c.scope_type, c.scope_id
                 FROM case_sanctions s
                 JOIN cases c ON c.id = s.case_id

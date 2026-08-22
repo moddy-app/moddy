@@ -411,8 +411,9 @@ was easier not to" is not one.
   before deciding whether it needs migrating or removing.
 - **Every view with zero interactive children** (`AvatarView`, `BannerView`,
   `RollView`, `TextResultView`, static info/log cards, …) or whose only
-  children are `ButtonStyle.link` buttons (e.g. `SubscriptionView`) —
-  `bot.add_view()` on these is a no-op. Do not add `__persistent__`; there
+  children are `ButtonStyle.link` buttons (e.g. `SubscriptionView`, and
+  `utils/expiration_views.py::build_expiration_dm_view`, whose only control is
+  the *Rejoin the server* invite link) — `bot.add_view()` on these is a no-op. Do not add `__persistent__`; there
   is nothing to register.
 - **`utils/transcription_views.py::TranscribePromptView`** — the one-button
   message posted under a voice message. It is a `BaseView` with
