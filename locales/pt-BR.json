@@ -2496,6 +2496,15 @@
         "done_title": "Membro da Equipe Removido",
         "done": "{user} foi removido da equipe."
       },
+      "rank": {
+        "unknown_role_title": "Cargo desconhecido",
+        "unknown_role": "Cargo inválido. Cargos disponíveis: {roles}.",
+        "already_title": "Cargo já atribuído",
+        "already": "{user} já possui o cargo {role}.",
+        "done_title": "Cargo atribuído",
+        "done": "O cargo {role} foi atribuído a {user}.",
+        "hint": "Use `m.staff` para configurar as permissões e `m.unrank` para remover da equipe."
+      },
       "staff": {
         "title": "Gerenciamento de Equipe",
         "subtitle": "Atribua cargos e configure permissões, depois salve.",

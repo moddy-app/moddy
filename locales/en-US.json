@@ -2496,6 +2496,15 @@
         "done_title": "Staff Member Removed",
         "done": "{user} has been removed from the staff team."
       },
+      "rank": {
+        "unknown_role_title": "Unknown role",
+        "unknown_role": "Invalid role. Available roles: {roles}.",
+        "already_title": "Role already assigned",
+        "already": "{user} already has the {role} role.",
+        "done_title": "Role assigned",
+        "done": "The {role} role has been assigned to {user}.",
+        "hint": "Use `m.staff` to configure permissions, `m.unrank` to remove from the team."
+      },
       "staff": {
         "title": "Staff Management",
         "subtitle": "Assign roles and configure permissions, then save.",

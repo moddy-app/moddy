@@ -143,6 +143,19 @@ dedicated test for this
 (`test_no_duplicate_custom_ids_across_registered_views`) — it must pass
 before a new view is added to the registry.
 
+**`DynamicItem` templates must not overlap either.** discord.py keeps
+dynamic items in a dict keyed by the **compiled** pattern and dispatches to
+the first template that `fullmatch`es the clicked `custom_id`. Because
+`re.compile` caches, two `DynamicItem` classes declared with the *same*
+pattern string collapse into a **single** registry entry — the one
+registered last wins, and every click on the others dies with "This
+interaction failed". Give each class its own non-overlapping template
+(one action per template, or a disjoint `(?P<action>a|b)` alternation),
+never a shared "all actions" regex.
+`test_dynamic_item_templates_do_not_overlap` in
+`tests/test_persistent_views.py` enforces this — add new `DynamicItem`
+classes to `_dynamic_item_cases()` so they are covered.
+
 ### Never put in a `custom_id`
 - `locale` → fetch from interaction via `i18n.get_user_locale(interaction)`
 - Secrets, tokens, webhook URLs

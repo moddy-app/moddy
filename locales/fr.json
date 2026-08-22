@@ -2495,6 +2495,15 @@
         "done_title": "Membre retiré",
         "done": "{user} a été retiré de l'équipe staff."
       },
+      "rank": {
+        "unknown_role_title": "Rôle inconnu",
+        "unknown_role": "Rôle invalide. Rôles disponibles : {roles}.",
+        "already_title": "Rôle déjà attribué",
+        "already": "{user} possède déjà le rôle {role}.",
+        "done_title": "Rôle attribué",
+        "done": "Le rôle {role} a été attribué à {user}.",
+        "hint": "Utilise `m.staff` pour configurer les permissions, `m.unrank` pour retirer du staff."
+      },
       "staff": {
         "title": "Gestion du staff",
         "subtitle": "Attribue des rôles et configure les permissions, puis enregistre.",

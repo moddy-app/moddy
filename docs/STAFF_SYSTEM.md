@@ -112,6 +112,7 @@ All available via `/manage` (slash) or `m.` (message).
 | Command | What it does |
 |---------|-------------|
 | `/manage staff @user` | Open the unified rank + setstaff panel |
+| `/manage rank @user <role>` | Give one staff role directly (fast path, no panel) |
 | `/manage unrank @user` | Remove all roles and the TEAM attribute |
 | `/manage staffinfo @user` | Show roles, permissions, join date |
 | `/manage list` | List all staff by role |
@@ -168,6 +169,8 @@ CREATE TABLE staff_permissions (
 | `staff/framework/context.py` | `StaffContext` — unified message/slash context |
 | `staff/framework/registry.py` | Discovery + slash group builder |
 | `staff/framework/design.py` | Components V2 panel helpers |
+| `staff/commands/manage/staff.py` | `/manage staff` panel (persistent DynamicItem controls) |
+| `staff/commands/manage/rank.py` | `/manage rank` — single role assignment |
 | `staff/base.py` | `StaffCommandsCog` base (auto-delete tracking for message commands) |
 | `utils/staff_permissions.py` | `StaffPermissionManager`, `CommandType`, `StaffRole` |
 | `utils/staff_role_permissions.py` | Node definitions per role |

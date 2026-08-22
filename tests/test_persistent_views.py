@@ -161,3 +161,27 @@ async def test_dynamic_item_template_matches_emitted_id(cls, args):
         f"{cls.__name__}: template does not match its own custom_id {cid!r}"
     )
     assert len(cid) <= 100, f"{cls.__name__}: custom_id exceeds 100 chars"
+
+
+async def test_dynamic_item_templates_do_not_overlap():
+    """Two DynamicItem classes must never share (or cross-match) a template.
+
+    discord.py stores dynamic items in a dict keyed by the *compiled* pattern
+    and dispatches to the first template that matches. ``re.compile`` caches,
+    so two classes declared with the same pattern string end up as a single
+    registry entry: the last one registered silently shadows the others and
+    every click on a shadowed control dies with "This interaction failed".
+    That is what the four /manage staff panel controls used to do.
+    """
+    cases = _dynamic_item_cases()
+    for cls, args in cases:
+        cid = cls(*args).item.custom_id
+        matching = [
+            other.__name__ for other, _ in cases
+            if other.__discord_ui_compiled_template__.fullmatch(cid)
+        ]
+        assert matching == [cls.__name__], (
+            f"custom_id {cid!r} emitted by {cls.__name__} also matches "
+            f"{[m for m in matching if m != cls.__name__]} — clicks dispatch "
+            "to only one of them"
+        )
