@@ -272,6 +272,7 @@ class BotCustomizationModule(ModuleBase):
     MODULE_NAME = "Bot Customization"
     MODULE_DESCRIPTION = "Personnalise l'identité de Moddy sur ce serveur"
     MODULE_EMOJI = MODDY_SQUARE
+    MODULE_ORDER = 120
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)

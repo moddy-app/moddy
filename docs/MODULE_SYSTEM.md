@@ -215,6 +215,8 @@ class TicketModule(ModuleBase):
     MODULE_NAME = "Tickets"
     MODULE_DESCRIPTION = "Système de tickets pour le support utilisateur"
     MODULE_EMOJI = "🎫"
+    # Position dans le menu déroulant /config (voir MODULE_ORDER ci-dessous)
+    MODULE_ORDER = 130
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)
@@ -498,6 +500,11 @@ L'interface utilise les **Composants V2** pour une expérience moderne :
    - Description de bienvenue
    - Menu déroulant avec tous les modules disponibles
    - Chaque option affiche : emoji + nom + description
+   - L'ordre des options est fixe : `ModuleManager.get_available_modules()`
+     trie par `MODULE_ORDER` (du plus important au moins important), pas par
+     nom ni par ordre de découverte des fichiers. Un nouveau module doit
+     définir `MODULE_ORDER` (voir Étape 1) en le comparant aux autres
+     modules dans `modules/*.py` pour se placer au bon rang.
 
 2. **Page de configuration d'un module**
    - Titre et description du module

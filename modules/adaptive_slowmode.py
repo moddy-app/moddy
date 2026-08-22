@@ -92,6 +92,7 @@ class AdaptiveSlowmodeModule(ModuleBase):
     MODULE_NAME = "Adaptive Slowmode"
     MODULE_DESCRIPTION = "Ajuste automatiquement le slowmode selon l'activité"
     MODULE_EMOJI = TIME
+    MODULE_ORDER = 70
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)

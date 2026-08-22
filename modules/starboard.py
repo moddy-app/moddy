@@ -273,6 +273,7 @@ class StarboardModule(ModuleBase):
     MODULE_NAME = "Starboard"
     MODULE_DESCRIPTION = "Tableau d'honneur des messages populaires"
     MODULE_EMOJI = STAR
+    MODULE_ORDER = 90
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)

@@ -193,6 +193,7 @@ class WelcomeChannelModule(ModuleBase):
     MODULE_NAME = "Welcome Channel"
     MODULE_DESCRIPTION = "Welcome messages posted in public channels"
     MODULE_EMOJI = WAVING_HAND
+    MODULE_ORDER = 40
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)

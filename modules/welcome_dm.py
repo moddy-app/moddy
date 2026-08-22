@@ -204,6 +204,7 @@ class WelcomeDmModule(ModuleBase):
     MODULE_NAME = "Welcome DM"
     MODULE_DESCRIPTION = "Welcome messages sent in private to new members"
     MODULE_EMOJI = WAVING_HAND
+    MODULE_ORDER = 50
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)
