@@ -119,6 +119,9 @@ def _dynamic_item_cases():
     from cogs.reminder import ReminderManageButton
     from cogs.saved_messages import SavedMessagesListButton, SavedMessagesDetailButton
     from modules.configs.adaptive_slowmode_config import SlowmodeListButton
+    from modules.configs.logs_config import (
+        LogsCategoryButton, LogsCategoryChannels, LogsCategoryEvents,
+    )
     from staff.commands.team.help import HelpDeptSelect
     from staff.commands.dev.serverlist import ServerListNavButton
     from staff.commands.manage.staff import (
@@ -141,6 +144,9 @@ def _dynamic_item_cases():
         (SavedMessagesListButton, ("view", _SNOWFLAKE, 0)),
         (SavedMessagesDetailButton, ("back", _SNOWFLAKE, 42, 0)),
         (SlowmodeListButton, ("edit", _SNOWFLAKE)),
+        (LogsCategoryChannels, ("server",)),
+        (LogsCategoryEvents, ("server", 1)),
+        (LogsCategoryButton, ("next", "server", 1)),
         (HelpDeptSelect, (_SNOWFLAKE,)),
         (ServerListNavButton, ("prev", _SNOWFLAKE, 2)),
         (StaffPanelRolesSelect, (_SNOWFLAKE, _SNOWFLAKE2)),

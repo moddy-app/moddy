@@ -62,6 +62,9 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     from modules.configs.voice_transcription_config import VoiceTranscriptionConfigView
     from modules.configs.bot_customization_config import BotCustomizationConfigView
     from modules.configs.altguard_config import AltGuardConfigView
+    from modules.configs.logs_config import (
+        LogsConfigView, LogsOptionsView, LogsPersistence,
+    )
     from utils.altguard_views import AltGuardPanelView
 
     return [
@@ -124,6 +127,14 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         # modal is excluded like every other modal)
         AltGuardConfigView,
         AltGuardPanelView,
+        # Group 12f — /config server logs: the root and options panels
+        # (guild permission auth) plus the category panel's dynamic items,
+        # which carry the category and page in their custom_id.
+        # LogsCategoryView itself is deliberately not registered — see its
+        # docstring and docs/PERSISTENT_VIEWS.md "Deliberate exclusions".
+        LogsConfigView,
+        LogsOptionsView,
+        LogsPersistence,
         # Group 13 — /config automod AI panel (guild permission auth;
         # AutomodAIPrecedentsView is deliberately excluded, see
         # docs/PERSISTENT_VIEWS.md Step 12)
