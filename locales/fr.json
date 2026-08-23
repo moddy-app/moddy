@@ -2849,7 +2849,9 @@
         "delete_title": "Supprimer ce panneau ?",
         "delete_description": "Son message sera retiré et ses {categories} catégorie(s) seront perdues. Les tickets déjà ouverts ne sont pas affectés.",
         "delete_confirm": "Supprimer le panneau",
-        "repost_failed": "Le panneau n'a pas pu être publié. Vérifiez que Moddy peut écrire dans le salon et que le panneau a au moins une catégorie utilisable."
+        "repost_failed": "Le panneau n'a pas pu être publié. Vérifiez que Moddy peut écrire dans le salon et que le panneau a au moins une catégorie utilisable.",
+        "default_title": "Besoin d'aide ?",
+        "default_description": "Choisissez une catégorie ci-dessous pour ouvrir un ticket. Un salon privé sera créé pour vous."
       },
       "category": {
         "modal_title_new": "Nouvelle catégorie",
@@ -2963,7 +2965,8 @@
         "default_open_message": "Merci d'avoir ouvert un ticket. Décrivez votre demande le plus précisément possible — l'équipe vous répondra ici.",
         "title": "Ticket #{number}",
         "meta": "Ouvert par",
-        "commands_hint": "Toutes les actions sont aussi disponibles avec les commandes `/ticket`."
+        "commands_hint": "Toutes les actions sont aussi disponibles avec les commandes `/ticket`.",
+        "default_close_message": "Merci de nous avoir contactés. Si vous avez besoin d'autre chose, ouvrez un nouveau ticket."
       },
       "actions": {
         "close": "Fermer",

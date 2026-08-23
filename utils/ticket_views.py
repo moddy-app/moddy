@@ -22,6 +22,13 @@ permissions from their roles — see ``services/ticket_service.py``. A stale
 button clicked a month after a restart is therefore exactly as safe as a fresh
 one.
 
+**Mentions live inside the view, never in ``content``.** Discord rejects a
+message that carries both the ``IS_COMPONENTS_V2`` flag and a ``content``
+field, and discord.py sets that flag automatically for any ``LayoutView`` — so
+``channel.send(content=..., view=SomeLayoutView())`` is a guaranteed 400. The
+pings therefore go in a ``TextDisplay`` at the top of the container, which
+still pings as long as the send passes ``allowed_mentions``.
+
 See docs/TICKETS.md and docs/PERSISTENT_VIEWS.md.
 """
 
@@ -344,17 +351,24 @@ class TicketControlView(BaseView):
 
     def __init__(self, ticket: Optional[Dict[str, Any]] = None,
                  category: Optional[Dict[str, Any]] = None,
-                 body: Optional[str] = None, locale: str = "en-US"):
+                 body: Optional[str] = None, locale: str = "en-US",
+                 mentions: Optional[str] = None):
         super().__init__()  # timeout=None
         self.ticket = ticket or {}
         self.category = category or {}
         self.body = body
         self.locale = locale
+        self.mentions = mentions
         self._build_view()
 
     def _build_view(self):
         self.clear_items()
         container = ui.Container(accent_colour=discord.Colour(DEFAULT_ACCENT_COLOR))
+
+        # The opener and the ping roles. In the view, not in `content` — see
+        # the module docstring.
+        if self.mentions:
+            container.add_item(ui.TextDisplay(self.mentions))
 
         number = self.ticket.get('number')
         container.add_item(ui.TextDisplay(
@@ -501,8 +515,9 @@ class TicketControlView(BaseView):
 
 
 def build_ticket_message(ticket: Dict[str, Any], category: Dict[str, Any],
-                         body: Optional[str], locale: str) -> TicketControlView:
-    return TicketControlView(ticket, category, body, locale)
+                         body: Optional[str], locale: str,
+                         mentions: Optional[str] = None) -> TicketControlView:
+    return TicketControlView(ticket, category, body, locale, mentions)
 
 
 # =========================================================================== #
@@ -641,18 +656,22 @@ class TicketCloseRequestView(BaseView):
 
     def __init__(self, ticket: Optional[Dict[str, Any]] = None,
                  requester: Optional[discord.abc.User] = None,
-                 reason: Optional[str] = None, locale: str = "en-US"):
+                 reason: Optional[str] = None, locale: str = "en-US",
+                 mentions: Optional[str] = None):
         super().__init__()  # timeout=None
         self.ticket = ticket or {}
         self.requester = requester
         self.reason = reason
         self.locale = locale
+        self.mentions = mentions
         self._build_view()
 
     def _build_view(self):
         self.clear_items()
         container = ui.Container(accent_colour=discord.Colour(0xFEE75C))
 
+        if self.mentions:
+            container.add_item(ui.TextDisplay(self.mentions))
         container.add_item(ui.TextDisplay(
             f"### {TICKET_CLOSE_REQUEST} "
             f"{t('modules.tickets.close_request.card_title', locale=self.locale)}"))
@@ -735,9 +754,10 @@ def _close_request_resolved(actor: discord.abc.User, locale: str) -> ui.LayoutVi
 
 
 def build_close_request_message(ticket: Dict[str, Any], requester: discord.abc.User,
-                                reason: Optional[str],
-                                locale: str) -> TicketCloseRequestView:
-    return TicketCloseRequestView(ticket, requester, reason, locale)
+                                reason: Optional[str], locale: str,
+                                mentions: Optional[str] = None
+                                ) -> TicketCloseRequestView:
+    return TicketCloseRequestView(ticket, requester, reason, locale, mentions)
 
 
 # =========================================================================== #
@@ -754,18 +774,22 @@ class TicketEscalationView(BaseView):
 
     def __init__(self, ticket: Optional[Dict[str, Any]] = None,
                  actor: Optional[discord.abc.User] = None,
-                 reason: Optional[str] = None, locale: str = "en-US"):
+                 reason: Optional[str] = None, locale: str = "en-US",
+                 mentions: Optional[str] = None):
         super().__init__()  # timeout=None
         self.ticket = ticket or {}
         self.actor = actor
         self.reason = reason
         self.locale = locale
+        self.mentions = mentions
         self._build_view()
 
     def _build_view(self):
         self.clear_items()
         container = ui.Container(accent_colour=discord.Colour(0x9B59B6))
 
+        if self.mentions:
+            container.add_item(ui.TextDisplay(self.mentions))
         container.add_item(ui.TextDisplay(
             f"### {TICKET_ESCALATE} "
             f"{t('modules.tickets.escalate.card_title', locale=self.locale)}"))
@@ -813,8 +837,9 @@ class TicketEscalationView(BaseView):
 
 
 def build_escalation_notice(ticket: Dict[str, Any], actor: discord.abc.User,
-                            reason: Optional[str], locale: str) -> TicketEscalationView:
-    return TicketEscalationView(ticket, actor, reason, locale)
+                            reason: Optional[str], locale: str,
+                            mentions: Optional[str] = None) -> TicketEscalationView:
+    return TicketEscalationView(ticket, actor, reason, locale, mentions)
 
 
 # =========================================================================== #

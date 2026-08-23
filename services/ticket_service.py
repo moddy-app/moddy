@@ -33,6 +33,7 @@ from modules.tickets import (
     PERM_STAFF_THREAD,
     PERM_VIEW,
     can_open,
+    default_open_message,
     locate_category,
     member_permissions,
     render_channel_name,
@@ -280,15 +281,17 @@ class TicketService:
             raise TicketError('modules.tickets.errors.unavailable')
 
         # The control message: pinned, so it stays reachable however long the
-        # conversation gets.
-        body = category.get('open_message') or t(
-            'modules.tickets.channel.default_open_message', locale=locale)
+        # conversation gets. The pings go INSIDE the view — Discord rejects a
+        # message that has both a `content` field and the components-v2 flag
+        # that any LayoutView sets. See utils/ticket_views.py.
+        body = category.get('open_message') or default_open_message(locale)
         rendered = render_text(body, member=member, guild=guild, category=category,
                                number=ticket['number'], channel=channel)
         try:
             message = await channel.send(
-                content=self._ping_content(guild, category, member),
-                view=build_ticket_message(ticket, category, rendered, locale=locale),
+                view=build_ticket_message(
+                    ticket, category, rendered, locale=locale,
+                    mentions=self._ping_content(guild, category, member)),
                 allowed_mentions=discord.AllowedMentions(users=True, roles=True),
             )
             await message.pin(reason="Moddy tickets: control message")
@@ -302,13 +305,23 @@ class TicketService:
 
     def _ping_content(self, guild: discord.Guild, category: Dict[str, Any],
                       member: discord.Member) -> Optional[str]:
-        """Mentions posted alongside the control message (opener + ping roles)."""
+        """Mentions shown at the top of the control message (opener + ping roles)."""
         parts = [member.mention]
         for role_id in category.get('ping_role_ids', []):
             role = guild.get_role(role_id)
             if role:
                 parts.append(role.mention)
         return " ".join(parts) if parts else None
+
+    def _role_mentions(self, guild: discord.Guild, category: Dict[str, Any],
+                       permission: str) -> Optional[str]:
+        """Mentions for every role holding ``permission`` in this category."""
+        mentions = []
+        for role_id in staff_role_ids(category, permission=permission):
+            role = guild.get_role(role_id)
+            if role:
+                mentions.append(role.mention)
+        return " ".join(mentions) or None
 
     # ------------------------------------------------------------------ #
     # Close / reopen
@@ -415,13 +428,11 @@ class TicketService:
         ticket = await self.get_ticket(channel.id) or ticket
 
         locale = self.ticket_locale(category)
-        mentions = [r.mention for r in (
-            channel.guild.get_role(rid) for rid in staff_role_ids(category, permission=PERM_CLOSE)
-        ) if r]
+        mentions = self._role_mentions(channel.guild, category, PERM_CLOSE)
         try:
             await channel.send(
-                content=" ".join(mentions) or None,
-                view=build_close_request_message(ticket, actor, reason, locale=locale),
+                view=build_close_request_message(ticket, actor, reason,
+                                                 locale=locale, mentions=mentions),
                 allowed_mentions=discord.AllowedMentions(roles=True),
             )
         except discord.HTTPException as e:
@@ -476,13 +487,11 @@ class TicketService:
         await self.sync_permissions(channel, category, ticket)
 
         locale = self.ticket_locale(category)
-        mentions = [r.mention for r in (
-            channel.guild.get_role(rid) for rid in staff_role_ids(category, permission=PERM_ADMIN)
-        ) if r]
+        mentions = self._role_mentions(channel.guild, category, PERM_ADMIN)
         try:
             await channel.send(
-                content=" ".join(mentions) or None,
-                view=build_escalation_notice(ticket, actor, reason, locale=locale),
+                view=build_escalation_notice(ticket, actor, reason,
+                                             locale=locale, mentions=mentions),
                 allowed_mentions=discord.AllowedMentions(roles=True),
             )
         except discord.HTTPException as e:

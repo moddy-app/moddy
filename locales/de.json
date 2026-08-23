@@ -2850,7 +2850,9 @@
         "delete_title": "Dieses Panel löschen?",
         "delete_description": "Seine Nachricht wird entfernt und seine {categories} Kategorie(n) gehen verloren. Bereits offene Tickets sind nicht betroffen.",
         "delete_confirm": "Panel löschen",
-        "repost_failed": "Das Panel konnte nicht gepostet werden. Prüfe, ob Moddy in den Kanal schreiben darf und ob das Panel mindestens eine nutzbare Kategorie hat."
+        "repost_failed": "Das Panel konnte nicht gepostet werden. Prüfe, ob Moddy in den Kanal schreiben darf und ob das Panel mindestens eine nutzbare Kategorie hat.",
+        "default_title": "Brauchst du Hilfe?",
+        "default_description": "Wähle unten eine Kategorie, um ein Ticket zu öffnen. Es wird ein privater Kanal für dich erstellt."
       },
       "category": {
         "modal_title_new": "Neue Kategorie",
@@ -2964,7 +2966,8 @@
         "default_open_message": "Danke, dass du ein Ticket geöffnet hast. Beschreibe dein Anliegen so genau wie möglich — das Team antwortet dir hier.",
         "title": "Ticket #{number}",
         "meta": "Geöffnet von",
-        "commands_hint": "Alle Aktionen gibt es auch als `/ticket`-Befehle."
+        "commands_hint": "Alle Aktionen gibt es auch als `/ticket`-Befehle.",
+        "default_close_message": "Danke für deine Nachricht. Wenn du noch etwas brauchst, öffne ein neues Ticket."
       },
       "actions": {
         "close": "Schließen",

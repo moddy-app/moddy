@@ -2850,7 +2850,9 @@
         "delete_title": "Delete this panel?",
         "delete_description": "Its message will be taken down and its {categories} category(ies) will be lost. Tickets already open are not affected.",
         "delete_confirm": "Delete the panel",
-        "repost_failed": "The panel could not be posted. Check that Moddy can write in the channel and that the panel has at least one usable category."
+        "repost_failed": "The panel could not be posted. Check that Moddy can write in the channel and that the panel has at least one usable category.",
+        "default_title": "Need help?",
+        "default_description": "Pick a category below to open a ticket. A private channel will be created for you."
       },
       "category": {
         "modal_title_new": "New category",
@@ -2964,7 +2966,8 @@
         "default_open_message": "Thanks for opening a ticket. Describe your request as precisely as you can — the team will answer you here.",
         "title": "Ticket #{number}",
         "meta": "Opened by",
-        "commands_hint": "Every action is also available with the `/ticket` commands."
+        "commands_hint": "Every action is also available with the `/ticket` commands.",
+        "default_close_message": "Thanks for reaching out. If you need anything else, open a new ticket."
       },
       "actions": {
         "close": "Close",

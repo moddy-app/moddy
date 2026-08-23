@@ -2850,7 +2850,9 @@
         "delete_title": "Excluir este painel?",
         "delete_description": "A mensagem dele será removida e as suas {categories} categoria(s) serão perdidas. Os tickets já abertos não são afetados.",
         "delete_confirm": "Excluir o painel",
-        "repost_failed": "O painel não pôde ser publicado. Verifique se o Moddy pode escrever no canal e se o painel tem pelo menos uma categoria utilizável."
+        "repost_failed": "O painel não pôde ser publicado. Verifique se o Moddy pode escrever no canal e se o painel tem pelo menos uma categoria utilizável.",
+        "default_title": "Precisa de ajuda?",
+        "default_description": "Escolha uma categoria abaixo para abrir um ticket. Um canal privado será criado para você."
       },
       "category": {
         "modal_title_new": "Nova categoria",
@@ -2964,7 +2966,8 @@
         "default_open_message": "Obrigado por abrir um ticket. Descreva o seu pedido da forma mais precisa possível — a equipe responderá aqui.",
         "title": "Ticket #{number}",
         "meta": "Aberto por",
-        "commands_hint": "Todas as ações também estão disponíveis com os comandos `/ticket`."
+        "commands_hint": "Todas as ações também estão disponíveis com os comandos `/ticket`.",
+        "default_close_message": "Obrigado por entrar em contato. Se precisar de mais alguma coisa, abra um novo ticket."
       },
       "actions": {
         "close": "Fechar",

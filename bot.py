@@ -1154,11 +1154,26 @@ class ModdyBot(ModdyFrameworkBot):
         colour must not cost one.
         """
         guild = self.get_guild(guild_id)
-        if guild is None or not self.module_slash_commands:
+        if guild is None:
+            logger.warning(f"[WARN] Cannot re-sync module commands: guild "
+                           f"{guild_id} is not in the cache")
+            return False
+        if not self.module_slash_commands:
+            # Nothing ever called register_module_commands — almost always a
+            # cog that failed to load. Silence here means a module works in
+            # /config while its commands never appear, with nothing to link
+            # the two, so say it out loud.
+            logger.warning(
+                f"[WARN] No module-gated commands are registered, so none can "
+                f"be published in guild {guild_id}. Check the startup log for "
+                f"a '[FAIL] Cog error' line."
+            )
             return False
 
         module_ids = await self.get_enabled_module_ids(guild_id)
         if self._guild_module_commands.get(guild_id) == frozenset(module_ids):
+            logger.debug(f"Module commands unchanged for guild {guild_id} "
+                         f"({sorted(module_ids) or 'none'}) — no sync sent")
             return False
 
         try:
@@ -1189,6 +1204,21 @@ class ModdyBot(ModdyFrameworkBot):
         """
         try:
             official_ids = await self.get_official_guild_ids()
+
+            # One greppable line saying which modules can publish commands at
+            # all. Empty when a cog failed to load, which otherwise shows up
+            # only as "the command never appeared".
+            if self.module_slash_commands:
+                logger.info(
+                    "Module-gated commands available: "
+                    + ", ".join(
+                        f"{mid} -> {[c.name for c in cmds]}"
+                        for mid, cmds in sorted(self.module_slash_commands.items())
+                    )
+                )
+            else:
+                logger.info("No module-gated commands registered")
+
             # Synchroniser les commandes guild-only dans chaque serveur
             guild_count = 0
             for guild in self.guilds:
@@ -1204,7 +1234,9 @@ class ModdyBot(ModdyFrameworkBot):
                     self._guild_module_commands[guild.id] = frozenset(module_ids)
 
                     guild_count += 1
-                    logger.info(f"Guild commands synced for {guild.name} ({guild.id})")
+                    logger.info(f"Guild commands synced for {guild.name} "
+                                f"({guild.id}) — modules: "
+                                f"{sorted(module_ids) or 'none'}")
                 except Exception as e:
                     logger.error(f"[FAIL] Error syncing commands for guild {guild.id}: {e}")
 

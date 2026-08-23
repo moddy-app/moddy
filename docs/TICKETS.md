@@ -157,6 +157,19 @@ Usable in `name_format`: `{number}` (zero-padded to 4) `{username}`
 `str.format` — an admin who types a stray `{` would otherwise blow up the
 message for everyone.
 
+### Defaults are offered, not hidden
+
+Every field that has a default — the opening and closing messages, the panel
+title and description — opens **pre-filled with the wording that would be used
+anyway** (`default_open_message()`, `default_close_message()`,
+`default_panel_title()`, `default_panel_description()`). An admin should be
+editing the message their members will read, never guessing at it in front of
+an empty box. An existing value always wins over the default.
+
+The two ticket messages are pre-filled in the **category's** language, not the
+admin's: those words are what the member reads, and a ticket speaks one
+language whoever configured it. Only the labels around them follow the admin.
+
 ---
 
 ## The permission model
@@ -314,6 +327,22 @@ mechanism is generic, not ticket-specific:
    the enabled set did not change — guild command syncs are rate-limited, and a
    save that only changes a colour must not spend one.
 
+**If `/ticket` never appears**, the module and the cog are loaded by two
+different mechanisms — `modules/tickets.py` by `ModuleManager.discover_modules()`,
+`cogs/tickets.py` by `load_extensions()` — so tickets can work perfectly in
+`/config` while the commands never publish. The startup log says which is the
+case:
+
+```
+Module commands registered for 'tickets': ['ticket']      # setup() ran
+Module-gated commands available: tickets -> ['ticket']    # on_ready
+Guild commands synced for <name> (<id>) — modules: ['tickets']
+```
+
+A missing first line means the cog failed to load — look for
+`[FAIL] Cog error tickets` earlier in the log. `modules: []` on the third means
+no panel is enabled in that guild yet.
+
 To give another module its own commands, do the same three things: declare the
 group at module level, register it in `setup()`, and make sure the module's
 `enabled` reflects what "this server uses the feature" means.
@@ -345,6 +374,23 @@ Authorization is never carried by a view. Every callback resolves the ticket
 from the channel, the category from the guild's config and the actor's
 permissions from their roles. A stale button clicked a month after a restart is
 therefore exactly as safe as a fresh one.
+
+### Mentions go inside the view, never in `content`
+
+Discord rejects any message that carries both a `content` field and the
+`IS_COMPONENTS_V2` flag, and discord.py sets that flag automatically for every
+`LayoutView`. So `channel.send(content=..., view=SomeLayoutView())` is a
+guaranteed `400 … The 'content' field cannot be used when using
+MessageFlags.IS_COMPONENTS_V2` — and if the call is wrapped in a
+`try/except HTTPException` that only logs, the message just silently never
+appears.
+
+The opener and the ping roles therefore go in a `TextDisplay` at the top of the
+container (`mentions=` on `build_ticket_message`,
+`build_close_request_message` and `build_escalation_notice`). They still ping,
+as long as the send passes `allowed_mentions`.
+`tests/test_tickets.py::TestNoContentWithLayoutView` scans the service for a
+`send()` that passes both, so this cannot come back.
 
 ---
 
