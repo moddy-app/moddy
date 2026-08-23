@@ -150,8 +150,16 @@ An event's icon is resolved in two steps (`registry.event_emoji`):
    ban looks like a ban in `server` and in `moderation`);
 2. failing that, its category's `log_icon`.
 
-Naming an event in `_EVENT_ICONS` is therefore optional polish, not a step of
-"adding an event" — a new event is never iconless.
+All 163 events of the catalogue are listed in `_EVENT_ICONS`; the fallback is
+there for a future event, not as the normal case (a test asserts both).
+
+**Prefer the official log icons.** The set's `create*` / `update*` / `remove*`
+/ `*created` / `*updated` / `*deleted` family is what a log is supposed to look
+like: a channel topic change is a *channel update*, so it gets
+`updatechannel`, not a decorative speech bubble. A more specific icon is kept
+only where the set has one for that exact thing **and** it says more than the
+generic verb — `permissions`, `locked`, `timedout`, `ban`, `kick`, `pickcolor`,
+`roleicon`.
 
 
 ## Categories
@@ -466,7 +474,7 @@ would advertise a log that never fires.
 
 ### Not validated live
 
-The system is covered by 69 unit tests but **has never run against a real
+The system is covered by 70 unit tests but **has never run against a real
 Discord server**. Worth checking on a test guild before it reaches
 production: webhook creation and reuse, the `manage_webhooks` fallback,
 batching under a burst of deletions, the 1–2 s audit-correlation windows
