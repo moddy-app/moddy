@@ -363,6 +363,14 @@
       "name": "参与者",
       "description": "查看并修改谁可以访问这个工单"
     },
+    "ticket claim": {
+      "name": "认领",
+      "description": "认领此工单"
+    },
+    "ticket unclaim": {
+      "name": "取消认领",
+      "description": "释放此工单，让其他人可以认领"
+    },
     "ticket staff-thread": {
       "name": "团队帖子",
       "description": "打开或加入团队私密帖子"

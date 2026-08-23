@@ -94,6 +94,8 @@ DEFAULT_BUTTON_STYLE = "primary"
 # --------------------------------------------------------------------------- #
 PERM_VIEW = "view"                  # see and talk in the ticket
 PERM_CLOSE = "close"                # close / reopen it
+PERM_CLAIM = "claim"                # take a ticket in charge (and release it)
+PERM_UNCLAIM_OTHERS = "unclaim_others"  # release a ticket somebody else claimed
 PERM_STAFF_THREAD = "staff_thread"  # open and join the private staff thread
 PERM_RENAME = "rename"              # rename the ticket channel
 PERM_MOVE = "move"                  # move it to another category
@@ -101,13 +103,13 @@ PERM_PARTICIPANTS = "participants"  # add/remove members and roles
 PERM_ADMIN = "admin"                # everything above + kept on escalation
 
 TICKET_PERMISSIONS: Tuple[str, ...] = (
-    PERM_VIEW, PERM_CLOSE, PERM_STAFF_THREAD, PERM_RENAME,
-    PERM_MOVE, PERM_PARTICIPANTS, PERM_ADMIN,
+    PERM_VIEW, PERM_CLOSE, PERM_CLAIM, PERM_UNCLAIM_OTHERS, PERM_STAFF_THREAD,
+    PERM_RENAME, PERM_MOVE, PERM_PARTICIPANTS, PERM_ADMIN,
 )
 
 # What a brand new role entry gets: enough to actually work the ticket, not
 # enough to reorganise the server.
-DEFAULT_ROLE_PERMISSIONS = (PERM_VIEW, PERM_CLOSE, PERM_STAFF_THREAD)
+DEFAULT_ROLE_PERMISSIONS = (PERM_VIEW, PERM_CLOSE, PERM_CLAIM, PERM_STAFF_THREAD)
 
 # Languages a category can speak. Same set as the bot's own locale files, so a
 # ticket never falls back to a half-translated language.
@@ -128,6 +130,50 @@ NAME_PLACEHOLDERS = ("{number}", "{username}", "{display_name}", "{category}")
 DEFAULT_MAX_OPEN_PER_USER = 1
 MAX_OPEN_PER_USER_CEILING = 10
 
+# --------------------------------------------------------------------------- #
+# The buttons offered under the opening message
+#
+# An admin picks which of these the ticket message carries. `close_request` is
+# in the catalogue but out of the default set: asking for a closure is a
+# command (`/ticket close-request`), and a server that wants it as a button
+# says so explicitly.
+# --------------------------------------------------------------------------- #
+BTN_CLOSE = "close"
+BTN_CLAIM = "claim"
+BTN_ESCALATE = "escalate"
+BTN_STAFF_THREAD = "staff_thread"
+BTN_PARTICIPANTS = "participants"
+BTN_CLOSE_REQUEST = "close_request"
+
+TICKET_BUTTONS: Tuple[str, ...] = (
+    BTN_CLOSE, BTN_CLAIM, BTN_ESCALATE, BTN_STAFF_THREAD, BTN_PARTICIPANTS,
+    BTN_CLOSE_REQUEST,
+)
+DEFAULT_TICKET_BUTTONS: Tuple[str, ...] = (
+    BTN_CLOSE, BTN_CLAIM, BTN_ESCALATE, BTN_STAFF_THREAD, BTN_PARTICIPANTS,
+)
+
+# --------------------------------------------------------------------------- #
+# Claim status, shown in the channel name
+#
+# These four are the ONE place Moddy uses a Unicode emoji outside country flags
+# (see CLAUDE.md rule 3), and not by choice: a Discord channel name cannot
+# carry a custom emoji, so a coloured dot is the only way to read a ticket's
+# state from the channel list.
+# --------------------------------------------------------------------------- #
+STATUS_DOT_UNCLAIMED = "🔴"
+STATUS_DOT_CLAIMED = "🟢"
+STATUS_DOT_ESCALATED = "🟣"
+STATUS_DOT_CLOSED = "⚫"
+STATUS_DOTS = (STATUS_DOT_UNCLAIMED, STATUS_DOT_CLAIMED,
+               STATUS_DOT_ESCALATED, STATUS_DOT_CLOSED)
+# The separator between the dot and the name — "🔴〡ticket-0003".
+STATUS_SEPARATOR = "〡"
+
+# A line made of nothing but this, inside a ticket message, becomes a real
+# Components V2 separator instead of three dashes of text.
+SEPARATOR_MARKER = "---"
+
 # Channel types a panel message can be posted in.
 PANEL_CHANNEL_TYPES = [discord.ChannelType.text, discord.ChannelType.news]
 
@@ -141,9 +187,21 @@ PANEL_CHANNEL_TYPES = [discord.ChannelType.text, discord.ChannelType.news]
 # in front of a blank box.
 # --------------------------------------------------------------------------- #
 def default_open_message(locale: str) -> str:
-    """The message pinned in a ticket when the category defines none."""
+    """The **whole** message pinned in a ticket when the category defines none.
+
+    Not a paragraph the module then decorates: the stored text *is* the
+    message, title line and footer included, so an admin who opens the editor
+    can rewrite every part of what their members read.
+
+    ``{icon}`` is substituted here rather than passed to ``t()`` as a kwarg:
+    ``t()`` runs ``str.format`` over the whole string when it gets any, and
+    that would eat the ``{number}`` / ``{user}`` placeholders the admin is
+    meant to keep.
+    """
+    from utils.emojis import TICKET
     from utils.i18n import t
-    return t('modules.tickets.channel.default_open_message', locale=locale)
+    return t('modules.tickets.channel.default_open_message',
+             locale=locale).replace('{icon}', TICKET)
 
 
 def default_close_message(locale: str) -> str:
@@ -248,6 +306,14 @@ def normalize_category(raw: Any) -> Optional[Dict[str, Any]]:
         max_open = DEFAULT_MAX_OPEN_PER_USER
     max_open = min(max_open, MAX_OPEN_PER_USER_CEILING)
 
+    # An explicitly empty button list is a real answer ("no buttons, commands
+    # only"), so only a *missing* key falls back to the default set.
+    raw_buttons = raw.get('buttons')
+    if isinstance(raw_buttons, (list, tuple)):
+        buttons = [b for b in TICKET_BUTTONS if b in raw_buttons]
+    else:
+        buttons = list(DEFAULT_TICKET_BUTTONS)
+
     return {
         'id': _as_text(raw.get('id'), 32) or new_category_id(),
         'name': name,
@@ -258,10 +324,14 @@ def normalize_category(raw: Any) -> Optional[Dict[str, Any]]:
         'allowed_role_ids': _as_id_list(raw.get('allowed_role_ids')),
         'denied_role_ids': _as_id_list(raw.get('denied_role_ids')),
         'ping_role_ids': _as_id_list(raw.get('ping_role_ids')),
+        'ping_staff_roles': bool(raw.get('ping_staff_roles', True)),
         'permissions': normalize_permissions(raw.get('permissions')),
         'locale': locale,
         'open_message': _as_text(raw.get('open_message'), MAX_TICKET_MESSAGE),
         'close_message': _as_text(raw.get('close_message'), MAX_TICKET_MESSAGE),
+        'buttons': buttons,
+        'claim_enabled': bool(raw.get('claim_enabled', True)),
+        'claim_lock': bool(raw.get('claim_lock', False)),
         'name_format': _as_text(raw.get('name_format'), MAX_CHANNEL_NAME) or DEFAULT_NAME_FORMAT,
         'max_open_per_user': max_open,
         'enabled': bool(raw.get('enabled', True)),
@@ -489,6 +559,28 @@ def render_text(template: str, *, member: discord.abc.User, guild: discord.Guild
     return out
 
 
+def split_message_blocks(text: Optional[str]) -> List[str]:
+    """Cut a ticket message on its ``---`` lines.
+
+    Returns the text blocks between the separators, in order and stripped of
+    empty ones. The caller turns the gaps into real Components V2 separators —
+    writing ``---`` on its own line is the only markup an admin has for that,
+    since Discord's markdown horizontal rule does not exist inside a container.
+    """
+    if not text:
+        return []
+    blocks: List[str] = []
+    current: List[str] = []
+    for line in text.splitlines():
+        if line.strip() == SEPARATOR_MARKER:
+            blocks.append("\n".join(current).strip())
+            current = []
+            continue
+        current.append(line)
+    blocks.append("\n".join(current).strip())
+    return [block for block in blocks if block]
+
+
 def render_channel_name(category: Dict[str, Any], *, member: discord.abc.User,
                         number: int) -> str:
     """Build the ticket channel name from the category's format."""
@@ -511,6 +603,49 @@ def render_channel_name(category: Dict[str, Any], *, member: discord.abc.User,
     while "--" in cleaned:
         cleaned = cleaned.replace("--", "-")
     return (cleaned or f"ticket-{number:04d}")[:MAX_CHANNEL_NAME]
+
+
+# --------------------------------------------------------------------------- #
+# Claim status in the channel name
+#
+# The dot is a *prefix*, never part of the stored format: it is stripped before
+# a new one is applied, so a ticket that goes unclaimed → claimed → escalated →
+# closed keeps exactly one dot however many times it changed hands.
+# --------------------------------------------------------------------------- #
+def ticket_status_dot(category: Dict[str, Any],
+                      ticket: Dict[str, Any]) -> Optional[str]:
+    """The coloured dot a ticket's channel name should carry, if any.
+
+    ``None`` when the category does not use the claim system: a server that
+    switched claiming off has no use for a red dot on every ticket, and the
+    escalated/closed colours only read as a scale next to the other two.
+    """
+    if not category.get('claim_enabled', True):
+        return None
+    if ticket.get('status') == 'closed':
+        return STATUS_DOT_CLOSED
+    if ticket.get('escalated'):
+        return STATUS_DOT_ESCALATED
+    return STATUS_DOT_CLAIMED if ticket.get('claimed_by') else STATUS_DOT_UNCLAIMED
+
+
+def strip_status_prefix(name: str) -> str:
+    """``"🔴〡ticket-0003"`` → ``"ticket-0003"``; anything else is untouched."""
+    for dot in STATUS_DOTS:
+        prefix = f"{dot}{STATUS_SEPARATOR}"
+        if name.startswith(prefix):
+            return name[len(prefix):]
+        if name.startswith(dot):
+            return name[len(dot):].lstrip(STATUS_SEPARATOR)
+    return name
+
+
+def apply_status_prefix(name: str, dot: Optional[str]) -> str:
+    """Put ``dot`` in front of a channel name, replacing any dot already there."""
+    base = strip_status_prefix(name)
+    if not dot:
+        return base[:MAX_CHANNEL_NAME]
+    return f"{dot}{STATUS_SEPARATOR}{base}"[:MAX_CHANNEL_NAME]
 
 
 def parse_emoji(raw: Optional[str]) -> Optional[discord.PartialEmoji]:

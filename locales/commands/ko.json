@@ -363,6 +363,14 @@
       "name": "참여자",
       "description": "이 티켓에 접근할 수 있는 대상을 보고 수정합니다"
     },
+    "ticket claim": {
+      "name": "담당",
+      "description": "이 티켓을 담당합니다"
+    },
+    "ticket unclaim": {
+      "name": "담당해제",
+      "description": "티켓을 놓아 누구나 담당할 수 있게 합니다"
+    },
     "ticket staff-thread": {
       "name": "스태프스레드",
       "description": "비공개 스태프 스레드를 열거나 참여합니다"

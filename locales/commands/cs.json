@@ -363,6 +363,14 @@
       "name": "účastníci",
       "description": "Zobrazí a upraví, kdo má k ticketu přístup"
     },
+    "ticket claim": {
+      "name": "prevzit",
+      "description": "Převezme tento ticket"
+    },
+    "ticket unclaim": {
+      "name": "uvolnit",
+      "description": "Uvolní tento ticket, aby si ho mohl vzít kdokoli"
+    },
     "ticket staff-thread": {
       "name": "vlákno-týmu",
       "description": "Otevře soukromé vlákno týmu nebo se do něj připojí"

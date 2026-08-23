@@ -487,13 +487,18 @@ was easier not to" is not one.
   `TicketsPersistence` — same pattern as `TranscribePromptView`. Registering
   the wrapper would be meaningless: it cannot be built without a panel.
   The *ticket-channel* views (`TicketControlView`, `TicketClosedView`,
-  `TicketCloseRequestView`, `TicketEscalationView`, `TicketEscalateConfirmView`,
-  `TicketParticipantsView`) are registered normally with **static** custom_ids:
+  `TicketCloseRequestView`, `TicketEscalationView`, `TicketEscalateConfirmView`)
+  are registered normally with **static** custom_ids:
   a ticket action always happens inside its own channel, so
   `interaction.channel_id` is the ticket's identity and an id in the custom_id
   would only add a second source of truth that could disagree with the channel.
-  `build_close_dm` has zero interactive children ("nothing to register" case
-  above).
+  `TicketControlView`'s buttons are per-category configurable, so its
+  registered shell declares **every** button id rather than the default set —
+  an id the shell never declared would be a dead button after a restart.
+  `build_close_dm`, `build_reopen_dm` and `build_claim_notice` have zero
+  interactive children ("nothing to register" case above), and the participants
+  editor is a Modal (`TicketParticipantsModal`), which falls under the
+  deliberate modal exclusion.
 
 ---
 

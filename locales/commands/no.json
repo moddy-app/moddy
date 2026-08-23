@@ -363,6 +363,14 @@
       "name": "deltakere",
       "description": "Se og endre hvem som har tilgang til saken"
     },
+    "ticket claim": {
+      "name": "overta",
+      "description": "Overtar denne saken"
+    },
+    "ticket unclaim": {
+      "name": "frigi",
+      "description": "Frigir saken slik at andre kan ta den"
+    },
     "ticket staff-thread": {
       "name": "stab-tråd",
       "description": "Åpner eller blir med i den private stab-tråden"

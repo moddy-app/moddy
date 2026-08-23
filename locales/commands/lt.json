@@ -363,6 +363,14 @@
       "name": "dalyviai",
       "description": "Rodo ir keičia, kas turi prieigą prie šio bilieto"
     },
+    "ticket claim": {
+      "name": "perimti",
+      "description": "Perima šią užklausą"
+    },
+    "ticket unclaim": {
+      "name": "atlaisvinti",
+      "description": "Atlaisvina užklausą, kad ją galėtų perimti kitas"
+    },
     "ticket staff-thread": {
       "name": "komandos-gija",
       "description": "Atidaro privačią komandos giją arba prie jos prisijungia"

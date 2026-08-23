@@ -96,24 +96,27 @@ LINK = "<:link:1521517863607734385>"       # appeal "invite" button
 PENDING = "<:pending:1521282587962900611>"  # appeal "pending" status
 ROCKET = "<a:Rocket:1535783839870353499>"  # bot customization bio attribution
 ALTGUARD = "<a:DisguisedFace:1539405255576657981>"  # AltGuard verification panel message
+QUESTIONS = "<:questions:1540890130854838272>"  # ticket claim button
+THREADS = "<:threads:1541216661699436675>"      # private staff thread
 
 # =============================================================================
 # TICKETS MODULE
 # -----------------------------------------------------------------------------
-# NOTE: these are ALIASES onto existing emojis, not dedicated ticket icons.
 # Everything in the Tickets module references these constants, so replacing an
 # id here propagates to the panels, the ticket control bar, the slash commands
-# and the /config screens at once. Replace them with dedicated artwork when it
+# and the /config screens at once. The ones still marked (placeholder) are
+# ALIASES onto existing emojis; replace them with dedicated artwork when it
 # exists — that is the only change needed.
 # =============================================================================
-TICKET = SUPPORT                # module icon + ticket cards      (placeholder)
+TICKET = "<:ticket:1541216667420594257>"   # module icon + ticket cards
+TICKET_STAFF_THREAD = THREADS              # private staff thread
+TICKET_CLOSE = UNDONE                      # close a ticket (a plain cross)
+TICKET_PARTICIPANTS = MANAGE_USER          # manage who is in the ticket
+TICKET_CLAIM = QUESTIONS                   # claim / release a ticket
 TICKET_PANEL = NOTE             # a ticket panel message          (placeholder)
 TICKET_CATEGORY = FOLDER        # a ticket category               (placeholder)
-TICKET_CLOSE = LOGOUT           # close a ticket                  (placeholder)
 TICKET_CLOSE_REQUEST = HAND     # ask the staff to close          (placeholder)
 TICKET_ESCALATE = SHIELD        # escalate to the responsibles    (placeholder)
-TICKET_STAFF_THREAD = MESSAGE   # private staff thread            (placeholder)
-TICKET_PARTICIPANTS = GROUPS    # manage who is in the ticket     (placeholder)
 TICKET_RENAME = EDIT            # rename the ticket               (placeholder)
 TICKET_MOVE = FOLDERS           # move to another category        (placeholder)
 TICKET_PERMISSIONS = LEGAL      # per-role ticket permissions     (placeholder)
@@ -259,6 +262,9 @@ EMOJIS = {
     "download": DOWNLOAD,
     "emoji": EMOJI,
     "manage_user": MANAGE_USER,
+    "questions": QUESTIONS,
+    "threads": THREADS,
+    "ticket": TICKET,
     "banner": BANNER,
     "text": TEXT,
     "translate": TRANSLATE,

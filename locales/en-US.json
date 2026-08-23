@@ -2883,7 +2883,7 @@
         "language_hint": "Every message inside these tickets uses this language",
         "summary_title": "Configured behind the buttons below",
         "summary_permissions": "Permissions — {roles} role(s)",
-        "summary_messages": "Messages — {count}/2 customised",
+        "summary_messages": "Messages — {count}/2 customised, {buttons} button(s)",
         "summary_options": "Options — name `{format}`, `{max}` open ticket(s) per member",
         "identity": "Identity",
         "permissions": "Permissions",
@@ -2894,7 +2894,10 @@
         "delete": "Delete",
         "delete_title": "Delete this category?",
         "delete_description": "It disappears from the panel and its permissions are lost. Tickets already open in it keep working until they are closed.",
-        "delete_confirm": "Delete the category"
+        "delete_confirm": "Delete the category",
+        "summary_claim_on": "Claiming — on",
+        "summary_claim_off": "Claiming — off",
+        "summary_claim_locked": "Claiming — on, only the claimer answers"
       },
       "messages": {
         "modal_title": "Ticket messages",
@@ -2909,7 +2912,8 @@
         "ph_server": "the server name",
         "ph_category": "the category name",
         "ph_number": "the ticket number",
-        "ph_ticket": "mention of the ticket channel"
+        "ph_ticket": "mention of the ticket channel",
+        "separator_hint": "A line with only `---` becomes a separator."
       },
       "options": {
         "modal_title": "Category options",
@@ -2918,7 +2922,14 @@
         "max_open_label": "Open tickets per member",
         "max_open_hint": "Between 1 and {max}, in this category",
         "ping_label": "Roles to ping",
-        "ping_hint": "Mentioned when a ticket opens"
+        "ping_hint": "Mentioned when a ticket opens",
+        "switches_label": "Behaviour",
+        "ping_staff_roles_label": "Mention the staff too",
+        "ping_staff_roles_hint": "The roles that can see this category's tickets are pinged as well",
+        "claim_enabled_label": "Allow claiming",
+        "claim_enabled_hint": "A coloured dot in the channel name shows who is on it",
+        "claim_lock_label": "Only the claimer answers",
+        "claim_lock_hint": "The other agents keep reading; the responsibles always speak"
       },
       "permissions": {
         "title": "Ticket permissions",
@@ -2959,14 +2970,20 @@
         "admin": {
           "name": "Responsible",
           "description": "Everything above, and keeps access after an escalation"
+        },
+        "claim": {
+          "name": "Claim",
+          "description": "Take a ticket in charge and release it again"
+        },
+        "unclaim_others": {
+          "name": "Release another's ticket",
+          "description": "Take a ticket off the agent holding it"
         }
       },
       "channel": {
-        "topic": "Ticket of {user} · {category}",
-        "default_open_message": "Thanks for opening a ticket. Describe your request as precisely as you can — the team will answer you here.",
+        "topic": "Ticket #{number} · {category} · opened by {user} ({user_id})",
+        "default_open_message": "### {icon} Ticket #{number}\nThanks for opening a ticket. Describe your request as precisely as you can — the team will answer you here.\n-# Opened by · {user} · `{category}`",
         "title": "Ticket #{number}",
-        "meta": "Opened by",
-        "commands_hint": "Every action is also available with the `/ticket` commands.",
         "default_close_message": "Thanks for reaching out. If you need anything else, open a new ticket."
       },
       "actions": {
@@ -2978,7 +2995,9 @@
         "reopen": "Reopen",
         "delete": "Delete the channel",
         "deescalate": "Cancel the escalation",
-        "rename": "Rename"
+        "rename": "Rename",
+        "claim": "Claim",
+        "unclaim": "Release"
       },
       "fields": {
         "reason": "Reason",
@@ -2991,7 +3010,8 @@
         "status": "Status",
         "escalated": "Escalation",
         "your_permissions": "Your permissions here",
-        "none": "none"
+        "none": "none",
+        "claimed_by": "Handled by"
       },
       "status": {
         "open": "Open",
@@ -3021,7 +3041,10 @@
       },
       "reopen": {
         "done_title": "Ticket reopened",
-        "done_description": "Everyone who had access to it is back."
+        "done_description": "Everyone who had access to it is back.",
+        "dm_title": "Your ticket has been reopened",
+        "dm_description": "Your ticket #`{number}` ({category}) on **{server}** is open again.",
+        "dm_channel": "Back to it:"
       },
       "delete": {
         "pending_title": "Deleting",
@@ -3037,7 +3060,9 @@
         "confirm_title": "Escalate this ticket?",
         "confirm_description": "The staff roles lose access. Its opener stays. What should happen to the people added by hand?",
         "keep": "Keep them",
-        "drop": "Remove them"
+        "drop": "Remove them",
+        "mute": "Keep them, read-only",
+        "muted_notice": "The people added by hand can still read the ticket but no longer write in it."
       },
       "move": {
         "done_title": "Ticket moved",
@@ -3050,7 +3075,6 @@
       "participants": {
         "title": "Ticket participants",
         "description": "Everyone selected here has access to the ticket, on top of its opener and the staff roles. Unselect someone to remove them.",
-        "owner_note": "Opened by",
         "members_title": "Members",
         "members_description": "Added one by one",
         "members_placeholder": "Select the members",
@@ -3060,7 +3084,9 @@
         "added_title": "Added",
         "added_description": "{target} now has access to this ticket.",
         "removed_title": "Removed",
-        "removed_description": "{target} no longer has access to this ticket."
+        "removed_description": "{target} no longer has access to this ticket.",
+        "saved_title": "Participants updated",
+        "saved_description": "Now in this ticket, on top of its opener and the staff: {participants}"
       },
       "staff_thread": {
         "name": "staff-{number}",
@@ -3104,7 +3130,31 @@
         "panel_limit": "This server has reached its limit of `{max}` ticket panels.",
         "category_limit": "This panel has reached its limit of `{max}` categories.",
         "premium_upsell": "Premium raises the limits to 10 panels and 15 categories per panel. [Learn more]({url})",
-        "invalid_emoji": "That emoji cannot be used. Use a server emoji or a standard one."
+        "invalid_emoji": "That emoji cannot be used. Use a server emoji or a standard one.",
+        "claim_disabled": "Claiming is not enabled in this ticket category.",
+        "already_claimed": "{user} is already handling this ticket.",
+        "already_claimed_by_you": "You are already handling this ticket.",
+        "not_claimed": "Nobody is handling this ticket.",
+        "claimed_by_someone_else": "{user} is handling this ticket, and you cannot take it off them."
+      },
+      "buttons": {
+        "label": "Buttons under the message",
+        "hint": "Unselect one to keep it as a command only",
+        "close_hint": "Close the ticket",
+        "claim_hint": "Take the ticket in charge, or release it",
+        "escalate_hint": "Restrict the ticket to the responsibles",
+        "staff_thread_hint": "Open or join the private staff thread",
+        "participants_hint": "Add and remove members and roles",
+        "close_request_hint": "Let the member ask for a closure"
+      },
+      "claim": {
+        "claimed_title": "Ticket claimed",
+        "claimed_description": "{user} is handling this ticket.",
+        "claimed_done": "The ticket is yours. Press the button again to release it.",
+        "released_title": "Ticket released",
+        "released_description": "{user} released this ticket — anyone on the team can take it.",
+        "released_done": "The ticket is free again.",
+        "nobody": "nobody yet"
       }
     }
   },
