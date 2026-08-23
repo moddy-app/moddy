@@ -111,7 +111,8 @@ class LogCategorySpec:
     """One category of events — the unit a channel is bound to."""
 
     id: str
-    emoji: str
+    emoji: str        # shown in /config (the category icon set)
+    log_icon: str     # shown on a log whose event has no icon of its own
     order: int
     events: Tuple[str, ...]
 
@@ -129,13 +130,15 @@ class LogCategorySpec:
 
 # ---------------------------------------------------------------------------
 # The catalogue. Order inside a category is the order shown in /config.
-# Icons come from utils/emojis.py::LOG_EMOJIS — the server-logs icon set,
-# the only one this feature is allowed to draw from (see docs/LOGS.md).
+# Icons come from utils/emojis.py::LOG_EMOJIS — the server-logs icon set, the
+# only one this feature is allowed to draw from (see docs/LOGS.md). The one
+# declared here is the category icon shown in /config; what a *log* falls back
+# to is _CATEGORY_LOG_ICONS below.
 # ---------------------------------------------------------------------------
 
 _CATALOGUE: Tuple[Tuple[str, str, Tuple[str, ...]], ...] = (
     (
-        "server", log_emoji("updateserver"),
+        "server", log_emoji("Servers_icon"),
         (
             "ban_add", "ban_remove", "user_join", "user_leave", "user_kick",
             "member_prune", "afk_channel_update", "afk_timeout_update",
@@ -155,14 +158,14 @@ _CATALOGUE: Tuple[Tuple[str, str, Tuple[str, ...]], ...] = (
         ),
     ),
     (
-        "messages", log_emoji("dm"),
+        "messages", log_emoji("messages_icon"),
         (
             "message_delete", "message_bulk_delete", "message_edit",
             "message_publish", "message_command_used",
         ),
     ),
     (
-        "users", log_emoji("updatemember"),
+        "users", log_emoji("members_icon"),
         (
             "user_name_update", "user_roles_update", "user_roles_add",
             "user_roles_remove", "user_avatar_update", "user_timed_out",
@@ -170,7 +173,7 @@ _CATALOGUE: Tuple[Tuple[str, str, Tuple[str, ...]], ...] = (
         ),
     ),
     (
-        "moderation", log_emoji("modview"),
+        "moderation", log_emoji("mod_icon"),
         (
             "auto_moderation", "ban_add", "ban_remove", "case_delete",
             "mass_case_delete", "case_update", "kick_add", "kick_remove",
@@ -197,7 +200,7 @@ _CATALOGUE: Tuple[Tuple[str, str, Tuple[str, ...]], ...] = (
         ),
     ),
     (
-        "roles", log_emoji("roleicon"),
+        "roles", log_emoji("roleicon_icon"),
         (
             "role_create", "role_delete", "role_color_update",
             "role_hoist_update", "role_mentionable_update", "role_name_update",
@@ -205,7 +208,7 @@ _CATALOGUE: Tuple[Tuple[str, str, Tuple[str, ...]], ...] = (
         ),
     ),
     (
-        "threads", log_emoji("updatethread"),
+        "threads", log_emoji("threads_icon"),
         (
             "thread_create", "thread_delete", "thread_name_update",
             "thread_slowmode_update", "thread_archive_duration_update",
@@ -214,18 +217,18 @@ _CATALOGUE: Tuple[Tuple[str, str, Tuple[str, ...]], ...] = (
         ),
     ),
     (
-        "voice", log_emoji("Play"),
+        "voice", log_emoji("voice_icon"),
         (
             "voice_channel_full", "voice_user_join", "voice_user_switch",
             "voice_user_leave", "voice_user_move", "voice_user_kick",
         ),
     ),
     (
-        "invites", log_emoji("links"),
+        "invites", log_emoji("invitemember_icon"),
         ("invite_create", "invite_delete", "invite_post"),
     ),
     (
-        "automod", log_emoji("Filter"),
+        "automod", log_emoji("automod_icon"),
         (
             "automod_rule_create", "automod_rule_delete",
             "automod_rule_toggle", "automod_rule_name_update",
@@ -235,28 +238,28 @@ _CATALOGUE: Tuple[Tuple[str, str, Tuple[str, ...]], ...] = (
         ),
     ),
     (
-        "emojis", log_emoji("emojisslots"),
+        "emojis", log_emoji("Emojis_icon"),
         (
             "emoji_create", "emoji_delete", "emoji_name_update",
             "emoji_roles_update",
         ),
     ),
     (
-        "stickers", log_emoji("stickerscreated"),
+        "stickers", log_emoji("Stickers_icon"),
         (
             "sticker_create", "sticker_delete", "sticker_name_update",
             "sticker_description_update", "sticker_related_emoji_update",
         ),
     ),
     (
-        "soundboard", log_emoji("soundboardadd"),
+        "soundboard", log_emoji("Soundboards_icon"),
         (
             "sound_upload", "sound_name_update", "sound_volume_update",
             "sound_emoji_update", "sound_delete",
         ),
     ),
     (
-        "events", log_emoji("eventcreated"),
+        "events", log_emoji("events_icon"),
         (
             "event_create", "event_delete", "event_name_update",
             "event_description_update", "event_location_update",
@@ -267,32 +270,62 @@ _CATALOGUE: Tuple[Tuple[str, str, Tuple[str, ...]], ...] = (
         ),
     ),
     (
-        "stage", log_emoji("stagecreated"),
+        "stage", log_emoji("stage_icon"),
         ("stage_start", "stage_end", "stage_topic_update", "stage_privacy_update"),
     ),
     (
-        "polls", log_emoji("questions"),
+        "polls", log_emoji("Poll_icon"),
         (
             "poll_create", "poll_delete", "poll_finalize", "poll_votes_add",
             "poll_votes_remove",
         ),
     ),
     (
-        "webhooks", log_emoji("Webhooks"),
+        "webhooks", log_emoji("Webhooks_icon"),
         (
             "webhook_create", "webhook_name_update", "webhook_avatar_update",
             "webhook_channel_update", "webhook_delete",
         ),
     ),
     (
-        "applications", log_emoji("bot"),
+        "applications", log_emoji("apps_icon"),
         ("app_add", "app_remove", "app_command_permission_update"),
     ),
 )
 
 
+#: Icon a log falls back to when its event has none of its own. Distinct from
+#: the category icon above: that one identifies the category in ``/config``,
+#: this one has to read as "what happened" on a message.
+_CATEGORY_LOG_ICONS: Dict[str, str] = {
+    "server":      "updateserver",
+    "messages":    "dm",
+    "users":       "updatemember",
+    "moderation":  "modview",
+    "channels":    "channls",
+    "roles":       "roleicon",
+    "threads":     "updatethread",
+    "voice":       "Play",
+    "invites":     "links",
+    "automod":     "Filter",
+    "emojis":      "emojisslots",
+    "stickers":    "stickerscreated",
+    "soundboard":  "soundboardadd",
+    "events":      "eventcreated",
+    "stage":       "stagecreated",
+    "polls":       "questions",
+    "webhooks":    "Webhooks",
+    "applications": "bot",
+}
+
 CATEGORIES: Dict[str, LogCategorySpec] = {
-    cat_id: LogCategorySpec(id=cat_id, emoji=emoji, order=index * 10, events=events)
+    cat_id: LogCategorySpec(
+        id=cat_id,
+        emoji=emoji,
+        log_icon=log_emoji(_CATEGORY_LOG_ICONS[cat_id]),
+        order=index * 10,
+        events=events,
+    )
     for index, (cat_id, emoji, events) in enumerate(_CATALOGUE)
 }
 
@@ -439,7 +472,7 @@ def event_emoji(key: str) -> str:
     if icon:
         return log_emoji(icon)
     category = CATEGORIES.get(spec.category)
-    return category.emoji if category else ""
+    return category.log_icon if category else ""
 
 
 # ---------------------------------------------------------------------------

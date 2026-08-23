@@ -56,12 +56,28 @@ logs **configuration panel** may use nothing else (the module icon in the
 | `docs/EMOJIS.md`, `docs/LOGS.md` | the set and the rule |
 | `tests/test_logs.py` | icon coverage + panel-source tests (updated rendering tests) |
 
+## Follow-up in the same session: dedicated category icons
+
+17 more icons were provided, one per log category, for the **`/config` panel**.
+`LogCategorySpec` now carries two icons instead of one:
+
+- `emoji` — the category icon shown in `/config` (the new `*_icon` set): it
+  answers *which category is this*;
+- `log_icon` — what a log falls back to when its event has no icon of its own
+  (the previous per-category choice): it answers *what happened*.
+
+They are deliberately different: a picker entry identifies a category, a log
+message describes an act. A test asserts the two never coincide — except for
+`channels`, the one category the new set ships no icon for, which keeps the
+generic `channls` on both sides.
+
 ## Known issues / follow-ups
 
 - **The icon-to-event mapping is a guess from the icon *names*.** The emojis
   were provided as names and ids; nothing here renders them, so pairings like
   `messages` → `dm`, `voice` → `Play` or `stickers` → `stickerscreated` may not
-  look right in Discord. Each is a one-line change in
+  look right in Discord. (The `/config` category icons are not a guess — there
+  is one named icon per category, `channels` excepted.) Each is a one-line change in
   `registry._EVENT_ICONS` / the `_CATALOGUE` — worth a pass by eye in a real
   server.
 - A few categories had no neutral icon in the set (voice, stickers, soundboard,
@@ -75,4 +91,4 @@ logs **configuration panel** may use nothing else (the module icon in the
 
 ## Tests
 
-`python3 -m pytest -q` → **1028 passed** (1026 before, +2).
+`python3 -m pytest -q` → **1029 passed** (1026 before, +3).

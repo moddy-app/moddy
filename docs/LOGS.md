@@ -133,12 +133,22 @@ That set is the **only** source this feature draws from, in the `/config`
 panel as well as in the log messages. The single exception is the module
 icon shown in the `/config` module picker (`LogsModule.MODULE_EMOJI`).
 
+A category has **two** icons, and they are not interchangeable:
+
+| Field | Where it shows | What it has to say |
+|---|---|---|
+| `LogCategorySpec.emoji` | the `/config` panel — picker, list, category screen | *which category this is* |
+| `LogCategorySpec.log_icon` | a log message whose event has no icon of its own | *what happened* |
+
+(`channels` is the one category where both are the same: the set ships no
+`channels_icon`.)
+
 An event's icon is resolved in two steps (`registry.event_emoji`):
 
 1. its own entry in `registry._EVENT_ICONS`, keyed by the **bare** event name
    so the same act keeps the same icon in every category that declares it (a
    ban looks like a ban in `server` and in `moderation`);
-2. failing that, its category's icon.
+2. failing that, its category's `log_icon`.
 
 Naming an event in `_EVENT_ICONS` is therefore optional polish, not a step of
 "adding an event" — a new event is never iconless.
@@ -456,7 +466,7 @@ would advertise a log that never fires.
 
 ### Not validated live
 
-The system is covered by 68 unit tests but **has never run against a real
+The system is covered by 69 unit tests but **has never run against a real
 Discord server**. Worth checking on a test guild before it reaches
 production: webhook creation and reuse, the `manage_webhooks` fallback,
 batching under a burst of deletions, the 1–2 s audit-correlation windows

@@ -54,9 +54,19 @@ def test_categories_and_events_use_the_logs_icon_set():
 
     known = set(LOG_EMOJIS.values())
     for category in registry.CATEGORIES.values():
-        assert category.emoji in known, category.id
+        assert category.emoji in known, category.id       # shown in /config
+        assert category.log_icon in known, category.id    # shown on a log
     for key in registry.EVENTS:
         assert registry.event_emoji(key) in known, key
+
+
+def test_a_category_icon_is_never_the_one_a_log_falls_back_to():
+    """/config identifies a category; a log says what happened."""
+    shared = [c.id for c in registry.CATEGORIES.values()
+              if c.emoji == c.log_icon]
+    # `channels` is the exception: the set ships no channels_icon, so the
+    # generic channels icon serves both.
+    assert shared == ["channels"], shared
 
 
 def test_category_order_is_stable():

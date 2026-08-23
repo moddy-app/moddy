@@ -672,6 +672,26 @@ LOG_EMOJIS = {
     "Blockmessage":                   "<:Blockmessage:1540890215932231730>",
     "blockwordsinmemberprofilenames": "<:blockwordsinmemberprofilenames:1540890217194590288>",
     "boostlevel1":                    "<:boostlevel1:1540890226098962452>",
+    # -- Category icons, used by the /config panel (one per log category;
+    # `channels` has none of its own and keeps `channls`). ------------------
+    "apps_icon":         "<:apps_icon:1540896689316036629>",
+    "Webhooks_icon":     "<:Webhooks_icon:1540896690419142656>",
+    "Poll_icon":         "<:Poll_icon:1540896691522248754>",
+    "stage_icon":        "<:stage_icon:1540896692772151326>",
+    "events_icon":       "<:events_icon:1540896693929644102>",
+    "Soundboards_icon":  "<:Soundboards_icon:1540896695162773614>",
+    "Stickers_icon":     "<:Stickers_icon:1540896696509399110>",
+    "Emojis_icon":       "<:Emojis_icon:1540896697893388371>",
+    "automod_icon":      "<:automod_icon:1540896699302674432>",
+    "invitemember_icon": "<:invitemember_icon:1540896701131268106>",
+    "voice_icon":        "<:voice_icon:1540896702360330370>",
+    "threads_icon":      "<:threads_icon:1540896703719280681>",
+    "roleicon_icon":     "<:roleicon_icon:1540896705250066502>",
+    "mod_icon":          "<:mod_icon:1540896706546237520>",
+    "members_icon":      "<:members_icon:1540896707854733412>",
+    "messages_icon":     "<:messages_icon:1540896709863936160>",
+    "Servers_icon":      "<:Servers_icon:1540896711378075668>",
+
 }
 
 

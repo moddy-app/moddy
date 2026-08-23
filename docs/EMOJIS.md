@@ -307,3 +307,26 @@ can never stop a log from being delivered.
 <:Blockmessage:1540890215932231730>  `Blockmessage`
 <:blockwordsinmemberprofilenames:1540890217194590288>  `blockwordsinmemberprofilenames`
 <:boostlevel1:1540890226098962452>  `boostlevel1`
+
+The `*_icon` entries are the **category** icons shown in the `/config`
+panel; the icon a log falls back to when its event has none of its own is a
+different one (`registry._CATEGORY_LOG_ICONS`) — `/config` identifies a
+category, a log says what happened.
+
+<:apps_icon:1540896689316036629>  `apps_icon`
+<:Webhooks_icon:1540896690419142656>  `Webhooks_icon`
+<:Poll_icon:1540896691522248754>  `Poll_icon`
+<:stage_icon:1540896692772151326>  `stage_icon`
+<:events_icon:1540896693929644102>  `events_icon`
+<:Soundboards_icon:1540896695162773614>  `Soundboards_icon`
+<:Stickers_icon:1540896696509399110>  `Stickers_icon`
+<:Emojis_icon:1540896697893388371>  `Emojis_icon`
+<:automod_icon:1540896699302674432>  `automod_icon`
+<:invitemember_icon:1540896701131268106>  `invitemember_icon`
+<:voice_icon:1540896702360330370>  `voice_icon`
+<:threads_icon:1540896703719280681>  `threads_icon`
+<:roleicon_icon:1540896705250066502>  `roleicon_icon`
+<:mod_icon:1540896706546237520>  `mod_icon`
+<:members_icon:1540896707854733412>  `members_icon`
+<:messages_icon:1540896709863936160>  `messages_icon`
+<:Servers_icon:1540896711378075668>  `Servers_icon`
