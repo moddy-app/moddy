@@ -479,16 +479,49 @@ def test_absorbing_keeps_the_subject_and_the_executor():
 # --------------------------------------------------------------------------- #
 
 def test_the_config_panel_draws_only_from_the_logs_icon_set():
-    """Only the module icon may come from anywhere else."""
+    """Category and event icons come from the logs set; generic UI chrome
+    (going back a screen, Options, clearing the config, and the three real
+    on/off settings) uses the bot's normal icons instead, like every other
+    /config panel."""
     from modules.configs import logs_config
-    from utils.emojis import LOG_EMOJIS, NOTE
+    from utils.emojis import (
+        BACK, DELETE, LOG_EMOJIS, NOTE, SETTINGS, TOGGLE_OFF, TOGGLE_ON,
+    )
 
-    allowed = set(LOG_EMOJIS.values()) | {NOTE}
+    generic_ui = {"_ICON_BACK": BACK, "_ICON_OPTIONS": SETTINGS,
+                  "_ICON_CLEAR": DELETE, "_ICON_ON": TOGGLE_ON,
+                  "_ICON_OFF": TOGGLE_OFF}
+    allowed_logs = set(LOG_EMOJIS.values()) | {NOTE}
     icons = {name: value for name, value in vars(logs_config).items()
              if name.startswith("_ICON_")}
     assert icons, "the panel declares no icon constant any more"
     for name, value in icons.items():
-        assert value in allowed, f"{name} is not in the logs icon set"
+        if name in generic_ui:
+            assert value == generic_ui[name], f"{name} should be the bot's normal icon"
+        else:
+            assert value in allowed_logs, f"{name} is not in the logs icon set"
+
+
+def test_every_toggle_in_the_bot_uses_the_one_toggle_icon_pair():
+    """TOGGLE_ON/TOGGLE_OFF are the only pair allowed for an on/off state,
+    across the whole bot — not just in the logs panel. Their old ids must be
+    gone everywhere outside this guard."""
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parent.parent
+    retired_ids = ("1446267419034386473", "1446267399786594514")
+    this_file = Path(__file__).resolve()
+    offenders = []
+    for path in root.rglob("*.py"):
+        if "__pycache__" in path.parts or path.resolve() == this_file:
+            continue
+        try:
+            source = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue
+        if any(old_id in source for old_id in retired_ids):
+            offenders.append(str(path.relative_to(root)))
+    assert not offenders, f"still reference the retired toggle icon ids: {offenders}"
 
 
 def test_the_event_checklist_shows_one_icon_per_event():

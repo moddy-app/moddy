@@ -129,19 +129,43 @@ icons, listed in [docs/EMOJIS.md](EMOJIS.md)). Resolve one by name with
 `log_emoji("createchannel")` — an unknown name returns `""` rather than
 raising, so a typo can never stop a log from being delivered.
 
-That set is the **only** source this feature draws from, in the `/config`
-panel as well as in the log messages. The single exception is the module
-icon shown in the `/config` module picker (`LogsModule.MODULE_EMOJI`).
+Category and event icons are the **only** thing that draws from that set. Four
+kinds of icon stay on the bot's own general set (`utils/emojis.py`, the plain
+constants) because they are generic `/config` chrome, not something specific
+to logs — the same reasoning that keeps the module icon on `NOTE` instead of a
+log icon:
 
-A category has **two** icons, and they are not interchangeable:
+- the module icon in the `/config` module picker (`LogsModule.MODULE_EMOJI`);
+- going back a screen (root panel, the category screen, the options screen) —
+  `BACK`;
+- opening Options (`SETTINGS`) and clearing the whole configuration
+  (`DELETE`);
+- the three real on/off settings — ignore bots, attach transcripts, merge
+  duplicates — which use `TOGGLE_ON` / `TOGGLE_OFF`, **the only toggle icon
+  pair anywhere in the bot** (every other `/config` panel with a switch uses
+  the same two constants; there is no second pair).
+
+Pagination inside the category checklist (previous/next page) is a different
+thing — a chevron *within* the logs UI, not a step back to another screen — and
+stays in the logs set (`left` / `right`). "Enable all" / "disable all" on the
+same checklist is a bulk *action* rather than a state to reflect (the icon is
+fixed, it does not flip with anything), so it keeps the logs set's own
+checkmark/cross (`Checked` / `Notchecked`) instead of the toggle pair.
+
+`tests/test_logs.py::test_the_config_panel_draws_only_from_the_logs_icon_set`
+pins exactly which constant goes where, and
+`test_every_toggle_in_the_bot_uses_the_one_toggle_icon_pair` guards the bot-wide
+rule: no file outside `utils/emojis.py` may reference the retired toggle icon
+ids.
+
+A category has **two** icons of its own, and they are not interchangeable:
 
 | Field | Where it shows | What it has to say |
 |---|---|---|
 | `LogCategorySpec.emoji` | the `/config` panel — picker, list, category screen | *which category this is* |
 | `LogCategorySpec.log_icon` | a log message whose event has no icon of its own | *what happened* |
 
-(`channels` is the one category where both are the same: the set ships no
-`channels_icon`.)
+They are never the same icon for any category — a test asserts it.
 
 An event's icon is resolved in two steps (`registry.event_emoji`):
 
@@ -504,8 +528,8 @@ python3 -m pytest tests/test_persistent_views.py -q
 * `tests/test_logs.py` — registry consistency, routing and fan-out, stored
   schema round-trip, ignore lists, rendering (escaping, truncation,
   attachments, size budget), duplicate merging (one channel, split channels,
-  option off), the icon set (every event resolves to one, the panel draws from
-  nothing else), delivery and batching.
+  option off), the icon set (every event resolves to one, generic UI chrome
+  stays on the bot's normal icons), delivery and batching.
 * `tests/test_logs_i18n.py` — every event name, title, field label, standalone
   value and Discord permission name exists in all five locales, and no stale
   translation is left behind after a rename.
