@@ -31,7 +31,7 @@ from modules.logs import (
     LogsModule, config_from_raw,
 )
 from serverlogs import registry
-from utils.emojis import NOTE, log_emoji
+from utils.emojis import BACK, DELETE, NOTE, SETTINGS, log_emoji
 from utils.i18n import i18n, t
 
 logger = logging.getLogger('moddy.modules.logs_config')
@@ -39,12 +39,18 @@ logger = logging.getLogger('moddy.modules.logs_config')
 _MODULE_ID = "logs"
 
 # Every icon of this panel comes from the server-logs set
-# (``utils/emojis.py::LOG_EMOJIS``) — the only source this feature draws from.
-# The module icon in the /config picker is the documented exception.
-_ICON_BACK = log_emoji("left")
+# (``utils/emojis.py::LOG_EMOJIS``), with three exceptions kept on the bot's
+# normal icons: navigating back a screen, opening Options and clearing the
+# whole config are generic UI actions, not something specific to logs, so
+# they use the same BACK/SETTINGS/DELETE the rest of /config uses — plus the
+# module icon in the /config picker.
+_ICON_BACK = BACK
+_ICON_OPTIONS = SETTINGS
+_ICON_CLEAR = DELETE
+#: Pagination chevrons inside the category checklist — distinct from "go back
+#: a screen" above, these stay in the logs set.
+_ICON_PREV = log_emoji("left")
 _ICON_NEXT = log_emoji("right")
-_ICON_OPTIONS = log_emoji("moreoptions")
-_ICON_CLEAR = log_emoji("close")
 _ICON_ON = log_emoji("Checked")
 _ICON_OFF = log_emoji("Notchecked")
 
@@ -560,7 +566,7 @@ class LogsCategoryButton(ui.DynamicItem[ui.Button],
         "back": (discord.ButtonStyle.secondary, _ICON_BACK),
         "all": (discord.ButtonStyle.success, _ICON_ON),
         "none": (discord.ButtonStyle.secondary, _ICON_OFF),
-        "prev": (discord.ButtonStyle.secondary, _ICON_BACK),
+        "prev": (discord.ButtonStyle.secondary, _ICON_PREV),
         "next": (discord.ButtonStyle.secondary, _ICON_NEXT),
     }
 

@@ -479,16 +479,23 @@ def test_absorbing_keeps_the_subject_and_the_executor():
 # --------------------------------------------------------------------------- #
 
 def test_the_config_panel_draws_only_from_the_logs_icon_set():
-    """Only the module icon may come from anywhere else."""
+    """Category and event icons come from the logs set; generic UI chrome
+    (going back a screen, Options, clearing the config) uses the bot's
+    normal icons instead, like every other /config panel."""
     from modules.configs import logs_config
-    from utils.emojis import LOG_EMOJIS, NOTE
+    from utils.emojis import BACK, DELETE, LOG_EMOJIS, NOTE, SETTINGS
 
-    allowed = set(LOG_EMOJIS.values()) | {NOTE}
+    generic_ui = {"_ICON_BACK": BACK, "_ICON_OPTIONS": SETTINGS,
+                  "_ICON_CLEAR": DELETE}
+    allowed_logs = set(LOG_EMOJIS.values()) | {NOTE}
     icons = {name: value for name, value in vars(logs_config).items()
              if name.startswith("_ICON_")}
     assert icons, "the panel declares no icon constant any more"
     for name, value in icons.items():
-        assert value in allowed, f"{name} is not in the logs icon set"
+        if name in generic_ui:
+            assert value == generic_ui[name], f"{name} should be the bot's normal icon"
+        else:
+            assert value in allowed_logs, f"{name} is not in the logs icon set"
 
 
 def test_the_event_checklist_shows_one_icon_per_event():
