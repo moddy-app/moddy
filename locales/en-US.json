@@ -2165,6 +2165,7 @@
         "uncached_message": "*The message content was no longer cached.*",
         "uncached_messages": "*None of these messages were cached, so no transcript could be built.*",
         "moved_to_file": "Content truncated — the full text is attached.",
+        "size_limit": "Log shortened — it exceeded the maximum size of a Discord message.",
         "transcript_attached": "*The full content is attached as a `.txt` transcript.*",
         "transcript_header": "Transcript of deleted messages — Moddy",
         "duration": {

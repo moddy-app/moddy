@@ -32,7 +32,7 @@ from modules.logs import (
 )
 from serverlogs import registry
 from utils.emojis import (
-    BACK, DELETE, FILTER, HISTORY, SETTINGS, TOGGLE_OFF, TOGGLE_ON, NEXT,
+    BACK, DELETE, FILTER, NOTE, SETTINGS, TOGGLE_OFF, TOGGLE_ON, NEXT,
 )
 from utils.i18n import i18n, t
 
@@ -129,7 +129,7 @@ class LogsConfigView(BaseView):
         container = ui.Container()
 
         container.add_item(ui.TextDisplay(
-            f"### {HISTORY} {t('modules.logs.config.title', locale=self.locale)}"
+            f"### {NOTE} {t('modules.logs.config.title', locale=self.locale)}"
         ))
         container.add_item(ui.TextDisplay(
             t('modules.logs.config.description', locale=self.locale)

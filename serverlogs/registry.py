@@ -27,6 +27,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
+from utils.emojis import (
+    BALANCE, COMMANDS, EMOJI, FILTER, FOLDERS, GROUPS, IMAGE, LINK,
+    MANAGE_USER, MESSAGE, MIC_OFF, PLAY, SHIELD, TEXT, TIME, USER,
+    VOICE_CHAT, WEBHOOK,
+)
+
 # ---------------------------------------------------------------------------
 # Colour "kind" of an event — drives the embed accent so a log channel reads
 # at a glance: green = something appeared, red = something disappeared,
@@ -132,7 +138,7 @@ class LogCategorySpec:
 
 _CATALOGUE: Tuple[Tuple[str, str, Tuple[str, ...]], ...] = (
     (
-        "server", "<:groups:1519789805456724049>",
+        "server", GROUPS,
         (
             "ban_add", "ban_remove", "user_join", "user_leave", "user_kick",
             "member_prune", "afk_channel_update", "afk_timeout_update",
@@ -152,14 +158,14 @@ _CATALOGUE: Tuple[Tuple[str, str, Tuple[str, ...]], ...] = (
         ),
     ),
     (
-        "messages", "<:message:1519790643784843416>",
+        "messages", MESSAGE,
         (
             "message_delete", "message_bulk_delete", "message_edit",
             "message_publish", "message_command_used",
         ),
     ),
     (
-        "users", "<:user:1519798911517196511>",
+        "users", USER,
         (
             "user_name_update", "user_roles_update", "user_roles_add",
             "user_roles_remove", "user_avatar_update", "user_timed_out",
@@ -167,7 +173,7 @@ _CATALOGUE: Tuple[Tuple[str, str, Tuple[str, ...]], ...] = (
         ),
     ),
     (
-        "moderation", "<:shield:1521471376815292498>",
+        "moderation", SHIELD,
         (
             "auto_moderation", "ban_add", "ban_remove", "case_delete",
             "mass_case_delete", "case_update", "kick_add", "kick_remove",
@@ -177,7 +183,7 @@ _CATALOGUE: Tuple[Tuple[str, str, Tuple[str, ...]], ...] = (
         ),
     ),
     (
-        "channels", "<:text:1519791921462120601>",
+        "channels", TEXT,
         (
             "channel_create", "channel_delete", "channel_pins_update",
             "channel_name_update", "channel_topic_update",
@@ -194,7 +200,7 @@ _CATALOGUE: Tuple[Tuple[str, str, Tuple[str, ...]], ...] = (
         ),
     ),
     (
-        "roles", "<:manageuser:1519798563880698066>",
+        "roles", MANAGE_USER,
         (
             "role_create", "role_delete", "role_color_update",
             "role_hoist_update", "role_mentionable_update", "role_name_update",
@@ -202,7 +208,7 @@ _CATALOGUE: Tuple[Tuple[str, str, Tuple[str, ...]], ...] = (
         ),
     ),
     (
-        "threads", "<:folders:1520590403533934713>",
+        "threads", FOLDERS,
         (
             "thread_create", "thread_delete", "thread_name_update",
             "thread_slowmode_update", "thread_archive_duration_update",
@@ -211,18 +217,18 @@ _CATALOGUE: Tuple[Tuple[str, str, Tuple[str, ...]], ...] = (
         ),
     ),
     (
-        "voice", "<:voice_chat:1535700758601666672>",
+        "voice", VOICE_CHAT,
         (
             "voice_channel_full", "voice_user_join", "voice_user_switch",
             "voice_user_leave", "voice_user_move", "voice_user_kick",
         ),
     ),
     (
-        "invites", "<:link:1521517863607734385>",
+        "invites", LINK,
         ("invite_create", "invite_delete", "invite_post"),
     ),
     (
-        "automod", "<:filter:1520586655180783666>",
+        "automod", FILTER,
         (
             "automod_rule_create", "automod_rule_delete",
             "automod_rule_toggle", "automod_rule_name_update",
@@ -232,28 +238,28 @@ _CATALOGUE: Tuple[Tuple[str, str, Tuple[str, ...]], ...] = (
         ),
     ),
     (
-        "emojis", "<:emoji:1519800926636867675>",
+        "emojis", EMOJI,
         (
             "emoji_create", "emoji_delete", "emoji_name_update",
             "emoji_roles_update",
         ),
     ),
     (
-        "stickers", "<:image:1520593192892764260>",
+        "stickers", IMAGE,
         (
             "sticker_create", "sticker_delete", "sticker_name_update",
             "sticker_description_update", "sticker_related_emoji_update",
         ),
     ),
     (
-        "soundboard", "<:play:1519787501789773996>",
+        "soundboard", PLAY,
         (
             "sound_upload", "sound_name_update", "sound_volume_update",
             "sound_emoji_update", "sound_delete",
         ),
     ),
     (
-        "events", "<:time:1519798202990330087>",
+        "events", TIME,
         (
             "event_create", "event_delete", "event_name_update",
             "event_description_update", "event_location_update",
@@ -264,25 +270,25 @@ _CATALOGUE: Tuple[Tuple[str, str, Tuple[str, ...]], ...] = (
         ),
     ),
     (
-        "stage", "<:mic_off:1520555496665255936>",
+        "stage", MIC_OFF,
         ("stage_start", "stage_end", "stage_topic_update", "stage_privacy_update"),
     ),
     (
-        "polls", "<:balance:1519801728961351730>",
+        "polls", BALANCE,
         (
             "poll_create", "poll_delete", "poll_finalize", "poll_votes_add",
             "poll_votes_remove",
         ),
     ),
     (
-        "webhooks", "<:webhook:1519793325329219675>",
+        "webhooks", WEBHOOK,
         (
             "webhook_create", "webhook_name_update", "webhook_avatar_update",
             "webhook_channel_update", "webhook_delete",
         ),
     ),
     (
-        "applications", "<:commands:1519794878933106830>",
+        "applications", COMMANDS,
         ("app_add", "app_remove", "app_command_permission_update"),
     ),
 )

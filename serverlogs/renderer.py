@@ -321,6 +321,32 @@ class LogEntry:
         if self._footer_text:
             embed.set_footer(text=truncate(self._footer_text, 2000),
                              icon_url=self._footer_icon)
+        return self._fit(embed)
+
+    def _fit(self, embed: discord.Embed) -> discord.Embed:
+        """Keep the whole embed inside Discord's total-size budget.
+
+        Every individual value is capped already, but a log made of many
+        fields (a permission diff spanning a dozen roles) can still add up
+        past the limit — and Discord rejects the *whole* message, so the log
+        would simply never arrive. Trailing fields are dropped first (they
+        carry the detail, the description carries the facts), the
+        description is shortened only if that is not enough, and the reader
+        is always told the log was shortened.
+        """
+        if len(embed) <= MAX_EMBED_TOTAL:
+            return embed
+
+        note = "\n-# " + t("modules.logs.values.size_limit", locale=self.locale)
+        budget = MAX_EMBED_TOTAL - len(note)
+
+        while embed.fields and len(embed) > budget:
+            embed.remove_field(len(embed.fields) - 1)
+        if len(embed) > budget:
+            description = embed.description or ""
+            keep = max(len(description) - (len(embed) - budget), 1)
+            embed.description = truncate(description, keep)
+        embed.description = (embed.description or "") + note
         return embed
 
 

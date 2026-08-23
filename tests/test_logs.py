@@ -16,8 +16,8 @@ from modules.logs import LogsModule, config_from_raw
 from serverlogs import registry
 from serverlogs.dispatcher import LogDispatcher, MAX_EMBEDS_PER_MESSAGE
 from serverlogs.renderer import (
-    KIND_COLORS, LogEntry, build_transcript, fmt_duration, fmt_number,
-    fmt_time, fmt_user,
+    KIND_COLORS, MAX_EMBED_TOTAL, LogEntry, build_transcript, fmt_duration,
+    fmt_number, fmt_time, fmt_user,
 )
 
 
@@ -45,6 +45,16 @@ def test_shared_events_resolve_to_several_categories():
     """A ban is both a server event and a moderation event."""
     assert set(registry.keys_for("ban_add")) == {"server.ban_add", "moderation.ban_add"}
     assert registry.keys_for("user_join") == ("server.user_join",)
+
+
+def test_categories_use_custom_emojis():
+    """CLAUDE.md rule 3: custom emojis only, straight from utils/emojis.py."""
+    import utils.emojis as emojis
+
+    known = {value for name, value in vars(emojis).items()
+             if name.isupper() and isinstance(value, str)}
+    for category in registry.CATEGORIES.values():
+        assert category.emoji in known, category.id
 
 
 def test_category_order_is_stable():
@@ -194,6 +204,25 @@ def test_a_short_block_stays_inline():
     entry.block("message", "hello")
     assert entry.files == []
     assert entry.to_embed().fields[0].value == "hello"
+
+
+def test_an_oversized_embed_is_cut_down_to_a_deliverable_size():
+    """Discord rejects the whole message past its total budget, not just the field."""
+    entry = LogEntry("channel_permissions_update", "en-US")
+    for index in range(25):
+        entry.block(f"role_{index}", "y" * 900)
+    embed = entry.to_embed()
+    assert len(embed) <= MAX_EMBED_TOTAL
+    assert len(embed.fields) < 25
+    assert "-#" in (embed.description or "")
+
+
+def test_an_embed_within_budget_is_left_alone():
+    entry = LogEntry("message_delete", "en-US")
+    entry.block("message", "hello")
+    embed = entry.to_embed()
+    assert embed.description is None
+    assert len(embed.fields) == 1
 
 
 def test_markdown_in_names_is_escaped():

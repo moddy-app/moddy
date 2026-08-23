@@ -2165,6 +2165,7 @@
         "uncached_message": "*Der Nachrichteninhalt war nicht mehr im Cache.*",
         "uncached_messages": "*Keine dieser Nachrichten war im Cache, daher konnte kein Transkript erstellt werden.*",
         "moved_to_file": "Inhalt gekürzt — der vollständige Text ist angehängt.",
+        "size_limit": "Log gekürzt — es überschritt die maximale Größe einer Discord-Nachricht.",
         "transcript_attached": "*Der vollständige Inhalt ist als `.txt`-Transkript angehängt.*",
         "transcript_header": "Transkript gelöschter Nachrichten — Moddy",
         "duration": {

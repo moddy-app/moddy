@@ -33,6 +33,7 @@ import discord
 
 from modules.module_manager import ModuleBase
 from serverlogs import registry
+from utils.emojis import NOTE
 
 logger = logging.getLogger('moddy.modules.logs')
 
@@ -110,7 +111,7 @@ class LogsModule(ModuleBase):
     MODULE_ID = MODULE_ID
     MODULE_NAME = "Logs"
     MODULE_DESCRIPTION = "Detailed audit logs for everything that happens on the server"
-    MODULE_EMOJI = "<:history:1519796822963392755>"
+    MODULE_EMOJI = NOTE
     MODULE_ORDER = 25
 
     def __init__(self, bot, guild_id: int):

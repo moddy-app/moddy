@@ -2164,6 +2164,7 @@
         "uncached_message": "*Le contenu du message n'était plus en cache.*",
         "uncached_messages": "*Aucun de ces messages n'était en cache : impossible d'en faire un transcript.*",
         "moved_to_file": "Contenu tronqué — le texte complet est en pièce jointe.",
+        "size_limit": "Log raccourci — il dépassait la taille maximale d'un message Discord.",
         "transcript_attached": "*Le contenu complet est en pièce jointe (transcript `.txt`).*",
         "transcript_header": "Transcript des messages supprimés — Moddy",
         "duration": {

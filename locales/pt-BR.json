@@ -2165,6 +2165,7 @@
         "uncached_message": "*O conteúdo da mensagem não estava mais em cache.*",
         "uncached_messages": "*Nenhuma dessas mensagens estava em cache: não foi possível gerar uma transcrição.*",
         "moved_to_file": "Conteúdo truncado — o texto completo está em anexo.",
+        "size_limit": "Registro encurtado: excedia o tamanho máximo de uma mensagem do Discord.",
         "transcript_attached": "*O conteúdo completo está em anexo (transcrição `.txt`).*",
         "transcript_header": "Transcrição das mensagens excluídas — Moddy",
         "duration": {
