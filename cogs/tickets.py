@@ -28,7 +28,6 @@ from discord.ext import commands
 
 from modules.tickets import (
     MODULE_ID,
-    PERM_PARTICIPANTS,
     PERM_RENAME,
     member_permissions,
 )
@@ -36,9 +35,10 @@ from services.ticket_service import TicketError
 from utils.components_v2 import create_success_message
 from utils.i18n import i18n, t
 from utils.ticket_views import (
-    TicketParticipantsView,
     TicketRenameModal,
     handle_ticket_error,
+    open_participants_modal,
+    run_claim,
     run_staff_thread,
     send_error,
     send_success,
@@ -329,15 +329,29 @@ async def ticket_participants(interaction: discord.Interaction):
     if not resolved:
         return
     service, ticket, panel, category = resolved
-    locale = i18n.get_user_locale(interaction)
+    # The form opens pre-filled with whoever is in the ticket right now — see
+    # utils/ticket_views.TicketParticipantsModal.
+    await open_participants_modal(interaction, ticket, category)
 
-    if PERM_PARTICIPANTS not in member_permissions(interaction.user, category, ticket):
-        await send_error(interaction,
-                         t('modules.tickets.errors.missing_permission', locale=locale),
-                         locale)
+
+# --------------------------------------------------------------------------- #
+# Claim
+# --------------------------------------------------------------------------- #
+@ticket_group.command(name="claim", description="Take this ticket in charge")
+async def ticket_claim(interaction: discord.Interaction):
+    resolved = await _service_and_ticket(interaction)
+    if not resolved:
         return
-    await interaction.response.send_message(
-        view=TicketParticipantsView(interaction.guild, ticket, locale), ephemeral=True)
+    await run_claim(interaction, resolved[0], force=True)
+
+
+@ticket_group.command(name="unclaim",
+                      description="Release this ticket so anyone can take it")
+async def ticket_unclaim(interaction: discord.Interaction):
+    resolved = await _service_and_ticket(interaction)
+    if not resolved:
+        return
+    await run_claim(interaction, resolved[0], force=False)
 
 
 # --------------------------------------------------------------------------- #
@@ -376,6 +390,13 @@ async def ticket_info(interaction: discord.Interaction):
         fields.append({
             "name": t('modules.tickets.fields.escalated', locale=locale),
             "value": t('modules.tickets.status.escalated', locale=locale),
+        })
+    if category.get('claim_enabled', True):
+        holder = ticket.get('claimed_by')
+        fields.append({
+            "name": t('modules.tickets.fields.claimed_by', locale=locale),
+            "value": f"<@{holder}>" if holder
+                     else t('modules.tickets.claim.nobody', locale=locale),
         })
     participants = [f"<@{uid}>" for uid in ticket.get('participants', [])]
     participants += [f"<@&{rid}>" for rid in ticket.get('participant_roles', [])]
@@ -426,6 +447,47 @@ class Tickets(commands.Cog):
                             f"(channel {channel.id} deleted)")
         except Exception as e:
             logger.error(f"[Tickets] Cleanup failed for channel {channel.id}: {e}")
+
+    @commands.Cog.listener()
+    async def on_thread_member_join(self, member: discord.ThreadMember):
+        """Keep the staff thread staff-only, whoever gets mentioned in it.
+
+        Mentioning somebody inside a thread adds them to it. In a ticket's
+        private staff thread that is enough to hand the member the thread the
+        staff are discussing them in — one stray ping, no warning. Anyone who
+        is not allowed to see this category's tickets as staff is therefore
+        pulled straight back out, and the same applies to the people added to
+        the ticket by hand: the staff thread is the one room they are not in.
+        """
+        thread = member.thread
+        service = getattr(self.bot, 'tickets', None)
+        if service is None or thread is None or thread.parent is None:
+            return
+        if member.id == self.bot.user.id:
+            return
+
+        try:
+            ticket = await service.get_ticket(thread.parent.id)
+            if not ticket or ticket.get('staff_thread_id') != thread.id:
+                return
+
+            guild_member = thread.guild.get_member(member.id)
+            if guild_member is None:
+                guild_member = await thread.guild.fetch_member(member.id)
+
+            _, _, category = await service.resolve(thread.parent)
+            if service.may_be_in_staff_thread(guild_member, category, ticket):
+                return
+
+            if await service.evict_from_staff_thread(thread, guild_member):
+                logger.info(f"[Tickets] Removed {member.id} from the staff "
+                            f"thread of ticket #{ticket['number']}")
+        except (TicketError, discord.HTTPException):
+            # Not a ticket any more, or the member left in the meantime.
+            return
+        except Exception as e:
+            logger.error(f"[Tickets] Staff-thread guard failed on thread "
+                         f"{thread.id}: {e}")
 
 
 async def setup(bot):

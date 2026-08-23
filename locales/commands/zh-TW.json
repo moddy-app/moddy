@@ -363,6 +363,14 @@
       "name": "參與者",
       "description": "查看並修改誰可以存取這個服務單"
     },
+    "ticket claim": {
+      "name": "認領",
+      "description": "認領此工單"
+    },
+    "ticket unclaim": {
+      "name": "取消認領",
+      "description": "釋放此工單，讓其他人可以認領"
+    },
     "ticket staff-thread": {
       "name": "團隊討論串",
       "description": "開啟或加入團隊私人討論串"

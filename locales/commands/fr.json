@@ -363,6 +363,14 @@
       "name": "participants",
       "description": "Affiche et modifie qui a accès à ce ticket"
     },
+    "ticket claim": {
+      "name": "prendre-en-charge",
+      "description": "Prend ce ticket en charge"
+    },
+    "ticket unclaim": {
+      "name": "relacher",
+      "description": "Relâche ce ticket pour que n'importe qui le reprenne"
+    },
     "ticket staff-thread": {
       "name": "thread-staff",
       "description": "Ouvre ou rejoint le thread privé du staff"

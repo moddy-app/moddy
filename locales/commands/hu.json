@@ -363,6 +363,14 @@
       "name": "résztvevők",
       "description": "Megmutatja és módosítja, ki fér hozzá a hibajegyhez"
     },
+    "ticket claim": {
+      "name": "atvetel",
+      "description": "Átveszi ezt a hibajegyet"
+    },
+    "ticket unclaim": {
+      "name": "elengedes",
+      "description": "Elengedi a hibajegyet, hogy bárki átvehesse"
+    },
     "ticket staff-thread": {
       "name": "csapat-szál",
       "description": "Megnyitja a privát csapatszálat vagy csatlakozik hozzá"

@@ -363,6 +363,14 @@
       "name": "sudionici",
       "description": "Prikazuje i mijenja tko ima pristup ovom tiketu"
     },
+    "ticket claim": {
+      "name": "preuzmi",
+      "description": "Preuzima ovaj tiket"
+    },
+    "ticket unclaim": {
+      "name": "otpusti",
+      "description": "Otpušta tiket kako bi ga netko drugi mogao preuzeti"
+    },
     "ticket staff-thread": {
       "name": "nit-tima",
       "description": "Otvara privatnu nit tima ili joj se pridružuje"

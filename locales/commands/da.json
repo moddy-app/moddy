@@ -363,6 +363,14 @@
       "name": "deltagere",
       "description": "Se og rediger, hvem der har adgang til sagen"
     },
+    "ticket claim": {
+      "name": "overtag",
+      "description": "Overtager denne sag"
+    },
+    "ticket unclaim": {
+      "name": "frigiv",
+      "description": "Frigiver sagen, så andre kan tage den"
+    },
     "ticket staff-thread": {
       "name": "stab-tråd",
       "description": "Åbner eller deltager i den private stab-tråd"

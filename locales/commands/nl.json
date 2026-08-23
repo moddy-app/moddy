@@ -363,6 +363,14 @@
       "name": "deelnemers",
       "description": "Bekijk en bewerk wie toegang heeft tot dit ticket"
     },
+    "ticket claim": {
+      "name": "overnemen",
+      "description": "Neemt dit ticket over"
+    },
+    "ticket unclaim": {
+      "name": "vrijgeven",
+      "description": "Geeft dit ticket vrij zodat iedereen het kan oppakken"
+    },
     "ticket staff-thread": {
       "name": "staff-thread",
       "description": "Opent of neemt deel aan de privé staff-thread"

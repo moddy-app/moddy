@@ -363,6 +363,14 @@
       "name": "participants",
       "description": "See and edit who has access to this ticket"
     },
+    "ticket claim": {
+      "name": "claim",
+      "description": "Take this ticket in charge"
+    },
+    "ticket unclaim": {
+      "name": "unclaim",
+      "description": "Release this ticket so anyone can take it"
+    },
     "ticket staff-thread": {
       "name": "staff-thread",
       "description": "Open or join the private staff thread"

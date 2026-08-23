@@ -363,6 +363,14 @@
       "name": "uczestnicy",
       "description": "Pokazuje i zmienia, kto ma dostęp do tego zgłoszenia"
     },
+    "ticket claim": {
+      "name": "przejmij",
+      "description": "Przejmuje ten ticket"
+    },
+    "ticket unclaim": {
+      "name": "zwolnij",
+      "description": "Zwalnia ten ticket, aby ktokolwiek mógł go przejąć"
+    },
     "ticket staff-thread": {
       "name": "wątek-zespołu",
       "description": "Otwiera prywatny wątek zespołu lub do niego dołącza"

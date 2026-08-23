@@ -363,6 +363,14 @@
       "name": "participantes",
       "description": "Veja e edite quem tem acesso a este ticket"
     },
+    "ticket claim": {
+      "name": "assumir",
+      "description": "Assume este ticket"
+    },
+    "ticket unclaim": {
+      "name": "liberar",
+      "description": "Libera este ticket para que qualquer pessoa o assuma"
+    },
     "ticket staff-thread": {
       "name": "topico-equipe",
       "description": "Abre ou entra no tópico privado da equipe"

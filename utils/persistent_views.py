@@ -71,8 +71,7 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     from modules.configs.tickets_category_config import TicketsConfigPersistence
     from utils.ticket_views import (
         TicketControlView, TicketClosedView, TicketCloseRequestView,
-        TicketEscalationView, TicketEscalateConfirmView, TicketParticipantsView,
-        TicketsPersistence,
+        TicketEscalationView, TicketEscalateConfirmView, TicketsPersistence,
     )
 
     return [
@@ -159,7 +158,6 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         TicketCloseRequestView,
         TicketEscalationView,
         TicketEscalateConfirmView,
-        TicketParticipantsView,
         # Group 12h — the public ticket panel's open buttons / dropdown
         # (dynamic items; public: whoever clicks is the member opening).
         TicketsPersistence,

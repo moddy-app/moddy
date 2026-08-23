@@ -138,6 +138,8 @@
 <:discorduserdoccers:1451303689602994196>
 <:railway:1451333311199838218>
 <:server:1519788576420921476>
+<:ticket:1541216667420594257>
+<:threads:1541216661699436675>
 
 
 ## Server logs icon set — `utils/emojis.py::LOG_EMOJIS`

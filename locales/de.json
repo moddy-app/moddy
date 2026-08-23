@@ -2870,7 +2870,7 @@
         "denied_placeholder": "Gesperrte Rollen",
         "summary_title": "Hinter den Buttons unten konfiguriert",
         "summary_permissions": "Rechte — {roles} Rolle(n)",
-        "summary_messages": "Nachrichten — {count}/2 angepasst",
+        "summary_messages": "Nachrichten — {count}/2 angepasst, {buttons} Button(s)",
         "summary_options": "Optionen — Name `{format}`, `{max}` offene(s) Ticket(s) pro Mitglied",
         "identity": "Identität",
         "permissions": "Rechte",
@@ -2881,7 +2881,10 @@
         "delete": "Löschen",
         "delete_title": "Diese Kategorie löschen?",
         "delete_description": "Sie verschwindet vom Panel und ihre Rechte gehen verloren. Bereits darin offene Tickets funktionieren bis zu ihrer Schließung weiter.",
-        "delete_confirm": "Kategorie löschen"
+        "delete_confirm": "Kategorie löschen",
+        "summary_claim_on": "Übernehmen — an",
+        "summary_claim_off": "Übernehmen — aus",
+        "summary_claim_locked": "Übernehmen — an, nur wer übernimmt, antwortet"
       },
       "messages": {
         "modal_title": "Nachrichten des Tickets",
@@ -2896,7 +2899,8 @@
         "ph_server": "der Servername",
         "ph_category": "der Name der Kategorie",
         "ph_number": "die Ticketnummer",
-        "ph_ticket": "Erwähnung des Ticket-Kanals"
+        "ph_ticket": "Erwähnung des Ticket-Kanals",
+        "separator_hint": "Eine Zeile mit nur `---` wird zu einer Trennlinie."
       },
       "options": {
         "modal_title": "Optionen der Kategorie",
@@ -2905,7 +2909,14 @@
         "max_open_label": "Offene Tickets pro Mitglied",
         "max_open_hint": "Zwischen 1 und {max}, in dieser Kategorie",
         "ping_label": "Zu erwähnende Rollen",
-        "ping_hint": "Werden beim Öffnen eines Tickets erwähnt"
+        "ping_hint": "Werden beim Öffnen eines Tickets erwähnt",
+        "switches_label": "Verhalten",
+        "ping_staff_roles_label": "Auch das Team erwähnen",
+        "ping_staff_roles_hint": "Die Rollen, die die Tickets dieser Kategorie sehen, werden ebenfalls erwähnt",
+        "claim_enabled_label": "Übernehmen erlauben",
+        "claim_enabled_hint": "Ein farbiger Punkt im Kanalnamen zeigt, wer sich kümmert",
+        "claim_lock_label": "Nur wer übernimmt, antwortet",
+        "claim_lock_hint": "Die anderen lesen weiter mit; die Verantwortlichen sprechen immer"
       },
       "permissions": {
         "title": "Rechte der Tickets",
@@ -2946,14 +2957,20 @@
         "admin": {
           "name": "Verantwortlich",
           "description": "Alles oben, und behält den Zugriff nach einer Eskalation"
+        },
+        "claim": {
+          "name": "Übernehmen",
+          "description": "Ein Ticket übernehmen und wieder freigeben"
+        },
+        "unclaim_others": {
+          "name": "Fremdes Ticket freigeben",
+          "description": "Einem Teammitglied sein Ticket abnehmen"
         }
       },
       "channel": {
-        "topic": "Ticket von {user} · {category}",
-        "default_open_message": "Danke, dass du ein Ticket geöffnet hast. Beschreibe dein Anliegen so genau wie möglich — das Team antwortet dir hier.",
+        "topic": "Ticket #{number} · {category} · geöffnet von {user} ({user_id})",
+        "default_open_message": "### {icon} Ticket #{number}\nDanke, dass du ein Ticket geöffnet hast. Beschreibe dein Anliegen so genau wie möglich — das Team antwortet dir hier.\n-# Geöffnet von · {user} · `{category}`",
         "title": "Ticket #{number}",
-        "meta": "Geöffnet von",
-        "commands_hint": "Alle Aktionen gibt es auch als `/ticket`-Befehle.",
         "default_close_message": "Danke für deine Nachricht. Wenn du noch etwas brauchst, öffne ein neues Ticket."
       },
       "actions": {
@@ -2965,7 +2982,9 @@
         "reopen": "Wieder öffnen",
         "delete": "Kanal löschen",
         "deescalate": "Eskalation aufheben",
-        "rename": "Umbenennen"
+        "rename": "Umbenennen",
+        "claim": "Übernehmen",
+        "unclaim": "Freigeben"
       },
       "fields": {
         "reason": "Grund",
@@ -2978,7 +2997,8 @@
         "status": "Status",
         "escalated": "Eskalation",
         "your_permissions": "Deine Rechte hier",
-        "none": "keine"
+        "none": "keine",
+        "claimed_by": "Betreut von"
       },
       "status": {
         "open": "Offen",
@@ -3008,7 +3028,10 @@
       },
       "reopen": {
         "done_title": "Ticket wieder geöffnet",
-        "done_description": "Alle, die Zugriff hatten, haben ihn zurück."
+        "done_description": "Alle, die Zugriff hatten, haben ihn zurück.",
+        "dm_title": "Dein Ticket wurde wieder geöffnet",
+        "dm_description": "Dein Ticket #`{number}` ({category}) auf **{server}** ist wieder offen.",
+        "dm_channel": "Zurück dorthin:"
       },
       "delete": {
         "pending_title": "Wird gelöscht",
@@ -3022,9 +3045,11 @@
         "cancelled_title": "Eskalation aufgehoben",
         "cancelled_description": "Die Team-Rollen haben ihren Zugriff zurück.",
         "confirm_title": "Dieses Ticket eskalieren?",
-        "confirm_description": "Die Team-Rollen verlieren den Zugriff. Der Ersteller bleibt. Was soll mit den von Hand hinzugefügten Personen geschehen?",
+        "confirm_description": "Die Team-Rollen verlieren den Zugriff. Der Ersteller bleibt. Was soll mit den von Hand hinzugefügten Personen passieren?",
         "keep": "Behalten",
-        "drop": "Entfernen"
+        "drop": "Entfernen",
+        "mute": "Sie nur mitlesen lassen",
+        "muted_notice": "Die von Hand hinzugefügten Personen können das Ticket weiter lesen, aber nicht mehr darin schreiben."
       },
       "move": {
         "done_title": "Ticket verschoben",
@@ -3037,7 +3062,6 @@
       "participants": {
         "title": "Teilnehmer des Tickets",
         "description": "Alle hier ausgewählten Personen haben Zugriff auf das Ticket, zusätzlich zum Ersteller und den Team-Rollen. Wähle jemanden ab, um ihn zu entfernen.",
-        "owner_note": "Geöffnet von",
         "members_title": "Mitglieder",
         "members_description": "Einzeln hinzugefügt",
         "members_placeholder": "Wähle die Mitglieder",
@@ -3047,7 +3071,9 @@
         "added_title": "Hinzugefügt",
         "added_description": "{target} hat jetzt Zugriff auf dieses Ticket.",
         "removed_title": "Entfernt",
-        "removed_description": "{target} hat keinen Zugriff mehr auf dieses Ticket."
+        "removed_description": "{target} hat keinen Zugriff mehr auf dieses Ticket.",
+        "saved_title": "Teilnehmer aktualisiert",
+        "saved_description": "In diesem Ticket, zusätzlich zum Ersteller und zum Team: {participants}"
       },
       "staff_thread": {
         "name": "staff-{number}",
@@ -3091,7 +3117,31 @@
         "panel_limit": "Dieser Server hat sein Limit von `{max}` Ticket-Panels erreicht.",
         "category_limit": "Dieses Panel hat sein Limit von `{max}` Kategorien erreicht.",
         "premium_upsell": "Premium hebt die Grenzen auf 10 Panels und 15 Kategorien pro Panel an. [Mehr erfahren]({url})",
-        "invalid_emoji": "Dieses Emoji kann nicht verwendet werden. Nutze ein Server-Emoji oder ein Standard-Emoji."
+        "invalid_emoji": "Dieses Emoji kann nicht verwendet werden. Nutze ein Server-Emoji oder ein Standard-Emoji.",
+        "claim_disabled": "Übernehmen ist in dieser Ticket-Kategorie nicht aktiviert.",
+        "already_claimed": "{user} kümmert sich bereits um dieses Ticket.",
+        "already_claimed_by_you": "Du kümmerst dich bereits um dieses Ticket.",
+        "not_claimed": "Niemand kümmert sich um dieses Ticket.",
+        "claimed_by_someone_else": "{user} kümmert sich um dieses Ticket, und du kannst es nicht abnehmen."
+      },
+      "buttons": {
+        "label": "Buttons unter der Nachricht",
+        "hint": "Abwählen, um die Aktion nur als Befehl zu lassen",
+        "close_hint": "Das Ticket schließen",
+        "claim_hint": "Das Ticket übernehmen oder wieder freigeben",
+        "escalate_hint": "Das Ticket den Verantwortlichen vorbehalten",
+        "staff_thread_hint": "Den privaten Team-Thread öffnen oder betreten",
+        "participants_hint": "Mitglieder und Rollen hinzufügen und entfernen",
+        "close_request_hint": "Dem Mitglied erlauben, die Schließung anzufragen"
+      },
+      "claim": {
+        "claimed_title": "Ticket übernommen",
+        "claimed_description": "{user} kümmert sich um dieses Ticket.",
+        "claimed_done": "Das Ticket gehört dir. Drücke den Button erneut, um es freizugeben.",
+        "released_title": "Ticket freigegeben",
+        "released_description": "{user} hat dieses Ticket freigegeben — jede und jeder im Team kann es übernehmen.",
+        "released_done": "Das Ticket ist wieder frei.",
+        "nobody": "noch niemand"
       }
     }
   },

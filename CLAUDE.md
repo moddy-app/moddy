@@ -47,7 +47,7 @@ moddy/
 │   ├── logs.py                #   Advanced server logs — Discord wiring only
 │   ├── social_notifications.py #  Social notifications dispatch + feeds service wiring
 │   ├── altguard.py            #   AltGuard verdicts, membership events, /altguard verify|unverify
-│   ├── tickets.py             #   /ticket group (module-gated) + ticket channel cleanup
+│   ├── tickets.py             #   /ticket group (module-gated) + channel cleanup + staff-thread guard
 │   ├── interserver_commands.py #  Inter-server commands
 │   ├── ping.py, user.py, avatar.py, banner.py, roll.py, moddy.py
 │   ├── subscription.py        #   Premium features
@@ -75,7 +75,7 @@ moddy/
 │   ├── interserver.py         #   Inter-server message relay
 │   ├── social_notifications.py #  Social notifications (via moddy-feeds service)
 │   ├── altguard.py            #   AltGuard anti multi-account verification gate
-│   ├── tickets.py             #   Tickets (panels, categories, per-role permissions)
+│   ├── tickets.py             #   Tickets (panels, categories, permissions, claim)
 │   ├── automod_ai.py          #   Automod AI (applies decisions, cases+evidence, scalable features)
 │   ├── bot_customization.py   #   Bot identity per guild (nick/avatar/banner/bio + name style)
 │   ├── voice_transcription.py #   Voice message transcription (button or automatic)
@@ -147,7 +147,7 @@ moddy/
 │       ├── reminders.py, saved_messages.py, saved_roles.py
 │       ├── moderation.py, interserver.py, attributes.py
 │       ├── altguard.py          #   AltGuard verifications + gate state (altguard_*)
-│       ├── tickets.py           #   Live ticket state (tickets table)
+│       ├── tickets.py           #   Live ticket state incl. claim (tickets table)
 │       ├── appeals.py           #   Automod sanction appeals (case_appeals)
 │       ├── enforcements.py      #   Global sanction appeal countdowns (case_enforcements)
 │       ├── eval_candidates.py   #   Automod eval/annotation corpus (automod_eval_candidates)
@@ -174,7 +174,7 @@ moddy/
 │   ├── altguard_views.py      #   AltGuard panel (persistent), consent Modal V2, link + log cards
 │   ├── automod_shadow_views.py #  Automod shadow-mode (dry_run) SIMULATION card + annotation buttons (persistent)
 │   ├── automod_render.py      #   Shared automod card helpers (barème breakdown, sanction name/accent)
-│   ├── ticket_views.py        #   Ticket panel, control bar, closing card, participants
+│   ├── ticket_views.py        #   Ticket panel, ticket message, cards, claim, participants modal
 │   ├── transcription_views.py #   Voice transcription cards + persistent Transcribe button
 │   ├── appeal_views.py        #   Automod appeal UI (DM buttons + reviewer panels, persistent)
 │   ├── expiration_views.py    #   Sanction-expiration DM (unban/unmute/unwarn + invite)
@@ -246,7 +246,7 @@ moddy/
     ├── test_bot_customization.py  # Bot customization validation (bio budget, styles)
     ├── test_expiration_notifications.py # Expired sanctions: unban, invite, DM card
     ├── test_task_signature.py #   moddy:tasks HMAC contract (canonicalization, replay, dedup)
-    ├── test_tickets.py        #   Tickets: schema, permissions, overwrites, screens, i18n
+    ├── test_tickets.py        #   Tickets: schema, permissions, claim, overwrites, screens, i18n
     ├── test_transcription.py  #   Voice transcription helpers, guard rails, cards
     ├── test_logs.py           #   Server logs: registry, routing, rendering, delivery
     └── test_logs_i18n.py      #   Server logs: i18n completeness on the 5 locales
@@ -415,7 +415,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/SERVER_LANGUAGE.md](docs/SERVER_LANGUAGE.md) | **Server language** — the single setting every module reads; what follows the server vs. the user |
 | [docs/WELCOME_MESSAGES.md](docs/WELCOME_MESSAGES.md) | Welcome messages module (`welcome_channel`) — config schema, placeholders, backend/dashboard contract |
 | [docs/WELCOME_DM.md](docs/WELCOME_DM.md) | Welcome DM module (`welcome_dm`) — config schema, placeholders, backend/dashboard contract |
-| [docs/TICKETS.md](docs/TICKETS.md) | **Tickets** — panels, categories, per-role permissions, escalation, module-gated `/ticket` commands |
+| [docs/TICKETS.md](docs/TICKETS.md) | **Tickets** — panels, categories, per-role permissions, the claim system, escalation, module-gated `/ticket` commands |
 | [docs/ALTGUARD.md](docs/ALTGUARD.md) | **AltGuard** — anti multi-account verification gate, consent, service contract, staff commands |
 | [docs/ALTGUARD_INTEGRATION.md](docs/ALTGUARD_INTEGRATION.md) | AltGuard ↔ bot exact wire contract — payload types, error codes, debugging |
 | [docs/AUTOMOD_AI.md](docs/AUTOMOD_AI.md) | Automod AI — detection pipeline, nano decider, scalable features, rules safety check |

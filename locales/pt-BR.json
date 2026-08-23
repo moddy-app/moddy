@@ -2870,7 +2870,7 @@
         "denied_placeholder": "Cargos proibidos",
         "summary_title": "Configurado atrás dos botões abaixo",
         "summary_permissions": "Permissões — {roles} cargo(s)",
-        "summary_messages": "Mensagens — {count}/2 personalizada(s)",
+        "summary_messages": "Mensagens — {count}/2 personalizadas, {buttons} botão(ões)",
         "summary_options": "Opções — nome `{format}`, `{max}` ticket(s) aberto(s) por membro",
         "identity": "Identidade",
         "permissions": "Permissões",
@@ -2881,7 +2881,10 @@
         "delete": "Excluir",
         "delete_title": "Excluir esta categoria?",
         "delete_description": "Ela desaparece do painel e as suas permissões são perdidas. Os tickets já abertos nela continuam funcionando até serem fechados.",
-        "delete_confirm": "Excluir a categoria"
+        "delete_confirm": "Excluir a categoria",
+        "summary_claim_on": "Assumir — ativado",
+        "summary_claim_off": "Assumir — desativado",
+        "summary_claim_locked": "Assumir — ativado, só quem assumiu responde"
       },
       "messages": {
         "modal_title": "Mensagens do ticket",
@@ -2896,7 +2899,8 @@
         "ph_server": "o nome do servidor",
         "ph_category": "o nome da categoria",
         "ph_number": "o número do ticket",
-        "ph_ticket": "menção do canal do ticket"
+        "ph_ticket": "menção do canal do ticket",
+        "separator_hint": "Uma linha com apenas `---` vira um separador."
       },
       "options": {
         "modal_title": "Opções da categoria",
@@ -2905,7 +2909,14 @@
         "max_open_label": "Tickets abertos por membro",
         "max_open_hint": "Entre 1 e {max}, nesta categoria",
         "ping_label": "Cargos a mencionar",
-        "ping_hint": "Mencionados quando um ticket é aberto"
+        "ping_hint": "Mencionados quando um ticket é aberto",
+        "switches_label": "Comportamento",
+        "ping_staff_roles_label": "Mencionar também a equipe",
+        "ping_staff_roles_hint": "Os cargos que veem os tickets desta categoria também são mencionados",
+        "claim_enabled_label": "Permitir assumir",
+        "claim_enabled_hint": "Um ponto colorido no nome do canal mostra quem está cuidando",
+        "claim_lock_label": "Só quem assumiu responde",
+        "claim_lock_hint": "Os outros agentes continuam lendo; os responsáveis sempre falam"
       },
       "permissions": {
         "title": "Permissões dos tickets",
@@ -2946,14 +2957,20 @@
         "admin": {
           "name": "Responsável",
           "description": "Tudo acima, e mantém o acesso após um escalonamento"
+        },
+        "claim": {
+          "name": "Assumir",
+          "description": "Assumir um ticket e liberá-lo de novo"
+        },
+        "unclaim_others": {
+          "name": "Liberar o ticket de outro",
+          "description": "Tirar um ticket do agente que o assumiu"
         }
       },
       "channel": {
-        "topic": "Ticket de {user} · {category}",
-        "default_open_message": "Obrigado por abrir um ticket. Descreva o seu pedido da forma mais precisa possível — a equipe responderá aqui.",
+        "topic": "Ticket #{number} · {category} · aberto por {user} ({user_id})",
+        "default_open_message": "### {icon} Ticket #{number}\nObrigado por abrir um ticket. Descreva o seu pedido da forma mais precisa possível — a equipe responderá aqui.\n-# Aberto por · {user} · `{category}`",
         "title": "Ticket #{number}",
-        "meta": "Aberto por",
-        "commands_hint": "Todas as ações também estão disponíveis com os comandos `/ticket`.",
         "default_close_message": "Obrigado por entrar em contato. Se precisar de mais alguma coisa, abra um novo ticket."
       },
       "actions": {
@@ -2965,7 +2982,9 @@
         "reopen": "Reabrir",
         "delete": "Excluir o canal",
         "deescalate": "Cancelar o escalonamento",
-        "rename": "Renomear"
+        "rename": "Renomear",
+        "claim": "Assumir",
+        "unclaim": "Liberar"
       },
       "fields": {
         "reason": "Motivo",
@@ -2978,7 +2997,8 @@
         "status": "Status",
         "escalated": "Escalonamento",
         "your_permissions": "Suas permissões aqui",
-        "none": "nenhuma"
+        "none": "nenhuma",
+        "claimed_by": "Atendido por"
       },
       "status": {
         "open": "Aberto",
@@ -3008,7 +3028,10 @@
       },
       "reopen": {
         "done_title": "Ticket reaberto",
-        "done_description": "Todos que tinham acesso o recuperam."
+        "done_description": "Todos que tinham acesso o recuperam.",
+        "dm_title": "Seu ticket foi reaberto",
+        "dm_description": "Seu ticket #`{number}` ({category}) em **{server}** está aberto de novo.",
+        "dm_channel": "Para voltar:"
       },
       "delete": {
         "pending_title": "Excluindo",
@@ -3022,9 +3045,11 @@
         "cancelled_title": "Escalonamento cancelado",
         "cancelled_description": "Os cargos da equipe recuperam o acesso.",
         "confirm_title": "Escalonar este ticket?",
-        "confirm_description": "Os cargos da equipe perdem o acesso. Quem o abriu permanece. O que fazer com as pessoas adicionadas manualmente?",
+        "confirm_description": "Os cargos da equipe perdem o acesso. O autor fica. O que fazer com as pessoas adicionadas manualmente?",
         "keep": "Mantê-las",
-        "drop": "Removê-las"
+        "drop": "Removê-las",
+        "mute": "Mantê-los em somente leitura",
+        "muted_notice": "As pessoas adicionadas manualmente ainda podem ler o ticket, mas não escrever nele."
       },
       "move": {
         "done_title": "Ticket movido",
@@ -3037,7 +3062,6 @@
       "participants": {
         "title": "Participantes do ticket",
         "description": "Todas as pessoas selecionadas aqui têm acesso ao ticket, além de quem o abriu e dos cargos da equipe. Desmarque alguém para removê-lo.",
-        "owner_note": "Aberto por",
         "members_title": "Membros",
         "members_description": "Adicionados um a um",
         "members_placeholder": "Selecione os membros",
@@ -3047,7 +3071,9 @@
         "added_title": "Adicionado",
         "added_description": "{target} agora tem acesso a este ticket.",
         "removed_title": "Removido",
-        "removed_description": "{target} não tem mais acesso a este ticket."
+        "removed_description": "{target} não tem mais acesso a este ticket.",
+        "saved_title": "Participantes atualizados",
+        "saved_description": "Neste ticket, além do autor e da equipe: {participants}"
       },
       "staff_thread": {
         "name": "staff-{number}",
@@ -3091,7 +3117,31 @@
         "panel_limit": "Este servidor atingiu o limite de `{max}` painéis de tickets.",
         "category_limit": "Este painel atingiu o limite de `{max}` categorias.",
         "premium_upsell": "O Premium eleva os limites para 10 painéis e 15 categorias por painel. [Saiba mais]({url})",
-        "invalid_emoji": "Esse emoji não pode ser usado. Use um emoji do servidor ou um padrão."
+        "invalid_emoji": "Esse emoji não pode ser usado. Use um emoji do servidor ou um padrão.",
+        "claim_disabled": "Assumir não está ativado nesta categoria de tickets.",
+        "already_claimed": "{user} já está cuidando deste ticket.",
+        "already_claimed_by_you": "Você já está cuidando deste ticket.",
+        "not_claimed": "Ninguém está cuidando deste ticket.",
+        "claimed_by_someone_else": "{user} está cuidando deste ticket e você não pode tirá-lo dele."
+      },
+      "buttons": {
+        "label": "Botões abaixo da mensagem",
+        "hint": "Desmarque um para mantê-lo apenas como comando",
+        "close_hint": "Fechar o ticket",
+        "claim_hint": "Assumir o ticket, ou liberá-lo",
+        "escalate_hint": "Reservar o ticket aos responsáveis",
+        "staff_thread_hint": "Abrir ou entrar no tópico privado da equipe",
+        "participants_hint": "Adicionar e remover membros e cargos",
+        "close_request_hint": "Permitir que o membro peça o fechamento"
+      },
+      "claim": {
+        "claimed_title": "Ticket assumido",
+        "claimed_description": "{user} está cuidando deste ticket.",
+        "claimed_done": "O ticket é seu. Aperte o botão de novo para liberá-lo.",
+        "released_title": "Ticket liberado",
+        "released_description": "{user} liberou este ticket — qualquer pessoa da equipe pode assumi-lo.",
+        "released_done": "O ticket está livre de novo.",
+        "nobody": "ninguém ainda"
       }
     }
   },

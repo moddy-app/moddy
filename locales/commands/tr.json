@@ -363,6 +363,14 @@
       "name": "katılımcılar",
       "description": "Bu talebe kimin eriştiğini gösterir ve değiştirir"
     },
+    "ticket claim": {
+      "name": "ustlen",
+      "description": "Bu talebi üstlenir"
+    },
+    "ticket unclaim": {
+      "name": "birak",
+      "description": "Talebi bırakır, böylece başkası üstlenebilir"
+    },
     "ticket staff-thread": {
       "name": "ekip-konusu",
       "description": "Özel ekip konusunu açar veya ona katılır"

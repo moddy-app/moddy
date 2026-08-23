@@ -2870,7 +2870,7 @@
         "denied_placeholder": "Roles prohibidos",
         "summary_title": "Configurado tras los botones de abajo",
         "summary_permissions": "Permisos — {roles} rol(es)",
-        "summary_messages": "Mensajes — {count}/2 personalizado(s)",
+        "summary_messages": "Mensajes — {count}/2 personalizados, {buttons} botón(es)",
         "summary_options": "Opciones — nombre `{format}`, `{max}` ticket(s) abierto(s) por miembro",
         "identity": "Identidad",
         "permissions": "Permisos",
@@ -2881,7 +2881,10 @@
         "delete": "Eliminar",
         "delete_title": "¿Eliminar esta categoría?",
         "delete_description": "Desaparece del panel y se pierden sus permisos. Los tickets ya abiertos en ella siguen funcionando hasta que se cierren.",
-        "delete_confirm": "Eliminar la categoría"
+        "delete_confirm": "Eliminar la categoría",
+        "summary_claim_on": "Hacerse cargo — activado",
+        "summary_claim_off": "Hacerse cargo — desactivado",
+        "summary_claim_locked": "Hacerse cargo — activado, solo responde quien se hace cargo"
       },
       "messages": {
         "modal_title": "Mensajes del ticket",
@@ -2896,7 +2899,8 @@
         "ph_server": "el nombre del servidor",
         "ph_category": "el nombre de la categoría",
         "ph_number": "el número del ticket",
-        "ph_ticket": "mención del canal del ticket"
+        "ph_ticket": "mención del canal del ticket",
+        "separator_hint": "Una línea con solo `---` se convierte en un separador."
       },
       "options": {
         "modal_title": "Opciones de la categoría",
@@ -2905,7 +2909,14 @@
         "max_open_label": "Tickets abiertos por miembro",
         "max_open_hint": "Entre 1 y {max}, en esta categoría",
         "ping_label": "Roles a mencionar",
-        "ping_hint": "Mencionados al abrirse un ticket"
+        "ping_hint": "Mencionados al abrirse un ticket",
+        "switches_label": "Comportamiento",
+        "ping_staff_roles_label": "Mencionar también al staff",
+        "ping_staff_roles_hint": "Los roles que ven los tickets de esta categoría también son mencionados",
+        "claim_enabled_label": "Permitir hacerse cargo",
+        "claim_enabled_hint": "Un punto de color en el nombre del canal muestra quién lo lleva",
+        "claim_lock_label": "Solo responde quien se hace cargo",
+        "claim_lock_hint": "Los demás agentes siguen leyendo; los responsables siempre hablan"
       },
       "permissions": {
         "title": "Permisos de los tickets",
@@ -2946,14 +2957,20 @@
         "admin": {
           "name": "Responsable",
           "description": "Todo lo anterior, y conserva el acceso tras un escalado"
+        },
+        "claim": {
+          "name": "Hacerse cargo",
+          "description": "Hacerse cargo de un ticket y volver a liberarlo"
+        },
+        "unclaim_others": {
+          "name": "Liberar el ticket de otro",
+          "description": "Quitarle un ticket al agente que lo lleva"
         }
       },
       "channel": {
-        "topic": "Ticket de {user} · {category}",
-        "default_open_message": "Gracias por abrir un ticket. Describe tu solicitud con el mayor detalle posible — el equipo te responderá aquí.",
+        "topic": "Ticket #{number} · {category} · abierto por {user} ({user_id})",
+        "default_open_message": "### {icon} Ticket #{number}\nGracias por abrir un ticket. Describe tu solicitud con el mayor detalle posible — el equipo te responderá aquí.\n-# Abierto por · {user} · `{category}`",
         "title": "Ticket #{number}",
-        "meta": "Abierto por",
-        "commands_hint": "Todas las acciones están también disponibles con los comandos `/ticket`.",
         "default_close_message": "Gracias por contactarnos. Si necesitas algo más, abre un ticket nuevo."
       },
       "actions": {
@@ -2965,7 +2982,9 @@
         "reopen": "Reabrir",
         "delete": "Eliminar el canal",
         "deescalate": "Cancelar el escalado",
-        "rename": "Renombrar"
+        "rename": "Renombrar",
+        "claim": "Hacerse cargo",
+        "unclaim": "Liberar"
       },
       "fields": {
         "reason": "Motivo",
@@ -2978,7 +2997,8 @@
         "status": "Estado",
         "escalated": "Escalado",
         "your_permissions": "Tus permisos aquí",
-        "none": "ninguno"
+        "none": "ninguno",
+        "claimed_by": "Atendido por"
       },
       "status": {
         "open": "Abierto",
@@ -3008,7 +3028,10 @@
       },
       "reopen": {
         "done_title": "Ticket reabierto",
-        "done_description": "Todos los que tenían acceso lo recuperan."
+        "done_description": "Todos los que tenían acceso lo recuperan.",
+        "dm_title": "Tu ticket ha sido reabierto",
+        "dm_description": "Tu ticket #`{number}` ({category}) en **{server}** está abierto de nuevo.",
+        "dm_channel": "Para volver:"
       },
       "delete": {
         "pending_title": "Eliminando",
@@ -3022,9 +3045,11 @@
         "cancelled_title": "Escalado cancelado",
         "cancelled_description": "Los roles del staff recuperan su acceso.",
         "confirm_title": "¿Escalar este ticket?",
-        "confirm_description": "Los roles del staff pierden el acceso. Quien lo abrió lo conserva. ¿Qué hacer con las personas añadidas a mano?",
+        "confirm_description": "Los roles del staff pierden el acceso. Su autor se queda. ¿Qué hacer con las personas añadidas a mano?",
         "keep": "Mantenerlas",
-        "drop": "Quitarlas"
+        "drop": "Quitarlas",
+        "mute": "Mantenerlos en solo lectura",
+        "muted_notice": "Las personas añadidas a mano pueden seguir leyendo el ticket pero ya no escribir en él."
       },
       "move": {
         "done_title": "Ticket movido",
@@ -3037,7 +3062,6 @@
       "participants": {
         "title": "Participantes del ticket",
         "description": "Todas las personas seleccionadas aquí tienen acceso al ticket, además de quien lo abrió y de los roles del staff. Deselecciona a alguien para quitarlo.",
-        "owner_note": "Abierto por",
         "members_title": "Miembros",
         "members_description": "Añadidos uno a uno",
         "members_placeholder": "Selecciona los miembros",
@@ -3047,7 +3071,9 @@
         "added_title": "Añadido",
         "added_description": "{target} ya tiene acceso a este ticket.",
         "removed_title": "Quitado",
-        "removed_description": "{target} ya no tiene acceso a este ticket."
+        "removed_description": "{target} ya no tiene acceso a este ticket.",
+        "saved_title": "Participantes actualizados",
+        "saved_description": "En este ticket, además de su autor y del staff: {participants}"
       },
       "staff_thread": {
         "name": "staff-{number}",
@@ -3091,7 +3117,31 @@
         "panel_limit": "Este servidor ha alcanzado su límite de `{max}` paneles de tickets.",
         "category_limit": "Este panel ha alcanzado su límite de `{max}` categorías.",
         "premium_upsell": "Premium eleva los límites a 10 paneles y 15 categorías por panel. [Más información]({url})",
-        "invalid_emoji": "Ese emoji no se puede usar. Usa un emoji del servidor o uno estándar."
+        "invalid_emoji": "Ese emoji no se puede usar. Usa un emoji del servidor o uno estándar.",
+        "claim_disabled": "Hacerse cargo no está activado en esta categoría de tickets.",
+        "already_claimed": "{user} ya se está ocupando de este ticket.",
+        "already_claimed_by_you": "Ya te estás ocupando de este ticket.",
+        "not_claimed": "Nadie se está ocupando de este ticket.",
+        "claimed_by_someone_else": "{user} se está ocupando de este ticket y no puedes quitárselo."
+      },
+      "buttons": {
+        "label": "Botones bajo el mensaje",
+        "hint": "Desmarca uno para dejarlo solo como comando",
+        "close_hint": "Cerrar el ticket",
+        "claim_hint": "Hacerse cargo del ticket, o liberarlo",
+        "escalate_hint": "Reservar el ticket a los responsables",
+        "staff_thread_hint": "Abrir o unirse al hilo privado del staff",
+        "participants_hint": "Añadir y quitar miembros y roles",
+        "close_request_hint": "Permitir al miembro solicitar el cierre"
+      },
+      "claim": {
+        "claimed_title": "Ticket asignado",
+        "claimed_description": "{user} se está ocupando de este ticket.",
+        "claimed_done": "El ticket es tuyo. Vuelve a pulsar el botón para liberarlo.",
+        "released_title": "Ticket liberado",
+        "released_description": "{user} ha liberado este ticket — cualquiera del equipo puede tomarlo.",
+        "released_done": "El ticket vuelve a estar libre.",
+        "nobody": "nadie todavía"
       }
     }
   },
