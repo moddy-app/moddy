@@ -64,9 +64,15 @@ def test_a_category_icon_is_never_the_one_a_log_falls_back_to():
     """/config identifies a category; a log says what happened."""
     shared = [c.id for c in registry.CATEGORIES.values()
               if c.emoji == c.log_icon]
-    # `channels` is the exception: the set ships no channels_icon, so the
-    # generic channels icon serves both.
-    assert shared == ["channels"], shared
+    assert shared == [], shared
+
+
+def test_every_event_has_a_hand_picked_icon():
+    """The fallback exists for a future event, not as the normal case."""
+    declared = set(registry._EVENT_ICONS)
+    catalogue = {spec.event for spec in registry.EVENTS.values()}
+    assert not catalogue - declared, f"no icon chosen for: {sorted(catalogue - declared)}"
+    assert not declared - catalogue, f"icons for gone events: {sorted(declared - catalogue)}"
 
 
 def test_category_order_is_stable():

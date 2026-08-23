@@ -71,6 +71,35 @@ message describes an act. A test asserts the two never coincide — except for
 `channels`, the one category the new set ships no icon for, which keeps the
 generic `channls` on both sides.
 
+## Second follow-up: prefer the official log icons
+
+The first pass mapped several events onto decorative icons while the set ships
+the official `create*` / `update*` / `remove*` / `*created` / `*updated` /
+`*deleted` family for exactly those acts. `_EVENT_ICONS` was rewritten around
+that rule, and now covers **all 163 events** (the category fallback is there
+for a future event, not as the normal case — a test asserts it).
+
+What changed, in substance:
+
+- the 16 `channel_*_update` events and the 3 `thread_*_update` ones no longer
+  fall back to their category icon: they are `updatechannel` / `updatethread`;
+- server asset and setting changes (`server_icon_update`, `server_banner_update`,
+  `server_vanity_update`, `verification_level_update`…) are `updateserver`
+  rather than `uploadimage`, `links` or `view`;
+- `app_add` / `app_remove` became `connectioncreated` / `connectiondeleted` —
+  they come from `bot_add` / `integration_create` / `integration_delete`, which
+  is exactly what those icons are for;
+- `user_avatar_update` and `user_roles_update` became `updatemember`;
+- `role_name_update`, `role_hoist_update`, `role_mentionable_update` →
+  `updaterole`; `thread_archive` / `thread_unarchive` → `updatethread`;
+- the category fallbacks are now the "updated" flavour of each family
+  (`updatechannel`, `updaterole`, `stickersupdated`, `connectionupdated`…),
+  so an event added later without its own icon still reads like a log icon.
+
+Kept specific where the set says more than the generic verb: `permissions`,
+`locked` / `locked1`, `timedout` / `timeout`, `ban`, `kick`, `Warn`,
+`pickcolor`, `roleicon`, the `Block*` automod icons.
+
 ## Known issues / follow-ups
 
 - **The icon-to-event mapping is a guess from the icon *names*.** The emojis
@@ -91,4 +120,4 @@ generic `channls` on both sides.
 
 ## Tests
 
-`python3 -m pytest -q` → **1029 passed** (1026 before, +3).
+`python3 -m pytest -q` → **1030 passed** (1026 before, +4).

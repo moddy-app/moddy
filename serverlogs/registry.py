@@ -298,24 +298,24 @@ _CATALOGUE: Tuple[Tuple[str, str, Tuple[str, ...]], ...] = (
 #: the category icon above: that one identifies the category in ``/config``,
 #: this one has to read as "what happened" on a message.
 _CATEGORY_LOG_ICONS: Dict[str, str] = {
-    "server":      "updateserver",
-    "messages":    "dm",
-    "users":       "updatemember",
-    "moderation":  "modview",
-    "channels":    "channls",
-    "roles":       "roleicon",
-    "threads":     "updatethread",
-    "voice":       "Play",
-    "invites":     "links",
-    "automod":     "Filter",
-    "emojis":      "emojisslots",
-    "stickers":    "stickerscreated",
-    "soundboard":  "soundboardadd",
-    "events":      "eventcreated",
-    "stage":       "stagecreated",
-    "polls":       "questions",
-    "webhooks":    "Webhooks",
-    "applications": "bot",
+    "server":        "updateserver",
+    "messages":      "dm",
+    "users":         "updatemember",
+    "moderation":    "modview",
+    "channels":      "updatechannel",
+    "roles":         "updaterole",
+    "threads":       "updatethread",
+    "voice":         "Play",
+    "invites":       "inviteupdate",
+    "automod":       "Filter",
+    "emojis":        "Emojiupdate",
+    "stickers":      "stickersupdated",
+    "soundboard":    "soundboardupdate",
+    "events":        "eventupdated",
+    "stage":         "stageupdated",
+    "polls":         "questions",
+    "webhooks":      "webhookupdate",
+    "applications":  "connectionupdated",
 }
 
 CATEGORIES: Dict[str, LogCategorySpec] = {
@@ -346,64 +346,94 @@ EVENTS: Dict[str, LogEventSpec] = {
 # ---------------------------------------------------------------------------
 #
 # Every log carries an icon, taken from the server-logs set in
-# ``utils/emojis.py``. Only the events whose act has its own icon are listed
-# here — anything else falls back to its category icon, so a new event is
-# never iconless and adding a name to this table is optional polish, not a
-# step of "adding an event".
+# ``utils/emojis.py``. The rule is to prefer the set's **official log icons** —
+# the ``create*`` / ``update*`` / ``remove*`` / ``*created`` / ``*updated`` /
+# ``*deleted`` family — over a decorative one: a channel topic change is a
+# channel update, so it gets ``updatechannel``, not a speech bubble. A more
+# specific icon is kept only where the set has one for that exact thing and it
+# says more than the generic verb (``permissions``, ``locked``, ``timedout``,
+# ``ban``, ``kick``, ``pickcolor``, ``roleicon``).
+#
+# Every event of the catalogue is listed here. A future one that is not falls
+# back to its category icon in ``_CATEGORY_LOG_ICONS`` (the "updated" flavour of
+# its family), so a new event is never iconless.
 #
 # Keys are bare event names: the same act keeps the same icon in whichever
 # category it is declared (a ban looks like a ban in ``server`` and in
 # ``moderation``).
 
 _EVENT_ICONS: Dict[str, str] = {
-    # People
+    # -- People ---------------------------------------------------------- #
     "user_join": "addmember", "user_leave": "removemember", "user_kick": "kick",
     "kick_add": "kick", "kick_remove": "accept", "member_prune": "removemember",
     "ban_add": "ban", "ban_remove": "accept",
     "mute_add": "timedout", "mute_remove": "timeout",
     "user_timed_out": "timedout", "user_timeout_removed": "timeout",
     "warn_add": "Warn", "warn_remove": "accept",
-    "user_name_update": "updatemember", "user_avatar_update": "uploadimage",
+    "user_name_update": "updatemember", "user_avatar_update": "updatemember",
+    "user_roles_update": "updatemember",
     "user_roles_add": "addrole", "user_roles_remove": "removeuserfromrole",
-    "user_roles_update": "updaterole",
-    # Moddy cases
+    # -- Moddy cases ----------------------------------------------------- #
     "auto_moderation": "Filter", "case_update": "Edit",
     "case_delete": "close", "mass_case_delete": "close",
     "report_create": "sendalert", "reports_accept": "accept",
     "reports_ignore": "deny",
     "user_note_add": "addview", "user_note_remove": "close",
-    # Messages
+    # -- Messages -------------------------------------------------------- #
     "message_delete": "messageremove", "message_bulk_delete": "messageremove",
     "message_edit": "Edit", "message_publish": "Channelsfollowed",
     "message_command_used": "slash",
-    # Channels
+    # -- Channels -------------------------------------------------------- #
     "channel_create": "createchannel", "channel_delete": "deletechannel",
     "channel_permissions_update": "permissions",
-    "channel_slowmode_update": "timeout", "channel_nsfw_update": "locked",
-    # Roles
+    "channel_pins_update": "updatechannel",
+    "channel_name_update": "updatechannel",
+    "channel_topic_update": "updatechannel",
+    "channel_nsfw_update": "updatechannel",
+    "channel_parent_update": "updatechannel",
+    "channel_type_update": "updatechannel",
+    "channel_bitrate_update": "updatechannel",
+    "channel_user_limit_update": "updatechannel",
+    "channel_slowmode_update": "updatechannel",
+    "channel_rtc_region_update": "updatechannel",
+    "channel_video_quality_update": "updatechannel",
+    "channel_default_archive_duration_update": "updatechannel",
+    "channel_default_thread_slowmode_update": "updatechannel",
+    "channel_default_reaction_emoji_update": "updatechannel",
+    "channel_default_sort_order_update": "updatechannel",
+    "channel_forum_tags_update": "updatechannel",
+    "channel_forum_layout_update": "updatechannel",
+    "channel_voice_status_update": "updatechannel",
+    # -- Roles ----------------------------------------------------------- #
     "role_create": "createrole", "role_delete": "removerole",
-    "role_color_update": "pickcolor", "role_icon_update": "roleicon1",
-    "role_permissions_update": "permissions", "role_name_update": "editrole",
-    # Threads
+    "role_color_update": "pickcolor", "role_icon_update": "roleicon",
+    "role_permissions_update": "permissions",
+    "role_name_update": "updaterole", "role_hoist_update": "updaterole",
+    "role_mentionable_update": "updaterole",
+    # -- Threads --------------------------------------------------------- #
     "thread_create": "createthread", "thread_delete": "removethread",
     "thread_lock": "locked", "thread_unlock": "locked1",
-    "thread_archive": "sort", "thread_unarchive": "sort",
-    # Voice
+    "thread_name_update": "updatethread",
+    "thread_slowmode_update": "updatethread",
+    "thread_archive_duration_update": "updatethread",
+    "thread_archive": "updatethread", "thread_unarchive": "updatethread",
+    # -- Voice ----------------------------------------------------------- #
     "voice_user_join": "addmember", "voice_user_leave": "removemember",
     "voice_user_switch": "right", "voice_user_move": "right",
     "voice_user_kick": "kick", "voice_channel_full": "locked",
-    # Invites
+    # -- Invites --------------------------------------------------------- #
     "invite_create": "invitecreate", "invite_delete": "inviteremove",
     "invite_post": "links",
-    # Discord AutoMod
+    # -- Discord AutoMod ------------------------------------------------- #
     "automod_rule_create": "addrule", "automod_rule_delete": "deny",
+    "automod_rule_toggle": "Filter",
     "automod_rule_name_update": "Edit",
     "automod_rule_actions_update": "Blockmessage",
     "automod_rule_content_update": "Blockcustomwords",
     "automod_rule_roles_update": "addrole",
     "automod_rule_channels_update": "channls",
     "automod_rule_whitelist_update": "grantedperm",
-    # Assets
+    # -- Assets ---------------------------------------------------------- #
     "emoji_create": "Emojicreate", "emoji_delete": "Emojiremove",
     "emoji_name_update": "Emojiupdate", "emoji_roles_update": "Emojiupdate",
     "sticker_create": "stickerscreated", "sticker_delete": "stickersdeleted",
@@ -414,47 +444,47 @@ _EVENT_ICONS: Dict[str, str] = {
     "sound_name_update": "soundboardupdate",
     "sound_volume_update": "soundboardupdate",
     "sound_emoji_update": "soundboardupdate",
-    # Scheduled events and stage
+    # -- Scheduled events and stage -------------------------------------- #
     "event_create": "eventcreated", "event_delete": "eventdeleted",
-    "event_image_update": "uploadimage",
     "event_user_subscribe": "addmember", "event_user_unsubscribe": "removemember",
     "event_name_update": "eventupdated", "event_description_update": "eventupdated",
     "event_location_update": "eventupdated", "event_privacy_level_update": "eventupdated",
     "event_start_time_update": "eventupdated", "event_end_time_update": "eventupdated",
-    "event_status_update": "eventupdated",
+    "event_status_update": "eventupdated", "event_image_update": "eventupdated",
     "stage_start": "stagecreated", "stage_end": "stageremoved",
     "stage_topic_update": "stageupdated", "stage_privacy_update": "stageupdated",
-    # Polls
+    # -- Polls ----------------------------------------------------------- #
     "poll_create": "questions", "poll_delete": "deny",
     "poll_finalize": "Checked", "poll_votes_add": "added",
     "poll_votes_remove": "deny",
-    # Webhooks and applications
+    # -- Webhooks and applications --------------------------------------- #
     "webhook_create": "webhookcreate", "webhook_delete": "webhookremove",
     "webhook_name_update": "webhookupdate",
     "webhook_avatar_update": "webhookupdate",
     "webhook_channel_update": "webhookupdate",
-    "app_add": "bot", "app_remove": "deny",
+    "app_add": "connectioncreated", "app_remove": "connectiondeleted",
     "app_command_permission_update": "commandpremissionupdated",
-    # Server
+    # -- Server ---------------------------------------------------------- #
     "server_name_update": "updateserver",
     "server_description_update": "updateserver",
-    "server_owner_update": "owner", "server_icon_update": "uploadimage",
-    "server_banner_update": "uploadimage", "server_splash_update": "uploadimage",
-    "server_discovery_splash_update": "nodiscovery",
-    "server_vanity_update": "links", "server_widget_update": "view",
+    "server_icon_update": "updateserver", "server_banner_update": "updateserver",
+    "server_splash_update": "updateserver",
+    "server_discovery_splash_update": "updateserver",
+    "server_vanity_update": "updateserver", "server_widget_update": "updateserver",
+    "server_preferred_locale_update": "updateserver",
+    "verification_level_update": "updateserver",
+    "afk_timeout_update": "updateserver",
+    "server_owner_update": "owner", "mfa_level_update": "key",
     "server_features_update": "featurecreated",
     "server_boost_level_update": "newtier",
     "boost_progress_bar_toggle": "boostlevelonly",
     "server_content_filter_update": "Filter",
-    "verification_level_update": "passedverification",
     "verified_update": "premiumbadge", "partnered_update": "premiumbadge",
-    "mfa_level_update": "key",
     "message_notifications_update": "sendalert",
     "server_rules_channel_update": "Rules",
     "public_updates_channel_update": "updatechannel",
     "system_channel_update": "updatechannel",
-    "server_preferred_locale_update": "updateserver",
-    "afk_channel_update": "updatechannel", "afk_timeout_update": "timeout",
+    "afk_channel_update": "updatechannel",
     "onboarding_toggle": "updatehome",
     "onboarding_channels_update": "updatehome",
     "onboarding_question_add": "createhome",
