@@ -782,3 +782,107 @@ def test_every_referenced_key_resolves(locale):
     missing = [k for k in keys
                if (v := t(k, locale=locale)).startswith("[") and v.endswith("]")]
     assert not missing, f"locales/{locale}.json is missing: {missing}"
+
+
+# =========================================================================== #
+# Components V2 + content
+#
+# Discord rejects any message that carries both the IS_COMPONENTS_V2 flag and
+# a `content` field, and discord.py sets that flag automatically for every
+# LayoutView. `channel.send(content=..., view=SomeLayoutView())` is therefore
+# a guaranteed 400 that only shows up at runtime — it shipped once already.
+# =========================================================================== #
+class TestNoContentWithLayoutView:
+    def test_the_service_never_sends_content_alongside_a_view(self):
+        """Static guard: the send calls in the service must have no content=."""
+        import re
+        from pathlib import Path
+
+        source = (Path(__file__).resolve().parent.parent
+                  / "services" / "ticket_service.py").read_text(encoding="utf-8")
+        # Every `.send(` call and its argument list, up to the closing paren of
+        # the call (good enough: no nested `send(` in this file).
+        offenders = [
+            call for call in re.findall(r"\.send\((.*?)\n\s*\)", source, re.S)
+            if "view=" in call and re.search(r"\bcontent\s*=", call)
+        ]
+        assert not offenders, (
+            "a send() passes both content= and view=; put the text inside the "
+            f"view instead:\n{offenders}"
+        )
+
+    def test_mentions_are_rendered_inside_the_view(self):
+        from utils.ticket_views import (
+            build_close_request_message, build_escalation_notice,
+            build_ticket_message,
+        )
+
+        category = normalize_category({'name': "Support", 'locale': "fr"})
+        ticket = {'number': 1, 'owner_id': 7, 'status': 'open', 'escalated': False,
+                  'participants': [], 'participant_roles': []}
+        actor = FakeMember(3)
+        mentions = "<@7> <@&10>"
+
+        views = [
+            build_ticket_message(ticket, category, "hello", "fr", mentions),
+            build_close_request_message(ticket, actor, None, "fr", mentions),
+            build_escalation_notice(ticket, actor, None, "fr", mentions),
+        ]
+        for view in views:
+            rendered = "\n".join(
+                getattr(item, "content", "") or "" for item in view.walk_children())
+            assert mentions in rendered, type(view).__name__
+
+    def test_the_views_still_build_without_mentions(self):
+        """The persistent shells are constructed with no mentions at all."""
+        from utils.ticket_views import (
+            TicketCloseRequestView, TicketControlView, TicketEscalationView,
+        )
+
+        for cls in (TicketControlView, TicketCloseRequestView, TicketEscalationView):
+            view = cls()
+            assert view.is_persistent(), cls.__name__
+
+
+# =========================================================================== #
+# Default wording is offered, not hidden
+# =========================================================================== #
+class TestDefaultsArePrefilled:
+    def test_messages_modal_prefills_both_messages_in_the_category_language(self):
+        from modules.configs.tickets_category_config import CategoryMessagesModal
+        from modules.tickets import default_close_message, default_open_message
+
+        category = normalize_category({'name': "Support", 'locale': "fr"})
+        modal = CategoryMessagesModal("de", category, _noop)   # admin reads German
+        assert modal.open_input.default == default_open_message("fr")
+        assert modal.close_input.default == default_close_message("fr")
+
+    def test_an_existing_message_is_not_overwritten_by_the_default(self):
+        from modules.configs.tickets_category_config import CategoryMessagesModal
+
+        category = normalize_category({
+            'name': "Support", 'locale': "fr",
+            'open_message': "Bonjour !", 'close_message': "Au revoir !"})
+        modal = CategoryMessagesModal("fr", category, _noop)
+        assert modal.open_input.default == "Bonjour !"
+        assert modal.close_input.default == "Au revoir !"
+
+    def test_panel_modal_prefills_title_and_description(self):
+        from modules.configs.tickets_config import PanelAppearanceModal
+        from modules.tickets import default_panel_description, default_panel_title
+
+        modal = PanelAppearanceModal("fr", None, _noop)
+        assert modal.title_input.default == default_panel_title("fr")
+        assert modal.description_input.default == default_panel_description("fr")
+
+    @pytest.mark.parametrize("locale", LOCALES)
+    def test_every_default_is_translated(self, locale):
+        from modules.tickets import (
+            default_close_message, default_open_message,
+            default_panel_description, default_panel_title,
+        )
+
+        for fn in (default_open_message, default_close_message,
+                   default_panel_title, default_panel_description):
+            value = fn(locale)
+            assert value and not value.startswith("["), f"{locale}: {fn.__name__}"

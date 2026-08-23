@@ -54,10 +54,13 @@ from modules.tickets import (
     MAX_OPEN_PER_USER_CEILING,
     MAX_TICKET_MESSAGE,
     NAME_PLACEHOLDERS,
+    DEFAULT_TICKET_LOCALE,
     PERM_ADMIN,
     PLACEHOLDERS,
     TICKET_LOCALES,
     TICKET_PERMISSIONS,
+    default_close_message,
+    default_open_message,
     find_panel,
     get_limits,
     locate_category,
@@ -327,7 +330,13 @@ class CategoryIdentityModal(BaseModal):
 
 
 class CategoryMessagesModal(BaseModal):
-    """The two messages a ticket shows: when it opens, and when it closes."""
+    """The two messages a ticket shows: when it opens, and when it closes.
+
+    Both fields are pre-filled with the wording the ticket would use anyway.
+    They are written in the **category's** language, not the admin's: these
+    are the words the member will read, and a ticket speaks one language
+    whoever configured it. Only the labels around them follow the admin.
+    """
 
     def __init__(self, locale: str, category: Dict[str, Any], callback_func):
         super().__init__(
@@ -335,10 +344,12 @@ class CategoryMessagesModal(BaseModal):
             timeout=None,
         )
         self.callback_func = callback_func
+        ticket_locale = category.get('locale') or DEFAULT_TICKET_LOCALE
 
         self.open_input = ui.TextInput(
             style=discord.TextStyle.paragraph, required=False,
-            max_length=MAX_TICKET_MESSAGE, default=category.get('open_message'),
+            max_length=MAX_TICKET_MESSAGE,
+            default=category.get('open_message') or default_open_message(ticket_locale),
         )
         self.add_item(ui.Label(
             text=t('modules.tickets.messages.open_label', locale=locale)[:45],
@@ -350,7 +361,8 @@ class CategoryMessagesModal(BaseModal):
 
         self.close_input = ui.TextInput(
             style=discord.TextStyle.paragraph, required=False,
-            max_length=MAX_TICKET_MESSAGE, default=category.get('close_message'),
+            max_length=MAX_TICKET_MESSAGE,
+            default=category.get('close_message') or default_close_message(ticket_locale),
         )
         self.add_item(ui.Label(
             text=t('modules.tickets.messages.close_label', locale=locale)[:45],

@@ -133,6 +133,36 @@ PANEL_CHANNEL_TYPES = [discord.ChannelType.text, discord.ChannelType.news]
 
 
 # --------------------------------------------------------------------------- #
+# Default wording
+#
+# Every one of these is what the module would use if the admin left the field
+# empty, which is exactly why the configuration modals pre-fill them: an admin
+# should be *editing* the message their members will see, never guessing at it
+# in front of a blank box.
+# --------------------------------------------------------------------------- #
+def default_open_message(locale: str) -> str:
+    """The message pinned in a ticket when the category defines none."""
+    from utils.i18n import t
+    return t('modules.tickets.channel.default_open_message', locale=locale)
+
+
+def default_close_message(locale: str) -> str:
+    """The wording suggested for the closing card."""
+    from utils.i18n import t
+    return t('modules.tickets.channel.default_close_message', locale=locale)
+
+
+def default_panel_title(locale: str) -> str:
+    from utils.i18n import t
+    return t('modules.tickets.panel.default_title', locale=locale)
+
+
+def default_panel_description(locale: str) -> str:
+    from utils.i18n import t
+    return t('modules.tickets.panel.default_description', locale=locale)
+
+
+# --------------------------------------------------------------------------- #
 # Ids
 # --------------------------------------------------------------------------- #
 def new_panel_id() -> str:

@@ -42,6 +42,8 @@ from modules.tickets import (
     MAX_PANEL_NAME,
     MAX_PANEL_TITLE,
     MODULE_ID,
+    default_panel_description,
+    default_panel_title,
     find_panel,
     get_limits,
     new_panel_id,
@@ -201,9 +203,12 @@ class PanelAppearanceModal(BaseModal):
             component=self.name_input,
         ))
 
+        # Pre-filled with what the panel would show anyway, so the admin edits
+        # a real message instead of guessing in front of an empty box.
         self.title_input = ui.TextInput(
             style=discord.TextStyle.short, required=False,
-            max_length=MAX_PANEL_TITLE, default=panel.get('title'),
+            max_length=MAX_PANEL_TITLE,
+            default=panel.get('title') or default_panel_title(locale),
         )
         self.add_item(ui.Label(
             text=t('modules.tickets.panel.title_label', locale=locale)[:45],
@@ -213,7 +218,8 @@ class PanelAppearanceModal(BaseModal):
 
         self.description_input = ui.TextInput(
             style=discord.TextStyle.paragraph, required=False,
-            max_length=MAX_PANEL_DESCRIPTION, default=panel.get('description'),
+            max_length=MAX_PANEL_DESCRIPTION,
+            default=panel.get('description') or default_panel_description(locale),
         )
         self.add_item(ui.Label(
             text=t('modules.tickets.panel.description_label', locale=locale)[:45],
