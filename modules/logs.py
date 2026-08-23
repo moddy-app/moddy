@@ -17,6 +17,7 @@ Stored configuration (``guilds.data.modules.logs``)::
       "ignored_role_ids": [],
       "ignore_bots": false,
       "attach_transcripts": true,
+      "merge_duplicates": true,
       "locale": "auto"
     }
 
@@ -121,6 +122,9 @@ class LogsModule(ModuleBase):
         self.ignored_role_ids: List[int] = []
         self.ignore_bots: bool = False
         self.attach_transcripts: bool = True
+        # Deliver one log per *act* rather than one per registry event — see
+        # registry.merge_family() and serverlogs.service.LogService.flush().
+        self.merge_duplicates: bool = True
         # "auto" follows the server's own language (guild.preferred_locale).
         self.locale: str = "auto"
 
@@ -135,6 +139,7 @@ class LogsModule(ModuleBase):
             "ignored_role_ids": [],
             "ignore_bots": False,
             "attach_transcripts": True,
+            "merge_duplicates": True,
             "locale": "auto",
         }
 
@@ -155,6 +160,7 @@ class LogsModule(ModuleBase):
                 self.config.get("ignored_role_ids"), MAX_IGNORED_ROLES)
             self.ignore_bots = bool(self.config.get("ignore_bots", False))
             self.attach_transcripts = bool(self.config.get("attach_transcripts", True))
+            self.merge_duplicates = bool(self.config.get("merge_duplicates", True))
             self.locale = str(self.config.get("locale") or "auto")
 
             # A logs configuration is "on" as soon as one category has a
@@ -264,6 +270,7 @@ class LogsModule(ModuleBase):
             "ignored_role_ids": list(self.ignored_role_ids),
             "ignore_bots": self.ignore_bots,
             "attach_transcripts": self.attach_transcripts,
+            "merge_duplicates": self.merge_duplicates,
             "locale": self.locale,
         }
 
@@ -301,6 +308,7 @@ def config_from_raw(bot, guild_id: int, raw: Optional[Dict[str, Any]]) -> LogsMo
     module.ignored_role_ids = _int_list(raw.get("ignored_role_ids"), MAX_IGNORED_ROLES)
     module.ignore_bots = bool(raw.get("ignore_bots", False))
     module.attach_transcripts = bool(raw.get("attach_transcripts", True))
+    module.merge_duplicates = bool(raw.get("merge_duplicates", True))
     module.locale = str(raw.get("locale") or "auto")
     module.enabled = any(cat.is_bound for cat in module.categories.values())
     return module

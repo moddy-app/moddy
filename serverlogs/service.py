@@ -21,11 +21,13 @@ nothing, every listener costs one dict lookup.
 
 from __future__ import annotations
 
+import asyncio
 import logging
-from typing import Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import discord
 
+from serverlogs import registry
 from serverlogs.audit import AuditCache, target_matcher
 from serverlogs.dispatcher import LogDispatcher
 from serverlogs.renderer import LogEntry
@@ -35,6 +37,12 @@ logger = logging.getLogger('moddy.serverlogs.service')
 
 MODULE_ID = "logs"
 
+#: How long a mergeable event waits for its siblings before being delivered.
+#: The events of one act come from different sources (a Moddy case, a gateway
+#: event, an audit entry) and arrive within milliseconds of each other, but in
+#: no guaranteed order — so the first one to arrive waits for the others.
+MERGE_WINDOW = 3.0
+
 
 class LogService:
     """Configuration lookup + rendering context + delivery, in one object."""
@@ -43,6 +51,9 @@ class LogService:
         self.bot = bot
         self.dispatcher = LogDispatcher(bot)
         self.audit = AuditCache()
+        # (guild_id, family, subject_id) -> entries waiting to be merged.
+        self._merging: Dict[Tuple[int, str, int], List[LogEntry]] = {}
+        self._merge_tasks: Dict[Tuple[int, str, int], asyncio.Task] = {}
 
     # ------------------------------------------------------------------ #
     # Configuration
@@ -104,14 +115,29 @@ class LogService:
         return entry
 
     async def submit(self, guild: discord.Guild, entry: Optional[LogEntry]) -> None:
-        """Render and queue the entry for every channel bound to its event."""
+        """Render and queue the entry for every channel bound to its event.
+
+        An event that belongs to a *merge family* (a mute is a case, a
+        timeout and a mirrored timeout — see ``registry.merge_family``) is
+        held for :data:`MERGE_WINDOW` instead, so the act is delivered as one
+        log rather than three. Everything else goes out immediately.
+        """
         if entry is None or entry.is_empty:
             return
         module = await self.module(guild)
         if module is None:
             return
 
-        channel_ids = module.channels_for(entry.event)
+        family = registry.merge_family(entry.event)
+        if (getattr(module, "merge_duplicates", False) and family is not None
+                and entry.subject_id is not None):
+            self._hold(guild, entry, family[0])
+            return
+
+        self._dispatch(module, entry, module.channels_for(entry.event))
+
+    def _dispatch(self, module, entry: LogEntry, channel_ids) -> None:
+        """Render once and queue the result for each destination channel."""
         if not channel_ids:
             return
         if not module.attach_transcripts:
@@ -123,6 +149,64 @@ class LogService:
             # every destination so a fan-out doesn't send empty attachments.
             files = entry.files if index == 0 else _clone_files(entry.files)
             self.dispatcher.enqueue(channel_id, embed, files)
+
+    # ------------------------------------------------------------------ #
+    # Merging one act told several times
+    # ------------------------------------------------------------------ #
+
+    def _hold(self, guild: discord.Guild, entry: LogEntry, family: str) -> None:
+        """Park an entry until its siblings have had their chance to arrive."""
+        key = (guild.id, family, entry.subject_id)
+        self._merging.setdefault(key, []).append(entry)
+        if key not in self._merge_tasks:
+            self._merge_tasks[key] = asyncio.create_task(
+                self._flush_later(guild, key), name=f"moddy-logs-merge-{guild.id}")
+
+    async def _flush_later(self, guild: discord.Guild, key) -> None:
+        try:
+            await asyncio.sleep(MERGE_WINDOW)
+            await self.flush(guild, key)
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            logger.error(f"[Logs] Merge flush failed for {key}: {e}", exc_info=True)
+            self._merging.pop(key, None)
+        finally:
+            self._merge_tasks.pop(key, None)
+
+    async def flush(self, guild: discord.Guild, key) -> None:
+        """Deliver a merged group: the richest entry, enriched by the others.
+
+        Merging happens **per channel**. The winner absorbs a sibling only
+        where both would have landed in the same channel; a sibling routed
+        somewhere the winner does not go is still delivered there, on its
+        own. A server that already splits its categories across channels
+        therefore loses nothing by turning merging on.
+        """
+        entries = self._merging.pop(key, [])
+        if not entries:
+            return
+        module = await self.module(guild)
+        if module is None:
+            return
+
+        # Highest priority first; ties keep their arrival order, so the entry
+        # that opened the group wins.
+        entries.sort(key=lambda item: -_priority(item.event))
+        winner, siblings = entries[0], entries[1:]
+        winner_channels = module.channels_for(winner.event)
+
+        for sibling in siblings:
+            channels = module.channels_for(sibling.event)
+            elsewhere = [cid for cid in channels if cid not in winner_channels]
+            if elsewhere:
+                self._dispatch(module, sibling, elsewhere)
+            if len(elsewhere) != len(channels):
+                # They share at least one channel: that is the duplicate the
+                # reader complained about.
+                winner.absorb(sibling)
+
+        self._dispatch(module, winner, winner_channels)
 
     # ------------------------------------------------------------------ #
     # Audit log
@@ -141,7 +225,17 @@ class LogService:
         return entry.user, entry.reason
 
     async def close(self) -> None:
+        for task in self._merge_tasks.values():
+            task.cancel()
+        self._merge_tasks.clear()
+        self._merging.clear()
         await self.dispatcher.close()
+
+
+def _priority(event: str) -> int:
+    """How much context an event carries — the merge winner is the richest."""
+    family = registry.merge_family(event)
+    return family[1] if family else 0
 
 
 def _clone_files(files):

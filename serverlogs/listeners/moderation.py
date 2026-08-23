@@ -65,6 +65,12 @@ async def log_case_event(service, guild: discord.Guild, event: str, *,
         if subject is None and subject_id:
             entry.line("user", f"<@{subject_id}>")
             entry.line("id", f"`{subject_id}`")
+            # Uncached member: the id is still what pairs this log with the
+            # gateway's own version of the same act (see LogEntry.subject_id).
+            try:
+                entry.subject_id = int(subject_id)
+            except (TypeError, ValueError):
+                pass
         if reference:
             entry.line("case", f"`{escape(reference)}`")
         if count is not None:

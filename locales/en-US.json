@@ -2166,6 +2166,7 @@
         "uncached_messages": "*None of these messages were cached, so no transcript could be built.*",
         "moved_to_file": "Content truncated — the full text is attached.",
         "size_limit": "Log shortened — it exceeded the maximum size of a Discord message.",
+        "merged_with": "Merged with: {events}",
         "transcript_attached": "*The full content is attached as a `.txt` transcript.*",
         "transcript_header": "Transcript of deleted messages — Moddy",
         "duration": {
@@ -2305,7 +2306,9 @@
           "toggles": {
             "section_title": "Settings",
             "bots": "Ignore bots",
-            "transcripts": "Attach transcripts"
+            "transcripts": "Attach transcripts",
+            "merge": "Merge duplicates",
+            "merge_description": "One act can be described by several events (a mute is a case, a Discord timeout and its mirror). On, Moddy sends a single log for it, enriched with what the others knew."
           }
         },
         "errors": {

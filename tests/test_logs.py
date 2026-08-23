@@ -15,6 +15,7 @@ import pytest
 from modules.logs import LogsModule, config_from_raw
 from serverlogs import registry
 from serverlogs.dispatcher import LogDispatcher, MAX_EMBEDS_PER_MESSAGE
+from serverlogs.service import LogService
 from serverlogs.renderer import (
     KIND_COLORS, MAX_EMBED_TOTAL, LogEntry, build_transcript, fmt_duration,
     fmt_number, fmt_time, fmt_user,
@@ -47,14 +48,25 @@ def test_shared_events_resolve_to_several_categories():
     assert registry.keys_for("user_join") == ("server.user_join",)
 
 
-def test_categories_use_custom_emojis():
-    """CLAUDE.md rule 3: custom emojis only, straight from utils/emojis.py."""
-    import utils.emojis as emojis
+def test_categories_and_events_use_the_logs_icon_set():
+    """The logs may only draw from LOG_EMOJIS — custom emojis, one source."""
+    from utils.emojis import LOG_EMOJIS
 
-    known = {value for name, value in vars(emojis).items()
-             if name.isupper() and isinstance(value, str)}
+    known = set(LOG_EMOJIS.values())
     for category in registry.CATEGORIES.values():
-        assert category.emoji in known, category.id
+        assert category.emoji in known, category.id       # shown in /config
+        assert category.log_icon in known, category.id    # shown on a log
+    for key in registry.EVENTS:
+        assert registry.event_emoji(key) in known, key
+
+
+def test_a_category_icon_is_never_the_one_a_log_falls_back_to():
+    """/config identifies a category; a log says what happened."""
+    shared = [c.id for c in registry.CATEGORIES.values()
+              if c.emoji == c.log_icon]
+    # `channels` is the exception: the set ships no channels_icon, so the
+    # generic channels icon serves both.
+    assert shared == ["channels"], shared
 
 
 def test_category_order_is_stable():
@@ -167,11 +179,15 @@ def test_ignored_roles_and_bots():
 # Rendering
 # --------------------------------------------------------------------------- #
 
-def test_entry_renders_quoted_labelled_lines():
+def test_entry_renders_a_heading_then_quoted_labelled_lines():
     entry = LogEntry("user_join", "en-US")
     entry.line("member_count", fmt_number(664))
     embed = entry.to_embed()
-    assert embed.description.startswith("> **")
+    heading, first_line = embed.description.split("\n")[:2]
+    # Custom emojis only render in a description, never in an embed title.
+    assert heading.startswith("### <:")
+    assert embed.title is None
+    assert first_line.startswith("> **")
     assert "`664`" in embed.description
     assert embed.colour.value == KIND_COLORS[registry.KIND_CREATE]
 
@@ -221,7 +237,7 @@ def test_an_embed_within_budget_is_left_alone():
     entry = LogEntry("message_delete", "en-US")
     entry.block("message", "hello")
     embed = entry.to_embed()
-    assert embed.description is None
+    assert embed.description.count("\n") == 0, "only the heading, no extra note"
     assert len(embed.fields) == 1
 
 
@@ -305,3 +321,176 @@ async def test_dispatcher_drops_the_oldest_under_a_flood():
     assert queue.qsize() <= 2
     assert instance._dropped[1] == 3
     await instance.close()
+
+
+# --------------------------------------------------------------------------- #
+# Merging one act told several times
+# --------------------------------------------------------------------------- #
+
+def test_every_merge_family_member_is_a_real_event():
+    for event in ("mute_add", "user_timed_out", "user_roles_update", "kick_add"):
+        assert registry.merge_family(event) is not None
+        assert registry.keys_for(event), event
+
+
+def test_ordinary_events_are_never_held_back():
+    """Two deletions from the same author must stay two logs."""
+    assert registry.merge_family("message_delete") is None
+    assert registry.merge_family("channel_create") is None
+
+
+def _merge_service(module):
+    """A service whose configuration is fixed and whose delivery is recorded."""
+    bot = types.SimpleNamespace(get_channel=lambda _id: None, user=None,
+                                module_manager=None)
+    service = LogService(bot)
+
+    async def _module(_guild=None):
+        return module
+
+    service.module = _module
+    sent = []
+    service.dispatcher.enqueue = lambda channel_id, embed, files=None: sent.append(
+        (channel_id, embed))
+    return service, sent
+
+
+def _mute_entries():
+    """The three logs a Moddy mute really produces (case, timeout, mirror)."""
+    case = LogEntry("mute_add", "en-US")
+    case.subject_id = 7
+    case.line("case", "`N6A8Q2`").line("reason", "bonjour")
+
+    timeout = LogEntry("user_timed_out", "en-US")
+    timeout.subject_id = 7
+    timeout.line("until", "tomorrow").line("expires", "in a month")
+    timeout.line("reason", "[N6A8Q2] (Permanent) : bonjour")
+
+    mirror = LogEntry("mute_add", "en-US")
+    mirror.subject_id = 7
+    mirror.line("until", "tomorrow")
+    return case, timeout, mirror
+
+
+@pytest.mark.asyncio
+async def test_one_act_sent_to_one_channel_becomes_one_log():
+    module = config_from_raw(None, 1, {
+        "categories": {
+            "moderation": {"channel_ids": [222], "disabled_events": []},
+            "users": {"channel_ids": [222], "disabled_events": []},
+        },
+    })
+    service, sent = _merge_service(module)
+    guild = types.SimpleNamespace(id=1, preferred_locale="en-US")
+
+    for entry in _mute_entries():
+        await service.submit(guild, entry)
+    assert sent == [], "mergeable events must wait for their siblings"
+
+    await service.flush(guild, (1, "member_mute", 7))
+    await service.close()
+
+    assert len(sent) == 1
+    _channel, embed = sent[0]
+    description = embed.description
+    # The richest entry won, and it kept what the others knew.
+    assert "N6A8Q2" in description        # from the case
+    assert "in a month" in description    # from the timeout
+    assert description.count("Reason") == 1, "the same reason must not be repeated"
+    assert "Merged with" in description
+
+
+@pytest.mark.asyncio
+async def test_merging_never_empties_a_channel_that_wanted_the_other_event():
+    """Categories split across channels: each channel keeps its own log."""
+    module = config_from_raw(None, 1, {
+        "categories": {
+            "moderation": {"channel_ids": [222], "disabled_events": []},
+            "users": {"channel_ids": [333], "disabled_events": []},
+        },
+    })
+    service, sent = _merge_service(module)
+    guild = types.SimpleNamespace(id=1, preferred_locale="en-US")
+
+    case, timeout, _mirror = _mute_entries()
+    await service.submit(guild, case)
+    await service.submit(guild, timeout)
+    await service.flush(guild, (1, "member_mute", 7))
+    await service.close()
+
+    assert sorted(channel for channel, _ in sent) == [222, 333]
+    for _channel, embed in sent:
+        assert "Merged with" not in (embed.description or "")
+
+
+@pytest.mark.asyncio
+async def test_the_option_can_be_turned_off():
+    module = config_from_raw(None, 1, {
+        "categories": {
+            "moderation": {"channel_ids": [222], "disabled_events": []},
+            "users": {"channel_ids": [222], "disabled_events": []},
+        },
+        "merge_duplicates": False,
+    })
+    service, sent = _merge_service(module)
+    guild = types.SimpleNamespace(id=1, preferred_locale="en-US")
+
+    for entry in _mute_entries():
+        await service.submit(guild, entry)
+    await service.close()
+
+    assert len(sent) == 3, "with merging off, every event is its own log"
+
+
+def test_merging_is_on_by_default_and_round_trips():
+    module = config_from_raw(None, 1, {})
+    assert module.merge_duplicates is True
+    assert config_from_raw(None, 1, {"merge_duplicates": False}).merge_duplicates is False
+    assert module.to_config()["merge_duplicates"] is True
+
+
+def test_absorbing_keeps_the_subject_and_the_executor():
+    winner = LogEntry("mute_add", "en-US")
+    winner.line("case", "`N6A8Q2`")
+    loser = LogEntry("user_timed_out", "en-US")
+    loser.line("until", "tomorrow")
+    class _Bot:
+        id = 9
+        display_avatar = None
+
+        def __str__(self):
+            return "Moddy#3735"
+
+    loser.actor(_Bot())
+
+    embed = winner.absorb(loser).to_embed()
+    assert "tomorrow" in embed.description
+    assert embed.footer.text == "Moddy#3735"
+
+
+# --------------------------------------------------------------------------- #
+# Icons
+# --------------------------------------------------------------------------- #
+
+def test_the_config_panel_draws_only_from_the_logs_icon_set():
+    """Only the module icon may come from anywhere else."""
+    from modules.configs import logs_config
+    from utils.emojis import LOG_EMOJIS, NOTE
+
+    allowed = set(LOG_EMOJIS.values()) | {NOTE}
+    icons = {name: value for name, value in vars(logs_config).items()
+             if name.startswith("_ICON_")}
+    assert icons, "the panel declares no icon constant any more"
+    for name, value in icons.items():
+        assert value in allowed, f"{name} is not in the logs icon set"
+
+
+def test_the_event_checklist_shows_one_icon_per_event():
+    from modules.configs.logs_config import LogsCategoryEvents
+    from utils.emojis import LOG_EMOJIS
+
+    item = LogsCategoryEvents("channels", 0)
+    known = {value.split(":")[2].rstrip(">") for value in LOG_EMOJIS.values()}
+    for option in item.item.options:
+        assert option.emoji is not None, option.value
+        assert str(option.emoji.id) in known, option.value

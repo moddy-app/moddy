@@ -2166,6 +2166,7 @@
         "uncached_messages": "*Ninguno de estos mensajes estaba en caché: no se ha podido generar una transcripción.*",
         "moved_to_file": "Contenido truncado — el texto completo está adjunto.",
         "size_limit": "Registro acortado: superaba el tamaño máximo de un mensaje de Discord.",
+        "merged_with": "Agrupado con: {events}",
         "transcript_attached": "*El contenido completo está adjunto (transcripción `.txt`).*",
         "transcript_header": "Transcripción de los mensajes eliminados — Moddy",
         "duration": {
@@ -2305,7 +2306,9 @@
           "toggles": {
             "section_title": "Ajustes",
             "bots": "Ignorar los bots",
-            "transcripts": "Transcripciones adjuntas"
+            "transcripts": "Transcripciones adjuntas",
+            "merge": "Agrupar duplicados",
+            "merge_description": "Un mismo acto puede describirse con varios eventos (un silencio es un caso, un timeout de Discord y su reflejo). Activado, Moddy envía un solo registro, enriquecido con lo que decían los demás."
           }
         },
         "errors": {

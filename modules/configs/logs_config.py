@@ -31,14 +31,22 @@ from modules.logs import (
     LogsModule, config_from_raw,
 )
 from serverlogs import registry
-from utils.emojis import (
-    BACK, DELETE, FILTER, NOTE, SETTINGS, TOGGLE_OFF, TOGGLE_ON, NEXT,
-)
+from utils.emojis import NOTE, log_emoji
 from utils.i18n import i18n, t
 
 logger = logging.getLogger('moddy.modules.logs_config')
 
 _MODULE_ID = "logs"
+
+# Every icon of this panel comes from the server-logs set
+# (``utils/emojis.py::LOG_EMOJIS``) — the only source this feature draws from.
+# The module icon in the /config picker is the documented exception.
+_ICON_BACK = log_emoji("left")
+_ICON_NEXT = log_emoji("right")
+_ICON_OPTIONS = log_emoji("moreoptions")
+_ICON_CLEAR = log_emoji("close")
+_ICON_ON = log_emoji("Checked")
+_ICON_OFF = log_emoji("Notchecked")
 
 #: Events shown per page in the category checklist (Discord's select limit).
 EVENTS_PER_PAGE = 25
@@ -58,6 +66,7 @@ _CID_OPT_CHANNELS = "moddy:logs:options:channels"
 _CID_OPT_ROLES = "moddy:logs:options:roles"
 _CID_OPT_BOTS = "moddy:logs:options:bots"
 _CID_OPT_TRANSCRIPTS = "moddy:logs:options:transcripts"
+_CID_OPT_MERGE = "moddy:logs:options:merge"
 _CID_OPT_LOCALE = "moddy:logs:options:locale"
 _CID_OPT_BACK = "moddy:logs:options:back"
 
@@ -213,7 +222,7 @@ class LogsConfigView(BaseView):
         row = ui.ActionRow()
 
         back = ui.Button(
-            emoji=discord.PartialEmoji.from_str(BACK),
+            emoji=discord.PartialEmoji.from_str(_ICON_BACK),
             label=t('modules.config.buttons.back', locale=self.locale),
             style=discord.ButtonStyle.secondary,
             custom_id=_CID_BACK,
@@ -222,7 +231,7 @@ class LogsConfigView(BaseView):
         row.add_item(back)
 
         options = ui.Button(
-            emoji=discord.PartialEmoji.from_str(SETTINGS),
+            emoji=discord.PartialEmoji.from_str(_ICON_OPTIONS),
             label=t('modules.logs.config.options.button', locale=self.locale),
             style=discord.ButtonStyle.secondary,
             custom_id=_CID_OPTIONS,
@@ -235,7 +244,7 @@ class LogsConfigView(BaseView):
         # (docs/PERSISTENT_VIEWS.md, gotcha 2).
         if self.bot is None or self.module.bound_categories:
             clear = ui.Button(
-                emoji=discord.PartialEmoji.from_str(DELETE),
+                emoji=discord.PartialEmoji.from_str(_ICON_CLEAR),
                 label=t('modules.logs.config.clear.button', locale=self.locale),
                 style=discord.ButtonStyle.danger,
                 custom_id=_CID_CLEAR,
@@ -500,6 +509,8 @@ class LogsCategoryEvents(ui.DynamicItem[ui.Select],
                 label=t(f"modules.logs.events.{category_id}.{event}", locale=locale)[:100],
                 value=event,
                 default=event not in disabled,
+                emoji=discord.PartialEmoji.from_str(
+                    registry.event_emoji(f"{category_id}.{event}")),
             )
             for event in events
         ]
@@ -546,11 +557,11 @@ class LogsCategoryButton(ui.DynamicItem[ui.Button],
     """Back / enable all / disable all / previous page / next page."""
 
     _STYLES = {
-        "back": (discord.ButtonStyle.secondary, BACK),
-        "all": (discord.ButtonStyle.success, TOGGLE_ON),
-        "none": (discord.ButtonStyle.secondary, TOGGLE_OFF),
-        "prev": (discord.ButtonStyle.secondary, BACK),
-        "next": (discord.ButtonStyle.secondary, NEXT),
+        "back": (discord.ButtonStyle.secondary, _ICON_BACK),
+        "all": (discord.ButtonStyle.success, _ICON_ON),
+        "none": (discord.ButtonStyle.secondary, _ICON_OFF),
+        "prev": (discord.ButtonStyle.secondary, _ICON_BACK),
+        "next": (discord.ButtonStyle.secondary, _ICON_NEXT),
     }
 
     def __init__(self, action: str = "back", category_id: str = "server",
@@ -646,7 +657,7 @@ class LogsOptionsView(BaseView):
         container = ui.Container()
 
         container.add_item(ui.TextDisplay(
-            f"### {FILTER} {t('modules.logs.config.options.title', locale=self.locale)}"
+            f"### {_ICON_OPTIONS} {t('modules.logs.config.options.title', locale=self.locale)}"
         ))
         container.add_item(ui.TextDisplay(
             t('modules.logs.config.options.description', locale=self.locale)
@@ -716,14 +727,17 @@ class LogsOptionsView(BaseView):
             f"-# {t('modules.logs.config.options.toggles.bots', locale=self.locale)}: "
             f"**{self._state(self.module.ignore_bots)}**\n"
             f"-# {t('modules.logs.config.options.toggles.transcripts', locale=self.locale)}: "
-            f"**{self._state(self.module.attach_transcripts)}**"
+            f"**{self._state(self.module.attach_transcripts)}**\n"
+            f"-# {t('modules.logs.config.options.toggles.merge', locale=self.locale)}: "
+            f"**{self._state(self.module.merge_duplicates)}**\n"
+            f"-# {t('modules.logs.config.options.toggles.merge_description', locale=self.locale)}"
         ))
 
         self.add_item(container)
 
         row = ui.ActionRow()
         back = ui.Button(
-            emoji=discord.PartialEmoji.from_str(BACK),
+            emoji=discord.PartialEmoji.from_str(_ICON_BACK),
             label=t('modules.config.buttons.back', locale=self.locale),
             style=discord.ButtonStyle.secondary,
             custom_id=_CID_OPT_BACK,
@@ -733,7 +747,7 @@ class LogsOptionsView(BaseView):
 
         bots = ui.Button(
             emoji=discord.PartialEmoji.from_str(
-                TOGGLE_ON if self.module.ignore_bots else TOGGLE_OFF),
+                _ICON_ON if self.module.ignore_bots else _ICON_OFF),
             label=t('modules.logs.config.options.toggles.bots', locale=self.locale),
             style=discord.ButtonStyle.secondary,
             custom_id=_CID_OPT_BOTS,
@@ -743,13 +757,23 @@ class LogsOptionsView(BaseView):
 
         transcripts = ui.Button(
             emoji=discord.PartialEmoji.from_str(
-                TOGGLE_ON if self.module.attach_transcripts else TOGGLE_OFF),
+                _ICON_ON if self.module.attach_transcripts else _ICON_OFF),
             label=t('modules.logs.config.options.toggles.transcripts', locale=self.locale),
             style=discord.ButtonStyle.secondary,
             custom_id=_CID_OPT_TRANSCRIPTS,
         )
         transcripts.callback = self.on_toggle_transcripts
         row.add_item(transcripts)
+
+        merge = ui.Button(
+            emoji=discord.PartialEmoji.from_str(
+                _ICON_ON if self.module.merge_duplicates else _ICON_OFF),
+            label=t('modules.logs.config.options.toggles.merge', locale=self.locale),
+            style=discord.ButtonStyle.secondary,
+            custom_id=_CID_OPT_MERGE,
+        )
+        merge.callback = self.on_toggle_merge
+        row.add_item(merge)
 
         self.add_item(row)
 
@@ -807,6 +831,12 @@ class LogsOptionsView(BaseView):
             return
         await self._apply(interaction, lambda module: setattr(
             module, "attach_transcripts", not module.attach_transcripts))
+
+    async def on_toggle_merge(self, interaction: discord.Interaction):
+        if not await check_guild_perms(interaction):
+            return
+        await self._apply(interaction, lambda module: setattr(
+            module, "merge_duplicates", not module.merge_duplicates))
 
     async def on_back(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):

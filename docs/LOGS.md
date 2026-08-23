@@ -28,14 +28,19 @@ One embed per event, in the channel the category is bound to:
 
 ```
 ┌──────────────────────────────────────────────┐
-│ Role(s) added to a user                      │  title       = i18n event title
-│ > **User:** @dyvion_ (<@120…>)               │  description = "> **Label:** value"
+│ <:addrole:…> Role(s) added to a user         │  heading     = icon + i18n title
+│ > **User:** @dyvion_ (<@120…>)               │  lines       = "> **Label:** value"
 │ > **Added:** <@&966…>                        │
 │ > **Reason:** Join Roles                     │
 │                                     [avatar] │  thumbnail   = the subject
 │ Moddy#0001                       26/07 13:12 │  footer      = executor + timestamp
 └──────────────────────────────────────────────┘
 ```
+
+The heading is a `### ` line **inside the description**, not `embed.title`:
+Discord renders custom emojis in an embed description and prints them as raw
+text in a title. An entry that carries a jump link (`entry.url()`) turns its
+heading into a markdown link instead of using `embed.url`.
 
 The accent colour states the nature of the event at a glance:
 
@@ -116,6 +121,39 @@ the layout of every log around it.
 
 ---
 
+## Icons
+
+Every category and every event has an icon, and all of them come from one
+place: **`utils/emojis.py::LOG_EMOJIS`**, the server-logs icon set (158
+icons, listed in [docs/EMOJIS.md](EMOJIS.md)). Resolve one by name with
+`log_emoji("createchannel")` — an unknown name returns `""` rather than
+raising, so a typo can never stop a log from being delivered.
+
+That set is the **only** source this feature draws from, in the `/config`
+panel as well as in the log messages. The single exception is the module
+icon shown in the `/config` module picker (`LogsModule.MODULE_EMOJI`).
+
+A category has **two** icons, and they are not interchangeable:
+
+| Field | Where it shows | What it has to say |
+|---|---|---|
+| `LogCategorySpec.emoji` | the `/config` panel — picker, list, category screen | *which category this is* |
+| `LogCategorySpec.log_icon` | a log message whose event has no icon of its own | *what happened* |
+
+(`channels` is the one category where both are the same: the set ships no
+`channels_icon`.)
+
+An event's icon is resolved in two steps (`registry.event_emoji`):
+
+1. its own entry in `registry._EVENT_ICONS`, keyed by the **bare** event name
+   so the same act keeps the same icon in every category that declares it (a
+   ban looks like a ban in `server` and in `moderation`);
+2. failing that, its category's `log_icon`.
+
+Naming an event in `_EVENT_ICONS` is therefore optional polish, not a step of
+"adding an event" — a new event is never iconless.
+
+
 ## Categories
 
 | Id | Name (en-US) | Events |
@@ -160,7 +198,7 @@ Three screens, **no save button** — every change applies immediately:
 |---|---|
 | **Root** | One line per configured category, a picker to open one, a "send everything to one channel" shortcut, and a "clear everything" button |
 | **Category** | The channels this category posts to (up to `MAX_CHANNELS_PER_CATEGORY = 3`) and a paginated checklist of its events (25 per page) |
-| **Options** | Ignored channels, ignored roles, ignore bots, attach transcripts, log language |
+| **Options** | Ignored channels, ignored roles, ignore bots, attach transcripts, merge duplicates, log language |
 
 Applying on the spot is not a style choice: the category screen is built
 from `DynamicItem`s (they carry the category and the page in their
@@ -180,6 +218,7 @@ there is no `self` on which to stage pending edits. See
   "ignored_role_ids": [],
   "ignore_bots": false,
   "attach_transcripts": true,
+  "merge_duplicates": true,
   "locale": "auto"
 }
 ```
@@ -193,6 +232,7 @@ there is no `self` on which to stage pending edits. See
 | `ignored_role_ids` | array of snowflake strings | `[]` | Max **25**. A member holding one of these roles is never the subject of a log. |
 | `ignore_bots` | bool | `false` | Skip events whose subject/actor is a bot. |
 | `attach_transcripts` | bool | `true` | Attach `.txt` transcripts and overflow files. When `false`, files are dropped and only the embed is sent. |
+| `merge_duplicates` | bool | `true` | Deliver one log per **act** instead of one per registry event — see *Merging duplicates* below. |
 | `locale` | `"auto"` \| `fr` \| `en-US` \| `es-ES` \| `pt-BR` \| `de` | `"auto"` | Language of the log messages. `"auto"` follows `guild.preferred_locale`, falling back to `en-US`. |
 
 Two conventions matter here:
@@ -241,6 +281,48 @@ bot over Redis (see
    admin has since repurposed, and deleting a webhook is not reversible.
 
 ---
+
+## Merging duplicates
+
+Discord and Moddy describe the same act in several ways, **on purpose**. A
+mute applied through Moddy produces three true, useful events:
+
+| Event | Source | What it knows |
+|---|---|---|
+| `moderation.mute_add` | `services/case_service.py` | the case reference, the moderator, the reason as typed |
+| `users.user_timed_out` | gateway `on_member_update` + audit log | the expiry date, the reason Discord recorded |
+| `moderation.mute_add` (mirror) | the same gateway event, mirrored into the moderation category | the expiry date |
+
+A server that sends `moderation` and `users` to the **same** channel gets
+three near-identical embeds for one click. `merge_duplicates` (on by
+default, toggled in the Options screen) collapses them into one:
+
+* `registry.merge_family(event)` declares which events describe one act, and
+  how much context each carries. Families today: mute, unmute, ban, unban,
+  kick, warn, unwarn, and role changes (the combined `user_roles_update`
+  against the focused `user_roles_add` / `user_roles_remove`).
+* The service holds a family member for `MERGE_WINDOW = 3 s` — the siblings
+  come from different sources and arrive within milliseconds of each other,
+  but in no guaranteed order — then delivers the **richest** one
+  (`LogEntry.absorb`), enriched with every labelled line the others had and
+  it did not. A label already present is never repeated, so a merged mute
+  shows one **Reason**, not two. The absorbed events are named under the log
+  (`Merged with: A user was timed out`), so nothing is silently swallowed.
+* **Merging is per channel.** A sibling routed to a channel the winner does
+  not reach is still delivered there, on its own. A server that already
+  splits `moderation` and `users` across two channels therefore loses
+  nothing by leaving the option on — there was no duplicate to merge.
+
+Two consequences worth knowing:
+
+* Events in a family are delivered ~3 s late. For a kick that is up to ~5 s,
+  since `on_member_remove` already waits up to 2 s for the audit entry that
+  tells a kick from a plain leave.
+* **Only declared families are ever held back.** Merging on a generic
+  "same event, same subject" rule would collapse two messages deleted in a
+  row from the same author into one log — losing a log is worse than showing
+  two, so ordinary events are dispatched immediately and untouched.
+
 
 ## Delivery
 
@@ -324,6 +406,9 @@ Three steps, nothing else:
 3. **Builder** — emit it from a listener in `serverlogs/listeners/`, and
    wire the gateway event in `cogs/logs.py` if it is a new one.
 
+Optionally, give it its own icon in `registry._EVENT_ICONS` (a name from
+`LOG_EMOJIS`); without one it inherits its category's.
+
 The `/config` panel paginates itself, the stored config validates the new
 key away on old servers, and the event starts **enabled** everywhere its
 category is bound.
@@ -381,7 +466,7 @@ would advertise a log that never fires.
 
 ### Not validated live
 
-The system is covered by 59 unit tests but **has never run against a real
+The system is covered by 69 unit tests but **has never run against a real
 Discord server**. Worth checking on a test guild before it reaches
 production: webhook creation and reuse, the `manage_webhooks` fallback,
 batching under a burst of deletions, the 1–2 s audit-correlation windows
@@ -395,7 +480,7 @@ If that changes, `utils/subscription.py::is_guild_premium` is the check (see
 [docs/PREMIUM.md](PREMIUM.md)); the natural knobs are the number of
 categories a free server may bind and `MAX_CHANNELS_PER_CATEGORY`.
 
-`MAX_CHANNELS_PER_CATEGORY = 3` and `MAX_IGNORED_CHANNELS` /
+`MERGE_WINDOW = 3 s`, `MAX_CHANNELS_PER_CATEGORY = 3` and `MAX_IGNORED_CHANNELS` /
 `MAX_IGNORED_ROLES = 25` (the Discord select limit) are working values, not
 researched ones.
 
@@ -410,7 +495,9 @@ python3 -m pytest tests/test_persistent_views.py -q
 
 * `tests/test_logs.py` — registry consistency, routing and fan-out, stored
   schema round-trip, ignore lists, rendering (escaping, truncation,
-  attachments, size budget), delivery and batching.
+  attachments, size budget), duplicate merging (one channel, split channels,
+  option off), the icon set (every event resolves to one, the panel draws from
+  nothing else), delivery and batching.
 * `tests/test_logs_i18n.py` — every event name, title, field label, standalone
   value and Discord permission name exists in all five locales, and no stale
   translation is left behind after a rename.
