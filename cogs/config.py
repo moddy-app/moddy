@@ -265,6 +265,14 @@ class ConfigMainView(BaseView):
                 locale,
                 module_config
             )
+        elif module_id == 'logs':
+            from modules.configs.logs_config import LogsConfigView
+            config_view = await LogsConfigView.create(
+                bot,
+                guild_id,
+                user_id,
+                locale
+            )
         elif module_id == 'automod_ai':
             from modules.configs.automod_ai_config import AutomodAIConfigView
             config_view = AutomodAIConfigView(

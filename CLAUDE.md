@@ -44,6 +44,7 @@ moddy/
 │   ├── text_tools.py          #   /fix, /rephrase, /summarize (OpenAI, Modal V2 + context menus)
 │   ├── voice_transcription.py #   "Transcribe" context menu (Groq Whisper)
 │   ├── webhook.py             #   Webhook management
+│   ├── logs.py                #   Advanced server logs — Discord wiring only
 │   ├── social_notifications.py #  Social notifications dispatch + feeds service wiring
 │   ├── altguard.py            #   AltGuard verdicts, membership events, /altguard verify|unverify
 │   ├── interserver_commands.py #  Inter-server commands
@@ -76,6 +77,7 @@ moddy/
 │   ├── automod_ai.py          #   Automod AI (applies decisions, cases+evidence, scalable features)
 │   ├── bot_customization.py   #   Bot identity per guild (nick/avatar/banner/bio + name style)
 │   ├── voice_transcription.py #   Voice message transcription (button or automatic)
+│   ├── logs.py                #   Advanced server logs (config + routing, 163 events)
 │   └── configs/               #   Components V2 config UIs per module
 │       ├── adaptive_slowmode_config.py
 │       ├── altguard_config.py             # AltGuard gate (channel, roles, logs, language)
@@ -86,6 +88,18 @@ moddy/
 │       ├── welcome_dm_config.py           # Welcome DMs list + add/manage (Modal V2)
 │       ├── voice_transcription_config.py  # Voice transcription (status, mode, channels)
 │       ├── bot_customization_config.py    # Bot customization (identity Modal V2 + name style)
+│       ├── logs_config.py                 # Server logs (categories, events, options)
+│
+├── serverlogs/                # Advanced server logs (the log messages themselves)
+│   ├── registry.py            #   Single catalogue of categories + events (source of truth)
+│   ├── renderer.py            #   The only place deciding what a log looks like + formatters
+│   ├── dispatcher.py          #   Per-channel webhooks, 10-embed batching, bounded queues
+│   ├── audit.py               #   Gateway-fed audit-log cache ("who did this", no REST call)
+│   ├── service.py             #   Listener API: open() / submit() / executor()
+│   └── listeners/             #   One builder module per category + _diff.py (before/after)
+│                              #   members, messages, channels, roles, guild, threads, voice,
+│                              #   invites, assets, scheduled_events, stage, polls,
+│                              #   integrations, automod, moderation
 │
 ├── automod/                   # Automod AI DETECTION pipeline (decides only; no side effects)
 │   ├── engine.py              #   Shared per-bot orchestrator (funnel entry)
@@ -221,7 +235,9 @@ moddy/
     ├── test_bot_customization.py  # Bot customization validation (bio budget, styles)
     ├── test_expiration_notifications.py # Expired sanctions: unban, invite, DM card
     ├── test_task_signature.py #   moddy:tasks HMAC contract (canonicalization, replay, dedup)
-    └── test_transcription.py  #   Voice transcription helpers, guard rails, cards
+    ├── test_transcription.py  #   Voice transcription helpers, guard rails, cards
+    ├── test_logs.py           #   Server logs: registry, routing, rendering, delivery
+    └── test_logs_i18n.py      #   Server logs: i18n completeness on the 5 locales
 ```
 
 ---
@@ -384,6 +400,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/BOT_CUSTOMIZATION.md](docs/BOT_CUSTOMIZATION.md) | Bot Customization — per-guild nickname/avatar/banner/bio + name styles, Redis dashboard contract |
 | [docs/PREMIUM.md](docs/PREMIUM.md) | **Premium gating** — how to check whether a server (or a user) is premium |
 | [docs/STAFF_SYSTEM.md](docs/STAFF_SYSTEM.md) | Staff/dev commands, permissions, roles |
+| [docs/LOGS.md](docs/LOGS.md) | **Advanced server logs** — 163 events, registry, rendering, webhook delivery, stored config & dashboard contract |
 | [docs/MODERATION_CASES.md](docs/MODERATION_CASES.md) | Moderation cases/sanctions, the case service & sources, auto-sync |
 | [docs/GLOBAL_SANCTIONS.md](docs/GLOBAL_SANCTIONS.md) | **Global sanctions** — Moddy-team warn / limited / suspended, on users *and* servers |
 | [docs/TECHNICAL_LOGS.md](docs/TECHNICAL_LOGS.md) | Internal technical staff logs (webhook-based, per-event channels) |

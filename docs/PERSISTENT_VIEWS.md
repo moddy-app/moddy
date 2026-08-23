@@ -442,6 +442,24 @@ was easier not to" is not one.
   with a classic embed. `_StarboardReactorsButton`'s callback is guarded
   with `report_component_error` instead of a live view's `on_error`, same
   as the appeal buttons.
+- **`modules/configs/logs_config.py::LogsCategoryView`** — the `/config` →
+  Logs *category* screen (its destinations and its paginated event
+  checklist). Every one of its children is a persistent `DynamicItem`
+  carrying the category — and, for the checklist, the page — in its
+  `custom_id` (`moddy:logs:catchan:<category>`,
+  `moddy:logs:catev:<category>:<page>`,
+  `moddy:logs:catbtn:<action>:<category>:<page>`), registered through
+  `LogsPersistence.register_persistent` (`bot.add_dynamic_items(...)`, same
+  marker-view pattern as `AppealPersistence` and `TranscriptionPersistence`).
+  Registering the wrapper as a shell would be meaningless: it cannot be
+  built without a category id, and there is nothing left for it to carry
+  once its three items reconstruct themselves from their custom_id on every
+  click. That is also why this screen applies every change immediately
+  instead of staging edits behind a Save button — same reasoning as
+  `StaffManagerPanel` below. The root and options screens
+  (`LogsConfigView`, `LogsOptionsView`) *are* registered normally: their
+  custom_ids are static and `interaction.guild_id` plus a Manage Server
+  check is the whole auth context they need.
 
 ---
 

@@ -2049,6 +2049,749 @@
           "footer": "Bei Fragen wende dich an die Moderation des Servers."
         }
       }
+    },
+    "logs": {
+      "fields": {
+        "account_created": "Konto erstellt",
+        "action": "Aktion",
+        "added": "Hinzugefügt",
+        "after": "Nachher",
+        "after_channel": "Neuer Kanal",
+        "allow_list": "Positivliste",
+        "animated": "Animiert",
+        "answer_id": "Antwort-ID",
+        "answers": "Antworten",
+        "application": "Anwendung",
+        "attachments": "Anhänge",
+        "author": "Autor(in)",
+        "authors": "Betroffene Autoren",
+        "before": "Vorher",
+        "before_channel": "Vorheriger Kanal",
+        "case": "Fall",
+        "category": "Kategorie",
+        "channel": "Kanal",
+        "channel_created": "Kanal erstellt",
+        "colour": "Farbe",
+        "command": "Befehl",
+        "count": "Anzahl",
+        "created": "Erstellt",
+        "description": "Beschreibung",
+        "emoji": "Emoji",
+        "enabled": "Aktiviert",
+        "end_time": "Ende",
+        "event": "Event",
+        "expires": "Läuft ab",
+        "expires_at": "Läuft ab am",
+        "hoisted": "Separat angezeigt",
+        "id": "ID",
+        "inactive_days": "Tage ohne Aktivität",
+        "invite": "Einladung",
+        "inviter": "Erstellt von",
+        "invites": "Einladungen",
+        "joined_at": "Beigetreten am",
+        "keyword_filter": "Schlüsselwörter",
+        "last_pin": "Zuletzt angeheftete Nachricht",
+        "location": "Ort",
+        "matched": "Treffer",
+        "max_uses": "Maximale Nutzungen",
+        "member_count": "Anzahl der Mitglieder",
+        "members": "Mitglieder",
+        "members_removed": "Entfernte Mitglieder",
+        "mention_limit": "Erwähnungslimit",
+        "mentionable": "Erwähnbar",
+        "message": "Nachricht",
+        "message_created": "Nachricht erstellt",
+        "message_id": "Nachrichten-ID",
+        "moderator": "Moderator(in)",
+        "name": "Name",
+        "newest_message": "Neueste Nachricht",
+        "note": "Notiz",
+        "oldest_message": "Älteste Nachricht",
+        "options": "Optionen",
+        "owner": "Inhaber(in)",
+        "parent_channel": "Übergeordneter Kanal",
+        "permissions": "Berechtigungen",
+        "presets": "Vordefinierte Filter",
+        "privacy_level": "Privatsphäre",
+        "question": "Frage",
+        "reason": "Grund",
+        "regex_patterns": "Reguläre Ausdrücke",
+        "removed": "Entfernt",
+        "reply_to": "Antwort auf",
+        "role": "Rolle",
+        "role_created": "Rolle erstellt",
+        "roles": "Rollen",
+        "roles_added": "Hinzugefügt",
+        "roles_removed": "Entfernt",
+        "rule": "Regel",
+        "server": "Server",
+        "sound": "Sound",
+        "start_time": "Beginn",
+        "status": "Status",
+        "sticker": "Sticker",
+        "stickers": "Sticker",
+        "subscribers": "Interessierte",
+        "target": "Ziel",
+        "temporary": "Temporär",
+        "thread": "Thread",
+        "thread_created": "Thread erstellt",
+        "topic": "Thema",
+        "trigger": "Auslöser",
+        "type": "Typ",
+        "until": "Bis",
+        "user": "Nutzer(in)",
+        "user_id": "Nutzer-ID",
+        "user_limit": "Nutzerlimit",
+        "uses": "Nutzungen",
+        "volume": "Lautstärke",
+        "votes": "Stimmen",
+        "webhook": "Webhook"
+      },
+      "values": {
+        "yes": "Ja",
+        "no": "Nein",
+        "on": "An",
+        "off": "Aus",
+        "none": "Keine",
+        "unlimited": "Unbegrenzt",
+        "disabled": "Deaktiviert",
+        "automatic": "Automatisch",
+        "allowed": "Erlaubt",
+        "denied": "Verweigert",
+        "open_link": "Ansehen",
+        "default_colour": "Standardfarbe",
+        "boost_tier": "Stufe {tier}",
+        "empty_content": "*Kein Text*",
+        "uncached_message": "*Der Nachrichteninhalt war nicht mehr im Cache.*",
+        "uncached_messages": "*Keine dieser Nachrichten war im Cache, daher konnte kein Transkript erstellt werden.*",
+        "moved_to_file": "Inhalt gekürzt — der vollständige Text ist angehängt.",
+        "size_limit": "Log gekürzt — es überschritt die maximale Größe einer Discord-Nachricht.",
+        "transcript_attached": "*Der vollständige Inhalt ist als `.txt`-Transkript angehängt.*",
+        "transcript_header": "Transkript gelöschter Nachrichten — Moddy",
+        "duration": {
+          "day": "{count} T",
+          "hour": "{count} Std.",
+          "minute": "{count} Min.",
+          "second": "{count} Sek."
+        }
+      },
+      "permissions": {
+        "add_reactions": "Reaktionen hinzufügen",
+        "administrator": "Administrator",
+        "attach_files": "Dateien anhängen",
+        "ban_members": "Mitglieder bannen",
+        "bypass_slowmode": "Slow-Modus umgehen",
+        "change_nickname": "Nickname ändern",
+        "connect": "Verbinden",
+        "create_events": "Events erstellen",
+        "create_expressions": "Ausdrücke erstellen",
+        "create_instant_invite": "Einladung erstellen",
+        "create_polls": "Umfragen erstellen",
+        "create_private_threads": "Private Threads erstellen",
+        "create_public_threads": "Öffentliche Threads erstellen",
+        "deafen_members": "Mitglieder taub schalten",
+        "embed_links": "Links einbetten",
+        "external_emojis": "Externe Emojis",
+        "external_stickers": "Externe Sticker",
+        "kick_members": "Mitglieder kicken",
+        "manage_channels": "Kanäle verwalten",
+        "manage_emojis": "Emojis verwalten",
+        "manage_emojis_and_stickers": "Emojis und Sticker verwalten",
+        "manage_events": "Events verwalten",
+        "manage_expressions": "Ausdrücke verwalten",
+        "manage_guild": "Server verwalten",
+        "manage_messages": "Nachrichten verwalten",
+        "manage_nicknames": "Nicknames verwalten",
+        "manage_permissions": "Berechtigungen verwalten",
+        "manage_roles": "Rollen verwalten",
+        "manage_threads": "Threads verwalten",
+        "manage_webhooks": "Webhooks verwalten",
+        "mention_everyone": "@everyone erwähnen",
+        "moderate_members": "Mitglieder in den Timeout versetzen",
+        "move_members": "Mitglieder verschieben",
+        "mute_members": "Mitglieder stummschalten",
+        "pin_messages": "Nachrichten anheften",
+        "priority_speaker": "Prioritäts-Sprecher",
+        "read_message_history": "Nachrichtenverlauf anzeigen",
+        "read_messages": "Kanäle ansehen",
+        "request_to_speak": "Redeerlaubnis anfragen",
+        "send_messages": "Nachrichten senden",
+        "send_messages_in_threads": "Nachrichten in Threads senden",
+        "send_polls": "Umfragen senden",
+        "send_tts_messages": "Text-zu-Sprache-Nachrichten senden",
+        "send_voice_messages": "Sprachnachrichten senden",
+        "set_voice_channel_status": "Status des Sprachkanals festlegen",
+        "speak": "Sprechen",
+        "stream": "Video",
+        "use_application_commands": "Anwendungsbefehle verwenden",
+        "use_embedded_activities": "Aktivitäten verwenden",
+        "use_external_apps": "Externe Apps verwenden",
+        "use_external_emojis": "Externe Emojis verwenden",
+        "use_external_sounds": "Externe Sounds verwenden",
+        "use_external_stickers": "Externe Sticker verwenden",
+        "use_soundboard": "Soundboard verwenden",
+        "use_voice_activation": "Sprachaktivierung verwenden",
+        "view_audit_log": "Audit-Log ansehen",
+        "view_channel": "Kanal ansehen",
+        "view_creator_monetization_analytics": "Monetarisierungsanalysen ansehen",
+        "view_guild_insights": "Server-Insights ansehen"
+      },
+      "description": "Detaillierte Logs zu allem, was auf dem Server passiert",
+      "config": {
+        "title": "Server-Logs",
+        "description": "Wähle eine Kategorie, lege den oder die Kanäle fest, die sie erhalten sollen, und entferne den Haken bei den Events, die dich nicht interessieren. Standardmäßig ist alles aktiviert.",
+        "summary": {
+          "empty": "Bisher ist keine Kategorie konfiguriert.",
+          "events": "{enabled}/{total} Events werden protokolliert"
+        },
+        "categories": {
+          "placeholder": "Kategorie konfigurieren…",
+          "bound": "{count} Kanal/Kanäle · {enabled}/{total} Events",
+          "unbound": "Nicht konfiguriert · {total} Events verfügbar"
+        },
+        "mass": {
+          "section_title": "Alles in einen einzigen Kanal senden",
+          "section_description": "Weist alle Kategorien auf einen Schlag dem gewählten Kanal zu.",
+          "placeholder": "Kanal für alle Logs wählen…"
+        },
+        "channels": {
+          "section_title": "Zielkanäle",
+          "section_description": "Bis zu {max} Kanäle für diese Kategorie.",
+          "placeholder": "Einen oder mehrere Kanäle wählen…"
+        },
+        "events": {
+          "section_title": "Protokollierte Events",
+          "section_description": "Angehakte Events werden protokolliert; entferne den Haken bei denen, die ignoriert werden sollen.",
+          "enabled_count": "{enabled}/{total} Events aktiv",
+          "placeholder": "Events zum Protokollieren anhaken…"
+        },
+        "buttons": {
+          "back": "Zurück",
+          "all": "Alle aktivieren",
+          "none": "Alle deaktivieren",
+          "prev": "Vorherige Seite",
+          "next": "Nächste Seite"
+        },
+        "clear": {
+          "button": "Alles löschen"
+        },
+        "options": {
+          "button": "Optionen",
+          "title": "Log-Optionen",
+          "description": "Einstellungen, die für alle Kategorien gelten.",
+          "channels": {
+            "section_title": "Ignorierte Kanäle",
+            "section_description": "Kein Event aus diesen Kanälen wird protokolliert.",
+            "placeholder": "Zu ignorierende Kanäle wählen…"
+          },
+          "roles": {
+            "section_title": "Ignorierte Rollen",
+            "section_description": "Mitglieder mit einer dieser Rollen werden nie protokolliert.",
+            "placeholder": "Zu ignorierende Rollen wählen…"
+          },
+          "locale": {
+            "section_title": "Sprache der Logs",
+            "section_description": "Standardmäßig folgen die Logs der Sprache des Servers.",
+            "placeholder": "Sprache der Logs wählen…",
+            "values": {
+              "auto": "Sprache des Servers",
+              "fr": "Français",
+              "en-US": "English",
+              "es-ES": "Español",
+              "pt-BR": "Português",
+              "de": "Deutsch"
+            }
+          },
+          "toggles": {
+            "section_title": "Einstellungen",
+            "bots": "Bots ignorieren",
+            "transcripts": "Transkripte als Anhang"
+          }
+        },
+        "errors": {
+          "title": "Speichern nicht möglich",
+          "invalid_config": "Ungültige Konfiguration.",
+          "unknown_category": "Unbekannte Kategorie: `{category}`.",
+          "channel_not_found": "Der Kanal `{channel_id}` wurde nicht gefunden.",
+          "missing_permissions": "Mir fehlen die Berechtigungen **Kanal ansehen**, **Nachrichten senden** oder **Links einbetten** in {channel}."
+        }
+      },
+      "categories": {
+        "server": {
+          "name": "Server",
+          "description": "Beitritte, Austritte, Sanktionen und Servereinstellungen."
+        },
+        "messages": {
+          "name": "Nachrichten",
+          "description": "Gelöschte, bearbeitete und veröffentlichte Nachrichten."
+        },
+        "users": {
+          "name": "Nutzer",
+          "description": "Nicknames, Avatare, Rollen und Timeouts."
+        },
+        "moderation": {
+          "name": "Moderation",
+          "description": "Moddy-Sanktionen und Moderationsaktionen."
+        },
+        "channels": {
+          "name": "Kanäle",
+          "description": "Erstellung, Löschung und Einstellungen von Kanälen."
+        },
+        "roles": {
+          "name": "Rollen",
+          "description": "Erstellung, Löschung und Einstellungen von Rollen."
+        },
+        "threads": {
+          "name": "Threads",
+          "description": "Erstellen, Archivieren und Sperren von Threads."
+        },
+        "voice": {
+          "name": "Sprache",
+          "description": "Verbindungen, Verschiebungen und Trennungen in Sprachkanälen."
+        },
+        "invites": {
+          "name": "Einladungen",
+          "description": "Erstellte, gelöschte oder geteilte Einladungen."
+        },
+        "automod": {
+          "name": "Discord AutoMod",
+          "description": "Native AutoMod-Regeln von Discord."
+        },
+        "emojis": {
+          "name": "Emojis",
+          "description": "Hinzugefügte, gelöschte oder umbenannte Emojis."
+        },
+        "stickers": {
+          "name": "Sticker",
+          "description": "Hinzugefügte, gelöschte oder geänderte Sticker."
+        },
+        "soundboard": {
+          "name": "Soundboard",
+          "description": "Hinzugefügte, geänderte oder gelöschte Sounds."
+        },
+        "events": {
+          "name": "Events",
+          "description": "Geplante Events des Servers."
+        },
+        "stage": {
+          "name": "Bühnen",
+          "description": "Gestartete oder beendete Bühnen (Bühnenkanäle)."
+        },
+        "polls": {
+          "name": "Umfragen",
+          "description": "Erstellte und beendete Umfragen sowie Stimmen."
+        },
+        "webhooks": {
+          "name": "Webhooks",
+          "description": "Erstellte, geänderte oder gelöschte Webhooks."
+        },
+        "applications": {
+          "name": "Anwendungen",
+          "description": "Hinzugefügte oder entfernte Bots und Anwendungen."
+        }
+      },
+      "events": {
+        "server": {
+          "ban_add": "Bann",
+          "ban_remove": "Entbannung",
+          "user_join": "Mitglied beigetreten",
+          "user_leave": "Mitglied verlassen",
+          "user_kick": "Kick",
+          "member_prune": "Inaktive Mitglieder entfernt",
+          "afk_channel_update": "AFK-Kanal",
+          "afk_timeout_update": "AFK-Timeout",
+          "server_banner_update": "Server-Banner",
+          "message_notifications_update": "Standard-Benachrichtigungen",
+          "server_discovery_splash_update": "Discovery-Bild",
+          "server_content_filter_update": "Inhaltsfilter",
+          "server_features_update": "Server-Funktionen",
+          "server_icon_update": "Server-Icon",
+          "mfa_level_update": "2FA-Stufe",
+          "server_name_update": "Servername",
+          "server_description_update": "Serverbeschreibung",
+          "server_owner_update": "Server-Inhaber",
+          "partnered_update": "Partner-Status",
+          "server_boost_level_update": "Boost-Stufe",
+          "boost_progress_bar_toggle": "Boost-Fortschrittsleiste",
+          "public_updates_channel_update": "Kanal für Discord-Ankündigungen",
+          "server_rules_channel_update": "Regelkanal",
+          "server_splash_update": "Einladungsbild",
+          "system_channel_update": "Systemkanal",
+          "server_vanity_update": "Eigene Einladung",
+          "verification_level_update": "Verifizierungsstufe",
+          "verified_update": "Verifiziert-Status",
+          "server_widget_update": "Server-Widget",
+          "server_preferred_locale_update": "Serversprache",
+          "onboarding_toggle": "Onboarding aktiviert",
+          "onboarding_channels_update": "Onboarding-Kanäle",
+          "onboarding_question_add": "Onboarding-Frage hinzugefügt",
+          "onboarding_question_remove": "Onboarding-Frage entfernt",
+          "onboarding_question_update": "Onboarding-Frage geändert"
+        },
+        "messages": {
+          "message_delete": "Nachricht gelöscht",
+          "message_bulk_delete": "Massenlöschung",
+          "message_edit": "Nachricht bearbeitet",
+          "message_publish": "Nachricht veröffentlicht",
+          "message_command_used": "Befehl verwendet"
+        },
+        "users": {
+          "user_name_update": "Nickname geändert",
+          "user_roles_update": "Rollen geändert",
+          "user_roles_add": "Rolle hinzugefügt",
+          "user_roles_remove": "Rolle entfernt",
+          "user_avatar_update": "Avatar geändert",
+          "user_timed_out": "Timeout",
+          "user_timeout_removed": "Timeout beendet"
+        },
+        "moderation": {
+          "auto_moderation": "Discord AutoMod",
+          "ban_add": "Bann",
+          "ban_remove": "Entbannung",
+          "case_delete": "Fall gelöscht",
+          "mass_case_delete": "Massenlöschung von Fällen",
+          "case_update": "Fall geändert",
+          "kick_add": "Kick",
+          "kick_remove": "Kick aufgehoben",
+          "mute_add": "Stummschaltung",
+          "mute_remove": "Stummschaltung aufgehoben",
+          "warn_add": "Verwarnung",
+          "warn_remove": "Verwarnung entfernt",
+          "report_create": "Meldung erstellt",
+          "reports_ignore": "Meldung ignoriert",
+          "reports_accept": "Meldung angenommen",
+          "user_note_add": "Notiz hinzugefügt",
+          "user_note_remove": "Notiz entfernt"
+        },
+        "channels": {
+          "channel_create": "Kanal erstellt",
+          "channel_delete": "Kanal gelöscht",
+          "channel_pins_update": "Angeheftete Nachrichten geändert",
+          "channel_name_update": "Kanalname",
+          "channel_topic_update": "Kanalthema",
+          "channel_nsfw_update": "NSFW des Kanals",
+          "channel_parent_update": "Kategorie des Kanals",
+          "channel_permissions_update": "Kanalberechtigungen",
+          "channel_type_update": "Kanaltyp",
+          "channel_bitrate_update": "Bitrate des Kanals",
+          "channel_user_limit_update": "Nutzerlimit",
+          "channel_slowmode_update": "Slow-Modus",
+          "channel_rtc_region_update": "Sprachregion",
+          "channel_video_quality_update": "Videoqualität",
+          "channel_default_archive_duration_update": "Standard-Archivierung",
+          "channel_default_thread_slowmode_update": "Slow-Modus für Threads",
+          "channel_default_reaction_emoji_update": "Standard-Reaktion",
+          "channel_default_sort_order_update": "Standard-Sortierung",
+          "channel_forum_tags_update": "Forum-Tags",
+          "channel_forum_layout_update": "Forum-Ansicht",
+          "channel_voice_status_update": "Status des Sprachkanals"
+        },
+        "roles": {
+          "role_create": "Rolle erstellt",
+          "role_delete": "Rolle gelöscht",
+          "role_color_update": "Rollenfarbe",
+          "role_hoist_update": "Separate Anzeige",
+          "role_mentionable_update": "Rolle erwähnbar",
+          "role_name_update": "Rollenname",
+          "role_permissions_update": "Rollenberechtigungen",
+          "role_icon_update": "Rollen-Icon"
+        },
+        "threads": {
+          "thread_create": "Thread erstellt",
+          "thread_delete": "Thread gelöscht",
+          "thread_name_update": "Thread-Name",
+          "thread_slowmode_update": "Slow-Modus des Threads",
+          "thread_archive_duration_update": "Archivierungsdauer",
+          "thread_archive": "Thread archiviert",
+          "thread_unarchive": "Thread wiederhergestellt",
+          "thread_lock": "Thread gesperrt",
+          "thread_unlock": "Thread entsperrt"
+        },
+        "voice": {
+          "voice_channel_full": "Sprachkanal voll",
+          "voice_user_join": "Sprachkanal betreten",
+          "voice_user_switch": "Sprachkanal gewechselt",
+          "voice_user_leave": "Sprachkanal verlassen",
+          "voice_user_move": "Zwangsverschiebung",
+          "voice_user_kick": "Zwangstrennung"
+        },
+        "invites": {
+          "invite_create": "Einladung erstellt",
+          "invite_delete": "Einladung gelöscht",
+          "invite_post": "Einladung geteilt"
+        },
+        "automod": {
+          "automod_rule_create": "Regel erstellt",
+          "automod_rule_delete": "Regel gelöscht",
+          "automod_rule_toggle": "Regel aktiviert/deaktiviert",
+          "automod_rule_name_update": "Name der Regel",
+          "automod_rule_actions_update": "Aktionen der Regel",
+          "automod_rule_content_update": "Gefilterte Inhalte",
+          "automod_rule_roles_update": "Ausgenommene Rollen",
+          "automod_rule_channels_update": "Ausgenommene Kanäle",
+          "automod_rule_whitelist_update": "Positivliste"
+        },
+        "emojis": {
+          "emoji_create": "Emoji hinzugefügt",
+          "emoji_delete": "Emoji gelöscht",
+          "emoji_name_update": "Name des Emojis",
+          "emoji_roles_update": "Rollen des Emojis"
+        },
+        "stickers": {
+          "sticker_create": "Sticker hinzugefügt",
+          "sticker_delete": "Sticker gelöscht",
+          "sticker_name_update": "Name des Stickers",
+          "sticker_description_update": "Beschreibung des Stickers",
+          "sticker_related_emoji_update": "Emoji des Stickers"
+        },
+        "soundboard": {
+          "sound_upload": "Sound hinzugefügt",
+          "sound_name_update": "Name des Sounds",
+          "sound_volume_update": "Lautstärke des Sounds",
+          "sound_emoji_update": "Emoji des Sounds",
+          "sound_delete": "Sound gelöscht"
+        },
+        "events": {
+          "event_create": "Event erstellt",
+          "event_delete": "Event gelöscht",
+          "event_name_update": "Name des Events",
+          "event_description_update": "Beschreibung des Events",
+          "event_location_update": "Ort des Events",
+          "event_privacy_level_update": "Privatsphäre des Events",
+          "event_start_time_update": "Beginn des Events",
+          "event_end_time_update": "Ende des Events",
+          "event_status_update": "Status des Events",
+          "event_image_update": "Bild des Events",
+          "event_user_subscribe": "Für Event angemeldet",
+          "event_user_unsubscribe": "Von Event abgemeldet"
+        },
+        "stage": {
+          "stage_start": "Bühne gestartet",
+          "stage_end": "Bühne beendet",
+          "stage_topic_update": "Thema der Bühne",
+          "stage_privacy_update": "Privatsphäre der Bühne"
+        },
+        "polls": {
+          "poll_create": "Umfrage erstellt",
+          "poll_delete": "Umfrage gelöscht",
+          "poll_finalize": "Umfrage beendet",
+          "poll_votes_add": "Stimme abgegeben",
+          "poll_votes_remove": "Stimme zurückgezogen"
+        },
+        "webhooks": {
+          "webhook_create": "Webhook erstellt",
+          "webhook_name_update": "Name des Webhooks",
+          "webhook_avatar_update": "Avatar des Webhooks",
+          "webhook_channel_update": "Kanal des Webhooks",
+          "webhook_delete": "Webhook gelöscht"
+        },
+        "applications": {
+          "app_add": "Anwendung hinzugefügt",
+          "app_remove": "Anwendung entfernt",
+          "app_command_permission_update": "Befehlsberechtigungen"
+        }
+      },
+      "titles": {
+        "server": {
+          "ban_add": "Ein Nutzer wurde gebannt",
+          "ban_remove": "Ein Nutzer wurde entbannt",
+          "user_join": "Ein Nutzer ist dem Server beigetreten",
+          "user_leave": "Ein Nutzer hat den Server verlassen",
+          "user_kick": "Ein Nutzer wurde gekickt",
+          "member_prune": "Inaktive Mitglieder wurden entfernt",
+          "afk_channel_update": "Der AFK-Kanal wurde geändert",
+          "afk_timeout_update": "Das AFK-Timeout wurde geändert",
+          "server_banner_update": "Das Server-Banner wurde geändert",
+          "message_notifications_update": "Die Standard-Benachrichtigungen wurden geändert",
+          "server_discovery_splash_update": "Das Discovery-Bild wurde geändert",
+          "server_content_filter_update": "Der Filter für anstößige Inhalte wurde geändert",
+          "server_features_update": "Die Server-Funktionen wurden geändert",
+          "server_icon_update": "Das Server-Icon wurde geändert",
+          "mfa_level_update": "Die Stufe der Zwei-Faktor-Authentifizierung wurde geändert",
+          "server_name_update": "Der Servername wurde geändert",
+          "server_description_update": "Die Serverbeschreibung wurde geändert",
+          "server_owner_update": "Der Server hat einen neuen Inhaber",
+          "partnered_update": "Der Partner-Status wurde geändert",
+          "server_boost_level_update": "Die Boost-Stufe wurde geändert",
+          "boost_progress_bar_toggle": "Die Boost-Fortschrittsleiste wurde geändert",
+          "public_updates_channel_update": "Der Kanal für Discord-Ankündigungen wurde geändert",
+          "server_rules_channel_update": "Der Regelkanal wurde geändert",
+          "server_splash_update": "Das Einladungsbild wurde geändert",
+          "system_channel_update": "Der Systemkanal wurde geändert",
+          "server_vanity_update": "Die eigene Einladung wurde geändert",
+          "verification_level_update": "Die Verifizierungsstufe wurde geändert",
+          "verified_update": "Der Verifiziert-Status wurde geändert",
+          "server_widget_update": "Das Server-Widget wurde geändert",
+          "server_preferred_locale_update": "Die Serversprache wurde geändert",
+          "onboarding_toggle": "Das Onboarding wurde aktiviert oder deaktiviert",
+          "onboarding_channels_update": "Die Standardkanäle des Onboardings wurden geändert",
+          "onboarding_question_add": "Eine Onboarding-Frage wurde hinzugefügt",
+          "onboarding_question_remove": "Eine Onboarding-Frage wurde entfernt",
+          "onboarding_question_update": "Eine Onboarding-Frage wurde geändert"
+        },
+        "messages": {
+          "message_delete": "Nachricht gelöscht",
+          "message_bulk_delete": "Mehrere Nachrichten wurden gelöscht",
+          "message_edit": "Nachricht bearbeitet",
+          "message_publish": "Nachricht in den abonnierten Servern veröffentlicht",
+          "message_command_used": "Ein Befehl wurde verwendet"
+        },
+        "users": {
+          "user_name_update": "Der Nickname eines Nutzers wurde geändert",
+          "user_roles_update": "Die Rollen eines Nutzers wurden geändert",
+          "user_roles_add": "Einem Nutzer wurden Rollen hinzugefügt",
+          "user_roles_remove": "Einem Nutzer wurden Rollen entfernt",
+          "user_avatar_update": "Der Avatar eines Nutzers wurde geändert",
+          "user_timed_out": "Ein Nutzer wurde in den Timeout versetzt",
+          "user_timeout_removed": "Der Timeout eines Nutzers wurde aufgehoben"
+        },
+        "moderation": {
+          "auto_moderation": "Discords AutoMod hat eingegriffen",
+          "ban_add": "Ein Nutzer wurde gebannt",
+          "ban_remove": "Ein Nutzer wurde entbannt",
+          "case_delete": "Ein Moderationsfall wurde gelöscht",
+          "mass_case_delete": "Mehrere Moderationsfälle wurden gelöscht",
+          "case_update": "Ein Moderationsfall wurde geändert",
+          "kick_add": "Ein Nutzer wurde gekickt",
+          "kick_remove": "Ein Kick wurde aufgehoben",
+          "mute_add": "Ein Nutzer wurde stummgeschaltet",
+          "mute_remove": "Ein Nutzer ist nicht mehr stummgeschaltet",
+          "warn_add": "Ein Nutzer hat eine Verwarnung erhalten",
+          "warn_remove": "Eine Verwarnung wurde entfernt",
+          "report_create": "Eine Meldung wurde erstellt",
+          "reports_ignore": "Eine Meldung wurde ignoriert",
+          "reports_accept": "Eine Meldung wurde angenommen",
+          "user_note_add": "Zu einem Nutzer wurde eine Notiz hinzugefügt",
+          "user_note_remove": "Von einem Nutzer wurde eine Notiz entfernt"
+        },
+        "channels": {
+          "channel_create": "Kanal erstellt",
+          "channel_delete": "Kanal gelöscht",
+          "channel_pins_update": "Die angehefteten Nachrichten eines Kanals wurden geändert",
+          "channel_name_update": "Der Name eines Kanals wurde geändert",
+          "channel_topic_update": "Das Thema eines Kanals wurde geändert",
+          "channel_nsfw_update": "Die NSFW-Einstellung eines Kanals wurde geändert",
+          "channel_parent_update": "Die Kategorie eines Kanals wurde geändert",
+          "channel_permissions_update": "Die Berechtigungen eines Kanals wurden geändert",
+          "channel_type_update": "Der Typ eines Kanals wurde geändert",
+          "channel_bitrate_update": "Die Bitrate eines Sprachkanals wurde geändert",
+          "channel_user_limit_update": "Das Nutzerlimit eines Sprachkanals wurde geändert",
+          "channel_slowmode_update": "Der Slow-Modus eines Kanals wurde geändert",
+          "channel_rtc_region_update": "Die Sprachregion eines Kanals wurde geändert",
+          "channel_video_quality_update": "Die Videoqualität eines Kanals wurde geändert",
+          "channel_default_archive_duration_update": "Die Standard-Archivierungsdauer wurde geändert",
+          "channel_default_thread_slowmode_update": "Der Standard-Slow-Modus für Threads wurde geändert",
+          "channel_default_reaction_emoji_update": "Das Standard-Reaktions-Emoji wurde geändert",
+          "channel_default_sort_order_update": "Die Standard-Sortierung eines Forums wurde geändert",
+          "channel_forum_tags_update": "Die Tags eines Forums wurden geändert",
+          "channel_forum_layout_update": "Die Ansicht eines Forums wurde geändert",
+          "channel_voice_status_update": "Der Status eines Sprachkanals wurde geändert"
+        },
+        "roles": {
+          "role_create": "Rolle erstellt",
+          "role_delete": "Rolle gelöscht",
+          "role_color_update": "Die Farbe einer Rolle wurde geändert",
+          "role_hoist_update": "Die separate Anzeige einer Rolle wurde geändert",
+          "role_mentionable_update": "Die Erwähnbarkeit einer Rolle wurde geändert",
+          "role_name_update": "Der Name einer Rolle wurde geändert",
+          "role_permissions_update": "Die Berechtigungen einer Rolle wurden geändert",
+          "role_icon_update": "Das Icon einer Rolle wurde geändert"
+        },
+        "threads": {
+          "thread_create": "Thread erstellt",
+          "thread_delete": "Thread gelöscht",
+          "thread_name_update": "Der Name eines Threads wurde geändert",
+          "thread_slowmode_update": "Der Slow-Modus eines Threads wurde geändert",
+          "thread_archive_duration_update": "Die Archivierungsdauer eines Threads wurde geändert",
+          "thread_archive": "Thread archiviert",
+          "thread_unarchive": "Thread wiederhergestellt",
+          "thread_lock": "Thread gesperrt",
+          "thread_unlock": "Thread entsperrt"
+        },
+        "voice": {
+          "voice_channel_full": "Ein Sprachkanal ist voll",
+          "voice_user_join": "Ein Nutzer hat einen Sprachkanal betreten",
+          "voice_user_switch": "Ein Nutzer hat den Sprachkanal gewechselt",
+          "voice_user_leave": "Ein Nutzer hat einen Sprachkanal verlassen",
+          "voice_user_move": "Ein Nutzer wurde in einen anderen Sprachkanal verschoben",
+          "voice_user_kick": "Ein Nutzer wurde aus dem Sprachkanal getrennt"
+        },
+        "invites": {
+          "invite_create": "Einladung erstellt",
+          "invite_delete": "Einladung gelöscht",
+          "invite_post": "Eine Einladung wurde in einem Kanal geteilt"
+        },
+        "automod": {
+          "automod_rule_create": "AutoMod-Regel erstellt",
+          "automod_rule_delete": "AutoMod-Regel gelöscht",
+          "automod_rule_toggle": "Eine AutoMod-Regel wurde aktiviert oder deaktiviert",
+          "automod_rule_name_update": "Der Name einer AutoMod-Regel wurde geändert",
+          "automod_rule_actions_update": "Die Aktionen einer AutoMod-Regel wurden geändert",
+          "automod_rule_content_update": "Die von einer AutoMod-Regel gefilterten Inhalte wurden geändert",
+          "automod_rule_roles_update": "Die ausgenommenen Rollen einer AutoMod-Regel wurden geändert",
+          "automod_rule_channels_update": "Die ausgenommenen Kanäle einer AutoMod-Regel wurden geändert",
+          "automod_rule_whitelist_update": "Die Positivliste einer AutoMod-Regel wurde geändert"
+        },
+        "emojis": {
+          "emoji_create": "Emoji hinzugefügt",
+          "emoji_delete": "Emoji gelöscht",
+          "emoji_name_update": "Der Name eines Emojis wurde geändert",
+          "emoji_roles_update": "Die berechtigten Rollen eines Emojis wurden geändert"
+        },
+        "stickers": {
+          "sticker_create": "Sticker hinzugefügt",
+          "sticker_delete": "Sticker gelöscht",
+          "sticker_name_update": "Der Name eines Stickers wurde geändert",
+          "sticker_description_update": "Die Beschreibung eines Stickers wurde geändert",
+          "sticker_related_emoji_update": "Das zugehörige Emoji eines Stickers wurde geändert"
+        },
+        "soundboard": {
+          "sound_upload": "Sound zum Soundboard hinzugefügt",
+          "sound_name_update": "Der Name eines Sounds wurde geändert",
+          "sound_volume_update": "Die Lautstärke eines Sounds wurde geändert",
+          "sound_emoji_update": "Das Emoji eines Sounds wurde geändert",
+          "sound_delete": "Sound aus dem Soundboard gelöscht"
+        },
+        "events": {
+          "event_create": "Event erstellt",
+          "event_delete": "Event gelöscht",
+          "event_name_update": "Der Name eines Events wurde geändert",
+          "event_description_update": "Die Beschreibung eines Events wurde geändert",
+          "event_location_update": "Der Ort eines Events wurde geändert",
+          "event_privacy_level_update": "Die Privatsphäre eines Events wurde geändert",
+          "event_start_time_update": "Die Startzeit eines Events wurde geändert",
+          "event_end_time_update": "Die Endzeit eines Events wurde geändert",
+          "event_status_update": "Der Status eines Events wurde geändert",
+          "event_image_update": "Das Bild eines Events wurde geändert",
+          "event_user_subscribe": "Ein Nutzer hat sich für ein Event angemeldet",
+          "event_user_unsubscribe": "Ein Nutzer hat sich von einem Event abgemeldet"
+        },
+        "stage": {
+          "stage_start": "Eine Bühne wurde gestartet",
+          "stage_end": "Eine Bühne wurde beendet",
+          "stage_topic_update": "Das Thema einer Bühne wurde geändert",
+          "stage_privacy_update": "Die Privatsphäre einer Bühne wurde geändert"
+        },
+        "polls": {
+          "poll_create": "Umfrage erstellt",
+          "poll_delete": "Umfrage gelöscht",
+          "poll_finalize": "Eine Umfrage wurde beendet",
+          "poll_votes_add": "Eine Stimme wurde zu einer Umfrage hinzugefügt",
+          "poll_votes_remove": "Eine Stimme wurde von einer Umfrage entfernt"
+        },
+        "webhooks": {
+          "webhook_create": "Webhook erstellt",
+          "webhook_name_update": "Der Name eines Webhooks wurde geändert",
+          "webhook_avatar_update": "Der Avatar eines Webhooks wurde geändert",
+          "webhook_channel_update": "Der Kanal eines Webhooks wurde geändert",
+          "webhook_delete": "Webhook gelöscht"
+        },
+        "applications": {
+          "app_add": "Eine Anwendung wurde dem Server hinzugefügt",
+          "app_remove": "Eine Anwendung wurde vom Server entfernt",
+          "app_command_permission_update": "Die Berechtigungen eines Befehls wurden geändert"
+        }
+      }
     }
   },
   "languages": {

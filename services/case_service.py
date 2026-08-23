@@ -179,6 +179,10 @@ class CaseService:
                     expires_at=expires_at, note=note,
                 )
                 self._invalidate_global(spec, subject_id)
+                await self._log_to_server(
+                    spec, scope_id, subject_id, action_value, issuer_id, reason,
+                    expires_at, existing["reference"],
+                )
                 return {
                     "id": existing["id"], "reference": existing["reference"],
                     "created": False, "sanction_id": sanction_id,
@@ -200,6 +204,10 @@ class CaseService:
         )
         result["created"] = True
         self._invalidate_global(spec, subject_id)
+        await self._log_to_server(
+            spec, scope_id, subject_id, action_value, issuer_id, reason,
+            expires_at, result.get("reference"),
+        )
         return result
 
     async def revoke_sanction(
@@ -230,4 +238,32 @@ class CaseService:
             action_value, by_type_value, by_id,
         )
         self._invalidate_global(spec, subject_id)
+        if revoked:
+            await self._log_to_server(
+                spec, scope_id, subject_id, action_value, by_id, None, None, None,
+                revoked=True,
+            )
         return revoked
+
+    async def _log_to_server(self, spec: CaseSource, scope_id, subject_id,
+                             action: str, issuer_id, reason: Optional[str],
+                             expires_at, reference: Optional[str], *,
+                             revoked: bool = False) -> None:
+        """Mirror a guild-scoped sanction into the server's own mod-log.
+
+        Only guild cases are mirrored: a Moddy-team global sanction is not a
+        server's business, and it is not its moderators who applied it. A
+        failure here never propagates — the sanction is already recorded.
+        """
+        if spec.case_type is not CaseType.GUILD or not scope_id:
+            return
+        try:
+            from serverlogs.listeners.moderation import log_sanction
+
+            await log_sanction(
+                self.bot, guild_id=scope_id, action=action, subject_id=subject_id,
+                issuer_id=issuer_id, reason=reason, expires_at=expires_at,
+                reference=reference, revoked=revoked,
+            )
+        except Exception as exc:
+            logger.debug("Server-log mirror failed for a %s sanction: %s", action, exc)
