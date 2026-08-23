@@ -7,8 +7,8 @@ this module turns that into the embed everyone sees:
 .. code-block:: text
 
     ┌──────────────────────────────────────────────┐
-    │ Role(s) added to a user                      │  title  = event title (i18n)
-    │ > **User:** @dyvion_ (<@120…>)               │  description = "> **Label:** value"
+    │ ### <:addrole:…> Role(s) added to a user     │  heading = icon + i18n title
+    │ > **User:** @dyvion_ (<@120…>)               │  lines   = "> **Label:** value"
     │ > **Added:** <@&966…>                        │
     │ > **Reason:** Join Roles                     │
     │                                     [avatar] │  thumbnail = the subject
@@ -349,18 +349,25 @@ class LogEntry:
             t(spec.title_key, locale=self.locale) if spec else self.event
         )
 
-        lines = [rendered for _, rendered in self._lines]
+        # The heading lives in the description, not in ``embed.title``:
+        # Discord renders custom emojis in a description and prints them as
+        # raw text in a title. The jump link an entry may carry (``url()``)
+        # becomes a markdown link on the heading instead of ``embed.url``.
+        heading = truncate(title, 250)
+        if self._url:
+            heading = f"[{heading}]({self._url})"
+        emoji = registry.event_emoji(_full_key(self.event))
+        lines = [f"### {emoji} {heading}".replace("###  ", "### ")]
+        lines.extend(rendered for _, rendered in self._lines)
         if self._merged:
             note = t("modules.logs.values.merged_with", locale=self.locale,
                      events=", ".join(self._merged))
             lines.append(f"-# {note}")
 
         embed = discord.Embed(
-            title=truncate(title, 250),
             description=truncate("\n".join(lines), MAX_DESCRIPTION) or None,
             colour=KIND_COLORS.get(kind, FALLBACK_COLOR),
             timestamp=self._timestamp,
-            url=self._url,
         )
         for name, value, inline in self._blocks:
             embed.add_field(name=truncate(name, 250),

@@ -27,11 +27,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
-from utils.emojis import (
-    BALANCE, COMMANDS, EMOJI, FILTER, FOLDERS, GROUPS, IMAGE, LINK,
-    MANAGE_USER, MESSAGE, MIC_OFF, PLAY, SHIELD, TEXT, TIME, USER,
-    VOICE_CHAT, WEBHOOK,
-)
+from utils.emojis import log_emoji
 
 # ---------------------------------------------------------------------------
 # Colour "kind" of an event — drives the embed accent so a log channel reads
@@ -133,12 +129,13 @@ class LogCategorySpec:
 
 # ---------------------------------------------------------------------------
 # The catalogue. Order inside a category is the order shown in /config.
-# Emojis come from utils/emojis.py (custom emojis only — CLAUDE.md rule 3).
+# Icons come from utils/emojis.py::LOG_EMOJIS — the server-logs icon set,
+# the only one this feature is allowed to draw from (see docs/LOGS.md).
 # ---------------------------------------------------------------------------
 
 _CATALOGUE: Tuple[Tuple[str, str, Tuple[str, ...]], ...] = (
     (
-        "server", GROUPS,
+        "server", log_emoji("updateserver"),
         (
             "ban_add", "ban_remove", "user_join", "user_leave", "user_kick",
             "member_prune", "afk_channel_update", "afk_timeout_update",
@@ -158,14 +155,14 @@ _CATALOGUE: Tuple[Tuple[str, str, Tuple[str, ...]], ...] = (
         ),
     ),
     (
-        "messages", MESSAGE,
+        "messages", log_emoji("dm"),
         (
             "message_delete", "message_bulk_delete", "message_edit",
             "message_publish", "message_command_used",
         ),
     ),
     (
-        "users", USER,
+        "users", log_emoji("updatemember"),
         (
             "user_name_update", "user_roles_update", "user_roles_add",
             "user_roles_remove", "user_avatar_update", "user_timed_out",
@@ -173,7 +170,7 @@ _CATALOGUE: Tuple[Tuple[str, str, Tuple[str, ...]], ...] = (
         ),
     ),
     (
-        "moderation", SHIELD,
+        "moderation", log_emoji("modview"),
         (
             "auto_moderation", "ban_add", "ban_remove", "case_delete",
             "mass_case_delete", "case_update", "kick_add", "kick_remove",
@@ -183,7 +180,7 @@ _CATALOGUE: Tuple[Tuple[str, str, Tuple[str, ...]], ...] = (
         ),
     ),
     (
-        "channels", TEXT,
+        "channels", log_emoji("channls"),
         (
             "channel_create", "channel_delete", "channel_pins_update",
             "channel_name_update", "channel_topic_update",
@@ -200,7 +197,7 @@ _CATALOGUE: Tuple[Tuple[str, str, Tuple[str, ...]], ...] = (
         ),
     ),
     (
-        "roles", MANAGE_USER,
+        "roles", log_emoji("roleicon"),
         (
             "role_create", "role_delete", "role_color_update",
             "role_hoist_update", "role_mentionable_update", "role_name_update",
@@ -208,7 +205,7 @@ _CATALOGUE: Tuple[Tuple[str, str, Tuple[str, ...]], ...] = (
         ),
     ),
     (
-        "threads", FOLDERS,
+        "threads", log_emoji("updatethread"),
         (
             "thread_create", "thread_delete", "thread_name_update",
             "thread_slowmode_update", "thread_archive_duration_update",
@@ -217,18 +214,18 @@ _CATALOGUE: Tuple[Tuple[str, str, Tuple[str, ...]], ...] = (
         ),
     ),
     (
-        "voice", VOICE_CHAT,
+        "voice", log_emoji("Play"),
         (
             "voice_channel_full", "voice_user_join", "voice_user_switch",
             "voice_user_leave", "voice_user_move", "voice_user_kick",
         ),
     ),
     (
-        "invites", LINK,
+        "invites", log_emoji("links"),
         ("invite_create", "invite_delete", "invite_post"),
     ),
     (
-        "automod", FILTER,
+        "automod", log_emoji("Filter"),
         (
             "automod_rule_create", "automod_rule_delete",
             "automod_rule_toggle", "automod_rule_name_update",
@@ -238,28 +235,28 @@ _CATALOGUE: Tuple[Tuple[str, str, Tuple[str, ...]], ...] = (
         ),
     ),
     (
-        "emojis", EMOJI,
+        "emojis", log_emoji("emojisslots"),
         (
             "emoji_create", "emoji_delete", "emoji_name_update",
             "emoji_roles_update",
         ),
     ),
     (
-        "stickers", IMAGE,
+        "stickers", log_emoji("stickerscreated"),
         (
             "sticker_create", "sticker_delete", "sticker_name_update",
             "sticker_description_update", "sticker_related_emoji_update",
         ),
     ),
     (
-        "soundboard", PLAY,
+        "soundboard", log_emoji("soundboardadd"),
         (
             "sound_upload", "sound_name_update", "sound_volume_update",
             "sound_emoji_update", "sound_delete",
         ),
     ),
     (
-        "events", TIME,
+        "events", log_emoji("eventcreated"),
         (
             "event_create", "event_delete", "event_name_update",
             "event_description_update", "event_location_update",
@@ -270,25 +267,25 @@ _CATALOGUE: Tuple[Tuple[str, str, Tuple[str, ...]], ...] = (
         ),
     ),
     (
-        "stage", MIC_OFF,
+        "stage", log_emoji("stagecreated"),
         ("stage_start", "stage_end", "stage_topic_update", "stage_privacy_update"),
     ),
     (
-        "polls", BALANCE,
+        "polls", log_emoji("questions"),
         (
             "poll_create", "poll_delete", "poll_finalize", "poll_votes_add",
             "poll_votes_remove",
         ),
     ),
     (
-        "webhooks", WEBHOOK,
+        "webhooks", log_emoji("Webhooks"),
         (
             "webhook_create", "webhook_name_update", "webhook_avatar_update",
             "webhook_channel_update", "webhook_delete",
         ),
     ),
     (
-        "applications", COMMANDS,
+        "applications", log_emoji("bot"),
         ("app_add", "app_remove", "app_command_permission_update"),
     ),
 )
@@ -309,6 +306,140 @@ EVENTS: Dict[str, LogEventSpec] = {
     for cat in CATEGORIES.values()
     for event in cat.events
 }
+
+
+# ---------------------------------------------------------------------------
+# Per-event icons
+# ---------------------------------------------------------------------------
+#
+# Every log carries an icon, taken from the server-logs set in
+# ``utils/emojis.py``. Only the events whose act has its own icon are listed
+# here — anything else falls back to its category icon, so a new event is
+# never iconless and adding a name to this table is optional polish, not a
+# step of "adding an event".
+#
+# Keys are bare event names: the same act keeps the same icon in whichever
+# category it is declared (a ban looks like a ban in ``server`` and in
+# ``moderation``).
+
+_EVENT_ICONS: Dict[str, str] = {
+    # People
+    "user_join": "addmember", "user_leave": "removemember", "user_kick": "kick",
+    "kick_add": "kick", "kick_remove": "accept", "member_prune": "removemember",
+    "ban_add": "ban", "ban_remove": "accept",
+    "mute_add": "timedout", "mute_remove": "timeout",
+    "user_timed_out": "timedout", "user_timeout_removed": "timeout",
+    "warn_add": "Warn", "warn_remove": "accept",
+    "user_name_update": "updatemember", "user_avatar_update": "uploadimage",
+    "user_roles_add": "addrole", "user_roles_remove": "removeuserfromrole",
+    "user_roles_update": "updaterole",
+    # Moddy cases
+    "auto_moderation": "Filter", "case_update": "Edit",
+    "case_delete": "close", "mass_case_delete": "close",
+    "report_create": "sendalert", "reports_accept": "accept",
+    "reports_ignore": "deny",
+    "user_note_add": "addview", "user_note_remove": "close",
+    # Messages
+    "message_delete": "messageremove", "message_bulk_delete": "messageremove",
+    "message_edit": "Edit", "message_publish": "Channelsfollowed",
+    "message_command_used": "slash",
+    # Channels
+    "channel_create": "createchannel", "channel_delete": "deletechannel",
+    "channel_permissions_update": "permissions",
+    "channel_slowmode_update": "timeout", "channel_nsfw_update": "locked",
+    # Roles
+    "role_create": "createrole", "role_delete": "removerole",
+    "role_color_update": "pickcolor", "role_icon_update": "roleicon1",
+    "role_permissions_update": "permissions", "role_name_update": "editrole",
+    # Threads
+    "thread_create": "createthread", "thread_delete": "removethread",
+    "thread_lock": "locked", "thread_unlock": "locked1",
+    "thread_archive": "sort", "thread_unarchive": "sort",
+    # Voice
+    "voice_user_join": "addmember", "voice_user_leave": "removemember",
+    "voice_user_switch": "right", "voice_user_move": "right",
+    "voice_user_kick": "kick", "voice_channel_full": "locked",
+    # Invites
+    "invite_create": "invitecreate", "invite_delete": "inviteremove",
+    "invite_post": "links",
+    # Discord AutoMod
+    "automod_rule_create": "addrule", "automod_rule_delete": "deny",
+    "automod_rule_name_update": "Edit",
+    "automod_rule_actions_update": "Blockmessage",
+    "automod_rule_content_update": "Blockcustomwords",
+    "automod_rule_roles_update": "addrole",
+    "automod_rule_channels_update": "channls",
+    "automod_rule_whitelist_update": "grantedperm",
+    # Assets
+    "emoji_create": "Emojicreate", "emoji_delete": "Emojiremove",
+    "emoji_name_update": "Emojiupdate", "emoji_roles_update": "Emojiupdate",
+    "sticker_create": "stickerscreated", "sticker_delete": "stickersdeleted",
+    "sticker_name_update": "stickersupdated",
+    "sticker_description_update": "stickersupdated",
+    "sticker_related_emoji_update": "stickersupdated",
+    "sound_upload": "soundboardadd", "sound_delete": "soundboardremove",
+    "sound_name_update": "soundboardupdate",
+    "sound_volume_update": "soundboardupdate",
+    "sound_emoji_update": "soundboardupdate",
+    # Scheduled events and stage
+    "event_create": "eventcreated", "event_delete": "eventdeleted",
+    "event_image_update": "uploadimage",
+    "event_user_subscribe": "addmember", "event_user_unsubscribe": "removemember",
+    "event_name_update": "eventupdated", "event_description_update": "eventupdated",
+    "event_location_update": "eventupdated", "event_privacy_level_update": "eventupdated",
+    "event_start_time_update": "eventupdated", "event_end_time_update": "eventupdated",
+    "event_status_update": "eventupdated",
+    "stage_start": "stagecreated", "stage_end": "stageremoved",
+    "stage_topic_update": "stageupdated", "stage_privacy_update": "stageupdated",
+    # Polls
+    "poll_create": "questions", "poll_delete": "deny",
+    "poll_finalize": "Checked", "poll_votes_add": "added",
+    "poll_votes_remove": "deny",
+    # Webhooks and applications
+    "webhook_create": "webhookcreate", "webhook_delete": "webhookremove",
+    "webhook_name_update": "webhookupdate",
+    "webhook_avatar_update": "webhookupdate",
+    "webhook_channel_update": "webhookupdate",
+    "app_add": "bot", "app_remove": "deny",
+    "app_command_permission_update": "commandpremissionupdated",
+    # Server
+    "server_name_update": "updateserver",
+    "server_description_update": "updateserver",
+    "server_owner_update": "owner", "server_icon_update": "uploadimage",
+    "server_banner_update": "uploadimage", "server_splash_update": "uploadimage",
+    "server_discovery_splash_update": "nodiscovery",
+    "server_vanity_update": "links", "server_widget_update": "view",
+    "server_features_update": "featurecreated",
+    "server_boost_level_update": "newtier",
+    "boost_progress_bar_toggle": "boostlevelonly",
+    "server_content_filter_update": "Filter",
+    "verification_level_update": "passedverification",
+    "verified_update": "premiumbadge", "partnered_update": "premiumbadge",
+    "mfa_level_update": "key",
+    "message_notifications_update": "sendalert",
+    "server_rules_channel_update": "Rules",
+    "public_updates_channel_update": "updatechannel",
+    "system_channel_update": "updatechannel",
+    "server_preferred_locale_update": "updateserver",
+    "afk_channel_update": "updatechannel", "afk_timeout_update": "timeout",
+    "onboarding_toggle": "updatehome",
+    "onboarding_channels_update": "updatehome",
+    "onboarding_question_add": "createhome",
+    "onboarding_question_remove": "removehome",
+    "onboarding_question_update": "updatehome",
+}
+
+
+def event_emoji(key: str) -> str:
+    """Icon of one event — its own if it has one, else its category's."""
+    spec = EVENTS.get(key)
+    if spec is None:
+        return log_emoji(_EVENT_ICONS.get(key, ""))
+    icon = _EVENT_ICONS.get(spec.event)
+    if icon:
+        return log_emoji(icon)
+    category = CATEGORIES.get(spec.category)
+    return category.emoji if category else ""
 
 
 # ---------------------------------------------------------------------------

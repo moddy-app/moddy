@@ -28,14 +28,19 @@ One embed per event, in the channel the category is bound to:
 
 ```
 ┌──────────────────────────────────────────────┐
-│ Role(s) added to a user                      │  title       = i18n event title
-│ > **User:** @dyvion_ (<@120…>)               │  description = "> **Label:** value"
+│ <:addrole:…> Role(s) added to a user         │  heading     = icon + i18n title
+│ > **User:** @dyvion_ (<@120…>)               │  lines       = "> **Label:** value"
 │ > **Added:** <@&966…>                        │
 │ > **Reason:** Join Roles                     │
 │                                     [avatar] │  thumbnail   = the subject
 │ Moddy#0001                       26/07 13:12 │  footer      = executor + timestamp
 └──────────────────────────────────────────────┘
 ```
+
+The heading is a `### ` line **inside the description**, not `embed.title`:
+Discord renders custom emojis in an embed description and prints them as raw
+text in a title. An entry that carries a jump link (`entry.url()`) turns its
+heading into a markdown link instead of using `embed.url`.
 
 The accent colour states the nature of the event at a glance:
 
@@ -115,6 +120,29 @@ f-string: markdown in a nickname or a channel topic would otherwise break
 the layout of every log around it.
 
 ---
+
+## Icons
+
+Every category and every event has an icon, and all of them come from one
+place: **`utils/emojis.py::LOG_EMOJIS`**, the server-logs icon set (158
+icons, listed in [docs/EMOJIS.md](EMOJIS.md)). Resolve one by name with
+`log_emoji("createchannel")` — an unknown name returns `""` rather than
+raising, so a typo can never stop a log from being delivered.
+
+That set is the **only** source this feature draws from, in the `/config`
+panel as well as in the log messages. The single exception is the module
+icon shown in the `/config` module picker (`LogsModule.MODULE_EMOJI`).
+
+An event's icon is resolved in two steps (`registry.event_emoji`):
+
+1. its own entry in `registry._EVENT_ICONS`, keyed by the **bare** event name
+   so the same act keeps the same icon in every category that declares it (a
+   ban looks like a ban in `server` and in `moderation`);
+2. failing that, its category's icon.
+
+Naming an event in `_EVENT_ICONS` is therefore optional polish, not a step of
+"adding an event" — a new event is never iconless.
+
 
 ## Categories
 
@@ -368,6 +396,9 @@ Three steps, nothing else:
 3. **Builder** — emit it from a listener in `serverlogs/listeners/`, and
    wire the gateway event in `cogs/logs.py` if it is a new one.
 
+Optionally, give it its own icon in `registry._EVENT_ICONS` (a name from
+`LOG_EMOJIS`); without one it inherits its category's.
+
 The `/config` panel paginates itself, the stored config validates the new
 key away on old servers, and the event starts **enabled** everywhere its
 category is bound.
@@ -425,7 +456,7 @@ would advertise a log that never fires.
 
 ### Not validated live
 
-The system is covered by 66 unit tests but **has never run against a real
+The system is covered by 68 unit tests but **has never run against a real
 Discord server**. Worth checking on a test guild before it reaches
 production: webhook creation and reuse, the `manage_webhooks` fallback,
 batching under a burst of deletions, the 1–2 s audit-correlation windows
@@ -455,7 +486,8 @@ python3 -m pytest tests/test_persistent_views.py -q
 * `tests/test_logs.py` — registry consistency, routing and fan-out, stored
   schema round-trip, ignore lists, rendering (escaping, truncation,
   attachments, size budget), duplicate merging (one channel, split channels,
-  option off), delivery and batching.
+  option off), the icon set (every event resolves to one, the panel draws from
+  nothing else), delivery and batching.
 * `tests/test_logs_i18n.py` — every event name, title, field label, standalone
   value and Discord permission name exists in all five locales, and no stale
   translation is left behind after a rename.

@@ -48,14 +48,15 @@ def test_shared_events_resolve_to_several_categories():
     assert registry.keys_for("user_join") == ("server.user_join",)
 
 
-def test_categories_use_custom_emojis():
-    """CLAUDE.md rule 3: custom emojis only, straight from utils/emojis.py."""
-    import utils.emojis as emojis
+def test_categories_and_events_use_the_logs_icon_set():
+    """The logs may only draw from LOG_EMOJIS — custom emojis, one source."""
+    from utils.emojis import LOG_EMOJIS
 
-    known = {value for name, value in vars(emojis).items()
-             if name.isupper() and isinstance(value, str)}
+    known = set(LOG_EMOJIS.values())
     for category in registry.CATEGORIES.values():
         assert category.emoji in known, category.id
+    for key in registry.EVENTS:
+        assert registry.event_emoji(key) in known, key
 
 
 def test_category_order_is_stable():
@@ -168,11 +169,15 @@ def test_ignored_roles_and_bots():
 # Rendering
 # --------------------------------------------------------------------------- #
 
-def test_entry_renders_quoted_labelled_lines():
+def test_entry_renders_a_heading_then_quoted_labelled_lines():
     entry = LogEntry("user_join", "en-US")
     entry.line("member_count", fmt_number(664))
     embed = entry.to_embed()
-    assert embed.description.startswith("> **")
+    heading, first_line = embed.description.split("\n")[:2]
+    # Custom emojis only render in a description, never in an embed title.
+    assert heading.startswith("### <:")
+    assert embed.title is None
+    assert first_line.startswith("> **")
     assert "`664`" in embed.description
     assert embed.colour.value == KIND_COLORS[registry.KIND_CREATE]
 
@@ -222,7 +227,7 @@ def test_an_embed_within_budget_is_left_alone():
     entry = LogEntry("message_delete", "en-US")
     entry.block("message", "hello")
     embed = entry.to_embed()
-    assert embed.description is None
+    assert embed.description.count("\n") == 0, "only the heading, no extra note"
     assert len(embed.fields) == 1
 
 
@@ -451,3 +456,31 @@ def test_absorbing_keeps_the_subject_and_the_executor():
     embed = winner.absorb(loser).to_embed()
     assert "tomorrow" in embed.description
     assert embed.footer.text == "Moddy#3735"
+
+
+# --------------------------------------------------------------------------- #
+# Icons
+# --------------------------------------------------------------------------- #
+
+def test_the_config_panel_draws_only_from_the_logs_icon_set():
+    """Only the module icon may come from anywhere else."""
+    from modules.configs import logs_config
+    from utils.emojis import LOG_EMOJIS, NOTE
+
+    allowed = set(LOG_EMOJIS.values()) | {NOTE}
+    icons = {name: value for name, value in vars(logs_config).items()
+             if name.startswith("_ICON_")}
+    assert icons, "the panel declares no icon constant any more"
+    for name, value in icons.items():
+        assert value in allowed, f"{name} is not in the logs icon set"
+
+
+def test_the_event_checklist_shows_one_icon_per_event():
+    from modules.configs.logs_config import LogsCategoryEvents
+    from utils.emojis import LOG_EMOJIS
+
+    item = LogsCategoryEvents("channels", 0)
+    known = {value.split(":")[2].rstrip(">") for value in LOG_EMOJIS.values()}
+    for option in item.item.options:
+        assert option.emoji is not None, option.value
+        assert str(option.emoji.id) in known, option.value
