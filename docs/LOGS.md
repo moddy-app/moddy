@@ -129,7 +129,7 @@ icons, listed in [docs/EMOJIS.md](EMOJIS.md)). Resolve one by name with
 `log_emoji("createchannel")` — an unknown name returns `""` rather than
 raising, so a typo can never stop a log from being delivered.
 
-Category and event icons are the **only** thing that draws from that set. Three
+Category and event icons are the **only** thing that draws from that set. Four
 kinds of icon stay on the bot's own general set (`utils/emojis.py`, the plain
 constants) because they are generic `/config` chrome, not something specific
 to logs — the same reasoning that keeps the module icon on `NOTE` instead of a
@@ -139,13 +139,24 @@ log icon:
 - going back a screen (root panel, the category screen, the options screen) —
   `BACK`;
 - opening Options (`SETTINGS`) and clearing the whole configuration
-  (`DELETE`).
+  (`DELETE`);
+- the three real on/off settings — ignore bots, attach transcripts, merge
+  duplicates — which use `TOGGLE_ON` / `TOGGLE_OFF`, **the only toggle icon
+  pair anywhere in the bot** (every other `/config` panel with a switch uses
+  the same two constants; there is no second pair).
 
 Pagination inside the category checklist (previous/next page) is a different
 thing — a chevron *within* the logs UI, not a step back to another screen — and
-stays in the logs set (`left` / `right`).
+stays in the logs set (`left` / `right`). "Enable all" / "disable all" on the
+same checklist is a bulk *action* rather than a state to reflect (the icon is
+fixed, it does not flip with anything), so it keeps the logs set's own
+checkmark/cross (`Checked` / `Notchecked`) instead of the toggle pair.
+
 `tests/test_logs.py::test_the_config_panel_draws_only_from_the_logs_icon_set`
-pins exactly which constant goes where.
+pins exactly which constant goes where, and
+`test_every_toggle_in_the_bot_uses_the_one_toggle_icon_pair` guards the bot-wide
+rule: no file outside `utils/emojis.py` may reference the retired toggle icon
+ids.
 
 A category has **two** icons of its own, and they are not interchangeable:
 

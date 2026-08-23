@@ -31,7 +31,9 @@ from modules.logs import (
     LogsModule, config_from_raw,
 )
 from serverlogs import registry
-from utils.emojis import BACK, DELETE, NOTE, SETTINGS, log_emoji
+from utils.emojis import (
+    BACK, DELETE, NOTE, SETTINGS, TOGGLE_OFF, TOGGLE_ON, log_emoji,
+)
 from utils.i18n import i18n, t
 
 logger = logging.getLogger('moddy.modules.logs_config')
@@ -51,8 +53,17 @@ _ICON_CLEAR = DELETE
 #: a screen" above, these stay in the logs set.
 _ICON_PREV = log_emoji("left")
 _ICON_NEXT = log_emoji("right")
-_ICON_ON = log_emoji("Checked")
-_ICON_OFF = log_emoji("Notchecked")
+#: The three real on/off settings (ignore bots, attach transcripts, merge
+#: duplicates) use the bot's single toggle icon set — the same one every
+#: other /config panel uses, and the only pair allowed anywhere in the bot
+#: for a state that is actually on or off (see utils/emojis.py).
+_ICON_ON = TOGGLE_ON
+_ICON_OFF = TOGGLE_OFF
+#: "Enable all" / "disable all" on the event checklist are a bulk selection
+#: action, not a state to reflect — a fixed checkmark/cross, not a switch —
+#: so they keep the logs set's own icons instead.
+_ICON_ALL = log_emoji("Checked")
+_ICON_NONE = log_emoji("Notchecked")
 
 #: Events shown per page in the category checklist (Discord's select limit).
 EVENTS_PER_PAGE = 25
@@ -564,8 +575,8 @@ class LogsCategoryButton(ui.DynamicItem[ui.Button],
 
     _STYLES = {
         "back": (discord.ButtonStyle.secondary, _ICON_BACK),
-        "all": (discord.ButtonStyle.success, _ICON_ON),
-        "none": (discord.ButtonStyle.secondary, _ICON_OFF),
+        "all": (discord.ButtonStyle.success, _ICON_ALL),
+        "none": (discord.ButtonStyle.secondary, _ICON_NONE),
         "prev": (discord.ButtonStyle.secondary, _ICON_PREV),
         "next": (discord.ButtonStyle.secondary, _ICON_NEXT),
     }
