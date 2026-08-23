@@ -250,8 +250,7 @@ there is no `self` on which to stage pending edits. See
   "ignored_role_ids": [],
   "ignore_bots": false,
   "attach_transcripts": true,
-  "merge_duplicates": true,
-  "locale": "auto"
+  "merge_duplicates": true
 }
 ```
 
@@ -265,7 +264,11 @@ there is no `self` on which to stage pending edits. See
 | `ignore_bots` | bool | `false` | Skip events whose subject/actor is a bot. |
 | `attach_transcripts` | bool | `true` | Attach `.txt` transcripts and overflow files. When `false`, files are dropped and only the embed is sent. |
 | `merge_duplicates` | bool | `true` | Deliver one log per **act** instead of one per registry event — see *Merging duplicates* below. |
-| `locale` | `"auto"` \| `fr` \| `en-US` \| `es-ES` \| `pt-BR` \| `de` | `"auto"` | Language of the log messages. `"auto"` follows `guild.preferred_locale`, falling back to `en-US`. |
+
+The **language of the log messages** is not stored here: it is the server
+language, set once in `/config` → **Server settings**
+(`guilds.data.settings.language`, see `utils/guild_language.py`). A `locale`
+key left over from an older config is ignored on load.
 
 Two conventions matter here:
 

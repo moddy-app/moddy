@@ -130,7 +130,7 @@ class ExpirationNotifier:
             return False
 
         view = build_expiration_dm_view(
-            locale=self.guild_locale(guild),
+            locale=await self.guild_locale(guild),
             action=row.get("action"),
             guild_name=guild.name,
             guild_id=guild.id,
@@ -147,10 +147,10 @@ class ExpirationNotifier:
             logger.warning("Expiration DM to %s failed: %s", subject_id, exc)
             return False
 
-    @staticmethod
-    def guild_locale(guild: Optional[discord.Guild]) -> str:
-        """The locale the guild's sanction DMs are written in."""
-        try:
-            return str(guild.preferred_locale) if guild and guild.preferred_locale else "en-US"
-        except Exception:
-            return "en-US"
+    async def guild_locale(self, guild: Optional[discord.Guild]) -> str:
+        """The locale the guild's sanction DMs are written in.
+
+        The server language, set once in ``/config`` -> Server settings.
+        """
+        from utils.guild_language import guild_locale
+        return await guild_locale(self.bot, guild)

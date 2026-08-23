@@ -126,7 +126,6 @@ key added later, and one just built by `/config` all come out identical.
             "111": ["view", "close", "staff_thread"],
             "222": ["admin"]
           },
-          "locale": "fr",              // en-US | fr | es-ES | pt-BR | de
           "open_message": "…",         // pinned in the ticket
           "close_message": "…",        // added to the closing card
           "name_format": "ticket-{number}",
@@ -166,9 +165,9 @@ anyway** (`default_open_message()`, `default_close_message()`,
 editing the message their members will read, never guessing at it in front of
 an empty box. An existing value always wins over the default.
 
-The two ticket messages are pre-filled in the **category's** language, not the
-admin's: those words are what the member reads, and a ticket speaks one
-language whoever configured it. Only the labels around them follow the admin.
+The two ticket messages are pre-filled in the **server** language, not the
+admin's: those words are what the member reads. Only the labels around them
+follow the admin.
 
 ---
 
@@ -400,9 +399,12 @@ Two independent languages, and mixing them up is the easy mistake:
 
 - **The actor's language** (`i18n.get_user_locale(interaction)`) for anything
   ephemeral — errors, confirmations, the `/config` screens.
-- **The category's language** (`category['locale']`) for anything posted *in*
-  the ticket — the control bar, the closing card, the escalation notice, the
-  staff thread, the DM. A ticket speaks one language, whoever is typing.
+- **The server language** (`TicketService.ticket_locale()`, which reads
+  `utils/guild_language.py`) for anything posted *in* the ticket — the control
+  bar, the closing card, the escalation notice, the staff thread, the DM. A
+  ticket speaks one language, whoever is typing, and it is the same language
+  as the rest of Moddy on this server (`/config` → **Server settings**).
+  Categories used to carry one each; they no longer do.
 
 Keys live under `modules.tickets.*` in the five locale files.
 `tests/test_tickets.py` asserts the five stay in step, key for key.

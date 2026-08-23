@@ -19,6 +19,7 @@ from modules.configs._common import check_guild_perms
 logger = logging.getLogger('moddy.cogs.config')
 
 _CID_MODULE_SELECT = "moddy:config:main:module_select"
+_CID_SETTINGS = "moddy:config:main:settings"
 
 
 class ConfigMainView(BaseView):
@@ -94,6 +95,7 @@ class ConfigMainView(BaseView):
             module_select.callback = self.on_module_select
             select_row.add_item(module_select)
             container.add_item(select_row)
+            container.add_item(self._settings_row())
             self.add_item(container)
             return
 
@@ -119,6 +121,7 @@ class ConfigMainView(BaseView):
             container.add_item(ui.TextDisplay(
                 f"{EMOJIS['warning']} {t('modules.config.main.no_modules', locale=self.locale)}"
             ))
+            container.add_item(self._settings_row())
             self.add_item(container)
             return
 
@@ -133,8 +136,39 @@ class ConfigMainView(BaseView):
         module_select.callback = self.on_module_select
         select_row.add_item(module_select)
         container.add_item(select_row)
+        container.add_item(self._settings_row())
 
         self.add_item(container)
+
+    def _settings_row(self) -> ui.ActionRow:
+        """The way into the settings that belong to the server, not a module.
+
+        Today that is the language Moddy speaks here (utils/guild_language.py),
+        which every module reads instead of shipping its own dropdown.
+        """
+        row = ui.ActionRow()
+        settings_btn = ui.Button(
+            emoji=discord.PartialEmoji.from_str(EMOJIS['settings']),
+            label=t('modules.config.settings.button', locale=self.locale),
+            style=discord.ButtonStyle.secondary,
+            custom_id=_CID_SETTINGS,
+        )
+        settings_btn.callback = self.on_settings
+        row.add_item(settings_btn)
+        return row
+
+    async def on_settings(self, interaction: discord.Interaction):
+        """Open the server-wide settings screen."""
+        if not await check_guild_perms(interaction):
+            return
+
+        from modules.configs.server_settings_config import ServerSettingsConfigView
+
+        locale = i18n.get_user_locale(interaction)
+        view = await ServerSettingsConfigView.create(
+            interaction.client, interaction.guild_id, interaction.user.id, locale
+        )
+        await interaction.response.edit_message(view=view)
 
     async def on_module_select(self, interaction: discord.Interaction):
         """Callback quand un module est sélectionné"""

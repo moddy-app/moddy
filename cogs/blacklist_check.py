@@ -16,6 +16,7 @@ import discord
 from discord.ext import commands
 
 from utils import global_sanctions
+from utils.guild_language import guild_locale
 from utils.components_v2 import create_suspension_message
 from utils.emojis import DONE
 
@@ -61,9 +62,8 @@ class BlacklistCheck(commands.Cog):
             )
 
             if user_suspended or guild_suspended:
-                locale = 'en-US'
-                if message.guild and message.guild.preferred_locale:
-                    locale = str(message.guild.preferred_locale)
+                locale = await guild_locale(self.bot, message.guild) \
+                    if message.guild else 'en-US'
                 view = create_suspension_message(locale, guild=guild_suspended)
 
                 try:
@@ -123,7 +123,7 @@ class BlacklistCheck(commands.Cog):
         if not self.bot.is_developer(ctx.author.id):
             return
 
-        locale = str(ctx.guild.preferred_locale) if ctx.guild and ctx.guild.preferred_locale else 'en-US'
+        locale = await guild_locale(self.bot, ctx.guild) if ctx.guild else 'en-US'
         view = create_suspension_message(locale)
 
         await ctx.send(

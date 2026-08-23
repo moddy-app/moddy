@@ -2,9 +2,11 @@
 Configuration UI for the AltGuard module.
 
 Deliberately narrow: an admin picks *where* the gate lives (channel, both
-roles, optional log channel) and *which language* the panel speaks. The panel
-wording itself is not configurable — every server must state the same thing
-about the same data processing, so it ships with the module.
+roles, optional log channel). The panel wording itself is not configurable —
+every server must state the same thing about the same data processing, so it
+ships with the module — and the language it speaks is the *server* language,
+set once in ``/config`` -> Server settings (``utils/guild_language.py``)
+rather than here.
 
 Saving always re-posts the panel (delete + send). That is what repairs a panel
 someone deleted, and the only way a language or channel change reaches the
@@ -20,7 +22,7 @@ import discord
 from discord import ui
 
 from cogs.error_handler import BaseView
-from modules.altguard import DEFAULT_PANEL_LOCALE, MODULE_ID, PANEL_LOCALES
+from modules.altguard import MODULE_ID
 from modules.configs._common import check_guild_perms
 from utils.emojis import ALTGUARD, BACK, DELETE, SAVE, UNDONE
 from utils.i18n import i18n, t
@@ -31,20 +33,10 @@ _CID_CHANNEL = "moddy:altguard:config:channel"
 _CID_UNVERIFIED = "moddy:altguard:config:unverified"
 _CID_VERIFIED = "moddy:altguard:config:verified"
 _CID_LOG_CHANNEL = "moddy:altguard:config:log_channel"
-_CID_LOCALE = "moddy:altguard:config:locale"
 _CID_BACK = "moddy:altguard:config:back"
 _CID_SAVE = "moddy:altguard:config:save"
 _CID_CANCEL = "moddy:altguard:config:cancel"
 _CID_DELETE = "moddy:altguard:config:delete"
-
-# Panel language options: label comes from the shared `languages` i18n block.
-_LOCALE_LABEL_KEYS = {
-    "fr": "languages.fr",
-    "en-US": "languages.en-US",
-    "es-ES": "languages.es-ES",
-    "pt-BR": "languages.pt-BR",
-    "de": "languages.de",
-}
 
 
 class AltGuardConfigView(BaseView):
@@ -133,29 +125,6 @@ class AltGuardConfigView(BaseView):
             _CID_VERIFIED, self.working_config.get('verified_role_id'),
             'modules.altguard.config.verified_role.placeholder', self.on_verified_select,
         ))
-
-        # --- Panel language ---------------------------------------------- #
-        panel_locale = self.working_config.get('panel_locale') or DEFAULT_PANEL_LOCALE
-        container.add_item(ui.TextDisplay(
-            f"**{t('modules.altguard.config.language.section_title', locale=self.locale)}**\n"
-            f"-# {t('modules.altguard.config.language.section_description', locale=self.locale)}"
-        ))
-        locale_row = ui.ActionRow()
-        locale_select = ui.Select(
-            placeholder=t('modules.altguard.config.language.placeholder', locale=self.locale),
-            options=[
-                discord.SelectOption(
-                    label=t(_LOCALE_LABEL_KEYS[value], locale=self.locale),
-                    value=value,
-                    default=(value == panel_locale),
-                )
-                for value in PANEL_LOCALES
-            ],
-            min_values=1, max_values=1, custom_id=_CID_LOCALE,
-        )
-        locale_select.callback = self.on_locale_select
-        locale_row.add_item(locale_select)
-        container.add_item(locale_row)
 
         # --- Log channel (optional) -------------------------------------- #
         container.add_item(ui.TextDisplay(
@@ -330,16 +299,6 @@ class AltGuardConfigView(BaseView):
         if not await check_guild_perms(interaction):
             return
         await self._set_and_refresh(interaction, 'log_channel_id', self._first_id(interaction))
-
-    async def on_locale_select(self, interaction: discord.Interaction) -> None:
-        if not await check_guild_perms(interaction):
-            return
-        values: List[str] = interaction.data.get("values") or []
-        panel_locale = values[0] if values else DEFAULT_PANEL_LOCALE
-        await self._set_and_refresh(
-            interaction, 'panel_locale',
-            panel_locale if panel_locale in PANEL_LOCALES else DEFAULT_PANEL_LOCALE,
-        )
 
     # --- action buttons ------------------------------------------------ #
 

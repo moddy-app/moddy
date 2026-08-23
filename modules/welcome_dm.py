@@ -224,7 +224,7 @@ class WelcomeDmModule(ModuleBase):
 
     async def validate_config(self, config_data: Dict[str, Any]) -> tuple[bool, Optional[str]]:
         """Validate the whole message list (count, ids, lengths, colours)."""
-        locale = self._locale()
+        locale = await self._locale()
         messages = normalize_config(config_data)['messages']
 
         if len(messages) > MAX_WELCOME_DMS:
@@ -253,15 +253,11 @@ class WelcomeDmModule(ModuleBase):
     def get_default_config(self) -> Dict[str, Any]:
         return {'version': CONFIG_VERSION, 'messages': []}
 
-    def _locale(self) -> str:
-        """Guild locale, used for validation errors raised outside an interaction."""
-        try:
-            guild = self.bot.get_guild(self.guild_id)
-            if guild and guild.preferred_locale:
-                return str(guild.preferred_locale)
-        except Exception:
-            pass
-        return 'en-US'
+    async def _locale(self) -> str:
+        """Server language (/config -> Server settings), used for validation
+        errors raised outside an interaction and for the DMs themselves."""
+        from utils.guild_language import guild_locale
+        return await guild_locale(self.bot, self.guild_id)
 
     async def on_member_join(self, member: discord.Member):
         """Send every enabled welcome DM to the joining member."""

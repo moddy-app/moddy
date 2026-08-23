@@ -62,7 +62,6 @@ Deleting a config = writing `{}` (that is what the "Delete" button does).
   "ignore_moderators": true,        // bool  — skip members with manage_messages
   "severity": 3,                    // int 1..5
   "max_action": "ban",              // "warn" | "mute" | "ban" — hard ceiling of the barème
-  "langue_serveur": "auto",         // "auto" | "fr" | "en-US"
   "categories_desactivees": [],      // string[] — kill-switched AI categories
   "dry_run": false,                 // bool  — shadow mode: decide, apply nothing
   "features": {
@@ -85,7 +84,6 @@ Deleting a config = writing `{}` (that is what the "Delete" button does).
 | `ignore_moderators` | bool | `true` | Members with `manage_messages` are skipped entirely. |
 | `severity` | int 1–5 | `3` | Detection dial: scales the embedding routing threshold (1 = 0.62 … 5 = 0.35) and the barème's global cran shift. Values outside 1–5 are clamped. |
 | `max_action` | enum | `"ban"` | Hardest sanction the automod may apply: `warn` < `mute` < `ban`. The barème caps itself at this level. |
-| `langue_serveur` | enum | `"auto"` | Language of sanction DMs / alert cards and of the AI-written reason. `auto` = the guild's `preferred_locale` when Community is on, else `en-US`. |
 | `categories_desactivees` | string[] | `[]` | AI categories the server never wants actioned. Allowed values: `insulte`, `menace`, `harcelement`, `harcelement_sexuel`, `haine_discrimination`, `incitation_automutilation`, `doxxing`, `arnaque_scam`, `violation_indications`. A decision in a disabled category is downgraded to deletion only. No UI selector yet — ops/backend-set; the bot's config panel preserves the value on save. |
 | `dry_run` | bool | `false` | **Shadow mode**: the whole funnel + barème run, but nothing is applied (no delete, no sanction, no case, no DM). A SIMULATION card with ✅/❌/⚠️ annotation buttons is posted to `notify_channel_id` instead. |
 | `features.content.enabled` | bool | `false` | The AI content detector. Today the only feature. |
@@ -126,7 +124,6 @@ save from its own panel and refuses invalid configs.
 | `len(indications) <= 3000` | `Les indications sont trop longues (max 3000 caractères)` |
 | `severity` ∈ 1..5 | `Niveau de sévérité invalide (1 à 5)` |
 | `max_action` ∈ `warn`/`mute`/`ban` | `Action maximale invalide` |
-| `langue_serveur` ∈ `auto`/`fr`/`en-US` | `Langue invalide` |
 | every key of `features` is a known feature id | `Fonctionnalité inconnue : <id>` |
 
 Legacy keys are still read transparently on load: `rules` → `indications`,

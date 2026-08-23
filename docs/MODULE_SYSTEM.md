@@ -624,7 +624,32 @@ title = t('modules.config.main.title', interaction=interaction)
 
 - `fr` - Français
 - `en-US` - Anglais (US)
+- `es-ES` - Espagnol
+- `pt-BR` - Portugais (BR)
+- `de` - Allemand
 - Autres langues : ajouter un fichier JSON correspondant
+
+### Quelle langue un module doit-il parler ?
+
+**Un module n'a jamais son propre sélecteur de langue.** Tout ce qui s'adresse
+au serveur (message de bienvenue, panneau, log, DM de sanction) est écrit dans
+la **langue du serveur**, réglée une seule fois dans `/config` → *Paramètres du
+serveur* :
+
+```python
+from utils.guild_language import guild_locale
+
+locale = await guild_locale(self.bot, self.guild_id)
+```
+
+Ce qui s'adresse à **une personne** (réponse éphémère, écran `/config`,
+erreur) garde la langue Discord de cette personne
+(`i18n.get_user_locale(interaction)`).
+
+Si le module possède un **message déjà posté** dans cette langue (un panneau),
+il déclare `LANGUAGE_DEPENDENT_MESSAGES = True` : un changement de langue le
+recharge via `ModuleManager.apply_language_change()`, ce qui re-poste le
+message. Voir [SERVER_LANGUAGE.md](SERVER_LANGUAGE.md).
 
 ---
 

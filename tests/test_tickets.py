@@ -117,8 +117,9 @@ class TestNormalisation:
         config = normalize_config({'panels': [{'name': "P", 'style': "carousel"}]})
         assert config['panels'][0]['style'] == STYLE_BUTTONS
 
-    def test_unknown_locale_falls_back_to_english(self):
-        assert make_category(locale="klingon")['locale'] == "en-US"
+    def test_a_category_carries_no_language(self):
+        """A ticket speaks the server language — see utils/guild_language.py."""
+        assert 'locale' not in make_category(locale="klingon")
 
     def test_max_open_per_user_is_clamped(self):
         assert make_category(max_open_per_user=0)['max_open_per_user'] == \
@@ -527,7 +528,8 @@ class TestConfigScreens:
         assert "moddy:tickets:catdest:p_a:c_1" in ids
         assert "moddy:tickets:catroles:allowed:p_a:c_1" in ids
         assert "moddy:tickets:catroles:denied:p_a:c_1" in ids
-        assert "moddy:tickets:catlang:p_a:c_1" in ids
+        # The category has no language control: the server has one setting.
+        assert not any(i.startswith("moddy:tickets:catlang") for i in ids)
         assert "moddy:tickets:catbtn:perms:p_a:c_1" in ids
 
     def test_permissions_screen_without_a_role_selected(self):
@@ -852,8 +854,10 @@ class TestDefaultsArePrefilled:
         from modules.configs.tickets_category_config import CategoryMessagesModal
         from modules.tickets import default_close_message, default_open_message
 
-        category = normalize_category({'name': "Support", 'locale': "fr"})
-        modal = CategoryMessagesModal("de", category, _noop)   # admin reads German
+        category = normalize_category({'name': "Support"})
+        # Admin reads German, the server speaks French: the member-facing
+        # wording is pre-filled in the server language.
+        modal = CategoryMessagesModal("de", category, _noop, "fr")
         assert modal.open_input.default == default_open_message("fr")
         assert modal.close_input.default == default_close_message("fr")
 

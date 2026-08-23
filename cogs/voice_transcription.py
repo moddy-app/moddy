@@ -61,7 +61,7 @@ class VoiceTranscription(commands.Cog):
         # Errors are ephemeral (the clicker's language); the transcription
         # itself stays in the channel, so it speaks the server's.
         locale = i18n.get_user_locale(interaction)
-        public_locale = card_locale(interaction)
+        public_locale = await card_locale(interaction)
         service = getattr(self.bot, "transcription", None)
 
         if service is None:

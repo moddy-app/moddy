@@ -119,7 +119,6 @@ TICKET_MOVE = FOLDERS           # move to another category        (placeholder)
 TICKET_PERMISSIONS = LEGAL      # per-role ticket permissions     (placeholder)
 TICKET_ACCESS = MANAGE_USER     # who may open a ticket           (placeholder)
 TICKET_REOPEN = SYNC            # reopen a closed ticket          (placeholder)
-TICKET_LANGUAGE = TRANSLATE     # language of a category          (placeholder)
 
 # =============================================================================
 # SOCIAL PLATFORMS (Social Notifications module)

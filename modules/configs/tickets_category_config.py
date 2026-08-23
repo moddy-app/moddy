@@ -3,13 +3,14 @@
 
 A category is the button (or dropdown option) a member clicks, and everything
 that follows from it: where the ticket channel is created, who may open one,
-what each staff role may do inside it, the language it speaks and the messages
-it shows.
+what each staff role may do inside it and the messages it shows. The language
+a ticket speaks is *not* set here: it is the server language, configured once
+in ``/config`` -> Server settings (``utils/guild_language.py``).
 
 The screen is split the way the questions are:
 
 - the **category screen** holds what an admin changes often — destination,
-  access, language — as controls that show their own state;
+  access — as controls that show their own state;
 - **identity**, **messages** and **options** are wording and numbers, so they
   live in modals;
 - **permissions** get their own screen, because "pick a role, then tick what it
@@ -54,10 +55,8 @@ from modules.tickets import (
     MAX_OPEN_PER_USER_CEILING,
     MAX_TICKET_MESSAGE,
     NAME_PLACEHOLDERS,
-    DEFAULT_TICKET_LOCALE,
     PERM_ADMIN,
     PLACEHOLDERS,
-    TICKET_LOCALES,
     TICKET_PERMISSIONS,
     default_close_message,
     default_open_message,
@@ -71,7 +70,7 @@ from modules.tickets import (
 from utils.components_v2 import create_error_message
 from utils.emojis import (
     BACK, DELETE, EDIT, INFO, MESSAGE, PAUSE, PLAY, REQUIRED_FIELDS,
-    TICKET_ACCESS, TICKET_CATEGORY, TICKET_LANGUAGE, TICKET_PERMISSIONS as PERM_EMOJI,
+    TICKET_ACCESS, TICKET_CATEGORY, TICKET_PERMISSIONS as PERM_EMOJI,
     SETTINGS, WARNING,
 )
 from utils.i18n import i18n, t
@@ -83,16 +82,6 @@ _ENTRY_ID = r"[a-z0-9_]+"
 _CAT_BUTTON_ACTIONS = "back|identity|messages|options|perms|toggle|delete|delconfirm"
 _PERM_BUTTON_ACTIONS = "back|clear"
 _ROLE_SCOPES = "allowed|denied"
-
-# Flags are the one Unicode emoji Moddy uses (see CLAUDE.md rule 3).
-_LOCALE_FLAGS = {
-    "en-US": "🇬🇧",
-    "fr": "🇫🇷",
-    "es-ES": "🇪🇸",
-    "pt-BR": "🇧🇷",
-    "de": "🇩🇪",
-}
-
 
 def _guarded(callback):
     """Route a dynamic-item callback error to the central handler."""
@@ -333,18 +322,18 @@ class CategoryMessagesModal(BaseModal):
     """The two messages a ticket shows: when it opens, and when it closes.
 
     Both fields are pre-filled with the wording the ticket would use anyway.
-    They are written in the **category's** language, not the admin's: these
-    are the words the member will read, and a ticket speaks one language
-    whoever configured it. Only the labels around them follow the admin.
+    They are written in the **server** language, not the admin's: these are
+    the words the member will read (``ticket_locale``). Only the labels around
+    them follow the admin.
     """
 
-    def __init__(self, locale: str, category: Dict[str, Any], callback_func):
+    def __init__(self, locale: str, category: Dict[str, Any], callback_func,
+                 ticket_locale: str = "en-US"):
         super().__init__(
             title=t('modules.tickets.messages.modal_title', locale=locale)[:45],
             timeout=None,
         )
         self.callback_func = callback_func
-        ticket_locale = category.get('locale') or DEFAULT_TICKET_LOCALE
 
         self.open_input = ui.TextInput(
             style=discord.TextStyle.paragraph, required=False,
@@ -499,8 +488,10 @@ class TicketCategoryButton(
         if not category:
             await render_panel(interaction, self.panel_id)
             return
+        from utils.guild_language import guild_locale
         modal = CategoryMessagesModal(
-            i18n.get_user_locale(interaction), category, self._apply_plain)
+            i18n.get_user_locale(interaction), category, self._apply_plain,
+            await guild_locale(interaction.client, interaction.guild))
         modal.bot = interaction.client
         await interaction.response.send_modal(modal)
 
@@ -625,50 +616,11 @@ class TicketCategoryRoles(
                                {field: role_ids})
 
 
-class TicketCategoryLocale(
-    ui.DynamicItem[ui.Select],
-    template=(rf"moddy:tickets:catlang:(?P<panel_id>{_ENTRY_ID}):"
-              rf"(?P<category_id>{_ENTRY_ID})"),
-):
-    """The language every message of this category's tickets is written in."""
-
-    def __init__(self, panel_id: str, category_id: str, *,
-                 locale: str = "en-US", current: Optional[str] = None):
-        super().__init__(ui.Select(
-            options=[
-                discord.SelectOption(
-                    label=t(f'languages.{code}', locale=locale),
-                    value=code, emoji=_LOCALE_FLAGS.get(code),
-                    default=code == current,
-                ) for code in TICKET_LOCALES
-            ],
-            min_values=1, max_values=1,
-            custom_id=f"moddy:tickets:catlang:{panel_id}:{category_id}",
-        ))
-        self.panel_id = panel_id
-        self.category_id = category_id
-
-    @classmethod
-    async def from_custom_id(cls, interaction, item, match: re.Match):
-        return cls(match['panel_id'], match['category_id'])
-
-    @_guarded
-    async def callback(self, interaction: discord.Interaction):
-        if not await check_guild_perms(interaction):
-            return
-        values = interaction.data.get('values') or []
-        if not values:
-            await interaction.response.defer()
-            return
-        await _update_category(interaction, self.panel_id, self.category_id,
-                               {'locale': values[0]})
-
-
 # =========================================================================== #
 # Category screen
 # =========================================================================== #
 class TicketCategoryConfigView(BaseView):
-    """One category: destination, access, language, and the way in to the rest.
+    """One category: destination, access, and the way in to the rest.
 
     Not registered — see the module docstring. Auth: Manage Server, re-checked
     inside every dynamic item's callback.
@@ -746,19 +698,7 @@ class TicketCategoryConfigView(BaseView):
         ))
         container.add_item(denied_row)
 
-        # 3. Language.
-        container.add_item(ui.TextDisplay(
-            f"**{TICKET_LANGUAGE} {t('modules.tickets.category.language_title', locale=self.locale)}**\n"
-            f"-# {t('modules.tickets.category.language_hint', locale=self.locale)}"))
-        lang_row = ui.ActionRow()
-        lang_row.add_item(TicketCategoryLocale(
-            self.panel['id'], self.category['id'],
-            locale=self.locale, current=self.category.get('locale')))
-        container.add_item(lang_row)
-
-        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-
-        # 4. What is configured behind the buttons below.
+        # 3. What is configured behind the buttons below.
         container.add_item(ui.TextDisplay(self._summary()))
 
         self.add_item(container)
@@ -1127,6 +1067,5 @@ class TicketsConfigPersistence(BaseView):
         bot.add_dynamic_items(
             TicketPanelButton, TicketPanelSelect, TicketPanelChannelSelect,
             TicketCategoryButton, TicketCategoryDestination, TicketCategoryRoles,
-            TicketCategoryLocale,
             TicketPermRoleSelect, TicketPermSelect, TicketPermButton,
         )

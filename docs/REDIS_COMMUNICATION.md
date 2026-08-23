@@ -81,7 +81,7 @@ the event was produced: task queues, command/reply RPC, notification feeds.
 
 | Channel | Direction | Purpose |
 |---|---|---|
-| `moddy:bot` | Backend → Bot | Generic events: `config_updated`, `module_updated`, `premium_activated`, `payment_failed`, … (`bot.py::_handle_bot_event`). A config event carrying a `module_id` also re-applies that module's Discord side (panel, permissions) and acks on `moddy:dashboard` — see [ALTGUARD_INTEGRATION.md §5](ALTGUARD_INTEGRATION.md) |
+| `moddy:bot` | Backend → Bot | Generic events: `config_updated`, `module_updated`, `settings_updated`, `premium_activated`, `payment_failed`, … (`bot.py::_handle_bot_event`). `settings_updated` covers `guilds.data.settings` (today: the server language, see [SERVER_LANGUAGE.md](SERVER_LANGUAGE.md)) — it drops the cached value and re-posts the panels written in that language. A config event carrying a `module_id` also re-applies that module's Discord side (panel, permissions) and acks on `moddy:dashboard` — see [ALTGUARD_INTEGRATION.md §5](ALTGUARD_INTEGRATION.md) |
 | `moddy:subscription:updates` | Backend → Bot | Premium subscription cache invalidation + DM triggers (`bot.py::_handle_subscription_event`) |
 | `moddy:blacklist:updates` | Backend/Bot → Bot | Global-sanction cache invalidation (`bot.py::_handle_blacklist_event`) |
 | `moddy:dashboard` | Bot → Backend | Bot-originated notifications to the dashboard, incl. `social_subscribe_result`, `module_config_applied` etc. |

@@ -618,16 +618,14 @@ class AppealService:
         return guild.name if guild else str(appeal["guild_id"])
 
     def _dm_locale(self, appeal: dict) -> str:
-        """Member-facing DM locale: the guild's language (Community) or English."""
-        guild = self.bot.get_guild(int(appeal["guild_id"]))
-        try:
-            features = set(getattr(guild, "features", []) or [])
-            if "COMMUNITY" not in features:
-                return "en-US"
-            pref = str(getattr(guild, "preferred_locale", "") or "")
-        except Exception:
-            return "en-US"
-        return "fr" if pref.lower().startswith("fr") else "en-US"
+        """Member-facing DM locale: the server language.
+
+        Sync on purpose — it is called from rendering helpers that cannot
+        await. It reads the cached setting; see ``guild_locale_cached`` in
+        ``utils/guild_language.py``.
+        """
+        from utils.guild_language import guild_locale_cached
+        return guild_locale_cached(self.bot, self.bot.get_guild(int(appeal["guild_id"])))
 
     @staticmethod
     def _explication(case: Optional[dict]) -> str:

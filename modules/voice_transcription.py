@@ -137,7 +137,7 @@ class VoiceTranscriptionModule(ModuleBase):
         if me is not None and not message.channel.permissions_for(me).send_messages:
             return
 
-        locale = self._locale()
+        locale = await self._locale()
 
         try:
             if self.mode == MODE_BUTTON:
@@ -189,13 +189,13 @@ class VoiceTranscriptionModule(ModuleBase):
     # Helpers
     # ----------------------------------------------------------------- #
 
-    def _locale(self) -> str:
-        """Server language — these messages are read by the whole channel."""
-        try:
-            guild = self.bot.get_guild(self.guild_id)
-            return str(guild.preferred_locale) if guild and guild.preferred_locale else "en-US"
-        except Exception:
-            return "en-US"
+    async def _locale(self) -> str:
+        """Server language — these messages are read by the whole channel.
+
+        One setting for the whole server: /config -> Server settings.
+        """
+        from utils.guild_language import guild_locale
+        return await guild_locale(self.bot, self.guild_id)
 
     @staticmethod
     async def _delete_quietly(message: discord.Message) -> None:

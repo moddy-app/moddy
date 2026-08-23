@@ -861,6 +861,20 @@
         "hint": "Select a module to access its detailed configuration.",
         "not_implemented": "Configuration for module **{module_name}** is not yet available."
       },
+      "settings": {
+        "button": "Server settings",
+        "title": "Server settings",
+        "description": "The settings that apply to the whole server, whichever module uses them.",
+        "language": {
+          "section_title": "Language",
+          "section_description": "The language Moddy speaks to your members in: welcome messages, tickets, logs, moderation notices...",
+          "auto_resolves_to": "Automatic currently resolves to **{language}**.",
+          "placeholder": "Choose the server language",
+          "auto": "Automatic",
+          "auto_description": "Follows the server language (Community), English otherwise",
+          "applies_to": "Your own Discord language is still used for everything Moddy answers you personally."
+        }
+      },
       "status": {
         "label": "Module status:",
         "enabled": "Enabled",
@@ -1552,20 +1566,13 @@
         "activations": {
           "placeholder": "Enable / disable…"
         },
-        "section_limits": "Limits & language",
+        "section_limits": "Limits",
         "max_action": {
           "desc": "The most severe action the automod is allowed to apply.",
           "placeholder": "Maximum action…",
           "option_warn": "Warn at most",
           "option_mute": "Mute at most",
           "option_ban": "Ban allowed"
-        },
-        "language": {
-          "desc": "Language of sanction messages (reason, member DM).",
-          "placeholder": "Sanction language…",
-          "auto": "Automatic (server language)",
-          "fr": "French",
-          "en": "English"
         },
         "dry_run": {
           "label": "Simulation mode",
@@ -1922,11 +1929,6 @@
           "section_title": "Verified role",
           "section_description": "Given as soon as the verification passes. This is what opens the server.",
           "placeholder": "Pick the verified role"
-        },
-        "language": {
-          "section_title": "Message language",
-          "section_description": "The wording is the same everywhere: only the language of the verification message changes.",
-          "placeholder": "Pick the message language"
         },
         "log_channel": {
           "section_title": "Log channel (optional)",
@@ -2289,19 +2291,6 @@
             "section_title": "Ignored roles",
             "section_description": "Members with any of these roles are never logged.",
             "placeholder": "Pick the roles to ignore…"
-          },
-          "locale": {
-            "section_title": "Log language",
-            "section_description": "By default, logs follow the server's language.",
-            "placeholder": "Pick the log language…",
-            "values": {
-              "auto": "Server language",
-              "fr": "Français",
-              "en-US": "English",
-              "es-ES": "Español",
-              "pt-BR": "Português",
-              "de": "Deutsch"
-            }
           },
           "toggles": {
             "section_title": "Settings",
@@ -2839,7 +2828,7 @@
         "categories_hint": "{count}/{max} · one per button or dropdown entry",
         "no_category": "No category yet. A panel with no category is never posted.",
         "category_placeholder": "Select a category to configure",
-        "category_summary": "{roles} role(s) with permissions · language `{language}`",
+        "category_summary": "{roles} role(s) with permissions",
         "no_destination": "no destination",
         "edit": "Edit",
         "add_category": "Add a category",
@@ -2879,8 +2868,6 @@
         "allowed_placeholder": "Roles allowed to open",
         "denied_hint": "A denied role always wins, even if the member also has an allowed one.",
         "denied_placeholder": "Roles denied",
-        "language_title": "Language of the tickets",
-        "language_hint": "Every message inside these tickets uses this language",
         "summary_title": "Configured behind the buttons below",
         "summary_permissions": "Permissions — {roles} role(s)",
         "summary_messages": "Messages — {count}/2 customised",

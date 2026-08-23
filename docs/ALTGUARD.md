@@ -85,7 +85,6 @@ Stored in `guilds.data.modules.altguard`:
 | `unverified_role_id` | int | ✅ | Given on join, holds the member back |
 | `verified_role_id` | int | ✅ | Given when the verification passes |
 | `log_channel_id` | int | — | Verdicts and manual decisions |
-| `panel_locale` | str | — | `fr`, `en-US`, `es-ES`, `pt-BR`, `de` (default `en-US`) |
 | `message_id` | int | — | Bookkeeping: id of the posted panel |
 
 The module is `enabled` only when the channel and **both** roles are set.
@@ -93,6 +92,11 @@ The module is `enabled` only when the channel and **both** roles are set.
 **The panel wording is not configurable.** Every server states the same thing
 about the same data processing; only the language changes. The admin-facing
 choice is where it lives, not what it says.
+
+**The panel language is the server language**, set once in `/config` →
+**Server settings** (`utils/guild_language.py`) — AltGuard carries no
+`panel_locale` of its own any more. Changing it re-posts the panel, exactly
+like a channel change does (`ModuleManager.apply_language_change`).
 
 **The panel is re-posted on every save**: the old message is deleted and a fresh
 one sent. That is what repairs a panel someone deleted, and the only way a

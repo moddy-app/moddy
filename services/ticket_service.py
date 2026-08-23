@@ -126,8 +126,15 @@ class TicketService:
             raise TicketError('modules.tickets.errors.category_gone')
         return ticket, panel, category
 
-    def ticket_locale(self, category: Dict[str, Any]) -> str:
-        return category.get('locale') or 'en-US'
+    async def ticket_locale(self, guild: discord.Guild) -> str:
+        """Language a ticket speaks: the server language.
+
+        Categories used to carry one each, which meant the same server could
+        greet a member in French in one category and in English in the next.
+        See ``utils/guild_language.py``.
+        """
+        from utils.guild_language import guild_locale
+        return await guild_locale(self.bot, guild)
 
     # ------------------------------------------------------------------ #
     # Authorization
@@ -250,7 +257,7 @@ class TicketService:
         # afterwards would spend one of the two renames Discord allows per
         # channel per 10 minutes, and a staffer's /ticket rename right after
         # opening would then hang.
-        locale = self.ticket_locale(category)
+        locale = await self.ticket_locale(guild)
         number = await self.bot.db.next_ticket_number(guild.id)
         draft = {'owner_id': member.id, 'status': 'open', 'escalated': False,
                  'participants': [], 'participant_roles': []}
@@ -346,7 +353,7 @@ class TicketService:
 
         await self.sync_permissions(channel, category, ticket)
 
-        locale = self.ticket_locale(category)
+        locale = await self.ticket_locale(channel.guild)
         closing = category.get('close_message')
         rendered = render_text(
             closing, member=actor, guild=channel.guild, category=category,
@@ -374,7 +381,7 @@ class TicketService:
         try:
             await owner.send(view=build_close_dm(
                 channel.guild, ticket, category, actor, reason,
-                locale=self.ticket_locale(category)))
+                locale=await self.ticket_locale(channel.guild)))
         except (discord.Forbidden, discord.HTTPException):
             pass  # closed DMs are the norm, not an error
 
@@ -427,7 +434,7 @@ class TicketService:
         await self.bot.db.set_close_request(channel.id, actor.id, reason)
         ticket = await self.get_ticket(channel.id) or ticket
 
-        locale = self.ticket_locale(category)
+        locale = await self.ticket_locale(channel.guild)
         mentions = self._role_mentions(channel.guild, category, PERM_CLOSE)
         try:
             await channel.send(
@@ -486,7 +493,7 @@ class TicketService:
 
         await self.sync_permissions(channel, category, ticket)
 
-        locale = self.ticket_locale(category)
+        locale = await self.ticket_locale(channel.guild)
         mentions = self._role_mentions(channel.guild, category, PERM_ADMIN)
         try:
             await channel.send(
@@ -648,7 +655,7 @@ class TicketService:
         ticket, panel, category = await self.resolve(channel)
         self.require(actor, category, ticket, PERM_STAFF_THREAD)
 
-        locale = self.ticket_locale(category)
+        locale = await self.ticket_locale(channel.guild)
         thread = None
         if ticket.get('staff_thread_id'):
             thread = channel.guild.get_channel_or_thread(ticket['staff_thread_id'])

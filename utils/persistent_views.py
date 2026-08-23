@@ -49,6 +49,7 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         WelcomeDmConfigView, ManageWelcomeDmView,
     )
     from cogs.config import ConfigMainView
+    from modules.configs.server_settings_config import ServerSettingsConfigView
     from modules.configs.adaptive_slowmode_config import AdaptiveSlowmodeConfigView
     from modules.configs.automod_ai_config import AutomodAIConfigView
     from staff.commands.team.help import HelpView
@@ -114,8 +115,11 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         ManageWelcomeMessageView,
         WelcomeDmConfigView,
         ManageWelcomeDmView,
-        # Group 11 — /config router (guild permission auth)
+        # Group 11 — /config router (guild permission auth) and the
+        # server-wide settings screen it opens (language of the server —
+        # see utils/guild_language.py)
         ConfigMainView,
+        ServerSettingsConfigView,
         # Group 12 — /config adaptive slowmode panel (guild permission +
         # channel-scoped dynamic items; AdaptiveSlowmodeChannelConfigView
         # is deliberately excluded, see docs/PERSISTENT_VIEWS.md Step 11)

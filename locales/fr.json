@@ -860,6 +860,20 @@
         "hint": "Sélectionnez un module pour accéder à sa configuration détaillée.",
         "not_implemented": "La configuration du module **{module_name}** n'est pas encore disponible."
       },
+      "settings": {
+        "button": "Paramètres du serveur",
+        "title": "Paramètres du serveur",
+        "description": "Les réglages qui s'appliquent à tout le serveur, quel que soit le module qui les utilise.",
+        "language": {
+          "section_title": "Langue",
+          "section_description": "La langue dans laquelle Moddy s'adresse à tes membres : messages de bienvenue, tickets, logs, sanctions...",
+          "auto_resolves_to": "Automatique correspond actuellement à **{language}**.",
+          "placeholder": "Choisis la langue du serveur",
+          "auto": "Automatique",
+          "auto_description": "Suit la langue du serveur (Communauté), sinon l'anglais",
+          "applies_to": "Ta propre langue Discord reste utilisée pour tout ce que Moddy te répond personnellement."
+        }
+      },
       "status": {
         "label": "Statut du module :",
         "enabled": "Activé",
@@ -1551,20 +1565,13 @@
         "activations": {
           "placeholder": "Activer / désactiver…"
         },
-        "section_limits": "Limites & langue",
+        "section_limits": "Limites",
         "max_action": {
           "desc": "Action la plus sévère que l'automod peut appliquer.",
           "placeholder": "Action maximale…",
           "option_warn": "Avertissement au maximum",
           "option_mute": "Exclusion au maximum",
           "option_ban": "Bannissement autorisé"
-        },
-        "language": {
-          "desc": "Langue des messages de sanction (raison, DM du membre).",
-          "placeholder": "Langue des sanctions…",
-          "auto": "Automatique (langue du serveur)",
-          "fr": "Français",
-          "en": "Anglais"
         },
         "dry_run": {
           "label": "Mode simulation",
@@ -1921,11 +1928,6 @@
           "section_title": "Rôle vérifié",
           "section_description": "Attribué dès que la vérification est validée. C'est lui qui ouvre le serveur.",
           "placeholder": "Choisis le rôle vérifié"
-        },
-        "language": {
-          "section_title": "Langue du message",
-          "section_description": "La formulation est identique partout : seule la langue du message de vérification change.",
-          "placeholder": "Choisis la langue du message"
         },
         "log_channel": {
           "section_title": "Salon de logs (facultatif)",
@@ -2288,19 +2290,6 @@
             "section_title": "Rôles ignorés",
             "section_description": "Les membres portant un de ces rôles ne seront pas enregistrés.",
             "placeholder": "Choisir les rôles à ignorer…"
-          },
-          "locale": {
-            "section_title": "Langue des logs",
-            "section_description": "Par défaut, les logs suivent la langue du serveur.",
-            "placeholder": "Choisir la langue des logs…",
-            "values": {
-              "auto": "Langue du serveur",
-              "fr": "Français",
-              "en-US": "English",
-              "es-ES": "Español",
-              "pt-BR": "Português",
-              "de": "Deutsch"
-            }
           },
           "toggles": {
             "section_title": "Réglages",
@@ -2838,7 +2827,7 @@
         "categories_hint": "{count}/{max} · une par bouton ou par entrée du menu",
         "no_category": "Aucune catégorie. Un panneau sans catégorie n'est jamais publié.",
         "category_placeholder": "Sélectionnez une catégorie à configurer",
-        "category_summary": "{roles} rôle(s) avec des permissions · langue `{language}`",
+        "category_summary": "{roles} rôle(s) avec des permissions",
         "no_destination": "aucune destination",
         "edit": "Modifier",
         "add_category": "Ajouter une catégorie",
@@ -2878,8 +2867,6 @@
         "allowed_placeholder": "Rôles autorisés à ouvrir",
         "denied_hint": "Un rôle interdit l'emporte toujours, même si le membre a aussi un rôle autorisé.",
         "denied_placeholder": "Rôles interdits",
-        "language_title": "Langue des tickets",
-        "language_hint": "Tous les messages de ces tickets utilisent cette langue",
         "summary_title": "Configuré derrière les boutons ci-dessous",
         "summary_permissions": "Permissions — {roles} rôle(s)",
         "summary_messages": "Messages — {count}/2 personnalisé(s)",
