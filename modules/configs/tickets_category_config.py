@@ -48,6 +48,8 @@ from modules.tickets import (
     DEFAULT_MAX_OPEN_PER_USER,
     DEFAULT_NAME_FORMAT,
     DEFAULT_ROLE_PERMISSIONS,
+    DEFAULT_TICKET_BUTTONS,
+    TICKET_BUTTONS,
     MAX_CATEGORY_DESCRIPTION,
     MAX_CATEGORY_NAME,
     MAX_CHANNEL_NAME,
@@ -71,8 +73,8 @@ from modules.tickets import (
 from utils.components_v2 import create_error_message
 from utils.emojis import (
     BACK, DELETE, EDIT, INFO, MESSAGE, PAUSE, PLAY, REQUIRED_FIELDS,
-    TICKET_ACCESS, TICKET_CATEGORY, TICKET_LANGUAGE, TICKET_PERMISSIONS as PERM_EMOJI,
-    SETTINGS, WARNING,
+    TICKET_ACCESS, TICKET_CATEGORY, TICKET_CLAIM, TICKET_LANGUAGE,
+    TICKET_PERMISSIONS as PERM_EMOJI, SETTINGS, WARNING,
 )
 from utils.i18n import i18n, t
 
@@ -330,12 +332,18 @@ class CategoryIdentityModal(BaseModal):
 
 
 class CategoryMessagesModal(BaseModal):
-    """The two messages a ticket shows: when it opens, and when it closes.
+    """The two messages a ticket shows, and the buttons under the first one.
 
-    Both fields are pre-filled with the wording the ticket would use anyway.
-    They are written in the **category's** language, not the admin's: these
-    are the words the member will read, and a ticket speaks one language
-    whoever configured it. Only the labels around them follow the admin.
+    The opening field holds the **whole** message — its title line, its body,
+    its footer — not a paragraph the module then wraps in a card of its own.
+    An admin who wants a different heading, a different sign-off or no footer
+    at all writes it here, and a line holding nothing but ``---`` becomes a
+    real separator in the posted message.
+
+    Both fields are pre-filled with the wording the ticket would use anyway,
+    written in the **category's** language, not the admin's: these are the
+    words the member will read, and a ticket speaks one language whoever
+    configured it. Only the labels around them follow the admin.
     """
 
     def __init__(self, locale: str, category: Dict[str, Any], callback_func):
@@ -357,7 +365,9 @@ class CategoryMessagesModal(BaseModal):
             component=self.open_input,
         ))
 
-        self.add_item(ui.TextDisplay(_placeholder_help(locale, PLACEHOLDERS)))
+        self.add_item(ui.TextDisplay(
+            _placeholder_help(locale, PLACEHOLDERS) + "\n"
+            + t('modules.tickets.messages.separator_hint', locale=locale)))
 
         self.close_input = ui.TextInput(
             style=discord.TextStyle.paragraph, required=False,
@@ -370,15 +380,49 @@ class CategoryMessagesModal(BaseModal):
             component=self.close_input,
         ))
 
+        selected = category.get('buttons')
+        if selected is None:
+            selected = list(DEFAULT_TICKET_BUTTONS)
+        self.buttons_select = ui.Select(
+            options=[
+                discord.SelectOption(
+                    label=t(f'modules.tickets.actions.{key}', locale=locale)[:100],
+                    value=key,
+                    description=t(f'modules.tickets.buttons.{key}_hint',
+                                  locale=locale)[:100],
+                    default=key in selected,
+                ) for key in TICKET_BUTTONS
+            ],
+            min_values=0, max_values=len(TICKET_BUTTONS), required=False,
+        )
+        self.add_item(ui.Label(
+            text=t('modules.tickets.buttons.label', locale=locale)[:45],
+            description=t('modules.tickets.buttons.hint', locale=locale)[:100],
+            component=self.buttons_select,
+        ))
+
     async def on_submit(self, interaction: discord.Interaction):
         await self.callback_func(interaction, {
             'open_message': (self.open_input.value or '').strip() or None,
             'close_message': (self.close_input.value or '').strip() or None,
+            # An empty selection is a real answer ("commands only"), so it is
+            # stored as an empty list rather than falling back to the default.
+            'buttons': [b for b in TICKET_BUTTONS
+                        if b in (self.buttons_select.values or [])],
         })
 
 
+# The three yes/no settings of a category, in one CheckboxGroup: a modal is
+# capped at five top-level components, and three separate checkboxes would eat
+# the whole budget for what reads as one block of switches anyway.
+_OPT_PING_STAFF = "ping_staff_roles"
+_OPT_CLAIM = "claim_enabled"
+_OPT_CLAIM_LOCK = "claim_lock"
+_CATEGORY_SWITCHES = (_OPT_PING_STAFF, _OPT_CLAIM, _OPT_CLAIM_LOCK)
+
+
 class CategoryOptionsModal(BaseModal):
-    """Channel naming, the anti-spam limit, and who gets pinged on a new ticket."""
+    """Channel naming, the anti-spam limit, the pings, and the claim switches."""
 
     def __init__(self, locale: str, category: Dict[str, Any], callback_func):
         super().__init__(
@@ -423,6 +467,25 @@ class CategoryOptionsModal(BaseModal):
             component=self.ping_select,
         ))
 
+        defaults = {_OPT_PING_STAFF: True, _OPT_CLAIM: True, _OPT_CLAIM_LOCK: False}
+        self.switches = ui.CheckboxGroup(
+            options=[
+                discord.CheckboxGroupOption(
+                    label=t(f'modules.tickets.options.{key}_label',
+                            locale=locale)[:100],
+                    value=key,
+                    description=t(f'modules.tickets.options.{key}_hint',
+                                  locale=locale)[:100],
+                    default=bool(category.get(key, defaults[key])),
+                ) for key in _CATEGORY_SWITCHES
+            ],
+            min_values=0, max_values=len(_CATEGORY_SWITCHES), required=False,
+        )
+        self.add_item(ui.Label(
+            text=t('modules.tickets.options.switches_label', locale=locale)[:45],
+            component=self.switches,
+        ))
+
     async def on_submit(self, interaction: discord.Interaction):
         raw = (self.max_open_input.value or '').strip()
         try:
@@ -431,11 +494,13 @@ class CategoryOptionsModal(BaseModal):
             max_open = DEFAULT_MAX_OPEN_PER_USER
         max_open = max(1, min(max_open, MAX_OPEN_PER_USER_CEILING))
 
+        chosen = set(self.switches.values or [])
         await self.callback_func(interaction, {
             'name_format': (self.name_format_input.value or '').strip()
                            or DEFAULT_NAME_FORMAT,
             'max_open_per_user': max_open,
             'ping_role_ids': [role.id for role in self.ping_select.values],
+            **{key: key in chosen for key in _CATEGORY_SWITCHES},
         })
 
 
@@ -769,12 +834,23 @@ class TicketCategoryConfigView(BaseView):
         roles = len(self.category.get('permissions', {}))
         messages = sum(1 for key in ('open_message', 'close_message')
                        if self.category.get(key))
+        buttons = self.category.get('buttons')
+        if buttons is None:
+            buttons = list(DEFAULT_TICKET_BUTTONS)
+
+        claim_key = 'summary_claim_off'
+        if self.category.get('claim_enabled', True):
+            claim_key = ('summary_claim_locked' if self.category.get('claim_lock')
+                         else 'summary_claim_on')
+
         return (
             f"**{t('modules.tickets.category.summary_title', locale=self.locale)}**\n"
             f"-# {PERM_EMOJI} "
             f"{t('modules.tickets.category.summary_permissions', locale=self.locale, roles=roles)}\n"
             f"-# {MESSAGE} "
-            f"{t('modules.tickets.category.summary_messages', locale=self.locale, count=messages)}\n"
+            f"{t('modules.tickets.category.summary_messages', locale=self.locale, count=messages, buttons=len(buttons))}\n"
+            f"-# {TICKET_CLAIM} "
+            f"{t(f'modules.tickets.category.{claim_key}', locale=self.locale)}\n"
             f"-# {SETTINGS} "
             f"{t('modules.tickets.category.summary_options', locale=self.locale, format=self.category.get('name_format', ''), max=self.category.get('max_open_per_user', 1))}"
         )

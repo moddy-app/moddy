@@ -14,6 +14,10 @@ static custom_ids (see ``utils/ticket_views.py``).
 ``number`` is a per-guild counter (``UNIQUE (guild_id, number)``) used in
 channel names and references — humans say "ticket 42", not a snowflake.
 
+``claimed_by`` is who is currently handling the ticket (the claim system);
+``pre_escalation_claim`` is where that value is parked while the ticket is
+escalated, so cancelling an escalation restores the claim it interrupted.
+
 See docs/TICKETS.md.
 """
 
@@ -50,6 +54,10 @@ def _row_to_dict(row) -> Dict[str, Any]:
         "participant_roles": list(row["participant_roles"] or []),
         "close_requested_by": row["close_requested_by"],
         "close_request_reason": row["close_request_reason"],
+        "claimed_by": row["claimed_by"],
+        "claimed_at": row["claimed_at"],
+        "pre_escalation_claim": row["pre_escalation_claim"],
+        "escalation_mute": row["escalation_mute"],
         "opened_at": row["opened_at"],
         "closed_at": row["closed_at"],
         "closed_by": row["closed_by"],
@@ -229,11 +237,48 @@ class TicketsRepository:
                 WHERE channel_id = $1
             """, channel_id, panel_id, category_id)
 
-    async def set_escalated(self, channel_id: int, escalated: bool) -> None:
+    async def set_escalated(self, channel_id: int, escalated: bool, *,
+                            mute_participants: bool = False) -> None:
+        """Escalate or de-escalate, moving the claim out of the way and back.
+
+        Escalating parks the current claim in ``pre_escalation_claim`` and
+        clears it: an escalated ticket belongs to the responsibles, and the
+        agent who had it must not keep the channel. De-escalating puts the same
+        person back on it, so cancelling an escalation really does restore the
+        state it interrupted instead of leaving the ticket unassigned.
+        """
         async with self.pool.acquire() as conn:
-            await conn.execute(
-                "UPDATE tickets SET escalated = $2 WHERE channel_id = $1",
-                channel_id, escalated)
+            if escalated:
+                await conn.execute("""
+                    UPDATE tickets
+                    SET escalated = TRUE, escalation_mute = $2,
+                        pre_escalation_claim = COALESCE(pre_escalation_claim,
+                                                        claimed_by),
+                        claimed_by = NULL, claimed_at = NULL
+                    WHERE channel_id = $1
+                """, channel_id, mute_participants)
+            else:
+                await conn.execute("""
+                    UPDATE tickets
+                    SET escalated = FALSE, escalation_mute = FALSE,
+                        claimed_by = COALESCE(claimed_by, pre_escalation_claim),
+                        claimed_at = CASE
+                            WHEN claimed_by IS NULL AND pre_escalation_claim IS NOT NULL
+                            THEN now() ELSE claimed_at END,
+                        pre_escalation_claim = NULL
+                    WHERE channel_id = $1
+                """, channel_id)
+
+    async def set_claim(self, channel_id: int,
+                        claimer_id: Optional[int]) -> None:
+        """Assign the ticket to a staffer, or release it with ``None``."""
+        async with self.pool.acquire() as conn:
+            await conn.execute("""
+                UPDATE tickets
+                SET claimed_by = $2,
+                    claimed_at = CASE WHEN $2::BIGINT IS NULL THEN NULL ELSE now() END
+                WHERE channel_id = $1
+            """, channel_id, claimer_id)
 
     async def set_staff_thread(self, channel_id: int,
                                thread_id: Optional[int]) -> None:

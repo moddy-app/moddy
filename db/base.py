@@ -839,12 +839,26 @@ class ModdyDatabase(
                     participant_roles    BIGINT[] NOT NULL DEFAULT '{}',
                     close_requested_by   BIGINT,
                     close_request_reason TEXT,
+                    claimed_by           BIGINT,
+                    claimed_at           TIMESTAMPTZ,
+                    pre_escalation_claim BIGINT,
+                    escalation_mute      BOOLEAN NOT NULL DEFAULT FALSE,
                     opened_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
                     closed_at            TIMESTAMPTZ,
                     closed_by            BIGINT,
                     close_reason         TEXT,
                     CONSTRAINT tickets_guild_number UNIQUE (guild_id, number)
                 )
+            """)
+            # Idempotent migration: tables created before the claim system gain
+            # its four columns here rather than needing a manual deploy step.
+            await conn.execute("""
+                ALTER TABLE tickets
+                    ADD COLUMN IF NOT EXISTS claimed_by BIGINT,
+                    ADD COLUMN IF NOT EXISTS claimed_at TIMESTAMPTZ,
+                    ADD COLUMN IF NOT EXISTS pre_escalation_claim BIGINT,
+                    ADD COLUMN IF NOT EXISTS escalation_mute BOOLEAN NOT NULL
+                        DEFAULT FALSE
             """)
             await conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_tickets_guild_status "

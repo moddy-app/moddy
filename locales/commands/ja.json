@@ -363,6 +363,14 @@
       "name": "参加者",
       "description": "このチケットにアクセスできる相手を確認・変更します"
     },
+    "ticket claim": {
+      "name": "担当する",
+      "description": "このチケットを担当します"
+    },
+    "ticket unclaim": {
+      "name": "担当を外れる",
+      "description": "チケットを解放し、誰でも担当できるようにします"
+    },
     "ticket staff-thread": {
       "name": "スタッフスレッド",
       "description": "スタッフ専用スレッドを開くか参加します"

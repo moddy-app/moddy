@@ -363,6 +363,14 @@
       "name": "teilnehmer",
       "description": "Zeigt und ändert, wer Zugriff auf dieses Ticket hat"
     },
+    "ticket claim": {
+      "name": "uebernehmen",
+      "description": "Übernimmt dieses Ticket"
+    },
+    "ticket unclaim": {
+      "name": "freigeben",
+      "description": "Gibt dieses Ticket wieder frei"
+    },
     "ticket staff-thread": {
       "name": "team-thread",
       "description": "Öffnet den privaten Team-Thread oder tritt ihm bei"

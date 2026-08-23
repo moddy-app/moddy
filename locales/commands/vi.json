@@ -363,6 +363,14 @@
       "name": "người-tham-gia",
       "description": "Xem và sửa ai có quyền truy cập ticket này"
     },
+    "ticket claim": {
+      "name": "nhan-xu-ly",
+      "description": "Nhận xử lý ticket này"
+    },
+    "ticket unclaim": {
+      "name": "nha-xu-ly",
+      "description": "Nhả ticket này để người khác nhận xử lý"
+    },
     "ticket staff-thread": {
       "name": "luồng-đội-ngũ",
       "description": "Mở hoặc tham gia luồng riêng của đội ngũ"

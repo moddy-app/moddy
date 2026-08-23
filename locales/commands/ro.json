@@ -363,6 +363,14 @@
       "name": "participanți",
       "description": "Vezi și modifică cine are acces la acest tichet"
     },
+    "ticket claim": {
+      "name": "preia",
+      "description": "Preia acest tichet"
+    },
+    "ticket unclaim": {
+      "name": "elibereaza",
+      "description": "Eliberează tichetul ca oricine să îl poată prelua"
+    },
     "ticket staff-thread": {
       "name": "discuție-echipă",
       "description": "Deschide sau intră în discuția privată a echipei"

@@ -22,11 +22,19 @@ from modules.tickets import (
     PLACEHOLDERS,
     PERM_CLOSE,
     PERM_VIEW,
+    PERM_CLAIM,
+    PERM_UNCLAIM_OTHERS,
     PREMIUM_MAX_CATEGORIES,
     PREMIUM_MAX_PANELS,
+    STATUS_DOT_CLAIMED,
+    STATUS_DOT_CLOSED,
+    STATUS_DOT_ESCALATED,
+    STATUS_DOT_UNCLAIMED,
     STYLE_BUTTONS,
     STYLE_SELECT,
+    TICKET_BUTTONS,
     TICKET_PERMISSIONS,
+    apply_status_prefix,
     can_open,
     find_category,
     find_panel,
@@ -41,7 +49,10 @@ from modules.tickets import (
     render_channel_name,
     render_text,
     role_permissions,
+    split_message_blocks,
     staff_role_ids,
+    strip_status_prefix,
+    ticket_status_dot,
 )
 
 
@@ -411,6 +422,140 @@ class TestOverwrites:
             self.guild, category, self._ticket())
         assert all(getattr(target, 'id', None) != 404 for target in overwrites)
 
+    def test_an_escalation_can_keep_people_reading_without_letting_them_write(self):
+        overwrites = self.service.build_overwrites(
+            self.guild, self.category,
+            self._ticket(escalated=True, escalation_mute=True, participants=[8]))
+        assert overwrites[self.helper].view_channel is True
+        assert overwrites[self.helper].send_messages is False
+        assert overwrites[self.owner].send_messages is False
+
+
+# =========================================================================== #
+# The claim system
+# =========================================================================== #
+class TestClaimOverwrites:
+    """`claim_lock` decides who may *speak*, never who may read: a locked
+    ticket is not a private one."""
+
+    def setup_method(self):
+        from services.ticket_service import TicketService
+
+        self.service = TicketService(bot=None)
+        self.support = FakeRole(10, "Support")
+        self.lead = FakeRole(11, "Lead")
+        self.owner = FakeMember(7, name="opener")
+        self.agent = FakeMember(8, name="agent")
+        self.guild = FakeGuild(roles=[self.support, self.lead],
+                               members=[self.owner, self.agent])
+
+    def _category(self, **overrides):
+        return make_category(permissions={"10": [PERM_VIEW, PERM_CLAIM],
+                                          "11": [PERM_ADMIN]}, **overrides)
+
+    def _ticket(self, **overrides):
+        base = {'owner_id': 7, 'status': 'open', 'escalated': False,
+                'participants': [], 'participant_roles': [], 'claimed_by': None}
+        base.update(overrides)
+        return base
+
+    def test_without_the_lock_nothing_changes(self):
+        overwrites = self.service.build_overwrites(
+            self.guild, self._category(claim_lock=False), self._ticket(claimed_by=8))
+        assert overwrites[self.support].send_messages is True
+
+    def test_the_lock_only_bites_once_somebody_holds_the_ticket(self):
+        """An unclaimed ticket nobody may answer would be a dead end."""
+        overwrites = self.service.build_overwrites(
+            self.guild, self._category(claim_lock=True), self._ticket())
+        assert overwrites[self.support].send_messages is True
+
+    def test_a_locked_ticket_silences_the_other_agents_but_not_the_claimer(self):
+        overwrites = self.service.build_overwrites(
+            self.guild, self._category(claim_lock=True), self._ticket(claimed_by=8))
+        assert overwrites[self.support].send_messages is False
+        assert overwrites[self.support].view_channel is True
+        # The claimer's own overwrite outranks the role they were just muted by.
+        assert overwrites[self.agent].send_messages is True
+
+    def test_the_responsibles_always_speak(self):
+        overwrites = self.service.build_overwrites(
+            self.guild, self._category(claim_lock=True), self._ticket(claimed_by=8))
+        assert overwrites[self.lead].send_messages is True
+
+    def test_the_opener_and_the_manual_participants_always_speak(self):
+        overwrites = self.service.build_overwrites(
+            self.guild, self._category(claim_lock=True),
+            self._ticket(claimed_by=11, participants=[8]))
+        assert overwrites[self.owner].send_messages is True
+        assert overwrites[self.agent].send_messages is True
+
+    def test_claiming_an_escalated_ticket_needs_to_be_a_responsible(self):
+        assert self.service.claim_permission(self._ticket()) == PERM_CLAIM
+        assert self.service.claim_permission(
+            self._ticket(escalated=True)) == PERM_ADMIN
+
+    def test_responsible_covers_both_claim_permissions(self):
+        category = make_category(permissions={"11": [PERM_ADMIN]})
+        granted = role_permissions(category, 11)
+        assert PERM_CLAIM in granted and PERM_UNCLAIM_OTHERS in granted
+
+
+class TestStatusDot:
+    def _ticket(self, **overrides):
+        base = {'status': 'open', 'escalated': False, 'claimed_by': None}
+        base.update(overrides)
+        return base
+
+    def test_the_four_states(self):
+        category = make_category(claim_enabled=True)
+        assert ticket_status_dot(category, self._ticket()) == STATUS_DOT_UNCLAIMED
+        assert ticket_status_dot(category, self._ticket(claimed_by=8)) == \
+            STATUS_DOT_CLAIMED
+        assert ticket_status_dot(category, self._ticket(escalated=True)) == \
+            STATUS_DOT_ESCALATED
+        assert ticket_status_dot(category, self._ticket(status='closed')) == \
+            STATUS_DOT_CLOSED
+
+    def test_closed_wins_over_escalated_and_claimed(self):
+        category = make_category(claim_enabled=True)
+        assert ticket_status_dot(
+            category, self._ticket(status='closed', escalated=True,
+                                   claimed_by=8)) == STATUS_DOT_CLOSED
+
+    def test_a_category_without_claiming_gets_no_dot(self):
+        assert ticket_status_dot(make_category(claim_enabled=False),
+                                 self._ticket()) is None
+
+    def test_a_ticket_never_accumulates_dots(self):
+        name = "ticket-0003"
+        for dot in (STATUS_DOT_UNCLAIMED, STATUS_DOT_CLAIMED,
+                    STATUS_DOT_ESCALATED, STATUS_DOT_CLOSED):
+            name = apply_status_prefix(name, dot)
+            assert name == f"{dot}〡ticket-0003"
+        assert strip_status_prefix(name) == "ticket-0003"
+
+    def test_switching_the_system_off_takes_the_dot_away(self):
+        assert apply_status_prefix("🟢〡ticket-0003", None) == "ticket-0003"
+
+    def test_a_plain_name_is_left_alone(self):
+        assert strip_status_prefix("ticket-0003") == "ticket-0003"
+
+
+class TestMessageBlocks:
+    def test_a_dashes_line_cuts_the_message(self):
+        assert split_message_blocks("Top\n---\nBottom") == ["Top", "Bottom"]
+
+    def test_dashes_inside_a_line_are_just_text(self):
+        assert split_message_blocks("a --- b") == ["a --- b"]
+
+    def test_empty_blocks_are_dropped(self):
+        assert split_message_blocks("---\nOnly\n---\n---") == ["Only"]
+
+    def test_no_text_means_no_block(self):
+        assert split_message_blocks(None) == []
+        assert split_message_blocks("   ") == []
+
 
 # =========================================================================== #
 # Panel message
@@ -630,7 +775,9 @@ class TestModals:
             CategoryIdentityModal, CategoryMessagesModal, CategoryOptionsModal,
         )
         from modules.configs.tickets_config import PanelAppearanceModal
-        from utils.ticket_views import TicketReasonModal, TicketRenameModal
+        from utils.ticket_views import (
+            TicketParticipantsModal, TicketReasonModal, TicketRenameModal,
+        )
 
         return [
             PanelAppearanceModal("fr", None, _noop),
@@ -641,7 +788,15 @@ class TestModals:
             CategoryOptionsModal("fr", self.category, _noop),
             TicketReasonModal("fr", "close", _noop),
             TicketRenameModal("fr", "ticket-0001", _noop),
+            TicketParticipantsModal("fr", {'owner_id': 7, 'participants': [8],
+                                           'participant_roles': [10]}, _noop),
         ]
+
+    def test_the_messages_modal_offers_every_button(self):
+        from modules.configs.tickets_category_config import CategoryMessagesModal
+
+        modal = CategoryMessagesModal("fr", self.category, _noop)
+        assert [o.value for o in modal.buttons_select.options] == list(TICKET_BUTTONS)
 
     def test_every_modal_builds_within_discords_limits(self):
         for modal in self._modals():
@@ -669,17 +824,89 @@ class TestTicketChannelViews:
         return [cid for cid in
                 (getattr(i, 'custom_id', None) for i in view.walk_children()) if cid]
 
-    def test_control_bar_offers_the_five_main_actions(self):
+    def test_control_bar_offers_the_default_actions_close_then_claim(self):
         from utils.ticket_views import build_ticket_message
 
         view = build_ticket_message(self.ticket, self.category, "Hello", "fr")
         assert self._ids(view) == [
             "moddy:tickets:ctrl:close",
-            "moddy:tickets:ctrl:close_request",
+            "moddy:tickets:ctrl:claim",
             "moddy:tickets:ctrl:escalate",
             "moddy:tickets:ctrl:staff_thread",
             "moddy:tickets:ctrl:participants",
         ]
+
+    def test_close_request_is_a_command_unless_asked_for(self):
+        """It left the default set; a server that wants it back ticks it."""
+        from utils.ticket_views import build_ticket_message
+
+        assert "moddy:tickets:ctrl:close_request" not in self._ids(
+            build_ticket_message(self.ticket, self.category, "Hello", "fr"))
+
+        category = normalize_category({
+            'name': "Support", 'buttons': ["close", "close_request"]})
+        assert self._ids(build_ticket_message(self.ticket, category, "Hi", "fr")) == [
+            "moddy:tickets:ctrl:close",
+            "moddy:tickets:ctrl:close_request",
+        ]
+
+    def test_an_empty_button_list_is_a_real_answer(self):
+        from utils.ticket_views import build_ticket_message
+
+        category = normalize_category({'name': "Support", 'buttons': []})
+        assert self._ids(build_ticket_message(self.ticket, category, "Hi", "fr")) == []
+
+    def test_the_claim_button_follows_the_category_switch(self):
+        from utils.ticket_views import build_ticket_message
+
+        category = normalize_category({'name': "Support", 'claim_enabled': False})
+        assert "moddy:tickets:ctrl:claim" not in self._ids(
+            build_ticket_message(self.ticket, category, "Hi", "fr"))
+
+    def test_the_persistent_shell_declares_every_button(self):
+        """A registered view matches on custom_id: an id the shell never
+        declared would be a dead button after a restart, whatever the guild
+        configured."""
+        from modules.tickets import TICKET_BUTTONS
+        from utils.ticket_views import TicketControlView
+
+        assert self._ids(TicketControlView()) == [
+            f"moddy:tickets:ctrl:{key}" for key in TICKET_BUTTONS]
+
+    def test_buttons_live_outside_the_container(self):
+        """The card is the container; the actions belong under it."""
+        from discord import ui
+
+        from utils.ticket_views import build_ticket_message
+
+        view = build_ticket_message(self.ticket, self.category, "Hello", "fr")
+        rows = [item for item in view.children if isinstance(item, ui.ActionRow)]
+        assert rows, "the control bar has no top-level ActionRow"
+        for container in (i for i in view.children if isinstance(i, ui.Container)):
+            assert not any(isinstance(child, ui.ActionRow)
+                           for child in container.children)
+
+    def test_the_body_is_the_whole_message(self):
+        """No title and no footer of the module's own: the admin writes it all."""
+        from utils.ticket_views import build_ticket_message
+
+        body = "### Ticket #42\nHello there\n-# Opened by · <@7>"
+        view = build_ticket_message(self.ticket, self.category, body, "fr")
+        rendered = [getattr(i, 'content', None) for i in view.walk_children()]
+        assert body in rendered
+
+    def test_a_separator_line_becomes_a_real_separator(self):
+        from discord import ui
+
+        from utils.ticket_views import build_ticket_message
+
+        view = build_ticket_message(
+            self.ticket, self.category, "Top\n---\nBottom", "fr")
+        children = list(view.walk_children())
+        texts = [getattr(i, 'content', None) for i in children]
+        assert "Top" in texts and "Bottom" in texts
+        assert "---" not in texts
+        assert any(isinstance(i, ui.Separator) for i in children)
 
     def test_closing_card_offers_reopen_and_delete(self):
         from utils.ticket_views import build_closed_message
@@ -702,15 +929,14 @@ class TestTicketChannelViews:
         view = build_escalation_notice(self.ticket, self.actor, "abuse", "fr")
         assert self._ids(view) == ["moddy:tickets:escalated:cancel"]
 
-    def test_participants_panel_preselects_the_current_ones(self):
-        from utils.ticket_views import TicketParticipantsView
+    def test_the_participants_form_opens_on_who_is_already_in(self):
+        """A picker showing the current members reads as "this is who is in",
+        which is what makes unselecting the obvious way to remove someone."""
+        from utils.ticket_views import TicketParticipantsModal
 
-        view = TicketParticipantsView(None, self.ticket, "fr")
-        selects = {getattr(i, 'custom_id', None): i for i in view.walk_children()}
-        users = selects["moddy:tickets:members:users"]
-        roles = selects["moddy:tickets:members:roles"]
-        assert [d.id for d in users.default_values] == [8]
-        assert [d.id for d in roles.default_values] == [10]
+        modal = TicketParticipantsModal("fr", self.ticket, _noop)
+        assert [d.id for d in modal.user_select.default_values] == [8]
+        assert [d.id for d in modal.role_select.default_values] == [10]
 
     def test_the_closing_dm_has_nothing_to_click(self):
         from types import SimpleNamespace
@@ -745,8 +971,16 @@ _SOURCE_FILES = (
 # "Extending the module".
 _INTERPOLATED_KEYS = (
     [f"modules.tickets.actions.{a}" for a in
-     ("close", "close_request", "escalate", "staff_thread", "participants",
-      "reopen", "delete", "deescalate", "rename")]
+     ("close", "close_request", "claim", "unclaim", "escalate", "staff_thread",
+      "participants", "reopen", "delete", "deescalate", "rename")]
+    + [f"modules.tickets.buttons.{b}_hint" for b in TICKET_BUTTONS]
+    + [f"modules.tickets.options.{o}_{k}" for o in
+       ("ping_staff_roles", "claim_enabled", "claim_lock")
+       for k in ("label", "hint")]
+    + [f"modules.tickets.category.summary_claim_{s}" for s in
+       ("on", "off", "locked")]
+    + [f"modules.tickets.claim.{c}_{k}" for c in ("claimed", "released")
+       for k in ("title", "description", "done")]
     + [f"modules.tickets.permissions.{p}.{k}" for p in TICKET_PERMISSIONS
        for k in ("name", "description")]
     + [f"modules.tickets.status.{s}" for s in ("open", "closed", "escalated")]
@@ -811,7 +1045,10 @@ class TestNoContentWithLayoutView:
             f"view instead:\n{offenders}"
         )
 
-    def test_mentions_are_rendered_inside_the_view(self):
+    def test_no_card_carries_a_mention_of_its_own(self):
+        """Pings go out as their own message, which the service deletes at once
+        (TicketService.ping): a mention printed in a card would stay there
+        forever, and Discord would reject it in `content` anyway."""
         from utils.ticket_views import (
             build_close_request_message, build_escalation_notice,
             build_ticket_message,
@@ -821,20 +1058,29 @@ class TestNoContentWithLayoutView:
         ticket = {'number': 1, 'owner_id': 7, 'status': 'open', 'escalated': False,
                   'participants': [], 'participant_roles': []}
         actor = FakeMember(3)
-        mentions = "<@7> <@&10>"
 
         views = [
-            build_ticket_message(ticket, category, "hello", "fr", mentions),
-            build_close_request_message(ticket, actor, None, "fr", mentions),
-            build_escalation_notice(ticket, actor, None, "fr", mentions),
+            build_ticket_message(ticket, category, "hello", "fr"),
+            build_close_request_message(ticket, actor, None, "fr"),
+            build_escalation_notice(ticket, actor, None, "fr"),
         ]
         for view in views:
             rendered = "\n".join(
                 getattr(item, "content", "") or "" for item in view.walk_children())
-            assert mentions in rendered, type(view).__name__
+            assert "<@&" not in rendered, type(view).__name__
 
-    def test_the_views_still_build_without_mentions(self):
-        """The persistent shells are constructed with no mentions at all."""
+    def test_the_ping_message_is_deleted_right_after_it_is_sent(self):
+        """Static guard: `ping` must not leave the mention behind."""
+        import re
+        from pathlib import Path
+
+        source = (Path(__file__).resolve().parent.parent
+                  / "services" / "ticket_service.py").read_text(encoding="utf-8")
+        body = re.search(r"async def ping\(.*?\n    # ", source, re.S)
+        assert body, "TicketService.ping is gone"
+        assert "await message.delete()" in body.group(0)
+
+    def test_the_views_still_build_as_persistent_shells(self):
         from utils.ticket_views import (
             TicketCloseRequestView, TicketControlView, TicketEscalationView,
         )

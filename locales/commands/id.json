@@ -363,6 +363,14 @@
       "name": "peserta",
       "description": "Lihat dan ubah siapa saja yang bisa mengakses tiket ini"
     },
+    "ticket claim": {
+      "name": "tangani",
+      "description": "Menangani tiket ini"
+    },
+    "ticket unclaim": {
+      "name": "lepas",
+      "description": "Melepas tiket ini agar siapa pun bisa mengambilnya"
+    },
     "ticket staff-thread": {
       "name": "utas-staf",
       "description": "Membuka atau bergabung ke utas privat staf"

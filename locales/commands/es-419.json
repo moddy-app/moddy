@@ -363,6 +363,14 @@
       "name": "participantes",
       "description": "Consulta y edita quién tiene acceso a este ticket"
     },
+    "ticket claim": {
+      "name": "hacerse-cargo",
+      "description": "Se hace cargo de este ticket"
+    },
+    "ticket unclaim": {
+      "name": "liberar",
+      "description": "Libera este ticket para que cualquiera lo tome"
+    },
     "ticket staff-thread": {
       "name": "hilo-staff",
       "description": "Abre o entra en el hilo privado del staff"

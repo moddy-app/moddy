@@ -363,6 +363,14 @@
       "name": "osallistujat",
       "description": "Näytä ja muokkaa, kenellä on pääsy tähän tikettiin"
     },
+    "ticket claim": {
+      "name": "ota-hoitoon",
+      "description": "Ottaa tämän tiketin hoitoon"
+    },
+    "ticket unclaim": {
+      "name": "vapauta",
+      "description": "Vapauttaa tiketin, jotta kuka tahansa voi ottaa sen"
+    },
     "ticket staff-thread": {
       "name": "henkilökunnan-ketju",
       "description": "Avaa yksityisen henkilökunnan ketjun tai liittyy siihen"

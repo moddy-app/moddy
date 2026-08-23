@@ -363,6 +363,14 @@
       "name": "deltagare",
       "description": "Visa och ändra vem som har åtkomst till ärendet"
     },
+    "ticket claim": {
+      "name": "ta-over",
+      "description": "Tar över det här ärendet"
+    },
+    "ticket unclaim": {
+      "name": "slapp",
+      "description": "Släpper ärendet så att någon annan kan ta det"
+    },
     "ticket staff-thread": {
       "name": "personaltråd",
       "description": "Öppnar eller går med i den privata personaltråden"

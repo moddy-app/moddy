@@ -12,14 +12,18 @@
 3. [Limits (free / premium)](#limits-free--premium)
 4. [Configuration schema](#configuration-schema)
 5. [The permission model](#the-permission-model)
-6. [Channel permissions, escalation and closure](#channel-permissions-escalation-and-closure)
-7. [The `tickets` table](#the-tickets-table)
-8. [Actions](#actions)
-9. [Slash commands, published per guild](#slash-commands-published-per-guild)
-10. [Persistence](#persistence)
-11. [i18n](#i18n)
-12. [Backend / dashboard contract](#backend--dashboard-contract)
-13. [Extending the module](#extending-the-module)
+6. [The claim system](#the-claim-system)
+7. [Channel permissions, escalation and closure](#channel-permissions-escalation-and-closure)
+8. [The ticket message](#the-ticket-message)
+9. [Pings](#pings)
+10. [The staff thread](#the-staff-thread)
+11. [The `tickets` table](#the-tickets-table)
+12. [Actions](#actions)
+13. [Slash commands, published per guild](#slash-commands-published-per-guild)
+14. [Persistence](#persistence)
+15. [i18n](#i18n)
+16. [Backend / dashboard contract](#backend--dashboard-contract)
+17. [Extending the module](#extending-the-module)
 
 ---
 
@@ -44,11 +48,14 @@ left up with dead buttons.
 
 ```
 modules/tickets.py                      Config schema, limits, permission model,
-                                        panel posting/refresh. No ticket action.
+                                        status dots, panel posting/refresh.
+                                        No ticket action.
 services/ticket_service.py              Every ticket verb (bot.tickets).
-utils/ticket_views.py                   Panel, control bar, closing card, close
-                                        request, escalation notice, participants.
-cogs/tickets.py                         /ticket group + channel cleanup listener.
+utils/ticket_views.py                   Panel, ticket message, closing card,
+                                        close request, escalation notice, claim
+                                        notice, participants modal, DMs.
+cogs/tickets.py                         /ticket group + channel cleanup and
+                                        staff-thread guard listeners.
 db/repositories/tickets.py              The tickets table.
 modules/configs/tickets_config.py       /config root: the panel list.
 modules/configs/tickets_panel_config.py /config: one panel.
@@ -122,13 +129,18 @@ key added later, and one just built by `/config` all come out identical.
           "allowed_role_ids": [],      // empty = everyone
           "denied_role_ids": [],
           "ping_role_ids": [],         // mentioned when a ticket opens
+          "ping_staff_roles": true,    // …and so are the roles that can see it
           "permissions": {             // role id (string) -> permissions
-            "111": ["view", "close", "staff_thread"],
+            "111": ["view", "close", "claim", "staff_thread"],
             "222": ["admin"]
           },
           "locale": "fr",              // en-US | fr | es-ES | pt-BR | de
-          "open_message": "…",         // pinned in the ticket
+          "open_message": "…",         // the WHOLE pinned message
           "close_message": "…",        // added to the closing card
+          "buttons": ["close", "claim", "escalate",
+                      "staff_thread", "participants"],
+          "claim_enabled": true,       // the claim system, per category
+          "claim_lock": false,         // only the claimer answers
           "name_format": "ticket-{number}",
           "max_open_per_user": 1,
           "enabled": true
@@ -157,6 +169,13 @@ Usable in `name_format`: `{number}` (zero-padded to 4) `{username}`
 `str.format` — an admin who types a stray `{` would otherwise blow up the
 message for everyone.
 
+`buttons` is the list of controls the ticket message carries, out of `close`,
+`claim`, `escalate`, `staff_thread`, `participants` and `close_request`. An
+**empty list is a real answer** ("commands only") and is stored as such; only a
+*missing* key falls back to `DEFAULT_TICKET_BUTTONS` — which is the five above
+minus `close_request`, that one being a command (`/ticket close-request`)
+unless a server ticks it back on.
+
 ### Defaults are offered, not hidden
 
 Every field that has a default — the opening and closing messages, the panel
@@ -166,6 +185,11 @@ anyway** (`default_open_message()`, `default_close_message()`,
 editing the message their members will read, never guessing at it in front of
 an empty box. An existing value always wins over the default.
 
+`default_open_message()` substitutes its `{icon}` with `str.replace` rather
+than passing it to `t()`: `t()` runs `str.format` over the whole string as soon
+as it gets one kwarg, which would eat the `{number}` / `{user}` placeholders
+the admin is meant to keep.
+
 The two ticket messages are pre-filled in the **category's** language, not the
 admin's: those words are what the member reads, and a ticket speaks one
 language whoever configured it. Only the labels around them follow the admin.
@@ -174,17 +198,24 @@ language whoever configured it. Only the labels around them follow the admin.
 
 ## The permission model
 
-Seven permissions, granted **per role, per category**:
+Nine permissions, granted **per role, per category**:
 
 | Key | What it allows |
 |---|---|
 | `view` | See and talk in the tickets of this category |
 | `close` | Close and reopen a ticket |
+| `claim` | Take a ticket in charge, and release your own |
+| `unclaim_others` | Take a ticket off the agent holding it |
 | `staff_thread` | Open and join the private staff thread |
 | `rename` | Rename the ticket channel |
 | `move` | Move the ticket to another category |
 | `participants` | Add and remove members and roles |
 | `admin` | Everything above — **and keeps access after an escalation** |
+
+`claim` and `unclaim_others` are deliberately separate. Releasing your own
+ticket is part of holding it; taking a case off a colleague is a different
+decision, and one an agent should not be able to make. `admin` expands to
+both, so a responsible needs nothing extra.
 
 Resolution (`member_permissions(member, category, ticket)`), in this order:
 
@@ -210,6 +241,72 @@ Resolution (`member_permissions(member, category, ticket)`), in this order:
 
 ---
 
+## The claim system
+
+Optional, per category (`claim_enabled`). It answers one question a support
+team asks constantly: *who is on this?*
+
+### One button, three outcomes
+
+`TicketService.toggle_claim` is what the **Claim** button runs, and who is
+clicking decides what happens:
+
+| State | Clicker | Result |
+|---|---|---|
+| Unclaimed | holds `claim` | they take it |
+| Claimed by them | — | they release it (a mis-click undoes itself) |
+| Claimed by someone else | holds `unclaim_others` | released |
+| Claimed by someone else | does not | refused, naming the holder |
+
+`/ticket claim` and `/ticket unclaim` say which one they mean instead of
+toggling — same methods underneath, so they cannot drift from the button.
+
+An **escalated** ticket can only be claimed by a role holding `admin`
+(`claim_permission()`): letting a plain agent claim it back would undo the
+escalation through the side door.
+
+### The coloured dot in the channel name
+
+A claimed ticket is readable from the channel list: `🟢〡ticket-0003`.
+
+| Dot | State |
+|---|---|
+| 🔴 | open, nobody on it |
+| 🟢 | claimed |
+| 🟣 | escalated |
+| ⚫ | closed |
+
+These four are the **only** Unicode emojis Moddy uses outside country flags
+(CLAUDE.md rule 3), and not by choice: a Discord channel name cannot carry a
+custom emoji. A category with `claim_enabled: false` gets no dot at all — the
+escalated and closed colours only read as a scale next to the other two.
+
+The dot is a *prefix*, stripped before a new one is applied
+(`strip_status_prefix` / `apply_status_prefix`), so a ticket that changes hands
+ten times still carries exactly one. `/ticket rename` and `move_ticket` go
+through the same helpers, so neither drops it.
+
+`sync_status_prefix()` fires the rename **in a background task**. Discord
+allows two channel renames per ten minutes; a busy ticket claimed, released and
+re-claimed would otherwise make the click wait out the rate limit while
+discord.py sleeps on the request. The claim is already stored and its
+permissions already applied — the name catching up late is the cheap half.
+
+### `claim_lock`
+
+With `claim_lock` on, a claimed ticket lets only the claimer, the roles holding
+`admin`, the opener and the manually added people **speak**. Every other staff
+role keeps `view_channel` and loses `send_messages`: a locked ticket is not a
+private one, and the rest of the team must still be able to read it.
+
+The lock only bites once somebody actually holds the ticket — an unclaimed
+ticket nobody may answer would be a dead end.
+
+The claimer's own member-level overwrite is written **last**, because it has to
+outrank the role overwrite that just muted them.
+
+---
+
 ## Channel permissions, escalation and closure
 
 `TicketService.build_overwrites()` rebuilds the **whole** overwrite map from
@@ -219,20 +316,135 @@ closure and participant edits from drifting into states nobody can explain.
 | State | Who can see the channel |
 |---|---|
 | Open | `@everyone` denied · the bot · every role with `view` · the opener · everyone added by hand |
-| **Escalated** | the bot · only roles with `admin` · the opener · everyone added by hand (unless dropped) |
+| **Claimed + `claim_lock`** | the same, but only the claimer, the `admin` roles, the opener and the manual participants may *write* |
+| **Escalated** | the bot · only roles with `admin` · the opener · everyone added by hand (unless dropped, or kept read-only) |
 | **Closed** | the bot · every role with `view` — the opener and the manual participants are hidden |
 
 - **Escalation** keeps the opener (a ticket without them is meaningless) and the
-  manually added people, and the flow *offers to drop them* — that question is
-  only asked when there is somebody to ask about, so the confirmation never
-  becomes noise. It refuses outright when no role holds `admin`: escalating with
+  manually added people. The flow asks what to do with them — and asks only
+  when there is somebody to ask about, so the confirmation never becomes noise:
+
+  | Answer | What happens |
+  |---|---|
+  | **Keep them** | they read and write as before |
+  | **Keep them, read-only** | `escalation_mute`: they follow along, they no longer weigh in |
+  | **Remove them** | the manual participant list is emptied |
+
+  Two answers were not enough: keeping someone in the room and keeping them
+  *talking* are different decisions, and an escalation usually wants the first
+  without the second.
+
+  Escalating also **releases the claim and parks it** in
+  `pre_escalation_claim`. An escalated ticket belongs to the responsibles, so
+  the agent who had it must not keep the channel — and cancelling the
+  escalation puts the same person back on it, rather than leaving the ticket
+  unassigned. `set_escalated()` does both halves in one statement, so the two
+  can never disagree.
+
+  Escalation refuses outright when no role holds `admin`: escalating with
   nobody to escalate *to* would lock the ticket down to its opener and the
   server admins.
 - **Closing keeps the channel.** Nothing is destroyed by a click: the ticket is
   locked, a closing card is posted with **Reopen** and **Delete the channel**,
   and the opener gets a DM (best effort — closed DMs are the norm, not an
   error). Deleting requires `admin`.
-- **Reopening restores the map exactly**, because it is rebuilt, not undone.
+- **Reopening restores the map exactly**, because it is rebuilt, not undone —
+  and it DMs the opener too. The closure was announced in a DM; its
+  cancellation has to be, or a member told their ticket was over never learns
+  that a channel which vanished from their list is back.
+
+---
+
+## The ticket message
+
+The pinned message a ticket opens with is **entirely** the category's
+`open_message`: its title line, its body, its footer. The module adds no
+heading and no meta line of its own, so an admin editing that field is editing
+the whole of what their members read.
+
+The default (`default_open_message()`) is what that looks like:
+
+```
+### <:ticket:…> Ticket #{number}
+Thanks for opening a ticket. Describe your request as precisely as you can —
+the team will answer you here.
+-# Opened by · {user} · `{category}`
+```
+
+A line holding nothing but `---` becomes a real Components V2 **separator**
+(`split_message_blocks` → `add_message_body`). It is the only piece of layout
+an admin can ask for from a text box: markdown's horizontal rule does not exist
+inside a container.
+
+**The buttons live outside the container**, on the view itself. A container is
+the card; the actions belong under it, not inside its frame. Every card in
+`utils/ticket_views.py` follows the same shape — container first, then
+`_add_rows(self, …)` — and `tests/test_tickets.py` asserts no `ActionRow` ends
+up inside a `Container`.
+
+Which buttons appear is `buttons` (see the schema). The **registered shell**
+(`TicketControlView()`, built with no category) deliberately declares *every*
+button id: a registered view matches on custom_id, so an id the shell never
+declared would be a dead button after a restart, whatever that guild
+configured.
+
+| Button | Style | Icon |
+|---|---|---|
+| Close | red | `TICKET_CLOSE` (a plain cross) |
+| Claim | **blue**, straight after Close | `TICKET_CLAIM` |
+| Escalate | grey | `TICKET_ESCALATE` |
+| Staff thread | grey | `TICKET_STAFF_THREAD` |
+| Participants | grey | `TICKET_PARTICIPANTS` |
+| Request closure | grey, off by default | `TICKET_CLOSE_REQUEST` |
+
+**Participants is a Modal** (`TicketParticipantsModal`), not a panel of
+selects: both pickers open **pre-filled with the current participants**, and
+one submit applies the whole picture. That is what makes unselecting the
+obvious way to remove somebody — the form shows who is in, not a queue of
+additions. Modals are the one surface deliberately excluded from persistence.
+
+---
+
+## Pings
+
+**A ping is its own message, and the bot deletes it immediately**
+(`TicketService.ping`). Discord has already delivered the notification by the
+time the message goes, so nothing is lost — and the ticket is not left with a
+permanent wall of blue names at the top of every card. Three places ping:
+opening a ticket, requesting a closure, escalating.
+
+This also sidesteps the Components V2 rule that used to force the mentions
+*into* the card: Discord rejects any message carrying both a `content` field
+and the `IS_COMPONENTS_V2` flag that discord.py sets for every `LayoutView`, so
+a ping could never have ridden along with a card anyway.
+`tests/test_tickets.py::TestNoContentWithLayoutView` guards both halves — no
+`send()` in the service passes `content=` and `view=` together, and `ping`
+still deletes what it sent.
+
+On a ticket opening, the ping covers the opener, the category's
+`ping_role_ids`, and — unless `ping_staff_roles` is switched off — every role
+that can actually *see* this category's tickets. Pinging a role that cannot
+read the ticket would be pure noise, which is why it is the `view` holders and
+not an arbitrary list.
+
+---
+
+## The staff thread
+
+A **private** thread, so the opener never sees it. Discord has no role-based
+membership for threads, so it is not pre-filled with every staff member: each
+staffer joins by running the action once.
+
+That leaves one hole, and `Tickets.on_thread_member_join` closes it:
+**mentioning somebody inside a thread adds them to it.** One stray ping is
+enough to hand a ticket's opener the staff-only conversation about them.
+Anyone joining who is not allowed to see this category's tickets *as staff* is
+therefore removed again, straight away.
+
+The rule is `TicketService.may_be_in_staff_thread`: the member's **role** grant
+decides (`view` on the category), never their presence in the ticket. The
+opener and the manually added participants hold `view` through the ticket
+itself — and the staff thread is precisely the room they must not be in.
 
 ---
 
@@ -259,6 +471,10 @@ CREATE TABLE tickets (
     participant_roles    BIGINT[] NOT NULL DEFAULT '{}',
     close_requested_by   BIGINT,
     close_request_reason TEXT,
+    claimed_by           BIGINT,        -- who is handling it right now
+    claimed_at           TIMESTAMPTZ,
+    pre_escalation_claim BIGINT,        -- parked there while escalated
+    escalation_mute      BOOLEAN NOT NULL DEFAULT FALSE,
     opened_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
     closed_at            TIMESTAMPTZ,
     closed_by            BIGINT,
@@ -277,6 +493,11 @@ retries, leaving the channel name one off rather than attempting a rename that
 may not go through for ten minutes. Cheaper and simpler than an advisory lock
 for a rare race.
 
+The four claim columns are added by an **idempotent migration**
+(`ALTER TABLE … ADD COLUMN IF NOT EXISTS`) next to the `CREATE TABLE`, so a
+database created before the claim system gains them on the next boot with no
+manual deploy step.
+
 A ticket channel deleted by hand is forgotten by
 `Tickets.on_guild_channel_delete`. Without it, the member's open-ticket quota
 would count a channel that no longer exists and they could never open another.
@@ -286,24 +507,28 @@ would count a channel that no longer exists and they could never open another.
 ## Actions
 
 Every one of them is a method on `bot.tickets`
-(`services/ticket_service.py`), a `/ticket` subcommand, **and** — for the five
-most used — a button on the pinned control bar. The buttons are the shortcut;
+(`services/ticket_service.py`), a `/ticket` subcommand, **and** — for the ones
+a category puts on the ticket message — a button. The buttons are the shortcut;
 the commands are the contract. Both call the same method, so they cannot drift.
 
 | Action | Permission | Notes |
 |---|---|---|
-| `open_ticket` | `can_open` | Enforces `max_open_per_user`. Name, overwrites and topic go in with the channel, in one call. |
+| `open_ticket` | `can_open` | Enforces `max_open_per_user`. Name (with its status dot), overwrites and topic go in with the channel, in one call. |
 | `close_ticket` | `close` | Locks, posts the closing card, DMs the opener. |
-| `reopen_ticket` | `close` | |
+| `reopen_ticket` | `close` | Rebuilds the map and DMs the opener with a link back. |
 | `delete_ticket` | `admin` | Destroys the channel. |
 | `request_close` | none beyond `view` | Refused to someone who *can* close — they are told to just close it. |
 | `cancel_close_request` | `close`, or being the requester | |
-| `escalate` | `admin` | Asks about manual participants when there are any. |
-| `deescalate` | `admin` | |
+| `claim_ticket` | `claim` (`admin` while escalated) | Posts a claim notice in the channel. |
+| `unclaim_ticket` | `claim` for your own, `unclaim_others` for someone else's | |
+| `toggle_claim` | *see above* | What the button runs. |
+| `escalate` | `admin` | Asks about manual participants when there are any; releases and parks the claim. |
+| `deescalate` | `admin` | Restores the parked claim. |
 | `move_ticket` | `move` **in the current category** | The destination's permissions replace the current ones — that is the point of moving. |
-| `rename_ticket` | `rename` | |
+| `rename_ticket` | `rename` | Keeps the status dot. |
 | `add_participant` / `remove_participant` | `participants` | Members *or* whole roles. The opener cannot be removed. |
 | `open_staff_thread` | `staff_thread` | Private thread; each staffer joins by running the action once (Discord has no role-based thread membership). |
+| `evict_from_staff_thread` | — | Housekeeping, run by the thread guard. |
 
 Failures are raised as `TicketError` carrying an **i18n key**, never a formatted
 string: the caller decides whether to answer in the actor's language (a slash
@@ -356,7 +581,9 @@ three different reasons:
 
 | Surface | Model | Why |
 |---|---|---|
-| Ticket control bar, closing card, close request, escalation notice, participants, escalation confirmation | **Registered views, static custom_ids** | The channel the click comes from *is* the ticket. An id in the custom_id would only add a second source of truth that could disagree with the channel. |
+| Ticket message, closing card, close request, escalation notice, escalation confirmation | **Registered views, static custom_ids** | The channel the click comes from *is* the ticket. An id in the custom_id would only add a second source of truth that could disagree with the channel. The ticket message's shell declares every button id, since which ones a guild shows is configurable. |
+| Claim notice, closing DM, reopening DM | **Nothing to register** | No interactive child at all. |
+| The participants editor | **A Modal** | Deliberately excluded from persistence, like every modal: it is answered in the moment and Discord closes it on a restart anyway. |
 | The public panel's buttons / dropdown | **`DynamicItem`** (`TicketOpenButton`, `TicketOpenSelect`), registered by `TicketsPersistence` | They carry the panel and category ids. |
 | `/config` panel, category and permission screens | **`DynamicItem`**, registered by `TicketsConfigPersistence`; the wrapper views are deliberately *not* registered | They are scoped to an entity (a panel, a category, a role) that a static custom_id cannot carry — same as `LogsCategoryView`. |
 
@@ -375,7 +602,7 @@ from the channel, the category from the guild's config and the actor's
 permissions from their roles. A stale button clicked a month after a restart is
 therefore exactly as safe as a fresh one.
 
-### Mentions go inside the view, never in `content`
+### A card never carries a mention
 
 Discord rejects any message that carries both a `content` field and the
 `IS_COMPONENTS_V2` flag, and discord.py sets that flag automatically for every
@@ -385,12 +612,9 @@ MessageFlags.IS_COMPONENTS_V2` — and if the call is wrapped in a
 `try/except HTTPException` that only logs, the message just silently never
 appears.
 
-The opener and the ping roles therefore go in a `TextDisplay` at the top of the
-container (`mentions=` on `build_ticket_message`,
-`build_close_request_message` and `build_escalation_notice`). They still ping,
-as long as the send passes `allowed_mentions`.
-`tests/test_tickets.py::TestNoContentWithLayoutView` scans the service for a
-`send()` that passes both, so this cannot come back.
+Pings are therefore their own message, deleted immediately — see
+[Pings](#pings). `tests/test_tickets.py::TestNoContentWithLayoutView` scans the
+service for a `send()` that passes both, so this cannot come back.
 
 ---
 
@@ -448,6 +672,13 @@ handled automatically, no extra event needed.
   permission dropdown and the audit line pick it up on their own.
 - **A new per-category setting**: add it to `normalize_category()` with a safe
   default (every stored config predates it), then to the right modal —
-  identity, messages or options.
+  identity, messages or options. A yes/no setting goes into the options
+  modal's `CheckboxGroup` (`_CATEGORY_SWITCHES`) rather than becoming a
+  component of its own: a modal is capped at five top-level components.
+- **A new ticket-message button**: add the constant, put it in
+  `TICKET_BUTTONS` (order matters — that tuple *is* the row order), add
+  `modules.tickets.actions.<key>` and `modules.tickets.buttons.<key>_hint` to
+  the five locale files, then a spec line in `TicketControlView._build_view`.
+  The `/config` picker and the registered shell pick it up on their own.
 - **A new panel style**: add it to `PANEL_STYLES`, teach `build_panel_view()`
   to render it and `max_categories_for_style()` its ceiling.

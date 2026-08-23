@@ -8,13 +8,13 @@ persistence models:
   panel and category ids, so they are :class:`discord.ui.DynamicItem`\\ s
   reconstructed from their ``custom_id`` on every click.
 - **The ticket control bar** (pinned in the ticket channel), **the closing
-  card**, **the close request** and **the escalation notice**. A ticket action
-  always happens *inside* its own channel, so ``interaction.channel_id`` is the
-  ticket's identity: these need no id in their custom_ids at all and are plain
-  registered persistent views with static ones.
-- **Ephemeral helper panels** (participants, escalation confirmation) — same
-  reasoning, same static ids.
-- **The closing DM**, which has no interactive child at all.
+  card**, **the close request**, **the escalation notice** and **the claim
+  notice**. A ticket action always happens *inside* its own channel, so
+  ``interaction.channel_id`` is the ticket's identity: these need no id in
+  their custom_ids at all and are plain registered persistent views with
+  static ones.
+- **The escalation confirmation** (ephemeral) — same reasoning, same static ids.
+- **The DMs** (closed, reopened), which have no interactive child at all.
 
 Authorization is never carried by a view. Every callback resolves the ticket
 from the channel, the category from the guild's config, and the actor's
@@ -22,12 +22,17 @@ permissions from their roles — see ``services/ticket_service.py``. A stale
 button clicked a month after a restart is therefore exactly as safe as a fresh
 one.
 
-**Mentions live inside the view, never in ``content``.** Discord rejects a
-message that carries both the ``IS_COMPONENTS_V2`` flag and a ``content``
-field, and discord.py sets that flag automatically for any ``LayoutView`` — so
-``channel.send(content=..., view=SomeLayoutView())`` is a guaranteed 400. The
-pings therefore go in a ``TextDisplay`` at the top of the container, which
-still pings as long as the send passes ``allowed_mentions``.
+**Buttons live outside the container, mentions live in their own message.**
+Two rules that shape every card below:
+
+- A Components V2 ``Container`` is the card; the actions belong under it, not
+  inside its frame. Every view here adds its container first and its
+  ``ActionRow``\\ s to the view itself afterwards.
+- Discord rejects a message carrying both the ``IS_COMPONENTS_V2`` flag and a
+  ``content`` field, and discord.py sets that flag for any ``LayoutView`` — so
+  a ping can never ride along with a card anyway. It goes out as its own
+  message, which the service deletes immediately
+  (``TicketService.ping``): it rings once and leaves nothing behind.
 
 See docs/TICKETS.md and docs/PERSISTENT_VIEWS.md.
 """
@@ -43,23 +48,32 @@ from discord import ui
 
 from cogs.error_handler import BaseView, BaseModal
 from modules.tickets import (
+    BTN_CLAIM,
+    BTN_CLOSE,
+    BTN_CLOSE_REQUEST,
+    BTN_ESCALATE,
+    BTN_PARTICIPANTS,
+    BTN_STAFF_THREAD,
     BUTTON_STYLES,
     DEFAULT_ACCENT_COLOR,
+    DEFAULT_TICKET_BUTTONS,
     MAX_TICKET_MESSAGE,
     PERM_ADMIN,
     PERM_CLOSE,
     PERM_PARTICIPANTS,
     STYLE_SELECT,
+    TICKET_BUTTONS,
     find_category,
     find_panel,
     member_permissions,
     parse_emoji,
+    split_message_blocks,
 )
 from utils.components_v2 import create_error_message, create_success_message
 from utils.emojis import (
-    BACK, DELETE, GROUPS, INFO, TICKET, TICKET_CLOSE, TICKET_CLOSE_REQUEST,
-    TICKET_ESCALATE, TICKET_PARTICIPANTS, TICKET_REOPEN, TICKET_STAFF_THREAD,
-    UNDONE,
+    BACK, DELETE, GROUPS, INFO, MIC_OFF, TICKET, TICKET_CLAIM, TICKET_CLOSE,
+    TICKET_CLOSE_REQUEST, TICKET_ESCALATE, TICKET_PARTICIPANTS, TICKET_REOPEN,
+    TICKET_STAFF_THREAD, UNDONE,
 )
 from utils.i18n import i18n, t
 
@@ -72,11 +86,14 @@ logger = logging.getLogger('moddy.tickets.views')
 # from *is* the ticket. Adding an id would only create a second source of truth
 # that could disagree with the channel.
 # --------------------------------------------------------------------------- #
-_CID_CTRL_CLOSE = "moddy:tickets:ctrl:close"
-_CID_CTRL_CLOSE_REQUEST = "moddy:tickets:ctrl:close_request"
-_CID_CTRL_ESCALATE = "moddy:tickets:ctrl:escalate"
-_CID_CTRL_STAFF_THREAD = "moddy:tickets:ctrl:staff_thread"
-_CID_CTRL_PARTICIPANTS = "moddy:tickets:ctrl:participants"
+_CID_CTRL = {
+    BTN_CLOSE: "moddy:tickets:ctrl:close",
+    BTN_CLAIM: "moddy:tickets:ctrl:claim",
+    BTN_ESCALATE: "moddy:tickets:ctrl:escalate",
+    BTN_STAFF_THREAD: "moddy:tickets:ctrl:staff_thread",
+    BTN_PARTICIPANTS: "moddy:tickets:ctrl:participants",
+    BTN_CLOSE_REQUEST: "moddy:tickets:ctrl:close_request",
+}
 
 _CID_CLOSED_REOPEN = "moddy:tickets:closed:reopen"
 _CID_CLOSED_DELETE = "moddy:tickets:closed:delete"
@@ -86,14 +103,15 @@ _CID_REQUEST_REFUSE = "moddy:tickets:request:refuse"
 
 _CID_ESCALATED_CANCEL = "moddy:tickets:escalated:cancel"
 
-_CID_MEMBERS_USERS = "moddy:tickets:members:users"
-_CID_MEMBERS_ROLES = "moddy:tickets:members:roles"
-
 _CID_ESC_KEEP = "moddy:tickets:escalate:keep"
+_CID_ESC_MUTE = "moddy:tickets:escalate:mute"
 _CID_ESC_DROP = "moddy:tickets:escalate:drop"
 
 # Panel ids are `p_xxxxxx` / `c_xxxxxx` (see modules/tickets.py).
 _ENTRY_ID = r"[a-z0-9_]+"
+
+# One row per five buttons — Discord's ActionRow limit.
+_BUTTONS_PER_ROW = 5
 
 
 # =========================================================================== #
@@ -148,6 +166,40 @@ def _accent(panel: Dict[str, Any]) -> discord.Colour:
 
 def _category_label(category: Dict[str, Any]) -> str:
     return (category.get('name') or '')[:80]
+
+
+def add_message_body(container: ui.Container, body: Optional[str]) -> None:
+    """Render an admin-written ticket message into a container.
+
+    A line holding nothing but ``---`` becomes a real Components V2 separator:
+    it is the only piece of layout an admin can ask for from a text box, and
+    markdown's own horizontal rule does not exist inside a container.
+    """
+    for index, block in enumerate(split_message_blocks(body)):
+        if index:
+            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+        container.add_item(ui.TextDisplay(block))
+
+
+def _add_rows(view: ui.LayoutView, buttons: List[ui.Button]) -> None:
+    """Attach buttons to the **view**, five per row — never to the container.
+
+    Buttons inside a container are drawn in its frame, which reads as part of
+    the card; the actions on a ticket belong under it.
+    """
+    for start in range(0, len(buttons), _BUTTONS_PER_ROW):
+        row = ui.ActionRow()
+        for button in buttons[start:start + _BUTTONS_PER_ROW]:
+            row.add_item(button)
+        view.add_item(row)
+
+
+def _button(custom_id: str, label: str, emoji: str,
+            style: discord.ButtonStyle, callback) -> ui.Button:
+    button = ui.Button(label=label[:80], style=style, custom_id=custom_id,
+                       emoji=discord.PartialEmoji.from_str(emoji))
+    button.callback = callback
+    return button
 
 
 # =========================================================================== #
@@ -293,7 +345,7 @@ class TicketPanelView(BaseView):
         if panel.get('style') == STYLE_SELECT:
             row = ui.ActionRow()
             row.add_item(TicketOpenSelect(panel['id'], panel, categories))
-            container.add_item(row)
+            self.add_item(row)
             return
 
         # Buttons, five per row (Discord's limit).
@@ -301,7 +353,7 @@ class TicketPanelView(BaseView):
             row = ui.ActionRow()
             for category in categories[start:start + 5]:
                 row.add_item(TicketOpenButton(panel['id'], category['id'], category))
-            container.add_item(row)
+            self.add_item(row)
 
 
 def build_panel_view(panel: Dict[str, Any]) -> TicketPanelView:
@@ -337,87 +389,90 @@ async def _resolve(interaction: discord.Interaction):
 
 
 class TicketControlView(BaseView):
-    """The pinned control bar of a ticket.
+    """The opening message of a ticket, and the actions under it.
+
+    Its **whole** text is the category's opening message, rendered as written
+    (``---`` on its own line becomes a separator): the module adds no title and
+    no footer of its own, so an admin controls every word their members read.
+
+    Which buttons appear is the category's decision too (``buttons``). The
+    persistent shell deliberately carries *all* of them so that whatever a
+    guild configured keeps working after a restart — a registered view matches
+    on custom_id, and an id the shell never declared would be dead.
 
     Persistent: yes. Auth: derived from the channel — the ticket is resolved
     from ``interaction.channel_id`` and the actor's permissions from their
     roles in the ticket's category, on every single click. The buttons are
     shown to everyone who can see the ticket; each one refuses politely when
-    the clicker may not use it, which is what lets a member discover
-    *Request closure* instead of silently facing a bar with one button on it.
+    the clicker may not use it.
     """
 
     __persistent__ = True
 
     def __init__(self, ticket: Optional[Dict[str, Any]] = None,
                  category: Optional[Dict[str, Any]] = None,
-                 body: Optional[str] = None, locale: str = "en-US",
-                 mentions: Optional[str] = None):
+                 body: Optional[str] = None, locale: str = "en-US"):
         super().__init__()  # timeout=None
         self.ticket = ticket or {}
         self.category = category or {}
         self.body = body
         self.locale = locale
-        self.mentions = mentions
         self._build_view()
+
+    # -- layout ------------------------------------------------------------ #
+    def _enabled_buttons(self) -> List[str]:
+        """Which actions this message offers, in their fixed order."""
+        if not self.category:
+            # The persistent shell: declare every id so no configuration ends
+            # up with buttons nothing answers.
+            return list(TICKET_BUTTONS)
+
+        configured = self.category.get('buttons')
+        if configured is None:
+            configured = list(DEFAULT_TICKET_BUTTONS)
+        keep = [b for b in TICKET_BUTTONS if b in configured]
+        if not self.category.get('claim_enabled', True):
+            keep = [b for b in keep if b != BTN_CLAIM]
+        return keep
 
     def _build_view(self):
         self.clear_items()
         container = ui.Container(accent_colour=discord.Colour(DEFAULT_ACCENT_COLOR))
 
-        # The opener and the ping roles. In the view, not in `content` — see
-        # the module docstring.
-        if self.mentions:
-            container.add_item(ui.TextDisplay(self.mentions))
-
-        number = self.ticket.get('number')
-        container.add_item(ui.TextDisplay(
-            f"### {TICKET} "
-            f"{t('modules.tickets.channel.title', locale=self.locale, number=number or '—')}"
-        ))
-        if self.ticket:
-            container.add_item(ui.TextDisplay(
-                f"-# {t('modules.tickets.channel.meta', locale=self.locale)} · "
-                f"<@{self.ticket.get('owner_id')}> · "
-                f"`{self.category.get('name', '—')}`"
-            ))
         if self.body:
-            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-            container.add_item(ui.TextDisplay(self.body))
-
-        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-        container.add_item(ui.TextDisplay(
-            f"-# {t('modules.tickets.channel.commands_hint', locale=self.locale)}"))
-
-        row = ui.ActionRow()
-        row.add_item(self._button(
-            _CID_CTRL_CLOSE, 'close', TICKET_CLOSE,
-            discord.ButtonStyle.danger, self.on_close))
-        row.add_item(self._button(
-            _CID_CTRL_CLOSE_REQUEST, 'close_request', TICKET_CLOSE_REQUEST,
-            discord.ButtonStyle.secondary, self.on_close_request))
-        row.add_item(self._button(
-            _CID_CTRL_ESCALATE, 'escalate', TICKET_ESCALATE,
-            discord.ButtonStyle.secondary, self.on_escalate))
-        row.add_item(self._button(
-            _CID_CTRL_STAFF_THREAD, 'staff_thread', TICKET_STAFF_THREAD,
-            discord.ButtonStyle.secondary, self.on_staff_thread))
-        row.add_item(self._button(
-            _CID_CTRL_PARTICIPANTS, 'participants', TICKET_PARTICIPANTS,
-            discord.ButtonStyle.secondary, self.on_participants))
-        container.add_item(row)
+            add_message_body(container, self.body)
+        else:
+            # Only reachable on the persistent shell, which is never sent.
+            container.add_item(ui.TextDisplay(
+                f"### {TICKET} "
+                f"{t('modules.tickets.channel.title', locale=self.locale, number='—')}"))
 
         self.add_item(container)
 
-    def _button(self, custom_id: str, key: str, emoji: str,
-                style: discord.ButtonStyle, callback) -> ui.Button:
-        button = ui.Button(
-            label=t(f'modules.tickets.actions.{key}', locale=self.locale)[:80],
-            style=style, custom_id=custom_id,
-            emoji=discord.PartialEmoji.from_str(emoji),
-        )
-        button.callback = callback
-        return button
+        specs = {
+            BTN_CLOSE: (t('modules.tickets.actions.close', locale=self.locale),
+                        TICKET_CLOSE, discord.ButtonStyle.danger, self.on_close),
+            BTN_CLAIM: (t('modules.tickets.actions.claim', locale=self.locale),
+                        TICKET_CLAIM, discord.ButtonStyle.primary, self.on_claim),
+            BTN_ESCALATE: (t('modules.tickets.actions.escalate', locale=self.locale),
+                           TICKET_ESCALATE, discord.ButtonStyle.secondary,
+                           self.on_escalate),
+            BTN_STAFF_THREAD: (
+                t('modules.tickets.actions.staff_thread', locale=self.locale),
+                TICKET_STAFF_THREAD, discord.ButtonStyle.secondary,
+                self.on_staff_thread),
+            BTN_PARTICIPANTS: (
+                t('modules.tickets.actions.participants', locale=self.locale),
+                TICKET_PARTICIPANTS, discord.ButtonStyle.secondary,
+                self.on_participants),
+            BTN_CLOSE_REQUEST: (
+                t('modules.tickets.actions.close_request', locale=self.locale),
+                TICKET_CLOSE_REQUEST, discord.ButtonStyle.secondary,
+                self.on_close_request),
+        }
+        _add_rows(self, [
+            _button(_CID_CTRL[key], *specs[key]) for key in self._enabled_buttons()
+        ])
 
     # -- callbacks (everything re-derived from the interaction) ------------ #
     async def on_close(self, interaction: discord.Interaction):
@@ -429,7 +484,7 @@ class TicketControlView(BaseView):
         granted = member_permissions(interaction.user, category, ticket)
         if PERM_CLOSE not in granted:
             # The one refusal that is really a redirection: tell them about
-            # the button that *is* theirs rather than just saying no.
+            # the command that *is* theirs rather than just saying no.
             await send_error(
                 interaction,
                 t('modules.tickets.errors.use_close_request', locale=locale), locale)
@@ -453,6 +508,12 @@ class TicketControlView(BaseView):
         await send_success(interaction,
                            t('modules.tickets.close.done_title', locale=locale),
                            t('modules.tickets.close.done_description', locale=locale))
+
+    async def on_claim(self, interaction: discord.Interaction):
+        resolved = await _resolve(interaction)
+        if not resolved:
+            return
+        await run_claim(interaction, resolved[0])
 
     async def on_close_request(self, interaction: discord.Interaction):
         locale = i18n.get_user_locale(interaction)
@@ -497,16 +558,7 @@ class TicketControlView(BaseView):
         if not resolved:
             return
         service, ticket, panel, category = resolved
-        locale = i18n.get_user_locale(interaction)
-        granted = member_permissions(interaction.user, category, ticket)
-        if PERM_PARTICIPANTS not in granted:
-            await send_error(
-                interaction,
-                t('modules.tickets.errors.missing_permission', locale=locale), locale)
-            return
-        await interaction.response.send_message(
-            view=TicketParticipantsView(interaction.guild, ticket, locale),
-            ephemeral=True)
+        await open_participants_modal(interaction, ticket, category)
 
     @classmethod
     def register_persistent(cls, bot) -> None:
@@ -515,9 +567,8 @@ class TicketControlView(BaseView):
 
 
 def build_ticket_message(ticket: Dict[str, Any], category: Dict[str, Any],
-                         body: Optional[str], locale: str,
-                         mentions: Optional[str] = None) -> TicketControlView:
-    return TicketControlView(ticket, category, body, locale, mentions)
+                         body: Optional[str], locale: str) -> TicketControlView:
+    return TicketControlView(ticket, category, body, locale)
 
 
 # =========================================================================== #
@@ -566,27 +617,18 @@ class TicketClosedView(BaseView):
             container.add_item(ui.TextDisplay("\n".join(lines)))
         if self.body:
             container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-            container.add_item(ui.TextDisplay(self.body))
-
-        row = ui.ActionRow()
-        reopen = ui.Button(
-            label=t('modules.tickets.actions.reopen', locale=self.locale)[:80],
-            style=discord.ButtonStyle.success, custom_id=_CID_CLOSED_REOPEN,
-            emoji=discord.PartialEmoji.from_str(TICKET_REOPEN),
-        )
-        reopen.callback = self.on_reopen
-        row.add_item(reopen)
-
-        delete = ui.Button(
-            label=t('modules.tickets.actions.delete', locale=self.locale)[:80],
-            style=discord.ButtonStyle.danger, custom_id=_CID_CLOSED_DELETE,
-            emoji=discord.PartialEmoji.from_str(DELETE),
-        )
-        delete.callback = self.on_delete
-        row.add_item(delete)
-        container.add_item(row)
+            add_message_body(container, self.body)
 
         self.add_item(container)
+
+        _add_rows(self, [
+            _button(_CID_CLOSED_REOPEN,
+                    t('modules.tickets.actions.reopen', locale=self.locale),
+                    TICKET_REOPEN, discord.ButtonStyle.success, self.on_reopen),
+            _button(_CID_CLOSED_DELETE,
+                    t('modules.tickets.actions.delete', locale=self.locale),
+                    DELETE, discord.ButtonStyle.danger, self.on_delete),
+        ])
 
     async def on_reopen(self, interaction: discord.Interaction):
         from services.ticket_service import TicketError
@@ -656,22 +698,18 @@ class TicketCloseRequestView(BaseView):
 
     def __init__(self, ticket: Optional[Dict[str, Any]] = None,
                  requester: Optional[discord.abc.User] = None,
-                 reason: Optional[str] = None, locale: str = "en-US",
-                 mentions: Optional[str] = None):
+                 reason: Optional[str] = None, locale: str = "en-US"):
         super().__init__()  # timeout=None
         self.ticket = ticket or {}
         self.requester = requester
         self.reason = reason
         self.locale = locale
-        self.mentions = mentions
         self._build_view()
 
     def _build_view(self):
         self.clear_items()
         container = ui.Container(accent_colour=discord.Colour(0xFEE75C))
 
-        if self.mentions:
-            container.add_item(ui.TextDisplay(self.mentions))
         container.add_item(ui.TextDisplay(
             f"### {TICKET_CLOSE_REQUEST} "
             f"{t('modules.tickets.close_request.card_title', locale=self.locale)}"))
@@ -682,25 +720,16 @@ class TicketCloseRequestView(BaseView):
                      f"{self.reason}")
         container.add_item(ui.TextDisplay(body))
 
-        row = ui.ActionRow()
-        accept = ui.Button(
-            label=t('modules.tickets.close_request.accept', locale=self.locale)[:80],
-            style=discord.ButtonStyle.danger, custom_id=_CID_REQUEST_ACCEPT,
-            emoji=discord.PartialEmoji.from_str(TICKET_CLOSE),
-        )
-        accept.callback = self.on_accept
-        row.add_item(accept)
-
-        refuse = ui.Button(
-            label=t('modules.tickets.close_request.refuse', locale=self.locale)[:80],
-            style=discord.ButtonStyle.secondary, custom_id=_CID_REQUEST_REFUSE,
-            emoji=discord.PartialEmoji.from_str(UNDONE),
-        )
-        refuse.callback = self.on_refuse
-        row.add_item(refuse)
-        container.add_item(row)
-
         self.add_item(container)
+
+        _add_rows(self, [
+            _button(_CID_REQUEST_ACCEPT,
+                    t('modules.tickets.close_request.accept', locale=self.locale),
+                    TICKET_CLOSE, discord.ButtonStyle.danger, self.on_accept),
+            _button(_CID_REQUEST_REFUSE,
+                    t('modules.tickets.close_request.refuse', locale=self.locale),
+                    UNDONE, discord.ButtonStyle.secondary, self.on_refuse),
+        ])
 
     async def on_accept(self, interaction: discord.Interaction):
         from services.ticket_service import TicketError
@@ -754,10 +783,9 @@ def _close_request_resolved(actor: discord.abc.User, locale: str) -> ui.LayoutVi
 
 
 def build_close_request_message(ticket: Dict[str, Any], requester: discord.abc.User,
-                                reason: Optional[str], locale: str,
-                                mentions: Optional[str] = None
+                                reason: Optional[str], locale: str
                                 ) -> TicketCloseRequestView:
-    return TicketCloseRequestView(ticket, requester, reason, locale, mentions)
+    return TicketCloseRequestView(ticket, requester, reason, locale)
 
 
 # =========================================================================== #
@@ -774,43 +802,38 @@ class TicketEscalationView(BaseView):
 
     def __init__(self, ticket: Optional[Dict[str, Any]] = None,
                  actor: Optional[discord.abc.User] = None,
-                 reason: Optional[str] = None, locale: str = "en-US",
-                 mentions: Optional[str] = None):
+                 reason: Optional[str] = None, locale: str = "en-US"):
         super().__init__()  # timeout=None
         self.ticket = ticket or {}
         self.actor = actor
         self.reason = reason
         self.locale = locale
-        self.mentions = mentions
         self._build_view()
 
     def _build_view(self):
         self.clear_items()
         container = ui.Container(accent_colour=discord.Colour(0x9B59B6))
 
-        if self.mentions:
-            container.add_item(ui.TextDisplay(self.mentions))
         container.add_item(ui.TextDisplay(
             f"### {TICKET_ESCALATE} "
             f"{t('modules.tickets.escalate.card_title', locale=self.locale)}"))
         body = t('modules.tickets.escalate.card_description', locale=self.locale,
                  user=self.actor.mention if self.actor else "—")
+        if self.ticket.get('escalation_mute'):
+            body += ("\n" + t('modules.tickets.escalate.muted_notice',
+                              locale=self.locale))
         if self.reason:
             body += (f"\n\n**{t('modules.tickets.fields.reason', locale=self.locale)}**\n"
                      f"{self.reason}")
         container.add_item(ui.TextDisplay(body))
 
-        row = ui.ActionRow()
-        cancel = ui.Button(
-            label=t('modules.tickets.actions.deescalate', locale=self.locale)[:80],
-            style=discord.ButtonStyle.secondary, custom_id=_CID_ESCALATED_CANCEL,
-            emoji=discord.PartialEmoji.from_str(BACK),
-        )
-        cancel.callback = self.on_cancel
-        row.add_item(cancel)
-        container.add_item(row)
-
         self.add_item(container)
+
+        _add_rows(self, [
+            _button(_CID_ESCALATED_CANCEL,
+                    t('modules.tickets.actions.deescalate', locale=self.locale),
+                    BACK, discord.ButtonStyle.secondary, self.on_cancel),
+        ])
 
     async def on_cancel(self, interaction: discord.Interaction):
         from services.ticket_service import TicketError
@@ -837,9 +860,9 @@ class TicketEscalationView(BaseView):
 
 
 def build_escalation_notice(ticket: Dict[str, Any], actor: discord.abc.User,
-                            reason: Optional[str], locale: str,
-                            mentions: Optional[str] = None) -> TicketEscalationView:
-    return TicketEscalationView(ticket, actor, reason, locale, mentions)
+                            reason: Optional[str], locale: str
+                            ) -> TicketEscalationView:
+    return TicketEscalationView(ticket, actor, reason, locale)
 
 
 # =========================================================================== #
@@ -880,7 +903,11 @@ async def start_escalation(interaction: discord.Interaction, service,
 
 
 class TicketEscalateConfirmView(BaseView):
-    """Keep or drop the manually added participants when escalating.
+    """What happens to the manually added participants when escalating.
+
+    Three answers, because two were not enough: keeping someone in the room and
+    keeping them *talking* are different decisions, and an escalation usually
+    wants the first without the second.
 
     Persistent: yes (ephemeral messages survive a restart too, and a dead
     button on one is just as broken). Auth: resolved from the ticket channel.
@@ -917,33 +944,31 @@ class TicketEscalateConfirmView(BaseView):
                 f"-# {t('modules.tickets.fields.participants', locale=self.locale)} : "
                 f"{', '.join(listed)}"))
 
-        row = ui.ActionRow()
-        keep = ui.Button(
-            label=t('modules.tickets.escalate.keep', locale=self.locale)[:80],
-            style=discord.ButtonStyle.primary, custom_id=_CID_ESC_KEEP,
-            emoji=discord.PartialEmoji.from_str(GROUPS),
-        )
-        keep.callback = self.on_keep
-        row.add_item(keep)
-
-        drop = ui.Button(
-            label=t('modules.tickets.escalate.drop', locale=self.locale)[:80],
-            style=discord.ButtonStyle.danger, custom_id=_CID_ESC_DROP,
-            emoji=discord.PartialEmoji.from_str(DELETE),
-        )
-        drop.callback = self.on_drop
-        row.add_item(drop)
-        container.add_item(row)
-
         self.add_item(container)
 
+        _add_rows(self, [
+            _button(_CID_ESC_KEEP,
+                    t('modules.tickets.escalate.keep', locale=self.locale),
+                    GROUPS, discord.ButtonStyle.primary, self.on_keep),
+            _button(_CID_ESC_MUTE,
+                    t('modules.tickets.escalate.mute', locale=self.locale),
+                    MIC_OFF, discord.ButtonStyle.secondary, self.on_mute),
+            _button(_CID_ESC_DROP,
+                    t('modules.tickets.escalate.drop', locale=self.locale),
+                    DELETE, discord.ButtonStyle.danger, self.on_drop),
+        ])
+
     async def on_keep(self, interaction: discord.Interaction):
-        await self._escalate(interaction, keep=True)
+        await self._escalate(interaction, keep=True, mute=False)
+
+    async def on_mute(self, interaction: discord.Interaction):
+        await self._escalate(interaction, keep=True, mute=True)
 
     async def on_drop(self, interaction: discord.Interaction):
-        await self._escalate(interaction, keep=False)
+        await self._escalate(interaction, keep=False, mute=False)
 
-    async def _escalate(self, interaction: discord.Interaction, *, keep: bool):
+    async def _escalate(self, interaction: discord.Interaction, *,
+                        keep: bool, mute: bool):
         from services.ticket_service import TicketError
         resolved = await _resolve(interaction)
         if not resolved:
@@ -953,7 +978,8 @@ class TicketEscalateConfirmView(BaseView):
         await interaction.response.defer()
         try:
             await service.escalate(interaction.channel, interaction.user,
-                                   reason=self.reason, keep_participants=keep)
+                                   reason=self.reason, keep_participants=keep,
+                                   mute_participants=mute)
         except TicketError as e:
             await handle_ticket_error(interaction, e)
             return
@@ -968,126 +994,147 @@ class TicketEscalateConfirmView(BaseView):
 
 
 # =========================================================================== #
-# 7. Participants (ephemeral)
+# 7. The claim notice (no interactive child)
 # =========================================================================== #
-class TicketParticipantsView(BaseView):
+def build_claim_notice(actor: discord.abc.User, *,
+                       claimed: bool, locale: str) -> ui.LayoutView:
+    """Say in the channel who took the ticket, or that it is free again.
+
+    Posted by the service (``TicketService._announce_claim``) so the button and
+    ``/ticket claim`` cannot end up announcing different things.
+    """
+    view = ui.LayoutView(timeout=None)
+    container = ui.Container(
+        accent_colour=discord.Colour(0x57F287 if claimed else 0x99AAB5))
+    container.add_item(ui.TextDisplay(
+        f"### {TICKET_CLAIM} "
+        f"{t('modules.tickets.claim.claimed_title' if claimed else 'modules.tickets.claim.released_title', locale=locale)}"))
+    container.add_item(ui.TextDisplay(t(
+        'modules.tickets.claim.claimed_description' if claimed
+        else 'modules.tickets.claim.released_description',
+        locale=locale, user=actor.mention)))
+    view.add_item(container)
+    return view
+
+
+# =========================================================================== #
+# 8. Participants (Modal V2)
+# =========================================================================== #
+class TicketParticipantsModal(BaseModal):
     """Who is in this ticket, on top of its opener and the staff roles.
 
-    Persistent: yes. Auth: resolved from the ticket channel + the
-    ``participants`` permission, re-checked on every change.
+    A modal rather than a panel of selects: both pickers open **pre-filled with
+    the current participants**, and one submit applies the whole picture at
+    once. That is what makes unselecting the obvious way to remove somebody —
+    the form shows who is in, not a queue of additions.
 
-    Both selects **replace** the list rather than adding to it: a picker that
-    already shows the current members as selected reads as "this is who is in",
-    and unselecting is then the obvious way to remove someone. An add-only
-    picker would need a second, mirror-image remove control for no gain.
+    Modals are the one surface that is deliberately not persistent (see
+    docs/PERSISTENT_VIEWS.md "Deliberate exclusions"): they are answered in the
+    moment, and Discord closes them on a restart anyway.
     """
 
-    __persistent__ = True
+    def __init__(self, locale: str, ticket: Dict[str, Any], callback_func):
+        super().__init__(
+            title=t('modules.tickets.participants.title', locale=locale)[:45],
+            timeout=None,
+        )
+        self.callback_func = callback_func
 
-    def __init__(self, guild: Optional[discord.Guild] = None,
-                 ticket: Optional[Dict[str, Any]] = None, locale: str = "en-US"):
-        super().__init__()  # timeout=None
-        self.guild = guild
-        self.ticket = ticket or {}
-        self.locale = locale
-        self._build_view()
+        self.add_item(ui.TextDisplay(
+            t('modules.tickets.participants.description', locale=locale)))
 
-    def _build_view(self):
-        self.clear_items()
-        container = ui.Container(accent_colour=discord.Colour(DEFAULT_ACCENT_COLOR))
-
-        container.add_item(ui.TextDisplay(
-            f"### {TICKET_PARTICIPANTS} "
-            f"{t('modules.tickets.participants.title', locale=self.locale)}"))
-        container.add_item(ui.TextDisplay(
-            t('modules.tickets.participants.description', locale=self.locale)))
-
-        if self.ticket.get('owner_id'):
-            container.add_item(ui.TextDisplay(
-                f"-# {t('modules.tickets.participants.owner_note', locale=self.locale)} "
-                f"<@{self.ticket['owner_id']}>"))
-
-        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-
-        container.add_item(ui.TextDisplay(
-            f"**{t('modules.tickets.participants.members_title', locale=self.locale)}**\n"
-            f"-# {t('modules.tickets.participants.members_description', locale=self.locale)}"))
-        user_row = ui.ActionRow()
-        user_select = ui.UserSelect(
+        self.user_select = ui.UserSelect(
             placeholder=t('modules.tickets.participants.members_placeholder',
-                          locale=self.locale),
-            min_values=0, max_values=25, custom_id=_CID_MEMBERS_USERS,
+                          locale=locale)[:150],
+            min_values=0, max_values=25, required=False,
         )
-        user_select.default_values = [
-            discord.Object(id=uid) for uid in self.ticket.get('participants', [])
+        self.user_select.default_values = [
+            discord.Object(id=uid) for uid in ticket.get('participants', [])
         ]
-        user_select.callback = self.on_users
-        user_row.add_item(user_select)
-        container.add_item(user_row)
+        self.add_item(ui.Label(
+            text=t('modules.tickets.participants.members_title', locale=locale)[:45],
+            description=t('modules.tickets.participants.members_description',
+                          locale=locale)[:100],
+            component=self.user_select,
+        ))
 
-        container.add_item(ui.TextDisplay(
-            f"**{t('modules.tickets.participants.roles_title', locale=self.locale)}**\n"
-            f"-# {t('modules.tickets.participants.roles_description', locale=self.locale)}"))
-        role_row = ui.ActionRow()
-        role_select = ui.RoleSelect(
+        self.role_select = ui.RoleSelect(
             placeholder=t('modules.tickets.participants.roles_placeholder',
-                          locale=self.locale),
-            min_values=0, max_values=10, custom_id=_CID_MEMBERS_ROLES,
+                          locale=locale)[:150],
+            min_values=0, max_values=10, required=False,
         )
-        role_select.default_values = [
-            discord.Object(id=rid) for rid in self.ticket.get('participant_roles', [])
+        self.role_select.default_values = [
+            discord.Object(id=rid) for rid in ticket.get('participant_roles', [])
         ]
-        role_select.callback = self.on_roles
-        role_row.add_item(role_select)
-        container.add_item(role_row)
+        self.add_item(ui.Label(
+            text=t('modules.tickets.participants.roles_title', locale=locale)[:45],
+            description=t('modules.tickets.participants.roles_description',
+                          locale=locale)[:100],
+            component=self.role_select,
+        ))
 
-        self.add_item(container)
+    async def on_submit(self, interaction: discord.Interaction):
+        await self.callback_func(
+            interaction,
+            [target.id for target in self.user_select.values],
+            [role.id for role in self.role_select.values],
+        )
 
-    async def on_users(self, interaction: discord.Interaction):
-        await self._apply(interaction, users=[
-            int(v) for v in (interaction.data.get('values') or [])
-        ])
 
-    async def on_roles(self, interaction: discord.Interaction):
-        await self._apply(interaction, roles=[
-            int(v) for v in (interaction.data.get('values') or [])
-        ])
+async def open_participants_modal(interaction: discord.Interaction,
+                                  ticket: Dict[str, Any],
+                                  category: Dict[str, Any]) -> None:
+    """Check the permission, then hand over the pre-filled participants form."""
+    locale = i18n.get_user_locale(interaction)
+    if PERM_PARTICIPANTS not in member_permissions(interaction.user, category, ticket):
+        await send_error(interaction,
+                         t('modules.tickets.errors.missing_permission', locale=locale),
+                         locale)
+        return
 
-    async def _apply(self, interaction: discord.Interaction, **selection):
-        resolved = await _resolve(interaction)
-        if not resolved:
-            return
-        service, ticket, panel, category = resolved
-        locale = i18n.get_user_locale(interaction)
+    modal = TicketParticipantsModal(locale, ticket, _apply_participants)
+    modal.bot = interaction.client
+    await interaction.response.send_modal(modal)
 
-        if PERM_PARTICIPANTS not in member_permissions(interaction.user, category, ticket):
-            await send_error(
-                interaction,
-                t('modules.tickets.errors.missing_permission', locale=locale), locale)
-            return
 
-        users = selection.get('users')
-        if users is not None:
-            # The opener is in the ticket by definition; keeping them out of
-            # the manual list stops "remove the owner" from being one click.
-            users = [uid for uid in users if uid != ticket['owner_id']]
+async def _apply_participants(interaction: discord.Interaction,
+                              users: List[int], roles: List[int]) -> None:
+    """Replace the ticket's manual participants with what the form returned."""
+    resolved = await _resolve(interaction)
+    if not resolved:
+        return
+    service, ticket, panel, category = resolved
+    locale = i18n.get_user_locale(interaction)
 
-        await interaction.client.db.set_participants(
-            interaction.channel.id, users=users, roles=selection.get('roles'))
-        ticket = await service.get_ticket(interaction.channel.id) or ticket
-        await service.sync_permissions(interaction.channel, category, ticket)
+    # Re-checked here and not only before the modal: a role can be taken away
+    # while a form sits open.
+    if PERM_PARTICIPANTS not in member_permissions(interaction.user, category, ticket):
+        await send_error(interaction,
+                         t('modules.tickets.errors.missing_permission', locale=locale),
+                         locale)
+        return
 
-        await interaction.response.edit_message(
-            view=TicketParticipantsView(interaction.guild, ticket, locale))
+    # The opener is in the ticket by definition; keeping them out of the manual
+    # list stops "remove the owner" from being one click.
+    users = [uid for uid in users if uid != ticket['owner_id']]
 
-    @classmethod
-    def register_persistent(cls, bot) -> None:
-        """Auth model: resolved from the ticket channel on every click."""
-        bot.add_view(cls())
+    await interaction.response.defer(ephemeral=True, thinking=True)
+    await interaction.client.db.set_participants(
+        interaction.channel.id, users=users, roles=roles)
+    ticket = await service.get_ticket(interaction.channel.id) or ticket
+    await service.sync_permissions(interaction.channel, category, ticket)
+
+    listed = [f"<@{uid}>" for uid in users] + [f"<@&{rid}>" for rid in roles]
+    await send_success(
+        interaction,
+        t('modules.tickets.participants.saved_title', locale=locale),
+        t('modules.tickets.participants.saved_description', locale=locale,
+          participants=", ".join(listed)
+          or t('modules.tickets.fields.none', locale=locale))[:2000])
 
 
 # =========================================================================== #
-# 8. Modals
+# 9. Modals
 # =========================================================================== #
 class TicketReasonModal(BaseModal):
     """One optional free-text reason, reused by close / close request / escalate."""
@@ -1140,7 +1187,7 @@ class TicketRenameModal(BaseModal):
 
 
 # =========================================================================== #
-# 9. Shared action bodies (used by the buttons AND the slash commands)
+# 10. Shared action bodies (used by the buttons AND the slash commands)
 # =========================================================================== #
 async def run_staff_thread(interaction: discord.Interaction, service) -> None:
     """Open/join the staff thread and answer with a link to it."""
@@ -1160,8 +1207,41 @@ async def run_staff_thread(interaction: discord.Interaction, service) -> None:
           thread=thread.mention))
 
 
+async def run_claim(interaction: discord.Interaction, service, *,
+                    force: Optional[bool] = None) -> None:
+    """Claim, release, or toggle. The notice in the channel is the service's job.
+
+    ``force=None`` is the button: one control that takes an unheld ticket,
+    releases the one you hold, and refuses a colleague's unless you may release
+    it. ``force=True/False`` is ``/ticket claim`` and ``/ticket unclaim``,
+    where the staffer said which one they meant.
+    """
+    from services.ticket_service import TicketError
+
+    locale = i18n.get_user_locale(interaction)
+    await interaction.response.defer(ephemeral=True, thinking=True)
+    try:
+        if force is None:
+            _, claimed = await service.toggle_claim(interaction.channel,
+                                                    interaction.user)
+        elif force:
+            await service.claim_ticket(interaction.channel, interaction.user)
+            claimed = True
+        else:
+            await service.unclaim_ticket(interaction.channel, interaction.user)
+            claimed = False
+    except TicketError as e:
+        await handle_ticket_error(interaction, e)
+        return
+
+    key = 'claimed' if claimed else 'released'
+    await send_success(interaction,
+                       t(f'modules.tickets.claim.{key}_title', locale=locale),
+                       t(f'modules.tickets.claim.{key}_done', locale=locale))
+
+
 # =========================================================================== #
-# 10. The closing DM (no interactive child)
+# 11. The DMs (no interactive child)
 # =========================================================================== #
 def build_close_dm(guild: discord.Guild, ticket: Dict[str, Any],
                    category: Dict[str, Any], actor: discord.abc.User,
@@ -1184,8 +1264,35 @@ def build_close_dm(guild: discord.Guild, ticket: Dict[str, Any],
     return view
 
 
+def build_reopen_dm(guild: discord.Guild, ticket: Dict[str, Any],
+                    category: Dict[str, Any], actor: discord.abc.User,
+                    channel: Optional[discord.abc.GuildChannel],
+                    locale: str) -> ui.LayoutView:
+    """Tell the opener their ticket is open again, with the way back to it.
+
+    The closure was announced in a DM; its cancellation has to be too, or the
+    member never learns that a channel which vanished from their list is back.
+    """
+    view = ui.LayoutView(timeout=None)
+    container = ui.Container(accent_colour=discord.Colour(0x57F287))
+
+    container.add_item(ui.TextDisplay(
+        f"### {TICKET_REOPEN} {t('modules.tickets.reopen.dm_title', locale=locale)}"))
+    container.add_item(ui.TextDisplay(
+        t('modules.tickets.reopen.dm_description', locale=locale,
+          server=guild.name, number=ticket.get('number', '—'),
+          category=category.get('name', '—'))))
+    if channel is not None:
+        container.add_item(ui.TextDisplay(
+            f"-# {t('modules.tickets.reopen.dm_channel', locale=locale)} "
+            f"{channel.mention}"))
+
+    view.add_item(container)
+    return view
+
+
 # =========================================================================== #
-# 11. Persistence marker
+# 12. Persistence marker
 # =========================================================================== #
 class TicketsPersistence(BaseView):
     """Marker view: registers the ticket panel's dynamic items at startup."""
