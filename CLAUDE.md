@@ -47,6 +47,7 @@ moddy/
 │   ├── logs.py                #   Advanced server logs — Discord wiring only
 │   ├── social_notifications.py #  Social notifications dispatch + feeds service wiring
 │   ├── altguard.py            #   AltGuard verdicts, membership events, /altguard verify|unverify
+│   ├── tickets.py             #   /ticket group (module-gated) + ticket channel cleanup
 │   ├── interserver_commands.py #  Inter-server commands
 │   ├── ping.py, user.py, avatar.py, banner.py, roll.py, moddy.py
 │   ├── subscription.py        #   Premium features
@@ -74,6 +75,7 @@ moddy/
 │   ├── interserver.py         #   Inter-server message relay
 │   ├── social_notifications.py #  Social notifications (via moddy-feeds service)
 │   ├── altguard.py            #   AltGuard anti multi-account verification gate
+│   ├── tickets.py             #   Tickets (panels, categories, per-role permissions)
 │   ├── automod_ai.py          #   Automod AI (applies decisions, cases+evidence, scalable features)
 │   ├── bot_customization.py   #   Bot identity per guild (nick/avatar/banner/bio + name style)
 │   ├── voice_transcription.py #   Voice message transcription (button or automatic)
@@ -86,6 +88,9 @@ moddy/
 │       ├── automod_ai_precedents_view.py  # Learned-precedents browser (S7)
 │       ├── welcome_channel_config.py      # Welcome messages list + add/manage (Modal V2)
 │       ├── welcome_dm_config.py           # Welcome DMs list + add/manage (Modal V2)
+│       ├── tickets_config.py              # Tickets: panel list (root screen)
+│       ├── tickets_panel_config.py        # Tickets: one panel (channel, style, categories)
+│       ├── tickets_category_config.py     # Tickets: one category + its per-role permissions
 │       ├── voice_transcription_config.py  # Voice transcription (status, mode, channels)
 │       ├── bot_customization_config.py    # Bot customization (identity Modal V2 + name style)
 │       ├── logs_config.py                 # Server logs (categories, events, options)
@@ -141,6 +146,7 @@ moddy/
 │       ├── reminders.py, saved_messages.py, saved_roles.py
 │       ├── moderation.py, interserver.py, attributes.py
 │       ├── altguard.py          #   AltGuard verifications + gate state (altguard_*)
+│       ├── tickets.py           #   Live ticket state (tickets table)
 │       ├── appeals.py           #   Automod sanction appeals (case_appeals)
 │       ├── enforcements.py      #   Global sanction appeal countdowns (case_enforcements)
 │       ├── eval_candidates.py   #   Automod eval/annotation corpus (automod_eval_candidates)
@@ -166,6 +172,7 @@ moddy/
 │   ├── altguard_views.py      #   AltGuard panel (persistent), consent Modal V2, link + log cards
 │   ├── automod_shadow_views.py #  Automod shadow-mode (dry_run) SIMULATION card + annotation buttons (persistent)
 │   ├── automod_render.py      #   Shared automod card helpers (barème breakdown, sanction name/accent)
+│   ├── ticket_views.py        #   Ticket panel, control bar, closing card, participants
 │   ├── transcription_views.py #   Voice transcription cards + persistent Transcribe button
 │   ├── appeal_views.py        #   Automod appeal UI (DM buttons + reviewer panels, persistent)
 │   ├── expiration_views.py    #   Sanction-expiration DM (unban/unmute/unwarn + invite)
@@ -206,6 +213,7 @@ moddy/
 │   ├── global_sanction_service.py # Global sanctions: grouped cases, notice DM, 48h countdown, Redis
 │   ├── appeal_service.py      #   Automod sanction appeals (server / Moddy team, binding)
 │   ├── precedent_service.py   #   Automod server precedents (record + serve, RAG)
+│   ├── ticket_service.py      #   Ticket lifecycle (open/close/escalate/move/participants)
 │   ├── transcription_service.py #  Voice/audio speech-to-text (shared by cog + module)
 │   └── railway_diagnostic.py  #   Railway diagnostics
 │
@@ -235,6 +243,7 @@ moddy/
     ├── test_bot_customization.py  # Bot customization validation (bio budget, styles)
     ├── test_expiration_notifications.py # Expired sanctions: unban, invite, DM card
     ├── test_task_signature.py #   moddy:tasks HMAC contract (canonicalization, replay, dedup)
+    ├── test_tickets.py        #   Tickets: schema, permissions, overwrites, screens, i18n
     ├── test_transcription.py  #   Voice transcription helpers, guard rails, cards
     ├── test_logs.py           #   Server logs: registry, routing, rendering, delivery
     └── test_logs_i18n.py      #   Server logs: i18n completeness on the 5 locales
@@ -393,6 +402,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/MODULE_SYSTEM.md](docs/MODULE_SYSTEM.md) | Creating or modifying server modules |
 | [docs/WELCOME_MESSAGES.md](docs/WELCOME_MESSAGES.md) | Welcome messages module (`welcome_channel`) — config schema, placeholders, backend/dashboard contract |
 | [docs/WELCOME_DM.md](docs/WELCOME_DM.md) | Welcome DM module (`welcome_dm`) — config schema, placeholders, backend/dashboard contract |
+| [docs/TICKETS.md](docs/TICKETS.md) | **Tickets** — panels, categories, per-role permissions, escalation, module-gated `/ticket` commands |
 | [docs/ALTGUARD.md](docs/ALTGUARD.md) | **AltGuard** — anti multi-account verification gate, consent, service contract, staff commands |
 | [docs/ALTGUARD_INTEGRATION.md](docs/ALTGUARD_INTEGRATION.md) | AltGuard ↔ bot exact wire contract — payload types, error codes, debugging |
 | [docs/AUTOMOD_AI.md](docs/AUTOMOD_AI.md) | Automod AI — detection pipeline, nano decider, scalable features, rules safety check |

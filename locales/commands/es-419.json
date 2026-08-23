@@ -276,6 +276,100 @@
           "description": "El miembro a desverificar"
         }
       }
+    },
+    "ticket": {
+      "name": "ticket",
+      "description": "Gestiona el ticket en el que estás"
+    },
+    "ticket close": {
+      "name": "cerrar",
+      "description": "Cierra este ticket",
+      "parameters": {
+        "reason": {
+          "name": "motivo",
+          "description": "Por qué se cierra o se escala el ticket"
+        }
+      }
+    },
+    "ticket reopen": {
+      "name": "reabrir",
+      "description": "Reabre este ticket cerrado"
+    },
+    "ticket close-request": {
+      "name": "pedir-cierre",
+      "description": "Pide al staff que cierre este ticket",
+      "parameters": {
+        "reason": {
+          "name": "motivo",
+          "description": "Por qué se cierra o se escala el ticket"
+        }
+      }
+    },
+    "ticket escalate": {
+      "name": "escalar",
+      "description": "Reserva este ticket a los responsables",
+      "parameters": {
+        "reason": {
+          "name": "motivo",
+          "description": "Por qué se cierra o se escala el ticket"
+        }
+      }
+    },
+    "ticket deescalate": {
+      "name": "cancelar-escalado",
+      "description": "Cancela el escalado"
+    },
+    "ticket move": {
+      "name": "mover",
+      "description": "Mueve este ticket a otra categoría",
+      "parameters": {
+        "category": {
+          "name": "categoría",
+          "description": "La categoría a la que mover el ticket"
+        }
+      }
+    },
+    "ticket rename": {
+      "name": "renombrar",
+      "description": "Renombra este ticket",
+      "parameters": {
+        "name": {
+          "name": "nombre",
+          "description": "El nuevo nombre del canal (vacío para abrir un formulario)"
+        }
+      }
+    },
+    "ticket add": {
+      "name": "añadir",
+      "description": "Añade un miembro o un rol a este ticket",
+      "parameters": {
+        "target": {
+          "name": "objetivo",
+          "description": "El miembro o el rol en cuestión"
+        }
+      }
+    },
+    "ticket remove": {
+      "name": "quitar",
+      "description": "Quita un miembro o un rol de este ticket",
+      "parameters": {
+        "target": {
+          "name": "objetivo",
+          "description": "El miembro o el rol en cuestión"
+        }
+      }
+    },
+    "ticket participants": {
+      "name": "participantes",
+      "description": "Consulta y edita quién tiene acceso a este ticket"
+    },
+    "ticket staff-thread": {
+      "name": "hilo-staff",
+      "description": "Abre o entra en el hilo privado del staff"
+    },
+    "ticket info": {
+      "name": "info",
+      "description": "Muestra los detalles de este ticket"
     }
   }
 }

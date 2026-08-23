@@ -276,6 +276,100 @@
           "description": "Das Mitglied, dem die Verifizierung entzogen wird"
         }
       }
+    },
+    "ticket": {
+      "name": "ticket",
+      "description": "Verwalte das Ticket, in dem du bist"
+    },
+    "ticket close": {
+      "name": "schliessen",
+      "description": "Schließt dieses Ticket",
+      "parameters": {
+        "reason": {
+          "name": "grund",
+          "description": "Warum das Ticket geschlossen oder eskaliert wird"
+        }
+      }
+    },
+    "ticket reopen": {
+      "name": "wieder-oeffnen",
+      "description": "Öffnet dieses geschlossene Ticket wieder"
+    },
+    "ticket close-request": {
+      "name": "schliessung-anfragen",
+      "description": "Bittet das Team, dieses Ticket zu schließen",
+      "parameters": {
+        "reason": {
+          "name": "grund",
+          "description": "Warum das Ticket geschlossen oder eskaliert wird"
+        }
+      }
+    },
+    "ticket escalate": {
+      "name": "eskalieren",
+      "description": "Beschränkt dieses Ticket auf die Verantwortlichen",
+      "parameters": {
+        "reason": {
+          "name": "grund",
+          "description": "Warum das Ticket geschlossen oder eskaliert wird"
+        }
+      }
+    },
+    "ticket deescalate": {
+      "name": "eskalation-aufheben",
+      "description": "Hebt die Eskalation auf"
+    },
+    "ticket move": {
+      "name": "verschieben",
+      "description": "Verschiebt dieses Ticket in eine andere Kategorie",
+      "parameters": {
+        "category": {
+          "name": "kategorie",
+          "description": "Die Kategorie, in die das Ticket verschoben wird"
+        }
+      }
+    },
+    "ticket rename": {
+      "name": "umbenennen",
+      "description": "Benennt dieses Ticket um",
+      "parameters": {
+        "name": {
+          "name": "name",
+          "description": "Der neue Kanalname (leer lassen für ein Formular)"
+        }
+      }
+    },
+    "ticket add": {
+      "name": "hinzufuegen",
+      "description": "Fügt ein Mitglied oder eine Rolle zu diesem Ticket hinzu",
+      "parameters": {
+        "target": {
+          "name": "ziel",
+          "description": "Das betroffene Mitglied oder die betroffene Rolle"
+        }
+      }
+    },
+    "ticket remove": {
+      "name": "entfernen",
+      "description": "Entfernt ein Mitglied oder eine Rolle aus diesem Ticket",
+      "parameters": {
+        "target": {
+          "name": "ziel",
+          "description": "Das betroffene Mitglied oder die betroffene Rolle"
+        }
+      }
+    },
+    "ticket participants": {
+      "name": "teilnehmer",
+      "description": "Zeigt und ändert, wer Zugriff auf dieses Ticket hat"
+    },
+    "ticket staff-thread": {
+      "name": "team-thread",
+      "description": "Öffnet den privaten Team-Thread oder tritt ihm bei"
+    },
+    "ticket info": {
+      "name": "info",
+      "description": "Zeigt die Details dieses Tickets"
     }
   }
 }

@@ -34,6 +34,7 @@ from db.repositories.banners import BannerRepository
 from db.repositories.forms import FormsRepository
 from db.repositories.social import SocialSubscriptionsRepository
 from db.repositories.altguard import AltGuardRepository
+from db.repositories.tickets import TicketsRepository
 
 logger = logging.getLogger('moddy.database')
 
@@ -69,6 +70,7 @@ class ModdyDatabase(
     FormsRepository,
     SocialSubscriptionsRepository,
     AltGuardRepository,
+    TicketsRepository,
 ):
     """Gestionnaire principal de la base de données"""
 
@@ -812,6 +814,44 @@ class ModdyDatabase(
             await conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_altguard_members_status "
                 "ON altguard_members (guild_id, status)")
+
+            # tickets — one row per ticket channel that exists in Discord.
+            # The module's *configuration* (panels, categories, permissions)
+            # lives in guilds.data.modules.tickets like every other module;
+            # this table is the runtime state every ticket action resolves
+            # from. channel_id is UNIQUE because a ticket action always
+            # happens inside its own channel. `number` is a per-guild counter
+            # used in channel names and references ("ticket 42").
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS tickets (
+                    id                   BIGSERIAL PRIMARY KEY,
+                    guild_id             BIGINT NOT NULL,
+                    channel_id           BIGINT NOT NULL UNIQUE,
+                    panel_id             TEXT NOT NULL,
+                    category_id          TEXT NOT NULL,
+                    number               INTEGER NOT NULL,
+                    owner_id             BIGINT NOT NULL,
+                    status               TEXT NOT NULL DEFAULT 'open'
+                        CHECK (status IN ('open','closed')),
+                    escalated            BOOLEAN NOT NULL DEFAULT FALSE,
+                    staff_thread_id      BIGINT,
+                    participants         BIGINT[] NOT NULL DEFAULT '{}',
+                    participant_roles    BIGINT[] NOT NULL DEFAULT '{}',
+                    close_requested_by   BIGINT,
+                    close_request_reason TEXT,
+                    opened_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
+                    closed_at            TIMESTAMPTZ,
+                    closed_by            BIGINT,
+                    close_reason         TEXT,
+                    CONSTRAINT tickets_guild_number UNIQUE (guild_id, number)
+                )
+            """)
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_tickets_guild_status "
+                "ON tickets (guild_id, status, number DESC)")
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_tickets_owner "
+                "ON tickets (guild_id, owner_id, status)")
 
             # Table des rôles sauvegardés (Auto Restore Roles module)
             await conn.execute("""

@@ -276,6 +276,100 @@
           "description": "Anggota yang verifikasinya dibatalkan"
         }
       }
+    },
+    "ticket": {
+      "name": "ticket",
+      "description": "Kelola tiket tempat kamu berada"
+    },
+    "ticket close": {
+      "name": "tutup",
+      "description": "Menutup tiket ini",
+      "parameters": {
+        "reason": {
+          "name": "alasan",
+          "description": "Alasan tiket ditutup atau dieskalasi"
+        }
+      }
+    },
+    "ticket reopen": {
+      "name": "buka-lagi",
+      "description": "Membuka kembali tiket yang sudah ditutup ini"
+    },
+    "ticket close-request": {
+      "name": "minta-penutupan",
+      "description": "Meminta staf menutup tiket ini",
+      "parameters": {
+        "reason": {
+          "name": "alasan",
+          "description": "Alasan tiket ditutup atau dieskalasi"
+        }
+      }
+    },
+    "ticket escalate": {
+      "name": "eskalasi",
+      "description": "Membatasi tiket ini untuk para penanggung jawab",
+      "parameters": {
+        "reason": {
+          "name": "alasan",
+          "description": "Alasan tiket ditutup atau dieskalasi"
+        }
+      }
+    },
+    "ticket deescalate": {
+      "name": "batalkan-eskalasi",
+      "description": "Membatalkan eskalasi"
+    },
+    "ticket move": {
+      "name": "pindahkan",
+      "description": "Memindahkan tiket ini ke kategori lain",
+      "parameters": {
+        "category": {
+          "name": "kategori",
+          "description": "Kategori tujuan pemindahan tiket"
+        }
+      }
+    },
+    "ticket rename": {
+      "name": "ganti-nama",
+      "description": "Mengganti nama tiket ini",
+      "parameters": {
+        "name": {
+          "name": "nama",
+          "description": "Nama kanal baru (kosongkan untuk membuka formulir)"
+        }
+      }
+    },
+    "ticket add": {
+      "name": "tambah",
+      "description": "Menambahkan anggota atau peran ke tiket ini",
+      "parameters": {
+        "target": {
+          "name": "target",
+          "description": "Anggota atau peran yang dimaksud"
+        }
+      }
+    },
+    "ticket remove": {
+      "name": "hapus",
+      "description": "Menghapus anggota atau peran dari tiket ini",
+      "parameters": {
+        "target": {
+          "name": "target",
+          "description": "Anggota atau peran yang dimaksud"
+        }
+      }
+    },
+    "ticket participants": {
+      "name": "peserta",
+      "description": "Lihat dan ubah siapa saja yang bisa mengakses tiket ini"
+    },
+    "ticket staff-thread": {
+      "name": "utas-staf",
+      "description": "Membuka atau bergabung ke utas privat staf"
+    },
+    "ticket info": {
+      "name": "info",
+      "description": "Menampilkan detail tiket ini"
     }
   }
 }

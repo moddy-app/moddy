@@ -276,6 +276,100 @@
           "description": "A tag, akinek visszavonják az ellenőrzését"
         }
       }
+    },
+    "ticket": {
+      "name": "ticket",
+      "description": "Kezeld a hibajegyet, amelyben vagy"
+    },
+    "ticket close": {
+      "name": "lezárás",
+      "description": "Lezárja ezt a hibajegyet",
+      "parameters": {
+        "reason": {
+          "name": "indok",
+          "description": "Miért zárul le vagy eszkalálódik a hibajegy"
+        }
+      }
+    },
+    "ticket reopen": {
+      "name": "újranyitás",
+      "description": "Újranyitja ezt a lezárt hibajegyet"
+    },
+    "ticket close-request": {
+      "name": "lezárás-kérése",
+      "description": "Megkéri a csapatot a hibajegy lezárására",
+      "parameters": {
+        "reason": {
+          "name": "indok",
+          "description": "Miért zárul le vagy eszkalálódik a hibajegy"
+        }
+      }
+    },
+    "ticket escalate": {
+      "name": "eszkalálás",
+      "description": "A hibajegyet a felelősökre korlátozza",
+      "parameters": {
+        "reason": {
+          "name": "indok",
+          "description": "Miért zárul le vagy eszkalálódik a hibajegy"
+        }
+      }
+    },
+    "ticket deescalate": {
+      "name": "eszkalálás-visszavonása",
+      "description": "Visszavonja az eszkalálást"
+    },
+    "ticket move": {
+      "name": "áthelyezés",
+      "description": "Áthelyezi ezt a hibajegyet másik kategóriába",
+      "parameters": {
+        "category": {
+          "name": "kategória",
+          "description": "A kategória, ahová a hibajegy kerüljön"
+        }
+      }
+    },
+    "ticket rename": {
+      "name": "átnevezés",
+      "description": "Átnevezi ezt a hibajegyet",
+      "parameters": {
+        "name": {
+          "name": "név",
+          "description": "Az új csatornanév (üresen űrlap nyílik)"
+        }
+      }
+    },
+    "ticket add": {
+      "name": "hozzáadás",
+      "description": "Tagot vagy rangot ad a hibajegyhez",
+      "parameters": {
+        "target": {
+          "name": "cél",
+          "description": "Az érintett tag vagy rang"
+        }
+      }
+    },
+    "ticket remove": {
+      "name": "eltávolítás",
+      "description": "Tagot vagy rangot távolít el a hibajegyből",
+      "parameters": {
+        "target": {
+          "name": "cél",
+          "description": "Az érintett tag vagy rang"
+        }
+      }
+    },
+    "ticket participants": {
+      "name": "résztvevők",
+      "description": "Megmutatja és módosítja, ki fér hozzá a hibajegyhez"
+    },
+    "ticket staff-thread": {
+      "name": "csapat-szál",
+      "description": "Megnyitja a privát csapatszálat vagy csatlakozik hozzá"
+    },
+    "ticket info": {
+      "name": "info",
+      "description": "Megmutatja a hibajegy részleteit"
     }
   }
 }

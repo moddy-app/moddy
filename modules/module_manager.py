@@ -385,6 +385,10 @@ class ModuleManager:
             except Exception as e:
                 logger.error(f"[FAIL] Error disabling {module_id} for guild {guild_id}: {e}")
             self.active_modules.get(guild_id, {}).pop(module_id, None)
+            # AFTER the instance is dropped: the command sync asks the cache
+            # whether the module is still enabled, and the outgoing instance
+            # would still answer yes.
+            await self._sync_module_commands(guild_id, module_id)
             logger.info(f"Module {module_id} unloaded for guild {guild_id} (external delete)")
             return {"ok": True, "action": action, "cleaned": True, **recap}
 
@@ -399,11 +403,29 @@ class ModuleManager:
             await module.disable()
 
         recap = await self._run_external_hook(module, action, guild_id, module_id)
+        await self._sync_module_commands(guild_id, module_id)
         logger.info(
             f"Module {module_id} reloaded from a pushed config for guild {guild_id} "
             f"(enabled: {module.enabled})"
         )
         return {"ok": True, "action": action, "enabled": module.enabled, **recap}
+
+    async def _sync_module_commands(self, guild_id: int, module_id: str) -> None:
+        """Publish/unpublish a module's slash commands after a config change.
+
+        A module can own guild commands that must only exist where it is
+        enabled (``/ticket``). Enabling or disabling it therefore changes the
+        guild's command tree, and nothing else in the save path would notice.
+        The bot skips the sync itself when the enabled set did not change, so
+        this is safe to call after every save.
+        """
+        if module_id not in getattr(self.bot, 'module_slash_commands', {}):
+            return
+        try:
+            await self.bot.resync_module_commands(guild_id)
+        except Exception as e:
+            logger.error(f"[FAIL] Could not re-sync {module_id} commands for guild "
+                         f"{guild_id}: {e}")
 
     async def _run_external_hook(self, module: ModuleBase, action: str,
                                  guild_id: int, module_id: str) -> Dict[str, Any]:
@@ -568,6 +590,10 @@ class ModuleManager:
                 await module_instance.disable()
 
             logger.info(f"Configuration saved for module {module_id} in guild {guild_id} (enabled: {module_instance.enabled})")
+
+            # A module that owns slash commands has just appeared in (or
+            # vanished from) this guild's command tree.
+            await self._sync_module_commands(guild_id, module_id)
             return True, None
 
         except Exception as e:
@@ -603,6 +629,9 @@ class ModuleManager:
             )
 
             logger.info(f"Configuration deleted for module {module_id} in guild {guild_id}")
+
+            # Its commands must disappear from the guild along with it.
+            await self._sync_module_commands(guild_id, module_id)
             return True
 
         except Exception as e:

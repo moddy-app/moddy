@@ -104,7 +104,9 @@ User-scoped changes go on `moddy:subscription:updates` instead — see
 implement all three (premium identity, free name style), and
 [`modules/social_notifications.py`](../modules/social_notifications.py) shows
 the quota-style variant (premium raises a limit instead of unlocking a
-feature).
+feature). [`modules/tickets.py::get_limits`](../modules/tickets.py) is the same
+variant with one addition worth copying: a **failed premium lookup falls back
+to the free quota**, so an outage can never hand out the premium one.
 
 ---
 
@@ -116,3 +118,5 @@ feature).
 | Bot Customization — name style (font, effect, colours) | ✅ | ✅ |
 | Social Notifications — accounts per platform | `FREE_PER_PLATFORM_LIMIT` | `PREMIUM_PER_PLATFORM_LIMIT` |
 | Social Notifications — poll interval | slow tier | fast tier |
+| Tickets — panels per server | `FREE_MAX_PANELS` (3) | `PREMIUM_MAX_PANELS` (10) |
+| Tickets — categories per panel | `FREE_MAX_CATEGORIES` (5) | `PREMIUM_MAX_CATEGORIES` (15) |

@@ -520,6 +520,42 @@ Voir → [GLOBAL_SANCTIONS.md](GLOBAL_SANCTIONS.md).
 
 ---
 
+### 12. Table `tickets`
+
+L'**état vivant** de chaque salon de ticket existant dans Discord. La
+*configuration* du module Tickets (panneaux, catégories, permissions) vit dans
+`guilds.data.modules.tickets` comme tout autre module ; cette table est l'autre
+moitié : ce que chaque action de ticket doit résoudre.
+
+`channel_id` est **UNIQUE** et c'est la seule clé de lecture utilisée à
+l'exécution : une action de ticket se passe toujours *dans* son propre salon,
+donc l'id du salon **est** l'identité du ticket. C'est aussi pour ça que les
+boutons de la barre de contrôle peuvent utiliser des `custom_id` statiques.
+
+**Colonnes:**
+- `id` (BIGSERIAL, PRIMARY KEY)
+- `guild_id` / `channel_id` (BIGINT) — `channel_id` UNIQUE
+- `panel_id` / `category_id` (TEXT) — les ids stockés dans la config du module
+- `number` (INTEGER) — compteur par serveur, `UNIQUE (guild_id, number)`
+- `owner_id` (BIGINT) — qui a ouvert le ticket
+- `status` (TEXT) — `open` | `closed`
+- `escalated` (BOOLEAN) — le ticket est réservé aux responsables
+- `staff_thread_id` (BIGINT) — le thread privé du staff, s'il existe
+- `participants` / `participant_roles` (BIGINT[]) — ajoutés à la main
+- `close_requested_by` / `close_request_reason` — demande de fermeture en attente
+- `opened_at` / `closed_at` / `closed_by` / `close_reason`
+
+**Index:**
+- `idx_tickets_guild_status` sur `(guild_id, status, number DESC)`
+- `idx_tickets_owner` sur `(guild_id, owner_id, status)` — la limite de tickets
+  ouverts par membre
+
+**Repository:** `db/repositories/tickets.py` — `TicketsRepository`
+
+Voir → [TICKETS.md](TICKETS.md).
+
+---
+
 ## Système d'attributs et de données
 
 Moddy utilise deux types de champs JSONB pour stocker les informations:

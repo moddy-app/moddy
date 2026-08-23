@@ -2795,6 +2795,314 @@
           "app_command_permission_update": "Die Berechtigungen eines Befehls wurden geändert"
         }
       }
+    },
+    "tickets": {
+      "description": "Support-Tickets mit Panels, Kategorien und Rechten pro Rolle",
+      "config": {
+        "title": "Tickets",
+        "description": "Lass deine Mitglieder über ein Panel ein Support-Ticket öffnen. Jedes Panel bietet eine oder mehrere Kategorien, und jede Kategorie legt fest, wo das Ticket geöffnet wird, wer es öffnen darf und was dein Team darin tun kann.",
+        "quota": "Panels: `{count}/{max}` · Kategorien pro Panel: `{categories}`",
+        "premium_hint": "Premium hebt diese Grenzen auf 10 Panels und 15 Kategorien pro Panel an.",
+        "manage_placeholder": "Wähle ein Panel zum Konfigurieren",
+        "empty": "Noch kein Panel. Erstelle eins, damit deine Mitglieder Tickets öffnen können.",
+        "add_panel": "Panel hinzufügen",
+        "entry_summary": "{categories} Kategorie(n) · {style}",
+        "no_channel": "kein Kanal",
+        "paused": "pausiert",
+        "not_posted": "Dieses Panel wurde noch nicht gepostet — nutze **Erneut posten**."
+      },
+      "panel": {
+        "modal_title_new": "Neues Ticket-Panel",
+        "modal_title_edit": "Panel bearbeiten",
+        "name_label": "Interner Name",
+        "name_hint": "Nur du siehst ihn, in dieser Konfiguration",
+        "title_label": "Titel für die Mitglieder",
+        "title_hint": "Leer lassen, um den internen Namen zu verwenden",
+        "description_label": "Beschreibung",
+        "description_hint": "Der Text über den Buttons",
+        "color_label": "Akzentfarbe",
+        "color_hint": "Hexadezimal, zum Beispiel #5865F2",
+        "placeholder_label": "Text des Auswahlmenüs",
+        "placeholder_hint": "Wird nur verwendet, wenn das Panel als Auswahlmenü erscheint",
+        "subtitle": "Ticket-Panel",
+        "paused_notice": "Dieses Panel ist pausiert: Seine Nachricht wird entfernt und niemand kann darüber ein Ticket öffnen.",
+        "channel_title": "Kanal des Panels",
+        "channel_hint": "Wo die Nachricht gepostet wird, auf die die Mitglieder klicken",
+        "channel_placeholder": "Wähle einen Kanal",
+        "style_title": "Wie Mitglieder wählen",
+        "style_hint": "Buttons sind schneller; ein Auswahlmenü fasst mehr Kategorien",
+        "style_buttons": "Buttons",
+        "style_buttons_hint": "Ein Button pro Kategorie, bis zu 15",
+        "style_select": "Auswahlmenü",
+        "style_select_hint": "Eine Liste, bis zu 25 Kategorien",
+        "categories_title": "Kategorien",
+        "categories_hint": "{count}/{max} · eine pro Button oder Menüeintrag",
+        "no_category": "Keine Kategorie. Ein Panel ohne Kategorie wird nie gepostet.",
+        "category_placeholder": "Wähle eine Kategorie zum Konfigurieren",
+        "category_summary": "{roles} Rolle(n) mit Rechten · Sprache `{language}`",
+        "no_destination": "kein Ziel",
+        "edit": "Bearbeiten",
+        "add_category": "Kategorie hinzufügen",
+        "repost": "Erneut posten",
+        "pause": "Pausieren",
+        "resume": "Fortsetzen",
+        "delete": "Löschen",
+        "delete_title": "Dieses Panel löschen?",
+        "delete_description": "Seine Nachricht wird entfernt und seine {categories} Kategorie(n) gehen verloren. Bereits offene Tickets sind nicht betroffen.",
+        "delete_confirm": "Panel löschen",
+        "repost_failed": "Das Panel konnte nicht gepostet werden. Prüfe, ob Moddy in den Kanal schreiben darf und ob das Panel mindestens eine nutzbare Kategorie hat."
+      },
+      "category": {
+        "modal_title_new": "Neue Kategorie",
+        "modal_title_edit": "Kategorie bearbeiten",
+        "name_label": "Name",
+        "name_hint": "Steht auf dem Button oder dem Menüeintrag",
+        "emoji_label": "Emoji",
+        "emoji_hint": "Optional, zum Beispiel ein Server-Emoji",
+        "description_label": "Kurzbeschreibung",
+        "description_hint": "Steht in einem Auswahlmenü unter dem Namen",
+        "color_label": "Farbe des Buttons",
+        "color_hint": "Wird ignoriert, wenn das Panel als Auswahlmenü erscheint",
+        "color_primary": "Blau",
+        "color_secondary": "Grau",
+        "color_success": "Grün",
+        "color_danger": "Rot",
+        "subtitle": "Kategorie des Panels „{panel}“",
+        "paused_notice": "Diese Kategorie ist pausiert: Sie erscheint nicht mehr auf dem Panel.",
+        "destination_title": "Wo Tickets erstellt werden",
+        "destination_hint": "Die Discord-Kategorie, in der der Ticket-Kanal erstellt wird",
+        "destination_placeholder": "Wähle eine Discord-Kategorie",
+        "access_title": "Wer ein Ticket öffnen darf",
+        "access_hint": "Leer lassen, um es allen zu erlauben",
+        "allowed_placeholder": "Rollen, die öffnen dürfen",
+        "denied_hint": "Eine gesperrte Rolle gewinnt immer, auch wenn das Mitglied zusätzlich eine erlaubte hat.",
+        "denied_placeholder": "Gesperrte Rollen",
+        "language_title": "Sprache der Tickets",
+        "language_hint": "Alle Nachrichten dieser Tickets verwenden diese Sprache",
+        "summary_title": "Hinter den Buttons unten konfiguriert",
+        "summary_permissions": "Rechte — {roles} Rolle(n)",
+        "summary_messages": "Nachrichten — {count}/2 angepasst",
+        "summary_options": "Optionen — Name `{format}`, `{max}` offene(s) Ticket(s) pro Mitglied",
+        "identity": "Identität",
+        "permissions": "Rechte",
+        "messages": "Nachrichten",
+        "options": "Optionen",
+        "pause": "Pausieren",
+        "resume": "Fortsetzen",
+        "delete": "Löschen",
+        "delete_title": "Diese Kategorie löschen?",
+        "delete_description": "Sie verschwindet vom Panel und ihre Rechte gehen verloren. Bereits darin offene Tickets funktionieren bis zu ihrer Schließung weiter.",
+        "delete_confirm": "Kategorie löschen"
+      },
+      "messages": {
+        "modal_title": "Nachrichten des Tickets",
+        "open_label": "Eröffnungsnachricht",
+        "open_hint": "Wird im Ticket gepostet und angepinnt. Leer lassen für die Standardnachricht.",
+        "close_label": "Schlussnachricht",
+        "close_hint": "Wird der Karte hinzugefügt, die beim Schließen gepostet wird",
+        "placeholders_header": "Verfügbare Platzhalter:",
+        "ph_user": "Erwähnung des Mitglieds",
+        "ph_username": "sein Benutzername",
+        "ph_display_name": "sein Anzeigename",
+        "ph_server": "der Servername",
+        "ph_category": "der Name der Kategorie",
+        "ph_number": "die Ticketnummer",
+        "ph_ticket": "Erwähnung des Ticket-Kanals"
+      },
+      "options": {
+        "modal_title": "Optionen der Kategorie",
+        "name_format_label": "Name des Kanals",
+        "name_format_hint": "zum Beispiel ticket-{number}",
+        "max_open_label": "Offene Tickets pro Mitglied",
+        "max_open_hint": "Zwischen 1 und {max}, in dieser Kategorie",
+        "ping_label": "Zu erwähnende Rollen",
+        "ping_hint": "Werden beim Öffnen eines Tickets erwähnt"
+      },
+      "permissions": {
+        "title": "Rechte der Tickets",
+        "subtitle": "Kategorie „{category}“",
+        "description": "Wähle eine Rolle und hake ab, was sie in den Tickets dieser Kategorie darf. Server-Administratoren haben immer alles.",
+        "configured_title": "Rollen mit Rechten",
+        "nobody": "Noch keine Rolle kann diese Tickets bearbeiten — nur die Server-Administratoren.",
+        "pick_role": "Zu konfigurierende Rolle",
+        "pick_role_hint": "Wähle sie erneut, um ihre Rechte zu ändern oder zu entziehen",
+        "role_placeholder": "Wähle eine Rolle",
+        "perms_placeholder": "Wähle die Rechte",
+        "defaults_hint": "Neue Rolle: eine Startauswahl ist vorangehakt, gespeichert wird erst, wenn du sie bestätigst.",
+        "clear": "Alles entziehen",
+        "view": {
+          "name": "Ticket sehen",
+          "description": "In den Tickets dieser Kategorie lesen und schreiben"
+        },
+        "close": {
+          "name": "Schließen",
+          "description": "Ein Ticket schließen und wieder öffnen"
+        },
+        "staff_thread": {
+          "name": "Team-Thread",
+          "description": "Den privaten Team-Thread öffnen und betreten"
+        },
+        "rename": {
+          "name": "Umbenennen",
+          "description": "Den Namen des Ticket-Kanals ändern"
+        },
+        "move": {
+          "name": "Kategorie wechseln",
+          "description": "Das Ticket in eine andere Kategorie verschieben"
+        },
+        "participants": {
+          "name": "Teilnehmer verwalten",
+          "description": "Mitglieder und Rollen hinzufügen und entfernen"
+        },
+        "admin": {
+          "name": "Verantwortlich",
+          "description": "Alles oben, und behält den Zugriff nach einer Eskalation"
+        }
+      },
+      "channel": {
+        "topic": "Ticket von {user} · {category}",
+        "default_open_message": "Danke, dass du ein Ticket geöffnet hast. Beschreibe dein Anliegen so genau wie möglich — das Team antwortet dir hier.",
+        "title": "Ticket #{number}",
+        "meta": "Geöffnet von",
+        "commands_hint": "Alle Aktionen gibt es auch als `/ticket`-Befehle."
+      },
+      "actions": {
+        "close": "Schließen",
+        "close_request": "Schließung anfragen",
+        "escalate": "Eskalieren",
+        "staff_thread": "Team-Thread",
+        "participants": "Teilnehmer",
+        "reopen": "Wieder öffnen",
+        "delete": "Kanal löschen",
+        "deescalate": "Eskalation aufheben",
+        "rename": "Umbenennen"
+      },
+      "fields": {
+        "reason": "Grund",
+        "reason_hint": "Optional",
+        "channel_name": "Neuer Name",
+        "channel_name_hint": "Buchstaben, Ziffern und Bindestriche",
+        "participants": "Teilnehmer",
+        "opener": "Geöffnet von",
+        "category": "Kategorie",
+        "status": "Status",
+        "escalated": "Eskalation",
+        "your_permissions": "Deine Rechte hier",
+        "none": "keine"
+      },
+      "status": {
+        "open": "Offen",
+        "closed": "Geschlossen",
+        "escalated": "Eskaliert"
+      },
+      "open": {
+        "success_title": "Ticket geöffnet",
+        "success_description": "Dein Ticket ist bereit: {channel}"
+      },
+      "close": {
+        "done_title": "Ticket geschlossen",
+        "done_description": "Das Ticket ist gesperrt. Über die Karte im Kanal lässt es sich wieder öffnen oder endgültig löschen.",
+        "card_title": "Ticket geschlossen",
+        "by": "Geschlossen von",
+        "dm_title": "Dein Ticket wurde geschlossen",
+        "dm_description": "Dein Ticket #`{number}` ({category}) auf **{server}** wurde geschlossen."
+      },
+      "close_request": {
+        "sent_title": "Anfrage gesendet",
+        "sent_description": "Das Team wurde benachrichtigt und schließt das Ticket, wenn alles erledigt ist.",
+        "card_title": "Schließung angefragt",
+        "card_description": "{user} möchte, dass dieses Ticket geschlossen wird.",
+        "accept": "Ticket schließen",
+        "refuse": "Offen lassen",
+        "refused": "{user} hat das Ticket offen gelassen."
+      },
+      "reopen": {
+        "done_title": "Ticket wieder geöffnet",
+        "done_description": "Alle, die Zugriff hatten, haben ihn zurück."
+      },
+      "delete": {
+        "pending_title": "Wird gelöscht",
+        "pending_description": "Der Kanal und sein Gespräch werden gelöscht."
+      },
+      "escalate": {
+        "card_title": "Ticket eskaliert",
+        "card_description": "{user} hat dieses Ticket eskaliert: Nur die Verantwortlichen, der Ersteller und die von Hand hinzugefügten Personen haben noch Zugriff.",
+        "done_title": "Ticket eskaliert",
+        "done_description": "Der Zugriff ist jetzt auf die Verantwortlichen beschränkt.",
+        "cancelled_title": "Eskalation aufgehoben",
+        "cancelled_description": "Die Team-Rollen haben ihren Zugriff zurück.",
+        "confirm_title": "Dieses Ticket eskalieren?",
+        "confirm_description": "Die Team-Rollen verlieren den Zugriff. Der Ersteller bleibt. Was soll mit den von Hand hinzugefügten Personen geschehen?",
+        "keep": "Behalten",
+        "drop": "Entfernen"
+      },
+      "move": {
+        "done_title": "Ticket verschoben",
+        "done_description": "Das Ticket folgt jetzt den Rechten seiner neuen Kategorie."
+      },
+      "rename": {
+        "done_title": "Ticket umbenannt",
+        "done_description": "Der Kanal heißt jetzt `{name}`."
+      },
+      "participants": {
+        "title": "Teilnehmer des Tickets",
+        "description": "Alle hier ausgewählten Personen haben Zugriff auf das Ticket, zusätzlich zum Ersteller und den Team-Rollen. Wähle jemanden ab, um ihn zu entfernen.",
+        "owner_note": "Geöffnet von",
+        "members_title": "Mitglieder",
+        "members_description": "Einzeln hinzugefügt",
+        "members_placeholder": "Wähle die Mitglieder",
+        "roles_title": "Rollen",
+        "roles_description": "Alle mit der Rolle erhalten Zugriff",
+        "roles_placeholder": "Wähle die Rollen",
+        "added_title": "Hinzugefügt",
+        "added_description": "{target} hat jetzt Zugriff auf dieses Ticket.",
+        "removed_title": "Entfernt",
+        "removed_description": "{target} hat keinen Zugriff mehr auf dieses Ticket."
+      },
+      "staff_thread": {
+        "name": "staff-{number}",
+        "intro": "Privater Team-Thread für Ticket #{number}. Das Mitglied, das das Ticket geöffnet hat, sieht ihn nicht.",
+        "done_title": "Team-Thread",
+        "done_description": "Du wurdest zu {thread} hinzugefügt."
+      },
+      "info": {
+        "title": "Ticket #{number}",
+        "description": "Alles, was Moddy über dieses Ticket weiß."
+      },
+      "errors": {
+        "title": "Ticket",
+        "not_a_ticket": "Dieser Kanal ist kein Ticket.",
+        "module_disabled": "Das Ticket-Modul ist auf diesem Server nicht aktiviert.",
+        "category_gone": "Die Kategorie dieses Tickets gibt es nicht mehr. Bitte einen Administrator, es in eine andere zu verschieben.",
+        "missing_permission": "Du hast nicht das Recht, das in diesem Ticket zu tun.",
+        "unavailable": "Tickets sind vorübergehend nicht verfügbar. Versuch es gleich noch einmal.",
+        "cannot_open": "Du kannst in dieser Kategorie kein Ticket öffnen.",
+        "category_disabled": "Diese Kategorie nimmt gerade keine Tickets an.",
+        "destination_missing": "Diese Kategorie hat kein gültiges Ziel. Sag einem Administrator Bescheid.",
+        "too_many_open": "Du hast bereits `{max}` offene(s) Ticket(s) in dieser Kategorie. Schließe eins, bevor du ein weiteres öffnest.",
+        "cannot_create_channel": "Moddy konnte den Ticket-Kanal nicht erstellen. Prüfe die Rechte in der Zielkategorie.",
+        "already_closed": "Dieses Ticket ist bereits geschlossen.",
+        "not_closed": "Dieses Ticket ist nicht geschlossen.",
+        "can_close_directly": "Du kannst dieses Ticket selbst schließen — du musst nicht fragen.",
+        "close_already_requested": "Für dieses Ticket liegt bereits eine Schließungsanfrage vor.",
+        "no_close_request": "Für dieses Ticket liegt keine Schließungsanfrage vor.",
+        "already_escalated": "Dieses Ticket ist bereits eskaliert.",
+        "not_escalated": "Dieses Ticket ist nicht eskaliert.",
+        "no_responsible_role": "Keine Rolle hat in dieser Kategorie das Recht **Verantwortlich**, es gibt also niemanden, an den eskaliert werden könnte.",
+        "unknown_category": "Diese Kategorie gibt es nicht.",
+        "same_category": "Das Ticket ist bereits in dieser Kategorie.",
+        "cannot_edit_channel": "Moddy konnte den Ticket-Kanal nicht bearbeiten. Prüfe die Rechte.",
+        "invalid_name": "Dieser Name kann nicht für einen Kanal verwendet werden.",
+        "already_participant": "Diese Person hat bereits Zugriff auf dieses Ticket.",
+        "not_a_participant": "Diese Person wurde diesem Ticket nicht hinzugefügt.",
+        "cannot_remove_owner": "Das Mitglied, das das Ticket geöffnet hat, kann nicht daraus entfernt werden. Schließe stattdessen das Ticket.",
+        "cannot_create_thread": "Moddy konnte den Team-Thread nicht erstellen. Private Threads brauchen das Recht, sie in diesem Kanal zu erstellen.",
+        "use_close_request": "Du kannst dieses Ticket nicht schließen. Nutze **Schließung anfragen**, um das Team darum zu bitten.",
+        "panel_limit": "Dieser Server hat sein Limit von `{max}` Ticket-Panels erreicht.",
+        "category_limit": "Dieses Panel hat sein Limit von `{max}` Kategorien erreicht.",
+        "premium_upsell": "Premium hebt die Grenzen auf 10 Panels und 15 Kategorien pro Panel an. [Mehr erfahren]({url})",
+        "invalid_emoji": "Dieses Emoji kann nicht verwendet werden. Nutze ein Server-Emoji oder ein Standard-Emoji."
+      }
     }
   },
   "languages": {

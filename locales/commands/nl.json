@@ -276,6 +276,100 @@
           "description": "Het lid dat gedeverifieerd wordt"
         }
       }
+    },
+    "ticket": {
+      "name": "ticket",
+      "description": "Beheer het ticket waarin je zit"
+    },
+    "ticket close": {
+      "name": "sluiten",
+      "description": "Sluit dit ticket",
+      "parameters": {
+        "reason": {
+          "name": "reden",
+          "description": "Waarom het ticket wordt gesloten of geëscaleerd"
+        }
+      }
+    },
+    "ticket reopen": {
+      "name": "heropenen",
+      "description": "Heropent dit gesloten ticket"
+    },
+    "ticket close-request": {
+      "name": "sluiting-vragen",
+      "description": "Vraagt de staff om dit ticket te sluiten",
+      "parameters": {
+        "reason": {
+          "name": "reden",
+          "description": "Waarom het ticket wordt gesloten of geëscaleerd"
+        }
+      }
+    },
+    "ticket escalate": {
+      "name": "escaleren",
+      "description": "Beperkt dit ticket tot de verantwoordelijken",
+      "parameters": {
+        "reason": {
+          "name": "reden",
+          "description": "Waarom het ticket wordt gesloten of geëscaleerd"
+        }
+      }
+    },
+    "ticket deescalate": {
+      "name": "escalatie-annuleren",
+      "description": "Annuleert de escalatie"
+    },
+    "ticket move": {
+      "name": "verplaatsen",
+      "description": "Verplaatst dit ticket naar een andere categorie",
+      "parameters": {
+        "category": {
+          "name": "categorie",
+          "description": "De categorie waarnaar het ticket moet verhuizen"
+        }
+      }
+    },
+    "ticket rename": {
+      "name": "hernoemen",
+      "description": "Hernoemt dit ticket",
+      "parameters": {
+        "name": {
+          "name": "naam",
+          "description": "De nieuwe kanaalnaam (leeg laten voor een formulier)"
+        }
+      }
+    },
+    "ticket add": {
+      "name": "toevoegen",
+      "description": "Voegt een lid of een rol toe aan dit ticket",
+      "parameters": {
+        "target": {
+          "name": "doel",
+          "description": "Het betrokken lid of de betrokken rol"
+        }
+      }
+    },
+    "ticket remove": {
+      "name": "verwijderen",
+      "description": "Verwijdert een lid of een rol uit dit ticket",
+      "parameters": {
+        "target": {
+          "name": "doel",
+          "description": "Het betrokken lid of de betrokken rol"
+        }
+      }
+    },
+    "ticket participants": {
+      "name": "deelnemers",
+      "description": "Bekijk en bewerk wie toegang heeft tot dit ticket"
+    },
+    "ticket staff-thread": {
+      "name": "staff-thread",
+      "description": "Opent of neemt deel aan de privé staff-thread"
+    },
+    "ticket info": {
+      "name": "info",
+      "description": "Toont de details van dit ticket"
     }
   }
 }

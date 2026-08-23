@@ -276,6 +276,100 @@
           "description": "要取消驗證的成員"
         }
       }
+    },
+    "ticket": {
+      "name": "ticket",
+      "description": "管理你所在的服務單"
+    },
+    "ticket close": {
+      "name": "關閉",
+      "description": "關閉這個服務單",
+      "parameters": {
+        "reason": {
+          "name": "原因",
+          "description": "關閉或升級這個服務單的原因"
+        }
+      }
+    },
+    "ticket reopen": {
+      "name": "重新開啟",
+      "description": "重新開啟這個已關閉的服務單"
+    },
+    "ticket close-request": {
+      "name": "申請關閉",
+      "description": "請團隊關閉這個服務單",
+      "parameters": {
+        "reason": {
+          "name": "原因",
+          "description": "關閉或升級這個服務單的原因"
+        }
+      }
+    },
+    "ticket escalate": {
+      "name": "升級",
+      "description": "將這個服務單限定給負責人",
+      "parameters": {
+        "reason": {
+          "name": "原因",
+          "description": "關閉或升級這個服務單的原因"
+        }
+      }
+    },
+    "ticket deescalate": {
+      "name": "取消升級",
+      "description": "取消升級"
+    },
+    "ticket move": {
+      "name": "移動",
+      "description": "將這個服務單移到另一個分類",
+      "parameters": {
+        "category": {
+          "name": "分類",
+          "description": "要把服務單移到的分類"
+        }
+      }
+    },
+    "ticket rename": {
+      "name": "重新命名",
+      "description": "重新命名這個服務單",
+      "parameters": {
+        "name": {
+          "name": "名稱",
+          "description": "新的頻道名稱（留空則開啟表單）"
+        }
+      }
+    },
+    "ticket add": {
+      "name": "新增",
+      "description": "為這個服務單新增成員或身分組",
+      "parameters": {
+        "target": {
+          "name": "目標",
+          "description": "相關的成員或身分組"
+        }
+      }
+    },
+    "ticket remove": {
+      "name": "移除",
+      "description": "從這個服務單移除成員或身分組",
+      "parameters": {
+        "target": {
+          "name": "目標",
+          "description": "相關的成員或身分組"
+        }
+      }
+    },
+    "ticket participants": {
+      "name": "參與者",
+      "description": "查看並修改誰可以存取這個服務單"
+    },
+    "ticket staff-thread": {
+      "name": "團隊討論串",
+      "description": "開啟或加入團隊私人討論串"
+    },
+    "ticket info": {
+      "name": "資訊",
+      "description": "顯示這個服務單的詳細資料"
     }
   }
 }

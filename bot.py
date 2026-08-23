@@ -8,7 +8,7 @@ from discord.ext import commands, tasks
 import asyncio
 import logging
 from datetime import datetime, timezone
-from typing import Optional, Set
+from typing import Dict, Optional, Set
 import os
 import sys
 from pathlib import Path
@@ -129,6 +129,8 @@ class ModdyBot(ModdyFrameworkBot):
         from services.altguard_client import AltGuardClient
         # AltGuard anti multi-account verification (HTTP + altguard:* Pub/Sub)
         self.altguard = AltGuardClient(self)
+        from services.ticket_service import TicketService
+        self.tickets = TicketService(self)  # ticket lifecycle (open/close/escalate…)
         from gateway import Gateway
         self.gateway = Gateway()
         self.redis = None  # Redis client (shared with backend)
@@ -149,6 +151,16 @@ class ModdyBot(ModdyFrameworkBot):
         # framework cog; synced ONLY to OFFICIAL guilds. Never added to the
         # global tree, so they can never leak to non-official servers.
         self.staff_slash_groups = []
+
+        # Commands owned by a server module (e.g. /ticket), published ONLY in
+        # the guilds where that module is enabled — see
+        # register_module_commands(). module_id -> [app command objects].
+        self.module_slash_commands: Dict[str, list] = {}
+
+        # What each guild's module command set was the last time it was synced.
+        # Discord rate-limits guild command syncs hard, so a config save that
+        # does not change which modules own commands must not spend one.
+        self._guild_module_commands: Dict[int, frozenset] = {}
 
         # Serveur HTTP interne pour /status
         self.internal_api_server = None
@@ -1075,19 +1087,95 @@ class ModdyBot(ModdyFrameworkBot):
             logger.error(f"[FAIL] Could not fetch OFFICIAL guilds: {e}")
             return set()
 
-    def _register_guild_command_set(self, guild: discord.Guild, official_ids: set):
+    def register_module_commands(self, module_id: str, commands_list: list) -> None:
+        """Publish these commands only in guilds where ``module_id`` is enabled.
+
+        A cog calls this at load time with commands it deliberately never added
+        to the global tree (declare them at module level, not as a Cog
+        attribute, or discord.py registers them globally for you). They are then
+        added to a guild's tree by :meth:`_register_guild_command_set` and
+        removed again the moment the module is switched off, so a server that
+        does not use a module never sees its commands at all.
+        """
+        self.module_slash_commands[module_id] = list(commands_list)
+        logger.info(f"Module commands registered for '{module_id}': "
+                    f"{[c.name for c in commands_list]}")
+
+    async def get_enabled_module_ids(self, guild_id: int) -> Set[str]:
+        """Modules currently enabled in a guild, restricted to those with commands.
+
+        Only modules that actually own commands are looked at: the answer feeds
+        the command tree and nothing else, so there is no reason to pay for the
+        rest.
+        """
+        if not self.module_manager or not self.module_slash_commands:
+            return set()
+
+        enabled = set()
+        for module_id in self.module_slash_commands:
+            try:
+                module = await self.module_manager.get_module_instance(guild_id, module_id)
+            except Exception as e:
+                logger.error(f"[FAIL] Could not read module {module_id} for guild "
+                             f"{guild_id}: {e}")
+                continue
+            if module and module.enabled:
+                enabled.add(module_id)
+        return enabled
+
+    def _register_guild_command_set(self, guild: discord.Guild, official_ids: set,
+                                    module_ids: Optional[Set[str]] = None):
         """(Re)build the per-guild command tree: guild-only commands for every
-        guild, plus the staff slash groups for OFFICIAL guilds only."""
+        guild, the commands of the modules this guild has enabled, plus the
+        staff slash groups for OFFICIAL guilds only."""
         self.tree.clear_commands(guild=guild)
 
         # Guild-only commands (e.g. /config) for every server with Moddy.
         for command in self._guild_only_commands:
             self.tree.add_command(command, guild=guild)
 
+        # Commands owned by an enabled module (e.g. /ticket).
+        for module_id in sorted(module_ids or ()):
+            for command in self.module_slash_commands.get(module_id, []):
+                self.tree.add_command(command, guild=guild)
+
         # Staff command groups only on OFFICIAL servers.
         if guild.id in official_ids:
             for group in (self.staff_slash_groups or []):
                 self.tree.add_command(group, guild=guild)
+
+    async def resync_module_commands(self, guild_id: int) -> bool:
+        """Re-sync a guild's commands if its enabled-module set just changed.
+
+        Called after any module configuration change (``/config``, the
+        dashboard, a deletion). Returns True when a sync was actually sent —
+        which only happens when the set of modules owning commands changed,
+        because guild command syncs are rate-limited and a save that toggles a
+        colour must not cost one.
+        """
+        guild = self.get_guild(guild_id)
+        if guild is None or not self.module_slash_commands:
+            return False
+
+        module_ids = await self.get_enabled_module_ids(guild_id)
+        if self._guild_module_commands.get(guild_id) == frozenset(module_ids):
+            return False
+
+        try:
+            official_ids = await self.get_official_guild_ids()
+            self._register_guild_command_set(guild, official_ids, module_ids)
+            await self.tree.sync(guild=guild)
+            self._guild_module_commands[guild_id] = frozenset(module_ids)
+            logger.info(f"Module commands re-synced for {guild.name} ({guild_id}): "
+                        f"{sorted(module_ids) or 'none'}")
+            return True
+        except discord.Forbidden:
+            logger.warning(f"[WARN] Cannot sync commands for guild {guild_id} "
+                           f"(missing applications.commands scope)")
+        except Exception as e:
+            logger.error(f"[FAIL] Error re-syncing module commands for guild "
+                         f"{guild_id}: {e}")
+        return False
 
     async def sync_all_guild_commands(self):
         """
@@ -1106,11 +1194,14 @@ class ModdyBot(ModdyFrameworkBot):
             for guild in self.guilds:
                 try:
                     # IMPORTANT: Clear d'abord toutes les commandes de ce serveur
-                    # puis ajoute guild-only (+ staff groups si serveur officiel).
-                    self._register_guild_command_set(guild, official_ids)
+                    # puis ajoute guild-only (+ commandes des modules activés,
+                    # + staff groups si serveur officiel).
+                    module_ids = await self.get_enabled_module_ids(guild.id)
+                    self._register_guild_command_set(guild, official_ids, module_ids)
 
                     # Sync les commandes de ce serveur (ou sync vide si rien)
                     await self.tree.sync(guild=guild)
+                    self._guild_module_commands[guild.id] = frozenset(module_ids)
 
                     guild_count += 1
                     logger.info(f"Guild commands synced for {guild.name} ({guild.id})")
@@ -1138,12 +1229,15 @@ class ModdyBot(ModdyFrameworkBot):
             guild: Le serveur pour lequel synchroniser les commandes
         """
         try:
-            # Clear puis ajoute guild-only (+ staff groups si serveur officiel).
+            # Clear puis ajoute guild-only (+ commandes des modules activés,
+            # + staff groups si serveur officiel).
             official_ids = await self.get_official_guild_ids()
-            self._register_guild_command_set(guild, official_ids)
+            module_ids = await self.get_enabled_module_ids(guild.id)
+            self._register_guild_command_set(guild, official_ids, module_ids)
 
             # Synchroniser les commandes pour ce serveur (ou sync vide si rien)
             await self.tree.sync(guild=guild)
+            self._guild_module_commands[guild.id] = frozenset(module_ids)
 
             logger.info(f"Commands synced for {guild.name} ({guild.id})")
         except Exception as e:

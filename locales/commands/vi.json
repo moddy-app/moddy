@@ -276,6 +276,100 @@
           "description": "Thành viên bị hủy xác minh"
         }
       }
+    },
+    "ticket": {
+      "name": "ticket",
+      "description": "Quản lý ticket bạn đang ở trong"
+    },
+    "ticket close": {
+      "name": "đóng",
+      "description": "Đóng ticket này",
+      "parameters": {
+        "reason": {
+          "name": "lý-do",
+          "description": "Lý do ticket bị đóng hoặc được nâng cấp"
+        }
+      }
+    },
+    "ticket reopen": {
+      "name": "mở-lại",
+      "description": "Mở lại ticket đã đóng này"
+    },
+    "ticket close-request": {
+      "name": "yêu-cầu-đóng",
+      "description": "Đề nghị đội ngũ đóng ticket này",
+      "parameters": {
+        "reason": {
+          "name": "lý-do",
+          "description": "Lý do ticket bị đóng hoặc được nâng cấp"
+        }
+      }
+    },
+    "ticket escalate": {
+      "name": "nâng-cấp",
+      "description": "Giới hạn ticket này cho những người phụ trách",
+      "parameters": {
+        "reason": {
+          "name": "lý-do",
+          "description": "Lý do ticket bị đóng hoặc được nâng cấp"
+        }
+      }
+    },
+    "ticket deescalate": {
+      "name": "hủy-nâng-cấp",
+      "description": "Hủy việc nâng cấp"
+    },
+    "ticket move": {
+      "name": "chuyển",
+      "description": "Chuyển ticket này sang danh mục khác",
+      "parameters": {
+        "category": {
+          "name": "danh-mục",
+          "description": "Danh mục sẽ chuyển ticket đến"
+        }
+      }
+    },
+    "ticket rename": {
+      "name": "đổi-tên",
+      "description": "Đổi tên ticket này",
+      "parameters": {
+        "name": {
+          "name": "tên",
+          "description": "Tên kênh mới (để trống để mở biểu mẫu)"
+        }
+      }
+    },
+    "ticket add": {
+      "name": "thêm",
+      "description": "Thêm một thành viên hoặc vai trò vào ticket này",
+      "parameters": {
+        "target": {
+          "name": "mục-tiêu",
+          "description": "Thành viên hoặc vai trò liên quan"
+        }
+      }
+    },
+    "ticket remove": {
+      "name": "xóa",
+      "description": "Xóa một thành viên hoặc vai trò khỏi ticket này",
+      "parameters": {
+        "target": {
+          "name": "mục-tiêu",
+          "description": "Thành viên hoặc vai trò liên quan"
+        }
+      }
+    },
+    "ticket participants": {
+      "name": "người-tham-gia",
+      "description": "Xem và sửa ai có quyền truy cập ticket này"
+    },
+    "ticket staff-thread": {
+      "name": "luồng-đội-ngũ",
+      "description": "Mở hoặc tham gia luồng riêng của đội ngũ"
+    },
+    "ticket info": {
+      "name": "thông-tin",
+      "description": "Hiển thị chi tiết của ticket này"
     }
   }
 }

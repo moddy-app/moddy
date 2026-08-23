@@ -276,6 +276,100 @@
           "description": "The member to un-verify"
         }
       }
+    },
+    "ticket": {
+      "name": "ticket",
+      "description": "Manage the ticket you are in"
+    },
+    "ticket close": {
+      "name": "close",
+      "description": "Close this ticket",
+      "parameters": {
+        "reason": {
+          "name": "reason",
+          "description": "Why the ticket is being closed or escalated"
+        }
+      }
+    },
+    "ticket reopen": {
+      "name": "reopen",
+      "description": "Reopen this closed ticket"
+    },
+    "ticket close-request": {
+      "name": "close-request",
+      "description": "Ask the staff to close this ticket",
+      "parameters": {
+        "reason": {
+          "name": "reason",
+          "description": "Why the ticket is being closed or escalated"
+        }
+      }
+    },
+    "ticket escalate": {
+      "name": "escalate",
+      "description": "Restrict this ticket to the responsibles",
+      "parameters": {
+        "reason": {
+          "name": "reason",
+          "description": "Why the ticket is being closed or escalated"
+        }
+      }
+    },
+    "ticket deescalate": {
+      "name": "deescalate",
+      "description": "Undo the escalation"
+    },
+    "ticket move": {
+      "name": "move",
+      "description": "Move this ticket to another category",
+      "parameters": {
+        "category": {
+          "name": "category",
+          "description": "The category the ticket should move to"
+        }
+      }
+    },
+    "ticket rename": {
+      "name": "rename",
+      "description": "Rename this ticket",
+      "parameters": {
+        "name": {
+          "name": "name",
+          "description": "The new channel name (leave empty to open a form)"
+        }
+      }
+    },
+    "ticket add": {
+      "name": "add",
+      "description": "Add a member or a role to this ticket",
+      "parameters": {
+        "target": {
+          "name": "target",
+          "description": "The member or role concerned"
+        }
+      }
+    },
+    "ticket remove": {
+      "name": "remove",
+      "description": "Remove a member or a role from this ticket",
+      "parameters": {
+        "target": {
+          "name": "target",
+          "description": "The member or role concerned"
+        }
+      }
+    },
+    "ticket participants": {
+      "name": "participants",
+      "description": "See and edit who has access to this ticket"
+    },
+    "ticket staff-thread": {
+      "name": "staff-thread",
+      "description": "Open or join the private staff thread"
+    },
+    "ticket info": {
+      "name": "info",
+      "description": "Show this ticket's details"
     }
   }
 }

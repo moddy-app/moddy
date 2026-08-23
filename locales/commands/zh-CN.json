@@ -276,6 +276,100 @@
           "description": "要取消验证的成员"
         }
       }
+    },
+    "ticket": {
+      "name": "ticket",
+      "description": "管理你所在的工单"
+    },
+    "ticket close": {
+      "name": "关闭",
+      "description": "关闭这个工单",
+      "parameters": {
+        "reason": {
+          "name": "原因",
+          "description": "关闭或升级这个工单的原因"
+        }
+      }
+    },
+    "ticket reopen": {
+      "name": "重新打开",
+      "description": "重新打开这个已关闭的工单"
+    },
+    "ticket close-request": {
+      "name": "申请关闭",
+      "description": "请求团队关闭这个工单",
+      "parameters": {
+        "reason": {
+          "name": "原因",
+          "description": "关闭或升级这个工单的原因"
+        }
+      }
+    },
+    "ticket escalate": {
+      "name": "升级",
+      "description": "将这个工单限定给负责人",
+      "parameters": {
+        "reason": {
+          "name": "原因",
+          "description": "关闭或升级这个工单的原因"
+        }
+      }
+    },
+    "ticket deescalate": {
+      "name": "取消升级",
+      "description": "取消升级"
+    },
+    "ticket move": {
+      "name": "移动",
+      "description": "将这个工单移到另一个分类",
+      "parameters": {
+        "category": {
+          "name": "分类",
+          "description": "要把工单移到的分类"
+        }
+      }
+    },
+    "ticket rename": {
+      "name": "重命名",
+      "description": "重命名这个工单",
+      "parameters": {
+        "name": {
+          "name": "名称",
+          "description": "新的频道名称（留空则打开表单）"
+        }
+      }
+    },
+    "ticket add": {
+      "name": "添加",
+      "description": "向这个工单添加成员或身份组",
+      "parameters": {
+        "target": {
+          "name": "目标",
+          "description": "相关的成员或身份组"
+        }
+      }
+    },
+    "ticket remove": {
+      "name": "移除",
+      "description": "从这个工单移除成员或身份组",
+      "parameters": {
+        "target": {
+          "name": "目标",
+          "description": "相关的成员或身份组"
+        }
+      }
+    },
+    "ticket participants": {
+      "name": "参与者",
+      "description": "查看并修改谁可以访问这个工单"
+    },
+    "ticket staff-thread": {
+      "name": "团队帖子",
+      "description": "打开或加入团队私密帖子"
+    },
+    "ticket info": {
+      "name": "信息",
+      "description": "显示这个工单的详情"
     }
   }
 }

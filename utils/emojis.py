@@ -98,6 +98,30 @@ ROCKET = "<a:Rocket:1535783839870353499>"  # bot customization bio attribution
 ALTGUARD = "<a:DisguisedFace:1539405255576657981>"  # AltGuard verification panel message
 
 # =============================================================================
+# TICKETS MODULE
+# -----------------------------------------------------------------------------
+# NOTE: these are ALIASES onto existing emojis, not dedicated ticket icons.
+# Everything in the Tickets module references these constants, so replacing an
+# id here propagates to the panels, the ticket control bar, the slash commands
+# and the /config screens at once. Replace them with dedicated artwork when it
+# exists — that is the only change needed.
+# =============================================================================
+TICKET = SUPPORT                # module icon + ticket cards      (placeholder)
+TICKET_PANEL = NOTE             # a ticket panel message          (placeholder)
+TICKET_CATEGORY = FOLDER        # a ticket category               (placeholder)
+TICKET_CLOSE = LOGOUT           # close a ticket                  (placeholder)
+TICKET_CLOSE_REQUEST = HAND     # ask the staff to close          (placeholder)
+TICKET_ESCALATE = SHIELD        # escalate to the responsibles    (placeholder)
+TICKET_STAFF_THREAD = MESSAGE   # private staff thread            (placeholder)
+TICKET_PARTICIPANTS = GROUPS    # manage who is in the ticket     (placeholder)
+TICKET_RENAME = EDIT            # rename the ticket               (placeholder)
+TICKET_MOVE = FOLDERS           # move to another category        (placeholder)
+TICKET_PERMISSIONS = LEGAL      # per-role ticket permissions     (placeholder)
+TICKET_ACCESS = MANAGE_USER     # who may open a ticket           (placeholder)
+TICKET_REOPEN = SYNC            # reopen a closed ticket          (placeholder)
+TICKET_LANGUAGE = TRANSLATE     # language of a category          (placeholder)
+
+# =============================================================================
 # SOCIAL PLATFORMS (Social Notifications module)
 # -----------------------------------------------------------------------------
 # NOTE: These are PLACEHOLDER ids — replace each one with the real custom emoji

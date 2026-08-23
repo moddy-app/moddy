@@ -276,6 +276,100 @@
           "description": "Člen, kterému se ověření zruší"
         }
       }
+    },
+    "ticket": {
+      "name": "ticket",
+      "description": "Spravuj ticket, ve kterém jsi"
+    },
+    "ticket close": {
+      "name": "zavřít",
+      "description": "Zavře tento ticket",
+      "parameters": {
+        "reason": {
+          "name": "důvod",
+          "description": "Proč se ticket zavírá nebo eskaluje"
+        }
+      }
+    },
+    "ticket reopen": {
+      "name": "znovu-otevřít",
+      "description": "Znovu otevře tento zavřený ticket"
+    },
+    "ticket close-request": {
+      "name": "požádat-o-zavření",
+      "description": "Požádá tým o zavření tohoto ticketu",
+      "parameters": {
+        "reason": {
+          "name": "důvod",
+          "description": "Proč se ticket zavírá nebo eskaluje"
+        }
+      }
+    },
+    "ticket escalate": {
+      "name": "eskalovat",
+      "description": "Vyhradí tento ticket odpovědným osobám",
+      "parameters": {
+        "reason": {
+          "name": "důvod",
+          "description": "Proč se ticket zavírá nebo eskaluje"
+        }
+      }
+    },
+    "ticket deescalate": {
+      "name": "zrušit-eskalaci",
+      "description": "Zruší eskalaci"
+    },
+    "ticket move": {
+      "name": "přesunout",
+      "description": "Přesune tento ticket do jiné kategorie",
+      "parameters": {
+        "category": {
+          "name": "kategorie",
+          "description": "Kategorie, do které ticket přesunout"
+        }
+      }
+    },
+    "ticket rename": {
+      "name": "přejmenovat",
+      "description": "Přejmenuje tento ticket",
+      "parameters": {
+        "name": {
+          "name": "název",
+          "description": "Nový název kanálu (prázdné otevře formulář)"
+        }
+      }
+    },
+    "ticket add": {
+      "name": "přidat",
+      "description": "Přidá člena nebo roli do tohoto ticketu",
+      "parameters": {
+        "target": {
+          "name": "cíl",
+          "description": "Dotčený člen nebo role"
+        }
+      }
+    },
+    "ticket remove": {
+      "name": "odebrat",
+      "description": "Odebere člena nebo roli z tohoto ticketu",
+      "parameters": {
+        "target": {
+          "name": "cíl",
+          "description": "Dotčený člen nebo role"
+        }
+      }
+    },
+    "ticket participants": {
+      "name": "účastníci",
+      "description": "Zobrazí a upraví, kdo má k ticketu přístup"
+    },
+    "ticket staff-thread": {
+      "name": "vlákno-týmu",
+      "description": "Otevře soukromé vlákno týmu nebo se do něj připojí"
+    },
+    "ticket info": {
+      "name": "info",
+      "description": "Zobrazí podrobnosti tohoto ticketu"
     }
   }
 }

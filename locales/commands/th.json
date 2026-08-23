@@ -276,6 +276,100 @@
           "description": "สมาชิกที่จะยกเลิกการยืนยัน"
         }
       }
+    },
+    "ticket": {
+      "name": "ticket",
+      "description": "จัดการทิกเก็ตที่คุณอยู่"
+    },
+    "ticket close": {
+      "name": "ปิด",
+      "description": "ปิดทิกเก็ตนี้",
+      "parameters": {
+        "reason": {
+          "name": "เหตุผล",
+          "description": "เหตุผลที่ปิดหรือยกระดับทิกเก็ต"
+        }
+      }
+    },
+    "ticket reopen": {
+      "name": "เปิดใหม่",
+      "description": "เปิดทิกเก็ตที่ปิดไปแล้วนี้อีกครั้ง"
+    },
+    "ticket close-request": {
+      "name": "ขอปิด",
+      "description": "ขอให้ทีมงานปิดทิกเก็ตนี้",
+      "parameters": {
+        "reason": {
+          "name": "เหตุผล",
+          "description": "เหตุผลที่ปิดหรือยกระดับทิกเก็ต"
+        }
+      }
+    },
+    "ticket escalate": {
+      "name": "ยกระดับ",
+      "description": "จำกัดทิกเก็ตนี้ไว้ให้ผู้รับผิดชอบ",
+      "parameters": {
+        "reason": {
+          "name": "เหตุผล",
+          "description": "เหตุผลที่ปิดหรือยกระดับทิกเก็ต"
+        }
+      }
+    },
+    "ticket deescalate": {
+      "name": "ยกเลิกการยกระดับ",
+      "description": "ยกเลิกการยกระดับ"
+    },
+    "ticket move": {
+      "name": "ย้าย",
+      "description": "ย้ายทิกเก็ตนี้ไปยังหมวดหมู่อื่น",
+      "parameters": {
+        "category": {
+          "name": "หมวดหมู่",
+          "description": "หมวดหมู่ที่จะย้ายทิกเก็ตไป"
+        }
+      }
+    },
+    "ticket rename": {
+      "name": "เปลี่ยนชื่อ",
+      "description": "เปลี่ยนชื่อทิกเก็ตนี้",
+      "parameters": {
+        "name": {
+          "name": "ชื่อ",
+          "description": "ชื่อช่องใหม่ (เว้นว่างเพื่อเปิดแบบฟอร์ม)"
+        }
+      }
+    },
+    "ticket add": {
+      "name": "เพิ่ม",
+      "description": "เพิ่มสมาชิกหรือบทบาทเข้าทิกเก็ตนี้",
+      "parameters": {
+        "target": {
+          "name": "เป้าหมาย",
+          "description": "สมาชิกหรือบทบาทที่เกี่ยวข้อง"
+        }
+      }
+    },
+    "ticket remove": {
+      "name": "นำออก",
+      "description": "นำสมาชิกหรือบทบาทออกจากทิกเก็ตนี้",
+      "parameters": {
+        "target": {
+          "name": "เป้าหมาย",
+          "description": "สมาชิกหรือบทบาทที่เกี่ยวข้อง"
+        }
+      }
+    },
+    "ticket participants": {
+      "name": "ผู้เข้าร่วม",
+      "description": "ดูและแก้ไขว่าใครเข้าถึงทิกเก็ตนี้ได้"
+    },
+    "ticket staff-thread": {
+      "name": "เธรดทีมงาน",
+      "description": "เปิดหรือเข้าร่วมเธรดส่วนตัวของทีมงาน"
+    },
+    "ticket info": {
+      "name": "ข้อมูล",
+      "description": "แสดงรายละเอียดของทิกเก็ตนี้"
     }
   }
 }

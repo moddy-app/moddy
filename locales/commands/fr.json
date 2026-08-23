@@ -276,6 +276,100 @@
           "description": "Le membre à dévérifier"
         }
       }
+    },
+    "ticket": {
+      "name": "ticket",
+      "description": "Gérer le ticket dans lequel vous êtes"
+    },
+    "ticket close": {
+      "name": "fermer",
+      "description": "Ferme ce ticket",
+      "parameters": {
+        "reason": {
+          "name": "raison",
+          "description": "Pourquoi le ticket est fermé ou escaladé"
+        }
+      }
+    },
+    "ticket reopen": {
+      "name": "rouvrir",
+      "description": "Rouvre ce ticket fermé"
+    },
+    "ticket close-request": {
+      "name": "demander-fermeture",
+      "description": "Demande au staff de fermer ce ticket",
+      "parameters": {
+        "reason": {
+          "name": "raison",
+          "description": "Pourquoi le ticket est fermé ou escaladé"
+        }
+      }
+    },
+    "ticket escalate": {
+      "name": "escalader",
+      "description": "Réserve ce ticket aux responsables",
+      "parameters": {
+        "reason": {
+          "name": "raison",
+          "description": "Pourquoi le ticket est fermé ou escaladé"
+        }
+      }
+    },
+    "ticket deescalate": {
+      "name": "annuler-escalade",
+      "description": "Annule l'escalade"
+    },
+    "ticket move": {
+      "name": "deplacer",
+      "description": "Déplace ce ticket vers une autre catégorie",
+      "parameters": {
+        "category": {
+          "name": "categorie",
+          "description": "La catégorie vers laquelle déplacer le ticket"
+        }
+      }
+    },
+    "ticket rename": {
+      "name": "renommer",
+      "description": "Renomme ce ticket",
+      "parameters": {
+        "name": {
+          "name": "nom",
+          "description": "Le nouveau nom du salon (laissez vide pour un formulaire)"
+        }
+      }
+    },
+    "ticket add": {
+      "name": "ajouter",
+      "description": "Ajoute un membre ou un rôle à ce ticket",
+      "parameters": {
+        "target": {
+          "name": "cible",
+          "description": "Le membre ou le rôle concerné"
+        }
+      }
+    },
+    "ticket remove": {
+      "name": "retirer",
+      "description": "Retire un membre ou un rôle de ce ticket",
+      "parameters": {
+        "target": {
+          "name": "cible",
+          "description": "Le membre ou le rôle concerné"
+        }
+      }
+    },
+    "ticket participants": {
+      "name": "participants",
+      "description": "Affiche et modifie qui a accès à ce ticket"
+    },
+    "ticket staff-thread": {
+      "name": "thread-staff",
+      "description": "Ouvre ou rejoint le thread privé du staff"
+    },
+    "ticket info": {
+      "name": "infos",
+      "description": "Affiche les détails de ce ticket"
     }
   }
 }

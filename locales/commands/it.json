@@ -276,6 +276,100 @@
           "description": "Il membro di cui annullare la verifica"
         }
       }
+    },
+    "ticket": {
+      "name": "ticket",
+      "description": "Gestisci il ticket in cui ti trovi"
+    },
+    "ticket close": {
+      "name": "chiudi",
+      "description": "Chiude questo ticket",
+      "parameters": {
+        "reason": {
+          "name": "motivo",
+          "description": "Perché il ticket viene chiuso o escalato"
+        }
+      }
+    },
+    "ticket reopen": {
+      "name": "riapri",
+      "description": "Riapre questo ticket chiuso"
+    },
+    "ticket close-request": {
+      "name": "chiedi-chiusura",
+      "description": "Chiede allo staff di chiudere questo ticket",
+      "parameters": {
+        "reason": {
+          "name": "motivo",
+          "description": "Perché il ticket viene chiuso o escalato"
+        }
+      }
+    },
+    "ticket escalate": {
+      "name": "escala",
+      "description": "Riserva questo ticket ai responsabili",
+      "parameters": {
+        "reason": {
+          "name": "motivo",
+          "description": "Perché il ticket viene chiuso o escalato"
+        }
+      }
+    },
+    "ticket deescalate": {
+      "name": "annulla-escalation",
+      "description": "Annulla l'escalation"
+    },
+    "ticket move": {
+      "name": "sposta",
+      "description": "Sposta questo ticket in un'altra categoria",
+      "parameters": {
+        "category": {
+          "name": "categoria",
+          "description": "La categoria in cui spostare il ticket"
+        }
+      }
+    },
+    "ticket rename": {
+      "name": "rinomina",
+      "description": "Rinomina questo ticket",
+      "parameters": {
+        "name": {
+          "name": "nome",
+          "description": "Il nuovo nome del canale (vuoto per aprire un modulo)"
+        }
+      }
+    },
+    "ticket add": {
+      "name": "aggiungi",
+      "description": "Aggiunge un membro o un ruolo a questo ticket",
+      "parameters": {
+        "target": {
+          "name": "bersaglio",
+          "description": "Il membro o il ruolo interessato"
+        }
+      }
+    },
+    "ticket remove": {
+      "name": "rimuovi",
+      "description": "Rimuove un membro o un ruolo da questo ticket",
+      "parameters": {
+        "target": {
+          "name": "bersaglio",
+          "description": "Il membro o il ruolo interessato"
+        }
+      }
+    },
+    "ticket participants": {
+      "name": "partecipanti",
+      "description": "Mostra e modifica chi ha accesso a questo ticket"
+    },
+    "ticket staff-thread": {
+      "name": "thread-staff",
+      "description": "Apre o entra nel thread privato dello staff"
+    },
+    "ticket info": {
+      "name": "info",
+      "description": "Mostra i dettagli di questo ticket"
     }
   }
 }

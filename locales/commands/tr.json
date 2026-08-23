@@ -276,6 +276,100 @@
           "description": "Doğrulaması kaldırılacak üye"
         }
       }
+    },
+    "ticket": {
+      "name": "ticket",
+      "description": "İçinde bulunduğun talebi yönet"
+    },
+    "ticket close": {
+      "name": "kapat",
+      "description": "Bu talebi kapatır",
+      "parameters": {
+        "reason": {
+          "name": "sebep",
+          "description": "Talebin neden kapatıldığı veya yükseltildiği"
+        }
+      }
+    },
+    "ticket reopen": {
+      "name": "yeniden-aç",
+      "description": "Kapalı olan bu talebi yeniden açar"
+    },
+    "ticket close-request": {
+      "name": "kapatma-iste",
+      "description": "Ekipten bu talebi kapatmasını ister",
+      "parameters": {
+        "reason": {
+          "name": "sebep",
+          "description": "Talebin neden kapatıldığı veya yükseltildiği"
+        }
+      }
+    },
+    "ticket escalate": {
+      "name": "yükselt",
+      "description": "Bu talebi yalnızca sorumlulara bırakır",
+      "parameters": {
+        "reason": {
+          "name": "sebep",
+          "description": "Talebin neden kapatıldığı veya yükseltildiği"
+        }
+      }
+    },
+    "ticket deescalate": {
+      "name": "yükseltmeyi-geri-al",
+      "description": "Yükseltmeyi geri alır"
+    },
+    "ticket move": {
+      "name": "taşı",
+      "description": "Bu talebi başka bir kategoriye taşır",
+      "parameters": {
+        "category": {
+          "name": "kategori",
+          "description": "Talebin taşınacağı kategori"
+        }
+      }
+    },
+    "ticket rename": {
+      "name": "yeniden-adlandır",
+      "description": "Bu talebi yeniden adlandırır",
+      "parameters": {
+        "name": {
+          "name": "ad",
+          "description": "Yeni kanal adı (boş bırakılırsa form açılır)"
+        }
+      }
+    },
+    "ticket add": {
+      "name": "ekle",
+      "description": "Bu talebe bir üye veya rol ekler",
+      "parameters": {
+        "target": {
+          "name": "hedef",
+          "description": "İlgili üye veya rol"
+        }
+      }
+    },
+    "ticket remove": {
+      "name": "çıkar",
+      "description": "Bu talepten bir üye veya rol çıkarır",
+      "parameters": {
+        "target": {
+          "name": "hedef",
+          "description": "İlgili üye veya rol"
+        }
+      }
+    },
+    "ticket participants": {
+      "name": "katılımcılar",
+      "description": "Bu talebe kimin eriştiğini gösterir ve değiştirir"
+    },
+    "ticket staff-thread": {
+      "name": "ekip-konusu",
+      "description": "Özel ekip konusunu açar veya ona katılır"
+    },
+    "ticket info": {
+      "name": "bilgi",
+      "description": "Bu talebin ayrıntılarını gösterir"
     }
   }
 }

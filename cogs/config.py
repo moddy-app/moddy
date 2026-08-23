@@ -273,6 +273,14 @@ class ConfigMainView(BaseView):
                 user_id,
                 locale
             )
+        elif module_id == 'tickets':
+            from modules.configs.tickets_config import TicketsConfigView
+            config_view = await TicketsConfigView.create(
+                bot,
+                guild_id,
+                user_id,
+                locale
+            )
         elif module_id == 'automod_ai':
             from modules.configs.automod_ai_config import AutomodAIConfigView
             config_view = AutomodAIConfigView(
@@ -285,9 +293,6 @@ class ConfigMainView(BaseView):
             # Session 7: load the learned-precedents count before first render.
             await config_view.load_precedent_stats()
         # Ajouter d'autres modules ici au fur et à mesure
-        # elif module_id == 'ticket':
-        #     from modules.configs.ticket_config import TicketConfigView
-        #     config_view = TicketConfigView(...)
 
         if config_view:
             # Affiche la vue de configuration du module

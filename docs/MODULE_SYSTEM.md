@@ -158,6 +158,47 @@ stockée et chargée, l'erreur est renvoyée dans `hook_error`.
 Voir l'implémentation de référence : `modules/altguard.py` et
 [ALTGUARD_INTEGRATION.md §5](ALTGUARD_INTEGRATION.md).
 
+### 3 ter. Commandes slash réservées aux serveurs qui utilisent le module
+
+Un module peut posséder ses propres commandes slash, publiées **uniquement dans
+les serveurs où il est activé** (`/ticket` pour le module Tickets). Un serveur
+qui n'utilise pas le module ne voit jamais ces commandes.
+
+Trois choses à faire :
+
+1. **Déclarer le groupe au niveau du module**, jamais comme attribut de Cog —
+   un attribut de Cog est ajouté à l'arbre global par discord.py, ce qui est
+   exactement ce qu'on veut éviter. Les callbacks récupèrent le bot via
+   `interaction.client`.
+
+   ```python
+   # cogs/mon_module.py
+   mon_groupe = app_commands.Group(name="…", description="…", guild_only=True)
+   ```
+
+2. **L'enregistrer dans `setup()`** :
+
+   ```python
+   async def setup(bot):
+       await bot.add_cog(MonCog(bot))
+       bot.register_module_commands(MODULE_ID, [mon_groupe])
+   ```
+
+3. **S'assurer que `module.enabled`** reflète bien « ce serveur utilise la
+   fonctionnalité » : c'est la seule condition qui décide de la publication.
+
+Le reste est automatique :
+`ModdyBot._register_guild_command_set()` ajoute le groupe à l'arbre d'un serveur
+quand `get_enabled_module_ids(guild_id)` contient le module, et `ModuleManager`
+appelle `bot.resync_module_commands(guild_id)` après **chaque** sauvegarde,
+suppression ou rechargement poussé par le dashboard. Le bot saute le sync quand
+l'ensemble des modules activés n'a pas changé : les syncs de commandes par
+serveur sont rate-limités, et une sauvegarde qui ne change qu'une couleur ne
+doit pas en consommer un.
+
+Voir l'implémentation de référence : `cogs/tickets.py` et
+[TICKETS.md](TICKETS.md#slash-commands-published-per-guild).
+
 ### 4. Stockage en base de données
 
 Les configurations sont stockées dans PostgreSQL :

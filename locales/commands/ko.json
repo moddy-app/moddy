@@ -276,6 +276,100 @@
           "description": "인증을 해제할 멤버"
         }
       }
+    },
+    "ticket": {
+      "name": "ticket",
+      "description": "현재 있는 티켓을 관리합니다"
+    },
+    "ticket close": {
+      "name": "닫기",
+      "description": "이 티켓을 닫습니다",
+      "parameters": {
+        "reason": {
+          "name": "사유",
+          "description": "티켓을 닫거나 에스컬레이션하는 이유"
+        }
+      }
+    },
+    "ticket reopen": {
+      "name": "다시열기",
+      "description": "닫힌 이 티켓을 다시 엽니다"
+    },
+    "ticket close-request": {
+      "name": "닫기요청",
+      "description": "스태프에게 이 티켓을 닫아 달라고 요청합니다",
+      "parameters": {
+        "reason": {
+          "name": "사유",
+          "description": "티켓을 닫거나 에스컬레이션하는 이유"
+        }
+      }
+    },
+    "ticket escalate": {
+      "name": "에스컬레이션",
+      "description": "이 티켓을 책임자에게만 남깁니다",
+      "parameters": {
+        "reason": {
+          "name": "사유",
+          "description": "티켓을 닫거나 에스컬레이션하는 이유"
+        }
+      }
+    },
+    "ticket deescalate": {
+      "name": "에스컬레이션취소",
+      "description": "에스컬레이션을 취소합니다"
+    },
+    "ticket move": {
+      "name": "이동",
+      "description": "이 티켓을 다른 카테고리로 옮깁니다",
+      "parameters": {
+        "category": {
+          "name": "카테고리",
+          "description": "티켓을 옮길 카테고리"
+        }
+      }
+    },
+    "ticket rename": {
+      "name": "이름변경",
+      "description": "이 티켓의 이름을 바꿉니다",
+      "parameters": {
+        "name": {
+          "name": "이름",
+          "description": "새 채널 이름 (비우면 양식이 열립니다)"
+        }
+      }
+    },
+    "ticket add": {
+      "name": "추가",
+      "description": "이 티켓에 멤버나 역할을 추가합니다",
+      "parameters": {
+        "target": {
+          "name": "대상",
+          "description": "해당 멤버 또는 역할"
+        }
+      }
+    },
+    "ticket remove": {
+      "name": "제거",
+      "description": "이 티켓에서 멤버나 역할을 제거합니다",
+      "parameters": {
+        "target": {
+          "name": "대상",
+          "description": "해당 멤버 또는 역할"
+        }
+      }
+    },
+    "ticket participants": {
+      "name": "참여자",
+      "description": "이 티켓에 접근할 수 있는 대상을 보고 수정합니다"
+    },
+    "ticket staff-thread": {
+      "name": "스태프스레드",
+      "description": "비공개 스태프 스레드를 열거나 참여합니다"
+    },
+    "ticket info": {
+      "name": "정보",
+      "description": "이 티켓의 세부 정보를 표시합니다"
     }
   }
 }

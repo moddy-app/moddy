@@ -276,6 +276,100 @@
           "description": "Участник, с которого снять проверку"
         }
       }
+    },
+    "ticket": {
+      "name": "ticket",
+      "description": "Управление тикетом, в котором вы находитесь"
+    },
+    "ticket close": {
+      "name": "закрыть",
+      "description": "Закрывает этот тикет",
+      "parameters": {
+        "reason": {
+          "name": "причина",
+          "description": "Почему тикет закрывается или эскалируется"
+        }
+      }
+    },
+    "ticket reopen": {
+      "name": "открыть-снова",
+      "description": "Снова открывает этот закрытый тикет"
+    },
+    "ticket close-request": {
+      "name": "запросить-закрытие",
+      "description": "Просит команду закрыть этот тикет",
+      "parameters": {
+        "reason": {
+          "name": "причина",
+          "description": "Почему тикет закрывается или эскалируется"
+        }
+      }
+    },
+    "ticket escalate": {
+      "name": "эскалация",
+      "description": "Оставляет тикет только ответственным",
+      "parameters": {
+        "reason": {
+          "name": "причина",
+          "description": "Почему тикет закрывается или эскалируется"
+        }
+      }
+    },
+    "ticket deescalate": {
+      "name": "отменить-эскалацию",
+      "description": "Отменяет эскалацию"
+    },
+    "ticket move": {
+      "name": "переместить",
+      "description": "Перемещает этот тикет в другую категорию",
+      "parameters": {
+        "category": {
+          "name": "категория",
+          "description": "Категория, в которую переместить тикет"
+        }
+      }
+    },
+    "ticket rename": {
+      "name": "переименовать",
+      "description": "Переименовывает этот тикет",
+      "parameters": {
+        "name": {
+          "name": "имя",
+          "description": "Новое название канала (пусто — откроется форма)"
+        }
+      }
+    },
+    "ticket add": {
+      "name": "добавить",
+      "description": "Добавляет участника или роль в этот тикет",
+      "parameters": {
+        "target": {
+          "name": "цель",
+          "description": "Затронутый участник или роль"
+        }
+      }
+    },
+    "ticket remove": {
+      "name": "убрать",
+      "description": "Убирает участника или роль из этого тикета",
+      "parameters": {
+        "target": {
+          "name": "цель",
+          "description": "Затронутый участник или роль"
+        }
+      }
+    },
+    "ticket participants": {
+      "name": "участники",
+      "description": "Показывает и меняет, у кого есть доступ к тикету"
+    },
+    "ticket staff-thread": {
+      "name": "ветка-команды",
+      "description": "Открывает приватную ветку команды или входит в неё"
+    },
+    "ticket info": {
+      "name": "инфо",
+      "description": "Показывает подробности этого тикета"
     }
   }
 }
