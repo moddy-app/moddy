@@ -2165,6 +2165,7 @@
         "uncached_messages": "*Aucun de ces messages n'était en cache : impossible d'en faire un transcript.*",
         "moved_to_file": "Contenu tronqué — le texte complet est en pièce jointe.",
         "size_limit": "Log raccourci — il dépassait la taille maximale d'un message Discord.",
+        "merged_with": "Regroupé avec : {events}",
         "transcript_attached": "*Le contenu complet est en pièce jointe (transcript `.txt`).*",
         "transcript_header": "Transcript des messages supprimés — Moddy",
         "duration": {
@@ -2304,7 +2305,9 @@
           "toggles": {
             "section_title": "Réglages",
             "bots": "Ignorer les bots",
-            "transcripts": "Transcripts en pièce jointe"
+            "transcripts": "Transcripts en pièce jointe",
+            "merge": "Regrouper les doublons",
+            "merge_description": "Un même acte peut être décrit par plusieurs événements (une exclusion temporaire est un dossier, un timeout Discord et son miroir). Activé, Moddy n'en envoie qu'un seul log, enrichi de ce que disaient les autres."
           }
         },
         "errors": {

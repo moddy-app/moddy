@@ -15,6 +15,7 @@ import pytest
 from modules.logs import LogsModule, config_from_raw
 from serverlogs import registry
 from serverlogs.dispatcher import LogDispatcher, MAX_EMBEDS_PER_MESSAGE
+from serverlogs.service import LogService
 from serverlogs.renderer import (
     KIND_COLORS, MAX_EMBED_TOTAL, LogEntry, build_transcript, fmt_duration,
     fmt_number, fmt_time, fmt_user,
@@ -305,3 +306,148 @@ async def test_dispatcher_drops_the_oldest_under_a_flood():
     assert queue.qsize() <= 2
     assert instance._dropped[1] == 3
     await instance.close()
+
+
+# --------------------------------------------------------------------------- #
+# Merging one act told several times
+# --------------------------------------------------------------------------- #
+
+def test_every_merge_family_member_is_a_real_event():
+    for event in ("mute_add", "user_timed_out", "user_roles_update", "kick_add"):
+        assert registry.merge_family(event) is not None
+        assert registry.keys_for(event), event
+
+
+def test_ordinary_events_are_never_held_back():
+    """Two deletions from the same author must stay two logs."""
+    assert registry.merge_family("message_delete") is None
+    assert registry.merge_family("channel_create") is None
+
+
+def _merge_service(module):
+    """A service whose configuration is fixed and whose delivery is recorded."""
+    bot = types.SimpleNamespace(get_channel=lambda _id: None, user=None,
+                                module_manager=None)
+    service = LogService(bot)
+
+    async def _module(_guild=None):
+        return module
+
+    service.module = _module
+    sent = []
+    service.dispatcher.enqueue = lambda channel_id, embed, files=None: sent.append(
+        (channel_id, embed))
+    return service, sent
+
+
+def _mute_entries():
+    """The three logs a Moddy mute really produces (case, timeout, mirror)."""
+    case = LogEntry("mute_add", "en-US")
+    case.subject_id = 7
+    case.line("case", "`N6A8Q2`").line("reason", "bonjour")
+
+    timeout = LogEntry("user_timed_out", "en-US")
+    timeout.subject_id = 7
+    timeout.line("until", "tomorrow").line("expires", "in a month")
+    timeout.line("reason", "[N6A8Q2] (Permanent) : bonjour")
+
+    mirror = LogEntry("mute_add", "en-US")
+    mirror.subject_id = 7
+    mirror.line("until", "tomorrow")
+    return case, timeout, mirror
+
+
+@pytest.mark.asyncio
+async def test_one_act_sent_to_one_channel_becomes_one_log():
+    module = config_from_raw(None, 1, {
+        "categories": {
+            "moderation": {"channel_ids": [222], "disabled_events": []},
+            "users": {"channel_ids": [222], "disabled_events": []},
+        },
+    })
+    service, sent = _merge_service(module)
+    guild = types.SimpleNamespace(id=1, preferred_locale="en-US")
+
+    for entry in _mute_entries():
+        await service.submit(guild, entry)
+    assert sent == [], "mergeable events must wait for their siblings"
+
+    await service.flush(guild, (1, "member_mute", 7))
+    await service.close()
+
+    assert len(sent) == 1
+    _channel, embed = sent[0]
+    description = embed.description
+    # The richest entry won, and it kept what the others knew.
+    assert "N6A8Q2" in description        # from the case
+    assert "in a month" in description    # from the timeout
+    assert description.count("Reason") == 1, "the same reason must not be repeated"
+    assert "Merged with" in description
+
+
+@pytest.mark.asyncio
+async def test_merging_never_empties_a_channel_that_wanted_the_other_event():
+    """Categories split across channels: each channel keeps its own log."""
+    module = config_from_raw(None, 1, {
+        "categories": {
+            "moderation": {"channel_ids": [222], "disabled_events": []},
+            "users": {"channel_ids": [333], "disabled_events": []},
+        },
+    })
+    service, sent = _merge_service(module)
+    guild = types.SimpleNamespace(id=1, preferred_locale="en-US")
+
+    case, timeout, _mirror = _mute_entries()
+    await service.submit(guild, case)
+    await service.submit(guild, timeout)
+    await service.flush(guild, (1, "member_mute", 7))
+    await service.close()
+
+    assert sorted(channel for channel, _ in sent) == [222, 333]
+    for _channel, embed in sent:
+        assert "Merged with" not in (embed.description or "")
+
+
+@pytest.mark.asyncio
+async def test_the_option_can_be_turned_off():
+    module = config_from_raw(None, 1, {
+        "categories": {
+            "moderation": {"channel_ids": [222], "disabled_events": []},
+            "users": {"channel_ids": [222], "disabled_events": []},
+        },
+        "merge_duplicates": False,
+    })
+    service, sent = _merge_service(module)
+    guild = types.SimpleNamespace(id=1, preferred_locale="en-US")
+
+    for entry in _mute_entries():
+        await service.submit(guild, entry)
+    await service.close()
+
+    assert len(sent) == 3, "with merging off, every event is its own log"
+
+
+def test_merging_is_on_by_default_and_round_trips():
+    module = config_from_raw(None, 1, {})
+    assert module.merge_duplicates is True
+    assert config_from_raw(None, 1, {"merge_duplicates": False}).merge_duplicates is False
+    assert module.to_config()["merge_duplicates"] is True
+
+
+def test_absorbing_keeps_the_subject_and_the_executor():
+    winner = LogEntry("mute_add", "en-US")
+    winner.line("case", "`N6A8Q2`")
+    loser = LogEntry("user_timed_out", "en-US")
+    loser.line("until", "tomorrow")
+    class _Bot:
+        id = 9
+        display_avatar = None
+
+        def __str__(self):
+            return "Moddy#3735"
+
+    loser.actor(_Bot())
+
+    embed = winner.absorb(loser).to_embed()
+    assert "tomorrow" in embed.description
+    assert embed.footer.text == "Moddy#3735"

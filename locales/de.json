@@ -2166,6 +2166,7 @@
         "uncached_messages": "*Keine dieser Nachrichten war im Cache, daher konnte kein Transkript erstellt werden.*",
         "moved_to_file": "Inhalt gekürzt — der vollständige Text ist angehängt.",
         "size_limit": "Log gekürzt — es überschritt die maximale Größe einer Discord-Nachricht.",
+        "merged_with": "Zusammengefasst mit: {events}",
         "transcript_attached": "*Der vollständige Inhalt ist als `.txt`-Transkript angehängt.*",
         "transcript_header": "Transkript gelöschter Nachrichten — Moddy",
         "duration": {
@@ -2305,7 +2306,9 @@
           "toggles": {
             "section_title": "Einstellungen",
             "bots": "Bots ignorieren",
-            "transcripts": "Transkripte als Anhang"
+            "transcripts": "Transkripte als Anhang",
+            "merge": "Duplikate zusammenfassen",
+            "merge_description": "Eine Handlung kann von mehreren Ereignissen beschrieben werden (eine Stummschaltung ist ein Fall, ein Discord-Timeout und dessen Spiegelung). Aktiviert sendet Moddy dafür nur ein Log, ergänzt um das, was die anderen wussten."
           }
         },
         "errors": {

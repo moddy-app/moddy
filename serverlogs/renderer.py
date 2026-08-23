@@ -29,7 +29,7 @@ from __future__ import annotations
 
 import io
 from datetime import datetime, timezone
-from typing import Any, Iterable, List, Optional, Sequence, Union
+from typing import Any, Iterable, List, Optional, Sequence, Tuple, Union
 
 import discord
 
@@ -172,15 +172,21 @@ class LogEntry:
     overflow-to-file rules are enforced here for every event alike.
     """
 
-    __slots__ = ("event", "locale", "kind", "_lines", "_blocks", "_files",
-                 "_thumbnail", "_image", "_footer_text", "_footer_icon",
-                 "_timestamp", "_title_override", "_url")
+    __slots__ = ("event", "locale", "kind", "subject_id", "_lines", "_blocks",
+                 "_files", "_thumbnail", "_image", "_footer_text",
+                 "_footer_icon", "_timestamp", "_title_override", "_url",
+                 "_merged")
 
     def __init__(self, event: str, locale: str, *, kind: Optional[str] = None):
         self.event = event
         self.locale = locale
         self.kind = kind
-        self._lines: List[str] = []
+        #: Who the log is about — the merge key, set by ``subject()`` or by a
+        #: listener that only has an id (see :mod:`serverlogs.service`).
+        self.subject_id: Optional[int] = None
+        # (label, rendered line) — the label is what lets a merged entry tell
+        # "I already say this" from "this is new".
+        self._lines: List[Tuple[Optional[str], str]] = []
         self._blocks: List[tuple] = []          # (name, value, inline)
         self._files: List[discord.File] = []
         self._thumbnail: Optional[str] = None
@@ -190,6 +196,7 @@ class LogEntry:
         self._timestamp: datetime = datetime.now(timezone.utc)
         self._title_override: Optional[str] = None
         self._url: Optional[str] = None
+        self._merged: List[str] = []
 
     # -- content ---------------------------------------------------------- #
 
@@ -198,13 +205,13 @@ class LogEntry:
         if value in (None, "", "—"):
             return self
         name = t(f"modules.logs.fields.{label}", locale=self.locale)
-        self._lines.append(f"> **{name}:** {value}")
+        self._lines.append((label, f"> **{name}:** {value}"))
         return self
 
     def raw_line(self, value: str) -> "LogEntry":
         """Add a quoted line with no label (used for standalone notes)."""
         if value:
-            self._lines.append(f"> {value}")
+            self._lines.append((None, f"> {value}"))
         return self
 
     def block(self, label: str, value: Any, *, inline: bool = False,
@@ -232,6 +239,7 @@ class LogEntry:
         """The user/entity the event is about: line(s) + avatar thumbnail."""
         if user is None:
             return self
+        self.subject_id = getattr(user, "id", None)
         self.line(label, fmt_user(user))
         if with_id:
             self.line("id", fmt_user_id(user.id))
@@ -296,6 +304,44 @@ class LogEntry:
     def is_empty(self) -> bool:
         return not self._lines and not self._blocks and not self._files
 
+    @property
+    def labels(self) -> set:
+        """Field labels already present — what :meth:`absorb` checks against."""
+        return {label for label, _ in self._lines if label}
+
+    def absorb(self, other: "LogEntry") -> "LogEntry":
+        """Fold another entry describing the *same act* into this one.
+
+        Only what this entry does not already say is taken: a line whose
+        label is already here is dropped rather than repeated, so a merged
+        mute shows one **Reason**, not two. The absorbed event is named
+        under the log so the reader knows the two were the same act.
+
+        Used by :mod:`serverlogs.service` when a server turns
+        ``merge_duplicates`` on. Never merges anything by itself — the
+        service decides what belongs together (see
+        ``registry.merge_family``).
+        """
+        known = self.labels
+        for label, rendered in other._lines:  # noqa: SLF001 — same class
+            if label and label not in known:
+                self._lines.append((label, rendered))
+                known.add(label)
+        known_blocks = {name for name, _, _ in self._blocks}
+        for name, value, inline in other._blocks:  # noqa: SLF001 — same class
+            if name not in known_blocks:
+                self._blocks.append((name, value, inline))
+        if not self._footer_text and other._footer_text:  # noqa: SLF001
+            self._footer_text = other._footer_text
+            self._footer_icon = other._footer_icon
+        if not self._thumbnail and other._thumbnail:  # noqa: SLF001
+            self._thumbnail = other._thumbnail
+        spec = registry.EVENTS.get(_full_key(other.event))
+        title = t(spec.title_key, locale=self.locale) if spec else other.event
+        if title not in self._merged:
+            self._merged.append(title)
+        return self
+
     def to_embed(self) -> discord.Embed:
         spec = registry.EVENTS.get(_full_key(self.event))
         kind = self.kind or (spec.kind if spec else registry.KIND_UPDATE)
@@ -303,9 +349,15 @@ class LogEntry:
             t(spec.title_key, locale=self.locale) if spec else self.event
         )
 
+        lines = [rendered for _, rendered in self._lines]
+        if self._merged:
+            note = t("modules.logs.values.merged_with", locale=self.locale,
+                     events=", ".join(self._merged))
+            lines.append(f"-# {note}")
+
         embed = discord.Embed(
             title=truncate(title, 250),
-            description=truncate("\n".join(self._lines), MAX_DESCRIPTION) or None,
+            description=truncate("\n".join(lines), MAX_DESCRIPTION) or None,
             colour=KIND_COLORS.get(kind, FALLBACK_COLOR),
             timestamp=self._timestamp,
             url=self._url,

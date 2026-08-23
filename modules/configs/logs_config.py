@@ -58,6 +58,7 @@ _CID_OPT_CHANNELS = "moddy:logs:options:channels"
 _CID_OPT_ROLES = "moddy:logs:options:roles"
 _CID_OPT_BOTS = "moddy:logs:options:bots"
 _CID_OPT_TRANSCRIPTS = "moddy:logs:options:transcripts"
+_CID_OPT_MERGE = "moddy:logs:options:merge"
 _CID_OPT_LOCALE = "moddy:logs:options:locale"
 _CID_OPT_BACK = "moddy:logs:options:back"
 
@@ -716,7 +717,10 @@ class LogsOptionsView(BaseView):
             f"-# {t('modules.logs.config.options.toggles.bots', locale=self.locale)}: "
             f"**{self._state(self.module.ignore_bots)}**\n"
             f"-# {t('modules.logs.config.options.toggles.transcripts', locale=self.locale)}: "
-            f"**{self._state(self.module.attach_transcripts)}**"
+            f"**{self._state(self.module.attach_transcripts)}**\n"
+            f"-# {t('modules.logs.config.options.toggles.merge', locale=self.locale)}: "
+            f"**{self._state(self.module.merge_duplicates)}**\n"
+            f"-# {t('modules.logs.config.options.toggles.merge_description', locale=self.locale)}"
         ))
 
         self.add_item(container)
@@ -750,6 +754,16 @@ class LogsOptionsView(BaseView):
         )
         transcripts.callback = self.on_toggle_transcripts
         row.add_item(transcripts)
+
+        merge = ui.Button(
+            emoji=discord.PartialEmoji.from_str(
+                TOGGLE_ON if self.module.merge_duplicates else TOGGLE_OFF),
+            label=t('modules.logs.config.options.toggles.merge', locale=self.locale),
+            style=discord.ButtonStyle.secondary,
+            custom_id=_CID_OPT_MERGE,
+        )
+        merge.callback = self.on_toggle_merge
+        row.add_item(merge)
 
         self.add_item(row)
 
@@ -807,6 +821,12 @@ class LogsOptionsView(BaseView):
             return
         await self._apply(interaction, lambda module: setattr(
             module, "attach_transcripts", not module.attach_transcripts))
+
+    async def on_toggle_merge(self, interaction: discord.Interaction):
+        if not await check_guild_perms(interaction):
+            return
+        await self._apply(interaction, lambda module: setattr(
+            module, "merge_duplicates", not module.merge_duplicates))
 
     async def on_back(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):

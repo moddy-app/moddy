@@ -312,6 +312,63 @@ EVENTS: Dict[str, LogEventSpec] = {
 
 
 # ---------------------------------------------------------------------------
+# Merge families — one real act, several registry events
+# ---------------------------------------------------------------------------
+#
+# Discord and Moddy describe the same act in several ways, on purpose: a mute
+# applied by Moddy is a case (``mute_add``), a Discord timeout
+# (``user_timed_out``) and, because the timeout is what Discord actually
+# reports, a second ``mute_add`` mirrored from the gateway. Three true, useful
+# events — and three near-identical embeds when a server sends them all to the
+# same channel.
+#
+# A **family** declares "these events describe one act". When the server has
+# ``merge_duplicates`` on, the service holds them for a moment and delivers the
+# highest-priority one, enriched with whatever the others knew that it did not
+# (see :mod:`serverlogs.service`). Priority = how much context the event
+# carries: a Moddy case knows the case reference and the moderator, a gateway
+# mirror only knows what Discord said.
+#
+# Only declared families are ever held back. Everything else is dispatched
+# straight away — merging two unrelated occurrences that happen to share a
+# subject (two messages from the same author deleted in a row) would lose a
+# log, which is worse than showing two.
+
+_MERGE_FAMILIES: Dict[str, Tuple[str, int]] = {
+    # A mute: Moddy's case, Discord's timeout, and the timeout mirrored back
+    # into the moderation category.
+    "mute_add": ("member_mute", 30),
+    "user_timed_out": ("member_mute", 10),
+    "mute_remove": ("member_unmute", 30),
+    "user_timeout_removed": ("member_unmute", 10),
+    # A ban: Moddy's case and the gateway's own ban event share the key, so
+    # the family exists to collapse the two emissions of the same event.
+    "ban_add": ("member_ban", 30),
+    "ban_remove": ("member_unban", 30),
+    # A kick, told once as a server event and once as a moderation one.
+    "kick_add": ("member_kick", 30),
+    "user_kick": ("member_kick", 20),
+    # A warn: only Moddy emits it, but twice if it is re-recorded.
+    "warn_add": ("member_warn", 30),
+    "warn_remove": ("member_unwarn", 30),
+    # Role changes: the combined entry already says everything the two
+    # focused ones say.
+    "user_roles_update": ("member_roles", 30),
+    "user_roles_add": ("member_roles", 20),
+    "user_roles_remove": ("member_roles", 10),
+}
+
+
+def merge_family(event: str) -> Optional[Tuple[str, int]]:
+    """``(family, priority)`` for a bare event name, or ``None``.
+
+    ``None`` means "never hold this event back" — the overwhelming majority
+    of the catalogue.
+    """
+    return _MERGE_FAMILIES.get(event)
+
+
+# ---------------------------------------------------------------------------
 # Lookups
 # ---------------------------------------------------------------------------
 
