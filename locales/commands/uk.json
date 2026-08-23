@@ -276,6 +276,100 @@
           "description": "Учасник, з якого зняти перевірку"
         }
       }
+    },
+    "ticket": {
+      "name": "ticket",
+      "description": "Керування тікетом, у якому ви перебуваєте"
+    },
+    "ticket close": {
+      "name": "закрити",
+      "description": "Закриває цей тікет",
+      "parameters": {
+        "reason": {
+          "name": "причина",
+          "description": "Чому тікет закривається або ескалюється"
+        }
+      }
+    },
+    "ticket reopen": {
+      "name": "відкрити-знову",
+      "description": "Знову відкриває цей закритий тікет"
+    },
+    "ticket close-request": {
+      "name": "запросити-закриття",
+      "description": "Просить команду закрити цей тікет",
+      "parameters": {
+        "reason": {
+          "name": "причина",
+          "description": "Чому тікет закривається або ескалюється"
+        }
+      }
+    },
+    "ticket escalate": {
+      "name": "ескалація",
+      "description": "Залишає тікет лише відповідальним",
+      "parameters": {
+        "reason": {
+          "name": "причина",
+          "description": "Чому тікет закривається або ескалюється"
+        }
+      }
+    },
+    "ticket deescalate": {
+      "name": "скасувати-ескалацію",
+      "description": "Скасовує ескалацію"
+    },
+    "ticket move": {
+      "name": "перемістити",
+      "description": "Переміщує цей тікет до іншої категорії",
+      "parameters": {
+        "category": {
+          "name": "категорія",
+          "description": "Категорія, до якої перемістити тікет"
+        }
+      }
+    },
+    "ticket rename": {
+      "name": "перейменувати",
+      "description": "Перейменовує цей тікет",
+      "parameters": {
+        "name": {
+          "name": "назва",
+          "description": "Нова назва каналу (порожньо — відкриється форма)"
+        }
+      }
+    },
+    "ticket add": {
+      "name": "додати",
+      "description": "Додає учасника або роль до цього тікета",
+      "parameters": {
+        "target": {
+          "name": "ціль",
+          "description": "Причетний учасник або роль"
+        }
+      }
+    },
+    "ticket remove": {
+      "name": "прибрати",
+      "description": "Прибирає учасника або роль із цього тікета",
+      "parameters": {
+        "target": {
+          "name": "ціль",
+          "description": "Причетний учасник або роль"
+        }
+      }
+    },
+    "ticket participants": {
+      "name": "учасники",
+      "description": "Показує та змінює, хто має доступ до тікета"
+    },
+    "ticket staff-thread": {
+      "name": "гілка-команди",
+      "description": "Відкриває приватну гілку команди або приєднується"
+    },
+    "ticket info": {
+      "name": "інфо",
+      "description": "Показує подробиці цього тікета"
     }
   }
 }

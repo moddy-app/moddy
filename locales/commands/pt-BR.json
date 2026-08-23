@@ -276,6 +276,100 @@
           "description": "O membro a desverificar"
         }
       }
+    },
+    "ticket": {
+      "name": "ticket",
+      "description": "Gerencie o ticket em que você está"
+    },
+    "ticket close": {
+      "name": "fechar",
+      "description": "Fecha este ticket",
+      "parameters": {
+        "reason": {
+          "name": "motivo",
+          "description": "Por que o ticket está sendo fechado ou escalonado"
+        }
+      }
+    },
+    "ticket reopen": {
+      "name": "reabrir",
+      "description": "Reabre este ticket fechado"
+    },
+    "ticket close-request": {
+      "name": "pedir-fechamento",
+      "description": "Pede à equipe para fechar este ticket",
+      "parameters": {
+        "reason": {
+          "name": "motivo",
+          "description": "Por que o ticket está sendo fechado ou escalonado"
+        }
+      }
+    },
+    "ticket escalate": {
+      "name": "escalonar",
+      "description": "Reserva este ticket aos responsáveis",
+      "parameters": {
+        "reason": {
+          "name": "motivo",
+          "description": "Por que o ticket está sendo fechado ou escalonado"
+        }
+      }
+    },
+    "ticket deescalate": {
+      "name": "cancelar-escalonamento",
+      "description": "Cancela o escalonamento"
+    },
+    "ticket move": {
+      "name": "mover",
+      "description": "Move este ticket para outra categoria",
+      "parameters": {
+        "category": {
+          "name": "categoria",
+          "description": "A categoria para onde mover o ticket"
+        }
+      }
+    },
+    "ticket rename": {
+      "name": "renomear",
+      "description": "Renomeia este ticket",
+      "parameters": {
+        "name": {
+          "name": "nome",
+          "description": "O novo nome do canal (vazio para abrir um formulário)"
+        }
+      }
+    },
+    "ticket add": {
+      "name": "adicionar",
+      "description": "Adiciona um membro ou cargo a este ticket",
+      "parameters": {
+        "target": {
+          "name": "alvo",
+          "description": "O membro ou cargo em questão"
+        }
+      }
+    },
+    "ticket remove": {
+      "name": "remover",
+      "description": "Remove um membro ou cargo deste ticket",
+      "parameters": {
+        "target": {
+          "name": "alvo",
+          "description": "O membro ou cargo em questão"
+        }
+      }
+    },
+    "ticket participants": {
+      "name": "participantes",
+      "description": "Veja e edite quem tem acesso a este ticket"
+    },
+    "ticket staff-thread": {
+      "name": "topico-equipe",
+      "description": "Abre ou entra no tópico privado da equipe"
+    },
+    "ticket info": {
+      "name": "info",
+      "description": "Mostra os detalhes deste ticket"
     }
   }
 }

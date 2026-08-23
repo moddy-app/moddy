@@ -2795,6 +2795,314 @@
           "app_command_permission_update": "A command's permissions were updated"
         }
       }
+    },
+    "tickets": {
+      "description": "Support tickets with panels, categories and per-role permissions",
+      "config": {
+        "title": "Tickets",
+        "description": "Let your members open a support ticket from a panel. Each panel offers one or more categories, and each category decides where the ticket opens, who can open it and what your staff can do inside.",
+        "quota": "Panels: `{count}/{max}` · Categories per panel: `{categories}`",
+        "premium_hint": "Premium raises these limits to 10 panels and 15 categories per panel.",
+        "manage_placeholder": "Select a panel to configure",
+        "empty": "No panel yet. Create one to let your members open tickets.",
+        "add_panel": "Add a panel",
+        "entry_summary": "{categories} category(ies) · {style}",
+        "no_channel": "no channel yet",
+        "paused": "paused",
+        "not_posted": "This panel has not been posted yet — use **Post again**."
+      },
+      "panel": {
+        "modal_title_new": "New ticket panel",
+        "modal_title_edit": "Edit the panel",
+        "name_label": "Internal name",
+        "name_hint": "Only you see it, in this configuration screen",
+        "title_label": "Title shown to members",
+        "title_hint": "Leave empty to use the internal name",
+        "description_label": "Description",
+        "description_hint": "The text displayed above the buttons",
+        "color_label": "Accent colour",
+        "color_hint": "Hexadecimal, e.g. #5865F2",
+        "placeholder_label": "Dropdown placeholder",
+        "placeholder_hint": "Only used when the panel renders as a dropdown",
+        "subtitle": "Ticket panel",
+        "paused_notice": "This panel is paused: its message is taken down and nobody can open a ticket from it.",
+        "channel_title": "Channel of the panel",
+        "channel_hint": "Where the message members click is posted",
+        "channel_placeholder": "Select a channel",
+        "style_title": "How members choose",
+        "style_hint": "Buttons are quicker; a dropdown scales to many categories",
+        "style_buttons": "Buttons",
+        "style_buttons_hint": "One button per category, up to 15",
+        "style_select": "Dropdown",
+        "style_select_hint": "One list, up to 25 categories",
+        "categories_title": "Categories",
+        "categories_hint": "{count}/{max} · one per button or dropdown entry",
+        "no_category": "No category yet. A panel with no category is never posted.",
+        "category_placeholder": "Select a category to configure",
+        "category_summary": "{roles} role(s) with permissions · language `{language}`",
+        "no_destination": "no destination",
+        "edit": "Edit",
+        "add_category": "Add a category",
+        "repost": "Post again",
+        "pause": "Pause",
+        "resume": "Resume",
+        "delete": "Delete",
+        "delete_title": "Delete this panel?",
+        "delete_description": "Its message will be taken down and its {categories} category(ies) will be lost. Tickets already open are not affected.",
+        "delete_confirm": "Delete the panel",
+        "repost_failed": "The panel could not be posted. Check that Moddy can write in the channel and that the panel has at least one usable category."
+      },
+      "category": {
+        "modal_title_new": "New category",
+        "modal_title_edit": "Edit the category",
+        "name_label": "Name",
+        "name_hint": "Shown on the button or the dropdown entry",
+        "emoji_label": "Emoji",
+        "emoji_hint": "Optional, e.g. a server emoji",
+        "description_label": "Short description",
+        "description_hint": "Shown under the name in a dropdown",
+        "color_label": "Button colour",
+        "color_hint": "Ignored when the panel renders as a dropdown",
+        "color_primary": "Blue",
+        "color_secondary": "Grey",
+        "color_success": "Green",
+        "color_danger": "Red",
+        "subtitle": "Category of the panel “{panel}”",
+        "paused_notice": "This category is paused: it no longer appears on the panel.",
+        "destination_title": "Where tickets are created",
+        "destination_hint": "The Discord category the ticket channel is created in",
+        "destination_placeholder": "Select a Discord category",
+        "access_title": "Who can open a ticket",
+        "access_hint": "Leave empty to allow everyone",
+        "allowed_placeholder": "Roles allowed to open",
+        "denied_hint": "A denied role always wins, even if the member also has an allowed one.",
+        "denied_placeholder": "Roles denied",
+        "language_title": "Language of the tickets",
+        "language_hint": "Every message inside these tickets uses this language",
+        "summary_title": "Configured behind the buttons below",
+        "summary_permissions": "Permissions — {roles} role(s)",
+        "summary_messages": "Messages — {count}/2 customised",
+        "summary_options": "Options — name `{format}`, `{max}` open ticket(s) per member",
+        "identity": "Identity",
+        "permissions": "Permissions",
+        "messages": "Messages",
+        "options": "Options",
+        "pause": "Pause",
+        "resume": "Resume",
+        "delete": "Delete",
+        "delete_title": "Delete this category?",
+        "delete_description": "It disappears from the panel and its permissions are lost. Tickets already open in it keep working until they are closed.",
+        "delete_confirm": "Delete the category"
+      },
+      "messages": {
+        "modal_title": "Ticket messages",
+        "open_label": "Opening message",
+        "open_hint": "Posted in the ticket, pinned. Leave empty for the default one.",
+        "close_label": "Closing message",
+        "close_hint": "Added to the card posted when the ticket is closed",
+        "placeholders_header": "Available placeholders:",
+        "ph_user": "mention of the member",
+        "ph_username": "their username",
+        "ph_display_name": "their display name",
+        "ph_server": "the server name",
+        "ph_category": "the category name",
+        "ph_number": "the ticket number",
+        "ph_ticket": "mention of the ticket channel"
+      },
+      "options": {
+        "modal_title": "Category options",
+        "name_format_label": "Channel name",
+        "name_format_hint": "e.g. ticket-{number}",
+        "max_open_label": "Open tickets per member",
+        "max_open_hint": "Between 1 and {max}, in this category",
+        "ping_label": "Roles to ping",
+        "ping_hint": "Mentioned when a ticket opens"
+      },
+      "permissions": {
+        "title": "Ticket permissions",
+        "subtitle": "Category “{category}”",
+        "description": "Pick a role, then tick what it may do in the tickets of this category. Server administrators always have everything.",
+        "configured_title": "Roles with permissions",
+        "nobody": "No role can work these tickets yet — only the server administrators can.",
+        "pick_role": "Role to configure",
+        "pick_role_hint": "Pick it again to change or revoke its permissions",
+        "role_placeholder": "Select a role",
+        "perms_placeholder": "Select the permissions",
+        "defaults_hint": "New role: a starting set is pre-selected, nothing is saved until you confirm it.",
+        "clear": "Revoke everything",
+        "view": {
+          "name": "See the ticket",
+          "description": "Read and write in the tickets of this category"
+        },
+        "close": {
+          "name": "Close",
+          "description": "Close and reopen a ticket"
+        },
+        "staff_thread": {
+          "name": "Staff thread",
+          "description": "Open and join the private staff thread"
+        },
+        "rename": {
+          "name": "Rename",
+          "description": "Change the ticket channel name"
+        },
+        "move": {
+          "name": "Change category",
+          "description": "Move the ticket to another category"
+        },
+        "participants": {
+          "name": "Manage participants",
+          "description": "Add and remove members and roles"
+        },
+        "admin": {
+          "name": "Responsible",
+          "description": "Everything above, and keeps access after an escalation"
+        }
+      },
+      "channel": {
+        "topic": "Ticket of {user} · {category}",
+        "default_open_message": "Thanks for opening a ticket. Describe your request as precisely as you can — the team will answer you here.",
+        "title": "Ticket #{number}",
+        "meta": "Opened by",
+        "commands_hint": "Every action is also available with the `/ticket` commands."
+      },
+      "actions": {
+        "close": "Close",
+        "close_request": "Request closure",
+        "escalate": "Escalate",
+        "staff_thread": "Staff thread",
+        "participants": "Participants",
+        "reopen": "Reopen",
+        "delete": "Delete the channel",
+        "deescalate": "Cancel the escalation",
+        "rename": "Rename"
+      },
+      "fields": {
+        "reason": "Reason",
+        "reason_hint": "Optional",
+        "channel_name": "New name",
+        "channel_name_hint": "Letters, digits and dashes",
+        "participants": "Participants",
+        "opener": "Opened by",
+        "category": "Category",
+        "status": "Status",
+        "escalated": "Escalation",
+        "your_permissions": "Your permissions here",
+        "none": "none"
+      },
+      "status": {
+        "open": "Open",
+        "closed": "Closed",
+        "escalated": "Escalated"
+      },
+      "open": {
+        "success_title": "Ticket opened",
+        "success_description": "Your ticket is ready: {channel}"
+      },
+      "close": {
+        "done_title": "Ticket closed",
+        "done_description": "The ticket is locked. It can be reopened, or deleted for good, from the card in the channel.",
+        "card_title": "Ticket closed",
+        "by": "Closed by",
+        "dm_title": "Your ticket has been closed",
+        "dm_description": "Your ticket #`{number}` ({category}) on **{server}** has been closed."
+      },
+      "close_request": {
+        "sent_title": "Request sent",
+        "sent_description": "The team has been notified and will close the ticket if it is done.",
+        "card_title": "Closure requested",
+        "card_description": "{user} would like this ticket to be closed.",
+        "accept": "Close the ticket",
+        "refuse": "Keep it open",
+        "refused": "{user} kept the ticket open."
+      },
+      "reopen": {
+        "done_title": "Ticket reopened",
+        "done_description": "Everyone who had access to it is back."
+      },
+      "delete": {
+        "pending_title": "Deleting",
+        "pending_description": "The channel and its conversation are being deleted."
+      },
+      "escalate": {
+        "card_title": "Ticket escalated",
+        "card_description": "{user} escalated this ticket: only the responsibles, its opener and the people added by hand still have access.",
+        "done_title": "Ticket escalated",
+        "done_description": "Access is now limited to the responsibles.",
+        "cancelled_title": "Escalation cancelled",
+        "cancelled_description": "The staff roles have their access back.",
+        "confirm_title": "Escalate this ticket?",
+        "confirm_description": "The staff roles lose access. Its opener stays. What should happen to the people added by hand?",
+        "keep": "Keep them",
+        "drop": "Remove them"
+      },
+      "move": {
+        "done_title": "Ticket moved",
+        "done_description": "The ticket now follows the permissions of its new category."
+      },
+      "rename": {
+        "done_title": "Ticket renamed",
+        "done_description": "The channel is now `{name}`."
+      },
+      "participants": {
+        "title": "Ticket participants",
+        "description": "Everyone selected here has access to the ticket, on top of its opener and the staff roles. Unselect someone to remove them.",
+        "owner_note": "Opened by",
+        "members_title": "Members",
+        "members_description": "Added one by one",
+        "members_placeholder": "Select the members",
+        "roles_title": "Roles",
+        "roles_description": "Everyone holding the role gets access",
+        "roles_placeholder": "Select the roles",
+        "added_title": "Added",
+        "added_description": "{target} now has access to this ticket.",
+        "removed_title": "Removed",
+        "removed_description": "{target} no longer has access to this ticket."
+      },
+      "staff_thread": {
+        "name": "staff-{number}",
+        "intro": "Private staff thread for ticket #{number}. The member who opened the ticket cannot see it.",
+        "done_title": "Staff thread",
+        "done_description": "You have been added to {thread}."
+      },
+      "info": {
+        "title": "Ticket #{number}",
+        "description": "Everything Moddy knows about this ticket."
+      },
+      "errors": {
+        "title": "Ticket",
+        "not_a_ticket": "This channel is not a ticket.",
+        "module_disabled": "The ticket module is not enabled on this server.",
+        "category_gone": "The category this ticket belongs to no longer exists. Ask an administrator to move it to another one.",
+        "missing_permission": "You do not have the permission to do this in this ticket.",
+        "unavailable": "Tickets are temporarily unavailable. Try again in a moment.",
+        "cannot_open": "You cannot open a ticket in this category.",
+        "category_disabled": "This category is not accepting tickets right now.",
+        "destination_missing": "This category has no valid destination. Warn an administrator.",
+        "too_many_open": "You already have `{max}` open ticket(s) in this category. Close one before opening another.",
+        "cannot_create_channel": "Moddy could not create the ticket channel. Check its permissions on the destination category.",
+        "already_closed": "This ticket is already closed.",
+        "not_closed": "This ticket is not closed.",
+        "can_close_directly": "You can close this ticket yourself — no need to ask.",
+        "close_already_requested": "A closure request is already pending on this ticket.",
+        "no_close_request": "No closure request is pending on this ticket.",
+        "already_escalated": "This ticket is already escalated.",
+        "not_escalated": "This ticket is not escalated.",
+        "no_responsible_role": "No role holds the **Responsible** permission in this category, so there is nobody to escalate to.",
+        "unknown_category": "That category does not exist.",
+        "same_category": "The ticket is already in that category.",
+        "cannot_edit_channel": "Moddy could not edit the ticket channel. Check its permissions.",
+        "invalid_name": "That name cannot be used for a channel.",
+        "already_participant": "They already have access to this ticket.",
+        "not_a_participant": "They were not added to this ticket.",
+        "cannot_remove_owner": "The member who opened the ticket cannot be removed from it. Close the ticket instead.",
+        "cannot_create_thread": "Moddy could not create the staff thread. Private threads require permission to create them in this channel.",
+        "use_close_request": "You cannot close this ticket. Use **Request closure** to ask the team to.",
+        "panel_limit": "This server has reached its limit of `{max}` ticket panels.",
+        "category_limit": "This panel has reached its limit of `{max}` categories.",
+        "premium_upsell": "Premium raises the limits to 10 panels and 15 categories per panel. [Learn more]({url})",
+        "invalid_emoji": "That emoji cannot be used. Use a server emoji or a standard one."
+      }
     }
   },
   "languages": {

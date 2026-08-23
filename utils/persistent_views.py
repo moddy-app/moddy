@@ -66,6 +66,13 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         LogsConfigView, LogsOptionsView, LogsPersistence,
     )
     from utils.altguard_views import AltGuardPanelView
+    from modules.configs.tickets_config import TicketsConfigView
+    from modules.configs.tickets_category_config import TicketsConfigPersistence
+    from utils.ticket_views import (
+        TicketControlView, TicketClosedView, TicketCloseRequestView,
+        TicketEscalationView, TicketEscalateConfirmView, TicketParticipantsView,
+        TicketsPersistence,
+    )
 
     return [
         # Group 1 — /moddy (public informational, no user auth)
@@ -135,6 +142,23 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         LogsConfigView,
         LogsOptionsView,
         LogsPersistence,
+        # Group 12g — Tickets. The /config root panel is a normal registered
+        # view (guild permission auth); the panel/category/permission screens
+        # are built from dynamic items carrying the entity ids, registered by
+        # TicketsConfigPersistence — see docs/PERSISTENT_VIEWS.md "Deliberate
+        # exclusions". The ticket-channel views need no id at all: the channel
+        # a click comes from IS the ticket.
+        TicketsConfigView,
+        TicketsConfigPersistence,
+        TicketControlView,
+        TicketClosedView,
+        TicketCloseRequestView,
+        TicketEscalationView,
+        TicketEscalateConfirmView,
+        TicketParticipantsView,
+        # Group 12h — the public ticket panel's open buttons / dropdown
+        # (dynamic items; public: whoever clicks is the member opening).
+        TicketsPersistence,
         # Group 13 — /config automod AI panel (guild permission auth;
         # AutomodAIPrecedentsView is deliberately excluded, see
         # docs/PERSISTENT_VIEWS.md Step 12)

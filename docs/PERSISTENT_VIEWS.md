@@ -461,6 +461,40 @@ was easier not to" is not one.
   custom_ids are static and `interaction.guild_id` plus a Manage Server
   check is the whole auth context they need.
 
+- **`modules/configs/tickets_panel_config.py::TicketPanelConfigView`,
+  `modules/configs/tickets_category_config.py::TicketCategoryConfigView` /
+  `TicketPermissionsConfigView`** — the `/config` → Tickets screens below the
+  module root. Every one of their children is a persistent `DynamicItem`
+  carrying the panel id, and where relevant the category and role ids, in its
+  `custom_id` (`moddy:tickets:pnlbtn:<action>:<panel>`,
+  `moddy:tickets:catdest:<panel>:<category>`,
+  `moddy:tickets:permset:<panel>:<category>:<role>`, …), registered through
+  `TicketsConfigPersistence.register_persistent` (`bot.add_dynamic_items(...)`,
+  same marker-view pattern as `LogsPersistence`). Registering the wrappers as
+  shells would be meaningless: none of them can be built without the entity
+  they configure, and there is nothing left for them to carry once their
+  children reconstruct themselves from their custom_id on every click. That is
+  also why these screens apply every change immediately instead of staging
+  edits behind a Save button — same reasoning as `LogsCategoryView` and
+  `StaffManagerPanel`. The root screen (`TicketsConfigView`) *is* registered
+  normally: its custom_ids are static and `interaction.guild_id` plus a Manage
+  Server check is the whole auth context it needs.
+- **`utils/ticket_views.py::TicketPanelView`** — the public ticket panel
+  message. A `BaseView` with `timeout=None` whose only interactive children are
+  `TicketOpenButton` / `TicketOpenSelect`, persistent `DynamicItem`s
+  (`moddy:tickets:open:<panel>:<category>`,
+  `moddy:tickets:opensel:<panel>`) registered separately through
+  `TicketsPersistence` — same pattern as `TranscribePromptView`. Registering
+  the wrapper would be meaningless: it cannot be built without a panel.
+  The *ticket-channel* views (`TicketControlView`, `TicketClosedView`,
+  `TicketCloseRequestView`, `TicketEscalationView`, `TicketEscalateConfirmView`,
+  `TicketParticipantsView`) are registered normally with **static** custom_ids:
+  a ticket action always happens inside its own channel, so
+  `interaction.channel_id` is the ticket's identity and an id in the custom_id
+  would only add a second source of truth that could disagree with the channel.
+  `build_close_dm` has zero interactive children ("nothing to register" case
+  above).
+
 ---
 
 ## Current coverage

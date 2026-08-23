@@ -276,6 +276,100 @@
           "description": "Medlemmet der skal afverificeres"
         }
       }
+    },
+    "ticket": {
+      "name": "ticket",
+      "description": "Administrer den sag, du er i"
+    },
+    "ticket close": {
+      "name": "luk",
+      "description": "Lukker denne sag",
+      "parameters": {
+        "reason": {
+          "name": "årsag",
+          "description": "Hvorfor sagen lukkes eller eskaleres"
+        }
+      }
+    },
+    "ticket reopen": {
+      "name": "genåbn",
+      "description": "Genåbner denne lukkede sag"
+    },
+    "ticket close-request": {
+      "name": "bed-om-lukning",
+      "description": "Beder staben om at lukke denne sag",
+      "parameters": {
+        "reason": {
+          "name": "årsag",
+          "description": "Hvorfor sagen lukkes eller eskaleres"
+        }
+      }
+    },
+    "ticket escalate": {
+      "name": "eskaler",
+      "description": "Begrænser sagen til de ansvarlige",
+      "parameters": {
+        "reason": {
+          "name": "årsag",
+          "description": "Hvorfor sagen lukkes eller eskaleres"
+        }
+      }
+    },
+    "ticket deescalate": {
+      "name": "annuller-eskalering",
+      "description": "Annullerer eskaleringen"
+    },
+    "ticket move": {
+      "name": "flyt",
+      "description": "Flytter denne sag til en anden kategori",
+      "parameters": {
+        "category": {
+          "name": "kategori",
+          "description": "Kategorien sagen skal flyttes til"
+        }
+      }
+    },
+    "ticket rename": {
+      "name": "omdøb",
+      "description": "Omdøber denne sag",
+      "parameters": {
+        "name": {
+          "name": "navn",
+          "description": "Det nye kanalnavn (lad stå tomt for en formular)"
+        }
+      }
+    },
+    "ticket add": {
+      "name": "tilføj",
+      "description": "Tilføjer et medlem eller en rolle til sagen",
+      "parameters": {
+        "target": {
+          "name": "mål",
+          "description": "Det berørte medlem eller den berørte rolle"
+        }
+      }
+    },
+    "ticket remove": {
+      "name": "fjern",
+      "description": "Fjerner et medlem eller en rolle fra sagen",
+      "parameters": {
+        "target": {
+          "name": "mål",
+          "description": "Det berørte medlem eller den berørte rolle"
+        }
+      }
+    },
+    "ticket participants": {
+      "name": "deltagere",
+      "description": "Se og rediger, hvem der har adgang til sagen"
+    },
+    "ticket staff-thread": {
+      "name": "stab-tråd",
+      "description": "Åbner eller deltager i den private stab-tråd"
+    },
+    "ticket info": {
+      "name": "info",
+      "description": "Viser detaljerne for denne sag"
     }
   }
 }

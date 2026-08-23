@@ -276,6 +276,100 @@
           "description": "Jäsen, jonka vahvistus poistetaan"
         }
       }
+    },
+    "ticket": {
+      "name": "ticket",
+      "description": "Hallitse tikettiä, jossa olet"
+    },
+    "ticket close": {
+      "name": "sulje",
+      "description": "Sulkee tämän tiketin",
+      "parameters": {
+        "reason": {
+          "name": "syy",
+          "description": "Miksi tiketti suljetaan tai eskaloidaan"
+        }
+      }
+    },
+    "ticket reopen": {
+      "name": "avaa-uudelleen",
+      "description": "Avaa tämän suljetun tiketin uudelleen"
+    },
+    "ticket close-request": {
+      "name": "pyydä-sulkemista",
+      "description": "Pyytää henkilökuntaa sulkemaan tämän tiketin",
+      "parameters": {
+        "reason": {
+          "name": "syy",
+          "description": "Miksi tiketti suljetaan tai eskaloidaan"
+        }
+      }
+    },
+    "ticket escalate": {
+      "name": "eskaloi",
+      "description": "Rajaa tiketin vain vastuuhenkilöille",
+      "parameters": {
+        "reason": {
+          "name": "syy",
+          "description": "Miksi tiketti suljetaan tai eskaloidaan"
+        }
+      }
+    },
+    "ticket deescalate": {
+      "name": "peru-eskalointi",
+      "description": "Peruu eskaloinnin"
+    },
+    "ticket move": {
+      "name": "siirrä",
+      "description": "Siirtää tämän tiketin toiseen kategoriaan",
+      "parameters": {
+        "category": {
+          "name": "kategoria",
+          "description": "Kategoria, johon tiketti siirretään"
+        }
+      }
+    },
+    "ticket rename": {
+      "name": "nimeä-uudelleen",
+      "description": "Nimeää tämän tiketin uudelleen",
+      "parameters": {
+        "name": {
+          "name": "nimi",
+          "description": "Uusi kanavan nimi (tyhjä avaa lomakkeen)"
+        }
+      }
+    },
+    "ticket add": {
+      "name": "lisää",
+      "description": "Lisää jäsenen tai roolin tähän tikettiin",
+      "parameters": {
+        "target": {
+          "name": "kohde",
+          "description": "Kyseessä oleva jäsen tai rooli"
+        }
+      }
+    },
+    "ticket remove": {
+      "name": "poista",
+      "description": "Poistaa jäsenen tai roolin tästä tiketistä",
+      "parameters": {
+        "target": {
+          "name": "kohde",
+          "description": "Kyseessä oleva jäsen tai rooli"
+        }
+      }
+    },
+    "ticket participants": {
+      "name": "osallistujat",
+      "description": "Näytä ja muokkaa, kenellä on pääsy tähän tikettiin"
+    },
+    "ticket staff-thread": {
+      "name": "henkilökunnan-ketju",
+      "description": "Avaa yksityisen henkilökunnan ketjun tai liittyy siihen"
+    },
+    "ticket info": {
+      "name": "info",
+      "description": "Näyttää tämän tiketin tiedot"
     }
   }
 }

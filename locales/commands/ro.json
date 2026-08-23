@@ -276,6 +276,100 @@
           "description": "Membrul căruia i se anulează verificarea"
         }
       }
+    },
+    "ticket": {
+      "name": "ticket",
+      "description": "Gestionează tichetul în care te afli"
+    },
+    "ticket close": {
+      "name": "închide",
+      "description": "Închide acest tichet",
+      "parameters": {
+        "reason": {
+          "name": "motiv",
+          "description": "De ce este închis sau escaladat tichetul"
+        }
+      }
+    },
+    "ticket reopen": {
+      "name": "redeschide",
+      "description": "Redeschide acest tichet închis"
+    },
+    "ticket close-request": {
+      "name": "cere-închiderea",
+      "description": "Cere echipei să închidă acest tichet",
+      "parameters": {
+        "reason": {
+          "name": "motiv",
+          "description": "De ce este închis sau escaladat tichetul"
+        }
+      }
+    },
+    "ticket escalate": {
+      "name": "escaladează",
+      "description": "Restrânge acest tichet la responsabili",
+      "parameters": {
+        "reason": {
+          "name": "motiv",
+          "description": "De ce este închis sau escaladat tichetul"
+        }
+      }
+    },
+    "ticket deescalate": {
+      "name": "anulează-escaladarea",
+      "description": "Anulează escaladarea"
+    },
+    "ticket move": {
+      "name": "mută",
+      "description": "Mută acest tichet în altă categorie",
+      "parameters": {
+        "category": {
+          "name": "categorie",
+          "description": "Categoria în care să fie mutat tichetul"
+        }
+      }
+    },
+    "ticket rename": {
+      "name": "redenumește",
+      "description": "Redenumește acest tichet",
+      "parameters": {
+        "name": {
+          "name": "nume",
+          "description": "Noul nume al canalului (gol deschide un formular)"
+        }
+      }
+    },
+    "ticket add": {
+      "name": "adaugă",
+      "description": "Adaugă un membru sau un rol la acest tichet",
+      "parameters": {
+        "target": {
+          "name": "țintă",
+          "description": "Membrul sau rolul vizat"
+        }
+      }
+    },
+    "ticket remove": {
+      "name": "elimină",
+      "description": "Elimină un membru sau un rol din acest tichet",
+      "parameters": {
+        "target": {
+          "name": "țintă",
+          "description": "Membrul sau rolul vizat"
+        }
+      }
+    },
+    "ticket participants": {
+      "name": "participanți",
+      "description": "Vezi și modifică cine are acces la acest tichet"
+    },
+    "ticket staff-thread": {
+      "name": "discuție-echipă",
+      "description": "Deschide sau intră în discuția privată a echipei"
+    },
+    "ticket info": {
+      "name": "info",
+      "description": "Afișează detaliile acestui tichet"
     }
   }
 }

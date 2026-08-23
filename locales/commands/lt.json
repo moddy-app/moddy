@@ -276,6 +276,100 @@
           "description": "Narys, kurio patvirtinimą atšaukti"
         }
       }
+    },
+    "ticket": {
+      "name": "ticket",
+      "description": "Tvarkyk bilietą, kuriame esi"
+    },
+    "ticket close": {
+      "name": "uždaryti",
+      "description": "Uždaro šį bilietą",
+      "parameters": {
+        "reason": {
+          "name": "priežastis",
+          "description": "Kodėl bilietas uždaromas arba eskaluojamas"
+        }
+      }
+    },
+    "ticket reopen": {
+      "name": "atidaryti-vėl",
+      "description": "Vėl atidaro šį uždarytą bilietą"
+    },
+    "ticket close-request": {
+      "name": "prašyti-uždaryti",
+      "description": "Paprašo komandos uždaryti šį bilietą",
+      "parameters": {
+        "reason": {
+          "name": "priežastis",
+          "description": "Kodėl bilietas uždaromas arba eskaluojamas"
+        }
+      }
+    },
+    "ticket escalate": {
+      "name": "eskaluoti",
+      "description": "Palieka šį bilietą tik atsakingiems",
+      "parameters": {
+        "reason": {
+          "name": "priežastis",
+          "description": "Kodėl bilietas uždaromas arba eskaluojamas"
+        }
+      }
+    },
+    "ticket deescalate": {
+      "name": "atšaukti-eskalavimą",
+      "description": "Atšaukia eskalavimą"
+    },
+    "ticket move": {
+      "name": "perkelti",
+      "description": "Perkelia šį bilietą į kitą kategoriją",
+      "parameters": {
+        "category": {
+          "name": "kategorija",
+          "description": "Kategorija, į kurią perkelti bilietą"
+        }
+      }
+    },
+    "ticket rename": {
+      "name": "pervadinti",
+      "description": "Pervadina šį bilietą",
+      "parameters": {
+        "name": {
+          "name": "pavadinimas",
+          "description": "Naujas kanalo pavadinimas (tuščia atveria formą)"
+        }
+      }
+    },
+    "ticket add": {
+      "name": "pridėti",
+      "description": "Prideda narį arba rolę į šį bilietą",
+      "parameters": {
+        "target": {
+          "name": "taikinys",
+          "description": "Susijęs narys arba rolė"
+        }
+      }
+    },
+    "ticket remove": {
+      "name": "pašalinti",
+      "description": "Pašalina narį arba rolę iš šio bilieto",
+      "parameters": {
+        "target": {
+          "name": "taikinys",
+          "description": "Susijęs narys arba rolė"
+        }
+      }
+    },
+    "ticket participants": {
+      "name": "dalyviai",
+      "description": "Rodo ir keičia, kas turi prieigą prie šio bilieto"
+    },
+    "ticket staff-thread": {
+      "name": "komandos-gija",
+      "description": "Atidaro privačią komandos giją arba prie jos prisijungia"
+    },
+    "ticket info": {
+      "name": "info",
+      "description": "Rodo šio bilieto informaciją"
     }
   }
 }

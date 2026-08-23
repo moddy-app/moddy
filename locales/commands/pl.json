@@ -276,6 +276,100 @@
           "description": "Członek, któremu cofnąć weryfikację"
         }
       }
+    },
+    "ticket": {
+      "name": "ticket",
+      "description": "Zarządzaj zgłoszeniem, w którym jesteś"
+    },
+    "ticket close": {
+      "name": "zamknij",
+      "description": "Zamyka to zgłoszenie",
+      "parameters": {
+        "reason": {
+          "name": "powód",
+          "description": "Dlaczego zgłoszenie jest zamykane lub eskalowane"
+        }
+      }
+    },
+    "ticket reopen": {
+      "name": "otwórz-ponownie",
+      "description": "Otwiera ponownie to zamknięte zgłoszenie"
+    },
+    "ticket close-request": {
+      "name": "poproś-o-zamknięcie",
+      "description": "Prosi zespół o zamknięcie tego zgłoszenia",
+      "parameters": {
+        "reason": {
+          "name": "powód",
+          "description": "Dlaczego zgłoszenie jest zamykane lub eskalowane"
+        }
+      }
+    },
+    "ticket escalate": {
+      "name": "eskaluj",
+      "description": "Ogranicza to zgłoszenie do osób odpowiedzialnych",
+      "parameters": {
+        "reason": {
+          "name": "powód",
+          "description": "Dlaczego zgłoszenie jest zamykane lub eskalowane"
+        }
+      }
+    },
+    "ticket deescalate": {
+      "name": "anuluj-eskalację",
+      "description": "Anuluje eskalację"
+    },
+    "ticket move": {
+      "name": "przenieś",
+      "description": "Przenosi to zgłoszenie do innej kategorii",
+      "parameters": {
+        "category": {
+          "name": "kategoria",
+          "description": "Kategoria, do której przenieść zgłoszenie"
+        }
+      }
+    },
+    "ticket rename": {
+      "name": "zmień-nazwę",
+      "description": "Zmienia nazwę tego zgłoszenia",
+      "parameters": {
+        "name": {
+          "name": "nazwa",
+          "description": "Nowa nazwa kanału (puste otwiera formularz)"
+        }
+      }
+    },
+    "ticket add": {
+      "name": "dodaj",
+      "description": "Dodaje członka lub rolę do tego zgłoszenia",
+      "parameters": {
+        "target": {
+          "name": "cel",
+          "description": "Członek lub rola, której to dotyczy"
+        }
+      }
+    },
+    "ticket remove": {
+      "name": "usuń",
+      "description": "Usuwa członka lub rolę z tego zgłoszenia",
+      "parameters": {
+        "target": {
+          "name": "cel",
+          "description": "Członek lub rola, której to dotyczy"
+        }
+      }
+    },
+    "ticket participants": {
+      "name": "uczestnicy",
+      "description": "Pokazuje i zmienia, kto ma dostęp do tego zgłoszenia"
+    },
+    "ticket staff-thread": {
+      "name": "wątek-zespołu",
+      "description": "Otwiera prywatny wątek zespołu lub do niego dołącza"
+    },
+    "ticket info": {
+      "name": "info",
+      "description": "Pokazuje szczegóły tego zgłoszenia"
     }
   }
 }

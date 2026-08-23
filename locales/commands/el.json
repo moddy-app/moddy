@@ -276,6 +276,100 @@
           "description": "Το μέλος του οποίου ακυρώνεται η επαλήθευση"
         }
       }
+    },
+    "ticket": {
+      "name": "ticket",
+      "description": "Διαχειρίσου το αίτημα στο οποίο βρίσκεσαι"
+    },
+    "ticket close": {
+      "name": "κλείσιμο",
+      "description": "Κλείνει αυτό το αίτημα",
+      "parameters": {
+        "reason": {
+          "name": "αιτία",
+          "description": "Γιατί κλείνει ή κλιμακώνεται το αίτημα"
+        }
+      }
+    },
+    "ticket reopen": {
+      "name": "επανάνοιγμα",
+      "description": "Ανοίγει ξανά αυτό το κλειστό αίτημα"
+    },
+    "ticket close-request": {
+      "name": "αίτημα-κλεισίματος",
+      "description": "Ζητά από την ομάδα να κλείσει αυτό το αίτημα",
+      "parameters": {
+        "reason": {
+          "name": "αιτία",
+          "description": "Γιατί κλείνει ή κλιμακώνεται το αίτημα"
+        }
+      }
+    },
+    "ticket escalate": {
+      "name": "κλιμάκωση",
+      "description": "Περιορίζει το αίτημα στους υπεύθυνους",
+      "parameters": {
+        "reason": {
+          "name": "αιτία",
+          "description": "Γιατί κλείνει ή κλιμακώνεται το αίτημα"
+        }
+      }
+    },
+    "ticket deescalate": {
+      "name": "ακύρωση-κλιμάκωσης",
+      "description": "Ακυρώνει την κλιμάκωση"
+    },
+    "ticket move": {
+      "name": "μετακίνηση",
+      "description": "Μετακινεί αυτό το αίτημα σε άλλη κατηγορία",
+      "parameters": {
+        "category": {
+          "name": "κατηγορία",
+          "description": "Η κατηγορία στην οποία θα μετακινηθεί το αίτημα"
+        }
+      }
+    },
+    "ticket rename": {
+      "name": "μετονομασία",
+      "description": "Μετονομάζει αυτό το αίτημα",
+      "parameters": {
+        "name": {
+          "name": "όνομα",
+          "description": "Το νέο όνομα καναλιού (κενό για φόρμα)"
+        }
+      }
+    },
+    "ticket add": {
+      "name": "προσθήκη",
+      "description": "Προσθέτει μέλος ή ρόλο σε αυτό το αίτημα",
+      "parameters": {
+        "target": {
+          "name": "στόχος",
+          "description": "Το σχετικό μέλος ή ρόλος"
+        }
+      }
+    },
+    "ticket remove": {
+      "name": "αφαίρεση",
+      "description": "Αφαιρεί μέλος ή ρόλο από αυτό το αίτημα",
+      "parameters": {
+        "target": {
+          "name": "στόχος",
+          "description": "Το σχετικό μέλος ή ρόλος"
+        }
+      }
+    },
+    "ticket participants": {
+      "name": "συμμετέχοντες",
+      "description": "Δείχνει και αλλάζει ποιος έχει πρόσβαση στο αίτημα"
+    },
+    "ticket staff-thread": {
+      "name": "νήμα-ομάδας",
+      "description": "Ανοίγει ή μπαίνει στο ιδιωτικό νήμα της ομάδας"
+    },
+    "ticket info": {
+      "name": "πληροφορίες",
+      "description": "Δείχνει τις λεπτομέρειες αυτού του αιτήματος"
     }
   }
 }

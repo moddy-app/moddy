@@ -276,6 +276,100 @@
           "description": "Членът, чиято проверка да се отмени"
         }
       }
+    },
+    "ticket": {
+      "name": "ticket",
+      "description": "Управлявай тикета, в който си"
+    },
+    "ticket close": {
+      "name": "затвори",
+      "description": "Затваря този тикет",
+      "parameters": {
+        "reason": {
+          "name": "причина",
+          "description": "Защо тикетът се затваря или ескалира"
+        }
+      }
+    },
+    "ticket reopen": {
+      "name": "отвори-отново",
+      "description": "Отваря отново този затворен тикет"
+    },
+    "ticket close-request": {
+      "name": "поискай-затваряне",
+      "description": "Моли екипа да затвори този тикет",
+      "parameters": {
+        "reason": {
+          "name": "причина",
+          "description": "Защо тикетът се затваря или ескалира"
+        }
+      }
+    },
+    "ticket escalate": {
+      "name": "ескалирай",
+      "description": "Ограничава тикета до отговорниците",
+      "parameters": {
+        "reason": {
+          "name": "причина",
+          "description": "Защо тикетът се затваря или ескалира"
+        }
+      }
+    },
+    "ticket deescalate": {
+      "name": "отмени-ескалацията",
+      "description": "Отменя ескалацията"
+    },
+    "ticket move": {
+      "name": "премести",
+      "description": "Премества този тикет в друга категория",
+      "parameters": {
+        "category": {
+          "name": "категория",
+          "description": "Категорията, в която да се премести тикетът"
+        }
+      }
+    },
+    "ticket rename": {
+      "name": "преименувай",
+      "description": "Преименува този тикет",
+      "parameters": {
+        "name": {
+          "name": "име",
+          "description": "Новото име на канала (празно отваря формуляр)"
+        }
+      }
+    },
+    "ticket add": {
+      "name": "добави",
+      "description": "Добавя член или роля към този тикет",
+      "parameters": {
+        "target": {
+          "name": "цел",
+          "description": "Засегнатият член или роля"
+        }
+      }
+    },
+    "ticket remove": {
+      "name": "премахни",
+      "description": "Премахва член или роля от този тикет",
+      "parameters": {
+        "target": {
+          "name": "цел",
+          "description": "Засегнатият член или роля"
+        }
+      }
+    },
+    "ticket participants": {
+      "name": "участници",
+      "description": "Показва и променя кой има достъп до тикета"
+    },
+    "ticket staff-thread": {
+      "name": "нишка-на-екипа",
+      "description": "Отваря частната нишка на екипа или се присъединява"
+    },
+    "ticket info": {
+      "name": "инфо",
+      "description": "Показва подробностите за този тикет"
     }
   }
 }

@@ -2795,6 +2795,314 @@
           "app_command_permission_update": "Alteração das permissões de um comando"
         }
       }
+    },
+    "tickets": {
+      "description": "Tickets de suporte com painéis, categorias e permissões por cargo",
+      "config": {
+        "title": "Tickets",
+        "description": "Permita que os seus membros abram um ticket de suporte a partir de um painel. Cada painel oferece uma ou mais categorias, e cada categoria decide onde o ticket é aberto, quem pode abri-lo e o que a sua equipe pode fazer dentro dele.",
+        "quota": "Painéis: `{count}/{max}` · Categorias por painel: `{categories}`",
+        "premium_hint": "O Premium eleva esses limites para 10 painéis e 15 categorias por painel.",
+        "manage_placeholder": "Selecione um painel para configurar",
+        "empty": "Nenhum painel ainda. Crie um para que os seus membros possam abrir tickets.",
+        "add_panel": "Adicionar um painel",
+        "entry_summary": "{categories} categoria(s) · {style}",
+        "no_channel": "sem canal",
+        "paused": "pausado",
+        "not_posted": "Este painel ainda não foi publicado — use **Publicar novamente**."
+      },
+      "panel": {
+        "modal_title_new": "Novo painel de tickets",
+        "modal_title_edit": "Editar o painel",
+        "name_label": "Nome interno",
+        "name_hint": "Só você o vê, nesta tela de configuração",
+        "title_label": "Título exibido aos membros",
+        "title_hint": "Deixe vazio para usar o nome interno",
+        "description_label": "Descrição",
+        "description_hint": "O texto exibido acima dos botões",
+        "color_label": "Cor de destaque",
+        "color_hint": "Hexadecimal, por exemplo #5865F2",
+        "placeholder_label": "Texto do menu suspenso",
+        "placeholder_hint": "Usado apenas quando o painel aparece como menu suspenso",
+        "subtitle": "Painel de tickets",
+        "paused_notice": "Este painel está pausado: a mensagem dele é removida e ninguém pode abrir um ticket por ele.",
+        "channel_title": "Canal do painel",
+        "channel_hint": "Onde é publicada a mensagem em que os membros clicam",
+        "channel_placeholder": "Selecione um canal",
+        "style_title": "Como os membros escolhem",
+        "style_hint": "Botões são mais rápidos; o menu suspenso comporta mais categorias",
+        "style_buttons": "Botões",
+        "style_buttons_hint": "Um botão por categoria, até 15",
+        "style_select": "Menu suspenso",
+        "style_select_hint": "Uma única lista, até 25 categorias",
+        "categories_title": "Categorias",
+        "categories_hint": "{count}/{max} · uma por botão ou entrada do menu",
+        "no_category": "Nenhuma categoria. Um painel sem categorias nunca é publicado.",
+        "category_placeholder": "Selecione uma categoria para configurar",
+        "category_summary": "{roles} cargo(s) com permissões · idioma `{language}`",
+        "no_destination": "sem destino",
+        "edit": "Editar",
+        "add_category": "Adicionar uma categoria",
+        "repost": "Publicar novamente",
+        "pause": "Pausar",
+        "resume": "Retomar",
+        "delete": "Excluir",
+        "delete_title": "Excluir este painel?",
+        "delete_description": "A mensagem dele será removida e as suas {categories} categoria(s) serão perdidas. Os tickets já abertos não são afetados.",
+        "delete_confirm": "Excluir o painel",
+        "repost_failed": "O painel não pôde ser publicado. Verifique se o Moddy pode escrever no canal e se o painel tem pelo menos uma categoria utilizável."
+      },
+      "category": {
+        "modal_title_new": "Nova categoria",
+        "modal_title_edit": "Editar a categoria",
+        "name_label": "Nome",
+        "name_hint": "Exibido no botão ou na entrada do menu",
+        "emoji_label": "Emoji",
+        "emoji_hint": "Opcional, por exemplo um emoji do servidor",
+        "description_label": "Descrição curta",
+        "description_hint": "Exibida abaixo do nome num menu suspenso",
+        "color_label": "Cor do botão",
+        "color_hint": "Ignorada quando o painel aparece como menu suspenso",
+        "color_primary": "Azul",
+        "color_secondary": "Cinza",
+        "color_success": "Verde",
+        "color_danger": "Vermelho",
+        "subtitle": "Categoria do painel “{panel}”",
+        "paused_notice": "Esta categoria está pausada: ela não aparece mais no painel.",
+        "destination_title": "Onde os tickets são criados",
+        "destination_hint": "A categoria do Discord em que o canal do ticket é criado",
+        "destination_placeholder": "Selecione uma categoria do Discord",
+        "access_title": "Quem pode abrir um ticket",
+        "access_hint": "Deixe vazio para permitir todo mundo",
+        "allowed_placeholder": "Cargos autorizados a abrir",
+        "denied_hint": "Um cargo proibido sempre prevalece, mesmo que o membro também tenha um autorizado.",
+        "denied_placeholder": "Cargos proibidos",
+        "language_title": "Idioma dos tickets",
+        "language_hint": "Todas as mensagens desses tickets usam este idioma",
+        "summary_title": "Configurado atrás dos botões abaixo",
+        "summary_permissions": "Permissões — {roles} cargo(s)",
+        "summary_messages": "Mensagens — {count}/2 personalizada(s)",
+        "summary_options": "Opções — nome `{format}`, `{max}` ticket(s) aberto(s) por membro",
+        "identity": "Identidade",
+        "permissions": "Permissões",
+        "messages": "Mensagens",
+        "options": "Opções",
+        "pause": "Pausar",
+        "resume": "Retomar",
+        "delete": "Excluir",
+        "delete_title": "Excluir esta categoria?",
+        "delete_description": "Ela desaparece do painel e as suas permissões são perdidas. Os tickets já abertos nela continuam funcionando até serem fechados.",
+        "delete_confirm": "Excluir a categoria"
+      },
+      "messages": {
+        "modal_title": "Mensagens do ticket",
+        "open_label": "Mensagem de abertura",
+        "open_hint": "Publicada no ticket e fixada. Deixe vazio para a padrão.",
+        "close_label": "Mensagem de fechamento",
+        "close_hint": "Adicionada ao cartão publicado quando o ticket é fechado",
+        "placeholders_header": "Variáveis disponíveis:",
+        "ph_user": "menção do membro",
+        "ph_username": "o nome de usuário dele",
+        "ph_display_name": "o nome exibido dele",
+        "ph_server": "o nome do servidor",
+        "ph_category": "o nome da categoria",
+        "ph_number": "o número do ticket",
+        "ph_ticket": "menção do canal do ticket"
+      },
+      "options": {
+        "modal_title": "Opções da categoria",
+        "name_format_label": "Nome do canal",
+        "name_format_hint": "por exemplo ticket-{number}",
+        "max_open_label": "Tickets abertos por membro",
+        "max_open_hint": "Entre 1 e {max}, nesta categoria",
+        "ping_label": "Cargos a mencionar",
+        "ping_hint": "Mencionados quando um ticket é aberto"
+      },
+      "permissions": {
+        "title": "Permissões dos tickets",
+        "subtitle": "Categoria “{category}”",
+        "description": "Escolha um cargo e marque o que ele pode fazer nos tickets desta categoria. Os administradores do servidor sempre têm tudo.",
+        "configured_title": "Cargos com permissões",
+        "nobody": "Nenhum cargo pode atender esses tickets ainda — apenas os administradores do servidor.",
+        "pick_role": "Cargo a configurar",
+        "pick_role_hint": "Selecione-o novamente para alterar ou retirar as permissões dele",
+        "role_placeholder": "Selecione um cargo",
+        "perms_placeholder": "Selecione as permissões",
+        "defaults_hint": "Cargo novo: há uma seleção inicial marcada; nada é salvo até você confirmá-la.",
+        "clear": "Retirar tudo",
+        "view": {
+          "name": "Ver o ticket",
+          "description": "Ler e escrever nos tickets desta categoria"
+        },
+        "close": {
+          "name": "Fechar",
+          "description": "Fechar e reabrir um ticket"
+        },
+        "staff_thread": {
+          "name": "Tópico da equipe",
+          "description": "Abrir e entrar no tópico privado da equipe"
+        },
+        "rename": {
+          "name": "Renomear",
+          "description": "Alterar o nome do canal do ticket"
+        },
+        "move": {
+          "name": "Mudar de categoria",
+          "description": "Mover o ticket para outra categoria"
+        },
+        "participants": {
+          "name": "Gerenciar participantes",
+          "description": "Adicionar e remover membros e cargos"
+        },
+        "admin": {
+          "name": "Responsável",
+          "description": "Tudo acima, e mantém o acesso após um escalonamento"
+        }
+      },
+      "channel": {
+        "topic": "Ticket de {user} · {category}",
+        "default_open_message": "Obrigado por abrir um ticket. Descreva o seu pedido da forma mais precisa possível — a equipe responderá aqui.",
+        "title": "Ticket #{number}",
+        "meta": "Aberto por",
+        "commands_hint": "Todas as ações também estão disponíveis com os comandos `/ticket`."
+      },
+      "actions": {
+        "close": "Fechar",
+        "close_request": "Pedir o fechamento",
+        "escalate": "Escalonar",
+        "staff_thread": "Tópico da equipe",
+        "participants": "Participantes",
+        "reopen": "Reabrir",
+        "delete": "Excluir o canal",
+        "deescalate": "Cancelar o escalonamento",
+        "rename": "Renomear"
+      },
+      "fields": {
+        "reason": "Motivo",
+        "reason_hint": "Opcional",
+        "channel_name": "Novo nome",
+        "channel_name_hint": "Letras, números e hifens",
+        "participants": "Participantes",
+        "opener": "Aberto por",
+        "category": "Categoria",
+        "status": "Status",
+        "escalated": "Escalonamento",
+        "your_permissions": "Suas permissões aqui",
+        "none": "nenhuma"
+      },
+      "status": {
+        "open": "Aberto",
+        "closed": "Fechado",
+        "escalated": "Escalonado"
+      },
+      "open": {
+        "success_title": "Ticket aberto",
+        "success_description": "O seu ticket está pronto: {channel}"
+      },
+      "close": {
+        "done_title": "Ticket fechado",
+        "done_description": "O ticket está trancado. Ele pode ser reaberto, ou excluído definitivamente, pelo cartão publicado no canal.",
+        "card_title": "Ticket fechado",
+        "by": "Fechado por",
+        "dm_title": "O seu ticket foi fechado",
+        "dm_description": "O seu ticket #`{number}` ({category}) em **{server}** foi fechado."
+      },
+      "close_request": {
+        "sent_title": "Pedido enviado",
+        "sent_description": "A equipe foi avisada e fechará o ticket se estiver tudo resolvido.",
+        "card_title": "Fechamento pedido",
+        "card_description": "{user} gostaria que este ticket fosse fechado.",
+        "accept": "Fechar o ticket",
+        "refuse": "Mantê-lo aberto",
+        "refused": "{user} manteve o ticket aberto."
+      },
+      "reopen": {
+        "done_title": "Ticket reaberto",
+        "done_description": "Todos que tinham acesso o recuperam."
+      },
+      "delete": {
+        "pending_title": "Excluindo",
+        "pending_description": "O canal e a conversa dele estão sendo excluídos."
+      },
+      "escalate": {
+        "card_title": "Ticket escalonado",
+        "card_description": "{user} escalonou este ticket: apenas os responsáveis, quem o abriu e as pessoas adicionadas manualmente ainda têm acesso.",
+        "done_title": "Ticket escalonado",
+        "done_description": "O acesso agora está limitado aos responsáveis.",
+        "cancelled_title": "Escalonamento cancelado",
+        "cancelled_description": "Os cargos da equipe recuperam o acesso.",
+        "confirm_title": "Escalonar este ticket?",
+        "confirm_description": "Os cargos da equipe perdem o acesso. Quem o abriu permanece. O que fazer com as pessoas adicionadas manualmente?",
+        "keep": "Mantê-las",
+        "drop": "Removê-las"
+      },
+      "move": {
+        "done_title": "Ticket movido",
+        "done_description": "O ticket agora segue as permissões da nova categoria."
+      },
+      "rename": {
+        "done_title": "Ticket renomeado",
+        "done_description": "O canal agora se chama `{name}`."
+      },
+      "participants": {
+        "title": "Participantes do ticket",
+        "description": "Todas as pessoas selecionadas aqui têm acesso ao ticket, além de quem o abriu e dos cargos da equipe. Desmarque alguém para removê-lo.",
+        "owner_note": "Aberto por",
+        "members_title": "Membros",
+        "members_description": "Adicionados um a um",
+        "members_placeholder": "Selecione os membros",
+        "roles_title": "Cargos",
+        "roles_description": "Todos que tiverem o cargo ganham acesso",
+        "roles_placeholder": "Selecione os cargos",
+        "added_title": "Adicionado",
+        "added_description": "{target} agora tem acesso a este ticket.",
+        "removed_title": "Removido",
+        "removed_description": "{target} não tem mais acesso a este ticket."
+      },
+      "staff_thread": {
+        "name": "staff-{number}",
+        "intro": "Tópico privado da equipe para o ticket #{number}. O membro que abriu o ticket não o vê.",
+        "done_title": "Tópico da equipe",
+        "done_description": "Você foi adicionado a {thread}."
+      },
+      "info": {
+        "title": "Ticket #{number}",
+        "description": "Tudo o que o Moddy sabe sobre este ticket."
+      },
+      "errors": {
+        "title": "Ticket",
+        "not_a_ticket": "Este canal não é um ticket.",
+        "module_disabled": "O módulo de tickets não está ativado neste servidor.",
+        "category_gone": "A categoria deste ticket não existe mais. Peça a um administrador para movê-lo para outra.",
+        "missing_permission": "Você não tem permissão para fazer isso neste ticket.",
+        "unavailable": "Os tickets estão temporariamente indisponíveis. Tente novamente daqui a pouco.",
+        "cannot_open": "Você não pode abrir um ticket nesta categoria.",
+        "category_disabled": "Esta categoria não aceita tickets no momento.",
+        "destination_missing": "Esta categoria não tem um destino válido. Avise um administrador.",
+        "too_many_open": "Você já tem `{max}` ticket(s) aberto(s) nesta categoria. Feche um antes de abrir outro.",
+        "cannot_create_channel": "O Moddy não conseguiu criar o canal do ticket. Verifique as permissões dele na categoria de destino.",
+        "already_closed": "Este ticket já está fechado.",
+        "not_closed": "Este ticket não está fechado.",
+        "can_close_directly": "Você pode fechar este ticket sozinho — não precisa pedir.",
+        "close_already_requested": "Já há um pedido de fechamento pendente neste ticket.",
+        "no_close_request": "Não há nenhum pedido de fechamento pendente neste ticket.",
+        "already_escalated": "Este ticket já está escalonado.",
+        "not_escalated": "Este ticket não está escalonado.",
+        "no_responsible_role": "Nenhum cargo tem a permissão **Responsável** nesta categoria, então não há para quem escalonar.",
+        "unknown_category": "Essa categoria não existe.",
+        "same_category": "O ticket já está nessa categoria.",
+        "cannot_edit_channel": "O Moddy não conseguiu editar o canal do ticket. Verifique as permissões dele.",
+        "invalid_name": "Esse nome não pode ser usado para um canal.",
+        "already_participant": "Essa pessoa já tem acesso a este ticket.",
+        "not_a_participant": "Essa pessoa não foi adicionada a este ticket.",
+        "cannot_remove_owner": "O membro que abriu o ticket não pode ser removido dele. Feche o ticket em vez disso.",
+        "cannot_create_thread": "O Moddy não conseguiu criar o tópico da equipe. Tópicos privados exigem permissão para criá-los neste canal.",
+        "use_close_request": "Você não pode fechar este ticket. Use **Pedir o fechamento** para pedir à equipe.",
+        "panel_limit": "Este servidor atingiu o limite de `{max}` painéis de tickets.",
+        "category_limit": "Este painel atingiu o limite de `{max}` categorias.",
+        "premium_upsell": "O Premium eleva os limites para 10 painéis e 15 categorias por painel. [Saiba mais]({url})",
+        "invalid_emoji": "Esse emoji não pode ser usado. Use um emoji do servidor ou um padrão."
+      }
     }
   },
   "languages": {

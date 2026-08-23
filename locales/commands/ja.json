@@ -276,6 +276,100 @@
           "description": "認証を解除するメンバー"
         }
       }
+    },
+    "ticket": {
+      "name": "ticket",
+      "description": "今いるチケットを管理します"
+    },
+    "ticket close": {
+      "name": "クローズ",
+      "description": "このチケットをクローズします",
+      "parameters": {
+        "reason": {
+          "name": "理由",
+          "description": "チケットをクローズまたはエスカレーションする理由"
+        }
+      }
+    },
+    "ticket reopen": {
+      "name": "再オープン",
+      "description": "クローズしたこのチケットを再オープンします"
+    },
+    "ticket close-request": {
+      "name": "クローズ依頼",
+      "description": "スタッフにこのチケットのクローズを依頼します",
+      "parameters": {
+        "reason": {
+          "name": "理由",
+          "description": "チケットをクローズまたはエスカレーションする理由"
+        }
+      }
+    },
+    "ticket escalate": {
+      "name": "エスカレーション",
+      "description": "このチケットを責任者だけに限定します",
+      "parameters": {
+        "reason": {
+          "name": "理由",
+          "description": "チケットをクローズまたはエスカレーションする理由"
+        }
+      }
+    },
+    "ticket deescalate": {
+      "name": "エスカレーション解除",
+      "description": "エスカレーションを解除します"
+    },
+    "ticket move": {
+      "name": "移動",
+      "description": "このチケットを別のカテゴリーへ移動します",
+      "parameters": {
+        "category": {
+          "name": "カテゴリー",
+          "description": "チケットの移動先カテゴリー"
+        }
+      }
+    },
+    "ticket rename": {
+      "name": "名前変更",
+      "description": "このチケットの名前を変更します",
+      "parameters": {
+        "name": {
+          "name": "名前",
+          "description": "新しいチャンネル名（空欄でフォームを表示）"
+        }
+      }
+    },
+    "ticket add": {
+      "name": "追加",
+      "description": "このチケットにメンバーまたはロールを追加します",
+      "parameters": {
+        "target": {
+          "name": "対象",
+          "description": "対象のメンバーまたはロール"
+        }
+      }
+    },
+    "ticket remove": {
+      "name": "削除",
+      "description": "このチケットからメンバーまたはロールを外します",
+      "parameters": {
+        "target": {
+          "name": "対象",
+          "description": "対象のメンバーまたはロール"
+        }
+      }
+    },
+    "ticket participants": {
+      "name": "参加者",
+      "description": "このチケットにアクセスできる相手を確認・変更します"
+    },
+    "ticket staff-thread": {
+      "name": "スタッフスレッド",
+      "description": "スタッフ専用スレッドを開くか参加します"
+    },
+    "ticket info": {
+      "name": "情報",
+      "description": "このチケットの詳細を表示します"
     }
   }
 }

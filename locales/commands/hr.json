@@ -276,6 +276,100 @@
           "description": "Član kojem se poništava provjera"
         }
       }
+    },
+    "ticket": {
+      "name": "ticket",
+      "description": "Upravljaj tiketom u kojem se nalaziš"
+    },
+    "ticket close": {
+      "name": "zatvori",
+      "description": "Zatvara ovaj tiket",
+      "parameters": {
+        "reason": {
+          "name": "razlog",
+          "description": "Zašto se tiket zatvara ili eskalira"
+        }
+      }
+    },
+    "ticket reopen": {
+      "name": "ponovno-otvori",
+      "description": "Ponovno otvara ovaj zatvoreni tiket"
+    },
+    "ticket close-request": {
+      "name": "zatraži-zatvaranje",
+      "description": "Traži od tima da zatvori ovaj tiket",
+      "parameters": {
+        "reason": {
+          "name": "razlog",
+          "description": "Zašto se tiket zatvara ili eskalira"
+        }
+      }
+    },
+    "ticket escalate": {
+      "name": "eskaliraj",
+      "description": "Ograničava ovaj tiket na odgovorne",
+      "parameters": {
+        "reason": {
+          "name": "razlog",
+          "description": "Zašto se tiket zatvara ili eskalira"
+        }
+      }
+    },
+    "ticket deescalate": {
+      "name": "poništi-eskalaciju",
+      "description": "Poništava eskalaciju"
+    },
+    "ticket move": {
+      "name": "premjesti",
+      "description": "Premješta ovaj tiket u drugu kategoriju",
+      "parameters": {
+        "category": {
+          "name": "kategorija",
+          "description": "Kategorija u koju premjestiti tiket"
+        }
+      }
+    },
+    "ticket rename": {
+      "name": "preimenuj",
+      "description": "Preimenuje ovaj tiket",
+      "parameters": {
+        "name": {
+          "name": "naziv",
+          "description": "Novi naziv kanala (prazno otvara obrazac)"
+        }
+      }
+    },
+    "ticket add": {
+      "name": "dodaj",
+      "description": "Dodaje člana ili ulogu u ovaj tiket",
+      "parameters": {
+        "target": {
+          "name": "meta",
+          "description": "Član ili uloga o kojoj je riječ"
+        }
+      }
+    },
+    "ticket remove": {
+      "name": "ukloni",
+      "description": "Uklanja člana ili ulogu iz ovog tiketa",
+      "parameters": {
+        "target": {
+          "name": "meta",
+          "description": "Član ili uloga o kojoj je riječ"
+        }
+      }
+    },
+    "ticket participants": {
+      "name": "sudionici",
+      "description": "Prikazuje i mijenja tko ima pristup ovom tiketu"
+    },
+    "ticket staff-thread": {
+      "name": "nit-tima",
+      "description": "Otvara privatnu nit tima ili joj se pridružuje"
+    },
+    "ticket info": {
+      "name": "info",
+      "description": "Prikazuje pojedinosti ovog tiketa"
     }
   }
 }

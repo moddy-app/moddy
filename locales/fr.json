@@ -2794,6 +2794,314 @@
           "app_command_permission_update": "Modification des permissions d'une commande"
         }
       }
+    },
+    "tickets": {
+      "description": "Tickets de support avec panneaux, catégories et permissions par rôle",
+      "config": {
+        "title": "Tickets",
+        "description": "Permettez à vos membres d'ouvrir un ticket de support depuis un panneau. Chaque panneau propose une ou plusieurs catégories, et chaque catégorie décide où le ticket s'ouvre, qui peut l'ouvrir et ce que votre staff peut y faire.",
+        "quota": "Panneaux : `{count}/{max}` · Catégories par panneau : `{categories}`",
+        "premium_hint": "Premium fait passer ces limites à 10 panneaux et 15 catégories par panneau.",
+        "manage_placeholder": "Sélectionnez un panneau à configurer",
+        "empty": "Aucun panneau pour le moment. Créez-en un pour que vos membres puissent ouvrir des tickets.",
+        "add_panel": "Ajouter un panneau",
+        "entry_summary": "{categories} catégorie(s) · {style}",
+        "no_channel": "aucun salon",
+        "paused": "en pause",
+        "not_posted": "Ce panneau n'a pas encore été publié — utilisez **Republier**."
+      },
+      "panel": {
+        "modal_title_new": "Nouveau panneau de tickets",
+        "modal_title_edit": "Modifier le panneau",
+        "name_label": "Nom interne",
+        "name_hint": "Vous seul le voyez, dans cet écran de configuration",
+        "title_label": "Titre affiché aux membres",
+        "title_hint": "Laissez vide pour utiliser le nom interne",
+        "description_label": "Description",
+        "description_hint": "Le texte affiché au-dessus des boutons",
+        "color_label": "Couleur d'accent",
+        "color_hint": "Hexadécimal, par exemple #5865F2",
+        "placeholder_label": "Texte du menu déroulant",
+        "placeholder_hint": "Utilisé uniquement si le panneau s'affiche en menu déroulant",
+        "subtitle": "Panneau de tickets",
+        "paused_notice": "Ce panneau est en pause : son message est retiré et personne ne peut y ouvrir de ticket.",
+        "channel_title": "Salon du panneau",
+        "channel_hint": "Là où est publié le message sur lequel les membres cliquent",
+        "channel_placeholder": "Sélectionnez un salon",
+        "style_title": "Comment les membres choisissent",
+        "style_hint": "Les boutons sont plus rapides ; le menu déroulant tient plus de catégories",
+        "style_buttons": "Boutons",
+        "style_buttons_hint": "Un bouton par catégorie, jusqu'à 15",
+        "style_select": "Menu déroulant",
+        "style_select_hint": "Une seule liste, jusqu'à 25 catégories",
+        "categories_title": "Catégories",
+        "categories_hint": "{count}/{max} · une par bouton ou par entrée du menu",
+        "no_category": "Aucune catégorie. Un panneau sans catégorie n'est jamais publié.",
+        "category_placeholder": "Sélectionnez une catégorie à configurer",
+        "category_summary": "{roles} rôle(s) avec des permissions · langue `{language}`",
+        "no_destination": "aucune destination",
+        "edit": "Modifier",
+        "add_category": "Ajouter une catégorie",
+        "repost": "Republier",
+        "pause": "Mettre en pause",
+        "resume": "Réactiver",
+        "delete": "Supprimer",
+        "delete_title": "Supprimer ce panneau ?",
+        "delete_description": "Son message sera retiré et ses {categories} catégorie(s) seront perdues. Les tickets déjà ouverts ne sont pas affectés.",
+        "delete_confirm": "Supprimer le panneau",
+        "repost_failed": "Le panneau n'a pas pu être publié. Vérifiez que Moddy peut écrire dans le salon et que le panneau a au moins une catégorie utilisable."
+      },
+      "category": {
+        "modal_title_new": "Nouvelle catégorie",
+        "modal_title_edit": "Modifier la catégorie",
+        "name_label": "Nom",
+        "name_hint": "Affiché sur le bouton ou l'entrée du menu",
+        "emoji_label": "Émoji",
+        "emoji_hint": "Facultatif, par exemple un émoji du serveur",
+        "description_label": "Description courte",
+        "description_hint": "Affichée sous le nom dans un menu déroulant",
+        "color_label": "Couleur du bouton",
+        "color_hint": "Ignorée si le panneau s'affiche en menu déroulant",
+        "color_primary": "Bleu",
+        "color_secondary": "Gris",
+        "color_success": "Vert",
+        "color_danger": "Rouge",
+        "subtitle": "Catégorie du panneau « {panel} »",
+        "paused_notice": "Cette catégorie est en pause : elle n'apparaît plus sur le panneau.",
+        "destination_title": "Où les tickets sont créés",
+        "destination_hint": "La catégorie Discord dans laquelle le salon du ticket est créé",
+        "destination_placeholder": "Sélectionnez une catégorie Discord",
+        "access_title": "Qui peut ouvrir un ticket",
+        "access_hint": "Laissez vide pour autoriser tout le monde",
+        "allowed_placeholder": "Rôles autorisés à ouvrir",
+        "denied_hint": "Un rôle interdit l'emporte toujours, même si le membre a aussi un rôle autorisé.",
+        "denied_placeholder": "Rôles interdits",
+        "language_title": "Langue des tickets",
+        "language_hint": "Tous les messages de ces tickets utilisent cette langue",
+        "summary_title": "Configuré derrière les boutons ci-dessous",
+        "summary_permissions": "Permissions — {roles} rôle(s)",
+        "summary_messages": "Messages — {count}/2 personnalisé(s)",
+        "summary_options": "Options — nom `{format}`, `{max}` ticket(s) ouvert(s) par membre",
+        "identity": "Identité",
+        "permissions": "Permissions",
+        "messages": "Messages",
+        "options": "Options",
+        "pause": "Mettre en pause",
+        "resume": "Réactiver",
+        "delete": "Supprimer",
+        "delete_title": "Supprimer cette catégorie ?",
+        "delete_description": "Elle disparaît du panneau et ses permissions sont perdues. Les tickets déjà ouverts dedans continuent de fonctionner jusqu'à leur fermeture.",
+        "delete_confirm": "Supprimer la catégorie"
+      },
+      "messages": {
+        "modal_title": "Messages du ticket",
+        "open_label": "Message d'ouverture",
+        "open_hint": "Publié dans le ticket, épinglé. Laissez vide pour celui par défaut.",
+        "close_label": "Message de fermeture",
+        "close_hint": "Ajouté à la carte publiée à la fermeture du ticket",
+        "placeholders_header": "Variables disponibles :",
+        "ph_user": "mention du membre",
+        "ph_username": "son nom d'utilisateur",
+        "ph_display_name": "son nom affiché",
+        "ph_server": "le nom du serveur",
+        "ph_category": "le nom de la catégorie",
+        "ph_number": "le numéro du ticket",
+        "ph_ticket": "mention du salon du ticket"
+      },
+      "options": {
+        "modal_title": "Options de la catégorie",
+        "name_format_label": "Nom du salon",
+        "name_format_hint": "par exemple ticket-{number}",
+        "max_open_label": "Tickets ouverts par membre",
+        "max_open_hint": "Entre 1 et {max}, dans cette catégorie",
+        "ping_label": "Rôles à mentionner",
+        "ping_hint": "Mentionnés à l'ouverture d'un ticket"
+      },
+      "permissions": {
+        "title": "Permissions des tickets",
+        "subtitle": "Catégorie « {category} »",
+        "description": "Choisissez un rôle, puis cochez ce qu'il a le droit de faire dans les tickets de cette catégorie. Les administrateurs du serveur ont toujours tout.",
+        "configured_title": "Rôles avec des permissions",
+        "nobody": "Aucun rôle ne peut encore traiter ces tickets — seuls les administrateurs du serveur le peuvent.",
+        "pick_role": "Rôle à configurer",
+        "pick_role_hint": "Re-sélectionnez-le pour modifier ou retirer ses permissions",
+        "role_placeholder": "Sélectionnez un rôle",
+        "perms_placeholder": "Sélectionnez les permissions",
+        "defaults_hint": "Nouveau rôle : une sélection de départ est pré-cochée, rien n'est enregistré tant que vous ne la validez pas.",
+        "clear": "Tout retirer",
+        "view": {
+          "name": "Voir le ticket",
+          "description": "Lire et écrire dans les tickets de cette catégorie"
+        },
+        "close": {
+          "name": "Fermer",
+          "description": "Fermer et rouvrir un ticket"
+        },
+        "staff_thread": {
+          "name": "Thread staff",
+          "description": "Ouvrir et rejoindre le thread privé du staff"
+        },
+        "rename": {
+          "name": "Renommer",
+          "description": "Changer le nom du salon du ticket"
+        },
+        "move": {
+          "name": "Changer de catégorie",
+          "description": "Déplacer le ticket vers une autre catégorie"
+        },
+        "participants": {
+          "name": "Gérer les participants",
+          "description": "Ajouter et retirer des membres et des rôles"
+        },
+        "admin": {
+          "name": "Responsable",
+          "description": "Tout ce qui précède, et garde l'accès après une escalade"
+        }
+      },
+      "channel": {
+        "topic": "Ticket de {user} · {category}",
+        "default_open_message": "Merci d'avoir ouvert un ticket. Décrivez votre demande le plus précisément possible — l'équipe vous répondra ici.",
+        "title": "Ticket #{number}",
+        "meta": "Ouvert par",
+        "commands_hint": "Toutes les actions sont aussi disponibles avec les commandes `/ticket`."
+      },
+      "actions": {
+        "close": "Fermer",
+        "close_request": "Demander la fermeture",
+        "escalate": "Escalader",
+        "staff_thread": "Thread staff",
+        "participants": "Participants",
+        "reopen": "Rouvrir",
+        "delete": "Supprimer le salon",
+        "deescalate": "Annuler l'escalade",
+        "rename": "Renommer"
+      },
+      "fields": {
+        "reason": "Raison",
+        "reason_hint": "Facultatif",
+        "channel_name": "Nouveau nom",
+        "channel_name_hint": "Lettres, chiffres et tirets",
+        "participants": "Participants",
+        "opener": "Ouvert par",
+        "category": "Catégorie",
+        "status": "Statut",
+        "escalated": "Escalade",
+        "your_permissions": "Vos permissions ici",
+        "none": "aucune"
+      },
+      "status": {
+        "open": "Ouvert",
+        "closed": "Fermé",
+        "escalated": "Escaladé"
+      },
+      "open": {
+        "success_title": "Ticket ouvert",
+        "success_description": "Votre ticket est prêt : {channel}"
+      },
+      "close": {
+        "done_title": "Ticket fermé",
+        "done_description": "Le ticket est verrouillé. Il peut être rouvert, ou supprimé définitivement, depuis la carte publiée dans le salon.",
+        "card_title": "Ticket fermé",
+        "by": "Fermé par",
+        "dm_title": "Votre ticket a été fermé",
+        "dm_description": "Votre ticket #`{number}` ({category}) sur **{server}** a été fermé."
+      },
+      "close_request": {
+        "sent_title": "Demande envoyée",
+        "sent_description": "L'équipe a été prévenue et fermera le ticket si tout est réglé.",
+        "card_title": "Fermeture demandée",
+        "card_description": "{user} souhaite que ce ticket soit fermé.",
+        "accept": "Fermer le ticket",
+        "refuse": "Le garder ouvert",
+        "refused": "{user} a gardé le ticket ouvert."
+      },
+      "reopen": {
+        "done_title": "Ticket rouvert",
+        "done_description": "Tous ceux qui y avaient accès le retrouvent."
+      },
+      "delete": {
+        "pending_title": "Suppression",
+        "pending_description": "Le salon et sa conversation sont en cours de suppression."
+      },
+      "escalate": {
+        "card_title": "Ticket escaladé",
+        "card_description": "{user} a escaladé ce ticket : seuls les responsables, son auteur et les personnes ajoutées à la main y ont encore accès.",
+        "done_title": "Ticket escaladé",
+        "done_description": "L'accès est désormais limité aux responsables.",
+        "cancelled_title": "Escalade annulée",
+        "cancelled_description": "Les rôles du staff retrouvent leur accès.",
+        "confirm_title": "Escalader ce ticket ?",
+        "confirm_description": "Les rôles du staff perdent l'accès. Son auteur le garde. Que faire des personnes ajoutées à la main ?",
+        "keep": "Les garder",
+        "drop": "Les retirer"
+      },
+      "move": {
+        "done_title": "Ticket déplacé",
+        "done_description": "Le ticket suit maintenant les permissions de sa nouvelle catégorie."
+      },
+      "rename": {
+        "done_title": "Ticket renommé",
+        "done_description": "Le salon s'appelle maintenant `{name}`."
+      },
+      "participants": {
+        "title": "Participants du ticket",
+        "description": "Toutes les personnes sélectionnées ici ont accès au ticket, en plus de son auteur et des rôles du staff. Désélectionnez quelqu'un pour le retirer.",
+        "owner_note": "Ouvert par",
+        "members_title": "Membres",
+        "members_description": "Ajoutés un par un",
+        "members_placeholder": "Sélectionnez les membres",
+        "roles_title": "Rôles",
+        "roles_description": "Tous les porteurs du rôle obtiennent l'accès",
+        "roles_placeholder": "Sélectionnez les rôles",
+        "added_title": "Ajouté",
+        "added_description": "{target} a maintenant accès à ce ticket.",
+        "removed_title": "Retiré",
+        "removed_description": "{target} n'a plus accès à ce ticket."
+      },
+      "staff_thread": {
+        "name": "staff-{number}",
+        "intro": "Thread privé du staff pour le ticket #{number}. Le membre qui a ouvert le ticket ne le voit pas.",
+        "done_title": "Thread staff",
+        "done_description": "Vous avez été ajouté à {thread}."
+      },
+      "info": {
+        "title": "Ticket #{number}",
+        "description": "Tout ce que Moddy sait de ce ticket."
+      },
+      "errors": {
+        "title": "Ticket",
+        "not_a_ticket": "Ce salon n'est pas un ticket.",
+        "module_disabled": "Le module de tickets n'est pas activé sur ce serveur.",
+        "category_gone": "La catégorie de ce ticket n'existe plus. Demandez à un administrateur de le déplacer vers une autre.",
+        "missing_permission": "Vous n'avez pas la permission de faire cela dans ce ticket.",
+        "unavailable": "Les tickets sont temporairement indisponibles. Réessayez dans un instant.",
+        "cannot_open": "Vous ne pouvez pas ouvrir de ticket dans cette catégorie.",
+        "category_disabled": "Cette catégorie n'accepte pas de ticket pour le moment.",
+        "destination_missing": "Cette catégorie n'a pas de destination valide. Prévenez un administrateur.",
+        "too_many_open": "Vous avez déjà `{max}` ticket(s) ouvert(s) dans cette catégorie. Fermez-en un avant d'en ouvrir un autre.",
+        "cannot_create_channel": "Moddy n'a pas pu créer le salon du ticket. Vérifiez ses permissions sur la catégorie de destination.",
+        "already_closed": "Ce ticket est déjà fermé.",
+        "not_closed": "Ce ticket n'est pas fermé.",
+        "can_close_directly": "Vous pouvez fermer ce ticket vous-même — inutile de le demander.",
+        "close_already_requested": "Une demande de fermeture est déjà en attente sur ce ticket.",
+        "no_close_request": "Aucune demande de fermeture n'est en attente sur ce ticket.",
+        "already_escalated": "Ce ticket est déjà escaladé.",
+        "not_escalated": "Ce ticket n'est pas escaladé.",
+        "no_responsible_role": "Aucun rôle n'a la permission **Responsable** dans cette catégorie : il n'y a personne vers qui escalader.",
+        "unknown_category": "Cette catégorie n'existe pas.",
+        "same_category": "Le ticket est déjà dans cette catégorie.",
+        "cannot_edit_channel": "Moddy n'a pas pu modifier le salon du ticket. Vérifiez ses permissions.",
+        "invalid_name": "Ce nom ne peut pas être utilisé pour un salon.",
+        "already_participant": "Cette personne a déjà accès à ce ticket.",
+        "not_a_participant": "Cette personne n'a pas été ajoutée à ce ticket.",
+        "cannot_remove_owner": "Le membre qui a ouvert le ticket ne peut pas en être retiré. Fermez plutôt le ticket.",
+        "cannot_create_thread": "Moddy n'a pas pu créer le thread staff. Les threads privés nécessitent la permission de les créer dans ce salon.",
+        "use_close_request": "Vous ne pouvez pas fermer ce ticket. Utilisez **Demander la fermeture** pour le demander à l'équipe.",
+        "panel_limit": "Ce serveur a atteint sa limite de `{max}` panneaux de tickets.",
+        "category_limit": "Ce panneau a atteint sa limite de `{max}` catégories.",
+        "premium_upsell": "Premium fait passer les limites à 10 panneaux et 15 catégories par panneau. [En savoir plus]({url})",
+        "invalid_emoji": "Cet émoji ne peut pas être utilisé. Utilisez un émoji du serveur ou un émoji standard."
+      }
     }
   },
   "languages": {

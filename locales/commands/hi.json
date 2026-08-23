@@ -276,6 +276,100 @@
           "description": "वह सदस्य जिसका सत्यापन हटाना है"
         }
       }
+    },
+    "ticket": {
+      "name": "ticket",
+      "description": "आप जिस टिकट में हैं उसे प्रबंधित करें"
+    },
+    "ticket close": {
+      "name": "बंद-करें",
+      "description": "यह टिकट बंद करता है",
+      "parameters": {
+        "reason": {
+          "name": "कारण",
+          "description": "टिकट क्यों बंद या आगे बढ़ाया जा रहा है"
+        }
+      }
+    },
+    "ticket reopen": {
+      "name": "फिर-खोलें",
+      "description": "इस बंद टिकट को फिर से खोलता है"
+    },
+    "ticket close-request": {
+      "name": "बंद-करने-का-अनुरोध",
+      "description": "स्टाफ़ से यह टिकट बंद करने का अनुरोध करता है",
+      "parameters": {
+        "reason": {
+          "name": "कारण",
+          "description": "टिकट क्यों बंद या आगे बढ़ाया जा रहा है"
+        }
+      }
+    },
+    "ticket escalate": {
+      "name": "आगे-बढ़ाएँ",
+      "description": "इस टिकट को केवल ज़िम्मेदारों तक सीमित करता है",
+      "parameters": {
+        "reason": {
+          "name": "कारण",
+          "description": "टिकट क्यों बंद या आगे बढ़ाया जा रहा है"
+        }
+      }
+    },
+    "ticket deescalate": {
+      "name": "वापस-लें",
+      "description": "आगे बढ़ाना रद्द करता है"
+    },
+    "ticket move": {
+      "name": "स्थानांतरित",
+      "description": "इस टिकट को दूसरी श्रेणी में ले जाता है",
+      "parameters": {
+        "category": {
+          "name": "श्रेणी",
+          "description": "वह श्रेणी जहाँ टिकट ले जाना है"
+        }
+      }
+    },
+    "ticket rename": {
+      "name": "नाम-बदलें",
+      "description": "इस टिकट का नाम बदलता है",
+      "parameters": {
+        "name": {
+          "name": "नाम",
+          "description": "नया चैनल नाम (खाली छोड़ें तो फ़ॉर्म खुलेगा)"
+        }
+      }
+    },
+    "ticket add": {
+      "name": "जोड़ें",
+      "description": "इस टिकट में सदस्य या भूमिका जोड़ता है",
+      "parameters": {
+        "target": {
+          "name": "लक्ष्य",
+          "description": "संबंधित सदस्य या भूमिका"
+        }
+      }
+    },
+    "ticket remove": {
+      "name": "हटाएँ",
+      "description": "इस टिकट से सदस्य या भूमिका हटाता है",
+      "parameters": {
+        "target": {
+          "name": "लक्ष्य",
+          "description": "संबंधित सदस्य या भूमिका"
+        }
+      }
+    },
+    "ticket participants": {
+      "name": "प्रतिभागी",
+      "description": "देखें और बदलें कि इस टिकट तक किसकी पहुँच है"
+    },
+    "ticket staff-thread": {
+      "name": "स्टाफ़-थ्रेड",
+      "description": "निजी स्टाफ़ थ्रेड खोलता है या उसमें शामिल होता है"
+    },
+    "ticket info": {
+      "name": "जानकारी",
+      "description": "इस टिकट का विवरण दिखाता है"
     }
   }
 }

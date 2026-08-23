@@ -127,6 +127,14 @@ def _dynamic_item_cases():
     from staff.commands.manage.staff import (
         StaffPanelRolesSelect, StaffPanelScopeSelect, StaffPanelPermsSelect, StaffPanelActionButton,
     )
+    from utils.ticket_views import TicketOpenButton, TicketOpenSelect
+    from modules.configs.tickets_panel_config import (
+        TicketPanelButton, TicketPanelSelect, TicketPanelChannelSelect,
+    )
+    from modules.configs.tickets_category_config import (
+        TicketCategoryButton, TicketCategoryDestination, TicketCategoryRoles,
+        TicketCategoryLocale, TicketPermRoleSelect, TicketPermSelect, TicketPermButton,
+    )
     _U = "0f7d9c62-3b4e-4a1f-9c2d-5e6f70819a2b"
     _SNOWFLAKE = 123456789012345678
     _SNOWFLAKE2 = 987654321098765432
@@ -153,6 +161,20 @@ def _dynamic_item_cases():
         (StaffPanelScopeSelect, (_SNOWFLAKE, _SNOWFLAKE2)),
         (StaffPanelPermsSelect, (_SNOWFLAKE, _SNOWFLAKE2, "Supervisor_Mod")),
         (StaffPanelActionButton, ("save", _SNOWFLAKE, _SNOWFLAKE2)),
+        # Tickets — the public panel (whoever clicks opens a ticket)…
+        (TicketOpenButton, ("p_ab12cd", "c_ab12cd")),
+        (TicketOpenSelect, ("p_ab12cd",)),
+        # …and every /config screen below the module root.
+        (TicketPanelButton, ("repost", "p_ab12cd")),
+        (TicketPanelSelect, ("style", "p_ab12cd")),
+        (TicketPanelChannelSelect, ("p_ab12cd",)),
+        (TicketCategoryButton, ("perms", "p_ab12cd", "c_ab12cd")),
+        (TicketCategoryDestination, ("p_ab12cd", "c_ab12cd")),
+        (TicketCategoryRoles, ("allowed", "p_ab12cd", "c_ab12cd")),
+        (TicketCategoryLocale, ("p_ab12cd", "c_ab12cd")),
+        (TicketPermRoleSelect, ("p_ab12cd", "c_ab12cd")),
+        (TicketPermSelect, ("p_ab12cd", "c_ab12cd", _SNOWFLAKE)),
+        (TicketPermButton, ("clear", "p_ab12cd", "c_ab12cd", _SNOWFLAKE)),
     ]
 
 

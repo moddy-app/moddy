@@ -276,6 +276,100 @@
           "description": "Medlemmen som ska avverifieras"
         }
       }
+    },
+    "ticket": {
+      "name": "ticket",
+      "description": "Hantera ärendet du befinner dig i"
+    },
+    "ticket close": {
+      "name": "stäng",
+      "description": "Stänger det här ärendet",
+      "parameters": {
+        "reason": {
+          "name": "anledning",
+          "description": "Varför ärendet stängs eller eskaleras"
+        }
+      }
+    },
+    "ticket reopen": {
+      "name": "återöppna",
+      "description": "Återöppnar det här stängda ärendet"
+    },
+    "ticket close-request": {
+      "name": "begär-stängning",
+      "description": "Ber personalen att stänga det här ärendet",
+      "parameters": {
+        "reason": {
+          "name": "anledning",
+          "description": "Varför ärendet stängs eller eskaleras"
+        }
+      }
+    },
+    "ticket escalate": {
+      "name": "eskalera",
+      "description": "Begränsar ärendet till de ansvariga",
+      "parameters": {
+        "reason": {
+          "name": "anledning",
+          "description": "Varför ärendet stängs eller eskaleras"
+        }
+      }
+    },
+    "ticket deescalate": {
+      "name": "avbryt-eskalering",
+      "description": "Avbryter eskaleringen"
+    },
+    "ticket move": {
+      "name": "flytta",
+      "description": "Flyttar ärendet till en annan kategori",
+      "parameters": {
+        "category": {
+          "name": "kategori",
+          "description": "Kategorin ärendet ska flyttas till"
+        }
+      }
+    },
+    "ticket rename": {
+      "name": "byt-namn",
+      "description": "Byter namn på ärendet",
+      "parameters": {
+        "name": {
+          "name": "namn",
+          "description": "Det nya kanalnamnet (lämna tomt för ett formulär)"
+        }
+      }
+    },
+    "ticket add": {
+      "name": "lägg-till",
+      "description": "Lägger till en medlem eller roll i ärendet",
+      "parameters": {
+        "target": {
+          "name": "mål",
+          "description": "Berörd medlem eller roll"
+        }
+      }
+    },
+    "ticket remove": {
+      "name": "ta-bort",
+      "description": "Tar bort en medlem eller roll från ärendet",
+      "parameters": {
+        "target": {
+          "name": "mål",
+          "description": "Berörd medlem eller roll"
+        }
+      }
+    },
+    "ticket participants": {
+      "name": "deltagare",
+      "description": "Visa och ändra vem som har åtkomst till ärendet"
+    },
+    "ticket staff-thread": {
+      "name": "personaltråd",
+      "description": "Öppnar eller går med i den privata personaltråden"
+    },
+    "ticket info": {
+      "name": "info",
+      "description": "Visar detaljerna för det här ärendet"
     }
   }
 }
