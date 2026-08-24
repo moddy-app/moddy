@@ -227,6 +227,7 @@ moddy/
 │   ├── precedent_service.py   #   Automod server precedents (record + serve, RAG)
 │   ├── ticket_service.py      #   Ticket lifecycle (open/close/escalate/move/participants)
 │   ├── transcription_service.py #  Voice/audio speech-to-text (shared by cog + module)
+│   ├── heartbeat.py           #   Moddy Health Monitor heartbeat (dead man's switch)
 │   └── railway_diagnostic.py  #   Railway diagnostics
 │
 ├── internal_api/              # FastAPI internal API
@@ -260,7 +261,8 @@ moddy/
     ├── test_transcription.py  #   Voice transcription helpers, guard rails, cards
     ├── test_notifications.py  #   Notifications: hashing, attribution, report rules, i18n
     ├── test_logs.py           #   Server logs: registry, routing, rendering, delivery
-    └── test_logs_i18n.py      #   Server logs: i18n completeness on the 5 locales
+    ├── test_logs_i18n.py      #   Server logs: i18n completeness on the 5 locales
+    └── test_heartbeat.py      #   Health Monitor heartbeat: payload, lifecycle, status decisions
 ```
 
 ---
@@ -456,6 +458,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/MODERATION_CASES.md](docs/MODERATION_CASES.md) | Moderation cases/sanctions, the case service & sources, auto-sync |
 | [docs/GLOBAL_SANCTIONS.md](docs/GLOBAL_SANCTIONS.md) | **Global sanctions** — Moddy-team warn / limited / suspended, on users *and* servers |
 | [docs/TECHNICAL_LOGS.md](docs/TECHNICAL_LOGS.md) | Internal technical staff logs (webhook-based, per-event channels) |
+| [docs/HEALTH_MONITOR.md](docs/HEALTH_MONITOR.md) | **Health Monitor heartbeat** — dead man's switch push to `moddy-health-monitor`, `HM_URL`/`HM_INGEST_TOKEN` |
 | [docs/DATABASE.md](docs/DATABASE.md) | Database schema, queries, repository pattern |
 
 ### Infrastructure

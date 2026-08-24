@@ -15,6 +15,8 @@ from pathlib import Path
 import traceback
 import aiohttp
 
+import math
+
 from config import (
     DEBUG,
     DEFAULT_PREFIX,
@@ -28,6 +30,8 @@ from config import (
     IS_MAINTENANCE,
     DEV_ALLOWED_IDS,
     ENV_MODE,
+    HM_URL,
+    HM_INGEST_TOKEN,
 )
 from utils.emojis import EMOJIS, ERROR as ERROR_EMOJI
 
@@ -137,6 +141,15 @@ class ModdyBot(ModdyFrameworkBot):
         self.notifications = NotificationService(self)
         from gateway import Gateway
         self.gateway = Gateway()
+        from services.heartbeat import HeartbeatClient
+        # Dead man's switch push to the Moddy Health Monitor (docs/HEALTH_MONITOR.md).
+        # Started in on_ready (a bot that was never ready has nothing to report).
+        self.heartbeat = HeartbeatClient(
+            "moddy-bot",
+            url=HM_URL,
+            token=HM_INGEST_TOKEN,
+            build=self._build_heartbeat_checks,
+        )
         self.redis = None  # Redis client (shared with backend)
         self._dev_team_ids: Set[int] = set()
         self.maintenance_mode = False
@@ -946,6 +959,7 @@ class ModdyBot(ModdyFrameworkBot):
 
         # Fetch bot version from GitHub
         await self.fetch_version()
+        self.heartbeat.version = self.version or "0.0.0"
 
         # Configure error handler for slash commands
         self.tree.on_error = self.on_app_command_error
@@ -1607,6 +1621,50 @@ class ModdyBot(ModdyFrameworkBot):
         # Run startup health checks
         await self.run_startup_checks()
 
+        # Start the Health Monitor heartbeat. Only from here on: an event
+        # loop with a dead gateway connection has nothing worth reporting.
+        self.heartbeat.start()
+
+    async def _build_heartbeat_checks(self) -> dict:
+        """Build the ``checks``/``status`` the heartbeat reports for this bot.
+
+        An event loop that is alive but whose gateway connection is dead must
+        never report ``ok`` — that is the exact failure mode a dead man's
+        switch exists to catch. ``bot.latency`` is ``nan`` until the gateway
+        has answered at least once.
+        """
+        ready = bool(self.is_ready())
+        latency_ms = round(self.latency * 1000) if math.isfinite(self.latency) else None
+
+        shards = getattr(self, "shards", None) or {}
+        if shards:
+            total = len(shards)
+            connected = len([s for s in shards.values() if not s.is_closed()])
+        else:
+            # Not sharded: one virtual shard, up iff the gateway is ready.
+            total = 1
+            connected = int(ready)
+
+        if not ready:
+            status = "down"
+        elif connected < total:
+            status = "degraded"
+        else:
+            status = "ok"
+
+        return {
+            "status": status,
+            "checks": {
+                "is_ready": {"ok": ready},
+                "discord_gateway": {"ok": ready, "latency_ms": latency_ms},
+                "shards": {"ok": connected == total, "connected": connected, "total": total},
+            },
+            "meta": {
+                "shards": f"{connected}/{total}",
+                "guilds": len(self.guilds),
+            },
+        }
+
     async def run_startup_checks(self):
         """Run comprehensive startup health checks on all systems."""
         logger.info("Running startup health checks...")
@@ -2254,6 +2312,9 @@ class ModdyBot(ModdyFrameworkBot):
 
         # Stop API gateway (flushes log buffer)
         await self.gateway.stop()
+
+        # Stop the Health Monitor heartbeat
+        await self.heartbeat.stop()
 
         # Close the AltGuard HTTP session
         try:

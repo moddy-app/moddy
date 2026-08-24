@@ -100,6 +100,16 @@ AltGuard — sans lui, le bouton de vérification répond « service indisponibl
 Les canaux Redis `altguard:verdict` / `altguard:membership` passent par le Redis
 déjà configuré (`REDIS_URL`), rien à ajouter — voir [ALTGUARD.md](ALTGUARD.md)
 
+### HM_URL
+**Valeur :** URL de base du Moddy Health Monitor, sans slash final (optionnel —
+sans elle, le heartbeat se désactive proprement avec un warning)
+
+### HM_INGEST_TOKEN
+**Valeur :** Secret partagé envoyé en `X-Health-Token` sur
+`POST /ingest/heartbeat` — identique sur tous les services surveillés
+(optionnel, même comportement que `HM_URL` si absent) — voir
+[HEALTH_MONITOR.md](HEALTH_MONITOR.md)
+
 ## Notifications centralisées
 
 Les deux salons vivent dans le serveur de l'équipe Moddy. Défauts dans
@@ -132,6 +142,8 @@ pris en charge, accepté, refusé) est journalisée
 - [ ] `ALTGUARD_API_URL` (optionnel, défaut `https://verify.moddy.app`)
 - [ ] `MODDY_NOTIF_REPORT_CHANNEL_ID` (optionnel, défaut en dur dans `config.py`)
 - [ ] `MODDY_NOTIF_REPORT_LOG_CHANNEL_ID` (optionnel, défaut en dur dans `config.py`)
+- [ ] `HM_URL` (optionnel, désactive le heartbeat si absent)
+- [ ] `HM_INGEST_TOKEN` (optionnel, désactive le heartbeat si absent, identique sur tous les services)
 
 ## Dépannage
 
