@@ -105,6 +105,18 @@ ALTGUARD_API_URL: str = os.environ.get(
 ALTGUARD_BOT_TOKEN: str = os.environ.get("ALTGUARD_BOT_TOKEN", "")
 
 # =============================================================================
+# MODDY HEALTH MONITOR (dead man's switch — see docs/HEALTH_MONITOR.md)
+# =============================================================================
+# The bot pushes a heartbeat every 20s; the monitor never polls it. Either
+# variable missing disables the heartbeat with a warning, never a crash.
+
+# Base URL of the health monitor, no trailing slash - Variable Railway: HM_URL
+HM_URL: str = os.environ.get("HM_URL", "").rstrip("/")
+
+# Shared secret sent as `X-Health-Token` - Variable Railway: HM_INGEST_TOKEN
+HM_INGEST_TOKEN: str = os.environ.get("HM_INGEST_TOKEN", "")
+
+# =============================================================================
 # TECHNICAL LOGS (internal staff webhooks)
 # =============================================================================
 # Internal technical logs are NOT sent by the bot itself but through Discord
