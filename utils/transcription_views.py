@@ -64,18 +64,20 @@ def _guarded(callback):
 # Formatting helpers
 # --------------------------------------------------------------------------- #
 
-def card_locale(interaction: discord.Interaction) -> str:
+async def card_locale(interaction: discord.Interaction) -> str:
     """Language of a **public** transcription card.
 
     The card stays in the channel for everyone to read, so it speaks the
-    server's language rather than the clicker's — the same rule the module uses
-    when it posts the button. In DMs there is no server, so the reader's own
-    language wins. Ephemeral errors always use the clicker's language.
+    server language (``/config`` -> Server settings) rather than the clicker's
+    — the same rule the module uses when it posts the button. In DMs there is
+    no server, so the reader's own language wins. Ephemeral errors always use
+    the clicker's language.
     """
-    guild = interaction.guild
-    if guild is not None and guild.preferred_locale:
-        return str(guild.preferred_locale)
-    return i18n.get_user_locale(interaction)
+    from utils.guild_language import guild_locale
+
+    if interaction.guild is None:
+        return i18n.get_user_locale(interaction)
+    return await guild_locale(interaction.client, interaction.guild)
 
 
 def format_duration(seconds: float) -> str:
@@ -270,7 +272,7 @@ class TranscribeButton(
         from services.transcription_service import ErrorCode, TranscriptionError
 
         bot = interaction.client
-        public_locale = card_locale(interaction)
+        public_locale = await card_locale(interaction)
 
         # Swap the button for the loading state straight away: the model call
         # takes seconds, and a button that looks idle invites a second click.
@@ -317,7 +319,7 @@ class TranscribeButton(
         """Put the button back and explain the failure to the clicker alone."""
         await interaction.edit_original_response(
             view=TranscribePromptView(
-                self.channel_id, self.message_id, card_locale(interaction)
+                self.channel_id, self.message_id, await card_locale(interaction)
             )
         )
         await interaction.followup.send(

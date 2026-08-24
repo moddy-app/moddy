@@ -165,11 +165,18 @@ def test_language_names_are_localized_from_whisper_output():
 
 
 def test_a_public_card_speaks_the_server_language_and_falls_back_in_dms():
-    in_guild = SimpleNamespace(guild=SimpleNamespace(preferred_locale="de"), locale="fr")
-    assert card_locale(in_guild) == "de"
+    import asyncio
 
-    in_dm = SimpleNamespace(guild=None, locale="fr")
-    assert card_locale(in_dm) == "fr"
+    from utils.guild_language import invalidate_guild_language
+
+    invalidate_guild_language()
+    guild = SimpleNamespace(id=1, features=["COMMUNITY"], preferred_locale="de")
+    in_guild = SimpleNamespace(guild=guild, locale="fr",
+                               client=SimpleNamespace(db=None))
+    assert asyncio.run(card_locale(in_guild)) == "de"
+
+    in_dm = SimpleNamespace(guild=None, locale="fr", client=SimpleNamespace(db=None))
+    assert asyncio.run(card_locale(in_dm)) == "fr"
 
 
 def test_an_unknown_language_still_renders():

@@ -218,9 +218,9 @@ class WelcomeChannelModule(ModuleBase):
         guild = self.bot.get_guild(self.guild_id)
         if not guild:
             return False, t('modules.welcome_channel.errors.guild_not_found',
-                            locale=self._locale())
+                            locale=await self._locale())
 
-        locale = self._locale()
+        locale = await self._locale()
         messages = normalize_config(config_data)['messages']
 
         if len(messages) > MAX_WELCOME_MESSAGES:
@@ -266,15 +266,11 @@ class WelcomeChannelModule(ModuleBase):
     def get_default_config(self) -> Dict[str, Any]:
         return {'version': CONFIG_VERSION, 'messages': []}
 
-    def _locale(self) -> str:
-        """Guild locale, used for validation errors raised outside an interaction."""
-        try:
-            guild = self.bot.get_guild(self.guild_id)
-            if guild and guild.preferred_locale:
-                return str(guild.preferred_locale)
-        except Exception:
-            pass
-        return 'en-US'
+    async def _locale(self) -> str:
+        """Server language (/config -> Server settings), used for validation
+        errors raised outside an interaction and for the messages themselves."""
+        from utils.guild_language import guild_locale
+        return await guild_locale(self.bot, self.guild_id)
 
     async def on_member_join(self, member: discord.Member):
         """Post every enabled welcome message for the joining member."""

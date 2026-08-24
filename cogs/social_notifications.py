@@ -26,6 +26,7 @@ from modules.social_notifications import (
     platform_subscription_limit,
     normalize_identifier,
 )
+from utils.guild_language import guild_locale
 
 logger = logging.getLogger('moddy.cogs.social_notifications')
 
@@ -251,7 +252,7 @@ class SocialNotifications(commands.Cog):
             if not isinstance(channel, (discord.TextChannel, discord.Thread)):
                 continue
 
-            locale = str(guild.preferred_locale) if guild.preferred_locale else 'en-US'
+            locale = await guild_locale(self.bot, guild)
             try:
                 view, allowed = build_notification_view(event, sub, locale)
                 await channel.send(view=view, allowed_mentions=allowed)

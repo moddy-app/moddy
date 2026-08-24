@@ -311,16 +311,14 @@ _AI_CHAT_MIN_TIMEOUT = 1.0  # seconds — floor left for the OpenAI call, even i
 _AI_MODEL = "gpt-4.1-nano"
 
 
-def _suggestion_language(guild: discord.Guild) -> str:
+async def _suggestion_language(bot, guild: discord.Guild) -> str:
     """Return the full language name to use in the AI prompt.
 
-    Uses the guild's preferred locale when the Community feature is enabled;
-    falls back to English otherwise.
+    Follows the server language (``/config`` -> Server settings), so a
+    suggested reason is written in the language the sanction will be read in.
     """
-    if "COMMUNITY" in guild.features:
-        locale_str = str(guild.preferred_locale)
-        return _LOCALE_TO_LANGUAGE.get(locale_str, "English")
-    return "English"
+    from utils.guild_language import guild_locale
+    return _LOCALE_TO_LANGUAGE.get(await guild_locale(bot, guild), "English")
 
 
 async def _fetch_recent_user_messages(
@@ -389,7 +387,7 @@ async def _get_ai_suggested_reason(
     if not getattr(bot, "gateway", None) or not bot.gateway.openai_available():
         return None
 
-    language = _suggestion_language(guild)
+    language = await _suggestion_language(bot, guild)
     action_labels = {
         "ban": "permanent ban",
         "kick": "kick",
@@ -683,7 +681,7 @@ class SanctionModal(BaseModal):
         discord_ok = await self._discord_action(user, discord_reason, duration)
 
         if notify_dm:
-            guild_locale = _guild_locale(self.guild)
+            guild_locale = await _guild_locale(self.bot, self.guild)
             await self._send_dm(user, reason, expires_at, reference, guild_locale, attachments)
 
         return {"user": user, "case": case_result, "discord_ok": discord_ok}
@@ -807,14 +805,13 @@ class SanctionModal(BaseModal):
 # Helper: guild locale for DM messages
 # ---------------------------------------------------------------------------
 
-def _guild_locale(guild: discord.Guild) -> str:
-    """Return the guild's preferred locale string ('fr', 'en-US', …)."""
-    try:
-        loc = str(guild.preferred_locale)
-        # discord.py returns e.g. "fr" or "en-US"
-        return loc if loc else "en-US"
-    except Exception:
-        return "en-US"
+async def _guild_locale(bot, guild: discord.Guild) -> str:
+    """The server language a sanction DM is written in.
+
+    One setting per server: ``/config`` -> Server settings.
+    """
+    from utils.guild_language import guild_locale
+    return await guild_locale(bot, guild)
 
 
 async def _resolve_incognito(bot, user_id: int, default: bool = True) -> bool:
@@ -1191,7 +1188,7 @@ class ModerationCommands(commands.Cog):
             await _send_sanction_dm(
                 self.bot, guild, int(issuer_id), action, dm_target,
                 case_row["reason"], expires_at, case_row["reference"],
-                _guild_locale(guild),
+                await _guild_locale(self.bot, guild),
             )
 
         full = await self.bot.db.get_case_by_id(case_uuid)

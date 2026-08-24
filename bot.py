@@ -610,6 +610,12 @@ class ModdyBot(ModdyFrameworkBot):
                 guild_id = 0
             await self._handle_module_config_push(event_type, guild_id, data)
 
+        elif event_type == "settings_updated":
+            # The dashboard wrote guilds.data.settings straight to the DB. The
+            # server language is cached in-process, so drop the entry and
+            # re-apply what the language is baked into (panels).
+            await self._handle_settings_push(guild_id)
+
         elif event_type in ("premium_activated", "premium_deactivated"):
             # Guild premium is cached in Redis (utils.subscription.is_guild_premium);
             # drop the entry so the next gate check sees the new state.
@@ -624,6 +630,34 @@ class ModdyBot(ModdyFrameworkBot):
 
         else:
             logger.debug(f"[PubSub] Unknown event type: {event_type}")
+
+    async def _handle_settings_push(self, guild_id) -> None:
+        """Apply server settings the dashboard wrote straight to the database.
+
+        Only the language lives there today (``guilds.data.settings.language``,
+        see utils/guild_language.py). Dropping the cached value is what makes
+        the next message read the new one; re-posting the panels is what makes
+        the messages *already sitting in Discord* speak it.
+        """
+        from utils.guild_language import invalidate_guild_language
+
+        try:
+            guild_id = int(guild_id) if guild_id else 0
+        except (TypeError, ValueError):
+            guild_id = 0
+        if not guild_id:
+            logger.warning("[PubSub] settings_updated without a guild id — ignored")
+            return
+
+        invalidate_guild_language(guild_id)
+        logger.info(f"[PubSub] Server settings invalidated for guild {guild_id}")
+
+        if self.module_manager:
+            try:
+                await self.module_manager.apply_language_change(guild_id)
+            except Exception as e:
+                logger.error(f"[PubSub] Could not re-apply the panels of guild "
+                             f"{guild_id} after a settings push: {e}", exc_info=True)
 
     async def _handle_module_config_push(self, event_type: str, guild_id: int, data: dict):
         """Apply a module configuration the backend/dashboard wrote to the DB.

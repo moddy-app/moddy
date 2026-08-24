@@ -81,8 +81,9 @@ moddy/
 │   ├── voice_transcription.py #   Voice message transcription (button or automatic)
 │   ├── logs.py                #   Advanced server logs (config + routing, 163 events)
 │   └── configs/               #   Components V2 config UIs per module
+│       ├── server_settings_config.py      # Server-wide settings (language)
 │       ├── adaptive_slowmode_config.py
-│       ├── altguard_config.py             # AltGuard gate (channel, roles, logs, language)
+│       ├── altguard_config.py             # AltGuard gate (channel, roles, logs)
 │       ├── social_notifications_config.py
 │       ├── automod_ai_config.py
 │       ├── automod_ai_precedents_view.py  # Learned-precedents browser (S7)
@@ -167,6 +168,7 @@ moddy/
 │
 ├── utils/                     # Utility modules
 │   ├── i18n.py                #   Internationalization system
+│   ├── guild_language.py      #   Server language (one setting, every module)
 │   ├── command_translator.py  #   Slash command name/description localization (32 locales)
 │   ├── emojis.py              #   Emoji constants
 │   ├── components_v2.py       #   V2 helper functions (create_error_message, etc.)
@@ -247,6 +249,7 @@ moddy/
     ├── internal_api/          #   pytest suite for the internal API routes
     │                          #   (FastAPI TestClient, bot + gateway stubbed)
     ├── gateway/               #   Provider rate limits + executor reservation lifecycle
+    ├── test_guild_language.py #   Server language: auto rule, cache, invalidation
     ├── test_altguard.py       #   AltGuard verdicts, gate roles, auto_role hold-back
     ├── test_global_sanctions.py   # Global sanction levels, cache TTL, user/guild context
     ├── test_global_sanction_flow.py # Groups, notices, countdown, Redis events, allowlists
@@ -299,7 +302,16 @@ moddy/
 - **Command names and descriptions** are localized separately (Discord shows them
   in the user's own language): declare the command in English in the cog, then add
   its key to every `/locales/commands/<locale>.json`
-- See → [docs/COMMAND_LOCALIZATION.md](docs/COMMAND_LOCALIZATION.md)
+- **Server-facing text uses the SERVER language, never `guild.preferred_locale`
+  and never a per-module language setting.** Anything a whole server reads
+  (welcome message, panel, log, sanction DM) takes its locale from
+  `await guild_locale(bot, guild)` (`utils/guild_language.py`), which resolves
+  the single setting stored in `guilds.data.settings.language` (`/config` →
+  *Server settings*). Anything one person reads privately (ephemeral reply,
+  `/config` screen, error) keeps `i18n.get_user_locale(interaction)`.
+  **Adding a language dropdown to a module's config is a bug.**
+- See → [docs/COMMAND_LOCALIZATION.md](docs/COMMAND_LOCALIZATION.md),
+  [docs/SERVER_LANGUAGE.md](docs/SERVER_LANGUAGE.md)
 
 ### 5. Title Format
 - Titles in Components V2 must use: `### <:emoji:id> Title Text`
@@ -428,6 +440,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/TEXT_TOOLS.md](docs/TEXT_TOOLS.md) | AI text tools — `/fix`, `/rephrase`, `/summarize` (models, presets, mention stripping) |
 | [docs/VOICE_TRANSCRIPTION.md](docs/VOICE_TRANSCRIPTION.md) | Voice transcription — context menu, module, Groq Whisper, cost control |
 | [docs/MODULE_SYSTEM.md](docs/MODULE_SYSTEM.md) | Creating or modifying server modules |
+| [docs/SERVER_LANGUAGE.md](docs/SERVER_LANGUAGE.md) | **Server language** — the single setting every module reads; what follows the server vs. the user |
 | [docs/WELCOME_MESSAGES.md](docs/WELCOME_MESSAGES.md) | Welcome messages module (`welcome_channel`) — config schema, placeholders, backend/dashboard contract |
 | [docs/WELCOME_DM.md](docs/WELCOME_DM.md) | Welcome DM module (`welcome_dm`) — config schema, placeholders, backend/dashboard contract |
 | [docs/TICKETS.md](docs/TICKETS.md) | **Tickets** — panels, categories, per-role permissions, the claim system, escalation, module-gated `/ticket` commands |

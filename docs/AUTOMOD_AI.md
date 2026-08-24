@@ -520,8 +520,9 @@ still read transparently.
 - **`indications`** (ex-`rules`) is the guidance fed to nano's system prompt.
 - **`max_action`** (`warn`/`mute`/`ban`, default `ban`) is the barème's hard
   ceiling — a server can forbid the automod from ever muting/banning.
-- **`langue_serveur`** (`auto`/`fr`/`en-US`, default `auto`) overrides the
-  language of the sanction reason / member DM (auto = derive from the guild).
+- The language of the sanction reason / member DM is the **server language**
+  (`/config` → Server settings, `utils/guild_language.py`) — automod has no
+  language setting of its own.
 - **`categories_desactivees`** (list) kill-switches AI sanctioning per category.
 - **`dry_run`** (bool, default `false`) is **shadow mode** (§8): the whole funnel
   and barème run but **nothing is applied** — no delete/warn/mute/ban, no case, no
@@ -580,7 +581,7 @@ removes the stored config, **Back** returns to the module list (disabled while
 there are unsaved changes). The view has a 300 s timeout and is opened fresh by
 `/config` (it is **not** a persistent view — consistent with the other module
 panels). Sections: **État**, **Salon d'alertes** (required), **Sévérité** (1–5),
-**Limites & langue** (`max_action` + `langue_serveur`), **Indications**
+**Limites** (`max_action`), **Indications**
 (replaces "Règlement"), **Exemptions**, **Options**.
 
 ### Indications safety check

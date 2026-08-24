@@ -7,7 +7,9 @@ Three screens, no save button:
 * **category** — the channels this category posts to, and a paginated
   checklist of its events (everything on by default, tick off what you don't
   want);
-* **options** — server-wide ignore lists, bots, transcripts and language.
+* **options** — server-wide ignore lists, bots and transcripts. The language
+  the logs are written in is the *server* language, set once in ``/config``
+  -> Server settings (``utils/guild_language.py``).
 
 Every change is applied immediately. That is deliberate: the category screen
 is built from ``DynamicItem``s (they carry the category and the page in
@@ -68,9 +70,6 @@ _ICON_NONE = log_emoji("Notchecked")
 #: Events shown per page in the category checklist (Discord's select limit).
 EVENTS_PER_PAGE = 25
 
-#: Languages a server can pin its logs to ("auto" follows the server locale).
-LOG_LOCALES = ("auto", "fr", "en-US", "es-ES", "pt-BR", "de")
-
 # Root panel — static custom_ids, guild-scoped authorization.
 _CID_CATEGORY = "moddy:logs:config:category"
 _CID_MASS_CHANNEL = "moddy:logs:config:mass_channel"
@@ -84,7 +83,6 @@ _CID_OPT_ROLES = "moddy:logs:options:roles"
 _CID_OPT_BOTS = "moddy:logs:options:bots"
 _CID_OPT_TRANSCRIPTS = "moddy:logs:options:transcripts"
 _CID_OPT_MERGE = "moddy:logs:options:merge"
-_CID_OPT_LOCALE = "moddy:logs:options:locale"
 _CID_OPT_BACK = "moddy:logs:options:back"
 
 
@@ -714,30 +712,6 @@ class LogsOptionsView(BaseView):
         role_row.add_item(role_select)
         container.add_item(role_row)
 
-        # Language.
-        container.add_item(ui.TextDisplay(
-            f"**{t('modules.logs.config.options.locale.section_title', locale=self.locale)}**\n"
-            f"-# {t('modules.logs.config.options.locale.section_description', locale=self.locale)}"
-        ))
-        locale_row = ui.ActionRow()
-        locale_select = ui.Select(
-            placeholder=t('modules.logs.config.options.locale.placeholder', locale=self.locale),
-            options=[
-                discord.SelectOption(
-                    label=t(f'modules.logs.config.options.locale.values.{code}',
-                            locale=self.locale),
-                    value=code,
-                    default=(code == (self.module.locale or "auto")),
-                )
-                for code in LOG_LOCALES
-            ],
-            min_values=1, max_values=1,
-            custom_id=_CID_OPT_LOCALE,
-        )
-        locale_select.callback = self.on_locale
-        locale_row.add_item(locale_select)
-        container.add_item(locale_row)
-
         # Toggles.
         container.add_item(ui.TextDisplay(
             f"**{t('modules.logs.config.options.toggles.section_title', locale=self.locale)}**\n"
@@ -829,13 +803,6 @@ class LogsOptionsView(BaseView):
         values = [int(v) for v in (interaction.data.get("values") or [])]
         await self._apply(interaction,
                           lambda module: setattr(module, "ignored_role_ids", values))
-
-    async def on_locale(self, interaction: discord.Interaction):
-        if not await check_guild_perms(interaction):
-            return
-        values = interaction.data.get("values") or ["auto"]
-        code = values[0] if values[0] in LOG_LOCALES else "auto"
-        await self._apply(interaction, lambda module: setattr(module, "locale", code))
 
     async def on_toggle_bots(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):

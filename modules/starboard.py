@@ -461,12 +461,10 @@ class StarboardModule(ModuleBase):
         return 0
 
     async def _get_locale(self) -> str:
-        """Locale used for the starboard message's static UI strings (jump button)"""
-        try:
-            guild = self.bot.get_guild(self.guild_id)
-            return str(guild.preferred_locale) if guild and guild.preferred_locale else 'en-US'
-        except Exception:
-            return 'en-US'
+        """Locale used for the starboard message's static UI strings (jump
+        button): the server language, /config -> Server settings."""
+        from utils.guild_language import guild_locale
+        return await guild_locale(self.bot, self.guild_id)
 
     @staticmethod
     def _image_from_discord_embeds(message: discord.Message) -> Optional[str]:

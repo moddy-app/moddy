@@ -144,11 +144,18 @@ def test_snowflakes_stored_as_strings_are_accepted():
 
 
 def test_round_trip_through_the_stored_schema():
-    module = _module(ignore_bots=True, ignored_channel_ids=[7], locale="fr")
+    module = _module(ignore_bots=True, ignored_channel_ids=[7])
     restored = config_from_raw(None, 1, module.to_config())
     assert restored.to_config() == module.to_config()
     assert restored.ignore_bots is True
-    assert restored.locale == "fr"
+
+
+def test_the_logs_carry_no_language_of_their_own():
+    """The logs speak the server language (utils/guild_language.py)."""
+    stored = _module(ignore_bots=True).to_config()
+    assert "locale" not in stored
+    # A config written before the setting moved must still load.
+    assert not hasattr(config_from_raw(None, 1, {**stored, "locale": "fr"}), "locale")
 
 
 def test_an_empty_category_is_not_persisted():

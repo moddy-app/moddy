@@ -137,7 +137,7 @@ def _dynamic_item_cases():
     )
     from modules.configs.tickets_category_config import (
         TicketCategoryButton, TicketCategoryDestination, TicketCategoryRoles,
-        TicketCategoryLocale, TicketPermRoleSelect, TicketPermSelect, TicketPermButton,
+        TicketPermRoleSelect, TicketPermSelect, TicketPermButton,
     )
     _U = "0f7d9c62-3b4e-4a1f-9c2d-5e6f70819a2b"
     _SNOWFLAKE = 123456789012345678
@@ -175,7 +175,6 @@ def _dynamic_item_cases():
         (TicketCategoryButton, ("perms", "p_ab12cd", "c_ab12cd")),
         (TicketCategoryDestination, ("p_ab12cd", "c_ab12cd")),
         (TicketCategoryRoles, ("allowed", "p_ab12cd", "c_ab12cd")),
-        (TicketCategoryLocale, ("p_ab12cd", "c_ab12cd")),
         (TicketPermRoleSelect, ("p_ab12cd", "c_ab12cd")),
         (TicketPermSelect, ("p_ab12cd", "c_ab12cd", _SNOWFLAKE)),
         (TicketPermButton, ("clear", "p_ab12cd", "c_ab12cd", _SNOWFLAKE)),

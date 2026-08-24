@@ -31,7 +31,6 @@ from serverlogs import registry
 from serverlogs.audit import AuditCache, target_matcher
 from serverlogs.dispatcher import LogDispatcher
 from serverlogs.renderer import LogEntry
-from utils.i18n import i18n
 
 logger = logging.getLogger('moddy.serverlogs.service')
 
@@ -72,20 +71,15 @@ class LogService:
             return None
         return module
 
-    def locale_for(self, guild: discord.Guild, module) -> str:
-        """Language of the log messages: the configured one, else the server's."""
-        configured = getattr(module, "locale", None)
-        if configured and configured != "auto":
-            return configured
-        preferred = str(guild.preferred_locale) if guild.preferred_locale else "en-US"
-        supported = i18n._supported_locales  # noqa: SLF001 — same package contract
-        if preferred in supported:
-            return preferred
-        base = preferred.split("-")[0]
-        for candidate in supported:
-            if candidate == base or candidate.startswith(f"{base}-"):
-                return candidate
-        return "en-US"
+    async def locale_for(self, guild: discord.Guild) -> str:
+        """Language of the log messages: the server language.
+
+        The logs used to carry their own ``locale`` setting; there is now one
+        per server, set in ``/config`` -> Server settings. See
+        ``utils/guild_language.py``.
+        """
+        from utils.guild_language import guild_locale
+        return await guild_locale(self.bot, guild)
 
     # ------------------------------------------------------------------ #
     # Entry lifecycle
@@ -109,7 +103,7 @@ class LogService:
             if user is not None and module.is_ignored_actor(user):
                 return None
 
-        entry = LogEntry(event, self.locale_for(guild, module))
+        entry = LogEntry(event, await self.locale_for(guild))
         if subject is not None:
             entry.subject(subject)
         return entry

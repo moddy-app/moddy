@@ -18,7 +18,7 @@ from db.repositories.altguard import (
     SOURCE_SERVICE, STATUS_BLOCKED, STATUS_PENDING, STATUS_VERIFIED,
     VERDICT_TO_STATUS,
 )
-from modules.altguard import AltGuardModule, DEFAULT_PANEL_LOCALE
+from modules.altguard import AltGuardModule
 from services.altguard_client import (
     MEMBERSHIP_ACTIVE, MEMBERSHIP_CHANNEL, AltGuardClient, parse_verdict,
 )
@@ -59,9 +59,12 @@ class FakeMember:
 
 
 class FakeGuild:
-    def __init__(self, guild_id=1, roles=(), name="Test Server"):
+    def __init__(self, guild_id=1, roles=(), name="Test Server",
+                 features=(), preferred_locale="en-US"):
         self.id = guild_id
         self.name = name
+        self.features = list(features)
+        self.preferred_locale = preferred_locale
         self._roles = {role.id: role for role in roles}
         self.channels = {}
         self.members = {}
@@ -108,6 +111,9 @@ class FakeDB:
     async def update_guild_data(self, guild_id, path, value):
         return None
 
+    async def get_guild(self, guild_id):
+        return {"guild_id": guild_id, "data": {}, "attributes": {}}
+
 
 class FakeBot:
     def __init__(self, guild=None, db=None):
@@ -133,7 +139,6 @@ def build_module(*, unverified=None, verified=None, db=None, guild=None):
         "unverified_role_id": unverified.id if unverified else None,
         "verified_role_id": verified.id if verified else None,
         "log_channel_id": None,
-        "panel_locale": "fr",
         "message_id": None,
     }))
     return module
@@ -280,20 +285,31 @@ def test_module_needs_channel_and_both_roles_to_be_enabled():
     for missing in ("channel_id", "unverified_role_id", "verified_role_id"):
         config = {
             "channel_id": 100, "unverified_role_id": 10,
-            "verified_role_id": 11, "panel_locale": "fr",
+            "verified_role_id": 11,
         }
         config[missing] = None
         asyncio.run(module.load_config(config))
         assert module.enabled is False, missing
 
 
-def test_unsupported_panel_language_falls_back():
-    module = build_module()
-    asyncio.run(module.load_config({
-        "channel_id": 100, "unverified_role_id": 10, "verified_role_id": 11,
-        "panel_locale": "kl",
-    }))
-    assert module.panel_locale == DEFAULT_PANEL_LOCALE
+def test_panel_speaks_the_server_language():
+    """AltGuard has no language of its own: the panel follows the server.
+
+    A non-Community guild has no meaningful preferred_locale, so it gets
+    English however its account default is set.
+    """
+    from utils.guild_language import invalidate_guild_language
+
+    invalidate_guild_language()
+    community = FakeGuild(1, [FakeRole(10, "u"), FakeRole(11, "v")],
+                          features=("COMMUNITY",), preferred_locale="fr")
+    module = build_module(guild=community)
+    assert module.panel_locale == "fr"
+
+    invalidate_guild_language()
+    plain = FakeGuild(2, [FakeRole(10, "u"), FakeRole(11, "v")],
+                      preferred_locale="fr")
+    assert build_module(guild=plain).panel_locale == "en-US"
 
 
 # -------------------------------------------------------------- gate roles
@@ -524,9 +540,15 @@ def test_the_consent_modal_requires_both_boxes():
 
 def test_a_verdict_is_announced_to_the_member():
     """The member cannot read the log channel: the DM is their only feedback."""
+    from utils.guild_language import invalidate_guild_language
+
+    invalidate_guild_language()
     db = FakeDB()
     unverified, verified = FakeRole(10, "unverified"), FakeRole(11, "verified")
-    module = build_module(unverified=unverified, verified=verified, db=db)
+    guild = FakeGuild(1, [unverified, verified],
+                      features=("COMMUNITY",), preferred_locale="fr")
+    module = build_module(unverified=unverified, verified=verified, db=db,
+                          guild=guild)
     member = FakeMember(member_id=42, roles=[unverified])
     module.bot._guild.get_member = lambda user_id, _m=member: _m if user_id == _m.id else None
     module._run_auto_role = lambda m: asyncio.sleep(0)
@@ -536,8 +558,8 @@ def test_a_verdict_is_announced_to_the_member():
         "verdict": "passed", "score": 3, "reasons": [], "enforced": True,
     }))
 
-    # Rendered in the guild's panel language (the fixture's is "fr"): a DM
-    # carries no interaction locale, so the member's own language is unknown.
+    # Rendered in the server language (French here): a DM carries no
+    # interaction locale, so the member's own language is unknown.
     assert len(member.dms) == 1
     assert "Vérification validée" in json.dumps(member.dms[0].to_components(),
                                                 ensure_ascii=False)
@@ -626,7 +648,7 @@ def _pushed_module(**config_overrides):
     module = RecordingModule(FakeBot(guild=guild, db=FakeDB()), guild.id)
     config = {
         "channel_id": 100, "unverified_role_id": 10, "verified_role_id": 11,
-        "log_channel_id": None, "panel_locale": "fr", "message_id": 999,
+        "log_channel_id": None, "message_id": 999,
     }
     config.update(config_overrides)
     asyncio.run(module.load_config(config))

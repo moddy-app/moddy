@@ -129,8 +129,9 @@ class ExpirationNotifier:
         if user is None:
             return False
 
+        locale = await self.guild_locale(guild)
         view = build_expiration_dm_view(
-            locale=self.guild_locale(guild),
+            locale=locale,
             action=row.get("action"),
             guild_name=guild.name,
             guild_id=guild.id,
@@ -148,13 +149,11 @@ class ExpirationNotifier:
             result = await self.bot.notifications.send_dm(
                 user,
                 content=NotificationContent(
-                    title=t("commands.moderation.expiry_dm.title",
-                            locale=self.guild_locale(guild)),
-                    body=t("commands.moderation.expiry_dm.body",
-                           locale=self.guild_locale(guild)),
+                    title=t("commands.moderation.expiry_dm.title", locale=locale),
+                    body=t("commands.moderation.expiry_dm.body", locale=locale),
                     icon=TIME,
                     sections=[{"title": t("commands.moderation.expiry_dm.case_id",
-                                          locale=self.guild_locale(guild)),
+                                          locale=locale),
                                "body": "`{reference}`"}],
                     footer="{server}",
                     template_id=f"expirations.{row.get('action')}",
@@ -163,17 +162,17 @@ class ExpirationNotifier:
                 variables={"server": guild.name,
                            "reference": str(row.get("reference") or "—")},
                 view=view,
-                locale=self.guild_locale(guild),
+                locale=locale,
             )
             return result.delivered
         except discord.HTTPException as exc:
             logger.warning("Expiration DM to %s failed: %s", subject_id, exc)
             return False
 
-    @staticmethod
-    def guild_locale(guild: Optional[discord.Guild]) -> str:
-        """The locale the guild's sanction DMs are written in."""
-        try:
-            return str(guild.preferred_locale) if guild and guild.preferred_locale else "en-US"
-        except Exception:
-            return "en-US"
+    async def guild_locale(self, guild: Optional[discord.Guild]) -> str:
+        """The locale the guild's sanction DMs are written in.
+
+        The server language, set once in ``/config`` -> Server settings.
+        """
+        from utils.guild_language import guild_locale
+        return await guild_locale(self.bot, guild)

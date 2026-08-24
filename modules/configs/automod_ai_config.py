@@ -41,7 +41,6 @@ _CID_ACTIVATIONS = "moddy:automod:config:activations"
 _CID_NOTIFY_CHANNEL = "moddy:automod:config:notify_channel"
 _CID_SEVERITY = "moddy:automod:config:severity"
 _CID_MAX_ACTION = "moddy:automod:config:max_action"
-_CID_LANGUAGE = "moddy:automod:config:language"
 _CID_EDIT_INDICATIONS = "moddy:automod:config:edit_indications"
 _CID_VIEW_PRECEDENTS = "moddy:automod:config:view_precedents"
 _CID_EXEMPT_ROLES = "moddy:automod:config:exempt_roles"
@@ -58,7 +57,6 @@ _DEFAULT_CONFIG = {
     "ignore_moderators": True,
     "severity": ac.SEVERITY_DEFAULT,
     "max_action": "ban",
-    "langue_serveur": "auto",
     # Kill-switched AI categories (ops/backend-set; no UI selector yet). Carried
     # through the working copy so a Save from this panel never wipes it.
     "categories_desactivees": [],
@@ -82,8 +80,6 @@ def _deep_default(current: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     cfg["severity"] = ac.clamp_severity(current.get("severity", ac.SEVERITY_DEFAULT))
     max_action = str(current.get("max_action", "ban") or "ban")
     cfg["max_action"] = max_action if max_action in ("warn", "mute", "ban") else "ban"
-    langue = str(current.get("langue_serveur", "auto") or "auto")
-    cfg["langue_serveur"] = langue if langue in ("auto", "fr", "en-US") else "auto"
     # Preserve any ops/backend-set kill-switch list (no UI selector yet) so
     # saving the panel does not silently drop it from the stored config.
     cfg["categories_desactivees"] = [
@@ -391,7 +387,9 @@ class AutomodAIConfigView(BaseView):
         sev_row.add_item(sev_select)
         container.add_item(sev_row)
 
-        # ── Limits & language (max sanction the automod may apply + DM tongue) ─
+        # ── Limits (the most severe sanction the automod may apply). The
+        # language its messages are written in is the *server* language
+        # (/config → Server settings, utils/guild_language.py). ─
         container.add_item(ui.TextDisplay(
             f"{SETTINGS} **{t('modules.automod_ai.config.section_limits', locale=self.locale)}**\n"
             f"-# {t('modules.automod_ai.config.max_action.desc', locale=self.locale)}"
@@ -413,27 +411,6 @@ class AutomodAIConfigView(BaseView):
         maxa_select.callback = self.on_max_action
         maxa_row.add_item(maxa_select)
         container.add_item(maxa_row)
-
-        container.add_item(ui.TextDisplay(
-            f"-# {t('modules.automod_ai.config.language.desc', locale=self.locale)}"
-        ))
-        langue = cfg.get("langue_serveur", "auto")
-        lang_row = ui.ActionRow()
-        lang_select = ui.Select(
-            placeholder=t("modules.automod_ai.config.language.placeholder", locale=self.locale),
-            min_values=1, max_values=1,
-            options=[
-                discord.SelectOption(
-                    label=t(f"modules.automod_ai.config.language.{key}", locale=self.locale),
-                    value=value, default=(value == langue),
-                )
-                for key, value in (("auto", "auto"), ("fr", "fr"), ("en", "en-US"))
-            ],
-        )
-        lang_select.custom_id = _CID_LANGUAGE
-        lang_select.callback = self.on_language
-        lang_row.add_item(lang_select)
-        container.add_item(lang_row)
 
         # ── Guidance (button+modal → keep a preview, can't show it inline) ─
         indications = cfg.get("indications", "")
@@ -641,16 +618,6 @@ class AutomodAIConfigView(BaseView):
         values = interaction.data.get("values", [])
         if values and values[0] in ("warn", "mute", "ban"):
             working_config["max_action"] = values[0]
-        view = await self._rebuild(interaction, working_config, True)
-        await interaction.response.edit_message(view=view)
-
-    async def on_language(self, interaction: discord.Interaction):
-        if not await check_guild_perms(interaction):
-            return
-        working_config = await self._fresh_working_config(interaction)
-        values = interaction.data.get("values", [])
-        if values and values[0] in ("auto", "fr", "en-US"):
-            working_config["langue_serveur"] = values[0]
         view = await self._rebuild(interaction, working_config, True)
         await interaction.response.edit_message(view=view)
 

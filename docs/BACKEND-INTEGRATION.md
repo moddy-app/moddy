@@ -269,6 +269,12 @@ async def handle_bot_event(bot: MoodyBot, data: dict):
             module_id = data.get("module_id")
             await reload_module(bot, guild_id, module_id)
 
+        case "settings_updated":
+            # Un réglage serveur (guilds.data.settings) a été écrit en direct
+            # par le dashboard — aujourd'hui la langue du serveur.
+            # Le bot vide son cache et re-poste les panneaux concernés.
+            await invalidate_guild_language(guild_id)
+
         case "module_disabled":
             # Un module a été désactivé depuis le dashboard
             module_id = data.get("module_id")

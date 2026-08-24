@@ -861,6 +861,20 @@
         "hint": "Selecione um módulo para acessar sua configuração detalhada.",
         "not_implemented": "A configuração do módulo **{module_name}** ainda não está disponível."
       },
+      "settings": {
+        "button": "Configurações do servidor",
+        "title": "Configurações do servidor",
+        "description": "As configurações que se aplicam ao servidor inteiro, seja qual for o módulo que as usa.",
+        "language": {
+          "section_title": "Idioma",
+          "section_description": "O idioma em que o Moddy fala com os seus membros: mensagens de boas-vindas, tickets, logs, sanções...",
+          "auto_resolves_to": "Automático corresponde atualmente a **{language}**.",
+          "placeholder": "Escolha o idioma do servidor",
+          "auto": "Automático",
+          "auto_description": "Segue o idioma do servidor (Comunidade); caso contrário, inglês",
+          "applies_to": "O seu próprio idioma do Discord continua a ser usado em tudo o que o Moddy responde a você."
+        }
+      },
       "status": {
         "label": "Status do módulo:",
         "enabled": "Ativado",
@@ -1552,20 +1566,13 @@
         "activations": {
           "placeholder": "Ativar / desativar…"
         },
-        "section_limits": "Limites e idioma",
+        "section_limits": "Limites",
         "max_action": {
           "desc": "A ação mais severa que o automod pode aplicar.",
           "placeholder": "Ação máxima…",
           "option_warn": "No máximo advertência",
           "option_mute": "No máximo silenciamento",
           "option_ban": "Banimento permitido"
-        },
-        "language": {
-          "desc": "Idioma das mensagens de sanção (motivo, DM ao membro).",
-          "placeholder": "Idioma da sanção…",
-          "auto": "Automático (idioma do servidor)",
-          "fr": "Francês",
-          "en": "Inglês"
         },
         "dry_run": {
           "label": "Modo simulação",
@@ -1922,11 +1929,6 @@
           "section_title": "Cargo verificado",
           "section_description": "Atribuído assim que a verificação é validada. É ele que abre o servidor.",
           "placeholder": "Escolha o cargo verificado"
-        },
-        "language": {
-          "section_title": "Idioma da mensagem",
-          "section_description": "O texto é idêntico em todo lugar: só muda o idioma da mensagem de verificação.",
-          "placeholder": "Escolha o idioma da mensagem"
         },
         "log_channel": {
           "section_title": "Canal de registros (opcional)",
@@ -2289,19 +2291,6 @@
             "section_title": "Cargos ignorados",
             "section_description": "Membros com algum desses cargos nunca serão registrados.",
             "placeholder": "Escolher os cargos a ignorar…"
-          },
-          "locale": {
-            "section_title": "Idioma dos registros",
-            "section_description": "Por padrão, os registros seguem o idioma do servidor.",
-            "placeholder": "Escolher o idioma dos registros…",
-            "values": {
-              "auto": "Idioma do servidor",
-              "fr": "Français",
-              "en-US": "English",
-              "es-ES": "Español",
-              "pt-BR": "Português",
-              "de": "Deutsch"
-            }
           },
           "toggles": {
             "section_title": "Configurações",
@@ -2839,7 +2828,7 @@
         "categories_hint": "{count}/{max} · uma por botão ou entrada do menu",
         "no_category": "Nenhuma categoria. Um painel sem categorias nunca é publicado.",
         "category_placeholder": "Selecione uma categoria para configurar",
-        "category_summary": "{roles} cargo(s) com permissões · idioma `{language}`",
+        "category_summary": "{roles} cargo(s) com permissões",
         "no_destination": "sem destino",
         "edit": "Editar",
         "add_category": "Adicionar uma categoria",
@@ -2879,8 +2868,6 @@
         "allowed_placeholder": "Cargos autorizados a abrir",
         "denied_hint": "Um cargo proibido sempre prevalece, mesmo que o membro também tenha um autorizado.",
         "denied_placeholder": "Cargos proibidos",
-        "language_title": "Idioma dos tickets",
-        "language_hint": "Todas as mensagens desses tickets usam este idioma",
         "summary_title": "Configurado atrás dos botões abaixo",
         "summary_permissions": "Permissões — {roles} cargo(s)",
         "summary_messages": "Mensagens — {count}/2 personalizadas, {buttons} botão(ões)",

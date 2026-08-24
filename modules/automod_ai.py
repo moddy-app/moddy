@@ -25,7 +25,6 @@ Config (stored in ``guilds.data.modules.automod``)::
       "ignore_moderators": true,
       "severity": 3,                     # 1–5 detection/severity dial
       "max_action": "ban",              # barème hard ceiling: warn|mute|ban
-      "langue_serveur": "auto",         # sanction language: auto|fr|en-US
       "categories_desactivees": [],      # kill-switched AI categories
       "features": {
         "content": {
@@ -244,7 +243,6 @@ class AutomodModule(ModuleBase):
         self.severity: int = ac.SEVERITY_DEFAULT
         # v2 barème knobs (session 2).
         self.max_action: str = "ban"          # "warn" | "mute" | "ban"
-        self.langue_serveur: str = "auto"      # "auto" | "fr" | "en-US"
         self.categories_desactivees: List[str] = []
         # Shadow mode (session 3): run the full funnel but apply nothing — post a
         # SIMULATION card with annotation buttons instead of sanctioning.
@@ -267,8 +265,6 @@ class AutomodModule(ModuleBase):
             # v2 barème config.
             max_action = str(self.config.get("max_action", "ban") or "ban")
             self.max_action = max_action if max_action in ("warn", "mute", "ban") else "ban"
-            lang = str(self.config.get("langue_serveur", "auto") or "auto")
-            self.langue_serveur = lang if lang in ("auto", "fr", "en-US") else "auto"
             self.categories_desactivees = [
                 str(c) for c in (self.config.get("categories_desactivees", []) or [])
             ]
@@ -313,10 +309,6 @@ class AutomodModule(ModuleBase):
         if max_action is not None and max_action not in ("warn", "mute", "ban"):
             return False, "Action maximale invalide"
 
-        langue = config_data.get("langue_serveur")
-        if langue is not None and langue not in ("auto", "fr", "en-US"):
-            return False, "Langue invalide"
-
         features_cfg = config_data.get("features", {}) or {}
         for fid in features_cfg:
             if fid not in FEATURE_CLASSES:
@@ -331,7 +323,6 @@ class AutomodModule(ModuleBase):
             "ignore_moderators": True,
             "severity": ac.SEVERITY_DEFAULT,
             "max_action": "ban",
-            "langue_serveur": "auto",
             "categories_desactivees": [],
             "dry_run": False,
             "features": {
@@ -1062,22 +1053,14 @@ class AutomodModule(ModuleBase):
     def guild_locale(self, guild: Optional[discord.Guild]) -> str:
         """The locale automod speaks in this guild.
 
-        An explicit ``langue_serveur`` config override (``fr`` / ``en-US``) wins;
-        otherwise (``auto``) we use the guild's preferred locale **only when
-        Community is enabled** (that's when Discord lets the server pick a real
-        language), and default to English when there is no reliable signal.
+        There is no automod-specific language any more: sanction DMs, alert
+        cards and the AI-written reason all follow the server language set in
+        ``/config`` -> Server settings (``utils/guild_language.py``). This is a
+        sync hot path (one call per moderated message), so it reads the cached
+        setting — see ``guild_locale_cached``.
         """
-        override = getattr(self, "langue_serveur", "auto")
-        if override in ("fr", "en-US"):
-            return override
-        try:
-            features = set(getattr(guild, "features", []) or [])
-            if "COMMUNITY" not in features:
-                return "en-US"
-            pref = str(getattr(guild, "preferred_locale", "") or "")
-        except Exception:
-            return "en-US"
-        return "fr" if pref.lower().startswith("fr") else "en-US"
+        from utils.guild_language import guild_locale_cached
+        return guild_locale_cached(self.bot, guild)
 
     # Backwards-compatible alias used by the DM/notification helpers.
     def _dm_locale(self, guild: Optional[discord.Guild]) -> str:

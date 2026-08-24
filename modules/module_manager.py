@@ -45,6 +45,12 @@ class ModuleBase(ABC):
     # des fichiers (non déterministe) ni du nom affiché (qui varie par
     # module mais ne reflète pas son importance).
     MODULE_ORDER: int = 100
+    # True when the module keeps *messages* written in the server language
+    # (a verification panel, a ticket panel). Changing the server language in
+    # /config → Server settings has to re-post them, exactly like a dashboard
+    # push does — see ModuleManager.apply_language_change() and
+    # utils/guild_language.py.
+    LANGUAGE_DEPENDENT_MESSAGES: bool = False
 
     def __init__(self, bot, guild_id: int):
         """
@@ -410,6 +416,34 @@ class ModuleManager:
         )
         return {"ok": True, "action": action, "enabled": module.enabled, **recap}
 
+    async def apply_language_change(self, guild_id: int) -> Dict[str, Any]:
+        """Re-apply what the server language is *baked into* after it changed.
+
+        Most of the bot reads the language when it writes a message, so a new
+        language simply takes effect. A panel is different: it is a message
+        already sitting in a channel, written in the previous language, and
+        only a re-post brings it in line. Those modules declare themselves
+        with ``LANGUAGE_DEPENDENT_MESSAGES`` and are reloaded here through the
+        same path a dashboard push uses.
+
+        Returns ``{module_id: recap}`` for the modules that were refreshed.
+        """
+        recaps: Dict[str, Any] = {}
+        for module_id, module_class in self.registered_modules.items():
+            if not getattr(module_class, 'LANGUAGE_DEPENDENT_MESSAGES', False):
+                continue
+            try:
+                config = await self.get_module_config(guild_id, module_id)
+            except Exception as e:
+                logger.error(f"[FAIL] Could not read {module_id} config for guild "
+                             f"{guild_id} on a language change: {e}")
+                continue
+            if not config:
+                continue  # nothing posted in Discord, nothing to re-post
+            recaps[module_id] = await self.reload_module(
+                guild_id, module_id, action=EXTERNAL_UPDATED)
+        return recaps
+
     async def _sync_module_commands(self, guild_id: int, module_id: str) -> None:
         """Publish/unpublish a module's slash commands after a config change.
 
@@ -483,11 +517,8 @@ class ModuleManager:
         if existing:
             return None
 
-        try:
-            guild = self.bot.get_guild(guild_id)
-            locale = str(guild.preferred_locale) if guild and guild.preferred_locale else 'en-US'
-        except Exception:
-            locale = 'en-US'
+        from utils.guild_language import guild_locale
+        locale = await guild_locale(self.bot, guild_id)
         return t('global_sanctions.limited.no_new_modules', locale=locale)
 
     async def save_module_config(self, guild_id: int, module_id: str,
@@ -535,12 +566,9 @@ class ModuleManager:
                     missing_fields.append(field)
 
             if missing_fields:
-                # Récupère la locale du serveur (par défaut en-US)
-                try:
-                    guild = self.bot.get_guild(guild_id)
-                    locale = str(guild.preferred_locale) if guild and guild.preferred_locale else 'en-US'
-                except:
-                    locale = 'en-US'
+                # Langue du serveur (/config → Paramètres du serveur)
+                from utils.guild_language import guild_locale
+                locale = await guild_locale(self.bot, guild_id)
 
                 # Construit le message d'erreur avec les labels traduits
                 from utils.i18n import t

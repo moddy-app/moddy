@@ -10,9 +10,10 @@ service decides. Its verdict arrives on the Redis channel ``altguard:verdict``
 
 What this module owns:
 
-- the guild configuration (channel, both roles, optional log channel, panel
-  language) and the single verification panel message, re-posted on every save
-  so a deleted panel repairs itself;
+- the guild configuration (channel, both roles, optional log channel) and the
+  single verification panel message, re-posted on every save so a deleted
+  panel repairs itself. The panel speaks the *server* language, configured
+  once in ``/config`` -> Server settings (``utils/guild_language.py``);
 - the roles: gating on join, promoting on ``passed``, manual staff overrides;
 - the local state (``altguard_members``) other features read — notably
   ``modules/auto_role.py``, which must not hand out its roles to a human who
@@ -38,16 +39,16 @@ from db.repositories.altguard import (
 )
 from modules.module_manager import ModuleBase
 from utils.emojis import SHIELD
+from utils.guild_language import DEFAULT_LOCALE, guild_locale
 
 logger = logging.getLogger('moddy.modules.altguard')
 
 MODULE_ID = "altguard"
 
-# Languages the verification panel can be rendered in. Guild admins choose the
-# language and nothing else: the panel wording is fixed so every server states
-# the same thing about the same data processing.
-PANEL_LOCALES = ("fr", "en-US", "es-ES", "pt-BR", "de")
-DEFAULT_PANEL_LOCALE = "en-US"
+# The panel speaks the server language (/config -> Server settings, see
+# utils/guild_language.py) — AltGuard has no language setting of its own. The
+# panel *wording* is fixed either way: every server must state the same thing
+# about the same data processing.
 
 # Accent colour of the panel container (matches the spec: 5793266 / #5865F2).
 PANEL_ACCENT = 0x5865F2
@@ -63,6 +64,8 @@ class AltGuardModule(ModuleBase):
     # animated AltGuard face is reserved for the panel message itself.
     MODULE_EMOJI = SHIELD
     MODULE_ORDER = 20
+    # The verification panel is a message written in the server language.
+    LANGUAGE_DEPENDENT_MESSAGES = True
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)
@@ -71,7 +74,9 @@ class AltGuardModule(ModuleBase):
         self.unverified_role_id: Optional[int] = None
         self.verified_role_id: Optional[int] = None
         self.log_channel_id: Optional[int] = None
-        self.panel_locale: str = DEFAULT_PANEL_LOCALE
+        # Resolved from the server language on every load, so a language
+        # change (which reloads the module) re-posts the panel translated.
+        self.panel_locale: str = DEFAULT_LOCALE
         self.message_id: Optional[int] = None
 
     # ------------------------------------------------------------------ #
@@ -85,8 +90,7 @@ class AltGuardModule(ModuleBase):
             self.unverified_role_id = config_data.get('unverified_role_id')
             self.verified_role_id = config_data.get('verified_role_id')
             self.log_channel_id = config_data.get('log_channel_id')
-            panel_locale = config_data.get('panel_locale') or DEFAULT_PANEL_LOCALE
-            self.panel_locale = panel_locale if panel_locale in PANEL_LOCALES else DEFAULT_PANEL_LOCALE
+            self.panel_locale = await guild_locale(self.bot, self.guild_id)
             self.message_id = config_data.get('message_id')
 
             # The gate is meaningless without all three: somewhere to verify,
@@ -105,7 +109,6 @@ class AltGuardModule(ModuleBase):
             'unverified_role_id': None,
             'verified_role_id': None,
             'log_channel_id': None,
-            'panel_locale': DEFAULT_PANEL_LOCALE,
             'message_id': None,
         }
 
@@ -156,10 +159,6 @@ class AltGuardModule(ModuleBase):
                 return False, "Log channel not found"
             if not log_channel.permissions_for(guild.me).send_messages:
                 return False, f"I cannot post in {log_channel.mention}"
-
-        panel_locale = config_data.get('panel_locale')
-        if panel_locale and panel_locale not in PANEL_LOCALES:
-            return False, f"Unsupported panel language: {panel_locale}"
 
         return True, None
 
@@ -738,7 +737,6 @@ class AltGuardModule(ModuleBase):
 
 
 __all__ = [
-    "AltGuardModule", "MODULE_ID", "PANEL_LOCALES", "DEFAULT_PANEL_LOCALE",
-    "PANEL_ACCENT", "STATUS_PENDING", "STATUS_VERIFIED", "STATUS_FLAGGED",
+    "AltGuardModule", "MODULE_ID", "PANEL_ACCENT", "STATUS_PENDING", "STATUS_VERIFIED", "STATUS_FLAGGED",
     "STATUS_BLOCKED",
 ]

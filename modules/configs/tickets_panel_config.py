@@ -439,7 +439,7 @@ class TicketPanelConfigView(BaseView):
             line += f" · {t('modules.tickets.config.paused', locale=self.locale)}"
 
         roles = len(category.get('permissions', {}))
-        line += (f"\n-# {t('modules.tickets.panel.category_summary', locale=self.locale, roles=roles, language=category['locale'])}")
+        line += (f"\n-# {t('modules.tickets.panel.category_summary', locale=self.locale, roles=roles)}")
         return line
 
     def _build_delete_confirmation(self, container: ui.Container):

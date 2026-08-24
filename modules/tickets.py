@@ -9,8 +9,9 @@ simple:
   menu**. A guild can have several panels (``max_panels``).
 - **A category** is one entry inside a panel: the button/option a member
   clicks. It decides *where* the ticket channel is created, *who* may open it,
-  *what* each staff role may do inside it, in which *language* the ticket
-  speaks, and the *messages* the member sees.
+  *what* each staff role may do inside it, and the *messages* the member sees.
+  It has no language of its own: a ticket speaks the *server* language, set
+  once in ``/config`` -> Server settings (``utils/guild_language.py``).
 - **A ticket** is the channel a member ends up in. Its live state (owner,
   number, participants, staff thread, escalation) lives in the ``tickets``
   table — see ``db/repositories/tickets.py``. Runtime actions live in
@@ -110,11 +111,6 @@ TICKET_PERMISSIONS: Tuple[str, ...] = (
 # What a brand new role entry gets: enough to actually work the ticket, not
 # enough to reorganise the server.
 DEFAULT_ROLE_PERMISSIONS = (PERM_VIEW, PERM_CLOSE, PERM_CLAIM, PERM_STAFF_THREAD)
-
-# Languages a category can speak. Same set as the bot's own locale files, so a
-# ticket never falls back to a half-translated language.
-TICKET_LOCALES = ("en-US", "fr", "es-ES", "pt-BR", "de")
-DEFAULT_TICKET_LOCALE = "en-US"
 
 # Placeholders usable in the messages an admin writes.
 PLACEHOLDERS = (
@@ -297,10 +293,6 @@ def normalize_category(raw: Any) -> Optional[Dict[str, Any]]:
     if button_style not in BUTTON_STYLES:
         button_style = DEFAULT_BUTTON_STYLE
 
-    locale = raw.get('locale')
-    if locale not in TICKET_LOCALES:
-        locale = DEFAULT_TICKET_LOCALE
-
     max_open = _as_int(raw.get('max_open_per_user'))
     if max_open is None or max_open < 1:
         max_open = DEFAULT_MAX_OPEN_PER_USER
@@ -326,7 +318,6 @@ def normalize_category(raw: Any) -> Optional[Dict[str, Any]]:
         'ping_role_ids': _as_id_list(raw.get('ping_role_ids')),
         'ping_staff_roles': bool(raw.get('ping_staff_roles', True)),
         'permissions': normalize_permissions(raw.get('permissions')),
-        'locale': locale,
         'open_message': _as_text(raw.get('open_message'), MAX_TICKET_MESSAGE),
         'close_message': _as_text(raw.get('close_message'), MAX_TICKET_MESSAGE),
         'buttons': buttons,
@@ -674,6 +665,9 @@ class TicketsModule(ModuleBase):
     MODULE_DESCRIPTION = "Support tickets with panels, categories and per-role permissions"
     MODULE_EMOJI = TICKET
     MODULE_ORDER = 25
+    # Panels are messages written in the server language: a language change
+    # has to re-post them (ModuleManager.apply_language_change).
+    LANGUAGE_DEPENDENT_MESSAGES = True
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)
