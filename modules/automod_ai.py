@@ -1098,7 +1098,36 @@ class AutomodModule(ModuleBase):
             proof_ts=int(message.created_at.timestamp()) if message else None,
         )
         try:
-            await member.send(view=view, files=files)
+            # Through the notification system: the sanction is worded by Moddy
+            # (the appeal buttons are the way to contest it), so the DM is
+            # attributed to the automod service + the server, flag greyed out.
+            from notifications.models import NotificationContent, NotificationSource
+            from utils.emojis import get_sanction_dm_emoji, get_sanction_accent
+            await self.bot.notifications.send_dm(
+                member,
+                content=NotificationContent(
+                    title=t(f"modules.automod_ai.dm.title_{primary_action}",
+                            locale=locale),
+                    body="{reason}",
+                    icon=get_sanction_dm_emoji(primary_action),
+                    accent_color=get_sanction_accent(primary_action),
+                    sections=[{"title": "{explication_title}", "body": "{explication}"}],
+                    footer="{case_ref}",
+                    template_id=f"automod_ai.sanction.{primary_action}",
+                ),
+                source=NotificationSource.service_guild(
+                    "automod_ai", guild.id if guild else 0),
+                variables={
+                    "reason": decision.raison or "",
+                    "explication_title": t("modules.automod_ai.dm.explanation",
+                                           locale=locale),
+                    "explication": decision.explication or "",
+                    "case_ref": case_ref or "—",
+                },
+                view=view,
+                files=files,
+                locale=locale,
+            )
         except (discord.Forbidden, discord.HTTPException):
             pass  # closed DMs — the case + channel notification still stand
 

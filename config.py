@@ -30,6 +30,14 @@ DEVELOPER_IDS: List[int] = [int(id.strip()) for id in dev_ids_str.split(",") if 
 MODDY_TEAM_GUILD_ID: int = int(os.environ.get("MODDY_GUILD_ID", "1394001780148535387"))
 MODDY_APPEAL_CHANNEL_ID: int = int(os.environ.get("MODDY_APPEAL_CHANNEL_ID", "1521246998127317114"))
 
+# Centralized notifications (docs/NOTIFICATIONS.md): where abuse reports filed
+# from a DM's flag button are reviewed, and where every step of their handling
+# is logged. Both live in the Moddy team guild.
+MODDY_NOTIF_REPORT_CHANNEL_ID: int = int(
+    os.environ.get("MODDY_NOTIF_REPORT_CHANNEL_ID", "1541231528754028594"))
+MODDY_NOTIF_REPORT_LOG_CHANNEL_ID: int = int(
+    os.environ.get("MODDY_NOTIF_REPORT_LOG_CHANNEL_ID", "1541233478522241034"))
+
 # =============================================================================
 # BASE DE DONNÉES
 # =============================================================================

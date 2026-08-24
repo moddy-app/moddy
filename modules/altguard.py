@@ -687,12 +687,32 @@ class AltGuardModule(ModuleBase):
         if view is None:
             return
 
+        from notifications.models import NotificationContent, NotificationSource
+        from utils.emojis import ALTGUARD
+        from utils.i18n import t
+
         try:
-            await member.send(view=view)
-        except discord.Forbidden:
-            logger.info(
-                f"[AltGuard] Cannot DM {member.id} in guild {self.guild_id} (DMs closed)"
+            # Through the notification system: AltGuard's wording is Moddy's,
+            # so the DM is attributed (service + server) but not reportable.
+            result = await self.bot.notifications.send_dm(
+                member,
+                content=NotificationContent(
+                    title=t(f'modules.altguard.dm.{kind}.title', locale=self.panel_locale),
+                    body=t(f'modules.altguard.dm.{kind}.description',
+                           locale=self.panel_locale,
+                           server=f"**{guild.name}**" if guild else ""),
+                    icon=ALTGUARD,
+                    footer=t(f'modules.altguard.dm.{kind}.footer', locale=self.panel_locale),
+                    template_id=f"altguard.dm.{kind}",
+                ),
+                source=NotificationSource.service_guild("altguard", self.guild_id),
+                view=view,
+                locale=self.panel_locale,
             )
+            if result.forbidden:
+                logger.info(
+                    f"[AltGuard] Cannot DM {member.id} in guild {self.guild_id} (DMs closed)"
+                )
         except Exception as e:
             logger.error(f"[AltGuard] DM failed for {member.id} in guild {self.guild_id}: {e}")
 

@@ -917,8 +917,26 @@ class Reminder(commands.Cog):
                     container_dm.add_item(TextDisplay(f"-# {t('commands.reminder.notification.footer', locale='en', time=format_discord_timestamp(created_at, 'R'))}"))
 
                 view_dm.add_item(container_dm)
-                await user.send(view=view_dm)
-                sent = True
+                # Through the notification system: the text is the user's own
+                # reminder, sent by a Moddy service — attributed, not reportable.
+                from notifications.models import NotificationContent, NotificationSource
+                from utils.emojis import TIME
+                result = await self.bot.notifications.send_dm(
+                    user,
+                    content=NotificationContent(
+                        title=t("commands.reminder.notification.title", locale="en"),
+                        body="> {message}",
+                        icon=TIME,
+                        template_id="reminder.notification",
+                    ),
+                    source=NotificationSource.service("reminder"),
+                    variables={"message": reminder['message']},
+                    view=view_dm,
+                    locale="en-US",
+                )
+                sent = result.delivered
+                if result.forbidden:
+                    logger.warning(f"Could not DM user {user_id}")
             except discord.Forbidden:
                 logger.warning(f"Could not DM user {user_id}")
                 sent = False

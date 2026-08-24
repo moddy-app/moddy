@@ -21,6 +21,7 @@ from discord.ext import commands
 
 from cogs.error_handler import BaseModal, BaseView
 from config import COLORS
+from notifications.models import NotificationContent, NotificationSource
 from utils import emojis
 from utils.i18n import t, get_locale
 
@@ -109,6 +110,7 @@ def _parse_iso(value: Optional[str]) -> Optional[datetime]:
 
 
 async def _send_sanction_dm(
+    bot,
     guild: discord.Guild,
     mod_id: int,
     action: str,
@@ -122,7 +124,9 @@ async def _send_sanction_dm(
     """Send a sanction DM notification to the sanctioned user.
 
     Shared by the manual /ban /mute /warn modal and the backend-dashboard
-    sanction handler so both produce an identical DM.
+    sanction handler so both produce an identical DM. It goes out through
+    ``bot.notifications`` like every other DM, attributed to the sanctioning
+    server (docs/NOTIFICATIONS.md).
     """
     try:
         accent = {
@@ -174,7 +178,22 @@ async def _send_sanction_dm(
             )
             dm_view.add_item(gallery)
 
-        await user.send(view=dm_view)
+        # Through the notification system: the wording (the reason) is the
+        # moderator's own, so the DM is attributed to the server and is
+        # reportable. See docs/NOTIFICATIONS.md.
+        await bot.notifications.send_dm(
+            user,
+            content=NotificationContent(
+                title=title,
+                body=text,
+                icon=sanction_emoji,
+                accent_color=accent,
+                template_id=f"moderation.dm.{action}",
+            ),
+            source=NotificationSource.guild(guild_id, actor_id=mod_id),
+            view=dm_view,
+            locale=dm_locale,
+        )
     except discord.Forbidden:
         pass  # DMs disabled
     except Exception as exc:
@@ -732,7 +751,7 @@ class SanctionModal(BaseModal):
     ):
         """Send a sanction DM notification to the sanctioned user."""
         await _send_sanction_dm(
-            self.guild, self.mod.id, self.action,
+            self.bot, self.guild, self.mod.id, self.action,
             user, reason, expires_at, reference, dm_locale, attachments,
         )
 
@@ -1167,7 +1186,7 @@ class ModerationCommands(commands.Cog):
                 dm_target = None
         if dm_target is not None and issuer_id:
             await _send_sanction_dm(
-                guild, int(issuer_id), action, dm_target,
+                self.bot, guild, int(issuer_id), action, dm_target,
                 case_row["reason"], expires_at, case_row["reference"],
                 await _guild_locale(self.bot, guild),
             )

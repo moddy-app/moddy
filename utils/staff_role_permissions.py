@@ -27,6 +27,8 @@ MODERATOR_PERMISSIONS = [
     "altguard_manage",        # Manually (un)verify members + read AltGuard refusals
     "interserver_info",       # View inter-server message info
     "interserver_delete",     # Delete inter-server messages
+    "notif_review",           # Review abuse reports filed against a notification
+    "notif_lookup",           # Look a notification up by its uuid
 ]
 
 # Permissions specific to Support role
@@ -42,6 +44,7 @@ SUPPORT_PERMISSIONS = [
 COMMUNICATION_PERMISSIONS = [
     "announce",      # Send announcements
     "broadcast",     # Broadcast messages
+    "notif_lookup",  # Look a notification up by its uuid (what did we send?)
 ]
 
 # Permissions specific to Supervisor_Mod role
@@ -119,6 +122,10 @@ def get_permission_label(permission: str) -> str:
         # Communication
         "announce": "Send Announcements",
         "broadcast": "Broadcast Messages",
+
+        # Notifications
+        "notif_review": "Review Notification Abuse Reports",
+        "notif_lookup": "Look Up a Notification by UUID",
 
         # Supervisor specific
         "manage_mod": "Manage Moderators",

@@ -29,8 +29,9 @@ configuration order. Rendering is a `ui.LayoutView` holding a single
 `ui.Container` (accent-coloured) with the formatted text — no `discord.Embed`
 anywhere.
 
-A member with DMs closed raises `discord.Forbidden` on the first send; the
-module stops there instead of retrying the remaining entries.
+A member with DMs closed makes the first send come back `forbidden`; the module
+stops there instead of retrying the remaining entries (see §7 — delivery goes
+through the notification system, which does not raise on a closed DM).
 
 Mentions are constrained to the joining member: `AllowedMentions(everyone=False,
 roles=False, users=[member])`. A DM cannot mass-ping in the first place, but the
@@ -195,3 +196,36 @@ Main panel ──► Add message (Modal V2) ──► saved
   registered in `utils/persistent_views.py`. The manage view's current entry is
   not persisted across a restart — same accepted loss as
   `ManageWelcomeMessageView`, see [PERSISTENT_VIEWS.md](PERSISTENT_VIEWS.md).
+
+---
+
+## 7. Delivery: through the notification system
+
+Welcome DMs are not sent with `member.send(...)`. They go through
+`bot.notifications.send_dm()` — see [NOTIFICATIONS.md](NOTIFICATIONS.md) — which
+changes three things:
+
+- **Every DM is recorded.** One `notifications` row per member, carrying the
+  uuid the recipient can quote to support, the delivery result, and the
+  `variables` that were substituted (`message_variables()`), so the exact
+  wording sent to a given member can be rebuilt later. The body itself is
+  stored **as a template**, placeholders unresolved (`welcome_content()` keeps
+  `{server}` / `{user}` in the text), so all the members of one server share a
+  single stored content row.
+- **It is attributed to the server.** A button under the message carries the
+  server's name and opens a panel identifying it — the recipient can always
+  tell which server DMed them.
+- **It is reportable.** The source is `NotificationSource.guild(guild.id)`,
+  whose default author is `ContentAuthor.GUILD`: the text is the server's own
+  words, which is exactly what can be abused, so the red flag next to the
+  attribution button is live and files an abuse report to the Moddy team.
+
+`send_dm()` returns a `DeliveryResult` instead of raising: `result.forbidden`
+means the member's DMs are closed (the module stops there), `result.delivered`
+that the message went out, and `result.notification_id` is what the module logs.
+
+The rendered container is unchanged — the module still builds its own
+Components V2 view holding only the guild's text — and is passed as `view=`;
+the attribution row is appended to it. The uniform `content` is still required:
+it is what the dashboard and the mail pipeline render, and what a staff reviewer
+sees when handling a report.

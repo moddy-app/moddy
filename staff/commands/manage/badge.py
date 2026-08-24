@@ -90,12 +90,12 @@ class BadgeCommand(StaffCommand):
             await _apply_remove(db, user.id, attr_key, ctx.author.id)
             await ctx.send(view=design.success(
                 t("staff.manage.badge.removed_title", locale=locale),
-                t("staff.manage.badge.removed", locale=locale, key=f"`{attr_key}`", user=user.mention),
+                t("staff.manage.badge.removed", locale=locale, badge_key=f"`{attr_key}`", user=user.mention),
             ))
             return
 
         merged = await _apply_set(db, user.id, attr_key, ctx.author.id, orgs)
-        desc = t("staff.manage.badge.assigned", locale=locale, key=f"`{attr_key}`", user=user.mention)
+        desc = t("staff.manage.badge.assigned", locale=locale, badge_key=f"`{attr_key}`", user=user.mention)
         if merged:
             desc += "\n" + t("staff.manage.badge.orgs", locale=locale, orgs=", ".join(f"**{o}**" for o in merged))
         await ctx.send(view=design.success(t("staff.manage.badge.assigned_title", locale=locale), desc))
@@ -135,7 +135,7 @@ class BadgeCommand(StaffCommand):
             await _apply_remove(db, target_id, attr_key, ctx.author.id)
             await ctx.send(view=design.success(
                 t("staff.manage.badge.removed_title", locale=locale),
-                t("staff.manage.badge.removed", locale=locale, key=f"`{attr_key}`", user=mention),
+                t("staff.manage.badge.removed", locale=locale, badge_key=f"`{attr_key}`", user=mention),
             ))
             return
 
@@ -146,7 +146,7 @@ class BadgeCommand(StaffCommand):
         attr_key = BADGE_ALIASES[action]
         orgs = [o.strip() for o in " ".join(tokens[1:]).split(",") if o.strip()]
         merged = await _apply_set(db, target_id, attr_key, ctx.author.id, orgs)
-        desc = t("staff.manage.badge.assigned", locale=locale, key=f"`{attr_key}`", user=mention)
+        desc = t("staff.manage.badge.assigned", locale=locale, badge_key=f"`{attr_key}`", user=mention)
         if merged:
             desc += "\n" + t("staff.manage.badge.orgs", locale=locale, orgs=", ".join(f"**{o}**" for o in merged))
         await ctx.send(view=design.success(t("staff.manage.badge.assigned_title", locale=locale), desc))

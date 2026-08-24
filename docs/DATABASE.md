@@ -556,6 +556,137 @@ Voir → [TICKETS.md](TICKETS.md).
 
 ---
 
+### 13. Table `notification_contents`
+
+The **template bodies** of everything Moddy sends to a human, stored once each.
+
+A notification's wording is hashed **as a template**, with its `{placeholders}`
+left unresolved (`NotificationContent.template_hash()` — SHA-256 of the
+canonical JSON payload). Ten thousand members receiving the same welcome DM of
+the same server therefore share **one** row here: the body is written once, and
+each `notifications` row only points at its hash. The values that were
+substituted for that particular recipient live in `notifications.variables`, so
+the exact wording of any single notification stays reproducible months later
+(`content.render(variables)`) — that is what the staff preview and the abuse
+report show as evidence.
+
+**Columns:**
+- `hash` (TEXT, PRIMARY KEY) — SHA-256 of the canonical template payload
+- `payload` (JSONB) — the `NotificationContent` template: `title`, `body`,
+  `icon`, `accent_color`, `sections`, `links`, `footer`, `template_id`
+- `uses` (BIGINT) — how many notifications have used this exact wording,
+  incremented on conflict at insert time
+- `first_seen_at` / `last_seen_at` (TIMESTAMPTZ)
+
+**Repository:** `db/repositories/notifications.py` — `NotificationRepository`
+
+See → [NOTIFICATIONS.md](NOTIFICATIONS.md).
+
+---
+
+### 14. Table `notifications`
+
+One row per **(message, recipient)**. The `id` is the uuid a recipient reads at
+the bottom of a Moddy DM and quotes to support, and the uuid the attribution and
+report buttons carry in their `custom_id`.
+
+A broadcast is exploded into one row per recipient, all sharing the same
+`batch_id`, so "who did this campaign reach, and how did it go" is a single
+query. `recipient_type` values `all_users` / `all_guilds` / `segment` describe
+the *audience* a batch was aimed at, not a delivered row.
+
+**Columns:**
+- `id` (UUID, PRIMARY KEY) — the public reference of the notification
+- `batch_id` (UUID) — groups the rows of one broadcast
+- `kind` (TEXT) — `official` | `service` | `guild` | `service_guild`
+- `author` (TEXT) — who wrote the words: `moddy` | `guild` | `staff`
+- `source_service` (TEXT) — service id (`reminder`, `tickets`…), if any
+- `source_guild_id` (BIGINT) — the server on whose behalf it was sent, if any
+- `actor_id` (BIGINT) — the human who triggered the send, if any
+- `recipient_type` (TEXT) — `discord_user` | `discord_guild` | `all_users` |
+  `all_guilds` | `segment` | `email`
+- `recipient_id` (BIGINT) / `recipient_ref` (TEXT) — the Discord id, or a
+  non-Discord reference (email address, segment name)
+- `content_hash` (TEXT) — FK → `notification_contents(hash)`
+- `variables` (JSONB) — the values substituted into the template for *this* row
+- `platforms` (TEXT[]) — what the notification targets (default `{discord}`)
+- `reportable` (BOOLEAN) — frozen at send time; the row can only make a
+  notification *less* reportable later, never more
+- `locale` (TEXT) — the locale the message was rendered in
+- `created_at` (TIMESTAMPTZ)
+
+**Index:**
+- `idx_notifications_recipient` on `(recipient_id, created_at DESC)`
+- `idx_notifications_guild` on `(source_guild_id, created_at DESC)`
+- `idx_notifications_batch` on `(batch_id)`
+- `idx_notifications_content` on `(content_hash)`
+
+**Repository:** `db/repositories/notifications.py` — `NotificationRepository`
+
+See → [NOTIFICATIONS.md](NOTIFICATIONS.md).
+
+---
+
+### 15. Table `notification_deliveries`
+
+One row per **(notification, platform)**: `notifications.platforms` is what a
+notification *targets*, this table is what actually happened on each one —
+Discord may have been accepted while the mail failed. The pair is the
+**PRIMARY KEY `(notification_id, platform)`**, so a retry updates the row
+instead of duplicating it.
+
+The bot delivers Discord; the `email` and `dashboard` rows stay `pending` for
+the backend to pick up and mark.
+
+**Columns:**
+- `notification_id` (UUID) — FK → `notifications(id)`, `ON DELETE CASCADE`
+- `platform` (TEXT) — `discord` | `email` | `dashboard`
+- `status` (TEXT) — `pending` | `sent` | `failed` | `skipped`
+- `channel_id` / `message_id` (BIGINT) — where it landed, for Discord
+- `error` (TEXT) — why it failed (closed DMs, HTTP error…)
+- `updated_at` (TIMESTAMPTZ)
+- PRIMARY KEY `(notification_id, platform)`
+
+**Index:**
+- `idx_notification_deliveries_status` on `(platform, status)`
+
+**Repository:** `db/repositories/notifications.py` — `NotificationRepository`
+
+See → [NOTIFICATIONS.md](NOTIFICATIONS.md).
+
+---
+
+### 16. Table `notification_reports`
+
+The **abuse reports** filed by recipients against a notification whose wording
+came from a server, plus the staff review that followed.
+
+`UNIQUE (notification_id, reporter_id)` (`notification_reports_unique`): a
+recipient reports a given message **once**. A second click on the flag shows
+them the status of their existing report instead of opening a new one.
+
+**Columns:**
+- `id` (UUID, PRIMARY KEY) — the report reference, accepted by `/mod notif`
+- `notification_id` (UUID) — FK → `notifications(id)`, `ON DELETE CASCADE`
+- `reporter_id` (BIGINT) — the recipient who filed it
+- `reason` (TEXT) — the text typed in the report modal
+- `status` (TEXT) — `pending` | `claimed` | `accepted` | `refused`
+- `claimed_by` / `claimed_at` — the reviewer who took it
+- `decided_by` / `decided_at` / `decision_note` — the outcome
+- `review_channel_id` / `review_message_id` (BIGINT) — the review panel it was
+  posted to
+- `created_at` (TIMESTAMPTZ)
+- `CONSTRAINT notification_reports_unique UNIQUE (notification_id, reporter_id)`
+
+**Index:**
+- `idx_notification_reports_status` on `(status, created_at DESC)`
+
+**Repository:** `db/repositories/notifications.py` — `NotificationRepository`
+
+See → [NOTIFICATIONS.md](NOTIFICATIONS.md).
+
+---
+
 ## Système d'attributs et de données
 
 Moddy utilise deux types de champs JSONB pour stocker les informations:

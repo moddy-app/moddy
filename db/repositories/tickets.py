@@ -269,9 +269,15 @@ class TicketsRepository:
                     WHERE channel_id = $1
                 """, channel_id)
 
-    async def set_claim(self, channel_id: int,
-                        claimer_id: Optional[int]) -> None:
-        """Assign the ticket to a staffer, or release it with ``None``."""
+    async def set_ticket_claim(self, channel_id: int,
+                               claimer_id: Optional[int]) -> None:
+        """Assign the ticket to a staffer, or release it with ``None``.
+
+        Named ``set_ticket_claim`` and not ``set_claim`` because every
+        repository is mixed into one ``ModdyDatabase``: a plain ``set_claim``
+        collided with ``AppealRepository.set_claim``, which sits earlier in the
+        MRO and silently won. See ``tests/test_database_repositories.py``.
+        """
         async with self.pool.acquire() as conn:
             await conn.execute("""
                 UPDATE tickets

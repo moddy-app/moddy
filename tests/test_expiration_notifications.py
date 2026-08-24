@@ -76,6 +76,12 @@ class FakeBot:
     def __init__(self, guild=None, user=None):
         self._guild = guild
         self._user = user
+        # Every DM goes through the notification system now. With no database
+        # the service records nothing and sends the view as-is, which is
+        # exactly what these tests assert on.
+        from notifications import NotificationService
+        self.notifications = NotificationService(self)
+        self.db = None
 
     def get_guild(self, gid):
         return self._guild if self._guild and self._guild.id == gid else None

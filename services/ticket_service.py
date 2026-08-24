@@ -520,18 +520,47 @@ class TicketService:
         """DM the opener that their ticket is closed — best effort, never fatal."""
         from utils.ticket_views import build_close_dm
 
-        await self._dm_owner(channel, ticket, build_close_dm(
-            channel.guild, ticket, category, actor, reason,
-            locale=await self.ticket_locale(channel.guild)))
+        locale = await self.ticket_locale(channel.guild)
+        await self._dm_owner(
+            channel, ticket,
+            build_close_dm(channel.guild, ticket, category, actor, reason,
+                           locale=locale),
+            kind="close", category=category, locale=locale)
 
     async def _dm_owner(self, channel: discord.TextChannel,
-                        ticket: Dict[str, Any], view) -> None:
-        """Send one card to the ticket's opener. Closed DMs are not an error."""
+                        ticket: Dict[str, Any], view, *,
+                        kind: str = "close", category: Optional[Dict[str, Any]] = None,
+                        locale: str = "en-US") -> None:
+        """Send one card to the ticket's opener. Closed DMs are not an error.
+
+        Routed through the notification system like every other DM: the card is
+        Moddy's own wording about a ticket on that server, so it carries the
+        service + server attribution and a greyed-out report flag.
+        """
         owner = channel.guild.get_member(ticket['owner_id'])
         if not owner or owner.bot:
             return
+        from notifications.models import NotificationContent, NotificationSource
+        from utils.emojis import TICKET
         try:
-            await owner.send(view=view)
+            await self.bot.notifications.send_dm(
+                owner,
+                content=NotificationContent(
+                    title=t(f"modules.tickets.{kind}.dm_title", locale=locale),
+                    body=t(f"modules.tickets.{kind}.dm_description", locale=locale,
+                           server="{server}", number="{number}", category="{category}"),
+                    icon=TICKET,
+                    template_id=f"tickets.dm.{kind}",
+                ),
+                variables={
+                    "server": channel.guild.name,
+                    "number": str(ticket.get("number", "—")),
+                    "category": (category or {}).get("name", "—"),
+                },
+                source=NotificationSource.service_guild("tickets", channel.guild.id),
+                view=view,
+                locale=locale,
+            )
         except (discord.Forbidden, discord.HTTPException):
             pass  # closed DMs are the norm, not an error
 
@@ -552,9 +581,12 @@ class TicketService:
         # The closure was announced in a DM, so its cancellation has to be too:
         # a member told their ticket was over has no reason to look at a
         # channel that had disappeared from their list.
-        await self._dm_owner(channel, ticket, build_reopen_dm(
-            channel.guild, ticket, category, actor, channel,
-            locale=await self.ticket_locale(channel.guild)))
+        locale = await self.ticket_locale(channel.guild)
+        await self._dm_owner(
+            channel, ticket,
+            build_reopen_dm(channel.guild, ticket, category, actor, channel,
+                            locale=locale),
+            kind="reopen", category=category, locale=locale)
 
         logger.info(f"[Tickets] #{ticket['number']} reopened by {actor.id}")
         return ticket
@@ -648,7 +680,7 @@ class TicketService:
             raise TicketError('modules.tickets.errors.already_claimed',
                               user=f"<@{holder}>")
 
-        await self.bot.db.set_claim(channel.id, actor.id)
+        await self.bot.db.set_ticket_claim(channel.id, actor.id)
         ticket = await self.get_ticket(channel.id) or ticket
         await self.sync_permissions(channel, category, ticket)
         await self.sync_status_prefix(channel, category, ticket)
@@ -696,7 +728,7 @@ class TicketService:
         if holder == actor.id and self.claim_permission(ticket) not in granted:
             raise TicketError('modules.tickets.errors.missing_permission')
 
-        await self.bot.db.set_claim(channel.id, None)
+        await self.bot.db.set_ticket_claim(channel.id, None)
         ticket = await self.get_ticket(channel.id) or ticket
         await self.sync_permissions(channel, category, ticket)
         await self.sync_status_prefix(channel, category, ticket)

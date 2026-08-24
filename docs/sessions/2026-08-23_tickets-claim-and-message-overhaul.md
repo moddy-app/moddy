@@ -46,14 +46,15 @@ Optional per category (`claim_enabled`).
 
 `TICKET` is now the real `<:ticket:…>`, `TICKET_STAFF_THREAD` the real
 `<:threads:…>`. `TICKET_CLOSE` → `UNDONE` (a plain cross),
-`TICKET_PARTICIPANTS` → `MANAGE_USER`, new `TICKET_CLAIM` → `QUESTIONS`.
+`TICKET_PARTICIPANTS` → `MANAGE_USER`, new `TICKET_CLAIM` → `<:claim:…>`.
 
-### 6. Participants open on who is already in
+### 6. Participants is a Modal V2
 
-`TicketParticipantsView` became **`TicketParticipantsModal`** (Modal V2), with
-both pickers pre-filled with the current members and roles. One submit applies
-the whole picture, which is what makes unselecting the obvious way to remove
-somebody.
+`TicketParticipantsView` became **`TicketParticipantsModal`**. It prints the
+current participants as text and asks what to do with the selection — add
+(default), remove, or replace. See the follow-up below: Discord does not render
+pre-selected values inside a modal, so the form could not be a straight
+"edit the list in place".
 
 ### 7. The staff thread stays staff-only
 
@@ -116,9 +117,9 @@ back to the channel that had vanished from their list (`build_reopen_dm`).
 | `utils/ticket_views.py` | Rewritten: buttons outside containers, configurable button set, claim notice, participants modal, reopen DM |
 | `cogs/tickets.py` | `/ticket claim`, `/ticket unclaim`, participants modal, `on_thread_member_join` guard, claim in `/ticket info` |
 | `db/base.py` | 4 claim columns + idempotent migration |
-| `db/repositories/tickets.py` | `set_claim`, claim-aware `set_escalated` |
+| `db/repositories/tickets.py` | `set_ticket_claim`, claim-aware `set_escalated` |
 | `modules/configs/tickets_category_config.py` | Button picker, `---` hint, behaviour `CheckboxGroup`, claim in the summary |
-| `utils/emojis.py`, `docs/EMOJIS.md` | `TICKET`, `THREADS`, `QUESTIONS`, `TICKET_CLAIM` |
+| `utils/emojis.py`, `docs/EMOJIS.md` | `TICKET`, `THREADS`, `CLAIM`, `TICKET_CLAIM` |
 | `utils/persistent_views.py` | `TicketParticipantsView` dropped (now a modal) |
 | `locales/*.json` (5) | ~80 keys each |
 | `locales/commands/*.json` (32) | `/ticket claim`, `/ticket unclaim` |
@@ -149,6 +150,46 @@ back to the channel that had vanished from their list (`build_reopen_dm`).
   runs `str.format` over the whole string as soon as it gets a kwarg, which
   would eat the `{number}` / `{user}` placeholders the admin keeps.
 
+## Follow-up fixes, same session
+
+### `set_claim` was silently shadowed
+
+`ModdyDatabase` inherits from ~24 repositories, so two of them picking the same
+method name do not clash loudly — the one earlier in the MRO wins. My
+`TicketsRepository.set_claim` was shadowed by `AppealRepository.set_claim`, and
+claiming a ticket raised `TypeError: takes 2 positional arguments but 3 were
+given` in production rather than failing at import.
+
+Renamed to **`set_ticket_claim`**, and `tests/test_database_repositories.py`
+now asserts that no repository method name is defined twice. It was the only
+collision in the project — the rule is: when two repositories describe the same
+verb on different things, qualify the name.
+
+### The participants modal came up empty, and that was destructive
+
+Discord does not render `default_values` for a select inside a modal (the
+payload is correct — verified by dumping `Modal.to_dict()` — it is simply
+ignored). The pickers therefore opened empty, while `_apply_participants`
+**replaced** the list with whatever was submitted: a staffer opening the form to
+add one person wiped every existing participant.
+
+Fixed by not depending on a pre-fill the platform does not guarantee:
+
+- the current participants are printed as **text** (the one thing that always
+  renders);
+- a mode select says what happens to the selection — **Add** (the default, and
+  the only one that can never destroy anything), Remove, or Replace;
+- `default_values` is still sent, so the form pre-fills the day Discord honours
+  it, but nothing depends on it.
+
+`TestParticipantMerge` covers the three modes, including the exact failure: an
+empty selection is a no-op in add and remove.
+
+### The claim icon
+
+`TICKET_CLAIM` now points at the dedicated `<:claim:1541239118888181770>`
+rather than borrowing `questions`.
+
 ## Known issues / follow-ups
 
 - `on_thread_member_join` needs the members intent (the bot has it). A member
@@ -159,7 +200,11 @@ back to the channel that had vanished from their list (`build_reopen_dm`).
   design; nothing else depends on it.
 - `MAX_TICKET_MESSAGE` stays at 2000 characters now that `open_message` is the
   whole message. Raise it if a server hits the ceiling.
+- The participants form is not the "edit the list in place" UX originally
+  asked for, because a modal cannot pre-select. If that UX matters more than
+  the modal, the only Discord surface that supports it is a Components V2
+  panel — switching back is a contained change.
 
 ## Tests
 
-`python3 -m pytest tests/ -q` — 1198 passed.
+`python3 -m pytest tests/ -q` — 1207 passed.

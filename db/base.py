@@ -35,6 +35,7 @@ from db.repositories.forms import FormsRepository
 from db.repositories.social import SocialSubscriptionsRepository
 from db.repositories.altguard import AltGuardRepository
 from db.repositories.tickets import TicketsRepository
+from db.repositories.notifications import NotificationRepository
 
 logger = logging.getLogger('moddy.database')
 
@@ -71,6 +72,7 @@ class ModdyDatabase(
     SocialSubscriptionsRepository,
     AltGuardRepository,
     TicketsRepository,
+    NotificationRepository,
 ):
     """Gestionnaire principal de la base de données"""
 
@@ -866,6 +868,108 @@ class ModdyDatabase(
             await conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_tickets_owner "
                 "ON tickets (guild_id, owner_id, status)")
+
+            # ---------------------------------------------------------------
+            # Centralized notifications (docs/NOTIFICATIONS.md)
+            # Every message Moddy sends to a human is one row in
+            # `notifications`. The wording itself lives once in
+            # `notification_contents`, keyed by the hash of its TEMPLATE
+            # (placeholders unresolved), so ten thousand identical welcome DMs
+            # store one body and ten thousand small rows pointing at it; the
+            # `variables` column carries what each one substituted, which is
+            # what makes an exact preview reproducible months later.
+            # ---------------------------------------------------------------
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS notification_contents (
+                    hash          TEXT PRIMARY KEY,
+                    payload       JSONB NOT NULL,
+                    uses          BIGINT NOT NULL DEFAULT 0,
+                    first_seen_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                    last_seen_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+                )
+            """)
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS notifications (
+                    id              UUID PRIMARY KEY,
+                    batch_id        UUID,
+                    kind            TEXT NOT NULL
+                        CHECK (kind IN ('official','service','guild','service_guild')),
+                    author          TEXT NOT NULL DEFAULT 'moddy'
+                        CHECK (author IN ('moddy','guild','staff')),
+                    source_service  TEXT,
+                    source_guild_id BIGINT,
+                    actor_id        BIGINT,
+                    recipient_type  TEXT NOT NULL,
+                    recipient_id    BIGINT,
+                    recipient_ref   TEXT,
+                    content_hash    TEXT NOT NULL REFERENCES notification_contents(hash),
+                    variables       JSONB NOT NULL DEFAULT '{}'::jsonb,
+                    platforms       TEXT[] NOT NULL DEFAULT ARRAY['discord'],
+                    reportable      BOOLEAN NOT NULL DEFAULT FALSE,
+                    locale          TEXT,
+                    created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+                )
+            """)
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_notifications_recipient "
+                "ON notifications (recipient_id, created_at DESC)")
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_notifications_guild "
+                "ON notifications (source_guild_id, created_at DESC)")
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_notifications_batch "
+                "ON notifications (batch_id)")
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_notifications_content "
+                "ON notifications (content_hash)")
+
+            # One row per (notification, platform): Discord may be sent while
+            # the mail failed. Primary-keyed on the pair so a retry updates.
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS notification_deliveries (
+                    notification_id UUID NOT NULL
+                        REFERENCES notifications(id) ON DELETE CASCADE,
+                    platform        TEXT NOT NULL
+                        CHECK (platform IN ('discord','email','dashboard')),
+                    status          TEXT NOT NULL DEFAULT 'pending'
+                        CHECK (status IN ('pending','sent','failed','skipped')),
+                    channel_id      BIGINT,
+                    message_id      BIGINT,
+                    error           TEXT,
+                    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+                    PRIMARY KEY (notification_id, platform)
+                )
+            """)
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_notification_deliveries_status "
+                "ON notification_deliveries (platform, status)")
+
+            # Abuse reports filed by a recipient. UNIQUE(notification, reporter)
+            # because a recipient reports a given DM once — a second click must
+            # show them the status of their report, not open a new one.
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS notification_reports (
+                    id                UUID PRIMARY KEY,
+                    notification_id   UUID NOT NULL
+                        REFERENCES notifications(id) ON DELETE CASCADE,
+                    reporter_id       BIGINT NOT NULL,
+                    reason            TEXT NOT NULL,
+                    status            TEXT NOT NULL DEFAULT 'pending'
+                        CHECK (status IN ('pending','claimed','accepted','refused')),
+                    claimed_by        BIGINT,
+                    claimed_at        TIMESTAMPTZ,
+                    decided_by        BIGINT,
+                    decided_at        TIMESTAMPTZ,
+                    decision_note     TEXT,
+                    review_channel_id BIGINT,
+                    review_message_id BIGINT,
+                    created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+                    CONSTRAINT notification_reports_unique UNIQUE (notification_id, reporter_id)
+                )
+            """)
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_notification_reports_status "
+                "ON notification_reports (status, created_at DESC)")
 
             # Table des rôles sauvegardés (Auto Restore Roles module)
             await conn.execute("""
