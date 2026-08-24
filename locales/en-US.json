@@ -4000,61 +4000,22 @@
       "expirations": "Sanction expiry"
     },
     "attribution": {
-      "unknown_guild": "Unknown server"
+      "unknown_guild": "Unknown server",
+      "sent_by": "Sent by [**{guild}**]({guild_url}){badge} (`{guild_id}`)",
+      "sent_by_service": "Sent by **{service}**"
     },
     "source": {
-      "title": "Where this notification comes from",
-      "guild_label": "Server:",
-      "service_label": "Service:",
-      "id_label": "ID:",
-      "members": "Members:",
-      "created": "Created:",
-      "verified": "Verified server",
-      "official": "Official Moddy server",
-      "open_server": "Open the server",
-      "uuid_label": "Notification:",
-      "sent_at": "Sent:",
-      "support_hint": "Something wrong with this notification? [Contact support]({url})",
-      "not_reportable": {
-        "moddy_authored": "This message is written by Moddy: there is nothing to report.",
-        "official_guild": "This message comes from an official Moddy server: it cannot be reported."
-      }
-    },
-    "service": {
-      "title": "Where this notification comes from",
-      "description": "This message was sent to you by a Moddy service."
+      "uuid_label": "Notification:"
     },
     "errors": {
       "unknown": {
-        "title": "Notification not found",
-        "description": "Notification `{uuid}` no longer exists in our records."
+        "title": "Notification not found"
       },
       "unknown_report": {
         "description": "Report `{uuid}` no longer exists."
       }
     },
     "report": {
-      "modal": {
-        "title": "Report this notification",
-        "recap": "**From:** {source}\n**Notification:** `{uuid}`\n\n> {excerpt}",
-        "reason": {
-          "label": "Why are you reporting this message?",
-          "description": "Describe the problem as precisely as you can.",
-          "placeholder": "This message contains…"
-        },
-        "confirm": {
-          "label": "Confirmation",
-          "option": "I confirm this report is legitimate"
-        }
-      },
-      "sent": {
-        "title": "Report sent",
-        "description": "The Moddy team will review this message. Thank you for your help."
-      },
-      "already": {
-        "title": "Report already sent",
-        "description": "You have already reported this notification."
-      },
       "status_label": "Status:",
       "status": {
         "pending": "Pending",
@@ -4063,20 +4024,6 @@
         "refused": "Declined"
       },
       "reference": "Report:",
-      "decision_note": "Team note:",
-      "errors": {
-        "not_recipient": {
-          "title": "Cannot report",
-          "description": "Only the recipient of this notification can report it."
-        },
-        "not_reportable": {
-          "title": "Cannot report"
-        },
-        "failed": {
-          "title": "Cannot report",
-          "description": "The report could not be saved. Please try again in a moment."
-        }
-      },
       "outcome": {
         "accepted": {
           "title": "Report accepted",

@@ -4000,61 +4000,22 @@
       "expirations": "Sanktionsende"
     },
     "attribution": {
-      "unknown_guild": "Unbekannter Server"
+      "unknown_guild": "Unbekannter Server",
+      "sent_by": "Gesendet von [**{guild}**]({guild_url}){badge} (`{guild_id}`)",
+      "sent_by_service": "Gesendet von **{service}**"
     },
     "source": {
-      "title": "Herkunft dieser Benachrichtigung",
-      "guild_label": "Server:",
-      "service_label": "Dienst:",
-      "id_label": "ID:",
-      "members": "Mitglieder:",
-      "created": "Erstellt am:",
-      "verified": "Verifizierter Server",
-      "official": "Offizieller Moddy-Server",
-      "open_server": "Server öffnen",
-      "uuid_label": "Benachrichtigung:",
-      "sent_at": "Gesendet am:",
-      "support_hint": "Ein Problem mit dieser Benachrichtigung? [Support kontaktieren]({url})",
-      "not_reportable": {
-        "moddy_authored": "Diese Nachricht stammt von Moddy: Es gibt nichts zu melden.",
-        "official_guild": "Diese Nachricht kommt von einem offiziellen Moddy-Server: Sie kann nicht gemeldet werden."
-      }
-    },
-    "service": {
-      "title": "Herkunft dieser Benachrichtigung",
-      "description": "Diese Nachricht wurde dir von einem Moddy-Dienst gesendet."
+      "uuid_label": "Benachrichtigung:"
     },
     "errors": {
       "unknown": {
-        "title": "Benachrichtigung nicht gefunden",
-        "description": "Die Benachrichtigung `{uuid}` existiert nicht mehr in unseren Aufzeichnungen."
+        "title": "Benachrichtigung nicht gefunden"
       },
       "unknown_report": {
         "description": "Die Meldung `{uuid}` existiert nicht mehr."
       }
     },
     "report": {
-      "modal": {
-        "title": "Diese Benachrichtigung melden",
-        "recap": "**Herkunft:** {source}\n**Benachrichtigung:** `{uuid}`\n\n> {excerpt}",
-        "reason": {
-          "label": "Warum meldest du diese Nachricht?",
-          "description": "Beschreibe das Problem so genau wie möglich.",
-          "placeholder": "Diese Nachricht enthält…"
-        },
-        "confirm": {
-          "label": "Bestätigung",
-          "option": "Ich bestätige, dass diese Meldung berechtigt ist"
-        }
-      },
-      "sent": {
-        "title": "Meldung gesendet",
-        "description": "Das Moddy-Team wird diese Nachricht prüfen. Danke für deine Hilfe."
-      },
-      "already": {
-        "title": "Meldung bereits gesendet",
-        "description": "Du hast diese Benachrichtigung bereits gemeldet."
-      },
       "status_label": "Status:",
       "status": {
         "pending": "Ausstehend",
@@ -4063,20 +4024,6 @@
         "refused": "Abgelehnt"
       },
       "reference": "Meldung:",
-      "decision_note": "Hinweis des Teams:",
-      "errors": {
-        "not_recipient": {
-          "title": "Melden nicht möglich",
-          "description": "Nur der Empfänger dieser Benachrichtigung kann sie melden."
-        },
-        "not_reportable": {
-          "title": "Melden nicht möglich"
-        },
-        "failed": {
-          "title": "Melden nicht möglich",
-          "description": "Die Meldung konnte nicht gespeichert werden. Versuche es gleich noch einmal."
-        }
-      },
       "outcome": {
         "accepted": {
           "title": "Meldung angenommen",

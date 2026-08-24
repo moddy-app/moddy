@@ -137,7 +137,7 @@ class ServiceInfo:
     @property
     def emoji(self) -> str:
         from utils import emojis as _emojis
-        return getattr(_emojis, self.emoji_name, _emojis.MODDY)
+        return getattr(_emojis, self.emoji_name, _emojis.MODDY_SQUARE_MIN)
 
 
 def _svc(sid: str, emoji_name: str) -> ServiceInfo:
@@ -147,7 +147,7 @@ def _svc(sid: str, emoji_name: str) -> ServiceInfo:
 #: service id -> ServiceInfo. Adding a sender means adding one line here.
 SERVICES: Dict[str, ServiceInfo] = {
     s.id: s for s in (
-        _svc("moddy", "MODDY"),                      # Moddy itself / staff broadcasts
+        _svc("moddy", "MODDY_SQUARE_MIN"),           # Moddy itself / staff broadcasts
         _svc("welcome_dm", "WAVING_HAND"),           # modules/welcome_dm.py
         _svc("moderation", "LEGAL"),                 # manual sanctions
         _svc("automod_ai", "SHIELD"),                # modules/automod_ai.py

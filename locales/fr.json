@@ -3999,61 +3999,22 @@
       "expirations": "Fin de sanction"
     },
     "attribution": {
-      "unknown_guild": "Serveur inconnu"
+      "unknown_guild": "Serveur inconnu",
+      "sent_by": "Envoyé par [**{guild}**]({guild_url}){badge} (`{guild_id}`)",
+      "sent_by_service": "Envoyé par **{service}**"
     },
     "source": {
-      "title": "Origine de cette notification",
-      "guild_label": "Serveur :",
-      "service_label": "Service :",
-      "id_label": "Identifiant :",
-      "members": "Membres :",
-      "created": "Créé le :",
-      "verified": "Serveur vérifié",
-      "official": "Serveur officiel Moddy",
-      "open_server": "Ouvrir le serveur",
-      "uuid_label": "Notification :",
-      "sent_at": "Envoyée le :",
-      "support_hint": "Un problème avec cette notification ? [Contacter le support]({url})",
-      "not_reportable": {
-        "moddy_authored": "Ce message est rédigé par Moddy : il n'y a rien à signaler.",
-        "official_guild": "Ce message provient d'un serveur officiel Moddy : il ne peut pas être signalé."
-      }
-    },
-    "service": {
-      "title": "Origine de cette notification",
-      "description": "Ce message t'a été envoyé par un service de Moddy."
+      "uuid_label": "Notification :"
     },
     "errors": {
       "unknown": {
-        "title": "Notification introuvable",
-        "description": "La notification `{uuid}` n'existe plus dans nos registres."
+        "title": "Notification introuvable"
       },
       "unknown_report": {
         "description": "Le signalement `{uuid}` n'existe plus."
       }
     },
     "report": {
-      "modal": {
-        "title": "Signaler cette notification",
-        "recap": "**Origine :** {source}\n**Notification :** `{uuid}`\n\n> {excerpt}",
-        "reason": {
-          "label": "Pourquoi signales-tu ce message ?",
-          "description": "Décris le problème le plus précisément possible.",
-          "placeholder": "Ce message contient…"
-        },
-        "confirm": {
-          "label": "Confirmation",
-          "option": "Je confirme que ce signalement est légitime"
-        }
-      },
-      "sent": {
-        "title": "Signalement envoyé",
-        "description": "L'équipe Moddy va examiner ce message. Merci de ton aide."
-      },
-      "already": {
-        "title": "Signalement déjà envoyé",
-        "description": "Tu as déjà signalé cette notification."
-      },
       "status_label": "Statut :",
       "status": {
         "pending": "En attente",
@@ -4062,20 +4023,6 @@
         "refused": "Refusé"
       },
       "reference": "Signalement :",
-      "decision_note": "Note de l'équipe :",
-      "errors": {
-        "not_recipient": {
-          "title": "Signalement impossible",
-          "description": "Seul le destinataire de cette notification peut la signaler."
-        },
-        "not_reportable": {
-          "title": "Signalement impossible"
-        },
-        "failed": {
-          "title": "Signalement impossible",
-          "description": "Le signalement n'a pas pu être enregistré. Réessaie dans un instant."
-        }
-      },
       "outcome": {
         "accepted": {
           "title": "Signalement accepté",

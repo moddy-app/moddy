@@ -15,11 +15,12 @@ What shipped:
 - **Uniform payload.** `NotificationContent` renders to Discord, to a mail
   shape and to a dashboard shape, so a suspension notice reads the same
   everywhere. Titles, body, sections, links, footer, icon, accent.
-- **Attribution row** under every non-official DM: `[ Service ] [ Server ] [ 🚩 ]`.
-  The first two open an ephemeral identity panel (server icon, verification
-  badge, member count, link into the server, the notification's uuid, a support
-  link). The flag opens a report Modal V2 (recap + reason + explicit legitimacy
-  confirmation).
+- **Attribution line** at the bottom of every non-official DM —
+  `-# Sent by [**Server**](link) (`id`)`, plus the verification check when the
+  server has one. Same shape the sanction DMs have always used, now on
+  everything. (An earlier iteration in this session put buttons and an identity
+  panel there instead; that was replaced by the line on request — see the
+  decisions below.)
 - **Abuse reports** posted to the staff review channel with Claim / See the
   message / Accept / Decline, every step mirrored to the report log channel, and
   the reporter told the outcome — through this same system.
@@ -29,7 +30,8 @@ What shipped:
   one of them stays reproducible to the character.
 - **Staff commands**: `/mod notif <uuid>` (everything about one notification or
   report) and `/com send` (one user, one server, or thousands of either).
-- **Eleven senders migrated** off `user.send(...)`.
+- **Eleven senders migrated** off `user.send(...)`. The three whose card
+  already printed its own `sent_by` line pass `attribution=False`.
 
 ## Changes Made
 
@@ -96,12 +98,18 @@ What shipped:
 - **Official notices carry no attribution at all** — a suspension is Moddy
   speaking as an institution; offering to "report" it is nonsense. They are
   still stored and counted.
-- **Every button is a `DynamicItem` keyed by uuid.** A DM sent today must still
-  be reportable after next week's deploy, so no callback may rely on in-memory
-  state.
-- **Attribution button icons are Moddy emojis, not server icons.** Discord
-  button emojis must be real emojis; the *actual* server icon is shown in the
-  panel the button opens.
+- **A member's DM carries no component at all.** Attribution is plain text, so
+  it cannot expire, lose its handler or need registering. This replaced an
+  earlier button+panel design in the same session: a button can only carry an
+  emoji (never a server icon), and one greyed line says everything the panel
+  said that a member actually needs. The staff review panel keeps its
+  `DynamicItem` buttons, keyed by the report uuid.
+- **The Discord entry point for filing a report is gone with the buttons.**
+  The pipeline behind it — `notification_reports`, the review panel, the
+  outcome DM, `reportable` computed and frozen per row — is intact and
+  reachable through `NotificationService.open_report()`. It is kept rather than
+  deleted because the natural new trigger is a dashboard control, and
+  everything downstream of it already works.
 - **Broadcasts explode into one row per recipient** sharing a `batch_id`. Per-
   recipient delivery status is the whole point of the table, and "how did this
   campaign go" is still one query.
@@ -122,9 +130,16 @@ What shipped:
       `notification_send` payload is sketched in the integration doc §6. The
       legacy `send_announcement` task still posts unrecorded raw text to
       `guild.system_channel`.
+- [ ] **Nothing can file a report today** — the flag button was removed and no
+      other surface calls `open_report()` yet. A dashboard control is the
+      obvious next step; it needs a bot-side task type, since filing also posts
+      the review panel and logs it (see NOTIFICATIONS_INTEGRATION.md §5.2).
 - [ ] Accepting a report records the decision and tells the reporter; it takes
       **no automatic action** against the server. Wiring it to the global
       sanction / case system is a deliberate next step, not an oversight.
+- [ ] The recipient no longer sees the notification uuid anywhere in Discord.
+      Support has to identify a message by user + date instead. Putting it back
+      as a second `-#` line is one line of code if that turns out to hurt.
 - [ ] `/com send` progress edits stop if the interaction token expires (15 min);
       the batch keeps running and stays queryable by `batch_id`. A long campaign
       would be better served by a status message in a staff channel.

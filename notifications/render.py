@@ -30,7 +30,7 @@ from cogs.error_handler import BaseView
 from notifications.models import (
     ContentAuthor, NotificationContent, NotificationSource, get_service,
 )
-from utils.emojis import GROUPS, MODDY, VERIFIED, format_verification_badge
+from utils.emojis import MODDY_SQUARE_MIN, VERIFIED, format_verification_badge
 from utils.i18n import t
 
 logger = logging.getLogger("moddy.notifications.render")
@@ -107,7 +107,7 @@ async def resolve_source_context(
 
     ``service`` / ``service_name`` / ``service_emoji``
         The Moddy feature behind the message, when there is one.
-    ``guild_name`` / ``guild_icon_url`` / ``guild_id``
+    ``guild_name`` / ``guild_id``
         The server, when the message was sent on one's behalf.
     ``verified`` / ``official`` / ``badge``
         Whether that server carries the check, and whether it is Moddy's own.
@@ -123,12 +123,9 @@ async def resolve_source_context(
         "author": source.author.value,
         "service_id": source.service_id,
         "service_name": t(service.i18n_key, locale=locale) if service else None,
-        "service_emoji": service.emoji if service else MODDY,
+        "service_emoji": service.emoji if service else MODDY_SQUARE_MIN,
         "guild_id": source.guild_id,
         "guild_name": None,
-        "guild_icon_url": None,
-        "guild_member_count": None,
-        "guild_created_at": None,
         "verified": False,
         "official": False,
         "badge": "",
@@ -137,13 +134,15 @@ async def resolve_source_context(
     }
 
     if source.guild_id:
-        guild = bot.get_guild(source.guild_id) if bot else None
-        if guild is not None:
-            ctx["guild_name"] = guild.name
-            ctx["guild_icon_url"] = guild.icon.url if guild.icon else None
-            ctx["guild_member_count"] = guild.member_count
-            ctx["guild_created_at"] = guild.created_at
-        else:
+        # Everything below is best-effort: this runs on the delivery path, and
+        # a missing guild or an unreachable database must cost the badge, never
+        # the message.
+        try:
+            guild = bot.get_guild(source.guild_id) if bot else None
+            ctx["guild_name"] = guild.name if guild is not None else None
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Could not resolve guild %s: %s", source.guild_id, exc)
+        if not ctx["guild_name"]:
             ctx["guild_name"] = t("notifications.attribution.unknown_guild", locale=locale)
 
         attributes = {}
@@ -169,13 +168,35 @@ async def resolve_source_context(
     return ctx
 
 
-def source_button_emoji(ctx: Dict[str, Any]) -> str:
-    """The emoji shown on the *server* attribution button.
+#: Deep link to a server. Discord opens it when the reader is a member.
+GUILD_URL = "https://discord.com/channels/{guild_id}"
 
-    Buttons can only carry a real Discord emoji, never a server icon URL — the
-    icon itself is shown as the thumbnail of the panel the button opens.
+
+def build_attribution_line(ctx: Dict[str, Any], *, locale: str = "en-US") -> Optional[str]:
+    """The one greyed line closing every attributable notification.
+
+    ``-# Sent by [**Server**](link) (`id`)`` — the same shape the sanction DMs
+    have always used (``commands.moderation.dm.sent_by``), so a member sees one
+    consistent sentence at the bottom of anything Moddy sends them, whatever
+    feature produced it. The verification badge is appended right after the
+    name when the server carries one, per the badge rule in CLAUDE.md.
+
+    A notification with no server (a reminder, an appeal outcome) names the
+    Moddy service instead. An official notice gets no line at all — the caller
+    does not even reach here.
     """
-    return VERIFIED if ctx.get("verified") else GROUPS
+    if ctx.get("guild_id") and ctx.get("guild_name"):
+        return "-# " + t(
+            "notifications.attribution.sent_by", locale=locale,
+            guild=ctx["guild_name"],
+            guild_url=GUILD_URL.format(guild_id=ctx["guild_id"]),
+            guild_id=ctx["guild_id"],
+            badge=ctx.get("badge") or "",
+        )
+    if ctx.get("service_name"):
+        return "-# " + t("notifications.attribution.sent_by_service",
+                         locale=locale, service=ctx["service_name"])
+    return None
 
 
 def author_is_guild(source: NotificationSource) -> bool:

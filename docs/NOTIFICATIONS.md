@@ -17,48 +17,51 @@ not answer "what did we send this person, and when".
 
 Three answers, one system:
 
-1. **Provenance.** Under every DM, a button carries the name and icon of the
-   server or the Moddy service that sent it. Clicking it identifies the sender,
-   links into the server, and shows the notification's uuid.
-2. **Reporting.** Next to it, a red flag opens a Modal V2 that recaps the
-   message, asks why, and requires an explicit "this report is legitimate"
-   confirmation. The report lands in a staff review channel with Claim / See the
-   message / Accept / Decline, and every step is logged.
-3. **Memory.** Every notification is a row: uuid, sender, recipient, target
+1. **Provenance.** Every DM closes with one greyed line naming its origin:
+
+   ```
+   -# Sent by [**Server name**](https://discord.com/channels/1421493239579676682) (`1421493239579676682`)
+   ```
+
+   The same shape the sanction DMs have always used, now on everything Moddy
+   sends. No buttons, no panel to open.
+2. **Memory.** Every notification is a row: uuid, sender, recipient, target
    platforms, per-platform delivery status, and enough to rebuild the exact
    wording months later.
+3. **Accountability.** An abuse report can be filed against a stored
+   notification and reviewed by staff in Discord (Claim / See the message /
+   Accept / Decline), with every step logged.
 
 ---
 
-## The three shapes of a notification
+## The attribution line
 
-| Source | Buttons under the message | Report flag |
-|---|---|---|
-| **Official** — account suspension, leaked-token alert | *none at all* | — |
-| **Service** — a Moddy feature acting alone (reminder) | `[ Service ]` `[ 🚩 ]` | greyed out (Moddy wrote it) |
-| **Server** — a server's own words (welcome DM, sanction reason) | `[ Server ]` `[ 🚩 ]` | **live** |
-| **Service + server** — a feature acting for a server (AltGuard, tickets, automod) | `[ Service ]` `[ Server ]` `[ 🚩 ]` | greyed out unless the server wrote the words |
+| Source | Line at the bottom of the DM |
+|---|---|
+| **Official** — account suspension, leaked-token alert | *none* |
+| **Service** — a Moddy feature acting alone (reminder, appeal outcome) | `-# Sent by **Reminders**` |
+| **Server** — a server's own words (welcome DM, sanction reason) | `-# Sent by [**Server**](link) (`id`)` |
+| **Service + server** — a feature acting for a server (AltGuard, tickets, automod) | same as above: the **server** is the origin |
 
-Two rules decide the flag, and they are re-checked on **every click**, not only
-at send time:
+The server is always the origin when there is one; which internal service acted
+for it is not something a member needs. A notification with no server at all
+names the Moddy service instead, so there is always exactly one origin.
 
-- **Who wrote the words** (`ContentAuthor`). Only `GUILD`-authored content can
-  be abusive. A sanction notice worded by Moddy on a server's behalf is not
-  reportable — its exit is the appeal, not the flag.
-- **Whose server it is.** A message from a server carrying the `OFFICIAL`
-  attribute (one of Moddy's own) is never reportable: reporting Moddy to Moddy
-  is a loop with no exit. The flag is rendered disabled, and the identity panel
-  says *why* — a dead button with no explanation is a bug.
+An official notice carries no line: a suspension **is** Moddy speaking, there is
+no third party to name.
 
-A verified server (`VERIFIED`, `VERIFIED_ORG` or `PARTNER`) shows the
-verification check next to its name, hyperlinked like everywhere else in Moddy
-(CLAUDE.md rule #7). An official Moddy server shows it too, plus an explicit
-"Official Moddy server" line.
+A verified server (`VERIFIED`, `VERIFIED_ORG` or `PARTNER`) gets the
+verification check right after its name, hyperlinked like everywhere else in
+Moddy (CLAUDE.md rule #7).
 
-> **Button icons.** A Discord button emoji must be a real emoji — a server icon
-> URL cannot go on one. The button therefore carries a generic server icon (or
-> the verification check), and the **real** server icon is shown in the panel
-> the button opens.
+The line goes **inside the last container** of the card, not under it: a `-#`
+floating as its own component reads as a separate message.
+
+### Cards that already say it
+
+Three senders have printed their own `sent_by` line since long before this
+system (the manual sanction DM, the automod sanction DM, the sanction-expiry
+DM). They pass `attribution=False` so the line is not printed twice.
 
 ---
 
@@ -84,6 +87,9 @@ result = await bot.notifications.send_dm(
 if result.forbidden:      # DMs closed — every other send would fail the same
     return
 ```
+
+Pass `attribution=False` when the card you hand over already ends with its own
+`sent_by` line.
 
 `send_dm` returns a `DeliveryResult` (`notification_id`, `message`, `status`,
 `error`, plus `delivered` / `forbidden`). It never raises on a delivery
@@ -210,22 +216,29 @@ later must not resurrect old flags.
 
 ## Reporting flow
 
-1. The recipient clicks 🚩 on their DM. Authorization: the addressee, and only
-   them (`may_report`) — for a server-wide notice, that means a member with
-   Manage Server.
-2. A Modal V2 recaps the source, the uuid and an excerpt, asks for a reason
-   (15–1000 chars) and requires a `CheckboxGroup` confirmation.
-3. The report is written and posted to `MODDY_NOTIF_REPORT_CHANNEL_ID` as a
-   review panel: **Claim**, **See the message**, **Accept**, **Decline**.
-4. Every step (created / claimed / accepted / declined) is mirrored to
+> **No entry point in Discord today.** The flag button that used to open a
+> report was removed along with the rest of the DM-side buttons. The pipeline
+> below is intact and reachable through `NotificationService.open_report(...)`;
+> what is missing is something that calls it — a report control on the
+> dashboard being the obvious candidate. Everything downstream already works.
+
+1. `open_report(notification_id, reporter, reason)` writes the report. Who may
+   file one is `may_report()`: the addressee, and only them — for a server-wide
+   notice, a member with Manage Server.
+2. The report is posted to `MODDY_NOTIF_REPORT_CHANNEL_ID` as a review panel:
+   **Claim**, **See the message**, **Accept**, **Decline**.
+3. Every step (created / claimed / accepted / declined) is mirrored to
    `MODDY_NOTIF_REPORT_LOG_CHANNEL_ID`.
-5. On a decision, the reporter receives the outcome — as an official
+4. On a decision, the reporter receives the outcome — as an official
    notification, through this same system.
 
 Reviewer rules, re-checked on every click: the `notif_review` permission node,
-and never your own report. A second click on the flag by the same person shows
-the status of their existing report instead of opening a new one
-(`UNIQUE (notification_id, reporter_id)`).
+and never your own report. `UNIQUE (notification_id, reporter_id)` keeps it to
+one report per person per notification.
+
+`reportable` is still computed and frozen on every row (`ContentAuthor.GUILD`
+wording, minus messages from `OFFICIAL` Moddy servers), so whatever surface
+grows the entry point already has its answer.
 
 Configuration:
 
@@ -265,21 +278,22 @@ live progress panel, paced by `BROADCAST_DELAY`. Node: `broadcast`.
 
 ## Persistence
 
-Every button is a `discord.ui.DynamicItem` whose `custom_id` carries the
-notification (or report) uuid, registered through `NotificationsPersistence`:
+A member's DM carries no component at all — its origin is plain text, which
+cannot break, expire or lose its handler.
+
+The staff review panel does, and every one of its buttons is a
+`discord.ui.DynamicItem` whose `custom_id` carries the report uuid, registered
+through `NotificationsPersistence`:
 
 | custom_id | Item | Auth |
 |---|---|---|
-| `moddy:notif:svc:<uuid>` | service identity panel | public |
-| `moddy:notif:src:<uuid>` | server identity panel | public |
-| `moddy:notif:flag:<uuid>` | report | the addressee |
 | `moddy:notif:rvclaim:<uuid>` | claim | `notif_review`, not the reporter |
 | `moddy:notif:rvshow:<uuid>` | see the message | `notif_review`, not the reporter |
 | `moddy:notif:rvdec:<accept\|refuse>:<uuid>` | decide | `notif_review`, not the reporter |
 
-A DM sent today must still be reportable after next week's deploy, so nothing
-may rely on in-memory state: every callback re-derives the notification from its
-uuid and the database. See [PERSISTENT_VIEWS.md](PERSISTENT_VIEWS.md).
+A report opened today must still be decidable after next week's deploy, so
+nothing may rely on in-memory state: every callback re-derives the report from
+its uuid and the database. See [PERSISTENT_VIEWS.md](PERSISTENT_VIEWS.md).
 
 ---
 
@@ -292,7 +306,7 @@ notifications/
 ├── render.py         # content → Components V2, attribution context
 └── service.py        # NotificationService (bot.notifications)
 
-utils/notification_views.py     # attribution row, report modal, review panels
+utils/notification_views.py     # staff review panel, decision modal, report log
 db/repositories/notifications.py
 staff/commands/mod/notification.py   # /mod notif
 staff/commands/com/send.py           # /com send

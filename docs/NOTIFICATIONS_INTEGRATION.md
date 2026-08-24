@@ -306,8 +306,10 @@ LIMIT $2 OFFSET $3;
 
 `idx_notifications_recipient` on `(recipient_id, created_at DESC)` covers it.
 
-Render each row with §2 + §3. Show the source the same way Discord does —
-service name, server name, verification badge — so the two surfaces agree:
+Render each row with §2 + §3. In Discord the origin is one greyed line at the
+bottom of the card (`-# Sent by [**Server**](link) (`id`)`, plus the
+verification check when the server has one). Show the same thing, so the two
+surfaces agree:
 
 - `source_service` → a service label (the bot's own names live in
   `locales/<locale>.json` → `notifications.services.<id>`),
@@ -316,6 +318,15 @@ service name, server name, verification badge — so the two surfaces agree:
 - `reportable = false` → no report affordance either, and if you explain why,
   match the bot's two reasons: the wording is Moddy's, or the server is an
   official Moddy server.
+
+> **The dashboard is now the only place a report can be filed.** The flag
+> button that used to sit under a DM was removed; the pipeline behind it is
+> intact (`notification_reports`, the staff review panel in Discord, the
+> outcome DM) and only lacks a trigger. That trigger cannot be an `INSERT`
+> from the backend — filing a report also posts the review panel and logs it,
+> both bot-side. It needs the `notification_send`-style task of §6, extended
+> with a `notification_report` type. Until that exists, `reportable` is
+> information you display, not an action you can offer.
 
 ### 5.3 Campaign status
 
@@ -417,9 +428,11 @@ button in someone's DMs.
    cascade from `notifications`; a delete erases the evidence behind an open
    abuse report. Add a retention job only with a deliberate policy, and never
    delete a notification that has a report.
-5. **The uuid is public.** The recipient reads it in Discord and quotes it to
-   support. It is safe to display; it is not a secret and must not be treated
-   as one.
+5. **The uuid is safe to display.** It is the reference staff look a
+   notification up by (`/mod notif`), and the natural id for a dashboard
+   report control. It is not a secret and must not be treated as one — but the
+   Discord DM does not show it, so a user who has only seen the DM cannot
+   quote it: identify their notification by recipient and date.
 6. **`recipient_id` is a Discord snowflake in a BIGINT.** JavaScript loses
    precision above 2^53 — serialise it as a string in every API response, like
    everywhere else in Moddy.

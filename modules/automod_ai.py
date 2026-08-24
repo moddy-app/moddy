@@ -1127,6 +1127,8 @@ class AutomodModule(ModuleBase):
                 view=view,
                 files=files,
                 locale=locale,
+                # build_sanction_dm_view already ends with its own `sent_by`.
+                attribution=False,
             )
         except (discord.Forbidden, discord.HTTPException):
             pass  # closed DMs — the case + channel notification still stand

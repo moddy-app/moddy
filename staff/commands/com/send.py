@@ -168,7 +168,7 @@ def _build_content(payload: Dict[str, Any]) -> NotificationContent:
     return NotificationContent(
         title=payload["title"],
         body=payload["body"],
-        icon=emojis.MODDY,
+        icon=emojis.MODDY_SQUARE_MIN,
         accent_color=0x3661FF,
         links=payload.get("links") or [],
         template_id="staff.com.send",

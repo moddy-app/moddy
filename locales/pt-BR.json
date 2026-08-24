@@ -4000,61 +4000,22 @@
       "expirations": "Fim de sanção"
     },
     "attribution": {
-      "unknown_guild": "Servidor desconhecido"
+      "unknown_guild": "Servidor desconhecido",
+      "sent_by": "Enviado por [**{guild}**]({guild_url}){badge} (`{guild_id}`)",
+      "sent_by_service": "Enviado por **{service}**"
     },
     "source": {
-      "title": "Origem desta notificação",
-      "guild_label": "Servidor:",
-      "service_label": "Serviço:",
-      "id_label": "Identificador:",
-      "members": "Membros:",
-      "created": "Criado em:",
-      "verified": "Servidor verificado",
-      "official": "Servidor oficial da Moddy",
-      "open_server": "Abrir o servidor",
-      "uuid_label": "Notificação:",
-      "sent_at": "Enviada em:",
-      "support_hint": "Algum problema com esta notificação? [Falar com o suporte]({url})",
-      "not_reportable": {
-        "moddy_authored": "Esta mensagem foi escrita pelo Moddy: não há nada a denunciar.",
-        "official_guild": "Esta mensagem vem de um servidor oficial da Moddy: ela não pode ser denunciada."
-      }
-    },
-    "service": {
-      "title": "Origem desta notificação",
-      "description": "Esta mensagem foi enviada a você por um serviço do Moddy."
+      "uuid_label": "Notificação:"
     },
     "errors": {
       "unknown": {
-        "title": "Notificação não encontrada",
-        "description": "A notificação `{uuid}` não existe mais em nossos registros."
+        "title": "Notificação não encontrada"
       },
       "unknown_report": {
         "description": "A denúncia `{uuid}` não existe mais."
       }
     },
     "report": {
-      "modal": {
-        "title": "Denunciar esta notificação",
-        "recap": "**Origem:** {source}\n**Notificação:** `{uuid}`\n\n> {excerpt}",
-        "reason": {
-          "label": "Por que você está denunciando isto?",
-          "description": "Descreva o problema da forma mais precisa possível.",
-          "placeholder": "Esta mensagem contém…"
-        },
-        "confirm": {
-          "label": "Confirmação",
-          "option": "Confirmo que esta denúncia é legítima"
-        }
-      },
-      "sent": {
-        "title": "Denúncia enviada",
-        "description": "A equipe do Moddy vai analisar esta mensagem. Obrigado pela sua ajuda."
-      },
-      "already": {
-        "title": "Denúncia já enviada",
-        "description": "Você já denunciou esta notificação."
-      },
       "status_label": "Status:",
       "status": {
         "pending": "Pendente",
@@ -4063,20 +4024,6 @@
         "refused": "Recusada"
       },
       "reference": "Denúncia:",
-      "decision_note": "Nota da equipe:",
-      "errors": {
-        "not_recipient": {
-          "title": "Não é possível denunciar",
-          "description": "Somente o destinatário desta notificação pode denunciá-la."
-        },
-        "not_reportable": {
-          "title": "Não é possível denunciar"
-        },
-        "failed": {
-          "title": "Não é possível denunciar",
-          "description": "A denúncia não pôde ser salva. Tente novamente em instantes."
-        }
-      },
       "outcome": {
         "accepted": {
           "title": "Denúncia aceita",
