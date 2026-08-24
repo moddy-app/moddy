@@ -3657,9 +3657,9 @@
       },
       "badge": {
         "removed_title": "Emblema Removido",
-        "removed": "Emblema {key} removido de {user}.",
+        "removed": "Emblema {badge_key} removido de {user}.",
         "assigned_title": "Emblema Atribuído",
-        "assigned": "Emblema {key} atribuído a {user}.",
+        "assigned": "Emblema {badge_key} atribuído a {user}.",
         "orgs": "Organização(ões): {orgs}",
         "import_fail_title": "Erro de Importação",
         "import_bad_json": "JSON inválido — esperava-se um array de entradas.",

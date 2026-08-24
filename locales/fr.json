@@ -3656,9 +3656,9 @@
       },
       "badge": {
         "removed_title": "Badge retiré",
-        "removed": "Badge {key} retiré de {user}.",
+        "removed": "Badge {badge_key} retiré de {user}.",
         "assigned_title": "Badge attribué",
-        "assigned": "Badge {key} attribué à {user}.",
+        "assigned": "Badge {badge_key} attribué à {user}.",
         "orgs": "Organisation(s) : {orgs}",
         "import_fail_title": "Erreur d'import",
         "import_bad_json": "JSON invalide — un tableau d'entrées est attendu.",

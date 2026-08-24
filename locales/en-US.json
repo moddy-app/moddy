@@ -3657,9 +3657,9 @@
       },
       "badge": {
         "removed_title": "Badge Removed",
-        "removed": "Removed the {key} badge from {user}.",
+        "removed": "Removed the {badge_key} badge from {user}.",
         "assigned_title": "Badge Assigned",
-        "assigned": "Assigned the {key} badge to {user}.",
+        "assigned": "Assigned the {badge_key} badge to {user}.",
         "orgs": "Organisation(s): {orgs}",
         "import_fail_title": "Import Error",
         "import_bad_json": "Invalid JSON — expected an array of entries.",

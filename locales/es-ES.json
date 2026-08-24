@@ -3657,9 +3657,9 @@
       },
       "badge": {
         "removed_title": "Insignia eliminada",
-        "removed": "Se eliminó la insignia {key} de {user}.",
+        "removed": "Se eliminó la insignia {badge_key} de {user}.",
         "assigned_title": "Insignia asignada",
-        "assigned": "Se asignó la insignia {key} a {user}.",
+        "assigned": "Se asignó la insignia {badge_key} a {user}.",
         "orgs": "Organización(es): {orgs}",
         "import_fail_title": "Error de importación",
         "import_bad_json": "JSON no válido — se esperaba un array de entradas.",

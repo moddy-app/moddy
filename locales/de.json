@@ -3657,9 +3657,9 @@
       },
       "badge": {
         "removed_title": "Abzeichen entfernt",
-        "removed": "Das Abzeichen {key} wurde von {user} entfernt.",
+        "removed": "Das Abzeichen {badge_key} wurde von {user} entfernt.",
         "assigned_title": "Abzeichen zugewiesen",
-        "assigned": "Das Abzeichen {key} wurde {user} zugewiesen.",
+        "assigned": "Das Abzeichen {badge_key} wurde {user} zugewiesen.",
         "orgs": "Organisation(en): {orgs}",
         "import_fail_title": "Importfehler",
         "import_bad_json": "Ungültiges JSON — ein Array von Einträgen wird erwartet.",
