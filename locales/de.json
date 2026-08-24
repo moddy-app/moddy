@@ -3715,6 +3715,118 @@
         "confirm_title": "Banner löschen?",
         "confirm": "Banner {id} dauerhaft löschen?"
       }
+    },
+    "notif": {
+      "title": "Benachrichtigung",
+      "created_at": "Gesendet am",
+      "kind": "Art",
+      "author": "Verfasst von",
+      "service": "Dienst",
+      "guild": "Server",
+      "actor": "Ausgelöst von",
+      "reportable": "Meldbar",
+      "recipient": "Empfänger",
+      "batch": "Kampagne",
+      "delivery": "Zustellung",
+      "no_delivery": "Keine Zustellung erfasst",
+      "content": "Inhalt",
+      "hash": "Prüfsumme",
+      "occurrences": "Identische Sendungen",
+      "template": "Vorlage",
+      "reports": "Meldungen",
+      "not_found": {
+        "title": "Benachrichtigung nicht gefunden",
+        "description": "Keine Benachrichtigung und keine Meldung passt zu `{uuid}`."
+      },
+      "unavailable": {
+        "title": "System nicht verfügbar",
+        "description": "Das Benachrichtigungssystem ist nicht initialisiert."
+      }
+    },
+    "com": {
+      "send": {
+        "compose": "Nachricht verfassen",
+        "compose_hint": "Empfänger: {audience}",
+        "default_link_label": "Mehr erfahren",
+        "audience": {
+          "user": "Nutzer",
+          "guild": "Server",
+          "users": "Nutzer",
+          "guilds": "Server"
+        },
+        "modal": {
+          "title": "Neue Benachrichtigung",
+          "title_field": {
+            "label": "Titel",
+            "placeholder": "Titel, der oben in der Nachricht angezeigt wird"
+          },
+          "body": {
+            "label": "Nachricht",
+            "description": "Markdown wird unterstützt. Schreibe sie als finale Nachricht.",
+            "placeholder": "Der Inhalt der Benachrichtigung…"
+          },
+          "link_label": {
+            "label": "Button-Text (optional)",
+            "placeholder": "Mehr erfahren"
+          },
+          "link_url": {
+            "label": "Button-Link (optional)",
+            "description": "Muss mit https:// beginnen"
+          }
+        },
+        "confirm": {
+          "title": "Senden bestätigen",
+          "description": "Die Nachricht wird an `{count}` {kind} gesendet (Segment `{segment}`).",
+          "large": "Massenversand: Er kann nach dem Start nicht abgebrochen werden.",
+          "button": "Senden"
+        },
+        "progress": {
+          "title": "Senden läuft",
+          "description": "`{done}` / `{total}` verarbeitet — `{sent}` gesendet, `{failed}` fehlgeschlagen."
+        },
+        "done": {
+          "title": "Senden abgeschlossen",
+          "description": "`{total}` Empfänger — `{sent}` gesendet, `{failed}` fehlgeschlagen."
+        },
+        "user_done": {
+          "title": "Benachrichtigung gesendet",
+          "description": "Die Nachricht wurde an **{user}** gesendet."
+        },
+        "guild_done": {
+          "title": "Benachrichtigung gesendet",
+          "description": "Die Nachricht wurde auf **{guild}** veröffentlicht (`{count}` Zustellung(en))."
+        },
+        "errors": {
+          "bad_id": {
+            "title": "Ungültige ID",
+            "description": "Gib eine gültige Discord-ID an (nur Ziffern)."
+          },
+          "unknown_user": {
+            "title": "Nutzer nicht gefunden",
+            "description": "Kein Nutzer passt zu `{id}`."
+          },
+          "unknown_guild": {
+            "title": "Server nicht gefunden",
+            "description": "Moddy ist nicht auf dem Server `{id}`."
+          },
+          "empty_segment": {
+            "title": "Leeres Segment",
+            "description": "Kein Empfänger passt zum Segment `{segment}`."
+          },
+          "no_channel": {
+            "title": "Senden nicht möglich",
+            "description": "Kein nutzbarer Kanal auf **{guild}**."
+          },
+          "dms_closed": {
+            "title": "Direktnachrichten deaktiviert",
+            "description": "**{user}** nimmt keine Direktnachrichten an."
+          },
+          "failed": {
+            "title": "Senden nicht möglich",
+            "description": "Die Nachricht konnte nicht an **{user}** gesendet werden."
+          }
+        }
+      }
     }
   },
   "transcription": {
@@ -3876,6 +3988,178 @@
       "title": "Dein Einspruch wurde abgelehnt",
       "description": "Unser Team hat deinen Einspruch geprüft und abgelehnt. Die Sanktion **{level}** bleibt bestehen, und die ausgesetzten Maßnahmen sind wieder eingeplant.",
       "deadline": "Sie treten nun am **{date}** (**{rel}**) in Kraft."
+    }
+  },
+  "notifications": {
+    "services": {
+      "moddy": "Moddy",
+      "welcome_dm": "Willkommensnachricht",
+      "moderation": "Moderation",
+      "automod_ai": "Automod KI",
+      "appeals": "Einsprüche",
+      "altguard": "AltGuard",
+      "tickets": "Tickets",
+      "reminder": "Erinnerungen",
+      "interserver": "Serverübergreifend",
+      "token_detector": "Token-Erkennung",
+      "global_sanctions": "Globale Sanktionen",
+      "expirations": "Sanktionsende"
+    },
+    "attribution": {
+      "unknown_guild": "Unbekannter Server"
+    },
+    "source": {
+      "title": "Herkunft dieser Benachrichtigung",
+      "guild_label": "Server:",
+      "service_label": "Dienst:",
+      "id_label": "ID:",
+      "members": "Mitglieder:",
+      "created": "Erstellt am:",
+      "verified": "Verifizierter Server",
+      "official": "Offizieller Moddy-Server",
+      "open_server": "Server öffnen",
+      "uuid_label": "Benachrichtigung:",
+      "sent_at": "Gesendet am:",
+      "support_hint": "Ein Problem mit dieser Benachrichtigung? [Support kontaktieren]({url})",
+      "not_reportable": {
+        "moddy_authored": "Diese Nachricht stammt von Moddy: Es gibt nichts zu melden.",
+        "official_guild": "Diese Nachricht kommt von einem offiziellen Moddy-Server: Sie kann nicht gemeldet werden."
+      }
+    },
+    "service": {
+      "title": "Herkunft dieser Benachrichtigung",
+      "description": "Diese Nachricht wurde dir von einem Moddy-Dienst gesendet."
+    },
+    "errors": {
+      "unknown": {
+        "title": "Benachrichtigung nicht gefunden",
+        "description": "Die Benachrichtigung `{uuid}` existiert nicht mehr in unseren Aufzeichnungen."
+      },
+      "unknown_report": {
+        "description": "Die Meldung `{uuid}` existiert nicht mehr."
+      }
+    },
+    "report": {
+      "modal": {
+        "title": "Diese Benachrichtigung melden",
+        "recap": "**Herkunft:** {source}\n**Benachrichtigung:** `{uuid}`\n\n> {excerpt}",
+        "reason": {
+          "label": "Warum meldest du diese Nachricht?",
+          "description": "Beschreibe das Problem so genau wie möglich.",
+          "placeholder": "Diese Nachricht enthält…"
+        },
+        "confirm": {
+          "label": "Bestätigung",
+          "option": "Ich bestätige, dass diese Meldung berechtigt ist"
+        }
+      },
+      "sent": {
+        "title": "Meldung gesendet",
+        "description": "Das Moddy-Team wird diese Nachricht prüfen. Danke für deine Hilfe."
+      },
+      "already": {
+        "title": "Meldung bereits gesendet",
+        "description": "Du hast diese Benachrichtigung bereits gemeldet."
+      },
+      "status_label": "Status:",
+      "status": {
+        "pending": "Ausstehend",
+        "claimed": "In Prüfung",
+        "accepted": "Angenommen",
+        "refused": "Abgelehnt"
+      },
+      "reference": "Meldung:",
+      "decision_note": "Hinweis des Teams:",
+      "errors": {
+        "not_recipient": {
+          "title": "Melden nicht möglich",
+          "description": "Nur der Empfänger dieser Benachrichtigung kann sie melden."
+        },
+        "not_reportable": {
+          "title": "Melden nicht möglich"
+        },
+        "failed": {
+          "title": "Melden nicht möglich",
+          "description": "Die Meldung konnte nicht gespeichert werden. Versuche es gleich noch einmal."
+        }
+      },
+      "outcome": {
+        "accepted": {
+          "title": "Meldung angenommen",
+          "description": "Deine Meldung wurde vom Moddy-Team geprüft und angenommen. Die nötigen Maßnahmen wurden ergriffen."
+        },
+        "refused": {
+          "title": "Meldung abgelehnt",
+          "description": "Deine Meldung wurde vom Moddy-Team geprüft, aber nicht angenommen."
+        },
+        "footer": "Meldung {report}"
+      }
+    },
+    "review": {
+      "title": "Meldung einer Benachrichtigung",
+      "reporter": "Gemeldet von",
+      "source": "Herkunft",
+      "service": "Dienst",
+      "recipient": "Empfänger",
+      "sent_at": "Gesendet am",
+      "occurrences": "Sendungen dieses Inhalts",
+      "reason": "Meldegrund",
+      "content": "Gesendete Nachricht",
+      "note": "Notiz",
+      "claimed_by": "Übernommen von",
+      "decided_by": "Entschieden von",
+      "buttons": {
+        "claim": "Übernehmen",
+        "claimed": "Übernommen",
+        "preview": "Nachricht ansehen",
+        "accept": "Annehmen",
+        "refuse": "Ablehnen"
+      },
+      "no_permission": {
+        "title": "Zugriff verweigert",
+        "description": "Du hast keine Berechtigung, Meldungen zu Benachrichtigungen zu prüfen."
+      },
+      "own_report": {
+        "title": "Aktion nicht möglich",
+        "description": "Du kannst deine eigene Meldung nicht prüfen."
+      },
+      "already_decided": {
+        "title": "Meldung bereits bearbeitet",
+        "description": "Über diese Meldung wurde bereits entschieden."
+      },
+      "decision": {
+        "accept": {
+          "title": "Meldung annehmen",
+          "recap": "Die Meldung wird als **angenommen** markiert und die meldende Person wird informiert.",
+          "done": {
+            "title": "Meldung angenommen",
+            "description": "Die Entscheidung wurde gespeichert und die meldende Person wurde benachrichtigt."
+          }
+        },
+        "refuse": {
+          "title": "Meldung ablehnen",
+          "recap": "Die Meldung wird als **abgelehnt** markiert und die meldende Person wird informiert.",
+          "done": {
+            "title": "Meldung abgelehnt",
+            "description": "Die Entscheidung wurde gespeichert und die meldende Person wurde benachrichtigt."
+          }
+        },
+        "note": {
+          "label": "Notiz zur Entscheidung",
+          "description": "Wird der meldenden Person mitgeteilt und in den Logs gespeichert.",
+          "placeholder": "Optional: Erkläre die Entscheidung."
+        }
+      }
+    },
+    "log": {
+      "title": {
+        "created": "Neue Meldung",
+        "claimed": "Meldung übernommen",
+        "accepted": "Meldung angenommen",
+        "refused": "Meldung abgelehnt"
+      },
+      "actor": "Staff",
+      "jump": "Meldung ansehen"
     }
   }
 }

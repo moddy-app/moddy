@@ -32,6 +32,7 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence
 
 import discord
 
+from notifications.models import NotificationContent, NotificationSource
 from utils import global_sanctions as gs
 from utils.global_sanctions import GlobalLevel
 from utils.moderation_cases import SubjectType
@@ -415,14 +416,50 @@ class GlobalSanctionService:
             deadline=(enforcement or {}).get("deadline"), premium=premium,
             has_servers=has_servers,
         )
-        try:
-            await user.send(view=view)
+        # Official Moddy notice: recorded and counted like every other
+        # notification, but it deliberately carries no attribution or report
+        # buttons — this IS Moddy speaking (docs/NOTIFICATIONS.md).
+        result = await self.bot.notifications.send_dm(
+            user,
+            content=self._notice_content(level, reason),
+            source=NotificationSource.official("global_sanctions"),
+            variables={"reason": reason or "", "level": level},
+            view=view,
+        )
+        if result.delivered:
             return True
-        except discord.Forbidden:
+        if result.forbidden:
             logger.info("[GlobalSanction] Cannot DM user %s (DMs closed)", user_id)
-        except discord.HTTPException as exc:
-            logger.error("[GlobalSanction] Notice DM to %s failed: %s", user_id, exc)
+        elif result.error is not None:
+            logger.error("[GlobalSanction] Notice DM to %s failed: %s",
+                         user_id, result.error)
         return False
+
+    def _notice_content(self, level: str, reason: Optional[str]) -> "NotificationContent":
+        """The uniform payload behind a global-sanction notice.
+
+        Same text the dashboard and the mail pipeline render — a suspension has
+        to reach the person even if they never open Discord again.
+        """
+        from utils.emojis import EXCLAMATION
+        from utils.i18n import t
+        locale = "en-US"
+        return NotificationContent(
+            title=t("global_sanctions.notice.title", locale=locale),
+            body=t("global_sanctions.notice.intro", locale=locale,
+                   url="https://moddy.app/violations"),
+            icon=EXCLAMATION,
+            accent_color=0xED4245,
+            sections=[
+                {"title": t("global_sanctions.notice.field_level", locale=locale),
+                 "body": "`{level}`"},
+                {"title": t("global_sanctions.notice.field_reason", locale=locale),
+                 "body": "{reason}"},
+            ],
+            links=[{"label": t("global_sanctions.notice.button_appeal", locale=locale),
+                    "url": "https://moddy.app/support"}],
+            template_id=f"global_sanctions.notice.{level}",
+        )
 
     async def _notify_halt(self, row: Dict[str, Any], group_cases: List[Dict[str, Any]]) -> None:
         """Tell the subject their countdown was stopped while the appeal runs."""
@@ -430,9 +467,17 @@ class GlobalSanctionService:
 
         try:
             user = await self.bot.fetch_user(int(row["subject_id"]))
-            await user.send(view=build_halt_notice(
-                level=self._level_of(row), cases=[self._case_summary(c) for c in group_cases],
-            ))
+            await self.bot.notifications.send_dm(
+                user,
+                content=self._notice_content(self._level_of(row), row.get("reason")),
+                source=NotificationSource.official("global_sanctions"),
+                variables={"reason": row.get("reason") or "",
+                           "level": self._level_of(row)},
+                view=build_halt_notice(
+                    level=self._level_of(row),
+                    cases=[self._case_summary(c) for c in group_cases],
+                ),
+            )
         except (discord.HTTPException, ValueError, TypeError):
             pass
 
@@ -446,12 +491,19 @@ class GlobalSanctionService:
 
         try:
             user = await self.bot.fetch_user(int(row["subject_id"]))
-            await user.send(view=build_resume_notice(
-                level=self._level_of(row),
-                cases=[self._case_summary(c) for c in group_cases],
-                deadline=row.get("deadline"),
-                premium=bool(row.get("premium")),
-            ))
+            await self.bot.notifications.send_dm(
+                user,
+                content=self._notice_content(self._level_of(row), row.get("reason")),
+                source=NotificationSource.official("global_sanctions"),
+                variables={"reason": row.get("reason") or "",
+                           "level": self._level_of(row)},
+                view=build_resume_notice(
+                    level=self._level_of(row),
+                    cases=[self._case_summary(c) for c in group_cases],
+                    deadline=row.get("deadline"),
+                    premium=bool(row.get("premium")),
+                ),
+            )
         except (discord.HTTPException, ValueError, TypeError):
             pass
 

@@ -131,6 +131,10 @@ class ModdyBot(ModdyFrameworkBot):
         self.altguard = AltGuardClient(self)
         from services.ticket_service import TicketService
         self.tickets = TicketService(self)  # ticket lifecycle (open/close/escalate…)
+        from notifications import NotificationService
+        # Every DM / server notice Moddy sends goes through this: stored,
+        # attributed, reportable (see docs/NOTIFICATIONS.md).
+        self.notifications = NotificationService(self)
         from gateway import Gateway
         self.gateway = Gateway()
         self.redis = None  # Redis client (shared with backend)

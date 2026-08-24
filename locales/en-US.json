@@ -3715,6 +3715,118 @@
         "confirm_title": "Delete Banner?",
         "confirm": "Permanently delete banner {id}?"
       }
+    },
+    "notif": {
+      "title": "Notification",
+      "created_at": "Sent",
+      "kind": "Kind",
+      "author": "Written by",
+      "service": "Service",
+      "guild": "Server",
+      "actor": "Triggered by",
+      "reportable": "Reportable",
+      "recipient": "Recipient",
+      "batch": "Batch",
+      "delivery": "Delivery",
+      "no_delivery": "No delivery recorded",
+      "content": "Content",
+      "hash": "Hash",
+      "occurrences": "Identical sends",
+      "template": "Template",
+      "reports": "Reports",
+      "not_found": {
+        "title": "Notification not found",
+        "description": "No notification or report matches `{uuid}`."
+      },
+      "unavailable": {
+        "title": "System unavailable",
+        "description": "The notification system is not initialized."
+      }
+    },
+    "com": {
+      "send": {
+        "compose": "Write the message",
+        "compose_hint": "Recipients: {audience}",
+        "default_link_label": "Learn more",
+        "audience": {
+          "user": "user",
+          "guild": "server",
+          "users": "users",
+          "guilds": "servers"
+        },
+        "modal": {
+          "title": "New notification",
+          "title_field": {
+            "label": "Title",
+            "placeholder": "Title shown at the top of the message"
+          },
+          "body": {
+            "label": "Message",
+            "description": "Markdown supported. Write it as the final message.",
+            "placeholder": "The notification content…"
+          },
+          "link_label": {
+            "label": "Button label (optional)",
+            "placeholder": "Learn more"
+          },
+          "link_url": {
+            "label": "Button link (optional)",
+            "description": "Must start with https://"
+          }
+        },
+        "confirm": {
+          "title": "Confirm the send",
+          "description": "The message will be sent to `{count}` {kind} (segment `{segment}`).",
+          "large": "Mass send: it cannot be cancelled once started.",
+          "button": "Send"
+        },
+        "progress": {
+          "title": "Sending",
+          "description": "`{done}` / `{total}` processed — `{sent}` sent, `{failed}` failed."
+        },
+        "done": {
+          "title": "Send finished",
+          "description": "`{total}` recipients — `{sent}` sent, `{failed}` failed."
+        },
+        "user_done": {
+          "title": "Notification sent",
+          "description": "The message was sent to **{user}**."
+        },
+        "guild_done": {
+          "title": "Notification sent",
+          "description": "The message was posted on **{guild}** (`{count}` delivery/deliveries)."
+        },
+        "errors": {
+          "bad_id": {
+            "title": "Invalid id",
+            "description": "Provide a valid Discord id (digits only)."
+          },
+          "unknown_user": {
+            "title": "User not found",
+            "description": "No user matches `{id}`."
+          },
+          "unknown_guild": {
+            "title": "Server not found",
+            "description": "Moddy is not on server `{id}`."
+          },
+          "empty_segment": {
+            "title": "Empty segment",
+            "description": "No recipient matches the segment `{segment}`."
+          },
+          "no_channel": {
+            "title": "Cannot send",
+            "description": "No usable channel on **{guild}**."
+          },
+          "dms_closed": {
+            "title": "DMs closed",
+            "description": "**{user}** does not accept direct messages."
+          },
+          "failed": {
+            "title": "Cannot send",
+            "description": "The message could not be sent to **{user}**."
+          }
+        }
+      }
     }
   },
   "transcription": {
@@ -3876,6 +3988,178 @@
       "title": "Your appeal was refused",
       "description": "Our team has reviewed your appeal and refused it. The **{level}** sanction stands, and the measures that were on hold are scheduled again.",
       "deadline": "They now take effect on **{date}** (**{rel}**)."
+    }
+  },
+  "notifications": {
+    "services": {
+      "moddy": "Moddy",
+      "welcome_dm": "Welcome message",
+      "moderation": "Moderation",
+      "automod_ai": "Automod AI",
+      "appeals": "Appeals",
+      "altguard": "AltGuard",
+      "tickets": "Tickets",
+      "reminder": "Reminders",
+      "interserver": "Inter-server",
+      "token_detector": "Token detector",
+      "global_sanctions": "Global sanctions",
+      "expirations": "Sanction expiry"
+    },
+    "attribution": {
+      "unknown_guild": "Unknown server"
+    },
+    "source": {
+      "title": "Where this notification comes from",
+      "guild_label": "Server:",
+      "service_label": "Service:",
+      "id_label": "ID:",
+      "members": "Members:",
+      "created": "Created:",
+      "verified": "Verified server",
+      "official": "Official Moddy server",
+      "open_server": "Open the server",
+      "uuid_label": "Notification:",
+      "sent_at": "Sent:",
+      "support_hint": "Something wrong with this notification? [Contact support]({url})",
+      "not_reportable": {
+        "moddy_authored": "This message is written by Moddy: there is nothing to report.",
+        "official_guild": "This message comes from an official Moddy server: it cannot be reported."
+      }
+    },
+    "service": {
+      "title": "Where this notification comes from",
+      "description": "This message was sent to you by a Moddy service."
+    },
+    "errors": {
+      "unknown": {
+        "title": "Notification not found",
+        "description": "Notification `{uuid}` no longer exists in our records."
+      },
+      "unknown_report": {
+        "description": "Report `{uuid}` no longer exists."
+      }
+    },
+    "report": {
+      "modal": {
+        "title": "Report this notification",
+        "recap": "**From:** {source}\n**Notification:** `{uuid}`\n\n> {excerpt}",
+        "reason": {
+          "label": "Why are you reporting this message?",
+          "description": "Describe the problem as precisely as you can.",
+          "placeholder": "This message contains…"
+        },
+        "confirm": {
+          "label": "Confirmation",
+          "option": "I confirm this report is legitimate"
+        }
+      },
+      "sent": {
+        "title": "Report sent",
+        "description": "The Moddy team will review this message. Thank you for your help."
+      },
+      "already": {
+        "title": "Report already sent",
+        "description": "You have already reported this notification."
+      },
+      "status_label": "Status:",
+      "status": {
+        "pending": "Pending",
+        "claimed": "Under review",
+        "accepted": "Accepted",
+        "refused": "Declined"
+      },
+      "reference": "Report:",
+      "decision_note": "Team note:",
+      "errors": {
+        "not_recipient": {
+          "title": "Cannot report",
+          "description": "Only the recipient of this notification can report it."
+        },
+        "not_reportable": {
+          "title": "Cannot report"
+        },
+        "failed": {
+          "title": "Cannot report",
+          "description": "The report could not be saved. Please try again in a moment."
+        }
+      },
+      "outcome": {
+        "accepted": {
+          "title": "Report accepted",
+          "description": "Your report was reviewed and upheld by the Moddy team. The necessary action has been taken."
+        },
+        "refused": {
+          "title": "Report declined",
+          "description": "Your report was reviewed but was not upheld by the Moddy team."
+        },
+        "footer": "Report {report}"
+      }
+    },
+    "review": {
+      "title": "Notification report",
+      "reporter": "Reported by",
+      "source": "Origin",
+      "service": "Service",
+      "recipient": "Recipient",
+      "sent_at": "Sent",
+      "occurrences": "Times this content was sent",
+      "reason": "Report reason",
+      "content": "Message sent",
+      "note": "Note",
+      "claimed_by": "Claimed by",
+      "decided_by": "Decided by",
+      "buttons": {
+        "claim": "Claim",
+        "claimed": "Claimed",
+        "preview": "See the message",
+        "accept": "Accept",
+        "refuse": "Decline"
+      },
+      "no_permission": {
+        "title": "Access denied",
+        "description": "You do not have permission to review notification reports."
+      },
+      "own_report": {
+        "title": "Not allowed",
+        "description": "You cannot review your own report."
+      },
+      "already_decided": {
+        "title": "Report already handled",
+        "description": "A decision has already been made on this report."
+      },
+      "decision": {
+        "accept": {
+          "title": "Accept the report",
+          "recap": "The report will be marked **accepted** and the reporter will be told.",
+          "done": {
+            "title": "Report accepted",
+            "description": "The decision was recorded and the reporter was notified."
+          }
+        },
+        "refuse": {
+          "title": "Decline the report",
+          "recap": "The report will be marked **declined** and the reporter will be told.",
+          "done": {
+            "title": "Report declined",
+            "description": "The decision was recorded and the reporter was notified."
+          }
+        },
+        "note": {
+          "label": "Decision note",
+          "description": "Sent to the reporter and kept in the logs.",
+          "placeholder": "Optional: explain the decision."
+        }
+      }
+    },
+    "log": {
+      "title": {
+        "created": "New report",
+        "claimed": "Report claimed",
+        "accepted": "Report accepted",
+        "refused": "Report declined"
+      },
+      "actor": "Staff",
+      "jump": "Open the report"
     }
   }
 }

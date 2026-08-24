@@ -531,14 +531,34 @@ class AppealService:
             await self._dm_outcome(int(appeal["subject_id"]), appeal, decided, dm_locale)
 
     async def _dm_outcome(self, user_id: int, appeal: dict, decided: dict, locale: str):
+        from notifications.models import NotificationContent, NotificationSource
         from utils.components_v2 import create_info_message
+        from utils.emojis import BALANCE
         try:
             user = self.bot.get_user(user_id) or await self.bot.fetch_user(user_id)
             key = f"modules.automod_ai.appeal.status.{decided['status']}"
             body = t("modules.automod_ai.appeal.dm_outcome", locale=locale,
                      status=t(key, locale=locale), guild=self._guild_name(appeal))
-            await user.send(view=create_info_message(
-                t("modules.automod_ai.appeal.dm_outcome_title", locale=locale), body))
+            # Through the notification system: Moddy's own wording about an
+            # appeal on a server, so it is attributed but not reportable.
+            guild_id = appeal.get("guild_id")
+            await self.bot.notifications.send_dm(
+                user,
+                content=NotificationContent(
+                    title=t("modules.automod_ai.appeal.dm_outcome_title", locale=locale),
+                    body=t("modules.automod_ai.appeal.dm_outcome", locale=locale,
+                           status="{status}", guild="{guild}"),
+                    icon=BALANCE,
+                    template_id=f"appeals.outcome.{decided['status']}",
+                ),
+                source=(NotificationSource.service_guild("appeals", int(guild_id))
+                        if guild_id else NotificationSource.service("appeals")),
+                variables={"status": t(key, locale=locale),
+                           "guild": self._guild_name(appeal)},
+                view=create_info_message(
+                    t("modules.automod_ai.appeal.dm_outcome_title", locale=locale), body),
+                locale=locale,
+            )
         except (discord.Forbidden, discord.HTTPException):
             pass
 

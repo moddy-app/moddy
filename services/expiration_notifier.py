@@ -138,11 +138,34 @@ class ExpirationNotifier:
             expired_at=row.get("expires_at"),
             invite_url=invite_url,
         )
+        from notifications.models import NotificationContent, NotificationSource
+        from utils.emojis import TIME
+        from utils.i18n import t
+
         try:
-            await user.send(view=view)
-            return True
-        except discord.Forbidden:
-            return False  # DMs closed — the case timeline still records it
+            # Through the notification system: Moddy telling the subject a
+            # server sanction is over — attributed to the server, not reportable.
+            result = await self.bot.notifications.send_dm(
+                user,
+                content=NotificationContent(
+                    title=t("commands.moderation.expiry_dm.title",
+                            locale=self.guild_locale(guild)),
+                    body=t("commands.moderation.expiry_dm.body",
+                           locale=self.guild_locale(guild)),
+                    icon=TIME,
+                    sections=[{"title": t("commands.moderation.expiry_dm.case_id",
+                                          locale=self.guild_locale(guild)),
+                               "body": "`{reference}`"}],
+                    footer="{server}",
+                    template_id=f"expirations.{row.get('action')}",
+                ),
+                source=NotificationSource.service_guild("expirations", guild.id),
+                variables={"server": guild.name,
+                           "reference": str(row.get("reference") or "—")},
+                view=view,
+                locale=self.guild_locale(guild),
+            )
+            return result.delivered
         except discord.HTTPException as exc:
             logger.warning("Expiration DM to %s failed: %s", subject_id, exc)
             return False

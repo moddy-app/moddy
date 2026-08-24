@@ -511,7 +511,12 @@ Registered persistent views live in
 the `/moddy` views, `/config` and every `modules/configs/*` panel, social
 notifications, `/cases` & `/mycases`, automod appeals and shadow-mode
 annotations, reminders, preferences, saved messages, and the staff
-help/server-list/manager panels.
+help/server-list/manager panels, and the notification attribution + abuse
+report buttons (`NotificationsPersistence`, see
+[NOTIFICATIONS.md](NOTIFICATIONS.md)) — a DM sent today must still be
+reportable after next week's deploy, so every one of its buttons carries the
+notification (or report) uuid in its custom_id and rebuilds from the database
+on each click.
 
 **`staff/commands/manage/staff.py::StaffManagerPanel`** grants and revokes
 staff roles/permissions. Making it persistent required changing its

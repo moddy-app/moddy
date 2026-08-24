@@ -100,6 +100,22 @@ AltGuard — sans lui, le bouton de vérification répond « service indisponibl
 Les canaux Redis `altguard:verdict` / `altguard:membership` passent par le Redis
 déjà configuré (`REDIS_URL`), rien à ajouter — voir [ALTGUARD.md](ALTGUARD.md)
 
+## Notifications centralisées
+
+Les deux salons vivent dans le serveur de l'équipe Moddy. Défauts dans
+`config.py` — voir [NOTIFICATIONS.md](NOTIFICATIONS.md).
+
+### MODDY_NOTIF_REPORT_CHANNEL_ID
+**Valeur :** id de salon (défaut : `1541231528754028594`)
+**Description :** Salon où sont postés les signalements d'abus déposés depuis le
+bouton drapeau d'une notification, avec le panneau de revue (Claim / Voir le
+message / Accepter / Refuser)
+
+### MODDY_NOTIF_REPORT_LOG_CHANNEL_ID
+**Valeur :** id de salon (défaut : `1541233478522241034`)
+**Description :** Salon où chaque étape du traitement d'un signalement (créé,
+pris en charge, accepté, refusé) est journalisée
+
 ## Checklist Railway
 
 - [ ] `DISCORD_TOKEN`
@@ -114,6 +130,8 @@ déjà configuré (`REDIS_URL`), rien à ajouter — voir [ALTGUARD.md](ALTGUARD
 - [ ] `BOT_STATUS` (optionnel)
 - [ ] `ALTGUARD_BOT_TOKEN` (optionnel, requis pour le module AltGuard)
 - [ ] `ALTGUARD_API_URL` (optionnel, défaut `https://verify.moddy.app`)
+- [ ] `MODDY_NOTIF_REPORT_CHANNEL_ID` (optionnel, défaut en dur dans `config.py`)
+- [ ] `MODDY_NOTIF_REPORT_LOG_CHANNEL_ID` (optionnel, défaut en dur dans `config.py`)
 
 ## Dépannage
 
@@ -131,3 +149,4 @@ déjà configuré (`REDIS_URL`), rien à ajouter — voir [ALTGUARD.md](ALTGUARD
 ## Documentation connexe
 
 - [BACKEND-INTEGRATION.md](BACKEND-INTEGRATION.md) — Architecture complète bot ↔ backend
+- [NOTIFICATIONS.md](NOTIFICATIONS.md) — Système de notifications centralisées

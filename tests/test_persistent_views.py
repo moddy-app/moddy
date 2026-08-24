@@ -128,6 +128,10 @@ def _dynamic_item_cases():
         StaffPanelRolesSelect, StaffPanelScopeSelect, StaffPanelPermsSelect, StaffPanelActionButton,
     )
     from utils.ticket_views import TicketOpenButton, TicketOpenSelect
+    from utils.notification_views import (
+        NotificationServiceButton, NotificationSourceButton, NotificationReportButton,
+        NotifReviewClaimButton, NotifReviewPreviewButton, NotifReviewDecisionButton,
+    )
     from modules.configs.tickets_panel_config import (
         TicketPanelButton, TicketPanelSelect, TicketPanelChannelSelect,
     )
@@ -175,6 +179,14 @@ def _dynamic_item_cases():
         (TicketPermRoleSelect, ("p_ab12cd", "c_ab12cd")),
         (TicketPermSelect, ("p_ab12cd", "c_ab12cd", _SNOWFLAKE)),
         (TicketPermButton, ("clear", "p_ab12cd", "c_ab12cd", _SNOWFLAKE)),
+        # Notifications — the attribution row carried by every DM, keyed by the
+        # notification uuid, and the staff review panel, keyed by the report's.
+        (NotificationServiceButton, (_U,)),
+        (NotificationSourceButton, (_U,)),
+        (NotificationReportButton, (_U,)),
+        (NotifReviewClaimButton, (_U,)),
+        (NotifReviewPreviewButton, (_U,)),
+        (NotifReviewDecisionButton, ("accept", _U)),
     ]
 
 
