@@ -3074,7 +3074,7 @@
       },
       "participants": {
         "title": "Ticket participants",
-        "description": "Everyone selected here has access to the ticket, on top of its opener and the staff roles. Unselect someone to remove them.",
+        "description": "Pick who to add, remove, or set as the full list — on top of the ticket's opener and the staff roles.",
         "members_title": "Members",
         "members_description": "Added one by one",
         "members_placeholder": "Select the members",
@@ -3086,7 +3086,14 @@
         "removed_title": "Removed",
         "removed_description": "{target} no longer has access to this ticket.",
         "saved_title": "Participants updated",
-        "saved_description": "Now in this ticket, on top of its opener and the staff: {participants}"
+        "saved_description": "Now in this ticket, on top of its opener and the staff: {participants}",
+        "current": "Currently in this ticket:",
+        "nobody": "nobody yet",
+        "mode_label": "What to do with your selection",
+        "mode_hint": "Add is the default and never removes anyone",
+        "mode_add": "Add them to the ticket",
+        "mode_remove": "Remove them from the ticket",
+        "mode_replace": "Replace the whole list with them"
       },
       "staff_thread": {
         "name": "staff-{number}",

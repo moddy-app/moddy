@@ -1023,15 +1023,23 @@ def build_claim_notice(actor: discord.abc.User, *,
 class TicketParticipantsModal(BaseModal):
     """Who is in this ticket, on top of its opener and the staff roles.
 
-    A modal rather than a panel of selects: both pickers open **pre-filled with
-    the current participants**, and one submit applies the whole picture at
-    once. That is what makes unselecting the obvious way to remove somebody —
-    the form shows who is in, not a queue of additions.
+    **The current participants are printed as text, and the form says what it
+    will do with the selection.** Both pickers still carry ``default_values``,
+    but nothing here depends on them: Discord does not render pre-selected
+    values for a select inside a modal, so a form that silently meant "replace
+    everyone with what you picked" would wipe the list of a staffer who only
+    wanted to add one person. The mode is therefore explicit, and it defaults
+    to **Add** — the answer that can never destroy anything.
 
     Modals are the one surface that is deliberately not persistent (see
     docs/PERSISTENT_VIEWS.md "Deliberate exclusions"): they are answered in the
     moment, and Discord closes them on a restart anyway.
     """
+
+    MODE_ADD = "add"
+    MODE_REMOVE = "remove"
+    MODE_REPLACE = "replace"
+    MODES = (MODE_ADD, MODE_REMOVE, MODE_REPLACE)
 
     def __init__(self, locale: str, ticket: Dict[str, Any], callback_func):
         super().__init__(
@@ -1040,8 +1048,33 @@ class TicketParticipantsModal(BaseModal):
         )
         self.callback_func = callback_func
 
+        # The one thing that always renders — and the only way the staffer can
+        # see who is in before deciding what to do about it.
+        listed = [f"<@{uid}>" for uid in ticket.get('participants', [])]
+        listed += [f"<@&{rid}>" for rid in ticket.get('participant_roles', [])]
         self.add_item(ui.TextDisplay(
-            t('modules.tickets.participants.description', locale=locale)))
+            t('modules.tickets.participants.description', locale=locale) + "\n"
+            + t('modules.tickets.participants.current', locale=locale) + " "
+            + (", ".join(listed)
+               or t('modules.tickets.participants.nobody', locale=locale))))
+
+        self.mode_select = ui.Select(
+            options=[
+                discord.SelectOption(
+                    label=t(f'modules.tickets.participants.mode_{mode}',
+                            locale=locale)[:100],
+                    value=mode,
+                    default=mode == self.MODE_ADD,
+                ) for mode in self.MODES
+            ],
+            min_values=1, max_values=1,
+        )
+        self.add_item(ui.Label(
+            text=t('modules.tickets.participants.mode_label', locale=locale)[:45],
+            description=t('modules.tickets.participants.mode_hint',
+                          locale=locale)[:100],
+            component=self.mode_select,
+        ))
 
         self.user_select = ui.UserSelect(
             placeholder=t('modules.tickets.participants.members_placeholder',
@@ -1074,8 +1107,10 @@ class TicketParticipantsModal(BaseModal):
         ))
 
     async def on_submit(self, interaction: discord.Interaction):
+        values = self.mode_select.values
         await self.callback_func(
             interaction,
+            values[0] if values else self.MODE_ADD,
             [target.id for target in self.user_select.values],
             [role.id for role in self.role_select.values],
         )
@@ -1097,9 +1132,19 @@ async def open_participants_modal(interaction: discord.Interaction,
     await interaction.response.send_modal(modal)
 
 
-async def _apply_participants(interaction: discord.Interaction,
+def _merge_participants(current: List[int], selected: List[int],
+                        mode: str) -> List[int]:
+    """Apply one of the three modes to a participant list, order preserved."""
+    if mode == TicketParticipantsModal.MODE_REPLACE:
+        return list(dict.fromkeys(selected))
+    if mode == TicketParticipantsModal.MODE_REMOVE:
+        return [item for item in current if item not in selected]
+    return list(dict.fromkeys([*current, *selected]))
+
+
+async def _apply_participants(interaction: discord.Interaction, mode: str,
                               users: List[int], roles: List[int]) -> None:
-    """Replace the ticket's manual participants with what the form returned."""
+    """Add, remove or replace the ticket's manual participants."""
     resolved = await _resolve(interaction)
     if not resolved:
         return
@@ -1114,8 +1159,11 @@ async def _apply_participants(interaction: discord.Interaction,
                          locale)
         return
 
+    users = _merge_participants(list(ticket.get('participants', [])), users, mode)
+    roles = _merge_participants(list(ticket.get('participant_roles', [])), roles, mode)
+
     # The opener is in the ticket by definition; keeping them out of the manual
-    # list stops "remove the owner" from being one click.
+    # list stops "remove the owner" from being one submit.
     users = [uid for uid in users if uid != ticket['owner_id']]
 
     await interaction.response.defer(ephemeral=True, thinking=True)

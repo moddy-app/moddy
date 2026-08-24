@@ -3073,7 +3073,7 @@
       },
       "participants": {
         "title": "Participants du ticket",
-        "description": "Toutes les personnes sélectionnées ici ont accès au ticket, en plus de son auteur et des rôles du staff. Désélectionnez quelqu'un pour le retirer.",
+        "description": "Choisissez qui ajouter, retirer, ou définir comme liste complète — en plus de l'auteur du ticket et des rôles du staff.",
         "members_title": "Membres",
         "members_description": "Ajoutés un par un",
         "members_placeholder": "Sélectionnez les membres",
@@ -3085,7 +3085,14 @@
         "removed_title": "Retiré",
         "removed_description": "{target} n'a plus accès à ce ticket.",
         "saved_title": "Participants mis à jour",
-        "saved_description": "Dans ce ticket, en plus de son auteur et du staff : {participants}"
+        "saved_description": "Dans ce ticket, en plus de son auteur et du staff : {participants}",
+        "current": "Actuellement dans ce ticket :",
+        "nobody": "personne pour l'instant",
+        "mode_label": "Que faire de votre sélection",
+        "mode_hint": "Ajouter est le choix par défaut et ne retire jamais personne",
+        "mode_add": "Les ajouter au ticket",
+        "mode_remove": "Les retirer du ticket",
+        "mode_replace": "Remplacer toute la liste par eux"
       },
       "staff_thread": {
         "name": "staff-{number}",

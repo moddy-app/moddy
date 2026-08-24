@@ -542,6 +542,36 @@ class TestStatusDot:
         assert strip_status_prefix("ticket-0003") == "ticket-0003"
 
 
+class TestParticipantMerge:
+    """The three modes of the participants form."""
+
+    def _merge(self, current, selected, mode):
+        from utils.ticket_views import _merge_participants
+
+        return _merge_participants(current, selected, mode)
+
+    def test_add_never_removes_anyone(self):
+        assert self._merge([1, 2], [3], "add") == [1, 2, 3]
+
+    def test_add_is_idempotent(self):
+        assert self._merge([1, 2], [2, 3], "add") == [1, 2, 3]
+
+    def test_remove_takes_only_the_selection_out(self):
+        assert self._merge([1, 2, 3], [2], "remove") == [1, 3]
+
+    def test_removing_someone_who_is_not_in_changes_nothing(self):
+        assert self._merge([1, 2], [9], "remove") == [1, 2]
+
+    def test_replace_is_the_only_destructive_mode(self):
+        assert self._merge([1, 2, 3], [9], "replace") == [9]
+        assert self._merge([1, 2, 3], [], "replace") == []
+
+    def test_an_empty_selection_is_a_no_op_in_the_safe_modes(self):
+        """The failure this guards: the pickers come up empty in a modal."""
+        assert self._merge([1, 2], [], "add") == [1, 2]
+        assert self._merge([1, 2], [], "remove") == [1, 2]
+
+
 class TestMessageBlocks:
     def test_a_dashes_line_cuts_the_message(self):
         assert split_message_blocks("Top\n---\nBottom") == ["Top", "Bottom"]
@@ -929,14 +959,28 @@ class TestTicketChannelViews:
         view = build_escalation_notice(self.ticket, self.actor, "abuse", "fr")
         assert self._ids(view) == ["moddy:tickets:escalated:cancel"]
 
-    def test_the_participants_form_opens_on_who_is_already_in(self):
-        """A picker showing the current members reads as "this is who is in",
-        which is what makes unselecting the obvious way to remove someone."""
+    def test_the_participants_form_shows_who_is_already_in(self):
+        """Discord does not render pre-selected values inside a modal, so the
+        current list is printed as text — the one thing that always shows."""
         from utils.ticket_views import TicketParticipantsModal
 
         modal = TicketParticipantsModal("fr", self.ticket, _noop)
+        rendered = "\n".join(
+            getattr(child, 'content', '') or '' for child in modal.children)
+        assert "<@8>" in rendered and "<@&10>" in rendered
+
+        # Still sent, so the form pre-fills the day Discord honours it.
         assert [d.id for d in modal.user_select.default_values] == [8]
         assert [d.id for d in modal.role_select.default_values] == [10]
+
+    def test_the_participants_form_defaults_to_the_harmless_mode(self):
+        """The pickers come up empty, so "replace" as a silent default would
+        wipe the list of a staffer who only wanted to add one person."""
+        from utils.ticket_views import TicketParticipantsModal
+
+        modal = TicketParticipantsModal("fr", self.ticket, _noop)
+        selected = [o.value for o in modal.mode_select.options if o.default]
+        assert selected == [TicketParticipantsModal.MODE_ADD]
 
     def test_the_closing_dm_has_nothing_to_click(self):
         from types import SimpleNamespace
@@ -990,6 +1034,8 @@ _INTERPOLATED_KEYS = (
     + [f"modules.tickets.messages.ph_{p.strip('{}')}" for p in PLACEHOLDERS]
     + [f"modules.tickets.participants.{k}_{s}" for k in ("added", "removed")
        for s in ("title", "description")]
+    + [f"modules.tickets.participants.mode_{m}" for m in
+       ("add", "remove", "replace")]
 )
 
 
