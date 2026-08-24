@@ -641,7 +641,7 @@ class TicketService:
             raise TicketError('modules.tickets.errors.already_claimed',
                               user=f"<@{holder}>")
 
-        await self.bot.db.set_claim(channel.id, actor.id)
+        await self.bot.db.set_ticket_claim(channel.id, actor.id)
         ticket = await self.get_ticket(channel.id) or ticket
         await self.sync_permissions(channel, category, ticket)
         await self.sync_status_prefix(channel, category, ticket)
@@ -688,7 +688,7 @@ class TicketService:
         if holder == actor.id and self.claim_permission(ticket) not in granted:
             raise TicketError('modules.tickets.errors.missing_permission')
 
-        await self.bot.db.set_claim(channel.id, None)
+        await self.bot.db.set_ticket_claim(channel.id, None)
         ticket = await self.get_ticket(channel.id) or ticket
         await self.sync_permissions(channel, category, ticket)
         await self.sync_status_prefix(channel, category, ticket)

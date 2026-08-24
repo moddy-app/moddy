@@ -3074,7 +3074,7 @@
       },
       "participants": {
         "title": "Teilnehmer des Tickets",
-        "description": "Alle hier ausgewählten Personen haben Zugriff auf das Ticket, zusätzlich zum Ersteller und den Team-Rollen. Wähle jemanden ab, um ihn zu entfernen.",
+        "description": "Wähle, wen du hinzufügen, entfernen oder als vollständige Liste setzen willst — zusätzlich zum Ersteller des Tickets und den Team-Rollen.",
         "members_title": "Mitglieder",
         "members_description": "Einzeln hinzugefügt",
         "members_placeholder": "Wähle die Mitglieder",
@@ -3086,7 +3086,14 @@
         "removed_title": "Entfernt",
         "removed_description": "{target} hat keinen Zugriff mehr auf dieses Ticket.",
         "saved_title": "Teilnehmer aktualisiert",
-        "saved_description": "In diesem Ticket, zusätzlich zum Ersteller und zum Team: {participants}"
+        "saved_description": "In diesem Ticket, zusätzlich zum Ersteller und zum Team: {participants}",
+        "current": "Aktuell in diesem Ticket:",
+        "nobody": "noch niemand",
+        "mode_label": "Was mit deiner Auswahl geschehen soll",
+        "mode_hint": "Hinzufügen ist die Vorgabe und entfernt nie jemanden",
+        "mode_add": "Sie zum Ticket hinzufügen",
+        "mode_remove": "Sie aus dem Ticket entfernen",
+        "mode_replace": "Die ganze Liste durch sie ersetzen"
       },
       "staff_thread": {
         "name": "staff-{number}",
