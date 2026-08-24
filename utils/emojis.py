@@ -96,8 +96,8 @@ LINK = "<:link:1521517863607734385>"       # appeal "invite" button
 PENDING = "<:pending:1521282587962900611>"  # appeal "pending" status
 ROCKET = "<a:Rocket:1535783839870353499>"  # bot customization bio attribution
 ALTGUARD = "<a:DisguisedFace:1539405255576657981>"  # AltGuard verification panel message
-QUESTIONS = "<:questions:1540890130854838272>"  # ticket claim button
-THREADS = "<:threads:1541216661699436675>"      # private staff thread
+CLAIM = "<:claim:1541239118888181770>"      # take a ticket in charge
+THREADS = "<:threads:1541216661699436675>"  # private staff thread
 
 # =============================================================================
 # TICKETS MODULE
@@ -112,7 +112,7 @@ TICKET = "<:ticket:1541216667420594257>"   # module icon + ticket cards
 TICKET_STAFF_THREAD = THREADS              # private staff thread
 TICKET_CLOSE = UNDONE                      # close a ticket (a plain cross)
 TICKET_PARTICIPANTS = MANAGE_USER          # manage who is in the ticket
-TICKET_CLAIM = QUESTIONS                   # claim / release a ticket
+TICKET_CLAIM = CLAIM                       # claim / release a ticket
 TICKET_PANEL = NOTE             # a ticket panel message          (placeholder)
 TICKET_CATEGORY = FOLDER        # a ticket category               (placeholder)
 TICKET_CLOSE_REQUEST = HAND     # ask the staff to close          (placeholder)
@@ -262,7 +262,7 @@ EMOJIS = {
     "download": DOWNLOAD,
     "emoji": EMOJI,
     "manage_user": MANAGE_USER,
-    "questions": QUESTIONS,
+    "claim": CLAIM,
     "threads": THREADS,
     "ticket": TICKET,
     "banner": BANNER,
