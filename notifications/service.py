@@ -36,7 +36,9 @@ from notifications.models import (
     DeliveryStatus, NotificationContent, NotificationSource,
     Platform, RecipientType, ReportStatus,
 )
-from notifications.render import build_content_view, resolve_source_context
+from notifications.render import (
+    build_attribution_line, build_content_view, resolve_source_context,
+)
 
 logger = logging.getLogger("moddy.notifications")
 
@@ -243,6 +245,7 @@ class NotificationService:
         platforms: Sequence[Platform] = (Platform.DISCORD,),
         locale: Optional[str] = None,
         batch_id: Optional[Any] = None,
+        attribution: bool = True,
     ) -> DeliveryResult:
         """Send one notification as a DM.
 
@@ -257,7 +260,8 @@ class NotificationService:
             recipient_id=getattr(user, "id", None),
             variables=variables, platforms=platforms, locale=locale, batch_id=batch_id,
         )
-        payload = await self._build_view(record, content, source, variables, view, locale)
+        payload = await self._build_view(record, content, source, variables, view,
+                                         locale, attribution)
         return await self._deliver(
             destination=user, record=record, view=payload,
             files=files, allowed_mentions=allowed_mentions,
@@ -276,6 +280,7 @@ class NotificationService:
         platforms: Sequence[Platform] = (Platform.DISCORD,),
         locale: Optional[str] = None,
         batch_id: Optional[Any] = None,
+        attribution: bool = True,
     ) -> DeliveryResult:
         """Send one notification into a server channel (a server-wide notice)."""
         record = await self.record(
@@ -284,29 +289,44 @@ class NotificationService:
             recipient_id=guild_id or getattr(getattr(channel, "guild", None), "id", None),
             variables=variables, platforms=platforms, locale=locale, batch_id=batch_id,
         )
-        payload = await self._build_view(record, content, source, variables, view, locale)
+        payload = await self._build_view(record, content, source, variables, view,
+                                         locale, attribution)
         return await self._deliver(
             destination=channel, record=record, view=payload,
             allowed_mentions=allowed_mentions,
         )
 
-    async def _build_view(self, record, content, source, variables, view, locale):
-        """Render (or take) the view and bolt the attribution row onto it."""
+    async def _build_view(self, record, content, source, variables, view, locale,
+                          attribution: bool = True):
+        """Render (or take) the view and close it with the attribution line.
+
+        The line is appended **inside the last container** of the view — at the
+        bottom of the card the recipient reads, not as a separate component —
+        so a welcome DM and a sanction DM end the same way.
+        """
         payload = view if view is not None else build_content_view(
             content, variables, locale=locale or "en-US")
 
-        if not source.has_attribution:
-            return payload  # official notices carry no attribution at all
-        if not record:
-            # No uuid means no working custom_id: better an unattributed DM
-            # than dead buttons.
-            logger.warning("Notification not recorded — sending without attribution row")
+        if not attribution or not source.has_attribution:
+            # Official notices say nothing about their origin: they ARE Moddy.
+            # `attribution=False` is for the callers whose card already prints
+            # its own "sent by" line (sanction DMs, expiry DMs).
             return payload
 
-        from utils.notification_views import attach_attribution
-        ctx = await self.source_context(record, locale=locale or record.get("locale") or "en-US")
-        return attach_attribution(payload, str(record["id"]), ctx,
-                                  locale=locale or "en-US")
+        # The line is plain text built from the source itself, so a failed
+        # database write costs the record, never the attribution: the recipient
+        # is still told which server wrote to them.
+        if record:
+            ctx = await self.source_context(
+                record, locale=locale or record.get("locale") or "en-US")
+        else:
+            logger.warning("Notification not recorded — attributing from the source")
+            ctx = await resolve_source_context(self.bot, source, locale=locale or "en-US")
+
+        line = build_attribution_line(ctx, locale=locale or "en-US")
+        if line:
+            _append_footer_line(payload, line)
+        return payload
 
     async def _deliver(self, *, destination, record, view, files=None,
                        allowed_mentions=None) -> DeliveryResult:
@@ -672,6 +692,29 @@ class NotificationService:
         """Staff-facing panels are rendered in one language, like the appeal
         review panels (``services/appeal_service._PANEL_LOCALE``)."""
         return STAFF_PANEL_LOCALE
+
+
+def _append_footer_line(view: discord.ui.LayoutView, line: str) -> None:
+    """Add ``line`` at the bottom of the view's last container.
+
+    Inside the container rather than under it: a `-#` line floating as its own
+    top-level component reads as a separate message. Falls back to a top-level
+    text block when the view has no container, or when the container is already
+    at Discord's child limit.
+    """
+    for child in reversed(list(view.children)):
+        if isinstance(child, discord.ui.Container):
+            try:
+                child.add_item(discord.ui.TextDisplay(line))
+                return
+            except Exception as exc:  # noqa: BLE001 — full container, keep the line
+                logger.debug("Could not append the attribution line inside the "
+                             "container (%s), falling back to top level", exc)
+                break
+    try:
+        view.add_item(discord.ui.TextDisplay(line))
+    except Exception as exc:  # noqa: BLE001 — never lose the message over its footer
+        logger.warning("Could not append the attribution line: %s", exc)
 
 
 async def _maybe_await(value):

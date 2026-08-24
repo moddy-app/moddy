@@ -193,6 +193,8 @@ async def _send_sanction_dm(
             source=NotificationSource.guild(guild_id, actor_id=mod_id),
             view=dm_view,
             locale=dm_locale,
+            # The card already ends with its own `sent_by` line.
+            attribution=False,
         )
     except discord.Forbidden:
         pass  # DMs disabled

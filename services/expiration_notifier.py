@@ -163,6 +163,8 @@ class ExpirationNotifier:
                            "reference": str(row.get("reference") or "—")},
                 view=view,
                 locale=locale,
+                # build_expiration_dm_view already ends with `sent_by`.
+                attribution=False,
             )
             return result.delivered
         except discord.HTTPException as exc:

@@ -109,7 +109,7 @@ moddy/
 │
 ├── notifications/             # Centralized notifications (EVERY DM goes through it)
 │   ├── models.py              #   Uniform payload + source + service registry + hashing
-│   ├── render.py              #   Payload → Components V2 + attribution context
+│   ├── render.py              #   Payload → Components V2 + `sent by` attribution line
 │   └── service.py             #   NotificationService (bot.notifications)
 │
 ├── automod/                   # Automod AI DETECTION pipeline (decides only; no side effects)
@@ -183,7 +183,7 @@ moddy/
 │   ├── altguard_views.py      #   AltGuard panel (persistent), consent Modal V2, link + log cards
 │   ├── automod_shadow_views.py #  Automod shadow-mode (dry_run) SIMULATION card + annotation buttons (persistent)
 │   ├── automod_render.py      #   Shared automod card helpers (barème breakdown, sanction name/accent)
-│   ├── notification_views.py  #   Notification attribution row, report Modal V2, staff review panels
+│   ├── notification_views.py  #   Notification abuse-report review panels (staff side)
 │   ├── ticket_views.py        #   Ticket panel, ticket message, cards, claim, participants modal
 │   ├── transcription_views.py #   Voice transcription cards + persistent Transcribe button
 │   ├── appeal_views.py        #   Automod appeal UI (DM buttons + reviewer panels, persistent)
@@ -454,6 +454,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/PREMIUM.md](docs/PREMIUM.md) | **Premium gating** — how to check whether a server (or a user) is premium |
 | [docs/STAFF_SYSTEM.md](docs/STAFF_SYSTEM.md) | Staff/dev commands, permissions, roles |
 | [docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md) | **Centralized notifications** — every DM/mail/dashboard message, attribution buttons, abuse reports, `/com send`, `/mod notif` |
+| [docs/NOTIFICATIONS_INTEGRATION.md](docs/NOTIFICATIONS_INTEGRATION.md) | Notifications ↔ backend contract — tables the backend reads/owns, exact payload rendering + placeholder algorithm, mail/dashboard delivery loop |
 | [docs/LOGS.md](docs/LOGS.md) | **Advanced server logs** — 163 events, registry, rendering, webhook delivery, stored config & dashboard contract |
 | [docs/MODERATION_CASES.md](docs/MODERATION_CASES.md) | Moderation cases/sanctions, the case service & sources, auto-sync |
 | [docs/GLOBAL_SANCTIONS.md](docs/GLOBAL_SANCTIONS.md) | **Global sanctions** — Moddy-team warn / limited / suspended, on users *and* servers |

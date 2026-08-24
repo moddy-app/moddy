@@ -586,9 +586,10 @@ See → [NOTIFICATIONS.md](NOTIFICATIONS.md).
 
 ### 14. Table `notifications`
 
-One row per **(message, recipient)**. The `id` is the uuid a recipient reads at
-the bottom of a Moddy DM and quotes to support, and the uuid the attribution and
-report buttons carry in their `custom_id`.
+One row per **(message, recipient)**. The `id` is the notification's public
+reference: what a staff member looks up with `/mod notif`, and what an abuse
+report points at. It is not surfaced to the recipient in Discord (the DM only
+carries a `sent by` line), but it is safe to display — see NOTIFICATIONS.md.
 
 A broadcast is exploded into one row per recipient, all sharing the same
 `batch_id`, so "who did this campaign reach, and how did it go" is a single

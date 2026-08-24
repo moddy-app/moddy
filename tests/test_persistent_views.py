@@ -129,7 +129,6 @@ def _dynamic_item_cases():
     )
     from utils.ticket_views import TicketOpenButton, TicketOpenSelect
     from utils.notification_views import (
-        NotificationServiceButton, NotificationSourceButton, NotificationReportButton,
         NotifReviewClaimButton, NotifReviewPreviewButton, NotifReviewDecisionButton,
     )
     from modules.configs.tickets_panel_config import (
@@ -178,11 +177,9 @@ def _dynamic_item_cases():
         (TicketPermRoleSelect, ("p_ab12cd", "c_ab12cd")),
         (TicketPermSelect, ("p_ab12cd", "c_ab12cd", _SNOWFLAKE)),
         (TicketPermButton, ("clear", "p_ab12cd", "c_ab12cd", _SNOWFLAKE)),
-        # Notifications — the attribution row carried by every DM, keyed by the
-        # notification uuid, and the staff review panel, keyed by the report's.
-        (NotificationServiceButton, (_U,)),
-        (NotificationSourceButton, (_U,)),
-        (NotificationReportButton, (_U,)),
+        # Notifications — the staff review panel, keyed by the report uuid.
+        # A member's DM carries no button at all: its origin is one greyed
+        # `sent by` line (see notifications/render.py).
         (NotifReviewClaimButton, (_U,)),
         (NotifReviewPreviewButton, (_U,)),
         (NotifReviewDecisionButton, ("accept", _U)),

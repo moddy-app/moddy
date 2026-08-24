@@ -52,6 +52,9 @@ USER = "<:user:1519798911517196511>"
 DEV = "<:dev:1398729645557285066>"
 MODDY = "<:ModdyIcon:1517239367184285909>"
 MODDY_SQUARE = "<:ModdyIconCarre:1517239121322578090>"  # rounded-square variant
+# Smaller rounded-square variant — the one to use when the logo sits inline in
+# a line of text or as a title icon, where the full-size mark reads as oversized.
+MODDY_SQUARE_MIN = "<:ModdyIconCarreMin:1517240474916880556>"
 MODDY_ALT = "<:moddy:1451280939412881508>"
 BLACKLIST = "<:blacklist:1519797375470669944>"
 TIME = "<:time:1519798202990330087>"
@@ -219,6 +222,7 @@ EMOJIS = {
     # Bot
     "moddy": MODDY,
     "moddy_square": MODDY_SQUARE,
+    "moddy_square_min": MODDY_SQUARE_MIN,
     "developer": DEV,
     "staff": STAFF,
     "ping": SUPPORT,

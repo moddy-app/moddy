@@ -4000,61 +4000,22 @@
       "expirations": "Fin de sanción"
     },
     "attribution": {
-      "unknown_guild": "Servidor desconocido"
+      "unknown_guild": "Servidor desconocido",
+      "sent_by": "Enviado por [**{guild}**]({guild_url}){badge} (`{guild_id}`)",
+      "sent_by_service": "Enviado por **{service}**"
     },
     "source": {
-      "title": "Origen de esta notificación",
-      "guild_label": "Servidor:",
-      "service_label": "Servicio:",
-      "id_label": "Identificador:",
-      "members": "Miembros:",
-      "created": "Creado el:",
-      "verified": "Servidor verificado",
-      "official": "Servidor oficial de Moddy",
-      "open_server": "Abrir el servidor",
-      "uuid_label": "Notificación:",
-      "sent_at": "Enviada el:",
-      "support_hint": "¿Algún problema con esta notificación? [Contactar con el soporte]({url})",
-      "not_reportable": {
-        "moddy_authored": "Este mensaje está redactado por Moddy: no hay nada que reportar.",
-        "official_guild": "Este mensaje proviene de un servidor oficial de Moddy: no se puede reportar."
-      }
-    },
-    "service": {
-      "title": "Origen de esta notificación",
-      "description": "Este mensaje te lo ha enviado un servicio de Moddy."
+      "uuid_label": "Notificación:"
     },
     "errors": {
       "unknown": {
-        "title": "Notificación no encontrada",
-        "description": "La notificación `{uuid}` ya no existe en nuestros registros."
+        "title": "Notificación no encontrada"
       },
       "unknown_report": {
         "description": "El reporte `{uuid}` ya no existe."
       }
     },
     "report": {
-      "modal": {
-        "title": "Reportar esta notificación",
-        "recap": "**Origen:** {source}\n**Notificación:** `{uuid}`\n\n> {excerpt}",
-        "reason": {
-          "label": "¿Por qué reportas este mensaje?",
-          "description": "Describe el problema con la mayor precisión posible.",
-          "placeholder": "Este mensaje contiene…"
-        },
-        "confirm": {
-          "label": "Confirmación",
-          "option": "Confirmo que este reporte es legítimo"
-        }
-      },
-      "sent": {
-        "title": "Reporte enviado",
-        "description": "El equipo de Moddy va a revisar este mensaje. Gracias por tu ayuda."
-      },
-      "already": {
-        "title": "Reporte ya enviado",
-        "description": "Ya has reportado esta notificación."
-      },
       "status_label": "Estado:",
       "status": {
         "pending": "Pendiente",
@@ -4063,20 +4024,6 @@
         "refused": "Rechazado"
       },
       "reference": "Reporte:",
-      "decision_note": "Nota del equipo:",
-      "errors": {
-        "not_recipient": {
-          "title": "No se puede reportar",
-          "description": "Solo el destinatario de esta notificación puede reportarla."
-        },
-        "not_reportable": {
-          "title": "No se puede reportar"
-        },
-        "failed": {
-          "title": "No se puede reportar",
-          "description": "No se ha podido guardar el reporte. Inténtalo de nuevo en un momento."
-        }
-      },
       "outcome": {
         "accepted": {
           "title": "Reporte aceptado",

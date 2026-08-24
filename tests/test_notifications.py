@@ -26,7 +26,7 @@ from notifications.models import (
     SERVICES, ContentAuthor, NotificationContent, NotificationSource,
     RecipientType, SourceKind, get_service, strip_custom_emojis, substitute,
 )
-from notifications.render import resolve_source_context, source_button_emoji
+from notifications.render import build_attribution_line, resolve_source_context
 from notifications.service import NotificationService
 
 _UUID = "0f7d9c62-3b4e-4a1f-9c2d-5e6f70819a2b"
@@ -179,9 +179,6 @@ class FakeGuild:
     def __init__(self, gid=42, name="Test Server"):
         self.id = gid
         self.name = name
-        self.icon = None
-        self.member_count = 1234
-        self.created_at = None
 
 
 class FakeDB:
@@ -216,7 +213,8 @@ async def test_a_verified_server_gets_the_check():
     assert ctx["verified"] is True
     assert ctx["badge"]  # a hyperlinked badge, per the CLAUDE.md rule
     assert ctx["reportable"] is True
-    assert source_button_emoji(ctx) != source_button_emoji({"verified": False})
+    # …and it is the badge that reaches the attribution line.
+    assert ctx["badge"] in build_attribution_line(ctx, locale="en-US")
 
 
 async def test_an_official_moddy_server_greys_the_flag_out():
@@ -243,6 +241,18 @@ async def test_an_unreachable_guild_degrades_instead_of_raising():
     assert ctx["reportable"] is True
 
 
+async def test_a_broken_guild_object_costs_the_badge_not_the_message():
+    """This runs on the delivery path: nothing in it may raise."""
+    class Exploding:
+        def get_guild(self, guild_id):
+            raise RuntimeError("cache is on fire")
+        db = None
+
+    ctx = await resolve_source_context(Exploding(), NotificationSource.guild(42))
+    assert ctx["guild_name"]      # falls back to "Unknown server"
+    assert ctx["badge"] == ""
+
+
 # --------------------------------------------------------------------------- #
 # Service behaviour without a database
 # --------------------------------------------------------------------------- #
@@ -265,8 +275,14 @@ class Recipient:
 
 
 async def test_a_dm_still_goes_out_when_the_database_is_down():
-    """A recording failure must never swallow the message itself."""
-    service = NotificationService(NoDbBot())
+    """A recording failure must never swallow the message itself.
+
+    And, since the attribution is plain text built from the source rather than
+    a button needing the stored uuid, the recipient is still told who wrote to
+    them — a failed INSERT costs the record, not the accountability.
+    """
+    service = NotificationService(FakeBot(FakeGuild()))
+    service.db  # the guild lookup works; create_notification does not exist
     recipient = Recipient()
     result = await service.send_dm(
         recipient,
@@ -274,8 +290,15 @@ async def test_a_dm_still_goes_out_when_the_database_is_down():
         source=NotificationSource.guild(42),
     )
     assert result.delivered
-    assert recipient.sent  # sent — just without the attribution row
-    assert result.notification_id is None
+    assert result.notification_id is None          # nothing was recorded…
+    rendered = str(recipient.sent[0]["view"].to_components())
+    assert "Sent by" in rendered and "Test Server" in rendered   # …but it is attributed
+
+
+async def test_the_moddy_logo_is_the_small_square_mark():
+    """One logo everywhere: the inline-sized rounded square."""
+    from utils.emojis import MODDY_SQUARE_MIN
+    assert SERVICES["moddy"].emoji == MODDY_SQUARE_MIN
 
 
 async def test_may_report_is_the_recipient_only():
@@ -324,65 +347,95 @@ async def test_a_row_recorded_as_unreportable_can_never_become_reportable():
 
 
 # --------------------------------------------------------------------------- #
-# Attribution row
+# Attribution line
+#
+# One greyed line at the bottom of every attributable DM, in place of the
+# buttons an earlier iteration carried. It is the only thing a recipient sees
+# about where their message came from, so its shape is load-bearing.
 # --------------------------------------------------------------------------- #
 
-def _row_labels(row):
-    """Labels of an attribution row.
+def test_a_server_source_names_the_server_with_a_link_and_its_id():
+    from notifications.render import build_attribution_line
 
-    Its children are ``DynamicItem`` wrappers (that is what makes them survive a
-    restart), so the label lives on the wrapped button.
-    """
-    return [child.item.label for child in row.children]
-
-
-def test_a_service_and_server_source_shows_three_buttons():
-    from utils.notification_views import build_attribution_row
-
-    row = build_attribution_row(_UUID, {
-        "service_name": "Tickets", "service_emoji": "<:t:1>",
-        "guild_name": "Test Server", "verified": False, "reportable": True,
-    })
-    assert _row_labels(row) == ["Tickets", "Test Server", None]  # flag has no label
+    line = build_attribution_line({
+        "guild_id": 42, "guild_name": "Test Server", "badge": "",
+        "service_name": "Welcome message",
+    }, locale="en-US")
+    assert line == ("-# Sent by [**Test Server**](https://discord.com/channels/42) (`42`)")
 
 
-def test_a_guild_only_source_shows_the_server_and_the_flag():
-    from utils.notification_views import build_attribution_row
+def test_the_verification_badge_follows_the_name():
+    """CLAUDE.md rule #7: the badge sits right after the bold name."""
+    from notifications.render import build_attribution_line
 
-    row = build_attribution_row(_UUID, {
-        "guild_name": "Test Server", "reportable": True})
-    assert _row_labels(row) == ["Test Server", None]
-
-
-def test_the_flag_is_disabled_when_the_message_is_not_reportable():
-    from utils.notification_views import build_attribution_row
-
-    row = build_attribution_row(_UUID, {
-        "service_name": "AltGuard", "guild_name": "Test Server",
-        "reportable": False, "report_block": "moddy_authored"})
-    assert list(row.children)[-1].item.disabled is True
+    line = build_attribution_line({
+        "guild_id": 42, "guild_name": "Test Server", "badge": "[<:v:1>](https://d)",
+    }, locale="en-US")
+    assert "[**Test Server**](https://discord.com/channels/42)[<:v:1>](https://d)" in line
 
 
-def test_an_official_notice_gets_no_row_and_the_view_is_untouched():
-    from cogs.error_handler import BaseView
-    from utils.notification_views import attach_attribution, build_attribution_row
+def test_a_service_only_source_names_the_service():
+    """A reminder has no server to point at — the service is the origin."""
+    from notifications.render import build_attribution_line
 
-    assert build_attribution_row(_UUID, {"service_name": None, "guild_name": None}) is None
-    view = BaseView()
-    before = len(view.children)
-    attach_attribution(view, _UUID, {"service_name": None, "guild_name": None})
-    assert len(view.children) == before
+    line = build_attribution_line({"service_name": "Reminders"}, locale="en-US")
+    assert line == "-# Sent by **Reminders**"
 
 
-def test_every_attribution_custom_id_carries_the_notification_uuid():
-    """After a restart the uuid in the custom_id is all a click has to go on."""
-    from utils.notification_views import build_attribution_row
+def test_a_source_with_nothing_to_name_gets_no_line():
+    from notifications.render import build_attribution_line
 
-    row = build_attribution_row(_UUID, {
-        "service_name": "Tickets", "guild_name": "Test Server", "reportable": True})
-    for child in row.children:
-        assert child.custom_id.endswith(_UUID)
-        assert len(child.custom_id) <= 100
+    assert build_attribution_line({}, locale="en-US") is None
+
+
+def test_the_line_is_greyed_out_in_every_locale():
+    """`-#` is what makes it a footnote rather than part of the message."""
+    from notifications.render import build_attribution_line
+
+    for locale in ("fr", "en-US", "es-ES", "pt-BR", "de"):
+        line = build_attribution_line(
+            {"guild_id": 42, "guild_name": "S", "badge": ""}, locale=locale)
+        assert line.startswith("-# ")
+        assert "https://discord.com/channels/42" in line
+        assert "`42`" in line
+
+
+async def test_the_line_lands_inside_the_last_container():
+    """Under the card's text, not floating as its own component."""
+    from discord import ui
+    from notifications.service import _append_footer_line
+
+    view = ui.LayoutView(timeout=None)
+    container = ui.Container(ui.TextDisplay("body"))
+    view.add_item(container)
+    _append_footer_line(view, "-# Sent by **Moddy**")
+
+    assert len(list(view.children)) == 1  # no new top-level component
+    assert list(container.children)[-1].content == "-# Sent by **Moddy**"
+
+
+async def test_a_view_without_a_container_still_gets_the_line():
+    from discord import ui
+    from notifications.service import _append_footer_line
+
+    view = ui.LayoutView(timeout=None)
+    view.add_item(ui.TextDisplay("body"))
+    _append_footer_line(view, "-# Sent by **Moddy**")
+    assert list(view.children)[-1].content == "-# Sent by **Moddy**"
+
+
+async def test_an_official_notice_says_nothing_about_its_origin():
+    """A suspension IS Moddy speaking; there is no third party to name."""
+    service = NotificationService(NoDbBot())
+    recipient = Recipient()
+    await service.send_dm(
+        recipient,
+        content=NotificationContent(title="T", body="B"),
+        source=NotificationSource.official("global_sanctions"),
+    )
+    view = recipient.sent[0]["view"]
+    rendered = str(view.to_components())
+    assert "Sent by" not in rendered
 
 
 # --------------------------------------------------------------------------- #
@@ -405,16 +458,10 @@ _DYNAMIC_KEYS = {
     "notifications.report.status.claimed",
     "notifications.report.status.accepted",
     "notifications.report.status.refused",
-    "notifications.report.sent.title",
-    "notifications.report.sent.description",
-    "notifications.report.already.title",
-    "notifications.report.already.description",
     "notifications.report.outcome.accepted.title",
     "notifications.report.outcome.accepted.description",
     "notifications.report.outcome.refused.title",
     "notifications.report.outcome.refused.description",
-    "notifications.source.not_reportable.moddy_authored",
-    "notifications.source.not_reportable.official_guild",
     "notifications.review.buttons.accept",
     "notifications.review.buttons.refuse",
     "notifications.review.decision.accept.title",
@@ -486,8 +533,7 @@ def test_every_notification_string_exists_in_every_locale(locale):
 def test_modal_titles_fit_discords_limit(locale):
     """Discord rejects a modal whose title is over 45 characters."""
     data = json.loads((ROOT / "locales" / f"{locale}.json").read_text(encoding="utf-8"))
-    for key in ("notifications.report.modal.title",
-                "notifications.review.decision.accept.title",
+    for key in ("notifications.review.decision.accept.title",
                 "notifications.review.decision.refuse.title",
                 "staff.com.send.modal.title"):
         assert len(_lookup(data, key)) <= 45, f"{key} too long in {locale}"
