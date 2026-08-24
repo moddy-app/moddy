@@ -50,6 +50,9 @@ What shipped:
 - `tests/test_notifications.py` — 39 tests (hashing, reproducibility,
   attribution rules, report authorization, i18n completeness on 5 locales)
 - `docs/NOTIFICATIONS.md`
+- `docs/NOTIFICATIONS_INTEGRATION.md` — backend/dashboard contract: tables read
+  vs owned, exact payload rendering, the placeholder algorithm the backend must
+  match character for character, the mail/dashboard delivery loop
 
 ### Modified
 
@@ -109,8 +112,16 @@ What shipped:
 
 - [ ] The **mail** and **dashboard** platforms are declared, stored and rendered
       (`to_email()` / `to_dashboard()`) but nothing sends them: their delivery
-      rows stay `pending` for the backend to pick up and mark. Needs the
-      backend-side contract.
+      rows stay `pending` for the backend to pick up and mark. The contract is
+      now written (`docs/NOTIFICATIONS_INTEGRATION.md`); the backend side is
+      not built. Note that no bot caller opts into a non-Discord platform yet,
+      so there are no pending rows to consume until one does.
+- [ ] **The backend cannot trigger a send.** There is no `moddy:tasks` type for
+      it, and it must not write `notifications` rows itself (the uuid has to
+      exist before the DM goes out — the buttons carry it). A proposed
+      `notification_send` payload is sketched in the integration doc §6. The
+      legacy `send_announcement` task still posts unrecorded raw text to
+      `guild.system_channel`.
 - [ ] Accepting a report records the decision and tells the reporter; it takes
       **no automatic action** against the server. Wiring it to the global
       sanction / case system is a deliberate next step, not an oversight.

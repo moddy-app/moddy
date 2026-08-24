@@ -301,6 +301,17 @@ tests/test_notifications.py
 
 ---
 
+## Backend & dashboard
+
+The mail and dashboard halves are delivered by the backend, from the same rows:
+the bot creates their `notification_deliveries` entries as `pending` and never
+touches them again. The exact contract — what the backend reads, what it owns,
+how to render the stored template so a mail says what the DM said, and the
+placeholder algorithm it must match character for character — is in
+[NOTIFICATIONS_INTEGRATION.md](NOTIFICATIONS_INTEGRATION.md).
+
+---
+
 ## Adding a sender
 
 1. Register the service in `notifications/models.py::SERVICES` (one line) and
