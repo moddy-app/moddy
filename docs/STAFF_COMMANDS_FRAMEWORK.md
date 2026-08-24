@@ -23,7 +23,7 @@ option, and error handling.
 | Management | `/manage` | `m.` | `staff/commands/manage/` |
 | Moderator | `/mod` | `mod.` | `staff/commands/mod/` |
 | Support | `/support` | `sup.` | `staff/commands/support/` *(no commands yet)* |
-| Communication | `/com` | `com.` | `staff/commands/com/` *(no commands yet)* |
+| Communication | `/com` | `com.` | `staff/commands/com/` |
 
 Slash commands are **ephemeral by default**. Every staff slash command carries
 an auto-injected `incognito` boolean option (default `true` = ephemeral). Pass
@@ -155,9 +155,9 @@ Permission checks are centralized in the dispatcher (`staff/framework/cog.py`):
    (`utils/staff_role_permissions.py`) — devs and super-admin bypass all nodes.
 
 Available permission nodes: `stripe_manage`, `redirect_manage`, `banner_manage`,
-`official_manage`, `global_sanction`, `global_enforcement`. Nodes let a command
-live in a non-dev department (e.g. `/manage`) while still being gated beyond the
-base role check.
+`official_manage`, `global_sanction`, `global_enforcement`, `notif_review`,
+`notif_lookup`, `broadcast`. Nodes let a command live in a non-dev department
+(e.g. `/manage`) while still being gated beyond the base role check.
 
 The node check lives in `utils/staff_permissions.has_staff_node(bot, user_id,
 node)`, shared with persistent components that must re-derive authorization on
@@ -231,10 +231,25 @@ arguments (used by `sql` and `jsk`). **Commands must not log themselves.**
 | `case create/view/list/edit/close/note` | Moderation case management |
 | `global apply/view/halt/resume/lift/pending` | Moddy-team global sanctions (grouped cases, appeal countdown) |
 | `altguard verify/unverify/refusal` | AltGuard gate overrides + refusal details (`altguard_manage`) — see [ALTGUARD.md](ALTGUARD.md) |
+| `notif` | Look a notification (or a report filed on it) up by its uuid (`notif_lookup`) — see [NOTIFICATIONS.md](NOTIFICATIONS.md) |
 
-### `/support` / `/com`
+### `/com` (Communication)
 
-No framework commands yet. Legacy placeholder `help` command exists on both.
+| Command | Message alias | Description |
+|---------|--------------|-------------|
+| `send` | `com.send` | Send a Moddy notification to a user, a server, or a group of them (`broadcast`) |
+
+`/com send <target> <recipient> [dm_owner]` — `target` is `user`, `guild`,
+`users` or `guilds`; `recipient` is a Discord id for the single targets, or a
+segment (`all`, or an attribute such as `PREMIUM` / `OFFICIAL`) for the group
+ones. The wording is written in a **Modal V2** (title, body, optional button
+label + URL) and stored as a uniform notification payload. Group sends are
+confirmed first, then run in the background with a live progress panel, every
+row sharing one `batch_id` — see [NOTIFICATIONS.md](NOTIFICATIONS.md).
+
+### `/support`
+
+No framework commands yet. A legacy placeholder `help` command exists.
 
 ---
 
@@ -256,7 +271,8 @@ staff/
 │   ├── dev/               # /dev commands (one file each)
 │   ├── team/              # /team commands
 │   ├── manage/            # /manage commands (+ redirect/ and banner/ sub-dirs)
-│   └── mod/               # /mod commands (+ case/ and global_sanction/ sub-dirs)
+│   ├── mod/               # /mod commands (+ case/ and global_sanction/ sub-dirs)
+│   └── com/               # /com commands (send + its compose modal)
 ├── base.py                # StaffCommandsCog base (auto-delete tracking)
 ├── staff_commands.py      # Entry point extension loaded by the bot
 ├── support_commands.py    # /sup legacy placeholder

@@ -3721,6 +3721,118 @@
         "confirm_title": "Supprimer la bannière ?",
         "confirm": "Supprimer définitivement la bannière {id} ?"
       }
+    },
+    "notif": {
+      "title": "Notification",
+      "created_at": "Envoyée le",
+      "kind": "Type",
+      "author": "Rédacteur",
+      "service": "Service",
+      "guild": "Serveur",
+      "actor": "Déclencheur",
+      "reportable": "Signalable",
+      "recipient": "Destinataire",
+      "batch": "Campagne",
+      "delivery": "Livraison",
+      "no_delivery": "Aucune livraison enregistrée",
+      "content": "Contenu",
+      "hash": "Empreinte",
+      "occurrences": "Envois identiques",
+      "template": "Modèle",
+      "reports": "Signalements",
+      "not_found": {
+        "title": "Notification introuvable",
+        "description": "Aucune notification ni signalement ne correspond à `{uuid}`."
+      },
+      "unavailable": {
+        "title": "Système indisponible",
+        "description": "Le système de notifications n'est pas initialisé."
+      }
+    },
+    "com": {
+      "send": {
+        "compose": "Rédiger le message",
+        "compose_hint": "Destinataires : {audience}",
+        "default_link_label": "En savoir plus",
+        "audience": {
+          "user": "utilisateur",
+          "guild": "serveur",
+          "users": "utilisateurs",
+          "guilds": "serveurs"
+        },
+        "modal": {
+          "title": "Nouvelle notification",
+          "title_field": {
+            "label": "Titre",
+            "placeholder": "Titre affiché en haut du message"
+          },
+          "body": {
+            "label": "Message",
+            "description": "Markdown accepté. Rédige-le comme un message final.",
+            "placeholder": "Le contenu de la notification…"
+          },
+          "link_label": {
+            "label": "Libellé du bouton (facultatif)",
+            "placeholder": "En savoir plus"
+          },
+          "link_url": {
+            "label": "Lien du bouton (facultatif)",
+            "description": "Doit commencer par https://"
+          }
+        },
+        "confirm": {
+          "title": "Confirmer l'envoi",
+          "description": "Le message va être envoyé à `{count}` {kind} (segment `{segment}`).",
+          "large": "Envoi massif : il ne pourra pas être annulé une fois lancé.",
+          "button": "Envoyer"
+        },
+        "progress": {
+          "title": "Envoi en cours",
+          "description": "`{done}` / `{total}` traités — `{sent}` envoyés, `{failed}` échecs."
+        },
+        "done": {
+          "title": "Envoi terminé",
+          "description": "`{total}` destinataires — `{sent}` envoyés, `{failed}` échecs."
+        },
+        "user_done": {
+          "title": "Notification envoyée",
+          "description": "Le message a été envoyé à **{user}**."
+        },
+        "guild_done": {
+          "title": "Notification envoyée",
+          "description": "Le message a été publié sur **{guild}** (`{count}` envoi(s))."
+        },
+        "errors": {
+          "bad_id": {
+            "title": "Identifiant invalide",
+            "description": "Fournis un identifiant Discord valide (uniquement des chiffres)."
+          },
+          "unknown_user": {
+            "title": "Utilisateur introuvable",
+            "description": "Aucun utilisateur ne correspond à `{id}`."
+          },
+          "unknown_guild": {
+            "title": "Serveur introuvable",
+            "description": "Moddy n'est pas présent sur le serveur `{id}`."
+          },
+          "empty_segment": {
+            "title": "Segment vide",
+            "description": "Aucun destinataire ne correspond au segment `{segment}`."
+          },
+          "no_channel": {
+            "title": "Envoi impossible",
+            "description": "Aucun salon utilisable sur **{guild}**."
+          },
+          "dms_closed": {
+            "title": "Messages privés fermés",
+            "description": "**{user}** n'accepte pas les messages privés."
+          },
+          "failed": {
+            "title": "Envoi impossible",
+            "description": "Le message n'a pas pu être envoyé à **{user}**."
+          }
+        }
+      }
     }
   },
   "transcription": {
@@ -3882,6 +3994,178 @@
       "title": "Ton appel a été refusé",
       "description": "Notre équipe a examiné ton appel et l'a refusé. La sanction **{level}** est maintenue, et les mesures suspendues sont de nouveau programmées.",
       "deadline": "Elles prendront désormais effet le **{date}** (**{rel}**)."
+    }
+  },
+  "notifications": {
+    "services": {
+      "moddy": "Moddy",
+      "welcome_dm": "Message de bienvenue",
+      "moderation": "Modération",
+      "automod_ai": "Automod IA",
+      "appeals": "Appels",
+      "altguard": "AltGuard",
+      "tickets": "Tickets",
+      "reminder": "Rappels",
+      "interserver": "Inter-serveurs",
+      "token_detector": "Détecteur de tokens",
+      "global_sanctions": "Sanctions globales",
+      "expirations": "Fin de sanction"
+    },
+    "attribution": {
+      "unknown_guild": "Serveur inconnu"
+    },
+    "source": {
+      "title": "Origine de cette notification",
+      "guild_label": "Serveur :",
+      "service_label": "Service :",
+      "id_label": "Identifiant :",
+      "members": "Membres :",
+      "created": "Créé le :",
+      "verified": "Serveur vérifié",
+      "official": "Serveur officiel Moddy",
+      "open_server": "Ouvrir le serveur",
+      "uuid_label": "Notification :",
+      "sent_at": "Envoyée le :",
+      "support_hint": "Un problème avec cette notification ? [Contacter le support]({url})",
+      "not_reportable": {
+        "moddy_authored": "Ce message est rédigé par Moddy : il n'y a rien à signaler.",
+        "official_guild": "Ce message provient d'un serveur officiel Moddy : il ne peut pas être signalé."
+      }
+    },
+    "service": {
+      "title": "Origine de cette notification",
+      "description": "Ce message t'a été envoyé par un service de Moddy."
+    },
+    "errors": {
+      "unknown": {
+        "title": "Notification introuvable",
+        "description": "La notification `{uuid}` n'existe plus dans nos registres."
+      },
+      "unknown_report": {
+        "description": "Le signalement `{uuid}` n'existe plus."
+      }
+    },
+    "report": {
+      "modal": {
+        "title": "Signaler cette notification",
+        "recap": "**Origine :** {source}\n**Notification :** `{uuid}`\n\n> {excerpt}",
+        "reason": {
+          "label": "Pourquoi signales-tu ce message ?",
+          "description": "Décris le problème le plus précisément possible.",
+          "placeholder": "Ce message contient…"
+        },
+        "confirm": {
+          "label": "Confirmation",
+          "option": "Je confirme que ce signalement est légitime"
+        }
+      },
+      "sent": {
+        "title": "Signalement envoyé",
+        "description": "L'équipe Moddy va examiner ce message. Merci de ton aide."
+      },
+      "already": {
+        "title": "Signalement déjà envoyé",
+        "description": "Tu as déjà signalé cette notification."
+      },
+      "status_label": "Statut :",
+      "status": {
+        "pending": "En attente",
+        "claimed": "En cours d'examen",
+        "accepted": "Accepté",
+        "refused": "Refusé"
+      },
+      "reference": "Signalement :",
+      "decision_note": "Note de l'équipe :",
+      "errors": {
+        "not_recipient": {
+          "title": "Signalement impossible",
+          "description": "Seul le destinataire de cette notification peut la signaler."
+        },
+        "not_reportable": {
+          "title": "Signalement impossible"
+        },
+        "failed": {
+          "title": "Signalement impossible",
+          "description": "Le signalement n'a pas pu être enregistré. Réessaie dans un instant."
+        }
+      },
+      "outcome": {
+        "accepted": {
+          "title": "Signalement accepté",
+          "description": "Ton signalement a été examiné et retenu par l'équipe Moddy. Les mesures nécessaires ont été prises."
+        },
+        "refused": {
+          "title": "Signalement refusé",
+          "description": "Ton signalement a été examiné mais n'a pas été retenu par l'équipe Moddy."
+        },
+        "footer": "Signalement {report}"
+      }
+    },
+    "review": {
+      "title": "Signalement de notification",
+      "reporter": "Signalé par",
+      "source": "Origine",
+      "service": "Service",
+      "recipient": "Destinataire",
+      "sent_at": "Envoyée le",
+      "occurrences": "Envois de ce contenu",
+      "reason": "Motif du signalement",
+      "content": "Contenu envoyé",
+      "note": "Note",
+      "claimed_by": "Pris en charge par",
+      "decided_by": "Décision de",
+      "buttons": {
+        "claim": "Prendre en charge",
+        "claimed": "Pris en charge",
+        "preview": "Voir le message",
+        "accept": "Accepter",
+        "refuse": "Refuser"
+      },
+      "no_permission": {
+        "title": "Accès refusé",
+        "description": "Tu n'as pas la permission d'examiner les signalements de notifications."
+      },
+      "own_report": {
+        "title": "Action impossible",
+        "description": "Tu ne peux pas examiner ton propre signalement."
+      },
+      "already_decided": {
+        "title": "Signalement déjà traité",
+        "description": "Une décision a déjà été rendue sur ce signalement."
+      },
+      "decision": {
+        "accept": {
+          "title": "Accepter le signalement",
+          "recap": "Le signalement sera marqué comme **accepté** et le signaleur en sera informé.",
+          "done": {
+            "title": "Signalement accepté",
+            "description": "La décision a été enregistrée et le signaleur a été prévenu."
+          }
+        },
+        "refuse": {
+          "title": "Refuser le signalement",
+          "recap": "Le signalement sera marqué comme **refusé** et le signaleur en sera informé.",
+          "done": {
+            "title": "Signalement refusé",
+            "description": "La décision a été enregistrée et le signaleur a été prévenu."
+          }
+        },
+        "note": {
+          "label": "Note de décision",
+          "description": "Transmise au signaleur et conservée dans les logs.",
+          "placeholder": "Facultatif : explique la décision."
+        }
+      }
+    },
+    "log": {
+      "title": {
+        "created": "Nouveau signalement",
+        "claimed": "Signalement pris en charge",
+        "accepted": "Signalement accepté",
+        "refused": "Signalement refusé"
+      },
+      "actor": "Staff",
+      "jump": "Voir le signalement"
     }
   }
 }

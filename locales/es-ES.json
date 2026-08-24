@@ -3722,6 +3722,118 @@
         "confirm_title": "¿Eliminar banner?",
         "confirm": "¿Eliminar permanentemente el banner {id}?"
       }
+    },
+    "notif": {
+      "title": "Notificación",
+      "created_at": "Enviada el",
+      "kind": "Tipo",
+      "author": "Redactado por",
+      "service": "Servicio",
+      "guild": "Servidor",
+      "actor": "Desencadenante",
+      "reportable": "Reportable",
+      "recipient": "Destinatario",
+      "batch": "Campaña",
+      "delivery": "Entrega",
+      "no_delivery": "Ninguna entrega registrada",
+      "content": "Contenido",
+      "hash": "Huella",
+      "occurrences": "Envíos idénticos",
+      "template": "Plantilla",
+      "reports": "Reportes",
+      "not_found": {
+        "title": "Notificación no encontrada",
+        "description": "Ninguna notificación ni reporte corresponde a `{uuid}`."
+      },
+      "unavailable": {
+        "title": "Sistema no disponible",
+        "description": "El sistema de notificaciones no está inicializado."
+      }
+    },
+    "com": {
+      "send": {
+        "compose": "Redactar el mensaje",
+        "compose_hint": "Destinatarios: {audience}",
+        "default_link_label": "Más información",
+        "audience": {
+          "user": "usuario",
+          "guild": "servidor",
+          "users": "usuarios",
+          "guilds": "servidores"
+        },
+        "modal": {
+          "title": "Nueva notificación",
+          "title_field": {
+            "label": "Título",
+            "placeholder": "Título mostrado en la parte superior del mensaje"
+          },
+          "body": {
+            "label": "Mensaje",
+            "description": "Se admite Markdown. Redáctalo como el mensaje final.",
+            "placeholder": "El contenido de la notificación…"
+          },
+          "link_label": {
+            "label": "Texto del botón (opcional)",
+            "placeholder": "Más información"
+          },
+          "link_url": {
+            "label": "Enlace del botón (opcional)",
+            "description": "Debe empezar por https://"
+          }
+        },
+        "confirm": {
+          "title": "Confirmar el envío",
+          "description": "El mensaje se enviará a `{count}` {kind} (segmento `{segment}`).",
+          "large": "Envío masivo: no se podrá cancelar una vez iniciado.",
+          "button": "Enviar"
+        },
+        "progress": {
+          "title": "Envío en curso",
+          "description": "`{done}` / `{total}` procesados — `{sent}` enviados, `{failed}` fallidos."
+        },
+        "done": {
+          "title": "Envío finalizado",
+          "description": "`{total}` destinatarios — `{sent}` enviados, `{failed}` fallidos."
+        },
+        "user_done": {
+          "title": "Notificación enviada",
+          "description": "El mensaje se ha enviado a **{user}**."
+        },
+        "guild_done": {
+          "title": "Notificación enviada",
+          "description": "El mensaje se ha publicado en **{guild}** (`{count}` envío(s))."
+        },
+        "errors": {
+          "bad_id": {
+            "title": "Identificador inválido",
+            "description": "Proporciona un identificador de Discord válido (solo cifras)."
+          },
+          "unknown_user": {
+            "title": "Usuario no encontrado",
+            "description": "Ningún usuario corresponde a `{id}`."
+          },
+          "unknown_guild": {
+            "title": "Servidor no encontrado",
+            "description": "Moddy no está en el servidor `{id}`."
+          },
+          "empty_segment": {
+            "title": "Segmento vacío",
+            "description": "Ningún destinatario corresponde al segmento `{segment}`."
+          },
+          "no_channel": {
+            "title": "No se puede enviar",
+            "description": "Ningún canal utilizable en **{guild}**."
+          },
+          "dms_closed": {
+            "title": "Mensajes privados cerrados",
+            "description": "**{user}** no acepta mensajes privados."
+          },
+          "failed": {
+            "title": "No se puede enviar",
+            "description": "El mensaje no se ha podido enviar a **{user}**."
+          }
+        }
+      }
     }
   },
   "transcription": {
@@ -3883,6 +3995,178 @@
       "title": "Tu apelación ha sido rechazada",
       "description": "Nuestro equipo ha revisado tu apelación y la ha rechazado. La sanción **{level}** se mantiene, y las medidas en espera vuelven a programarse.",
       "deadline": "Ahora surtirán efecto el **{date}** (**{rel}**)."
+    }
+  },
+  "notifications": {
+    "services": {
+      "moddy": "Moddy",
+      "welcome_dm": "Mensaje de bienvenida",
+      "moderation": "Moderación",
+      "automod_ai": "Automod IA",
+      "appeals": "Apelaciones",
+      "altguard": "AltGuard",
+      "tickets": "Tickets",
+      "reminder": "Recordatorios",
+      "interserver": "Interservidor",
+      "token_detector": "Detector de tokens",
+      "global_sanctions": "Sanciones globales",
+      "expirations": "Fin de sanción"
+    },
+    "attribution": {
+      "unknown_guild": "Servidor desconocido"
+    },
+    "source": {
+      "title": "Origen de esta notificación",
+      "guild_label": "Servidor:",
+      "service_label": "Servicio:",
+      "id_label": "Identificador:",
+      "members": "Miembros:",
+      "created": "Creado el:",
+      "verified": "Servidor verificado",
+      "official": "Servidor oficial de Moddy",
+      "open_server": "Abrir el servidor",
+      "uuid_label": "Notificación:",
+      "sent_at": "Enviada el:",
+      "support_hint": "¿Algún problema con esta notificación? [Contactar con el soporte]({url})",
+      "not_reportable": {
+        "moddy_authored": "Este mensaje está redactado por Moddy: no hay nada que reportar.",
+        "official_guild": "Este mensaje proviene de un servidor oficial de Moddy: no se puede reportar."
+      }
+    },
+    "service": {
+      "title": "Origen de esta notificación",
+      "description": "Este mensaje te lo ha enviado un servicio de Moddy."
+    },
+    "errors": {
+      "unknown": {
+        "title": "Notificación no encontrada",
+        "description": "La notificación `{uuid}` ya no existe en nuestros registros."
+      },
+      "unknown_report": {
+        "description": "El reporte `{uuid}` ya no existe."
+      }
+    },
+    "report": {
+      "modal": {
+        "title": "Reportar esta notificación",
+        "recap": "**Origen:** {source}\n**Notificación:** `{uuid}`\n\n> {excerpt}",
+        "reason": {
+          "label": "¿Por qué reportas este mensaje?",
+          "description": "Describe el problema con la mayor precisión posible.",
+          "placeholder": "Este mensaje contiene…"
+        },
+        "confirm": {
+          "label": "Confirmación",
+          "option": "Confirmo que este reporte es legítimo"
+        }
+      },
+      "sent": {
+        "title": "Reporte enviado",
+        "description": "El equipo de Moddy va a revisar este mensaje. Gracias por tu ayuda."
+      },
+      "already": {
+        "title": "Reporte ya enviado",
+        "description": "Ya has reportado esta notificación."
+      },
+      "status_label": "Estado:",
+      "status": {
+        "pending": "Pendiente",
+        "claimed": "En revisión",
+        "accepted": "Aceptado",
+        "refused": "Rechazado"
+      },
+      "reference": "Reporte:",
+      "decision_note": "Nota del equipo:",
+      "errors": {
+        "not_recipient": {
+          "title": "No se puede reportar",
+          "description": "Solo el destinatario de esta notificación puede reportarla."
+        },
+        "not_reportable": {
+          "title": "No se puede reportar"
+        },
+        "failed": {
+          "title": "No se puede reportar",
+          "description": "No se ha podido guardar el reporte. Inténtalo de nuevo en un momento."
+        }
+      },
+      "outcome": {
+        "accepted": {
+          "title": "Reporte aceptado",
+          "description": "Tu reporte ha sido revisado y aceptado por el equipo de Moddy. Se han tomado las medidas necesarias."
+        },
+        "refused": {
+          "title": "Reporte rechazado",
+          "description": "Tu reporte ha sido revisado, pero el equipo de Moddy no lo ha aceptado."
+        },
+        "footer": "Reporte {report}"
+      }
+    },
+    "review": {
+      "title": "Reporte de notificación",
+      "reporter": "Reportado por",
+      "source": "Origen",
+      "service": "Servicio",
+      "recipient": "Destinatario",
+      "sent_at": "Enviada el",
+      "occurrences": "Envíos de este contenido",
+      "reason": "Motivo del reporte",
+      "content": "Mensaje enviado",
+      "note": "Nota",
+      "claimed_by": "Gestionado por",
+      "decided_by": "Decisión de",
+      "buttons": {
+        "claim": "Encargarse",
+        "claimed": "Gestionado",
+        "preview": "Ver el mensaje",
+        "accept": "Aceptar",
+        "refuse": "Rechazar"
+      },
+      "no_permission": {
+        "title": "Acceso denegado",
+        "description": "No tienes permiso para revisar los reportes de notificaciones."
+      },
+      "own_report": {
+        "title": "Acción imposible",
+        "description": "No puedes revisar tu propio reporte."
+      },
+      "already_decided": {
+        "title": "Reporte ya tratado",
+        "description": "Ya se ha tomado una decisión sobre este reporte."
+      },
+      "decision": {
+        "accept": {
+          "title": "Aceptar el reporte",
+          "recap": "El reporte se marcará como **aceptado** y se informará a quien lo envió.",
+          "done": {
+            "title": "Reporte aceptado",
+            "description": "La decisión se ha registrado y se ha avisado a quien envió el reporte."
+          }
+        },
+        "refuse": {
+          "title": "Rechazar el reporte",
+          "recap": "El reporte se marcará como **rechazado** y se informará a quien lo envió.",
+          "done": {
+            "title": "Reporte rechazado",
+            "description": "La decisión se ha registrado y se ha avisado a quien envió el reporte."
+          }
+        },
+        "note": {
+          "label": "Nota de la decisión",
+          "description": "Se envía a quien reportó y se conserva en los registros.",
+          "placeholder": "Opcional: explica la decisión."
+        }
+      }
+    },
+    "log": {
+      "title": {
+        "created": "Nuevo reporte",
+        "claimed": "Reporte gestionado",
+        "accepted": "Reporte aceptado",
+        "refused": "Reporte rechazado"
+      },
+      "actor": "Staff",
+      "jump": "Ver el reporte"
     }
   }
 }

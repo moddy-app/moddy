@@ -453,8 +453,23 @@ class InterServerModule(ModuleBase):
 
             view = WelcomeView()
 
-            # Envoie le DM
-            await user.send(view=view)
+            # Through the notification system: Moddy's own wording, so the DM
+            # carries the service attribution button and no report flag.
+            from notifications.models import (
+                NotificationContent, NotificationSource,
+            )
+            await self.bot.notifications.send_dm(
+                user,
+                content=NotificationContent(
+                    title=welcome_title,
+                    body=welcome_body,
+                    icon=GROUPS,
+                    template_id=f"interserver.welcome.{self.interserver_type}",
+                ),
+                source=NotificationSource.service_guild("interserver", self.guild_id),
+                view=view,
+                locale=locale,
+            )
 
             # Marque l'utilisateur comme accueilli en DB
             await self.bot.db.set_attribute(

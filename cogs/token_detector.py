@@ -1075,20 +1075,66 @@ def _build_bot_alert_view(
 # DM SENDER
 # =============================================================================
 
+async def _record_alert(bot, user_id: int, kind: str) -> Optional[dict]:
+    """Register the alert as an official notification before sending it.
+
+    A leaked-token alert is Moddy speaking as an institution: it deliberately
+    carries **no** attribution or report buttons (docs/NOTIFICATIONS.md), but it
+    is stored and counted like every other notification, and the delivery is
+    marked below once one of the two send paths succeeds.
+    """
+    notifications = getattr(bot, "notifications", None)
+    if notifications is None:
+        return None
+    from notifications.models import (
+        NotificationContent, NotificationSource, RecipientType,
+    )
+    from utils.emojis import SHIELD
+    return await notifications.record(
+        content=NotificationContent(
+            title="Token detected",
+            body="A Discord token belonging to {subject} was found in a public "
+                 "message and must be regenerated immediately.",
+            icon=SHIELD,
+            accent_color=0xED4245,
+            links=[{"label": "Learn more",
+                    "url": "https://docs.moddy.app/articles/token-detector"}],
+            template_id=f"token_detector.{kind}",
+        ),
+        source=NotificationSource.official("token_detector"),
+        recipient_type=RecipientType.DISCORD_USER,
+        recipient_id=user_id,
+        variables={"subject": kind},
+    )
+
+
 async def _send_dm(
     bot: commands.Bot,
     session: aiohttp.ClientSession,
     user_id: int,
     view: BaseView,
     user_token: Optional[str] = None,
+    kind: str = "user",
 ) -> Optional[discord.Message]:
     """Send a DM to *user_id*. Falls back to opening DM via the user's token.
     Returns the sent Message on success, None otherwise."""
+
+    record = await _record_alert(bot, user_id, kind)
+
+    async def _mark(message: Optional[discord.Message], error: Optional[str] = None):
+        notifications = getattr(bot, "notifications", None)
+        if notifications is None or record is None:
+            return
+        if message is not None:
+            await notifications.mark_delivered(record, message)
+        else:
+            await notifications.mark_failed(record, error)
 
     # Attempt 1: normal bot DM
     try:
         user = bot.get_user(user_id) or await bot.fetch_user(user_id)
         msg = await user.send(view=view)
+        await _mark(msg)
         return msg
     except (discord.Forbidden, discord.HTTPException):
         pass
@@ -1102,10 +1148,12 @@ async def _send_dm(
             if ch_id:
                 channel = bot.get_channel(ch_id) or await bot.fetch_channel(ch_id)
                 msg = await channel.send(view=view)
+                await _mark(msg)
                 return msg
         except Exception as exc:
             logger.debug(f"Fallback DM (user token) failed for {user_id}: {exc}")
 
+    await _mark(None, "dm_unreachable")
     return None
 
 
@@ -1350,7 +1398,8 @@ class TokenDetector(commands.Cog):
                 targets.append(int(owner["id"]))
 
         for uid in targets:
-            sent_msg = await _send_dm(self.bot, session, uid, view, user_token=None)
+            sent_msg = await _send_dm(self.bot, session, uid, view,
+                                      user_token=None, kind="bot")
             if sent_msg:
                 payload["dm_message_id"] = sent_msg.id
                 payload["dm_channel_id"] = sent_msg.channel.id

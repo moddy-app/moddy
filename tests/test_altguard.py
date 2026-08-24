@@ -114,6 +114,8 @@ class FakeBot:
         self._guild = guild
         self.db = db
         self.module_manager = None
+        from notifications import NotificationService
+        self.notifications = NotificationService(self)
 
     def get_guild(self, guild_id):
         return self._guild if self._guild and self._guild.id == guild_id else None

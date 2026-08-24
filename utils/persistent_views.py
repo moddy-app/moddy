@@ -72,6 +72,7 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         TicketControlView, TicketClosedView, TicketCloseRequestView,
         TicketEscalationView, TicketEscalateConfirmView, TicketsPersistence,
     )
+    from utils.notification_views import NotificationsPersistence
 
     return [
         # Group 1 — /moddy (public informational, no user auth)
@@ -157,6 +158,10 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         # Group 12h — the public ticket panel's open buttons / dropdown
         # (dynamic items; public: whoever clicks is the member opening).
         TicketsPersistence,
+        # Group 12i — the attribution + report buttons carried by every
+        # notification Moddy sends, and the staff review panel they feed
+        # (dynamic items keyed by the notification / report uuid).
+        NotificationsPersistence,
         # Group 13 — /config automod AI panel (guild permission auth;
         # AutomodAIPrecedentsView is deliberately excluded, see
         # docs/PERSISTENT_VIEWS.md Step 12)

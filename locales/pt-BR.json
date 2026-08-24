@@ -3722,6 +3722,118 @@
         "confirm_title": "Excluir Banner?",
         "confirm": "Excluir permanentemente o banner {id}?"
       }
+    },
+    "notif": {
+      "title": "Notificação",
+      "created_at": "Enviada em",
+      "kind": "Tipo",
+      "author": "Escrita por",
+      "service": "Serviço",
+      "guild": "Servidor",
+      "actor": "Acionada por",
+      "reportable": "Denunciável",
+      "recipient": "Destinatário",
+      "batch": "Campanha",
+      "delivery": "Entrega",
+      "no_delivery": "Nenhuma entrega registrada",
+      "content": "Conteúdo",
+      "hash": "Impressão",
+      "occurrences": "Envios idênticos",
+      "template": "Modelo",
+      "reports": "Denúncias",
+      "not_found": {
+        "title": "Notificação não encontrada",
+        "description": "Nenhuma notificação ou denúncia corresponde a `{uuid}`."
+      },
+      "unavailable": {
+        "title": "Sistema indisponível",
+        "description": "O sistema de notificações não está inicializado."
+      }
+    },
+    "com": {
+      "send": {
+        "compose": "Escrever a mensagem",
+        "compose_hint": "Destinatários: {audience}",
+        "default_link_label": "Saiba mais",
+        "audience": {
+          "user": "usuário",
+          "guild": "servidor",
+          "users": "usuários",
+          "guilds": "servidores"
+        },
+        "modal": {
+          "title": "Nova notificação",
+          "title_field": {
+            "label": "Título",
+            "placeholder": "Título exibido no topo da mensagem"
+          },
+          "body": {
+            "label": "Mensagem",
+            "description": "Markdown é aceito. Escreva-a como a mensagem final.",
+            "placeholder": "O conteúdo da notificação…"
+          },
+          "link_label": {
+            "label": "Texto do botão (opcional)",
+            "placeholder": "Saiba mais"
+          },
+          "link_url": {
+            "label": "Link do botão (opcional)",
+            "description": "Deve começar com https://"
+          }
+        },
+        "confirm": {
+          "title": "Confirmar o envio",
+          "description": "A mensagem será enviada para `{count}` {kind} (segmento `{segment}`).",
+          "large": "Envio em massa: não poderá ser cancelado depois de iniciado.",
+          "button": "Enviar"
+        },
+        "progress": {
+          "title": "Envio em andamento",
+          "description": "`{done}` / `{total}` processados — `{sent}` enviados, `{failed}` falhas."
+        },
+        "done": {
+          "title": "Envio concluído",
+          "description": "`{total}` destinatários — `{sent}` enviados, `{failed}` falhas."
+        },
+        "user_done": {
+          "title": "Notificação enviada",
+          "description": "A mensagem foi enviada para **{user}**."
+        },
+        "guild_done": {
+          "title": "Notificação enviada",
+          "description": "A mensagem foi publicada em **{guild}** (`{count}` envio(s))."
+        },
+        "errors": {
+          "bad_id": {
+            "title": "Identificador inválido",
+            "description": "Forneça um identificador do Discord válido (apenas números)."
+          },
+          "unknown_user": {
+            "title": "Usuário não encontrado",
+            "description": "Nenhum usuário corresponde a `{id}`."
+          },
+          "unknown_guild": {
+            "title": "Servidor não encontrado",
+            "description": "O Moddy não está no servidor `{id}`."
+          },
+          "empty_segment": {
+            "title": "Segmento vazio",
+            "description": "Nenhum destinatário corresponde ao segmento `{segment}`."
+          },
+          "no_channel": {
+            "title": "Não é possível enviar",
+            "description": "Nenhum canal utilizável em **{guild}**."
+          },
+          "dms_closed": {
+            "title": "Mensagens diretas fechadas",
+            "description": "**{user}** não aceita mensagens diretas."
+          },
+          "failed": {
+            "title": "Não é possível enviar",
+            "description": "A mensagem não pôde ser enviada para **{user}**."
+          }
+        }
+      }
     }
   },
   "transcription": {
@@ -3883,6 +3995,178 @@
       "title": "O seu recurso foi recusado",
       "description": "A nossa equipa analisou o seu recurso e recusou-o. A sanção **{level}** mantém-se, e as medidas suspensas voltam a estar agendadas.",
       "deadline": "Produzem agora efeito a **{date}** (**{rel}**)."
+    }
+  },
+  "notifications": {
+    "services": {
+      "moddy": "Moddy",
+      "welcome_dm": "Mensagem de boas-vindas",
+      "moderation": "Moderação",
+      "automod_ai": "Automod IA",
+      "appeals": "Recursos",
+      "altguard": "AltGuard",
+      "tickets": "Tickets",
+      "reminder": "Lembretes",
+      "interserver": "Interservidor",
+      "token_detector": "Detector de tokens",
+      "global_sanctions": "Sanções globais",
+      "expirations": "Fim de sanção"
+    },
+    "attribution": {
+      "unknown_guild": "Servidor desconhecido"
+    },
+    "source": {
+      "title": "Origem desta notificação",
+      "guild_label": "Servidor:",
+      "service_label": "Serviço:",
+      "id_label": "Identificador:",
+      "members": "Membros:",
+      "created": "Criado em:",
+      "verified": "Servidor verificado",
+      "official": "Servidor oficial da Moddy",
+      "open_server": "Abrir o servidor",
+      "uuid_label": "Notificação:",
+      "sent_at": "Enviada em:",
+      "support_hint": "Algum problema com esta notificação? [Falar com o suporte]({url})",
+      "not_reportable": {
+        "moddy_authored": "Esta mensagem foi escrita pelo Moddy: não há nada a denunciar.",
+        "official_guild": "Esta mensagem vem de um servidor oficial da Moddy: ela não pode ser denunciada."
+      }
+    },
+    "service": {
+      "title": "Origem desta notificação",
+      "description": "Esta mensagem foi enviada a você por um serviço do Moddy."
+    },
+    "errors": {
+      "unknown": {
+        "title": "Notificação não encontrada",
+        "description": "A notificação `{uuid}` não existe mais em nossos registros."
+      },
+      "unknown_report": {
+        "description": "A denúncia `{uuid}` não existe mais."
+      }
+    },
+    "report": {
+      "modal": {
+        "title": "Denunciar esta notificação",
+        "recap": "**Origem:** {source}\n**Notificação:** `{uuid}`\n\n> {excerpt}",
+        "reason": {
+          "label": "Por que você está denunciando isto?",
+          "description": "Descreva o problema da forma mais precisa possível.",
+          "placeholder": "Esta mensagem contém…"
+        },
+        "confirm": {
+          "label": "Confirmação",
+          "option": "Confirmo que esta denúncia é legítima"
+        }
+      },
+      "sent": {
+        "title": "Denúncia enviada",
+        "description": "A equipe do Moddy vai analisar esta mensagem. Obrigado pela sua ajuda."
+      },
+      "already": {
+        "title": "Denúncia já enviada",
+        "description": "Você já denunciou esta notificação."
+      },
+      "status_label": "Status:",
+      "status": {
+        "pending": "Pendente",
+        "claimed": "Em análise",
+        "accepted": "Aceita",
+        "refused": "Recusada"
+      },
+      "reference": "Denúncia:",
+      "decision_note": "Nota da equipe:",
+      "errors": {
+        "not_recipient": {
+          "title": "Não é possível denunciar",
+          "description": "Somente o destinatário desta notificação pode denunciá-la."
+        },
+        "not_reportable": {
+          "title": "Não é possível denunciar"
+        },
+        "failed": {
+          "title": "Não é possível denunciar",
+          "description": "A denúncia não pôde ser salva. Tente novamente em instantes."
+        }
+      },
+      "outcome": {
+        "accepted": {
+          "title": "Denúncia aceita",
+          "description": "Sua denúncia foi analisada e aceita pela equipe do Moddy. As medidas necessárias foram tomadas."
+        },
+        "refused": {
+          "title": "Denúncia recusada",
+          "description": "Sua denúncia foi analisada, mas não foi aceita pela equipe do Moddy."
+        },
+        "footer": "Denúncia {report}"
+      }
+    },
+    "review": {
+      "title": "Denúncia de notificação",
+      "reporter": "Denunciado por",
+      "source": "Origem",
+      "service": "Serviço",
+      "recipient": "Destinatário",
+      "sent_at": "Enviada em",
+      "occurrences": "Envios deste conteúdo",
+      "reason": "Motivo da denúncia",
+      "content": "Mensagem enviada",
+      "note": "Nota",
+      "claimed_by": "Assumida por",
+      "decided_by": "Decisão de",
+      "buttons": {
+        "claim": "Assumir",
+        "claimed": "Assumida",
+        "preview": "Ver a mensagem",
+        "accept": "Aceitar",
+        "refuse": "Recusar"
+      },
+      "no_permission": {
+        "title": "Acesso negado",
+        "description": "Você não tem permissão para analisar denúncias de notificações."
+      },
+      "own_report": {
+        "title": "Ação impossível",
+        "description": "Você não pode analisar a sua própria denúncia."
+      },
+      "already_decided": {
+        "title": "Denúncia já tratada",
+        "description": "Uma decisão já foi tomada sobre esta denúncia."
+      },
+      "decision": {
+        "accept": {
+          "title": "Aceitar a denúncia",
+          "recap": "A denúncia será marcada como **aceita** e quem a enviou será avisado.",
+          "done": {
+            "title": "Denúncia aceita",
+            "description": "A decisão foi registrada e quem enviou a denúncia foi avisado."
+          }
+        },
+        "refuse": {
+          "title": "Recusar a denúncia",
+          "recap": "A denúncia será marcada como **recusada** e quem a enviou será avisado.",
+          "done": {
+            "title": "Denúncia recusada",
+            "description": "A decisão foi registrada e quem enviou a denúncia foi avisado."
+          }
+        },
+        "note": {
+          "label": "Nota da decisão",
+          "description": "Enviada a quem denunciou e mantida nos logs.",
+          "placeholder": "Opcional: explique a decisão."
+        }
+      }
+    },
+    "log": {
+      "title": {
+        "created": "Nova denúncia",
+        "claimed": "Denúncia assumida",
+        "accepted": "Denúncia aceita",
+        "refused": "Denúncia recusada"
+      },
+      "actor": "Staff",
+      "jump": "Ver a denúncia"
     }
   }
 }

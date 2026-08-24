@@ -28,6 +28,7 @@ import discord
 from discord import ui
 
 from modules.module_manager import ModuleBase
+from notifications.models import NotificationContent, NotificationSource
 from utils.emojis import WAVING_HAND
 from utils.i18n import t
 
@@ -155,23 +156,49 @@ def entry_accent_color(entry: Dict[str, Any]) -> int:
 # --------------------------------------------------------------------------- #
 # Rendering (Components V2)
 # --------------------------------------------------------------------------- #
+def message_variables(member: discord.Member, guild: discord.Guild) -> Dict[str, str]:
+    """The placeholder values for one member joining one guild.
+
+    Keys are bare (``server``, not ``{server}``) because this same dict is
+    stored as the notification's ``variables`` — that is what lets the exact
+    wording of a welcome DM be rebuilt months later from the template alone
+    (see docs/NOTIFICATIONS.md).
+    """
+    joined_at = getattr(member, 'joined_at', None)
+    timestamp = int(joined_at.timestamp()) if joined_at else int(time.time())
+    return {
+        "server": guild.name,
+        "user": member.mention,
+        "display_name": member.display_name,
+        "username": member.name,
+        "member_count": str(guild.member_count or 0),
+        "timestamp": str(timestamp),
+    }
+
+
 def format_message(template: str, member: discord.Member,
                    guild: discord.Guild) -> str:
     """Substitute the supported placeholders inside a message template."""
-    joined_at = getattr(member, 'joined_at', None)
-    timestamp = int(joined_at.timestamp()) if joined_at else int(time.time())
-
-    replacements = {
-        "{server}": guild.name,
-        "{user}": member.mention,
-        "{display_name}": member.display_name,
-        "{username}": member.name,
-        "{member_count}": str(guild.member_count or 0),
-        "{timestamp}": str(timestamp),
-    }
-    for key, value in replacements.items():
-        template = template.replace(key, str(value))
+    for key, value in message_variables(member, guild).items():
+        template = template.replace("{" + key + "}", str(value))
     return template
+
+
+def welcome_content(entry: Dict[str, Any], guild_name: str) -> NotificationContent:
+    """The uniform notification payload behind one welcome DM.
+
+    The body keeps its ``{placeholders}``: every member of a given server
+    receives the *same* template, so all of their notifications share one stored
+    content row. The guild name is part of the title, which is what the mail and
+    the dashboard show as the heading.
+    """
+    return NotificationContent(
+        title=guild_name,
+        body=entry.get('message') or '',
+        icon=WAVING_HAND,
+        accent_color=entry_accent_color(entry),
+        template_id=f"welcome_dm.{entry.get('id')}",
+    )
 
 
 def build_welcome_view(entry: Dict[str, Any], member: discord.Member,
@@ -272,23 +299,38 @@ class WelcomeDmModule(ModuleBase):
         if not guild:
             return
 
+        variables = message_variables(member, guild)
+        locale = self._locale()
+
         for entry in self.messages:
             if not entry.get('enabled', True):
                 continue
             try:
                 view, allowed = build_welcome_view(entry, member, guild)
-                await member.send(view=view, allowed_mentions=allowed)
-                logger.info(
-                    f"DM welcome sent to {member.id} (guild {self.guild_id}, "
-                    f"message {entry['id']})"
+                # Through the notification system: the DM is recorded,
+                # attributed to this server, and reportable — the text is the
+                # server's own words, which is exactly what can be abused.
+                result = await self.bot.notifications.send_dm(
+                    member,
+                    content=welcome_content(entry, guild.name),
+                    source=NotificationSource.guild(guild.id),
+                    variables=variables,
+                    view=view,
+                    allowed_mentions=allowed,
+                    locale=locale,
                 )
-            except discord.Forbidden:
-                # DMs are closed for this member: every other entry would fail
-                # the same way, so stop here instead of hammering the API.
-                logger.warning(
-                    f"Cannot send DM welcome to {member.id} (guild {self.guild_id}) "
-                    "— DMs disabled"
-                )
-                return
+                if result.forbidden:
+                    # DMs are closed for this member: every other entry would
+                    # fail the same way, so stop instead of hammering the API.
+                    logger.warning(
+                        f"Cannot send DM welcome to {member.id} (guild {self.guild_id}) "
+                        "— DMs disabled"
+                    )
+                    return
+                if result.delivered:
+                    logger.info(
+                        f"DM welcome sent to {member.id} (guild {self.guild_id}, "
+                        f"message {entry['id']}, notification {result.notification_id})"
+                    )
             except Exception as e:
                 logger.error(f"Error sending DM welcome: {e}", exc_info=True)

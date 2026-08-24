@@ -106,6 +106,11 @@ moddy/
 │                              #   invites, assets, scheduled_events, stage, polls,
 │                              #   integrations, automod, moderation
 │
+├── notifications/             # Centralized notifications (EVERY DM goes through it)
+│   ├── models.py              #   Uniform payload + source + service registry + hashing
+│   ├── render.py              #   Payload → Components V2 + attribution context
+│   └── service.py             #   NotificationService (bot.notifications)
+│
 ├── automod/                   # Automod AI DETECTION pipeline (decides only; no side effects)
 │   ├── engine.py              #   Shared per-bot orchestrator (funnel entry)
 │   ├── relations.py / routing.py / precedents.py / bareme.py
@@ -135,6 +140,9 @@ moddy/
 │   ├── commands/dev/          #   /dev commands (one file each)
 │   ├── commands/team/         #   /team commands (incl. help)
 │   ├── commands/mod/          #   /mod commands + case/, global/ and altguard/ sub-groups
+│   │                          #   (incl. /mod notif — notification lookup by uuid)
+│   ├── commands/com/          #   /com commands (/com send — notification to a user,
+│   │                          #   a server, or thousands of them)
 │   ├── commands/manage/       #   /manage commands (staff panel, badge, redirect/, banner/…)
 │   ├── support_commands.py    #   sup. commands — legacy (not yet migrated)
 │   └── communication_commands.py  # com. commands — legacy (not yet migrated)
@@ -153,6 +161,7 @@ moddy/
 │       ├── precedents.py        #   Automod server precedents (automod_precedents, RAG)
 │       ├── token_alerts.py, token_secrets.py
 │       ├── subscription.py    #   Subscription read-only queries (incl. is_guild_premium)
+│       ├── notifications.py   #   Notifications, deliveries, abuse reports
 │       ├── social.py          #   Social notifications subscriptions
 │       └── _utils.py
 │
@@ -172,6 +181,7 @@ moddy/
 │   ├── altguard_views.py      #   AltGuard panel (persistent), consent Modal V2, link + log cards
 │   ├── automod_shadow_views.py #  Automod shadow-mode (dry_run) SIMULATION card + annotation buttons (persistent)
 │   ├── automod_render.py      #   Shared automod card helpers (barème breakdown, sanction name/accent)
+│   ├── notification_views.py  #   Notification attribution row, report Modal V2, staff review panels
 │   ├── ticket_views.py        #   Ticket panel, ticket message, cards, claim, participants modal
 │   ├── transcription_views.py #   Voice transcription cards + persistent Transcribe button
 │   ├── appeal_views.py        #   Automod appeal UI (DM buttons + reviewer panels, persistent)
@@ -245,6 +255,7 @@ moddy/
     ├── test_task_signature.py #   moddy:tasks HMAC contract (canonicalization, replay, dedup)
     ├── test_tickets.py        #   Tickets: schema, permissions, claim, overwrites, screens, i18n
     ├── test_transcription.py  #   Voice transcription helpers, guard rails, cards
+    ├── test_notifications.py  #   Notifications: hashing, attribution, report rules, i18n
     ├── test_logs.py           #   Server logs: registry, routing, rendering, delivery
     └── test_logs_i18n.py      #   Server logs: i18n completeness on the 5 locales
 ```
@@ -375,6 +386,23 @@ moddy/
 - Code comments, commits, PRs: **English only**
 - User-facing strings: via i18n (French + English)
 
+### 11. Every message to a human goes through the notification system
+- **NEVER call `user.send(...)` / `member.send(...)` directly.** Every DM — and
+  every server-wide notice Moddy posts on its own behalf — goes through
+  `bot.notifications` so that it is stored, attributable, and reportable when
+  someone other than Moddy wrote it.
+- Pass a uniform `NotificationContent` **and** a `NotificationSource` that tells
+  the truth about who wrote the words. A feature that already has its own card
+  passes it as `view=` — the uniform content is still required, because it is
+  what the dashboard, the mail pipeline and the staff preview render.
+- Keep `{placeholders}` in the content and pass their values as `variables`:
+  that is what lets thousands of identical DMs share one stored body while each
+  one stays reproducible to the character.
+- The only exception is a sender with a genuinely exotic delivery path (the
+  token detector opens the DM channel with the user's own token). It still calls
+  `record()` and then `mark_delivered()` / `mark_failed()`.
+- See → [docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md)
+
 ---
 
 ## Documentation Index
@@ -410,6 +438,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/BOT_CUSTOMIZATION.md](docs/BOT_CUSTOMIZATION.md) | Bot Customization — per-guild nickname/avatar/banner/bio + name styles, Redis dashboard contract |
 | [docs/PREMIUM.md](docs/PREMIUM.md) | **Premium gating** — how to check whether a server (or a user) is premium |
 | [docs/STAFF_SYSTEM.md](docs/STAFF_SYSTEM.md) | Staff/dev commands, permissions, roles |
+| [docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md) | **Centralized notifications** — every DM/mail/dashboard message, attribution buttons, abuse reports, `/com send`, `/mod notif` |
 | [docs/LOGS.md](docs/LOGS.md) | **Advanced server logs** — 163 events, registry, rendering, webhook delivery, stored config & dashboard contract |
 | [docs/MODERATION_CASES.md](docs/MODERATION_CASES.md) | Moderation cases/sanctions, the case service & sources, auto-sync |
 | [docs/GLOBAL_SANCTIONS.md](docs/GLOBAL_SANCTIONS.md) | **Global sanctions** — Moddy-team warn / limited / suspended, on users *and* servers |

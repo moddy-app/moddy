@@ -46,6 +46,18 @@ class UserRepository:
         """Met à jour une partie spécifique de la data utilisateur"""
         await self._update_entity_data('users', 'user_id', user_id, path, value)
 
+    async def get_all_user_ids(self, limit: int = 100000) -> List[int]:
+        """Every user Moddy knows about.
+
+        The audience of a bot-wide announcement (see the notification system's
+        broadcasts). Capped rather than unbounded so a mistyped segment cannot
+        pull the whole table into memory at once.
+        """
+        async with self.pool.acquire() as conn:
+            rows = await conn.fetch(
+                "SELECT user_id FROM users ORDER BY user_id LIMIT $1", limit)
+            return [row['user_id'] for row in rows]
+
     async def get_users_with_attribute(self, attribute: str, value: Any = None) -> List[int]:
         """Récupère tous les utilisateurs ayant un attribut spécifique
 

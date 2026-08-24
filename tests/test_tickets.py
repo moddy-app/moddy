@@ -1082,9 +1082,16 @@ class TestNoContentWithLayoutView:
                   / "services" / "ticket_service.py").read_text(encoding="utf-8")
         # Every `.send(` call and its argument list, up to the closing paren of
         # the call (good enough: no nested `send(` in this file).
+        #
+        # `content=NotificationContent(...)` is NOT a message content: it is the
+        # uniform payload handed to `bot.notifications.send_dm` (see
+        # docs/NOTIFICATIONS.md), which never reaches Discord as a `content`
+        # field. Only a bare `content=` next to a `view=` is the 400 this
+        # guards against.
         offenders = [
             call for call in re.findall(r"\.send\((.*?)\n\s*\)", source, re.S)
-            if "view=" in call and re.search(r"\bcontent\s*=", call)
+            if "view=" in call
+            and re.search(r"\bcontent\s*=(?!\s*NotificationContent)", call)
         ]
         assert not offenders, (
             "a send() passes both content= and view=; put the text inside the "
