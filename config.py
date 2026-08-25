@@ -117,6 +117,18 @@ HM_URL: str = os.environ.get("HM_URL", "").rstrip("/")
 HM_INGEST_TOKEN: str = os.environ.get("HM_INGEST_TOKEN", "")
 
 # =============================================================================
+# BETTER STACK HEARTBEAT MONITOR (cron/heartbeat monitor, see docs/HEALTH_MONITOR.md)
+# =============================================================================
+# Separate from the Moddy Health Monitor above: a plain GET every 3 minutes to
+# a secret Better Stack URL means "alive"; GET .../fail reports a failure
+# explicitly. Missing this variable disables the ping with a warning.
+
+# Full secret heartbeat URL from the Better Stack heartbeat detail page,
+# e.g. https://uptime.betterstack.com/api/v1/heartbeat/<TOKEN>
+# Variable Railway: BETTERSTACK_HEARTBEAT_URL
+BETTERSTACK_HEARTBEAT_URL: str = os.environ.get("BETTERSTACK_HEARTBEAT_URL", "").rstrip("/")
+
+# =============================================================================
 # TECHNICAL LOGS (internal staff webhooks)
 # =============================================================================
 # Internal technical logs are NOT sent by the bot itself but through Discord

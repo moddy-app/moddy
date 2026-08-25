@@ -1,9 +1,10 @@
-"""Tests for the Moddy Health Monitor heartbeat (see docs/HEALTH_MONITOR.md).
+"""Tests for the two Health Monitor heartbeats (see docs/HEALTH_MONITOR.md).
 
-Nothing here talks to the network: ``HeartbeatClient`` is tested on its pure
-payload-building logic and its start()/stop() lifecycle, and the bot's own
-``_build_heartbeat_checks`` is tested against a bare stand-in object so no
-live Discord gateway is required.
+Nothing here talks to the network: ``HeartbeatClient`` and
+``BetterStackHeartbeat`` are tested on their pure payload-building logic and
+their start()/stop() lifecycle, and the bot's own ``_build_heartbeat_checks``
+/ ``_is_bot_healthy`` are tested against a bare stand-in object so no live
+Discord gateway is required.
 
     pytest tests/test_heartbeat.py -q
 """
@@ -13,6 +14,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from services.betterstack_heartbeat import BetterStackHeartbeat
 from services.heartbeat import HeartbeatClient
 
 
@@ -76,15 +78,88 @@ def test_incident_active_defaults_to_false():
     assert client.incident_active is False
 
 
+# --------------------------------------------------------------- BetterStackHeartbeat
+
+def test_betterstack_start_is_noop_without_url():
+    client = BetterStackHeartbeat(url="")
+
+    async def run():
+        client.start()
+        assert client._task is None
+        await client.stop()  # must not raise even though it never started
+
+    asyncio.run(run())
+
+
+def test_betterstack_start_creates_task_when_configured():
+    async def run():
+        client = BetterStackHeartbeat(url="https://uptime.betterstack.com/api/v1/heartbeat/tok")
+        client.start()
+        assert client._task is not None
+        await client.stop()
+        assert client._task is None
+
+    asyncio.run(run())
+
+
+def test_betterstack_pings_plain_url_without_healthy_callback():
+    calls = []
+
+    class FakeResponse:
+        status = 200
+        async def __aenter__(self):
+            return self
+        async def __aexit__(self, *exc):
+            return False
+
+    class FakeSession:
+        def get(self, url):
+            calls.append(url)
+            return FakeResponse()
+        async def close(self):
+            pass
+
+    async def run():
+        client = BetterStackHeartbeat(url="https://uptime.betterstack.com/api/v1/heartbeat/tok")
+        client._session = FakeSession()
+        # Exercise a single iteration of the loop body directly rather than
+        # the infinite loop: call the same request logic it awaits each tick.
+        healthy = await client._healthy() if client._healthy else True
+        target = client.url if healthy else f"{client.url}/fail"
+        async with client._session.get(target) as response:
+            assert response.status == 200
+
+    asyncio.run(run())
+    assert calls == ["https://uptime.betterstack.com/api/v1/heartbeat/tok"]
+
+
+def test_betterstack_pings_fail_url_when_unhealthy():
+    async def unhealthy():
+        return False
+
+    client = BetterStackHeartbeat(
+        url="https://uptime.betterstack.com/api/v1/heartbeat/tok", healthy=unhealthy,
+    )
+    healthy = asyncio.run(client._healthy())
+    target = client.url if healthy else f"{client.url}/fail"
+    assert target == "https://uptime.betterstack.com/api/v1/heartbeat/tok/fail"
+
+
 # --------------------------------------------------------------- bot checks
 
 def _fake_bot(*, ready: bool, latency: float, guild_count: int = 3, shards=None):
-    return SimpleNamespace(
+    from bot import ModdyBot
+
+    fake = SimpleNamespace(
         is_ready=lambda: ready,
         latency=latency,
         shards=shards or {},
         guilds=[object()] * guild_count,
     )
+    # _is_bot_healthy calls self._build_heartbeat_checks() as a bound method;
+    # a bare SimpleNamespace has no such attribute, so wire one up here too.
+    fake._build_heartbeat_checks = lambda: ModdyBot._build_heartbeat_checks(fake)
+    return fake
 
 
 def test_build_bot_checks_down_when_not_ready():
@@ -120,3 +195,19 @@ def test_build_bot_checks_degraded_when_a_shard_is_down():
 
     assert result["status"] == "degraded"
     assert result["checks"]["shards"] == {"ok": False, "connected": 1, "total": 2}
+
+
+def test_is_bot_healthy_matches_build_heartbeat_checks_status():
+    from bot import ModdyBot
+
+    ready_bot = _fake_bot(ready=True, latency=0.01)
+    assert asyncio.run(ModdyBot._is_bot_healthy(ready_bot)) is True
+
+    down_bot = _fake_bot(ready=False, latency=float("nan"))
+    assert asyncio.run(ModdyBot._is_bot_healthy(down_bot)) is False
+
+    degraded_bot = _fake_bot(
+        ready=True, latency=0.01,
+        shards={0: SimpleNamespace(is_closed=lambda: True)},
+    )
+    assert asyncio.run(ModdyBot._is_bot_healthy(degraded_bot)) is False

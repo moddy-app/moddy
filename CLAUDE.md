@@ -228,6 +228,7 @@ moddy/
 │   ├── ticket_service.py      #   Ticket lifecycle (open/close/escalate/move/participants)
 │   ├── transcription_service.py #  Voice/audio speech-to-text (shared by cog + module)
 │   ├── heartbeat.py           #   Moddy Health Monitor heartbeat (dead man's switch)
+│   ├── betterstack_heartbeat.py #  Better Stack cron/heartbeat monitor ping (3 min)
 │   └── railway_diagnostic.py  #   Railway diagnostics
 │
 ├── internal_api/              # FastAPI internal API
@@ -459,7 +460,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/MODERATION_CASES.md](docs/MODERATION_CASES.md) | Moderation cases/sanctions, the case service & sources, auto-sync |
 | [docs/GLOBAL_SANCTIONS.md](docs/GLOBAL_SANCTIONS.md) | **Global sanctions** — Moddy-team warn / limited / suspended, on users *and* servers |
 | [docs/TECHNICAL_LOGS.md](docs/TECHNICAL_LOGS.md) | Internal technical staff logs (webhook-based, per-event channels) |
-| [docs/HEALTH_MONITOR.md](docs/HEALTH_MONITOR.md) | **Health Monitor heartbeat** — dead man's switch push to `moddy-health-monitor`, `HM_URL`/`HM_INGEST_TOKEN` |
+| [docs/HEALTH_MONITOR.md](docs/HEALTH_MONITOR.md) | **Health Monitor heartbeats** — dead man's switch push to `moddy-health-monitor` (`HM_URL`/`HM_INGEST_TOKEN`) and the Better Stack cron ping (`BETTERSTACK_HEARTBEAT_URL`) |
 | [docs/DATABASE.md](docs/DATABASE.md) | Database schema, queries, repository pattern |
 
 ### Infrastructure

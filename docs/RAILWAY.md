@@ -110,6 +110,14 @@ sans elle, le heartbeat se désactive proprement avec un warning)
 (optionnel, même comportement que `HM_URL` si absent) — voir
 [HEALTH_MONITOR.md](HEALTH_MONITOR.md)
 
+### BETTERSTACK_HEARTBEAT_URL
+**Valeur :** URL secrète complète de la page « Heartbeat » Better Stack
+(ex. `https://uptime.betterstack.com/api/v1/heartbeat/<TOKEN>`) — un simple
+GET dessus toutes les 3 minutes signale que le bot va bien, `.../fail` un
+échec explicite. Optionnel — sans elle, ce ping se désactive proprement
+avec un warning (indépendant de `HM_URL`/`HM_INGEST_TOKEN` ci-dessus) — voir
+[HEALTH_MONITOR.md](HEALTH_MONITOR.md)
+
 ## Notifications centralisées
 
 Les deux salons vivent dans le serveur de l'équipe Moddy. Défauts dans
@@ -144,6 +152,7 @@ pris en charge, accepté, refusé) est journalisée
 - [ ] `MODDY_NOTIF_REPORT_LOG_CHANNEL_ID` (optionnel, défaut en dur dans `config.py`)
 - [ ] `HM_URL` (optionnel, désactive le heartbeat si absent)
 - [ ] `HM_INGEST_TOKEN` (optionnel, désactive le heartbeat si absent, identique sur tous les services)
+- [ ] `BETTERSTACK_HEARTBEAT_URL` (optionnel, désactive le ping Better Stack si absent)
 
 ## Dépannage
 
