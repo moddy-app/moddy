@@ -32,6 +32,7 @@ from config import (
     ENV_MODE,
     HM_URL,
     HM_INGEST_TOKEN,
+    BETTERSTACK_HEARTBEAT_URL,
 )
 from utils.emojis import EMOJIS, ERROR as ERROR_EMOJI
 
@@ -149,6 +150,13 @@ class ModdyBot(ModdyFrameworkBot):
             url=HM_URL,
             token=HM_INGEST_TOKEN,
             build=self._build_heartbeat_checks,
+        )
+        from services.betterstack_heartbeat import BetterStackHeartbeat
+        # Better Stack cron/heartbeat monitor: a plain ping every 3 minutes,
+        # `/fail` when the bot itself thinks it is unhealthy (docs/HEALTH_MONITOR.md).
+        self.betterstack_heartbeat = BetterStackHeartbeat(
+            url=BETTERSTACK_HEARTBEAT_URL,
+            healthy=self._is_bot_healthy,
         )
         self.redis = None  # Redis client (shared with backend)
         self._dev_team_ids: Set[int] = set()
@@ -1624,6 +1632,14 @@ class ModdyBot(ModdyFrameworkBot):
         # Start the Health Monitor heartbeat. Only from here on: an event
         # loop with a dead gateway connection has nothing worth reporting.
         self.heartbeat.start()
+        self.betterstack_heartbeat.start()
+
+    async def _is_bot_healthy(self) -> bool:
+        """Whether the bot is healthy enough to ping the Better Stack
+        heartbeat as a success — reuses the same down/degraded/ok verdict as
+        the Moddy Health Monitor checks so the two never disagree."""
+        checks = await self._build_heartbeat_checks()
+        return checks["status"] == "ok"
 
     async def _build_heartbeat_checks(self) -> dict:
         """Build the ``checks``/``status`` the heartbeat reports for this bot.
@@ -2315,6 +2331,7 @@ class ModdyBot(ModdyFrameworkBot):
 
         # Stop the Health Monitor heartbeat
         await self.heartbeat.stop()
+        await self.betterstack_heartbeat.stop()
 
         # Close the AltGuard HTTP session
         try:
