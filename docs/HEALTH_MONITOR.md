@@ -76,11 +76,3 @@ Every heartbeat response sets `self.heartbeat.incident_active`. Nothing in
 the bot currently branches on it — it is exposed for future use (e.g. cutting
 non-critical notifications during an incident), matching the "optional to
 consume" wording of the monitor's integration contract.
-
-## Out of scope here
-
-The bot's role as the Health Monitor's **display channel** (posting/editing
-incident messages via `moddy:hm:notify` / `moddy:hm:notify:ack`, publishing
-`moddy:hm:command`, the sticky status message and its persistent `Refresh`
-button) is a separate, larger piece of work and is not implemented by this
-heartbeat integration.

@@ -62,11 +62,6 @@ What shipped:
 
 ## Known issues and follow-ups
 
-- The bot's separate role as the monitor's **display channel** (Redis
-  `moddy:hm:notify`/`:ack`/`:command`, the sticky status message, its
-  persistent `Refresh` button) is explicitly out of scope per the brief and
-  is not implemented — flagged as a separate follow-up in
-  `docs/HEALTH_MONITOR.md`.
 - `HM_URL` / `HM_INGEST_TOKEN` still need to be set in the Railway
   environment for the heartbeat to actually start; until then it stays
   silently disabled (by design).
