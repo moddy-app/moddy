@@ -23,27 +23,83 @@ Le module Tickets dote votre serveur d'un véritable bureau d'assistance : les m
 
 Vous pouvez avoir plusieurs panneaux — par exemple, un pour le support général et un pour les signalements — chacun avec son propre ensemble de catégories.
 
-## Configurer votre premier panneau
+## Configuration
+
+Ouvrez `/config` sur votre serveur et sélectionnez **Tickets**. Chaque écran applique vos modifications dès que vous les faites — il n'y a pas de bouton d'enregistrement séparé, sauf pour la suppression d'un panneau ou d'une catégorie, qui demande toujours confirmation.
+
+### L'écran principal
+
+C'est la racine du module : la liste de vos panneaux, avec un bouton pour en ajouter un nouveau. Sélectionner un panneau existant ouvre son propre écran (ci-dessous).
 
 <Steps>
   <Step title="Ouvrir le panneau de configuration">
     Tapez `/config` sur votre serveur et sélectionnez **Tickets**.
   </Step>
   <Step title="Créer un panneau">
-    Donnez-lui un nom (pour votre propre référence), choisissez le salon dans lequel il sera publié, et son style : **boutons** ou **menu déroulant**.
-  </Step>
-  <Step title="Ajouter au moins une catégorie">
-    Chaque catégorie a besoin d'une destination — la catégorie Discord sous laquelle les tickets seront créés — et d'un libellé que les membres verront.
-  </Step>
-  <Step title="Accorder l'accès aux rôles">
-    Pour chaque catégorie, décidez quels rôles du staff peuvent voir et agir sur ses tickets, et avec quelles permissions (voir ci-dessous). Sans au moins un rôle habilité, personne à part les administrateurs du serveur ne pourra traiter ces tickets.
-  </Step>
-  <Step title="Personnaliser les messages (optionnel)">
-    Chaque champ de texte — le titre et la description du panneau lui-même, et le message qu'un membre voit à l'ouverture de son ticket — est pré-rempli avec un texte par défaut que vous pouvez modifier librement. Utilisez `{user}`, `{category}` et `{number}` pour les personnaliser.
+    Donnez-lui un nom (pour votre propre référence — les membres ne le voient jamais), et son message se publie dès que vous avez renseigné un salon.
   </Step>
 </Steps>
 
-Le panneau se publie (ou se met à jour) dès l'enregistrement — il n'y a pas d'étape de publication séparée.
+### Configurer un panneau
+
+Chaque panneau dispose de son propre écran avec les réglages suivants :
+
+| Réglage | Ce qu'il contrôle |
+|---|---|
+| Salon | Là où le message du panneau est publié. Le changer déplace le message existant. |
+| Titre | Le titre que voient les membres. Pré-rempli avec un texte par défaut que vous pouvez modifier librement. |
+| Description | Le texte sous le titre, expliquant à quoi sert le panneau. |
+| Couleur d'accent | La couleur de la carte du panneau. |
+| Style | **Boutons** (jusqu'à 15 catégories, réparties en rangées) ou **menu déroulant** (jusqu'à 25 catégories) — voir ci-dessous. |
+| Placeholder | Le texte affiché dans le menu déroulant avant qu'un membre ne choisisse une option (style menu déroulant uniquement). |
+| Activé | Mettre un panneau en pause retire son message sans supprimer sa configuration — réactivez-le pour le republier à l'identique. |
+| Catégories | La liste des catégories de ce panneau, avec des boutons pour en ajouter, modifier, réordonner ou retirer une. |
+
+<Tip>
+  Choisissez des **boutons** pour un petit nombre d'options clairement identifiées d'un coup d'œil (`Support général`, `Signaler un membre`…). Choisissez un **menu déroulant** dès que vous avez de nombreuses catégories, ou si vous préférez afficher une courte description sous chaque option — les boutons n'ont pas de place pour cela, un menu déroulant si.
+</Tip>
+
+Le panneau se publie (ou se met à jour) dès l'enregistrement de l'un des champs ci-dessus — il n'y a pas d'étape de publication séparée.
+
+### Configurer une catégorie
+
+Accessible depuis la liste des catégories d'un panneau, cet écran est organisé en quelques groupes :
+
+**Identité**
+| Champ | Ce qu'il contrôle |
+|---|---|
+| Nom | Le libellé du bouton, ou le titre de l'option du menu déroulant |
+| Emoji | Optionnel, affiché à côté du nom |
+| Description | Affichée sous l'option dans un panneau à menu déroulant (non utilisée pour les boutons) |
+| Style de bouton | Couleur primaire, secondaire, succès ou danger (boutons uniquement) |
+| Activée | Une catégorie mise en pause disparaît du panneau sans perdre sa configuration |
+
+**Où et pour qui**
+| Champ | Ce qu'il contrôle |
+|---|---|
+| Destination | La catégorie Discord sous laquelle les nouveaux salons de tickets sont créés. Obligatoire — une catégorie sans destination n'apparaît jamais sur le panneau. |
+| Rôles autorisés | Qui peut ouvrir un ticket ici. Vide signifie tout le monde. |
+| Rôles exclus | Explicitement empêchés d'en ouvrir un, même sur une autorisation ou le statut d'administrateur du serveur. |
+| Rôles du staff & permissions | Quels rôles peuvent voir et agir sur les tickets de cette catégorie, et avec lesquelles des neuf permissions — voir [Permissions](#permissions). |
+| Rôles à mentionner | Rôles mentionnés dès qu'un ticket s'ouvre |
+| Mentionner les rôles du staff | Lorsque c'est activé, chaque rôle disposant de la permission **Voir** sur cette catégorie est également mentionné, en plus des rôles ci-dessus |
+
+**Messages**
+| Champ | Ce qu'il contrôle |
+|---|---|
+| Message d'ouverture | L'intégralité du message épinglé publié à la création du ticket — titre, corps, tout. Pré-rempli avec un texte par défaut adapté. |
+| Message de fermeture | Ajouté à la carte affichée à la fermeture du ticket. |
+
+Les deux acceptent les balises `{user}`, `{username}`, `{display_name}`, `{server}`, `{category}`, `{number}` et `{ticket}`. Une ligne ne contenant que `---` s'affiche comme un séparateur visuel.
+
+**Comportement**
+| Champ | Ce qu'il contrôle |
+|---|---|
+| Boutons | Quels contrôles apparaissent sur le message du ticket : Fermer, Prendre en charge, Escalader, Fil du staff, Participants, Demander la fermeture. Tout désactiver est un choix valide — le staff peut toujours utiliser les commandes `/ticket` équivalentes. |
+| Prise en charge activée | Active ou désactive le [système de prise en charge](#prendre-en-charge) pour cette catégorie |
+| Verrouillage à la prise en charge | Voir [Prendre en charge](#prendre-en-charge) |
+| Format du nom de salon | Comment les salons de tickets sont nommés. Prend en charge `{number}` (avec des zéros), `{username}`, `{display_name}` et `{category}`. |
+| Tickets ouverts max. par membre | Combien de tickets un même membre peut avoir ouverts simultanément dans cette catégorie |
 
 <Note>
   Une catégorie sans destination configurée, ou que vous avez mise en pause, n'apparaît tout simplement pas sur le panneau. Si toutes les catégories d'un panneau deviennent ainsi inutilisables, Moddy retire le panneau plutôt que de laisser aux membres un bouton qui ne mène nulle part.

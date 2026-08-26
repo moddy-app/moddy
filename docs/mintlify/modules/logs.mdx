@@ -77,45 +77,59 @@ A **category** is the unit you route to a channel — every event within it goes
   The same real-world action can appear in two categories at once. A ban, for example, shows up under both **Moderation** and **Server** — so you can send moderation history to a private mod channel while still keeping a general server-activity feed for everyone with access.
 </Tip>
 
-## Enabling Logs
+## Configuration
+
+Open `/config` in your server and select **Logs**. The module has three screens, and — unlike most forms — **nothing needs to be saved**: every change you make applies the instant you make it.
+
+### The main screen
+
+This is where you land, and where you always end up back at. It shows one line per category you've already configured, plus:
+
+| Action | What it does |
+|---|---|
+| Pick a category | Opens that category's screen (see below) |
+| Send everything to one channel | A shortcut that binds **every** category at once to a single channel — the fastest way to get started if you just want one general activity log |
+| Clear everything | Removes every category's channels in one go, effectively turning the module off |
 
 <Steps>
   <Step title="Open the configuration panel">
     Type `/config` in your server and select **Logs**.
   </Step>
   <Step title="Pick a category">
-    Choose which category to configure from the list, or use the shortcut to send everything to a single channel at once.
+    Choose which category to configure from the list, or use the "send everything to one channel" shortcut above to get a general log running in seconds.
   </Step>
   <Step title="Choose one or more channels">
     Each category can post to up to **3 channels**. Splitting a category across several channels is useful if, say, different teams should each see the same events in their own space.
   </Step>
   <Step title="Fine-tune which events are included">
-    Every category comes with all of its events enabled. Untick anything you don't want to see — the list is paginated when a category has a lot of events.
+    Every category comes with all of its events enabled. Untick anything you don't want to see, or use the **enable all / disable all** shortcut at the top of the list. The checklist is paginated (25 events per page) when a category has a lot of them.
   </Step>
 </Steps>
-
-Every change applies immediately — there's no separate save button.
 
 <Warning>
   Moddy needs the **Manage Webhooks** permission to post logs efficiently. Without it, logs still go through, just slightly slower and less resistant to bursts of activity (a raid, a mass-ban).
 </Warning>
 
-## Options
+### The Options screen
 
-Alongside the categories, an **Options** screen lets you fine-tune the whole module:
+Reached from the main screen, this is where you fine-tune the whole module rather than one specific category:
 
 | Option | What it does |
 |---|---|
-| Ignored channels | Events happening in these channels (or their threads) are never logged |
-| Ignored roles | Members holding one of these roles are never logged as the subject of an event |
+| Ignored channels | Events happening in these channels (or their threads) are never logged. Up to 25 channels. |
+| Ignored roles | Members holding one of these roles are never logged as the subject of an event. Up to 25 roles. |
 | Ignore bots | Skip events caused by or targeting bots |
-| Attach transcripts | Attach full message content as a file when it's too long to fit in the entry itself |
-| Merge duplicates | See below |
+| Attach transcripts | Attach full message content as a file when it's too long to fit in the entry itself. Turn this off if you'd rather only ever see the embed, with long content simply cut off. |
+| Merge duplicates | See [Avoiding duplicate entries](#avoiding-duplicate-entries) below |
 | Log language | The language your log entries are written in |
 
 <Note>
-  Log entries always use your server's configured language (set once, under **Server settings**), not each moderator's personal language — a log channel should read the same to everyone who has access to it.
+  Log entries always use your server's configured language (set once, under **Server settings**), not each moderator's personal language — a log channel should read the same to everyone who has access to it. The **Log language** setting here only controls which of the supported languages that shared wording is written in.
 </Note>
+
+<Tip>
+  There's no toggle to turn the whole module "off": removing every channel from every category (or using **Clear everything** on the main screen) is what disables it. Add a channel back to any category and logging resumes immediately.
+</Tip>
 
 ## Avoiding duplicate entries
 

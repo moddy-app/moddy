@@ -23,27 +23,83 @@ Tickets gives your server a proper support desk: members click a button or pick 
 
 You can have several panels — for example, one for general support and one for report submissions — each with its own set of categories.
 
-## Setting up your first panel
+## Configuration
+
+Open `/config` in your server and select **Tickets**. Every screen applies your changes the moment you make them — there's no separate save button, except when deleting a panel or a category, which always asks you to confirm first.
+
+### The main screen
+
+This is the root of the module: the list of your panels, with a button to add a new one. Selecting an existing panel opens its screen (below).
 
 <Steps>
   <Step title="Open the configuration panel">
     Type `/config` in your server and select **Tickets**.
   </Step>
   <Step title="Create a panel">
-    Give it a name (for your own reference), pick the channel it should be posted in, and choose its style: **buttons** or a **dropdown menu**.
-  </Step>
-  <Step title="Add at least one category">
-    Every category needs a destination — the Discord category tickets from it will be created under — and a label members will see.
-  </Step>
-  <Step title="Grant roles access">
-    For each category, decide which staff roles can see and act on its tickets, and with which permissions (see below). Without at least one role granted access, nobody but server admins can help with those tickets.
-  </Step>
-  <Step title="Customize the messages (optional)">
-    Every text field — the panel's own title and description, and the message a member sees when their ticket opens — comes pre-filled with sensible wording you can edit freely. Use `{user}`, `{category}`, and `{number}` to personalize them.
+    Give it a name (for your own reference — members never see it), and its message posts as soon as you've filled in a channel.
   </Step>
 </Steps>
 
-The panel posts (or updates) as soon as you save — there's no separate publish step.
+### Configuring a panel
+
+Each panel has its own screen with the following settings:
+
+| Setting | What it controls |
+|---|---|
+| Channel | Where the panel message is posted. Changing it moves the existing message. |
+| Title | The heading members see. Pre-filled with sensible wording you can edit freely. |
+| Description | The text members see under the title, explaining what the panel is for. |
+| Accent colour | The colour of the panel's card. |
+| Style | **Buttons** (up to 15 categories, laid out in rows) or a **dropdown menu** (up to 25 categories) — see below. |
+| Placeholder | The text shown in the dropdown before a member picks anything (dropdown style only). |
+| Enabled | Pausing a panel takes its message down without deleting your configuration — turn it back on to repost it exactly as it was. |
+| Categories | The list of categories on this panel, with buttons to add, edit, reorder, or remove one. |
+
+<Tip>
+  Choose **buttons** for a handful of clearly-labelled options members recognize at a glance (`General support`, `Report a member`…). Choose a **dropdown** once you have many categories, or when you'd rather show a short description under each option — buttons have no room for one, a dropdown does.
+</Tip>
+
+The panel posts (or updates in place) the moment you save any of the fields above — there's no separate publish step.
+
+### Configuring a category
+
+Opened from a panel's category list, this screen is organized into a few groups:
+
+**Identity**
+| Field | What it controls |
+|---|---|
+| Name | The button label, or the dropdown option's title |
+| Emoji | Optional, shown next to the name |
+| Description | Shown under the option in a dropdown panel (not used for buttons) |
+| Button style | Primary, secondary, success, or danger colour (buttons only) |
+| Enabled | A paused category disappears from the panel without losing its configuration |
+
+**Where and who**
+| Field | What it controls |
+|---|---|
+| Destination | The Discord category new ticket channels are created under. Required — a category with none configured never appears on the panel. |
+| Allowed roles | Who may open a ticket here. Empty means everyone. |
+| Denied roles | Explicitly barred from opening one, even over an allow or over being a server admin. |
+| Staff roles & permissions | Which roles can see and act on this category's tickets, and with which of the nine permissions — see [Permissions](#permissions). |
+| Ping roles | Roles mentioned the moment a ticket opens |
+| Ping staff roles | When on, every role holding **View** on this category is also pinged, in addition to the roles above |
+
+**Messages**
+| Field | What it controls |
+|---|---|
+| Opening message | The whole pinned message posted when the ticket is created — title, body, everything. Pre-filled with sensible default wording. |
+| Closing message | Added to the card shown when the ticket is closed. |
+
+Both accept the placeholders `{user}`, `{username}`, `{display_name}`, `{server}`, `{category}`, `{number}`, and `{ticket}`. A line containing only `---` renders as a visual divider.
+
+**Behavior**
+| Field | What it controls |
+|---|---|
+| Buttons | Which controls appear on the ticket message: Close, Claim, Escalate, Staff thread, Participants, Request closure. Leaving all of them off is a valid choice — staff can still use the equivalent `/ticket` commands. |
+| Claim enabled | Turns the [claim system](#claiming) on or off for this category |
+| Claim lock | See [Claiming](#claiming) |
+| Channel name format | How ticket channels are named. Supports `{number}` (zero-padded), `{username}`, `{display_name}`, and `{category}`. |
+| Max open tickets per member | How many tickets the same member may have open at once in this category |
 
 <Note>
   A category that has no destination configured, or that you've paused, simply won't appear on the panel. If every category on a panel becomes unusable this way, Moddy takes the panel down rather than leaving members a dead-end button.

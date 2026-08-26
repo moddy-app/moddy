@@ -77,45 +77,59 @@ Une **catégorie** est l'unité que vous routez vers un salon — tous les évé
   Une même action réelle peut apparaître dans deux catégories à la fois. Un bannissement, par exemple, apparaît à la fois dans **Modération** et dans **Serveur** — vous pouvez donc envoyer l'historique de modération vers un salon privé réservé au staff tout en gardant un flux d'activité générale accessible à tous ceux qui y ont accès.
 </Tip>
 
-## Activer les logs
+## Configuration
+
+Ouvrez `/config` sur votre serveur et sélectionnez **Logs**. Le module comporte trois écrans, et — contrairement à la plupart des formulaires — **rien n'a besoin d'être enregistré** : chaque modification s'applique dès que vous la faites.
+
+### L'écran principal
+
+C'est là que vous arrivez, et là que vous revenez toujours. Il affiche une ligne par catégorie déjà configurée, ainsi que :
+
+| Action | Ce qu'elle fait |
+|---|---|
+| Choisir une catégorie | Ouvre l'écran de cette catégorie (voir ci-dessous) |
+| Tout envoyer vers un seul salon | Un raccourci qui relie **toutes** les catégories d'un coup à un seul salon — le moyen le plus rapide de démarrer si vous voulez simplement un journal d'activité général |
+| Tout effacer | Retire les salons de toutes les catégories en une fois, désactivant de fait le module |
 
 <Steps>
   <Step title="Ouvrir le panneau de configuration">
     Tapez `/config` sur votre serveur et sélectionnez **Logs**.
   </Step>
   <Step title="Choisir une catégorie">
-    Sélectionnez la catégorie à configurer dans la liste, ou utilisez le raccourci pour tout envoyer d'un coup vers un seul salon.
+    Sélectionnez la catégorie à configurer dans la liste, ou utilisez le raccourci « tout envoyer vers un seul salon » ci-dessus pour avoir un journal général en quelques secondes.
   </Step>
   <Step title="Choisir un ou plusieurs salons">
     Chaque catégorie peut être envoyée vers **3 salons maximum**. Répartir une catégorie sur plusieurs salons est utile si, par exemple, différentes équipes doivent chacune voir les mêmes événements dans leur propre espace.
   </Step>
   <Step title="Affiner les événements inclus">
-    Chaque catégorie arrive avec tous ses événements activés. Décochez ce que vous ne souhaitez pas voir — la liste est paginée lorsqu'une catégorie contient beaucoup d'événements.
+    Chaque catégorie arrive avec tous ses événements activés. Décochez ce que vous ne souhaitez pas voir, ou utilisez le raccourci **tout activer / tout désactiver** en haut de la liste. La liste est paginée (25 événements par page) lorsqu'une catégorie en contient beaucoup.
   </Step>
 </Steps>
-
-Chaque modification s'applique immédiatement — il n'y a pas de bouton d'enregistrement séparé.
 
 <Warning>
   Moddy a besoin de la permission **Gérer les webhooks** pour publier les logs efficacement. Sans elle, les logs continuent de fonctionner, mais un peu plus lentement et moins résistants aux pics d'activité (un raid, un bannissement massif).
 </Warning>
 
-## Options
+### L'écran Options
 
-En plus des catégories, un écran **Options** vous permet d'ajuster finement l'ensemble du module :
+Accessible depuis l'écran principal, c'est ici que vous ajustez l'ensemble du module plutôt qu'une catégorie précise :
 
 | Option | Ce qu'elle fait |
 |---|---|
-| Salons ignorés | Les événements se produisant dans ces salons (ou leurs fils) ne sont jamais enregistrés |
-| Rôles ignorés | Les membres possédant l'un de ces rôles ne sont jamais enregistrés comme sujet d'un événement |
+| Salons ignorés | Les événements se produisant dans ces salons (ou leurs fils) ne sont jamais enregistrés. 25 salons maximum. |
+| Rôles ignorés | Les membres possédant l'un de ces rôles ne sont jamais enregistrés comme sujet d'un événement. 25 rôles maximum. |
 | Ignorer les bots | Ignore les événements causés par ou ciblant des bots |
-| Joindre les transcriptions | Joint le contenu complet d'un message sous forme de fichier lorsqu'il est trop long pour tenir dans l'entrée elle-même |
-| Fusionner les doublons | Voir ci-dessous |
+| Joindre les transcriptions | Joint le contenu complet d'un message sous forme de fichier lorsqu'il est trop long pour tenir dans l'entrée elle-même. Désactivez cette option si vous préférez ne voir que le message, avec le contenu long simplement tronqué. |
+| Fusionner les doublons | Voir [Éviter les doublons](#eviter-les-doublons) ci-dessous |
 | Langue des logs | La langue dans laquelle vos entrées de log sont rédigées |
 
 <Note>
-  Les entrées de logs utilisent toujours la langue configurée pour votre serveur (définie une fois, dans **Paramètres du serveur**), et non la langue personnelle de chaque modérateur — un salon de logs doit se lire de la même façon pour tous ceux qui y ont accès.
+  Les entrées de logs utilisent toujours la langue configurée pour votre serveur (définie une fois, dans **Paramètres du serveur**), et non la langue personnelle de chaque modérateur — un salon de logs doit se lire de la même façon pour tous ceux qui y ont accès. Le réglage **Langue des logs** ici ne fait que choisir dans laquelle des langues prises en charge ce texte commun est rédigé.
 </Note>
+
+<Tip>
+  Il n'y a pas d'interrupteur pour désactiver le module dans son ensemble : retirer tous les salons de toutes les catégories (ou utiliser **Tout effacer** sur l'écran principal) revient à le désactiver. Rajoutez un salon à n'importe quelle catégorie et les logs reprennent immédiatement.
+</Tip>
 
 ## Éviter les doublons
 
