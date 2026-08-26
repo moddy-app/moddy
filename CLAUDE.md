@@ -455,7 +455,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/PREMIUM.md](docs/PREMIUM.md) | **Premium gating** — how to check whether a server (or a user) is premium |
 | [docs/STAFF_SYSTEM.md](docs/STAFF_SYSTEM.md) | Staff/dev commands, permissions, roles |
 | [docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md) | **Centralized notifications** — every DM/mail/dashboard message, attribution buttons, abuse reports, `/com send`, `/mod notif` |
-| [docs/NOTIFICATIONS_INTEGRATION.md](docs/NOTIFICATIONS_INTEGRATION.md) | Notifications ↔ backend contract — tables the backend reads/owns, exact payload rendering + placeholder algorithm, mail/dashboard delivery loop |
+| [docs/NOTIFICATIONS_INTEGRATION.md](docs/NOTIFICATIONS_INTEGRATION.md) | **Notifications — backend implementation guide** — schema, enums, rendering + placeholder algorithm, content hash, read models, delivery worker, dashboard inbox, API shapes, security, test vectors |
 | [docs/LOGS.md](docs/LOGS.md) | **Advanced server logs** — 163 events, registry, rendering, webhook delivery, stored config & dashboard contract |
 | [docs/MODERATION_CASES.md](docs/MODERATION_CASES.md) | Moderation cases/sanctions, the case service & sources, auto-sync |
 | [docs/GLOBAL_SANCTIONS.md](docs/GLOBAL_SANCTIONS.md) | **Global sanctions** — Moddy-team warn / limited / suspended, on users *and* servers |

@@ -321,9 +321,10 @@ tests/test_notifications.py
 
 The mail and dashboard halves are delivered by the backend, from the same rows:
 the bot creates their `notification_deliveries` entries as `pending` and never
-touches them again. The exact contract — what the backend reads, what it owns,
-how to render the stored template so a mail says what the DM said, and the
-placeholder algorithm it must match character for character — is in
+touches them again. The full implementation guide for that side — schema and
+enums, the rendering and placeholder algorithms it must match character for
+character, the content hash, the read models, the delivery worker, the
+dashboard inbox and its authorisation rules, security and test vectors — is in
 [NOTIFICATIONS_INTEGRATION.md](NOTIFICATIONS_INTEGRATION.md).
 
 ---
