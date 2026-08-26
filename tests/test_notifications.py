@@ -211,7 +211,7 @@ async def test_a_verified_server_gets_the_check():
     ctx = await resolve_source_context(
         FakeBot(FakeGuild(), {"VERIFIED": True}), NotificationSource.guild(42))
     assert ctx["verified"] is True
-    assert ctx["badge"]  # a hyperlinked badge, per the CLAUDE.md rule
+    assert ctx["badge"]  # the plain badge emoji, no link (Discord DM previews break on it)
     assert ctx["reportable"] is True
     # …and it is the badge that reaches the attribution line.
     assert ctx["badge"] in build_attribution_line(ctx, locale="en-US")

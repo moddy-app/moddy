@@ -51,8 +51,10 @@ An official notice carries no line: a suspension **is** Moddy speaking, there is
 no third party to name.
 
 A verified server (`VERIFIED`, `VERIFIED_ORG` or `PARTNER`) gets the
-verification check right after its name, hyperlinked like everywhere else in
-Moddy (CLAUDE.md rule #7).
+verification check right after its name, as the plain emoji — **not**
+hyperlinked like everywhere else in Moddy (CLAUDE.md rule #7). The hyperlinked
+form broke in this context, so `resolve_source_context()` sets `ctx["badge"]`
+to the bare `VERIFIED` emoji instead of `format_verification_badge(VERIFIED)`.
 
 The line goes **inside the last container** of the card, not under it: a `-#`
 floating as its own component reads as a separate message.

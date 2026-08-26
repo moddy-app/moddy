@@ -30,7 +30,7 @@ from cogs.error_handler import BaseView
 from notifications.models import (
     ContentAuthor, NotificationContent, NotificationSource, get_service,
 )
-from utils.emojis import MODDY_SQUARE_MIN, VERIFIED, format_verification_badge
+from utils.emojis import MODDY_SQUARE_MIN, VERIFIED
 from utils.i18n import t
 
 logger = logging.getLogger("moddy.notifications.render")
@@ -158,7 +158,7 @@ async def resolve_source_context(
             attributes.get(attr) for attr in VERIFIED_GUILD_ATTRIBUTES
         )
         if ctx["verified"]:
-            ctx["badge"] = format_verification_badge(VERIFIED)
+            ctx["badge"] = VERIFIED
 
         # Moddy's own servers are not reportable to Moddy.
         if ctx["official"] and ctx["reportable"]:
@@ -179,7 +179,8 @@ def build_attribution_line(ctx: Dict[str, Any], *, locale: str = "en-US") -> Opt
     have always used (``commands.moderation.dm.sent_by``), so a member sees one
     consistent sentence at the bottom of anything Moddy sends them, whatever
     feature produced it. The verification badge is appended right after the
-    name when the server carries one, per the badge rule in CLAUDE.md.
+    name when the server carries one — as the plain emoji, not the hyperlinked
+    form from CLAUDE.md's badge rule, since the link breaks in this context.
 
     A notification with no server (a reminder, an appeal outcome) names the
     Moddy service instead. An official notice gets no line at all — the caller
