@@ -1,0 +1,142 @@
+---
+title: "Logs de serveur : ne manquez plus rien de ce qui se passe"
+sidebarTitle: "Logs"
+description: "Recevez un journal détaillé et lisible dans vos propres salons à chaque changement dans votre serveur — messages, rôles, salons, modération, et bien plus."
+icon: "list-timeline"
+---
+
+Les logs de serveur surveillent tout ce qui se passe sur votre serveur — un message modifié, un rôle créé, un membre banni, les permissions d'un salon modifiées — et publient une entrée claire et lisible dans le salon de votre choix, quelques secondes après. Rien n'est filtré au hasard : chacun des **163 événements** que Moddy peut détecter appartient à l'une des 18 catégories, et c'est vous qui décidez où va chaque catégorie.
+
+<Note>
+  Les logs sont entièrement passifs. Moddy n'agit jamais sur ce qu'il enregistre — il se contente de le rapporter. La modération elle-même (bannissements, avertissements, mutes) est gérée par vos modérateurs ou par l'Automod IA ; les logs garantissent simplement qu'il en existe toujours une trace.
+</Note>
+
+## Comment ça marche
+
+<Steps>
+  <Step title="Un événement se produit sur votre serveur">
+    Un membre rejoint, un salon est renommé, les permissions d'un rôle changent, un message est supprimé — tout ce que le journal d'audit natif de Discord montrerait déjà, et bien plus encore.
+  </Step>
+  <Step title="Moddy identifie qui en est à l'origine">
+    Pour tout ce qu'un modérateur ou un admin pourrait avoir causé, Moddy croise en arrière-plan les informations avec le journal d'audit de Discord, afin que l'entrée nomme la personne responsable — pas seulement ce qui a changé.
+  </Step>
+  <Step title="L'entrée est publiée dans le salon configuré">
+    Un message clair par événement, avec un code couleur selon le type de changement, et les détails pertinents affichés sous forme de lignes labellisées : qui, quoi, quand, et pourquoi si une raison a été indiquée.
+  </Step>
+  <Step title="Les entrées similaires sont fusionnées quand cela a du sens">
+    Une seule action de modération peut déclencher plusieurs événements sous-jacents (voir [Éviter les doublons](#eviter-les-doublons)) — par défaut, Moddy les fusionne en une seule entrée plutôt que d'inonder votre salon.
+  </Step>
+</Steps>
+
+### À quoi ressemble une entrée
+
+```
+┌──────────────────────────────────────────────┐
+│  Rôle(s) ajouté(s) à un utilisateur          │
+│  > Utilisateur : SomeMember (123456789012345678) │
+│  > Ajouté : @Trusted                         │
+│  > Raison : Rôles automatiques                │
+│                                     [avatar] │
+│  Moddy                          26/07 13:12  │
+└──────────────────────────────────────────────┘
+```
+
+La couleur sur le bord gauche indique en un coup d'œil le type de changement :
+
+| Couleur | Signification |
+|---|---|
+| 🟢 Vert | Quelque chose a été créé |
+| 🔴 Rouge | Quelque chose a été supprimé |
+| 🔵 Bleu | Quelque chose a été modifié |
+| 🟠 Orange | Un modérateur a agi |
+
+## Catégories
+
+Une **catégorie** est l'unité que vous routez vers un salon — tous les événements qu'elle contient vont au même endroit. Cela garde la configuration gérable : vous choisissez « où vont les logs de messages », pas 163 décisions individuelles.
+
+| Catégorie | Couvre |
+|---|---|
+| Serveur | Paramètres et identité globaux du serveur |
+| Messages | Modifications, suppressions, épinglages |
+| Utilisateurs | Arrivées, départs, changements de pseudo et de profil |
+| Modération | Bannissements, expulsions, avertissements, mutes, timeouts |
+| Salons | Création, suppression, changements de permissions et de paramètres |
+| Rôles | Création, suppression, changements de permissions |
+| Fils de discussion | Création, archivage, suppression |
+| Vocal | Arrivées, départs, déplacements, mutes |
+| Invitations | Création et suppression |
+| AutoMod Discord | Déclenchements des règles d'automodération natives de Discord |
+| Emojis, Autocollants, Soundboard | Ajouts, suppressions, modifications |
+| Événements | Cycle de vie des événements planifiés |
+| Stage | Changements des salons de conférence |
+| Sondages | Création et résultats des sondages |
+| Webhooks | Création, suppression, modifications |
+| Applications | Changements d'intégrations et de bots |
+
+<Tip>
+  Une même action réelle peut apparaître dans deux catégories à la fois. Un bannissement, par exemple, apparaît à la fois dans **Modération** et dans **Serveur** — vous pouvez donc envoyer l'historique de modération vers un salon privé réservé au staff tout en gardant un flux d'activité générale accessible à tous ceux qui y ont accès.
+</Tip>
+
+## Activer les logs
+
+<Steps>
+  <Step title="Ouvrir le panneau de configuration">
+    Tapez `/config` sur votre serveur et sélectionnez **Logs**.
+  </Step>
+  <Step title="Choisir une catégorie">
+    Sélectionnez la catégorie à configurer dans la liste, ou utilisez le raccourci pour tout envoyer d'un coup vers un seul salon.
+  </Step>
+  <Step title="Choisir un ou plusieurs salons">
+    Chaque catégorie peut être envoyée vers **3 salons maximum**. Répartir une catégorie sur plusieurs salons est utile si, par exemple, différentes équipes doivent chacune voir les mêmes événements dans leur propre espace.
+  </Step>
+  <Step title="Affiner les événements inclus">
+    Chaque catégorie arrive avec tous ses événements activés. Décochez ce que vous ne souhaitez pas voir — la liste est paginée lorsqu'une catégorie contient beaucoup d'événements.
+  </Step>
+</Steps>
+
+Chaque modification s'applique immédiatement — il n'y a pas de bouton d'enregistrement séparé.
+
+<Warning>
+  Moddy a besoin de la permission **Gérer les webhooks** pour publier les logs efficacement. Sans elle, les logs continuent de fonctionner, mais un peu plus lentement et moins résistants aux pics d'activité (un raid, un bannissement massif).
+</Warning>
+
+## Options
+
+En plus des catégories, un écran **Options** vous permet d'ajuster finement l'ensemble du module :
+
+| Option | Ce qu'elle fait |
+|---|---|
+| Salons ignorés | Les événements se produisant dans ces salons (ou leurs fils) ne sont jamais enregistrés |
+| Rôles ignorés | Les membres possédant l'un de ces rôles ne sont jamais enregistrés comme sujet d'un événement |
+| Ignorer les bots | Ignore les événements causés par ou ciblant des bots |
+| Joindre les transcriptions | Joint le contenu complet d'un message sous forme de fichier lorsqu'il est trop long pour tenir dans l'entrée elle-même |
+| Fusionner les doublons | Voir ci-dessous |
+| Langue des logs | La langue dans laquelle vos entrées de log sont rédigées |
+
+<Note>
+  Les entrées de logs utilisent toujours la langue configurée pour votre serveur (définie une fois, dans **Paramètres du serveur**), et non la langue personnelle de chaque modérateur — un salon de logs doit se lire de la même façon pour tous ceux qui y ont accès.
+</Note>
+
+## Éviter les doublons
+
+Certaines actions sont légitimement décrites par plusieurs événements. Rendre quelqu'un muet via Moddy, par exemple, est à la fois une action de modération *et* un timeout au niveau Discord — chacun vrai et utile en soi, mais publier les deux dans le même salon signifierait deux entrées quasi identiques pour un seul clic.
+
+Avec l'option **Fusionner les doublons** activée (par défaut), Moddy attend un court instant pour voir si des événements liés arrivent ensemble, puis délivre une seule entrée, plus riche, combinant tout ce qu'ils savaient — clairement indiquée comme fusionnée, pour que rien ne soit caché. Cela ne fusionne que les événements qui atterrissent dans le *même* salon : si vous avez délibérément séparé les événements de modération et d'utilisateurs sur deux salons différents, chacun garde sa propre entrée, puisqu'il n'y avait rien à fusionner au départ.
+
+<Tip>
+  Désactivez la fusion si vous préférez voir chaque événement sous-jacent listé séparément — utile si vous reconstituez une chronologie technique exacte de ce que Discord a rapporté.
+</Tip>
+
+## Questions fréquentes
+
+<AccordionGroup>
+  <Accordion title="Pourquoi un événement précis n'apparaît-il pas dans mon salon de logs ?">
+    Vérifiez que sa catégorie est bien reliée à un salon, que l'événement lui-même n'est pas décoché dans la liste de cette catégorie, et que ni le salon ni le membre concerné ne figurent dans vos listes d'exclusion des Options.
+  </Accordion>
+  <Accordion title="Puis-je envoyer un événement vers plusieurs salons ?">
+    Oui — chaque catégorie peut être routée vers jusqu'à 3 salons à la fois.
+  </Accordion>
+  <Accordion title="Est-ce une fonctionnalité premium ?">
+    Non, chaque serveur a accès aux 18 catégories.
+  </Accordion>
+</AccordionGroup>

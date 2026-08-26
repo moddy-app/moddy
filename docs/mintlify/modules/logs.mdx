@@ -1,0 +1,142 @@
+---
+title: "Server Logs: Never Miss What Happens In Your Server"
+sidebarTitle: "Logs"
+description: "Send a detailed, readable log to your own channels every time something changes in your server — messages, roles, channels, moderation, and more."
+icon: "list-timeline"
+---
+
+Server Logs watches everything that happens across your server — a message edited, a role created, a member banned, a channel's permissions changed — and posts a clear, readable entry to the channel you choose, seconds after it happens. Nothing is filtered by guesswork: every one of the **163 events** Moddy can detect belongs to one of 18 categories, and you decide exactly which categories go where.
+
+<Note>
+  Logs are entirely passive. Moddy never acts on what it logs — it only reports it. Moderation itself (bans, warns, mutes) is handled by your moderators or by Automod AI; Logs simply makes sure there's always a record of it.
+</Note>
+
+## How It Works
+
+<Steps>
+  <Step title="Something happens in your server">
+    A member joins, a channel is renamed, a role's permissions change, a message is deleted — anything Discord itself would show in its own audit log, and a fair amount it doesn't.
+  </Step>
+  <Step title="Moddy figures out who did it">
+    For anything a moderator or an admin could have caused, Moddy cross-references Discord's audit log in the background so the entry can name the person responsible — not just what changed.
+  </Step>
+  <Step title="The entry is posted to your configured channel">
+    One clean message per event, colour-coded by what kind of change it is, with the relevant details as clear labelled lines: who, what, when, and why if a reason was given.
+  </Step>
+  <Step title="Similar entries are merged when it makes sense">
+    A single moderation action can trigger more than one underlying event (see [Avoiding duplicate entries](#avoiding-duplicate-entries)) — by default, Moddy merges these into one entry instead of flooding your channel.
+  </Step>
+</Steps>
+
+### What a log entry looks like
+
+```
+┌──────────────────────────────────────────────┐
+│  Role(s) added to a user                     │
+│  > User: SomeMember (123456789012345678)     │
+│  > Added: @Trusted                           │
+│  > Reason: Join Roles                        │
+│                                     [avatar] │
+│  Moddy                          26/07 13:12  │
+└──────────────────────────────────────────────┘
+```
+
+The colour on the left edge tells you at a glance what kind of change it is:
+
+| Colour | Meaning |
+|---|---|
+| 🟢 Green | Something was created |
+| 🔴 Red | Something was deleted |
+| 🔵 Blue | Something was updated |
+| 🟠 Orange | A moderator took action |
+
+## Categories
+
+A **category** is the unit you route to a channel — every event within it goes to the same place. This keeps configuration manageable: you're choosing "where do messages logs go", not making 163 individual decisions.
+
+| Category | Covers |
+|---|---|
+| Server | Server-wide settings and identity changes |
+| Messages | Edits, deletions, pins |
+| Users | Joins, leaves, nickname and profile changes |
+| Moderation | Bans, kicks, warns, mutes, timeouts |
+| Channels | Creation, deletion, permission and settings changes |
+| Roles | Creation, deletion, permission changes |
+| Threads | Creation, archiving, deletion |
+| Voice | Joins, leaves, moves, mutes |
+| Invites | Creation and deletion |
+| Discord AutoMod | Discord's own automod rule triggers |
+| Emojis, Stickers, Soundboard | Additions, removals, edits |
+| Events | Scheduled event lifecycle |
+| Stage | Stage instance changes |
+| Polls | Poll creation and results |
+| Webhooks | Creation, deletion, edits |
+| Applications | Integration and bot changes |
+
+<Tip>
+  The same real-world action can appear in two categories at once. A ban, for example, shows up under both **Moderation** and **Server** — so you can send moderation history to a private mod channel while still keeping a general server-activity feed for everyone with access.
+</Tip>
+
+## Enabling Logs
+
+<Steps>
+  <Step title="Open the configuration panel">
+    Type `/config` in your server and select **Logs**.
+  </Step>
+  <Step title="Pick a category">
+    Choose which category to configure from the list, or use the shortcut to send everything to a single channel at once.
+  </Step>
+  <Step title="Choose one or more channels">
+    Each category can post to up to **3 channels**. Splitting a category across several channels is useful if, say, different teams should each see the same events in their own space.
+  </Step>
+  <Step title="Fine-tune which events are included">
+    Every category comes with all of its events enabled. Untick anything you don't want to see — the list is paginated when a category has a lot of events.
+  </Step>
+</Steps>
+
+Every change applies immediately — there's no separate save button.
+
+<Warning>
+  Moddy needs the **Manage Webhooks** permission to post logs efficiently. Without it, logs still go through, just slightly slower and less resistant to bursts of activity (a raid, a mass-ban).
+</Warning>
+
+## Options
+
+Alongside the categories, an **Options** screen lets you fine-tune the whole module:
+
+| Option | What it does |
+|---|---|
+| Ignored channels | Events happening in these channels (or their threads) are never logged |
+| Ignored roles | Members holding one of these roles are never logged as the subject of an event |
+| Ignore bots | Skip events caused by or targeting bots |
+| Attach transcripts | Attach full message content as a file when it's too long to fit in the entry itself |
+| Merge duplicates | See below |
+| Log language | The language your log entries are written in |
+
+<Note>
+  Log entries always use your server's configured language (set once, under **Server settings**), not each moderator's personal language — a log channel should read the same to everyone who has access to it.
+</Note>
+
+## Avoiding duplicate entries
+
+Some actions are legitimately described by more than one event. Muting someone through Moddy, for instance, is simultaneously a moderation action *and* a Discord-level timeout — each one true and useful on its own, but posting both to the same channel would mean two near-identical entries for a single click.
+
+With **Merge duplicates** enabled (the default), Moddy waits a brief moment to see if related events arrive together, then delivers a single, richer entry combining everything they knew — clearly marked with what it was merged with, so nothing is hidden. This only merges events landing in the *same* channel: if you've deliberately split moderation and user events across two different channels, both still get their own entry, because there was nothing duplicated to begin with.
+
+<Tip>
+  Turn merging off if you'd rather see every underlying event listed separately — useful if you're piecing together an exact technical timeline of what Discord itself reported.
+</Tip>
+
+## Frequently asked questions
+
+<AccordionGroup>
+  <Accordion title="Why didn't a specific event show up in my log channel?">
+    Check that its category is bound to a channel, that the event itself isn't unticked in that category's list, and that neither the channel nor the member involved is on your ignore lists in Options.
+  </Accordion>
+  <Accordion title="Can I log an event to more than one channel?">
+    Yes — each category can be routed to up to 3 channels at once.
+  </Accordion>
+  <Accordion title="Is this a premium feature?">
+    No, every server gets access to all 18 categories.
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,171 @@
+---
+title: "Tickets : des demandes de support organisées avec panneaux et permissions"
+sidebarTitle: "Tickets"
+description: "Laissez vos membres ouvrir des salons de support privés via un panneau que vous concevez, routez chaque type de demande vers la bonne équipe, et gérez tout avec les prises en charge, l'escalade et des permissions fines par rôle."
+icon: "ticket"
+---
+
+Le module Tickets dote votre serveur d'un véritable bureau d'assistance : les membres cliquent sur un bouton ou choisissent une option dans un menu déroulant, et Moddy leur ouvre un salon privé avec votre équipe. Vous contrôlez tout de cette expérience — où va chaque type de demande, quels rôles peuvent la voir et agir dessus, ce que dit le message d'ouverture, et comment votre équipe s'organise autour.
+
+## Les trois niveaux
+
+<Steps>
+  <Step title="Panneau">
+    Un message que vous publiez dans un salon public, affichant soit des boutons, soit un menu déroulant. C'est le point d'entrée avec lequel les membres interagissent.
+  </Step>
+  <Step title="Catégorie">
+    Une option à l'intérieur d'un panneau — un bouton, ou une entrée du menu déroulant. Chaque catégorie détermine où ses tickets sont créés, qui peut les ouvrir, quels rôles peuvent agir dessus, et ce qu'ils disent.
+  </Step>
+  <Step title="Ticket">
+    Le salon privé dans lequel se retrouve un membre après avoir choisi une catégorie.
+  </Step>
+</Steps>
+
+Vous pouvez avoir plusieurs panneaux — par exemple, un pour le support général et un pour les signalements — chacun avec son propre ensemble de catégories.
+
+## Configurer votre premier panneau
+
+<Steps>
+  <Step title="Ouvrir le panneau de configuration">
+    Tapez `/config` sur votre serveur et sélectionnez **Tickets**.
+  </Step>
+  <Step title="Créer un panneau">
+    Donnez-lui un nom (pour votre propre référence), choisissez le salon dans lequel il sera publié, et son style : **boutons** ou **menu déroulant**.
+  </Step>
+  <Step title="Ajouter au moins une catégorie">
+    Chaque catégorie a besoin d'une destination — la catégorie Discord sous laquelle les tickets seront créés — et d'un libellé que les membres verront.
+  </Step>
+  <Step title="Accorder l'accès aux rôles">
+    Pour chaque catégorie, décidez quels rôles du staff peuvent voir et agir sur ses tickets, et avec quelles permissions (voir ci-dessous). Sans au moins un rôle habilité, personne à part les administrateurs du serveur ne pourra traiter ces tickets.
+  </Step>
+  <Step title="Personnaliser les messages (optionnel)">
+    Chaque champ de texte — le titre et la description du panneau lui-même, et le message qu'un membre voit à l'ouverture de son ticket — est pré-rempli avec un texte par défaut que vous pouvez modifier librement. Utilisez `{user}`, `{category}` et `{number}` pour les personnaliser.
+  </Step>
+</Steps>
+
+Le panneau se publie (ou se met à jour) dès l'enregistrement — il n'y a pas d'étape de publication séparée.
+
+<Note>
+  Une catégorie sans destination configurée, ou que vous avez mise en pause, n'apparaît tout simplement pas sur le panneau. Si toutes les catégories d'un panneau deviennent ainsi inutilisables, Moddy retire le panneau plutôt que de laisser aux membres un bouton qui ne mène nulle part.
+</Note>
+
+## Limites
+
+| | Gratuit | Premium |
+|---|---|---|
+| Panneaux par serveur | 3 | 10 |
+| Catégories par panneau | 5 | 15 |
+
+Voir [Premium](/premium) pour ce que débloque le palier supérieur.
+
+## Permissions
+
+L'accès aux tickets d'une catégorie est accordé **par rôle**, avec neuf permissions indépendantes :
+
+| Permission | Permet à un rôle de... |
+|---|---|
+| Voir | Voir et répondre dans les tickets de cette catégorie |
+| Fermer | Fermer et rouvrir un ticket |
+| Prendre en charge | Prendre un ticket en charge, et libérer le sien |
+| Retirer à un autre | Retirer un ticket à la personne qui le détient actuellement |
+| Fil du staff | Ouvrir et rejoindre le fil de discussion privé réservé au staff, attaché à un ticket |
+| Renommer | Renommer le salon du ticket |
+| Déplacer | Déplacer un ticket vers une autre catégorie |
+| Participants | Ajouter ou retirer des membres et des rôles d'un ticket |
+| Admin | Tout ce qui précède, et conserve l'accès même si le ticket est escaladé |
+
+<Tip>
+  Prendre en charge et retirer à un autre sont volontairement séparées. Libérer un ticket que l'on gère soi-même est une action courante ; retirer un ticket à un collègue est une décision plus importante que votre équipe voudra peut-être réserver aux responsables.
+</Tip>
+
+Un membre qui ouvre un ticket — ou toute personne ajoutée manuellement — peut toujours le voir et y répondre, même sans détenir de permission de rôle pour cette catégorie. Le fait qu'il puisse aussi le fermer lui-même dépend de vous : accordez la permission **Fermer** au rôle de vos membres si vous souhaitez le leur permettre.
+
+### Qui peut ouvrir un ticket
+
+Chaque catégorie peut restreindre qui a le droit de l'ouvrir : laissez la liste d'autorisation vide pour « tout le monde », remplissez-la pour la restreindre à certains rôles, ou ajoutez des rôles à une liste d'exclusion pour les bannir explicitement — une exclusion l'emporte toujours, même sur une autorisation ou sur le statut d'administrateur du serveur.
+
+## Gérer un ticket
+
+Chacune des actions ci-dessous est disponible à la fois comme bouton directement sur le ticket et comme commande `/ticket` — utilisez celle qui est la plus pratique sur le moment.
+
+### Prendre en charge
+
+Si une catégorie a activé la prise en charge, tout agent disposant de la permission **Prendre en charge** peut s'attribuer un ticket :
+
+```discord
+/ticket claim
+/ticket unclaim
+```
+
+Le nom du salon affiche un petit point coloré pour que toute votre équipe puisse voir l'état d'un ticket d'un coup d'œil :
+
+| Point | Signification |
+|---|---|
+| 🔴 | Ouvert, non pris en charge |
+| 🟢 | Pris en charge |
+| 🟣 | Escaladé |
+| ⚫ | Fermé |
+
+<Tip>
+  Activez le **verrouillage à la prise en charge** sur une catégorie si vous voulez qu'un ticket pris en charge devienne silencieux pour tout le monde sauf celui qui le détient, vos administrateurs et le membre lui-même — le reste de votre équipe garde un accès en lecture, mais seule la personne qui gère le ticket peut répondre. Utile pour les équipes où les réponses croisées (deux agents répondant au même message) posent un vrai problème.
+</Tip>
+
+### Escalader
+
+Escaladez un ticket pour le confier à votre staff le plus expérimenté — seuls les rôles avec la permission **Admin** restent dans la boucle une fois le ticket escaladé. Si des participants avaient été ajoutés manuellement, on vous demande ce qu'il doit advenir d'eux : les garder tels quels, les garder mais rendre le ticket en lecture seule pour eux, ou les retirer complètement.
+
+```discord
+/ticket escalate
+/ticket deescalate
+```
+
+L'escalade libère automatiquement la prise en charge en cours — elle est mise de côté et restituée automatiquement à la même personne si l'escalade est ensuite annulée.
+
+### Fermer
+
+```discord
+/ticket close
+/ticket reopen
+```
+
+Fermer ne supprime rien : le salon est verrouillé et une carte de fermeture apparaît avec un bouton **Rouvrir** et un bouton **Supprimer** (ce dernier nécessite la permission **Admin**). Le membre à l'origine du ticket reçoit un DM dans les deux cas, pour toujours savoir où en sont les choses.
+
+Si vous préférez demander l'accord d'un membre avant de fermer, utilisez :
+
+```discord
+/ticket close-request
+```
+
+### Ajouter des personnes à un ticket
+
+```discord
+/ticket participants
+```
+
+Ouvre un formulaire pré-rempli avec les personnes ayant déjà accès, de sorte que retirer quelqu'un revienne simplement à le décocher.
+
+### Le fil du staff
+
+Pour les discussions que votre équipe doit avoir *à propos* d'un ticket sans que le membre les voie, ouvrez le fil privé qui y est attaché :
+
+```discord
+/ticket staff-thread
+```
+
+<Warning>
+  Mentionner quelqu'un dans le fil du staff l'y ajoute immédiatement — c'est le comportement natif de Discord pour les fils privés. Moddy retire automatiquement toute personne qui rejoint ainsi le fil sans être réellement habilitée à accéder au staff de cette catégorie, afin qu'une mention accidentelle ne puisse pas exposer la conversation.
+</Warning>
+
+## Questions fréquentes
+
+<AccordionGroup>
+  <Accordion title="Un membre peut-il ouvrir plusieurs tickets à la fois ?">
+    Seulement si vous l'autorisez — chaque catégorie a sa propre limite du nombre de tickets ouverts simultanément par un même membre (un seul, par défaut).
+  </Accordion>
+  <Accordion title="Que se passe-t-il si je supprime un panneau ou une catégorie ?">
+    Le message du panneau est retiré immédiatement. Les tickets déjà ouverts depuis celui-ci ne sont pas affectés — seuls les nouveaux sont empêchés.
+  </Accordion>
+  <Accordion title="Puis-je déplacer un ticket vers une autre catégorie après son ouverture ?">
+    Oui, avec la permission **Déplacer** sur la catégorie actuelle du ticket. Les permissions et le staff de la catégorie de destination s'appliquent alors pour la suite.
+  </Accordion>
+</AccordionGroup>
