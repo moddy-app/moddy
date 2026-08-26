@@ -378,6 +378,10 @@
     "ticket info": {
       "name": "情報",
       "description": "このチケットの詳細を表示します"
+    },
+    "bug-report": {
+      "name": "バグ報告",
+      "description": "Moddyの不具合をチームに報告します"
     }
   }
 }

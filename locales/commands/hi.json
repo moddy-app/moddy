@@ -378,6 +378,10 @@
     "ticket info": {
       "name": "जानकारी",
       "description": "इस टिकट का विवरण दिखाता है"
+    },
+    "bug-report": {
+      "name": "बग-रिपोर्ट",
+      "description": "टीम को Moddy की कोई बग बताएँ"
     }
   }
 }

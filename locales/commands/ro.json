@@ -378,6 +378,10 @@
     "ticket info": {
       "name": "info",
       "description": "Afișează detaliile acestui tichet"
+    },
+    "bug-report": {
+      "name": "raporteaza-eroare",
+      "description": "Raportează echipei o eroare Moddy"
     }
   }
 }

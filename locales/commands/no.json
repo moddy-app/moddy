@@ -378,6 +378,10 @@
     "ticket info": {
       "name": "info",
       "description": "Viser detaljene for denne saken"
+    },
+    "bug-report": {
+      "name": "feilrapport",
+      "description": "Rapporter en Moddy-feil til teamet"
     }
   }
 }

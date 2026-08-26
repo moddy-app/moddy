@@ -378,6 +378,10 @@
     "ticket info": {
       "name": "info",
       "description": "Megmutatja a hibajegy részleteit"
+    },
+    "bug-report": {
+      "name": "hibabejelentes",
+      "description": "Jelents egy Moddy-hibát a csapatnak"
     }
   }
 }

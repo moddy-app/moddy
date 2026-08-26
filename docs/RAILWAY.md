@@ -134,6 +134,32 @@ message / Accepter / Refuser)
 **Description :** Salon où chaque étape du traitement d'un signalement (créé,
 pris en charge, accepté, refusé) est journalisée
 
+## Demandes de support
+
+Les deux salons vivent dans le serveur de l'équipe Moddy. Défauts dans
+`config.py` — voir [SUPPORT_REQUESTS.md](SUPPORT_REQUESTS.md).
+
+### MODDY_BUG_REPORT_CHANNEL_ID
+**Valeur :** id de salon (défaut : `1542307806055759943`)
+**Description :** Salon où atterrissent les signalements `/bug-report`, avec la
+carte staff (Prendre / Répondre / Fermer)
+
+### MODDY_CONFIG_HELP_CHANNEL_ID
+**Valeur :** id de salon (défaut : `1542307892970131516`)
+**Description :** Salon où atterrissent les demandes « configurez-le pour moi »
+envoyées depuis le bouton sous les annonces de Moddy
+
+### MODDY_SUPPORT_URL / MODDY_DASHBOARD_URL / MODDY_DOCS_URL
+**Valeurs :** `https://moddy.app/support`, `https://dashboard.moddy.app`,
+`https://docs.moddy.app`
+**Description :** Liens publics affichés sous `/config`, les cartes de support
+et les notifications
+
+### MODDY_CONFIG_COMMAND_MENTION
+**Valeur :** mention de commande (défaut : `</config:1444430277970497653>`)
+**Description :** Mention cliquable de `/config` insérée dans le corps des
+notifications. À mettre à jour si la commande est recréée (son id change)
+
 ## Checklist Railway
 
 - [ ] `DISCORD_TOKEN`
@@ -150,6 +176,9 @@ pris en charge, accepté, refusé) est journalisée
 - [ ] `ALTGUARD_API_URL` (optionnel, défaut `https://verify.moddy.app`)
 - [ ] `MODDY_NOTIF_REPORT_CHANNEL_ID` (optionnel, défaut en dur dans `config.py`)
 - [ ] `MODDY_NOTIF_REPORT_LOG_CHANNEL_ID` (optionnel, défaut en dur dans `config.py`)
+- [ ] `MODDY_BUG_REPORT_CHANNEL_ID` (optionnel, défaut en dur dans `config.py`)
+- [ ] `MODDY_CONFIG_HELP_CHANNEL_ID` (optionnel, défaut en dur dans `config.py`)
+- [ ] `MODDY_CONFIG_COMMAND_MENTION` (optionnel, défaut en dur dans `config.py`)
 - [ ] `HM_URL` (optionnel, désactive le heartbeat si absent)
 - [ ] `HM_INGEST_TOKEN` (optionnel, désactive le heartbeat si absent, identique sur tous les services)
 - [ ] `BETTERSTACK_HEARTBEAT_URL` (optionnel, désactive le ping Better Stack si absent)

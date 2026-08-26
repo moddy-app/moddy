@@ -378,6 +378,10 @@
     "ticket info": {
       "name": "정보",
       "description": "이 티켓의 세부 정보를 표시합니다"
+    },
+    "bug-report": {
+      "name": "버그-신고",
+      "description": "Moddy의 버그를 팀에 신고합니다"
     }
   }
 }

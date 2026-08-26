@@ -378,6 +378,10 @@
     "ticket info": {
       "name": "bilgi",
       "description": "Bu talebin ayrıntılarını gösterir"
+    },
+    "bug-report": {
+      "name": "hata-bildir",
+      "description": "Moddy'deki bir hatayı ekibe bildir"
     }
   }
 }

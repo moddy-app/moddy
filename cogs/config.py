@@ -1,6 +1,15 @@
 """
-Commande /config - Configuration des modules de serveur
-Permet de configurer tous les modules disponibles avec une interface moderne V2
+/config — the server configuration panel.
+
+One screen, one dropdown: every module Moddy offers, plus the server-wide
+settings entry that used to sit on its own button. Below the container come the
+two links a server owner reaches for when the panel is not enough — the support
+server and the dashboard — as link buttons *outside* the container, the way
+docs/DESIGN.md wants call-to-actions that leave Discord.
+
+Access: anyone with **Manage Server**. The panel used to be gated behind the
+TEAM/BETA attributes while the module system was being built; Moddy is in beta
+now and the modules are live, so the gate is gone.
 """
 
 import discord
@@ -9,8 +18,9 @@ from discord.ext import commands
 from typing import Optional
 import logging
 
+from config import COLORS
 from utils.i18n import i18n, t
-from utils.emojis import EMOJIS
+from utils.emojis import EMOJIS, SETTINGS, SUPPORT, WEB, BOOK
 from utils import global_sanctions
 from utils.components_v2 import create_limited_message
 from cogs.error_handler import BaseView
@@ -19,7 +29,15 @@ from modules.configs._common import check_guild_perms
 logger = logging.getLogger('moddy.cogs.config')
 
 _CID_MODULE_SELECT = "moddy:config:main:module_select"
-_CID_SETTINGS = "moddy:config:main:settings"
+
+#: Value of the dropdown entry that opens the server-wide settings screen.
+#: Prefixed so it can never collide with a module id.
+SETTINGS_OPTION = "__server_settings__"
+
+#: Links shown under the panel. Outside the container, as link buttons.
+SUPPORT_URL = "https://moddy.app/support"
+DASHBOARD_URL = "https://dashboard.moddy.app"
+DOCS_URL = "https://docs.moddy.app"
 
 
 class ConfigMainView(BaseView):
@@ -59,119 +77,120 @@ class ConfigMainView(BaseView):
 
         self._build_view()
 
+    # ----------------------------------------------------------------- #
+    # Rendering
+    # ----------------------------------------------------------------- #
+
     def _build_view(self):
-        """Construit l'interface principale"""
+        """Construit l'interface principale."""
         self.clear_items()
 
-        container = ui.Container()
+        container = ui.Container(accent_colour=discord.Colour(COLORS["primary"]))
 
-        # Titre et message de bienvenue
         container.add_item(ui.TextDisplay(
-            f"### <:settings:1519800032499339354> {t('modules.config.main.title', locale=self.locale)}"
+            f"### {SETTINGS} {t('modules.config.main.title', locale=self.locale)}"
         ))
         container.add_item(ui.TextDisplay(
-            f"\n{t('modules.config.main.description', locale=self.locale)}"
+            t('modules.config.main.description', locale=self.locale)
         ))
 
         # Bandeau de sanction globale "limité".
         if self.limited:
             container.add_item(ui.TextDisplay(
-                f"\n{EMOJIS['warning']} **{t('global_sanctions.limited.banner_title', locale=self.locale)}**\n"
+                f"{EMOJIS['warning']} **{t('global_sanctions.limited.banner_title', locale=self.locale)}**\n"
                 f"-# {t('global_sanctions.limited.no_new_modules', locale=self.locale)}"
             ))
 
-        # Menu déroulant pour sélectionner un module
-        select_row = ui.ActionRow()
+        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+        container.add_item(ui.TextDisplay(
+            f"-# {t('modules.config.main.hint', locale=self.locale)}"
+        ))
+        container.add_item(self._select_row())
+
+        self.add_item(container)
+        self.add_item(self._links_row())
+
+    def _select_row(self) -> ui.ActionRow:
+        """The one dropdown: the server settings, then every module.
+
+        The settings entry lives *in* the menu rather than on a button next to
+        it — from the reader's side "the language Moddy speaks here" is one
+        more thing to configure, not a different kind of action.
+        """
+        row = ui.ActionRow()
+        options = [self._settings_option()]
 
         if self.bot is None:
-            # Registration shell: no live module_manager to list modules
-            # from. Register the custom_id anyway (disabled placeholder) so
-            # a real message's select still dispatches after a restart.
-            module_select = ui.Select(
+            # Registration shell: no live module_manager to list modules from.
+            # Register the custom_id anyway so a real message's select still
+            # dispatches after a restart — the callback re-derives everything
+            # from the interaction.
+            select = ui.Select(
                 placeholder=t('modules.config.main.select_placeholder', locale=self.locale),
-                options=[discord.SelectOption(label="—", value="none")],
-                min_values=1, max_values=1, custom_id=_CID_MODULE_SELECT, disabled=True,
+                options=options, min_values=1, max_values=1,
+                custom_id=_CID_MODULE_SELECT,
             )
-            module_select.callback = self.on_module_select
-            select_row.add_item(module_select)
-            container.add_item(select_row)
-            container.add_item(self._settings_row())
-            self.add_item(container)
-            return
+            select.callback = self.on_module_select
+            row.add_item(select)
+            return row
 
-        # Récupère la liste des modules disponibles
-        available_modules = self.bot.module_manager.get_available_modules()
-
-        # Crée les options du menu
-        options = []
-        for module_info in available_modules:
-            # Utilise i18n pour la description du module
-            description_key = f"modules.{module_info['id']}.description"
-            description = t(description_key, locale=self.locale)
-
+        for module_info in self.bot.module_manager.get_available_modules():
+            description = t(f"modules.{module_info['id']}.description", locale=self.locale)
             options.append(discord.SelectOption(
                 label=module_info['name'],
                 value=module_info['id'],
-                description=description[:100],  # Limite à 100 caractères
-                emoji=module_info['emoji']
+                description=description[:100],
+                emoji=module_info['emoji'],
             ))
 
-        # Si aucun module disponible
-        if not options:
-            container.add_item(ui.TextDisplay(
-                f"{EMOJIS['warning']} {t('modules.config.main.no_modules', locale=self.locale)}"
-            ))
-            container.add_item(self._settings_row())
-            self.add_item(container)
-            return
-
-        # Crée le menu déroulant
-        module_select = ui.Select(
+        select = ui.Select(
             placeholder=t('modules.config.main.select_placeholder', locale=self.locale),
-            options=options,
+            # Discord caps a select at 25 options; the settings entry is the
+            # one that must never be pushed out, hence its slot at the top.
+            options=options[:25],
             min_values=1,
             max_values=1,
             custom_id=_CID_MODULE_SELECT,
         )
-        module_select.callback = self.on_module_select
-        select_row.add_item(module_select)
-        container.add_item(select_row)
-        container.add_item(self._settings_row())
-
-        self.add_item(container)
-
-    def _settings_row(self) -> ui.ActionRow:
-        """The way into the settings that belong to the server, not a module.
-
-        Today that is the language Moddy speaks here (utils/guild_language.py),
-        which every module reads instead of shipping its own dropdown.
-        """
-        row = ui.ActionRow()
-        settings_btn = ui.Button(
-            emoji=discord.PartialEmoji.from_str(EMOJIS['settings']),
-            label=t('modules.config.settings.button', locale=self.locale),
-            style=discord.ButtonStyle.secondary,
-            custom_id=_CID_SETTINGS,
-        )
-        settings_btn.callback = self.on_settings
-        row.add_item(settings_btn)
+        select.callback = self.on_module_select
+        row.add_item(select)
         return row
 
-    async def on_settings(self, interaction: discord.Interaction):
-        """Open the server-wide settings screen."""
-        if not await check_guild_perms(interaction):
-            return
-
-        from modules.configs.server_settings_config import ServerSettingsConfigView
-
-        locale = i18n.get_user_locale(interaction)
-        view = await ServerSettingsConfigView.create(
-            interaction.client, interaction.guild_id, interaction.user.id, locale
+    def _settings_option(self) -> discord.SelectOption:
+        return discord.SelectOption(
+            label=t('modules.config.settings.title', locale=self.locale),
+            value=SETTINGS_OPTION,
+            description=t('modules.config.settings.short_description',
+                          locale=self.locale)[:100],
+            emoji=discord.PartialEmoji.from_str(SETTINGS),
         )
-        await interaction.response.edit_message(view=view)
+
+    def _links_row(self) -> ui.ActionRow:
+        """Support, dashboard and documentation — outside the container."""
+        row = ui.ActionRow()
+        row.add_item(ui.Button(
+            label=t('modules.config.main.links.dashboard', locale=self.locale),
+            emoji=discord.PartialEmoji.from_str(WEB),
+            style=discord.ButtonStyle.link, url=DASHBOARD_URL,
+        ))
+        row.add_item(ui.Button(
+            label=t('modules.config.main.links.support', locale=self.locale),
+            emoji=discord.PartialEmoji.from_str(SUPPORT),
+            style=discord.ButtonStyle.link, url=SUPPORT_URL,
+        ))
+        row.add_item(ui.Button(
+            label=t('modules.config.main.links.docs', locale=self.locale),
+            emoji=discord.PartialEmoji.from_str(BOOK),
+            style=discord.ButtonStyle.link, url=DOCS_URL,
+        ))
+        return row
+
+    # ----------------------------------------------------------------- #
+    # Callbacks
+    # ----------------------------------------------------------------- #
 
     async def on_module_select(self, interaction: discord.Interaction):
-        """Callback quand un module est sélectionné"""
+        """Callback quand un module (ou les paramètres du serveur) est choisi."""
         if not await check_guild_perms(interaction):
             return
 
@@ -180,8 +199,14 @@ class ConfigMainView(BaseView):
         user_id = interaction.user.id
         locale = i18n.get_user_locale(interaction)
 
-        # Récupère le module sélectionné
         module_id = interaction.data['values'][0]
+
+        if module_id == SETTINGS_OPTION:
+            from modules.configs.server_settings_config import ServerSettingsConfigView
+
+            view = await ServerSettingsConfigView.create(bot, guild_id, user_id, locale)
+            await interaction.response.edit_message(view=view)
+            return
 
         # Désactive temporairement pour éviter les double-clics
         await interaction.response.defer()
@@ -396,49 +421,12 @@ class Config(commands.Cog):
             )
             return
 
-        # Vérifie que l'utilisateur a l'attribut TEAM ou BETA
-        # Les modules de serveur sont en développement et réservés aux testeurs
-        has_team = await self.bot.db.has_attribute('user', interaction.user.id, 'TEAM')
-        has_beta = await self.bot.db.has_attribute('user', interaction.user.id, 'BETA')
-
-        if not (has_team or has_beta):
-            # Message d'erreur avec Components V2
-            error_view = ui.LayoutView(timeout=None)
-            error_container = ui.Container()
-
-            error_container.add_item(ui.TextDisplay(
-                f"### {EMOJIS['warning']} {t('modules.config.errors.dev_only.title', interaction)}"
-            ))
-            error_container.add_item(ui.TextDisplay(
-                t('modules.config.errors.dev_only.description', interaction)
-            ))
-
-            error_container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-
-            # Bouton pour rejoindre le serveur support
-            button_row = ui.ActionRow()
-            support_btn = ui.Button(
-                label=t('modules.config.errors.dev_only.button', interaction),
-                style=discord.ButtonStyle.link,
-                url="https://moddy.app/support"
-            )
-            button_row.add_item(support_btn)
-            error_container.add_item(button_row)
-
-            error_view.add_item(error_container)
-
-            await interaction.response.send_message(
-                view=error_view,
-                ephemeral=True
-            )
-            return
-
         # Vérifie que Moddy a les permissions administrateur
         bot_member = interaction.guild.me
         if not bot_member.guild_permissions.administrator:
             # Crée un message d'erreur avec Components V2
             error_view = ui.LayoutView(timeout=None)
-            error_container = ui.Container()
+            error_container = ui.Container(accent_colour=discord.Colour(COLORS["error"]))
 
             error_container.add_item(ui.TextDisplay(
                 f"### {EMOJIS['error']} {t('modules.config.errors.no_admin_perms.title', interaction)}"
@@ -447,7 +435,7 @@ class Config(commands.Cog):
                 t('modules.config.errors.no_admin_perms.description', interaction)
             ))
 
-            error_container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+            error_view.add_item(error_container)
 
             # Bouton pour inviter le bot avec les bonnes permissions
             button_row = ui.ActionRow()
@@ -457,9 +445,7 @@ class Config(commands.Cog):
                 url=f"https://discord.com/oauth2/authorize?client_id={self.bot.user.id}&scope=bot&permissions=8"
             )
             button_row.add_item(reinvite_btn)
-            error_container.add_item(button_row)
-
-            error_view.add_item(error_container)
+            error_view.add_item(button_row)
 
             await interaction.response.send_message(
                 view=error_view,

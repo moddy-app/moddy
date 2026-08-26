@@ -378,6 +378,10 @@
     "ticket info": {
       "name": "info",
       "description": "Mostra i dettagli di questo ticket"
+    },
+    "bug-report": {
+      "name": "segnala-bug",
+      "description": "Segnala un bug di Moddy al team"
     }
   }
 }

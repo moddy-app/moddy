@@ -296,7 +296,7 @@ class WelcomeDmModule(ModuleBase):
             return
 
         variables = message_variables(member, guild)
-        locale = self._locale()
+        locale = await self._locale()
 
         for entry in self.messages:
             if not entry.get('enabled', True):

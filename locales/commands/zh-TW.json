@@ -378,6 +378,10 @@
     "ticket info": {
       "name": "資訊",
       "description": "顯示這個服務單的詳細資料"
+    },
+    "bug-report": {
+      "name": "回報問題",
+      "description": "向團隊回報 Moddy 的問題"
     }
   }
 }

@@ -140,6 +140,10 @@ class ModdyBot(ModdyFrameworkBot):
         # Every DM / server notice Moddy sends goes through this: stored,
         # attributed, reportable (see docs/NOTIFICATIONS.md).
         self.notifications = NotificationService(self)
+        from services.support_request_service import SupportRequestService
+        # Bug reports (/bug-report) and "configure it for me" requests: opened
+        # by users, answered by the team (see docs/SUPPORT_REQUESTS.md).
+        self.support_requests = SupportRequestService(self)
         from gateway import Gateway
         self.gateway = Gateway()
         from services.heartbeat import HeartbeatClient
@@ -1949,6 +1953,14 @@ class ModdyBot(ModdyFrameworkBot):
             await self.apply_name_style(guild.id)
         except Exception as e:
             logger.error(f"[FAIL] Error applying name style for new guild {guild.id}: {e}")
+
+        # Welcome the person who just installed Moddy (a DM to them, not a
+        # card in a channel they may never read) — utils/install_welcome.py.
+        try:
+            from utils.install_welcome import send_install_welcome
+            await send_install_welcome(self, guild)
+        except Exception as e:
+            logger.error(f"[FAIL] Error sending the install welcome for guild {guild.id}: {e}")
 
         # Setup announcement channel following
         try:

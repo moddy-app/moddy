@@ -148,6 +148,7 @@ def _svc(sid: str, emoji_name: str) -> ServiceInfo:
 SERVICES: Dict[str, ServiceInfo] = {
     s.id: s for s in (
         _svc("moddy", "MODDY_SQUARE_MIN"),           # Moddy itself / staff broadcasts
+        _svc("moddy_team", "MODDY_SQUARE_MIN"),      # the team writing to a human
         _svc("welcome_dm", "WAVING_HAND"),           # modules/welcome_dm.py
         _svc("moderation", "LEGAL"),                 # manual sanctions
         _svc("automod_ai", "SHIELD"),                # modules/automod_ai.py
@@ -159,6 +160,7 @@ SERVICES: Dict[str, ServiceInfo] = {
         _svc("token_detector", "SHIELD"),            # cogs/token_detector.py
         _svc("global_sanctions", "EXCLAMATION"),     # services/global_sanction_service.py
         _svc("expirations", "TIME"),                 # services/expiration_notifier.py
+        _svc("support", "SUPPORT"),                  # services/support_request_service.py
     )
 }
 

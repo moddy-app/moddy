@@ -378,6 +378,10 @@
     "ticket info": {
       "name": "info",
       "description": "Näyttää tämän tiketin tiedot"
+    },
+    "bug-report": {
+      "name": "virheilmoitus",
+      "description": "Ilmoita Moddyn virheestä tiimille"
     }
   }
 }
