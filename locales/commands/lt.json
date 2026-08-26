@@ -378,6 +378,10 @@
     "ticket info": {
       "name": "info",
       "description": "Rodo šio bilieto informaciją"
+    },
+    "bug-report": {
+      "name": "pranesti-klaida",
+      "description": "Praneškite komandai apie Moddy klaidą"
     }
   }
 }

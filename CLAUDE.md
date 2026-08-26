@@ -37,6 +37,7 @@ moddy/
 │   ├── config.py              #   /config command (module configuration)
 │   ├── module_events.py       #   Event handlers for modules
 │   ├── invite.py              #   /invite command
+│   ├── bug_report.py          #   /bug-report command (Modal V2 → team channel)
 │   ├── emoji.py               #   Emoji management
 │   ├── reminder.py            #   /reminder command
 │   ├── saved_messages.py      #   Message bookmarking
@@ -143,7 +144,8 @@ moddy/
 │   ├── commands/mod/          #   /mod commands + case/, global/ and altguard/ sub-groups
 │   │                          #   (incl. /mod notif — notification lookup by uuid)
 │   ├── commands/com/          #   /com commands (/com send — notification to a user,
-│   │                          #   a server, or thousands of them)
+│   │                          #   a server, or thousands of them; /com beta — the
+│   │                          #   one-off beta-launch campaign to server owners)
 │   ├── commands/manage/       #   /manage commands (staff panel, badge, redirect/, banner/…)
 │   ├── support_commands.py    #   sup. commands — legacy (not yet migrated)
 │   └── communication_commands.py  # com. commands — legacy (not yet migrated)
@@ -163,6 +165,7 @@ moddy/
 │       ├── token_alerts.py, token_secrets.py
 │       ├── subscription.py    #   Subscription read-only queries (incl. is_guild_premium)
 │       ├── notifications.py   #   Notifications, deliveries, abuse reports
+│       ├── support_requests.py #  Bug reports / config-help requests + their exchange
 │       ├── social.py          #   Social notifications subscriptions
 │       └── _utils.py
 │
@@ -184,6 +187,9 @@ moddy/
 │   ├── automod_shadow_views.py #  Automod shadow-mode (dry_run) SIMULATION card + annotation buttons (persistent)
 │   ├── automod_render.py      #   Shared automod card helpers (barème breakdown, sanction name/accent)
 │   ├── notification_views.py  #   Notification abuse-report review panels (staff side)
+│   ├── support_request_views.py # Support requests: staff card, reply DM, modals, buttons
+│   ├── install_welcome.py     #   DM sent to whoever adds Moddy to a server
+│   ├── beta_announcement.py   #   Beta-launch campaign card (temporary — see docs)
 │   ├── ticket_views.py        #   Ticket panel, ticket message, cards, claim, participants modal
 │   ├── transcription_views.py #   Voice transcription cards + persistent Transcribe button
 │   ├── appeal_views.py        #   Automod appeal UI (DM buttons + reviewer panels, persistent)
@@ -226,6 +232,7 @@ moddy/
 │   ├── appeal_service.py      #   Automod sanction appeals (server / Moddy team, binding)
 │   ├── precedent_service.py   #   Automod server precedents (record + serve, RAG)
 │   ├── ticket_service.py      #   Ticket lifecycle (open/close/escalate/move/participants)
+│   ├── support_request_service.py # Bug reports + config-help requests (team side)
 │   ├── transcription_service.py #  Voice/audio speech-to-text (shared by cog + module)
 │   ├── heartbeat.py           #   Moddy Health Monitor heartbeat (dead man's switch)
 │   ├── betterstack_heartbeat.py #  Better Stack cron/heartbeat monitor ping (3 min)
@@ -261,6 +268,7 @@ moddy/
     ├── test_tickets.py        #   Tickets: schema, permissions, claim, overwrites, screens, i18n
     ├── test_transcription.py  #   Voice transcription helpers, guard rails, cards
     ├── test_notifications.py  #   Notifications: hashing, attribution, report rules, i18n
+    ├── test_support_requests.py #  Support requests: cards, buttons, beta card, welcome DM
     ├── test_logs.py           #   Server logs: registry, routing, rendering, delivery
     ├── test_logs_i18n.py      #   Server logs: i18n completeness on the 5 locales
     └── test_heartbeat.py      #   Health Monitor heartbeat: payload, lifecycle, status decisions
@@ -454,6 +462,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/BOT_CUSTOMIZATION.md](docs/BOT_CUSTOMIZATION.md) | Bot Customization — per-guild nickname/avatar/banner/bio + name styles, Redis dashboard contract |
 | [docs/PREMIUM.md](docs/PREMIUM.md) | **Premium gating** — how to check whether a server (or a user) is premium |
 | [docs/STAFF_SYSTEM.md](docs/STAFF_SYSTEM.md) | Staff/dev commands, permissions, roles |
+| [docs/SUPPORT_REQUESTS.md](docs/SUPPORT_REQUESTS.md) | **Support requests** — `/bug-report`, the "configure it for me" button, the staff card and its reply flow, the beta-launch campaign |
 | [docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md) | **Centralized notifications** — every DM/mail/dashboard message, attribution buttons, abuse reports, `/com send`, `/mod notif` |
 | [docs/NOTIFICATIONS_INTEGRATION.md](docs/NOTIFICATIONS_INTEGRATION.md) | Notifications ↔ backend contract — tables the backend reads/owns, exact payload rendering + placeholder algorithm, mail/dashboard delivery loop |
 | [docs/LOGS.md](docs/LOGS.md) | **Advanced server logs** — 163 events, registry, rendering, webhook delivery, stored config & dashboard contract |

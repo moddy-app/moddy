@@ -378,6 +378,10 @@
     "ticket info": {
       "name": "ข้อมูล",
       "description": "แสดงรายละเอียดของทิกเก็ตนี้"
+    },
+    "bug-report": {
+      "name": "รายงานบั๊ก",
+      "description": "รายงานบั๊กของ Moddy ให้ทีมทราบ"
     }
   }
 }

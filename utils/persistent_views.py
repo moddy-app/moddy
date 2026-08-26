@@ -74,6 +74,8 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         TicketEscalationView, TicketEscalateConfirmView, TicketsPersistence,
     )
     from utils.notification_views import NotificationsPersistence
+    from utils.support_request_views import SupportPersistence
+    from utils.beta_announcement import BetaPersistence
 
     return [
         # Group 1 — /moddy (public informational, no user auth)
@@ -166,6 +168,17 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         # notification Moddy sends, and the staff review panel they feed
         # (dynamic items keyed by the notification / report uuid).
         NotificationsPersistence,
+        # Group 12j — support requests: the staff card's Claim/Reply/Resolve,
+        # the reporter's Reply button on the DM, and the "Configure it for me"
+        # entry point Moddy puts under its own announcements (dynamic items
+        # keyed by the request uuid; the entry point carries no owner — the
+        # clicker IS the requester).
+        SupportPersistence,
+        # Group 12k — the beta-launch announcement's Translate button
+        # (dynamic item keyed by the notification uuid; public — it only ever
+        # re-renders the DM its reader already has). Temporary: goes away with
+        # utils/beta_announcement.py when the campaign is over.
+        BetaPersistence,
         # Group 13 — /config automod AI panel (guild permission auth;
         # AutomodAIPrecedentsView is deliberately excluded, see
         # docs/PERSISTENT_VIEWS.md Step 12)

@@ -519,6 +519,17 @@ the database on each click. The notification DMs themselves carry no component
 at all: their origin is one greyed `sent by` line, which cannot lose its
 handler in the first place.
 
+**Support requests** (`SupportPersistence`, see
+[SUPPORT_REQUESTS.md](SUPPORT_REQUESTS.md)) follow the same pattern: Claim,
+Reply and Close on the staff card, and the requester's own Reply button on the
+DM, each carrying the request uuid. The **Configure it for me** entry point
+(`moddy:support:confighelp[:<guild_id>]`) is the rare public button with no
+owner in its id at all: whoever clicks it *is* the person asking, so there is
+nothing to authorize. The beta campaign's **Translate** button
+(`BetaPersistence`) is public for the same reason and can show nothing its
+reader was not already sent — it re-renders the recipient's own notification
+from its stored template.
+
 **`staff/commands/manage/staff.py::StaffManagerPanel`** grants and revokes
 staff roles/permissions. Making it persistent required changing its
 edit-then-Save flow to apply each change immediately (see the class's own

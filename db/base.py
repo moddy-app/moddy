@@ -36,6 +36,7 @@ from db.repositories.social import SocialSubscriptionsRepository
 from db.repositories.altguard import AltGuardRepository
 from db.repositories.tickets import TicketsRepository
 from db.repositories.notifications import NotificationRepository
+from db.repositories.support_requests import SupportRequestRepository
 
 logger = logging.getLogger('moddy.database')
 
@@ -73,6 +74,7 @@ class ModdyDatabase(
     AltGuardRepository,
     TicketsRepository,
     NotificationRepository,
+    SupportRequestRepository,
 ):
     """Gestionnaire principal de la base de données"""
 
@@ -970,6 +972,64 @@ class ModdyDatabase(
             await conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_notification_reports_status "
                 "ON notification_reports (status, created_at DESC)")
+
+            # ---------------------------------------------------------------
+            # Support requests (docs/SUPPORT_REQUESTS.md)
+            # What users send *to the Moddy team*: a bug report
+            # (/bug-report) or a configuration-help request (the button under
+            # Moddy's own announcements). One table for both, because the
+            # object is the same — a user wrote about one server, the team
+            # answers, the exchange is kept — and one staff card renders both.
+            # ---------------------------------------------------------------
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS support_requests (
+                    id          UUID PRIMARY KEY,
+                    kind        TEXT NOT NULL
+                        CHECK (kind IN ('bug','config_help')),
+                    user_id     BIGINT NOT NULL,
+                    guild_id    BIGINT,
+                    guild_name  TEXT,
+                    locale      TEXT,
+                    subject     TEXT,
+                    body        TEXT NOT NULL DEFAULT '',
+                    details     JSONB NOT NULL DEFAULT '{}'::jsonb,
+                    status      TEXT NOT NULL DEFAULT 'open'
+                        CHECK (status IN ('open','claimed','resolved')),
+                    claimed_by  BIGINT,
+                    claimed_at  TIMESTAMPTZ,
+                    resolved_by BIGINT,
+                    resolved_at TIMESTAMPTZ,
+                    channel_id  BIGINT,
+                    message_id  BIGINT,
+                    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+                    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+                )
+            """)
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_support_requests_status "
+                "ON support_requests (kind, status, created_at DESC)")
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_support_requests_user "
+                "ON support_requests (user_id, created_at DESC)")
+
+            # The exchange itself: staff replies and the reporter's follow-ups,
+            # in order. Each staff reply keeps the uuid of the notification it
+            # was delivered as, so "what exactly did we send them" is one join.
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS support_request_messages (
+                    id              BIGSERIAL PRIMARY KEY,
+                    request_id      UUID NOT NULL
+                        REFERENCES support_requests(id) ON DELETE CASCADE,
+                    author          TEXT NOT NULL CHECK (author IN ('staff','user')),
+                    author_id       BIGINT NOT NULL,
+                    body            TEXT NOT NULL,
+                    notification_id UUID,
+                    created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+                )
+            """)
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_support_request_messages_request "
+                "ON support_request_messages (request_id, created_at)")
 
             # Table des rôles sauvegardés (Auto Restore Roles module)
             await conn.execute("""

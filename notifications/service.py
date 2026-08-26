@@ -246,6 +246,7 @@ class NotificationService:
         locale: Optional[str] = None,
         batch_id: Optional[Any] = None,
         attribution: bool = True,
+        record: Optional[Dict[str, Any]] = None,
     ) -> DeliveryResult:
         """Send one notification as a DM.
 
@@ -253,13 +254,21 @@ class NotificationService:
         notice, a ticket transcript); the uniform ``content`` is still required
         because it is what the dashboard, the mail and the staff preview read.
         When ``view`` is omitted the content renders itself.
+
+        ``record`` is for the callers that had to write the row *before*
+        building their card, because the card's buttons carry the
+        notification's own uuid (the beta announcement's Translate button).
+        Passing it back here delivers against that row instead of writing a
+        second one.
         """
-        record = await self.record(
-            content=content, source=source,
-            recipient_type=RecipientType.DISCORD_USER,
-            recipient_id=getattr(user, "id", None),
-            variables=variables, platforms=platforms, locale=locale, batch_id=batch_id,
-        )
+        if record is None:
+            record = await self.record(
+                content=content, source=source,
+                recipient_type=RecipientType.DISCORD_USER,
+                recipient_id=getattr(user, "id", None),
+                variables=variables, platforms=platforms, locale=locale,
+                batch_id=batch_id,
+            )
         payload = await self._build_view(record, content, source, variables, view,
                                          locale, attribution)
         return await self._deliver(

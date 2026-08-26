@@ -849,20 +849,24 @@
     "yes": "Ja",
     "no": "Nein",
     "unknown": "Unbekannt",
-    "none": "Keine"
+    "none": "Keine",
+    "and": "und"
   },
   "modules": {
     "config": {
       "main": {
-        "title": "Konfigurationsübersicht",
-        "description": "Willkommen im Konfigurationsbereich von Moddy! Wähle unten ein Modul aus, um dessen Einstellungen zu konfigurieren.",
-        "select_placeholder": "Wähle ein zu konfigurierendes Modul",
-        "no_modules": "Momentan sind keine Module verfügbar.",
-        "hint": "Wähle ein Modul aus, um dessen detaillierte Konfiguration aufzurufen.",
-        "not_implemented": "Die Konfiguration für das Modul **{module_name}** ist noch nicht verfügbar."
+        "title": "Konfiguration",
+        "description": "Alles, was Moddy auf diesem Server tut, wird hier eingestellt. Wähle ein Modul im Menü: Du siehst den aktuellen Stand und kannst es mit wenigen Klicks aktivieren, anpassen oder abschalten.",
+        "select_placeholder": "Wähle, was du konfigurieren möchtest",
+        "hint": "Die Servereinstellungen – inklusive der Sprache, die Moddy hier spricht – stehen oben im Menü.",
+        "not_implemented": "Die Konfiguration für das Modul **{module_name}** ist noch nicht verfügbar.",
+        "links": {
+          "dashboard": "Dashboard",
+          "support": "Support",
+          "docs": "Dokumentation"
+        }
       },
       "settings": {
-        "button": "Servereinstellungen",
         "title": "Servereinstellungen",
         "description": "Die Einstellungen, die für den gesamten Server gelten - unabhängig davon, welches Modul sie nutzt.",
         "language": {
@@ -873,7 +877,8 @@
           "auto": "Automatisch",
           "auto_description": "Folgt der Serversprache (Community), sonst Englisch",
           "applies_to": "Deine eigene Discord-Sprache wird weiterhin für alles verwendet, was Moddy dir persönlich antwortet."
-        }
+        },
+        "short_description": "Moddys Sprache und die Einstellungen, die alle Module teilen"
       },
       "status": {
         "label": "Modulstatus:",
@@ -905,11 +910,6 @@
           "title": "Unzureichende Berechtigungen",
           "description": "Moddy benötigt **Administratorberechtigungen**, um Servermodule zu verwalten.\n\nBitte lade den Bot mit den korrekten Berechtigungen erneut ein.",
           "button": "Moddy erneut einladen"
-        },
-        "dev_only": {
-          "title": "Funktion in Entwicklung",
-          "description": "Servermodule befinden sich derzeit in der Entwicklung und sind nur für Moddy-Teammitglieder und Beta-Tester zugänglich.\n\nTritt unserem Support-Server bei, um mehr zu erfahren und am Testen teilzunehmen!",
-          "button": "Support-Server beitreten"
         }
       },
       "current_value": "Aktueller Wert:",
@@ -3820,6 +3820,43 @@
             "description": "Die Nachricht konnte nicht an **{user}** gesendet werden."
           }
         }
+      },
+      "beta": {
+        "confirm": {
+          "title": "Send the beta announcement?",
+          "description": "It goes to `{owners}` server owners (`{guilds}` servers). A campaign cannot be recalled.",
+          "button": "Send it",
+          "field": {
+            "label": "Confirmation",
+            "description": "Type {word} to launch the campaign."
+          }
+        },
+        "progress": {
+          "title": "Sending the beta announcement",
+          "description": "`{done}`/`{total}` · sent `{sent}` · failed `{failed}`"
+        },
+        "done": {
+          "title": "Beta announcement sent",
+          "description": "`{total}` recipients · sent `{sent}` · failed `{failed}`"
+        },
+        "errors": {
+          "empty": {
+            "title": "No recipient",
+            "description": "Moddy knows no server owner yet."
+          },
+          "bad_id": {
+            "title": "Invalid id",
+            "description": "Target `test` needs a Discord user id."
+          },
+          "unknown_user": {
+            "title": "Unknown user",
+            "description": "No user matches `{id}`."
+          },
+          "not_confirmed": {
+            "title": "Not sent",
+            "description": "The campaign was not launched: type `{word}` to confirm."
+          }
+        }
       }
     }
   },
@@ -3997,12 +4034,14 @@
       "interserver": "Serverübergreifend",
       "token_detector": "Token-Erkennung",
       "global_sanctions": "Globale Sanktionen",
-      "expirations": "Sanktionsende"
+      "expirations": "Sanktionsende",
+      "support": "Support",
+      "moddy_team": "dem Moddy-Team"
     },
     "attribution": {
       "unknown_guild": "Unbekannter Server",
       "sent_by": "Gesendet von [**{guild}**]({guild_url}){badge} (`{guild_id}`)",
-      "sent_by_service": "Gesendet von **{service}**"
+      "sent_by_service": "Gesendet von **{service}**{badge}"
     },
     "source": {
       "uuid_label": "Benachrichtigung:"
@@ -4101,6 +4140,193 @@
       },
       "actor": "Staff",
       "jump": "Meldung ansehen"
+    },
+    "beta": {
+      "title": "Moddy geht in die Beta",
+      "body": "Hallo **{user}**!\n\nDu hast **Moddy** zu {servers} hinzugefügt, als der Bot noch in Entwicklung war und kaum etwas konnte. Das hat sich geändert: Moddy geht jetzt in die **Beta**, und ein großer Teil der Funktionen ist aktiv.\n\nWeil du vor allen anderen dabei warst, **schenken wir dir 2 Monate Moddy Max**, kostenlos und ohne Kreditkarte. Öffne einfach ein Ticket auf unserem [**Support-Server**]({support}), um es zu aktivieren.\n\nZum Einrichten der Module nimmst du {config} oder unser Dashboard auf [**dashboard.moddy.app**]({dashboard}). Und wenn du dich lieber nicht damit beschäftigen möchtest, richtet es jemand aus dem Team für dich ein: einfach den Knopf unten drücken. Unsere [**Dokumentation**]({docs}) gibt es auch.\n\nWir sind in der Beta, also wird es Fehler geben. Das ist normal. Melde sie mit **/bug-report** oder auf dem Support-Server: Das hilft uns wirklich weiter.\n\nDanke, dass du Moddy die ganze Zeit in einer Ecke deines Servers behalten hast.",
+      "translate": "Übersetzen",
+      "your_server": "**deinen Server**"
+    },
+    "install": {
+      "title": "Willkommen bei Moddy",
+      "body": "Danke, dass du **Moddy** zu **{server}** hinzugefügt hast!\n\nAlles wird an einer Stelle eingerichtet: {config} auf deinem Server oder das Dashboard auf [**dashboard.moddy.app**]({dashboard}). Moderation, Logs, Willkommensnachrichten, Tickets: Modul auswählen, einstellen, fertig.\n\n**Einen Monat Premium schenken wir dir** für diesen Server, kostenlos und ohne Kreditkarte. Komm auf unseren [**Support-Server**]({support}) und öffne ein Ticket, um es zu aktivieren.\n\nLieber nicht selbst einrichten? Drück den Knopf unten und jemand aus dem Team macht es mit dir. Unsere [**Dokumentation**]({docs}) erklärt jedes Modul.\n\nModdy ist derzeit in der **Beta**, es kann also Fehler geben. Das ist normal: sag uns mit **/bug-report** oder auf dem Support-Server Bescheid, und wir beheben sie."
+    }
+  },
+  "support": {
+    "status": {
+      "open": "Offen",
+      "claimed": "In Bearbeitung",
+      "resolved": "Geschlossen"
+    },
+    "card": {
+      "bug": {
+        "title": "Fehlermeldung"
+      },
+      "config_help": {
+        "title": "Anfrage: Hilfe bei der Einrichtung"
+      },
+      "status_label": "Status:",
+      "reporter": "Von",
+      "server": "Server",
+      "unknown_guild": "Unbekannter Server",
+      "opened_at": "Geöffnet am",
+      "subject": "Kurzfassung",
+      "description": "Was passiert ist",
+      "exchange": "Verlauf",
+      "staff": "Team",
+      "user": "Melder",
+      "claimed_by": "Bearbeitet von",
+      "resolved_by": "Geschlossen von",
+      "reference": "Referenz",
+      "details": {
+        "steps": "So lässt es sich nachstellen",
+        "context": "Wo es passiert ist",
+        "availability": "Verfügbarkeit"
+      }
+    },
+    "buttons": {
+      "claim": "Übernehmen",
+      "claimed": "Übernommen",
+      "reply": "Antworten",
+      "resolve": "Schließen",
+      "user_reply": "Antworten",
+      "config_help": "Für mich einrichten"
+    },
+    "links": {
+      "support": "Support-Server",
+      "dashboard": "Dashboard",
+      "docs": "Dokumentation"
+    },
+    "bug": {
+      "modal": {
+        "title": "Fehler melden",
+        "intro": "Sag uns, was kaputt ist. Je genauer, desto schneller ist es behoben.",
+        "summary": {
+          "label": "In einer Zeile",
+          "description": "Das Problem, kurz gefasst.",
+          "placeholder": "Die Willkommensnachricht wird doppelt gesendet"
+        },
+        "description": {
+          "label": "Was passiert ist",
+          "description": "Was du getan hast, was du erwartet hast, was stattdessen passierte.",
+          "placeholder": "Ich habe eine Willkommensnachricht eingerichtet und jedes neue Mitglied bekommt sie doppelt…"
+        },
+        "steps": {
+          "label": "So lässt es sich nachstellen",
+          "description": "Optional, hilft aber am meisten.",
+          "placeholder": "1. /config → Willkommensnachrichten\n2. Nachricht hinzufügen\n3. Mit Zweitkonto beitreten"
+        }
+      }
+    },
+    "config_help": {
+      "modal": {
+        "title": "Hilfe bei der Einrichtung",
+        "intro": "Jemand aus dem Team richtet Moddy gemeinsam mit dir auf deinem Server ein. Sag uns, was du brauchst.",
+        "server": {
+          "label": "Welcher Server",
+          "description": "Name oder ID.",
+          "placeholder": "Mein Server"
+        },
+        "needs": {
+          "label": "Was du brauchst",
+          "description": "Module, Moderation, Logs, Tickets…",
+          "placeholder": "Ich hätte gern automatische Moderation und Logs, weiß aber nicht, wo ich anfangen soll."
+        },
+        "availability": {
+          "label": "Deine Verfügbarkeit",
+          "description": "Optional: Tag, Uhrzeit, Zeitzone."
+        }
+      }
+    },
+    "receipt": {
+      "bug": {
+        "title": "Meldung gesendet",
+        "description": "Danke, das Team hat sie. Wir melden uns hier, wenn wir Details brauchen oder sobald es behoben ist."
+      },
+      "config_help": {
+        "title": "Anfrage gesendet",
+        "description": "Das Team hat deine Anfrage. Jemand meldet sich hier, um einen Termin auszumachen."
+      }
+    },
+    "reply": {
+      "bug": {
+        "title": "Zu deiner Fehlermeldung"
+      },
+      "config_help": {
+        "title": "Zu deiner Einrichtungsanfrage"
+      },
+      "reference": "Referenz: {reference}",
+      "modal": {
+        "title": "Dem Melder antworten",
+        "body": {
+          "label": "Deine Antwort",
+          "description": "Sie wird wortwörtlich zugestellt.",
+          "placeholder": "Danke für die Meldung, wir konnten es nachstellen und…"
+        }
+      },
+      "sent": {
+        "title": "Antwort gesendet",
+        "description": "Der Melder hat sie, und sie hängt an der Anfrage."
+      }
+    },
+    "user_reply": {
+      "modal": {
+        "title": "Dem Team antworten",
+        "body": {
+          "label": "Deine Nachricht",
+          "placeholder": "Das sehe ich auf meiner Seite…"
+        }
+      },
+      "sent": {
+        "title": "Nachricht gesendet",
+        "description": "Das Team hat sie und meldet sich hier."
+      }
+    },
+    "followup": {
+      "title": "Der Melder hat geantwortet"
+    },
+    "resolved": {
+      "title": "Anfrage geschlossen",
+      "bug": "Deine Fehlermeldung ist geschlossen. Danke, dass du dir die Zeit genommen hast: genau das macht Moddy besser.",
+      "config_help": "Deine Einrichtungsanfrage ist geschlossen. Melde dich jederzeit wieder auf dem Support-Server."
+    },
+    "errors": {
+      "unknown": {
+        "title": "Anfrage unbekannt",
+        "description": "Keine Anfrage passt zu `{reference}`."
+      },
+      "no_permission": {
+        "title": "Nicht für dich",
+        "description": "Support-Anfragen zu bearbeiten braucht die passende Staff-Berechtigung."
+      },
+      "already_claimed": {
+        "title": "Schon übernommen",
+        "description": "Jemand aus dem Team war schneller."
+      },
+      "already_resolved": {
+        "title": "Schon geschlossen",
+        "description": "Diese Anfrage ist bereits geschlossen."
+      },
+      "not_yours": {
+        "title": "Nicht deine Anfrage",
+        "description": "Nur wer diese Anfrage geöffnet hat, kann hier antworten."
+      },
+      "closed": {
+        "title": "Anfrage geschlossen",
+        "description": "Diese Anfrage ist geschlossen. Öffne eine neue oder komm auf den Support-Server."
+      },
+      "reply_failed": {
+        "title": "Konnte nicht gesendet werden",
+        "description": "Die Nachricht kam nicht an. Versuch es erneut oder nutze den Support-Server."
+      },
+      "rate_limited": {
+        "title": "Langsam",
+        "description": "Du hast in wenigen Minuten mehrere Anfragen gesendet. Warte kurz bis zur nächsten."
+      },
+      "unavailable": {
+        "title": "Gerade nicht verfügbar",
+        "description": "Anfragen können momentan nicht gespeichert werden. Nutze bitte den Support-Server."
+      }
     }
   }
 }

@@ -38,6 +38,25 @@ MODDY_NOTIF_REPORT_CHANNEL_ID: int = int(
 MODDY_NOTIF_REPORT_LOG_CHANNEL_ID: int = int(
     os.environ.get("MODDY_NOTIF_REPORT_LOG_CHANNEL_ID", "1541233478522241034"))
 
+# Support requests (docs/SUPPORT_REQUESTS.md): where /bug-report lands, and
+# where a server owner asking the team to configure Moddy for them lands. Both
+# live in the Moddy team guild and are answered from the card itself.
+MODDY_BUG_REPORT_CHANNEL_ID: int = int(
+    os.environ.get("MODDY_BUG_REPORT_CHANNEL_ID", "1542307806055759943"))
+MODDY_CONFIG_HELP_CHANNEL_ID: int = int(
+    os.environ.get("MODDY_CONFIG_HELP_CHANNEL_ID", "1542307892970131516"))
+
+# Public Moddy URLs, referenced from panels, notifications and welcome cards.
+SUPPORT_URL: str = os.environ.get("MODDY_SUPPORT_URL", "https://moddy.app/support")
+DASHBOARD_URL: str = os.environ.get("MODDY_DASHBOARD_URL", "https://dashboard.moddy.app")
+DOCS_URL: str = os.environ.get("MODDY_DOCS_URL", "https://docs.moddy.app")
+
+# Clickable mention of /config, used inside notification bodies. A command
+# mention needs the registered command id, which is stable for the application
+# but changes if the command is ever re-created — hence the override.
+CONFIG_COMMAND_MENTION: str = os.environ.get(
+    "MODDY_CONFIG_COMMAND_MENTION", "</config:1444430277970497653>")
+
 # =============================================================================
 # BASE DE DONNÉES
 # =============================================================================

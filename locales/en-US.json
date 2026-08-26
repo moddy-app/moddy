@@ -849,20 +849,24 @@
     "yes": "Yes",
     "no": "No",
     "unknown": "Unknown",
-    "none": "None"
+    "none": "None",
+    "and": "and"
   },
   "modules": {
     "config": {
       "main": {
-        "title": "Configuration Panel",
-        "description": "Welcome to Moddy's configuration panel! Select a module below to configure its settings.",
-        "select_placeholder": "Select a module to configure",
-        "no_modules": "No modules available at the moment.",
-        "hint": "Select a module to access its detailed configuration.",
-        "not_implemented": "Configuration for module **{module_name}** is not yet available."
+        "title": "Configuration",
+        "description": "Everything Moddy does on this server is set up here. Pick a module from the menu: you'll see how it currently stands and can enable, tune or turn it off in a few clicks.",
+        "select_placeholder": "Choose what you want to configure",
+        "hint": "Server settings, including the language Moddy speaks here, sit at the top of the menu.",
+        "not_implemented": "Configuration for module **{module_name}** is not yet available.",
+        "links": {
+          "dashboard": "Dashboard",
+          "support": "Support",
+          "docs": "Documentation"
+        }
       },
       "settings": {
-        "button": "Server settings",
         "title": "Server settings",
         "description": "The settings that apply to the whole server, whichever module uses them.",
         "language": {
@@ -873,7 +877,8 @@
           "auto": "Automatic",
           "auto_description": "Follows the server language (Community), English otherwise",
           "applies_to": "Your own Discord language is still used for everything Moddy answers you personally."
-        }
+        },
+        "short_description": "Moddy's language and the settings every module shares"
       },
       "status": {
         "label": "Module status:",
@@ -905,11 +910,6 @@
           "title": "Insufficient Permissions",
           "description": "Moddy needs **administrator permissions** to manage server modules.\n\nPlease re-invite the bot with the correct permissions.",
           "button": "Re-invite Moddy"
-        },
-        "dev_only": {
-          "title": "Feature in Development",
-          "description": "Server modules are currently under development and are only accessible to Moddy team members and beta testers.\n\nJoin our support server to learn more and participate in testing!",
-          "button": "Join Support Server"
         }
       },
       "current_value": "Current value:",
@@ -3820,6 +3820,43 @@
             "description": "The message could not be sent to **{user}**."
           }
         }
+      },
+      "beta": {
+        "confirm": {
+          "title": "Send the beta announcement?",
+          "description": "It goes to `{owners}` server owners (`{guilds}` servers). A campaign cannot be recalled.",
+          "button": "Send it",
+          "field": {
+            "label": "Confirmation",
+            "description": "Type {word} to launch the campaign."
+          }
+        },
+        "progress": {
+          "title": "Sending the beta announcement",
+          "description": "`{done}`/`{total}` · sent `{sent}` · failed `{failed}`"
+        },
+        "done": {
+          "title": "Beta announcement sent",
+          "description": "`{total}` recipients · sent `{sent}` · failed `{failed}`"
+        },
+        "errors": {
+          "empty": {
+            "title": "No recipient",
+            "description": "Moddy knows no server owner yet."
+          },
+          "bad_id": {
+            "title": "Invalid id",
+            "description": "Target `test` needs a Discord user id."
+          },
+          "unknown_user": {
+            "title": "Unknown user",
+            "description": "No user matches `{id}`."
+          },
+          "not_confirmed": {
+            "title": "Not sent",
+            "description": "The campaign was not launched: type `{word}` to confirm."
+          }
+        }
       }
     }
   },
@@ -3997,12 +4034,14 @@
       "interserver": "Inter-server",
       "token_detector": "Token detector",
       "global_sanctions": "Global sanctions",
-      "expirations": "Sanction expiry"
+      "expirations": "Sanction expiry",
+      "support": "Support",
+      "moddy_team": "the Moddy Team"
     },
     "attribution": {
       "unknown_guild": "Unknown server",
       "sent_by": "Sent by [**{guild}**]({guild_url}){badge} (`{guild_id}`)",
-      "sent_by_service": "Sent by **{service}**"
+      "sent_by_service": "Sent by **{service}**{badge}"
     },
     "source": {
       "uuid_label": "Notification:"
@@ -4101,6 +4140,193 @@
       },
       "actor": "Staff",
       "jump": "Open the report"
+    },
+    "beta": {
+      "title": "Moddy is entering beta",
+      "body": "Hi **{user}**!\n\nYou added **Moddy** to {servers} back when it was still in development, at a time when it did not do much yet. That has changed: the bot is entering **beta**, and most of its features are now live.\n\nBecause you were here before everyone else, **Moddy Max is yours for 2 months**, free and without a card. Just open a ticket on our [**support server**]({support}) to activate it.\n\nTo set the modules up, use {config} or our dashboard on [**dashboard.moddy.app**]({dashboard}). And if you would rather not deal with it, someone from the team can come and configure it for you: press the button below. Our [**documentation**]({docs}) is there too.\n\nWe are in beta, so there will be bugs. That is normal. Report them with **/bug-report** or on our support server: it genuinely helps us move forward.\n\nThanks for keeping Moddy in a corner of your server all this time.",
+      "translate": "Translate",
+      "your_server": "**your server**"
+    },
+    "install": {
+      "title": "Welcome to Moddy",
+      "body": "Thanks for adding **Moddy** to **{server}**!\n\nEverything is configured from one place: run {config} on your server, or use the dashboard on [**dashboard.moddy.app**]({dashboard}). Moderation, logs, welcome messages, tickets: pick a module, set it up, done.\n\n**One month of premium is on us**, free and without a card, for this server. Join our [**support server**]({support}) and open a ticket to activate it.\n\nRather not set things up yourself? Press the button below and someone from the team will configure it with you. Our [**documentation**]({docs}) walks through every module.\n\nModdy is currently in **beta**, so you may run into bugs. That is expected: tell us with **/bug-report** or on the support server, and we will fix them."
+    }
+  },
+  "support": {
+    "status": {
+      "open": "Open",
+      "claimed": "Being handled",
+      "resolved": "Closed"
+    },
+    "card": {
+      "bug": {
+        "title": "Bug report"
+      },
+      "config_help": {
+        "title": "Configuration help requested"
+      },
+      "status_label": "Status:",
+      "reporter": "From",
+      "server": "Server",
+      "unknown_guild": "Unknown server",
+      "opened_at": "Opened",
+      "subject": "Summary",
+      "description": "What happened",
+      "exchange": "Exchange",
+      "staff": "Team",
+      "user": "Reporter",
+      "claimed_by": "Handled by",
+      "resolved_by": "Closed by",
+      "reference": "Reference",
+      "details": {
+        "steps": "Steps to reproduce",
+        "context": "Where it happened",
+        "availability": "When they are available"
+      }
+    },
+    "buttons": {
+      "claim": "Take it",
+      "claimed": "Taken",
+      "reply": "Reply",
+      "resolve": "Close",
+      "user_reply": "Reply",
+      "config_help": "Configure it for me"
+    },
+    "links": {
+      "support": "Support server",
+      "dashboard": "Dashboard",
+      "docs": "Documentation"
+    },
+    "bug": {
+      "modal": {
+        "title": "Report a bug",
+        "intro": "Tell us what broke. The more precise, the faster it gets fixed.",
+        "summary": {
+          "label": "In one line",
+          "description": "What went wrong, briefly.",
+          "placeholder": "The welcome message is sent twice"
+        },
+        "description": {
+          "label": "What happened",
+          "description": "What you did, what you expected, what happened instead.",
+          "placeholder": "I set up a welcome message and every new member gets it twice…"
+        },
+        "steps": {
+          "label": "How to reproduce it",
+          "description": "Optional, but it is what helps the most.",
+          "placeholder": "1. /config → Welcome messages\n2. Add a message\n3. Join with an alt"
+        }
+      }
+    },
+    "config_help": {
+      "modal": {
+        "title": "Configuration help",
+        "intro": "A member of the team can set Moddy up on your server with you. Tell us what you need.",
+        "server": {
+          "label": "Which server",
+          "description": "Its name or its ID.",
+          "placeholder": "My server"
+        },
+        "needs": {
+          "label": "What do you need",
+          "description": "Modules, moderation, logs, tickets…",
+          "placeholder": "I'd like automatic moderation and logs, I don't know where to start."
+        },
+        "availability": {
+          "label": "When are you available",
+          "description": "Optional: a day, a time, a timezone."
+        }
+      }
+    },
+    "receipt": {
+      "bug": {
+        "title": "Report sent",
+        "description": "Thank you, the team has it. You will get a DM here if we need details or once it is fixed."
+      },
+      "config_help": {
+        "title": "Request sent",
+        "description": "The team has your request. Someone will get back to you here to arrange it."
+      }
+    },
+    "reply": {
+      "bug": {
+        "title": "About your bug report"
+      },
+      "config_help": {
+        "title": "About your configuration request"
+      },
+      "reference": "Reference: {reference}",
+      "modal": {
+        "title": "Reply to the reporter",
+        "body": {
+          "label": "Your reply",
+          "description": "This is sent to them word for word.",
+          "placeholder": "Thanks for the report, we reproduced it and…"
+        }
+      },
+      "sent": {
+        "title": "Reply sent",
+        "description": "The reporter has it, and it is on the request."
+      }
+    },
+    "user_reply": {
+      "modal": {
+        "title": "Reply to the team",
+        "body": {
+          "label": "Your message",
+          "placeholder": "Here is what I see on my side…"
+        }
+      },
+      "sent": {
+        "title": "Message sent",
+        "description": "The team has it and will get back to you here."
+      }
+    },
+    "followup": {
+      "title": "The reporter answered"
+    },
+    "resolved": {
+      "title": "Request closed",
+      "bug": "Your bug report has been closed. Thanks for taking the time to send it: that is what makes Moddy better.",
+      "config_help": "Your configuration request has been closed. Reach out on the support server whenever you need us again."
+    },
+    "errors": {
+      "unknown": {
+        "title": "Unknown request",
+        "description": "No request matches `{reference}`."
+      },
+      "no_permission": {
+        "title": "Not for you",
+        "description": "Handling support requests needs the matching staff permission."
+      },
+      "already_claimed": {
+        "title": "Already taken",
+        "description": "Someone on the team got there first."
+      },
+      "already_resolved": {
+        "title": "Already closed",
+        "description": "This request is already closed."
+      },
+      "not_yours": {
+        "title": "Not your request",
+        "description": "Only the person who opened this request can answer here."
+      },
+      "closed": {
+        "title": "Request closed",
+        "description": "This request is closed. Open a new one, or come to the support server."
+      },
+      "reply_failed": {
+        "title": "Could not be sent",
+        "description": "The message could not be delivered. Try again, or use the support server."
+      },
+      "rate_limited": {
+        "title": "Slow down",
+        "description": "You have sent several requests in a few minutes. Wait a little before the next one."
+      },
+      "unavailable": {
+        "title": "Unavailable right now",
+        "description": "Requests cannot be recorded at the moment. Please use the support server."
+      }
     }
   }
 }

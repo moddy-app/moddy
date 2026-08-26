@@ -378,6 +378,10 @@
     "ticket info": {
       "name": "info",
       "description": "Zobrazí podrobnosti tohoto ticketu"
+    },
+    "bug-report": {
+      "name": "nahlasit-chybu",
+      "description": "Nahlaste týmu chybu v Moddy"
     }
   }
 }

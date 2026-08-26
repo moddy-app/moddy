@@ -378,6 +378,10 @@
     "ticket info": {
       "name": "thông-tin",
       "description": "Hiển thị chi tiết của ticket này"
+    },
+    "bug-report": {
+      "name": "bao-loi",
+      "description": "Báo lỗi của Moddy cho nhóm"
     }
   }
 }

@@ -38,6 +38,7 @@ SUPPORT_PERMISSIONS = [
     "ticket_create",       # Create support tickets
     "subscription_view",   # View user subscription information
     "subscription_manage", # Manage user subscriptions (refunds, modifications)
+    "support_request",     # Handle bug reports / configuration-help requests
 ]
 
 # Permissions specific to Communication role
@@ -118,6 +119,7 @@ def get_permission_label(permission: str) -> str:
         "ticket_create": "Create Tickets",
         "subscription_view": "View User Subscriptions",
         "subscription_manage": "Manage Subscriptions (Refunds)",
+        "support_request": "Handle Bug Reports & Config Help",
 
         # Communication
         "announce": "Send Announcements",

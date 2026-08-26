@@ -38,6 +38,9 @@ logger = logging.getLogger("moddy.notifications.render")
 #: Guild attributes that earn the verification check on the attribution panel.
 VERIFIED_GUILD_ATTRIBUTES = ("VERIFIED", "VERIFIED_ORG", "PARTNER")
 
+#: Services that ARE Moddy: their attribution line carries the check mark.
+OFFICIAL_SERVICES = ("moddy", "moddy_team")
+
 #: Guild attribute marking one of Moddy's own servers. Reporting a message from
 #: Moddy's own server to Moddy's abuse team is a loop with no exit, so the flag
 #: button is rendered greyed out there.
@@ -133,6 +136,13 @@ async def resolve_source_context(
         "report_block": None if source.base_reportable else "moddy_authored",
     }
 
+    if source.service_id in OFFICIAL_SERVICES and not source.guild_id:
+        # Moddy speaking as itself (or as its team): the check mark is what
+        # tells a member this DM is not an impersonation. No database read —
+        # it is true by construction.
+        ctx["verified"] = True
+        ctx["badge"] = VERIFIED
+
     if source.guild_id:
         # Everything below is best-effort: this runs on the delivery path, and
         # a missing guild or an unreachable database must cost the badge, never
@@ -196,7 +206,8 @@ def build_attribution_line(ctx: Dict[str, Any], *, locale: str = "en-US") -> Opt
         )
     if ctx.get("service_name"):
         return "-# " + t("notifications.attribution.sent_by_service",
-                         locale=locale, service=ctx["service_name"])
+                         locale=locale, service=ctx["service_name"],
+                         badge=ctx.get("badge") or "")
     return None
 
 

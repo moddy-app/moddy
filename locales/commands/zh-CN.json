@@ -378,6 +378,10 @@
     "ticket info": {
       "name": "信息",
       "description": "显示这个工单的详情"
+    },
+    "bug-report": {
+      "name": "报告问题",
+      "description": "向团队报告 Moddy 的问题"
     }
   }
 }

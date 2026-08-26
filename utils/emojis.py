@@ -64,6 +64,7 @@ HISTORY = "<:history:1519796822963392755>"
 BOOK = "<:book:1519788969691316467>"
 CODE = "<:code:1519794490750271641>"
 BUG = "<:bug:1519794242296483952>"
+BUILD = "<:build:1542311000479498310>"  # configuration help ("we set it up for you")
 VERIFIED = "<:verified:1495533349266264230>"
 VERIFIED_ORG = "<:verified_org:1495537358337081465>"
 VERIFIED_ORG_MEMBER = "<:verified:1495533349266264230>"  # same visual as VERIFIED
@@ -240,6 +241,7 @@ EMOJIS = {
     "book": BOOK,
     "code": CODE,
     "bug": BUG,
+    "build": BUILD,
     "logout": LOGOUT,
     "verified": VERIFIED,
     "verified_org": VERIFIED_ORG,

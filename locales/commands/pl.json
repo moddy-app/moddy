@@ -378,6 +378,10 @@
     "ticket info": {
       "name": "info",
       "description": "Pokazuje szczegóły tego zgłoszenia"
+    },
+    "bug-report": {
+      "name": "zglos-blad",
+      "description": "Zgłoś zespołowi błąd w Moddy"
     }
   }
 }

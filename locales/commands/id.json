@@ -378,6 +378,10 @@
     "ticket info": {
       "name": "info",
       "description": "Menampilkan detail tiket ini"
+    },
+    "bug-report": {
+      "name": "laporkan-bug",
+      "description": "Laporkan bug Moddy ke tim"
     }
   }
 }

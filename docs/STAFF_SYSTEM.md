@@ -100,6 +100,8 @@ no nodes has no command access even if it matches the type check.
 | `redirect_manage` | `/manage redirect *` |
 | `banner_manage` | `/manage banner *` |
 | `official_manage` | `/dev official` |
+| `support_request` | Claim / reply to / close a `/bug-report` or configuration-help request ([SUPPORT_REQUESTS.md](SUPPORT_REQUESTS.md)) |
+| `broadcast` | `/com send`, `/com beta` |
 
 `"common"` key in `role_permissions` = nodes available to all of the user's roles.
 

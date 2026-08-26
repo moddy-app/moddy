@@ -688,6 +688,58 @@ See → [NOTIFICATIONS.md](NOTIFICATIONS.md).
 
 ---
 
+### 17. Table `support_requests`
+
+Ce que les utilisateurs envoient **à l'équipe Moddy** : un signalement de bug
+(`/bug-report`) ou une demande d'aide à la configuration (le bouton sous les
+annonces de Moddy). Une seule table pour les deux : c'est le même objet vu sous
+deux angles, seul `kind` change.
+
+**Columns:**
+- `id` (UUID, PRIMARY KEY) — la référence affichée sur la carte staff, dans le
+  DM, et portée par le `custom_id` de chaque bouton
+- `kind` (TEXT) — `bug` | `config_help`
+- `user_id` (BIGINT) — qui a ouvert la demande
+- `guild_id` (BIGINT) / `guild_name` (TEXT) — le serveur concerné ; le nom est
+  du texte libre quand la demande vient d'un DM
+- `locale` (TEXT) — la langue Discord du demandeur, pour que la réponse la parle
+- `subject` (TEXT) — le résumé en une ligne (signalements de bug)
+- `body` (TEXT) — la description
+- `details` (JSONB) — extras par type : `steps`, `context` (bug),
+  `availability` (aide à la configuration)
+- `status` (TEXT) — `open` | `claimed` | `resolved`
+- `claimed_by` / `claimed_at`, `resolved_by` / `resolved_at`
+- `channel_id` / `message_id` (BIGINT) — la carte staff, pour la rafraîchir
+- `created_at` / `updated_at` (TIMESTAMPTZ)
+
+**Index:**
+- `idx_support_requests_status` on `(kind, status, created_at DESC)`
+- `idx_support_requests_user` on `(user_id, created_at DESC)`
+
+### 18. Table `support_request_messages`
+
+L'échange lui-même : une ligne par tour (réponse du staff, relance du
+demandeur), dans l'ordre.
+
+**Columns:**
+- `id` (BIGSERIAL, PRIMARY KEY)
+- `request_id` (UUID) — FK → `support_requests(id)`, `ON DELETE CASCADE`
+- `author` (TEXT) — `staff` | `user`
+- `author_id` (BIGINT)
+- `body` (TEXT)
+- `notification_id` (UUID) — la notification par laquelle une réponse staff a
+  été remise ; « qu'a-t-on envoyé exactement » est une jointure
+- `created_at` (TIMESTAMPTZ)
+
+**Index:**
+- `idx_support_request_messages_request` on `(request_id, created_at)`
+
+**Repository:** `db/repositories/support_requests.py` — `SupportRequestRepository`
+
+See → [SUPPORT_REQUESTS.md](SUPPORT_REQUESTS.md).
+
+---
+
 ## Système d'attributs et de données
 
 Moddy utilise deux types de champs JSONB pour stocker les informations:
