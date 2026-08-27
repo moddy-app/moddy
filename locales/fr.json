@@ -4034,13 +4034,14 @@
       "token_detector": "Détecteur de tokens",
       "global_sanctions": "Sanctions globales",
       "expirations": "Fin de sanction",
-      "support": "Support",
-      "moddy_team": "l'équipe Moddy"
+      "support": "Moddy Support",
+      "moddy_team": "Moddy Team"
     },
     "attribution": {
       "unknown_guild": "Serveur inconnu",
       "sent_by": "Envoyé par [**{guild}**]({guild_url}){badge} (`{guild_id}`)",
-      "sent_by_service": "Envoyé par **{service}**{badge}"
+      "sent_by_service": "Envoyé par **{service}**{badge}",
+      "sent_by_moddy": "Envoyé par **{service}**{badge}"
     },
     "source": {
       "uuid_label": "Notification :"
@@ -4142,13 +4143,13 @@
     },
     "beta": {
       "title": "Moddy passe en bêta",
-      "body": "Salut **{user}** !\n\nTu avais ajouté **Moddy** sur {servers} pendant sa phase de développement, à une époque où il ne faisait pas encore grand-chose. Ça a changé : le bot passe aujourd'hui en **bêta** et une grande partie des fonctionnalités sont désormais actives.\n\nComme tu étais là avant tout le monde, **Moddy Max t'est offert pendant 2 mois** : gratuitement et sans carte bancaire. Il te suffit d'ouvrir un ticket sur notre [**serveur support**]({support}) pour l'activer.\n\nSi tu souhaites configurer les modules, tu peux utiliser la commande {config} ou notre dashboard sur [**dashboard.moddy.app**]({dashboard}). Et si tu préfères ne pas t'en occuper, un membre de l'équipe peut venir le configurer pour toi : il suffit d'appuyer sur le bouton ci-dessous. Tu peux aussi t'aider de notre [**documentation**]({docs}).\n\nOn est en bêta, donc il y a des bugs, c'est normal. Signale-les avec **/bug-report** ou sur notre serveur support : ça nous aide vraiment à avancer.\n\nMerci d'avoir gardé Moddy dans un coin de ton serveur tout ce temps.",
+      "body": "Salut **{user}** !\n\nTu avais ajouté **Moddy** sur {servers} pendant sa phase de développement, à une époque où il ne faisait pas encore grand-chose. Ça a changé : le bot passe aujourd'hui en **bêta** et une grande partie des fonctionnalités sont désormais actives.\n\nComme tu étais là avant tout le monde, **Moddy Max t'est offert pendant 2 mois** : gratuitement et sans carte bancaire. Il te suffit d'ouvrir un ticket sur notre [**serveur support**]({support}) pour l'activer.\n\nSi tu souhaites configurer les modules, tu peux utiliser la commande {config} ou notre dashboard sur [**dashboard.moddy.app**]({dashboard}). Et si tu préfères ne pas t'en occuper, un membre de l'équipe peut venir le configurer pour toi : il suffit d'appuyer sur le bouton ci-dessous. Tu peux aussi t'aider de notre [**documentation**]({docs}).\n\nOn est en bêta, donc il y a des bugs, c'est normal. Signale-les avec {bug_report} ou sur notre serveur support : ça nous aide vraiment à avancer.\n\nMerci d'avoir gardé Moddy dans un coin de ton serveur tout ce temps.",
       "translate": "Traduire",
       "your_server": "**ton serveur**"
     },
     "install": {
       "title": "Bienvenue chez Moddy",
-      "body": "Merci d'avoir ajouté **Moddy** sur **{server}** !\n\nTout se configure au même endroit : la commande {config} sur ton serveur, ou le dashboard sur [**dashboard.moddy.app**]({dashboard}). Modération, logs, messages de bienvenue, tickets : tu choisis un module, tu le règles, c'est fait.\n\n**Un mois de premium t'est offert** pour ce serveur, gratuitement et sans carte bancaire. Rejoins notre [**serveur support**]({support}) et ouvre un ticket pour l'activer.\n\nTu préfères ne pas t'en occuper ? Appuie sur le bouton ci-dessous et un membre de l'équipe le configurera avec toi. Notre [**documentation**]({docs}) détaille chaque module.\n\nModdy est actuellement en **bêta**, donc tu peux rencontrer des bugs. C'est normal : signale-les avec **/bug-report** ou sur le serveur support, et on les corrige."
+      "body": "Merci d'avoir ajouté **Moddy** sur **{server}** !\n\nTout se configure au même endroit : la commande {config} sur ton serveur, ou le dashboard sur [**dashboard.moddy.app**]({dashboard}). Modération, logs, messages de bienvenue, tickets : tu choisis un module, tu le règles, c'est fait.\n\n**Un mois de premium t'est offert** pour ce serveur, gratuitement et sans carte bancaire. Rejoins notre [**serveur support**]({support}) et ouvre un ticket pour l'activer.\n\nTu préfères ne pas t'en occuper ? Appuie sur le bouton ci-dessous et un membre de l'équipe le configurera avec toi. Notre [**documentation**]({docs}) détaille chaque module.\n\nModdy est actuellement en **bêta**, donc tu peux rencontrer des bugs. C'est normal : signale-les avec {bug_report} ou sur le serveur support, et on les corrige."
     }
   },
   "support": {
@@ -4254,7 +4255,7 @@
       "config_help": {
         "title": "À propos de ta demande de configuration"
       },
-      "reference": "Référence : {reference}",
+      "reference": "Référence : `{reference}`",
       "modal": {
         "title": "Répondre à l'auteur",
         "body": {

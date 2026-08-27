@@ -4035,13 +4035,14 @@
       "token_detector": "Token detector",
       "global_sanctions": "Global sanctions",
       "expirations": "Sanction expiry",
-      "support": "Support",
-      "moddy_team": "the Moddy Team"
+      "support": "Moddy Support",
+      "moddy_team": "Moddy Team"
     },
     "attribution": {
       "unknown_guild": "Unknown server",
       "sent_by": "Sent by [**{guild}**]({guild_url}){badge} (`{guild_id}`)",
-      "sent_by_service": "Sent by **{service}**{badge}"
+      "sent_by_service": "Sent by **{service}**{badge}",
+      "sent_by_moddy": "Sent by the **{service}**{badge}"
     },
     "source": {
       "uuid_label": "Notification:"
@@ -4143,13 +4144,13 @@
     },
     "beta": {
       "title": "Moddy is entering beta",
-      "body": "Hi **{user}**!\n\nYou added **Moddy** to {servers} back when it was still in development, at a time when it did not do much yet. That has changed: the bot is entering **beta**, and most of its features are now live.\n\nBecause you were here before everyone else, **Moddy Max is yours for 2 months**, free and without a card. Just open a ticket on our [**support server**]({support}) to activate it.\n\nTo set the modules up, use {config} or our dashboard on [**dashboard.moddy.app**]({dashboard}). And if you would rather not deal with it, someone from the team can come and configure it for you: press the button below. Our [**documentation**]({docs}) is there too.\n\nWe are in beta, so there will be bugs. That is normal. Report them with **/bug-report** or on our support server: it genuinely helps us move forward.\n\nThanks for keeping Moddy in a corner of your server all this time.",
+      "body": "Hi **{user}**!\n\nYou added **Moddy** to {servers} back when it was still in development, at a time when it did not do much yet. That has changed: the bot is entering **beta**, and most of its features are now live.\n\nBecause you were here before everyone else, **Moddy Max is yours for 2 months**, free and without a card. Just open a ticket on our [**support server**]({support}) to activate it.\n\nTo set the modules up, use {config} or our dashboard on [**dashboard.moddy.app**]({dashboard}). And if you would rather not deal with it, someone from the team can come and configure it for you: press the button below. Our [**documentation**]({docs}) is there too.\n\nWe are in beta, so there will be bugs. That is normal. Report them with {bug_report} or on our support server: it genuinely helps us move forward.\n\nThanks for keeping Moddy in a corner of your server all this time.",
       "translate": "Translate",
       "your_server": "**your server**"
     },
     "install": {
       "title": "Welcome to Moddy",
-      "body": "Thanks for adding **Moddy** to **{server}**!\n\nEverything is configured from one place: run {config} on your server, or use the dashboard on [**dashboard.moddy.app**]({dashboard}). Moderation, logs, welcome messages, tickets: pick a module, set it up, done.\n\n**One month of premium is on us**, free and without a card, for this server. Join our [**support server**]({support}) and open a ticket to activate it.\n\nRather not set things up yourself? Press the button below and someone from the team will configure it with you. Our [**documentation**]({docs}) walks through every module.\n\nModdy is currently in **beta**, so you may run into bugs. That is expected: tell us with **/bug-report** or on the support server, and we will fix them."
+      "body": "Thanks for adding **Moddy** to **{server}**!\n\nEverything is configured from one place: run {config} on your server, or use the dashboard on [**dashboard.moddy.app**]({dashboard}). Moderation, logs, welcome messages, tickets: pick a module, set it up, done.\n\n**One month of premium is on us**, free and without a card, for this server. Join our [**support server**]({support}) and open a ticket to activate it.\n\nRather not set things up yourself? Press the button below and someone from the team will configure it with you. Our [**documentation**]({docs}) walks through every module.\n\nModdy is currently in **beta**, so you may run into bugs. That is expected: tell us with {bug_report} or on the support server, and we will fix them."
     }
   },
   "support": {
@@ -4255,7 +4256,7 @@
       "config_help": {
         "title": "About your configuration request"
       },
-      "reference": "Reference: {reference}",
+      "reference": "Reference: `{reference}`",
       "modal": {
         "title": "Reply to the reporter",
         "body": {

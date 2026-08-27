@@ -51,11 +51,12 @@ SUPPORT_URL: str = os.environ.get("MODDY_SUPPORT_URL", "https://moddy.app/suppor
 DASHBOARD_URL: str = os.environ.get("MODDY_DASHBOARD_URL", "https://dashboard.moddy.app")
 DOCS_URL: str = os.environ.get("MODDY_DOCS_URL", "https://docs.moddy.app")
 
-# Clickable mention of /config, used inside notification bodies. A command
-# mention needs the registered command id, which is stable for the application
-# but changes if the command is ever re-created — hence the override.
-CONFIG_COMMAND_MENTION: str = os.environ.get(
-    "MODDY_CONFIG_COMMAND_MENTION", "</config:1444430277970497653>")
+# How a command is written inside a message Moddy sends: bold + inline code,
+# e.g. **`/config`**. Not a clickable </config:id> mention — that id changes if
+# the command is ever re-registered, and a stale mention renders as raw text.
+def command_label(name: str) -> str:
+    """Format a command name the way every Moddy message writes one."""
+    return f"**`/{name.lstrip('/')}`**"
 
 # =============================================================================
 # BASE DE DONNÉES

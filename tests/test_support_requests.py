@@ -231,12 +231,48 @@ def test_install_welcome_offers_the_config_help_button():
 # --------------------------------------------------------------------------- #
 
 @pytest.mark.asyncio
-async def test_team_attribution_carries_the_badge():
-    """"Sent by the Moddy Team" is the one line proving a DM is not a fake."""
-    source = NotificationSource.service("moddy_team", author=ContentAuthor.STAFF)
+@pytest.mark.parametrize("service, name", [
+    ("moddy_team", "Moddy Team"),
+    ("support", "Moddy Support"),
+])
+async def test_moddy_attribution_carries_the_badge(service, name):
+    """"Sent by the Moddy Team✓" is the one line proving a DM is not a fake."""
+    source = NotificationSource.service(service, author=ContentAuthor.STAFF)
     ctx = await resolve_source_context(None, source, locale="en-US")
     line = build_attribution_line(ctx, locale="en-US")
     assert ctx["badge"]
+    assert line and ctx["badge"] in line
+    # The article stays outside the bold: "the **Moddy Team**", not "**the …**".
+    assert f"the **{name}**" in line
+
+
+@pytest.mark.asyncio
+async def test_a_plain_service_gets_no_badge_and_no_article():
+    source = NotificationSource.service("reminder")
+    ctx = await resolve_source_context(None, source, locale="en-US")
+    line = build_attribution_line(ctx, locale="en-US")
+    assert not ctx["badge"]
+    assert line and "the **" not in line
+
+
+@pytest.mark.asyncio
+async def test_a_verified_server_still_gets_its_check():
+    """The guild badge is the oldest half of the attribution line; the
+    Moddy-service badge must not have displaced it."""
+    class DB:
+        async def get_guild(self, guild_id):
+            return {"attributes": {"VERIFIED": True}}
+
+    class Bot:
+        db = DB()
+
+        def get_guild(self, guild_id):
+            return FakeGuild(guild_id, "Verified server", 1)
+
+    ctx = await resolve_source_context(Bot(), NotificationSource.guild(42),
+                                       locale="en-US")
+    line = build_attribution_line(ctx, locale="en-US")
+    assert ctx["verified"] and ctx["badge"]
     assert line and ctx["badge"] in line
 
 
@@ -246,3 +282,45 @@ async def test_staff_authored_notifications_are_not_reportable():
     source = NotificationSource.service("support", author=ContentAuthor.STAFF)
     ctx = await resolve_source_context(None, source, locale="en-US")
     assert ctx["reportable"] is False
+
+
+# --------------------------------------------------------------------------- #
+# House style
+# --------------------------------------------------------------------------- #
+
+def _link_buttons(view):
+    return [child.item if hasattr(child, "item") else child
+            for row in view.children
+            for child in getattr(row, "children", [])
+            if getattr(getattr(child, "item", child), "style", None)
+            is discord.ButtonStyle.link]
+
+
+@pytest.mark.parametrize("view", [
+    build_beta_view(variables={"user": "J", "servers": "**S**"}),
+    build_welcome_view(guild=FakeGuild(1, "Test", 1), locale="en-US"),
+    views.build_reply_dm(request=make_request(), body="ok", locale="en-US"),
+    views.build_receipt(kind=KIND_BUG, request=make_request(), locale="en-US"),
+])
+def test_link_buttons_carry_no_icon(view):
+    """House rule: a link button is its label, nothing else."""
+    buttons = _link_buttons(view)
+    assert buttons
+    assert all(button.emoji is None for button in buttons)
+
+
+@pytest.mark.parametrize("locale", ["fr", "en-US", "es-ES", "pt-BR", "de"])
+def test_commands_are_written_in_the_house_format(locale):
+    """**`/config`**, never a </config:id> mention: the id dies on a
+    re-registration and renders as raw text."""
+    for content in (welcome_content(locale), beta_content(locale)):
+        assert "**`/config`**" in content.body
+        assert "**`/bug-report`**" in content.body
+        assert "</config:" not in content.body
+
+
+@pytest.mark.parametrize("locale", ["fr", "en-US", "es-ES", "pt-BR", "de"])
+def test_references_are_always_code(locale):
+    from utils.i18n import t
+    assert "`{reference}`" in t("support.reply.reference", locale=locale,
+                                reference="{reference}")

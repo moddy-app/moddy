@@ -36,7 +36,7 @@ from discord import ui
 import config
 from cogs.error_handler import BaseView
 from notifications.models import NotificationContent
-from utils.emojis import BOOK, MODDY_SQUARE_MIN, SUPPORT, TRANSLATE, WEB
+from utils.emojis import MODDY_SQUARE_MIN, TRANSLATE
 from utils.i18n import i18n, t
 from utils.support_request_views import ConfigHelpButton, shorten
 
@@ -48,10 +48,11 @@ DEFAULT_LOCALE = "en-US"
 #: Accent of the card — Moddy blue, as asked for the campaign.
 ACCENT = 0x3661FF
 
-#: The ``/config`` mention, so the message opens the command in one click.
-#: A command mention needs the *registered* command id, which is stable per
-#: application: it lives in config so it survives a re-registration.
-CONFIG_MENTION = config.CONFIG_COMMAND_MENTION
+#: How ``/config`` is written in the body (see ``config.command_label``).
+CONFIG_LABEL = config.command_label("config")
+
+#: Same for ``/bug-report``, named in the last paragraph.
+BUG_REPORT_LABEL = config.command_label("bug-report")
 
 #: UUID fragment used by the translate button's custom_id.
 _UUID = r"[0-9a-fA-F-]{36}"
@@ -68,7 +69,7 @@ def beta_content(locale: str = DEFAULT_LOCALE) -> NotificationContent:
         title=t("notifications.beta.title", locale=locale),
         body=t("notifications.beta.body", locale=locale,
                user="{user}", servers="{servers}",
-               config=CONFIG_MENTION,
+               config=CONFIG_LABEL, bug_report=BUG_REPORT_LABEL,
                support=config.SUPPORT_URL,
                dashboard=config.DASHBOARD_URL,
                docs=config.DOCS_URL),
@@ -104,15 +105,12 @@ def build_beta_view(*, variables: Dict[str, Any], locale: str = DEFAULT_LOCALE,
     row.add_item(ConfigHelpButton(locale=locale))
     row.add_item(ui.Button(
         label=shorten(t("support.links.support", locale=locale)),
-        emoji=discord.PartialEmoji.from_str(SUPPORT),
         style=discord.ButtonStyle.link, url=config.SUPPORT_URL))
     row.add_item(ui.Button(
         label=shorten(t("support.links.docs", locale=locale)),
-        emoji=discord.PartialEmoji.from_str(BOOK),
         style=discord.ButtonStyle.link, url=config.DOCS_URL))
     row.add_item(ui.Button(
         label=shorten(t("support.links.dashboard", locale=locale)),
-        emoji=discord.PartialEmoji.from_str(WEB),
         style=discord.ButtonStyle.link, url=config.DASHBOARD_URL))
     view.add_item(row)
     return view
@@ -132,7 +130,7 @@ class BetaTranslateButton(
     def __init__(self, notification_id: str, *, locale: str = DEFAULT_LOCALE):
         super().__init__(ui.Button(
             label=shorten(t("notifications.beta.translate", locale=locale)),
-            style=discord.ButtonStyle.secondary,
+            style=discord.ButtonStyle.primary,
             emoji=discord.PartialEmoji.from_str(TRANSLATE),
             custom_id=f"moddy:beta:translate:{notification_id}",
         ))
@@ -145,19 +143,28 @@ class BetaTranslateButton(
     async def callback(self, interaction: discord.Interaction):
         try:
             locale = i18n.get_user_locale(interaction)
-            variables = await self._variables(interaction)
-            await interaction.response.edit_message(view=build_beta_view(
-                variables=variables, locale=locale,
-                notification_id=self.notification_id))
+            service = getattr(interaction.client, "notifications", None)
+            record = await service.get(self.notification_id) if service else None
+            variables = self._variables(record, interaction)
+
+            view = build_beta_view(variables=variables, locale=locale,
+                                   notification_id=self.notification_id)
+            # A translated card is the same notification, so it closes the same
+            # way: dropping the "sent by" line would leave a message with no
+            # stated origin.
+            if service is not None:
+                service.append_attribution(
+                    view, await service.attribution_line(record, locale))
+            await interaction.response.edit_message(view=view)
         except Exception as exc:  # noqa: BLE001 — dynamic items have no BaseView
             from cogs.error_handler import report_component_error
             await report_component_error(interaction, exc, self.__class__.__name__)
 
-    async def _variables(self, interaction: discord.Interaction) -> Dict[str, Any]:
+    @staticmethod
+    def _variables(record: Optional[Dict[str, Any]],
+                   interaction: discord.Interaction) -> Dict[str, Any]:
         """The values this copy was sent with — falling back to what the
         interaction itself knows, so a translation never renders `{user}`."""
-        service = getattr(interaction.client, "notifications", None)
-        record = await service.get(self.notification_id) if service else None
         variables = dict((record or {}).get("variables") or {})
         variables.setdefault(
             "user", interaction.user.global_name or interaction.user.name)

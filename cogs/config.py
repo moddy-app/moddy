@@ -18,9 +18,9 @@ from discord.ext import commands
 from typing import Optional
 import logging
 
-from config import COLORS
+from config import COLORS, DASHBOARD_URL, DOCS_URL, SUPPORT_URL
 from utils.i18n import i18n, t
-from utils.emojis import EMOJIS, SETTINGS, SUPPORT, WEB, BOOK
+from utils.emojis import EMOJIS, SETTINGS
 from utils import global_sanctions
 from utils.components_v2 import create_limited_message
 from cogs.error_handler import BaseView
@@ -33,11 +33,6 @@ _CID_MODULE_SELECT = "moddy:config:main:module_select"
 #: Value of the dropdown entry that opens the server-wide settings screen.
 #: Prefixed so it can never collide with a module id.
 SETTINGS_OPTION = "__server_settings__"
-
-#: Links shown under the panel. Outside the container, as link buttons.
-SUPPORT_URL = "https://moddy.app/support"
-DASHBOARD_URL = "https://dashboard.moddy.app"
-DOCS_URL = "https://docs.moddy.app"
 
 
 class ConfigMainView(BaseView):
@@ -170,17 +165,14 @@ class ConfigMainView(BaseView):
         row = ui.ActionRow()
         row.add_item(ui.Button(
             label=t('modules.config.main.links.dashboard', locale=self.locale),
-            emoji=discord.PartialEmoji.from_str(WEB),
             style=discord.ButtonStyle.link, url=DASHBOARD_URL,
         ))
         row.add_item(ui.Button(
             label=t('modules.config.main.links.support', locale=self.locale),
-            emoji=discord.PartialEmoji.from_str(SUPPORT),
             style=discord.ButtonStyle.link, url=SUPPORT_URL,
         ))
         row.add_item(ui.Button(
             label=t('modules.config.main.links.docs', locale=self.locale),
-            emoji=discord.PartialEmoji.from_str(BOOK),
             style=discord.ButtonStyle.link, url=DOCS_URL,
         ))
         return row

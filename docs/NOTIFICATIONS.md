@@ -40,7 +40,7 @@ Three answers, one system:
 |---|---|
 | **Official** — account suspension, leaked-token alert | *none* |
 | **Service** — a Moddy feature acting alone (reminder, appeal outcome) | `-# Sent by **Reminders**` |
-| **Moddy itself** — the `moddy` / `moddy_team` services (install welcome, support reply, campaigns) | `-# Sent by **the Moddy Team**<:verified:…>` |
+| **Moddy itself** — the `moddy`, `moddy_team` and `support` services (install welcome, support reply, campaigns) | `-# Sent by the **Moddy Team**<:verified:…>` |
 | **Server** — a server's own words (welcome DM, sanction reason) | `-# Sent by [**Server**](link) (`id`)` |
 | **Service + server** — a feature acting for a server (AltGuard, tickets, automod) | same as above: the **server** is the origin |
 
@@ -51,10 +51,18 @@ names the Moddy service instead, so there is always exactly one origin.
 An official notice carries no line: a suspension **is** Moddy speaking, there is
 no third party to name.
 
-The two services that *are* Moddy (`OFFICIAL_SERVICES` in
-`notifications/render.py`: `moddy` and `moddy_team`) carry the verification
-check on their own line, without any database read — it is true by
+The services that *are* Moddy (`OFFICIAL_SERVICES` in
+`notifications/render.py`: `moddy`, `moddy_team`, `support`) carry the
+verification check on their own line, without any database read — it is true by
 construction, and it is what tells a member the DM is not an impersonation.
+Those of them that read as a named entity (`ARTICLE_SERVICES`: `moddy_team`,
+`support`) use `sent_by_moddy`, whose article sits **outside** the bold —
+"Sent by the **Moddy Team**", never "**the Moddy Team**".
+
+A card rebuilt *after* delivery (the beta announcement's Translate button)
+re-appends the same line through `NotificationService.attribution_line()` +
+`append_attribution()`: a re-render that drops it would leave a message stating
+no origin at all.
 
 A verified server (`VERIFIED`, `VERIFIED_ORG` or `PARTNER`) gets the
 verification check right after its name, as the plain emoji — **not**
