@@ -183,6 +183,10 @@ naming all of their servers). The mass send is confirmed through a **Modal**
 where the sender types `SEND`: a campaign cannot be recalled, so it must not be
 one mis-click away.
 
+`owners` accepts `exclude_guild`: a server id whose **owner** should not
+receive the campaign at all — not just that one server left out of their list,
+the whole person skipped, even if they own other servers Moddy is in.
+
 ---
 
 ## Related

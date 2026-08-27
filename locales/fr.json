@@ -3828,7 +3828,8 @@
           "field": {
             "label": "Confirmation",
             "description": "Tape {word} pour lancer la campagne."
-          }
+          },
+          "excluded": "Excluding the owner of server `{id}` from this run."
         },
         "progress": {
           "title": "Envoi de l'annonce bêta",
@@ -3854,6 +3855,14 @@
           "not_confirmed": {
             "title": "Pas envoyée",
             "description": "La campagne n'a pas été lancée : tape `{word}` pour confirmer."
+          },
+          "bad_guild_id": {
+            "title": "Invalid id",
+            "description": "`exclude_guild` needs a Discord server id."
+          },
+          "unknown_guild": {
+            "title": "Unknown server",
+            "description": "No server matches `{id}`, or Moddy could not resolve its owner."
           }
         }
       }
