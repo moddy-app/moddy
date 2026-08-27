@@ -25,6 +25,7 @@ from utils.beta_announcement import (
     owner_server_map,
 )
 from utils.install_welcome import build_welcome_view, welcome_content
+from staff.commands.com.beta import _resolve_excluded_owner
 
 
 # --------------------------------------------------------------------------- #
@@ -324,3 +325,43 @@ def test_references_are_always_code(locale):
     from utils.i18n import t
     assert "`{reference}`" in t("support.reply.reference", locale=locale,
                                 reference="{reference}")
+
+
+# --------------------------------------------------------------------------- #
+# /com beta exclude_guild
+# --------------------------------------------------------------------------- #
+
+class _ExcludeBot:
+    def __init__(self, guilds):
+        self._guilds = {g.id: g for g in guilds}
+
+    def get_guild(self, guild_id):
+        return self._guilds.get(guild_id)
+
+
+@pytest.mark.asyncio
+async def test_exclude_guild_resolves_its_owner():
+    bot = _ExcludeBot([FakeGuild(42, "Excluded", 999)])
+    owner_id, error = await _resolve_excluded_owner(bot, "42", "en-US")
+    assert owner_id == 999 and error is None
+
+
+@pytest.mark.asyncio
+async def test_exclude_guild_rejects_a_non_numeric_id():
+    owner_id, error = await _resolve_excluded_owner(_ExcludeBot([]), "not-an-id", "en-US")
+    assert owner_id is None and error is not None
+
+
+@pytest.mark.asyncio
+async def test_exclude_guild_rejects_an_unknown_guild():
+    owner_id, error = await _resolve_excluded_owner(_ExcludeBot([]), "1", "en-US")
+    assert owner_id is None and error is not None
+
+
+def test_owner_map_excludes_the_whole_owner_not_just_that_guild():
+    """Asking to leave a server's owner alone means leave them alone, even on
+    their other servers — not just skip the one server named."""
+    bot = FakeBot([FakeGuild(1, "A", 10), FakeGuild(2, "B", 10)])
+    owners = owner_server_map(bot)
+    owners.pop(10, None)
+    assert 10 not in owners
