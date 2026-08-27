@@ -25,7 +25,7 @@ from utils.beta_announcement import (
     owner_server_map,
 )
 from utils.install_welcome import build_welcome_view, welcome_content
-from staff.commands.com.beta import _resolve_excluded_owner
+from staff.commands.com.beta import _resolve_excluded_owners
 
 
 # --------------------------------------------------------------------------- #
@@ -340,22 +340,38 @@ class _ExcludeBot:
 
 
 @pytest.mark.asyncio
-async def test_exclude_guild_resolves_its_owner():
+async def test_exclude_guilds_resolves_a_single_owner():
     bot = _ExcludeBot([FakeGuild(42, "Excluded", 999)])
-    owner_id, error = await _resolve_excluded_owner(bot, "42", "en-US")
-    assert owner_id == 999 and error is None
+    owner_ids, error = await _resolve_excluded_owners(bot, "42", "en-US")
+    assert owner_ids == [999] and error is None
 
 
 @pytest.mark.asyncio
-async def test_exclude_guild_rejects_a_non_numeric_id():
-    owner_id, error = await _resolve_excluded_owner(_ExcludeBot([]), "not-an-id", "en-US")
-    assert owner_id is None and error is not None
+async def test_exclude_guilds_accepts_a_comma_separated_list():
+    bot = _ExcludeBot([FakeGuild(1, "A", 100), FakeGuild(2, "B", 200)])
+    owner_ids, error = await _resolve_excluded_owners(bot, "1, 2", "en-US")
+    assert owner_ids == [100, 200] and error is None
 
 
 @pytest.mark.asyncio
-async def test_exclude_guild_rejects_an_unknown_guild():
-    owner_id, error = await _resolve_excluded_owner(_ExcludeBot([]), "1", "en-US")
-    assert owner_id is None and error is not None
+async def test_exclude_guilds_rejects_a_non_numeric_id():
+    owner_ids, error = await _resolve_excluded_owners(_ExcludeBot([]), "not-an-id", "en-US")
+    assert owner_ids is None and error is not None
+
+
+@pytest.mark.asyncio
+async def test_exclude_guilds_rejects_an_unknown_guild():
+    owner_ids, error = await _resolve_excluded_owners(_ExcludeBot([]), "1", "en-US")
+    assert owner_ids is None and error is not None
+
+
+@pytest.mark.asyncio
+async def test_exclude_guilds_stops_at_the_first_bad_entry():
+    """One bad id in the list refuses the whole exclusion rather than silently
+    dropping it — a campaign is not the place to guess what staff meant."""
+    bot = _ExcludeBot([FakeGuild(1, "A", 100)])
+    owner_ids, error = await _resolve_excluded_owners(bot, "1, 999", "en-US")
+    assert owner_ids is None and error is not None
 
 
 def test_owner_map_excludes_the_whole_owner_not_just_that_guild():
