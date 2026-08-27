@@ -22,7 +22,7 @@ import config
 from cogs.error_handler import BaseView
 from discord import ui
 from notifications.models import ContentAuthor, NotificationContent, NotificationSource
-from utils.emojis import BOOK, MODDY_SQUARE_MIN, SUPPORT, WEB
+from utils.emojis import MODDY_SQUARE_MIN
 from utils.i18n import t
 from utils.support_request_views import ConfigHelpButton, shorten
 
@@ -37,7 +37,8 @@ def welcome_content(locale: str = "en-US") -> NotificationContent:
     return NotificationContent(
         title=t("notifications.install.title", locale=locale),
         body=t("notifications.install.body", locale=locale,
-               server="{server}", config=config.CONFIG_COMMAND_MENTION,
+               server="{server}", config=config.command_label("config"),
+               bug_report=config.command_label("bug-report"),
                dashboard=config.DASHBOARD_URL, support=config.SUPPORT_URL,
                docs=config.DOCS_URL),
         icon=MODDY_SQUARE_MIN,
@@ -65,15 +66,12 @@ def build_welcome_view(*, guild: discord.Guild, locale: str = "en-US") -> BaseVi
     row.add_item(ConfigHelpButton(guild_id=guild.id, locale=locale))
     row.add_item(ui.Button(
         label=shorten(t("support.links.dashboard", locale=locale)),
-        emoji=discord.PartialEmoji.from_str(WEB),
         style=discord.ButtonStyle.link, url=config.DASHBOARD_URL))
     row.add_item(ui.Button(
         label=shorten(t("support.links.support", locale=locale)),
-        emoji=discord.PartialEmoji.from_str(SUPPORT),
         style=discord.ButtonStyle.link, url=config.SUPPORT_URL))
     row.add_item(ui.Button(
         label=shorten(t("support.links.docs", locale=locale)),
-        emoji=discord.PartialEmoji.from_str(BOOK),
         style=discord.ButtonStyle.link, url=config.DOCS_URL))
     view.add_item(row)
     return view

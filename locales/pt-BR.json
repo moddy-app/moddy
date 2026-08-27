@@ -4035,13 +4035,14 @@
       "token_detector": "Detector de tokens",
       "global_sanctions": "Sanções globais",
       "expirations": "Fim de sanção",
-      "support": "Suporte",
-      "moddy_team": "a equipe do Moddy"
+      "support": "Moddy Support",
+      "moddy_team": "Moddy Team"
     },
     "attribution": {
       "unknown_guild": "Servidor desconhecido",
       "sent_by": "Enviado por [**{guild}**]({guild_url}){badge} (`{guild_id}`)",
-      "sent_by_service": "Enviado por **{service}**{badge}"
+      "sent_by_service": "Enviado por **{service}**{badge}",
+      "sent_by_moddy": "Enviado por **{service}**{badge}"
     },
     "source": {
       "uuid_label": "Notificação:"
@@ -4143,13 +4144,13 @@
     },
     "beta": {
       "title": "O Moddy entra em beta",
-      "body": "Olá **{user}**!\n\nVocê adicionou o **Moddy** em {servers} quando ele ainda estava em desenvolvimento, numa época em que não fazia grande coisa. Isso mudou: o bot entra em **beta** e boa parte dos recursos já está ativa.\n\nComo você estava aqui antes de todo mundo, **o Moddy Max é seu por 2 meses**: de graça e sem cartão. Basta abrir um ticket no nosso [**servidor de suporte**]({support}) para ativar.\n\nPara configurar os módulos, use {config} ou o nosso painel em [**dashboard.moddy.app**]({dashboard}). E se preferir não cuidar disso, alguém da equipe pode configurar para você: é só apertar o botão abaixo. A nossa [**documentação**]({docs}) também está aí.\n\nEstamos em beta, então vai ter bug; é normal. Relate com **/bug-report** ou no servidor de suporte: ajuda muito.\n\nObrigado por ter mantido o Moddy num canto do seu servidor todo esse tempo.",
+      "body": "Olá **{user}**!\n\nVocê adicionou o **Moddy** em {servers} quando ele ainda estava em desenvolvimento, numa época em que não fazia grande coisa. Isso mudou: o bot entra em **beta** e boa parte dos recursos já está ativa.\n\nComo você estava aqui antes de todo mundo, **o Moddy Max é seu por 2 meses**: de graça e sem cartão. Basta abrir um ticket no nosso [**servidor de suporte**]({support}) para ativar.\n\nPara configurar os módulos, use {config} ou o nosso painel em [**dashboard.moddy.app**]({dashboard}). E se preferir não cuidar disso, alguém da equipe pode configurar para você: é só apertar o botão abaixo. A nossa [**documentação**]({docs}) também está aí.\n\nEstamos em beta, então vai ter bug; é normal. Relate com {bug_report} ou no servidor de suporte: ajuda muito.\n\nObrigado por ter mantido o Moddy num canto do seu servidor todo esse tempo.",
       "translate": "Traduzir",
       "your_server": "**o seu servidor**"
     },
     "install": {
       "title": "Bem-vindo ao Moddy",
-      "body": "Obrigado por adicionar o **Moddy** em **{server}**!\n\nTudo se configura em um só lugar: use {config} no seu servidor ou o painel em [**dashboard.moddy.app**]({dashboard}). Moderação, logs, mensagens de boas-vindas, tickets: escolha um módulo, ajuste e pronto.\n\n**Um mês de premium é por nossa conta** para este servidor, de graça e sem cartão. Entre no nosso [**servidor de suporte**]({support}) e abra um ticket para ativar.\n\nPrefere não cuidar disso? Aperte o botão abaixo e alguém da equipe configura com você. A nossa [**documentação**]({docs}) explica cada módulo.\n\nO Moddy está atualmente em **beta**, então você pode encontrar bugs. É esperado: conte para a gente com **/bug-report** ou no servidor de suporte, e a gente corrige."
+      "body": "Obrigado por adicionar o **Moddy** em **{server}**!\n\nTudo se configura em um só lugar: use {config} no seu servidor ou o painel em [**dashboard.moddy.app**]({dashboard}). Moderação, logs, mensagens de boas-vindas, tickets: escolha um módulo, ajuste e pronto.\n\n**Um mês de premium é por nossa conta** para este servidor, de graça e sem cartão. Entre no nosso [**servidor de suporte**]({support}) e abra um ticket para ativar.\n\nPrefere não cuidar disso? Aperte o botão abaixo e alguém da equipe configura com você. A nossa [**documentação**]({docs}) explica cada módulo.\n\nO Moddy está atualmente em **beta**, então você pode encontrar bugs. É esperado: conte para a gente com {bug_report} ou no servidor de suporte, e a gente corrige."
     }
   },
   "support": {
@@ -4255,7 +4256,7 @@
       "config_help": {
         "title": "Sobre o seu pedido de configuração"
       },
-      "reference": "Referência: {reference}",
+      "reference": "Referência: `{reference}`",
       "modal": {
         "title": "Responder ao autor",
         "body": {

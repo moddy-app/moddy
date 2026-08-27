@@ -97,6 +97,26 @@ coroutine`). One missing `await`.
 - **No em dashes in user-facing strings** (explicit request): every new locale
   string uses commas or colons instead.
 
+## Review pass (same session)
+
+- `sent_by_moddy`: the article sits outside the bold ("Sent by the **Moddy
+  Team**✓"), and `support` joined `OFFICIAL_SERVICES` so a team reply carries
+  the check too. Service names are brand names now: *Moddy Team*, *Moddy
+  Support*.
+- The Translate button re-appends the attribution line
+  (`NotificationService.attribution_line()` / `append_attribution()`) — a
+  rebuilt card was dropping it — and is blue (`ButtonStyle.primary`).
+- Commands inside a message are written `**\`/config\`**` via
+  `config.command_label()`, replacing the `</config:id>` mention (a stale id
+  renders as raw text). `MODDY_CONFIG_COMMAND_MENTION` is gone.
+- References always render as code: `support.reply.reference` carries its own
+  backticks.
+- Link buttons carry no icon anywhere (`/config`, support cards, beta card,
+  install welcome).
+- Verified **servers**: the guild badge path was checked and is unchanged; a
+  guild carrying `VERIFIED` / `VERIFIED_ORG` / `PARTNER` / `OFFICIAL` still gets
+  its check, and a regression test now pins it.
+
 ## Follow-ups
 
 - `MODDY_CONFIG_COMMAND_MENTION` must be updated if `/config` is ever

@@ -39,7 +39,12 @@ logger = logging.getLogger("moddy.notifications.render")
 VERIFIED_GUILD_ATTRIBUTES = ("VERIFIED", "VERIFIED_ORG", "PARTNER")
 
 #: Services that ARE Moddy: their attribution line carries the check mark.
-OFFICIAL_SERVICES = ("moddy", "moddy_team")
+OFFICIAL_SERVICES = ("moddy", "moddy_team", "support")
+
+#: Among those, the ones read as a named entity rather than as Moddy itself
+#: ("Sent by the **Moddy Team**", not "Sent by the **Moddy**"). The article sits
+#: outside the bold, in the localized template.
+ARTICLE_SERVICES = ("moddy_team", "support")
 
 #: Guild attribute marking one of Moddy's own servers. Reporting a message from
 #: Moddy's own server to Moddy's abuse team is a loop with no exit, so the flag
@@ -205,8 +210,10 @@ def build_attribution_line(ctx: Dict[str, Any], *, locale: str = "en-US") -> Opt
             badge=ctx.get("badge") or "",
         )
     if ctx.get("service_name"):
-        return "-# " + t("notifications.attribution.sent_by_service",
-                         locale=locale, service=ctx["service_name"],
+        key = ("notifications.attribution.sent_by_moddy"
+               if ctx.get("service_id") in ARTICLE_SERVICES
+               else "notifications.attribution.sent_by_service")
+        return "-# " + t(key, locale=locale, service=ctx["service_name"],
                          badge=ctx.get("badge") or "")
     return None
 

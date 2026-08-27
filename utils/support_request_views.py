@@ -39,7 +39,7 @@ from db.repositories.support_requests import (
 )
 from utils.components_v2 import create_error_message, create_success_message
 from utils.emojis import (
-    BOOK, BUG, BUILD, DONE, GROUPS, HAND, NOTE, REPLY, SUPPORT, TIME, USER, WEB,
+    BUG, BUILD, DONE, GROUPS, HAND, NOTE, REPLY, SUPPORT, TIME, USER,
 )
 from utils.i18n import i18n, t
 
@@ -218,7 +218,6 @@ def build_reply_dm(*, request: Dict[str, Any], body: str,
     row.add_item(SupportUserReplyButton(str(request["id"]), locale=locale))
     row.add_item(ui.Button(
         label=_short(t("support.links.support", locale=locale)),
-        emoji=discord.PartialEmoji.from_str(SUPPORT),
         style=discord.ButtonStyle.link, url=config.SUPPORT_URL))
     view.add_item(row)
     return view
@@ -622,17 +621,14 @@ def build_receipt(*, kind: str, request: Dict[str, Any], locale: str) -> BaseVie
     row = ui.ActionRow()
     row.add_item(ui.Button(
         label=_short(t("support.links.support", locale=locale)),
-        emoji=discord.PartialEmoji.from_str(SUPPORT),
         style=discord.ButtonStyle.link, url=config.SUPPORT_URL))
     if kind == KIND_CONFIG_HELP:
         row.add_item(ui.Button(
             label=_short(t("support.links.dashboard", locale=locale)),
-            emoji=discord.PartialEmoji.from_str(WEB),
             style=discord.ButtonStyle.link, url=config.DASHBOARD_URL))
     else:
         row.add_item(ui.Button(
             label=_short(t("support.links.docs", locale=locale)),
-            emoji=discord.PartialEmoji.from_str(BOOK),
             style=discord.ButtonStyle.link, url=config.DOCS_URL))
     view.add_item(row)
     return view

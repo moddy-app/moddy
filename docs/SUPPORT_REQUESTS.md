@@ -144,7 +144,10 @@ docs/PERSISTENT_VIEWS.md.
 | `MODDY_SUPPORT_URL` | `https://moddy.app/support` | shown on every card |
 | `MODDY_DASHBOARD_URL` | `https://dashboard.moddy.app` | idem |
 | `MODDY_DOCS_URL` | `https://docs.moddy.app` | idem |
-| `MODDY_CONFIG_COMMAND_MENTION` | `</config:1444430277970497653>` | the clickable `/config` mention used inside notification bodies |
+
+Commands named inside a message are written with `config.command_label()`
+(**`` `/config` ``**), never as a `</config:id>` mention: that id changes if the
+command is re-registered, and a stale mention renders as raw text.
 
 ---
 

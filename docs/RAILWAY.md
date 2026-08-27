@@ -155,11 +155,6 @@ envoyées depuis le bouton sous les annonces de Moddy
 **Description :** Liens publics affichés sous `/config`, les cartes de support
 et les notifications
 
-### MODDY_CONFIG_COMMAND_MENTION
-**Valeur :** mention de commande (défaut : `</config:1444430277970497653>`)
-**Description :** Mention cliquable de `/config` insérée dans le corps des
-notifications. À mettre à jour si la commande est recréée (son id change)
-
 ## Checklist Railway
 
 - [ ] `DISCORD_TOKEN`
@@ -178,7 +173,6 @@ notifications. À mettre à jour si la commande est recréée (son id change)
 - [ ] `MODDY_NOTIF_REPORT_LOG_CHANNEL_ID` (optionnel, défaut en dur dans `config.py`)
 - [ ] `MODDY_BUG_REPORT_CHANNEL_ID` (optionnel, défaut en dur dans `config.py`)
 - [ ] `MODDY_CONFIG_HELP_CHANNEL_ID` (optionnel, défaut en dur dans `config.py`)
-- [ ] `MODDY_CONFIG_COMMAND_MENTION` (optionnel, défaut en dur dans `config.py`)
 - [ ] `HM_URL` (optionnel, désactive le heartbeat si absent)
 - [ ] `HM_INGEST_TOKEN` (optionnel, désactive le heartbeat si absent, identique sur tous les services)
 - [ ] `BETTERSTACK_HEARTBEAT_URL` (optionnel, désactive le ping Better Stack si absent)

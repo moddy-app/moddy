@@ -305,6 +305,27 @@ class NotificationService:
             allowed_mentions=allowed_mentions,
         )
 
+    async def attribution_line(self, record: Optional[Dict[str, Any]],
+                               locale: Optional[str] = None) -> Optional[str]:
+        """The ``sent by`` line of a stored notification.
+
+        Public because a card can be **rebuilt** after delivery — the beta
+        announcement's Translate button re-renders the message in the reader's
+        language — and a rebuilt card that drops its origin line is a message
+        that suddenly says nothing about who wrote it.
+        """
+        if not record:
+            return None
+        ctx = await self.source_context(
+            record, locale=locale or record.get("locale") or "en-US")
+        return build_attribution_line(ctx, locale=locale or "en-US")
+
+    @staticmethod
+    def append_attribution(view: discord.ui.LayoutView, line: Optional[str]) -> None:
+        """Close a rebuilt card with the line :meth:`attribution_line` returned."""
+        if line:
+            _append_footer_line(view, line)
+
     async def _build_view(self, record, content, source, variables, view, locale,
                           attribution: bool = True):
         """Render (or take) the view and close it with the attribution line.
