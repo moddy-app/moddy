@@ -61,8 +61,9 @@ class ComBetaCommand(StaffCommand):
                     choices=["preview", "test", "owners"]),
         SlashOption("recipient", "string", "Target 'test': the user id to send to.",
                     required=False),
-        SlashOption("exclude_guild", "string",
-                    "Target 'owners': a server id whose owner should NOT receive it.",
+        SlashOption("exclude_guilds", "string",
+                    "Target 'owners': server id(s) whose owner should NOT receive it, "
+                    "comma-separated.",
                     required=False),
     ]
 
@@ -71,13 +72,13 @@ class ComBetaCommand(StaffCommand):
         return {
             "target": parts[0] if parts else None,
             "recipient": parts[1] if len(parts) > 1 else None,
-            "exclude_guild": parts[1] if len(parts) > 1 and parts[0] == "owners" else None,
+            "exclude_guilds": parts[1] if len(parts) > 1 and parts[0] == "owners" else None,
         }
 
     async def execute(self, ctx):
         target = (ctx.opt("target") or "").lower()
         recipient = (ctx.opt("recipient") or "").strip()
-        exclude_guild = (ctx.opt("exclude_guild") or "").strip()
+        exclude_guilds = (ctx.opt("exclude_guilds") or "").strip()
 
         if target not in ("preview", "test", "owners"):
             await ctx.send(view=design.invalid_usage(
@@ -103,17 +104,18 @@ class ComBetaCommand(StaffCommand):
 
         # --- the real thing --------------------------------------------- #
         owners = owner_server_map(ctx.bot)
-        excluded_owner_id = None
-        if exclude_guild:
-            excluded_owner_id, error = await _resolve_excluded_owner(
-                ctx.bot, exclude_guild, ctx.locale)
+        excluded_owner_ids: List[int] = []
+        if exclude_guilds:
+            excluded_owner_ids, error = await _resolve_excluded_owners(
+                ctx.bot, exclude_guilds, ctx.locale)
             if error is not None:
                 await ctx.send(view=error)
                 return
             # The whole owner is skipped, not just that one server: someone
             # asking to leave a server's owner alone means leave them alone,
             # whatever else they run.
-            owners.pop(excluded_owner_id, None)
+            for owner_id in excluded_owner_ids:
+                owners.pop(owner_id, None)
 
         audience: List[Tuple[int, List[discord.Guild]]] = sorted(
             owners.items(), key=lambda item: len(item[1]), reverse=True)
@@ -133,8 +135,8 @@ class ComBetaCommand(StaffCommand):
             prompt_title=t("staff.com.beta.confirm.title", locale=ctx.locale),
             prompt_description=t("staff.com.beta.confirm.description", locale=ctx.locale,
                                  owners=len(audience), guilds=len(ctx.bot.guilds))
-                                + (f"\n\n{t('staff.com.beta.confirm.excluded', locale=ctx.locale, id=excluded_owner_id)}"
-                                   if excluded_owner_id else ""),
+                                + (f"\n\n{t('staff.com.beta.confirm.excluded', locale=ctx.locale, ids=', '.join(f'`{o}`' for o in excluded_owner_ids))}"
+                                   if excluded_owner_ids else ""),
         )
 
 
@@ -198,19 +200,27 @@ def _owned(bot, user_id: int) -> List[discord.Guild]:
     return [g for g in bot.guilds if g.owner_id == user_id]
 
 
-async def _resolve_excluded_owner(bot, guild_id: str, locale: str):
-    """The owner id to leave out of the ``owners`` campaign, from a guild id."""
-    if not guild_id.isdigit():
-        return None, design.error(
-            t("staff.com.beta.errors.bad_guild_id.title", locale=locale),
-            t("staff.com.beta.errors.bad_guild_id.description", locale=locale))
-    guild = bot.get_guild(int(guild_id))
-    if guild is None or guild.owner_id is None:
-        return None, design.error(
-            t("staff.com.beta.errors.unknown_guild.title", locale=locale),
-            t("staff.com.beta.errors.unknown_guild.description", locale=locale,
-              id=guild_id))
-    return guild.owner_id, None
+async def _resolve_excluded_owners(bot, raw: str, locale: str):
+    """The owner ids to leave out of the ``owners`` campaign, from a
+    comma-separated list of server ids (same convention as ``/manage badge``'s
+    ``orgs`` option)."""
+    owner_ids: List[int] = []
+    for guild_id in (part.strip() for part in raw.split(",")):
+        if not guild_id:
+            continue
+        if not guild_id.isdigit():
+            return None, design.error(
+                t("staff.com.beta.errors.bad_guild_id.title", locale=locale),
+                t("staff.com.beta.errors.bad_guild_id.description", locale=locale,
+                  id=guild_id))
+        guild = bot.get_guild(int(guild_id))
+        if guild is None or guild.owner_id is None:
+            return None, design.error(
+                t("staff.com.beta.errors.unknown_guild.title", locale=locale),
+                t("staff.com.beta.errors.unknown_guild.description", locale=locale,
+                  id=guild_id))
+        owner_ids.append(guild.owner_id)
+    return owner_ids, None
 
 
 async def _resolve_user(bot, recipient: str, locale: str):

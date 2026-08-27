@@ -3829,7 +3829,7 @@
             "label": "Confirmation",
             "description": "Tape {word} pour lancer la campagne."
           },
-          "excluded": "Excluding the owner of server `{id}` from this run."
+          "excluded": "Excluding the owner(s) of server(s) {ids} from this run."
         },
         "progress": {
           "title": "Envoi de l'annonce bêta",
@@ -3858,7 +3858,7 @@
           },
           "bad_guild_id": {
             "title": "Invalid id",
-            "description": "`exclude_guild` needs a Discord server id."
+            "description": "`{id}` is not a valid Discord server id."
           },
           "unknown_guild": {
             "title": "Unknown server",
