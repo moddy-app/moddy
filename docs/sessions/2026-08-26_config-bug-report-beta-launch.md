@@ -119,8 +119,6 @@ coroutine`). One missing `await`.
 
 ## Follow-ups
 
-- `MODDY_CONFIG_COMMAND_MENTION` must be updated if `/config` is ever
-  re-registered (the command id changes and the mention stops resolving).
 - Delete `utils/beta_announcement.py`, `staff/commands/com/beta.py` and the
   `notifications.beta` / `staff.com.beta` i18n blocks once the campaign is over.
 - The email and dashboard halves of the campaign depend on the backend serving
