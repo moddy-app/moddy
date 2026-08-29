@@ -618,6 +618,21 @@ def test_the_verified_role_alone_proves_a_member_is_through_the_gate():
     assert module.has_verified_role(FakeMember(member_id=43, roles=[])) is False
 
 
+def test_the_unverified_role_outranks_a_stale_verified_db_row():
+    """A member the gate still holds back must not be told they already passed."""
+    unverified = FakeRole(10, "unverified")
+    verified = FakeRole(11, "verified")
+    db = FakeDB()
+    module = build_module(unverified=unverified, verified=verified, db=db)
+
+    asyncio.run(db.set_altguard_member_status(1, 42, STATUS_VERIFIED))
+
+    assert module.has_unverified_role(FakeMember(member_id=42, roles=[unverified])) is True
+
+    asyncio.run(module.resync_stale_verified_status(42))
+    assert db.members[(1, 42)]["status"] == STATUS_PENDING
+
+
 # ------------------------------------------------- pushed config (dashboard)
 
 class RecordingModule(AltGuardModule):
