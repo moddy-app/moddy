@@ -32,9 +32,14 @@ would move personal data into the bot is a compliance regression.
    click a button.
 2. **The panel.** One permanent message in the verification channel, with one
    button. Its wording ships with Moddy; a server picks only the language.
-3. **Consent.** A member who already carries the verified role (or is verified
-   in `altguard_members`) is told so and goes no further — no data collected for
-   an answer the server already has. Otherwise the button opens a Modal V2
+3. **Consent.** A member who already carries the verified role (or, absent that
+   role, is verified in `altguard_members`) is told so and goes no further — no
+   data collected for an answer the server already has. The **unverified role**
+   outranks the database the other way: a member still wearing it is let
+   through to consent even if `altguard_members` still says `verified` (e.g. a
+   manual unverify or a reconciliation gap left a stale row) — the role is what
+   the gate actually enforces, and the stale row is corrected to `pending` on
+   the way out. Otherwise the button opens a Modal V2
    stating exactly what is collected (browser characteristics, technical cookie,
    Discord email, server list, IP address), that the data is encrypted, and
    linking the data notice

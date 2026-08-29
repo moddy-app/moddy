@@ -258,6 +258,31 @@ class AltGuardModule(ModuleBase):
             return False
         return any(role.id == self.verified_role_id for role in member.roles)
 
+    def has_unverified_role(self, member: discord.Member) -> bool:
+        """True when the member carries the unverified (held-back) role.
+
+        Same authority as :meth:`has_verified_role`, the other way round: the
+        role is what the gate actually enforces on the server. A stale
+        ``altguard_members`` row (e.g. left over from before a manual
+        unverify was reconciled) must never outrank it.
+        """
+        if not self.unverified_role_id:
+            return False
+        return any(role.id == self.unverified_role_id for role in member.roles)
+
+    async def resync_stale_verified_status(self, user_id: int) -> None:
+        """Bring a stale ``verified`` DB row back to ``pending``.
+
+        Called when a member still carries the unverified role but the stored
+        status says ``verified`` — the role is the ground truth, so the row
+        must not be left to block them from clicking through the gate again.
+        """
+        if not self.bot.db:
+            return
+        await self.bot.db.set_altguard_member_status(
+            self.guild_id, user_id, STATUS_PENDING, source=SOURCE_SERVICE,
+        )
+
     async def resolve_member(self, user_id: int) -> Optional[discord.Member]:
         """Get a member, falling back to the API when the cache misses.
 

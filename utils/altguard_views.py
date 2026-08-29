@@ -142,10 +142,18 @@ def build_verification_panel(locale: str = "en-US") -> AltGuardPanelView:
 async def _already_verified(interaction: discord.Interaction) -> bool:
     """Whether the clicker is already through the gate in this guild.
 
-    Two authorities, either one is enough: the verified **role** (what the
-    server actually enforces, and what a manual grant leaves behind) and the
-    stored state. A lookup failure answers ``False`` — being asked to verify
-    once too often is a far smaller problem than a gate that cannot be passed.
+    The **role** is the authority the server actually enforces, both ways:
+    holding the verified role is enough to answer yes without asking the
+    database. Holding the unverified role answers no even if the stored
+    status still says ``verified`` — a member sent back behind the gate
+    (manual unverify, or any other reconciliation gap) must be able to click
+    through again, not be told by a stale row that they already passed. That
+    stale row is corrected on the way out so it stops lying to the next check.
+
+    Only when the member isn't wearing either role (e.g. the interaction
+    object isn't a ``discord.Member``) does the stored state get the final
+    word. A lookup failure answers ``False`` — being asked to verify once too
+    often is a far smaller problem than a gate that cannot be passed.
     """
     bot = interaction.client
     member = interaction.user
@@ -154,8 +162,13 @@ async def _already_verified(interaction: discord.Interaction) -> bool:
             interaction.guild_id, "altguard")
         if module is None or not module.enabled:
             return False
-        if isinstance(member, discord.Member) and module.has_verified_role(member):
-            return True
+        if isinstance(member, discord.Member):
+            if module.has_verified_role(member):
+                return True
+            if module.has_unverified_role(member):
+                if await module.is_verified(member.id):
+                    await module.resync_stale_verified_status(member.id)
+                return False
         return await module.is_verified(member.id)
     except Exception as e:
         logger.error(f"[AltGuard] Verified-state lookup failed for {member.id}: {e}")
