@@ -4,7 +4,7 @@
 
 ### 1. The welcome DM (`notify_subscription_started`)
 
-- New GIF (`https://media.tenor.com/FjVZaTai9TwAAAAC/peach-cat-kiss.gif`,
+- New GIF (`https://media.tenor.com/eaDPAe9OLSoAAAAM/cat-kissing.gif`,
   from Tenor's *mwa* search as requested). The previous `files.catbox.moe`
   link stays dead in history only.
 - The card now **says out loud that servers have to be selected**. This was the
@@ -22,10 +22,11 @@ celebratory lifecycle DMs:
 |---|---|---|
 | Language | account `LANG` | **always English** (`INVOICE_LOCALE`) |
 | Attribution | `Sent by **Moddy Subscription**` | `Sent by **Stripe**<:verified:…>` |
-| Icon / accent | `PREMIUM` gem / `0x245F9F` | `NOTE` / Stripe indigo `0x635BFF` |
+| Icon / accent | `PREMIUM` gem / `0x245F9F` | `DOLLARS` / Stripe indigo `0x635BFF` |
 | Wording | "Thanks for supporting Moddy!" | formal receipt, no thanks, no exclamation |
 | Footer | none | Stripe is Moddy's billing/payment provider, Moddy never holds card details |
 | Trial | `First charge: 2026-09-29` | end date **in the body** + `Trial ends — first charge` field |
+| Dates | `2026-08-30` | `2026-08-30` (`<t:…:R>`) — relative timestamp beside every date |
 | Buttons | Manage my subscription | Manage billing |
 
 - **The trial end date was already available** — `period_end` on a trial
@@ -35,8 +36,16 @@ celebratory lifecycle DMs:
   invoice.
 - New notification service **`stripe`** (`notifications/models.py`), added to
   `OFFICIAL_SERVICES` so the attribution line carries the verification check.
-  It is the first entry in that list that is not Moddy itself.
+  It is the first entry in that list that is not Moddy itself. Its icon, and
+  the invoice card's title icon, is the new `DOLLARS` emoji
+  (`<:dollars:1543645900797116436>`).
 - `InvoiceNotifier.user_locale()` deleted — dead once the DM pins English.
+- `format_relative()` puts a Discord relative timestamp next to every date,
+  **outside** the backticks (a `<t:…:R>` inside a code span renders as its own
+  source text). `NotificationContent.to_email()` now strips Discord timestamps
+  as well as custom emojis — both are literal text outside Discord — via a new
+  `strip_discord_markup()`, dropping the parentheses with them so the mail
+  reads `2026-08-30`, not `2026-08-30 ()`.
 
 ### 3. `/manage stripe trial` — no more day cap
 
@@ -48,13 +57,14 @@ instead of an opaque Stripe API error.
 ## Files modified
 
 - `bot.py` — welcome DM (GIF + server selection)
+- `utils/emojis.py` — `DOLLARS`
 - `services/invoice_notifier.py` — English-only, Stripe source, footer, trial end, accent/icon
-- `notifications/models.py` — `stripe` service
+- `notifications/models.py` — `stripe` service, `strip_discord_markup()`
 - `notifications/render.py` — `stripe` in `OFFICIAL_SERVICES`
 - `locales/{en-US,fr,es-ES,pt-BR,de}.json` — invoice block rewritten, `services.stripe`
 - `staff/commands/manage/stripe/trial.py` — trial length cap
 - `tests/test_invoice_notifications.py` — updated + new cases (English-only, Stripe footer/attribution, trial end in body)
-- `docs/SUBSCRIPTION_SCHEMA.md`, `docs/NOTIFICATIONS.md`
+- `docs/SUBSCRIPTION_SCHEMA.md`, `docs/NOTIFICATIONS.md`, `docs/EMOJIS.md`
 
 ## Decisions and why
 
@@ -74,8 +84,6 @@ instead of an opaque Stripe API error.
 
 ## Follow-ups
 
-- `utils/emojis.py` has no Stripe emoji: the `stripe` service reuses `NOTE`
-  with a `TODO`. Replace it once a `<:stripe:…>` emoji exists.
 - The lifecycle DMs in `bot.py::_send_subscription_dm` are still hardcoded
   English strings outside i18n — untouched here, but they are the obvious next
   cleanup.

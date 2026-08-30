@@ -20,7 +20,7 @@
         },
         "body": {
           "paid": "Este é o recibo da sua assinatura Moddy Max **{tier}**. Um pagamento de **{amount}** foi processado com sucesso. Nenhuma ação é necessária da sua parte.",
-          "trial": "Seu teste gratuito do Moddy Max **{tier}** está ativo. **Nenhum valor foi cobrado.** A fatura abaixo é emitida no valor de **{amount}** para os seus registros.\nSeu teste termina em **{period_end}**, data em que a primeira cobrança será realizada. Você pode cancelar sem custo a qualquer momento antes dessa data.",
+          "trial": "Seu teste gratuito do Moddy Max **{tier}** está ativo. **Nenhum valor foi cobrado.** A fatura abaixo é emitida no valor de **{amount}** para os seus registros.\nSeu teste termina em **{period_end}** ({period_end_rel}), data em que a primeira cobrança será realizada. Você pode cancelar sem custo a qualquer momento antes dessa data.",
           "free": "**Nenhum valor foi cobrado** no período atual da sua assinatura Moddy Max **{tier}**. A fatura correspondente, emitida no valor de **{amount}**, está disponível abaixo."
         },
         "field_number": "Número da fatura",

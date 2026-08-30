@@ -20,7 +20,7 @@
         },
         "body": {
           "paid": "Voici le reçu de votre abonnement Moddy Max **{tier}**. Un paiement de **{amount}** a été traité avec succès. Aucune action n'est requise de votre part.",
-          "trial": "Votre essai gratuit Moddy Max **{tier}** est désormais actif. **Aucun montant n'a été prélevé.** La facture ci-dessous est émise à **{amount}** pour vos archives.\nVotre essai prend fin le **{period_end}**, date à laquelle le premier paiement sera prélevé. Vous pouvez résilier sans frais à tout moment avant cette date.",
+          "trial": "Votre essai gratuit Moddy Max **{tier}** est désormais actif. **Aucun montant n'a été prélevé.** La facture ci-dessous est émise à **{amount}** pour vos archives.\nVotre essai prend fin le **{period_end}** ({period_end_rel}), date à laquelle le premier paiement sera prélevé. Vous pouvez résilier sans frais à tout moment avant cette date.",
           "free": "**Aucun montant n'a été prélevé** pour la période en cours de votre abonnement Moddy Max **{tier}**. La facture correspondante, émise à **{amount}**, est disponible ci-dessous."
         },
         "field_number": "Numéro de facture",
