@@ -15,6 +15,7 @@ locale and an ``incognito`` flag, plus transport-agnostic helpers:
 
 from __future__ import annotations
 
+import logging
 from typing import Any, Callable, Dict, Optional
 
 import discord
@@ -22,7 +23,10 @@ from discord import ui
 
 from utils.i18n import t
 from utils import emojis
+from utils.interaction_response import deliver, safe_defer
 from cogs.error_handler import BaseView
+
+logger = logging.getLogger("moddy.staff.context")
 
 
 def resolve_message_locale(bot, user_id: int, guild: Optional[discord.Guild]) -> str:
@@ -117,27 +121,57 @@ class StaffContext:
 
     async def send(self, view: Optional[ui.LayoutView] = None,
                    content: Optional[str] = None) -> Optional[discord.Message]:
-        """Send the first/follow-up response and return the message."""
+        """Send the first/follow-up response and return the message.
+
+        Returns the sent message when the transport hands one back, so callers
+        can keep editing it. A failure on the reply path never propagates: the
+        answer falls back to :func:`deliver`, which walks every remaining
+        transport (up to a plain channel message) rather than turning a
+        finished command into a second, traceless error.
+        """
         if self.is_slash:
-            if self.interaction.response.is_done():
-                return await self.interaction.followup.send(
-                    content=content, view=view, ephemeral=self.incognito, wait=True
+            try:
+                if self.interaction.response.is_done():
+                    return await self.interaction.followup.send(
+                        content=content, view=view, ephemeral=self.incognito, wait=True
+                    )
+                await self.interaction.response.send_message(
+                    content=content, view=view, ephemeral=self.incognito
                 )
-            await self.interaction.response.send_message(
-                content=content, view=view, ephemeral=self.incognito
-            )
+            except discord.HTTPException:
+                # Dead token, consumed response, expired followup… `deliver`
+                # knows every way out; there is simply no message to return.
+                await deliver(self.interaction, view=view, content=content,
+                              ephemeral=self.incognito)
+                return None
+            # Sent, but fetching the handle can still fail — the user has the
+            # answer either way, so this only costs the caller the edit handle.
             try:
                 return await self.interaction.original_response()
             except discord.HTTPException:
                 return None
         # message transport
-        if self.cog is not None and hasattr(self.cog, "reply_with_tracking"):
-            return await self.cog.reply_with_tracking(self.message, view=view, content=content)
-        return await self.message.reply(content=content, view=view, mention_author=False)
+        try:
+            if self.cog is not None and hasattr(self.cog, "reply_with_tracking"):
+                return await self.cog.reply_with_tracking(self.message, view=view, content=content)
+            return await self.message.reply(content=content, view=view, mention_author=False)
+        except discord.HTTPException as exc:
+            # The original message may be gone (deleted mid-command); answering
+            # in the channel is better than losing the reply entirely.
+            logger.warning("Staff reply failed, falling back to the channel: %s", exc)
+            try:
+                return await self.channel.send(content=content, view=view)
+            except discord.HTTPException:
+                return None
 
     async def defer(self, thinking: bool = True):
-        if self.is_slash and not self.interaction.response.is_done():
-            await self.interaction.response.defer(ephemeral=self.incognito, thinking=thinking)
+        """Acknowledge the interaction (no-op when the router already did).
+
+        Never raises: an interaction whose window has already closed is
+        reported by :func:`safe_defer` and handled by :meth:`send`.
+        """
+        if self.is_slash:
+            await safe_defer(self.interaction, ephemeral=self.incognito, thinking=thinking)
 
     async def open_modal(self, modal_factory: Callable[[], discord.ui.Modal], *,
                          label: str, emoji: Optional[str] = None,
@@ -149,8 +183,15 @@ class StaffContext:
         same prompt can be reopened after a failed submit.
         """
         if self.is_slash and not self.interaction.response.is_done():
-            await self.interaction.response.send_modal(modal_factory())
-            return None
+            try:
+                await self.interaction.response.send_modal(modal_factory())
+                return None
+            except discord.HTTPException as exc:
+                # The 3-second window closed, or something else acknowledged
+                # the interaction first. The button below reopens the same
+                # modal on a fresh interaction rather than dropping the command.
+                logger.warning("Could not open the modal for %s, falling back to a button: %s",
+                               getattr(self.command, "name", "?"), exc)
 
         view = _ModalButtonView(
             bot=self.bot,

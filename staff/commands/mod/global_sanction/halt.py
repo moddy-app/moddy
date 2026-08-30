@@ -25,6 +25,8 @@ class GlobalHaltCommand(StaffCommand):
     name = "halt"
     permission = "global_enforcement"
     description = "Stop the enforcement countdown of a group (appeal received)."
+    # Answers with a Modal: Discord refuses one on a deferred interaction.
+    opens_modal = True
     options = [
         SlashOption("target", "string",
                     "Group id, or any case reference inside it.", required=True),

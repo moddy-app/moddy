@@ -35,6 +35,7 @@ from services.altguard_client import (
 from utils.altguard_views import format_member_name
 from utils.components_v2 import create_error_message, create_success_message
 from utils.i18n import i18n, t
+from utils.interaction_response import safe_defer
 
 logger = logging.getLogger('moddy.cogs.altguard')
 
@@ -300,8 +301,12 @@ class AltGuard(commands.Cog):
                                member: discord.Member, *, verify: bool):
         locale = i18n.get_user_locale(interaction)
 
+        # The module lookup below is a database read, and verify/unverify then
+        # calls the AltGuard service: acknowledge before any of it.
+        await safe_defer(interaction, ephemeral=True, thinking=True)
+
         if not interaction.user.guild_permissions.manage_roles:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 view=create_error_message(
                     t('modules.altguard.errors.no_perms.title', locale=locale),
                     t('modules.altguard.errors.no_perms.description', locale=locale),
@@ -312,7 +317,7 @@ class AltGuard(commands.Cog):
 
         module = await self._module(interaction.guild_id)
         if module is None:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 view=create_error_message(
                     t('modules.altguard.errors.not_configured.title', locale=locale),
                     t('modules.altguard.errors.not_configured.description', locale=locale),
@@ -322,7 +327,7 @@ class AltGuard(commands.Cog):
             return
 
         if member.bot:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 view=create_error_message(
                     t('modules.altguard.errors.bot_target.title', locale=locale),
                     t('modules.altguard.errors.bot_target.description', locale=locale),
@@ -330,8 +335,6 @@ class AltGuard(commands.Cog):
                 ephemeral=True,
             )
             return
-
-        await interaction.response.defer(ephemeral=True, thinking=True)
 
         if verify:
             await module.verify_member(member, actor_id=interaction.user.id)

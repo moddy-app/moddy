@@ -28,6 +28,7 @@ from discord import ui
 
 from cogs.error_handler import BaseView
 from utils.i18n import t, i18n
+from utils.interaction_response import deliver, safe_defer
 from utils.emojis import SHIELD, SEARCH, DONE, UNDONE, WARNING, get_sanction_accent
 from utils.automod_render import bareme_breakdown, sanction_name
 
@@ -184,6 +185,10 @@ class ShadowAnnotateButton(
 
     @_guarded
     async def callback(self, interaction: discord.Interaction):
+        # The annotation write and the precedent feed both land before the card
+        # is re-rendered — acknowledge first so a slow write cannot cost the
+        # 3s window.
+        await safe_defer(interaction, thinking=False)
         locale = i18n.get_user_locale(interaction)
         bot = interaction.client
 
@@ -191,8 +196,7 @@ class ShadowAnnotateButton(
         perms = getattr(interaction.user, "guild_permissions", None)
         if perms is None or not perms.manage_messages:
             from utils.components_v2 import create_error_message
-            await interaction.response.send_message(
-                view=create_error_message(
+            await deliver(interaction, view=create_error_message(
                     t("modules.automod_ai.shadow.error.title", locale=locale),
                     t("modules.automod_ai.shadow.error.no_perms", locale=locale)),
                 ephemeral=True)
@@ -203,8 +207,7 @@ class ShadowAnnotateButton(
             self.candidate_id, verdict_humain, annotated_by=interaction.user.id)
         if not row:
             from utils.components_v2 import create_error_message
-            await interaction.response.send_message(
-                view=create_error_message(
+            await deliver(interaction, view=create_error_message(
                     t("modules.automod_ai.shadow.error.title", locale=locale),
                     t("modules.automod_ai.shadow.error.gone", locale=locale)),
                 ephemeral=True)
@@ -216,7 +219,7 @@ class ShadowAnnotateButton(
         await self._feed_precedent(bot, row)
 
         # Re-render the card in place (buttons → the recorded ruling).
-        await interaction.response.edit_message(view=render_shadow_card(row))
+        await interaction.edit_original_response(view=render_shadow_card(row))
 
     @staticmethod
     async def _feed_precedent(bot, row: Dict[str, Any]) -> None:

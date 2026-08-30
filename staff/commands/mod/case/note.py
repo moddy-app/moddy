@@ -17,6 +17,8 @@ class CaseNoteCommand(StaffCommand):
     name = "note"
     permission = "case_note"
     description = "Add a comment or internal note to a case timeline."
+    # Answers with a Modal: Discord refuses one on a deferred interaction.
+    opens_modal = True
     options = [
         SlashOption("reference", "string", "The public case reference.", required=True),
         SlashOption(

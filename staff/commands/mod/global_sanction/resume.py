@@ -27,6 +27,8 @@ class GlobalResumeCommand(StaffCommand):
     name = "resume"
     permission = "global_enforcement"
     description = "Restart the enforcement countdown of a group (appeal refused)."
+    # Answers with a Modal: Discord refuses one on a deferred interaction.
+    opens_modal = True
     options = [
         SlashOption("target", "string",
                     "Group id, or any case reference inside it.", required=True),

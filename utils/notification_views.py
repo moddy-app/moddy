@@ -37,6 +37,7 @@ from utils.emojis import (
     SNOWFLAKE, TIME, UNDONE, USER,
 )
 from utils.i18n import i18n, t
+from utils.interaction_response import deliver, safe_defer
 
 logger = logging.getLogger("moddy.notification_views")
 
@@ -245,7 +246,9 @@ async def _load_review(interaction: discord.Interaction, report_id: str, locale:
     notifications = getattr(interaction.client, "notifications", None)
     report = await notifications.get_report(report_id) if notifications else None
     if not report:
-        await interaction.response.send_message(view=create_error_message(
+        # `deliver` so the caller is free to have deferred first: this runs
+        # both before and after acknowledgement.
+        await deliver(interaction, view=create_error_message(
             t("notifications.errors.unknown.title", locale=locale),
             t("notifications.errors.unknown_report.description", locale=locale,
               uuid=report_id),
@@ -261,14 +264,14 @@ async def _guard_reviewer(interaction: discord.Interaction, report: Dict[str, An
     from utils.staff_permissions import has_staff_node
 
     if not await has_staff_node(interaction.client, interaction.user.id, "notif_review"):
-        await interaction.response.send_message(view=create_error_message(
+        await deliver(interaction, view=create_error_message(
             t("notifications.review.no_permission.title", locale=locale),
             t("notifications.review.no_permission.description", locale=locale),
         ), ephemeral=True)
         return False
 
     if interaction.user.id == report.get("reporter_id"):
-        await interaction.response.send_message(view=create_error_message(
+        await deliver(interaction, view=create_error_message(
             t("notifications.review.own_report.title", locale=locale),
             t("notifications.review.own_report.description", locale=locale),
         ), ephemeral=True)
@@ -301,6 +304,9 @@ class NotifReviewClaimButton(
 
     @_guarded
     async def callback(self, interaction: discord.Interaction):
+        # Three round-trips (report, staff node, claim) before anything is
+        # shown: acknowledge first or the 3s window closes on a cold DB.
+        await safe_defer(interaction, ephemeral=True, thinking=False)
         locale = i18n.get_user_locale(interaction)
         report, _record = await _load_review(interaction, self.report_id, locale)
         if not report or not await _guard_reviewer(interaction, report, locale):
@@ -330,6 +336,9 @@ class NotifReviewPreviewButton(
 
     @_guarded
     async def callback(self, interaction: discord.Interaction):
+        # Two database reads plus a staff-node lookup before the preview can
+        # be rendered — acknowledge up front.
+        await safe_defer(interaction, ephemeral=True)
         locale = i18n.get_user_locale(interaction)
         report, record = await _load_review(interaction, self.report_id, locale)
         if not report or not record:
@@ -341,7 +350,7 @@ class NotifReviewPreviewButton(
         # the exact wording that reached the recipient, attribution row left
         # off (its buttons belong to the recipient, not to the reviewer).
         content = NotificationContent.from_dict(record.get("content") or {})
-        await interaction.response.send_message(
+        await interaction.followup.send(
             view=build_content_view(content, record.get("variables") or {},
                                     locale=record.get("locale") or locale),
             ephemeral=True,
@@ -380,7 +389,7 @@ class NotifReviewDecisionButton(
         if not report or not await _guard_reviewer(interaction, report, locale):
             return
         if report.get("status") in (ReportStatus.ACCEPTED.value, ReportStatus.REFUSED.value):
-            await interaction.response.send_message(view=create_error_message(
+            await deliver(interaction, view=create_error_message(
                 t("notifications.review.already_decided.title", locale=locale),
                 t("notifications.review.already_decided.description", locale=locale),
             ), ephemeral=True)

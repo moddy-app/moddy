@@ -9,6 +9,7 @@ from typing import Optional, Dict, Any
 import logging
 
 from utils.i18n import i18n, t
+from utils.interaction_response import safe_defer
 from cogs.error_handler import BaseView
 from utils.emojis import GROUPS, REQUIRED_FIELDS, WARNING, BACK, SAVE, UNDONE, DELETE
 from modules.configs._common import check_guild_perms
@@ -258,6 +259,9 @@ class InterServerConfigView(BaseView):
         if not await check_guild_perms(interaction):
             return
 
+        # The stored config is read below: acknowledge before the round-trip.
+        await safe_defer(interaction, thinking=False)
+
         working_config = await self._fresh_working_config(interaction)
         if interaction.data['values']:
             working_config['channel_id'] = int(interaction.data['values'][0])
@@ -265,18 +269,20 @@ class InterServerConfigView(BaseView):
             working_config['channel_id'] = None
 
         view = await self._rebuild(interaction, working_config, has_changes=True)
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
 
     async def on_type_select(self, interaction: discord.Interaction):
         """Callback quand un type d'inter-serveur est sélectionné"""
         if not await check_guild_perms(interaction):
             return
 
+        await safe_defer(interaction, thinking=False)
+
         working_config = await self._fresh_working_config(interaction)
         working_config['interserver_type'] = interaction.data['values'][0]
 
         view = await self._rebuild(interaction, working_config, has_changes=True)
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
 
     async def on_back(self, interaction: discord.Interaction):
         """Retour au menu principal"""
@@ -319,11 +325,13 @@ class InterServerConfigView(BaseView):
         if not await check_guild_perms(interaction):
             return
 
+        await safe_defer(interaction, thinking=False)
+
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
         saved = await bot.module_manager.get_module_config(interaction.guild_id, 'interserver')
         view = InterServerConfigView(bot, interaction.guild_id, interaction.user.id, locale, current_config=saved)
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
 
     async def on_delete(self, interaction: discord.Interaction):
         """Supprime la configuration"""

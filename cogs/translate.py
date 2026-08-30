@@ -11,11 +11,14 @@ from typing import Optional
 import re
 from datetime import datetime, timedelta
 import asyncio
+import logging
 
 from utils.embeds import ModdyEmbed, ModdyResponse, ModdyColors
 from utils.incognito import add_incognito_option, get_incognito_setting
 from config import COLORS
 from utils.i18n import i18n
+
+logger = logging.getLogger('moddy.translate')
 
 
 class TranslateView(BaseView):
@@ -313,8 +316,10 @@ class Translate(commands.Cog):
         user_id: int,
     ) -> Optional[dict]:
         """Translate using the gateway. Returns {'text': ..., 'detected_source_language': ...}."""
+        from gateway import QuotaTarget
+        from gateway.errors import GatewayError
+
         try:
-            from gateway import QuotaTarget
             return await self.bot.gateway.translation.translate(
                 text,
                 target_lang,
@@ -322,9 +327,12 @@ class Translate(commands.Cog):
                 call_type="translation",
                 metadata={"user_id": user_id},
             )
-        except Exception as exc:
-            import logging
-            logging.getLogger("moddy.translate").error("Gateway translate failed: %s", exc)
+        except GatewayError as exc:
+            # Expected provider-side conditions (quota, rate limit, provider
+            # outage): the caller shows the friendly "translation unavailable"
+            # card. Anything else is a bug and must bubble up to the global
+            # handler so the user gets a traceable error code.
+            logger.error("Gateway translate failed: %s", exc)
             return None
 
     def locale_to_deepl_lang(self, locale: str) -> str:

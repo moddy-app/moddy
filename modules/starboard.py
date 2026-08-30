@@ -3,7 +3,6 @@ Module Starboard - Système de tableau d'honneur pour messages populaires
 """
 
 import re
-import asyncio
 import logging
 from typing import Dict, Any, Optional
 
@@ -68,10 +67,15 @@ def _extract_meta_content(html: str, props: tuple) -> Optional[str]:
     return None
 
 
-def _report_dynamic_item_error(interaction: discord.Interaction, error: Exception, source: str):
-    """Route a DynamicItem callback error to the central handler (fire-and-forget)."""
+async def _report_dynamic_item_error(interaction: discord.Interaction, error: Exception, source: str):
+    """Route a DynamicItem callback error to the central handler.
+
+    Awaited rather than fired off as a task: a task nobody holds a reference to
+    can be garbage-collected before it reports, and the user would be left with
+    Discord's own failure message instead of the error card and its code.
+    """
     from cogs.error_handler import report_component_error
-    asyncio.create_task(report_component_error(interaction, error, source))
+    await report_component_error(interaction, error, source)
 
 
 class _StarboardReactorsButton(
@@ -116,7 +120,7 @@ class _StarboardReactorsButton(
         try:
             await self._show_reactors(interaction)
         except Exception as e:
-            _report_dynamic_item_error(interaction, e, self.__class__.__name__)
+            await _report_dynamic_item_error(interaction, e, self.__class__.__name__)
 
     async def _show_reactors(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True, thinking=True)

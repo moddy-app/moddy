@@ -19,11 +19,12 @@ import discord
 from discord import app_commands, ui
 from discord.ext import commands
 
-from cogs.error_handler import BaseModal, BaseView
+from cogs.error_handler import BaseModal, BaseView, ErrorView, report_error
 from config import COLORS
 from notifications.models import NotificationContent, NotificationSource
 from utils import emojis
 from utils.i18n import t, get_locale
+from utils.interaction_response import deliver
 
 logger = logging.getLogger("moddy.moderation_commands")
 
@@ -307,7 +308,15 @@ _LOCALE_TO_LANGUAGE: dict[str, str] = {
 
 _AI_SENTINEL_NO_REASON = "NO_REASON"
 _AI_SENTINEL_INJECTION = "INJECTION_DETECTED"
-_AI_TOTAL_TIMEOUT = 2.8  # seconds — must leave room for send_modal within the 3 s window
+_AI_TOTAL_TIMEOUT = 2.8  # seconds — hard ceiling for the whole suggestion
+# Discord closes the acknowledgement window 3 s after the interaction was
+# created, and a modal cannot be preceded by a defer: the suggestion has to fit
+# in whatever is left of that window. The margin covers the round-trip of the
+# send_modal call itself, so a slow suggestion degrades into "no prefill"
+# instead of into Discord's own "The application did not respond".
+_ACK_WINDOW = 3.0
+_MODAL_SAFETY_MARGIN = 0.8
+_AI_MIN_BUDGET = 0.3  # below this, do not even start the suggestion
 _AI_FETCH_TIMEOUT = 1.2  # seconds — budget for the message-history scan
 _AI_CHAT_MIN_TIMEOUT = 1.0  # seconds — floor left for the OpenAI call, even if the fetch was slow
 _AI_MODEL = "gpt-4.1-nano"
@@ -487,15 +496,28 @@ async def _ai_reason_safe(
     guild: discord.Guild,
     user: Union[discord.Member, discord.User],
     action: str,
+    budget: Optional[float] = None,
 ) -> Optional[str]:
     """Wrapper that silences all errors and enforces the global timeout budget."""
+    timeout = _AI_TOTAL_TIMEOUT if budget is None else min(_AI_TOTAL_TIMEOUT, budget)
+    if timeout < _AI_MIN_BUDGET:
+        return None
     try:
         return await asyncio.wait_for(
             _get_ai_suggested_reason(bot, guild, user, action),
-            timeout=_AI_TOTAL_TIMEOUT,
+            timeout=timeout,
         )
     except Exception:
         return None
+
+
+def _ack_budget(interaction: discord.Interaction) -> float:
+    """Seconds of Discord's acknowledgement window still safely available."""
+    created = getattr(interaction, "created_at", None)
+    if created is None:
+        return _ACK_WINDOW - _MODAL_SAFETY_MARGIN
+    elapsed = (datetime.now(timezone.utc) - created).total_seconds()
+    return max(0.0, _ACK_WINDOW - elapsed - _MODAL_SAFETY_MARGIN)
 
 
 # ---------------------------------------------------------------------------
@@ -919,6 +941,62 @@ class ModerationCommands(commands.Cog):
             return
         _cache_deleted(message.guild.id, message.author.id, message.content)
 
+    # ── Shared entry point for /ban /kick /mute /warn ───────────────────────
+
+    async def _open_sanction_modal(
+        self,
+        interaction: discord.Interaction,
+        user: discord.Member,
+        action: str,
+        incognito: Optional[bool],
+    ) -> None:
+        """Open the sanction modal, prefilled with an AI reason when there is time.
+
+        A modal cannot be preceded by a defer, so everything awaited here eats
+        into Discord's 3-second window. The suggestion therefore runs on
+        whatever is left of that window (`_ack_budget`) and simply yields no
+        prefill when the budget is gone — the modal always opens.
+        """
+        locale = get_locale(interaction)
+        err = _hierarchy_check(interaction.guild, interaction.user, user, action, locale)
+        if err is not None:
+            await interaction.response.send_message(view=err, ephemeral=True)
+            return
+
+        budget = _ack_budget(interaction)
+        if incognito is None:
+            incognito, prefill_reason = await asyncio.gather(
+                _resolve_incognito(self.bot, interaction.user.id, default=True),
+                _ai_reason_safe(self.bot, interaction.guild, user, action, budget=budget),
+            )
+        else:
+            prefill_reason = await _ai_reason_safe(
+                self.bot, interaction.guild, user, action, budget=budget)
+
+        modal = SanctionModal(
+            action=action,
+            initial_users=[user],
+            incognito=incognito,
+            guild=interaction.guild,
+            mod=interaction.user,
+            bot=self.bot,
+            locale=locale,
+            prefill_reason=prefill_reason,
+        )
+        try:
+            await interaction.response.send_modal(modal)
+        except discord.HTTPException as exc:
+            # The window closed anyway (a very cold gateway, a slow database).
+            # Surface Moddy's own error card with a code instead of leaving
+            # Discord to show "The application did not respond".
+            error_code = await report_error(
+                self.bot, exc, source=f"Cog:ModerationCommands.{action}",
+                user=interaction.user, guild=interaction.guild,
+                channel=interaction.channel,
+            )
+            if error_code:
+                await deliver(interaction, view=ErrorView(error_code), ephemeral=True)
+
     # ── /ban ─────────────────────────────────────────────────────────────────
 
     @app_commands.command(
@@ -937,29 +1015,7 @@ class ModerationCommands(commands.Cog):
         user: discord.Member,
         incognito: Optional[bool] = None,
     ):
-        locale = get_locale(interaction)
-        err = _hierarchy_check(interaction.guild, interaction.user, user, "ban", locale)
-        if err is not None:
-            await interaction.response.send_message(view=err, ephemeral=True)
-            return
-        if incognito is None:
-            incognito, prefill_reason = await asyncio.gather(
-                _resolve_incognito(self.bot, interaction.user.id, default=True),
-                _ai_reason_safe(self.bot, interaction.guild, user, "ban"),
-            )
-        else:
-            prefill_reason = await _ai_reason_safe(self.bot, interaction.guild, user, "ban")
-        modal = SanctionModal(
-            action="ban",
-            initial_users=[user],
-            incognito=incognito,
-            guild=interaction.guild,
-            mod=interaction.user,
-            bot=self.bot,
-            locale=locale,
-            prefill_reason=prefill_reason,
-        )
-        await interaction.response.send_modal(modal)
+        await self._open_sanction_modal(interaction, user, "ban", incognito)
 
     # ── /kick ────────────────────────────────────────────────────────────────
 
@@ -979,29 +1035,7 @@ class ModerationCommands(commands.Cog):
         user: discord.Member,
         incognito: Optional[bool] = None,
     ):
-        locale = get_locale(interaction)
-        err = _hierarchy_check(interaction.guild, interaction.user, user, "kick", locale)
-        if err is not None:
-            await interaction.response.send_message(view=err, ephemeral=True)
-            return
-        if incognito is None:
-            incognito, prefill_reason = await asyncio.gather(
-                _resolve_incognito(self.bot, interaction.user.id, default=True),
-                _ai_reason_safe(self.bot, interaction.guild, user, "kick"),
-            )
-        else:
-            prefill_reason = await _ai_reason_safe(self.bot, interaction.guild, user, "kick")
-        modal = SanctionModal(
-            action="kick",
-            initial_users=[user],
-            incognito=incognito,
-            guild=interaction.guild,
-            mod=interaction.user,
-            bot=self.bot,
-            locale=locale,
-            prefill_reason=prefill_reason,
-        )
-        await interaction.response.send_modal(modal)
+        await self._open_sanction_modal(interaction, user, "kick", incognito)
 
     # ── /mute ────────────────────────────────────────────────────────────────
 
@@ -1021,29 +1055,7 @@ class ModerationCommands(commands.Cog):
         user: discord.Member,
         incognito: Optional[bool] = None,
     ):
-        locale = get_locale(interaction)
-        err = _hierarchy_check(interaction.guild, interaction.user, user, "mute", locale)
-        if err is not None:
-            await interaction.response.send_message(view=err, ephemeral=True)
-            return
-        if incognito is None:
-            incognito, prefill_reason = await asyncio.gather(
-                _resolve_incognito(self.bot, interaction.user.id, default=True),
-                _ai_reason_safe(self.bot, interaction.guild, user, "mute"),
-            )
-        else:
-            prefill_reason = await _ai_reason_safe(self.bot, interaction.guild, user, "mute")
-        modal = SanctionModal(
-            action="mute",
-            initial_users=[user],
-            incognito=incognito,
-            guild=interaction.guild,
-            mod=interaction.user,
-            bot=self.bot,
-            locale=locale,
-            prefill_reason=prefill_reason,
-        )
-        await interaction.response.send_modal(modal)
+        await self._open_sanction_modal(interaction, user, "mute", incognito)
 
     # ── /warn ────────────────────────────────────────────────────────────────
 
@@ -1063,29 +1075,7 @@ class ModerationCommands(commands.Cog):
         user: discord.Member,
         incognito: Optional[bool] = None,
     ):
-        locale = get_locale(interaction)
-        err = _hierarchy_check(interaction.guild, interaction.user, user, "warn", locale)
-        if err is not None:
-            await interaction.response.send_message(view=err, ephemeral=True)
-            return
-        if incognito is None:
-            incognito, prefill_reason = await asyncio.gather(
-                _resolve_incognito(self.bot, interaction.user.id, default=True),
-                _ai_reason_safe(self.bot, interaction.guild, user, "warn"),
-            )
-        else:
-            prefill_reason = await _ai_reason_safe(self.bot, interaction.guild, user, "warn")
-        modal = SanctionModal(
-            action="warn",
-            initial_users=[user],
-            incognito=incognito,
-            guild=interaction.guild,
-            mod=interaction.user,
-            bot=self.bot,
-            locale=locale,
-            prefill_reason=prefill_reason,
-        )
-        await interaction.response.send_modal(modal)
+        await self._open_sanction_modal(interaction, user, "warn", incognito)
 
     # ── Backend dashboard tasks (moddy:tasks) ───────────────────────────────
     # A dashboard sanction on a guild case is executed here, exactly like a

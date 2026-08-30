@@ -23,6 +23,7 @@ from utils.i18n import i18n, t
 from utils.emojis import EMOJIS, SETTINGS
 from utils import global_sanctions
 from utils.components_v2 import create_limited_message
+from utils.interaction_response import safe_defer
 from cogs.error_handler import BaseView
 from modules.configs._common import check_guild_perms
 
@@ -193,15 +194,17 @@ class ConfigMainView(BaseView):
 
         module_id = interaction.data['values'][0]
 
+        # Building any of the screens below reads the guild config from the
+        # database. Acknowledge first (this also disables the select while the
+        # screen is built, which stops double-clicks).
+        await safe_defer(interaction, ephemeral=False, thinking=False)
+
         if module_id == SETTINGS_OPTION:
             from modules.configs.server_settings_config import ServerSettingsConfigView
 
             view = await ServerSettingsConfigView.create(bot, guild_id, user_id, locale)
-            await interaction.response.edit_message(view=view)
+            await interaction.edit_original_response(view=view)
             return
-
-        # Désactive temporairement pour éviter les double-clics
-        await interaction.response.defer()
 
         # Récupère la configuration actuelle du module
         module_config = await bot.module_manager.get_module_config(guild_id, module_id)
@@ -392,14 +395,19 @@ class Config(commands.Cog):
             try:
                 user_pref = await self.bot.db.get_attribute('user', interaction.user.id, 'DEFAULT_INCOGNITO')
                 ephemeral = True if user_pref is None else user_pref
-            except:
+            except Exception:
+                # Visibility preference is a nicety: default to private.
                 ephemeral = True
         else:
             ephemeral = incognito if incognito is not None else True
 
+        # Everything below reads the database (global sanctions, module
+        # configs): acknowledge now so the 3s window cannot close on us.
+        await safe_defer(interaction, ephemeral=ephemeral, thinking=True)
+
         # Vérifie que c'est bien dans un serveur
         if not interaction.guild:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 t('modules.config.errors.guild_only', interaction),
                 ephemeral=True
             )
@@ -407,7 +415,7 @@ class Config(commands.Cog):
 
         # Vérifie que le bot est bien membre du serveur
         if not interaction.guild.me:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 t('modules.config.errors.bot_not_in_guild', interaction),
                 ephemeral=True
             )
@@ -439,7 +447,7 @@ class Config(commands.Cog):
             button_row.add_item(reinvite_btn)
             error_view.add_item(button_row)
 
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 view=error_view,
                 ephemeral=True
             )
@@ -447,7 +455,7 @@ class Config(commands.Cog):
 
         # Vérifie que l'utilisateur a les permissions de gérer le serveur
         if not interaction.user.guild_permissions.manage_guild:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 t('modules.config.errors.no_user_perms', interaction),
                 ephemeral=True
             )
@@ -468,7 +476,7 @@ class Config(commands.Cog):
             limited=limited,
         )
 
-        await interaction.response.send_message(
+        await interaction.followup.send(
             view=main_view,
             ephemeral=ephemeral
         )

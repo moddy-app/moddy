@@ -325,8 +325,15 @@ class GlobalSanctionService:
             try:
                 await self._execute(row)
             except Exception as exc:
-                logger.error("[Enforcement] Execution failed for group %s: %s",
-                             row.get("group_id"), exc, exc_info=True)
+                # A background sweep: nobody is waiting, but a group whose
+                # consequences never ran is invisible unless it is reported
+                # through the central pipeline (Sentry + internal log + code).
+                from cogs.error_handler import report_error
+                await report_error(
+                    self.bot, exc,
+                    source=f"GlobalSanctions:enforce:{row.get('group_id')}",
+                    error_type="Service Error",
+                )
         return len(due)
 
     async def _execute(self, row: Dict[str, Any]) -> None:
@@ -587,7 +594,9 @@ class GlobalSanctionService:
             sub = await get_subscription(self.bot, int(user_id))
             return bool(sub and sub.get("is_active"))
         except Exception as exc:
-            logger.debug("[GlobalSanction] Premium lookup failed for %s: %s", user_id, exc)
+            # Falling back to "not premium" only costs a warning line in the
+            # notice, but the lookup failing at all is worth seeing.
+            logger.warning("[GlobalSanction] Premium lookup failed for %s: %s", user_id, exc)
             return False
 
     async def _log_group_event(
@@ -604,7 +613,9 @@ class GlobalSanctionService:
                     content=content, payload={"kind": kind},
                 )
             except Exception as exc:
-                logger.debug("[GlobalSanction] Timeline event failed: %s", exc)
+                # The audit trail losing an entry silently is worse than noisy.
+                logger.warning("[GlobalSanction] Timeline event failed for case %s: %s",
+                               case.get("id"), exc)
 
     async def _publish(self, event_type: str, payload: Dict[str, Any]) -> None:
         """Publish a global-sanction event for the backend (fire-and-forget)."""

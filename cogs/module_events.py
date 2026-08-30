@@ -10,6 +10,21 @@ import logging
 logger = logging.getLogger('moddy.cogs.module_events')
 
 
+async def _report(bot, error: Exception, source: str, guild=None) -> None:
+    """File a module dispatch failure through the central error pipeline.
+
+    Every ``try`` in this cog is an isolation boundary: one broken module must
+    not stop the others from receiving the event. That isolation used to mean a
+    module could fail on every single join and only ever say so on stdout —
+    ``report_error`` gives the failure an error code, a Sentry event and an
+    entry in the internal log, exactly like an error raised from a command.
+    """
+    from cogs.error_handler import report_error
+
+    # report_error already logs the full traceback, so no second log line here.
+    await report_error(bot, error, source=f"Cog:ModuleEvents.{source}", guild=guild)
+
+
 class ModuleEvents(commands.Cog):
     """
     Cog qui écoute les événements Discord et les transmet aux modules concernés
@@ -39,10 +54,7 @@ class ModuleEvents(commands.Cog):
                 await altguard_module.on_member_join(member)
 
         except Exception as e:
-            logger.error(
-                f"Error in on_member_join (altguard) for guild {member.guild.id}: {e}",
-                exc_info=True
-            )
+            await _report(self.bot, e, "on_member_join (altguard)", member.guild)
 
         # Welcome Channel + Welcome DM. The channel module used to be dispatched
         # under the id 'welcome', which no registered module has ever answered to
@@ -59,10 +71,7 @@ class ModuleEvents(commands.Cog):
                     await welcome_module.on_member_join(member)
 
             except Exception as e:
-                logger.error(
-                    f"Error in on_member_join ({module_id}) for guild {member.guild.id}: {e}",
-                    exc_info=True
-                )
+                await _report(self.bot, e, f"on_member_join ({module_id})", member.guild)
 
         try:
             # Récupère l'instance du module Auto Restore Roles pour ce serveur
@@ -76,7 +85,7 @@ class ModuleEvents(commands.Cog):
                 await auto_restore_module.on_member_join(member)
 
         except Exception as e:
-            logger.error(f"Error in on_member_join (auto_restore_roles) for guild {member.guild.id}: {e}", exc_info=True)
+            await _report(self.bot, e, "on_member_join (auto_restore_roles)", member.guild)
 
         try:
             # Récupère l'instance du module Auto Role pour ce serveur
@@ -90,7 +99,7 @@ class ModuleEvents(commands.Cog):
                 await auto_role_module.on_member_join(member)
 
         except Exception as e:
-            logger.error(f"Error in on_member_join (auto_role) for guild {member.guild.id}: {e}", exc_info=True)
+            await _report(self.bot, e, "on_member_join (auto_role)", member.guild)
 
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member):
@@ -113,7 +122,7 @@ class ModuleEvents(commands.Cog):
                 await auto_restore_module.on_member_remove(member)
 
         except Exception as e:
-            logger.error(f"Error in on_member_remove (auto_restore_roles) for guild {member.guild.id}: {e}", exc_info=True)
+            await _report(self.bot, e, "on_member_remove (auto_restore_roles)", member.guild)
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -144,7 +153,7 @@ class ModuleEvents(commands.Cog):
                 await interserver_module.on_message(message)
 
         except Exception as e:
-            logger.error(f"Error in on_message for guild {message.guild.id}: {e}", exc_info=True)
+            await _report(self.bot, e, "on_message (interserver)", message.guild)
 
         try:
             # Adaptive Slowmode: record the message in the rolling window
@@ -157,7 +166,7 @@ class ModuleEvents(commands.Cog):
                 await slowmode_module.on_message(message)
 
         except Exception as e:
-            logger.error(f"Error in on_message (adaptive_slowmode) for guild {message.guild.id}: {e}", exc_info=True)
+            await _report(self.bot, e, "on_message (adaptive_slowmode)", message.guild)
 
         try:
             # Automod: run the message through the AI moderation pipeline
@@ -170,7 +179,7 @@ class ModuleEvents(commands.Cog):
                 await automod_module.on_message(message)
 
         except Exception as e:
-            logger.error(f"Error in on_message (automod) for guild {message.guild.id}: {e}", exc_info=True)
+            await _report(self.bot, e, "on_message (automod)", message.guild)
 
         try:
             # Voice Transcription: offer (or post) a transcription under a
@@ -184,7 +193,7 @@ class ModuleEvents(commands.Cog):
                 await transcription_module.on_message(message)
 
         except Exception as e:
-            logger.error(f"Error in on_message (voice_transcription) for guild {message.guild.id}: {e}", exc_info=True)
+            await _report(self.bot, e, "on_message (voice_transcription)", message.guild)
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction: discord.Reaction, user):
@@ -206,9 +215,7 @@ class ModuleEvents(commands.Cog):
             if automod_module and automod_module.enabled:
                 await automod_module.on_reaction(reaction, user)
         except Exception as e:
-            logger.error(
-                f"Error in on_reaction_add (automod) for guild {msg.guild.id}: {e}",
-                exc_info=True)
+            await _report(self.bot, e, "on_reaction_add (automod)", msg.guild)
 
     @commands.Cog.listener()
     async def on_message_delete(self, message: discord.Message):
@@ -259,7 +266,8 @@ class ModuleEvents(commands.Cog):
             logger.info(f"Deleted inter-server message {interserver_msg['moddy_id']} and all relayed copies")
 
         except Exception as e:
-            logger.error(f"Error in on_message_delete for inter-server: {e}", exc_info=True)
+            await _report(self.bot, e, "on_message_delete (interserver)",
+                          getattr(message, "guild", None))
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
@@ -290,7 +298,8 @@ class ModuleEvents(commands.Cog):
                 await starboard_module.on_reaction_add(payload)
 
         except Exception as e:
-            logger.error(f"Error in on_raw_reaction_add for guild {payload.guild_id}: {e}", exc_info=True)
+            await _report(self.bot, e, "on_raw_reaction_add (starboard)",
+                          self.bot.get_guild(payload.guild_id))
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
@@ -321,7 +330,8 @@ class ModuleEvents(commands.Cog):
                 await starboard_module.on_reaction_remove(payload)
 
         except Exception as e:
-            logger.error(f"Error in on_raw_reaction_remove for guild {payload.guild_id}: {e}", exc_info=True)
+            await _report(self.bot, e, "on_raw_reaction_remove (starboard)",
+                          self.bot.get_guild(payload.guild_id))
 
 
 async def setup(bot):

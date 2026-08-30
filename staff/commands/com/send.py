@@ -31,6 +31,7 @@ from staff.commands.com._send_modal import NotificationComposeModal
 from staff.framework.views import ConfirmView
 from utils import emojis
 from utils.i18n import t
+from utils.interaction_response import safe_defer
 
 logger = logging.getLogger("moddy.staff.com.send")
 
@@ -48,6 +49,8 @@ class ComSendCommand(StaffCommand):
     name = "send"
     permission = "broadcast"
     description = "Send a Moddy notification to a user, a server, or a group of them."
+    # Answers with a Modal: Discord refuses one on a deferred interaction.
+    opens_modal = True
     options = [
         SlashOption("target", "string", "Who receives it.", required=True,
                     choices=["user", "guild", "users", "guilds"]),
@@ -76,10 +79,18 @@ class ComSendCommand(StaffCommand):
                 ctx.locale, "com.send <user|guild|users|guilds> <id|segment> [dm_owner]"))
             return
 
-        audience, error = await _resolve_audience(ctx.bot, target, recipient, ctx.locale)
-        if error is not None:
-            await ctx.send(view=error)
-            return
+        # Resolving the audience costs a user fetch or a segment query. On the
+        # slash transport that has to wait: this command is ``opens_modal``, so
+        # the interaction is still unacknowledged and the composer must go out
+        # inside Discord's 3-second window. ``_handle_composed`` resolves it on
+        # the modal's own interaction instead. The message transport has no such
+        # window, and its prompt names the audience, so it resolves up front.
+        audience = None
+        if not ctx.is_slash:
+            audience, error = await _resolve_audience(ctx.bot, target, recipient, ctx.locale)
+            if error is not None:
+                await ctx.send(view=error)
+                return
 
         async def _composed(interaction: discord.Interaction, payload: Dict[str, Any]):
             await _handle_composed(
@@ -153,6 +164,9 @@ async def _resolve_audience(bot, target: str, recipient: str, locale: str
 
 
 def _audience_label(target: str, recipient: str, audience: Any) -> str:
+    """Name the audience for the prompt — ``audience`` may not be resolved yet."""
+    if audience is None:
+        return f"`{recipient}`"
     if target in ("user", "guild"):
         name = getattr(audience, "name", None) or getattr(audience, "display_name", recipient)
         return f"{name} (`{getattr(audience, 'id', recipient)}`)"
@@ -178,14 +192,29 @@ def _build_content(payload: Dict[str, Any]) -> NotificationContent:
 async def _handle_composed(interaction: discord.Interaction, ctx, *, target: str,
                            recipient: str, audience: Any, dm_owner: bool,
                            payload: Dict[str, Any]) -> None:
-    """Single targets go out immediately; group targets are confirmed first."""
+    """Single targets go out immediately; group targets are confirmed first.
+
+    ``audience`` is ``None`` when the command opened the composer before
+    resolving it (the slash path): this interaction is fresh, so the lookup
+    happens here, behind a defer.
+    """
     locale = ctx.locale
+    # One defer for every branch: the audience lookup and the sends that follow
+    # all outlast the 3-second window, and a deferred interaction still answers
+    # — through `followup`, or by editing the placeholder it just put up.
+    await safe_defer(interaction, ephemeral=True, thinking=True)
+
+    if audience is None:
+        audience, error = await _resolve_audience(ctx.bot, target, recipient, locale)
+        if error is not None:
+            await interaction.followup.send(view=error, ephemeral=True)
+            return
+
     content = _build_content(payload)
     source = NotificationSource.service(
         "moddy", author=ContentAuthor.STAFF, actor_id=interaction.user.id)
 
     if target == "user":
-        await interaction.response.defer(ephemeral=True, thinking=True)
         result = await ctx.bot.notifications.send_dm(
             audience, content=content, source=source, locale=locale)
         await interaction.followup.send(view=_single_result(
@@ -193,7 +222,6 @@ async def _handle_composed(interaction: discord.Interaction, ctx, *, target: str
         return
 
     if target == "guild":
-        await interaction.response.defer(ephemeral=True, thinking=True)
         results = await ctx.bot.notifications.notify_guild(
             audience, content=content, source=source, dm_owner=dm_owner)
         delivered = [r for r in results if r.delivered]
@@ -227,7 +255,9 @@ async def _handle_composed(interaction: discord.Interaction, ctx, *, target: str
             i, ctx, target=target, recipient=recipient, audience=audience,
             content=content, source=source, dm_owner=dm_owner, locale=locale),
     )
-    await interaction.response.send_message(view=confirm, ephemeral=True)
+    # Edit, not followup: the defer above already put a placeholder in front of
+    # the sender, and the confirmation belongs in it rather than beside it.
+    await interaction.edit_original_response(view=confirm)
 
 
 def _single_result(result, *, name: str, locale: str) -> BaseView:
@@ -277,7 +307,20 @@ async def _start_broadcast(interaction: discord.Interaction, ctx, *, target: str
             except discord.HTTPException:
                 pass
         except Exception as exc:  # noqa: BLE001 — a background task must not die silently
-            logger.error("Broadcast failed: %s", exc, exc_info=True)
+            # Same reasoning as the progress edits above: the sender is watching
+            # a panel that would otherwise never finish, so the failure gets an
+            # error code they can quote instead of a silent log line.
+            from cogs.error_handler import ErrorView, report_error
+            error_code = await report_error(
+                ctx.bot, exc, source="Staff:com.send", user=ctx.author,
+                guild=ctx.guild, channel=ctx.channel,
+                error_type="Staff Command Error",
+            )
+            if error_code:
+                try:
+                    await interaction.edit_original_response(view=ErrorView(error_code))
+                except discord.HTTPException:
+                    pass
 
     asyncio.create_task(_run())
     return _progress_panel({"total": 0, "sent": 0, "failed": 0},

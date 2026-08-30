@@ -24,6 +24,7 @@ import discord
 from discord import ui
 
 from utils.i18n import t, i18n
+from utils.interaction_response import safe_defer
 from cogs.error_handler import BaseView, BaseModal
 from utils.emojis import (
     SHIELD, BOOK, BACK, DELETE, MESSAGE, GROUPS, SETTINGS, WARNING, SAVE,
@@ -134,13 +135,16 @@ class IndicationsModal(BaseModal):
         locale = self.locale
         text = (self.field.component.value or "").strip()
 
+        # Both branches below make a round-trip (a DB read, or the rules check
+        # against the AI gateway): acknowledge the submit before either.
+        await safe_defer(interaction, thinking=False)
+
         if not text:  # clearing needs no AI call
             self.working_config["indications"] = ""
             view = await self._rebuild(interaction, self.working_config, True)
-            await interaction.response.edit_message(view=view)
+            await interaction.edit_original_response(view=view)
             return
 
-        await interaction.response.defer()
         safe, reason = await validate_rules(self.bot, self.guild_id, text)
         if not safe:
             if reason == "too_long":
@@ -576,66 +580,74 @@ class AutomodAIConfigView(BaseView):
     async def on_toggle_module(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+        # The stored config is read below: acknowledge before the round-trip.
+        await safe_defer(interaction, thinking=False)
         working_config = await self._fresh_working_config(interaction)
         working_config["enabled"] = not working_config["enabled"]
         view = await self._rebuild(interaction, working_config, True)
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
 
     async def on_activations(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+        await safe_defer(interaction, thinking=False)
         working_config = await self._fresh_working_config(interaction)
         selected = set(interaction.data.get("values", []))
         self._content_of(working_config)["enabled"] = "content" in selected
         working_config["ignore_moderators"] = "ignore" in selected
         working_config["dry_run"] = "dry_run" in selected
         view = await self._rebuild(interaction, working_config, True)
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
 
     async def on_notify_channel(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+        await safe_defer(interaction, thinking=False)
         working_config = await self._fresh_working_config(interaction)
         values = interaction.data.get("values", [])
         working_config["notify_channel_id"] = int(values[0]) if values else None
         view = await self._rebuild(interaction, working_config, True)
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
 
     async def on_severity(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+        await safe_defer(interaction, thinking=False)
         working_config = await self._fresh_working_config(interaction)
         values = interaction.data.get("values", [])
         if values:
             working_config["severity"] = ac.clamp_severity(values[0])
         view = await self._rebuild(interaction, working_config, True)
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
 
     async def on_max_action(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+        await safe_defer(interaction, thinking=False)
         working_config = await self._fresh_working_config(interaction)
         values = interaction.data.get("values", [])
         if values and values[0] in ("warn", "mute", "ban"):
             working_config["max_action"] = values[0]
         view = await self._rebuild(interaction, working_config, True)
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
 
     async def on_exempt_roles(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+        await safe_defer(interaction, thinking=False)
         working_config = await self._fresh_working_config(interaction)
         self._content_of(working_config)["exempt_roles"] = [int(v) for v in interaction.data.get("values", [])]
         view = await self._rebuild(interaction, working_config, True)
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
 
     async def on_exempt_channels(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+        await safe_defer(interaction, thinking=False)
         working_config = await self._fresh_working_config(interaction)
         self._content_of(working_config)["exempt_channels"] = [int(v) for v in interaction.data.get("values", [])]
         view = await self._rebuild(interaction, working_config, True)
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
 
     async def on_edit_indications(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
@@ -650,17 +662,19 @@ class AutomodAIConfigView(BaseView):
     async def on_view_precedents(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+        await safe_defer(interaction, thinking=False)
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
         from modules.configs.automod_ai_precedents_view import AutomodAIPrecedentsView
         view = AutomodAIPrecedentsView(bot, interaction.guild_id, interaction.user.id, locale)
         await view.load()
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
 
     # -- action buttons -------------------------------------------------- #
     async def on_save(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+        await safe_defer(interaction, thinking=False)
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
         working_config = await self._fresh_working_config(interaction)
@@ -670,12 +684,12 @@ class AutomodAIConfigView(BaseView):
             actor_id=interaction.user.id,
         )
         if not success:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 t("modules.config.save.error", locale=locale, error=error), ephemeral=True
             )
             return
         view = await self._rebuild(interaction, working_config, False)
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
         await interaction.followup.send(
             t("modules.config.save.success", locale=locale), ephemeral=True
         )
@@ -683,22 +697,24 @@ class AutomodAIConfigView(BaseView):
     async def on_cancel(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+        await safe_defer(interaction, thinking=False)
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
         saved = await bot.module_manager.get_module_config(interaction.guild_id, "automod_ai")
         view = AutomodAIConfigView(bot, interaction.guild_id, interaction.user.id, locale, current_config=saved)
         await view.load_precedent_stats()
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
 
     async def on_delete(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+        await safe_defer(interaction, thinking=False)
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
         await bot.module_manager.delete_module_config(interaction.guild_id, "automod_ai")
         view = AutomodAIConfigView(bot, interaction.guild_id, interaction.user.id, locale, current_config=None)
         await view.load_precedent_stats()
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
         await interaction.followup.send(
             t("modules.config.delete.success", locale=locale), ephemeral=True
         )

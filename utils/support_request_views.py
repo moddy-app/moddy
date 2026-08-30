@@ -42,6 +42,7 @@ from utils.emojis import (
     BUG, BUILD, DONE, GROUPS, HAND, NOTE, REPLY, SUPPORT, TIME, USER,
 )
 from utils.i18n import i18n, t
+from utils.interaction_response import deliver, safe_defer
 
 logger = logging.getLogger("moddy.support_request_views")
 
@@ -231,7 +232,8 @@ async def _load_request(interaction: discord.Interaction, request_id: str, local
     service = getattr(interaction.client, "support_requests", None)
     request = await service.get(request_id) if service else None
     if not request:
-        await interaction.response.send_message(view=create_error_message(
+        # `deliver` so this works whether or not the caller deferred first.
+        await deliver(interaction, view=create_error_message(
             t("support.errors.unknown.title", locale=locale),
             t("support.errors.unknown.description", locale=locale, reference=request_id),
         ), ephemeral=True)
@@ -245,7 +247,7 @@ async def _guard_staff(interaction: discord.Interaction, locale: str) -> bool:
 
     if await has_staff_node(interaction.client, interaction.user.id, "support_request"):
         return True
-    await interaction.response.send_message(view=create_error_message(
+    await deliver(interaction, view=create_error_message(
         t("support.errors.no_permission.title", locale=locale),
         t("support.errors.no_permission.description", locale=locale),
     ), ephemeral=True)
@@ -275,11 +277,14 @@ class SupportClaimButton(
 
     @_guarded
     async def callback(self, interaction: discord.Interaction):
+        # The request read and the staff-node lookup both hit the database
+        # before anything is shown: acknowledge first, or a cold query costs
+        # the 3s window and the click dies as "did not respond".
+        await safe_defer(interaction, ephemeral=True, thinking=False)
         locale = i18n.get_user_locale(interaction)
         request = await _load_request(interaction, self.request_id, locale)
         if not request or not await _guard_staff(interaction, locale):
             return
-        await interaction.response.defer()
         claimed = await interaction.client.support_requests.claim(
             self.request_id, interaction.user)
         if claimed is None:
@@ -341,11 +346,12 @@ class SupportResolveButton(
 
     @_guarded
     async def callback(self, interaction: discord.Interaction):
+        # Same reasoning as the claim button: acknowledge before the reads.
+        await safe_defer(interaction, ephemeral=True, thinking=False)
         locale = i18n.get_user_locale(interaction)
         request = await _load_request(interaction, self.request_id, locale)
         if not request or not await _guard_staff(interaction, locale):
             return
-        await interaction.response.defer()
         resolved = await interaction.client.support_requests.resolve(
             self.request_id, interaction.user)
         if resolved is None:
@@ -426,13 +432,13 @@ class SupportUserReplyButton(
         if not request:
             return
         if request["user_id"] != interaction.user.id:
-            await interaction.response.send_message(view=create_error_message(
+            await deliver(interaction, view=create_error_message(
                 t("support.errors.not_yours.title", locale=locale),
                 t("support.errors.not_yours.description", locale=locale),
             ), ephemeral=True)
             return
         if request.get("status") == STATUS_RESOLVED:
-            await interaction.response.send_message(view=create_error_message(
+            await deliver(interaction, view=create_error_message(
                 t("support.errors.closed.title", locale=locale),
                 t("support.errors.closed.description", locale=locale),
             ), ephemeral=True)
@@ -516,7 +522,7 @@ class ConfigHelpButton(
         if service is not None and await service.is_rate_limited(
             interaction.user.id, KIND_CONFIG_HELP
         ):
-            await interaction.response.send_message(view=create_error_message(
+            await deliver(interaction, view=create_error_message(
                 t("support.errors.rate_limited.title", locale=locale),
                 t("support.errors.rate_limited.description", locale=locale),
             ), ephemeral=True)

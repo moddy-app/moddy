@@ -89,6 +89,11 @@ async def _purge(bot, data) -> int:
         if channel:
             original = await channel.fetch_message(data["original_message_id"])
             await original.delete()
-    except Exception:
-        pass
+    except discord.NotFound:
+        pass  # already gone — that is the desired end state
+    except Exception as exc:
+        # The relayed copies are already deleted; leaving the original behind
+        # silently is what made this look like a successful purge.
+        logger.warning("Error deleting the original message %s: %s",
+                       data.get("original_message_id"), exc)
     return deleted

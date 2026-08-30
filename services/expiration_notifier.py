@@ -57,7 +57,15 @@ class ExpirationNotifier:
                 if await self.handle(row):
                     sent += 1
             except Exception as exc:  # never let one row break the sweep
-                logger.error("Error handling expired sanction: %s", exc, exc_info=True)
+                # A sanction that never expires for real (no unban, no DM) is
+                # exactly the kind of failure that has to leave a trace: the
+                # sweep moves on, the central pipeline keeps the evidence.
+                from cogs.error_handler import report_error
+                await report_error(
+                    self.bot, exc,
+                    source=f"ExpirationNotifier:{row.get('action') or 'sanction'}",
+                    error_type="Service Error",
+                )
         return sent
 
     async def handle(self, row: Dict[str, Any]) -> bool:

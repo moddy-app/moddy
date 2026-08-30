@@ -551,82 +551,81 @@ class ModuleManager:
         if blocked:
             return False, blocked
 
-        try:
-            # Crée une instance temporaire du module
-            module_class = self.registered_modules[module_id]
-            temp_instance = module_class(self.bot, guild_id)
+        # A genuinely unexpected failure (DB down, a broken module class) is not
+        # a validation error: it propagates so the central handler shows the user
+        # an error card with a code instead of a bare "Internal error" string.
 
-            # Vérifie que tous les champs obligatoires sont remplis
-            required_fields = temp_instance.get_required_fields()
-            missing_fields = []
+        # Crée une instance temporaire du module
+        module_class = self.registered_modules[module_id]
+        temp_instance = module_class(self.bot, guild_id)
 
-            for field in required_fields:
-                # Vérifie si le champ est présent et non vide
-                if field not in config_data or config_data[field] is None:
-                    missing_fields.append(field)
+        # Vérifie que tous les champs obligatoires sont remplis
+        required_fields = temp_instance.get_required_fields()
+        missing_fields = []
 
-            if missing_fields:
-                # Langue du serveur (/config → Paramètres du serveur)
-                from utils.guild_language import guild_locale
-                locale = await guild_locale(self.bot, guild_id)
+        for field in required_fields:
+            # Vérifie si le champ est présent et non vide
+            if field not in config_data or config_data[field] is None:
+                missing_fields.append(field)
 
-                # Construit le message d'erreur avec les labels traduits
-                from utils.i18n import t
-                field_labels = [temp_instance.get_field_label(field, locale) for field in missing_fields]
-                fields_str = "\n• ".join(field_labels)
+        if missing_fields:
+            # Langue du serveur (/config → Paramètres du serveur)
+            from utils.guild_language import guild_locale
+            locale = await guild_locale(self.bot, guild_id)
 
-                error_msg = t('modules.config.errors.required_fields', locale=locale, fields=fields_str)
-                return False, error_msg
+            # Construit le message d'erreur avec les labels traduits
+            from utils.i18n import t
+            field_labels = [temp_instance.get_field_label(field, locale) for field in missing_fields]
+            fields_str = "\n• ".join(field_labels)
 
-            # Valide la configuration (permissions, existence des ressources, etc.)
-            is_valid, error_msg = await temp_instance.validate_config(config_data)
+            error_msg = t('modules.config.errors.required_fields', locale=locale, fields=fields_str)
+            return False, error_msg
 
-            if not is_valid:
-                return False, error_msg
+        # Valide la configuration (permissions, existence des ressources, etc.)
+        is_valid, error_msg = await temp_instance.validate_config(config_data)
 
-            # S'assure que le serveur existe dans la DB
-            await self.bot.db.get_guild(guild_id)
+        if not is_valid:
+            return False, error_msg
 
-            # Sauvegarde dans la DB
-            await self.bot.db.update_guild_data(
-                guild_id,
-                f"modules.{module_id}",
-                config_data
-            )
+        # S'assure que le serveur existe dans la DB
+        await self.bot.db.get_guild(guild_id)
 
-            logger.info(f"Config saved to DB for module {module_id} in guild {guild_id}: {config_data}")
+        # Sauvegarde dans la DB
+        await self.bot.db.update_guild_data(
+            guild_id,
+            f"modules.{module_id}",
+            config_data
+        )
 
-            # Met à jour ou crée l'instance active
-            if guild_id not in self.active_modules:
-                self.active_modules[guild_id] = {}
+        logger.info(f"Config saved to DB for module {module_id} in guild {guild_id}: {config_data}")
 
-            # Crée ou met à jour l'instance
-            if module_id in self.active_modules[guild_id]:
-                # Met à jour l'instance existante
-                module_instance = self.active_modules[guild_id][module_id]
-                await module_instance.load_config(config_data)
-            else:
-                # Crée une nouvelle instance
-                module_instance = module_class(self.bot, guild_id)
-                await module_instance.load_config(config_data)
-                self.active_modules[guild_id][module_id] = module_instance
+        # Met à jour ou crée l'instance active
+        if guild_id not in self.active_modules:
+            self.active_modules[guild_id] = {}
 
-            # Active/désactive selon la validité de la config (enabled est déterminé dans load_config)
-            if module_instance.enabled:
-                await module_instance.enable()
-            else:
-                await module_instance.disable()
+        # Crée ou met à jour l'instance
+        if module_id in self.active_modules[guild_id]:
+            # Met à jour l'instance existante
+            module_instance = self.active_modules[guild_id][module_id]
+            await module_instance.load_config(config_data)
+        else:
+            # Crée une nouvelle instance
+            module_instance = module_class(self.bot, guild_id)
+            await module_instance.load_config(config_data)
+            self.active_modules[guild_id][module_id] = module_instance
 
-            logger.info(f"Configuration saved for module {module_id} in guild {guild_id} (enabled: {module_instance.enabled})")
+        # Active/désactive selon la validité de la config (enabled est déterminé dans load_config)
+        if module_instance.enabled:
+            await module_instance.enable()
+        else:
+            await module_instance.disable()
 
-            # A module that owns slash commands has just appeared in (or
-            # vanished from) this guild's command tree.
-            await self._sync_module_commands(guild_id, module_id)
-            return True, None
+        logger.info(f"Configuration saved for module {module_id} in guild {guild_id} (enabled: {module_instance.enabled})")
 
-        except Exception as e:
-            logger.error(f"[FAIL] Error saving module config: {e}", exc_info=True)
-            return False, f"Internal error: {str(e)}"
+        # A module that owns slash commands has just appeared in (or
+        # vanished from) this guild's command tree.
+        await self._sync_module_commands(guild_id, module_id)
+        return True, None
 
     async def delete_module_config(self, guild_id: int, module_id: str) -> bool:
         """
@@ -642,29 +641,28 @@ class ModuleManager:
         if not self.bot.db:
             return False
 
-        try:
-            # Désactive le module s'il est actif
-            if guild_id in self.active_modules and module_id in self.active_modules[guild_id]:
-                module_instance = self.active_modules[guild_id][module_id]
-                await module_instance.disable()
-                del self.active_modules[guild_id][module_id]
+        # An unexpected failure here is not an expected outcome: it must reach
+        # the central error handler (BaseView.on_error) so the user gets an
+        # error card with a code, not a bare "deletion failed" message.
 
-            # Supprime de la DB en mettant un objet vide
-            await self.bot.db.update_guild_data(
-                guild_id,
-                f"modules.{module_id}",
-                {}
-            )
+        # Désactive le module s'il est actif
+        if guild_id in self.active_modules and module_id in self.active_modules[guild_id]:
+            module_instance = self.active_modules[guild_id][module_id]
+            await module_instance.disable()
+            del self.active_modules[guild_id][module_id]
 
-            logger.info(f"Configuration deleted for module {module_id} in guild {guild_id}")
+        # Supprime de la DB en mettant un objet vide
+        await self.bot.db.update_guild_data(
+            guild_id,
+            f"modules.{module_id}",
+            {}
+        )
 
-            # Its commands must disappear from the guild along with it.
-            await self._sync_module_commands(guild_id, module_id)
-            return True
+        logger.info(f"Configuration deleted for module {module_id} in guild {guild_id}")
 
-        except Exception as e:
-            logger.error(f"[FAIL] Error deleting module config: {e}", exc_info=True)
-            return False
+        # Its commands must disappear from the guild along with it.
+        await self._sync_module_commands(guild_id, module_id)
+        return True
 
     async def get_module_config(self, guild_id: int, module_id: str) -> Optional[Dict[str, Any]]:
         """

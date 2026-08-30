@@ -37,6 +37,7 @@ from utils.emojis import (
     BACK, DELETE, NOTE, SETTINGS, TOGGLE_OFF, TOGGLE_ON, log_emoji,
 )
 from utils.i18n import i18n, t
+from utils.interaction_response import deliver, safe_defer
 
 logger = logging.getLogger('moddy.modules.logs_config')
 
@@ -111,10 +112,7 @@ async def _refuse(interaction: discord.Interaction, error: str) -> None:
     locale = i18n.get_user_locale(interaction)
     view = create_error_message(
         t('modules.logs.config.errors.title', locale=locale), error)
-    if interaction.response.is_done():
-        await interaction.followup.send(view=view, ephemeral=True)
-    else:
-        await interaction.response.send_message(view=view, ephemeral=True)
+    await deliver(interaction, view=view, ephemeral=True)
 
 
 # --------------------------------------------------------------------------- #
@@ -277,8 +275,10 @@ class LogsConfigView(BaseView):
         values = interaction.data.get("values") or []
         if not values or values[0] not in registry.CATEGORIES:
             return
+        # Building a screen reads the stored config: acknowledge first.
+        await safe_defer(interaction, thinking=False)
         view = await LogsCategoryView.create(interaction, values[0], page=0)
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
 
     async def on_mass_channel(self, interaction: discord.Interaction):
         """Bind every category to a single channel in one click."""
@@ -303,8 +303,9 @@ class LogsConfigView(BaseView):
     async def on_options(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+        await safe_defer(interaction, thinking=False)
         view = await LogsOptionsView.create(interaction)
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
 
     async def on_clear(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
@@ -603,10 +604,11 @@ class LogsCategoryButton(ui.DynamicItem[ui.Button],
             return
 
         if self.action == "back":
+            await safe_defer(interaction, thinking=False)
             view = await LogsConfigView.create(
                 interaction.client, interaction.guild_id, interaction.user.id,
                 i18n.get_user_locale(interaction))
-            await interaction.response.edit_message(view=view)
+            await interaction.edit_original_response(view=view)
             return
 
         spec = registry.CATEGORIES[self.category_id]
@@ -615,8 +617,9 @@ class LogsCategoryButton(ui.DynamicItem[ui.Button],
         if self.action in ("prev", "next"):
             step = -1 if self.action == "prev" else 1
             page = (self.page + step) % page_count
+            await safe_defer(interaction, thinking=False)
             view = await LogsCategoryView.create(interaction, self.category_id, page)
-            await interaction.response.edit_message(view=view)
+            await interaction.edit_original_response(view=view)
             return
 
         await interaction.response.defer()
@@ -825,10 +828,11 @@ class LogsOptionsView(BaseView):
     async def on_back(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+        await safe_defer(interaction, thinking=False)
         view = await LogsConfigView.create(
             interaction.client, interaction.guild_id, interaction.user.id,
             i18n.get_user_locale(interaction))
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         return await check_guild_perms(interaction)

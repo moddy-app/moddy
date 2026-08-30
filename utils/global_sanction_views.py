@@ -32,6 +32,7 @@ from utils import emojis
 from utils import global_sanctions as gs
 from utils.global_sanctions import GlobalLevel
 from utils.i18n import t
+from utils.interaction_response import deliver
 
 logger = logging.getLogger('moddy.global_sanction_views')
 
@@ -796,7 +797,10 @@ class GlobalSanctionHaltButton(
         from utils.i18n import i18n
         locale = i18n.get_user_locale(interaction)
         if not await _may_manage(interaction):
-            await interaction.response.send_message(view=_error_panel(
+            # Cannot defer here (the happy path opens a modal), so deliver the
+            # refusal through every transport: the two permission lookups
+            # above may already have cost the acknowledgement window.
+            await deliver(interaction, view=_error_panel(
                 t("global_sanctions.staff.denied_title", locale=locale),
                 t("global_sanctions.staff.denied", locale=locale),
             ), ephemeral=True)
@@ -832,7 +836,7 @@ class GlobalSanctionResumeButton(
         from utils.i18n import i18n
         locale = i18n.get_user_locale(interaction)
         if not await _may_manage(interaction):
-            await interaction.response.send_message(view=_error_panel(
+            await deliver(interaction, view=_error_panel(
                 t("global_sanctions.staff.denied_title", locale=locale),
                 t("global_sanctions.staff.denied", locale=locale),
             ), ephemeral=True)

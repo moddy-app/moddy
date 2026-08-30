@@ -135,7 +135,14 @@ class TicketService:
         try:
             return await self.bot.module_manager.get_module_instance(guild_id, MODULE_ID)
         except Exception as e:
-            logger.error(f"[Tickets] Could not load module for guild {guild_id}: {e}")
+            # Callers read ``None`` as "tickets are not configured here", so a
+            # load failure would look to the server like the feature simply
+            # being off. Report it centrally instead of guessing.
+            from cogs.error_handler import report_error
+            await report_error(
+                self.bot, e, source="TicketService:get_module",
+                guild=self.bot.get_guild(guild_id), error_type="Service Error",
+            )
             return None
 
     async def get_ticket(self, channel_id: int) -> Optional[Dict[str, Any]]:

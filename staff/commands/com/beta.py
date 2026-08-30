@@ -56,6 +56,8 @@ class ComBetaCommand(StaffCommand):
     name = "beta"
     permission = "broadcast"
     description = "Send the beta-launch announcement to server owners."
+    # Answers with a Modal: Discord refuses one on a deferred interaction.
+    opens_modal = True
     options = [
         SlashOption("target", "string", "Who receives it.", required=True,
                     choices=["preview", "test", "owners"]),
@@ -79,6 +81,13 @@ class ComBetaCommand(StaffCommand):
         target = (ctx.opt("target") or "").lower()
         recipient = (ctx.opt("recipient") or "").strip()
         exclude_guilds = (ctx.opt("exclude_guilds") or "").strip()
+
+        # ``opens_modal`` keeps the interaction fresh for the ``owners``
+        # confirmation modal — but every other branch answers with a panel
+        # after real work (a user fetch, a whole test DM), which would blow
+        # past the 3-second window. Those branches acknowledge first.
+        if target != "owners":
+            await ctx.defer()
 
         if target not in ("preview", "test", "owners"):
             await ctx.send(view=design.invalid_usage(
@@ -329,7 +338,20 @@ async def _start(interaction: discord.Interaction, ctx,
             except discord.HTTPException:
                 pass
         except Exception as exc:  # noqa: BLE001 — a background task must not die silently
-            logger.error("Beta announcement failed: %s", exc, exc_info=True)
+            # Nothing above catches this and the sender is watching a progress
+            # panel that would otherwise freeze forever: report it centrally and
+            # replace the panel with the resulting error code.
+            from cogs.error_handler import ErrorView, report_error
+            error_code = await report_error(
+                ctx.bot, exc, source="Staff:com.beta", user=ctx.author,
+                guild=ctx.guild, channel=ctx.channel,
+                error_type="Staff Command Error",
+            )
+            if error_code:
+                try:
+                    await interaction.edit_original_response(view=ErrorView(error_code))
+                except discord.HTTPException:
+                    pass
 
     asyncio.create_task(_run())
 

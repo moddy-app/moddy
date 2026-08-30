@@ -9,6 +9,7 @@ from cogs.error_handler import BaseView
 from discord.ext import commands
 from typing import Optional
 import aiohttp
+import asyncio
 from datetime import datetime
 from config import COLORS
 from utils.emojis import (
@@ -135,7 +136,7 @@ class UserInfoView(BaseView):
             timestamp = ((snowflake_id >> 22) + 1420070400000) // 1000
             created_label = i18n.get("commands.user.view.created", locale=self.locale)
             info_lines.append(f"> **{created_label}:** <t:{timestamp}:R>")
-        except:
+        except (ValueError, TypeError):
             pass
 
         # Banner color
@@ -353,7 +354,7 @@ class UserInfoView(BaseView):
                             if "discord.gg/" in invite_url:
                                 result["invite_code"] = invite_url.split("discord.gg/")[-1]
                         return result
-            except:
+            except (aiohttp.ClientError, asyncio.TimeoutError, ValueError):
                 pass
 
             # Try 2: Guild Preview (requires bot token, works for Discovery servers)
@@ -367,7 +368,7 @@ class UserInfoView(BaseView):
                         preview_data = await resp.json()
                         result["name"] = preview_data.get("name")
                         return result
-            except:
+            except (aiohttp.ClientError, asyncio.TimeoutError, ValueError):
                 pass
 
         return result
@@ -683,7 +684,8 @@ class User(commands.Cog):
             try:
                 user_pref = await self.bot.db.get_attribute('user', interaction.user.id, 'DEFAULT_INCOGNITO')
                 ephemeral = True if user_pref is None else user_pref
-            except:
+            except Exception:
+                # Visibility preference is a nicety: default to private.
                 ephemeral = True
         else:
             ephemeral = incognito if incognito is not None else True

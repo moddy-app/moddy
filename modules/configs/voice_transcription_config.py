@@ -20,6 +20,7 @@ from utils.emojis import (
     BACK, DELETE, SAVE, TOGGLE_OFF, TOGGLE_ON, UNDONE, VOICE_CHAT,
 )
 from utils.i18n import i18n, t
+from utils.interaction_response import safe_defer
 
 logger = logging.getLogger("moddy.modules.voice_transcription_config")
 
@@ -268,15 +269,20 @@ class VoiceTranscriptionConfigView(BaseView):
         if not await check_guild_perms(interaction):
             return
 
+        # The stored config is read below: acknowledge before the round-trip.
+        await safe_defer(interaction, thinking=False)
+
         working_config = await self._fresh_working_config(interaction)
         working_config["enabled"] = not bool(working_config.get("enabled"))
 
         view = await self._rebuild(interaction, working_config, has_changes=True)
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
 
     async def on_mode_select(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+
+        await safe_defer(interaction, thinking=False)
 
         values = interaction.data.get("values") or []
         mode = values[0] if values else MODE_BUTTON
@@ -284,18 +290,20 @@ class VoiceTranscriptionConfigView(BaseView):
         working_config["mode"] = mode if mode in MODES else MODE_BUTTON
 
         view = await self._rebuild(interaction, working_config, has_changes=True)
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
 
     async def on_channels_select(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+
+        await safe_defer(interaction, thinking=False)
 
         values: List[str] = interaction.data.get("values") or []
         working_config = await self._fresh_working_config(interaction)
         working_config["channel_ids"] = [int(v) for v in values]
 
         view = await self._rebuild(interaction, working_config, has_changes=True)
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
 
     # --- action buttons ------------------------------------------------ #
 
@@ -344,13 +352,15 @@ class VoiceTranscriptionConfigView(BaseView):
         if not await check_guild_perms(interaction):
             return
 
+        await safe_defer(interaction, thinking=False)
+
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
         saved = await bot.module_manager.get_module_config(interaction.guild_id, _MODULE_ID)
         view = VoiceTranscriptionConfigView(
             bot, interaction.guild_id, interaction.user.id, locale, current_config=saved,
         )
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
 
     async def on_delete(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):

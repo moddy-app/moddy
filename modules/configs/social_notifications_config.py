@@ -47,6 +47,7 @@ from utils.emojis import (
     REQUIRED_FIELDS, PAUSE, PLAY, get_platform_emoji,
 )
 from utils.i18n import t, i18n
+from utils.interaction_response import safe_defer
 
 logger = logging.getLogger('moddy.modules.social_notifications_config')
 
@@ -148,13 +149,13 @@ async def _render_main(interaction: discord.Interaction) -> None:
     """(Re)build and show the main panel from a live interaction."""
     bot = interaction.client
     locale = i18n.get_user_locale(interaction)
+    # Acknowledge first: rebuilding the panel reads the DB, and an interaction
+    # left unacknowledged for 3s dies with Discord's own "did not respond".
+    await safe_defer(interaction, thinking=False)
     view = await SocialNotificationsConfigView.create(
         bot, interaction.guild_id, interaction.user.id, locale
     )
-    if interaction.response.is_done():
-        await interaction.edit_original_response(view=view)
-    else:
-        await interaction.response.edit_message(view=view)
+    await interaction.edit_original_response(view=view)
 
 
 # =========================================================================== #
@@ -436,13 +437,15 @@ class SocialNotificationsConfigView(BaseView):
             return
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
+        # The premium lookup is a round-trip: acknowledge before it.
+        await safe_defer(interaction, thinking=False)
         is_premium = False
         try:
             is_premium = await bot.db.is_guild_premium(interaction.guild_id)
         except Exception:
             pass
         add_view = AddSubscriptionView(bot, interaction.guild_id, locale, is_premium)
-        await interaction.response.edit_message(view=add_view)
+        await interaction.edit_original_response(view=add_view)
 
     async def on_manage_select(self, interaction: discord.Interaction):
         if not await _check_perms(interaction):
@@ -450,13 +453,14 @@ class SocialNotificationsConfigView(BaseView):
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
         key = interaction.data['values'][0]
+        await safe_defer(interaction, thinking=False)  # a DB read follows
         subs = await bot.db.list_social_subscriptions(interaction.guild_id)
         sub = next((s for s in subs if _sub_key(s) == key), None)
         if not sub:
             await _render_main(interaction)
             return
         manage_view = ManageSubscriptionView(bot, interaction.guild_id, locale, sub)
-        await interaction.response.edit_message(view=manage_view)
+        await interaction.edit_original_response(view=manage_view)
 
     async def on_back(self, interaction: discord.Interaction):
         if not await _check_perms(interaction):
@@ -925,18 +929,20 @@ class ManageSubscriptionView(BaseView):
         if not await _check_perms(interaction):
             return
         values = interaction.data.get('values')
+        await safe_defer(interaction, thinking=False)  # the write below is a round-trip
         if values:
             await self._persist(channel_id=int(values[0]))
         self._build_view()
-        await interaction.response.edit_message(view=self)
+        await interaction.edit_original_response(view=self)
 
     async def on_role_select(self, interaction: discord.Interaction):
         if not await _check_perms(interaction):
             return
         role_ids = [int(r) for r in interaction.data.get('values', [])]
+        await safe_defer(interaction, thinking=False)  # the write below is a round-trip
         await self._persist(mention_role_ids=role_ids)
         self._build_view()
-        await interaction.response.edit_message(view=self)
+        await interaction.edit_original_response(view=self)
 
     async def on_edit_message(self, interaction: discord.Interaction):
         if not await _check_perms(interaction):
@@ -952,19 +958,21 @@ class ManageSubscriptionView(BaseView):
 
     async def _on_message_edited(self, interaction: discord.Interaction, message: str,
                                  color: Optional[int], show_avatar: bool, show_media: bool):
+        await safe_defer(interaction, thinking=False)  # the write below is a round-trip
         await self._persist(
             message=message, embed_color=color,
             show_avatar=show_avatar, show_media=show_media,
         )
         self._build_view()
-        await interaction.response.edit_message(view=self)
+        await interaction.edit_original_response(view=self)
 
     async def on_toggle(self, interaction: discord.Interaction):
         if not await _check_perms(interaction):
             return
+        await safe_defer(interaction, thinking=False)  # the write below is a round-trip
         await self._persist(enabled=not self.sub.get('enabled', True))
         self._build_view()
-        await interaction.response.edit_message(view=self)
+        await interaction.edit_original_response(view=self)
 
     async def on_remove(self, interaction: discord.Interaction):
         if not await _check_perms(interaction):
