@@ -175,6 +175,21 @@ def format_date(value: Any) -> Optional[str]:
     return parsed.astimezone(timezone.utc).strftime("%Y-%m-%d")
 
 
+def format_relative(value: Any) -> Optional[str]:
+    """A Discord relative timestamp (``<t:1756…:R>`` → "in a month").
+
+    It sits *next to* the ISO date, never instead of it: the exact date is what
+    a customer matches against their bank statement, and "in a month" is what
+    tells them at a glance whether a charge is imminent. Discord renders it in
+    the reader's own timezone and language, which is the one part of this
+    English-only receipt that localizes itself for free.
+    """
+    parsed = parse_timestamp(value)
+    if parsed is None:
+        return None
+    return f"<t:{int(parsed.timestamp())}:R>"
+
+
 # --------------------------------------------------------------------------- #
 # Service
 # --------------------------------------------------------------------------- #
@@ -271,6 +286,10 @@ class InvoiceNotifier:
                                invoice.get("currency"), locale=locale)
         paid_at = format_date(invoice.get("paid_at"))
         period_end = format_date(invoice.get("period_end"))
+        # The relative half lives outside the backticks — a `<t:…:R>` inside a
+        # code span renders as its own source text.
+        paid_at_rel = format_relative(invoice.get("paid_at"))
+        period_end_rel = format_relative(invoice.get("period_end"))
 
         sections = []
         number = invoice.get("number")
@@ -286,7 +305,7 @@ class InvoiceNotifier:
         if paid_at:
             sections.append({
                 "title": t("commands.subscription.invoice.field_date", locale=locale),
-                "body": "`{paid_at}`",
+                "body": "`{paid_at}` ({paid_at_rel})",
             })
         if period_end:
             # On a trial this date is the end of the trial and the first
@@ -296,7 +315,7 @@ class InvoiceNotifier:
                      else "field_next_renewal")
             sections.append({
                 "title": t(f"commands.subscription.invoice.{label}", locale=locale),
-                "body": "`{period_end}`",
+                "body": "`{period_end}` ({period_end_rel})",
             })
 
         links = []
@@ -334,6 +353,8 @@ class InvoiceNotifier:
             "number": number or "—",
             "paid_at": paid_at or "—",
             "period_end": period_end or "—",
+            "paid_at_rel": paid_at_rel or "—",
+            "period_end_rel": period_end_rel or "—",
         }
         return content, variables
 

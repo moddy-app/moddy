@@ -20,7 +20,7 @@
         },
         "body": {
           "paid": "This is your receipt for the **{tier}** Moddy Max subscription. A payment of **{amount}** has been processed successfully. No action is required on your part.",
-          "trial": "Your **{tier}** Moddy Max free trial is now active. **No amount has been charged.** The invoice below is issued at **{amount}** for your records.\nYour trial ends on **{period_end}**, the date on which the first payment will be taken. You may cancel at any time before that date at no cost.",
+          "trial": "Your **{tier}** Moddy Max free trial is now active. **No amount has been charged.** The invoice below is issued at **{amount}** for your records.\nYour trial ends on **{period_end}** ({period_end_rel}), the date on which the first payment will be taken. You may cancel at any time before that date at no cost.",
           "free": "**No amount has been charged** for the current period of your **{tier}** Moddy Max subscription. The corresponding invoice, issued at **{amount}**, is available below."
         },
         "field_number": "Invoice number",

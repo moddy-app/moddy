@@ -20,7 +20,7 @@
         },
         "body": {
           "paid": "Este es el recibo de su suscripción Moddy Max **{tier}**. Se ha procesado correctamente un pago de **{amount}**. No es necesaria ninguna acción por su parte.",
-          "trial": "Su prueba gratuita de Moddy Max **{tier}** ya está activa. **No se ha cobrado ningún importe.** La factura siguiente se emite por **{amount}** para su archivo.\nSu prueba finaliza el **{period_end}**, fecha en la que se realizará el primer cobro. Puede cancelar sin coste alguno en cualquier momento antes de esa fecha.",
+          "trial": "Su prueba gratuita de Moddy Max **{tier}** ya está activa. **No se ha cobrado ningún importe.** La factura siguiente se emite por **{amount}** para su archivo.\nSu prueba finaliza el **{period_end}** ({period_end_rel}), fecha en la que se realizará el primer cobro. Puede cancelar sin coste alguno en cualquier momento antes de esa fecha.",
           "free": "**No se ha cobrado ningún importe** por el periodo actual de su suscripción Moddy Max **{tier}**. La factura correspondiente, emitida por **{amount}**, está disponible a continuación."
         },
         "field_number": "Número de factura",

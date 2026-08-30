@@ -394,8 +394,12 @@ class NotificationContent:
         """The mail shape: a subject plus a plain-text body and the CTA links.
 
         Moddy does not send the mail itself — the backend does — so this is the
-        contract handed over, not an SMTP call. Discord custom emojis are
-        stripped: they render as literal ``<:name:id>`` outside Discord.
+        contract handed over, not an SMTP call. Discord custom emojis **and**
+        Discord timestamps are stripped: both render as their own source text
+        outside Discord (``<:name:id>``, ``<t:1756…:R>``). A timestamp is
+        dropped with the parentheses around it, since it is always written next
+        to the absolute date it qualifies — the mail keeps "2026-08-30", not
+        "2026-08-30 ()".
         """
         resolved = self.render(variables)
         blocks = [resolved.body]
@@ -406,8 +410,8 @@ class NotificationContent:
             blocks.append(resolved.footer)
         text = "\n\n".join(b for b in blocks if b)
         return {
-            "subject": strip_custom_emojis(resolved.title),
-            "text": strip_custom_emojis(text),
+            "subject": strip_discord_markup(resolved.title),
+            "text": strip_discord_markup(text),
             "links": resolved.links,
         }
 
@@ -421,7 +425,16 @@ class NotificationContent:
 
 _CUSTOM_EMOJI_RE = re.compile(r"<a?:[a-zA-Z0-9_]+:\d+>")
 
+#: ``<t:1756512400:R>`` and friends, with the parentheses and leading space they
+#: are written in ("2026-08-30 (<t:…:R>)"), so nothing empty is left behind.
+_TIMESTAMP_RE = re.compile(r"[ \t]*\(?<t:-?\d+(?::[tTdDfFR])?>\)?")
+
 
 def strip_custom_emojis(text: str) -> str:
     """Remove Discord custom emojis and collapse the space they leave."""
     return re.sub(r"[ \t]{2,}", " ", _CUSTOM_EMOJI_RE.sub("", text or "")).strip()
+
+
+def strip_discord_markup(text: str) -> str:
+    """Remove everything only Discord can render: custom emojis, timestamps."""
+    return strip_custom_emojis(_TIMESTAMP_RE.sub("", text or ""))

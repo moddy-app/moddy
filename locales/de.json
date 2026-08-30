@@ -20,7 +20,7 @@
         },
         "body": {
           "paid": "Dies ist Ihr Beleg für das Moddy Max Abonnement (**{tier}**). Eine Zahlung über **{amount}** wurde erfolgreich verarbeitet. Es ist keine Aktion Ihrerseits erforderlich.",
-          "trial": "Ihre kostenlose Testphase von Moddy Max (**{tier}**) ist jetzt aktiv. **Es wurde kein Betrag abgebucht.** Die nachstehende Rechnung wird über **{amount}** für Ihre Unterlagen ausgestellt.\nIhre Testphase endet am **{period_end}**, an diesem Datum wird die erste Zahlung abgebucht. Sie können bis dahin jederzeit kostenlos kündigen.",
+          "trial": "Ihre kostenlose Testphase von Moddy Max (**{tier}**) ist jetzt aktiv. **Es wurde kein Betrag abgebucht.** Die nachstehende Rechnung wird über **{amount}** für Ihre Unterlagen ausgestellt.\nIhre Testphase endet am **{period_end}** ({period_end_rel}), an diesem Datum wird die erste Zahlung abgebucht. Sie können bis dahin jederzeit kostenlos kündigen.",
           "free": "**Es wurde kein Betrag abgebucht** für den laufenden Zeitraum Ihres Moddy Max Abonnements (**{tier}**). Die zugehörige Rechnung über **{amount}** finden Sie unten."
         },
         "field_number": "Rechnungsnummer",

@@ -233,7 +233,7 @@ Bot action (`services/invoice_notifier.py`, `bot.invoices`):
 | `variant` | Meaning | What the DM says |
 |---|---|---|
 | `paid` | An amount was charged | "A payment of **€4.99** has been processed successfully" |
-| `trial` | 0 at the opening of the subscription — the **free trial** | "**No amount has been charged.** Your trial ends on **2026-09-29**, the date on which the first payment will be taken" |
+| `trial` | 0 at the opening of the subscription — the **free trial** | "**No amount has been charged.** Your trial ends on **2026-09-29** (in a month), the date on which the first payment will be taken" |
 | `free` | 0 on a later period (full discount, credit note) | "**No amount has been charged** for the current period" |
 
 The backend computes it (`invoices.variant_of`): `amount_paid > 0` → `paid`;
@@ -252,7 +252,7 @@ on which the first payment will be taken") and as its own field, labelled
 and the two must not contradict. There is no separate "trial end" field on the
 payload and none is needed — `period_end` **is** that date.
 
-##### Five rules the DM obeys
+##### Six rules the DM obeys
 
 1. **Amounts as reported, never recomputed.** `amount_paid` is the currency's
    smallest unit, except for the zero-decimal currencies
@@ -268,7 +268,15 @@ payload and none is needed — `period_end` **is** that date.
    (`SET NX`, TTL 7 days) is a second belt against a replayed event, on top of
    the backend's own de-duplication; Redis being unavailable costs a possible
    duplicate, never the DM.
-5. **It is a receipt, not a thank-you note.** Formal wording, Stripe's indigo
+5. **Every date is written twice.** The ISO date (`2026-08-30`) is what a
+   customer matches against a bank statement; a Discord relative timestamp
+   (`format_relative` → `<t:1788089200:R>`) sits in parentheses next to it and
+   says "in a month" at a glance, rendered in the reader's own timezone and
+   language — the one part of this English-only receipt that localizes itself.
+   It goes **outside** the backticks: a `<t:…:R>` inside a code span renders as
+   its own source text. `NotificationContent.to_email()` strips it, with its
+   parentheses, for the mail rendering of a stored row.
+6. **It is a receipt, not a thank-you note.** Formal wording, Stripe's indigo
    accent (`0x635BFF`), a document icon rather than the premium gem — nothing
    like the celebratory subscription lifecycle DMs, on purpose. A customer must
    be able to tell a receipt from a marketing message at a glance.

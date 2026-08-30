@@ -32,7 +32,7 @@ from notifications.models import SERVICES, NotificationSource, get_service
 from notifications.render import OFFICIAL_SERVICES, build_attribution_line, resolve_source_context
 from services.invoice_notifier import (
     INVOICE_LOCALE, ZERO_DECIMAL_CURRENCIES, InvoiceNotifier, format_amount,
-    format_date, parse_timestamp, variant_of,
+    format_date, format_relative, parse_timestamp, variant_of,
 )
 
 PAID = {
@@ -135,6 +135,31 @@ def test_a_naive_timestamp_is_read_as_utc():
 @pytest.mark.parametrize("value", [None, "", "not-a-date"])
 def test_an_unusable_date_is_none_not_a_crash(value):
     assert format_date(value) is None
+    assert format_relative(value) is None
+
+
+def test_a_date_carries_a_relative_timestamp_beside_it():
+    """The ISO date matches a bank statement; the relative one says "soon"."""
+    assert format_relative("2026-08-30T11:26:40+00:00") == "<t:1788089200:R>"
+
+
+def test_the_relative_timestamp_sits_outside_the_backticks():
+    """`<t:…:R>` inside a code span renders as its own source text."""
+    content, variables = _content(PAID)
+    bodies = [s["body"] for s in content.sections]
+    assert "`{paid_at}` ({paid_at_rel})" in bodies
+    assert "`{period_end}` ({period_end_rel})" in bodies
+    rendered = content.render(variables)
+    assert "`2026-08-30` (<t:1788089200:R>)" in [s["body"] for s in rendered.sections]
+
+
+def test_the_mail_rendering_drops_the_timestamp_and_its_parentheses():
+    """Outside Discord `<t:…:R>` is literal text; "2026-08-30 ()" is worse still."""
+    content, variables = _content(PAID)
+    text = content.to_email(variables)["text"]
+    assert "<t:" not in text
+    assert "()" not in text
+    assert "2026-08-30" in text
 
 
 # --------------------------------------------------------------------------- #
