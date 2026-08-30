@@ -404,8 +404,12 @@ class BaseModal(ui.Modal):
 class ErrorView(ui.LayoutView):
     """Error display view using Components V2"""
 
-    def __init__(self, error_code: str):
+    def __init__(self, error_code: Optional[str] = None):
         super().__init__(timeout=None)
+        #: ``None`` when the tracker cog is unavailable (a reload, a failed
+        #: startup) and no code could be minted. The card is still shown —
+        #: telling the user nothing is never an option — it just cannot
+        #: offer a reference to quote to support.
         self.error_code = error_code
         self.build_view()
 
@@ -414,14 +418,22 @@ class ErrorView(ui.LayoutView):
         container.add_item(ui.TextDisplay(
             "### <:FrameBug:1519805334988787843> Something went wrong..."
         ))
-        container.add_item(ui.TextDisplay(
-            f"**Error Code:** ``{self.error_code}``"
-        ))
+        if self.error_code:
+            container.add_item(ui.TextDisplay(
+                f"**Error Code:** ``{self.error_code}``"
+            ))
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-        container.add_item(ui.TextDisplay(
-            "-# This error has been automatically logged and will be reviewed by our team.\n"
-            "-# If the problem persists, please contact support with this error code."
-        ))
+        if self.error_code:
+            container.add_item(ui.TextDisplay(
+                "-# This error has been automatically logged and will be reviewed by our team.\n"
+                "-# If the problem persists, please contact support with this error code."
+            ))
+        else:
+            container.add_item(ui.TextDisplay(
+                "-# The error could not be assigned a code — our tracking system is "
+                "unavailable right now.\n"
+                "-# Please try again in a moment, and contact support if it keeps happening."
+            ))
         self.add_item(container)
 
         btn_row = ui.ActionRow()
@@ -1038,9 +1050,11 @@ async def report_component_error(
         channel=interaction.channel,
         error_type="Component Error",
     )
-    view = ErrorView(error_code) if error_code else None
-    if view is not None:
-        await deliver(interaction, view=view, ephemeral=True)
+    # ``error_code`` is ``None`` when the tracker cog is not loaded. The card
+    # goes out regardless: falling silent here would hand the user back to
+    # Discord's own "the application did not respond", which is the exact
+    # outcome this pipeline exists to prevent.
+    await deliver(interaction, view=ErrorView(error_code), ephemeral=True)
 
 
 async def setup(bot):
