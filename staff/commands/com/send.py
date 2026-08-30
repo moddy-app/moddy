@@ -200,8 +200,8 @@ async def _handle_composed(interaction: discord.Interaction, ctx, *, target: str
     """
     locale = ctx.locale
     # One defer for every branch: the audience lookup and the sends that follow
-    # all outlast the window, and a deferred interaction still answers through
-    # `followup` — the confirmation prompt included.
+    # all outlast the 3-second window, and a deferred interaction still answers
+    # — through `followup`, or by editing the placeholder it just put up.
     await safe_defer(interaction, ephemeral=True, thinking=True)
 
     if audience is None:
@@ -255,7 +255,9 @@ async def _handle_composed(interaction: discord.Interaction, ctx, *, target: str
             i, ctx, target=target, recipient=recipient, audience=audience,
             content=content, source=source, dm_owner=dm_owner, locale=locale),
     )
-    await interaction.followup.send(view=confirm, ephemeral=True)
+    # Edit, not followup: the defer above already put a placeholder in front of
+    # the sender, and the confirmation belongs in it rather than beside it.
+    await interaction.edit_original_response(view=confirm)
 
 
 def _single_result(result, *, name: str, locale: str) -> BaseView:

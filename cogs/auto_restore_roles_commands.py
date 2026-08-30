@@ -209,7 +209,7 @@ class AutoRestoreRolesCommands(commands.Cog):
             try:
                 user = await self.bot.fetch_user(user_id)
                 user_display = f"{user.mention} (`{user.id}`)"
-            except:
+            except discord.HTTPException:
                 user_display = f"`{username}` (`{user_id}`)"
 
             field_value = t(

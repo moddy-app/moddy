@@ -50,7 +50,7 @@ async def safe_defer(
     interaction: discord.Interaction,
     *,
     ephemeral: bool = True,
-    thinking: bool = True,
+    thinking: Optional[bool] = None,
 ) -> bool:
     """Defer ``interaction`` without ever raising.
 
@@ -60,9 +60,19 @@ async def safe_defer(
     Call this as the *first* awaited statement of any handler that may take
     more than a moment — a permission lookup, an audit-log write and an API
     call are each enough to burn the 3-second budget on a cold connection.
+
+    ``thinking`` defaults to what the interaction type actually wants. A
+    slash command has no message yet, so it needs the "thinking…" placeholder
+    or the user sees nothing. A component callback re-rendering its own panel
+    in place must NOT get one — ``thinking=False`` there means "acknowledge
+    silently, the message is about to be edited". Passing the wrong one
+    leaves a stray placeholder next to the panel, so let this decide unless
+    you have a reason not to.
     """
     if interaction.response.is_done():
         return True
+    if thinking is None:
+        thinking = interaction.type is discord.InteractionType.application_command
     try:
         await interaction.response.defer(ephemeral=ephemeral, thinking=thinking)
         return True

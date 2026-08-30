@@ -15,8 +15,6 @@ from staff.framework import badges
 from utils import emojis
 from utils.i18n import t
 
-logger = logging.getLogger("moddy.staff.team.subscription")
-
 
 @staff_command
 class SubscriptionCommand(StaffCommand):
@@ -54,8 +52,16 @@ class SubscriptionCommand(StaffCommand):
             sub = await get_subscription(bot, user_id)
             servers = await bot.db.get_subscription_servers(user_id) if bot.db else []
         except Exception as exc:
-            logger.error("subscription fetch error for %s: %s", user_id, exc, exc_info=True)
-            await ctx.send(view=design.error(
+            # Any failure here is unexpected (Redis, backend, DB): give it an
+            # error code so the reader can quote it, and keep the specific
+            # wording only as the fallback when no code could be generated.
+            from cogs.error_handler import ErrorView, report_error
+            error_code = await report_error(
+                bot, exc, source="Staff:t.subscription", user=ctx.author,
+                guild=ctx.guild, channel=ctx.channel,
+                error_type="Staff Command Error",
+            )
+            await ctx.send(view=ErrorView(error_code) if error_code else design.error(
                 t("staff.common.error.title", locale=locale),
                 t("staff.team.subscription.fetch_fail", locale=locale),
             ))

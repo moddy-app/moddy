@@ -1,10 +1,13 @@
 """`/dev error` — look up a logged error by its code (cache + database)."""
 
+import logging
 from datetime import datetime
 
 from staff.framework import StaffCommand, SlashOption, staff_command, design, CommandType
 from utils import emojis
 from utils.i18n import t
+
+logger = logging.getLogger("moddy.staff.dev.error")
 
 
 @staff_command
@@ -36,7 +39,10 @@ class ErrorCommand(StaffCommand):
         if bot.db:
             try:
                 db_error = await bot.db.get_error(code)
-            except Exception:
+            except Exception as exc:
+                # Falling through to the cache is right, but "not found" must
+                # not be the only trace of a database that refused to answer.
+                logger.warning("Error lookup failed for %s: %s", code, exc)
                 db_error = None
 
         if not cached and not db_error:

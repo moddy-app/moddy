@@ -76,6 +76,7 @@ from utils.emojis import (
     TICKET_PERMISSIONS as PERM_EMOJI, SETTINGS, WARNING,
 )
 from utils.i18n import i18n, t
+from utils.interaction_response import safe_defer
 
 logger = logging.getLogger('moddy.modules.tickets_category_config')
 
@@ -104,6 +105,7 @@ async def render_category(interaction: discord.Interaction, panel_id: str,
     """(Re)build and show one category's editor, falling back up the tree."""
     bot = interaction.client
     locale = i18n.get_user_locale(interaction)
+    await safe_defer(interaction, thinking=False)  # a config read follows
     config = await load_config(bot, interaction.guild_id)
     panel, category = locate_category(config, panel_id, category_id)
     if not category:
@@ -122,6 +124,7 @@ async def render_permissions(interaction: discord.Interaction, panel_id: str,
     """(Re)build and show the permissions screen of one category."""
     bot = interaction.client
     locale = i18n.get_user_locale(interaction)
+    await safe_defer(interaction, thinking=False)  # a config read follows
     config = await load_config(bot, interaction.guild_id)
     panel, category = locate_category(config, panel_id, category_id)
     if not category:

@@ -249,7 +249,7 @@ class LoggingSystem(commands.Cog):
 
         try:
             await channel.send(embed=embed)
-        except:
+        except discord.HTTPException:
             pass
 
     async def log_critical(self, title: str, description: str, ping_dev: bool = True):
@@ -274,7 +274,7 @@ class LoggingSystem(commands.Cog):
 
         try:
             await channel.send(content=content, embed=embed)
-        except:
+        except discord.HTTPException:
             pass
 
 

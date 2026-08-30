@@ -310,8 +310,10 @@ class ViewMessageModal(BaseModal):
         self.add_item(self.id_input)
 
     async def on_submit(self, interaction: discord.Interaction):
-        # The lookup below is a database round-trip: acknowledge first.
-        await safe_defer(interaction, ephemeral=True)
+        # The lookup below is a database round-trip: acknowledge first. Silent
+        # (thinking=False) because the success path only edits the library card
+        # in place and sends nothing back.
+        await safe_defer(interaction, ephemeral=True, thinking=False)
 
         # Gestion de l'erreur attendue (ID invalide)
         try:
@@ -653,23 +655,32 @@ class SavedMessagesDetailButton(ui.DynamicItem[ui.Button], template=_CID_DETAIL_
         channel_id = interaction.channel_id
         message_id = interaction.message.id if interaction.message else None
 
+        if self.action == "edit_note":
+            # A modal cannot follow a defer, so this branch stays un-acknowledged
+            # and does the one lookup the form needs to be prefilled.
+            detail_msg = await bot.db.get_saved_message(self.saved_id, owner_id)
+            if not detail_msg:
+                return
+            await interaction.response.send_modal(
+                EditNoteModal(locale, bot, detail_msg, owner_id,
+                              card_channel_id=channel_id, card_message_id=message_id, page=self.page)
+            )
+            return
+
+        # Every other branch reads the database before it can answer: acknowledge
+        # silently first, then edit the card or follow up.
+        await safe_defer(interaction, ephemeral=False, thinking=False)
+
         if self.action == "back":
             offset = self.page * 10
             messages = await bot.db.get_saved_messages(owner_id, limit=10, offset=offset)
             total_count = await bot.db.count_saved_messages(owner_id)
             view = SavedMessagesLibraryView(bot, owner_id, messages, locale, page=self.page, total_count=total_count)
-            await interaction.response.edit_message(view=view)
+            await interaction.edit_original_response(view=view)
             return
 
         detail_msg = await bot.db.get_saved_message(self.saved_id, owner_id)
         if not detail_msg:
-            return
-
-        if self.action == "edit_note":
-            await interaction.response.send_modal(
-                EditNoteModal(locale, bot, detail_msg, owner_id,
-                              card_channel_id=channel_id, card_message_id=message_id, page=self.page)
-            )
             return
 
         if self.action == "export":
@@ -679,7 +690,7 @@ class SavedMessagesDetailButton(ui.DynamicItem[ui.Button], template=_CID_DETAIL_
                     io.BytesIO(json_data.encode('utf-8')),
                     filename=f"message_{detail_msg['id']}_raw_data.json"
                 )
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     content=t("commands.saved_messages.success.exported", locale=locale),
                     file=file,
                     ephemeral=True,
@@ -689,7 +700,7 @@ class SavedMessagesDetailButton(ui.DynamicItem[ui.Button], template=_CID_DETAIL_
         if self.action == "delete":
             success = await bot.db.delete_saved_message(detail_msg['id'], owner_id)
             if success:
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     t("commands.saved_messages.success.deleted", locale=locale),
                     ephemeral=True,
                 )
@@ -699,7 +710,7 @@ class SavedMessagesDetailButton(ui.DynamicItem[ui.Button], template=_CID_DETAIL_
                     show_detail=False, page=self.page,
                 )
             else:
-                await interaction.response.send_message(t("common.error", locale=locale), ephemeral=True)
+                await interaction.followup.send(t("common.error", locale=locale), ephemeral=True)
 
 
 class SavedMessages(commands.Cog):
@@ -750,10 +761,14 @@ class SavedMessages(commands.Cog):
             try:
                 user_pref = await self.bot.db.get_attribute('user', interaction.user.id, 'DEFAULT_INCOGNITO')
                 ephemeral = True if user_pref is None else user_pref
-            except:
+            except Exception:
+                # Visibility preference is a nicety: default to private.
                 ephemeral = True
         else:
             ephemeral = incognito if incognito is not None else True
+
+        # Listing the library is two database round-trips: acknowledge first.
+        await safe_defer(interaction, ephemeral=ephemeral)
 
         # Get saved messages
         messages = await self.bot.db.get_saved_messages(interaction.user.id, limit=10, offset=0)
@@ -769,7 +784,7 @@ class SavedMessages(commands.Cog):
             total_count=total_count,
         )
 
-        await interaction.response.send_message(view=view, ephemeral=ephemeral)
+        await interaction.followup.send(view=view, ephemeral=ephemeral)
 
     async def cog_unload(self):
         """Remove context menu when cog is unloaded"""

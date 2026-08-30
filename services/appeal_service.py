@@ -214,16 +214,22 @@ class AppealService:
             await self._ephemeral(interaction, "invite_failed", error=True)
             return
         from utils.components_v2 import create_info_message
-        try:
-            await interaction.response.send_message(
-                view=create_info_message(
-                    t("modules.automod_ai.appeal.invite.title", locale=locale),
-                    t("modules.automod_ai.appeal.invite.body", locale=locale, url=url, guild=guild.name),
-                ),
-                ephemeral=True,
-            )
-        except discord.HTTPException:
-            pass
+        from utils.interaction_response import deliver
+
+        # Acknowledgement-agnostic on purpose: the caller may have deferred
+        # (looking the appeal up and creating an invite is a REST round trip,
+        # easily past the 3-second window), and `response.send_message` would
+        # then raise `InteractionResponded` — which is not an `HTTPException`,
+        # so the reviewer would get nothing at all. `deliver` picks whichever
+        # transport is still valid.
+        await deliver(
+            interaction,
+            view=create_info_message(
+                t("modules.automod_ai.appeal.invite.title", locale=locale),
+                t("modules.automod_ai.appeal.invite.body", locale=locale, url=url, guild=guild.name),
+            ),
+            ephemeral=True,
+        )
 
     async def _make_invite(self, guild: discord.Guild) -> Optional[str]:
         from utils.invites import create_guild_invite

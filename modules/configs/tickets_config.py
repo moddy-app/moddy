@@ -54,6 +54,7 @@ from utils.emojis import (
     ADD, BACK, INFO, PREMIUM, TICKET, TICKET_PANEL, WARNING,
 )
 from utils.i18n import i18n, t
+from utils.interaction_response import deliver, safe_defer
 
 logger = logging.getLogger('moddy.modules.tickets_config')
 
@@ -116,14 +117,14 @@ async def report_save_error(interaction: discord.Interaction, error: Optional[st
     view = create_error_message(
         t('modules.tickets.errors.title', locale=locale),
         t('modules.config.save.error', locale=locale, error=error or ''))
-    if interaction.response.is_done():
-        await interaction.followup.send(view=view, ephemeral=True)
-    else:
-        await interaction.response.send_message(view=view, ephemeral=True)
+    await deliver(interaction, view=view, ephemeral=True)
 
 
 async def render_root(interaction: discord.Interaction) -> None:
     """(Re)build and show the panel list."""
+    # Every screen is rebuilt from the stored config: acknowledge before that
+    # read, or a cold DB burns the 3s window and the click looks dead.
+    await safe_defer(interaction, thinking=False)
     view = await TicketsConfigView.create(
         interaction.client, interaction.guild_id, interaction.user.id,
         i18n.get_user_locale(interaction))
@@ -136,6 +137,7 @@ async def render_panel(interaction: discord.Interaction, panel_id: str) -> None:
 
     bot = interaction.client
     locale = i18n.get_user_locale(interaction)
+    await safe_defer(interaction, thinking=False)
     config = await load_config(bot, interaction.guild_id)
     panel = find_panel(config, panel_id)
     if not panel:
@@ -440,10 +442,7 @@ class TicketsConfigView(BaseView):
                               url=PREMIUM_URL))
         view = create_error_message(
             t('modules.tickets.errors.title', locale=locale), description)
-        if interaction.response.is_done():
-            await interaction.followup.send(view=view, ephemeral=True)
-        else:
-            await interaction.response.send_message(view=view, ephemeral=True)
+        await deliver(interaction, view=view, ephemeral=True)
 
     async def on_manage(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):

@@ -116,7 +116,7 @@ class InterServerCommands(commands.GroupCog, name="interserver", description="Ma
         try:
             author = await self.bot.fetch_user(msg_data['author_id'])
             author_mention = f"{author.mention} (`{author.id}`)"
-        except:
+        except discord.HTTPException:
             author_mention = f"Unknown User (`{msg_data['author_id']}`)"
 
         # Crée le rapport avec Components V2
@@ -293,7 +293,7 @@ class InterServerCommands(commands.GroupCog, name="interserver", description="Ma
         try:
             author = await self.bot.fetch_user(msg_data['author_id'])
             author_info = f"{author.mention} (`{author.id}`)"
-        except:
+        except discord.HTTPException:
             author_info = f"Unknown User (`{msg_data['author_id']}`)"
 
         # Récupère le serveur d'origine

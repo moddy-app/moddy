@@ -271,10 +271,13 @@ class AltGuardConfigView(BaseView):
 
     async def _set_and_refresh(self, interaction: discord.Interaction,
                                key: str, value: Any) -> None:
+        # Reads the stored config twice (fresh copy + rebuild): acknowledge
+        # before the first round-trip.
+        await safe_defer(interaction, thinking=False)
         working_config = await self._fresh_working_config(interaction)
         working_config[key] = value
         view = await self._rebuild(interaction, working_config, has_changes=True)
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
 
     @staticmethod
     def _first_id(interaction: discord.Interaction) -> Optional[int]:

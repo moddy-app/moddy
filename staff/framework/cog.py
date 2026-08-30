@@ -135,7 +135,12 @@ class StaffCommandsRouter(StaffCommandsCog):
 
         try:
             options = command.parse_message(raw_args)
-        except Exception:
+        except Exception as exc:
+            # Empty options make the command answer with its usage panel, which
+            # is the right thing for a malformed argument — but a parser that
+            # raises on a valid one would otherwise never be noticed.
+            logger.warning("parse_message failed for %s.%s (%r): %s",
+                           command.command_type.value, command.name, raw_args, exc)
             options = {}
         ctx = StaffContext.from_message(self.bot, command, message, options, raw_args, cog=self)
         await self._invoke(command, ctx)

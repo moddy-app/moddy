@@ -31,9 +31,9 @@ import discord
 from discord import ui
 from discord.ext import commands
 
-import traceback
 
-from cogs.error_handler import BaseView, ErrorView, capture_error_to_sentry
+from cogs.error_handler import BaseView, ErrorView, report_error
+from utils.interaction_response import deliver, safe_defer
 from utils.emojis import (
     WARNING, ERROR, DONE, INFO, DELETE, LOGOUT,
 )
@@ -52,62 +52,34 @@ async def _route_error(
     error: Exception,
     context: str,
 ) -> None:
-    """Route an unexpected exception to the centralized ErrorTracker cog."""
-    compact_tb = "".join(
-        traceback.format_exception(type(error), error, error.__traceback__)
-    ).replace("\n", " ⮐ ")
-    logger.error(f"Unexpected error in TokenDetector/{context}: {compact_tb}")
+    """Route an unexpected exception to the centralized error pipeline.
 
-    bot = interaction.client
-    error_tracker = bot.get_cog("ErrorTracker") if bot else None
+    ``report_error`` does the whole job (traceback log, Sentry, in-memory and
+    database storage, internal Discord log) and hands back the error code, and
+    ``deliver`` gets the card in front of the user whatever state the
+    interaction is in — including a channel message when its token has
+    already expired.
+    """
+    error_code = await report_error(
+        interaction.client,
+        error,
+        source=f"TokenDetector:{context}",
+        user=interaction.user,
+        guild=interaction.guild,
+        channel=interaction.channel,
+        error_type="DynamicItem Error",
+    )
 
-    if error_tracker:
-        error_code = error_tracker.generate_error_code(error)
-        error_details = error_tracker.format_error_details(error)
-        error_details.update({
-            "command": f"TokenDetector:{context}",
-            "user": f"{interaction.user} ({interaction.user.id})",
-            "guild": (
-                f"{interaction.guild.name} ({interaction.guild.id})"
-                if interaction.guild else "DM"
-            ),
-            "channel": (
-                f"#{interaction.channel.name}"
-                if hasattr(interaction.channel, "name") else "DM"
-            ),
-        })
-
-        sentry_id = capture_error_to_sentry(error, {
-            "error_type": "DynamicItem Error",
-            "error_code": error_code,
-            "context": context,
-            "user_id": interaction.user.id if interaction.user else None,
-            "guild_id": interaction.guild.id if interaction.guild else None,
-        })
-        if sentry_id:
-            error_details["sentry_event_id"] = sentry_id
-
-        error_tracker.store_error(error_code, error_details)
-        await error_tracker.store_error_db(error_code, error_details)
-        await error_tracker.send_error_log(error_code, error_details, is_fatal=False)
-
-        error_view = ErrorView(error_code)
-        try:
-            if interaction.response.is_done():
-                await interaction.followup.send(view=error_view, ephemeral=True)
-            else:
-                await interaction.response.send_message(view=error_view, ephemeral=True)
-        except Exception:
-            pass
+    if error_code:
+        await deliver(interaction, view=ErrorView(error_code), ephemeral=True)
     else:
-        try:
-            msg = "An unexpected error occurred and has been logged."
-            if interaction.response.is_done():
-                await interaction.followup.send(msg, ephemeral=True)
-            else:
-                await interaction.response.send_message(msg, ephemeral=True)
-        except Exception:
-            pass
+        # No ErrorTracker cog loaded: there is no code to show, but the user
+        # must still learn that the click failed.
+        await deliver(
+            interaction,
+            content="An unexpected error occurred and has been logged.",
+            ephemeral=True,
+        )
 
 
 class _ErrorRoutingMixin:
@@ -452,9 +424,11 @@ class UserDetailsButton(
         return cls(match.group("ck"), int(match.group("mid")), int(match.group("cid")))
 
     async def callback(self, interaction: discord.Interaction) -> None:
+        # The alert lookup falls back to the database: acknowledge first.
+        await safe_defer(interaction, ephemeral=True)
         data = await peek_alert_with_db_fallback(self.ck, interaction.client)
         if data is None:
-            await interaction.response.send_message(view=_expired_view(), ephemeral=True)
+            await interaction.followup.send(view=_expired_view(), ephemeral=True)
             return
 
         ts = data.get("timestamp", 0)
@@ -473,7 +447,7 @@ class UserDetailsButton(
         c.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
         c.add_item(ui.TextDisplay(body))
         view.add_item(c)
-        await interaction.response.send_message(view=view, ephemeral=True)
+        await interaction.followup.send(view=view, ephemeral=True)
 
 
 # =============================================================================
@@ -504,12 +478,14 @@ class UserInvalidateButton(
         return cls(match.group("ck"))
 
     async def callback(self, interaction: discord.Interaction) -> None:
+        # The alert lookup falls back to the database: acknowledge first.
+        await safe_defer(interaction, ephemeral=True)
         data = await peek_alert_with_db_fallback(self.ck, interaction.client)
         if data is None:
-            await interaction.response.send_message(view=_expired_view(), ephemeral=True)
+            await interaction.followup.send(view=_expired_view(), ephemeral=True)
             return
         if data.get("state", {}).get("invalidated"):
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 view=_already_done_view("token invalidation"), ephemeral=True
             )
             return
@@ -530,7 +506,7 @@ class UserInvalidateButton(
         row.add_item(UserCancelButton())
         view.add_item(row)
 
-        await interaction.response.send_message(view=view, ephemeral=True)
+        await interaction.followup.send(view=view, ephemeral=True)
 
 
 # =============================================================================
@@ -560,7 +536,7 @@ class UserConfirmInvalidateButton(
         return cls(match.group("ck"))
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        await interaction.response.defer(ephemeral=True)
+        await safe_defer(interaction, ephemeral=True)
         bot = interaction.client
         data = await peek_alert_with_db_fallback(self.ck, bot)
         if data is None:
@@ -691,7 +667,7 @@ class UserDeleteMsgButton(
         return cls(match.group("ck"), int(match.group("mid")), int(match.group("cid")))
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        await interaction.response.defer(ephemeral=True)
+        await safe_defer(interaction, ephemeral=True)
         bot = interaction.client
         data = await peek_alert_with_db_fallback(self.ck, bot)
         if data is None:
@@ -808,9 +784,11 @@ class BotDetailsButton(
         return cls(match.group("ck"), int(match.group("mid")), int(match.group("cid")))
 
     async def callback(self, interaction: discord.Interaction) -> None:
+        # The alert lookup falls back to the database: acknowledge first.
+        await safe_defer(interaction, ephemeral=True)
         data = await peek_alert_with_db_fallback(self.ck, interaction.client)
         if data is None:
-            await interaction.response.send_message(view=_expired_view(), ephemeral=True)
+            await interaction.followup.send(view=_expired_view(), ephemeral=True)
             return
 
         ts = data.get("timestamp", 0)
@@ -829,7 +807,7 @@ class BotDetailsButton(
         c.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
         c.add_item(ui.TextDisplay(body))
         view.add_item(c)
-        await interaction.response.send_message(view=view, ephemeral=True)
+        await interaction.followup.send(view=view, ephemeral=True)
 
 
 # =============================================================================
@@ -860,7 +838,7 @@ class BotDeleteMsgButton(
         return cls(match.group("ck"), int(match.group("mid")), int(match.group("cid")))
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        await interaction.response.defer(ephemeral=True)
+        await safe_defer(interaction, ephemeral=True)
         bot = interaction.client
         data = await peek_alert_with_db_fallback(self.ck, bot)
         if data is None:
