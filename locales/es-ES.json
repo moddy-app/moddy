@@ -3657,6 +3657,13 @@
         "title": "Caché de suscripción actualizada",
         "done": "Se ha borrado la caché de suscripción de {id}. La siguiente lectura obtendrá datos actualizados de la base de datos."
       },
+      "stripe_create": {
+        "title": "Cuenta de Stripe solicitada",
+        "done": "Solicitud de creación de cliente Stripe enviada para {id} con el correo {email}.",
+        "footer": "Solicitud enviada al backend — idempotente, sin confirmación esperada.",
+        "no_redis": "Redis no está disponible, no se pudo enviar la solicitud.",
+        "publish_failed": "Error al enviar la solicitud: {error}"
+      },
       "redirect": {
         "modal_add": "Añadir redirección",
         "modal_edit": "Editar redirección",

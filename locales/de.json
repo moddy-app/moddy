@@ -3657,6 +3657,13 @@
         "title": "Abonnement-Cache aktualisiert",
         "done": "Der Abonnement-Cache für {id} wurde geleert. Beim nächsten Lesen werden aktuelle Daten aus der Datenbank abgerufen."
       },
+      "stripe_create": {
+        "title": "Stripe-Konto angefordert",
+        "done": "Anfrage zur Erstellung eines Stripe-Kunden für {id} mit der E-Mail {email} gesendet.",
+        "footer": "Anfrage an das Backend gesendet — idempotent, keine Bestätigung erwartet.",
+        "no_redis": "Redis ist nicht verfügbar, die Anfrage konnte nicht gesendet werden.",
+        "publish_failed": "Anfrage konnte nicht gesendet werden: {error}"
+      },
       "redirect": {
         "modal_add": "Weiterleitung hinzufügen",
         "modal_edit": "Weiterleitung bearbeiten",

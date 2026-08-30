@@ -3657,6 +3657,13 @@
         "title": "Cache de Assinatura Atualizado",
         "done": "O cache de assinatura de {id} foi limpo. A próxima leitura buscará dados atualizados do banco de dados."
       },
+      "stripe_create": {
+        "title": "Conta Stripe Solicitada",
+        "done": "Solicitação de criação de cliente Stripe enviada para {id} com o e-mail {email}.",
+        "footer": "Solicitação enviada ao backend — idempotente, sem confirmação esperada.",
+        "no_redis": "O Redis está indisponível, não foi possível enviar a solicitação.",
+        "publish_failed": "Falha ao enviar a solicitação: {error}"
+      },
       "redirect": {
         "modal_add": "Adicionar Redirecionamento",
         "modal_edit": "Editar Redirecionamento",

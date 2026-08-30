@@ -3657,6 +3657,13 @@
         "title": "Subscription Cache Refreshed",
         "done": "Cleared the subscription cache for {id}. The next read will fetch fresh data from the database."
       },
+      "stripe_create": {
+        "title": "Stripe Account Requested",
+        "done": "Stripe customer creation request sent for {id} with email {email}.",
+        "footer": "Request sent to the backend — idempotent, no acknowledgement expected.",
+        "no_redis": "Redis is unavailable, the request could not be sent.",
+        "publish_failed": "Failed to publish the request: {error}"
+      },
       "redirect": {
         "modal_add": "Add Redirect",
         "modal_edit": "Edit Redirect",

@@ -3656,6 +3656,13 @@
         "title": "Cache d'abonnement rafraîchi",
         "done": "Cache d'abonnement vidé pour {id}. La prochaine lecture récupérera des données fraîches depuis la base."
       },
+      "stripe_create": {
+        "title": "Compte Stripe demandé",
+        "done": "Demande de création de compte Stripe envoyée pour {id} avec l'email {email}.",
+        "footer": "Requête envoyée au backend — idempotente, aucun accusé de réception attendu.",
+        "no_redis": "Redis est indisponible, impossible d'envoyer la demande.",
+        "publish_failed": "Échec de l'envoi de la demande : {error}"
+      },
       "redirect": {
         "modal_add": "Ajouter une redirection",
         "modal_edit": "Modifier la redirection",
