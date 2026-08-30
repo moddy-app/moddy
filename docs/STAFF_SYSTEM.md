@@ -96,7 +96,7 @@ no nodes has no command access even if it matches the type check.
 | `serverinfo` | `t.server` |
 | `blacklist` | `mod.blacklist` |
 | `unblacklist` | `mod.unblacklist` |
-| `stripe_manage` | `/manage subrefresh` |
+| `stripe_manage` | `/manage subrefresh`, `/manage stripecreate`, `/manage stripe cancel/resume/refund/trial` |
 | `redirect_manage` | `/manage redirect *` |
 | `banner_manage` | `/manage banner *` |
 | `official_manage` | `/dev official` |

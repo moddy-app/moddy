@@ -3657,6 +3657,32 @@
         "title": "Subscription Cache Refreshed",
         "done": "Cleared the subscription cache for {id}. The next read will fetch fresh data from the database."
       },
+      "stripe_create": {
+        "title": "Stripe Account Requested",
+        "done": "Stripe customer creation request sent for {id} with email {email}.",
+        "footer": "Request sent to the backend — idempotent, no acknowledgement expected.",
+        "no_redis": "Redis is unavailable, the request could not be sent.",
+        "publish_failed": "Failed to publish the request: {error}"
+      },
+      "stripe": {
+        "action_failed": "Action failed: {error}",
+        "cancel": {
+          "title": "Subscription Cancelled",
+          "done": "Cancellation request sent for {id}."
+        },
+        "resume": {
+          "title": "Subscription Resumed",
+          "done": "Resume request sent for {id}."
+        },
+        "refund": {
+          "title": "Payment Refunded",
+          "done": "Refund request sent for {id}."
+        },
+        "trial": {
+          "title": "Trial Started",
+          "done": "Trial start request sent for {id}."
+        }
+      },
       "redirect": {
         "modal_add": "Add Redirect",
         "modal_edit": "Edit Redirect",

@@ -219,6 +219,8 @@ arguments (used by `sql` and `jsk`). **Commands must not log themselves.**
 | `list` | `stafflist` | List all staff by role |
 | `badge` | — | Assign a profile badge |
 | `subrefresh` | — | Refresh Stripe subscription cache (`stripe_manage`) |
+| `stripecreate` | — | Request Stripe customer creation for a user (`stripe_manage`), fire-and-forget via `moddy:dashboard` |
+| `stripe cancel/resume/refund/trial` | — | Signed Stripe subscription admin actions (`stripe_manage`), request on `moddy:dashboard` / signed reply on `moddy:bot` (`services/stripe_admin_client.py`) |
 | `redirect add/edit/list/delete` | — | Manage redirect links (`redirect_manage`) |
 | `banner add/edit/list/info/activate/deactivate/delete` | — | Manage banners (`banner_manage`) |
 

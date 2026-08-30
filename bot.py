@@ -136,6 +136,10 @@ class ModdyBot(ModdyFrameworkBot):
         self.altguard = AltGuardClient(self)
         from services.ticket_service import TicketService
         self.tickets = TicketService(self)  # ticket lifecycle (open/close/escalate…)
+        from services.stripe_admin_client import StripeAdminClient
+        # Signed Stripe admin actions (cancel/resume/refund/trial) over
+        # moddy:dashboard <-> moddy:bot, correlated by request_id.
+        self.stripe_admin = StripeAdminClient(self)
         from notifications import NotificationService
         # Every DM / server notice Moddy sends goes through this: stored,
         # attributed, reportable (see docs/NOTIFICATIONS.md).
@@ -652,6 +656,9 @@ class ModdyBot(ModdyFrameworkBot):
         elif event_type == "payment_failed":
             user_id = data.get("user_id")
             logger.warning(f"[PubSub] Payment failed for user {user_id}")
+
+        elif event_type == "stripe_action_result":
+            self.stripe_admin.handle_reply(data)
 
         else:
             logger.debug(f"[PubSub] Unknown event type: {event_type}")
