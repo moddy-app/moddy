@@ -463,7 +463,7 @@ class ModdyBot(ModdyFrameworkBot):
                 ),
                 ui.MediaGallery(
                     discord.MediaGalleryItem(
-                        media="https://media.tenor.com/FjVZaTai9TwAAAAC/peach-cat-kiss.gif",
+                        media="https://media.tenor.com/eaDPAe9OLSoAAAAM/cat-kissing.gif",
                     ),
                 ),
                 ui.Separator(visible=True, spacing=discord.SeparatorSpacing.small),

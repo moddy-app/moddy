@@ -260,7 +260,7 @@ class InvoiceNotifier:
         the DM itself always passes :data:`INVOICE_LOCALE`.
         """
         from notifications.models import NotificationContent
-        from utils.emojis import NOTE
+        from utils.emojis import DOLLARS
         from utils.i18n import t
 
         tier = invoice.get("tier")
@@ -318,7 +318,7 @@ class InvoiceNotifier:
         content = NotificationContent(
             title=t(f"commands.subscription.invoice.title.{variant}", locale=locale),
             body=t(f"commands.subscription.invoice.body.{variant}", locale=locale),
-            icon=NOTE,
+            icon=DOLLARS,
             accent_color=ACCENT_COLOR,
             sections=sections,
             links=links,
