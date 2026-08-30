@@ -13,6 +13,7 @@ from typing import Optional
 from cogs.error_handler import BaseView
 from utils.components_v2 import create_error_message
 from utils.i18n import i18n, t
+from utils.interaction_response import safe_defer
 
 # --------------------------------------------------------------------------- #
 # custom_id templates
@@ -153,9 +154,11 @@ class TimezoneSelect(ui.DynamicItem[ui.Select], template=_CID_SELECT_TEMPLATE):
         locale = i18n.get_user_locale(interaction)
         selected_tz = self.item.values[0]
 
+        # The write is a database round-trip: acknowledge before it.
+        await safe_defer(interaction, ephemeral=True)
         await bot.db.update_user_data(interaction.user.id, "reminder_timezone", selected_tz)
 
-        await interaction.response.send_message(
+        await interaction.followup.send(
             t("commands.preferences.timezone.success", locale=locale,
               timezone=TIMEZONE_NAMES.get(selected_tz, selected_tz)),
             ephemeral=True,
@@ -201,10 +204,12 @@ class PreferencesManageButton(ui.DynamicItem[ui.Button], template=_CID_BTN_TEMPL
 
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
+        # Reading the user row is a database round-trip: acknowledge first.
+        await safe_defer(interaction, ephemeral=False, thinking=False)
         user_data = await bot.db.get_user(interaction.user.id)
         page = "timezone" if self.action == "timezone" else "home"
         view = PreferencesView(bot, interaction.user.id, locale, user_data, page=page)
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
 
 
 class PreferencesView(BaseView):
@@ -323,10 +328,14 @@ class Preferences(commands.Cog):
             try:
                 user_pref = await self.bot.db.get_attribute('user', interaction.user.id, 'DEFAULT_INCOGNITO')
                 ephemeral = True if user_pref is None else user_pref
-            except:
+            except Exception:
+                # Visibility preference is a nicety: default to private.
                 ephemeral = True
         else:
             ephemeral = incognito if incognito is not None else True
+
+        # Reading the user row is a database round-trip: acknowledge first.
+        await safe_defer(interaction, ephemeral=ephemeral)
 
         # Get user data
         user_data = await self.bot.db.get_user(interaction.user.id)
@@ -339,7 +348,7 @@ class Preferences(commands.Cog):
             user_data,
         )
 
-        await interaction.response.send_message(view=view, ephemeral=ephemeral)
+        await interaction.followup.send(view=view, ephemeral=ephemeral)
 
 
 async def setup(bot):

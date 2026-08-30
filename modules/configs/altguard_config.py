@@ -26,6 +26,7 @@ from modules.altguard import MODULE_ID
 from modules.configs._common import check_guild_perms
 from utils.emojis import ALTGUARD, BACK, DELETE, SAVE, UNDONE
 from utils.i18n import i18n, t
+from utils.interaction_response import safe_defer
 
 logger = logging.getLogger("moddy.modules.altguard_config")
 
@@ -365,13 +366,16 @@ class AltGuardConfigView(BaseView):
         if not await check_guild_perms(interaction):
             return
 
+        # The stored config is read below: acknowledge before the round-trip.
+        await safe_defer(interaction, thinking=False)
+
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
         saved = await bot.module_manager.get_module_config(interaction.guild_id, MODULE_ID)
         view = AltGuardConfigView(
             bot, interaction.guild_id, interaction.user.id, locale, current_config=saved,
         )
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
 
     async def on_delete(self, interaction: discord.Interaction) -> None:
         if not await check_guild_perms(interaction):

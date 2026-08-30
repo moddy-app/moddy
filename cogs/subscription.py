@@ -12,7 +12,6 @@ from discord import app_commands, ui
 from discord.ext import commands
 
 from cogs.error_handler import BaseView
-from utils.components_v2 import create_error_message
 from utils.emojis import PREMIUM
 from utils.i18n import t
 from utils.subscription import get_subscription
@@ -134,21 +133,13 @@ class Subscription(commands.Cog):
         locale = str(interaction.locale)
         user_id = interaction.user.id
 
-        try:
-            sub = await get_subscription(self.bot, user_id)
-            servers = []
-            if self.bot.db and sub and sub.get('is_active'):
-                servers = await self.bot.db.get_subscription_servers(user_id)
-        except Exception as e:
-            logger.error(f"Subscription fetch error for {user_id}: {e}", exc_info=True)
-            await interaction.followup.send(
-                view=create_error_message(
-                    "Error",
-                    t('commands.subscription.error', locale=locale),
-                ),
-                ephemeral=True,
-            )
-            return
+        # An unexpected failure here is a bug: let it reach the centralized
+        # app-command handler, which files an error code instead of showing a
+        # generic message the user cannot report.
+        sub = await get_subscription(self.bot, user_id)
+        servers = []
+        if self.bot.db and sub and sub.get('is_active'):
+            servers = await self.bot.db.get_subscription_servers(user_id)
 
         view = SubscriptionView(self.bot, user_id, sub, servers, locale)
         await interaction.followup.send(view=view, ephemeral=True)

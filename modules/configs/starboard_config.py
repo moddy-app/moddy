@@ -9,6 +9,7 @@ from typing import Optional, Dict, Any
 import logging
 
 from utils.i18n import i18n, t
+from utils.interaction_response import safe_defer
 from cogs.error_handler import BaseView, BaseModal
 from utils.emojis import STAR, REQUIRED_FIELDS, EDIT, BACK, SAVE, UNDONE, DELETE, is_standard_discord_emoji
 from modules.configs._common import check_guild_perms
@@ -313,6 +314,9 @@ class StarboardConfigView(BaseView):
         if not await check_guild_perms(interaction):
             return
 
+        # The stored config is read below: acknowledge before the round-trip.
+        await safe_defer(interaction, thinking=False)
+
         working_config = await self._fresh_working_config(interaction)
         if interaction.data['values']:
             working_config['channel_id'] = int(interaction.data['values'][0])
@@ -320,7 +324,7 @@ class StarboardConfigView(BaseView):
             working_config['channel_id'] = None
 
         view = await self._rebuild(interaction, working_config, has_changes=True)
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
 
     async def on_edit_reaction_count(self, interaction: discord.Interaction):
         """Edit reaction count"""
@@ -399,11 +403,13 @@ class StarboardConfigView(BaseView):
         if not await check_guild_perms(interaction):
             return
 
+        await safe_defer(interaction, thinking=False)
+
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
         saved = await bot.module_manager.get_module_config(interaction.guild_id, 'starboard')
         view = StarboardConfigView(bot, interaction.guild_id, interaction.user.id, locale, current_config=saved)
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
 
     async def on_delete(self, interaction: discord.Interaction):
         """Delete configuration"""

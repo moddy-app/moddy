@@ -9,6 +9,7 @@ from typing import Optional, Dict, Any
 import logging
 
 from utils.i18n import i18n, t
+from utils.interaction_response import safe_defer
 from cogs.error_handler import BaseView
 from utils.emojis import HISTORY, REQUIRED_FIELDS, DONE, DELETE, BACK, SAVE, UNDONE
 from modules.configs._common import check_guild_perms
@@ -338,6 +339,9 @@ class AutoRestoreRolesConfigView(BaseView):
         if not await check_guild_perms(interaction):
             return
 
+        # The stored config is read below: acknowledge before the round-trip.
+        await safe_defer(interaction, thinking=False)
+
         working_config = await self._fresh_working_config(interaction)
         selected_mode = interaction.data['values'][0]
         working_config['mode'] = selected_mode
@@ -347,12 +351,14 @@ class AutoRestoreRolesConfigView(BaseView):
             working_config['included_roles'] = []
 
         view = await self._rebuild(interaction, working_config, has_changes=True)
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
 
     async def on_excluded_roles_select(self, interaction: discord.Interaction):
         """Callback quand les rôles exclus sont sélectionnés"""
         if not await check_guild_perms(interaction):
             return
+
+        await safe_defer(interaction, thinking=False)
 
         working_config = await self._fresh_working_config(interaction)
         if interaction.data['values']:
@@ -361,12 +367,14 @@ class AutoRestoreRolesConfigView(BaseView):
             working_config['excluded_roles'] = []
 
         view = await self._rebuild(interaction, working_config, has_changes=True)
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
 
     async def on_included_roles_select(self, interaction: discord.Interaction):
         """Callback quand les rôles inclus sont sélectionnés"""
         if not await check_guild_perms(interaction):
             return
+
+        await safe_defer(interaction, thinking=False)
 
         working_config = await self._fresh_working_config(interaction)
         if interaction.data['values']:
@@ -375,12 +383,14 @@ class AutoRestoreRolesConfigView(BaseView):
             working_config['included_roles'] = []
 
         view = await self._rebuild(interaction, working_config, has_changes=True)
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
 
     async def on_log_channel_select(self, interaction: discord.Interaction):
         """Callback quand le salon de logs est sélectionné"""
         if not await check_guild_perms(interaction):
             return
+
+        await safe_defer(interaction, thinking=False)
 
         working_config = await self._fresh_working_config(interaction)
         if interaction.data['values']:
@@ -389,7 +399,7 @@ class AutoRestoreRolesConfigView(BaseView):
             working_config['log_channel_id'] = None
 
         view = await self._rebuild(interaction, working_config, has_changes=True)
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
 
     async def on_save(self, interaction: discord.Interaction):
         """Sauvegarde la configuration"""
@@ -422,11 +432,13 @@ class AutoRestoreRolesConfigView(BaseView):
         if not await check_guild_perms(interaction):
             return
 
+        await safe_defer(interaction, thinking=False)
+
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
         saved = await bot.module_manager.get_module_config(interaction.guild_id, 'auto_restore_roles')
         view = AutoRestoreRolesConfigView(bot, interaction.guild_id, interaction.user.id, locale, current_config=saved)
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
 
     async def on_delete(self, interaction: discord.Interaction):
         """Supprime la configuration"""

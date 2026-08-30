@@ -33,6 +33,7 @@ from config import COLORS
 from utils.automod_render import make_text_file
 from utils.emojis import DOWNLOAD, ROBOT_WORKING, TIME, VOICE_CHAT
 from utils.i18n import i18n, t
+from utils.interaction_response import safe_defer
 
 logger = logging.getLogger("moddy.transcription_views")
 
@@ -272,11 +273,14 @@ class TranscribeButton(
         from services.transcription_service import ErrorCode, TranscriptionError
 
         bot = interaction.client
+        # The server-language lookup is the first await of the callback and can
+        # reach the database — acknowledge before it, then edit.
+        await safe_defer(interaction, thinking=False)
         public_locale = await card_locale(interaction)
 
         # Swap the button for the loading state straight away: the model call
         # takes seconds, and a button that looks idle invites a second click.
-        await interaction.response.edit_message(view=render_loading_card(public_locale))
+        await interaction.edit_original_response(view=render_loading_card(public_locale))
 
         message = await self._fetch_message(bot)
         if message is None:

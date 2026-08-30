@@ -13,6 +13,7 @@ Responsibilities:
 
 from __future__ import annotations
 
+import asyncio
 import logging
 
 import discord
@@ -163,15 +164,28 @@ class StaffCommandsRouter(StaffCommandsCog):
 
     # --- shared invocation -------------------------------------------------
 
+    async def _audit(self, command, ctx: StaffContext) -> None:
+        """Write the staff audit entry, off the command's critical path."""
+        try:
+            await staff_logger.log_command(
+                command.command_type.value, command.name, ctx.author,
+                args=command.log_args(ctx), target_server=ctx.guild,
+            )
+        except Exception as exc:  # logging must never break a command
+            # Warning, not debug: a silent audit gap is exactly what an
+            # investigation later needs to know about.
+            logger.warning("Staff audit log failed for %s.%s (user=%s): %s",
+                           command.command_type.value, command.name,
+                           getattr(ctx.author, "id", None), exc)
+
     async def _invoke(self, command, ctx: StaffContext):
+        # The audit entry goes out through a Discord webhook. Awaiting it here
+        # would spend part of the 3-second window that a modal command still
+        # needs (the router deliberately leaves those interactions
+        # unacknowledged), and no command depends on its result — so it runs
+        # beside the command instead of in front of it.
         if staff_logger:
-            try:
-                await staff_logger.log_command(
-                    command.command_type.value, command.name, ctx.author,
-                    args=command.log_args(ctx), target_server=ctx.guild,
-                )
-            except Exception as exc:  # pragma: no cover - logging must never break commands
-                logger.debug("staff log failed for %s.%s: %s", command.command_type.value, command.name, exc)
+            asyncio.create_task(self._audit(command, ctx))
 
         try:
             await command.execute(ctx)

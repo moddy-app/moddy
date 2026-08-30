@@ -36,6 +36,7 @@ from config import COLORS
 from utils.emojis import EMOJIS
 from utils.i18n import i18n
 from utils.incognito import add_incognito_option, get_incognito_setting
+from utils.interaction_response import deliver
 
 logger = logging.getLogger("moddy.text_tools")
 
@@ -325,10 +326,7 @@ class TextTools(commands.Cog):
             i18n.get("common.error", locale=locale),
             i18n.get(message_key, locale=locale, **kwargs),
         )
-        if interaction.response.is_done():
-            await interaction.followup.send(view=view, ephemeral=True)
-        else:
-            await interaction.response.send_message(view=view, ephemeral=True)
+        await deliver(interaction, view=view, ephemeral=True)
 
     async def _preflight(self, interaction: discord.Interaction, text: str,
                          locale: str, *, strip_mentions: bool) -> Optional[str]:
@@ -363,6 +361,7 @@ class TextTools(commands.Cog):
                           max_tokens: int, strip_mentions: bool) -> Optional[str]:
         """Single gateway call. Returns the model output, or None on failure."""
         from gateway import QuotaTarget
+        from gateway.errors import GatewayError
 
         quota = [QuotaTarget.user(interaction.user.id, call_type)]
         if interaction.guild:
@@ -389,7 +388,10 @@ class TextTools(commands.Cog):
         except asyncio.TimeoutError:
             logger.warning("[%s] OpenAI call timed out for user %s", call_type, interaction.user.id)
             return None
-        except Exception as exc:
+        except GatewayError as exc:
+            # Expected provider-side conditions (quota, rate limit, outage):
+            # the caller shows the friendly "AI unavailable" card. Anything
+            # else is a bug and must reach the global handler with a code.
             logger.warning("[%s] OpenAI call failed: %s", call_type, exc)
             return None
 

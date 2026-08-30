@@ -34,6 +34,7 @@ from modules.tickets import (
 from services.ticket_service import TicketError
 from utils.components_v2 import create_success_message
 from utils.i18n import i18n, t
+from utils.interaction_response import safe_defer
 from utils.ticket_views import (
     TicketRenameModal,
     handle_ticket_error,
@@ -58,12 +59,21 @@ ticket_group = app_commands.Group(
 )
 
 
-async def _service_and_ticket(interaction: discord.Interaction):
+async def _service_and_ticket(interaction: discord.Interaction, *,
+                              defer: bool = False):
     """``(service, ticket, panel, category)`` for the channel the command ran in.
 
     Answers the user and returns ``None`` when the channel is not a ticket —
     the check every single subcommand starts with.
+
+    ``defer=True`` acknowledges the interaction *before* the resolve, which is
+    a database read: a subcommand that ends in a plain answer must never let
+    that read eat its 3-second window. Subcommands that open a modal (or hand
+    over to a helper that acknowledges by itself) leave it off.
     """
+    if defer:
+        await safe_defer(interaction, ephemeral=True, thinking=True)
+
     service = getattr(interaction.client, 'tickets', None)
     locale = i18n.get_user_locale(interaction)
     if service is None or not isinstance(interaction.channel, discord.TextChannel):
@@ -84,13 +94,11 @@ async def _service_and_ticket(interaction: discord.Interaction):
 @ticket_group.command(name="close", description="Close this ticket")
 @app_commands.describe(reason="Why the ticket is being closed")
 async def ticket_close(interaction: discord.Interaction, reason: Optional[str] = None):
-    resolved = await _service_and_ticket(interaction)
+    resolved = await _service_and_ticket(interaction, defer=True)
     if not resolved:
         return
     service = resolved[0]
     locale = i18n.get_user_locale(interaction)
-
-    await interaction.response.defer(ephemeral=True, thinking=True)
     try:
         await service.close_ticket(interaction.channel, interaction.user, reason)
     except TicketError as e:
@@ -103,13 +111,11 @@ async def ticket_close(interaction: discord.Interaction, reason: Optional[str] =
 
 @ticket_group.command(name="reopen", description="Reopen this closed ticket")
 async def ticket_reopen(interaction: discord.Interaction):
-    resolved = await _service_and_ticket(interaction)
+    resolved = await _service_and_ticket(interaction, defer=True)
     if not resolved:
         return
     service = resolved[0]
     locale = i18n.get_user_locale(interaction)
-
-    await interaction.response.defer(ephemeral=True, thinking=True)
     try:
         await service.reopen_ticket(interaction.channel, interaction.user)
     except TicketError as e:
@@ -125,13 +131,11 @@ async def ticket_reopen(interaction: discord.Interaction):
 @app_commands.describe(reason="Why you would like the ticket closed")
 async def ticket_close_request(interaction: discord.Interaction,
                                reason: Optional[str] = None):
-    resolved = await _service_and_ticket(interaction)
+    resolved = await _service_and_ticket(interaction, defer=True)
     if not resolved:
         return
     service = resolved[0]
     locale = i18n.get_user_locale(interaction)
-
-    await interaction.response.defer(ephemeral=True, thinking=True)
     try:
         await service.request_close(interaction.channel, interaction.user, reason)
     except TicketError as e:
@@ -160,13 +164,11 @@ async def ticket_escalate(interaction: discord.Interaction,
 
 @ticket_group.command(name="deescalate", description="Undo the escalation")
 async def ticket_deescalate(interaction: discord.Interaction):
-    resolved = await _service_and_ticket(interaction)
+    resolved = await _service_and_ticket(interaction, defer=True)
     if not resolved:
         return
     service = resolved[0]
     locale = i18n.get_user_locale(interaction)
-
-    await interaction.response.defer(ephemeral=True, thinking=True)
     try:
         await service.deescalate(interaction.channel, interaction.user)
     except TicketError as e:
@@ -215,7 +217,7 @@ async def _category_autocomplete(interaction: discord.Interaction, current: str
 @app_commands.describe(category="The category the ticket should move to")
 @app_commands.autocomplete(category=_category_autocomplete)
 async def ticket_move(interaction: discord.Interaction, category: str):
-    resolved = await _service_and_ticket(interaction)
+    resolved = await _service_and_ticket(interaction, defer=True)
     if not resolved:
         return
     service = resolved[0]
@@ -227,8 +229,6 @@ async def ticket_move(interaction: discord.Interaction, category: str):
                          t('modules.tickets.errors.unknown_category', locale=locale),
                          locale)
         return
-
-    await interaction.response.defer(ephemeral=True, thinking=True)
     try:
         await service.move_ticket(interaction.channel, interaction.user,
                                   panel_id, category_id)
@@ -298,13 +298,11 @@ async def ticket_remove(interaction: discord.Interaction,
 async def _participant_action(interaction: discord.Interaction,
                               target: Union[discord.Member, discord.Role],
                               *, add: bool):
-    resolved = await _service_and_ticket(interaction)
+    resolved = await _service_and_ticket(interaction, defer=True)
     if not resolved:
         return
     service = resolved[0]
     locale = i18n.get_user_locale(interaction)
-
-    await interaction.response.defer(ephemeral=True, thinking=True)
     try:
         if add:
             await service.add_participant(interaction.channel, interaction.user, target)
@@ -371,7 +369,7 @@ async def ticket_staff_thread(interaction: discord.Interaction):
 # --------------------------------------------------------------------------- #
 @ticket_group.command(name="info", description="Show this ticket's details")
 async def ticket_info(interaction: discord.Interaction):
-    resolved = await _service_and_ticket(interaction)
+    resolved = await _service_and_ticket(interaction, defer=True)
     if not resolved:
         return
     service, ticket, panel, category = resolved
@@ -412,7 +410,7 @@ async def ticket_info(interaction: discord.Interaction):
         ) or t('modules.tickets.fields.none', locale=locale),
     })
 
-    await interaction.response.send_message(
+    await interaction.followup.send(
         view=create_success_message(
             t('modules.tickets.info.title', locale=locale, number=ticket['number']),
             t('modules.tickets.info.description', locale=locale),

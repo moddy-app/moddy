@@ -37,6 +37,7 @@ from utils.guild_language import (
     set_language_setting,
 )
 from utils.i18n import i18n, t
+from utils.interaction_response import safe_defer
 
 logger = logging.getLogger('moddy.modules.server_settings_config')
 
@@ -174,18 +175,15 @@ class ServerSettingsConfigView(BaseView):
         locale = i18n.get_user_locale(interaction)
         value = (interaction.data.get('values') or [AUTO])[0]
 
-        try:
-            stored = await set_language_setting(bot, interaction.guild_id, value)
-        except Exception as e:
-            logger.error(f"Could not save the language of guild {interaction.guild_id}: {e}",
-                         exc_info=True)
-            await interaction.response.send_message(
-                t('modules.config.save.error', locale=locale, error=str(e)), ephemeral=True)
-            return
+        # The write below is a round-trip: acknowledge before it. An unexpected
+        # failure is deliberately not caught — BaseView.on_error shows the user
+        # the error card and its code, which a bare "save failed" line cannot.
+        await safe_defer(interaction, thinking=False)
+        stored = await set_language_setting(bot, interaction.guild_id, value)
 
         view = ServerSettingsConfigView(bot, interaction.guild_id, interaction.user.id,
                                         locale, stored)
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
         await interaction.followup.send(
             t('modules.config.save.success', locale=locale), ephemeral=True)
 

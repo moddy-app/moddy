@@ -118,7 +118,14 @@ class SupportRequestService:
                 locale=locale, subject=subject, body=body, details=details,
             )
         except Exception as exc:  # noqa: BLE001
-            logger.error("Failed to record support request: %s", exc, exc_info=True)
+            # The caller tells the user to use the support server instead, which
+            # is the right message — but the failure behind it still needs an
+            # error code, a Sentry capture and an internal log entry.
+            from cogs.error_handler import report_error
+            await report_error(
+                self.bot, exc, source=f"SupportRequests:open:{kind}",
+                user=user, guild=guild, error_type="Service Error",
+            )
             return None
 
         if request:

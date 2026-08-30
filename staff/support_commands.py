@@ -21,6 +21,7 @@ from utils.emojis import (
 )
 from utils.staff_logger import staff_logger
 from staff.base import StaffCommandsCog
+from cogs.error_handler import ErrorView, report_error
 
 logger = logging.getLogger('moddy.support_commands')
 
@@ -58,16 +59,39 @@ class SupportCommands(StaffCommandsCog):
             await self.reply_with_tracking(message, view)
             return
 
-        if command_name == "help":
-            await self.handle_help_command(message, args)
-        elif command_name == "subscription":
-            await self.handle_subscription_command(message, args)
-        else:
-            view = create_error_message(
-                "Unknown Command",
-                f"Support command `{command_name}` not found.\n\nUse `sup.help` to see available commands."
-            )
+        # A message listener has no global error handler behind it: an
+        # unexpected failure here would vanish into discord.py's dispatch log
+        # and leave the author with no answer at all. Route it through the same
+        # central pipeline every other command uses, and show the error code.
+        try:
+            if command_name == "help":
+                await self.handle_help_command(message, args)
+            elif command_name == "subscription":
+                await self.handle_subscription_command(message, args)
+            else:
+                view = create_error_message(
+                    "Unknown Command",
+                    f"Support command `{command_name}` not found.\n\nUse `sup.help` to see available commands."
+                )
+                await self.reply_with_tracking(message, view)
+        except Exception as exc:
+            await self._report(exc, message, command_name)
+
+    async def _report(self, exc: Exception, message: discord.Message, command_name: str):
+        """Central error pipeline for this legacy cog (no framework behind it)."""
+        error_code = await report_error(
+            self.bot, exc, source=f"Staff:sup.{command_name}",
+            user=message.author, guild=message.guild, channel=message.channel,
+            error_type="Staff Command Error",
+        )
+        view = ErrorView(error_code) if error_code else create_error_message(
+            "Error", "An unexpected error occurred."
+        )
+        try:
             await self.reply_with_tracking(message, view)
+        except discord.HTTPException as send_error:
+            logger.error("CRITICAL: could not show the error card for sup.%s: %s",
+                         command_name, send_error)
 
     async def handle_help_command(self, message: discord.Message, args: str):
         """
@@ -144,7 +168,10 @@ class SupportCommands(StaffCommandsCog):
             return
 
         if staff_logger:
-            await staff_logger.log_command("sup", "subscription", message.author, target_user_id=user_id)
+            # `log_command` takes `args`/`target_user`, never a `target_user_id`:
+            # the old call raised a TypeError before the command even ran.
+            await staff_logger.log_command("sup", "subscription", message.author,
+                                           args=f"user={user_id}")
 
         try:
             try:
@@ -188,14 +215,14 @@ class SupportCommands(StaffCommandsCog):
             view.add_item(container)
             await self.reply_with_tracking(message, view)
 
-        except Exception as e:
-            logger.error(f"Unexpected error in sup.subscription: {e}", exc_info=True)
-            view = create_error_message("Error", "An unexpected error occurred.")
-            await self.reply_with_tracking(message, view)
+        except Exception as exc:
+            # An error code, not a bare "an unexpected error occurred": without
+            # one neither the user nor the team can trace what happened.
+            await self._report(exc, message, "subscription")
             if staff_logger:
                 await staff_logger.log_command(
                     "sup", "subscription", message.author,
-                    target_user_id=user_id, success=False, error=str(e)
+                    args=f"user={user_id}", success=False, error_message=str(exc),
                 )
 
 

@@ -13,6 +13,7 @@ from typing import Any, Callable, Dict, Optional
 import logging
 
 from utils.i18n import i18n, t
+from utils.interaction_response import safe_defer
 from cogs.error_handler import BaseView, BaseModal
 from utils.emojis import TIME, REQUIRED_FIELDS, EDIT, BACK, SAVE, UNDONE, DELETE, ADD
 from modules.configs._common import check_guild_perms
@@ -618,6 +619,10 @@ class AdaptiveSlowmodeConfigView(BaseView):
     async def on_add_channel(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+
+        # The stored config is read below: acknowledge before the round-trip.
+        await safe_defer(interaction, thinking=False)
+
         working_config = await self._fresh_working_config(interaction)
         locale = i18n.get_user_locale(interaction)
         channel_view = AdaptiveSlowmodeChannelConfigView(
@@ -628,7 +633,7 @@ class AdaptiveSlowmodeConfigView(BaseView):
             working_config=working_config,
             has_existing_config=self.has_existing_config if self._is_live_for(interaction) else bool(working_config.get("channels")),
         )
-        await interaction.response.edit_message(view=channel_view)
+        await interaction.edit_original_response(view=channel_view)
 
     async def on_back(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
@@ -666,11 +671,14 @@ class AdaptiveSlowmodeConfigView(BaseView):
     async def on_cancel(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+
+        await safe_defer(interaction, thinking=False)
+
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
         saved = await bot.module_manager.get_module_config(interaction.guild_id, "adaptive_slowmode")
         view = AdaptiveSlowmodeConfigView(bot, interaction.guild_id, interaction.user.id, locale, current_config=saved)
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
 
     async def on_delete(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
@@ -737,6 +745,8 @@ class SlowmodeListButton(ui.DynamicItem[ui.Button], template=_CID_LIST_ITEM_TEMP
         if not await check_guild_perms(interaction):
             return
 
+        await safe_defer(interaction, thinking=False)
+
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
         saved = await bot.module_manager.get_module_config(interaction.guild_id, "adaptive_slowmode")
@@ -754,7 +764,7 @@ class SlowmodeListButton(ui.DynamicItem[ui.Button], template=_CID_LIST_ITEM_TEMP
                 working_config=working_config, has_existing_config=has_existing_config,
                 channel_id=self.channel_id, channel_config=dict(ch_cfg),
             )
-            await interaction.response.edit_message(view=channel_view)
+            await interaction.edit_original_response(view=channel_view)
             return
 
         # remove
@@ -764,4 +774,4 @@ class SlowmodeListButton(ui.DynamicItem[ui.Button], template=_CID_LIST_ITEM_TEMP
         view.working_config = working_config
         view.has_changes = True
         view._build_view()
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)

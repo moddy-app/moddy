@@ -16,6 +16,7 @@ from utils.components_v2 import create_error_message, create_info_message
 from utils.emojis import EMOJIS
 from utils.staff_logger import staff_logger
 from staff.base import StaffCommandsCog
+from cogs.error_handler import ErrorView, report_error
 
 logger = logging.getLogger('moddy.communication_commands')
 
@@ -58,15 +59,40 @@ class CommunicationCommands(StaffCommandsCog):
             await self.reply_with_tracking(message, view)
             return
 
-        # Route to appropriate command
-        if command_name == "help":
-            await self.handle_help_command(message, args)
-        else:
-            view = create_error_message(
-                "Unknown Command",
-                f"Communication command `{command_name}` not found.\n\nCommunication commands are in development."
+        # `com.send` and `com.beta` live in the new framework, which answers
+        # them from its own router. Without this check the migrated commands
+        # would also get an "unknown command" reply from here.
+        router = self.bot.get_cog("StaffCommandsRouter")
+        if router is not None and router.is_migrated(command_type.value, command_name):
+            return
+
+        # A message listener has no global error handler behind it: an
+        # unexpected failure here would vanish into discord.py's dispatch log
+        # and leave the author with no answer at all. Route it through the same
+        # central pipeline every other command uses, and show the error code.
+        try:
+            if command_name == "help":
+                await self.handle_help_command(message, args)
+            else:
+                view = create_error_message(
+                    "Unknown Command",
+                    f"Communication command `{command_name}` not found.\n\nCommunication commands are in development."
+                )
+                await self.reply_with_tracking(message, view)
+        except Exception as exc:
+            error_code = await report_error(
+                self.bot, exc, source=f"Staff:com.{command_name}",
+                user=message.author, guild=message.guild, channel=message.channel,
+                error_type="Staff Command Error",
             )
-            await self.reply_with_tracking(message, view)
+            view = ErrorView(error_code) if error_code else create_error_message(
+                "Error", "An unexpected error occurred."
+            )
+            try:
+                await self.reply_with_tracking(message, view)
+            except discord.HTTPException as send_error:
+                logger.error("CRITICAL: could not show the error card for com.%s: %s",
+                             command_name, send_error)
 
     async def handle_help_command(self, message: discord.Message, args: str):
         """

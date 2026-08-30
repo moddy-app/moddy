@@ -45,6 +45,7 @@ from utils.emojis import (
     REQUIRED_FIELDS, PAUSE, PLAY,
 )
 from utils.i18n import i18n, t
+from utils.interaction_response import safe_defer
 
 logger = logging.getLogger('moddy.modules.welcome_channel_config')
 
@@ -127,13 +128,13 @@ async def _render_main(interaction: discord.Interaction) -> None:
     """(Re)build and show the main panel from a live interaction."""
     bot = interaction.client
     locale = i18n.get_user_locale(interaction)
+    # Acknowledge first: rebuilding the panel reads the DB, and an interaction
+    # left unacknowledged for 3s dies with Discord's own "did not respond".
+    await safe_defer(interaction, thinking=False)
     view = await WelcomeChannelConfigView.create(
         bot, interaction.guild_id, interaction.user.id, locale
     )
-    if interaction.response.is_done():
-        await interaction.edit_original_response(view=view)
-    else:
-        await interaction.response.edit_message(view=view)
+    await interaction.edit_original_response(view=view)
 
 
 # =========================================================================== #
@@ -327,16 +328,18 @@ class WelcomeChannelConfigView(BaseView):
             return
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
+        # The entry list is read from the DB below: acknowledge first.
+        await safe_defer(interaction, thinking=False)
         messages = await _load_messages(bot, interaction.guild_id)
         if len(messages) >= MAX_WELCOME_MESSAGES:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 t('modules.welcome_channel.errors.too_many', locale=locale,
                   max=MAX_WELCOME_MESSAGES),
                 ephemeral=True,
             )
             return
         add_view = AddWelcomeMessageView(bot, interaction.guild_id, locale)
-        await interaction.response.edit_message(view=add_view)
+        await interaction.edit_original_response(view=add_view)
 
     async def on_manage_select(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
@@ -344,13 +347,15 @@ class WelcomeChannelConfigView(BaseView):
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
         entry_id = interaction.data['values'][0]
+        # The entry list is read from the DB below: acknowledge first.
+        await safe_defer(interaction, thinking=False)
         messages = await _load_messages(bot, interaction.guild_id)
         entry = next((m for m in messages if m['id'] == entry_id), None)
         if not entry:
             await _render_main(interaction)
             return
         manage_view = ManageWelcomeMessageView(bot, interaction.guild_id, locale, entry)
-        await interaction.response.edit_message(view=manage_view)
+        await interaction.edit_original_response(view=manage_view)
 
     async def on_back(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
@@ -684,6 +689,8 @@ class ManageWelcomeMessageView(BaseView):
         """
         bot = interaction.client
         entry_id = self.entry.get('id')
+        # A read plus a write: acknowledge before either can burn the 3s window.
+        await safe_defer(interaction, thinking=False)
         messages = await _load_messages(bot, interaction.guild_id)
         target = next((m for m in messages if m['id'] == entry_id), None)
         if not target:
@@ -703,13 +710,13 @@ class ManageWelcomeMessageView(BaseView):
             return
         success, error = result
         if not success:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 t('modules.config.save.error', locale=locale, error=error or ''),
                 ephemeral=True,
             )
             return
         view = ManageWelcomeMessageView(interaction.client, interaction.guild_id, locale, self.entry)
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
 
     # -- callbacks -------------------------------------------------------- #
     async def on_channel_select(self, interaction: discord.Interaction):

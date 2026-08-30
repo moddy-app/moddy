@@ -41,6 +41,7 @@ from utils.emojis import (
     get_sanction_dm_emoji, get_sanction_accent,
 )
 from utils.automod_render import is_long, make_text_file
+from utils.interaction_response import deliver, safe_defer
 
 logger = logging.getLogger("moddy.appeal_views")
 
@@ -567,8 +568,7 @@ class AppealNewButton(
         existing = await bot.db.get_active_for_sanction(self.sanction_id)
         if existing:
             from utils.components_v2 import create_warning_message
-            await interaction.response.send_message(
-                view=create_warning_message(
+            await deliver(interaction, view=create_warning_message(
                     t("modules.automod_ai.appeal.error.title", locale=locale),
                     t("modules.automod_ai.appeal.error.already", locale=locale),
                 ),
@@ -589,15 +589,15 @@ async def _guard_review(interaction: discord.Interaction, appeal: Optional[dict]
     """Shared gate for reviewer actions: still pending + may review (+ not own)."""
     from utils.components_v2 import create_warning_message, create_error_message
     if not appeal or appeal["status"] != "pending":
-        await interaction.response.send_message(
-            view=create_warning_message(
+        # `deliver` so a guard still reaches the reviewer once the callback
+        # has acknowledged the interaction up front.
+        await deliver(interaction, view=create_warning_message(
                 t("modules.automod_ai.appeal.error.title", locale=locale),
                 t("modules.automod_ai.appeal.error.handled", locale=locale)),
             ephemeral=True)
         return False
     if not await _can_review(interaction, appeal):
-        await interaction.response.send_message(
-            view=create_error_message(
+        await deliver(interaction, view=create_error_message(
                 t("modules.automod_ai.appeal.error.title", locale=locale),
                 t("modules.automod_ai.appeal.error.no_perms", locale=locale)),
             ephemeral=True)
@@ -610,15 +610,13 @@ async def _require_claimer(interaction: discord.Interaction, appeal: dict, local
     from utils.components_v2 import create_warning_message
     claimed_by = appeal.get("claimed_by_id")
     if not claimed_by:
-        await interaction.response.send_message(
-            view=create_warning_message(
+        await deliver(interaction, view=create_warning_message(
                 t("modules.automod_ai.appeal.error.title", locale=locale),
                 t("modules.automod_ai.appeal.error.claim_first", locale=locale)),
             ephemeral=True)
         return False
     if str(claimed_by) != str(interaction.user.id):
-        await interaction.response.send_message(
-            view=create_warning_message(
+        await deliver(interaction, view=create_warning_message(
                 t("modules.automod_ai.appeal.error.title", locale=locale),
                 t("modules.automod_ai.appeal.error.not_claimer", locale=locale)),
             ephemeral=True)
@@ -652,6 +650,11 @@ class AppealClaimButton(
 
     @_guarded
     async def callback(self, interaction: discord.Interaction):
+        # Appeal read + reviewer-permission lookup + the claim write, all
+        # before anything is rendered: acknowledge first. Every response path
+        # downstream (`_ephemeral`, `_rerender_pending_panel`) already handles
+        # an acknowledged interaction.
+        await safe_defer(interaction, ephemeral=True, thinking=False)
         locale = i18n.get_user_locale(interaction)
         bot = interaction.client
         appeal = await bot.db.get_appeal(self.appeal_id)
@@ -691,8 +694,7 @@ class AppealInviteButton(
             return
         if not await _can_review(interaction, appeal):
             from utils.components_v2 import create_error_message
-            await interaction.response.send_message(
-                view=create_error_message(
+            await deliver(interaction, view=create_error_message(
                     t("modules.automod_ai.appeal.error.title", locale=locale),
                     t("modules.automod_ai.appeal.error.no_perms", locale=locale)),
                 ephemeral=True)
@@ -727,6 +729,10 @@ class AppealDecisionButton(
 
     @_guarded
     async def callback(self, interaction: discord.Interaction):
+        # The appeal read and the two guards are database round-trips, and the
+        # binding effects behind a refusal far exceed 3s — acknowledge before
+        # any of it rather than after the guards.
+        await safe_defer(interaction, ephemeral=True, thinking=False)
         locale = i18n.get_user_locale(interaction)
         bot = interaction.client
         appeal = await bot.db.get_appeal(self.appeal_id)
@@ -736,11 +742,9 @@ class AppealDecisionButton(
             return
         if self.decision == "accept":
             # Ask whether to fully cancel or modify the case.
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 view=build_accept_choice_view(self.appeal_id, locale), ephemeral=True)
             return
-        # decline → refuse (binding effects can exceed 3s → ack first)
-        await interaction.response.defer(ephemeral=True)
         await bot.appeals.decide(
             interaction=interaction, appeal_id=self.appeal_id,
             decision="refuse", by_id=interaction.user.id)

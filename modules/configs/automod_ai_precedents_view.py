@@ -20,6 +20,7 @@ from discord import ui
 
 from cogs.error_handler import BaseView
 from utils.i18n import t, i18n
+from utils.interaction_response import safe_defer
 from utils.emojis import SHIELD, SEARCH, BACK, NEXT, DELETE
 
 logger = logging.getLogger("moddy.modules.automod_precedents")
@@ -43,13 +44,14 @@ class AutomodAIPrecedentsView(BaseView):
         self.rows: List[Dict[str, Any]] = []
 
     async def load(self):
-        """Fetch the guild's precedents and (re)build the view."""
-        try:
-            self.rows = await self.bot.db.list_precedents(
-                self.guild_id, with_vectors=False)
-        except Exception as e:  # noqa: BLE001
-            logger.debug("precedent list load failed: %s", e)
-            self.rows = []
+        """Fetch the guild's precedents and (re)build the view.
+
+        A read failure is not caught here on purpose: an empty list would lie
+        about what the server has learned. It propagates to the caller's
+        ``BaseView.on_error``, which shows the error card and its code.
+        """
+        self.rows = await self.bot.db.list_precedents(
+            self.guild_id, with_vectors=False)
         self._clamp_page()
         self._build_view()
 
@@ -184,11 +186,10 @@ class AutomodAIPrecedentsView(BaseView):
         if not values:
             await self._rerender(interaction)
             return
-        ok = False
-        try:
-            ok = await self.bot.db.delete_precedent(self.guild_id, values[0])
-        except Exception as e:  # noqa: BLE001
-            logger.debug("precedent delete failed: %s", e)
+        # The delete is a round-trip, and a failure must reach the error
+        # handler rather than be reported as a deletion that never happened.
+        await safe_defer(interaction, thinking=False)
+        ok = await self.bot.db.delete_precedent(self.guild_id, values[0])
         if ok:
             svc = getattr(self.bot, "precedents", None)
             if svc is not None:
@@ -196,7 +197,7 @@ class AutomodAIPrecedentsView(BaseView):
             self.rows = [r for r in self.rows if str(r.get("id")) != values[0]]
             self._clamp_page()
         self._build_view()
-        await interaction.response.edit_message(view=self)
+        await interaction.edit_original_response(view=self)
         await interaction.followup.send(
             t("modules.automod_ai.config.precedents.deleted", locale=self.locale),
             ephemeral=True)
@@ -211,5 +212,8 @@ class AutomodAIPrecedentsView(BaseView):
                                        self.locale)
         # Refresh the count shown on the parent panel after any deletions.
         if hasattr(parent, "load_precedent_stats"):
+            await safe_defer(interaction, thinking=False)
             await parent.load_precedent_stats()
+            await interaction.edit_original_response(view=parent)
+            return
         await interaction.response.edit_message(view=parent)

@@ -147,7 +147,8 @@ class InviteView(BaseView):
                 expires_dt = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
                 expires_ts = int(expires_dt.timestamp())
                 info_lines.append(f"**{t('commands.invite.view.guild.expires', locale=self.locale)}:** <t:{expires_ts}:F> (<t:{expires_ts}:R>)")
-            except:
+            except (ValueError, TypeError, AttributeError):
+                # Malformed timestamp from the API — just omit the line.
                 pass
 
         # Add all info as a single text block
@@ -212,7 +213,8 @@ class InviteView(BaseView):
                 expires_dt = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
                 expires_ts = int(expires_dt.timestamp())
                 info_lines.append(f"**{t('commands.invite.view.guild.expires', locale=self.locale)}:** <t:{expires_ts}:F> (<t:{expires_ts}:R>)")
-            except:
+            except (ValueError, TypeError, AttributeError):
+                # Malformed timestamp from the API — just omit the line.
                 pass
 
         container.add_item(ui.TextDisplay("\n".join(info_lines)))
@@ -246,7 +248,8 @@ class InviteView(BaseView):
                 expires_dt = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
                 expires_ts = int(expires_dt.timestamp())
                 info_lines.append(f"**{t('commands.invite.view.guild.expires', locale=self.locale)}:** <t:{expires_ts}:F> (<t:{expires_ts}:R>)")
-            except:
+            except (ValueError, TypeError, AttributeError):
+                # Malformed timestamp from the API — just omit the line.
                 pass
 
         container.add_item(ui.TextDisplay("\n".join(info_lines)))
@@ -540,7 +543,9 @@ class Invite(commands.Cog):
             try:
                 user_pref = await self.bot.db.get_attribute('user', interaction.user.id, 'DEFAULT_INCOGNITO')
                 ephemeral = True if user_pref is None else user_pref
-            except:
+            except Exception:
+                # Visibility preference is a nicety: fall back to private
+                # rather than failing the whole lookup.
                 ephemeral = True
         else:
             ephemeral = incognito if incognito is not None else True
@@ -583,10 +588,6 @@ class Invite(commands.Cog):
 
         except aiohttp.ClientError as e:
             error_msg = t("commands.invite.errors.network_error", locale=locale)
-            await interaction.edit_original_response(content=error_msg)
-            return
-        except Exception as e:
-            error_msg = t("commands.invite.errors.generic", locale=locale, error=str(e))
             await interaction.edit_original_response(content=error_msg)
             return
 

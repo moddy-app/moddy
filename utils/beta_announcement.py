@@ -38,6 +38,7 @@ from cogs.error_handler import BaseView
 from notifications.models import NotificationContent
 from utils.emojis import MODDY_SQUARE_MIN, TRANSLATE
 from utils.i18n import i18n, t
+from utils.interaction_response import safe_defer
 from utils.support_request_views import ConfigHelpButton, shorten
 
 logger = logging.getLogger("moddy.beta_announcement")
@@ -142,6 +143,9 @@ class BetaTranslateButton(
 
     async def callback(self, interaction: discord.Interaction):
         try:
+            # The stored notification and its attribution line are two
+            # database reads before the card can be re-rendered.
+            await safe_defer(interaction, thinking=False)
             locale = i18n.get_user_locale(interaction)
             service = getattr(interaction.client, "notifications", None)
             record = await service.get(self.notification_id) if service else None
@@ -155,7 +159,7 @@ class BetaTranslateButton(
             if service is not None:
                 service.append_attribution(
                     view, await service.attribution_line(record, locale))
-            await interaction.response.edit_message(view=view)
+            await interaction.edit_original_response(view=view)
         except Exception as exc:  # noqa: BLE001 — dynamic items have no BaseView
             from cogs.error_handler import report_component_error
             await report_component_error(interaction, exc, self.__class__.__name__)

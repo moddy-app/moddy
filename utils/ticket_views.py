@@ -76,6 +76,7 @@ from utils.emojis import (
     TICKET_STAFF_THREAD, UNDONE,
 )
 from utils.i18n import i18n, t
+from utils.interaction_response import deliver, safe_defer
 
 logger = logging.getLogger('moddy.tickets.views')
 
@@ -139,19 +140,15 @@ async def send_error(interaction: discord.Interaction, description: str,
     locale = locale or i18n.get_user_locale(interaction)
     view = create_error_message(
         t('modules.tickets.errors.title', locale=locale), description)
-    if interaction.response.is_done():
-        await interaction.followup.send(view=view, ephemeral=True)
-    else:
-        await interaction.response.send_message(view=view, ephemeral=True)
+    # `deliver` knows the whole transport cascade, including a channel message
+    # when the interaction token has already expired.
+    await deliver(interaction, view=view, ephemeral=True)
 
 
 async def send_success(interaction: discord.Interaction, title: str,
                        description: str) -> None:
     view = create_success_message(title, description)
-    if interaction.response.is_done():
-        await interaction.followup.send(view=view, ephemeral=True)
-    else:
-        await interaction.response.send_message(view=view, ephemeral=True)
+    await deliver(interaction, view=view, ephemeral=True)
 
 
 async def handle_ticket_error(interaction: discord.Interaction, error) -> None:
@@ -282,6 +279,10 @@ async def _open_from_panel(interaction: discord.Interaction, panel_id: str,
     """Shared body of both panel controls: open a ticket, or say why not."""
     from services.ticket_service import TicketError
 
+    # The module read below is a database round-trip and opening a channel is
+    # several more — acknowledge before any of it.
+    await safe_defer(interaction, ephemeral=True, thinking=True)
+
     locale = i18n.get_user_locale(interaction)
     bot = interaction.client
     service = getattr(bot, 'tickets', None)
@@ -303,7 +304,6 @@ async def _open_from_panel(interaction: discord.Interaction, panel_id: str,
                          t('modules.tickets.errors.category_gone', locale=locale), locale)
         return
 
-    await interaction.response.defer(ephemeral=True, thinking=True)
     try:
         channel = await service.open_ticket(interaction.user, panel, category)
     except TicketError as e:
@@ -494,11 +494,12 @@ class TicketControlView(BaseView):
 
     async def _do_close(self, interaction: discord.Interaction, reason: Optional[str]):
         from services.ticket_service import TicketError
+        # `_resolve` reads the ticket row: acknowledge before it, not after.
+        await safe_defer(interaction, ephemeral=True, thinking=True)
         resolved = await _resolve(interaction)
         if not resolved:
             return
         service, ticket, panel, category = resolved
-        await interaction.response.defer(ephemeral=True, thinking=True)
         try:
             await service.close_ticket(interaction.channel, interaction.user, reason)
         except TicketError as e:
@@ -510,6 +511,9 @@ class TicketControlView(BaseView):
                            t('modules.tickets.close.done_description', locale=locale))
 
     async def on_claim(self, interaction: discord.Interaction):
+        # `_resolve` reads the ticket row before `run_claim` gets its chance
+        # to defer — acknowledge here instead.
+        await safe_defer(interaction, ephemeral=True, thinking=True)
         resolved = await _resolve(interaction)
         if not resolved:
             return
@@ -523,11 +527,11 @@ class TicketControlView(BaseView):
     async def _do_close_request(self, interaction: discord.Interaction,
                                 reason: Optional[str]):
         from services.ticket_service import TicketError
+        await safe_defer(interaction, ephemeral=True, thinking=True)
         resolved = await _resolve(interaction)
         if not resolved:
             return
         service, ticket, panel, category = resolved
-        await interaction.response.defer(ephemeral=True, thinking=True)
         try:
             await service.request_close(interaction.channel, interaction.user, reason)
         except TicketError as e:
@@ -540,6 +544,9 @@ class TicketControlView(BaseView):
             t('modules.tickets.close_request.sent_description', locale=locale))
 
     async def on_escalate(self, interaction: discord.Interaction):
+        # `_resolve` precedes every branch of `start_escalation` — acknowledge
+        # here so none of them races the 3s window.
+        await safe_defer(interaction, ephemeral=True, thinking=True)
         resolved = await _resolve(interaction)
         if not resolved:
             return
@@ -547,6 +554,9 @@ class TicketControlView(BaseView):
         await start_escalation(interaction, service, ticket, category)
 
     async def on_staff_thread(self, interaction: discord.Interaction):
+        # Same as the claim button: the resolve happens before the defer that
+        # `run_staff_thread` would have done.
+        await safe_defer(interaction, ephemeral=True, thinking=True)
         resolved = await _resolve(interaction)
         if not resolved:
             return
@@ -632,11 +642,11 @@ class TicketClosedView(BaseView):
 
     async def on_reopen(self, interaction: discord.Interaction):
         from services.ticket_service import TicketError
+        await safe_defer(interaction, ephemeral=True, thinking=True)
         resolved = await _resolve(interaction)
         if not resolved:
             return
         service = resolved[0]
-        await interaction.response.defer(ephemeral=True, thinking=True)
         try:
             await service.reopen_ticket(interaction.channel, interaction.user)
         except TicketError as e:
@@ -649,6 +659,9 @@ class TicketClosedView(BaseView):
 
     async def on_delete(self, interaction: discord.Interaction):
         from services.ticket_service import TicketError
+        # The channel is about to disappear: acknowledge before the reads so
+        # the actor still gets the "deleting…" card.
+        await safe_defer(interaction, ephemeral=True, thinking=True)
         resolved = await _resolve(interaction)
         if not resolved:
             return
@@ -659,8 +672,7 @@ class TicketClosedView(BaseView):
                 interaction,
                 t('modules.tickets.errors.missing_permission', locale=locale), locale)
             return
-        await interaction.response.send_message(
-            view=create_success_message(
+        await deliver(interaction, view=create_success_message(
                 t('modules.tickets.delete.pending_title', locale=locale),
                 t('modules.tickets.delete.pending_description', locale=locale)),
             ephemeral=True)
@@ -733,11 +745,11 @@ class TicketCloseRequestView(BaseView):
 
     async def on_accept(self, interaction: discord.Interaction):
         from services.ticket_service import TicketError
+        await safe_defer(interaction, ephemeral=True, thinking=True)
         resolved = await _resolve(interaction)
         if not resolved:
             return
         service = resolved[0]
-        await interaction.response.defer(ephemeral=True, thinking=True)
         try:
             await service.close_ticket(interaction.channel, interaction.user, None)
         except TicketError as e:
@@ -750,6 +762,8 @@ class TicketCloseRequestView(BaseView):
 
     async def on_refuse(self, interaction: discord.Interaction):
         from services.ticket_service import TicketError
+        # Two writes before the card is rewritten — acknowledge first.
+        await safe_defer(interaction, thinking=False)
         resolved = await _resolve(interaction)
         if not resolved:
             return
@@ -760,7 +774,7 @@ class TicketCloseRequestView(BaseView):
             await handle_ticket_error(interaction, e)
             return
         locale = i18n.get_user_locale(interaction)
-        await interaction.response.edit_message(
+        await interaction.edit_original_response(
             view=_close_request_resolved(interaction.user, locale))
 
     @classmethod
@@ -837,11 +851,11 @@ class TicketEscalationView(BaseView):
 
     async def on_cancel(self, interaction: discord.Interaction):
         from services.ticket_service import TicketError
+        await safe_defer(interaction, ephemeral=True, thinking=True)
         resolved = await _resolve(interaction)
         if not resolved:
             return
         service = resolved[0]
-        await interaction.response.defer(ephemeral=True, thinking=True)
         try:
             await service.deescalate(interaction.channel, interaction.user)
         except TicketError as e:
@@ -887,11 +901,12 @@ async def start_escalation(interaction: discord.Interaction, service,
 
     manual = list(ticket.get('participants', [])) + list(ticket.get('participant_roles', []))
     if manual:
-        await interaction.response.send_message(
-            view=TicketEscalateConfirmView(ticket, reason, locale), ephemeral=True)
+        await deliver(interaction,
+                      view=TicketEscalateConfirmView(ticket, reason, locale),
+                      ephemeral=True)
         return
 
-    await interaction.response.defer(ephemeral=True, thinking=True)
+    await safe_defer(interaction, ephemeral=True, thinking=True)
     try:
         await service.escalate(interaction.channel, interaction.user, reason=reason)
     except TicketError as e:
@@ -970,12 +985,12 @@ class TicketEscalateConfirmView(BaseView):
     async def _escalate(self, interaction: discord.Interaction, *,
                         keep: bool, mute: bool):
         from services.ticket_service import TicketError
+        await safe_defer(interaction, thinking=False)
         resolved = await _resolve(interaction)
         if not resolved:
             return
         service = resolved[0]
         locale = i18n.get_user_locale(interaction)
-        await interaction.response.defer()
         try:
             await service.escalate(interaction.channel, interaction.user,
                                    reason=self.reason, keep_participants=keep,
@@ -1145,6 +1160,8 @@ def _merge_participants(current: List[int], selected: List[int],
 async def _apply_participants(interaction: discord.Interaction, mode: str,
                               users: List[int], roles: List[int]) -> None:
     """Add, remove or replace the ticket's manual participants."""
+    # `_resolve`, the write and the permission sync are all round-trips.
+    await safe_defer(interaction, ephemeral=True, thinking=True)
     resolved = await _resolve(interaction)
     if not resolved:
         return
@@ -1166,7 +1183,6 @@ async def _apply_participants(interaction: discord.Interaction, mode: str,
     # list stops "remove the owner" from being one submit.
     users = [uid for uid in users if uid != ticket['owner_id']]
 
-    await interaction.response.defer(ephemeral=True, thinking=True)
     await interaction.client.db.set_participants(
         interaction.channel.id, users=users, roles=roles)
     ticket = await service.get_ticket(interaction.channel.id) or ticket

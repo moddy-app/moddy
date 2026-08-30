@@ -155,7 +155,15 @@ class AppealService:
                                           duration_hours=duration_hours)
             # refuse: nothing to change
         except Exception as e:
-            logger.error("appeal %s effect failed: %s", appeal_id, e, exc_info=True)
+            # The appeal is already recorded as decided, so the ruling stands —
+            # but its binding effect (unban, re-sanction) did not happen. That
+            # needs an error code and a Sentry trace, not just a log line.
+            from cogs.error_handler import report_error
+            await report_error(
+                self.bot, e, source=f"AppealService:effect:{decision}",
+                user=interaction.user, guild=guild, channel=interaction.channel,
+                error_type="Service Error",
+            )
 
         # Session 7: an appeal ruling is a strong human precedent — accept →
         # non_sanctionnable (proven false positive), refuse → sanctionnable
@@ -165,7 +173,9 @@ class AppealService:
             try:
                 await self._feed_precedent(appeal, accepted=(decision == "accept"))
             except Exception as e:  # noqa: BLE001 — precedents are best-effort
-                logger.debug("appeal %s precedent feed failed: %s", appeal_id, e)
+                # Best-effort, but a server quietly learning nothing from its
+                # own rulings is worth seeing in the logs.
+                logger.warning("appeal %s precedent feed failed: %s", appeal_id, e)
 
         # Timeline trace.
         await self._timeline(

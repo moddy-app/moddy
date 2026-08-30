@@ -130,7 +130,10 @@ class CaseService:
             from utils import global_sanctions
             global_sanctions.invalidate(self.bot, spec.subject_type.value, subject_id)
         except Exception as exc:  # never break a sanction on a cache miss
-            logger.debug("Global sanction cache invalidation failed: %s", exc)
+            # Warning, not debug: a stale global level keeps answering the old
+            # verdict until the TTL expires, and nothing else reports it.
+            logger.warning("Global sanction cache invalidation failed for %s %s: %s",
+                           spec.subject_type.value, subject_id, exc)
 
     async def record_sanction(
         self,
@@ -266,4 +269,11 @@ class CaseService:
                 reference=reference, revoked=revoked,
             )
         except Exception as exc:
-            logger.debug("Server-log mirror failed for a %s sanction: %s", action, exc)
+            # Nobody is waiting on the mirror, but a server silently losing its
+            # moderation logs is a bug, not a debug line: give it an error code.
+            from cogs.error_handler import report_error
+            await report_error(
+                self.bot, exc, source="CaseService:mirror_to_server_logs",
+                guild=self.bot.get_guild(int(scope_id)) if scope_id else None,
+                error_type="Service Error",
+            )
