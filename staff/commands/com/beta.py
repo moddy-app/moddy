@@ -56,6 +56,8 @@ class ComBetaCommand(StaffCommand):
     name = "beta"
     permission = "broadcast"
     description = "Send the beta-launch announcement to server owners."
+    # Answers with a Modal: Discord refuses one on a deferred interaction.
+    opens_modal = True
     options = [
         SlashOption("target", "string", "Who receives it.", required=True,
                     choices=["preview", "test", "owners"]),

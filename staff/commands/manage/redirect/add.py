@@ -14,6 +14,8 @@ class RedirectAddCommand(StaffCommand):
     name = "add"
     permission = "redirect_manage"
     description = "Create a redirect link."
+    # Answers with a Modal: Discord refuses one on a deferred interaction.
+    opens_modal = True
 
     async def execute(self, ctx):
         await ctx.open_modal(

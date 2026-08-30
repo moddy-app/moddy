@@ -24,6 +24,8 @@ class GlobalApplyCommand(StaffCommand):
     name = "apply"
     permission = "global_sanction"
     description = "Apply a global sanction to a user and/or servers (one group)."
+    # Answers with a Modal: Discord refuses one on a deferred interaction.
+    opens_modal = True
     options = [
         SlashOption("user", "user", "The sanctioned user.", required=False),
         SlashOption("guilds", "string",

@@ -101,6 +101,8 @@ class JskCommand(StaffCommand):
     aliases = ("jsk",)
     description = "Evaluate Python code in the bot runtime."
     sensitive = True
+    # Answers with a Modal: Discord refuses one on a deferred interaction.
+    opens_modal = True
 
     async def execute(self, ctx):
         # Message command with inline code -> run directly.

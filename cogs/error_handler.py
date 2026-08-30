@@ -17,6 +17,7 @@ from collections import deque
 import os
 
 from config import COLORS
+from utils.interaction_response import deliver, safe_defer, is_expired_interaction
 import logging
 
 logger = logging.getLogger('moddy.error_handler')
@@ -296,29 +297,17 @@ class BaseView(ui.LayoutView):
             # ALWAYS show error to user
             error_view = ErrorView(error_code)
 
-            try:
-                if interaction.response.is_done():
-                    try:
-                        await interaction.followup.send(view=error_view, ephemeral=True)
-                    except:
-                        try:
-                            await interaction.edit_original_response(view=error_view)
-                        except Exception as edit_error:
-                            logger.error(f"Failed to edit response: {edit_error}")
-                else:
-                    await interaction.response.send_message(view=error_view, ephemeral=True)
-            except Exception as send_error:
-                logger.error(f"CRITICAL: Failed to send error view to user: {send_error}")
+            # `deliver` walks every transport, including a plain channel
+            # message when the interaction token itself is dead (10062), so
+            # the user never ends up on Discord's "did not respond".
+            await deliver(interaction, view=error_view, ephemeral=True)
         else:
             # FALLBACK: No error tracker, but STILL show error to user
             logger.error(f"ERROR TRACKER NOT AVAILABLE - Falling back to basic error message")
             try:
                 error_msg = f"❌ **An error occurred**\n\n`{type(error).__name__}: {str(error)}`\n\nThis error has been logged."
 
-                if interaction.response.is_done():
-                    await interaction.followup.send(error_msg, ephemeral=True)
-                else:
-                    await interaction.response.send_message(error_msg, ephemeral=True)
+                await deliver(interaction, content=error_msg, ephemeral=True)
             except Exception as fallback_error:
                 logger.error(f"CRITICAL: Failed to send even fallback error message: {fallback_error}")
 
@@ -399,27 +388,15 @@ class BaseModal(ui.Modal):
 
             error_view = ErrorView(error_code)
 
-            try:
-                if interaction.response.is_done():
-                    try:
-                        await interaction.followup.send(view=error_view, ephemeral=True)
-                    except:
-                        try:
-                            await interaction.edit_original_response(view=error_view)
-                        except:
-                            pass
-                else:
-                    await interaction.response.send_message(view=error_view, ephemeral=True)
-            except Exception as send_error:
-                logger.error(f"CRITICAL: Failed to send error view to user: {send_error}")
+            # `deliver` walks every transport, including a plain channel
+            # message when the interaction token itself is dead (10062), so
+            # the user never ends up on Discord's "did not respond".
+            await deliver(interaction, view=error_view, ephemeral=True)
         else:
             try:
                 error_msg = f"❌ **An error occurred**\n\n`{type(error).__name__}: {str(error)}`\n\nThis error has been logged."
 
-                if interaction.response.is_done():
-                    await interaction.followup.send(error_msg, ephemeral=True)
-                else:
-                    await interaction.response.send_message(error_msg, ephemeral=True)
+                await deliver(interaction, content=error_msg, ephemeral=True)
             except Exception as fallback_error:
                 logger.error(f"CRITICAL: Failed to send fallback error message: {fallback_error}")
 
@@ -885,13 +862,7 @@ class ErrorTracker(commands.Cog):
                     container.add_item(button_row)
                     self.add_item(container)
 
-            try:
-                if interaction.response.is_done():
-                    await interaction.followup.send(view=PermissionErrorView(), ephemeral=True)
-                else:
-                    await interaction.response.send_message(view=PermissionErrorView(), ephemeral=True)
-            except:
-                pass
+            await deliver(interaction, view=PermissionErrorView(), ephemeral=True)
             return
 
         if isinstance(error, discord.app_commands.CommandOnCooldown):
@@ -908,13 +879,7 @@ class ErrorTracker(commands.Cog):
                     )
                     self.add_item(container)
 
-            try:
-                if interaction.response.is_done():
-                    await interaction.followup.send(view=CooldownErrorView(error.retry_after), ephemeral=True)
-                else:
-                    await interaction.response.send_message(view=CooldownErrorView(error.retry_after), ephemeral=True)
-            except:
-                pass
+            await deliver(interaction, view=CooldownErrorView(error.retry_after), ephemeral=True)
             return
 
         # Argument that couldn't be resolved (e.g. a username typed where a
@@ -932,13 +897,7 @@ class ErrorTracker(commands.Cog):
                         f"Try mentioning them or using their ID."))
                     self.add_item(container)
 
-            try:
-                if interaction.response.is_done():
-                    await interaction.followup.send(view=NotFoundView(), ephemeral=True)
-                else:
-                    await interaction.response.send_message(view=NotFoundView(), ephemeral=True)
-            except discord.HTTPException:
-                pass
+            await deliver(interaction, view=NotFoundView(), ephemeral=True)
             return
 
         # For all other errors, log them
@@ -991,22 +950,72 @@ class ErrorTracker(commands.Cog):
         # Send error to user with Components V2 (no embed needed)
         error_view = ErrorView(error_code)
 
-        try:
-            if interaction.response.is_done():
-                # Try to send a followup message first (preferred)
-                try:
-                    await interaction.followup.send(view=error_view, ephemeral=True)
-                except:
-                    # If followup fails, edit the original response as fallback
-                    await interaction.edit_original_response(content=None, view=error_view)
-            else:
-                # Send the error as the initial response
-                await interaction.response.send_message(view=error_view, ephemeral=True)
-        except Exception as send_error:
-            # Last resort: log the failure
-            import logging
-            logger = logging.getLogger('moddy')
-            logger.error(f"Failed to send app command error to user: {send_error}")
+        # `deliver` never raises and never gives up while a transport is
+        # left — including a channel message when the interaction token
+        # has expired, which is exactly the case that used to surface as
+        # Discord's own "The application did not respond".
+        await deliver(interaction, view=error_view, ephemeral=True)
+
+
+async def report_error(
+    bot,
+    error: Exception,
+    *,
+    source: str,
+    user: "Optional[discord.abc.User]" = None,
+    guild: "Optional[discord.Guild]" = None,
+    channel=None,
+    error_type: str = "Handled Error",
+) -> Optional[str]:
+    """Route an unexpected error through the central handler and return its code.
+
+    This is the transport-agnostic half of the error pipeline: it logs the
+    traceback, captures to Sentry, stores the error in memory and in the
+    database, and posts the internal Discord log — exactly what
+    :class:`BaseView` and the app-command handler do — then hands back the
+    error code so the caller can show it to the user.
+
+    Use it anywhere an unexpected exception is caught outside a View, a Modal
+    or an app command: a message command, a background task, a service
+    callback. **Never** swallow an unexpected exception behind a bare
+    "an error occurred" message: without a code, neither the user nor the
+    team can trace what happened.
+
+    Returns ``None`` when the tracker cog is unavailable, in which case the
+    caller should still tell the user something went wrong.
+    """
+    error_tb = ''.join(traceback.format_exception(type(error), error, error.__traceback__))
+    logger.error(f"Error in {source} - {error_tb.replace(chr(10), ' ⮐ ')}")
+
+    tracker = bot.get_cog('ErrorTracker') if bot else None
+    if not tracker:
+        return None
+
+    error_code = tracker.generate_error_code(error)
+    error_details = tracker.format_error_details(error)
+    error_details.update({
+        "command": source,
+        "user": f"{user} ({user.id})" if user else "Unknown",
+        "guild": f"{guild.name} ({guild.id})" if guild else "DM",
+        "channel": f"#{channel.name}" if hasattr(channel, 'name') else "DM",
+    })
+
+    sentry_event_id = capture_error_to_sentry(error, {
+        'error_type': error_type,
+        'error_code': error_code,
+        'source': source,
+        'user_id': user.id if user else None,
+        'guild_id': guild.id if guild else None,
+    })
+    if sentry_event_id:
+        error_details['sentry_event_id'] = sentry_event_id
+
+    tracker.store_error(error_code, error_details)
+    await tracker.store_error_db(error_code, error_details)
+    if sentry_event_id and bot.db:
+        asyncio.create_task(tracker._update_sentry_issue_id(error_code, sentry_event_id))
+    await tracker.send_error_log(error_code, error_details, False)
+    return error_code
 
 
 async def report_component_error(
@@ -1020,44 +1029,18 @@ async def report_component_error(
     unknown error still gets an error code, a Sentry capture, a Discord log and
     a user-facing ``ErrorView`` — exactly like every other UI error.
     """
-    error_tb = ''.join(traceback.format_exception(type(error), error, error.__traceback__))
-    logger.error(f"Component error in {source} - {error_tb.replace(chr(10), ' ⮐ ')}")
-
-    bot = interaction.client
-    tracker = bot.get_cog('ErrorTracker') if bot else None
-    if tracker:
-        error_code = tracker.generate_error_code(error)
-        error_details = tracker.format_error_details(error)
-        error_details.update({
-            "command": f"Component:{source}",
-            "user": f"{interaction.user} ({interaction.user.id})",
-            "guild": f"{interaction.guild.name} ({interaction.guild.id})" if interaction.guild else "DM",
-            "channel": f"#{interaction.channel.name}" if hasattr(interaction.channel, 'name') else "DM",
-        })
-        sentry_event_id = capture_error_to_sentry(error, {
-            'error_type': 'Component Error', 'error_code': error_code, 'source': source,
-            'user_id': interaction.user.id if interaction.user else None,
-            'guild_id': interaction.guild.id if interaction.guild else None,
-        })
-        if sentry_event_id:
-            error_details['sentry_event_id'] = sentry_event_id
-        tracker.store_error(error_code, error_details)
-        await tracker.store_error_db(error_code, error_details)
-        if sentry_event_id and bot.db:
-            asyncio.create_task(tracker._update_sentry_issue_id(error_code, sentry_event_id))
-        await tracker.send_error_log(error_code, error_details, False)
-        view = ErrorView(error_code)
-    else:
-        view = None
-
-    try:
-        if view is not None:
-            if interaction.response.is_done():
-                await interaction.followup.send(view=view, ephemeral=True)
-            else:
-                await interaction.response.send_message(view=view, ephemeral=True)
-    except discord.HTTPException as send_error:
-        logger.error(f"CRITICAL: Failed to send component error view: {send_error}")
+    error_code = await report_error(
+        interaction.client,
+        error,
+        source=f"Component:{source}",
+        user=interaction.user,
+        guild=interaction.guild,
+        channel=interaction.channel,
+        error_type="Component Error",
+    )
+    view = ErrorView(error_code) if error_code else None
+    if view is not None:
+        await deliver(interaction, view=view, ephemeral=True)
 
 
 async def setup(bot):

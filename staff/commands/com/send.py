@@ -48,6 +48,8 @@ class ComSendCommand(StaffCommand):
     name = "send"
     permission = "broadcast"
     description = "Send a Moddy notification to a user, a server, or a group of them."
+    # Answers with a Modal: Discord refuses one on a deferred interaction.
+    opens_modal = True
     options = [
         SlashOption("target", "string", "Who receives it.", required=True,
                     choices=["user", "guild", "users", "guilds"]),

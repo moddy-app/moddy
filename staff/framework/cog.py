@@ -24,6 +24,8 @@ from staff.framework.context import StaffContext
 from utils.staff_permissions import staff_permissions, CommandType
 from utils.staff_logger import staff_logger
 from utils.i18n import t
+from utils.interaction_response import deliver, safe_defer
+from cogs.error_handler import report_error, ErrorView
 
 logger = logging.getLogger("moddy.staff.router")
 
@@ -140,12 +142,22 @@ class StaffCommandsRouter(StaffCommandsCog):
     # --- slash transport ---------------------------------------------------
 
     async def _run_slash(self, command, interaction: discord.Interaction, options: dict, incognito: bool):
-        allowed, reason = await self._has_permission(command, interaction.user.id)
         ctx = StaffContext.from_interaction(self.bot, command, interaction, options, incognito, cog=self)
+
+        # Acknowledge FIRST, before the permission lookup and the audit write.
+        # Both hit the database, and either one can outlast the 3-second
+        # window Discord gives an interaction — after which every call on it
+        # fails with 10062 and the user only ever sees "the application did
+        # not respond". Commands that answer with a Modal are the exception:
+        # Discord refuses a modal on an acknowledged interaction, so they are
+        # left fresh and must stay fast.
+        if not command.opens_modal:
+            await safe_defer(interaction, ephemeral=incognito, thinking=True)
+
+        allowed, reason = await self._has_permission(command, interaction.user.id)
         if not allowed:
-            await interaction.response.send_message(
-                view=design.permission_denied(ctx.locale, reason), ephemeral=True
-            )
+            await deliver(interaction, view=design.permission_denied(ctx.locale, reason),
+                          ephemeral=True)
             return
         await self._invoke(command, ctx)
 
@@ -164,19 +176,37 @@ class StaffCommandsRouter(StaffCommandsCog):
         try:
             await command.execute(ctx)
         except Exception as exc:
-            logger.error("Error in staff command %s.%s: %s",
-                         command.command_type.value, command.name, exc, exc_info=True)
-            # For a not-yet-answered slash, let the global handler produce the
-            # standard error view (and capture to Sentry).
+            # For a not-yet-answered slash, let the global app-command handler
+            # produce the standard error view (and capture to Sentry).
             if ctx.is_slash and not ctx.interaction.response.is_done():
                 raise
+            # Otherwise the interaction is already acknowledged (the router
+            # defers up front) or this is a message command, so no global
+            # handler will ever see this exception. Run the same central
+            # pipeline by hand and show the user the resulting error code —
+            # a bare "an error occurred" with nothing to trace is not an
+            # acceptable answer.
+            error_code = await report_error(
+                self.bot, exc,
+                source=f"Staff:{command.command_type.value}.{command.name}",
+                user=ctx.author, guild=ctx.guild, channel=ctx.channel,
+                error_type="Staff Command Error",
+            )
             try:
-                await ctx.send(view=design.error(
-                    t("staff.common.error.title", locale=ctx.locale),
-                    t("staff.common.error.description", locale=ctx.locale),
-                ))
-            except Exception:
-                pass
+                if error_code:
+                    view = ErrorView(error_code)
+                else:
+                    view = design.error(
+                        t("staff.common.error.title", locale=ctx.locale),
+                        t("staff.common.error.description", locale=ctx.locale),
+                    )
+                if ctx.is_slash:
+                    await deliver(ctx.interaction, view=view, ephemeral=ctx.incognito)
+                else:
+                    await ctx.send(view=view)
+            except Exception as send_error:
+                logger.error("CRITICAL: could not show the error card for %s.%s: %s",
+                             command.command_type.value, command.name, send_error)
 
 
 async def setup(bot):

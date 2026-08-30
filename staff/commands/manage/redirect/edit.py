@@ -14,6 +14,8 @@ class RedirectEditCommand(StaffCommand):
     name = "edit"
     permission = "redirect_manage"
     description = "Edit a redirect link."
+    # Answers with a Modal: Discord refuses one on a deferred interaction.
+    opens_modal = True
     options = [
         SlashOption("id", "integer", "Redirect id.", required=True),
     ]

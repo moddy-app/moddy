@@ -80,6 +80,14 @@ class StaffCommand:
     permission: Optional[str] = None
     #: Redact arguments in the staff audit log (for ``sql`` / ``jsk``).
     sensitive: bool = False
+    #: Set to ``True`` when the command answers a slash invocation by opening
+    #: a Modal. Discord only accepts a modal on a *fresh* interaction, so the
+    #: router must not acknowledge it early for these commands. Every other
+    #: command is deferred by the router before any awaited work, which is
+    #: what keeps a slow permission lookup or audit write from burning the
+    #: 3-second window and turning the reply into "the application did not
+    #: respond" (10062).
+    opens_modal: bool = False
 
     def __init__(self, bot):
         self.bot = bot

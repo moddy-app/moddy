@@ -17,6 +17,8 @@ class CaseEditCommand(StaffCommand):
     name = "edit"
     permission = "case_edit"
     description = "Edit the reason of a moderation case."
+    # Answers with a Modal: Discord refuses one on a deferred interaction.
+    opens_modal = True
     options = [
         SlashOption("reference", "string", "The public case reference.", required=True),
     ]
