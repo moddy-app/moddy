@@ -85,7 +85,12 @@ class CaseSync(commands.Cog):
             elif action == A.member_update:
                 await self._handle_timeout(entry, guild, target_id, reason, issuer_type, issuer_id)
         except Exception as e:
-            logger.error(f"case_sync: failed to record {action} in guild {guild.id}: {e}", exc_info=True)
+            # A dropped sanction is a hole in the audit trail: it must be
+            # traceable, not just visible on stdout.
+            from cogs.error_handler import report_error
+            await report_error(
+                self.bot, e, source=f"Cog:CaseSync.record({action})", guild=guild,
+            )
 
     async def _handle_timeout(self, entry, guild, target_id, reason, issuer_type, issuer_id):
         """A member_update entry may set or clear a communication timeout (mute)."""

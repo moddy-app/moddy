@@ -444,7 +444,13 @@ class Tickets(commands.Cog):
                 logger.info(f"[Tickets] #{ticket['number']} forgotten "
                             f"(channel {channel.id} deleted)")
         except Exception as e:
-            logger.error(f"[Tickets] Cleanup failed for channel {channel.id}: {e}")
+            # A row left behind burns the member's open-ticket quota forever,
+            # so this failure needs an error code, not just a log line.
+            from cogs.error_handler import report_error
+            await report_error(
+                self.bot, e, source="Cog:Tickets.on_guild_channel_delete",
+                guild=getattr(channel, "guild", None),
+            )
 
     @commands.Cog.listener()
     async def on_thread_member_join(self, member: discord.ThreadMember):
@@ -484,8 +490,13 @@ class Tickets(commands.Cog):
             # Not a ticket any more, or the member left in the meantime.
             return
         except Exception as e:
-            logger.error(f"[Tickets] Staff-thread guard failed on thread "
-                         f"{thread.id}: {e}")
+            # This guard is what keeps a ticket's staff thread staff-only:
+            # a silent failure is a privacy leak, so it is filed centrally.
+            from cogs.error_handler import report_error
+            await report_error(
+                self.bot, e, source="Cog:Tickets.on_thread_member_join",
+                guild=thread.guild,
+            )
 
 
 async def setup(bot):

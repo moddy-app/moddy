@@ -841,7 +841,10 @@ class Reminder(commands.Cog):
             for reminder in pending:
                 await self.send_reminder(reminder)
         except Exception as e:
-            logger.error(f"Error checking reminders: {e}")
+            # A silently broken loop means nobody's reminders ever fire again:
+            # file it centrally so it surfaces with an error code.
+            from cogs.error_handler import report_error
+            await report_error(self.bot, e, source="Cog:Reminder.check_reminders")
 
     @check_reminders.before_loop
     async def before_check_reminders(self):
@@ -860,7 +863,9 @@ class Reminder(commands.Cog):
                 for reminder in pending:
                     await self.send_reminder(reminder, is_late=True)
             except Exception as e:
-                logger.error(f"Error sending missed reminders: {e}")
+                from cogs.error_handler import report_error
+                await report_error(
+                    self.bot, e, source="Cog:Reminder.before_check_reminders")
 
     async def send_reminder(self, reminder: Dict, is_late: bool = False):
         """Send a reminder to the user"""

@@ -39,6 +39,10 @@ class StaffCommandsRouter(StaffCommandsCog):
         self.message_index = {}
         self.subgroup_index = {}
         self.groups = []
+        # Strong references to the fire-and-forget audit tasks. asyncio only
+        # holds a weak one, so without this the event loop may garbage-collect
+        # an audit write mid-flight and the entry silently never lands.
+        self._audit_tasks: set = set()
         # Types fully owned by the new framework. Message commands of these
         # types are handled here; legacy cogs keep handling the rest.
         self.owned_types = set()
@@ -190,7 +194,9 @@ class StaffCommandsRouter(StaffCommandsCog):
         # unacknowledged), and no command depends on its result — so it runs
         # beside the command instead of in front of it.
         if staff_logger:
-            asyncio.create_task(self._audit(command, ctx))
+            task = asyncio.create_task(self._audit(command, ctx))
+            self._audit_tasks.add(task)
+            task.add_done_callback(self._audit_tasks.discard)
 
         try:
             await command.execute(ctx)

@@ -687,6 +687,10 @@ class AppealInviteButton(
 
     @_guarded
     async def callback(self, interaction: discord.Interaction):
+        # The appeal read and the invite creation are two round trips, one of
+        # them a REST call, so acknowledge before either. `appeal_service.invite`
+        # answers through `deliver`, which works on both sides of a defer.
+        await safe_defer(interaction, ephemeral=True)
         locale = i18n.get_user_locale(interaction)
         bot = interaction.client
         appeal = await bot.db.get_appeal(self.appeal_id)
