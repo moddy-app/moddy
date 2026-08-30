@@ -14,23 +14,24 @@
       "error": "No se pudo obtener el estado de tu suscripción. Inténtalo de nuevo más tarde.",
       "invoice": {
         "title": {
-          "paid": "Pago recibido",
-          "trial": "Tu prueba ha comenzado",
+          "paid": "Recibo de pago",
+          "trial": "Confirmación de prueba gratuita",
           "free": "Factura disponible"
         },
         "body": {
-          "paid": "El pago de **{amount}** de tu suscripción **{tier}** se ha recibido correctamente. ¡Gracias por apoyar a Moddy!",
-          "trial": "Tu prueba **{tier}** ha comenzado: **no se ha cobrado ningún importe**. Aquí tienes la factura correspondiente, de **{amount}**. ¡Gracias por probar Moddy!",
-          "free": "**No se ha cobrado ningún importe** por este periodo de tu suscripción **{tier}**. Aquí tienes tu factura, de **{amount}**."
+          "paid": "Este es el recibo de su suscripción Moddy Max **{tier}**. Se ha procesado correctamente un pago de **{amount}**. No es necesaria ninguna acción por su parte.",
+          "trial": "Su prueba gratuita de Moddy Max **{tier}** ya está activa. **No se ha cobrado ningún importe.** La factura siguiente se emite por **{amount}** para su archivo.\nSu prueba finaliza el **{period_end}**, fecha en la que se realizará el primer cobro. Puede cancelar sin coste alguno en cualquier momento antes de esa fecha.",
+          "free": "**No se ha cobrado ningún importe** por el periodo actual de su suscripción Moddy Max **{tier}**. La factura correspondiente, emitida por **{amount}**, está disponible a continuación."
         },
         "field_number": "Número de factura",
         "field_amount": "Importe",
-        "field_date": "Fecha",
+        "field_date": "Fecha de factura",
         "field_next_renewal": "Próxima renovación",
-        "field_first_charge": "Primer cobro",
+        "field_trial_end": "Fin de la prueba — primer cobro",
+        "footer_stripe": "Factura emitida y pago procesado por Stripe, proveedor de facturación y pagos de Moddy. Moddy nunca gestiona ni almacena los datos de su tarjeta.",
         "button_view": "Ver la factura",
         "button_pdf": "Descargar el PDF",
-        "button_manage": "Gestionar mi suscripción",
+        "button_manage": "Gestionar la facturación",
         "tier": {
           "monthly": "mensual",
           "yearly": "anual"
@@ -4096,7 +4097,8 @@
       "expirations": "Fin de sanción",
       "support": "Moddy Support",
       "moddy_team": "Moddy Team",
-      "subscription": "Suscripción Moddy"
+      "subscription": "Suscripción Moddy",
+      "stripe": "Stripe"
     },
     "attribution": {
       "unknown_guild": "Servidor desconocido",

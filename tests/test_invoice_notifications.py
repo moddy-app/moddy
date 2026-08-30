@@ -10,8 +10,12 @@ What these guard, in order of how badly they would hurt a paying customer:
 * **Amounts are printed as Stripe reported them.** Minor units everywhere
   except the zero-decimal currencies, where dividing by 100 would understate
   an invoice a hundredfold. ``0`` is a legitimate amount.
-* **A trial's ``period_end`` is the first charge, not a renewal.** Same date,
-  opposite meaning; the mail says "first charge" and the DM must agree.
+* **A trial's ``period_end`` is the end of the trial and the first charge,
+  not a renewal.** Same date, opposite meaning; the mail says the same thing
+  and the DM must agree.
+* **The DM is a Stripe receipt.** English whatever the account's language,
+  attributed to Stripe, and saying so — that attribution is the only thing
+  separating it from the scams that impersonate a bot's billing.
 * **Missing halves stay missing.** ``number``, ``invoice_pdf``,
   ``hosted_invoice_url`` and the dates are all nullable on a fresh invoice; a
   null must not become a dead button or the string "None".
@@ -27,8 +31,8 @@ import pytest
 from notifications.models import SERVICES, NotificationSource, get_service
 from notifications.render import OFFICIAL_SERVICES, build_attribution_line, resolve_source_context
 from services.invoice_notifier import (
-    ZERO_DECIMAL_CURRENCIES, InvoiceNotifier, format_amount, format_date,
-    parse_timestamp, variant_of,
+    INVOICE_LOCALE, ZERO_DECIMAL_CURRENCIES, InvoiceNotifier, format_amount,
+    format_date, parse_timestamp, variant_of,
 )
 
 PAID = {
@@ -60,7 +64,7 @@ class FakeBot:
         self.db = None
 
 
-def _content(invoice, *, locale="en-US"):
+def _content(invoice, *, locale=INVOICE_LOCALE):
     variant = variant_of(invoice)
     return InvoiceNotifier(FakeBot()).build_content(invoice, variant, locale=locale)
 
@@ -149,29 +153,36 @@ def test_a_trial_never_claims_a_payment():
     content, variables = _content(TRIAL)
     assert content.template_id == "subscription.invoice.trial"
     rendered = content.render(variables).body
-    assert "no amount was charged" in rendered.lower()
+    assert "no amount has been charged" in rendered.lower()
     assert "payment of" not in rendered.lower()
 
 
 def test_a_free_period_never_claims_a_payment():
     content, variables = _content(FREE)
     rendered = content.render(variables).body
-    assert "no amount was charged" in rendered.lower()
+    assert "no amount has been charged" in rendered.lower()
 
 
-def test_a_trial_labels_period_end_as_the_first_charge():
-    """Same date as a renewal, opposite meaning — and the mail says 'first charge'."""
+def test_a_trial_labels_period_end_as_the_end_of_the_trial():
+    """Same date as a renewal, opposite meaning — and the mail says so too."""
     content, _ = _content(TRIAL)
     titles = [s["title"] for s in content.sections]
-    assert "First charge" in titles
+    assert "Trial ends — first charge" in titles
     assert "Next renewal" not in titles
+
+
+def test_a_trial_spells_out_when_it_ends_in_the_body_too():
+    """The end date is the whole point of a 0 invoice: a field alone buries it."""
+    content, variables = _content(TRIAL)
+    assert "{period_end}" in content.body
+    assert "2026-09-29" in content.render(variables).body
 
 
 def test_a_paid_invoice_labels_period_end_as_the_next_renewal():
     content, _ = _content(PAID)
     titles = [s["title"] for s in content.sections]
     assert "Next renewal" in titles
-    assert "First charge" not in titles
+    assert all("Trial ends" not in title for title in titles)
 
 
 def test_the_body_keeps_its_placeholders_so_one_row_serves_every_invoice():
@@ -180,11 +191,20 @@ def test_the_body_keeps_its_placeholders_so_one_row_serves_every_invoice():
     assert variables["amount"] == "€4.99"
 
 
-def test_the_wording_is_translated():
-    content, variables = _content(PAID, locale="fr")
+def test_the_dm_is_written_in_english():
+    """A receipt describes an English Stripe document; half-translating it reads
+    as a forgery, so the account language does not apply to this one DM."""
+    assert INVOICE_LOCALE == "en-US"
+    content, variables = _content(PAID)
     rendered = content.render(variables)
-    assert "4,99 €" in rendered.body
-    assert "mensuel" in rendered.body
+    assert "€4.99" in rendered.body
+    assert "monthly" in rendered.body
+
+
+def test_the_dm_names_stripe_as_the_issuer():
+    """The one message that says who bills: it is the receipt's own credential."""
+    content, _ = _content(PAID)
+    assert "Stripe" in (content.footer or "")
 
 
 # --------------------------------------------------------------------------- #
@@ -206,7 +226,7 @@ def test_a_fresh_invoice_without_a_number_simply_omits_the_line():
 def test_a_missing_period_end_omits_the_date_line_entirely():
     content, _ = _content(dict(PAID, period_end=None, paid_at=None))
     titles = [s["title"] for s in content.sections]
-    assert "Next renewal" not in titles and "Date" not in titles
+    assert "Next renewal" not in titles and "Invoice date" not in titles
 
 
 def test_an_unknown_tier_never_prints_a_translation_key():
@@ -257,15 +277,23 @@ async def test_no_redis_at_all_still_lets_the_dm_through():
 # Attribution
 # --------------------------------------------------------------------------- #
 
-def test_the_subscription_service_is_registered():
-    assert "subscription" in SERVICES
-    assert get_service("subscription").emoji.startswith("<")
+@pytest.mark.parametrize("service_id", ["subscription", "stripe"])
+def test_the_billing_services_are_registered(service_id):
+    assert service_id in SERVICES
+    assert get_service(service_id).emoji.startswith("<")
+
+
+async def test_an_invoice_dm_is_attributed_to_stripe():
+    """Stripe issues the invoice and takes the payment — the receipt says so."""
+    ctx = await resolve_source_context(None, NotificationSource.service("stripe"))
+    assert ctx["service_name"] == "Stripe"
+    assert "Stripe" in build_attribution_line(ctx, locale=INVOICE_LOCALE)
 
 
 async def test_a_billing_dm_carries_the_verification_check():
     """A billing DM is what a scam impersonates: the check is the tell."""
-    assert "subscription" in OFFICIAL_SERVICES
-    ctx = await resolve_source_context(None, NotificationSource.service("subscription"))
+    assert "stripe" in OFFICIAL_SERVICES
+    ctx = await resolve_source_context(None, NotificationSource.service("stripe"))
     assert ctx["verified"] is True
     assert ctx["reportable"] is False  # Moddy wrote it; there is nothing to judge
-    assert ctx["badge"] in build_attribution_line(ctx, locale="en-US")
+    assert ctx["badge"] in build_attribution_line(ctx, locale=INVOICE_LOCALE)

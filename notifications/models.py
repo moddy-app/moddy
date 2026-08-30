@@ -161,7 +161,12 @@ SERVICES: Dict[str, ServiceInfo] = {
         _svc("global_sanctions", "EXCLAMATION"),     # services/global_sanction_service.py
         _svc("expirations", "TIME"),                 # services/expiration_notifier.py
         _svc("support", "SUPPORT"),                  # services/support_request_service.py
-        _svc("subscription", "PREMIUM"),             # services/invoice_notifier.py
+        _svc("subscription", "PREMIUM"),             # bot.py::_send_subscription_dm
+        # Stripe is Moddy's payment provider: it issues the invoices and it is
+        # its name — not Moddy's — that belongs on a receipt, so the invoice DM
+        # attributes itself to Stripe rather than to the subscription service.
+        # TODO: replace NOTE with a proper <:stripe:…> emoji once one exists.
+        _svc("stripe", "NOTE"),                      # services/invoice_notifier.py
     )
 }
 

@@ -149,12 +149,12 @@ Bot action:
 
 Bot action:
 1. Invalidate Redis cache.
-2. Send DM to user:
-
-> ### ✨ Abonnement activé
-> Ton abonnement **Moddy Max** est maintenant actif. Merci pour ton soutien !
->
-> *[Gérer mon abonnement → https://dashboard.moddy.app/billing]*
+2. Send the welcome DM (`bot.py::_send_subscription_dm`). It is the one
+   celebratory message of the set, and it carries the **only call to action**
+   of the whole subscription flow: premium is not active on any server until
+   the customer picks them, so the card says so in the body and offers a
+   *Select servers* button to
+   `https://dashboard.moddy.app/select-premium-servers` (up to 5).
 
 ---
 
@@ -232,9 +232,9 @@ Bot action (`services/invoice_notifier.py`, `bot.invoices`):
 
 | `variant` | Meaning | What the DM says |
 |---|---|---|
-| `paid` | An amount was charged | "The payment of **€4.99** has been received" |
-| `trial` | 0 at the opening of the subscription — the **free trial** | "Your trial has started: **no amount was charged**" |
-| `free` | 0 on a later period (full discount, credit note) | "**No amount was charged** for this period" |
+| `paid` | An amount was charged | "A payment of **€4.99** has been processed successfully" |
+| `trial` | 0 at the opening of the subscription — the **free trial** | "**No amount has been charged.** Your trial ends on **2026-09-29**, the date on which the first payment will be taken" |
+| `free` | 0 on a later period (full discount, credit note) | "**No amount has been charged** for the current period" |
 
 The backend computes it (`invoices.variant_of`): `amount_paid > 0` → `paid`;
 else `billing_reason == "subscription_create"` → `trial`; else `free`. The bot
@@ -244,11 +244,15 @@ nothing was charged when something was is the one error a billing message must
 never make. The opposite error costs as much: "payment received" on a 0 invoice
 sends someone hunting for a debit that does not exist on their statement.
 
-⚠️ **On a `trial`, `period_end` is the date of the first charge, not a
-renewal.** It is labelled *First charge* (`field_first_charge`), exactly like
-the mail — same date, opposite meaning.
+⚠️ **On a `trial`, `period_end` is the date the trial ends and the first
+charge is taken, not a renewal.** Same date as a renewal, opposite meaning, so
+it is said twice: in the body ("Your trial ends on **{period_end}**, the date
+on which the first payment will be taken") and as its own field, labelled
+*Trial ends — first charge* (`field_trial_end`). The mail says the same thing,
+and the two must not contradict. There is no separate "trial end" field on the
+payload and none is needed — `period_end` **is** that date.
 
-##### Four rules the DM obeys
+##### Five rules the DM obeys
 
 1. **Amounts as reported, never recomputed.** `amount_paid` is the currency's
    smallest unit, except for the zero-decimal currencies
@@ -264,13 +268,31 @@ the mail — same date, opposite meaning.
    (`SET NX`, TTL 7 days) is a second belt against a replayed event, on top of
    the backend's own de-duplication; Redis being unavailable costs a possible
    duplicate, never the DM.
+5. **It is a receipt, not a thank-you note.** Formal wording, Stripe's indigo
+   accent (`0x635BFF`), a document icon rather than the premium gem — nothing
+   like the celebratory subscription lifecycle DMs, on purpose. A customer must
+   be able to tell a receipt from a marketing message at a glance.
+
+##### Attributed to Stripe, and written in English
 
 The DM goes through the notification system like everything else
-([NOTIFICATIONS.md](NOTIFICATIONS.md)) under the `subscription` service, which
-is one of the `OFFICIAL_SERVICES`: its attribution line carries the
-verification check, because a billing DM is precisely what a scam impersonates.
-Its language is the account's `LANG` attribute — the same one the backend's
-mail reads, so the two halves of one invoice never arrive in two languages.
+([NOTIFICATIONS.md](NOTIFICATIONS.md)), but under the **`stripe`** service, not
+`subscription`: Stripe issues the invoice, takes the payment and holds the card
+details, so `-# Sent by **Stripe**<:verified:…>` is simply what happened.
+`stripe` is in `OFFICIAL_SERVICES`, so that line carries the verification
+check — a billing DM is precisely what a scam impersonates, and the check is
+the tell. It is also the **only** message in Moddy that names Stripe: the
+footer (`footer_stripe`) states that Stripe is Moddy's billing and payment
+provider and that Moddy never handles card details, which is what makes the
+attribution read as a fact rather than as a stray brand name.
+
+Its language is **always English** (`INVOICE_LOCALE` in
+`services/invoice_notifier.py`), whatever the account's `LANG`. The invoice,
+its PDF and Stripe's hosted page are English documents, and a receipt that
+half-translates the document it describes reads as a forgery. The localized
+`commands.subscription.invoice.*` keys are kept in the five locales for the
+mail and dashboard renderings of a stored row; `build_content(locale=…)` still
+honours them, only the DM path pins English.
 
 ---
 

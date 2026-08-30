@@ -38,10 +38,12 @@ logger = logging.getLogger("moddy.notifications.render")
 #: Guild attributes that earn the verification check on the attribution panel.
 VERIFIED_GUILD_ATTRIBUTES = ("VERIFIED", "VERIFIED_ORG", "PARTNER")
 
-#: Services that ARE Moddy: their attribution line carries the check mark.
-#: ``subscription`` is here for one reason: a billing DM is what a scam
-#: impersonates, and the check is what tells the recipient this one is ours.
-OFFICIAL_SERVICES = ("moddy", "moddy_team", "support", "subscription")
+#: Services whose attribution line carries the check mark. ``subscription`` and
+#: ``stripe`` are here for one reason: a billing DM is what a scam impersonates,
+#: and the check is what tells the recipient this one is genuine. ``stripe`` is
+#: the only entry that is not Moddy itself — it is Moddy's payment provider, and
+#: it is the name printed on the invoice the DM is about.
+OFFICIAL_SERVICES = ("moddy", "moddy_team", "support", "subscription", "stripe")
 
 #: Among those, the ones read as a named entity rather than as Moddy itself
 #: ("Sent by the **Moddy Team**", not "Sent by the **Moddy**"). The article sits
