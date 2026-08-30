@@ -14,23 +14,24 @@
       "error": "Impossible de récupérer ton statut d'abonnement. Réessaie plus tard.",
       "invoice": {
         "title": {
-          "paid": "Paiement reçu",
-          "trial": "Ton essai a démarré",
+          "paid": "Reçu de paiement",
+          "trial": "Confirmation d'essai gratuit",
           "free": "Facture disponible"
         },
         "body": {
-          "paid": "Le paiement de **{amount}** pour ton abonnement **{tier}** a bien été reçu. Merci de soutenir Moddy !",
-          "trial": "Ton essai **{tier}** a démarré : **aucun montant n'a été prélevé**. Voici la facture correspondante, à **{amount}**. Merci d'essayer Moddy !",
-          "free": "**Aucun montant n'a été prélevé** pour cette période de ton abonnement **{tier}**. Voici ta facture, à **{amount}**."
+          "paid": "Voici le reçu de votre abonnement Moddy Max **{tier}**. Un paiement de **{amount}** a été traité avec succès. Aucune action n'est requise de votre part.",
+          "trial": "Votre essai gratuit Moddy Max **{tier}** est désormais actif. **Aucun montant n'a été prélevé.** La facture ci-dessous est émise à **{amount}** pour vos archives.\nVotre essai prend fin le **{period_end}**, date à laquelle le premier paiement sera prélevé. Vous pouvez résilier sans frais à tout moment avant cette date.",
+          "free": "**Aucun montant n'a été prélevé** pour la période en cours de votre abonnement Moddy Max **{tier}**. La facture correspondante, émise à **{amount}**, est disponible ci-dessous."
         },
         "field_number": "Numéro de facture",
         "field_amount": "Montant",
-        "field_date": "Date",
+        "field_date": "Date de facture",
         "field_next_renewal": "Prochain renouvellement",
-        "field_first_charge": "Premier prélèvement",
+        "field_trial_end": "Fin de l'essai — premier prélèvement",
+        "footer_stripe": "Facture émise et paiement traité par Stripe, prestataire de facturation et de paiement de Moddy. Moddy ne manipule ni ne conserve vos données bancaires.",
         "button_view": "Voir la facture",
         "button_pdf": "Télécharger le PDF",
-        "button_manage": "Gérer mon abonnement",
+        "button_manage": "Gérer la facturation",
         "tier": {
           "monthly": "mensuel",
           "yearly": "annuel"
@@ -4095,7 +4096,8 @@
       "expirations": "Fin de sanction",
       "support": "Moddy Support",
       "moddy_team": "Moddy Team",
-      "subscription": "Abonnement Moddy"
+      "subscription": "Abonnement Moddy",
+      "stripe": "Stripe"
     },
     "attribution": {
       "unknown_guild": "Serveur inconnu",

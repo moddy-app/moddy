@@ -14,23 +14,24 @@
       "error": "Dein Abonnementstatus konnte nicht abgerufen werden. Bitte versuche es später erneut.",
       "invoice": {
         "title": {
-          "paid": "Zahlung erhalten",
-          "trial": "Deine Testphase hat begonnen",
+          "paid": "Zahlungsbeleg",
+          "trial": "Bestätigung der kostenlosen Testphase",
           "free": "Rechnung verfügbar"
         },
         "body": {
-          "paid": "Die Zahlung von **{amount}** für dein **{tier}** Abonnement ist eingegangen. Danke, dass du Moddy unterstützt!",
-          "trial": "Deine **{tier}** Testphase hat begonnen: **es wurde kein Betrag abgebucht**. Hier ist die zugehörige Rechnung über **{amount}**. Danke, dass du Moddy ausprobierst!",
-          "free": "**Es wurde kein Betrag abgebucht** für diesen Zeitraum deines **{tier}** Abonnements. Hier ist deine Rechnung über **{amount}**."
+          "paid": "Dies ist Ihr Beleg für das Moddy Max Abonnement (**{tier}**). Eine Zahlung über **{amount}** wurde erfolgreich verarbeitet. Es ist keine Aktion Ihrerseits erforderlich.",
+          "trial": "Ihre kostenlose Testphase von Moddy Max (**{tier}**) ist jetzt aktiv. **Es wurde kein Betrag abgebucht.** Die nachstehende Rechnung wird über **{amount}** für Ihre Unterlagen ausgestellt.\nIhre Testphase endet am **{period_end}**, an diesem Datum wird die erste Zahlung abgebucht. Sie können bis dahin jederzeit kostenlos kündigen.",
+          "free": "**Es wurde kein Betrag abgebucht** für den laufenden Zeitraum Ihres Moddy Max Abonnements (**{tier}**). Die zugehörige Rechnung über **{amount}** finden Sie unten."
         },
         "field_number": "Rechnungsnummer",
         "field_amount": "Betrag",
-        "field_date": "Datum",
+        "field_date": "Rechnungsdatum",
         "field_next_renewal": "Nächste Verlängerung",
-        "field_first_charge": "Erste Abbuchung",
+        "field_trial_end": "Ende der Testphase — erste Abbuchung",
+        "footer_stripe": "Rechnung ausgestellt und Zahlung verarbeitet von Stripe, dem Abrechnungs- und Zahlungsdienstleister von Moddy. Moddy verarbeitet und speichert Ihre Kartendaten zu keinem Zeitpunkt.",
         "button_view": "Rechnung ansehen",
         "button_pdf": "PDF herunterladen",
-        "button_manage": "Mein Abonnement verwalten",
+        "button_manage": "Abrechnung verwalten",
         "tier": {
           "monthly": "monatlich",
           "yearly": "jährlich"
@@ -4096,7 +4097,8 @@
       "expirations": "Sanktionsende",
       "support": "Moddy Support",
       "moddy_team": "Moddy Team",
-      "subscription": "Moddy-Abonnement"
+      "subscription": "Moddy-Abonnement",
+      "stripe": "Stripe"
     },
     "attribution": {
       "unknown_guild": "Unbekannter Server",

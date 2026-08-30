@@ -455,16 +455,21 @@ class ModdyBot(ModdyFrameworkBot):
                     "### <a:GemStone_animated:1509243505845731389> Welcome to Moddy Max !\n"
                     "Your Moddy Max subscription is now active ! Your servers are in good hands.\n"
                     "Your support truly warms our hearts <3\n"
+                    "\n"
+                    "**One last step: pick your servers.**\n"
+                    "Premium is not active on any server until you choose them — "
+                    f"open [Select premium servers]({SELECT_URL}) and pick up to **5** "
+                    "of the servers you want it on.\n"
                 ),
                 ui.MediaGallery(
                     discord.MediaGalleryItem(
-                        media="https://files.catbox.moe/vdqse1.gif",
+                        media="https://media.tenor.com/FjVZaTai9TwAAAAC/peach-cat-kiss.gif",
                     ),
                 ),
                 ui.Separator(visible=True, spacing=discord.SeparatorSpacing.small),
                 ui.TextDisplay(
-                    "-# You now have access to premium features everywhere on Discord as a personal app "
-                    "and on 5 servers of your choice. Use </subscription:1459599678139011357> for details. "
+                    "-# Premium features are yours everywhere on Discord as a personal app right away, "
+                    "and on the 5 servers you select. Use </subscription:1459599678139011357> for details. "
                     "Need help? Contact our [support](https://moddy.app/support).\n"
                 ),
                 accent_colour=ACCENT,

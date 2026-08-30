@@ -4,6 +4,10 @@ from staff.framework import StaffCommand, SlashOption, staff_command, design, Co
 from staff.commands.manage.stripe._shared import GROUP, GROUP_DESCRIPTION, resolve_target, send_result_panel
 from staff.commands.manage.stripe_create import EMAIL_RE
 
+#: Stripe's own ceiling on ``trial_period_days``; anything above is refused by
+#: the API. https://docs.stripe.com/api/subscriptions/create
+MAX_TRIAL_DAYS = 730
+
 
 @staff_command
 class StripeTrialCommand(StaffCommand):
@@ -19,7 +23,8 @@ class StripeTrialCommand(StaffCommand):
         SlashOption("plan", "string", "Billing plan.", required=False,
                     default="monthly", choices=["monthly", "yearly"]),
         SlashOption("trial_days", "integer",
-                    "Trial length in days (1-30, defaults to 7).", required=False),
+                    "Trial length in days (defaults to 7, up to Stripe's 730-day maximum).",
+                    required=False),
     ]
 
     def parse_message(self, raw: str) -> dict:
@@ -48,7 +53,11 @@ class StripeTrialCommand(StaffCommand):
         plan = ctx.opt("plan") or "monthly"
         trial_days = ctx.opt("trial_days")
         if trial_days is not None:
-            trial_days = max(1, min(30, trial_days))
+            # No Moddy-side cap any more: a staff member may grant a trial of
+            # any length. The only bounds left are Stripe's own — a trial is at
+            # least a day, and `trial_period_days` is rejected above 730 — so
+            # clamping here turns an opaque API error into the value asked for.
+            trial_days = max(1, min(MAX_TRIAL_DAYS, trial_days))
 
         await ctx.defer()
         result = await ctx.bot.stripe_admin.start_trial(

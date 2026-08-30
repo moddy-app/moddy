@@ -8,16 +8,23 @@ on ``moddy:subscription:updates``::
 
     {"type": "notify_invoice", "user_id": "…", "invoice": {…}}
 
-Two rules carry the design, and both exist to keep the DM honest:
+Three rules carry the design, and all three exist to keep the DM honest:
 
 * **The wording is chosen on ``variant``, never on the amount.** A free trial
   produces a real Stripe invoice at 0. Saying "payment received" on it sends
   the person hunting for a charge that does not exist on their bank statement —
   the worst possible outcome for a billing message. An unknown variant is read
   as ``paid``, the conservative default the backend's own rule falls back to.
-* **On a trial, ``period_end`` is the date of the *first* charge**, not a
-  renewal. It is the most useful line of the message, so it is labelled as
-  such; the mail says the same thing, and the two must not contradict.
+* **On a trial, ``period_end`` is the date the trial ends and the *first*
+  charge is taken**, not a renewal. It is the most useful line of the message,
+  so it is said twice: in the body and as its own field. The mail says the same
+  thing, and the two must not contradict.
+* **This DM is a receipt, not a thank-you note.** It is deliberately unlike the
+  subscription lifecycle DMs (``bot.py::_send_subscription_dm``): formal, in
+  English whatever the account's language (:data:`INVOICE_LOCALE`), attributed
+  to **Stripe** rather than to Moddy, and carrying Stripe's accent colour. The
+  attribution is the truth of the matter — Stripe issues the invoice, processes
+  the payment and holds the card details; Moddy only relays it.
 
 Amounts arrive in the currency's smallest unit and are printed as they are:
 no conversion, no VAT reconstruction, no hardcoded catalogue price. Anything
@@ -63,8 +70,16 @@ VARIANTS = ("paid", "trial", "free")
 DEDUP_KEY = "invoice:dm:{invoice_id}"
 DEDUP_TTL = 7 * 86400  # 7 days, same window as the backend's
 
-#: Accent of the subscription DMs (bot.py::_send_subscription_dm).
-ACCENT_COLOR = 0x245F9F
+#: Stripe's own indigo, not Moddy's subscription blue: this card is a receipt
+#: issued by the payment provider, and looking different from the celebratory
+#: subscription DMs is the point.
+ACCENT_COLOR = 0x635BFF
+
+#: Billing messages are written in English, whatever the account's ``LANG``.
+#: The invoice itself, its PDF and Stripe's hosted page are English documents;
+#: a receipt that half-translates the document it describes reads as a forgery,
+#: and a legal/billing wording is one text to review rather than five.
+INVOICE_LOCALE = "en-US"
 
 BILLING_URL = "https://dashboard.moddy.app/billing"
 
@@ -203,7 +218,7 @@ class InvoiceNotifier:
         if user is None:
             return False
 
-        locale = await self.user_locale(user_id)
+        locale = INVOICE_LOCALE
         variant = variant_of(invoice)
         content, variables = self.build_content(invoice, variant, locale=locale)
 
@@ -213,10 +228,11 @@ class InvoiceNotifier:
             result = await self.bot.notifications.send_dm(
                 user,
                 content=content,
-                # Billing is Moddy speaking as itself: the attribution line
-                # carries the check, which is what tells someone this invoice
-                # DM is not one of the many that impersonate a bot's billing.
-                source=NotificationSource.service("subscription"),
+                # Attributed to Stripe, which is who actually issued the
+                # invoice, and an official service so the line carries the
+                # check — the one thing that tells someone this billing DM is
+                # not one of the many that impersonate a bot's billing.
+                source=NotificationSource.service("stripe"),
                 variables=variables,
                 locale=locale,
             )
@@ -235,14 +251,16 @@ class InvoiceNotifier:
 
     # --------------------------------------------------------------- content
     def build_content(self, invoice: Dict[str, Any], variant: str, *,
-                      locale: str = "en-US"):
+                      locale: str = INVOICE_LOCALE):
         """The uniform payload behind an invoice DM, plus its variables.
 
         Kept separate from :meth:`handle` so the wording of the three variants
-        is testable without a bot, a user or a Discord connection.
+        is testable without a bot, a user or a Discord connection. ``locale``
+        is a parameter for the dashboard and mail renderings of a stored row;
+        the DM itself always passes :data:`INVOICE_LOCALE`.
         """
         from notifications.models import NotificationContent
-        from utils.emojis import PREMIUM
+        from utils.emojis import NOTE
         from utils.i18n import t
 
         tier = invoice.get("tier")
@@ -271,10 +289,10 @@ class InvoiceNotifier:
                 "body": "`{paid_at}`",
             })
         if period_end:
-            # On a trial this date is the first charge, not a renewal. Naming
-            # it "next renewal" would hide the only thing the customer needs
-            # to know about a 0 invoice.
-            label = ("field_first_charge" if variant == "trial"
+            # On a trial this date is the end of the trial and the first
+            # charge, not a renewal. Naming it "next renewal" would hide the
+            # only thing the customer needs to know about a 0 invoice.
+            label = ("field_trial_end" if variant == "trial"
                      else "field_next_renewal")
             sections.append({
                 "title": t(f"commands.subscription.invoice.{label}", locale=locale),
@@ -300,10 +318,14 @@ class InvoiceNotifier:
         content = NotificationContent(
             title=t(f"commands.subscription.invoice.title.{variant}", locale=locale),
             body=t(f"commands.subscription.invoice.body.{variant}", locale=locale),
-            icon=PREMIUM,
+            icon=NOTE,
             accent_color=ACCENT_COLOR,
             sections=sections,
             links=links,
+            # The one message that names Stripe: a receipt has to say who
+            # issued it, and this is also what makes the Stripe attribution
+            # line above read as a fact rather than as a stray brand name.
+            footer=t("commands.subscription.invoice.footer_stripe", locale=locale),
             template_id=f"subscription.invoice.{variant}",
         )
         variables = {
@@ -335,35 +357,3 @@ class InvoiceNotifier:
             logger.warning("[Invoice] Redis de-duplication unavailable: %s", exc)
             return False
         return not claimed
-
-    async def user_locale(self, user_id: int) -> str:
-        """The language this person's billing messages are written in.
-
-        The ``LANG`` account attribute, the very same one the backend's mail
-        reads, so the DM and the mail about one invoice never arrive in two
-        different languages. Unknown or unset falls back to English.
-        """
-        from utils.i18n import i18n
-
-        try:
-            user_data = await self.bot.db.get_user(user_id)
-        except Exception as exc:  # noqa: BLE001 — a DM is worth more than its locale
-            logger.warning("[Invoice] Could not read user %s: %s", user_id, exc)
-            return "en-US"
-
-        raw = ((user_data or {}).get("attributes") or {}).get("LANG")
-        if not isinstance(raw, str) or not raw.strip():
-            return "en-US"
-
-        candidate = raw.strip()
-        supported = i18n.supported_locales or set()
-        if candidate in supported:
-            return candidate
-        for locale in supported:
-            if locale.lower() == candidate.lower():
-                return locale
-        base = candidate.split("-")[0].lower()
-        for locale in supported:
-            if locale.split("-")[0].lower() == base:
-                return locale
-        return "en-US"

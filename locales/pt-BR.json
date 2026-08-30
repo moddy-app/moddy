@@ -14,23 +14,24 @@
       "error": "Não foi possível obter o status da sua assinatura. Tente novamente mais tarde.",
       "invoice": {
         "title": {
-          "paid": "Pagamento recebido",
-          "trial": "Seu teste começou",
+          "paid": "Recibo de pagamento",
+          "trial": "Confirmação de teste gratuito",
           "free": "Fatura disponível"
         },
         "body": {
-          "paid": "O pagamento de **{amount}** da sua assinatura **{tier}** foi recebido. Obrigado por apoiar o Moddy!",
-          "trial": "Seu teste **{tier}** começou: **nenhum valor foi cobrado**. Aqui está a fatura correspondente, de **{amount}**. Obrigado por experimentar o Moddy!",
-          "free": "**Nenhum valor foi cobrado** neste período da sua assinatura **{tier}**. Aqui está a sua fatura, de **{amount}**."
+          "paid": "Este é o recibo da sua assinatura Moddy Max **{tier}**. Um pagamento de **{amount}** foi processado com sucesso. Nenhuma ação é necessária da sua parte.",
+          "trial": "Seu teste gratuito do Moddy Max **{tier}** está ativo. **Nenhum valor foi cobrado.** A fatura abaixo é emitida no valor de **{amount}** para os seus registros.\nSeu teste termina em **{period_end}**, data em que a primeira cobrança será realizada. Você pode cancelar sem custo a qualquer momento antes dessa data.",
+          "free": "**Nenhum valor foi cobrado** no período atual da sua assinatura Moddy Max **{tier}**. A fatura correspondente, emitida no valor de **{amount}**, está disponível abaixo."
         },
         "field_number": "Número da fatura",
         "field_amount": "Valor",
-        "field_date": "Data",
+        "field_date": "Data da fatura",
         "field_next_renewal": "Próxima renovação",
-        "field_first_charge": "Primeira cobrança",
+        "field_trial_end": "Fim do teste — primeira cobrança",
+        "footer_stripe": "Fatura emitida e pagamento processado pela Stripe, provedora de faturamento e pagamentos do Moddy. O Moddy nunca manipula nem armazena os dados do seu cartão.",
         "button_view": "Ver a fatura",
         "button_pdf": "Baixar o PDF",
-        "button_manage": "Gerenciar minha assinatura",
+        "button_manage": "Gerenciar o faturamento",
         "tier": {
           "monthly": "mensal",
           "yearly": "anual"
@@ -4096,7 +4097,8 @@
       "expirations": "Fim de sanção",
       "support": "Moddy Support",
       "moddy_team": "Moddy Team",
-      "subscription": "Assinatura Moddy"
+      "subscription": "Assinatura Moddy",
+      "stripe": "Stripe"
     },
     "attribution": {
       "unknown_guild": "Servidor desconhecido",

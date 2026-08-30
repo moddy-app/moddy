@@ -52,9 +52,13 @@ An official notice carries no line: a suspension **is** Moddy speaking, there is
 no third party to name.
 
 The services that *are* Moddy (`OFFICIAL_SERVICES` in
-`notifications/render.py`: `moddy`, `moddy_team`, `support`) carry the
-verification check on their own line, without any database read — it is true by
-construction, and it is what tells a member the DM is not an impersonation.
+`notifications/render.py`: `moddy`, `moddy_team`, `support`, `subscription`)
+carry the verification check on their own line, without any database read — it
+is true by construction, and it is what tells a member the DM is not an
+impersonation. `stripe` is in that list too and is the one entry that is *not*
+Moddy: it is Moddy's payment provider, it issues the invoices, and the invoice
+DM (`services/invoice_notifier.py`) is attributed to it rather than to Moddy —
+see [SUBSCRIPTION_SCHEMA.md §3](SUBSCRIPTION_SCHEMA.md).
 Those of them that read as a named entity (`ARTICLE_SERVICES`: `moddy_team`,
 `support`) use `sent_by_moddy`, whose article sits **outside** the bold —
 "Sent by the **Moddy Team**", never "**the Moddy Team**".

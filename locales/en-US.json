@@ -14,26 +14,27 @@
       "error": "Unable to retrieve your subscription status. Please try again later.",
       "invoice": {
         "title": {
-          "paid": "Payment received",
-          "trial": "Your trial has started",
+          "paid": "Payment receipt",
+          "trial": "Free trial confirmation",
           "free": "Invoice available"
         },
         "body": {
-          "paid": "The payment of **{amount}** for your **{tier}** subscription has been received. Thanks for supporting Moddy!",
-          "trial": "Your **{tier}** trial has started: **no amount was charged**. Here is the matching invoice, for **{amount}**. Thanks for trying Moddy!",
-          "free": "**No amount was charged** for this period of your **{tier}** subscription. Here is your invoice, for **{amount}**."
+          "paid": "This is your receipt for the **{tier}** Moddy Max subscription. A payment of **{amount}** has been processed successfully. No action is required on your part.",
+          "trial": "Your **{tier}** Moddy Max free trial is now active. **No amount has been charged.** The invoice below is issued at **{amount}** for your records.\nYour trial ends on **{period_end}**, the date on which the first payment will be taken. You may cancel at any time before that date at no cost.",
+          "free": "**No amount has been charged** for the current period of your **{tier}** Moddy Max subscription. The corresponding invoice, issued at **{amount}**, is available below."
         },
         "field_number": "Invoice number",
         "field_amount": "Amount",
-        "field_date": "Date",
+        "field_date": "Invoice date",
         "field_next_renewal": "Next renewal",
-        "field_first_charge": "First charge",
+        "field_trial_end": "Trial ends — first charge",
+        "footer_stripe": "Invoice issued and payment processed by Stripe, Moddy's billing and payment provider. Moddy never handles or stores your card details.",
         "button_view": "View invoice",
         "button_pdf": "Download PDF",
-        "button_manage": "Manage my subscription",
+        "button_manage": "Manage billing",
         "tier": {
           "monthly": "monthly",
-          "yearly": "yearly"
+          "yearly": "annual"
         }
       }
     },
@@ -4096,7 +4097,8 @@
       "expirations": "Sanction expiry",
       "support": "Moddy Support",
       "moddy_team": "Moddy Team",
-      "subscription": "Moddy Subscription"
+      "subscription": "Moddy Subscription",
+      "stripe": "Stripe"
     },
     "attribution": {
       "unknown_guild": "Unknown server",
