@@ -8,8 +8,9 @@ persistence models:
   panel and category ids, so they are :class:`discord.ui.DynamicItem`\\ s
   reconstructed from their ``custom_id`` on every click.
 - **The ticket control bar** (pinned in the ticket channel), **the closing
-  card**, **the close request**, **the escalation notice** and **the claim
-  notice**. A ticket action always happens *inside* its own channel, so
+  card**, **the close request** (asked either way round — see
+  docs/TICKETS.md), **the escalation notice** and **the claim notice**.
+  A ticket action always happens *inside* its own channel, so
   ``interaction.channel_id`` is the ticket's identity: these need no id in
   their custom_ids at all and are plain registered persistent views with
   static ones.
@@ -484,7 +485,7 @@ class TicketControlView(BaseView):
         granted = member_permissions(interaction.user, category, ticket)
         if PERM_CLOSE not in granted:
             # The one refusal that is really a redirection: tell them about
-            # the command that *is* theirs rather than just saying no.
+            # the action that *is* theirs rather than just saying no.
             await send_error(
                 interaction,
                 t('modules.tickets.errors.use_close_request', locale=locale), locale)
@@ -516,6 +517,7 @@ class TicketControlView(BaseView):
         await run_claim(interaction, resolved[0])
 
     async def on_close_request(self, interaction: discord.Interaction):
+        """Propose the closure to the other side — see ``request_close``."""
         locale = i18n.get_user_locale(interaction)
         await interaction.response.send_modal(
             TicketReasonModal(locale, 'close_request', self._do_close_request))
@@ -529,15 +531,18 @@ class TicketControlView(BaseView):
         service, ticket, panel, category = resolved
         await interaction.response.defer(ephemeral=True, thinking=True)
         try:
-            await service.request_close(interaction.channel, interaction.user, reason)
+            _, to_staff = await service.request_close(
+                interaction.channel, interaction.user, reason)
         except TicketError as e:
             await handle_ticket_error(interaction, e)
             return
         locale = i18n.get_user_locale(interaction)
+        side = "to_staff" if to_staff else "to_member"
         await send_success(
             interaction,
             t('modules.tickets.close_request.sent_title', locale=locale),
-            t('modules.tickets.close_request.sent_description', locale=locale))
+            t(f'modules.tickets.close_request.sent_description_{side}',
+              locale=locale))
 
     async def on_escalate(self, interaction: discord.Interaction):
         resolved = await _resolve(interaction)
@@ -688,32 +693,41 @@ def build_closed_message(ticket: Dict[str, Any], category: Dict[str, Any],
 # 4. The close request
 # =========================================================================== #
 class TicketCloseRequestView(BaseView):
-    """A member asked for the ticket to be closed; staff accepts or refuses.
+    """A pending close request, asked either way round.
 
-    Persistent: yes. Auth: resolved from the ticket channel — accepting needs
-    ``close``, refusing needs ``close`` or being the requester.
+    A member asked the staff to close, or the staff offered the closure to the
+    opener (``to_staff``); the card is worded for whichever side has to answer,
+    and both buttons are theirs.
+
+    Persistent: yes. Auth: resolved from the ticket channel and from the stored
+    direction — see ``TicketService._may_answer_close_request``.
     """
 
     __persistent__ = True
 
     def __init__(self, ticket: Optional[Dict[str, Any]] = None,
                  requester: Optional[discord.abc.User] = None,
-                 reason: Optional[str] = None, locale: str = "en-US"):
+                 reason: Optional[str] = None, locale: str = "en-US",
+                 to_staff: bool = True):
         super().__init__()  # timeout=None
         self.ticket = ticket or {}
         self.requester = requester
         self.reason = reason
         self.locale = locale
+        self.to_staff = to_staff
         self._build_view()
 
     def _build_view(self):
         self.clear_items()
         container = ui.Container(accent_colour=discord.Colour(0xFEE75C))
 
+        side = "to_staff" if self.to_staff else "to_member"
+        title = t(f'modules.tickets.close_request.card_title_{side}',
+                  locale=self.locale)
         container.add_item(ui.TextDisplay(
-            f"### {TICKET_CLOSE_REQUEST} "
-            f"{t('modules.tickets.close_request.card_title', locale=self.locale)}"))
-        body = t('modules.tickets.close_request.card_description', locale=self.locale,
+            f"### {TICKET_CLOSE_REQUEST} {title}"))
+        body = t(f'modules.tickets.close_request.card_description_{side}',
+                 locale=self.locale,
                  user=self.requester.mention if self.requester else "—")
         if self.reason:
             body += (f"\n\n**{t('modules.tickets.fields.reason', locale=self.locale)}**\n"
@@ -739,7 +753,7 @@ class TicketCloseRequestView(BaseView):
         service = resolved[0]
         await interaction.response.defer(ephemeral=True, thinking=True)
         try:
-            await service.close_ticket(interaction.channel, interaction.user, None)
+            await service.accept_close_request(interaction.channel, interaction.user)
         except TicketError as e:
             await handle_ticket_error(interaction, e)
             return
@@ -783,9 +797,9 @@ def _close_request_resolved(actor: discord.abc.User, locale: str) -> ui.LayoutVi
 
 
 def build_close_request_message(ticket: Dict[str, Any], requester: discord.abc.User,
-                                reason: Optional[str], locale: str
-                                ) -> TicketCloseRequestView:
-    return TicketCloseRequestView(ticket, requester, reason, locale)
+                                reason: Optional[str], locale: str,
+                                to_staff: bool = True) -> TicketCloseRequestView:
+    return TicketCloseRequestView(ticket, requester, reason, locale, to_staff)
 
 
 # =========================================================================== #

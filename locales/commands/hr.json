@@ -297,7 +297,7 @@
     },
     "ticket close-request": {
       "name": "zatraži-zatvaranje",
-      "description": "Traži od tima da zatvori ovaj tiket",
+      "description": "Predlaže drugoj strani zatvaranje ovog tiketa",
       "parameters": {
         "reason": {
           "name": "razlog",

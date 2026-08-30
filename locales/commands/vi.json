@@ -297,7 +297,7 @@
     },
     "ticket close-request": {
       "name": "yêu-cầu-đóng",
-      "description": "Đề nghị đội ngũ đóng ticket này",
+      "description": "Đề nghị bên còn lại đóng ticket này",
       "parameters": {
         "reason": {
           "name": "lý-do",

@@ -297,7 +297,7 @@
     },
     "ticket close-request": {
       "name": "minta-penutupan",
-      "description": "Meminta staf menutup tiket ini",
+      "description": "Mengusulkan penutupan tiket ini kepada pihak lain",
       "parameters": {
         "reason": {
           "name": "alasan",

@@ -297,7 +297,7 @@
     },
     "ticket close-request": {
       "name": "close-request",
-      "description": "Ask the staff to close this ticket",
+      "description": "Propose closing this ticket to the other side",
       "parameters": {
         "reason": {
           "name": "reason",

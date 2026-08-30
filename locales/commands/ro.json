@@ -297,7 +297,7 @@
     },
     "ticket close-request": {
       "name": "cere-închiderea",
-      "description": "Cere echipei să închidă acest tichet",
+      "description": "Propune celeilalte părți închiderea acestui tichet",
       "parameters": {
         "reason": {
           "name": "motiv",

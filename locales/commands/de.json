@@ -297,7 +297,7 @@
     },
     "ticket close-request": {
       "name": "schliessung-anfragen",
-      "description": "Bittet das Team, dieses Ticket zu schließen",
+      "description": "Schlägt der anderen Seite vor, dieses Ticket zu schließen",
       "parameters": {
         "reason": {
           "name": "grund",

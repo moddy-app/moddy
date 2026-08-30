@@ -3044,9 +3044,13 @@
       },
       "close_request": {
         "sent_title": "Anfrage gesendet",
-        "sent_description": "Das Team wurde benachrichtigt und schließt das Ticket, wenn alles erledigt ist.",
-        "card_title": "Schließung angefragt",
-        "card_description": "{user} möchte, dass dieses Ticket geschlossen wird.",
+        "sent_description_to_staff": "Das Team wurde benachrichtigt und schließt das Ticket, wenn alles erledigt ist.",
+        "sent_description_to_member": "Das Mitglied wurde benachrichtigt: Es kann das Ticket schließen oder offen lassen.",
+        "card_title": "Schließungsanfrage",
+        "card_title_to_staff": "Schließung angefragt",
+        "card_title_to_member": "Schließung vorgeschlagen",
+        "card_description_to_staff": "{user} möchte, dass dieses Ticket geschlossen wird. Das Team kann es schließen oder offen lassen.",
+        "card_description_to_member": "{user} schlägt vor, dieses Ticket zu schließen. Wenn du es nicht mehr brauchst, schließe es; sonst lass es offen.",
         "accept": "Ticket schließen",
         "refuse": "Offen lassen",
         "refused": "{user} hat das Ticket offen gelassen."
@@ -3131,7 +3135,6 @@
         "cannot_create_channel": "Moddy konnte den Ticket-Kanal nicht erstellen. Prüfe die Rechte in der Zielkategorie.",
         "already_closed": "Dieses Ticket ist bereits geschlossen.",
         "not_closed": "Dieses Ticket ist nicht geschlossen.",
-        "can_close_directly": "Du kannst dieses Ticket selbst schließen — du musst nicht fragen.",
         "close_already_requested": "Für dieses Ticket liegt bereits eine Schließungsanfrage vor.",
         "no_close_request": "Für dieses Ticket liegt keine Schließungsanfrage vor.",
         "already_escalated": "Dieses Ticket ist bereits eskaliert.",
@@ -3164,7 +3167,7 @@
         "escalate_hint": "Das Ticket den Verantwortlichen vorbehalten",
         "staff_thread_hint": "Den privaten Team-Thread öffnen oder betreten",
         "participants_hint": "Mitglieder und Rollen hinzufügen und entfernen",
-        "close_request_hint": "Dem Mitglied erlauben, die Schließung anzufragen"
+        "close_request_hint": "Der anderen Seite die Schließung vorschlagen"
       },
       "claim": {
         "claimed_title": "Ticket übernommen",

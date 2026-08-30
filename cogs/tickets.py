@@ -121,10 +121,11 @@ async def ticket_reopen(interaction: discord.Interaction):
 
 
 @ticket_group.command(name="close-request",
-                      description="Ask the staff to close this ticket")
-@app_commands.describe(reason="Why you would like the ticket closed")
+                      description="Propose closing this ticket to the other side")
+@app_commands.describe(reason="Why the ticket could be closed")
 async def ticket_close_request(interaction: discord.Interaction,
                                reason: Optional[str] = None):
+    """Ask the staff to close, or — run by the staff — offer it to the opener."""
     resolved = await _service_and_ticket(interaction)
     if not resolved:
         return
@@ -133,14 +134,17 @@ async def ticket_close_request(interaction: discord.Interaction,
 
     await interaction.response.defer(ephemeral=True, thinking=True)
     try:
-        await service.request_close(interaction.channel, interaction.user, reason)
+        _, to_staff = await service.request_close(
+            interaction.channel, interaction.user, reason)
     except TicketError as e:
         await handle_ticket_error(interaction, e)
         return
+    side = "to_staff" if to_staff else "to_member"
     await send_success(
         interaction,
         t('modules.tickets.close_request.sent_title', locale=locale),
-        t('modules.tickets.close_request.sent_description', locale=locale))
+        t(f'modules.tickets.close_request.sent_description_{side}',
+          locale=locale))
 
 
 # --------------------------------------------------------------------------- #

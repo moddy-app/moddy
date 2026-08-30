@@ -478,18 +478,25 @@ class TicketService:
     # Close / reopen
     # ------------------------------------------------------------------ #
     async def close_ticket(self, channel: discord.TextChannel, actor: discord.Member,
-                           reason: Optional[str] = None) -> Dict[str, Any]:
+                           reason: Optional[str] = None, *,
+                           bypass_permission: bool = False) -> Dict[str, Any]:
         """Lock the ticket and post the closing card.
 
         The channel is **kept**: nothing is destroyed by a click. Deleting it is
         a separate, explicit action on the closing card.
+
+        ``bypass_permission`` is for the one caller that has already done the
+        checking itself: :meth:`accept_close_request`, where the opener — who
+        holds no ``close`` permission — closes their own ticket because the
+        staff asked them to. Nothing else may set it.
         """
         from utils.ticket_views import build_closed_message
 
         ticket, panel, category = await self.resolve(channel)
         if ticket['status'] == 'closed':
             raise TicketError('modules.tickets.errors.already_closed')
-        self.require(actor, category, ticket, PERM_CLOSE)
+        if not bypass_permission:
+            self.require(actor, category, ticket, PERM_CLOSE)
 
         await self.bot.db.set_ticket_status(
             channel.id, 'closed', actor_id=actor.id, reason=reason)
@@ -600,15 +607,24 @@ class TicketService:
         await channel.delete(reason=f"Moddy ticket deleted by {actor} ({actor.id})")
 
     # ------------------------------------------------------------------ #
-    # Close request
+    # Close request — it points both ways
     # ------------------------------------------------------------------ #
     async def request_close(self, channel: discord.TextChannel, actor: discord.Member,
-                            reason: Optional[str] = None) -> Dict[str, Any]:
-        """Ask the staff to close — the action for whoever cannot close.
+                            reason: Optional[str] = None
+                            ) -> Tuple[Dict[str, Any], bool]:
+        """Propose the closure to the *other* side of the ticket.
 
-        Deliberately requires no permission: anyone who can see the ticket may
-        ask for it to end. Someone who *can* close is told to just close it,
-        rather than asking themselves.
+        One action, two directions, decided by who runs it:
+
+        - a **member** (anyone who can see the ticket but not close it) asks the
+          staff to close — the staff is rung and answers on the card;
+        - a **staffer** (``close``) offers the closure to the opener instead of
+          ending the conversation under their nose — the opener is rung and
+          answers.
+
+        Either way nobody is forced: the other side closes the ticket or keeps
+        it open. Returns ``(ticket, to_staff)``, ``to_staff`` telling the caller
+        which of the two just happened so it can word its reply.
         """
         from utils.ticket_views import build_close_request_message
 
@@ -619,34 +635,83 @@ class TicketService:
         granted = member_permissions(actor, category, ticket)
         if PERM_VIEW not in granted:
             raise TicketError('modules.tickets.errors.missing_permission')
-        if PERM_CLOSE in granted:
-            raise TicketError('modules.tickets.errors.can_close_directly')
         if ticket.get('close_requested_by'):
             raise TicketError('modules.tickets.errors.close_already_requested')
 
-        await self.bot.db.set_close_request(channel.id, actor.id, reason)
+        # Whoever cannot close is asking; whoever can is offering.
+        to_staff = PERM_CLOSE not in granted
+
+        await self.bot.db.set_close_request(channel.id, actor.id, reason,
+                                            to_staff=to_staff)
         ticket = await self.get_ticket(channel.id) or ticket
 
         locale = await self.ticket_locale(channel.guild)
         try:
-            await channel.send(
-                view=build_close_request_message(ticket, actor, reason, locale=locale))
+            await channel.send(view=build_close_request_message(
+                ticket, actor, reason, locale=locale, to_staff=to_staff))
         except discord.HTTPException as e:
             logger.warning(f"[Tickets] Could not post the close request in "
                            f"{channel.id}: {e}")
-        await self.ping(channel,
-                        self._role_mentions(channel.guild, category, PERM_CLOSE))
-        return ticket
+
+        # The side that has to answer is the side that gets rung.
+        if to_staff:
+            await self.ping(channel,
+                            self._role_mentions(channel.guild, category, PERM_CLOSE))
+        else:
+            await self.ping(channel, self._owner_mention(channel, ticket))
+        return ticket, to_staff
+
+    def _owner_mention(self, channel: discord.TextChannel,
+                       ticket: Dict[str, Any]) -> Optional[str]:
+        """The opener's mention, when they are still on the server."""
+        owner = channel.guild.get_member(ticket['owner_id'])
+        return owner.mention if owner and not owner.bot else None
+
+    def _may_answer_close_request(self, actor: discord.Member,
+                                  ticket: Dict[str, Any], granted: set) -> bool:
+        """Whether ``actor`` is the side a pending request is waiting on.
+
+        A request made *to the staff* is answered by the staff; one made *to the
+        opener* is answered by the opener — and by the staff too, who could have
+        closed the ticket outright and may just as well conclude their own offer.
+        """
+        if PERM_CLOSE in granted:
+            return True
+        return (not ticket.get('close_request_to_staff')
+                and actor.id == ticket['owner_id'])
+
+    async def accept_close_request(self, channel: discord.TextChannel,
+                                   actor: discord.Member) -> Dict[str, Any]:
+        """Accept a pending request: close the ticket, whichever side asked.
+
+        The opener holds no ``close`` permission — that is the whole point of
+        being asked — so the check is *this* method's, and the reason given for
+        asking becomes the closing reason.
+        """
+        ticket, panel, category = await self.resolve(channel)
+        if ticket['status'] == 'closed':
+            raise TicketError('modules.tickets.errors.already_closed')
+        if not ticket.get('close_requested_by'):
+            raise TicketError('modules.tickets.errors.no_close_request')
+
+        granted = member_permissions(actor, category, ticket)
+        if not self._may_answer_close_request(actor, ticket, granted):
+            raise TicketError('modules.tickets.errors.missing_permission')
+
+        return await self.close_ticket(
+            channel, actor, ticket.get('close_request_reason'),
+            bypass_permission=True)
 
     async def cancel_close_request(self, channel: discord.TextChannel,
                                    actor: discord.Member) -> Dict[str, Any]:
-        """Refuse a pending close request (staff) or withdraw it (requester)."""
+        """Turn a pending request down, or withdraw the one you made."""
         ticket, panel, category = await self.resolve(channel)
         if not ticket.get('close_requested_by'):
             raise TicketError('modules.tickets.errors.no_close_request')
 
         granted = member_permissions(actor, category, ticket)
-        if PERM_CLOSE not in granted and actor.id != ticket['close_requested_by']:
+        if (not self._may_answer_close_request(actor, ticket, granted)
+                and actor.id != ticket['close_requested_by']):
             raise TicketError('modules.tickets.errors.missing_permission')
 
         await self.bot.db.set_close_request(channel.id, None, None)

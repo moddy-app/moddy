@@ -470,6 +470,7 @@ CREATE TABLE tickets (
     participant_roles    BIGINT[] NOT NULL DEFAULT '{}',
     close_requested_by   BIGINT,
     close_request_reason TEXT,
+    close_request_to_staff BOOLEAN,     -- TRUE: member → staff, FALSE: staff → opener
     claimed_by           BIGINT,        -- who is handling it right now
     claimed_at           TIMESTAMPTZ,
     pre_escalation_claim BIGINT,        -- parked there while escalated
@@ -492,9 +493,10 @@ retries, leaving the channel name one off rather than attempting a rename that
 may not go through for ten minutes. Cheaper and simpler than an advisory lock
 for a rare race.
 
-The four claim columns are added by an **idempotent migration**
-(`ALTER TABLE … ADD COLUMN IF NOT EXISTS`) next to the `CREATE TABLE`, so a
-database created before the claim system gains them on the next boot with no
+The four claim columns and `close_request_to_staff` are added by an
+**idempotent migration** (`ALTER TABLE … ADD COLUMN IF NOT EXISTS`) next to the
+`CREATE TABLE`, so a database created before the claim system — or before close
+requests learned which way they point — gains them on the next boot with no
 manual deploy step.
 
 A ticket channel deleted by hand is forgotten by
@@ -516,8 +518,9 @@ the commands are the contract. Both call the same method, so they cannot drift.
 | `close_ticket` | `close` | Locks, posts the closing card, DMs the opener. |
 | `reopen_ticket` | `close` | Rebuilds the map and DMs the opener with a link back. |
 | `delete_ticket` | `admin` | Destroys the channel. |
-| `request_close` | none beyond `view` | Refused to someone who *can* close — they are told to just close it. |
-| `cancel_close_request` | `close`, or being the requester | |
+| `request_close` | `view` | **Bidirectional** — see below. Returns `(ticket, to_staff)`. |
+| `accept_close_request` | the side that was asked (`close`, or the opener on a staff offer) | Closes with the reason given for asking. |
+| `cancel_close_request` | the side that was asked, or being the requester | Refusing, or withdrawing your own request. |
 | `claim_ticket` | `claim` (`admin` while escalated) | Posts a claim notice in the channel. |
 | `unclaim_ticket` | `claim` for your own, `unclaim_others` for someone else's | |
 | `toggle_claim` | *see above* | What the button runs. |
@@ -528,6 +531,27 @@ the commands are the contract. Both call the same method, so they cannot drift.
 | `add_participant` / `remove_participant` | `participants` | Members *or* whole roles. The opener cannot be removed. |
 | `open_staff_thread` | `staff_thread` | Private thread; each staffer joins by running the action once (Discord has no role-based thread membership). |
 | `evict_from_staff_thread` | — | Housekeeping, run by the thread guard. |
+
+### A close request points both ways
+
+`/ticket close-request` (and the optional `close_request` button) is **one
+action with two directions**, decided by who runs it:
+
+| Run by | Direction | Who is rung | Who answers the card |
+|---|---|---|---|
+| a member (`view`, no `close`) | asks the staff to close | the roles holding `close` | the staff |
+| a staffer (`close`) | offers the closure to the opener | the opener | the opener — and the staff, who could have closed it outright |
+
+Neither side is forced: the card carries **Close the ticket** and **Keep it
+open**. Accepting goes through `accept_close_request`, which closes the ticket
+with the reason the requester gave — the opener holds no `close` permission, so
+that method does the checking itself and calls `close_ticket(...,
+bypass_permission=True)`. Nothing else may set that flag.
+
+The direction is **stored** (`close_request_to_staff`), not recomputed when the
+buttons are clicked: a card is answered later, possibly after the requester's
+roles changed or after they left the server, and who may answer depends on
+which way the request pointed when it was made.
 
 Failures are raised as `TicketError` carrying an **i18n key**, never a formatted
 string: the caller decides whether to answer in the actor's language (a slash

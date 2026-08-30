@@ -297,7 +297,7 @@
     },
     "ticket close-request": {
       "name": "be-om-lukking",
-      "description": "Ber staben om å lukke denne saken",
+      "description": "Foreslår for den andre parten å lukke denne saken",
       "parameters": {
         "reason": {
           "name": "årsak",

@@ -297,7 +297,7 @@
     },
     "ticket close-request": {
       "name": "demander-fermeture",
-      "description": "Demande au staff de fermer ce ticket",
+      "description": "Propose la fermeture de ce ticket à l'autre partie",
       "parameters": {
         "reason": {
           "name": "raison",
