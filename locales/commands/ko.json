@@ -297,7 +297,7 @@
     },
     "ticket close-request": {
       "name": "닫기요청",
-      "description": "스태프에게 이 티켓을 닫아 달라고 요청합니다",
+      "description": "이 티켓을 닫자고 상대방에게 제안합니다",
       "parameters": {
         "reason": {
           "name": "사유",

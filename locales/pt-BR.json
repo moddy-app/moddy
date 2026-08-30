@@ -3044,9 +3044,13 @@
       },
       "close_request": {
         "sent_title": "Pedido enviado",
-        "sent_description": "A equipe foi avisada e fechará o ticket se estiver tudo resolvido.",
-        "card_title": "Fechamento pedido",
-        "card_description": "{user} gostaria que este ticket fosse fechado.",
+        "sent_description_to_staff": "A equipe foi avisada e fechará o ticket se estiver tudo resolvido.",
+        "sent_description_to_member": "O membro foi avisado: ele pode fechar o ticket ou mantê-lo aberto.",
+        "card_title": "Pedido de fechamento",
+        "card_title_to_staff": "Fechamento pedido",
+        "card_title_to_member": "Fechamento proposto",
+        "card_description_to_staff": "{user} gostaria que este ticket fosse fechado. A equipe pode fechá-lo ou mantê-lo aberto.",
+        "card_description_to_member": "{user} propõe fechar este ticket. Se não precisar mais dele, feche-o; caso contrário, mantenha-o aberto.",
         "accept": "Fechar o ticket",
         "refuse": "Mantê-lo aberto",
         "refused": "{user} manteve o ticket aberto."
@@ -3131,7 +3135,6 @@
         "cannot_create_channel": "O Moddy não conseguiu criar o canal do ticket. Verifique as permissões dele na categoria de destino.",
         "already_closed": "Este ticket já está fechado.",
         "not_closed": "Este ticket não está fechado.",
-        "can_close_directly": "Você pode fechar este ticket sozinho — não precisa pedir.",
         "close_already_requested": "Já há um pedido de fechamento pendente neste ticket.",
         "no_close_request": "Não há nenhum pedido de fechamento pendente neste ticket.",
         "already_escalated": "Este ticket já está escalonado.",
@@ -3164,7 +3167,7 @@
         "escalate_hint": "Reservar o ticket aos responsáveis",
         "staff_thread_hint": "Abrir ou entrar no tópico privado da equipe",
         "participants_hint": "Adicionar e remover membros e cargos",
-        "close_request_hint": "Permitir que o membro peça o fechamento"
+        "close_request_hint": "Propor o fechamento à outra parte"
       },
       "claim": {
         "claimed_title": "Ticket assumido",

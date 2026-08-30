@@ -297,7 +297,7 @@
     },
     "ticket close-request": {
       "name": "pyydä-sulkemista",
-      "description": "Pyytää henkilökuntaa sulkemaan tämän tiketin",
+      "description": "Ehdottaa toiselle osapuolelle tämän tiketin sulkemista",
       "parameters": {
         "reason": {
           "name": "syy",

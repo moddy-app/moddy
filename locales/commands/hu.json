@@ -297,7 +297,7 @@
     },
     "ticket close-request": {
       "name": "lezárás-kérése",
-      "description": "Megkéri a csapatot a hibajegy lezárására",
+      "description": "Felajánlja a másik félnek a hibajegy lezárását",
       "parameters": {
         "reason": {
           "name": "indok",

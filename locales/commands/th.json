@@ -297,7 +297,7 @@
     },
     "ticket close-request": {
       "name": "ขอปิด",
-      "description": "ขอให้ทีมงานปิดทิกเก็ตนี้",
+      "description": "เสนอให้อีกฝ่ายปิดทิกเก็ตนี้",
       "parameters": {
         "reason": {
           "name": "เหตุผล",

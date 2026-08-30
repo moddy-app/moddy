@@ -297,7 +297,7 @@
     },
     "ticket close-request": {
       "name": "クローズ依頼",
-      "description": "スタッフにこのチケットのクローズを依頼します",
+      "description": "このチケットのクローズを相手側に提案します",
       "parameters": {
         "reason": {
           "name": "理由",

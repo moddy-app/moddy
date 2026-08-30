@@ -3044,9 +3044,13 @@
       },
       "close_request": {
         "sent_title": "Request sent",
-        "sent_description": "The team has been notified and will close the ticket if it is done.",
-        "card_title": "Closure requested",
-        "card_description": "{user} would like this ticket to be closed.",
+        "sent_description_to_staff": "The team has been notified and will close the ticket if it is done.",
+        "sent_description_to_member": "The member has been notified: they can close the ticket or keep it open.",
+        "card_title": "Closure request",
+        "card_title_to_staff": "Closure requested",
+        "card_title_to_member": "Closure offered",
+        "card_description_to_staff": "{user} would like this ticket to be closed. The team can close it or keep it open.",
+        "card_description_to_member": "{user} suggests closing this ticket. If you no longer need it, close it; otherwise keep it open.",
         "accept": "Close the ticket",
         "refuse": "Keep it open",
         "refused": "{user} kept the ticket open."
@@ -3131,7 +3135,6 @@
         "cannot_create_channel": "Moddy could not create the ticket channel. Check its permissions on the destination category.",
         "already_closed": "This ticket is already closed.",
         "not_closed": "This ticket is not closed.",
-        "can_close_directly": "You can close this ticket yourself — no need to ask.",
         "close_already_requested": "A closure request is already pending on this ticket.",
         "no_close_request": "No closure request is pending on this ticket.",
         "already_escalated": "This ticket is already escalated.",
@@ -3164,7 +3167,7 @@
         "escalate_hint": "Restrict the ticket to the responsibles",
         "staff_thread_hint": "Open or join the private staff thread",
         "participants_hint": "Add and remove members and roles",
-        "close_request_hint": "Let the member ask for a closure"
+        "close_request_hint": "Offer the closure to the other side"
       },
       "claim": {
         "claimed_title": "Ticket claimed",

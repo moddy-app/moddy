@@ -14,6 +14,11 @@ static custom_ids (see ``utils/ticket_views.py``).
 ``number`` is a per-guild counter (``UNIQUE (guild_id, number)``) used in
 channel names and references — humans say "ticket 42", not a snowflake.
 
+``close_request_to_staff`` is the direction of a pending close request: a
+member asking the staff to close (``TRUE``) or the staff offering the closure to
+the opener (``FALSE``). It is stored because who may answer the card depends on
+it, and the card is answered long after the request was made.
+
 ``claimed_by`` is who is currently handling the ticket (the claim system);
 ``pre_escalation_claim`` is where that value is parked while the ticket is
 escalated, so cancelling an escalation restores the claim it interrupted.
@@ -54,6 +59,7 @@ def _row_to_dict(row) -> Dict[str, Any]:
         "participant_roles": list(row["participant_roles"] or []),
         "close_requested_by": row["close_requested_by"],
         "close_request_reason": row["close_request_reason"],
+        "close_request_to_staff": row["close_request_to_staff"],
         "claimed_by": row["claimed_by"],
         "claimed_at": row["claimed_at"],
         "pre_escalation_claim": row["pre_escalation_claim"],
@@ -208,7 +214,8 @@ class TicketsRepository:
                     UPDATE tickets
                     SET status = 'closed', closed_at = now(), closed_by = $2,
                         close_reason = $3, close_requested_by = NULL,
-                        close_request_reason = NULL
+                        close_request_reason = NULL,
+                        close_request_to_staff = NULL
                     WHERE channel_id = $1
                 """, channel_id, actor_id, reason)
             else:
@@ -220,14 +227,25 @@ class TicketsRepository:
                 """, channel_id)
 
     async def set_close_request(self, channel_id: int, requester_id: Optional[int],
-                                reason: Optional[str]) -> None:
-        """Record (or clear, with ``requester_id=None``) a pending close request."""
+                                reason: Optional[str], *,
+                                to_staff: Optional[bool] = None) -> None:
+        """Record (or clear, with ``requester_id=None``) a pending close request.
+
+        ``to_staff`` is the direction: ``True`` when a member asks the staff to
+        close, ``False`` when the staff offers the closure to the opener. It is
+        stored rather than recomputed because the buttons on the card are
+        answered later — possibly after the requester's roles have changed, or
+        after they left the server — and who may answer depends on which way
+        the request points.
+        """
         async with self.pool.acquire() as conn:
             await conn.execute("""
                 UPDATE tickets
-                SET close_requested_by = $2, close_request_reason = $3
+                SET close_requested_by = $2, close_request_reason = $3,
+                    close_request_to_staff = $4
                 WHERE channel_id = $1
-            """, channel_id, requester_id, reason)
+            """, channel_id, requester_id, reason,
+                None if requester_id is None else to_staff)
 
     async def set_ticket_category(self, channel_id: int, panel_id: str,
                                   category_id: str) -> None:

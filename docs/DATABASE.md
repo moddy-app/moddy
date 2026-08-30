@@ -543,6 +543,8 @@ boutons de la barre de contrôle peuvent utiliser des `custom_id` statiques.
 - `staff_thread_id` (BIGINT) — le thread privé du staff, s'il existe
 - `participants` / `participant_roles` (BIGINT[]) — ajoutés à la main
 - `close_requested_by` / `close_request_reason` — demande de fermeture en attente
+- `close_request_to_staff` (BOOLEAN) — le sens de la demande : `TRUE` un membre
+  demande au staff de fermer, `FALSE` le staff propose la fermeture au membre
 - `opened_at` / `closed_at` / `closed_by` / `close_reason`
 
 **Index:**

@@ -297,7 +297,7 @@
     },
     "ticket close-request": {
       "name": "sluiting-vragen",
-      "description": "Vraagt de staff om dit ticket te sluiten",
+      "description": "Stelt de andere partij voor dit ticket te sluiten",
       "parameters": {
         "reason": {
           "name": "reden",

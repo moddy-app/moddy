@@ -297,7 +297,7 @@
     },
     "ticket close-request": {
       "name": "begär-stängning",
-      "description": "Ber personalen att stänga det här ärendet",
+      "description": "Föreslår för den andra parten att stänga det här ärendet",
       "parameters": {
         "reason": {
           "name": "anledning",

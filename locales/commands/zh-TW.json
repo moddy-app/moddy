@@ -297,7 +297,7 @@
     },
     "ticket close-request": {
       "name": "申請關閉",
-      "description": "請團隊關閉這個服務單",
+      "description": "向對方提議關閉這個服務單",
       "parameters": {
         "reason": {
           "name": "原因",

@@ -3043,9 +3043,13 @@
       },
       "close_request": {
         "sent_title": "Demande envoyée",
-        "sent_description": "L'équipe a été prévenue et fermera le ticket si tout est réglé.",
-        "card_title": "Fermeture demandée",
-        "card_description": "{user} souhaite que ce ticket soit fermé.",
+        "sent_description_to_staff": "L'équipe a été prévenue et fermera le ticket si tout est réglé.",
+        "sent_description_to_member": "Le membre a été prévenu : il peut fermer le ticket ou le garder ouvert.",
+        "card_title": "Demande de fermeture",
+        "card_title_to_staff": "Fermeture demandée",
+        "card_title_to_member": "Fermeture proposée",
+        "card_description_to_staff": "{user} souhaite que ce ticket soit fermé. L'équipe peut le fermer ou le garder ouvert.",
+        "card_description_to_member": "{user} propose de fermer ce ticket. S'il n'a plus lieu d'être, fermez-le ; sinon gardez-le ouvert.",
         "accept": "Fermer le ticket",
         "refuse": "Le garder ouvert",
         "refused": "{user} a gardé le ticket ouvert."
@@ -3130,7 +3134,6 @@
         "cannot_create_channel": "Moddy n'a pas pu créer le salon du ticket. Vérifiez ses permissions sur la catégorie de destination.",
         "already_closed": "Ce ticket est déjà fermé.",
         "not_closed": "Ce ticket n'est pas fermé.",
-        "can_close_directly": "Vous pouvez fermer ce ticket vous-même — inutile de le demander.",
         "close_already_requested": "Une demande de fermeture est déjà en attente sur ce ticket.",
         "no_close_request": "Aucune demande de fermeture n'est en attente sur ce ticket.",
         "already_escalated": "Ce ticket est déjà escaladé.",
@@ -3163,7 +3166,7 @@
         "escalate_hint": "Réserver le ticket aux responsables",
         "staff_thread_hint": "Ouvrir ou rejoindre le fil privé du staff",
         "participants_hint": "Ajouter et retirer des membres et des rôles",
-        "close_request_hint": "Permettre au membre de demander la fermeture"
+        "close_request_hint": "Proposer la fermeture à l'autre partie"
       },
       "claim": {
         "claimed_title": "Ticket pris en charge",

@@ -297,7 +297,7 @@
     },
     "ticket close-request": {
       "name": "prašyti-uždaryti",
-      "description": "Paprašo komandos uždaryti šį bilietą",
+      "description": "Pasiūlo kitai pusei uždaryti šį bilietą",
       "parameters": {
         "reason": {
           "name": "priežastis",

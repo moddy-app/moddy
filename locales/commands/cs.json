@@ -297,7 +297,7 @@
     },
     "ticket close-request": {
       "name": "požádat-o-zavření",
-      "description": "Požádá tým o zavření tohoto ticketu",
+      "description": "Navrhne zavření tohoto ticketu druhé straně",
       "parameters": {
         "reason": {
           "name": "důvod",

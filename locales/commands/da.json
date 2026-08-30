@@ -297,7 +297,7 @@
     },
     "ticket close-request": {
       "name": "bed-om-lukning",
-      "description": "Beder staben om at lukke denne sag",
+      "description": "Foreslår den anden part at lukke denne sag",
       "parameters": {
         "reason": {
           "name": "årsag",

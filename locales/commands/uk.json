@@ -297,7 +297,7 @@
     },
     "ticket close-request": {
       "name": "запросити-закриття",
-      "description": "Просить команду закрити цей тікет",
+      "description": "Пропонує іншій стороні закрити цей тікет",
       "parameters": {
         "reason": {
           "name": "причина",

@@ -130,9 +130,9 @@ MAX_OPEN_PER_USER_CEILING = 10
 # The buttons offered under the opening message
 #
 # An admin picks which of these the ticket message carries. `close_request` is
-# in the catalogue but out of the default set: asking for a closure is a
-# command (`/ticket close-request`), and a server that wants it as a button
-# says so explicitly.
+# in the catalogue but out of the default set: offering the closure to the
+# opener is a staff command (`/ticket close-request`), and a server that wants
+# it as a button says so explicitly.
 # --------------------------------------------------------------------------- #
 BTN_CLOSE = "close"
 BTN_CLAIM = "claim"

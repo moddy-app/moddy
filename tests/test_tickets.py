@@ -301,6 +301,48 @@ class TestMemberPermissions:
 
 
 # =========================================================================== #
+# Close requests point both ways
+#
+# The same action asks the staff to close (run by a member) or offers the
+# closure to the opener (run by the staff). Which side may answer the card
+# therefore depends on the direction the request was stored with.
+# =========================================================================== #
+class TestCloseRequestDirection:
+    def setup_method(self):
+        from services.ticket_service import TicketService
+
+        self.service = TicketService(bot=None)
+        self.category = make_category(permissions={"11": [PERM_VIEW, PERM_CLOSE]})
+        self.owner = FakeMember(7)
+        self.staffer = FakeMember(3, [FakeRole(11)])
+        self.participant = FakeMember(9)
+
+    def _ticket(self, to_staff, requester):
+        return {'owner_id': 7, 'participants': [9], 'participant_roles': [],
+                'status': 'open', 'escalated': False,
+                'close_requested_by': requester, 'close_request_to_staff': to_staff}
+
+    def _may(self, actor, ticket):
+        return self.service._may_answer_close_request(
+            actor, ticket, member_permissions(actor, self.category, ticket))
+
+    def test_a_member_asking_is_answered_by_the_staff(self):
+        ticket = self._ticket(True, self.owner.id)
+        assert self._may(self.staffer, ticket) is True
+        # Not by the opener: they asked, they cannot grant it to themselves.
+        assert self._may(self.owner, ticket) is False
+        assert self._may(self.participant, ticket) is False
+
+    def test_the_staff_offering_is_answered_by_the_opener(self):
+        ticket = self._ticket(False, self.staffer.id)
+        assert self._may(self.owner, ticket) is True
+        # Anyone else added to the ticket is a spectator here.
+        assert self._may(self.participant, ticket) is False
+        # The staff could have closed it outright, so they may conclude it too.
+        assert self._may(self.staffer, ticket) is True
+
+
+# =========================================================================== #
 # Rendering
 # =========================================================================== #
 class TestRendering:
@@ -955,6 +997,26 @@ class TestTicketChannelViews:
         assert self._ids(view) == ["moddy:tickets:request:accept",
                                    "moddy:tickets:request:refuse"]
 
+    def test_the_close_request_card_is_worded_for_the_side_that_answers(self):
+        """One card, two directions: a member asking the staff and the staff
+        offering the closure to the opener do not read the same."""
+        from utils.i18n import t
+        from utils.ticket_views import build_close_request_message
+
+        def rendered(to_staff):
+            view = build_close_request_message(self.ticket, self.actor, None, "fr",
+                                               to_staff)
+            return "\n".join(getattr(item, "content", "") or ""
+                              for item in view.walk_children())
+
+        to_staff = rendered(True)
+        to_member = rendered(False)
+        assert t('modules.tickets.close_request.card_title_to_staff',
+                 locale="fr") in to_staff
+        assert t('modules.tickets.close_request.card_title_to_member',
+                 locale="fr") in to_member
+        assert to_staff != to_member
+
     def test_escalation_notice_can_be_undone(self):
         from utils.ticket_views import build_escalation_notice
 
@@ -1020,6 +1082,9 @@ _INTERPOLATED_KEYS = (
      ("close", "close_request", "claim", "unclaim", "escalate", "staff_thread",
       "participants", "reopen", "delete", "deescalate", "rename")]
     + [f"modules.tickets.buttons.{b}_hint" for b in TICKET_BUTTONS]
+    + [f"modules.tickets.close_request.{k}_{s}"
+       for k in ("sent_description", "card_title", "card_description")
+       for s in ("to_staff", "to_member")]
     + [f"modules.tickets.options.{o}_{k}" for o in
        ("ping_staff_roles", "claim_enabled", "claim_lock")
        for k in ("label", "hint")]

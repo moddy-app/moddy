@@ -297,7 +297,7 @@
     },
     "ticket close-request": {
       "name": "poproś-o-zamknięcie",
-      "description": "Prosi zespół o zamknięcie tego zgłoszenia",
+      "description": "Proponuje drugiej stronie zamknięcie tego zgłoszenia",
       "parameters": {
         "reason": {
           "name": "powód",

@@ -297,7 +297,7 @@
     },
     "ticket close-request": {
       "name": "kapatma-iste",
-      "description": "Ekipten bu talebi kapatmasını ister",
+      "description": "Bu talebin kapatılmasını karşı tarafa önerir",
       "parameters": {
         "reason": {
           "name": "sebep",

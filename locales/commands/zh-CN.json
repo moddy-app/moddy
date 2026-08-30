@@ -297,7 +297,7 @@
     },
     "ticket close-request": {
       "name": "申请关闭",
-      "description": "请求团队关闭这个工单",
+      "description": "向对方提议关闭这个工单",
       "parameters": {
         "reason": {
           "name": "原因",
