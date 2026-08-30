@@ -3663,6 +3663,25 @@
         "no_redis": "Redis est indisponible, impossible d'envoyer la demande.",
         "publish_failed": "Échec de l'envoi de la demande : {error}"
       },
+      "stripe": {
+        "action_failed": "Échec de l'action : {error}",
+        "cancel": {
+          "title": "Abonnement annulé",
+          "done": "Demande d'annulation envoyée pour {id}."
+        },
+        "resume": {
+          "title": "Abonnement repris",
+          "done": "Demande de reprise envoyée pour {id}."
+        },
+        "refund": {
+          "title": "Paiement remboursé",
+          "done": "Demande de remboursement envoyée pour {id}."
+        },
+        "trial": {
+          "title": "Essai démarré",
+          "done": "Demande de démarrage d'essai envoyée pour {id}."
+        }
+      },
       "redirect": {
         "modal_add": "Ajouter une redirection",
         "modal_edit": "Modifier la redirection",

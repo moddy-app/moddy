@@ -3664,6 +3664,25 @@
         "no_redis": "Redis no está disponible, no se pudo enviar la solicitud.",
         "publish_failed": "Error al enviar la solicitud: {error}"
       },
+      "stripe": {
+        "action_failed": "Error en la acción: {error}",
+        "cancel": {
+          "title": "Suscripción cancelada",
+          "done": "Solicitud de cancelación enviada para {id}."
+        },
+        "resume": {
+          "title": "Suscripción reanudada",
+          "done": "Solicitud de reanudación enviada para {id}."
+        },
+        "refund": {
+          "title": "Pago reembolsado",
+          "done": "Solicitud de reembolso enviada para {id}."
+        },
+        "trial": {
+          "title": "Prueba iniciada",
+          "done": "Solicitud de inicio de prueba enviada para {id}."
+        }
+      },
       "redirect": {
         "modal_add": "Añadir redirección",
         "modal_edit": "Editar redirección",
