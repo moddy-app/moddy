@@ -140,7 +140,8 @@ moddy/
 │   │   ├── design.py          #     Standardized Components V2 panels (accents)
 │   │   └── parsing.py         #     Arg helpers (user/guild id)
 │   ├── commands/dev/          #   /dev commands (one file each)
-│   ├── commands/team/         #   /team commands (incl. help)
+│   ├── commands/team/         #   /team commands (incl. help, /team user — full
+│   │                          #   user card: account, billing, cases, notifications)
 │   ├── commands/mod/          #   /mod commands + case/, global/ and altguard/ sub-groups
 │   │                          #   (incl. /mod notif — notification lookup by uuid)
 │   ├── commands/com/          #   /com commands (/com send — notification to a user,
@@ -273,7 +274,8 @@ moddy/
     ├── test_support_requests.py #  Support requests: cards, buttons, beta card, welcome DM
     ├── test_logs.py           #   Server logs: registry, routing, rendering, delivery
     ├── test_logs_i18n.py      #   Server logs: i18n completeness on the 5 locales
-    └── test_heartbeat.py      #   Health Monitor heartbeat: payload, lifecycle, status decisions
+    ├── test_heartbeat.py      #   Health Monitor heartbeat: payload, lifecycle, status decisions
+    └── test_staff_user_command.py # /team user: sections, personal-data gate, i18n (5 locales)
 ```
 
 ---

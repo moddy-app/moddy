@@ -100,6 +100,7 @@ no nodes has no command access even if it matches the type check.
 | `redirect_manage` | `/manage redirect *` |
 | `banner_manage` | `/manage banner *` |
 | `official_manage` | `/dev official` |
+| `user_lookup` | The personal-data section of `/team user` (email, Stripe customer, stored preferences). The command itself stays open to all staff — only that section is gated |
 | `support_request` | Claim / reply to / close a `/bug-report` or configuration-help request ([SUPPORT_REQUESTS.md](SUPPORT_REQUESTS.md)) |
 | `broadcast` | `/com send`, `/com beta` |
 
