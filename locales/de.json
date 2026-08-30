@@ -3423,11 +3423,7 @@
         "bot": "Bot",
         "created": "Erstellt",
         "shared": "Gemeinsame Server",
-        "first_seen": "Zuerst gesehen"
-      },
-      "account": {
-        "title": "Benutzerkonto",
-        "identity": "Discord-Identität",
+        "first_seen": "Zuerst gesehen",
         "moddy_account": "Moddy-Konto",
         "email": "E-Mail",
         "no_email": "Keine E-Mail hinterlegt — sie wird beim Anlegen des Stripe-Kunden gespeichert.",
@@ -3447,7 +3443,8 @@
         "notifications_recent": "Aktuell",
         "notifications_last": "Letzte:",
         "privacy": "Personenbezogene Daten — diese Abfrage wird protokolliert. Teile sie nicht außerhalb des Supports.",
-        "no_db": "Die Datenbank ist nicht verfügbar."
+        "no_db": "Die Datenbank ist nicht verfügbar.",
+        "restricted": "E-Mail, Abrechnung und Einstellungen erfordern die Berechtigung `user_lookup`."
       },
       "mutual": {
         "title": "Gemeinsame Server ({count})",

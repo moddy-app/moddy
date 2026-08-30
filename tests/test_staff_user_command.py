@@ -1,11 +1,12 @@
-"""`/team account` — the staff user-account lookup.
+"""`/team user` — the staff user lookup.
 
 What these guard:
 
 * **Every section renders.** The panel aggregates nine independent DB reads;
   a staffer must still get the other eight when one of them fails.
-* **The sensitive fields are actually shown.** The command exists for the
-  email and the Stripe customer — a silent regression there makes it useless.
+* **The personal-data gate.** Email, Stripe customer and stored preferences
+  are shown only to a staffer holding the ``user_lookup`` node — `/team user`
+  itself stays open to all staff, as it always was.
 * **i18n completeness.** Every key the panel uses exists in the five locales
   (a missing key renders as a raw path in front of a staffer).
 """
@@ -21,19 +22,19 @@ import pytest
 
 os.environ.setdefault("DISCORD_TOKEN", "test-token")
 
-from staff.commands.team import account as account_cmd  # noqa: E402
+from staff.commands.team import user as user_cmd  # noqa: E402
 
 NOW = datetime.now(timezone.utc)
 
 LOCALES = ("fr", "en-US", "es-ES", "pt-BR", "de")
 
-#: Keys the panel reads, relative to ``staff.team.account``.
-ACCOUNT_KEYS = (
-    "title", "identity", "moddy_account", "email", "no_email", "updated",
-    "timezone", "staff", "nodes", "denied", "staff_since", "moderation",
-    "global_level", "global_expires", "cases", "cases_open", "cases_scopes",
-    "notifications", "notifications_recent", "notifications_last", "privacy",
-    "no_db",
+#: Keys the panel reads, relative to ``staff.team.user``.
+USER_KEYS = (
+    "title", "basic", "username", "bot", "created", "shared", "first_seen",
+    "moddy_account", "email", "no_email", "restricted", "updated", "timezone",
+    "staff", "nodes", "denied", "staff_since", "moderation", "global_level",
+    "global_expires", "cases", "cases_open", "cases_scopes", "notifications",
+    "notifications_recent", "notifications_last", "privacy", "no_db",
 )
 
 
@@ -166,8 +167,13 @@ def _texts(view) -> str:
     return "\n".join(chunks)
 
 
-async def _run(bot, options=None, locale="fr") -> str:
-    command = account_cmd.AccountCommand(bot)
+async def _run(bot, options=None, locale="fr", *, node=True, monkeypatch=None) -> str:
+    """Render the panel, with or without the ``user_lookup`` node on the caller."""
+    if monkeypatch is not None:
+        async def _has_node(_bot, _user_id, _node):
+            return node
+        monkeypatch.setattr(user_cmd, "has_staff_node", _has_node)
+    command = user_cmd.UserCommand(bot)
     ctx = FakeContext(bot, options if options is not None else {"user": bot._user}, locale)
     await command.execute(ctx)
     assert ctx.sent is not None
@@ -178,9 +184,11 @@ async def _run(bot, options=None, locale="fr") -> str:
 # Tests
 # --------------------------------------------------------------------------- #
 
-def test_command_is_gated_behind_the_user_lookup_node():
-    # Personal data: the staff role check alone must never be enough.
-    assert account_cmd.AccountCommand.permission == "user_lookup"
+def test_the_command_itself_stays_open_to_all_staff():
+    # Only the personal-data section is gated; /team user must not become
+    # unusable for staffers who merely need to identify an account.
+    assert user_cmd.UserCommand.permission is None
+    assert user_cmd.SENSITIVE_NODE == "user_lookup"
 
     from utils.staff_role_permissions import (
         MANAGER_PERMISSIONS, SUPPORT_PERMISSIONS, get_permission_label,
@@ -190,8 +198,8 @@ def test_command_is_gated_behind_the_user_lookup_node():
     assert get_permission_label("user_lookup") != "user_lookup"
 
 
-async def test_panel_shows_the_account_data():
-    text = await _run(FakeBot(db=FakeDB()))
+async def test_panel_shows_the_account_data(monkeypatch):
+    text = await _run(FakeBot(db=FakeDB()), monkeypatch=monkeypatch)
     assert "jules@example.com" in text          # the whole point of the command
     assert "cus_ABC123" in text                 # Stripe customer
     assert "Europe/Paris" in text               # stored preference
@@ -203,13 +211,31 @@ async def test_panel_shows_the_account_data():
     assert "**Jules**" in text                  # display name + badge (rule #7)
 
 
-async def test_one_failing_read_does_not_sink_the_panel():
-    text = await _run(FakeBot(db=FakeDB(fail={"list_notifications", "get_subscription"})))
+async def test_personal_data_is_hidden_without_the_node(monkeypatch):
+    text = await _run(FakeBot(db=FakeDB()), node=False, monkeypatch=monkeypatch)
+    assert "jules@example.com" not in text      # email
+    assert "cus_ABC123" not in text             # Stripe customer
+    assert "Europe/Paris" not in text           # stored preference
+    assert "user_lookup" in text                # the panel says what is missing
+    assert "`Support`" in text                  # everything else still renders
+    assert "`limited`" in text
+
+
+async def test_the_node_is_re_derived_from_the_caller():
+    # No monkeypatch: the real has_staff_node runs against an uninitialized
+    # permission manager and must fail closed.
+    text = await _run(FakeBot(db=FakeDB()))
+    assert "jules@example.com" not in text
+
+
+async def test_one_failing_read_does_not_sink_the_panel(monkeypatch):
+    text = await _run(FakeBot(db=FakeDB(fail={"list_notifications", "get_subscription"})),
+                      monkeypatch=monkeypatch)
     assert "jules@example.com" in text
     assert "`Support`" in text
 
 
-async def test_missing_email_is_explicit():
+async def test_missing_email_is_explicit(monkeypatch):
     db = FakeDB()
 
     async def no_email(user_id):
@@ -219,17 +245,17 @@ async def test_missing_email_is_explicit():
         return record
 
     db.get_user = no_email
-    text = await _run(FakeBot(db=db))
+    text = await _run(FakeBot(db=db), monkeypatch=monkeypatch)
     assert "Aucun email enregistré" in text
 
 
 async def test_unknown_target_is_rejected_before_any_lookup():
     bot = FakeBot(db=FakeDB())
-    command = account_cmd.AccountCommand(bot)
+    command = user_cmd.UserCommand(bot)
     ctx = FakeContext(bot, {"user_id": "not-an-id"})
     await command.execute(ctx)
     assert ctx.sent is not None
-    assert "t.account" in _texts(ctx.sent)
+    assert "t.user" in _texts(ctx.sent)
 
 
 async def test_without_a_database_the_command_says_so():
@@ -240,6 +266,6 @@ async def test_without_a_database_the_command_says_so():
 @pytest.mark.parametrize("locale", LOCALES)
 def test_i18n_keys_exist_in_every_locale(locale):
     with open(f"locales/{locale}.json", encoding="utf-8") as handle:
-        block = json.load(handle)["staff"]["team"]["account"]
-    missing = [key for key in ACCOUNT_KEYS if not block.get(key)]
+        block = json.load(handle)["staff"]["team"]["user"]
+    missing = [key for key in USER_KEYS if not block.get(key)]
     assert not missing, f"{locale}: missing {missing}"

@@ -3423,11 +3423,7 @@
         "bot": "Bot",
         "created": "Created",
         "shared": "Shared Servers",
-        "first_seen": "First Seen"
-      },
-      "account": {
-        "title": "User account",
-        "identity": "Discord identity",
+        "first_seen": "First Seen",
         "moddy_account": "Moddy account",
         "email": "Email",
         "no_email": "No email on file — one is stored when a Stripe customer is created.",
@@ -3447,7 +3443,8 @@
         "notifications_recent": "Recent",
         "notifications_last": "Last:",
         "privacy": "Personal data — this lookup is logged. Do not share it outside support.",
-        "no_db": "The database is unavailable."
+        "no_db": "The database is unavailable.",
+        "restricted": "Email, billing and preferences require the `user_lookup` node."
       },
       "mutual": {
         "title": "Mutual Servers ({count})",

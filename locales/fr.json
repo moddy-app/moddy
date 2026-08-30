@@ -3422,11 +3422,7 @@
         "bot": "Bot",
         "created": "Créé",
         "shared": "Serveurs en commun",
-        "first_seen": "Première apparition"
-      },
-      "account": {
-        "title": "Compte utilisateur",
-        "identity": "Identité Discord",
+        "first_seen": "Première apparition",
         "moddy_account": "Compte Moddy",
         "email": "Email",
         "no_email": "Aucun email enregistré — il est stocké à la création du client Stripe.",
@@ -3446,7 +3442,8 @@
         "notifications_recent": "Récentes",
         "notifications_last": "Dernière :",
         "privacy": "Données personnelles — cette consultation est journalisée. Ne les partage pas hors du support.",
-        "no_db": "La base de données est indisponible."
+        "no_db": "La base de données est indisponible.",
+        "restricted": "Email, facturation et préférences nécessitent la permission `user_lookup`."
       },
       "mutual": {
         "title": "Serveurs en commun ({count})",

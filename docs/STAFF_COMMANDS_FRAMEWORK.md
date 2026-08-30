@@ -203,8 +203,7 @@ arguments (used by `sql` and `jsk`). **Commands must not log themselves.**
 |---------|--------------|-------------|
 | `invite` | — | Get an invite to a guild |
 | `server` | `serverinfo` | Server info + DB attributes |
-| `user` | — | User info + DB attributes |
-| `account` | `acc`, `whois` | Full Moddy account: email, Stripe, subscription, staff, cases, notifications *(node `user_lookup`)* |
+| `user` | `whois` | Everything about a user: Discord, Moddy account, subscription, staff, attributes, cases, notifications. Email / billing / preferences need the `user_lookup` node |
 | `mutualserver` | — | Mutual guilds with a user |
 | `flex` | — | Public staff verification message |
 | `subscription` | — | Check a user's subscription status |
