@@ -228,6 +228,7 @@ moddy/
 │   ├── feeds_client.py        #   moddy-feeds Redis client (social notifications)
 │   ├── case_service.py        #   Scalable sanction→case entry point (source registry)
 │   ├── expiration_notifier.py #   Expired sanctions: lift the ban + DM the subject (invite)
+│   ├── invoice_notifier.py    #   Stripe invoices (notify_invoice): one DM per invoice, trials incl.
 │   ├── global_sanction_service.py # Global sanctions: grouped cases, notice DM, 48h countdown, Redis
 │   ├── appeal_service.py      #   Automod sanction appeals (server / Moddy team, binding)
 │   ├── precedent_service.py   #   Automod server precedents (record + serve, RAG)
@@ -264,6 +265,7 @@ moddy/
     ├── test_global_sanction_flow.py # Groups, notices, countdown, Redis events, allowlists
     ├── test_bot_customization.py  # Bot customization validation (bio budget, styles)
     ├── test_expiration_notifications.py # Expired sanctions: unban, invite, DM card
+    ├── test_invoice_notifications.py # Stripe invoices: variant wording, amounts, dedup
     ├── test_task_signature.py #   moddy:tasks HMAC contract (canonicalization, replay, dedup)
     ├── test_tickets.py        #   Tickets: schema, permissions, claim, overwrites, screens, i18n
     ├── test_transcription.py  #   Voice transcription helpers, guard rails, cards
@@ -480,7 +482,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/TASK_SIGNATURE.md](docs/TASK_SIGNATURE.md) | **`moddy:tasks` HMAC signature** — canonicalization, anti-replay, `TASK_STREAM_SECRET`, deployment order |
 | [docs/REDIS_COMMUNICATION.md](docs/REDIS_COMMUNICATION.md) | **Redis inter-service communication** — Pub/Sub vs Streams vs plain keys, current channel/stream inventory, checklist for wiring up a new Redis-based service |
 | [docs/SOCIAL_NOTIFICATIONS.md](docs/SOCIAL_NOTIFICATIONS.md) | Social Notifications module + `moddy-feeds` Redis contract (what the backend must mirror) |
-| [docs/SUBSCRIPTION_SCHEMA.md](docs/SUBSCRIPTION_SCHEMA.md) | Subscription DB schema, Redis cache contract, Pub/Sub events |
+| [docs/SUBSCRIPTION_SCHEMA.md](docs/SUBSCRIPTION_SCHEMA.md) | Subscription DB schema, Redis cache contract, Pub/Sub events (incl. `notify_invoice` — Stripe invoice DMs) |
 | [docs/RAILWAY.md](docs/RAILWAY.md) | Environment variables, deployment, troubleshooting |
 
 ### Other

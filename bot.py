@@ -136,6 +136,9 @@ class ModdyBot(ModdyFrameworkBot):
         self.altguard = AltGuardClient(self)
         from services.ticket_service import TicketService
         self.tickets = TicketService(self)  # ticket lifecycle (open/close/escalate…)
+        from services.invoice_notifier import InvoiceNotifier
+        # Stripe invoices (notify_invoice): one DM per invoice, trials included
+        self.invoices = InvoiceNotifier(self)
         from services.stripe_admin_client import StripeAdminClient
         # Signed Stripe admin actions (cancel/resume/refund/trial) over
         # moddy:dashboard <-> moddy:bot, correlated by request_id.
@@ -396,6 +399,13 @@ class ModdyBot(ModdyFrameworkBot):
             tier = data.get("tier")
             await invalidate_cache(self, user_id)
             await self._send_subscription_dm(user_id, "subscription_downgraded", tier=tier)
+
+        elif event_type == "notify_invoice":
+            # A Stripe invoice was issued — including at 0, because a free
+            # trial produces a real invoice. The backend already mailed it and
+            # deduplicated on the invoice id; the bot only DMs it.
+            await invalidate_cache(self, user_id)
+            await self.invoices.handle(data)
 
         else:
             logger.debug(f"[SubPubSub] Unknown subscription event type: {event_type}")

@@ -11,7 +11,31 @@
       "servers_empty": "-# Aucun serveur lié à ton abonnement.",
       "server_entry": "- `{server_id}`",
       "manage_button": "Gérer mon abonnement",
-      "error": "Impossible de récupérer ton statut d'abonnement. Réessaie plus tard."
+      "error": "Impossible de récupérer ton statut d'abonnement. Réessaie plus tard.",
+      "invoice": {
+        "title": {
+          "paid": "Paiement reçu",
+          "trial": "Ton essai a démarré",
+          "free": "Facture disponible"
+        },
+        "body": {
+          "paid": "Le paiement de **{amount}** pour ton abonnement **{tier}** a bien été reçu. Merci de soutenir Moddy !",
+          "trial": "Ton essai **{tier}** a démarré : **aucun montant n'a été prélevé**. Voici la facture correspondante, à **{amount}**. Merci d'essayer Moddy !",
+          "free": "**Aucun montant n'a été prélevé** pour cette période de ton abonnement **{tier}**. Voici ta facture, à **{amount}**."
+        },
+        "field_number": "Numéro de facture",
+        "field_amount": "Montant",
+        "field_date": "Date",
+        "field_next_renewal": "Prochain renouvellement",
+        "field_first_charge": "Premier prélèvement",
+        "button_view": "Voir la facture",
+        "button_pdf": "Télécharger le PDF",
+        "button_manage": "Gérer mon abonnement",
+        "tier": {
+          "monthly": "mensuel",
+          "yearly": "annuel"
+        }
+      }
     },
     "ping": {
       "description": "Vérifie la latence et le statut du bot",
@@ -4070,7 +4094,8 @@
       "global_sanctions": "Sanctions globales",
       "expirations": "Fin de sanction",
       "support": "Moddy Support",
-      "moddy_team": "Moddy Team"
+      "moddy_team": "Moddy Team",
+      "subscription": "Abonnement Moddy"
     },
     "attribution": {
       "unknown_guild": "Serveur inconnu",

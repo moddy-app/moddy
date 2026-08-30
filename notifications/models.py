@@ -161,6 +161,7 @@ SERVICES: Dict[str, ServiceInfo] = {
         _svc("global_sanctions", "EXCLAMATION"),     # services/global_sanction_service.py
         _svc("expirations", "TIME"),                 # services/expiration_notifier.py
         _svc("support", "SUPPORT"),                  # services/support_request_service.py
+        _svc("subscription", "PREMIUM"),             # services/invoice_notifier.py
     )
 }
 

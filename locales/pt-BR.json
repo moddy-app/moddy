@@ -11,7 +11,31 @@
       "servers_empty": "-# Nenhum servidor está vinculado à sua assinatura.",
       "server_entry": "- `{server_id}`",
       "manage_button": "Gerenciar minha assinatura",
-      "error": "Não foi possível obter o status da sua assinatura. Tente novamente mais tarde."
+      "error": "Não foi possível obter o status da sua assinatura. Tente novamente mais tarde.",
+      "invoice": {
+        "title": {
+          "paid": "Pagamento recebido",
+          "trial": "Seu teste começou",
+          "free": "Fatura disponível"
+        },
+        "body": {
+          "paid": "O pagamento de **{amount}** da sua assinatura **{tier}** foi recebido. Obrigado por apoiar o Moddy!",
+          "trial": "Seu teste **{tier}** começou: **nenhum valor foi cobrado**. Aqui está a fatura correspondente, de **{amount}**. Obrigado por experimentar o Moddy!",
+          "free": "**Nenhum valor foi cobrado** neste período da sua assinatura **{tier}**. Aqui está a sua fatura, de **{amount}**."
+        },
+        "field_number": "Número da fatura",
+        "field_amount": "Valor",
+        "field_date": "Data",
+        "field_next_renewal": "Próxima renovação",
+        "field_first_charge": "Primeira cobrança",
+        "button_view": "Ver a fatura",
+        "button_pdf": "Baixar o PDF",
+        "button_manage": "Gerenciar minha assinatura",
+        "tier": {
+          "monthly": "mensal",
+          "yearly": "anual"
+        }
+      }
     },
     "ping": {
       "description": "Verifica a latência e o status do bot",
@@ -4071,7 +4095,8 @@
       "global_sanctions": "Sanções globais",
       "expirations": "Fim de sanção",
       "support": "Moddy Support",
-      "moddy_team": "Moddy Team"
+      "moddy_team": "Moddy Team",
+      "subscription": "Assinatura Moddy"
     },
     "attribution": {
       "unknown_guild": "Servidor desconhecido",
