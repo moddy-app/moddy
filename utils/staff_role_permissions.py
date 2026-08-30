@@ -39,6 +39,7 @@ SUPPORT_PERMISSIONS = [
     "subscription_view",   # View user subscription information
     "subscription_manage", # Manage user subscriptions (refunds, modifications)
     "support_request",     # Handle bug reports / configuration-help requests
+    "user_lookup",         # Look up a user's Moddy account (email, billing, cases)
 ]
 
 # Permissions specific to Communication role
@@ -78,6 +79,7 @@ MANAGER_PERMISSIONS = [
     "banner_manage",        # Manage site/dashboard banners
     "stripe_manage",        # Manage Stripe / billing operations
     "official_manage",      # Mark/unmark OFFICIAL Moddy servers
+    "user_lookup",          # Look up a user's Moddy account (email, billing, cases)
 ]
 
 # Map role names to their available permissions
@@ -120,6 +122,7 @@ def get_permission_label(permission: str) -> str:
         "subscription_view": "View User Subscriptions",
         "subscription_manage": "Manage Subscriptions (Refunds)",
         "support_request": "Handle Bug Reports & Config Help",
+        "user_lookup": "Look Up a User Account (Email, Billing)",
 
         # Communication
         "announce": "Send Announcements",

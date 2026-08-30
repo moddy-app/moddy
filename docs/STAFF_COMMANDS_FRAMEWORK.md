@@ -156,7 +156,7 @@ Permission checks are centralized in the dispatcher (`staff/framework/cog.py`):
 
 Available permission nodes: `stripe_manage`, `redirect_manage`, `banner_manage`,
 `official_manage`, `global_sanction`, `global_enforcement`, `notif_review`,
-`notif_lookup`, `broadcast`. Nodes let a command live in a non-dev department
+`notif_lookup`, `broadcast`, `user_lookup`. Nodes let a command live in a non-dev department
 (e.g. `/manage`) while still being gated beyond the base role check.
 
 The node check lives in `utils/staff_permissions.has_staff_node(bot, user_id,
@@ -204,6 +204,7 @@ arguments (used by `sql` and `jsk`). **Commands must not log themselves.**
 | `invite` | — | Get an invite to a guild |
 | `server` | `serverinfo` | Server info + DB attributes |
 | `user` | — | User info + DB attributes |
+| `account` | `acc`, `whois` | Full Moddy account: email, Stripe, subscription, staff, cases, notifications *(node `user_lookup`)* |
 | `mutualserver` | — | Mutual guilds with a user |
 | `flex` | — | Public staff verification message |
 | `subscription` | — | Check a user's subscription status |
