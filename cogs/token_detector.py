@@ -32,8 +32,8 @@ from discord import ui
 from discord.ext import commands
 
 
-from cogs.error_handler import BaseView, ErrorView, report_error
-from utils.interaction_response import deliver, safe_defer
+from cogs.error_handler import BaseView, report_component_error
+from utils.interaction_response import safe_defer
 from utils.emojis import (
     WARNING, ERROR, DONE, INFO, DELETE, LOGOUT,
 )
@@ -54,32 +54,12 @@ async def _route_error(
 ) -> None:
     """Route an unexpected exception to the centralized error pipeline.
 
-    ``report_error`` does the whole job (traceback log, Sentry, in-memory and
-    database storage, internal Discord log) and hands back the error code, and
-    ``deliver`` gets the card in front of the user whatever state the
-    interaction is in — including a channel message when its token has
-    already expired.
+    ``report_component_error`` does the whole job — traceback log, Sentry,
+    in-memory and database storage, internal Discord log — and puts the coded
+    error card in front of the user whatever state the interaction is in,
+    including a channel message once its token has expired.
     """
-    error_code = await report_error(
-        interaction.client,
-        error,
-        source=f"TokenDetector:{context}",
-        user=interaction.user,
-        guild=interaction.guild,
-        channel=interaction.channel,
-        error_type="DynamicItem Error",
-    )
-
-    if error_code:
-        await deliver(interaction, view=ErrorView(error_code), ephemeral=True)
-    else:
-        # No ErrorTracker cog loaded: there is no code to show, but the user
-        # must still learn that the click failed.
-        await deliver(
-            interaction,
-            content="An unexpected error occurred and has been logged.",
-            ephemeral=True,
-        )
+    await report_component_error(interaction, error, f"TokenDetector:{context}")
 
 
 class _ErrorRoutingMixin:
