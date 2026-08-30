@@ -39,7 +39,9 @@ logger = logging.getLogger("moddy.notifications.render")
 VERIFIED_GUILD_ATTRIBUTES = ("VERIFIED", "VERIFIED_ORG", "PARTNER")
 
 #: Services that ARE Moddy: their attribution line carries the check mark.
-OFFICIAL_SERVICES = ("moddy", "moddy_team", "support")
+#: ``subscription`` is here for one reason: a billing DM is what a scam
+#: impersonates, and the check is what tells the recipient this one is ours.
+OFFICIAL_SERVICES = ("moddy", "moddy_team", "support", "subscription")
 
 #: Among those, the ones read as a named entity rather than as Moddy itself
 #: ("Sent by the **Moddy Team**", not "Sent by the **Moddy**"). The article sits

@@ -11,7 +11,31 @@
       "servers_empty": "-# Es sind keine Server mit deinem Abonnement verknüpft.",
       "server_entry": "- `{server_id}`",
       "manage_button": "Abonnement verwalten",
-      "error": "Dein Abonnementstatus konnte nicht abgerufen werden. Bitte versuche es später erneut."
+      "error": "Dein Abonnementstatus konnte nicht abgerufen werden. Bitte versuche es später erneut.",
+      "invoice": {
+        "title": {
+          "paid": "Zahlung erhalten",
+          "trial": "Deine Testphase hat begonnen",
+          "free": "Rechnung verfügbar"
+        },
+        "body": {
+          "paid": "Die Zahlung von **{amount}** für dein **{tier}** Abonnement ist eingegangen. Danke, dass du Moddy unterstützt!",
+          "trial": "Deine **{tier}** Testphase hat begonnen: **es wurde kein Betrag abgebucht**. Hier ist die zugehörige Rechnung über **{amount}**. Danke, dass du Moddy ausprobierst!",
+          "free": "**Es wurde kein Betrag abgebucht** für diesen Zeitraum deines **{tier}** Abonnements. Hier ist deine Rechnung über **{amount}**."
+        },
+        "field_number": "Rechnungsnummer",
+        "field_amount": "Betrag",
+        "field_date": "Datum",
+        "field_next_renewal": "Nächste Verlängerung",
+        "field_first_charge": "Erste Abbuchung",
+        "button_view": "Rechnung ansehen",
+        "button_pdf": "PDF herunterladen",
+        "button_manage": "Mein Abonnement verwalten",
+        "tier": {
+          "monthly": "monatlich",
+          "yearly": "jährlich"
+        }
+      }
     },
     "ping": {
       "description": "Prüft die Latenz und den Status des Bots",
@@ -4071,7 +4095,8 @@
       "global_sanctions": "Globale Sanktionen",
       "expirations": "Sanktionsende",
       "support": "Moddy Support",
-      "moddy_team": "Moddy Team"
+      "moddy_team": "Moddy Team",
+      "subscription": "Moddy-Abonnement"
     },
     "attribution": {
       "unknown_guild": "Unbekannter Server",

@@ -11,7 +11,31 @@
       "servers_empty": "-# No servers are linked to your subscription.",
       "server_entry": "- `{server_id}`",
       "manage_button": "Manage my subscription",
-      "error": "Unable to retrieve your subscription status. Please try again later."
+      "error": "Unable to retrieve your subscription status. Please try again later.",
+      "invoice": {
+        "title": {
+          "paid": "Payment received",
+          "trial": "Your trial has started",
+          "free": "Invoice available"
+        },
+        "body": {
+          "paid": "The payment of **{amount}** for your **{tier}** subscription has been received. Thanks for supporting Moddy!",
+          "trial": "Your **{tier}** trial has started: **no amount was charged**. Here is the matching invoice, for **{amount}**. Thanks for trying Moddy!",
+          "free": "**No amount was charged** for this period of your **{tier}** subscription. Here is your invoice, for **{amount}**."
+        },
+        "field_number": "Invoice number",
+        "field_amount": "Amount",
+        "field_date": "Date",
+        "field_next_renewal": "Next renewal",
+        "field_first_charge": "First charge",
+        "button_view": "View invoice",
+        "button_pdf": "Download PDF",
+        "button_manage": "Manage my subscription",
+        "tier": {
+          "monthly": "monthly",
+          "yearly": "yearly"
+        }
+      }
     },
     "ping": {
       "description": "Check the bot's latency and status",
@@ -4071,7 +4095,8 @@
       "global_sanctions": "Global sanctions",
       "expirations": "Sanction expiry",
       "support": "Moddy Support",
-      "moddy_team": "Moddy Team"
+      "moddy_team": "Moddy Team",
+      "subscription": "Moddy Subscription"
     },
     "attribution": {
       "unknown_guild": "Unknown server",
