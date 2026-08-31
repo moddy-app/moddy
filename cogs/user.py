@@ -19,6 +19,7 @@ from utils.emojis import (
     get_user_verification_badge, format_verification_badge,
 )
 from utils.i18n import i18n
+from utils.incognito import resolve_incognito
 
 def _format_org_names(orgs: list, locale: str) -> str:
     """Format a list of org names into a readable string with locale-aware joining."""
@@ -680,15 +681,8 @@ class User(commands.Cog):
         """Display user information"""
 
         # === BLOC INCOGNITO ===
-        if incognito is None and self.bot.db:
-            try:
-                user_pref = await self.bot.db.get_attribute('user', interaction.user.id, 'DEFAULT_INCOGNITO')
-                ephemeral = True if user_pref is None else user_pref
-            except Exception:
-                # Visibility preference is a nicety: default to private.
-                ephemeral = True
-        else:
-            ephemeral = incognito if incognito is not None else True
+        ephemeral = (incognito if incognito is not None
+                     else await resolve_incognito(self.bot, interaction.user.id))
 
         # Get locale
         locale = i18n.get_user_locale(interaction)

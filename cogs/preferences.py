@@ -14,6 +14,7 @@ from cogs.error_handler import BaseView
 from utils.components_v2 import create_error_message
 from utils.i18n import i18n, t
 from utils.interaction_response import safe_defer
+from utils.incognito import resolve_incognito
 
 # --------------------------------------------------------------------------- #
 # custom_id templates
@@ -324,15 +325,8 @@ class Preferences(commands.Cog):
     ):
         """Open preferences menu"""
         # Handle incognito setting
-        if incognito is None and self.bot.db:
-            try:
-                user_pref = await self.bot.db.get_attribute('user', interaction.user.id, 'DEFAULT_INCOGNITO')
-                ephemeral = True if user_pref is None else user_pref
-            except Exception:
-                # Visibility preference is a nicety: default to private.
-                ephemeral = True
-        else:
-            ephemeral = incognito if incognito is not None else True
+        ephemeral = (incognito if incognito is not None
+                     else await resolve_incognito(self.bot, interaction.user.id))
 
         # Reading the user row is a database round-trip: acknowledge first.
         await safe_defer(interaction, ephemeral=ephemeral)

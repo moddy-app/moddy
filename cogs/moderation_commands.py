@@ -25,6 +25,7 @@ from notifications.models import NotificationContent, NotificationSource
 from utils import emojis
 from utils.i18n import t, get_locale
 from utils.interaction_response import deliver
+from utils.incognito import resolve_incognito
 
 logger = logging.getLogger("moddy.moderation_commands")
 
@@ -838,16 +839,10 @@ async def _guild_locale(bot, guild: discord.Guild) -> str:
     return await guild_locale(bot, guild)
 
 
-async def _resolve_incognito(bot, user_id: int, default: bool = True) -> bool:
-    """Resolve incognito from user preference or the given default."""
-    try:
-        if bot.db:
-            pref = await bot.db.get_attribute("user", user_id, "DEFAULT_INCOGNITO")
-            if pref is not None:
-                return bool(pref)
-    except Exception:
-        pass
-    return default
+#: The sanction commands answer with a Modal, which cannot be deferred, so
+#: this lookup sits directly in front of the 3-second window. It goes through
+#: the shared cached resolver rather than hitting the database every time.
+_resolve_incognito = resolve_incognito
 
 
 # ---------------------------------------------------------------------------

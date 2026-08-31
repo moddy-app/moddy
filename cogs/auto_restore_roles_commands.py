@@ -149,15 +149,15 @@ class AutoRestoreRolesCommands(commands.Cog):
 
         # Module lookup and role reads hit the database: acknowledge first so
         # the 3s window can never close on us.
-    await safe_defer(interaction, ephemeral=True)
+        await safe_defer(interaction, ephemeral=True)
 
-    # Vérifie que le module est activé
-    if not self.bot.module_manager:
-        await interaction.followup.send(
-            t('modules.auto_restore_roles.commands.error.no_manager', locale=locale),
-            ephemeral=True
-        )
-        return
+        # Vérifie que le module est activé
+        if not self.bot.module_manager:
+            await interaction.followup.send(
+                t('modules.auto_restore_roles.commands.error.no_manager', locale=locale),
+                ephemeral=True
+            )
+            return
 
         # Récupère l'instance du module
         auto_restore_module = await self.bot.module_manager.get_module_instance(

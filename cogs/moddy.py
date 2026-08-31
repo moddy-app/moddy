@@ -12,6 +12,7 @@ from datetime import datetime
 from cogs.error_handler import BaseView
 from utils.i18n import i18n, t
 from utils.emojis import EMOJIS
+from utils.incognito import resolve_incognito
 
 
 # Namespaced custom_id constants for persistent dispatch.
@@ -315,15 +316,8 @@ class Moddy(commands.Cog):
     ):
         """Display information about Moddy"""
         # Get the ephemeral mode
-        if incognito is None and self.bot.db:
-            try:
-                user_pref = await self.bot.db.get_attribute('user', interaction.user.id, 'DEFAULT_INCOGNITO')
-                ephemeral = True if user_pref is None else user_pref
-            except Exception:
-                # Visibility preference is a nicety: default to private.
-                ephemeral = True
-        else:
-            ephemeral = incognito if incognito is not None else True
+        ephemeral = (incognito if incognito is not None
+                     else await resolve_incognito(self.bot, interaction.user.id))
 
         # Get the user's locale
         locale = i18n.get_user_locale(interaction)

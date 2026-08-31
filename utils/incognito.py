@@ -3,11 +3,76 @@ Incognito system for Moddy's slash commands
 Allows users to control the visibility of their responses
 """
 
+import asyncio
+import logging
+import time
+
 import discord
 from discord import app_commands
 from typing import Optional
 import functools
 import types
+
+logger = logging.getLogger("moddy.incognito")
+
+# The visibility preference is read before the command body runs, which means
+# it sits in front of the interaction's 3-second acknowledgement window on
+# every single command that carries the option. A cold or contended database
+# there does not degrade the reply — it kills the interaction outright and the
+# user gets Discord's "the application did not respond".
+#
+# So the read is cached and time-boxed. The preference changes rarely (it is
+# set from the dashboard, never by the bot itself), a stale value for a few
+# minutes only means one reply has the wrong visibility, and either failure is
+# incomparably cheaper than a dead interaction.
+_CACHE_TTL = 300.0
+#: Bound the cache so a busy shard cannot grow it without limit.
+_CACHE_MAX = 10_000
+#: Hard ceiling on the lookup. Well under the window, leaving the command room.
+_LOOKUP_TIMEOUT = 1.0
+
+_cache: "dict[int, tuple[float, Optional[bool]]]" = {}
+
+
+def invalidate_incognito(user_id: int) -> None:
+    """Drop a user's cached visibility preference (call after changing it)."""
+    _cache.pop(user_id, None)
+
+
+async def resolve_incognito(bot, user_id: int, default: bool = True) -> bool:
+    """Resolve a user's response visibility, cached and time-boxed.
+
+    Never raises and never blocks for long: on a miss, a timeout or any
+    failure it falls back to ``default``. Private is the safe default — an
+    answer that should have been public is a nuisance, one that should have
+    been private is a leak.
+    """
+    now = time.monotonic()
+    cached = _cache.get(user_id)
+    if cached is not None and now - cached[0] < _CACHE_TTL:
+        return default if cached[1] is None else bool(cached[1])
+
+    db = getattr(bot, "db", None)
+    if not db:
+        return default
+
+    try:
+        pref = await asyncio.wait_for(
+            db.get_attribute("user", user_id, "DEFAULT_INCOGNITO"),
+            timeout=_LOOKUP_TIMEOUT,
+        )
+    except asyncio.TimeoutError:
+        # Do not cache a timeout: the next command should try again.
+        logger.warning("Incognito preference lookup timed out for user %s", user_id)
+        return default
+    except Exception as exc:
+        logger.warning("Incognito preference lookup failed for user %s: %s", user_id, exc)
+        return default
+
+    if len(_cache) >= _CACHE_MAX:
+        _cache.clear()
+    _cache[user_id] = (now, pref)
+    return default if pref is None else bool(pref)
 
 
 def add_incognito_option(default_value: bool = True):
@@ -25,25 +90,9 @@ def add_incognito_option(default_value: bool = True):
             # IMPORTANT: If incognito is not specified explicitly in the command
             # we check the user's preference
             if incognito is None:
-                # First, check the user attribute for the default preference
-                if hasattr(self, 'bot') and self.bot.db:
-                    try:
-                        # Get the DEFAULT_INCOGNITO preference
-                        user_pref = await self.bot.db.get_attribute('user', interaction.user.id, 'DEFAULT_INCOGNITO')
-
-                        # If the user has a defined preference
-                        if user_pref is not None:
-                            # If DEFAULT_INCOGNITO is False, we want messages to be public by default
-                            incognito = user_pref
-                        else:
-                            # No preference defined, use the default value
-                            incognito = default_value
-                    except Exception as e:
-                        # In case of an error, use the default value
-                        import logging
-                        logger = logging.getLogger('moddy')
-                        logger.error(f"Error getting incognito preference: {e}")
-                        incognito = default_value
+                if hasattr(self, 'bot'):
+                    incognito = await resolve_incognito(
+                        self.bot, interaction.user.id, default_value)
                 else:
                     incognito = default_value
 
@@ -92,4 +141,5 @@ def get_incognito_setting(interaction: discord.Interaction) -> bool:
 
 
 # Export of the main functions
-__all__ = ['add_incognito_option', 'get_incognito_setting']
+__all__ = ['add_incognito_option', 'get_incognito_setting',
+           'resolve_incognito', 'invalidate_incognito']

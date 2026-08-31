@@ -19,7 +19,7 @@ import io
 from utils.components_v2 import create_error_message
 from utils.i18n import i18n, t
 from utils.interaction_response import safe_defer
-from utils.incognito import get_incognito_setting
+from utils.incognito import get_incognito_setting, resolve_incognito
 
 logger = logging.getLogger('moddy.saved_messages')
 
@@ -757,15 +757,8 @@ class SavedMessages(commands.Cog):
     ):
         """View saved messages library"""
         # Handle incognito setting
-        if incognito is None and self.bot.db:
-            try:
-                user_pref = await self.bot.db.get_attribute('user', interaction.user.id, 'DEFAULT_INCOGNITO')
-                ephemeral = True if user_pref is None else user_pref
-            except Exception:
-                # Visibility preference is a nicety: default to private.
-                ephemeral = True
-        else:
-            ephemeral = incognito if incognito is not None else True
+        ephemeral = (incognito if incognito is not None
+                     else await resolve_incognito(self.bot, interaction.user.id))
 
         # Listing the library is two database round-trips: acknowledge first.
         await safe_defer(interaction, ephemeral=ephemeral)
