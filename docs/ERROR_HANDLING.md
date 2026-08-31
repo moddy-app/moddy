@@ -4,9 +4,11 @@
 1. [Overview](#overview)
 2. [Error Handler System](#error-handler-system)
 3. [How to Use BaseView and BaseModal](#how-to-use-baseview-and-basemodal)
-4. [Best Practices](#best-practices)
-5. [Logging](#logging)
-6. [Troubleshooting](#troubleshooting)
+4. [The 3-Second Window](#the-3-second-window)
+5. [Reaching the User No Matter What](#reaching-the-user-no-matter-what)
+6. [Best Practices](#best-practices)
+7. [Logging](#logging)
+8. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -130,6 +132,108 @@ async def on_edit_button(self, interaction: discord.Interaction):
 **Don't worry!** `BaseView` and `BaseModal` will automatically use `interaction.client` as a fallback.
 
 However, it's **strongly recommended** to always set `self.bot` when possible for consistency.
+
+---
+
+## The 3-Second Window
+
+Discord gives an interaction **3 seconds** to receive its first response.
+Miss it and the token is dead: every later call fails with `10062 Unknown
+interaction`, the error handler itself cannot answer, and the user sees
+Discord's own **"The application did not respond"** — no message, no error
+code, nothing to trace. It looks like Moddy is broken, and there is no
+recovering the interaction afterwards.
+
+**So acknowledge before you work.** Any handler that awaits a database
+query, an HTTP or gateway call, a `fetch_*`, or Redis must acknowledge
+first:
+
+```python
+from utils.interaction_response import safe_defer
+
+async def callback(self, interaction: discord.Interaction):
+    await safe_defer(interaction, ephemeral=True)   # ← first awaited statement
+    data = await self.bot.db.get_something(...)     # now you have 15 minutes
+    await interaction.followup.send(view=build(data))
+```
+
+`safe_defer` never raises. It returns `False` when the token was already
+dead, and it picks `thinking` from the interaction type — a slash command
+gets the "thinking…" placeholder, a component re-rendering its own panel
+does not. Pass `thinking=` explicitly only when you need to override that.
+
+**Two things do not fit this pattern:**
+
+- **Modals.** Discord refuses `send_modal()` on an acknowledged
+  interaction, so a handler that opens a modal must stay un-deferred —
+  which means it must do **no** slow work first. Move the lookups into the
+  modal's `on_submit`, or cache them. Staff commands declare this with
+  `StaffCommand.opens_modal = True`, which tells the router not to defer.
+- **Work that cannot be moved.** If a value is genuinely needed before
+  acknowledging (visibility, a permission), cache it and put a hard timeout
+  on the lookup — see `utils/incognito.py::resolve_incognito`. Degrading
+  one reply beats killing the interaction.
+
+---
+
+## Reaching the User No Matter What
+
+**An unexpected error must always surface as Moddy's error card with an
+error code.** Never as Discord's failure message, and never as a bare "an
+error occurred" that the team cannot trace.
+
+`utils/interaction_response.py::deliver` is how that is guaranteed. It
+walks every transport until one works — followup, then editing the original
+response, then the initial response, then a plain channel message
+mentioning the user when the token itself is dead — and it never raises,
+because a second exception on the error path would silence the first.
+
+```python
+from utils.interaction_response import deliver
+
+await deliver(interaction, view=ErrorView(error_code), ephemeral=True)
+```
+
+Use it instead of hand-rolling `if interaction.response.is_done(): ... else: ...`.
+
+### Getting an error code outside a View, Modal or app command
+
+`BaseView.on_error`, `BaseModal.on_error` and `on_app_command_error`
+already run the full pipeline. Everywhere else — a listener, a background
+task, a message command, a service callback — call `report_error`:
+
+```python
+from cogs.error_handler import ErrorView, report_error
+from utils.interaction_response import deliver
+
+except Exception as exc:
+    error_code = await report_error(
+        self.bot, exc, source="Cog:reminders.check_loop",
+        user=interaction.user, guild=interaction.guild, channel=interaction.channel,
+    )
+    if error_code:
+        await deliver(interaction, view=ErrorView(error_code), ephemeral=True)
+```
+
+For a `DynamicItem` callback dispatched without a live `BaseView`, use
+`report_component_error(interaction, exc, source)` — it reports **and**
+delivers.
+
+### Expected errors keep their own message
+
+None of this applies to errors that are the user's fault or a known
+condition: missing permissions, member not found, invalid input, module
+disabled, premium required, quota exhausted. Those keep a specific,
+translated message via `create_error_message()` and get **no** error code —
+a code there is noise that trains people to ignore codes.
+
+The test to apply: *could the team act on this?* If yes it is a bug and
+needs a code; if the user simply has to do something differently, it needs
+a sentence.
+
+**Never report a bug as an expected error.** A catch-all around an API
+call that answers "the service is unavailable" hides real crashes — catch
+the provider's own error type instead.
 
 ---
 
@@ -295,6 +399,12 @@ When creating new UI components:
 - [ ] `modal.bot = self.bot` is called before `send_modal()`
 - [ ] No unnecessary `try/except` blocks that hide errors
 - [ ] Using `logger.error(..., exc_info=True)` for manual exception logging
+- [ ] `safe_defer()` before any awaited work, unless the handler opens a modal
+- [ ] A handler that opens a modal does no slow work first
+- [ ] Error paths use `deliver()`, never a hand-rolled `is_done()` branch
+- [ ] Unexpected errors reach the user with an error code (`report_error` /
+      `report_component_error` where no global handler covers the path)
+- [ ] Expected errors keep a specific translated message and no code
 
 ---
 

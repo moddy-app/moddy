@@ -337,7 +337,7 @@ async def ticket_participants(interaction: discord.Interaction):
 # --------------------------------------------------------------------------- #
 @ticket_group.command(name="claim", description="Take this ticket in charge")
 async def ticket_claim(interaction: discord.Interaction):
-    resolved = await _service_and_ticket(interaction)
+    resolved = await _service_and_ticket(interaction, defer=True)
     if not resolved:
         return
     await run_claim(interaction, resolved[0], force=True)
@@ -346,7 +346,7 @@ async def ticket_claim(interaction: discord.Interaction):
 @ticket_group.command(name="unclaim",
                       description="Release this ticket so anyone can take it")
 async def ticket_unclaim(interaction: discord.Interaction):
-    resolved = await _service_and_ticket(interaction)
+    resolved = await _service_and_ticket(interaction, defer=True)
     if not resolved:
         return
     await run_claim(interaction, resolved[0], force=False)
@@ -358,7 +358,7 @@ async def ticket_unclaim(interaction: discord.Interaction):
 @ticket_group.command(name="staff-thread",
                       description="Open or join the private staff thread")
 async def ticket_staff_thread(interaction: discord.Interaction):
-    resolved = await _service_and_ticket(interaction)
+    resolved = await _service_and_ticket(interaction, defer=True)
     if not resolved:
         return
     await run_staff_thread(interaction, resolved[0])

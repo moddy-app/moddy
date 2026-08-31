@@ -1258,7 +1258,9 @@ async def run_staff_thread(interaction: discord.Interaction, service) -> None:
     from services.ticket_service import TicketError
 
     locale = i18n.get_user_locale(interaction)
-    await interaction.response.defer(ephemeral=True, thinking=True)
+    # Idempotent: the caller may already have acknowledged before its own
+    # database lookups, which is what keeps those off the 3s window.
+    await safe_defer(interaction, ephemeral=True, thinking=True)
     try:
         thread = await service.open_staff_thread(interaction.channel, interaction.user)
     except TicketError as e:
@@ -1283,7 +1285,9 @@ async def run_claim(interaction: discord.Interaction, service, *,
     from services.ticket_service import TicketError
 
     locale = i18n.get_user_locale(interaction)
-    await interaction.response.defer(ephemeral=True, thinking=True)
+    # Idempotent: the caller may already have acknowledged before its own
+    # database lookups, which is what keeps those off the 3s window.
+    await safe_defer(interaction, ephemeral=True, thinking=True)
     try:
         if force is None:
             _, claimed = await service.toggle_claim(interaction.channel,

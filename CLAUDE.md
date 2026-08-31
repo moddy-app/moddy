@@ -351,6 +351,24 @@ moddy/
 ### 8. Error Handling
 - For "unexpected" errors in cogs/modules: let the global error handler manage them
 - For expected errors: use `create_error_message()` / `create_success_message()` from `utils/components_v2.py`
+- **The user must NEVER end up on Discord's "The application did not respond".**
+  An interaction has 3 seconds to be acknowledged: call
+  `await safe_defer(interaction, ...)` (`utils/interaction_response.py`) as the
+  **first awaited statement** of any handler that queries the database, calls an
+  API or fetches from Discord. The only exception is a handler that opens a
+  Modal — Discord refuses one on an acknowledged interaction, so it must stay
+  un-deferred and do no slow work at all (staff commands declare this with
+  `StaffCommand.opens_modal = True`).
+- Show errors with `await deliver(interaction, view=..., ephemeral=True)`, never a
+  hand-rolled `if interaction.response.is_done()` branch: `deliver` falls back to
+  a channel message when the interaction token is already dead.
+- **A bare "an error occurred" with no error code is a bug.** Outside a
+  `BaseView` / `BaseModal` / app command (listeners, background tasks, message
+  commands, `DynamicItem` callbacks), route unexpected exceptions through
+  `report_error()` / `report_component_error()` from `cogs/error_handler.py` and
+  show the returned code. Expected errors — the user's mistake or a known
+  condition — keep their specific translated message and get no code.
+- See → [docs/ERROR_HANDLING.md](docs/ERROR_HANDLING.md)
 
 ### 8. Persistent Views — **MANDATORY, NO EXCEPTIONS**
 - **You MUST use persistent views for EVERY interactive Discord component,
