@@ -382,6 +382,10 @@
     "bug-report": {
       "name": "bug-melden",
       "description": "Meld een Moddy-bug bij het team"
+    },
+    "brocoli": {
+      "name": "brocoli",
+      "description": "Opent een kanaal waar Moddy's assistent deze server instelt"
     }
   }
 }

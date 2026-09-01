@@ -382,6 +382,10 @@
     "bug-report": {
       "name": "pranesti-klaida",
       "description": "Praneškite komandai apie Moddy klaidą"
+    },
+    "brocoli": {
+      "name": "brocoli",
+      "description": "Atidaro kanalą, kuriame Moddy asistentas konfigūruoja šį serverį"
     }
   }
 }

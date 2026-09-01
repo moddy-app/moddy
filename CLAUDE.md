@@ -38,6 +38,7 @@ moddy/
 │   ├── module_events.py       #   Event handlers for modules
 │   ├── invite.py              #   /invite command
 │   ├── bug_report.py          #   /bug-report command (Modal V2 → team channel)
+│   ├── brocoli_chat.py        #   Brocoli in a channel (dev-guild gated, SSE → Components V2)
 │   ├── emoji.py               #   Emoji management
 │   ├── reminder.py            #   /reminder command
 │   ├── saved_messages.py      #   Message bookmarking
@@ -202,6 +203,8 @@ moddy/
 │   ├── embeds.py
 │   ├── announcement_setup.py
 │   ├── task_signature.py      #   moddy:tasks HMAC verification (signature, freshness, anti-replay)
+│   ├── brocoli_signature.py   #   HMAC identity assertions sent to the backend's /ai surface
+│   ├── brocoli_views.py       #   Brocoli channel cards + persistent confirmation buttons
 │   └── incognito.py
 │
 ├── gateway/                   # Centralized API gateway (ALL external API calls go here)
@@ -225,7 +228,7 @@ moddy/
 │
 ├── services/                  # External service clients
 │   ├── altguard_client.py     #   AltGuard service client (HTTP + altguard:* Pub/Sub)
-│   ├── backend_client.py      #   Backend HTTP client
+│   ├── brocoli_client.py      #   Brocoli HTTP + SSE client (backend /ai surface)
 │   ├── feeds_client.py        #   moddy-feeds Redis client (social notifications)
 │   ├── case_service.py        #   Scalable sanction→case entry point (source registry)
 │   ├── expiration_notifier.py #   Expired sanctions: lift the ban + DM the subject (invite)
@@ -268,6 +271,7 @@ moddy/
     ├── test_expiration_notifications.py # Expired sanctions: unban, invite, DM card
     ├── test_invoice_notifications.py # Stripe invoices: variant wording, amounts, dedup
     ├── test_task_signature.py #   moddy:tasks HMAC contract (canonicalization, replay, dedup)
+    ├── test_brocoli.py        #   Brocoli: assertion signing vs backend algorithm, SSE parsing
     ├── test_tickets.py        #   Tickets: schema, permissions, claim, overwrites, screens, i18n
     ├── test_transcription.py  #   Voice transcription helpers, guard rails, cards
     ├── test_notifications.py  #   Notifications: hashing, attribution, report rules, i18n
@@ -481,6 +485,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 |---|---|
 | [docs/API_GATEWAY.md](docs/API_GATEWAY.md) | API Gateway — all external API calls (OpenAI, DeepL, Groq), quotas, provider rate limits, resilience, logging |
 | [docs/BACKEND-INTEGRATION.md](docs/BACKEND-INTEGRATION.md) | Bot ↔ Backend integration (Redis, Pub/Sub, Streams, `/status`) |
+| [docs/BROCOLI_CHANNEL.md](docs/BROCOLI_CHANNEL.md) | **Brocoli in a channel** — the AI assistant as a Discord channel, signed identity assertions, confirmation cards, dev-guild gating |
 | [docs/TASK_SIGNATURE.md](docs/TASK_SIGNATURE.md) | **`moddy:tasks` HMAC signature** — canonicalization, anti-replay, `TASK_STREAM_SECRET`, deployment order |
 | [docs/REDIS_COMMUNICATION.md](docs/REDIS_COMMUNICATION.md) | **Redis inter-service communication** — Pub/Sub vs Streams vs plain keys, current channel/stream inventory, checklist for wiring up a new Redis-based service |
 | [docs/SOCIAL_NOTIFICATIONS.md](docs/SOCIAL_NOTIFICATIONS.md) | Social Notifications module + `moddy-feeds` Redis contract (what the backend must mirror) |

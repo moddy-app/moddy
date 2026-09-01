@@ -382,6 +382,10 @@
     "bug-report": {
       "name": "hata-bildir",
       "description": "Moddy'deki bir hatayı ekibe bildir"
+    },
+    "brocoli": {
+      "name": "brocoli",
+      "description": "Moddy asistanının bu sunucuyu yapılandırdığı bir kanal açar"
     }
   }
 }

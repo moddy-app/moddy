@@ -4414,5 +4414,91 @@
         "description": "Les demandes ne peuvent pas être enregistrées en ce moment. Passe par le serveur support."
       }
     }
+  },
+  "brocoli": {
+    "thinking": "Brocoli travaille",
+    "max_iterations": "-# Je m'arrête là — ça demandait plus d'étapes que je n'ai le droit d'en faire d'un coup. Demande-moi de continuer.",
+    "channel_topic": "Configure ce serveur en parlant à l'assistant de Moddy.",
+    "channel_reason": "Salon Brocoli créé",
+    "welcome": {
+      "title": "Brocoli t'écoute",
+      "body": "Décris ce que tu veux mettre en place et je m'en occupe. Par exemple : *active le starboard à partir de 5 étoiles*, ou *pourquoi mon message de bienvenue ne part pas ?*\n\nAvant de changer quoi que ce soit, je te montre exactement ce qui change et je te demande de confirmer.",
+      "footer": "Commence une ligne par // pour parler ici sans rien me demander."
+    },
+    "decision": {
+      "approve": "Appliquer",
+      "deny": "Ne pas appliquer"
+    },
+    "confirm": {
+      "title": "Confirmer ce changement",
+      "critical": "Celui-ci est sensible — je demande même en mode automatique.",
+      "invalid": "Cette configuration n'est pas valide :",
+      "approved": "Appliqué",
+      "denied": "Non appliqué"
+    },
+    "diff": {
+      "added": "ajouté",
+      "removed": "retiré",
+      "more": "et {count} autre(s) changement(s)"
+    },
+    "tools": {
+      "generic": "Je travaille…",
+      "search_documentation": "Je cherche dans la documentation…",
+      "read_documentation_page": "Je lis la documentation…",
+      "read_internal_guide": "Je consulte mes notes…",
+      "get_guild_overview": "Je regarde ce serveur…",
+      "list_channels": "Je liste les salons…",
+      "list_roles": "Je liste les rôles…",
+      "lookup_member": "Je cherche un membre…",
+      "get_bot_capabilities": "Je vérifie mes permissions…",
+      "list_modules": "Je liste les modules…",
+      "list_module_catalogue": "Je parcours le catalogue des modules…",
+      "get_module_config": "Je lis la configuration actuelle…",
+      "describe_module_config": "Je lis la configuration actuelle…",
+      "get_module_schema": "Je vérifie ce que ce module accepte…",
+      "validate_module_config": "Je vérifie la configuration…",
+      "get_guild_language": "Je vérifie la langue du serveur…",
+      "set_module_config": "J'enregistre la configuration…",
+      "disable_module": "Je désactive le module…",
+      "set_guild_language": "Je change la langue du serveur…"
+    },
+    "notice": {
+      "quota": {
+        "title": "Limite du jour atteinte",
+        "description": "J'ai répondu autant que je le pouvais aujourd'hui. Le compteur repart à minuit UTC."
+      },
+      "unavailable": {
+        "title": "Je suis indisponible",
+        "description": "Je n'arrive pas à joindre mon cerveau pour le moment. Réessaie dans quelques minutes — rien n'a été modifié."
+      },
+      "busy": {
+        "title": "Une chose à la fois",
+        "description": "Je travaille encore sur le message précédent. Laisse-moi finir."
+      },
+      "forbidden": {
+        "title": "Ce n'est pas permis",
+        "description": "Il faut être administrateur de ce serveur pour que je le configure."
+      },
+      "expired": {
+        "title": "La demande a expiré",
+        "description": "Trop de temps est passé. Redemande-moi et je prépare un nouveau changement."
+      },
+      "not_configured": {
+        "title": "Pas encore branché",
+        "description": "Ce salon n'est pas relié à moi. Un développeur doit renseigner `BOT_ASSERT_SECRET`."
+      },
+      "created": {
+        "title": "Salon créé",
+        "description": "Parle-moi dans {channel}."
+      },
+      "exists": {
+        "title": "Déjà là",
+        "description": "Je t'écoute déjà dans {channel}."
+      }
+    },
+    "error": {
+      "no_permission_title": "Je ne peux pas créer le salon",
+      "no_permission": "Il me faut la permission **Gérer les salons** pour créer le salon."
+    }
   }
 }

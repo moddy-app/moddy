@@ -382,6 +382,10 @@
     "bug-report": {
       "name": "รายงานบั๊ก",
       "description": "รายงานบั๊กของ Moddy ให้ทีมทราบ"
+    },
+    "brocoli": {
+      "name": "brocoli",
+      "description": "เปิดช่องที่ผู้ช่วยของ Moddy จะตั้งค่าเซิร์ฟเวอร์นี้"
     }
   }
 }

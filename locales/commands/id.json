@@ -382,6 +382,10 @@
     "bug-report": {
       "name": "laporkan-bug",
       "description": "Laporkan bug Moddy ke tim"
+    },
+    "brocoli": {
+      "name": "brocoli",
+      "description": "Membuka kanal tempat asisten Moddy mengonfigurasi server ini"
     }
   }
 }

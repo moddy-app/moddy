@@ -382,6 +382,10 @@
     "bug-report": {
       "name": "报告问题",
       "description": "向团队报告 Moddy 的问题"
+    },
+    "brocoli": {
+      "name": "brocoli",
+      "description": "打开一个频道，让 Moddy 助手配置此服务器"
     }
   }
 }

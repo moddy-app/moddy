@@ -4415,5 +4415,91 @@
         "description": "Requests cannot be recorded at the moment. Please use the support server."
       }
     }
+  },
+  "brocoli": {
+    "thinking": "Brocoli is working",
+    "max_iterations": "-# I stopped here — this was taking more steps than I'm allowed in one go. Ask me to continue.",
+    "channel_topic": "Configure this server by talking to Moddy's assistant.",
+    "channel_reason": "Brocoli channel created",
+    "welcome": {
+      "title": "Brocoli is listening",
+      "body": "Describe what you want to set up and I'll do it. For example: *enable the starboard from 5 stars*, or *why isn't my welcome message posting?*\n\nBefore I change anything, I'll show you exactly what changes and ask you to confirm.",
+      "footer": "Start a line with // to talk here without asking me anything."
+    },
+    "decision": {
+      "approve": "Apply",
+      "deny": "Don't apply"
+    },
+    "confirm": {
+      "title": "Confirm this change",
+      "critical": "This one is sensitive — I ask even in automatic mode.",
+      "invalid": "This configuration is not valid:",
+      "approved": "Applied",
+      "denied": "Not applied"
+    },
+    "diff": {
+      "added": "added",
+      "removed": "removed",
+      "more": "and {count} more change(s)"
+    },
+    "tools": {
+      "generic": "Working…",
+      "search_documentation": "Searching the documentation…",
+      "read_documentation_page": "Reading the documentation…",
+      "read_internal_guide": "Checking my notes…",
+      "get_guild_overview": "Looking at this server…",
+      "list_channels": "Listing the channels…",
+      "list_roles": "Listing the roles…",
+      "lookup_member": "Looking up a member…",
+      "get_bot_capabilities": "Checking my permissions…",
+      "list_modules": "Listing the modules…",
+      "list_module_catalogue": "Browsing the module catalogue…",
+      "get_module_config": "Reading the current configuration…",
+      "describe_module_config": "Reading the current configuration…",
+      "get_module_schema": "Checking what this module accepts…",
+      "validate_module_config": "Checking the configuration…",
+      "get_guild_language": "Checking the server language…",
+      "set_module_config": "Saving the configuration…",
+      "disable_module": "Disabling the module…",
+      "set_guild_language": "Changing the server language…"
+    },
+    "notice": {
+      "quota": {
+        "title": "Daily limit reached",
+        "description": "I've answered as much as I can today. The counter resets at midnight UTC."
+      },
+      "unavailable": {
+        "title": "I'm unavailable",
+        "description": "I can't reach my brain right now. Try again in a few minutes — nothing was changed."
+      },
+      "busy": {
+        "title": "One thing at a time",
+        "description": "I'm still working on the previous message. Wait for me to finish."
+      },
+      "forbidden": {
+        "title": "Not allowed",
+        "description": "You need to be an administrator of this server for me to configure it."
+      },
+      "expired": {
+        "title": "That request timed out",
+        "description": "Too much time passed. Ask me again and I'll prepare a fresh change."
+      },
+      "not_configured": {
+        "title": "Not set up",
+        "description": "This channel isn't connected to me yet. A developer needs to set `BOT_ASSERT_SECRET`."
+      },
+      "created": {
+        "title": "Channel created",
+        "description": "Talk to me in {channel}."
+      },
+      "exists": {
+        "title": "Already there",
+        "description": "I'm already listening in {channel}."
+      }
+    },
+    "error": {
+      "no_permission_title": "I can't create the channel",
+      "no_permission": "I need the **Manage Channels** permission to create the channel."
+    }
   }
 }

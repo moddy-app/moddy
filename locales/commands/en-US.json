@@ -382,6 +382,10 @@
     "bug-report": {
       "name": "bug-report",
       "description": "Report a Moddy bug to the team"
+    },
+    "brocoli": {
+      "name": "brocoli",
+      "description": "Open a channel where Moddy's assistant configures this server"
     }
   }
 }

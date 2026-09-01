@@ -382,6 +382,10 @@
     "bug-report": {
       "name": "बग-रिपोर्ट",
       "description": "टीम को Moddy की कोई बग बताएँ"
+    },
+    "brocoli": {
+      "name": "brocoli",
+      "description": "एक चैनल खोलें जहाँ Moddy का सहायक इस सर्वर को कॉन्फ़िगर करता है"
     }
   }
 }

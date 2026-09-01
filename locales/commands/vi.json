@@ -382,6 +382,10 @@
     "bug-report": {
       "name": "bao-loi",
       "description": "Báo lỗi của Moddy cho nhóm"
+    },
+    "brocoli": {
+      "name": "brocoli",
+      "description": "Mở một kênh nơi trợ lý của Moddy thiết lập máy chủ này"
     }
   }
 }

@@ -382,6 +382,10 @@
     "bug-report": {
       "name": "signaler-bug",
       "description": "Signale un bug de Moddy à l'équipe"
+    },
+    "brocoli": {
+      "name": "brocoli",
+      "description": "Ouvre un salon où l'assistant de Moddy configure ce serveur"
     }
   }
 }

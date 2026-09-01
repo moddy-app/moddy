@@ -89,6 +89,32 @@ REDIS_PASSWORD: Optional[str] = os.environ.get("REDIS_PASSWORD") or None
 # celui d'un attaquant qui possède déjà l'accès Redis. Voir docs/TASK_SIGNATURE.md
 TASK_STREAM_SECRET: str = os.environ.get("TASK_STREAM_SECRET", "")
 
+# =============================================================================
+# BROCOLI — salon de conversation avec l'assistant IA
+# =============================================================================
+
+# Base publique de l'API backend qui héberge Brocoli.
+BROCOLI_API_URL: str = os.environ.get("BROCOLI_API_URL", "https://api.moddy.app")
+
+# Secret HMAC partagé backend ⇄ bot pour signer les attestations d'identité
+# envoyées à /ai - Variable Railway: BOT_ASSERT_SECRET
+# Générer avec: python -c "import secrets; print(secrets.token_urlsafe(48))"
+# NE JAMAIS réutiliser TASK_STREAM_SECRET : celui-là protège Redis contre un
+# attaquant qui y a déjà accès, celui-ci permet de parler au nom d'un compte
+# Discord. Rayons d'explosion différents, rotations indépendantes.
+# Voir docs/BROCOLI_CHANNEL.md
+BOT_ASSERT_SECRET: str = os.environ.get("BOT_ASSERT_SECRET", "")
+
+# Guildes où la commande de création du salon est enregistrée. Vide = aucune :
+# la fonctionnalité s'ouvre serveur par serveur, elle ne s'active pas partout.
+# Doit correspondre à BOT_ASSERT_ALLOWED_GUILDS côté backend, sinon la commande
+# existe mais toute conversation repart en 403.
+BROCOLI_GUILD_IDS: list[int] = [
+    int(part.strip())
+    for part in os.environ.get("BROCOLI_GUILD_IDS", "").split(",")
+    if part.strip().isdigit()
+]
+
 # Fenêtre de déploiement uniquement (docs/TASK_SIGNATURE.md §6) : accepte les
 # entrées non signées tant que le backend ne signe pas encore. À remettre à
 # false dès que le backend est en production.
@@ -291,6 +317,15 @@ def validate_config():
 
     if not REDIS_URL:
         print("[WARN] REDIS_URL not configured - Redis features disabled")
+
+    if BROCOLI_GUILD_IDS and len(BOT_ASSERT_SECRET) < 32:
+        print(
+            "[ERROR] BROCOLI_GUILD_IDS is set but BOT_ASSERT_SECRET is missing or "
+            "too short (32 minimum) - every Brocoli channel message will be "
+            "rejected with a 401. Generate one with `python -c \"import secrets; "
+            "print(secrets.token_urlsafe(48))\"` and set the SAME value on the bot "
+            "and the backend."
+        )
 
     if not TASK_STREAM_SECRET:
         print(

@@ -54,6 +54,22 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 **Description :** Secret HMAC partagé avec le backend pour signer les tâches sensibles du stream Redis `moddy:tasks`
 **Note :** Utiliser exactement la même valeur côté bot et backend. Une valeur absente ou trop courte bloque la production et l'exécution des tâches.
 
+## Brocoli — salon de conversation avec l'assistant IA
+
+### BOT_ASSERT_SECRET
+**Valeur :** `<générer-encore-un-autre-secret-avec-secrets.token_urlsafe(48)>`
+**Description :** Secret HMAC signant les attestations d'identité envoyées à l'API `/ai` du backend (32 caractères minimum)
+**Note :** Utiliser exactement la même valeur côté bot et backend. **Ne jamais réutiliser `TASK_STREAM_SECRET`** : celui-là protège Redis contre un attaquant qui y a déjà accès, celui-ci permet de parler au nom d'un compte Discord. Rayons d'explosion différents, rotations indépendantes. Voir `docs/BROCOLI_CHANNEL.md`.
+
+### BROCOLI_GUILD_IDS
+**Valeur :** ids de guildes séparés par des virgules, ex. `1421493239579676682`
+**Description :** Serveurs où la commande `/brocoli` est enregistrée
+**Note :** Vide = fonctionnalité entièrement désactivée (le cog ne se charge pas). Doit correspondre à `BOT_ASSERT_ALLOWED_GUILDS` côté backend, sinon la commande existe mais chaque message repart en `403`.
+
+### BROCOLI_API_URL
+**Valeur :** `https://api.moddy.app` (défaut)
+**Description :** Base publique de l'API backend qui héberge Brocoli
+
 ## Discord
 
 ### DISCORD_CLIENT_ID
@@ -163,6 +179,8 @@ et les notifications
 - [ ] `REDIS_PASSWORD` (si Redis avec auth)
 - [ ] `INTERNAL_API_SECRET` (obligatoire, protège `/status`)
 - [ ] `TASK_STREAM_SECRET` (obligatoire, identique côté backend — sinon `moddy:tasks` est inopérant)
+- [ ] `BOT_ASSERT_SECRET` (si salon Brocoli, identique côté backend, ≠ `TASK_STREAM_SECRET`)
+- [ ] `BROCOLI_GUILD_IDS` (si salon Brocoli, identique à `BOT_ASSERT_ALLOWED_GUILDS`)
 - [ ] `PORT` → `3000`
 - [ ] `ENV_MODE` → `production`
 - [ ] `DEBUG` → `False`

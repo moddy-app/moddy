@@ -60,6 +60,7 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     from utils.global_sanction_views import GlobalSanctionPersistence
     from utils.automod_shadow_views import ShadowAnnotationPersistence
     from utils.transcription_views import TranscriptionPersistence
+    from utils.brocoli_views import BrocoliDecisionPersistence
     from modules.configs.voice_transcription_config import VoiceTranscriptionConfigView
     from modules.configs.bot_customization_config import BotCustomizationConfigView
     from modules.configs.altguard_config import AltGuardConfigView
@@ -131,6 +132,7 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         # Group 12c — the "Transcribe" button posted under voice messages
         # (dynamic item, public: anyone who sees the voice message may click)
         TranscriptionPersistence,
+        BrocoliDecisionPersistence,
         # Group 12d — /config bot customization panel (guild permission auth;
         # its two modals are excluded like every other modal)
         BotCustomizationConfigView,
