@@ -382,6 +382,10 @@
     "bug-report": {
       "name": "felrapport",
       "description": "Rapportera ett Moddy-fel till teamet"
+    },
+    "brocoli": {
+      "name": "brocoli",
+      "description": "Öppnar en kanal där Moddys assistent konfigurerar denna server"
     }
   }
 }

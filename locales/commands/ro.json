@@ -382,6 +382,10 @@
     "bug-report": {
       "name": "raporteaza-eroare",
       "description": "Raportează echipei o eroare Moddy"
+    },
+    "brocoli": {
+      "name": "brocoli",
+      "description": "Deschide un canal unde asistentul Moddy configurează acest server"
     }
   }
 }

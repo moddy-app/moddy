@@ -382,6 +382,10 @@
     "bug-report": {
       "name": "버그-신고",
       "description": "Moddy의 버그를 팀에 신고합니다"
+    },
+    "brocoli": {
+      "name": "brocoli",
+      "description": "Moddy 어시스턴트가 이 서버를 설정하는 채널을 엽니다"
     }
   }
 }

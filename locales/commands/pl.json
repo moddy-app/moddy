@@ -382,6 +382,10 @@
     "bug-report": {
       "name": "zglos-blad",
       "description": "Zgłoś zespołowi błąd w Moddy"
+    },
+    "brocoli": {
+      "name": "brocoli",
+      "description": "Otwiera kanał, na którym asystent Moddy konfiguruje ten serwer"
     }
   }
 }

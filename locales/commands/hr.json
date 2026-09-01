@@ -382,6 +382,10 @@
     "bug-report": {
       "name": "prijavi-gresku",
       "description": "Prijavite timu grešku u Moddyju"
+    },
+    "brocoli": {
+      "name": "brocoli",
+      "description": "Otvara kanal na kojem Moddyjev asistent postavlja ovaj poslužitelj"
     }
   }
 }
