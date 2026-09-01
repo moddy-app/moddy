@@ -123,21 +123,56 @@ mécanique, et le journal de la #72 n'a pas été corrigé. Le backend n'émet q
 sept événements. Vérifié avant d'écrire la doc du salon, qui dit donc que les
 questions arrivent en texte.
 
-## État
+## État — déployé en production le 2026-09-01
 
-- Backend : **496 passés**, 9 ignorés (baseline 476 → +20).
-- Bot : **1419 passés** (baseline 1414), dont `test_persistent_views.py` 288.
-- Les deux branches sont commitées, non poussées, dans des worktrees séparés —
-  les branches `kymra` des deux dépôts et leur travail non commité (`ratelimit`,
-  HSTS côté backend) n'ont pas été touchés.
+- Backend : PR #79, mergée, déployée `SUCCESS` à 17:50 (`c0d8209`). **496 passés.**
+- Bot : PR #374, mergée, déployée `SUCCESS` à 17:53 (`05a544a`), puis redéployée
+  à 18:28 avec ses variables. **1488 passés** après fusion de `main`.
+- Un conflit à la fusion : ce travail avait retiré la ligne
+  `services/backend_client.py` du `CLAUDE.md` (le fichier n'existe pas), et la
+  PR #375 l'a réajoutée. Les trois lignes ont été gardées plutôt que de
+  re-supprimer l'entrée de quelqu'un d'autre — **mais le fichier n'existe
+  toujours pas et rien ne l'importe**, donc cette ligne reste fausse sur `main`.
+
+## Ce que le premier essai réel a montré
+
+Chaîne complète vérifiée en production, dans les logs des deux services :
+
+```
+GET  discord.com/…/guilds/1421493239579676682     → 200
+GET  discord.com/…/members/1177298939880415342    → 200
+GET  discord.com/…/roles                          → 200
+[brocoli] conversation ouverte | kind=guild_config | mode=ask | staff=True
+POST /ai/conversations                            → 200 (1106 ms)
+POST /ai/conversations/…/messages                 → 200
+POST api.openai.com/v1/responses                  → 429
+```
+
+Les trois appels Discord sont le modèle de sécurité en action : le bot atteste
+une identité, le backend va **demander à Discord** si ce compte administre la
+guilde. L'attestation signée, la dérivation des droits, le flux SSE et le rendu
+fonctionnent de bout en bout.
+
+Le seul échec : `You have no credits remaining` — le compte OpenAI est à sec.
+Ça n'affecte pas que Brocoli : la même clé sert à l'automod, aux embeddings et
+aux outils de texte.
 
 ## Suites
 
-1. **Déploiement.** Générer `BOT_ASSERT_SECRET`, le poser sur les deux services
-   Railway, renseigner `BOT_ASSERT_ALLOWED_GUILDS` (backend) et
-   `BROCOLI_GUILD_IDS` (bot) avec `1421493239579676682`. Backend d'abord.
-2. **Rien n'a été testé contre un vrai backend** — la suite couvre les contrats,
-   pas l'intégration. Le premier essai réel se fait sur le serveur de dev.
-3. **Reprise de flux absente** : si le bot redémarre pendant un tour, la carte
+1. **Recharger OpenAI.** Rien à redéployer ensuite.
+2. **Point unique de défaillance confirmé.** Un solde vide met à l'arrêt
+   l'automod, les embeddings, les outils de texte et Brocoli en même temps.
+   `app/ai/client.py` parle à OpenAI en httpx brut, sans SDK : ajouter un
+   fournisseur de repli (Groq a déjà un adaptateur côté bot) est peu de travail
+   pour supprimer cette fragilité.
+3. **Chemin déterministe devant le modèle**, sur le motif de l'entonnoir de
+   `automod/` : les intentions fréquentes (activer un module, changer un seuil)
+   ne devraient coûter aucun appel — et continueraient de marcher pendant une
+   panne du fournisseur. À concevoir à partir des vraies phrases du salon, pas
+   en devinant.
+4. **Reprise de flux absente** : si le bot redémarre pendant un tour, la carte
    reste figée. Les boutons de confirmation, eux, survivent.
-4. Modes `read_only` / `auto` supportés par l'API mais non exposés dans le salon.
+5. Modes `read_only` / `auto` supportés par l'API mais non exposés dans le salon.
+6. La langue du salon suit le réglage serveur, non posé sur la guilde de dev —
+   les cartes sortent donc en anglais tant que `/config` → *Server settings* ne
+   fixe pas le français.
