@@ -35,7 +35,7 @@ from cogs.error_handler import BaseView
 logger = logging.getLogger("moddy.staff.team.role")
 
 
-def _blocker(guild: discord.Guild, member) -> str:
+def _blocker(guild: discord.Guild, member, role: discord.Role) -> str:
     """Why the thirty-second window cannot be opened here, or ``""``.
 
     Checked before anything is created or moved: a window that fails halfway
@@ -54,10 +54,14 @@ def _blocker(guild: discord.Guild, member) -> str:
         return "no_permission"
     # A staffer sitting at or above Moddy is no longer refused: the window sets
     # aside what it can and says so. See `linking.unstrippable_roles`.
-    if me.top_role.position < 3:
-        # Moddy Team at 1 and the throwaway role at 2 must both fit under Moddy,
-        # and Discord forbids moving a role above your own highest — so the bot
-        # cannot make room for itself. Only a human can raise Moddy's role.
+    if role >= me.top_role:
+        # The only genuine floor. Everything else the window needs, it makes:
+        # a new role is inserted at position 1 and pushes the rest up, so
+        # creating the throwaway role produces the second slot by itself — a
+        # Moddy sitting directly above Moddy Team ends up two above it. What
+        # cannot be produced is authority over a Moddy Team role that is *not*
+        # below Moddy, since Discord refuses to move it and refuses to let the
+        # bot raise itself.
         return "no_room"
     return ""
 
@@ -151,7 +155,7 @@ class TeamRoleCommand(StaffCommand):
         blocker = ""
         if not linked:
             member = guild.get_member(ctx.author.id)
-            blocker = _blocker(guild, member)
+            blocker = _blocker(guild, member, role)
             if not blocker:
                 # Tell them what to do *before* the clock starts: the card is
                 # the instructions, and thirty seconds is not long enough to
@@ -189,7 +193,7 @@ class TeamRoleCommand(StaffCommand):
             container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
             container.add_item(ui.TextDisplay(
                 f"**{t('staff.team.role.howto_title', locale=locale)}**\n"
-                f"-# {t('staff.team.role.' + reason, locale=locale)}\n"
+                f"-# {t('staff.team.role.' + reason, locale=locale, name=f'**{TEAM_ROLE_NAME}**')}\n"
                 f"{t('staff.team.role.howto', locale=locale, name=f'**{TEAM_ROLE_NAME}**', role=role.name)}"
             ))
         container.add_item(ui.TextDisplay(

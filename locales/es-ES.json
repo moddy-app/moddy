@@ -3523,7 +3523,7 @@
         "blocked_owner": "Eres el propietario de este servidor: ya tienes todo lo necesario.",
         "blocked_busy": "Ya hay otra vinculación en curso en este servidor.",
         "blocked_no_permission": "Moddy no tiene `Gestionar roles` aquí.",
-        "blocked_no_room": "El rol de Moddy está demasiado abajo: hacen falta dos posiciones libres debajo para alojar `Moddy Team` y el rol temporal. Sube el rol de Moddy en Ajustes del servidor → **Roles** — el bot no puede subirse a sí mismo, Discord se lo impide.",
+        "blocked_no_room": "El rol {name} no está por debajo del de Moddy: no puede moverlo ni cederlo. Sube el rol de Moddy por encima en Ajustes del servidor → **Roles** — el bot no puede subirse a sí mismo, Discord se lo impide.",
         "hint": "Vuelve a ejecutar el comando para comprobar que el vínculo se aplicó.",
         "docs": "Vincular tu cuenta",
         "failed_title": "No se pudo crear el rol",

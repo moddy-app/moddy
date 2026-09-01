@@ -235,9 +235,17 @@ by the manual path as a fallback.
 The window is never started on a hope. `_blocker()` refuses it upfront, with its
 own sentence on the card, when: the staffer is not a member of the guild
 (`not_member`), owns it (`owner` — they already have everything), another window
-is running (`busy`), Moddy lacks `Manage Roles` (`no_permission`), or Moddy's
-role sits too low to fit two roles under it (`no_room`). A window that fails
+is running (`busy`), Moddy lacks `Manage Roles` (`no_permission`), or the Moddy
+Team role does not sit below Moddy's own (`no_room`). A window that fails
 halfway leaves somebody without their roles, so it is never opened blind.
+
+`no_room` is the only genuine floor, and it is deliberately narrow. The window
+does **not** need two free positions to already exist: a new role is inserted at
+position 1 and pushes everything above it up, so creating the throwaway role
+produces the second slot by itself — a Moddy sitting directly above Moddy Team
+ends up two above it. What cannot be produced is authority over a Moddy Team
+role that is not below Moddy: Discord refuses to move it, and refuses to let the
+bot raise its own role to get over it. Only a human can do that.
 
 #### When the box cannot be closed
 

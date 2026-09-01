@@ -3523,7 +3523,7 @@
         "blocked_owner": "Dir gehört dieser Server: du hast bereits alles Nötige.",
         "blocked_busy": "Auf diesem Server läuft bereits eine andere Verknüpfung.",
         "blocked_no_permission": "Moddy hat hier kein `Rollen verwalten`.",
-        "blocked_no_room": "Moddys Rolle steht zu weit unten: darunter braucht es zwei freie Positionen für `Moddy Team` und die Wegwerf-Rolle. Setze Moddys Rolle in den Servereinstellungen → **Rollen** höher — der Bot kann sich nicht selbst anheben, Discord verbietet es.",
+        "blocked_no_room": "Die Rolle {name} steht nicht unter der von Moddy: er kann sie weder verschieben noch übergeben. Setze Moddys Rolle in den Servereinstellungen → **Rollen** darüber — der Bot kann sich nicht selbst anheben, Discord verbietet es.",
         "hint": "Führe den Befehl erneut aus, um zu prüfen, ob die Verknüpfung greift.",
         "docs": "Konto verknüpfen",
         "failed_title": "Rolle konnte nicht erstellt werden",

@@ -3523,7 +3523,7 @@
         "blocked_owner": "You own this server: you already have everything you need.",
         "blocked_busy": "Another linking is already running on this server.",
         "blocked_no_permission": "Moddy does not have `Manage Roles` here.",
-        "blocked_no_room": "Moddy's role sits too low: two free positions under it are needed to hold `Moddy Team` and the throwaway role. Move Moddy's role higher in Server Settings → **Roles** — the bot cannot raise itself, Discord forbids it.",
+        "blocked_no_room": "The {name} role does not sit below Moddy's: it can neither move it nor hand it over. Move Moddy's role above it in Server Settings → **Roles** — the bot cannot raise itself, Discord forbids it.",
         "hint": "Run the command again to check that the link took.",
         "docs": "Link your account",
         "failed_title": "Could not create the role",
