@@ -141,7 +141,10 @@ moddy/
 │   │   └── parsing.py         #     Arg helpers (user/guild id)
 │   ├── commands/dev/          #   /dev commands (one file each)
 │   ├── commands/team/         #   /team commands (incl. help, /team user — full
-│   │                          #   user card: account, billing, cases, notifications)
+│   │                          #   user card: account, billing, cases, notifications;
+│   │                          #   /team role, /team access, /team ticket — the
+│   │                          #   Moddy Team linked role, permission requests
+│   │                          #   and staff tickets, see docs/LINKED_ROLES.md)
 │   ├── commands/mod/          #   /mod commands + case/, global/ and altguard/ sub-groups
 │   │                          #   (incl. /mod notif — notification lookup by uuid)
 │   ├── commands/com/          #   /com commands (/com send — notification to a user,
@@ -185,6 +188,8 @@ moddy/
 │   ├── case_management_views.py #  Cases Views/Modals (create, sanction, comment…) — staff
 │   ├── cases_views.py         #   /cases & /mycases browser (CasesBrowserView, persistent)
 │   ├── altguard_views.py      #   AltGuard panel (persistent), consent Modal V2, link + log cards
+│   ├── moddy_team_role.py     #   The Moddy Team role: find/create/remember, linked-state check
+│   ├── team_access_views.py   #   /team access: permission picker + admin request card (persistent)
 │   ├── automod_shadow_views.py #  Automod shadow-mode (dry_run) SIMULATION card + annotation buttons (persistent)
 │   ├── automod_render.py      #   Shared automod card helpers (barème breakdown, sanction name/accent)
 │   ├── notification_views.py  #   Notification abuse-report review panels (staff side)
@@ -225,6 +230,7 @@ moddy/
 │
 ├── services/                  # External service clients
 │   ├── altguard_client.py     #   AltGuard service client (HTTP + altguard:* Pub/Sub)
+│   ├── staff_events.py        #   Staff rank changes -> backend (moddy:staff, linked roles)
 │   ├── backend_client.py      #   Backend HTTP client
 │   ├── feeds_client.py        #   moddy-feeds Redis client (social notifications)
 │   ├── case_service.py        #   Scalable sanction→case entry point (source registry)
@@ -269,6 +275,7 @@ moddy/
     ├── test_invoice_notifications.py # Stripe invoices: variant wording, amounts, dedup
     ├── test_task_signature.py #   moddy:tasks HMAC contract (canonicalization, replay, dedup)
     ├── test_tickets.py        #   Tickets: schema, permissions, claim, overwrites, screens, i18n
+    ├── test_linked_roles.py   #   moddy:staff publication, /team access catalogue, staff tickets
     ├── test_transcription.py  #   Voice transcription helpers, guard rails, cards
     ├── test_notifications.py  #   Notifications: hashing, attribution, report rules, i18n
     ├── test_support_requests.py #  Support requests: cards, buttons, beta card, welcome DM
@@ -465,6 +472,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/AUTOMOD_AI_CONFIG.md](docs/AUTOMOD_AI_CONFIG.md) | Automod AI configuration schema in DB (backend / dashboard integration) |
 | [docs/BOT_CUSTOMIZATION.md](docs/BOT_CUSTOMIZATION.md) | Bot Customization — per-guild nickname/avatar/banner/bio + name styles, Redis dashboard contract |
 | [docs/PREMIUM.md](docs/PREMIUM.md) | **Premium gating** — how to check whether a server (or a user) is premium |
+| [docs/LINKED_ROLES.md](docs/LINKED_ROLES.md) | **Linked roles** — the `moddy:staff` publication the backend needs, the Moddy Team role, and `/team role` / `/team access` / `/team ticket` |
 | [docs/STAFF_SYSTEM.md](docs/STAFF_SYSTEM.md) | Staff/dev commands, permissions, roles |
 | [docs/SUPPORT_REQUESTS.md](docs/SUPPORT_REQUESTS.md) | **Support requests** — `/bug-report`, the "configure it for me" button, the staff card and its reply flow, the beta-launch campaign |
 | [docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md) | **Centralized notifications** — every DM/mail/dashboard message, attribution buttons, abuse reports, `/com send`, `/mod notif` |

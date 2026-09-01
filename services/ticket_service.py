@@ -36,6 +36,9 @@ from typing import Any, Dict, Optional, Tuple, Union
 import discord
 
 from modules.tickets import (
+    BTN_CLOSE,
+    BTN_PARTICIPANTS,
+    MAX_OPEN_PER_USER_CEILING,
     MODULE_ID,
     PERM_ADMIN,
     PERM_CLAIM,
@@ -59,6 +62,20 @@ from modules.tickets import (
 from utils.i18n import t
 
 logger = logging.getLogger('moddy.services.tickets')
+
+# --------------------------------------------------------------------------- #
+# Moddy staff tickets
+#
+# A ticket the Moddy team opens in a server, without going through — or even
+# needing — that server's own ticket configuration. It is a normal row in the
+# `tickets` table, so every verb, button and command already written works on
+# it; these two sentinels are what tell it apart from a configured ticket, and
+# `TicketService.staff_ticket_context` builds its panel and category on the fly
+# from the guild's Moddy Team role. See docs/LINKED_ROLES.md.
+# --------------------------------------------------------------------------- #
+STAFF_PANEL_ID = "__moddy_staff__"
+STAFF_CATEGORY_ID = "__moddy_staff__"
+STAFF_NAME_FORMAT = "moddy-{number}"
 
 # Permissions the ticket opener (and anyone added by hand) gets in the channel.
 _MEMBER_OVERWRITE = discord.PermissionOverwrite(
@@ -154,6 +171,13 @@ class TicketService:
         ticket = await self.get_ticket(channel.id)
         if not ticket:
             raise TicketError('modules.tickets.errors.not_a_ticket')
+
+        # A Moddy staff ticket carries no server configuration at all: its
+        # category is built on the spot from the guild's Moddy Team role, so it
+        # keeps working in a server that never enabled the module — and stops
+        # depending on a config an admin could delete mid-conversation.
+        if ticket['panel_id'] == STAFF_PANEL_ID:
+            return (ticket, *await self.staff_ticket_context(channel.guild))
 
         module = await self.get_module(ticket['guild_id'])
         if not module:
@@ -463,6 +487,156 @@ class TicketService:
             if role:
                 parts.append(role.mention)
         return " ".join(parts) if parts else None
+
+    # ------------------------------------------------------------------ #
+    # Moddy staff tickets
+    # ------------------------------------------------------------------ #
+    async def staff_ticket_context(self, guild: discord.Guild
+                                   ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        """``(panel, category)`` for the staff tickets of ``guild``.
+
+        Built on every call rather than stored: the only thing it depends on is
+        which role is the guild's Moddy Team role *right now*. A role deleted
+        and recreated therefore fixes an existing ticket, and a server that
+        never touched the Tickets module has a working category all the same.
+        """
+        from modules.tickets import normalize_category
+        from utils.moddy_team_role import find_team_role
+
+        locale = await self.ticket_locale(guild)
+        role = await find_team_role(self.bot, guild)
+        name = t('staff.team.ticket.category', locale=locale)
+
+        category = normalize_category({
+            'id': STAFF_CATEGORY_ID,
+            'name': name,
+            # The Moddy Team role is the *only* role that gets anything here —
+            # the same rule as /team access. Server administrators keep full
+            # access through member_permissions' administrator branch, which is
+            # what makes this readable to the people who own the server.
+            'permissions': {str(role.id): [PERM_ADMIN]} if role else {},
+            'buttons': [BTN_CLOSE, BTN_PARTICIPANTS],
+            # Claiming is a queue-management tool for a server's own support
+            # team. A staff ticket has exactly one team on it already.
+            'claim_enabled': False,
+            'name_format': STAFF_NAME_FORMAT,
+            'ping_staff_roles': False,
+            # The quota exists to stop members flooding a server. It has no
+            # meaning for a ticket only the Moddy team can open.
+            'max_open_per_user': MAX_OPEN_PER_USER_CEILING,
+            'enabled': True,
+        })
+        return {'id': STAFF_PANEL_ID, 'name': name}, category
+
+    async def open_staff_ticket(self, guild: discord.Guild,
+                                actor: discord.abc.User,
+                                reason: Optional[str] = None
+                                ) -> discord.TextChannel:
+        """Open a Moddy staff ticket in ``guild`` — no server config involved.
+
+        This is the same ticket as any other (same table, same buttons, same
+        verbs), opened straight into a channel of its own instead of through a
+        panel the server configured. Two things differ, and both follow from
+        who it is for:
+
+        - It is created **outside any Discord category**, so it never inherits
+          overwrites from a category chosen for the server's own tickets.
+        - Its opener is the staffer, who may well not be a member of the guild.
+          They are then simply absent from the overwrites — the ticket belongs
+          to the Moddy Team role and to the server's administrators, and reads
+          exactly the same either way.
+        """
+        from utils.ticket_views import build_ticket_message
+
+        if not self.bot.db:
+            raise TicketError('modules.tickets.errors.unavailable')
+
+        me = guild.me
+        if not me or not me.guild_permissions.manage_channels:
+            raise TicketError('modules.tickets.errors.cannot_create_channel')
+
+        locale = await self.ticket_locale(guild)
+        _panel, category = await self.staff_ticket_context(guild)
+        number = await self.bot.db.next_ticket_number(guild.id)
+        draft = {'owner_id': actor.id, 'status': 'open', 'escalated': False,
+                 'participants': [], 'participant_roles': [], 'claimed_by': None}
+
+        try:
+            channel = await guild.create_text_channel(
+                name=render_channel_name(category, member=actor, number=number),
+                overwrites=self.build_overwrites(guild, category, draft),
+                topic=t('staff.team.ticket.topic', locale=locale, number=number,
+                        user=str(actor), user_id=actor.id)[:1024],
+                reason=f"Moddy staff ticket opened by {actor} ({actor.id})",
+            )
+        except discord.Forbidden:
+            raise TicketError('modules.tickets.errors.cannot_create_channel')
+        except discord.HTTPException as e:
+            logger.error(f"[Tickets] Staff ticket creation failed in guild "
+                         f"{guild.id}: {e}")
+            raise TicketError('modules.tickets.errors.cannot_create_channel')
+
+        ticket = await self.bot.db.create_ticket(
+            guild_id=guild.id, channel_id=channel.id, panel_id=STAFF_PANEL_ID,
+            category_id=STAFF_CATEGORY_ID, owner_id=actor.id, number=number,
+        )
+        if not ticket:
+            await channel.delete(reason="Moddy tickets: could not register the ticket")
+            raise TicketError('modules.tickets.errors.unavailable')
+
+        # The same card every other ticket opens with — the opening message is
+        # simply written here instead of by an admin, since no configuration of
+        # this server has anything to say about it.
+        try:
+            message = await channel.send(view=build_ticket_message(
+                ticket, category,
+                self._staff_open_message(actor, reason, number, locale),
+                locale=locale))
+            await message.pin(reason="Moddy tickets: control message")
+        except discord.HTTPException as e:
+            logger.warning(f"[Tickets] Could not post the staff control message "
+                           f"in {channel.id}: {e}")
+
+        # The people this ticket is *for*: whoever owns the server, and the
+        # Moddy Team role if anybody in the guild already holds it.
+        await self.ping(channel, self._staff_ping_content(guild, category))
+
+        logger.info(f"[Tickets] staff ticket #{ticket['number']} opened in guild "
+                    f"{guild.id} by {actor.id}")
+        return channel
+
+    def _staff_open_message(self, actor: discord.abc.User, reason: Optional[str],
+                            number: int, locale: str) -> str:
+        """The opening card's text, in the **server's** language.
+
+        Whoever reads it is on the server's side of the conversation, so it
+        follows the server language like every other ticket message — not the
+        staffer's, and not the staffer's Discord client.
+        """
+        from utils import emojis
+
+        lines = [
+            f"### {emojis.TICKET} " + t('staff.team.ticket.title', locale=locale,
+                                        number=number),
+            t('staff.team.ticket.intro', locale=locale),
+        ]
+        if reason:
+            lines.append("---")
+            lines.append(f"**{t('staff.team.ticket.reason', locale=locale)}**\n{reason}")
+        lines.append(f"-# {t('staff.team.ticket.footer', locale=locale, user=actor.mention)}")
+        return "\n".join(lines)
+
+    def _staff_ping_content(self, guild: discord.Guild,
+                            category: Dict[str, Any]) -> Optional[str]:
+        """Ring the server owner and the Moddy Team role, once."""
+        parts = []
+        if guild.owner:
+            parts.append(guild.owner.mention)
+        for role_id in staff_role_ids(category, permission=PERM_VIEW):
+            role = guild.get_role(role_id)
+            if role:
+                parts.append(role.mention)
+        return " ".join(parts) or None
 
     def _role_mentions(self, guild: discord.Guild, category: Dict[str, Any],
                        permission: str) -> Optional[str]:

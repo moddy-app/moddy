@@ -58,6 +58,11 @@ Every staff member receives the `TEAM` database attribute automatically when any
 role is assigned. It is removed when all roles are removed. The attribute is used
 system-wide to identify staff (e.g. for the verified badge system).
 
+Every write to `staff_permissions` must also publish on `moddy:staff`, **after**
+the write — that is what tells the backend to republish the `team` boolean
+Discord's linked roles are built on, and it is the only obligation the bot has
+in that pipeline. See [LINKED_ROLES.md](LINKED_ROLES.md).
+
 ### Role emoji badges
 
 | Role | Badge |
@@ -120,6 +125,17 @@ All available via `/manage` (slash) or `m.` (message).
 | `/manage staffinfo @user` | Show roles, permissions, join date |
 | `/manage list` | List all staff by role |
 | `/manage badge @user` | Assign a profile badge |
+
+## Working inside somebody else's server
+
+Three `/team` commands, all built on one role and granting nothing to any staff
+member's account — full contract in [LINKED_ROLES.md](LINKED_ROLES.md).
+
+| Command | What it does |
+|---------|-------------|
+| `/team role [guild_id]` | Create (or re-report) the server's **Moddy Team** role, and print the linked-role requirement an administrator still has to add |
+| `/team access` | Pick the permissions you need; an administrator accepts or refuses on a card; accepting adds them to the Moddy Team role and to nothing else |
+| `/team ticket [reason] [guild_id]` | Open a Moddy staff ticket in the server — a real ticket, outside the server's own ticket configuration |
 
 ---
 

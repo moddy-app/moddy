@@ -8,6 +8,7 @@ from staff.framework import StaffCommand, SlashOption, staff_command, design, Co
 from utils import emojis
 from utils.i18n import t
 from utils.staff_permissions import staff_permissions
+from services.staff_events import notify_staff_change, EVENT_UNRANKED
 
 logger = logging.getLogger("moddy.staff.manage.unrank")
 
@@ -59,6 +60,9 @@ class UnrankCommand(StaffCommand):
             await bot.db.remove_staff_permissions(uid)
             await bot.db.set_attribute("user", uid, "TEAM", False, ctx.author.id, "Removed from staff via unrank")
             logger.info("Staff %s removed %s from staff", ctx.author.id, uid)
+            # Losing the badge is the case that matters: nobody notices a role
+            # that was not granted, everybody notices a former member wearing it.
+            await notify_staff_change(bot, uid, event=EVENT_UNRANKED)
             return design.success(
                 t("staff.manage.unrank.done_title", locale=locale),
                 t("staff.manage.unrank.done", locale=locale, user=user.mention),
