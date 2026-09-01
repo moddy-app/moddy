@@ -178,9 +178,72 @@ alors que `BOT_ASSERT_SECRET` manque ou fait moins de 32 caractères.
 Un code inconnu retombe sur `unavailable` avec un warning, plutôt que d'afficher
 une clé i18n brute.
 
-## 8. Tests
+## 8. Tester sans toucher au bot de production
 
-`tests/test_brocoli.py` (15 cas) : la signature rejouée contre l'algorithme du
+Il n'existe **aucun bot de test déployé** : les environnements de PR Railway
+(`moddy-pr-*`) sont des environnements vides, sans service. Le chemin praticable
+est donc un bot local.
+
+### Ce qu'il faut
+
+1. **Une seconde application Discord** (Developer Portal → New Application →
+   Bot), invitée sur le serveur de développement avec les permissions
+   `Manage Channels`, `Send Messages`, `Read Message History`. C'est ce bot de
+   test qui répondra ; celui de production ne bouge pas.
+2. Le salon de test doit être **visible par ce bot**.
+
+### Option A — bot local, backend déployé (recommandé)
+
+Le seul changement en production est le backend qui gagne un chemin
+d'authentification supplémentaire, restreint à une seule guilde et inerte tant
+que `BOT_ASSERT_SECRET` n'est pas posé. Le bot de production, lui, n'est pas
+redéployé du tout.
+
+```bash
+# Sur le service Backend (Railway) :
+#   BOT_ASSERT_SECRET=<le secret>
+#   BOT_ASSERT_ALLOWED_GUILDS=<id de la guilde de dev>
+
+# En local, dans le dépôt du bot :
+export DISCORD_TOKEN=<token du BOT DE TEST>
+export ENV_MODE=development
+export DEV_ALLOWED_IDS=<ton id Discord>
+export DATABASE_URL=<...>            # ou rien : le cache mémoire prend le relais
+export BOT_ASSERT_SECRET=<le meme secret que le backend>
+export BROCOLI_API_URL=https://api.moddy.app
+export BROCOLI_GUILD_IDS=<id de la guilde de dev>
+export BROCOLI_CHANNEL_IDS=<id du salon de test>
+python main.py
+```
+
+`ENV_MODE=development` restreint le bot à `DEV_ALLOWED_IDS` : même invité
+ailleurs, il ne répondra qu'à toi.
+
+Sans `DATABASE_URL`, la conversation n'est pas persistée en base mais le cache
+mémoire par salon tient le temps du processus — suffisant pour un essai.
+
+### Option B — tout en local
+
+Même chose, plus le backend lancé à côté
+(`uvicorn app.main:app --reload --port 8080`, avec ses propres `DATABASE_URL`,
+`REDIS_URL` et `OPENAI_API_KEY`), et `BROCOLI_API_URL=http://localhost:8080`.
+Rien ne sort de la machine, au prix d'un Postgres et d'un Redis à fournir.
+
+### Ce que la suite couvre déjà
+
+`tests/test_brocoli_integration.py` fait tourner la chaîne complète contre un
+**vrai serveur HTTP local** : signature, requête, flux SSE, gestion des
+événements, et les messages que le salon afficherait. Le serveur de test
+revérifie le HMAC avec l'algorithme du backend réécrit à la main — il refuse une
+signature fausse, un rejeu et un mauvais secret, donc il prouve qu'il vérifie
+au lieu de tamponner.
+
+Ce qui n'est pas couvert et ne peut l'être hors ligne : Discord lui-même, et le
+vrai backend avec un vrai modèle derrière.
+
+## 9. Tests
+
+`tests/test_brocoli.py` (20 cas) : la signature rejouée contre l'algorithme du
 backend écrit à la main (un test qui vérifie l'implémentation avec
 l'implémentation passerait même si les deux dérivaient ensemble), l'ordre
 canonique des clés, la sérialisation des snowflakes en chaînes, la couverture de
@@ -188,9 +251,12 @@ chaque champ signé, l'unicité du `request_id`, le refus de signer sans secret
 fort, et le parseur SSE (événements nommés, événement final sans ligne vide,
 keep-alives, payload illisible, correspondance des statuts HTTP).
 
+`tests/test_brocoli_integration.py` (6 cas) : la chaîne complète contre un vrai
+serveur HTTP local (voir §8).
+
 `tests/test_persistent_views.py` couvre `BrocoliDecisionPersistence`.
 
-## 9. Limites connues
+## 10. Limites connues
 
 - **Pas de reprise de flux.** Si le bot redémarre pendant un tour, la carte reste
   en l'état ; le tour se termine côté backend mais personne ne l'affiche. Les
