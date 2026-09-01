@@ -25,7 +25,17 @@ from services.staff_events import (
     STAFF_CHANNEL,
     notify_staff_change,
 )
-from utils.moddy_team_role import STORE_PATH, TEAM_ROLE_NAME, _as_int
+from utils.moddy_team_role import (
+    OPERATOR_BOOLEAN_EQUAL,
+    STORE_PATH,
+    TEAM_ROLE_NAME,
+    LinkResult,
+    _as_int,
+    build_requirement,
+    configuration_contains,
+    link_team_role,
+    merge_configuration,
+)
 from utils.team_access_views import (
     ACCESS_PERMISSIONS,
     keys_to_value,
@@ -167,6 +177,129 @@ class TestTeamRole:
 
     def test_role_name(self):
         assert TEAM_ROLE_NAME == "Moddy Team"
+
+
+# --------------------------------------------------------------------------- #
+# Binding the role to the linked-role requirement
+# --------------------------------------------------------------------------- #
+class FakeHTTP:
+    """Answers the two role-connection routes with whatever the test wants."""
+
+    #: The real schema: two boolean keys, only one of which may ever be used.
+    METADATA = [{"key": "team", "type": 7}, {"key": "premium", "type": 7}]
+
+    def __init__(self, current=None, on_write=None, metadata=None):
+        self.metadata = self.METADATA if metadata is None else metadata
+        self.current = current if current is not None else []
+        self.on_write = on_write
+        self.written = None
+        self.calls = []
+
+    async def request(self, route, **kwargs):
+        self.calls.append((route.method, route.path))
+        if route.path.endswith("/role-connections/metadata"):
+            return self.metadata
+        if route.method == "GET":
+            return self.current
+        if self.on_write:
+            raise self.on_write
+        self.written = kwargs.get("json")
+        return self.written
+
+
+def make_role(guild_id=1, role_id=2):
+    return SimpleNamespace(id=role_id, guild=SimpleNamespace(id=guild_id))
+
+
+_app_ids = iter(range(1000, 9999))
+
+
+def make_linking_bot(http, application_id=42):
+    return SimpleNamespace(application_id=application_id, http=http)
+
+
+class TestRoleBinding:
+    def test_requirement_shape(self):
+        req = build_requirement(42, "team")
+        assert req["connection_type"] == "application"
+        assert req["application_id"] == "42"   # a snowflake travels as a string
+        assert req["connection_metadata_field"] == "team"
+        assert req["operator"] == OPERATOR_BOOLEAN_EQUAL
+        assert req["value"] == "1"
+
+    def test_a_server_requirement_is_never_dropped(self):
+        """The PUT replaces the whole configuration — ours is an extra OR branch."""
+        theirs = [[{"connection_type": "steam", "connection_metadata_field": None,
+                    "operator": None, "value": None}]]
+        merged = merge_configuration(theirs, build_requirement(42, "team"))
+        assert merged[0] == theirs[0]
+        assert len(merged) == 2
+
+    def test_merging_twice_adds_nothing(self):
+        req = build_requirement(42, "team")
+        once = merge_configuration([], req)
+        assert merge_configuration(once, req) == once
+
+    def test_receive_only_fields_do_not_hide_our_requirement(self):
+        """A configuration read back carries extra fields; == would miss it."""
+        req = build_requirement(42, "team")
+        from_discord = [[dict(req, name="Moddy Team", description="…", result=True)]]
+        assert configuration_contains(from_discord, req)
+
+    def test_merge_does_not_mutate_the_original(self):
+        theirs = [[{"connection_type": "steam"}]]
+        merge_configuration(theirs, build_requirement(42, "team"))
+        assert theirs == [[{"connection_type": "steam"}]]
+
+    def test_binding_writes_the_requirement(self):
+        http = FakeHTTP()
+        result = run(link_team_role(make_linking_bot(http), make_role()))
+        assert result == LinkResult.LINKED_NOW
+        assert http.written == [[build_requirement(42, "team")]]
+
+    def test_an_existing_binding_is_not_rewritten(self):
+        http = FakeHTTP(current=[[build_requirement(42, "team")]])
+        result = run(link_team_role(make_linking_bot(http), make_role()))
+        assert result == LinkResult.ALREADY_LINKED
+        assert http.written is None
+
+    @pytest.mark.parametrize("status,expected", [
+        (403, LinkResult.FORBIDDEN),
+        (404, LinkResult.UNSUPPORTED),
+        (405, LinkResult.UNSUPPORTED),
+        (400, LinkResult.FAILED),
+        (500, LinkResult.FAILED),
+    ])
+    def test_discord_refusing_is_an_answer_not_a_crash(self, status, expected):
+        """`/team role` must always be able to fall back on the manual steps."""
+        import discord
+
+        response = SimpleNamespace(status=status, reason="nope")
+        error = (discord.Forbidden(response, "no") if status == 403
+                 else discord.HTTPException(response, "no"))
+        http = FakeHTTP(on_write=error)
+        assert run(link_team_role(make_linking_bot(http), make_role())) == expected
+
+    def test_premium_is_never_mistaken_for_team(self):
+        """Binding the role to `premium` would hand it to every subscriber."""
+        http = FakeHTTP(metadata=[{"key": "premium", "type": 7}])
+        bot = make_linking_bot(http, application_id=next(_app_ids))
+        assert run(link_team_role(bot, make_role())) == LinkResult.NO_METADATA
+        assert http.written is None
+
+    def test_no_application_id_is_not_a_crash(self):
+        bot = SimpleNamespace(application_id=None, http=FakeHTTP())
+        assert run(link_team_role(bot, make_role())) == LinkResult.FAILED
+
+    def test_every_failure_has_something_to_say(self):
+        """Each non-DONE outcome must have its `auto_*` line in every locale."""
+        outcomes = [v for k, v in vars(LinkResult).items()
+                    if k.isupper() and isinstance(v, str) and v not in LinkResult.DONE]
+        for locale in ("fr", "en-US", "es-ES", "pt-BR", "de"):
+            with open(f"locales/{locale}.json", encoding="utf-8") as fh:
+                role = json.load(fh)["staff"]["team"]["role"]
+            for outcome in outcomes:
+                assert f"auto_{outcome}" in role, (locale, outcome)
 
 
 # --------------------------------------------------------------------------- #
