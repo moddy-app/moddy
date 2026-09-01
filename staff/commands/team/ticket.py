@@ -35,6 +35,7 @@ logger = logging.getLogger("moddy.staff.team.ticket")
 class TeamTicketCommand(StaffCommand):
     command_type = CommandType.TEAM
     name = "ticket"
+    defer = True
     description = "Open a Moddy staff ticket in a server."
     options = [
         SlashOption("reason", "string", "What this ticket is about — shown to the server.",

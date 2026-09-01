@@ -36,6 +36,7 @@ moddy/
 │   ├── error_handler.py       #   Centralized error handler (38KB)
 │   ├── config.py              #   /config command (module configuration)
 │   ├── module_events.py       #   Event handlers for modules
+│   ├── team_link_events.py    #   Gateway wiring + boot recovery for the linking window
 │   ├── invite.py              #   /invite command
 │   ├── bug_report.py          #   /bug-report command (Modal V2 → team channel)
 │   ├── brocoli_chat.py        #   Brocoli in a channel (dev-guild gated, SSE → Components V2)
@@ -246,6 +247,7 @@ moddy/
 │   ├── ticket_service.py      #   Ticket lifecycle (open/close/escalate/move/participants)
 │   ├── support_request_service.py # Bug reports + config-help requests (team side)
 │   ├── transcription_service.py #  Voice/audio speech-to-text (shared by cog + module)
+│   ├── team_link_session.py   #   /team role: the 30 s window in which a staffer links the role
 │   ├── heartbeat.py           #   Moddy Health Monitor heartbeat (dead man's switch)
 │   ├── betterstack_heartbeat.py #  Better Stack cron/heartbeat monitor ping (3 min)
 │   └── railway_diagnostic.py  #   Railway diagnostics

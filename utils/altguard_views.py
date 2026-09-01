@@ -436,12 +436,18 @@ def build_member_dm(*, locale: str, kind: str, guild_name: str = "") -> Optional
 # Shared name rendering
 # ---------------------------------------------------------------------- #
 
-async def format_member_name(bot, user: discord.abc.User) -> str:
+async def format_member_name(bot, user: discord.abc.User, *, link: bool = True) -> str:
     """``**display name**badge`` per the verification-badge rule in CLAUDE.md.
 
     Falls back to the plain bold name when the database is unreachable — a
     missing badge is a cosmetic loss, an exception here would break a
     moderation command.
+
+    ``link=False`` keeps the badge but drops the hyperlink to the docs page.
+    Used where the card is read by somebody outside the team — a server's
+    administrator has no use for an article on Moddy's verification tiers, and
+    the blue link pulls the eye away from the decision they are being asked to
+    make.
     """
     attributes: dict = {}
     verification: Optional[dict] = None
@@ -462,7 +468,7 @@ async def format_member_name(bot, user: discord.abc.User) -> str:
     badge, _org_names, _tier = get_user_verification_badge(
         {"public_flags": public_flags}, attributes, verification,
     )
-    return f"**{name}**{format_verification_badge(badge)}"
+    return f"**{name}**{format_verification_badge(badge) if link else badge}"
 
 
 # ---------------------------------------------------------------------- #

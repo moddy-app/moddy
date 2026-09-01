@@ -25,16 +25,15 @@ from services.staff_events import (
     STAFF_CHANNEL,
     notify_staff_change,
 )
-from utils.moddy_team_role import (
-    OPERATOR_BOOLEAN_EQUAL,
-    STORE_PATH,
-    TEAM_ROLE_NAME,
-    LinkResult,
-    _as_int,
-    build_requirement,
-    configuration_contains,
-    link_team_role,
-    merge_configuration,
+from utils.moddy_team_role import STORE_PATH, TEAM_ROLE_NAME, _as_int
+from services.team_link_session import (
+    CANCELLED,
+    DONE,
+    EXPIRED,
+    FAILED,
+    SESSION_PATH,
+    WINDOW_SECONDS,
+    _restorable,
 )
 from utils.team_access_views import (
     ACCESS_PERMISSIONS,
@@ -180,149 +179,72 @@ class TestTeamRole:
 
 
 # --------------------------------------------------------------------------- #
-# Binding the role to the linked-role requirement
+# The thirty-second linking window
 # --------------------------------------------------------------------------- #
-class FakeHTTP:
-    """Answers the two role-connection routes with whatever the test wants."""
+class FakeRole:
+    def __init__(self, rid, *, managed=False, default=False):
+        self.id = rid
+        self.managed = managed
+        self._default = default
 
-    #: The real schema: two boolean keys, only one of which may ever be used.
-    METADATA = [{"key": "team", "type": 7}, {"key": "premium", "type": 7}]
-
-    def __init__(self, current=None, on_write=None, metadata=None):
-        self.metadata = self.METADATA if metadata is None else metadata
-        self.current = current if current is not None else []
-        self.on_write = on_write
-        self.written = None
-        self.calls = []
-
-    async def request(self, route, **kwargs):
-        self.calls.append((route.method, route.path))
-        if route.path.endswith("/role-connections/metadata"):
-            return self.metadata
-        if route.method == "GET":
-            return self.current
-        if self.on_write:
-            raise self.on_write
-        self.written = kwargs.get("json")
-        return self.written
+    def is_default(self):
+        return self._default
 
 
-def make_role(guild_id=1, role_id=2):
-    return SimpleNamespace(id=role_id, guild=SimpleNamespace(id=guild_id))
+class FakeGuild:
+    def __init__(self, roles):
+        self._roles = {r.id: r for r in roles}
+
+    def get_role(self, rid):
+        return self._roles.get(rid)
 
 
-_app_ids = iter(range(1000, 9999))
+class TestLinkingWindow:
+    TEAM_ID = 99
 
+    def _guild(self):
+        return FakeGuild([
+            FakeRole(1, default=True),          # @everyone
+            FakeRole(2),                        # a normal role
+            FakeRole(3, managed=True),          # a bot/booster role
+            FakeRole(self.TEAM_ID),             # Moddy Team
+        ])
 
-def make_linking_bot(http, application_id=42):
-    return SimpleNamespace(application_id=application_id, http=http)
+    def test_the_moddy_team_role_is_never_handed_back(self):
+        """Discord assigns it from the metadata; the bot must never grant it."""
+        restored = _restorable(self._guild(), [2, self.TEAM_ID], self.TEAM_ID)
+        assert [r.id for r in restored] == [2]
 
+    def test_managed_and_everyone_are_left_alone(self):
+        """Neither was ever removed — Discord refuses — so re-adding would 403."""
+        restored = _restorable(self._guild(), [1, 2, 3], self.TEAM_ID)
+        assert [r.id for r in restored] == [2]
 
-class TestRoleBinding:
-    def test_requirement_shape(self):
-        req = build_requirement(42, "team")
-        assert req["connection_type"] == "application"
-        assert req["application_id"] == "42"   # a snowflake travels as a string
-        assert req["connection_metadata_field"] == "team"
-        assert req["operator"] == OPERATOR_BOOLEAN_EQUAL
-        assert req["value"] == "1"
+    def test_a_deleted_role_is_simply_dropped(self):
+        restored = _restorable(self._guild(), [2, 12345], self.TEAM_ID)
+        assert [r.id for r in restored] == [2]
 
-    def test_a_server_requirement_is_never_dropped(self):
-        """The PUT replaces the whole configuration — ours is an extra OR branch."""
-        theirs = [[{"connection_type": "steam", "connection_metadata_field": None,
-                    "operator": None, "value": None}]]
-        merged = merge_configuration(theirs, build_requirement(42, "team"))
-        assert merged[0] == theirs[0]
-        assert len(merged) == 2
+    def test_nothing_to_restore_is_not_an_error(self):
+        assert _restorable(self._guild(), None, self.TEAM_ID) == []
 
-    def test_merging_twice_adds_nothing(self):
-        req = build_requirement(42, "team")
-        once = merge_configuration([], req)
-        assert merge_configuration(once, req) == once
+    def test_the_window_is_thirty_seconds(self):
+        assert WINDOW_SECONDS == 30
 
-    def test_receive_only_fields_do_not_hide_our_requirement(self):
-        """A configuration read back carries extra fields; == would miss it."""
-        req = build_requirement(42, "team")
-        from_discord = [[dict(req, name="Moddy Team", description="…", result=True)]]
-        assert configuration_contains(from_discord, req)
+    def test_the_session_is_persisted_under_moddy_team(self):
+        """It must land beside the role id, so one guild read finds both."""
+        assert SESSION_PATH.startswith("moddy_team.")
+        assert SESSION_PATH != STORE_PATH
 
-    def test_merge_does_not_mutate_the_original(self):
-        theirs = [[{"connection_type": "steam"}]]
-        merge_configuration(theirs, build_requirement(42, "team"))
-        assert theirs == [[{"connection_type": "steam"}]]
-
-    def test_binding_writes_the_requirement(self):
-        http = FakeHTTP()
-        result = run(link_team_role(make_linking_bot(http), make_role()))
-        assert result == LinkResult.LINKED_NOW
-        assert http.written == [[build_requirement(42, "team")]]
-
-    def test_an_existing_binding_is_not_rewritten(self):
-        http = FakeHTTP(current=[[build_requirement(42, "team")]])
-        result = run(link_team_role(make_linking_bot(http), make_role()))
-        assert result == LinkResult.ALREADY_LINKED
-        assert http.written is None
-
-    @pytest.mark.parametrize("status,expected", [
-        (403, LinkResult.FORBIDDEN),
-        (404, LinkResult.UNSUPPORTED),
-        (405, LinkResult.UNSUPPORTED),
-        (400, LinkResult.FAILED),
-        (500, LinkResult.FAILED),
-    ])
-    def test_discord_refusing_is_an_answer_not_a_crash(self, status, expected):
-        """`/team role` must always be able to fall back on the manual steps."""
-        import discord
-
-        response = SimpleNamespace(status=status, reason="nope")
-        error = (discord.Forbidden(response, "no") if status == 403
-                 else discord.HTTPException(response, "no"))
-        http = FakeHTTP(on_write=error)
-        assert run(link_team_role(make_linking_bot(http), make_role())) == expected
-
-    def test_premium_is_never_mistaken_for_team(self):
-        """Binding the role to `premium` would hand it to every subscriber."""
-        http = FakeHTTP(metadata=[{"key": "premium", "type": 7}])
-        bot = make_linking_bot(http, application_id=next(_app_ids))
-        assert run(link_team_role(bot, make_role())) == LinkResult.NO_METADATA
-        assert http.written is None
-
-    def test_discord_s_own_answer_reaches_the_logs(self, caplog):
-        """The route is undocumented: its body is the only thing that will ever
-        explain a refusal, so it must never be swallowed."""
-        import logging
-
-        import discord
-
-        response = SimpleNamespace(status=403, reason="Forbidden")
-        error = discord.Forbidden(response, {
-            "code": 50013, "message": "Missing Permissions",
-        })
-        http = FakeHTTP(on_write=error)
-        with caplog.at_level(logging.ERROR, logger="moddy.moddy_team_role"):
-            run(link_team_role(make_linking_bot(http, application_id=next(_app_ids)),
-                               make_role(guild_id=7, role_id=8)))
-
-        logged = "\n".join(r.getMessage() for r in caplog.records)
-        assert "403" in logged
-        assert "50013" in logged                 # Discord's own error code
-        assert "Missing Permissions" in logged   # the body, verbatim
-        assert "role 8" in logged and "guild 7" in logged
-        assert "connection_metadata_field" in logged  # what we actually sent
-
-    def test_no_application_id_is_not_a_crash(self):
-        bot = SimpleNamespace(application_id=None, http=FakeHTTP())
-        assert run(link_team_role(bot, make_role())) == LinkResult.FAILED
-
-    def test_every_failure_has_something_to_say(self):
-        """Each non-DONE outcome must have its `auto_*` line in every locale."""
-        outcomes = [v for k, v in vars(LinkResult).items()
-                    if k.isupper() and isinstance(v, str) and v not in LinkResult.DONE]
-        for locale in ("fr", "en-US", "es-ES", "pt-BR", "de"):
-            with open(f"locales/{locale}.json", encoding="utf-8") as fh:
-                role = json.load(fh)["staff"]["team"]["role"]
-            for outcome in outcomes:
-                assert f"auto_{outcome}" in role, (locale, outcome)
+    @pytest.mark.parametrize("locale", ["fr", "en-US", "es-ES", "pt-BR", "de"])
+    def test_every_outcome_has_a_sentence(self, locale):
+        """A window that ends with no explanation is a window nobody trusts."""
+        with open(f"locales/{locale}.json", encoding="utf-8") as fh:
+            role = json.load(fh)["staff"]["team"]["role"]
+        for outcome in (DONE, EXPIRED, CANCELLED, FAILED):
+            assert f"window_{outcome}" in role, (locale, outcome)
+        for blocker in ("not_member", "owner", "busy", "no_permission",
+                        "above_moddy", "no_room"):
+            assert f"blocked_{blocker}" in role, (locale, blocker)
 
 
 # --------------------------------------------------------------------------- #

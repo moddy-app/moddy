@@ -5,11 +5,12 @@ Discord hands it to whoever is on the team **at that moment** and takes it back
 the second they are not. That is the whole point: a server never has to keep a
 list of our staff up to date, and a destitution reaches every server at once.
 
-The command creates the role and then binds it itself, through the same
-(undocumented) route the Discord client uses for *Server Settings → Roles →
-Links* — see ``utils.moddy_team_role.link_team_role``. When Discord refuses, the
-card falls back on the three clicks an administrator has to do by hand, and says
-why. Run it again afterwards and it says whether the binding took.
+No API can attach the requirement — a bot token is answered
+``20001 — Bots cannot use this endpoint``. So when the role is not linked yet,
+this command opens a **thirty-second window** in which the staffer who ran it
+holds `Manage Roles` and can do it themselves, inside the containment described
+in :mod:`services.team_link_session`. The card then reports what came of it, and
+falls back on the manual instructions when the window could not be opened.
 
 See docs/LINKED_ROLES.md.
 """
@@ -25,31 +26,59 @@ from staff.framework import (
 from utils import emojis
 from utils.i18n import t
 from utils.moddy_team_role import (
-    LINKED_ROLES_URL, TEAM_ROLE_NAME, LinkResult, can_manage, create_team_role,
-    find_team_role, is_linked, link_team_role,
+    LINKED_ROLES_URL, TEAM_ROLE_NAME, can_manage, create_team_role,
+    find_team_role, is_linked,
 )
+from services import team_link_session as linking
 from cogs.error_handler import BaseView
 
 logger = logging.getLogger("moddy.staff.team.role")
 
 
-def _linked_key(linked: bool, link_result) -> str:
-    """Which of the three "Rôle lié" wordings the card shows.
+def _blocker(guild: discord.Guild, member) -> str:
+    """Why the thirty-second window cannot be opened here, or ``""``.
 
-    A role Moddy just bound reads differently from one an administrator bound
-    last week: the staffer needs to know the binding is the command's doing.
+    Checked before anything is created or moved: a window that fails halfway
+    leaves a staffer without their roles, so it is never started on a hope.
     """
-    if not linked:
-        return "linked_no"
-    if link_result == LinkResult.LINKED_NOW:
-        return "linked_auto"
-    return "linked_yes"
+    me = guild.me
+    if member is None:
+        return "not_member"
+    if member.id == guild.owner_id:
+        # The owner already has every permission; lending them one is absurd,
+        # and Discord refuses to edit the owner's roles anyway.
+        return "owner"
+    if linking.active_session(guild.id) is not None:
+        return "busy"
+    if not me or not me.guild_permissions.manage_roles:
+        return "no_permission"
+    if member.top_role >= me.top_role:
+        return "above_moddy"
+    if me.top_role.position < 3:
+        # Moddy Team at 1 and the throwaway role at 2 must both fit under Moddy.
+        return "no_room"
+    return ""
+
+
+def _window_card(locale: str, role: discord.Role, guild: discord.Guild) -> BaseView:
+    """The instructions the staffer has thirty seconds to follow."""
+    view = BaseView()
+    container = design.make_container("warning")
+    container.add_item(ui.TextDisplay(
+        f"{design.title_line(emojis.PENDING, t('staff.team.role.window_title', locale=locale, seconds=linking.WINDOW_SECONDS))}\n"
+        f"{t('staff.team.role.window', locale=locale, role=role.name, name=f'**{TEAM_ROLE_NAME}**')}"
+    ))
+    container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+    container.add_item(ui.TextDisplay(f"-# {t('staff.team.role.window_rules', locale=locale)}"))
+    view.add_item(container)
+    return view
 
 
 @staff_command
 class TeamRoleCommand(StaffCommand):
     command_type = CommandType.TEAM
     name = "role"
+    defer = True
     description = "Create the Moddy Team role (linked role) in a server."
     options = [
         SlashOption("guild_id", "string",
@@ -107,15 +136,18 @@ class TeamRoleCommand(StaffCommand):
             logger.info("Staff %s created the Moddy Team role in %s", ctx.author.id, gid)
 
         linked = is_linked(role)
-        link_result = None
+        outcome = None
+        blocker = ""
         if not linked:
-            # The binding Discord does not officially let us do. A failure is
-            # not an error: the card below prints what is left to do by hand.
-            link_result = await link_team_role(ctx.bot, role)
-            if link_result in LinkResult.DONE:
-                # `role.tags` only refreshes on the gateway event, which has not
-                # arrived yet — the route's own answer is the truth here.
-                linked = True
+            member = guild.get_member(ctx.author.id)
+            blocker = _blocker(guild, member)
+            if not blocker:
+                # Tell them what to do *before* the clock starts: the card is
+                # the instructions, and thirty seconds is not long enough to
+                # read them afterwards.
+                await ctx.send(view=_window_card(locale, role, guild))
+                outcome = await linking.run_window(ctx.bot, guild, member, role)
+                linked = outcome == linking.DONE
 
         granted = [name for name, value in role.permissions if value]
 
@@ -131,19 +163,21 @@ class TeamRoleCommand(StaffCommand):
             f"-# {t('staff.team.role.id', locale=locale)}: `{role.id}`\n"
             f"-# {t('staff.team.role.linked', locale=locale)}: "
             f"{emojis.DONE if linked else emojis.UNDONE} "
-            f"{t('staff.team.role.' + _linked_key(linked, link_result), locale=locale)}\n"
+            f"{t('staff.team.role.linked_' + ('yes' if linked else 'no'), locale=locale)}\n"
             f"-# {t('staff.team.role.permissions', locale=locale)}: "
             f"`{len(granted)}`"
         ))
 
         if not linked:
-            # The one thing the bot cannot do for them, spelled out — this is
-            # what a staffer reads out loud to the administrator.
+            # Why the window did not get there, then the manual path — which is
+            # what a staffer reads out loud to an administrator when all else
+            # fails.
+            reason = f"window_{outcome}" if outcome else f"blocked_{blocker}"
             container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
             container.add_item(ui.TextDisplay(
                 f"**{t('staff.team.role.howto_title', locale=locale)}**\n"
-                f"{t('staff.team.role.howto', locale=locale, name=f'**{TEAM_ROLE_NAME}**', role=role.name)}\n"
-                f"-# {t('staff.team.role.auto_' + (link_result or LinkResult.FAILED), locale=locale)}"
+                f"-# {t('staff.team.role.' + reason, locale=locale)}\n"
+                f"{t('staff.team.role.howto', locale=locale, name=f'**{TEAM_ROLE_NAME}**', role=role.name)}"
             ))
         container.add_item(ui.TextDisplay(
             f"-# {t('staff.team.role.hint', locale=locale)}"))

@@ -147,6 +147,10 @@ class StaffCommandsRouter(StaffCommandsCog):
                 view=design.permission_denied(ctx.locale, reason), ephemeral=True
             )
             return
+        # Before the staff-log write below, not after: that write is itself part
+        # of what used to blow the 3 s response budget.
+        if getattr(command, "defer", False):
+            await ctx.defer()
         await self._invoke(command, ctx)
 
     # --- shared invocation -------------------------------------------------
