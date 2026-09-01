@@ -3544,6 +3544,7 @@
         "granted": "{role} agora pode ler e escrever em {channel}.",
         "revoked": "{role} não tem mais acesso a {channel}.",
         "already": "{role} já tem acesso a {channel}.",
+        "not_set": "{role} não tem nenhuma permissão própria em {channel} — nada a remover.",
         "scope": "Ver o canal, seu histórico e escrever nele. Nada de moderação: para isso, `t.access`.",
         "failed_title": "Não foi possível alterar o acesso",
         "guild_only": "Este comando é usado em um canal de servidor.",

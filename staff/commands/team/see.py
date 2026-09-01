@@ -130,11 +130,26 @@ class TeamSeeCommand(StaffCommand):
                 return
 
         current = channel.overwrites_for(role)
-        already = all(getattr(current, p) is True for p in GRANTED)
-        if not revoke and already:
+
+        if not revoke:
+            # Effective permissions, not the overwrite: the role may already
+            # reach this channel through @everyone or through what it carries
+            # guild-wide. Writing an overwrite then would add a line to the
+            # channel that changes nothing and that somebody has to clean up.
+            effective = channel.permissions_for(role)
+            if all(getattr(effective, p) for p in GRANTED):
+                await ctx.send(view=design.info(
+                    t("staff.team.see.title", locale=locale),
+                    t("staff.team.see.already", locale=locale,
+                      role=role.mention, channel=channel.mention),
+                ))
+                return
+        elif current.is_empty():
+            # Nothing of ours on this channel; deleting an overwrite that does
+            # not exist would report a change that never happened.
             await ctx.send(view=design.info(
                 t("staff.team.see.title", locale=locale),
-                t("staff.team.see.already", locale=locale,
+                t("staff.team.see.not_set", locale=locale,
                   role=role.mention, channel=channel.mention),
             ))
             return

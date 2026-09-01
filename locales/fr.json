@@ -3543,6 +3543,7 @@
         "granted": "{role} peut désormais lire et écrire dans {channel}.",
         "revoked": "{role} n'a plus accès à {channel}.",
         "already": "{role} a déjà accès à {channel}.",
+        "not_set": "{role} n'a aucune permission propre sur {channel} — rien à retirer.",
         "scope": "Voir le salon, son historique, et y écrire. Rien de modératif : pour ça, `t.access`.",
         "failed_title": "Impossible de modifier l'accès",
         "guild_only": "Cette commande s'utilise dans un salon de serveur.",
