@@ -132,12 +132,13 @@ class TeamSeeCommand(StaffCommand):
         current = channel.overwrites_for(role)
 
         if not revoke:
-            # Effective permissions, not the overwrite: the role may already
-            # reach this channel through @everyone or through what it carries
-            # guild-wide. Writing an overwrite then would add a line to the
-            # channel that changes nothing and that somebody has to clean up.
-            effective = channel.permissions_for(role)
-            if all(getattr(effective, p) for p in GRANTED):
+            # The role's **own** overwrite, deliberately — not its effective
+            # permissions. A channel Moddy Team can already read through
+            # @everyone is one it reads at somebody else's discretion: the day
+            # @everyone is closed, our access goes with it, silently, in the
+            # middle of whatever the team was doing there. The explicit
+            # overwrite is what makes the access ours, so it is always written.
+            if all(getattr(current, p) is True for p in GRANTED):
                 await ctx.send(view=design.info(
                     t("staff.team.see.title", locale=locale),
                     t("staff.team.see.already", locale=locale,

@@ -323,9 +323,18 @@ you are already standing in, so the command can never become a way of reaching a
 channel you do not already have. Run in a thread it acts on the parent, since a
 thread has no overwrites of its own.
 
+The overwrite is written **even when the role can already reach the channel
+through `@everyone`**. That access belongs to somebody else: the day `@everyone`
+is closed on the channel, ours goes with it, silently, in the middle of whatever
+the team was doing there. The explicit overwrite is what makes the access ours,
+so the "nothing to do" case is the role's *own* overwrite already carrying the
+four permissions — never its effective ones.
+
 `revoke` **deletes** the overwrite rather than setting it to a denial: the
 channel goes back to the exact state it had, instead of gaining an explicit
-"Moddy Team cannot see this" that nobody asked for.
+"Moddy Team cannot see this" that nobody asked for. With no overwrite of ours on
+the channel it says `not_set` rather than reporting a removal that never
+happened.
 
 Pre-flight, each with its own sentence: Moddy needs `Manage Permissions` on the
 channel (`no_permission`), the role must sit below Moddy's (`role_too_high`),
