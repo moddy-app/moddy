@@ -3523,7 +3523,7 @@
         "blocked_owner": "You own this server: you already have everything you need.",
         "blocked_busy": "Another linking is already running on this server.",
         "blocked_no_permission": "Moddy does not have `Manage Roles` here.",
-        "blocked_no_room": "Moddy's role sits too low in the hierarchy to fit the two roles needed underneath it.",
+        "blocked_no_room": "The {name} role does not sit below Moddy's: it can neither move it nor hand it over. Move Moddy's role above it in Server Settings → **Roles** — the bot cannot raise itself, Discord forbids it.",
         "hint": "Run the command again to check that the link took.",
         "docs": "Link your account",
         "failed_title": "Could not create the role",
@@ -3538,6 +3538,21 @@
         "failed_title": "Could not delete the role",
         "no_role": "No {name} role in {guild}.",
         "forbidden": "Moddy is not allowed to delete {role} — it most likely sits above its own."
+      },
+      "see": {
+        "title": "Channel access",
+        "granted": "{role} can now read and write in {channel}.",
+        "revoked": "{role} no longer has access to {channel}.",
+        "already": "{role} already has access to {channel}.",
+        "not_set": "{role} has no overwrite of its own on {channel} — nothing to remove.",
+        "scope": "See the channel, its history, and write in it. Nothing moderative: for that, `t.access`.",
+        "failed_title": "Could not change the access",
+        "guild_only": "This command is used in a server channel.",
+        "not_yours": "You must have access to this channel yourself to open it to the team.",
+        "no_role": "No {name} role here — run `t.role` first.",
+        "no_permission": "Moddy does not have `Manage Permissions` on {channel}.",
+        "role_too_high": "{role} sits above Moddy's role: it cannot edit it.",
+        "moddy_cannot_see": "Moddy cannot see {channel} itself: Discord forbids granting an access it does not hold."
       },
       "access": {
         "picker_title": "Permission request",

@@ -3523,7 +3523,7 @@
         "blocked_owner": "Você é dono deste servidor: já tem tudo o que precisa.",
         "blocked_busy": "Já existe outra vinculação em andamento neste servidor.",
         "blocked_no_permission": "O Moddy não tem `Gerenciar cargos` aqui.",
-        "blocked_no_room": "O cargo do Moddy está baixo demais na hierarquia para caber os dois cargos necessários abaixo dele.",
+        "blocked_no_room": "O cargo {name} não está abaixo do do Moddy: ele não consegue movê-lo nem entregá-lo. Suba o cargo do Moddy acima dele em Configurações do servidor → **Cargos** — o bot não consegue se subir sozinho, o Discord não permite.",
         "hint": "Rode o comando de novo para conferir se o vínculo pegou.",
         "docs": "Vincular sua conta",
         "failed_title": "Não foi possível criar o cargo",
@@ -3538,6 +3538,21 @@
         "failed_title": "Não foi possível excluir o cargo",
         "no_role": "Nenhum cargo {name} em {guild}.",
         "forbidden": "O Moddy não tem permissão para excluir {role} — ele provavelmente está acima do dele."
+      },
+      "see": {
+        "title": "Acesso ao canal",
+        "granted": "{role} agora pode ler e escrever em {channel}.",
+        "revoked": "{role} não tem mais acesso a {channel}.",
+        "already": "{role} já tem acesso a {channel}.",
+        "not_set": "{role} não tem nenhuma permissão própria em {channel} — nada a remover.",
+        "scope": "Ver o canal, seu histórico e escrever nele. Nada de moderação: para isso, `t.access`.",
+        "failed_title": "Não foi possível alterar o acesso",
+        "guild_only": "Este comando é usado em um canal de servidor.",
+        "not_yours": "Você mesmo precisa ter acesso a este canal para abri-lo à equipe.",
+        "no_role": "Nenhum cargo {name} aqui — rode `t.role` primeiro.",
+        "no_permission": "O Moddy não tem `Gerenciar permissões` em {channel}.",
+        "role_too_high": "{role} está acima do cargo do Moddy: ele não consegue editá-lo.",
+        "moddy_cannot_see": "O Moddy não enxerga {channel}: o Discord proíbe conceder um acesso que ele não tem."
       },
       "access": {
         "picker_title": "Pedido de permissões",

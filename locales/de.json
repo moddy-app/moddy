@@ -3523,7 +3523,7 @@
         "blocked_owner": "Dir gehört dieser Server: du hast bereits alles Nötige.",
         "blocked_busy": "Auf diesem Server läuft bereits eine andere Verknüpfung.",
         "blocked_no_permission": "Moddy hat hier kein `Rollen verwalten`.",
-        "blocked_no_room": "Moddys Rolle steht zu weit unten, um die zwei nötigen Rollen darunter unterzubringen.",
+        "blocked_no_room": "Die Rolle {name} steht nicht unter der von Moddy: er kann sie weder verschieben noch übergeben. Setze Moddys Rolle in den Servereinstellungen → **Rollen** darüber — der Bot kann sich nicht selbst anheben, Discord verbietet es.",
         "hint": "Führe den Befehl erneut aus, um zu prüfen, ob die Verknüpfung greift.",
         "docs": "Konto verknüpfen",
         "failed_title": "Rolle konnte nicht erstellt werden",
@@ -3538,6 +3538,21 @@
         "failed_title": "Rolle konnte nicht gelöscht werden",
         "no_role": "Keine Rolle {name} in {guild}.",
         "forbidden": "Moddy darf {role} nicht löschen — sie steht vermutlich über seiner eigenen."
+      },
+      "see": {
+        "title": "Kanalzugriff",
+        "granted": "{role} kann jetzt in {channel} lesen und schreiben.",
+        "revoked": "{role} hat keinen Zugriff mehr auf {channel}.",
+        "already": "{role} hat bereits Zugriff auf {channel}.",
+        "not_set": "{role} hat auf {channel} keine eigene Berechtigung — nichts zu entfernen.",
+        "scope": "Den Kanal, seinen Verlauf sehen und darin schreiben. Nichts Moderatives: dafür `t.access`.",
+        "failed_title": "Zugriff konnte nicht geändert werden",
+        "guild_only": "Dieser Befehl wird in einem Serverkanal benutzt.",
+        "not_yours": "Du musst selbst Zugriff auf diesen Kanal haben, um ihn dem Team zu öffnen.",
+        "no_role": "Keine Rolle {name} hier — führe zuerst `t.role` aus.",
+        "no_permission": "Moddy hat auf {channel} kein `Berechtigungen verwalten`.",
+        "role_too_high": "{role} steht über Moddys Rolle: er kann sie nicht bearbeiten.",
+        "moddy_cannot_see": "Moddy sieht {channel} selbst nicht: Discord verbietet es, einen Zugriff zu geben, den er nicht hat."
       },
       "access": {
         "picker_title": "Berechtigungsanfrage",
