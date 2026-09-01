@@ -55,7 +55,9 @@ def _blocker(guild: discord.Guild, member) -> str:
     # A staffer sitting at or above Moddy is no longer refused: the window sets
     # aside what it can and says so. See `linking.unstrippable_roles`.
     if me.top_role.position < 3:
-        # Moddy Team at 1 and the throwaway role at 2 must both fit under Moddy.
+        # Moddy Team at 1 and the throwaway role at 2 must both fit under Moddy,
+        # and Discord forbids moving a role above your own highest — so the bot
+        # cannot make room for itself. Only a human can raise Moddy's role.
         return "no_room"
     return ""
 

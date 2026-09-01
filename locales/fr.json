@@ -3522,7 +3522,7 @@
         "blocked_owner": "Tu es propriétaire de ce serveur : tu as déjà tout ce qu'il faut.",
         "blocked_busy": "Une autre liaison est déjà en cours sur ce serveur.",
         "blocked_no_permission": "Moddy n'a pas `Gérer les rôles` ici.",
-        "blocked_no_room": "Le rôle de Moddy est trop bas dans la hiérarchie pour placer les deux rôles nécessaires en dessous.",
+        "blocked_no_room": "Le rôle de Moddy est trop bas : il faut deux positions libres sous lui pour y loger `Moddy Team` et le rôle temporaire. Monte le rôle de Moddy plus haut dans Paramètres du serveur → **Rôles** — le bot ne peut pas se remonter lui-même, Discord le lui interdit.",
         "hint": "Relance la commande pour vérifier que la liaison est prise en compte.",
         "docs": "Lier son compte",
         "failed_title": "Impossible de créer le rôle",

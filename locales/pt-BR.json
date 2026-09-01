@@ -3523,7 +3523,7 @@
         "blocked_owner": "Você é dono deste servidor: já tem tudo o que precisa.",
         "blocked_busy": "Já existe outra vinculação em andamento neste servidor.",
         "blocked_no_permission": "O Moddy não tem `Gerenciar cargos` aqui.",
-        "blocked_no_room": "O cargo do Moddy está baixo demais na hierarquia para caber os dois cargos necessários abaixo dele.",
+        "blocked_no_room": "O cargo do Moddy está baixo demais: são necessárias duas posições livres abaixo dele para acomodar `Moddy Team` e o cargo temporário. Suba o cargo do Moddy em Configurações do servidor → **Cargos** — o bot não consegue se subir sozinho, o Discord não permite.",
         "hint": "Rode o comando de novo para conferir se o vínculo pegou.",
         "docs": "Vincular sua conta",
         "failed_title": "Não foi possível criar o cargo",
