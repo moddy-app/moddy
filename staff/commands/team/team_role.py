@@ -53,6 +53,10 @@ def _blocker(guild: discord.Guild, member) -> str:
     if not me or not me.guild_permissions.manage_roles:
         return "no_permission"
     if member.top_role >= me.top_role:
+        # Discord refuses to touch the roles of anybody whose highest role is
+        # not below the bot's, and the window starts by setting them aside.
+        # Nobody this blocks actually needs the window: they already hold
+        # Manage Roles and can do the clicks themselves.
         return "above_moddy"
     if me.top_role.position < 3:
         # Moddy Team at 1 and the throwaway role at 2 must both fit under Moddy.

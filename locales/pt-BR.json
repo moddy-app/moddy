@@ -3522,7 +3522,7 @@
         "blocked_owner": "Você é dono deste servidor: já tem tudo o que precisa.",
         "blocked_busy": "Já existe outra vinculação em andamento neste servidor.",
         "blocked_no_permission": "O Moddy não tem `Gerenciar cargos` aqui.",
-        "blocked_above_moddy": "Seu cargo mais alto está acima do do Moddy: ele não consegue gerenciar seus cargos.",
+        "blocked_above_moddy": "Seu cargo mais alto está acima do do Moddy: ele não consegue guardar seus cargos. Suba o cargo do Moddy acima do seu, ou rode o comando de uma conta sem cargo acima dele.",
         "blocked_no_room": "O cargo do Moddy está baixo demais na hierarquia para caber os dois cargos necessários abaixo dele.",
         "hint": "Rode o comando de novo para conferir se o vínculo pegou.",
         "docs": "Vincular sua conta",

@@ -3522,7 +3522,7 @@
         "blocked_owner": "Dir gehört dieser Server: du hast bereits alles Nötige.",
         "blocked_busy": "Auf diesem Server läuft bereits eine andere Verknüpfung.",
         "blocked_no_permission": "Moddy hat hier kein `Rollen verwalten`.",
-        "blocked_above_moddy": "Deine höchste Rolle steht über der von Moddy: er kann deine Rollen nicht verwalten.",
+        "blocked_above_moddy": "Deine höchste Rolle steht über der von Moddy: er kann deine Rollen nicht beiseitelegen. Setze Moddys Rolle über deine, oder führe den Befehl von einem Konto ohne Rolle darüber aus.",
         "blocked_no_room": "Moddys Rolle steht zu weit unten, um die zwei nötigen Rollen darunter unterzubringen.",
         "hint": "Führe den Befehl erneut aus, um zu prüfen, ob die Verknüpfung greift.",
         "docs": "Konto verknüpfen",

@@ -3522,7 +3522,7 @@
         "blocked_owner": "Eres el propietario de este servidor: ya tienes todo lo necesario.",
         "blocked_busy": "Ya hay otra vinculación en curso en este servidor.",
         "blocked_no_permission": "Moddy no tiene `Gestionar roles` aquí.",
-        "blocked_above_moddy": "Tu rol más alto está por encima del de Moddy: no puede gestionar tus roles.",
+        "blocked_above_moddy": "Tu rol más alto está por encima del de Moddy: no puede apartar tus roles. Sube el rol de Moddy por encima del tuyo, o ejecuta el comando desde una cuenta sin ningún rol por encima de él.",
         "blocked_no_room": "El rol de Moddy está demasiado abajo en la jerarquía para colocar debajo los dos roles necesarios.",
         "hint": "Vuelve a ejecutar el comando para comprobar que el vínculo se aplicó.",
         "docs": "Vincular tu cuenta",

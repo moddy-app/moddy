@@ -3522,7 +3522,7 @@
         "blocked_owner": "You own this server: you already have everything you need.",
         "blocked_busy": "Another linking is already running on this server.",
         "blocked_no_permission": "Moddy does not have `Manage Roles` here.",
-        "blocked_above_moddy": "Your highest role sits above Moddy's: it cannot manage your roles.",
+        "blocked_above_moddy": "Your highest role sits above Moddy's: it cannot set your roles aside. Move Moddy's role above yours, or run the command from an account with no role above it.",
         "blocked_no_room": "Moddy's role sits too low in the hierarchy to fit the two roles needed underneath it.",
         "hint": "Run the command again to check that the link took.",
         "docs": "Link your account",
