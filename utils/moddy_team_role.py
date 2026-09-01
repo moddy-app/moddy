@@ -37,6 +37,7 @@ the bot knew about it (or by hand).
 
 from __future__ import annotations
 
+import json
 import logging
 from typing import Optional
 
@@ -145,8 +146,12 @@ def is_linked(role: discord.Role) -> bool:
 
     ``guild_connections`` is the flag Discord sets on a role as soon as it has
     at least one *Links* requirement — including requirements that have nothing
-    to do with Moddy. It answers "an admin has been through the Links screen",
-    which is exactly the step `/team role` cannot do for them.
+    to do with Moddy. It answers "this role has a requirement on it", which is
+    what `/team role` reports before deciding whether to bind it itself.
+
+    It is deliberately *not* used to confirm a binding Moddy just made: tags
+    only refresh on the ``GUILD_ROLE_UPDATE`` gateway event, so they are still
+    stale one millisecond after the ``PUT``.
     """
     tags = role.tags
     return bool(tags and tags.is_guild_connection())
@@ -205,6 +210,29 @@ class LinkResult:
 
     #: The two outcomes that mean the admin has nothing left to do.
     DONE = (LINKED_NOW, ALREADY_LINKED)
+
+
+def _log_discord_refusal(what: str, role: discord.Role, exc: discord.HTTPException,
+                         *, payload=None) -> None:
+    """Log **what Discord actually answered**, not our interpretation of it.
+
+    The route this module depends on is undocumented: the day it changes, the
+    only thing that will say so is the body Discord sent back. A log line
+    reading "forbidden" would be worthless — the status, Discord's own error
+    code and the raw text are the whole point, so they are always logged, at
+    ``error`` level, whatever the failure.
+
+    The payload is logged too when there is one: an argument Discord rejects is
+    invisible otherwise.
+    """
+    logger.error(
+        "%s failed on role %s in guild %s — HTTP %s (Discord code %s): %s%s",
+        what, role.id, role.guild.id,
+        getattr(exc, "status", "?"),
+        getattr(exc, "code", "?"),
+        getattr(exc, "text", None) or str(exc),
+        f" | sent: {json.dumps(payload, separators=(',', ':'))}" if payload is not None else "",
+    )
 
 
 def build_requirement(application_id: int, metadata_key: str) -> dict:
@@ -284,7 +312,9 @@ async def resolve_metadata_key(bot) -> Optional[str]:
     try:
         records = await bot.http.request(route)
     except discord.HTTPException as e:
-        logger.warning("Could not read Moddy's role-connection metadata: %s", e)
+        logger.error("Could not read Moddy's role-connection metadata — HTTP %s "
+                     "(Discord code %s): %s", getattr(e, "status", "?"),
+                     getattr(e, "code", "?"), getattr(e, "text", None) or e)
         return None
 
     key = next((r.get("key") for r in (records or [])
@@ -334,32 +364,40 @@ async def link_team_role(bot, role: discord.Role) -> str:
 
     try:
         current = await bot.http.request(read)
-    except discord.NotFound:
+    except discord.NotFound as e:
         # No configuration yet is a legitimate answer on a fresh role; only a
-        # missing *route* is fatal, and the PUT below tells us which it is.
+        # missing *route* is fatal, and the PUT below tells us which it is. Log
+        # it anyway: it is also what a withdrawn route looks like from here.
+        logger.info("No role connection configuration on role %s in guild %s "
+                    "(HTTP 404: %s)", role.id, role.guild.id,
+                    getattr(e, "text", None) or e)
         current = []
-    except discord.Forbidden:
+    except discord.Forbidden as e:
+        _log_discord_refusal("Reading the role connection configuration", role, e)
         return LinkResult.FORBIDDEN
     except discord.HTTPException as e:
-        logger.warning("Could not read the role connection configuration of %s: %s", role.id, e)
+        _log_discord_refusal("Reading the role connection configuration", role, e)
         current = []
 
     if configuration_contains(current, requirement):
         return LinkResult.ALREADY_LINKED
 
+    payload = merge_configuration(current, requirement)
     try:
-        await bot.http.request(write, json=merge_configuration(current, requirement))
-    except discord.Forbidden:
-        logger.info("Discord refused the role connection binding of %s (forbidden)", role.id)
+        await bot.http.request(write, json=payload)
+    except discord.Forbidden as e:
+        _log_discord_refusal("Binding the role connection", role, e, payload=payload)
         return LinkResult.FORBIDDEN
     except discord.HTTPException as e:
+        _log_discord_refusal("Binding the role connection", role, e, payload=payload)
         # 404/405 is the shape a withdrawn route takes: say so plainly rather
         # than reporting a permission problem the admin cannot act on.
         if e.status in (404, 405):
-            logger.warning("The role connection route is not available to Moddy "
-                           "(HTTP %s) — falling back on the manual instructions", e.status)
+            logger.error("The role connection route is not available to Moddy "
+                         "(HTTP %s) — falling back on the manual instructions. "
+                         "If this is permanent, `/team role` must go back to "
+                         "printing the manual steps only.", e.status)
             return LinkResult.UNSUPPORTED
-        logger.warning("Could not bind the role connection of %s: %s", role.id, e)
         return LinkResult.FAILED
 
     logger.info("Moddy Team role %s bound to the linked-role requirement in guild %s",

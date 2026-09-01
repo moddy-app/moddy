@@ -287,6 +287,29 @@ class TestRoleBinding:
         assert run(link_team_role(bot, make_role())) == LinkResult.NO_METADATA
         assert http.written is None
 
+    def test_discord_s_own_answer_reaches_the_logs(self, caplog):
+        """The route is undocumented: its body is the only thing that will ever
+        explain a refusal, so it must never be swallowed."""
+        import logging
+
+        import discord
+
+        response = SimpleNamespace(status=403, reason="Forbidden")
+        error = discord.Forbidden(response, {
+            "code": 50013, "message": "Missing Permissions",
+        })
+        http = FakeHTTP(on_write=error)
+        with caplog.at_level(logging.ERROR, logger="moddy.moddy_team_role"):
+            run(link_team_role(make_linking_bot(http, application_id=next(_app_ids)),
+                               make_role(guild_id=7, role_id=8)))
+
+        logged = "\n".join(r.getMessage() for r in caplog.records)
+        assert "403" in logged
+        assert "50013" in logged                 # Discord's own error code
+        assert "Missing Permissions" in logged   # the body, verbatim
+        assert "role 8" in logged and "guild 7" in logged
+        assert "connection_metadata_field" in logged  # what we actually sent
+
     def test_no_application_id_is_not_a_crash(self):
         bot = SimpleNamespace(application_id=None, http=FakeHTTP())
         assert run(link_team_role(bot, make_role())) == LinkResult.FAILED
