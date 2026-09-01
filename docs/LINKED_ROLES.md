@@ -1,4 +1,4 @@
-# Linked roles — the Moddy Team role, and how a server gives us access
+# Linked roles — the Moddy Team roles, and how a server gives us access
 
 > How Discord knows who is on the Moddy team, what the bot owes the backend for
 > that to work, and the three staff commands built on top of it:
@@ -11,9 +11,9 @@
 1. [The pipeline in three sentences](#the-pipeline-in-three-sentences)
 2. [The bot's only obligation: `moddy:staff`](#the-bots-only-obligation-moddystaff)
 3. [What the bot must never do](#what-the-bot-must-never-do)
-4. [The Moddy Team role](#the-moddy-team-role)
-5. [`/team role` — creating it](#team-role--creating-it)
-6. [`/team role_delete` — removing it](#team-role_delete--removing-it)
+4. [The Moddy Team roles](#the-moddy-team-roles)
+5. [`/team role` — creating them](#team-role--creating-them)
+6. [`/team role_delete` — removing them](#team-role_delete--removing-them)
 7. [`/team see` — opening one channel](#team-see--opening-one-channel)
 8. [`/team access` — asking for permissions](#team-access--asking-for-permissions)
 9. [`/team ticket` — a ticket of our own](#team-ticket--a-ticket-of-our-own)
@@ -25,15 +25,18 @@
 
 ## The pipeline in three sentences
 
-The backend publishes two booleans per account to Discord: `team` (on the Moddy
-team) and `premium` (active subscription). Discord then assigns, on its own, the
+The backend publishes three booleans per account to Discord: `team` (on the
+Moddy team), `manager` (leads it) and `premium` (active subscription). Discord
+then assigns, on its own, the
 roles servers configured against them. **The bot publishes nothing to Discord**
 — it has exactly one obligation: telling the backend when the composition of the
 team changes.
 
 Premium is already covered: Stripe notifies the backend. The staff rank is not,
 because the bot is what writes `staff_permissions` and the backend has no way of
-learning it.
+learning it. `team` and `manager` both come out of that same table, so the one
+`moddy:staff` message the bot sends covers them both — see
+[The `manager` metadata](#the-manager-metadata).
 
 ---
 
@@ -101,24 +104,70 @@ resync.
 
 ---
 
-## The Moddy Team role
+## The Moddy Team roles
 
-One role per server, bound to the *Moddy Team* linked-role requirement.
-Everything Moddy staff can do in somebody else's server goes through it, and
-nothing goes anywhere else:
+**Two** roles exist, and a server takes as many of them as it needs:
 
-- `/team access` grants permissions **to that role only** — never to a staff
-  member's account, never to a role the server uses for something else.
-- `/team ticket` opens its channel **to that role only** (plus the server's own
-  administrators, who bypass overwrites by Discord's own rule).
+| Role | Metadata | Who Discord gives it to |
+|---|---|---|
+| **Moddy Team** | `team` | everybody on the team |
+| **Moddy Team Manager** | `manager` | the accounts that lead it |
+
+A manager holds **both**: `team` stays true for them, so anything granted to the
+base role never has to be granted twice. Granting to the manager role is
+therefore how a permission is kept to the people who lead the team rather than
+handed to everybody on it.
+
+**One role is the default.** `/team role` creates and links **Moddy Team** alone
+unless it is told otherwise; `manager` and `both` are opt-ins. A server that
+started with one role can come back for the second at any time — the two are
+independent, and asking for one never disturbs the other.
+
+Everything Moddy staff can do in somebody else's server goes through these
+roles, and nothing goes anywhere else:
+
+- `/team access` grants permissions **to one of them only** — the base role by
+  default, the manager one on request; never to a staff member's account, never
+  to a role the server uses for something else.
+- `/team ticket` opens its channel **to them only** (plus the server's own
+  administrators, who bypass overwrites by Discord's own rule). Both are put on
+  the channel when both exist: it changes nothing for a manager, who holds the
+  base role too, and it covers a server that only ever created the manager role.
 
 Which means a server takes our access back with one role edit, without us, and
 a destitution reaches every server at once without anybody cleaning up.
 
-Helpers: [`utils/moddy_team_role.py`](../utils/moddy_team_role.py). The role id
-is remembered in `guilds.data.moddy_team.role_id`, so renaming it loses nothing;
-the name lookup (`Moddy Team`) is only a fallback for a role created before the
+Helpers: [`utils/moddy_team_role.py`](../utils/moddy_team_role.py). Each role is
+described by a `TeamRoleKind` carrying its name, its stored path and its
+metadata key — the four differences in one object, so callers are written once
+and a third role would be one entry. The ids live in
+`guilds.data.moddy_team.role_id` and `.manager_role_id`, so renaming a role
+loses nothing; the name lookup is only a fallback for a role created before the
 bot knew about it. A stored id that no longer resolves is forgotten on the spot.
+
+> **The name match is exact, and it has to be.** `Moddy Team Manager` contains
+> `Moddy Team`. A `startswith` there would resolve the base role to the manager
+> role in a server that has both, and `/team access` would then grant the team's
+> permissions to the wrong one. A role already stored as the other kind is
+> skipped for the same reason.
+
+### The `manager` metadata
+
+The bot **does not** publish it, read it, or register it — the standing rules
+below are unchanged. It is listed here because it is the contract the backend
+fills:
+
+- Key: `manager`, boolean, alongside `team` and `premium` in the application's
+  role-connection metadata schema.
+- True for the accounts that lead the team; the bot's own hierarchy is in
+  [`utils/staff_permissions.py`](../utils/staff_permissions.py) (`Dev` and
+  `Manager` sit at the top).
+- Computed from `staff_permissions`, the same table `team` comes from, so the
+  existing `moddy:staff` publication already triggers its recomputation. **No
+  new channel, no new message, no bot-side change.**
+- `team` stays true for a manager. A schema where the two are exclusive would
+  silently take the base role — and everything `/team access` granted to it —
+  away from the people who lead the team.
 
 ### Why a human has to do the linking
 
@@ -144,24 +193,40 @@ self-botting. **The step belongs to a human, and that is final.**
 
 [ud]: https://docs.discord.food/resources/guild#role-connection-configuration-object
 
-### The thirty-second window
+### The linking window
 
 Since a human must do it, `/team role` lends the permission to the staffer who
 ran it instead of sending them to find an administrator. See
 [`services/team_link_session.py`](../services/team_link_session.py).
 
-1. **Moddy Team** is pushed to position 1, the very bottom of the hierarchy.
+1. The roles that still need a requirement are pushed to the bottom of the
+   hierarchy — positions 1 and 2 when there are two of them.
 2. A throwaway role, `Moddy Team — linking`, carrying **only** `manage_roles`,
-   is created at position 2 — directly above it.
+   is created directly above them.
 3. Every other role the staffer holds is taken off them and **written to
    `guilds.data.moddy_team.link_session` before the removal**.
-4. They have `WINDOW_SECONDS` (30) to do the clicks themselves.
-5. Whatever the outcome: roles back, throwaway role deleted, **Moddy Team**
+4. They have `WINDOW_SECONDS` (75) to do the clicks themselves.
+5. Whatever the outcome: roles back, throwaway role deleted, the linked roles
    moved back under Moddy, stored session cleared.
 
-Discord refuses to edit any role at or above your own highest one, so from
-position 2 the staffer can reach exactly one role: the one they are there to
-link. That containment is the whole reason for the positions.
+Discord refuses to edit any role at or above your own highest one, so from just
+below the throwaway role the staffer can reach exactly the roles they are there
+to link. That containment is the whole reason for the positions.
+
+**One window covers every role**, rather than one window per role: a second pass
+would mean stripping the same staffer of their roles twice in a row. It ends the
+moment the *last* requirement appears, and the outcomes say how far it got:
+
+| Outcome | Meaning |
+|---|---|
+| `done` | every role carries a requirement |
+| `partial` | some do, some do not — run the command again; what is linked is not asked for twice |
+| `expired` | the clock ran out with nothing linked |
+| `cancelled` | the staffer did something outside the linking; it was reverted |
+| `failed` | Discord refused a setup step; nothing was left dangling |
+
+`WINDOW_SECONDS` went from 30 to 75 when the second role landed: seven clicks
+was already tight for thirty seconds, and there can be fourteen now.
 
 #### Say what it is
 
@@ -188,12 +253,12 @@ Two limits follow, and neither is theoretical:
 
 | Event | What it does |
 |---|---|
-| `on_guild_role_update` | success — `guild_connections` appeared on the role |
+| `on_guild_role_update` | progress — `guild_connections` appeared on one of the roles; the window ends on the last one |
 | `on_audit_log_entry_create` | the staffer did something else → revert it, close the window |
 
 Watched actions: `role_create`, `role_delete`, `role_update`,
-`member_role_update`, `overwrite_create/update/delete`. **`role_update` on the
-Moddy Team role is exempt** — that edit *is* the task, and cancelling on it
+`member_role_update`, `overwrite_create/update/delete`. **`role_update` on any
+role being linked is exempt** — that edit *is* the task, and cancelling on it
 would make the feature cancel its own success. Reverts are best effort and
 individually swallowed: a revert that fails must never stop the teardown.
 
@@ -204,49 +269,65 @@ just has no watchdog.
 
 The saved roles are in the database *before* they are removed, so
 `recover_sessions()` — run on every `on_ready` — gives them back, deletes the
-throwaway role and puts **Moddy Team** back. A staffer left stripped of every
+throwaway role and puts the linked roles back. A staffer left stripped of every
 role by a crash is the one outcome this feature must never produce.
 
-#### Never grant the role
+The stored payload carries `team_role_ids` (a list). A window interrupted by a
+deploy that predates the second role stored a single `team_role_id`, and
+recovery reads **both** shapes — anything else would leave that staffer without
+their roles for good.
 
-Nothing in this flow gives anybody **Moddy Team**. Discord assigns it from the
-metadata; a manual grant is a duplicate Discord removes on its next check.
-`_restorable()` filters it out of the restore explicitly, in case the staffer
-already had it, and a test asserts that.
+#### Never grant the roles
+
+Nothing in this flow gives anybody **Moddy Team** or **Moddy Team Manager**.
+Discord assigns them from the metadata; a manual grant is a duplicate Discord
+removes on its next check. `_restorable()` filters both out of the restore
+explicitly, in case the staffer already had one, and a test asserts that.
 
 
-## `/team role` — creating it
+## `/team role` — creating them
 
 ```
-/team role [guild_id]          @Moddy t.role [guild_id]
+/team role [guild_id] [team|manager|both]      @Moddy t.role [guild_id] [team|manager|both]
 ```
 
-Defaults to the server it is run in. Creates the role **with no permissions at
-all** (`discord.Permissions.none()`), stores its id, and prints:
+Defaults to the server it is run in, and to **`team` — one role**. Creates each
+requested role **with no permissions at all** (`discord.Permissions.none()`),
+stores its id, and prints, per role:
 
-- the role, its id, and how many permissions it currently holds;
+- the role, its id, its metadata key, and how many permissions it holds;
 - whether it is linked yet — `RoleTags.is_guild_connection()`.
 
-When it is **not** linked, the command opens the thirty-second window described
-above: it sends the click path *first* (thirty seconds is not long enough to
-read instructions afterwards), runs the window, then reports what came of it —
-`window_done`, `window_expired`, `window_cancelled` or `window_failed`, followed
-by the manual path as a fallback.
+The message form takes the scope in either order (`t.role 123 manager` and
+`t.role manager 123` are the same): a scope is a word from a three-item list and
+a guild id is digits, so the two cannot be confused.
+
+When a role is **not** linked, the command opens the window described above for
+whichever ones are missing: it sends the click path *first* (the window is not
+long enough to read instructions afterwards), runs it, then reports what came of
+it — `window_done`, `window_partial`, `window_expired`, `window_cancelled` or
+`window_failed`, followed by the manual path as a fallback. The instructions
+name each role **with its requirement key**, since the two roles do not take the
+same one.
+
+Coming back for the second role later is the normal path, not an edge case:
+`t.role <id> manager` in a server that already has the base role creates and
+links only the manager one, and leaves the rest alone.
 
 The window is never started on a hope. `_blocker()` refuses it upfront, with its
 own sentence on the card, when: the staffer is not a member of the guild
 (`not_member`), owns it (`owner` — they already have everything), another window
 is running (`busy`), Moddy lacks `Manage Roles` (`no_permission`), or the Moddy
-Team role does not sit below Moddy's own (`no_room`). A window that fails
+Team roles do not sit below Moddy's own (`no_room`). A window that fails
 halfway leaves somebody without their roles, so it is never opened blind.
 
 `no_room` is the only genuine floor, and it is deliberately narrow. The window
 does **not** need two free positions to already exist: a new role is inserted at
 position 1 and pushes everything above it up, so creating the throwaway role
-produces the second slot by itself — a Moddy sitting directly above Moddy Team
-ends up two above it. What cannot be produced is authority over a Moddy Team
-role that is not below Moddy: Discord refuses to move it, and refuses to let the
-bot raise its own role to get over it. Only a human can do that.
+produces the slots by itself — a Moddy sitting directly above Moddy Team ends
+up two above it. What cannot be produced is authority over a role that is not
+below Moddy: Discord refuses to move it, and refuses to let the bot raise its
+own role to get over it. Only a human can do that.
 
 #### When the box cannot be closed
 
@@ -254,11 +335,11 @@ A staffer whose highest role sits **at or above Moddy's** used to be refused
 outright. They are not any more: `removable_roles()` sets aside what Discord
 allows and leaves the rest, and the window runs.
 
-Be clear about what that costs. Those roles stay on them for the thirty seconds,
-with everything they carry — so the window lends `Manage Roles` without
+Be clear about what that costs. Those roles stay on them for the length of the
+window, with everything they carry — so it lends `Manage Roles` without
 confining anybody to it, and the position trick protects nothing. The card names
-the roles that stayed (`window_partial`) rather than implying a containment that
-is not there.
+the roles that stayed (`window_kept_roles`) rather than implying a containment
+that is not there.
 
 Lending and setting aside are two separate requests for the same reason: the
 first is what makes the window useful, the second is what makes it safe, and a
@@ -275,29 +356,35 @@ without borrowing anything.
 `execute` runs, and with the window on top the 3 s interaction budget is long
 gone — without it Discord answers *Unknown interaction*.
 
-Run again at any time: it never creates a second role, it re-reports the state.
+Run again at any time: it never creates a role that already exists, it
+re-reports the state — and it is how a role linked in a window that only got
+half way (`window_partial`) is finished off.
 
 ---
 
-## `/team role_delete` — removing it
+## `/team role_delete` — removing them
 
 ```
-/team role_delete [guild_id]      @Moddy t.role_delete [guild_id]
-                                  @Moddy t.unrole [guild_id]
+/team role_delete [guild_id] [team|manager|both]   @Moddy t.role_delete [guild_id] [team|manager|both]
+                                                   @Moddy t.unrole [guild_id] [team|manager|both]
 ```
 
-The whole undo, because everything hangs off the role: Discord drops the
-linked-role requirement with it and takes it off everybody who held it.
+Takes the same scope as `/team role`, and the same default: **the base role
+alone**. The whole undo, because everything hangs off the roles: Discord drops
+the linked-role requirement with a role and takes it off everybody who held it.
 `/team access` and `/team ticket` then find nothing to grant or to open a
 channel for.
 
-No confirmation dialog: the role carries no permissions of its own and
-`/team role` recreates it in one command. It **does** refuse while a linking
-window is running (`blocked_busy`) — deleting the role out from under one would
+No confirmation dialog: the roles carry no permissions of their own and
+`/team role` recreates them in one command. It **does** refuse while a linking
+window is running (`blocked_busy`) — deleting a role out from under one would
 leave it putting back a role that no longer exists.
 
-The stored id is forgotten (`remember_role(bot, guild_id, None)`), so the next
-`/team role` creates a fresh one rather than pointing at a ghost.
+With `both`, each id is forgotten right after its own deletion rather than at
+the end: a refusal on the second role must not leave the first one remembered.
+
+The stored id is forgotten (`remember_role(bot, guild_id, None, kind)`), so the
+next `/team role` creates a fresh one rather than pointing at a ghost.
 
 ---
 
@@ -346,7 +433,7 @@ to grant, in an overwrite, a permission the actor does not have.
 ## `/team access` — asking for permissions
 
 ```
-/team access                   @Moddy t.access
+/team access [role]            @Moddy t.access [role]
 ```
 
 Run it in the server concerned, in the channel where the conversation is
@@ -354,11 +441,16 @@ happening (a ticket, usually), with an administrator there to answer. There is
 deliberately no `guild_id` option: the whole point is that somebody is in the
 room.
 
+`role` is `team` (the default) or `manager`. Since a manager holds both roles,
+asking on the manager role is how a permission is kept to the people who lead
+the team instead of going to everybody on it.
+
 1. The staffer picks what they need from a **fixed catalogue of 25 permissions**
    (`ACCESS_PERMISSIONS`). `administrator` is not on it and cannot be requested
    through this surface at all.
 2. A card is posted in the channel — in the **server's** language — naming who
-   is asking, what for, and that everything lands on the Moddy Team role.
+   is asking, what for, and **which role** it lands on. The card always names the
+   role: which of the two it is changes who ends up holding the permissions.
 3. The administrator clicks **Accept** or **Refuse**. Nothing happens until they
    do.
 4. Accepting adds the permissions to the role: `role.permissions | requested`.
@@ -370,7 +462,7 @@ something that would then fail:
 
 | Checked | Why |
 |---|---|
-| the Moddy Team role exists | there is nothing to grant to otherwise |
+| the requested Moddy Team role exists | there is nothing to grant to otherwise |
 | the role sits below the bot's top role | Discord refuses the edit |
 | Moddy holds `manage_roles` | same |
 | Moddy holds every requested permission itself | Discord refuses to let a bot grant what it does not have |
@@ -378,6 +470,11 @@ something that would then fail:
 The labels are the ones the server logs already translate
 (`modules.logs.permissions.*`), so an administrator reads the same wording here
 as in their own audit log.
+
+The role travels in the custom_ids alongside the bitfield, as an **optional**
+segment: a card posted before the manager role existed has no third field, means
+the base role, and stays answerable. Buttons that silently stop responding after
+a deploy are not an acceptable way to ship a new option.
 
 **Authorization is re-derived on every click**: `Administrator` on
 `interaction.user`, never carried by the view. A member who was an admin when
@@ -408,7 +505,7 @@ What tells it apart is one sentinel pair, `panel_id = category_id =
   (`staff_ticket_context`), instead of reading them from the guild's config. A
   server that never enabled the Tickets module therefore has a working staff
   ticket, and an admin deleting a category mid-conversation cannot break one.
-- The category grants `admin` to the Moddy Team role and to nothing else,
+- The category grants `admin` to the Moddy Team roles and to nothing else,
   carries `close` and `participants` as its buttons, and has the claim system
   off — claiming is a queue-management tool for a server's own support team, and
   a staff ticket already has exactly one team on it.
@@ -419,13 +516,15 @@ the staffer, who may not even be a member of the guild — they are then simply
 absent from the overwrites, and the ticket reads the same either way. The server
 owner and the Moddy Team role are pinged once, in a message that deletes itself.
 
-**The Moddy Team role is always on a staff ticket** — without it the channel
+**A Moddy Team role is always on a staff ticket** — without one the channel
 would be readable by the server's administrators and by nobody on our side. A
-server that does not have one yet gets it here (same creation as `/team role`,
-no permissions) rather than the staffer being sent away to run another command
-first. When the role is not bound to the linked-role requirement yet, the
-confirmation says so: the channel exists and the role is on it, but nobody
-*holds* the role until an administrator adds the requirement.
+server that does not have the base role yet gets it here (same creation as
+`/team role`, no permissions) rather than the staffer being sent away to run
+another command first. **Both** roles go on the channel when both exist: that
+changes nothing for a manager, who holds the base role too, and it covers a
+server that only ever created the manager role. When a role is not bound to its
+requirement yet, the confirmation says so: the channel exists and the role is on
+it, but nobody *holds* the role until an administrator adds the requirement.
 
 ---
 
@@ -433,9 +532,12 @@ confirmation says so: the channel exists and the role is on it, but nobody
 
 ```
 services/staff_events.py             The moddy:staff publication (the obligation).
-utils/moddy_team_role.py             Find / create / remember the role, linked-state check.
+utils/moddy_team_role.py             The two TeamRoleKinds; find / create / remember, linked-state check.
+services/team_link_session.py        The linking window: containment, watchdog, teardown, recovery.
+cogs/team_link_events.py             Gateway wiring for the window + the boot sweep.
 utils/team_access_views.py           /team access: picker, request card, the grant itself.
 staff/commands/team/team_role.py     /team role
+staff/commands/team/role_delete.py   /team role_delete
 staff/commands/team/access.py        /team access
 staff/commands/team/ticket.py        /team ticket
 services/ticket_service.py           open_staff_ticket + staff_ticket_context.
@@ -453,8 +555,8 @@ card are read by the **server**, so they follow the server language
 
 1. Backend deployed, metadata schema registered.
 2. On a test server: Roles → new role → *Links* → *Add requirement* → Moddy →
-   `Moddy Team` is true.
-3. With a linked staff account: the role appears.
+   `team` is true (and a second role on `manager`, if the server wants it).
+3. With a linked staff account: the role appears — both, for a manager.
 4. Take them off the staff with the bot → the role disappears **within
    seconds**. If it takes hours, `moddy:staff` was not published and the backend
    only caught up at the resync.
@@ -479,9 +581,15 @@ is only for the rest.
 - **A member who never linked their account** will never get the role, whatever
   the bot does. The backend answers `absent` and moves on — that is normal, not
   something to investigate.
-- **Assuming the binding is guaranteed.** It rides an undocumented route. Read
-  the state line on the `/team role` card rather than the fact that the command
-  answered.
+- **Assuming the binding is guaranteed.** No API does it; a human clicks it in
+  a borrowed window. Read the state line on the `/team role` card rather than the
+  fact that the command answered.
+- **Matching the role by name loosely.** `Moddy Team Manager` starts with
+  `Moddy Team`. An `in` or a `startswith` there hands the base role's permissions
+  to the manager role, in exactly the servers that have both.
+- **Making `team` and `manager` exclusive backend-side.** A manager holds both.
+  Flipping `team` off for them takes away everything `/team access` granted to
+  the base role, in every server at once, with nothing bot-side to notice it.
 - **Several backend workers get the same message**; a 15 s Redis lock means only
   one writes to Discord. Nothing to handle bot-side, but do not be surprised to
   see one push for an event received four times.
