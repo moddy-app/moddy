@@ -530,6 +530,19 @@ nothing to authorize. The beta campaign's **Translate** button
 reader was not already sent — it re-renders the recipient's own notification
 from its stored template.
 
+**`/team access`** (`utils/team_access_views.py`, see
+[LINKED_ROLES.md](LINKED_ROLES.md)) is two surfaces with two different auth
+models on the same flow. The staffer's picker is requester-scoped: the
+selection is carried in the *next* view's custom_ids (`…:pick:<requester>:<bitfield>`,
+`…:send:<requester>:<bitfield>`) rather than staged on `self`, which is what
+lets a picker survive a restart mid-choice. The request card an administrator
+answers re-derives its authorization from `interaction.user.guild_permissions.administrator`
+on every click, so a member who was an admin when the card was posted and is
+not one now cannot answer it. The requested bitfield rides in the custom_id and
+is **re-filtered through the catalogue** on the way out (`value_to_keys`), so a
+hand-edited id cannot smuggle `administrator` past the picker. Accepting edits
+a role's permissions: treat that file like the one below.
+
 **`staff/commands/manage/staff.py::StaffManagerPanel`** grants and revokes
 staff roles/permissions. Making it persistent required changing its
 edit-then-Save flow to apply each change immediately (see the class's own

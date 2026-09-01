@@ -17,6 +17,7 @@ from utils.i18n import t
 from utils.staff_permissions import staff_permissions, StaffRole
 from utils.staff_role_permissions import get_role_display_name
 from staff.commands.manage.staff import ASSIGNABLE_ROLES
+from services.staff_events import notify_staff_change, EVENT_RANKED, EVENT_UPDATED
 
 logger = logging.getLogger("moddy.staff.manage.rank")
 
@@ -136,7 +137,15 @@ class RankCommand(StaffCommand):
         await bot.db.add_staff_role(uid, role.value, ctx.author.id)
         logger.info("Staff %s granted role %s to %s", ctx.author.id, role.value, uid)
 
-        roles = [StaffRole(r) for r in (await bot.db.get_staff_permissions(uid))["roles"]]
+        role_values = (await bot.db.get_staff_permissions(uid))["roles"]
+        # After the write, never before: the backend re-reads the table.
+        await notify_staff_change(
+            bot, uid,
+            event=EVENT_UPDATED if is_staff else EVENT_RANKED,
+            roles=role_values,
+        )
+
+        roles = [StaffRole(r) for r in role_values]
         await ctx.send(view=design.success(
             t("staff.manage.rank.done_title", locale=locale),
             t("staff.manage.rank.done", locale=locale, user=user.mention,
