@@ -3539,6 +3539,20 @@
         "no_role": "Nenhum cargo {name} em {guild}.",
         "forbidden": "O Moddy não tem permissão para excluir {role} — ele provavelmente está acima do dele."
       },
+      "see": {
+        "title": "Acesso ao canal",
+        "granted": "{role} agora pode ler e escrever em {channel}.",
+        "revoked": "{role} não tem mais acesso a {channel}.",
+        "already": "{role} já tem acesso a {channel}.",
+        "scope": "Ver o canal, seu histórico e escrever nele. Nada de moderação: para isso, `t.access`.",
+        "failed_title": "Não foi possível alterar o acesso",
+        "guild_only": "Este comando é usado em um canal de servidor.",
+        "not_yours": "Você mesmo precisa ter acesso a este canal para abri-lo à equipe.",
+        "no_role": "Nenhum cargo {name} aqui — rode `t.role` primeiro.",
+        "no_permission": "O Moddy não tem `Gerenciar permissões` em {channel}.",
+        "role_too_high": "{role} está acima do cargo do Moddy: ele não consegue editá-lo.",
+        "moddy_cannot_see": "O Moddy não enxerga {channel}: o Discord proíbe conceder um acesso que ele não tem."
+      },
       "access": {
         "picker_title": "Pedido de permissões",
         "picker_desc": "Escolha as permissões de que você precisa. Elas serão pedidas a um administrador e concedidas apenas ao cargo {name}.",

@@ -3538,6 +3538,20 @@
         "no_role": "Aucun rôle {name} dans {guild}.",
         "forbidden": "Moddy n'a pas la permission de supprimer {role} — il est probablement au-dessus du sien."
       },
+      "see": {
+        "title": "Accès au salon",
+        "granted": "{role} peut désormais lire et écrire dans {channel}.",
+        "revoked": "{role} n'a plus accès à {channel}.",
+        "already": "{role} a déjà accès à {channel}.",
+        "scope": "Voir le salon, son historique, et y écrire. Rien de modératif : pour ça, `t.access`.",
+        "failed_title": "Impossible de modifier l'accès",
+        "guild_only": "Cette commande s'utilise dans un salon de serveur.",
+        "not_yours": "Tu dois toi-même avoir accès à ce salon pour l'ouvrir à l'équipe.",
+        "no_role": "Aucun rôle {name} ici — lance `t.role` d'abord.",
+        "no_permission": "Moddy n'a pas `Gérer les permissions` sur {channel}.",
+        "role_too_high": "{role} est au-dessus du rôle de Moddy : il ne peut pas le modifier.",
+        "moddy_cannot_see": "Moddy ne voit pas {channel} lui-même : Discord lui interdit d'accorder un accès qu'il n'a pas."
+      },
       "access": {
         "picker_title": "Demande de permissions",
         "picker_desc": "Choisis les permissions dont tu as besoin. Elles seront demandées à un administrateur, et accordées au rôle {name} uniquement.",

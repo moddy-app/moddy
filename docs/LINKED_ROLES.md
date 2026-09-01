@@ -14,11 +14,12 @@
 4. [The Moddy Team role](#the-moddy-team-role)
 5. [`/team role` — creating it](#team-role--creating-it)
 6. [`/team role_delete` — removing it](#team-role_delete--removing-it)
-7. [`/team access` — asking for permissions](#team-access--asking-for-permissions)
-8. [`/team ticket` — a ticket of our own](#team-ticket--a-ticket-of-our-own)
-9. [Files](#files)
-10. [Checking it works](#checking-it-works)
-11. [The traps](#the-traps)
+7. [`/team see` — opening one channel](#team-see--opening-one-channel)
+8. [`/team access` — asking for permissions](#team-access--asking-for-permissions)
+9. [`/team ticket` — a ticket of our own](#team-ticket--a-ticket-of-our-own)
+10. [Files](#files)
+11. [Checking it works](#checking-it-works)
+12. [The traps](#the-traps)
 
 ---
 
@@ -297,6 +298,39 @@ leave it putting back a role that no longer exists.
 
 The stored id is forgotten (`remember_role(bot, guild_id, None)`), so the next
 `/team role` creates a fresh one rather than pointing at a ghost.
+
+---
+
+## `/team see` — opening one channel
+
+```
+/team see [grant|revoke]      @Moddy t.see [grant|revoke]
+                              @Moddy t.channel [grant|revoke]
+```
+
+The narrow counterpart of `/team access`: that one grants guild-wide
+permissions an administrator accepts; this one opens **the channel it is run
+in** to the Moddy Team role, and nothing else. A staffer looking at a bug in one
+channel needs their colleagues in that channel, not in the whole server.
+
+The overwrite grants `view_channel`, `read_message_history`, `send_messages` and
+`send_messages_in_threads` — see it, read what was said, take part. **Nothing
+moderative**: managing messages or the channel stays a `/team access` decision.
+
+**There is deliberately no `channel` option.** It acts on the current channel and
+refuses when the staffer cannot see it themselves (`not_yours`) — you open a door
+you are already standing in, so the command can never become a way of reaching a
+channel you do not already have. Run in a thread it acts on the parent, since a
+thread has no overwrites of its own.
+
+`revoke` **deletes** the overwrite rather than setting it to a denial: the
+channel goes back to the exact state it had, instead of gaining an explicit
+"Moddy Team cannot see this" that nobody asked for.
+
+Pre-flight, each with its own sentence: Moddy needs `Manage Permissions` on the
+channel (`no_permission`), the role must sit below Moddy's (`role_too_high`),
+and Moddy must hold what it is granting (`moddy_cannot_see`) — Discord refuses
+to grant, in an overwrite, a permission the actor does not have.
 
 ---
 

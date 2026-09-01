@@ -263,6 +263,26 @@ class TestLinkingWindow:
         assert SESSION_PATH.startswith("moddy_team.")
         assert SESSION_PATH != STORE_PATH
 
+    def test_channel_access_is_not_moderative(self):
+        """`/team see` opens a channel; it does not hand out moderation.
+
+        Anything beyond taking part in the conversation goes through
+        `/team access`, which an administrator has to accept.
+        """
+        from staff.commands.team.see import GRANTED
+
+        assert set(GRANTED) == {"view_channel", "read_message_history",
+                                "send_messages", "send_messages_in_threads"}
+
+    @pytest.mark.parametrize("locale", ["fr", "en-US", "es-ES", "pt-BR", "de"])
+    def test_channel_access_is_translated(self, locale):
+        with open(f"locales/{locale}.json", encoding="utf-8") as fh:
+            see = json.load(fh)["staff"]["team"]["see"]
+        for key in ("title", "granted", "revoked", "already", "scope",
+                    "failed_title", "guild_only", "not_yours", "no_role",
+                    "no_permission", "role_too_high", "moddy_cannot_see"):
+            assert see.get(key), (locale, key)
+
     @pytest.mark.parametrize("locale", ["fr", "en-US", "es-ES", "pt-BR", "de"])
     def test_every_outcome_has_a_sentence(self, locale):
         """A window that ends with no explanation is a window nobody trusts."""
