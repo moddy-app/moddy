@@ -499,6 +499,23 @@ The four claim columns and `close_request_to_staff` are added by an
 requests learned which way they point — gains them on the next boot with no
 manual deploy step.
 
+### Moddy staff tickets
+
+One kind of row in this table comes from nowhere in the server's config: the
+ticket the **Moddy team** opens with `/team ticket` (see
+[LINKED_ROLES.md](LINKED_ROLES.md)). It carries the sentinel pair
+`panel_id = category_id = "__moddy_staff__"`, and `TicketService.resolve()`
+short-circuits on it: its panel and category are built on the spot from the
+guild's Moddy Team role (`staff_ticket_context`) rather than read from
+`guilds.data.modules.tickets`.
+
+That is what makes it work in a server that never enabled the module — and what
+stops an admin deleting a category mid-conversation from breaking one. The
+category grants `admin` to the Moddy Team role and to nothing else, carries
+`close` and `participants`, and has claiming off. Everything else — the verbs,
+the buttons, the channel cleanup listener, the closing card — is the code above,
+unchanged.
+
 A ticket channel deleted by hand is forgotten by
 `Tickets.on_guild_channel_delete`. Without it, the member's open-ticket quota
 would count a channel that no longer exists and they could never open another.

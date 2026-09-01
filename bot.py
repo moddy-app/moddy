@@ -1625,6 +1625,10 @@ class ModdyBot(ModdyFrameworkBot):
                     if updated:
                         await self.db.set_staff_roles(dev_id, roles, self.user.id)
                         logger.info(f"Auto-assigned Manager+Dev roles for {dev_id}")
+                        # Linked roles: only when something actually changed —
+                        # republishing every boot would be pure noise.
+                        from services.staff_events import notify_staff_change, EVENT_RANKED
+                        await notify_staff_change(self, dev_id, event=EVENT_RANKED, roles=roles)
                     else:
                         logger.info(f"Dev {dev_id} already has Manager+Dev roles")
 

@@ -23,6 +23,9 @@ from utils import emojis
 from utils.i18n import i18n, t
 from utils.components_v2 import create_error_message
 from utils.staff_permissions import staff_permissions, StaffRole
+from services.staff_events import (
+    notify_staff_change, EVENT_RANKED, EVENT_UNRANKED, EVENT_UPDATED,
+)
 from utils.staff_role_permissions import (
     COMMON_PERMISSIONS, ROLE_PERMISSIONS_MAP, get_permission_label, get_role_display_name,
 )
@@ -339,9 +342,10 @@ class StaffPanelRolesSelect(ui.DynamicItem[ui.Select], template=_CID_ROLES_TEMPL
             await db.remove_staff_permissions(self.target_id)
             await db.set_attribute("user", self.target_id, "TEAM", False, self.modifier_id,
                                     "All roles removed via /manage staff")
+            await notify_staff_change(bot, self.target_id, event=EVENT_UNRANKED)
             role_permissions, common = {}, []
         else:
-            _, _, _, saved_role_perms, saved_common = await _load_panel_state(bot, self.target_id)
+            _, was_staff, _, saved_role_perms, saved_common = await _load_panel_state(bot, self.target_id)
             kept = {r.value for r in new_roles}
             role_permissions = {k: v for k, v in saved_role_perms.items() if k in kept}
             for role in new_roles:
@@ -356,6 +360,11 @@ class StaffPanelRolesSelect(ui.DynamicItem[ui.Select], template=_CID_ROLES_TEMPL
                     json.dumps(all_perms), self.modifier_id, self.target_id,
                 )
             common = saved_common
+            await notify_staff_change(
+                bot, self.target_id,
+                event=EVENT_UPDATED if was_staff else EVENT_RANKED,
+                roles=role_values,
+            )
 
         valid_scopes = ["common"] + [r.value for r in new_roles if ROLE_PERMISSIONS_MAP.get(r.value)]
         scope = "common" if "common" in valid_scopes else valid_scopes[0]
@@ -512,6 +521,7 @@ class StaffPanelActionButton(ui.DynamicItem[ui.Button], template=_CID_ACTION_TEM
             await db.remove_staff_permissions(self.target_id)
             await db.set_attribute("user", self.target_id, "TEAM", False, self.modifier_id,
                                     "Removed via /manage staff")
+            await notify_staff_change(bot, self.target_id, event=EVENT_UNRANKED)
             await interaction.response.edit_message(view=design.success(
                 t("staff.manage.staff.removed_title", locale=locale),
                 t("staff.manage.staff.removed", locale=locale, user=target.mention),
