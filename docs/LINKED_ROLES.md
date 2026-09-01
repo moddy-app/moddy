@@ -13,11 +13,12 @@
 3. [What the bot must never do](#what-the-bot-must-never-do)
 4. [The Moddy Team role](#the-moddy-team-role)
 5. [`/team role` — creating it](#team-role--creating-it)
-6. [`/team access` — asking for permissions](#team-access--asking-for-permissions)
-7. [`/team ticket` — a ticket of our own](#team-ticket--a-ticket-of-our-own)
-8. [Files](#files)
-9. [Checking it works](#checking-it-works)
-10. [The traps](#the-traps)
+6. [`/team role_delete` — removing it](#team-role_delete--removing-it)
+7. [`/team access` — asking for permissions](#team-access--asking-for-permissions)
+8. [`/team ticket` — a ticket of our own](#team-ticket--a-ticket-of-our-own)
+9. [Files](#files)
+10. [Checking it works](#checking-it-works)
+11. [The traps](#the-traps)
 
 ---
 
@@ -234,16 +235,60 @@ by the manual path as a fallback.
 The window is never started on a hope. `_blocker()` refuses it upfront, with its
 own sentence on the card, when: the staffer is not a member of the guild
 (`not_member`), owns it (`owner` — they already have everything), another window
-is running (`busy`), Moddy lacks `Manage Roles` (`no_permission`), the staffer's
-top role is above Moddy's (`above_moddy`), or Moddy's role sits too low to fit
-two roles under it (`no_room`). A window that fails halfway leaves somebody
-without their roles, so it is never opened blind.
+is running (`busy`), Moddy lacks `Manage Roles` (`no_permission`), or Moddy's
+role sits too low to fit two roles under it (`no_room`). A window that fails
+halfway leaves somebody without their roles, so it is never opened blind.
+
+#### When the box cannot be closed
+
+A staffer whose highest role sits **at or above Moddy's** used to be refused
+outright. They are not any more: `removable_roles()` sets aside what Discord
+allows and leaves the rest, and the window runs.
+
+Be clear about what that costs. Those roles stay on them for the thirty seconds,
+with everything they carry — so the window lends `Manage Roles` without
+confining anybody to it, and the position trick protects nothing. The card names
+the roles that stayed (`window_partial`) rather than implying a containment that
+is not there.
+
+Lending and setting aside are two separate requests for the same reason: the
+first is what makes the window useful, the second is what makes it safe, and a
+server where the second is impossible still gets the first. If the removal is
+refused outright, the saved list is cleared — the teardown must never try to
+give back roles it never took.
+
+Almost nobody hits this in the real case: a staffer in a customer's server is a
+guest with no roles, so below Moddy. It shows up when the staffer is also an
+administrator of the server — that is, when they could have done the clicks
+without borrowing anything.
 
 `defer = True` on the command: the dispatcher writes a staff-log entry before
 `execute` runs, and with the window on top the 3 s interaction budget is long
 gone — without it Discord answers *Unknown interaction*.
 
 Run again at any time: it never creates a second role, it re-reports the state.
+
+---
+
+## `/team role_delete` — removing it
+
+```
+/team role_delete [guild_id]      @Moddy t.role_delete [guild_id]
+                                  @Moddy t.unrole [guild_id]
+```
+
+The whole undo, because everything hangs off the role: Discord drops the
+linked-role requirement with it and takes it off everybody who held it.
+`/team access` and `/team ticket` then find nothing to grant or to open a
+channel for.
+
+No confirmation dialog: the role carries no permissions of its own and
+`/team role` recreates it in one command. It **does** refuse while a linking
+window is running (`blocked_busy`) — deleting the role out from under one would
+leave it putting back a role that no longer exists.
+
+The stored id is forgotten (`remember_role(bot, guild_id, None)`), so the next
+`/team role` creates a fresh one rather than pointing at a ghost.
 
 ---
 

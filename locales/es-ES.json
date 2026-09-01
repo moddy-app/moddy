@@ -3514,6 +3514,7 @@
         "window_title": "Tienes {seconds} segundos",
         "window": "Hazlo ahora, tú mismo:\nAjustes del servidor → **Roles** → **{role}** → **Enlaces** → *Añadir un requisito* → **Moddy** → `Moddy Team` es verdadero.",
         "window_rules": "Moddy te ha prestado `Gestionar roles` y ha apartado tus otros roles — los recuperarás en cuanto esto termine. Cualquier otra acción (crear un rol, asignar uno, tocar los permisos de un canal) se revierte y da por terminada la operación.",
+        "window_partial": "Estos roles están por encima del de Moddy y se quedan puestos: {roles}. La ventana te presta `Gestionar roles`, pero no puede confinarte a él.",
         "window_done": "Requisito detectado en el rol. Tus roles te han sido devueltos.",
         "window_expired": "El plazo terminó sin que apareciera el requisito. Tus roles te han sido devueltos.",
         "window_cancelled": "Se detectó una acción ajena a la vinculación: se revirtió, y la operación con ella.",
@@ -3522,13 +3523,21 @@
         "blocked_owner": "Eres el propietario de este servidor: ya tienes todo lo necesario.",
         "blocked_busy": "Ya hay otra vinculación en curso en este servidor.",
         "blocked_no_permission": "Moddy no tiene `Gestionar roles` aquí.",
-        "blocked_above_moddy": "Tu rol más alto está por encima del de Moddy: no puede apartar tus roles. Sube el rol de Moddy por encima del tuyo, o ejecuta el comando desde una cuenta sin ningún rol por encima de él.",
         "blocked_no_room": "El rol de Moddy está demasiado abajo en la jerarquía para colocar debajo los dos roles necesarios.",
         "hint": "Vuelve a ejecutar el comando para comprobar que el vínculo se aplicó.",
         "docs": "Vincular tu cuenta",
         "failed_title": "No se pudo crear el rol",
         "no_permission": "Moddy no tiene permiso para gestionar roles en {name}.",
         "http_error": "Discord rechazó la creación: {error}"
+      },
+      "role_delete": {
+        "title": "Rol Moddy Team eliminado",
+        "done": "El rol {role} ha sido eliminado de {guild}.",
+        "holders": "Lo tenían {count} miembro(s)",
+        "hint": "Vuelve a ejecutar `t.role` para crear uno nuevo.",
+        "failed_title": "No se pudo eliminar el rol",
+        "no_role": "No hay ningún rol {name} en {guild}.",
+        "forbidden": "Moddy no tiene permiso para eliminar {role} — seguramente está por encima del suyo."
       },
       "access": {
         "picker_title": "Solicitud de permisos",

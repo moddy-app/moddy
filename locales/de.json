@@ -3514,6 +3514,7 @@
         "window_title": "Du hast {seconds} Sekunden",
         "window": "Mach es jetzt, selbst:\nServereinstellungen → **Rollen** → **{role}** → **Verknüpfungen** → *Bedingung hinzufügen* → **Moddy** → `Moddy Team` ist wahr.",
         "window_rules": "Moddy hat dir `Rollen verwalten` geliehen und deine anderen Rollen beiseitegelegt — du bekommst sie zurück, sobald das vorbei ist. Alles andere (eine Rolle erstellen, eine vergeben, Kanalrechte anfassen) wird rückgängig gemacht und beendet den Vorgang.",
+        "window_partial": "Diese Rollen stehen über der von Moddy und bleiben bei dir: {roles}. Das Fenster leiht dir `Rollen verwalten`, kann dich aber nicht darauf beschränken.",
         "window_done": "Bedingung auf der Rolle erkannt. Deine Rollen hast du zurück.",
         "window_expired": "Die Frist lief ab, ohne dass die Bedingung erschien. Deine Rollen hast du zurück.",
         "window_cancelled": "Eine Aktion außerhalb der Verknüpfung wurde erkannt: sie wurde rückgängig gemacht, der Vorgang ebenso.",
@@ -3522,13 +3523,21 @@
         "blocked_owner": "Dir gehört dieser Server: du hast bereits alles Nötige.",
         "blocked_busy": "Auf diesem Server läuft bereits eine andere Verknüpfung.",
         "blocked_no_permission": "Moddy hat hier kein `Rollen verwalten`.",
-        "blocked_above_moddy": "Deine höchste Rolle steht über der von Moddy: er kann deine Rollen nicht beiseitelegen. Setze Moddys Rolle über deine, oder führe den Befehl von einem Konto ohne Rolle darüber aus.",
         "blocked_no_room": "Moddys Rolle steht zu weit unten, um die zwei nötigen Rollen darunter unterzubringen.",
         "hint": "Führe den Befehl erneut aus, um zu prüfen, ob die Verknüpfung greift.",
         "docs": "Konto verknüpfen",
         "failed_title": "Rolle konnte nicht erstellt werden",
         "no_permission": "Moddy darf in {name} keine Rollen verwalten.",
         "http_error": "Discord hat die Erstellung abgelehnt: {error}"
+      },
+      "role_delete": {
+        "title": "Moddy-Team-Rolle gelöscht",
+        "done": "Die Rolle {role} wurde aus {guild} gelöscht.",
+        "holders": "Sie hatten {count} Mitglied(er)",
+        "hint": "Führe `t.role` erneut aus, um eine neue zu erstellen.",
+        "failed_title": "Rolle konnte nicht gelöscht werden",
+        "no_role": "Keine Rolle {name} in {guild}.",
+        "forbidden": "Moddy darf {role} nicht löschen — sie steht vermutlich über seiner eigenen."
       },
       "access": {
         "picker_title": "Berechtigungsanfrage",
