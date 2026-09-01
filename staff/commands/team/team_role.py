@@ -5,11 +5,11 @@ Discord hands it to whoever is on the team **at that moment** and takes it back
 the second they are not. That is the whole point: a server never has to keep a
 list of our staff up to date, and a destitution reaches every server at once.
 
-The linking half cannot be automated — Discord exposes no API for role-connection
-requirements, they are set by a human in *Server Settings → Roles → Links*. So
-this command creates the role, checks whether the requirement is in place
-(``RoleTags.is_guild_connection``), and prints the three clicks that are left.
-Run it again afterwards and it says whether the binding took.
+The command creates the role and then binds it itself, through the same
+(undocumented) route the Discord client uses for *Server Settings → Roles →
+Links* — see ``utils.moddy_team_role.link_team_role``. When Discord refuses, the
+card falls back on the three clicks an administrator has to do by hand, and says
+why. Run it again afterwards and it says whether the binding took.
 
 See docs/LINKED_ROLES.md.
 """
@@ -25,12 +25,25 @@ from staff.framework import (
 from utils import emojis
 from utils.i18n import t
 from utils.moddy_team_role import (
-    LINKED_ROLES_URL, TEAM_ROLE_NAME, can_manage, create_team_role, find_team_role,
-    is_linked,
+    LINKED_ROLES_URL, TEAM_ROLE_NAME, LinkResult, can_manage, create_team_role,
+    find_team_role, is_linked, link_team_role,
 )
 from cogs.error_handler import BaseView
 
 logger = logging.getLogger("moddy.staff.team.role")
+
+
+def _linked_key(linked: bool, link_result) -> str:
+    """Which of the three "Rôle lié" wordings the card shows.
+
+    A role Moddy just bound reads differently from one an administrator bound
+    last week: the staffer needs to know the binding is the command's doing.
+    """
+    if not linked:
+        return "linked_no"
+    if link_result == LinkResult.LINKED_NOW:
+        return "linked_auto"
+    return "linked_yes"
 
 
 @staff_command
@@ -94,6 +107,16 @@ class TeamRoleCommand(StaffCommand):
             logger.info("Staff %s created the Moddy Team role in %s", ctx.author.id, gid)
 
         linked = is_linked(role)
+        link_result = None
+        if not linked:
+            # The binding Discord does not officially let us do. A failure is
+            # not an error: the card below prints what is left to do by hand.
+            link_result = await link_team_role(ctx.bot, role)
+            if link_result in LinkResult.DONE:
+                # `role.tags` only refreshes on the gateway event, which has not
+                # arrived yet — the route's own answer is the truth here.
+                linked = True
+
         granted = [name for name, value in role.permissions if value]
 
         view = BaseView()
@@ -108,7 +131,7 @@ class TeamRoleCommand(StaffCommand):
             f"-# {t('staff.team.role.id', locale=locale)}: `{role.id}`\n"
             f"-# {t('staff.team.role.linked', locale=locale)}: "
             f"{emojis.DONE if linked else emojis.UNDONE} "
-            f"{t('staff.team.role.' + ('linked_yes' if linked else 'linked_no'), locale=locale)}\n"
+            f"{t('staff.team.role.' + _linked_key(linked, link_result), locale=locale)}\n"
             f"-# {t('staff.team.role.permissions', locale=locale)}: "
             f"`{len(granted)}`"
         ))
@@ -119,7 +142,8 @@ class TeamRoleCommand(StaffCommand):
             container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
             container.add_item(ui.TextDisplay(
                 f"**{t('staff.team.role.howto_title', locale=locale)}**\n"
-                f"{t('staff.team.role.howto', locale=locale, name=f'**{TEAM_ROLE_NAME}**', role=role.name)}"
+                f"{t('staff.team.role.howto', locale=locale, name=f'**{TEAM_ROLE_NAME}**', role=role.name)}\n"
+                f"-# {t('staff.team.role.auto_' + (link_result or LinkResult.FAILED), locale=locale)}"
             ))
         container.add_item(ui.TextDisplay(
             f"-# {t('staff.team.role.hint', locale=locale)}"))

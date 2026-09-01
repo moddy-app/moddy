@@ -118,14 +118,64 @@ is remembered in `guilds.data.moddy_team.role_id`, so renaming it loses nothing;
 the name lookup (`Moddy Team`) is only a fallback for a role created before the
 bot knew about it. A stored id that no longer resolves is forgotten on the spot.
 
-### Why the linking step is manual
+### How the binding is done
 
-**Discord exposes no API for role-connection requirements.** They are set in
-*Server Settings → Roles → Links*, by a human, and the REST payload for creating
-or editing a role has no field for them. The bot can create the role and
-*verify* the binding afterwards (`discord.RoleTags.is_guild_connection`), never
-perform it — which is why `/team role` ends on instructions rather than on a
-done panel.
+**Discord's official API exposes nothing for it.** The REST payload for creating
+or editing a role has no field for requirements, and `role.tags` only *reports*
+them (`guild_connections`, read-only). Officially the step happens in *Server
+Settings → Roles → Links*, by a human.
+
+But the client itself has to call something, and it does:
+
+```
+PUT /guilds/{guild.id}/roles/{role.id}/connections/configuration
+```
+
+`MANAGE_ROLES` is the only permission it needs — the one Moddy already holds
+when it creates the role. It is **undocumented**: it appears in
+[Discord Userdoccers](https://docs.discord.food/resources/guild#role-connection-configuration-object),
+not in Discord's own documentation, so it can change or close without notice.
+
+`link_team_role()` uses it and is built around that fact: every failure is
+caught and returned as a `LinkResult`, never raised. The day the route goes
+away, `/team role` prints the three clicks again and says why. Nothing else in
+the bot depends on it.
+
+#### The payload
+
+The configuration is `array[array[requirement]]`: the outer array is a **OR**,
+the inner ones a **AND**. Ours is one requirement:
+
+```json
+[[{"connection_type": "application",
+   "application_id": "<Moddy>",
+   "connection_metadata_field": "team",
+   "operator": 7,
+   "value": "1"}]]
+```
+
+`operator: 7` is `BOOLEAN_EQUAL`. Two things are load-bearing:
+
+- **The `PUT` replaces the whole configuration.** So the current one is read
+  first and ours is appended as an extra OR branch — a server that already had
+  a requirement on that role keeps it, and both populations get the role.
+- **The metadata key is `team`, and only `team`.** The schema also carries
+  `premium`; a "use whatever boolean key exists" fallback would have bound the
+  Moddy Team role to *every subscriber*. `resolve_metadata_key()` reads the
+  schema (`GET /applications/{id}/role-connections/metadata` — the `GET` is
+  fine, it is the `PUT` that is forbidden here) and accepts nothing else. A
+  missing key is reported to the staffer, never guessed around.
+
+| `LinkResult` | Meaning |
+|---|---|
+| `linked_now` | Moddy just set the requirement |
+| `already_linked` | it was already there — nothing written |
+| `no_metadata` | the backend has not registered the `team` key |
+| `unsupported` | Discord answered 404/405: the route is closed to us |
+| `forbidden` | missing `Manage Roles`, or the role sits above Moddy's |
+| `failed` | anything else Discord answered |
+
+Only the first two mean the administrator has nothing left to do.
 
 ---
 
@@ -139,9 +189,14 @@ Defaults to the server it is run in. Creates the role **with no permissions at
 all** (`discord.Permissions.none()`), stores its id, and prints:
 
 - the role, its id, and how many permissions it currently holds;
-- whether it is linked yet — `RoleTags.is_guild_connection()`;
-- when it is not: the exact path an administrator has to click, plus a link to
-  the account-linking page.
+- whether it is linked yet — `RoleTags.is_guild_connection()`, and when it is
+  not, it binds it itself (see above) and says so;
+- when even that failed: the exact path an administrator has to click, the
+  reason Discord gave, plus a link to the account-linking page.
+
+The card trusts the route's own answer rather than `role.tags`, which only
+refreshes on the `GUILD_ROLE_UPDATE` gateway event and is still stale one
+millisecond after the `PUT`.
 
 Run again at any time: it never creates a second role, it re-reports the state.
 That is how you check a binding took.
@@ -284,6 +339,9 @@ is only for the rest.
 - **A member who never linked their account** will never get the role, whatever
   the bot does. The backend answers `absent` and moves on — that is normal, not
   something to investigate.
+- **Assuming the binding is guaranteed.** It rides an undocumented route. Read
+  the state line on the `/team role` card rather than the fact that the command
+  answered.
 - **Several backend workers get the same message**; a 15 s Redis lock means only
   one writes to Discord. Nothing to handle bot-side, but do not be surprised to
   see one push for an event received four times.
