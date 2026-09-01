@@ -16,19 +16,19 @@ Two consequences worth stating out loud:
 - **The bot must not assign the role by hand.** Discord owns that half; a
   manual grant would be a duplicate Discord removes on its next check.
 
-### How the linking step is done
+### Why a human has to do the linking
 
-Discord's **official** API exposes nothing for it: the REST payload for creating
-or editing a role has no field for requirements, and ``role.tags`` only *reports*
-them (``guild_connections``, read-only). What the client itself calls from
-*Server Settings → Roles → Links* is an undocumented route —
-``PUT /guilds/{guild.id}/roles/{role.id}/connections/configuration``, needing
-only ``MANAGE_ROLES``, which Moddy already holds when it creates the role.
+No API attaches a linked-role requirement to a role. The official one has no
+field for it, and the undocumented route the Discord client uses
+(``PUT /guilds/{id}/roles/{id}/connections/configuration``) answers a bot token
+with ``20001 — Bots cannot use this endpoint``. That was established against the
+live API, not assumed; see docs/LINKED_ROLES.md.
 
-:func:`link_team_role` uses it, and treats it as the unsupported route it is:
-every failure is caught and turned into a :class:`LinkResult`, so the day
-Discord closes it `/team role` simply goes back to printing the three clicks an
-administrator has to do by hand. Nothing else in the bot depends on it.
+So the step belongs to a human holding *Manage Roles*, and `/team role` lends
+that permission to the staffer for thirty seconds rather than sending them to
+find an administrator — see :mod:`services.team_link_session`. This module keeps
+only what is genuinely the role's business: finding it, creating it, and
+reporting whether the requirement is there (:func:`is_linked`).
 
 The role id is remembered in ``guilds.data.moddy_team.role_id`` so a rename
 never loses it; the name lookup is only a fallback for a role created before
@@ -37,7 +37,6 @@ the bot knew about it (or by hand).
 
 from __future__ import annotations
 
-import json
 import logging
 from typing import Optional
 
@@ -171,235 +170,3 @@ def can_manage(guild: discord.Guild, role: Optional[discord.Role] = None) -> boo
         return False
     return True
 
-
-# --------------------------------------------------------------------------- #
-# Binding the role to Moddy's linked-role requirement
-# --------------------------------------------------------------------------- #
-#: The metadata key the requirement is built on. The backend owns the schema
-#: (`PUT /applications/{id}/role-connections/metadata`, never called from here);
-#: this is the key it registers, and :func:`resolve_metadata_key` checks at
-#: runtime that it is really there before anything is written.
-#:
-#: The schema also carries ``premium``, and that is exactly why nothing here
-#: ever falls back on "some other boolean key": binding the Moddy Team role to
-#: ``premium`` would hand it to every subscriber. A missing ``team`` is a
-#: backend problem, and the command says so instead of guessing.
-TEAM_METADATA_KEY = "team"
-
-#: ``BOOLEAN_EQUAL`` — "the metadata value is equal to the configured value (1)".
-OPERATOR_BOOLEAN_EQUAL = 7
-
-#: Metadata record types that a boolean requirement can be built on.
-_BOOLEAN_METADATA_TYPES = (7, 8)
-
-#: Cache of the resolved metadata key, per application id. The schema changes
-#: only when the backend redeploys, and a wrong guess is not worth one HTTP
-#: request per `/team role`.
-_metadata_key_cache: dict[int, Optional[str]] = {}
-
-
-class LinkResult:
-    """Outcome of :func:`link_team_role` — what to tell the staffer."""
-
-    LINKED_NOW = "linked_now"          #: Moddy just set the requirement.
-    ALREADY_LINKED = "already_linked"  #: The requirement was already there.
-    NO_METADATA = "no_metadata"        #: The app has no boolean metadata key.
-    UNSUPPORTED = "unsupported"        #: Discord does not expose the route to us.
-    FORBIDDEN = "forbidden"            #: Missing Manage Roles, or role too high.
-    FAILED = "failed"                  #: Anything else Discord answered.
-
-    #: The two outcomes that mean the admin has nothing left to do.
-    DONE = (LINKED_NOW, ALREADY_LINKED)
-
-
-def _log_discord_refusal(what: str, role: discord.Role, exc: discord.HTTPException,
-                         *, payload=None) -> None:
-    """Log **what Discord actually answered**, not our interpretation of it.
-
-    The route this module depends on is undocumented: the day it changes, the
-    only thing that will say so is the body Discord sent back. A log line
-    reading "forbidden" would be worthless — the status, Discord's own error
-    code and the raw text are the whole point, so they are always logged, at
-    ``error`` level, whatever the failure.
-
-    The payload is logged too when there is one: an argument Discord rejects is
-    invisible otherwise.
-    """
-    logger.error(
-        "%s failed on role %s in guild %s — HTTP %s (Discord code %s): %s%s",
-        what, role.id, role.guild.id,
-        getattr(exc, "status", "?"),
-        getattr(exc, "code", "?"),
-        getattr(exc, "text", None) or str(exc),
-        f" | sent: {json.dumps(payload, separators=(',', ':'))}" if payload is not None else "",
-    )
-
-
-def build_requirement(application_id: int, metadata_key: str) -> dict:
-    """The single requirement that says "this account is on the Moddy team".
-
-    ``connection_type: "application"`` is how Discord represents an *app*
-    requirement, as opposed to a provider connection (Steam, PayPal…).
-    """
-    return {
-        "connection_type": "application",
-        "application_id": str(application_id),
-        "connection_metadata_field": metadata_key,
-        "operator": OPERATOR_BOOLEAN_EQUAL,
-        "value": "1",
-    }
-
-
-def _same_requirement(a: dict, b: dict) -> bool:
-    """Whether two requirements express the same condition.
-
-    Only the four fields that define the condition are compared: a configuration
-    read back from Discord carries extra, receive-only fields (``application``,
-    ``name``, ``result``…) that would make a plain ``==`` always false.
-    """
-    keys = ("connection_type", "application_id", "connection_metadata_field", "operator", "value")
-    return all(str(a.get(k)) == str(b.get(k)) for k in keys)
-
-
-def configuration_contains(configuration, requirement: dict) -> bool:
-    """Whether *requirement* already appears anywhere in the configuration."""
-    for group in configuration or []:
-        for existing in group or []:
-            if _same_requirement(existing, requirement):
-                return True
-    return False
-
-
-def merge_configuration(configuration, requirement: dict) -> list:
-    """Add *requirement* to an existing configuration without losing it.
-
-    The configuration is ``array[array[requirement]]``: the outer array is a
-    **OR**, the inner ones a **AND**. Ours goes in as its own OR branch, so a
-    server that already had a requirement on this role keeps it working — both
-    populations get the role, neither excludes the other.
-
-    A ``PUT`` **replaces** the whole configuration, which is exactly why this
-    merge exists: writing our branch alone would silently drop theirs.
-    """
-    merged = [list(group or []) for group in (configuration or [])]
-    if configuration_contains(merged, requirement):
-        return merged
-    merged.append([requirement])
-    return merged
-
-
-async def resolve_metadata_key(bot) -> Optional[str]:
-    """The boolean metadata key to build the requirement on, or ``None``.
-
-    Read from ``GET /applications/{id}/role-connections/metadata`` — the
-    documented, bot-token endpoint. Reading is safe: the rule in
-    docs/LINKED_ROLES.md forbids the ``PUT`` (it replaces the whole schema),
-    not the ``GET``.
-
-    Only :data:`TEAM_METADATA_KEY` is accepted — see the note there on why
-    "any boolean key" is not an acceptable fallback.
-    """
-    application_id = getattr(bot, 'application_id', None)
-    if not application_id:
-        return None
-    if application_id in _metadata_key_cache:
-        return _metadata_key_cache[application_id]
-
-    route = discord.http.Route(
-        "GET", "/applications/{application_id}/role-connections/metadata",
-        application_id=application_id,
-    )
-    try:
-        records = await bot.http.request(route)
-    except discord.HTTPException as e:
-        logger.error("Could not read Moddy's role-connection metadata — HTTP %s "
-                     "(Discord code %s): %s", getattr(e, "status", "?"),
-                     getattr(e, "code", "?"), getattr(e, "text", None) or e)
-        return None
-
-    key = next((r.get("key") for r in (records or [])
-                if r.get("key") == TEAM_METADATA_KEY
-                and r.get("type") in _BOOLEAN_METADATA_TYPES), None)
-    if key is not None:
-        # Only a success is cached: the schema may simply not be registered yet
-        # on a bot that booted before the backend did, and one command later is
-        # a perfectly good time to find out that it now is.
-        _metadata_key_cache[application_id] = key
-    else:
-        logger.warning("Moddy's role-connection metadata has no boolean %r key — "
-                       "the backend has not registered the schema yet",
-                       TEAM_METADATA_KEY)
-    return key
-
-
-async def link_team_role(bot, role: discord.Role) -> str:
-    """Attach Moddy's linked-role requirement to *role*. Returns a `LinkResult`.
-
-    **This route is not in Discord's official documentation.** It is the one the
-    client itself calls from *Server Settings → Roles → Links*
-    (``PUT /guilds/{guild.id}/roles/{role.id}/connections/configuration``,
-    ``MANAGE_ROLES``), documented by Discord Userdoccers. Treat it as it
-    deserves: every failure is caught and answered with a `LinkResult`, never
-    raised, so `/team role` falls back on the manual instructions the day
-    Discord closes it. Nothing else in the bot depends on it.
-
-    The existing configuration is read first and merged into, because the
-    ``PUT`` replaces it whole — a server that had its own requirement on this
-    role must not lose it.
-    """
-    application_id = getattr(bot, 'application_id', None)
-    if not application_id:
-        return LinkResult.FAILED
-
-    metadata_key = await resolve_metadata_key(bot)
-    if not metadata_key:
-        return LinkResult.NO_METADATA
-
-    requirement = build_requirement(application_id, metadata_key)
-    params = {"guild_id": role.guild.id, "role_id": role.id}
-    read = discord.http.Route(
-        "GET", "/guilds/{guild_id}/roles/{role_id}/connections/configuration", **params)
-    write = discord.http.Route(
-        "PUT", "/guilds/{guild_id}/roles/{role_id}/connections/configuration", **params)
-
-    try:
-        current = await bot.http.request(read)
-    except discord.NotFound as e:
-        # No configuration yet is a legitimate answer on a fresh role; only a
-        # missing *route* is fatal, and the PUT below tells us which it is. Log
-        # it anyway: it is also what a withdrawn route looks like from here.
-        logger.info("No role connection configuration on role %s in guild %s "
-                    "(HTTP 404: %s)", role.id, role.guild.id,
-                    getattr(e, "text", None) or e)
-        current = []
-    except discord.Forbidden as e:
-        _log_discord_refusal("Reading the role connection configuration", role, e)
-        return LinkResult.FORBIDDEN
-    except discord.HTTPException as e:
-        _log_discord_refusal("Reading the role connection configuration", role, e)
-        current = []
-
-    if configuration_contains(current, requirement):
-        return LinkResult.ALREADY_LINKED
-
-    payload = merge_configuration(current, requirement)
-    try:
-        await bot.http.request(write, json=payload)
-    except discord.Forbidden as e:
-        _log_discord_refusal("Binding the role connection", role, e, payload=payload)
-        return LinkResult.FORBIDDEN
-    except discord.HTTPException as e:
-        _log_discord_refusal("Binding the role connection", role, e, payload=payload)
-        # 404/405 is the shape a withdrawn route takes: say so plainly rather
-        # than reporting a permission problem the admin cannot act on.
-        if e.status in (404, 405):
-            logger.error("The role connection route is not available to Moddy "
-                         "(HTTP %s) — falling back on the manual instructions. "
-                         "If this is permanent, `/team role` must go back to "
-                         "printing the manual steps only.", e.status)
-            return LinkResult.UNSUPPORTED
-        return LinkResult.FAILED
-
-    logger.info("Moddy Team role %s bound to the linked-role requirement in guild %s",
-                role.id, role.guild.id)
-    return LinkResult.LINKED_NOW

@@ -80,6 +80,16 @@ class StaffCommand:
     permission: Optional[str] = None
     #: Redact arguments in the staff audit log (for ``sql`` / ``jsk``).
     sensitive: bool = False
+    #: Defer the slash interaction before running, buying 15 minutes instead of
+    #: 3 seconds to answer. Set it on any command that touches the database or
+    #: Discord before its first ``ctx.send`` — the dispatcher itself writes a
+    #: staff-log entry first, so the 3 s budget is already partly spent when
+    #: ``execute`` starts, and the user sees *Unknown interaction*.
+    #:
+    #: **Never set it on a command that calls** ``ctx.open_modal``: Discord
+    #: refuses ``send_modal`` on an interaction that has already been answered,
+    #: so the modal would silently degrade to a button.
+    defer: bool = False
 
     def __init__(self, bot):
         self.bot = bot

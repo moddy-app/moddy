@@ -90,7 +90,10 @@ BANNER = "<:banner:1519792732716007634>"
 TEXT = "<:text:1519791921462120601>"
 TRANSLATE = "<:translate:1519802660856008834>"
 WEBHOOK = "<:webhook:1519793325329219675>"
-STAFF = "<:staff:1398729432759476245>"
+# The `:staff:` artwork was deleted; the Moddy Team badge is the same idea
+# and is defined further down. Aliased rather than re-pointed at each call
+# site so a future dedicated icon is a one-line change again.
+STAFF = "<:moddyteam_badge:1437514344467398837>"
 FILTER = "<:filter:1520586655180783666>"
 FOLDER = "<:folder:1520590405043880107>"
 FOLDERS = "<:folders:1520590403533934713>"

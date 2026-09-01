@@ -118,85 +118,100 @@ is remembered in `guilds.data.moddy_team.role_id`, so renaming it loses nothing;
 the name lookup (`Moddy Team`) is only a fallback for a role created before the
 bot knew about it. A stored id that no longer resolves is forgotten on the spot.
 
-### How the binding is done
+### Why a human has to do the linking
 
-**Discord's official API exposes nothing for it.** The REST payload for creating
-or editing a role has no field for requirements, and `role.tags` only *reports*
-them (`guild_connections`, read-only). Officially the step happens in *Server
-Settings → Roles → Links*, by a human.
+**No API attaches a linked-role requirement to a role.** The official one has no
+field for it: the REST payload for creating or editing a role carries nothing of
+the sort, and `role.tags.guild_connections` only *reports* the requirement,
+read-only.
 
-But the client itself has to call something, and it does:
+The Discord client does call something —
+`PUT /guilds/{guild.id}/roles/{role.id}/connections/configuration`, documented by
+[Discord Userdoccers][ud] and by nobody else. Moddy tried it. Discord answered:
 
 ```
-PUT /guilds/{guild.id}/roles/{role.id}/connections/configuration
+HTTP 403 (Discord code 20001): Bots cannot use this endpoint
 ```
 
-`MANAGE_ROLES` is the only permission it needs — the one Moddy already holds
-when it creates the role. It is **undocumented**: it appears in
-[Discord Userdoccers](https://docs.discord.food/resources/guild#role-connection-configuration-object),
-not in Discord's own documentation, so it can change or close without notice.
+on the `GET` as well as the `PUT`. `20001` is not a missing permission — it is
+the code Discord returns when an endpoint is closed to bot tokens outright. Nor
+is there a way around it: no OAuth2 scope covers guild role configuration
+(`role_connections.write` writes a *user's* metadata; `rpc.api` is not public),
+and the only credential that works is a real user session, which is
+self-botting. **The step belongs to a human, and that is final.**
 
-`link_team_role()` uses it and is built around that fact: every failure is
-caught and returned as a `LinkResult`, never raised. The day the route goes
-away, `/team role` prints the three clicks again and says why. Nothing else in
-the bot depends on it.
+[ud]: https://docs.discord.food/resources/guild#role-connection-configuration-object
 
-#### The payload
+### The thirty-second window
 
-The configuration is `array[array[requirement]]`: the outer array is a **OR**,
-the inner ones a **AND**. Ours is one requirement:
+Since a human must do it, `/team role` lends the permission to the staffer who
+ran it instead of sending them to find an administrator. See
+[`services/team_link_session.py`](../services/team_link_session.py).
 
-```json
-[[{"connection_type": "application",
-   "application_id": "<Moddy>",
-   "connection_metadata_field": "team",
-   "operator": 7,
-   "value": "1"}]]
-```
+1. **Moddy Team** is pushed to position 1, the very bottom of the hierarchy.
+2. A throwaway role, `Moddy Team — linking`, carrying **only** `manage_roles`,
+   is created at position 2 — directly above it.
+3. Every other role the staffer holds is taken off them and **written to
+   `guilds.data.moddy_team.link_session` before the removal**.
+4. They have `WINDOW_SECONDS` (30) to do the clicks themselves.
+5. Whatever the outcome: roles back, throwaway role deleted, **Moddy Team**
+   moved back under Moddy, stored session cleared.
 
-`operator: 7` is `BOOLEAN_EQUAL`. Two things are load-bearing:
+Discord refuses to edit any role at or above your own highest one, so from
+position 2 the staffer can reach exactly one role: the one they are there to
+link. That containment is the whole reason for the positions.
 
-- **The `PUT` replaces the whole configuration.** So the current one is read
-  first and ours is appended as an extra OR branch — a server that already had
-  a requirement on that role keeps it, and both populations get the role.
-- **The metadata key is `team`, and only `team`.** The schema also carries
-  `premium`; a "use whatever boolean key exists" fallback would have bound the
-  Moddy Team role to *every subscriber*. `resolve_metadata_key()` reads the
-  schema (`GET /applications/{id}/role-connections/metadata` — the `GET` is
-  fine, it is the `PUT` that is forbidden here) and accepts nothing else. A
-  missing key is reported to the staffer, never guessed around.
+#### Say what it is
 
-| `LinkResult` | Meaning |
+This is a privilege escalation, and a deliberate one: **no administrator of the
+server approves it**, unlike `/team access`. It is short, confined, reverted and
+logged, but the honest sentence is that Moddy hands one of its own staff
+`Manage Roles` in somebody else's server for thirty seconds.
+
+Two limits follow, and neither is theoretical:
+
+- **The hierarchy does not contain everything.** `manage_roles` is also *Manage
+  Permissions* on a channel, and channel overwrites are not bounded by role
+  position. Only the audit-log watch catches that, and an audit entry can arrive
+  late or not at all — detection, not a guarantee.
+- **Success means "a requirement exists", not "our requirement exists".**
+  `guild_connections` is a boolean. Reading *which* requirement is on the role
+  needs the same endpoint Discord closes to bots, so a role linked to another
+  app's criterion is indistinguishable from a correct one. What protects us is
+  that the person doing it is our own staff, not the check.
+
+#### The watchdog
+
+`cogs/team_link_events.py` feeds the window two gateway events:
+
+| Event | What it does |
 |---|---|
-| `linked_now` | Moddy just set the requirement |
-| `already_linked` | it was already there — nothing written |
-| `no_metadata` | the backend has not registered the `team` key |
-| `unsupported` | Discord answered 404/405: the route is closed to us |
-| `forbidden` | missing `Manage Roles`, or the role sits above Moddy's |
-| `failed` | anything else Discord answered |
+| `on_guild_role_update` | success — `guild_connections` appeared on the role |
+| `on_audit_log_entry_create` | the staffer did something else → revert it, close the window |
 
-Only the first two mean the administrator has nothing left to do.
+Watched actions: `role_create`, `role_delete`, `role_update`,
+`member_role_update`, `overwrite_create/update/delete`. **`role_update` on the
+Moddy Team role is exempt** — that edit *is* the task, and cancelling on it
+would make the feature cancel its own success. Reverts are best effort and
+individually swallowed: a revert that fails must never stop the teardown.
 
-#### Every refusal is logged verbatim
+The audit watch needs `View Audit Log`. Without it the window still runs, it
+just has no watchdog.
 
-The route is undocumented, so **Discord's own answer is the only thing that will
-ever explain a failure** — and the only thing that will say the route has
-changed. Every failing path logs, at `error` level on `moddy.moddy_team_role`:
-the HTTP status, Discord's error code, the raw response body, the role and guild
-ids, and the payload that was sent. Never a bare "forbidden".
+#### If the process dies mid-window
 
-```
-Binding the role connection failed on role 8 in guild 7 — HTTP 403
-(Discord code 50013): Missing Permissions | sent: [[{"connection_type":…}]]
-```
+The saved roles are in the database *before* they are removed, so
+`recover_sessions()` — run on every `on_ready` — gives them back, deletes the
+throwaway role and puts **Moddy Team** back. A staffer left stripped of every
+role by a crash is the one outcome this feature must never produce.
 
-A 404/405 additionally logs that the route is no longer available to Moddy —
-that is the line to grep for the day `/team role` starts falling back for
-everyone. `tests/test_linked_roles.py` asserts the body reaches the logs, since
-a swallowed answer is exactly the kind of thing nobody notices until it
-matters.
+#### Never grant the role
 
----
+Nothing in this flow gives anybody **Moddy Team**. Discord assigns it from the
+metadata; a manual grant is a duplicate Discord removes on its next check.
+`_restorable()` filters it out of the restore explicitly, in case the staffer
+already had it, and a test asserts that.
+
 
 ## `/team role` — creating it
 
@@ -208,17 +223,27 @@ Defaults to the server it is run in. Creates the role **with no permissions at
 all** (`discord.Permissions.none()`), stores its id, and prints:
 
 - the role, its id, and how many permissions it currently holds;
-- whether it is linked yet — `RoleTags.is_guild_connection()`, and when it is
-  not, it binds it itself (see above) and says so;
-- when even that failed: the exact path an administrator has to click, the
-  reason Discord gave, plus a link to the account-linking page.
+- whether it is linked yet — `RoleTags.is_guild_connection()`.
 
-The card trusts the route's own answer rather than `role.tags`, which only
-refreshes on the `GUILD_ROLE_UPDATE` gateway event and is still stale one
-millisecond after the `PUT`.
+When it is **not** linked, the command opens the thirty-second window described
+above: it sends the click path *first* (thirty seconds is not long enough to
+read instructions afterwards), runs the window, then reports what came of it —
+`window_done`, `window_expired`, `window_cancelled` or `window_failed`, followed
+by the manual path as a fallback.
+
+The window is never started on a hope. `_blocker()` refuses it upfront, with its
+own sentence on the card, when: the staffer is not a member of the guild
+(`not_member`), owns it (`owner` — they already have everything), another window
+is running (`busy`), Moddy lacks `Manage Roles` (`no_permission`), the staffer's
+top role is above Moddy's (`above_moddy`), or Moddy's role sits too low to fit
+two roles under it (`no_room`). A window that fails halfway leaves somebody
+without their roles, so it is never opened blind.
+
+`defer = True` on the command: the dispatcher writes a staff-log entry before
+`execute` runs, and with the window on top the 3 s interaction budget is long
+gone — without it Discord answers *Unknown interaction*.
 
 Run again at any time: it never creates a second role, it re-reports the state.
-That is how you check a binding took.
 
 ---
 

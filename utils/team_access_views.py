@@ -499,7 +499,9 @@ async def build_access_card(bot, guild: discord.Guild, *, requester_id: int,
             requester = await bot.fetch_user(requester_id)
         except discord.HTTPException:
             requester = None
-    who = (await format_member_name(bot, requester)) if requester else f"`{requester_id}`"
+    # No hyperlink on the badge here: this card is read by the server's
+    # administrator, not by the team.
+    who = (await format_member_name(bot, requester, link=False)) if requester else f"`{requester_id}`"
 
     accent, icon, title = {
         STATE_PENDING: ("warning", emojis.LEGAL, "title"),
