@@ -30,7 +30,7 @@ from discord import ui
 
 from cogs.error_handler import BaseView
 from config import COLORS
-from utils.emojis import CHECK, DONE, ERROR, INFO, LOADING, ROBOT_WORKING, SETTINGS, UNDONE
+from utils.emojis import CHECK, DONE, ERROR, INFO, LOADING, SETTINGS, UNDONE
 from utils.i18n import t
 
 logger = logging.getLogger('moddy.brocoli')
@@ -53,6 +53,24 @@ def _truncate(text: str, limit: int = MAX_TEXT) -> str:
     return text[: limit - 1] + "…"
 
 
+def loading_card(locale: str = "en-US") -> ui.LayoutView:
+    """The card posted before every answer, while Brocoli works.
+
+    Deliberately bare: one container with **no accent colour** and a single line.
+    It is the first thing the member sees after hitting enter, so it has to say
+    "heard you, working" and nothing else — a header, a colour bar and a tool
+    line would all be noise on a message that lives for a few seconds.
+
+    Same shape as the answer card, so the edit into the reply is a content
+    swap rather than a layout jump.
+    """
+    view = BaseView()
+    container = ui.Container()
+    container.add_item(ui.TextDisplay(f"{LOADING} {t('brocoli.loading', locale=locale)}"))
+    view.add_item(container)
+    return view
+
+
 def answer_card(
     text: str,
     *,
@@ -62,23 +80,25 @@ def answer_card(
 ) -> ui.LayoutView:
     """Brocoli's reply, in the state it is currently in.
 
-    ``thinking`` swaps the header for a live one — the same card is edited in
-    place as the turn progresses, so the member sees one message evolve instead
-    of a burst of new ones.
+    While ``thinking``, the card keeps the loading line at the top so the member
+    can tell a finished answer from one still being written — the same message
+    is edited in place as the turn progresses, rather than a burst of new ones.
     """
     view = BaseView()
-    container = ui.Container(accent_colour=COLORS["primary"])
+    # No accent while working, so the card is visually identical to the loading
+    # one it replaces; the colour appears when the answer is final.
+    container = ui.Container() if thinking else ui.Container(accent_colour=COLORS["primary"])
 
     if thinking:
         container.add_item(
-            ui.TextDisplay(f"### {ROBOT_WORKING} {t('brocoli.thinking', locale=locale)}")
+            ui.TextDisplay(f"{LOADING} {t('brocoli.loading', locale=locale)}")
         )
     if text:
         container.add_item(ui.TextDisplay(_truncate(text)))
     if tool:
         # Tool names are shown in the member's language, never raw
         # (`get_module_config` means nothing to anyone but us).
-        container.add_item(ui.TextDisplay(f"-# {LOADING} {tool}"))
+        container.add_item(ui.TextDisplay(f"-# {tool}"))
 
     view.add_item(container)
     return view

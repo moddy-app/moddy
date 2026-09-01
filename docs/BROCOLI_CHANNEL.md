@@ -42,6 +42,23 @@ _render() : une carte éditée en place
         └─ run_end           → carte finalisée
 ```
 
+### La carte de chargement
+
+Avant **chaque** réponse — message tapé comme reprise après confirmation — le
+salon reçoit d'abord une carte de chargement : un conteneur **sans couleur
+d'accent** et une seule ligne, `<a:spinner:…> **Moddy** réfléchit...`.
+
+Elle part avant même l'ouverture de la conversation, qui est déjà un aller-retour
+vers le backend : la personne ne doit jamais se demander si son message a été vu.
+Elle est ensuite **éditée** en réponse, pas remplacée — d'où l'absence d'accent
+pendant la rédaction, pour que le passage de l'un à l'autre soit un changement de
+contenu et non un saut de mise en page. La couleur n'apparaît qu'une fois la
+réponse finale.
+
+Si le tour ne produit aucun texte (il part directement sur une carte de
+confirmation), la carte de chargement est **supprimée** : Discord refuse un
+conteneur vide, et un « réfléchit… » resté en place ne partirait plus jamais.
+
 ### Pourquoi la carte est éditée et non renvoyée
 
 Un message Discord ne se diffuse pas jeton par jeton. Éditer à chaque
@@ -110,6 +127,7 @@ en `403`.
 | Visibilité | `@everyone` : `view_channel` refusé |
 | Créé par | `/brocoli`, `default_permissions(administrator=True)` |
 | État | `guilds.data.brocoli` → `{channel_id, conversation_id}` |
+| Salon déjà existant | `BROCOLI_CHANNEL_IDS` (voir §6) |
 
 Le salon est réservé aux administrateurs parce que le genre `guild_config` exige
 des droits d'admin côté backend : un salon ouvert à tous serait un mur de `403`.
@@ -139,6 +157,7 @@ quand elle manque, et un `[brocoli.tools.x]` dans un salon se lit comme un bug.
 | `BROCOLI_API_URL` | `https://api.moddy.app` | Base de l'API backend |
 | `BOT_ASSERT_SECRET` | `""` | Secret HMAC des attestations. **Ne jamais réutiliser `TASK_STREAM_SECRET`** : celui-là protège Redis contre un attaquant qui y a déjà accès, celui-ci permet de parler au nom d'un compte |
 | `BROCOLI_GUILD_IDS` | `""` | Guildes où `/brocoli` est enregistrée, séparées par des virgules. Vide = fonctionnalité désactivée |
+| `BROCOLI_CHANNEL_IDS` | `""` | Salons **déjà existants** à traiter comme des salons Brocoli, sans passer par `/brocoli`. Sert au serveur de test, et à reprendre la main si l'entrée en base est perdue |
 
 `config.py` log une erreur au démarrage si `BROCOLI_GUILD_IDS` est renseignée
 alors que `BOT_ASSERT_SECRET` manque ou fait moins de 32 caractères.

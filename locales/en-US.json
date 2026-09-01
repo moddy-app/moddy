@@ -4417,7 +4417,7 @@
     }
   },
   "brocoli": {
-    "thinking": "Brocoli is working",
+    "loading": "**Moddy** is thinking...",
     "max_iterations": "-# I stopped here — this was taking more steps than I'm allowed in one go. Ask me to continue.",
     "channel_topic": "Configure this server by talking to Moddy's assistant.",
     "channel_reason": "Brocoli channel created",

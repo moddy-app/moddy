@@ -115,6 +115,16 @@ BROCOLI_GUILD_IDS: list[int] = [
     if part.strip().isdigit()
 ]
 
+# Salons déjà existants à traiter comme des salons Brocoli, sans passer par
+# /brocoli. Sert au serveur de test, et à reprendre la main si l'entrée en base
+# est perdue : la commande crée un salon et l'enregistre, cette liste permet
+# d'en désigner un qui existe déjà.
+BROCOLI_CHANNEL_IDS: list[int] = [
+    int(part.strip())
+    for part in os.environ.get("BROCOLI_CHANNEL_IDS", "").split(",")
+    if part.strip().isdigit()
+]
+
 # Fenêtre de déploiement uniquement (docs/TASK_SIGNATURE.md §6) : accepte les
 # entrées non signées tant que le backend ne signe pas encore. À remettre à
 # false dès que le backend est en production.

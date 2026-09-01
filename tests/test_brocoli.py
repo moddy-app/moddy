@@ -277,3 +277,80 @@ def test_an_expired_action_is_told_apart_from_a_busy_turn():
 def test_a_successful_status_raises_nothing():
     module = _client()
     assert module.BrocoliClient._raise_for_status(200, "") is None
+
+
+# ---------------------------------------------------------------------------
+# Channel matching
+# ---------------------------------------------------------------------------
+
+def _cog_module():
+    """`cogs.brocoli_chat` needs a token to import (config validates at import)."""
+    import os
+
+    os.environ.setdefault("DISCORD_TOKEN", "test-token")
+    import importlib
+
+    return importlib.import_module("cogs.brocoli_chat")
+
+
+def test_a_configured_channel_needs_no_database_row():
+    """BROCOLI_CHANNEL_IDS points the feature at a channel that already exists."""
+    module = _cog_module()
+    match = module.BrocoliChat._is_brocoli_channel
+
+    module.BROCOLI_CHANNEL_IDS.append(1544393707707437117)
+    try:
+        assert match(1544393707707437117, {}) is True
+        assert match(999, {}) is False
+    finally:
+        module.BROCOLI_CHANNEL_IDS.remove(1544393707707437117)
+
+
+def test_a_stored_channel_is_still_recognised():
+    module = _cog_module()
+    match = module.BrocoliChat._is_brocoli_channel
+
+    assert match(42, {"channel_id": "42"}) is True
+    assert match(42, {"channel_id": 42}) is True  # ints and strings both occur
+    assert match(43, {"channel_id": "42"}) is False
+
+
+def test_no_channel_configured_matches_nothing():
+    module = _cog_module()
+    assert module.BrocoliChat._is_brocoli_channel(1, {}) is False
+    assert module.BrocoliChat._is_brocoli_channel(1, {"channel_id": ""}) is False
+    assert module.BrocoliChat._is_brocoli_channel(1, {"channel_id": None}) is False
+
+
+# ---------------------------------------------------------------------------
+# Loading card
+# ---------------------------------------------------------------------------
+
+def test_loading_card_matches_the_agreed_payload():
+    """One container, no accent colour, one line with the animated spinner."""
+    _cog_module()  # ensures config/i18n are loaded
+    from utils.brocoli_views import loading_card
+
+    payload = loading_card("fr").to_components()
+
+    assert len(payload) == 1
+    container = payload[0]
+    assert container["type"] == 17
+    assert container["accent_color"] is None
+    assert len(container["components"]) == 1
+
+    line = container["components"][0]
+    assert line["type"] == 10
+    assert line["content"] == (
+        "<a:spinner:1534857169667883078> **Moddy** réfléchit..."
+    )
+
+
+def test_a_turn_with_no_prose_renders_no_empty_container():
+    """Discord rejects a container with no content, so it must not be built."""
+    _cog_module()
+    from utils.brocoli_views import answer_card
+
+    payload = answer_card("", locale="fr", thinking=True).to_components()
+    # While thinking the loading line is always there, so the container is valid.
+    assert payload[0]["components"]

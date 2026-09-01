@@ -37,12 +37,19 @@ import discord
 from discord import app_commands, ui
 from discord.ext import commands
 
-from config import BOT_ASSERT_SECRET, BROCOLI_API_URL, BROCOLI_GUILD_IDS, COLORS
+from config import (
+    BOT_ASSERT_SECRET,
+    BROCOLI_API_URL,
+    BROCOLI_CHANNEL_IDS,
+    BROCOLI_GUILD_IDS,
+    COLORS,
+)
 from services.brocoli_client import BrocoliClient, BrocoliError
 from utils.brocoli_views import (
     answer_card,
     confirmation_card,
     decided_card,
+    loading_card,
     notice_card,
 )
 from utils.components_v2 import create_error_message
@@ -80,6 +87,12 @@ class BrocoliChat(commands.Cog):
         # concurrent turn; holding the lock here turns that race into a queue
         # rather than an error the member has to read.
         self._locks: dict[int, asyncio.Lock] = {}
+        # Channel id -> conversation id. The database is the durable store, but
+        # a channel declared through BROCOLI_CHANNEL_IDS may have no row yet,
+        # and `_state` answers `{}` when there is no database at all. Without
+        # this cache every message would open a fresh conversation and Brocoli
+        # would forget what was just configured.
+        self._conversations: dict[int, str] = {}
 
     async def cog_unload(self) -> None:
         await self.client.close()
@@ -100,6 +113,20 @@ class BrocoliChat(commands.Cog):
 
     def _lock(self, channel_id: int) -> asyncio.Lock:
         return self._locks.setdefault(channel_id, asyncio.Lock())
+
+    @staticmethod
+    def _is_brocoli_channel(channel_id: int, state: dict) -> bool:
+        """Is this the channel Brocoli listens in?
+
+        Two sources, deliberately: the channel `/brocoli` created and stored in
+        `guilds.data`, and an explicit `BROCOLI_CHANNEL_IDS` list for a channel
+        that already existed. The config list wins nothing special — either
+        answer is a yes — but it means the feature can be pointed at a test
+        channel without a command run and without a database row.
+        """
+        if channel_id in BROCOLI_CHANNEL_IDS:
+            return True
+        return str(channel_id) == str(state.get("channel_id") or "")
 
     # ------------------------------------------------------------------
     # Command
@@ -189,7 +216,7 @@ class BrocoliChat(commands.Cog):
             return
 
         state = await self._state(message.guild.id)
-        if str(message.channel.id) != str(state.get("channel_id") or ""):
+        if not self._is_brocoli_channel(message.channel.id, state):
             return
         if not message.content or message.content.startswith(("//", "#")):
             # An easy way to talk in the channel without paying for a turn.
@@ -208,11 +235,19 @@ class BrocoliChat(commands.Cog):
     async def _run_turn(self, message: discord.Message, state: dict, locale: str) -> None:
         guild_id = message.guild.id
         user_id = message.author.id
+        channel_id = message.channel.id
+
+        # Posted before anything else, including before the conversation is
+        # opened: opening one is itself a round trip to the backend, and the
+        # member should never wonder whether their message was seen.
+        card = await message.channel.send(view=loading_card(locale))
 
         try:
-            conversation_id = await self._conversation(state, guild_id, user_id)
+            conversation_id = await self._conversation(
+                state, guild_id, channel_id, user_id
+            )
         except BrocoliError as exc:
-            await message.reply(view=notice_card(exc.code, locale), silent=True)
+            await card.edit(view=notice_card(exc.code, locale))
             return
 
         async with message.channel.typing():
@@ -220,24 +255,34 @@ class BrocoliChat(commands.Cog):
                 stream = self.client.send_message(
                     conversation_id, user_id, guild_id, message.content[:MAX_INPUT]
                 )
-                await self._render(stream, message.channel, conversation_id, locale)
+                await self._render(
+                    stream, message.channel, conversation_id, locale, card=card
+                )
             except BrocoliError as exc:
                 logger.warning("[Brocoli] turn failed (%s): %s", exc.code, exc.detail)
-                await message.reply(view=notice_card(exc.code, locale), silent=True)
+                await card.edit(view=notice_card(exc.code, locale))
 
-    async def _conversation(self, state: dict, guild_id: int, user_id: int) -> str:
+    async def _conversation(
+        self, state: dict, guild_id: int, channel_id: int, user_id: int
+    ) -> str:
         """The live conversation for this channel, opening one if needed.
 
         One conversation per channel, not per member: the channel is a single
         thread of work on a single server, and splitting it per person would
         make Brocoli forget what was just configured.
         """
+        cached = self._conversations.get(channel_id)
+        if cached:
+            return cached
+
         conversation_id = state.get("conversation_id")
         if conversation_id:
+            self._conversations[channel_id] = conversation_id
             return conversation_id
 
         conversation = await self.client.open_conversation(user_id, guild_id)
         conversation_id = conversation["id"]
+        self._conversations[channel_id] = conversation_id
         state["conversation_id"] = conversation_id
         await self._save(guild_id, state)
         return conversation_id
@@ -248,6 +293,7 @@ class BrocoliChat(commands.Cog):
         channel: discord.abc.Messageable,
         conversation_id: str,
         locale: str,
+        card: Optional[discord.Message] = None,
     ) -> None:
         """Turn the event stream into one message that updates in place.
 
@@ -256,7 +302,6 @@ class BrocoliChat(commands.Cog):
         card is therefore edited on a throttle and finalised once, which is
         also what makes the "thinking" state readable rather than flickering.
         """
-        card: Optional[discord.Message] = None
         buffer: list[str] = []
         tool: Optional[str] = None
         last_edit = 0.0
@@ -267,9 +312,19 @@ class BrocoliChat(commands.Cog):
             if not force and now - last_edit < EDIT_INTERVAL:
                 return
             last_edit = now
-            view = answer_card(
-                "".join(buffer), locale=locale, thinking=thinking, tool=tool
-            )
+
+            text = "".join(buffer)
+            if not thinking and not text:
+                # The turn produced no prose — it went straight to a
+                # confirmation card, or ended empty. A container with no
+                # content is rejected by Discord, and a stranded "thinking"
+                # card would sit there forever, so the placeholder goes away.
+                if card is not None:
+                    await card.delete()
+                    card = None
+                return
+
+            view = answer_card(text, locale=locale, thinking=thinking, tool=tool)
             if card is None:
                 card = await channel.send(view=view)
             else:
@@ -346,7 +401,13 @@ class BrocoliChat(commands.Cog):
             await interaction.message.edit(
                 view=decided_card(approve, "", locale)
             )
-            await self._render(stream, interaction.channel, conversation_id, locale)
+            # A decision resumes the turn, so it gets the same placeholder as a
+            # typed message: applying a change can take several seconds and the
+            # channel should show that something is happening.
+            card = await interaction.channel.send(view=loading_card(locale))
+            await self._render(
+                stream, interaction.channel, conversation_id, locale, card=card
+            )
         except BrocoliError as exc:
             logger.warning("[Brocoli] decision failed (%s): %s", exc.code, exc.detail)
             await interaction.followup.send(

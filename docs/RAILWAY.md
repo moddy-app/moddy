@@ -66,6 +66,11 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 **Description :** Serveurs où la commande `/brocoli` est enregistrée
 **Note :** Vide = fonctionnalité entièrement désactivée (le cog ne se charge pas). Doit correspondre à `BOT_ASSERT_ALLOWED_GUILDS` côté backend, sinon la commande existe mais chaque message repart en `403`.
 
+### BROCOLI_CHANNEL_IDS
+**Valeur :** ids de salons séparés par des virgules, ex. `1544393707707437117`
+**Description :** Salons déjà existants où Brocoli écoute, sans avoir à lancer `/brocoli`
+**Note :** Le salon doit se trouver dans une guilde listée par `BROCOLI_GUILD_IDS`. Utile pour un salon de test, ou pour reprendre la main si l'entrée `guilds.data.brocoli` est perdue.
+
 ### BROCOLI_API_URL
 **Valeur :** `https://api.moddy.app` (défaut)
 **Description :** Base publique de l'API backend qui héberge Brocoli
@@ -181,6 +186,7 @@ et les notifications
 - [ ] `TASK_STREAM_SECRET` (obligatoire, identique côté backend — sinon `moddy:tasks` est inopérant)
 - [ ] `BOT_ASSERT_SECRET` (si salon Brocoli, identique côté backend, ≠ `TASK_STREAM_SECRET`)
 - [ ] `BROCOLI_GUILD_IDS` (si salon Brocoli, identique à `BOT_ASSERT_ALLOWED_GUILDS`)
+- [ ] `BROCOLI_CHANNEL_IDS` (facultatif — salon existant, sinon `/brocoli` en crée un)
 - [ ] `PORT` → `3000`
 - [ ] `ENV_MODE` → `production`
 - [ ] `DEBUG` → `False`
