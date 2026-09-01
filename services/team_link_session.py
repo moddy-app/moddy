@@ -165,24 +165,78 @@ def _restorable(guild: discord.Guild, role_ids, team_role_id: int) -> List[disco
     return out
 
 
-async def _strip_roles(session: LinkSession) -> None:
-    """Take every role off the staffer, leaving only the throwaway one.
+def removable_roles(guild: discord.Guild, member: discord.Member) -> List[discord.Role]:
+    """The roles Moddy is actually able to take off *member*.
 
-    Managed roles stay: Discord refuses to remove them, and a request that
-    includes them fails as a whole.
+    Two kinds never leave, and neither is a choice:
+
+    - **managed** roles (a bot's own role, the booster role, an integration's),
+      which Discord refuses to remove from anybody;
+    - roles **at or above Moddy's own top role**, which Discord refuses to touch
+      whoever holds them.
+
+    Everything else goes, and comes back at the end.
+    """
+    me = guild.me
+    top = me.top_role if me else None
+    return [r for r in member.roles
+            if not r.is_default() and not r.managed
+            and (top is None or r < top)]
+
+
+def unstrippable_roles(guild: discord.Guild, member: discord.Member) -> List[discord.Role]:
+    """The roles that will stay on the staffer for the length of the window.
+
+    Non-empty means the containment is partial: the staffer keeps whatever
+    those roles carry, so the window lends them `Manage Roles` without being
+    able to confine them to it. The card says so rather than implying a box
+    that is not there.
+    """
+    removable = {r.id for r in removable_roles(guild, member)}
+    return [r for r in member.roles
+            if not r.is_default() and not r.managed and r.id not in removable]
+
+
+async def _strip_roles(session: LinkSession) -> None:
+    """Lend the throwaway role, then set aside everything Moddy is able to.
+
+    The two halves are separate requests on purpose. Handing over the role is
+    what makes the window worth opening; setting the others aside is what makes
+    it *safe*. A server where the second is impossible (the staffer sits above
+    Moddy) still gets the first — with the card saying the box is open.
     """
     member = session.member
-    keep = [r for r in member.roles if r.managed and not r.is_default()]
-    session.saved_role_ids = [r.id for r in member.roles
-                              if not r.is_default() and not r.managed]
+    await member.add_roles(session.temp_role,
+                           reason="Moddy Team linking window — permission lent")
+
+    removable = removable_roles(session.guild, member)
+    session.saved_role_ids = [r.id for r in removable]
+    # Persisted *before* the removal, never after: a process that dies in
+    # between must still know what to give back.
     await _remember(session.bot, session.guild.id, {
         "staff_id": member.id,
         "temp_role_id": session.temp_role.id if session.temp_role else None,
         "team_role_id": session.team_role.id,
         "saved_role_ids": session.saved_role_ids,
     })
-    await member.edit(roles=keep + [session.temp_role],
-                      reason="Moddy Team linking window — roles held")
+    if not removable:
+        return
+    try:
+        await member.remove_roles(*removable,
+                                  reason="Moddy Team linking window — roles held")
+    except discord.HTTPException as e:
+        # The window is still useful without this; do not abort and leave the
+        # staffer with a half-applied state.
+        logger.error("Could not set aside the roles of %s in guild %s — HTTP %s: %s",
+                     member.id, session.guild.id, getattr(e, "status", "?"),
+                     getattr(e, "text", None) or e)
+        session.saved_role_ids = []
+        await _remember(session.bot, session.guild.id, {
+            "staff_id": member.id,
+            "temp_role_id": session.temp_role.id if session.temp_role else None,
+            "team_role_id": session.team_role.id,
+            "saved_role_ids": [],
+        })
 
 
 async def _give_roles_back(bot, guild: discord.Guild, member: discord.Member,

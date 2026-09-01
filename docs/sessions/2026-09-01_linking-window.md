@@ -76,6 +76,27 @@ seconds, so they can do the clicks themselves.
   break `ctx.open_modal` — Discord refuses `send_modal` on an answered
   interaction — so commands that open modals must keep the 3 s path.
 
+## After the first real run
+
+`t.role` in a live server was refused with `above_moddy`: the staffer's highest
+role sat above Moddy's, and Discord refuses to touch the roles of anybody in
+that position.
+
+Jules asked for the limit to go. It now does:
+
+- `removable_roles()` sets aside what Discord allows and leaves the rest, rather
+  than refusing the whole window;
+- lending the throwaway role and setting the others aside are two separate
+  requests, so a server where the second is impossible still gets the first;
+- the card names the roles that stayed (`window_partial`). **The containment is
+  void in that case** — the staffer keeps whatever those roles carry, and the
+  position trick protects nothing. Saying so on the card was the condition for
+  removing the check: a half-open box described as closed is worse than a
+  refusal.
+
+Also added `/team role_delete` (alias `t.unrole`): deletes the Moddy Team role,
+forgets its stored id, refuses while a linking window is running.
+
 ## Known issues / follow-ups
 
 - **Nothing here has been run against a live guild yet.** The tests cover the

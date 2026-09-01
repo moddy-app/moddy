@@ -28,6 +28,8 @@ from services.staff_events import (
 from utils.moddy_team_role import STORE_PATH, TEAM_ROLE_NAME, _as_int
 from services.team_link_session import (
     CANCELLED,
+    removable_roles,
+    unstrippable_roles,
     DONE,
     EXPIRED,
     FAILED,
@@ -182,13 +184,24 @@ class TestTeamRole:
 # The thirty-second linking window
 # --------------------------------------------------------------------------- #
 class FakeRole:
-    def __init__(self, rid, *, managed=False, default=False):
+    def __init__(self, rid, *, managed=False, default=False, position=0):
         self.id = rid
         self.managed = managed
+        self.position = position
         self._default = default
 
     def is_default(self):
         return self._default
+
+    def __lt__(self, other):
+        return self.position < other.position
+
+
+class FakeGuildWithMe:
+    """A guild whose ``me`` sits at a known height in the hierarchy."""
+
+    def __init__(self, bot_top):
+        self.me = SimpleNamespace(top_role=FakeRole(999, position=bot_top))
 
 
 class FakeGuild:
@@ -227,6 +240,21 @@ class TestLinkingWindow:
     def test_nothing_to_restore_is_not_an_error(self):
         assert _restorable(self._guild(), None, self.TEAM_ID) == []
 
+    def test_roles_above_moddy_are_left_in_place(self):
+        """Discord refuses to touch them; the window runs anyway, half-open."""
+        guild = FakeGuildWithMe(bot_top=10)
+        member = SimpleNamespace(roles=[
+            FakeRole(1, default=True), FakeRole(2, position=5),
+            FakeRole(3, managed=True, position=6), FakeRole(4, position=20),
+        ])
+        assert [r.id for r in removable_roles(guild, member)] == [2]
+        assert [r.id for r in unstrippable_roles(guild, member)] == [4]
+
+    def test_nothing_stays_when_everything_is_below_moddy(self):
+        guild = FakeGuildWithMe(bot_top=10)
+        member = SimpleNamespace(roles=[FakeRole(1, default=True), FakeRole(2, position=5)])
+        assert unstrippable_roles(guild, member) == []
+
     def test_the_window_is_thirty_seconds(self):
         assert WINDOW_SECONDS == 30
 
@@ -242,9 +270,11 @@ class TestLinkingWindow:
             role = json.load(fh)["staff"]["team"]["role"]
         for outcome in (DONE, EXPIRED, CANCELLED, FAILED):
             assert f"window_{outcome}" in role, (locale, outcome)
-        for blocker in ("not_member", "owner", "busy", "no_permission",
-                        "above_moddy", "no_room"):
+        for blocker in ("not_member", "owner", "busy", "no_permission", "no_room"):
             assert f"blocked_{blocker}" in role, (locale, blocker)
+        # The window can only half-contain a staffer sitting above Moddy, and
+        # the card has to say so — silence there would be a false promise.
+        assert "window_partial" in role, locale
 
 
 # --------------------------------------------------------------------------- #

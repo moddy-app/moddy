@@ -3514,6 +3514,7 @@
         "window_title": "You have {seconds} seconds",
         "window": "Do it now, yourself:\nServer Settings → **Roles** → **{role}** → **Links** → *Add requirement* → **Moddy** → `Moddy Team` is true.",
         "window_rules": "Moddy has lent you `Manage Roles` and set your other roles aside — you get them back as soon as this is over. Anything else (creating a role, handing one out, touching a channel's permissions) is reverted and ends the operation.",
+        "window_partial": "These roles sit above Moddy's and stay on you: {roles}. The window lends you `Manage Roles`, but cannot confine you to it.",
         "window_done": "Requirement detected on the role. Your roles have been given back.",
         "window_expired": "The window closed without the requirement appearing. Your roles have been given back.",
         "window_cancelled": "An action outside the linking was detected: it was reverted, and the operation with it.",
@@ -3522,13 +3523,21 @@
         "blocked_owner": "You own this server: you already have everything you need.",
         "blocked_busy": "Another linking is already running on this server.",
         "blocked_no_permission": "Moddy does not have `Manage Roles` here.",
-        "blocked_above_moddy": "Your highest role sits above Moddy's: it cannot manage your roles.",
         "blocked_no_room": "Moddy's role sits too low in the hierarchy to fit the two roles needed underneath it.",
         "hint": "Run the command again to check that the link took.",
         "docs": "Link your account",
         "failed_title": "Could not create the role",
         "no_permission": "Moddy is not allowed to manage roles in {name}.",
         "http_error": "Discord refused the creation: {error}"
+      },
+      "role_delete": {
+        "title": "Moddy Team role deleted",
+        "done": "The {role} role has been deleted from {guild}.",
+        "holders": "It was held by {count} member(s)",
+        "hint": "Run `t.role` again to recreate one.",
+        "failed_title": "Could not delete the role",
+        "no_role": "No {name} role in {guild}.",
+        "forbidden": "Moddy is not allowed to delete {role} — it most likely sits above its own."
       },
       "access": {
         "picker_title": "Permission request",

@@ -52,16 +52,22 @@ def _blocker(guild: discord.Guild, member) -> str:
         return "busy"
     if not me or not me.guild_permissions.manage_roles:
         return "no_permission"
-    if member.top_role >= me.top_role:
-        return "above_moddy"
+    # A staffer sitting at or above Moddy is no longer refused: the window sets
+    # aside what it can and says so. See `linking.unstrippable_roles`.
     if me.top_role.position < 3:
         # Moddy Team at 1 and the throwaway role at 2 must both fit under Moddy.
         return "no_room"
     return ""
 
 
-def _window_card(locale: str, role: discord.Role, guild: discord.Guild) -> BaseView:
-    """The instructions the staffer has thirty seconds to follow."""
+def _window_card(locale: str, role: discord.Role, guild: discord.Guild,
+                 staying=()) -> BaseView:
+    """The instructions the staffer has thirty seconds to follow.
+
+    ``staying`` are the roles Moddy cannot set aside (they sit at or above its
+    own). When there are any, the card says the containment is partial rather
+    than letting the staffer believe in a box that is not closed.
+    """
     view = BaseView()
     container = design.make_container("warning")
     container.add_item(ui.TextDisplay(
@@ -70,6 +76,9 @@ def _window_card(locale: str, role: discord.Role, guild: discord.Guild) -> BaseV
     ))
     container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
     container.add_item(ui.TextDisplay(f"-# {t('staff.team.role.window_rules', locale=locale)}"))
+    if staying:
+        container.add_item(ui.TextDisplay(
+            f"-# {t('staff.team.role.window_partial', locale=locale, roles=', '.join(r.mention for r in staying))}"))
     view.add_item(container)
     return view
 
@@ -145,7 +154,9 @@ class TeamRoleCommand(StaffCommand):
                 # Tell them what to do *before* the clock starts: the card is
                 # the instructions, and thirty seconds is not long enough to
                 # read them afterwards.
-                await ctx.send(view=_window_card(locale, role, guild))
+                await ctx.send(view=_window_card(
+                    locale, role, guild,
+                    staying=linking.unstrippable_roles(guild, member)))
                 outcome = await linking.run_window(ctx.bot, guild, member, role)
                 linked = outcome == linking.DONE
 

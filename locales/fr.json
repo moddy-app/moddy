@@ -3513,6 +3513,7 @@
         "window_title": "Tu as {seconds} secondes",
         "window": "Fais-le maintenant, toi-même :\nParamètres du serveur → **Rôles** → **{role}** → **Liens** → *Ajouter une condition* → **Moddy** → `Équipe Moddy` est vrai.",
         "window_rules": "Moddy t'a prêté `Gérer les rôles` et a mis tes autres rôles de côté — ils te seront rendus dès que c'est fini. Toute autre action (créer un rôle, en attribuer un, toucher aux permissions d'un salon) est annulée et met fin à l'opération.",
+        "window_partial": "Ces rôles sont au-dessus de celui de Moddy et restent en place : {roles}. La fenêtre te prête `Gérer les rôles`, mais ne peut pas te confiner à lui.",
         "window_done": "Condition détectée sur le rôle. Tes rôles t'ont été rendus.",
         "window_expired": "Le délai est passé sans que la condition apparaisse. Tes rôles t'ont été rendus.",
         "window_cancelled": "Une action hors de la liaison a été détectée : elle a été annulée, et l'opération avec.",
@@ -3521,13 +3522,21 @@
         "blocked_owner": "Tu es propriétaire de ce serveur : tu as déjà tout ce qu'il faut.",
         "blocked_busy": "Une autre liaison est déjà en cours sur ce serveur.",
         "blocked_no_permission": "Moddy n'a pas `Gérer les rôles` ici.",
-        "blocked_above_moddy": "Ton rôle le plus haut est au-dessus de celui de Moddy : il ne peut pas gérer tes rôles.",
         "blocked_no_room": "Le rôle de Moddy est trop bas dans la hiérarchie pour placer les deux rôles nécessaires en dessous.",
         "hint": "Relance la commande pour vérifier que la liaison est prise en compte.",
         "docs": "Lier son compte",
         "failed_title": "Impossible de créer le rôle",
         "no_permission": "Moddy n'a pas la permission de gérer les rôles dans {name}.",
         "http_error": "Discord a refusé la création : {error}"
+      },
+      "role_delete": {
+        "title": "Rôle Moddy Team supprimé",
+        "done": "Le rôle {role} a été supprimé de {guild}.",
+        "holders": "Il était porté par {count} membre(s)",
+        "hint": "Relance `t.role` pour en recréer un.",
+        "failed_title": "Impossible de supprimer le rôle",
+        "no_role": "Aucun rôle {name} dans {guild}.",
+        "forbidden": "Moddy n'a pas la permission de supprimer {role} — il est probablement au-dessus du sien."
       },
       "access": {
         "picker_title": "Demande de permissions",
