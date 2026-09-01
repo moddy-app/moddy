@@ -209,14 +209,46 @@ class BrocoliChat(commands.Cog):
     # ------------------------------------------------------------------
 
     @commands.Cog.listener()
+    async def on_ready(self):
+        """Log which channels are wired up, and to which guild.
+
+        The backend's own allowlist is keyed by GUILD, while a channel is
+        configured by CHANNEL id — so the guild a configured channel actually
+        belongs to has to be discoverable without opening Discord. Printing it
+        once at startup turns "nothing happens when I type" into a one-line
+        answer.
+        """
+        for channel_id in BROCOLI_CHANNEL_IDS:
+            channel = self.bot.get_channel(channel_id)
+            if channel is None:
+                logger.warning(
+                    "[Brocoli] configured channel %s is not visible to the bot",
+                    channel_id,
+                )
+                continue
+            guild_id = getattr(channel.guild, "id", None)
+            logger.info(
+                "[Brocoli] listening in #%s (%s) — guild %s. The backend's "
+                "BOT_ASSERT_ALLOWED_GUILDS must contain %s.",
+                channel, channel_id, guild_id, guild_id,
+            )
+
+    @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         if message.author.bot or not message.guild:
-            return
-        if message.guild.id not in BROCOLI_GUILD_IDS:
             return
 
         state = await self._state(message.guild.id)
         if not self._is_brocoli_channel(message.channel.id, state):
+            return
+        # The guild allowlist governs where `/brocoli` is REGISTERED. A channel
+        # named explicitly in BROCOLI_CHANNEL_IDS is already an allowlist of its
+        # own, and requiring both would mean a channel configured by id stays
+        # silent for a reason nothing in Discord explains.
+        if (
+            message.channel.id not in BROCOLI_CHANNEL_IDS
+            and message.guild.id not in BROCOLI_GUILD_IDS
+        ):
             return
         if not message.content or message.content.startswith(("//", "#")):
             # An easy way to talk in the channel without paying for a turn.
@@ -437,9 +469,20 @@ def _tool_label(name: str, locale: str) -> str:
 
 async def setup(bot):
     if not BROCOLI_GUILD_IDS:
-        # No allowlist, no command. Loading the cog with an empty
-        # `app_commands.guilds()` would register `/brocoli` globally — on every
-        # server Moddy is in — which is the opposite of the intent.
-        logger.info("[Brocoli] BROCOLI_GUILD_IDS is empty, channel feature disabled")
+        # No allowlist, no cog. Loading it with an empty `app_commands.guilds()`
+        # would register `/brocoli` globally — on every server Moddy is in —
+        # which is the opposite of the intent.
+        if BROCOLI_CHANNEL_IDS:
+            # Half-configured is the confusing case: a channel is named but the
+            # cog cannot load, so the channel would sit silent with nothing
+            # explaining why.
+            logger.error(
+                "[Brocoli] BROCOLI_CHANNEL_IDS is set (%s) but BROCOLI_GUILD_IDS "
+                "is empty — the cog cannot load. Set BROCOLI_GUILD_IDS to the "
+                "guild those channels belong to.",
+                ",".join(str(c) for c in BROCOLI_CHANNEL_IDS),
+            )
+        else:
+            logger.info("[Brocoli] BROCOLI_GUILD_IDS is empty, channel feature disabled")
         return
     await bot.add_cog(BrocoliChat(bot))
