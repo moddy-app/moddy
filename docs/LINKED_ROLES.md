@@ -177,6 +177,25 @@ the inner ones a **AND**. Ours is one requirement:
 
 Only the first two mean the administrator has nothing left to do.
 
+#### Every refusal is logged verbatim
+
+The route is undocumented, so **Discord's own answer is the only thing that will
+ever explain a failure** — and the only thing that will say the route has
+changed. Every failing path logs, at `error` level on `moddy.moddy_team_role`:
+the HTTP status, Discord's error code, the raw response body, the role and guild
+ids, and the payload that was sent. Never a bare "forbidden".
+
+```
+Binding the role connection failed on role 8 in guild 7 — HTTP 403
+(Discord code 50013): Missing Permissions | sent: [[{"connection_type":…}]]
+```
+
+A 404/405 additionally logs that the route is no longer available to Moddy —
+that is the line to grep for the day `/team role` starts falling back for
+everyone. `tests/test_linked_roles.py` asserts the body reaches the logs, since
+a swallowed answer is exactly the kind of thing nobody notices until it
+matters.
+
 ---
 
 ## `/team role` — creating it

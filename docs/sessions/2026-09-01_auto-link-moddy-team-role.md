@@ -20,7 +20,7 @@ Discord's **official** API has nothing — no field on the role payload, and
 |---|---|
 | `utils/moddy_team_role.py` | `link_team_role()`, `resolve_metadata_key()`, `build_requirement()`, `merge_configuration()`, `configuration_contains()`, `LinkResult` |
 | `staff/commands/team/team_role.py` | binds after creating; three state wordings; the failure reason on the card |
-| `tests/test_linked_roles.py` | +15 tests (payload, merge, every failure mode, the `premium` trap) |
+| `tests/test_linked_roles.py` | +16 tests (payload, merge, every failure mode, the `premium` trap) |
 | `locales/*.json` (×5) | `linked_auto`, `auto_{no_metadata,unsupported,forbidden,failed}`; `howto` reworded |
 | `docs/LINKED_ROLES.md` | "Why the linking step is manual" → "How the binding is done" |
 
@@ -49,6 +49,15 @@ Discord's **official** API has nothing — no field on the role payload, and
   `GUILD_ROLE_UPDATE` gateway event, which has not arrived when the card is
   built. A "just linked" wording distinguishes Moddy's own binding from one an
   admin did last week.
+
+### Logging (added after review)
+
+A refusal used to log `"Discord refused the role connection binding (forbidden)"`
+and nothing else. On an undocumented route that is worthless: the body is the
+only thing that can say *why*, or that the route itself has changed. Every
+failing path now logs, at `error`, the status, Discord's error code, the raw
+body, the role/guild ids and the payload sent — with a test asserting it, so a
+future refactor cannot quietly swallow it again.
 
 ## Known issues / follow-ups
 
