@@ -32,12 +32,12 @@ if SENTRY_DSN:
         # Add data like request headers and IP for users
         # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
         send_default_pii=False,
-        # Set traces_sample_rate to 1.0 to capture 100% of transactions for performance monitoring.
-        # Adjust this value in production.
-        traces_sample_rate=0.1,  # 10% of transactions
-        # Set profiles_sample_rate to 1.0 to profile 100% of sampled transactions.
-        # Adjust this value in production.
-        profiles_sample_rate=0.1,  # 10% of sampled transactions
+        # What we actually use Sentry for is error tracking, which is unaffected by
+        # these two. Tracing keeps a span buffer per transaction, and the profiler
+        # runs a dedicated sampling thread (and therefore its own glibc malloc
+        # arena) -- both are pure memory cost here. Overridable per environment.
+        traces_sample_rate=float(os.getenv("SENTRY_TRACES_SAMPLE_RATE", "0.01")),
+        profiles_sample_rate=float(os.getenv("SENTRY_PROFILES_SAMPLE_RATE", "0.0")),
         # Auto-enabled integrations import their target library at init time
         # (e.g. the OpenAI integration imports `openai`, which imports its
         # vendored aiohttp transport). A version mismatch in that import

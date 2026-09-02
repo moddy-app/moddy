@@ -34,6 +34,7 @@ from modules.tickets import (
 from services.ticket_service import TicketError
 from utils.components_v2 import create_success_message
 from utils.i18n import i18n, t
+from utils.members import get_or_fetch_member
 from utils.ticket_views import (
     TicketRenameModal,
     handle_ticket_error,
@@ -475,7 +476,7 @@ class Tickets(commands.Cog):
             if not ticket or ticket.get('staff_thread_id') != thread.id:
                 return
 
-            guild_member = thread.guild.get_member(member.id)
+            guild_member = await get_or_fetch_member(thread.guild, member.id)
             if guild_member is None:
                 guild_member = await thread.guild.fetch_member(member.id)
 

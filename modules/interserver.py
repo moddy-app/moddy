@@ -14,6 +14,7 @@ import asyncio
 
 from modules.module_manager import ModuleBase
 from utils.emojis import GROUPS, UNDONE, DONE, VERIFIED, LOADING as LOADING_EMOJI, REPLY as REPLY_EMOJI
+from utils.members import get_or_fetch_member
 
 logger = logging.getLogger('moddy.modules.interserver')
 
@@ -261,7 +262,7 @@ class InterServerModule(ModuleBase):
                 if not is_moddy_team:
                     try:
                         # Vérifie si l'auteur est membre du serveur cible
-                        target_member = channel.guild.get_member(message.author.id)
+                        target_member = await get_or_fetch_member(channel.guild, message.author.id)
 
                         if target_member:
                             # Vérifie si le membre est en timeout

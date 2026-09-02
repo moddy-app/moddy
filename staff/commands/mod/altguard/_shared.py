@@ -6,6 +6,7 @@ from typing import Optional, Tuple
 
 from staff.framework import design, parse_guild_id, parse_user_id
 from utils.i18n import t
+from utils.members import get_or_fetch_member
 
 GROUP = "altguard"
 GROUP_DESCRIPTION = "AltGuard verification (anti multi-account)"
@@ -39,7 +40,7 @@ async def resolve_target(ctx, *, user_option: str = "user",
             t("staff.mod.altguard.no_guild", locale=ctx.locale, id=f"`{guild_id}`"),
         )
 
-    member = guild.get_member(user_id)
+    member = await get_or_fetch_member(guild, user_id)
     if member is None:
         try:
             member = await guild.fetch_member(user_id)

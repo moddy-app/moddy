@@ -2,6 +2,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
+from collections import OrderedDict
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -11,6 +12,8 @@ from .errors import QuotaExceededError
 logger = logging.getLogger("moddy.gateway.quota")
 
 _LIMIT_CACHE_TTL = 60.0  # seconds
+# Hard cap on distinct (scope, key, type) limits kept in memory.
+_LIMIT_CACHE_MAX_ENTRIES = 2048
 _QUOTA_KEY_TTL = 172800  # 48h in seconds
 
 
@@ -21,8 +24,11 @@ class QuotaManager:
     def __init__(self, redis, pool):
         self._redis = redis
         self._pool = pool
-        # (scope, key, type) -> (limit, cached_at)
-        self._limit_cache: dict[tuple, tuple[int, float]] = {}
+        # (scope, key, type) -> (limit, cached_at). The TTL was only checked on
+        # read, so an expired entry stayed resident forever: one key per distinct
+        # user/guild the gateway ever served. Insertion-ordered and capped, with
+        # expired entries dropped on write (see _prune_limit_cache).
+        self._limit_cache: "OrderedDict[tuple, tuple[int, float]]" = OrderedDict()
         self._cache_lock = asyncio.Lock()
 
     def _date_str(self) -> str:
@@ -62,8 +68,25 @@ class QuotaManager:
 
         async with self._cache_lock:
             self._limit_cache[cache_key] = (limit, time.monotonic())
+            self._limit_cache.move_to_end(cache_key)
+            self._prune_limit_cache()
 
         return limit
+
+    def _prune_limit_cache(self) -> None:
+        """Drop expired entries, then the oldest ones past the size cap.
+
+        Called under `_cache_lock` from the write path only: the read path is hot
+        and must stay a plain dict lookup. Re-resolving an evicted limit costs one
+        query, which is what the cache miss would have cost anyway.
+        """
+        now = time.monotonic()
+        expired = [k for k, (_, at) in self._limit_cache.items()
+                   if now - at >= _LIMIT_CACHE_TTL]
+        for k in expired:
+            del self._limit_cache[k]
+        while len(self._limit_cache) > _LIMIT_CACHE_MAX_ENTRIES:
+            self._limit_cache.popitem(last=False)
 
     async def _get_count(self, target: QuotaTarget) -> int:
         """Current daily usage from Redis."""

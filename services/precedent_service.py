@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import logging
 import time
+from collections import OrderedDict
 from typing import Awaitable, Callable, List, Optional
 
 from automod import constants as ac
@@ -38,7 +39,12 @@ class PrecedentService:
         # holds up to PRECEDENT_MAX_PER_GUILD embedding vectors per guild, so
         # letting stale entries linger is the single largest memory leak-shaped
         # cost in the bot even though nothing here actually leaks.
-        self._cache: dict[int, tuple[float, List[ap.Precedent]]] = {}
+        #
+        # An OrderedDict in insertion order, capped at PRECEDENT_CACHE_MAX_GUILDS:
+        # the TTL bounds the cache in *time* but not in *size*, so a busy window
+        # across many guilds could otherwise pin hundreds of megabytes of vectors
+        # at once. Past the cap the least-recently-loaded guild is dropped.
+        self._cache: "OrderedDict[int, tuple[float, List[ap.Precedent]]]" = OrderedDict()
 
     # -- Recording (from a human ruling) -----------------------------------
 
@@ -108,10 +114,23 @@ class PrecedentService:
         for gid in stale:
             del self._cache[gid]
 
+    def _evict_overflow(self) -> None:
+        """Drop least-recently-loaded guilds past PRECEDENT_CACHE_MAX_GUILDS.
+
+        Complements the TTL sweep: that one bounds how *long* a guild stays
+        cached, this one bounds how *many* do at once. Evicting costs the guild a
+        single extra query the next time it is seen.
+        """
+        while len(self._cache) > ac.PRECEDENT_CACHE_MAX_GUILDS:
+            self._cache.popitem(last=False)
+
     async def _guild_precedents(self, guild_id: int) -> List[ap.Precedent]:
         now = time.time()
         entry = self._cache.get(guild_id)
         if entry is not None and entry[0] > now:
+            # Refresh recency so a guild that keeps being read is not the one
+            # evicted when the cache overflows.
+            self._cache.move_to_end(guild_id)
             return entry[1]
         self._evict_expired(now)
         pres: List[ap.Precedent] = []
@@ -137,6 +156,8 @@ class PrecedentService:
                 source=r.get("source") or "",
             ))
         self._cache[guild_id] = (now + ac.PRECEDENT_CACHE_TTL_SECONDS, pres)
+        self._cache.move_to_end(guild_id)
+        self._evict_overflow()
         return pres
 
     def make_provider(

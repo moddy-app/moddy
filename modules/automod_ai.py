@@ -61,6 +61,7 @@ from automod import bareme as ab
 from automod import relations as ar
 from utils import global_sanctions
 from utils.i18n import t
+from utils.members import get_or_fetch_member
 from utils.moderation_cases import IssuerType, SanctionAction, EventType, AuthorType
 
 logger = logging.getLogger("moddy.modules.automod_ai")
@@ -620,8 +621,12 @@ class AutomodModule(ModuleBase):
 
         target_gone = False
         guild = message.guild
-        if guild is not None and guild.get_member(int(target_id)) is None:
-            target_gone = True
+        if guild is not None:
+            # Must be an authoritative answer: guilds are not chunked at startup
+            # (config.CHUNK_GUILDS_AT_STARTUP), so a plain cache miss would be
+            # read as "the target left", feeding a false signal into the
+            # target-reaction classifier and therefore into a sanction.
+            target_gone = await get_or_fetch_member(guild, int(target_id)) is None
 
         engine = get_engine(self.bot)
         aggressive = sum(1 for r in replies if engine.blocklist.match(r) is not None)

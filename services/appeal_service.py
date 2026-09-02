@@ -28,6 +28,7 @@ import discord
 import config
 from utils.i18n import t
 from utils.moderation_cases import IssuerType, SanctionAction, EventType, AuthorType
+from utils.members import get_or_fetch_member
 
 logger = logging.getLogger("moddy.appeal_service")
 
@@ -387,7 +388,7 @@ class AppealService:
             if action == "ban":
                 await guild.unban(discord.Object(id=subject_id), reason="[Automod] appel accepté")
             elif action == "mute":
-                member = guild.get_member(subject_id)
+                member = await get_or_fetch_member(guild, subject_id)
                 if member is not None:
                     await member.timeout(None, reason="[Automod] appel accepté")
         except (discord.Forbidden, discord.HTTPException, discord.NotFound) as e:
@@ -400,7 +401,7 @@ class AppealService:
             return
         from datetime import timedelta
         me = guild.me
-        member = guild.get_member(subject_id)
+        member = await get_or_fetch_member(guild, subject_id)
         mute_for = (min(timedelta(hours=int(duration_hours)), timedelta(days=28))
                     if duration_hours and duration_hours > 0 else _TRANSFORM_MUTE_DURATION)
         try:

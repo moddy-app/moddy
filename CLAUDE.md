@@ -204,6 +204,8 @@ moddy/
 │   ├── appeal_views.py        #   Automod appeal UI (DM buttons + reviewer panels, persistent)
 │   ├── expiration_views.py    #   Sanction-expiration DM (unban/unmute/unwarn + invite)
 │   ├── invites.py             #   Shared guild invite creation (appeals, expirations)
+│   ├── members.py             #   Member lookup without the startup chunk
+│   │                          #   (get_or_fetch_member / fetch_all_members)
 │   ├── moderation_cases.py    #   Cases domain model + enums + reference gen
 │   ├── global_sanctions.py    #   Global (Moddy-team) sanction levels: warn/limited/suspended
 │   ├── global_sanction_views.py #  Global sanction UI (notice DMs, staff panels, Modals V2)
@@ -502,7 +504,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/REDIS_COMMUNICATION.md](docs/REDIS_COMMUNICATION.md) | **Redis inter-service communication** — Pub/Sub vs Streams vs plain keys, current channel/stream inventory, checklist for wiring up a new Redis-based service |
 | [docs/SOCIAL_NOTIFICATIONS.md](docs/SOCIAL_NOTIFICATIONS.md) | Social Notifications module + `moddy-feeds` Redis contract (what the backend must mirror) |
 | [docs/SUBSCRIPTION_SCHEMA.md](docs/SUBSCRIPTION_SCHEMA.md) | Subscription DB schema, Redis cache contract, Pub/Sub events (incl. `notify_invoice` — Stripe invoice DMs) |
-| [docs/RAILWAY.md](docs/RAILWAY.md) | Environment variables, deployment, troubleshooting |
+| [docs/RAILWAY.md](docs/RAILWAY.md) | Environment variables, deployment, troubleshooting, **memory footprint & Railway cost** |
 
 ### Other
 | Document | When to Read |

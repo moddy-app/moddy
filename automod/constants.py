@@ -264,6 +264,13 @@ PRECEDENT_MAX_PER_GUILD: int = 500
 # In-process TTL of a guild's precedent set (service-side cache; bounds DB load
 # to one query per guild per window while keeping matching in-process).
 PRECEDENT_CACHE_TTL_SECONDS: float = 300.0
+# Hard cap on how many guilds may hold a precedent set in memory at once. The
+# TTL alone bounds the cache to "guilds active in the last 5 minutes", which is
+# unbounded by design: at PRECEDENT_MAX_PER_GUILD 1536-dim float32 vectors, that
+# is ~3 MB per guild, so a busy window could pin hundreds of megabytes. The
+# least-recently-loaded guild is evicted past this; it only costs that guild one
+# extra DB query on its next message.
+PRECEDENT_CACHE_MAX_GUILDS: int = 50
 # Bounded cache of the primary message embedding captured during scoring, so the
 # precedent query reuses the funnel's embedding instead of paying a second call.
 PRECEDENT_QUERY_VECTOR_CACHE: int = 256

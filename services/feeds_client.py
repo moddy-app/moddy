@@ -143,7 +143,7 @@ class FeedsClient:
         last_id = "$"  # only replies produced after we start listening
         while True:
             try:
-                messages = await self.redis.xread({REPLIES_STREAM: last_id}, block=5000, count=20)
+                messages = await self.redis.xread({REPLIES_STREAM: last_id}, block=30000, count=20)
                 if not messages:
                     continue
                 for _stream, entries in messages:
@@ -188,7 +188,7 @@ class FeedsClient:
                     self._consumer_name,
                     {QUEUE_STREAM: ">"},
                     count=50,
-                    block=5000,
+                    block=30000,
                 )
                 for _stream, messages in resp or []:
                     for msg_id, fields in messages:

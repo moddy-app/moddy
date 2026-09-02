@@ -73,6 +73,27 @@ DB_POOL_MIN_SIZE: int = int(os.environ.get("DB_POOL_MIN_SIZE", "1"))
 DB_POOL_MAX_SIZE: int = int(os.environ.get("DB_POOL_MAX_SIZE", "8"))
 
 # =============================================================================
+# CACHE DISCORD
+# =============================================================================
+
+# Whether to request every guild's full member list at startup.
+#
+# discord.py defaults this to True as soon as the `members` intent is on, which
+# materialises one resident Member object (~1-2 KB) for every member of every
+# guild -- by far the largest single memory cost of the process, and Railway
+# bills RAM by the GB-minute.
+#
+# Almost nothing here needs a complete member list: the three places that
+# iterate `guild.members` chunk on demand instead (see
+# `utils/members.py::fetch_all_members`), and lookups go through
+# `utils/members.py::get_or_fetch_member`, which falls back to a REST fetch on a
+# cache miss. Set CHUNK_GUILDS_AT_STARTUP=true to restore the old behaviour
+# without a code change if a regression shows up in production.
+CHUNK_GUILDS_AT_STARTUP: bool = os.environ.get(
+    "CHUNK_GUILDS_AT_STARTUP", "False"
+).lower() in ("true", "1", "yes", "on")
+
+# =============================================================================
 # REDIS
 # =============================================================================
 

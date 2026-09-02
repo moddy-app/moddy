@@ -283,27 +283,40 @@ def setup_logging():
     log_format = '%(asctime)s [%(levelname)-8s] %(name)-25s | %(message)s'
     date_format = '%Y-%m-%d %H:%M:%S'
 
+    # DEBUG is opt-in. Leaving the root logger at DEBUG means every library on the
+    # stack formats and allocates log records that are then thrown away, which is
+    # pure memory churn in a container where nobody reads them.
+    debug_enabled = os.getenv("DEBUG", "").strip().lower() in ("1", "true", "yes", "on")
+    level = logging.DEBUG if debug_enabled else logging.INFO
+
     # Console handler
     console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(logging.INFO)
+    console_handler.setLevel(level)
     console_handler.setFormatter(CompactExceptionFormatter(log_format, date_format))
-
-    # File handler
-    log_dir = Path(__file__).parent / 'logs'
-    log_dir.mkdir(exist_ok=True)
-
-    file_handler = logging.FileHandler(
-        log_dir / f'moddy_{time.strftime("%Y%m%d")}.log',
-        encoding='utf-8'
-    )
-    file_handler.setLevel(logging.DEBUG)
-    file_handler.setFormatter(CompactExceptionFormatter(log_format, date_format))
 
     # Root logger configuration
     root_logger = logging.getLogger()
-    root_logger.setLevel(logging.DEBUG)
+    root_logger.setLevel(level)
     root_logger.addHandler(console_handler)
-    root_logger.addHandler(file_handler)
+
+    # File handler. On Railway stdout is already collected and the container disk is
+    # ephemeral, so writing a second copy only grows a file nobody reads. Everywhere
+    # else the file is capped and rotated instead of growing forever.
+    if not os.getenv("RAILWAY_ENVIRONMENT"):
+        from logging.handlers import RotatingFileHandler
+
+        log_dir = Path(__file__).parent / 'logs'
+        log_dir.mkdir(exist_ok=True)
+
+        file_handler = RotatingFileHandler(
+            log_dir / 'moddy.log',
+            maxBytes=5_000_000,
+            backupCount=2,
+            encoding='utf-8',
+        )
+        file_handler.setLevel(level)
+        file_handler.setFormatter(CompactExceptionFormatter(log_format, date_format))
+        root_logger.addHandler(file_handler)
 
     # Reduces noise from certain modules
     logging.getLogger('discord').setLevel(logging.WARNING)
