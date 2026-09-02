@@ -64,7 +64,10 @@ there can be fourteen now.
 | `staff/commands/team/access.py` | `role` option (`team`/`manager`) |
 | `utils/team_access_views.py` | the role travels in the custom_ids, as an **optional** segment |
 | `services/ticket_service.py` | a staff ticket grants `admin` to **both** roles when both exist |
+| `staff/base.py` | response **list** per command, tracking from dispatch, deletion after the fact, bounded map |
+| `staff/framework/cog.py`, `staff/{support,communication}_commands.py` | `begin_command()` at dispatch |
 | `tests/test_linked_roles.py` | 82 tests (was 52) |
+| `tests/test_staff_response_tracking.py` | **new** — 9 tests on the deletion contract |
 | `locales/*.json` (×5) | `metadata`, `scope_hint`, `window_partial` as an outcome, `window_kept_roles`; `{role}`→`{roles}`; `state` dropped |
 | `docs/LINKED_ROLES.md`, `docs/STAFF_SYSTEM.md`, `CLAUDE.md` | rewritten around the two roles |
 
@@ -99,6 +102,40 @@ there can be fourteen now.
 - **`/team see` was left on the base role.** It opens one channel to the team;
   there is no version of that which wants to be manager-only, and the base role
   is what every staffer holds.
+
+## Then: deleting a staff command left messages behind
+
+Reported mid-session. `staff/base.py` mapped **one** response id per command,
+so a command that answers twice — `t.role` sends the window card, then the
+report — lost the first one on the second reply, and the card stayed in the
+channel for good. Two more holes came out of looking at it:
+
+- a reply landing **after** the deletion (the report arrives up to
+  `WINDOW_SECONDS` later) was never covered: the deletion had been handled and
+  forgotten by then;
+- nothing was ever removed from the map, which grew for the life of the process.
+
+Now: responses are a list, a command is tracked from dispatch (`begin_command`,
+wired into the router and both legacy cogs) rather than from its first reply,
+a deleted command is remembered so anything still to come is sent and removed
+again, and the map is bounded at 500, oldest first. `ctx.send` returns `None`
+in that case — the three callers that edit their message already guarded on it.
+
+`tests/test_staff_response_tracking.py` covers the three cases plus the bounds.
+
+## Then: the cards said too much
+
+"pas besoin de mettre tous les tuto, on est pas con." The `/team role` cards
+were written for somebody who has never seen a linked role; they are read by
+the people who built them.
+
+Gone: `howto_title` (a heading over two lines), `hint` ("run it again to
+check"), `scope_hint` (a usage reminder next to the command that was just run),
+`window_rules` (a paragraph explaining the borrowed permission) and
+`role_delete.hint`. Kept and cut to one line each: the click path — genuinely
+several menus deep — the role → requirement pairs, and the reason a window did
+not get there. `window_note` replaces the paragraph with the only two facts
+that matter while the clock runs: the roles come back, anything else is undone.
 
 ## Known issues / follow-ups
 

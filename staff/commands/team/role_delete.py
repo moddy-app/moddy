@@ -148,7 +148,5 @@ class TeamRoleDeleteCommand(StaffCommand):
                 f"-# {t('staff.team.role.id', locale=locale)}: `{role_id}`\n"
                 f"-# {t('staff.team.role_delete.holders', locale=locale, count=f'`{holders}`')}"
             ))
-        container.add_item(ui.TextDisplay(
-            f"-# {t('staff.team.role_delete.hint', locale=locale)}"))
         view.add_item(container)
         await ctx.send(view=view)

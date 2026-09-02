@@ -198,7 +198,7 @@ CREATE TABLE staff_permissions (
 | `staff/framework/design.py` | Components V2 panel helpers |
 | `staff/commands/manage/staff.py` | `/manage staff` panel (persistent DynamicItem controls) |
 | `staff/commands/manage/rank.py` | `/manage rank` — single role assignment |
-| `staff/base.py` | `StaffCommandsCog` base (auto-delete tracking for message commands) |
+| `staff/base.py` | `StaffCommandsCog` base — deleting a message command deletes **every** answer it produced, including ones that land after the deletion |
 | `utils/staff_permissions.py` | `StaffPermissionManager`, `CommandType`, `StaffRole` |
 | `utils/staff_role_permissions.py` | Node definitions per role |
 | `utils/staff_logger.py` | Audit log writer |

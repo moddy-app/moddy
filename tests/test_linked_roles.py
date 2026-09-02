@@ -436,13 +436,22 @@ class TestLinkingWindow:
         from services.team_link_session import LinkSession
 
         # The session only needs a loop to hold its future on; nothing here
-        # ever runs on it.
-        asyncio.set_event_loop(asyncio.new_event_loop())
-        return LinkSession(
-            bot=None, guild=SimpleNamespace(id=1),
-            member=SimpleNamespace(id=2),
-            team_roles=[FakeRole(rid) for rid in role_ids],
-        )
+        # ever runs on it. The previous loop is put back, or this leaks into
+        # every test that runs after it.
+        try:
+            previous = asyncio.get_event_loop_policy().get_event_loop()
+        except RuntimeError:
+            previous = None
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            return LinkSession(
+                bot=None, guild=SimpleNamespace(id=1),
+                member=SimpleNamespace(id=2),
+                team_roles=[FakeRole(rid) for rid in role_ids],
+            )
+        finally:
+            asyncio.set_event_loop(previous)
 
     def test_the_session_is_persisted_under_moddy_team(self):
         """It must land beside the role id, so one guild read finds both."""

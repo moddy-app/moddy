@@ -99,6 +99,10 @@ class StaffCommandsRouter(StaffCommandsCog):
         if command_type.value not in self.owned_types:
             return
 
+        # Tracked from here on, before anything is sent: a command deleted
+        # before its first reply must still take that reply with it.
+        self.begin_command(message)
+
         # Flat command, or a sub-group command (`mod.case create ...`).
         command = self.message_index.get((command_type.value, command_name))
         raw_args = args

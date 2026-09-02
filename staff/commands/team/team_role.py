@@ -115,10 +115,9 @@ def _window_card(locale: str, pairs: List[Tuple[TeamRoleKind, discord.Role]],
     container.add_item(ui.TextDisplay(
         f"{design.title_line(emojis.PENDING, t('staff.team.role.window_title', locale=locale, seconds=linking.WINDOW_SECONDS))}\n"
         f"{t('staff.team.role.window', locale=locale)}\n"
-        f"{requirement_list(pairs)}"
+        f"{requirement_list(pairs)}\n"
+        f"-# {t('staff.team.role.window_note', locale=locale)}"
     ))
-    container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-    container.add_item(ui.TextDisplay(f"-# {t('staff.team.role.window_rules', locale=locale)}"))
     if staying:
         container.add_item(ui.TextDisplay(
             f"-# {t('staff.team.role.window_kept_roles', locale=locale, roles=', '.join(r.mention for r in staying))}"))
@@ -268,21 +267,17 @@ class TeamRoleCommand(StaffCommand):
             ))
 
         if not all_linked:
-            # Why the window did not get there, then the manual path — which is
-            # what a staffer reads out loud to an administrator when all else
-            # fails.
+            # Why the window did not get there, then the click path — which is
+            # what a staffer reads out to an administrator when all else fails.
             missing = [(kind, role) for kind, role, linked in states if not linked]
             names = ", ".join(f"**{role.name}**" for _, role in missing)
             reason = f"window_{outcome}" if outcome else f"blocked_{blocker}"
             container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
             container.add_item(ui.TextDisplay(
-                f"**{t('staff.team.role.howto_title', locale=locale)}**\n"
-                f"-# {t('staff.team.role.' + reason, locale=locale, roles=names)}\n"
-                f"{t('staff.team.role.howto', locale=locale)}\n"
+                f"{t('staff.team.role.' + reason, locale=locale, roles=names)}\n"
+                f"-# {t('staff.team.role.howto', locale=locale)}\n"
                 f"{requirement_list(missing)}"
             ))
-        container.add_item(ui.TextDisplay(
-            f"-# {t('staff.team.role.hint', locale=locale)}"))
         view.add_item(container)
 
         row = ui.ActionRow()
