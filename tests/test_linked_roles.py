@@ -25,7 +25,15 @@ from services.staff_events import (
     STAFF_CHANNEL,
     notify_staff_change,
 )
-from utils.moddy_team_role import STORE_PATH, TEAM_ROLE_NAME, _as_int
+from utils.moddy_team_role import (
+    KINDS,
+    MANAGER,
+    STORE_PATH,
+    TEAM,
+    TEAM_ROLE_NAME,
+    _as_int,
+    kind_from_key,
+)
 from services.team_link_session import (
     CANCELLED,
     removable_roles,
@@ -33,9 +41,12 @@ from services.team_link_session import (
     DONE,
     EXPIRED,
     FAILED,
+    PARTIAL,
     SESSION_PATH,
     WINDOW_SECONDS,
+    WindowResult,
     _restorable,
+    id_set,
 )
 from utils.team_access_views import (
     ACCESS_PERMISSIONS,
@@ -151,6 +162,42 @@ class TestAccessCatalogue:
         forged.ban_members = True
         assert value_to_keys(forged.value) == ["ban_members"]
 
+    @pytest.mark.parametrize("custom_id", [
+        "moddy:teamaccess:pick:7:3",
+        "moddy:teamaccess:send:7:3",
+        "moddy:teamaccess:accept:7:3",
+        "moddy:teamaccess:refuse:7:3",
+    ])
+    def test_a_card_posted_before_the_manager_role_is_still_answerable(self, custom_id):
+        """The role segment is optional in every template. A pending card
+        posted last month has no third field and means the base role — the
+        alternative is buttons that silently stop responding."""
+        import re
+
+        from utils.moddy_team_role import TEAM
+        from utils.team_access_views import _CID_DECIDE, _CID_PICK, _CID_SEND
+
+        matched = None
+        for template in (_CID_PICK, _CID_SEND, _CID_DECIDE):
+            matched = re.fullmatch(template, custom_id)
+            if matched:
+                break
+        assert matched is not None, custom_id
+        assert matched.groupdict().get("kind") is None
+        # And an absent segment resolves to the base role, not to nothing.
+        assert kind_from_key(matched.groupdict().get("kind")) is TEAM
+
+    def test_the_role_travels_in_the_custom_id(self):
+        import re
+
+        from utils.team_access_views import _CID_SEND
+
+        match = re.fullmatch(_CID_SEND, "moddy:teamaccess:send:7:3:manager")
+        assert match is not None
+        assert match["kind"] == "manager"
+        # And nothing else is accepted there.
+        assert re.fullmatch(_CID_SEND, "moddy:teamaccess:send:7:3:admin") is None
+
     def test_unknown_keys_are_dropped_on_the_way_in(self):
         assert keys_to_value(["administrator", "manage_messages"]) == \
             keys_to_value(["manage_messages"])
@@ -178,6 +225,75 @@ class TestTeamRole:
 
     def test_role_name(self):
         assert TEAM_ROLE_NAME == "Moddy Team"
+
+    def test_the_two_roles_never_share_anything(self):
+        """A shared name, path or metadata key would mean one role overwriting
+        the other's id — silently, and only in servers that have both."""
+        for field in ("key", "name", "store_path", "metadata"):
+            values = [getattr(kind, field) for kind in KINDS]
+            assert len(set(values)) == len(values), field
+
+    def test_the_metadata_keys_are_the_ones_the_backend_publishes(self):
+        assert TEAM.metadata == "team"
+        assert MANAGER.metadata == "manager"
+
+    def test_the_manager_name_contains_the_team_name(self):
+        """Which is exactly why the name lookup must match in full.
+
+        A ``startswith`` (or an ``in``) would resolve the base role to
+        "Moddy Team Manager" in a server that has both, and `/team access`
+        would then grant the team's permissions to the manager role.
+        """
+        assert MANAGER.name.startswith(TEAM.name)
+        assert MANAGER.name != TEAM.name
+
+    def test_an_unknown_key_means_the_base_role(self):
+        """The key travels through options and custom_ids; a typo must not
+        raise in front of an administrator, and must not silently escalate."""
+        assert kind_from_key("manager") is MANAGER
+        assert kind_from_key("team") is TEAM
+        assert kind_from_key("MANAGER") is MANAGER
+        for junk in (None, "", "admin", "moddy team manager"):
+            assert kind_from_key(junk) is TEAM
+
+
+class TestRoleScope:
+    """`t.role [guild_id] [team|manager|both]` — one role by default."""
+
+    def test_the_default_is_the_base_role_alone(self):
+        from staff.commands.team.team_role import kinds_for_scope
+
+        assert kinds_for_scope(None) == (TEAM,)
+        assert kinds_for_scope("") == (TEAM,)
+        assert kinds_for_scope("team") == (TEAM,)
+
+    def test_each_scope_selects_what_it_says(self):
+        from staff.commands.team.team_role import kinds_for_scope
+
+        assert kinds_for_scope("manager") == (MANAGER,)
+        assert kinds_for_scope("both") == KINDS
+        assert set(kinds_for_scope("both")) == {TEAM, MANAGER}
+
+    def test_an_unknown_scope_does_not_widen(self):
+        assert __import__(
+            "staff.commands.team.team_role", fromlist=["kinds_for_scope"]
+        ).kinds_for_scope("everything") == (TEAM,)
+
+    @pytest.mark.parametrize("raw,expected", [
+        ("", ("", "team")),
+        ("123", ("123", "team")),
+        ("manager", ("", "manager")),
+        ("123 manager", ("123", "manager")),
+        ("manager 123", ("123", "manager")),
+        ("123 both", ("123", "both")),
+    ])
+    def test_the_message_form_reads_both_orders(self, raw, expected):
+        """A scope is a word from a three-item list and a guild id is digits,
+        so neither can be mistaken for the other."""
+        from staff.commands.team.team_role import TeamRoleCommand
+
+        parsed = TeamRoleCommand(bot=None).parse_message(raw)
+        assert (parsed["guild_id"], parsed["roles"]) == expected
 
 
 # --------------------------------------------------------------------------- #
@@ -214,6 +330,7 @@ class FakeGuild:
 
 class TestLinkingWindow:
     TEAM_ID = 99
+    MANAGER_ID = 98
 
     def _guild(self):
         return FakeGuild([
@@ -221,24 +338,44 @@ class TestLinkingWindow:
             FakeRole(2),                        # a normal role
             FakeRole(3, managed=True),          # a bot/booster role
             FakeRole(self.TEAM_ID),             # Moddy Team
+            FakeRole(self.MANAGER_ID),          # Moddy Team Manager
         ])
 
-    def test_the_moddy_team_role_is_never_handed_back(self):
-        """Discord assigns it from the metadata; the bot must never grant it."""
+    def test_neither_moddy_team_role_is_ever_handed_back(self):
+        """Discord assigns them from the metadata; the bot must never grant one."""
+        restored = _restorable(self._guild(),
+                               [2, self.TEAM_ID, self.MANAGER_ID],
+                               {self.TEAM_ID, self.MANAGER_ID})
+        assert [r.id for r in restored] == [2]
+
+    def test_a_window_persisted_before_the_second_role_still_restores(self):
+        """A restart reads back a single ``team_role_id``, not a list. That
+        staffer must still get their roles — and not the Moddy Team one."""
         restored = _restorable(self._guild(), [2, self.TEAM_ID], self.TEAM_ID)
         assert [r.id for r in restored] == [2]
 
     def test_managed_and_everyone_are_left_alone(self):
         """Neither was ever removed — Discord refuses — so re-adding would 403."""
-        restored = _restorable(self._guild(), [1, 2, 3], self.TEAM_ID)
+        restored = _restorable(self._guild(), [1, 2, 3], {self.TEAM_ID})
         assert [r.id for r in restored] == [2]
 
     def test_a_deleted_role_is_simply_dropped(self):
-        restored = _restorable(self._guild(), [2, 12345], self.TEAM_ID)
+        restored = _restorable(self._guild(), [2, 12345], {self.TEAM_ID})
         assert [r.id for r in restored] == [2]
 
     def test_nothing_to_restore_is_not_an_error(self):
-        assert _restorable(self._guild(), None, self.TEAM_ID) == []
+        assert _restorable(self._guild(), None, {self.TEAM_ID}) == []
+
+    @pytest.mark.parametrize("value,expected", [
+        (None, set()),
+        (7, {7}),
+        ("7", {7}),
+        ([7, "8"], {7, 8}),
+        ([], set()),
+        (["nope", None], set()),
+    ])
+    def test_stored_ids_are_read_in_either_shape(self, value, expected):
+        assert id_set(value) == expected
 
     def test_roles_above_moddy_are_left_in_place(self):
         """Discord refuses to touch them; the window runs anyway, half-open."""
@@ -255,8 +392,66 @@ class TestLinkingWindow:
         member = SimpleNamespace(roles=[FakeRole(1, default=True), FakeRole(2, position=5)])
         assert unstrippable_roles(guild, member) == []
 
-    def test_the_window_is_thirty_seconds(self):
-        assert WINDOW_SECONDS == 30
+    def test_the_window_covers_two_bindings(self):
+        """It stays short — it is an escalation — but seven clicks per role
+        against thirty seconds was already tight for one."""
+        assert 60 <= WINDOW_SECONDS <= 120
+
+    def test_the_window_ends_only_once_every_role_is_linked(self):
+        """One role linked out of two is not a success, and resolving there
+        would tear the window down with the second one still unbound."""
+        session = self._session([self.TEAM_ID, self.MANAGER_ID])
+
+        session.mark_linked(self.TEAM_ID)
+        assert not session.finished.done()
+
+        session.mark_linked(self.MANAGER_ID)
+        assert session.finished.done()
+        assert session.finished.result() == DONE
+
+    def test_a_single_role_window_resolves_on_that_role(self):
+        session = self._session([self.TEAM_ID])
+        session.mark_linked(self.TEAM_ID)
+        assert session.finished.result() == DONE
+
+    def test_the_same_role_twice_does_not_resolve_the_other(self):
+        """The gateway can repeat an event; it must not count as progress."""
+        session = self._session([self.TEAM_ID, self.MANAGER_ID])
+        session.mark_linked(self.TEAM_ID)
+        session.mark_linked(self.TEAM_ID)
+        assert not session.finished.done()
+        assert session.pending == {self.MANAGER_ID}
+
+    def test_the_outcome_reads_as_a_string(self):
+        """`result == DONE` is how every caller asks; keep it working."""
+        assert WindowResult(DONE) == DONE
+        assert WindowResult(PARTIAL) != DONE
+        assert str(WindowResult(EXPIRED)) == EXPIRED
+        assert WindowResult(DONE, {1, 2}).linked_ids == {1, 2}
+
+    def _session(self, role_ids):
+        """A LinkSession with no Discord behind it — only the bookkeeping."""
+        import asyncio
+
+        from services.team_link_session import LinkSession
+
+        # The session only needs a loop to hold its future on; nothing here
+        # ever runs on it. The previous loop is put back, or this leaks into
+        # every test that runs after it.
+        try:
+            previous = asyncio.get_event_loop_policy().get_event_loop()
+        except RuntimeError:
+            previous = None
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            return LinkSession(
+                bot=None, guild=SimpleNamespace(id=1),
+                member=SimpleNamespace(id=2),
+                team_roles=[FakeRole(rid) for rid in role_ids],
+            )
+        finally:
+            asyncio.set_event_loop(previous)
 
     def test_the_session_is_persisted_under_moddy_team(self):
         """It must land beside the role id, so one guild read finds both."""
@@ -288,27 +483,30 @@ class TestLinkingWindow:
         """A window that ends with no explanation is a window nobody trusts."""
         with open(f"locales/{locale}.json", encoding="utf-8") as fh:
             role = json.load(fh)["staff"]["team"]["role"]
-        for outcome in (DONE, EXPIRED, CANCELLED, FAILED):
+        for outcome in (DONE, PARTIAL, EXPIRED, CANCELLED, FAILED):
             assert f"window_{outcome}" in role, (locale, outcome)
         for blocker in ("not_member", "owner", "busy", "no_permission", "no_room"):
             assert f"blocked_{blocker}" in role, (locale, blocker)
         # The window can only half-contain a staffer sitting above Moddy, and
         # the card has to say so — silence there would be a false promise.
-        assert "window_partial" in role, locale
+        assert "window_kept_roles" in role, locale
+        # One role linked out of two is its own outcome, distinct from the
+        # window that achieved nothing.
+        assert role["window_partial"] != role["window_expired"], locale
 
 
 # --------------------------------------------------------------------------- #
 # The staff ticket category
 # --------------------------------------------------------------------------- #
 class TestStaffTicketCategory:
-    def _category(self, role_id=555):
+    def _category(self, role_ids=(555,)):
         from modules.tickets import normalize_category
         from services.ticket_service import STAFF_CATEGORY_ID, STAFF_NAME_FORMAT
 
         return normalize_category({
             'id': STAFF_CATEGORY_ID,
             'name': "Moddy ticket",
-            'permissions': {str(role_id): ["admin"]},
+            'permissions': {str(rid): ["admin"] for rid in role_ids},
             'buttons': ["close", "participants"],
             'claim_enabled': False,
             'name_format': STAFF_NAME_FORMAT,
@@ -316,12 +514,21 @@ class TestStaffTicketCategory:
             'enabled': True,
         })
 
-    def test_only_the_team_role_is_granted_anything(self):
+    def test_only_the_team_roles_are_granted_anything(self):
         from modules.tickets import staff_role_ids
 
         category = self._category()
         assert staff_role_ids(category, permission="view") == [555]
         assert staff_role_ids(category, permission="admin") == [555]
+
+    def test_both_team_roles_are_on_a_staff_ticket(self):
+        """A manager holds the base role too, so this changes nothing for them.
+        What it covers is a server that only ever created the manager role,
+        where granting the base role alone would open the channel to nobody."""
+        from modules.tickets import staff_role_ids
+
+        category = self._category(role_ids=(555, 556))
+        assert sorted(staff_role_ids(category, permission="admin")) == [555, 556]
 
     def test_no_status_dot_without_claiming(self):
         from modules.tickets import ticket_status_dot

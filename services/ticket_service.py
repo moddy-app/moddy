@@ -496,25 +496,34 @@ class TicketService:
         """``(panel, category)`` for the staff tickets of ``guild``.
 
         Built on every call rather than stored: the only thing it depends on is
-        which role is the guild's Moddy Team role *right now*. A role deleted
+        which roles are the guild's Moddy Team roles *right now*. A role deleted
         and recreated therefore fixes an existing ticket, and a server that
         never touched the Tickets module has a working category all the same.
         """
         from modules.tickets import normalize_category
-        from utils.moddy_team_role import find_team_role
+        from utils.moddy_team_role import KINDS, find_team_role
 
         locale = await self.ticket_locale(guild)
-        role = await find_team_role(self.bot, guild)
         name = t('staff.team.ticket.category', locale=locale)
+
+        # Both Moddy Team roles, whichever of them the server has. A manager
+        # holds the base role too, so this changes nothing for them — what it
+        # covers is a server that only ever created the manager role, where
+        # granting the base role alone would open the ticket to nobody.
+        permissions = {}
+        for kind in KINDS:
+            role = await find_team_role(self.bot, guild, kind)
+            if role is not None:
+                permissions[str(role.id)] = [PERM_ADMIN]
 
         category = normalize_category({
             'id': STAFF_CATEGORY_ID,
             'name': name,
-            # The Moddy Team role is the *only* role that gets anything here —
-            # the same rule as /team access. Server administrators keep full
+            # The Moddy Team roles are the *only* roles that get anything here
+            # — the same rule as /team access. Server administrators keep full
             # access through member_permissions' administrator branch, which is
             # what makes this readable to the people who own the server.
-            'permissions': {str(role.id): [PERM_ADMIN]} if role else {},
+            'permissions': permissions,
             'buttons': [BTN_CLOSE, BTN_PARTICIPANTS],
             # Claiming is a queue-management tool for a server's own support
             # team. A staff ticket has exactly one team on it already.

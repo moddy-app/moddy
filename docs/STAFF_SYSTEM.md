@@ -59,9 +59,10 @@ role is assigned. It is removed when all roles are removed. The attribute is use
 system-wide to identify staff (e.g. for the verified badge system).
 
 Every write to `staff_permissions` must also publish on `moddy:staff`, **after**
-the write — that is what tells the backend to republish the `team` boolean
-Discord's linked roles are built on, and it is the only obligation the bot has
-in that pipeline. See [LINKED_ROLES.md](LINKED_ROLES.md).
+the write — that is what tells the backend to republish the `team` and `manager`
+booleans Discord's linked roles are built on, and it is the only obligation the
+bot has in that pipeline. Both come out of this same table, so one message
+covers them. See [LINKED_ROLES.md](LINKED_ROLES.md).
 
 ### Role emoji badges
 
@@ -128,13 +129,20 @@ All available via `/manage` (slash) or `m.` (message).
 
 ## Working inside somebody else's server
 
-Three `/team` commands, all built on one role and granting nothing to any staff
-member's account — full contract in [LINKED_ROLES.md](LINKED_ROLES.md).
+Three `/team` commands, all built on the Moddy Team roles and granting nothing
+to any staff member's account — full contract in
+[LINKED_ROLES.md](LINKED_ROLES.md).
+
+Two roles exist: **Moddy Team** (metadata `team`, everybody) and **Moddy Team
+Manager** (metadata `manager`, whoever leads the team, who holds both). One role
+— the base one — is the default everywhere; the manager role is an opt-in a
+server can add later.
 
 | Command | What it does |
 |---------|-------------|
-| `/team role [guild_id]` | Create (or re-report) the server's **Moddy Team** role, and print the linked-role requirement an administrator still has to add |
-| `/team access` | Pick the permissions you need; an administrator accepts or refuses on a card; accepting adds them to the Moddy Team role and to nothing else |
+| `/team role [guild_id] [team\|manager\|both]` | Create (or re-report) the server's Moddy Team roles — the base one by default — and open the window in which a staffer adds the linked-role requirement themselves |
+| `/team role_delete [guild_id] [team\|manager\|both]` | Delete them again, same default, and forget the stored ids |
+| `/team access [role]` | Pick the permissions you need; an administrator accepts or refuses on a card; accepting adds them to the named Moddy Team role and to nothing else |
 | `/team ticket [reason] [guild_id]` | Open a Moddy staff ticket in the server — a real ticket, outside the server's own ticket configuration |
 
 ---
@@ -190,7 +198,7 @@ CREATE TABLE staff_permissions (
 | `staff/framework/design.py` | Components V2 panel helpers |
 | `staff/commands/manage/staff.py` | `/manage staff` panel (persistent DynamicItem controls) |
 | `staff/commands/manage/rank.py` | `/manage rank` — single role assignment |
-| `staff/base.py` | `StaffCommandsCog` base (auto-delete tracking for message commands) |
+| `staff/base.py` | `StaffCommandsCog` base — deleting a message command deletes **every** answer it produced, including ones that land after the deletion |
 | `utils/staff_permissions.py` | `StaffPermissionManager`, `CommandType`, `StaffRole` |
 | `utils/staff_role_permissions.py` | Node definitions per role |
 | `utils/staff_logger.py` | Audit log writer |

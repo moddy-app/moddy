@@ -66,7 +66,7 @@ class ReloadCommand(StaffCommand):
 | Attribute / method | Description |
 |--------------------|-------------|
 | `ctx.opt(name, default)` | Option value (slash) or parsed message arg |
-| `ctx.send(view=…, content=…)` | Reply/respond — returns the `Message` for later edits |
+| `ctx.send(view=…, content=…)` | Reply/respond — returns the `Message` for later edits, or `None` if the staffer deleted their command meanwhile (always guard `if msg:` before editing) |
 | `ctx.open_modal(factory, label=…)` | Slash opens the modal; message sends a button that opens it |
 | `ctx.defer(thinking=True)` | Defer response for long operations |
 | `ctx.locale` | User locale (slash) or `"en-US"` (message) |
@@ -75,6 +75,26 @@ class ReloadCommand(StaffCommand):
 | `ctx.bot` | Bot instance |
 | `ctx.is_slash` | `True` when invoked via slash |
 | `ctx.incognito` | `True` when response should be ephemeral |
+
+### Deleting a command deletes its answers
+
+A message command is tracked from dispatch (`begin_command`) to the last thing
+it sends. Deleting the command message deletes **every** message the bot sent
+for it — not just the last one — and a reply that lands *after* the deletion
+(the report at the end of a `t.role` window, a long `d.sync`) is sent and
+removed again, because Discord offers no way to un-send something already in
+flight.
+
+Two consequences for command authors:
+
+- `ctx.send` returns `None` in that case. Guard before editing.
+- Anything sent outside `ctx.send` — a card posted with `channel.send` — is
+  **not** tracked. Call `cog.track_response(ctx.message.id, msg)` when it should
+  disappear with the command, and leave it alone when it should not
+  (`t.flex`'s public proof, the `/team access` card an administrator answers).
+
+See [`staff/base.py`](../staff/base.py) and
+[`tests/test_staff_response_tracking.py`](../tests/test_staff_response_tracking.py).
 
 ### SlashOption types
 

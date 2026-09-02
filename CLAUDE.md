@@ -145,8 +145,9 @@ moddy/
 │   ├── commands/team/         #   /team commands (incl. help, /team user — full
 │   │                          #   user card: account, billing, cases, notifications;
 │   │                          #   /team role, /team access, /team ticket — the
-│   │                          #   Moddy Team linked role, permission requests
-│   │                          #   and staff tickets, see docs/LINKED_ROLES.md)
+│   │                          #   two Moddy Team linked roles (team + manager),
+│   │                          #   permission requests and staff tickets,
+│   │                          #   see docs/LINKED_ROLES.md)
 │   ├── commands/mod/          #   /mod commands + case/, global/ and altguard/ sub-groups
 │   │                          #   (incl. /mod notif — notification lookup by uuid)
 │   ├── commands/com/          #   /com commands (/com send — notification to a user,
@@ -190,7 +191,7 @@ moddy/
 │   ├── case_management_views.py #  Cases Views/Modals (create, sanction, comment…) — staff
 │   ├── cases_views.py         #   /cases & /mycases browser (CasesBrowserView, persistent)
 │   ├── altguard_views.py      #   AltGuard panel (persistent), consent Modal V2, link + log cards
-│   ├── moddy_team_role.py     #   The Moddy Team role: find/create/remember, linked-state check
+│   ├── moddy_team_role.py     #   The two Moddy Team roles: kinds, find/create/remember, linked state
 │   ├── team_access_views.py   #   /team access: permission picker + admin request card (persistent)
 │   ├── automod_shadow_views.py #  Automod shadow-mode (dry_run) SIMULATION card + annotation buttons (persistent)
 │   ├── automod_render.py      #   Shared automod card helpers (barème breakdown, sanction name/accent)
@@ -247,7 +248,7 @@ moddy/
 │   ├── ticket_service.py      #   Ticket lifecycle (open/close/escalate/move/participants)
 │   ├── support_request_service.py # Bug reports + config-help requests (team side)
 │   ├── transcription_service.py #  Voice/audio speech-to-text (shared by cog + module)
-│   ├── team_link_session.py   #   /team role: the 30 s window in which a staffer links the role
+│   ├── team_link_session.py   #   /team role: the window in which a staffer links the roles
 │   ├── heartbeat.py           #   Moddy Health Monitor heartbeat (dead man's switch)
 │   ├── betterstack_heartbeat.py #  Better Stack cron/heartbeat monitor ping (3 min)
 │   └── railway_diagnostic.py  #   Railway diagnostics
@@ -479,7 +480,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/AUTOMOD_AI_CONFIG.md](docs/AUTOMOD_AI_CONFIG.md) | Automod AI configuration schema in DB (backend / dashboard integration) |
 | [docs/BOT_CUSTOMIZATION.md](docs/BOT_CUSTOMIZATION.md) | Bot Customization — per-guild nickname/avatar/banner/bio + name styles, Redis dashboard contract |
 | [docs/PREMIUM.md](docs/PREMIUM.md) | **Premium gating** — how to check whether a server (or a user) is premium |
-| [docs/LINKED_ROLES.md](docs/LINKED_ROLES.md) | **Linked roles** — the `moddy:staff` publication the backend needs, the Moddy Team role, and `/team role` / `/team access` / `/team ticket` |
+| [docs/LINKED_ROLES.md](docs/LINKED_ROLES.md) | **Linked roles** — the `moddy:staff` publication the backend needs, the two Moddy Team roles (`team` / `manager`), and `/team role` / `/team access` / `/team ticket` |
 | [docs/STAFF_SYSTEM.md](docs/STAFF_SYSTEM.md) | Staff/dev commands, permissions, roles |
 | [docs/SUPPORT_REQUESTS.md](docs/SUPPORT_REQUESTS.md) | **Support requests** — `/bug-report`, the "configure it for me" button, the staff card and its reply flow, the beta-launch campaign |
 | [docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md) | **Centralized notifications** — every DM/mail/dashboard message, attribution buttons, abuse reports, `/com send`, `/mod notif` |

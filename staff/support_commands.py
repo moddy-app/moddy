@@ -49,6 +49,10 @@ class SupportCommands(StaffCommandsCog):
         if command_type != CommandType.SUPPORT:
             return
 
+        # Tracked before anything is sent, so a command deleted mid-run takes
+        # its replies — including the ones still to come — with it.
+        self.begin_command(message)
+
         allowed, reason = await staff_permissions.check_command_permission(
             message.author.id, command_type, command_name
         )
