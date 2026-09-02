@@ -24,6 +24,7 @@ from config import COLORS
 from notifications.models import NotificationContent, NotificationSource
 from utils import emojis
 from utils.i18n import t, get_locale
+from utils.members import get_or_fetch_member
 
 logger = logging.getLogger("moddy.moderation_commands")
 
@@ -1134,7 +1135,7 @@ class ModerationCommands(commands.Cog):
         subject_id = int(case_row["subject_id"])
         issuer_id = payload.get("issuer_id")
         expires_at = _parse_iso(payload.get("expires_at"))
-        member = guild.get_member(subject_id)
+        member = await get_or_fetch_member(guild, subject_id)
 
         mod_name = "Moddy"
         try:

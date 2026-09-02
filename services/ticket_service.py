@@ -60,6 +60,7 @@ from modules.tickets import (
     ticket_status_dot,
 )
 from utils.i18n import t
+from utils.members import get_or_fetch_member
 
 logger = logging.getLogger('moddy.services.tickets')
 
@@ -213,8 +214,28 @@ class TicketService:
     # ------------------------------------------------------------------ #
     # Channel permissions
     # ------------------------------------------------------------------ #
+    async def resolve_ticket_members(
+        self, guild: discord.Guild, ticket: Dict[str, Any]
+    ) -> Dict[int, discord.Member]:
+        """Resolve everyone who needs a personal overwrite on a ticket channel.
+
+        One REST fetch per person missing from the cache, only for the handful
+        of people actually on a ticket. Feed the result to `build_overwrites`.
+        """
+        wanted = {ticket.get('owner_id'), ticket.get('claimed_by'),
+                  *ticket.get('participants', [])}
+        resolved: Dict[int, discord.Member] = {}
+        for uid in wanted:
+            if not uid:
+                continue
+            member = await get_or_fetch_member(guild, int(uid))
+            if member is not None:
+                resolved[int(uid)] = member
+        return resolved
+
     def build_overwrites(self, guild: discord.Guild, category: Dict[str, Any],
-                         ticket: Dict[str, Any]
+                         ticket: Dict[str, Any],
+                         members: Optional[Dict[int, discord.Member]] = None,
                          ) -> Dict[Union[discord.Role, discord.Member],
                                    discord.PermissionOverwrite]:
         """The full overwrite map for a ticket channel, from scratch.
@@ -234,6 +255,19 @@ class TicketService:
           side, so a closed ticket disappears from the opener's channel list
           without losing anything: reopening restores it exactly.
         """
+        # Guilds are no longer chunked at startup (config.CHUNK_GUILDS_AT_STARTUP),
+        # so an opener who has not spoken recently may not be in the member cache
+        # -- and a missing overwrite locks them out of their own ticket. Callers
+        # resolve the people involved beforehand with `resolve_ticket_members()`
+        # and pass them in; `guild.get_member` stays the fallback so this method
+        # remains synchronous and usable on its own.
+        def _lookup(uid: int) -> Optional[discord.Member]:
+            if members is not None:
+                found = members.get(uid)
+                if found is not None:
+                    return found
+            return guild.get_member(uid)
+
         escalated = bool(ticket.get('escalated'))
         closed = ticket.get('status') == 'closed'
         muted = escalated and bool(ticket.get('escalation_mute'))
@@ -282,7 +316,7 @@ class TicketService:
             # drop them, or to keep them read-only).
             member_ids = [ticket['owner_id'], *ticket.get('participants', [])]
             for user_id in member_ids:
-                member = guild.get_member(user_id)
+                member = _lookup(user_id)
                 if member and member not in overwrites:
                     overwrites[member] = (_MEMBER_MUTED_OVERWRITE if muted
                                           else _MEMBER_OVERWRITE)
@@ -290,7 +324,7 @@ class TicketService:
         # The claimer, last: a member overwrite outranks the role one they were
         # just muted through, which is the whole point of claiming.
         if locked and claimer_id:
-            claimer = guild.get_member(claimer_id)
+            claimer = _lookup(claimer_id)
             if claimer:
                 overwrites[claimer] = _STAFF_OVERWRITE
 
@@ -362,9 +396,10 @@ class TicketService:
                                category: Dict[str, Any],
                                ticket: Dict[str, Any]) -> bool:
         """Push the rebuilt overwrite map onto the channel."""
+        members = await self.resolve_ticket_members(channel.guild, ticket)
         try:
             await channel.edit(
-                overwrites=self.build_overwrites(channel.guild, category, ticket),
+                overwrites=self.build_overwrites(channel.guild, category, ticket, members),
                 reason="Moddy tickets: permission sync",
             )
             return True
@@ -413,13 +448,14 @@ class TicketService:
         number = await self.bot.db.next_ticket_number(guild.id)
         draft = {'owner_id': member.id, 'status': 'open', 'escalated': False,
                  'participants': [], 'participant_roles': [], 'claimed_by': None}
+        members = await self.resolve_ticket_members(guild, draft)
         try:
             channel = await guild.create_text_channel(
                 name=apply_status_prefix(
                     render_channel_name(category, member=member, number=number),
                     ticket_status_dot(category, draft)),
                 category=parent,
-                overwrites=self.build_overwrites(guild, category, draft),
+                overwrites=self.build_overwrites(guild, category, draft, members),
                 topic=t('modules.tickets.channel.topic', locale=locale,
                         number=number, category=category['name'],
                         user=str(member), user_id=member.id)[:1024],
@@ -570,10 +606,11 @@ class TicketService:
         draft = {'owner_id': actor.id, 'status': 'open', 'escalated': False,
                  'participants': [], 'participant_roles': [], 'claimed_by': None}
 
+        members = await self.resolve_ticket_members(guild, draft)
         try:
             channel = await guild.create_text_channel(
                 name=render_channel_name(category, member=actor, number=number),
-                overwrites=self.build_overwrites(guild, category, draft),
+                overwrites=self.build_overwrites(guild, category, draft, members),
                 topic=t('staff.team.ticket.topic', locale=locale, number=number,
                         user=str(actor), user_id=actor.id)[:1024],
                 reason=f"Moddy staff ticket opened by {actor} ({actor.id})",
@@ -1104,6 +1141,7 @@ class TicketService:
         await self.bot.db.set_ticket_category(channel.id, target_panel['id'], target['id'])
         ticket = await self.get_ticket(channel.id) or ticket
 
+        members = await self.resolve_ticket_members(channel.guild, ticket)
         try:
             await channel.edit(
                 category=parent,
@@ -1112,7 +1150,7 @@ class TicketService:
                 # showing the previous category's convention.
                 name=apply_status_prefix(channel.name,
                                          ticket_status_dot(target, ticket)),
-                overwrites=self.build_overwrites(channel.guild, target, ticket),
+                overwrites=self.build_overwrites(channel.guild, target, ticket, members),
                 reason=f"Moddy ticket moved by {actor} ({actor.id})",
             )
         except discord.Forbidden:

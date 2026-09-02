@@ -69,6 +69,7 @@ class I18n:
     _translations: Dict[str, Dict[str, Any]] = {}
     _default_locale = Locale.EN_US
     _supported_locales = set()
+    _loaded = False
 
     def __new__(cls):
         if cls._instance is None:
@@ -81,8 +82,18 @@ class I18n:
             self._initialized = True
             self.load_translations()
 
-    def load_translations(self):
-        """Charge toutes les traductions depuis les fichiers JSON"""
+    def load_translations(self, force: bool = False):
+        """Charge toutes les traductions depuis les fichiers JSON.
+
+        Idempotent: the singleton is built at import time (and `utils.i18n` is
+        imported by most of the codebase), so a second call would re-parse ~1.1 MB
+        of JSON and double the peak allocation for a dict that is simply
+        overwritten with the same content. Use `force=True` (or
+        `reload_translations()`) to genuinely re-read the files.
+        """
+        if self.__class__._loaded and not force:
+            return
+
         translations_dir = Path(__file__).parent.parent / 'locales'
 
         if not translations_dir.exists():
@@ -104,12 +115,15 @@ class I18n:
 
         if not self._translations:
             logger.warning("⚠️ Aucune traduction chargée, utilisation des valeurs par défaut")
+        else:
+            self.__class__._loaded = True
 
     def reload_translations(self):
         """Recharge toutes les traductions (utile pour le développement)"""
         self._translations.clear()
         self._supported_locales.clear()
-        self.load_translations()
+        self.__class__._loaded = False
+        self.load_translations(force=True)
         logger.info("🔄 Traductions rechargées")
 
     def get_user_locale(self, interaction: discord.Interaction) -> str:

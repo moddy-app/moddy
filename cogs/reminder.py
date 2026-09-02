@@ -18,6 +18,7 @@ from cogs.error_handler import BaseView
 
 from utils.i18n import i18n, t
 from utils.components_v2 import create_error_message
+from utils.members import get_or_fetch_member
 from cogs.error_handler import BaseModal
 
 logger = logging.getLogger('moddy.reminder')
@@ -891,7 +892,7 @@ class Reminder(commands.Cog):
                 guild = self.bot.get_guild(guild_id)
                 if guild:
                     # Check if user is still in the guild
-                    member = guild.get_member(user_id)
+                    member = await get_or_fetch_member(guild, user_id)
                     if member:
                         channel = guild.get_channel(channel_id)
                         if channel and channel.permissions_for(guild.me).send_messages:

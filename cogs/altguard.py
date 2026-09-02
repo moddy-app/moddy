@@ -35,6 +35,7 @@ from services.altguard_client import (
 from utils.altguard_views import format_member_name
 from utils.components_v2 import create_error_message, create_success_message
 from utils.i18n import i18n, t
+from utils.members import fetch_all_members
 
 logger = logging.getLogger('moddy.cogs.altguard')
 
@@ -255,17 +256,21 @@ class AltGuard(commands.Cog):
         if module is None:
             return False
 
-        # A partially-filled cache would mark real members as `left`, so a
-        # guild whose members are not all cached is skipped this round
-        # rather than reconciled against a lie.
-        if guild.member_count and len(guild.members) < guild.member_count:
+        # A partially-filled cache would mark real members as `left`, so the list
+        # is pulled in full over the gateway rather than reconciled against a
+        # lie. Guilds are not chunked at startup any more (see
+        # config.CHUNK_GUILDS_AT_STARTUP), and only guilds that actually run the
+        # gate reach this point -- so this is the one place that pays for a full
+        # member list, once an hour, without keeping it resident.
+        members = await fetch_all_members(guild, cache=False)
+        if members is None:
             logger.debug(
-                f"[AltGuard] Skipping resync for guild {guild.id}: member cache "
-                f"incomplete ({len(guild.members)}/{guild.member_count})"
+                f"[AltGuard] Skipping resync for guild {guild.id}: "
+                f"member list unavailable"
             )
             return False
 
-        member_ids = [m.id for m in guild.members if not m.bot]
+        member_ids = [m.id for m in members if not m.bot]
         try:
             reconciled = await client.resync_membership(guild.id, member_ids)
             logger.info(

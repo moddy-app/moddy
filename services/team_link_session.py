@@ -56,6 +56,7 @@ from typing import Dict, Iterable, List, Optional, Sequence, Set
 import discord
 
 from utils.moddy_team_role import is_linked
+from utils.members import get_or_fetch_member
 
 logger = logging.getLogger("moddy.team_link_session")
 
@@ -349,7 +350,7 @@ async def _undo(session: LinkSession, entry: discord.AuditLogEntry) -> None:
                 await role.edit(permissions=before, reason=reason)
 
         elif action is discord.AuditLogAction.member_role_update:
-            member = guild.get_member(getattr(entry.target, "id", 0))
+            member = await get_or_fetch_member(guild, getattr(entry.target, "id", 0))
             if member:
                 # discord.py puts the roles *added* in `after` and the roles
                 # *removed* in `before`; undoing is exactly swapping them back.
@@ -553,7 +554,7 @@ async def recover_sessions(bot) -> None:
         # what one interrupted before this file handled two roles stored. Both
         # are read, or that staffer never gets their roles back.
         team_ids = id_set(stored.get("team_role_ids")) or id_set(stored.get("team_role_id"))
-        member = guild.get_member(int(stored.get("staff_id") or 0))
+        member = await get_or_fetch_member(guild, int(stored.get("staff_id") or 0))
         if member:
             await _give_roles_back(bot, guild, member,
                                    stored.get("saved_role_ids") or [], team_ids)

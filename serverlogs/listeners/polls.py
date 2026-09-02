@@ -6,8 +6,9 @@ Discord happily sends message events for messages that never carried a poll,
 and a message can also lose its poll after the fact.
 
 Votes arrive as raw payloads (``on_raw_poll_vote_add``/``_remove``), so the
-voter is resolved from the guild cache when possible and falls back to a bare
-id line when the member is not cached.
+voter is resolved from the guild cache and, on a miss, fetched over REST --
+guilds are not chunked at startup, and a vote log with no voter in it says
+nothing. A bare id line is still the fallback when even the fetch fails.
 """
 
 from __future__ import annotations
@@ -19,6 +20,7 @@ import discord
 from serverlogs.renderer import (
     escape, fmt_channel, fmt_number, fmt_time, fmt_user,
 )
+from utils.members import get_or_fetch_member
 
 #: Answers listed inline before the block would overflow into a file.
 MAX_LISTED_ANSWERS = 10
@@ -68,7 +70,9 @@ async def on_poll_vote(service, guild: discord.Guild,
                        added: bool) -> None:
     """One member adding or removing one vote on one answer."""
     channel = guild.get_channel_or_thread(payload.channel_id)
-    member = guild.get_member(payload.user_id)
+    # Fetch on a miss: without the voter the whole log line says nothing. Only
+    # costs a request for someone who has not been seen in the guild yet.
+    member = await get_or_fetch_member(guild, payload.user_id)
     event = "poll_votes_add" if added else "poll_votes_remove"
 
     entry = await service.open(guild, event, channel=channel, subject=member,

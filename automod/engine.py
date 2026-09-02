@@ -93,9 +93,15 @@ class AutomodEngine:
         # counter lives in Redis so it is shared across shards / restarts).
         self._budget_calls = 0          # real nano calls counted this process
         self._budget_dropped = 0        # nano-bound messages dropped over budget
-        self._budget_degraded: Set[Tuple[int, str]] = set()   # (guild, day) degraded
-        self._budget_notified: Set[Tuple[int, str]] = set()   # (guild, day) card sent
-        self._budget_notice_pending: Set[int] = set()          # guilds the module owes a card
+        # Both sets are scoped to a single UTC day and only ever read for the
+        # current one, so they hold guild ids and are cleared when the day rolls
+        # over. Keyed by (guild, day) they instead grew by one tuple per active
+        # guild per day for the life of the process, and nothing ever read the
+        # old days back.
+        self._budget_day: str = self._utc_day()
+        self._budget_degraded: Set[int] = set()       # guilds degraded today
+        self._budget_notified: Set[int] = set()       # guilds already sent a card today
+        self._budget_notice_pending: Set[int] = set()  # guilds the module owes a card
 
     # -- Gateway-backed primitives -----------------------------------------
 
@@ -159,7 +165,7 @@ class AutomodEngine:
             "nano_calls": self._budget_calls,
             "dropped": self._budget_dropped,
             "degraded_guilds": sorted(
-                {g for (g, d) in self._budget_degraded if d == day}),
+                self._budget_degraded if day == self._budget_day else ()),
         }
 
     async def ensure_ready(self) -> bool:
@@ -749,11 +755,20 @@ class AutomodEngine:
                 return True
         return False
 
-    def _mark_degraded(self, guild_id: int) -> None:
+    def _roll_budget_day(self) -> str:
+        """Reset today's guild sets when the UTC day has changed."""
         day = self._utc_day()
-        self._budget_degraded.add((guild_id, day))
-        if (guild_id, day) not in self._budget_notified:
-            self._budget_notified.add((guild_id, day))
+        if day != self._budget_day:
+            self._budget_day = day
+            self._budget_degraded.clear()
+            self._budget_notified.clear()
+        return day
+
+    def _mark_degraded(self, guild_id: int) -> None:
+        self._roll_budget_day()
+        self._budget_degraded.add(guild_id)
+        if guild_id not in self._budget_notified:
+            self._budget_notified.add(guild_id)
             self._budget_notice_pending.add(guild_id)
 
     def pop_budget_notice(self, guild_id: int) -> bool:

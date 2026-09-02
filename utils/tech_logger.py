@@ -36,6 +36,7 @@ from utils.emojis import (
     DONE, UNDONE, ADD, LOGOUT, MODDY, BUG, MODDYTEAM_BADGE, SETTINGS, COMMANDS,
     SAVE, MANAGE_USER, BLACKLIST, TIME, PAUSE, CODE, MODDY_SQUARE,
 )
+from utils.members import fetch_all_members
 
 logger = logging.getLogger("moddy.tech_logger")
 
@@ -190,8 +191,12 @@ class TechLogger:
 
     async def log_guild_join(self, guild: discord.Guild):
         try:
-            humans = sum(1 for m in guild.members if not m.bot) if guild.members else None
-            bots = sum(1 for m in guild.members if m.bot) if guild.members else None
+            # Guilds are not chunked at startup (config.CHUNK_GUILDS_AT_STARTUP).
+            # This fires once, on join, so the list is pulled on demand and not
+            # kept resident; None when it cannot be completed.
+            all_members = await fetch_all_members(guild, cache=False)
+            humans = sum(1 for m in all_members if not m.bot) if all_members else None
+            bots = sum(1 for m in all_members if m.bot) if all_members else None
             members = guild.member_count or 0
             owner = f"`{guild.owner}`" if guild.owner else "unknown"
 

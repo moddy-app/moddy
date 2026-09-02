@@ -7,6 +7,7 @@ information plus Moddy database attributes.
 from staff.framework import StaffCommand, SlashOption, staff_command, design, CommandType, parse_guild_id
 from utils import emojis
 from utils.i18n import t
+from utils.members import fetch_all_members
 
 
 @staff_command
@@ -35,8 +36,16 @@ class ServerCommand(StaffCommand):
             ))
             return
 
-        humans = sum(1 for m in guild.members if not m.bot)
-        bots = guild.member_count - humans if guild.member_count else 0
+        # Guilds are not chunked at startup (config.CHUNK_GUILDS_AT_STARTUP), so
+        # the split is pulled on demand here rather than counted off a partial
+        # cache, which would silently under-report. `None` when the pull fails.
+        members = await fetch_all_members(guild, cache=False)
+        if members is None:
+            humans_str = bots_str = "?"
+        else:
+            humans = sum(1 for m in members if not m.bot)
+            bots = (guild.member_count - humans) if guild.member_count else (len(members) - humans)
+            humans_str, bots_str = f"{humans:,}", f"{bots:,}"
         owner = f"<@{guild.owner_id}> (`{guild.owner_id}`)"
 
         fields = [{
@@ -51,8 +60,8 @@ class ServerCommand(StaffCommand):
             "name": f"{emojis.USER} {t('staff.team.server.members', locale=locale)}",
             "value": (
                 f"**{t('staff.team.server.total', locale=locale)}:** `{guild.member_count:,}`\n"
-                f"**{t('staff.team.server.humans', locale=locale)}:** `{humans:,}`\n"
-                f"**{t('staff.team.server.bots', locale=locale)}:** `{bots:,}`"
+                f"**{t('staff.team.server.humans', locale=locale)}:** `{humans_str}`\n"
+                f"**{t('staff.team.server.bots', locale=locale)}:** `{bots_str}`"
             ),
         }, {
             "name": f"{emojis.COMMANDS} {t('staff.team.server.channels', locale=locale)}",

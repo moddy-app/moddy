@@ -6,6 +6,7 @@ Handles all core logic and events
 import discord
 from discord.ext import commands, tasks
 import asyncio
+import gc
 import logging
 from datetime import datetime, timezone
 from typing import Dict, Optional, Set
@@ -18,6 +19,7 @@ import aiohttp
 import math
 
 from config import (
+    CHUNK_GUILDS_AT_STARTUP,
     DEBUG,
     DEFAULT_PREFIX,
     DATABASE_URL,
@@ -106,10 +108,14 @@ class ModdyBot(ModdyFrameworkBot):
             # content cache behind the AI-suggested sanction reason) and the
             # non-raw on_reaction_add feeding the automod relationship graph
             # (REACTION_WAIT_SECONDS = 20). All of those act on messages seconds
-            # to minutes old, so 10000 was far past the useful window while
+            # to minutes old, so even 5000 was far past the useful window while
             # costing ~1.5-3 KB per resident Message.
-            max_messages=5000,
+            max_messages=1000,
             member_cache_flags=member_cache_flags,
+            # Off by default: see config.CHUNK_GUILDS_AT_STARTUP. Lookups go
+            # through utils.members.get_or_fetch_member and the few code paths
+            # needing a full list call utils.members.ensure_chunked.
+            chunk_guilds_at_startup=CHUNK_GUILDS_AT_STARTUP,
             http_timeout=http_timeout  # Apply custom timeout
         )
 
@@ -198,9 +204,6 @@ class ModdyBot(ModdyFrameworkBot):
         # does not change which modules own commands must not spend one.
         self._guild_module_commands: Dict[int, frozenset] = {}
 
-        # Serveur HTTP interne pour /status
-        self.internal_api_server = None
-        self.internal_api_thread = None
 
         # Configure global error handler
         self.setup_error_handler()
@@ -263,36 +266,20 @@ class ModdyBot(ModdyFrameworkBot):
             logger.error(f"[FAIL] Error fetching version: {e}")
             self.version = "Unknown"
 
-    def start_internal_api_server(self):
+    def wire_internal_api(self):
         """
-        Démarre le serveur HTTP interne dans un thread séparé.
-        Expose GET /health et GET /status (appelé par le backend pour les métriques).
+        Hand this bot instance to the internal API so GET /status can report on it.
+
+        The uvicorn server itself is started once by `main.start_api_server()`, on
+        the bot's own event loop. This used to spawn a *second* uvicorn on the same
+        port from a daemon thread with its own event loop; only one of the two could
+        ever bind, and the loser died silently while still costing a thread, an
+        extra loop and a duplicate FastAPI app.
         """
-        import threading
-        import uvicorn
-        from internal_api.server import app, set_bot
+        from internal_api.server import set_bot
 
         set_bot(self)
-
-        port = int(os.getenv("PORT", 3000))
-
-        def run_server():
-            logger.info(f"Starting internal API server on port {port}")
-            uvicorn.run(
-                app,
-                host="::",  # IPv4 + IPv6 dual-stack
-                port=port,
-                log_level="warning",
-                access_log=False,
-            )
-
-        self.internal_api_thread = threading.Thread(
-            target=run_server,
-            daemon=True,
-            name="InternalAPIServer"
-        )
-        self.internal_api_thread.start()
-        logger.info(f"Internal API server started on port {port}")
+        logger.info("Internal API wired to the bot instance")
 
     async def _setup_redis(self):
         """Initialize Redis connection and start background listeners."""
@@ -798,9 +785,14 @@ class ModdyBot(ModdyFrameworkBot):
             try:
                 last_id = await self.redis.get(LAST_ID_KEY) or "0"
                 while True:
+                    # A blocking XREAD returns as soon as an entry lands, so a
+                    # longer block does not add latency -- it only stops the
+                    # client re-issuing the command every 5s around the clock.
+                    # Four such loops across the services were burning nearly as
+                    # much Redis CPU as the bot itself.
                     messages = await self.redis.xread(
                         {TASK_STREAM: last_id},
-                        block=5000,
+                        block=30000,
                         count=10,
                     )
                     if not messages:
@@ -1043,9 +1035,8 @@ class ModdyBot(ModdyFrameworkBot):
         self.module_manager.discover_modules()
         logger.info("Module manager ready")
 
-        # Start internal API server
-        logger.info("Starting internal API server...")
-        self.start_internal_api_server()
+        # Hand the bot instance to the internal API (server started in main.py)
+        self.wire_internal_api()
 
         # Set start time for /status uptime metric
         import time as _time
@@ -1116,6 +1107,14 @@ class ModdyBot(ModdyFrameworkBot):
             # In production, sync commands properly
             await self.sync_commands()
             logger.info("Commands synced")
+
+        # Everything loaded above (cogs, modules, staff commands, persistent views,
+        # translations) lives for the whole process. Moving it out of the
+        # generational GC's reach stops every collection from re-walking tens of
+        # thousands of permanent objects, and keeps their pages shareable instead of
+        # being dirtied by refcount writes during each sweep.
+        gc.freeze()
+        logger.info("GC: startup objects frozen into the permanent generation")
 
     async def sync_commands(self):
         """

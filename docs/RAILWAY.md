@@ -92,6 +92,62 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 **Description :** Port sur lequel le bot expose `/health` et `/status`
 **Note :** Le backend appelle `GET <BOT_URL>/status` pour les métriques du bot
 
+## Empreinte mémoire et coût Railway
+
+Railway facture la RAM à la GB-minute, et c'est de loin le premier poste de
+coût du projet (≈93 % de la facture, contre ≈4 % pour le CPU). Ces variables
+existent uniquement pour piloter cette empreinte.
+
+### MALLOC_ARENA_MAX
+**Valeur recommandée :** `2`
+**Description :** glibc alloue une arène mémoire (jusqu'à 64 Mo) **par thread**
+et ne la rend jamais à l'OS. Le process fait tourner uvicorn, le bot et
+plusieurs threads de bibliothèques, ce qui fait stagner le RSS bien au-dessus
+de la mémoire réellement vivante. La brider à 2 arènes réduit typiquement le
+RSS de 20 à 40 % sans aucun changement de code. À définir sur **tous** les
+services Python du projet, pas seulement sur le bot.
+
+### CHUNK_GUILDS_AT_STARTUP
+**Valeur :** `False` (défaut) / `True` pour restaurer l'ancien comportement
+**Description :** quand elle vaut `True`, discord.py télécharge la liste
+complète des membres de **tous** les serveurs au démarrage et garde un objet
+`Member` résident (~1 à 2 Ko) pour chacun — le plus gros poste mémoire du
+process.
+
+Avec la valeur par défaut (`False`), le cache ne contient que les membres que
+Moddy a réellement vus (`MemberCacheFlags(joined=True)` : arrivées, messages,
+interactions). Les recherches passent par `utils/members.py` :
+
+- `get_or_fetch_member(guild, user_id)` — cache, puis un fetch REST sur défaut
+  de cache. À utiliser partout où un `None` casserait une fonctionnalité
+  (permissions de ticket, application d'une sanction, gate AltGuard…).
+- `fetch_all_members(guild, cache=False)` — la liste complète à la demande, sans
+  la laisser résidente. Réservée aux rares endroits qui en ont vraiment besoin
+  (resync AltGuard, statistiques staff).
+
+**Régression connue et assumée :** tout ce qui balaie *tous* les serveurs pour
+savoir où un utilisateur est membre (`/mutualserver`, le compte de serveurs
+partagés de `/team user`, le fan-out `on_user_update` des logs serveur) ne voit
+plus que les serveurs où la personne est en cache. Y appliquer un fetch coûterait
+une requête REST **par serveur**, ce qui est pire que la sous-estimation. Passer
+`CHUNK_GUILDS_AT_STARTUP=true` restaure l'exactitude, au prix de la mémoire.
+
+### SENTRY_TRACES_SAMPLE_RATE / SENTRY_PROFILES_SAMPLE_RATE
+**Valeurs par défaut :** `0.01` / `0.0`
+**Description :** le suivi d'erreurs (le seul usage réel de Sentry ici) n'est pas
+concerné. Le tracing garde un tampon de spans par transaction et le profileur
+lance un thread d'échantillonnage dédié (donc une arène malloc de plus). Les
+remonter n'a d'intérêt que pour une investigation ponctuelle.
+
+### Journalisation
+Le logger racine suit `DEBUG` : `INFO` en production, `DEBUG` uniquement si
+`DEBUG=True`. Le laisser en `DEBUG` fait formater et allouer par toutes les
+bibliothèques des enregistrements que personne ne lit.
+
+Sur Railway (détecté via `RAILWAY_ENVIRONMENT`), **aucun fichier de log n'est
+écrit** : stdout est déjà collecté et le disque du conteneur est éphémère.
+Ailleurs, un `RotatingFileHandler` plafonne `logs/moddy.log` à 5 Mo × 3.
+
 ## Variables optionnelles
 
 ### DEBUG
@@ -200,6 +256,9 @@ et les notifications
 - [ ] `HM_URL` (optionnel, désactive le heartbeat si absent)
 - [ ] `HM_INGEST_TOKEN` (optionnel, désactive le heartbeat si absent, identique sur tous les services)
 - [ ] `BETTERSTACK_HEARTBEAT_URL` (optionnel, désactive le ping Better Stack si absent)
+- [ ] `MALLOC_ARENA_MAX` → `2` (fortement recommandé — voir « Empreinte mémoire »)
+- [ ] `CHUNK_GUILDS_AT_STARTUP` (optionnel, défaut `False` — `True` restaure l'ancien cache complet)
+- [ ] `SENTRY_TRACES_SAMPLE_RATE` / `SENTRY_PROFILES_SAMPLE_RATE` (optionnels, défauts `0.01` / `0.0`)
 
 ## Dépannage
 
