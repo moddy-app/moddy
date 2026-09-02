@@ -103,6 +103,11 @@ class OpenAIAdapter(BaseAdapter):
                 retry_after = float(resp.headers.get("Retry-After", 0)) or None
             except (ValueError, TypeError):
                 pass
+            try:
+                body = await resp.text()
+            except Exception:
+                body = ""
+            logger.warning("OpenAI 429 on %s: %s", resp.url, body[:500])
             raise RateLimitError("openai", retry_after)
         if resp.status >= 400:
             try:

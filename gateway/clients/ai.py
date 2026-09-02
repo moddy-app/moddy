@@ -4,6 +4,7 @@ from typing import Optional
 
 from ..spec import CallSpec, QuotaPlan
 from ..executor import GatewayExecutor
+from ..ratelimit import UNIT_REQUESTS
 
 
 class AIClient:
@@ -41,6 +42,7 @@ class AIClient:
             call_type=call_type,
             correlation_id=correlation_id or str(uuid.uuid4()),
             metadata=metadata or {},
+            rate_cost={UNIT_REQUESTS: 1},
         )
         return await self._executor.execute(spec)
 
@@ -79,5 +81,6 @@ class AIClient:
             call_type=call_type,
             correlation_id=correlation_id or str(uuid.uuid4()),
             metadata=metadata or {},
+            rate_cost={UNIT_REQUESTS: 1},
         )
         return await self._executor.execute(spec)
