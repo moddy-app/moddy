@@ -41,10 +41,30 @@ def _whisper_turbo_rules() -> List[RateRule]:
     ]
 
 
+def _openai_rpm_rules(env_name: str, default_rpm: int) -> List[RateRule]:
+    """Request-per-minute cap mirroring the OpenAI console (*Limits* page).
+
+    Only RPM is enforced here (not TPM): estimating tokens before the call
+    would need a tokenizer, and RPM alone is enough to stop the bot from
+    bursting past what the account tier allows.
+    """
+    return [RateRule("rpm", UNIT_REQUESTS, MINUTE, _int_env(env_name, default_rpm))]
+
+
 def _default_model_rate_limits() -> Dict[Tuple[str, str], List[RateRule]]:
-    """(provider, model) → the rules enforced for it. Add new models here."""
+    """(provider, model) → the rules enforced for it. Add new models here.
+
+    OpenAI values mirror the org's Tier 1 limits (platform.openai.com →
+    Limits → Rate limits) as of 2026-09-02. Raise them here (or via the env
+    vars) the day the account tier changes.
+    """
     return {
         ("groq", "whisper-large-v3-turbo"): _whisper_turbo_rules(),
+        ("openai", "text-embedding-3-small"): _openai_rpm_rules(
+            "OPENAI_EMBED_RPM", 3_000
+        ),
+        ("openai", "gpt-4.1-nano"): _openai_rpm_rules("OPENAI_NANO_RPM", 500),
+        ("openai", "gpt-4.1-mini"): _openai_rpm_rules("OPENAI_MINI_RPM", 500),
     }
 
 

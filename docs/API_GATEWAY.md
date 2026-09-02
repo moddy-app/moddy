@@ -204,6 +204,15 @@ Rules live in `gateway/config.py` and mirror the provider console:
 | | `rpd` | 2 000 requests | 1 day | `GROQ_WHISPER_RPD` |
 | | `ash` | 7 200 audio seconds | 1 hour | `GROQ_WHISPER_AUDIO_SECONDS_PER_HOUR` |
 | | `asd` | 28 800 audio seconds | 1 day | `GROQ_WHISPER_AUDIO_SECONDS_PER_DAY` |
+| openai / `text-embedding-3-small` | `rpm` | 3 000 requests | 1 min | `OPENAI_EMBED_RPM` |
+| openai / `gpt-4.1-nano` | `rpm` | 500 requests | 1 min | `OPENAI_NANO_RPM` |
+| openai / `gpt-4.1-mini` | `rpm` | 500 requests | 1 min | `OPENAI_MINI_RPM` |
+
+The OpenAI values mirror our org's Tier 1 limits (platform.openai.com → Limits
+→ Rate limits). Only RPM is enforced (not TPM) — estimating tokens ahead of
+the call would need a tokenizer, and RPM alone stops the bot from bursting
+past what the account tier allows. Raise them (env vars above) when the
+account tier changes.
 
 How it works:
 - Fixed windows in Redis (`ratelimit:{provider}:{model}:{rule}:{window}`), shared across shards.
@@ -320,6 +329,9 @@ except (APIUnavailableError, GatewayError):
 | `GROQ_WHISPER_RPD` | `2000` | Whisper requests per day |
 | `GROQ_WHISPER_AUDIO_SECONDS_PER_HOUR` | `7200` | Whisper audio seconds per hour |
 | `GROQ_WHISPER_AUDIO_SECONDS_PER_DAY` | `28800` | Whisper audio seconds per day |
+| `OPENAI_EMBED_RPM` | `3000` | `text-embedding-3-small` requests per minute (provider account) |
+| `OPENAI_NANO_RPM` | `500` | `gpt-4.1-nano` requests per minute |
+| `OPENAI_MINI_RPM` | `500` | `gpt-4.1-mini` requests per minute |
 | `GATEWAY_MAX_RETRIES` | `3` | Max retry attempts |
 | `GATEWAY_RETRY_BASE_DELAY` | `0.5` | Retry base delay (seconds) |
 | `GATEWAY_CB_FAILURE_THRESHOLD` | `5` | Circuit breaker failure count |
