@@ -30,7 +30,7 @@ from bumpreminder import BumpBot, bot_by_key, format_interval
 from cogs.error_handler import BaseView
 from config import COLORS
 from utils import i18n
-from utils.emojis import ROCKET_LAUNCH, TIME, TOGGLE_ON
+from utils.emojis import ROCKET_LAUNCH, TIME
 from utils.i18n import t
 
 logger = logging.getLogger('moddy.bump_views')
@@ -94,13 +94,9 @@ class BumpOptInButton(
                  locale: str = "en-US", armed: bool = False):
         super().__init__(
             ui.Button(
-                label=t(
-                    "modules.bump_reminder.card.optin_armed" if armed
-                    else "modules.bump_reminder.card.optin",
-                    locale=locale,
-                )[:80],
-                style=discord.ButtonStyle.secondary,
-                emoji=discord.PartialEmoji.from_str(TOGGLE_ON if armed else TIME),
+                label=t("modules.bump_reminder.card.optin", locale=locale)[:80],
+                style=discord.ButtonStyle.success if armed else discord.ButtonStyle.secondary,
+                emoji=discord.PartialEmoji.from_str(TIME),
                 custom_id=f"{_CID_PREFIX}:{bot_key}:{user_id}",
             )
         )
@@ -150,6 +146,14 @@ class BumpOptInButton(
             locale=public_locale, ping_mode="button", armed=armed,
         )
         await interaction.response.edit_message(view=view, allowed_mentions=NO_MENTIONS)
+        await interaction.followup.send(
+            t(
+                "modules.bump_reminder.card.optin_armed" if armed
+                else "modules.bump_reminder.card.optin_disarmed",
+                locale=locale,
+            ),
+            ephemeral=True,
+        )
 
 
 class BumpReminderPersistence(BaseView):

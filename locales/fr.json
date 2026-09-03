@@ -1532,6 +1532,7 @@
         "thanks_body": "Le serveur vient de remonter sur {emoji} **{name}**.\nProchain bump possible {timestamp}.",
         "optin": "Me rappeler",
         "optin_armed": "Tu seras mentionné",
+        "optin_disarmed": "Tu ne seras plus mentionné",
         "optin_expired": "Ce bump a déjà été remplacé par un plus récent.",
         "reminder_title": "C'est reparti",
         "reminder_body": "Le serveur peut de nouveau être bumpé sur {emoji} **{name}**.\n{command}",
