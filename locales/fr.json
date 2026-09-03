@@ -1531,7 +1531,9 @@
         "thanks_title_anonymous": "Merci !",
         "thanks_body": "Le serveur vient de remonter sur {emoji} **{name}**.\nProchain bump possible {timestamp}.",
         "optin": "Me rappeler",
+        "optin_on_title": "Notification activée",
         "optin_armed": "Tu seras mentionné",
+        "optin_off_title": "Notification désactivée",
         "optin_disarmed": "Tu ne seras plus mentionné",
         "optin_expired": "Ce bump a déjà été remplacé par un plus récent.",
         "reminder_title": "C'est reparti",
@@ -1554,6 +1556,7 @@
         "saved": "Rappel enregistré."
       },
       "add": {
+        "title": "Rappel créé",
         "success": "Rappel créé. Moddy surveille désormais ce salon."
       },
       "errors": {
