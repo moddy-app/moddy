@@ -164,8 +164,13 @@ BUMP_BOTS: Tuple[BumpBot, ...] = (
     ),
     # --------------------------------------------------------------- D-INVITES
     # The hard one: a successful bump is a bare image with a "view the server"
-    # button and not one word of text. The asset filename is the only signal
-    # there is — see the note in docs/BUMP_REMINDER.md.
+    # button and not one word of text, so the asset filename is the only signal
+    # a success carries — see the note in docs/BUMP_REMINDER.md.
+    #
+    # Its refusal, by contrast, is explicit: `bump-error.png` plus "Tu pourras
+    # bump à nouveau <t:…>". Both markers below are taken from a captured
+    # refusal, not guessed — `/bump.png` and `bump-error.png` are distinct
+    # enough that the success marker cannot match a failure.
     BumpBot(
         key="dinvites",
         app_id=678211574183362571,
@@ -175,7 +180,11 @@ BUMP_BOTS: Tuple[BumpBot, ...] = (
         command_names=frozenset({"bump"}),
         default_interval=2 * HOUR,
         success_media=("/bump.png", "/bump.gif", "/bump.jpg", "/bump.webp"),
-        failure_media=("/cooldown.", "/error.", "/wait.", "/already."),
+        failure_text=_rx(
+            r"pourras\s+bump",
+            r"able\s+to\s+bump\s+again",
+        ),
+        failure_media=("bump-error",),
     ),
     # ---------------------------------------------------------------- DiscordL
     # Components V2. Its banner URL carries the bump path, and its footer

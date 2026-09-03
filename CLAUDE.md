@@ -298,7 +298,7 @@ moddy/
     ├── test_transcription.py  #   Voice transcription helpers, guard rails, cards
     ├── test_notifications.py  #   Notifications: hashing, attribution, report rules, i18n
     ├── test_support_requests.py #  Support requests: cards, buttons, beta card, welcome DM
-    ├── test_bump_reminder.py  #   Bump detection (7 real payloads), config, cards, i18n
+    ├── test_bump_reminder.py  #   Bump detection (real payloads + refusals), config, cards, i18n
     ├── test_logs.py           #   Server logs: registry, routing, rendering, delivery
     ├── test_logs_i18n.py      #   Server logs: i18n completeness on the 5 locales
     ├── test_heartbeat.py      #   Health Monitor heartbeat: payload, lifecycle, status decisions

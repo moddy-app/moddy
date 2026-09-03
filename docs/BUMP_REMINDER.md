@@ -132,9 +132,19 @@ Setting this flag on another directory needs the same evidence.
 ### D-INVITES is the fragile one
 
 Its successful bump is a bare image with a "view the server" button and **not one
-word of text**. The asset filename (`bump.png`) is the only signal there is. If
-D-INVITES renames that file, detection for it stops — and it is the one detector
-here that would.
+word of text**. The asset filename (`bump.png`) is the only signal a success
+carries. If D-INVITES renames that file, detection for it stops — and it is the
+one detector here that would.
+
+Its *refusal*, by contrast, is explicit: `bump-error.png` plus "Tu pourras bump à
+nouveau `<t:…>`". Both are captured in `tests/data/bump_refusals.json` rather
+than guessed — which matters, because the guesses were wrong. The markers were
+`cooldown.png` and `error.png` until a real refusal showed the file is called
+`bump-error.png`. The refusal was rejected before the fix, but only because no
+success marker happened to fire; nothing vetoed it. That is the weakest reason a
+detector can be right, and
+`TestCapturedRefusals::test_a_captured_refusal_is_vetoed_not_merely_unmatched`
+now forbids it.
 
 ### Stated next-bump times, and the freshness window
 
@@ -432,7 +442,13 @@ Directory names are brands and are never translated.
    directory nobody captured a reply for.
 2. Add one `BumpBot` entry to `BUMP_BOTS`, positioned by audience size.
 3. Add its emoji to `utils/emojis.py` and [docs/EMOJIS.md](EMOJIS.md) if it is new.
-4. Run `pytest tests/test_bump_reminder.py`. The cross-directory test will tell
+4. Capture a **refusal** too, into `tests/data/bump_refusals.json`. This is the
+   step that is easy to skip and should not be: a guessed failure marker only
+   tests the guess, and the danger is a *success* marker that also appears on
+   the refusal — a button, a banner path — which turns every failed bump into a
+   reminder. Directories whose success rests on an image URL or a button id are
+   the exposed ones.
+5. Run `pytest tests/test_bump_reminder.py`. The cross-directory test will tell
    you if a marker is too generic — that is its job, and the reason DiscordL's
    marker is `a été bump **par**` rather than the `a été bump` it started as,
    which also matched French.gg.

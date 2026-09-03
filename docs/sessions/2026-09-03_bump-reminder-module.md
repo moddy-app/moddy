@@ -84,6 +84,19 @@ bot-authored messages before any module sees them, which is exactly what this
 feature reads. Relaxing the shared guard would change what four other modules
 receive.
 
+## Correction after the first push
+
+Jules supplied a real D-INVITES refusal. It showed the failure markers were
+wrong: invented as `cooldown.png` / `error.png`, the file is actually
+`bump-error.png`, and the message reads "Tu pourras bump à nouveau `<t:…>`".
+
+The refusal *was* already rejected — but only because no success marker happened
+to fire, which is the weakest reason a detector can be right: the day a
+directory adds a banner or a phrase to its refusal, the rejection silently
+becomes an acceptance. `tests/data/bump_refusals.json` now holds captured
+refusals, and `TestCapturedRefusals` asserts each one trips an **explicit** veto.
+That test fails against the old guessed markers, which is how it earns its place.
+
 ## Bugs caught during the work
 
 - `_by_channel` keyed on the channel alone would have silently dropped a second
@@ -108,7 +121,11 @@ receive.
   DISBOARD is verifiably largest; the rest are ordered by bot account age and
   reputation because no comparable published guild counts exist. Reordering is a
   one-line move in `BUMP_BOTS`.
-- Failure payloads in the tests are *synthetic* (plausible cooldown replies in
-  FR and EN). Real captured refusals would be stronger — worth adding whenever
-  one is seen in the wild.
+- **Captured refusals exist only for D-INVITES so far.** The rest of
+  `TestFailure` replays hand-written cooldown replies, which only ever test the
+  guess. The exposed directories are the ones whose *success* marker could
+  plausibly also appear on a refusal: French.gg (its "remind me" button — which
+  makes more sense on a cooldown than on a success), DiscordL (a banner under
+  `/v2/bump/`), and DiscordTop (whose failure markers `boost-error`,
+  `boost-cooldown`, `boost-failed` are still invented). Requested from Jules.
 - The module ships no slash command, so `locales/commands/` is untouched.

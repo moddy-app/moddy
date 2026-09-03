@@ -39,6 +39,13 @@ LOCALES = ("fr", "en-US", "es-ES", "pt-BR", "de")
 
 PAYLOADS = json.loads((ROOT / "tests" / "data" / "bump_payloads.json").read_text(encoding="utf-8"))
 
+#: Captured **refusals** — a real cooldown reply, per directory. Far more
+#: valuable than the synthetic ones below, because a guessed refusal only tests
+#: the guess: the D-INVITES failure markers were wrong (``cooldown.png``,
+#: ``error.png``) until a real refusal showed the file is called
+#: ``bump-error.png``. Add one whenever a real refusal is seen in the wild.
+REFUSALS = json.loads((ROOT / "tests" / "data" / "bump_refusals.json").read_text(encoding="utf-8"))
+
 
 # --------------------------------------------------------------------------- #
 # Turning a captured payload back into something Message-shaped
@@ -231,14 +238,14 @@ class TestFailure:
     reply in one of the two languages these directories actually answer in.
     """
 
+    #: Plausible cooldown replies, written by hand. Weaker evidence than
+    #: ``REFUSALS`` — see :class:`TestCapturedRefusals`.
     CASES = [
         ("disboard", embed_reply(
             "disboard", "Veuillez attendre encore 47 minutes.",
             image="https://disboard.org/images/bot-command-image-notification.png")),
         ("dsmonitoring", embed_reply("dsmonitoring", "You have already liked this server today.")),
         ("dsmonitoring", embed_reply("dsmonitoring", "Vous avez déjà aimé le serveur récemment.")),
-        ("dinvites", v2_reply("dinvites", media="https://cdn.discordapp.com/a/b/cooldown.png?ex=1")),
-        ("dinvites", v2_reply("dinvites", media="https://cdn.discordapp.com/a/b/error.png?ex=1")),
         ("dl", v2_reply("dl", text="❌ Tu dois attendre avant de bump à nouveau.")),
         ("dl", v2_reply("dl", text="You must wait before bumping again.")),
         ("beemp", embed_reply("beemp", "> Beemp already done, please wait a bit.")),
@@ -252,6 +259,18 @@ class TestFailure:
                              ids=[f"{k}-{i}" for i, (k, _) in enumerate(CASES)])
     def test_a_cooldown_reply_arms_nothing(self, key, payload):
         assert detect(message(payload), 7200, now=sent_at(payload)) is None
+
+    def test_a_success_asset_name_cannot_match_a_failure_one(self):
+        """``bump.png`` and ``bump-error.png`` must stay distinguishable.
+
+        D-INVITES has no text on a success, so the filename is the whole
+        detector. A success marker loose enough to also match the error asset
+        would turn every refusal into a reminder.
+        """
+        spec = bot_by_key("dinvites")
+        error_url = "https://cdn.discordapp.com/a/b/bump-error.png?ex=1"
+        assert not any(marker in error_url for marker in spec.success_media)
+        assert any(marker in error_url for marker in spec.failure_media)
 
     def test_a_failure_marker_outranks_a_success_marker(self):
         """Success wording plus a failure asset is a message we do not understand.
@@ -287,6 +306,48 @@ class TestFailure:
             "disboard", "Bump effectué !",
             image="https://disboard.org/images/bot-command-image-notification.png")
         assert detect(message(payload), 7200, now=sent_at(payload)) is None
+
+
+class TestCapturedRefusals:
+    """Real cooldown replies, replayed through the real code.
+
+    These matter more than the hand-written ones: a guessed refusal only ever
+    tests the guess. D-INVITES' failure markers were ``cooldown.png`` /
+    ``error.png`` — both invented, both wrong — until a captured refusal showed
+    the asset is named ``bump-error.png`` and the message reads "Tu pourras bump
+    à nouveau". The refusal was rejected before the fix, but only because no
+    success marker happened to fire; nothing vetoed it. That is the weakest
+    reason a detector can be right, and it is what this class exists to prevent.
+    """
+
+    @pytest.mark.parametrize("key", sorted(REFUSALS), ids=sorted(REFUSALS))
+    def test_a_captured_refusal_arms_nothing(self, key):
+        payload = REFUSALS[key]
+        assert detect(message(payload), 7200, now=sent_at(payload)) is None
+
+    @pytest.mark.parametrize("key", sorted(REFUSALS), ids=sorted(REFUSALS))
+    def test_a_captured_refusal_is_vetoed_not_merely_unmatched(self, key):
+        """It must trip an explicit failure marker, not just miss the success ones.
+
+        Otherwise the day a directory adds a success marker to its refusal — a
+        banner, a phrase — the rejection silently becomes an acceptance.
+        """
+        from bumpreminder.detect import _FAILURE_TEXT, _harvest, _matches
+
+        spec = bot_by_key(key)
+        text, media, _ = _harvest(message(REFUSALS[key]))
+        vetoed = (
+            _matches(spec.failure_text, text)
+            or any(marker in media for marker in spec.failure_media)
+            or (not spec.refusal_is_ephemeral and _matches(_FAILURE_TEXT, text))
+        )
+        assert vetoed, f"{key}: the refusal is only rejected by omission"
+
+    @pytest.mark.parametrize("key", sorted(REFUSALS), ids=sorted(REFUSALS))
+    def test_the_refusal_carries_the_same_command_as_the_success(self, key):
+        """Which is the whole problem: the command name cannot tell them apart."""
+        assert (REFUSALS[key]["interaction"]["commandName"]
+                == PAYLOADS[key]["interaction"]["commandName"])
 
 
 # --------------------------------------------------------------------------- #

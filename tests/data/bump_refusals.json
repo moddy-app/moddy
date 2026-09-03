@@ -1,0 +1,52 @@
+{
+  "dinvites": {
+    "id": "1545019804581109810",
+    "createdTimestamp": 1788431826492,
+    "content": "",
+    "authorId": "678211574183362571",
+    "embeds": [],
+    "components": [
+      {
+        "type": 17,
+        "accent_color": 15548997,
+        "components": [
+          {
+            "type": 10,
+            "content": "Tu pourras bump à nouveau <t:1788439014:R>."
+          },
+          {
+            "type": 12,
+            "items": [
+              {
+                "media": {
+                  "url": "https://cdn.discordapp.com/attachments/640677064705441822/1545019807148285953/bump-error.png?ex=6a9a9f53&is=6a994dd3&hm=a87f2f027c3b958c007dce3b40f533094cb3bba960f7d70038084faacfdc5aeb&",
+                  "proxy_url": "https://media.discordapp.net/attachments/640677064705441822/1545019807148285953/bump-error.png?ex=6a9a9f53&is=6a994dd3"
+                }
+              }
+            ]
+          },
+          {
+            "type": 1,
+            "components": [
+              {
+                "type": 2,
+                "style": 5,
+                "label": "Voir le serveur",
+                "url": "https://discordinvites.net/servers/223070469148901376"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "attachments": [],
+    "applicationId": "678211574183362571",
+    "interactionMetadata": {
+      "user": "1164597199594852395"
+    },
+    "interaction": {
+      "commandName": "bump",
+      "user": "1164597199594852395"
+    }
+  }
+}
