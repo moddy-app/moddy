@@ -1533,6 +1533,7 @@
         "thanks_body": "El servidor acaba de subir en {emoji} **{name}**.\nPróximo bump posible {timestamp}.",
         "optin": "Recuérdamelo",
         "optin_armed": "Se te mencionará",
+        "optin_disarmed": "Ya no se te mencionará",
         "optin_expired": "Un bump más reciente ya ha reemplazado a este.",
         "reminder_title": "Toca hacer bump",
         "reminder_body": "El servidor puede recibir bump de nuevo en {emoji} **{name}**.\n{command}",
