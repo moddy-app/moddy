@@ -143,6 +143,7 @@
 <:ticket:1541216667420594257>
 <:threads:1541216661699436675>
 <:claim:1541239118888181770>
+<:rocket_launch:1545028494298447873>
 
 
 ## Server logs icon set — `utils/emojis.py::LOG_EMOJIS`

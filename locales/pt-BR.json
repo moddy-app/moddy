@@ -1482,6 +1482,94 @@
         "internal_error": "<:error:1519790252594827264> Algo deu errado. Tente novamente."
       }
     },
+    "bump_reminder": {
+      "name": "Lembrete de bump",
+      "description": "Agradece quem dá bump no servidor e avisa o canal quando ele pode receber bump de novo",
+      "config": {
+        "title": "Lembrete de bump",
+        "description": "Uma janela de bump perdida é visibilidade perdida. O Moddy reconhece um bump **bem-sucedido** no canal que você indicar, agradece quem o executou e chama o canal de volta assim que o comando fica disponível de novo.",
+        "limit": "{max} lembrete(s) por diretório.",
+        "add_placeholder": "Adicionar um lembrete para um diretório",
+        "manage_placeholder": "Gerenciar um lembrete existente",
+        "all_configured": "Você atingiu sua cota em todos os diretórios compatíveis.",
+        "list": {
+          "title": "Lembretes configurados",
+          "count": "{count} lembrete(s)",
+          "empty": "Nenhum lembrete ainda. Escolha um diretório abaixo para começar.",
+          "every": "A cada {interval}",
+          "paused": "Pausado"
+        },
+        "state": {
+          "waiting": "Aguardando um primeiro bump.",
+          "scheduled": "Próximo lembrete {timestamp}.",
+          "ready": "O servidor pode receber bump agora mesmo."
+        }
+      },
+      "modal": {
+        "title": "Lembrete de bump",
+        "bot_label": "Diretório",
+        "bot_description": "A lista cujo comando o Moddy deve vigiar.",
+        "bot_option": "{command} · a cada {interval}",
+        "channel_label": "Canal",
+        "channel_description": "O Moddy vigia o bump aqui e publica o lembrete aqui.",
+        "roles_label": "Cargos a mencionar",
+        "roles_description": "Opcional. Deixe vazio para não mencionar ninguém.",
+        "ping_label": "Mencionar a última pessoa que deu bump",
+        "ping_description": "O que o Moddy faz com quem executou o comando.",
+        "interval_label": "Intervalo antes do lembrete",
+        "interval_description": "Por exemplo 2h, 2h30 ou 90m. Entre 5 minutos e 24 horas."
+      },
+      "ping": {
+        "auto": "Sempre",
+        "auto_description": "Ela é mencionada em todos os lembretes.",
+        "button": "A pedido",
+        "button_description": "Um botão no agradecimento permite que ela peça.",
+        "never": "Nunca",
+        "never_description": "Apenas os cargos escolhidos são mencionados."
+      },
+      "card": {
+        "thanks_title": "Obrigado {user}!",
+        "thanks_title_anonymous": "Obrigado!",
+        "thanks_body": "O servidor acabou de subir em {emoji} **{name}**.\nPróximo bump possível {timestamp}.",
+        "optin": "Me lembrar",
+        "optin_armed": "Você será mencionado",
+        "optin_expired": "Um bump mais recente já substituiu este.",
+        "reminder_title": "Hora de dar bump",
+        "reminder_body": "O servidor pode receber bump em {emoji} **{name}** novamente.\n{command}",
+        "reminder_last": "Último bump por {user}, há {duration}.",
+        "reminder_late": "Lembrete enviado com atraso: o Moddy estava indisponível."
+      },
+      "manage": {
+        "subtitle": "A cada {interval} · {command}",
+        "channel": "**Canal:** {channel}",
+        "roles": "**Cargos mencionados:** {roles}",
+        "no_roles": "nenhum",
+        "ping": "**Última pessoa que deu bump:** {mode}",
+        "paused_notice": "Este lembrete está pausado: o Moddy ignora os bumps deste diretório.",
+        "edit": "Editar",
+        "pause": "Pausar",
+        "resume": "Retomar",
+        "remove": "Excluir",
+        "removed": "Lembrete excluído.",
+        "saved": "Lembrete salvo."
+      },
+      "add": {
+        "success": "Lembrete criado. O Moddy já está vigiando esse canal."
+      },
+      "errors": {
+        "guild_not_found": "Servidor não encontrado.",
+        "unknown_bot": "Este diretório não é mais compatível.",
+        "quota": "Você atingiu sua cota de {max} lembrete(s) para {name}. Assine o premium para configurar mais.",
+        "duplicate_id": "Dois lembretes têm o mesmo identificador.",
+        "duplicate_target": "Já existe um lembrete de {name} em {channel}: os dois publicariam a mesma mensagem.",
+        "channel_required": "Escolha um canal.",
+        "channel_not_found": "Esse canal não existe mais.",
+        "channel_type": "O canal deve ser um canal de texto.",
+        "no_send_permission": "O Moddy não pode publicar em {channel}.",
+        "too_many_roles": "No máximo {max} cargos.",
+        "invalid_interval": "Intervalo inválido. Use por exemplo `2h`, `2h30` ou `90m`, entre 5 minutos e 24 horas."
+      }
+    },
     "automod_ai": {
       "description": "Moderação automática de mensagens problemáticas (IA)",
       "config": {

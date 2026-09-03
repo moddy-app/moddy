@@ -740,6 +740,48 @@ demandeur), dans l'ordre.
 
 See → [SUPPORT_REQUESTS.md](SUPPORT_REQUESTS.md).
 
+### 19. Table `bump_reminders`
+
+L'état vivant du module Bump Reminder : ce qui est en attente **maintenant**. La
+*configuration* du module, elle, vit dans `guilds.data.modules.bump_reminder`
+comme celle de tous les autres modules.
+
+La clé est `(guild_id, bot_key)` et non l'entrée de configuration, parce qu'un
+cooldown appartient au **serveur** : bumper DISBOARD une fois verrouille tout le
+serveur pendant deux heures, quel que soit le salon d'où la commande est partie.
+Un serveur premium qui pointe trois salons vers DISBOARD ne possède donc qu'une
+ligne, que le balayeur diffuse ensuite vers ses trois salons. Un serveur détient
+au plus 7 lignes, à vie : rien ne s'accumule, aucun job de nettoyage à écrire.
+
+Un second bump avant l'échéance est un `ON CONFLICT DO UPDATE` qui repousse
+`due_at`, remet `sent` à FALSE et enregistre le nouveau bumpeur — c'est tout le
+comportement « on redémarre le compte à rebours », obtenu du schéma plutôt que
+codé.
+
+**Columns:**
+- `guild_id` (BIGINT) + `bot_key` (TEXT) — PRIMARY KEY ; `bot_key` est une clé
+  de `bumpreminder.registry.BUMP_BOTS` (`disboard`, `dl`, `dtop`…)
+- `channel_id` (BIGINT) — le salon surveillé au moment du bump
+- `due_at` (TIMESTAMPTZ) — quand la commande redevient disponible
+- `sent` (BOOLEAN) — le rappel est parti (ou a été réclamé par le balayeur)
+- `bumper_id` (BIGINT) — qui a lancé la commande, si Discord l'a dit
+- `opt_in` (BOOLEAN) — cette personne a demandé à être mentionnée (bouton
+  « Me rappeler » du message de remerciement)
+- `thanks_channel_id` / `thanks_message_id` (BIGINT) — la carte de remerciement
+- `bumped_at` (TIMESTAMPTZ)
+
+**Index:**
+- `idx_bump_reminders_due` on `(due_at) WHERE sent = FALSE` — c'est la requête
+  du balayeur, mot pour mot
+
+**Repository:** `db/repositories/bump.py` — `BumpReminderRepository`
+
+`claim_due_bumps` bascule les lignes à `sent` **dans l'instruction qui les
+renvoie** (`FOR UPDATE SKIP LOCKED`) : ni double envoi, ni perte sur un
+redémarrage en plein balayage.
+
+See → [BUMP_REMINDER.md](BUMP_REMINDER.md).
+
 ---
 
 ## Système d'attributs et de données

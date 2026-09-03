@@ -48,6 +48,10 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     from modules.configs.welcome_dm_config import (
         WelcomeDmConfigView, ManageWelcomeDmView,
     )
+    from modules.configs.bump_reminder_config import (
+        BumpReminderConfigView, ManageBumpReminderView,
+    )
+    from utils.bump_views import BumpReminderPersistence
     from cogs.config import ConfigMainView
     from modules.configs.server_settings_config import ServerSettingsConfigView
     from modules.configs.adaptive_slowmode_config import AdaptiveSlowmodeConfigView
@@ -119,6 +123,14 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         ManageWelcomeMessageView,
         WelcomeDmConfigView,
         ManageWelcomeDmView,
+        # Group 10b — /config bump reminder panel (guild permission auth), plus
+        # the marker registering the thank-you card's opt-in button. That button
+        # is a DynamicItem carrying the bumper's user id, re-checked on every
+        # click, so a card left in a channel for a month stays exactly as safe
+        # as a fresh one.
+        BumpReminderConfigView,
+        ManageBumpReminderView,
+        BumpReminderPersistence,
         # Group 11 — /config router (guild permission auth) and the
         # server-wide settings screen it opens (language of the server —
         # see utils/guild_language.py)

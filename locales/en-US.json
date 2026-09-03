@@ -1482,6 +1482,94 @@
         "internal_error": "<:error:1519790252594827264> Something went wrong. Please try again."
       }
     },
+    "bump_reminder": {
+      "name": "Bump Reminder",
+      "description": "Thanks whoever bumps the server and calls the channel back the moment it can be bumped again",
+      "config": {
+        "title": "Bump Reminder",
+        "description": "A missed bump window is visibility lost. Moddy recognises a **successful** bump in the channel you point it at, thanks whoever ran it, and calls the channel back the moment the command is available again.",
+        "limit": "{max} reminder(s) per directory.",
+        "add_placeholder": "Add a reminder for a directory",
+        "manage_placeholder": "Manage an existing reminder",
+        "all_configured": "You have reached your quota on every supported directory.",
+        "list": {
+          "title": "Configured reminders",
+          "count": "{count} reminder(s)",
+          "empty": "No reminder yet. Pick a directory below to get started.",
+          "every": "Every {interval}",
+          "paused": "Paused"
+        },
+        "state": {
+          "waiting": "Waiting for a first bump.",
+          "scheduled": "Next reminder {timestamp}.",
+          "ready": "The server can be bumped right now."
+        }
+      },
+      "modal": {
+        "title": "Bump reminder",
+        "bot_label": "Directory",
+        "bot_description": "The listing whose command Moddy should watch.",
+        "bot_option": "{command} · every {interval}",
+        "channel_label": "Channel",
+        "channel_description": "Moddy watches for the bump here, and posts the reminder here.",
+        "roles_label": "Roles to mention",
+        "roles_description": "Optional. Leave empty to mention nobody.",
+        "ping_label": "Mention the last person who bumped",
+        "ping_description": "What Moddy does about whoever ran the command.",
+        "interval_label": "Delay before the reminder",
+        "interval_description": "For example 2h, 2h30 or 90m. Between 5 minutes and 24 hours."
+      },
+      "ping": {
+        "auto": "Always",
+        "auto_description": "They are mentioned by every reminder.",
+        "button": "On request",
+        "button_description": "A button on the thank-you lets them ask for it.",
+        "never": "Never",
+        "never_description": "Only the chosen roles are mentioned."
+      },
+      "card": {
+        "thanks_title": "Thanks {user}!",
+        "thanks_title_anonymous": "Thanks!",
+        "thanks_body": "The server just climbed back up on {emoji} **{name}**.\nNext bump possible {timestamp}.",
+        "optin": "Remind me",
+        "optin_armed": "You will be mentioned",
+        "optin_expired": "A more recent bump has already replaced this one.",
+        "reminder_title": "Time to bump again",
+        "reminder_body": "The server can be bumped on {emoji} **{name}** again.\n{command}",
+        "reminder_last": "Last bumped by {user}, {duration} ago.",
+        "reminder_late": "Reminder sent late: Moddy was unavailable."
+      },
+      "manage": {
+        "subtitle": "Every {interval} · {command}",
+        "channel": "**Channel:** {channel}",
+        "roles": "**Mentioned roles:** {roles}",
+        "no_roles": "none",
+        "ping": "**Last person who bumped:** {mode}",
+        "paused_notice": "This reminder is paused: Moddy ignores bumps from this directory.",
+        "edit": "Edit",
+        "pause": "Pause",
+        "resume": "Resume",
+        "remove": "Delete",
+        "removed": "Reminder deleted.",
+        "saved": "Reminder saved."
+      },
+      "add": {
+        "success": "Reminder created. Moddy is now watching that channel."
+      },
+      "errors": {
+        "guild_not_found": "Server not found.",
+        "unknown_bot": "This directory is no longer supported.",
+        "quota": "You have reached your quota of {max} reminder(s) for {name}. Go premium to configure more.",
+        "duplicate_id": "Two reminders share the same identifier.",
+        "duplicate_target": "A {name} reminder already exists in {channel}: both would post the same message.",
+        "channel_required": "Pick a channel.",
+        "channel_not_found": "That channel no longer exists.",
+        "channel_type": "The channel must be a text channel.",
+        "no_send_permission": "Moddy cannot post in {channel}.",
+        "too_many_roles": "{max} roles at most.",
+        "invalid_interval": "Invalid delay. Use for example `2h`, `2h30` or `90m`, between 5 minutes and 24 hours."
+      }
+    },
     "automod_ai": {
       "description": "Automatic moderation of problematic messages (AI)",
       "config": {

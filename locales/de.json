@@ -1482,6 +1482,94 @@
         "internal_error": "<:error:1519790252594827264> Etwas ist schiefgelaufen. Bitte versuche es erneut."
       }
     },
+    "bump_reminder": {
+      "name": "Bump-Erinnerung",
+      "description": "Bedankt sich bei allen, die den Server bumpen, und meldet sich, sobald er wieder dran ist",
+      "config": {
+        "title": "Bump-Erinnerung",
+        "description": "Ein verpasstes Bump-Fenster ist verlorene Sichtbarkeit. Moddy erkennt einen **erfolgreichen** Bump im Kanal deiner Wahl, bedankt sich bei der Person und meldet sich im Kanal, sobald der Befehl wieder verfügbar ist.",
+        "limit": "{max} Erinnerung(en) pro Verzeichnis.",
+        "add_placeholder": "Erinnerung für ein Verzeichnis hinzufügen",
+        "manage_placeholder": "Bestehende Erinnerung verwalten",
+        "all_configured": "Du hast dein Kontingent bei jedem unterstützten Verzeichnis erreicht.",
+        "list": {
+          "title": "Eingerichtete Erinnerungen",
+          "count": "{count} Erinnerung(en)",
+          "empty": "Noch keine Erinnerung. Wähle unten ein Verzeichnis, um zu beginnen.",
+          "every": "Alle {interval}",
+          "paused": "Pausiert"
+        },
+        "state": {
+          "waiting": "Wartet auf den ersten Bump.",
+          "scheduled": "Nächste Erinnerung {timestamp}.",
+          "ready": "Der Server kann sofort gebumpt werden."
+        }
+      },
+      "modal": {
+        "title": "Bump-Erinnerung",
+        "bot_label": "Verzeichnis",
+        "bot_description": "Die Liste, deren Befehl Moddy beobachten soll.",
+        "bot_option": "{command} · alle {interval}",
+        "channel_label": "Kanal",
+        "channel_description": "Hier achtet Moddy auf den Bump und postet die Erinnerung.",
+        "roles_label": "Zu erwähnende Rollen",
+        "roles_description": "Optional. Leer lassen, um niemanden zu erwähnen.",
+        "ping_label": "Die letzte Person erwähnen, die gebumpt hat",
+        "ping_description": "Was Moddy mit der Person macht, die den Befehl ausgeführt hat.",
+        "interval_label": "Wartezeit bis zur Erinnerung",
+        "interval_description": "Zum Beispiel 2h, 2h30 oder 90m. Zwischen 5 Minuten und 24 Stunden."
+      },
+      "ping": {
+        "auto": "Immer",
+        "auto_description": "Sie wird bei jeder Erinnerung erwähnt.",
+        "button": "Auf Wunsch",
+        "button_description": "Ein Button auf dem Dank lässt sie darum bitten.",
+        "never": "Nie",
+        "never_description": "Nur die gewählten Rollen werden erwähnt."
+      },
+      "card": {
+        "thanks_title": "Danke {user}!",
+        "thanks_title_anonymous": "Danke!",
+        "thanks_body": "Der Server ist gerade auf {emoji} **{name}** wieder nach oben gerutscht.\nNächster Bump möglich {timestamp}.",
+        "optin": "Erinnere mich",
+        "optin_armed": "Du wirst erwähnt",
+        "optin_expired": "Ein neuerer Bump hat diesen bereits ersetzt.",
+        "reminder_title": "Zeit für den nächsten Bump",
+        "reminder_body": "Der Server kann auf {emoji} **{name}** wieder gebumpt werden.\n{command}",
+        "reminder_last": "Letzter Bump von {user}, vor {duration}.",
+        "reminder_late": "Erinnerung verspätet gesendet: Moddy war nicht erreichbar."
+      },
+      "manage": {
+        "subtitle": "Alle {interval} · {command}",
+        "channel": "**Kanal:** {channel}",
+        "roles": "**Erwähnte Rollen:** {roles}",
+        "no_roles": "keine",
+        "ping": "**Letzte Person, die gebumpt hat:** {mode}",
+        "paused_notice": "Diese Erinnerung ist pausiert: Moddy ignoriert Bumps dieses Verzeichnisses.",
+        "edit": "Bearbeiten",
+        "pause": "Pausieren",
+        "resume": "Fortsetzen",
+        "remove": "Löschen",
+        "removed": "Erinnerung gelöscht.",
+        "saved": "Erinnerung gespeichert."
+      },
+      "add": {
+        "success": "Erinnerung erstellt. Moddy beobachtet diesen Kanal ab sofort."
+      },
+      "errors": {
+        "guild_not_found": "Server nicht gefunden.",
+        "unknown_bot": "Dieses Verzeichnis wird nicht mehr unterstützt.",
+        "quota": "Du hast dein Kontingent von {max} Erinnerung(en) für {name} erreicht. Mit Premium kannst du mehr einrichten.",
+        "duplicate_id": "Zwei Erinnerungen haben dieselbe Kennung.",
+        "duplicate_target": "In {channel} gibt es bereits eine {name}-Erinnerung: beide würden dieselbe Nachricht posten.",
+        "channel_required": "Wähle einen Kanal.",
+        "channel_not_found": "Diesen Kanal gibt es nicht mehr.",
+        "channel_type": "Der Kanal muss ein Textkanal sein.",
+        "no_send_permission": "Moddy kann in {channel} nicht posten.",
+        "too_many_roles": "Höchstens {max} Rollen.",
+        "invalid_interval": "Ungültige Wartezeit. Nutze zum Beispiel `2h`, `2h30` oder `90m`, zwischen 5 Minuten und 24 Stunden."
+      }
+    },
     "automod_ai": {
       "description": "Automatische Moderation problematischer Nachrichten (KI)",
       "config": {

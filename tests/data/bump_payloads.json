@@ -1,0 +1,187 @@
+{
+  "dl": {
+    "id": "1545012109421576192",
+    "createdTimestamp": 1788429991823,
+    "content": "",
+    "authorId": "528557940811104258",
+    "embeds": [],
+    "components": [
+      {
+        "type": 17,
+        "id": 1,
+        "accent_color": 5531135,
+        "components": [
+          { "type": 10, "id": 2, "content": "## Résultat du Bump sur DiscordL" },
+          { "type": 10, "id": 3, "content": "✅ **Moddev** a été BUMP par <@1164597199594852395> 🚀\n\n[Ton propre serveur généré par IA](https://aiguild.me/fr?source=bot_dl&page=home) **gratuitement** ✨" },
+          { "type": 14, "id": 4, "divider": true },
+          { "type": 12, "id": 5, "items": [ { "media": { "url": "https://shr.discordl.org/v2/bump/1/1421493239579676682/1164597199594852395.jpg?324", "proxy_url": "https://images-ext-1.discordapp.net/external/9eckuJqm1nV8Ko2fU2ZsuvGTpb9K9P9pTF6cTZiSsFU/%3F324/https/shr.discordl.org/v2/bump/1/1421493239579676682/1164597199594852395.jpg" } } ] },
+          { "type": 14, "id": 6, "divider": true },
+          { "type": 1, "id": 7, "components": [
+            { "type": 2, "style": 5, "label": "👑 Bump chaque heure", "url": "https://www.discordl.org/upgrade/1421493239579676682?source=bump_btn" },
+            { "type": 2, "style": 5, "label": "🎰 Tourner la Roue", "url": "https://www.discordl.org/roue-fortune?source=bump_btn" },
+            { "type": 2, "style": 5, "label": "🏠 Voir le bump sur DiscordL", "url": "https://www.discordl.org?source=bump_btn#bump" },
+            { "type": 2, "style": 5, "label": "🌐 Voir la page du serveur", "url": "https://www.discordl.org/serveurs/1421493239579676682?source=bump_btn" }
+          ] },
+          { "type": 10, "id": 12, "content": "-# Serveurs Discord sur https://www.discordl.org • <t:1788429994:R>" }
+        ]
+      }
+    ],
+    "attachments": [],
+    "applicationId": "528557940811104258",
+    "interactionMetadata": { "id": "1545012107978739823", "type": 2, "user": "1164597199594852395" },
+    "interaction": { "id": "1545012107978739823", "type": 2, "commandName": "bump", "user": "1164597199594852395" }
+  },
+
+  "disboard": {
+    "id": "1544847369382662267",
+    "createdTimestamp": 1788390714737,
+    "content": "",
+    "authorId": "302050872383242240",
+    "embeds": [
+      {
+        "url": "https://disboard.org/",
+        "type": "rich",
+        "title": "DISBOARD : La liste des serveurs publics",
+        "image": { "url": "https://disboard.org/images/bot-command-image-bump.png", "proxy_url": "https://images-ext-1.discordapp.net/external/tAuRcs-FCy2M8OaTS9Ims62J1vrFiviahjBDtpZrrBs/https/disboard.org/images/bot-command-image-bump.png" },
+        "description": "Bump effectué !\nJette un coup d'oeil [sur DISBOARD](https://disboard.org/server/843109055610224640).\n\n\n*Je développe et maintiens ce bot avec passion, avec le soutien précieux de modérateurs et de contributeurs incroyables en coulisses.\nJe couvre tous les frais moi-même — et pour être honnête, votre soutien fait vraiment la différence.\nMême un petit don aide à faire vivre le bot 💖\n🙏 Faire un don ici : https://www.paypal.com/ncp/payment/V2257AKBQS2S6*",
+        "color": 2406327
+      }
+    ],
+    "components": [],
+    "attachments": [],
+    "applicationId": "302050872383242240",
+    "interactionMetadata": { "id": "1544847366476136519", "type": 2, "user": "1394804016051126293" },
+    "interaction": { "id": "1544847366476136519", "type": 2, "commandName": "bump", "user": "1394804016051126293" }
+  },
+
+  "dinvites": {
+    "id": "1544986031231860747",
+    "createdTimestamp": 1788423774298,
+    "content": "",
+    "authorId": "678211574183362571",
+    "embeds": [],
+    "components": [
+      {
+        "type": 17,
+        "id": 1,
+        "components": [
+          { "type": 12, "id": 2, "items": [ { "media": { "url": "https://cdn.discordapp.com/attachments/1043850925028159499/1544986051289026581/bump.png?ex=6a9a7fe3&is=6a992e63&hm=3de6624b04b617d0d4025389c45a3fbd67d92fb62d5e26f2593a76fcf95dbd16&", "proxy_url": "https://media.discordapp.net/attachments/1043850925028159499/1544986051289026581/bump.png?ex=6a9a7fe3&is=6a992e63&hm=3de6624b04b617d0d4025389c45a3fbd67d92fb62d5e26f2593a76fcf95dbd16&" } } ] },
+          { "type": 1, "id": 3, "components": [ { "type": 2, "style": 5, "label": "Voir le serveur", "url": "https://discordinvites.net/servers/1043202164740329513" } ] }
+        ]
+      }
+    ],
+    "attachments": [],
+    "applicationId": "678211574183362571",
+    "interactionMetadata": { "id": "1544986030216577055", "type": 2, "user": "1036948336017686579" },
+    "interaction": { "id": "1544986030216577055", "type": 2, "commandName": "bump", "user": "1036948336017686579" }
+  },
+
+  "frenchgg": {
+    "id": "1538727826256297994",
+    "createdTimestamp": 1786931701960,
+    "content": "",
+    "authorId": "1313443824483307531",
+    "embeds": [],
+    "components": [
+      {
+        "type": 17,
+        "id": 1,
+        "components": [
+          { "type": 10, "id": 2, "content": "<:votepositif:1319736817406181489> [**NOUVEAU BUMP**](https://french.gg/serveurs)\n <a:aFlecheDroite:1071771640213545011> Le serveur Modération France a été bumpé !" },
+          { "type": 1, "id": 3, "components": [ { "type": 2, "style": 1, "label": "⏰ Me rappeler dans 2h", "custom_id": "buttons-custom-reminder-782248491895750706" } ] },
+          { "type": 14, "id": 5, "divider": true },
+          { "type": 10, "id": 6, "content": "-# <:frggBadgeSupporterOr:1437463042802716712>  **French.gg est un projet en grande majorité gratuit, nous développons ce projet avec passion et entretenons son coût de notre poche.** \n-# Pour soutenir notre projet et continuer à le faire vivre, vous pouvez nous soutenir avec [nos badges supporter](https://french.gg/premium)" }
+        ]
+      }
+    ],
+    "attachments": [],
+    "applicationId": "1313443824483307531",
+    "interactionMetadata": { "id": "1538727824385638400", "type": 2, "user": "782248491895750706" },
+    "interaction": { "id": "1538727824385638400", "type": 2, "commandName": "bump", "user": "782248491895750706" }
+  },
+
+  "dtop": {
+    "id": "1545016250751655956",
+    "createdTimestamp": 1788430979193,
+    "content": "",
+    "authorId": "1071460654839517184",
+    "embeds": [],
+    "components": [
+      {
+        "type": 17,
+        "id": 1,
+        "accent_color": 4278969,
+        "components": [
+          { "type": 12, "id": 2, "items": [ { "media": { "url": "https://cdn.discordapp.com/attachments/640677064705441822/1545016250990862447/boost-success.png?ex=6a9a9c03&is=6a994a83&hm=878e19fba3dc54f852b03680d472a35975fa80cb69f6cdbdbc11f794c4108603&", "proxy_url": "https://media.discordapp.net/attachments/640677064705441822/1545016250990862447/boost-success.png?ex=6a9a9c03&is=6a994a83" } } ] },
+          { "type": 14, "id": 3, "divider": true },
+          { "type": 10, "id": 4, "content": "# 🚀 Boost envoyé" },
+          { "type": 10, "id": 5, "content": "**Creators Area** vient d’être propulsé en première page.\n\nC’est le meilleur moment pour attirer de nouveaux visiteurs : le serveur gagne un coup de projecteur immédiat sur DiscordTop." },
+          { "type": 14, "id": 6, "divider": true },
+          { "type": 10, "id": 7, "content": "Prochain boost disponible <t:1788434578:R>.\n\nAstuce : alterner votes réguliers et boosts aide un serveur à rester visible plus longtemps." },
+          { "type": 14, "id": 8, "divider": true },
+          { "type": 1, "id": 9, "components": [
+            { "type": 2, "style": 5, "label": "Voir le serveur", "url": "https://discordtop.net/guild/223070469148901376" },
+            { "type": 2, "style": 5, "label": "Voter aussi", "url": "https://discordtop.net/guild/223070469148901376/vote" },
+            { "type": 2, "style": 5, "label": "Voir le classement", "url": "https://discordtop.net" }
+          ] }
+        ]
+      }
+    ],
+    "attachments": [],
+    "applicationId": "1071460654839517184",
+    "interactionMetadata": { "id": "1545016247400271952", "type": 2, "user": "1164597199594852395" },
+    "interaction": { "id": "1545016247400271952", "type": 2, "commandName": "boost", "user": "1164597199594852395" }
+  },
+
+  "beemp": {
+    "id": "1545016714075447307",
+    "createdTimestamp": 1788431089658,
+    "content": "",
+    "authorId": "1293636927337136269",
+    "embeds": [
+      {
+        "url": "https://beemp.gg/en/bumps",
+        "type": "rich",
+        "title": "Find the BUMPS on our website !",
+        "timestamp": "2026-09-03T10:24:50.340000+00:00",
+        "image": { "url": "https://cdn.discordapp.com/attachments/960209644373016627/1545016720140533761/banner.png?ex=6a9a9c73&is=6a994af3", "proxy_url": "https://media.discordapp.net/attachments/960209644373016627/1545016720140533761/banner.png" },
+        "fields": [ { "name": "", "value": "`😎` Bump faster !\n> **You can configure a BUMP and VOTE panel [by clicking here](https://beemp.gg/en/dashboard/959269961572962314/bump).**", "inline": false } ],
+        "description": "> Beemp done **successfully**, a little </vote:1470530261245628556> now ?",
+        "color": 16758272,
+        "author": { "url": "https://discord.gg/h3PAgWRE5M", "name": "John-Bot・BUMP !" }
+      }
+    ],
+    "components": [
+      { "type": 1, "id": 1, "components": [
+        { "type": 2, "style": 5, "label": "Add Beemp", "url": "https://discord.com/oauth2/authorize?client_id=1293636927337136269&scope=bot%20applications.commands&permissions=545460321791&redirect_uri=https://discord.gg/h3PAgWRE5M&response_type=code" },
+        { "type": 2, "style": 5, "label": "John-Bot", "url": "https://beemp.gg/en/guilds/959269961572962314" }
+      ] }
+    ],
+    "attachments": [],
+    "applicationId": "1293636927337136269",
+    "interactionMetadata": { "id": "1545016713077067846", "type": 2, "user": "1164597199594852395" },
+    "interaction": { "id": "1545016713077067846", "type": 2, "commandName": "bump", "user": "1164597199594852395" }
+  },
+
+  "dsmonitoring": {
+    "id": "1545017159309205516",
+    "createdTimestamp": 1788431195810,
+    "content": "",
+    "authorId": "575776004233232386",
+    "embeds": [
+      {
+        "type": "rich",
+        "timestamp": "2026-09-03T14:26:35+00:00",
+        "footer": { "text": "Next Like" },
+        "description": "You successfully liked the server.\nYou were faster than **0.00%** users!\n\n*We have a mobile application: [discordserver.info/app](https://discordserver.info/app)*",
+        "color": 5271975,
+        "author": { "name": "juthing_", "icon_url": "https://cdn.discordapp.com/avatars/1164597199594852395/34ce3b287b33797c0c009aa2ed1d55ef.png" }
+      }
+    ],
+    "components": [],
+    "attachments": [],
+    "applicationId": "575776004233232386",
+    "interactionMetadata": { "id": "1545017156385775637", "type": 2, "user": "1164597199594852395" },
+    "interaction": { "id": "1545017156385775637", "type": 2, "commandName": "bump", "user": "1164597199594852395" }
+  }
+}
