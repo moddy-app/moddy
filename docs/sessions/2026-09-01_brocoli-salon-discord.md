@@ -159,12 +159,16 @@ aux outils de texte.
 
 ## Suites
 
+> Cette section touche les deux dépôts. Les chemins préfixés
+> `website-backend/` sont côté backend ; les autres sont dans ce dépôt.
+
 1. **Recharger OpenAI.** Rien à redéployer ensuite.
 2. **Point unique de défaillance confirmé.** Un solde vide met à l'arrêt
    l'automod, les embeddings, les outils de texte et Brocoli en même temps.
-   `app/ai/client.py` parle à OpenAI en httpx brut, sans SDK : ajouter un
-   fournisseur de repli (Groq a déjà un adaptateur côté bot) est peu de travail
-   pour supprimer cette fragilité.
+   `website-backend/app/ai/client.py` parle à OpenAI en httpx brut, sans SDK :
+   ajouter un fournisseur de repli (Groq a déjà un adaptateur ici, dans
+   `gateway/adapters/groq.py`) est peu de travail pour supprimer cette
+   fragilité.
 3. **Chemin déterministe devant le modèle**, sur le motif de l'entonnoir de
    `automod/` : les intentions fréquentes (activer un module, changer un seuil)
    ne devraient coûter aucun appel — et continueraient de marcher pendant une
