@@ -1539,7 +1539,7 @@
         "optin_expired": "Um bump mais recente já substituiu este.",
         "reminder_title": "Hora de dar bump",
         "reminder_body": "O servidor pode receber bump em {emoji} **{name}** novamente.\n{command}",
-        "reminder_last": "Último bump por {user}, há {duration}.",
+        "reminder_last": "Último bump por {user}, {timestamp}.",
         "reminder_late": "Lembrete enviado com atraso: o Moddy estava indisponível."
       },
       "manage": {

@@ -21,12 +21,13 @@ See docs/BUMP_REMINDER.md.
 
 import logging
 import re
+from datetime import datetime
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import discord
 from discord import ui
 
-from bumpreminder import BumpBot, bot_by_key, format_interval
+from bumpreminder import BumpBot, bot_by_key
 from cogs.error_handler import BaseView
 from config import COLORS
 from utils import i18n
@@ -211,7 +212,7 @@ def build_thanks_card(spec: BumpBot, bumper_id: Optional[int], due_at,
 
 def build_reminder_card(spec: BumpBot, *, locale: str,
                         role_ids: Sequence[int], bumper_id: Optional[int],
-                        mention_bumper: bool, elapsed: Optional[int],
+                        mention_bumper: bool, bumped_at: Optional[datetime],
                         late_by: int = 0) -> ui.LayoutView:
     """The card posted when the command becomes available again.
 
@@ -239,10 +240,10 @@ def build_reminder_card(spec: BumpBot, *, locale: str,
     ))
 
     footnotes = []
-    if bumper_id and elapsed is not None:
+    if bumper_id and bumped_at is not None:
         footnotes.append(t("modules.bump_reminder.card.reminder_last",
                            locale=locale, user=f"<@{bumper_id}>",
-                           duration=format_interval(elapsed)))
+                           timestamp=f"<t:{int(bumped_at.timestamp())}:R>"))
     if late_by >= LATE_AFTER:
         footnotes.append(t("modules.bump_reminder.card.reminder_late", locale=locale))
     if footnotes:

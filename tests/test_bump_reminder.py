@@ -781,7 +781,8 @@ class TestComponents:
 
         view = build_reminder_card(
             bot_by_key("disboard"), locale="fr", role_ids=[1234],
-            bumper_id=5678, mention_bumper=True, elapsed=7200)
+            bumper_id=5678, mention_bumper=True,
+            bumped_at=datetime.now(timezone.utc) - timedelta(hours=2))
         first = view.children[0]
         assert isinstance(first, discord.ui.TextDisplay)
         assert "<@&1234>" in first.content and "<@5678>" in first.content
@@ -800,7 +801,8 @@ class TestComponents:
 
         view = build_reminder_card(
             bot_by_key("disboard"), locale="fr", role_ids=[1234],
-            bumper_id=5678, mention_bumper=False, elapsed=7200)
+            bumper_id=5678, mention_bumper=False,
+            bumped_at=datetime.now(timezone.utc) - timedelta(hours=2))
         top = view.children[0].content
         assert "<@5678>" not in top, "the bumper must not be in the ping line"
         body = "\n".join(

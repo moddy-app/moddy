@@ -41,6 +41,7 @@ from utils.bump_views import (
 )
 from utils.emojis import ROCKET_LAUNCH
 from utils.i18n import t
+from utils.members import get_or_fetch_member
 
 logger = logging.getLogger('moddy.cogs.bump_reminder')
 
@@ -209,20 +210,22 @@ class BumpReminder(commands.Cog):
         now = datetime.now(timezone.utc)
         late_by = int((now - state['due_at']).total_seconds())
         bumped_at = state.get('bumped_at')
-        elapsed = int((state['due_at'] - bumped_at).total_seconds()) if bumped_at else None
 
         bumper = None
         if state.get('bumper_id'):
-            bumper = guild.get_member(state['bumper_id'])
+            # A cache-only lookup misses whenever the bumper hasn't been seen
+            # since the bot last restarted (CHUNK_GUILDS_AT_STARTUP is off) —
+            # which would silently turn off their "ping me" opt-in below.
+            bumper = await get_or_fetch_member(guild, state['bumper_id'])
 
         for entry in entries:
             await self._post(guild, spec, entry, state, locale,
-                             bumper=bumper, elapsed=elapsed, late_by=late_by)
+                             bumper=bumper, bumped_at=bumped_at, late_by=late_by)
 
     async def _post(self, guild: discord.Guild, spec, entry: Dict[str, Any],
                     state: Dict[str, Any], locale: str, *,
                     bumper: Optional[discord.Member],
-                    elapsed: Optional[int], late_by: int) -> None:
+                    bumped_at: Optional[datetime], late_by: int) -> None:
         channel = guild.get_channel(entry['channel_id'])
         if not isinstance(channel, discord.TextChannel):
             logger.warning(
@@ -250,7 +253,7 @@ class BumpReminder(commands.Cog):
             role_ids=[role.id for role in roles],
             bumper_id=state.get('bumper_id'),
             mention_bumper=mention_bumper,
-            elapsed=elapsed,
+            bumped_at=bumped_at,
             late_by=late_by,
         )
 

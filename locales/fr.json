@@ -1538,7 +1538,7 @@
         "optin_expired": "Ce bump a déjà été remplacé par un plus récent.",
         "reminder_title": "C'est reparti",
         "reminder_body": "Le serveur peut de nouveau être bumpé sur {emoji} **{name}**.\n{command}",
-        "reminder_last": "Dernier bump par {user}, il y a {duration}.",
+        "reminder_last": "Dernier bump par {user}, {timestamp}.",
         "reminder_late": "Rappel envoyé en retard : Moddy était indisponible."
       },
       "manage": {
