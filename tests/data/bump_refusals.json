@@ -166,5 +166,59 @@
       "commandName": "boost",
       "user": "1164597199594852395"
     }
+  },
+  "dsmonitoring": {
+    "id": "1545042389406584903",
+    "createdTimestamp": 1788437211134,
+    "content": "",
+    "authorId": "575776004233232386",
+    "embeds": [
+      {
+        "type": "rich",
+        "timestamp": "2026-09-03T14:26:35+00:00",
+        "footer": {
+          "text": "Next Like"
+        },
+        "description": "You are so hot! 2 hours 19 minutes until the next like.\n\n*We have a mobile application: [discordserver.info/app](https://discordserver.info/app)*",
+        "color": 5271975,
+        "author": {
+          "name": "juthing_",
+          "icon_url": "https://cdn.discordapp.com/avatars/1164597199594852395/34ce3b287b33797c0c009aa2ed1d55ef.png"
+        }
+      }
+    ],
+    "components": [],
+    "attachments": [],
+    "applicationId": "575776004233232386",
+    "interactionMetadata": {
+      "user": "1164597199594852395"
+    },
+    "interaction": {
+      "commandName": "bump",
+      "user": "1164597199594852395"
+    }
+  },
+  "beemp": {
+    "id": "1545017939629969438",
+    "createdTimestamp": 1788431381853,
+    "content": "",
+    "authorId": "1293636927337136269",
+    "embeds": [
+      {
+        "type": "rich",
+        "description": "`⏱️` **You can bump again <t:1788434690:R> !**",
+        "color": 16711680
+      }
+    ],
+    "components": [],
+    "attachments": [],
+    "applicationId": "1293636927337136269",
+    "interactionMetadata": {
+      "user": "1164597199594852395"
+    },
+    "interaction": {
+      "commandName": "bump",
+      "user": "1164597199594852395"
+    }
   }
 }

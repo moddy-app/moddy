@@ -153,6 +153,22 @@ The lesson generalises: **the signal is what differs between the two messages**,
 never what the directory says about bumping in general. "Boost envoyé" versus
 "Boost impossible" is a signal. "propulsé" is vocabulary.
 
+### And a refusal need not sound like one
+
+DSMonitoring answers a cooldown with *"You are so hot! 2 hours 19 minutes until
+the next like."* Beemp with *"You can bump again `<t:…>`"*. Neither contains a
+single word of the shared cooldown blocklist — no "wait", no "already". Both were
+rejected only because no success marker happened to fire.
+
+So each carries an explicit failure marker taken from its captured refusal. And
+Beemp's stays **per-directory on purpose**: "you can bump again at X" is a
+refusal there, but it is semantically what a *success* says about the next window
+elsewhere — DiscordTop's success reads "Prochain boost disponible `<t:…>`".
+Promoting it to the shared blocklist would kill real bumps.
+
+Captured refusals now exist for all five directories that have a visible one.
+DISBOARD and French.gg refuse ephemerally, so there is nothing to capture.
+
 ### D-INVITES is the fragile one
 
 Its successful bump is a bare image with a "view the server" button and **not one

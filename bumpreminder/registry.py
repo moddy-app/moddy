@@ -174,6 +174,14 @@ BUMP_BOTS: Tuple[BumpBot, ...] = (
             r"faster\s+than",
             r"plus\s+rapide\s+que",
         ),
+        # Its refusal carries no cooldown word at all ("You are so hot! 2 hours
+        # 19 minutes until the next like") — the shared blocklist does not fire,
+        # so this marker is the only thing rejecting it. "until the": the
+        # success footer is *also* "Next Like".
+        failure_text=_rx(
+            r"until\s+the\s+next\s+like",
+            r"avant\s+le\s+prochain\s+like",
+        ),
         next_due="embed_timestamp",
     ),
     # --------------------------------------------------------------- D-INVITES
@@ -245,6 +253,14 @@ BUMP_BOTS: Tuple[BumpBot, ...] = (
             r"beemp\s+(?:done|effectu|r[ée]ussi|realizado)",
             r"beemp[^.\n]{0,40}success",
             r"beemp[^.\n]{0,40}succ[èe]s",
+        ),
+        # Kept per-directory on purpose. "You can bump again at X" is a refusal
+        # here, but it is semantically what a *success* says about the next
+        # window elsewhere (DiscordTop: "Prochain boost disponible <t:…>"), so
+        # promoting it to the shared blocklist would kill real bumps.
+        failure_text=_rx(
+            r"can\s+bump\s+again",
+            r"peux\s+bump\s+[àa]\s+nouveau",
         ),
     ),
     # -------------------------------------------------------------- DiscordTop

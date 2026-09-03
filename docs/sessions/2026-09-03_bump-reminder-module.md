@@ -107,6 +107,19 @@ impossible to reintroduce: a captured refusal must trip an **explicit** veto,
 and **no success marker may match a directory's own refusal**. Both fail against
 the original markers, naming them.
 
+The last two refusals taught the opposite lesson to the first three. I predicted
+DSMonitoring would say "already liked" and collide with its success marker
+`liked the server`. It does not — it says *"You are so hot! 2 hours 19 minutes
+until the next like."* Beemp says *"You can bump again `<t:…>`"*. **Neither
+contains a single word of the shared cooldown blocklist.** No success marker
+fired either, so both were rejected — by omission, again. Each now carries an
+explicit marker from its captured refusal.
+
+Beemp's stays per-directory deliberately: "you can bump again at X" is a refusal
+there, but it is what a *success* says about the next window elsewhere
+(DiscordTop: "Prochain boost disponible <t:…>"). Promoting it to the shared
+blocklist would kill real bumps.
+
 The generalisable lesson, now in the docs: the signal is what *differs* between
 the two messages, never what the directory says about bumping in general.
 "Boost envoyé" versus "Boost impossible" is a signal; "propulsé" is vocabulary.
@@ -155,10 +168,8 @@ That test fails against the old guessed markers, which is how it earns its place
   DISBOARD is verifiably largest; the rest are ordered by bot account age and
   reputation because no comparable published guild counts exist. Reordering is a
   one-line move in `BUMP_BOTS`.
-- **Captured refusals exist for D-INVITES, DiscordL and DiscordTop.** DISBOARD
-  and French.gg refuse ephemerally, so there is nothing to capture. Still
-  synthetic, and worth replacing whenever a real one is seen: **Beemp** and
-  **DSMonitoring**. Both rest on text markers covered by the shared blocklist,
-  so the exposure is lower than it was for the three above — but "lower" is what
-  I said about DiscordL before its refusal turned up a live marker collision.
+- **Captured refusals now exist for all five directories that have a visible
+  one** (D-INVITES, DiscordL, DiscordTop, DSMonitoring, Beemp). DISBOARD and
+  French.gg refuse ephemerally, so there is nothing to capture. No directory is
+  still detected on guessed failure markers.
 - The module ships no slash command, so `locales/commands/` is untouched.
