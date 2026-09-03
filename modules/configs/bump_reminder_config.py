@@ -46,6 +46,7 @@ from modules.bump_reminder import (
     reminders_per_bot,
 )
 from modules.configs._common import check_guild_perms
+from utils.components_v2 import create_success_message
 from utils.emojis import (
     ADD, BACK, DELETE, EDIT, INFO, PAUSE, PLAY, REQUIRED_FIELDS, ROCKET_LAUNCH, TIME,
 )
@@ -709,16 +710,24 @@ def _resolve_interval(raw: Optional[str], bot_key: str) -> Optional[int]:
 
 
 async def _write(interaction: discord.Interaction, reminders: List[Dict[str, Any]],
-                 success_key: str) -> None:
+                 success_title_key: str, success_description_key: str) -> None:
     bot = interaction.client
     locale = i18n.get_user_locale(interaction)
     success, error = await _save(bot, interaction.guild_id, reminders, interaction.user.id)
     await _render_main(interaction)
-    await interaction.followup.send(
-        t(success_key, locale=locale) if success
-        else t('modules.config.save.error', locale=locale, error=error or ''),
-        ephemeral=True,
-    )
+    if success:
+        await interaction.followup.send(
+            view=create_success_message(
+                t(success_title_key, locale=locale),
+                t(success_description_key, locale=locale),
+            ),
+            ephemeral=True,
+        )
+    else:
+        await interaction.followup.send(
+            t('modules.config.save.error', locale=locale, error=error or ''),
+            ephemeral=True,
+        )
 
 
 async def _create_reminder(interaction: discord.Interaction, *, bot_key: str,
@@ -739,7 +748,8 @@ async def _create_reminder(interaction: discord.Interaction, *, bot_key: str,
         bot_key, channel_id=channel_id, role_ids=role_ids,
         ping_mode=ping_mode, interval=interval, created_by=interaction.user.id,
     ))
-    await _write(interaction, reminders, 'modules.bump_reminder.add.success')
+    await _write(interaction, reminders,
+                'modules.bump_reminder.add.title', 'modules.bump_reminder.add.success')
 
 
 def _edit_reminder(entry_id: str):

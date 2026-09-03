@@ -1532,7 +1532,9 @@
         "thanks_title_anonymous": "Thanks!",
         "thanks_body": "The server just climbed back up on {emoji} **{name}**.\nNext bump possible {timestamp}.",
         "optin": "Remind me",
+        "optin_on_title": "Notification enabled",
         "optin_armed": "You will be mentioned",
+        "optin_off_title": "Notification disabled",
         "optin_disarmed": "You will no longer be mentioned",
         "optin_expired": "A more recent bump has already replaced this one.",
         "reminder_title": "Time to bump again",
@@ -1555,6 +1557,7 @@
         "saved": "Reminder saved."
       },
       "add": {
+        "title": "Reminder created",
         "success": "Reminder created. Moddy is now watching that channel."
       },
       "errors": {

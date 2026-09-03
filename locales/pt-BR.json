@@ -1532,7 +1532,9 @@
         "thanks_title_anonymous": "Obrigado!",
         "thanks_body": "O servidor acabou de subir em {emoji} **{name}**.\nPróximo bump possível {timestamp}.",
         "optin": "Me lembrar",
+        "optin_on_title": "Notificação ativada",
         "optin_armed": "Você será mencionado",
+        "optin_off_title": "Notificação desativada",
         "optin_disarmed": "Você não será mais mencionado",
         "optin_expired": "Um bump mais recente já substituiu este.",
         "reminder_title": "Hora de dar bump",
@@ -1555,6 +1557,7 @@
         "saved": "Lembrete salvo."
       },
       "add": {
+        "title": "Lembrete criado",
         "success": "Lembrete criado. O Moddy já está vigiando esse canal."
       },
       "errors": {
