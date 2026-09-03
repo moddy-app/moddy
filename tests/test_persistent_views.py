@@ -131,6 +131,7 @@ def _dynamic_item_cases():
     from utils.notification_views import (
         NotifReviewClaimButton, NotifReviewPreviewButton, NotifReviewDecisionButton,
     )
+    from utils.bump_views import BumpOptInButton
     from modules.configs.tickets_panel_config import (
         TicketPanelButton, TicketPanelSelect, TicketPanelChannelSelect,
     )
@@ -183,6 +184,9 @@ def _dynamic_item_cases():
         (NotifReviewClaimButton, (_U,)),
         (NotifReviewPreviewButton, (_U,)),
         (NotifReviewDecisionButton, ("accept", _U)),
+        # Bump reminder — the "ping me next time" button on a thank-you card,
+        # scoped to the person who ran the bump.
+        (BumpOptInButton, ("disboard", _SNOWFLAKE)),
     ]
 
 

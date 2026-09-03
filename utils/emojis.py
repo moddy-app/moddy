@@ -103,6 +103,7 @@ HAND = "<:hand:1521517865348632706>"       # appeal "claim" button
 LINK = "<:link:1521517863607734385>"       # appeal "invite" button
 PENDING = "<:pending:1521282587962900611>"  # appeal "pending" status
 ROCKET = "<a:Rocket:1535783839870353499>"  # bot customization bio attribution
+ROCKET_LAUNCH = "<:rocket_launch:1545028494298447873>"  # Bump Reminder module
 ALTGUARD = "<a:DisguisedFace:1539405255576657981>"  # AltGuard verification panel message
 CLAIM = "<:claim:1541239118888181770>"      # take a ticket in charge
 THREADS = "<:threads:1541216661699436675>"  # private staff thread
@@ -237,6 +238,7 @@ EMOJIS = {
     "dev": DEV,
     "blacklist": BLACKLIST,
     "time": TIME,
+    "rocket_launch": ROCKET_LAUNCH,
     "snowflake": SNOWFLAKE,
     "web": WEB,
     "history": HISTORY,

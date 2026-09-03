@@ -281,6 +281,14 @@ class ConfigMainView(BaseView):
                 user_id,
                 locale
             )
+        elif module_id == 'bump_reminder':
+            from modules.configs.bump_reminder_config import BumpReminderConfigView
+            config_view = await BumpReminderConfigView.create(
+                bot,
+                guild_id,
+                user_id,
+                locale
+            )
         elif module_id == 'adaptive_slowmode':
             from modules.configs.adaptive_slowmode_config import AdaptiveSlowmodeConfigView
             config_view = AdaptiveSlowmodeConfigView(

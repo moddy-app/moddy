@@ -1481,6 +1481,94 @@
         "internal_error": "<:error:1519790252594827264> Une erreur est survenue. Réessayez."
       }
     },
+    "bump_reminder": {
+      "name": "Rappel de bump",
+      "description": "Remercie qui bumpe le serveur et relance le salon dès que la commande redevient disponible",
+      "config": {
+        "title": "Rappel de bump",
+        "description": "Une fenêtre de bump ratée, c'est de la visibilité perdue. Moddy reconnaît un bump **réussi** dans le salon que vous désignez, remercie la personne, et rappelle le salon dès que la commande redevient disponible.",
+        "limit": "{max} rappel(s) par site de référencement.",
+        "add_placeholder": "Ajouter un rappel pour un site",
+        "manage_placeholder": "Gérer un rappel existant",
+        "all_configured": "Vous avez atteint votre quota sur chaque site pris en charge.",
+        "list": {
+          "title": "Rappels configurés",
+          "count": "{count} rappel(s)",
+          "empty": "Aucun rappel pour l'instant. Choisissez un site ci-dessous pour commencer.",
+          "every": "Toutes les {interval}",
+          "paused": "En pause"
+        },
+        "state": {
+          "waiting": "En attente d'un premier bump.",
+          "scheduled": "Prochain rappel {timestamp}.",
+          "ready": "Le serveur peut être bumpé dès maintenant."
+        }
+      },
+      "modal": {
+        "title": "Rappel de bump",
+        "bot_label": "Site de référencement",
+        "bot_description": "Le site dont Moddy doit surveiller la commande.",
+        "bot_option": "{command} · toutes les {interval}",
+        "channel_label": "Salon",
+        "channel_description": "Moddy y guette le bump et y poste le rappel.",
+        "roles_label": "Rôles à mentionner",
+        "roles_description": "Facultatif. Laissez vide pour ne mentionner personne.",
+        "ping_label": "Mentionner la dernière personne à avoir bumpé",
+        "ping_description": "Ce que Moddy fait de la personne qui a lancé la commande.",
+        "interval_label": "Délai avant le rappel",
+        "interval_description": "Par exemple 2h, 2h30 ou 90m. Entre 5 minutes et 24 heures."
+      },
+      "ping": {
+        "auto": "Toujours",
+        "auto_description": "Elle est mentionnée à chaque rappel.",
+        "button": "Sur demande",
+        "button_description": "Un bouton sur le remerciement lui permet de le demander.",
+        "never": "Jamais",
+        "never_description": "Seuls les rôles choisis sont mentionnés."
+      },
+      "card": {
+        "thanks_title": "Merci {user} !",
+        "thanks_title_anonymous": "Merci !",
+        "thanks_body": "Le serveur vient de remonter sur {emoji} **{name}**.\nProchain bump possible {timestamp}.",
+        "optin": "Me rappeler",
+        "optin_armed": "Tu seras mentionné",
+        "optin_expired": "Ce bump a déjà été remplacé par un plus récent.",
+        "reminder_title": "C'est reparti",
+        "reminder_body": "Le serveur peut de nouveau être bumpé sur {emoji} **{name}**.\n{command}",
+        "reminder_last": "Dernier bump par {user}, il y a {duration}.",
+        "reminder_late": "Rappel envoyé en retard : Moddy était indisponible."
+      },
+      "manage": {
+        "subtitle": "Toutes les {interval} · {command}",
+        "channel": "**Salon :** {channel}",
+        "roles": "**Rôles mentionnés :** {roles}",
+        "no_roles": "aucun",
+        "ping": "**Dernière personne à avoir bumpé :** {mode}",
+        "paused_notice": "Ce rappel est en pause : Moddy ignore les bumps de ce site.",
+        "edit": "Modifier",
+        "pause": "Mettre en pause",
+        "resume": "Reprendre",
+        "remove": "Supprimer",
+        "removed": "Rappel supprimé.",
+        "saved": "Rappel enregistré."
+      },
+      "add": {
+        "success": "Rappel créé. Moddy surveille désormais ce salon."
+      },
+      "errors": {
+        "guild_not_found": "Serveur introuvable.",
+        "unknown_bot": "Ce site de référencement n'est plus pris en charge.",
+        "quota": "Vous avez atteint votre quota de {max} rappel(s) pour {name}. Passez au premium pour en configurer davantage.",
+        "duplicate_id": "Deux rappels portent le même identifiant.",
+        "duplicate_target": "Un rappel {name} existe déjà dans {channel} : les deux posteraient le même message.",
+        "channel_required": "Choisissez un salon.",
+        "channel_not_found": "Ce salon n'existe plus.",
+        "channel_type": "Le salon doit être un salon textuel.",
+        "no_send_permission": "Moddy ne peut pas écrire dans {channel}.",
+        "too_many_roles": "{max} rôles au maximum.",
+        "invalid_interval": "Délai invalide. Utilisez par exemple `2h`, `2h30` ou `90m`, entre 5 minutes et 24 heures."
+      }
+    },
     "automod_ai": {
       "description": "Modération automatique des messages problématiques (IA)",
       "config": {

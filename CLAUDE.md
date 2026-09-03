@@ -42,6 +42,7 @@ moddy/
 │   ├── brocoli_chat.py        #   Brocoli in a channel (dev-guild gated, SSE → Components V2)
 │   ├── emoji.py               #   Emoji management
 │   ├── reminder.py            #   /reminder command
+│   ├── bump_reminder.py       #   Bump Reminder listener + 30s sweeper loop
 │   ├── saved_messages.py      #   Message bookmarking
 │   ├── translate.py           #   /translate (DeepL)
 │   ├── text_tools.py          #   /fix, /rephrase, /summarize (OpenAI, Modal V2 + context menus)
@@ -77,6 +78,7 @@ moddy/
 │   ├── adaptive_slowmode.py   #   Adaptive slowmode (EWMA + hysteresis)
 │   ├── interserver.py         #   Inter-server message relay
 │   ├── social_notifications.py #  Social notifications (via moddy-feeds service)
+│   ├── bump_reminder.py       #   Bump reminders (Disboard, DiscordL, French.gg…)
 │   ├── altguard.py            #   AltGuard anti multi-account verification gate
 │   ├── tickets.py             #   Tickets (panels, categories, permissions, claim)
 │   ├── automod_ai.py          #   Automod AI (applies decisions, cases+evidence, scalable features)
@@ -88,6 +90,7 @@ moddy/
 │       ├── adaptive_slowmode_config.py
 │       ├── altguard_config.py             # AltGuard gate (channel, roles, logs)
 │       ├── social_notifications_config.py
+│       ├── bump_reminder_config.py        # Bump reminders list + Modal V2
 │       ├── automod_ai_config.py
 │       ├── automod_ai_precedents_view.py  # Learned-precedents browser (S7)
 │       ├── welcome_channel_config.py      # Welcome messages list + add/manage (Modal V2)
@@ -114,6 +117,10 @@ moddy/
 │   ├── models.py              #   Uniform payload + source + service registry + hashing
 │   ├── render.py              #   Payload → Components V2 + `sent by` attribution line
 │   └── service.py             #   NotificationService (bot.notifications)
+│
+├── bumpreminder/              # Bump detection core (pure; no Discord, no DB)
+│   ├── registry.py            #   The 7 supported directories + their markers
+│   └── detect.py              #   Success/failure funnel, next-bump time, intervals
 │
 ├── automod/                   # Automod AI DETECTION pipeline (decides only; no side effects)
 │   ├── engine.py              #   Shared per-bot orchestrator (funnel entry)
@@ -174,6 +181,7 @@ moddy/
 │       ├── notifications.py   #   Notifications, deliveries, abuse reports
 │       ├── support_requests.py #  Bug reports / config-help requests + their exchange
 │       ├── social.py          #   Social notifications subscriptions
+│       ├── bump.py            #   Pending bump reminders (bump_reminders)
 │       └── _utils.py
 │
 ├── utils/                     # Utility modules
@@ -201,6 +209,7 @@ moddy/
 │   ├── beta_announcement.py   #   Beta-launch campaign card (temporary — see docs)
 │   ├── ticket_views.py        #   Ticket panel, ticket message, cards, claim, participants modal
 │   ├── transcription_views.py #   Voice transcription cards + persistent Transcribe button
+│   ├── bump_views.py          #   Bump thank-you + reminder cards, opt-in button
 │   ├── appeal_views.py        #   Automod appeal UI (DM buttons + reviewer panels, persistent)
 │   ├── expiration_views.py    #   Sanction-expiration DM (unban/unmute/unwarn + invite)
 │   ├── invites.py             #   Shared guild invite creation (appeals, expirations)
@@ -289,6 +298,7 @@ moddy/
     ├── test_transcription.py  #   Voice transcription helpers, guard rails, cards
     ├── test_notifications.py  #   Notifications: hashing, attribution, report rules, i18n
     ├── test_support_requests.py #  Support requests: cards, buttons, beta card, welcome DM
+    ├── test_bump_reminder.py  #   Bump detection (real payloads + refusals), config, cards, i18n
     ├── test_logs.py           #   Server logs: registry, routing, rendering, delivery
     ├── test_logs_i18n.py      #   Server logs: i18n completeness on the 5 locales
     ├── test_heartbeat.py      #   Health Monitor heartbeat: payload, lifecycle, status decisions
@@ -475,6 +485,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/SERVER_LANGUAGE.md](docs/SERVER_LANGUAGE.md) | **Server language** — the single setting every module reads; what follows the server vs. the user |
 | [docs/WELCOME_MESSAGES.md](docs/WELCOME_MESSAGES.md) | Welcome messages module (`welcome_channel`) — config schema, placeholders, backend/dashboard contract |
 | [docs/WELCOME_DM.md](docs/WELCOME_DM.md) | Welcome DM module (`welcome_dm`) — config schema, placeholders, backend/dashboard contract |
+| [docs/BUMP_REMINDER.md](docs/BUMP_REMINDER.md) | **Bump Reminder** — detecting a *successful* bump on 7 directories, the reminder, ping modes, quotas |
 | [docs/TICKETS.md](docs/TICKETS.md) | **Tickets** — panels, categories, per-role permissions, the claim system, escalation, module-gated `/ticket` commands |
 | [docs/ALTGUARD.md](docs/ALTGUARD.md) | **AltGuard** — anti multi-account verification gate, consent, service contract, staff commands |
 | [docs/ALTGUARD_INTEGRATION.md](docs/ALTGUARD_INTEGRATION.md) | AltGuard ↔ bot exact wire contract — payload types, error codes, debugging |

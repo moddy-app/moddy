@@ -1,0 +1,224 @@
+{
+  "dinvites": {
+    "id": "1545019804581109810",
+    "createdTimestamp": 1788431826492,
+    "content": "",
+    "authorId": "678211574183362571",
+    "embeds": [],
+    "components": [
+      {
+        "type": 17,
+        "accent_color": 15548997,
+        "components": [
+          {
+            "type": 10,
+            "content": "Tu pourras bump à nouveau <t:1788439014:R>."
+          },
+          {
+            "type": 12,
+            "items": [
+              {
+                "media": {
+                  "url": "https://cdn.discordapp.com/attachments/640677064705441822/1545019807148285953/bump-error.png?ex=6a9a9f53&is=6a994dd3&hm=a87f2f027c3b958c007dce3b40f533094cb3bba960f7d70038084faacfdc5aeb&",
+                  "proxy_url": "https://media.discordapp.net/attachments/640677064705441822/1545019807148285953/bump-error.png?ex=6a9a9f53&is=6a994dd3"
+                }
+              }
+            ]
+          },
+          {
+            "type": 1,
+            "components": [
+              {
+                "type": 2,
+                "style": 5,
+                "label": "Voir le serveur",
+                "url": "https://discordinvites.net/servers/223070469148901376"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "attachments": [],
+    "applicationId": "678211574183362571",
+    "interactionMetadata": {
+      "user": "1164597199594852395"
+    },
+    "interaction": {
+      "commandName": "bump",
+      "user": "1164597199594852395"
+    }
+  },
+  "dl": {
+    "id": "1545040315486834698",
+    "createdTimestamp": 1788436716673,
+    "content": "",
+    "authorId": "528557940811104258",
+    "embeds": [],
+    "components": [
+      {
+        "type": 17,
+        "accent_color": 5531135,
+        "components": [
+          {
+            "type": 10,
+            "content": "## Résultat du Bump sur DiscordL"
+          },
+          {
+            "type": 10,
+            "content": "❌  Tu dois attendre encore **59min 43sec** avant de pouvoir bump à nouveau ⏳\n\nLe temps de découvrir le **__[Super Bump](https://www.discordl.org/power?source=bump)__** Gratuit"
+          },
+          {
+            "type": 14,
+            "divider": true
+          },
+          {
+            "type": 1,
+            "components": [
+              {
+                "type": 2,
+                "style": 2,
+                "label": "⚡ Bump instant",
+                "custom_id": "bump_instant"
+              },
+              {
+                "type": 2,
+                "style": 5,
+                "label": "🎰 Tourner la Roue",
+                "url": "https://www.discordl.org/roue-fortune?source=bump_btn"
+              },
+              {
+                "type": 2,
+                "style": 5,
+                "label": "🌐 Voir la page du serveur",
+                "url": "https://www.discordl.org/serveurs/223070469148901376?source=bump_btn"
+              }
+            ]
+          },
+          {
+            "type": 10,
+            "content": "-# Top List Discord sur https://www.discordl.org • <t:1788436718:R>"
+          }
+        ]
+      }
+    ],
+    "attachments": [],
+    "applicationId": "528557940811104258",
+    "interactionMetadata": {
+      "user": "1164597199594852395"
+    },
+    "interaction": {
+      "commandName": "bump",
+      "user": "1164597199594852395"
+    }
+  },
+  "dtop": {
+    "id": "1545040626595266641",
+    "createdTimestamp": 1788436790847,
+    "content": "",
+    "authorId": "1071460654839517184",
+    "embeds": [],
+    "components": [
+      {
+        "type": 17,
+        "accent_color": 15158332,
+        "components": [
+          {
+            "type": 12,
+            "items": [
+              {
+                "media": {
+                  "url": "https://cdn.discordapp.com/attachments/640677064705441822/1545040627157176430/boost-error.png?ex=6a9ab2b6&is=6a996136&hm=9f03abfdfb0e1568f6966dabe125925c2be976082a9661e555798974b53b591e&",
+                  "proxy_url": "https://media.discordapp.net/attachments/640677064705441822/1545040627157176430/boost-error.png?ex=6a9ab2b6&is=6a996136"
+                }
+              }
+            ]
+          },
+          {
+            "type": 14,
+            "divider": true
+          },
+          {
+            "type": 10,
+            "content": "# 🚀 Boost impossible"
+          },
+          {
+            "type": 10,
+            "content": "Ce serveur vient déjà d’être propulsé.\n\nTu pourras le booster à nouveau <t:1788440384:R>."
+          },
+          {
+            "type": 14,
+            "divider": true
+          },
+          {
+            "type": 10,
+            "content": "Le boost permet de replacer un serveur en première page pour lui donner un vrai coup de visibilité."
+          }
+        ]
+      }
+    ],
+    "attachments": [],
+    "applicationId": "1071460654839517184",
+    "interactionMetadata": {
+      "user": "1164597199594852395"
+    },
+    "interaction": {
+      "commandName": "boost",
+      "user": "1164597199594852395"
+    }
+  },
+  "dsmonitoring": {
+    "id": "1545042389406584903",
+    "createdTimestamp": 1788437211134,
+    "content": "",
+    "authorId": "575776004233232386",
+    "embeds": [
+      {
+        "type": "rich",
+        "timestamp": "2026-09-03T14:26:35+00:00",
+        "footer": {
+          "text": "Next Like"
+        },
+        "description": "You are so hot! 2 hours 19 minutes until the next like.\n\n*We have a mobile application: [discordserver.info/app](https://discordserver.info/app)*",
+        "color": 5271975,
+        "author": {
+          "name": "juthing_",
+          "icon_url": "https://cdn.discordapp.com/avatars/1164597199594852395/34ce3b287b33797c0c009aa2ed1d55ef.png"
+        }
+      }
+    ],
+    "components": [],
+    "attachments": [],
+    "applicationId": "575776004233232386",
+    "interactionMetadata": {
+      "user": "1164597199594852395"
+    },
+    "interaction": {
+      "commandName": "bump",
+      "user": "1164597199594852395"
+    }
+  },
+  "beemp": {
+    "id": "1545017939629969438",
+    "createdTimestamp": 1788431381853,
+    "content": "",
+    "authorId": "1293636927337136269",
+    "embeds": [
+      {
+        "type": "rich",
+        "description": "`⏱️` **You can bump again <t:1788434690:R> !**",
+        "color": 16711680
+      }
+    ],
+    "components": [],
+    "attachments": [],
+    "applicationId": "1293636927337136269",
+    "interactionMetadata": {
+      "user": "1164597199594852395"
+    },
+    "interaction": {
+      "commandName": "bump",
+      "user": "1164597199594852395"
+    }
+  }
+}

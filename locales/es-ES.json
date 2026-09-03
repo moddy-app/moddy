@@ -1482,6 +1482,94 @@
         "internal_error": "<:error:1519790252594827264> Algo salió mal. Inténtalo de nuevo."
       }
     },
+    "bump_reminder": {
+      "name": "Recordatorio de bump",
+      "description": "Agradece a quien hace bump y avisa al canal cuando se puede volver a hacer",
+      "config": {
+        "title": "Recordatorio de bump",
+        "description": "Una ventana de bump perdida es visibilidad perdida. Moddy reconoce un bump **exitoso** en el canal que elijas, agradece a quien lo hizo y avisa al canal en cuanto el comando vuelve a estar disponible.",
+        "limit": "{max} recordatorio(s) por directorio.",
+        "add_placeholder": "Añadir un recordatorio para un directorio",
+        "manage_placeholder": "Gestionar un recordatorio existente",
+        "all_configured": "Has alcanzado tu cuota en todos los directorios compatibles.",
+        "list": {
+          "title": "Recordatorios configurados",
+          "count": "{count} recordatorio(s)",
+          "empty": "Todavía no hay recordatorios. Elige un directorio abajo para empezar.",
+          "every": "Cada {interval}",
+          "paused": "En pausa"
+        },
+        "state": {
+          "waiting": "Esperando un primer bump.",
+          "scheduled": "Próximo recordatorio {timestamp}.",
+          "ready": "El servidor puede recibir bump ahora mismo."
+        }
+      },
+      "modal": {
+        "title": "Recordatorio de bump",
+        "bot_label": "Directorio",
+        "bot_description": "El listado cuyo comando debe vigilar Moddy.",
+        "bot_option": "{command} · cada {interval}",
+        "channel_label": "Canal",
+        "channel_description": "Moddy vigila el bump aquí y publica aquí el recordatorio.",
+        "roles_label": "Roles a mencionar",
+        "roles_description": "Opcional. Déjalo vacío para no mencionar a nadie.",
+        "ping_label": "Mencionar a la última persona que hizo bump",
+        "ping_description": "Qué hace Moddy con quien ejecutó el comando.",
+        "interval_label": "Retraso antes del recordatorio",
+        "interval_description": "Por ejemplo 2h, 2h30 o 90m. Entre 5 minutos y 24 horas."
+      },
+      "ping": {
+        "auto": "Siempre",
+        "auto_description": "Se le menciona en cada recordatorio.",
+        "button": "A petición",
+        "button_description": "Un botón en el agradecimiento le permite pedirlo.",
+        "never": "Nunca",
+        "never_description": "Solo se menciona a los roles elegidos."
+      },
+      "card": {
+        "thanks_title": "¡Gracias {user}!",
+        "thanks_title_anonymous": "¡Gracias!",
+        "thanks_body": "El servidor acaba de subir en {emoji} **{name}**.\nPróximo bump posible {timestamp}.",
+        "optin": "Recuérdamelo",
+        "optin_armed": "Se te mencionará",
+        "optin_expired": "Un bump más reciente ya ha reemplazado a este.",
+        "reminder_title": "Toca hacer bump",
+        "reminder_body": "El servidor puede recibir bump de nuevo en {emoji} **{name}**.\n{command}",
+        "reminder_last": "Último bump por {user}, hace {duration}.",
+        "reminder_late": "Recordatorio enviado con retraso: Moddy no estaba disponible."
+      },
+      "manage": {
+        "subtitle": "Cada {interval} · {command}",
+        "channel": "**Canal:** {channel}",
+        "roles": "**Roles mencionados:** {roles}",
+        "no_roles": "ninguno",
+        "ping": "**Última persona que hizo bump:** {mode}",
+        "paused_notice": "Este recordatorio está en pausa: Moddy ignora los bumps de este directorio.",
+        "edit": "Editar",
+        "pause": "Pausar",
+        "resume": "Reanudar",
+        "remove": "Eliminar",
+        "removed": "Recordatorio eliminado.",
+        "saved": "Recordatorio guardado."
+      },
+      "add": {
+        "success": "Recordatorio creado. Moddy ya vigila ese canal."
+      },
+      "errors": {
+        "guild_not_found": "Servidor no encontrado.",
+        "unknown_bot": "Este directorio ya no es compatible.",
+        "quota": "Has alcanzado tu cuota de {max} recordatorio(s) para {name}. Hazte premium para configurar más.",
+        "duplicate_id": "Dos recordatorios comparten el mismo identificador.",
+        "duplicate_target": "Ya existe un recordatorio de {name} en {channel}: ambos publicarían el mismo mensaje.",
+        "channel_required": "Elige un canal.",
+        "channel_not_found": "Ese canal ya no existe.",
+        "channel_type": "El canal debe ser un canal de texto.",
+        "no_send_permission": "Moddy no puede publicar en {channel}.",
+        "too_many_roles": "{max} roles como máximo.",
+        "invalid_interval": "Retraso no válido. Usa por ejemplo `2h`, `2h30` o `90m`, entre 5 minutos y 24 horas."
+      }
+    },
     "automod_ai": {
       "description": "Moderación automática de mensajes problemáticos (IA)",
       "config": {

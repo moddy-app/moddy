@@ -37,6 +37,7 @@ from db.repositories.altguard import AltGuardRepository
 from db.repositories.tickets import TicketsRepository
 from db.repositories.notifications import NotificationRepository
 from db.repositories.support_requests import SupportRequestRepository
+from db.repositories.bump import BumpReminderRepository
 
 logger = logging.getLogger('moddy.database')
 
@@ -75,6 +76,7 @@ class ModdyDatabase(
     TicketsRepository,
     NotificationRepository,
     SupportRequestRepository,
+    BumpReminderRepository,
 ):
     """Gestionnaire principal de la base de données"""
 
@@ -707,6 +709,31 @@ class ModdyDatabase(
             await conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_enforcements_subject "
                 "ON case_enforcements (subject_type, subject_id)")
+
+            # bump_reminders — one row per (guild, directory), never more.
+            # The module's *config* lives in guilds.data.modules.bump_reminder;
+            # this is the live half: what is pending right now. A second bump
+            # before the reminder fires upserts the same row, which is how the
+            # countdown restarts without ever stacking two reminders. The
+            # partial index is the sweeper's query, verbatim.
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS bump_reminders (
+                    guild_id          BIGINT      NOT NULL,
+                    bot_key           TEXT        NOT NULL,
+                    channel_id        BIGINT      NOT NULL,
+                    due_at            TIMESTAMPTZ NOT NULL,
+                    sent              BOOLEAN     NOT NULL DEFAULT FALSE,
+                    bumper_id         BIGINT,
+                    opt_in            BOOLEAN     NOT NULL DEFAULT FALSE,
+                    thanks_channel_id BIGINT,
+                    thanks_message_id BIGINT,
+                    bumped_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+                    PRIMARY KEY (guild_id, bot_key)
+                )
+            """)
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_bump_reminders_due "
+                "ON bump_reminders (due_at) WHERE sent = FALSE")
 
             # automod_eval_candidates — the annotation corpus that feeds the
             # offline golden set (automod/eval). A row is created for every
