@@ -64,7 +64,7 @@ async def card_locale(interaction: discord.Interaction) -> str:
     from utils.guild_language import guild_locale
 
     if interaction.guild is None:
-        return i18n.get_user_locale(interaction)
+        return i18n.get_locale(interaction)
     return await guild_locale(interaction.client, interaction.guild)
 
 
@@ -114,7 +114,7 @@ class BumpOptInButton(
 
     @_guarded
     async def callback(self, interaction: discord.Interaction):
-        locale = i18n.get_user_locale(interaction)
+        locale = i18n.get_locale(interaction)
 
         if interaction.user.id != self.user_id:
             from utils.components_v2 import create_error_message
