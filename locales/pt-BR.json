@@ -1489,7 +1489,6 @@
         "title": "Lembrete de bump",
         "description": "Uma janela de bump perdida é visibilidade perdida. O Moddy reconhece um bump **bem-sucedido** no canal que você indicar, agradece quem o executou e chama o canal de volta assim que o comando fica disponível de novo.",
         "limit": "{max} lembrete(s) por diretório.",
-        "add_placeholder": "Adicionar um lembrete para um diretório",
         "manage_placeholder": "Gerenciar um lembrete existente",
         "all_configured": "Você atingiu sua cota em todos os diretórios compatíveis.",
         "list": {
@@ -1517,7 +1516,8 @@
         "ping_label": "Mencionar a última pessoa que deu bump",
         "ping_description": "O que o Moddy faz com quem executou o comando.",
         "interval_label": "Intervalo antes do lembrete",
-        "interval_description": "Por exemplo 2h, 2h30 ou 90m. Entre 5 minutos e 24 horas."
+        "interval_description": "Por exemplo 2h, 2h30 ou 90m. Deixe vazio para o intervalo do próprio diretório.",
+        "interval_placeholder": "Deixe vazio para o do diretório"
       },
       "ping": {
         "auto": "Sempre",
@@ -1568,6 +1568,9 @@
         "no_send_permission": "O Moddy não pode publicar em {channel}.",
         "too_many_roles": "No máximo {max} cargos.",
         "invalid_interval": "Intervalo inválido. Use por exemplo `2h`, `2h30` ou `90m`, entre 5 minutos e 24 horas."
+      },
+      "buttons": {
+        "add": "Adicionar"
       }
     },
     "automod_ai": {

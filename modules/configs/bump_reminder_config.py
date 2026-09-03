@@ -37,6 +37,7 @@ from bumpreminder import BUMP_BOTS, bot_by_key, format_interval, parse_interval
 from cogs.error_handler import BaseModal, BaseView
 from modules.bump_reminder import (
     CHANNEL_TYPES,
+    DEFAULT_PING_MODE,
     MAX_ROLE_MENTIONS,
     PING_MODES,
     count_by_bot,
@@ -123,13 +124,12 @@ class BumpReminderModal(BaseModal):
     directory itself advertises it.
     """
 
-    def __init__(self, locale: str, *, bot_key: str, callback_func,
+    def __init__(self, locale: str, *, bot_key: Optional[str] = None, callback_func=None,
                  channel_id: Optional[int] = None,
                  role_ids: Optional[List[int]] = None,
                  ping_mode: str = "button",
                  interval: Optional[int] = None,
                  available: Optional[List[str]] = None):
-        spec = bot_by_key(bot_key)
         super().__init__(
             title=t('modules.bump_reminder.modal.title', locale=locale)[:45],
             timeout=None,
@@ -141,7 +141,7 @@ class BumpReminderModal(BaseModal):
         # 1 — the directory. Only the ones with room left are offered, plus
         #     whichever one is already selected (editing must never be blocked
         #     by the quota an entry is itself part of).
-        offered = list(dict.fromkeys([bot_key] + list(available or [])))
+        offered = list(dict.fromkeys(([bot_key] if bot_key else []) + list(available or [])))
         self.bot_select = ui.Select(
             options=[
                 discord.SelectOption(
@@ -210,12 +210,17 @@ class BumpReminderModal(BaseModal):
             component=self.ping_group,
         ))
 
-        # 5 — the delay, pre-filled with what this directory actually enforces.
+        # 5 — the delay. Pre-filled when editing, left blank when creating:
+        #     a Discord modal is static, so it cannot fill this in from the
+        #     directory picked in the select above it. Blank therefore means
+        #     "whatever that directory enforces", which is both the right
+        #     default and one less thing to look up.
         self.interval_input = ui.TextInput(
             style=discord.TextStyle.short,
-            default=format_interval(interval if interval is not None
-                                    else spec.default_interval),
-            max_length=8, required=True, custom_id=_CID_MODAL_INTERVAL,
+            default=format_interval(interval) if interval is not None else None,
+            placeholder=t('modules.bump_reminder.modal.interval_placeholder',
+                          locale=locale)[:100],
+            max_length=8, required=False, custom_id=_CID_MODAL_INTERVAL,
         )
         self.add_item(ui.Label(
             text=t('modules.bump_reminder.modal.interval_label', locale=locale),
@@ -230,7 +235,9 @@ class BumpReminderModal(BaseModal):
             bot_key=self.bot_select.values[0],
             channel_id=channels[0].id if channels else None,
             role_ids=[role.id for role in self.role_select.values],
-            ping_mode=self.ping_group.values[0],
+            # RadioGroup is single-choice: `.value`, not the `.values` list
+            # every select and CheckboxGroup exposes. See docs/MODALS_V2.md.
+            ping_mode=self.ping_group.value or DEFAULT_PING_MODE,
             raw_interval=self.interval_input.value,
         )
 
@@ -313,36 +320,15 @@ class BumpReminderConfigView(BaseView):
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
-        # Add: pick the directory here so the modal opens fully pre-filled.
         available = self._available_bots()
-        add_row = ui.ActionRow()
-        add_select = ui.Select(
-            placeholder=t('modules.bump_reminder.config.add_placeholder', locale=self.locale),
-            options=[
-                discord.SelectOption(
-                    label=spec.name,
-                    value=spec.key,
-                    description=t('modules.bump_reminder.modal.bot_option',
-                                  locale=self.locale,
-                                  interval=format_interval(spec.default_interval),
-                                  command=spec.command_hint)[:100],
-                    emoji=discord.PartialEmoji.from_str(spec.emoji),
-                )
-                for spec in BUMP_BOTS if spec.key in available
-            ] or [discord.SelectOption(label="—", value="none")],
-            min_values=1, max_values=1, custom_id=_CID_MAIN_ADD,
-            disabled=not available,
-        )
-        add_select.callback = self.on_add_select
-        add_row.add_item(add_select)
-        container.add_item(add_row)
-
         if not available:
             container.add_item(ui.TextDisplay(
                 f"-# {t('modules.bump_reminder.config.all_configured', locale=self.locale)}"
             ))
 
-        # Manage: always registered so a restarted shell can still dispatch it.
+        # Manage: the dropdown edits an existing reminder, never creates one —
+        # creating is the Add button below, as on every other /config panel.
+        # Always registered so a restarted shell can still dispatch it.
         manage_row = ui.ActionRow()
         manage_select = ui.Select(
             placeholder=t('modules.bump_reminder.config.manage_placeholder', locale=self.locale),
@@ -372,6 +358,15 @@ class BumpReminderConfigView(BaseView):
         )
         back_btn.callback = self.on_back
         button_row.add_item(back_btn)
+
+        add_btn = ui.Button(
+            emoji=discord.PartialEmoji.from_str(ADD),
+            label=t('modules.bump_reminder.buttons.add', locale=self.locale),
+            style=discord.ButtonStyle.success, custom_id=_CID_MAIN_ADD,
+            disabled=not available,
+        )
+        add_btn.callback = self.on_add
+        button_row.add_item(add_btn)
         self.add_item(button_row)
 
     def _entry_channel_name(self, entry: Dict[str, Any]) -> str:
@@ -414,31 +409,25 @@ class BumpReminderConfigView(BaseView):
                  timestamp=f"<t:{int(state['due_at'].timestamp())}:R>")
 
     # -- callbacks -------------------------------------------------------- #
-    async def on_add_select(self, interaction: discord.Interaction):
+    async def on_add(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
-        bot_key = interaction.data['values'][0]
 
         # Re-check against live config: the panel may have been open a while.
         reminders = await _load(bot, interaction.guild_id)
         cap = await reminders_per_bot(bot, interaction.guild_id)
         counts = count_by_bot(reminders)
-        spec = bot_by_key(bot_key)
-        if spec is None or counts.get(bot_key, 0) >= cap:
+        available = [s.key for s in BUMP_BOTS if counts.get(s.key, 0) < cap]
+        if not available:
             await interaction.response.send_message(
-                t('modules.bump_reminder.errors.quota', locale=locale,
-                  name=spec.name if spec else bot_key, max=cap),
-                ephemeral=True,
-            )
+                t('modules.bump_reminder.config.all_configured', locale=locale),
+                ephemeral=True)
             return
 
-        available = [s.key for s in BUMP_BOTS if counts.get(s.key, 0) < cap]
         modal = BumpReminderModal(
-            locale, bot_key=bot_key, callback_func=_create_reminder,
-            available=available,
-        )
+            locale, callback_func=_create_reminder, available=available)
         modal.bot = bot
         await interaction.response.send_modal(modal)
 
@@ -706,6 +695,19 @@ class ManageBumpReminderView(BaseView):
 # =========================================================================== #
 # Modal submit handlers
 # =========================================================================== #
+def _resolve_interval(raw: Optional[str], bot_key: str) -> Optional[int]:
+    """Read the delay field, treating blank as "this directory's own cooldown".
+
+    The field cannot be pre-filled when creating — a Discord modal is static and
+    cannot react to the directory picked in its own select — so blank has to
+    mean something useful rather than being rejected.
+    """
+    if raw is None or not raw.strip():
+        spec = bot_by_key(bot_key)
+        return spec.default_interval if spec else None
+    return parse_interval(raw)
+
+
 async def _write(interaction: discord.Interaction, reminders: List[Dict[str, Any]],
                  success_key: str) -> None:
     bot = interaction.client
@@ -726,7 +728,7 @@ async def _create_reminder(interaction: discord.Interaction, *, bot_key: str,
     locale = i18n.get_user_locale(interaction)
     await interaction.response.defer()
 
-    interval = parse_interval(raw_interval)
+    interval = _resolve_interval(raw_interval, bot_key)
     if interval is None:
         await interaction.followup.send(
             t('modules.bump_reminder.errors.invalid_interval', locale=locale), ephemeral=True)
@@ -753,7 +755,7 @@ def _edit_reminder(entry_id: str):
         locale = i18n.get_user_locale(interaction)
         await interaction.response.defer()
 
-        interval = parse_interval(raw_interval)
+        interval = _resolve_interval(raw_interval, bot_key)
         if interval is None:
             await interaction.followup.send(
                 t('modules.bump_reminder.errors.invalid_interval', locale=locale),

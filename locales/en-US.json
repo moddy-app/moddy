@@ -1489,7 +1489,6 @@
         "title": "Bump Reminder",
         "description": "A missed bump window is visibility lost. Moddy recognises a **successful** bump in the channel you point it at, thanks whoever ran it, and calls the channel back the moment the command is available again.",
         "limit": "{max} reminder(s) per directory.",
-        "add_placeholder": "Add a reminder for a directory",
         "manage_placeholder": "Manage an existing reminder",
         "all_configured": "You have reached your quota on every supported directory.",
         "list": {
@@ -1517,7 +1516,8 @@
         "ping_label": "Mention the last person who bumped",
         "ping_description": "What Moddy does about whoever ran the command.",
         "interval_label": "Delay before the reminder",
-        "interval_description": "For example 2h, 2h30 or 90m. Between 5 minutes and 24 hours."
+        "interval_description": "For example 2h, 2h30 or 90m. Leave empty for the chosen directory's own cooldown.",
+        "interval_placeholder": "Leave empty for the directory's own"
       },
       "ping": {
         "auto": "Always",
@@ -1568,6 +1568,9 @@
         "no_send_permission": "Moddy cannot post in {channel}.",
         "too_many_roles": "{max} roles at most.",
         "invalid_interval": "Invalid delay. Use for example `2h`, `2h30` or `90m`, between 5 minutes and 24 hours."
+      },
+      "buttons": {
+        "add": "Add"
       }
     },
     "automod_ai": {
