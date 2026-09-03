@@ -57,7 +57,7 @@ Ordered as every menu shows them, largest audience first.
 | 4 | `dl` | DiscordL | `/bump` | 1 h | Banner URL under `/v2/bump/`, or "a été bump par" |
 | 5 | `beemp` | Beemp | `/bump` | 1 h | "Beemp done successfully" wording |
 | 6 | `dtop` | DiscordTop | `/boost` | 1 h | Asset named `boost-success`; states its next boost |
-| 7 | `frenchgg` | French.gg | `/bump` | 2 h | Its own "remind me" button, offered only on success |
+| 7 | `frenchgg` | French.gg | `/bump` | 2 h | Anything visible (refuses privately); its own "remind me" button |
 
 The order is an editorial judgement, not a measured ranking: DISBOARD is
 verifiably the largest (700k+ listed servers, and the only global one here); the
@@ -107,27 +107,51 @@ Directories are not built alike, so neither are the markers:
   is the bumper's user id, which the detector falls back on when Discord omits
   the interaction metadata.
 
-### DISBOARD refuses privately
+### Two directories refuse privately
 
-DISBOARD answers a cooldown with an **ephemeral** message, which the gateway
-never delivers to a bot. Every `/bump` reply Moddy can actually *see* from it
-therefore went through.
+DISBOARD and French.gg answer a cooldown with an **ephemeral** message, which
+the gateway never delivers to a bot. Every `/bump` reply Moddy can actually
+*see* from them therefore went through.
 
-That is modelled as `refusal_is_ephemeral`, and it makes DISBOARD detection
+That is modelled as `refusal_is_ephemeral`. For DISBOARD it makes detection
 language-proof — Japanese, Korean, Russian, Turkish all work, with no phrase
-list to maintain. Two guard rails keep the shortcut honest:
+list to maintain. For French.gg it is what makes its "remind me in 2h" button
+safe to lean on: that button would arguably make *more* sense on a cooldown than
+on a success, so without the guarantee it would have been the wrong marker.
+
+Two guard rails keep the shortcut honest:
 
 - it applies **only** to a message Discord tagged with `/bump`. Without a command
   name the reply could be anything the directory posts, so the ordinary markers
   have to carry it instead;
 - the directory's own failure markers still veto, as insurance against the day
-  DISBOARD changes its mind.
+  it changes its mind.
 
-The shared text blocklist is *skipped* for it, though: that blocklist exists to
-recognise a visible refusal, which cannot happen here — so applying it could only
-ever cost a real bump, on some translation tripping over a word it does not own.
+The shared text blocklist is a **separate** decision, carried by
+`answers_in_any_language` and skipped only for DISBOARD. Private refusals alone
+are not reason enough to drop it: the flag is an assumption about someone else's
+product, and the blocklist is the net under that assumption. Only a directory
+that *also* answers in languages we cannot enumerate has anything to lose by
+keeping it — and French.gg, being a French listing, does not. Setting either flag
+on another directory needs the same evidence.
 
-Setting this flag on another directory needs the same evidence.
+### A success marker must never appear on a refusal
+
+This is the failure mode that actually bites, and it bit twice.
+
+`Résultat du Bump sur DiscordL` looked like a success marker. It is DiscordL's
+message **header**, printed on the refusal too. `propulsé` looked like one for
+DiscordTop. Its refusal reads "Ce serveur vient **déjà** d'être propulsé".
+
+Both were harmless — but only because some veto happened to fire first
+("attendre", "déjà"). Reword either refusal and the detector starts arming
+reminders off failed bumps. `TestCapturedRefusals` now forbids it outright:
+no success marker of a directory may match that directory's own captured
+refusal. It fails against both original markers, naming them.
+
+The lesson generalises: **the signal is what differs between the two messages**,
+never what the directory says about bumping in general. "Boost envoyé" versus
+"Boost impossible" is a signal. "propulsé" is vocabulary.
 
 ### D-INVITES is the fragile one
 

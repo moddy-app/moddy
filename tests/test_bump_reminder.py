@@ -22,6 +22,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from bumpreminder.detect import _harvest
 from bumpreminder import (
     BUMP_BOTS,
     MAX_INTERVAL,
@@ -161,6 +162,18 @@ class TestRegistry:
         """A directory with no marker and no private-refusal flag is dead code."""
         assert (spec.refusal_is_ephemeral or spec.success_text
                 or spec.success_media or spec.success_custom_id)
+
+    @pytest.mark.parametrize("spec", BUMP_BOTS, ids=lambda s: s.key)
+    def test_the_blocklist_is_only_skipped_where_it_could_backfire(self, spec):
+        """Dropping the shared cooldown blocklist needs both reasons, not one.
+
+        Private refusals alone are not enough: the flag is an assumption about
+        someone else's product, and the blocklist is the net under it. Only a
+        directory that *also* answers in languages we cannot enumerate has
+        anything to lose by keeping it.
+        """
+        if spec.answers_in_any_language:
+            assert spec.refusal_is_ephemeral, f"{spec.key}: skips the net for free"
 
     def test_lookup_by_app_id(self):
         for spec in BUMP_BOTS:
@@ -342,6 +355,25 @@ class TestCapturedRefusals:
             or (not spec.refusal_is_ephemeral and _matches(_FAILURE_TEXT, text))
         )
         assert vetoed, f"{key}: the refusal is only rejected by omission"
+
+    @pytest.mark.parametrize("key", sorted(REFUSALS), ids=sorted(REFUSALS))
+    def test_no_success_marker_fires_on_a_captured_refusal(self, key):
+        """The sharp one. A success marker present on the refusal is a live bug.
+
+        It survives only as long as some veto happens to fire first — reword the
+        refusal and the detector starts arming reminders off failed bumps. Two
+        markers were caught exactly this way: DiscordL's "Résultat du Bump",
+        which is the message *header* and prints on both, and DiscordTop's
+        "propulsé", because its refusal reads "vient **déjà** d'être propulsé".
+        """
+        spec = bot_by_key(key)
+        text, media, custom_ids = _harvest(message(REFUSALS[key]))
+
+        fired = [r.pattern for r in spec.success_text if r.search(text)]
+        fired += [f"media:{m}" for m in spec.success_media if m in media]
+        fired += [f"custom_id:{m}" for m in spec.success_custom_id
+                  for c in custom_ids if c.startswith(m)]
+        assert not fired, f"{key}: success marker(s) {fired} match its own refusal"
 
     @pytest.mark.parametrize("key", sorted(REFUSALS), ids=sorted(REFUSALS))
     def test_the_refusal_carries_the_same_command_as_the_success(self, key):

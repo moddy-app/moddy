@@ -324,11 +324,14 @@ def evaluate(message: Any, spec: BumpBot, interval: int, *,
 
     text, media, custom_ids = _harvest(message)
 
-    # The shared blocklist exists to recognise a *visible* refusal. A directory
-    # that refuses privately can never send one, so applying it there could only
-    # ever cost a real bump — some translation of the success message tripping
-    # on a word it has no business owning. Its own markers still veto.
-    if not spec.refusal_is_ephemeral and _matches(_FAILURE_TEXT, text):
+    # The shared blocklist recognises a *visible* refusal in the languages these
+    # directories answer in. It is skipped only for a directory that answers in
+    # languages we cannot list AND refuses privately — there it could only ever
+    # cost a real bump, on some translation tripping over a word it does not
+    # own. Everywhere else it stays, including where refusals are private: if
+    # that assumption is ever wrong, this is what catches it.
+    if not (spec.answers_in_any_language and spec.refusal_is_ephemeral) \
+            and _matches(_FAILURE_TEXT, text):
         return None
     if _matches(spec.failure_text, text):
         return None

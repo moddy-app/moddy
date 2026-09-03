@@ -84,7 +84,41 @@ bot-authored messages before any module sees them, which is exactly what this
 feature reads. Relaxing the shared guard would change what four other modules
 receive.
 
-## Correction after the first push
+## Corrections after the first push
+
+Jules supplied real refusals for D-INVITES, DiscordL and DiscordTop, and the
+information that DISBOARD *and* French.gg refuse ephemerally. Three real bugs
+came out of it, all of the same shape: **a marker that is present on both the
+success and the refusal**.
+
+| Directory | The bad marker | Why it looked right |
+|---|---|---|
+| D-INVITES | failure `cooldown.png` / `error.png` | Invented. The file is `bump-error.png`. |
+| DiscordL | success `Résultat du Bump` | It is the message *header*, printed on both. |
+| DiscordTop | success `propulsé` | The refusal reads "vient **déjà** d'être propulsé". |
+
+None of the three was *observable*: every refusal was still rejected, because
+some other veto happened to fire first — `bump-error` missing a success marker,
+"attendre", "déjay". That is the worst kind of correct: reword any of those
+refusals and the detector silently starts arming reminders off failed bumps.
+
+`TestCapturedRefusals` now holds two assertions that make this class of bug
+impossible to reintroduce: a captured refusal must trip an **explicit** veto,
+and **no success marker may match a directory's own refusal**. Both fail against
+the original markers, naming them.
+
+The generalisable lesson, now in the docs: the signal is what *differs* between
+the two messages, never what the directory says about bumping in general.
+"Boost envoyé" versus "Boost impossible" is a signal; "propulsé" is vocabulary.
+
+Separately, `refusal_is_ephemeral` was doing two jobs and has been split.
+Granting the "visible means success" shortcut is one fact; dropping the shared
+cooldown blocklist is another, now `answers_in_any_language` and true only for
+DISBOARD. Private refusals alone are an assumption about someone else's product,
+and the blocklist is the net under it — French.gg, being a French listing, keeps
+it for free.
+
+## Superseded note (kept for the record)
 
 Jules supplied a real D-INVITES refusal. It showed the failure markers were
 wrong: invented as `cooldown.png` / `error.png`, the file is actually
@@ -121,11 +155,10 @@ That test fails against the old guessed markers, which is how it earns its place
   DISBOARD is verifiably largest; the rest are ordered by bot account age and
   reputation because no comparable published guild counts exist. Reordering is a
   one-line move in `BUMP_BOTS`.
-- **Captured refusals exist only for D-INVITES so far.** The rest of
-  `TestFailure` replays hand-written cooldown replies, which only ever test the
-  guess. The exposed directories are the ones whose *success* marker could
-  plausibly also appear on a refusal: French.gg (its "remind me" button — which
-  makes more sense on a cooldown than on a success), DiscordL (a banner under
-  `/v2/bump/`), and DiscordTop (whose failure markers `boost-error`,
-  `boost-cooldown`, `boost-failed` are still invented). Requested from Jules.
+- **Captured refusals exist for D-INVITES, DiscordL and DiscordTop.** DISBOARD
+  and French.gg refuse ephemerally, so there is nothing to capture. Still
+  synthetic, and worth replacing whenever a real one is seen: **Beemp** and
+  **DSMonitoring**. Both rest on text markers covered by the shared blocklist,
+  so the exposure is lower than it was for the three above — but "lower" is what
+  I said about DiscordL before its refusal turned up a live marker collision.
 - The module ships no slash command, so `locales/commands/` is untouched.

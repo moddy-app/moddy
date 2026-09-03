@@ -72,6 +72,19 @@ class BumpBot:
     failure_text: Tuple[Pattern, ...] = ()
     failure_media: Tuple[str, ...] = ()
 
+    answers_in_any_language: bool = False
+    """The directory replies in the reader's language, from a set we cannot list.
+
+    Only DISBOARD does, being the one global listing here. The shared cooldown
+    blocklist is skipped for such a directory: that blocklist recognises a
+    *visible* refusal, so where refusals are private it can only ever cost a
+    real bump — some translation tripping over a word it does not own.
+
+    A single-language directory keeps the blocklist even when its refusals are
+    private, as a cheap net under that assumption: if it ever does post a
+    visible refusal, the blocklist still catches it.
+    """
+
     refusal_is_ephemeral: bool = False
     """The directory refuses a bump *privately*, so anything visible is a success.
 
@@ -140,6 +153,7 @@ BUMP_BOTS: Tuple[BumpBot, ...] = (
         success_media=("bot-command-image-bump",),
         failure_media=("bot-command-image-notification",),
         refusal_is_ephemeral=True,
+        answers_in_any_language=True,
     ),
     # ----------------------------------------------------------- DSMonitoring
     # Calls a bump a "like". Its embed timestamp is the *next* like, four hours
@@ -201,13 +215,22 @@ BUMP_BOTS: Tuple[BumpBot, ...] = (
         # "a été bump **par**" — the trailing preposition is what keeps this
         # apart from French.gg's "a été bump**é**", which is otherwise the
         # same sentence in the same language.
+        #
+        # "Résultat du Bump sur DiscordL" is deliberately NOT here: it is the
+        # message *header*, printed on the refusal too. It sat in this list
+        # until a captured refusal showed it firing there — harmless only
+        # because "attendre" tripped the shared blocklist first, which is to
+        # say harmless by luck.
         success_text=_rx(
-            r"r[ée]sultat\s+du\s+bump",
             r"a\s+[ée]t[ée]\s+bump\s+par",
             r"has\s+been\s+bumped\s+by",
             r"fue\s+bumpeado\s+por",
         ),
         success_media=("/v2/bump/",),
+        failure_text=_rx(
+            r"avant\s+de\s+pouvoir\s+bump",
+            r"before\s+you\s+can\s+bump",
+        ),
     ),
     # ------------------------------------------------------------------- Beemp
     BumpBot(
@@ -226,7 +249,12 @@ BUMP_BOTS: Tuple[BumpBot, ...] = (
     ),
     # -------------------------------------------------------------- DiscordTop
     # Calls it a "boost" — hence the separate command name. Names its asset
-    # after the outcome and states the next boost as a relative timestamp.
+    # after the outcome (`boost-success.png` / `boost-error.png`, both observed)
+    # and states the next boost as a relative timestamp.
+    #
+    # "propulsé" is deliberately NOT a success marker: the refusal reads "Ce
+    # serveur vient **déjà** d'être propulsé", so the word appears on both. The
+    # verb is not the signal — "Boost envoyé" versus "Boost impossible" is.
     BumpBot(
         key="dtop",
         app_id=1071460654839517184,
@@ -237,18 +265,23 @@ BUMP_BOTS: Tuple[BumpBot, ...] = (
         default_interval=1 * HOUR,
         success_text=_rx(
             r"boost\s+(?:envoy[ée]|sent|enviado|gesendet)",
-            r"propuls[ée]",
-            r"pushed\s+to\s+the\s+front",
         ),
         success_media=("boost-success",),
-        failure_media=("boost-error", "boost-cooldown", "boost-failed"),
+        failure_text=_rx(
+            r"boost\s+(?:impossible|unavailable)",
+            r"booster\s+[àa]\s+nouveau",
+        ),
+        failure_media=("boost-error",),
         next_due="relative",
     ),
     # -------------------------------------------------------------- French.gg
-    # Offers its own "remind me in 2h" button, and only on a success — so the
-    # button's custom_id is the strongest marker available here. Its suffix is
-    # the bumper's user id, which the detector uses when Discord omits the
-    # interaction metadata.
+    # Refuses privately, like DISBOARD (see ``refusal_is_ephemeral``), which is
+    # what makes its "remind me in 2h" button safe to trust: the button would
+    # arguably make *more* sense on a cooldown than on a success, so without
+    # that guarantee it would have been the wrong marker to lean on.
+    #
+    # The button's custom_id is suffixed with the bumper's user id, which the
+    # detector falls back on when Discord omits the interaction metadata.
     BumpBot(
         key="frenchgg",
         app_id=1313443824483307531,
@@ -263,6 +296,7 @@ BUMP_BOTS: Tuple[BumpBot, ...] = (
             r"a\s+[ée]t[ée]\s+bump[ée]",
         ),
         success_custom_id=("buttons-custom-reminder-",),
+        refusal_is_ephemeral=True,
     ),
 )
 
