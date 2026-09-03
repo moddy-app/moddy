@@ -1489,7 +1489,6 @@
         "title": "Bump-Erinnerung",
         "description": "Ein verpasstes Bump-Fenster ist verlorene Sichtbarkeit. Moddy erkennt einen **erfolgreichen** Bump im Kanal deiner Wahl, bedankt sich bei der Person und meldet sich im Kanal, sobald der Befehl wieder verfügbar ist.",
         "limit": "{max} Erinnerung(en) pro Verzeichnis.",
-        "add_placeholder": "Erinnerung für ein Verzeichnis hinzufügen",
         "manage_placeholder": "Bestehende Erinnerung verwalten",
         "all_configured": "Du hast dein Kontingent bei jedem unterstützten Verzeichnis erreicht.",
         "list": {
@@ -1517,7 +1516,8 @@
         "ping_label": "Die letzte Person erwähnen, die gebumpt hat",
         "ping_description": "Was Moddy mit der Person macht, die den Befehl ausgeführt hat.",
         "interval_label": "Wartezeit bis zur Erinnerung",
-        "interval_description": "Zum Beispiel 2h, 2h30 oder 90m. Zwischen 5 Minuten und 24 Stunden."
+        "interval_description": "Zum Beispiel 2h, 2h30 oder 90m. Leer lassen für die Wartezeit des Verzeichnisses.",
+        "interval_placeholder": "Leer lassen für die des Verzeichnisses"
       },
       "ping": {
         "auto": "Immer",
@@ -1568,6 +1568,9 @@
         "no_send_permission": "Moddy kann in {channel} nicht posten.",
         "too_many_roles": "Höchstens {max} Rollen.",
         "invalid_interval": "Ungültige Wartezeit. Nutze zum Beispiel `2h`, `2h30` oder `90m`, zwischen 5 Minuten und 24 Stunden."
+      },
+      "buttons": {
+        "add": "Hinzufügen"
       }
     },
     "automod_ai": {

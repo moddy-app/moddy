@@ -1489,7 +1489,6 @@
         "title": "Recordatorio de bump",
         "description": "Una ventana de bump perdida es visibilidad perdida. Moddy reconoce un bump **exitoso** en el canal que elijas, agradece a quien lo hizo y avisa al canal en cuanto el comando vuelve a estar disponible.",
         "limit": "{max} recordatorio(s) por directorio.",
-        "add_placeholder": "Añadir un recordatorio para un directorio",
         "manage_placeholder": "Gestionar un recordatorio existente",
         "all_configured": "Has alcanzado tu cuota en todos los directorios compatibles.",
         "list": {
@@ -1517,7 +1516,8 @@
         "ping_label": "Mencionar a la última persona que hizo bump",
         "ping_description": "Qué hace Moddy con quien ejecutó el comando.",
         "interval_label": "Retraso antes del recordatorio",
-        "interval_description": "Por ejemplo 2h, 2h30 o 90m. Entre 5 minutos y 24 horas."
+        "interval_description": "Por ejemplo 2h, 2h30 o 90m. Déjalo vacío para el propio del directorio elegido.",
+        "interval_placeholder": "Déjalo vacío para el del directorio"
       },
       "ping": {
         "auto": "Siempre",
@@ -1568,6 +1568,9 @@
         "no_send_permission": "Moddy no puede publicar en {channel}.",
         "too_many_roles": "{max} roles como máximo.",
         "invalid_interval": "Retraso no válido. Usa por ejemplo `2h`, `2h30` o `90m`, entre 5 minutos y 24 horas."
+      },
+      "buttons": {
+        "add": "Añadir"
       }
     },
     "automod_ai": {

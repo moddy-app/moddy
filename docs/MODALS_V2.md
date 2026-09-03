@@ -254,6 +254,47 @@ self.checkbox_group.component.values  # list[str]
 
 Sélection unique exclusive via boutons radio. Valide dans un `Label`. *New in 2.7*.
 
+```python
+discord.ui.RadioGroup(
+    options=[
+        discord.RadioGroupOption(label="Toujours", value="auto", default=True),
+        discord.RadioGroupOption(label="Jamais", value="never"),
+    ],
+    required=True,
+)
+```
+
+| Paramètre | Limite |
+|---|---|
+| options | 2 à 10 |
+| `required` | défaut `True` |
+
+Chaque `RadioGroupOption` : `label` / `value` / `description`, chacun max 100
+caractères, plus `default=True` pour pré-sélectionner l'option à l'ouverture.
+
+⚠️ `RadioGroupOption` vit sur `discord`, **pas** sur `discord.ui` — contrairement
+à `ui.RadioGroup` lui-même.
+
+### Valeurs
+
+```python
+self.radio_group.value  # Optional[str] — le `value` de l'option choisie
+```
+
+⚠️ **`RadioGroup` est un choix unique : il expose `.value` (un `str` ou `None`),
+PAS `.values`.** C'est la différence avec `CheckboxGroup`, `Select` et les
+selects natifs, qui exposent tous une liste `.values`. Confondre les deux lève
+`AttributeError` **à la soumission** et nulle part avant : construire le modal,
+le sérialiser et l'afficher réussissent tous. Le bug est donc invisible en test
+tant que personne ne simule un `on_submit` — voir
+`tests/test_bump_reminder.py::TestComponents::test_on_submit_reads_each_component_the_way_its_class_allows`
+pour la garde qui l'attrape statiquement.
+
+| Composant | Accès |
+|---|---|
+| `TextInput`, `Checkbox`, **`RadioGroup`** | `.value` |
+| `Select`, `UserSelect`, `RoleSelect`, `ChannelSelect`, `MentionableSelect`, `CheckboxGroup`, `FileUpload` | `.values` |
+
 ---
 
 ## Checkbox obligatoire (technique officielle)

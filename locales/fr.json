@@ -1488,7 +1488,6 @@
         "title": "Rappel de bump",
         "description": "Une fenêtre de bump ratée, c'est de la visibilité perdue. Moddy reconnaît un bump **réussi** dans le salon que vous désignez, remercie la personne, et rappelle le salon dès que la commande redevient disponible.",
         "limit": "{max} rappel(s) par site de référencement.",
-        "add_placeholder": "Ajouter un rappel pour un site",
         "manage_placeholder": "Gérer un rappel existant",
         "all_configured": "Vous avez atteint votre quota sur chaque site pris en charge.",
         "list": {
@@ -1516,7 +1515,8 @@
         "ping_label": "Mentionner la dernière personne à avoir bumpé",
         "ping_description": "Ce que Moddy fait de la personne qui a lancé la commande.",
         "interval_label": "Délai avant le rappel",
-        "interval_description": "Par exemple 2h, 2h30 ou 90m. Entre 5 minutes et 24 heures."
+        "interval_description": "Par exemple 2h, 2h30 ou 90m. Laissez vide pour le délai propre au site choisi.",
+        "interval_placeholder": "Laisse vide pour le délai du site"
       },
       "ping": {
         "auto": "Toujours",
@@ -1567,6 +1567,9 @@
         "no_send_permission": "Moddy ne peut pas écrire dans {channel}.",
         "too_many_roles": "{max} rôles au maximum.",
         "invalid_interval": "Délai invalide. Utilisez par exemple `2h`, `2h30` ou `90m`, entre 5 minutes et 24 heures."
+      },
+      "buttons": {
+        "add": "Ajouter"
       }
     },
     "automod_ai": {

@@ -14,6 +14,7 @@ Three properties matter more than the rest, and each has its own class:
 - one directory's markers never fire on another's message (`TestCrossTalk`)
 """
 
+import inspect
 import json
 import pathlib
 import re
@@ -690,6 +691,45 @@ class TestComponents:
 
     def test_the_modal_fits_the_five_component_ceiling(self):
         assert len(self._modal().children) == 5
+
+    def test_on_submit_reads_each_component_the_way_its_class_allows(self):
+        """A wrong accessor here is invisible until somebody submits the modal.
+
+        ``RadioGroup`` is single-choice and exposes ``.value``; the selects and
+        ``CheckboxGroup`` are multi and expose ``.values``. Mixing them up
+        raises AttributeError at submit time and nowhere earlier — building the
+        modal, serialising it and rendering it all succeed. It shipped once.
+        """
+        modal = self._modal()
+        source = inspect.getsource(type(modal).on_submit)
+        accesses = re.findall(r"self\.(\w+)\.(value|values)\b", source)
+        assert accesses, "on_submit no longer reads its components — update this test"
+        for attribute, accessor in accesses:
+            component = getattr(modal, attribute)
+            assert hasattr(type(component), accessor), (
+                f"{type(component).__name__}.{accessor} does not exist "
+                f"(self.{attribute}.{accessor})")
+
+    def test_radiogroup_is_single_choice(self):
+        """The API fact behind the bug above, stated where a reader will see it."""
+        import discord
+        assert hasattr(discord.ui.RadioGroup, "value")
+        assert not hasattr(discord.ui.RadioGroup, "values")
+
+    def test_a_blank_delay_falls_back_to_the_directory_cooldown(self):
+        """The field cannot be pre-filled when creating, so blank must mean something.
+
+        A Discord modal is static: it cannot react to the directory picked in
+        its own select. Rejecting a blank field would make the common case the
+        awkward one.
+        """
+        from modules.configs.bump_reminder_config import _resolve_interval
+        for key in ("disboard", "dtop", "dsmonitoring"):
+            assert _resolve_interval("", key) == bot_by_key(key).default_interval
+            assert _resolve_interval(None, key) == bot_by_key(key).default_interval
+            assert _resolve_interval("   ", key) == bot_by_key(key).default_interval
+        assert _resolve_interval("90m", "disboard") == 5400
+        assert _resolve_interval("nope", "disboard") is None
 
     def test_the_modal_serialises(self):
         """Catches an illegal component *shape* before Discord 400s on it."""

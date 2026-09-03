@@ -144,6 +144,33 @@ becomes an acceptance. `tests/data/bump_refusals.json` now holds captured
 refusals, and `TestCapturedRefusals` asserts each one trips an **explicit** veto.
 That test fails against the old guessed markers, which is how it earns its place.
 
+## Fixed after the first deploy
+
+**`AttributeError: 'RadioGroup' object has no attribute 'values'`** on submitting
+the config modal. `ui.RadioGroup` is single-choice and exposes `.value`; I wrote
+`.values[0]` by analogy with `CheckboxGroup`. Two things let it ship:
+
+- `docs/MODALS_V2.md` documented `RadioGroup` in three lines and **never said
+  how to read it**, while every other component there has a "Valeurs" section.
+  I was also the repo's first `RadioGroup` user, so there was no precedent to
+  copy. That doc now carries the accessor, the option parameters, and a table of
+  which components are `.value` versus `.values`.
+- **The tests built the modal but never submitted it.** Construction,
+  serialisation and rendering all succeed with a wrong accessor — the failure
+  only exists at submit time. There is now a static guard that reads the
+  accessors `on_submit` actually uses and checks each against its component's
+  class. It fails on the shipped line, naming it:
+  `RadioGroup.values does not exist (self.ping_group.values)`.
+
+The other four accessors in the same `on_submit` were audited against the real
+discord.py 2.7.1 API and are correct.
+
+**Add moved from a dropdown to a button** (Jules): on a `/config` panel the
+dropdown edits, the button creates. My dropdown existed to pre-fill the delay
+field with the chosen directory's cooldown, which a static modal cannot do on
+its own — so blank now means "that directory's own cooldown" instead, which is
+the better default anyway and one less thing for the reader to look up.
+
 ## Bugs caught during the work
 
 - `_by_channel` keyed on the channel alone would have silently dropped a second
