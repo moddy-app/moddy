@@ -256,8 +256,16 @@ def test_the_member_sees_the_loading_card_before_anything_else():
     assert first == "<a:spinner:1534857169667883078> **Moddy** réfléchit..."
 
 
-def test_a_confirmation_replaces_the_placeholder_with_a_card_that_has_buttons():
+def test_a_confirmation_edits_the_placeholder_instead_of_replacing_it():
+    """One turn must stay one message: edit, never delete-and-repost.
+
+    Also guards the ordering trap: `run_end` arrives right after
+    `permission_request`, and repainting the answer on top of it would make the
+    buttons vanish a fraction of a second after appearing.
+    """
     backend = FakeBackend([
+        ("text_delta", {"delta": "Le starboard n'est pas activé. "}),
+        ("text_delta", {"delta": "Je peux l'activer à 5 étoiles."}),
         ("permission_request", {
             "action_id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
             "kind": "set_module_config",
@@ -297,14 +305,19 @@ def test_a_confirmation_replaces_the_placeholder_with_a_card_that_has_buttons():
 
     channel, card = _run(scenario())
 
-    # The turn produced no prose, so the placeholder is removed rather than
-    # edited into an empty container (which Discord rejects).
-    assert card.deleted is True
+    # One message, never deleted: the placeholder became the question.
+    assert card.deleted is False
+    assert len(channel.sent) == 1
+    assert card.views[0][0] == "send"
+    assert all(kind == "edit" for kind, _ in card.views[1:])
 
-    # A second message carries the question, with two buttons.
-    assert len(channel.sent) == 2
-    question = channel.sent[1].views[0][1]
+    # The last state is the question — `run_end` did not repaint over it.
+    question = card.views[-1][1]
     text = _first_text(question)
+
+    # It carries what Brocoli said on the way to asking, so the member does not
+    # have to read upwards to know what they are agreeing to.
+    assert "Le starboard n'est pas activé." in text
     assert "Active le starboard à 5 étoiles" in text
     assert "threshold" in text
 
@@ -319,6 +332,42 @@ def test_a_confirmation_replaces_the_placeholder_with_a_card_that_has_buttons():
     assert all(
         b["custom_id"].startswith("moddy:brocoli:decision:") for b in buttons
     )
+
+
+def test_a_stream_error_edits_the_placeholder_too():
+    """A failure must not leave an orphaned "thinking" card next to a notice."""
+    backend = FakeBackend([
+        ("error", {"code": "stream_error", "message": "boom"}),
+        ("run_end", {"status": "error"}),
+    ])
+
+    async def scenario():
+        runner, base = await _serve(backend)
+        try:
+            from cogs.brocoli_chat import BrocoliChat
+            from services.brocoli_client import BrocoliClient
+            from utils.brocoli_views import loading_card
+
+            cog = BrocoliChat.__new__(BrocoliChat)
+            cog.client = BrocoliClient(base, SECRET)
+
+            channel = FakeChannel()
+            card = await channel.send(view=loading_card("fr"))
+            conversation = await cog.client.open_conversation(USER, GUILD)
+            stream = cog.client.send_message(
+                conversation["id"], USER, GUILD, "coucou"
+            )
+            await cog._render(stream, channel, conversation["id"], "fr", card=card)
+            await cog.client.close()
+        finally:
+            await runner.cleanup()
+        return channel, card
+
+    channel, card = _run(scenario())
+
+    assert card.deleted is False
+    assert len(channel.sent) == 1
+    assert "réfléchit" not in _first_text(card.views[-1][1])
 
 
 def test_a_backend_error_becomes_a_notice_and_not_a_traceback():

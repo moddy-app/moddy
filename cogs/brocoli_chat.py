@@ -337,6 +337,18 @@ class BrocoliChat(commands.Cog):
         buffer: list[str] = []
         tool: Optional[str] = None
         last_edit = 0.0
+        # Set once a confirmation or an error has taken the card over. Without
+        # it the `run_end` that follows would repaint the answer on top and the
+        # buttons would vanish a fraction of a second after appearing.
+        halted = False
+
+        async def replace(view) -> None:
+            """Turn the placeholder into `view`, or post it if there is none."""
+            nonlocal card
+            if card is None:
+                card = await channel.send(view=view)
+            else:
+                await card.edit(view=view)
 
         async def paint(*, thinking: bool, force: bool = False) -> None:
             nonlocal card, last_edit
@@ -347,20 +359,15 @@ class BrocoliChat(commands.Cog):
 
             text = "".join(buffer)
             if not thinking and not text:
-                # The turn produced no prose — it went straight to a
-                # confirmation card, or ended empty. A container with no
-                # content is rejected by Discord, and a stranded "thinking"
-                # card would sit there forever, so the placeholder goes away.
+                # A turn that ends without a word and without a question is
+                # degenerate — but a container with no content is rejected by
+                # Discord, and a stranded "thinking" card would never clear.
                 if card is not None:
                     await card.delete()
                     card = None
                 return
 
-            view = answer_card(text, locale=locale, thinking=thinking, tool=tool)
-            if card is None:
-                card = await channel.send(view=view)
-            else:
-                await card.edit(view=view)
+            await replace(answer_card(text, locale=locale, thinking=thinking, tool=tool))
 
         async for event in stream:
             name, data = event.get("event"), event.get("data") or {}
@@ -377,23 +384,32 @@ class BrocoliChat(commands.Cog):
                 tool = None
 
             elif name == "permission_request":
-                # Finalise whatever Brocoli said first, then ask separately: the
-                # question must be a card with buttons, never a sentence in the
-                # middle of a paragraph.
-                await paint(thinking=False, force=True)
-                await channel.send(
-                    view=confirmation_card(data, conversation_id, locale=locale)
+                # The question takes over the very card the member is watching,
+                # prose included. Deleting the placeholder and posting a second
+                # message would make one turn look like two, and would leave
+                # them reading upwards to see what they are agreeing to.
+                await replace(
+                    confirmation_card(
+                        data, conversation_id, locale=locale, text="".join(buffer)
+                    )
                 )
+                halted = True
 
             elif name == "error":
                 logger.warning("[Brocoli] stream error: %s", data.get("code"))
-                await channel.send(view=notice_card("unavailable", locale))
+                # Same rule: the failure replaces the placeholder instead of
+                # being a second message next to an orphaned "thinking" card.
+                await replace(notice_card("unavailable", locale))
+                halted = True
 
             elif name == "run_end":
                 tool = None
                 if data.get("status") == "max_iterations":
                     buffer.append("\n\n" + t("brocoli.max_iterations", locale=locale))
-                if buffer or card is not None:
+                if not halted:
+                    # A confirmation or an error already owns the card. Painting
+                    # the answer on top would make the buttons vanish a fraction
+                    # of a second after appearing.
                     await paint(thinking=False, force=True)
 
     # ------------------------------------------------------------------
