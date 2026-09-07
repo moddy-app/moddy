@@ -203,12 +203,35 @@ class CaseService:
             group_id=group_id,
         )
         result["created"] = True
+        self._count(spec, scope_id, action_value)
         self._invalidate_global(spec, subject_id)
         await self._log_to_server(
             spec, scope_id, subject_id, action_value, issuer_id, reason,
             expires_at, result.get("reference"),
         )
         return result
+
+    def _count(self, spec, scope_id, action: str) -> None:
+        """One counter per case opened (see docs/STATS.md).
+
+        A guild-scoped case counts for that guild; a platform-scoped one is
+        not a server's business, so it counts globally.
+        """
+        stats = getattr(self.bot, "stats", None)
+        if stats is None:
+            return
+        guild_id = None
+        if spec.case_type is CaseType.GUILD and scope_id:
+            try:
+                guild_id = int(scope_id)
+            except (TypeError, ValueError):
+                guild_id = None
+        stats.incr(
+            "case.created",
+            guild_id=guild_id,
+            scope="guild" if guild_id else "global",
+            dims={"type": spec.case_type.value, "action": action},
+        )
 
     async def revoke_sanction(
         self,

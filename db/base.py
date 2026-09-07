@@ -38,6 +38,7 @@ from db.repositories.tickets import TicketsRepository
 from db.repositories.notifications import NotificationRepository
 from db.repositories.support_requests import SupportRequestRepository
 from db.repositories.bump import BumpReminderRepository
+from db.repositories.stats import StatsRepository
 
 logger = logging.getLogger('moddy.database')
 
@@ -77,6 +78,7 @@ class ModdyDatabase(
     NotificationRepository,
     SupportRequestRepository,
     BumpReminderRepository,
+    StatsRepository,
 ):
     """Gestionnaire principal de la base de données"""
 
@@ -1443,6 +1445,156 @@ class ModdyDatabase(
                     """,
                     scope, qtype, tier, limit,
                 )
+
+            # ----------------------------------------------------------- #
+            # Statistics (see docs/STATS.md)
+            #
+            # Frequent events never write a row: they are counted in Redis
+            # and upserted here in aggregate, so a server that runs ten
+            # thousand commands in a day costs one row, not ten thousand.
+            # ----------------------------------------------------------- #
+
+            # Pre-aggregated counters. `dims` holds whatever the metric
+            # declared in stats/registry.py, so a new statistic never needs a
+            # new column; `dims_hash` keeps the primary key short and
+            # fixed-width whatever those dimensions are.
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS stats_counters (
+                    metric      TEXT        NOT NULL,
+                    scope       TEXT        NOT NULL,
+                    scope_id    BIGINT      NOT NULL DEFAULT 0,
+                    bucket      TIMESTAMPTZ NOT NULL,
+                    dims        JSONB       NOT NULL DEFAULT '{}'::jsonb,
+                    dims_hash   BYTEA       NOT NULL,
+                    value       BIGINT      NOT NULL DEFAULT 0,
+                    PRIMARY KEY (metric, scope, scope_id, bucket, dims_hash)
+                ) PARTITION BY RANGE (bucket)
+            """)
+            # Purging a month is then a DROP, never a DELETE that blocks the
+            # writers and leaves bloat behind.
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS stats_counters_default
+                PARTITION OF stats_counters DEFAULT
+            """)
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_stats_counters_scope
+                ON stats_counters (scope, scope_id, bucket DESC)
+            """)
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_stats_counters_metric
+                ON stats_counters (metric, bucket DESC)
+            """)
+
+            # Gauges: "how many are there", photographed once a day. A few
+            # dozen rows a day, kept forever — this is the curve of the bot.
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS stats_snapshots (
+                    metric    TEXT    NOT NULL,
+                    scope     TEXT    NOT NULL,
+                    scope_id  BIGINT  NOT NULL DEFAULT 0,
+                    day       DATE    NOT NULL,
+                    dims      JSONB   NOT NULL DEFAULT '{}'::jsonb,
+                    value     NUMERIC NOT NULL,
+                    PRIMARY KEY (metric, scope, scope_id, day, dims)
+                )
+            """)
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_stats_snapshots_metric
+                ON stats_snapshots (metric, day DESC)
+            """)
+
+            # Every arrival and departure of Moddy, one row each, forever.
+            # Retention is *computed* from this table (cohorts by join month),
+            # never stored — and at a few thousand rows a month it costs
+            # nothing to keep the detail.
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS guild_events (
+                    id           BIGSERIAL   PRIMARY KEY,
+                    guild_id     BIGINT      NOT NULL,
+                    event        TEXT        NOT NULL,
+                    member_count INTEGER,
+                    owner_id     BIGINT,
+                    guild_age    INTERVAL,
+                    lifetime     INTERVAL,
+                    source       TEXT,
+                    created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+                )
+            """)
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_guild_events_guild
+                ON guild_events (guild_id, created_at DESC)
+            """)
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_guild_events_type
+                ON guild_events (event, created_at DESC)
+            """)
+
+            # Where an installation came from. The backend writes the row at
+            # the OAuth2 callback (it is the only side that sees the UTM in
+            # the `state`); the bot stamps `confirmed_at` when the guild
+            # actually shows up, which is what makes a conversion rate per
+            # source computable. See docs/STATS.md.
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS guild_installs (
+                    guild_id      BIGINT      PRIMARY KEY,
+                    installer_id  BIGINT,
+                    source        TEXT,
+                    utm           JSONB       NOT NULL DEFAULT '{}'::jsonb,
+                    first_seen_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                    confirmed_at  TIMESTAMPTZ
+                )
+            """)
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_guild_installs_source
+                ON guild_installs (source, first_seen_at DESC)
+            """)
+
+            # The raw window: one row per occurrence, for the handful of
+            # metrics marked raw=True, dropped a fortnight later by the
+            # partition. The insurance against questions nobody anticipated.
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS stats_events (
+                    id         BIGSERIAL,
+                    event      TEXT        NOT NULL,
+                    guild_id   BIGINT,
+                    user_id    BIGINT,
+                    payload    JSONB       NOT NULL DEFAULT '{}'::jsonb,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                    PRIMARY KEY (id, created_at)
+                ) PARTITION BY RANGE (created_at)
+            """)
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS stats_events_default
+                PARTITION OF stats_events DEFAULT
+            """)
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_stats_events_event
+                ON stats_events (event, created_at DESC)
+            """)
+
+            # Reading surface for the dashboard: daily numbers, no
+            # partitioning detail, no dims_hash.
+            await conn.execute("""
+                CREATE OR REPLACE VIEW stats_guild_daily_v AS
+                SELECT metric,
+                       scope_id AS guild_id,
+                       (bucket AT TIME ZONE 'UTC')::date AS day,
+                       dims,
+                       SUM(value)::bigint AS value
+                FROM stats_counters
+                WHERE scope = 'guild'
+                GROUP BY metric, scope_id, day, dims
+            """)
+            await conn.execute("""
+                CREATE OR REPLACE VIEW stats_global_daily_v AS
+                SELECT metric,
+                       (bucket AT TIME ZONE 'UTC')::date AS day,
+                       dims,
+                       SUM(value)::bigint AS value
+                FROM stats_counters
+                WHERE scope = 'global'
+                GROUP BY metric, day, dims
+            """)
 
             logger.info("[OK] Tables initialisées")
 

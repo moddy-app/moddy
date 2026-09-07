@@ -499,6 +499,10 @@ class TicketService:
 
         logger.info(f"[Tickets] #{ticket['number']} opened in guild {guild.id} "
                     f"by {member.id} (category {category['id']})")
+        stats = getattr(self.bot, "stats", None)
+        if stats is not None:
+            stats.incr("ticket.opened", guild_id=guild.id,
+                       dims={"panel": str(panel.get('id'))})
         return channel
 
     def _open_ping_content(self, guild: discord.Guild, category: Dict[str, Any],
@@ -741,6 +745,14 @@ class TicketService:
 
         await self._notify_owner_closed(channel, ticket, category, actor, reason)
         logger.info(f"[Tickets] #{ticket['number']} closed by {actor.id}")
+        stats = getattr(self.bot, "stats", None)
+        if stats is not None:
+            stats.incr(
+                "ticket.closed", guild_id=channel.guild.id,
+                # Not the free-text reason — a dimension has to have bounded
+                # cardinality (see stats/registry.py).
+                dims={"reason": "with_reason" if reason else "none"},
+            )
         return ticket
 
     async def _notify_owner_closed(self, channel, ticket, category, actor, reason):

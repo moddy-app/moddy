@@ -295,6 +295,7 @@ class WelcomeChannelModule(ModuleBase):
 
                 view, allowed = build_welcome_view(entry, member, guild)
                 await channel.send(view=view, allowed_mentions=allowed)
+                self.count("sent")
                 logger.info(
                     f"Channel welcome sent for {member.id} in channel {entry['channel_id']} "
                     f"(guild {self.guild_id}, message {entry['id']})"

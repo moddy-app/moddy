@@ -202,6 +202,22 @@ class NotificationService:
         except Exception as exc:  # noqa: BLE001
             logger.error("Failed to update delivery status: %s", exc)
 
+    def _count_delivery(self, record: Optional[Dict[str, Any]],
+                        platform: Platform, ok: bool) -> None:
+        """Fold one delivery into the daily counters (see docs/STATS.md)."""
+        stats = getattr(self.bot, "stats", None)
+        if stats is None:
+            return
+        stats.incr(
+            "notification.sent",
+            guild_id=(record or {}).get("source_guild_id"),
+            dims={
+                "kind": (record or {}).get("kind") or "unknown",
+                "platform": platform.value,
+                "ok": ok,
+            },
+        )
+
     async def mark_delivered(self, record: Optional[Dict[str, Any]],
                              message: Optional[discord.Message] = None,
                              platform: Platform = Platform.DISCORD) -> None:
@@ -219,6 +235,7 @@ class NotificationService:
             channel_id=getattr(getattr(message, "channel", None), "id", None),
             message_id=getattr(message, "id", None),
         )
+        self._count_delivery(record, platform, True)
 
     async def mark_failed(self, record: Optional[Dict[str, Any]],
                           error: Optional[str] = None,
@@ -227,6 +244,7 @@ class NotificationService:
         if not record:
             return
         await self._mark(record["id"], platform, DeliveryStatus.FAILED, error=error)
+        self._count_delivery(record, platform, False)
 
     # ------------------------------------------------------------------ #
     # Sending
@@ -372,10 +390,12 @@ class NotificationService:
         except discord.Forbidden as exc:
             await self._mark(notification_id, Platform.DISCORD, DeliveryStatus.FAILED,
                              error="forbidden")
+            self._count_delivery(record, Platform.DISCORD, False)
             return DeliveryResult(notification_id, None, DeliveryStatus.FAILED, exc)
         except discord.HTTPException as exc:
             await self._mark(notification_id, Platform.DISCORD, DeliveryStatus.FAILED,
                              error=str(exc))
+            self._count_delivery(record, Platform.DISCORD, False)
             return DeliveryResult(notification_id, None, DeliveryStatus.FAILED, exc)
 
         # ``message`` is always a Message from a real Discord send; guard
@@ -386,6 +406,7 @@ class NotificationService:
             channel_id=getattr(getattr(message, "channel", None), "id", None),
             message_id=getattr(message, "id", None),
         )
+        self._count_delivery(record, Platform.DISCORD, True)
         # The mail and the dashboard are served by the backend from the stored
         # row; the bot only declares them as targeted and leaves them pending.
         return DeliveryResult(notification_id, message, DeliveryStatus.SENT, None)
