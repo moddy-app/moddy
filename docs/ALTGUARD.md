@@ -260,7 +260,8 @@ account rejoining) — a resync never resurrects a banned account.
 
 ## Commands
 
-### Server side — `/altguard` (requires **Manage Roles**)
+### Server side — `/altguard` (requires **Kick Members** — the same Discord
+permission that covers approving/rejecting membership applications)
 
 | Command | Effect |
 |---|---|

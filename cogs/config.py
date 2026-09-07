@@ -386,6 +386,7 @@ class Config(commands.Cog):
         description="Configure server modules"
     )
     @app_commands.guild_only()
+    @app_commands.default_permissions(manage_guild=True)
     @app_commands.describe(
         incognito="Make response visible only to you"
     )
