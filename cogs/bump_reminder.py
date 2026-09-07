@@ -221,6 +221,10 @@ class BumpReminder(commands.Cog):
         for entry in entries:
             await self._post(guild, spec, entry, state, locale,
                              bumper=bumper, bumped_at=bumped_at, late_by=late_by)
+            stats = getattr(self.bot, "stats", None)
+            if stats is not None:
+                stats.incr("bump.reminded", guild_id=guild.id,
+                           dims={"bot": state['bot_key']})
 
     async def _post(self, guild: discord.Guild, spec, entry: Dict[str, Any],
                     state: Dict[str, Any], locale: str, *,

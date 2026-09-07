@@ -616,6 +616,7 @@ class StarboardModule(ModuleBase):
 
             # Track it for future updates/removal
             self.starboard_messages[original_message.id] = starboard_msg.id
+            self.count("starred")
 
             logger.info(f"Created starboard entry for {original_message.id}")
         except discord.Forbidden:

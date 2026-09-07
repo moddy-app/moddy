@@ -134,6 +134,12 @@ class LogService:
         """Render once and queue the result for each destination channel."""
         if not channel_ids:
             return
+        # One counter per *entry*, not per destination: a server sending the
+        # same event to three channels logged one thing (see docs/STATS.md).
+        stats = getattr(self.bot, "stats", None)
+        if stats is not None:
+            stats.incr("log.dispatched", guild_id=getattr(module, "guild_id", None),
+                       dims={"category": entry.event.split(".", 1)[0]})
         if not module.attach_transcripts:
             entry.files.clear()
 

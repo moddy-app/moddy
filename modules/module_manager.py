@@ -65,6 +65,21 @@ class ModuleBase(ABC):
         self.config: Dict[str, Any] = {}
         self.enabled = False
 
+    def count(self, action: str, value: int = 1) -> None:
+        """Record that this module actually *did* something.
+
+        Being enabled and being used are different questions, and only the
+        second one says whether a feature earns its place. Synchronous and
+        unfailing, like every statistic (see docs/STATS.md).
+        """
+        stats = getattr(self.bot, "stats", None)
+        if stats is None:
+            return
+        stats.incr(
+            "module.action", guild_id=self.guild_id, value=value,
+            dims={"module": self.MODULE_ID, "action": action},
+        )
+
     @abstractmethod
     async def load_config(self, config_data: Dict[str, Any]) -> bool:
         """

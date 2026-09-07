@@ -817,6 +817,21 @@ class AutomodModule(ModuleBase):
         if not decision.actions:
             return
 
+        # Counted here — after the barème settled the sanction, before shadow
+        # mode short-circuits — so a server running in simulation produces the
+        # same statistics as one applying them (see docs/STATS.md).
+        self.count("decision")
+        heaviest = next(
+            (a for a in ("ban", "mute", "warn", "delete") if a in decision.actions),
+            decision.actions[0],
+        )
+        stats = getattr(self.bot, "stats", None)
+        if stats is not None:
+            stats.incr(
+                "automod.decision", guild_id=self.guild_id,
+                dims={"sanction": heaviest, "dry_run": bool(self.dry_run)},
+            )
+
         # Shadow mode (session 3): run the whole funnel + barème but apply NOTHING
         # — no delete, no sanction, no case, no DM. Post a SIMULATION card with
         # annotation buttons that feed the eval corpus instead.

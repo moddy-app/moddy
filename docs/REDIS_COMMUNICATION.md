@@ -110,6 +110,7 @@ the event was produced: task queues, command/reply RPC, notification feeds.
 | `task:seen:{task_id}` | Bot | Anti-replay marker for `moddy:tasks`, `SET NX EX 600` ([TASK_SIGNATURE.md](TASK_SIGNATURE.md)) |
 | `feeds:heartbeat` | `moddy-feeds` service | Health check, TTL ~90s |
 | `quota:{scope}:{key}:{type}:{date}` | Bot (`gateway/quota.py`) | Daily API quota counters |
+| `stats:hll:{metric}:{scope}:{id}:{day}` | Bot (`stats/service.py`) | HyperLogLog of distinct people per day, TTL 3 days. Never holds a list of ids — the daily rollup reads `PFCOUNT` and stores one number ([STATS.md](STATS.md)) |
 
 ---
 
@@ -172,6 +173,10 @@ order live in [TASK_SIGNATURE.md](TASK_SIGNATURE.md).
   integration (not `feeds:notifications`); don't reuse it for anything else.
 - `bot:*` — bot-only cache keys with no cross-service meaning (per
   `docs/BACKEND-INTEGRATION.md` §9).
+- `stats:*` — the statistics system's own keys ([STATS.md](STATS.md)). Counters
+  do **not** live here: they are aggregated in the bot's memory and flushed
+  straight to Postgres, so a Redis outage costs only the distinct-people
+  counts.
 - JSON payloads on Pub/Sub and Streams commonly carry a `type`/`action` field
   to dispatch on, and a `request_id` when a reply is expected. Discord IDs
   travel as strings in stream fields (`XADD` only accepts strings) — always

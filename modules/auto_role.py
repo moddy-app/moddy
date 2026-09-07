@@ -228,6 +228,7 @@ class AutoRoleModule(ModuleBase):
             # Attribue les rôles si il y en a
             if roles_to_add:
                 await member.add_roles(*roles_to_add, reason="Auto Role")
+                self.count("roles_added", len(roles_to_add))
                 role_names = ", ".join([role.name for role in roles_to_add])
                 logger.info(
                     f"✅ Added {len(roles_to_add)} auto role(s) to {member.name} ({'bot' if member.bot else 'member'}) "

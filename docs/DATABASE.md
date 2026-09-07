@@ -782,6 +782,62 @@ redémarrage en plein balayage.
 
 See → [BUMP_REMINDER.md](BUMP_REMINDER.md).
 
+### 20. Tables de statistiques
+
+Cinq tables, un seul principe : **agréger avant d'écrire**. Un événement
+fréquent (une commande, un appel IA, un log) n'écrit jamais de ligne — il est
+compté en mémoire par `bot.stats` et un flush périodique en enregistre le
+total. Dix mille commandes dans une journée sur un serveur coûtent une ligne,
+pas dix mille. Voir → [STATS.md](STATS.md).
+
+**`stats_counters`** — les compteurs pré-agrégés, partitionnée par mois.
+
+- `metric` (TEXT) — la clé déclarée dans `stats/registry.py`
+- `scope` (TEXT) / `scope_id` (BIGINT) — `global` (0), `guild` ou `user`
+- `bucket` (TIMESTAMPTZ) — début d'heure ou de jour, UTC
+- `dims` (JSONB) — les dimensions déclarées par la métrique. C'est ce qui rend
+  le système extensible **sans colonne** : ajouter une statistique ne demande
+  aucune migration
+- `dims_hash` (BYTEA) — SHA-1 du JSON canonique, pour que la clé primaire reste
+  courte et de taille fixe quelles que soient les dimensions
+- `value` (BIGINT) — l'argent est stocké en millionièmes de dollar (`ai.cost`)
+- PRIMARY KEY `(metric, scope, scope_id, bucket, dims_hash)`
+
+L'écriture est une **addition** (`ON CONFLICT DO UPDATE SET value = value +
+EXCLUDED.value`) : un flush rejoué après un commit raté ne double rien, et deux
+process ajoutent simplement leurs totaux à la même ligne. Le partitionnement
+rend la purge gratuite — un `DROP TABLE` au lieu d'un `DELETE` qui bloque les
+écrivains et laisse du bloat.
+
+**`stats_snapshots`** — les jauges (« combien y en a-t-il »), une photo par
+jour : nombre de serveurs, de membres, adoption de chaque module, utilisateurs
+distincts. Quelques dizaines de lignes par jour, gardées à vie : c'est la
+courbe d'évolution du bot. PRIMARY KEY `(metric, scope, scope_id, day, dims)`,
+écriture par remplacement — relancer le rollup ne double rien.
+
+**`guild_events`** — chaque arrivée et chaque départ de Moddy (`event` =
+`join` | `leave`), avec `member_count`, `owner_id`, `guild_age`, `lifetime` et
+`source`. La **rétention se calcule** depuis cette table (cohortes par mois
+d'ajout), elle ne se stocke pas.
+
+**`guild_installs`** — d'où vient une installation. La **seule table de stats
+que le bot ne remplit pas seul** : le backend écrit la ligne au callback OAuth2
+(lui seul voit les UTM du `state`), le bot pose `confirmed_at` à
+`on_guild_join`. `guild_id` (PK), `installer_id`, `source`, `utm` (JSONB),
+`first_seen_at`, `confirmed_at`. Contrat exact → [STATS.md](STATS.md) §6.
+
+**`stats_events`** — la fenêtre brute : une ligne par occurrence pour les rares
+métriques marquées `raw=True`, partitionnée par jour et supprimée à 14 jours.
+L'assurance contre les questions non anticipées.
+
+**Vues de lecture** (dashboard) : `stats_guild_daily_v` et
+`stats_global_daily_v` exposent des chiffres journaliers sans le
+partitionnement ni le `dims_hash`.
+
+**Repository:** `db/repositories/stats.py` — `StatsRepository`
+
+---
+
 ---
 
 ## Système d'attributs et de données

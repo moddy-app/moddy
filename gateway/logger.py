@@ -37,15 +37,24 @@ class GatewayLogger:
     2. Buffered PG writes via Redis list flushed by a background task.
     """
 
-    def __init__(self, redis, pool, config: GatewayConfig, tech_logger=None):
+    def __init__(self, redis, pool, config: GatewayConfig, tech_logger=None,
+                 stats=None):
         self._redis = redis
         self._pool = pool
         self._config = config
         self._tech_logger = tech_logger
+        # bot.stats, when the gateway runs inside the bot. api_calls stays the
+        # fine-grained truth; these counters are the same facts pre-aggregated
+        # per guild and per day, so "what did this server cost us in August"
+        # is a three-row read instead of a scan (see docs/STATS.md).
+        self._stats = stats
         self._flush_task: Optional[asyncio.Task] = None
 
     def set_tech_logger(self, tech_logger) -> None:
         self._tech_logger = tech_logger
+
+    def set_stats(self, stats) -> None:
+        self._stats = stats
 
     def start(self) -> None:
         self._flush_task = asyncio.create_task(
@@ -108,6 +117,8 @@ class GatewayLogger:
             "ts": datetime.now(timezone.utc).isoformat(),
         }
 
+        self._count(entry)
+
         # Push to Redis buffer (non-blocking)
         try:
             await self._redis.rpush(self._config.log_buffer_key, json.dumps(entry))
@@ -120,6 +131,33 @@ class GatewayLogger:
                 self._safe_webhook(entry, request_payload, response_data),
                 name="gateway-webhook-log",
             )
+
+    def _count(self, entry: dict) -> None:
+        """Fold one call into the daily counters. Synchronous and unfailing."""
+        if self._stats is None:
+            return
+        try:
+            dims = {
+                "provider": entry["provider"],
+                "model": entry.get("model") or "none",
+                "call_type": entry["call_type"],
+            }
+            guild_id = entry.get("guild_id")
+            self._stats.incr("ai.calls", guild_id=guild_id,
+                             dims={**dims, "ok": entry["success"]})
+            tokens = entry.get("tokens_total") or 0
+            if tokens:
+                self._stats.incr("ai.tokens", guild_id=guild_id,
+                                 value=tokens, dims=dims)
+            cost = entry.get("estimated_cost")
+            if cost:
+                # Stored in millionths of a dollar: the counter column is a
+                # BIGINT, and a float would not survive the additive upsert.
+                self._stats.incr("ai.cost", guild_id=guild_id,
+                                 value=int(round(float(cost) * 1_000_000)),
+                                 dims=dims)
+        except Exception as exc:
+            logger.debug("Gateway stats counting failed: %s", exc)
 
     async def _safe_webhook(
         self,

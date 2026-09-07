@@ -159,6 +159,13 @@ class ModdyBot(ModdyFrameworkBot):
         self.support_requests = SupportRequestService(self)
         from gateway import Gateway
         self.gateway = Gateway()
+        from stats import StatsRollup, StatsService
+        # Statistics. `incr()` is synchronous and never raises: it adds to an
+        # in-memory aggregate that a background flush carries to Postgres once
+        # a minute, so measuring something can never slow down or break the
+        # feature being measured (see docs/STATS.md).
+        self.stats = StatsService(self)
+        self.stats_rollup = StatsRollup(self)
         from services.heartbeat import HeartbeatClient
         # Dead man's switch push to the Moddy Health Monitor (docs/HEALTH_MONITOR.md).
         # Started in on_ready (a bot that was never ready has nothing to report).
@@ -1048,6 +1055,10 @@ class ModdyBot(ModdyFrameworkBot):
         else:
             logger.warning("[WARN] REDIS_URL not set - Redis features disabled")
 
+        # Start the statistics flush loop (needs the DB pool; Redis is
+        # optional — without it only the distinct-people counts are lost).
+        self.stats.start()
+
         # Initialize API gateway (requires Redis + DB pool)
         logger.info("Starting API gateway...")
         try:
@@ -1055,6 +1066,7 @@ class ModdyBot(ModdyFrameworkBot):
                 redis=self.redis,
                 pool=self.db.pool if self.db else None,
                 tech_logger=getattr(self, "tech_logger", None),
+                stats=self.stats,
             )
             logger.info("API gateway ready")
         except Exception as e:
@@ -1662,6 +1674,10 @@ class ModdyBot(ModdyFrameworkBot):
         # loop with a dead gateway connection has nothing worth reporting.
         self.heartbeat.start()
         self.betterstack_heartbeat.start()
+
+        # Daily statistics pass: snapshots, rollup, partition maintenance.
+        # Here rather than in setup_hook because it photographs self.guilds.
+        self.stats_rollup.start()
 
     async def _is_bot_healthy(self) -> bool:
         """Whether the bot is healthy enough to ping the Better Stack
@@ -2362,6 +2378,13 @@ class ModdyBot(ModdyFrameworkBot):
 
         # Wait a bit for tasks to finish
         await asyncio.sleep(0.1)
+
+        # Stop the statistics service (flushes the pending aggregate)
+        try:
+            await self.stats_rollup.stop()
+            await self.stats.stop()
+        except Exception as e:
+            logger.error(f"[FAIL] Error stopping the stats service: {e}")
 
         # Stop API gateway (flushes log buffer)
         await self.gateway.stop()

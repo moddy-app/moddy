@@ -97,7 +97,7 @@ class Gateway:
         self.translation = None
         self.transcription = None
 
-    async def start(self, redis, pool, tech_logger=None) -> None:
+    async def start(self, redis, pool, tech_logger=None, stats=None) -> None:
         """Boot the gateway. Call after Redis + DB pool are ready."""
         from .quota import QuotaManager
         from .ratelimit import RateLimiter
@@ -117,7 +117,7 @@ class Gateway:
             failure_threshold=self.config.cb_failure_threshold,
             cooldown=self.config.cb_cooldown,
         )
-        self._gw_logger = GatewayLogger(redis, pool, self.config, tech_logger)
+        self._gw_logger = GatewayLogger(redis, pool, self.config, tech_logger, stats)
 
         if self.config.openai_api_key:
             try:

@@ -43,6 +43,7 @@ moddy/
 │   ├── emoji.py               #   Emoji management
 │   ├── reminder.py            #   /reminder command
 │   ├── bump_reminder.py       #   Bump Reminder listener + 30s sweeper loop
+│   ├── stats_events.py        #   Statistics emitters (commands, members, guild joins)
 │   ├── saved_messages.py      #   Message bookmarking
 │   ├── translate.py           #   /translate (DeepL)
 │   ├── text_tools.py          #   /fix, /rephrase, /summarize (OpenAI, Modal V2 + context menus)
@@ -113,6 +114,11 @@ moddy/
 │                              #   invites, assets, scheduled_events, stage, polls,
 │                              #   integrations, automod, moderation
 │
+├── stats/                     # Statistics (aggregate before writing)
+│   ├── registry.py            #   Every metric declared once (no migration to add one)
+│   ├── service.py             #   bot.stats — incr()/observe_unique(), 60s flush to PG
+│   └── rollup.py              #   Daily snapshots, hourly→daily ageing, partition purge
+│
 ├── notifications/             # Centralized notifications (EVERY DM goes through it)
 │   ├── models.py              #   Uniform payload + source + service registry + hashing
 │   ├── render.py              #   Payload → Components V2 + `sent by` attribution line
@@ -182,6 +188,8 @@ moddy/
 │       ├── support_requests.py #  Bug reports / config-help requests + their exchange
 │       ├── social.py          #   Social notifications subscriptions
 │       ├── bump.py            #   Pending bump reminders (bump_reminders)
+│       ├── stats.py           #   Statistics: counters, snapshots, guild lifecycle,
+│       │                      #   acquisition (guild_installs), partitions
 │       └── _utils.py
 │
 ├── utils/                     # Utility modules
@@ -301,6 +309,7 @@ moddy/
     ├── test_bump_reminder.py  #   Bump detection (real payloads + refusals), config, cards, i18n
     ├── test_logs.py           #   Server logs: registry, routing, rendering, delivery
     ├── test_logs_i18n.py      #   Server logs: i18n completeness on the 5 locales
+    ├── test_stats.py          #   Statistics: registry guards, aggregation, flush, rollup
     ├── test_heartbeat.py      #   Health Monitor heartbeat: payload, lifecycle, status decisions
     └── test_staff_user_command.py # /team user: sections, personal-data gate, i18n (5 locales)
 ```
@@ -503,6 +512,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/GLOBAL_SANCTIONS.md](docs/GLOBAL_SANCTIONS.md) | **Global sanctions** — Moddy-team warn / limited / suspended, on users *and* servers |
 | [docs/TECHNICAL_LOGS.md](docs/TECHNICAL_LOGS.md) | Internal technical staff logs (webhook-based, per-event channels) |
 | [docs/HEALTH_MONITOR.md](docs/HEALTH_MONITOR.md) | **Health Monitor heartbeats** — dead man's switch push to `moddy-health-monitor` (`HM_URL`/`HM_INGEST_TOKEN`) and the Better Stack cron ping (`BETTERSTACK_HEARTBEAT_URL`) |
+| [docs/STATS.md](docs/STATS.md) | **Statistics** — recording anything (`bot.stats`), the metric registry, what is stored and for how long, the growth/retention/acquisition queries, the backend UTM contract |
 | [docs/DATABASE.md](docs/DATABASE.md) | Database schema, queries, repository pattern |
 
 ### Infrastructure
