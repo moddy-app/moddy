@@ -59,7 +59,7 @@ class AltGuard(commands.Cog):
         name="altguard",
         description="Manage AltGuard verifications on this server",
         guild_only=True,
-        default_permissions=discord.Permissions(manage_roles=True),
+        default_permissions=discord.Permissions(kick_members=True),
     )
 
     def __init__(self, bot):
@@ -305,7 +305,7 @@ class AltGuard(commands.Cog):
                                member: discord.Member, *, verify: bool):
         locale = i18n.get_user_locale(interaction)
 
-        if not interaction.user.guild_permissions.manage_roles:
+        if not interaction.user.guild_permissions.kick_members:
             await interaction.response.send_message(
                 view=create_error_message(
                     t('modules.altguard.errors.no_perms.title', locale=locale),
