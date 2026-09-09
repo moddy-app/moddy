@@ -1,26 +1,29 @@
 # Announcement Translation
 
 > Support-server only. Every announcement posted in the Moddy support server's
-> announcement channels is translated into the five languages Moddy speaks, once,
-> and offered behind one flag button per language.
+> announcement channels is translated once into every language Moddy speaks
+> except its own, and offered behind one flag button per language.
 
 ---
 
 ## What it does
 
 1. Somebody posts a message in one of the watched channels.
-2. Moddy sends the message to DeepL **once per language** (at most five calls,
-   and one fewer when the announcement is already written in one of them).
+2. Moddy sends the message to DeepL **once per language other than its own**.
+   DeepL reports the detected source language with the first translation, so an
+   announcement written in English is never translated into English.
 3. The whole set is stored in `announcement_translations`, keyed by the
    announcement's message id.
-4. Moddy replies to the announcement with a container holding **only** five
-   buttons — flag + language name written in that language.
+4. Moddy replies to the announcement with a container holding **only** buttons
+   — flag + language name written in that language, one per stored translation.
+   The announcement's own language gets no button: offering to translate a
+   message into the language it is already written in is noise.
 5. Clicking a button shows the stored translation ephemerally, as plain text in
    a container: no title, no code block, no attribution line.
 
 Translating at post time rather than on click is the point of the design: an
-announcement read by a thousand people costs five DeepL calls, not a thousand.
-A click is an indexed primary-key read.
+announcement read by a thousand people costs four or five DeepL calls, not a
+thousand. A click is an indexed primary-key read.
 
 ---
 
@@ -70,9 +73,9 @@ CREATE TABLE announcement_translations (
 );
 ```
 
-One row per announcement, upserted. A language whose DeepL call failed is simply
-absent from `translations` — and gets no button, rather than a button that
-apologises.
+One row per announcement, upserted. The detected source language is **not** a
+key of `translations`, and neither is a language whose DeepL call failed: a
+missing key simply means no button, rather than a button that apologises.
 
 ---
 
@@ -91,9 +94,11 @@ already read.
 ## Adding a language
 
 Add an entry to `LANGUAGES` in `cogs/announcement_translation.py`
-(`code → (DeepL target, flag, label in that language)`) and extend the button's
-`template=` alternation to accept the new code. Five buttons is the per-ActionRow
-maximum, so a sixth language needs a second row in `build_view()`.
+(`code → (DeepL target, flag, label in that language)`), map DeepL's source code
+for it in `_SOURCE_TO_CODE`, and extend the button's `template=` alternation to
+accept the new code. Five buttons is the per-ActionRow maximum — with the source
+language dropped, five languages fit; a sixth needs a second row in
+`build_view()`.
 
 The labels are deliberately **not** translated: a button offering German reads
 "Deutsch" whoever is looking at it, which is the only way a reader who does not

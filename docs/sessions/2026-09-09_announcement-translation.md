@@ -3,14 +3,18 @@
 ## What was done
 
 Announcements posted in the two support-server announcement channels are now
-translated automatically into the five languages Moddy speaks, and offered under
-the announcement as one flag button per language.
+translated automatically into every language Moddy speaks except the one they
+are written in, and offered under the announcement as one flag button per
+language.
 
-- A message posted in a watched channel is sent to DeepL **once per language**
-  (through the gateway), and the full set is stored in a new
+- A message posted in a watched channel is sent to DeepL **once per language
+  other than its own** (through the gateway), and the set is stored in a new
   `announcement_translations` table keyed by the announcement's message id.
-- Moddy replies with a container holding **only** the five buttons (flag +
-  language name written in that language, e.g. `🇩🇪 Deutsch`).
+  DeepL reports the detected source language with the first translation, so an
+  English announcement is never translated into English.
+- Moddy replies with a container holding **only** the buttons (flag + language
+  name written in that language, e.g. `🇩🇪 Deutsch`) — one per stored
+  translation, so the announcement's own language gets no button.
 - A click reads the stored row and answers ephemerally with the translated text
   alone, in a container: no title, no code block, no attribution line.
 
@@ -42,9 +46,10 @@ number of readers or clicks — the requirement that drove the whole shape.
 - **Button labels are not i18n'd.** A German reader looking at a French
   announcement finds their language because the button says "Deutsch", not
   because it was translated into the language they cannot read.
-- **A language whose DeepL call failed gets no button** rather than a button
-  that apologises on click; the error string exists only for a row that has gone
-  missing.
+- **The source language gets no button**, and neither does a language whose
+  DeepL call failed — a missing key in the stored set simply means no button,
+  rather than a button that apologises on click. The error string exists only
+  for a row that has gone missing.
 - Mentions are neutralised before translation, so DeepL sees words and a
   translated copy cannot ping anyone.
 

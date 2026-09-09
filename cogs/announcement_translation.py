@@ -198,11 +198,14 @@ class AnnouncementTranslation(commands.Cog):
     async def _translate_all(
         self, text: str, *, user_id: int
     ) -> tuple[Dict[str, str], Optional[str]]:
-        """Translate one announcement into every language. One call per language.
+        """Translate one announcement into every language but its own.
 
-        The language the announcement is already written in is not sent to
-        DeepL: once the first call has reported the detected source, that
-        language is filled in with the original text.
+        DeepL reports the detected source language with the first translation,
+        so from the second call on the announcement's own language is skipped —
+        and if it happened to be the language of that first call, its result is
+        dropped. An announcement written in English therefore ends up with no
+        English entry, hence no English button: offering to translate a message
+        into the language it is already written in is noise.
         """
         from gateway import QuotaTarget
 
@@ -211,7 +214,6 @@ class AnnouncementTranslation(commands.Cog):
 
         for code, (target, _flag, _label) in LANGUAGES.items():
             if source_code == code:
-                translations[code] = text
                 continue
             try:
                 result = await self.bot.gateway.translation.translate(
@@ -231,6 +233,10 @@ class AnnouncementTranslation(commands.Cog):
             if source_code is None:
                 detected = (result.get("detected_source_language") or "").upper()
                 source_code = _SOURCE_TO_CODE.get(detected.split("-")[0])
+                # The very first call is the one that can land on the source
+                # language itself — DeepL simply handed the text back.
+                if source_code == code:
+                    translations.pop(code, None)
 
         return translations, source_code
 
