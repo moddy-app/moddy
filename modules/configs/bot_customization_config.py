@@ -40,6 +40,7 @@ from modules.bot_customization import (
     BotCustomizationModule,
     CustomizationError,
     color_to_hex,
+    has_identity_access,
     parse_hex_color,
     style_is_empty,
 )
@@ -275,8 +276,7 @@ async def _submit_identity(interaction: discord.Interaction, *, nickname: str,
     locale = i18n.get_user_locale(interaction)
     await interaction.response.defer()
 
-    from utils.subscription import is_guild_premium
-    if not await is_guild_premium(bot, interaction.guild_id):
+    if not await has_identity_access(bot, interaction.guild_id):
         await interaction.followup.send(
             view=create_error_message(
                 t('modules.bot_customization.premium.title', locale=locale),
@@ -405,11 +405,9 @@ class BotCustomizationConfigView(BaseView):
     @classmethod
     async def create(cls, bot, guild_id: int, user_id: int, locale: str
                      ) -> "BotCustomizationConfigView":
-        """Async factory — premium state and config must be read before render."""
-        from utils.subscription import is_guild_premium
-
+        """Async factory — identity-access state and config must be read before render."""
         config = await bot.module_manager.get_module_config(guild_id, MODULE_ID)
-        premium = await is_guild_premium(bot, guild_id)
+        premium = await has_identity_access(bot, guild_id)
         return cls(bot, guild_id, user_id, locale, config, premium)
 
     # ----------------------------------------------------------------- #
@@ -605,8 +603,7 @@ class BotCustomizationConfigView(BaseView):
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
 
-        from utils.subscription import is_guild_premium
-        if not await is_guild_premium(bot, interaction.guild_id):
+        if not await has_identity_access(bot, interaction.guild_id):
             await interaction.response.send_message(
                 view=create_error_message(
                     t('modules.bot_customization.premium.title', locale=locale),

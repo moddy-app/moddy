@@ -3924,6 +3924,16 @@
           "done": "Solicitação de início de teste enviada para {id}."
         }
       },
+      "customization": {
+        "title": "Acesso ao Bot Customization",
+        "granted": "{name} ({id}) agora pode usar os campos de identidade do Bot Customization (apelido, avatar, banner, bio) sem assinatura premium.",
+        "revoked": "{name} ({id}) não tem mais acesso ao Bot Customization concedido pela equipe. Assinantes premium não são afetados.",
+        "not_present": "O Moddy não está atualmente neste servidor; a alteração é salva e será aplicada se ele entrar.",
+        "not_present_short": "servidor desconhecido",
+        "list_title": "Acesso ao Bot Customization",
+        "empty": "Nenhum servidor tem atualmente acesso ao Bot Customization concedido pela equipe.",
+        "total": "{count} servidor(es)"
+      },
       "redirect": {
         "modal_add": "Adicionar Redirecionamento",
         "modal_edit": "Editar Redirecionamento",

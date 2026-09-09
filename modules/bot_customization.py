@@ -237,6 +237,20 @@ def to_data_uri(data: bytes, content_type: str) -> str:
     return f"data:{mime};base64,{encoded}"
 
 
+async def has_identity_access(bot, guild_id: int) -> bool:
+    """Return True if this guild may use the identity fields (nickname/avatar/
+    banner/bio) — either through an active premium subscription, or through
+    the ``BOT_CUSTOMIZATION`` guild attribute a staff member granted with
+    ``/manage customization grant``. The free name style is never gated.
+    """
+    from utils.subscription import is_guild_premium
+    if await is_guild_premium(bot, guild_id):
+        return True
+    if not bot.db:
+        return False
+    return await bot.db.has_attribute("guild", guild_id, "BOT_CUSTOMIZATION")
+
+
 async def download_image(url: str) -> Tuple[bytes, str]:
     """Fetch an image URL, enforcing the type and size guard rails."""
     try:
@@ -508,8 +522,6 @@ class BotCustomizationModule(ModuleBase):
         explicit ``null`` resets it. Premium fields are re-checked here — the
         bot never trusts the dashboard on entitlement.
         """
-        from utils.subscription import is_guild_premium
-
         actor_id = payload.get("actor_id")
         try:
             actor_id = int(actor_id) if actor_id is not None else None
@@ -520,7 +532,7 @@ class BotCustomizationModule(ModuleBase):
         wants_premium = any(
             k in payload for k in ("nickname", "bio", "avatar_url", "banner_url")
         )
-        if wants_premium and not await is_guild_premium(self.bot, self.guild_id):
+        if wants_premium and not await has_identity_access(self.bot, self.guild_id):
             return {"ok": False, "error": "premium_required"}
 
         if "nickname" in payload:
