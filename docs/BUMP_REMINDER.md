@@ -379,6 +379,26 @@ objects — never `roles=True` — so:
   ping mode**, and stays silent unless the mode put them in `allowed_mentions`.
   The credit survives; the unwanted ping cannot happen.
 
+#### When the mention renders but nobody is notified
+
+`allowed_mentions` asks; Discord decides. A role that is **not mentionable** is
+only notified when Moddy holds *Mention @everyone, @here and All Roles* in that
+channel — otherwise Discord drops the ping from the delivered message, returns
+no error, and still renders the tag in blue. The reminder then looks perfect and
+buzzes nobody.
+
+That case is now named in the logs rather than left to guesswork:
+
+- before sending, `unnotifiable_roles()` reports every configured role that is
+  neither mentionable nor covered by the permission;
+- after sending, the delivered message's own `raw_role_mentions` is compared to
+  what was asked, and anything Discord refused is logged as dropped.
+
+So `Discord dropped 1 role ping(s)` in the logs means the server has to make the
+role mentionable (or grant Moddy that permission). No such line, and the ping did
+leave — a member not seeing it is then a client-side notification setting
+(*Suppress role @mentions*, a muted channel, or simply not having the role).
+
 ### The three ping modes
 
 | Mode | The last bumper is mentioned |

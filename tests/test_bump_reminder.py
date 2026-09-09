@@ -39,6 +39,13 @@ from bumpreminder import (
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 LOCALES = ("fr", "en-US", "es-ES", "pt-BR", "de")
 
+
+def _async_return(value):
+    """An awaitable stub that answers `value` to any call."""
+    async def call(*args, **kwargs):
+        return value
+    return call
+
 PAYLOADS = json.loads((ROOT / "tests" / "data" / "bump_payloads.json").read_text(encoding="utf-8"))
 
 #: Captured **refusals** — a real cooldown reply, per directory. Far more
@@ -823,6 +830,74 @@ class TestComponents:
         assert allowed.roles == [alive]
         assert allowed.everyone is False
         assert allowed.users == []
+
+    def test_the_optin_button_rebuilds_a_complete_card(self, monkeypatch):
+        """Clicking the button must produce a card, not an error report.
+
+        The callback rebuilds the thank-you from scratch, so every argument the
+        card requires has to be restated there — a new one added to
+        build_thanks_card and not passed here raises at click time. The failure
+        is invisible to a caller: @_guarded routes it to the error handler, so
+        the assertion is that edit_message was actually reached.
+        """
+        import asyncio
+
+        import utils.bump_views as bump_views
+        from utils.bump_views import BumpOptInButton
+        from utils.i18n import i18n
+        i18n.load_translations()
+
+        monkeypatch.setattr(bump_views, "card_locale", _async_return("fr"))
+
+        due = datetime.now(timezone.utc) + timedelta(hours=2)
+        db = SimpleNamespace(
+            get_guild_bump_states=_async_return({
+                "disboard": {"bumper_id": 42, "due_at": due,
+                             "sent": False, "opt_in": False},
+            }),
+            set_bump_opt_in=_async_return(None),
+        )
+
+        edited = {}
+
+        async def edit_message(**kwargs):
+            edited.update(kwargs)
+
+        interaction = SimpleNamespace(
+            user=SimpleNamespace(id=42),
+            guild=SimpleNamespace(name="UnitedCord"),
+            guild_id=1350867709772042362,
+            locale="fr",
+            client=SimpleNamespace(db=db),
+            response=SimpleNamespace(edit_message=edit_message),
+            followup=SimpleNamespace(send=_async_return(None)),
+        )
+
+        item = BumpOptInButton("disboard", 42)
+        asyncio.run(item.callback(interaction))
+
+        assert edited, "the click produced no card — the rebuild raised"
+        body = "\n".join(
+            child.content
+            for child in edited["view"].children[0].children
+            if hasattr(child, "content"))
+        assert "UnitedCord" in body, "the rebuilt card lost the server name"
+
+    def test_a_role_that_cannot_notify_is_reported(self):
+        """The silent failure this feature could not previously see.
+
+        Discord renders a non-mentionable role's tag and drops the ping unless
+        the sender may mention every role, so the channel looks right either
+        way. The helper is what lets the reminder say which roles went silent.
+        """
+        from utils.bump_views import unnotifiable_roles
+
+        open_role = SimpleNamespace(id=1, name="Bump", mentionable=True)
+        closed = SimpleNamespace(id=2, name="Bump", mentionable=False)
+
+        assert unnotifiable_roles([open_role, closed], False) == [closed]
+        # Mention All Roles overrides the flag: everything notifies.
+        assert unnotifiable_roles([open_role, closed], True) == []
 
     def test_the_optin_button_only_appears_when_it_can_be_used(self):
         from utils.bump_views import BumpOptInButton, build_thanks_card

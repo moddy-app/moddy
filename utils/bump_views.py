@@ -143,9 +143,12 @@ class BumpOptInButton(
 
         public_locale = await card_locale(interaction)
         spec = bot_by_key(self.bot_key)
+        # The card is rebuilt from scratch on every click, so it has to restate
+        # everything the original one was given — the server's name included.
         view = build_thanks_card(
             spec, self.user_id, state["due_at"],
             locale=public_locale, ping_mode="button", armed=armed,
+            guild_name=interaction.guild.name if interaction.guild else "",
         )
         await interaction.response.edit_message(view=view, allowed_mentions=NO_MENTIONS)
         await interaction.followup.send(
@@ -270,3 +273,19 @@ def reminder_mentions(guild: discord.Guild, role_ids: Sequence[int],
     users = [bumper] if (mention_bumper and bumper is not None) else []
     allowed = discord.AllowedMentions(everyone=False, roles=roles, users=users)
     return roles, allowed
+
+
+def unnotifiable_roles(roles: Sequence[discord.Role],
+                       can_mention_everyone: bool) -> List[discord.Role]:
+    """The roles Discord will render but refuse to notify.
+
+    A role that is **not mentionable** only pings when the sender may mention
+    every role in that channel. Discord enforces that by dropping the mention
+    from the delivered message — no error, no rejected request, and the tag
+    still renders in blue. So a reminder can look perfect in the channel and
+    notify nobody, which is indistinguishable from a working one unless
+    something says otherwise. That is what this list is for.
+    """
+    if can_mention_everyone:
+        return []
+    return [role for role in roles if not role.mentionable]

@@ -38,6 +38,7 @@ from utils.bump_views import (
     build_reminder_card,
     build_thanks_card,
     reminder_mentions,
+    unnotifiable_roles,
 )
 from utils.emojis import ROCKET_LAUNCH
 from utils.i18n import t
@@ -252,6 +253,17 @@ class BumpReminder(commands.Cog):
         roles, allowed = reminder_mentions(
             guild, entry['role_ids'], bumper, mention_bumper)
 
+        # A reminder nobody is notified about is the one failure this feature
+        # cannot see: Discord drops the ping and still renders the tag, so the
+        # channel looks right. Name the reason before sending.
+        muted = unnotifiable_roles(roles, perms.mention_everyone)
+        if muted:
+            logger.warning(
+                f"Bump reminder in guild {guild.id} channel {channel.id} will not "
+                f"notify {', '.join(f'{r.name} ({r.id})' for r in muted)}: the role "
+                "is not mentionable and Moddy lacks Mention All Roles here"
+            )
+
         view = build_reminder_card(
             spec, locale=locale,
             role_ids=[role.id for role in roles],
@@ -274,6 +286,17 @@ class BumpReminder(commands.Cog):
             attribution=False,
         )
         if result.delivered:
+            # `raw_role_mentions` is Discord's own answer: the roles it accepted
+            # to notify. Comparing it to what was asked turns "the ping did not
+            # arrive" from a guess into a fact readable in the logs.
+            pinged = set(getattr(result.message, "raw_role_mentions", []) or [])
+            dropped = [role for role in roles if role.id not in pinged]
+            if dropped:
+                logger.warning(
+                    f"Discord dropped {len(dropped)} role ping(s) from the bump "
+                    f"reminder in guild {guild.id} channel {channel.id}: "
+                    f"{', '.join(f'{r.name} ({r.id})' for r in dropped)}"
+                )
             logger.info(
                 f"Bump reminder sent: guild {guild.id}, {spec.key}, channel {channel.id}"
                 f"{f' (late by {late_by}s)' if late_by >= LATE_AFTER else ''}"
