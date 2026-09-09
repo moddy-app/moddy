@@ -49,3 +49,23 @@ and races with anyone editing the role. The server making the role mentionable
 
 Surface the same warning in the `/config` panel, next to the role select, so the
 server sees it while configuring rather than only in the logs.
+
+---
+
+## Second fix — `B2FC2E55`: the opt-in button crashed
+
+`TypeError: build_thanks_card() missing 1 required keyword-only argument:
+'guild_name'` on every click of the "ping me next time" button.
+
+A regression from b66a207 ("Show the server's name in bump reminder cards"),
+which made `guild_name` required but only updated the cog's two call sites. The
+third — `BumpOptInButton.callback` in `utils/bump_views.py`, which rebuilds the
+thank-you card from scratch on every click — was missed, so the button raised
+and the person got an error report instead of their opt-in.
+
+- `utils/bump_views.py:146` now passes `guild_name`.
+- `tests/test_bump_reminder.py` runs the callback end to end against stubs and
+  asserts `edit_message` was reached with the server's name in the card. It has
+  to assert on the outcome rather than on a raised exception, because
+  `@_guarded` swallows the error into the central handler — which is exactly why
+  the regression shipped. Verified failing without the fix, passing with it.

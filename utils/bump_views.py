@@ -143,9 +143,12 @@ class BumpOptInButton(
 
         public_locale = await card_locale(interaction)
         spec = bot_by_key(self.bot_key)
+        # The card is rebuilt from scratch on every click, so it has to restate
+        # everything the original one was given — the server's name included.
         view = build_thanks_card(
             spec, self.user_id, state["due_at"],
             locale=public_locale, ping_mode="button", armed=armed,
+            guild_name=interaction.guild.name if interaction.guild else "",
         )
         await interaction.response.edit_message(view=view, allowed_mentions=NO_MENTIONS)
         await interaction.followup.send(
