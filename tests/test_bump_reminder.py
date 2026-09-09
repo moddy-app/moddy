@@ -824,6 +824,22 @@ class TestComponents:
         assert allowed.everyone is False
         assert allowed.users == []
 
+    def test_a_role_that_cannot_notify_is_reported(self):
+        """The silent failure this feature could not previously see.
+
+        Discord renders a non-mentionable role's tag and drops the ping unless
+        the sender may mention every role, so the channel looks right either
+        way. The helper is what lets the reminder say which roles went silent.
+        """
+        from utils.bump_views import unnotifiable_roles
+
+        open_role = SimpleNamespace(id=1, name="Bump", mentionable=True)
+        closed = SimpleNamespace(id=2, name="Bump", mentionable=False)
+
+        assert unnotifiable_roles([open_role, closed], False) == [closed]
+        # Mention All Roles overrides the flag: everything notifies.
+        assert unnotifiable_roles([open_role, closed], True) == []
+
     def test_the_optin_button_only_appears_when_it_can_be_used(self):
         from utils.bump_views import BumpOptInButton, build_thanks_card
         from utils.i18n import i18n
