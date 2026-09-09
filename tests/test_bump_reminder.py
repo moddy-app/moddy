@@ -781,7 +781,7 @@ class TestComponents:
 
         view = build_reminder_card(
             bot_by_key("disboard"), locale="fr", role_ids=[1234],
-            bumper_id=5678, mention_bumper=True,
+            bumper_id=5678, mention_bumper=True, guild_name="Moddy support",
             bumped_at=datetime.now(timezone.utc) - timedelta(hours=2))
         first = view.children[0]
         assert isinstance(first, discord.ui.TextDisplay)
@@ -801,7 +801,7 @@ class TestComponents:
 
         view = build_reminder_card(
             bot_by_key("disboard"), locale="fr", role_ids=[1234],
-            bumper_id=5678, mention_bumper=False,
+            bumper_id=5678, mention_bumper=False, guild_name="Moddy support",
             bumped_at=datetime.now(timezone.utc) - timedelta(hours=2))
         top = view.children[0].content
         assert "<@5678>" not in top, "the bumper must not be in the ping line"
@@ -840,8 +840,12 @@ class TestComponents:
             )
 
         spec = bot_by_key("disboard")
-        assert has_button(build_thanks_card(spec, 42, due, locale="fr", ping_mode="button"))
-        assert not has_button(build_thanks_card(spec, 42, due, locale="fr", ping_mode="auto"))
-        assert not has_button(build_thanks_card(spec, 42, due, locale="fr", ping_mode="never"))
+        assert has_button(build_thanks_card(
+            spec, 42, due, locale="fr", ping_mode="button", guild_name="Moddy support"))
+        assert not has_button(build_thanks_card(
+            spec, 42, due, locale="fr", ping_mode="auto", guild_name="Moddy support"))
+        assert not has_button(build_thanks_card(
+            spec, 42, due, locale="fr", ping_mode="never", guild_name="Moddy support"))
         # Nobody to arm it for.
-        assert not has_button(build_thanks_card(spec, None, due, locale="fr", ping_mode="button"))
+        assert not has_button(build_thanks_card(
+            spec, None, due, locale="fr", ping_mode="button", guild_name="Moddy support"))

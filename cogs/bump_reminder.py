@@ -124,7 +124,7 @@ class BumpReminder(commands.Cog):
 
         view = build_thanks_card(
             hit.bot, hit.bumper_id, hit.due_at,
-            locale=locale, ping_mode=entry['ping_mode'],
+            locale=locale, ping_mode=entry['ping_mode'], guild_name=guild.name,
         )
 
         # The thank-you is a courtesy; the reminder is the promise. So a failed
@@ -258,6 +258,7 @@ class BumpReminder(commands.Cog):
             bumper_id=state.get('bumper_id'),
             mention_bumper=mention_bumper,
             bumped_at=bumped_at,
+            guild_name=guild.name,
             late_by=late_by,
         )
 
