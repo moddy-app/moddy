@@ -200,12 +200,19 @@ class AnnouncementTranslation(commands.Cog):
     ) -> tuple[Dict[str, str], Optional[str]]:
         """Translate one announcement into every language but its own.
 
-        DeepL reports the detected source language with the first translation,
-        so from the second call on the announcement's own language is skipped —
-        and if it happened to be the language of that first call, its result is
-        dropped. An announcement written in English therefore ends up with no
-        English entry, hence no English button: offering to translate a message
-        into the language it is already written in is noise.
+        DeepL reports the detected source language with every translation, so
+        the announcement's own language is skipped as soon as it is known — and
+        dropped at the end whatever the order the calls happened in. An
+        announcement written in English therefore ends up with no English entry,
+        hence no English button: offering to translate a message into the
+        language it is already written in is noise.
+
+        The final ``pop`` is what makes this order-independent. Skipping ahead of
+        the call only works for a language the loop has not reached yet; the one
+        translated *before* the source was known (the first call, always) has to
+        be removed afterwards. A result that comes back identical to the source
+        is dropped too, which catches the announcements whose language DeepL
+        detects wrongly or not at all.
         """
         from gateway import QuotaTarget
 
@@ -229,14 +236,24 @@ class AnnouncementTranslation(commands.Cog):
 
             if not result or not result.get("text"):
                 continue
-            translations[code] = result["text"]
+            # A "translation" identical to the announcement is the announcement:
+            # DeepL was handed a text already in that language and gave it back.
+            # The button would show the message the reader is looking at, so it
+            # is dropped — this also covers a detection DeepL got wrong or did
+            # not report, which language detection on a short text does.
+            if result["text"].strip().casefold() != text.strip().casefold():
+                translations[code] = result["text"]
+
             if source_code is None:
                 detected = (result.get("detected_source_language") or "").upper()
                 source_code = _SOURCE_TO_CODE.get(detected.split("-")[0])
-                # The very first call is the one that can land on the source
-                # language itself — DeepL simply handed the text back.
-                if source_code == code:
-                    translations.pop(code, None)
+                logger.debug("Announcement source detected as %r -> %r",
+                             detected, source_code)
+
+        # The announcement's own language never gets a button, including when it
+        # is the language the first call happened to translate into.
+        if source_code:
+            translations.pop(source_code, None)
 
         return translations, source_code
 
