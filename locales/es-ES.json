@@ -1530,7 +1530,7 @@
       "card": {
         "thanks_title": "¡Gracias {user}!",
         "thanks_title_anonymous": "¡Gracias!",
-        "thanks_body": "El servidor acaba de subir en {emoji} **{name}**.\nPróximo bump posible {timestamp}.",
+        "thanks_body": "**{server}** acaba de subir en {emoji} **{name}**.\nPróximo bump posible {timestamp}.",
         "optin": "Recuérdamelo",
         "optin_on_title": "Notificación activada",
         "optin_armed": "Se te mencionará",
@@ -1538,7 +1538,7 @@
         "optin_disarmed": "Ya no se te mencionará",
         "optin_expired": "Un bump más reciente ya ha reemplazado a este.",
         "reminder_title": "Toca hacer bump",
-        "reminder_body": "El servidor puede recibir bump de nuevo en {emoji} **{name}**.\n{command}",
+        "reminder_body": "**{server}** puede recibir bump de nuevo en {emoji} **{name}**.\n{command}",
         "reminder_last": "Último bump por {user}, {timestamp}.",
         "reminder_late": "Recordatorio enviado con retraso: Moddy no estaba disponible."
       },

@@ -181,7 +181,7 @@ class BumpReminderPersistence(BaseView):
 # Cards
 # --------------------------------------------------------------------------- #
 def build_thanks_card(spec: BumpBot, bumper_id: Optional[int], due_at,
-                      *, locale: str, ping_mode: str,
+                      *, locale: str, ping_mode: str, guild_name: str,
                       armed: bool = False) -> ui.LayoutView:
     """The card posted right after a successful bump."""
     view = ui.LayoutView(timeout=None)
@@ -197,6 +197,7 @@ def build_thanks_card(spec: BumpBot, bumper_id: Optional[int], due_at,
     container.add_item(ui.TextDisplay(
         t("modules.bump_reminder.card.thanks_body",
           locale=locale, emoji=spec.emoji, name=spec.name,
+          server=guild_name,
           timestamp=f"<t:{int(due_at.timestamp())}:R>")
     ))
 
@@ -213,7 +214,7 @@ def build_thanks_card(spec: BumpBot, bumper_id: Optional[int], due_at,
 def build_reminder_card(spec: BumpBot, *, locale: str,
                         role_ids: Sequence[int], bumper_id: Optional[int],
                         mention_bumper: bool, bumped_at: Optional[datetime],
-                        late_by: int = 0) -> ui.LayoutView:
+                        guild_name: str, late_by: int = 0) -> ui.LayoutView:
     """The card posted when the command becomes available again.
 
     The mentions ride in a text display added to the **view**, above the
@@ -236,7 +237,8 @@ def build_reminder_card(spec: BumpBot, *, locale: str,
     ))
     container.add_item(ui.TextDisplay(
         t("modules.bump_reminder.card.reminder_body",
-          locale=locale, emoji=spec.emoji, name=spec.name, command=spec.command)
+          locale=locale, emoji=spec.emoji, name=spec.name, command=spec.command,
+          server=guild_name)
     ))
 
     footnotes = []

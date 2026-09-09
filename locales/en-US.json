@@ -1530,7 +1530,7 @@
       "card": {
         "thanks_title": "Thanks {user}!",
         "thanks_title_anonymous": "Thanks!",
-        "thanks_body": "The server just climbed back up on {emoji} **{name}**.\nNext bump possible {timestamp}.",
+        "thanks_body": "**{server}** just climbed back up on {emoji} **{name}**.\nNext bump possible {timestamp}.",
         "optin": "Remind me",
         "optin_on_title": "Notification enabled",
         "optin_armed": "You will be mentioned",
@@ -1538,7 +1538,7 @@
         "optin_disarmed": "You will no longer be mentioned",
         "optin_expired": "A more recent bump has already replaced this one.",
         "reminder_title": "Time to bump again",
-        "reminder_body": "The server can be bumped on {emoji} **{name}** again.\n{command}",
+        "reminder_body": "**{server}** can be bumped on {emoji} **{name}** again.\n{command}",
         "reminder_last": "Last bumped by {user}, {timestamp}.",
         "reminder_late": "Reminder sent late: Moddy was unavailable."
       },
