@@ -15,6 +15,33 @@ Premium here means "this **guild** is covered by an active subscription" —
 `utils.subscription.is_guild_premium`, see [PREMIUM.md](PREMIUM.md). It is not
 a guild attribute.
 
+### Staff override — the `BOT_CUSTOMIZATION` guild attribute
+
+Every identity-field check (`/config` panel, the edit modal, the dashboard
+task handler) goes through `modules.bot_customization.has_identity_access(bot,
+guild_id)` instead of `is_guild_premium` directly. It returns `True` when
+either:
+
+- the guild is premium (`is_guild_premium`), or
+- the guild carries the `BOT_CUSTOMIZATION` guild attribute — a staff-only
+  grant, independent of billing, set with `db.set_attribute("guild", guild_id,
+  "BOT_CUSTOMIZATION", True/None, actor_id, reason=...)`.
+
+The name style stays free for everyone and is never gated by either check.
+
+Staff commands (Manager role, `bot_customization_manage` permission):
+
+- `/manage customization grant <guild_id> [add|remove]` —
+  `staff/commands/manage/bot_customization/grant.py`
+- `/manage customization list` — lists every guild currently holding the
+  attribute, via `db.get_guilds_with_attribute("BOT_CUSTOMIZATION")` —
+  `staff/commands/manage/bot_customization/list.py`
+
+This is a feature-specific grant, not a general premium override — unlike the
+non-existent `PREMIUM` guild attribute described in
+[PREMIUM.md](PREMIUM.md#the-model), `BOT_CUSTOMIZATION` only unlocks this one
+module.
+
 Files:
 
 - [`modules/bot_customization.py`](../modules/bot_customization.py) — module,

@@ -101,7 +101,10 @@ User-scoped changes go on `moddy:subscription:updates` instead — see
 
 [`modules/bot_customization.py`](../modules/bot_customization.py) +
 [`modules/configs/bot_customization_config.py`](../modules/configs/bot_customization_config.py)
-implement all three (premium identity, free name style), and
+implement all three (premium identity, free name style — plus a
+feature-specific `BOT_CUSTOMIZATION` guild attribute staff can grant on top of
+premium, see [BOT_CUSTOMIZATION.md](BOT_CUSTOMIZATION.md#staff-override--the-bot_customization-guild-attribute);
+this is not the `PREMIUM` guild attribute the warning above refers to), and
 [`modules/social_notifications.py`](../modules/social_notifications.py) shows
 the quota-style variant (premium raises a limit instead of unlocking a
 feature). [`modules/tickets.py::get_limits`](../modules/tickets.py) is the same

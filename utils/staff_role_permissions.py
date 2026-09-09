@@ -80,6 +80,7 @@ MANAGER_PERMISSIONS = [
     "stripe_manage",        # Manage Stripe / billing operations
     "official_manage",      # Mark/unmark OFFICIAL Moddy servers
     "user_lookup",          # Look up a user's Moddy account (email, billing, cases)
+    "bot_customization_manage",  # Grant/revoke staff Bot Customization access + list grants
 ]
 
 # Map role names to their available permissions
@@ -150,6 +151,7 @@ def get_permission_label(permission: str) -> str:
         "banner_manage": "Manage Site Banners",
         "stripe_manage": "Manage Stripe / Billing",
         "official_manage": "Manage Official Servers",
+        "bot_customization_manage": "Manage Bot Customization Access",
     }
     return labels.get(permission, permission.replace("_", " ").title())
 

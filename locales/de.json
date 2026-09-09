@@ -3924,6 +3924,16 @@
           "done": "Anfrage zum Start der Testphase für {id} gesendet."
         }
       },
+      "customization": {
+        "title": "Bot-Customization-Zugriff",
+        "granted": "{name} ({id}) kann jetzt die Bot-Customization-Identitätsfelder (Nickname, Avatar, Banner, Bio) ohne Premium-Abo nutzen.",
+        "revoked": "{name} ({id}) hat keinen vom Team gewährten Bot-Customization-Zugriff mehr. Premium-Abonnenten sind davon nicht betroffen.",
+        "not_present": "Moddy ist derzeit nicht auf diesem Server; die Änderung wird gespeichert und angewendet, sobald er beitritt.",
+        "not_present_short": "unbekannter Server",
+        "list_title": "Bot-Customization-Zugriff",
+        "empty": "Aktuell hat kein Server einen vom Team gewährten Bot-Customization-Zugriff.",
+        "total": "{count} Server"
+      },
       "redirect": {
         "modal_add": "Weiterleitung hinzufügen",
         "modal_edit": "Weiterleitung bearbeiten",

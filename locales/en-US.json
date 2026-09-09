@@ -3924,6 +3924,16 @@
           "done": "Trial start request sent for {id}."
         }
       },
+      "customization": {
+        "title": "Bot Customization Access",
+        "granted": "{name} ({id}) can now use Bot Customization's identity fields (nickname, avatar, banner, bio) without a premium subscription.",
+        "revoked": "{name} ({id}) no longer has staff-granted Bot Customization access. Premium subscribers are unaffected.",
+        "not_present": "Moddy is not currently in this server; the change is saved and applies if it joins.",
+        "not_present_short": "unknown server",
+        "list_title": "Bot Customization Access",
+        "empty": "No server currently has staff-granted Bot Customization access.",
+        "total": "{count} server(s)"
+      },
       "redirect": {
         "modal_add": "Add Redirect",
         "modal_edit": "Edit Redirect",
