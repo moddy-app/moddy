@@ -53,6 +53,24 @@ number of readers or clicks — the requirement that drove the whole shape.
 - Mentions are neutralised before translation, so DeepL sees words and a
   translated copy cannot ping anyone.
 
+## Follow-up in the same session
+
+An English announcement still showed an English button in production. Two
+changes, both in `_translate_all`:
+
+- the source language is now dropped **after** the loop rather than only when it
+  was the first call's target, so the removal no longer depends on the order the
+  languages are translated in;
+- a result that comes back identical to the announcement (case- and
+  whitespace-insensitive) is never stored — whatever DeepL claims the source is,
+  a button showing the message the reader is already looking at is noise. This
+  is the safety net for detection on short texts, which is unreliable.
+
+`tests/test_announcement_translation.py` now pins both properties, plus the call
+count (one per language, never one per click) and the buttons-only card.
+`tests/internal_api/test_rules_check_route.py`'s session-wide `gateway` stub
+gained the `QuotaTarget.user`/`global_` constructors it was missing.
+
 ## Follow-ups
 
 - Message **edits** are not re-translated: the stored set is the announcement as

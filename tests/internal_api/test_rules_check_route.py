@@ -36,10 +36,21 @@ def _install_gateway_stub():
     stub._moddy_test_stub = True
     stub.GatewayError = GatewayError
 
+    # The stub replaces `gateway` for the whole session, so it mirrors the real
+    # QuotaTarget surface rather than only the constructor this route needs —
+    # a missing one fails whichever unrelated test happens to run afterwards.
     class QuotaTarget:
         @staticmethod
         def guild(gid, call_type):
             return ("guild", gid, call_type)
+
+        @staticmethod
+        def user(uid, call_type):
+            return ("user", uid, call_type)
+
+        @staticmethod
+        def global_(call_type):
+            return ("global", "", call_type)
 
     stub.QuotaTarget = QuotaTarget
     sys.modules["gateway"] = stub

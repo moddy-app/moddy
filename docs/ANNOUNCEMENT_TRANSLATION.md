@@ -10,8 +10,11 @@
 
 1. Somebody posts a message in one of the watched channels.
 2. Moddy sends the message to DeepL **once per language other than its own**.
-   DeepL reports the detected source language with the first translation, so an
-   announcement written in English is never translated into English.
+   DeepL reports the detected source language with every translation, so the
+   announcement's own language is skipped once it is known and dropped from the
+   set afterwards — the order the calls happen in does not matter. A result that
+   comes back identical to the announcement is dropped too, which covers a
+   detection DeepL got wrong or did not report (it happens on very short texts).
 3. The whole set is stored in `announcement_translations`, keyed by the
    announcement's message id.
 4. Moddy replies to the announcement with a container holding **only** buttons
@@ -74,8 +77,9 @@ CREATE TABLE announcement_translations (
 ```
 
 One row per announcement, upserted. The detected source language is **not** a
-key of `translations`, and neither is a language whose DeepL call failed: a
-missing key simply means no button, rather than a button that apologises.
+key of `translations`; neither is a language whose result came back identical to
+the announcement, nor one whose DeepL call failed. A missing key simply means no
+button, rather than a button that apologises.
 
 ---
 
