@@ -82,6 +82,7 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     from utils.notification_views import NotificationsPersistence
     from utils.support_request_views import SupportPersistence
     from utils.beta_announcement import BetaPersistence
+    from cogs.announcement_translation import AnnouncementTranslationView
 
     return [
         # Group 1 — /moddy (public informational, no user auth)
@@ -194,6 +195,11 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         # re-renders the DM its reader already has). Temporary: goes away with
         # utils/beta_announcement.py when the campaign is over.
         BetaPersistence,
+        # Group 12l — support-server announcement translations: one flag button
+        # per language under an announcement (dynamic items keyed by the
+        # announcement's message id; public — clicking only shows the stored
+        # translation of a message the reader can already see).
+        AnnouncementTranslationView,
         # Group 13 — /config automod AI panel (guild permission auth;
         # AutomodAIPrecedentsView is deliberately excluded, see
         # docs/PERSISTENT_VIEWS.md Step 12)

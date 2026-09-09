@@ -4617,5 +4617,11 @@
         "description": "Anfragen können momentan nicht gespeichert werden. Nutze bitte den Support-Server."
       }
     }
+  },
+  "announcement_translation": {
+    "error": {
+      "title": "Übersetzung nicht verfügbar",
+      "missing": "Die Übersetzung dieser Ankündigung ist nicht mehr verfügbar."
+    }
   }
 }

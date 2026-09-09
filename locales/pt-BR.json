@@ -4617,5 +4617,11 @@
         "description": "Os pedidos não podem ser registrados no momento. Use o servidor de suporte."
       }
     }
+  },
+  "announcement_translation": {
+    "error": {
+      "title": "Tradução indisponível",
+      "missing": "A tradução deste anúncio não está mais disponível."
+    }
   }
 }

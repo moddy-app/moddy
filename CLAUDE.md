@@ -46,6 +46,7 @@ moddy/
 │   ├── stats_events.py        #   Statistics emitters (commands, members, guild joins)
 │   ├── saved_messages.py      #   Message bookmarking
 │   ├── translate.py           #   /translate (DeepL)
+│   ├── announcement_translation.py #  Support-server announcements translated once → flag buttons
 │   ├── text_tools.py          #   /fix, /rephrase, /summarize (OpenAI, Modal V2 + context menus)
 │   ├── voice_transcription.py #   "Transcribe" context menu (Groq Whisper)
 │   ├── webhook.py             #   Webhook management
@@ -188,6 +189,7 @@ moddy/
 │       ├── support_requests.py #  Bug reports / config-help requests + their exchange
 │       ├── social.py          #   Social notifications subscriptions
 │       ├── bump.py            #   Pending bump reminders (bump_reminders)
+│       ├── announcement_translations.py # Stored announcement translations
 │       ├── stats.py           #   Statistics: counters, snapshots, guild lifecycle,
 │       │                      #   acquisition (guild_installs), partitions
 │       └── _utils.py
@@ -489,6 +491,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/MODDY_FRAMEWORK.md](docs/MODDY_FRAMEWORK.md) | Internal framework public API and migration |
 | [docs/COMMAND_LOCALIZATION.md](docs/COMMAND_LOCALIZATION.md) | Translating slash command names/descriptions (32 Discord locales) |
 | [docs/TEXT_TOOLS.md](docs/TEXT_TOOLS.md) | AI text tools — `/fix`, `/rephrase`, `/summarize` (models, presets, mention stripping) |
+| [docs/ANNOUNCEMENT_TRANSLATION.md](docs/ANNOUNCEMENT_TRANSLATION.md) | **Announcement translation** — support-server announcements translated once into every language, one flag button per language |
 | [docs/VOICE_TRANSCRIPTION.md](docs/VOICE_TRANSCRIPTION.md) | Voice transcription — context menu, module, Groq Whisper, cost control |
 | [docs/MODULE_SYSTEM.md](docs/MODULE_SYSTEM.md) | Creating or modifying server modules |
 | [docs/SERVER_LANGUAGE.md](docs/SERVER_LANGUAGE.md) | **Server language** — the single setting every module reads; what follows the server vs. the user |
