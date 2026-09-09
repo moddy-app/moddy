@@ -38,6 +38,7 @@ from db.repositories.tickets import TicketsRepository
 from db.repositories.notifications import NotificationRepository
 from db.repositories.support_requests import SupportRequestRepository
 from db.repositories.bump import BumpReminderRepository
+from db.repositories.announcement_translations import AnnouncementTranslationRepository
 from db.repositories.stats import StatsRepository
 
 logger = logging.getLogger('moddy.database')
@@ -78,6 +79,7 @@ class ModdyDatabase(
     NotificationRepository,
     SupportRequestRepository,
     BumpReminderRepository,
+    AnnouncementTranslationRepository,
     StatsRepository,
 ):
     """Gestionnaire principal de la base de données"""
@@ -736,6 +738,24 @@ class ModdyDatabase(
             await conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_bump_reminders_due "
                 "ON bump_reminders (due_at) WHERE sent = FALSE")
+
+            # announcement_translations — one row per announcement posted in a
+            # support-server announcement channel, holding the message already
+            # translated into every language the bot speaks. Written once at
+            # post time (one DeepL call per language), read on every button
+            # click. The translation buttons carry the message id, so this row
+            # is the only thing they need to survive a restart.
+            # See docs/ANNOUNCEMENT_TRANSLATION.md.
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS announcement_translations (
+                    message_id   BIGINT      PRIMARY KEY,
+                    guild_id     BIGINT      NOT NULL,
+                    channel_id   BIGINT      NOT NULL,
+                    source_lang  TEXT,
+                    translations JSONB       NOT NULL DEFAULT '{}'::jsonb,
+                    created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+                )
+            """)
 
             # automod_eval_candidates — the annotation corpus that feeds the
             # offline golden set (automod/eval). A row is created for every

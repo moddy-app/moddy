@@ -132,6 +132,7 @@ def _dynamic_item_cases():
         NotifReviewClaimButton, NotifReviewPreviewButton, NotifReviewDecisionButton,
     )
     from utils.bump_views import BumpOptInButton
+    from cogs.announcement_translation import AnnouncementLanguageButton
     from modules.configs.tickets_panel_config import (
         TicketPanelButton, TicketPanelSelect, TicketPanelChannelSelect,
     )
@@ -187,6 +188,9 @@ def _dynamic_item_cases():
         # Bump reminder — the "ping me next time" button on a thank-you card,
         # scoped to the person who ran the bump.
         (BumpOptInButton, ("disboard", _SNOWFLAKE)),
+        # Announcement translation — one flag button per language under a
+        # support-server announcement, keyed by that announcement's id.
+        (AnnouncementLanguageButton, ("fr", _SNOWFLAKE)),
     ]
 
 

@@ -4703,5 +4703,11 @@
       "no_permission_title": "I can't create the channel",
       "no_permission": "I need the **Manage Channels** permission to create the channel."
     }
+  },
+  "announcement_translation": {
+    "error": {
+      "title": "Translation unavailable",
+      "missing": "The translation of this announcement is no longer available."
+    }
   }
 }

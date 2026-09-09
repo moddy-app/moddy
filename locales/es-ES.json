@@ -4617,5 +4617,11 @@
         "description": "Las solicitudes no se pueden registrar en este momento. Usa el servidor de soporte."
       }
     }
+  },
+  "announcement_translation": {
+    "error": {
+      "title": "Traducción no disponible",
+      "missing": "La traducción de este anuncio ya no está disponible."
+    }
   }
 }

@@ -38,6 +38,19 @@ MODDY_NOTIF_REPORT_CHANNEL_ID: int = int(
 MODDY_NOTIF_REPORT_LOG_CHANNEL_ID: int = int(
     os.environ.get("MODDY_NOTIF_REPORT_LOG_CHANNEL_ID", "1541233478522241034"))
 
+# Announcement translation (docs/ANNOUNCEMENT_TRANSLATION.md): the Moddy team
+# channels whose messages are translated into every language the bot speaks the
+# moment they are posted. Deliberately a hardcoded list and not a module: this
+# is a support-server tool, not a feature offered to servers.
+ANNOUNCEMENT_TRANSLATION_CHANNEL_IDS: list[int] = [
+    int(part.strip())
+    for part in os.environ.get(
+        "ANNOUNCEMENT_TRANSLATION_CHANNEL_IDS",
+        "1398625728467173376,1444505508546478232",
+    ).split(",")
+    if part.strip().isdigit()
+]
+
 # Support requests (docs/SUPPORT_REQUESTS.md): where /bug-report lands, and
 # where a server owner asking the team to configure Moddy for them lands. Both
 # live in the Moddy team guild and are answered from the card itself.
