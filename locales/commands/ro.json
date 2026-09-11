@@ -279,7 +279,7 @@
     },
     "ticket": {
       "name": "ticket",
-      "description": "Gestionează tichetul în care te afli"
+      "description": "Gestionează tichetele serverului"
     },
     "ticket close": {
       "name": "închide",
@@ -386,6 +386,20 @@
     "brocoli": {
       "name": "brocoli",
       "description": "Deschide un canal unde asistentul Moddy configurează acest server"
+    },
+    "ticket stats": {
+      "name": "statistici",
+      "description": "Tichete rezolvate și evaluările echipei",
+      "parameters": {
+        "staff": {
+          "name": "membru",
+          "description": "Ale cui evaluări individuale să fie afișate"
+        },
+        "days": {
+          "name": "zile",
+          "description": "Cu câte zile în urmă să se uite (implicit 30)"
+        }
+      }
     }
   }
 }

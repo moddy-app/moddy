@@ -46,3 +46,9 @@ cryptography>=42.0.0
 # OpenAI API
 openai>=1.0.0
 
+# Ticket transcript compression.
+# Optional in practice: utils/compression.py falls back to stdlib zlib and
+# stores which codec it used, so a deployment without the wheel still archives
+# and still reads back rows written with zstd elsewhere.
+zstandard>=0.22.0
+

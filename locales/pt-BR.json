@@ -3085,6 +3085,10 @@
         "unclaim_others": {
           "name": "Liberar o ticket de outro",
           "description": "Tirar um ticket do agente que o assumiu"
+        },
+        "stats": {
+          "name": "Ver as estatísticas",
+          "description": "Consultar as avaliações e o volume de tickets desta categoria"
         }
       },
       "channel": {
@@ -3118,7 +3122,10 @@
         "escalated": "Escalonamento",
         "your_permissions": "Suas permissões aqui",
         "none": "nenhuma",
-        "claimed_by": "Atendido por"
+        "claimed_by": "Atendido por",
+        "closed_by": "Fechado por",
+        "duration": "Duração",
+        "messages": "Mensagens arquivadas"
       },
       "status": {
         "open": "Aberto",
@@ -3272,6 +3279,89 @@
         "released_description": "{user} liberou este ticket — qualquer pessoa da equipe pode assumi-lo.",
         "released_done": "O ticket está livre de novo.",
         "nobody": "ninguém ainda"
+      },
+      "transcript": {
+        "view": "Ver a transcrição",
+        "truncated": "(início truncado)"
+      },
+      "log": {
+        "closed_title": "Ticket #{number} fechado"
+      },
+      "closure_detection": {
+        "card_title": "Este ticket parece encerrado",
+        "card_description": "A conversa parece ter chegado ao fim. Se estiver tudo resolvido, marque este ticket como resolvido; caso contrário, mantenha-o aberto e ninguém será incomodado de novo por um bom tempo.",
+        "resolve": "Marcar como resolvido",
+        "keep_open": "Ainda não",
+        "dismissed": "{user} preferiu manter este ticket aberto."
+      },
+      "rating": {
+        "modal_title": "Avaliar o atendimento",
+        "leave": "Deixar uma avaliação",
+        "prompt_description": "Seu ticket foi fechado. Você pode contar em alguns segundos como foi o atendimento — é opcional e ajuda muito a equipe.",
+        "score_label": "Sua avaliação",
+        "score_hint": "Como foi o atendimento que você recebeu?",
+        "score_5": "Excelente",
+        "score_4": "Muito bom",
+        "score_3": "Razoável",
+        "score_2": "Mediano",
+        "score_1": "Ruim",
+        "staff_label": "Quem te ajudou",
+        "staff_hint": "Deixe como está se a pessoa sugerida for a certa",
+        "no_staff": "Ninguém em particular",
+        "comment_label": "Comentário",
+        "comment_hint": "Opcional — o que você quiser acrescentar",
+        "given": "Avaliação",
+        "staff": "Pessoa avaliada",
+        "comment": "Comentário",
+        "thanks_title": "Obrigado pela sua avaliação",
+        "thanks_description": "Sua avaliação (`{score}`) foi registrada.",
+        "already_title": "Já avaliado",
+        "already_description": "Uma avaliação já foi deixada para este fechamento.",
+        "gone": "Este ticket não está mais disponível: sua transcrição foi excluída."
+      },
+      "settings": {
+        "title": "Configurações dos tickets",
+        "description": "O que vale para todos os tickets do servidor, seja qual for a categoria. Cada recurso pode ser desativado separadamente.",
+        "button": "Configurações",
+        "edit": "Alterar",
+        "modal_title": "Configurações dos tickets",
+        "on": "ativado",
+        "off": "desativado",
+        "switches_label": "Recursos",
+        "switches_hint": "Desmarque para desativar por completo",
+        "transcripts_enabled_label": "Transcrições",
+        "transcripts_enabled_hint": "Arquivar a conversa quando o ticket é fechado",
+        "closure_detection_enabled_label": "Detecção de fim",
+        "closure_detection_enabled_hint": "Propor o fechamento quando a conversa parece encerrada",
+        "rating_enabled_label": "Avaliações",
+        "rating_enabled_hint": "Pedir ao membro que avalie o atendimento recebido",
+        "retention_label": "Retenção",
+        "retention_hint": "Dias antes de excluir as transcrições, 0 = para sempre (máx. {max})",
+        "retention_forever": "para sempre",
+        "log_label": "Canal de logs dos tickets",
+        "log_hint": "Um cartão é publicado lá a cada fechamento, com o link da transcrição e a avaliação",
+        "log_placeholder": "Escolha um canal"
+      },
+      "stats": {
+        "team_title": "Atendimento dos tickets",
+        "staff_title": "Atendimento de um membro do staff",
+        "member": "Membro",
+        "window": "Período",
+        "days": "dias",
+        "handled": "Tickets atendidos",
+        "handled_short": "atendidos",
+        "ratings": "Avaliações recebidas",
+        "ratings_short": "avaliações",
+        "negative_short": "negativas",
+        "average": "Média",
+        "recent": "Últimas avaliações",
+        "few_ratings": "Avaliações demais de menos para a média significar algo.",
+        "no_ratings": "Nenhuma avaliação foi deixada neste período ainda."
+      },
+      "owner_left": {
+        "card_title": "O autor saiu do servidor",
+        "card_description": "{user} (`{name}`) não está mais no servidor. O ticket continua aberto: feche-o se não fizer mais sentido, ou mantenha-o enquanto termina o que for preciso. Se a pessoa voltar, o acesso é restaurado automaticamente.",
+        "reason": "O autor saiu do servidor"
       }
     }
   },

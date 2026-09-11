@@ -148,6 +148,30 @@ Sur Railway (détecté via `RAILWAY_ENVIRONMENT`), **aucun fichier de log n'est
 écrit** : stdout est déjà collecté et le disque du conteneur est éphémère.
 Ailleurs, un `RotatingFileHandler` plafonne `logs/moddy.log` à 5 Mo × 3.
 
+### Stockage des transcriptions de tickets
+
+Les transcriptions de tickets (voir [TICKETS.md](TICKETS.md)) sont la seule
+fonctionnalité qui fait croître la base de données proportionnellement à
+l'activité des serveurs. Trois choix la maintiennent négligeable :
+
+- le corps est du JSON à clés courtes dont **tout champ vide est omis** ;
+- les auteurs sont stockés **une fois** dans `ticket_transcript_authors`, pas à
+  chaque message ;
+- le tout est compressé en `zstd` niveau 19 (`utils/compression.py`).
+
+En pratique un ticket de support de 30 messages occupe environ **300 octets**.
+Les pièces jointes ne sont **jamais** téléchargées : seule leur URL CDN est
+conservée, sinon l'archiveur deviendrait un service de stockage de fichiers.
+
+Un serveur qui veut borner son empreinte règle `transcript_retention_days`
+depuis `/config` → Tickets → Paramètres (`0` = pour toujours, valeur par défaut).
+
+**Dépendance :** `zstandard>=0.22.0` est dans `requirements.txt`. Elle est
+installée comme roue précompilée, sans compilation, et n'ajoute rien à la
+mémoire résidente. Si elle venait à manquer, `utils/compression.py` retombe sur
+`zlib` de la bibliothèque standard et enregistre le codec utilisé ligne par
+ligne — les deux coexistent sans migration, donc son absence ne casse rien.
+
 ## Variables optionnelles
 
 ### DEBUG

@@ -142,6 +142,12 @@ class ModdyBot(ModdyFrameworkBot):
         self.altguard = AltGuardClient(self)
         from services.ticket_service import TicketService
         self.tickets = TicketService(self)  # ticket lifecycle (open/close/escalate…)
+        from services.ticket_transcript_service import TicketTranscriptService
+        # Archives a ticket's conversation when it closes (docs/TICKETS.md)
+        self.ticket_transcripts = TicketTranscriptService(self)
+        from services.ticket_closure_detector import TicketClosureDetector
+        # Spots a conversation that has run its course and offers to close it
+        self.ticket_closure = TicketClosureDetector(self)
         from services.invoice_notifier import InvoiceNotifier
         # Stripe invoices (notify_invoice): one DM per invoice, trials included
         self.invoices = InvoiceNotifier(self)
@@ -1596,6 +1602,11 @@ class ModdyBot(ModdyFrameworkBot):
         logger.info(f"Servers: {len(self.guilds)} | Users: {len(self.users)}")
         logger.info(f"Latency: {round(self.latency * 1000)}ms")
         logger.info(f"i18n: {len(i18n.supported_locales)} languages loaded")
+
+        # Which channels are open tickets, so the closure detector can ignore
+        # every other message without touching the database.
+        if self.db and getattr(self, 'tickets', None):
+            await self.tickets.hydrate_open_tickets()
 
         # Update DEVELOPER attributes now that self.user is available
         if self.db and self._dev_team_ids:

@@ -38,6 +38,10 @@ from cogs.error_handler import BaseModal, BaseView
 from modules.configs._common import check_guild_perms
 from modules.tickets import (
     DEFAULT_ACCENT_COLOR,
+    MAX_RETENTION_DAYS,
+    SETTING_LOG_CHANNEL,
+    SETTING_RETENTION,
+    SETTING_SWITCHES,
     MAX_PANEL_DESCRIPTION,
     MAX_PANEL_NAME,
     MAX_PANEL_TITLE,
@@ -51,7 +55,7 @@ from modules.tickets import (
 )
 from utils.components_v2 import create_error_message
 from utils.emojis import (
-    ADD, BACK, INFO, PREMIUM, TICKET, TICKET_PANEL, WARNING,
+    ADD, BACK, INFO, PREMIUM, SETTINGS, TICKET, TICKET_PANEL, WARNING,
 )
 from utils.i18n import i18n, t
 
@@ -63,6 +67,12 @@ _ENTRY_ID = r"[a-z0-9_]+"
 _CID_ROOT_BACK = "moddy:tickets:cfg:back"
 _CID_ROOT_ADD = "moddy:tickets:cfg:add"
 _CID_ROOT_MANAGE = "moddy:tickets:cfg:manage"
+
+# Module-wide settings screen — guild-scoped too, so static ids are enough.
+_CID_ROOT_SETTINGS = "moddy:tickets:cfg:settings"
+_CID_SET_BACK = "moddy:tickets:set:back"
+_CID_SET_LOG = "moddy:tickets:set:log"
+_CID_SET_EDIT = "moddy:tickets:set:edit"
 
 PREMIUM_URL = "https://dashboard.moddy.app/select-premium-servers"
 
@@ -368,6 +378,14 @@ class TicketsConfigView(BaseView):
         )
         add.callback = self.on_add
         button_row.add_item(add)
+
+        settings = ui.Button(
+            emoji=discord.PartialEmoji.from_str(SETTINGS),
+            label=t('modules.tickets.settings.button', locale=self.locale),
+            style=discord.ButtonStyle.secondary, custom_id=_CID_ROOT_SETTINGS,
+        )
+        settings.callback = self.on_settings
+        button_row.add_item(settings)
         self.add_item(button_row)
 
     def _entry_summary(self, panel: Dict[str, Any]) -> str:
@@ -392,6 +410,11 @@ class TicketsConfigView(BaseView):
         return line
 
     # -- callbacks --------------------------------------------------------- #
+    async def on_settings(self, interaction: discord.Interaction):
+        if not await check_guild_perms(interaction):
+            return
+        await render_settings(interaction)
+
     async def on_add(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
@@ -461,6 +484,213 @@ class TicketsConfigView(BaseView):
         locale = i18n.get_user_locale(interaction)
         await interaction.response.edit_message(view=ConfigMainView(
             interaction.client, interaction.guild_id, interaction.user.id, locale))
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        return await check_guild_perms(interaction)
+
+    @classmethod
+    def register_persistent(cls, bot) -> None:
+        """Auth model: Manage Server in the guild (checked on every click)."""
+        bot.add_view(cls())
+
+
+# =========================================================================== #
+# Module-wide settings (transcripts, closure detection, ratings, log channel)
+# =========================================================================== #
+async def render_settings(interaction: discord.Interaction) -> None:
+    """(Re)build and show the ticket settings screen."""
+    view = await TicketsSettingsView.create(
+        interaction.client, interaction.guild_id,
+        i18n.get_user_locale(interaction))
+    await _edit(interaction, view)
+
+
+class TicketsSettingsModal(BaseModal):
+    """The three switches and the retention window.
+
+    Grouped into one modal rather than spread over the screen because a modal
+    is the only place where showing the stored value as text is right: a
+    checkbox and a text field carry their own state, a button opening a form
+    carries none (CLAUDE.md rule 9).
+    """
+
+    def __init__(self, locale: str, settings: Dict[str, Any], callback_func):
+        super().__init__(
+            title=t('modules.tickets.settings.modal_title', locale=locale)[:45],
+            timeout=None,
+        )
+        self.locale = locale
+        self.callback_func = callback_func
+
+        self.switches = ui.CheckboxGroup(
+            options=[
+                discord.CheckboxGroupOption(
+                    label=t(f'modules.tickets.settings.{key}_label',
+                            locale=locale)[:100],
+                    value=key,
+                    description=t(f'modules.tickets.settings.{key}_hint',
+                                  locale=locale)[:100],
+                    default=bool(settings.get(key)),
+                ) for key in SETTING_SWITCHES
+            ],
+            min_values=0, max_values=len(SETTING_SWITCHES), required=False,
+        )
+        self.add_item(ui.Label(
+            text=t('modules.tickets.settings.switches_label', locale=locale)[:45],
+            description=t('modules.tickets.settings.switches_hint',
+                          locale=locale)[:100],
+            component=self.switches,
+        ))
+
+        self.retention_input = ui.TextInput(
+            style=discord.TextStyle.short, required=False, max_length=4,
+            default=str(settings.get(SETTING_RETENTION, 0) or 0),
+        )
+        self.add_item(ui.Label(
+            text=t('modules.tickets.settings.retention_label', locale=locale)[:45],
+            description=t('modules.tickets.settings.retention_hint',
+                          locale=locale, max=MAX_RETENTION_DAYS)[:100],
+            component=self.retention_input,
+        ))
+
+    async def on_submit(self, interaction: discord.Interaction):
+        chosen = set(self.switches.values or [])
+        raw = (self.retention_input.value or '').strip()
+        try:
+            retention = max(0, min(int(raw), MAX_RETENTION_DAYS)) if raw else 0
+        except ValueError:
+            retention = 0
+        await self.callback_func(interaction, {
+            **{key: key in chosen for key in SETTING_SWITCHES},
+            SETTING_RETENTION: retention,
+        })
+
+
+class TicketsSettingsView(BaseView):
+    """``/config`` → Tickets → Settings.
+
+    Persistent: yes. Auth: Manage Server, re-checked on every click.
+    """
+
+    __persistent__ = True
+
+    def __init__(self, bot=None, guild_id: Optional[int] = None,
+                 locale: str = "en-US",
+                 settings: Optional[Dict[str, Any]] = None):
+        super().__init__()  # timeout=None
+        self.bot = bot
+        self.guild_id = guild_id
+        self.locale = locale
+        self.settings = settings or {}
+        self._build_view()
+
+    @classmethod
+    async def create(cls, bot, guild_id: int, locale: str):
+        config = await load_config(bot, guild_id)
+        return cls(bot, guild_id, locale, config['settings'])
+
+    def _build_view(self):
+        self.clear_items()
+        container = ui.Container()
+        container.add_item(ui.TextDisplay(
+            f"### {SETTINGS} {t('modules.tickets.settings.title', locale=self.locale)}"))
+        container.add_item(ui.TextDisplay(
+            t('modules.tickets.settings.description', locale=self.locale)))
+        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+
+        # The three switches and the retention window live behind a modal, so
+        # nothing on screen shows their state — hence these lines. The channel
+        # select below gets none, because it displays its own (rule 9).
+        lines = []
+        for key in SETTING_SWITCHES:
+            state = t('modules.tickets.settings.on' if self.settings.get(key)
+                      else 'modules.tickets.settings.off', locale=self.locale)
+            lines.append(
+                f"**{t(f'modules.tickets.settings.{key}_label', locale=self.locale)}** "
+                f"`{state}`")
+        retention = self.settings.get(SETTING_RETENTION, 0) or 0
+        lines.append(
+            f"**{t('modules.tickets.settings.retention_label', locale=self.locale)}** "
+            f"`{retention}`" if retention else
+            f"**{t('modules.tickets.settings.retention_label', locale=self.locale)}** "
+            f"`{t('modules.tickets.settings.retention_forever', locale=self.locale)}`")
+        container.add_item(ui.TextDisplay("\n".join(lines)))
+
+        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+        container.add_item(ui.TextDisplay(
+            f"**{t('modules.tickets.settings.log_label', locale=self.locale)}**\n"
+            f"-# {t('modules.tickets.settings.log_hint', locale=self.locale)}"))
+
+        row = ui.ActionRow()
+        log_select = ui.ChannelSelect(
+            channel_types=[discord.ChannelType.text],
+            placeholder=t('modules.tickets.settings.log_placeholder',
+                          locale=self.locale),
+            min_values=0, max_values=1, custom_id=_CID_SET_LOG,
+        )
+        current = self.settings.get(SETTING_LOG_CHANNEL)
+        if current and self.bot is not None:
+            channel = self.bot.get_channel(int(current))
+            if channel is not None:
+                log_select.default_values = [channel]
+        log_select.callback = self.on_log_channel
+        row.add_item(log_select)
+        container.add_item(row)
+
+        self.add_item(container)
+
+        buttons = ui.ActionRow()
+        back = ui.Button(
+            emoji=discord.PartialEmoji.from_str(BACK),
+            label=t('modules.config.buttons.back', locale=self.locale),
+            style=discord.ButtonStyle.secondary, custom_id=_CID_SET_BACK,
+        )
+        back.callback = self.on_back
+        buttons.add_item(back)
+
+        edit = ui.Button(
+            emoji=discord.PartialEmoji.from_str(SETTINGS),
+            label=t('modules.tickets.settings.edit', locale=self.locale),
+            style=discord.ButtonStyle.primary, custom_id=_CID_SET_EDIT,
+        )
+        edit.callback = self.on_edit
+        buttons.add_item(edit)
+        self.add_item(buttons)
+
+    # -- callbacks --------------------------------------------------------- #
+    async def _apply(self, interaction: discord.Interaction,
+                     changes: Dict[str, Any]) -> None:
+        """Merge changes into the stored settings. No panel re-post: none of
+        these settings is visible on a panel message."""
+        bot = interaction.client
+        config = await load_config(bot, interaction.guild_id)
+        config['settings'].update(changes)
+        ok, error = await save_config(bot, interaction.guild_id, config,
+                                      interaction.user.id)
+        if not ok:
+            await report_save_error(interaction, error)
+            return
+        await render_settings(interaction)
+
+    async def on_log_channel(self, interaction: discord.Interaction):
+        if not await check_guild_perms(interaction):
+            return
+        values: List[str] = interaction.data.get('values') or []
+        await self._apply(interaction,
+                          {SETTING_LOG_CHANNEL: int(values[0]) if values else None})
+
+    async def on_edit(self, interaction: discord.Interaction):
+        if not await check_guild_perms(interaction):
+            return
+        locale = i18n.get_user_locale(interaction)
+        config = await load_config(interaction.client, interaction.guild_id)
+        await interaction.response.send_modal(
+            TicketsSettingsModal(locale, config['settings'], self._apply))
+
+    async def on_back(self, interaction: discord.Interaction):
+        if not await check_guild_perms(interaction):
+            return
+        await render_root(interaction)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         return await check_guild_perms(interaction)

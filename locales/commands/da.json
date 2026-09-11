@@ -279,7 +279,7 @@
     },
     "ticket": {
       "name": "ticket",
-      "description": "Administrer den sag, du er i"
+      "description": "Administrer serverens sager"
     },
     "ticket close": {
       "name": "luk",
@@ -386,6 +386,20 @@
     "brocoli": {
       "name": "brocoli",
       "description": "Åbner en kanal, hvor Moddys assistent konfigurerer denne server"
+    },
+    "ticket stats": {
+      "name": "statistik",
+      "description": "Behandlede sager og teamets bedømmelser",
+      "parameters": {
+        "staff": {
+          "name": "medarbejder",
+          "description": "Hvis individuelle bedømmelser skal vises"
+        },
+        "days": {
+          "name": "dage",
+          "description": "Hvor langt tilbage der skal ses, i dage (standard 30)"
+        }
+      }
     }
   }
 }

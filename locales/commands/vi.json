@@ -279,7 +279,7 @@
     },
     "ticket": {
       "name": "ticket",
-      "description": "Quản lý ticket bạn đang ở trong"
+      "description": "Quản lý các ticket của máy chủ"
     },
     "ticket close": {
       "name": "đóng",
@@ -386,6 +386,20 @@
     "brocoli": {
       "name": "brocoli",
       "description": "Mở một kênh nơi trợ lý của Moddy thiết lập máy chủ này"
+    },
+    "ticket stats": {
+      "name": "thong-ke",
+      "description": "Số ticket đã xử lý và đánh giá của đội ngũ",
+      "parameters": {
+        "staff": {
+          "name": "nhan-vien",
+          "description": "Hiển thị đánh giá riêng của ai"
+        },
+        "days": {
+          "name": "so-ngay",
+          "description": "Xem lại bao nhiêu ngày (mặc định 30)"
+        }
+      }
     }
   }
 }

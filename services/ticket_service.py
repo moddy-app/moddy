@@ -49,6 +49,10 @@ from modules.tickets import (
     PERM_STAFF_THREAD,
     PERM_UNCLAIM_OTHERS,
     PERM_VIEW,
+    SETTING_LOG_CHANNEL,
+    SETTING_RATING,
+    SETTING_TRANSCRIPTS,
+    DEFAULT_SETTINGS,
     apply_status_prefix,
     can_open,
     default_open_message,
@@ -142,6 +146,9 @@ class TicketService:
         # collected mid-flight and the channel would silently keep the wrong
         # status dot.
         self._renames: set = set()
+        # Channel ids of currently open tickets — see the cache section below.
+        self._open_channels: set = set()
+        self._cache_ready = False
 
     # ------------------------------------------------------------------ #
     # Resolution
@@ -160,6 +167,55 @@ class TicketService:
         if not self.bot.db:
             return None
         return await self.bot.db.get_ticket_by_channel(channel_id)
+
+    async def settings(self, guild_id: int) -> Dict[str, Any]:
+        """The guild's module-wide ticket settings, defaults when unconfigured."""
+        module = await self.get_module(guild_id)
+        if module is None:
+            return dict(DEFAULT_SETTINGS)
+        return getattr(module, 'settings', None) or dict(DEFAULT_SETTINGS)
+
+    async def setting(self, guild_id: int, key: str) -> Any:
+        return (await self.settings(guild_id)).get(key, DEFAULT_SETTINGS.get(key))
+
+    # ------------------------------------------------------------------ #
+    # Open-ticket channel cache
+    #
+    # The closure detector looks at every message of every guild. Asking the
+    # database "is this channel a ticket?" on each one would be one query per
+    # message on a busy server; this set answers it for free. It is a cache of
+    # *identities*, never of state: a hit still goes to the database for the
+    # ticket itself.
+    # ------------------------------------------------------------------ #
+    def remember_open_ticket(self, channel_id: int) -> None:
+        self._open_channels.add(int(channel_id))
+
+    def forget_open_ticket(self, channel_id: int) -> None:
+        self._open_channels.discard(int(channel_id))
+
+    def is_open_ticket_channel(self, channel_id: int) -> bool:
+        """Whether this channel is a known open ticket.
+
+        Before the cache is hydrated it answers ``True`` for everything rather
+        than risk missing real tickets during the first seconds after a boot —
+        a false positive costs one query, a false negative loses the feature.
+        """
+        if not self._cache_ready:
+            return True
+        return int(channel_id) in self._open_channels
+
+    async def hydrate_open_tickets(self) -> None:
+        """Fill the cache from the database, once, at startup."""
+        if not self.bot.db:
+            return
+        try:
+            rows = await self.bot.db.list_open_ticket_channels()
+        except Exception as e:
+            logger.error(f"[Tickets] Could not hydrate the open-ticket cache: {e}")
+            return
+        self._open_channels = {int(cid) for cid in rows}
+        self._cache_ready = True
+        logger.info(f"[Tickets] Open-ticket cache: {len(self._open_channels)} channels")
 
     async def resolve(self, channel: discord.abc.GuildChannel
                       ) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
@@ -333,6 +389,169 @@ class TicketService:
     # ------------------------------------------------------------------ #
     # Pings
     # ------------------------------------------------------------------ #
+    # ------------------------------------------------------------------ #
+    # Membership changes
+    #
+    # Neither of these is optional, and neither closes or opens anything on
+    # its own. A ticket whose author has left is not automatically over — the
+    # staff may still have work to finish or a decision to record — so Moddy
+    # says so and leaves the decision to somebody who holds `close`. And a
+    # member who comes back gets their channel back rather than a ticket they
+    # can no longer read, which is what a plain rejoin would otherwise mean.
+    # ------------------------------------------------------------------ #
+    async def announce_owner_left(self, guild: discord.Guild,
+                                  user: discord.abc.User) -> int:
+        """Tell each of this member's open tickets that they left the server.
+
+        Only the tickets they *opened*: a ticket does not lose its purpose
+        because somebody who had been added to it left. Returns how many were
+        announced in.
+        """
+        from utils.ticket_views import build_owner_left_card
+
+        if not self.bot.db:
+            return 0
+        tickets = await self.bot.db.list_member_open_tickets(
+            guild.id, user.id, owned_only=True)
+        if not tickets:
+            return 0
+
+        locale = await self.ticket_locale(guild)
+        announced = 0
+        for ticket in tickets:
+            channel = guild.get_channel(ticket['channel_id'])
+            if not isinstance(channel, discord.TextChannel):
+                continue
+            try:
+                await channel.send(view=build_owner_left_card(user, locale=locale))
+                announced += 1
+            except (discord.Forbidden, discord.HTTPException) as e:
+                logger.warning(f"[Tickets] Could not announce the departure of "
+                               f"{user.id} in {channel.id}: {e}")
+        if announced:
+            logger.info(f"[Tickets] {user.id} left guild {guild.id}: "
+                        f"{announced} open ticket(s) announced")
+        return announced
+
+    async def restore_member_access(self, member: discord.Member) -> int:
+        """Put a returning member back into the open tickets they belong to.
+
+        Their channel overwrite went with them when they left, so without this
+        they come back to a ticket they cannot read — including the one they
+        opened themselves. Rebuilt from the stored ticket rather than patched,
+        so a claim lock or an escalation that happened while they were away is
+        honoured exactly as it would be for anyone else.
+        """
+        if not self.bot.db:
+            return 0
+        tickets = await self.bot.db.list_member_open_tickets(
+            member.guild.id, member.id)
+        restored = 0
+        for ticket in tickets:
+            channel = member.guild.get_channel(ticket['channel_id'])
+            if not isinstance(channel, discord.TextChannel):
+                continue
+            try:
+                _t, _panel, category = await self.resolve(channel)
+            except TicketError:
+                continue  # the category is gone; nothing to rebuild against
+            try:
+                await self.sync_permissions(channel, category, ticket)
+                restored += 1
+            except (discord.Forbidden, discord.HTTPException) as e:
+                logger.warning(f"[Tickets] Could not restore {member.id}'s "
+                               f"access to {channel.id}: {e}")
+        if restored:
+            logger.info(f"[Tickets] {member.id} rejoined guild "
+                        f"{member.guild.id}: access restored to {restored} ticket(s)")
+        return restored
+
+    # ------------------------------------------------------------------ #
+    # Ticket logs
+    #
+    # A dedicated channel, configured on the module rather than through
+    # `serverlogs/`: that registry catalogues the 163 *Discord* events, and a
+    # ticket closing is an application event of Moddy's own making. One card
+    # per closure, edited in place when a rating lands afterwards — which is
+    # why the transcript row remembers where it was posted.
+    # ------------------------------------------------------------------ #
+    async def post_ticket_log(self, guild: discord.Guild, ticket: Dict[str, Any],
+                              category: Dict[str, Any], actor: discord.abc.User,
+                              reason: Optional[str], *,
+                              transcript: Optional[Dict[str, Any]] = None,
+                              locale: Optional[str] = None) -> None:
+        """Post the closing card in the ticket log channel. Never fatal."""
+        from utils.ticket_views import build_ticket_log_card
+
+        channel_id = await self.setting(guild.id, SETTING_LOG_CHANNEL)
+        if not channel_id:
+            return
+        channel = guild.get_channel(int(channel_id))
+        if not isinstance(channel, (discord.TextChannel, discord.Thread)):
+            return
+
+        locale = locale or await self.ticket_locale(guild)
+        try:
+            message = await channel.send(view=build_ticket_log_card(
+                guild, ticket, category, actor, reason,
+                transcript=transcript, locale=locale))
+        except (discord.Forbidden, discord.HTTPException) as e:
+            logger.warning(f"[Tickets] Could not post the ticket log in "
+                           f"{channel_id}: {e}")
+            return
+
+        if transcript and self.bot.db:
+            try:
+                await self.bot.db.set_transcript_log_message(
+                    transcript['id'], channel_id=channel.id, message_id=message.id)
+            except Exception as e:  # noqa: BLE001
+                logger.warning(f"[Tickets] Could not remember the log message "
+                               f"of transcript {transcript['id']}: {e}")
+
+    async def refresh_ticket_log(self, transcript: Dict[str, Any]) -> None:
+        """Re-render a posted log card, now that its rating exists.
+
+        Best effort by design: a log card that cannot be edited (deleted
+        message, revoked permission, channel gone) must never turn a member's
+        rating into an error.
+        """
+        from utils.ticket_views import build_ticket_log_card
+
+        channel_id = transcript.get('log_channel_id')
+        message_id = transcript.get('log_message_id')
+        if not channel_id or not message_id:
+            return
+        guild = self.bot.get_guild(transcript['guild_id'])
+        if guild is None:
+            return
+        channel = guild.get_channel(int(channel_id))
+        if not isinstance(channel, (discord.TextChannel, discord.Thread)):
+            return
+
+        rating = None
+        if self.bot.db:
+            rating = await self.bot.db.get_ticket_rating(transcript['id'])
+
+        ticket = {
+            'number': transcript['ticket_number'],
+            'owner_id': transcript['owner_id'],
+            'claimed_by': transcript.get('claimed_by'),
+            'participants': transcript.get('participants') or [],
+            'opened_at': transcript['opened_at'],
+            'closed_at': transcript['closed_at'],
+        }
+        category = {'name': transcript['category_name']}
+        actor = guild.get_member(transcript['closed_by'])
+        locale = await self.ticket_locale(guild)
+        try:
+            message = channel.get_partial_message(int(message_id))
+            await message.edit(view=build_ticket_log_card(
+                guild, ticket, category, actor, transcript.get('close_reason'),
+                transcript=transcript, rating=rating, locale=locale))
+        except (discord.NotFound, discord.Forbidden, discord.HTTPException) as e:
+            logger.warning(f"[Tickets] Could not refresh the ticket log card "
+                           f"for transcript {transcript['id']}: {e}")
+
     async def ping(self, channel: discord.TextChannel,
                    mentions: Optional[str]) -> None:
         """Notify people with a message that deletes itself immediately.
@@ -477,6 +696,8 @@ class TicketService:
         if not ticket:
             await channel.delete(reason="Moddy tickets: could not register the ticket")
             raise TicketError('modules.tickets.errors.unavailable')
+
+        self.remember_open_ticket(channel.id)
 
         # The control message: pinned, so it stays reachable however long the
         # conversation gets. The whole of its text is the category's opening
@@ -729,7 +950,24 @@ class TicketService:
         await self.sync_permissions(channel, category, ticket)
         await self.sync_status_prefix(channel, category, ticket)
 
+        self.forget_open_ticket(channel.id)
+        detector = getattr(self.bot, 'ticket_closure', None)
+        if detector is not None:
+            detector.forget(channel.id)
+
         locale = await self.ticket_locale(channel.guild)
+        settings = await self.settings(channel.guild.id)
+
+        # Archive before anything else is posted: the closing card adds nothing
+        # a transcript row does not already carry in its own columns, and
+        # reading the history first is what lets the card carry the link.
+        transcript = None
+        if settings.get(SETTING_TRANSCRIPTS):
+            archiver = getattr(self.bot, 'ticket_transcripts', None)
+            if archiver is not None:
+                transcript = await archiver.capture(channel, ticket, category, actor.id)
+        transcript_key = transcript['key'] if transcript else None
+
         closing = category.get('close_message')
         rendered = render_text(
             closing, member=actor, guild=channel.guild, category=category,
@@ -738,12 +976,18 @@ class TicketService:
 
         try:
             await channel.send(view=build_closed_message(
-                ticket, category, actor, reason, rendered, locale=locale))
+                ticket, category, actor, reason, rendered, locale=locale,
+                transcript_key=transcript_key))
         except discord.HTTPException as e:
             logger.warning(f"[Tickets] Could not post the closing card in "
                            f"{channel.id}: {e}")
 
-        await self._notify_owner_closed(channel, ticket, category, actor, reason)
+        await self._notify_owner_closed(
+            channel, ticket, category, actor, reason,
+            transcript=transcript,
+            rating_available=bool(settings.get(SETTING_RATING)))
+        await self.post_ticket_log(channel.guild, ticket, category, actor,
+                                   reason, transcript=transcript, locale=locale)
         logger.info(f"[Tickets] #{ticket['number']} closed by {actor.id}")
         stats = getattr(self.bot, "stats", None)
         if stats is not None:
@@ -755,15 +999,33 @@ class TicketService:
             )
         return ticket
 
-    async def _notify_owner_closed(self, channel, ticket, category, actor, reason):
-        """DM the opener that their ticket is closed — best effort, never fatal."""
+    async def _notify_owner_closed(self, channel, ticket, category, actor, reason,
+                                   *, transcript: Optional[Dict[str, Any]] = None,
+                                   rating_available: bool = False):
+        """DM the opener that their ticket is closed — best effort, never fatal.
+
+        The card carries the transcript link when there is an archive, and the
+        "rate it" button when the server collects ratings and none was left on
+        the way out. That button is the catch-all of the three rating entry
+        points: whatever happened in the channel, the opener always has a way
+        back to it from here.
+        """
         from utils.ticket_views import build_close_dm
 
         locale = await self.ticket_locale(channel.guild)
+        rating = None
+        if transcript and self.bot.db:
+            try:
+                rating = await self.bot.db.get_ticket_rating(transcript['id'])
+            except Exception as e:  # noqa: BLE001 - a DM is never worth failing
+                logger.warning(f"[Tickets] Could not read the rating of "
+                               f"transcript {transcript['id']}: {e}")
         await self._dm_owner(
             channel, ticket,
             build_close_dm(channel.guild, ticket, category, actor, reason,
-                           locale=locale),
+                           locale=locale,
+                           transcript_key=transcript['key'] if transcript else None,
+                           rating=rating, rating_available=rating_available),
             kind="close", category=category, locale=locale)
 
     async def _dm_owner(self, channel: discord.TextChannel,
@@ -816,6 +1078,12 @@ class TicketService:
         ticket = await self.get_ticket(channel.id) or ticket
         await self.sync_permissions(channel, category, ticket)
         await self.sync_status_prefix(channel, category, ticket)
+        # A reopened ticket is a fresh conversation as far as the detector is
+        # concerned: it gets its suggestion budget back.
+        self.remember_open_ticket(channel.id)
+        detector = getattr(self.bot, 'ticket_closure', None)
+        if detector is not None:
+            detector.forget(channel.id)
 
         # The closure was announced in a DM, so its cancellation has to be too:
         # a member told their ticket was over has no reason to look at a
@@ -1340,6 +1608,15 @@ class TicketService:
     # Housekeeping
     # ------------------------------------------------------------------ #
     async def forget_channel(self, channel_id: int) -> None:
-        """Drop the row of a ticket whose channel no longer exists."""
+        """Drop the row of a ticket whose channel no longer exists.
+
+        The transcript and the rating are deliberately left alone: they live in
+        their own tables precisely so that deleting a ticket channel does not
+        erase what happened in it.
+        """
+        self.forget_open_ticket(channel_id)
+        detector = getattr(self.bot, 'ticket_closure', None)
+        if detector is not None:
+            detector.forget(channel_id)
         if self.bot.db:
             await self.bot.db.delete_ticket(channel_id)

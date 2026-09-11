@@ -279,7 +279,7 @@
     },
     "ticket": {
       "name": "ticket",
-      "description": "今いるチケットを管理します"
+      "description": "サーバーのチケットを管理します"
     },
     "ticket close": {
       "name": "クローズ",
@@ -386,6 +386,20 @@
     "brocoli": {
       "name": "brocoli",
       "description": "Moddy のアシスタントがこのサーバーを設定するチャンネルを開きます"
+    },
+    "ticket stats": {
+      "name": "統計",
+      "description": "対応したチケット数とスタッフの評価",
+      "parameters": {
+        "staff": {
+          "name": "スタッフ",
+          "description": "誰の個別評価を表示するか"
+        },
+        "days": {
+          "name": "日数",
+          "description": "何日前まで遡るか（既定は30）"
+        }
+      }
     }
   }
 }

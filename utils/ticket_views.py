@@ -62,6 +62,7 @@ from modules.tickets import (
     PERM_ADMIN,
     PERM_CLOSE,
     PERM_PARTICIPANTS,
+    PERM_VIEW,
     STYLE_SELECT,
     TICKET_BUTTONS,
     find_category,
@@ -74,6 +75,7 @@ from utils.components_v2 import create_error_message, create_success_message
 from utils.emojis import (
     BACK, DELETE, GROUPS, INFO, MIC_OFF, TICKET, TICKET_CLAIM, TICKET_CLOSE,
     TICKET_CLOSE_REQUEST, TICKET_ESCALATE, TICKET_PARTICIPANTS, TICKET_REOPEN,
+    WARNING,
     TICKET_STAFF_THREAD, UNDONE,
 )
 from utils.i18n import i18n, t
@@ -103,6 +105,11 @@ _CID_REQUEST_ACCEPT = "moddy:tickets:request:accept"
 _CID_REQUEST_REFUSE = "moddy:tickets:request:refuse"
 
 _CID_ESCALATED_CANCEL = "moddy:tickets:escalated:cancel"
+
+_CID_LEFT_CLOSE = "moddy:tickets:left:close"
+
+_CID_SUGGEST_CLOSE = "moddy:tickets:suggest:close"
+_CID_SUGGEST_DISMISS = "moddy:tickets:suggest:dismiss"
 
 _CID_ESC_KEEP = "moddy:tickets:escalate:keep"
 _CID_ESC_MUTE = "moddy:tickets:escalate:mute"
@@ -193,6 +200,23 @@ def _add_rows(view: ui.LayoutView, buttons: List[ui.Button]) -> None:
         for button in buttons[start:start + _BUTTONS_PER_ROW]:
             row.add_item(button)
         view.add_item(row)
+
+
+def _transcript_button(transcript_key: Optional[str], locale: str
+                       ) -> Optional[ui.Button]:
+    """The "view the transcript" link, or ``None`` when there is no archive.
+
+    A link button carries no custom_id, so it costs a persistent view nothing:
+    only the interactive children are rebound at startup.
+    """
+    if not transcript_key:
+        return None
+    from services.ticket_transcript_service import transcript_url
+    return ui.Button(
+        style=discord.ButtonStyle.link,
+        label=t('modules.tickets.transcript.view', locale=locale),
+        emoji=discord.PartialEmoji.from_str(TICKET) if TICKET else None,
+        url=transcript_url(transcript_key))
 
 
 def _button(custom_id: str, label: str, emoji: str,
@@ -367,6 +391,49 @@ def build_panel_view(panel: Dict[str, Any]) -> TicketPanelView:
 # =========================================================================== #
 # 2. The ticket control bar (pinned in the ticket channel)
 # =========================================================================== #
+async def close_and_offer_rating(interaction: discord.Interaction, service,
+                                 ticket: Dict[str, Any], locale: str, *,
+                                 reason: Optional[str] = None,
+                                 trigger: Optional[str] = None) -> None:
+    """Close the ticket, then answer — with the rating card when it fits.
+
+    This is the shared tail of every way a ticket gets closed from a click, and
+    the reason the three rating prompts stay consistent. The card only replaces
+    the plain confirmation when the person closing is the ticket's own opener:
+    a staffer closing somebody else's ticket has nothing to rate.
+
+    The interaction must already be deferred (or answerable) — the modal itself
+    is opened by the card's button, on a later interaction, because Discord
+    only accepts ``send_modal`` as the first response to one.
+    """
+    from db.repositories.ticket_ratings import TRIGGER_SELF_CLOSE
+    from services.ticket_service import TicketError
+    from utils.ticket_rating_views import offer_rating
+
+    channel = interaction.channel
+    try:
+        await service.close_ticket(channel, interaction.user, reason)
+    except TicketError as e:
+        await handle_ticket_error(interaction, e)
+        return
+
+    if interaction.user.id == ticket.get('owner_id'):
+        try:
+            if await offer_rating(interaction, interaction.client,
+                                  interaction.guild, channel_id=channel.id,
+                                  trigger=trigger or TRIGGER_SELF_CLOSE,
+                                  locale=locale):
+                return
+        except Exception as e:  # noqa: BLE001 - never fail a closure over this
+            import logging
+            logging.getLogger('moddy.tickets.rating').warning(
+                f"[Tickets] Could not offer a rating in {channel.id}: {e}")
+
+    await send_success(interaction,
+                       t('modules.tickets.close.done_title', locale=locale),
+                       t('modules.tickets.close.done_description', locale=locale))
+
+
 async def _resolve(interaction: discord.Interaction):
     """``(service, ticket, panel, category)`` for the channel a click came from.
 
@@ -494,21 +561,14 @@ class TicketControlView(BaseView):
             TicketReasonModal(locale, 'close', self._do_close))
 
     async def _do_close(self, interaction: discord.Interaction, reason: Optional[str]):
-        from services.ticket_service import TicketError
         resolved = await _resolve(interaction)
         if not resolved:
             return
         service, ticket, panel, category = resolved
         await interaction.response.defer(ephemeral=True, thinking=True)
-        try:
-            await service.close_ticket(interaction.channel, interaction.user, reason)
-        except TicketError as e:
-            await handle_ticket_error(interaction, e)
-            return
         locale = i18n.get_user_locale(interaction)
-        await send_success(interaction,
-                           t('modules.tickets.close.done_title', locale=locale),
-                           t('modules.tickets.close.done_description', locale=locale))
+        await close_and_offer_rating(interaction, service, ticket, locale,
+                                     reason=reason)
 
     async def on_claim(self, interaction: discord.Interaction):
         resolved = await _resolve(interaction)
@@ -593,7 +653,7 @@ class TicketClosedView(BaseView):
                  category: Optional[Dict[str, Any]] = None,
                  actor: Optional[discord.abc.User] = None,
                  reason: Optional[str] = None, body: Optional[str] = None,
-                 locale: str = "en-US"):
+                 locale: str = "en-US", transcript_key: Optional[str] = None):
         super().__init__()  # timeout=None
         self.ticket = ticket or {}
         self.category = category or {}
@@ -601,6 +661,7 @@ class TicketClosedView(BaseView):
         self.reason = reason
         self.body = body
         self.locale = locale
+        self.transcript_key = transcript_key
         self._build_view()
 
     def _build_view(self):
@@ -626,14 +687,18 @@ class TicketClosedView(BaseView):
 
         self.add_item(container)
 
-        _add_rows(self, [
+        buttons = [
             _button(_CID_CLOSED_REOPEN,
                     t('modules.tickets.actions.reopen', locale=self.locale),
                     TICKET_REOPEN, discord.ButtonStyle.success, self.on_reopen),
             _button(_CID_CLOSED_DELETE,
                     t('modules.tickets.actions.delete', locale=self.locale),
                     DELETE, discord.ButtonStyle.danger, self.on_delete),
-        ])
+        ]
+        transcript = _transcript_button(self.transcript_key, self.locale)
+        if transcript is not None:
+            buttons.append(transcript)
+        _add_rows(self, buttons)
 
     async def on_reopen(self, interaction: discord.Interaction):
         from services.ticket_service import TicketError
@@ -685,8 +750,207 @@ class TicketClosedView(BaseView):
 
 def build_closed_message(ticket: Dict[str, Any], category: Dict[str, Any],
                          actor: discord.abc.User, reason: Optional[str],
-                         body: Optional[str], locale: str) -> TicketClosedView:
-    return TicketClosedView(ticket, category, actor, reason, body, locale)
+                         body: Optional[str], locale: str,
+                         transcript_key: Optional[str] = None) -> TicketClosedView:
+    return TicketClosedView(ticket, category, actor, reason, body, locale,
+                            transcript_key=transcript_key)
+
+
+# =========================================================================== #
+# 3b. The closure suggestion
+# =========================================================================== #
+class TicketClosureSuggestionView(BaseView):
+    """Offered when a conversation reads as finished (see the detector).
+
+    Persistent: yes. Auth: resolved from the ticket channel, like every other
+    ticket card.
+
+    The single action button does **not** decide what it does from who was
+    detected — it decides from who *clicks*. Somebody holding ``close`` closes
+    the ticket; anybody else on the ticket gets the close request they would
+    have got from ``/ticket close-request``. Offering a closure therefore never
+    hands out a permission: both branches go through the service, which is the
+    only place that checks anything.
+    """
+
+    __persistent__ = True
+
+    def __init__(self, locale: str = "en-US"):
+        super().__init__()  # timeout=None
+        self.locale = locale
+        self._build_view()
+
+    def _build_view(self):
+        self.clear_items()
+        container = ui.Container(accent_colour=discord.Colour(0xFEE75C))
+        container.add_item(ui.TextDisplay(
+            f"### {TICKET_CLOSE_REQUEST} "
+            f"{t('modules.tickets.closure_detection.card_title', locale=self.locale)}"))
+        container.add_item(ui.TextDisplay(
+            t('modules.tickets.closure_detection.card_description', locale=self.locale)))
+        self.add_item(container)
+
+        _add_rows(self, [
+            _button(_CID_SUGGEST_CLOSE,
+                    t('modules.tickets.closure_detection.resolve', locale=self.locale),
+                    TICKET_CLOSE, discord.ButtonStyle.success, self.on_resolve),
+            _button(_CID_SUGGEST_DISMISS,
+                    t('modules.tickets.closure_detection.keep_open', locale=self.locale),
+                    UNDONE, discord.ButtonStyle.secondary, self.on_dismiss),
+        ])
+
+    async def on_resolve(self, interaction: discord.Interaction):
+        from services.ticket_service import TicketError
+        resolved = await _resolve(interaction)
+        if not resolved:
+            return
+        service, ticket, panel, category = resolved
+        locale = i18n.get_user_locale(interaction)
+        granted = member_permissions(interaction.user, category, ticket)
+
+        if PERM_VIEW not in granted and PERM_CLOSE not in granted:
+            await send_error(
+                interaction,
+                t('modules.tickets.errors.missing_permission', locale=locale), locale)
+            return
+
+        if PERM_CLOSE in granted:
+            # The opener closing their own ticket is one of the three moments
+            # a rating is asked for; everyone else just closes it.
+            await interaction.response.defer(ephemeral=True, thinking=True)
+            await close_and_offer_rating(interaction, service, ticket, locale)
+            return
+
+        # No `close`: this becomes a request, exactly as if they had run
+        # /ticket close-request. Suggesting is not granting.
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        try:
+            await service.request_close(interaction.channel, interaction.user)
+        except TicketError as e:
+            await handle_ticket_error(interaction, e)
+            return
+        await send_success(
+            interaction,
+            t('modules.tickets.close_request.sent_title', locale=locale),
+            t('modules.tickets.close_request.sent_description_to_staff', locale=locale))
+
+    async def on_dismiss(self, interaction: discord.Interaction):
+        resolved = await _resolve(interaction)
+        if not resolved:
+            return
+        service, ticket, panel, category = resolved
+        locale = i18n.get_user_locale(interaction)
+        if PERM_VIEW not in member_permissions(interaction.user, category, ticket):
+            await send_error(
+                interaction,
+                t('modules.tickets.errors.missing_permission', locale=locale), locale)
+            return
+        detector = getattr(interaction.client, 'ticket_closure', None)
+        if detector is not None:
+            detector.note_dismissed(interaction.channel.id)
+        await interaction.response.edit_message(
+            view=_closure_suggestion_dismissed(interaction.user, locale))
+
+    @classmethod
+    def register_persistent(cls, bot) -> None:
+        """Auth model: resolved from the ticket channel on every click."""
+        bot.add_view(cls())
+
+
+def _closure_suggestion_dismissed(actor: discord.abc.User,
+                                  locale: str) -> ui.LayoutView:
+    """The suggestion card once someone has said "not yet" (no buttons left)."""
+    view = ui.LayoutView(timeout=None)
+    container = ui.Container(accent_colour=discord.Colour(0x99AAB5))
+    container.add_item(ui.TextDisplay(
+        f"### {TICKET_CLOSE_REQUEST} "
+        f"{t('modules.tickets.closure_detection.card_title', locale=locale)}"))
+    container.add_item(ui.TextDisplay(
+        f"{INFO} {t('modules.tickets.closure_detection.dismissed', locale=locale, user=actor.mention)}"))
+    view.add_item(container)
+    return view
+
+
+def build_closure_suggestion(locale: str = "en-US") -> TicketClosureSuggestionView:
+    return TicketClosureSuggestionView(locale)
+
+
+# =========================================================================== #
+# 3c. The author left the server
+# =========================================================================== #
+class TicketOwnerLeftView(BaseView):
+    """Posted when the member who opened a ticket leaves the server.
+
+    Persistent: yes. Auth: resolved from the ticket channel, ``close``.
+
+    The offer is deliberately an offer. A departure often *is* the end of a
+    ticket, but not always — a report still has to be acted on, a refund still
+    has to be recorded — so nothing closes by itself and only somebody holding
+    ``close`` can act on the card. Unlike the closure suggestion this one is
+    not a server setting: a ticket whose author is gone is a fact the staff
+    need to see, not a feature to opt into.
+    """
+
+    __persistent__ = True
+
+    def __init__(self, user: Optional[discord.abc.User] = None,
+                 locale: str = "en-US"):
+        super().__init__()  # timeout=None
+        self.user = user
+        self.locale = locale
+        self._build_view()
+
+    def _build_view(self):
+        self.clear_items()
+        container = ui.Container(accent_colour=discord.Colour(0xFEE75C))
+        container.add_item(ui.TextDisplay(
+            f"### {WARNING} "
+            f"{t('modules.tickets.owner_left.card_title', locale=self.locale)}"))
+        container.add_item(ui.TextDisplay(t(
+            'modules.tickets.owner_left.card_description', locale=self.locale,
+            user=self.user.mention if self.user else "—",
+            name=str(self.user) if self.user else "—")))
+        self.add_item(container)
+
+        _add_rows(self, [
+            _button(_CID_LEFT_CLOSE,
+                    t('modules.tickets.actions.close', locale=self.locale),
+                    TICKET_CLOSE, discord.ButtonStyle.danger, self.on_close),
+        ])
+
+    async def on_close(self, interaction: discord.Interaction):
+        from services.ticket_service import TicketError
+        resolved = await _resolve(interaction)
+        if not resolved:
+            return
+        service, ticket, panel, category = resolved
+        locale = i18n.get_user_locale(interaction)
+        if PERM_CLOSE not in member_permissions(interaction.user, category, ticket):
+            await send_error(
+                interaction,
+                t('modules.tickets.errors.missing_permission', locale=locale), locale)
+            return
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        try:
+            await service.close_ticket(
+                interaction.channel, interaction.user,
+                t('modules.tickets.owner_left.reason', locale=locale))
+        except TicketError as e:
+            await handle_ticket_error(interaction, e)
+            return
+        await send_success(interaction,
+                           t('modules.tickets.close.done_title', locale=locale),
+                           t('modules.tickets.close.done_description', locale=locale))
+
+    @classmethod
+    def register_persistent(cls, bot) -> None:
+        """Auth model: resolved from the ticket channel on every click."""
+        bot.add_view(cls())
+
+
+def build_owner_left_card(user: discord.abc.User,
+                          locale: str = "en-US") -> TicketOwnerLeftView:
+    return TicketOwnerLeftView(user, locale)
 
 
 # =========================================================================== #
@@ -750,14 +1014,28 @@ class TicketCloseRequestView(BaseView):
         resolved = await _resolve(interaction)
         if not resolved:
             return
-        service = resolved[0]
+        service, ticket, panel, category = resolved
         await interaction.response.defer(ephemeral=True, thinking=True)
         try:
             await service.accept_close_request(interaction.channel, interaction.user)
         except TicketError as e:
             await handle_ticket_error(interaction, e)
             return
+
         locale = i18n.get_user_locale(interaction)
+        # The staff offered the closure and the member took it: that is one of
+        # the three moments a rating is asked for.
+        if interaction.user.id == ticket.get('owner_id'):
+            from db.repositories.ticket_ratings import TRIGGER_CLOSE_REQUEST
+            from utils.ticket_rating_views import offer_rating
+            try:
+                if await offer_rating(interaction, interaction.client,
+                                      interaction.guild,
+                                      channel_id=interaction.channel.id,
+                                      trigger=TRIGGER_CLOSE_REQUEST, locale=locale):
+                    return
+            except Exception:  # noqa: BLE001 - the ticket is already closed
+                pass
         await send_success(interaction,
                            t('modules.tickets.close.done_title', locale=locale),
                            t('modules.tickets.close.done_description', locale=locale))
@@ -1307,8 +1585,19 @@ async def run_claim(interaction: discord.Interaction, service, *,
 # =========================================================================== #
 def build_close_dm(guild: discord.Guild, ticket: Dict[str, Any],
                    category: Dict[str, Any], actor: discord.abc.User,
-                   reason: Optional[str], locale: str) -> ui.LayoutView:
-    """Tell the opener their ticket is closed. Zero interactive children."""
+                   reason: Optional[str], locale: str, *,
+                   transcript_key: Optional[str] = None,
+                   rating: Optional[Dict[str, Any]] = None,
+                   rating_available: bool = False) -> ui.LayoutView:
+    """Tell the opener their ticket is closed.
+
+    Three shapes, in order of precedence: a rating already left is shown as
+    text; otherwise, if the server collects ratings, a button invites them to
+    leave one; otherwise the card is purely informational, as it always was.
+    The transcript link rides along whenever an archive was produced.
+    """
+    from utils.ticket_rating_views import TicketRateButton, format_rating_line
+
     view = ui.LayoutView(timeout=None)
     container = ui.Container(accent_colour=discord.Colour(0xED4245))
 
@@ -1321,9 +1610,99 @@ def build_close_dm(guild: discord.Guild, ticket: Dict[str, Any],
     if reason:
         container.add_item(ui.TextDisplay(
             f"**{t('modules.tickets.fields.reason', locale=locale)}**\n{reason}"))
+    if rating:
+        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+        container.add_item(ui.TextDisplay(format_rating_line(rating, locale)))
 
     view.add_item(container)
+
+    buttons = []
+    if rating is None and rating_available and transcript_key:
+        buttons.append(TicketRateButton.build(transcript_key, locale))
+    transcript = _transcript_button(transcript_key, locale)
+    if transcript is not None:
+        buttons.append(transcript)
+    if buttons:
+        _add_rows(view, buttons)
     return view
+
+
+def build_ticket_log_card(guild: discord.Guild, ticket: Dict[str, Any],
+                          category: Dict[str, Any], actor: Optional[discord.abc.User],
+                          reason: Optional[str], *,
+                          transcript: Optional[Dict[str, Any]] = None,
+                          rating: Optional[Dict[str, Any]] = None,
+                          locale: str = "en-US") -> ui.LayoutView:
+    """The card posted in the ticket log channel when a ticket closes.
+
+    Re-rendered in place when a rating arrives afterwards, so this has to be
+    able to draw itself from a transcript row alone — by then the ticket
+    channel, and its `tickets` row, may be long gone.
+    """
+    from utils.ticket_rating_views import format_rating_line
+
+    view = ui.LayoutView(timeout=None)
+    container = ui.Container(accent_colour=discord.Colour(0xED4245))
+    container.add_item(ui.TextDisplay(
+        f"### {TICKET_CLOSE} "
+        f"{t('modules.tickets.log.closed_title', locale=locale, number=ticket.get('number', '—'))}"))
+
+    lines = [
+        f"**{t('modules.tickets.fields.category', locale=locale)}** "
+        f"`{category.get('name', '—')}`",
+        f"**{t('modules.tickets.fields.opener', locale=locale)}** "
+        f"<@{ticket['owner_id']}> (`{ticket['owner_id']}`)",
+    ]
+    claimed_by = ticket.get('claimed_by')
+    if claimed_by:
+        lines.append(f"**{t('modules.tickets.fields.claimed_by', locale=locale)}** "
+                     f"<@{claimed_by}> (`{claimed_by}`)")
+    if actor is not None:
+        lines.append(f"**{t('modules.tickets.fields.closed_by', locale=locale)}** "
+                     f"{actor.mention} (`{actor.id}`)")
+    participants = ticket.get('participants') or []
+    if participants:
+        lines.append(f"**{t('modules.tickets.fields.participants', locale=locale)}** "
+                     f"`{len(participants)}`")
+
+    opened_at, closed_at = ticket.get('opened_at'), ticket.get('closed_at')
+    if opened_at and closed_at:
+        seconds = int((closed_at - opened_at).total_seconds())
+        lines.append(f"**{t('modules.tickets.fields.duration', locale=locale)}** "
+                     f"`{_format_duration(seconds, locale)}`")
+    if transcript:
+        lines.append(f"**{t('modules.tickets.fields.messages', locale=locale)}** "
+                     f"`{transcript.get('message_count', 0)}`"
+                     + (f" {t('modules.tickets.transcript.truncated', locale=locale)}"
+                        if transcript.get('truncated') else ""))
+    container.add_item(ui.TextDisplay("\n".join(lines)))
+
+    if reason:
+        container.add_item(ui.TextDisplay(
+            f"**{t('modules.tickets.fields.reason', locale=locale)}**\n{reason}"))
+    if rating:
+        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+        container.add_item(ui.TextDisplay(format_rating_line(rating, locale)))
+
+    view.add_item(container)
+
+    transcript_button = _transcript_button(
+        transcript['key'] if transcript else None, locale)
+    if transcript_button is not None:
+        _add_rows(view, [transcript_button])
+    return view
+
+
+def _format_duration(seconds: int, locale: str) -> str:
+    """A ticket's lifetime as "3d 4h", "4h 12m" or "12m" — never "0m"."""
+    days, rest = divmod(max(seconds, 0), 86400)
+    hours, rest = divmod(rest, 3600)
+    minutes = rest // 60
+    if days:
+        return f"{days}d {hours}h"
+    if hours:
+        return f"{hours}h {minutes}m"
+    return f"{max(minutes, 1)}m"
 
 
 def build_reopen_dm(guild: discord.Guild, ticket: Dict[str, Any],
@@ -1357,10 +1736,17 @@ def build_reopen_dm(guild: discord.Guild, ticket: Dict[str, Any],
 # 12. Persistence marker
 # =========================================================================== #
 class TicketsPersistence(BaseView):
-    """Marker view: registers the ticket panel's dynamic items at startup."""
+    """Marker view: registers the tickets module's dynamic items at startup.
+
+    Two families, both needing an id a static custom_id cannot carry: the
+    panel's open buttons (which panel, which category) and the closing DM's
+    "leave a review" button (which transcript — a DM has no ticket channel to
+    derive identity from).
+    """
 
     __persistent__ = True
 
     @classmethod
     def register_persistent(cls, bot) -> None:
-        bot.add_dynamic_items(TicketOpenButton, TicketOpenSelect)
+        from utils.ticket_rating_views import TicketRateButton
+        bot.add_dynamic_items(TicketOpenButton, TicketOpenSelect, TicketRateButton)

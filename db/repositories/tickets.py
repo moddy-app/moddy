@@ -167,6 +167,36 @@ class TicketsRepository:
                 guild_id, number)
             return _row_to_dict(row) if row else None
 
+    async def list_open_ticket_channels(self) -> List[int]:
+        """Every open ticket's channel id — hydrates the service's cache.
+
+        One query at boot instead of one per message forever.
+        """
+        async with self.pool.acquire() as conn:
+            rows = await conn.fetch(
+                "SELECT channel_id FROM tickets WHERE status = $1", STATUS_OPEN)
+        return [r['channel_id'] for r in rows]
+
+    async def list_member_open_tickets(self, guild_id: int, user_id: int, *,
+                                       owned_only: bool = False
+                                       ) -> List[Dict[str, Any]]:
+        """This member's open tickets in this guild.
+
+        By default both the ones they opened and the ones they were added to —
+        which is what "give them their access back" needs when they rejoin.
+        ``owned_only`` narrows it to the ones they opened, which is what
+        "should this ticket still be open?" needs when they leave: a ticket
+        does not lose its point because a bystander left.
+        """
+        clause = "owner_id = $2" if owned_only else \
+                 "(owner_id = $2 OR $2 = ANY(participants))"
+        async with self.pool.acquire() as conn:
+            rows = await conn.fetch(
+                f"SELECT * FROM tickets WHERE guild_id = $1 AND status = $3 "
+                f"AND {clause} ORDER BY number",
+                guild_id, user_id, STATUS_OPEN)
+        return [_row_to_dict(r) for r in rows]
+
     async def count_open_tickets(self, guild_id: int, owner_id: int,
                                  category_id: Optional[str] = None) -> int:
         """Open tickets a member owns — the per-category anti-spam limit."""

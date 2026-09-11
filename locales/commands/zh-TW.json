@@ -279,7 +279,7 @@
     },
     "ticket": {
       "name": "ticket",
-      "description": "管理你所在的服務單"
+      "description": "管理伺服器的工單"
     },
     "ticket close": {
       "name": "關閉",
@@ -386,6 +386,20 @@
     "brocoli": {
       "name": "brocoli",
       "description": "開啟一個頻道，讓 Moddy 助手設定此伺服器"
+    },
+    "ticket stats": {
+      "name": "統計",
+      "description": "已處理的工單數與團隊評價",
+      "parameters": {
+        "staff": {
+          "name": "工作人員",
+          "description": "顯示誰的單筆評價"
+        },
+        "days": {
+          "name": "天數",
+          "description": "回溯多少天（預設 30）"
+        }
+      }
     }
   }
 }

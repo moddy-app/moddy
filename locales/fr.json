@@ -3084,6 +3084,10 @@
         "unclaim_others": {
           "name": "Relâcher le ticket d'un autre",
           "description": "Retirer un ticket à l'agent qui l'a pris en charge"
+        },
+        "stats": {
+          "name": "Voir les statistiques",
+          "description": "Consulter les avis et le volume de tickets de cette catégorie"
         }
       },
       "channel": {
@@ -3117,7 +3121,10 @@
         "escalated": "Escalade",
         "your_permissions": "Vos permissions ici",
         "none": "aucune",
-        "claimed_by": "Pris en charge par"
+        "claimed_by": "Pris en charge par",
+        "closed_by": "Fermé par",
+        "duration": "Durée",
+        "messages": "Messages archivés"
       },
       "status": {
         "open": "Ouvert",
@@ -3271,6 +3278,89 @@
         "released_description": "{user} a relâché ce ticket — n'importe qui dans l'équipe peut le reprendre.",
         "released_done": "Le ticket est de nouveau libre.",
         "nobody": "personne pour l'instant"
+      },
+      "transcript": {
+        "view": "Voir la transcription",
+        "truncated": "(début tronqué)"
+      },
+      "log": {
+        "closed_title": "Ticket #{number} fermé"
+      },
+      "closure_detection": {
+        "card_title": "Ce ticket semble terminé",
+        "card_description": "La conversation ressemble à une fin d'échange. Si tout est réglé, marquez ce ticket comme résolu — sinon, gardez-le ouvert, personne ne sera dérangé à nouveau avant un moment.",
+        "resolve": "Marquer comme résolu",
+        "keep_open": "Pas encore",
+        "dismissed": "{user} a préféré garder ce ticket ouvert."
+      },
+      "rating": {
+        "modal_title": "Noter la prise en charge",
+        "leave": "Laisser un avis",
+        "prompt_description": "Votre ticket est fermé. Vous pouvez dire en quelques secondes comment s'est passée votre prise en charge — c'est facultatif, et cela aide beaucoup l'équipe.",
+        "score_label": "Votre appréciation",
+        "score_hint": "Comment s'est passée votre prise en charge ?",
+        "score_5": "Excellent",
+        "score_4": "Très bien",
+        "score_3": "Correct",
+        "score_2": "Moyen",
+        "score_1": "Pas top",
+        "staff_label": "Qui vous a aidé",
+        "staff_hint": "Laissez tel quel si la personne proposée est la bonne",
+        "no_staff": "Personne en particulier",
+        "comment_label": "Commentaire",
+        "comment_hint": "Facultatif — ce que vous voulez ajouter",
+        "given": "Appréciation",
+        "staff": "Personne notée",
+        "comment": "Commentaire",
+        "thanks_title": "Merci pour votre avis",
+        "thanks_description": "Votre appréciation (`{score}`) a bien été enregistrée.",
+        "already_title": "Déjà noté",
+        "already_description": "Un avis a déjà été laissé pour cette fermeture.",
+        "gone": "Ce ticket n'est plus disponible : sa transcription a été supprimée."
+      },
+      "settings": {
+        "title": "Paramètres des tickets",
+        "description": "Ce qui s'applique à tous les tickets du serveur, quelle que soit leur catégorie. Chaque fonctionnalité peut être désactivée séparément.",
+        "button": "Paramètres",
+        "edit": "Modifier",
+        "modal_title": "Paramètres des tickets",
+        "on": "activé",
+        "off": "désactivé",
+        "switches_label": "Fonctionnalités",
+        "switches_hint": "Décochez pour désactiver complètement",
+        "transcripts_enabled_label": "Transcriptions",
+        "transcripts_enabled_hint": "Archiver la conversation à la fermeture",
+        "closure_detection_enabled_label": "Détection de fin",
+        "closure_detection_enabled_hint": "Proposer la fermeture quand l'échange semble fini",
+        "rating_enabled_label": "Notation",
+        "rating_enabled_hint": "Demander au membre d'évaluer sa prise en charge",
+        "retention_label": "Conservation",
+        "retention_hint": "Jours avant suppression des transcriptions, 0 = toujours (max {max})",
+        "retention_forever": "pour toujours",
+        "log_label": "Salon des logs de tickets",
+        "log_hint": "Une carte y est publiée à chaque fermeture, avec le lien de la transcription et l'avis",
+        "log_placeholder": "Sélectionnez un salon"
+      },
+      "stats": {
+        "team_title": "Prise en charge des tickets",
+        "staff_title": "Prise en charge d'un membre du staff",
+        "member": "Membre",
+        "window": "Période",
+        "days": "jours",
+        "handled": "Tickets traités",
+        "handled_short": "traités",
+        "ratings": "Avis reçus",
+        "ratings_short": "avis",
+        "negative_short": "négatifs",
+        "average": "Moyenne",
+        "recent": "Derniers avis",
+        "few_ratings": "Trop peu d'avis pour que la moyenne soit représentative.",
+        "no_ratings": "Aucun avis n'a encore été laissé sur cette période."
+      },
+      "owner_left": {
+        "card_title": "L'auteur a quitté le serveur",
+        "card_description": "{user} (`{name}`) n'est plus sur le serveur. Le ticket reste ouvert : fermez-le s'il n'a plus lieu d'être, ou gardez-le le temps de finir ce qui doit l'être. Si la personne revient, elle y retrouvera automatiquement l'accès.",
+        "reason": "L'auteur a quitté le serveur"
       }
     }
   },

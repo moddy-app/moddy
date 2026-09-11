@@ -3085,6 +3085,10 @@
         "unclaim_others": {
           "name": "Release another's ticket",
           "description": "Take a ticket off the agent holding it"
+        },
+        "stats": {
+          "name": "View statistics",
+          "description": "Read the reviews and the ticket volume of this category"
         }
       },
       "channel": {
@@ -3118,7 +3122,10 @@
         "escalated": "Escalation",
         "your_permissions": "Your permissions here",
         "none": "none",
-        "claimed_by": "Handled by"
+        "claimed_by": "Handled by",
+        "closed_by": "Closed by",
+        "duration": "Duration",
+        "messages": "Archived messages"
       },
       "status": {
         "open": "Open",
@@ -3272,6 +3279,89 @@
         "released_description": "{user} released this ticket — anyone on the team can take it.",
         "released_done": "The ticket is free again.",
         "nobody": "nobody yet"
+      },
+      "transcript": {
+        "view": "View the transcript",
+        "truncated": "(beginning truncated)"
+      },
+      "log": {
+        "closed_title": "Ticket #{number} closed"
+      },
+      "closure_detection": {
+        "card_title": "This ticket looks finished",
+        "card_description": "The conversation reads like it has wrapped up. If everything is sorted, mark this ticket as resolved — otherwise keep it open and nobody will be asked again for a while.",
+        "resolve": "Mark as resolved",
+        "keep_open": "Not yet",
+        "dismissed": "{user} chose to keep this ticket open."
+      },
+      "rating": {
+        "modal_title": "Rate the handling",
+        "leave": "Leave a review",
+        "prompt_description": "Your ticket is closed. You can say in a few seconds how you were looked after — it is optional, and it helps the team a lot.",
+        "score_label": "Your rating",
+        "score_hint": "How was the way you were looked after?",
+        "score_5": "Excellent",
+        "score_4": "Very good",
+        "score_3": "Fine",
+        "score_2": "Mediocre",
+        "score_1": "Poor",
+        "staff_label": "Who helped you",
+        "staff_hint": "Leave as is if the suggested person is the right one",
+        "no_staff": "Nobody in particular",
+        "comment_label": "Comment",
+        "comment_hint": "Optional — anything you want to add",
+        "given": "Rating",
+        "staff": "Rated person",
+        "comment": "Comment",
+        "thanks_title": "Thanks for your review",
+        "thanks_description": "Your rating (`{score}`) has been recorded.",
+        "already_title": "Already rated",
+        "already_description": "A review has already been left for this closure.",
+        "gone": "This ticket is no longer available: its transcript has been deleted."
+      },
+      "settings": {
+        "title": "Ticket settings",
+        "description": "What applies to every ticket on the server, whatever their category. Each feature can be switched off on its own.",
+        "button": "Settings",
+        "edit": "Edit",
+        "modal_title": "Ticket settings",
+        "on": "on",
+        "off": "off",
+        "switches_label": "Features",
+        "switches_hint": "Uncheck to switch off entirely",
+        "transcripts_enabled_label": "Transcripts",
+        "transcripts_enabled_hint": "Archive the conversation when a ticket closes",
+        "closure_detection_enabled_label": "Closure detection",
+        "closure_detection_enabled_hint": "Offer to close when the conversation looks finished",
+        "rating_enabled_label": "Ratings",
+        "rating_enabled_hint": "Ask the member to rate how they were looked after",
+        "retention_label": "Retention",
+        "retention_hint": "Days before transcripts are deleted, 0 = forever (max {max})",
+        "retention_forever": "forever",
+        "log_label": "Ticket log channel",
+        "log_hint": "A card is posted there on every closure, with the transcript link and the rating",
+        "log_placeholder": "Pick a channel"
+      },
+      "stats": {
+        "team_title": "Ticket handling",
+        "staff_title": "One staff member's handling",
+        "member": "Member",
+        "window": "Window",
+        "days": "days",
+        "handled": "Tickets handled",
+        "handled_short": "handled",
+        "ratings": "Reviews received",
+        "ratings_short": "reviews",
+        "negative_short": "negative",
+        "average": "Average",
+        "recent": "Latest reviews",
+        "few_ratings": "Too few reviews for the average to mean much.",
+        "no_ratings": "No review has been left over this window yet."
+      },
+      "owner_left": {
+        "card_title": "The author left the server",
+        "card_description": "{user} (`{name}`) is no longer on the server. The ticket stays open: close it if it no longer has a purpose, or keep it while you finish what has to be finished. If they come back, their access is restored automatically.",
+        "reason": "The author left the server"
       }
     }
   },

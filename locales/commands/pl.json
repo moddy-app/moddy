@@ -279,7 +279,7 @@
     },
     "ticket": {
       "name": "ticket",
-      "description": "Zarządzaj zgłoszeniem, w którym jesteś"
+      "description": "Zarządzaj zgłoszeniami serwera"
     },
     "ticket close": {
       "name": "zamknij",
@@ -386,6 +386,20 @@
     "brocoli": {
       "name": "brocoli",
       "description": "Otwiera kanał, na którym asystent Moddy konfiguruje ten serwer"
+    },
+    "ticket stats": {
+      "name": "statystyki",
+      "description": "Obsłużone zgłoszenia i oceny zespołu",
+      "parameters": {
+        "staff": {
+          "name": "czlonek-zespolu",
+          "description": "Czyje indywidualne oceny pokazać"
+        },
+        "days": {
+          "name": "dni",
+          "description": "Ile dni wstecz sprawdzić (domyślnie 30)"
+        }
+      }
     }
   }
 }

@@ -279,7 +279,7 @@
     },
     "ticket": {
       "name": "ticket",
-      "description": "จัดการทิกเก็ตที่คุณอยู่"
+      "description": "จัดการตั๋วของเซิร์ฟเวอร์"
     },
     "ticket close": {
       "name": "ปิด",
@@ -386,6 +386,20 @@
     "brocoli": {
       "name": "brocoli",
       "description": "เปิดช่องที่ผู้ช่วยของ Moddy จะตั้งค่าเซิร์ฟเวอร์นี้"
+    },
+    "ticket stats": {
+      "name": "สถิติ",
+      "description": "ตั๋วที่จัดการแล้วและคะแนนของทีมงาน",
+      "parameters": {
+        "staff": {
+          "name": "ทีมงาน",
+          "description": "จะแสดงคะแนนรายบุคคลของใคร"
+        },
+        "days": {
+          "name": "วัน",
+          "description": "ย้อนหลังกี่วัน (ค่าเริ่มต้น 30)"
+        }
+      }
     }
   }
 }

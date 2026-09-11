@@ -24,19 +24,31 @@ from typing import List, Optional, Union
 
 import discord
 from discord import app_commands
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 from modules.tickets import (
     MODULE_ID,
+    PERM_ADMIN,
     PERM_RENAME,
+    PERM_STATS,
+    SETTING_CLOSURE_DETECTION,
+    SETTING_RETENTION,
     member_permissions,
 )
 from services.ticket_service import TicketError
 from utils.components_v2 import create_success_message
 from utils.i18n import i18n, t
 from utils.members import get_or_fetch_member
+from utils.ticket_stats_views import (
+    DEFAULT_STATS_DAYS,
+    INDIVIDUAL_RATINGS_SHOWN,
+    MAX_STATS_DAYS,
+    build_staff_stats_card,
+    build_stats_leaderboard_card,
+)
 from utils.ticket_views import (
     TicketRenameModal,
+    close_and_offer_rating,
     handle_ticket_error,
     open_participants_modal,
     run_claim,
@@ -88,18 +100,14 @@ async def ticket_close(interaction: discord.Interaction, reason: Optional[str] =
     resolved = await _service_and_ticket(interaction)
     if not resolved:
         return
-    service = resolved[0]
+    service, ticket = resolved[0], resolved[1]
     locale = i18n.get_user_locale(interaction)
 
     await interaction.response.defer(ephemeral=True, thinking=True)
-    try:
-        await service.close_ticket(interaction.channel, interaction.user, reason)
-    except TicketError as e:
-        await handle_ticket_error(interaction, e)
-        return
-    await send_success(interaction,
-                       t('modules.tickets.close.done_title', locale=locale),
-                       t('modules.tickets.close.done_description', locale=locale))
+    # Same tail as the control-bar button, so a member closing their own
+    # ticket is asked to rate it whichever of the two they used.
+    await close_and_offer_rating(interaction, service, ticket, locale,
+                                 reason=reason)
 
 
 @ticket_group.command(name="reopen", description="Reopen this closed ticket")
@@ -426,6 +434,82 @@ async def ticket_info(interaction: discord.Interaction):
 
 
 # --------------------------------------------------------------------------- #
+# Handling statistics
+# --------------------------------------------------------------------------- #
+async def _stats_scope(interaction: discord.Interaction, service
+                       ) -> Optional[List[str]]:
+    """Which categories the caller may read ratings for.
+
+    ``None`` means "all of them" — a server administrator. A list means only
+    the categories where one of their roles holds the ``stats`` permission.
+    Returning an empty list is a real answer too: they hold it nowhere.
+    """
+    if interaction.user.guild_permissions.manage_guild:
+        return None
+    module = await service.get_module(interaction.guild.id)
+    if module is None:
+        return []
+    allowed = []
+    for panel in module.panels:
+        for category in panel['categories']:
+            granted = member_permissions(interaction.user, category, None)
+            if PERM_STATS in granted or PERM_ADMIN in granted:
+                allowed.append(category['id'])
+    return allowed
+
+
+@ticket_group.command(
+    name="stats",
+    description="Ticket handling statistics: volume and member ratings")
+@app_commands.describe(
+    staff="Whose individual ratings to show (leave empty for the whole team)",
+    days="How far back to look, in days (default 30)")
+async def ticket_stats(interaction: discord.Interaction,
+                       staff: Optional[discord.Member] = None,
+                       days: Optional[int] = None):
+    locale = i18n.get_user_locale(interaction)
+    service = getattr(interaction.client, 'tickets', None)
+    if service is None or not interaction.client.db or interaction.guild is None:
+        await send_error(interaction,
+                         t('modules.tickets.errors.unavailable', locale=locale), locale)
+        return
+
+    categories = await _stats_scope(interaction, service)
+    if categories is not None and not categories:
+        await send_error(
+            interaction,
+            t('modules.tickets.errors.missing_permission', locale=locale), locale)
+        return
+
+    days = max(1, min(days or DEFAULT_STATS_DAYS, MAX_STATS_DAYS))
+    await interaction.response.defer(ephemeral=True, thinking=True)
+    db = interaction.client.db
+
+    if staff is not None:
+        summary = await db.staff_rating_summary(
+            interaction.guild.id, staff.id, days=days, categories=categories)
+        recent = await db.list_staff_ratings(
+            interaction.guild.id, staff.id, days=days,
+            limit=INDIVIDUAL_RATINGS_SHOWN, categories=categories)
+        handled = (await db.staff_handled_counts(
+            interaction.guild.id, days=days, categories=categories)).get(staff.id, 0)
+        await interaction.followup.send(
+            view=build_staff_stats_card(staff, summary, recent, handled,
+                                        days=days, locale=locale),
+            ephemeral=True)
+        return
+
+    leaderboard = await db.guild_rating_leaderboard(
+        interaction.guild.id, days=days, categories=categories)
+    handled = await db.staff_handled_counts(
+        interaction.guild.id, days=days, categories=categories)
+    await interaction.followup.send(
+        view=build_stats_leaderboard_card(interaction.guild, leaderboard, handled,
+                                          days=days, locale=locale),
+        ephemeral=True)
+
+
+# --------------------------------------------------------------------------- #
 # The cog (events + registration)
 # --------------------------------------------------------------------------- #
 class Tickets(commands.Cog):
@@ -433,6 +517,124 @@ class Tickets(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.purge_transcripts.start()
+
+    def cog_unload(self):
+        self.purge_transcripts.cancel()
+
+    # ------------------------------------------------------------------ #
+    # Retention
+    # ------------------------------------------------------------------ #
+    @tasks.loop(hours=24)
+    async def purge_transcripts(self):
+        """Drop transcripts past each guild's retention window.
+
+        Driven by the guilds that actually own transcripts rather than by every
+        guild Moddy is in: a server that never enabled tickets costs nothing.
+        """
+        if not self.bot.db:
+            return
+        service = getattr(self.bot, 'tickets', None)
+        if service is None:
+            return
+        try:
+            guild_ids = await self.bot.db.guilds_with_transcripts()
+        except Exception as e:
+            logger.error(f"[Tickets] Could not list guilds with transcripts: {e}")
+            return
+        for guild_id in guild_ids:
+            try:
+                days = await service.setting(guild_id, SETTING_RETENTION)
+                if not days:
+                    continue  # 0 = keep forever
+                removed = await self.bot.db.purge_expired_transcripts(guild_id, days)
+                if removed:
+                    logger.info(f"[Tickets] Purged {removed} transcript(s) older "
+                                f"than {days}d in guild {guild_id}")
+            except Exception as e:
+                logger.error(f"[Tickets] Transcript purge failed for guild "
+                             f"{guild_id}: {e}")
+
+    @purge_transcripts.before_loop
+    async def before_purge(self):
+        await self.bot.wait_until_ready()
+
+    # ------------------------------------------------------------------ #
+    # Closure detection
+    # ------------------------------------------------------------------ #
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message):
+        """Feed ticket messages to the closure detector.
+
+        Ordered cheapest-check-first: the vast majority of messages on a server
+        are not in a ticket, and the service's in-memory set answers that
+        without a query.
+        """
+        if message.author.bot or message.guild is None:
+            return
+        service = getattr(self.bot, 'tickets', None)
+        detector = getattr(self.bot, 'ticket_closure', None)
+        if service is None or detector is None:
+            return
+        if not service.is_open_ticket_channel(message.channel.id):
+            return
+        if not detector.looks_like_closure(message.content):
+            return  # free, local, and rules out nearly everything
+
+        try:
+            ticket = await service.get_ticket(message.channel.id)
+            if not ticket or ticket['status'] != 'open':
+                return
+            if not await service.setting(message.guild.id, SETTING_CLOSURE_DETECTION):
+                return
+            await detector.consider(message, ticket)
+        except TicketError:
+            return  # not a ticket any more, or its category is gone
+        except Exception as e:
+            logger.error(f"[Tickets] Closure detection failed on channel "
+                         f"{message.channel.id}: {e}")
+
+    # ------------------------------------------------------------------ #
+    # Membership
+    # ------------------------------------------------------------------ #
+    @commands.Cog.listener()
+    async def on_member_remove(self, member: discord.Member):
+        """The author of a ticket left: say so, and offer the closure.
+
+        Not a setting. A ticket whose author is gone is something the staff
+        have to be told; whether it should then be closed is their call, and
+        the card's button goes through the same `close` permission as any
+        other closure.
+        """
+        if member.bot:
+            return
+        service = getattr(self.bot, 'tickets', None)
+        if service is None or not self.bot.db:
+            return
+        try:
+            await service.announce_owner_left(member.guild, member)
+        except Exception as e:
+            logger.error(f"[Tickets] Could not handle the departure of "
+                         f"{member.id} from guild {member.guild.id}: {e}")
+
+    @commands.Cog.listener()
+    async def on_member_join(self, member: discord.Member):
+        """A member came back: put them back into their still-open tickets.
+
+        Leaving a server drops the per-member channel overwrites with it, so
+        without this they return to a ticket they opened and can no longer
+        read.
+        """
+        if member.bot:
+            return
+        service = getattr(self.bot, 'tickets', None)
+        if service is None or not self.bot.db:
+            return
+        try:
+            await service.restore_member_access(member)
+        except Exception as e:
+            logger.error(f"[Tickets] Could not restore ticket access for "
+                         f"{member.id} in guild {member.guild.id}: {e}")
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel: discord.abc.GuildChannel):

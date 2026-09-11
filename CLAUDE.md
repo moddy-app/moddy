@@ -100,6 +100,8 @@ moddy/
 │       ├── tickets_config.py              # Tickets: panel list (root screen)
 │       ├── tickets_panel_config.py        # Tickets: one panel (channel, style, categories)
 │       ├── tickets_category_config.py     # Tickets: one category + its per-role permissions
+│       │                                  # (tickets_config.py also holds the module-wide
+│       │                                  #  settings screen: transcripts, detection, ratings, logs)
 │       ├── voice_transcription_config.py  # Voice transcription (status, mode, channels)
 │       ├── bot_customization_config.py    # Bot customization (identity Modal V2 + name style)
 │       ├── logs_config.py                 # Server logs (categories, events, options)
@@ -179,6 +181,8 @@ moddy/
 │       ├── moderation.py, interserver.py, attributes.py
 │       ├── altguard.py          #   AltGuard verifications + gate state (altguard_*)
 │       ├── tickets.py           #   Live ticket state incl. claim (tickets table)
+│       ├── ticket_transcripts.py #  Archived ticket conversations, compressed (ticket_transcripts)
+│       ├── ticket_ratings.py    #   Ticket handling ratings + staff aggregates (ticket_ratings)
 │       ├── appeals.py           #   Automod sanction appeals (case_appeals)
 │       ├── enforcements.py      #   Global sanction appeal countdowns (case_enforcements)
 │       ├── eval_candidates.py   #   Automod eval/annotation corpus (automod_eval_candidates)
@@ -218,6 +222,9 @@ moddy/
 │   ├── install_welcome.py     #   DM sent to whoever adds Moddy to a server
 │   ├── beta_announcement.py   #   Beta-launch campaign card (temporary — see docs)
 │   ├── ticket_views.py        #   Ticket panel, ticket message, cards, claim, participants modal
+│   ├── ticket_rating_views.py #   Ticket rating Modal V2 + persistent DM "leave a review" button
+│   ├── ticket_stats_views.py  #   /ticket stats cards (team leaderboard, one staffer)
+│   ├── compression.py         #   zstd (fallback zlib) for stored blobs — one codec decision
 │   ├── transcription_views.py #   Voice transcription cards + persistent Transcribe button
 │   ├── bump_views.py          #   Bump thank-you + reminder cards, opt-in button
 │   ├── appeal_views.py        #   Automod appeal UI (DM buttons + reviewer panels, persistent)
@@ -267,6 +274,8 @@ moddy/
 │   ├── appeal_service.py      #   Automod sanction appeals (server / Moddy team, binding)
 │   ├── precedent_service.py   #   Automod server precedents (record + serve, RAG)
 │   ├── ticket_service.py      #   Ticket lifecycle (open/close/escalate/move/participants)
+│   ├── ticket_transcript_service.py # Archives a closing ticket's conversation (compressed JSON)
+│   ├── ticket_closure_detector.py   # Spots a finished conversation, offers the closure (embeddings)
 │   ├── support_request_service.py # Bug reports + config-help requests (team side)
 │   ├── transcription_service.py #  Voice/audio speech-to-text (shared by cog + module)
 │   ├── team_link_session.py   #   /team role: the window in which a staffer links the roles
@@ -304,6 +313,9 @@ moddy/
     ├── test_task_signature.py #   moddy:tasks HMAC contract (canonicalization, replay, dedup)
     ├── test_brocoli.py        #   Brocoli: assertion signing vs backend algorithm, SSE parsing
     ├── test_tickets.py        #   Tickets: schema, permissions, claim, overwrites, screens, i18n
+    ├── test_ticket_transcripts.py # Tickets: compression, export, closure detection,
+    │                          #   settings, membership changes
+    ├── test_ticket_ratings.py #   Tickets: rating modal, DM button, stats cards
     ├── test_linked_roles.py   #   moddy:staff publication, /team access catalogue, staff tickets
     ├── test_transcription.py  #   Voice transcription helpers, guard rails, cards
     ├── test_notifications.py  #   Notifications: hashing, attribution, report rules, i18n
@@ -498,7 +510,8 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/WELCOME_MESSAGES.md](docs/WELCOME_MESSAGES.md) | Welcome messages module (`welcome_channel`) — config schema, placeholders, backend/dashboard contract |
 | [docs/WELCOME_DM.md](docs/WELCOME_DM.md) | Welcome DM module (`welcome_dm`) — config schema, placeholders, backend/dashboard contract |
 | [docs/BUMP_REMINDER.md](docs/BUMP_REMINDER.md) | **Bump Reminder** — detecting a *successful* bump on 7 directories, the reminder, ping modes, quotas |
-| [docs/TICKETS.md](docs/TICKETS.md) | **Tickets** — panels, categories, per-role permissions, the claim system, escalation, module-gated `/ticket` commands |
+| [docs/TICKETS.md](docs/TICKETS.md) | **Tickets** — panels, categories, per-role permissions, the claim system, escalation, transcripts, closure detection, ratings, module-gated `/ticket` commands |
+| [docs/TICKETS_INTEGRATION.md](docs/TICKETS_INTEGRATION.md) | Tickets ↔ backend contract — the transcript/rating tables, the compressed body schema, `/transcripts/<key>` and its authorisation, the rating aggregates |
 | [docs/ALTGUARD.md](docs/ALTGUARD.md) | **AltGuard** — anti multi-account verification gate, consent, service contract, staff commands |
 | [docs/ALTGUARD_INTEGRATION.md](docs/ALTGUARD_INTEGRATION.md) | AltGuard ↔ bot exact wire contract — payload types, error codes, debugging |
 | [docs/AUTOMOD_AI.md](docs/AUTOMOD_AI.md) | Automod AI — detection pipeline, nano decider, scalable features, rules safety check |

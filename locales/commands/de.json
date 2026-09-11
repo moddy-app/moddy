@@ -279,7 +279,7 @@
     },
     "ticket": {
       "name": "ticket",
-      "description": "Verwalte das Ticket, in dem du bist"
+      "description": "Die Tickets des Servers verwalten"
     },
     "ticket close": {
       "name": "schliessen",
@@ -386,6 +386,20 @@
     "brocoli": {
       "name": "brocoli",
       "description": "Öffnet einen Kanal, in dem Moddys Assistent diesen Server einrichtet"
+    },
+    "ticket stats": {
+      "name": "statistiken",
+      "description": "Bearbeitete Tickets und Bewertungen des Teams",
+      "parameters": {
+        "staff": {
+          "name": "teammitglied",
+          "description": "Wessen einzelne Bewertungen gezeigt werden sollen"
+        },
+        "days": {
+          "name": "tage",
+          "description": "Wie weit zurückgeschaut wird, in Tagen (Standard 30)"
+        }
+      }
     }
   }
 }
