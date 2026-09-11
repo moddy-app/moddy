@@ -279,7 +279,7 @@
     },
     "ticket": {
       "name": "ticket",
-      "description": "Kezeld a hibajegyet, amelyben vagy"
+      "description": "A szerver hibajegyeinek kezelése"
     },
     "ticket close": {
       "name": "lezárás",
@@ -386,6 +386,20 @@
     "brocoli": {
       "name": "brocoli",
       "description": "Megnyit egy csatornát, ahol a Moddy asszisztense beállítja ezt a szervert"
+    },
+    "ticket stats": {
+      "name": "statisztika",
+      "description": "Kezelt hibajegyek és a csapat értékelései",
+      "parameters": {
+        "staff": {
+          "name": "munkatars",
+          "description": "Kinek az egyéni értékeléseit mutassuk"
+        },
+        "days": {
+          "name": "napok",
+          "description": "Hány napra visszamenőleg (alapértelmezés 30)"
+        }
+      }
     }
   }
 }

@@ -279,7 +279,7 @@
     },
     "ticket": {
       "name": "ticket",
-      "description": "Kelola tiket tempat kamu berada"
+      "description": "Kelola tiket server"
     },
     "ticket close": {
       "name": "tutup",
@@ -386,6 +386,20 @@
     "brocoli": {
       "name": "brocoli",
       "description": "Membuka kanal tempat asisten Moddy mengonfigurasi server ini"
+    },
+    "ticket stats": {
+      "name": "statistik",
+      "description": "Tiket yang ditangani dan penilaian tim",
+      "parameters": {
+        "staff": {
+          "name": "staf",
+          "description": "Penilaian individu siapa yang ditampilkan"
+        },
+        "days": {
+          "name": "hari",
+          "description": "Seberapa jauh ke belakang, dalam hari (bawaan 30)"
+        }
+      }
     }
   }
 }

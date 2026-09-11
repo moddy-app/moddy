@@ -13,6 +13,7 @@ from types import SimpleNamespace
 import pytest
 
 from modules.tickets import (
+    DEFAULT_SETTINGS,
     DEFAULT_MAX_OPEN_PER_USER,
     FREE_MAX_CATEGORIES,
     FREE_MAX_PANELS,
@@ -94,9 +95,10 @@ def make_category(**overrides):
 # =========================================================================== #
 class TestNormalisation:
     def test_empty_config_is_a_panel_list(self):
-        assert normalize_config(None) == {'panels': []}
-        assert normalize_config({}) == {'panels': []}
-        assert normalize_config("nonsense") == {'panels': []}
+        for raw in (None, {}, "nonsense"):
+            config = normalize_config(raw)
+            assert config['panels'] == []
+            assert config['settings'] == DEFAULT_SETTINGS
 
     def test_panel_without_a_name_is_dropped(self):
         config = normalize_config({'panels': [{'id': 'p_a'}, {'name': "Kept"}]})

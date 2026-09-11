@@ -35,6 +35,8 @@ from db.repositories.forms import FormsRepository
 from db.repositories.social import SocialSubscriptionsRepository
 from db.repositories.altguard import AltGuardRepository
 from db.repositories.tickets import TicketsRepository
+from db.repositories.ticket_transcripts import TicketTranscriptRepository
+from db.repositories.ticket_ratings import TicketRatingRepository
 from db.repositories.notifications import NotificationRepository
 from db.repositories.support_requests import SupportRequestRepository
 from db.repositories.bump import BumpReminderRepository
@@ -76,6 +78,8 @@ class ModdyDatabase(
     SocialSubscriptionsRepository,
     AltGuardRepository,
     TicketsRepository,
+    TicketTranscriptRepository,
+    TicketRatingRepository,
     NotificationRepository,
     SupportRequestRepository,
     BumpReminderRepository,
@@ -922,6 +926,106 @@ class ModdyDatabase(
             await conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_tickets_owner "
                 "ON tickets (guild_id, owner_id, status)")
+
+            # ---------------------------------------------------------------
+            # Ticket transcripts (docs/TICKETS.md, docs/TICKETS_INTEGRATION.md)
+            # One row per *closure*: the archived conversation of a ticket.
+            #
+            # Deliberately NOT a foreign key on `tickets`: that row is DELETEd
+            # the moment the Discord channel disappears (cogs/tickets.py
+            # on_guild_channel_delete -> forget_channel), and a transcript has
+            # to outlive it. Everything the dashboard needs to render the
+            # archive without `tickets` is therefore snapshotted here on
+            # purpose — do not "factor this out" later.
+            #
+            # `key` is the public handle used in the dashboard URL: a UUID so
+            # the id space cannot be walked. `payload` is the compressed JSON
+            # body (see docs/TICKETS_INTEGRATION.md for its schema and for the
+            # decompression algorithm implied by `codec`).
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS ticket_transcripts (
+                    id             BIGSERIAL PRIMARY KEY,
+                    key            UUID NOT NULL UNIQUE,
+                    guild_id       BIGINT NOT NULL,
+                    channel_id     BIGINT NOT NULL,
+                    ticket_number  INTEGER NOT NULL,
+                    panel_id       TEXT NOT NULL,
+                    category_id    TEXT NOT NULL,
+                    category_name  TEXT NOT NULL,
+                    owner_id       BIGINT NOT NULL,
+                    participants   BIGINT[] NOT NULL DEFAULT '{}',
+                    claimed_by     BIGINT,
+                    closed_by      BIGINT NOT NULL,
+                    close_reason   TEXT,
+                    opened_at      TIMESTAMPTZ NOT NULL,
+                    closed_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+                    message_count  INTEGER NOT NULL DEFAULT 0,
+                    truncated      BOOLEAN NOT NULL DEFAULT FALSE,
+                    codec          TEXT NOT NULL
+                        CHECK (codec IN ('zstd','zlib')),
+                    payload        BYTEA NOT NULL,
+                    payload_size   INTEGER NOT NULL,
+                    log_channel_id BIGINT,
+                    log_message_id BIGINT
+                )
+            """)
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_ticket_transcripts_guild "
+                "ON ticket_transcripts (guild_id, closed_at DESC)")
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_ticket_transcripts_channel "
+                "ON ticket_transcripts (channel_id, closed_at DESC)")
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_ticket_transcripts_owner "
+                "ON ticket_transcripts (guild_id, owner_id)")
+
+            # Authors are lifted out of the compressed payload so the dashboard
+            # can answer "who spoke in this ticket" over a list of transcripts
+            # without decompressing a single byte.
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS ticket_transcript_authors (
+                    transcript_id BIGINT NOT NULL
+                        REFERENCES ticket_transcripts(id) ON DELETE CASCADE,
+                    author_id     BIGINT NOT NULL,
+                    username      TEXT NOT NULL,
+                    display_name  TEXT NOT NULL,
+                    avatar_url    TEXT,
+                    is_bot        BOOLEAN NOT NULL DEFAULT FALSE,
+                    PRIMARY KEY (transcript_id, author_id)
+                )
+            """)
+
+            # Ticket ratings — how the opener rated the way they were handled.
+            # One rating per *closure* (UNIQUE on transcript_id), so a ticket
+            # reopened and closed again can legitimately be rated again.
+            # rated_staff_id is NULL when the member picked "nobody in
+            # particular"; it defaults to claimed_by, else closed_by.
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS ticket_ratings (
+                    id             BIGSERIAL PRIMARY KEY,
+                    guild_id       BIGINT NOT NULL,
+                    channel_id     BIGINT NOT NULL,
+                    transcript_id  BIGINT
+                        REFERENCES ticket_transcripts(id) ON DELETE SET NULL,
+                    ticket_number  INTEGER NOT NULL,
+                    category_id    TEXT NOT NULL,
+                    rated_staff_id BIGINT,
+                    rated_by       BIGINT NOT NULL,
+                    score          SMALLINT NOT NULL
+                        CHECK (score BETWEEN 1 AND 5),
+                    comment        TEXT,
+                    trigger        TEXT NOT NULL
+                        CHECK (trigger IN ('close_request','self_close','dm_button')),
+                    created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+                    CONSTRAINT ticket_ratings_once UNIQUE (transcript_id)
+                )
+            """)
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_ticket_ratings_staff "
+                "ON ticket_ratings (guild_id, rated_staff_id, created_at DESC)")
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_ticket_ratings_channel "
+                "ON ticket_ratings (guild_id, channel_id)")
 
             # ---------------------------------------------------------------
             # Centralized notifications (docs/NOTIFICATIONS.md)

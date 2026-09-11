@@ -279,7 +279,7 @@
     },
     "ticket": {
       "name": "ticket",
-      "description": "Tvarkyk bilietą, kuriame esi"
+      "description": "Tvarkyti serverio bilietus"
     },
     "ticket close": {
       "name": "uždaryti",
@@ -386,6 +386,20 @@
     "brocoli": {
       "name": "brocoli",
       "description": "Atidaro kanalą, kuriame Moddy asistentas konfigūruoja šį serverį"
+    },
+    "ticket stats": {
+      "name": "statistika",
+      "description": "Išspręsti bilietai ir komandos įvertinimai",
+      "parameters": {
+        "staff": {
+          "name": "darbuotojas",
+          "description": "Kieno atskirus įvertinimus rodyti"
+        },
+        "days": {
+          "name": "dienos",
+          "description": "Kiek dienų atgal žiūrėti (numatyta 30)"
+        }
+      }
     }
   }
 }

@@ -279,7 +279,7 @@
     },
     "ticket": {
       "name": "ticket",
-      "description": "Hantera ärendet du befinner dig i"
+      "description": "Hantera serverns ärenden"
     },
     "ticket close": {
       "name": "stäng",
@@ -386,6 +386,20 @@
     "brocoli": {
       "name": "brocoli",
       "description": "Öppnar en kanal där Moddys assistent konfigurerar denna server"
+    },
+    "ticket stats": {
+      "name": "statistik",
+      "description": "Hanterade ärenden och teamets omdömen",
+      "parameters": {
+        "staff": {
+          "name": "personal",
+          "description": "Vems enskilda omdömen som ska visas"
+        },
+        "days": {
+          "name": "dagar",
+          "description": "Hur långt tillbaka det ska tittas, i dagar (standard 30)"
+        }
+      }
     }
   }
 }

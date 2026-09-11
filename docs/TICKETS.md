@@ -19,11 +19,17 @@
 10. [The staff thread](#the-staff-thread)
 11. [The `tickets` table](#the-tickets-table)
 12. [Actions](#actions)
-13. [Slash commands, published per guild](#slash-commands-published-per-guild)
-14. [Persistence](#persistence)
-15. [i18n](#i18n)
-16. [Backend / dashboard contract](#backend--dashboard-contract)
-17. [Extending the module](#extending-the-module)
+13. [Membership changes](#membership-changes)
+14. [Module settings](#module-settings)
+15. [Transcripts](#transcripts)
+16. [Closure detection](#closure-detection)
+17. [Ratings](#ratings)
+18. [The ticket log](#the-ticket-log)
+19. [Slash commands, published per guild](#slash-commands-published-per-guild)
+20. [Persistence](#persistence)
+21. [i18n](#i18n)
+22. [Backend / dashboard contract](#backend--dashboard-contract)
+23. [Extending the module](#extending-the-module)
 
 ---
 
@@ -57,11 +63,28 @@ utils/ticket_views.py                   Panel, ticket message, closing card,
 cogs/tickets.py                         /ticket group + channel cleanup and
                                         staff-thread guard listeners.
 db/repositories/tickets.py              The tickets table.
-modules/configs/tickets_config.py       /config root: the panel list.
+services/ticket_transcript_service.py   Exports a closing ticket's conversation
+                                        (bot.ticket_transcripts).
+services/ticket_closure_detector.py     Spots a finished conversation and offers
+                                        the closure (bot.ticket_closure).
+services/data/ticket_closure_references.json
+                                        The closing keywords (5 languages) and
+                                        the phrases embedded to score against.
+utils/compression.py                    zstd/zlib, one codec decision.
+utils/ticket_rating_views.py            The rating modal, the DM button, the
+                                        "rate it" prompt.
+utils/ticket_stats_views.py             The /ticket stats cards.
+db/repositories/ticket_transcripts.py   The transcript archive.
+db/repositories/ticket_ratings.py       The ratings and their aggregates.
+modules/configs/tickets_config.py       /config root: the panel list, and the
+                                        module-wide settings screen.
 modules/configs/tickets_panel_config.py /config: one panel.
 modules/configs/tickets_category_config.py
                                         /config: one category + its permissions.
 tests/test_tickets.py                   Schema, permissions, overwrites, screens, i18n.
+tests/test_ticket_transcripts.py        Compression, export, closure detection,
+                                        settings, membership changes.
+tests/test_ticket_ratings.py            The modal, the DM button, the stats cards.
 ```
 
 The split between `modules/tickets.py` (configuration) and
@@ -197,7 +220,7 @@ follow the admin.
 
 ## The permission model
 
-Nine permissions, granted **per role, per category**:
+Ten permissions, granted **per role, per category**:
 
 | Key | What it allows |
 |---|---|
@@ -209,6 +232,7 @@ Nine permissions, granted **per role, per category**:
 | `rename` | Rename the ticket channel |
 | `move` | Move the ticket to another category |
 | `participants` | Add and remove members and roles |
+| `stats` | Read this category's handling ratings (`/ticket stats`) |
 | `admin` | Everything above — **and keeps access after an escalation** |
 
 `claim` and `unclaim_others` are deliberately separate. Releasing your own
@@ -576,6 +600,284 @@ command) or the ticket's (a message posted in the channel).
 
 ---
 
+## Membership changes
+
+Two listeners in `cogs/tickets.py`, neither of them a setting: both are facts
+the staff and the member need, not features to opt into.
+
+**When the author leaves** (`on_member_remove`), every ticket *they opened* and
+that is still open gets a card saying so, with a **Close the ticket** button.
+Only the tickets they opened: a ticket does not lose its purpose because
+somebody who had been added to it left.
+
+Nothing closes by itself, and the button is not a shortcut past the permission
+model — it calls `close_ticket` like everything else, so only somebody holding
+`close` can act on it. A departure often *is* the end of a ticket, but not
+always: a report still has to be acted on, a refund still has to be recorded.
+The decision stays with the staff.
+
+**When they come back** (`on_member_join`), `restore_member_access` puts them
+back into every open ticket they belong to — the ones they opened *and* the ones
+they were added to. Leaving a server drops the per-member channel overwrites
+with it, so without this they would return to a ticket they opened and can no
+longer read. Access is rebuilt from the stored ticket through
+`sync_permissions` rather than patched, so a claim lock or an escalation that
+happened while they were away is honoured exactly as it would be for anyone
+else.
+
+---
+
+## Module settings
+
+Three features and a log channel, stored in
+`guilds.data.modules.tickets.settings` and edited from
+**`/config` → Tickets → Settings**:
+
+| Key | Default | What it does |
+|---|---|---|
+| `transcripts_enabled` | `true` | Archive the conversation when a ticket closes |
+| `closure_detection_enabled` | **`false`** | Offer the closure when the conversation looks over |
+| `rating_enabled` | `true` | Ask the opener to rate how they were looked after |
+| `transcript_retention_days` | `0` | Days before a transcript is purged; `0` = forever, capped at 3650 |
+| `log_channel_id` | `null` | Where the closing card is posted |
+
+These are **module-wide, not per-category**, and that is the distinction worth
+keeping: `claim_enabled` or `claim_lock` genuinely differ from one workflow to
+the next, but a server archives its tickets or it does not. It also means one
+place to switch a feature off, which is what "optional" has to mean.
+
+Closure detection is the one that defaults to off: it spends AI quota, and
+everything that goes through `bot.gateway.ai` is opt-in here.
+
+A config written before these existed loads with the defaults above
+(`normalize_settings`), so no guild has to be touched. The five keys are also
+accepted flat at the root of the module config, for a dashboard write that
+predates the `settings` object.
+
+The three switches and the retention window live behind a modal, so the screen
+prints their current value as text; the log channel is a `ChannelSelect`, which
+displays its own state, so it does not — see CLAUDE.md rule 9.
+
+---
+
+## Transcripts
+
+When a ticket closes, its conversation is exported, compressed and stored. The
+member gets a link in their closing DM, the staff get the same link on the
+ticket log card, and the dashboard renders the archive.
+
+The exporter is **native** (`services/ticket_transcript_service.py`): it reads
+`channel.history()` and writes a compact JSON body. No external exporter binary,
+no extra language runtime, no subprocess, and no bot token leaving the process.
+Railway bills almost entirely on resident memory ([RAILWAY.md](RAILWAY.md)), and
+a second runtime kept alive to archive a few hundred tickets a day would be the
+most expensive line on the invoice.
+
+### What keeps it small
+
+1. Short keys, and **every empty field omitted** — a plain text message costs
+   about forty bytes before compression.
+2. Authors stored **once**, in `ticket_transcript_authors`; a message carries
+   only an author id.
+3. The whole body compressed with zstd level 19 (`utils/compression.py`), which
+   removes another 90%+ on conversational JSON.
+
+Attachments are referenced by their CDN url, never downloaded: an archiver that
+copies files is a storage bill, not an archive.
+
+In practice a 30-message support ticket stores in roughly 300 bytes.
+
+### The Components V2 trap
+
+Moddy posts its own cards with Components V2, so their `content` and `embeds`
+are **empty** and all their text lives in the component tree.
+`extract_component_text` walks it. Without that, every card Moddy wrote — the
+opening message, the closing card, every claim notice — would archive blank.
+
+### Bounds
+
+- **20 000 messages** per transcript. Beyond that the *most recent* are kept and
+  `truncated` is set: losing the beginning of a very long ticket costs less than
+  losing how it ended, which is what anyone reading an archive is looking for.
+- **4000 characters** per message, like every other stored free-text field.
+- **120 s** hard timeout on the whole export.
+
+### It never fails a closure
+
+`capture()` returns `None` on every failure path — a forbidden history, a
+timeout, a database error — and logs it. The closure carries on and simply
+offers no transcript link, rather than a dead one. Archiving is not worth
+failing a closure over.
+
+### Reopening
+
+Reopening touches nothing. The next closure re-reads the whole history and
+creates a **new** row, so every closure of a ticket keeps its own archive and
+every link already handed out keeps showing what it showed.
+
+### Retention
+
+`transcript_retention_days` is enforced by a daily task in `cogs/tickets.py`,
+driven by the guilds that actually own transcripts rather than by every guild
+Moddy is in. Deleting a transcript cascades to its authors.
+
+> The exact schema, the body format field by field, the decompression
+> algorithm and the `/transcripts/<key>` authorisation model are in
+> [TICKETS_INTEGRATION.md](TICKETS_INTEGRATION.md) — that is what the backend
+> implements against.
+
+---
+
+## Closure detection
+
+When someone writes "merci, c'est bon" the ticket is almost always over, and
+nobody closes it. `services/ticket_closure_detector.py` spots that and **offers**
+the closure.
+
+### The cost model comes first
+
+This runs on every message of every ticket of every server, so the order of the
+checks is the design:
+
+1. `TicketService.is_open_ticket_channel` — an in-memory set of open ticket
+   channel ids, hydrated once at boot. Answers "is this even a ticket?" without
+   a query.
+2. `looks_like_closure` — a lexical test over ~90 multilingual roots
+   (`merci`, `thanks`, `gracias`, `obrigado`, `danke`, `résolu`, `solved`,
+   `you can close`, …). Free, no I/O. **No keyword hit, no API call, ever.**
+3. Structural checks, also free: 8–160 characters, no `?` (a question is not a
+   goodbye), no mention (still addressed to somebody), not a command, ticket
+   older than 120 s with at least 3 human messages.
+4. A **20 s debounce** per channel, so "merci" two seconds before "attends en
+   fait non" produces nothing.
+5. Only then is the message embedded and scored.
+
+The embedding engine, its cosine maths and its LRU+TTL cache are reused from
+`automod/` rather than rewritten; only the reference corpus
+(`services/data/ticket_closure_references.json`, 40 phrases across the five
+languages) and the threshold are this module's own. The threshold is **0.62**,
+deliberately higher than automod's 0.45: a false positive there routes a message
+to a second model, a false positive here puts a card in front of everybody in
+the channel.
+
+### Suggesting is not granting
+
+The card has one action button, and its callback re-derives the **clicker's**
+permissions — never the permissions of whoever wrote the detected message:
+
+| The clicker holds | What happens |
+|---|---|
+| `close` | `close_ticket()` |
+| `view` only (typically the opener) | `request_close()` — the same close request `/ticket close-request` produces |
+| neither | an ephemeral refusal |
+
+Both branches go through the service, which is the only thing in the codebase
+that checks a ticket permission. Offering a closure therefore cannot hand out
+one. `tests/test_ticket_transcripts.py::TestClosureSuggestionAuthorisation`
+pins this down.
+
+The second button, **Not yet**, holds the suggestion off for six hours from that
+click. One suggestion per ticket per window; everything the detector remembers
+between messages is in memory, and losing a debounce timer to a redeploy costs
+one slightly-early card — not worth a table.
+
+---
+
+## Ratings
+
+The member who opened a ticket can say how they were looked after: one adjective
+out of five, optionally who helped them, optionally a comment.
+
+Scores are **adjectives, never numbers** — `Pas top`, `Moyen`, `Correct`,
+`Très bien`, `Excellent`, translated in the five languages. "3/5" means nothing
+consistent across people; "Correct" does.
+
+### The modal
+
+`TicketRatingModal` (`utils/ticket_rating_views.py`) uses three of Discord's
+five top-level slots: a `RadioGroup` of the five adjectives, a `Select` of the
+staff who actually touched this ticket, and an optional comment.
+
+The staff picker is built from `claimed_by`, `closed_by` and the staff among the
+participants, pre-selected on **the claimer, else the closer**, plus a *nobody
+in particular* option — a real answer, not an empty one. It is a plain `Select`
+rather than a `UserSelect` because a `UserSelect` cannot be pre-filled and
+because nobody should be able to rate a member of the server who never touched
+their ticket. With no candidate at all the component is dropped, and the modal
+has two.
+
+> `RadioGroup` exposes `.value`, not `.values`. Reading `.values` there silently
+> returns nothing — see [MODALS_V2.md](MODALS_V2.md).
+
+### The three moments
+
+Discord requires `send_modal` to be the **first** response to an interaction, so
+a single click cannot both close a ticket and open a form. The modal therefore
+always opens on a second interaction: the first two paths close the ticket and
+answer with an ephemeral card carrying a **Leave a review** button.
+
+| Trigger | Where |
+|---|---|
+| `close_request` | the member accepts a closure the staff offered them |
+| `self_close` | the member closes their own ticket, from the button or `/ticket close` |
+| `dm_button` | the closing DM, days later |
+
+The DM button is the durable one, and the interesting one. By the time it is
+clicked the channel — and its `tickets` row — may be long gone, so it is a
+`DynamicItem` carrying the **transcript key** and resolves everything from
+`ticket_transcripts`: the guild, the opener (which is also the authorisation
+check), the claimer, the closer. That is the same reason transcripts have no
+foreign key on `tickets`.
+
+Once left, the rating is shown in the DM (edited in place, button gone) and on
+the ticket log card (edited through the `log_channel_id` / `log_message_id`
+remembered on the transcript row).
+
+One rating per **closure**, enforced by `UNIQUE (transcript_id)` rather than by
+a check-then-insert: two clicks a few milliseconds apart would both pass a
+check. A ticket reopened and closed again is a new interaction and can be rated
+again.
+
+### `/ticket stats [staff] [days]`
+
+Without `staff`: the team, ordered **by volume, not by average** — a single 5/5
+must not outrank somebody who handled fifty tickets — with a caveat marker under
+three reviews.
+
+With `staff`: their volume, their average, the 1→5 histogram, and their ten
+latest reviews with comments.
+
+Read with plain SQL aggregates, not through `bot.stats`: that is built for
+bounded counters and deliberately refuses to carry a user id as a dimension.
+Ratings are named data about named people and live in their own table.
+
+Volume is counted from `ticket_transcripts`, not from `tickets`: a closed ticket
+whose channel was tidied away still counts towards the work its staff did.
+
+Access is `Manage Server`, **or** the new per-category `stats` permission — in
+which case the results are limited to the categories where the caller holds it.
+
+---
+
+## The ticket log
+
+`log_channel_id` (module settings) is where Moddy posts one card per closure:
+number, category, opener, claimer, closer, reason, duration, participant count,
+the transcript link, and the rating as soon as there is one.
+
+It is configured on the module rather than through `serverlogs/` on purpose:
+that registry catalogues the 163 **Discord** events, and a ticket closing is an
+application event of Moddy's own making. The calque is AltGuard's
+`log_channel_id`, not the server-logs module.
+
+`refresh_ticket_log` re-renders a posted card when a rating lands afterwards,
+which is what `log_channel_id` / `log_message_id` on the transcript row are for.
+It is best effort throughout: a card that cannot be edited — deleted message,
+revoked permission, channel gone — must never turn a member's rating into an
+error.
+
+---
+
 ## Slash commands, published per guild
 
 `/ticket` exists **only in the guilds where the module is enabled**. The
@@ -692,6 +994,17 @@ then does what `/config` does on save:
   line.
 - **deleted** → take every panel message down and write nothing back (the config
   is already gone; writing would half-resurrect the module).
+
+The transcripts, the ratings and the module settings have their own contract —
+the exact schema of the three tables, the compressed body format field by field,
+the decompression algorithm, the `/transcripts/<key>` authorisation model and
+the aggregate queries the dashboard needs:
+**[TICKETS_INTEGRATION.md](TICKETS_INTEGRATION.md)**.
+
+The short version: the bot is the only writer of `ticket_transcripts`,
+`ticket_transcript_authors` and `ticket_ratings`; the dashboard reads them and
+writes only `settings`. And `staff_thread` inside a transcript body is staff-only
+content that must be withheld from the ticket's own author.
 
 The recap relayed to `moddy:dashboard` reports `panels`, `panels_posted` and
 `panels_failed`, so an admin can tell a save that stored fine but could not post.

@@ -279,7 +279,7 @@
     },
     "ticket": {
       "name": "ticket",
-      "description": "Manage the ticket you are in"
+      "description": "Manage the server's tickets"
     },
     "ticket close": {
       "name": "close",
@@ -386,6 +386,20 @@
     "brocoli": {
       "name": "brocoli",
       "description": "Open a channel where Moddy's assistant configures this server"
+    },
+    "ticket stats": {
+      "name": "stats",
+      "description": "Tickets handled and the team's ratings",
+      "parameters": {
+        "staff": {
+          "name": "staff",
+          "description": "Whose individual ratings to show"
+        },
+        "days": {
+          "name": "days",
+          "description": "How far back to look, in days (default 30)"
+        }
+      }
     }
   }
 }

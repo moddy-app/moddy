@@ -1,0 +1,56 @@
+{
+  "_comment": "Ticket-closure intent detection. `keywords` is the free local prefilter: a message must contain one of these roots before a single embedding is ever paid for. `categories.resolution.exemples` are the reference phrases embedded once per process and compared by cosine. Both cover the five languages Moddy speaks (fr, en-US, es-ES, pt-BR, de). Keep roots short and unaccented-tolerant: they are matched against a stripped, lowercased form of the message. See services/ticket_closure_detector.py.",
+  "keywords": {
+    "fr": ["merci", "resolu", "regle", "c'est bon", "cest bon", "ca marche", "ca fonctionne", "parfait", "nickel", "au revoir", "bonne journee", "bonne soiree", "vous pouvez fermer", "tu peux fermer", "on peut fermer", "fermer le ticket", "plus besoin", "tout est bon", "impec", "super"],
+    "en": ["thank", "thanks", "thx", "resolved", "solved", "fixed", "all good", "it works", "working now", "perfect", "goodbye", "bye", "have a good", "you can close", "please close", "close the ticket", "no longer need", "sorted", "all set", "appreciate it"],
+    "es": ["gracias", "resuelto", "solucionado", "arreglado", "ya esta", "funciona", "perfecto", "adios", "hasta luego", "buen dia", "pueden cerrar", "puedes cerrar", "cerrar el ticket", "ya no necesito", "todo bien", "genial"],
+    "pt": ["obrigado", "obrigada", "valeu", "resolvido", "solucionado", "arrumado", "ja esta", "funciona", "funcionou", "perfeito", "tchau", "ate logo", "bom dia", "podem fechar", "pode fechar", "fechar o ticket", "nao preciso mais", "tudo certo", "otimo"],
+    "de": ["danke", "dankeschon", "geloest", "gelost", "behoben", "erledigt", "funktioniert", "perfekt", "tschuss", "auf wiedersehen", "schonen tag", "ihr konnt schliessen", "du kannst schliessen", "ticket schliessen", "brauche nicht mehr", "alles gut", "super"]
+  },
+  "categories": {
+    "resolution": {
+      "exemples": [
+        "merci beaucoup, mon problème est résolu",
+        "c'est bon ça marche maintenant, merci",
+        "parfait, merci pour votre aide",
+        "tout est réglé de mon côté, vous pouvez fermer le ticket",
+        "j'ai plus besoin d'aide, merci et bonne journée",
+        "nickel merci, on peut fermer",
+        "super, ça fonctionne, merci à toi",
+        "merci pour tout, au revoir",
+        "c'est réglé, encore merci",
+        "ok top merci, bonne soirée",
+        "thanks a lot, that solved my problem",
+        "perfect, it works now, thank you",
+        "all good on my end, you can close this",
+        "thank you so much for your help",
+        "that fixed it, thanks",
+        "I don't need anything else, thanks and goodbye",
+        "great, everything is sorted now",
+        "appreciate the help, you can close the ticket",
+        "it's working, thank you very much",
+        "all set, thanks again",
+        "muchas gracias, ya está solucionado",
+        "perfecto, ahora funciona, gracias",
+        "ya no necesito nada más, pueden cerrar",
+        "gracias por tu ayuda, hasta luego",
+        "todo bien por mi parte, muchas gracias",
+        "genial, problema resuelto",
+        "muito obrigado, já está resolvido",
+        "perfeito, agora funciona, valeu",
+        "não preciso de mais nada, podem fechar",
+        "obrigado pela ajuda, até logo",
+        "tudo certo do meu lado, valeu mesmo",
+        "ótimo, problema resolvido",
+        "vielen dank, mein problem ist gelöst",
+        "perfekt, es funktioniert jetzt, danke",
+        "ich brauche nichts mehr, ihr könnt schließen",
+        "danke für die hilfe, tschüss",
+        "alles gut bei mir, nochmals danke",
+        "super, das hat funktioniert",
+        "das problem ist behoben, danke schön",
+        "erledigt, vielen dank und schönen tag"
+      ]
+    }
+  }
+}

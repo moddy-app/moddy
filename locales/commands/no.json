@@ -279,7 +279,7 @@
     },
     "ticket": {
       "name": "ticket",
-      "description": "Administrer saken du er i"
+      "description": "Administrer serverens saker"
     },
     "ticket close": {
       "name": "lukk",
@@ -386,6 +386,20 @@
     "brocoli": {
       "name": "brocoli",
       "description": "Åpner en kanal der Moddys assistent konfigurerer denne serveren"
+    },
+    "ticket stats": {
+      "name": "statistikk",
+      "description": "Behandlede saker og teamets vurderinger",
+      "parameters": {
+        "staff": {
+          "name": "ansatt",
+          "description": "Hvem sine enkeltvurderinger som skal vises"
+        },
+        "days": {
+          "name": "dager",
+          "description": "Hvor langt tilbake det skal ses, i dager (standard 30)"
+        }
+      }
     }
   }
 }

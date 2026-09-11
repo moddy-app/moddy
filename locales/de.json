@@ -3085,6 +3085,10 @@
         "unclaim_others": {
           "name": "Fremdes Ticket freigeben",
           "description": "Einem Teammitglied sein Ticket abnehmen"
+        },
+        "stats": {
+          "name": "Statistiken ansehen",
+          "description": "Die Bewertungen und das Ticket-Aufkommen dieser Kategorie einsehen"
         }
       },
       "channel": {
@@ -3118,7 +3122,10 @@
         "escalated": "Eskalation",
         "your_permissions": "Deine Rechte hier",
         "none": "keine",
-        "claimed_by": "Betreut von"
+        "claimed_by": "Betreut von",
+        "closed_by": "Geschlossen von",
+        "duration": "Dauer",
+        "messages": "Archivierte Nachrichten"
       },
       "status": {
         "open": "Offen",
@@ -3272,6 +3279,89 @@
         "released_description": "{user} hat dieses Ticket freigegeben — jede und jeder im Team kann es übernehmen.",
         "released_done": "Das Ticket ist wieder frei.",
         "nobody": "noch niemand"
+      },
+      "transcript": {
+        "view": "Transkript ansehen",
+        "truncated": "(Anfang gekürzt)"
+      },
+      "log": {
+        "closed_title": "Ticket #{number} geschlossen"
+      },
+      "closure_detection": {
+        "card_title": "Dieses Ticket scheint erledigt",
+        "card_description": "Das Gespräch liest sich, als wäre es zu Ende. Wenn alles geklärt ist, markiere das Ticket als erledigt — sonst lass es offen, dann fragt eine Weile lang niemand mehr nach.",
+        "resolve": "Als erledigt markieren",
+        "keep_open": "Noch nicht",
+        "dismissed": "{user} möchte dieses Ticket offen lassen."
+      },
+      "rating": {
+        "modal_title": "Betreuung bewerten",
+        "leave": "Bewertung abgeben",
+        "prompt_description": "Dein Ticket ist geschlossen. Du kannst in wenigen Sekunden sagen, wie die Betreuung war — freiwillig, und es hilft dem Team sehr.",
+        "score_label": "Deine Bewertung",
+        "score_hint": "Wie war die Betreuung, die du bekommen hast?",
+        "score_5": "Ausgezeichnet",
+        "score_4": "Sehr gut",
+        "score_3": "In Ordnung",
+        "score_2": "Mittelmäßig",
+        "score_1": "Schlecht",
+        "staff_label": "Wer dir geholfen hat",
+        "staff_hint": "So lassen, wenn die vorgeschlagene Person die richtige ist",
+        "no_staff": "Niemand im Besonderen",
+        "comment_label": "Kommentar",
+        "comment_hint": "Freiwillig — was du noch ergänzen möchtest",
+        "given": "Bewertung",
+        "staff": "Bewertete Person",
+        "comment": "Kommentar",
+        "thanks_title": "Danke für deine Bewertung",
+        "thanks_description": "Deine Bewertung (`{score}`) wurde gespeichert.",
+        "already_title": "Bereits bewertet",
+        "already_description": "Für diese Schließung wurde bereits eine Bewertung abgegeben.",
+        "gone": "Dieses Ticket gibt es nicht mehr: sein Transkript wurde gelöscht."
+      },
+      "settings": {
+        "title": "Ticket-Einstellungen",
+        "description": "Was für alle Tickets des Servers gilt, unabhängig von der Kategorie. Jede Funktion lässt sich einzeln abschalten.",
+        "button": "Einstellungen",
+        "edit": "Ändern",
+        "modal_title": "Ticket-Einstellungen",
+        "on": "an",
+        "off": "aus",
+        "switches_label": "Funktionen",
+        "switches_hint": "Abwählen, um ganz abzuschalten",
+        "transcripts_enabled_label": "Transkripte",
+        "transcripts_enabled_hint": "Das Gespräch beim Schließen archivieren",
+        "closure_detection_enabled_label": "Ende-Erkennung",
+        "closure_detection_enabled_hint": "Das Schließen vorschlagen, wenn das Gespräch beendet wirkt",
+        "rating_enabled_label": "Bewertungen",
+        "rating_enabled_hint": "Das Mitglied bitten, die Betreuung zu bewerten",
+        "retention_label": "Aufbewahrung",
+        "retention_hint": "Tage bis Transkripte gelöscht werden, 0 = für immer (max. {max})",
+        "retention_forever": "für immer",
+        "log_label": "Ticket-Log-Kanal",
+        "log_hint": "Dort erscheint bei jeder Schließung eine Karte, mit Transkript-Link und Bewertung",
+        "log_placeholder": "Kanal auswählen"
+      },
+      "stats": {
+        "team_title": "Ticket-Betreuung",
+        "staff_title": "Betreuung eines Teammitglieds",
+        "member": "Mitglied",
+        "window": "Zeitraum",
+        "days": "Tage",
+        "handled": "Bearbeitete Tickets",
+        "handled_short": "bearbeitet",
+        "ratings": "Erhaltene Bewertungen",
+        "ratings_short": "Bewertungen",
+        "negative_short": "negativ",
+        "average": "Durchschnitt",
+        "recent": "Letzte Bewertungen",
+        "few_ratings": "Zu wenige Bewertungen, als dass der Durchschnitt etwas aussagen würde.",
+        "no_ratings": "In diesem Zeitraum wurde noch keine Bewertung abgegeben."
+      },
+      "owner_left": {
+        "card_title": "Die Person hat den Server verlassen",
+        "card_description": "{user} (`{name}`) ist nicht mehr auf dem Server. Das Ticket bleibt offen: schließe es, wenn es keinen Zweck mehr hat, oder behalte es, solange noch etwas zu erledigen ist. Kommt die Person zurück, bekommt sie ihren Zugang automatisch wieder.",
+        "reason": "Die Person hat den Server verlassen"
       }
     }
   },

@@ -279,7 +279,7 @@
     },
     "ticket": {
       "name": "ticket",
-      "description": "Beheer het ticket waarin je zit"
+      "description": "Beheer de tickets van de server"
     },
     "ticket close": {
       "name": "sluiten",
@@ -386,6 +386,20 @@
     "brocoli": {
       "name": "brocoli",
       "description": "Opent een kanaal waar Moddy's assistent deze server instelt"
+    },
+    "ticket stats": {
+      "name": "statistieken",
+      "description": "Afgehandelde tickets en beoordelingen van het team",
+      "parameters": {
+        "staff": {
+          "name": "teamlid",
+          "description": "Wiens individuele beoordelingen tonen"
+        },
+        "days": {
+          "name": "dagen",
+          "description": "Hoe ver terug kijken, in dagen (standaard 30)"
+        }
+      }
     }
   }
 }

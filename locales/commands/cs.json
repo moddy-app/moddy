@@ -279,7 +279,7 @@
     },
     "ticket": {
       "name": "ticket",
-      "description": "Spravuj ticket, ve kterém jsi"
+      "description": "Správa ticketů serveru"
     },
     "ticket close": {
       "name": "zavřít",
@@ -386,6 +386,20 @@
     "brocoli": {
       "name": "brocoli",
       "description": "Otevře kanál, kde asistent Moddy nastaví tento server"
+    },
+    "ticket stats": {
+      "name": "statistiky",
+      "description": "Vyřízené tickety a hodnocení týmu",
+      "parameters": {
+        "staff": {
+          "name": "clen-tymu",
+          "description": "Čí jednotlivá hodnocení zobrazit"
+        },
+        "days": {
+          "name": "dny",
+          "description": "Jak daleko zpět se podívat, ve dnech (výchozí 30)"
+        }
+      }
     }
   }
 }

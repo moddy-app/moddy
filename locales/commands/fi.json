@@ -279,7 +279,7 @@
     },
     "ticket": {
       "name": "ticket",
-      "description": "Hallitse tikettiä, jossa olet"
+      "description": "Hallitse palvelimen tikettejä"
     },
     "ticket close": {
       "name": "sulje",
@@ -386,6 +386,20 @@
     "brocoli": {
       "name": "brocoli",
       "description": "Avaa kanavan, jossa Moddyn avustaja määrittää tämän palvelimen"
+    },
+    "ticket stats": {
+      "name": "tilastot",
+      "description": "Käsitellyt tiketit ja tiimin arviot",
+      "parameters": {
+        "staff": {
+          "name": "henkilokunta",
+          "description": "Kenen yksittäiset arviot näytetään"
+        },
+        "days": {
+          "name": "paivat",
+          "description": "Kuinka kauas taaksepäin katsotaan, päivinä (oletus 30)"
+        }
+      }
     }
   }
 }

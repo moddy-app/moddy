@@ -73,10 +73,13 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         LogsConfigView, LogsOptionsView, LogsPersistence,
     )
     from utils.altguard_views import AltGuardPanelView
-    from modules.configs.tickets_config import TicketsConfigView
+    from modules.configs.tickets_config import (
+        TicketsConfigView, TicketsSettingsView,
+    )
     from modules.configs.tickets_category_config import TicketsConfigPersistence
     from utils.ticket_views import (
         TicketControlView, TicketClosedView, TicketCloseRequestView,
+        TicketClosureSuggestionView, TicketOwnerLeftView,
         TicketEscalationView, TicketEscalateConfirmView, TicketsPersistence,
     )
     from utils.notification_views import NotificationsPersistence
@@ -171,10 +174,13 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         # exclusions". The ticket-channel views need no id at all: the channel
         # a click comes from IS the ticket.
         TicketsConfigView,
+        TicketsSettingsView,
         TicketsConfigPersistence,
         TicketControlView,
         TicketClosedView,
         TicketCloseRequestView,
+        TicketClosureSuggestionView,
+        TicketOwnerLeftView,
         TicketEscalationView,
         TicketEscalateConfirmView,
         # Group 12h — the public ticket panel's open buttons / dropdown

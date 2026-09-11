@@ -279,7 +279,7 @@
     },
     "ticket": {
       "name": "ticket",
-      "description": "현재 있는 티켓을 관리합니다"
+      "description": "서버의 티켓을 관리합니다"
     },
     "ticket close": {
       "name": "닫기",
@@ -386,6 +386,20 @@
     "brocoli": {
       "name": "brocoli",
       "description": "Moddy 어시스턴트가 이 서버를 설정하는 채널을 엽니다"
+    },
+    "ticket stats": {
+      "name": "통계",
+      "description": "처리한 티켓 수와 스태프 평가",
+      "parameters": {
+        "staff": {
+          "name": "스태프",
+          "description": "누구의 개별 평가를 표시할지"
+        },
+        "days": {
+          "name": "일수",
+          "description": "며칠 전까지 볼지 (기본값 30)"
+        }
+      }
     }
   }
 }

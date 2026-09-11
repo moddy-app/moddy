@@ -151,6 +151,14 @@ _ALL: Tuple[Metric, ...] = (
            doc="A platform-scoped case (a Moddy-team sanction) was recorded."),
     Metric("ticket.opened", dimensions=("panel",)),
     Metric("ticket.closed", dimensions=("reason",)),
+    Metric("ticket.transcript", dimensions=("codec",),
+           doc="A closed ticket's conversation was archived."),
+    Metric("ticket.closure_suggested",
+           doc="Moddy offered to close a ticket whose conversation looked over."),
+    Metric("ticket.rated", dimensions=("score",),
+           doc="A member rated how their ticket was handled. The score is a "
+               "dimension because it has five values; who was rated is not, "
+               "and lives in `ticket_ratings` instead."),
     Metric("bump.reminded", dimensions=("bot",)),
     Metric("log.dispatched", dimensions=("category",),
            doc="A server-log entry was delivered to a webhook."),

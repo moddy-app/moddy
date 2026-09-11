@@ -279,7 +279,7 @@
     },
     "ticket": {
       "name": "ticket",
-      "description": "Upravljaj tiketom u kojem se nalaziš"
+      "description": "Upravljanje ticketima poslužitelja"
     },
     "ticket close": {
       "name": "zatvori",
@@ -386,6 +386,20 @@
     "brocoli": {
       "name": "brocoli",
       "description": "Otvara kanal na kojem Moddyjev asistent postavlja ovaj poslužitelj"
+    },
+    "ticket stats": {
+      "name": "statistika",
+      "description": "Riješeni ticketi i ocjene tima",
+      "parameters": {
+        "staff": {
+          "name": "osoblje",
+          "description": "Čije pojedinačne ocjene prikazati"
+        },
+        "days": {
+          "name": "dani",
+          "description": "Koliko dana unatrag gledati (zadano 30)"
+        }
+      }
     }
   }
 }

@@ -279,7 +279,7 @@
     },
     "ticket": {
       "name": "ticket",
-      "description": "İçinde bulunduğun talebi yönet"
+      "description": "Sunucunun taleplerini yönet"
     },
     "ticket close": {
       "name": "kapat",
@@ -386,6 +386,20 @@
     "brocoli": {
       "name": "brocoli",
       "description": "Moddy asistanının bu sunucuyu yapılandırdığı bir kanal açar"
+    },
+    "ticket stats": {
+      "name": "istatistikler",
+      "description": "İlgilenilen talepler ve ekibin puanları",
+      "parameters": {
+        "staff": {
+          "name": "yetkili",
+          "description": "Kimin bireysel puanlarının gösterileceği"
+        },
+        "days": {
+          "name": "gun",
+          "description": "Kaç gün geriye bakılacağı (varsayılan 30)"
+        }
+      }
     }
   }
 }

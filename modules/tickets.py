@@ -101,11 +101,12 @@ PERM_STAFF_THREAD = "staff_thread"  # open and join the private staff thread
 PERM_RENAME = "rename"              # rename the ticket channel
 PERM_MOVE = "move"                  # move it to another category
 PERM_PARTICIPANTS = "participants"  # add/remove members and roles
+PERM_STATS = "stats"                # read the handling ratings of this category
 PERM_ADMIN = "admin"                # everything above + kept on escalation
 
 TICKET_PERMISSIONS: Tuple[str, ...] = (
     PERM_VIEW, PERM_CLOSE, PERM_CLAIM, PERM_UNCLAIM_OTHERS, PERM_STAFF_THREAD,
-    PERM_RENAME, PERM_MOVE, PERM_PARTICIPANTS, PERM_ADMIN,
+    PERM_RENAME, PERM_MOVE, PERM_PARTICIPANTS, PERM_STATS, PERM_ADMIN,
 )
 
 # What a brand new role entry gets: enough to actually work the ticket, not
@@ -125,6 +126,40 @@ NAME_PLACEHOLDERS = ("{number}", "{username}", "{display_name}", "{category}")
 # Open tickets one member may hold in one category at the same time.
 DEFAULT_MAX_OPEN_PER_USER = 1
 MAX_OPEN_PER_USER_CEILING = 10
+
+# --------------------------------------------------------------------------- #
+# Module-wide settings
+#
+# These are support *policies*, not workflow knobs: unlike `claim_enabled` or
+# `claim_lock`, which genuinely differ from one category to the next, a server
+# archives its tickets or it does not. Keeping them at module level also means
+# one place to switch a feature off, which is what "optional" has to mean.
+#
+# Closure detection defaults to OFF because it spends API quota on embeddings;
+# everything that goes through `bot.gateway.ai` is opt-in here.
+# --------------------------------------------------------------------------- #
+SETTING_LOG_CHANNEL = "log_channel_id"
+SETTING_TRANSCRIPTS = "transcripts_enabled"
+SETTING_RETENTION = "transcript_retention_days"
+SETTING_CLOSURE_DETECTION = "closure_detection_enabled"
+SETTING_RATING = "rating_enabled"
+
+# The three switches offered as one checkbox group in /config.
+SETTING_SWITCHES: Tuple[str, ...] = (
+    SETTING_TRANSCRIPTS, SETTING_CLOSURE_DETECTION, SETTING_RATING,
+)
+
+DEFAULT_SETTINGS: Dict[str, Any] = {
+    SETTING_LOG_CHANNEL: None,
+    SETTING_TRANSCRIPTS: True,
+    SETTING_RETENTION: 0,          # 0 = keep forever
+    SETTING_CLOSURE_DETECTION: False,
+    SETTING_RATING: True,
+}
+
+# A transcript older than this many days can be purged; the ceiling only keeps
+# a typo out of the database, the real answer is almost always 0 or 90.
+MAX_RETENTION_DAYS = 3650
 
 # --------------------------------------------------------------------------- #
 # The buttons offered under the opening message
@@ -370,10 +405,35 @@ def normalize_panel(raw: Any) -> Optional[Dict[str, Any]]:
     }
 
 
+def normalize_settings(raw: Any) -> Dict[str, Any]:
+    """The module-wide settings, always complete.
+
+    A config written before these existed comes back with the defaults, so no
+    guild has to be touched for the features to appear.
+    """
+    raw = raw if isinstance(raw, dict) else {}
+
+    retention = _as_int(raw.get(SETTING_RETENTION))
+    if retention is None or retention < 0:
+        retention = DEFAULT_SETTINGS[SETTING_RETENTION]
+    retention = min(retention, MAX_RETENTION_DAYS)
+
+    return {
+        SETTING_LOG_CHANNEL: _as_int(raw.get(SETTING_LOG_CHANNEL)),
+        SETTING_TRANSCRIPTS: bool(raw.get(
+            SETTING_TRANSCRIPTS, DEFAULT_SETTINGS[SETTING_TRANSCRIPTS])),
+        SETTING_RETENTION: retention,
+        SETTING_CLOSURE_DETECTION: bool(raw.get(
+            SETTING_CLOSURE_DETECTION, DEFAULT_SETTINGS[SETTING_CLOSURE_DETECTION])),
+        SETTING_RATING: bool(raw.get(
+            SETTING_RATING, DEFAULT_SETTINGS[SETTING_RATING])),
+    }
+
+
 def normalize_config(raw: Any) -> Dict[str, Any]:
-    """The whole module config, always ``{'panels': [...]}``."""
+    """The whole module config: ``{'panels': [...], 'settings': {...}}``."""
     if not isinstance(raw, dict):
-        return {'panels': []}
+        return {'panels': [], 'settings': normalize_settings(None)}
 
     panels = []
     seen_ids = set()
@@ -384,7 +444,15 @@ def normalize_config(raw: Any) -> Dict[str, Any]:
         seen_ids.add(panel['id'])
         panels.append(panel)
 
-    return {'panels': panels}
+    # Settings were introduced after panels, so they may live either in their
+    # own sub-object or (from an older dashboard write) flat at the root.
+    settings_raw = raw.get('settings')
+    if not isinstance(settings_raw, dict):
+        settings_raw = {k: raw[k] for k in
+                        (SETTING_LOG_CHANNEL, *SETTING_SWITCHES, SETTING_RETENTION)
+                        if k in raw}
+
+    return {'panels': panels, 'settings': normalize_settings(settings_raw)}
 
 
 # --------------------------------------------------------------------------- #
@@ -672,6 +740,7 @@ class TicketsModule(ModuleBase):
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)
         self.panels: List[Dict[str, Any]] = []
+        self.settings: Dict[str, Any] = dict(DEFAULT_SETTINGS)
 
     # -- ModuleBase ------------------------------------------------------- #
     async def load_config(self, config_data: Dict[str, Any]) -> bool:
@@ -679,6 +748,7 @@ class TicketsModule(ModuleBase):
             normalized = normalize_config(config_data)
             self.config = normalized
             self.panels = normalized['panels']
+            self.settings = normalized['settings']
             # A guild "has tickets" as soon as one panel is switched on. That
             # is also the condition under which /ticket is published in the
             # guild, so it must not depend on anything transient.
@@ -690,7 +760,7 @@ class TicketsModule(ModuleBase):
             return False
 
     def get_default_config(self) -> Dict[str, Any]:
-        return {'panels': []}
+        return {'panels': [], 'settings': dict(DEFAULT_SETTINGS)}
 
     def get_required_fields(self) -> List[str]:
         # Nothing is required to *store* the config: a guild that created a

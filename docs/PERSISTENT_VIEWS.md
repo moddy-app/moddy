@@ -495,10 +495,26 @@ was easier not to" is not one.
   `TicketControlView`'s buttons are per-category configurable, so its
   registered shell declares **every** button id rather than the default set —
   an id the shell never declared would be a dead button after a restart.
-  `build_close_dm`, `build_reopen_dm` and `build_claim_notice` have zero
-  interactive children ("nothing to register" case above), and the participants
-  editor is a Modal (`TicketParticipantsModal`), which falls under the
-  deliberate modal exclusion.
+  `TicketClosureSuggestionView` and `TicketOwnerLeftView` join them on the same
+  terms — the channel is the ticket.
+
+  `build_reopen_dm` and `build_claim_notice` have zero interactive children
+  ("nothing to register" case above); `build_close_dm` no longer does, and its
+  button is the interesting exception. A DM has **no ticket channel** to derive
+  identity from, and by the time it is clicked — possibly days later — the
+  channel and its `tickets` row may be gone entirely. So it is a `DynamicItem`,
+  `utils/ticket_rating_views.py::TicketRateButton`
+  (`moddy:tickets:rate:<transcript_key>`), registered through
+  `TicketsPersistence`; every click re-reads the transcript row and checks that
+  the clicker is the ticket's opener.
+
+  `TicketRatingModal` and `TicketsSettingsModal` are Modals, which fall under
+  the deliberate modal exclusion, as does `TicketParticipantsModal`.
+  `utils/ticket_rating_views.py::TicketRatePromptView` is deliberately **not**
+  registered: it lives inside a single ephemeral reply, holds the transcript it
+  points at in memory for that one click, and the DM button above is the
+  durable path to the same modal. Registering it would mean persisting a
+  convenience that already has a permanent equivalent.
 
 ---
 
@@ -529,6 +545,17 @@ nothing to authorize. The beta campaign's **Translate** button
 (`BetaPersistence`) is public for the same reason and can show nothing its
 reader was not already sent — it re-renders the recipient's own notification
 from its stored template.
+
+**Tickets** (see [TICKETS.md](TICKETS.md)) cover both models at once. Every
+card posted *in a ticket channel* — the control bar, the closing card, the close
+request, the escalation notice, the closure suggestion, the "author left"
+card — uses a static custom_id, because the channel a click comes from **is**
+the ticket. The closing **DM** cannot: it has no ticket channel, and by the time
+its "leave a review" button is clicked the channel may have been deleted
+outright. So that one is a `DynamicItem` carrying the transcript key
+(`TicketRateButton`), and it resolves the guild, the opener and the staff from
+`ticket_transcripts` rather than from `tickets` — which is exactly why
+transcripts have no foreign key on that table.
 
 **`/team access`** (`utils/team_access_views.py`, see
 [LINKED_ROLES.md](LINKED_ROLES.md)) is two surfaces with two different auth
