@@ -11,13 +11,17 @@ request, exactly as if they had run ``/ticket close-request`` themselves.
 The cost model matters more than the accuracy here, because this runs on every
 message of every ticket of every server:
 
-1. ``looks_like_closure`` is a lexical test over ~90 multilingual roots. It is
-   free, it runs in the cog before anything else, and it rules out the
-   overwhelming majority of messages. **No keyword hit, no API call, ever.**
-2. What survives goes through structural checks (length, questions, mentions,
-   how young the ticket is) that are also free.
-3. Only then is a message embedded, and even then the engine memoises scores
+1. ``looks_like_closure`` is a structural prefilter — length, questions,
+   mentions, commands, how young the ticket is. It is free, no I/O, and it
+   runs in the cog before anything else.
+2. Only then is a message embedded, and even then the engine memoises scores
    and coalesces identical concurrent requests (``automod.embeddings``).
+
+There is deliberately no lexical/keyword gate in front of the embedding: automod
+already embeds every message of every server it watches, so gating this
+narrower, opt-in feature behind a keyword list bought a false sense of savings
+it didn't need — and a keyword list is also a ceiling on recall (it only ever
+catches a closing line that happens to use one of the anticipated roots).
 
 The embedding engine, its cosine maths and its LRU+TTL cache are reused from
 ``automod`` rather than rewritten; only the reference phrases and the threshold
@@ -37,7 +41,6 @@ import asyncio
 import json
 import logging
 import time
-import unicodedata
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -76,12 +79,6 @@ _CACHE_MAX_ENTRIES = 512
 _CACHE_TTL = 1800.0
 
 
-def _strip_accents(text: str) -> str:
-    """Lowercase and drop diacritics, so "résolu" matches the root "resolu"."""
-    decomposed = unicodedata.normalize('NFD', text.lower())
-    return ''.join(c for c in decomposed if unicodedata.category(c) != 'Mn')
-
-
 class _ClosureReferences(EmbeddingEngine):
     """The automod engine, pointed at the ticket-closure phrases.
 
@@ -102,16 +99,6 @@ class _ClosureReferences(EmbeddingEngine):
         return texts, categories
 
 
-def load_keywords() -> List[str]:
-    """Every lexical root of the prefilter, flattened and accent-stripped."""
-    with open(_REFERENCES_PATH, 'r', encoding='utf-8') as f:
-        data = json.load(f)
-    roots: List[str] = []
-    for language_roots in data.get('keywords', {}).values():
-        roots.extend(_strip_accents(root) for root in language_roots)
-    return roots
-
-
 class _ChannelState:
     """What the detector remembers about one open ticket."""
 
@@ -128,7 +115,6 @@ class TicketClosureDetector:
 
     def __init__(self, bot):
         self.bot = bot
-        self._keywords: Optional[List[str]] = None
         self._engine: Optional[_ClosureReferences] = None
         self._engine_lock = asyncio.Lock()
         self._states: Dict[int, _ChannelState] = {}
@@ -136,18 +122,13 @@ class TicketClosureDetector:
     # ------------------------------------------------------------------ #
     # The free prefilter
     # ------------------------------------------------------------------ #
-    @property
-    def keywords(self) -> List[str]:
-        if self._keywords is None:
-            try:
-                self._keywords = load_keywords()
-            except (OSError, ValueError) as e:
-                logger.error(f"[Tickets] Could not load closure keywords: {e}")
-                self._keywords = []
-        return self._keywords
-
     def looks_like_closure(self, content: Optional[str]) -> bool:
         """Whether this message is even worth considering. Free, no I/O.
+
+        Purely structural — length, questions, mentions, commands. There is
+        no keyword gate: automod already embeds every message of every
+        server it watches, so this narrower feature gains nothing from one,
+        and a keyword list only ever catches the closing lines it anticipated.
 
         Called from the message listener before anything else: a message that
         fails here never reaches the database, let alone an embedding.
@@ -163,8 +144,7 @@ class TicketClosureDetector:
             return False            # addressed to someone, still in progress
         if stripped.startswith(('/', '!', '.', '>')):
             return False            # a command, not a sentence
-        haystack = _strip_accents(stripped)
-        return any(root in haystack for root in self.keywords)
+        return True
 
     # ------------------------------------------------------------------ #
     # State

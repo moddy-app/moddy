@@ -1,12 +1,5 @@
 {
-  "_comment": "Ticket-closure intent detection. `keywords` is the free local prefilter: a message must contain one of these roots before a single embedding is ever paid for. `categories.resolution.exemples` are the reference phrases embedded once per process and compared by cosine. Both cover the five languages Moddy speaks (fr, en-US, es-ES, pt-BR, de). Keep roots short and unaccented-tolerant: they are matched against a stripped, lowercased form of the message. See services/ticket_closure_detector.py.",
-  "keywords": {
-    "fr": ["merci", "resolu", "regle", "c'est bon", "cest bon", "ca marche", "ca fonctionne", "parfait", "nickel", "au revoir", "bonne journee", "bonne soiree", "vous pouvez fermer", "tu peux fermer", "on peut fermer", "fermer le ticket", "plus besoin", "tout est bon", "impec", "super"],
-    "en": ["thank", "thanks", "thx", "resolved", "solved", "fixed", "all good", "it works", "working now", "perfect", "goodbye", "bye", "have a good", "you can close", "please close", "close the ticket", "no longer need", "sorted", "all set", "appreciate it"],
-    "es": ["gracias", "resuelto", "solucionado", "arreglado", "ya esta", "funciona", "perfecto", "adios", "hasta luego", "buen dia", "pueden cerrar", "puedes cerrar", "cerrar el ticket", "ya no necesito", "todo bien", "genial"],
-    "pt": ["obrigado", "obrigada", "valeu", "resolvido", "solucionado", "arrumado", "ja esta", "funciona", "funcionou", "perfeito", "tchau", "ate logo", "bom dia", "podem fechar", "pode fechar", "fechar o ticket", "nao preciso mais", "tudo certo", "otimo"],
-    "de": ["danke", "dankeschon", "geloest", "gelost", "behoben", "erledigt", "funktioniert", "perfekt", "tschuss", "auf wiedersehen", "schonen tag", "ihr konnt schliessen", "du kannst schliessen", "ticket schliessen", "brauche nicht mehr", "alles gut", "super"]
-  },
+  "_comment": "Ticket-closure intent detection. `categories.resolution.exemples` are the reference phrases embedded once per process and compared by cosine against every message that clears the structural prefilter (services/ticket_closure_detector.py::looks_like_closure). No keyword gate: automod already embeds every message of every server it watches, so this narrower feature doesn't buy anything by gating itself behind one, and a keyword list only ever catches the closing lines it anticipated. Covers the five languages Moddy speaks (fr, en-US, es-ES, pt-BR, de).",
   "categories": {
     "resolution": {
       "exemples": [

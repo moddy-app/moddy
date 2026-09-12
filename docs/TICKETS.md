@@ -68,8 +68,8 @@ services/ticket_transcript_service.py   Exports a closing ticket's conversation
 services/ticket_closure_detector.py     Spots a finished conversation and offers
                                         the closure (bot.ticket_closure).
 services/data/ticket_closure_references.json
-                                        The closing keywords (5 languages) and
-                                        the phrases embedded to score against.
+                                        The closing-intent reference phrases
+                                        (5 languages) embedded to score against.
 utils/compression.py                    zstd/zlib, one codec decision.
 utils/ticket_rating_views.py            The rating modal, the DM button, the
                                         "rate it" prompt.
@@ -742,15 +742,16 @@ checks is the design:
 1. `TicketService.is_open_ticket_channel` — an in-memory set of open ticket
    channel ids, hydrated once at boot. Answers "is this even a ticket?" without
    a query.
-2. `looks_like_closure` — a lexical test over ~90 multilingual roots
-   (`merci`, `thanks`, `gracias`, `obrigado`, `danke`, `résolu`, `solved`,
-   `you can close`, …). Free, no I/O. **No keyword hit, no API call, ever.**
-3. Structural checks, also free: 8–160 characters, no `?` (a question is not a
-   goodbye), no mention (still addressed to somebody), not a command, ticket
-   older than 120 s with at least 3 human messages.
-4. A **20 s debounce** per channel, so "merci" two seconds before "attends en
+2. `looks_like_closure` — a purely structural prefilter, free and no I/O:
+   8–160 characters, no `?` (a question is not a goodbye), no mention (still
+   addressed to somebody), not a command, ticket older than 120 s with at
+   least 3 human messages. There is no keyword gate: automod already embeds
+   every message of every server it watches, so this narrower, opt-in
+   feature doesn't save anything by gating itself behind a keyword list —
+   and a list only ever catches the closing lines it anticipated.
+3. A **20 s debounce** per channel, so "merci" two seconds before "attends en
    fait non" produces nothing.
-5. Only then is the message embedded and scored.
+4. Only then is the message embedded and scored.
 
 The embedding engine, its cosine maths and its LRU+TTL cache are reused from
 `automod/` rather than rewritten; only the reference corpus
