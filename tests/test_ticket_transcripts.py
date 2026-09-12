@@ -32,7 +32,6 @@ from services.ticket_closure_detector import (
     MAX_LENGTH,
     MIN_LENGTH,
     TicketClosureDetector,
-    load_keywords,
 )
 from services.ticket_transcript_service import (
     MAX_MESSAGE_CONTENT,
@@ -333,6 +332,8 @@ class TestClosurePrefilter:
         "muchas gracias, ya está",           # es
         "obrigado, tudo certo",              # pt
         "vielen dank, alles gut",            # de
+        "je n'arrive toujours pas a me co",  # no closing wording at all —
+                                              # still a candidate, the embedding decides
     ])
     def test_every_supported_language_gets_through(self, detector, message):
         assert detector.looks_like_closure(message) is True
@@ -343,7 +344,6 @@ class TestClosurePrefilter:
         "/ticket close merci",               # a command
         "ok",                                # too short
         "merci " + "x" * MAX_LENGTH,         # too long
-        "je n'arrive toujours pas a me co",  # no closing root at all
         "",
         None,
     ])
@@ -351,20 +351,8 @@ class TestClosurePrefilter:
         assert detector.looks_like_closure(message) is False
 
     def test_the_bounds_are_the_ones_advertised(self, detector):
-        assert detector.looks_like_closure("merci" + "!" * (MIN_LENGTH - 6)) is False
-        assert detector.looks_like_closure("merci beaucoup") is True
-
-    def test_accents_and_case_do_not_matter(self, detector):
-        assert detector.looks_like_closure("C'EST RÉSOLU, MERCI") is True
-
-    def test_the_keyword_table_covers_the_five_languages(self):
-        import json
-        from services.ticket_closure_detector import _REFERENCES_PATH
-        with open(_REFERENCES_PATH, encoding='utf-8') as f:
-            data = json.load(f)
-        assert set(data['keywords']) == {'fr', 'en', 'es', 'pt', 'de'}
-        assert all(len(roots) >= 10 for roots in data['keywords'].values())
-        assert len(load_keywords()) >= 80
+        assert detector.looks_like_closure("x" * (MIN_LENGTH - 1)) is False
+        assert detector.looks_like_closure("x" * MIN_LENGTH) is True
 
     def test_the_reference_corpus_covers_them_too(self):
         from services.ticket_closure_detector import _ClosureReferences
