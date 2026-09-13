@@ -134,8 +134,10 @@ as "not present", never as an error.
          "fl": [{"n": "field name", "v": "field value"}]}
       ],
       "r":  [{"e": "👍", "c": 3}],    // optional, reactions
-      "p":  "1234567890123456780",   // optional, the message this replies to
-      "s":  "pin_add"                // optional, discord.MessageType name
+      "p":  "1234567890123456780",   // optional, the message this points to
+      "pr": {"a": 789, "c": "the original text"}, // optional, preview of "p"
+      "s":  "pin_add",               // optional, discord.MessageType name
+      "tg": 456                      // optional, the user id a system notice is about
     }
   ],
   "staff_thread": { "messages": [ … ] }   // optional — see the warning below
@@ -143,8 +145,26 @@ as "not present", never as an error.
 ```
 
 - `messages` is ordered **oldest first**.
-- `"s"` is present only for non-default message types (`pin_add`,
-  `thread_created`, …). Those usually carry no `"c"`.
+- `"s"` is present only for non-default message types (`reply`, `pin_add`,
+  `thread_created`, …). A `reply` still carries a normal `"c"`; the
+  purely-system ones (`pin_add`, `thread_created`, `channel_name_change`, …)
+  usually do not.
+- `"p"` is set whenever Discord attaches a `message_reference` — that is both
+  a **reply** and a **"pinned a message" notice** (`s: "pin_add"`), since
+  Discord points the pin notice at the message that got pinned the same way.
+  Render both the same way: "→ pointing at message `p`".
+- `"pr"` is a **best-effort, self-contained preview** of the message `"p"`
+  points to — its author id and up to 150 characters of its text (pulled from
+  Components V2 content when the original had no plain `"c"`, e.g. one of
+  Moddy's own cards) — so a renderer never has to look `"p"` up in the rest of
+  the transcript, which may not even contain it (older message, truncated
+  export). `"pr"` is `{"deleted": true}` when the original was deleted before
+  export, and absent entirely when Discord could not resolve it at all
+  (`"p"` is still present and is then the only thing to show). Never assume
+  the message `"p"` names is present in `messages`.
+- `"tg"` is the user id a `recipient_add` / `recipient_remove` notice is
+  about (a member added to or removed from the channel) — who, not just that
+  it happened. Absent for every other system type.
 - **Attachments are references, never files.** `"u"` is Discord's CDN url; it
   expires and is not re-signed by the bot. A dashboard that wants durable
   attachments has to mirror them itself, at its own cost.
