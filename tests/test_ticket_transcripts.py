@@ -72,7 +72,8 @@ class FakeMessage:
 
     def __init__(self, message_id=1, author=None, content="", *, components=(),
                  attachments=(), embeds=(), reactions=(), reference=None,
-                 edited_at=None, created_at=None, message_type=None):
+                 edited_at=None, created_at=None, message_type=None,
+                 mentions=()):
         import discord
         self.id = message_id
         self.author = author or FakeAuthor()
@@ -85,6 +86,7 @@ class FakeMessage:
         self.edited_at = edited_at
         self.created_at = created_at or _now()
         self.type = message_type or discord.MessageType.default
+        self.mentions = list(mentions)
 
 
 class FakeHistoryChannel:
@@ -258,6 +260,76 @@ class TestExport:
         body, _a, _t = await service.build_payload(
             FakeHistoryChannel([FakeMessage(1, FakeAuthor(), "hi")]))
         assert 'staff_thread' not in body
+
+    async def test_a_reply_carries_a_preview_of_what_it_replies_to(self, service):
+        """The point of the feature: no cross-referencing needed to render it."""
+        import discord
+        original = FakeMessage(1, FakeAuthor(2, "jules"), "original message")
+        reference = SimpleNamespace(message_id=1, resolved=original)
+        reply = FakeMessage(2, FakeAuthor(3, "mod"), "sure, on it",
+                            reference=reference, message_type=discord.MessageType.reply)
+        body, _a, _t = await service.build_payload(FakeHistoryChannel([original, reply]))
+        entry = body['messages'][1]
+        assert entry['p'] == "1"
+        assert entry['s'] == "reply"
+        assert entry['pr'] == {'a': 2, 'c': "original message"}
+
+    async def test_a_pinned_message_notice_carries_the_same_preview(self, service):
+        """Discord sends a message_reference for pin_add too — same code path."""
+        import discord
+        pinned = FakeMessage(1, FakeAuthor(2, "jules"), "keep this")
+        reference = SimpleNamespace(message_id=1, resolved=pinned)
+        notice = FakeMessage(2, FakeAuthor(3, "mod"), "",
+                             reference=reference, message_type=discord.MessageType.pins_add)
+        body, _a, _t = await service.build_payload(FakeHistoryChannel([pinned, notice]))
+        entry = body['messages'][1]
+        assert entry['s'] == "pins_add"
+        assert entry['pr'] == {'a': 2, 'c': "keep this"}
+
+    async def test_a_preview_of_a_deleted_message_says_so_rather_than_guessing(self, service):
+        import discord
+        reference = SimpleNamespace(
+            message_id=1, resolved=discord.DeletedReferencedMessage(SimpleNamespace()))
+        reply = FakeMessage(2, FakeAuthor(), "was replying to that",
+                            reference=reference, message_type=discord.MessageType.reply)
+        body, _a, _t = await service.build_payload(FakeHistoryChannel([reply]))
+        assert body['messages'][0]['pr'] == {'deleted': True}
+
+    async def test_an_unresolved_reference_keeps_the_id_without_a_preview(self, service):
+        """Too old, or in a channel the bot can no longer see — 'p' still holds."""
+        reference = SimpleNamespace(message_id=1, resolved=None)
+        reply = FakeMessage(2, FakeAuthor(), "context is gone", reference=reference)
+        body, _a, _t = await service.build_payload(FakeHistoryChannel([reply]))
+        entry = body['messages'][0]
+        assert entry['p'] == "1"
+        assert 'pr' not in entry
+
+    async def test_a_component_only_reply_still_gets_a_readable_preview(self, service):
+        """The referenced message is one of Moddy's own cards (no `content`)."""
+        card = FakeMessage(1, FakeAuthor(2, "moddy", bot=True), "",
+                           components=[SimpleNamespace(content="### Ticket closed")])
+        reference = SimpleNamespace(message_id=1, resolved=card)
+        reply = FakeMessage(2, FakeAuthor(), "got it", reference=reference)
+        body, _a, _t = await service.build_payload(FakeHistoryChannel([card, reply]))
+        assert body['messages'][1]['pr'] == {'a': 2, 'c': "### Ticket closed"}
+
+    async def test_a_member_added_notice_names_who_was_added(self, service):
+        import discord
+        added = FakeAuthor(5, "newmember")
+        notice = FakeMessage(1, FakeAuthor(3, "mod"), "",
+                             message_type=discord.MessageType.recipient_add,
+                             mentions=[added])
+        body, _a, _t = await service.build_payload(FakeHistoryChannel([notice]))
+        entry = body['messages'][0]
+        assert entry['s'] == "recipient_add"
+        assert entry['tg'] == 5
+
+    async def test_a_plain_system_notice_has_no_target(self, service):
+        import discord
+        notice = FakeMessage(1, FakeAuthor(), "new-ticket-name",
+                             message_type=discord.MessageType.channel_name_change)
+        body, _a, _t = await service.build_payload(FakeHistoryChannel([notice]))
+        assert 'tg' not in body['messages'][0]
 
 
 class TestCapture:

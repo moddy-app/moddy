@@ -55,6 +55,9 @@ MAX_TRANSCRIPT_MESSAGES = 20_000
 # Per-message text cap, matching the other stored free-text fields.
 MAX_MESSAGE_CONTENT = 4000
 
+# A reply/pin preview is a pointer, not the message itself — kept short.
+MAX_REFERENCE_PREVIEW = 150
+
 # A pathological channel must never hold a closure open.
 EXPORT_TIMEOUT = 120
 
@@ -89,6 +92,53 @@ def extract_component_text(components) -> str:
     for component in components or ():
         walk(component)
     return "\n".join(parts)
+
+
+def _reference_preview(message: discord.Message) -> Optional[Dict[str, Any]]:
+    """A short, self-contained preview of the message ``message`` points to.
+
+    Covers both a reply and a "pinned a message" system notice — Discord sends
+    a ``message_reference`` for each, and discord.py resolves it inline into
+    ``reference.resolved`` when the referenced message is still available. This
+    is a best-effort convenience so a renderer never has to cross-reference the
+    transcript itself: ``'p'`` (the referenced message id) stays the source of
+    truth, and a preview may be absent even when ``'p'`` is present (older
+    message, deleted, or a channel the bot can no longer see).
+    """
+    reference = getattr(message, 'reference', None)
+    if reference is None:
+        return None
+    resolved = getattr(reference, 'resolved', None)
+    if isinstance(resolved, discord.DeletedReferencedMessage):
+        return {'deleted': True}
+    author = getattr(resolved, 'author', None)
+    if author is None:
+        return None
+
+    content = getattr(resolved, 'content', None) or \
+        extract_component_text(getattr(resolved, 'components', None))
+    preview: Dict[str, Any] = {'a': author.id}
+    if content:
+        preview['c'] = content[:MAX_REFERENCE_PREVIEW]
+    return preview
+
+
+def _system_event_target(message: discord.Message) -> Optional[int]:
+    """The user id a system notice is about, when Discord names one.
+
+    ``recipient_add`` / ``recipient_remove`` (a member added to or removed
+    from the channel — group-DM style, reachable in a ticket via manual
+    channel membership changes) carry it as the message's mention. Every
+    other system type has nothing to point at beyond its author, already
+    stored as ``'a'``.
+    """
+    if message.type not in (discord.MessageType.recipient_add,
+                            discord.MessageType.recipient_remove):
+        return None
+    mentions = getattr(message, 'mentions', None)
+    if not mentions:
+        return None
+    return mentions[0].id
 
 
 def _serialise_message(message: discord.Message,
@@ -149,9 +199,15 @@ def _serialise_message(message: discord.Message,
 
     if message.reference and message.reference.message_id:
         entry['p'] = str(message.reference.message_id)
+        preview = _reference_preview(message)
+        if preview:
+            entry['pr'] = preview
 
     if message.type is not discord.MessageType.default:
         entry['s'] = message.type.name
+        target = _system_event_target(message)
+        if target is not None:
+            entry['tg'] = target
 
     return entry
 
