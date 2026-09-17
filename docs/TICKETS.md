@@ -158,7 +158,7 @@ key added later, and one just built by `/config` all come out identical.
             "222": ["admin"]
           },
           "open_message": "…",         // the WHOLE pinned message
-          "close_message": "…",        // added to the closing card
+          "close_message": "…",        // added to the opener's closing DM
           "buttons": ["close", "claim", "escalate",
                       "staff_thread", "participants"],
           "claim_enabled": true,       // the claim system, per category
@@ -225,7 +225,7 @@ Ten permissions, granted **per role, per category**:
 | Key | What it allows |
 |---|---|
 | `view` | See and talk in the tickets of this category |
-| `close` | Close and reopen a ticket |
+| `close` | Close a ticket (deletes its channel) |
 | `claim` | Take a ticket in charge, and release your own |
 | `unclaim_others` | Take a ticket off the agent holding it |
 | `staff_thread` | Open and join the private staff thread |
@@ -367,14 +367,14 @@ closure and participant edits from drifting into states nobody can explain.
   Escalation refuses outright when no role holds `admin`: escalating with
   nobody to escalate *to* would lock the ticket down to its opener and the
   server admins.
-- **Closing keeps the channel.** Nothing is destroyed by a click: the ticket is
-  locked, a closing card is posted with **Reopen** and **Delete the channel**,
-  and the opener gets a DM (best effort — closed DMs are the norm, not an
-  error). Deleting requires `admin`.
-- **Reopening restores the map exactly**, because it is rebuilt, not undone —
-  and it DMs the opener too. The closure was announced in a DM; its
-  cancellation has to be, or a member told their ticket was over never learns
-  that a channel which vanished from their list is back.
+- **Closing deletes the channel.** The ticket is locked, archived (if
+  transcripts are on), the opener gets a DM (best effort — closed DMs are the
+  norm, not an error), the log channel gets the permanent record, and the
+  channel is then deleted for good — there is no reopening a closed ticket.
+  When transcripts are enabled, a spinner card (`build_archiving_message`) is
+  posted in the channel *before* the archive capture runs, since that is the
+  one step slow enough that a silent channel would read as broken; the
+  channel disappears moments later regardless of how that card looked.
 
 ---
 
@@ -556,9 +556,7 @@ the commands are the contract. Both call the same method, so they cannot drift.
 | Action | Permission | Notes |
 |---|---|---|
 | `open_ticket` | `can_open` | Enforces `max_open_per_user`. Name (with its status dot), overwrites and topic go in with the channel, in one call. |
-| `close_ticket` | `close` | Locks, posts the closing card, DMs the opener. |
-| `reopen_ticket` | `close` | Rebuilds the map and DMs the opener with a link back. |
-| `delete_ticket` | `admin` | Destroys the channel. |
+| `close_ticket` | `close` | Locks, archives (if enabled), DMs the opener, logs, then deletes the channel. |
 | `request_close` | `view` | **Bidirectional** — see below. Returns `(ticket, to_staff)`. |
 | `accept_close_request` | the side that was asked (`close`, or the opener on a staff offer) | Closes with the reason given for asking. |
 | `cancel_close_request` | the side that was asked, or being the requester | Refusing, or withdrawing your own request. |
@@ -709,12 +707,6 @@ timeout, a database error — and logs it. The closure carries on and simply
 offers no transcript link, rather than a dead one. Archiving is not worth
 failing a closure over.
 
-### Reopening
-
-Reopening touches nothing. The next closure re-reads the whole history and
-creates a **new** row, so every closure of a ticket keeps its own archive and
-every link already handed out keeps showing what it showed.
-
 ### Retention
 
 `transcript_retention_days` is enforced by a daily task in `cogs/tickets.py`,
@@ -836,8 +828,8 @@ remembered on the transcript row).
 
 One rating per **closure**, enforced by `UNIQUE (transcript_id)` rather than by
 a check-then-insert: two clicks a few milliseconds apart would both pass a
-check. A ticket reopened and closed again is a new interaction and can be rated
-again.
+check. Opening a fresh ticket for the same conversation is a new transcript
+and can be rated again.
 
 ### `/ticket stats [staff] [days]`
 
@@ -924,8 +916,8 @@ three different reasons:
 
 | Surface | Model | Why |
 |---|---|---|
-| Ticket message, closing card, close request, escalation notice, escalation confirmation | **Registered views, static custom_ids** | The channel the click comes from *is* the ticket. An id in the custom_id would only add a second source of truth that could disagree with the channel. The ticket message's shell declares every button id, since which ones a guild shows is configurable. |
-| Claim notice, closing DM, reopening DM | **Nothing to register** | No interactive child at all. |
+| Ticket message, close request, escalation notice, escalation confirmation | **Registered views, static custom_ids** | The channel the click comes from *is* the ticket. An id in the custom_id would only add a second source of truth that could disagree with the channel. The ticket message's shell declares every button id, since which ones a guild shows is configurable. |
+| Claim notice, archiving card, closing DM | **Nothing to register** | No interactive child at all. |
 | The participants editor | **A Modal** | Deliberately excluded from persistence, like every modal: it is answered in the moment and Discord closes it on a restart anyway. |
 | The public panel's buttons / dropdown | **`DynamicItem`** (`TicketOpenButton`, `TicketOpenSelect`), registered by `TicketsPersistence` | They carry the panel and category ids. |
 | `/config` panel, category and permission screens | **`DynamicItem`**, registered by `TicketsConfigPersistence`; the wrapper views are deliberately *not* registered | They are scoped to an entity (a panel, a category, a role) that a static custom_id cannot carry — same as `LogsCategoryView`. |

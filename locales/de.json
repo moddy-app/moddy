@@ -3011,7 +3011,7 @@
         "open_label": "Eröffnungsnachricht",
         "open_hint": "Wird im Ticket gepostet und angepinnt. Leer lassen für die Standardnachricht.",
         "close_label": "Schlussnachricht",
-        "close_hint": "Wird der Karte hinzugefügt, die beim Schließen gepostet wird",
+        "close_hint": "Wird der DM hinzugefügt, die beim Schließen an den Ersteller gesendet wird",
         "placeholders_header": "Verfügbare Platzhalter:",
         "ph_user": "Erwähnung des Mitglieds",
         "ph_username": "sein Benutzername",
@@ -3103,8 +3103,6 @@
         "escalate": "Eskalieren",
         "staff_thread": "Team-Thread",
         "participants": "Teilnehmer",
-        "reopen": "Wieder öffnen",
-        "delete": "Kanal löschen",
         "deescalate": "Eskalation aufheben",
         "rename": "Umbenennen",
         "claim": "Übernehmen",
@@ -3138,11 +3136,11 @@
       },
       "close": {
         "done_title": "Ticket geschlossen",
-        "done_description": "Das Ticket ist gesperrt. Über die Karte im Kanal lässt es sich wieder öffnen oder endgültig löschen.",
-        "card_title": "Ticket geschlossen",
-        "by": "Geschlossen von",
+        "done_description": "Das Ticket ist geschlossen und der Kanal wurde gelöscht.",
         "dm_title": "Dein Ticket wurde geschlossen",
-        "dm_description": "Dein Ticket #`{number}` ({category}) auf **{server}** wurde geschlossen."
+        "dm_description": "Dein Ticket #`{number}` ({category}) auf **{server}** wurde geschlossen.",
+        "archiving_title": "Archivierung läuft",
+        "archiving_description": "Das Transkript dieses Tickets wird gespeichert. Der Kanal wird gelöscht, sobald die Archivierung abgeschlossen ist."
       },
       "close_request": {
         "sent_title": "Anfrage gesendet",
@@ -3156,17 +3154,6 @@
         "accept": "Ticket schließen",
         "refuse": "Offen lassen",
         "refused": "{user} hat das Ticket offen gelassen."
-      },
-      "reopen": {
-        "done_title": "Ticket wieder geöffnet",
-        "done_description": "Alle, die Zugriff hatten, haben ihn zurück.",
-        "dm_title": "Dein Ticket wurde wieder geöffnet",
-        "dm_description": "Dein Ticket #`{number}` ({category}) auf **{server}** ist wieder offen.",
-        "dm_channel": "Zurück dorthin:"
-      },
-      "delete": {
-        "pending_title": "Wird gelöscht",
-        "pending_description": "Der Kanal und sein Gespräch werden gelöscht."
       },
       "escalate": {
         "card_title": "Ticket eskaliert",
@@ -3236,7 +3223,6 @@
         "too_many_open": "Du hast bereits `{max}` offene(s) Ticket(s) in dieser Kategorie. Schließe eins, bevor du ein weiteres öffnest.",
         "cannot_create_channel": "Moddy konnte den Ticket-Kanal nicht erstellen. Prüfe die Rechte in der Zielkategorie.",
         "already_closed": "Dieses Ticket ist bereits geschlossen.",
-        "not_closed": "Dieses Ticket ist nicht geschlossen.",
         "close_already_requested": "Für dieses Ticket liegt bereits eine Schließungsanfrage vor.",
         "no_close_request": "Für dieses Ticket liegt keine Schließungsanfrage vor.",
         "already_escalated": "Dieses Ticket ist bereits eskaliert.",

@@ -3011,7 +3011,7 @@
         "open_label": "Opening message",
         "open_hint": "Posted in the ticket, pinned. Leave empty for the default one.",
         "close_label": "Closing message",
-        "close_hint": "Added to the card posted when the ticket is closed",
+        "close_hint": "Added to the DM sent to the opener when the ticket is closed",
         "placeholders_header": "Available placeholders:",
         "ph_user": "mention of the member",
         "ph_username": "their username",
@@ -3103,8 +3103,6 @@
         "escalate": "Escalate",
         "staff_thread": "Staff thread",
         "participants": "Participants",
-        "reopen": "Reopen",
-        "delete": "Delete the channel",
         "deescalate": "Cancel the escalation",
         "rename": "Rename",
         "claim": "Claim",
@@ -3138,11 +3136,11 @@
       },
       "close": {
         "done_title": "Ticket closed",
-        "done_description": "The ticket is locked. It can be reopened, or deleted for good, from the card in the channel.",
-        "card_title": "Ticket closed",
-        "by": "Closed by",
+        "done_description": "The ticket is closed and its channel has been deleted.",
         "dm_title": "Your ticket has been closed",
-        "dm_description": "Your ticket #`{number}` ({category}) on **{server}** has been closed."
+        "dm_description": "Your ticket #`{number}` ({category}) on **{server}** has been closed.",
+        "archiving_title": "Archiving in progress",
+        "archiving_description": "This ticket's transcript is being saved. The channel will be deleted once archiving is complete."
       },
       "close_request": {
         "sent_title": "Request sent",
@@ -3156,17 +3154,6 @@
         "accept": "Close the ticket",
         "refuse": "Keep it open",
         "refused": "{user} kept the ticket open."
-      },
-      "reopen": {
-        "done_title": "Ticket reopened",
-        "done_description": "Everyone who had access to it is back.",
-        "dm_title": "Your ticket has been reopened",
-        "dm_description": "Your ticket #`{number}` ({category}) on **{server}** is open again.",
-        "dm_channel": "Back to it:"
-      },
-      "delete": {
-        "pending_title": "Deleting",
-        "pending_description": "The channel and its conversation are being deleted."
       },
       "escalate": {
         "card_title": "Ticket escalated",
@@ -3236,7 +3223,6 @@
         "too_many_open": "You already have `{max}` open ticket(s) in this category. Close one before opening another.",
         "cannot_create_channel": "Moddy could not create the ticket channel. Check its permissions on the destination category.",
         "already_closed": "This ticket is already closed.",
-        "not_closed": "This ticket is not closed.",
         "close_already_requested": "A closure request is already pending on this ticket.",
         "no_close_request": "No closure request is pending on this ticket.",
         "already_escalated": "This ticket is already escalated.",

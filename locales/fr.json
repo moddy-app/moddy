@@ -3010,7 +3010,7 @@
         "open_label": "Message d'ouverture",
         "open_hint": "Publié dans le ticket, épinglé. Laissez vide pour celui par défaut.",
         "close_label": "Message de fermeture",
-        "close_hint": "Ajouté à la carte publiée à la fermeture du ticket",
+        "close_hint": "Ajouté au DM envoyé à l'ouvreur quand le ticket est fermé",
         "placeholders_header": "Variables disponibles :",
         "ph_user": "mention du membre",
         "ph_username": "son nom d'utilisateur",
@@ -3102,8 +3102,6 @@
         "escalate": "Escalader",
         "staff_thread": "Thread staff",
         "participants": "Participants",
-        "reopen": "Rouvrir",
-        "delete": "Supprimer le salon",
         "deescalate": "Annuler l'escalade",
         "rename": "Renommer",
         "claim": "Prendre en charge",
@@ -3137,11 +3135,11 @@
       },
       "close": {
         "done_title": "Ticket fermé",
-        "done_description": "Le ticket est verrouillé. Il peut être rouvert, ou supprimé définitivement, depuis la carte publiée dans le salon.",
-        "card_title": "Ticket fermé",
-        "by": "Fermé par",
+        "done_description": "Le ticket est fermé et le salon a été supprimé.",
         "dm_title": "Votre ticket a été fermé",
-        "dm_description": "Votre ticket #`{number}` ({category}) sur **{server}** a été fermé."
+        "dm_description": "Votre ticket #`{number}` ({category}) sur **{server}** a été fermé.",
+        "archiving_title": "Archivage en cours",
+        "archiving_description": "La transcription de ce ticket est en cours d'enregistrement. Le salon sera supprimé une fois l'archivage terminé."
       },
       "close_request": {
         "sent_title": "Demande envoyée",
@@ -3155,17 +3153,6 @@
         "accept": "Fermer le ticket",
         "refuse": "Le garder ouvert",
         "refused": "{user} a gardé le ticket ouvert."
-      },
-      "reopen": {
-        "done_title": "Ticket rouvert",
-        "done_description": "Tous ceux qui y avaient accès le retrouvent.",
-        "dm_title": "Votre ticket a été rouvert",
-        "dm_description": "Votre ticket #`{number}` ({category}) sur **{server}** est de nouveau ouvert.",
-        "dm_channel": "Pour y retourner :"
-      },
-      "delete": {
-        "pending_title": "Suppression",
-        "pending_description": "Le salon et sa conversation sont en cours de suppression."
       },
       "escalate": {
         "card_title": "Ticket escaladé",
@@ -3235,7 +3222,6 @@
         "too_many_open": "Vous avez déjà `{max}` ticket(s) ouvert(s) dans cette catégorie. Fermez-en un avant d'en ouvrir un autre.",
         "cannot_create_channel": "Moddy n'a pas pu créer le salon du ticket. Vérifiez ses permissions sur la catégorie de destination.",
         "already_closed": "Ce ticket est déjà fermé.",
-        "not_closed": "Ce ticket n'est pas fermé.",
         "close_already_requested": "Une demande de fermeture est déjà en attente sur ce ticket.",
         "no_close_request": "Aucune demande de fermeture n'est en attente sur ce ticket.",
         "already_escalated": "Ce ticket est déjà escaladé.",

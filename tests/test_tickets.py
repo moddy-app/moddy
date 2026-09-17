@@ -984,13 +984,12 @@ class TestTicketChannelViews:
         assert "---" not in texts
         assert any(isinstance(i, ui.Separator) for i in children)
 
-    def test_closing_card_offers_reopen_and_delete(self):
-        from utils.ticket_views import build_closed_message
+    def test_archiving_card_has_no_buttons(self):
+        """The pre-deletion spinner card is purely informational."""
+        from utils.ticket_views import build_archiving_message
 
-        view = build_closed_message(self.ticket, self.category, self.actor,
-                                    "solved", "Bye", "fr")
-        assert self._ids(view) == ["moddy:tickets:closed:reopen",
-                                   "moddy:tickets:closed:delete"]
+        view = build_archiving_message("fr")
+        assert self._ids(view) == []
 
     def test_close_request_card(self):
         from utils.ticket_views import build_close_request_message
@@ -1082,7 +1081,7 @@ _SOURCE_FILES = (
 _INTERPOLATED_KEYS = (
     [f"modules.tickets.actions.{a}" for a in
      ("close", "close_request", "claim", "unclaim", "escalate", "staff_thread",
-      "participants", "reopen", "delete", "deescalate", "rename")]
+      "participants", "deescalate", "rename")]
     + [f"modules.tickets.buttons.{b}_hint" for b in TICKET_BUTTONS]
     + [f"modules.tickets.close_request.{k}_{s}"
        for k in ("sent_description", "card_title", "card_description")

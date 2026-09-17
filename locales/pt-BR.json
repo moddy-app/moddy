@@ -3011,7 +3011,7 @@
         "open_label": "Mensagem de abertura",
         "open_hint": "Publicada no ticket e fixada. Deixe vazio para a padrão.",
         "close_label": "Mensagem de fechamento",
-        "close_hint": "Adicionada ao cartão publicado quando o ticket é fechado",
+        "close_hint": "Adicionada ao DM enviado a quem abriu o ticket quando ele é fechado",
         "placeholders_header": "Variáveis disponíveis:",
         "ph_user": "menção do membro",
         "ph_username": "o nome de usuário dele",
@@ -3103,8 +3103,6 @@
         "escalate": "Escalonar",
         "staff_thread": "Tópico da equipe",
         "participants": "Participantes",
-        "reopen": "Reabrir",
-        "delete": "Excluir o canal",
         "deescalate": "Cancelar o escalonamento",
         "rename": "Renomear",
         "claim": "Assumir",
@@ -3138,11 +3136,11 @@
       },
       "close": {
         "done_title": "Ticket fechado",
-        "done_description": "O ticket está trancado. Ele pode ser reaberto, ou excluído definitivamente, pelo cartão publicado no canal.",
-        "card_title": "Ticket fechado",
-        "by": "Fechado por",
+        "done_description": "O ticket está fechado e o canal foi excluído.",
         "dm_title": "O seu ticket foi fechado",
-        "dm_description": "O seu ticket #`{number}` ({category}) em **{server}** foi fechado."
+        "dm_description": "O seu ticket #`{number}` ({category}) em **{server}** foi fechado.",
+        "archiving_title": "Arquivando",
+        "archiving_description": "A transcrição deste ticket está sendo salva. O canal será excluído assim que o arquivamento terminar."
       },
       "close_request": {
         "sent_title": "Pedido enviado",
@@ -3156,17 +3154,6 @@
         "accept": "Fechar o ticket",
         "refuse": "Mantê-lo aberto",
         "refused": "{user} manteve o ticket aberto."
-      },
-      "reopen": {
-        "done_title": "Ticket reaberto",
-        "done_description": "Todos que tinham acesso o recuperam.",
-        "dm_title": "Seu ticket foi reaberto",
-        "dm_description": "Seu ticket #`{number}` ({category}) em **{server}** está aberto de novo.",
-        "dm_channel": "Para voltar:"
-      },
-      "delete": {
-        "pending_title": "Excluindo",
-        "pending_description": "O canal e a conversa dele estão sendo excluídos."
       },
       "escalate": {
         "card_title": "Ticket escalonado",
@@ -3236,7 +3223,6 @@
         "too_many_open": "Você já tem `{max}` ticket(s) aberto(s) nesta categoria. Feche um antes de abrir outro.",
         "cannot_create_channel": "O Moddy não conseguiu criar o canal do ticket. Verifique as permissões dele na categoria de destino.",
         "already_closed": "Este ticket já está fechado.",
-        "not_closed": "Este ticket não está fechado.",
         "close_already_requested": "Já há um pedido de fechamento pendente neste ticket.",
         "no_close_request": "Não há nenhum pedido de fechamento pendente neste ticket.",
         "already_escalated": "Este ticket já está escalonado.",

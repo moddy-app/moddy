@@ -37,9 +37,9 @@ only writer; a dashboard that needs a transcript deleted should delete the row
 
 ## 1. `ticket_transcripts`
 
-One row per **closure**, not per channel: a ticket reopened and closed again
-produces a second row, and both stay readable. `channel_id` is therefore not
-unique.
+One row per **closure**, not per channel: a fresh ticket opened for the same
+conversation produces a second row, and both stay readable. `channel_id` is
+therefore not unique.
 
 ```sql
 CREATE TABLE ticket_transcripts (
@@ -277,8 +277,9 @@ CREATE TABLE ticket_ratings (
 | `trigger` | where the rating was collected: `close_request` (the staff offered the closure and the member accepted), `self_close` (the member closed it themselves), `dm_button` (they came back to it from the closing DM, possibly days later). |
 | `transcript_id` | `ON DELETE SET NULL`: a purged transcript does not erase the rating it carried. `ticket_number` and `category_id` are kept here for that reason. |
 
-One rating per **closure**, enforced by `UNIQUE (transcript_id)`. A ticket
-reopened and closed again is a new interaction and can be rated again.
+One rating per **closure**, enforced by `UNIQUE (transcript_id)`. A fresh
+ticket opened for the same conversation is a new interaction and can be
+rated again.
 
 ### Aggregates the dashboard will want
 

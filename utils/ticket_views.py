@@ -73,8 +73,8 @@ from modules.tickets import (
 )
 from utils.components_v2 import create_error_message, create_success_message
 from utils.emojis import (
-    BACK, DELETE, GROUPS, INFO, MIC_OFF, TICKET, TICKET_CLAIM, TICKET_CLOSE,
-    TICKET_CLOSE_REQUEST, TICKET_ESCALATE, TICKET_PARTICIPANTS, TICKET_REOPEN,
+    BACK, DELETE, GROUPS, INFO, LOADING, MIC_OFF, TICKET, TICKET_CLAIM,
+    TICKET_CLOSE, TICKET_CLOSE_REQUEST, TICKET_ESCALATE, TICKET_PARTICIPANTS,
     WARNING,
     TICKET_STAFF_THREAD, UNDONE,
 )
@@ -97,9 +97,6 @@ _CID_CTRL = {
     BTN_PARTICIPANTS: "moddy:tickets:ctrl:participants",
     BTN_CLOSE_REQUEST: "moddy:tickets:ctrl:close_request",
 }
-
-_CID_CLOSED_REOPEN = "moddy:tickets:closed:reopen"
-_CID_CLOSED_DELETE = "moddy:tickets:closed:delete"
 
 _CID_REQUEST_ACCEPT = "moddy:tickets:request:accept"
 _CID_REQUEST_REFUSE = "moddy:tickets:request:refuse"
@@ -637,123 +634,22 @@ def build_ticket_message(ticket: Dict[str, Any], category: Dict[str, Any],
 
 
 # =========================================================================== #
-# 3. The closing card
+# 3. The archiving card
 # =========================================================================== #
-class TicketClosedView(BaseView):
-    """Posted when a ticket closes: reopen it, or delete the channel for good.
-
-    Persistent: yes. Auth: resolved from the ticket channel (``close`` to
-    reopen, ``admin`` to delete — deletion destroys the conversation, so it is
-    never a permission a plain agent role gets by default).
+def build_archiving_message(locale: str = "en-US") -> ui.LayoutView:
+    """Posted right before the channel is deleted, only when transcripts are
+    on: the archive capture is the one step slow enough that a silent channel
+    would read as broken. Not persistent — it outlives nothing, the channel is
+    gone moments later.
     """
-
-    __persistent__ = True
-
-    def __init__(self, ticket: Optional[Dict[str, Any]] = None,
-                 category: Optional[Dict[str, Any]] = None,
-                 actor: Optional[discord.abc.User] = None,
-                 reason: Optional[str] = None, body: Optional[str] = None,
-                 locale: str = "en-US", transcript_key: Optional[str] = None):
-        super().__init__()  # timeout=None
-        self.ticket = ticket or {}
-        self.category = category or {}
-        self.actor = actor
-        self.reason = reason
-        self.body = body
-        self.locale = locale
-        self.transcript_key = transcript_key
-        self._build_view()
-
-    def _build_view(self):
-        self.clear_items()
-        container = ui.Container(accent_colour=discord.Colour(0xED4245))
-
-        container.add_item(ui.TextDisplay(
-            f"### {TICKET_CLOSE} {t('modules.tickets.close.card_title', locale=self.locale)}"))
-        lines = []
-        if self.actor:
-            lines.append(
-                f"-# {t('modules.tickets.close.by', locale=self.locale)} "
-                f"{self.actor.mention}")
-        if self.reason:
-            lines.append(
-                f"**{t('modules.tickets.fields.reason', locale=self.locale)}**\n"
-                f"{self.reason}")
-        if lines:
-            container.add_item(ui.TextDisplay("\n".join(lines)))
-        if self.body:
-            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-            add_message_body(container, self.body)
-
-        self.add_item(container)
-
-        buttons = [
-            _button(_CID_CLOSED_REOPEN,
-                    t('modules.tickets.actions.reopen', locale=self.locale),
-                    TICKET_REOPEN, discord.ButtonStyle.success, self.on_reopen),
-            _button(_CID_CLOSED_DELETE,
-                    t('modules.tickets.actions.delete', locale=self.locale),
-                    DELETE, discord.ButtonStyle.danger, self.on_delete),
-        ]
-        transcript = _transcript_button(self.transcript_key, self.locale)
-        if transcript is not None:
-            buttons.append(transcript)
-        _add_rows(self, buttons)
-
-    async def on_reopen(self, interaction: discord.Interaction):
-        from services.ticket_service import TicketError
-        resolved = await _resolve(interaction)
-        if not resolved:
-            return
-        service = resolved[0]
-        await interaction.response.defer(ephemeral=True, thinking=True)
-        try:
-            await service.reopen_ticket(interaction.channel, interaction.user)
-        except TicketError as e:
-            await handle_ticket_error(interaction, e)
-            return
-        locale = i18n.get_user_locale(interaction)
-        await send_success(interaction,
-                           t('modules.tickets.reopen.done_title', locale=locale),
-                           t('modules.tickets.reopen.done_description', locale=locale))
-
-    async def on_delete(self, interaction: discord.Interaction):
-        from services.ticket_service import TicketError
-        resolved = await _resolve(interaction)
-        if not resolved:
-            return
-        service, ticket, panel, category = resolved
-        locale = i18n.get_user_locale(interaction)
-        if PERM_ADMIN not in member_permissions(interaction.user, category, ticket):
-            await send_error(
-                interaction,
-                t('modules.tickets.errors.missing_permission', locale=locale), locale)
-            return
-        await interaction.response.send_message(
-            view=create_success_message(
-                t('modules.tickets.delete.pending_title', locale=locale),
-                t('modules.tickets.delete.pending_description', locale=locale)),
-            ephemeral=True)
-        try:
-            await service.delete_ticket(interaction.channel, interaction.user)
-        except TicketError as e:
-            await interaction.followup.send(
-                view=create_error_message(
-                    t('modules.tickets.errors.title', locale=locale), e.message(locale)),
-                ephemeral=True)
-
-    @classmethod
-    def register_persistent(cls, bot) -> None:
-        """Auth model: resolved from the ticket channel on every click."""
-        bot.add_view(cls())
-
-
-def build_closed_message(ticket: Dict[str, Any], category: Dict[str, Any],
-                         actor: discord.abc.User, reason: Optional[str],
-                         body: Optional[str], locale: str,
-                         transcript_key: Optional[str] = None) -> TicketClosedView:
-    return TicketClosedView(ticket, category, actor, reason, body, locale,
-                            transcript_key=transcript_key)
+    view = ui.LayoutView(timeout=None)
+    container = ui.Container(accent_colour=discord.Colour(0x5865F2))
+    container.add_item(ui.TextDisplay(
+        f"### {LOADING} {t('modules.tickets.close.archiving_title', locale=locale)}"))
+    container.add_item(ui.TextDisplay(
+        t('modules.tickets.close.archiving_description', locale=locale)))
+    view.add_item(container)
+    return view
 
 
 # =========================================================================== #
@@ -1586,6 +1482,7 @@ async def run_claim(interaction: discord.Interaction, service, *,
 def build_close_dm(guild: discord.Guild, ticket: Dict[str, Any],
                    category: Dict[str, Any], actor: discord.abc.User,
                    reason: Optional[str], locale: str, *,
+                   body: Optional[str] = None,
                    transcript_key: Optional[str] = None,
                    rating: Optional[Dict[str, Any]] = None,
                    rating_available: bool = False) -> ui.LayoutView:
@@ -1594,15 +1491,18 @@ def build_close_dm(guild: discord.Guild, ticket: Dict[str, Any],
     Three shapes, in order of precedence: a rating already left is shown as
     text; otherwise, if the server collects ratings, a button invites them to
     leave one; otherwise the card is purely informational, as it always was.
-    The transcript link rides along whenever an archive was produced.
+    The transcript link rides along whenever an archive was produced. ``body``
+    is the category's own ``close_message`` (rendered) — the channel it used
+    to be posted in is deleted by the time this DM goes out, so this is the
+    only place it still reaches the opener.
     """
     from utils.ticket_rating_views import TicketRateButton, format_rating_line
 
     view = ui.LayoutView(timeout=None)
-    container = ui.Container(accent_colour=discord.Colour(0xED4245))
+    container = ui.Container(accent_colour=discord.Colour(0x5865F2))
 
     container.add_item(ui.TextDisplay(
-        f"### {TICKET_CLOSE} {t('modules.tickets.close.dm_title', locale=locale)}"))
+        f"### {TICKET} {t('modules.tickets.close.dm_title', locale=locale)}"))
     container.add_item(ui.TextDisplay(
         t('modules.tickets.close.dm_description', locale=locale,
           server=guild.name, number=ticket.get('number', '—'),
@@ -1610,6 +1510,9 @@ def build_close_dm(guild: discord.Guild, ticket: Dict[str, Any],
     if reason:
         container.add_item(ui.TextDisplay(
             f"**{t('modules.tickets.fields.reason', locale=locale)}**\n{reason}"))
+    if body:
+        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+        add_message_body(container, body)
     if rating:
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
         container.add_item(ui.TextDisplay(format_rating_line(rating, locale)))
@@ -1642,9 +1545,9 @@ def build_ticket_log_card(guild: discord.Guild, ticket: Dict[str, Any],
     from utils.ticket_rating_views import format_rating_line
 
     view = ui.LayoutView(timeout=None)
-    container = ui.Container(accent_colour=discord.Colour(0xED4245))
+    container = ui.Container(accent_colour=discord.Colour(0x5865F2))
     container.add_item(ui.TextDisplay(
-        f"### {TICKET_CLOSE} "
+        f"### {TICKET} "
         f"{t('modules.tickets.log.closed_title', locale=locale, number=ticket.get('number', '—'))}"))
 
     lines = [
@@ -1703,33 +1606,6 @@ def _format_duration(seconds: int, locale: str) -> str:
     if hours:
         return f"{hours}h {minutes}m"
     return f"{max(minutes, 1)}m"
-
-
-def build_reopen_dm(guild: discord.Guild, ticket: Dict[str, Any],
-                    category: Dict[str, Any], actor: discord.abc.User,
-                    channel: Optional[discord.abc.GuildChannel],
-                    locale: str) -> ui.LayoutView:
-    """Tell the opener their ticket is open again, with the way back to it.
-
-    The closure was announced in a DM; its cancellation has to be too, or the
-    member never learns that a channel which vanished from their list is back.
-    """
-    view = ui.LayoutView(timeout=None)
-    container = ui.Container(accent_colour=discord.Colour(0x57F287))
-
-    container.add_item(ui.TextDisplay(
-        f"### {TICKET_REOPEN} {t('modules.tickets.reopen.dm_title', locale=locale)}"))
-    container.add_item(ui.TextDisplay(
-        t('modules.tickets.reopen.dm_description', locale=locale,
-          server=guild.name, number=ticket.get('number', '—'),
-          category=category.get('name', '—'))))
-    if channel is not None:
-        container.add_item(ui.TextDisplay(
-            f"-# {t('modules.tickets.reopen.dm_channel', locale=locale)} "
-            f"{channel.mention}"))
-
-    view.add_item(container)
-    return view
 
 
 # =========================================================================== #

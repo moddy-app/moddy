@@ -78,7 +78,7 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     )
     from modules.configs.tickets_category_config import TicketsConfigPersistence
     from utils.ticket_views import (
-        TicketControlView, TicketClosedView, TicketCloseRequestView,
+        TicketControlView, TicketCloseRequestView,
         TicketClosureSuggestionView, TicketOwnerLeftView,
         TicketEscalationView, TicketEscalateConfirmView, TicketsPersistence,
     )
@@ -177,7 +177,6 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         TicketsSettingsView,
         TicketsConfigPersistence,
         TicketControlView,
-        TicketClosedView,
         TicketCloseRequestView,
         TicketClosureSuggestionView,
         TicketOwnerLeftView,
