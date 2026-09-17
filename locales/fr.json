@@ -930,9 +930,9 @@
         "no_user_perms": "<:error:1519790252594827264> Vous devez avoir la permission **Gérer le serveur** pour utiliser cette commande.",
         "required_fields": "<:undone:1519800313324896327> **Configuration invalide** - Les champs suivants doivent être remplis :\n• {fields}",
         "channel_not_found": "Salon introuvable",
-        "no_admin_perms": {
+        "missing_bot_perms": {
           "title": "Permissions insuffisantes",
-          "description": "Moddy a besoin des **permissions administrateur** pour gérer les modules du serveur.\n\nVeuillez réinviter le bot avec les bonnes permissions.",
+          "description": "Moddy a besoin de la permission suivante pour configurer **{module}** :\n{permissions}\n\nVeuillez réinviter le bot ou lui accorder cette permission manuellement.",
           "button": "Réinviter Moddy"
         }
       },
@@ -3010,7 +3010,7 @@
         "open_label": "Message d'ouverture",
         "open_hint": "Publié dans le ticket, épinglé. Laissez vide pour celui par défaut.",
         "close_label": "Message de fermeture",
-        "close_hint": "Ajouté à la carte publiée à la fermeture du ticket",
+        "close_hint": "Affiché à la fermeture : dans le DM par défaut, ou sur la carte si le salon est gardé",
         "placeholders_header": "Variables disponibles :",
         "ph_user": "mention du membre",
         "ph_username": "son nom d'utilisateur",
@@ -3102,12 +3102,12 @@
         "escalate": "Escalader",
         "staff_thread": "Thread staff",
         "participants": "Participants",
-        "reopen": "Rouvrir",
-        "delete": "Supprimer le salon",
         "deescalate": "Annuler l'escalade",
         "rename": "Renommer",
         "claim": "Prendre en charge",
-        "unclaim": "Relâcher"
+        "unclaim": "Relâcher",
+        "reopen": "Rouvrir",
+        "delete": "Supprimer le salon"
       },
       "fields": {
         "reason": "Raison",
@@ -3137,11 +3137,14 @@
       },
       "close": {
         "done_title": "Ticket fermé",
-        "done_description": "Le ticket est verrouillé. Il peut être rouvert, ou supprimé définitivement, depuis la carte publiée dans le salon.",
+        "done_description": "Le ticket est fermé et le salon a été supprimé.",
+        "dm_title": "Votre ticket a été fermé",
+        "dm_description": "Votre ticket #`{number}` ({category}) sur **{server}** a été fermé.",
+        "archiving_title": "Archivage en cours",
+        "archiving_description": "La transcription de ce ticket est en cours d'enregistrement. Le salon sera supprimé une fois l'archivage terminé.",
         "card_title": "Ticket fermé",
         "by": "Fermé par",
-        "dm_title": "Votre ticket a été fermé",
-        "dm_description": "Votre ticket #`{number}` ({category}) sur **{server}** a été fermé."
+        "done_description_kept": "Le ticket est verrouillé. Il peut être rouvert, ou supprimé définitivement, depuis la carte publiée dans le salon."
       },
       "close_request": {
         "sent_title": "Demande envoyée",
@@ -3155,17 +3158,6 @@
         "accept": "Fermer le ticket",
         "refuse": "Le garder ouvert",
         "refused": "{user} a gardé le ticket ouvert."
-      },
-      "reopen": {
-        "done_title": "Ticket rouvert",
-        "done_description": "Tous ceux qui y avaient accès le retrouvent.",
-        "dm_title": "Votre ticket a été rouvert",
-        "dm_description": "Votre ticket #`{number}` ({category}) sur **{server}** est de nouveau ouvert.",
-        "dm_channel": "Pour y retourner :"
-      },
-      "delete": {
-        "pending_title": "Suppression",
-        "pending_description": "Le salon et sa conversation sont en cours de suppression."
       },
       "escalate": {
         "card_title": "Ticket escaladé",
@@ -3235,7 +3227,6 @@
         "too_many_open": "Vous avez déjà `{max}` ticket(s) ouvert(s) dans cette catégorie. Fermez-en un avant d'en ouvrir un autre.",
         "cannot_create_channel": "Moddy n'a pas pu créer le salon du ticket. Vérifiez ses permissions sur la catégorie de destination.",
         "already_closed": "Ce ticket est déjà fermé.",
-        "not_closed": "Ce ticket n'est pas fermé.",
         "close_already_requested": "Une demande de fermeture est déjà en attente sur ce ticket.",
         "no_close_request": "Aucune demande de fermeture n'est en attente sur ce ticket.",
         "already_escalated": "Ce ticket est déjà escaladé.",
@@ -3258,7 +3249,8 @@
         "already_claimed": "{user} s'occupe déjà de ce ticket.",
         "already_claimed_by_you": "Vous vous occupez déjà de ce ticket.",
         "not_claimed": "Personne ne s'occupe de ce ticket.",
-        "claimed_by_someone_else": "{user} s'occupe de ce ticket, et vous ne pouvez pas le lui retirer."
+        "claimed_by_someone_else": "{user} s'occupe de ce ticket, et vous ne pouvez pas le lui retirer.",
+        "not_closed": "Ce ticket n'est pas fermé."
       },
       "buttons": {
         "label": "Boutons sous le message",
@@ -3339,7 +3331,9 @@
         "retention_forever": "pour toujours",
         "log_label": "Salon des logs de tickets",
         "log_hint": "Une carte y est publiée à chaque fermeture, avec le lien de la transcription et l'avis",
-        "log_placeholder": "Sélectionnez un salon"
+        "log_placeholder": "Sélectionnez un salon",
+        "keep_channel_on_close_label": "Garder le salon après fermeture",
+        "keep_channel_on_close_hint": "Le salon reste ouvert, verrouillé, avec Rouvrir et Supprimer sur la carte"
       },
       "stats": {
         "team_title": "Prise en charge des tickets",
@@ -3361,6 +3355,17 @@
         "card_title": "L'auteur a quitté le serveur",
         "card_description": "{user} (`{name}`) n'est plus sur le serveur. Le ticket reste ouvert : fermez-le s'il n'a plus lieu d'être, ou gardez-le le temps de finir ce qui doit l'être. Si la personne revient, elle y retrouvera automatiquement l'accès.",
         "reason": "L'auteur a quitté le serveur"
+      },
+      "reopen": {
+        "done_title": "Ticket rouvert",
+        "done_description": "Tous ceux qui y avaient accès le retrouvent.",
+        "dm_title": "Votre ticket a été rouvert",
+        "dm_description": "Votre ticket #`{number}` ({category}) sur **{server}** est de nouveau ouvert.",
+        "dm_channel": "Pour y retourner :"
+      },
+      "delete": {
+        "pending_title": "Suppression",
+        "pending_description": "Le salon et sa conversation sont en cours de suppression."
       }
     }
   },

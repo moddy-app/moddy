@@ -287,6 +287,7 @@ class BotCustomizationModule(ModuleBase):
     MODULE_DESCRIPTION = "Personnalise l'identité de Moddy sur ce serveur"
     MODULE_EMOJI = MODDY_SQUARE
     MODULE_ORDER = 120
+    REQUIRED_BOT_PERMISSIONS = ["change_nickname"]
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)

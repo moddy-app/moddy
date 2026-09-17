@@ -24,7 +24,7 @@ from utils.emojis import EMOJIS, SETTINGS
 from utils import global_sanctions
 from utils.components_v2 import create_limited_message
 from cogs.error_handler import BaseView
-from modules.configs._common import check_guild_perms
+from modules.configs._common import check_guild_perms, check_bot_perms
 
 logger = logging.getLogger('moddy.cogs.config')
 
@@ -202,6 +202,16 @@ class ConfigMainView(BaseView):
 
         # Désactive temporairement pour éviter les double-clics
         await interaction.response.defer()
+
+        # Le bot ne demande jamais Administrateur (CLAUDE.md #12) : chaque
+        # module déclare les permissions dont IL a besoin, vérifiées ici
+        # avant d'ouvrir son écran de configuration.
+        module_class = bot.module_manager.registered_modules.get(module_id)
+        if module_class and not await check_bot_perms(
+            interaction, module_class.REQUIRED_BOT_PERMISSIONS,
+            module_name=module_class.MODULE_NAME, followup=True,
+        ):
+            return
 
         # Récupère la configuration actuelle du module
         module_config = await bot.module_manager.get_module_config(guild_id, module_id)
@@ -422,37 +432,9 @@ class Config(commands.Cog):
             )
             return
 
-        # Vérifie que Moddy a les permissions administrateur
-        bot_member = interaction.guild.me
-        if not bot_member.guild_permissions.administrator:
-            # Crée un message d'erreur avec Components V2
-            error_view = ui.LayoutView(timeout=None)
-            error_container = ui.Container(accent_colour=discord.Colour(COLORS["error"]))
-
-            error_container.add_item(ui.TextDisplay(
-                f"### {EMOJIS['error']} {t('modules.config.errors.no_admin_perms.title', interaction)}"
-            ))
-            error_container.add_item(ui.TextDisplay(
-                t('modules.config.errors.no_admin_perms.description', interaction)
-            ))
-
-            error_view.add_item(error_container)
-
-            # Bouton pour inviter le bot avec les bonnes permissions
-            button_row = ui.ActionRow()
-            reinvite_btn = ui.Button(
-                label=t('modules.config.errors.no_admin_perms.button', interaction),
-                style=discord.ButtonStyle.link,
-                url=f"https://discord.com/oauth2/authorize?client_id={self.bot.user.id}&scope=bot&permissions=8"
-            )
-            button_row.add_item(reinvite_btn)
-            error_view.add_item(button_row)
-
-            await interaction.response.send_message(
-                view=error_view,
-                ephemeral=True
-            )
-            return
+        # Moddy ne demande jamais Administrateur (CLAUDE.md #12) : chaque
+        # module vérifie individuellement ses propres permissions au moment
+        # où on le sélectionne (voir ConfigMainView.on_module_select).
 
         # Vérifie que l'utilisateur a les permissions de gérer le serveur
         if not interaction.user.guild_permissions.manage_guild:

@@ -66,6 +66,9 @@ class AltGuardModule(ModuleBase):
     MODULE_ORDER = 20
     # The verification panel is a message written in the server language.
     LANGUAGE_DEPENDENT_MESSAGES = True
+    # Assigns/removes the verified & unverified roles and edits the gate
+    # channel's permission overwrites (validate_config already checks this).
+    REQUIRED_BOT_PERMISSIONS = ["manage_roles"]
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)

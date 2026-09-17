@@ -112,6 +112,10 @@ async def ticket_close(interaction: discord.Interaction, reason: Optional[str] =
 
 @ticket_group.command(name="reopen", description="Reopen this closed ticket")
 async def ticket_reopen(interaction: discord.Interaction):
+    """Only works when the server kept the channel around on close
+    (SETTING_KEEP_CHANNEL) — a ticket closed with it off has no channel left
+    to run this command in.
+    """
     resolved = await _service_and_ticket(interaction)
     if not resolved:
         return

@@ -556,6 +556,7 @@ class TestClosureSuggestionAuthorisation:
         service = MagicMock()
         service.close_ticket = AsyncMock()
         service.request_close = AsyncMock()
+        service.setting = AsyncMock(return_value=False)
         return service
 
     @pytest.fixture

@@ -26,6 +26,7 @@ class AutoRestoreRolesModule(ModuleBase):
     MODULE_DESCRIPTION = "Restaure automatiquement les rôles des utilisateurs qui reviennent"
     MODULE_EMOJI = HISTORY
     MODULE_ORDER = 60
+    REQUIRED_BOT_PERMISSIONS = ["manage_roles"]
 
     # Modes de sauvegarde
     MODE_ALL = "all"  # Tous les rôles

@@ -258,6 +258,13 @@ class TicketModule(ModuleBase):
     MODULE_EMOJI = "🎫"
     # Position dans le menu déroulant /config (voir MODULE_ORDER ci-dessous)
     MODULE_ORDER = 130
+    # Permissions Discord que LE BOT doit avoir dans le serveur pour que ce
+    # module fonctionne (création de salons, gestion des rôles...). Moddy ne
+    # demande jamais Administrateur (CLAUDE.md #12) : /config vérifie cette
+    # liste contre guild.me.guild_permissions avant d'ouvrir l'écran de
+    # configuration du module, et affiche un message "permissions
+    # manquantes" avec un lien de réinvitation ciblé si besoin.
+    REQUIRED_BOT_PERMISSIONS = ["manage_channels", "manage_roles"]
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)

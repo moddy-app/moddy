@@ -931,9 +931,9 @@
         "no_user_perms": "<:error:1519790252594827264> Du benötigst die Berechtigung **Server verwalten**, um diesen Befehl zu verwenden.",
         "required_fields": "<:undone:1519800313324896327> **Ungültige Konfiguration** - Die folgenden Felder müssen ausgefüllt werden:\n• {fields}",
         "channel_not_found": "Kanal nicht gefunden",
-        "no_admin_perms": {
+        "missing_bot_perms": {
           "title": "Unzureichende Berechtigungen",
-          "description": "Moddy benötigt **Administratorberechtigungen**, um Servermodule zu verwalten.\n\nBitte lade den Bot mit den korrekten Berechtigungen erneut ein.",
+          "description": "Moddy benötigt die folgende Berechtigung, um **{module}** zu konfigurieren:\n{permissions}\n\nBitte lade den Bot erneut ein oder erteile ihm diese Berechtigung manuell.",
           "button": "Moddy erneut einladen"
         }
       },
@@ -3011,7 +3011,7 @@
         "open_label": "Eröffnungsnachricht",
         "open_hint": "Wird im Ticket gepostet und angepinnt. Leer lassen für die Standardnachricht.",
         "close_label": "Schlussnachricht",
-        "close_hint": "Wird der Karte hinzugefügt, die beim Schließen gepostet wird",
+        "close_hint": "Wird beim Schließen gezeigt: standardmäßig in der DM, oder auf der Karte, wenn der Kanal bleibt",
         "placeholders_header": "Verfügbare Platzhalter:",
         "ph_user": "Erwähnung des Mitglieds",
         "ph_username": "sein Benutzername",
@@ -3103,12 +3103,12 @@
         "escalate": "Eskalieren",
         "staff_thread": "Team-Thread",
         "participants": "Teilnehmer",
-        "reopen": "Wieder öffnen",
-        "delete": "Kanal löschen",
         "deescalate": "Eskalation aufheben",
         "rename": "Umbenennen",
         "claim": "Übernehmen",
-        "unclaim": "Freigeben"
+        "unclaim": "Freigeben",
+        "reopen": "Wieder öffnen",
+        "delete": "Kanal löschen"
       },
       "fields": {
         "reason": "Grund",
@@ -3138,11 +3138,14 @@
       },
       "close": {
         "done_title": "Ticket geschlossen",
-        "done_description": "Das Ticket ist gesperrt. Über die Karte im Kanal lässt es sich wieder öffnen oder endgültig löschen.",
+        "done_description": "Das Ticket ist geschlossen und der Kanal wurde gelöscht.",
+        "dm_title": "Dein Ticket wurde geschlossen",
+        "dm_description": "Dein Ticket #`{number}` ({category}) auf **{server}** wurde geschlossen.",
+        "archiving_title": "Archivierung läuft",
+        "archiving_description": "Das Transkript dieses Tickets wird gespeichert. Der Kanal wird gelöscht, sobald die Archivierung abgeschlossen ist.",
         "card_title": "Ticket geschlossen",
         "by": "Geschlossen von",
-        "dm_title": "Dein Ticket wurde geschlossen",
-        "dm_description": "Dein Ticket #`{number}` ({category}) auf **{server}** wurde geschlossen."
+        "done_description_kept": "Das Ticket ist gesperrt. Über die Karte im Kanal lässt es sich wieder öffnen oder endgültig löschen."
       },
       "close_request": {
         "sent_title": "Anfrage gesendet",
@@ -3156,17 +3159,6 @@
         "accept": "Ticket schließen",
         "refuse": "Offen lassen",
         "refused": "{user} hat das Ticket offen gelassen."
-      },
-      "reopen": {
-        "done_title": "Ticket wieder geöffnet",
-        "done_description": "Alle, die Zugriff hatten, haben ihn zurück.",
-        "dm_title": "Dein Ticket wurde wieder geöffnet",
-        "dm_description": "Dein Ticket #`{number}` ({category}) auf **{server}** ist wieder offen.",
-        "dm_channel": "Zurück dorthin:"
-      },
-      "delete": {
-        "pending_title": "Wird gelöscht",
-        "pending_description": "Der Kanal und sein Gespräch werden gelöscht."
       },
       "escalate": {
         "card_title": "Ticket eskaliert",
@@ -3236,7 +3228,6 @@
         "too_many_open": "Du hast bereits `{max}` offene(s) Ticket(s) in dieser Kategorie. Schließe eins, bevor du ein weiteres öffnest.",
         "cannot_create_channel": "Moddy konnte den Ticket-Kanal nicht erstellen. Prüfe die Rechte in der Zielkategorie.",
         "already_closed": "Dieses Ticket ist bereits geschlossen.",
-        "not_closed": "Dieses Ticket ist nicht geschlossen.",
         "close_already_requested": "Für dieses Ticket liegt bereits eine Schließungsanfrage vor.",
         "no_close_request": "Für dieses Ticket liegt keine Schließungsanfrage vor.",
         "already_escalated": "Dieses Ticket ist bereits eskaliert.",
@@ -3259,7 +3250,8 @@
         "already_claimed": "{user} kümmert sich bereits um dieses Ticket.",
         "already_claimed_by_you": "Du kümmerst dich bereits um dieses Ticket.",
         "not_claimed": "Niemand kümmert sich um dieses Ticket.",
-        "claimed_by_someone_else": "{user} kümmert sich um dieses Ticket, und du kannst es nicht abnehmen."
+        "claimed_by_someone_else": "{user} kümmert sich um dieses Ticket, und du kannst es nicht abnehmen.",
+        "not_closed": "Dieses Ticket ist nicht geschlossen."
       },
       "buttons": {
         "label": "Buttons unter der Nachricht",
@@ -3340,7 +3332,9 @@
         "retention_forever": "für immer",
         "log_label": "Ticket-Log-Kanal",
         "log_hint": "Dort erscheint bei jeder Schließung eine Karte, mit Transkript-Link und Bewertung",
-        "log_placeholder": "Kanal auswählen"
+        "log_placeholder": "Kanal auswählen",
+        "keep_channel_on_close_label": "Kanal nach dem Schließen behalten",
+        "keep_channel_on_close_hint": "Der Kanal bleibt gesperrt geöffnet, mit Wiedereröffnen und Löschen auf der Karte"
       },
       "stats": {
         "team_title": "Ticket-Betreuung",
@@ -3362,6 +3356,17 @@
         "card_title": "Die Person hat den Server verlassen",
         "card_description": "{user} (`{name}`) ist nicht mehr auf dem Server. Das Ticket bleibt offen: schließe es, wenn es keinen Zweck mehr hat, oder behalte es, solange noch etwas zu erledigen ist. Kommt die Person zurück, bekommt sie ihren Zugang automatisch wieder.",
         "reason": "Die Person hat den Server verlassen"
+      },
+      "reopen": {
+        "done_title": "Ticket wieder geöffnet",
+        "done_description": "Alle, die Zugriff hatten, haben ihn zurück.",
+        "dm_title": "Dein Ticket wurde wieder geöffnet",
+        "dm_description": "Dein Ticket #`{number}` ({category}) auf **{server}** ist wieder offen.",
+        "dm_channel": "Zurück dorthin:"
+      },
+      "delete": {
+        "pending_title": "Wird gelöscht",
+        "pending_description": "Der Kanal und sein Gespräch werden gelöscht."
       }
     }
   },

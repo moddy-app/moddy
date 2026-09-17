@@ -28,6 +28,17 @@ LEGACY_MODULE_IDS: Dict[str, str] = {
 EXTERNAL_UPDATED = "updated"
 EXTERNAL_DELETED = "deleted"
 
+# Modules temporarily pulled from registration — never shown in /config,
+# never loaded/enabled for any guild. A disabled module's stored config is
+# left untouched in the DB: ModuleManager.load_guild_modules() skips ids it
+# does not recognize (the same path an old renamed module takes, see
+# LEGACY_MODULE_IDS), so re-enabling one just means removing its id here.
+DISABLED_MODULES: set = {
+    # Inter-Server relay — temporarily disabled 2026-09-17, see
+    # docs/sessions/2026-09-17_disable-interserver-module.md.
+    "interserver",
+}
+
 
 class ModuleBase(ABC):
     """
@@ -51,6 +62,14 @@ class ModuleBase(ABC):
     # push does — see ModuleManager.apply_language_change() and
     # utils/guild_language.py.
     LANGUAGE_DEPENDENT_MESSAGES: bool = False
+    # discord.Permissions flag names (e.g. "manage_roles", "ban_members") the
+    # BOT itself needs in this guild to run this module's Discord-side
+    # actions. Moddy never asks for Administrator (CLAUDE.md #12) — /config
+    # checks this list against guild.me.guild_permissions before opening the
+    # module's config screen (see modules/configs/_common.py::check_bot_perms).
+    # Leave empty when the module needs nothing beyond the baseline permissions
+    # every slash command already implies (view/send in the invoking channel).
+    REQUIRED_BOT_PERMISSIONS: List[str] = []
 
     def __init__(self, bot, guild_id: int):
         """
@@ -217,6 +236,10 @@ class ModuleManager:
             raise ValueError(f"{module_class} must inherit from ModuleBase")
 
         module_id = module_class.MODULE_ID
+        if module_id in DISABLED_MODULES:
+            logger.info(f"Module {module_id} is temporarily disabled — skipping registration")
+            return
+
         if module_id in self.registered_modules:
             logger.warning(f"[WARN] Module {module_id} already registered, overwriting")
 

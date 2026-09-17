@@ -984,7 +984,15 @@ class TestTicketChannelViews:
         assert "---" not in texts
         assert any(isinstance(i, ui.Separator) for i in children)
 
+    def test_archiving_card_has_no_buttons(self):
+        """The pre-deletion spinner card is purely informational."""
+        from utils.ticket_views import build_archiving_message
+
+        view = build_archiving_message("fr")
+        assert self._ids(view) == []
+
     def test_closing_card_offers_reopen_and_delete(self):
+        """Only posted when SETTING_KEEP_CHANNEL is on — see close_ticket()."""
         from utils.ticket_views import build_closed_message
 
         view = build_closed_message(self.ticket, self.category, self.actor,
@@ -1105,6 +1113,10 @@ _INTERPOLATED_KEYS = (
        for s in ("title", "description")]
     + [f"modules.tickets.participants.mode_{m}" for m in
        ("add", "remove", "replace")]
+    # Picked from a variable in _close_done_description, not a literal t(...)
+    # call the regex scan below can see.
+    + ["modules.tickets.close.done_description",
+       "modules.tickets.close.done_description_kept"]
 )
 
 

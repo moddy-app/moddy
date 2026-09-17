@@ -931,9 +931,9 @@
         "no_user_perms": "<:error:1519790252594827264> Debes tener el permiso de **Gestionar servidor** para usar este comando.",
         "required_fields": "<:undone:1519800313324896327> **Configuración no válida** - Se deben rellenar los siguientes campos:\n• {fields}",
         "channel_not_found": "Canal no encontrado",
-        "no_admin_perms": {
+        "missing_bot_perms": {
           "title": "Permisos insuficientes",
-          "description": "Moddy necesita **permisos de administrador** para gestionar los módulos del servidor.\n\nVuelve a invitar al bot con los permisos correctos.",
+          "description": "Moddy necesita el siguiente permiso para configurar **{module}**:\n{permissions}\n\nVuelve a invitar al bot o concédele este permiso manualmente.",
           "button": "Volver a invitar a Moddy"
         }
       },
@@ -3011,7 +3011,7 @@
         "open_label": "Mensaje de apertura",
         "open_hint": "Publicado en el ticket y fijado. Déjalo vacío para el predeterminado.",
         "close_label": "Mensaje de cierre",
-        "close_hint": "Se añade a la tarjeta publicada al cerrar el ticket",
+        "close_hint": "Se muestra al cerrar: en el DM por defecto, o en la tarjeta si se mantiene el canal",
         "placeholders_header": "Variables disponibles:",
         "ph_user": "mención del miembro",
         "ph_username": "su nombre de usuario",
@@ -3103,12 +3103,12 @@
         "escalate": "Escalar",
         "staff_thread": "Hilo del staff",
         "participants": "Participantes",
-        "reopen": "Reabrir",
-        "delete": "Eliminar el canal",
         "deescalate": "Cancelar el escalado",
         "rename": "Renombrar",
         "claim": "Hacerse cargo",
-        "unclaim": "Liberar"
+        "unclaim": "Liberar",
+        "reopen": "Reabrir",
+        "delete": "Eliminar el canal"
       },
       "fields": {
         "reason": "Motivo",
@@ -3138,11 +3138,14 @@
       },
       "close": {
         "done_title": "Ticket cerrado",
-        "done_description": "El ticket está bloqueado. Se puede reabrir, o eliminar definitivamente, desde la tarjeta publicada en el canal.",
+        "done_description": "El ticket está cerrado y su canal ha sido eliminado.",
+        "dm_title": "Tu ticket ha sido cerrado",
+        "dm_description": "Tu ticket #`{number}` ({category}) en **{server}** ha sido cerrado.",
+        "archiving_title": "Archivando",
+        "archiving_description": "Se está guardando la transcripción de este ticket. El canal se eliminará en cuanto termine el archivado.",
         "card_title": "Ticket cerrado",
         "by": "Cerrado por",
-        "dm_title": "Tu ticket ha sido cerrado",
-        "dm_description": "Tu ticket #`{number}` ({category}) en **{server}** ha sido cerrado."
+        "done_description_kept": "El ticket está bloqueado. Se puede reabrir, o eliminar definitivamente, desde la tarjeta publicada en el canal."
       },
       "close_request": {
         "sent_title": "Solicitud enviada",
@@ -3156,17 +3159,6 @@
         "accept": "Cerrar el ticket",
         "refuse": "Mantenerlo abierto",
         "refused": "{user} ha mantenido el ticket abierto."
-      },
-      "reopen": {
-        "done_title": "Ticket reabierto",
-        "done_description": "Todos los que tenían acceso lo recuperan.",
-        "dm_title": "Tu ticket ha sido reabierto",
-        "dm_description": "Tu ticket #`{number}` ({category}) en **{server}** está abierto de nuevo.",
-        "dm_channel": "Para volver:"
-      },
-      "delete": {
-        "pending_title": "Eliminando",
-        "pending_description": "Se están eliminando el canal y su conversación."
       },
       "escalate": {
         "card_title": "Ticket escalado",
@@ -3236,7 +3228,6 @@
         "too_many_open": "Ya tienes `{max}` ticket(s) abierto(s) en esta categoría. Cierra uno antes de abrir otro.",
         "cannot_create_channel": "Moddy no ha podido crear el canal del ticket. Comprueba sus permisos en la categoría de destino.",
         "already_closed": "Este ticket ya está cerrado.",
-        "not_closed": "Este ticket no está cerrado.",
         "close_already_requested": "Ya hay una solicitud de cierre pendiente en este ticket.",
         "no_close_request": "No hay ninguna solicitud de cierre pendiente en este ticket.",
         "already_escalated": "Este ticket ya está escalado.",
@@ -3259,7 +3250,8 @@
         "already_claimed": "{user} ya se está ocupando de este ticket.",
         "already_claimed_by_you": "Ya te estás ocupando de este ticket.",
         "not_claimed": "Nadie se está ocupando de este ticket.",
-        "claimed_by_someone_else": "{user} se está ocupando de este ticket y no puedes quitárselo."
+        "claimed_by_someone_else": "{user} se está ocupando de este ticket y no puedes quitárselo.",
+        "not_closed": "Este ticket no está cerrado."
       },
       "buttons": {
         "label": "Botones bajo el mensaje",
@@ -3340,7 +3332,9 @@
         "retention_forever": "para siempre",
         "log_label": "Canal de registros de tickets",
         "log_hint": "Se publica una tarjeta en cada cierre, con el enlace de la transcripción y la valoración",
-        "log_placeholder": "Elige un canal"
+        "log_placeholder": "Elige un canal",
+        "keep_channel_on_close_label": "Mantener el canal tras cerrar",
+        "keep_channel_on_close_hint": "El canal permanece abierto, bloqueado, con Reabrir y Eliminar en la tarjeta"
       },
       "stats": {
         "team_title": "Atención de tickets",
@@ -3362,6 +3356,17 @@
         "card_title": "El autor abandonó el servidor",
         "card_description": "{user} (`{name}`) ya no está en el servidor. El ticket sigue abierto: ciérralo si ya no tiene sentido, o consérvalo mientras terminas lo que haga falta. Si la persona vuelve, recuperará el acceso automáticamente.",
         "reason": "El autor abandonó el servidor"
+      },
+      "reopen": {
+        "done_title": "Ticket reabierto",
+        "done_description": "Todos los que tenían acceso lo recuperan.",
+        "dm_title": "Tu ticket ha sido reabierto",
+        "dm_description": "Tu ticket #`{number}` ({category}) en **{server}** está abierto de nuevo.",
+        "dm_channel": "Para volver:"
+      },
+      "delete": {
+        "pending_title": "Eliminando",
+        "pending_description": "Se están eliminando el canal y su conversación."
       }
     }
   },

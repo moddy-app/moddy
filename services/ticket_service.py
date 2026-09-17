@@ -49,6 +49,7 @@ from modules.tickets import (
     PERM_STAFF_THREAD,
     PERM_UNCLAIM_OTHERS,
     PERM_VIEW,
+    SETTING_KEEP_CHANNEL,
     SETTING_LOG_CHANNEL,
     SETTING_RATING,
     SETTING_TRANSCRIPTS,
@@ -925,18 +926,22 @@ class TicketService:
     async def close_ticket(self, channel: discord.TextChannel, actor: discord.Member,
                            reason: Optional[str] = None, *,
                            bypass_permission: bool = False) -> Dict[str, Any]:
-        """Lock the ticket and post the closing card.
+        """Lock the ticket, archive it if configured, then either delete the
+        channel or keep it around behind a Reopen/Delete card.
 
-        The channel is **kept**: nothing is destroyed by a click. Deleting it is
-        a separate, explicit action on the closing card.
+        Deleting is the **default**: the channel is destroyed at the end of
+        this call, once the opener has been notified and the log channel
+        (and transcript, if enabled) have been written — those become the
+        conversation's permanent record. A guild can opt into the older
+        behaviour instead (``SETTING_KEEP_CHANNEL``): the channel survives,
+        locked, behind a closing card offering **Reopen** and **Delete the
+        channel** (``admin`` only).
 
         ``bypass_permission`` is for the one caller that has already done the
         checking itself: :meth:`accept_close_request`, where the opener — who
         holds no ``close`` permission — closes their own ticket because the
         staff asked them to. Nothing else may set it.
         """
-        from utils.ticket_views import build_closed_message
-
         ticket, panel, category = await self.resolve(channel)
         if ticket['status'] == 'closed':
             raise TicketError('modules.tickets.errors.already_closed')
@@ -957,16 +962,7 @@ class TicketService:
 
         locale = await self.ticket_locale(channel.guild)
         settings = await self.settings(channel.guild.id)
-
-        # Archive before anything else is posted: the closing card adds nothing
-        # a transcript row does not already carry in its own columns, and
-        # reading the history first is what lets the card carry the link.
-        transcript = None
-        if settings.get(SETTING_TRANSCRIPTS):
-            archiver = getattr(self.bot, 'ticket_transcripts', None)
-            if archiver is not None:
-                transcript = await archiver.capture(channel, ticket, category, actor.id)
-        transcript_key = transcript['key'] if transcript else None
+        keep_channel = bool(settings.get(SETTING_KEEP_CHANNEL))
 
         closing = category.get('close_message')
         rendered = render_text(
@@ -974,16 +970,40 @@ class TicketService:
             number=ticket['number'], channel=channel,
         ) if closing else None
 
-        try:
-            await channel.send(view=build_closed_message(
-                ticket, category, actor, reason, rendered, locale=locale,
-                transcript_key=transcript_key))
-        except discord.HTTPException as e:
-            logger.warning(f"[Tickets] Could not post the closing card in "
-                           f"{channel.id}: {e}")
+        transcript = None
+        if keep_channel:
+            # The channel survives, so the closing card is where close_message
+            # belongs, exactly like it always has — no need to also DM it.
+            if settings.get(SETTING_TRANSCRIPTS):
+                archiver = getattr(self.bot, 'ticket_transcripts', None)
+                if archiver is not None:
+                    transcript = await archiver.capture(channel, ticket, category, actor.id)
+            from utils.ticket_views import build_closed_message
+            try:
+                await channel.send(view=build_closed_message(
+                    ticket, category, actor, reason, rendered, locale=locale,
+                    transcript_key=transcript['key'] if transcript else None))
+            except discord.HTTPException as e:
+                logger.warning(f"[Tickets] Could not post the closing card in "
+                               f"{channel.id}: {e}")
+        else:
+            # The channel is deleted at the end of this call — a transcript
+            # capture is the only step slow enough that leaving it silent for
+            # it would read as broken, hence the spinner card.
+            if settings.get(SETTING_TRANSCRIPTS):
+                from utils.ticket_views import build_archiving_message
+                try:
+                    await channel.send(view=build_archiving_message(locale=locale))
+                except discord.HTTPException as e:
+                    logger.warning(f"[Tickets] Could not post the archiving card "
+                                   f"in {channel.id}: {e}")
+                archiver = getattr(self.bot, 'ticket_transcripts', None)
+                if archiver is not None:
+                    transcript = await archiver.capture(channel, ticket, category, actor.id)
 
         await self._notify_owner_closed(
             channel, ticket, category, actor, reason,
+            body=rendered if not keep_channel else None,
             transcript=transcript,
             rating_available=bool(settings.get(SETTING_RATING)))
         await self.post_ticket_log(channel.guild, ticket, category, actor,
@@ -997,10 +1017,20 @@ class TicketService:
                 # cardinality (see stats/registry.py).
                 dims={"reason": "with_reason" if reason else "none"},
             )
+
+        if not keep_channel:
+            await self.bot.db.delete_ticket(channel.id)
+            try:
+                await channel.delete(
+                    reason=f"Moddy ticket #{ticket['number']} closed by {actor} ({actor.id})")
+            except (discord.Forbidden, discord.HTTPException) as e:
+                logger.warning(f"[Tickets] Could not delete closed ticket channel "
+                               f"{channel.id}: {e}")
         return ticket
 
     async def _notify_owner_closed(self, channel, ticket, category, actor, reason,
-                                   *, transcript: Optional[Dict[str, Any]] = None,
+                                   *, body: Optional[str] = None,
+                                   transcript: Optional[Dict[str, Any]] = None,
                                    rating_available: bool = False):
         """DM the opener that their ticket is closed — best effort, never fatal.
 
@@ -1008,7 +1038,9 @@ class TicketService:
         "rate it" button when the server collects ratings and none was left on
         the way out. That button is the catch-all of the three rating entry
         points: whatever happened in the channel, the opener always has a way
-        back to it from here.
+        back to it from here. ``body`` is the category's own ``close_message``
+        (rendered) — the channel it used to be posted in is gone by the time
+        this runs, so the DM is the only place left carrying it.
         """
         from utils.ticket_views import build_close_dm
 
@@ -1023,7 +1055,7 @@ class TicketService:
         await self._dm_owner(
             channel, ticket,
             build_close_dm(channel.guild, ticket, category, actor, reason,
-                           locale=locale,
+                           locale=locale, body=body,
                            transcript_key=transcript['key'] if transcript else None,
                            rating=rating, rating_available=rating_available),
             kind="close", category=category, locale=locale)
@@ -1067,6 +1099,11 @@ class TicketService:
 
     async def reopen_ticket(self, channel: discord.TextChannel,
                             actor: discord.Member) -> Dict[str, Any]:
+        """Reopen a ticket closed with ``SETTING_KEEP_CHANNEL`` on.
+
+        Only reachable from the closing card's Reopen button — a ticket
+        closed with the setting off has no channel left to reopen.
+        """
         from utils.ticket_views import build_reopen_dm
 
         ticket, panel, category = await self.resolve(channel)
@@ -1100,7 +1137,12 @@ class TicketService:
 
     async def delete_ticket(self, channel: discord.TextChannel,
                             actor: discord.Member) -> None:
-        """Delete the ticket channel for good. Requires ``admin``."""
+        """Delete a closed ticket's channel for good. Requires ``admin``.
+
+        Only reachable from the closing card, so only relevant when
+        ``SETTING_KEEP_CHANNEL`` is on — the default path deletes the channel
+        itself as part of :meth:`close_ticket`.
+        """
         ticket, panel, category = await self.resolve(channel)
         self.require(actor, category, ticket, PERM_ADMIN)
         await self.bot.db.delete_ticket(channel.id)
