@@ -3,11 +3,18 @@ Incognito system for Moddy's slash commands
 Allows users to control the visibility of their responses
 """
 
+import asyncio
 import discord
 from discord import app_commands
 from typing import Optional
 import functools
 import types
+
+# Discord requires the initial ack (response.send_message / defer) within 3s
+# of receiving the interaction. This lookup runs before that ack, so it must
+# never be allowed to eat into that budget on a slow/stuck DB call — a
+# timeout here falls back to the default, same as any other lookup failure.
+_PREFERENCE_LOOKUP_TIMEOUT = 1.5
 
 
 def add_incognito_option(default_value: bool = True):
@@ -28,8 +35,13 @@ def add_incognito_option(default_value: bool = True):
                 # First, check the user attribute for the default preference
                 if hasattr(self, 'bot') and self.bot.db:
                     try:
-                        # Get the DEFAULT_INCOGNITO preference
-                        user_pref = await self.bot.db.get_attribute('user', interaction.user.id, 'DEFAULT_INCOGNITO')
+                        # Get the DEFAULT_INCOGNITO preference. Bounded so a slow
+                        # DB call can't burn through Discord's 3s ack window —
+                        # the command's own first response hasn't been sent yet.
+                        user_pref = await asyncio.wait_for(
+                            self.bot.db.get_attribute('user', interaction.user.id, 'DEFAULT_INCOGNITO'),
+                            timeout=_PREFERENCE_LOOKUP_TIMEOUT,
+                        )
 
                         # If the user has a defined preference
                         if user_pref is not None:
@@ -39,7 +51,7 @@ def add_incognito_option(default_value: bool = True):
                             # No preference defined, use the default value
                             incognito = default_value
                     except Exception as e:
-                        # In case of an error, use the default value
+                        # In case of an error (including a timeout), use the default value
                         import logging
                         logger = logging.getLogger('moddy')
                         logger.error(f"Error getting incognito preference: {e}")
