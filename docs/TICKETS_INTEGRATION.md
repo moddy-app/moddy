@@ -329,7 +329,8 @@ the one object the dashboard **writes** as well as reads.
     "transcripts_enabled": true,
     "transcript_retention_days": 0,        // 0 = keep forever, max 3650
     "closure_detection_enabled": false,
-    "rating_enabled": true
+    "rating_enabled": true,
+    "keep_channel_on_close": false          // see below
   }
 }
 ```
@@ -337,7 +338,7 @@ the one object the dashboard **writes** as well as reads.
 - **Every key is optional.** A config written before these existed loads with
   the defaults above (`modules/tickets.py::normalize_settings`), so no guild has
   to be migrated.
-- For backward compatibility the bot also accepts these five keys **flat at the
+- For backward compatibility the bot also accepts these six keys **flat at the
   root** of the module config, not only under `settings`. New writes should use
   `settings`.
 - `closure_detection_enabled` defaults to **false**: it spends AI quota, so it
@@ -345,6 +346,14 @@ the one object the dashboard **writes** as well as reads.
 - `transcript_retention_days` is enforced by a daily task in the bot, not by the
   backend. Setting it to 30 deletes transcripts closed more than 30 days ago,
   on the next run, cascading to their authors.
+- `keep_channel_on_close` defaults to **false**: closing a ticket deletes its
+  channel (archiving it first if `transcripts_enabled`). Set to **true** and
+  the channel survives instead, locked, behind a closing card offering
+  **Reopen** and **Delete the channel** — the bot's own older behaviour. This
+  changes what a closing webhook/log means: with it **off**, `close_message`
+  rides in the closing DM instead of a channel card (there isn't one), and a
+  `tickets` row is deleted the moment its ticket closes, not only when its
+  channel is later deleted by hand.
 
 ### The new per-category permission
 
