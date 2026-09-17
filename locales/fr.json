@@ -930,9 +930,9 @@
         "no_user_perms": "<:error:1519790252594827264> Vous devez avoir la permission **Gérer le serveur** pour utiliser cette commande.",
         "required_fields": "<:undone:1519800313324896327> **Configuration invalide** - Les champs suivants doivent être remplis :\n• {fields}",
         "channel_not_found": "Salon introuvable",
-        "no_admin_perms": {
+        "missing_bot_perms": {
           "title": "Permissions insuffisantes",
-          "description": "Moddy a besoin des **permissions administrateur** pour gérer les modules du serveur.\n\nVeuillez réinviter le bot avec les bonnes permissions.",
+          "description": "Moddy a besoin de la permission suivante pour configurer **{module}** :\n{permissions}\n\nVeuillez réinviter le bot ou lui accorder cette permission manuellement.",
           "button": "Réinviter Moddy"
         }
       },

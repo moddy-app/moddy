@@ -931,9 +931,9 @@
         "no_user_perms": "<:error:1519790252594827264> You must have the **Manage Server** permission to use this command.",
         "required_fields": "<:undone:1519800313324896327> **Invalid configuration** - The following fields must be filled:\n• {fields}",
         "channel_not_found": "Channel not found",
-        "no_admin_perms": {
+        "missing_bot_perms": {
           "title": "Insufficient Permissions",
-          "description": "Moddy needs **administrator permissions** to manage server modules.\n\nPlease re-invite the bot with the correct permissions.",
+          "description": "Moddy needs the following permission to configure **{module}**:\n{permissions}\n\nPlease re-invite the bot or grant it this permission manually.",
           "button": "Re-invite Moddy"
         }
       },

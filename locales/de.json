@@ -931,9 +931,9 @@
         "no_user_perms": "<:error:1519790252594827264> Du benötigst die Berechtigung **Server verwalten**, um diesen Befehl zu verwenden.",
         "required_fields": "<:undone:1519800313324896327> **Ungültige Konfiguration** - Die folgenden Felder müssen ausgefüllt werden:\n• {fields}",
         "channel_not_found": "Kanal nicht gefunden",
-        "no_admin_perms": {
+        "missing_bot_perms": {
           "title": "Unzureichende Berechtigungen",
-          "description": "Moddy benötigt **Administratorberechtigungen**, um Servermodule zu verwalten.\n\nBitte lade den Bot mit den korrekten Berechtigungen erneut ein.",
+          "description": "Moddy benötigt die folgende Berechtigung, um **{module}** zu konfigurieren:\n{permissions}\n\nBitte lade den Bot erneut ein oder erteile ihm diese Berechtigung manuell.",
           "button": "Moddy erneut einladen"
         }
       },

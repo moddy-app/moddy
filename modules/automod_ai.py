@@ -235,6 +235,7 @@ class AutomodModule(ModuleBase):
     MODULE_DESCRIPTION = "Modération automatique des messages problématiques (IA)"
     MODULE_EMOJI = "<:shield:1521471376815292498>"
     MODULE_ORDER = 10
+    REQUIRED_BOT_PERMISSIONS = ["manage_messages", "ban_members", "moderate_members"]
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)

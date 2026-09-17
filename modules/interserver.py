@@ -37,6 +37,7 @@ class InterServerModule(ModuleBase):
     MODULE_DESCRIPTION = "Connecte plusieurs serveurs via des salons dédiés"
     MODULE_EMOJI = GROUPS
     MODULE_ORDER = 100
+    REQUIRED_BOT_PERMISSIONS = ["manage_webhooks"]
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)

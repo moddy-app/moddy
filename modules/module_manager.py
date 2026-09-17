@@ -51,6 +51,14 @@ class ModuleBase(ABC):
     # push does — see ModuleManager.apply_language_change() and
     # utils/guild_language.py.
     LANGUAGE_DEPENDENT_MESSAGES: bool = False
+    # discord.Permissions flag names (e.g. "manage_roles", "ban_members") the
+    # BOT itself needs in this guild to run this module's Discord-side
+    # actions. Moddy never asks for Administrator (CLAUDE.md #12) — /config
+    # checks this list against guild.me.guild_permissions before opening the
+    # module's config screen (see modules/configs/_common.py::check_bot_perms).
+    # Leave empty when the module needs nothing beyond the baseline permissions
+    # every slash command already implies (view/send in the invoking channel).
+    REQUIRED_BOT_PERMISSIONS: List[str] = []
 
     def __init__(self, bot, guild_id: int):
         """

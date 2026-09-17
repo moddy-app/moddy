@@ -117,6 +117,7 @@ class LogsModule(ModuleBase):
     MODULE_DESCRIPTION = "Detailed audit logs for everything that happens on the server"
     MODULE_EMOJI = NOTE
     MODULE_ORDER = 25
+    REQUIRED_BOT_PERMISSIONS = ["manage_webhooks"]
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)

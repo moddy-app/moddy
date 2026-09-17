@@ -480,6 +480,32 @@ moddy/
   `record()` and then `mark_delivered()` / `mark_failed()`.
 - See → [docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md)
 
+### 12. Never require Administrator — declare per-module bot permissions instead
+- **Moddy must never require the `Administrator` permission**, neither as the
+  bot's default invite scope nor as a runtime gate (this matters for listing
+  Moddy on bot directories like top.gg, which frown on `Administrator`-only
+  bots). The bot only ever needs the specific Discord permissions each
+  feature actually uses.
+- Every module (`modules/*.py`, `ModuleBase` subclass) **must** declare
+  `REQUIRED_BOT_PERMISSIONS: List[str]` — the exact `discord.Permissions`
+  flag names (e.g. `manage_roles`, `manage_channels`, `manage_webhooks`,
+  `ban_members`, `kick_members`, `moderate_members`, `manage_messages`) the
+  bot itself needs to perform that module's Discord-side actions. Leave it
+  as `[]` when the module needs nothing beyond the baseline (view/send in
+  the channels it already has access to).
+- `/config` checks the bot's permissions **per module**, not globally: when
+  a server selects a module to configure, the panel checks
+  `guild.me.guild_permissions` against that module's
+  `REQUIRED_BOT_PERMISSIONS` and shows a "missing permissions" message
+  (naming exactly what is missing, with a re-invite link scoped to that
+  need) instead of opening the config screen — see
+  `modules/configs/_common.py::check_bot_perms` and `cogs/config.py`.
+- Adding a new module means auditing every Discord API call it (or the
+  service it delegates to) makes and setting `REQUIRED_BOT_PERMISSIONS`
+  accordingly — do not guess, and do not default to `administrator` as a
+  shortcut.
+- See → [docs/COMMANDS.md](docs/COMMANDS.md), [docs/MODULE_SYSTEM.md](docs/MODULE_SYSTEM.md)
+
 ---
 
 ## Documentation Index

@@ -24,6 +24,7 @@ class AutoRoleModule(ModuleBase):
     MODULE_DESCRIPTION = "Attribue automatiquement des rôles aux nouveaux membres"
     MODULE_EMOJI = MANAGE_USER
     MODULE_ORDER = 30
+    REQUIRED_BOT_PERMISSIONS = ["manage_roles"]
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)

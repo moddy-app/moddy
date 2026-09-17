@@ -93,6 +93,7 @@ class AdaptiveSlowmodeModule(ModuleBase):
     MODULE_DESCRIPTION = "Ajuste automatiquement le slowmode selon l'activité"
     MODULE_EMOJI = TIME
     MODULE_ORDER = 70
+    REQUIRED_BOT_PERMISSIONS = ["manage_channels"]
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)

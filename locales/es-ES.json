@@ -931,9 +931,9 @@
         "no_user_perms": "<:error:1519790252594827264> Debes tener el permiso de **Gestionar servidor** para usar este comando.",
         "required_fields": "<:undone:1519800313324896327> **Configuración no válida** - Se deben rellenar los siguientes campos:\n• {fields}",
         "channel_not_found": "Canal no encontrado",
-        "no_admin_perms": {
+        "missing_bot_perms": {
           "title": "Permisos insuficientes",
-          "description": "Moddy necesita **permisos de administrador** para gestionar los módulos del servidor.\n\nVuelve a invitar al bot con los permisos correctos.",
+          "description": "Moddy necesita el siguiente permiso para configurar **{module}**:\n{permissions}\n\nVuelve a invitar al bot o concédele este permiso manualmente.",
           "button": "Volver a invitar a Moddy"
         }
       },
