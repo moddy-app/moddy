@@ -3011,7 +3011,7 @@
         "open_label": "Eröffnungsnachricht",
         "open_hint": "Wird im Ticket gepostet und angepinnt. Leer lassen für die Standardnachricht.",
         "close_label": "Schlussnachricht",
-        "close_hint": "Wird der DM hinzugefügt, die beim Schließen an den Ersteller gesendet wird",
+        "close_hint": "Wird beim Schließen gezeigt: standardmäßig in der DM, oder auf der Karte, wenn der Kanal bleibt",
         "placeholders_header": "Verfügbare Platzhalter:",
         "ph_user": "Erwähnung des Mitglieds",
         "ph_username": "sein Benutzername",
@@ -3106,7 +3106,9 @@
         "deescalate": "Eskalation aufheben",
         "rename": "Umbenennen",
         "claim": "Übernehmen",
-        "unclaim": "Freigeben"
+        "unclaim": "Freigeben",
+        "reopen": "Wieder öffnen",
+        "delete": "Kanal löschen"
       },
       "fields": {
         "reason": "Grund",
@@ -3140,7 +3142,10 @@
         "dm_title": "Dein Ticket wurde geschlossen",
         "dm_description": "Dein Ticket #`{number}` ({category}) auf **{server}** wurde geschlossen.",
         "archiving_title": "Archivierung läuft",
-        "archiving_description": "Das Transkript dieses Tickets wird gespeichert. Der Kanal wird gelöscht, sobald die Archivierung abgeschlossen ist."
+        "archiving_description": "Das Transkript dieses Tickets wird gespeichert. Der Kanal wird gelöscht, sobald die Archivierung abgeschlossen ist.",
+        "card_title": "Ticket geschlossen",
+        "by": "Geschlossen von",
+        "done_description_kept": "Das Ticket ist gesperrt. Über die Karte im Kanal lässt es sich wieder öffnen oder endgültig löschen."
       },
       "close_request": {
         "sent_title": "Anfrage gesendet",
@@ -3245,7 +3250,8 @@
         "already_claimed": "{user} kümmert sich bereits um dieses Ticket.",
         "already_claimed_by_you": "Du kümmerst dich bereits um dieses Ticket.",
         "not_claimed": "Niemand kümmert sich um dieses Ticket.",
-        "claimed_by_someone_else": "{user} kümmert sich um dieses Ticket, und du kannst es nicht abnehmen."
+        "claimed_by_someone_else": "{user} kümmert sich um dieses Ticket, und du kannst es nicht abnehmen.",
+        "not_closed": "Dieses Ticket ist nicht geschlossen."
       },
       "buttons": {
         "label": "Buttons unter der Nachricht",
@@ -3326,7 +3332,9 @@
         "retention_forever": "für immer",
         "log_label": "Ticket-Log-Kanal",
         "log_hint": "Dort erscheint bei jeder Schließung eine Karte, mit Transkript-Link und Bewertung",
-        "log_placeholder": "Kanal auswählen"
+        "log_placeholder": "Kanal auswählen",
+        "keep_channel_on_close_label": "Kanal nach dem Schließen behalten",
+        "keep_channel_on_close_hint": "Der Kanal bleibt gesperrt geöffnet, mit Wiedereröffnen und Löschen auf der Karte"
       },
       "stats": {
         "team_title": "Ticket-Betreuung",
@@ -3348,6 +3356,17 @@
         "card_title": "Die Person hat den Server verlassen",
         "card_description": "{user} (`{name}`) ist nicht mehr auf dem Server. Das Ticket bleibt offen: schließe es, wenn es keinen Zweck mehr hat, oder behalte es, solange noch etwas zu erledigen ist. Kommt die Person zurück, bekommt sie ihren Zugang automatisch wieder.",
         "reason": "Die Person hat den Server verlassen"
+      },
+      "reopen": {
+        "done_title": "Ticket wieder geöffnet",
+        "done_description": "Alle, die Zugriff hatten, haben ihn zurück.",
+        "dm_title": "Dein Ticket wurde wieder geöffnet",
+        "dm_description": "Dein Ticket #`{number}` ({category}) auf **{server}** ist wieder offen.",
+        "dm_channel": "Zurück dorthin:"
+      },
+      "delete": {
+        "pending_title": "Wird gelöscht",
+        "pending_description": "Der Kanal und sein Gespräch werden gelöscht."
       }
     }
   },

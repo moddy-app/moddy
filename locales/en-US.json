@@ -3011,7 +3011,7 @@
         "open_label": "Opening message",
         "open_hint": "Posted in the ticket, pinned. Leave empty for the default one.",
         "close_label": "Closing message",
-        "close_hint": "Added to the DM sent to the opener when the ticket is closed",
+        "close_hint": "Shown when closing: in the DM by default, or on the card if the channel is kept",
         "placeholders_header": "Available placeholders:",
         "ph_user": "mention of the member",
         "ph_username": "their username",
@@ -3106,7 +3106,9 @@
         "deescalate": "Cancel the escalation",
         "rename": "Rename",
         "claim": "Claim",
-        "unclaim": "Release"
+        "unclaim": "Release",
+        "reopen": "Reopen",
+        "delete": "Delete the channel"
       },
       "fields": {
         "reason": "Reason",
@@ -3140,7 +3142,10 @@
         "dm_title": "Your ticket has been closed",
         "dm_description": "Your ticket #`{number}` ({category}) on **{server}** has been closed.",
         "archiving_title": "Archiving in progress",
-        "archiving_description": "This ticket's transcript is being saved. The channel will be deleted once archiving is complete."
+        "archiving_description": "This ticket's transcript is being saved. The channel will be deleted once archiving is complete.",
+        "card_title": "Ticket closed",
+        "by": "Closed by",
+        "done_description_kept": "The ticket is locked. It can be reopened, or deleted for good, from the card in the channel."
       },
       "close_request": {
         "sent_title": "Request sent",
@@ -3245,7 +3250,8 @@
         "already_claimed": "{user} is already handling this ticket.",
         "already_claimed_by_you": "You are already handling this ticket.",
         "not_claimed": "Nobody is handling this ticket.",
-        "claimed_by_someone_else": "{user} is handling this ticket, and you cannot take it off them."
+        "claimed_by_someone_else": "{user} is handling this ticket, and you cannot take it off them.",
+        "not_closed": "This ticket is not closed."
       },
       "buttons": {
         "label": "Buttons under the message",
@@ -3326,7 +3332,9 @@
         "retention_forever": "forever",
         "log_label": "Ticket log channel",
         "log_hint": "A card is posted there on every closure, with the transcript link and the rating",
-        "log_placeholder": "Pick a channel"
+        "log_placeholder": "Pick a channel",
+        "keep_channel_on_close_label": "Keep the channel after closing",
+        "keep_channel_on_close_hint": "The channel stays open, locked, with Reopen and Delete on the card"
       },
       "stats": {
         "team_title": "Ticket handling",
@@ -3348,6 +3356,17 @@
         "card_title": "The author left the server",
         "card_description": "{user} (`{name}`) is no longer on the server. The ticket stays open: close it if it no longer has a purpose, or keep it while you finish what has to be finished. If they come back, their access is restored automatically.",
         "reason": "The author left the server"
+      },
+      "reopen": {
+        "done_title": "Ticket reopened",
+        "done_description": "Everyone who had access to it is back.",
+        "dm_title": "Your ticket has been reopened",
+        "dm_description": "Your ticket #`{number}` ({category}) on **{server}** is open again.",
+        "dm_channel": "Back to it:"
+      },
+      "delete": {
+        "pending_title": "Deleting",
+        "pending_description": "The channel and its conversation are being deleted."
       }
     }
   },

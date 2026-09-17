@@ -92,7 +92,7 @@ async def _service_and_ticket(interaction: discord.Interaction):
 
 
 # --------------------------------------------------------------------------- #
-# Close
+# Close / reopen
 # --------------------------------------------------------------------------- #
 @ticket_group.command(name="close", description="Close this ticket")
 @app_commands.describe(reason="Why the ticket is being closed")
@@ -108,6 +108,29 @@ async def ticket_close(interaction: discord.Interaction, reason: Optional[str] =
     # ticket is asked to rate it whichever of the two they used.
     await close_and_offer_rating(interaction, service, ticket, locale,
                                  reason=reason)
+
+
+@ticket_group.command(name="reopen", description="Reopen this closed ticket")
+async def ticket_reopen(interaction: discord.Interaction):
+    """Only works when the server kept the channel around on close
+    (SETTING_KEEP_CHANNEL) — a ticket closed with it off has no channel left
+    to run this command in.
+    """
+    resolved = await _service_and_ticket(interaction)
+    if not resolved:
+        return
+    service = resolved[0]
+    locale = i18n.get_user_locale(interaction)
+
+    await interaction.response.defer(ephemeral=True, thinking=True)
+    try:
+        await service.reopen_ticket(interaction.channel, interaction.user)
+    except TicketError as e:
+        await handle_ticket_error(interaction, e)
+        return
+    await send_success(interaction,
+                       t('modules.tickets.reopen.done_title', locale=locale),
+                       t('modules.tickets.reopen.done_description', locale=locale))
 
 
 @ticket_group.command(name="close-request",

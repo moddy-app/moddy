@@ -158,7 +158,8 @@ key added later, and one just built by `/config` all come out identical.
             "222": ["admin"]
           },
           "open_message": "…",         // the WHOLE pinned message
-          "close_message": "…",        // added to the opener's closing DM
+          "close_message": "…",        // closing DM by default, or the
+                                        // closing card if keep_channel_on_close is on
           "buttons": ["close", "claim", "escalate",
                       "staff_thread", "participants"],
           "claim_enabled": true,       // the claim system, per category
@@ -225,7 +226,7 @@ Ten permissions, granted **per role, per category**:
 | Key | What it allows |
 |---|---|
 | `view` | See and talk in the tickets of this category |
-| `close` | Close a ticket (deletes its channel) |
+| `close` | Close a ticket (and reopen it, when `keep_channel_on_close` kept the channel) |
 | `claim` | Take a ticket in charge, and release your own |
 | `unclaim_others` | Take a ticket off the agent holding it |
 | `staff_thread` | Open and join the private staff thread |
@@ -367,14 +368,25 @@ closure and participant edits from drifting into states nobody can explain.
   Escalation refuses outright when no role holds `admin`: escalating with
   nobody to escalate *to* would lock the ticket down to its opener and the
   server admins.
-- **Closing deletes the channel.** The ticket is locked, archived (if
-  transcripts are on), the opener gets a DM (best effort — closed DMs are the
-  norm, not an error), the log channel gets the permanent record, and the
-  channel is then deleted for good — there is no reopening a closed ticket.
-  When transcripts are enabled, a spinner card (`build_archiving_message`) is
-  posted in the channel *before* the archive capture runs, since that is the
-  one step slow enough that a silent channel would read as broken; the
-  channel disappears moments later regardless of how that card looked.
+- **Closing deletes the channel, by default.** The ticket is locked, archived
+  (if transcripts are on), the opener gets a DM (best effort — closed DMs are
+  the norm, not an error), the log channel gets the permanent record, and the
+  channel is then deleted for good. When transcripts are enabled, a spinner
+  card (`build_archiving_message`) is posted in the channel *before* the
+  archive capture runs, since that is the one step slow enough that a silent
+  channel would read as broken; the channel disappears moments later
+  regardless of how that card looked.
+- **`keep_channel_on_close`** (module-wide setting, off by default) brings
+  back the older behaviour instead: the channel survives, locked, behind a
+  closing card (`TicketClosedView`) offering **Reopen** and **Delete the
+  channel** (`admin` only). `close_message` then shows on that card, exactly
+  as it always did — turning the setting off is what moves it to the closing
+  DM instead (see `close_message` below).
+- **Reopening restores the map exactly**, because it is rebuilt, not undone —
+  and it DMs the opener too. The closure was announced in a DM; its
+  cancellation has to be, or a member told their ticket was over never learns
+  that a channel which vanished from their list is back. Only reachable when
+  `keep_channel_on_close` is on.
 
 ---
 
@@ -556,7 +568,9 @@ the commands are the contract. Both call the same method, so they cannot drift.
 | Action | Permission | Notes |
 |---|---|---|
 | `open_ticket` | `can_open` | Enforces `max_open_per_user`. Name (with its status dot), overwrites and topic go in with the channel, in one call. |
-| `close_ticket` | `close` | Locks, archives (if enabled), DMs the opener, logs, then deletes the channel. |
+| `close_ticket` | `close` | Locks, archives (if enabled), DMs the opener, logs, then deletes the channel — unless `keep_channel_on_close` is on, in which case it posts the closing card instead. |
+| `reopen_ticket` | `close` | Only reachable when `keep_channel_on_close` kept the channel. Rebuilds the map and DMs the opener with a link back. |
+| `delete_ticket` | `admin` | Only reachable from the closing card (`keep_channel_on_close`). Destroys the channel. |
 | `request_close` | `view` | **Bidirectional** — see below. Returns `(ticket, to_staff)`. |
 | `accept_close_request` | the side that was asked (`close`, or the opener on a staff offer) | Closes with the reason given for asking. |
 | `cancel_close_request` | the side that was asked, or being the requester | Refusing, or withdrawing your own request. |
@@ -652,7 +666,7 @@ A config written before these existed loads with the defaults above
 accepted flat at the root of the module config, for a dashboard write that
 predates the `settings` object.
 
-The three switches and the retention window live behind a modal, so the screen
+The four switches and the retention window live behind a modal, so the screen
 prints their current value as text; the log channel is a `ChannelSelect`, which
 displays its own state, so it does not — see CLAUDE.md rule 9.
 
@@ -916,7 +930,7 @@ three different reasons:
 
 | Surface | Model | Why |
 |---|---|---|
-| Ticket message, close request, escalation notice, escalation confirmation | **Registered views, static custom_ids** | The channel the click comes from *is* the ticket. An id in the custom_id would only add a second source of truth that could disagree with the channel. The ticket message's shell declares every button id, since which ones a guild shows is configurable. |
+| Ticket message, closing card, close request, escalation notice, escalation confirmation | **Registered views, static custom_ids** | The channel the click comes from *is* the ticket. An id in the custom_id would only add a second source of truth that could disagree with the channel. The ticket message's shell declares every button id, since which ones a guild shows is configurable. |
 | Claim notice, archiving card, closing DM | **Nothing to register** | No interactive child at all. |
 | The participants editor | **A Modal** | Deliberately excluded from persistence, like every modal: it is answered in the moment and Discord closes it on a restart anyway. |
 | The public panel's buttons / dropdown | **`DynamicItem`** (`TicketOpenButton`, `TicketOpenSelect`), registered by `TicketsPersistence` | They carry the panel and category ids. |

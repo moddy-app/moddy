@@ -143,10 +143,16 @@ SETTING_TRANSCRIPTS = "transcripts_enabled"
 SETTING_RETENTION = "transcript_retention_days"
 SETTING_CLOSURE_DETECTION = "closure_detection_enabled"
 SETTING_RATING = "rating_enabled"
+# Off by default: a closed ticket's channel is deleted right away (once
+# archived, if transcripts are on). Turning this on keeps the channel around
+# instead, behind a closing card offering Reopen / Delete the channel — the
+# older behaviour, for servers that want the undo window back.
+SETTING_KEEP_CHANNEL = "keep_channel_on_close"
 
-# The three switches offered as one checkbox group in /config.
+# The four switches offered as one checkbox group in /config.
 SETTING_SWITCHES: Tuple[str, ...] = (
     SETTING_TRANSCRIPTS, SETTING_CLOSURE_DETECTION, SETTING_RATING,
+    SETTING_KEEP_CHANNEL,
 )
 
 DEFAULT_SETTINGS: Dict[str, Any] = {
@@ -155,6 +161,7 @@ DEFAULT_SETTINGS: Dict[str, Any] = {
     SETTING_RETENTION: 0,          # 0 = keep forever
     SETTING_CLOSURE_DETECTION: False,
     SETTING_RATING: True,
+    SETTING_KEEP_CHANNEL: False,
 }
 
 # A transcript older than this many days can be purged; the ceiling only keeps
@@ -427,6 +434,8 @@ def normalize_settings(raw: Any) -> Dict[str, Any]:
             SETTING_CLOSURE_DETECTION, DEFAULT_SETTINGS[SETTING_CLOSURE_DETECTION])),
         SETTING_RATING: bool(raw.get(
             SETTING_RATING, DEFAULT_SETTINGS[SETTING_RATING])),
+        SETTING_KEEP_CHANNEL: bool(raw.get(
+            SETTING_KEEP_CHANNEL, DEFAULT_SETTINGS[SETTING_KEEP_CHANNEL])),
     }
 
 

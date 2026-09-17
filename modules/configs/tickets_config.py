@@ -506,7 +506,7 @@ async def render_settings(interaction: discord.Interaction) -> None:
 
 
 class TicketsSettingsModal(BaseModal):
-    """The three switches and the retention window.
+    """The four switches and the retention window.
 
     Grouped into one modal rather than spread over the screen because a modal
     is the only place where showing the stored value as text is right: a
@@ -598,7 +598,7 @@ class TicketsSettingsView(BaseView):
             t('modules.tickets.settings.description', locale=self.locale)))
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
-        # The three switches and the retention window live behind a modal, so
+        # The four switches and the retention window live behind a modal, so
         # nothing on screen shows their state — hence these lines. The channel
         # select below gets none, because it displays its own (rule 9).
         lines = []

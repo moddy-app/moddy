@@ -486,7 +486,7 @@ was easier not to" is not one.
   `moddy:tickets:opensel:<panel>`) registered separately through
   `TicketsPersistence` — same pattern as `TranscribePromptView`. Registering
   the wrapper would be meaningless: it cannot be built without a panel.
-  The *ticket-channel* views (`TicketControlView`,
+  The *ticket-channel* views (`TicketControlView`, `TicketClosedView`,
   `TicketCloseRequestView`, `TicketEscalationView`, `TicketEscalateConfirmView`)
   are registered normally with **static** custom_ids:
   a ticket action always happens inside its own channel, so
@@ -547,14 +547,16 @@ reader was not already sent — it re-renders the recipient's own notification
 from its stored template.
 
 **Tickets** (see [TICKETS.md](TICKETS.md)) cover both models at once. Every
-interactive card posted *in a ticket channel* — the control bar, the close
-request, the escalation notice, the closure suggestion, the "author left"
-card — uses a static custom_id, because the channel a click comes from **is**
-the ticket (the archiving spinner has no interactive child at all, and the
-channel it was posted in is gone moments later anyway). The closing **DM**
-cannot use a static custom_id: it has no ticket channel, and by the time
-its "leave a review" button is clicked the channel has already been deleted.
-So that one is a `DynamicItem` carrying the transcript key
+interactive card posted *in a ticket channel* — the control bar, the closing
+card, the close request, the escalation notice, the closure suggestion, the
+"author left" card — uses a static custom_id, because the channel a click
+comes from **is** the ticket (the archiving spinner, posted instead of the
+closing card when the channel is about to be auto-deleted, has no
+interactive child at all). The closing **DM** cannot use a static
+custom_id: it has no ticket channel, and by the time its "leave a review"
+button is clicked the channel may have been deleted outright (the default
+path) or still be there (`keep_channel_on_close`) — either way the DM must
+not assume. So that one is a `DynamicItem` carrying the transcript key
 (`TicketRateButton`), and it resolves the guild, the opener and the staff from
 `ticket_transcripts` rather than from `tickets` — which is exactly why
 transcripts have no foreign key on that table.

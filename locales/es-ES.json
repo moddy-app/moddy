@@ -3011,7 +3011,7 @@
         "open_label": "Mensaje de apertura",
         "open_hint": "Publicado en el ticket y fijado. Déjalo vacío para el predeterminado.",
         "close_label": "Mensaje de cierre",
-        "close_hint": "Se añade al DM enviado a quien abrió el ticket al cerrarlo",
+        "close_hint": "Se muestra al cerrar: en el DM por defecto, o en la tarjeta si se mantiene el canal",
         "placeholders_header": "Variables disponibles:",
         "ph_user": "mención del miembro",
         "ph_username": "su nombre de usuario",
@@ -3106,7 +3106,9 @@
         "deescalate": "Cancelar el escalado",
         "rename": "Renombrar",
         "claim": "Hacerse cargo",
-        "unclaim": "Liberar"
+        "unclaim": "Liberar",
+        "reopen": "Reabrir",
+        "delete": "Eliminar el canal"
       },
       "fields": {
         "reason": "Motivo",
@@ -3140,7 +3142,10 @@
         "dm_title": "Tu ticket ha sido cerrado",
         "dm_description": "Tu ticket #`{number}` ({category}) en **{server}** ha sido cerrado.",
         "archiving_title": "Archivando",
-        "archiving_description": "Se está guardando la transcripción de este ticket. El canal se eliminará en cuanto termine el archivado."
+        "archiving_description": "Se está guardando la transcripción de este ticket. El canal se eliminará en cuanto termine el archivado.",
+        "card_title": "Ticket cerrado",
+        "by": "Cerrado por",
+        "done_description_kept": "El ticket está bloqueado. Se puede reabrir, o eliminar definitivamente, desde la tarjeta publicada en el canal."
       },
       "close_request": {
         "sent_title": "Solicitud enviada",
@@ -3245,7 +3250,8 @@
         "already_claimed": "{user} ya se está ocupando de este ticket.",
         "already_claimed_by_you": "Ya te estás ocupando de este ticket.",
         "not_claimed": "Nadie se está ocupando de este ticket.",
-        "claimed_by_someone_else": "{user} se está ocupando de este ticket y no puedes quitárselo."
+        "claimed_by_someone_else": "{user} se está ocupando de este ticket y no puedes quitárselo.",
+        "not_closed": "Este ticket no está cerrado."
       },
       "buttons": {
         "label": "Botones bajo el mensaje",
@@ -3326,7 +3332,9 @@
         "retention_forever": "para siempre",
         "log_label": "Canal de registros de tickets",
         "log_hint": "Se publica una tarjeta en cada cierre, con el enlace de la transcripción y la valoración",
-        "log_placeholder": "Elige un canal"
+        "log_placeholder": "Elige un canal",
+        "keep_channel_on_close_label": "Mantener el canal tras cerrar",
+        "keep_channel_on_close_hint": "El canal permanece abierto, bloqueado, con Reabrir y Eliminar en la tarjeta"
       },
       "stats": {
         "team_title": "Atención de tickets",
@@ -3348,6 +3356,17 @@
         "card_title": "El autor abandonó el servidor",
         "card_description": "{user} (`{name}`) ya no está en el servidor. El ticket sigue abierto: ciérralo si ya no tiene sentido, o consérvalo mientras terminas lo que haga falta. Si la persona vuelve, recuperará el acceso automáticamente.",
         "reason": "El autor abandonó el servidor"
+      },
+      "reopen": {
+        "done_title": "Ticket reabierto",
+        "done_description": "Todos los que tenían acceso lo recuperan.",
+        "dm_title": "Tu ticket ha sido reabierto",
+        "dm_description": "Tu ticket #`{number}` ({category}) en **{server}** está abierto de nuevo.",
+        "dm_channel": "Para volver:"
+      },
+      "delete": {
+        "pending_title": "Eliminando",
+        "pending_description": "Se están eliminando el canal y su conversación."
       }
     }
   },

@@ -991,6 +991,15 @@ class TestTicketChannelViews:
         view = build_archiving_message("fr")
         assert self._ids(view) == []
 
+    def test_closing_card_offers_reopen_and_delete(self):
+        """Only posted when SETTING_KEEP_CHANNEL is on — see close_ticket()."""
+        from utils.ticket_views import build_closed_message
+
+        view = build_closed_message(self.ticket, self.category, self.actor,
+                                    "solved", "Bye", "fr")
+        assert self._ids(view) == ["moddy:tickets:closed:reopen",
+                                   "moddy:tickets:closed:delete"]
+
     def test_close_request_card(self):
         from utils.ticket_views import build_close_request_message
 
@@ -1081,7 +1090,7 @@ _SOURCE_FILES = (
 _INTERPOLATED_KEYS = (
     [f"modules.tickets.actions.{a}" for a in
      ("close", "close_request", "claim", "unclaim", "escalate", "staff_thread",
-      "participants", "deescalate", "rename")]
+      "participants", "reopen", "delete", "deescalate", "rename")]
     + [f"modules.tickets.buttons.{b}_hint" for b in TICKET_BUTTONS]
     + [f"modules.tickets.close_request.{k}_{s}"
        for k in ("sent_description", "card_title", "card_description")
@@ -1104,6 +1113,10 @@ _INTERPOLATED_KEYS = (
        for s in ("title", "description")]
     + [f"modules.tickets.participants.mode_{m}" for m in
        ("add", "remove", "replace")]
+    # Picked from a variable in _close_done_description, not a literal t(...)
+    # call the regex scan below can see.
+    + ["modules.tickets.close.done_description",
+       "modules.tickets.close.done_description_kept"]
 )
 
 

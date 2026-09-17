@@ -37,8 +37,9 @@ only writer; a dashboard that needs a transcript deleted should delete the row
 
 ## 1. `ticket_transcripts`
 
-One row per **closure**, not per channel: a fresh ticket opened for the same
-conversation produces a second row, and both stay readable. `channel_id` is
+One row per **closure**, not per channel: a ticket reopened and closed again
+(`keep_channel_on_close`), or a fresh ticket opened for the same conversation
+otherwise, produces a second row, and both stay readable. `channel_id` is
 therefore not unique.
 
 ```sql
