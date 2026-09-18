@@ -76,9 +76,13 @@ def add_incognito_option(default_value: bool = True):
         # parameter annotated with a constant from its own cog module (e.g.
         # `app_commands.Range[str, 1, MAX_INPUT_LENGTH]`) would fail to resolve
         # and silently break the whole command tree sync. Rebind the wrapper to
-        # the original callback's globals so lookups happen in the right module.
+        # the original callback's globals so lookups happen in the right module —
+        # but merge in this module's own globals first, since the wrapper's body
+        # itself references names (asyncio, _PREFERENCE_LOOKUP_TIMEOUT) that only
+        # live here, not in the cog module.
+        merged_globals = {**func.__globals__, **globals()}
         rebound = types.FunctionType(
-            wrapper.__code__, func.__globals__, wrapper.__name__,
+            wrapper.__code__, merged_globals, wrapper.__name__,
             wrapper.__defaults__, wrapper.__closure__,
         )
         rebound = functools.wraps(func)(rebound)
