@@ -410,6 +410,14 @@ class ModuleManager:
         # — the id of the panel message to take down. Rebuild one from the stored
         # config when the cache is cold (a restart between the two events), so a
         # deletion right after a restart still cleans up Discord.
+        #
+        # A guild whose modules were never loaded (bot restarted, or
+        # unload_guild_modules ran and nothing repopulated it yet) is not the
+        # same as one genuinely holding no instance for this module: warm it
+        # the same way get_module_instance() does before deciding there is
+        # nothing to clean up.
+        if guild_id not in self.active_modules:
+            await self.load_guild_modules(guild_id)
         module = self.active_modules.get(guild_id, {}).get(module_id)
         if module is None and (config or action == EXTERNAL_UPDATED):
             module = self.registered_modules[module_id](self.bot, guild_id)
