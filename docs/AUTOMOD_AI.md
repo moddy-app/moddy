@@ -474,6 +474,8 @@ a wrong precedent can always be purged (it also busts the service cache).
 | `PRECEDENT_SHORTCUT_SIMILARITE` | 0.97 | a `non_sanctionnable` match this close stops before the model |
 | `PRECEDENT_MAX_PER_GUILD` | 500 | per-guild cap (oldest evicted) |
 | `PRECEDENT_CACHE_TTL_SECONDS` | 300 | in-process freshness of a guild's precedent set |
+| `PRECEDENT_CACHE_MAX_GUILDS` | 50 | hard cap on guilds held in memory at once (LRU-evicted) |
+| `PRECEDENT_QUERY_VECTOR_CACHE` | 256 | bounded cache of the funnel's own embedding, reused for the precedent query |
 
 ---
 
@@ -603,26 +605,6 @@ POST {BOT_INTERNAL_URL}/automod/rules_check
 See `internal_api/routes/automod.py` and
 [AUTOMOD_AI_CONFIG.md § 6](AUTOMOD_AI_CONFIG.md#6-indications-safety-check) for
 the full contract (error codes, locales, fail-closed semantics).
-
-## 7. Appeals
-
-When automod opens a sanction case it DMs the member a notice (like a manual mod
-action) with two appeal buttons — **server** (the guild's mods) or **Moddy
-team** (`config.MODDY_APPEAL_CHANNEL_ID`). A reviewer can **Accept / Refuse /
-Transform**; the decision is **binding** and applied by
-`services/appeal_service.AppealService`:
-
-| decision | effect |
-|---|---|
-| accept | revoke the case sanction + reverse the Discord action (unban / clear timeout) |
-| refuse | the sanction stands |
-| transform | revoke + record a replacement sanction and apply it on Discord |
-
-Every step is mirrored to the **case timeline** (`comment` events), the reviewer
-panel and the member's DM, and the server is always informed. State lives in the
-`case_appeals` table (`db/repositories/appeals.py`); the UI is persistent
-`DynamicItem` buttons + Modals V2 in `utils/appeal_views.py` (registered via
-`AppealPersistence`). See [MODERATION_CASES.md](MODERATION_CASES.md).
 
 ---
 
@@ -822,6 +804,28 @@ budget guard (5.3): they bound exactly those two failure modes.
 | `MULT_MEME_CATEGORIE` | 1.5 | same-category repeat multiplier |
 | `PLAFOND_CONFIG` | warn 1 / mute 6 / ban 7 | guild `max_action` cran ceiling |
 | `CATEGORIES_SENSIBLES` | self-harm/doxxing/sexual | no veteran clemency at haute+ |
+
+---
+
+## 7. Appeals
+
+When automod opens a sanction case it DMs the member a notice (like a manual mod
+action) with two appeal buttons — **server** (the guild's mods) or **Moddy
+team** (`config.MODDY_APPEAL_CHANNEL_ID`). A reviewer can **Accept / Refuse /
+Transform**; the decision is **binding** and applied by
+`services/appeal_service.AppealService`:
+
+| decision | effect |
+|---|---|
+| accept | revoke the case sanction + reverse the Discord action (unban / clear timeout) |
+| refuse | the sanction stands |
+| transform | revoke + record a replacement sanction and apply it on Discord |
+
+Every step is mirrored to the **case timeline** (`comment` events), the reviewer
+panel and the member's DM, and the server is always informed. State lives in the
+`case_appeals` table (`db/repositories/appeals.py`); the UI is persistent
+`DynamicItem` buttons + Modals V2 in `utils/appeal_views.py` (registered via
+`AppealPersistence`). See [MODERATION_CASES.md](MODERATION_CASES.md).
 
 ---
 
