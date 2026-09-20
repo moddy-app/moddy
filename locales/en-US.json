@@ -886,6 +886,7 @@
         "hint": "Server settings, including the language Moddy speaks here, sit at the top of the menu.",
         "not_implemented": "Configuration for module **{module_name}** is not yet available.",
         "links": {
+          "ai_configure": "Configure with AI",
           "dashboard": "Dashboard",
           "support": "Support",
           "docs": "Documentation"

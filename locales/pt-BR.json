@@ -886,6 +886,7 @@
         "hint": "As configurações do servidor, incluindo o idioma do Moddy, ficam no topo do menu.",
         "not_implemented": "A configuração do módulo **{module_name}** ainda não está disponível.",
         "links": {
+          "ai_configure": "Configurar com IA",
           "dashboard": "Painel",
           "support": "Suporte",
           "docs": "Documentação"

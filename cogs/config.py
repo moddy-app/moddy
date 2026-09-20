@@ -161,11 +161,17 @@ class ConfigMainView(BaseView):
         )
 
     def _links_row(self) -> ui.ActionRow:
-        """Support, dashboard and documentation — outside the container."""
+        """AI setup, dashboard, support and documentation — outside the container."""
         row = ui.ActionRow()
         row.add_item(ui.Button(
+            label=t('modules.config.main.links.ai_configure', locale=self.locale),
+            style=discord.ButtonStyle.link,
+            url=f"{DASHBOARD_URL}/servers/{self.guild_id}/brocoli",
+        ))
+        row.add_item(ui.Button(
             label=t('modules.config.main.links.dashboard', locale=self.locale),
-            style=discord.ButtonStyle.link, url=DASHBOARD_URL,
+            style=discord.ButtonStyle.link,
+            url=f"{DASHBOARD_URL}/servers/{self.guild_id}/",
         ))
         row.add_item(ui.Button(
             label=t('modules.config.main.links.support', locale=self.locale),
