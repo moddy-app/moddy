@@ -886,6 +886,7 @@
         "hint": "Die Servereinstellungen – inklusive der Sprache, die Moddy hier spricht – stehen oben im Menü.",
         "not_implemented": "Die Konfiguration für das Modul **{module_name}** ist noch nicht verfügbar.",
         "links": {
+          "ai_configure": "Mit KI konfigurieren",
           "dashboard": "Dashboard",
           "support": "Support",
           "docs": "Dokumentation"
