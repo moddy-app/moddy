@@ -2172,6 +2172,99 @@
         }
       }
     },
+    "member_applications": {
+      "name": "Candidatures",
+      "description": "Examine les candidatures Discord pour rejoindre le serveur depuis un salon",
+      "config": {
+        "title": "Candidatures",
+        "description": "Quand ton serveur utilise **Postuler pour rejoindre** de Discord, Moddy publie chaque candidature envoyée dans un salon d'examen, avec des boutons pour l'accepter ou la refuser. Les questions se règlent dans les paramètres du serveur Discord.",
+        "discord": {
+          "enabled": "Les candidatures sont activées sur ce serveur dans Discord.",
+          "disabled": "Les candidatures ne sont pas encore activées dans Discord : active **Postuler pour rejoindre** dans les paramètres du serveur, sinon Moddy n'aura rien à examiner."
+        },
+        "status": {
+          "section_title": "Statut",
+          "section_description": "Active ou désactive les cartes de candidature",
+          "enabled": "Activé",
+          "disabled": "Désactivé",
+          "enable": "Activer",
+          "disable": "Désactiver"
+        },
+        "channel": {
+          "section_title": "Salon d'examen",
+          "section_description": "Là où chaque nouvelle candidature est publiée. Garde-le réservé au staff : la carte affiche les réponses du candidat.",
+          "placeholder": "Choisis un salon"
+        },
+        "ping_roles": {
+          "section_title": "Rôles à notifier",
+          "section_description": "Mentionnés à l'arrivée d'une nouvelle candidature (jusqu'à {max})",
+          "placeholder": "Aucun rôle notifié"
+        },
+        "reviewer_roles": {
+          "section_title": "Rôles examinateurs",
+          "section_description": "Peuvent accepter ou refuser, en plus des membres ayant la permission Expulser des membres",
+          "placeholder": "Expulser des membres uniquement"
+        },
+        "reasons": {
+          "section_title": "Motifs de refus prédéfinis",
+          "section_description": "Proposés en un clic au moment de refuser. Le candidat voit le motif.",
+          "none": "Aucun motif prédéfini",
+          "edit": "Modifier les motifs",
+          "modal_title": "Motifs de refus prédéfinis",
+          "modal_help": "Un motif par ligne, jusqu'à **{max}** motifs de **{length}** caractères chacun. Le candidat voit le motif choisi quand sa candidature est refusée.",
+          "modal_placeholder": "Compte trop récent\nRéponses incomplètes",
+          "modal_label": "Motifs",
+          "modal_description": "Un par ligne. Laisse vide pour tous les supprimer."
+        }
+      },
+      "errors": {
+        "channel_required": "Choisis un salon d'examen avant d'enregistrer.",
+        "too_many_roles": "Tu peux choisir jusqu'à {max} rôles.",
+        "too_many_reasons": "Tu peux garder jusqu'à {max} motifs prédéfinis.",
+        "channel_not_found": "Le salon d'examen n'existe plus.",
+        "channel_type": "Le salon d'examen doit être un salon textuel.",
+        "no_send_permission": "Je ne peux pas envoyer de messages dans {channel}.",
+        "action_title": "Action impossible",
+        "not_reviewer": "Il te faut la permission **Expulser des membres** ou un rôle examinateur pour décider des candidatures.",
+        "not_found": "Cette candidature n'est plus suivie par Moddy.",
+        "already_decided": "Cette candidature a déjà été traitée. La carte affiche la décision.",
+        "gone": "Le candidat a retiré sa candidature avant la décision.",
+        "forbidden": "Moddy n'a plus la permission **Expulser des membres**, que Discord exige pour traiter les candidatures.",
+        "discord_error": "Discord a refusé la décision. Réessaie, ou décide depuis l'écran d'examen de Discord."
+      },
+      "card": {
+        "title": "Nouvelle candidature",
+        "account_created": "Compte créé {timestamp}",
+        "new_account": "Compte récent (moins de 7 jours)",
+        "history": "Candidatures précédentes sur ce serveur : `{count}`",
+        "history_rejected": "Candidatures précédentes sur ce serveur : `{count}` (`{rejected}` refusée(s))",
+        "terms_accepted": "A accepté le règlement du serveur",
+        "terms_refused": "N'a pas accepté le règlement du serveur",
+        "no_answer": "Pas de réponse",
+        "approve": "Accepter",
+        "reject": "Refuser",
+        "footer": "Candidature {id}",
+        "submitted": "envoyée {timestamp}",
+        "status": {
+          "pending": "En attente d'examen",
+          "approved": "Acceptée",
+          "rejected": "Refusée",
+          "withdrawn": "Retirée par le candidat",
+          "by": "par {user}",
+          "in_discord": "depuis Discord",
+          "reason": "**Motif :** {reason}"
+        }
+      },
+      "reject_modal": {
+        "title": "Refuser la candidature",
+        "intro": "Tu refuses la candidature de {user}. Discord lui affichera le motif.",
+        "preset_label": "Motif prédéfini",
+        "preset_description": "Choisis-en un, ou écris le tien en dessous",
+        "reason_label": "Motif",
+        "reason_description": "Facultatif. Remplace le motif prédéfini. 160 caractères max.",
+        "reason_placeholder": "Pourquoi la candidature est refusée"
+      }
+    },
     "logs": {
       "fields": {
         "account_created": "Création du compte",

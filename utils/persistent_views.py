@@ -73,6 +73,8 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         LogsConfigView, LogsOptionsView, LogsPersistence,
     )
     from utils.altguard_views import AltGuardPanelView
+    from modules.configs.member_applications_config import MemberApplicationsConfigView
+    from utils.member_application_views import MemberApplicationsPersistence
     from modules.configs.tickets_config import (
         TicketsConfigView, TicketsSettingsView,
     )
@@ -159,6 +161,13 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         # modal is excluded like every other modal)
         AltGuardConfigView,
         AltGuardPanelView,
+        # Group 12e bis — /config member applications panel (guild permission
+        # auth) and the Approve/Reject buttons of the review cards (dynamic
+        # items keyed by the join request id; who may decide is re-derived
+        # from Kick Members / the module's reviewer roles on every click; the
+        # reject modal is excluded like every other modal).
+        MemberApplicationsConfigView,
+        MemberApplicationsPersistence,
         # Group 12f — /config server logs: the root and options panels
         # (guild permission auth) plus the category panel's dynamic items,
         # which carry the category and page in their custom_id.

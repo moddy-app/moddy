@@ -782,6 +782,42 @@ redémarrage en plein balayage.
 
 See → [BUMP_REMINDER.md](BUMP_REMINDER.md).
 
+### 19 bis. Table `member_applications`
+
+Les candidatures Discord (« Postuler pour rejoindre ») que Moddy a mises sous
+les yeux du staff d'un serveur. Une ligne par **id de join request** ; Discord
+garde la candidature elle-même, cette ligne garde la carte d'examen et l'issue.
+
+`request` est la join request telle que Discord l'a envoyée (réponses,
+candidat) : un bot ne peut pas relire une join request par son id, donc chaque
+nouveau rendu de la carte part d'ici.
+
+**Columns:**
+- `request_id` (BIGINT) — PRIMARY KEY, id Discord de la join request
+- `guild_id`, `user_id` (BIGINT)
+- `status` (TEXT) — `SUBMITTED` / `APPROVED` / `REJECTED` / `WITHDRAWN` (CHECK)
+- `request` (JSONB) — l'instantané Discord
+- `channel_id`, `message_id` (BIGINT) — la carte ; `NULL` si l'envoi a échoué
+  (retenté au passage suivant)
+- `reviewed_by` (BIGINT), `reviewed_at` (TIMESTAMPTZ), `rejection_reason` (TEXT)
+- `decided_in` (TEXT) — `moddy` (bouton de la carte) ou `discord`
+- `submitted_at`, `created_at`, `updated_at` (TIMESTAMPTZ)
+
+**Index:**
+- `idx_member_applications_pending` on `(guild_id) WHERE status = 'SUBMITTED'`
+- `idx_member_applications_user` on `(guild_id, user_id)` — l'historique affiché
+  sur la carte
+- `idx_member_applications_created` on `(created_at)` — la purge
+
+**Repository:** `db/repositories/member_applications.py` — `MemberApplicationRepository`
+
+L'insert (`ON CONFLICT DO NOTHING`) est la déduplication : gateway et poll
+peuvent voir la même candidature, une seule carte part. La résolution ne fait
+sortir une ligne que de `SUBMITTED` : la première décision gagne. Purge à 180
+jours, la rétention de Discord.
+
+See → [MEMBER_APPLICATIONS.md](MEMBER_APPLICATIONS.md).
+
 ### 20. Tables de statistiques
 
 Cinq tables, un seul principe : **agréger avant d'écrire**. Un événement

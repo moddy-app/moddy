@@ -2173,6 +2173,99 @@
         }
       }
     },
+    "member_applications": {
+      "name": "Candidaturas",
+      "description": "Analise as candidaturas do Discord para entrar no servidor a partir de um canal",
+      "config": {
+        "title": "Candidaturas",
+        "description": "Quando seu servidor usa **Candidatar-se para entrar** do Discord, o Moddy publica cada candidatura enviada em um canal de análise, com botões para aprová-la ou recusá-la. As perguntas são definidas nas configurações do servidor no Discord.",
+        "discord": {
+          "enabled": "As candidaturas estão ativadas neste servidor no Discord.",
+          "disabled": "As candidaturas ainda não estão ativadas no Discord: ative **Candidatar-se para entrar** nas configurações do servidor, senão o Moddy não terá nada para analisar."
+        },
+        "status": {
+          "section_title": "Status",
+          "section_description": "Ativa ou desativa os cartões de candidatura",
+          "enabled": "Ativado",
+          "disabled": "Desativado",
+          "enable": "Ativar",
+          "disable": "Desativar"
+        },
+        "channel": {
+          "section_title": "Canal de análise",
+          "section_description": "Onde cada nova candidatura é publicada. Mantenha-o restrito à equipe: o cartão mostra as respostas do candidato.",
+          "placeholder": "Escolha um canal"
+        },
+        "ping_roles": {
+          "section_title": "Cargos a notificar",
+          "section_description": "Mencionados quando chega uma nova candidatura (até {max})",
+          "placeholder": "Nenhum cargo notificado"
+        },
+        "reviewer_roles": {
+          "section_title": "Cargos avaliadores",
+          "section_description": "Podem aprovar ou recusar, além dos membros com a permissão Expulsar membros",
+          "placeholder": "Somente Expulsar membros"
+        },
+        "reasons": {
+          "section_title": "Motivos de recusa predefinidos",
+          "section_description": "Oferecidos em um clique ao recusar. O candidato vê o motivo.",
+          "none": "Nenhum motivo predefinido",
+          "edit": "Editar motivos",
+          "modal_title": "Motivos de recusa predefinidos",
+          "modal_help": "Um motivo por linha, até **{max}** motivos de **{length}** caracteres cada. O candidato vê o motivo escolhido quando sua candidatura é recusada.",
+          "modal_placeholder": "Conta muito recente\nRespostas incompletas",
+          "modal_label": "Motivos",
+          "modal_description": "Um por linha. Deixe vazio para remover todos."
+        }
+      },
+      "errors": {
+        "channel_required": "Escolha um canal de análise antes de salvar.",
+        "too_many_roles": "Você pode escolher até {max} cargos.",
+        "too_many_reasons": "Você pode manter até {max} motivos predefinidos.",
+        "channel_not_found": "O canal de análise não existe mais.",
+        "channel_type": "O canal de análise deve ser um canal de texto.",
+        "no_send_permission": "Não consigo enviar mensagens em {channel}.",
+        "action_title": "Ação impossível",
+        "not_reviewer": "Você precisa da permissão **Expulsar membros** ou de um cargo avaliador para decidir sobre as candidaturas.",
+        "not_found": "Esta candidatura não é mais acompanhada pelo Moddy.",
+        "already_decided": "Esta candidatura já foi tratada. O cartão mostra a decisão.",
+        "gone": "O candidato retirou a candidatura antes da decisão.",
+        "forbidden": "O Moddy não tem mais a permissão **Expulsar membros**, exigida pelo Discord para tratar as candidaturas.",
+        "discord_error": "O Discord recusou a decisão. Tente novamente ou decida pela tela de análise do Discord."
+      },
+      "card": {
+        "title": "Nova candidatura",
+        "account_created": "Conta criada {timestamp}",
+        "new_account": "Conta recente (menos de 7 dias)",
+        "history": "Candidaturas anteriores neste servidor: `{count}`",
+        "history_rejected": "Candidaturas anteriores neste servidor: `{count}` (`{rejected}` recusada(s))",
+        "terms_accepted": "Aceitou as regras do servidor",
+        "terms_refused": "Não aceitou as regras do servidor",
+        "no_answer": "Sem resposta",
+        "approve": "Aprovar",
+        "reject": "Recusar",
+        "footer": "Candidatura {id}",
+        "submitted": "enviada {timestamp}",
+        "status": {
+          "pending": "Aguardando análise",
+          "approved": "Aprovada",
+          "rejected": "Recusada",
+          "withdrawn": "Retirada pelo candidato",
+          "by": "por {user}",
+          "in_discord": "pelo Discord",
+          "reason": "**Motivo:** {reason}"
+        }
+      },
+      "reject_modal": {
+        "title": "Recusar a candidatura",
+        "intro": "Você está recusando a candidatura de {user}. O Discord mostrará o motivo.",
+        "preset_label": "Motivo predefinido",
+        "preset_description": "Escolha um ou escreva o seu abaixo",
+        "reason_label": "Motivo",
+        "reason_description": "Opcional. Substitui o motivo predefinido. Máx. 160 caracteres.",
+        "reason_placeholder": "Por que a candidatura é recusada"
+      }
+    },
     "logs": {
       "fields": {
         "account_created": "Criação da conta",

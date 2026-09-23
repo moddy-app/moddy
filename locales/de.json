@@ -2173,6 +2173,99 @@
         }
       }
     },
+    "member_applications": {
+      "name": "Beitrittsanfragen",
+      "description": "Prüfe Discord-Beitrittsanfragen direkt in einem Kanal",
+      "config": {
+        "title": "Beitrittsanfragen",
+        "description": "Wenn dein Server Discords **Beitritt beantragen** nutzt, veröffentlicht Moddy jede eingereichte Anfrage in einem Prüfkanal, mit Buttons zum Annehmen oder Ablehnen. Die Fragen selbst legst du in den Discord-Servereinstellungen fest.",
+        "discord": {
+          "enabled": "Beitrittsanfragen sind auf diesem Server in Discord aktiviert.",
+          "disabled": "Beitrittsanfragen sind in Discord noch nicht aktiviert: Aktiviere **Beitritt beantragen** in den Servereinstellungen, sonst hat Moddy nichts zu prüfen."
+        },
+        "status": {
+          "section_title": "Status",
+          "section_description": "Schaltet die Anfragekarten ein oder aus",
+          "enabled": "Aktiviert",
+          "disabled": "Deaktiviert",
+          "enable": "Aktivieren",
+          "disable": "Deaktivieren"
+        },
+        "channel": {
+          "section_title": "Prüfkanal",
+          "section_description": "Hier wird jede neue Anfrage veröffentlicht. Halte ihn dem Team vorbehalten: Die Karte zeigt die Antworten der Person.",
+          "placeholder": "Kanal wählen"
+        },
+        "ping_roles": {
+          "section_title": "Zu benachrichtigende Rollen",
+          "section_description": "Werden bei einer neuen Anfrage erwähnt (bis zu {max})",
+          "placeholder": "Keine Rolle benachrichtigt"
+        },
+        "reviewer_roles": {
+          "section_title": "Prüfer-Rollen",
+          "section_description": "Dürfen annehmen oder ablehnen, zusätzlich zu Mitgliedern mit der Berechtigung Mitglieder kicken",
+          "placeholder": "Nur Mitglieder kicken"
+        },
+        "reasons": {
+          "section_title": "Vordefinierte Ablehnungsgründe",
+          "section_description": "Beim Ablehnen mit einem Klick verfügbar. Die Person sieht den Grund.",
+          "none": "Kein vordefinierter Grund",
+          "edit": "Gründe bearbeiten",
+          "modal_title": "Vordefinierte Ablehnungsgründe",
+          "modal_help": "Ein Grund pro Zeile, bis zu **{max}** Gründe mit je **{length}** Zeichen. Die Person sieht den gewählten Grund, wenn ihre Anfrage abgelehnt wird.",
+          "modal_placeholder": "Konto zu neu\nUnvollständige Antworten",
+          "modal_label": "Gründe",
+          "modal_description": "Einer pro Zeile. Leer lassen, um alle zu entfernen."
+        }
+      },
+      "errors": {
+        "channel_required": "Wähle vor dem Speichern einen Prüfkanal.",
+        "too_many_roles": "Du kannst bis zu {max} Rollen wählen.",
+        "too_many_reasons": "Du kannst bis zu {max} vordefinierte Gründe behalten.",
+        "channel_not_found": "Der Prüfkanal existiert nicht mehr.",
+        "channel_type": "Der Prüfkanal muss ein Textkanal sein.",
+        "no_send_permission": "Ich kann in {channel} keine Nachrichten senden.",
+        "action_title": "Aktion nicht möglich",
+        "not_reviewer": "Du brauchst die Berechtigung **Mitglieder kicken** oder eine Prüfer-Rolle, um über Anfragen zu entscheiden.",
+        "not_found": "Diese Anfrage wird von Moddy nicht mehr verfolgt.",
+        "already_decided": "Diese Anfrage wurde bereits bearbeitet. Die Karte zeigt die Entscheidung.",
+        "gone": "Die Person hat ihre Anfrage vor der Entscheidung zurückgezogen.",
+        "forbidden": "Moddy hat die Berechtigung **Mitglieder kicken** nicht mehr, die Discord zum Bearbeiten von Anfragen verlangt.",
+        "discord_error": "Discord hat die Entscheidung abgelehnt. Versuche es erneut oder entscheide in Discords Prüfansicht."
+      },
+      "card": {
+        "title": "Neue Beitrittsanfrage",
+        "account_created": "Konto erstellt {timestamp}",
+        "new_account": "Neues Konto (jünger als 7 Tage)",
+        "history": "Frühere Anfragen auf diesem Server: `{count}`",
+        "history_rejected": "Frühere Anfragen auf diesem Server: `{count}` (`{rejected}` abgelehnt)",
+        "terms_accepted": "Hat die Serverregeln akzeptiert",
+        "terms_refused": "Hat die Serverregeln nicht akzeptiert",
+        "no_answer": "Keine Antwort",
+        "approve": "Annehmen",
+        "reject": "Ablehnen",
+        "footer": "Anfrage {id}",
+        "submitted": "eingereicht {timestamp}",
+        "status": {
+          "pending": "Wartet auf Prüfung",
+          "approved": "Angenommen",
+          "rejected": "Abgelehnt",
+          "withdrawn": "Von der Person zurückgezogen",
+          "by": "von {user}",
+          "in_discord": "über Discord",
+          "reason": "**Grund:** {reason}"
+        }
+      },
+      "reject_modal": {
+        "title": "Anfrage ablehnen",
+        "intro": "Du lehnst die Anfrage von {user} ab. Discord zeigt der Person den Grund.",
+        "preset_label": "Vordefinierter Grund",
+        "preset_description": "Wähle einen oder schreibe unten deinen eigenen",
+        "reason_label": "Grund",
+        "reason_description": "Optional. Ersetzt den vordefinierten Grund. Max. 160 Zeichen.",
+        "reason_placeholder": "Warum die Anfrage abgelehnt wird"
+      }
+    },
     "logs": {
       "fields": {
         "account_created": "Konto erstellt",

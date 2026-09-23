@@ -40,6 +40,7 @@ from db.repositories.ticket_ratings import TicketRatingRepository
 from db.repositories.notifications import NotificationRepository
 from db.repositories.support_requests import SupportRequestRepository
 from db.repositories.bump import BumpReminderRepository
+from db.repositories.member_applications import MemberApplicationRepository
 from db.repositories.announcement_translations import AnnouncementTranslationRepository
 from db.repositories.stats import StatsRepository
 
@@ -83,6 +84,7 @@ class ModdyDatabase(
     NotificationRepository,
     SupportRequestRepository,
     BumpReminderRepository,
+    MemberApplicationRepository,
     AnnouncementTranslationRepository,
     StatsRepository,
 ):
@@ -742,6 +744,42 @@ class ModdyDatabase(
             await conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_bump_reminders_due "
                 "ON bump_reminders (due_at) WHERE sent = FALSE")
+
+            # member_applications — one row per Discord join request Moddy put
+            # in front of a server's staff ("Apply to Join"). Discord keeps the
+            # application; this row keeps the review card (where it was posted)
+            # and how it ended. `request` is the join request as Discord sent
+            # it: bots cannot fetch a single request by id, so every re-render
+            # of the card reads it from here. Purged after 180 days, Discord's
+            # own retention. See docs/MEMBER_APPLICATIONS.md.
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS member_applications (
+                    request_id       BIGINT      PRIMARY KEY,
+                    guild_id         BIGINT      NOT NULL,
+                    user_id          BIGINT      NOT NULL,
+                    status           TEXT        NOT NULL DEFAULT 'SUBMITTED'
+                        CHECK (status IN ('SUBMITTED','APPROVED','REJECTED','WITHDRAWN')),
+                    request          JSONB       NOT NULL DEFAULT '{}'::jsonb,
+                    channel_id       BIGINT,
+                    message_id       BIGINT,
+                    reviewed_by      BIGINT,
+                    reviewed_at      TIMESTAMPTZ,
+                    rejection_reason TEXT,
+                    decided_in       TEXT,
+                    submitted_at     TIMESTAMPTZ,
+                    created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+                    updated_at       TIMESTAMPTZ NOT NULL DEFAULT now()
+                )
+            """)
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_member_applications_pending "
+                "ON member_applications (guild_id) WHERE status = 'SUBMITTED'")
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_member_applications_user "
+                "ON member_applications (guild_id, user_id)")
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_member_applications_created "
+                "ON member_applications (created_at)")
 
             # announcement_translations — one row per announcement posted in a
             # support-server announcement channel, holding the message already
