@@ -35,7 +35,7 @@ from db.repositories.member_applications import (
     STATUS_SUBMITTED,
     STATUS_WITHDRAWN,
 )
-from modules.member_applications import MAX_REJECTION_REASON_LENGTH, MODULE_ID
+from modules.member_applications import MAX_REJECTION_REASON_LENGTH, MODULE_ID, inline_code
 from utils.emojis import (
     DONE, SHAPES, UNDONE,
     format_verification_badge, get_user_verification_badge,
@@ -188,7 +188,7 @@ def identity_lines(user: Dict[str, Any], user_id: int, name: str,
     ]
     username = user.get("username")
     if username:
-        lines.append(field_line("username", f"`{discord.utils.escape_markdown(username)}`", locale))
+        lines.append(field_line("username", inline_code(username), locale))
     lines += [
         field_line("id", f"`{user_id}`", locale),
         field_line("created", created_value, locale),
@@ -218,7 +218,7 @@ def status_lines(row: Dict[str, Any], locale: str) -> List[str]:
         lines.append(field_line("via", t(f"{_C}.values.via_discord", locale=locale), locale))
     if status == STATUS_REJECTED:
         reason = row.get("rejection_reason")
-        value = (f"`{discord.utils.escape_markdown(reason)}`" if reason
+        value = (inline_code(reason) if reason
                  else t(f"{_C}.values.no_reason", locale=locale))
         lines.append(field_line("reason", value, locale))
     return lines
