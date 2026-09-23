@@ -43,6 +43,7 @@ moddy/
 │   ├── emoji.py               #   Emoji management
 │   ├── reminder.py            #   /reminder command
 │   ├── bump_reminder.py       #   Bump Reminder listener + 30s sweeper loop
+│   ├── member_applications.py #   Discord join requests: gateway parser hook + reconciliation poll
 │   ├── stats_events.py        #   Statistics emitters (commands, members, guild joins)
 │   ├── saved_messages.py      #   Message bookmarking
 │   ├── translate.py           #   /translate (DeepL)
@@ -82,6 +83,7 @@ moddy/
 │   ├── social_notifications.py #  Social notifications (via moddy-feeds service)
 │   ├── bump_reminder.py       #   Bump reminders (Disboard, DiscordL, French.gg…)
 │   ├── altguard.py            #   AltGuard anti multi-account verification gate
+│   ├── member_applications.py #   Member Applications (review Discord "Apply to Join" in a channel)
 │   ├── tickets.py             #   Tickets (panels, categories, permissions, claim)
 │   ├── automod_ai.py          #   Automod AI (applies decisions, cases+evidence, scalable features)
 │   ├── bot_customization.py   #   Bot identity per guild (nick/avatar/banner/bio + name style)
@@ -91,6 +93,7 @@ moddy/
 │       ├── server_settings_config.py      # Server-wide settings (language)
 │       ├── adaptive_slowmode_config.py
 │       ├── altguard_config.py             # AltGuard gate (channel, roles, logs)
+│       ├── member_applications_config.py  # Member Applications (channel, roles, preset reasons Modal V2)
 │       ├── social_notifications_config.py
 │       ├── bump_reminder_config.py        # Bump reminders list + Modal V2
 │       ├── automod_ai_config.py
@@ -193,6 +196,7 @@ moddy/
 │       ├── support_requests.py #  Bug reports / config-help requests + their exchange
 │       ├── social.py          #   Social notifications subscriptions
 │       ├── bump.py            #   Pending bump reminders (bump_reminders)
+│       ├── member_applications.py # Review cards of Discord join requests (member_applications)
 │       ├── announcement_translations.py # Stored announcement translations
 │       ├── stats.py           #   Statistics: counters, snapshots, guild lifecycle,
 │       │                      #   acquisition (guild_installs), partitions
@@ -227,6 +231,7 @@ moddy/
 │   ├── compression.py         #   zstd (fallback zlib) for stored blobs — one codec decision
 │   ├── transcription_views.py #   Voice transcription cards + persistent Transcribe button
 │   ├── bump_views.py          #   Bump thank-you + reminder cards, opt-in button
+│   ├── member_application_views.py # Application review card, Approve/Reject (persistent), reject Modal V2
 │   ├── appeal_views.py        #   Automod appeal UI (DM buttons + reviewer panels, persistent)
 │   ├── expiration_views.py    #   Sanction-expiration DM (unban/unmute/unwarn + invite)
 │   ├── invites.py             #   Shared guild invite creation (appeals, expirations)
@@ -274,6 +279,7 @@ moddy/
 │   ├── appeal_service.py      #   Automod sanction appeals (server / Moddy team, binding)
 │   ├── precedent_service.py   #   Automod server precedents (record + serve, RAG)
 │   ├── ticket_service.py      #   Ticket lifecycle (open/close/escalate/move/participants)
+│   ├── member_application_service.py # Join request API calls + review card lifecycle
 │   ├── ticket_transcript_service.py # Archives a closing ticket's conversation (compressed JSON)
 │   ├── ticket_closure_detector.py   # Spots a finished conversation, offers the closure (embeddings)
 │   ├── support_request_service.py # Bug reports + config-help requests (team side)
@@ -321,6 +327,7 @@ moddy/
     ├── test_notifications.py  #   Notifications: hashing, attribution, report rules, i18n
     ├── test_support_requests.py #  Support requests: cards, buttons, beta card, welcome DM
     ├── test_bump_reminder.py  #   Bump detection (real payloads + refusals), config, cards, i18n
+    ├── test_member_applications.py # Member applications: card, dedupe, decisions, poll, gateway, i18n
     ├── test_logs.py           #   Server logs: registry, routing, rendering, delivery
     ├── test_logs_i18n.py      #   Server logs: i18n completeness on the 5 locales
     ├── test_stats.py          #   Statistics: registry guards, aggregation, flush, rollup
@@ -536,6 +543,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/WELCOME_MESSAGES.md](docs/WELCOME_MESSAGES.md) | Welcome messages module (`welcome_channel`) — config schema, placeholders, backend/dashboard contract |
 | [docs/WELCOME_DM.md](docs/WELCOME_DM.md) | Welcome DM module (`welcome_dm`) — config schema, placeholders, backend/dashboard contract |
 | [docs/BUMP_REMINDER.md](docs/BUMP_REMINDER.md) | **Bump Reminder** — detecting a *successful* bump on 7 directories, the reminder, ping modes, quotas |
+| [docs/MEMBER_APPLICATIONS.md](docs/MEMBER_APPLICATIONS.md) | **Member Applications** — Discord "Apply to Join" reviewed from a channel: what the API allows bots, gateway hook + poll, the card, Approve/Reject, the `member_applications` table |
 | [docs/TICKETS.md](docs/TICKETS.md) | **Tickets** — panels, categories, per-role permissions, the claim system, escalation, transcripts, closure detection, ratings, module-gated `/ticket` commands |
 | [docs/TICKETS_INTEGRATION.md](docs/TICKETS_INTEGRATION.md) | Tickets ↔ backend contract — the transcript/rating tables, the compressed body schema, `/transcripts/<key>` and its authorisation, the rating aggregates |
 | [docs/ALTGUARD.md](docs/ALTGUARD.md) | **AltGuard** — anti multi-account verification gate, consent, service contract, staff commands |

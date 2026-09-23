@@ -2173,6 +2173,99 @@
         }
       }
     },
+    "member_applications": {
+      "name": "Member Applications",
+      "description": "Review Discord membership applications from a channel",
+      "config": {
+        "title": "Member Applications",
+        "description": "When your server uses Discord's **Apply to Join**, Moddy posts every submitted application in a review channel, with buttons to approve or reject it. The questions themselves are set in Discord's server settings.",
+        "discord": {
+          "enabled": "Applications are enabled on this server in Discord.",
+          "disabled": "Applications are not enabled in Discord yet: turn on **Apply to Join** in the server settings, otherwise Moddy will have nothing to review."
+        },
+        "status": {
+          "section_title": "Status",
+          "section_description": "Turns the review cards on or off",
+          "enabled": "Enabled",
+          "disabled": "Disabled",
+          "enable": "Enable",
+          "disable": "Disable"
+        },
+        "channel": {
+          "section_title": "Review channel",
+          "section_description": "Where each new application is posted. Keep it private to your staff: the card shows the applicant's answers.",
+          "placeholder": "Choose a channel"
+        },
+        "ping_roles": {
+          "section_title": "Roles to notify",
+          "section_description": "Mentioned when a new application arrives (up to {max})",
+          "placeholder": "No role notified"
+        },
+        "reviewer_roles": {
+          "section_title": "Reviewer roles",
+          "section_description": "Can approve or reject, in addition to members with the Kick Members permission",
+          "placeholder": "Kick Members only"
+        },
+        "reasons": {
+          "section_title": "Preset rejection reasons",
+          "section_description": "Offered in one click when rejecting. The applicant sees the reason.",
+          "none": "No preset reason",
+          "edit": "Edit reasons",
+          "modal_title": "Preset rejection reasons",
+          "modal_help": "One reason per line, up to **{max}** reasons of **{length}** characters each. The applicant sees the reason chosen when their application is rejected.",
+          "modal_placeholder": "Account too recent\nIncomplete answers",
+          "modal_label": "Reasons",
+          "modal_description": "One per line. Leave empty to remove them all."
+        }
+      },
+      "errors": {
+        "channel_required": "Choose a review channel before saving.",
+        "too_many_roles": "You can pick up to {max} roles.",
+        "too_many_reasons": "You can keep up to {max} preset reasons.",
+        "channel_not_found": "The review channel no longer exists.",
+        "channel_type": "The review channel must be a text channel.",
+        "no_send_permission": "I can't send messages in {channel}.",
+        "action_title": "Action impossible",
+        "not_reviewer": "You need the **Kick Members** permission or a reviewer role to decide on applications.",
+        "not_found": "This application is no longer tracked by Moddy.",
+        "already_decided": "This application has already been handled. The card shows the decision.",
+        "gone": "The applicant withdrew this application before the decision.",
+        "forbidden": "Moddy no longer has the **Kick Members** permission, which Discord requires to handle applications.",
+        "discord_error": "Discord refused the decision. Try again, or decide from Discord's review screen."
+      },
+      "card": {
+        "title": "New application",
+        "account_created": "Account created {timestamp}",
+        "new_account": "Recent account (less than 7 days old)",
+        "history": "Earlier applications to this server: `{count}`",
+        "history_rejected": "Earlier applications to this server: `{count}` (`{rejected}` rejected)",
+        "terms_accepted": "Accepted the server rules",
+        "terms_refused": "Did not accept the server rules",
+        "no_answer": "No answer",
+        "approve": "Approve",
+        "reject": "Reject",
+        "footer": "Application {id}",
+        "submitted": "submitted {timestamp}",
+        "status": {
+          "pending": "Awaiting review",
+          "approved": "Approved",
+          "rejected": "Rejected",
+          "withdrawn": "Withdrawn by the applicant",
+          "by": "by {user}",
+          "in_discord": "from Discord",
+          "reason": "**Reason:** {reason}"
+        }
+      },
+      "reject_modal": {
+        "title": "Reject the application",
+        "intro": "You are rejecting the application of {user}. Discord will show them the reason.",
+        "preset_label": "Preset reason",
+        "preset_description": "Pick one, or write your own below",
+        "reason_label": "Reason",
+        "reason_description": "Optional. Overrides the preset reason. 160 characters max.",
+        "reason_placeholder": "Why the application is rejected"
+      }
+    },
     "logs": {
       "fields": {
         "account_created": "Account created",

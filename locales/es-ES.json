@@ -2173,6 +2173,99 @@
         }
       }
     },
+    "member_applications": {
+      "name": "Solicitudes de ingreso",
+      "description": "Revisa las solicitudes de ingreso de Discord desde un canal",
+      "config": {
+        "title": "Solicitudes de ingreso",
+        "description": "Cuando tu servidor usa **Solicitar unirse** de Discord, Moddy publica cada solicitud enviada en un canal de revisión, con botones para aprobarla o rechazarla. Las preguntas se configuran en los ajustes del servidor de Discord.",
+        "discord": {
+          "enabled": "Las solicitudes están activadas en este servidor en Discord.",
+          "disabled": "Las solicitudes aún no están activadas en Discord: activa **Solicitar unirse** en los ajustes del servidor, o Moddy no tendrá nada que revisar."
+        },
+        "status": {
+          "section_title": "Estado",
+          "section_description": "Activa o desactiva las tarjetas de solicitud",
+          "enabled": "Activado",
+          "disabled": "Desactivado",
+          "enable": "Activar",
+          "disable": "Desactivar"
+        },
+        "channel": {
+          "section_title": "Canal de revisión",
+          "section_description": "Donde se publica cada nueva solicitud. Mantenlo reservado al staff: la tarjeta muestra las respuestas del solicitante.",
+          "placeholder": "Elige un canal"
+        },
+        "ping_roles": {
+          "section_title": "Roles a notificar",
+          "section_description": "Mencionados cuando llega una nueva solicitud (hasta {max})",
+          "placeholder": "Ningún rol notificado"
+        },
+        "reviewer_roles": {
+          "section_title": "Roles revisores",
+          "section_description": "Pueden aprobar o rechazar, además de los miembros con el permiso Expulsar miembros",
+          "placeholder": "Solo Expulsar miembros"
+        },
+        "reasons": {
+          "section_title": "Motivos de rechazo predefinidos",
+          "section_description": "Se ofrecen en un clic al rechazar. El solicitante ve el motivo.",
+          "none": "Ningún motivo predefinido",
+          "edit": "Editar motivos",
+          "modal_title": "Motivos de rechazo predefinidos",
+          "modal_help": "Un motivo por línea, hasta **{max}** motivos de **{length}** caracteres cada uno. El solicitante ve el motivo elegido cuando se rechaza su solicitud.",
+          "modal_placeholder": "Cuenta demasiado reciente\nRespuestas incompletas",
+          "modal_label": "Motivos",
+          "modal_description": "Uno por línea. Déjalo vacío para eliminarlos todos."
+        }
+      },
+      "errors": {
+        "channel_required": "Elige un canal de revisión antes de guardar.",
+        "too_many_roles": "Puedes elegir hasta {max} roles.",
+        "too_many_reasons": "Puedes mantener hasta {max} motivos predefinidos.",
+        "channel_not_found": "El canal de revisión ya no existe.",
+        "channel_type": "El canal de revisión debe ser un canal de texto.",
+        "no_send_permission": "No puedo enviar mensajes en {channel}.",
+        "action_title": "Acción imposible",
+        "not_reviewer": "Necesitas el permiso **Expulsar miembros** o un rol revisor para decidir sobre las solicitudes.",
+        "not_found": "Moddy ya no sigue esta solicitud.",
+        "already_decided": "Esta solicitud ya fue tratada. La tarjeta muestra la decisión.",
+        "gone": "El solicitante retiró su solicitud antes de la decisión.",
+        "forbidden": "Moddy ya no tiene el permiso **Expulsar miembros**, que Discord exige para tratar las solicitudes.",
+        "discord_error": "Discord rechazó la decisión. Inténtalo de nuevo o decide desde la pantalla de revisión de Discord."
+      },
+      "card": {
+        "title": "Nueva solicitud",
+        "account_created": "Cuenta creada {timestamp}",
+        "new_account": "Cuenta reciente (menos de 7 días)",
+        "history": "Solicitudes anteriores en este servidor: `{count}`",
+        "history_rejected": "Solicitudes anteriores en este servidor: `{count}` (`{rejected}` rechazada(s))",
+        "terms_accepted": "Aceptó las normas del servidor",
+        "terms_refused": "No aceptó las normas del servidor",
+        "no_answer": "Sin respuesta",
+        "approve": "Aprobar",
+        "reject": "Rechazar",
+        "footer": "Solicitud {id}",
+        "submitted": "enviada {timestamp}",
+        "status": {
+          "pending": "Pendiente de revisión",
+          "approved": "Aprobada",
+          "rejected": "Rechazada",
+          "withdrawn": "Retirada por el solicitante",
+          "by": "por {user}",
+          "in_discord": "desde Discord",
+          "reason": "**Motivo:** {reason}"
+        }
+      },
+      "reject_modal": {
+        "title": "Rechazar la solicitud",
+        "intro": "Estás rechazando la solicitud de {user}. Discord le mostrará el motivo.",
+        "preset_label": "Motivo predefinido",
+        "preset_description": "Elige uno o escribe el tuyo abajo",
+        "reason_label": "Motivo",
+        "reason_description": "Opcional. Sustituye al motivo predefinido. 160 caracteres máx.",
+        "reason_placeholder": "Por qué se rechaza la solicitud"
+      }
+    },
     "logs": {
       "fields": {
         "account_created": "Cuenta creada",
