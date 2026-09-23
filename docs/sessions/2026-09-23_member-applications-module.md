@@ -89,3 +89,17 @@ Feedback from the project owner:
 - **There is no on/off toggle in `/config`.** Configured means active, and
   deleting the configuration turns the module off. `enabled` is no longer
   stored, and a legacy `enabled` key is ignored.
+
+## Follow-up: Bump Reminder directory icons
+
+PR #407 was merged before the card/toggle follow-up was pushed. The branch was
+restarted from `main`, that commit replayed on top, and this change added:
+
+- `utils/emojis.py`: one constant per directory (`DISBOARD`, `DSMONITORING`,
+  `DINVITES`, `DISCORDL`, `BEEMP`, `DISCORDTOP`, `FRENCHGG`) and
+  `BUMP_DIRECTORY_EMOJIS` (key → emoji). `bumpreminder/registry.py` now reads
+  `BumpBot.emoji` from it instead of hardcoding each string, so there is one
+  source for the icons.
+- `docs/EMOJIS.md`: a "Bump Reminder directory icons" section.
+- `tests/test_bump_reminder.py::TestDirectoryIcons`: every directory has its
+  icon, and the registry matches the dict.

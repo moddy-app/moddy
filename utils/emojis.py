@@ -148,6 +148,31 @@ BLUESKY = "<:bluesky:1515511920235516024>"
 RSS = "<:rss:1519788506980028477>"
 INSTAGRAM = "<:web:1519798069191901254>"         # TODO replace with <:instagram:...> (platform is future/disabled)
 
+# =============================================================================
+# BUMP REMINDER — directory icons
+# =============================================================================
+# One per supported server directory. bumpreminder/registry.py reads these
+# (BumpBot.emoji), so the cards, the /config panel and this file can never
+# disagree on a directory's icon.
+DISBOARD = "<:disboard:1545025221612802101>"
+DSMONITORING = "<:DSMonitoring:1545027259323256842>"
+DINVITES = "<:dinvites:1545025725948624956>"
+DISCORDL = "<:DiscordDL:1545024517066465370>"
+BEEMP = "<:beemp:1545026898520969216>"
+DISCORDTOP = "<:DTOP:1545026416331198515>"
+FRENCHGG = "<:frenchgg:1545026009235988490>"
+
+# directory key (BumpBot.key) -> emoji
+BUMP_DIRECTORY_EMOJIS = {
+    "disboard": DISBOARD,
+    "dsmonitoring": DSMONITORING,
+    "dinvites": DINVITES,
+    "dl": DISCORDL,
+    "beemp": BEEMP,
+    "dtop": DISCORDTOP,
+    "frenchgg": FRENCHGG,
+}
+
 # platform id -> emoji (single source of truth used by the module + config UI)
 PLATFORM_EMOJIS = {
     "youtube": YOUTUBE,

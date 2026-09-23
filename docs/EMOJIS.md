@@ -147,6 +147,25 @@
 <:shapes:1552314638782300260>
 
 
+
+## Bump Reminder directory icons — `utils/emojis.py::BUMP_DIRECTORY_EMOJIS`
+
+One icon per server directory supported by the Bump Reminder module
+([BUMP_REMINDER.md](BUMP_REMINDER.md)). `bumpreminder/registry.py` reads its
+`BumpBot.emoji` from this dict: change an icon here, nowhere else.
+
+| Key (`BumpBot.key`) | Directory | Constant | Emoji |
+|---|---|---|---|
+| `disboard` | DISBOARD | `DISBOARD` | `<:disboard:1545025221612802101>` |
+| `dsmonitoring` | DSMonitoring | `DSMONITORING` | `<:DSMonitoring:1545027259323256842>` |
+| `dinvites` | D-INVITES | `DINVITES` | `<:dinvites:1545025725948624956>` |
+| `dl` | DiscordL | `DISCORDL` | `<:DiscordDL:1545024517066465370>` |
+| `beemp` | Beemp | `BEEMP` | `<:beemp:1545026898520969216>` |
+| `dtop` | DiscordTop | `DISCORDTOP` | `<:DTOP:1545026416331198515>` |
+| `frenchgg` | French.gg | `FRENCHGG` | `<:frenchgg:1545026009235988490>` |
+
+Image URL for a dashboard: `https://cdn.discordapp.com/emojis/<id>.png`.
+
 ## Server logs icon set — `utils/emojis.py::LOG_EMOJIS`
 
 The icon set of the advanced server logs (`docs/LOGS.md`). It is the
