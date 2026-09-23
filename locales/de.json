@@ -2183,14 +2183,6 @@
           "enabled": "Beitrittsanfragen sind auf diesem Server in Discord aktiviert.",
           "disabled": "Beitrittsanfragen sind in Discord noch nicht aktiviert: Aktiviere **Beitritt beantragen** in den Servereinstellungen, sonst hat Moddy nichts zu prüfen."
         },
-        "status": {
-          "section_title": "Status",
-          "section_description": "Schaltet die Anfragekarten ein oder aus",
-          "enabled": "Aktiviert",
-          "disabled": "Deaktiviert",
-          "enable": "Aktivieren",
-          "disable": "Deaktivieren"
-        },
         "channel": {
           "section_title": "Prüfkanal",
           "section_description": "Hier wird jede neue Anfrage veröffentlicht. Halte ihn dem Team vorbehalten: Die Karte zeigt die Antworten der Person.",
@@ -2235,26 +2227,41 @@
       },
       "card": {
         "title": "Neue Beitrittsanfrage",
-        "account_created": "Konto erstellt {timestamp}",
-        "new_account": "Neues Konto (jünger als 7 Tage)",
-        "history": "Frühere Anfragen auf diesem Server: `{count}`",
-        "history_rejected": "Frühere Anfragen auf diesem Server: `{count}` (`{rejected}` abgelehnt)",
-        "terms_accepted": "Hat die Serverregeln akzeptiert",
-        "terms_refused": "Hat die Serverregeln nicht akzeptiert",
-        "no_answer": "Keine Antwort",
-        "approve": "Annehmen",
-        "reject": "Ablehnen",
-        "footer": "Anfrage {id}",
-        "submitted": "eingereicht {timestamp}",
+        "answers_title": "Antworten",
+        "field": "**{label}:** {value}",
+        "fields": {
+          "member": "Mitglied",
+          "display_name": "Anzeigename",
+          "username": "Benutzername",
+          "id": "ID",
+          "created": "Erstellt am",
+          "history": "Frühere Anfragen",
+          "terms": "Serverregeln",
+          "status": "Status",
+          "reviewer": "Entschieden von",
+          "decided_at": "Entschieden am",
+          "via": "Über",
+          "reason": "Grund"
+        },
+        "values": {
+          "new_account": "neues Konto",
+          "history_rejected": "{count}, davon {rejected} abgelehnt",
+          "terms_accepted": "Akzeptiert",
+          "terms_refused": "Nicht akzeptiert",
+          "no_answer": "Keine Antwort",
+          "via_discord": "Discords Prüfansicht",
+          "no_reason": "Kein Grund angegeben"
+        },
         "status": {
           "pending": "Wartet auf Prüfung",
           "approved": "Angenommen",
           "rejected": "Abgelehnt",
-          "withdrawn": "Von der Person zurückgezogen",
-          "by": "von {user}",
-          "in_discord": "über Discord",
-          "reason": "**Grund:** {reason}"
-        }
+          "withdrawn": "Von der Person zurückgezogen"
+        },
+        "approve": "Annehmen",
+        "reject": "Ablehnen",
+        "footer": "Anfrage {id}",
+        "submitted": "eingereicht {timestamp}"
       },
       "reject_modal": {
         "title": "Anfrage ablehnen",

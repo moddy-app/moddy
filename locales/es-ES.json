@@ -2183,14 +2183,6 @@
           "enabled": "Las solicitudes están activadas en este servidor en Discord.",
           "disabled": "Las solicitudes aún no están activadas en Discord: activa **Solicitar unirse** en los ajustes del servidor, o Moddy no tendrá nada que revisar."
         },
-        "status": {
-          "section_title": "Estado",
-          "section_description": "Activa o desactiva las tarjetas de solicitud",
-          "enabled": "Activado",
-          "disabled": "Desactivado",
-          "enable": "Activar",
-          "disable": "Desactivar"
-        },
         "channel": {
           "section_title": "Canal de revisión",
           "section_description": "Donde se publica cada nueva solicitud. Mantenlo reservado al staff: la tarjeta muestra las respuestas del solicitante.",
@@ -2235,26 +2227,41 @@
       },
       "card": {
         "title": "Nueva solicitud",
-        "account_created": "Cuenta creada {timestamp}",
-        "new_account": "Cuenta reciente (menos de 7 días)",
-        "history": "Solicitudes anteriores en este servidor: `{count}`",
-        "history_rejected": "Solicitudes anteriores en este servidor: `{count}` (`{rejected}` rechazada(s))",
-        "terms_accepted": "Aceptó las normas del servidor",
-        "terms_refused": "No aceptó las normas del servidor",
-        "no_answer": "Sin respuesta",
-        "approve": "Aprobar",
-        "reject": "Rechazar",
-        "footer": "Solicitud {id}",
-        "submitted": "enviada {timestamp}",
+        "answers_title": "Respuestas",
+        "field": "**{label}:** {value}",
+        "fields": {
+          "member": "Miembro",
+          "display_name": "Nombre visible",
+          "username": "Nombre de usuario",
+          "id": "ID",
+          "created": "Creada el",
+          "history": "Solicitudes anteriores",
+          "terms": "Normas del servidor",
+          "status": "Estado",
+          "reviewer": "Decidido por",
+          "decided_at": "Decidido el",
+          "via": "Desde",
+          "reason": "Motivo"
+        },
+        "values": {
+          "new_account": "cuenta reciente",
+          "history_rejected": "{count}, {rejected} rechazada(s)",
+          "terms_accepted": "Aceptadas",
+          "terms_refused": "No aceptadas",
+          "no_answer": "Sin respuesta",
+          "via_discord": "la pantalla de revisión de Discord",
+          "no_reason": "Sin motivo"
+        },
         "status": {
           "pending": "Pendiente de revisión",
           "approved": "Aprobada",
           "rejected": "Rechazada",
-          "withdrawn": "Retirada por el solicitante",
-          "by": "por {user}",
-          "in_discord": "desde Discord",
-          "reason": "**Motivo:** {reason}"
-        }
+          "withdrawn": "Retirada por el solicitante"
+        },
+        "approve": "Aprobar",
+        "reject": "Rechazar",
+        "footer": "Solicitud {id}",
+        "submitted": "enviada {timestamp}"
       },
       "reject_modal": {
         "title": "Rechazar la solicitud",

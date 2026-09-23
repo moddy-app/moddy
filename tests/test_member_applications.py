@@ -225,14 +225,17 @@ def _server_language(monkeypatch):
 # --------------------------------------------------------------------------- #
 class TestConfig:
 
-    async def test_enabled_needs_a_channel(self):
+    async def test_configured_means_active(self):
+        """No on/off switch: a stored channel is the module running."""
         module = MemberApplicationsModule(None, GUILD_ID)
-        await module.load_config({"enabled": True, "channel_id": None})
+        assert "enabled" not in module.get_default_config()
+        await module.load_config({"channel_id": None})
         assert module.enabled is False
-        await module.load_config({"enabled": True, "channel_id": 444})
+        await module.load_config({"channel_id": 444})
         assert module.enabled is True
+        # A legacy "enabled": false left by an older build does not switch it off.
         await module.load_config({"enabled": False, "channel_id": 444})
-        assert module.enabled is False
+        assert module.enabled is True
 
     def test_reasons_are_trimmed_deduplicated_and_capped(self):
         raw = ["  too   new ", "too new", "", "x" * 300] + [f"r{i}" for i in range(20)]
@@ -306,7 +309,7 @@ class TestCard:
     def test_answers_render_each_field_type(self):
         blocks = views.render_answers(_request()["form_responses"], "en-US")
         joined = "\n".join(blocks)
-        assert "Accepted the server rules" in joined
+        assert "**Server rules:** Accepted" in joined
         assert "**Age?**\n> 18" in joined
         assert "> Ad" in joined  # choice index 1
 
@@ -339,6 +342,41 @@ class TestCard:
         assert texts[0] == "<@&55>"
         assert sum(len(t) for t in texts) <= 4000
 
+    async def test_buttons_sit_outside_the_container(self):
+        db = FakeDB()
+        row = await db.claim_member_application(1000, GUILD_ID, USER_ID, _request(), None)
+        guild, _ = _guild()
+        view = await views.build_card(_bot(db), guild, row, locale="en-US")
+        container, buttons = view.children
+        assert isinstance(container, discord.ui.Container)
+        assert isinstance(buttons, discord.ui.ActionRow)
+        assert not [c for c in _custom_ids(container) if ":card:" in c]
+
+    async def test_information_is_labelled_lines_without_emojis(self):
+        db = FakeDB()
+        row = await db.claim_member_application(1000, GUILD_ID, USER_ID, _request(), None)
+        guild, _ = _guild()
+        texts = _texts(await views.build_card(_bot(db), guild, row, locale="fr"))
+        identity = next(t for t in texts if t.startswith("**Membre :**"))
+        labels = [line.split(":**")[0] + ":**" for line in identity.splitlines()]
+        assert labels == ["**Membre :**", "**Nom affiché :**", "**Nom d'utilisateur :**",
+                          "**ID :**", "**Créé le :**", "**Candidatures précédentes :**"]
+        # Custom emojis only in the title; none on any information line.
+        for text in texts:
+            if not text.startswith("### "):
+                assert "<:" not in text and "<a:" not in text, text
+
+    async def test_no_separator_between_answers(self):
+        db = FakeDB()
+        row = await db.claim_member_application(1000, GUILD_ID, USER_ID, _request(), None)
+        guild, _ = _guild()
+        view = await views.build_card(_bot(db), guild, row, locale="en-US")
+        container = view.children[0]
+        answers = [c for c in container.children
+                   if isinstance(c, discord.ui.TextDisplay) and c.content.startswith("**Answers**")]
+        assert len(answers) == 1
+        assert "**Age?**" in answers[0].content and "**Found us via**" in answers[0].content
+
     async def test_decided_card_has_no_buttons_and_names_the_reviewer(self):
         db = FakeDB()
         await db.claim_member_application(1000, GUILD_ID, USER_ID, _request(), None)
@@ -359,7 +397,7 @@ class TestCard:
         row = await db.claim_member_application(2, GUILD_ID, USER_ID, _request(2), None)
         guild, _ = _guild()
         text = "\n".join(_texts(await views.build_card(_bot(db), guild, row, locale="en-US")))
-        assert "`1` rejected" in text
+        assert "**Earlier applications:** `1`, `1` rejected" in text
 
     @pytest.mark.parametrize("item_cls,action", [(views.ApproveButton, "approve"),
                                                  (views.RejectButton, "reject")])
@@ -637,19 +675,23 @@ class TestTranslations:
         literal = re.compile(r"""['"](modules\.member_applications\.[a-z_.]+[a-z_])['"]""")
         # A key followed by ".{" is a dynamic prefix — covered explicitly below.
         prefixed = re.compile(r"""\{_P\}\.([a-z_.]+[a-z_])(?![a-z_]|\.\{)""")
+        card_prefixed = re.compile(r"""\{_C\}\.([a-z_.]+[a-z_])(?![a-z_]|\.\{)""")
         keys = set()
         for name in _SOURCES:
             source = (ROOT / name).read_text(encoding="utf-8")
             keys |= set(literal.findall(source))
             keys |= {f"modules.member_applications.config.{k}" for k in prefixed.findall(source)}
-        # `_P` itself — the config panel's key prefix, not a key.
+            keys |= {f"modules.member_applications.card.{k}" for k in card_prefixed.findall(source)}
+        # `_P` / `_C` themselves — key prefixes, not keys.
         keys.discard("modules.member_applications.config")
+        keys.discard("modules.member_applications.card")
         # Built dynamically in the code.
-        for part in ("status.enabled", "status.disabled"):
-            keys.add(f"modules.member_applications.config.{part}")
+        for label in ("member", "display_name", "username", "id", "created", "history",
+                      "terms", "status", "reviewer", "decided_at", "via", "reason"):
+            keys.add(f"modules.member_applications.card.fields.{label}")
         for key in ("terms_accepted", "terms_refused"):
-            keys.add(f"modules.member_applications.card.{key}")
-        for key in ("approved", "rejected"):
+            keys.add(f"modules.member_applications.card.values.{key}")
+        for key in ("pending", "approved", "rejected", "withdrawn"):
             keys.add(f"modules.member_applications.card.status.{key}")
         for code in (svc.ERR_NOT_FOUND, svc.ERR_ALREADY, svc.ERR_FORBIDDEN,
                      svc.ERR_GONE, svc.ERR_DISCORD):

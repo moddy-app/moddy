@@ -2183,14 +2183,6 @@
           "enabled": "Applications are enabled on this server in Discord.",
           "disabled": "Applications are not enabled in Discord yet: turn on **Apply to Join** in the server settings, otherwise Moddy will have nothing to review."
         },
-        "status": {
-          "section_title": "Status",
-          "section_description": "Turns the review cards on or off",
-          "enabled": "Enabled",
-          "disabled": "Disabled",
-          "enable": "Enable",
-          "disable": "Disable"
-        },
         "channel": {
           "section_title": "Review channel",
           "section_description": "Where each new application is posted. Keep it private to your staff: the card shows the applicant's answers.",
@@ -2235,26 +2227,41 @@
       },
       "card": {
         "title": "New application",
-        "account_created": "Account created {timestamp}",
-        "new_account": "Recent account (less than 7 days old)",
-        "history": "Earlier applications to this server: `{count}`",
-        "history_rejected": "Earlier applications to this server: `{count}` (`{rejected}` rejected)",
-        "terms_accepted": "Accepted the server rules",
-        "terms_refused": "Did not accept the server rules",
-        "no_answer": "No answer",
-        "approve": "Approve",
-        "reject": "Reject",
-        "footer": "Application {id}",
-        "submitted": "submitted {timestamp}",
+        "answers_title": "Answers",
+        "field": "**{label}:** {value}",
+        "fields": {
+          "member": "Member",
+          "display_name": "Display name",
+          "username": "Username",
+          "id": "ID",
+          "created": "Created",
+          "history": "Earlier applications",
+          "terms": "Server rules",
+          "status": "Status",
+          "reviewer": "Decided by",
+          "decided_at": "Decided on",
+          "via": "From",
+          "reason": "Reason"
+        },
+        "values": {
+          "new_account": "recent account",
+          "history_rejected": "{count}, {rejected} rejected",
+          "terms_accepted": "Accepted",
+          "terms_refused": "Not accepted",
+          "no_answer": "No answer",
+          "via_discord": "Discord's review screen",
+          "no_reason": "No reason given"
+        },
         "status": {
           "pending": "Awaiting review",
           "approved": "Approved",
           "rejected": "Rejected",
-          "withdrawn": "Withdrawn by the applicant",
-          "by": "by {user}",
-          "in_discord": "from Discord",
-          "reason": "**Reason:** {reason}"
-        }
+          "withdrawn": "Withdrawn by the applicant"
+        },
+        "approve": "Approve",
+        "reject": "Reject",
+        "footer": "Application {id}",
+        "submitted": "submitted {timestamp}"
       },
       "reject_modal": {
         "title": "Reject the application",

@@ -2183,14 +2183,6 @@
           "enabled": "As candidaturas estão ativadas neste servidor no Discord.",
           "disabled": "As candidaturas ainda não estão ativadas no Discord: ative **Candidatar-se para entrar** nas configurações do servidor, senão o Moddy não terá nada para analisar."
         },
-        "status": {
-          "section_title": "Status",
-          "section_description": "Ativa ou desativa os cartões de candidatura",
-          "enabled": "Ativado",
-          "disabled": "Desativado",
-          "enable": "Ativar",
-          "disable": "Desativar"
-        },
         "channel": {
           "section_title": "Canal de análise",
           "section_description": "Onde cada nova candidatura é publicada. Mantenha-o restrito à equipe: o cartão mostra as respostas do candidato.",
@@ -2235,26 +2227,41 @@
       },
       "card": {
         "title": "Nova candidatura",
-        "account_created": "Conta criada {timestamp}",
-        "new_account": "Conta recente (menos de 7 dias)",
-        "history": "Candidaturas anteriores neste servidor: `{count}`",
-        "history_rejected": "Candidaturas anteriores neste servidor: `{count}` (`{rejected}` recusada(s))",
-        "terms_accepted": "Aceitou as regras do servidor",
-        "terms_refused": "Não aceitou as regras do servidor",
-        "no_answer": "Sem resposta",
-        "approve": "Aprovar",
-        "reject": "Recusar",
-        "footer": "Candidatura {id}",
-        "submitted": "enviada {timestamp}",
+        "answers_title": "Respostas",
+        "field": "**{label}:** {value}",
+        "fields": {
+          "member": "Membro",
+          "display_name": "Nome exibido",
+          "username": "Nome de usuário",
+          "id": "ID",
+          "created": "Criada em",
+          "history": "Candidaturas anteriores",
+          "terms": "Regras do servidor",
+          "status": "Status",
+          "reviewer": "Decidido por",
+          "decided_at": "Decidido em",
+          "via": "Pelo",
+          "reason": "Motivo"
+        },
+        "values": {
+          "new_account": "conta recente",
+          "history_rejected": "{count}, {rejected} recusada(s)",
+          "terms_accepted": "Aceitas",
+          "terms_refused": "Não aceitas",
+          "no_answer": "Sem resposta",
+          "via_discord": "tela de análise do Discord",
+          "no_reason": "Nenhum motivo informado"
+        },
         "status": {
           "pending": "Aguardando análise",
           "approved": "Aprovada",
           "rejected": "Recusada",
-          "withdrawn": "Retirada pelo candidato",
-          "by": "por {user}",
-          "in_discord": "pelo Discord",
-          "reason": "**Motivo:** {reason}"
-        }
+          "withdrawn": "Retirada pelo candidato"
+        },
+        "approve": "Aprovar",
+        "reject": "Recusar",
+        "footer": "Candidatura {id}",
+        "submitted": "enviada {timestamp}"
       },
       "reject_modal": {
         "title": "Recusar a candidatura",

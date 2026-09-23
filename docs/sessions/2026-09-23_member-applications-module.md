@@ -73,3 +73,19 @@ join request routes are open to bot tokens: `GET /guilds/{id}/requests` and
 - Possible next steps: a role granted on approval, a server-log entry, a
   dashboard history, a "ticket" stand-in for interviews (applicants rarely see
   the server before approval).
+
+## Follow-up (same day): card layout and no on/off switch
+
+Feedback from the project owner:
+
+- **The card reads like a form.** The applicant's information is now a list of
+  labelled lines in a fixed order: Member, Display name, Username, ID,
+  Created, Earlier applications. The status block uses the same format.
+  `field_line()` builds every line, and the locale owns the label and its
+  punctuation. The only emoji on the card is the one in the title.
+- **The buttons sit outside the container.**
+- **There is no separator between the answers**: they are one text block,
+  under an "Answers" heading.
+- **There is no on/off toggle in `/config`.** Configured means active, and
+  deleting the configuration turns the module off. `enabled` is no longer
+  stored, and a legacy `enabled` key is ignored.

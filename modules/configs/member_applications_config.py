@@ -5,8 +5,9 @@ The application form itself is Discord's and is edited in the server settings;
 this panel only decides where Moddy puts the review cards and who may act on
 them:
 
-- on/off;
-- the review channel (required);
+- the review channel (required — a server with a stored configuration is a
+  server using the module; there is no separate on/off switch, deleting the
+  configuration is how the module is turned off);
 - roles pinged when an application arrives;
 - roles allowed to decide in addition to members with Kick Members;
 - preset rejection reasons, edited in a Modal V2 and offered in the reject
@@ -34,13 +35,12 @@ from modules.member_applications import (
     normalize_reasons,
 )
 from utils.emojis import (
-    BACK, DELETE, DONE, EDIT, SAVE, SHAPES, TOGGLE_OFF, TOGGLE_ON, UNDONE, WARNING,
+    BACK, DELETE, DONE, EDIT, SAVE, SHAPES, UNDONE, WARNING,
 )
 from utils.i18n import i18n, t
 
 logger = logging.getLogger("moddy.modules.member_applications_config")
 
-_CID_TOGGLE = "moddy:member_apps:config:toggle"
 _CID_CHANNEL = "moddy:member_apps:config:channel"
 _CID_PING_ROLES = "moddy:member_apps:config:ping_roles"
 _CID_REVIEWER_ROLES = "moddy:member_apps:config:reviewer_roles"
@@ -120,7 +120,7 @@ class MemberApplicationsConfigView(BaseView):
 
         default_config = _default_config(bot, guild_id)
         # `channel_id` is required to save, so it marks a stored configuration
-        # (`enabled` does not: it is also in the defaults).
+        # — and a stored configuration is the module being active.
         if current_config and current_config.get("channel_id") is not None:
             self.current_config = default_config.copy()
             self.current_config.update(current_config)
@@ -163,26 +163,6 @@ class MemberApplicationsConfigView(BaseView):
             container.add_item(ui.TextDisplay(f"-# {discord_line}"))
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-
-        # --- Status (a toggle button: it does not show its state) --------- #
-        enabled = bool(self.working_config.get("enabled"))
-        status_key = "enabled" if enabled else "disabled"
-        container.add_item(ui.TextDisplay(
-            f"**{t(f'{_P}.status.section_title', locale=loc)}**\n"
-            f"-# {t(f'{_P}.status.section_description', locale=loc)}\n"
-            f"-# {t('modules.config.current_value', locale=loc)} "
-            f"**{t(f'{_P}.status.{status_key}', locale=loc)}**"
-        ))
-        toggle_row = ui.ActionRow()
-        toggle_btn = ui.Button(
-            label=t(f"{_P}.status.disable" if enabled else f"{_P}.status.enable", locale=loc),
-            style=discord.ButtonStyle.secondary if enabled else discord.ButtonStyle.success,
-            emoji=discord.PartialEmoji.from_str(TOGGLE_ON if enabled else TOGGLE_OFF),
-            custom_id=_CID_TOGGLE,
-        )
-        toggle_btn.callback = self.on_toggle
-        toggle_row.add_item(toggle_btn)
-        container.add_item(toggle_row)
 
         # --- Review channel ------------------------------------------------ #
         container.add_item(ui.TextDisplay(
@@ -346,12 +326,6 @@ class MemberApplicationsConfigView(BaseView):
     # ----------------------------------------------------------------- #
     # Callbacks
     # ----------------------------------------------------------------- #
-
-    async def on_toggle(self, interaction: discord.Interaction):
-        if not await check_guild_perms(interaction):
-            return
-        working_config = await self._fresh_working_config(interaction)
-        await self._update(interaction, "enabled", not bool(working_config.get("enabled")))
 
     async def on_channel_select(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):

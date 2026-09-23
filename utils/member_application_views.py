@@ -37,7 +37,7 @@ from db.repositories.member_applications import (
 )
 from modules.member_applications import MAX_REJECTION_REASON_LENGTH, MODULE_ID
 from utils.emojis import (
-    DONE, HISTORY, PENDING, SHAPES, TIME, UNDONE, WARNING,
+    DONE, SHAPES, UNDONE,
     format_verification_badge, get_user_verification_badge,
 )
 from utils.i18n import i18n, t
@@ -48,7 +48,7 @@ _CID_PREFIX = "moddy:member_apps:card"
 _CID_REJECT_PRESET = "moddy:member_apps:reject:preset"
 _CID_REJECT_REASON = "moddy:member_apps:reject:reason"
 
-# An account younger than this gets a warning line on the card.
+# An account younger than this is flagged as recent on the card.
 NEW_ACCOUNT_AGE = timedelta(days=7)
 
 # Components V2 caps a message at 4000 characters of text in total. The
@@ -79,6 +79,20 @@ def _guarded(callback):
 # --------------------------------------------------------------------------- #
 # Pure rendering helpers
 # --------------------------------------------------------------------------- #
+_C = "modules.member_applications.card"
+
+
+def field_line(label_key: str, value: str, locale: str) -> str:
+    """``**Label:** value`` — the only shape an information line takes.
+
+    The label and its punctuation come from the locale (French puts a space
+    before the colon, English does not); no emoji, ever: the card is read as
+    a form, one fact per line, in a fixed order.
+    """
+    return t(f"{_C}.field", locale=locale,
+             label=t(f"{_C}.fields.{label_key}", locale=locale), value=value)
+
+
 def _quote(text: str) -> str:
     """An applicant's answer as a block quote that cannot ping anyone."""
     text = discord.utils.escape_mentions(text.strip())
@@ -93,7 +107,7 @@ def answer_text(field: Dict[str, Any], locale: str) -> Optional[str]:
     """What the applicant answered to one form field, as plain text.
 
     ``None`` means "nothing to quote": a TERMS field renders as a single
-    line of its own, and an unanswered optional question as a dash.
+    line of its own, and an unanswered optional question says so.
     """
     kind = field.get("field_type")
     response = field.get("response")
@@ -114,37 +128,30 @@ def render_answers(form_responses: Sequence[Dict[str, Any]], locale: str,
     for field in form_responses or []:
         if not isinstance(field, dict):
             continue
-        kind = field.get("field_type")
-        if kind == "TERMS":
+        if field.get("field_type") == "TERMS":
             accepted = field.get("response") is True
-            key = "terms_accepted" if accepted else "terms_refused"
-            blocks.append((
-                f"{DONE if accepted else UNDONE} "
-                f"{t(f'modules.member_applications.card.{key}', locale=locale)}",
-                None,
-            ))
+            value = t(f"{_C}.values.{'terms_accepted' if accepted else 'terms_refused'}",
+                      locale=locale)
+            blocks.append((field_line("terms", value, locale), None, False))
             continue
         label = _truncate(" ".join(str(field.get("label") or "").split()), 150) or "—"
-        blocks.append((f"**{label}**", answer_text(field, locale)))
+        blocks.append((f"**{label}**", answer_text(field, locale), True))
 
-    answers = [a for _, a in blocks if a]
-    fixed = sum(len(h) + 4 for h, _ in blocks)
+    answers = [a for _, a, _ in blocks if a]
+    fixed = sum(len(h) + 4 for h, _, _ in blocks)
     share = None
     if answers and fixed + sum(len(a) + len(a.splitlines()) * 2 for a in answers) > budget:
         share = max(MIN_ANSWER_SHARE, (budget - fixed) // len(answers))
 
     rendered = []
-    no_answer = t("modules.member_applications.card.no_answer", locale=locale)
-    for heading, answer in blocks:
-        if answer is None:
-            if heading.startswith("**"):
-                rendered.append(f"{heading}\n-# {no_answer}")
-            else:
-                rendered.append(heading)
-            continue
-        if share is not None:
-            answer = _truncate(answer, share)
-        rendered.append(f"{heading}\n{_quote(answer)}")
+    no_answer = t(f"{_C}.values.no_answer", locale=locale)
+    for heading, answer, is_question in blocks:
+        if not is_question:
+            rendered.append(heading)
+        elif answer is None:
+            rendered.append(f"{heading}\n-# {no_answer}")
+        else:
+            rendered.append(f"{heading}\n{_quote(_truncate(answer, share) if share else answer)}")
     return rendered
 
 
@@ -156,45 +163,64 @@ def avatar_url(user: Dict[str, Any], user_id: int) -> str:
     return f"https://cdn.discordapp.com/embed/avatars/{(user_id >> 22) % 6}.png"
 
 
-def history_line(history: Dict[str, int], locale: str) -> Optional[str]:
-    """``Earlier applications: 3 (2 rejected)`` — or nothing for a first one."""
+def history_value(history: Dict[str, int], locale: str) -> str:
+    """``3`` / ``3, 2 rejected`` — ``0`` for a first application."""
     total = sum(history.values())
-    if not total:
-        return None
     rejected = history.get(STATUS_REJECTED, 0)
     if rejected:
-        return t("modules.member_applications.card.history_rejected", locale=locale,
-                 count=total, rejected=rejected)
-    return t("modules.member_applications.card.history", locale=locale, count=total)
+        return t(f"{_C}.values.history_rejected", locale=locale,
+                 count=f"`{total}`", rejected=f"`{rejected}`")
+    return f"`{total}`"
+
+
+def identity_lines(user: Dict[str, Any], user_id: int, name: str,
+                   history: Dict[str, int], locale: str) -> List[str]:
+    """Who applied — one labelled fact per line, always in the same order."""
+    created = discord.utils.snowflake_time(user_id)
+    stamp = int(created.timestamp())
+    created_value = f"<t:{stamp}:D> (<t:{stamp}:R>)"
+    if datetime.now(timezone.utc) - created < NEW_ACCOUNT_AGE:
+        created_value += " · " + t(f"{_C}.values.new_account", locale=locale)
+
+    lines = [
+        field_line("member", f"<@{user_id}>", locale),
+        field_line("display_name", name, locale),
+    ]
+    username = user.get("username")
+    if username:
+        lines.append(field_line("username", f"`{discord.utils.escape_markdown(username)}`", locale))
+    lines += [
+        field_line("id", f"`{user_id}`", locale),
+        field_line("created", created_value, locale),
+        field_line("history", history_value(history, locale), locale),
+    ]
+    return lines
 
 
 def status_lines(row: Dict[str, Any], locale: str) -> List[str]:
+    """Where the application stands — labelled lines, like the identity block."""
     status = row.get("status")
-    if status == STATUS_SUBMITTED:
-        return [f"{PENDING} **{t('modules.member_applications.card.status.pending', locale=locale)}**"]
-    if status == STATUS_WITHDRAWN:
-        return [f"{UNDONE} **{t('modules.member_applications.card.status.withdrawn', locale=locale)}**"]
+    key = {
+        STATUS_SUBMITTED: "pending", STATUS_APPROVED: "approved",
+        STATUS_REJECTED: "rejected", STATUS_WITHDRAWN: "withdrawn",
+    }.get(status, "pending")
+    lines = [field_line("status", t(f"{_C}.status.{key}", locale=locale), locale)]
+    if status not in (STATUS_APPROVED, STATUS_REJECTED):
+        return lines
 
-    approved = status == STATUS_APPROVED
-    head = t(f"modules.member_applications.card.status.{'approved' if approved else 'rejected'}",
-             locale=locale)
-    lines = [f"{DONE if approved else UNDONE} **{head}**"]
-
-    details = []
     if row.get("reviewed_by"):
-        details.append(t("modules.member_applications.card.status.by", locale=locale,
-                         user=f"<@{row['reviewed_by']}>"))
+        lines.append(field_line("reviewer", f"<@{row['reviewed_by']}>", locale))
     reviewed_at = row.get("reviewed_at")
     if isinstance(reviewed_at, datetime):
-        details.append(f"<t:{int(reviewed_at.timestamp())}:R>")
+        stamp = int(reviewed_at.timestamp())
+        lines.append(field_line("decided_at", f"<t:{stamp}:f>", locale))
     if row.get("decided_in") == "discord":
-        details.append(t("modules.member_applications.card.status.in_discord", locale=locale))
-    if details:
-        lines.append("-# " + " · ".join(details))
-
-    if not approved and row.get("rejection_reason"):
-        lines.append(t("modules.member_applications.card.status.reason", locale=locale,
-                       reason=f"`{discord.utils.escape_markdown(row['rejection_reason'])}`"))
+        lines.append(field_line("via", t(f"{_C}.values.via_discord", locale=locale), locale))
+    if status == STATUS_REJECTED:
+        reason = row.get("rejection_reason")
+        value = (f"`{discord.utils.escape_markdown(reason)}`" if reason
+                 else t(f"{_C}.values.no_reason", locale=locale))
+        lines.append(field_line("reason", value, locale))
     return lines
 
 
@@ -222,9 +248,11 @@ async def build_card(bot, guild: discord.Guild, row: Dict[str, Any], *, locale: 
                      mention_role_ids: Sequence[int] = ()) -> ui.LayoutView:
     """The review card for one application, in whatever state it is in.
 
-    ``mention_role_ids`` are rendered above the container on the first post
-    only — the one place a Components V2 message can carry a real ping. Which
-    of them notifies is decided by the caller's ``allowed_mentions``.
+    Layout, top to bottom: the role pings (first post only — the one place a
+    Components V2 message can carry a real ping; which of them notifies is
+    decided by the caller's ``allowed_mentions``), the container — applicant,
+    answers, status — and, while the application is pending, the Approve /
+    Reject row **outside** the container.
     """
     request = row.get("request") or {}
     user = request.get("user") or {}
@@ -244,53 +272,38 @@ async def build_card(bot, guild: discord.Guild, row: Dict[str, Any], *, locale: 
         view.add_item(ui.TextDisplay(" ".join(f"<@&{rid}>" for rid in mention_role_ids)))
 
     container = ui.Container(accent_colour=discord.Colour(ACCENTS.get(status, COLORS["primary"])))
-    container.add_item(ui.TextDisplay(
-        f"### {SHAPES} {t('modules.member_applications.card.title', locale=locale)}"
-    ))
+    container.add_item(ui.TextDisplay(f"### {SHAPES} {t(f'{_C}.title', locale=locale)}"))
 
-    created = discord.utils.snowflake_time(user_id)
-    identity = [
-        await applicant_name(bot, user, user_id),
-        f"<@{user_id}> · `{user_id}`",
-        f"{TIME} " + t("modules.member_applications.card.account_created", locale=locale,
-                       timestamp=f"<t:{int(created.timestamp())}:R>"),
-    ]
-    if datetime.now(timezone.utc) - created < NEW_ACCOUNT_AGE:
-        identity.append(f"{WARNING} " + t("modules.member_applications.card.new_account",
-                                          locale=locale))
-    line = history_line(history, locale)
-    if line:
-        identity.append(f"{HISTORY} {line}")
+    name = await applicant_name(bot, user, user_id)
     container.add_item(ui.Section(
-        ui.TextDisplay("\n".join(identity)),
+        ui.TextDisplay("\n".join(identity_lines(user, user_id, name, history, locale))),
         accessory=ui.Thumbnail(avatar_url(user, user_id)),
     ))
 
     answers = render_answers(request.get("form_responses") or [], locale)
     if answers:
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-        container.add_item(ui.TextDisplay("\n\n".join(answers)))
+        container.add_item(ui.TextDisplay(
+            f"**{t(f'{_C}.answers_title', locale=locale)}**\n\n" + "\n\n".join(answers)))
 
     container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
     container.add_item(ui.TextDisplay("\n".join(status_lines(row, locale))))
 
-    if status == STATUS_SUBMITTED:
-        row_ui = ui.ActionRow()
-        row_ui.add_item(ApproveButton(row["request_id"], locale=locale))
-        row_ui.add_item(RejectButton(row["request_id"], locale=locale))
-        container.add_item(row_ui)
-
-    footer = [t("modules.member_applications.card.footer", locale=locale,
-                id=f"`{row['request_id']}`")]
+    footer = [t(f"{_C}.footer", locale=locale, id=f"`{row['request_id']}`")]
     submitted_at = row.get("submitted_at")
     if isinstance(submitted_at, datetime):
-        footer.append(t("modules.member_applications.card.submitted", locale=locale,
+        footer.append(t(f"{_C}.submitted", locale=locale,
                         timestamp=f"<t:{int(submitted_at.timestamp())}:R>"))
     container.add_item(ui.TextDisplay("-# " + " · ".join(footer)))
-
     view.add_item(container)
-    return view
 
+    if status == STATUS_SUBMITTED:
+        buttons = ui.ActionRow()
+        buttons.add_item(ApproveButton(row["request_id"], locale=locale))
+        buttons.add_item(RejectButton(row["request_id"], locale=locale))
+        view.add_item(buttons)
+
+    return view
 
 # --------------------------------------------------------------------------- #
 # Shared click handling
