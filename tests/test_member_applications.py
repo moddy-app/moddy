@@ -726,3 +726,72 @@ class TestTranslations:
     def test_button_labels_fit(self, locale):
         card = _block(locale)["card"]
         assert len(card["approve"]) <= 80 and len(card["reject"]) <= 80
+
+
+# --------------------------------------------------------------------------- #
+# /config panel: the draft lives in the message
+# --------------------------------------------------------------------------- #
+def _as_message(view):
+    """What Discord sends back as ``interaction.message.components``."""
+    from discord.components import _component_factory
+    return SimpleNamespace(components=[_component_factory(p) for p in view.to_components()])
+
+
+class TestConfigDraft:
+    """Save must write what the panel shows, whichever process answers."""
+
+    def _panel(self, config):
+        from modules.configs.member_applications_config import MemberApplicationsConfigView
+        bot = SimpleNamespace(get_guild=lambda gid: None, get_channel=lambda cid: None)
+        return MemberApplicationsConfigView(bot, GUILD_ID, 1, "fr", current_config=config)
+
+    def test_unsaved_changes_round_trip_through_the_message(self):
+        from modules.configs.member_applications_config import draft_from_message
+        view = self._panel({"channel_id": 444})
+        view.working_config = {
+            "channel_id": 555, "ping_role_ids": [1, 2], "reviewer_role_ids": [3],
+            "rejection_reasons": ["Compte trop récent", "dyvion_ *pas* d'accord"],
+        }
+        view.has_changes = True
+        view._build_view()
+        assert draft_from_message(_as_message(view)) == view.working_config
+
+    def test_empty_selections_and_no_reasons(self):
+        from modules.configs.member_applications_config import draft_from_message
+        view = self._panel(None)
+        assert draft_from_message(_as_message(view)) == {
+            "channel_id": None, "ping_role_ids": [], "reviewer_role_ids": [],
+            "rejection_reasons": [],
+        }
+
+    def test_another_message_is_not_mistaken_for_the_panel(self):
+        from modules.configs.member_applications_config import draft_from_message
+        assert draft_from_message(SimpleNamespace(components=[])) is None
+        assert draft_from_message(None) is None
+
+    async def test_a_shell_saves_the_draft_not_the_stored_config(self):
+        """The reported bug: 'OK' on save, nothing changed."""
+        from modules.configs.member_applications_config import MemberApplicationsConfigView
+        view = self._panel({"channel_id": 444})
+        view.working_config = {"channel_id": 555, "ping_role_ids": [], "reviewer_role_ids": [],
+                               "rejection_reasons": []}
+        view._build_view()
+        shell = MemberApplicationsConfigView()  # what a restarted / other process has
+        interaction = SimpleNamespace(message=_as_message(view), guild_id=GUILD_ID)
+        draft = await shell._fresh_working_config(interaction)
+        assert draft["channel_id"] == 555
+
+    def test_reasons_never_hold_a_backtick(self):
+        assert normalize_reasons(["no `code` here"]) == ["no 'code' here"]
+
+
+class TestInlineCode:
+
+    def test_username_is_shown_exactly(self):
+        from modules.member_applications import inline_code
+        assert inline_code("dyvion_") == "`dyvion_`"
+        assert inline_code("a`b") == "`aˋb`"
+
+    def test_card_username_has_no_escape(self):
+        lines = views.identity_lines({"username": "dyvion_"}, USER_ID, "**Dyvion**", {}, "fr")
+        assert "**Nom d'utilisateur :** `dyvion_`" in lines

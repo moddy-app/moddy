@@ -225,6 +225,14 @@ sit there silently.
 
 - `MemberApplicationsConfigView`: registered view, static custom ids
   `moddy:member_apps:config:*`. Auth is Manage Server.
+  **Unsaved changes live in the panel message.** Every change re-renders the
+  panel, so the message itself holds the draft. When the click reaches a
+  process that did not render the panel (after a restart, the registration
+  shell, or a second bot process answering during a deploy), the draft is read
+  back from the message by `draft_from_message()`: the three selects'
+  `default_values`, and the `- `reason`` lines of the reasons list. It is not
+  replaced by the stored config. Before this, such a Save re-wrote the old
+  config and answered "saved".
 - `MemberApplicationsPersistence`: registers the dynamic items
   `moddy:member_apps:card:approve:<request_id>` and `…:reject:<request_id>`.
   Auth is re-derived from the clicker, as described in [Deciding](#deciding).

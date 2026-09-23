@@ -17,6 +17,7 @@ them:
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any, Dict, List, Optional
 
 import discord
@@ -32,6 +33,7 @@ from modules.member_applications import (
     MAX_PRESET_REASONS,
     MAX_REVIEWER_ROLES,
     MODULE_ID,
+    inline_code,
     normalize_reasons,
 )
 from utils.emojis import (
@@ -57,6 +59,55 @@ _P = "modules.member_applications.config"
 def _default_config(bot, guild_id) -> Dict[str, Any]:
     from modules.member_applications import MemberApplicationsModule
     return MemberApplicationsModule(bot, guild_id).get_default_config()
+
+
+# A preset reason as the panel lists it. normalize_reasons() guarantees a
+# reason holds no backtick, so the inline code span round-trips exactly.
+_REASON_LINE = re.compile(r"^- `([^`]+)`$")
+
+
+def draft_from_message(message: Any) -> Optional[Dict[str, Any]]:
+    """The configuration exactly as the panel message shows it, or ``None``.
+
+    Unsaved changes are never kept in memory alone: every change re-renders the
+    panel, so the message *is* the draft. Reading it back makes Save correct on
+    any click — after a restart, on a registration shell, or when a different
+    bot process answers the interaction — instead of silently re-saving the
+    stored configuration and reporting success.
+    """
+    components = getattr(message, "components", None)
+    if not components:
+        return None
+
+    selects: Dict[str, List[int]] = {}
+    reasons: List[str] = []
+
+    def walk(items):
+        for component in items or []:
+            custom_id = getattr(component, "custom_id", None)
+            if custom_id in (_CID_CHANNEL, _CID_PING_ROLES, _CID_REVIEWER_ROLES):
+                selects[custom_id] = [int(v.id) for v in (getattr(component, "default_values", None) or [])]
+            content = getattr(component, "content", None)
+            if isinstance(content, str):
+                for line in content.splitlines():
+                    match = _REASON_LINE.match(line.strip())
+                    if match:
+                        reasons.append(match.group(1))
+            walk(getattr(component, "children", None))
+            accessory = getattr(component, "accessory", None)
+            if accessory is not None:
+                walk([accessory])
+
+    walk(components)
+    if _CID_CHANNEL not in selects:
+        return None  # not this panel
+    channel = selects[_CID_CHANNEL]
+    return {
+        "channel_id": channel[0] if channel else None,
+        "ping_role_ids": selects.get(_CID_PING_ROLES, [])[:MAX_PING_ROLES],
+        "reviewer_role_ids": selects.get(_CID_REVIEWER_ROLES, [])[:MAX_REVIEWER_ROLES],
+        "rejection_reasons": normalize_reasons(reasons),
+    }
 
 
 # =========================================================================== #
@@ -215,7 +266,8 @@ class MemberApplicationsConfigView(BaseView):
 
         # --- Preset rejection reasons (edited in a modal: listed here) ---- #
         reasons = normalize_reasons(self.working_config.get("rejection_reasons"))
-        listed = ("\n".join(f"- `{discord.utils.escape_markdown(r)}`" for r in reasons)
+        # One "- `reason`" line per reason: draft_from_message() reads them back.
+        listed = ("\n".join(f"- {inline_code(r)}" for r in reasons)
                   if reasons else f"-# {t(f'{_P}.reasons.none', locale=loc)}")
         container.add_item(ui.TextDisplay(
             f"**{t(f'{_P}.reasons.section_title', locale=loc)}**\n"
@@ -291,9 +343,18 @@ class MemberApplicationsConfigView(BaseView):
         return self.bot is not None and self.guild_id == interaction.guild_id
 
     async def _fresh_working_config(self, interaction: discord.Interaction) -> Dict[str, Any]:
-        """Working copy to mutate — from memory when live, from the DB otherwise."""
+        """The draft to mutate or save.
+
+        1. This process rendered the panel: its in-memory draft.
+        2. Otherwise (restart, registration shell, another bot process
+           answering): what the panel message shows (``draft_from_message``).
+        3. Only when the message cannot be read: the stored configuration.
+        """
         if self._is_live_for(interaction):
             return dict(self.working_config)
+        draft = draft_from_message(getattr(interaction, "message", None))
+        if draft is not None:
+            return draft
 
         bot = interaction.client
         config = _default_config(bot, interaction.guild_id)
