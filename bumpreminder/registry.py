@@ -34,6 +34,9 @@ import re
 from dataclasses import dataclass, field
 from typing import Dict, Optional, Pattern, Tuple
 
+# Plain strings, no Discord import: the core stays pure.
+from utils.emojis import BUMP_DIRECTORY_EMOJIS
+
 __all__ = ["BumpBot", "BUMP_BOTS", "bot_by_app_id", "bot_by_key", "is_bump_bot"]
 
 
@@ -141,7 +144,7 @@ BUMP_BOTS: Tuple[BumpBot, ...] = (
         key="disboard",
         app_id=302050872383242240,
         name="DISBOARD",
-        emoji="<:disboard:1545025221612802101>",
+        emoji=BUMP_DIRECTORY_EMOJIS["disboard"],
         command="</bump:947088344167366698>",
         command_names=frozenset({"bump"}),
         default_interval=2 * HOUR,
@@ -162,7 +165,7 @@ BUMP_BOTS: Tuple[BumpBot, ...] = (
         key="dsmonitoring",
         app_id=575776004233232386,
         name="DSMonitoring",
-        emoji="<:DSMonitoring:1545027259323256842>",
+        emoji=BUMP_DIRECTORY_EMOJIS["dsmonitoring"],
         command="</bump:1343606491386609716>",
         command_names=frozenset({"bump", "like"}),
         default_interval=4 * HOUR,
@@ -197,7 +200,7 @@ BUMP_BOTS: Tuple[BumpBot, ...] = (
         key="dinvites",
         app_id=678211574183362571,
         name="D-INVITES",
-        emoji="<:dinvites:1545025725948624956>",
+        emoji=BUMP_DIRECTORY_EMOJIS["dinvites"],
         command="</bump:1099048758228037742>",
         command_names=frozenset({"bump"}),
         default_interval=2 * HOUR,
@@ -216,7 +219,7 @@ BUMP_BOTS: Tuple[BumpBot, ...] = (
         key="dl",
         app_id=528557940811104258,
         name="DiscordL",
-        emoji="<:DiscordDL:1545024517066465370>",
+        emoji=BUMP_DIRECTORY_EMOJIS["dl"],
         command="</bump:1011963835634159667>",
         command_names=frozenset({"bump"}),
         default_interval=1 * HOUR,
@@ -245,7 +248,7 @@ BUMP_BOTS: Tuple[BumpBot, ...] = (
         key="beemp",
         app_id=1293636927337136269,
         name="Beemp",
-        emoji="<:beemp:1545026898520969216>",
+        emoji=BUMP_DIRECTORY_EMOJIS["beemp"],
         command="</bump:1470530261170257972>",
         command_names=frozenset({"bump", "beemp"}),
         default_interval=1 * HOUR,
@@ -275,7 +278,7 @@ BUMP_BOTS: Tuple[BumpBot, ...] = (
         key="dtop",
         app_id=1071460654839517184,
         name="DiscordTop",
-        emoji="<:DTOP:1545026416331198515>",
+        emoji=BUMP_DIRECTORY_EMOJIS["dtop"],
         command="</boost:1364194690290683965>",
         command_names=frozenset({"boost", "bump"}),
         default_interval=1 * HOUR,
@@ -302,7 +305,7 @@ BUMP_BOTS: Tuple[BumpBot, ...] = (
         key="frenchgg",
         app_id=1313443824483307531,
         name="French.gg",
-        emoji="<:frenchgg:1545026009235988490>",
+        emoji=BUMP_DIRECTORY_EMOJIS["frenchgg"],
         command="</bump:1319697709363494946>",
         command_names=frozenset({"bump"}),
         default_interval=2 * HOUR,

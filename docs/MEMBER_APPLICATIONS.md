@@ -75,7 +75,6 @@ receive them. See [How an application reaches Moddy](#how-an-application-reaches
 
 ```json
 {
-  "enabled": true,
   "channel_id": 123456789012345678,
   "ping_role_ids": [111],
   "reviewer_role_ids": [222],
@@ -85,11 +84,14 @@ receive them. See [How an application reaches Moddy](#how-an-application-reaches
 
 | Key | Meaning | Limit |
 |---|---|---|
-| `enabled` | Master switch. The module is active only when `enabled` **and** `channel_id` are both set | — |
-| `channel_id` | Review channel (text/announcement). Required to save; also the "config exists" marker | — |
+| `channel_id` | Review channel (text/announcement). Required to save. **A stored `channel_id` is the module being active** | — |
 | `ping_role_ids` | Roles mentioned on a new card (first post only) | 5 |
 | `reviewer_role_ids` | Roles allowed to decide, **in addition to** members with Kick Members | 10 |
 | `rejection_reasons` | Preset reasons offered in the reject modal | 10 × 100 chars |
+
+There is **no on/off switch**, neither in `/config` nor in the stored config:
+configured means active, and deleting the configuration (stored as `{}`) is
+how a server turns the module off. A legacy `enabled` key is ignored.
 
 A preset reason is capped at 100 characters, below the API's 160, because it
 also has to fit as a select option label. A dashboard writing this key must
@@ -133,19 +135,29 @@ a pending row with no `message_id` and tries again.
 ## The card
 
 The card is Components V2, written in the **server language**, and posted
-through `bot.notifications.send_channel` (`attribution=False`). It contains:
+through `bot.notifications.send_channel` (`attribution=False`). Top to bottom:
 
-- the role mentions, above the container, **on the first post only**. The
-  `allowed_mentions` list names exactly those roles;
-- the applicant: display name + verification badge, mention, id, account age,
-  a warning under 7 days, and earlier applications to this server (with how
-  many were rejected);
-- every answer in a quote block, with mentions escaped. The answers share a
-  2,800-character budget so the message stays under Discord's 4,000;
-- the status (pending / approved / rejected with reason / withdrawn), who
-  decided, when, and whether it was "from Discord";
-- *Approve* / *Reject* while pending;
-- a footer with the request id and the submission time.
+1. the role mentions, above the container, **on the first post only**. The
+   `allowed_mentions` list names exactly those roles;
+2. the container:
+   - the title `### <:shapes:…> New application`, the only emoji on the card;
+   - the applicant, next to their avatar, as **labelled lines in a fixed
+     order, with no emoji**: Member (mention), Display name (with the
+     verification badge), Username, ID, Created (date + relative, followed by
+     "recent account" when under 7 days), Earlier applications (with how many
+     were rejected). Every line is built by `field_line()`: the locale owns the
+     label and its punctuation (`**Membre :**` in French, `**Member:**` in
+     English);
+   - one separator, then **Answers**: every question and its answer in a
+     single text block, with **no separator between answers**. Rules checkboxes
+     read `**Server rules:** Accepted`. The answers are quoted with mentions
+     escaped, and share a 2,800-character budget so the message stays under
+     Discord's 4,000;
+   - one separator, then the status as labelled lines: Status, and once
+     decided, Decided by, Decided on, From (only when decided in Discord's
+     screen) and Reason (for a rejection);
+   - a footer with the request id and the submission time;
+3. while pending, the *Approve* / *Reject* row, **outside** the container.
 
 The accent follows the status: primary, success, error or neutral.
 

@@ -924,3 +924,17 @@ class TestComponents:
         # Nobody to arm it for.
         assert not has_button(build_thanks_card(
             spec, None, due, locale="fr", ping_mode="button", guild_name="Moddy support"))
+
+
+# --------------------------------------------------------------------------- #
+# Directory icons
+# --------------------------------------------------------------------------- #
+class TestDirectoryIcons:
+    """utils/emojis.py::BUMP_DIRECTORY_EMOJIS is the one source of the icons."""
+
+    def test_every_directory_has_its_icon(self):
+        from utils.emojis import BUMP_DIRECTORY_EMOJIS
+        assert set(BUMP_DIRECTORY_EMOJIS) == {spec.key for spec in BUMP_BOTS}
+        for spec in BUMP_BOTS:
+            assert spec.emoji == BUMP_DIRECTORY_EMOJIS[spec.key]
+            assert re.fullmatch(r"<:[A-Za-z0-9_]+:\d{17,20}>", spec.emoji), spec.key

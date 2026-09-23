@@ -104,8 +104,9 @@ class MemberApplicationsModule(ModuleBase):
     # ----------------------------------------------------------------- #
 
     def get_default_config(self) -> Dict[str, Any]:
+        # No "enabled" flag: a configured server is a server using the module,
+        # and deleting the configuration is how it is turned off.
         return {
-            "enabled": True,
             "channel_id": None,
             "ping_role_ids": [],
             "reviewer_role_ids": [],
@@ -120,8 +121,9 @@ class MemberApplicationsModule(ModuleBase):
             self.ping_role_ids = _ids(config_data.get("ping_role_ids"), MAX_PING_ROLES)
             self.reviewer_role_ids = _ids(config_data.get("reviewer_role_ids"), MAX_REVIEWER_ROLES)
             self.rejection_reasons = normalize_reasons(config_data.get("rejection_reasons"))
-            # Nothing to do without a channel to post in.
-            self.enabled = bool(config_data.get("enabled", False)) and self.channel_id is not None
+            # Configured = active. There is no on/off switch; a legacy
+            # "enabled" key, if any, is ignored.
+            self.enabled = self.channel_id is not None
             return True
         except Exception as e:
             logger.error(f"Error loading member_applications config: {e}", exc_info=True)

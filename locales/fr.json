@@ -2182,14 +2182,6 @@
           "enabled": "Les candidatures sont activées sur ce serveur dans Discord.",
           "disabled": "Les candidatures ne sont pas encore activées dans Discord : active **Postuler pour rejoindre** dans les paramètres du serveur, sinon Moddy n'aura rien à examiner."
         },
-        "status": {
-          "section_title": "Statut",
-          "section_description": "Active ou désactive les cartes de candidature",
-          "enabled": "Activé",
-          "disabled": "Désactivé",
-          "enable": "Activer",
-          "disable": "Désactiver"
-        },
         "channel": {
           "section_title": "Salon d'examen",
           "section_description": "Là où chaque nouvelle candidature est publiée. Garde-le réservé au staff : la carte affiche les réponses du candidat.",
@@ -2234,26 +2226,41 @@
       },
       "card": {
         "title": "Nouvelle candidature",
-        "account_created": "Compte créé {timestamp}",
-        "new_account": "Compte récent (moins de 7 jours)",
-        "history": "Candidatures précédentes sur ce serveur : `{count}`",
-        "history_rejected": "Candidatures précédentes sur ce serveur : `{count}` (`{rejected}` refusée(s))",
-        "terms_accepted": "A accepté le règlement du serveur",
-        "terms_refused": "N'a pas accepté le règlement du serveur",
-        "no_answer": "Pas de réponse",
-        "approve": "Accepter",
-        "reject": "Refuser",
-        "footer": "Candidature {id}",
-        "submitted": "envoyée {timestamp}",
+        "answers_title": "Réponses",
+        "field": "**{label} :** {value}",
+        "fields": {
+          "member": "Membre",
+          "display_name": "Nom affiché",
+          "username": "Nom d'utilisateur",
+          "id": "ID",
+          "created": "Créé le",
+          "history": "Candidatures précédentes",
+          "terms": "Règlement du serveur",
+          "status": "Statut",
+          "reviewer": "Décidé par",
+          "decided_at": "Décidé le",
+          "via": "Depuis",
+          "reason": "Motif"
+        },
+        "values": {
+          "new_account": "compte récent",
+          "history_rejected": "{count}, dont {rejected} refusée(s)",
+          "terms_accepted": "Accepté",
+          "terms_refused": "Non accepté",
+          "no_answer": "Pas de réponse",
+          "via_discord": "l'écran d'examen de Discord",
+          "no_reason": "Aucun motif donné"
+        },
         "status": {
           "pending": "En attente d'examen",
           "approved": "Acceptée",
           "rejected": "Refusée",
-          "withdrawn": "Retirée par le candidat",
-          "by": "par {user}",
-          "in_discord": "depuis Discord",
-          "reason": "**Motif :** {reason}"
-        }
+          "withdrawn": "Retirée par le candidat"
+        },
+        "approve": "Accepter",
+        "reject": "Refuser",
+        "footer": "Candidature {id}",
+        "submitted": "envoyée {timestamp}"
       },
       "reject_modal": {
         "title": "Refuser la candidature",
