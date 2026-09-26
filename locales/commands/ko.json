@@ -400,6 +400,16 @@
           "description": "며칠 전까지 볼지 (기본값 30)"
         }
       }
+    },
+    "ocr": {
+      "name": "ocr",
+      "description": "이미지의 텍스트를 추출합니다",
+      "parameters": {
+        "image": {
+          "name": "이미지",
+          "description": "읽을 이미지"
+        }
+      }
     }
   }
 }

@@ -400,6 +400,16 @@
           "description": "Koliko dana unatrag gledati (zadano 30)"
         }
       }
+    },
+    "ocr": {
+      "name": "ocr",
+      "description": "Izdvoji tekst sa slike",
+      "parameters": {
+        "image": {
+          "name": "slika",
+          "description": "Slika za čitanje"
+        }
+      }
     }
   }
 }

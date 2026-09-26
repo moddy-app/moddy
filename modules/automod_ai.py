@@ -45,6 +45,7 @@ qualification, the member's recidivism history and the guild config. See
 from __future__ import annotations
 
 import asyncio
+import dataclasses
 import logging
 import time
 from datetime import datetime, timedelta, timezone
@@ -58,7 +59,12 @@ from automod import (
 )
 from automod import constants as ac
 from automod import bareme as ab
+from automod import image_policy as aip
 from automod import relations as ar
+from automod import scam_anchors
+from automod.schemas import (
+    ImageMeta, ORIGINE_IMAGE_HASH, ORIGINE_IMAGE_NSFW, ORIGINE_IMAGE_OCR,
+)
 from utils import global_sanctions
 from utils.i18n import t
 from utils.members import get_or_fetch_member
@@ -217,9 +223,249 @@ class ContentModerationFeature(AutomodFeature):
         return out
 
 
+class _ImageFeature(AutomodFeature):
+    """Shared helpers of the two image features (docs/AUTOMOD_AI.md §4.2/§4.3).
+
+    The heavy lifting (download, hashing, caches, paid calls) lives in
+    ``bot.automod_images`` (``services/automod_image_service.py``); the
+    features only apply the per-guild policy and build Decisions.
+    """
+
+    def _service(self):
+        return getattr(self.bot, "automod_images", None)
+
+    @staticmethod
+    def _ages(message: discord.Message) -> tuple:
+        """(Discord account age, time on this server) in days — None if unknown."""
+        now = datetime.now(timezone.utc)
+        author = message.author
+        created = getattr(author, "created_at", None)
+        joined = getattr(author, "joined_at", None)
+        acct = (now - created).total_seconds() / 86400.0 if created else None
+        member = (now - joined).total_seconds() / 86400.0 if joined else None
+        return acct, member
+
+    def _meta(self, img, att: discord.Attachment, posts) -> ImageMeta:
+        return ImageMeta(
+            phash=img.phash_hex, dhash=img.dhash_hex, filename=att.filename or "image",
+            cross_post=len({c for c, _ in posts}),
+            copies=[[int(c), int(m)] for c, m in posts],
+        )
+
+    def _image_decision(self, message: discord.Message, meta: ImageMeta, *,
+                        sanctionnable: bool, categorie: str, gravite: str,
+                        confiance: str, raison: str, explication: str,
+                        source: str, score: float, origine: str, decideur: str,
+                        doute: Optional[str] = None) -> Decision:
+        return Decision(
+            message_id=str(message.id), auteur_id=str(message.author.id),
+            sanctionnable=sanctionnable, actions=[], categorie=categorie,
+            gravite=gravite, raison=raison, explication=explication,
+            confiance=confiance, signal_source=source, score_detecteur=score,
+            decideur=decideur, origine=origine, image=meta, doute=doute,
+        )
+
+    def _known_image_decision(self, message: discord.Message, meta: ImageMeta,
+                              categorie: str) -> Decision:
+        """A team-validated image: sanctioned on sight (no OCR, no SafeSearch)."""
+        locale = self.module.guild_locale(message.guild)
+        key = "known_scam" if categorie == "arnaque_scam" else "known_nsfw"
+        return self._image_decision(
+            message, meta, sanctionnable=True, categorie=categorie, gravite="haute",
+            confiance="high",
+            raison=t(f"modules.automod_ai.image.reason_{key}", locale=locale),
+            explication=t("modules.automod_ai.image.explication_known", locale=locale),
+            source=ac.SOURCE_IMAGE_HASH, score=1.0, origine=ORIGINE_IMAGE_HASH,
+            # "equipe": already ruled by humans — never sent to the mini
+            # heavy-sanction confirmation (that one re-reads *text*).
+            decideur="equipe",
+        )
+
+    @staticmethod
+    def _channel_is_nsfw(channel) -> bool:
+        checker = getattr(channel, "is_nsfw", None)
+        try:
+            return bool(checker()) if callable(checker) else False
+        except Exception:  # noqa: BLE001
+            return False
+
+
+class ImageScamFeature(_ImageFeature):
+    """Crypto / giveaway scam images: known hash → OCR → the text funnel."""
+
+    feature_id = "image_scam"
+
+    async def process(self, message: discord.Message) -> List[Decision]:
+        from services.automod_image_service import image_attachments
+        from automod.image_hash import KIND_SCAM, VERDICT_ALLOW
+        svc = self._service()
+        attachments = image_attachments(message)
+        if svc is None or not attachments:
+            return []
+
+        content = message.content or ""
+        acct_age, member_age = self._ages(message)
+        text_has_link = "http://" in content or "https://" in content
+        text_scam = scam_anchors.score(content).score if content else 0.0
+        engine = get_engine(self.bot)
+        decisions: List[Decision] = []
+
+        for att in attachments:
+            img = await svc.prepare(att)
+            if img is None:
+                continue
+            posts = await svc.record_post(
+                self.guild_id, message.author.id, img.phash_hex,
+                message.channel.id, message.id)
+            meta = self._meta(img, att, posts)
+
+            match = await svc.lookup(img)
+            if match is not None:
+                if match.entry.verdict == VERDICT_ALLOW:
+                    svc.stat("hash_allow")
+                    continue
+                if match.entry.kind == KIND_SCAM:
+                    svc.stat("hash_hit")
+                    meta.hash_match = match.as_dict()
+                    decisions.append(self._known_image_decision(message, meta, "arnaque_scam"))
+                    break
+                continue  # a known NSFW image is the image_nsfw feature's call
+
+            cached = await svc.cached_verdict("scam", img.phash_hex)
+            if cached is not None:
+                svc.stat("cache_hit")
+                text = str(cached.get("text") or "")
+            else:
+                risk, reasons = aip.scam_risk_score(aip.ScamRiskInput(
+                    account_age_days=acct_age, member_age_days=member_age,
+                    image_count=len(attachments), text_empty=not content.strip(),
+                    text_has_link=text_has_link, text_scam_score=text_scam,
+                    cross_post=meta.cross_post,
+                    looks_like_screenshot=img.looks_like_screenshot,
+                ))
+                if risk < ac.SCAM_RISK_THRESHOLD and not self.config.get("scan_all"):
+                    svc.stat("skip_prerules")
+                    continue
+                text = await svc.ocr(img, guild_id=self.guild_id)
+                if text is None:
+                    continue  # OCR unavailable: an unread image is never sanctioned
+                await svc.store_verdict("scam", img.phash_hex, {"text": text[:4000]})
+
+            text = text.strip()
+            if len(text) < 8:
+                continue
+            anchors = scam_anchors.score(text)
+            meta.ancres = list(anchors.anchors)
+            meta.score_ancres = anchors.score
+
+            target = TargetMessage(
+                id=str(message.id), author_id=str(message.author.id),
+                content=text[:2000], origine=ORIGINE_IMAGE_OCR,
+            )
+            decision = await engine.analyze(
+                target,
+                guild_id=self.guild_id,
+                guild_name=message.guild.name if message.guild else "",
+                rules=self.module.rules,
+                author_history=await self.module.build_author_history(message.author.id),
+                fetch_context=self.module.make_context_loader(message),
+                severity=self.module.severity,
+                response_language=self.module.response_language(message.guild),
+                precedents_fn=self.module.make_precedents_provider(),
+            )
+            if decision is None:
+                continue
+            decision.image = meta
+            decisions.append(decision)
+            if decision.sanctionnable:
+                break
+        return decisions
+
+
+class ImageNsfwFeature(_ImageFeature):
+    """Explicit images: known hash → Google SafeSearch (paced monthly budget)."""
+
+    feature_id = "image_nsfw"
+
+    async def process(self, message: discord.Message) -> List[Decision]:
+        from services.automod_image_service import image_attachments
+        from automod.image_hash import KIND_NSFW, VERDICT_ALLOW
+        svc = self._service()
+        attachments = image_attachments(message)
+        if svc is None or not attachments:
+            return []
+        # Age-restricted channels are where NSFW belongs.
+        if self._channel_is_nsfw(message.channel):
+            return []
+
+        acct_age, member_age = self._ages(message)
+        locale = self.module.guild_locale(message.guild)
+        decisions: List[Decision] = []
+
+        for att in attachments:
+            img = await svc.prepare(att)
+            if img is None:
+                continue
+            posts = await svc.record_post(
+                self.guild_id, message.author.id, img.phash_hex,
+                message.channel.id, message.id)
+            meta = self._meta(img, att, posts)
+
+            match = await svc.lookup(img)
+            if match is not None:
+                if match.entry.verdict == VERDICT_ALLOW:
+                    svc.stat("hash_allow")
+                    continue
+                if match.entry.kind == KIND_NSFW:
+                    svc.stat("hash_hit")
+                    meta.hash_match = match.as_dict()
+                    decisions.append(self._known_image_decision(message, meta, "contenu_nsfw"))
+                    break
+                continue
+
+            likelihoods = await svc.cached_verdict("nsfw", img.phash_hex)
+            if likelihoods is not None:
+                svc.stat("cache_hit")
+            else:
+                tier = aip.nsfw_tier(acct_age, member_age, None)
+                likelihoods = await svc.safesearch(img, guild_id=self.guild_id, tier=tier)
+                if likelihoods is None:
+                    continue  # budget/pacing said no, or the call failed
+                await svc.store_verdict("nsfw", img.phash_hex, likelihoods)
+
+            verdict = aip.safesearch_to_verdict(likelihoods)
+            if not verdict.actionable:
+                continue
+            meta.safesearch = dict(likelihoods)
+            decision = self._image_decision(
+                message, meta,
+                sanctionnable=verdict.sanctionnable, categorie="contenu_nsfw",
+                gravite=verdict.gravite, confiance=verdict.confiance,
+                raison=t("modules.automod_ai.image.reason_nsfw", locale=locale),
+                explication=t("modules.automod_ai.image.explication_nsfw", locale=locale,
+                              level=str(likelihoods.get("adult", "UNKNOWN"))),
+                source=ac.SOURCE_SAFESEARCH,
+                score={"VERY_LIKELY": 1.0, "LIKELY": 0.8, "POSSIBLE": 0.6}.get(
+                    str(likelihoods.get("adult")), 0.4),
+                origine=ORIGINE_IMAGE_NSFW, decideur="safesearch", doute=verdict.doute,
+            )
+            decisions.append(decision)
+            if decision.sanctionnable:
+                break
+        return decisions
+
+
 FEATURE_CLASSES = {
     ContentModerationFeature.feature_id: ContentModerationFeature,
+    ImageNsfwFeature.feature_id: ImageNsfwFeature,
+    ImageScamFeature.feature_id: ImageScamFeature,
     # Future: "anti_link": AntiLinkFeature, "anti_spam": AntiSpamFeature, ...
+}
+
+# Feature-specific keys accepted in ``features.<id>`` besides the common
+# {enabled, exempt_roles, exempt_channels}.
+FEATURE_EXTRA_KEYS = {
+    ImageScamFeature.feature_id: {"scan_all": False},
 }
 
 
@@ -333,6 +579,17 @@ class AutomodModule(ModuleBase):
                     "exempt_roles": [],
                     "exempt_channels": [],
                 },
+                "image_nsfw": {
+                    "enabled": False,
+                    "exempt_roles": [],
+                    "exempt_channels": [],
+                },
+                "image_scam": {
+                    "enabled": False,
+                    "exempt_roles": [],
+                    "exempt_channels": [],
+                    "scan_all": False,
+                },
             },
         }
 
@@ -391,6 +648,7 @@ class AutomodModule(ModuleBase):
                     feature.feature_id, self.guild_id, e, exc_info=True,
                 )
                 continue
+            handled = False
             for decision in decisions:
                 try:
                     await self.apply_decision(message, decision)
@@ -399,6 +657,14 @@ class AutomodModule(ModuleBase):
                         "automod apply_decision failed (guild %s): %s",
                         self.guild_id, e, exc_info=True,
                     )
+                if (decision.sanctionnable and not self.dry_run
+                        and str(decision.message_id) == str(message.id)
+                        and "supprimer" in (decision.actions or [])):
+                    handled = True
+            # The message is gone: the remaining features have nothing to judge
+            # (and must not sanction the same message twice).
+            if handled:
+                break
 
         # Budget guard (session 4): if this guild has just crossed its daily nano
         # soft cap, post a one-off notice that sensitivity is reduced for today.
@@ -704,7 +970,9 @@ class AutomodModule(ModuleBase):
             target = TargetMessage(
                 id=str(decision.message_id),
                 author_id=str(decision.auteur_id),
-                content=getattr(decision, "agregat_contenu", "") or message.content or "",
+                content=self._judged_text(message, decision),
+                origine=decision.origine if decision.origine == ORIGINE_IMAGE_OCR
+                else "texte",
             )
             confirme, motif = await engine.confirm_heavy(
                 target, decision,
@@ -783,6 +1051,22 @@ class AutomodModule(ModuleBase):
                 ids.append(raw)
 
         deleted_any = False
+        # A sanctioned image posted in several channels (cross-post of a
+        # compromised account): every copy goes, not just this one.
+        image = getattr(decision, "image", None)
+        if image is not None and message.guild is not None:
+            for channel_id, message_id in (image.copies or []):
+                if int(message_id) == message.id:
+                    continue
+                channel = message.guild.get_channel_or_thread(int(channel_id))
+                if channel is None:
+                    continue
+                try:
+                    await channel.get_partial_message(int(message_id)).delete()
+                    deleted_any = True
+                except (discord.NotFound, discord.Forbidden, discord.HTTPException):
+                    continue
+
         for raw_id in ids:
             msg = message if str(message.id) == raw_id else None
             if msg is None:
@@ -797,8 +1081,39 @@ class AutomodModule(ModuleBase):
                 continue
         return deleted_any
 
+    def _judged_text(self, message: discord.Message, decision: Decision) -> str:
+        """The text the decision is about: the aggregate, the OCR of an image,
+        or the message itself."""
+        return (getattr(decision, "agregat_contenu", "")
+                or getattr(decision, "contenu_juge", "")
+                or message.content or "")
+
+    async def _enqueue_label(self, message: discord.Message, decision: Decision, *,
+                             motif: str, bareme: Optional[ab.ResultatBareme] = None,
+                             case_id=None, applied: Optional[List[str]] = None) -> None:
+        """Copy the decision to the Moddy team labeling queue (docs §9).
+
+        Never raises and never blocks the moderation path: labeling is a side
+        channel that only teaches the bot (and can revoke a bot sanction).
+        """
+        labels = getattr(self.bot, "automod_labels", None)
+        if labels is None:
+            return
+        try:
+            await labels.enqueue(
+                message=message, decision=decision, motif=motif, bareme=bareme,
+                case_id=case_id, applied=applied or [],
+                judged_text=self._judged_text(message, decision),
+            )
+        except Exception as e:  # noqa: BLE001
+            logger.warning("automod: labeling enqueue failed (guild %s): %s", self.guild_id, e)
+
     async def apply_decision(self, message: discord.Message, decision: Decision):
         if not decision.sanctionnable:
+            # Unsure, and nothing applied: the team still gets a copy — the
+            # borderline cases are the ones that teach the most.
+            if getattr(decision, "doute", None):
+                await self._enqueue_label(message, decision, motif="doute")
             return
 
         # v2 (session 2): nano only QUALIFIED the message; the deterministic
@@ -812,6 +1127,9 @@ class AutomodModule(ModuleBase):
         # Skipped when mini already decided it (ambigu path is already the smart
         # model) or in the kill-switch/deletion-only case.
         bareme = await self._maybe_confirm_heavy(message, decision, bareme)
+        if any(c.code == "confirmation_refusee" for c in bareme.composantes) \
+                and not getattr(decision, "doute", None):
+            decision.doute = "confirmation_refusee"
 
         decision.actions = list(bareme.actions)
         decision.duree_heures = bareme.duree_heures or 0
@@ -838,6 +1156,7 @@ class AutomodModule(ModuleBase):
         # annotation buttons that feed the eval corpus instead.
         if self.dry_run:
             await self._notify_shadow(message, decision, bareme)
+            await self._enqueue_label(message, decision, motif="simulation", bareme=bareme)
             return
 
         guild = message.guild
@@ -911,6 +1230,11 @@ class AutomodModule(ModuleBase):
                 member, case_id, case_ref, primary_action, primary_sanction_id, decision, message,
             )
 
+        # 6. Copy to the Moddy team labeling queue (every sanction). A team
+        #    "non sanctionnable" revokes this sanction; nothing else is applied.
+        await self._enqueue_label(message, decision, motif="sanction", bareme=bareme,
+                                  case_id=case_id, applied=applied)
+
     # Discord timeout / temporary sanction max (28 days).
     _MAX_DURATION = timedelta(days=28)
 
@@ -976,7 +1300,7 @@ class AutomodModule(ModuleBase):
         case_reason = (decision.raison or decision.categorie or "Message problématique")[:480]
         # An aggregate decision judged the concatenation of several fragments;
         # show that combined text as the evidence extract.
-        extrait = (getattr(decision, "agregat_contenu", "") or message.content or "")[:1500]
+        extrait = self._judged_text(message, decision)[:1500]
         note = f"Automod · {decision.categorie} · {decision.gravite}"
 
         case_ref = case_id = None
@@ -1053,6 +1377,11 @@ class AutomodModule(ModuleBase):
                         "score_detecteur": round(decision.score_detecteur, 4),
                         "confiance": decision.confiance,
                         "actions": decision.actions,
+                        # Automod images: where the judged text came from and
+                        # the image facts (hash, SafeSearch, scam anchors).
+                        "origine": getattr(decision, "origine", "texte"),
+                        **({"image": dataclasses.asdict(decision.image)}
+                           if getattr(decision, "image", None) is not None else {}),
                         # Deterministic barème breakdown (session 2): the cran and
                         # every component that produced it, so the timeline can
                         # explain the sanction line by line.
@@ -1101,7 +1430,7 @@ class AutomodModule(ModuleBase):
         from utils.appeal_views import build_sanction_dm_view
         guild = member.guild
         locale = self.guild_locale(guild)
-        content = (message.content or "") if message else ""
+        content = self._judged_text(message, decision) if message else ""
         view, files = build_sanction_dm_view(
             locale=locale,
             guild_name=guild.name if guild else "",
@@ -1219,7 +1548,7 @@ class AutomodModule(ModuleBase):
             candidate_id = await self.bot.db.create_eval_candidate(
                 guild_id=self.guild_id,
                 source="shadow_button",
-                contenu=message.content or "",
+                contenu=self._judged_text(message, decision),
                 contexte=contexte,
                 verdict=verdict_payload,
                 cran=bareme.cran,
@@ -1236,7 +1565,7 @@ class AutomodModule(ModuleBase):
             "channel_id": message.channel.id,
             "message_id": message.id,
             "author_id": int(decision.auteur_id),
-            "contenu": message.content or "",
+            "contenu": self._judged_text(message, decision),
             "contexte": contexte,
             "verdict": verdict_payload,
             "cran": bareme.cran,
@@ -1282,6 +1611,19 @@ class AutomodModule(ModuleBase):
             await channel.send(view=view)
         except (discord.Forbidden, discord.HTTPException):
             return
+
+    def _image_file(self, decision: Decision) -> Optional[discord.File]:
+        """A spoilered copy of the image behind an image decision (or None)."""
+        image = getattr(decision, "image", None)
+        svc = getattr(self.bot, "automod_images", None)
+        if image is None or svc is None or not image.phash:
+            return None
+        img = svc.cached_by_phash(image.phash)
+        if img is None:
+            return None
+        import io
+        return discord.File(io.BytesIO(img.data), filename=f"image_{image.phash}.jpg",
+                            spoiler=True)
 
     async def _notify_channel(self, message: discord.Message, decision: Decision,
                               applied: List[str], case_ref: Optional[str],
@@ -1361,7 +1703,7 @@ class AutomodModule(ModuleBase):
         # Offending message — spoilered, attached as a file when too long. For an
         # aggregate, show the concatenated fragments that were judged together.
         files: List[discord.File] = []
-        content = getattr(decision, "agregat_contenu", "") or message.content or ""
+        content = self._judged_text(message, decision)
         deleted = "supprimer" in applied
         ts = int(message.created_at.timestamp())
         author_name = getattr(message.author, "display_name", str(message.author))
@@ -1379,6 +1721,12 @@ class AutomodModule(ModuleBase):
         else:
             shown = content if content else "*…*"
             quote.add_item(ui.TextDisplay(f"**{author_name}** — <t:{ts}:S>\n> {shown}\n{meta}"))
+        # Automod images: the (downscaled) image itself, always spoilered.
+        image_file = self._image_file(decision)
+        if image_file is not None:
+            files.append(image_file)
+            quote.add_item(ui.MediaGallery(discord.MediaGalleryItem(
+                f"attachment://{image_file.filename}", spoiler=True)))
         view.add_item(quote)
 
         try:

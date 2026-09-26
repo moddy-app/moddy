@@ -114,7 +114,9 @@ def pacing_allows(used: float, cap: int, month_start: float, month_end: float,
 class ScamRiskInput:
     account_age_days: Optional[float] = None   # Discord account age
     member_age_days: Optional[float] = None    # time on this server
-    familiarite: Optional[str] = None          # best familiarity with anyone ("aucune"…)
+    # Best known familiarity with anyone ("aucune" = a known stranger). None =
+    # unknown, which adds nothing: an unknown is not evidence of anything.
+    familiarite: Optional[str] = None
     image_count: int = 1
     text_empty: bool = False
     text_has_link: bool = False
@@ -137,7 +139,7 @@ def scam_risk_score(x: ScamRiskInput) -> Tuple[int, Tuple[str, ...]]:
     if x.member_age_days is not None and x.member_age_days < 7:
         score += 2
         reasons.append("arrivee_recente")
-    if x.familiarite in (None, "aucune"):
+    if x.familiarite == "aucune":
         score += 1
         reasons.append("inconnu")
     if x.image_count >= 2:
@@ -162,6 +164,6 @@ def nsfw_tier(account_age_days: Optional[float], member_age_days: Optional[float
         return TIER_PRIORITAIRE
     if member_age_days is not None and member_age_days < 7:
         return TIER_PRIORITAIRE
-    if familiarite in (None, "aucune"):
+    if familiarite == "aucune":
         return TIER_PRIORITAIRE
     return TIER_NORMAL

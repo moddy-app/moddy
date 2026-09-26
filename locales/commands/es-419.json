@@ -400,6 +400,16 @@
           "description": "Cuántos días atrás mirar (por defecto 30)"
         }
       }
+    },
+    "ocr": {
+      "name": "ocr",
+      "description": "Extrae el texto de una imagen",
+      "parameters": {
+        "image": {
+          "name": "imagen",
+          "description": "La imagen que se va a leer"
+        }
+      }
     }
   }
 }

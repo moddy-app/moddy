@@ -164,6 +164,13 @@ _ALL: Tuple[Metric, ...] = (
            doc="A server-log entry was delivered to a webhook."),
     Metric("automod.decision", dimensions=("sanction", "dry_run"),
            doc="Automod AI reached a verdict."),
+    Metric("automod.image", scope=SCOPE_GLOBAL, dimensions=("etape",),
+           doc="An automod image step: hash_hit | ocr | safesearch | "
+               "skip_budget | skip_prerules | skip_queue | cache_hit."),
+    Metric("automod.label", scope=SCOPE_GLOBAL, dimensions=("verdict", "kind"),
+           doc="The Moddy team labeled an automod decision (labeling queue)."),
+    Metric("ocr.used", scope=SCOPE_GLOBAL, dimensions=("source",),
+           doc="/ocr or the Transcribe menu extracted text from an image."),
     # -- Uniques (HyperLogLog, never a list of ids) ------------------------ #
     Metric("user.active", kind=KIND_UNIQUE, scope=SCOPE_GUILD,
            doc="Distinct people who used Moddy in this server, per day."),

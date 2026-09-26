@@ -400,6 +400,16 @@
           "description": "何日前まで遡るか（既定は30）"
         }
       }
+    },
+    "ocr": {
+      "name": "ocr",
+      "description": "画像のテキストを抽出します",
+      "parameters": {
+        "image": {
+          "name": "画像",
+          "description": "読み取る画像"
+        }
+      }
     }
   }
 }

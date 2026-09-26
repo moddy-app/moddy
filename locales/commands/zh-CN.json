@@ -400,6 +400,16 @@
           "description": "回溯多少天（默认 30）"
         }
       }
+    },
+    "ocr": {
+      "name": "ocr",
+      "description": "提取图片中的文字",
+      "parameters": {
+        "image": {
+          "name": "图片",
+          "description": "要读取的图片"
+        }
+      }
     }
   }
 }

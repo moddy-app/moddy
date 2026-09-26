@@ -1715,7 +1715,11 @@
           "delete_placeholder": "Eliminar un precedente incorrecto…",
           "delete_option": "Eliminar precedente {n}",
           "deleted": "Precedente eliminado."
-        }
+        },
+        "image_nsfw_label": "Imágenes NSFW",
+        "image_nsfw_desc": "Imágenes sexualmente explícitas (análisis de Google SafeSearch).",
+        "image_scam_label": "Estafas en imagen",
+        "image_scam_desc": "Capturas de estafas cripto / sorteos falsos (hash conocido + lectura del texto)."
       },
       "action": {
         "warn": "Aviso",
@@ -1897,6 +1901,19 @@
           "no_perms": "Solo los moderadores (gestionar mensajes) pueden anotar una simulación.",
           "gone": "Esta simulación ya no existe."
         }
+      },
+      "image": {
+        "reason_known_scam": "Imagen de estafa ya identificada por el equipo de Moddy.",
+        "reason_known_nsfw": "Imagen sexualmente explícita ya identificada por el equipo de Moddy.",
+        "reason_nsfw": "Imagen sexualmente explícita.",
+        "explication_known": "Esta imagen coincide con una imagen ya revisada y confirmada por el equipo de Moddy.",
+        "explication_nsfw": "El análisis automático de la imagen indica contenido para adultos (nivel: {level})."
+      },
+      "label_revoked": {
+        "title": "Sanción automática revocada",
+        "body": "El equipo de Moddy revisó la decisión del automod sobre {user} ({user_id}) y la consideró injustificada. La sanción del caso {case_ref} fue revocada (un mensaje eliminado no se puede restaurar).",
+        "dm_title": "Tu sanción ha sido retirada",
+        "dm_body": "El equipo de Moddy revisó la sanción automática que recibiste en **{guild}** y la consideró injustificada: ha sido revocada. Disculpa las molestias."
       }
     },
     "voice_transcription": {
@@ -4340,6 +4357,22 @@
           }
         }
       }
+    },
+    "automod": {
+      "title": "Automod — labeling & learned data",
+      "unavailable": "Database unavailable.",
+      "queue": "Labeling queue",
+      "pending": "Waiting for a label",
+      "created_24h": "Copied (24 h)",
+      "labeled_24h": "Labeled (24 h)",
+      "revoked_24h": "revocations",
+      "budget": "Google Vision (this month)",
+      "learned": "Learned",
+      "hashes": "Image hashes",
+      "references": "Embedding references",
+      "terms": "Blocklist terms",
+      "deleted": "`{action}` done for entry `{id}`.",
+      "not_found": "No entry `{id}`."
     }
   },
   "transcription": {
@@ -4350,7 +4383,7 @@
     "truncated": "La transcripción era demasiado larga: el texto completo está adjunto.",
     "error_title": "No se pudo transcribir",
     "errors": {
-      "no_audio": "Este mensaje no contiene audio que transcribir.",
+      "no_audio": "Este mensaje no contiene audio ni imagen para transcribir.",
       "too_large": "Este archivo de audio es demasiado pesado (máximo {size} MB).",
       "too_long": "Este audio es demasiado largo (máximo {minutes} minutos).",
       "unavailable": "La transcripción no está disponible ahora mismo, inténtalo en unos instantes.",
@@ -4818,6 +4851,93 @@
     "error": {
       "title": "Traducción no disponible",
       "missing": "La traducción de este anuncio ya no está disponible."
+    }
+  },
+  "ocr": {
+    "title": "Texto extraído",
+    "loading": "Leyendo la imagen",
+    "requested_by": "solicitado por {user}",
+    "powered_by": "OCR de Google Vision",
+    "truncated": "Texto demasiado largo: el texto completo va adjunto.",
+    "error_title": "No se pudo leer la imagen",
+    "errors": {
+      "no_image": "No hay ninguna imagen que leer en este mensaje.",
+      "too_large": "Esta imagen es demasiado pesada (máximo {size} MB).",
+      "unavailable": "La lectura de imágenes no está disponible por el momento, inténtalo más tarde.",
+      "quota": "Has alcanzado tu límite de lecturas de imágenes por hoy.",
+      "monthly_cap": "Se ha agotado la capacidad mensual de lectura de imágenes de Moddy. Vuelve a principios del mes que viene.",
+      "download_failed": "No se pudo descargar la imagen.",
+      "unreadable": "Este archivo no es una imagen legible.",
+      "empty": "No se encontró texto en esta imagen.",
+      "failed": "La lectura falló, inténtalo de nuevo en unos instantes."
+    }
+  },
+  "automod_label": {
+    "title": "Automod review",
+    "kind": {
+      "texte": "Text",
+      "image_scam": "Scam image",
+      "image_nsfw": "NSFW image"
+    },
+    "motif": {
+      "sanction": "Sanctioned by the bot",
+      "doute": "Bot unsure (nothing applied)",
+      "simulation": "Simulation (shadow mode, nothing applied)"
+    },
+    "nothing_applied": "nothing",
+    "server": "Server",
+    "author": "Author",
+    "channel": "Channel",
+    "jump": "Jump",
+    "why": "Why here",
+    "decision": "Bot decision",
+    "confidence": "confidence",
+    "applied": "Applied",
+    "cran": "Barème rung",
+    "seen": "Seen (duplicates)",
+    "anchors": "Scam anchors",
+    "hash_match": "Known hash",
+    "distance": "distance",
+    "cross_post": "Posted in channels",
+    "reason": "Reason",
+    "ocr_text": "Text read from the image",
+    "message": "Message",
+    "labeled": "Labeled **{verdict}** by {user}.",
+    "verdict": {
+      "sanctionnable": "sanctionable",
+      "non_sanctionnable": "not sanctionable",
+      "ignore": "skipped"
+    },
+    "revoked": "The bot's sanction was revoked (case + Discord side) and the server was told.",
+    "category": "Category",
+    "hint": "A label never applies a sanction. **Not sanctionable** on a bot sanction revokes it.",
+    "category_placeholder": "Correct the category…",
+    "button": {
+      "yes": "Sanctionable",
+      "no": "Not sanctionable",
+      "skip": "Skip",
+      "terms": "Blocklist terms"
+    },
+    "errors": {
+      "title": "Labeling",
+      "no_permission": "You need the `automod_label` staff permission.",
+      "gone": "This item no longer exists.",
+      "already": "This item was already labeled.",
+      "need_category": "Pick a category first (the select above)."
+    },
+    "terms": {
+      "title": "Add blocklist terms",
+      "label": "Terms",
+      "description": "One per line (or comma separated). Max 25.",
+      "placeholder": "free nitro\nclaim your reward",
+      "mode": "Matching",
+      "mode_words": "Whole words",
+      "mode_words_desc": "Matched as words (safe for short terms).",
+      "mode_compact": "Anywhere (anti-obfuscation)",
+      "mode_compact_desc": "Matched inside the text with separators removed (f.r.e.e).",
+      "empty": "Type at least one term and pick a category.",
+      "done_title": "Blocklist updated",
+      "done": "{n} term(s) added to `{category}`."
     }
   }
 }

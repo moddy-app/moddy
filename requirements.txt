@@ -52,3 +52,7 @@ openai>=1.0.0
 # and still reads back rows written with zstd elsewhere.
 zstandard>=0.22.0
 
+# Automod images (perceptual hashing, safe decode + downscale) and /ocr
+# re-encoding. A plain wheel: no system package, ~10 MB resident. Hashing is
+# implemented on top of it (no numpy/scipy/imagehash) — see automod/image_hash.py.
+Pillow>=10.0.0

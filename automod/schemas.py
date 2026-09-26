@@ -50,6 +50,9 @@ class ImageMeta:
     score_ancres: float = 0.0
     hash_match: Optional[dict] = None  # {id, distance, kind} when a known hash matched
     cross_post: int = 0             # channels the same image was posted in (same author)
+    # Every [channel_id, message_id] where the same author posted this image
+    # within the cross-post window — all of them go when the image is sanctioned.
+    copies: List[List[int]] = field(default_factory=list)
 
 
 @dataclass

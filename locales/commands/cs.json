@@ -400,6 +400,16 @@
           "description": "Jak daleko zpět se podívat, ve dnech (výchozí 30)"
         }
       }
+    },
+    "ocr": {
+      "name": "ocr",
+      "description": "Získá text z obrázku",
+      "parameters": {
+        "image": {
+          "name": "obrazek",
+          "description": "Obrázek k přečtení"
+        }
+      }
     }
   }
 }

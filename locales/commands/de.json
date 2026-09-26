@@ -400,6 +400,16 @@
           "description": "Wie weit zurückgeschaut wird, in Tagen (Standard 30)"
         }
       }
+    },
+    "ocr": {
+      "name": "ocr",
+      "description": "Extrahiert den Text eines Bildes",
+      "parameters": {
+        "image": {
+          "name": "bild",
+          "description": "Das zu lesende Bild"
+        }
+      }
     }
   }
 }
