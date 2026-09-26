@@ -400,6 +400,16 @@
           "description": "Xem lại bao nhiêu ngày (mặc định 30)"
         }
       }
+    },
+    "ocr": {
+      "name": "ocr",
+      "description": "Trích xuất văn bản từ hình ảnh",
+      "parameters": {
+        "image": {
+          "name": "hinh-anh",
+          "description": "Hình ảnh cần đọc"
+        }
+      }
     }
   }
 }

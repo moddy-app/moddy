@@ -115,6 +115,12 @@ class EmbeddingEngine:
         self._embed_fn = embed_fn
         self._ref_vectors: List["array.array"] = []
         self._ref_categories: List[str] = []
+        # References learned from the Moddy team labeling queue
+        # (``automod_learned_references``): already-normalised vectors, scored
+        # exactly like the static ones. Kept apart so a reload never re-embeds
+        # the static set.
+        self._learned_vectors: List["array.array"] = []
+        self._learned_categories: List[str] = []
         self._ready = False
         # Score cache: exact message text → (score, category). Deterministic for
         # the process lifetime (references are embedded once), so memoising it is
@@ -152,6 +158,28 @@ class EmbeddingEngine:
         stats = self._cache.stats()
         stats["inflight"] = len(self._inflight)
         return stats
+
+    @property
+    def learned_count(self) -> int:
+        return len(self._learned_vectors)
+
+    def set_learned(self, vectors: List["array.array"], categories: List[str]) -> None:
+        """Replace the learned references (normalised vectors) and drop cached
+        scores — a cached score predates the new references."""
+        self._learned_vectors = [_normalize_vec(v) for v in vectors]
+        self._learned_categories = list(categories)
+        self._cache.clear()
+
+    def add_learned(self, vector: "array.array", categorie: str) -> None:
+        """Append one learned reference (normalised) and drop cached scores."""
+        self._learned_vectors.append(_normalize_vec(vector))
+        self._learned_categories.append(categorie)
+        self._cache.clear()
+
+    def max_similarity_to_learned(self, vector: "array.array") -> float:
+        """Highest cosine between ``vector`` and a learned reference (dedup)."""
+        query = _normalize_vec(vector)
+        return max((_dot(v, query) for v in self._learned_vectors), default=-1.0)
 
     @staticmethod
     def load_reference_texts() -> Tuple[List[str], List[str]]:
@@ -248,9 +276,12 @@ class EmbeddingEngine:
         self._vector_cache.set(cache_key(content), _normalize_vec(vectors[0]))
         best_score = -1.0
         best_cat = ""
+        refs = list(zip(self._ref_vectors, self._ref_categories))
+        if self._learned_vectors:
+            refs += list(zip(self._learned_vectors, self._learned_categories))
         for raw in vectors:
             query = _normalize_vec(raw)
-            for vec, cat in zip(self._ref_vectors, self._ref_categories):
+            for vec, cat in refs:
                 sim = _dot(vec, query)
                 if sim > best_score:
                     best_score = sim

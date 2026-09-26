@@ -400,6 +400,16 @@
           "description": "Hvor langt tilbake det skal ses, i dager (standard 30)"
         }
       }
+    },
+    "ocr": {
+      "name": "ocr",
+      "description": "Hent ut teksten fra et bilde",
+      "parameters": {
+        "image": {
+          "name": "bilde",
+          "description": "Bildet som skal leses"
+        }
+      }
     }
   }
 }

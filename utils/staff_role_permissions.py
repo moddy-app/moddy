@@ -29,6 +29,7 @@ MODERATOR_PERMISSIONS = [
     "interserver_delete",     # Delete inter-server messages
     "notif_review",           # Review abuse reports filed against a notification
     "notif_lookup",           # Look a notification up by its uuid
+    "automod_label",          # Label automod decisions in the team queue (+ /mod automod)
 ]
 
 # Permissions specific to Support role
@@ -115,6 +116,7 @@ def get_permission_label(permission: str) -> str:
         "altguard_manage": "Manage AltGuard Verifications",
         "interserver_info": "Inter-Server Message Info",
         "interserver_delete": "Delete Inter-Server Messages",
+        "automod_label": "Label Automod Decisions (Team Queue)",
 
         # Support
         "ticket_view": "View Tickets",

@@ -4,9 +4,11 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 
 from .ratelimit import (
+    CALENDAR_MONTH,
     DAY,
     HOUR,
     MINUTE,
+    MONTH,
     RateRule,
     UNIT_AUDIO_SECONDS,
     UNIT_REQUESTS,
@@ -51,6 +53,19 @@ def _openai_rpm_rules(env_name: str, default_rpm: int) -> List[RateRule]:
     return [RateRule("rpm", UNIT_REQUESTS, MINUTE, _int_env(env_name, default_rpm))]
 
 
+def _google_vision_monthly_rules(env_name: str, default: int) -> List[RateRule]:
+    """Google Vision free tier: ``default`` units per calendar month, per feature.
+
+    The window follows the calendar month in Pacific time (Google's billing
+    clock) and the rule is **fail-closed**: past the allowance every unit is
+    billed, so a Redis outage must refuse the call rather than let it through.
+    """
+    return [RateRule(
+        "rpmo", UNIT_REQUESTS, MONTH, _int_env(env_name, default),
+        calendar=CALENDAR_MONTH, fail_closed=True,
+    )]
+
+
 def _default_model_rate_limits() -> Dict[Tuple[str, str], List[RateRule]]:
     """(provider, model) → the rules enforced for it. Add new models here.
 
@@ -65,6 +80,13 @@ def _default_model_rate_limits() -> Dict[Tuple[str, str], List[RateRule]]:
         ),
         ("openai", "gpt-4.1-nano"): _openai_rpm_rules("OPENAI_NANO_RPM", 500),
         ("openai", "gpt-4.1-mini"): _openai_rpm_rules("OPENAI_MINI_RPM", 500),
+        # Google Vision has no model: rules are keyed on the billed feature.
+        ("google_vision", "safe_search"): _google_vision_monthly_rules(
+            "GOOGLE_VISION_SAFESEARCH_MONTHLY", 1_000
+        ),
+        ("google_vision", "document_text"): _google_vision_monthly_rules(
+            "GOOGLE_VISION_OCR_MONTHLY", 1_000
+        ),
     }
 
 
@@ -73,6 +95,7 @@ class GatewayConfig:
     openai_api_key: Optional[str] = None
     deepl_api_key: Optional[str] = None
     groq_api_key: Optional[str] = None
+    google_vision_api_key: Optional[str] = None
     deepl_free: bool = True
 
     # Timeouts (seconds)
@@ -82,6 +105,8 @@ class GatewayConfig:
     # Transcription uploads a file and processes minutes of audio — it is
     # legitimately slower than a chat completion.
     timeout_transcribe: float = 90.0
+    # Image calls upload a few MB and run OCR/vision server-side.
+    timeout_vision: float = 30.0
 
     # Retry
     max_retries: int = 3
@@ -118,11 +143,13 @@ class GatewayConfig:
             openai_api_key=os.environ.get("OPENAI_API_KEY") or None,
             deepl_api_key=os.environ.get("DEEPL_API_KEY") or None,
             groq_api_key=os.environ.get("GROQ_API_KEY") or None,
+            google_vision_api_key=os.environ.get("GOOGLE_VISION_API_KEY") or None,
             deepl_free=os.environ.get("DEEPL_FREE", "true").lower() != "false",
             timeout_embed=float(os.environ.get("GATEWAY_TIMEOUT_EMBED", "10")),
             timeout_chat=float(os.environ.get("GATEWAY_TIMEOUT_CHAT", "30")),
             timeout_translate=float(os.environ.get("GATEWAY_TIMEOUT_TRANSLATE", "15")),
             timeout_transcribe=float(os.environ.get("GATEWAY_TIMEOUT_TRANSCRIBE", "90")),
+            timeout_vision=float(os.environ.get("GATEWAY_TIMEOUT_VISION", "30")),
             max_retries=int(os.environ.get("GATEWAY_MAX_RETRIES", "3")),
             retry_base_delay=float(os.environ.get("GATEWAY_RETRY_BASE_DELAY", "0.5")),
             cb_failure_threshold=int(os.environ.get("GATEWAY_CB_FAILURE_THRESHOLD", "5")),

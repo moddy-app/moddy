@@ -382,17 +382,9 @@ class AppealService:
         )
 
     async def _reverse_discord(self, guild: Optional[discord.Guild], subject_id: int, action: Optional[str]):
-        if guild is None or not action:
-            return
-        try:
-            if action == "ban":
-                await guild.unban(discord.Object(id=subject_id), reason="[Automod] appel accepté")
-            elif action == "mute":
-                member = await get_or_fetch_member(guild, subject_id)
-                if member is not None:
-                    await member.timeout(None, reason="[Automod] appel accepté")
-        except (discord.Forbidden, discord.HTTPException, discord.NotFound) as e:
-            logger.warning("appeal reverse (%s) failed in guild %s: %s", action, guild.id, e)
+        from utils.sanction_reversal import reverse_discord_sanction
+        await reverse_discord_sanction(guild, subject_id, action,
+                                       reason="[Automod] appel accepté")
 
     async def _apply_discord(self, guild: Optional[discord.Guild], subject_id: int,
                              action: Optional[str], reason: str,

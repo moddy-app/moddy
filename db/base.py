@@ -25,6 +25,7 @@ from db.repositories.appeals import AppealRepository
 from db.repositories.enforcements import EnforcementRepository
 from db.repositories.eval_candidates import EvalCandidateRepository
 from db.repositories.precedents import PrecedentRepository
+from db.repositories.automod_learning import AutomodLearningRepository
 from db.repositories.saved_roles import SavedRolesRepository
 from db.repositories.token_alerts import TokenAlertRepository
 from db.repositories.token_secrets import TokenSecretRepository
@@ -69,6 +70,7 @@ class ModdyDatabase(
     EnforcementRepository,
     EvalCandidateRepository,
     PrecedentRepository,
+    AutomodLearningRepository,
     SavedRolesRepository,
     TokenAlertRepository,
     TokenSecretRepository,
@@ -861,6 +863,97 @@ class ModdyDatabase(
                 "CREATE INDEX IF NOT EXISTS idx_automod_precedents_guild "
                 "ON automod_precedents (guild_id, created_at)")
 
+            # Automod images + the Moddy team labeling queue (docs/AUTOMOD_AI.md
+            # §4.2/§4.3/§9). Global tables — scam images and scam wording are
+            # the same on every server, so what the team teaches the bot on one
+            # server protects all of them.
+            #
+            # automod_label_items — one row per decision copied to the team
+            # (every sanction + every doubt). The team's label never applies a
+            # sanction; "non_sanctionnable" on a bot sanction revokes it.
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS automod_label_items (
+                    id              UUID PRIMARY KEY,
+                    kind            TEXT NOT NULL
+                        CHECK (kind IN ('texte','image_scam','image_nsfw')),
+                    motif           TEXT NOT NULL
+                        CHECK (motif IN ('sanction','doute','simulation')),
+                    guild_id        BIGINT NOT NULL,
+                    channel_id      BIGINT,
+                    message_id      BIGINT,
+                    author_id       BIGINT,
+                    contenu         TEXT,
+                    phash           BIGINT,
+                    dhash           BIGINT,
+                    dedup_key       TEXT,
+                    details         JSONB,
+                    case_id         UUID,
+                    occurrences     INTEGER NOT NULL DEFAULT 1,
+                    card_channel_id BIGINT,
+                    card_message_id BIGINT,
+                    verdict         TEXT
+                        CHECK (verdict IN ('sanctionnable','non_sanctionnable','ignore')),
+                    categorie_humaine TEXT,
+                    labeled_by      BIGINT,
+                    labeled_at      TIMESTAMPTZ,
+                    revoked         BOOLEAN NOT NULL DEFAULT FALSE,
+                    created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+                )
+            """)
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_label_items_pending "
+                "ON automod_label_items (created_at) WHERE verdict IS NULL")
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_label_items_dedup "
+                "ON automod_label_items (dedup_key, created_at)")
+
+            # automod_image_hashes — team-validated perceptual hashes. `block`
+            # = sanction on sight (no OCR, no SafeSearch); `allow` = never flag
+            # this image again. Hashes are 64-bit, stored signed in BIGINT.
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS automod_image_hashes (
+                    id            BIGSERIAL PRIMARY KEY,
+                    phash         BIGINT NOT NULL,
+                    dhash         BIGINT NOT NULL,
+                    kind          TEXT NOT NULL CHECK (kind IN ('scam','nsfw')),
+                    verdict       TEXT NOT NULL CHECK (verdict IN ('block','allow')),
+                    label_item_id UUID,
+                    added_by      BIGINT,
+                    created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+                )
+            """)
+
+            # automod_learned_references — embedding references taught by the
+            # team (a sanctionable text / OCR text), scored like the static
+            # ones in automod/data/references.json. float32-packed BYTEA.
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS automod_learned_references (
+                    id            BIGSERIAL PRIMARY KEY,
+                    categorie     TEXT NOT NULL,
+                    texte         TEXT NOT NULL,
+                    embedding     BYTEA NOT NULL,
+                    label_item_id UUID,
+                    added_by      BIGINT,
+                    created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+                )
+            """)
+
+            # automod_learned_terms — blocklist terms typed by the team from a
+            # label card ("words" = word-boundary match, "compact" = substring
+            # of the separator-free form).
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS automod_learned_terms (
+                    id            BIGSERIAL PRIMARY KEY,
+                    terme         TEXT NOT NULL,
+                    categorie     TEXT NOT NULL,
+                    mode          TEXT NOT NULL CHECK (mode IN ('words','compact')),
+                    label_item_id UUID,
+                    added_by      BIGINT,
+                    created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+                    UNIQUE (terme, mode)
+                )
+            """)
+
             # altguard_verifications — one row per verdict published by the
             # AltGuard service on ``altguard:verdict`` (docs/ALTGUARD.md).
             # `id` is the service's ``verification_id``: it doubles as the
@@ -1598,6 +1691,20 @@ class ModdyDatabase(
                 ("user",   "voice_transcription", "default", -1),
                 ("guild",  "voice_transcription", "default", -1),
                 ("global", "voice_transcription", "default", -1),
+                # Automod images. The binding cap on SafeSearch is the
+                # monthly Google Vision allowance (fail-closed rule in
+                # gateway/config.py) plus the automod's own pacing; the OCR of
+                # crypto images runs on gpt-4.1-nano vision, capped per guild.
+                ("guild",  "automod_safesearch",  "default", -1),
+                ("global", "automod_safesearch",  "default", -1),
+                ("guild",  "automod_image_ocr",   "default", 300),
+                ("global", "automod_image_ocr",   "default", -1),
+                # /ocr (Google Vision DOCUMENT_TEXT_DETECTION). The monthly
+                # allowance is shared by every user, so each one gets a small
+                # daily bucket.
+                ("user",   "ocr_command", "default", 10),
+                ("guild",  "ocr_command", "default", 100),
+                ("global", "ocr_command", "default", -1),
             ]:
                 await conn.execute(
                     """

@@ -43,6 +43,7 @@ from automod import bareme as ab
 from automod import constants as ac
 from automod import nano
 from automod import routing
+from automod import scam_anchors
 from automod.blocklist import get_blocklist
 from automod.prefiltre import pre_filter
 from automod.schemas import Signal
@@ -229,6 +230,10 @@ def replay_case(case: GoldenCase, fixture: Dict[str, Any],
             source=ac.SOURCE_REGEX, categorie=entry.categorie,
             score_confiance=ac.GRAVITE_TO_SCORE.get(entry.gravite_indicative, 0.7),
         )
+    elif scam_anchors.score(case.contenu).score >= ac.SCAM_ANCHOR_THRESHOLD:
+        # Step 3bis — scam anchors (noise-tolerant; OCR text of scam images).
+        signal = Signal(source=ac.SOURCE_ANCRES_SCAM, categorie="arnaque_scam",
+                        score_confiance=0.8)
     else:
         # Step 4 — embedding routing (score recorded in the fixture).
         embed = (fixture or {}).get("embedding") or {}

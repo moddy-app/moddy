@@ -400,6 +400,16 @@
           "description": "Kiek dienų atgal žiūrėti (numatyta 30)"
         }
       }
+    },
+    "ocr": {
+      "name": "ocr",
+      "description": "Ištraukti tekstą iš paveikslėlio",
+      "parameters": {
+        "image": {
+          "name": "paveikslelis",
+          "description": "Skaitomas paveikslėlis"
+        }
+      }
     }
   }
 }

@@ -28,7 +28,15 @@ audio duration, for instance, is estimated from the file before the call and
 returned exactly by the provider after it.
 
 Redis failures fail **open**: a rate limiter that cannot read its counters must
-never take a feature down.
+never take a feature down. The one exception is a rule flagged
+``fail_closed`` — a *paid* monthly allowance (Google Vision's free tier) must
+never be overshot just because Redis blinked, so such a rule refuses the call
+when its counter cannot be read.
+
+A rule can also follow the **calendar month** (``calendar="month"``) instead of
+a fixed number of seconds: the window index is ``YYYYMM`` in the provider's
+billing time zone (Google bills on Pacific time), so the counter resets exactly
+when the provider's free tier does.
 """
 
 from __future__ import annotations
@@ -36,7 +44,9 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Dict, List, Optional, Tuple
+from zoneinfo import ZoneInfo
 
 from .errors import ModelRateLimitError
 
@@ -49,6 +59,14 @@ UNIT_AUDIO_SECONDS = "audio_seconds"
 MINUTE = 60
 HOUR = 3600
 DAY = 86400
+# Nominal length used for the TTL of calendar-month rules (the real window is
+# the calendar month, see ``RateRule.calendar``).
+MONTH = 31 * DAY
+
+# Calendar kinds a rule can follow instead of a fixed window.
+CALENDAR_MONTH = "month"
+# Google Cloud bills (and resets its free tiers) on Pacific time.
+BILLING_TZ = "America/Los_Angeles"
 
 
 @dataclass(frozen=True)
@@ -57,8 +75,15 @@ class RateRule:
 
     name: str      # short id, used in the Redis key and in error messages
     unit: str      # UNIT_REQUESTS | UNIT_AUDIO_SECONDS
-    window: int    # seconds
+    window: int    # seconds (for a calendar rule: nominal length, used for the TTL)
     limit: int     # -1 = unlimited
+    # "month" → the window is the calendar month in ``tz`` (``window`` then only
+    # sizes the Redis TTL). None → fixed window of ``window`` seconds.
+    calendar: Optional[str] = None
+    tz: str = BILLING_TZ
+    # A paid allowance must not be overshot when Redis is unreachable: refuse
+    # the call instead of failing open.
+    fail_closed: bool = False
 
     @property
     def unlimited(self) -> bool:
@@ -135,7 +160,16 @@ class RateLimiter:
                 stays debited — every earlier rule of this call is rolled back.
         """
         reservation = Reservation(limiter=self)
-        if not cost or self._redis is None:
+        if not cost:
+            return reservation
+        if self._redis is None:
+            # No counters at all: fail open, except for a paid allowance.
+            for rule in self.rules_for(provider, model):
+                if rule.fail_closed and not rule.unlimited and cost.get(rule.unit):
+                    raise ModelRateLimitError(
+                        provider=provider, model=model or "", rule=rule.name,
+                        limit=rule.limit, retry_after=60.0,
+                    )
             return reservation
 
         now = time.time()
@@ -147,6 +181,15 @@ class RateLimiter:
             key = self._key(provider, model, rule, now)
             total = await self._add(key, amount, ttl=rule.window * 2)
             if total is None:
+                if rule.fail_closed:
+                    await reservation.release()
+                    raise ModelRateLimitError(
+                        provider=provider,
+                        model=model or "",
+                        rule=rule.name,
+                        limit=rule.limit,
+                        retry_after=60.0,
+                    )
                 continue  # Redis unavailable — fail open, see module docstring
 
             if total > rule.limit:
@@ -192,10 +235,16 @@ class RateLimiter:
 
     @staticmethod
     def _window_index(rule: RateRule, now: float) -> int:
+        if rule.calendar == CALENDAR_MONTH:
+            local = datetime.fromtimestamp(now, tz=ZoneInfo(rule.tz))
+            return local.year * 100 + local.month
         return int(now // rule.window)
 
     @staticmethod
     def _seconds_to_reset(rule: RateRule, now: float) -> float:
+        if rule.calendar == CALENDAR_MONTH:
+            _start, end = month_bounds(now, rule.tz)
+            return round(end - now, 3)
         return round(rule.window - (now % rule.window), 3)
 
     def _key(self, provider: str, model: Optional[str], rule: RateRule, now: float) -> str:
@@ -218,3 +267,15 @@ class RateLimiter:
         except Exception as exc:  # noqa: BLE001 — fail open
             logger.warning("Rate limit counter %s unavailable: %s", key, exc)
             return None
+
+
+def month_bounds(now: float, tz: str = BILLING_TZ) -> Tuple[float, float]:
+    """``(start, end)`` epoch seconds of the calendar month containing ``now`` in ``tz``."""
+    zone = ZoneInfo(tz)
+    local = datetime.fromtimestamp(now, tz=zone)
+    start = datetime(local.year, local.month, 1, tzinfo=zone)
+    if local.month == 12:
+        end = datetime(local.year + 1, 1, 1, tzinfo=zone)
+    else:
+        end = datetime(local.year, local.month + 1, 1, tzinfo=zone)
+    return start.timestamp(), end.timestamp()

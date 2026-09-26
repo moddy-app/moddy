@@ -400,6 +400,16 @@
           "description": "Cu câte zile în urmă să se uite (implicit 30)"
         }
       }
+    },
+    "ocr": {
+      "name": "ocr",
+      "description": "Extrage textul dintr-o imagine",
+      "parameters": {
+        "image": {
+          "name": "imagine",
+          "description": "Imaginea de citit"
+        }
+      }
     }
   }
 }

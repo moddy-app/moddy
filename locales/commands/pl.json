@@ -400,6 +400,16 @@
           "description": "Ile dni wstecz sprawdzić (domyślnie 30)"
         }
       }
+    },
+    "ocr": {
+      "name": "ocr",
+      "description": "Wyodrębnij tekst z obrazu",
+      "parameters": {
+        "image": {
+          "name": "obraz",
+          "description": "Obraz do odczytania"
+        }
+      }
     }
   }
 }

@@ -49,7 +49,8 @@ moddy/
 │   ├── translate.py           #   /translate (DeepL)
 │   ├── announcement_translation.py #  Support-server announcements translated once → flag buttons
 │   ├── text_tools.py          #   /fix, /rephrase, /summarize (OpenAI, Modal V2 + context menus)
-│   ├── voice_transcription.py #   "Transcribe" context menu (Groq Whisper)
+│   ├── voice_transcription.py #   "Transcribe" context menu (Groq Whisper; images → OCR)
+│   ├── ocr.py                 #   /ocr (Google Vision document OCR)
 │   ├── webhook.py             #   Webhook management
 │   ├── logs.py                #   Advanced server logs — Discord wiring only
 │   ├── social_notifications.py #  Social notifications dispatch + feeds service wiring
@@ -135,6 +136,9 @@ moddy/
 │   └── detect.py              #   Success/failure funnel, next-bump time, intervals
 │
 ├── automod/                   # Automod AI DETECTION pipeline (decides only; no side effects)
+│   ├── image_hash.py          #   Pillow-only pHash/dHash, safe decode, known-hash index
+│   ├── scam_anchors.py        #   OCR-noise-tolerant scam anchor scorer (routes to nano)
+│   ├── image_policy.py        #   SafeSearch → verdict, monthly pacing, scam pre-rules
 │   ├── engine.py              #   Shared per-bot orchestrator (funnel entry)
 │   ├── relations.py / routing.py / precedents.py / bareme.py
 │   ├── prefiltre.py / triviaux.py / blocklist.py / embeddings.py / nano.py
@@ -190,6 +194,7 @@ moddy/
 │       ├── enforcements.py      #   Global sanction appeal countdowns (case_enforcements)
 │       ├── eval_candidates.py   #   Automod eval/annotation corpus (automod_eval_candidates)
 │       ├── precedents.py        #   Automod server precedents (automod_precedents, RAG)
+│       ├── automod_learning.py  #   Automod labeling queue + learned hashes/references/terms
 │       ├── token_alerts.py, token_secrets.py
 │       ├── subscription.py    #   Subscription read-only queries (incl. is_guild_premium)
 │       ├── notifications.py   #   Notifications, deliveries, abuse reports
@@ -220,6 +225,9 @@ moddy/
 │   ├── moddy_team_role.py     #   The two Moddy Team roles: kinds, find/create/remember, linked state
 │   ├── team_access_views.py   #   /team access: permission picker + admin request card (persistent)
 │   ├── automod_shadow_views.py #  Automod shadow-mode (dry_run) SIMULATION card + annotation buttons (persistent)
+│   ├── automod_label_views.py #   Automod team labeling card, labels/category/terms (persistent) + Modal V2
+│   ├── ocr_views.py           #   /ocr cards (loading, result, error)
+│   ├── sanction_reversal.py   #   Undo the Discord side of a sanction (appeals + labeling queue)
 │   ├── automod_render.py      #   Shared automod card helpers (barème breakdown, sanction name/accent)
 │   ├── notification_views.py  #   Notification abuse-report review panels (staff side)
 │   ├── support_request_views.py # Support requests: staff card, reply DM, modals, buttons
@@ -260,11 +268,13 @@ moddy/
 │   ├── adapters/              #   Provider adapters
 │   │   ├── openai.py          #     embed + chat
 │   │   ├── deepl.py           #     translate
-│   │   └── groq.py            #     transcribe (whisper-large-v3-turbo)
+│   │   ├── groq.py            #     transcribe (whisper-large-v3-turbo)
+│   │   └── google_vision.py   #     SafeSearch + document OCR (monthly free tier)
 │   └── clients/               #   High-level clients
 │       ├── ai.py              #     bot.gateway.ai
 │       ├── translation.py     #     bot.gateway.translation
-│       └── transcription.py   #     bot.gateway.transcription
+│       ├── transcription.py   #     bot.gateway.transcription
+│       └── vision.py          #     bot.gateway.vision
 │
 ├── services/                  # External service clients
 │   ├── altguard_client.py     #   AltGuard service client (HTTP + altguard:* Pub/Sub)
@@ -278,6 +288,9 @@ moddy/
 │   ├── global_sanction_service.py # Global sanctions: grouped cases, notice DM, 48h countdown, Redis
 │   ├── appeal_service.py      #   Automod sanction appeals (server / Moddy team, binding)
 │   ├── precedent_service.py   #   Automod server precedents (record + serve, RAG)
+│   ├── automod_image_service.py # Automod images: downloads, hash index, caches, OCR/SafeSearch
+│   ├── automod_label_service.py # Moddy team labeling queue (learn + revoke bot sanctions)
+│   ├── ocr_service.py         #   Image → text for /ocr and the Transcribe menu
 │   ├── ticket_service.py      #   Ticket lifecycle (open/close/escalate/move/participants)
 │   ├── member_application_service.py # Join request API calls + review card lifecycle
 │   ├── ticket_transcript_service.py # Archives a closing ticket's conversation (compressed JSON)
@@ -332,6 +345,8 @@ moddy/
     ├── test_logs_i18n.py      #   Server logs: i18n completeness on the 5 locales
     ├── test_stats.py          #   Statistics: registry guards, aggregation, flush, rollup
     ├── test_heartbeat.py      #   Health Monitor heartbeat: payload, lifecycle, status decisions
+    ├── test_automod_images.py #   Automod image features, image service, labeling queue + card
+    ├── test_ocr.py            #   /ocr service: errors, re-encoding, card
     └── test_staff_user_command.py # /team user: sections, personal-data gate, i18n (5 locales)
 ```
 
@@ -538,6 +553,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/TEXT_TOOLS.md](docs/TEXT_TOOLS.md) | AI text tools — `/fix`, `/rephrase`, `/summarize` (models, presets, mention stripping) |
 | [docs/ANNOUNCEMENT_TRANSLATION.md](docs/ANNOUNCEMENT_TRANSLATION.md) | **Announcement translation** — support-server announcements translated once into every language, one flag button per language |
 | [docs/VOICE_TRANSCRIPTION.md](docs/VOICE_TRANSCRIPTION.md) | Voice transcription — context menu, module, Groq Whisper, cost control |
+| [docs/OCR.md](docs/OCR.md) | **OCR** — `/ocr` and the Transcribe menu on images (Google Vision, monthly free tier) |
 | [docs/MODULE_SYSTEM.md](docs/MODULE_SYSTEM.md) | Creating or modifying server modules |
 | [docs/SERVER_LANGUAGE.md](docs/SERVER_LANGUAGE.md) | **Server language** — the single setting every module reads; what follows the server vs. the user |
 | [docs/WELCOME_MESSAGES.md](docs/WELCOME_MESSAGES.md) | Welcome messages module (`welcome_channel`) — config schema, placeholders, backend/dashboard contract |
@@ -548,7 +564,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/TICKETS_INTEGRATION.md](docs/TICKETS_INTEGRATION.md) | Tickets ↔ backend contract — the transcript/rating tables, the compressed body schema, `/transcripts/<key>` and its authorisation, the rating aggregates |
 | [docs/ALTGUARD.md](docs/ALTGUARD.md) | **AltGuard** — anti multi-account verification gate, consent, service contract, staff commands |
 | [docs/ALTGUARD_INTEGRATION.md](docs/ALTGUARD_INTEGRATION.md) | AltGuard ↔ bot exact wire contract — payload types, error codes, debugging |
-| [docs/AUTOMOD_AI.md](docs/AUTOMOD_AI.md) | Automod AI — detection pipeline, nano decider, scalable features, rules safety check |
+| [docs/AUTOMOD_AI.md](docs/AUTOMOD_AI.md) | Automod AI — detection pipeline, nano decider, scalable features, **images (NSFW + scam screenshots)**, **Moddy team labeling queue**, rules safety check |
 | [docs/AUTOMOD_AI_CONFIG.md](docs/AUTOMOD_AI_CONFIG.md) | Automod AI configuration schema in DB (backend / dashboard integration) |
 | [docs/BOT_CUSTOMIZATION.md](docs/BOT_CUSTOMIZATION.md) | Bot Customization — per-guild nickname/avatar/banner/bio + name styles, Redis dashboard contract |
 | [docs/PREMIUM.md](docs/PREMIUM.md) | **Premium gating** — how to check whether a server (or a user) is premium |
@@ -568,7 +584,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 ### Infrastructure
 | Document | When to Read |
 |---|---|
-| [docs/API_GATEWAY.md](docs/API_GATEWAY.md) | API Gateway — all external API calls (OpenAI, DeepL, Groq), quotas, provider rate limits, resilience, logging |
+| [docs/API_GATEWAY.md](docs/API_GATEWAY.md) | API Gateway — all external API calls (OpenAI, DeepL, Groq, Google Vision), quotas, provider rate limits (incl. calendar-month fail-closed), resilience, logging |
 | [docs/BACKEND-INTEGRATION.md](docs/BACKEND-INTEGRATION.md) | Bot ↔ Backend integration (Redis, Pub/Sub, Streams, `/status`) |
 | [docs/BROCOLI_CHANNEL.md](docs/BROCOLI_CHANNEL.md) | **Brocoli in a channel** — the AI assistant as a Discord channel, signed identity assertions, confirmation cards, dev-guild gating |
 | [docs/TASK_SIGNATURE.md](docs/TASK_SIGNATURE.md) | **`moddy:tasks` HMAC signature** — canonicalization, anti-replay, `TASK_STREAM_SECRET`, deployment order |

@@ -400,6 +400,16 @@
           "description": "Sur combien de jours en arrière (30 par défaut)"
         }
       }
+    },
+    "ocr": {
+      "name": "ocr",
+      "description": "Extrait le texte d'une image",
+      "parameters": {
+        "image": {
+          "name": "image",
+          "description": "L'image à lire"
+        }
+      }
     }
   }
 }

@@ -400,6 +400,16 @@
           "description": "How far back to look, in days (default 30)"
         }
       }
+    },
+    "ocr": {
+      "name": "ocr",
+      "description": "Extract the text of an image",
+      "parameters": {
+        "image": {
+          "name": "image",
+          "description": "The image to read"
+        }
+      }
     }
   }
 }

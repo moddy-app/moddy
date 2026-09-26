@@ -49,6 +49,9 @@ class GatewayExecutor:
             "chat": self._config.timeout_chat,
             "translate": self._config.timeout_translate,
             "transcribe": self._config.timeout_transcribe,
+            "vision": self._config.timeout_vision,
+            "safe_search": self._config.timeout_vision,
+            "document_text": self._config.timeout_vision,
         }.get(operation, 30.0)
 
     async def execute(self, spec: CallSpec) -> Any:

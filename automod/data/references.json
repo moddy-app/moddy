@@ -124,6 +124,24 @@
         "i will dox you and post all your personal info",
         "your address and phone number are about to be leaked"
       ]
+    },
+    "arnaque_scam": {
+      "exemples": [
+        "je donne 5000 $ à tous ceux qui s'inscrivent avec mon code promo",
+        "réclame ton bonus crypto gratuit maintenant avant qu'il soit trop tard",
+        "retrait réussi, l'argent a été envoyé sur ton portefeuille, inscris-toi vite",
+        "nitro discord gratuit, clique sur le lien pour le récupérer",
+        "je lance mon casino crypto, entre le code promo pour recevoir ton bonus",
+        "envoie-moi 0,1 BTC et je te renvoie le double",
+        "offre limitée : gagne de l'argent facilement, rejoins mon groupe d'investissement",
+        "I am giving away $5,600 to everyone who registers, enter the promo code BET",
+        "Withdrawal Success! Your withdrawal of $5600 was successful",
+        "claim your free Discord Nitro gift here before it expires",
+        "launch of my own cryptocurrency casino, receive your bonus instantly",
+        "send me 0.1 ETH and I will send back double, limited time",
+        "free Steam gift card, just log in with your account to claim it",
+        "this post will be deleted in an hour so only the fastest get the bonus"
+      ]
     }
   }
 }
