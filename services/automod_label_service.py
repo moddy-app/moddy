@@ -67,9 +67,14 @@ def label_kind(decision) -> str:
     return KIND_TEXTE
 
 
-def dedup_key(kind: str, *, phash: str = "", text: str = "") -> str:
-    """Same image (hash) or same text (collapsed) → same queue item."""
-    basis = phash if kind != KIND_TEXTE and phash else (collapse_repeats(text) or text).lower()
+def dedup_key(kind: str, *, phash: str = "", text: str = "", guild_id: int = 0) -> str:
+    """Same image (hash, any server) or same text (collapsed, same server) →
+    same queue item. Text is scoped to the server: the same words can be banter
+    here and harassment there, and one label revokes every merged sanction."""
+    if kind != KIND_TEXTE and phash:
+        basis = phash
+    else:
+        basis = f"{guild_id}\x00" + (collapse_repeats(text) or text).lower()
     return hashlib.sha256(f"{kind}\x00{basis}".encode("utf-8")).hexdigest()
 
 
@@ -154,12 +159,19 @@ class AutomodLabelService:
         kind = label_kind(decision)
         image = getattr(decision, "image", None)
         phash = image.phash if image is not None else ""
-        key = dedup_key(kind, phash=phash, text=judged_text)
+        key = dedup_key(kind, phash=phash, text=judged_text,
+                        guild_id=message.guild.id if message.guild else 0)
         details = build_details(
             decision, motif=motif, bareme=bareme, applied=applied or [],
             guild_name=message.guild.name if message.guild else "",
             case_id=case_id, message=message,
         )
+
+        # Whether the card will carry the image (it is re-uploaded from the
+        # short-lived prepared-image cache); later edits must know it.
+        svc = getattr(self.bot, "automod_images", None)
+        details["image_attached"] = bool(
+            phash and svc is not None and svc.cached_by_phash(phash) is not None)
 
         # A duplicate still waiting for a label: count it (and remember its
         # sanction, so one label can revoke them all) instead of a new card.
@@ -197,6 +209,8 @@ class AutomodLabelService:
     # ------------------------------------------------------------------ #
 
     def _image_file(self, row: Dict[str, Any]) -> Optional[discord.File]:
+        if not (row.get("details") or {}).get("image_attached"):
+            return None
         image = (row.get("details") or {}).get("image") or {}
         phash = image.get("phash")
         svc = getattr(self.bot, "automod_images", None)
@@ -212,6 +226,9 @@ class AutomodLabelService:
     async def _post_card(self, channel, row: Dict[str, Any]) -> None:
         from utils.automod_label_views import render_label_card
         file = self._image_file(row)
+        if file is None and (row.get("details") or {}).get("image_attached"):
+            # The cache expired between enqueue and post: say so on the row.
+            row["details"]["image_attached"] = False
         view = render_label_card(row, image_filename=file.filename if file else None)
         try:
             msg = await channel.send(
@@ -232,8 +249,11 @@ class AutomodLabelService:
         channel = self.bot.get_channel(int(ch_id))
         if channel is None:
             return
+        from utils.automod_label_views import card_image_filename
         image = ((row.get("details") or {}).get("image") or {}).get("phash")
-        filename = f"image_{image}.jpg" if image else None
+        # Only reference the image if the card was posted with one.
+        attached = (row.get("details") or {}).get("image_attached")
+        filename = card_image_filename(image) if image and attached else None
         try:
             await channel.get_partial_message(int(msg_id)).edit(
                 view=render_label_card(row, image_filename=filename))

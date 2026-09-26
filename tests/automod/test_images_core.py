@@ -340,8 +340,12 @@ class TestDoubt:
         assert detect_doute(_decision(rejet_grounding="grounding_citation_absente")) \
             == "grounding_citation_absente"
 
-    def test_low_confidence_with_a_category_is_a_doubt(self):
-        assert detect_doute(_decision(categorie="insulte", confiance="low")) == "confiance_basse"
+    def test_low_confidence_sanction_is_a_doubt(self):
+        assert detect_doute(_decision(sanctionnable=True, categorie="insulte",
+                                      confiance="low")) == "confiance_basse"
+
+    def test_cleared_message_with_default_low_confidence_is_not(self):
+        assert detect_doute(_decision(categorie="insulte", confiance="low")) is None
 
     def test_anchor_hit_that_nano_cleared_is_a_doubt(self):
         assert detect_doute(_decision(signal_source=constants.SOURCE_ANCRES_SCAM)) \

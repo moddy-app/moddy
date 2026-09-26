@@ -475,7 +475,9 @@ def test_label_kind_and_dedup():
     d.categorie = "contenu_nsfw"
     assert label_kind(d) == KIND_IMAGE_NSFW
     assert dedup_key(KIND_TEXTE, text="Salut  ") != dedup_key(KIND_TEXTE, text="autre")
-    assert dedup_key(KIND_IMAGE_SCAM, phash="ab") == dedup_key(KIND_IMAGE_SCAM, phash="ab", text="x")
+    assert dedup_key(KIND_IMAGE_SCAM, phash="ab", guild_id=1) == \
+        dedup_key(KIND_IMAGE_SCAM, phash="ab", text="x", guild_id=2)
+    assert dedup_key(KIND_TEXTE, text="fdp", guild_id=1) != dedup_key(KIND_TEXTE, text="fdp", guild_id=2)
 
 
 async def test_enqueue_posts_a_card_then_counts_duplicates(monkeypatch):

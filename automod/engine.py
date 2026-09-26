@@ -980,7 +980,10 @@ def detect_doute(decision: Decision) -> Optional[str]:
         return None  # a human already ruled on near-identical text
     if decision.rejet_grounding:
         return decision.rejet_grounding
-    if decision.categorie and decision.confiance == "low":
+    # Only a SANCTION taken with low confidence is a doubt: a message nano
+    # cleared carries the default "low" confidence (and the routing category),
+    # so counting those would copy nearly every routed message to the team.
+    if decision.sanctionnable and decision.confiance == "low":
         return "confiance_basse"
     if (not decision.sanctionnable
             and decision.signal_source == constants.SOURCE_ANCRES_SCAM):

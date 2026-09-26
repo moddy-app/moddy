@@ -207,9 +207,17 @@ async def _load(interaction: discord.Interaction, item_id: str) -> Optional[Dict
     return row
 
 
+def card_image_filename(phash: str) -> str:
+    """Name of the image attached to a card. discord.py prefixes spoilered
+    files with ``SPOILER_``, and the card's ``attachment://`` reference must
+    match the stored name on every later edit."""
+    return f"SPOILER_image_{phash}.jpg"
+
+
 def _card_filename(row: Dict[str, Any]) -> Optional[str]:
-    phash = ((row.get("details") or {}).get("image") or {}).get("phash")
-    return f"image_{phash}.jpg" if phash else None
+    details = row.get("details") or {}
+    phash = (details.get("image") or {}).get("phash")
+    return card_image_filename(phash) if phash and details.get("image_attached") else None
 
 
 class LabelVerdictButton(
