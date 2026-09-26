@@ -215,10 +215,12 @@ def _command_name(message: Any) -> Optional[str]:
     populates it. So we read the name from the deprecated field and take the
     user from whichever is present. The read is deliberate, so the
     accompanying ``DeprecationWarning`` is silenced rather than left to spam
-    the logs on every message.
+    the logs on every message. discord.py's ``@deprecated`` decorator forces
+    ``warnings.simplefilter('always', DeprecationWarning)`` right before
+    emitting, which overrides any filter we set — so we record the warning
+    instead of trying to filter it away, and simply discard the record.
     """
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", DeprecationWarning)
+    with warnings.catch_warnings(record=True):
         interaction = getattr(message, "interaction", None)
     name = getattr(interaction, "name", None)
     return name.lower() if isinstance(name, str) else None
@@ -231,10 +233,13 @@ def _bumper_id(message: Any, custom_ids: Set[str], spec: BumpBot) -> Optional[in
     (deprecated), and finally to a marker custom_id that embeds the id —
     French.gg suffixes its reminder button with the bumper's user id. The
     deprecated fallback is deliberate, so its ``DeprecationWarning`` is
-    silenced rather than left to spam the logs on every message.
+    silenced rather than left to spam the logs on every message. discord.py's
+    ``@deprecated`` decorator forces
+    ``warnings.simplefilter('always', DeprecationWarning)`` right before
+    emitting, which overrides any filter we set — so we record the warning
+    instead of trying to filter it away, and simply discard the record.
     """
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", DeprecationWarning)
+    with warnings.catch_warnings(record=True):
         for attribute in ("interaction_metadata", "interaction"):
             source = getattr(message, attribute, None)
             user = getattr(source, "user", None)
