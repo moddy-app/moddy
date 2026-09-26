@@ -1598,6 +1598,20 @@ class ModdyDatabase(
                 ("user",   "voice_transcription", "default", -1),
                 ("guild",  "voice_transcription", "default", -1),
                 ("global", "voice_transcription", "default", -1),
+                # Automod images. The binding cap on SafeSearch is the
+                # monthly Google Vision allowance (fail-closed rule in
+                # gateway/config.py) plus the automod's own pacing; the OCR of
+                # crypto images runs on gpt-4.1-nano vision, capped per guild.
+                ("guild",  "automod_safesearch",  "default", -1),
+                ("global", "automod_safesearch",  "default", -1),
+                ("guild",  "automod_image_ocr",   "default", 300),
+                ("global", "automod_image_ocr",   "default", -1),
+                # /ocr (Google Vision DOCUMENT_TEXT_DETECTION). The monthly
+                # allowance is shared by every user, so each one gets a small
+                # daily bucket.
+                ("user",   "ocr_command", "default", 10),
+                ("guild",  "ocr_command", "default", 100),
+                ("global", "ocr_command", "default", -1),
             ]:
                 await conn.execute(
                     """
