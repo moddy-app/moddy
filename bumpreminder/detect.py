@@ -26,6 +26,7 @@ directory against the real code.
 from __future__ import annotations
 
 import re
+import warnings
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any, List, Optional, Sequence, Set, Tuple
@@ -212,9 +213,13 @@ def _command_name(message: Any) -> Optional[str]:
     ``interaction`` is deprecated in favour of ``interaction_metadata``, but it
     is the only one of the two carrying the command *name* — and Discord still
     populates it. So we read the name from the deprecated field and take the
-    user from whichever is present.
+    user from whichever is present. The read is deliberate, so the
+    accompanying ``DeprecationWarning`` is silenced rather than left to spam
+    the logs on every message.
     """
-    interaction = getattr(message, "interaction", None)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        interaction = getattr(message, "interaction", None)
     name = getattr(interaction, "name", None)
     return name.lower() if isinstance(name, str) else None
 
@@ -224,14 +229,18 @@ def _bumper_id(message: Any, custom_ids: Set[str], spec: BumpBot) -> Optional[in
 
     Prefers ``interaction_metadata`` (current), falls back to ``interaction``
     (deprecated), and finally to a marker custom_id that embeds the id —
-    French.gg suffixes its reminder button with the bumper's user id.
+    French.gg suffixes its reminder button with the bumper's user id. The
+    deprecated fallback is deliberate, so its ``DeprecationWarning`` is
+    silenced rather than left to spam the logs on every message.
     """
-    for attribute in ("interaction_metadata", "interaction"):
-        source = getattr(message, attribute, None)
-        user = getattr(source, "user", None)
-        user_id = getattr(user, "id", None)
-        if isinstance(user_id, int):
-            return user_id
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        for attribute in ("interaction_metadata", "interaction"):
+            source = getattr(message, attribute, None)
+            user = getattr(source, "user", None)
+            user_id = getattr(user, "id", None)
+            if isinstance(user_id, int):
+                return user_id
 
     for marker in spec.success_custom_id:
         for custom_id in custom_ids:
