@@ -269,7 +269,8 @@ class _ImageFeature(AutomodFeature):
                               categorie: str) -> Decision:
         """A team-validated image: sanctioned on sight (no OCR, no SafeSearch)."""
         locale = self.module.guild_locale(message.guild)
-        key = "known_scam" if categorie == "arnaque_scam" else "known_nsfw"
+        key = {"arnaque_scam": "known_scam",
+               "contenu_choquant": "known_gore"}.get(categorie, "known_nsfw")
         return self._image_decision(
             message, meta, sanctionnable=True, categorie=categorie, gravite="haute",
             confiance="high",
@@ -382,19 +383,29 @@ class ImageScamFeature(_ImageFeature):
         return decisions
 
 
-class ImageNsfwFeature(_ImageFeature):
-    """Explicit images: known hash → Google SafeSearch (paced monthly budget)."""
+class _SafeSearchFeature(_ImageFeature):
+    """One SafeSearch axis as its own feature (docs/AUTOMOD_AI.md §4.3).
 
-    feature_id = "image_nsfw"
+    ``image_nsfw`` (sexual content) and ``image_gore`` (gore / graphic
+    violence) are independent toggles but read the SAME SafeSearch result:
+    the likelihoods are cached per image hash (Redis + in-process), so an image
+    costs one call even when both features are on.
+    """
+
+    AXIS = aip.AXIS_NSFW
+    CATEGORY = "contenu_nsfw"
+    HASH_KIND = "nsfw"
+    REASON = "nsfw"          # i18n suffix: reason_<x> / explication_<x> / reason_known_<x>
+    SCORE_AXIS = "adult"     # SafeSearch field shown on the card / used as score
 
     async def process(self, message: discord.Message) -> List[Decision]:
         from services.automod_image_service import image_attachments
-        from automod.image_hash import KIND_NSFW, VERDICT_ALLOW
+        from automod.image_hash import VERDICT_ALLOW
         svc = self._service()
         attachments = image_attachments(message)
         if svc is None or not attachments:
             return []
-        # Age-restricted channels are where NSFW belongs.
+        # Age-restricted channels are where this content belongs.
         if self._channel_is_nsfw(message.channel):
             return []
 
@@ -416,14 +427,14 @@ class ImageNsfwFeature(_ImageFeature):
                 if match.entry.verdict == VERDICT_ALLOW:
                     svc.stat("hash_allow")
                     continue
-                if match.entry.kind == KIND_NSFW:
+                if match.entry.kind == self.HASH_KIND:
                     svc.stat("hash_hit")
                     meta.hash_match = match.as_dict()
-                    decisions.append(self._known_image_decision(message, meta, "contenu_nsfw"))
+                    decisions.append(self._known_image_decision(message, meta, self.CATEGORY))
                     break
-                continue
+                continue  # known for another axis: that feature's call
 
-            likelihoods = await svc.cached_verdict("nsfw", img.phash_hex)
+            likelihoods = await svc.safesearch_cached(img)
             if likelihoods is not None:
                 svc.stat("cache_hit")
             else:
@@ -431,22 +442,21 @@ class ImageNsfwFeature(_ImageFeature):
                 likelihoods = await svc.safesearch(img, guild_id=self.guild_id, tier=tier)
                 if likelihoods is None:
                     continue  # budget/pacing said no, or the call failed
-                await svc.store_verdict("nsfw", img.phash_hex, likelihoods)
 
-            verdict = aip.safesearch_to_verdict(likelihoods)
+            verdict = aip.safesearch_to_verdict(likelihoods, self.AXIS)
             if not verdict.actionable:
                 continue
             meta.safesearch = dict(likelihoods)
+            level = str(likelihoods.get(self.SCORE_AXIS, "UNKNOWN"))
             decision = self._image_decision(
                 message, meta,
-                sanctionnable=verdict.sanctionnable, categorie="contenu_nsfw",
+                sanctionnable=verdict.sanctionnable, categorie=self.CATEGORY,
                 gravite=verdict.gravite, confiance=verdict.confiance,
-                raison=t("modules.automod_ai.image.reason_nsfw", locale=locale),
-                explication=t("modules.automod_ai.image.explication_nsfw", locale=locale,
-                              level=str(likelihoods.get("adult", "UNKNOWN"))),
+                raison=t(f"modules.automod_ai.image.reason_{self.REASON}", locale=locale),
+                explication=t(f"modules.automod_ai.image.explication_{self.REASON}",
+                              locale=locale, level=level),
                 source=ac.SOURCE_SAFESEARCH,
-                score={"VERY_LIKELY": 1.0, "LIKELY": 0.8, "POSSIBLE": 0.6}.get(
-                    str(likelihoods.get("adult")), 0.4),
+                score={"VERY_LIKELY": 1.0, "LIKELY": 0.8, "POSSIBLE": 0.6}.get(level, 0.4),
                 origine=ORIGINE_IMAGE_NSFW, decideur="safesearch", doute=verdict.doute,
             )
             decisions.append(decision)
@@ -455,9 +465,27 @@ class ImageNsfwFeature(_ImageFeature):
         return decisions
 
 
+class ImageNsfwFeature(_SafeSearchFeature):
+    """Sexually explicit images (SafeSearch ``adult`` / ``racy``)."""
+
+    feature_id = "image_nsfw"
+
+
+class ImageGoreFeature(_SafeSearchFeature):
+    """Gore / graphic violence (SafeSearch ``violence``)."""
+
+    feature_id = "image_gore"
+    AXIS = aip.AXIS_GORE
+    CATEGORY = "contenu_choquant"
+    HASH_KIND = "gore"
+    REASON = "gore"
+    SCORE_AXIS = "violence"
+
+
 FEATURE_CLASSES = {
     ContentModerationFeature.feature_id: ContentModerationFeature,
     ImageNsfwFeature.feature_id: ImageNsfwFeature,
+    ImageGoreFeature.feature_id: ImageGoreFeature,
     ImageScamFeature.feature_id: ImageScamFeature,
     # Future: "anti_link": AntiLinkFeature, "anti_spam": AntiSpamFeature, ...
 }
@@ -580,6 +608,11 @@ class AutomodModule(ModuleBase):
                     "exempt_channels": [],
                 },
                 "image_nsfw": {
+                    "enabled": False,
+                    "exempt_roles": [],
+                    "exempt_channels": [],
+                },
+                "image_gore": {
                     "enabled": False,
                     "exempt_roles": [],
                     "exempt_channels": [],

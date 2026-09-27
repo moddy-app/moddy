@@ -1719,7 +1719,9 @@
         "image_nsfw_label": "Imágenes NSFW",
         "image_nsfw_desc": "Imágenes sexualmente explícitas (análisis de Google SafeSearch).",
         "image_scam_label": "Estafas en imagen",
-        "image_scam_desc": "Capturas de estafas cripto / sorteos falsos (hash conocido + lectura del texto)."
+        "image_scam_desc": "Capturas de estafas cripto / sorteos falsos (hash conocido + lectura del texto).",
+        "image_gore_label": "Imágenes impactantes (gore)",
+        "image_gore_desc": "Gore y violencia gráfica (análisis de Google SafeSearch)."
       },
       "action": {
         "warn": "Aviso",
@@ -1907,7 +1909,10 @@
         "reason_known_nsfw": "Imagen sexualmente explícita ya identificada por el equipo de Moddy.",
         "reason_nsfw": "Imagen sexualmente explícita.",
         "explication_known": "Esta imagen coincide con una imagen ya revisada y confirmada por el equipo de Moddy.",
-        "explication_nsfw": "El análisis automático de la imagen indica contenido para adultos (nivel: {level})."
+        "explication_nsfw": "El análisis automático de la imagen indica contenido para adultos (nivel: {level}).",
+        "reason_gore": "Imagen impactante (gore o violencia gráfica).",
+        "reason_known_gore": "Imagen impactante ya identificada por el equipo de Moddy.",
+        "explication_gore": "El análisis automático de la imagen indica contenido violento o gore (nivel: {level})."
       },
       "label_revoked": {
         "title": "Sanción automática revocada",
@@ -4877,7 +4882,8 @@
     "kind": {
       "texte": "Text",
       "image_scam": "Scam image",
-      "image_nsfw": "NSFW image"
+      "image_nsfw": "NSFW image",
+      "image_gore": "Shocking image (gore)"
     },
     "motif": {
       "sanction": "Sanctioned by the bot",

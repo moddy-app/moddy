@@ -86,6 +86,9 @@ class AutomodImageService:
         self.index = HashIndex()
         self._index_loaded_at = 0.0
         self._index_lock = asyncio.Lock()
+        # SafeSearch likelihoods per image hash, in-process: image_nsfw and
+        # image_gore read the same result, one call per image even without Redis.
+        self._safesearch_memo: "OrderedDict[str, dict]" = OrderedDict()
 
     # ------------------------------------------------------------------ #
     # Download + decode (shared by both features)
@@ -236,6 +239,7 @@ class AutomodImageService:
             pass
 
     async def forget_verdicts(self, phash_hex: str) -> None:
+        self._safesearch_memo.pop(phash_hex, None)
         r = self._redis()
         if r is None:
             return
@@ -342,9 +346,38 @@ class AutomodImageService:
         except Exception:  # noqa: BLE001
             pass
 
+    async def safesearch_cached(self, img: PreparedImage) -> Optional[dict]:
+        """A SafeSearch result already known for this image (memo, then Redis)."""
+        hit = self._safesearch_memo.get(img.phash_hex)
+        if hit is not None:
+            return hit
+        cached = await self.cached_verdict("nsfw", img.phash_hex)
+        if cached is not None:
+            self._remember_safesearch(img.phash_hex, cached)
+        return cached
+
+    def _remember_safesearch(self, phash_hex: str, likelihoods: dict) -> None:
+        self._safesearch_memo[phash_hex] = likelihoods
+        self._safesearch_memo.move_to_end(phash_hex)
+        while len(self._safesearch_memo) > 256:
+            self._safesearch_memo.popitem(last=False)
+
     async def safesearch(self, img: PreparedImage, *, guild_id: int,
                          tier: str) -> Optional[dict]:
-        """SafeSearch likelihoods, or None when the budget/pacing says no."""
+        """SafeSearch likelihoods, or None when the budget/pacing says no.
+
+        The result is cached per image hash (in-process + Redis, key kept as
+        ``automod:img:nsfw:<phash>`` for compatibility) and shared by the
+        ``image_nsfw`` and ``image_gore`` features."""
+        likelihoods = await self._request_safesearch(img, guild_id=guild_id, tier=tier)
+        if likelihoods is not None:
+            self._remember_safesearch(img.phash_hex, likelihoods)
+            await self.store_verdict("nsfw", img.phash_hex, likelihoods)
+        return likelihoods
+
+    async def _request_safesearch(self, img: PreparedImage, *, guild_id: int,
+                                  tier: str) -> Optional[dict]:
+        """Budget + pacing checks, then the paid call (no caching here)."""
         gateway = getattr(self.bot, "gateway", None)
         if gateway is None or gateway.vision is None or not gateway.google_vision_available():
             return None

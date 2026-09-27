@@ -875,7 +875,7 @@ class ModdyDatabase(
                 CREATE TABLE IF NOT EXISTS automod_label_items (
                     id              UUID PRIMARY KEY,
                     kind            TEXT NOT NULL
-                        CHECK (kind IN ('texte','image_scam','image_nsfw')),
+                        CHECK (kind IN ('texte','image_scam','image_nsfw','image_gore')),
                     motif           TEXT NOT NULL
                         CHECK (motif IN ('sanction','doute','simulation')),
                     guild_id        BIGINT NOT NULL,
@@ -915,12 +915,49 @@ class ModdyDatabase(
                     id            BIGSERIAL PRIMARY KEY,
                     phash         BIGINT NOT NULL,
                     dhash         BIGINT NOT NULL,
-                    kind          TEXT NOT NULL CHECK (kind IN ('scam','nsfw')),
+                    kind          TEXT NOT NULL CHECK (kind IN ('scam','nsfw','gore')),
                     verdict       TEXT NOT NULL CHECK (verdict IN ('block','allow')),
                     label_item_id UUID,
                     added_by      BIGINT,
                     created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
                 )
+            """)
+
+            # 2026-09-27: the `image_gore` labeling lane. Same one-off widening.
+            await conn.execute("""
+                DO $$
+                BEGIN
+                    IF EXISTS (
+                        SELECT 1 FROM pg_constraint
+                        WHERE conname = 'automod_label_items_kind_check'
+                          AND pg_get_constraintdef(oid) NOT LIKE '%image_gore%'
+                    ) THEN
+                        ALTER TABLE automod_label_items
+                            DROP CONSTRAINT automod_label_items_kind_check;
+                        ALTER TABLE automod_label_items
+                            ADD CONSTRAINT automod_label_items_kind_check
+                            CHECK (kind IN ('texte','image_scam','image_nsfw','image_gore'));
+                    END IF;
+                END $$;
+            """)
+
+            # 2026-09-27: `gore` hashes (graphic-violence images). Tables created
+            # before that carry the two-value CHECK: widen it once, idempotently.
+            await conn.execute("""
+                DO $$
+                BEGIN
+                    IF EXISTS (
+                        SELECT 1 FROM pg_constraint
+                        WHERE conname = 'automod_image_hashes_kind_check'
+                          AND pg_get_constraintdef(oid) NOT LIKE '%gore%'
+                    ) THEN
+                        ALTER TABLE automod_image_hashes
+                            DROP CONSTRAINT automod_image_hashes_kind_check;
+                        ALTER TABLE automod_image_hashes
+                            ADD CONSTRAINT automod_image_hashes_kind_check
+                            CHECK (kind IN ('scam','nsfw','gore'));
+                    END IF;
+                END $$;
             """)
 
             # automod_learned_references — embedding references taught by the

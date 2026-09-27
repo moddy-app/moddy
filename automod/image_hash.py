@@ -189,6 +189,7 @@ VERDICT_BLOCK = "block"
 VERDICT_ALLOW = "allow"
 KIND_SCAM = "scam"
 KIND_NSFW = "nsfw"
+KIND_GORE = "gore"
 
 
 @dataclass

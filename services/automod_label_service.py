@@ -12,6 +12,7 @@ item                   sanctionnable                                    non sanc
 image_scam             hash → ``block`` + OCR text → ``arnaque_scam``   hash → ``allow``
                        embedding reference
 image_nsfw             hash → ``block``                                 hash → ``allow``
+image_gore             hash → ``block`` (gore)                          hash → ``allow``
 texte                  embedding reference (chosen category) +          server precedent ``non_sanctionnable`` +
                        optional blocklist terms (Modal)                 eval candidate ``faux_positif``
 =====================  ==============================================  =========================================
@@ -36,7 +37,9 @@ import discord
 
 import config
 from automod import constants as ac
-from automod.image_hash import KIND_NSFW, KIND_SCAM, VERDICT_ALLOW, VERDICT_BLOCK, from_hex
+from automod.image_hash import (
+    KIND_GORE, KIND_NSFW, KIND_SCAM, VERDICT_ALLOW, VERDICT_BLOCK, from_hex,
+)
 from automod.normalize import collapse_repeats
 from automod.schemas import (
     ORIGINE_IMAGE_HASH, ORIGINE_IMAGE_NSFW, ORIGINE_IMAGE_OCR,
@@ -47,6 +50,10 @@ logger = logging.getLogger("moddy.services.automod_labels")
 KIND_TEXTE = "texte"
 KIND_IMAGE_SCAM = "image_scam"
 KIND_IMAGE_NSFW = "image_nsfw"
+KIND_IMAGE_GORE = "image_gore"
+#: Lanes whose item is an image judged by SafeSearch (no text to learn from).
+SAFESEARCH_LANES = (KIND_IMAGE_NSFW, KIND_IMAGE_GORE)
+IMAGE_LANES = (KIND_IMAGE_SCAM, KIND_IMAGE_NSFW, KIND_IMAGE_GORE)
 
 #: Team panels are always English (like appeals and support requests).
 PANEL_LOCALE = "en-US"
@@ -58,12 +65,14 @@ LEARNED_DEDUP_SIMILARITY = 0.97
 def label_kind(decision) -> str:
     """Which queue lane a decision belongs to."""
     origine = getattr(decision, "origine", "texte")
+    categorie = getattr(decision, "categorie", "")
     if origine == ORIGINE_IMAGE_NSFW:
-        return KIND_IMAGE_NSFW
+        return KIND_IMAGE_GORE if categorie == "contenu_choquant" else KIND_IMAGE_NSFW
     if origine == ORIGINE_IMAGE_OCR:
         return KIND_IMAGE_SCAM
     if origine == ORIGINE_IMAGE_HASH:
-        return KIND_IMAGE_NSFW if decision.categorie == "contenu_nsfw" else KIND_IMAGE_SCAM
+        return {"contenu_nsfw": KIND_IMAGE_NSFW,
+                "contenu_choquant": KIND_IMAGE_GORE}.get(categorie, KIND_IMAGE_SCAM)
     return KIND_TEXTE
 
 
@@ -296,21 +305,28 @@ class AutomodLabelService:
             return row.get("categorie_humaine") or "arnaque_scam"
         if row["kind"] == KIND_IMAGE_NSFW:
             return "contenu_nsfw"
+        if row["kind"] == KIND_IMAGE_GORE:
+            return "contenu_choquant"
         return row.get("categorie_humaine") or details.get("categorie") or ""
+
+    def _hash_kind(self, row: Dict[str, Any]) -> str:
+        """Hash kind a labeled image teaches: scam, gore or nsfw."""
+        return {KIND_IMAGE_SCAM: KIND_SCAM, KIND_IMAGE_GORE: KIND_GORE}.get(
+            row["kind"], KIND_NSFW)
 
     async def _learn_positive(self, row: Dict[str, Any], by: int) -> Dict[str, Any]:
         outcome: Dict[str, Any] = {}
         svc = getattr(self.bot, "automod_images", None)
         image = (row.get("details") or {}).get("image") or {}
-        if row["kind"] in (KIND_IMAGE_SCAM, KIND_IMAGE_NSFW) and image.get("phash") and svc:
-            kind = KIND_SCAM if row["kind"] == KIND_IMAGE_SCAM else KIND_NSFW
+        if row["kind"] in IMAGE_LANES and image.get("phash") and svc:
+            kind = self._hash_kind(row)
             await svc.add_hash(from_hex(image["phash"]), from_hex(image["dhash"]),
                                kind=kind, verdict=VERDICT_BLOCK,
                                label_item_id=row["id"], added_by=by)
             outcome["hash"] = VERDICT_BLOCK
         categorie = self._category_of(row)
         text = (row.get("contenu") or "").strip()
-        if row["kind"] != KIND_IMAGE_NSFW and text and categorie:
+        if row["kind"] not in SAFESEARCH_LANES and text and categorie:
             outcome["reference"] = await self.learn_reference(
                 text, categorie, label_item_id=row["id"], added_by=by)
         await self._eval_candidate(row, "correct", by)
@@ -320,8 +336,8 @@ class AutomodLabelService:
         outcome: Dict[str, Any] = {}
         svc = getattr(self.bot, "automod_images", None)
         image = (row.get("details") or {}).get("image") or {}
-        if row["kind"] in (KIND_IMAGE_SCAM, KIND_IMAGE_NSFW) and image.get("phash") and svc:
-            kind = KIND_SCAM if row["kind"] == KIND_IMAGE_SCAM else KIND_NSFW
+        if row["kind"] in IMAGE_LANES and image.get("phash") and svc:
+            kind = self._hash_kind(row)
             await svc.add_hash(from_hex(image["phash"]), from_hex(image["dhash"]),
                                kind=kind, verdict=VERDICT_ALLOW,
                                label_item_id=row["id"], added_by=by)
@@ -348,7 +364,7 @@ class AutomodLabelService:
 
     async def _eval_candidate(self, row: Dict[str, Any], verdict: str, by: int) -> None:
         """Feed the offline golden-set corpus (``make eval-import``)."""
-        if row["kind"] == KIND_IMAGE_NSFW or not (row.get("contenu") or "").strip():
+        if row["kind"] in SAFESEARCH_LANES or not (row.get("contenu") or "").strip():
             return
         db = self.bot.db
         details = row.get("details") or {}

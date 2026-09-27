@@ -92,6 +92,11 @@ PLANCHER: Dict[Tuple[str, str], int] = {
     # with recidivism like everything else.
     ("contenu_nsfw", "basse"): 0,    ("contenu_nsfw", "moyenne"): 2,
     ("contenu_nsfw", "haute"): 3,    ("contenu_nsfw", "critique"): 5,
+
+    # Gore / graphic violence image (SafeSearch). Delete + a short mute at
+    # "haute" (what a VERY_LIKELY violence score maps to), recidivism escalates.
+    ("contenu_choquant", "basse"): 0,    ("contenu_choquant", "moyenne"): 1,
+    ("contenu_choquant", "haute"): 2,    ("contenu_choquant", "critique"): 4,
 }
 
 # Fallback floor when nano returns an unknown/empty (category, gravity) pair but
