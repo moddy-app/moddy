@@ -92,4 +92,7 @@ get through. This session added:
   mini confirmation of a nano-decided ban.
 - The **SIMULATION card** now shows the spoilered image (it had none); alert and
   simulation cards fall back to a bare card when the bot lacks *Attach Files*.
-
+- **Gore images**: SafeSearch `violence VERY_LIKELY` is now sanctioned as the new
+  `contenu_choquant` category (delete + 2 h mute, recidivism escalates);
+  `violence LIKELY` stays a doubt. Hashes gain a `gore` kind (CHECK widened by an
+  idempotent migration); the labeling lane for it stays `image_nsfw`.

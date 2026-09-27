@@ -38,6 +38,8 @@ class NsfwVerdict:
     gravite: str = "basse"
     confiance: str = "low"
     doute: Optional[str] = None     # motif when the team should look at it
+    # "contenu_nsfw" (sexual) or "contenu_choquant" (gore / graphic violence).
+    categorie: str = "contenu_nsfw"
 
     @property
     def actionable(self) -> bool:
@@ -51,8 +53,12 @@ def safesearch_to_verdict(likelihoods: dict) -> NsfwVerdict:
     * ``adult VERY_LIKELY`` → sanctionable, gravity haute, confidence high.
     * ``adult LIKELY``      → sanctionable, gravity moyenne, confidence medium
       (the barème caps a medium-confidence verdict at mute 48 h).
-    * ``adult POSSIBLE`` / ``racy VERY_LIKELY`` / ``violence VERY_LIKELY`` →
+    * ``violence VERY_LIKELY`` → sanctionable as ``contenu_choquant`` (gore /
+      graphic violence), gravity haute, confidence high.
+    * ``adult POSSIBLE`` / ``racy VERY_LIKELY`` / ``violence LIKELY`` →
       no sanction, but a doubt the Moddy team labels.
+
+    Adult content wins when both scores fire.
     * anything else → nothing.
     """
     adult = _rank(likelihoods.get("adult"))
@@ -64,10 +70,12 @@ def safesearch_to_verdict(likelihoods: dict) -> NsfwVerdict:
         return NsfwVerdict(True, "moyenne", "medium")
     if adult >= _LIKELIHOOD_RANK["POSSIBLE"]:
         return NsfwVerdict(False, doute="safesearch_adult_possible")
+    if violence >= _LIKELIHOOD_RANK["VERY_LIKELY"]:
+        return NsfwVerdict(True, "haute", "high", categorie="contenu_choquant")
     if racy >= _LIKELIHOOD_RANK["VERY_LIKELY"]:
         return NsfwVerdict(False, doute="safesearch_racy")
-    if violence >= _LIKELIHOOD_RANK["VERY_LIKELY"]:
-        return NsfwVerdict(False, doute="safesearch_violence")
+    if violence >= _LIKELIHOOD_RANK["LIKELY"]:
+        return NsfwVerdict(False, doute="safesearch_violence", categorie="contenu_choquant")
     return NsfwVerdict(False)
 
 

@@ -156,12 +156,18 @@ class TestScamAnchors:
 # --------------------------------------------------------------------------- #
 
 class TestSafeSearchPolicy:
+    def test_gore_is_its_own_category_and_adult_wins(self):
+        assert ip.safesearch_to_verdict({"violence": "VERY_LIKELY"}).categorie == "contenu_choquant"
+        both = ip.safesearch_to_verdict({"adult": "VERY_LIKELY", "violence": "VERY_LIKELY"})
+        assert both.categorie == "contenu_nsfw" and both.sanctionnable
+
     @pytest.mark.parametrize("lk,sanction,gravite,doute", [
         ({"adult": "VERY_LIKELY"}, True, "haute", None),
         ({"adult": "LIKELY"}, True, "moyenne", None),
         ({"adult": "POSSIBLE"}, False, "basse", "safesearch_adult_possible"),
         ({"adult": "UNLIKELY", "racy": "VERY_LIKELY"}, False, "basse", "safesearch_racy"),
-        ({"violence": "VERY_LIKELY"}, False, "basse", "safesearch_violence"),
+        ({"violence": "VERY_LIKELY"}, True, "haute", None),
+        ({"violence": "LIKELY"}, False, "basse", "safesearch_violence"),
         ({"adult": "VERY_UNLIKELY", "racy": "LIKELY"}, False, "basse", None),
         ({}, False, "basse", None),
     ])
@@ -360,3 +366,11 @@ class TestDoubt:
         from automod import bareme
         assert ("contenu_nsfw", "haute") in bareme.PLANCHER
         assert "contenu_nsfw" in constants.CATEGORIES
+
+    def test_contenu_choquant_is_delete_plus_short_mute(self):
+        from automod import bareme
+        assert "contenu_choquant" in constants.CATEGORIES
+        v = type("V", (), {"categorie": "contenu_choquant", "gravite": "haute",
+                           "confiance": "high"})()
+        res = bareme.calculer(v, [], bareme.MembreInfo(anciennete_jours=400))
+        assert res.cran == 2 and "mute" in res.actions and "supprimer" in res.actions

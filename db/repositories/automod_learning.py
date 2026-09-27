@@ -27,7 +27,7 @@ logger = logging.getLogger("moddy.database")
 LABEL_KINDS = ("texte", "image_scam", "image_nsfw")
 LABEL_MOTIFS = ("sanction", "doute", "simulation")
 LABEL_VERDICTS = ("sanctionnable", "non_sanctionnable", "ignore")
-HASH_KINDS = ("scam", "nsfw")
+HASH_KINDS = ("scam", "nsfw", "gore")
 HASH_VERDICTS = ("block", "allow")
 TERM_MODES = ("words", "compact")
 

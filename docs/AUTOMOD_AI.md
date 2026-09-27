@@ -114,7 +114,8 @@ that is the deterministic barème's job (session 2). The key v2 fields:
 **Canonical categories** (`automod.constants.CATEGORIES`): `insulte`, `menace`,
 `harcelement`, `harcelement_sexuel`, `haine_discrimination`,
 `incitation_automutilation`, `doxxing`, `arnaque_scam`, `violation_indications`,
-and `contenu_nsfw` (explicit images — decided by SafeSearch only, never by nano).
+`contenu_nsfw` (explicit images) and `contenu_choquant` (gore / graphic violence
+in an image) — the last two decided by SafeSearch only, never by nano.
 Legacy detector/stored values (`insultes`, `menaces`, `contenu_sexuel`…) fold
 onto this set via `nano.CATEGORIE_ALIASES` / `nano.normalize_categorie` — no data
 migration needed.
@@ -688,12 +689,12 @@ image posted (attachments only, ≤ 4 / message, ≥ 128 px, ≤ 8 MB)
 An image the pipeline could not read (OCR unavailable, decode failure, queue
 full) is **never** sanctioned.
 
-### 4.3 `image_nsfw` — explicit images (Google SafeSearch)
+### 4.3 `image_nsfw` — explicit and shocking images (Google SafeSearch)
 
 ```
 image posted  (skipped in age-restricted channels)
    ▼
-1. perceptual hash → known "block" (nsfw) → sanction on sight · "allow" → ignored
+1. perceptual hash → known "block" (nsfw / gore) → sanction on sight · "allow" → ignored
 2. per-hash SafeSearch cache (Redis 30 d, global) — an image seen anywhere costs 0
 3. budget: the Google free tier (1000 / month) is shared by ALL of Moddy
      - smoothed: allowed(t) = cap × elapsed-month-fraction + 30 (burst)
@@ -704,13 +705,18 @@ image posted  (skipped in age-restricted channels)
 4. SafeSearch (call_type automod_safesearch) → image_policy.safesearch_to_verdict
      adult VERY_LIKELY → sanction, contenu_nsfw / haute / high
      adult LIKELY      → sanction, contenu_nsfw / moyenne / medium (barème caps at mute 48 h)
-     adult POSSIBLE, racy VERY_LIKELY, violence VERY_LIKELY → doubt only
+     violence VERY_LIKELY → sanction, contenu_choquant / haute / high (gore)
+     adult POSSIBLE, racy VERY_LIKELY, violence LIKELY → doubt only
                          (team queue, nothing applied)
+     adult wins when both adult and violence fire
 ```
 
 No model decides an NSFW image: the likelihood scale is the whole policy
 (`decideur="safesearch"`). Barème floors for `contenu_nsfw`: basse 0 ·
-moyenne 2 · haute 3 · critique 5. SafeSearch is **not** a CSAM detector.
+moyenne 2 · haute 3 · critique 5; for `contenu_choquant`: basse 0 · moyenne 1 ·
+haute 2 (delete + 2 h mute) · critique 4. SafeSearch's violence score can fire on
+video games, films or medical pictures — a wrong call is revoked from the team
+queue (§9) and its hash set to `allow`. SafeSearch is **not** a CSAM detector.
 
 ### Image decisions, everywhere else
 

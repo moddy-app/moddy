@@ -36,7 +36,9 @@ import discord
 
 import config
 from automod import constants as ac
-from automod.image_hash import KIND_NSFW, KIND_SCAM, VERDICT_ALLOW, VERDICT_BLOCK, from_hex
+from automod.image_hash import (
+    KIND_GORE, KIND_NSFW, KIND_SCAM, VERDICT_ALLOW, VERDICT_BLOCK, from_hex,
+)
 from automod.normalize import collapse_repeats
 from automod.schemas import (
     ORIGINE_IMAGE_HASH, ORIGINE_IMAGE_NSFW, ORIGINE_IMAGE_OCR,
@@ -63,7 +65,8 @@ def label_kind(decision) -> str:
     if origine == ORIGINE_IMAGE_OCR:
         return KIND_IMAGE_SCAM
     if origine == ORIGINE_IMAGE_HASH:
-        return KIND_IMAGE_NSFW if decision.categorie == "contenu_nsfw" else KIND_IMAGE_SCAM
+        return (KIND_IMAGE_NSFW if decision.categorie in ("contenu_nsfw", "contenu_choquant")
+                else KIND_IMAGE_SCAM)
     return KIND_TEXTE
 
 
@@ -295,15 +298,24 @@ class AutomodLabelService:
         if row["kind"] == KIND_IMAGE_SCAM:
             return row.get("categorie_humaine") or "arnaque_scam"
         if row["kind"] == KIND_IMAGE_NSFW:
-            return "contenu_nsfw"
+            # The SafeSearch lane carries both sexual and gore images.
+            return details.get("categorie") or "contenu_nsfw"
         return row.get("categorie_humaine") or details.get("categorie") or ""
+
+    def _hash_kind(self, row: Dict[str, Any]) -> str:
+        """Hash kind a labeled image teaches: scam, gore or nsfw."""
+        if row["kind"] == KIND_IMAGE_SCAM:
+            return KIND_SCAM
+        if self._category_of(row) == "contenu_choquant":
+            return KIND_GORE
+        return KIND_NSFW
 
     async def _learn_positive(self, row: Dict[str, Any], by: int) -> Dict[str, Any]:
         outcome: Dict[str, Any] = {}
         svc = getattr(self.bot, "automod_images", None)
         image = (row.get("details") or {}).get("image") or {}
         if row["kind"] in (KIND_IMAGE_SCAM, KIND_IMAGE_NSFW) and image.get("phash") and svc:
-            kind = KIND_SCAM if row["kind"] == KIND_IMAGE_SCAM else KIND_NSFW
+            kind = self._hash_kind(row)
             await svc.add_hash(from_hex(image["phash"]), from_hex(image["dhash"]),
                                kind=kind, verdict=VERDICT_BLOCK,
                                label_item_id=row["id"], added_by=by)
@@ -321,7 +333,7 @@ class AutomodLabelService:
         svc = getattr(self.bot, "automod_images", None)
         image = (row.get("details") or {}).get("image") or {}
         if row["kind"] in (KIND_IMAGE_SCAM, KIND_IMAGE_NSFW) and image.get("phash") and svc:
-            kind = KIND_SCAM if row["kind"] == KIND_IMAGE_SCAM else KIND_NSFW
+            kind = self._hash_kind(row)
             await svc.add_hash(from_hex(image["phash"]), from_hex(image["dhash"]),
                                kind=kind, verdict=VERDICT_ALLOW,
                                label_item_id=row["id"], added_by=by)

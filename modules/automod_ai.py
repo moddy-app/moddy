@@ -269,7 +269,8 @@ class _ImageFeature(AutomodFeature):
                               categorie: str) -> Decision:
         """A team-validated image: sanctioned on sight (no OCR, no SafeSearch)."""
         locale = self.module.guild_locale(message.guild)
-        key = "known_scam" if categorie == "arnaque_scam" else "known_nsfw"
+        key = {"arnaque_scam": "known_scam",
+               "contenu_choquant": "known_gore"}.get(categorie, "known_nsfw")
         return self._image_decision(
             message, meta, sanctionnable=True, categorie=categorie, gravite="haute",
             confiance="high",
@@ -389,7 +390,7 @@ class ImageNsfwFeature(_ImageFeature):
 
     async def process(self, message: discord.Message) -> List[Decision]:
         from services.automod_image_service import image_attachments
-        from automod.image_hash import KIND_NSFW, VERDICT_ALLOW
+        from automod.image_hash import KIND_GORE, KIND_NSFW, VERDICT_ALLOW
         svc = self._service()
         attachments = image_attachments(message)
         if svc is None or not attachments:
@@ -416,10 +417,12 @@ class ImageNsfwFeature(_ImageFeature):
                 if match.entry.verdict == VERDICT_ALLOW:
                     svc.stat("hash_allow")
                     continue
-                if match.entry.kind == KIND_NSFW:
+                if match.entry.kind in (KIND_NSFW, KIND_GORE):
                     svc.stat("hash_hit")
                     meta.hash_match = match.as_dict()
-                    decisions.append(self._known_image_decision(message, meta, "contenu_nsfw"))
+                    categorie = ("contenu_choquant" if match.entry.kind == KIND_GORE
+                                 else "contenu_nsfw")
+                    decisions.append(self._known_image_decision(message, meta, categorie))
                     break
                 continue
 
@@ -437,16 +440,20 @@ class ImageNsfwFeature(_ImageFeature):
             if not verdict.actionable:
                 continue
             meta.safesearch = dict(likelihoods)
+            # Sexual content vs gore / graphic violence: own reason, own axis.
+            gore = verdict.categorie == "contenu_choquant"
+            axis = "violence" if gore else "adult"
+            suffix = "gore" if gore else "nsfw"
             decision = self._image_decision(
                 message, meta,
-                sanctionnable=verdict.sanctionnable, categorie="contenu_nsfw",
+                sanctionnable=verdict.sanctionnable, categorie=verdict.categorie,
                 gravite=verdict.gravite, confiance=verdict.confiance,
-                raison=t("modules.automod_ai.image.reason_nsfw", locale=locale),
-                explication=t("modules.automod_ai.image.explication_nsfw", locale=locale,
-                              level=str(likelihoods.get("adult", "UNKNOWN"))),
+                raison=t(f"modules.automod_ai.image.reason_{suffix}", locale=locale),
+                explication=t(f"modules.automod_ai.image.explication_{suffix}", locale=locale,
+                              level=str(likelihoods.get(axis, "UNKNOWN"))),
                 source=ac.SOURCE_SAFESEARCH,
                 score={"VERY_LIKELY": 1.0, "LIKELY": 0.8, "POSSIBLE": 0.6}.get(
-                    str(likelihoods.get("adult")), 0.4),
+                    str(likelihoods.get(axis)), 0.4),
                 origine=ORIGINE_IMAGE_NSFW, decideur="safesearch", doute=verdict.doute,
             )
             decisions.append(decision)

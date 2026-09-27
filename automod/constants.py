@@ -331,6 +331,8 @@ CATEGORIES = (
     "violation_indications",
     # Explicit image content, decided by SafeSearch only (never by nano on text).
     "contenu_nsfw",
+    # Gore / graphic violence in an image, decided by SafeSearch only.
+    "contenu_choquant",
 )
 
 # Categories that structurally require a victim: an insult/threat/harassment

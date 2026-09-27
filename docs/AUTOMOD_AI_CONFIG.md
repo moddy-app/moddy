@@ -95,12 +95,12 @@ Deleting a config = writing `{}` (that is what the "Delete" button does).
 | `ignore_moderators` | bool | `true` | Members with `manage_messages` are skipped entirely. |
 | `severity` | int 1–5 | `3` | Detection dial: scales the embedding routing threshold (1 = 0.62 … 5 = 0.35) and the barème's global cran shift. Values outside 1–5 are clamped. |
 | `max_action` | enum | `"ban"` | Hardest sanction the automod may apply: `warn` < `mute` < `ban`. The barème caps itself at this level. |
-| `categories_desactivees` | string[] | `[]` | AI categories the server never wants actioned. Allowed values: `insulte`, `menace`, `harcelement`, `harcelement_sexuel`, `haine_discrimination`, `incitation_automutilation`, `doxxing`, `arnaque_scam`, `violation_indications`, `contenu_nsfw`. A decision in a disabled category is downgraded to deletion only. No UI selector yet — ops/backend-set; the bot's config panel preserves the value on save. |
+| `categories_desactivees` | string[] | `[]` | AI categories the server never wants actioned. Allowed values: `insulte`, `menace`, `harcelement`, `harcelement_sexuel`, `haine_discrimination`, `incitation_automutilation`, `doxxing`, `arnaque_scam`, `violation_indications`, `contenu_nsfw`, `contenu_choquant`. A decision in a disabled category is downgraded to deletion only. No UI selector yet — ops/backend-set; the bot's config panel preserves the value on save. |
 | `dry_run` | bool | `false` | **Shadow mode**: the whole funnel + barème run, but nothing is applied (no delete, no sanction, no case, no DM). A SIMULATION card with ✅/❌/⚠️ annotation buttons is posted to `notify_channel_id` instead. |
 | `features.content.enabled` | bool | `false` | The AI content detector. Today the only feature. |
 | `features.content.exempt_roles` | int[] | `[]` | Members holding any of these roles are not moderated. |
 | `features.content.exempt_channels` | int[] | `[]` | These channels (and threads whose parent is listed) are not moderated. |
-| `features.image_nsfw.enabled` | bool | `false` | Explicit-image detection (Google SafeSearch, shared monthly budget). Age-restricted channels are always skipped. |
+| `features.image_nsfw.enabled` | bool | `false` | Explicit **and shocking (gore / graphic violence)** image detection (Google SafeSearch, shared monthly budget). Age-restricted channels are always skipped. |
 | `features.image_scam.enabled` | bool | `false` | Scam-screenshot detection (known hash → OCR → AI funnel). |
 | `features.image_scam.scan_all` | bool | `false` | OCR every image instead of only the ones the free pre-rules flag as risky. No UI yet (ops/backend-set); the panel preserves it. |
 | `features.<image_*>.exempt_*` | int[] | `[]` | Same shape as `content`. The bot's own panel writes **one** exemption list onto all three features; a dashboard may keep them identical too. |
@@ -303,7 +303,7 @@ attachment on the team card).
 ```sql
 CREATE TABLE automod_image_hashes (
     id BIGSERIAL PRIMARY KEY, phash BIGINT NOT NULL, dhash BIGINT NOT NULL,
-    kind TEXT NOT NULL CHECK (kind IN ('scam','nsfw')),
+    kind TEXT NOT NULL CHECK (kind IN ('scam','nsfw','gore')),
     verdict TEXT NOT NULL CHECK (verdict IN ('block','allow')),
     label_item_id UUID, added_by BIGINT, created_at TIMESTAMPTZ NOT NULL DEFAULT now());
 

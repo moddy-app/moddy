@@ -675,3 +675,48 @@ def test_every_bareme_component_has_a_translation():
             key = f"modules.automod_ai.bareme.{BAREME_LABELS[code]}"
             assert not i18n.get(key, locale=loc).startswith("["), (loc, key)
     assert AutomodModule._BAREME_LABELS is BAREME_LABELS
+
+
+# --------------------------------------------------------------------------- #
+# Gore / graphic violence (contenu_choquant)
+# --------------------------------------------------------------------------- #
+
+async def test_gore_image_is_sanctioned_with_its_own_reason(monkeypatch):
+    bot, _ = _nsfw_bot(monkeypatch, {"adult": "UNLIKELY", "violence": "VERY_LIKELY"})
+    feature = ImageNsfwFeature(FakeModule(bot), {"enabled": True})
+    (d,) = await feature.process(_message([FakeAttachment(_png())]))
+    assert d.sanctionnable and d.categorie == "contenu_choquant" and d.gravite == "haute"
+    assert "gore" in d.raison.lower() or "choquante" in d.raison.lower()
+    assert d.score_detecteur == 1.0
+
+
+async def test_known_gore_hash_is_sanctioned_on_sight(monkeypatch):
+    bot, calls = _nsfw_bot(monkeypatch, {"adult": "VERY_UNLIKELY"})
+    img = prepare_image(_png())
+    bot.automod_images.index.add(HashEntry(3, img.phash, img.dhash, "gore", "block"))
+    feature = ImageNsfwFeature(FakeModule(bot), {"enabled": True})
+    (d,) = await feature.process(_message([FakeAttachment(_png())]))
+    assert d.categorie == "contenu_choquant" and d.origine == ORIGINE_IMAGE_HASH
+    assert calls == []   # no SafeSearch call for a known image
+
+
+async def test_labeling_a_gore_item_stores_a_gore_hash(monkeypatch):
+    bot, _ = _label_bot(monkeypatch)
+    svc = AutomodLabelService(bot)
+    img = prepare_image(_png())
+    d = Decision(message_id="100", auteur_id="5", sanctionnable=False, actions=[],
+                 categorie="contenu_choquant", gravite="basse", raison="", explication="",
+                 confiance="low", signal_source=ac.SOURCE_SAFESEARCH, score_detecteur=0.8,
+                 origine=ORIGINE_IMAGE_NSFW, doute="safesearch_violence",
+                 image=ImageMeta(phash=img.phash_hex, dhash=img.dhash_hex))
+    item_id = await svc.enqueue(message=_message([]), decision=d, motif="doute")
+    assert bot.db.items[item_id]["kind"] == KIND_IMAGE_NSFW
+    await svc.label(item_id, verdict="sanctionnable", labeler_id=42)
+    assert bot.db.hashes[0]["kind"] == "gore" and bot.db.hashes[0]["verdict"] == "block"
+
+
+def test_gore_i18n_keys_exist_in_every_locale():
+    from utils.i18n import i18n
+    for loc in ("fr", "en-US", "es-ES", "pt-BR", "de"):
+        for key in ("reason_gore", "reason_known_gore", "explication_gore"):
+            assert not i18n.get(f"modules.automod_ai.image.{key}", locale=loc).startswith("[")
