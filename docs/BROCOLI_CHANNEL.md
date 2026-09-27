@@ -55,9 +55,24 @@ pendant la rédaction, pour que le passage de l'un à l'autre soit un changement
 contenu et non un saut de mise en page. La couleur n'apparaît qu'une fois la
 réponse finale.
 
-Si le tour ne produit aucun texte (il part directement sur une carte de
-confirmation), la carte de chargement est **supprimée** : Discord refuse un
-conteneur vide, et un « réfléchit… » resté en place ne partirait plus jamais.
+**Un tour = un message.** La carte de chargement n'est jamais supprimée puis
+remplacée : elle est **éditée**, quoi qu'il arrive au bout.
+
+- réponse en texte → elle devient la réponse ;
+- demande de confirmation → elle devient la carte de confirmation, **et porte
+  aussi ce que Brocoli a dit en chemin**. Déplacer la question dans un second
+  message obligerait à relire vers le haut pour savoir ce qu'on approuve ;
+- erreur → elle devient la carte d'erreur, au lieu de laisser un « réfléchit… »
+  orphelin à côté d'un second message.
+
+Le seul cas de suppression reste le tour dégénéré : ni un mot, ni une question.
+Discord refuse un conteneur vide, et un placeholder resté en place ne partirait
+plus jamais.
+
+Piège d'ordonnancement à connaître : `run_end` arrive **juste après**
+`permission_request`. Sans le drapeau `halted` du moteur de rendu, la réponse
+serait repeinte par-dessus la confirmation et les boutons disparaîtraient une
+fraction de seconde après être apparus.
 
 ### Pourquoi la carte est éditée et non renvoyée
 
