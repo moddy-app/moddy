@@ -1,7 +1,7 @@
 """
 Moddy API Gateway — centralized client for all external API calls.
 
-All OpenAI, DeepL and Groq calls go through this package. No module calls
+All OpenAI, DeepL, Groq and Google Vision calls go through this package. No module calls
 provider APIs directly. The gateway enforces quotas and provider-account
 rate limits, adds resilience, and logs every request to both a staff webhook
 and the api_calls PG table.
@@ -26,6 +26,12 @@ Usage (from any cog or module):
         quota=[QuotaTarget.user(user_id, "voice_transcription")],
         call_type="voice_transcription",
         metadata={"guild_id": guild_id, "user_id": user_id},
+    )
+
+    verdict = await bot.gateway.vision.safe_search(
+        image_bytes, mime="image/png",
+        quota=[QuotaTarget.guild(guild_id, "automod_safesearch")],
+        call_type="automod_safesearch",
     )
 """
 
@@ -96,6 +102,7 @@ class Gateway:
         self.ai = None
         self.translation = None
         self.transcription = None
+        self.vision = None
 
     async def start(self, redis, pool, tech_logger=None, stats=None) -> None:
         """Boot the gateway. Call after Redis + DB pool are ready."""
@@ -107,9 +114,11 @@ class Gateway:
         from .clients.ai import AIClient
         from .clients.translation import TranslationClient
         from .clients.transcription import TranscriptionClient
+        from .clients.vision import VisionClient
         from .adapters.openai import OpenAIAdapter
         from .adapters.deepl import DeepLAdapter
         from .adapters.groq import GroqAdapter
+        from .adapters.google_vision import GoogleVisionAdapter
 
         self._quota = QuotaManager(redis, pool)
         self._ratelimiter = RateLimiter(redis, self.config.model_rate_limits)
@@ -151,6 +160,16 @@ class Gateway:
         else:
             _log.warning("GROQ_API_KEY not set — Groq adapter disabled")
 
+        if self.config.google_vision_api_key:
+            try:
+                adapter = GoogleVisionAdapter(self.config.google_vision_api_key)
+                await adapter.start()
+                self._adapters["google_vision"] = adapter
+            except Exception as exc:
+                _log.error("Google Vision adapter failed to start: %s", exc)
+        else:
+            _log.warning("GOOGLE_VISION_API_KEY not set — Google Vision adapter disabled")
+
         self._executor = GatewayExecutor(
             adapters=self._adapters,
             quota=self._quota,
@@ -163,6 +182,7 @@ class Gateway:
         self.ai = AIClient(self._executor)
         self.translation = TranslationClient(self._executor)
         self.transcription = TranscriptionClient(self._executor)
+        self.vision = VisionClient(self._executor)
 
         self._gw_logger.start()
         self._started = True
@@ -194,6 +214,9 @@ class Gateway:
 
     def groq_available(self) -> bool:
         return "groq" in self._adapters
+
+    def google_vision_available(self) -> bool:
+        return "google_vision" in self._adapters
 
     async def quota_available(self, target: "QuotaTarget") -> bool:
         """Convenience check for consumer-side availability gating."""

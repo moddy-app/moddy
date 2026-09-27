@@ -400,6 +400,16 @@
           "description": "Quantos dias para trás olhar (padrão 30)"
         }
       }
+    },
+    "ocr": {
+      "name": "ocr",
+      "description": "Extrai o texto de uma imagem",
+      "parameters": {
+        "image": {
+          "name": "imagem",
+          "description": "A imagem a ser lida"
+        }
+      }
     }
   }
 }

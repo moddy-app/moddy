@@ -40,13 +40,16 @@ import uuid
 from datetime import datetime, timezone
 from typing import Awaitable, Callable, Dict, List, Optional, Set, Tuple
 
-from . import constants, nano, precedents as ap, routing
+from . import constants, nano, precedents as ap, routing, scam_anchors
 from .blocklist import get_blocklist
 from .cache import MISS, LruTtlCache
 from .embeddings import EmbeddingEngine, _retrieve_result
 from .normalize import collapse_repeats
 from .prefiltre import pre_filter
-from .schemas import Signal, Decision, TargetMessage, ContextMessage, AuthorHistory
+from .schemas import (
+    Signal, Decision, TargetMessage, ContextMessage, AuthorHistory,
+    ORIGINE_TEXTE, ORIGINE_IMAGE_OCR,
+)
 from .triviaux import est_trivial
 
 logger = logging.getLogger("moddy.automod.engine")
@@ -214,6 +217,41 @@ class AutomodEngine:
         actually spends a nano call. A relation-carrying decision is **never**
         verdict-cached (the reaction is specific to this message).
         """
+        decision = await self._analyze(
+            target, guild_id=guild_id, guild_name=guild_name, rules=rules,
+            author_history=author_history, fetch_context=fetch_context,
+            is_bot=is_bot, is_system=is_system, force_nano=force_nano,
+            severity=severity, response_language=response_language,
+            # OCR text is not a conversational fragment: never aggregated.
+            channel_id=(channel_id
+                        if getattr(target, "origine", ORIGINE_TEXTE) == ORIGINE_TEXTE
+                        else None),
+            relation_fn=relation_fn, precedents_fn=precedents_fn,
+        )
+        if isinstance(decision, Decision):
+            stamp_origin(decision, target)
+            if decision.doute is None:
+                decision.doute = detect_doute(decision)
+        return decision
+
+    async def _analyze(
+        self,
+        target: TargetMessage,
+        *,
+        guild_id: int,
+        guild_name: str,
+        rules: str,
+        author_history: AuthorHistory,
+        fetch_context: ContextFn,
+        is_bot: bool,
+        is_system: bool,
+        force_nano: bool,
+        severity: int,
+        response_language: str,
+        channel_id: Optional[int],
+        relation_fn: Optional[RelationFn],
+        precedents_fn: Optional[PrecedentsFn],
+    ) -> Optional[Decision]:
         correlation_id = str(uuid.uuid4())
         severity = constants.clamp_severity(severity)
 
@@ -277,7 +315,8 @@ class AutomodEngine:
         return await self._route_semantic(content, severity)
 
     async def _route_semantic(self, content: str, severity: int) -> Optional[Signal]:
-        """Steps 3–4 only (regex blocklist + embedding). Shared with aggregation.
+        """Steps 3–4 only (regex blocklist + scam anchors + embedding). Shared
+        with aggregation.
 
         The aggregate path reuses exactly these two cheap steps on the
         concatenation, skipping the (single-message) pre-filter / trivial guards.
@@ -290,6 +329,15 @@ class AutomodEngine:
                 categorie=entry.categorie,
                 score_confiance=constants.GRAVITE_TO_SCORE.get(
                     entry.gravite_indicative, 0.7),
+            )
+        # Step 3bis — scam anchors (noise-tolerant, OCR-friendly). Routes like
+        # a regex hit; nano still decides.
+        anchors = scam_anchors.score(content)
+        if anchors.score >= constants.SCAM_ANCHOR_THRESHOLD:
+            return Signal(
+                source=constants.SOURCE_ANCRES_SCAM,
+                categorie="arnaque_scam",
+                score_confiance=min(0.5 + anchors.score / 10.0, 0.95),
             )
         # Step 4 — embedding (threshold scales with severity).
         if not await self.ensure_ready():
@@ -337,7 +385,8 @@ class AutomodEngine:
         ``reaction_cible``) is specific to this message, so its verdict must never
         be shared with, or reused by, another message of the same text.
         """
-        key = self._verdict_key(guild_id, target.content)
+        key = self._verdict_key(guild_id, target.content,
+                                getattr(target, "origine", ORIGINE_TEXTE))
         cacheable = relation_fn is None
 
         if cacheable:
@@ -619,14 +668,20 @@ class AutomodEngine:
 
     # -- Verdict cache helpers ---------------------------------------------
 
-    def _verdict_key(self, guild_id: int, content: str) -> str:
+    def _verdict_key(self, guild_id: int, content: str,
+                     origine: str = ORIGINE_TEXTE) -> str:
         """Per-guild cache key over the collapsed/normalised message text.
 
         Collapsing runs before hashing so a padded/re-cased copypasta shares one
         entry; the guild id keeps guidance/severity differences from colliding.
+        The content origin is part of the key: OCR text read off an image is
+        judged with its own prompt block, so it never shares a verdict with an
+        identical typed message.
         """
         collapsed = collapse_repeats(content) or content
         raw = f"{guild_id}\x00{collapsed}"
+        if origine != ORIGINE_TEXTE:
+            raw = f"{origine}\x00{raw}"
         return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
     @staticmethod
@@ -904,6 +959,36 @@ class AutomodEngine:
             correlation_id=correlation_id, severity=severity,
             response_language=response_language, agregat_de=frag_ids,
         )
+
+
+def stamp_origin(decision: Decision, target: TargetMessage) -> None:
+    """Carry the content origin onto a Decision whatever path produced it
+    (nano, verdict cache, precedent shortcut)."""
+    origine = getattr(target, "origine", ORIGINE_TEXTE)
+    decision.origine = origine
+    if origine != ORIGINE_TEXTE and not decision.contenu_juge:
+        decision.contenu_juge = target.content
+
+
+def detect_doute(decision: Decision) -> Optional[str]:
+    """Why the pipeline was unsure about this decision (None when it wasn't).
+
+    A doubtful decision is copied to the Moddy team labeling queue even when it
+    carries no sanction — those are the cases that teach the most.
+    """
+    if decision.precedent_applique:
+        return None  # a human already ruled on near-identical text
+    if decision.rejet_grounding:
+        return decision.rejet_grounding
+    # Only a SANCTION taken with low confidence is a doubt: a message nano
+    # cleared carries the default "low" confidence (and the routing category),
+    # so counting those would copy nearly every routed message to the team.
+    if decision.sanctionnable and decision.confiance == "low":
+        return "confiance_basse"
+    if (not decision.sanctionnable
+            and decision.signal_source == constants.SOURCE_ANCRES_SCAM):
+        return "ancres_sans_sanction"
+    return None
 
 
 def get_engine(bot) -> AutomodEngine:

@@ -400,6 +400,16 @@
           "description": "Hoe ver terug kijken, in dagen (standaard 30)"
         }
       }
+    },
+    "ocr": {
+      "name": "ocr",
+      "description": "Haal de tekst uit een afbeelding",
+      "parameters": {
+        "image": {
+          "name": "afbeelding",
+          "description": "De afbeelding om te lezen"
+        }
+      }
     }
   }
 }

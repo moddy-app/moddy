@@ -400,6 +400,16 @@
           "description": "Hvor langt tilbage der skal ses, i dage (standard 30)"
         }
       }
+    },
+    "ocr": {
+      "name": "ocr",
+      "description": "Udtræk teksten fra et billede",
+      "parameters": {
+        "image": {
+          "name": "billede",
+          "description": "Billedet der skal læses"
+        }
+      }
     }
   }
 }

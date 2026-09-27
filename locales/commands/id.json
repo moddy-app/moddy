@@ -400,6 +400,16 @@
           "description": "Seberapa jauh ke belakang, dalam hari (bawaan 30)"
         }
       }
+    },
+    "ocr": {
+      "name": "ocr",
+      "description": "Ambil teks dari sebuah gambar",
+      "parameters": {
+        "image": {
+          "name": "gambar",
+          "description": "Gambar yang akan dibaca"
+        }
+      }
     }
   }
 }

@@ -21,6 +21,9 @@ Every external call (embeddings + nano chat + rules safety check) goes through
 message → 1.pre-filter → 2.trivial allowlist → 3.regex blocklist ─match→ 5.nano
                                                       │no match
                                                       ▼
+                                              3bis.scam anchors ─≥1.0→ 5.nano
+                                                      │< 1.0
+                                                      ▼
                                               4.embedding ─≥threshold→ 5.nano
                                                       │< threshold
                                                       ▼
@@ -32,6 +35,7 @@ message → 1.pre-filter → 2.trivial allowlist → 3.regex blocklist ─match�
 | 1. pre-filter | `prefiltre.py` | free | bot / system / empty → STOP |
 | 2. trivial allowlist | `triviaux.py` | free | "ok", "mdr", "gg"… → STOP |
 | 3. regex blocklist | `blocklist.py` | free | match → nano (`source=regex`), **skips embedding** |
+| 3bis. scam anchors | `scam_anchors.py` | free | score ≥ `SCAM_ANCHOR_THRESHOLD` → nano (`source=ancres_scam`, category `arnaque_scam`) |
 | 4. embedding | `embeddings.py` | 1 embed call (cached) | `score ≥ SEUIL_EMBEDDING` → nano (`source=embedding`); else STOP |
 | 5. nano | `nano.py` | 1–3 chat calls | **the only decider** → `Decision` |
 
@@ -46,6 +50,20 @@ Only **nano decides**. Regex and embedding merely *route*. Output is a
   coverage directly conditions recall.
 - The trivial allowlist (`triviaux.py`) and the regex blocklist (`blocklist.py`)
   are inline Python data (regex / sets), also FR + EN.
+- `arnaque_scam` has its own blocklist block (free nitro, claim your reward,
+  crypto casino…) and 14 FR + EN references (added 2026-09 — before that the
+  category existed only on nano's side, so scam text was never routed).
+- **Scam anchors** (`scam_anchors.py`) — weighted anchor phrases of scam
+  interfaces ("Withdrawal Success", "promo code", "bonus", "USDT", "Bank card",
+  money amounts, impersonated celebrities…), matched per token with a small
+  edit distance (≤ 1 from 4 letters, ≤ 2 from 9) **and** on the separator-free
+  form, so noisy OCR text ("BANK CARO", "Vyrowith") still counts. One strong
+  anchor routes alone; weak ones must add up. It only routes — nano decides.
+- **Learned data** (Moddy team labeling queue, §9): embedding references
+  (`automod_learned_references`) are scored exactly like the static ones
+  (`EmbeddingEngine.set_learned/add_learned`), and blocklist terms
+  (`automod_learned_terms`) are appended to the static lists
+  (`Blocklist.reload`). Both are global and loaded at startup.
 
 > Calibrate `SEUIL_EMBEDDING` and extend the references / blocklist with **real
 > server data** over time. The blocklist is intentionally aggressive
@@ -95,7 +113,8 @@ that is the deterministic barème's job (session 2). The key v2 fields:
 
 **Canonical categories** (`automod.constants.CATEGORIES`): `insulte`, `menace`,
 `harcelement`, `harcelement_sexuel`, `haine_discrimination`,
-`incitation_automutilation`, `doxxing`, `arnaque_scam`, `violation_indications`.
+`incitation_automutilation`, `doxxing`, `arnaque_scam`, `violation_indications`,
+and `contenu_nsfw` (explicit images — decided by SafeSearch only, never by nano).
 Legacy detector/stored values (`insultes`, `menaces`, `contenu_sexuel`…) fold
 onto this set via `nano.CATEGORIE_ALIASES` / `nano.normalize_categorie` — no data
 migration needed.
@@ -623,6 +642,84 @@ anti-raid later, follow the same three steps.
 The only feature today: insults / problematic messages via the funnel of §1 →
 `Decision` → barème → sanction.
 
+### 4.2 `image_scam` — crypto / fake-giveaway images
+
+The raids this targets post a screenshot (fake MrBeast announcement + a fake
+"Withdrawal Success! +5 600 USDT" proof) — often from a compromised account,
+often in several channels at once. The feature (`ImageScamFeature`) turns the
+image into a normal automod decision:
+
+```
+image posted (attachments only, ≤ 4 / message, ≥ 128 px, ≤ 8 MB)
+   │ download + decode ONCE (bot.automod_images, bounded concurrency)
+   ▼
+1. perceptual hash (pHash + dHash, automod/image_hash.py)
+   ├─ known "block" (team-validated) → sanction on sight: arnaque_scam / haute /
+   │                                    high, decideur="equipe", no AI call
+   ├─ known "allow"                   → ignored (never flagged again)
+   ▼
+2. per-hash OCR cache (Redis 30 d, global) ─ hit → reuse the text
+   ▼ miss
+3. free pre-rules (image_policy.scam_risk_score) — OCR only if score ≥ 2
+   (or the guild enabled `scan_all`):
+     account < 30 d +2 · on the server < 7 d +2 · ≥ 2 images +1 ·
+     text empty / link / scam words +1 · same image in ≥ 3 channels (10 min) +3 ·
+     screenshot-like layout +1
+   ▼
+4. OCR — gpt-4.1-nano vision (call_type automod_image_ocr, guild quota 300/day)
+   ▼
+5. OCR text → engine.analyze(TargetMessage(origine="image_ocr"))
+   blocklist → scam anchors → embedding → nano (dedicated prompt block:
+   "text read from an image, noisy"), grounding unchanged (the citation must
+   be a substring of the OCR text)
+   ▼
+6. Decision → barème (arnaque_scam) → applied like any decision; every
+   cross-posted copy of the image is deleted too → copy to the team queue (§9)
+```
+
+An image the pipeline could not read (OCR unavailable, decode failure, queue
+full) is **never** sanctioned.
+
+### 4.3 `image_nsfw` — explicit images (Google SafeSearch)
+
+```
+image posted  (skipped in age-restricted channels)
+   ▼
+1. perceptual hash → known "block" (nsfw) → sanction on sight · "allow" → ignored
+2. per-hash SafeSearch cache (Redis 30 d, global) — an image seen anywhere costs 0
+3. budget: the Google free tier (1000 / month) is shared by ALL of Moddy
+     - smoothed: allowed(t) = cap × elapsed-month-fraction + 30 (burst)
+     - priority tier (account < 30 d or on the server < 7 d) may spend up to
+       100 % of allowed(t); everyone else only while usage < 70 % of it
+     - at most NSFW_GUILD_DAILY_SHARE (15) calls per guild per day
+     - the hard cap is a calendar-month, fail-closed gateway rule
+4. SafeSearch (call_type automod_safesearch) → image_policy.safesearch_to_verdict
+     adult VERY_LIKELY → sanction, contenu_nsfw / haute / high
+     adult LIKELY      → sanction, contenu_nsfw / moyenne / medium (barème caps at mute 48 h)
+     adult POSSIBLE, racy VERY_LIKELY, violence VERY_LIKELY → doubt only
+                         (team queue, nothing applied)
+```
+
+No model decides an NSFW image: the likelihood scale is the whole policy
+(`decideur="safesearch"`). Barème floors for `contenu_nsfw`: basse 0 ·
+moyenne 2 · haute 3 · critique 5. SafeSearch is **not** a CSAM detector.
+
+### Image decisions, everywhere else
+
+- `Decision.origine` (`texte` / `image_ocr` / `image_hash` / `image_nsfw`),
+  `Decision.contenu_juge` (the OCR text), `Decision.image` (`ImageMeta`: hashes,
+  SafeSearch likelihoods, scam anchors, known-hash match, cross-post copies).
+- The alert card, the case evidence (`payload.origine`, `payload.image`), the
+  sanction DM and the shadow card show the **judged text** (OCR) instead of the
+  empty message; the alert card attaches a downscaled copy of the image,
+  **always spoilered**.
+- The heavy-sanction mini confirmation re-reads the OCR text with the same
+  origin block; `equipe` / `safesearch` decisions skip it (nothing to re-read).
+- Once a feature deleted the message, the remaining features stop (no double
+  sanction on one message).
+- Config: `features.image_nsfw` / `features.image_scam` (`+ scan_all`), toggled
+  in `/config` → Automod → Options; the panel's exemptions apply to every feature.
+
 > A `situation` feature (diffuse harassment / dogpiling, judged on a friction
 > state machine + a `mini` sequence analyst) existed until 2026-08 and was
 > removed: it never applied anything (forced shadow mode) and did not earn its
@@ -639,6 +736,8 @@ The only feature today: insults / problematic messages via the funnel of §1 →
 | `automod_decision_mini` | openai/chat (mini) | guild | ✅ |
 | `automod_confirm` | openai/chat (mini) | guild | ✅ |
 | `automod_rules_check` | openai/chat | guild | ✅ |
+| `automod_image_ocr` | openai/vision (nano) | guild (300/day) + global | ✅ |
+| `automod_safesearch` | google_vision/safe_search | guild + global (+ monthly fail-closed rule) | ✅ |
 
 Seeded unlimited in `db/base.py`; tighten per-guild via `quota_overrides`.
 `automod_decision_mini` (ambiguous cases) and `automod_confirm` (heavy-sanction
@@ -750,6 +849,22 @@ budget guard (5.3): they bound exactly those two failure modes.
 | `NANO_TEMPERATURE` | 0.0 | classification → deterministic |
 | `NANO_MAX_TOKENS` | 300 | lean v2 contract |
 | `PREFILTRE_MAX_CHARS` | 1500 | embed input cap (collapsed-form truncation) |
+
+### Image tunables (`automod/constants.py`, §4.2/§4.3)
+
+| Constant | Default | Meaning |
+|---|---|---|
+| `IMAGE_OCR_MODEL` | `gpt-4.1-nano` | vision model reading scam screenshots |
+| `IMAGE_MAX_SIDE` | 1280 | longest side sent to OCR / SafeSearch |
+| `IMAGE_MAX_BYTES` / `IMAGE_MIN_SIDE` / `IMAGE_MAX_PER_MESSAGE` | 8 MB / 128 px / 4 | which attachments are looked at |
+| `IMAGE_CONCURRENCY` / `IMAGE_QUEUE_MAX` | 4 / 64 | process-wide image jobs (memory bound) |
+| `PHASH_MAX_DISTANCE` / `DHASH_MAX_DISTANCE` | 6 / 10 | known-hash match (both must hold) |
+| `IMAGE_VERDICT_TTL_SECONDS` | 30 d | per-hash OCR text / SafeSearch cache |
+| `CROSSPOST_WINDOW_SECONDS` / `CROSSPOST_MIN_CHANNELS` | 600 / 3 | same image, same author, several channels |
+| `SCAM_RISK_THRESHOLD` | 2 | pre-rules score needed to OCR |
+| `SCAM_ANCHOR_THRESHOLD` | 1.0 | anchor score that routes text to nano |
+| `SAFESEARCH_MONTHLY_CAP` / `SAFESEARCH_BURST` / `SAFESEARCH_NORMAL_TIER_RATIO` | 1000 / 30 / 0.7 | smoothed monthly SafeSearch budget |
+| `NSFW_GUILD_DAILY_SHARE` | 15 | SafeSearch calls per guild per day |
 
 ### Cost-control tunables (session 4, `automod/constants.py`)
 
@@ -924,3 +1039,57 @@ stdout, for a curator to review and fold into `golden.jsonl`:
 This is the loop that keeps the golden set — and the whole harness — grounded in
 real server traffic. It is also the raw material for per-server precedents
 (session 7).
+
+---
+
+## 9. Moddy team labeling queue (`services/automod_label_service.py`)
+
+Every automod **sanction** (text or image, shadow simulations included) and every
+**doubtful** decision is copied to a Moddy team channel
+(`MODDY_AUTOMOD_LABEL_CHANNEL_ID`, queue off while it is `0`) where humans
+label it. The goal is to grow the samples the bot learns from — and to catch
+its mistakes.
+
+**Doubt** (`Decision.doute`, `engine.detect_doute`): a grounding rejection
+(nano wanted to sanction, the guard voided it), a sanction taken with `low`
+confidence, a heavy sanction the mini confirmation refused, a scam-anchor hit
+nano cleared, SafeSearch `POSSIBLE` / racy / violence.
+
+**The card** (`utils/automod_label_views.py`, English like every team panel):
+server, author, channel + jump, why it is here, the bot's decision and what was
+actually applied, the text / OCR (spoilered), the image (**always spoilered**),
+SafeSearch likelihoods, scam anchors, known-hash match, duplicate count.
+Controls (persistent `DynamicItem`s, staff node `automod_label`):
+
+| control | effect |
+|---|---|
+| category select | corrects the category before labeling (text / scam) |
+| **Sanctionable** | image → hash `block` (+ OCR text → `arnaque_scam` reference) · text → embedding reference in the chosen category · eval candidate `correct` |
+| **Not sanctionable** | image → hash `allow` · text → server precedent `non_sanctionnable` (`source=equipe_moddy`) + eval candidate `faux_positif` · **if the bot sanctioned: revocation** |
+| **Skip** | nothing |
+| Blocklist terms | Modal V2 (terms, words/compact, category) → `automod_learned_terms` |
+
+**The label never applies a sanction.** Its only enforcement is the reverse:
+"not sanctionable" on a decision the bot sanctioned revokes every active
+sanction of the case (`db.revoke_sanction`, by `moddy_staff`), lifts the
+Discord side (`utils/sanction_reversal.py` — unban / clear timeout, shared with
+appeals), adds a timeline comment, posts a notice in the server's alert channel
+(server language) and DMs the member through `bot.notifications`. A deleted
+message cannot be restored. A labeled item is final.
+
+**Duplicates** — an unlabeled item with the same key within 24 h is counted
+(`occurrences`) instead of a new card: images by hash (any server), text by
+collapsed text **per server** (the same words can be banter here and harassment
+there). Each duplicate's sanction is appended to `details.sanctions`, so one
+label revokes them all. A safety cap (`MODDY_AUTOMOD_LABEL_HOURLY_CAP`, 300/h)
+bounds the channel.
+
+**Learned data** is global and bounded: hashes (index in memory, 20 000 max),
+embedding references (1000 max, oldest evicted, near-duplicates cos ≥ 0.97
+skipped), blocklist terms. `/mod automod` shows the queue, the monthly Google
+Vision budget and the learned sets, and purges a wrong entry by id.
+
+Tables: `automod_label_items`, `automod_image_hashes`,
+`automod_learned_references`, `automod_learned_terms` — schemas in
+[AUTOMOD_AI_CONFIG.md §8](AUTOMOD_AI_CONFIG.md#8-related-tables-read-mostly-for-the-dashboard).
+

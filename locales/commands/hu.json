@@ -400,6 +400,16 @@
           "description": "Hány napra visszamenőleg (alapértelmezés 30)"
         }
       }
+    },
+    "ocr": {
+      "name": "ocr",
+      "description": "Kinyeri egy kép szövegét",
+      "parameters": {
+        "image": {
+          "name": "kep",
+          "description": "Az olvasandó kép"
+        }
+      }
     }
   }
 }

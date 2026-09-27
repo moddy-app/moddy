@@ -69,6 +69,17 @@ Deleting a config = writing `{}` (that is what the "Delete" button does).
       "enabled": false,             // bool
       "exempt_roles": [],           // int[] role ids (≤ 25 via the UI)
       "exempt_channels": []         // int[] channel ids (≤ 25 via the UI)
+    },
+    "image_nsfw": {                 // explicit images (Google SafeSearch)
+      "enabled": false,
+      "exempt_roles": [],
+      "exempt_channels": []
+    },
+    "image_scam": {                 // crypto / fake-giveaway screenshots
+      "enabled": false,
+      "exempt_roles": [],
+      "exempt_channels": [],
+      "scan_all": false             // bool — OCR every image, not only risky ones
     }
   }
 }
@@ -84,14 +95,18 @@ Deleting a config = writing `{}` (that is what the "Delete" button does).
 | `ignore_moderators` | bool | `true` | Members with `manage_messages` are skipped entirely. |
 | `severity` | int 1–5 | `3` | Detection dial: scales the embedding routing threshold (1 = 0.62 … 5 = 0.35) and the barème's global cran shift. Values outside 1–5 are clamped. |
 | `max_action` | enum | `"ban"` | Hardest sanction the automod may apply: `warn` < `mute` < `ban`. The barème caps itself at this level. |
-| `categories_desactivees` | string[] | `[]` | AI categories the server never wants actioned. Allowed values: `insulte`, `menace`, `harcelement`, `harcelement_sexuel`, `haine_discrimination`, `incitation_automutilation`, `doxxing`, `arnaque_scam`, `violation_indications`. A decision in a disabled category is downgraded to deletion only. No UI selector yet — ops/backend-set; the bot's config panel preserves the value on save. |
+| `categories_desactivees` | string[] | `[]` | AI categories the server never wants actioned. Allowed values: `insulte`, `menace`, `harcelement`, `harcelement_sexuel`, `haine_discrimination`, `incitation_automutilation`, `doxxing`, `arnaque_scam`, `violation_indications`, `contenu_nsfw`. A decision in a disabled category is downgraded to deletion only. No UI selector yet — ops/backend-set; the bot's config panel preserves the value on save. |
 | `dry_run` | bool | `false` | **Shadow mode**: the whole funnel + barème run, but nothing is applied (no delete, no sanction, no case, no DM). A SIMULATION card with ✅/❌/⚠️ annotation buttons is posted to `notify_channel_id` instead. |
 | `features.content.enabled` | bool | `false` | The AI content detector. Today the only feature. |
 | `features.content.exempt_roles` | int[] | `[]` | Members holding any of these roles are not moderated. |
 | `features.content.exempt_channels` | int[] | `[]` | These channels (and threads whose parent is listed) are not moderated. |
+| `features.image_nsfw.enabled` | bool | `false` | Explicit-image detection (Google SafeSearch, shared monthly budget). Age-restricted channels are always skipped. |
+| `features.image_scam.enabled` | bool | `false` | Scam-screenshot detection (known hash → OCR → AI funnel). |
+| `features.image_scam.scan_all` | bool | `false` | OCR every image instead of only the ones the free pre-rules flag as risky. No UI yet (ops/backend-set); the panel preserves it. |
+| `features.<image_*>.exempt_*` | int[] | `[]` | Same shape as `content`. The bot's own panel writes **one** exemption list onto all three features; a dashboard may keep them identical too. |
 
-`features` is an **open map keyed by feature id**: future detectors (anti-link,
-anti-spam…) will add sibling blocks with the same `{enabled, exempt_roles,
+`features` is an **open map keyed by feature id** (`content`, `image_nsfw`,
+`image_scam` today): future detectors (anti-link, anti-spam…) will add sibling blocks with the same `{enabled, exempt_roles,
 exempt_channels}` shape. Unknown feature ids are **rejected** by validation, so
 the backend must not invent keys.
 
@@ -106,7 +121,7 @@ The bot computes `enabled` at load time as:
 
 ```
 running = config.enabled
-          AND any(features[*].enabled)
+          AND any(features[*].enabled)      # content, image_nsfw or image_scam
           AND notify_channel_id is not null
 ```
 
@@ -249,6 +264,65 @@ CREATE TABLE automod_precedents (
 Capped at 500 rows per guild (oldest evicted). Fed by human rulings (accepted /
 refused appeals, shadow-card clicks).
 
+### `automod_label_items` — Moddy team labeling queue (global)
+
+```sql
+CREATE TABLE automod_label_items (
+    id              UUID PRIMARY KEY,
+    kind            TEXT NOT NULL CHECK (kind IN ('texte','image_scam','image_nsfw')),
+    motif           TEXT NOT NULL CHECK (motif IN ('sanction','doute','simulation')),
+    guild_id        BIGINT NOT NULL,
+    channel_id      BIGINT,
+    message_id      BIGINT,
+    author_id       BIGINT,
+    contenu         TEXT,            -- message text, or the OCR text of an image
+    phash           BIGINT,          -- 64-bit perceptual hash, stored signed
+    dhash           BIGINT,
+    dedup_key       TEXT,
+    details         JSONB,           -- bot decision snapshot, image facts, sanctions[]
+    case_id         UUID,
+    occurrences     INTEGER NOT NULL DEFAULT 1,
+    card_channel_id BIGINT,
+    card_message_id BIGINT,
+    verdict         TEXT CHECK (verdict IN ('sanctionnable','non_sanctionnable','ignore')),
+    categorie_humaine TEXT,
+    labeled_by      BIGINT,
+    labeled_at      TIMESTAMPTZ,
+    revoked         BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+```
+
+`details.sanctions` = `[{guild_id, case_id, author_id, message_id}]` — every bot
+sanction the item (and its duplicates) caused; a "non_sanctionnable" label
+revokes them all. Images are **not** stored here (they live only as a spoilered
+attachment on the team card).
+
+### `automod_image_hashes`, `automod_learned_references`, `automod_learned_terms` (global)
+
+```sql
+CREATE TABLE automod_image_hashes (
+    id BIGSERIAL PRIMARY KEY, phash BIGINT NOT NULL, dhash BIGINT NOT NULL,
+    kind TEXT NOT NULL CHECK (kind IN ('scam','nsfw')),
+    verdict TEXT NOT NULL CHECK (verdict IN ('block','allow')),
+    label_item_id UUID, added_by BIGINT, created_at TIMESTAMPTZ NOT NULL DEFAULT now());
+
+CREATE TABLE automod_learned_references (
+    id BIGSERIAL PRIMARY KEY, categorie TEXT NOT NULL, texte TEXT NOT NULL,
+    embedding BYTEA NOT NULL,        -- float32 vector, normalised (like automod_precedents)
+    label_item_id UUID, added_by BIGINT, created_at TIMESTAMPTZ NOT NULL DEFAULT now());
+
+CREATE TABLE automod_learned_terms (
+    id BIGSERIAL PRIMARY KEY, terme TEXT NOT NULL, categorie TEXT NOT NULL,
+    mode TEXT NOT NULL CHECK (mode IN ('words','compact')),
+    label_item_id UUID, added_by BIGINT, created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (terme, mode));
+```
+
+Written only by the bot (team labels, `/mod automod`). The bot loads them at
+startup; a row written by another service is picked up on the next restart
+(hashes: within 15 min).
+
 ### `case_appeals` — appeals of automod sanctions
 
 See [MODERATION_CASES.md](MODERATION_CASES.md). Sanctions themselves live in the
@@ -259,7 +333,7 @@ generic `cases` / `case_sanctions` / `case_events` tables with
 
 | Lever | Where | Effect |
 |---|---|---|
-| `quota_limits` / `quota_overrides` (scope `guild`, key = guild id) | PostgreSQL | Hard daily cap per call type: `automod_decision`, `automod_decision_mini`, `automod_confirm`, `automod_rules_check` (`automod_embed` is not quota-gated). `-1` = unlimited. |
+| `quota_limits` / `quota_overrides` (scope `guild`, key = guild id) | PostgreSQL | Hard daily cap per call type: `automod_decision`, `automod_decision_mini`, `automod_confirm`, `automod_rules_check`, `automod_image_ocr` (default 300/guild), `automod_safesearch` (`automod_embed` is not quota-gated). `-1` = unlimited. |
 | `automod:budget:cap:{guild_id}` | Redis | Per-guild override of the daily soft cap (default 300 "call units"; a `mini` call counts 4). Past the cap the funnel degrades (AI reserved for flagrant cases) instead of stopping. |
 | `automod:budget:{guild_id}:{YYYYMMDD}` | Redis | The day's consumption counter (read-only for observability). |
 

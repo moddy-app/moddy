@@ -104,7 +104,9 @@ message-driven module.
 `Transcribe` is the **fifth and last** message context menu Discord allows
 (with `Save Message`, `Get Emojis`, `Translate`, `AI text tools`). A sixth one
 means merging two of them, as `AI text tools` already does for `/fix`,
-`/rephrase` and `/summarize`.
+`/rephrase` and `/summarize` — and as `Transcribe` itself does for images: on a
+message with an image and no audio it extracts the text instead (OCR, see
+[OCR.md](OCR.md)).
 
 Its localized names live in `locales/commands/<locale>.json` under
 `context_menus.Transcribe` — all 32 Discord locales, see

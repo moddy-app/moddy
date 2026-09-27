@@ -28,7 +28,7 @@ from cogs.error_handler import BaseView, BaseModal
 from utils.emojis import (
     SHIELD, BOOK, BACK, DELETE, MESSAGE, GROUPS, SETTINGS, WARNING, SAVE,
     UNDONE, REQUIRED_FIELDS, MANAGE_USER, GREEN_STATUS, RED_STATUS, TOGGLE_ON,
-    TOGGLE_OFF, SEARCH,
+    TOGGLE_OFF, SEARCH, IMAGE, DOLLARS,
 )
 from automod.rules_check import validate_rules, MAX_RULES_LENGTH
 from automod import constants as ac
@@ -63,8 +63,16 @@ _DEFAULT_CONFIG = {
     "dry_run": False,
     "features": {
         "content": {"enabled": False, "exempt_roles": [], "exempt_channels": []},
+        # Automod images (docs/AUTOMOD_AI.md §4.2/§4.3). The panel edits ONE set
+        # of exemptions and mirrors it onto every feature.
+        "image_nsfw": {"enabled": False, "exempt_roles": [], "exempt_channels": []},
+        "image_scam": {"enabled": False, "exempt_roles": [], "exempt_channels": [],
+                       "scan_all": False},
     },
 }
+
+#: Features whose on/off lives in the activations select.
+_FEATURE_IDS = ("content", "image_nsfw", "image_scam")
 
 
 def _deep_default(current: Optional[Dict[str, Any]]) -> Dict[str, Any]:
@@ -86,12 +94,18 @@ def _deep_default(current: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         str(c) for c in (current.get("categories_desactivees", []) or [])
     ]
     cfg["dry_run"] = bool(current.get("dry_run", False))
-    content = (current.get("features", {}) or {}).get("content", {}) or {}
-    cfg["features"]["content"] = {
-        "enabled": bool(content.get("enabled", False)),
-        "exempt_roles": list(content.get("exempt_roles", [])),
-        "exempt_channels": list(content.get("exempt_channels", [])),
-    }
+    features = current.get("features", {}) or {}
+    content = features.get("content", {}) or {}
+    for fid in _FEATURE_IDS:
+        stored = features.get(fid, {}) or {}
+        cfg["features"][fid] = {
+            "enabled": bool(stored.get("enabled", False)),
+            # Exemptions are shared: the content feature's list is the source.
+            "exempt_roles": list(content.get("exempt_roles", [])),
+            "exempt_channels": list(content.get("exempt_channels", [])),
+        }
+    cfg["features"]["image_scam"]["scan_all"] = bool(
+        (features.get("image_scam", {}) or {}).get("scan_all", False))
     return cfg
 
 
@@ -254,9 +268,11 @@ class AutomodAIConfigView(BaseView):
         cfg = self.working_config
         module_on = cfg["enabled"]
         content_on = self._content["enabled"]
+        nsfw_on = cfg["features"]["image_nsfw"]["enabled"]
+        scam_on = cfg["features"]["image_scam"]["enabled"]
         ignore_on = cfg["ignore_moderators"]
         has_channel = cfg.get("notify_channel_id") is not None
-        running = module_on and content_on and has_channel
+        running = module_on and (content_on or nsfw_on or scam_on) and has_channel
 
         # ── Header + one-line status ──────────────────────────────────────
         container.add_item(ui.TextDisplay(
@@ -310,7 +326,7 @@ class AutomodAIConfigView(BaseView):
         opt_row = ui.ActionRow()
         opt_select = ui.Select(
             placeholder=t("modules.automod_ai.config.activations.placeholder", locale=self.locale),
-            min_values=0, max_values=3,
+            min_values=0, max_values=5,
             options=[
                 discord.SelectOption(
                     label=t("modules.automod_ai.config.content_label", locale=self.locale),
@@ -318,6 +334,20 @@ class AutomodAIConfigView(BaseView):
                     description=t("modules.automod_ai.config.content_desc", locale=self.locale)[:100],
                     emoji=discord.PartialEmoji.from_str(MESSAGE),
                     default=content_on,
+                ),
+                discord.SelectOption(
+                    label=t("modules.automod_ai.config.image_nsfw_label", locale=self.locale),
+                    value="image_nsfw",
+                    description=t("modules.automod_ai.config.image_nsfw_desc", locale=self.locale)[:100],
+                    emoji=discord.PartialEmoji.from_str(IMAGE),
+                    default=nsfw_on,
+                ),
+                discord.SelectOption(
+                    label=t("modules.automod_ai.config.image_scam_label", locale=self.locale),
+                    value="image_scam",
+                    description=t("modules.automod_ai.config.image_scam_desc", locale=self.locale)[:100],
+                    emoji=discord.PartialEmoji.from_str(DOLLARS),
+                    default=scam_on,
                 ),
                 discord.SelectOption(
                     label=t("modules.automod_ai.config.ignore_mods.label", locale=self.locale),
@@ -586,7 +616,8 @@ class AutomodAIConfigView(BaseView):
             return
         working_config = await self._fresh_working_config(interaction)
         selected = set(interaction.data.get("values", []))
-        self._content_of(working_config)["enabled"] = "content" in selected
+        for fid in _FEATURE_IDS:
+            working_config["features"][fid]["enabled"] = fid in selected
         working_config["ignore_moderators"] = "ignore" in selected
         working_config["dry_run"] = "dry_run" in selected
         view = await self._rebuild(interaction, working_config, True)
@@ -625,7 +656,9 @@ class AutomodAIConfigView(BaseView):
         if not await check_guild_perms(interaction):
             return
         working_config = await self._fresh_working_config(interaction)
-        self._content_of(working_config)["exempt_roles"] = [int(v) for v in interaction.data.get("values", [])]
+        roles = [int(v) for v in interaction.data.get("values", [])]
+        for fid in _FEATURE_IDS:
+            working_config["features"][fid]["exempt_roles"] = list(roles)
         view = await self._rebuild(interaction, working_config, True)
         await interaction.response.edit_message(view=view)
 
@@ -633,7 +666,9 @@ class AutomodAIConfigView(BaseView):
         if not await check_guild_perms(interaction):
             return
         working_config = await self._fresh_working_config(interaction)
-        self._content_of(working_config)["exempt_channels"] = [int(v) for v in interaction.data.get("values", [])]
+        channels = [int(v) for v in interaction.data.get("values", [])]
+        for fid in _FEATURE_IDS:
+            working_config["features"][fid]["exempt_channels"] = list(channels)
         view = await self._rebuild(interaction, working_config, True)
         await interaction.response.edit_message(view=view)
 

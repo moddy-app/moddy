@@ -59,6 +59,22 @@ MODDY_BUG_REPORT_CHANNEL_ID: int = int(
 MODDY_CONFIG_HELP_CHANNEL_ID: int = int(
     os.environ.get("MODDY_CONFIG_HELP_CHANNEL_ID", "1542307892970131516"))
 
+# Automod labeling queue (docs/AUTOMOD_AI.md §9): every automod sanction and
+# every doubtful decision is copied here, in the Moddy team guild, for the team
+# to label. 0 = queue disabled (nothing is copied) until the channel exists.
+def _int_or_zero(value: str) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return 0
+
+
+MODDY_AUTOMOD_LABEL_CHANNEL_ID: int = _int_or_zero(
+    os.environ.get("MODDY_AUTOMOD_LABEL_CHANNEL_ID", "0"))
+# Safety net on the queue's volume: at most this many cards per hour.
+MODDY_AUTOMOD_LABEL_HOURLY_CAP: int = _int_or_zero(
+    os.environ.get("MODDY_AUTOMOD_LABEL_HOURLY_CAP", "300"))
+
 # Public Moddy URLs, referenced from panels, notifications and welcome cards.
 SUPPORT_URL: str = os.environ.get("MODDY_SUPPORT_URL", "https://moddy.app/support")
 DASHBOARD_URL: str = os.environ.get("MODDY_DASHBOARD_URL", "https://dashboard.moddy.app")

@@ -400,6 +400,16 @@
           "description": "Quanti giorni indietro guardare (predefinito 30)"
         }
       }
+    },
+    "ocr": {
+      "name": "ocr",
+      "description": "Estrai il testo di un'immagine",
+      "parameters": {
+        "image": {
+          "name": "immagine",
+          "description": "L'immagine da leggere"
+        }
+      }
     }
   }
 }

@@ -109,6 +109,7 @@ no nodes has no command access even if it matches the type check.
 | `bot_customization_manage` | `/manage customization grant\|list` — staff-granted Bot Customization access, see [BOT_CUSTOMIZATION.md](BOT_CUSTOMIZATION.md#staff-override--the-bot_customization-guild-attribute) |
 | `user_lookup` | The personal-data section of `/team user` (email, Stripe customer, stored preferences). The command itself stays open to all staff — only that section is gated |
 | `support_request` | Claim / reply to / close a `/bug-report` or configuration-help request ([SUPPORT_REQUESTS.md](SUPPORT_REQUESTS.md)) |
+| `automod_label` | Label automod decisions in the team queue (Moderator role) and `/mod automod` ([AUTOMOD_AI.md §9](AUTOMOD_AI.md)) |
 | `broadcast` | `/com send`, `/com beta` |
 
 `"common"` key in `role_permissions` = nodes available to all of the user's roles.

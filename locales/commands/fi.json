@@ -400,6 +400,16 @@
           "description": "Kuinka kauas taaksepäin katsotaan, päivinä (oletus 30)"
         }
       }
+    },
+    "ocr": {
+      "name": "ocr",
+      "description": "Poimi kuvan teksti",
+      "parameters": {
+        "image": {
+          "name": "kuva",
+          "description": "Luettava kuva"
+        }
+      }
     }
   }
 }

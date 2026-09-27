@@ -135,8 +135,16 @@ class ModdyBot(ModdyFrameworkBot):
         self.expirations = ExpirationNotifier(self)
         from services.precedent_service import PrecedentService
         self.precedents = PrecedentService(self)  # automod server precedents (RAG)
+        from services.automod_image_service import AutomodImageService
+        # Automod images: downloads, hash index, verdict cache, OCR/SafeSearch
+        self.automod_images = AutomodImageService(self)
+        from services.automod_label_service import AutomodLabelService
+        # Moddy team labeling queue for automod decisions (docs/AUTOMOD_AI.md §9)
+        self.automod_labels = AutomodLabelService(self)
         from services.transcription_service import TranscriptionService
         self.transcription = TranscriptionService(self)  # voice message speech-to-text
+        from services.ocr_service import OcrService
+        self.ocr = OcrService(self)  # image → text (/ocr + Transcribe menu on images)
         from services.altguard_client import AltGuardClient
         # AltGuard anti multi-account verification (HTTP + altguard:* Pub/Sub)
         self.altguard = AltGuardClient(self)
@@ -1077,6 +1085,11 @@ class ModdyBot(ModdyFrameworkBot):
             logger.info("API gateway ready")
         except Exception as e:
             logger.error(f"[FAIL] API gateway startup error: {e}")
+
+        # Automod: what the Moddy team taught the bot (learned references,
+        # blocklist terms, image hashes). Background — never delays startup.
+        if self.db:
+            asyncio.create_task(self.automod_labels.load_learned())
 
         # Add before_invoke check for prefix commands cog disable
         @self.before_invoke

@@ -84,3 +84,52 @@ class AIClient:
             rate_cost={UNIT_REQUESTS: 1},
         )
         return await self._executor.execute(spec)
+
+    async def vision(
+        self,
+        *,
+        image: bytes,
+        mime: str = "image/png",
+        system: str = "",
+        prompt: str = "",
+        model: str = "gpt-4.1-nano",
+        detail: str = "high",
+        json_mode: bool = False,
+        temperature: float = 0.0,
+        max_tokens: Optional[int] = None,
+        quota: QuotaPlan,
+        call_type: str,
+        correlation_id: Optional[str] = None,
+        metadata: Optional[dict] = None,
+    ) -> str | dict:
+        """Chat completion over one image (OCR, image understanding).
+
+        The image travels on ``CallSpec.binary``; the adapter builds the
+        ``image_url`` part at send time, so neither the webhook log nor the
+        api_calls table ever carry the base64.
+        """
+        payload: dict = {
+            "system": system,
+            "prompt": prompt,
+            "mime": mime,
+            "detail": detail,
+            "temperature": temperature,
+            "json_mode": json_mode,
+            # Metadata only — the bytes themselves ride on `binary`.
+            "size_bytes": len(image),
+        }
+        if max_tokens:
+            payload["max_tokens"] = max_tokens
+        spec = CallSpec(
+            provider="openai",
+            operation="vision",
+            model=model,
+            payload=payload,
+            quota=quota,
+            call_type=call_type,
+            correlation_id=correlation_id or str(uuid.uuid4()),
+            metadata=metadata or {},
+            rate_cost={UNIT_REQUESTS: 1},
+            binary=image,
+        )
+        return await self._executor.execute(spec)

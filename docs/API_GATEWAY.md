@@ -74,6 +74,30 @@ result = await bot.gateway.transcription.transcribe(
 )
 # result: Transcription(text=..., language=..., duration=...)
 
+# Vision on one image (OpenAI) — the bytes ride on CallSpec.binary; the adapter
+# builds the image_url part at send time, so logs never carry base64.
+text = await bot.gateway.ai.vision(
+    image=jpeg_bytes, mime="image/jpeg",
+    system="You are an OCR engine…", prompt="Transcribe the text of this image.",
+    model="gpt-4.1-nano", detail="high", max_tokens=700,
+    quota=[QuotaTarget.guild(guild.id, "automod_image_ocr")],
+    call_type="automod_image_ocr",
+)
+
+# Google Cloud Vision — SafeSearch and document OCR (monthly free tier, see
+# "Provider Rate Limits": calendar-month, fail-closed rules).
+verdict = await bot.gateway.vision.safe_search(
+    jpeg_bytes, mime="image/jpeg",
+    quota=[QuotaTarget.guild(guild.id, "automod_safesearch")],
+    call_type="automod_safesearch",
+)
+# verdict: SafeSearchResult(adult="VERY_LIKELY", racy=..., violence=..., medical=..., spoof=...)
+ocr = await bot.gateway.vision.document_text(
+    image_bytes, mime="image/png",
+    quota=[QuotaTarget.user(user.id, "ocr_command")], call_type="ocr_command",
+)
+# ocr: OcrResult(text=..., language=...)
+
 # Availability check (for graceful degradation)
 available = await bot.gateway.quota_available(QuotaTarget.guild(guild.id, "ban_reason"))
 ```
@@ -152,6 +176,12 @@ Limits are cached in memory with a 60-second TTL to avoid PG hits on the hot pat
 | `translation` | global | -1 |
 | `chatbot` | guild | -1 |
 | `voice_transcription` | user / guild / global | -1 |
+| `automod_safesearch` | guild / global | -1 (the binding cap is the monthly Vision rule + the automod pacing) |
+| `automod_image_ocr` | guild | **300** |
+| `automod_image_ocr` | global | -1 |
+| `ocr_command` | user | **10** |
+| `ocr_command` | guild | **100** |
+| `ocr_command` | global | -1 |
 
 To add a limit for a specific guild:
 ```sql
@@ -178,10 +208,18 @@ ON CONFLICT (scope, key, type) DO UPDATE SET daily_limit = EXCLUDED.daily_limit;
 | `text_summarize` | openai/chat (`gpt-4.1-mini`) | user + guild | ✅ |
 
 | `voice_transcription` | groq/transcribe (`whisper-large-v3-turbo`) | user + guild | ✅ |
+| `automod_image_ocr` | openai/vision (`gpt-4.1-nano`) | guild + global | ✅ |
+| `automod_safesearch` | google_vision/safe_search | guild + global | ✅ |
+| `ocr_command` | google_vision/document_text | user + guild + global | ✅ |
 
 > `text_*` calls come from `cogs/text_tools.py` (`/fix`, `/rephrase`, `/summarize`).
 > The guild target is only added when the command runs inside a server — in DMs
 > and user-installed contexts only the user bucket is debited.
+>
+> `automod_image_ocr` / `automod_safesearch` come from
+> `services/automod_image_service.py` (automod image features, see
+> [AUTOMOD_AI.md](AUTOMOD_AI.md) §4.2/§4.3); `ocr_command` from
+> `services/ocr_service.py` (see [OCR.md](OCR.md)).
 >
 > `voice_transcription` comes from `services/transcription_service.py`
 > (see [VOICE_TRANSCRIPTION.md](VOICE_TRANSCRIPTION.md)). Same rule for the
@@ -207,6 +245,8 @@ Rules live in `gateway/config.py` and mirror the provider console:
 | openai / `text-embedding-3-small` | `rpm` | 3 000 requests | 1 min | `OPENAI_EMBED_RPM` |
 | openai / `gpt-4.1-nano` | `rpm` | 500 requests | 1 min | `OPENAI_NANO_RPM` |
 | openai / `gpt-4.1-mini` | `rpm` | 500 requests | 1 min | `OPENAI_MINI_RPM` |
+| google_vision / `safe_search` | `rpmo` | 1 000 requests | **calendar month** (Pacific), fail-closed | `GOOGLE_VISION_SAFESEARCH_MONTHLY` |
+| google_vision / `document_text` | `rpmo` | 1 000 requests | **calendar month** (Pacific), fail-closed | `GOOGLE_VISION_OCR_MONTHLY` |
 
 The OpenAI values mirror our org's Tier 1 limits (platform.openai.com → Limits
 → Rate limits). Only RPM is enforced (not TPM) — estimating tokens ahead of
@@ -221,6 +261,13 @@ How it works:
 - The reservation is **released** when the call fails, and **reconciled** when the
   provider reports the real cost (audio duration is estimated before, measured after).
 - Redis unavailable ⇒ **fail open**. A limiter that cannot count must never take a feature down.
+  **Exception:** a rule flagged `fail_closed=True` refuses the call instead — used for
+  the Google Vision free tier, where every unit past the allowance is billed.
+- `RateRule(calendar="month")` follows the calendar month in `tz` (default
+  `America/Los_Angeles`, Google's billing clock): the window index is `YYYYMM`, so the
+  counter resets exactly when the provider's free tier does. Google Vision has no
+  "model": its rules are keyed on the billed feature (`safe_search`, `document_text`),
+  which the `VisionClient` passes as `CallSpec.model`.
 
 Breaching one raises `ModelRateLimitError` (`.rule`, `.limit`, `.retry_after`)
 **without contacting the provider**.
@@ -320,6 +367,10 @@ except (APIUnavailableError, GatewayError):
 | `OPENAI_API_KEY` | — | Required for AI features |
 | `DEEPL_API_KEY` | — | Required for translation |
 | `GROQ_API_KEY` | — | Required for voice transcription |
+| `GOOGLE_VISION_API_KEY` | — | Google Cloud Vision API key (SafeSearch for automod images, document OCR for `/ocr`). The Cloud project needs the Vision API enabled and a billing account, even inside the free tier |
+| `GOOGLE_VISION_SAFESEARCH_MONTHLY` | `1000` | SafeSearch units per calendar month (fail-closed) |
+| `GOOGLE_VISION_OCR_MONTHLY` | `1000` | Document OCR units per calendar month (fail-closed) |
+| `GATEWAY_TIMEOUT_VISION` | `30` | Timeout of vision / SafeSearch / OCR calls (seconds) |
 | `DEEPL_FREE` | `true` | Use free-tier DeepL endpoint |
 | `GATEWAY_TIMEOUT_EMBED` | `10` | Embed timeout (seconds) |
 | `GATEWAY_TIMEOUT_CHAT` | `30` | Chat timeout (seconds) |

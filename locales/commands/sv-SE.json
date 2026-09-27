@@ -400,6 +400,16 @@
           "description": "Hur långt tillbaka det ska tittas, i dagar (standard 30)"
         }
       }
+    },
+    "ocr": {
+      "name": "ocr",
+      "description": "Extrahera texten från en bild",
+      "parameters": {
+        "image": {
+          "name": "bild",
+          "description": "Bilden som ska läsas"
+        }
+      }
     }
   }
 }

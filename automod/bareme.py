@@ -84,6 +84,12 @@ PLANCHER: Dict[Tuple[str, str], int] = {
 
     ("violation_indications", "basse"): 0,    ("violation_indications", "moyenne"): 1,
     ("violation_indications", "haute"): 2,    ("violation_indications", "critique"): 4,
+
+    # Explicit image (SafeSearch). A SFW server is not a place for porn, but the
+    # poster is rarely malicious beyond that: delete + a short mute, escalating
+    # with recidivism like everything else.
+    ("contenu_nsfw", "basse"): 0,    ("contenu_nsfw", "moyenne"): 2,
+    ("contenu_nsfw", "haute"): 3,    ("contenu_nsfw", "critique"): 5,
 }
 
 # Fallback floor when nano returns an unknown/empty (category, gravity) pair but

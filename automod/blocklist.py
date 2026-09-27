@@ -172,6 +172,22 @@ _CATEGORIES = {
             "post your address", "expose your address", "ip logger",
         ],
     },
+    # Scam / fake giveaway bait. Only unambiguous phrases here — the noisy,
+    # OCR-tolerant vocabulary lives in ``scam_anchors.py``.
+    "arnaque_scam": {
+        "gravite": "moyenne",
+        "compact": [
+            "freenitro", "nitrogratuit", "nitrogratuite", "discordnitrofree",
+            "freediscordnitro", "steamgiftcard", "cryptocasino",
+            "claimyourreward", "claimyourbonus", "withdrawalsuccess",
+            "doubleyourbitcoin", "doubleyourcrypto",
+        ],
+        "words": [
+            "free nitro", "nitro gratuit", "nitro gratuites", "claim your gift",
+            "claim your nitro", "promo code bonus", "code promo bonus",
+            "retrait reussi",
+        ],
+    },
 }
 # fmt: on
 
@@ -197,11 +213,49 @@ def normalize_for_match(content: str) -> tuple[str, str]:
 class Blocklist:
     """Compiled explicit-term blocklist."""
 
-    def __init__(self):
+    def __init__(self, extra_terms: Optional[List[dict]] = None):
         self._entries: List[BlocklistEntry] = []
         # Raw (pre-normalization) substring flags: list of (substr, entry).
         self._emoji_entries: List[tuple] = []
         self._build()
+        self._extra_count = 0
+        if extra_terms:
+            self._add_extra(extra_terms)
+
+    def reload(self, extra_terms: Optional[List[dict]] = None) -> None:
+        """Rebuild with the static lists + ``extra_terms`` (learned from the
+        Moddy team labeling queue, ``automod_learned_terms``). Each item:
+        ``{"terme": str, "categorie": str, "mode": "words"|"compact"}``."""
+        self._entries = []
+        self._emoji_entries = []
+        self._build()
+        self._extra_count = 0
+        if extra_terms:
+            self._add_extra(extra_terms)
+
+    @property
+    def extra_count(self) -> int:
+        return self._extra_count
+
+    def _add_extra(self, extra_terms: List[dict]) -> None:
+        for item in extra_terms:
+            term = normalize_spaced(str(item.get("terme") or ""))
+            categorie = str(item.get("categorie") or "")
+            if not term or not categorie:
+                continue
+            compact = (item.get("mode") == "compact")
+            if compact:
+                term = term.replace(" ", "")
+                if len(term) < 4:  # too short for substring matching (Scunthorpe)
+                    compact = False
+            pattern = re.compile(re.escape(term) if compact else rf"\b{re.escape(term)}\b")
+            self._entries.append(BlocklistEntry(
+                pattern=pattern,
+                categorie=categorie,
+                gravite_indicative=str(item.get("gravite") or "moyenne"),
+                compact=compact,
+            ))
+            self._extra_count += 1
 
     def _build(self):
         for substr, categorie, gravite in _EMOJI_TERMS:

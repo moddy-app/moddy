@@ -400,6 +400,16 @@
           "description": "Kaç gün geriye bakılacağı (varsayılan 30)"
         }
       }
+    },
+    "ocr": {
+      "name": "ocr",
+      "description": "Bir görselin metnini çıkarır",
+      "parameters": {
+        "image": {
+          "name": "gorsel",
+          "description": "Okunacak görsel"
+        }
+      }
     }
   }
 }

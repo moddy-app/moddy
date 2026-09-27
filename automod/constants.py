@@ -304,6 +304,12 @@ CALL_TYPE_EMBED: str = "automod_embed"
 SOURCE_REGEX: str = "regex"
 SOURCE_EMBEDDING: str = "embedding"
 SOURCE_NANO_FLAG: str = "signalé_par_nano"
+# Automod images (§4.2/§4.3). A scam-anchor hit routes OCR/typed text to nano
+# (like a regex hit); a known image hash and a SafeSearch verdict decide on
+# their own (no nano).
+SOURCE_ANCRES_SCAM: str = "ancres_scam"
+SOURCE_IMAGE_HASH: str = "image_hash"
+SOURCE_SAFESEARCH: str = "safesearch"
 
 
 # --- Verdict categories (canonical FR set, v2 contract) ---------------------
@@ -323,6 +329,8 @@ CATEGORIES = (
     "doxxing",
     "arnaque_scam",
     "violation_indications",
+    # Explicit image content, decided by SafeSearch only (never by nano on text).
+    "contenu_nsfw",
 )
 
 # Categories that structurally require a victim: an insult/threat/harassment
@@ -341,3 +349,52 @@ GRAVITE_TO_SCORE = {
     "moyenne": 0.70,
     "haute": 0.85,
 }
+
+
+# --- Images (docs/AUTOMOD_AI.md §4.2 image_scam / §4.3 image_nsfw) ----------
+
+# Call types (quota-gated per guild, seeded in db/base.py).
+CALL_TYPE_IMAGE_OCR: str = "automod_image_ocr"
+CALL_TYPE_SAFESEARCH: str = "automod_safesearch"
+
+# Model reading the text off a posted image (crypto-scam pipeline). Vision nano
+# is ~$0.0001/image and costs no resident memory (vs a local OCR engine).
+IMAGE_OCR_MODEL: str = "gpt-4.1-nano"
+IMAGE_OCR_MAX_TOKENS: int = 700
+# Longest side the image is downscaled to before OCR / SafeSearch (bytes on the
+# wire and vision tokens scale with it; screenshots stay readable at 1280).
+IMAGE_MAX_SIDE: int = 1280
+
+# Which attachments are looked at.
+IMAGE_MAX_BYTES: int = 8 * 1024 * 1024
+IMAGE_MIN_SIDE: int = 128            # smaller = emoji/reaction image, ignored
+IMAGE_MAX_PER_MESSAGE: int = 4
+IMAGE_MAX_PIXELS: int = 40_000_000   # decompression-bomb guard
+# Concurrent image jobs process-wide (download + decode + calls). Bounded so a
+# raid of images cannot balloon resident memory.
+IMAGE_CONCURRENCY: int = 4
+IMAGE_QUEUE_MAX: int = 64
+
+# Perceptual-hash matching against the team-validated hash DB: both hashes
+# must be close (pHash tolerates re-encoding/resizing, dHash guards collisions).
+PHASH_MAX_DISTANCE: int = 6
+DHASH_MAX_DISTANCE: int = 10
+# Verdict cache keyed on the image hash (Redis, global, all servers).
+IMAGE_VERDICT_TTL_SECONDS: int = 30 * 86400
+
+# Cross-post: the same image by the same author in N channels within the window
+# (the signature of a compromised account spamming a scam).
+CROSSPOST_WINDOW_SECONDS: int = 600
+CROSSPOST_MIN_CHANNELS: int = 3
+
+# Scam pre-rules (§4.2): OCR only when the risk score reaches this (or the guild
+# enabled ``scan_all``).
+SCAM_RISK_THRESHOLD: int = 2
+# Scam-anchor score at which OCR/typed text is routed to nano.
+SCAM_ANCHOR_THRESHOLD: float = 1.0
+
+# SafeSearch budget (§4.3): the Google free tier is shared by all of Moddy.
+SAFESEARCH_MONTHLY_CAP: int = 1000
+SAFESEARCH_BURST: int = 30            # head start on the smoothed allowance
+SAFESEARCH_NORMAL_TIER_RATIO: float = 0.7
+NSFW_GUILD_DAILY_SHARE: int = 15      # SafeSearch calls per guild per day at most

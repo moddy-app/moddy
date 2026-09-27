@@ -191,6 +191,20 @@ sont configurées dans `gateway/config.py` et surchargeables via
 `GROQ_WHISPER_AUDIO_SECONDS_PER_DAY` — voir
 [VOICE_TRANSCRIPTION.md](VOICE_TRANSCRIPTION.md)
 
+### GOOGLE_VISION_API_KEY
+**Valeur :** Clé API Google Cloud (Vision API activée ; un compte de facturation
+est exigé par Google même dans la tranche gratuite). Optionnelle : sans elle,
+la détection d'images NSFW de l'automod et `/ocr` sont désactivées.
+**Note :** la tranche gratuite (1000 unités / mois / fonctionnalité) est
+protégée par des règles mensuelles *fail-closed* : `GOOGLE_VISION_SAFESEARCH_MONTHLY`
+et `GOOGLE_VISION_OCR_MONTHLY` (défaut `1000`) — voir [API_GATEWAY.md](API_GATEWAY.md).
+
+### MODDY_AUTOMOD_LABEL_CHANNEL_ID
+**Valeur :** ID du salon (serveur de l'équipe Moddy) où arrive la file
+d'étiquetage de l'automod — chaque sanction et chaque doute. `0` (défaut) =
+file désactivée. `MODDY_AUTOMOD_LABEL_HOURLY_CAP` (défaut `300`) plafonne le
+nombre de cartes par heure. Voir [AUTOMOD_AI.md §9](AUTOMOD_AI.md).
+
 ### ALTGUARD_API_URL
 **Valeur :** URL de base du service AltGuard (défaut : `https://verify.moddy.app`)
 

@@ -14,12 +14,45 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 
 
+# Where the judged text comes from. "texte" is an ordinary message; the image
+# origins are set by the automod image features (docs/AUTOMOD_AI.md §4.2/§4.3).
+ORIGINE_TEXTE = "texte"
+ORIGINE_IMAGE_OCR = "image_ocr"        # text OCR-extracted from a posted image
+ORIGINE_IMAGE_HASH = "image_hash"      # known image (perceptual hash, team-validated)
+ORIGINE_IMAGE_NSFW = "image_nsfw"      # Google SafeSearch verdict
+ORIGINES_IMAGE = frozenset({ORIGINE_IMAGE_OCR, ORIGINE_IMAGE_HASH, ORIGINE_IMAGE_NSFW})
+
+
 @dataclass
 class TargetMessage:
     """The single message under judgement."""
     id: str
     author_id: str
     content: str
+    # "texte" (default) or "image_ocr" — the latter tells nano the content is
+    # noisy OCR text read off an image the author posted. A content ORIGIN, not
+    # a detection signal: nano still judges cold.
+    origine: str = ORIGINE_TEXTE
+
+
+@dataclass
+class ImageMeta:
+    """What the automod knows about the image behind an image decision.
+
+    Plain data (no bytes): the raw image stays with the caller, which re-uploads
+    it on the alert card / team review card.
+    """
+    phash: str = ""                 # 16-hex perceptual hash
+    dhash: str = ""                 # 16-hex difference hash
+    filename: str = ""
+    safesearch: dict = field(default_factory=dict)   # Google likelihoods, if checked
+    ancres: List[str] = field(default_factory=list)  # scam anchors found in the OCR
+    score_ancres: float = 0.0
+    hash_match: Optional[dict] = None  # {id, distance, kind} when a known hash matched
+    cross_post: int = 0             # channels the same image was posted in (same author)
+    # Every [channel_id, message_id] where the same author posted this image
+    # within the cross-post window — all of them go when the image is sanctioned.
+    copies: List[List[int]] = field(default_factory=list)
 
 
 @dataclass
@@ -120,3 +153,11 @@ class Decision:
     # shortcut, §7.3). Carries {similarite, message} for logs / the card. None
     # when no precedent shortcut fired.
     precedent_applique: Optional[dict] = None
+    # Images (docs/AUTOMOD_AI.md §4.2/§4.3): where the judged text came from,
+    # the text actually judged when it is not ``message.content`` (the OCR of an
+    # image), and the image facts. ``doute`` carries the motif when the pipeline
+    # was unsure — such a decision is copied to the Moddy team labeling queue.
+    origine: str = ORIGINE_TEXTE
+    contenu_juge: str = ""
+    image: Optional[ImageMeta] = None
+    doute: Optional[str] = None
