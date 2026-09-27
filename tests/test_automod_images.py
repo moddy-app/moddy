@@ -616,3 +616,62 @@ def test_new_i18n_keys_exist_in_every_locale():
     for loc in ("fr", "en-US", "es-ES", "pt-BR", "de"):
         for key in keys:
             assert not i18n.get(key, locale=loc).startswith("["), (loc, key)
+
+
+# --------------------------------------------------------------------------- #
+# Image on the server alert cards (simulation + fallback without Attach Files)
+# --------------------------------------------------------------------------- #
+
+def _shadow_candidate(**verdict):
+    base = {"raison": "r", "actions": ["ban", "supprimer"], "locale": "fr"}
+    base.update(verdict)
+    return {"id": str(uuid.uuid4()), "guild_id": 1, "channel_id": 7, "message_id": 100,
+            "author_id": 5, "contenu": "Withdrawal Success!", "contexte": [],
+            "verdict": base, "cran": 7, "bareme": {"actions": ["ban", "supprimer"]},
+            "verdict_humain": None, "annotated_by": None}
+
+
+def test_simulation_card_shows_the_spoilered_image_when_attached():
+    from utils.automod_shadow_views import render_shadow_card
+    view = render_shadow_card(_shadow_candidate(image_phash="ab" * 8, image_attached=True))
+    galleries = [i for i in view.walk_children() if i.__class__.__name__ == "MediaGallery"]
+    assert len(galleries) == 1
+    item = galleries[0].items[0]
+    assert item.spoiler and item.media.url == "attachment://SPOILER_image_" + "ab" * 8 + ".jpg"
+    bare = render_shadow_card(_shadow_candidate())
+    assert not [i for i in bare.walk_children() if i.__class__.__name__ == "MediaGallery"]
+
+
+async def test_shadow_card_falls_back_without_the_image_on_forbidden():
+    import discord
+    sent = []
+
+    class Channel:
+        async def send(self, **kw):
+            if kw.get("files"):
+                raise discord.Forbidden(types.SimpleNamespace(status=403, reason="x"), "no files")
+            sent.append(kw)
+
+    from utils.automod_shadow_views import render_shadow_card
+    module = AutomodModule(types.SimpleNamespace(), 1)
+    candidate = _shadow_candidate(image_phash="ab" * 8, image_attached=True)
+    file = types.SimpleNamespace(filename="SPOILER_image_x.jpg")
+    await module._send_alert(Channel(), render_shadow_card, candidate, file)
+    assert len(sent) == 1
+    assert not [i for i in sent[0]["view"].walk_children()
+                if i.__class__.__name__ == "MediaGallery"]
+
+
+def test_every_bareme_component_has_a_translation():
+    """Every component code the barème can emit renders in all 5 locales
+    (the shadow card used to miss `confirmation_refusee`)."""
+    from utils.automod_render import BAREME_LABELS
+    from utils.i18n import i18n
+    codes = {"plancher", "recidive", "severite", "confiance", "veteran", "compte_recent",
+             "plafond", "categorie_desactivee", "borne", "confirmation_refusee"}
+    assert codes <= set(BAREME_LABELS)
+    for loc in ("fr", "en-US", "es-ES", "pt-BR", "de"):
+        for code in codes:
+            key = f"modules.automod_ai.bareme.{BAREME_LABELS[code]}"
+            assert not i18n.get(key, locale=loc).startswith("["), (loc, key)
+    assert AutomodModule._BAREME_LABELS is BAREME_LABELS

@@ -80,6 +80,20 @@ class EvalCandidateRepository:
             )
         return self._eval_row(row)
 
+    async def set_eval_candidate_verdict_field(
+        self, candidate_id: Union[str, uuid.UUID], key: str, value: Any,
+    ) -> None:
+        """Set one key of the stored ``verdict`` JSON (e.g. ``image_attached``)."""
+        async with self.pool.acquire() as conn:
+            await conn.execute(
+                """
+                UPDATE automod_eval_candidates
+                SET verdict = jsonb_set(COALESCE(verdict, '{}'::jsonb), ARRAY[$2], $3::jsonb, true)
+                WHERE id = $1
+                """,
+                uuid.UUID(str(candidate_id)), key, json.dumps(value),
+            )
+
     async def annotate_eval_candidate(
         self,
         candidate_id: Union[str, uuid.UUID],

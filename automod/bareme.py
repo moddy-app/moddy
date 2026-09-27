@@ -79,7 +79,9 @@ PLANCHER: Dict[Tuple[str, str], int] = {
     ("doxxing", "basse"): 4,    ("doxxing", "moyenne"): 6,
     ("doxxing", "haute"): 7,    ("doxxing", "critique"): 7,
 
-    ("arnaque_scam", "basse"): 2,    ("arnaque_scam", "moyenne"): 4,
+    # Scams (crypto casinos, fake giveaways, free nitro…) are banned on sight at
+    # every gravity — see CATEGORIES_BAN_DIRECT.
+    ("arnaque_scam", "basse"): 7,    ("arnaque_scam", "moyenne"): 7,
     ("arnaque_scam", "haute"): 7,    ("arnaque_scam", "critique"): 7,
 
     ("violation_indications", "basse"): 0,    ("violation_indications", "moyenne"): 1,
@@ -102,6 +104,14 @@ PLANCHER_DEFAUT = 0
 CATEGORIES_SENSIBLES = frozenset({
     "incitation_automutilation", "doxxing", "harcelement_sexuel",
 })
+
+# Categories banned on sight: a scam account (usually compromised, spamming
+# every channel) is not "moderated", it is removed. For these the floor is the
+# ban at every gravity, the `medium` confidence cap does not apply and veteran
+# clemency never does. Still bounded by: the `low` confidence cap (no ban on a
+# guess), the guild's `max_action` ceiling, and the mini senior confirmation of
+# a nano-decided ban (§6.3, applied by the module).
+CATEGORIES_BAN_DIRECT = frozenset({"arnaque_scam"})
 
 
 # ---------------------------------------------------------------------------
@@ -293,6 +303,8 @@ def calculer(
     # -- b) nano confidence cap (never mute/ban on weak confidence) ------
     #    low  => at worst a warn (cran 1); medium => never mute >48 h nor ban.
     ceiling = {"low": 1, "medium": 4}.get(confiance)
+    if confiance == "medium" and categorie in CATEGORIES_BAN_DIRECT:
+        ceiling = None
     if ceiling is not None and cran > ceiling:
         composantes.append(Composante("confiance", ceiling - cran, confiance))
         cran = ceiling
@@ -303,6 +315,7 @@ def calculer(
         and not sanctions_passees
         and gravite in ("basse", "moyenne")
         and categorie not in CATEGORIES_SENSIBLES
+        and categorie not in CATEGORIES_BAN_DIRECT
     )
     if veteran and cran > 0:
         cran -= 1

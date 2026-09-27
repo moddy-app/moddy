@@ -240,3 +240,27 @@ class TestResultat:
     def test_no_review_flag_on_light_sanction(self):
         result = calculer(_Verdict("insulte", "moyenne"), [], _member(), now=NOW)
         assert result.needs_review is False
+
+
+# --- Scams: banned on sight (CATEGORIES_BAN_DIRECT) ------------------------ #
+
+class TestScamBanDirect:
+    @pytest.mark.parametrize("gravite", ["basse", "moyenne", "haute", "critique"])
+    @pytest.mark.parametrize("confiance", ["medium", "high"])
+    def test_scam_is_a_ban_at_every_gravity(self, gravite, confiance):
+        res = calculer(_Verdict("arnaque_scam", gravite, confiance), [], _veteran(), now=NOW)
+        assert res.cran == 7 and "ban" in res.actions
+        assert not any(c.code in ("veteran", "confiance") for c in res.composantes)
+
+    def test_low_confidence_scam_is_never_a_ban(self):
+        res = calculer(_Verdict("arnaque_scam", "haute", "low"), [], _member(), now=NOW)
+        assert res.cran == 1
+
+    def test_guild_ceiling_still_wins(self):
+        res = calculer(_Verdict("arnaque_scam", "haute"), [], _member(),
+                       config=ConfigBareme(max_action="mute"), now=NOW)
+        assert res.cran == 6 and "ban" not in res.actions
+
+    def test_other_categories_keep_the_medium_cap(self):
+        res = calculer(_Verdict("menace", "critique", "medium"), [], _member(), now=NOW)
+        assert res.cran == 4

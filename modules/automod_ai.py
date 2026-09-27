@@ -992,19 +992,9 @@ class AutomodModule(ModuleBase):
         )
         return ab.appliquer_non_confirme(bareme)
 
-    # Component code → i18n key suffix for the sanction breakdown card.
-    _BAREME_LABELS = {
-        "plancher": "floor",
-        "recidive": "recidivism",
-        "severite": "severity",
-        "confiance": "confidence",
-        "veteran": "veteran",
-        "compte_recent": "fresh_account",
-        "plafond": "ceiling",
-        "categorie_desactivee": "disabled_category",
-        "borne": "bounds",
-        "confirmation_refusee": "unconfirmed",
-    }
+    # Component code → i18n key suffix for the sanction breakdown card. One
+    # table, shared with the shadow card, so the two can never drift apart.
+    from utils.automod_render import BAREME_LABELS as _BAREME_LABELS
 
     def _bareme_breakdown(self, bareme: ab.ResultatBareme, locale: str) -> str:
         """A localized, line-by-line explanation of how the cran was reached."""
@@ -1187,7 +1177,10 @@ class AutomodModule(ModuleBase):
             audit = self._audit_reason(case_ref, ban_expires, decision.raison)
             try:
                 self._mark_moddy_initiated(member.id, "ban")
-                await guild.ban(member, reason=audit, delete_message_days=0)
+                # A scam account (usually compromised) spams every channel:
+                # its last hour of messages goes with the ban.
+                purge = 3600 if decision.categorie in ab.CATEGORIES_BAN_DIRECT else 0
+                await guild.ban(member, reason=audit, delete_message_seconds=purge)
                 applied.append("ban")
             except (discord.Forbidden, discord.HTTPException):
                 pass
@@ -1530,6 +1523,13 @@ class AutomodModule(ModuleBase):
             "actions": list(decision.actions),
             "locale": locale,
         }
+        # Automod images: the (spoilered) image rides with the card, and the
+        # stored payload remembers it so a re-render after an annotation click
+        # keeps pointing at the same attachment.
+        image_file = self._image_file(decision)
+        if image_file is not None:
+            verdict_payload["image_phash"] = decision.image.phash
+            verdict_payload["image_attached"] = True
         bareme_payload = {
             "cran": bareme.cran,
             "duree_heures": bareme.duree_heures,
@@ -1573,10 +1573,7 @@ class AutomodModule(ModuleBase):
             "verdict_humain": None,
             "annotated_by": None,
         }
-        try:
-            await channel.send(view=render_shadow_card(candidate))
-        except (discord.Forbidden, discord.HTTPException):
-            return
+        await self._send_alert(channel, render_shadow_card, candidate, image_file)
 
     async def _notify_budget_reduced(self, guild: Optional[discord.Guild]):
         """Post a one-off 'AI budget reached — reduced sensitivity' card.
@@ -1609,6 +1606,42 @@ class AutomodModule(ModuleBase):
         view.add_item(container)
         try:
             await channel.send(view=view)
+        except (discord.Forbidden, discord.HTTPException):
+            return
+
+    @staticmethod
+    def _drop_image_gallery(view):
+        """The same card without its MediaGallery items (image fallback)."""
+        from discord import ui
+        for container in list(view.children):
+            for child in list(getattr(container, "children", [])):
+                if isinstance(child, ui.MediaGallery):
+                    container.remove_item(child)
+        return view
+
+    async def _send_alert(self, channel, render, candidate: dict, image_file) -> None:
+        """Send a shadow card, with the image when possible, else without it."""
+        if image_file is not None:
+            try:
+                await channel.send(view=render(candidate), files=[image_file])
+                return
+            except discord.Forbidden:
+                # No "Attach Files": fall through and send the card bare —
+                # and remember it, so annotation re-renders don't reference
+                # an attachment the message never got.
+                candidate["verdict"] = dict(candidate.get("verdict") or {},
+                                            image_attached=False)
+                db = getattr(self.bot, "db", None)
+                if db is not None and candidate.get("id"):
+                    try:
+                        await db.set_eval_candidate_verdict_field(
+                            candidate["id"], "image_attached", False)
+                    except Exception as e:  # noqa: BLE001
+                        logger.debug("automod: shadow image flag update failed: %s", e)
+            except discord.HTTPException:
+                return
+        try:
+            await channel.send(view=render(candidate))
         except (discord.Forbidden, discord.HTTPException):
             return
 
@@ -1731,5 +1764,16 @@ class AutomodModule(ModuleBase):
 
         try:
             return await channel.send(view=view, files=files)
-        except (discord.Forbidden, discord.HTTPException):
+        except discord.Forbidden:
+            if image_file is None:
+                return None
+            # No "Attach Files" in the alert channel: never lose the alert
+            # itself — resend without the image.
+            files = [f for f in files if f is not image_file]
+            view = self._drop_image_gallery(view)
+            try:
+                return await channel.send(view=view, files=files)
+            except (discord.Forbidden, discord.HTTPException):
+                return None
+        except discord.HTTPException:
             return None
