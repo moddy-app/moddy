@@ -118,6 +118,14 @@ def render_shadow_card(candidate: Dict[str, Any]) -> ui.LayoutView:
         f"-# {t('modules.automod_ai.log.message_id', locale=locale)} : "
         f"``{candidate.get('message_id')}``"))
 
+    # Automod images: the image itself, always spoilered. Only referenced when
+    # the card was actually posted with it (`image_attached`), so a re-render
+    # after an annotation click keeps pointing at the same attachment.
+    if verdict.get("image_attached") and verdict.get("image_phash"):
+        from utils.automod_label_views import card_image_filename
+        quote.add_item(ui.MediaGallery(discord.MediaGalleryItem(
+            f"attachment://{card_image_filename(verdict['image_phash'])}", spoiler=True)))
+
     view.add_item(container)
     view.add_item(quote)
 

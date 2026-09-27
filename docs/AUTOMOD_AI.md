@@ -217,6 +217,13 @@ Every sanction is one rung on a single scale. `supprimer` is **always** included
 derives it per past sanction from the issuer + the appeal state
 (`db.list_member_sanctions`).
 
+**Scams are banned on sight** (`CATEGORIES_BAN_DIRECT = {arnaque_scam}`): floor =
+ban (cran 7) at every gravity, the `medium` confidence cap does not apply and
+veteran clemency never does. Still bounded by the `low` confidence cap (no ban on
+a guess), the guild `max_action` ceiling and the mini confirmation of a
+nano-decided ban (§2quater). A scam ban also deletes the author's last hour of
+messages (`delete_message_seconds=3600`) — compromised accounts spam every channel.
+
 **Kill-switch** (`categories_desactivees`): a guild can opt a category out of AI
 sanctioning entirely — it is capped to deletion only (cran 0).
 
@@ -673,8 +680,9 @@ image posted (attachments only, ≤ 4 / message, ≥ 128 px, ≤ 8 MB)
    "text read from an image, noisy"), grounding unchanged (the citation must
    be a substring of the OCR text)
    ▼
-6. Decision → barème (arnaque_scam) → applied like any decision; every
-   cross-posted copy of the image is deleted too → copy to the team queue (§9)
+6. Decision → barème (arnaque_scam = **ban**, §2bis) → applied like any
+   decision; every cross-posted copy of the image is deleted too and the ban
+   purges the author's last hour of messages → copy to the team queue (§9)
 ```
 
 An image the pipeline could not read (OCR unavailable, decode failure, queue
@@ -711,8 +719,11 @@ moyenne 2 · haute 3 · critique 5. SafeSearch is **not** a CSAM detector.
   SafeSearch likelihoods, scam anchors, known-hash match, cross-post copies).
 - The alert card, the case evidence (`payload.origine`, `payload.image`), the
   sanction DM and the shadow card show the **judged text** (OCR) instead of the
-  empty message; the alert card attaches a downscaled copy of the image,
-  **always spoilered**.
+  empty message; the alert card **and the SIMULATION card** attach a downscaled
+  copy of the image, **always spoilered** (the shadow candidate stores
+  `verdict.image_phash` / `image_attached` so annotation re-renders keep it).
+  Without *Attach Files* in the alert channel the card is resent without the
+  image — the alert is never lost.
 - The heavy-sanction mini confirmation re-reads the OCR text with the same
   origin block; `equipe` / `safesearch` decisions skip it (nothing to re-read).
 - Once a feature deleted the message, the remaining features stop (no double

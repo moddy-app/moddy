@@ -81,3 +81,15 @@ get through. This session added:
 - [ ] Measure SafeSearch false positives and the pre-rules' recall on real
       traffic, then tune `SCAM_RISK_THRESHOLD` / the anchors.
 - [ ] A dashboard view of the labeling queue could replace the Discord channel later.
+
+## Follow-up (2026-09-27, after the first live tests)
+
+- Google returned `403 billing required`: Vision needs a billing account on the
+  Cloud project even inside the free tier (documented in RAILWAY.md / OCR.md).
+- **Scams are now banned on sight** (`bareme.CATEGORIES_BAN_DIRECT`): ban floor at
+  every gravity, no `medium` confidence cap, no veteran clemency; the ban purges
+  the last hour of messages. Kept: `low` confidence cap, guild `max_action`,
+  mini confirmation of a nano-decided ban.
+- The **SIMULATION card** now shows the spoilered image (it had none); alert and
+  simulation cards fall back to a bare card when the bot lacks *Attach Files*.
+
