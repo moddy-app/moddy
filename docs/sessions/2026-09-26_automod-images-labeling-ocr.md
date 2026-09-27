@@ -96,3 +96,7 @@ get through. This session added:
   `contenu_choquant` category (delete + 2 h mute, recidivism escalates);
   `violence LIKELY` stays a doubt. Hashes gain a `gore` kind (CHECK widened by an
   idempotent migration); the labeling lane for it stays `image_nsfw`.
+- **Gore split out** (Jules' call): `image_gore` is its own feature (own `/config`
+  toggle, own labeling lane `image_gore`, CHECK widened by an idempotent
+  migration) instead of riding on `image_nsfw`. Both read one SafeSearch result
+  per image (per-hash cache, in-process + Redis).

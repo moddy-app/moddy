@@ -70,7 +70,12 @@ Deleting a config = writing `{}` (that is what the "Delete" button does).
       "exempt_roles": [],           // int[] role ids (≤ 25 via the UI)
       "exempt_channels": []         // int[] channel ids (≤ 25 via the UI)
     },
-    "image_nsfw": {                 // explicit images (Google SafeSearch)
+    "image_nsfw": {                 // sexually explicit images (Google SafeSearch)
+      "enabled": false,
+      "exempt_roles": [],
+      "exempt_channels": []
+    },
+    "image_gore": {                 // gore / graphic violence (same SafeSearch call)
       "enabled": false,
       "exempt_roles": [],
       "exempt_channels": []
@@ -100,13 +105,14 @@ Deleting a config = writing `{}` (that is what the "Delete" button does).
 | `features.content.enabled` | bool | `false` | The AI content detector. Today the only feature. |
 | `features.content.exempt_roles` | int[] | `[]` | Members holding any of these roles are not moderated. |
 | `features.content.exempt_channels` | int[] | `[]` | These channels (and threads whose parent is listed) are not moderated. |
-| `features.image_nsfw.enabled` | bool | `false` | Explicit **and shocking (gore / graphic violence)** image detection (Google SafeSearch, shared monthly budget). Age-restricted channels are always skipped. |
+| `features.image_nsfw.enabled` | bool | `false` | Sexually explicit image detection (Google SafeSearch, shared monthly budget). Age-restricted channels are always skipped. |
+| `features.image_gore.enabled` | bool | `false` | Gore / graphic-violence image detection (category `contenu_choquant`). Reads the same SafeSearch result as `image_nsfw` (one call per image). Age-restricted channels are always skipped. |
 | `features.image_scam.enabled` | bool | `false` | Scam-screenshot detection (known hash → OCR → AI funnel). |
 | `features.image_scam.scan_all` | bool | `false` | OCR every image instead of only the ones the free pre-rules flag as risky. No UI yet (ops/backend-set); the panel preserves it. |
 | `features.<image_*>.exempt_*` | int[] | `[]` | Same shape as `content`. The bot's own panel writes **one** exemption list onto all three features; a dashboard may keep them identical too. |
 
 `features` is an **open map keyed by feature id** (`content`, `image_nsfw`,
-`image_scam` today): future detectors (anti-link, anti-spam…) will add sibling blocks with the same `{enabled, exempt_roles,
+`image_gore`, `image_scam` today): future detectors (anti-link, anti-spam…) will add sibling blocks with the same `{enabled, exempt_roles,
 exempt_channels}` shape. Unknown feature ids are **rejected** by validation, so
 the backend must not invent keys.
 
@@ -121,7 +127,7 @@ The bot computes `enabled` at load time as:
 
 ```
 running = config.enabled
-          AND any(features[*].enabled)      # content, image_nsfw or image_scam
+          AND any(features[*].enabled)      # content, image_nsfw, image_gore or image_scam
           AND notify_channel_id is not null
 ```
 
@@ -269,7 +275,7 @@ refused appeals, shadow-card clicks).
 ```sql
 CREATE TABLE automod_label_items (
     id              UUID PRIMARY KEY,
-    kind            TEXT NOT NULL CHECK (kind IN ('texte','image_scam','image_nsfw')),
+    kind            TEXT NOT NULL CHECK (kind IN ('texte','image_scam','image_nsfw','image_gore')),
     motif           TEXT NOT NULL CHECK (motif IN ('sanction','doute','simulation')),
     guild_id        BIGINT NOT NULL,
     channel_id      BIGINT,

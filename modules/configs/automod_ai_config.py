@@ -66,13 +66,14 @@ _DEFAULT_CONFIG = {
         # Automod images (docs/AUTOMOD_AI.md §4.2/§4.3). The panel edits ONE set
         # of exemptions and mirrors it onto every feature.
         "image_nsfw": {"enabled": False, "exempt_roles": [], "exempt_channels": []},
+        "image_gore": {"enabled": False, "exempt_roles": [], "exempt_channels": []},
         "image_scam": {"enabled": False, "exempt_roles": [], "exempt_channels": [],
                        "scan_all": False},
     },
 }
 
 #: Features whose on/off lives in the activations select.
-_FEATURE_IDS = ("content", "image_nsfw", "image_scam")
+_FEATURE_IDS = ("content", "image_nsfw", "image_gore", "image_scam")
 
 
 def _deep_default(current: Optional[Dict[str, Any]]) -> Dict[str, Any]:
@@ -269,10 +270,11 @@ class AutomodAIConfigView(BaseView):
         module_on = cfg["enabled"]
         content_on = self._content["enabled"]
         nsfw_on = cfg["features"]["image_nsfw"]["enabled"]
+        gore_on = cfg["features"]["image_gore"]["enabled"]
         scam_on = cfg["features"]["image_scam"]["enabled"]
         ignore_on = cfg["ignore_moderators"]
         has_channel = cfg.get("notify_channel_id") is not None
-        running = module_on and (content_on or nsfw_on or scam_on) and has_channel
+        running = module_on and (content_on or nsfw_on or gore_on or scam_on) and has_channel
 
         # ── Header + one-line status ──────────────────────────────────────
         container.add_item(ui.TextDisplay(
@@ -326,7 +328,7 @@ class AutomodAIConfigView(BaseView):
         opt_row = ui.ActionRow()
         opt_select = ui.Select(
             placeholder=t("modules.automod_ai.config.activations.placeholder", locale=self.locale),
-            min_values=0, max_values=5,
+            min_values=0, max_values=6,
             options=[
                 discord.SelectOption(
                     label=t("modules.automod_ai.config.content_label", locale=self.locale),
@@ -341,6 +343,13 @@ class AutomodAIConfigView(BaseView):
                     description=t("modules.automod_ai.config.image_nsfw_desc", locale=self.locale)[:100],
                     emoji=discord.PartialEmoji.from_str(IMAGE),
                     default=nsfw_on,
+                ),
+                discord.SelectOption(
+                    label=t("modules.automod_ai.config.image_gore_label", locale=self.locale),
+                    value="image_gore",
+                    description=t("modules.automod_ai.config.image_gore_desc", locale=self.locale)[:100],
+                    emoji=discord.PartialEmoji.from_str(WARNING),
+                    default=gore_on,
                 ),
                 discord.SelectOption(
                     label=t("modules.automod_ai.config.image_scam_label", locale=self.locale),

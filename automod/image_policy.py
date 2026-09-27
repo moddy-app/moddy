@@ -47,35 +47,45 @@ class NsfwVerdict:
         return self.sanctionnable or self.doute is not None
 
 
-def safesearch_to_verdict(likelihoods: dict) -> NsfwVerdict:
-    """Map SafeSearch likelihoods onto an automod qualification.
+AXIS_NSFW = "nsfw"
+AXIS_GORE = "gore"
 
-    * ``adult VERY_LIKELY`` → sanctionable, gravity haute, confidence high.
-    * ``adult LIKELY``      → sanctionable, gravity moyenne, confidence medium
-      (the barème caps a medium-confidence verdict at mute 48 h).
-    * ``violence VERY_LIKELY`` → sanctionable as ``contenu_choquant`` (gore /
-      graphic violence), gravity haute, confidence high.
-    * ``adult POSSIBLE`` / ``racy VERY_LIKELY`` / ``violence LIKELY`` →
-      no sanction, but a doubt the Moddy team labels.
 
-    Adult content wins when both scores fire.
-    * anything else → nothing.
+def safesearch_to_verdict(likelihoods: dict, axis: str = AXIS_NSFW) -> NsfwVerdict:
+    """Map SafeSearch likelihoods onto an automod qualification, for ONE axis.
+
+    Two independent features read the same SafeSearch result (one call):
+
+    ``axis="nsfw"`` (``image_nsfw``, category ``contenu_nsfw``)
+      * ``adult VERY_LIKELY`` → sanctionable, gravity haute, confidence high.
+      * ``adult LIKELY``      → sanctionable, gravity moyenne, confidence medium
+        (the barème caps a medium-confidence verdict at mute 48 h).
+      * ``adult POSSIBLE`` / ``racy VERY_LIKELY`` → doubt only.
+
+    ``axis="gore"`` (``image_gore``, category ``contenu_choquant``)
+      * ``violence VERY_LIKELY`` → sanctionable, gravity haute, confidence high.
+      * ``violence LIKELY``      → doubt only.
+
+    Anything else → nothing.
     """
+    if axis == AXIS_GORE:
+        violence = _rank(likelihoods.get("violence"))
+        if violence >= _LIKELIHOOD_RANK["VERY_LIKELY"]:
+            return NsfwVerdict(True, "haute", "high", categorie="contenu_choquant")
+        if violence >= _LIKELIHOOD_RANK["LIKELY"]:
+            return NsfwVerdict(False, doute="safesearch_violence", categorie="contenu_choquant")
+        return NsfwVerdict(False, categorie="contenu_choquant")
+
     adult = _rank(likelihoods.get("adult"))
     racy = _rank(likelihoods.get("racy"))
-    violence = _rank(likelihoods.get("violence"))
     if adult >= _LIKELIHOOD_RANK["VERY_LIKELY"]:
         return NsfwVerdict(True, "haute", "high")
     if adult >= _LIKELIHOOD_RANK["LIKELY"]:
         return NsfwVerdict(True, "moyenne", "medium")
     if adult >= _LIKELIHOOD_RANK["POSSIBLE"]:
         return NsfwVerdict(False, doute="safesearch_adult_possible")
-    if violence >= _LIKELIHOOD_RANK["VERY_LIKELY"]:
-        return NsfwVerdict(True, "haute", "high", categorie="contenu_choquant")
     if racy >= _LIKELIHOOD_RANK["VERY_LIKELY"]:
         return NsfwVerdict(False, doute="safesearch_racy")
-    if violence >= _LIKELIHOOD_RANK["LIKELY"]:
-        return NsfwVerdict(False, doute="safesearch_violence", categorie="contenu_choquant")
     return NsfwVerdict(False)
 
 

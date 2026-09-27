@@ -156,18 +156,28 @@ class TestScamAnchors:
 # --------------------------------------------------------------------------- #
 
 class TestSafeSearchPolicy:
-    def test_gore_is_its_own_category_and_adult_wins(self):
-        assert ip.safesearch_to_verdict({"violence": "VERY_LIKELY"}).categorie == "contenu_choquant"
-        both = ip.safesearch_to_verdict({"adult": "VERY_LIKELY", "violence": "VERY_LIKELY"})
-        assert both.categorie == "contenu_nsfw" and both.sanctionnable
+    @pytest.mark.parametrize("lk,sanction,doute", [
+        ({"violence": "VERY_LIKELY"}, True, None),
+        ({"violence": "LIKELY"}, False, "safesearch_violence"),
+        ({"violence": "POSSIBLE"}, False, None),
+        ({"adult": "VERY_LIKELY"}, False, None),     # not this axis
+    ])
+    def test_gore_axis(self, lk, sanction, doute):
+        v = ip.safesearch_to_verdict(lk, ip.AXIS_GORE)
+        assert (v.sanctionnable, v.doute, v.categorie) == (sanction, doute, "contenu_choquant")
+
+    def test_axes_are_independent(self):
+        both = {"adult": "VERY_LIKELY", "violence": "VERY_LIKELY"}
+        assert ip.safesearch_to_verdict(both, ip.AXIS_NSFW).categorie == "contenu_nsfw"
+        assert ip.safesearch_to_verdict(both, ip.AXIS_GORE).sanctionnable
+        assert not ip.safesearch_to_verdict({"violence": "VERY_LIKELY"}, ip.AXIS_NSFW).actionable
 
     @pytest.mark.parametrize("lk,sanction,gravite,doute", [
         ({"adult": "VERY_LIKELY"}, True, "haute", None),
         ({"adult": "LIKELY"}, True, "moyenne", None),
         ({"adult": "POSSIBLE"}, False, "basse", "safesearch_adult_possible"),
         ({"adult": "UNLIKELY", "racy": "VERY_LIKELY"}, False, "basse", "safesearch_racy"),
-        ({"violence": "VERY_LIKELY"}, True, "haute", None),
-        ({"violence": "LIKELY"}, False, "basse", "safesearch_violence"),
+        ({"violence": "VERY_LIKELY"}, False, "basse", None),   # gore = other feature
         ({"adult": "VERY_UNLIKELY", "racy": "LIKELY"}, False, "basse", None),
         ({}, False, "basse", None),
     ])

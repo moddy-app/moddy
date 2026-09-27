@@ -1716,10 +1716,12 @@
           "delete_option": "Excluir precedente {n}",
           "deleted": "Precedente excluído."
         },
-        "image_nsfw_label": "Imagens NSFW e chocantes",
-        "image_nsfw_desc": "Imagens sexualmente explícitas e gore / violência gráfica (Google SafeSearch).",
+        "image_nsfw_label": "Imagens NSFW",
+        "image_nsfw_desc": "Imagens sexualmente explícitas (análise do Google SafeSearch).",
         "image_scam_label": "Golpes em imagem",
-        "image_scam_desc": "Capturas de golpes cripto / sorteios falsos (hash conhecido + leitura do texto)."
+        "image_scam_desc": "Capturas de golpes cripto / sorteios falsos (hash conhecido + leitura do texto).",
+        "image_gore_label": "Imagens chocantes (gore)",
+        "image_gore_desc": "Gore e violência gráfica (análise do Google SafeSearch)."
       },
       "action": {
         "warn": "Advertência",
@@ -4880,7 +4882,8 @@
     "kind": {
       "texte": "Text",
       "image_scam": "Scam image",
-      "image_nsfw": "NSFW / shocking image"
+      "image_nsfw": "NSFW image",
+      "image_gore": "Shocking image (gore)"
     },
     "motif": {
       "sanction": "Sanctioned by the bot",

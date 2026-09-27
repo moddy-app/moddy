@@ -689,12 +689,19 @@ image posted (attachments only, ≤ 4 / message, ≥ 128 px, ≤ 8 MB)
 An image the pipeline could not read (OCR unavailable, decode failure, queue
 full) is **never** sanctioned.
 
-### 4.3 `image_nsfw` — explicit and shocking images (Google SafeSearch)
+### 4.3 `image_nsfw` + `image_gore` — explicit and shocking images (Google SafeSearch)
+
+Two **independent features** with their own `/config` toggle and their own
+labeling lane: `image_nsfw` (sexual content, category `contenu_nsfw`) and
+`image_gore` (gore / graphic violence, category `contenu_choquant`). Both read
+the **same** SafeSearch result: it is cached per image hash (in-process + Redis),
+so an image costs one call even with both on.
 
 ```
 image posted  (skipped in age-restricted channels)
    ▼
-1. perceptual hash → known "block" (nsfw / gore) → sanction on sight · "allow" → ignored
+1. perceptual hash → known "block" of this feature's kind (nsfw | gore) → sanction
+   on sight · "allow" → ignored
 2. per-hash SafeSearch cache (Redis 30 d, global) — an image seen anywhere costs 0
 3. budget: the Google free tier (1000 / month) is shared by ALL of Moddy
      - smoothed: allowed(t) = cap × elapsed-month-fraction + 30 (burst)
@@ -702,13 +709,14 @@ image posted  (skipped in age-restricted channels)
        100 % of allowed(t); everyone else only while usage < 70 % of it
      - at most NSFW_GUILD_DAILY_SHARE (15) calls per guild per day
      - the hard cap is a calendar-month, fail-closed gateway rule
-4. SafeSearch (call_type automod_safesearch) → image_policy.safesearch_to_verdict
+4. SafeSearch (call_type automod_safesearch) → image_policy.safesearch_to_verdict(lk, axis)
+   image_nsfw (axis "nsfw"):
      adult VERY_LIKELY → sanction, contenu_nsfw / haute / high
      adult LIKELY      → sanction, contenu_nsfw / moyenne / medium (barème caps at mute 48 h)
-     violence VERY_LIKELY → sanction, contenu_choquant / haute / high (gore)
-     adult POSSIBLE, racy VERY_LIKELY, violence LIKELY → doubt only
-                         (team queue, nothing applied)
-     adult wins when both adult and violence fire
+     adult POSSIBLE, racy VERY_LIKELY → doubt only (team queue, nothing applied)
+   image_gore (axis "gore"):
+     violence VERY_LIKELY → sanction, contenu_choquant / haute / high
+     violence LIKELY      → doubt only
 ```
 
 No model decides an NSFW image: the likelihood scale is the whole policy
@@ -734,7 +742,8 @@ queue (§9) and its hash set to `allow`. SafeSearch is **not** a CSAM detector.
   origin block; `equipe` / `safesearch` decisions skip it (nothing to re-read).
 - Once a feature deleted the message, the remaining features stop (no double
   sanction on one message).
-- Config: `features.image_nsfw` / `features.image_scam` (`+ scan_all`), toggled
+- Config: `features.image_nsfw` / `features.image_gore` / `features.image_scam`
+  (`+ scan_all`), toggled
   in `/config` → Automod → Options; the panel's exemptions apply to every feature.
 
 > A `situation` feature (diffuse harassment / dogpiling, judged on a friction
@@ -1081,7 +1090,7 @@ Controls (persistent `DynamicItem`s, staff node `automod_label`):
 | control | effect |
 |---|---|
 | category select | corrects the category before labeling (text / scam) |
-| **Sanctionable** | image → hash `block` (+ OCR text → `arnaque_scam` reference) · text → embedding reference in the chosen category · eval candidate `correct` |
+| **Sanctionable** | image → hash `block` of the lane's kind (scam / nsfw / gore; + OCR text → `arnaque_scam` reference) · text → embedding reference in the chosen category · eval candidate `correct` |
 | **Not sanctionable** | image → hash `allow` · text → server precedent `non_sanctionnable` (`source=equipe_moddy`) + eval candidate `faux_positif` · **if the bot sanctioned: revocation** |
 | **Skip** | nothing |
 | Blocklist terms | Modal V2 (terms, words/compact, category) → `automod_learned_terms` |

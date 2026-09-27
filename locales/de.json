@@ -1716,10 +1716,12 @@
           "delete_option": "Präzedenzfall {n} löschen",
           "deleted": "Präzedenzfall gelöscht."
         },
-        "image_nsfw_label": "NSFW- und schockierende Bilder",
-        "image_nsfw_desc": "Sexuell explizite Bilder und Gore / grafische Gewalt (Google SafeSearch).",
+        "image_nsfw_label": "NSFW-Bilder",
+        "image_nsfw_desc": "Sexuell explizite Bilder (Analyse mit Google SafeSearch).",
         "image_scam_label": "Betrug in Bildern",
-        "image_scam_desc": "Screenshots von Krypto-Betrug / falschen Giveaways (bekannter Hash + Textlesung)."
+        "image_scam_desc": "Screenshots von Krypto-Betrug / falschen Giveaways (bekannter Hash + Textlesung).",
+        "image_gore_label": "Schockierende Bilder (Gore)",
+        "image_gore_desc": "Gore und grafische Gewalt (Analyse mit Google SafeSearch)."
       },
       "action": {
         "warn": "Verwarnung",
@@ -4880,7 +4882,8 @@
     "kind": {
       "texte": "Text",
       "image_scam": "Scam image",
-      "image_nsfw": "NSFW / shocking image"
+      "image_nsfw": "NSFW image",
+      "image_gore": "Shocking image (gore)"
     },
     "motif": {
       "sanction": "Sanctioned by the bot",

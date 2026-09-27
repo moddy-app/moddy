@@ -48,7 +48,9 @@ _ACCENT = {
     "non_sanctionnable": 0x57F287,
     "ignore": 0x99AAB5,
 }
-_KIND_EMOJI = {"texte": TEXT, "image_scam": IMAGE, "image_nsfw": IMAGE}
+_KIND_EMOJI = {"texte": TEXT, "image_scam": IMAGE, "image_nsfw": IMAGE, "image_gore": IMAGE}
+#: Lanes judged by SafeSearch: no category to correct, no text for the blocklist.
+_SAFESEARCH_LANES = ("image_nsfw", "image_gore")
 
 #: Categories the team can pick for a text / scam item (NSFW is image-only).
 TEXT_CATEGORIES = (
@@ -157,7 +159,7 @@ def render_label_card(row: Dict[str, Any], *, image_filename: Optional[str] = No
         footer.add_item(ui.TextDisplay(outcome))
     else:
         footer.add_item(ui.TextDisplay(f"-# {_l('hint')}"))
-        if kind != "image_nsfw":
+        if kind not in _SAFESEARCH_LANES:
             current = row.get("categorie_humaine") or details.get("categorie") or ""
             footer.add_item(ui.ActionRow(LabelCategorySelect(item_id, current=current)))
         buttons = ui.ActionRow(
@@ -165,7 +167,7 @@ def render_label_card(row: Dict[str, Any], *, image_filename: Optional[str] = No
             LabelVerdictButton("no", item_id),
             LabelVerdictButton("skip", item_id),
         )
-        if kind != "image_nsfw":
+        if kind not in _SAFESEARCH_LANES:
             buttons.add_item(LabelTermsButton(item_id))
         footer.add_item(buttons)
     view.add_item(footer)
