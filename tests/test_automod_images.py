@@ -660,3 +660,18 @@ async def test_shadow_card_falls_back_without_the_image_on_forbidden():
     assert len(sent) == 1
     assert not [i for i in sent[0]["view"].walk_children()
                 if i.__class__.__name__ == "MediaGallery"]
+
+
+def test_every_bareme_component_has_a_translation():
+    """Every component code the barème can emit renders in all 5 locales
+    (the shadow card used to miss `confirmation_refusee`)."""
+    from utils.automod_render import BAREME_LABELS
+    from utils.i18n import i18n
+    codes = {"plancher", "recidive", "severite", "confiance", "veteran", "compte_recent",
+             "plafond", "categorie_desactivee", "borne", "confirmation_refusee"}
+    assert codes <= set(BAREME_LABELS)
+    for loc in ("fr", "en-US", "es-ES", "pt-BR", "de"):
+        for code in codes:
+            key = f"modules.automod_ai.bareme.{BAREME_LABELS[code]}"
+            assert not i18n.get(key, locale=loc).startswith("["), (loc, key)
+    assert AutomodModule._BAREME_LABELS is BAREME_LABELS

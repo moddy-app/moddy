@@ -45,6 +45,8 @@ BAREME_LABELS = {
     "plafond": "ceiling",
     "categorie_desactivee": "disabled_category",
     "borne": "bounds",
+    # Heavy sanction downgraded after the mini senior review refused it (§6.3).
+    "confirmation_refusee": "unconfirmed",
 }
 
 

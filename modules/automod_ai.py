@@ -992,19 +992,9 @@ class AutomodModule(ModuleBase):
         )
         return ab.appliquer_non_confirme(bareme)
 
-    # Component code → i18n key suffix for the sanction breakdown card.
-    _BAREME_LABELS = {
-        "plancher": "floor",
-        "recidive": "recidivism",
-        "severite": "severity",
-        "confiance": "confidence",
-        "veteran": "veteran",
-        "compte_recent": "fresh_account",
-        "plafond": "ceiling",
-        "categorie_desactivee": "disabled_category",
-        "borne": "bounds",
-        "confirmation_refusee": "unconfirmed",
-    }
+    # Component code → i18n key suffix for the sanction breakdown card. One
+    # table, shared with the shadow card, so the two can never drift apart.
+    from utils.automod_render import BAREME_LABELS as _BAREME_LABELS
 
     def _bareme_breakdown(self, bareme: ab.ResultatBareme, locale: str) -> str:
         """A localized, line-by-line explanation of how the cran was reached."""
