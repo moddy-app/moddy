@@ -103,3 +103,26 @@ restarted from `main`, that commit replayed on top, and this change added:
 - `docs/EMOJIS.md`: a "Bump Reminder directory icons" section.
 - `tests/test_bump_reminder.py::TestDirectoryIcons`: every directory has its
   icon, and the registry matches the dict.
+
+## Fix: Save said "saved" but nothing changed, and `dyvion_` showed as `dyvion\_`
+
+- **Bug report:** `/config` → Save answered "saved" but the configuration was
+  unchanged. The logs showed `404 Unknown interaction (10062)` on the Save
+  button's `defer()`.
+- **Diagnosis:** the unsaved changes only lived in the memory of the process
+  that rendered the panel. Two cases led to the stored config being re-saved
+  and reported as saved:
+  - a second bot process answered the click, most likely a deploy overlap
+    (the other process then hit 10062);
+  - the bot had restarted, so the registration shell handled the click.
+- **Fix:** `draft_from_message()` reads the draft back from the panel message
+  itself: the selects' `default_values` and the `- `reason`` lines.
+  `_fresh_working_config` now uses, in order: the live memory, then the
+  message, then the stored config. `normalize_reasons()` turns backticks into
+  apostrophes, so a reason round-trips exactly through the inline-code list.
+- **Username:** it was wrapped in backticks *and* Markdown-escaped. Inside a
+  code span Discord shows the backslash literally. The new `inline_code()`
+  helper escapes nothing and only swaps backticks for a look-alike. It is also
+  used for the rejection reason.
+- **Tests:** draft round-trip through the message, a shell saving the draft
+  rather than the stored config, and the username rendering.

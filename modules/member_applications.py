@@ -58,15 +58,31 @@ MAX_REJECTION_REASON_LENGTH = 160
 CHANNEL_TYPES = [discord.ChannelType.text, discord.ChannelType.news]
 
 
+def inline_code(text: Any) -> str:
+    """``text`` as Discord inline code, shown exactly as typed.
+
+    Nothing is Markdown-escaped: inside backticks Discord renders a backslash
+    literally, so escaping would print ``dyvion\\_`` for ``dyvion_``. The only
+    character that can break out of the span is a backtick, swapped for a
+    look-alike.
+    """
+    return f"`{str(text).replace('`', 'ˋ')}`"
+
+
 def normalize_reasons(raw: Any) -> List[str]:
-    """Clean a preset reason list: trimmed, deduplicated, capped."""
+    """Clean a preset reason list: trimmed, deduplicated, capped.
+
+    Backticks become apostrophes so a reason round-trips unchanged through the
+    inline-code list the /config panel shows (and reads back, see
+    ``modules/configs/member_applications_config.py::draft_from_message``).
+    """
     if isinstance(raw, str):
         raw = raw.splitlines()
     if not isinstance(raw, list):
         return []
     reasons: List[str] = []
     for item in raw:
-        text = " ".join(str(item).split())[:MAX_PRESET_REASON_LENGTH]
+        text = " ".join(str(item).replace("`", "'").split())[:MAX_PRESET_REASON_LENGTH]
         if text and text not in reasons:
             reasons.append(text)
     return reasons[:MAX_PRESET_REASONS]
