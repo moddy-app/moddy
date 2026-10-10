@@ -590,8 +590,10 @@ See [API_GATEWAY.md](API_GATEWAY.md) for the quota model.
 | Key | TTL | Content |
 |---|---|---|
 | `automod:avatar:<asset key>` | 30 d | Verdict of a profile image (avatar **or** banner), keyed by Discord asset key — global, shared by every server |
-| `automod:pseudo:<sha1 of normalized name>` | 30 d | Verdict of a judged name (global; a *clean* verdict is reused only by a server whose severity is not stricter) |
-| `automod:profile:done:<guild>:<user>:<asset key \| n:<hash>>` | 7 d (assets) / 24 h (names) | "Already sanctioned for this asset/name" marker; cleared when a hold is lifted |
+| `automod:pseudo:<sha1 of normalized name>[:<12-hex digest of the guild's indications>]` | 30 d | Verdict of a judged name. Without indications the key is global (shared by every server); a server with indications gets its own suffixed key. A *clean* verdict is reused only by a server whose severity is not stricter |
+| `automod:pseudo:allow:<sha1 of normalized name>` | 30 d | Name cleared by the Moddy team ("not sanctionable" label): never flagged again, on any server |
+| `automod:profile:allow:<guild>:<asset key \| n:<hash>>` | 90 d | Asset/name cleared for one server by an accepted appeal |
+| `automod:profile:done:<guild>:<user>:<asset key \| n:<hash>>` | 7 d (assets) / 24 h (names) | "Already sanctioned for this asset/name" marker; cleared when a hold is lifted. Simulation mode uses a separate `sim:`-prefixed marker that live mode ignores |
 | `automod:profile:share:<guild>:<YYYYMMDD>` | 2 d | Profile SafeSearch calls today for the guild (daily per-guild share) |
 | `automod:nsfw:share:<guild>:<YYYYMMDD>` | 2 d | Same, for message images (pre-existing) |
 | `automod:img:{scam,nsfw,gore}:<phash>`, `automod:img:xp:...` | | Message-image caches (pre-existing, see [AUTOMOD_AI.md](AUTOMOD_AI.md)) |
