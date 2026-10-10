@@ -148,6 +148,10 @@ class FakeDB:
         self.revoked.append(sanction_id)
         return True
 
+    async def extend_sanction_expiry(self, sanction_id, expires_at):
+        self.extended = getattr(self, "extended", []) + [(sanction_id, expires_at)]
+        return True
+
     async def add_event(self, case_id, etype, **kw):
         self.events.append((case_id, etype, kw))
 
@@ -1137,3 +1141,247 @@ async def test_validate_config_rejects_a_non_boolean_profile_option(monkeypatch)
     env.bot.get_guild = lambda gid: types.SimpleNamespace(get_channel=lambda c: None)
     ok, err = await mod.validate_config({"features": {"profile": {"avatar": "yes"}}})
     assert not ok and "avatar" in err
+
+
+# --------------------------------------------------------------------------- #
+# Review fixes (hold kinds, banner errors, caches, sweep, locks, dry run...)
+# --------------------------------------------------------------------------- #
+
+def test_pseudo_can_never_be_configured_with_a_hold():
+    from automod import infractions as inf
+    clean = inf.normalize_sanctions({"profil_pseudo": {"action_profil": "hold"},
+                                     "profil_avatar_nsfw": {"action_profil": "hold"}})
+    assert clean["profil_pseudo"]["action_profil"] == "rename_warn"
+    assert clean["profil_avatar_nsfw"]["action_profil"] == "hold"
+    assert inf.validate_sanctions({"profil_pseudo": {"action_profil": "hold"}}) \
+        == "sanctions_action_profil_invalid"
+    assert inf.validate_sanctions({"profil_avatar_nsfw": {"action_profil": "hold"}}) is None
+
+
+async def test_a_stored_pseudo_hold_falls_back_instead_of_timing_out(monkeypatch):
+    env = Env(monkeypatch)
+    env.bot._automod_engine = FakeEngine(_name_decision(), only=_is_bad)
+    guild = FakeGuild()
+    mod = await _module(env, guild)
+    mod.sanctions = {"profil_pseudo": {"action_profil": "hold"}}   # legacy / raw row
+    member = FakeMember(guild, global_name="BadWord", name="alice")
+    await mod.screen_member(member, scope={"pseudo"})
+    assert member.timeouts == [] and env.bot.db.holds == {}
+    assert member.edits and env.bot.cases.recorded[0]["action"].value == "warn"
+
+
+async def test_a_failed_banner_fetch_keeps_the_hold(monkeypatch):
+    import discord
+    env = Env(monkeypatch)
+    guild = FakeGuild()
+    mod = await _module(env, guild)
+    member = FakeMember(guild)
+    member.timed_out_until = NOW + timedelta(days=5)
+    await env.bot.db.upsert_profile_hold(
+        1, 5, "banner", asset_key="b_bad", sanction_id=uuid.uuid4(),
+        timeout_until=member.timed_out_until)
+
+    async def boom(uid):
+        raise discord.HTTPException(types.SimpleNamespace(status=500, reason="x"), "err")
+    env.bot.fetch_user = boom
+    await mod.screen_member(member, scope={"banner"})
+    assert (1, 5, "banner") in env.bot.db.holds and member.timed_out_until is not None
+    assert env.bot.db.revoked == [] and not guild.channel.sent
+    # An error is not "no banner", and it is not cached for ten minutes.
+    assert env.bot.automod_profiles._banners[5][0] < __import__("time").monotonic() \
+        - ac.PROFILE_BANNER_FETCH_INTERVAL_SECONDS + 100
+    # A genuine "no banner" answer does lift the hold.
+    env.bot.automod_profiles._banners.clear()
+    env.bot.fetch_user = env._fetch_user
+    await mod.screen_member(member, scope={"banner"})
+    assert (1, 5, "banner") not in env.bot.db.holds
+
+
+def test_name_cache_is_per_indications_but_shared_without():
+    assert name_cache_key("x", "") == name_cache_key("x") == name_cache_key("x", "  ")
+    assert name_cache_key("x", "no jokes") != name_cache_key("x")
+    assert name_cache_key("x", "no jokes") != name_cache_key("x", "other rules")
+
+
+async def test_a_verdict_from_one_servers_indications_is_not_reused_by_another(monkeypatch):
+    env = Env(monkeypatch)
+    engine = FakeEngine(_name_decision(), only=_is_bad)
+    env.bot._automod_engine = engine
+    svc = env.bot.automod_profiles
+    kw = dict(user_id=5, guild_name="G", severity=3, response_language="English")
+    await svc.judge_name("BadName", guild_id=1, rules="ban the word bad", **kw)
+    other = await svc.judge_name("BadName", guild_id=2, rules="", **kw)
+    assert len(engine.calls) == 2 and other.fresh is True
+    again = await svc.judge_name("BadName", guild_id=3, rules="", **kw)
+    assert len(engine.calls) == 2 and again.fresh is False
+
+
+async def test_a_team_negative_label_stops_every_guild_flagging_the_name(monkeypatch):
+    env = Env(monkeypatch)
+    engine = FakeEngine(_name_decision(), only=_is_bad)
+    env.bot._automod_engine = engine
+    svc = env.bot.automod_profiles
+    kw = dict(user_id=5, guild_id=1, guild_name="G", rules="", severity=3,
+              response_language="English")
+    assert (await svc.judge_name("BadName", **kw)).decision.sanctionnable
+    labels = AutomodLabelService(env.bot)
+
+    async def none(*a, **k):
+        return 0
+    monkeypatch.setattr(labels, "revoke_bot_sanctions", none)
+    monkeypatch.setattr(labels, "_eval_candidate", none)
+    row = {"id": "i", "kind": KIND_PROFIL_PSEUDO, "contenu": "BadName", "guild_id": 1}
+    out = await labels._learn_negative(row, 42)
+    assert out["name_allowed"] is True
+    n = len(engine.calls)
+    judged = await svc.judge_name("badname", **{**kw, "guild_id": 2, "rules": "r"})
+    assert judged.decision is None and len(engine.calls) == n
+
+
+async def test_revoking_a_rename_resets_the_moderated_nickname(monkeypatch):
+    case_id, sanction_id = uuid.uuid4(), uuid.uuid4()
+    events = []
+
+    class DB:
+        async def get_case_by_id(self, cid):
+            return {"sanctions": [{"id": sanction_id, "status": "active", "action": "warn"}],
+                    "case": {"reference": "R1"}}
+
+        async def revoke_sanction(self, *a):
+            return True
+
+        async def add_event(self, cid, etype, **k):
+            events.append(k)
+
+        async def mark_label_item_revoked(self, item_id):
+            pass
+    member = FakeMember(FakeGuild(), nick="Moderated name")
+    guild = FakeGuild()
+    guild.get_member = lambda uid: member
+    bot = types.SimpleNamespace(db=DB(), get_guild=lambda gid: guild)
+    service = AutomodLabelService(bot)
+
+    async def no_notice(*a, **k):
+        pass
+    monkeypatch.setattr(service, "_notify_revocation", no_notice)
+
+    async def locale(bot_, g):
+        return "en-US"
+    monkeypatch.setattr("utils.guild_language.guild_locale", locale)
+    row = {"id": "i1", "revoked": False, "kind": KIND_PROFIL_PSEUDO, "details": {
+        "sanctions": [{"guild_id": 1, "case_id": str(case_id), "author_id": 5}]}}
+    assert await service.revoke_bot_sanctions(row, 42) == 1
+    assert member.edits and member.edits[0]["nick"] is None
+    assert "réinitialisé" in events[0]["content"]
+    # A nickname the member chose since is left alone.
+    member.nick, member.edits = "Bob", []
+    row["revoked"] = False
+    await service.revoke_bot_sanctions(row, 42)
+    assert member.edits == []
+
+
+async def test_member_lock_is_released_after_screening(monkeypatch):
+    env = Env(monkeypatch)
+    guild = FakeGuild()
+    mod = await _module(env, guild)
+    await mod.screen_member(FakeMember(guild), scope={"avatar"})
+    await mod.screen_member(FakeMember(guild, uid=6, mod=True), scope={"avatar"})
+    assert mod.__dict__.get("_profile_locks") == {}
+
+
+async def test_dry_run_does_not_burn_the_done_markers(monkeypatch):
+    env = Env(monkeypatch, vision=FakeVision(adult="VERY_LIKELY"))
+    env.bot._automod_engine = FakeEngine(_name_decision(), only=_is_bad)
+    guild = FakeGuild()
+    sim = await _module(env, guild, extra={"dry_run": True})
+    member, _ = _nsfw_member(guild, global_name="BadWord")
+    await sim.screen_member(member, scope={"avatar", "pseudo"})
+    assert member.timeouts == [] and member.edits == []
+    live = await _module(env, guild)
+    await live.screen_member(member, scope={"avatar", "pseudo"})
+    assert member.timeouts, "the avatar is judged again once the simulation ends"
+    assert member.edits, "so is the name"
+
+
+async def test_one_guilds_safesearch_share_does_not_block_other_guilds(monkeypatch):
+    env = Env(monkeypatch, vision=FakeVision(adult="UNLIKELY"))
+    svc = env.bot.automod_profiles
+    day = datetime.now(timezone.utc).strftime("%Y%m%d")
+    env.bot.redis.store[f"automod:profile:share:1:{day}"] = ac.PROFILE_GUILD_DAILY_SHARE
+    asset = FakeAsset("a_shared", _png())
+    first = await svc.check_asset(asset, kind="avatar", guild_id=1, tier="prioritaire")
+    assert not first.checked and first.guild_scoped_refusal
+    second = await svc.check_asset(asset, kind="avatar", guild_id=2, tier="prioritaire")
+    assert second.checked
+
+
+async def test_accepted_appeal_clears_the_asset_for_that_guild(monkeypatch):
+    env = Env(monkeypatch, vision=FakeVision(adult="VERY_LIKELY"))
+    guild = FakeGuild()
+    mod = await _module(env, guild)
+    case = {"events": [{"type": "evidence", "payload": {
+        "source": "automod", "origine": "profil_avatar",
+        "profil": {"kind": "avatar", "asset_key": "a_bad"}}}]}
+
+    class DB:
+        async def get_case_by_id(self, cid):
+            return case
+    bot = types.SimpleNamespace(db=DB(), automod_profiles=env.bot.automod_profiles)
+    await AppealService(bot)._allow_profile_subject(
+        {"case_id": str(uuid.uuid4()), "guild_id": 1})
+    member, _ = _nsfw_member(guild)
+    await mod.screen_member(member, scope={"avatar"})
+    assert member.timeouts == [] and env.bot.db.holds == {}
+    # Another guild still judges it.
+    guild2 = FakeGuild(2)
+    mod2 = await _module(env, guild2)
+    member2, _ = _nsfw_member(guild2)
+    await mod2.screen_member(member2, scope={"avatar"})
+    assert member2.timeouts
+
+
+async def test_a_renewed_hold_extends_its_mute_sanction(monkeypatch):
+    env = Env(monkeypatch, vision=FakeVision(adult="VERY_LIKELY"))
+    guild = FakeGuild()
+    mod = await _module(env, guild)
+    member, _ = _nsfw_member(guild)
+    await mod.screen_member(member, scope={"avatar"})
+    hold = env.bot.db.holds[(1, 5, "avatar")]
+    member.timed_out_until = NOW + timedelta(hours=2)       # about to end
+    await mod.screen_member(member, reason="sweep", scope={"avatar"})
+    (sid, until), = env.bot.db.extended
+    assert sid == hold["sanction_id"] and until > NOW + timedelta(days=27)
+
+
+async def test_sweep_rechecks_every_hold_and_stamps_it(monkeypatch):
+    from cogs.automod_profiles import AutomodProfiles, RECHECK_AFTER
+    seen = {}
+    touched = []
+
+    class DB:
+        pool = object()
+
+        async def list_profile_holds_due(self, before, limit, recheck_before=None):
+            seen["recheck_before"] = recheck_before
+            return [{"guild_id": 1, "user_id": 5, "kind": "banner", "timeout_until": None}]
+
+        async def touch_profile_hold(self, g, u, k):
+            touched.append((g, u, k))
+
+    class Module:
+        async def sweep_hold(self, hold):
+            raise RuntimeError("boom")
+
+    class Manager:
+        async def get_module_instance(self, gid, mid):
+            return Module()
+    bot = types.SimpleNamespace(
+        db=DB(), module_manager=Manager(),
+        get_guild=lambda gid: types.SimpleNamespace(id=gid))
+    cog = AutomodProfiles.__new__(AutomodProfiles)
+    cog.bot = bot
+    await AutomodProfiles.sweep_profile_holds.coro(cog)
+    assert seen["recheck_before"] is not None
+    assert datetime.now(timezone.utc) - seen["recheck_before"] >= RECHECK_AFTER
+    assert touched == [(1, 5, "banner")], "stamped even when the hold's sweep fails"
+    assert AutomodProfiles.sweep_profile_holds.hours == 1

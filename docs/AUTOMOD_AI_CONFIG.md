@@ -177,7 +177,7 @@ The ladder a cran maps to: `0` delete only · `1` warn · `2..6` mute 2 h / 12 h
 
 | Value | Default for | Effect |
 |---|---|---|
-| `hold` | the two avatar types | timeout until the profile is fixed (case + `automod_profile_holds` row) |
+| `hold` | the two avatar types (not valid for `profil_pseudo`) | timeout until the profile is fixed (case + `automod_profile_holds` row) |
 | `rename_warn` | `profil_pseudo` | reset the displayed nickname + warn |
 | `alert` | — | alert card only, no sanction |
 | `bareme` | — | the cran ladder above, like a message (minus the deletion) |
@@ -187,7 +187,8 @@ ids and non-object entries are dropped; a `perso:<id>` whose `<id>` is not in
 `infractions_perso` is dropped (orphan); a bad `mode` becomes `auto`; crans are
 clamped to 0..7 (garbage → the type's default); `enabled`/`recidive` are `true`
 unless exactly `false`; `action_profil` outside the four values falls back to the
-type's default.
+type's default; `hold` on `profil_pseudo` is coerced to `rename_warn` (and
+rejected by validation with `sanctions_action_profil_invalid`).
 
 ### 3.2 `infractions_perso` — server-defined infractions
 
@@ -267,7 +268,7 @@ the **first failure** is returned (French strings, verbatim):
 | `sanctions_flag_invalid` | `enabled` or `recidive` is not a boolean |
 | `sanctions_crans_invalid` | `crans` is not an object, has a key ∉ `basse`/`moyenne`/`haute`/`critique`, or a value that is not an integer (booleans refused) |
 | `sanctions_cran_range` | a cran outside 0..7 |
-| `sanctions_action_profil_invalid` | `action_profil` ∉ `hold`/`alert`/`rename_warn`/`bareme`, or set on a non-profile type |
+| `sanctions_action_profil_invalid` | `action_profil` ∉ `hold`/`alert`/`rename_warn`/`bareme`, set on a non-profile type, or `hold` on `profil_pseudo` |
 
 `<code>` of rule 7 (`custom_infractions.validate`, also returned per entry by the
 route of §6.2): `infractions_perso_invalid` (not a list), `infractions_perso_too_many`
@@ -517,6 +518,7 @@ CREATE TABLE automod_profile_holds (
     sanction_id   UUID,                 -- its MUTE sanction (case_sanctions.id)
     created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
     timeout_until TIMESTAMPTZ,          -- end of the Discord timeout currently in force
+    last_checked  TIMESTAMPTZ,          -- last sweep re-screen (ALTER ... ADD COLUMN IF NOT EXISTS)
     PRIMARY KEY (guild_id, user_id, kind)
 );
 CREATE INDEX idx_profile_holds_timeout ON automod_profile_holds (timeout_until);

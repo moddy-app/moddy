@@ -472,9 +472,10 @@ class TestScreens:
         assert "is off right now" not in texts(view)
 
     def test_profile_type_offers_the_right_actions(self):
-        assert sanc.profile_actions("profil_pseudo") == ["hold", "alert", "rename_warn", "bareme"] or \
-            set(sanc.profile_actions("profil_pseudo")) == set(infractions.ACTIONS_PROFIL)
+        # A hold tracks an avatar / banner asset: never offered for a name.
+        assert sanc.profile_actions("profil_pseudo") == ["alert", "rename_warn", "bareme"]
         assert "rename_warn" not in sanc.profile_actions("profil_avatar_nsfw")
+        assert "hold" in sanc.profile_actions("profil_avatar_nsfw")
 
     def test_customise_hidden_when_a_profile_action_ignores_the_scale(self):
         cfg = configured()

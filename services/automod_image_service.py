@@ -389,22 +389,28 @@ class AutomodImageService:
             self._safesearch_memo.popitem(last=False)
 
     async def safesearch(self, img: PreparedImage, *, guild_id: int,
-                         tier: str, profile: bool = False) -> Optional[dict]:
+                         tier: str, profile: bool = False,
+                         refusal: Optional[dict] = None) -> Optional[dict]:
         """SafeSearch likelihoods, or None when the budget/pacing says no.
 
         The result is cached per image hash (in-process + Redis, key kept as
         ``automod:img:nsfw:<phash>`` for compatibility) and shared by the
         ``image_nsfw`` and ``image_gore`` features. ``profile=True`` spends the
-        separate member-profile budget instead (avatars / banners)."""
+        separate member-profile budget instead (avatars / banners). ``refusal``
+        (optional out-dict) receives ``{"scope": "guild"}`` when only THIS
+        guild's daily share said no (another guild may still be served)."""
         likelihoods = await self._request_safesearch(
-            img, guild_id=guild_id, tier=tier, **({"profile": True} if profile else {}))
+            img, guild_id=guild_id, tier=tier,
+            **({"profile": True} if profile else {}),
+            **({"refusal": refusal} if refusal is not None else {}))
         if likelihoods is not None:
             self._remember_safesearch(img.phash_hex, likelihoods)
             await self.store_verdict("nsfw", img.phash_hex, likelihoods)
         return likelihoods
 
     async def _request_safesearch(self, img: PreparedImage, *, guild_id: int,
-                                  tier: str, profile: bool = False) -> Optional[dict]:
+                                  tier: str, profile: bool = False,
+                                  refusal: Optional[dict] = None) -> Optional[dict]:
         """Budget + pacing checks, then the paid call (no caching here).
 
         ``profile`` selects the member-profile budget: a separate monthly rule
@@ -432,6 +438,8 @@ class AutomodImageService:
             return None
         if not await self._guild_share_allows(guild_id, profile):
             self._stat("skip_budget")
+            if refusal is not None:
+                refusal["scope"] = "guild"
             return None
         from gateway.errors import GatewayError
         from gateway.spec import QuotaTarget

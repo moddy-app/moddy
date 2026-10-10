@@ -52,6 +52,9 @@ MODES = ("auto", "perso")
 
 #: Profile actions an admin can pick for a ``profil`` infraction.
 ACTIONS_PROFIL = ("hold", "alert", "rename_warn", "bareme")
+# Profile types a hold can apply to (a hold tracks an avatar/banner asset; a
+# name has nothing to "fix" that Moddy could re-check by hash).
+HOLD_TYPES = ("profil_avatar_nsfw", "profil_avatar_choquant")
 
 CRAN_MIN = 0
 CRAN_MAX = 7
@@ -209,7 +212,9 @@ def normalize_sanctions(raw: Any, known_perso_ids: Iterable[str] = ()) -> Dict[s
         }
         if typ.famille == "profil":
             ap = entry.get("action_profil")
-            clean["action_profil"] = ap if ap in ACTIONS_PROFIL else typ.default_profile_action
+            if ap not in ACTIONS_PROFIL or (ap == "hold" and cat not in HOLD_TYPES):
+                ap = typ.default_profile_action
+            clean["action_profil"] = ap
         out[cat] = clean
     return out
 
@@ -248,6 +253,8 @@ def validate_sanctions(raw: Any) -> Optional[str]:
         if "action_profil" in entry:
             typ = get(cat)
             if typ.famille != "profil" or entry["action_profil"] not in ACTIONS_PROFIL:
+                return "sanctions_action_profil_invalid"
+            if entry["action_profil"] == "hold" and cat not in HOLD_TYPES:
                 return "sanctions_action_profil_invalid"
     return None
 

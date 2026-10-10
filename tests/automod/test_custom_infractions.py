@@ -333,9 +333,10 @@ class TestEngineRouting:
         text = MSG_GLOBAL
         await engine.analyze(tgt(text), custom_infractions=[
             entry(pid="x", mots_cles=["globally"], description=PUB_DESC)], **COMMON)
-        # The "globally" keyword routes first (free, before similarity)...
-        assert rec["signal"].source == ac.SOURCE_PERSO
-        # ... but without that keyword the global embedding wins.
+        # A global embedding pass outranks even a custom keyword hit...
+        assert rec["signal"].source == ac.SOURCE_EMBEDDING
+        assert rec["signal"].categorie == "menace"
+        # ... and it is still the plain global verdict without that keyword.
         rec.clear()
         await engine.analyze(tgt(text, "3"), custom_infractions=[PUB], **COMMON)
         assert rec["signal"].source == ac.SOURCE_EMBEDDING
@@ -347,13 +348,20 @@ class TestEngineRouting:
         await engine.analyze(tgt("espèce de connard"), custom_infractions=[kw], **COMMON)
         assert rec["signal"].source == ac.SOURCE_REGEX
 
-    async def test_keyword_routes_without_any_embedding(self, monkeypatch):
+    async def test_keyword_routes_when_global_embedding_fails(self, monkeypatch):
         engine, rec, calls = build_engine(monkeypatch)
-        await engine.analyze(tgt("viens discord.gg/abc"), custom_infractions=[PUB], **COMMON)
+        text = "viens discord.gg/abc"
+        VECS[text] = [0.0, 0.0, 0.0, 1.0]       # nothing global about it
+        try:
+            await engine.analyze(tgt(text), custom_infractions=[PUB], **COMMON)
+        finally:
+            del VECS[text]
         sig = rec["signal"]
         assert sig.source == ac.SOURCE_PERSO and sig.categorie == "perso:pub"
         assert sig.score_confiance == ac.PERSO_KEYWORD_SCORE
-        assert calls == []
+        # The message is embedded once (global score) and the custom references
+        # are never embedded: the keyword answered before the similarity step.
+        assert calls == [[text]]
 
     async def test_keyword_routes_a_trivial_message_but_similarity_does_not(
             self, monkeypatch):

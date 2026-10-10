@@ -36,6 +36,7 @@ def _hold(row) -> Optional[Dict[str, Any]]:
         "categorie": row["categorie"], "asset_key": row["asset_key"],
         "case_id": row["case_id"], "sanction_id": row["sanction_id"],
         "created_at": row["created_at"], "timeout_until": row["timeout_until"],
+        "last_checked": row["last_checked"] if "last_checked" in row.keys() else None,
     }
 
 
@@ -88,16 +89,35 @@ class AutomodProfileRepository:
                 int(guild_id), int(user_id))
         return [_hold(r) for r in rows]
 
-    async def list_profile_holds_due(self, before: datetime,
-                                     limit: int = 200) -> List[Dict[str, Any]]:
-        """Holds whose timeout ends before ``before`` (sweep input)."""
+    async def list_profile_holds_due(self, before: datetime, limit: int = 200,
+                                     recheck_before: Optional[datetime] = None
+                                     ) -> List[Dict[str, Any]]:
+        """Holds the sweep must look at (sweep input).
+
+        Two reasons: the timeout ends before ``before`` (renew / lift it), or the
+        hold was not re-screened since ``recheck_before`` (a banner removal raises
+        no gateway event). Expiring holds come first, then the least recently
+        checked, so a stale hold (member gone) cannot starve the batch.
+        """
         async with self.pool.acquire() as conn:
             rows = await conn.fetch(
                 "SELECT * FROM automod_profile_holds "
                 "WHERE timeout_until IS NULL OR timeout_until < $1 "
-                "ORDER BY timeout_until NULLS FIRST LIMIT $2",
-                before, int(limit))
+                "   OR ($3::timestamptz IS NOT NULL "
+                "       AND (last_checked IS NULL OR last_checked < $3)) "
+                "ORDER BY (timeout_until IS NULL OR timeout_until < $1) DESC, "
+                "         last_checked NULLS FIRST, timeout_until NULLS FIRST "
+                "LIMIT $2",
+                before, int(limit), recheck_before)
         return [_hold(r) for r in rows]
+
+    async def touch_profile_hold(self, guild_id: int, user_id: int, kind: str) -> None:
+        """Stamp ``last_checked`` (the sweep looked at this hold)."""
+        async with self.pool.acquire() as conn:
+            await conn.execute(
+                "UPDATE automod_profile_holds SET last_checked = now() "
+                "WHERE guild_id = $1 AND user_id = $2 AND kind = $3",
+                int(guild_id), int(user_id), kind)
 
     async def delete_profile_hold(self, guild_id: int, user_id: int,
                                   kind: str) -> bool:

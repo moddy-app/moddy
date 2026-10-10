@@ -17,7 +17,8 @@ across events lives here (docs/AUTOMOD_AI.md "Profiles"):
   user per ten minutes, shared by every guild.
 * **Names** — nickname / display name / username go through the text funnel
   (``engine.analyze`` with the ``profil_pseudo`` origin). A verdict is cached per
-  normalized name (``automod:pseudo:<sha1>``, 30 d, global).
+  normalized name (``automod:pseudo:<sha1>[:<rules digest>]``, 30 d; shared across guilds
+  without indications, per-indications otherwise).
 * **Idempotence** — a "done" marker per (guild, member, asset or name) stops a
   profile event storm from sanctioning the same thing twice.
 * **Scheduling** — screenings run as bounded background tasks so a raid of joins
@@ -60,6 +61,17 @@ _MEMO_MAX = 512
 _NEGATIVE_TTL = 600.0          # an unreadable / budget-refused asset is not retried sooner
 _BANNER_MEMO_MAX = 2000
 _NAME_MAX_CHARS = 100
+_BANNER_ERROR_RETRY = 60.0     # an unknown banner (fetch error) is retried after a minute
+
+
+class _BannerUnknown:
+    """Sentinel: the banner could not be read (NOT "this user has no banner")."""
+
+    def __repr__(self) -> str:  # pragma: no cover
+        return "BANNER_UNKNOWN"
+
+
+BANNER_UNKNOWN = _BannerUnknown()
 
 #: Categories a SafeSearch hash kind can carry for a profile image.
 _PROFILE_HASH_KINDS = (KIND_NSFW, KIND_GORE)
@@ -82,6 +94,9 @@ class AssetCheck:
     hash_match: Optional[dict] = None
     img: Optional[PreparedImage] = None
     url: str = ""
+    #: The refusal came from THIS guild's daily share only (not a global
+    #: budget): it must not be negative-cached for the other guilds.
+    guild_scoped_refusal: bool = False
 
 
 @dataclass
@@ -98,9 +113,30 @@ def normalize_name(name: str) -> str:
     return (collapse_repeats(text) or text)[:_NAME_MAX_CHARS]
 
 
-def name_cache_key(name: str) -> str:
-    return "automod:pseudo:" + hashlib.sha1(
+def name_cache_key(name: str, rules: str = "") -> str:
+    """Verdict cache key of a name.
+
+    The verdict depends on the guild's indications (``rules``), so a guild that
+    has some gets its own key (digest of the text); the common case, no
+    indications, shares one global key.
+    """
+    key = "automod:pseudo:" + hashlib.sha1(
         normalize_name(name).encode("utf-8")).hexdigest()
+    rules = (rules or "").strip()
+    if rules:
+        key += ":" + hashlib.sha1(rules.encode("utf-8")).hexdigest()[:12]
+    return key
+
+
+def name_allow_key(name: str) -> str:
+    """Team-wide "this name is fine" marker (a negative label), every guild."""
+    return "automod:pseudo:allow:" + hashlib.sha1(
+        normalize_name(name).encode("utf-8")).hexdigest()
+
+
+def name_subject(norm: str) -> str:
+    """The idempotence / allow subject of an already-normalized name."""
+    return "n:" + hashlib.sha1(norm.encode("utf-8")).hexdigest()[:16]
 
 
 def synthetic_id(user_id: int, kind: str, subject: str) -> str:
@@ -118,6 +154,7 @@ class AutomodProfileService:
         self._banners: "OrderedDict[int, tuple]" = OrderedDict()
         self._done_mem: Dict[str, float] = {}
         self._name_memo: "OrderedDict[str, dict]" = OrderedDict()
+        self._allowed_names: Dict[str, float] = {}
         self._tasks: set = set()
 
     # ------------------------------------------------------------------ #
@@ -209,25 +246,65 @@ class AutomodProfileService:
                 pass
 
     # ------------------------------------------------------------------ #
+    # Per-guild allow markers (an accepted appeal clears an asset / a name)
+    # ------------------------------------------------------------------ #
+
+    @staticmethod
+    def _allow_key(guild_id: int, subject: str) -> str:
+        return f"automod:profile:allow:{guild_id}:{subject}"
+
+    async def allow_profile(self, guild_id: int, subject: str) -> None:
+        """This guild's moderators cleared ``subject`` (asset key or ``n:<hash>``)."""
+        key = self._allow_key(guild_id, subject)
+        self._done_mem[key] = time.monotonic() + ac.PROFILE_ALLOW_TTL_SECONDS
+        r = self._redis()
+        if r is not None:
+            try:
+                await r.set(key, "1", ex=ac.PROFILE_ALLOW_TTL_SECONDS)
+            except Exception:  # noqa: BLE001
+                pass
+
+    async def is_profile_allowed(self, guild_id: int, subject: str) -> bool:
+        key = self._allow_key(guild_id, subject)
+        until = self._done_mem.get(key)
+        if until is not None and until > time.monotonic():
+            return True
+        r = self._redis()
+        if r is not None:
+            try:
+                return bool(await r.exists(key))
+            except Exception:  # noqa: BLE001
+                pass
+        return False
+
+    # ------------------------------------------------------------------ #
     # Banners (REST only, throttled)
     # ------------------------------------------------------------------ #
 
-    async def get_banner(self, user_id: int) -> Optional[discord.Asset]:
-        """The user's banner asset (None = none / unknown), at most one REST
-        fetch per user per ten minutes — shared by every guild they are in."""
+    async def get_banner(self, user_id: int):
+        """The user's banner asset, ``None`` (no banner) or ``BANNER_UNKNOWN``.
+
+        At most one REST fetch per user per ten minutes — shared by every guild
+        they are in. A failed fetch is *unknown*, never "no banner": the caller
+        must not treat it as the banner having been removed. Only definitive
+        answers are cached for the full interval (an error is retried after a
+        minute).
+        """
         now = time.monotonic()
         hit = self._banners.get(int(user_id))
         if hit is not None and now - hit[0] < ac.PROFILE_BANNER_FETCH_INTERVAL_SECONDS:
             return hit[1]
-        banner = None
+        stamp = now
         try:
             user = await self.bot.fetch_user(int(user_id))
             banner = getattr(user, "banner", None)
-        except (discord.NotFound, discord.HTTPException) as exc:
+        except discord.NotFound:
+            banner = None                       # the account is gone: no banner
+        except Exception as exc:  # noqa: BLE001 — HTTP error, crash...: unknown
             logger.debug("automod banner fetch failed for %s: %s", user_id, exc)
-        except Exception as exc:  # noqa: BLE001
-            logger.debug("automod banner fetch crashed for %s: %s", user_id, exc)
-        self._banners[int(user_id)] = (now, banner)
+            banner = BANNER_UNKNOWN
+            stamp = now - ac.PROFILE_BANNER_FETCH_INTERVAL_SECONDS + _BANNER_ERROR_RETRY
+        self._banners[int(user_id)] = (stamp, banner)
         self._banners.move_to_end(int(user_id))
         while len(self._banners) > _BANNER_MEMO_MAX:
             self._banners.popitem(last=False)
@@ -292,7 +369,7 @@ class AutomodProfileService:
             return result
         finally:
             self._flights.pop(key, None)
-            if not result.checked:
+            if not result.checked and not result.guild_scoped_refusal:
                 self._negative[key] = time.monotonic() + _NEGATIVE_TTL
                 if len(self._negative) > 5000:
                     now = time.monotonic()
@@ -340,9 +417,11 @@ class AutomodProfileService:
                 out.img = img
             if img is None:
                 return out
+            refusal: dict = {}
             likelihoods = await images.safesearch(
-                img, guild_id=guild_id, tier=tier, profile=True)
+                img, guild_id=guild_id, tier=tier, profile=True, refusal=refusal)
             if likelihoods is None:
+                out.guild_scoped_refusal = refusal.get("scope") == "guild"
                 self.stat("skip_budget")
                 logger.debug("automod profile SafeSearch refused for %s (guild %s)",
                              key, guild_id)
@@ -421,7 +500,9 @@ class AutomodProfileService:
         text = (name or "").strip()[:_NAME_MAX_CHARS]
         if len(normalize_name(text)) < 2:
             return NameJudgement(None, fresh=False)
-        key = name_cache_key(text)
+        if await self.is_name_allowed(text):
+            return NameJudgement(None, fresh=False)
+        key = name_cache_key(text, rules)
         rec = await self._load_name(key)
         if rec is not None and (rec.get("s") or int(rec.get("sev", 0)) >= int(severity)):
             self.stat("cache_hit")
@@ -449,6 +530,31 @@ class AutomodProfileService:
                      "d": _decision_dict(decision)}
         await self._store_name(key, store)
         return NameJudgement(decision, fresh=True)
+
+    async def allow_name(self, name: str) -> None:
+        """The team ruled this name fine: no guild sanctions it from now on
+        (checked before any cached verdict or judge call)."""
+        key = name_allow_key(name)
+        self._allowed_names[key] = time.monotonic() + ac.PROFILE_PSEUDO_TTL_SECONDS
+        r = self._redis()
+        if r is not None:
+            try:
+                await r.set(key, "1", ex=ac.PROFILE_PSEUDO_TTL_SECONDS)
+            except Exception:  # noqa: BLE001
+                pass
+
+    async def is_name_allowed(self, name: str) -> bool:
+        key = name_allow_key(name)
+        until = self._allowed_names.get(key)
+        if until is not None and until > time.monotonic():
+            return True
+        r = self._redis()
+        if r is not None:
+            try:
+                return bool(await r.exists(key))
+            except Exception:  # noqa: BLE001
+                pass
+        return False
 
     @staticmethod
     def _relabel(decision: Optional[Decision], user_id: int, text: str

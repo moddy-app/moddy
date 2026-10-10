@@ -473,6 +473,8 @@ PROFILE_BANNER_FETCH_INTERVAL_SECONDS: int = 600
 #: A sanction already applied for the same asset / name is not repeated for it.
 PROFILE_DONE_TTL_ASSET_SECONDS: int = 7 * 86400
 PROFILE_DONE_TTL_PSEUDO_SECONDS: int = 86400
+#: An accepted appeal clears that asset / name for this guild for this long.
+PROFILE_ALLOW_TTL_SECONDS: int = 90 * 86400
 #: Pending profile screenings process-wide (a raid of joins cannot pile up).
 PROFILE_QUEUE_MAX: int = 200
 #: A hold lasts one Discord timeout (28 d max); it is renewed when it has less

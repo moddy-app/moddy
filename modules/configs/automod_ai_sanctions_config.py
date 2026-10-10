@@ -383,6 +383,8 @@ def profile_actions(cat: str) -> List[str]:
     actions = list(infractions.ACTIONS_PROFIL)
     if cat != "profil_pseudo":
         actions.remove("rename_warn")
+    elif cat not in infractions.HOLD_TYPES:
+        actions.remove("hold")
     return actions
 
 

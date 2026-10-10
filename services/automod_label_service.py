@@ -404,6 +404,15 @@ class AutomodLabelService:
                     outcome["precedent"] = True
                 except Exception as exc:  # noqa: BLE001
                     logger.debug("automod labeling precedent failed: %s", exc)
+        if row["kind"] == KIND_PROFIL_PSEUDO and text:
+            # The cached name verdicts of every server must stop flagging it.
+            profiles = getattr(self.bot, "automod_profiles", None)
+            if profiles is not None:
+                try:
+                    await profiles.allow_name(text)
+                    outcome["name_allowed"] = True
+                except Exception as exc:  # noqa: BLE001
+                    logger.debug("automod labeling name allow failed: %s", exc)
         await self._eval_candidate(row, "faux_positif", by)
         revoked = await self.revoke_bot_sanctions(row, by)
         if revoked:
@@ -548,12 +557,18 @@ class AutomodLabelService:
                         reason="[Automod] révoqué par l'équipe Moddy")
             if not lifted:
                 continue
+            renamed_back = False
+            if row.get("kind") == KIND_PROFIL_PSEUDO:
+                renamed_back = await self._restore_nickname(
+                    guild, int(entry.get("author_id") or 0))
             try:
                 await db.add_event(
                     _uuid.UUID(str(case_id)), EventType.COMMENT.value,
                     author_type=AuthorType.SYSTEM.value,
                     content="Sanction révoquée : l'équipe Moddy a jugé ce contenu non sanctionnable "
-                            "(file d'étiquetage de l'automod).",
+                            "(file d'étiquetage de l'automod)."
+                            + (" Le pseudo « Moderated name » a été réinitialisé."
+                               if renamed_back else ""),
                     payload={"kind": "automod_label_revoked", "label_item_id": row["id"]},
                 )
             except Exception as exc:  # noqa: BLE001
@@ -562,6 +577,31 @@ class AutomodLabelService:
         if total:
             await db.mark_label_item_revoked(row["id"])
         return total
+
+    async def _restore_nickname(self, guild: Optional[discord.Guild],
+                                user_id: int) -> bool:
+        """Best effort: drop the "Moderated name" nickname the automod set.
+
+        Only when the member's nickname is still exactly that placeholder (in
+        the server language): a nickname they chose since is left alone.
+        """
+        if guild is None or not user_id:
+            return False
+        try:
+            from utils.guild_language import guild_locale
+            from utils.i18n import t
+            member = guild.get_member(user_id)
+            if member is None or not getattr(member, "nick", None):
+                return False
+            locale = await guild_locale(self.bot, guild)
+            moderated = t("modules.automod_ai.profile.moderated_name", locale=locale)[:32]
+            if member.nick != moderated:
+                return False
+            await member.edit(nick=None, reason="[Automod] révoqué par l'équipe Moddy")
+            return True
+        except Exception as exc:  # noqa: BLE001 — permissions / hierarchy
+            logger.debug("automod labeling nickname restore failed: %s", exc)
+            return False
 
     async def _notify_revocation(self, guild: Optional[discord.Guild], entry: dict,
                                  case: dict, lifted: List[str]) -> None:

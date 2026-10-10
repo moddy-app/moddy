@@ -146,6 +146,7 @@ class AppealService:
                 await self._revoke_case_sanction(appeal, by_type, by_id)
                 await self._reverse_discord(guild, subject_id, old_action)
                 await self._drop_profile_hold(appeal)
+                await self._allow_profile_subject(appeal)
             elif decision == "transform":
                 await self._revoke_case_sanction(appeal, by_type, by_id)
                 await self._drop_profile_hold(appeal)
@@ -365,6 +366,34 @@ class AppealService:
             "guild", subject_id=appeal["subject_id"], action=action,
             scope_id=appeal["guild_id"], by_type=by_type, by_id=by_id,
         )
+
+    async def _allow_profile_subject(self, appeal: dict) -> None:
+        """Accepted appeal on a profile sanction: that asset / name is cleared.
+
+        Without it the hold row is gone but the asset is still flagged, so a
+        rejoin (once the done marker expired) would hold the same avatar again.
+        """
+        profiles = getattr(self.bot, "automod_profiles", None)
+        if profiles is None:
+            return
+        try:
+            case = await self.db.get_case_by_id(_as_uuid(appeal["case_id"]))
+            for ev in reversed((case or {}).get("events", [])):
+                p = ev.get("payload") or {}
+                origine = str(p.get("origine") or "")
+                if ev.get("type") != "evidence" or p.get("source") != "automod" \
+                        or not origine.startswith("profil_"):
+                    continue
+                if origine == "profil_pseudo":
+                    from services.automod_profile_service import name_subject, normalize_name
+                    subject = name_subject(normalize_name(p.get("extrait") or ""))
+                else:
+                    subject = (p.get("profil") or {}).get("asset_key")
+                if subject:
+                    await profiles.allow_profile(int(appeal["guild_id"]), subject)
+                return
+        except Exception as e:  # noqa: BLE001 — the ruling itself is already applied
+            logger.debug("appeal profile allow marker failed: %s", e)
 
     async def _drop_profile_hold(self, appeal: dict) -> None:
         """A profile "hold" ends with its sanction (appeal accepted / modified)."""

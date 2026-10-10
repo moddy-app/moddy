@@ -2043,7 +2043,9 @@ class AutomodModule(ModuleBase):
     def _release_member_lock(self, user_id: int) -> None:
         locks = self.__dict__.get("_profile_locks", {})
         lock = locks.get(user_id)
-        if lock is not None and not lock.locked():
+        # Never drop a lock somebody is still queued on (two screenings of the
+        # same member would then run concurrently on different lock objects).
+        if lock is not None and not lock.locked() and not getattr(lock, "_waiters", None):
             locks.pop(user_id, None)
 
     def _spawn_screen(self, member: discord.Member, reason: str, scope) -> None:
@@ -2133,25 +2135,27 @@ class AutomodModule(ModuleBase):
         scope = frozenset(scope) if scope is not None else self._PROFILE_SCOPE_ALL
         if not self.profile_active() or member is None:
             return
-        async with self._member_lock(member.id):
-            try:
-                if await global_sanctions.is_limited(self.bot, guild_id=self.guild_id):
-                    return
-                if self._profile_exempt(member):
-                    await self._lift_exempt_holds(member)
-                    return
-                feature = self.profile
-                if "avatar" in scope and feature.avatar:
-                    await self._screen_image(member, "avatar", reason)
-                if "banner" in scope and feature.banner:
-                    await self._screen_image(member, "banner", reason)
-                if "pseudo" in scope and feature.pseudo:
-                    await self._screen_names(member)
-            except Exception as e:  # noqa: BLE001
-                logger.error("automod profile screening failed (guild %s, member %s): %s",
-                             self.guild_id, member.id, e, exc_info=True)
-            finally:
-                self._release_member_lock(member.id)
+        try:
+            async with self._member_lock(member.id):
+                try:
+                    if await global_sanctions.is_limited(self.bot, guild_id=self.guild_id):
+                        return
+                    if self._profile_exempt(member):
+                        await self._lift_exempt_holds(member)
+                        return
+                    feature = self.profile
+                    if "avatar" in scope and feature.avatar:
+                        await self._screen_image(member, "avatar", reason)
+                    if "banner" in scope and feature.banner:
+                        await self._screen_image(member, "banner", reason)
+                    if "pseudo" in scope and feature.pseudo:
+                        await self._screen_names(member)
+                except Exception as e:  # noqa: BLE001
+                    logger.error("automod profile screening failed (guild %s, member %s): %s",
+                                 self.guild_id, member.id, e, exc_info=True)
+        finally:
+            # After the lock is released (inside the block it is always held).
+            self._release_member_lock(member.id)
 
     async def _lift_exempt_holds(self, member: discord.Member) -> None:
         """A member who became exempt (moderator, exempt role) is no longer held."""
@@ -2166,6 +2170,7 @@ class AutomodModule(ModuleBase):
         db = getattr(self.bot, "db", None)
         if svc is None:
             return
+        from services.automod_profile_service import BANNER_UNKNOWN
         hold = await db.get_profile_hold(self.guild_id, member.id, kind) if db else None
 
         if kind == "avatar":
@@ -2174,6 +2179,8 @@ class AutomodModule(ModuleBase):
             asset = member.display_avatar if has_custom else None
         else:
             asset = await svc.get_banner(member.id)
+            if asset is BANNER_UNKNOWN:
+                return      # fetch failed: neither flag nor lift anything on a guess
 
         if asset is None:
             if hold:
@@ -2199,9 +2206,13 @@ class AutomodModule(ModuleBase):
             return
         if decision is None:
             return
-        if await svc.already_done(self.guild_id, member.id, check.key):
+        if await svc.is_profile_allowed(self.guild_id, check.key):
+            return          # an accepted appeal cleared this very asset
+        # A simulation keeps its own marker: going live must not skip the member.
+        done_subject = ("sim:" if self.dry_run else "") + check.key
+        if await svc.already_done(self.guild_id, member.id, done_subject):
             return
-        await svc.mark_done(self.guild_id, member.id, check.key,
+        await svc.mark_done(self.guild_id, member.id, done_subject,
                             ac.PROFILE_DONE_TTL_ASSET_SECONDS)
         svc.stat("flagged" if flagged else "doubt")
         image = await svc.prepared_for_card(check, asset) if flagged or decision.doute else None
@@ -2270,7 +2281,7 @@ class AutomodModule(ModuleBase):
         svc = self._profile_service()
         if svc is None:
             return
-        from services.automod_profile_service import normalize_name
+        from services.automod_profile_service import name_subject, normalize_name
         guild = member.guild
         candidates: Dict[str, str] = {}
         for value in (member.nick, member.global_name, member.name):
@@ -2289,6 +2300,8 @@ class AutomodModule(ModuleBase):
             if d is None:
                 continue
             if d.sanctionnable:
+                if await svc.is_profile_allowed(self.guild_id, name_subject(norm)):
+                    continue        # an accepted appeal cleared this name
                 flagged.append((norm != displayed, norm, d))
             elif d.doute and judgement.fresh:
                 await self.apply_profile_decision(member, d, kind="pseudo")
@@ -2297,8 +2310,7 @@ class AutomodModule(ModuleBase):
         flagged.sort(key=lambda item: item[0])      # the displayed name first
         not_displayed, norm, decision = flagged[0]
 
-        import hashlib
-        subject = "n:" + hashlib.sha1(norm.encode("utf-8")).hexdigest()[:16]
+        subject = ("sim:" if self.dry_run else "") + name_subject(norm)
         if await svc.already_done(self.guild_id, member.id, subject):
             # Already sanctioned. If the member put the same name back where it
             # shows, the reset alone is repeated (no second warn).
@@ -2341,6 +2353,7 @@ class AutomodModule(ModuleBase):
                           kind=t(f"modules.automod_ai.profile.kind.{hold['kind']}",
                                  locale=locale)))[:512])
                     timeout_until = now + duration
+                    await self._extend_hold_sanction(hold, timeout_until)
                 except (discord.Forbidden, discord.HTTPException):
                     pass
         if db is not None and (timeout_until != hold.get("timeout_until")
@@ -2349,6 +2362,22 @@ class AutomodModule(ModuleBase):
                 self.guild_id, member.id, hold["kind"], categorie=hold.get("categorie"),
                 asset_key=asset_key or hold.get("asset_key"), case_id=hold.get("case_id"),
                 sanction_id=hold.get("sanction_id"), timeout_until=timeout_until)
+
+    async def _extend_hold_sanction(self, hold: dict, until: datetime) -> None:
+        """A renewed hold keeps its MUTE sanction alive.
+
+        The case sanction was created with the first 28 d expiry and a renewal
+        adds no new sanction: without this the expiration notifier would DM
+        "your timeout is over" (and close the case) while the member is still
+        held. Best effort.
+        """
+        db = getattr(self.bot, "db", None)
+        if db is None or not hold.get("sanction_id"):
+            return
+        try:
+            await db.extend_sanction_expiry(hold["sanction_id"], until)
+        except Exception as e:  # noqa: BLE001
+            logger.debug("automod: hold sanction extension failed: %s", e)
 
     async def _lift_hold(self, member: Optional[discord.Member], hold: dict, *,
                          announce: bool = True) -> None:
@@ -2485,6 +2514,13 @@ class AutomodModule(ModuleBase):
         ceiling degrades to a plain warn.
         """
         action = bareme.action_profil
+        if action == "hold" and decision.categorie not in infractions.HOLD_TYPES:
+            # A hold tracks an avatar / banner asset (and its table only knows
+            # those kinds): a name configured with it falls back to its default.
+            typ = infractions.get(decision.categorie)
+            action = typ.default_profile_action if typ else "alert"
+            if action == "hold":
+                action = "alert"
         if action == "hold":
             if self.max_action == "warn":
                 return "warn", ["warn"], 0

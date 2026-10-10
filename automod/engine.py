@@ -385,11 +385,11 @@ class AutomodEngine:
             )
         # Step 3ter — the guild's custom-infraction keywords (free).
         if custom_infractions:
+            # Free, but a global embedding pass still outranks it: the hit is
+            # only returned once the global score has failed.
             hit = self._route_custom_keywords(content, custom_infractions)
-            if hit is not None:
-                return hit
             return await self._route_embedding_with_custom(
-                content, severity, custom_infractions)
+                content, severity, custom_infractions, keyword_hit=hit)
         # Step 4 — embedding (threshold scales with severity).
         if not await self.ensure_ready():
             return None  # graceful degradation: embeddings unavailable
@@ -408,8 +408,12 @@ class AutomodEngine:
 
     async def _route_embedding_with_custom(
         self, content: str, severity: int, custom_infractions: Sequence[dict],
+        keyword_hit: Optional[Signal] = None,
     ) -> Optional[Signal]:
         """Step 4 for a guild with custom infractions.
+
+        ``keyword_hit`` (a custom keyword match) is returned right after the
+        global embedding failed to pass and before the custom similarity.
 
         Same global scoring as the plain path (and it wins when it passes), then
         the message vector — reused, never recomputed — is compared with the
@@ -420,7 +424,7 @@ class AutomodEngine:
         if await self.ensure_ready():
             triple = await self.embeddings.score_with_vector(content)
             if triple is None:
-                return None
+                return keyword_hit
             score, categorie, vector = triple
             if EmbeddingEngine.passes_threshold(
                     score, constants.embedding_threshold_for(severity)):
@@ -429,8 +433,12 @@ class AutomodEngine:
                     categorie=categorie,
                     score_confiance=score,
                 )
+        elif keyword_hit is not None:
+            return keyword_hit
         else:
             vector = await self.embeddings.embed_query(content)
+        if keyword_hit is not None:
+            return keyword_hit
         if vector is None:
             return None
         try:

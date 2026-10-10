@@ -989,6 +989,11 @@ class ModdyDatabase(
             await conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_profile_holds_timeout "
                 "ON automod_profile_holds (timeout_until)")
+            # 2026-10-10: when the sweep last re-screened the hold (banner removals
+            # raise no gateway event, so every hold is re-checked on a cadence).
+            await conn.execute(
+                "ALTER TABLE automod_profile_holds "
+                "ADD COLUMN IF NOT EXISTS last_checked TIMESTAMPTZ")
 
             # 2026-09-27: `gore` hashes (graphic-violence images). Tables created
             # before that carry the two-value CHECK: widen it once, idempotently.

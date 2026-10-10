@@ -567,10 +567,14 @@ give one-click starting points, filled in the server language.
 > custom infractions are this §2sexies.
 
 - **Routing, zero extra embedding call.** In `_route_semantic`, AFTER the regex
-  blocklist and scam anchors (a global hit keeps priority): (1) keyword match
+  blocklist and scam anchors (a global hit keeps priority, **including a passing
+  global embedding score, which outranks a custom keyword hit**): (1) keyword match
   (`match_keywords`, same accent/leet/repeat/separator tolerance as the blocklist;
   URL fragments like `discord.gg/` match literally, also with whitespace evasion)
-  -> `Signal(SOURCE_PERSO, score=PERSO_KEYWORD_SCORE)`; (2) similarity: the message
+  -> `Signal(SOURCE_PERSO, score=PERSO_KEYWORD_SCORE)`, returned only once the global
+  embedding score failed to pass (the message is embedded once either way; a
+  non-trivial message with a keyword now costs that one embedding, but never the
+  custom references); (2) similarity: the message
   vector the global score already computed (`EmbeddingEngine.score_with_vector`)
   is compared with the guild's custom reference vectors (description + examples,
   embedded once per content digest, shared across guilds with identical text) at
@@ -910,9 +914,12 @@ pseudo}` (`exempt_roles` shared, `exempt_channels` unused). The module runs when
   single in-flight job, so the same avatar in 20 servers = one call.
 - *Banner* — only reachable over REST (`fetch_user`): at most one fetch per user
   per 10 min (shared by every guild), same cache / hash / SafeSearch path keyed by
-  the banner asset key. **Known limitation**: Discord emits no reliable event for
-  a banner-only change; banners are checked on join and on any other profile
-  event (nick, server avatar, username, display name, avatar).
+  the banner asset key. Discord emits no event for a banner-only change, so banners
+  are checked on join, on any other profile event, and by the hold sweep (below)
+  for banners that are held. A failed fetch is **unknown** (`BANNER_UNKNOWN`, not
+  cached, retried after 1 min): it never counts as "banner removed", so a held
+  member is not freed by a Discord/REST hiccup. Only a successful fetch with no
+  banner (or `NotFound`) lifts a banner hold.
 - *SafeSearch budget* — **separate** from message images: gateway rule
   `google_vision/safe_search_profile` (`rpmo`, calendar month, fail-closed,
   `GOOGLE_VISION_SAFESEARCH_PROFILE_MONTHLY`, default 1000). The adapter still
@@ -921,18 +928,33 @@ pseudo}` (`exempt_roles` shared, `exempt_channels` unused). The module runs when
   `automod_profile_safesearch`. Spending is smoothed with
   `image_policy.pacing_allows` (`PROFILE_SAFESEARCH_*`), priority tier = account
   < 30 d or fresh join (`nsfw_tier`), plus a per-guild daily share
-  (`PROFILE_GUILD_DAILY_SHARE`). A refusal sanctions nothing (debug log).
+  (`PROFILE_GUILD_DAILY_SHARE`). A refusal sanctions nothing (debug log). Only
+  *global* refusals (monthly budget, pacing, unreadable) are negative-cached for
+  10 min per asset; a refusal caused by ONE guild's daily share is not
+  (`AssetCheck.guild_scoped_refusal`), so it never blocks other guilds.
 - *Names* — the distinct nickname / global name / username go through
   `engine.analyze` with `origine=profil_pseudo` (own short prompt block in
   `nano.py`: judge the NAME, staff impersonation is out of scope; no context, no
   relation, no precedents). Any sanctionable verdict is re-labelled category
   `profil_pseudo` (nano's own category kept in the evidence as `categorie_nano`).
-  Verdicts cached per normalized name in Redis `automod:pseudo:<sha1>` (30 d,
-  global; a *clean* verdict is only reused by a server whose severity is not
-  stricter). Grounding still applies (citation ⊆ name).
+  Verdicts cached per normalized name in Redis `automod:pseudo:<sha1>` (30 d;
+  a server **with indications** gets its own key `…:<sha1 of the indications,
+  12 hex>`, since they influence the verdict; servers without share the global
+  key; a *clean* verdict is only reused by a server whose severity is not
+  stricter). A cached verdict never bypasses per-server gates: the type's
+  `enabled` / `action_profil` are read when the decision is applied.
+  A team "not sanctionable" label on a name writes a global allow marker
+  `automod:pseudo:allow:<sha1>` (30 d) checked before any cache/judge call.
+  Grounding still applies (citation ⊆ name).
 - *Idempotence* — Redis `automod:profile:done:<guild>:<user>:<asset key | n:hash>`
   (7 d for assets, 24 h for names) so a burst of profile events never sanctions
-  the same thing twice; lifting a hold clears its marker.
+  the same thing twice; lifting a hold clears its marker. A **simulation**
+  (`dry_run`) uses its own `sim:`-prefixed markers, so switching to live mode
+  does not skip members already seen in simulation.
+- *Allow markers* — an **accepted appeal** on a profile sanction writes
+  `automod:profile:allow:<guild>:<asset key | n:hash>` (90 d); that guild no
+  longer sanctions that exact asset / name (the hold row alone would not stop a
+  rejoin from re-holding the same avatar once the done marker expired).
 
 **Verdicts** reuse `image_policy.safesearch_to_verdict` per axis: `adult` →
 `profil_avatar_nsfw`, `violence` → `profil_avatar_choquant` (banners map to the
@@ -947,7 +969,7 @@ labeling queue with `apply_decision`):
 
 | action | default for | effect |
 |---|---|---|
-| `hold` | avatar types | Discord timeout (28 d) + case `MUTE` ("the {kind} must be changed") + a row in `automod_profile_holds` + DM "change your avatar/banner". On a later profile event, a clean (or removed) profile **lifts** it: timeout cleared (only ours), sanction revoked, `profil_corrige` note on the case, hold deleted, a short "profile fixed" line in the alert channel. Still flagged → the timeout is kept (a rejoin is re-timed-out). A `max_action: warn` ceiling degrades it to a plain warn. |
+| `hold` | avatar types (**never offered / accepted for `profil_pseudo`**: a name has no asset to re-check and the hold table only knows avatar/banner; stored values are coerced to `rename_warn`, `validate_sanctions` rejects it, and `apply_profile_decision` falls back to the type default as a last resort) | Discord timeout (28 d) + case `MUTE` ("the {kind} must be changed") + a row in `automod_profile_holds` + DM "change your avatar/banner". On a later profile event, a clean (or removed) profile **lifts** it: timeout cleared (only ours), sanction revoked, `profil_corrige` note on the case, hold deleted, a short "profile fixed" line in the alert channel. Still flagged → the timeout is kept (a rejoin is re-timed-out). A `max_action: warn` ceiling degrades it to a plain warn. Each renewal also pushes the case MUTE sanction's `expires_at` (`extend_sanction_expiry`), so the expiration notifier does not DM "your timeout is over" while the member is still held (chosen over creating the sanction without expiry: the case keeps a real end date and a team revoke/expiry job still works). |
 | `rename_warn` | `profil_pseudo` | If the flagged name is the one displayed on the server, nickname ← "Moderated name" (server language, needs `manage_nicknames`), then a `WARN` case. Rename impossible (permission / hierarchy) or name not displayed → warn only, said on the card. |
 | `alert` | — | Alert card only: no case, no sanction, no DM. |
 | `bareme` | — | The cran ladder exactly like a message (warn / mute / ban), minus the deletion. |
@@ -962,8 +984,12 @@ shows these three types, the action select writes `action_profil`.
 policy) and applies nothing. Discord actions are marked in
 `bot._moddy_initiated_sanctions` so `case_sync` does not double-record.
 
-**Hold sweep** (`cogs/automod_profiles.py`, every 6 h, one indexed query): holds
-whose timeout ends within `PROFILE_HOLD_RENEW_WINDOW_HOURS` are re-screened
+**Hold sweep** (`cogs/automod_profiles.py`, every hour, one query): holds
+whose timeout ends within `PROFILE_HOLD_RENEW_WINDOW_HOURS` **and every hold not
+re-screened for 6 h** (`last_checked`, so a removed banner is noticed; ordered
+expiring first, then least recently checked, and stamped after each attempt even
+when it fails, so stale holds of departed members cannot starve the batch; their
+row is kept until 60 d past the timeout so a rejoin is re-held) are re-screened
 through the module (cached verdicts → no new SafeSearch call for an unchanged
 image): still flagged → timeout renewed, fixed → lifted. A server that switched
 the feature off just lets the timeout lapse.
@@ -979,14 +1005,15 @@ fields, `profil: {kind, asset_key, asset_url}`; **no** `message_id` / `jump_url`
 (image: block/allow hash of kind `nsfw`/`gore`, so one team label protects message
 images too) and `profil_pseudo` (teaches nothing globally, like a server's own
 infraction). "Not sanctionable" revokes the sanctions **and** deletes the hold /
-lifts the timeout (`details.sanctions[].hold_kind`). A nickname already reset is
-not restored.
+lifts the timeout (`details.sanctions[].hold_kind`). On a name, revoking also
+resets the nickname if it is still exactly the "Moderated name" placeholder
+(best effort; noted on the case), and the name is allowed for every server.
 
 **Known limitations** — banners (above); a name judged by the funnel only when
 the blocklist / embedding routing sends it to nano (an unobvious name is not
 flagged); the cached name verdict is the first server's (language of the AI text
 is replaced by server-language wording, the AI explanation stays on the case); a
-`rename_warn` nickname reset is not undone by a team revocation.
+`rename_warn` nickname reset is only undone while the nickname is still the placeholder.
 
 ### Image decisions, everywhere else
 

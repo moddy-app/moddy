@@ -86,3 +86,15 @@ Docs
 - [ ] `PERSO_SIMILARITY_THRESHOLD` (0.50 at severity 3) is a starting value and needs calibration on real traffic.
 - [ ] Google SafeSearch's free tier is 1000 units/month per account: with the two budgets at their default 1000 each, combined use can exceed the free tier — lower one of the two env vars if that matters.
 - [ ] Backend/dashboard: mirror the contract in `docs/AUTOMOD_AI_CONFIG.md` §10 (infraction safety check before saving, delete `sanctions["perso:<id>"]` with an infraction, never write `categories_desactivees`, keep exemptions identical across features).
+
+
+## Review fixes (12 findings)
+
+- `hold` is no longer valid for `profil_pseudo` (panel, normalize, validate, plus a runtime fallback in `_profile_plan`).
+- Banner holds: failed fetch = unknown (never lifts); the sweep now runs hourly and re-checks every hold every 6 h (`last_checked`, ordered so stale holds cannot starve it).
+- Name verdict cache keyed by a digest of the server's indications; team negative label writes a global allow marker and resets a leftover "Moderated name" nickname on revoke.
+- `screen_member` releases its per-member lock after the `async with` (no more `_profile_locks` growth).
+- Simulation uses `sim:` done markers; profile SafeSearch negative cache skips per-guild share refusals.
+- Accepted appeal writes a per-guild allow marker; renewed holds extend their MUTE sanction expiry.
+- Custom keyword routing no longer outranks a passing global embedding score (`_route_semantic`).
+- Follow-up: none known. Rows of departed members stay (for rejoin re-hold) until 60 d past their timeout.
