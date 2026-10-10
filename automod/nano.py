@@ -25,7 +25,7 @@ from .injection import new_nonce, fence
 from .normalize import fold_accents
 from .schemas import (
     Signal, Decision, TargetMessage, ContextMessage, AuthorHistory,
-    ORIGINE_TEXTE, ORIGINE_IMAGE_OCR,
+    ORIGINE_TEXTE, ORIGINE_IMAGE_OCR, ORIGINE_PROFIL_PSEUDO,
 )
 
 logger = logging.getLogger("moddy.automod.nano")
@@ -220,6 +220,21 @@ words, misread letters, fragments of interface (buttons, menus, balances).
 - An ordinary screenshot (a game, a conversation, a meme, a normal app) is NOT
   sanctionable just because it shows money, a brand or a website.
 - The citation must still be a verbatim substring of the OCR contenu (typos included).
+"""
+
+
+# Content-origin block (member profiles). Shown only when the judged text is a
+# member's display name / username rather than a message.
+PROFIL_PSEUDO_PROMPT_BLOCK = """MEMBER NAME
+message_cible carries "origine": "profil_pseudo": its "contenu" is NOT a message, it is
+a member's display name, nickname or username. Judge whether the NAME itself is
+inappropriate for the server: a slur, an insult, explicit sexual wording, hateful or
+discriminatory wording, an apology of violence or of a hate movement.
+- A name has no victim and no conversation: "cible" is "aucune" and there is no context.
+- Impersonation of staff or of another person is NOT in scope here: do not sanction it.
+- Ordinary names, pseudonyms, gamer tags, leetspeak and foreign words are fine. When in
+  doubt: sanctionnable=false.
+- The citation must be a verbatim substring of the name.
 """
 
 
@@ -687,8 +702,11 @@ def resolve_categorie(verdict: dict, perso_map: Optional[dict] = None) -> str:
 
 def origin_prompt_block(target: TargetMessage) -> str:
     """The content-origin system block for ``target`` ("" for an ordinary message)."""
-    if getattr(target, "origine", ORIGINE_TEXTE) == ORIGINE_IMAGE_OCR:
+    origine = getattr(target, "origine", ORIGINE_TEXTE)
+    if origine == ORIGINE_IMAGE_OCR:
         return IMAGE_OCR_PROMPT_BLOCK
+    if origine == ORIGINE_PROFIL_PSEUDO:
+        return PROFIL_PSEUDO_PROMPT_BLOCK
     return ""
 
 

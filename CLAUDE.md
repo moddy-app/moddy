@@ -55,6 +55,7 @@ moddy/
 │   ├── logs.py                #   Advanced server logs — Discord wiring only
 │   ├── social_notifications.py #  Social notifications dispatch + feeds service wiring
 │   ├── altguard.py            #   AltGuard verdicts, membership events, /altguard verify|unverify
+│   ├── automod_profiles.py    #   Automod member profiles: periodic hold sweep (renew / lift timeouts)
 │   ├── tickets.py             #   /ticket group (module-gated) + channel cleanup + staff-thread guard
 │   ├── interserver_commands.py #  Inter-server commands
 │   ├── ping.py, user.py, avatar.py, banner.py, roll.py, moddy.py
@@ -86,7 +87,8 @@ moddy/
 │   ├── altguard.py            #   AltGuard anti multi-account verification gate
 │   ├── member_applications.py #   Member Applications (review Discord "Apply to Join" in a channel)
 │   ├── tickets.py             #   Tickets (panels, categories, permissions, claim)
-│   ├── automod_ai.py          #   Automod AI (applies decisions, cases+evidence, scalable features)
+│   ├── automod_ai.py          #   Automod AI (applies decisions, cases+evidence, scalable features,
+│   │                          #   member profiles: avatar / banner / names via apply_profile_decision)
 │   ├── bot_customization.py   #   Bot identity per guild (nick/avatar/banner/bio + name style)
 │   ├── voice_transcription.py #   Voice message transcription (button or automatic)
 │   ├── logs.py                #   Advanced server logs (config + routing, 163 events)
@@ -196,6 +198,7 @@ moddy/
 │       ├── eval_candidates.py   #   Automod eval/annotation corpus (automod_eval_candidates)
 │       ├── precedents.py        #   Automod server precedents (automod_precedents, RAG)
 │       ├── automod_learning.py  #   Automod labeling queue + learned hashes/references/terms
+│       ├── automod_profiles.py  #   Automod profile holds (automod_profile_holds)
 │       ├── token_alerts.py, token_secrets.py
 │       ├── subscription.py    #   Subscription read-only queries (incl. is_guild_premium)
 │       ├── notifications.py   #   Notifications, deliveries, abuse reports
@@ -290,6 +293,7 @@ moddy/
 │   ├── appeal_service.py      #   Automod sanction appeals (server / Moddy team, binding)
 │   ├── precedent_service.py   #   Automod server precedents (record + serve, RAG)
 │   ├── automod_image_service.py # Automod images: downloads, hash index, caches, OCR/SafeSearch
+│   ├── automod_profile_service.py # Automod member profiles: avatar/banner/name verdict caches, profile SafeSearch budget
 │   ├── automod_label_service.py # Moddy team labeling queue (learn + revoke bot sanctions)
 │   ├── ocr_service.py         #   Image → text for /ocr and the Transcribe menu
 │   ├── ticket_service.py      #   Ticket lifecycle (open/close/escalate/move/participants)
@@ -347,6 +351,7 @@ moddy/
     ├── test_stats.py          #   Statistics: registry guards, aggregation, flush, rollup
     ├── test_heartbeat.py      #   Health Monitor heartbeat: payload, lifecycle, status decisions
     ├── test_automod_images.py #   Automod image features, image service, labeling queue + card
+    ├── test_automod_profiles.py # Automod member profiles: holds, rename+warn, caches, budget, events, i18n
     ├── test_ocr.py            #   /ocr service: errors, re-encoding, card
     └── test_staff_user_command.py # /team user: sections, personal-data gate, i18n (5 locales)
 ```

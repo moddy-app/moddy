@@ -167,6 +167,9 @@ _ALL: Tuple[Metric, ...] = (
     Metric("automod.image", scope=SCOPE_GLOBAL, dimensions=("etape",),
            doc="An automod image step: hash_hit | ocr | safesearch | "
                "skip_budget | skip_prerules | skip_queue | cache_hit."),
+    Metric("automod.profile", scope=SCOPE_GLOBAL, dimensions=("etape",),
+           doc="An automod member-profile step: screened | cache_hit | "
+               "name_judged | skip_budget | flagged | hold | hold_lifted | renamed."),
     Metric("automod.label", scope=SCOPE_GLOBAL, dimensions=("verdict", "kind"),
            doc="The Moddy team labeled an automod decision (labeling queue)."),
     Metric("ocr.used", scope=SCOPE_GLOBAL, dimensions=("source",),

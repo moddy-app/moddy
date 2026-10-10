@@ -447,3 +447,35 @@ SAFESEARCH_MONTHLY_CAP: int = 1000
 SAFESEARCH_BURST: int = 30            # head start on the smoothed allowance
 SAFESEARCH_NORMAL_TIER_RATIO: float = 0.7
 NSFW_GUILD_DAILY_SHARE: int = 15      # SafeSearch calls per guild per day at most
+
+
+# --- Member profiles (avatar / banner / names) -------------------------------
+# docs/AUTOMOD_AI.md "Profiles". SafeSearch on avatars and banners has its OWN
+# monthly budget (gateway rule keyed "safe_search_profile") so profile checks can
+# never starve the message images, and the other way round.
+
+CALL_TYPE_PROFILE_SAFESEARCH: str = "automod_profile_safesearch"
+#: Fallback when the gateway config cannot be read (env
+#: ``GOOGLE_VISION_SAFESEARCH_PROFILE_MONTHLY`` sets the real, enforced cap).
+PROFILE_SAFESEARCH_MONTHLY_CAP: int = 1000
+PROFILE_SAFESEARCH_BURST: int = 15
+PROFILE_SAFESEARCH_NORMAL_TIER_RATIO: float = 0.6
+#: SafeSearch calls per guild per day at most (profile budget).
+PROFILE_GUILD_DAILY_SHARE: int = 30
+#: Verdict cache keyed on the Discord asset key / the normalized name.
+PROFILE_ASSET_TTL_SECONDS: int = 30 * 86400
+PROFILE_PSEUDO_TTL_SECONDS: int = 30 * 86400
+#: Longest side an avatar / banner is requested at.
+PROFILE_AVATAR_SIZE: int = 512
+PROFILE_BANNER_SIZE: int = 1024
+#: At most one banner REST fetch per user within this window.
+PROFILE_BANNER_FETCH_INTERVAL_SECONDS: int = 600
+#: A sanction already applied for the same asset / name is not repeated for it.
+PROFILE_DONE_TTL_ASSET_SECONDS: int = 7 * 86400
+PROFILE_DONE_TTL_PSEUDO_SECONDS: int = 86400
+#: Pending profile screenings process-wide (a raid of joins cannot pile up).
+PROFILE_QUEUE_MAX: int = 200
+#: A hold lasts one Discord timeout (28 d max); it is renewed when it has less
+#: than this left and the profile is still flagged.
+PROFILE_HOLD_DURATION_HOURS: int = 28 * 24
+PROFILE_HOLD_RENEW_WINDOW_HOURS: int = 36

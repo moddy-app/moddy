@@ -2010,6 +2010,44 @@
             "desc": "Teilen externer Links (Webseiten, Werbung, Produkte), die nichts mit dem Gespräch zu tun haben oder auf diesem Server nicht erlaubt sind."
           }
         }
+      },
+      "profile": {
+        "kind": {
+          "avatar": "Avatar",
+          "banner": "Banner",
+          "pseudo": "Name"
+        },
+        "title": "Profilmoderation",
+        "title_sim": "Profilmoderation (Simulation)",
+        "member": "Mitglied",
+        "kind_label": "Geprüft",
+        "policy": "Konfigurierte Richtlinie",
+        "judged_name": "Bewerteter Name",
+        "image_unavailable": "Das Bild ist nicht mehr verfügbar.",
+        "action": {
+          "hold": "Timeout, bis das Profil korrigiert ist",
+          "rename_warn": "Namen zurücksetzen und verwarnen",
+          "alert": "Nur Warnmeldung",
+          "bareme": "Moderationsstufen",
+          "warn": "Verwarnung (die Obergrenze des Servers verbietet einen Timeout)"
+        },
+        "action_rename": "Name zurückgesetzt",
+        "reason_avatar_nsfw": "Explizite Inhalte im Profilbild",
+        "reason_avatar_gore": "Verstörende Inhalte (Gore) im Profilbild",
+        "reason_banner_nsfw": "Explizite Inhalte im Profilbanner",
+        "reason_banner_gore": "Verstörende Inhalte (Gore) im Profilbanner",
+        "reason_pseudo": "Unangemessener Name: {name}",
+        "explication_pseudo": "Der Name wurde für diesen Server als unangemessen eingestuft.",
+        "case_reason_hold": "Profil muss korrigiert werden: {kind} (Timeout bis zur Korrektur)",
+        "lift_reason": "[Automod] Profil korrigiert",
+        "dm_hold": "Du hast einen Timeout, bis dein Profil korrigiert ist ({kind}). Ändere es: Moddy prüft es automatisch erneut und hebt den Timeout auf, sobald alles in Ordnung ist.",
+        "dm_rename": "Dein Name wurde auf diesem Server auf „{moderated}“ zurückgesetzt. Bitte wähle einen anderen.",
+        "moderated_name": "Moderierter Name",
+        "note_hold_failed": "Moddy konnte den Timeout nicht setzen (fehlende Berechtigung oder Rollenhierarchie).",
+        "note_rename_failed": "Moddy konnte den Nicknamen nicht zurücksetzen (fehlende Berechtigung oder Rollenhierarchie): nur Verwarnung.",
+        "note_not_displayed": "Dieser Name wird auf diesem Server nicht angezeigt: nur Verwarnung.",
+        "fixed_title": "Profil korrigiert",
+        "fixed_body": "{user} ({user_id}) hat das Profil korrigiert ({kind}): der Timeout ist aufgehoben."
       }
     },
     "voice_transcription": {
@@ -4974,7 +5012,10 @@
       "texte": "Text",
       "image_scam": "Scam image",
       "image_nsfw": "NSFW image",
-      "image_gore": "Shocking image (gore)"
+      "image_gore": "Shocking image (gore)",
+      "profil_avatar_nsfw": "Profilbild (NSFW)",
+      "profil_avatar_choquant": "Profilbild (Gore)",
+      "profil_pseudo": "Mitgliedsname"
     },
     "motif": {
       "sanction": "Sanctioned by the bot",
@@ -5035,6 +5076,7 @@
       "empty": "Type at least one term and pick a category.",
       "done_title": "Blocklist updated",
       "done": "{n} term(s) added to `{category}`."
-    }
+    },
+    "name": "Name"
   }
 }

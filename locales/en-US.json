@@ -2010,6 +2010,44 @@
             "desc": "Sharing external links (websites, promotions, products) unrelated to the conversation or not allowed on this server."
           }
         }
+      },
+      "profile": {
+        "kind": {
+          "avatar": "avatar",
+          "banner": "banner",
+          "pseudo": "name"
+        },
+        "title": "Profile moderation",
+        "title_sim": "Profile moderation (simulation)",
+        "member": "Member",
+        "kind_label": "Checked",
+        "policy": "Configured policy",
+        "judged_name": "Name that was judged",
+        "image_unavailable": "The image is no longer available.",
+        "action": {
+          "hold": "Timeout until the profile is fixed",
+          "rename_warn": "Reset the name and warn",
+          "alert": "Alert only",
+          "bareme": "Moderation scale",
+          "warn": "Warning (the server ceiling forbids a timeout)"
+        },
+        "action_rename": "Name reset",
+        "reason_avatar_nsfw": "Explicit content in the profile picture",
+        "reason_avatar_gore": "Shocking content (gore) in the profile picture",
+        "reason_banner_nsfw": "Explicit content in the profile banner",
+        "reason_banner_gore": "Shocking content (gore) in the profile banner",
+        "reason_pseudo": "Inappropriate name: {name}",
+        "explication_pseudo": "The name was judged inappropriate for this server.",
+        "case_reason_hold": "The {kind} must be changed (timeout until fixed)",
+        "lift_reason": "[Automod] Profile fixed",
+        "dm_hold": "You are timed out until you change your {kind}. Moddy checks it again automatically and lifts the timeout as soon as it is fine.",
+        "dm_rename": "Your name was reset to \"{moderated}\" on this server. Please pick another one.",
+        "moderated_name": "Moderated name",
+        "note_hold_failed": "Moddy could not apply the timeout (missing permission or role hierarchy).",
+        "note_rename_failed": "Moddy could not reset the nickname (missing permission or role hierarchy): warning only.",
+        "note_not_displayed": "This name is not the one displayed on this server: warning only.",
+        "fixed_title": "Profile fixed",
+        "fixed_body": "{user} ({user_id}) changed their {kind}: the timeout is lifted."
       }
     },
     "voice_transcription": {
@@ -5060,7 +5098,10 @@
       "texte": "Text",
       "image_scam": "Scam image",
       "image_nsfw": "NSFW image",
-      "image_gore": "Shocking image (gore)"
+      "image_gore": "Shocking image (gore)",
+      "profil_avatar_nsfw": "Profile picture (NSFW)",
+      "profil_avatar_choquant": "Profile picture (gore)",
+      "profil_pseudo": "Member name"
     },
     "motif": {
       "sanction": "Sanctioned by the bot",
@@ -5121,6 +5162,7 @@
       "empty": "Type at least one term and pick a category.",
       "done_title": "Blocklist updated",
       "done": "{n} term(s) added to `{category}`."
-    }
+    },
+    "name": "Name"
   }
 }

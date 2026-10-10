@@ -44,6 +44,24 @@ class ModuleEvents(commands.Cog):
                 exc_info=True
             )
 
+        # Automod AI member profiles: screen the avatar / banner / names. The
+        # module only schedules a bounded background task, so a raid of joins
+        # never delays the modules below.
+        try:
+            automod_module = await self.bot.module_manager.get_module_instance(
+                member.guild.id,
+                'automod_ai'
+            )
+
+            if automod_module and automod_module.enabled:
+                await automod_module.on_member_join(member)
+
+        except Exception as e:
+            logger.error(
+                f"Error in on_member_join (automod_ai) for guild {member.guild.id}: {e}",
+                exc_info=True
+            )
+
         # Welcome Channel + Welcome DM. The channel module used to be dispatched
         # under the id 'welcome', which no registered module has ever answered to
         # (its MODULE_ID is 'welcome_channel'), so channel welcomes never fired.
@@ -91,6 +109,50 @@ class ModuleEvents(commands.Cog):
 
         except Exception as e:
             logger.error(f"Error in on_member_join (auto_role) for guild {member.guild.id}: {e}", exc_info=True)
+
+    @commands.Cog.listener()
+    async def on_member_update(self, before: discord.Member, after: discord.Member):
+        """Nickname / server avatar change -> Automod AI member profiles."""
+        if after.bot or not self.bot.module_manager:
+            return
+        if before.nick == after.nick and before.guild_avatar == after.guild_avatar:
+            return
+        try:
+            automod_module = await self.bot.module_manager.get_module_instance(
+                after.guild.id, 'automod_ai')
+            if automod_module and automod_module.enabled:
+                await automod_module.on_member_update(before, after)
+        except Exception as e:
+            logger.error(
+                f"Error in on_member_update (automod_ai) for guild {after.guild.id}: {e}",
+                exc_info=True)
+
+    @commands.Cog.listener()
+    async def on_user_update(self, before: discord.User, after: discord.User):
+        """Account name / display name / avatar change -> Automod AI profiles.
+
+        Fans out to every server the user shares with Moddy (same idiom as
+        ``cogs/logs.py``). The avatar itself is screened once globally — the
+        verdict is cached per Discord asset key — then applied per server.
+        """
+        if after.bot or not self.bot.module_manager:
+            return
+        if (before.name == after.name and before.global_name == after.global_name
+                and before.avatar == after.avatar):
+            return
+        for guild in self.bot.guilds:
+            member = guild.get_member(after.id)
+            if member is None:
+                continue
+            try:
+                automod_module = await self.bot.module_manager.get_module_instance(
+                    guild.id, 'automod_ai')
+                if automod_module and automod_module.enabled:
+                    await automod_module.on_user_update(before, after, member)
+            except Exception as e:
+                logger.error(
+                    f"Error in on_user_update (automod_ai) for guild {guild.id}: {e}",
+                    exc_info=True)
 
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member):

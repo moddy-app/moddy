@@ -84,6 +84,13 @@ def _default_model_rate_limits() -> Dict[Tuple[str, str], List[RateRule]]:
         ("google_vision", "safe_search"): _google_vision_monthly_rules(
             "GOOGLE_VISION_SAFESEARCH_MONTHLY", 1_000
         ),
+        # Profile avatars / banners: the SAME Google API (SafeSearch), accounted on
+        # its own key so member-profile checks and message images never starve
+        # each other. The adapter still calls the real "safe_search" operation —
+        # only the rate-limit accounting key differs (see VisionClient).
+        ("google_vision", "safe_search_profile"): _google_vision_monthly_rules(
+            "GOOGLE_VISION_SAFESEARCH_PROFILE_MONTHLY", 1_000
+        ),
         ("google_vision", "document_text"): _google_vision_monthly_rules(
             "GOOGLE_VISION_OCR_MONTHLY", 1_000
         ),

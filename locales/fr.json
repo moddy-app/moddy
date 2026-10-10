@@ -2009,6 +2009,44 @@
             "desc": "Partage de liens externes (sites, promotions, produits) sans rapport avec la discussion ou non autorisés sur ce serveur."
           }
         }
+      },
+      "profile": {
+        "kind": {
+          "avatar": "avatar",
+          "banner": "bannière",
+          "pseudo": "pseudo"
+        },
+        "title": "Modération de profil",
+        "title_sim": "Modération de profil (simulation)",
+        "member": "Membre",
+        "kind_label": "Vérifié",
+        "policy": "Politique configurée",
+        "judged_name": "Pseudo jugé",
+        "image_unavailable": "L'image n'est plus disponible.",
+        "action": {
+          "hold": "Timeout jusqu'à correction du profil",
+          "rename_warn": "Réinitialisation du pseudo et avertissement",
+          "alert": "Alerte uniquement",
+          "bareme": "Barème de modération",
+          "warn": "Avertissement (le plafond du serveur interdit un timeout)"
+        },
+        "action_rename": "Pseudo réinitialisé",
+        "reason_avatar_nsfw": "Contenu explicite dans la photo de profil",
+        "reason_avatar_gore": "Contenu choquant (gore) dans la photo de profil",
+        "reason_banner_nsfw": "Contenu explicite dans la bannière de profil",
+        "reason_banner_gore": "Contenu choquant (gore) dans la bannière de profil",
+        "reason_pseudo": "Pseudo inapproprié : {name}",
+        "explication_pseudo": "Le pseudo a été jugé inapproprié pour ce serveur.",
+        "case_reason_hold": "Profil à corriger : {kind} (timeout jusqu'à correction)",
+        "lift_reason": "[Automod] Profil corrigé",
+        "dm_hold": "Tu es en timeout tant que ton profil n'est pas corrigé ({kind}). Change-le : Moddy le revérifie automatiquement et lève le timeout dès que c'est bon.",
+        "dm_rename": "Ton pseudo a été remplacé par « {moderated} » sur ce serveur. Merci d'en choisir un autre.",
+        "moderated_name": "Pseudo modéré",
+        "note_hold_failed": "Moddy n'a pas pu appliquer le timeout (permission manquante ou hiérarchie des rôles).",
+        "note_rename_failed": "Moddy n'a pas pu réinitialiser le pseudo (permission manquante ou hiérarchie des rôles) : avertissement uniquement.",
+        "note_not_displayed": "Ce pseudo n'est pas celui affiché sur ce serveur : avertissement uniquement.",
+        "fixed_title": "Profil corrigé",
+        "fixed_body": "{user} ({user_id}) a corrigé son profil ({kind}) : le timeout est levé."
       }
     },
     "voice_transcription": {
@@ -5059,7 +5097,10 @@
       "texte": "Text",
       "image_scam": "Scam image",
       "image_nsfw": "NSFW image",
-      "image_gore": "Shocking image (gore)"
+      "image_gore": "Shocking image (gore)",
+      "profil_avatar_nsfw": "Photo de profil (NSFW)",
+      "profil_avatar_choquant": "Photo de profil (gore)",
+      "profil_pseudo": "Pseudo de membre"
     },
     "motif": {
       "sanction": "Sanctioned by the bot",
@@ -5120,6 +5161,7 @@
       "empty": "Type at least one term and pick a category.",
       "done_title": "Blocklist updated",
       "done": "{n} term(s) added to `{category}`."
-    }
+    },
+    "name": "Pseudo"
   }
 }

@@ -33,6 +33,10 @@ Config (stored in ``guilds.data.modules.automod``)::
           "enabled": true,
           "exempt_roles": [<role_id>, ...],
           "exempt_channels": [<channel_id>, ...]
+        },
+        "profile": {                     # member profiles: run by member events
+          "enabled": false, "exempt_roles": [], "exempt_channels": [],  # (unused)
+          "avatar": true, "banner": true, "pseudo": true
         }
       }
     }
@@ -68,6 +72,7 @@ from automod import relations as ar
 from automod import scam_anchors
 from automod.schemas import (
     ImageMeta, ORIGINE_IMAGE_HASH, ORIGINE_IMAGE_NSFW, ORIGINE_IMAGE_OCR,
+    ORIGINE_PROFIL_AVATAR, ORIGINE_PROFIL_BANNIERE, ORIGINE_PROFIL_PSEUDO,
 )
 from utils import global_sanctions
 from utils.automod_render import infraction_label, label_in_text
@@ -109,6 +114,9 @@ class AutomodFeature:
     """Base class for an automod detector feature."""
 
     feature_id: str = "base"
+    #: Whether ``on_message`` runs this feature on every message. The profile
+    #: feature is driven by member events instead.
+    ON_MESSAGE: bool = True
 
     def __init__(self, module: "AutomodModule", config: Dict[str, Any]):
         self.module = module
@@ -495,11 +503,40 @@ class ImageGoreFeature(_SafeSearchFeature):
     SCORE_AXIS = "violence"
 
 
+class ProfileFeature(AutomodFeature):
+    """Member profiles: avatar, banner and names (nickname / display name / username).
+
+    Driven by member events (``AutomodModule.on_member_join`` / ``on_member_update``
+    / ``on_user_update``), never by ``on_message``. ``avatar`` / ``banner`` /
+    ``pseudo`` switch each check; ``exempt_channels`` is kept for the common
+    config shape but unused (a profile has no channel).
+    """
+
+    feature_id = "profile"
+    ON_MESSAGE = False
+
+    @property
+    def avatar(self) -> bool:
+        return bool(self.config.get("avatar", True))
+
+    @property
+    def banner(self) -> bool:
+        return bool(self.config.get("banner", True))
+
+    @property
+    def pseudo(self) -> bool:
+        return bool(self.config.get("pseudo", True))
+
+    async def process(self, message: discord.Message) -> List[Decision]:
+        return []
+
+
 FEATURE_CLASSES = {
     ContentModerationFeature.feature_id: ContentModerationFeature,
     ImageNsfwFeature.feature_id: ImageNsfwFeature,
     ImageGoreFeature.feature_id: ImageGoreFeature,
     ImageScamFeature.feature_id: ImageScamFeature,
+    ProfileFeature.feature_id: ProfileFeature,
     # Future: "anti_link": AntiLinkFeature, "anti_spam": AntiSpamFeature, ...
 }
 
@@ -507,6 +544,7 @@ FEATURE_CLASSES = {
 # {enabled, exempt_roles, exempt_channels}.
 FEATURE_EXTRA_KEYS = {
     ImageScamFeature.feature_id: {"scan_all": False},
+    ProfileFeature.feature_id: {"avatar": True, "banner": True, "pseudo": True},
 }
 
 
@@ -522,7 +560,9 @@ class AutomodModule(ModuleBase):
     MODULE_DESCRIPTION = "Modération automatique des messages problématiques (IA)"
     MODULE_EMOJI = "<:shield:1521471376815292498>"
     MODULE_ORDER = 10
-    REQUIRED_BOT_PERMISSIONS = ["manage_messages", "ban_members", "moderate_members"]
+    # manage_nicknames: the profile feature resets an inappropriate nickname.
+    REQUIRED_BOT_PERMISSIONS = ["manage_messages", "ban_members", "moderate_members",
+                                "manage_nicknames"]
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)
@@ -638,6 +678,10 @@ class AutomodModule(ModuleBase):
         for fid in features_cfg:
             if fid not in FEATURE_CLASSES:
                 return False, f"Fonctionnalité inconnue : {fid}"
+        for key in FEATURE_EXTRA_KEYS[ProfileFeature.feature_id]:
+            value = (features_cfg.get(ProfileFeature.feature_id) or {}).get(key)
+            if value is not None and not isinstance(value, bool):
+                return False, f"Option de profil invalide : {key}"
         return True, None
 
     def get_default_config(self) -> Dict[str, Any]:
@@ -673,6 +717,14 @@ class AutomodModule(ModuleBase):
                     "exempt_roles": [],
                     "exempt_channels": [],
                     "scan_all": False,
+                },
+                "profile": {
+                    "enabled": False,
+                    "exempt_roles": [],
+                    "exempt_channels": [],
+                    "avatar": True,
+                    "banner": True,
+                    "pseudo": True,
                 },
             },
         }
@@ -720,7 +772,7 @@ class AutomodModule(ModuleBase):
             return
 
         for feature in self._features.values():
-            if not feature.enabled:
+            if not feature.enabled or not feature.ON_MESSAGE:
                 continue
             if feature.is_exempt(message):
                 continue
@@ -1013,12 +1065,17 @@ class AutomodModule(ModuleBase):
             ))
         return out
 
-    async def _compute_bareme(self, message: discord.Message,
-                              decision: Decision) -> ab.ResultatBareme:
-        """Compute the deterministic cran (sanction) for a qualified decision."""
+    async def _compute_bareme(self, message: Optional[discord.Message],
+                              decision: Decision, *,
+                              member: Optional[discord.Member] = None) -> ab.ResultatBareme:
+        """Compute the deterministic cran (sanction) for a qualified decision.
+
+        ``message`` is None for a profile decision (``member`` is then given)."""
         sanctions = await self._member_sanctions(int(decision.auteur_id))
 
-        member = message.guild.get_member(int(decision.auteur_id)) if message.guild else None
+        if member is None:
+            member = message.guild.get_member(int(decision.auteur_id)) \
+                if message is not None and message.guild else None
         anciennete = 0.0
         joined = getattr(member, "joined_at", None) if member else None
         if joined is not None:
@@ -1034,9 +1091,11 @@ class AutomodModule(ModuleBase):
             severite_guild=self.severity, config=config,
         )
 
-    async def _maybe_confirm_heavy(self, message: discord.Message,
+    async def _maybe_confirm_heavy(self, message: Optional[discord.Message],
                                    decision: Decision,
-                                   bareme: ab.ResultatBareme) -> ab.ResultatBareme:
+                                   bareme: ab.ResultatBareme, *,
+                                   member: Optional[discord.Member] = None
+                                   ) -> ab.ResultatBareme:
         """Confirm a heavy nano sanction via mini, or cap it (session 6.3).
 
         A cran ≥ ``CONFIRM_CRAN_THRESHOLD`` produced by nano is not applied until
@@ -1056,14 +1115,22 @@ class AutomodModule(ModuleBase):
                 id=str(decision.message_id),
                 author_id=str(decision.auteur_id),
                 content=self._judged_text(message, decision),
-                origine=decision.origine if decision.origine == ORIGINE_IMAGE_OCR
+                origine=decision.origine
+                if decision.origine in (ORIGINE_IMAGE_OCR, ORIGINE_PROFIL_PSEUDO)
                 else "texte",
             )
+            guild = message.guild if message is not None else (
+                member.guild if member is not None else None)
+            if message is not None:
+                loader = self.make_context_loader(message)
+            else:
+                async def loader(_n: int):
+                    return []   # a name has no conversation around it
             confirme, motif = await engine.confirm_heavy(
                 target, decision,
                 guild_id=self.guild_id,
-                fetch_context=self.make_context_loader(message),
-                response_language=self.response_language(message.guild),
+                fetch_context=loader,
+                response_language=self.response_language(guild),
                 custom_infractions=self.infractions_perso,
             )
         except Exception as e:
@@ -1158,16 +1225,18 @@ class AutomodModule(ModuleBase):
                 continue
         return deleted_any
 
-    def _judged_text(self, message: discord.Message, decision: Decision) -> str:
+    def _judged_text(self, message: Optional[discord.Message], decision: Decision) -> str:
         """The text the decision is about: the aggregate, the OCR of an image,
-        or the message itself."""
+        a member's name, or the message itself (empty for an avatar / banner)."""
         return (getattr(decision, "agregat_contenu", "")
                 or getattr(decision, "contenu_juge", "")
-                or message.content or "")
+                or (message.content if message is not None else "") or "")
 
-    async def _enqueue_label(self, message: discord.Message, decision: Decision, *,
+    async def _enqueue_label(self, message: Optional[discord.Message], decision: Decision, *,
                              motif: str, bareme: Optional[ab.ResultatBareme] = None,
-                             case_id=None, applied: Optional[List[str]] = None) -> None:
+                             case_id=None, applied: Optional[List[str]] = None,
+                             member: Optional[discord.Member] = None,
+                             **extra) -> None:
         """Copy the decision to the Moddy team labeling queue (docs §9).
 
         Never raises and never blocks the moderation path: labeling is a side
@@ -1177,9 +1246,11 @@ class AutomodModule(ModuleBase):
         if labels is None:
             return
         try:
+            if member is not None:
+                extra["member"] = member   # profile item: there is no message
             await labels.enqueue(
                 message=message, decision=decision, motif=motif, bareme=bareme,
-                case_id=case_id, applied=applied or [],
+                case_id=case_id, applied=applied or [], **extra,
                 judged_text=self._judged_text(message, decision),
                 # The team panel is English; a custom infraction is shown by
                 # the server's own name instead of an opaque `perso:<id>`.
@@ -1242,7 +1313,6 @@ class AutomodModule(ModuleBase):
 
         guild = message.guild
         member = guild.get_member(int(decision.auteur_id)) if guild else None
-        me = guild.me if guild else None
         actions = decision.actions
 
         applied: List[str] = []
@@ -1260,32 +1330,8 @@ class AutomodModule(ModuleBase):
             await self._record_case(message, decision, bareme)
 
         # 3. Apply the Discord-side sanction with the standardized reason.
-        can_act = member is not None and me is not None and member != guild.owner \
-            and (me.top_role > member.top_role)
-
-        if "ban" in actions and can_act and me.guild_permissions.ban_members:
-            ban_expires = self._expiry_for(decision, "ban")
-            audit = self._audit_reason(case_ref, ban_expires, decision.raison)
-            try:
-                self._mark_moddy_initiated(member.id, "ban")
-                # A scam account (usually compromised) spams every channel:
-                # its last hour of messages goes with the ban.
-                purge = 3600 if decision.categorie in ab.CATEGORIES_BAN_DIRECT else 0
-                await guild.ban(member, reason=audit, delete_message_seconds=purge)
-                applied.append("ban")
-            except (discord.Forbidden, discord.HTTPException):
-                pass
-        elif "mute" in actions and can_act and me.guild_permissions.moderate_members:
-            duration = self._duration_td(decision) or _MUTE_DURATIONS.get(
-                decision.gravite, timedelta(hours=1))
-            audit = self._audit_reason(
-                case_ref, datetime.now(timezone.utc) + duration, decision.raison)
-            try:
-                self._mark_moddy_initiated(member.id, "mute")
-                await member.timeout(duration, reason=audit)
-                applied.append("mute")
-            except (discord.Forbidden, discord.HTTPException):
-                pass
+        applied.extend(await self._apply_discord_sanction(
+            guild, member, decision, case_ref, actions))
 
         # A warn carries no Discord-side action but IS a recorded sanction —
         # surface it so the notification doesn't read "aucune".
@@ -1318,6 +1364,46 @@ class AutomodModule(ModuleBase):
         #    "non sanctionnable" revokes this sanction; nothing else is applied.
         await self._enqueue_label(message, decision, motif="sanction", bareme=bareme,
                                   case_id=case_id, applied=applied)
+
+    async def _apply_discord_sanction(self, guild: Optional[discord.Guild],
+                                      member: Optional[discord.Member],
+                                      decision: Decision, case_ref: Optional[str],
+                                      actions: List[str]) -> List[str]:
+        """Apply the ban / timeout half of a sanction. Returns what was applied.
+
+        Shared by the message path and the profile path (``bareme`` / ``hold``).
+        Nothing is attempted on the owner, on a member Moddy's top role does not
+        outrank, or without the matching permission.
+        """
+        applied: List[str] = []
+        me = guild.me if guild else None
+        can_act = member is not None and me is not None and member != guild.owner \
+            and (me.top_role > member.top_role)
+
+        if "ban" in actions and can_act and me.guild_permissions.ban_members:
+            ban_expires = self._expiry_for(decision, "ban")
+            audit = self._audit_reason(case_ref, ban_expires, decision.raison)
+            try:
+                self._mark_moddy_initiated(member.id, "ban")
+                # A scam account (usually compromised) spams every channel:
+                # its last hour of messages goes with the ban.
+                purge = 3600 if decision.categorie in ab.CATEGORIES_BAN_DIRECT else 0
+                await guild.ban(member, reason=audit, delete_message_seconds=purge)
+                applied.append("ban")
+            except (discord.Forbidden, discord.HTTPException):
+                pass
+        elif "mute" in actions and can_act and me.guild_permissions.moderate_members:
+            duration = self._duration_td(decision) or _MUTE_DURATIONS.get(
+                decision.gravite, timedelta(hours=1))
+            audit = self._audit_reason(
+                case_ref, datetime.now(timezone.utc) + duration, decision.raison)
+            try:
+                self._mark_moddy_initiated(member.id, "mute")
+                await member.timeout(duration, reason=audit)
+                applied.append("mute")
+            except (discord.Forbidden, discord.HTTPException):
+                pass
+        return applied
 
     # Discord timeout / temporary sanction max (28 days).
     _MAX_DURATION = timedelta(days=28)
@@ -1354,8 +1440,11 @@ class AutomodModule(ModuleBase):
         expiry = expires_at.strftime("%Y-%m-%d %H:%M UTC") if expires_at else "Permanent"
         return f"[{ref}] @{mod_name} ({expiry}) : {reason}"[:512]
 
-    async def _record_case(self, message: discord.Message, decision: Decision,
-                           bareme: Optional[ab.ResultatBareme] = None):
+    async def _record_case(self, message: Optional[discord.Message], decision: Decision,
+                           bareme: Optional[ab.ResultatBareme] = None, *,
+                           member: Optional[discord.Member] = None,
+                           case_reason: Optional[str] = None,
+                           profile: Optional[dict] = None):
         """Open ONE guild case for this incident, attach its sanctions + evidence.
 
         Each automod incident is its own case: the first sanction opens a fresh
@@ -1366,6 +1455,10 @@ class AutomodModule(ModuleBase):
         Returns ``(case_ref, case_id, primary_action, primary_sanction_id)`` so
         the caller can DM the member an appealable notice. ``primary_action`` is
         the most punitive recorded sanction (ban > mute > warn).
+
+        A profile decision has no message: ``member`` is given instead, and
+        ``profile`` (``kind`` / ``origine`` / ``extrait`` / ``asset_key`` /
+        ``asset_url``) describes what was judged.
         """
         if not getattr(self.bot, "cases", None):
             return None, None, None, None
@@ -1382,12 +1475,19 @@ class AutomodModule(ModuleBase):
 
         # Factual reason (issuer already identifies automod — no "[Automod]" noise).
         # A custom infraction shows its server-authored name, never the raw id.
+        guild = message.guild if message is not None else (
+            member.guild if member is not None else None)
         categorie_label = infraction_label(
-            decision.categorie, self.guild_locale(message.guild), self.infractions_perso)
-        case_reason = (decision.raison or categorie_label or "Message problématique")[:480]
+            decision.categorie, self.guild_locale(guild), self.infractions_perso)
+        case_reason = (case_reason or decision.raison or categorie_label
+                       or "Message problématique")[:480]
         # An aggregate decision judged the concatenation of several fragments;
-        # show that combined text as the evidence extract.
-        extrait = self._judged_text(message, decision)[:1500]
+        # show that combined text as the evidence extract. A profile case quotes
+        # the judged name, or the avatar / banner URL.
+        if profile is not None:
+            extrait = (profile.get("extrait") or "")[:1500]
+        else:
+            extrait = self._judged_text(message, decision)[:1500]
         note = f"Automod · {categorie_label} · {decision.gravite}"
 
         case_ref = case_id = None
@@ -1426,19 +1526,49 @@ class AutomodModule(ModuleBase):
                     expires_at=expires_at, note=note,
                 )
 
-        # Attach the offending message as evidence on the case.
+        # Attach the offending message (or profile) as evidence on the case.
         if case_id is not None:
-            jump = getattr(message, "jump_url", "")
-            context_text = await self._build_context_text(message)
-            evidence = (
-                f"Message de <@{decision.auteur_id}> (`{decision.auteur_id}`) dans "
-                f"<#{message.channel.id}> :\n"
-                f"> {extrait or '*(vide)*'}\n\n"
-                f"Détection : `{decision.signal_source}` · catégorie `{categorie_label}` "
-                f"· gravité `{decision.gravite}` · score `{decision.score_detecteur:.2f}` "
-                f"· confiance `{decision.confiance}`"
-                + (f"\n[Aller au message]({jump})" if jump else "")
-            )
+            if message is not None:
+                jump = getattr(message, "jump_url", "")
+                context_text = await self._build_context_text(message)
+                evidence = (
+                    f"Message de <@{decision.auteur_id}> (`{decision.auteur_id}`) dans "
+                    f"<#{message.channel.id}> :\n"
+                    f"> {extrait or '*(vide)*'}\n\n"
+                    f"Détection : `{decision.signal_source}` · catégorie `{categorie_label}` "
+                    f"· gravité `{decision.gravite}` · score `{decision.score_detecteur:.2f}` "
+                    f"· confiance `{decision.confiance}`"
+                    + (f"\n[Aller au message]({jump})" if jump else "")
+                )
+                where = {
+                    "message_id": decision.message_id,
+                    "channel_id": message.channel.id,
+                    "jump_url": jump,
+                    "author_name": getattr(message.author, "display_name", str(message.author)),
+                    "ts": int(message.created_at.timestamp()),
+                    "context_text": context_text,
+                }
+            else:
+                # Profile evidence: no message, no channel, no jump link.
+                profile = profile or {}
+                evidence = (
+                    f"Profil de <@{decision.auteur_id}> (`{decision.auteur_id}`) "
+                    f"({profile.get('kind', 'profil')}) :\n"
+                    f"> {extrait or '*(vide)*'}\n\n"
+                    f"Détection : `{decision.signal_source}` · catégorie `{categorie_label}` "
+                    f"· gravité `{decision.gravite}` · score `{decision.score_detecteur:.2f}` "
+                    f"· confiance `{decision.confiance}`"
+                )
+                where = {
+                    "author_name": getattr(member, "display_name", str(decision.auteur_id)),
+                    "ts": int(time.time()),
+                    "profil": {k: profile.get(k) for k in ("kind", "asset_key", "asset_url")
+                               if profile.get(k)},
+                    **({"categorie_nano": decision.categorie_origine}
+                       if getattr(decision, "categorie_origine", "") else {}),
+                    **({"explication_ia": decision.explication_ia}
+                       if getattr(decision, "explication_ia", "") else {}),
+                }
             try:
                 await self.bot.db.add_event(
                     case_id,
@@ -1447,13 +1577,8 @@ class AutomodModule(ModuleBase):
                     content=evidence,
                     payload={
                         "source": "automod",
-                        "message_id": decision.message_id,
-                        "channel_id": message.channel.id,
-                        "jump_url": jump,
+                        **where,
                         "extrait": extrait,
-                        "author_name": getattr(message.author, "display_name", str(message.author)),
-                        "ts": int(message.created_at.timestamp()),
-                        "context_text": context_text,
                         "raison": decision.raison,
                         "explication": decision.explication,
                         "citation": decision.citation,
@@ -1467,7 +1592,8 @@ class AutomodModule(ModuleBase):
                         "actions": decision.actions,
                         # Automod images: where the judged text came from and
                         # the image facts (hash, SafeSearch, scam anchors).
-                        "origine": getattr(decision, "origine", "texte"),
+                        "origine": (profile or {}).get("origine")
+                        or getattr(decision, "origine", "texte"),
                         **({"image": dataclasses.asdict(decision.image)}
                            if getattr(decision, "image", None) is not None else {}),
                         # Deterministic barème breakdown (session 2): the cran and
@@ -1479,7 +1605,7 @@ class AutomodModule(ModuleBase):
                             "bareme": [
                                 {"code": c.code, "delta": c.delta,
                                  "detail": label_in_text(
-                                     c.detail, self.guild_locale(message.guild),
+                                     c.detail, self.guild_locale(guild),
                                      self.infractions_perso)}
                                 for c in bareme.composantes
                             ],
@@ -1514,14 +1640,16 @@ class AutomodModule(ModuleBase):
 
     async def _send_sanction_dm(self, member: discord.Member, case_id, case_ref: str,
                                 primary_action: str, primary_sanction_id, decision: Decision,
-                                message: Optional[discord.Message] = None):
+                                message: Optional[discord.Message] = None, *,
+                                explication: Optional[str] = None):
         """DM the member their sanction with Server / Moddy-team appeal buttons."""
         if not primary_sanction_id:
             return  # cannot offer an appeal without a sanction to target
         from utils.appeal_views import build_sanction_dm_view
         guild = member.guild
         locale = self.guild_locale(guild)
-        content = self._judged_text(message, decision) if message else ""
+        # A profile sanction quotes the judged name (an avatar has no text proof).
+        content = self._judged_text(message, decision)
         view, files = build_sanction_dm_view(
             locale=locale,
             guild_name=guild.name if guild else "",
@@ -1529,7 +1657,7 @@ class AutomodModule(ModuleBase):
             case_ref=case_ref or "—",
             action=primary_action,
             reason=decision.raison,
-            explication=decision.explication,
+            explication=explication if explication is not None else decision.explication,
             case_id=str(case_id),
             sanction_id=str(primary_sanction_id),
             expires_at=self._expiry_for(decision, primary_action),
@@ -1562,7 +1690,8 @@ class AutomodModule(ModuleBase):
                     "reason": decision.raison or "",
                     "explication_title": t("modules.automod_ai.dm.explanation",
                                            locale=locale),
-                    "explication": decision.explication or "",
+                    "explication": (explication if explication is not None
+                                    else decision.explication) or "",
                     "case_ref": case_ref or "—",
                 },
                 view=view,
@@ -1874,6 +2003,755 @@ class AutomodModule(ModuleBase):
             view = self._drop_image_gallery(view)
             try:
                 return await channel.send(view=view, files=files)
+            except (discord.Forbidden, discord.HTTPException):
+                return None
+        except discord.HTTPException:
+            return None
+
+    # ======================================================================
+    # Member profiles (avatar / banner / names) — feature "profile"
+    # ======================================================================
+    #
+    # Not run from ``on_message``: the events of ``cogs/module_events.py`` call
+    # ``on_member_join`` / ``on_member_update`` / ``on_user_update``, which hand
+    # the member to ``screen_member`` as a bounded background task. The shared
+    # caches, the SafeSearch budget and the name verdicts live in
+    # ``bot.automod_profiles`` (``services/automod_profile_service.py``); this
+    # module only applies the server's policy. See docs/AUTOMOD_AI.md "Profiles".
+
+    _PROFILE_SCOPE_ALL = frozenset({"avatar", "banner", "pseudo"})
+
+    @property
+    def profile(self) -> Optional["ProfileFeature"]:
+        feature = self._features.get("profile")
+        return feature if isinstance(feature, ProfileFeature) else None
+
+    def profile_active(self) -> bool:
+        feature = self.profile
+        return bool(self.enabled and feature is not None and feature.enabled)
+
+    def _profile_service(self):
+        return getattr(self.bot, "automod_profiles", None)
+
+    def _member_lock(self, user_id: int) -> asyncio.Lock:
+        locks = self.__dict__.setdefault("_profile_locks", {})
+        lock = locks.get(user_id)
+        if lock is None:
+            lock = locks[user_id] = asyncio.Lock()
+        return lock
+
+    def _release_member_lock(self, user_id: int) -> None:
+        locks = self.__dict__.get("_profile_locks", {})
+        lock = locks.get(user_id)
+        if lock is not None and not lock.locked():
+            locks.pop(user_id, None)
+
+    def _spawn_screen(self, member: discord.Member, reason: str, scope) -> None:
+        coro = self.screen_member(member, reason=reason, scope=frozenset(scope))
+        svc = self._profile_service()
+        if svc is not None:
+            svc.spawn(coro, label=f"screen:{self.guild_id}:{member.id}")
+            return
+        asyncio.ensure_future(coro)
+
+    # -- Events (called by ModuleEvents) -----------------------------------
+
+    async def on_member_join(self, member: discord.Member):
+        """A member joined: screen the whole profile in the background."""
+        if not self.profile_active():
+            return
+        self._spawn_screen(member, "join", self._PROFILE_SCOPE_ALL)
+
+    async def on_member_update(self, before: discord.Member, after: discord.Member):
+        """Nickname or server avatar changed. The banner rides along (throttled)."""
+        if not self.profile_active():
+            return
+        scope = set()
+        if before.nick != after.nick:
+            scope.add("pseudo")
+        if before.guild_avatar != after.guild_avatar:
+            scope.add("avatar")
+        if scope:
+            scope.add("banner")
+            self._spawn_screen(after, "update", scope)
+
+    async def on_user_update(self, before: discord.User, after: discord.User,
+                             member: discord.Member):
+        """Account name / display name / avatar changed (``member`` = this guild's)."""
+        if not self.profile_active() or member is None:
+            return
+        scope = set()
+        if before.name != after.name or before.global_name != after.global_name:
+            scope.add("pseudo")
+        if before.avatar != after.avatar:
+            scope.add("avatar")
+        if scope:
+            scope.add("banner")
+            self._spawn_screen(member, "update", scope)
+
+    # -- Gates ----------------------------------------------------------------
+
+    def _profile_exempt(self, member: discord.Member) -> bool:
+        """Bots, the owner (cannot be timed out), exempt roles, moderators."""
+        if member.bot or member.id == getattr(member.guild, "owner_id", None):
+            return True
+        feature = self.profile
+        exempt_roles = set(feature.config.get("exempt_roles", [])) if feature else set()
+        if exempt_roles and any(r.id in exempt_roles for r in getattr(member, "roles", [])):
+            return True
+        if self.ignore_moderators and member.guild_permissions.manage_messages:
+            return True
+        return False
+
+    def _profile_tier(self, member: discord.Member) -> str:
+        """Priority tier of the SafeSearch budget: new accounts and fresh joins first."""
+        now = datetime.now(timezone.utc)
+        created = getattr(member, "created_at", None)
+        joined = getattr(member, "joined_at", None)
+        acct = (now - created).total_seconds() / 86400.0 if created else None
+        tenure = (now - joined).total_seconds() / 86400.0 if joined else None
+        return aip.nsfw_tier(acct, tenure, None)
+
+    def profile_action_for(self, categorie: str) -> Optional[str]:
+        """The configured ``action_profil`` of a profile infraction (None = off)."""
+        entry = (self.sanctions or {}).get(categorie)
+        entry = entry if isinstance(entry, dict) else {}
+        if entry.get("enabled") is False or categorie in self.categories_desactivees:
+            return None
+        typ = infractions.get(categorie)
+        return entry.get("action_profil") or (typ.default_profile_action if typ else None)
+
+    # -- Screening --------------------------------------------------------------
+
+    async def screen_member(self, member: discord.Member, *, reason: str = "update",
+                            scope=None) -> None:
+        """Screen a member's avatar / banner / names and apply the server's policy.
+
+        Serialized per member so a burst of profile events never sanctions the
+        same thing twice. Never raises into the caller's event loop.
+        """
+        scope = frozenset(scope) if scope is not None else self._PROFILE_SCOPE_ALL
+        if not self.profile_active() or member is None:
+            return
+        async with self._member_lock(member.id):
+            try:
+                if await global_sanctions.is_limited(self.bot, guild_id=self.guild_id):
+                    return
+                if self._profile_exempt(member):
+                    await self._lift_exempt_holds(member)
+                    return
+                feature = self.profile
+                if "avatar" in scope and feature.avatar:
+                    await self._screen_image(member, "avatar", reason)
+                if "banner" in scope and feature.banner:
+                    await self._screen_image(member, "banner", reason)
+                if "pseudo" in scope and feature.pseudo:
+                    await self._screen_names(member)
+            except Exception as e:  # noqa: BLE001
+                logger.error("automod profile screening failed (guild %s, member %s): %s",
+                             self.guild_id, member.id, e, exc_info=True)
+            finally:
+                self._release_member_lock(member.id)
+
+    async def _lift_exempt_holds(self, member: discord.Member) -> None:
+        """A member who became exempt (moderator, exempt role) is no longer held."""
+        db = getattr(self.bot, "db", None)
+        if db is None:
+            return
+        for hold in await db.list_member_profile_holds(self.guild_id, member.id):
+            await self._lift_hold(member, hold, announce=False)
+
+    async def _screen_image(self, member: discord.Member, kind: str, reason: str) -> None:
+        svc = self._profile_service()
+        db = getattr(self.bot, "db", None)
+        if svc is None:
+            return
+        hold = await db.get_profile_hold(self.guild_id, member.id, kind) if db else None
+
+        if kind == "avatar":
+            # Default avatar: nothing to look at. Guild avatar overrides global.
+            has_custom = member.avatar is not None or member.guild_avatar is not None
+            asset = member.display_avatar if has_custom else None
+        else:
+            asset = await svc.get_banner(member.id)
+
+        if asset is None:
+            if hold:
+                await self._lift_hold(member, hold)   # the offending image is gone
+            return
+
+        check = await svc.check_asset(
+            asset, kind=kind, guild_id=self.guild_id, tier=self._profile_tier(member))
+        if not check.checked:
+            # Budget refused / unreadable: nothing is sanctioned on a guess. An
+            # existing hold on this very image is simply kept.
+            if hold and hold.get("asset_key") == check.key:
+                await self._enforce_hold(member, hold, check.key)
+            return
+
+        decision = self._image_profile_decision(member, check, kind)
+        flagged = decision is not None and decision.sanctionnable
+        if hold:
+            if flagged:
+                await self._enforce_hold(member, hold, check.key)
+            else:
+                await self._lift_hold(member, hold)
+            return
+        if decision is None:
+            return
+        if await svc.already_done(self.guild_id, member.id, check.key):
+            return
+        await svc.mark_done(self.guild_id, member.id, check.key,
+                            ac.PROFILE_DONE_TTL_ASSET_SECONDS)
+        svc.stat("flagged" if flagged else "doubt")
+        image = await svc.prepared_for_card(check, asset) if flagged or decision.doute else None
+        await self.apply_profile_decision(
+            member, decision, image_bytes=image.data if image else None,
+            asset_url=check.url, kind=kind, asset_key=check.key)
+
+    def _image_profile_decision(self, member: discord.Member, check, kind: str
+                                ) -> Optional[Decision]:
+        """SafeSearch / team-hash result -> a profile Decision (None = clean)."""
+        locale = self.guild_locale(member.guild)
+        meta = ImageMeta(
+            phash=check.phash, dhash=check.dhash, filename=f"{kind}_{check.key}",
+            safesearch=dict(check.likelihoods or {}), hash_match=check.hash_match)
+        origine = ORIGINE_PROFIL_BANNIERE if kind == "banner" else ORIGINE_PROFIL_AVATAR
+        from services.automod_profile_service import synthetic_id
+        base = dict(
+            message_id=synthetic_id(member.id, kind, check.key),
+            auteur_id=str(member.id), actions=[], origine=origine, image=meta,
+        )
+
+        def build(axis: str, *, sanctionnable: bool, gravite: str, confiance: str,
+                  source: str, score: float, decideur: str, level: str = "",
+                  doute: Optional[str] = None) -> Decision:
+            categorie = "profil_avatar_choquant" if axis == "gore" else "profil_avatar_nsfw"
+            known = source == ac.SOURCE_IMAGE_HASH
+            return Decision(
+                sanctionnable=sanctionnable, categorie=categorie, gravite=gravite,
+                raison=t(f"modules.automod_ai.profile.reason_{kind}_{axis}", locale=locale),
+                explication=(
+                    t("modules.automod_ai.image.explication_known", locale=locale) if known
+                    else t(f"modules.automod_ai.image.explication_{'gore' if axis == 'gore' else 'nsfw'}",
+                           locale=locale, level=level)),
+                confiance=confiance, signal_source=source, score_detecteur=score,
+                decideur=decideur, doute=doute, **base)
+
+        if check.hash_verdict == "allow":
+            return None
+        if check.hash_verdict == "block":
+            axis = "gore" if check.hash_kind == "gore" else "nsfw"
+            return build(axis, sanctionnable=True, gravite="haute", confiance="high",
+                         source=ac.SOURCE_IMAGE_HASH, score=1.0, decideur="equipe")
+
+        likelihoods = check.likelihoods or {}
+        nsfw = aip.safesearch_to_verdict(likelihoods, aip.AXIS_NSFW)
+        gore = aip.safesearch_to_verdict(likelihoods, aip.AXIS_GORE)
+        scores = {"VERY_LIKELY": 1.0, "LIKELY": 0.8, "POSSIBLE": 0.6}
+        for axis, verdict, field in (("nsfw", nsfw, "adult"), ("gore", gore, "violence")):
+            if verdict.sanctionnable:
+                level = str(likelihoods.get(field, "UNKNOWN"))
+                return build(axis, sanctionnable=True, gravite=verdict.gravite,
+                             confiance=verdict.confiance, source=ac.SOURCE_SAFESEARCH,
+                             score=scores.get(level, 0.4), decideur="safesearch",
+                             level=level)
+        for axis, verdict, field in (("nsfw", nsfw, "adult"), ("gore", gore, "violence")):
+            if verdict.doute is not None:
+                level = str(likelihoods.get(field, "UNKNOWN"))
+                return build(axis, sanctionnable=False, gravite=verdict.gravite,
+                             confiance=verdict.confiance, source=ac.SOURCE_SAFESEARCH,
+                             score=scores.get(level, 0.4), decideur="safesearch",
+                             level=level, doute=verdict.doute)
+        return None
+
+    async def _screen_names(self, member: discord.Member) -> None:
+        """Judge nickname / display name / username (each distinct one once)."""
+        svc = self._profile_service()
+        if svc is None:
+            return
+        from services.automod_profile_service import normalize_name
+        guild = member.guild
+        candidates: Dict[str, str] = {}
+        for value in (member.nick, member.global_name, member.name):
+            norm = normalize_name(value or "")
+            if len(norm) >= 2 and norm not in candidates:
+                candidates[norm] = value
+        displayed = normalize_name(member.display_name)
+
+        flagged = []
+        for norm, value in candidates.items():
+            judgement = await svc.judge_name(
+                value, user_id=member.id, guild_id=self.guild_id, guild_name=guild.name,
+                rules=self.rules, severity=self.severity,
+                response_language=self.response_language(guild))
+            d = judgement.decision
+            if d is None:
+                continue
+            if d.sanctionnable:
+                flagged.append((norm != displayed, norm, d))
+            elif d.doute and judgement.fresh:
+                await self.apply_profile_decision(member, d, kind="pseudo")
+        if not flagged:
+            return
+        flagged.sort(key=lambda item: item[0])      # the displayed name first
+        not_displayed, norm, decision = flagged[0]
+
+        import hashlib
+        subject = "n:" + hashlib.sha1(norm.encode("utf-8")).hexdigest()[:16]
+        if await svc.already_done(self.guild_id, member.id, subject):
+            # Already sanctioned. If the member put the same name back where it
+            # shows, the reset alone is repeated (no second warn).
+            if (not not_displayed
+                    and self.profile_action_for("profil_pseudo") == "rename_warn"):
+                await self._rename_member(member, decision, None)
+            return
+        await svc.mark_done(self.guild_id, member.id, subject,
+                            ac.PROFILE_DONE_TTL_PSEUDO_SECONDS)
+        svc.stat("flagged")
+        await self.apply_profile_decision(member, decision, kind="pseudo")
+
+    # -- Holds ----------------------------------------------------------------
+
+    async def _enforce_hold(self, member: discord.Member, hold: dict,
+                            asset_key: Optional[str]) -> None:
+        """The profile is still flagged: keep the member timed out.
+
+        Re-applies the Discord timeout when it is gone (the member rejoined) or
+        about to end, and follows the hold to a newer flagged asset. No new case.
+        """
+        db = getattr(self.bot, "db", None)
+        guild = member.guild
+        now = datetime.now(timezone.utc)
+        until = getattr(member, "timed_out_until", None)
+        renew = until is None or until - now < timedelta(
+            hours=ac.PROFILE_HOLD_RENEW_WINDOW_HOURS)
+        timeout_until = hold.get("timeout_until")
+        if renew:
+            me = guild.me
+            if (me is not None and member != guild.owner and me.top_role > member.top_role
+                    and me.guild_permissions.moderate_members):
+                locale = self.guild_locale(guild)
+                duration = timedelta(hours=ac.PROFILE_HOLD_DURATION_HOURS)
+                try:
+                    self._mark_moddy_initiated(member.id, "mute")
+                    await member.timeout(duration, reason=self._audit_reason(
+                        None, now + duration,
+                        t("modules.automod_ai.profile.case_reason_hold", locale=locale,
+                          kind=t(f"modules.automod_ai.profile.kind.{hold['kind']}",
+                                 locale=locale)))[:512])
+                    timeout_until = now + duration
+                except (discord.Forbidden, discord.HTTPException):
+                    pass
+        if db is not None and (timeout_until != hold.get("timeout_until")
+                               or (asset_key and asset_key != hold.get("asset_key"))):
+            await db.upsert_profile_hold(
+                self.guild_id, member.id, hold["kind"], categorie=hold.get("categorie"),
+                asset_key=asset_key or hold.get("asset_key"), case_id=hold.get("case_id"),
+                sanction_id=hold.get("sanction_id"), timeout_until=timeout_until)
+
+    async def _lift_hold(self, member: Optional[discord.Member], hold: dict, *,
+                         announce: bool = True) -> None:
+        """The profile is fixed (or no longer judged): free the member.
+
+        Removes the timeout we put (never a longer one someone else set), revokes
+        the case sanction, notes ``profil_corrige`` on the case timeline, deletes
+        the hold and (``announce``) posts a short line in the alert channel.
+        """
+        db = getattr(self.bot, "db", None)
+        guild = member.guild if member is not None else self.bot.get_guild(hold["guild_id"])
+        kind = hold["kind"]
+        if member is not None:
+            until = getattr(member, "timed_out_until", None)
+            ours = hold.get("timeout_until")
+            if until is not None and (ours is None or until <= ours + timedelta(minutes=5)):
+                try:
+                    locale = self.guild_locale(guild)
+                    await member.timeout(None, reason=t(
+                        "modules.automod_ai.profile.lift_reason", locale=locale)[:512])
+                except (discord.Forbidden, discord.HTTPException):
+                    pass
+        if db is not None:
+            if hold.get("sanction_id"):
+                try:
+                    await db.revoke_sanction(
+                        hold["sanction_id"], IssuerType.AUTOMOD.value,
+                        self.bot.user.id if self.bot.user else None)
+                except Exception as e:  # noqa: BLE001
+                    logger.debug("automod: hold sanction revoke failed: %s", e)
+            if hold.get("case_id"):
+                try:
+                    await db.add_event(
+                        hold["case_id"], EventType.COMMENT.value,
+                        author_type=AuthorType.SYSTEM.value,
+                        content="Profil corrigé : le membre a changé son "
+                                f"{'avatar' if kind == 'avatar' else 'bandeau'}, "
+                                "le timeout est levé.",
+                        payload={"kind": "profil_corrige", "profile_kind": kind})
+                except Exception as e:  # noqa: BLE001
+                    logger.debug("automod: profil_corrige event failed: %s", e)
+            await db.delete_profile_hold(self.guild_id, hold["user_id"], kind)
+        svc = self._profile_service()
+        if svc is not None:
+            svc.stat("hold_lifted")
+            if hold.get("asset_key"):
+                # Putting the same image back must be judged again, not ignored.
+                await svc.forget_done(self.guild_id, int(hold["user_id"]),
+                                      hold["asset_key"])
+        if announce and guild is not None:
+            await self._notify_profile_fixed(guild, int(hold["user_id"]), kind)
+
+    async def _notify_profile_fixed(self, guild: discord.Guild, user_id: int, kind: str):
+        """A short "profile fixed" line in the mandatory alert channel."""
+        channel = guild.get_channel(int(self.notify_channel_id)) \
+            if self.notify_channel_id else None
+        if not isinstance(channel, discord.TextChannel) or guild.me is None \
+                or not channel.permissions_for(guild.me).send_messages:
+            return
+        from discord import ui
+        from utils.emojis import DONE
+        locale = self.guild_locale(guild)
+        view = ui.LayoutView(timeout=None)
+        container = ui.Container(accent_colour=discord.Colour(0x57F287))
+        container.add_item(ui.TextDisplay(
+            f"### {DONE} {t('modules.automod_ai.profile.fixed_title', locale=locale)}"))
+        container.add_item(ui.TextDisplay(t(
+            "modules.automod_ai.profile.fixed_body", locale=locale,
+            user=f"<@{user_id}>", user_id=f"`{user_id}`",
+            kind=t(f"modules.automod_ai.profile.kind.{kind}", locale=locale))))
+        view.add_item(container)
+        try:
+            await channel.send(view=view, allowed_mentions=discord.AllowedMentions.none())
+        except (discord.Forbidden, discord.HTTPException):
+            return
+
+    async def sweep_hold(self, hold: dict) -> str:
+        """One hold of the periodic sweep (``cogs/automod_profiles.py``).
+
+        Re-screens the member's current asset for this kind: still flagged ->
+        the timeout is renewed, fixed -> lifted. Returns what happened.
+        """
+        db = getattr(self.bot, "db", None)
+        guild = self.bot.get_guild(self.guild_id)
+        feature = self.profile
+        if guild is None or not self.profile_active() or feature is None \
+                or not getattr(feature, hold["kind"], False):
+            if db is not None:
+                await db.delete_profile_hold(self.guild_id, hold["user_id"], hold["kind"])
+            return "dropped"
+        member = await get_or_fetch_member(guild, int(hold["user_id"]))
+        if member is None:
+            return "absent"   # re-timed out by the join screening if they come back
+        await self.screen_member(member, reason="sweep", scope={hold["kind"]})
+        return "checked"
+
+    # -- Application ---------------------------------------------------------------
+
+    def _profile_label(self, kind: str, locale: str) -> str:
+        return t(f"modules.automod_ai.profile.kind.{kind}", locale=locale)
+
+    async def _rename_member(self, member: discord.Member, decision: Decision,
+                             case_ref: Optional[str]) -> str:
+        """Reset the displayed name to the "Moderated name" placeholder.
+
+        Returns ``"ok"``, ``"not_displayed"`` (the flagged name is not what shows
+        on this server) or ``"failed"`` (permission / hierarchy / Discord error).
+        """
+        from services.automod_profile_service import normalize_name
+        guild = member.guild
+        if normalize_name(member.display_name) != normalize_name(
+                getattr(decision, "contenu_juge", "") or ""):
+            return "not_displayed"
+        me = guild.me
+        if (me is None or member == guild.owner or not me.guild_permissions.manage_nicknames
+                or not me.top_role > member.top_role):
+            return "failed"
+        locale = self.guild_locale(guild)
+        moderated = t("modules.automod_ai.profile.moderated_name", locale=locale)[:32]
+        try:
+            await member.edit(nick=moderated, reason=self._audit_reason(
+                case_ref, None, decision.raison))
+        except (discord.Forbidden, discord.HTTPException):
+            return "failed"
+        svc = self._profile_service()
+        if svc is not None:
+            svc.stat("renamed")
+        return "ok"
+
+    def _profile_plan(self, bareme: ab.ResultatBareme, decision: Decision):
+        """The effective profile action and the case actions it produces.
+
+        ``max_action`` is a hard ceiling: a ``hold`` (a timeout) under a "warn"
+        ceiling degrades to a plain warn.
+        """
+        action = bareme.action_profil
+        if action == "hold":
+            if self.max_action == "warn":
+                return "warn", ["warn"], 0
+            return "hold", ["mute"], ac.PROFILE_HOLD_DURATION_HOURS
+        if action == "rename_warn":
+            return "rename_warn", ["warn"], 0
+        if action == "bareme":
+            actions = [a for a in bareme.actions if a != "supprimer"]
+            return ("bareme" if actions else "alert"), actions, bareme.duree_heures or 0
+        return "alert", [], 0
+
+    async def apply_profile_decision(self, member: discord.Member, decision: Decision, *,
+                                     image_bytes: Optional[bytes] = None,
+                                     asset_url: Optional[str] = None,
+                                     kind: str = "avatar",
+                                     asset_key: Optional[str] = None) -> None:
+        """Apply a profile decision (there is no message to delete or quote).
+
+        Shares the barème, the heavy-sanction confirmation, the statistics, the
+        simulation mode, the case, the Discord sanction, the alert card, the DM
+        and the team labeling queue with :meth:`apply_decision`. What happens to
+        the member is the server's ``action_profil`` for the infraction:
+
+        * ``hold`` — timeout (28 d) until the avatar / banner is fixed;
+        * ``rename_warn`` — reset the displayed name and warn;
+        * ``alert`` — alert card only;
+        * ``bareme`` — the cran ladder like a message (minus the deletion).
+        """
+        guild = member.guild
+        locale = self.guild_locale(guild)
+        if not decision.sanctionnable:
+            # Unsure, nothing applied: the team still gets a copy.
+            if getattr(decision, "doute", None):
+                await self._enqueue_label(None, decision, motif="doute", member=member,
+                                          image_bytes=image_bytes)
+            return
+
+        bareme = await self._compute_bareme(None, decision, member=member)
+        if bareme.action_profil is None:
+            return          # this infraction is switched off
+        if bareme.action_profil == "bareme":
+            bareme = await self._maybe_confirm_heavy(None, decision, bareme, member=member)
+        action, actions, duree = self._profile_plan(bareme, decision)
+        decision.actions = list(actions)
+        decision.duree_heures = duree
+
+        # Server-language wording (a cached verdict may have been written in
+        # another language): the funnel's own explanation stays on the case.
+        label = self._profile_label(kind, locale)
+        if kind == "pseudo":
+            decision.explication_ia = decision.explication
+            decision.raison = t("modules.automod_ai.profile.reason_pseudo", locale=locale,
+                                name=f"`{decision.contenu_juge}`")
+            decision.explication = t("modules.automod_ai.profile.explication_pseudo",
+                                     locale=locale)
+        dm_explication = {
+            "hold": t("modules.automod_ai.profile.dm_hold", locale=locale, kind=label),
+            "rename_warn": t("modules.automod_ai.profile.dm_rename", locale=locale,
+                             moderated=t("modules.automod_ai.profile.moderated_name",
+                                         locale=locale)),
+        }.get(action, decision.explication)
+
+        self.count("decision")
+        stats = getattr(self.bot, "stats", None)
+        if stats is not None:
+            stats.incr(
+                "automod.decision", guild_id=self.guild_id,
+                dims={"sanction": (actions[0] if actions else "alert"),
+                      "dry_run": bool(self.dry_run)},
+            )
+
+        origine = {"avatar": ORIGINE_PROFIL_AVATAR, "banner": ORIGINE_PROFIL_BANNIERE,
+                   "pseudo": ORIGINE_PROFIL_PSEUDO}[kind]
+        profile = {
+            "kind": kind, "origine": origine, "asset_key": asset_key,
+            "asset_url": asset_url,
+            "extrait": decision.contenu_juge if kind == "pseudo" else (asset_url or ""),
+        }
+
+        # Shadow mode: nothing applied, a SIMULATION card instead.
+        if self.dry_run:
+            await self._notify_profile(member, decision, [], None, None, bareme,
+                                       action=action, kind=kind, image_bytes=image_bytes,
+                                       simulation=True)
+            await self._enqueue_label(None, decision, motif="simulation", bareme=bareme,
+                                      member=member, image_bytes=image_bytes)
+            return
+
+        applied: List[str] = []
+        notes: List[str] = []
+        case_ref = case_id = primary_action = sanction_id = None
+
+        if action != "alert":
+            case_reason = decision.raison
+            if action == "hold":
+                case_reason = t("modules.automod_ai.profile.case_reason_hold",
+                                locale=locale, kind=label)
+            case_ref, case_id, primary_action, sanction_id = await self._record_case(
+                None, decision, bareme, member=member, case_reason=case_reason,
+                profile=profile)
+
+        timed_out = False
+        if action in ("hold", "bareme"):
+            discord_applied = await self._apply_discord_sanction(
+                guild, member, decision, case_ref, actions)
+            applied.extend(discord_applied)
+            timed_out = "mute" in discord_applied
+            if action == "hold" and not timed_out:
+                notes.append("hold_failed")
+        elif action == "rename_warn":
+            outcome = await self._rename_member(member, decision, case_ref)
+            if outcome == "ok":
+                applied.append("rename")
+            else:
+                notes.append("rename_failed" if outcome == "failed" else "not_displayed")
+        if "warn" in actions and "warn" not in applied:
+            applied.append("warn")
+
+        hold_stored = False
+        if action == "hold" and timed_out and getattr(self.bot, "db", None):
+            await self.bot.db.upsert_profile_hold(
+                self.guild_id, member.id, kind, categorie=decision.categorie,
+                asset_key=asset_key, case_id=case_id, sanction_id=sanction_id,
+                timeout_until=datetime.now(timezone.utc)
+                + timedelta(hours=ac.PROFILE_HOLD_DURATION_HOURS))
+            hold_stored = True
+            svc = self._profile_service()
+            if svc is not None:
+                svc.stat("hold")
+
+        log_msg = await self._notify_profile(
+            member, decision, applied, case_ref, primary_action, bareme, action=action,
+            kind=kind, image_bytes=image_bytes, notes=notes, asset_url=asset_url)
+        if log_msg is not None and case_id is not None:
+            try:
+                await self.bot.db.add_event(
+                    case_id, EventType.EVIDENCE.value,
+                    author_type=AuthorType.SYSTEM.value,
+                    payload={"kind": "automod_log", "channel_id": log_msg.channel.id,
+                             "message_id": log_msg.id},
+                )
+            except Exception as e:  # noqa: BLE001
+                logger.debug("automod: could not store profile log ref: %s", e)
+
+        # DM (through the notification system): only when a sanction was opened,
+        # and a failed timeout is not announced as one.
+        if (case_id is not None and primary_action is not None
+                and not (action == "hold" and not timed_out)):
+            await self._send_sanction_dm(
+                member, case_id, case_ref, primary_action, sanction_id, decision, None,
+                explication=dm_explication)
+
+        await self._enqueue_label(
+            None, decision, motif="sanction", bareme=bareme, case_id=case_id,
+            applied=applied, member=member, image_bytes=image_bytes,
+            hold_kind=kind if hold_stored else None)
+
+    # -- Cards ------------------------------------------------------------------------
+
+    def _profile_card(self, member: discord.Member, decision: Decision, applied: List[str],
+                      case_ref: Optional[str], primary_action: Optional[str],
+                      bareme: ab.ResultatBareme, *, action: str, kind: str,
+                      image_bytes: Optional[bytes], notes: Optional[List[str]] = None,
+                      simulation: bool = False):
+        """The profile alert / simulation card: ``(view, files, image_file)``."""
+        import io
+        from discord import ui
+        from utils.emojis import SHIELD, get_sanction_accent
+        from config import COLORS
+
+        guild = member.guild
+        locale = self.guild_locale(guild)
+        accent = (get_sanction_accent(primary_action) if primary_action
+                  else COLORS["warning"])
+
+        def _label(a: str) -> str:
+            if a == "rename":
+                return t("modules.automod_ai.profile.action_rename", locale=locale)
+            return t(f"modules.automod_ai.action.{a}", locale=locale)
+
+        view = ui.LayoutView(timeout=None)
+        container = ui.Container(accent_colour=discord.Colour(accent))
+        title_key = "profile.title_sim" if simulation else "profile.title"
+        container.add_item(ui.TextDisplay(
+            f"### {SHIELD} {t(f'modules.automod_ai.{title_key}', locale=locale)}"))
+        if simulation:
+            container.add_item(ui.TextDisplay(
+                f"-# {t('modules.automod_ai.shadow.badge', locale=locale)}"))
+        actions_txt = ", ".join(_label(a) for a in applied) if applied \
+            else t("modules.automod_ai.log.detection_only", locale=locale)
+        body = (
+            f"- **{t('modules.automod_ai.profile.member', locale=locale)} :** "
+            f"<@{member.id}> (`{member.id}`)\n"
+            f"- **{t('modules.automod_ai.profile.kind_label', locale=locale)} :** "
+            f"{self._profile_label(kind, locale)}\n"
+            f"- **{t('modules.automod_ai.profile.policy', locale=locale)} :** "
+            f"{t(f'modules.automod_ai.profile.action.{action}', locale=locale)}\n"
+            f"- **{t('modules.automod_ai.log.actions', locale=locale)} :** {actions_txt}\n"
+            f"- **{t('modules.automod_ai.log.reason', locale=locale)} :** {decision.raison or '—'}"
+        )
+        if decision.explication:
+            body += (f"\n- **{t('modules.automod_ai.log.explanation', locale=locale)} :** "
+                     f"{decision.explication}")
+        if case_ref:
+            body += f"\n- **{t('modules.automod_ai.log.case', locale=locale)} :** `{case_ref}`"
+        container.add_item(ui.TextDisplay(body))
+
+        if action == "bareme" and bareme is not None and bareme.composantes:
+            header = t("modules.automod_ai.bareme.title", locale=locale,
+                       sanction=self._sanction_name(bareme, locale), cran=bareme.cran)
+            container.add_item(ui.TextDisplay(
+                f"**{header}**\n{self._bareme_breakdown(bareme, locale)}"))
+        for note in notes or []:
+            container.add_item(ui.TextDisplay(
+                f"-# {t(f'modules.automod_ai.profile.note_{note}', locale=locale)}"))
+        if not simulation and action != "alert":
+            container.add_item(ui.TextDisplay(
+                f"-# {t('modules.automod_ai.log.appeal_hint', locale=locale)}"))
+        view.add_item(container)
+
+        # What was judged — spoilered: the name, or the (downscaled) image.
+        files: List[discord.File] = []
+        image_file = None
+        quote = ui.Container(accent_colour=discord.Colour(accent), spoiler=True)
+        if kind == "pseudo":
+            quote.add_item(ui.TextDisplay(
+                f"**{t('modules.automod_ai.profile.judged_name', locale=locale)}**\n"
+                f"> {decision.contenu_juge or '*…*'}"))
+        elif image_bytes:
+            image_file = discord.File(io.BytesIO(image_bytes), filename=f"profile_{kind}.jpg",
+                                      spoiler=True)
+            files.append(image_file)
+            quote.add_item(ui.MediaGallery(discord.MediaGalleryItem(
+                f"attachment://{image_file.filename}", spoiler=True)))
+        else:
+            quote.add_item(ui.TextDisplay(
+                f"-# {t('modules.automod_ai.profile.image_unavailable', locale=locale)}"))
+        view.add_item(quote)
+        return view, files, image_file
+
+    async def _notify_profile(self, member: discord.Member, decision: Decision,
+                              applied: List[str], case_ref: Optional[str],
+                              primary_action: Optional[str], bareme: ab.ResultatBareme, *,
+                              action: str, kind: str, image_bytes: Optional[bytes],
+                              notes: Optional[List[str]] = None, simulation: bool = False,
+                              asset_url: Optional[str] = None):
+        """Post a profile alert (or simulation) card; returns the sent message."""
+        guild = member.guild
+        channel = guild.get_channel(int(self.notify_channel_id)) \
+            if self.notify_channel_id else None
+        if not isinstance(channel, discord.TextChannel) or guild.me is None \
+                or not channel.permissions_for(guild.me).send_messages:
+            return None
+        view, files, image_file = self._profile_card(
+            member, decision, applied, case_ref, primary_action, bareme, action=action,
+            kind=kind, image_bytes=image_bytes, notes=notes, simulation=simulation)
+        try:
+            return await channel.send(view=view, files=files,
+                                      allowed_mentions=discord.AllowedMentions.none())
+        except discord.Forbidden:
+            if image_file is None:
+                return None
+            # No "Attach Files": never lose the alert itself — resend without it.
+            view = self._drop_image_gallery(view)
+            try:
+                return await channel.send(view=view,
+                                          allowed_mentions=discord.AllowedMentions.none())
             except (discord.Forbidden, discord.HTTPException):
                 return None
         except discord.HTTPException:

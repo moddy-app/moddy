@@ -196,8 +196,8 @@ sont configurées dans `gateway/config.py` et surchargeables via
 est exigé par Google même dans la tranche gratuite). Optionnelle : sans elle,
 la détection d'images NSFW de l'automod et `/ocr` sont désactivées.
 **Note :** la tranche gratuite (1000 unités / mois / fonctionnalité) est
-protégée par des règles mensuelles *fail-closed* : `GOOGLE_VISION_SAFESEARCH_MONTHLY`
-et `GOOGLE_VISION_OCR_MONTHLY` (défaut `1000`) — voir [API_GATEWAY.md](API_GATEWAY.md).
+protégée par des règles mensuelles *fail-closed* : `GOOGLE_VISION_SAFESEARCH_MONTHLY`,
+`GOOGLE_VISION_SAFESEARCH_PROFILE_MONTHLY` (avatars/bannières des membres) et `GOOGLE_VISION_OCR_MONTHLY` (défaut `1000`) — voir [API_GATEWAY.md](API_GATEWAY.md).
 
 ### MODDY_AUTOMOD_LABEL_CHANNEL_ID
 **Valeur :** ID du salon (serveur de l'équipe Moddy) où arrive la file

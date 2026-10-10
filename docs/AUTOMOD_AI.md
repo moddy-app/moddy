@@ -764,6 +764,106 @@ haute 2 (delete + 2 h mute) · critique 4. SafeSearch's violence score can fire 
 video games, films or medical pictures — a wrong call is revoked from the team
 queue (§9) and its hash set to `allow`. SafeSearch is **not** a CSAM detector.
 
+### 4.4 `profile` — member profiles (avatar, banner, names)
+
+Moderates what a member **is**, not what they say: avatar and banner (NSFW / gore,
+Google SafeSearch) and names (nickname, global display name, username: slurs,
+sexual or hateful wording). Not run from `on_message`: `cogs/module_events.py`
+dispatches member events to the module (`on_member_join`, `on_member_update` for
+nickname / server avatar, `on_user_update` for username / display name / avatar,
+fanned out to every shared server like `cogs/logs.py`). The module schedules the
+check as a **bounded background task** (`bot.automod_profiles.spawn`, queue cap
+`PROFILE_QUEUE_MAX`) so a raid of joins never delays another module.
+
+Skipped: bots, the owner, exempt roles, moderators (`ignore_moderators`), servers
+under a global sanction. Config: `features.profile.{enabled, avatar, banner,
+pseudo}` (`exempt_roles` shared, `exempt_channels` unused). The module runs when
+`enabled AND any feature AND notify_channel_id`, `profile` counting as a feature.
+
+**Shared service** (`services/automod_profile_service.py`, `bot.automod_profiles`):
+
+- *Avatar* — `member.display_avatar` (server avatar overrides the global one); a
+  default avatar is skipped. Verdict cached per Discord **asset key**
+  (`asset.key`) in Redis `automod:avatar:<key>` (30 d) + an in-process LRU: an
+  avatar already seen on ANY server costs no download and no call. A miss goes
+  download (`AutomodImageService.prepare_asset`) → team hash index (`nsfw` /
+  `gore` kinds, block/allow) → SafeSearch (also reuses a result already cached by
+  perceptual hash from message images). Concurrent checks of one asset share a
+  single in-flight job, so the same avatar in 20 servers = one call.
+- *Banner* — only reachable over REST (`fetch_user`): at most one fetch per user
+  per 10 min (shared by every guild), same cache / hash / SafeSearch path keyed by
+  the banner asset key. **Known limitation**: Discord emits no reliable event for
+  a banner-only change; banners are checked on join and on any other profile
+  event (nick, server avatar, username, display name, avatar).
+- *SafeSearch budget* — **separate** from message images: gateway rule
+  `google_vision/safe_search_profile` (`rpmo`, calendar month, fail-closed,
+  `GOOGLE_VISION_SAFESEARCH_PROFILE_MONTHLY`, default 1000). The adapter still
+  calls the real SafeSearch API (operation `safe_search`); only the accounting
+  key differs (`VisionClient.safe_search(budget_model=...)`). `call_type`
+  `automod_profile_safesearch`. Spending is smoothed with
+  `image_policy.pacing_allows` (`PROFILE_SAFESEARCH_*`), priority tier = account
+  < 30 d or fresh join (`nsfw_tier`), plus a per-guild daily share
+  (`PROFILE_GUILD_DAILY_SHARE`). A refusal sanctions nothing (debug log).
+- *Names* — the distinct nickname / global name / username go through
+  `engine.analyze` with `origine=profil_pseudo` (own short prompt block in
+  `nano.py`: judge the NAME, staff impersonation is out of scope; no context, no
+  relation, no precedents). Any sanctionable verdict is re-labelled category
+  `profil_pseudo` (nano's own category kept in the evidence as `categorie_nano`).
+  Verdicts cached per normalized name in Redis `automod:pseudo:<sha1>` (30 d,
+  global; a *clean* verdict is only reused by a server whose severity is not
+  stricter). Grounding still applies (citation ⊆ name).
+- *Idempotence* — Redis `automod:profile:done:<guild>:<user>:<asset key | n:hash>`
+  (7 d for assets, 24 h for names) so a burst of profile events never sanctions
+  the same thing twice; lifting a hold clears its marker.
+
+**Verdicts** reuse `image_policy.safesearch_to_verdict` per axis: `adult` →
+`profil_avatar_nsfw`, `violence` → `profil_avatar_choquant` (banners map to the
+same two categories; the evidence `origine` tells `profil_avatar` /
+`profil_banniere` / `profil_pseudo` apart). A doubt goes to the team labeling
+queue only.
+
+**What happens to the member** is the server's `sanctions[<type>].action_profil`
+(`modules/automod_ai.py::apply_profile_decision`, which shares the barème, heavy
+confirmation, stats, simulation, case, Discord sanction, alert card, DM and
+labeling queue with `apply_decision`):
+
+| action | default for | effect |
+|---|---|---|
+| `hold` | avatar types | Discord timeout (28 d) + case `MUTE` ("the {kind} must be changed") + a row in `automod_profile_holds` + DM "change your avatar/banner". On a later profile event, a clean (or removed) profile **lifts** it: timeout cleared (only ours), sanction revoked, `profil_corrige` note on the case, hold deleted, a short "profile fixed" line in the alert channel. Still flagged → the timeout is kept (a rejoin is re-timed-out). A `max_action: warn` ceiling degrades it to a plain warn. |
+| `rename_warn` | `profil_pseudo` | If the flagged name is the one displayed on the server, nickname ← "Moderated name" (server language, needs `manage_nicknames`), then a `WARN` case. Rename impossible (permission / hierarchy) or name not displayed → warn only, said on the card. |
+| `alert` | — | Alert card only: no case, no sanction, no DM. |
+| `bareme` | — | The cran ladder exactly like a message (warn / mute / ban), minus the deletion. |
+
+`dry_run` posts a SIMULATION card (member, kind, judged name or spoilered image,
+policy) and applies nothing. Discord actions are marked in
+`bot._moddy_initiated_sanctions` so `case_sync` does not double-record.
+
+**Hold sweep** (`cogs/automod_profiles.py`, every 6 h, one indexed query): holds
+whose timeout ends within `PROFILE_HOLD_RENEW_WINDOW_HOURS` are re-screened
+through the module (cached verdicts → no new SafeSearch call for an unchanged
+image): still flagged → timeout renewed, fixed → lifted. A server that switched
+the feature off just lets the timeout lapse.
+
+**Evidence** (`payload`): `source=automod`, `origine`, `extrait` (the name, or the
+asset URL), `author_name`, `ts`, `categorie` / `gravite` / `confiance` / barème
+fields, `profil: {kind, asset_key, asset_url}`; **no** `message_id` / `jump_url` /
+`context_text`. The appeal helpers (`_proof`, `_automod_extract`, `_context_text`,
+`_log_ref`) tolerate that; an accepted/modified appeal deletes the hold
+(`delete_profile_hold_by_sanction`). Asset-URL cases show no message proof.
+
+**Labeling queue** — new lanes `profil_avatar_nsfw`, `profil_avatar_choquant`
+(image: block/allow hash of kind `nsfw`/`gore`, so one team label protects message
+images too) and `profil_pseudo` (teaches nothing globally, like a server's own
+infraction). "Not sanctionable" revokes the sanctions **and** deletes the hold /
+lifts the timeout (`details.sanctions[].hold_kind`). A nickname already reset is
+not restored.
+
+**Known limitations** — banners (above); a name judged by the funnel only when
+the blocklist / embedding routing sends it to nano (an unobvious name is not
+flagged); the cached name verdict is the first server's (language of the AI text
+is replaced by server-language wording, the AI explanation stays on the case); a
+`rename_warn` nickname reset is not undone by a team revocation.
+
 ### Image decisions, everywhere else
 
 - `Decision.origine` (`texte` / `image_ocr` / `image_hash` / `image_nsfw`),
@@ -1154,6 +1254,7 @@ skipped), blocklist terms. `/mod automod` shows the queue, the monthly Google
 Vision budget and the learned sets, and purges a wrong entry by id.
 
 Tables: `automod_label_items`, `automod_image_hashes`,
-`automod_learned_references`, `automod_learned_terms` — schemas in
+`automod_learned_references`, `automod_learned_terms` (+ `automod_profile_holds`
+for member profiles, §4.4) — schemas in
 [AUTOMOD_AI_CONFIG.md §8](AUTOMOD_AI_CONFIG.md#8-related-tables-read-mostly-for-the-dashboard).
 

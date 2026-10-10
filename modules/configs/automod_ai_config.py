@@ -74,6 +74,11 @@ _DEFAULT_CONFIG = {
         "image_gore": {"enabled": False, "exempt_roles": [], "exempt_channels": []},
         "image_scam": {"enabled": False, "exempt_roles": [], "exempt_channels": [],
                        "scan_all": False},
+        # Member profiles (avatar / banner / names). No UI yet: carried through
+        # so a Save from this panel never wipes it. Run by member events, not
+        # by messages.
+        "profile": {"enabled": False, "exempt_roles": [], "exempt_channels": [],
+                    "avatar": True, "banner": True, "pseudo": True},
     },
 }
 
@@ -114,6 +119,17 @@ def _deep_default(current: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         }
     cfg["features"]["image_scam"]["scan_all"] = bool(
         (features.get("image_scam", {}) or {}).get("scan_all", False))
+    # The profile feature keeps its own toggles; its role exemptions follow the
+    # shared list like the other features.
+    stored_profile = features.get("profile", {}) or {}
+    cfg["features"]["profile"] = {
+        "enabled": bool(stored_profile.get("enabled", False)),
+        "exempt_roles": list(content.get("exempt_roles", [])),
+        "exempt_channels": [],
+        "avatar": bool(stored_profile.get("avatar", True)),
+        "banner": bool(stored_profile.get("banner", True)),
+        "pseudo": bool(stored_profile.get("pseudo", True)),
+    }
     return cfg
 
 
@@ -673,7 +689,7 @@ class AutomodAIConfigView(BaseView):
             return
         working_config = await self._fresh_working_config(interaction)
         roles = [int(v) for v in interaction.data.get("values", [])]
-        for fid in _FEATURE_IDS:
+        for fid in _FEATURE_IDS + ("profile",):
             working_config["features"][fid]["exempt_roles"] = list(roles)
         view = await self._rebuild(interaction, working_config, True)
         await interaction.response.edit_message(view=view)

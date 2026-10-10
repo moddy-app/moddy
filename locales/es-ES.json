@@ -2010,6 +2010,44 @@
             "desc": "Compartir enlaces externos (sitios web, promociones, productos) sin relación con la conversación o no permitidos en este servidor."
           }
         }
+      },
+      "profile": {
+        "kind": {
+          "avatar": "avatar",
+          "banner": "banner",
+          "pseudo": "nombre"
+        },
+        "title": "Moderación de perfil",
+        "title_sim": "Moderación de perfil (simulación)",
+        "member": "Miembro",
+        "kind_label": "Comprobado",
+        "policy": "Política configurada",
+        "judged_name": "Nombre juzgado",
+        "image_unavailable": "La imagen ya no está disponible.",
+        "action": {
+          "hold": "Aislamiento hasta que se corrija el perfil",
+          "rename_warn": "Restablecer el nombre y advertir",
+          "alert": "Solo alerta",
+          "bareme": "Escala de moderación",
+          "warn": "Advertencia (el límite del servidor impide un aislamiento)"
+        },
+        "action_rename": "Nombre restablecido",
+        "reason_avatar_nsfw": "Contenido explícito en la foto de perfil",
+        "reason_avatar_gore": "Contenido impactante (gore) en la foto de perfil",
+        "reason_banner_nsfw": "Contenido explícito en el banner del perfil",
+        "reason_banner_gore": "Contenido impactante (gore) en el banner del perfil",
+        "reason_pseudo": "Nombre inapropiado: {name}",
+        "explication_pseudo": "El nombre se consideró inapropiado para este servidor.",
+        "case_reason_hold": "Hay que cambiar el {kind} (aislamiento hasta que se corrija)",
+        "lift_reason": "[Automod] Perfil corregido",
+        "dm_hold": "Estás aislado hasta que cambies tu {kind}. Moddy lo vuelve a comprobar automáticamente y levanta el aislamiento en cuanto sea correcto.",
+        "dm_rename": "Tu nombre se ha restablecido a «{moderated}» en este servidor. Elige otro, por favor.",
+        "moderated_name": "Nombre moderado",
+        "note_hold_failed": "Moddy no pudo aplicar el aislamiento (falta un permiso o por la jerarquía de roles).",
+        "note_rename_failed": "Moddy no pudo restablecer el apodo (falta un permiso o por la jerarquía de roles): solo advertencia.",
+        "note_not_displayed": "Este nombre no es el que se muestra en este servidor: solo advertencia.",
+        "fixed_title": "Perfil corregido",
+        "fixed_body": "{user} ({user_id}) cambió su {kind}: se levantó el aislamiento."
       }
     },
     "voice_transcription": {
@@ -4974,7 +5012,10 @@
       "texte": "Text",
       "image_scam": "Scam image",
       "image_nsfw": "NSFW image",
-      "image_gore": "Shocking image (gore)"
+      "image_gore": "Shocking image (gore)",
+      "profil_avatar_nsfw": "Foto de perfil (NSFW)",
+      "profil_avatar_choquant": "Foto de perfil (gore)",
+      "profil_pseudo": "Nombre de miembro"
     },
     "motif": {
       "sanction": "Sanctioned by the bot",
@@ -5035,6 +5076,7 @@
       "empty": "Type at least one term and pick a category.",
       "done_title": "Blocklist updated",
       "done": "{n} term(s) added to `{category}`."
-    }
+    },
+    "name": "Nombre"
   }
 }

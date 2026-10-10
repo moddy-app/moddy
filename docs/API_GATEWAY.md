@@ -210,6 +210,7 @@ ON CONFLICT (scope, key, type) DO UPDATE SET daily_limit = EXCLUDED.daily_limit;
 | `voice_transcription` | groq/transcribe (`whisper-large-v3-turbo`) | user + guild | ✅ |
 | `automod_image_ocr` | openai/vision (`gpt-4.1-nano`) | guild + global | ✅ |
 | `automod_safesearch` | google_vision/safe_search | guild + global | ✅ |
+| `automod_profile_safesearch` | google_vision/safe_search (accounted on `safe_search_profile`) | guild + global | ✅ |
 | `ocr_command` | google_vision/document_text | user + guild + global | ✅ |
 
 > `text_*` calls come from `cogs/text_tools.py` (`/fix`, `/rephrase`, `/summarize`).
@@ -246,6 +247,7 @@ Rules live in `gateway/config.py` and mirror the provider console:
 | openai / `gpt-4.1-nano` | `rpm` | 500 requests | 1 min | `OPENAI_NANO_RPM` |
 | openai / `gpt-4.1-mini` | `rpm` | 500 requests | 1 min | `OPENAI_MINI_RPM` |
 | google_vision / `safe_search` | `rpmo` | 1 000 requests | **calendar month** (Pacific), fail-closed | `GOOGLE_VISION_SAFESEARCH_MONTHLY` |
+| google_vision / `safe_search_profile` | `rpmo` | 1 000 requests | **calendar month** (Pacific), fail-closed — a separate budget for member avatars / banners (same SafeSearch API call, own accounting key) | `GOOGLE_VISION_SAFESEARCH_PROFILE_MONTHLY` |
 | google_vision / `document_text` | `rpmo` | 1 000 requests | **calendar month** (Pacific), fail-closed | `GOOGLE_VISION_OCR_MONTHLY` |
 
 The OpenAI values mirror our org's Tier 1 limits (platform.openai.com → Limits
@@ -369,6 +371,7 @@ except (APIUnavailableError, GatewayError):
 | `GROQ_API_KEY` | — | Required for voice transcription |
 | `GOOGLE_VISION_API_KEY` | — | Google Cloud Vision API key (SafeSearch for automod images, document OCR for `/ocr`). The Cloud project needs the Vision API enabled and a billing account, even inside the free tier |
 | `GOOGLE_VISION_SAFESEARCH_MONTHLY` | `1000` | SafeSearch units per calendar month (fail-closed) |
+| `GOOGLE_VISION_SAFESEARCH_PROFILE_MONTHLY` | `1000` | SafeSearch units per calendar month for member profiles (avatars / banners), accounted apart from message images (fail-closed) |
 | `GOOGLE_VISION_OCR_MONTHLY` | `1000` | Document OCR units per calendar month (fail-closed) |
 | `GATEWAY_TIMEOUT_VISION` | `30` | Timeout of vision / SafeSearch / OCR calls (seconds) |
 | `DEEPL_FREE` | `true` | Use free-tier DeepL endpoint |

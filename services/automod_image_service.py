@@ -30,7 +30,7 @@ import logging
 import time
 from collections import OrderedDict
 from datetime import datetime, timezone
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import discord
 
@@ -80,9 +80,9 @@ class AutomodImageService:
         self.bot = bot
         self._sem = asyncio.Semaphore(ac.IMAGE_CONCURRENCY)
         self._waiting = 0
-        self._prepared: "OrderedDict[int, Tuple[float, PreparedImage]]" = OrderedDict()
+        self._prepared: "OrderedDict[Any, Tuple[float, PreparedImage]]" = OrderedDict()
         self._by_phash: "OrderedDict[str, PreparedImage]" = OrderedDict()
-        self._inflight: Dict[int, asyncio.Future] = {}
+        self._inflight: Dict[Any, asyncio.Future] = {}
         self.index = HashIndex()
         self._index_loaded_at = 0.0
         self._index_lock = asyncio.Lock()
@@ -94,7 +94,7 @@ class AutomodImageService:
     # Download + decode (shared by both features)
     # ------------------------------------------------------------------ #
 
-    def _cache_get(self, att_id: int) -> Optional[PreparedImage]:
+    def _cache_get(self, att_id: Any) -> Optional[PreparedImage]:
         hit = self._prepared.get(att_id)
         if hit is None:
             return None
@@ -105,7 +105,7 @@ class AutomodImageService:
         self._prepared.move_to_end(att_id)
         return img
 
-    def _cache_put(self, att_id: int, img: PreparedImage) -> None:
+    def _cache_put(self, att_id: Any, img: PreparedImage) -> None:
         self._prepared[att_id] = (time.monotonic(), img)
         self._prepared.move_to_end(att_id)
         while len(self._prepared) > _PREPARED_CACHE_MAX:
@@ -121,10 +121,26 @@ class AutomodImageService:
 
     async def prepare(self, attachment: discord.Attachment) -> Optional[PreparedImage]:
         """Download + decode once. None when unreadable or the queue is full."""
-        cached = self._cache_get(attachment.id)
+        return await self._prepare_cached(attachment.id, attachment.read)
+
+    async def prepare_asset(self, asset: discord.Asset, cache_key: str, *,
+                            size: int = ac.PROFILE_AVATAR_SIZE) -> Optional[PreparedImage]:
+        """Same pipeline for a profile avatar / banner (a Discord CDN asset).
+
+        ``cache_key`` is the asset key (``asset.key``): an image already
+        prepared is served from the small LRU without a second download. The
+        asset is requested at ``size`` px, static for a non-animated one (an
+        animated asset decodes to its first frame).
+        """
+        sized = asset.replace(size=size, static_format="png")
+        return await self._prepare_cached(f"asset:{cache_key}", sized.read)
+
+    async def _prepare_cached(self, cache_id, reader) -> Optional[PreparedImage]:
+        """Download (``await reader()``) + decode, shared per ``cache_id``."""
+        cached = self._cache_get(cache_id)
         if cached is not None:
             return cached
-        pending = self._inflight.get(attachment.id)
+        pending = self._inflight.get(cache_id)
         if pending is not None:
             return await pending
         if self._waiting >= ac.IMAGE_QUEUE_MAX:
@@ -132,13 +148,13 @@ class AutomodImageService:
             return None
         loop = asyncio.get_running_loop()
         future: asyncio.Future = loop.create_future()
-        self._inflight[attachment.id] = future
+        self._inflight[cache_id] = future
         self._waiting += 1
         result: Optional[PreparedImage] = None
         try:
             async with self._sem:
                 try:
-                    raw = await attachment.read()
+                    raw = await reader()
                 except (discord.HTTPException, discord.NotFound) as exc:
                     logger.debug("automod image download failed: %s", exc)
                     raw = None
@@ -149,11 +165,11 @@ class AutomodImageService:
                         logger.debug("automod image decode failed: %s", exc)
                     del raw
             if result is not None:
-                self._cache_put(attachment.id, result)
+                self._cache_put(cache_id, result)
             return result
         finally:
             self._waiting -= 1
-            self._inflight.pop(attachment.id, None)
+            self._inflight.pop(cache_id, None)
             if not future.done():
                 future.set_result(result)
 
@@ -309,10 +325,10 @@ class AutomodImageService:
         self._stat("ocr")
         return (text or "").strip() if isinstance(text, str) else ""
 
-    async def _safesearch_used(self) -> float:
+    async def _safesearch_used(self, model: str = "safe_search") -> float:
         gateway = getattr(self.bot, "gateway", None)
         try:
-            usage = await gateway.rate_limit_usage("google_vision", "safe_search")
+            usage = await gateway.rate_limit_usage("google_vision", model)
         except Exception:  # noqa: BLE001
             return float("inf")  # cannot read the budget → do not spend
         for rule in usage or []:
@@ -320,24 +336,30 @@ class AutomodImageService:
                 return float(rule.get("used") or 0.0)
         return 0.0
 
-    async def _guild_share_allows(self, guild_id: int) -> bool:
+    async def _guild_share_allows(self, guild_id: int, profile: bool = False) -> bool:
         r = self._redis()
         if r is None:
             return True  # the monthly fail-closed rule still bounds the spend
         day = datetime.now(timezone.utc).strftime("%Y%m%d")
-        key = f"automod:nsfw:share:{guild_id}:{day}"
+        key = self._share_key(guild_id, day, profile)
+        limit = ac.PROFILE_GUILD_DAILY_SHARE if profile else ac.NSFW_GUILD_DAILY_SHARE
         try:
             used = int(await r.get(key) or 0)
-            return used < ac.NSFW_GUILD_DAILY_SHARE
+            return used < limit
         except Exception:  # noqa: BLE001
             return True
 
-    async def _guild_share_increment(self, guild_id: int) -> None:
+    @staticmethod
+    def _share_key(guild_id: int, day: str, profile: bool) -> str:
+        prefix = "automod:profile:share" if profile else "automod:nsfw:share"
+        return f"{prefix}:{guild_id}:{day}"
+
+    async def _guild_share_increment(self, guild_id: int, profile: bool = False) -> None:
         r = self._redis()
         if r is None:
             return
         day = datetime.now(timezone.utc).strftime("%Y%m%d")
-        key = f"automod:nsfw:share:{guild_id}:{day}"
+        key = self._share_key(guild_id, day, profile)
         try:
             pipe = r.pipeline()
             pipe.incr(key)
@@ -348,12 +370,16 @@ class AutomodImageService:
 
     async def safesearch_cached(self, img: PreparedImage) -> Optional[dict]:
         """A SafeSearch result already known for this image (memo, then Redis)."""
-        hit = self._safesearch_memo.get(img.phash_hex)
+        return await self.safesearch_cached_hex(img.phash_hex)
+
+    async def safesearch_cached_hex(self, phash_hex: str) -> Optional[dict]:
+        """Same lookup from a bare perceptual-hash hex (profile cache hits)."""
+        hit = self._safesearch_memo.get(phash_hex)
         if hit is not None:
             return hit
-        cached = await self.cached_verdict("nsfw", img.phash_hex)
+        cached = await self.cached_verdict("nsfw", phash_hex)
         if cached is not None:
-            self._remember_safesearch(img.phash_hex, cached)
+            self._remember_safesearch(phash_hex, cached)
         return cached
 
     def _remember_safesearch(self, phash_hex: str, likelihoods: dict) -> None:
@@ -363,33 +389,48 @@ class AutomodImageService:
             self._safesearch_memo.popitem(last=False)
 
     async def safesearch(self, img: PreparedImage, *, guild_id: int,
-                         tier: str) -> Optional[dict]:
+                         tier: str, profile: bool = False) -> Optional[dict]:
         """SafeSearch likelihoods, or None when the budget/pacing says no.
 
         The result is cached per image hash (in-process + Redis, key kept as
         ``automod:img:nsfw:<phash>`` for compatibility) and shared by the
-        ``image_nsfw`` and ``image_gore`` features."""
-        likelihoods = await self._request_safesearch(img, guild_id=guild_id, tier=tier)
+        ``image_nsfw`` and ``image_gore`` features. ``profile=True`` spends the
+        separate member-profile budget instead (avatars / banners)."""
+        likelihoods = await self._request_safesearch(
+            img, guild_id=guild_id, tier=tier, **({"profile": True} if profile else {}))
         if likelihoods is not None:
             self._remember_safesearch(img.phash_hex, likelihoods)
             await self.store_verdict("nsfw", img.phash_hex, likelihoods)
         return likelihoods
 
     async def _request_safesearch(self, img: PreparedImage, *, guild_id: int,
-                                  tier: str) -> Optional[dict]:
-        """Budget + pacing checks, then the paid call (no caching here)."""
+                                  tier: str, profile: bool = False) -> Optional[dict]:
+        """Budget + pacing checks, then the paid call (no caching here).
+
+        ``profile`` selects the member-profile budget: a separate monthly rule
+        (``safe_search_profile``), its own pacing constants and per-guild share.
+        It is the same Google SafeSearch call either way."""
         gateway = getattr(self.bot, "gateway", None)
         if gateway is None or gateway.vision is None or not gateway.google_vision_available():
             return None
         from gateway.ratelimit import BILLING_TZ, month_bounds
-        cap = self._safesearch_cap()
-        used = await self._safesearch_used()
+        model = "safe_search_profile" if profile else "safe_search"
+        call_type = ac.CALL_TYPE_PROFILE_SAFESEARCH if profile else ac.CALL_TYPE_SAFESEARCH
+        cap = self._safesearch_cap(model)
+        used = await self._safesearch_used(model)
         now = time.time()
         start, end = month_bounds(now, BILLING_TZ)
-        if not ip.pacing_allows(used, cap, start, end, now, tier):
+        if profile:
+            allowed = ip.pacing_allows(
+                used, cap, start, end, now, tier,
+                burst=ac.PROFILE_SAFESEARCH_BURST,
+                normal_ratio=ac.PROFILE_SAFESEARCH_NORMAL_TIER_RATIO)
+        else:
+            allowed = ip.pacing_allows(used, cap, start, end, now, tier)
+        if not allowed:
             self._stat("skip_budget")
             return None
-        if not await self._guild_share_allows(guild_id):
+        if not await self._guild_share_allows(guild_id, profile):
             self._stat("skip_budget")
             return None
         from gateway.errors import GatewayError
@@ -397,10 +438,11 @@ class AutomodImageService:
         try:
             result = await gateway.vision.safe_search(
                 img.data, mime=img.mime,
-                quota=[QuotaTarget.guild(guild_id, ac.CALL_TYPE_SAFESEARCH),
-                       QuotaTarget.global_(ac.CALL_TYPE_SAFESEARCH)],
-                call_type=ac.CALL_TYPE_SAFESEARCH,
+                quota=[QuotaTarget.guild(guild_id, call_type),
+                       QuotaTarget.global_(call_type)],
+                call_type=call_type,
                 metadata={"guild_id": guild_id, "phash": img.phash_hex, "tier": tier},
+                **({"budget_model": model} if profile else {}),
             )
         except GatewayError as exc:
             logger.info("automod SafeSearch unavailable (guild %s): %s", guild_id, exc)
@@ -408,26 +450,27 @@ class AutomodImageService:
         except Exception as exc:  # noqa: BLE001
             logger.warning("automod SafeSearch failed (guild %s): %s", guild_id, exc)
             return None
-        await self._guild_share_increment(guild_id)
-        self._stat("safesearch")
+        await self._guild_share_increment(guild_id, profile)
+        self._stat("safesearch_profile" if profile else "safesearch")
         return result.as_dict()
 
-    def _safesearch_cap(self) -> int:
+    def _safesearch_cap(self, model: str = "safe_search") -> int:
         gateway = getattr(self.bot, "gateway", None)
         try:
-            rules = gateway.config.model_rate_limits.get(("google_vision", "safe_search")) or []
+            rules = gateway.config.model_rate_limits.get(("google_vision", model)) or []
             for rule in rules:
                 if rule.name == "rpmo":
                     return int(rule.limit)
         except Exception:  # noqa: BLE001
             pass
-        return ac.SAFESEARCH_MONTHLY_CAP
+        return (ac.PROFILE_SAFESEARCH_MONTHLY_CAP if model == "safe_search_profile"
+                else ac.SAFESEARCH_MONTHLY_CAP)
 
     async def budget_snapshot(self) -> dict:
         """Monthly usage of both Vision features — for ``/mod automod``."""
         gateway = getattr(self.bot, "gateway", None)
         out = {}
-        for model in ("safe_search", "document_text"):
+        for model in ("safe_search", "safe_search_profile", "document_text"):
             try:
                 usage = await gateway.rate_limit_usage("google_vision", model)
             except Exception:  # noqa: BLE001

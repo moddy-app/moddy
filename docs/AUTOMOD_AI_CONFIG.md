@@ -85,6 +85,14 @@ Deleting a config = writing `{}` (that is what the "Delete" button does).
       "exempt_roles": [],
       "exempt_channels": [],
       "scan_all": false             // bool — OCR every image, not only risky ones
+    },
+    "profile": {                    // member profiles: avatar / banner / names
+      "enabled": false,             // run by member events, never by messages
+      "exempt_roles": [],           // int[] — members holding one are not checked
+      "exempt_channels": [],        // int[] — unused (a profile has no channel), keep the shape
+      "avatar": true,               // bool — SafeSearch on the avatar (server avatar wins)
+      "banner": true,               // bool — SafeSearch on the banner (REST, throttled)
+      "pseudo": true                // bool — nickname / display name / username through the AI funnel
     }
   }
 }
@@ -111,8 +119,13 @@ Deleting a config = writing `{}` (that is what the "Delete" button does).
 | `features.image_scam.scan_all` | bool | `false` | OCR every image instead of only the ones the free pre-rules flag as risky. No UI yet (ops/backend-set); the panel preserves it. |
 | `features.<image_*>.exempt_*` | int[] | `[]` | Same shape as `content`. The bot's own panel writes **one** exemption list onto all three features; a dashboard may keep them identical too. |
 
+| `features.profile.enabled` | bool | `false` | Member-profile moderation (avatar, banner, names). Counts as a feature for the "module runs" rule. |
+| `features.profile.avatar` / `.banner` / `.pseudo` | bool | `true` | Which profile checks run. Banners are only checked on join and on any other profile event (Discord emits no reliable event for a banner-only change). |
+| `features.profile.exempt_roles` | int[] | `[]` | Members holding any of these roles are not checked (the bot's panel writes the shared list). `exempt_channels` is kept for the shape, unused. |
+| `sanctions.<profil_*>.action_profil` | string | `hold` (avatar types), `rename_warn` (`profil_pseudo`) | `hold` \| `alert` \| `rename_warn` \| `bareme` — see [AUTOMOD_AI.md §4.4](AUTOMOD_AI.md). |
+
 `features` is an **open map keyed by feature id** (`content`, `image_nsfw`,
-`image_gore`, `image_scam` today): future detectors (anti-link, anti-spam…) will add sibling blocks with the same `{enabled, exempt_roles,
+`image_gore`, `image_scam`, `profile` today): future detectors (anti-link, anti-spam…) will add sibling blocks with the same `{enabled, exempt_roles,
 exempt_channels}` shape. Unknown feature ids are **rejected** by validation, so
 the backend must not invent keys.
 
@@ -275,7 +288,9 @@ refused appeals, shadow-card clicks).
 ```sql
 CREATE TABLE automod_label_items (
     id              UUID PRIMARY KEY,
-    kind            TEXT NOT NULL CHECK (kind IN ('texte','image_scam','image_nsfw','image_gore')),
+    kind            TEXT NOT NULL CHECK (kind IN ('texte','image_scam','image_nsfw','image_gore',
+                                                  'profil_avatar_nsfw','profil_avatar_choquant',
+                                                  'profil_pseudo')),
     motif           TEXT NOT NULL CHECK (motif IN ('sanction','doute','simulation')),
     guild_id        BIGINT NOT NULL,
     channel_id      BIGINT,
@@ -299,10 +314,37 @@ CREATE TABLE automod_label_items (
 );
 ```
 
-`details.sanctions` = `[{guild_id, case_id, author_id, message_id}]` — every bot
-sanction the item (and its duplicates) caused; a "non_sanctionnable" label
-revokes them all. Images are **not** stored here (they live only as a spoilered
+`details.sanctions` = `[{guild_id, case_id, author_id, message_id, hold_kind?}]` —
+every bot sanction the item (and its duplicates) caused; a "non_sanctionnable"
+label revokes them all (and deletes the `automod_profile_holds` row named by
+`hold_kind`). A member-profile item (`profil_*` kinds) has no channel and no
+message: `channel_id` / `message_id` are NULL and `message_id` is null in
+`details.sanctions`. Images are **not** stored here (they live only as a spoilered
 attachment on the team card).
+
+### `automod_profile_holds` — members timed out until they fix their profile
+
+```sql
+CREATE TABLE automod_profile_holds (
+    guild_id      BIGINT NOT NULL,
+    user_id       BIGINT NOT NULL,
+    kind          TEXT NOT NULL CHECK (kind IN ('avatar','banner')),
+    categorie     TEXT,                 -- profil_avatar_nsfw | profil_avatar_choquant
+    asset_key     TEXT,                 -- Discord asset key of the flagged image
+    case_id       UUID,                 -- the case the hold opened
+    sanction_id   UUID,                 -- its MUTE sanction (case_sanctions.id)
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+    timeout_until TIMESTAMPTZ,          -- end of the Discord timeout currently in force
+    PRIMARY KEY (guild_id, user_id, kind)
+);
+CREATE INDEX idx_profile_holds_timeout ON automod_profile_holds (timeout_until);
+```
+
+Written only by the bot (`db/repositories/automod_profiles.py`): created when the
+`hold` profile action times a member out, renewed by the sweep
+(`cogs/automod_profiles.py`) while the profile stays flagged, deleted when the
+profile is fixed, the sanction is revoked (appeal / team label) or the feature is
+switched off.
 
 ### `automod_image_hashes`, `automod_learned_references`, `automod_learned_terms` (global)
 

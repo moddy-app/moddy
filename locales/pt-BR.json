@@ -2010,6 +2010,44 @@
             "desc": "Compartilhar links externos (sites, promoções, produtos) sem relação com a conversa ou não permitidos neste servidor."
           }
         }
+      },
+      "profile": {
+        "kind": {
+          "avatar": "avatar",
+          "banner": "banner",
+          "pseudo": "nome"
+        },
+        "title": "Moderação de perfil",
+        "title_sim": "Moderação de perfil (simulação)",
+        "member": "Membro",
+        "kind_label": "Verificado",
+        "policy": "Política configurada",
+        "judged_name": "Nome julgado",
+        "image_unavailable": "A imagem não está mais disponível.",
+        "action": {
+          "hold": "Castigo até o perfil ser corrigido",
+          "rename_warn": "Redefinir o nome e advertir",
+          "alert": "Somente alerta",
+          "bareme": "Escala de moderação",
+          "warn": "Advertência (o limite do servidor proíbe um castigo)"
+        },
+        "action_rename": "Nome redefinido",
+        "reason_avatar_nsfw": "Conteúdo explícito na foto de perfil",
+        "reason_avatar_gore": "Conteúdo chocante (gore) na foto de perfil",
+        "reason_banner_nsfw": "Conteúdo explícito no banner do perfil",
+        "reason_banner_gore": "Conteúdo chocante (gore) no banner do perfil",
+        "reason_pseudo": "Nome inadequado: {name}",
+        "explication_pseudo": "O nome foi considerado inadequado para este servidor.",
+        "case_reason_hold": "O {kind} precisa ser alterado (castigo até a correção)",
+        "lift_reason": "[Automod] Perfil corrigido",
+        "dm_hold": "Você está de castigo até alterar seu {kind}. O Moddy verifica de novo automaticamente e remove o castigo assim que estiver tudo certo.",
+        "dm_rename": "Seu nome foi redefinido para \"{moderated}\" neste servidor. Escolha outro, por favor.",
+        "moderated_name": "Nome moderado",
+        "note_hold_failed": "O Moddy não conseguiu aplicar o castigo (permissão ausente ou hierarquia de cargos).",
+        "note_rename_failed": "O Moddy não conseguiu redefinir o apelido (permissão ausente ou hierarquia de cargos): somente advertência.",
+        "note_not_displayed": "Este nome não é o exibido neste servidor: somente advertência.",
+        "fixed_title": "Perfil corrigido",
+        "fixed_body": "{user} ({user_id}) alterou seu {kind}: o castigo foi removido."
       }
     },
     "voice_transcription": {
@@ -4974,7 +5012,10 @@
       "texte": "Text",
       "image_scam": "Scam image",
       "image_nsfw": "NSFW image",
-      "image_gore": "Shocking image (gore)"
+      "image_gore": "Shocking image (gore)",
+      "profil_avatar_nsfw": "Foto de perfil (NSFW)",
+      "profil_avatar_choquant": "Foto de perfil (gore)",
+      "profil_pseudo": "Nome de membro"
     },
     "motif": {
       "sanction": "Sanctioned by the bot",
@@ -5035,6 +5076,7 @@
       "empty": "Type at least one term and pick a category.",
       "done_title": "Blocklist updated",
       "done": "{n} term(s) added to `{category}`."
-    }
+    },
+    "name": "Nome"
   }
 }
