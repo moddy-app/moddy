@@ -107,7 +107,8 @@ def render_label_card(row: Dict[str, Any], *, image_filename: Optional[str] = No
         f"- **{_l('channel')}:** <#{row.get('channel_id')}>"
         + (f" · [{_l('jump')}]({details['jump_url']})" if details.get("jump_url") else ""),
         f"- **{_l('why')}:** {why}",
-        f"- **{_l('decision')}:** `{details.get('categorie') or '—'}` · "
+        f"- **{_l('decision')}:** "
+        f"`{details.get('categorie_label') or details.get('categorie') or '—'}` · "
         f"`{details.get('gravite') or '—'}` · {_l('confidence')} `{details.get('confiance') or '—'}` · "
         f"`{details.get('decideur') or '—'}` (`{details.get('signal_source') or '—'}` "
         f"`{details.get('score', 0)}`)",

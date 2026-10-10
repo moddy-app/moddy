@@ -62,6 +62,9 @@ _DEFAULT_CONFIG = {
     "categories_desactivees": [],
     # Per-infraction policy (automod/infractions.py). No UI yet: carried through.
     "sanctions": {},
+    # Server-defined infractions (automod/custom_infractions.py). No UI yet:
+    # carried through so a Save from this panel never wipes them.
+    "infractions_perso": [],
     "dry_run": False,
     "features": {
         "content": {"enabled": False, "exempt_roles": [], "exempt_channels": []},
@@ -97,6 +100,7 @@ def _deep_default(current: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         str(c) for c in (current.get("categories_desactivees", []) or [])
     ]
     cfg["sanctions"] = copy.deepcopy(current.get("sanctions") or {})
+    cfg["infractions_perso"] = copy.deepcopy(current.get("infractions_perso") or [])
     cfg["dry_run"] = bool(current.get("dry_run", False))
     features = current.get("features", {}) or {}
     content = features.get("content", {}) or {}

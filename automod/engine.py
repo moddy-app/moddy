@@ -38,9 +38,9 @@ import logging
 import time
 import uuid
 from datetime import datetime, timezone
-from typing import Awaitable, Callable, Dict, List, Optional, Set, Tuple
+from typing import Awaitable, Callable, Dict, List, Optional, Sequence, Set, Tuple
 
-from . import constants, nano, precedents as ap, routing, scam_anchors
+from . import constants, custom_infractions as ci, nano, precedents as ap, routing, scam_anchors
 from .blocklist import get_blocklist
 from .cache import MISS, LruTtlCache
 from .embeddings import EmbeddingEngine, _retrieve_result
@@ -198,8 +198,17 @@ class AutomodEngine:
         channel_id: Optional[int] = None,
         relation_fn: Optional[RelationFn] = None,
         precedents_fn: Optional[PrecedentsFn] = None,
+        custom_infractions: Sequence[dict] = (),
     ) -> Optional[Decision]:
         """Run a message through the funnel and return a Decision or None.
+
+        ``custom_infractions`` (optional) is the guild's normalised
+        ``infractions_perso`` list (``automod/custom_infractions.py``). When
+        non-empty, a keyword hit or an embedding match against the guild's own
+        descriptions/examples also routes the message to nano (``SOURCE_PERSO``),
+        nano may answer ``infraction_perso`` with a P-id, and the verdict is
+        mapped back to ``perso:<id>``. Empty (the default) == the exact
+        pre-existing behaviour, prompt included.
 
         ``force_nano`` short-circuits the detectors and sends the message
         straight to nano with ``source=signalé_par_nano`` — used by the caller
@@ -227,6 +236,7 @@ class AutomodEngine:
                         if getattr(target, "origine", ORIGINE_TEXTE) == ORIGINE_TEXTE
                         else None),
             relation_fn=relation_fn, precedents_fn=precedents_fn,
+            custom_infractions=tuple(custom_infractions or ()),
         )
         if isinstance(decision, Decision):
             stamp_origin(decision, target)
@@ -251,6 +261,7 @@ class AutomodEngine:
         channel_id: Optional[int],
         relation_fn: Optional[RelationFn],
         precedents_fn: Optional[PrecedentsFn],
+        custom_infractions: Sequence[dict] = (),
     ) -> Optional[Decision]:
         correlation_id = str(uuid.uuid4())
         severity = constants.clamp_severity(severity)
@@ -267,6 +278,7 @@ class AutomodEngine:
                 fetch_context=fetch_context, correlation_id=correlation_id,
                 severity=severity, response_language=response_language,
                 relation_fn=relation_fn, precedents_fn=precedents_fn,
+                custom_infractions=custom_infractions,
             )
 
         # Buffer this message for the aggregation window BEFORE routing, so a
@@ -275,7 +287,8 @@ class AutomodEngine:
             await self._agg_push(guild_id, channel_id, target)
 
         signal = await self._route_message(
-            target.content, is_bot=is_bot, is_system=is_system, severity=severity)
+            target.content, is_bot=is_bot, is_system=is_system, severity=severity,
+            custom_infractions=custom_infractions)
 
         if signal is not None:
             # Reached nano on its own → mark it judged so the aggregate skips it.
@@ -288,6 +301,7 @@ class AutomodEngine:
                 fetch_context=fetch_context, correlation_id=correlation_id,
                 severity=severity, response_language=response_language,
                 relation_fn=relation_fn, precedents_fn=precedents_fn,
+                custom_infractions=custom_infractions,
             )
 
         # Stopped before nano → try the fragmented-harassment aggregate.
@@ -297,6 +311,7 @@ class AutomodEngine:
                 guild_name=guild_name, rules=rules, author_history=author_history,
                 fetch_context=fetch_context, correlation_id=correlation_id,
                 severity=severity, response_language=response_language,
+                custom_infractions=custom_infractions,
             )
         return None
 
@@ -304,22 +319,51 @@ class AutomodEngine:
 
     async def _route_message(
         self, content: str, *, is_bot: bool, is_system: bool, severity: int,
+        custom_infractions: Sequence[dict] = (),
     ) -> Optional[Signal]:
         """Steps 1–4 for a single message. Returns the nano-routing Signal or None."""
-        # Step 1 — pre-filter.
+        # Step 1 — pre-filter (bot / system / empty: never analysed, custom or not).
         if not pre_filter(content, is_bot=is_bot, is_system=is_system):
             return None
-        # Step 2 — trivial allowlist.
+        # Step 2 — trivial allowlist. A trivial interjection ("ok", "lol") is
+        # never worth an embedding, so custom SIMILARITY routing does not run on
+        # it; but a server-authored KEYWORD is an explicit instruction ("lol" can
+        # be a spoiler tag, "gg" a banned term…), so keywords still get a look.
         if est_trivial(content):
-            return None
-        return await self._route_semantic(content, severity)
+            return self._route_custom_keywords(content, custom_infractions)
+        return await self._route_semantic(content, severity, custom_infractions)
 
-    async def _route_semantic(self, content: str, severity: int) -> Optional[Signal]:
+    @staticmethod
+    def _route_custom_keywords(
+        content: str, custom_infractions: Sequence[dict],
+    ) -> Optional[Signal]:
+        """Signal for a custom-infraction keyword hit (pure, free), else None."""
+        if not custom_infractions:
+            return None
+        perso_id = ci.match_keywords(content, custom_infractions)
+        if perso_id is None:
+            return None
+        return Signal(
+            source=constants.SOURCE_PERSO,
+            categorie=f"{ci.PERSO_PREFIX}{perso_id}",
+            score_confiance=constants.PERSO_KEYWORD_SCORE,
+        )
+
+    async def _route_semantic(
+        self, content: str, severity: int,
+        custom_infractions: Sequence[dict] = (),
+    ) -> Optional[Signal]:
         """Steps 3–4 only (regex blocklist + scam anchors + embedding). Shared
         with aggregation.
 
         The aggregate path reuses exactly these two cheap steps on the
         concatenation, skipping the (single-message) pre-filter / trivial guards.
+
+        With ``custom_infractions`` the guild's own infractions are tried AFTER
+        every global signal (a global harmful hit keeps priority and its
+        category): keywords first (free), then similarity against the guild's
+        custom references using the SAME message vector the global score already
+        computed — no extra embedding call per message.
         """
         # Step 3 — regex blocklist.
         entry = self.blocklist.match(content)
@@ -339,6 +383,13 @@ class AutomodEngine:
                 categorie="arnaque_scam",
                 score_confiance=min(0.5 + anchors.score / 10.0, 0.95),
             )
+        # Step 3ter — the guild's custom-infraction keywords (free).
+        if custom_infractions:
+            hit = self._route_custom_keywords(content, custom_infractions)
+            if hit is not None:
+                return hit
+            return await self._route_embedding_with_custom(
+                content, severity, custom_infractions)
         # Step 4 — embedding (threshold scales with severity).
         if not await self.ensure_ready():
             return None  # graceful degradation: embeddings unavailable
@@ -353,6 +404,48 @@ class AutomodEngine:
             source=constants.SOURCE_EMBEDDING,
             categorie=categorie,
             score_confiance=score,
+        )
+
+    async def _route_embedding_with_custom(
+        self, content: str, severity: int, custom_infractions: Sequence[dict],
+    ) -> Optional[Signal]:
+        """Step 4 for a guild with custom infractions.
+
+        Same global scoring as the plain path (and it wins when it passes), then
+        the message vector — reused, never recomputed — is compared with the
+        guild's custom reference vectors. Custom routing is best-effort: any
+        failure there degrades to "no custom signal", never to an error.
+        """
+        vector = None
+        if await self.ensure_ready():
+            triple = await self.embeddings.score_with_vector(content)
+            if triple is None:
+                return None
+            score, categorie, vector = triple
+            if EmbeddingEngine.passes_threshold(
+                    score, constants.embedding_threshold_for(severity)):
+                return Signal(
+                    source=constants.SOURCE_EMBEDDING,
+                    categorie=categorie,
+                    score_confiance=score,
+                )
+        else:
+            vector = await self.embeddings.embed_query(content)
+        if vector is None:
+            return None
+        try:
+            references = await self.embeddings.custom_references(custom_infractions)
+        except Exception as e:  # noqa: BLE001 — custom routing is best-effort
+            logger.warning("automod: custom reference embedding failed: %s", e)
+            return None
+        best = EmbeddingEngine.best_custom_match(vector, references)
+        if best is None or best[0] < constants.perso_threshold_for(severity):
+            return None
+        sim, perso_id = best
+        return Signal(
+            source=constants.SOURCE_PERSO,
+            categorie=f"{ci.PERSO_PREFIX}{perso_id}",
+            score_confiance=sim,
         )
 
     # -- Decision (budget gate + verdict cache + nano) ---------------------
@@ -373,6 +466,7 @@ class AutomodEngine:
         agregat_de: Optional[List[str]] = None,
         relation_fn: Optional[RelationFn] = None,
         precedents_fn: Optional[PrecedentsFn] = None,
+        custom_infractions: Sequence[dict] = (),
     ) -> Optional[Decision]:
         """Turn a routing Signal into a Decision, spending at most one nano call.
 
@@ -386,7 +480,8 @@ class AutomodEngine:
         be shared with, or reused by, another message of the same text.
         """
         key = self._verdict_key(guild_id, target.content,
-                                getattr(target, "origine", ORIGINE_TEXTE))
+                                getattr(target, "origine", ORIGINE_TEXTE),
+                                ci.fingerprint(custom_infractions))
         cacheable = relation_fn is None
 
         if cacheable:
@@ -454,7 +549,7 @@ class AutomodEngine:
             correlation_id=correlation_id, severity=severity,
             response_language=response_language, agregat_de=agregat_de,
             relation=relation, cacheable=cacheable, niveau=niveau,
-            precedents=precedents_payload,
+            precedents=precedents_payload, custom_infractions=custom_infractions,
         )
 
     @staticmethod
@@ -480,6 +575,7 @@ class AutomodEngine:
         cacheable: bool = True,
         niveau: str = constants.DIFFICULTE_EVIDENT,
         precedents: Optional[List[dict]] = None,
+        custom_infractions: Sequence[dict] = (),
     ) -> Optional[Decision]:
         """Real decision call, wrapped in single-flight + cache-fill + budget count.
 
@@ -500,7 +596,7 @@ class AutomodEngine:
                 fetch_context=fetch_context, correlation_id=correlation_id,
                 severity=severity, response_language=response_language,
                 agregat_de=agregat_de, relation=relation, niveau=niveau,
-                precedents=precedents,
+                precedents=precedents, custom_infractions=custom_infractions,
             )
         except BaseException as exc:  # propagate to caller and any waiters
             if future is not None:
@@ -540,6 +636,7 @@ class AutomodEngine:
         relation: Optional[dict] = None,
         niveau: str = constants.DIFFICULTE_EVIDENT,
         precedents: Optional[List[dict]] = None,
+        custom_infractions: Sequence[dict] = (),
     ) -> Decision:
         # Session 6: an ``ambigu`` message is routed to the smarter, pricier mini
         # (same v2 contract, ×2 context); ``evident`` stays on nano. The Decision
@@ -569,6 +666,7 @@ class AutomodEngine:
             precedents=precedents,
             contexte_initial=routing.contexte_initial_for(niveau),
             decideur=decideur,
+            custom_infractions=custom_infractions,
         )
 
     # -- Server precedents (session 7) -------------------------------------
@@ -636,6 +734,7 @@ class AutomodEngine:
         fetch_context: ContextFn,
         response_language: str = "English",
         correlation_id: Optional[str] = None,
+        custom_infractions: Sequence[dict] = (),
     ) -> Tuple[bool, str]:
         """Binary mini senior review of a heavy nano decision (§6.3).
 
@@ -657,10 +756,18 @@ class AutomodEngine:
             "gravite": decision.gravite,
             "citation": decision.citation,
         }
+        # A custom infraction is opaque to the reviewer (`perso:<id>`): hand it
+        # the server-authored definition it was judged against.
+        perso_definition = ""
+        entry = (ci.find(custom_infractions, decision.categorie)
+                 if (decision.categorie or "").startswith(ci.PERSO_PREFIX) else None)
+        if entry is not None:
+            perso_definition = f"{entry.get('nom', '')}: {entry.get('description', '')}"
         result = await nano.confirmer(
             target, verdict_junior,
             chat_fn=chat_fn, fetch_context=fetch_context,
             response_language=response_language,
+            perso_definition=perso_definition,
         )
         await self._budget_increment(guild_id, constants.MINI_BUDGET_WEIGHT)
         self._budget_calls += 1
@@ -669,17 +776,22 @@ class AutomodEngine:
     # -- Verdict cache helpers ---------------------------------------------
 
     def _verdict_key(self, guild_id: int, content: str,
-                     origine: str = ORIGINE_TEXTE) -> str:
+                     origine: str = ORIGINE_TEXTE, custom_fp: str = "") -> str:
         """Per-guild cache key over the collapsed/normalised message text.
 
         Collapsing runs before hashing so a padded/re-cased copypasta shares one
         entry; the guild id keeps guidance/severity differences from colliding.
         The content origin is part of the key: OCR text read off an image is
         judged with its own prompt block, so it never shares a verdict with an
-        identical typed message.
+        identical typed message. ``custom_fp`` (the fingerprint of the guild's
+        custom infractions, ``""`` when it has none) is part of the key too: a
+        verdict qualified before a server added or edited an infraction must not
+        be served after. With no custom infractions the key is unchanged.
         """
         collapsed = collapse_repeats(content) or content
         raw = f"{guild_id}\x00{collapsed}"
+        if custom_fp:
+            raw = f"{custom_fp}\x00{raw}"
         if origine != ORIGINE_TEXTE:
             raw = f"{origine}\x00{raw}"
         return hashlib.sha256(raw.encode("utf-8")).hexdigest()
@@ -808,6 +920,10 @@ class AutomodEngine:
             threshold = constants.embedding_threshold_for(severity)
             if signal.score_confiance >= threshold + constants.NANO_DEGRADED_SCORE_MARGIN:
                 return True
+        if signal.source == constants.SOURCE_PERSO:
+            threshold = constants.perso_threshold_for(severity)
+            if signal.score_confiance >= threshold + constants.NANO_DEGRADED_SCORE_MARGIN:
+                return True
         return False
 
     def _roll_budget_day(self) -> str:
@@ -922,6 +1038,7 @@ class AutomodEngine:
         correlation_id: str,
         severity: int,
         response_language: str,
+        custom_infractions: Sequence[dict] = (),
     ) -> Optional[Decision]:
         """Re-route the author's recent fragments as one concatenated message.
 
@@ -943,7 +1060,7 @@ class AutomodEngine:
             return None  # a fragment already reached nano on its own → skip
 
         concat = "\n".join(str(o.get("c", "")) for o in items)
-        signal = await self._route_semantic(concat, severity)
+        signal = await self._route_semantic(concat, severity, custom_infractions)
         if signal is None:
             return None
 
@@ -958,6 +1075,7 @@ class AutomodEngine:
             rules=rules, author_history=author_history, fetch_context=fetch_context,
             correlation_id=correlation_id, severity=severity,
             response_language=response_language, agregat_de=frag_ids,
+            custom_infractions=custom_infractions,
         )
 
 

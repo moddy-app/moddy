@@ -1982,6 +1982,34 @@
         "body": "A equipe Moddy revisou a decisão do automod sobre {user} ({user_id}) e a considerou injustificada. A sanção do caso {case_ref} foi revogada (uma mensagem apagada não pode ser restaurada).",
         "dm_title": "Sua sanção foi retirada",
         "dm_body": "A equipe Moddy revisou a sanção automática que você recebeu em **{guild}** e a considerou injustificada: ela foi revogada. Desculpe pelo transtorno."
+      },
+      "custom": {
+        "templates": {
+          "pub_serveur": {
+            "name": "Divulgação de servidores",
+            "desc": "Promover outro servidor do Discord, um canal ou um projeto pessoal: convites, \"entre no meu servidor\", autopromoção não solicitada."
+          },
+          "spoilers": {
+            "name": "Spoilers",
+            "desc": "Revelar o enredo ou o final de uma obra (filme, série, jogo, livro) fora do canal ou das tags de spoiler."
+          },
+          "politique_religion": {
+            "name": "Política e religião",
+            "desc": "Debates, propaganda ou posicionamentos políticos ou religiosos que não são bem-vindos neste servidor."
+          },
+          "demande_dm": {
+            "name": "Pedidos no privado",
+            "desc": "Solicitações indesejadas por mensagem privada: pedir para conversar no privado, oferecer ou pedir fotos ou conteúdo privado (nudes)."
+          },
+          "langue": {
+            "name": "Idioma do servidor",
+            "desc": "Mensagens escritas em um idioma diferente do servidor, fora dos canais destinados a outros idiomas."
+          },
+          "liens": {
+            "name": "Links externos",
+            "desc": "Compartilhar links externos (sites, promoções, produtos) sem relação com a conversa ou não permitidos neste servidor."
+          }
+        }
       }
     },
     "voice_transcription": {

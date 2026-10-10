@@ -52,8 +52,11 @@ def test_flags_derived():
 
 
 def test_nano_categories_unchanged_and_in_catalogue():
-    assert set(ac.CATEGORIES) == set(LEGACY_PLANCHER)
-    assert all(c in inf.INFRACTIONS for c in ac.CATEGORIES)
+    # "infraction_perso" is nano's opaque marker for a server-defined infraction
+    # (resolved to ``perso:<id>`` by the engine): the only non-catalogue entry.
+    cats = set(ac.CATEGORIES) - {ac.CATEGORIE_PERSO}
+    assert cats == set(LEGACY_PLANCHER)
+    assert all(c in inf.INFRACTIONS for c in cats)
     assert not any(c.startswith("profil_") for c in ac.CATEGORIES)
 
 

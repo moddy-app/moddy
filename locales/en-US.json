@@ -1982,6 +1982,34 @@
         "body": "The Moddy team reviewed the automod decision about {user} ({user_id}) and found it unjustified. The sanction of case {case_ref} was revoked (a deleted message cannot be restored).",
         "dm_title": "Your sanction was lifted",
         "dm_body": "The Moddy team reviewed the automatic sanction you received on **{guild}** and found it unjustified: it has been revoked. Sorry for the trouble."
+      },
+      "custom": {
+        "templates": {
+          "pub_serveur": {
+            "name": "Server advertising",
+            "desc": "Promoting another Discord server, channel or personal project: invites, \"join my server\", unsolicited self-promotion."
+          },
+          "spoilers": {
+            "name": "Spoilers",
+            "desc": "Revealing the plot or ending of a work (movie, show, game, book) outside the spoiler channel or spoiler tags."
+          },
+          "politique_religion": {
+            "name": "Politics and religion",
+            "desc": "Political or religious debates, propaganda or stances that are not welcome on this server."
+          },
+          "demande_dm": {
+            "name": "DM requests",
+            "desc": "Unwanted private-message solicitations: asking to talk in DMs, offering or requesting private photos or content (nudes)."
+          },
+          "langue": {
+            "name": "Server language",
+            "desc": "Messages written in a language other than the server's, outside the channels meant for other languages."
+          },
+          "liens": {
+            "name": "External links",
+            "desc": "Sharing external links (websites, promotions, products) unrelated to the conversation or not allowed on this server."
+          }
+        }
       }
     },
     "voice_transcription": {

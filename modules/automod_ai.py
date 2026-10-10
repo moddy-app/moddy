@@ -27,6 +27,7 @@ Config (stored in ``guilds.data.modules.automod``)::
       "max_action": "ban",              # barème hard ceiling: warn|mute|ban
       "categories_desactivees": [],      # LEGACY kill-switch (read, migrated into "sanctions")
       "sanctions": {},                   # per-infraction policy (automod/infractions.py)
+      "infractions_perso": [],           # server-defined infractions (automod/custom_infractions.py)
       "features": {
         "content": {
           "enabled": true,
@@ -61,6 +62,7 @@ from automod import (
 from automod import constants as ac
 from automod import bareme as ab
 from automod import infractions
+from automod import custom_infractions
 from automod import image_policy as aip
 from automod import relations as ar
 from automod import scam_anchors
@@ -68,6 +70,7 @@ from automod.schemas import (
     ImageMeta, ORIGINE_IMAGE_HASH, ORIGINE_IMAGE_NSFW, ORIGINE_IMAGE_OCR,
 )
 from utils import global_sanctions
+from utils.automod_render import infraction_label, label_in_text
 from utils.i18n import t
 from utils.members import get_or_fetch_member
 from utils.moderation_cases import IssuerType, SanctionAction, EventType, AuthorType
@@ -148,7 +151,10 @@ class ContentModerationFeature(AutomodFeature):
         # Skip the embedding step for very short content (blocklist already
         # covers explicit short insults) to save API calls.
         content = message.content or ""
-        if len(content.strip()) < _MIN_EMBED_LENGTH and engine.blocklist.match(content) is None:
+        custom = self.module.infractions_perso
+        if (len(content.strip()) < _MIN_EMBED_LENGTH
+                and engine.blocklist.match(content) is None
+                and custom_infractions.match_keywords(content, custom) is None):
             return decisions
 
         target = TargetMessage(
@@ -176,6 +182,10 @@ class ContentModerationFeature(AutomodFeature):
             # Session 7: server precedents — match this message against the
             # guild's past human rulings (learned local culture).
             precedents_fn=self.module.make_precedents_provider(),
+            # The server's own infraction types (keywords + similarity routing,
+            # nano P-ids). The OCR path below deliberately does not get them:
+            # image text is only read for the scam pre-rules, not for rules.
+            custom_infractions=custom,
         )
         if decision is not None:
             decisions.append(decision)
@@ -217,6 +227,7 @@ class ContentModerationFeature(AutomodFeature):
                 force_nano=True,   # already flagged → straight to nano
                 severity=self.module.severity,
                 response_language=self.module.response_language(origin.guild),
+                custom_infractions=self.module.infractions_perso,
             )
             # Do NOT recurse into this decision's a_reverifier (one level only).
             if decision is not None:
@@ -525,6 +536,10 @@ class AutomodModule(ModuleBase):
         #: Normalised per-infraction policy (``sanctions`` config key), with the
         #: legacy ``categories_desactivees`` already folded in.
         self.sanctions: Dict[str, dict] = {}
+        #: Normalised server-defined infractions (``infractions_perso`` config
+        #: key). Passed to the content funnel; ``sanctions["perso:<id>"]`` keys
+        #: that no longer point at one of them are dropped on load.
+        self.infractions_perso: List[dict] = []
         # Shadow mode (session 3): run the full funnel but apply nothing — post a
         # SIMULATION card with annotation buttons instead of sanctioning.
         self.dry_run: bool = False
@@ -548,7 +563,17 @@ class AutomodModule(ModuleBase):
             self.max_action = max_action if max_action in ("warn", "mute", "ban") else "ban"
             raw_sanctions = self.config.get("sanctions")
             legacy = [str(c) for c in (self.config.get("categories_desactivees", []) or [])]
+            self.infractions_perso = custom_infractions.normalize(
+                self.config.get("infractions_perso"))
+            # An empty registry accepts any well-formed perso id in
+            # ``normalize_sanctions``; the module wants orphans dropped instead.
             norm = infractions.normalize_sanctions(raw_sanctions)
+            known_perso = set(custom_infractions.ids(self.infractions_perso))
+            norm = {
+                cat: entry for cat, entry in norm.items()
+                if not infractions.is_perso(cat)
+                or infractions.perso_id(cat) in known_perso
+            }
             self.sanctions = infractions.merge_legacy_disabled(norm, legacy, raw_sanctions)
             # An explicit ``sanctions[cat].enabled`` wins over the legacy list.
             explicit = raw_sanctions if isinstance(raw_sanctions, dict) else {}
@@ -601,6 +626,14 @@ class AutomodModule(ModuleBase):
         if sanctions_err:
             return False, f"Barème personnalisé invalide ({sanctions_err})"
 
+        perso_err = custom_infractions.validate(config_data.get("infractions_perso"))
+        if perso_err:
+            return False, f"Infractions personnalisées invalides ({perso_err})"
+        known = set(custom_infractions.ids(config_data.get("infractions_perso") or []))
+        for cat in (config_data.get("sanctions") or {}):
+            if infractions.is_perso(cat) and infractions.perso_id(cat) not in known:
+                return False, f"Barème d'une infraction personnalisée inconnue ({cat})"
+
         features_cfg = config_data.get("features", {}) or {}
         for fid in features_cfg:
             if fid not in FEATURE_CLASSES:
@@ -617,6 +650,7 @@ class AutomodModule(ModuleBase):
             "max_action": "ban",
             "categories_desactivees": [],
             "sanctions": {},
+            "infractions_perso": [],
             "dry_run": False,
             "features": {
                 "content": {
@@ -1030,6 +1064,7 @@ class AutomodModule(ModuleBase):
                 guild_id=self.guild_id,
                 fetch_context=self.make_context_loader(message),
                 response_language=self.response_language(message.guild),
+                custom_infractions=self.infractions_perso,
             )
         except Exception as e:
             logger.error("automod: heavy-sanction confirmation failed: %s", e)
@@ -1057,7 +1092,8 @@ class AutomodModule(ModuleBase):
                 amount = t("modules.automod_ai.bareme.cran", locale=locale, n=c.delta)
             else:
                 amount = f"{'+' if c.delta >= 0 else ''}{c.delta}"
-            detail = f" ({c.detail})" if c.detail else ""
+            detail = (f" ({label_in_text(c.detail, locale, self.infractions_perso)})"
+                      if c.detail else "")
             lines.append(f"- {label}{detail} · {amount}")
         return "\n".join(lines)
 
@@ -1145,6 +1181,10 @@ class AutomodModule(ModuleBase):
                 message=message, decision=decision, motif=motif, bareme=bareme,
                 case_id=case_id, applied=applied or [],
                 judged_text=self._judged_text(message, decision),
+                # The team panel is English; a custom infraction is shown by
+                # the server's own name instead of an opaque `perso:<id>`.
+                categorie_label=infraction_label(
+                    decision.categorie, "en-US", self.infractions_perso),
             )
         except Exception as e:  # noqa: BLE001
             logger.warning("automod: labeling enqueue failed (guild %s): %s", self.guild_id, e)
@@ -1341,11 +1381,14 @@ class AutomodModule(ModuleBase):
             return None, None, None, None  # deletion-only: no case folder
 
         # Factual reason (issuer already identifies automod — no "[Automod]" noise).
-        case_reason = (decision.raison or decision.categorie or "Message problématique")[:480]
+        # A custom infraction shows its server-authored name, never the raw id.
+        categorie_label = infraction_label(
+            decision.categorie, self.guild_locale(message.guild), self.infractions_perso)
+        case_reason = (decision.raison or categorie_label or "Message problématique")[:480]
         # An aggregate decision judged the concatenation of several fragments;
         # show that combined text as the evidence extract.
         extrait = self._judged_text(message, decision)[:1500]
-        note = f"Automod · {decision.categorie} · {decision.gravite}"
+        note = f"Automod · {categorie_label} · {decision.gravite}"
 
         case_ref = case_id = None
         primary_action = None
@@ -1391,7 +1434,7 @@ class AutomodModule(ModuleBase):
                 f"Message de <@{decision.auteur_id}> (`{decision.auteur_id}`) dans "
                 f"<#{message.channel.id}> :\n"
                 f"> {extrait or '*(vide)*'}\n\n"
-                f"Détection : `{decision.signal_source}` · catégorie `{decision.categorie}` "
+                f"Détection : `{decision.signal_source}` · catégorie `{categorie_label}` "
                 f"· gravité `{decision.gravite}` · score `{decision.score_detecteur:.2f}` "
                 f"· confiance `{decision.confiance}`"
                 + (f"\n[Aller au message]({jump})" if jump else "")
@@ -1417,6 +1460,7 @@ class AutomodModule(ModuleBase):
                         "cible": decision.cible,
                         "signal_source": decision.signal_source,
                         "categorie": decision.categorie,
+                        "categorie_label": categorie_label,
                         "gravite": decision.gravite,
                         "score_detecteur": round(decision.score_detecteur, 4),
                         "confiance": decision.confiance,
@@ -1433,7 +1477,10 @@ class AutomodModule(ModuleBase):
                             "cran": bareme.cran,
                             "points_recidive": round(bareme.points_recidive, 2),
                             "bareme": [
-                                {"code": c.code, "delta": c.delta, "detail": c.detail}
+                                {"code": c.code, "delta": c.delta,
+                                 "detail": label_in_text(
+                                     c.detail, self.guild_locale(message.guild),
+                                     self.infractions_perso)}
                                 for c in bareme.composantes
                             ],
                         } if bareme is not None else {}),
@@ -1563,6 +1610,8 @@ class AutomodModule(ModuleBase):
         verdict_payload = {
             "sanctionnable": True,
             "categorie": decision.categorie,
+            "categorie_label": infraction_label(
+                decision.categorie, locale, self.infractions_perso),
             "gravite": decision.gravite,
             "confiance": decision.confiance,
             "citation": decision.citation,
@@ -1588,7 +1637,8 @@ class AutomodModule(ModuleBase):
             "actions": list(bareme.actions),
             "points_recidive": round(bareme.points_recidive, 2),
             "composantes": [
-                {"code": c.code, "delta": c.delta, "detail": c.detail}
+                {"code": c.code, "delta": c.delta,
+                 "detail": label_in_text(c.detail, locale, self.infractions_perso)}
                 for c in bareme.composantes
             ],
         }

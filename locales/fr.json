@@ -1981,6 +1981,34 @@
         "body": "L'équipe Moddy a vérifié la décision de l'automod concernant {user} ({user_id}) et l'a jugée injustifiée. La sanction du dossier {case_ref} a été révoquée (un message supprimé ne peut pas être restauré).",
         "dm_title": "Ta sanction a été levée",
         "dm_body": "L'équipe Moddy a vérifié la sanction automatique que tu as reçue sur **{guild}** et l'a jugée injustifiée : elle a été révoquée. Désolé pour la gêne occasionnée."
+      },
+      "custom": {
+        "templates": {
+          "pub_serveur": {
+            "name": "Publicité pour un serveur",
+            "desc": "Promotion d'un autre serveur Discord, d'une chaîne ou d'un projet personnel : invitations, « rejoignez mon serveur », autopromotion non sollicitée."
+          },
+          "spoilers": {
+            "name": "Spoilers",
+            "desc": "Révéler l'intrigue ou la fin d'une œuvre (film, série, jeu, livre) en dehors du salon ou des balises prévues pour les spoilers."
+          },
+          "politique_religion": {
+            "name": "Politique et religion",
+            "desc": "Débats, propagande ou prises de position politiques ou religieuses qui ne sont pas les bienvenues sur ce serveur."
+          },
+          "demande_dm": {
+            "name": "Demandes en MP",
+            "desc": "Sollicitations non désirées en messages privés : demander à parler en MP, proposer ou réclamer des photos ou du contenu privé (nudes)."
+          },
+          "langue": {
+            "name": "Langue du serveur",
+            "desc": "Messages écrits dans une autre langue que celle du serveur, en dehors des salons prévus pour d'autres langues."
+          },
+          "liens": {
+            "name": "Liens externes",
+            "desc": "Partage de liens externes (sites, promotions, produits) sans rapport avec la discussion ou non autorisés sur ce serveur."
+          }
+        }
       }
     },
     "voice_transcription": {

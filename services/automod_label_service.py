@@ -37,6 +37,7 @@ import discord
 
 import config
 from automod import constants as ac
+from automod import infractions
 from automod.image_hash import (
     KIND_GORE, KIND_NSFW, KIND_SCAM, VERDICT_ALLOW, VERDICT_BLOCK, from_hex,
 )
@@ -88,7 +89,8 @@ def dedup_key(kind: str, *, phash: str = "", text: str = "", guild_id: int = 0) 
 
 
 def build_details(decision, *, motif: str, bareme=None, applied: List[str],
-                  guild_name: str = "", case_id=None, message=None) -> Dict[str, Any]:
+                  guild_name: str = "", case_id=None, message=None,
+                  categorie_label: str = "") -> Dict[str, Any]:
     """The JSON snapshot stored on the item (what the card renders)."""
     details: Dict[str, Any] = {
         "guild_name": guild_name,
@@ -96,6 +98,11 @@ def build_details(decision, *, motif: str, bareme=None, applied: List[str],
         "doute": getattr(decision, "doute", None),
         "sanctionnable": bool(decision.sanctionnable),
         "categorie": decision.categorie,
+        # Human name of a server-defined infraction (server-authored text); empty
+        # for the built-in categories, which the card prints as-is.
+        "categorie_label": (categorie_label
+                            if categorie_label and categorie_label != decision.categorie
+                            else ""),
         "gravite": decision.gravite,
         "confiance": decision.confiance,
         "raison": decision.raison,
@@ -159,7 +166,7 @@ class AutomodLabelService:
 
     async def enqueue(self, *, message: discord.Message, decision, motif: str,
                       bareme=None, case_id=None, applied: Optional[List[str]] = None,
-                      judged_text: str = "") -> Optional[str]:
+                      judged_text: str = "", categorie_label: str = "") -> Optional[str]:
         """Copy one decision to the team queue. Returns the item id (or None)."""
         db = getattr(self.bot, "db", None)
         channel = self._channel()
@@ -173,7 +180,7 @@ class AutomodLabelService:
         details = build_details(
             decision, motif=motif, bareme=bareme, applied=applied or [],
             guild_name=message.guild.name if message.guild else "",
-            case_id=case_id, message=message,
+            case_id=case_id, message=message, categorie_label=categorie_label,
         )
 
         # Whether the card will carry the image (it is re-uploaded from the
@@ -396,6 +403,10 @@ class AutomodLabelService:
                               added_by: Optional[int] = None) -> str:
         """Embed ``text`` and add it as a learned reference ("added" /
         "duplicate" / "unavailable")."""
+        if infractions.is_perso(categorie):
+            # A server's own infraction is private to that server: it must never
+            # become a global learned reference that routes messages everywhere.
+            return "skipped"
         engine = self._engine()
         vector = await engine.embeddings.embed_query(text[:ac.PREFILTRE_MAX_CHARS])
         if vector is None:

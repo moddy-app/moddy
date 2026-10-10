@@ -506,6 +506,44 @@ a wrong precedent can always be purged (it also busts the service cache).
 
 ---
 
+## 2sexies. Custom (server-defined) infractions (`automod/custom_infractions.py`)
+
+A server declares its own infraction types in `infractions_perso` (max 10):
+`{id [a-z0-9]{1,12}, nom <=40, description <=300, exemples <=5x200, mots_cles <=20x60, modele}`.
+Downstream the category is `perso:<id>`; its sanction is `sanctions["perso:<id>"]`
+(§2bis). Orphan `perso:*` sanctions are dropped on load and rejected by
+`validate_config`. `indications` is untouched.
+
+- **Routing, zero extra embedding call.** In `_route_semantic`, AFTER the regex
+  blocklist and scam anchors (a global hit keeps priority): (1) keyword match
+  (`match_keywords`, same accent/leet/repeat/separator tolerance as the blocklist;
+  URL fragments like `discord.gg/` match literally, also with whitespace evasion)
+  -> `Signal(SOURCE_PERSO, score=PERSO_KEYWORD_SCORE)`; (2) similarity: the message
+  vector the global score already computed (`EmbeddingEngine.score_with_vector`)
+  is compared with the guild's custom reference vectors (description + examples,
+  embedded once per content digest, shared across guilds with identical text) at
+  `perso_threshold_for(severity)` (0.50 at severity 3, shifted like the global
+  threshold). A guild without custom infractions takes the exact old code path.
+- **Pre-filter / trivial.** Bots, system and empty messages never route. A trivial
+  interjection ("lol") is never embedded, but a server keyword still routes it.
+  Aggregation (fragmented messages) also uses custom routing. The OCR image path
+  does not.
+- **nano.** Only when the guild has custom infractions, a block after the
+  indications lists them as `[P1] <fenced nom: description>` (opaque ids, real ids
+  never shown, nano still judges cold and is not told which one routed). nano
+  answers `"categorie": "infraction_perso", "perso": "P<n>"`; `validate_grounding`
+  rejects an unknown P-id (`grounding_perso_inconnu`); `juger` maps it to
+  `perso:<id>`. No victim is required. The prompt is byte-identical without custom
+  infractions.
+- **Caches.** The verdict-cache key includes `custom_infractions.fingerprint`.
+- **Safety.** `rules_check.validate_custom_infraction` (also
+  `POST /automod/rules_check` with `{"guild_id", "infraction": {...}}`) runs the AI
+  injection guard over nom + description + exemples; unmodified Moddy templates
+  (`TEMPLATES`, `from_template`) are trusted. Fails closed.
+- **Rendering.** `utils/automod_render.infraction_label` shows the infraction's
+  `nom` (sanitised) on cases, evidence, barème breakdown, shadow card and the team
+  label card. A `perso:*` category is never learned as a global reference.
+
 ## 3. The module (`modules/automod_ai.py`)
 
 > **Globally limited servers are skipped entirely.** `on_message` returns

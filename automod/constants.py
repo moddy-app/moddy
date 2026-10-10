@@ -39,6 +39,18 @@ def embedding_threshold_for(severity: int) -> float:
     """Embedding routing threshold for a given severity level."""
     return SEVERITY_EMBEDDING_THRESHOLDS.get(clamp_severity(severity), SEUIL_EMBEDDING)
 
+
+def perso_threshold_for(severity: int) -> float:
+    """Routing threshold of the custom-infraction similarity for a severity.
+
+    ``PERSO_SIMILARITY_THRESHOLD`` at the default severity, shifted by the same
+    delta the global embedding threshold moves with the dial (lenient = higher,
+    strict = lower): 0.65 / 0.57 / 0.50 / 0.44 / 0.38 for severity 1..5.
+    """
+    delta = (embedding_threshold_for(severity)
+             - SEVERITY_EMBEDDING_THRESHOLDS[SEVERITY_DEFAULT])
+    return max(0.2, min(0.9, PERSO_SIMILARITY_THRESHOLD + delta))
+
 # Embedding model used for both the references and incoming messages.
 EMBEDDING_MODEL: str = "text-embedding-3-small"
 
@@ -310,6 +322,36 @@ SOURCE_NANO_FLAG: str = "signalé_par_nano"
 SOURCE_ANCRES_SCAM: str = "ancres_scam"
 SOURCE_IMAGE_HASH: str = "image_hash"
 SOURCE_SAFESEARCH: str = "safesearch"
+# Server-defined (custom) infractions: a keyword hit or an embedding match against
+# the guild's own descriptions / examples routes the message to nano
+# (docs/AUTOMOD_AI.md §2quinquies). Never decisional on its own.
+SOURCE_PERSO: str = "perso"
+
+
+# --- Custom (server-defined) infractions ------------------------------------
+#
+# The guild's custom infractions are routed WITHOUT any extra embedding call: the
+# vector computed for the global harmful-reference score is reused (or, when the
+# message was routed earlier by a cheaper step, never needed). The custom
+# reference vectors (description + examples) are embedded once per config version
+# and kept in memory per guild.
+#
+# Starting value, to calibrate on real traffic like SEUIL_EMBEDDING. Descriptions
+# are more abstract than the short harmful phrases of references.json, so their
+# cosine against a matching message sits a little lower — but a false route only
+# costs one nano call (nano still judges cold), whereas a miss silently disables
+# the feature, hence the threshold stays close to the global one. It is scaled by
+# the server severity exactly like the global threshold (see perso_threshold_for).
+PERSO_SIMILARITY_THRESHOLD: float = 0.50
+# Confidence handed to the routing Signal of a keyword hit (an explicit,
+# server-authored term: as sure as a medium-gravity regex hit, above the
+# degraded-budget bar).
+PERSO_KEYWORD_SCORE: float = 0.85
+# Bounded in-memory cache of the per-guild custom reference vectors. A guild holds
+# at most 10 infractions x (1 description + 5 examples) = 60 vectors (~370 KB of
+# float32); typical servers hold a handful. LRU evicts idle guilds.
+PERSO_REFS_CACHE_MAX_GUILDS: int = 256
+PERSO_REFS_CACHE_TTL_SECONDS: float = 3600.0
 
 
 # --- Verdict categories (canonical FR set, v2 contract) ---------------------
@@ -319,6 +361,8 @@ SOURCE_SAFESEARCH: str = "safesearch"
 # and any old values stored on existing cases are folded onto this set via
 # ``nano.CATEGORIE_ALIASES`` / ``nano.normalize_categorie`` so nothing needs a
 # manual data migration.
+CATEGORIE_PERSO: str = "infraction_perso"
+
 CATEGORIES = (
     "insulte",
     "menace",
@@ -329,6 +373,9 @@ CATEGORIES = (
     "doxxing",
     "arnaque_scam",
     "violation_indications",
+    # A server-defined infraction: nano answers "infraction_perso" + a "perso"
+    # P-id; the engine maps it to the real "perso:<id>" category.
+    CATEGORIE_PERSO,
     # Explicit image content, decided by SafeSearch only (never by nano on text).
     "contenu_nsfw",
     # Gore / graphic violence in an image, decided by SafeSearch only.

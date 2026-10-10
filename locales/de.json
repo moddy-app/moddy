@@ -1982,6 +1982,34 @@
         "body": "Das Moddy-Team hat die Automod-Entscheidung zu {user} ({user_id}) geprüft und für ungerechtfertigt befunden. Die Sanktion des Falls {case_ref} wurde aufgehoben (eine gelöschte Nachricht kann nicht wiederhergestellt werden).",
         "dm_title": "Deine Sanktion wurde aufgehoben",
         "dm_body": "Das Moddy-Team hat die automatische Sanktion geprüft, die du auf **{guild}** erhalten hast, und sie für ungerechtfertigt befunden: Sie wurde aufgehoben. Entschuldige die Unannehmlichkeiten."
+      },
+      "custom": {
+        "templates": {
+          "pub_serveur": {
+            "name": "Server-Werbung",
+            "desc": "Werbung für einen anderen Discord-Server, einen Kanal oder ein eigenes Projekt: Einladungen, „tritt meinem Server bei“, unerwünschte Eigenwerbung."
+          },
+          "spoilers": {
+            "name": "Spoiler",
+            "desc": "Handlung oder Ende eines Werks (Film, Serie, Spiel, Buch) außerhalb des Spoiler-Kanals oder der Spoiler-Tags verraten."
+          },
+          "politique_religion": {
+            "name": "Politik und Religion",
+            "desc": "Politische oder religiöse Debatten, Propaganda oder Positionen, die auf diesem Server nicht erwünscht sind."
+          },
+          "demande_dm": {
+            "name": "DM-Anfragen",
+            "desc": "Unerwünschte Anfragen per Direktnachricht: um ein Gespräch in DMs bitten, private Fotos oder Inhalte (Nudes) anbieten oder verlangen."
+          },
+          "langue": {
+            "name": "Sprache des Servers",
+            "desc": "Nachrichten in einer anderen Sprache als der des Servers, außerhalb der Kanäle für andere Sprachen."
+          },
+          "liens": {
+            "name": "Externe Links",
+            "desc": "Teilen externer Links (Webseiten, Werbung, Produkte), die nichts mit dem Gespräch zu tun haben oder auf diesem Server nicht erlaubt sind."
+          }
+        }
       }
     },
     "voice_transcription": {

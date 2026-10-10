@@ -136,6 +136,7 @@ moddy/
 │   └── detect.py              #   Success/failure funnel, next-bump time, intervals
 │
 ├── automod/                   # Automod AI DETECTION pipeline (decides only; no side effects)
+│   ├── custom_infractions.py  #   Server-defined infractions: schema, templates, keywords, routing refs
 │   ├── image_hash.py          #   Pillow-only pHash/dHash, safe decode, known-hash index
 │   ├── scam_anchors.py        #   OCR-noise-tolerant scam anchor scorer (routes to nano)
 │   ├── image_policy.py        #   SafeSearch → verdict, monthly pacing, scam pre-rules
