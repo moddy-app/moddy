@@ -37,6 +37,7 @@ def make_text_file(content: str, filename: str) -> discord.File:
 # Component machine code → i18n key suffix under ``modules.automod_ai.bareme.*``.
 BAREME_LABELS = {
     "plancher": "floor",
+    "plancher_perso": "floor_custom",
     "recidive": "recidivism",
     "severite": "severity",
     "confiance": "confidence",
@@ -72,7 +73,7 @@ def bareme_breakdown(composantes, locale: str) -> str:
         delta = _comp_field(c, "delta") or 0
         detail = _comp_field(c, "detail") or ""
         label = t(f"modules.automod_ai.bareme.{BAREME_LABELS.get(code, code)}", locale=locale)
-        if code == "plancher":
+        if code in ("plancher", "plancher_perso"):
             amount = t("modules.automod_ai.bareme.cran", locale=locale, n=delta)
         else:
             amount = f"{'+' if delta >= 0 else ''}{delta}"

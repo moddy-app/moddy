@@ -1864,6 +1864,68 @@
         "server_decided_title": "Widerspruch bearbeitet",
         "server_decided": "{user}s Widerspruch ({route}) wurde bearbeitet: **{status}**."
       },
+      "infractions": {
+        "insulte": {
+          "name": "Beleidigungen",
+          "desc": "Beleidigungen und Beschimpfungen gegen ein Mitglied"
+        },
+        "menace": {
+          "name": "Drohungen",
+          "desc": "Drohungen mit Gewalt oder Vergeltung"
+        },
+        "harcelement": {
+          "name": "Belästigung",
+          "desc": "Wiederholte Anfeindung eines Mitglieds"
+        },
+        "harcelement_sexuel": {
+          "name": "Sexuelle Belästigung",
+          "desc": "Unerwünschte sexuelle Äußerungen oder Annäherungen"
+        },
+        "haine_discrimination": {
+          "name": "Hass und Diskriminierung",
+          "desc": "Hasserfüllte Äußerungen zu Herkunft, Religion, Orientierung…"
+        },
+        "incitation_automutilation": {
+          "name": "Aufruf zur Selbstverletzung",
+          "desc": "Jemanden dazu drängen, sich zu verletzen oder das Leben zu nehmen"
+        },
+        "doxxing": {
+          "name": "Doxxing",
+          "desc": "Veröffentlichung privater Informationen einer Person"
+        },
+        "arnaque_scam": {
+          "name": "Betrug",
+          "desc": "Fake-Gewinnspiele, Gratis-Nitro, Krypto-Casinos, Fallen-Links"
+        },
+        "violation_indications": {
+          "name": "Serverregeln",
+          "desc": "Verstoß gegen die Vorgaben deines Servers"
+        },
+        "contenu_nsfw": {
+          "name": "Explizite Bilder",
+          "desc": "Pornografische oder sexuell explizite Bilder"
+        },
+        "contenu_choquant": {
+          "name": "Schockierende Bilder",
+          "desc": "Gore- oder Gewaltbilder"
+        },
+        "profil_avatar_nsfw": {
+          "name": "Expliziter Avatar",
+          "desc": "Pornografisches oder sexuell explizites Profilbild"
+        },
+        "profil_avatar_choquant": {
+          "name": "Schockierender Avatar",
+          "desc": "Profilbild mit Gore oder grafischer Gewalt"
+        },
+        "profil_pseudo": {
+          "name": "Unangemessener Name",
+          "desc": "Beleidigender oder hasserfüllter Benutzer- oder Anzeigename"
+        },
+        "perso": {
+          "name": "Eigener Verstoß",
+          "desc": "Eine Regel speziell für deinen Server"
+        }
+      },
       "bareme": {
         "title": "Skala: {sanction} (Stufe {cran})",
         "cran": "Stufe {n}",
@@ -1874,6 +1936,7 @@
         "veteran": "Zugehörigkeitsdauer (sauberer Verlauf)",
         "fresh_account": "Neues Konto",
         "ceiling": "Serverobergrenze",
+        "floor_custom": "Eigene Mindeststufe",
         "disabled_category": "Deaktivierte Kategorie",
         "unconfirmed": "KI-Bestätigung verweigert",
         "review_hint": "Von der KI entschiedene schwere Sanktion — ein Moderator kann sie überprüfen.",

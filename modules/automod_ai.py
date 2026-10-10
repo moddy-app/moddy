@@ -25,7 +25,8 @@ Config (stored in ``guilds.data.modules.automod``)::
       "ignore_moderators": true,
       "severity": 3,                     # 1–5 detection/severity dial
       "max_action": "ban",              # barème hard ceiling: warn|mute|ban
-      "categories_desactivees": [],      # kill-switched AI categories
+      "categories_desactivees": [],      # LEGACY kill-switch (read, migrated into "sanctions")
+      "sanctions": {},                   # per-infraction policy (automod/infractions.py)
       "features": {
         "content": {
           "enabled": true,
@@ -59,6 +60,7 @@ from automod import (
 )
 from automod import constants as ac
 from automod import bareme as ab
+from automod import infractions
 from automod import image_policy as aip
 from automod import relations as ar
 from automod import scam_anchors
@@ -520,6 +522,9 @@ class AutomodModule(ModuleBase):
         # v2 barème knobs (session 2).
         self.max_action: str = "ban"          # "warn" | "mute" | "ban"
         self.categories_desactivees: List[str] = []
+        #: Normalised per-infraction policy (``sanctions`` config key), with the
+        #: legacy ``categories_desactivees`` already folded in.
+        self.sanctions: Dict[str, dict] = {}
         # Shadow mode (session 3): run the full funnel but apply nothing — post a
         # SIMULATION card with annotation buttons instead of sanctioning.
         self.dry_run: bool = False
@@ -541,8 +546,15 @@ class AutomodModule(ModuleBase):
             # v2 barème config.
             max_action = str(self.config.get("max_action", "ban") or "ban")
             self.max_action = max_action if max_action in ("warn", "mute", "ban") else "ban"
+            raw_sanctions = self.config.get("sanctions")
+            legacy = [str(c) for c in (self.config.get("categories_desactivees", []) or [])]
+            norm = infractions.normalize_sanctions(raw_sanctions)
+            self.sanctions = infractions.merge_legacy_disabled(norm, legacy, raw_sanctions)
+            # An explicit ``sanctions[cat].enabled`` wins over the legacy list.
+            explicit = raw_sanctions if isinstance(raw_sanctions, dict) else {}
             self.categories_desactivees = [
-                str(c) for c in (self.config.get("categories_desactivees", []) or [])
+                c for c in legacy
+                if not (isinstance(explicit.get(c), dict) and "enabled" in explicit[c])
             ]
             self.dry_run = bool(self.config.get("dry_run", False))
 
@@ -585,6 +597,10 @@ class AutomodModule(ModuleBase):
         if max_action is not None and max_action not in ("warn", "mute", "ban"):
             return False, "Action maximale invalide"
 
+        sanctions_err = infractions.validate_sanctions(config_data.get("sanctions"))
+        if sanctions_err:
+            return False, f"Barème personnalisé invalide ({sanctions_err})"
+
         features_cfg = config_data.get("features", {}) or {}
         for fid in features_cfg:
             if fid not in FEATURE_CLASSES:
@@ -600,6 +616,7 @@ class AutomodModule(ModuleBase):
             "severity": ac.SEVERITY_DEFAULT,
             "max_action": "ban",
             "categories_desactivees": [],
+            "sanctions": {},
             "dry_run": False,
             "features": {
                 "content": {
@@ -976,6 +993,7 @@ class AutomodModule(ModuleBase):
         config = ab.ConfigBareme(
             max_action=self.max_action,
             categories_desactivees=tuple(self.categories_desactivees),
+            sanctions=dict(self.sanctions),
         )
         return ab.calculer(
             decision, sanctions, ab.MembreInfo(anciennete_jours=anciennete),
@@ -1035,7 +1053,7 @@ class AutomodModule(ModuleBase):
         for c in bareme.composantes:
             label = t(f"modules.automod_ai.bareme.{self._BAREME_LABELS.get(c.code, c.code)}",
                       locale=locale)
-            if c.code == "plancher":
+            if c.code in ("plancher", "plancher_perso"):
                 amount = t("modules.automod_ai.bareme.cran", locale=locale, n=c.delta)
             else:
                 amount = f"{'+' if c.delta >= 0 else ''}{c.delta}"

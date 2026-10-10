@@ -1864,6 +1864,68 @@
         "server_decided_title": "Appeal handled",
         "server_decided": "{user}'s appeal ({route}) was handled: **{status}**."
       },
+      "infractions": {
+        "insulte": {
+          "name": "Insults",
+          "desc": "Insults and name-calling aimed at a member"
+        },
+        "menace": {
+          "name": "Threats",
+          "desc": "Threats of violence or retaliation"
+        },
+        "harcelement": {
+          "name": "Harassment",
+          "desc": "Repeated targeting of a member"
+        },
+        "harcelement_sexuel": {
+          "name": "Sexual harassment",
+          "desc": "Unwanted sexual remarks or advances"
+        },
+        "haine_discrimination": {
+          "name": "Hate and discrimination",
+          "desc": "Hateful remarks targeting origin, religion, orientation…"
+        },
+        "incitation_automutilation": {
+          "name": "Self-harm encouragement",
+          "desc": "Pushing someone to hurt themselves or end their life"
+        },
+        "doxxing": {
+          "name": "Doxxing",
+          "desc": "Sharing someone's private information"
+        },
+        "arnaque_scam": {
+          "name": "Scams",
+          "desc": "Fake giveaways, free Nitro, crypto casinos, trap links"
+        },
+        "violation_indications": {
+          "name": "Server rules",
+          "desc": "Breaking the guidelines specific to your server"
+        },
+        "contenu_nsfw": {
+          "name": "Explicit images",
+          "desc": "Pornographic or sexually explicit images"
+        },
+        "contenu_choquant": {
+          "name": "Shocking images",
+          "desc": "Gore or graphic violence images"
+        },
+        "profil_avatar_nsfw": {
+          "name": "Explicit avatar",
+          "desc": "Pornographic or sexually explicit profile picture"
+        },
+        "profil_avatar_choquant": {
+          "name": "Shocking avatar",
+          "desc": "Gore or graphic violence profile picture"
+        },
+        "profil_pseudo": {
+          "name": "Inappropriate name",
+          "desc": "Abusive or hateful username or display name"
+        },
+        "perso": {
+          "name": "Custom infraction",
+          "desc": "A rule specific to your server"
+        }
+      },
       "bareme": {
         "title": "Scale: {sanction} (rung {cran})",
         "cran": "rung {n}",
@@ -1874,6 +1936,7 @@
         "veteran": "Tenure (clean record)",
         "fresh_account": "New account",
         "ceiling": "Server ceiling",
+        "floor_custom": "Custom floor",
         "disabled_category": "Disabled category",
         "unconfirmed": "AI confirmation refused",
         "review_hint": "Heavy AI-decided sanction — a moderator can review it.",

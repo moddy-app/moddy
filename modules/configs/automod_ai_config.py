@@ -60,6 +60,8 @@ _DEFAULT_CONFIG = {
     # Kill-switched AI categories (ops/backend-set; no UI selector yet). Carried
     # through the working copy so a Save from this panel never wipes it.
     "categories_desactivees": [],
+    # Per-infraction policy (automod/infractions.py). No UI yet: carried through.
+    "sanctions": {},
     "dry_run": False,
     "features": {
         "content": {"enabled": False, "exempt_roles": [], "exempt_channels": []},
@@ -94,6 +96,7 @@ def _deep_default(current: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     cfg["categories_desactivees"] = [
         str(c) for c in (current.get("categories_desactivees", []) or [])
     ]
+    cfg["sanctions"] = copy.deepcopy(current.get("sanctions") or {})
     cfg["dry_run"] = bool(current.get("dry_run", False))
     features = current.get("features", {}) or {}
     content = features.get("content", {}) or {}

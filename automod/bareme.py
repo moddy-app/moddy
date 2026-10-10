@@ -21,6 +21,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple
 
+from . import infractions
+
 # ---------------------------------------------------------------------------
 # 1. The ladder — every sanction is one rung on a single scale
 # ---------------------------------------------------------------------------
@@ -57,46 +59,14 @@ def ladder_for(cran: int) -> Tuple[List[str], Optional[int]]:
 # 2. Floor cran per (category × gravity) — the "cold" first-offence policy
 # ---------------------------------------------------------------------------
 
+# Derived from the infraction catalogue (``automod/infractions.py``), the single
+# source of truth. Only the 11 categories nano / SafeSearch can return live here;
+# profile and custom (``perso:*``) types are resolved through ``infractions.get``.
 PLANCHER: Dict[Tuple[str, str], int] = {
-    ("insulte", "basse"): 1,    ("insulte", "moyenne"): 1,
-    ("insulte", "haute"): 2,    ("insulte", "critique"): 3,
-
-    ("harcelement", "basse"): 1,    ("harcelement", "moyenne"): 2,
-    ("harcelement", "haute"): 3,    ("harcelement", "critique"): 5,
-
-    ("menace", "basse"): 2,     ("menace", "moyenne"): 3,
-    ("menace", "haute"): 6,     ("menace", "critique"): 7,
-
-    ("haine_discrimination", "basse"): 2,    ("haine_discrimination", "moyenne"): 4,
-    ("haine_discrimination", "haute"): 6,    ("haine_discrimination", "critique"): 7,
-
-    ("incitation_automutilation", "basse"): 3,    ("incitation_automutilation", "moyenne"): 5,
-    ("incitation_automutilation", "haute"): 7,    ("incitation_automutilation", "critique"): 7,
-
-    ("harcelement_sexuel", "basse"): 3,    ("harcelement_sexuel", "moyenne"): 5,
-    ("harcelement_sexuel", "haute"): 7,    ("harcelement_sexuel", "critique"): 7,
-
-    ("doxxing", "basse"): 4,    ("doxxing", "moyenne"): 6,
-    ("doxxing", "haute"): 7,    ("doxxing", "critique"): 7,
-
-    # Scams (crypto casinos, fake giveaways, free nitro…) are banned on sight at
-    # every gravity — see CATEGORIES_BAN_DIRECT.
-    ("arnaque_scam", "basse"): 7,    ("arnaque_scam", "moyenne"): 7,
-    ("arnaque_scam", "haute"): 7,    ("arnaque_scam", "critique"): 7,
-
-    ("violation_indications", "basse"): 0,    ("violation_indications", "moyenne"): 1,
-    ("violation_indications", "haute"): 2,    ("violation_indications", "critique"): 4,
-
-    # Explicit image (SafeSearch). A SFW server is not a place for porn, but the
-    # poster is rarely malicious beyond that: delete + a short mute, escalating
-    # with recidivism like everything else.
-    ("contenu_nsfw", "basse"): 0,    ("contenu_nsfw", "moyenne"): 2,
-    ("contenu_nsfw", "haute"): 3,    ("contenu_nsfw", "critique"): 5,
-
-    # Gore / graphic violence image (SafeSearch). Delete + a short mute at
-    # "haute" (what a VERY_LIKELY violence score maps to), recidivism escalates.
-    ("contenu_choquant", "basse"): 0,    ("contenu_choquant", "moyenne"): 1,
-    ("contenu_choquant", "haute"): 2,    ("contenu_choquant", "critique"): 4,
+    (t.id, g): t.plancher[g]
+    for t in infractions.INFRACTIONS.values()
+    if t.famille in ("message", "image")
+    for g in infractions.GRAVITES
 }
 
 # Fallback floor when nano returns an unknown/empty (category, gravity) pair but
@@ -106,9 +76,8 @@ PLANCHER_DEFAUT = 0
 # Categories that are never softened and always act: the veteran-clemency bonus
 # is refused for these at gravity haute+, and (deletion aside) they are the hard
 # floor of the policy.
-CATEGORIES_SENSIBLES = frozenset({
-    "incitation_automutilation", "doxxing", "harcelement_sexuel",
-})
+CATEGORIES_SENSIBLES = frozenset(
+    t.id for t in infractions.INFRACTIONS.values() if t.sensible)
 
 # Categories banned on sight: a scam account (usually compromised, spamming
 # every channel) is not "moderated", it is removed. For these the floor is the
@@ -116,7 +85,8 @@ CATEGORIES_SENSIBLES = frozenset({
 # clemency never does. Still bounded by: the `low` confidence cap (no ban on a
 # guess), the guild's `max_action` ceiling, and the mini senior confirmation of
 # a nano-decided ban (§6.3, applied by the module).
-CATEGORIES_BAN_DIRECT = frozenset({"arnaque_scam"})
+CATEGORIES_BAN_DIRECT = frozenset(
+    t.id for t in infractions.INFRACTIONS.values() if t.ban_direct)
 
 
 # ---------------------------------------------------------------------------
@@ -211,6 +181,16 @@ class ConfigBareme:
     #: Categories the guild opted out of AI sanctioning (kill-switch, annexe 5):
     #: a disabled category is capped to deletion only (cran 0).
     categories_desactivees: Tuple[str, ...] = ()
+    #: Per-infraction server policy (``sanctions`` config key, normalised by
+    #: ``infractions.normalize_sanctions``). Absent entry == "auto" == Moddy
+    #: defaults. ``enabled=False`` joins ``categories_desactivees``.
+    sanctions: Dict[str, dict] = field(default_factory=dict)
+
+    def desactivees(self) -> frozenset:
+        """Every disabled type: legacy list ∪ ``sanctions[cat].enabled == False``."""
+        off = {c for c, e in (self.sanctions or {}).items()
+               if isinstance(e, dict) and e.get("enabled") is False}
+        return frozenset(off | set(self.categories_desactivees))
 
     @property
     def plafond_cran(self) -> int:
@@ -242,6 +222,12 @@ class ResultatBareme:
     #: cran ≥ 6 (mute 672 h / ban) decided purely by automod → flag for review
     #: (session-6 mini confirmation; today it only highlights the alert card).
     needs_review: bool = False
+    #: Profile infractions only (``profil_*``): what to do with the profile.
+    #: ``hold`` = timeout until the profile is fixed; ``alert`` = alert card
+    #: only, no sanction; ``rename_warn`` = reset nickname + warn; ``bareme`` =
+    #: use the cran ladder like a message. ``None`` for every other type (and
+    #: for a disabled type). Applied by the profile feature, not the barème.
+    action_profil: Optional[str] = None
 
     @property
     def sanction_reelle(self) -> bool:
@@ -277,7 +263,7 @@ def calculer(
     composantes: List[Composante] = []
 
     # Kill-switch: a disabled category never earns more than deletion.
-    if categorie in set(config.categories_desactivees):
+    if categorie in config.desactivees():
         composantes.append(Composante("categorie_desactivee", 0, categorie))
         actions, duree = ladder_for(0)
         return ResultatBareme(
@@ -286,24 +272,45 @@ def calculer(
             composantes=composantes,
         )
 
+    typ = infractions.get(categorie)
+    entree = (config.sanctions or {}).get(categorie)
+    entree = entree if isinstance(entree, dict) else {}
+    perso = typ is not None and entree.get("mode") == "perso"
+
+    action_profil: Optional[str] = None
+    if typ is not None and typ.famille == "profil":
+        action_profil = entree.get("action_profil") or typ.default_profile_action
+
     # -- Floor -----------------------------------------------------------
-    plancher = PLANCHER.get((categorie, gravite), PLANCHER_DEFAUT)
+    if perso:
+        crans = entree.get("crans") if isinstance(entree.get("crans"), dict) else {}
+        plancher = infractions._coerce_cran(
+            crans.get(gravite), typ.plancher.get(gravite, PLANCHER_DEFAUT))
+        code_plancher = "plancher_perso"
+    else:
+        default = typ.plancher.get(gravite, PLANCHER_DEFAUT) if typ else PLANCHER_DEFAUT
+        plancher = PLANCHER.get((categorie, gravite), default)
+        code_plancher = "plancher"
     cran = plancher
-    composantes.append(Composante("plancher", plancher, f"{categorie or '?'}/{gravite}"))
+    composantes.append(Composante(code_plancher, plancher, f"{categorie or '?'}/{gravite}"))
 
     # -- Recidivism ------------------------------------------------------
     points = points_actifs(sanctions_passees, categorie, now)
-    add_recidive = crans_recidive(points)
-    cran += add_recidive
-    if add_recidive:
-        composantes.append(Composante("recidive", add_recidive, f"{points:.1f} pts"))
+    if not perso or entree.get("recidive", True) is not False:
+        add_recidive = crans_recidive(points)
+        cran += add_recidive
+        if add_recidive:
+            composantes.append(Composante("recidive", add_recidive, f"{points:.1f} pts"))
 
     # -- a) Guild severity (global shift) --------------------------------
-    sev = _clamp_severite(severite_guild)
-    shift = _SEVERITE_SHIFT[sev]
-    cran += shift
-    if shift:
-        composantes.append(Composante("severite", shift, f"serveur {sev}"))
+    #    A custom ladder ("perso") skips severity, veteran clemency and the
+    #    fresh-account malus: the server gets exactly what it chose.
+    if not perso:
+        sev = _clamp_severite(severite_guild)
+        shift = _SEVERITE_SHIFT[sev]
+        cran += shift
+        if shift:
+            composantes.append(Composante("severite", shift, f"serveur {sev}"))
 
     # -- b) nano confidence cap (never mute/ban on weak confidence) ------
     #    low  => at worst a warn (cran 1); medium => never mute >48 h nor ban.
@@ -316,7 +323,8 @@ def calculer(
 
     # -- c) Veteran clemency (never on sensitive categories / high gravity)
     veteran = (
-        membre.anciennete_jours >= 90
+        not perso
+        and membre.anciennete_jours >= 90
         and not sanctions_passees
         and gravite in ("basse", "moyenne")
         and categorie not in CATEGORIES_SENSIBLES
@@ -327,7 +335,7 @@ def calculer(
         composantes.append(Composante("veteran", -1, "≥90 j, casier vierge"))
 
     # -- d) Fresh-account malus ------------------------------------------
-    if membre.anciennete_jours < 7:
+    if not perso and membre.anciennete_jours < 7:
         cran += 1
         composantes.append(Composante("compte_recent", 1, "<7 j"))
 
@@ -349,6 +357,7 @@ def calculer(
         cran=cran, actions=actions, duree_heures=duree,
         categorie=categorie, gravite=gravite, points_recidive=points,
         composantes=composantes, needs_review=cran >= 6,
+        action_profil=action_profil,
     )
 
 
@@ -377,7 +386,7 @@ def appliquer_non_confirme(res: ResultatBareme) -> ResultatBareme:
         cran=cap, actions=actions, duree_heures=duree,
         categorie=res.categorie, gravite=res.gravite,
         points_recidive=res.points_recidive, composantes=composantes,
-        needs_review=True,
+        needs_review=True, action_profil=res.action_profil,
     )
 
 

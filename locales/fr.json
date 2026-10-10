@@ -1863,6 +1863,68 @@
         "server_decided_title": "Appel traité",
         "server_decided": "L'appel de {user} ({route}) a été traité : **{status}**."
       },
+      "infractions": {
+        "insulte": {
+          "name": "Insultes",
+          "desc": "Insultes et injures envers un membre"
+        },
+        "menace": {
+          "name": "Menaces",
+          "desc": "Menaces de violence ou de représailles"
+        },
+        "harcelement": {
+          "name": "Harcèlement",
+          "desc": "Acharnement répété contre un membre"
+        },
+        "harcelement_sexuel": {
+          "name": "Harcèlement sexuel",
+          "desc": "Propos ou avances sexuels non désirés"
+        },
+        "haine_discrimination": {
+          "name": "Haine et discrimination",
+          "desc": "Propos haineux visant l'origine, la religion, l'orientation…"
+        },
+        "incitation_automutilation": {
+          "name": "Incitation à l'automutilation",
+          "desc": "Pousser quelqu'un à se faire du mal ou à se suicider"
+        },
+        "doxxing": {
+          "name": "Doxxing",
+          "desc": "Divulgation d'informations privées d'une personne"
+        },
+        "arnaque_scam": {
+          "name": "Arnaques",
+          "desc": "Faux concours, Nitro gratuit, casinos crypto, liens piégés"
+        },
+        "violation_indications": {
+          "name": "Règles du serveur",
+          "desc": "Non-respect des indications propres à ton serveur"
+        },
+        "contenu_nsfw": {
+          "name": "Images explicites",
+          "desc": "Images pornographiques ou sexuellement explicites"
+        },
+        "contenu_choquant": {
+          "name": "Images choquantes",
+          "desc": "Images de gore ou de violence graphique"
+        },
+        "profil_avatar_nsfw": {
+          "name": "Avatar explicite",
+          "desc": "Photo de profil pornographique ou sexuellement explicite"
+        },
+        "profil_avatar_choquant": {
+          "name": "Avatar choquant",
+          "desc": "Photo de profil de gore ou de violence graphique"
+        },
+        "profil_pseudo": {
+          "name": "Pseudo inapproprié",
+          "desc": "Pseudo ou nom d'affichage injurieux ou haineux"
+        },
+        "perso": {
+          "name": "Infraction personnalisée",
+          "desc": "Une règle propre à ton serveur"
+        }
+      },
       "bareme": {
         "title": "Barème : {sanction} (cran {cran})",
         "cran": "cran {n}",
@@ -1873,6 +1935,7 @@
         "veteran": "Ancienneté (casier vierge)",
         "fresh_account": "Compte récent",
         "ceiling": "Plafond du serveur",
+        "floor_custom": "Plancher personnalisé",
         "disabled_category": "Catégorie désactivée",
         "unconfirmed": "Confirmation IA refusée",
         "review_hint": "Sanction lourde décidée par l'IA — un modérateur peut la réviser.",
