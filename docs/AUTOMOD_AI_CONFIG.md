@@ -564,6 +564,20 @@ and in the barème breakdown can now be `perso:<id>` (a custom infraction) or on
 `profil_avatar_nsfw` / `profil_avatar_choquant` / `profil_pseudo`. To show a
 readable name for `perso:<id>`, look `<id>` up in `infractions_perso` of the
 guild; if the entry was deleted since, fall back to the raw id (this is what the bot does too).
+
+**Name snapshot (stable key).** Every automod evidence event
+(`case_events.type = 'evidence'`, `payload.source = 'automod'`) carries
+`payload.categorie_label`: the infraction's human name **as it was when the
+sanction was applied**. Readers that do not have the guild config (personal
+`/cases`, the sanctioned member, a deleted infraction) should display it as-is.
+- `perso:<id>` → the server's `nom` at that time (sanitised: backticks replaced,
+  `@` neutralised; plain text, no markdown). Raw id only if the infraction no
+  longer existed at sanction time.
+- built-in ids → the i18n name **in the server's language** at that time (a
+  dashboard with its own translations may prefer translating `categorie` itself).
+- Present on message and profile sanctions alike; absent on cases recorded
+  before 2026-10-10 (fall back to `categorie`).
+Pinned by `tests/test_automod_profiles.py::test_evidence_snapshots_the_infraction_name`.
 Profile evidence has no `message_id` / `jump_url` /
 `context_text` and carries `profil: {kind, asset_key, asset_url}` plus an
 `origine` of `profil_avatar` / `profil_banniere` / `profil_pseudo`.

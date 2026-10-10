@@ -1385,3 +1385,23 @@ async def test_sweep_rechecks_every_hold_and_stamps_it(monkeypatch):
     assert datetime.now(timezone.utc) - seen["recheck_before"] >= RECHECK_AFTER
     assert touched == [(1, 5, "banner")], "stamped even when the hold's sweep fails"
     assert AutomodProfiles.sweep_profile_holds.hours == 1
+
+
+async def test_evidence_snapshots_the_infraction_name(monkeypatch):
+    """`payload.categorie_label` is a stable contract: readers without the guild
+    config (personal /cases, the sanctioned member) display it as-is."""
+    env = Env(monkeypatch)
+    guild = FakeGuild()
+    mod = await _module(env, guild)
+    mod.infractions_perso = [{"id": "k3x9", "nom": "Publicité", "description": "pub",
+                              "exemples": [], "mots_cles": [], "modele": None}]
+    profile = {"kind": "pseudo", "origine": "profil_pseudo", "extrait": "x"}
+    for categorie, expected in (("perso:k3x9", "Publicité"), ("perso:gone", "perso:gone")):
+        env.bot.db.events.clear()
+        decision = _name_decision(categorie=categorie)
+        decision.actions = ["warn"]
+        await mod._record_case(None, decision, member=FakeMember(guild), profile=profile)
+        ev = [e for e in env.bot.db.events
+              if e[2].get("payload", {}).get("source") == "automod"]
+        assert ev and ev[0][2]["payload"]["categorie"] == categorie
+        assert ev[0][2]["payload"]["categorie_label"] == expected
