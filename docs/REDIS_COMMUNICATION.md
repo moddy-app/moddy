@@ -111,6 +111,8 @@ the event was produced: task queues, command/reply RPC, notification feeds.
 | `feeds:heartbeat` | `moddy-feeds` service | Health check, TTL ~90s |
 | `quota:{scope}:{key}:{type}:{date}` | Bot (`gateway/quota.py`) | Daily API quota counters |
 | `stats:hll:{metric}:{scope}:{id}:{day}` | Bot (`stats/service.py`) | HyperLogLog of distinct people per day, TTL 3 days. Never holds a list of ids — the daily rollup reads `PFCOUNT` and stores one number ([STATS.md](STATS.md)) |
+| `automod:avatar:{asset key}`, `automod:pseudo:{sha1}`, `automod:profile:done:{guild}:{user}:{subject}`, `automod:profile:share:{guild}:{day}` | Bot (`services/automod_profile_service.py`, `automod_image_service.py`) | Automod member-profile caches (profile image verdicts 30 d, name verdicts 30 d), idempotence markers (7 d / 24 h) and the per-guild daily SafeSearch share (2 d). Pure caches/counters, no other service reads them ([AUTOMOD_AI_CONFIG.md §9](AUTOMOD_AI_CONFIG.md)) |
+| `automod:budget:{guild}:{day}`, `automod:budget:cap:{guild}` | Bot (cap overridable by Backend) | Automod per-guild daily nano budget counter / soft-cap override ([AUTOMOD_AI.md §5.3](AUTOMOD_AI.md)) |
 
 ---
 

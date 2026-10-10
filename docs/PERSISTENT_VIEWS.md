@@ -492,6 +492,14 @@ was easier not to" is not one.
   registered. The other Automod AI screens (wizard steps, home, sanctions list,
   monitoring, AI guidance, exemptions, advanced) are registered shells with
   static ids. Changes are applied instantly (no Save), like `LogsCategoryView`.
+  The two destructive confirmations (delete a custom infraction, delete the whole
+  configuration) are **not** in-memory dialogs: the first click re-renders the
+  same screen in confirmation mode (`confirm_delete`), whose *Yes* control is
+  itself a persistent item (`delyes`), so they survive a restart too. The Modals
+  of the panel (`SanctionModal`, `InfractionModal`, `IndicationsModal`) follow the
+  standing "modals are not persistent" exclusion. The previous panel's ids
+  (`moddy:automod:config:*`) were dropped on purpose: a message still showing the
+  old panel stops answering until `/config` is reopened.
 - **`utils/ticket_views.py::TicketPanelView`** — the public ticket panel
   message. A `BaseView` with `timeout=None` whose only interactive children are
   `TicketOpenButton` / `TicketOpenSelect`, persistent `DynamicItem`s

@@ -405,4 +405,4 @@ schema change** (both effects are *derived* at read time):
   the moderated message as a precedent through `bot.precedents`: **accept** →
   `non_sanctionnable`, **refuse** → `sanctionnable`. A **transform** ruling is
   ambiguous (the sanction changed, not the sanctionable/not call) and is **not**
-  recorded. See [AUTOMOD.md](AUTOMOD.md) §2quinquies.
+  recorded. See [AUTOMOD_AI.md](AUTOMOD_AI.md) §2quinquies.

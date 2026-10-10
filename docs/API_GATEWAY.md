@@ -177,6 +177,7 @@ Limits are cached in memory with a 60-second TTL to avoid PG hits on the hot pat
 | `chatbot` | guild | -1 |
 | `voice_transcription` | user / guild / global | -1 |
 | `automod_safesearch` | guild / global | -1 (the binding cap is the monthly Vision rule + the automod pacing) |
+| `automod_profile_safesearch` | guild / global | -1 (member avatars / banners; binding cap = the `safe_search_profile` monthly rule + the automod pacing and `PROFILE_GUILD_DAILY_SHARE`) |
 | `automod_image_ocr` | guild | **300** |
 | `automod_image_ocr` | global | -1 |
 | `ocr_command` | user | **10** |
@@ -217,9 +218,10 @@ ON CONFLICT (scope, key, type) DO UPDATE SET daily_limit = EXCLUDED.daily_limit;
 > The guild target is only added when the command runs inside a server — in DMs
 > and user-installed contexts only the user bucket is debited.
 >
-> `automod_image_ocr` / `automod_safesearch` come from
-> `services/automod_image_service.py` (automod image features, see
-> [AUTOMOD_AI.md](AUTOMOD_AI.md) §4.2/§4.3); `ocr_command` from
+> `automod_image_ocr` / `automod_safesearch` / `automod_profile_safesearch` come
+> from `services/automod_image_service.py` (automod image features, see
+> [AUTOMOD_AI.md](AUTOMOD_AI.md) §4.2/§4.3; the profile variant is called by
+> `services/automod_profile_service.py`, §4.4); `ocr_command` from
 > `services/ocr_service.py` (see [OCR.md](OCR.md)).
 >
 > `voice_transcription` comes from `services/transcription_service.py`
@@ -269,7 +271,12 @@ How it works:
   `America/Los_Angeles`, Google's billing clock): the window index is `YYYYMM`, so the
   counter resets exactly when the provider's free tier does. Google Vision has no
   "model": its rules are keyed on the billed feature (`safe_search`, `document_text`),
-  which the `VisionClient` passes as `CallSpec.model`.
+  which the `VisionClient` passes as `CallSpec.model`. `VisionClient.safe_search(budget_model=...)`
+overrides that key: member-profile checks pass `MODEL_SAFE_SEARCH_PROFILE`
+(`safe_search_profile`), which selects a **separate** monthly rule while the
+adapter still calls the real SafeSearch operation. Google's free tier is 1000
+units/month per account, so the two SafeSearch budgets together (default 1000 +
+1000) can exceed it — lower one env var if that matters.
 
 Breaching one raises `ModelRateLimitError` (`.rule`, `.limit`, `.retry_after`)
 **without contacting the provider**.

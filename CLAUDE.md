@@ -141,19 +141,19 @@ moddy/
 │   └── detect.py              #   Success/failure funnel, next-bump time, intervals
 │
 ├── automod/                   # Automod AI DETECTION pipeline (decides only; no side effects)
+│   ├── infractions.py         #   Infraction catalogue (single source of truth) + per-server `sanctions` schema/validation
 │   ├── custom_infractions.py  #   Server-defined infractions: schema, templates, keywords, routing refs
 │   ├── image_hash.py          #   Pillow-only pHash/dHash, safe decode, known-hash index
 │   ├── scam_anchors.py        #   OCR-noise-tolerant scam anchor scorer (routes to nano)
 │   ├── image_policy.py        #   SafeSearch → verdict, monthly pacing, scam pre-rules
 │   ├── engine.py              #   Shared per-bot orchestrator (funnel entry)
-│   ├── relations.py / routing.py / precedents.py / bareme.py
 │   ├── presets.py             #   Wizard protection levels (Light/Balanced/Strict) -> full config
 │   ├── prefiltre.py / triviaux.py / blocklist.py / embeddings.py / nano.py
 │   ├── relations.py           #   Relationship graph + target-reaction signals (familiarity)
 │   ├── routing.py             #   Difficulty router (nano→mini) + heavy-sanction confirm (S6)
 │   ├── precedents.py          #   Server precedents matcher (jurisprudence RAG, pure) (S7)
 │   ├── normalize.py / injection.py / rules_check.py / schemas.py / constants.py
-│   ├── bareme.py              #   Deterministic sanction scale (cran ladder + recidivism)
+│   ├── bareme.py              #   Deterministic sanction scale (cran ladder + recidivism, per-server overrides)
 │   ├── cache.py               #   LRU+TTL score cache (embedding de-duplication)
 │   ├── eval/                  #   Regression harness (golden set, offline runner, shadow annotations)
 │   │   ├── golden.jsonl / fixtures.json / golden_baseline.json
@@ -314,7 +314,7 @@ moddy/
 ├── internal_api/              # FastAPI internal API
 │   ├── server.py              #   FastAPI app + /health, /ping, /status + router wiring
 │   ├── routes/                #   API route handlers
-│   │   └── automod.py         #     POST /automod/rules_check (indications safety check)
+│   │   └── automod.py         #     POST /automod/rules_check (indications or custom-infraction safety check)
 │   └── middleware/             #   Auth middleware
 │
 ├── schemas/                   # Data schemas
@@ -575,8 +575,8 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/TICKETS_INTEGRATION.md](docs/TICKETS_INTEGRATION.md) | Tickets ↔ backend contract — the transcript/rating tables, the compressed body schema, `/transcripts/<key>` and its authorisation, the rating aggregates |
 | [docs/ALTGUARD.md](docs/ALTGUARD.md) | **AltGuard** — anti multi-account verification gate, consent, service contract, staff commands |
 | [docs/ALTGUARD_INTEGRATION.md](docs/ALTGUARD_INTEGRATION.md) | AltGuard ↔ bot exact wire contract — payload types, error codes, debugging |
-| [docs/AUTOMOD_AI.md](docs/AUTOMOD_AI.md) | Automod AI — detection pipeline, nano decider, scalable features, **images (NSFW + scam screenshots)**, **Moddy team labeling queue**, rules safety check |
-| [docs/AUTOMOD_AI_CONFIG.md](docs/AUTOMOD_AI_CONFIG.md) | Automod AI configuration schema in DB (backend / dashboard integration) |
+| [docs/AUTOMOD_AI.md](docs/AUTOMOD_AI.md) | Automod AI — detection pipeline, nano decider, scalable features, **images (NSFW + scam screenshots)**, **Moddy team labeling queue**, rules + custom-infraction safety check, **infraction catalogue & per-type sanctions**, **custom infractions**, **member profiles** |
+| [docs/AUTOMOD_AI_CONFIG.md](docs/AUTOMOD_AI_CONFIG.md) | Automod AI configuration schema in DB (backend / dashboard integration): `sanctions`, `infractions_perso`, `features.profile`, validation errors, `rules_check` route, tables, Redis keys, deployment order |
 | [docs/BOT_CUSTOMIZATION.md](docs/BOT_CUSTOMIZATION.md) | Bot Customization — per-guild nickname/avatar/banner/bio + name styles, Redis dashboard contract |
 | [docs/PREMIUM.md](docs/PREMIUM.md) | **Premium gating** — how to check whether a server (or a user) is premium |
 | [docs/LINKED_ROLES.md](docs/LINKED_ROLES.md) | **Linked roles** — the `moddy:staff` publication the backend needs, the two Moddy Team roles (`team` / `manager`), and `/team role` / `/team access` / `/team ticket` |

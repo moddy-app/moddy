@@ -39,6 +39,12 @@ message → 1.pre-filter → 2.trivial allowlist → 3.regex blocklist ─match�
 | 4. embedding | `embeddings.py` | 1 embed call (cached) | `score ≥ SEUIL_EMBEDDING` → nano (`source=embedding`); else STOP |
 | 5. nano | `nano.py` | 1–3 chat calls | **the only decider** → `Decision` |
 
+A guild that declared **custom infractions** (§2sexies) gets one extra, free
+routing step between 3bis and 4 (its own keywords, `source=perso`) and a second
+comparison at step 4 (the already-computed message vector against the guild's own
+reference vectors) — no additional embedding call. A guild without any follows
+the exact diagram above.
+
 Only **nano decides**. Regex and embedding merely *route*. Output is a
 `Decision` object (or `None` if the message was stopped before nano).
 
@@ -115,7 +121,12 @@ that is the deterministic barème's job (session 2). The key v2 fields:
 `harcelement`, `harcelement_sexuel`, `haine_discrimination`,
 `incitation_automutilation`, `doxxing`, `arnaque_scam`, `violation_indications`,
 `contenu_nsfw` (explicit images) and `contenu_choquant` (gore / graphic violence
-in an image) — the last two decided by SafeSearch only, never by nano.
+in an image) — the last two decided by SafeSearch only, never by nano. nano may
+additionally answer `infraction_perso` (+ a `perso` P-id) for a server-defined
+infraction; the engine maps it to `perso:<id>` (§2sexies), so `infraction_perso`
+never leaves the pipeline. The member-profile categories `profil_avatar_nsfw`,
+`profil_avatar_choquant` and `profil_pseudo` are assigned by the profile service
+(§4.4), not returned by nano.
 Legacy detector/stored values (`insultes`, `menaces`, `contenu_sexuel`…) fold
 onto this set via `nano.CATEGORIE_ALIASES` / `nano.normalize_categorie` — no data
 migration needed.
@@ -197,7 +208,10 @@ Every sanction is one rung on a single scale. `supprimer` is **always** included
 
 ### How a cran is computed (`bareme.calculer`)
 
-1. **Floor** `PLANCHER[(categorie, gravite)]` — the "cold" first-offence policy.
+1. **Floor** `PLANCHER[(categorie, gravite)]` — the "cold" first-offence policy
+   (derived from the infraction catalogue, see below). A type the server set to
+   `mode: "perso"` uses the server's own cran for that gravity instead
+   (`plancher_perso` in the breakdown).
 2. **Recidivism** `+ crans_recidive(points_actifs(...))` — past sanctions are
    **weighted points** (`POINTS_GRAVITE`) that **decay exponentially** (half-life
    45 days), scaled by source reliability (`POIDS_SOURCE`) and ×1.5 for a repeat
@@ -225,8 +239,37 @@ a guess), the guild `max_action` ceiling and the mini confirmation of a
 nano-decided ban (§2quater). A scam ban also deletes the author's last hour of
 messages (`delete_message_seconds=3600`) — compromised accounts spam every channel.
 
-**Kill-switch** (`categories_desactivees`): a guild can opt a category out of AI
-sanctioning entirely — it is capped to deletion only (cran 0).
+**Kill-switch** (`sanctions[<id>].enabled = false`, or the legacy
+`categories_desactivees` list): a guild can opt an infraction out of sanctioning
+entirely — it is capped to deletion only (cran 0, component `categorie_desactivee`).
+`ConfigBareme.desactivees()` is the union of both sources.
+
+### Infraction catalogue and per-server sanctions (`automod/infractions.py`)
+
+`automod/infractions.py` is the **single source of truth** for what the automod
+can sanction. Each `InfractionType` carries `id`, `famille` (`message` · `image` ·
+`profil` · `perso`), the default floors per gravity (`plancher`), `sensible`
+(never softened), `ban_direct` (banned on sight) and, for profile types, the
+default `action_profil`. `bareme.PLANCHER`, `CATEGORIES_SENSIBLES` and
+`CATEGORIES_BAN_DIRECT` are **derived** from it (message + image families), so
+adding a type there is the only edit the barème needs. `infractions.get()`
+synthesizes a `perso:<id>` type (family `perso`, floors `0/1/2/4`) for a custom
+infraction.
+
+Per server, `sanctions[<id>]` (normalised by `normalize_sanctions`, validated by
+`validate_sanctions`; schema in [AUTOMOD_AI_CONFIG.md §3.1](AUTOMOD_AI_CONFIG.md))
+overrides the policy of one type. `bareme.calculer` reads `ConfigBareme.sanctions`:
+
+| Entry | Effect on the cran |
+|---|---|
+| absent / `mode: "auto"` | Moddy's defaults, unchanged (floor, severity shift, veteran clemency, fresh-account malus, recidivism) |
+| `mode: "perso"` | Floor = the server's `crans[gravité]` (0..7). **Skips** the severity shift, veteran clemency and the fresh-account malus ("the server gets exactly what it chose"). Recidivism stays unless `recidive: false`. Confidence caps and the `max_action` ceiling still apply |
+| `enabled: false` | Deletion only (kill-switch above) |
+| `action_profil` (profile types) | Not a cran: tells the profile feature what to do (§4.4). Carried on `ResultatBareme.action_profil`; `None` for every other type and for a disabled type |
+
+The breakdown (`composantes`) shows `plancher_perso` instead of `plancher` for a
+custom ladder. Legacy `categories_desactivees` is folded into
+`sanctions[<id>].enabled` when the config is loaded (an explicit `enabled` wins).
 
 ### Explainability
 
@@ -510,8 +553,18 @@ a wrong precedent can always be purged (it also busts the service cache).
 A server declares its own infraction types in `infractions_perso` (max 10):
 `{id [a-z0-9]{1,12}, nom <=40, description <=300, exemples <=5x200, mots_cles <=20x60, modele}`.
 Downstream the category is `perso:<id>`; its sanction is `sanctions["perso:<id>"]`
-(§2bis). Orphan `perso:*` sanctions are dropped on load and rejected by
-`validate_config`. `indications` is untouched.
+(§2bis; default floors `0/1/2/4` like `violation_indications`). Orphan `perso:*`
+sanctions are dropped on load and rejected by `validate_config`. `indications` is
+untouched. Entries are normalised on load (`custom_infractions.normalize`: bad
+entries dropped, text cut to its limits, lists de-duplicated, max 10) and strictly
+validated on save (`validate` / `validate_entry`); error codes and the full schema
+→ [AUTOMOD_AI_CONFIG.md §3.2 and §5](AUTOMOD_AI_CONFIG.md). Six Moddy **templates**
+(`pub_serveur`, `spoilers`, `politique_religion`, `demande_dm`, `langue`, `liens`)
+give one-click starting points, filled in the server language.
+
+> Code comments in `automod/constants.py` / `automod/engine.py` still cite
+> "§2quinquies" for this feature; that section is the server precedents RAG — the
+> custom infractions are this §2sexies.
 
 - **Routing, zero extra embedding call.** In `_route_semantic`, AFTER the regex
   blocklist and scam anchors (a global hit keeps priority): (1) keyword match
@@ -534,7 +587,14 @@ Downstream the category is `perso:<id>`; its sanction is `sanctions["perso:<id>"
   rejects an unknown P-id (`grounding_perso_inconnu`); `juger` maps it to
   `perso:<id>`. No victim is required. The prompt is byte-identical without custom
   infractions.
-- **Caches.** The verdict-cache key includes `custom_infractions.fingerprint`.
+- **Caches.** The verdict-cache key includes `custom_infractions.fingerprint`
+  (id + nom + description + examples + keywords; `""` without custom infractions,
+  so such a guild keeps the exact old keys). Custom reference vectors are cached
+  per content digest, shared across guilds with identical text
+  (`PERSO_REFS_CACHE_MAX_GUILDS` 256, `PERSO_REFS_CACHE_TTL_SECONDS` 3600).
+- **Mini confirmation.** A heavy sanction on a custom infraction is re-read by
+  the mini reviewer with the server-authored definition handed to it (the
+  `perso:<id>` id alone would be opaque).
 - **Safety.** `rules_check.validate_custom_infraction` (also
   `POST /automod/rules_check` with `{"guild_id", "infraction": {...}}`) runs the AI
   injection guard over nom + description + exemples; unmodified Moddy templates
@@ -564,19 +624,29 @@ take the `automod` id later. Full schema (for the dashboard / backend) →
   "notify_channel_id": 123,
   "ignore_moderators": true,
   "severity": 3,
+  "max_action": "ban",
+  "sanctions": { "insulte": { "enabled": true, "mode": "perso",
+                              "crans": {"basse": 0, "moyenne": 0, "haute": 2, "critique": 3},
+                              "recidive": true } },
+  "infractions_perso": [ { "id": "k3x9", "nom": "Advertising",
+                           "description": "…", "exemples": [], "mots_cles": [], "modele": null } ],
   "dry_run": false,
   "features": {
     "content": {
       "enabled": true,
       "exempt_roles": [111, 222],
       "exempt_channels": [333]
-    }
+    },
+    "profile": { "enabled": false, "exempt_roles": [], "exempt_channels": [],
+                 "avatar": true, "banner": true, "pseudo": true }
   }
 }
 ```
 
-The module runs `enabled` only when the module **and** at least one feature are
-on **and** `notify_channel_id` is set — the **alert channel is mandatory**
+(`image_nsfw`, `image_gore` and `image_scam` blocks have the same shape as `content`.)
+
+The module runs `enabled` only when the module **and** at least one feature
+(`profile` included) are on **and** `notify_channel_id` is set — the **alert channel is mandatory**
 (automod never runs without it). Legacy keys `rules` / `log_channel_id` are
 still read transparently.
 
@@ -589,7 +659,12 @@ still read transparently.
 - The language of the sanction reason / member DM is the **server language**
   (`/config` → Server settings, `utils/guild_language.py`) — automod has no
   language setting of its own.
-- **`categories_desactivees`** (list) kill-switches AI sanctioning per category.
+- **`sanctions`** (object) — per-infraction policy (kill-switch, own severity
+  ladder, profile action); **`infractions_perso`** (list, ≤ 10) — the server's
+  own infraction types. See §2bis, §2sexies and
+  [AUTOMOD_AI_CONFIG.md](AUTOMOD_AI_CONFIG.md).
+- **`categories_desactivees`** (list) — legacy kill-switch, superseded by
+  `sanctions[<id>].enabled`; still read, never written by the panel.
 - **`dry_run`** (bool, default `false`) is **shadow mode** (§8): the whole funnel
   and barème run but **nothing is applied** — no delete/warn/mute/ban, no case, no
   DM. A **SIMULATION** card is posted instead, carrying annotation buttons that
@@ -702,9 +777,17 @@ POST {BOT_INTERNAL_URL}/automod/rules_check
 { "guild_id": "…", "indications": "…" }  →  { "ok": true } | { "ok": false, "reason": "…" }
 ```
 
+The same route also accepts `{"guild_id": "…", "infraction": {…}}` to check ONE
+custom infraction (name + description + examples; keywords are never prompted):
+the entry is validated structurally first (`400 invalid_infraction`), then run
+through `rules_check.validate_custom_infraction` (an extra prompt paragraph tells
+the guard that examples are fictional messages; unmodified Moddy templates are
+trusted and skip the AI call). The panel runs it when an infraction is created
+from scratch or edited.
+
 See `internal_api/routes/automod.py` and
-[AUTOMOD_AI_CONFIG.md § 6](AUTOMOD_AI_CONFIG.md#6-indications-safety-check) for
-the full contract (error codes, locales, fail-closed semantics).
+[AUTOMOD_AI_CONFIG.md § 6](AUTOMOD_AI_CONFIG.md#6-safety-checks-indications-and-custom-infractions)
+for the full contract (error codes, locales, fail-closed semantics).
 
 ---
 
@@ -720,8 +803,8 @@ anti-raid later, follow the same three steps.
 
 ### 4.1 `content` — the AI funnel
 
-The only feature today: insults / problematic messages via the funnel of §1 →
-`Decision` → barème → sanction.
+Insults / problematic messages via the funnel of §1 → `Decision` → barème →
+sanction. Also the feature that carries the server's custom infractions (§2sexies).
 
 ### 4.2 `image_scam` — crypto / fake-giveaway images
 
@@ -869,6 +952,12 @@ labeling queue with `apply_decision`):
 | `alert` | — | Alert card only: no case, no sanction, no DM. |
 | `bareme` | — | The cran ladder exactly like a message (warn / mute / ban), minus the deletion. |
 
+A profile type switched off (`sanctions[<type>].enabled = false`, or listed in the
+legacy `categories_desactivees`) is not acted on at all (`profile_action_for`
+returns `None`). In `bareme` mode the server's `mode` / `crans` / `recidive` for
+that type apply as for any other. The `/config` → Sanctions → *Profiles* group
+shows these three types, the action select writes `action_profil`.
+
 `dry_run` posts a SIMULATION card (member, kind, judged name or spoilered image,
 policy) and applies nothing. Discord actions are marked in
 `bot._moddy_initiated_sanctions` so `case_sync` does not double-record.
@@ -916,8 +1005,8 @@ is replaced by server-language wording, the AI explanation stays on the case); a
 - Once a feature deleted the message, the remaining features stop (no double
   sanction on one message).
 - Config: `features.image_nsfw` / `features.image_gore` / `features.image_scam`
-  (`+ scan_all`), toggled
-  in `/config` → Automod → Options; the panel's exemptions apply to every feature.
+  (`+ scan_all`, no UI), toggled in `/config` → Automod AI → *What is monitored*;
+  the panel's exemptions apply to every feature.
 
 > A `situation` feature (diffuse harassment / dogpiling, judged on a friction
 > state machine + a `mini` sequence analyst) existed until 2026-08 and was
@@ -937,8 +1026,12 @@ is replaced by server-language wording, the AI explanation stays on the case); a
 | `automod_rules_check` | openai/chat | guild | ✅ |
 | `automod_image_ocr` | openai/vision (nano) | guild (300/day) + global | ✅ |
 | `automod_safesearch` | google_vision/safe_search | guild + global (+ monthly fail-closed rule) | ✅ |
+| `automod_profile_safesearch` | google_vision/safe_search, accounted on the `safe_search_profile` rule (member avatars / banners) | guild + global (+ its own monthly fail-closed rule) | ✅ |
 
-Seeded unlimited in `db/base.py`; tighten per-guild via `quota_overrides`.
+Seeded unlimited in `db/base.py` (the `automod_profile_safesearch` rows included);
+tighten per-guild via `quota_overrides`. `automod_rules_check` also covers the
+custom-infraction check. Names of members (§4.4) go through `automod_decision`
+like any text, so they consume the same nano quota and budget guard.
 `automod_decision_mini` (ambiguous cases) and `automod_confirm` (heavy-sanction
 confirmation) are the **session-6** routing calls — see §2quater.
 
@@ -968,7 +1061,7 @@ confirmation) are the **session-6** routing calls — see §2quater.
 
 Symmetric to the embedding cache but on nano's **qualification**. Same text in
 the same guild yields the same qualification (guidance / severity are per-guild,
-so the key is `sha256(guild_id + collapse_repeats(text))`), which makes the
+so the key is `sha256(guild_id + collapse_repeats(text) [+ origin] [+ custom-infraction fingerprint])`), which makes the
 qualification safe to memoise: a copypasta raid that reaches nano costs **one**
 chat call, not N. Only the qualification (sanctionnable / categorie / gravite /
 citation / cible / raison / explication / confiance / grounding motif) is cached
@@ -1065,6 +1158,33 @@ budget guard (5.3): they bound exactly those two failure modes.
 | `SAFESEARCH_MONTHLY_CAP` / `SAFESEARCH_BURST` / `SAFESEARCH_NORMAL_TIER_RATIO` | 1000 / 30 / 0.7 | smoothed monthly SafeSearch budget |
 | `NSFW_GUILD_DAILY_SHARE` | 15 | SafeSearch calls per guild per day |
 
+### Custom-infraction tunables (`automod/constants.py`, §2sexies)
+
+| Constant | Default | Meaning |
+|---|---|---|
+| `PERSO_SIMILARITY_THRESHOLD` | 0.50 | cosine between a message and a custom infraction's description / examples that routes it to nano, at severity 3. **Starting value — calibrate on real traffic** like `SEUIL_EMBEDDING`. A false route costs one nano call; a miss silently disables the feature |
+| `perso_threshold_for(severity)` | 0.65 / 0.57 / 0.50 / 0.44 / 0.38 | the threshold per severity 1..5 (shifted by the same delta as the global threshold, clamped 0.2..0.9) |
+| `PERSO_KEYWORD_SCORE` | 0.85 | confidence handed to the routing signal of a keyword hit |
+| `PERSO_REFS_CACHE_MAX_GUILDS` / `PERSO_REFS_CACHE_TTL_SECONDS` | 256 / 3600 | in-memory cache of custom reference vectors (≤ 60 per guild) |
+| `SOURCE_PERSO` / `CATEGORIE_PERSO` | `perso` / `infraction_perso` | routing source tag / the category nano answers before the engine maps it to `perso:<id>` |
+| `custom_infractions.MAX_*` | 10 / 40 / 300 / 5×200 / 20×60 | infractions, name, description, examples, keywords |
+| `custom_infractions.KEYWORD_COMPACT_MIN` | 6 | keywords this long also match inside separator-free text (shorter ones match on word boundaries only) |
+
+### Profile tunables (`automod/constants.py`, §4.4)
+
+| Constant | Default | Meaning |
+|---|---|---|
+| `CALL_TYPE_PROFILE_SAFESEARCH` | `automod_profile_safesearch` | gateway call type |
+| `PROFILE_SAFESEARCH_MONTHLY_CAP` | 1000 | fallback only; the enforced cap is env `GOOGLE_VISION_SAFESEARCH_PROFILE_MONTHLY` |
+| `PROFILE_SAFESEARCH_BURST` / `PROFILE_SAFESEARCH_NORMAL_TIER_RATIO` | 15 / 0.6 | smoothed monthly pacing of the profile budget |
+| `PROFILE_GUILD_DAILY_SHARE` | 30 | profile SafeSearch calls per guild per day |
+| `PROFILE_ASSET_TTL_SECONDS` / `PROFILE_PSEUDO_TTL_SECONDS` | 30 d / 30 d | verdict caches (asset key / normalized name) |
+| `PROFILE_AVATAR_SIZE` / `PROFILE_BANNER_SIZE` | 512 / 1024 | longest side requested from Discord's CDN |
+| `PROFILE_BANNER_FETCH_INTERVAL_SECONDS` | 600 | at most one banner REST fetch per user in this window |
+| `PROFILE_DONE_TTL_ASSET_SECONDS` / `PROFILE_DONE_TTL_PSEUDO_SECONDS` | 7 d / 24 h | "already sanctioned" markers |
+| `PROFILE_QUEUE_MAX` | 200 | pending profile screenings process-wide |
+| `PROFILE_HOLD_DURATION_HOURS` / `PROFILE_HOLD_RENEW_WINDOW_HOURS` | 672 (28 d) / 36 | timeout length of a hold / renewed by the sweep when less than this is left |
+
 ### Cost-control tunables (session 4, `automod/constants.py`)
 
 | Constant | Default | Meaning |
@@ -1111,13 +1231,15 @@ budget guard (5.3): they bound exactly those two failure modes.
 
 | Constant | Default | Meaning |
 |---|---|---|
-| `PLANCHER` | table | floor cran per (category, gravity) |
+| `PLANCHER` | table | floor cran per (category, gravity), **derived** from `automod/infractions.py` (message + image families); a server's `sanctions[...].crans` override it per type |
 | `POINTS_GRAVITE` | basse 1 / moyenne 3 / haute 7 / critique 15 | recidivism points per gravity |
 | `DEMI_VIE_JOURS` | 45 | points half-life (decay) |
 | `POIDS_SOURCE` | manuel 1.5 … appel accepté 0 | source-reliability weight |
 | `MULT_MEME_CATEGORIE` | 1.5 | same-category repeat multiplier |
 | `PLAFOND_CONFIG` | warn 1 / mute 6 / ban 7 | guild `max_action` cran ceiling |
-| `CATEGORIES_SENSIBLES` | self-harm/doxxing/sexual | no veteran clemency at haute+ |
+| `CATEGORIES_SENSIBLES` | self-harm/doxxing/sexual | no veteran clemency at haute+ (derived from `InfractionType.sensible`) |
+| `CATEGORIES_BAN_DIRECT` | `arnaque_scam` | banned on sight (derived from `InfractionType.ban_direct`) |
+| `infractions.CRAN_MIN` / `CRAN_MAX` | 0 / 7 | bounds of a server-set cran |
 
 ---
 
@@ -1209,7 +1331,8 @@ the funnel and barème run exactly as normal, but instead of acting the module
 posts a **SIMULATION** card to the alert channel (badge *"SIMULATION — aucune
 action appliquée"*) showing the sanction that *would* have been taken and its
 barème breakdown. **No delete, no warn/mute/ban, no case, no DM.** Toggle it in
-`/config` (Automod → Options, "Mode simulation", recommended the first week).
+`/config` (Automod AI → Advanced, simulation toggle, or the last wizard step;
+recommended the first week).
 
 The card carries three **persistent** annotation buttons — **✅ Correct**,
 **❌ Faux positif**, **⚠️ Disproportionné** (`utils/automod_shadow_views.py`,

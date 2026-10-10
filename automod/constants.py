@@ -324,7 +324,7 @@ SOURCE_IMAGE_HASH: str = "image_hash"
 SOURCE_SAFESEARCH: str = "safesearch"
 # Server-defined (custom) infractions: a keyword hit or an embedding match against
 # the guild's own descriptions / examples routes the message to nano
-# (docs/AUTOMOD_AI.md §2quinquies). Never decisional on its own.
+# (docs/AUTOMOD_AI.md §2sexies). Never decisional on its own.
 SOURCE_PERSO: str = "perso"
 
 
