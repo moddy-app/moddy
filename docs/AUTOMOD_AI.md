@@ -1,7 +1,7 @@
 # Moddy — Automod AI (AI message moderation)
 
 > Read this before touching the `automod/` package, `modules/automod_ai.py`, or
-> `modules/configs/automod_ai_config.py`.
+> `modules/configs/automod_ai_*.py` (the `/config` panel).
 
 The automod is split in two clean halves:
 
@@ -486,8 +486,7 @@ is one query per guild per window. Without a DB the whole feature is inert.
 
 ### Admin visibility (`§7.4`)
 
-`/config → Automod → Précédents` shows the learned-precedent count (and the last
-date) and a **Voir** button opening a paginated browser with per-item deletion —
+`/config → Automod → Advanced` shows the learned-precedent count and a **View precedents** button opening a paginated browser with per-item deletion —
 a wrong precedent can always be purged (it also busts the service cache).
 
 ### Tunables (session 7, `automod/constants.py`)
@@ -641,21 +640,57 @@ No blind windowing of long messages.
 
 ### Config UI
 
-`modules/configs/automod_ai_config.py` follows the **standard module pattern**
-(like the other `modules/configs/*`): a **working copy** is edited in memory and
-written to the DB only on **Save**; **Cancel** discards pending edits, **Delete**
-removes the stored config, **Back** returns to the module list (disabled while
-there are unsaved changes). The view has a 300 s timeout and is opened fresh by
-`/config` (it is **not** a persistent view — consistent with the other module
-panels). Sections: **État**, **Salon d'alertes** (required), **Sévérité** (1–5),
-**Limites** (`max_action`), **Indications**
-(replaces "Règlement"), **Exemptions**, **Options**.
+The panel is a rewrite built around one idea: *the only mandatory thing is where
+Moddy posts its alerts; everything else has a ready-made answer.* Plain words
+throughout (never "cran", "barème", "nano"). **Every change is saved instantly**
+(no Save/Cancel): the screen reads the stored config, changes one thing, and
+writes it with `bot.module_manager.save_module_config` (which runs
+`AutomodModule.validate_config` and refreshes the live module). A refused change
+writes nothing and shows the reason. CLAUDE.md rule 9 applies: no "current
+value" text under a select / channel / role picker; the stored value is printed
+only where a button opens a Modal (the AI guidance, the sanction of a type).
+
+| Screen | File | What it is |
+|---|---|---|
+| **Wizard** (no alerts channel yet) | `automod_ai_config.py` | 1. alerts channel · 2. level *Light / Balanced (recommended) / Strict* (`automod/presets.py`, pure) · 3. start in simulation (recommended) or enable now |
+| **Home** | `automod_ai_config.py` | status line (Active / Simulation / Off / Needs setup), a four-line summary, on/off, *Switch to real mode*, the alerts channel select, and a menu to the screens below |
+| **What is monitored** | `automod_ai_advanced_config.py` | two multi-selects: messages + 3 image kinds, and avatar / banner / names (`features.profile.*`) |
+| **Sanctions** | `automod_ai_sanctions_config.py` | types grouped Messages · Images · Profiles · Specific to this server, each with its sanction in plain words; a type select; *+ Add an infraction* (Moddy template in one click — no AI check — or from scratch, validated by `rules_check.validate_custom_infraction`, max 10) |
+| **One type** | same | description, Enabled toggle, *Customise* (Modal V2: four severity pickers + an "escalate on repeat offences" checkbox), *Reset to default*, the profile action select, and Edit / Delete (confirmation) for custom infractions |
+| **AI guidance** | `automod_ai_advanced_config.py` | the `indications` text, same AI injection check as before (`validate_rules`) |
+| **Exemptions** | same | roles + channels (shared by every feature) and *Ignore moderators* |
+| **Advanced** | same | simulation toggle, maximum sanction, sensitivity (*Very tolerant … Very strict*), learned precedents (`automod_ai_precedents_view.py`), delete the configuration (confirmation) |
+
+The alerts channel lives on the **Home** screen rather than under Advanced: it is
+the one mandatory setting and the first thing an admin looks for.
+
+Shared plumbing is `automod_ai_common.py`: `normalize_cfg` (the single place that
+turns the stored config — legacy keys included — into the edited dict),
+`save_cfg`, the plain-language sanction wording (`sanction_summary`), and `go()`
+navigation. Sanction **action** icons come from `utils/emojis.py::LOG_EMOJIS`
+(a documented, product-approved exception); all other icons are regular
+constants.
+
+Legacy `categories_desactivees` is folded into `sanctions[<id>].enabled = false`
+when the config is loaded (an explicit `sanctions[<id>].enabled` wins, exactly
+like `AutomodModule.load_config`) and is **never written back**; deleting a
+custom infraction also deletes `sanctions["perso:<id>"]`. The panel keeps ONE
+shared exemption list, written onto every feature (profiles get roles only).
+
+Persistence: every screen is persistent. Guild-scoped screens (wizard steps,
+home, sanctions list, monitoring, guidance, exemptions, advanced) are registered
+shells with static `moddy:automod:cfg:<screen>:<action>` custom_ids. Entity-scoped
+screens use `DynamicItem`s: `moddy:automod:cfg:tbtn:<action>:<type>` /
+`moddy:automod:cfg:tsel:<type>` (one infraction type, `<type>` = built-in id or
+`perso:<id>`) and `moddy:automod:cfg:prec:<action>:<page>` /
+`moddy:automod:cfg:precdel:<page>` (precedents), registered by
+`AutomodConfigPersistence`. Tests: `tests/test_automod_ai_panel.py`.
 
 ### Indications safety check
 
 When an admin edits the **indications** in `/config`, the text is run past the
 AI (`automod/rules_check.py`, call_type `automod_rules_check`) **before** being
-accepted into the working copy, because the indications are embedded verbatim
+accepted and stored, because the indications are embedded verbatim
 into nano's system prompt. The check **fails closed**: if the AI is unavailable,
 the text is rejected.
 

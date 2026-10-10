@@ -55,7 +55,15 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     from cogs.config import ConfigMainView
     from modules.configs.server_settings_config import ServerSettingsConfigView
     from modules.configs.adaptive_slowmode_config import AdaptiveSlowmodeConfigView
-    from modules.configs.automod_ai_config import AutomodAIConfigView
+    from modules.configs.automod_ai_config import (
+        AutomodAIConfigView, AutomodWizardChannelView, AutomodWizardLevelView,
+        AutomodWizardModeView, AutomodConfigPersistence,
+    )
+    from modules.configs.automod_ai_sanctions_config import AutomodSanctionsView
+    from modules.configs.automod_ai_advanced_config import (
+        AutomodMonitoringView, AutomodIndicationsView, AutomodExemptionsView,
+        AutomodAdvancedView,
+    )
     from staff.commands.team.help import HelpView
     from staff.commands.dev.serverlist import ServerListView
     from staff.commands.manage.staff import StaffManagerPanel
@@ -218,10 +226,20 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         # announcement's message id; public — clicking only shows the stored
         # translation of a message the reader can already see).
         AnnouncementTranslationView,
-        # Group 13 — /config automod AI panel (guild permission auth;
-        # AutomodAIPrecedentsView is deliberately excluded, see
-        # docs/PERSISTENT_VIEWS.md Step 12)
+        # Group 13 — /config automod AI panel (guild permission auth). Every
+        # screen has static custom_ids and is a registered shell; the
+        # infraction type screen and the precedents browser are dynamic items
+        # registered by AutomodConfigPersistence (their wrappers are not).
         AutomodAIConfigView,
+        AutomodWizardChannelView,
+        AutomodWizardLevelView,
+        AutomodWizardModeView,
+        AutomodSanctionsView,
+        AutomodMonitoringView,
+        AutomodIndicationsView,
+        AutomodExemptionsView,
+        AutomodAdvancedView,
+        AutomodConfigPersistence,
         # Group 14 — staff read-only views (owner-scoped dynamic items;
         # EmojiPreviewView is deliberately excluded — "Non-persistent...
         # Temporary by design" per its own docstring)

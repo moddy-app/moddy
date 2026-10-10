@@ -732,7 +732,7 @@ class TestModule:
 
 
 def test_config_panel_preserves_infractions_perso():
-    from modules.configs.automod_ai_config import _deep_default
+    from modules.configs.automod_ai_common import normalize_cfg as _deep_default
     assert _deep_default(None)["infractions_perso"] == []
     kept = _deep_default({"infractions_perso": [entry(pid="pub")]})
     assert kept["infractions_perso"] == [entry(pid="pub")]

@@ -11,7 +11,7 @@
 |---|---|
 | `MODULE_ID` | `automod_ai` |
 | Display name | `Automod AI` |
-| Code | `modules/automod_ai.py`, config UI `modules/configs/automod_ai_config.py` |
+| Code | `modules/automod_ai.py`, config UI `modules/configs/automod_ai_config.py` (home + wizard), `automod_ai_sanctions_config.py`, `automod_ai_advanced_config.py`, `automod_ai_common.py` |
 | Storage | `guilds.data.modules.automod_ai` (JSONB) |
 
 **Rename note.** This module was `automod` until 2026-08. The id is now
@@ -108,7 +108,7 @@ Deleting a config = writing `{}` (that is what the "Delete" button does).
 | `ignore_moderators` | bool | `true` | Members with `manage_messages` are skipped entirely. |
 | `severity` | int 1–5 | `3` | Detection dial: scales the embedding routing threshold (1 = 0.62 … 5 = 0.35) and the barème's global cran shift. Values outside 1–5 are clamped. |
 | `max_action` | enum | `"ban"` | Hardest sanction the automod may apply: `warn` < `mute` < `ban`. The barème caps itself at this level. |
-| `categories_desactivees` | string[] | `[]` | AI categories the server never wants actioned. Allowed values: `insulte`, `menace`, `harcelement`, `harcelement_sexuel`, `haine_discrimination`, `incitation_automutilation`, `doxxing`, `arnaque_scam`, `violation_indications`, `contenu_nsfw`, `contenu_choquant`. A decision in a disabled category is downgraded to deletion only. No UI selector yet — ops/backend-set; the bot's config panel preserves the value on save. |
+| `categories_desactivees` | string[] | `[]` | AI categories the server never wants actioned. Allowed values: `insulte`, `menace`, `harcelement`, `harcelement_sexuel`, `haine_discrimination`, `incitation_automutilation`, `doxxing`, `arnaque_scam`, `violation_indications`, `contenu_nsfw`, `contenu_choquant`. A decision in a disabled category is downgraded to deletion only. LEGACY: the config panel folds it into `sanctions[<id>].enabled = false` when it loads the config and never writes the key back. |
 | `dry_run` | bool | `false` | **Shadow mode**: the whole funnel + barème run, but nothing is applied (no delete, no sanction, no case, no DM). A SIMULATION card with ✅/❌/⚠️ annotation buttons is posted to `notify_channel_id` instead. |
 | `features.content.enabled` | bool | `false` | The AI content detector. Today the only feature. |
 | `features.content.exempt_roles` | int[] | `[]` | Members holding any of these roles are not moderated. |

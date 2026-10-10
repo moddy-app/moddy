@@ -579,6 +579,12 @@ def get_user_verification_badge(user_data: dict, moddy_attributes: dict, user_ve
 # This set is the **only** icon source allowed in the logs configuration panel
 # and in the log messages themselves — the sole exception being the module icon
 # shown in the /config picker.
+#
+# Product-approved exception (the other direction): the Automod AI /config panel
+# (modules/configs/automod_ai_*.py) uses this set for its SANCTION ACTION icons
+# only — delete message ("messageremove"), warn ("Warn"), timeout ("timeout"),
+# kick ("kick") and ban ("ban"). Everything else in that panel keeps the regular
+# constants above.
 # =============================================================================
 
 LOG_EMOJIS = {

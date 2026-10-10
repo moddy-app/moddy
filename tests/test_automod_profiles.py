@@ -1120,7 +1120,7 @@ def test_normalize_name_is_stable():
 
 
 def test_config_panel_carries_the_profile_feature_through():
-    from modules.configs.automod_ai_config import _deep_default
+    from modules.configs.automod_ai_common import normalize_cfg as _deep_default
     cfg = _deep_default({"features": {
         "content": {"exempt_roles": [3]},
         "profile": {"enabled": True, "banner": False}}})

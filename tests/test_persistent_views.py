@@ -143,6 +143,10 @@ def _dynamic_item_cases():
         TicketCategoryButton, TicketCategoryDestination, TicketCategoryRoles,
         TicketPermRoleSelect, TicketPermSelect, TicketPermButton,
     )
+    from modules.configs.automod_ai_sanctions_config import TypeActionSelect, TypeButton
+    from modules.configs.automod_ai_precedents_view import (
+        PrecedentsDeleteSelect, PrecedentsNavButton,
+    )
     _U = "0f7d9c62-3b4e-4a1f-9c2d-5e6f70819a2b"
     _SNOWFLAKE = 123456789012345678
     _SNOWFLAKE2 = 987654321098765432
@@ -197,6 +201,11 @@ def _dynamic_item_cases():
         # Announcement translation — one flag button per language under a
         # support-server announcement, keyed by that announcement's id.
         (AnnouncementLanguageButton, ("fr", _SNOWFLAKE)),
+        # Automod AI /config — one infraction type, and the precedents browser.
+        (TypeButton, ("toggle", "insulte")),
+        (TypeActionSelect, ("profil_pseudo",)),
+        (PrecedentsNavButton, ("next", 2)),
+        (PrecedentsDeleteSelect, (2,)),
     ]
 
 

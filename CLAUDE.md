@@ -99,8 +99,11 @@ moddy/
 │       ├── member_applications_config.py  # Member Applications (channel, roles, preset reasons Modal V2)
 │       ├── social_notifications_config.py
 │       ├── bump_reminder_config.py        # Bump reminders list + Modal V2
-│       ├── automod_ai_config.py
-│       ├── automod_ai_precedents_view.py  # Learned-precedents browser (S7)
+│       ├── automod_ai_config.py           # Automod AI: first-run wizard + home (instant save, persistent)
+│       ├── automod_ai_sanctions_config.py # Automod AI: sanctions list, one type, custom infractions, Modals V2
+│       ├── automod_ai_advanced_config.py  # Automod AI: monitoring, AI guidance, exemptions, advanced
+│       ├── automod_ai_common.py           # Automod AI panel: load/save/validate, wording, navigation
+│       ├── automod_ai_precedents_view.py  # Learned-precedents browser (persistent dynamic items)
 │       ├── welcome_channel_config.py      # Welcome messages list + add/manage (Modal V2)
 │       ├── welcome_dm_config.py           # Welcome DMs list + add/manage (Modal V2)
 │       ├── tickets_config.py              # Tickets: panel list (root screen)
@@ -144,6 +147,7 @@ moddy/
 │   ├── image_policy.py        #   SafeSearch → verdict, monthly pacing, scam pre-rules
 │   ├── engine.py              #   Shared per-bot orchestrator (funnel entry)
 │   ├── relations.py / routing.py / precedents.py / bareme.py
+│   ├── presets.py             #   Wizard protection levels (Light/Balanced/Strict) -> full config
 │   ├── prefiltre.py / triviaux.py / blocklist.py / embeddings.py / nano.py
 │   ├── relations.py           #   Relationship graph + target-reaction signals (familiarity)
 │   ├── routing.py             #   Difficulty router (nano→mini) + heavy-sanction confirm (S6)
@@ -348,6 +352,7 @@ moddy/
     ├── test_member_applications.py # Member applications: card, dedupe, decisions, poll, gateway, i18n
     ├── test_logs.py           #   Server logs: registry, routing, rendering, delivery
     ├── test_logs_i18n.py      #   Server logs: i18n completeness on the 5 locales
+    ├── test_automod_ai_panel.py #  Automod AI /config panel: presets, screens, instant save, persistence, i18n
     ├── test_stats.py          #   Statistics: registry guards, aggregation, flush, rollup
     ├── test_heartbeat.py      #   Health Monitor heartbeat: payload, lifecycle, status decisions
     ├── test_automod_images.py #   Automod image features, image service, labeling queue + card

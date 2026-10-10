@@ -610,7 +610,7 @@ def test_new_i18n_keys_exist_in_every_locale():
     from utils.i18n import i18n
     keys = [
         "modules.automod_ai.image.reason_nsfw", "modules.automod_ai.label_revoked.dm_body",
-        "modules.automod_ai.config.image_scam_label", "automod_label.button.yes",
+        "modules.automod_ai.panel.monitoring.image_scam", "automod_label.button.yes",
         "automod_label.terms.mode_compact", "ocr.errors.monthly_cap", "ocr.title",
         "staff.automod.title",
     ]
@@ -739,8 +739,8 @@ def test_gore_is_a_separate_feature_with_its_own_toggle():
     assert module.get_default_config()["features"]["image_gore"]["enabled"] is False
     from utils.i18n import i18n
     for loc in ("fr", "en-US", "es-ES", "pt-BR", "de"):
-        for key in ("image_gore_label", "image_gore_desc"):
-            assert not i18n.get(f"modules.automod_ai.config.{key}", locale=loc).startswith("[")
+        for key in ("image_gore", "image_gore_desc"):
+            assert not i18n.get(f"modules.automod_ai.panel.monitoring.{key}", locale=loc).startswith("[")
 
 
 def test_gore_i18n_keys_exist_in_every_locale():
