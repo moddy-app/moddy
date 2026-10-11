@@ -31,7 +31,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Awaitable, Callable, Dict, Iterable, Optional, Tuple, Union
 
 import discord
 
@@ -123,6 +123,78 @@ _MEMBER_MUTED_OVERWRITE = discord.PermissionOverwrite(
 )
 
 _HIDDEN_OVERWRITE = discord.PermissionOverwrite(view_channel=False)
+
+
+# --------------------------------------------------------------------------- #
+# Overwrites and the bot's own permissions
+#
+# Discord refuses (50013 Missing Permissions) any channel create / edit whose
+# overwrites ALLOW *or DENY* a permission the bot does not hold itself in that
+# spot -- unless the bot is Administrator. The bot is never required to be
+# Administrator (see CLAUDE.md rule 12), so every overwrite map is clamped to
+# what the bot effectively has before it is sent. Extras such as
+# `manage_messages` for staff then simply degrade: staff keep everything the
+# bot can give them, and the ticket still opens.
+# --------------------------------------------------------------------------- #
+# The permissions without which a ticket cannot work at all, and the English
+# label shown to the admin when one is missing. Order = order of the message.
+CORE_BOT_PERMISSIONS: Tuple[str, ...] = (
+    'view_channel', 'manage_channels', 'manage_roles', 'send_messages',
+)
+
+
+def bot_permissions_for(guild: discord.Guild,
+                        parent: Optional[discord.abc.GuildChannel] = None,
+                        ) -> discord.Permissions:
+    """What the bot holds where a ticket channel is (about to be) created.
+
+    Inside a Discord category that is the bot's permissions *there*; with no
+    category, its guild-level permissions. Never looks a role up by name: it is
+    whatever Discord computes for the bot member, with or without a Moddy role.
+    """
+    me = guild.me
+    if me is None:
+        return discord.Permissions.none()
+    if parent is not None:
+        return parent.permissions_for(me)
+    return me.guild_permissions
+
+
+def missing_core_permissions(perms: discord.Permissions) -> list:
+    """Core permissions absent from ``perms`` (empty for Administrator)."""
+    if perms.administrator:
+        return []
+    return [name for name in CORE_BOT_PERMISSIONS if not getattr(perms, name)]
+
+
+def clamp_overwrite(overwrite: discord.PermissionOverwrite,
+                    bot_perms: discord.Permissions) -> discord.PermissionOverwrite:
+    """A copy of ``overwrite`` that only touches permissions the bot holds."""
+    if bot_perms.administrator:
+        return overwrite
+    clamped = discord.PermissionOverwrite()
+    for name, value in overwrite:
+        if value is None:
+            continue
+        if getattr(bot_perms, name, False):
+            setattr(clamped, name, value)
+    return clamped
+
+
+def clamp_overwrites(overwrites: Dict[Any, discord.PermissionOverwrite],
+                     bot_perms: discord.Permissions,
+                     ) -> Dict[Any, discord.PermissionOverwrite]:
+    """Clamp a whole overwrite map (see :func:`clamp_overwrite`)."""
+    return {target: clamp_overwrite(ow, bot_perms)
+            for target, ow in overwrites.items()}
+
+
+def _bot_overwrite_flags() -> Iterable[str]:
+    """The bot's own overwrite, minus flags this discord.py does not know."""
+    wanted = ('view_channel', 'send_messages', 'read_message_history',
+              'manage_channels', 'manage_messages', 'pin_messages', 'embed_links',
+              'attach_files', 'manage_threads', 'create_private_threads')
+    return [f for f in wanted if f in discord.Permissions.VALID_FLAGS]
 
 
 class TicketError(Exception):
@@ -344,10 +416,7 @@ class TicketService:
         }
         if guild.me:
             overwrites[guild.me] = discord.PermissionOverwrite(
-                view_channel=True, send_messages=True, read_message_history=True,
-                manage_channels=True, manage_messages=True, embed_links=True,
-                attach_files=True, manage_threads=True, create_private_threads=True,
-            )
+                **{flag: True for flag in _bot_overwrite_flags()})
 
         # Staff roles.
         wanted = PERM_ADMIN if escalated else PERM_VIEW
@@ -386,6 +455,27 @@ class TicketService:
                 overwrites[claimer] = _STAFF_OVERWRITE
 
         return overwrites
+
+    def safe_overwrites(self, guild: discord.Guild, category: Dict[str, Any],
+                        ticket: Dict[str, Any],
+                        members: Optional[Dict[int, discord.Member]] = None,
+                        parent: Optional[discord.abc.GuildChannel] = None,
+                        ) -> Dict[Union[discord.Role, discord.Member],
+                                  discord.PermissionOverwrite]:
+        """:meth:`build_overwrites`, clamped to what the bot may actually set.
+
+        Raises ``TicketError('missing_bot_permissions')`` naming the missing
+        core permissions rather than letting Discord answer a bare 50013.
+        Hiding the channel from ``@everyone`` is part of the map, so a bot that
+        cannot see the channel refuses instead of silently leaking the ticket.
+        """
+        perms = bot_permissions_for(guild, parent)
+        missing = missing_core_permissions(perms)
+        if missing:
+            raise TicketError('modules.tickets.errors.missing_bot_permissions',
+                              permissions=", ".join(f"`{m}`" for m in missing))
+        return clamp_overwrites(
+            self.build_overwrites(guild, category, ticket, members), perms)
 
     # ------------------------------------------------------------------ #
     # Pings
@@ -619,10 +709,14 @@ class TicketService:
         members = await self.resolve_ticket_members(channel.guild, ticket)
         try:
             await channel.edit(
-                overwrites=self.build_overwrites(channel.guild, category, ticket, members),
+                overwrites=self.safe_overwrites(channel.guild, category, ticket,
+                                                members, channel.category),
                 reason="Moddy tickets: permission sync",
             )
             return True
+        except TicketError as e:
+            logger.warning(f"[Tickets] Cannot sync overwrites on {channel.id}: "
+                           f"{e.key} {e.params}")
         except discord.Forbidden:
             logger.warning(f"[Tickets] Missing permissions to sync overwrites on "
                            f"channel {channel.id}")
@@ -675,7 +769,7 @@ class TicketService:
                     render_channel_name(category, member=member, number=number),
                     ticket_status_dot(category, draft)),
                 category=parent,
-                overwrites=self.build_overwrites(guild, category, draft, members),
+                overwrites=self.safe_overwrites(guild, category, draft, members, parent),
                 topic=t('modules.tickets.channel.topic', locale=locale,
                         number=number, category=category['name'],
                         user=str(member), user_id=member.id)[:1024],
@@ -823,8 +917,12 @@ class TicketService:
             raise TicketError('modules.tickets.errors.unavailable')
 
         me = guild.me
-        if not me or not me.guild_permissions.manage_channels:
+        if not me:
             raise TicketError('modules.tickets.errors.cannot_create_channel')
+        missing = missing_core_permissions(me.guild_permissions)
+        if missing:
+            raise TicketError('modules.tickets.errors.missing_bot_permissions',
+                              permissions=", ".join(f"`{m}`" for m in missing))
 
         locale = await self.ticket_locale(guild)
         _panel, category = await self.staff_ticket_context(guild)
@@ -836,7 +934,7 @@ class TicketService:
         try:
             channel = await guild.create_text_channel(
                 name=render_channel_name(category, member=actor, number=number),
-                overwrites=self.build_overwrites(guild, category, draft, members),
+                overwrites=self.safe_overwrites(guild, category, draft, members),
                 topic=t('staff.team.ticket.topic', locale=locale, number=number,
                         user=str(actor), user_id=actor.id)[:1024],
                 reason=f"Moddy staff ticket opened by {actor} ({actor.id})",
@@ -925,7 +1023,9 @@ class TicketService:
     # ------------------------------------------------------------------ #
     async def close_ticket(self, channel: discord.TextChannel, actor: discord.Member,
                            reason: Optional[str] = None, *,
-                           bypass_permission: bool = False) -> Dict[str, Any]:
+                           bypass_permission: bool = False,
+                           before_delete: Optional[Callable[[], Awaitable[None]]] = None,
+                           ) -> Dict[str, Any]:
         """Lock the ticket, archive it if configured, then either delete the
         channel or keep it around behind a Reopen/Delete card.
 
@@ -941,6 +1041,13 @@ class TicketService:
         checking itself: :meth:`accept_close_request`, where the opener — who
         holds no ``close`` permission — closes their own ticket because the
         staff asked them to. Nothing else may set it.
+
+        ``before_delete`` is awaited right before the channel is destroyed (never
+        when it is kept). An interaction answered from inside the ticket channel
+        lives *in* that channel: once it is deleted, Discord rejects the
+        follow-up with ``10008 Unknown Message``. Callers therefore send their
+        confirmation through this hook instead of after the call. Whatever it
+        raises is logged and never blocks the deletion.
         """
         ticket, panel, category = await self.resolve(channel)
         if ticket['status'] == 'closed':
@@ -1019,6 +1126,12 @@ class TicketService:
             )
 
         if not keep_channel:
+            if before_delete is not None:
+                try:
+                    await before_delete()
+                except Exception as e:  # noqa: BLE001 - never block the deletion
+                    logger.warning(f"[Tickets] before_delete hook failed for "
+                                   f"{channel.id}: {e}")
             await self.bot.db.delete_ticket(channel.id)
             try:
                 await channel.delete(
@@ -1145,8 +1258,14 @@ class TicketService:
         """
         ticket, panel, category = await self.resolve(channel)
         self.require(actor, category, ticket, PERM_ADMIN)
+        try:
+            await channel.delete(reason=f"Moddy ticket deleted by {actor} ({actor.id})")
+        except discord.NotFound:
+            pass  # already gone: the row below is all that is left to remove
+        except discord.HTTPException as e:
+            logger.error(f"[Tickets] Could not delete channel {channel.id}: {e}")
+            raise TicketError('modules.tickets.errors.cannot_edit_channel')
         await self.bot.db.delete_ticket(channel.id)
-        await channel.delete(reason=f"Moddy ticket deleted by {actor} ({actor.id})")
 
     # ------------------------------------------------------------------ #
     # Close request — it points both ways
@@ -1223,7 +1342,9 @@ class TicketService:
                 and actor.id == ticket['owner_id'])
 
     async def accept_close_request(self, channel: discord.TextChannel,
-                                   actor: discord.Member) -> Dict[str, Any]:
+                                   actor: discord.Member, *,
+                                   before_delete: Optional[Callable[[], Awaitable[None]]] = None,
+                                   ) -> Dict[str, Any]:
         """Accept a pending request: close the ticket, whichever side asked.
 
         The opener holds no ``close`` permission — that is the whole point of
@@ -1242,7 +1363,7 @@ class TicketService:
 
         return await self.close_ticket(
             channel, actor, ticket.get('close_request_reason'),
-            bypass_permission=True)
+            bypass_permission=True, before_delete=before_delete)
 
     async def cancel_close_request(self, channel: discord.TextChannel,
                                    actor: discord.Member) -> Dict[str, Any]:
@@ -1472,7 +1593,7 @@ class TicketService:
                 # showing the previous category's convention.
                 name=apply_status_prefix(channel.name,
                                          ticket_status_dot(target, ticket)),
-                overwrites=self.build_overwrites(channel.guild, target, ticket, members),
+                overwrites=self.safe_overwrites(channel.guild, target, ticket, members, parent),
                 reason=f"Moddy ticket moved by {actor} ({actor.id})",
             )
         except discord.Forbidden:
