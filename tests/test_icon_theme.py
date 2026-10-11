@@ -110,6 +110,34 @@ def test_swap_payload_on_components_v2_payload():
     assert original == _payload()
 
 
+@pytest.mark.parametrize("style", [1, 3, 4])
+def test_coloured_buttons_keep_the_white_icon(style):
+    button = {"type": 2, "style": style, "custom_id": "c",
+              "emoji": {"id": str(SETTINGS_ID), "name": "settings"}}
+    out = icon_theme.swap_payload({"components": [{"type": 1, "components": [button]}]})
+    assert out["components"][0]["components"][0]["emoji"]["id"] == str(SETTINGS_ID)
+
+
+@pytest.mark.parametrize("style", [2, 5])
+def test_grey_buttons_follow_the_theme(style):
+    button = {"type": 2, "style": style, "custom_id": "g",
+              "emoji": {"id": str(SETTINGS_ID), "name": "settings"}}
+    out = icon_theme.swap_payload(button)
+    assert out["emoji"]["id"] == str(SETTINGS_DARK_ID)
+
+
+def test_coloured_button_in_a_real_view_keeps_white_icon():
+    view = ui.LayoutView()
+    row = ui.ActionRow()
+    row.add_item(ui.Button(style=discord.ButtonStyle.success, emoji=emojis.SETTINGS, custom_id="ok"))
+    row.add_item(ui.Button(style=discord.ButtonStyle.secondary, emoji=emojis.SETTINGS, custom_id="no"))
+    view.add_item(row)
+    out = icon_theme.swap_payload(view.to_components())
+    green, grey = out[0]["components"]
+    assert int(green["emoji"]["id"]) == SETTINGS_ID
+    assert int(grey["emoji"]["id"]) == SETTINGS_DARK_ID
+
+
 # --------------------------------------------------------------------------- #
 # Theme state
 # --------------------------------------------------------------------------- #

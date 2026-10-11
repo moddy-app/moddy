@@ -943,6 +943,8 @@ _EXTRA_ORIGINAL_IDS: Dict[str, Tuple[int, ...]] = {
     "policy": (1519801425247604736,),
     "track": (1519797032917795008,),
     "update": (1519801949736927414,),
+    "verified1": (1519799054631043332,),  # white "moderated by Moddy" check
+    "lock": (1519799617087213779,),
 }
 
 _EMOJI_TOKEN_RE = re.compile(r"<a?:([A-Za-z0-9_]+):(\d+)>")
