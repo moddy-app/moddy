@@ -155,6 +155,27 @@ def _skew() -> float:
     return min(MAX_SKEW_SECONDS, max(0.0, min(_ages) - 0.15))
 
 
+# Time kept between the end of a pre-modal wait and the guard's deadline, so
+# send_modal still lands before the guard defers (after which a modal is
+# impossible).
+MODAL_MARGIN_SECONDS = 0.3
+
+
+def modal_budget(interaction, cap: float) -> float:
+    """Seconds a handler may still wait before calling ``send_modal``.
+
+    A handler that opens a modal cannot ack first, so any lookup before it
+    races the guard's deadline. This returns what is left of that deadline
+    (minus a margin), never more than ``cap`` and never below 0.
+    """
+    try:
+        left = float(DEADLINE_SECONDS - (interaction_age(interaction) - _skew())
+                     - MODAL_MARGIN_SECONDS)
+    except Exception:  # noqa: BLE001 - stub without created_at: use the cap
+        return cap
+    return max(0.0, min(cap, left))
+
+
 def interaction_age(interaction) -> float:
     return (discord.utils.utcnow() - interaction.created_at).total_seconds()
 

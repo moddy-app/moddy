@@ -33,6 +33,7 @@ from utils.emojis import (
     ALTGUARD, DONE, ERROR, INFO, MANAGE_USER, SHIELD, TIME, WARNING,
     format_verification_badge, get_user_verification_badge,
 )
+from utils.interaction_guard import modal_budget
 from utils.i18n import i18n, t
 
 logger = logging.getLogger('moddy.utils.altguard_views')
@@ -124,7 +125,8 @@ class AltGuardPanelView(BaseView):
         # Bounded (fail-open, like any lookup failure): send_modal has to be
         # the first response, inside Discord's 3 s window.
         try:
-            already = await asyncio.wait_for(_already_verified(interaction), 1.5)
+            already = await asyncio.wait_for(_already_verified(interaction),
+                                             modal_budget(interaction, 1.5))
         except asyncio.TimeoutError:
             already = False
         if already:

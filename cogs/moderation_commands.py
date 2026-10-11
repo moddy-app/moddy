@@ -23,6 +23,7 @@ from cogs.error_handler import BaseModal, BaseView
 from config import COLORS
 from notifications.models import NotificationContent, NotificationSource
 from utils import emojis
+from utils.interaction_guard import modal_budget
 from utils.i18n import t, get_locale
 from utils.members import get_or_fetch_member
 
@@ -308,7 +309,7 @@ _LOCALE_TO_LANGUAGE: dict[str, str] = {
 
 _AI_SENTINEL_NO_REASON = "NO_REASON"
 _AI_SENTINEL_INJECTION = "INJECTION_DETECTED"
-_AI_TOTAL_TIMEOUT = 2.8  # seconds — must leave room for send_modal within the 3 s window
+_AI_TOTAL_TIMEOUT = 1.6  # seconds; further capped by modal_budget() (interaction guard deadline)
 _AI_FETCH_TIMEOUT = 1.2  # seconds — budget for the message-history scan
 _AI_CHAT_MIN_TIMEOUT = 1.0  # seconds — floor left for the OpenAI call, even if the fetch was slow
 _AI_MODEL = "gpt-4.1-nano"
@@ -488,12 +489,20 @@ async def _ai_reason_safe(
     guild: discord.Guild,
     user: Union[discord.Member, discord.User],
     action: str,
+    budget: float = _AI_TOTAL_TIMEOUT,
 ) -> Optional[str]:
-    """Wrapper that silences all errors and enforces the global timeout budget."""
+    """Wrapper that silences all errors and enforces the timeout budget.
+
+    Callers about to open a modal pass ``modal_budget(interaction, ...)``: the
+    suggestion must be ready before the interaction guard acknowledges the
+    command, after which a modal can no longer be opened.
+    """
+    if budget <= 0:
+        return None
     try:
         return await asyncio.wait_for(
             _get_ai_suggested_reason(bot, guild, user, action),
-            timeout=_AI_TOTAL_TIMEOUT,
+            timeout=budget,
         )
     except Exception:
         return None
@@ -940,10 +949,12 @@ class ModerationCommands(commands.Cog):
         if incognito is None:
             incognito, prefill_reason = await asyncio.gather(
                 _resolve_incognito(self.bot, interaction.user.id, default=True),
-                _ai_reason_safe(self.bot, interaction.guild, user, "ban"),
+                _ai_reason_safe(self.bot, interaction.guild, user, "ban",
+                            budget=modal_budget(interaction, _AI_TOTAL_TIMEOUT)),
             )
         else:
-            prefill_reason = await _ai_reason_safe(self.bot, interaction.guild, user, "ban")
+            prefill_reason = await _ai_reason_safe(self.bot, interaction.guild, user, "ban",
+                            budget=modal_budget(interaction, _AI_TOTAL_TIMEOUT))
         modal = SanctionModal(
             action="ban",
             initial_users=[user],
@@ -982,10 +993,12 @@ class ModerationCommands(commands.Cog):
         if incognito is None:
             incognito, prefill_reason = await asyncio.gather(
                 _resolve_incognito(self.bot, interaction.user.id, default=True),
-                _ai_reason_safe(self.bot, interaction.guild, user, "kick"),
+                _ai_reason_safe(self.bot, interaction.guild, user, "kick",
+                            budget=modal_budget(interaction, _AI_TOTAL_TIMEOUT)),
             )
         else:
-            prefill_reason = await _ai_reason_safe(self.bot, interaction.guild, user, "kick")
+            prefill_reason = await _ai_reason_safe(self.bot, interaction.guild, user, "kick",
+                            budget=modal_budget(interaction, _AI_TOTAL_TIMEOUT))
         modal = SanctionModal(
             action="kick",
             initial_users=[user],
@@ -1024,10 +1037,12 @@ class ModerationCommands(commands.Cog):
         if incognito is None:
             incognito, prefill_reason = await asyncio.gather(
                 _resolve_incognito(self.bot, interaction.user.id, default=True),
-                _ai_reason_safe(self.bot, interaction.guild, user, "mute"),
+                _ai_reason_safe(self.bot, interaction.guild, user, "mute",
+                            budget=modal_budget(interaction, _AI_TOTAL_TIMEOUT)),
             )
         else:
-            prefill_reason = await _ai_reason_safe(self.bot, interaction.guild, user, "mute")
+            prefill_reason = await _ai_reason_safe(self.bot, interaction.guild, user, "mute",
+                            budget=modal_budget(interaction, _AI_TOTAL_TIMEOUT))
         modal = SanctionModal(
             action="mute",
             initial_users=[user],
@@ -1066,10 +1081,12 @@ class ModerationCommands(commands.Cog):
         if incognito is None:
             incognito, prefill_reason = await asyncio.gather(
                 _resolve_incognito(self.bot, interaction.user.id, default=True),
-                _ai_reason_safe(self.bot, interaction.guild, user, "warn"),
+                _ai_reason_safe(self.bot, interaction.guild, user, "warn",
+                            budget=modal_budget(interaction, _AI_TOTAL_TIMEOUT)),
             )
         else:
-            prefill_reason = await _ai_reason_safe(self.bot, interaction.guild, user, "warn")
+            prefill_reason = await _ai_reason_safe(self.bot, interaction.guild, user, "warn",
+                            budget=modal_budget(interaction, _AI_TOTAL_TIMEOUT))
         modal = SanctionModal(
             action="warn",
             initial_users=[user],

@@ -681,3 +681,19 @@ def test_guard_coexists_with_the_icon_theme_patches():
                              ("InteractionResponse", "edit_message")):
         fn = getattr(discord.InteractionResponse, method)
         assert getattr(fn, "__icon_theme_patched__", False) or getattr(fn, guard.PATCH_MARK, False)
+
+
+def test_modal_budget_leaves_room_before_the_guard_deadline():
+    import datetime
+    from types import SimpleNamespace
+    from utils import interaction_guard as g
+
+    def at(age):
+        created = discord.utils.utcnow() - datetime.timedelta(seconds=age)
+        return SimpleNamespace(created_at=created)
+
+    fresh = g.modal_budget(at(0.0), 5.0)
+    assert fresh <= g.DEADLINE_SECONDS - g.MODAL_MARGIN_SECONDS + 0.05
+    assert g.modal_budget(at(0.0), 0.5) == 0.5          # capped
+    assert g.modal_budget(at(2.5), 1.5) == 0.0          # already past the deadline
+    assert g.modal_budget(object(), 1.5) == 1.5         # stub without created_at

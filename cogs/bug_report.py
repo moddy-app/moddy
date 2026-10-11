@@ -25,6 +25,7 @@ from discord.ext import commands
 
 from cogs.error_handler import BaseModal
 from db.repositories.support_requests import KIND_BUG
+from utils.interaction_guard import modal_budget
 from utils.components_v2 import create_error_message
 
 from utils.i18n import i18n, t
@@ -144,7 +145,8 @@ class BugReport(commands.Cog):
         # Discord's 3 s window, so a slow database must not hold it back.
         try:
             limited = await asyncio.wait_for(
-                service.is_rate_limited(interaction.user.id, KIND_BUG), 1.5)
+                service.is_rate_limited(interaction.user.id, KIND_BUG),
+                modal_budget(interaction, 1.5))
         except asyncio.TimeoutError:
             limited = False
         if limited:

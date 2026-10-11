@@ -38,6 +38,7 @@ from db.repositories.support_requests import (
     AUTHOR_STAFF, KIND_BUG, KIND_CONFIG_HELP,
     STATUS_CLAIMED, STATUS_OPEN, STATUS_RESOLVED,
 )
+from utils.interaction_guard import modal_budget
 from utils.components_v2 import create_error_message, create_success_message
 from utils.emojis import (
     BUG, BUILD, DONE, GROUPS, HAND, NOTE, REPLY, SUPPORT, TIME, USER,
@@ -534,7 +535,8 @@ class ConfigHelpButton(
         if service is not None:
             try:
                 limited = await asyncio.wait_for(
-                    service.is_rate_limited(interaction.user.id, KIND_CONFIG_HELP), 1.5)
+                    service.is_rate_limited(interaction.user.id, KIND_CONFIG_HELP),
+                    modal_budget(interaction, 1.5))
             except asyncio.TimeoutError:
                 limited = False
         if limited:

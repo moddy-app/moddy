@@ -26,6 +26,7 @@ from discord import ui
 
 from config import COLORS
 from utils.emojis import EMOJIS
+from utils.interaction_guard import modal_budget
 from utils.i18n import i18n, t
 from utils.bot_permissions import (
     format_missing,
@@ -187,7 +188,8 @@ async def load_before_modal(interaction: discord.Interaction,
     the caller must then return without opening the modal.
     """
     try:
-        return True, await asyncio.wait_for(coro, timeout=MODAL_LOAD_TIMEOUT)
+        return True, await asyncio.wait_for(
+            coro, timeout=modal_budget(interaction, MODAL_LOAD_TIMEOUT))
     except Exception as e:  # noqa: BLE001 - timeout or DB error: never let the click fail
         logging.getLogger("moddy").warning(
             "Modal pre-fill load failed (%s); asking the user to retry", type(e).__name__)
