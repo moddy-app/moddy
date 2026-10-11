@@ -1133,7 +1133,7 @@
       },
       "welcome_dm": {
         "title": "### <:groups:1519789805456724049> Salon Inter-Serveur",
-        "body": "<:web:1519798069191901254> Ceci est un salon inter-serveur francophone connectant plusieurs serveurs Discord.\n<:book:1519788969691316467> Veuillez respecter les Règles Inter-Serveur et les Conditions d'Utilisation de Discord.\n<:verified:1519799054631043332> Ce salon est modéré par l'équipe de modération de Moddy.\n<:flag:1519789496181461183> Pour signaler un message à notre équipe, rejoignez notre serveur de support ou utilisez /interserver report.\n\n-# Vous recevez ce message car vous avez envoyé votre premier message dans un salon inter-serveur."
+        "body": "<:web:1519798069191901254> Ceci est un salon inter-serveur francophone connectant plusieurs serveurs Discord.\n<:book:1519788969691316467> Veuillez respecter les Règles Inter-Serveur et les Conditions d'Utilisation de Discord.\n<:verified1:1519799054631043332> Ce salon est modéré par l'équipe de modération de Moddy.\n<:flag:1519789496181461183> Pour signaler un message à notre équipe, rejoignez notre serveur de support ou utilisez /interserver report.\n\n-# Vous recevez ce message car vous avez envoyé votre premier message dans un salon inter-serveur."
       },
       "channel_description": "🌐 Salon Inter-Serveur | Connectez-vous avec des utilisateurs de plusieurs serveurs Discord | Respectez les Règles Inter-Serveur (https://moddy.app/interserver-guidelines) | Modéré par l'équipe Moddy | Signalement : /interserver report"
     },

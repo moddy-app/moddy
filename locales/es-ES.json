@@ -1134,7 +1134,7 @@
       },
       "welcome_dm": {
         "title": "### <:groups:1519789805456724049> Canal inter-servidor",
-        "body": "<:web:1519798069191901254> Este es un canal inter-servidor internacional que conecta varios servidores de Discord.\n<:book:1519788969691316467> Sigue las Normas Inter-Servidor y los Términos de Servicio de Discord.\n<:verified:1519799054631043332> Este canal está moderado por el equipo de moderación de Moddy.\n<:flag:1519789496181461183> Para reportar un mensaje a nuestro equipo, únete a nuestro servidor de soporte o usa /interserver report.\n\n-# Recibes este mensaje porque has enviado tu primer mensaje en un canal inter-servidor."
+        "body": "<:web:1519798069191901254> Este es un canal inter-servidor internacional que conecta varios servidores de Discord.\n<:book:1519788969691316467> Sigue las Normas Inter-Servidor y los Términos de Servicio de Discord.\n<:verified1:1519799054631043332> Este canal está moderado por el equipo de moderación de Moddy.\n<:flag:1519789496181461183> Para reportar un mensaje a nuestro equipo, únete a nuestro servidor de soporte o usa /interserver report.\n\n-# Recibes este mensaje porque has enviado tu primer mensaje en un canal inter-servidor."
       },
       "channel_description": "🌐 Canal Inter-Servidor | Conéctate con usuarios de varios servidores de Discord | Sigue las Normas Inter-Servidor (https://moddy.app/interserver-guidelines) | Moderado por el equipo de Moddy | Reportar: /interserver report"
     },

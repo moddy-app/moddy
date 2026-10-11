@@ -49,9 +49,8 @@
 
 ## Known issues / follow-ups
 
-- Two uploaded `_dark` icons have no known original yet: `lock_dark` (code
-  has `locked` / `locked1`) and `verified1_dark`. The 18 others were matched
-  through the ids listed in docs/EMOJIS.md (`_EXTRA_ORIGINAL_IDS`).
+- Every uploaded `_dark` icon is now mapped (18 originals came from the ids in
+  docs/EMOJIS.md; `verified1` and `lock` were confirmed by the user).
 - Messages sent by the bot on its own in channels (logs, welcome, panels) and
   `interaction.message.edit()` outside a response keep white icons.
 - Public interaction responses follow the interactor's theme for everyone.
