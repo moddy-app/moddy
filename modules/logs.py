@@ -37,7 +37,7 @@ import discord
 
 from modules.module_manager import ModuleBase
 from serverlogs import registry
-from utils.emojis import NOTE
+from utils.emojis import NEWSPAPER
 
 logger = logging.getLogger('moddy.modules.logs')
 
@@ -115,7 +115,7 @@ class LogsModule(ModuleBase):
     MODULE_ID = MODULE_ID
     MODULE_NAME = "Logs"
     MODULE_DESCRIPTION = "Detailed audit logs for everything that happens on the server"
-    MODULE_EMOJI = NOTE
+    MODULE_EMOJI = NEWSPAPER
     MODULE_ORDER = 25
     REQUIRED_BOT_PERMISSIONS = ["manage_webhooks"]
 

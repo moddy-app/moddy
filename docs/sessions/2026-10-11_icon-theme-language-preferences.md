@@ -33,6 +33,10 @@
   `notifications/service.py`, `locales/*.json` (5), `CLAUDE.md`,
   `docs/DATABASE.md`, `docs/SERVER_LANGUAGE.md`.
 
+- **Module icons.** AltGuard → `fingerprint`, Logs → `newspaper`, Member
+  applications → `assignment`, Adaptive slowmode → `timer`, Auto restore roles
+  → `refresh` (`MODULE_EMOJI` + config screen title), each with its `_dark` twin.
+
 ## Decisions
 
 - Send-time rewrite instead of per-call-site changes or "smart" emoji objects:
@@ -43,12 +47,9 @@
 
 ## Known issues / follow-ups
 
-- 20 uploaded `_dark` icons have no original with the same name in the code,
-  so they are not mapped yet: `1__`, `2__`, `3__`, `4__`, `color`, `commit`,
-  `cooldown`, `copyright`, `explore`, `eye_m`, `ia`, `idea`, `import`,
-  `invalidsnowflake`, `lock`, `person_off`, `policy`, `track`, `update`,
-  `verified1`. Either the originals are unused yet or named differently — map
-  them in `utils/emojis.py` once confirmed.
+- Two uploaded `_dark` icons have no known original yet: `lock_dark` (code
+  has `locked` / `locked1`) and `verified1_dark`. The 18 others were matched
+  through the ids listed in docs/EMOJIS.md (`_EXTRA_ORIGINAL_IDS`).
 - Messages sent by the bot on its own in channels (logs, welcome, panels) and
   `interaction.message.edit()` outside a response keep white icons.
 - Public interaction responses follow the interactor's theme for everyone.

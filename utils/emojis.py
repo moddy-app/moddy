@@ -80,6 +80,12 @@ AT = "<:at:1519789374898700289>"
 STAR = "<:star:1519789099286925406>"
 EMOJI = "<:emoji:1519800926636867675>"
 PREMIUM = "<:premium:1519795224493424893>"
+# Module icons (the /config list and each module's config screen title)
+FINGERPRINT = "<:fingerprint:1558791867988971620>"  # AltGuard
+NEWSPAPER = "<:newspaper:1558791863228567603>"      # Server logs
+ASSIGNMENT = "<:assignment:1558791861802639400>"    # Member applications
+TIMER = "<:timer:1558791855297269880>"              # Adaptive slowmode
+REFRESH = "<:refresh:1558791853745250314>"          # Auto restore roles
 DOLLARS = "<:dollars:1543645900797116436>"  # billing: Stripe invoice receipts
 SUPPORT = "<:support:1519797524813185164>"
 BALANCE = "<:balance:1519801728961351730>"
@@ -893,6 +899,11 @@ DARK_VARIANTS: Dict[str, int] = {
     "waving_hand_dark": 1558776114594324480,
     "web_dark": 1558776209909882880,
     "webhook_dark": 1558776155337916506,
+    "fingerprint_dark": 1558791866286350437,
+    "newspaper_dark": 1558791864373743718,
+    "assignment_dark": 1558791858505646211,
+    "timer_dark": 1558791856844701867,
+    "refresh_dark": 1558791852382093332,
 }
 
 # Original ids that are hardcoded outside this module (other .py files or the
@@ -912,6 +923,26 @@ _EXTRA_ORIGINAL_IDS: Dict[str, Tuple[int, ...]] = {
     "send": (1519793414185553940,),
     "server": (1519788576420921476,),
     "warning": (1398729560895422505,),
+    # Listed in docs/EMOJIS.md but not used as a constant yet — mapped so they
+    # switch as soon as someone uses them.
+    "1_": (1386154327499997275,),
+    "2_": (1386154384974413906,),
+    "3_": (1386154437998940300,),
+    "4_": (1386154478142750874,),
+    "color": (1519800727231266858,),
+    "commit": (1519802920097419334,),
+    "cooldown": (1519799889045880912,),
+    "copyright": (1519801539143667785,),
+    "explore": (1519799371841933483,),
+    "eye_m": (1519793508695933130,),
+    "ia": (1519796401796546581,),
+    "idea": (1519801074427363468,),
+    "import": (1519802254759039201,),
+    "invalidsnowflake": (1519797857635532890,),
+    "person_off": (1519796161530171603,),
+    "policy": (1519801425247604736,),
+    "track": (1519797032917795008,),
+    "update": (1519801949736927414,),
 }
 
 _EMOJI_TOKEN_RE = re.compile(r"<a?:([A-Za-z0-9_]+):(\d+)>")

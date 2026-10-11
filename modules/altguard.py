@@ -38,7 +38,7 @@ from db.repositories.altguard import (
     VERDICT_PASSED, VERDICT_TO_STATUS,
 )
 from modules.module_manager import ModuleBase
-from utils.emojis import SHIELD
+from utils.emojis import FINGERPRINT
 from utils.guild_language import DEFAULT_LOCALE, guild_locale
 
 logger = logging.getLogger('moddy.modules.altguard')
@@ -62,7 +62,7 @@ class AltGuardModule(ModuleBase):
     MODULE_DESCRIPTION = "Anti multi-account verification before server access"
     # The /config picker uses the shield (it is a protection module); the
     # animated AltGuard face is reserved for the panel message itself.
-    MODULE_EMOJI = SHIELD
+    MODULE_EMOJI = FINGERPRINT
     MODULE_ORDER = 20
     # The verification panel is a message written in the server language.
     LANGUAGE_DEPENDENT_MESSAGES = True

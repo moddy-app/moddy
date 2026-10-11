@@ -35,7 +35,7 @@ from modules.member_applications import (
     normalize_reasons,
 )
 from utils.emojis import (
-    BACK, DELETE, DONE, EDIT, SAVE, SHAPES, UNDONE, WARNING,
+    ASSIGNMENT, BACK, DELETE, DONE, EDIT, SAVE, UNDONE, WARNING,
 )
 from utils.i18n import i18n, t
 
@@ -156,7 +156,7 @@ class MemberApplicationsConfigView(BaseView):
         loc = self.locale
         container = ui.Container()
 
-        container.add_item(ui.TextDisplay(f"### {SHAPES} {t(f'{_P}.title', locale=loc)}"))
+        container.add_item(ui.TextDisplay(f"### {ASSIGNMENT} {t(f'{_P}.title', locale=loc)}"))
         container.add_item(ui.TextDisplay(t(f"{_P}.description", locale=loc)))
         discord_line = self._discord_status_line()
         if discord_line:

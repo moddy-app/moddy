@@ -10,7 +10,7 @@ import logging
 
 from utils.i18n import i18n, t
 from cogs.error_handler import BaseView
-from utils.emojis import HISTORY, REQUIRED_FIELDS, DONE, DELETE, BACK, SAVE, UNDONE
+from utils.emojis import REFRESH, REQUIRED_FIELDS, DONE, DELETE, BACK, SAVE, UNDONE
 from modules.configs._common import check_guild_perms
 
 logger = logging.getLogger('moddy.modules.auto_restore_roles_config')
@@ -78,7 +78,7 @@ class AutoRestoreRolesConfigView(BaseView):
 
         # Header
         container.add_item(ui.TextDisplay(
-            f"### {HISTORY} {t('modules.auto_restore_roles.config.title', locale=self.locale)}"
+            f"### {REFRESH} {t('modules.auto_restore_roles.config.title', locale=self.locale)}"
         ))
         container.add_item(ui.TextDisplay(
             t('modules.auto_restore_roles.config.description', locale=self.locale)

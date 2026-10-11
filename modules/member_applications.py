@@ -34,7 +34,7 @@ from typing import Any, Dict, List, Optional
 import discord
 
 from modules.module_manager import ModuleBase
-from utils.emojis import SHAPES
+from utils.emojis import ASSIGNMENT
 from utils.i18n import t
 
 logger = logging.getLogger("moddy.modules.member_applications")
@@ -84,7 +84,7 @@ class MemberApplicationsModule(ModuleBase):
     MODULE_ID = MODULE_ID
     MODULE_NAME = "Member Applications"
     MODULE_DESCRIPTION = "Review Discord membership applications from a channel"
-    MODULE_EMOJI = SHAPES
+    MODULE_EMOJI = ASSIGNMENT
     # Next to AltGuard: both decide who gets into the server.
     MODULE_ORDER = 22
     # Discord requires Kick Members to list and action join requests. Nothing
