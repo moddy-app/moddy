@@ -15,7 +15,7 @@ import discord
 import logging
 
 from modules.module_manager import ModuleBase
-from utils.emojis import TIME
+from utils.emojis import TIMER
 
 logger = logging.getLogger('moddy.modules.adaptive_slowmode')
 
@@ -91,7 +91,7 @@ class AdaptiveSlowmodeModule(ModuleBase):
     MODULE_ID = "adaptive_slowmode"
     MODULE_NAME = "Adaptive Slowmode"
     MODULE_DESCRIPTION = "Ajuste automatiquement le slowmode selon l'activité"
-    MODULE_EMOJI = TIME
+    MODULE_EMOJI = TIMER
     MODULE_ORDER = 70
     REQUIRED_BOT_PERMISSIONS = ["manage_channels"]
 

@@ -1514,6 +1514,21 @@ class ModdyBot(ModdyFrameworkBot):
             # Property for compatibility with old code
             self.db_pool = self.db.pool
 
+            # User preferences cache (icon theme + language override) and the
+            # icon theme engine (written separately; boot either way).
+            try:
+                from utils import user_preferences
+                await user_preferences.load_all(self)
+            except Exception as e:
+                logger.error(f"[FAIL] User preferences load error: {e}")
+            try:
+                from utils import icon_theme
+                icon_theme.install()
+            except ImportError:
+                logger.warning("utils.icon_theme not available; icon theme disabled")
+            except Exception as e:
+                logger.error(f"[FAIL] Icon theme install error: {e}")
+
             # Global sanctions live in the cases system now. Convert whatever
             # is left of the legacy BLACKLISTED attribute into a global ban
             # case, then drop the attribute (idempotent, no-op once done).

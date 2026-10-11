@@ -9,7 +9,7 @@ import logging
 from datetime import datetime
 
 from modules.module_manager import ModuleBase
-from utils.emojis import HISTORY, DONE
+from utils.emojis import REFRESH, HISTORY, DONE
 
 logger = logging.getLogger('moddy.modules.auto_restore_roles')
 
@@ -24,7 +24,7 @@ class AutoRestoreRolesModule(ModuleBase):
     MODULE_ID = "auto_restore_roles"
     MODULE_NAME = "Auto Restore Roles"
     MODULE_DESCRIPTION = "Restaure automatiquement les rôles des utilisateurs qui reviennent"
-    MODULE_EMOJI = HISTORY
+    MODULE_EMOJI = REFRESH
     MODULE_ORDER = 60
     REQUIRED_BOT_PERMISSIONS = ["manage_roles"]
 

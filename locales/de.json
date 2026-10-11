@@ -490,6 +490,20 @@
         "success": "<:done:1519800188925902881> Zeitzone auf **{timezone}** geändert.",
         "auto_detected": "automatisch erkannt"
       },
+      "theme": {
+        "label": "**Discord-Design**\nNutzt du Discord im hellen Modus? Wähle Hell, damit die Symbole sichtbar bleiben.",
+        "placeholder": "Wähle dein Discord-Design...",
+        "options": {
+          "dark": "Dunkel (Standard)",
+          "light": "Hell"
+        }
+      },
+      "language": {
+        "label": "**Sprache von Moddy**\nStandardmäßig folgt Moddy der Sprache deines Discord-Clients. Wähle eine Sprache, um sie festzulegen.",
+        "placeholder": "Wähle deine Sprache...",
+        "auto": "Automatisch",
+        "auto_description": "Folgt deiner Discord-Sprache"
+      },
       "footer": "-# Tipp: Deine Zeitzone wirkt sich auf die Erinnerungszeiten aus.",
       "errors": {
         "author_only": "<:undone:1519800313324896327> Du kannst diese Schaltflächen nicht verwenden, sie gehören einem anderen Nutzer."

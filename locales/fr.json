@@ -489,6 +489,20 @@
         "success": "<:done:1519800188925902881> Fuseau horaire changé en **{timezone}**.",
         "auto_detected": "auto-détecté"
       },
+      "theme": {
+        "label": "**Thème de Discord**\nVous utilisez Discord en mode clair ? Choisissez Clair pour que les icônes restent visibles.",
+        "placeholder": "Choisissez votre thème Discord...",
+        "options": {
+          "dark": "Sombre (par défaut)",
+          "light": "Clair"
+        }
+      },
+      "language": {
+        "label": "**Langue de Moddy**\nPar défaut, Moddy suit la langue de votre client Discord. Choisissez une langue pour la forcer.",
+        "placeholder": "Choisissez votre langue...",
+        "auto": "Automatique",
+        "auto_description": "Suit la langue de votre Discord"
+      },
       "footer": "-# Astuce : Votre fuseau horaire affecte les heures des rappels.",
       "errors": {
         "author_only": "<:undone:1519800313324896327> Vous ne pouvez pas utiliser ces boutons, ils appartiennent à un autre utilisateur."

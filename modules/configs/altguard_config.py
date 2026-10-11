@@ -24,7 +24,7 @@ from discord import ui
 from cogs.error_handler import BaseView
 from modules.altguard import MODULE_ID
 from modules.configs._common import check_guild_perms
-from utils.emojis import ALTGUARD, BACK, DELETE, SAVE, UNDONE
+from utils.emojis import BACK, FINGERPRINT, DELETE, SAVE, UNDONE
 from utils.i18n import i18n, t
 
 logger = logging.getLogger("moddy.modules.altguard_config")
@@ -87,7 +87,7 @@ class AltGuardConfigView(BaseView):
         container = ui.Container()
 
         container.add_item(ui.TextDisplay(
-            f"### {ALTGUARD} {t('modules.altguard.config.title', locale=self.locale)}"
+            f"### {FINGERPRINT} {t('modules.altguard.config.title', locale=self.locale)}"
         ))
         container.add_item(ui.TextDisplay(
             t('modules.altguard.config.description', locale=self.locale)

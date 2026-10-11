@@ -490,6 +490,20 @@
         "success": "<:done:1519800188925902881> Timezone changed to **{timezone}**.",
         "auto_detected": "auto-detected"
       },
+      "theme": {
+        "label": "**Discord theme**\nUsing Discord in light mode? Choose Light so icons stay visible.",
+        "placeholder": "Choose your Discord theme...",
+        "options": {
+          "dark": "Dark (default)",
+          "light": "Light"
+        }
+      },
+      "language": {
+        "label": "**Moddy language**\nBy default, Moddy follows your Discord client language. Pick a language to force it.",
+        "placeholder": "Choose your language...",
+        "auto": "Automatic",
+        "auto_description": "Follows your Discord language"
+      },
       "footer": "-# Tip: Your timezone affects reminder times.",
       "errors": {
         "author_only": "<:undone:1519800313324896327> You can't use these buttons, they belong to another user."

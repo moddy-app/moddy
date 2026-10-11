@@ -148,6 +148,19 @@
 
 
 
+## Module icons — `MODULE_EMOJI` + config screen title
+
+| Module | Constant | Emoji | Light-theme twin |
+|---|---|---|---|
+| AltGuard | `FINGERPRINT` | `<:fingerprint:1558791867988971620>` | `fingerprint_dark` |
+| Server logs | `NEWSPAPER` | `<:newspaper:1558791863228567603>` | `newspaper_dark` |
+| Member applications | `ASSIGNMENT` | `<:assignment:1558791861802639400>` | `assignment_dark` |
+| Adaptive slowmode | `TIMER` | `<:timer:1558791855297269880>` | `timer_dark` |
+| Auto restore roles | `REFRESH` | `<:refresh:1558791853745250314>` | `refresh_dark` |
+
+Every `<name>_dark` twin lives in `utils/emojis.py::DARK_VARIANTS` (see
+[ICON_THEME.md](ICON_THEME.md)).
+
 ## Bump Reminder directory icons — `utils/emojis.py::BUMP_DIRECTORY_EMOJIS`
 
 One icon per server directory supported by the Bump Reminder module

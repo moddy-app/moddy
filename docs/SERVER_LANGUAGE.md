@@ -133,3 +133,10 @@ and read as `auto`.
    labels come from that shared block.
 
 Nothing else: no module carries its own list any more.
+
+## Personal language override (`/preferences`)
+
+A user can force their own language (or keep "Auto" = Discord client language).
+It is stored in `users.data.preferences.language` and applied inside
+`i18n.get_user_locale(interaction)` via `utils/user_preferences.py`. It never
+affects server-facing text: `guild_locale()` is unchanged.

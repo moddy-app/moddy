@@ -14,7 +14,7 @@ import logging
 
 from utils.i18n import i18n, t
 from cogs.error_handler import BaseView, BaseModal
-from utils.emojis import TIME, REQUIRED_FIELDS, EDIT, BACK, SAVE, UNDONE, DELETE, ADD
+from utils.emojis import TIMER, REQUIRED_FIELDS, EDIT, BACK, SAVE, UNDONE, DELETE, ADD
 from modules.configs._common import check_guild_perms
 
 logger = logging.getLogger('moddy.modules.adaptive_slowmode_config')
@@ -164,7 +164,7 @@ class AdaptiveSlowmodeChannelConfigView(BaseView):
             "modules.adaptive_slowmode.config.channel_settings.title_add"
         )
         container.add_item(ui.TextDisplay(
-            f"### {TIME} {t(title_key, locale=self.locale)}"
+            f"### {TIMER} {t(title_key, locale=self.locale)}"
         ))
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
@@ -472,7 +472,7 @@ class AdaptiveSlowmodeConfigView(BaseView):
 
         # ── Header ────────────────────────────────────────────────────
         container.add_item(ui.TextDisplay(
-            f"### {TIME} {t('modules.adaptive_slowmode.config.title', locale=self.locale)}"
+            f"### {TIMER} {t('modules.adaptive_slowmode.config.title', locale=self.locale)}"
         ))
         container.add_item(ui.TextDisplay(
             t("modules.adaptive_slowmode.config.description", locale=self.locale)
