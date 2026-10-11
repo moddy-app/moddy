@@ -27,7 +27,9 @@ import discord
 from discord import ui
 
 from cogs.error_handler import BaseView
-from modules.configs._common import check_guild_perms
+from modules.configs._common import (
+    ack, check_guild_perms, load_before_modal, show,
+)
 from modules.configs.tickets_config import (
     PanelAppearanceModal,
     load_config,
@@ -112,7 +114,11 @@ class TicketPanelButton(
         await render_root(interaction)
 
     async def _on_edit(self, interaction: discord.Interaction):
-        panel = await _fetch_panel(interaction, self.panel_id)
+        # A modal must be the first response: bounded read for the pre-fill.
+        ok, panel = await load_before_modal(
+            interaction, _fetch_panel(interaction, self.panel_id))
+        if not ok:
+            return
         if panel is None:
             await render_root(interaction)
             return
@@ -132,7 +138,7 @@ class TicketPanelButton(
     async def _on_repost(self, interaction: discord.Interaction):
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
-        await interaction.response.defer()
+        await ack(interaction)
 
         module = await bot.module_manager.get_module_instance(
             interaction.guild_id, 'tickets')
@@ -148,6 +154,7 @@ class TicketPanelButton(
                 ephemeral=True)
 
     async def _on_toggle(self, interaction: discord.Interaction):
+        await ack(interaction)
         panel = await _fetch_panel(interaction, self.panel_id)
         if panel is None:
             await render_root(interaction)
@@ -157,19 +164,20 @@ class TicketPanelButton(
 
     async def _on_delete(self, interaction: discord.Interaction):
         """First click: ask. The panel screen re-renders in confirmation mode."""
+        await ack(interaction)
         panel = await _fetch_panel(interaction, self.panel_id)
         if panel is None:
             await render_root(interaction)
             return
         bot = interaction.client
         limits = await get_limits(bot, interaction.guild_id)
-        await interaction.response.edit_message(view=TicketPanelConfigView(
+        await show(interaction, TicketPanelConfigView(
             bot, interaction.guild_id, i18n.get_user_locale(interaction),
             panel, limits, confirm_delete=True))
 
     async def _on_delconfirm(self, interaction: discord.Interaction):
         bot = interaction.client
-        await interaction.response.defer()
+        await ack(interaction)
 
         # Take the message down before forgetting where it is.
         module = await bot.module_manager.get_module_instance(
@@ -215,7 +223,7 @@ class TicketPanelSelect(
 
         if self.action == 'style':
             if not values:
-                await interaction.response.defer()
+                await ack(interaction)
                 return
             await _update_panel(interaction, self.panel_id,
                                 {'style': values[0]}, repost=True)
@@ -223,7 +231,7 @@ class TicketPanelSelect(
 
         # 'category'
         if not values or values[0] == "none":
-            await interaction.response.defer()
+            await ack(interaction)
             return
         from modules.configs.tickets_category_config import render_category
         await render_category(interaction, self.panel_id, values[0])
@@ -273,6 +281,7 @@ async def _fetch_panel(interaction: discord.Interaction,
 async def _update_panel(interaction: discord.Interaction, panel_id: str,
                         fields: Dict[str, Any], *, repost: bool) -> None:
     """Apply ``fields`` to one panel, persist, and re-render the editor."""
+    await ack(interaction)
     bot = interaction.client
     config = await load_config(bot, interaction.guild_id)
     panel = find_panel(config, panel_id)
@@ -281,8 +290,6 @@ async def _update_panel(interaction: discord.Interaction, panel_id: str,
         return
 
     panel.update(fields)
-    if not interaction.response.is_done():
-        await interaction.response.defer()
 
     success, error = await save_config(
         bot, interaction.guild_id, config, interaction.user.id,

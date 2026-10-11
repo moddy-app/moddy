@@ -301,8 +301,14 @@ class TicketTranscriptService:
                          f"{getattr(channel, 'id', '?')}: {e}")
             return None
 
-        raw = json.dumps(body, separators=(',', ':'), ensure_ascii=False).encode('utf-8')
-        payload, codec = compress(raw)
+        # zstd level 19 on a long ticket takes seconds of pure CPU: keep it
+        # (and the JSON dump) off the event loop or every pending interaction
+        # in the bot ages past Discord's 3 s window (10062).
+        def _encode() -> tuple:
+            raw = json.dumps(body, separators=(',', ':'), ensure_ascii=False).encode('utf-8')
+            return (*compress(raw), len(raw))
+
+        payload, codec, raw_size = await asyncio.to_thread(_encode)
 
         try:
             row = await db.create_ticket_transcript(
@@ -322,7 +328,7 @@ class TicketTranscriptService:
                 truncated=truncated,
                 codec=codec,
                 payload=payload,
-                payload_size=len(raw),
+                payload_size=raw_size,
                 authors=list(authors.values()),
             )
         except Exception as e:  # noqa: BLE001 - archiving never fails a closure
@@ -335,6 +341,6 @@ class TicketTranscriptService:
             stats.incr("ticket.transcript", guild_id=ticket['guild_id'],
                        dims={"codec": codec})
         logger.info(f"[Tickets] Transcript of #{ticket.get('number')}: "
-                    f"{len(body['messages'])} messages, {len(raw)} -> "
+                    f"{len(body['messages'])} messages, {raw_size} -> "
                     f"{len(payload)} bytes ({codec})")
         return row

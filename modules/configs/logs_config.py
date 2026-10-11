@@ -27,7 +27,7 @@ import discord
 from discord import ui
 
 from cogs.error_handler import BaseView
-from modules.configs._common import check_guild_perms
+from modules.configs._common import check_guild_perms, ack, show
 from modules.logs import (
     MAX_CHANNELS_PER_CATEGORY, MAX_IGNORED_CHANNELS, MAX_IGNORED_ROLES,
     LogsModule, config_from_raw,
@@ -274,11 +274,12 @@ class LogsConfigView(BaseView):
     async def on_category_select(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+        await ack(interaction)
         values = interaction.data.get("values") or []
         if not values or values[0] not in registry.CATEGORIES:
             return
         view = await LogsCategoryView.create(interaction, values[0], page=0)
-        await interaction.response.edit_message(view=view)
+        await show(interaction, view)
 
     async def on_mass_channel(self, interaction: discord.Interaction):
         """Bind every category to a single channel in one click."""
@@ -288,7 +289,7 @@ class LogsConfigView(BaseView):
         if not values:
             return
 
-        await interaction.response.defer()
+        await ack(interaction)
         channel_id = int(values[0])
         module = await _load(interaction.client, interaction.guild_id)
         for category_id in registry.CATEGORIES:
@@ -303,13 +304,14 @@ class LogsConfigView(BaseView):
     async def on_options(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+        await ack(interaction)
         view = await LogsOptionsView.create(interaction)
-        await interaction.response.edit_message(view=view)
+        await show(interaction, view)
 
     async def on_clear(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
-        await interaction.response.defer()
+        await ack(interaction)
 
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
@@ -325,7 +327,7 @@ class LogsConfigView(BaseView):
             return
         from cogs.config import ConfigMainView
         locale = i18n.get_user_locale(interaction)
-        await interaction.response.edit_message(view=ConfigMainView(
+        await show(interaction, ConfigMainView(
             interaction.client, interaction.guild_id, interaction.user.id, locale))
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
@@ -491,7 +493,7 @@ class LogsCategoryChannels(ui.DynamicItem[ui.ChannelSelect],
     async def callback(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
-        await interaction.response.defer()
+        await ack(interaction)
 
         values = interaction.data.get("values") or []
         module = await _load(interaction.client, interaction.guild_id)
@@ -547,7 +549,7 @@ class LogsCategoryEvents(ui.DynamicItem[ui.Select],
     async def callback(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
-        await interaction.response.defer()
+        await ack(interaction)
 
         kept = set(interaction.data.get("values") or [])
         spec = registry.CATEGORIES[self.category_id]
@@ -601,12 +603,13 @@ class LogsCategoryButton(ui.DynamicItem[ui.Button],
     async def callback(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+        await ack(interaction)
 
         if self.action == "back":
             view = await LogsConfigView.create(
                 interaction.client, interaction.guild_id, interaction.user.id,
                 i18n.get_user_locale(interaction))
-            await interaction.response.edit_message(view=view)
+            await show(interaction, view)
             return
 
         spec = registry.CATEGORIES[self.category_id]
@@ -616,10 +619,10 @@ class LogsCategoryButton(ui.DynamicItem[ui.Button],
             step = -1 if self.action == "prev" else 1
             page = (self.page + step) % page_count
             view = await LogsCategoryView.create(interaction, self.category_id, page)
-            await interaction.response.edit_message(view=view)
+            await show(interaction, view)
             return
 
-        await interaction.response.defer()
+        await ack(interaction)
         module = await _load(interaction.client, interaction.guild_id)
         config = module.category(self.category_id)
         # "All"/"None" apply to the whole category, not just the visible page:
@@ -780,7 +783,7 @@ class LogsOptionsView(BaseView):
     # -- callbacks -------------------------------------------------------- #
 
     async def _apply(self, interaction: discord.Interaction, mutate) -> None:
-        await interaction.response.defer()
+        await ack(interaction)
         module = await _load(interaction.client, interaction.guild_id)
         mutate(module)
         error = await _save(interaction, module)
@@ -825,10 +828,11 @@ class LogsOptionsView(BaseView):
     async def on_back(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+        await ack(interaction)
         view = await LogsConfigView.create(
             interaction.client, interaction.guild_id, interaction.user.id,
             i18n.get_user_locale(interaction))
-        await interaction.response.edit_message(view=view)
+        await show(interaction, view)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         return await check_guild_perms(interaction)

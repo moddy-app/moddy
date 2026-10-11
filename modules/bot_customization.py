@@ -288,6 +288,7 @@ class BotCustomizationModule(ModuleBase):
     MODULE_EMOJI = MODDY_SQUARE
     MODULE_ORDER = 120
     REQUIRED_BOT_PERMISSIONS = ["change_nickname"]
+    SENDS_MESSAGES = False  # edits Moddy's own member profile only
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)

@@ -4,6 +4,7 @@ Displays information about Discord invites (Server, Group DM, Friend)
 """
 
 import discord
+from utils.incognito import resolve_default_incognito
 from discord import app_commands, ui
 from cogs.error_handler import BaseView
 from discord.ext import commands
@@ -536,14 +537,10 @@ class Invite(commands.Cog):
     ):
         """Lookup a Discord invite"""
         # Get the ephemeral mode
-        if incognito is None and self.bot.db:
-            try:
-                user_pref = await self.bot.db.get_attribute('user', interaction.user.id, 'DEFAULT_INCOGNITO')
-                ephemeral = True if user_pref is None else user_pref
-            except:
-                ephemeral = True
+        if incognito is None:
+            ephemeral = await resolve_default_incognito(self.bot, interaction.user.id)
         else:
-            ephemeral = incognito if incognito is not None else True
+            ephemeral = incognito
 
         # Get the user's locale
         locale = i18n.get_user_locale(interaction)

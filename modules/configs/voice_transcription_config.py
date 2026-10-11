@@ -14,7 +14,7 @@ import discord
 from discord import ui
 
 from cogs.error_handler import BaseView
-from modules.configs._common import check_guild_perms
+from modules.configs._common import check_guild_perms, ack, show
 from modules.voice_transcription import MAX_CHANNELS, MODE_BUTTON, MODES
 from utils.emojis import (
     BACK, DELETE, SAVE, TOGGLE_OFF, TOGGLE_ON, UNDONE, VOICE_CHAT,
@@ -267,16 +267,18 @@ class VoiceTranscriptionConfigView(BaseView):
     async def on_toggle(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+        await ack(interaction)
 
         working_config = await self._fresh_working_config(interaction)
         working_config["enabled"] = not bool(working_config.get("enabled"))
 
         view = await self._rebuild(interaction, working_config, has_changes=True)
-        await interaction.response.edit_message(view=view)
+        await show(interaction, view)
 
     async def on_mode_select(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+        await ack(interaction)
 
         values = interaction.data.get("values") or []
         mode = values[0] if values else MODE_BUTTON
@@ -284,18 +286,19 @@ class VoiceTranscriptionConfigView(BaseView):
         working_config["mode"] = mode if mode in MODES else MODE_BUTTON
 
         view = await self._rebuild(interaction, working_config, has_changes=True)
-        await interaction.response.edit_message(view=view)
+        await show(interaction, view)
 
     async def on_channels_select(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+        await ack(interaction)
 
         values: List[str] = interaction.data.get("values") or []
         working_config = await self._fresh_working_config(interaction)
         working_config["channel_ids"] = [int(v) for v in values]
 
         view = await self._rebuild(interaction, working_config, has_changes=True)
-        await interaction.response.edit_message(view=view)
+        await show(interaction, view)
 
     # --- action buttons ------------------------------------------------ #
 
@@ -308,13 +311,13 @@ class VoiceTranscriptionConfigView(BaseView):
         main_view = ConfigMainView(
             interaction.client, interaction.guild_id, interaction.user.id, locale,
         )
-        await interaction.response.edit_message(view=main_view)
+        await show(interaction, main_view)
 
     async def on_save(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
 
-        await interaction.response.defer()
+        await ack(interaction)
 
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
@@ -343,6 +346,7 @@ class VoiceTranscriptionConfigView(BaseView):
     async def on_cancel(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+        await ack(interaction)
 
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
@@ -350,13 +354,13 @@ class VoiceTranscriptionConfigView(BaseView):
         view = VoiceTranscriptionConfigView(
             bot, interaction.guild_id, interaction.user.id, locale, current_config=saved,
         )
-        await interaction.response.edit_message(view=view)
+        await show(interaction, view)
 
     async def on_delete(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
 
-        await interaction.response.defer()
+        await ack(interaction)
 
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)

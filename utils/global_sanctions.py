@@ -41,6 +41,7 @@ used from the bot, the modules, the internal API and any worker.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
 from datetime import datetime, timezone
@@ -266,8 +267,52 @@ def _ttl_for(sanctions) -> float:
     return max(ttl, 1.0)
 
 
-async def get_level(bot, subject_type: str, subject_id: Optional[int]) -> GlobalLevel:
-    """Return the global sanction level of a subject (cached)."""
+# Longest an interaction-path lookup may wait on the database. An interaction
+# must be acknowledged within 3 s of Discord creating it and this check runs
+# before the command/component even starts, so a slow query (pool starvation,
+# a fresh connection handshake) must never eat that budget. On timeout the
+# check fails open exactly like it already does on a DB error; the query keeps
+# running in the background and fills the cache for the next click.
+INTERACTION_LOOKUP_BUDGET = 1.0
+
+_inflight: Dict[Tuple[str, str], "asyncio.Task"] = {}
+
+
+async def _fetch_level(bot, key: Tuple[str, str], subject_type: str,
+                       subject_id: int) -> GlobalLevel:
+    """One DB lookup, written to the cache. Raises on DB failure."""
+    sanctions = await bot.db.list_active_global_actions(subject_type, subject_id)
+    level = level_from_actions(s["action"] for s in sanctions)
+    _cache(bot)[key] = (level, time.monotonic() + _ttl_for(sanctions))
+    return level
+
+
+def _lookup_task(bot, key, subject_type, subject_id) -> "asyncio.Task":
+    """Single-flight: concurrent callers share one query per subject."""
+    task = _inflight.get(key)
+    if task is None or task.done():
+        task = asyncio.ensure_future(_fetch_level(bot, key, subject_type, subject_id))
+        _inflight[key] = task
+
+        def _cleanup(t, key=key):
+            if _inflight.get(key) is t:
+                _inflight.pop(key, None)
+            if not t.cancelled() and t.exception() is not None:
+                logger.error("Global sanction lookup failed for %s %s: %s",
+                             key[0], key[1], t.exception())
+        task.add_done_callback(_cleanup)
+    return task
+
+
+async def get_level(bot, subject_type: str, subject_id: Optional[int], *,
+                    budget: Optional[float] = None) -> GlobalLevel:
+    """Return the global sanction level of a subject (cached).
+
+    ``budget`` (seconds) bounds the wait on the database for callers sitting on
+    the interaction hot path; ``None`` waits as long as the query takes. An
+    expired cache entry is served stale (never worse than the previous answer)
+    while a background refresh runs, when a budget is set.
+    """
     if subject_id is None or not getattr(bot, "db", None):
         return GlobalLevel.NONE
 
@@ -278,31 +323,42 @@ async def get_level(bot, subject_type: str, subject_id: Optional[int]) -> Global
     if cached and cached[1] > now:
         return cached[0]
 
+    task = _lookup_task(bot, key, subject_type, subject_id)
+    if budget is not None and cached and cached[0] == GlobalLevel.NONE:
+        # Stale "no sanction": serve it while the refresh runs (new sanctions
+        # call invalidate()). A stale *sanctioned* level is never served - a
+        # lapsed temporary sanction must stop applying immediately - so that
+        # case waits for the (bounded) refresh below.
+        return cached[0]
     try:
-        sanctions = await bot.db.list_active_global_actions(subject_type, subject_id)
-    except Exception as exc:
-        logger.error("Global sanction lookup failed for %s %s: %s",
-                     subject_type, subject_id, exc)
-        # Fail open: a DB hiccup must not lock everyone out of the bot.
+        if budget is None:
+            return await asyncio.shield(task)
+        return await asyncio.wait_for(asyncio.shield(task), budget)
+    except asyncio.TimeoutError:
+        logger.warning("Global sanction lookup for %s %s exceeded %.1fs; failing open",
+                       key[0], key[1], budget)
+        return GlobalLevel.NONE
+    except Exception:
+        # Already logged by the task callback. Fail open: a DB hiccup must not
+        # lock everyone out of the bot.
         return cached[0] if cached else GlobalLevel.NONE
 
-    level = level_from_actions(s["action"] for s in sanctions)
-    store[key] = (level, now + _ttl_for(sanctions))
-    return level
 
-
-async def get_user_level(bot, user_id: Optional[int]) -> GlobalLevel:
+async def get_user_level(bot, user_id: Optional[int], *,
+                         budget: Optional[float] = None) -> GlobalLevel:
     """Global sanction level of a Discord user."""
-    return await get_level(bot, SUBJECT_USER, user_id)
+    return await get_level(bot, SUBJECT_USER, user_id, budget=budget)
 
 
-async def get_guild_level(bot, guild_id: Optional[int]) -> GlobalLevel:
+async def get_guild_level(bot, guild_id: Optional[int], *,
+                          budget: Optional[float] = None) -> GlobalLevel:
     """Global sanction level of a Discord server."""
-    return await get_level(bot, SUBJECT_GUILD, guild_id)
+    return await get_level(bot, SUBJECT_GUILD, guild_id, budget=budget)
 
 
 async def get_context_level(bot, *, user_id: Optional[int] = None,
-                            guild_id: Optional[int] = None) -> GlobalLevel:
+                            guild_id: Optional[int] = None,
+                            budget: Optional[float] = None) -> GlobalLevel:
     """Highest level between the acting user and the server they act in.
 
     A limited server limits everyone acting in it; a limited user stays limited
@@ -311,9 +367,9 @@ async def get_context_level(bot, *, user_id: Optional[int] = None,
     """
     level = GlobalLevel.NONE
     if user_id is not None:
-        level = await get_user_level(bot, user_id)
+        level = await get_user_level(bot, user_id, budget=budget)
     if guild_id is not None and not at_least(level, GlobalLevel.SUSPENDED):
-        guild_level = await get_guild_level(bot, guild_id)
+        guild_level = await get_guild_level(bot, guild_id, budget=budget)
         if _ORDER[guild_level] > _ORDER[level]:
             level = guild_level
     return level
@@ -324,9 +380,11 @@ async def get_context_level(bot, *, user_id: Optional[int] = None,
 # --------------------------------------------------------------------------- #
 
 async def is_suspended(bot, *, user_id: Optional[int] = None,
-                       guild_id: Optional[int] = None) -> bool:
+                       guild_id: Optional[int] = None,
+                       budget: Optional[float] = None) -> bool:
     """Whether the user or the server has no access to Moddy at all."""
-    level = await get_context_level(bot, user_id=user_id, guild_id=guild_id)
+    level = await get_context_level(bot, user_id=user_id, guild_id=guild_id,
+                                    budget=budget)
     return level == GlobalLevel.SUSPENDED
 
 

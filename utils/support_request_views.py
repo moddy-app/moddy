@@ -24,6 +24,7 @@ exclusion in docs/PERSISTENT_VIEWS.md.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import re
 from typing import Any, Dict, List, Optional
@@ -227,14 +228,22 @@ def build_reply_dm(*, request: Dict[str, Any], body: str,
 # Staff buttons (persistent)
 # =========================================================================== #
 
+async def _say(interaction: discord.Interaction, view) -> None:
+    """Ephemeral answer, before or after the interaction was acknowledged."""
+    if interaction.response.is_done():
+        await interaction.followup.send(view=view, ephemeral=True)
+    else:
+        await interaction.response.send_message(view=view, ephemeral=True)
+
+
 async def _load_request(interaction: discord.Interaction, request_id: str, locale: str):
     service = getattr(interaction.client, "support_requests", None)
     request = await service.get(request_id) if service else None
     if not request:
-        await interaction.response.send_message(view=create_error_message(
+        await _say(interaction, create_error_message(
             t("support.errors.unknown.title", locale=locale),
             t("support.errors.unknown.description", locale=locale, reference=request_id),
-        ), ephemeral=True)
+        ))
         return None
     return request
 
@@ -245,10 +254,10 @@ async def _guard_staff(interaction: discord.Interaction, locale: str) -> bool:
 
     if await has_staff_node(interaction.client, interaction.user.id, "support_request"):
         return True
-    await interaction.response.send_message(view=create_error_message(
+    await _say(interaction, create_error_message(
         t("support.errors.no_permission.title", locale=locale),
         t("support.errors.no_permission.description", locale=locale),
-    ), ephemeral=True)
+    ))
     return False
 
 
@@ -276,10 +285,10 @@ class SupportClaimButton(
     @_guarded
     async def callback(self, interaction: discord.Interaction):
         locale = i18n.get_user_locale(interaction)
+        await interaction.response.defer()  # ack first: request + permission lookups
         request = await _load_request(interaction, self.request_id, locale)
         if not request or not await _guard_staff(interaction, locale):
             return
-        await interaction.response.defer()
         claimed = await interaction.client.support_requests.claim(
             self.request_id, interaction.user)
         if claimed is None:
@@ -312,9 +321,8 @@ class SupportReplyButton(
     @_guarded
     async def callback(self, interaction: discord.Interaction):
         locale = i18n.get_user_locale(interaction)
-        request = await _load_request(interaction, self.request_id, locale)
-        if not request or not await _guard_staff(interaction, locale):
-            return
+        # The modal opens at once (send_modal must be the first response); the
+        # request lookup and the staff check run in SupportReplyModal.on_submit.
         await interaction.response.send_modal(
             SupportReplyModal(request_id=self.request_id, locale=locale))
 
@@ -342,10 +350,10 @@ class SupportResolveButton(
     @_guarded
     async def callback(self, interaction: discord.Interaction):
         locale = i18n.get_user_locale(interaction)
+        await interaction.response.defer()  # ack first: request + permission lookups
         request = await _load_request(interaction, self.request_id, locale)
         if not request or not await _guard_staff(interaction, locale):
             return
-        await interaction.response.defer()
         resolved = await interaction.client.support_requests.resolve(
             self.request_id, interaction.user)
         if resolved is None:
@@ -377,6 +385,9 @@ class SupportReplyModal(BaseModal):
 
     async def on_submit(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True, thinking=True)
+        if not await _load_request(interaction, self.request_id, self.locale) \
+                or not await _guard_staff(interaction, self.locale):
+            return
         body = (self.body.component.value or "").strip()
         ok = await interaction.client.support_requests.reply(
             request_id=self.request_id, staff=interaction.user, body=body)
@@ -422,21 +433,9 @@ class SupportUserReplyButton(
     @_guarded
     async def callback(self, interaction: discord.Interaction):
         locale = i18n.get_user_locale(interaction)
-        request = await _load_request(interaction, self.request_id, locale)
-        if not request:
-            return
-        if request["user_id"] != interaction.user.id:
-            await interaction.response.send_message(view=create_error_message(
-                t("support.errors.not_yours.title", locale=locale),
-                t("support.errors.not_yours.description", locale=locale),
-            ), ephemeral=True)
-            return
-        if request.get("status") == STATUS_RESOLVED:
-            await interaction.response.send_message(view=create_error_message(
-                t("support.errors.closed.title", locale=locale),
-                t("support.errors.closed.description", locale=locale),
-            ), ephemeral=True)
-            return
+        # The modal opens at once (send_modal must be the first response); the
+        # ownership and "already closed" checks run in
+        # SupportUserReplyModal.on_submit.
         await interaction.response.send_modal(
             SupportUserReplyModal(request_id=self.request_id, locale=locale))
 
@@ -462,6 +461,21 @@ class SupportUserReplyModal(BaseModal):
 
     async def on_submit(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True, thinking=True)
+        request = await _load_request(interaction, self.request_id, self.locale)
+        if not request:
+            return
+        if request["user_id"] != interaction.user.id:
+            await _say(interaction, create_error_message(
+                t("support.errors.not_yours.title", locale=self.locale),
+                t("support.errors.not_yours.description", locale=self.locale),
+            ))
+            return
+        if request.get("status") == STATUS_RESOLVED:
+            await _say(interaction, create_error_message(
+                t("support.errors.closed.title", locale=self.locale),
+                t("support.errors.closed.description", locale=self.locale),
+            ))
+            return
         ok = await interaction.client.support_requests.user_followup(
             request_id=self.request_id, user=interaction.user,
             body=(self.body.component.value or "").strip())
@@ -513,9 +527,17 @@ class ConfigHelpButton(
     async def callback(self, interaction: discord.Interaction):
         locale = i18n.get_user_locale(interaction)
         service = getattr(interaction.client, "support_requests", None)
-        if service is not None and await service.is_rate_limited(
-            interaction.user.id, KIND_CONFIG_HELP
-        ):
+        # Refusing before the form keeps people from typing a long message that
+        # would be refused anyway; the lookup is bounded (fail-open) so it can
+        # never eat the 3 s window that send_modal has to meet.
+        limited = False
+        if service is not None:
+            try:
+                limited = await asyncio.wait_for(
+                    service.is_rate_limited(interaction.user.id, KIND_CONFIG_HELP), 1.5)
+            except asyncio.TimeoutError:
+                limited = False
+        if limited:
             await interaction.response.send_message(view=create_error_message(
                 t("support.errors.rate_limited.title", locale=locale),
                 t("support.errors.rate_limited.description", locale=locale),

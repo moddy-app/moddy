@@ -125,22 +125,26 @@ async def open_automod_panel(bot, guild_id: int, locale: str,
 
 
 async def render_home(interaction: discord.Interaction) -> None:
+    await common.ack(interaction)
     cfg = await common.load_cfg(interaction.client, interaction.guild_id)
     await common.respond(interaction, AutomodAIConfigView(
         interaction.client, interaction.guild_id, i18n.get_user_locale(interaction), cfg))
 
 
 async def render_wizard_channel(interaction: discord.Interaction) -> None:
+    await common.ack(interaction)
     await common.respond(interaction, AutomodWizardChannelView(
         interaction.client, interaction.guild_id, i18n.get_user_locale(interaction)))
 
 
 async def render_wizard_level(interaction: discord.Interaction) -> None:
+    await common.ack(interaction)
     await common.respond(interaction, AutomodWizardLevelView(
         interaction.client, interaction.guild_id, i18n.get_user_locale(interaction)))
 
 
 async def render_wizard_mode(interaction: discord.Interaction) -> None:
+    await common.ack(interaction)
     await common.respond(interaction, AutomodWizardModeView(
         interaction.client, interaction.guild_id, i18n.get_user_locale(interaction)))
 
@@ -233,17 +237,19 @@ class AutomodAIConfigView(BaseView):
         return await common.gate(interaction)
 
     async def on_channel(self, interaction: discord.Interaction):
+        await common.ack(interaction)
         values = interaction.data.get("values") or []
         if not values:
-            await interaction.response.defer()
+            await common.ack(interaction)
             return
         cfg = await common.load_cfg(interaction.client, interaction.guild_id)
         cfg["notify_channel_id"] = int(values[0])
-        await interaction.response.defer()
+        await common.ack(interaction)
         await common.save_cfg(interaction, cfg)
         await render_home(interaction)
 
     async def on_toggle(self, interaction: discord.Interaction):
+        await common.ack(interaction)
         cfg = await common.load_cfg(interaction.client, interaction.guild_id)
         turning_on = not cfg["enabled"]
         if turning_on and not cfg.get("notify_channel_id"):
@@ -253,25 +259,27 @@ class AutomodAIConfigView(BaseView):
             await go(interaction, "wizard_level")
             return
         cfg["enabled"] = turning_on
-        await interaction.response.defer()
+        await common.ack(interaction)
         await common.save_cfg(interaction, cfg)
         await render_home(interaction)
 
     async def on_live(self, interaction: discord.Interaction):
+        await common.ack(interaction)
         cfg = await common.load_cfg(interaction.client, interaction.guild_id)
         cfg["dry_run"] = False
-        await interaction.response.defer()
+        await common.ack(interaction)
         await common.save_cfg(interaction, cfg)
         await render_home(interaction)
 
     async def on_level(self, interaction: discord.Interaction):
+        await common.ack(interaction)
         await go(interaction, "wizard_level")
 
     async def on_nav(self, interaction: discord.Interaction):
         values = interaction.data.get("values") or []
         screen = values[0] if values else ""
         if screen not in {key for key, _ in NAV_ITEMS}:
-            await interaction.response.defer()
+            await common.ack(interaction)
             return
         await go(interaction, screen)
 
@@ -338,13 +346,14 @@ class AutomodWizardChannelView(_WizardView):
         self.add_item(back_row(self.on_back, "wiz1", self.locale))
 
     async def on_channel(self, interaction: discord.Interaction):
+        await common.ack(interaction)
         values = interaction.data.get("values") or []
         if not values:
-            await interaction.response.defer()
+            await common.ack(interaction)
             return
         cfg = await common.load_cfg(interaction.client, interaction.guild_id)
         cfg["notify_channel_id"] = int(values[0])
-        await interaction.response.defer()
+        await common.ack(interaction)
         if await common.save_cfg(interaction, cfg):
             await go(interaction, "wizard_level")
 
@@ -376,9 +385,10 @@ class AutomodWizardLevelView(_WizardView):
         self.add_item(back_row(self.on_back, "wiz2", self.locale))
 
     async def on_level(self, interaction: discord.Interaction):
+        await common.ack(interaction)
         preset = (interaction.data.get("custom_id") or "").rsplit(":", 1)[-1]
         if preset not in PRESETS:
-            await interaction.response.defer()
+            await common.ack(interaction)
             return
         cfg = await common.load_cfg(interaction.client, interaction.guild_id)
         if not cfg.get("notify_channel_id"):
@@ -387,7 +397,7 @@ class AutomodWizardLevelView(_WizardView):
         # The level is applied switched off and in simulation: step 3 decides.
         new_cfg = preset_config(preset, cfg["notify_channel_id"], dry_run=True,
                                 enabled=False, base=cfg)
-        await interaction.response.defer()
+        await common.ack(interaction)
         if await common.save_cfg(interaction, new_cfg):
             await go(interaction, "wizard_mode")
 
@@ -418,14 +428,15 @@ class AutomodWizardModeView(_WizardView):
         self.add_item(back_row(self.on_back, "wiz3", self.locale))
 
     async def on_mode(self, interaction: discord.Interaction):
+        await common.ack(interaction)
         action = (interaction.data.get("custom_id") or "").rsplit(":", 1)[-1]
         if action not in ("sim", "live"):
-            await interaction.response.defer()
+            await common.ack(interaction)
             return
         cfg = await common.load_cfg(interaction.client, interaction.guild_id)
         cfg["enabled"] = True
         cfg["dry_run"] = action == "sim"
-        await interaction.response.defer()
+        await common.ack(interaction)
         if await common.save_cfg(interaction, cfg):
             await render_home(interaction)
 

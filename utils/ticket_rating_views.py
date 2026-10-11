@@ -207,6 +207,10 @@ class TicketRatingModal(BaseModal):
             return None
 
     async def on_submit(self, interaction: discord.Interaction):
+        # Ack first: the insert and the log-card refresh below are slow. Every
+        # answer goes through ``_reply``, which follows up once deferred.
+        if not interaction.response.is_done():
+            await interaction.response.defer(ephemeral=True, thinking=True)
         locale = i18n.get_user_locale(interaction)
         bot = self.bot or interaction.client
         transcript = self.transcript
@@ -315,6 +319,9 @@ class TicketRateButton(
                 t('modules.tickets.errors.unavailable', locale=locale)))
             return
 
+        # Unavoidable lookups before the modal: send_modal must be the first
+        # response (it cannot follow a defer) and the form needs the transcript
+        # (staff candidates). All three reads are primary-key / unique-index.
         transcript = await bot.db.get_ticket_transcript_by_key(self.key)
         if transcript is None:
             await _reply(interaction, create_error_message(

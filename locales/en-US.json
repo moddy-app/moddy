@@ -877,6 +877,35 @@
     "not_your_message": {
       "title": "Not your message",
       "description": "<:undone:1519800313324896327> You can't use these buttons, they belong to another user."
+    },
+    "card": {
+      "title": "Something went wrong...",
+      "code": "**Error Code:** `{error_code}`",
+      "logged": "-# This error has been automatically logged and will be reviewed by our team.\n-# If the problem persists, please contact support with this error code.",
+      "support": "Support",
+      "status": "Status"
+    },
+    "too_slow": {
+      "title": "Moddy was too slow to answer",
+      "body": "Discord closed this interaction before Moddy could answer. Please try again.\n**Error Code:** `{error_code}`",
+      "dm_body": "Moddy could not answer in time and Discord closed the interaction. Please try again.\n**Error Code:** `{error_code}`"
+    },
+    "dm_fallback": {
+      "title": "Moddy could not answer you",
+      "intro": "I could not reply where you used me (the interaction expired), so I am telling you here.",
+      "body": "Something went wrong with your last action and I could not answer you where you used me.\n**Error Code:** `{error_code}`"
+    },
+    "inactive": {
+      "title": "This control is no longer active",
+      "body": "This button, menu or form is no longer active. Please run the command again."
+    },
+    "still_working": {
+      "title": "This is taking longer than expected",
+      "body": "If nothing appears shortly, please try again."
+    },
+    "command_unavailable": {
+      "title": "This command is not available",
+      "body": "This command no longer exists or is not available right now. Discord may need a moment to refresh its list; please try again later."
     }
   },
   "common": {
@@ -944,13 +973,17 @@
         "bot_not_in_guild": "<:error:1519790252594827264> Moddy must be present on this server to use this command.",
         "wrong_user": "<:error:1519790252594827264> Only the user who started the configuration can use this interface.",
         "no_user_perms": "<:error:1519790252594827264> You must have the **Manage Server** permission to use this command.",
+        "slow_retry": "<:error:1519790252594827264> Loading took too long. Please click again.",
         "required_fields": "<:undone:1519800313324896327> **Invalid configuration** - The following fields must be filled:\n• {fields}",
         "channel_not_found": "Channel not found",
         "missing_bot_perms": {
           "title": "Insufficient Permissions",
-          "description": "Moddy needs the following permission to configure **{module}**:\n{permissions}\n\nPlease re-invite the bot or grant it this permission manually.",
-          "button": "Re-invite Moddy"
-        }
+          "description": "Moddy needs the following permissions to configure **{module}**:\n{permissions}\n\nPlease re-invite the bot or grant it these permissions manually (and check the permissions of the channels involved).",
+          "button": "Re-invite Moddy",
+          "in_channel": "In {channel}:"
+        },
+        "channel_missing_perms": "<:error:1519790252594827264> Moddy is missing permissions in {channel}:\n{permissions}",
+        "guild_missing_perms": "<:error:1519790252594827264> Moddy is missing permissions on this server:\n{permissions}"
       },
       "current_value": "Current value:",
       "not_configured": "Not configured"
@@ -3639,6 +3672,7 @@
         "destination_missing": "This category has no valid destination. Warn an administrator.",
         "too_many_open": "You already have `{max}` open ticket(s) in this category. Close one before opening another.",
         "cannot_create_channel": "Moddy could not create the ticket channel. Check its permissions on the destination category.",
+        "missing_bot_permissions": "Moddy is missing permissions to run tickets: {permissions}. Grant them on the destination category (or server-wide).",
         "already_closed": "This ticket is already closed.",
         "close_already_requested": "A closure request is already pending on this ticket.",
         "no_close_request": "No closure request is pending on this ticket.",

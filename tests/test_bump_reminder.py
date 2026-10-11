@@ -838,7 +838,7 @@ class TestComponents:
         card requires has to be restated there — a new one added to
         build_thanks_card and not passed here raises at click time. The failure
         is invisible to a caller: @_guarded routes it to the error handler, so
-        the assertion is that edit_message was actually reached.
+        the assertion is that the card edit was actually reached.
         """
         import asyncio
 
@@ -869,7 +869,8 @@ class TestComponents:
             guild_id=1350867709772042362,
             locale="fr",
             client=SimpleNamespace(db=db),
-            response=SimpleNamespace(edit_message=edit_message),
+            response=SimpleNamespace(defer=_async_return(None)),
+            edit_original_response=edit_message,
             followup=SimpleNamespace(send=_async_return(None)),
         )
 

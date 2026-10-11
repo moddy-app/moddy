@@ -877,6 +877,35 @@
     "not_your_message": {
       "title": "Nicht deine Nachricht",
       "description": "<:undone:1519800313324896327> Du kannst diese Schaltflächen nicht verwenden, sie gehören einem anderen Nutzer."
+    },
+    "card": {
+      "title": "Etwas ist schiefgelaufen...",
+      "code": "**Fehlercode:** `{error_code}`",
+      "logged": "-# Dieser Fehler wurde automatisch protokolliert und wird von unserem Team geprüft.\n-# Wenn das Problem weiterhin besteht, wende dich mit diesem Fehlercode an den Support.",
+      "support": "Support",
+      "status": "Status"
+    },
+    "too_slow": {
+      "title": "Moddy hat zu langsam geantwortet",
+      "body": "Discord hat diese Interaktion beendet, bevor Moddy antworten konnte. Bitte versuche es erneut.\n**Fehlercode:** `{error_code}`",
+      "dm_body": "Moddy konnte nicht rechtzeitig antworten und Discord hat die Interaktion beendet. Bitte versuche es erneut.\n**Fehlercode:** `{error_code}`"
+    },
+    "dm_fallback": {
+      "title": "Moddy konnte dir nicht antworten",
+      "intro": "Ich konnte dort, wo du mich benutzt hast, nicht antworten (die Interaktion ist abgelaufen), deshalb melde ich mich hier.",
+      "body": "Bei deiner letzten Aktion ist etwas schiefgelaufen und ich konnte dir dort, wo du mich benutzt hast, nicht antworten.\n**Fehlercode:** `{error_code}`"
+    },
+    "inactive": {
+      "title": "Dieses Element ist nicht mehr aktiv",
+      "body": "Diese Schaltfläche, dieses Menü oder dieses Formular ist nicht mehr aktiv. Führe den Befehl bitte erneut aus."
+    },
+    "still_working": {
+      "title": "Das dauert länger als erwartet",
+      "body": "Wenn gleich nichts erscheint, versuche es bitte erneut."
+    },
+    "command_unavailable": {
+      "title": "Dieser Befehl ist nicht verfügbar",
+      "body": "Dieser Befehl existiert nicht mehr oder ist gerade nicht verfügbar. Discord braucht eventuell einen Moment, um die Liste zu aktualisieren; versuche es später erneut."
     }
   },
   "common": {
@@ -944,13 +973,17 @@
         "bot_not_in_guild": "<:error:1519790252594827264> Moddy muss auf diesem Server anwesend sein, um diesen Befehl zu verwenden.",
         "wrong_user": "<:error:1519790252594827264> Nur der Nutzer, der die Konfiguration gestartet hat, kann diese Oberfläche verwenden.",
         "no_user_perms": "<:error:1519790252594827264> Du benötigst die Berechtigung **Server verwalten**, um diesen Befehl zu verwenden.",
+        "slow_retry": "<:error:1519790252594827264> Das Laden hat zu lange gedauert. Klicke bitte erneut.",
         "required_fields": "<:undone:1519800313324896327> **Ungültige Konfiguration** - Die folgenden Felder müssen ausgefüllt werden:\n• {fields}",
         "channel_not_found": "Kanal nicht gefunden",
         "missing_bot_perms": {
           "title": "Unzureichende Berechtigungen",
-          "description": "Moddy benötigt die folgende Berechtigung, um **{module}** zu konfigurieren:\n{permissions}\n\nBitte lade den Bot erneut ein oder erteile ihm diese Berechtigung manuell.",
-          "button": "Moddy erneut einladen"
-        }
+          "description": "Moddy benötigt die folgenden Berechtigungen, um **{module}** zu konfigurieren:\n{permissions}\n\nBitte lade den Bot erneut ein oder erteile ihm diese Berechtigungen manuell (und prüfe die Berechtigungen der betroffenen Kanäle).",
+          "button": "Moddy erneut einladen",
+          "in_channel": "In {channel}:"
+        },
+        "channel_missing_perms": "<:error:1519790252594827264> Moddy fehlen Berechtigungen in {channel}:\n{permissions}",
+        "guild_missing_perms": "<:error:1519790252594827264> Moddy fehlen Berechtigungen auf diesem Server:\n{permissions}"
       },
       "current_value": "Aktueller Wert:",
       "not_configured": "Nicht konfiguriert"
@@ -3639,6 +3672,7 @@
         "destination_missing": "Diese Kategorie hat kein gültiges Ziel. Sag einem Administrator Bescheid.",
         "too_many_open": "Du hast bereits `{max}` offene(s) Ticket(s) in dieser Kategorie. Schließe eins, bevor du ein weiteres öffnest.",
         "cannot_create_channel": "Moddy konnte den Ticket-Kanal nicht erstellen. Prüfe die Rechte in der Zielkategorie.",
+        "missing_bot_permissions": "Moddy fehlen Rechte für Tickets: {permissions}. Vergib sie in der Zielkategorie (oder serverweit).",
         "already_closed": "Dieses Ticket ist bereits geschlossen.",
         "close_already_requested": "Für dieses Ticket liegt bereits eine Schließungsanfrage vor.",
         "no_close_request": "Für dieses Ticket liegt keine Schließungsanfrage vor.",

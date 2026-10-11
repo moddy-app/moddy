@@ -24,7 +24,8 @@ from utils.emojis import EMOJIS, SETTINGS
 from utils import global_sanctions
 from utils.components_v2 import create_limited_message
 from cogs.error_handler import BaseView
-from modules.configs._common import check_guild_perms, check_bot_perms
+from utils.incognito import resolve_default_incognito
+from modules.configs._common import check_guild_perms, check_bot_perms, ack, show
 
 logger = logging.getLogger('moddy.cogs.config')
 
@@ -191,6 +192,7 @@ class ConfigMainView(BaseView):
         """Callback quand un module (ou les paramètres du serveur) est choisi."""
         if not await check_guild_perms(interaction):
             return
+        await ack(interaction)
 
         bot = interaction.client
         guild_id = interaction.guild_id
@@ -203,24 +205,33 @@ class ConfigMainView(BaseView):
             from modules.configs.server_settings_config import ServerSettingsConfigView
 
             view = await ServerSettingsConfigView.create(bot, guild_id, user_id, locale)
-            await interaction.response.edit_message(view=view)
+            await show(interaction, view)
             return
 
-        # Désactive temporairement pour éviter les double-clics
-        await interaction.response.defer()
+        # (The interaction was already acknowledged by ack() above.)
 
         # Le bot ne demande jamais Administrateur (CLAUDE.md #12) : chaque
         # module déclare les permissions dont IL a besoin, vérifiées ici
         # avant d'ouvrir son écran de configuration.
         module_class = bot.module_manager.registered_modules.get(module_id)
-        if module_class and not await check_bot_perms(
-            interaction, module_class.REQUIRED_BOT_PERMISSIONS,
-            module_name=module_class.MODULE_NAME, followup=True,
-        ):
-            return
 
         # Récupère la configuration actuelle du module
         module_config = await bot.module_manager.get_module_config(guild_id, module_id)
+
+        # One combined check: baseline + module permissions guild-wide AND the
+        # permissions needed in the channels already configured. Everything
+        # missing is listed at once, never one permission per attempt.
+        try:
+            channel_needs = (module_class.channel_requirements(module_config or {})
+                             if module_class else {})
+        except Exception:
+            channel_needs = {}  # malformed stored config: guild-level check still runs
+        if module_class and not await check_bot_perms(
+            interaction, module_class.required_permissions(),
+            module_name=module_class.MODULE_NAME, followup=True,
+            channel_requirements=channel_needs,
+        ):
+            return
 
         # Sanction globale "limité" : un module jamais configuré ne peut plus
         # être mis en place. On le dit tout de suite plutôt qu'à la sauvegarde.
@@ -416,11 +427,8 @@ class Config(commands.Cog):
 
         # Gestion du mode incognito
         if incognito is None and self.bot.db:
-            try:
-                user_pref = await self.bot.db.get_attribute('user', interaction.user.id, 'DEFAULT_INCOGNITO')
-                ephemeral = True if user_pref is None else user_pref
-            except:
-                ephemeral = True
+            # Cached + bounded lookup: safe to await before the first response.
+            ephemeral = await resolve_default_incognito(self.bot, interaction.user.id)
         else:
             ephemeral = incognito if incognito is not None else True
 
@@ -452,6 +460,10 @@ class Config(commands.Cog):
             )
             return
 
+        # Acknowledge before the (database-backed) sanction lookup: Discord
+        # wants the initial response within 3 s.
+        await interaction.response.defer(ephemeral=ephemeral)
+
         # Sanction globale "limité" : les modules déjà configurés restent
         # modifiables, mais aucun NOUVEAU module ne peut être mis en place.
         limited = await global_sanctions.is_limited(
@@ -467,10 +479,7 @@ class Config(commands.Cog):
             limited=limited,
         )
 
-        await interaction.response.send_message(
-            view=main_view,
-            ephemeral=ephemeral
-        )
+        await interaction.followup.send(view=main_view, ephemeral=ephemeral)
 
 
 async def setup(bot):

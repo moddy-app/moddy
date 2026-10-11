@@ -255,6 +255,8 @@ class TeamAccessSendButton(ui.DynamicItem[ui.Button], template=_CID_SEND):
         if await _reject_stranger(interaction, self.requester_id):
             return
 
+        # Ack first: the staff-permission lookup and the role search are async.
+        await interaction.response.defer()
         locale = i18n.get_user_locale(interaction)
         bot = interaction.client
         guild = interaction.guild
@@ -264,13 +266,13 @@ class TeamAccessSendButton(ui.DynamicItem[ui.Button], template=_CID_SEND):
         from utils.staff_permissions import CommandType, staff_permissions
         if not await staff_permissions.can_use_command_type(
                 interaction.user.id, CommandType.TEAM):
-            await interaction.response.edit_message(view=design.permission_denied(
+            await interaction.edit_original_response(view=design.permission_denied(
                 locale, t("staff.team.access.not_staff", locale=locale)))
             return
 
         keys = value_to_keys(self.value)
         if not guild or not keys:
-            await interaction.response.edit_message(view=design.error(
+            await interaction.edit_original_response(view=design.error(
                 t("staff.team.access.failed_title", locale=locale),
                 t("staff.team.access.nothing_picked", locale=locale),
             ))
@@ -279,7 +281,7 @@ class TeamAccessSendButton(ui.DynamicItem[ui.Button], template=_CID_SEND):
         kind = kind_from_key(self.kind_key)
         role = await find_team_role(bot, guild, kind)
         if not role:
-            await interaction.response.edit_message(view=design.error(
+            await interaction.edit_original_response(view=design.error(
                 t("staff.team.access.no_role_title", locale=locale),
                 t("staff.team.access.no_role", locale=locale, name=f"**{kind.name}**"),
             ))
@@ -299,13 +301,13 @@ class TeamAccessSendButton(ui.DynamicItem[ui.Button], template=_CID_SEND):
         except discord.HTTPException as e:
             logger.warning("Could not post the access request in %s: %s",
                            getattr(interaction.channel, 'id', None), e)
-            await interaction.response.edit_message(view=design.error(
+            await interaction.edit_original_response(view=design.error(
                 t("staff.team.access.failed_title", locale=locale),
                 t("staff.team.access.cannot_post", locale=locale),
             ))
             return
 
-        await interaction.response.edit_message(view=design.success(
+        await interaction.edit_original_response(view=design.success(
             t("staff.team.access.sent_title", locale=locale),
             t("staff.team.access.sent", locale=locale, role=role.mention),
         ))
@@ -415,12 +417,13 @@ class TeamAccessDecisionButton(ui.DynamicItem[ui.Button], template=_CID_DECIDE):
             )
             return
 
+        await interaction.response.defer()  # ack first: locale lookup + role edit
         from utils.guild_language import guild_locale
         card_locale = await guild_locale(bot, guild)
 
         kind = kind_from_key(self.kind_key)
         if self.action == "refuse":
-            await interaction.response.edit_message(view=await build_access_card(
+            await interaction.edit_original_response(view=await build_access_card(
                 bot, guild, requester_id=self.requester_id, value=self.value,
                 locale=card_locale, state=STATE_REFUSED, actor=actor,
                 kind_key=kind.key,
@@ -446,7 +449,7 @@ class TeamAccessDecisionButton(ui.DynamicItem[ui.Button], template=_CID_DECIDE):
                                 f"`{permission_label(k, card_locale)}`" for k in missing))
 
         if problem:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 view=create_error_message(
                     t("staff.team.access.failed_title", locale=card_locale), problem),
                 ephemeral=True,
@@ -462,7 +465,7 @@ class TeamAccessDecisionButton(ui.DynamicItem[ui.Button], template=_CID_DECIDE):
                         f"requested by {self.requester_id}"),
             )
         except discord.Forbidden:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 view=create_error_message(
                     t("staff.team.access.failed_title", locale=card_locale),
                     t("staff.team.access.cannot_edit", locale=card_locale,
@@ -471,7 +474,7 @@ class TeamAccessDecisionButton(ui.DynamicItem[ui.Button], template=_CID_DECIDE):
             )
             return
 
-        await interaction.response.edit_message(view=await build_access_card(
+        await interaction.edit_original_response(view=await build_access_card(
             bot, guild, requester_id=self.requester_id, value=self.value,
             locale=card_locale, state=STATE_GRANTED, actor=actor, role=role,
             kind_key=kind.key,

@@ -349,7 +349,8 @@ async def _apply_decision(interaction: discord.Interaction, request_id: int,
         ERR_ALREADY, ERR_GONE, get_service,
     )
 
-    await interaction.response.defer()
+    if not interaction.response.is_done():
+        await interaction.response.defer()
     error, row = await get_service(interaction.client).decide(
         interaction.guild, request_id, action,
         reviewer_id=interaction.user.id, rejection_reason=reason,
@@ -404,6 +405,7 @@ class ApproveButton(
 
     @_guarded
     async def callback(self, interaction: discord.Interaction):
+        await interaction.response.defer()  # ack first: authorisation hits the DB
         if await _authorize(interaction, self.request_id) is None:
             return
         await _apply_decision(interaction, self.request_id, STATUS_APPROVED, None)
@@ -431,6 +433,9 @@ class RejectButton(
 
     @_guarded
     async def callback(self, interaction: discord.Interaction):
+        # Unavoidable lookups before the modal (send_modal must be the first
+        # response): the form needs the module's preset reasons and the
+        # applicant's name from the stored row.
         found = await _authorize(interaction, self.request_id)
         if found is None:
             return
@@ -514,6 +519,7 @@ class RejectModal(BaseModal):
 
     async def on_submit(self, interaction: discord.Interaction):
         # Re-checked: the modal may have stayed open while roles changed.
+        await interaction.response.defer()  # ack first: authorisation hits the DB
         if await _authorize(interaction, self.request_id) is None:
             return
         await _apply_decision(interaction, self.request_id, STATUS_REJECTED,

@@ -214,7 +214,7 @@ days**, Discord's own retention. The answers are personal data.
 
 `REQUIRED_BOT_PERMISSIONS = ["kick_members"]`: Discord requires it to list and
 to action join requests. The review channel is checked for View Channel and
-Send Messages at save time. Administrator is never required.
+Send Messages (up front in /config and again at save time). Administrator is never required.
 
 The panel shows whether the server has applications enabled in Discord (the
 `MEMBER_VERIFICATION_MANUAL_APPROVAL` feature). Nothing else on the panel says

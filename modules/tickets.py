@@ -745,7 +745,13 @@ class TicketsModule(ModuleBase):
     # Panels are messages written in the server language: a language change
     # has to re-post them (ModuleManager.apply_language_change).
     LANGUAGE_DEPENDENT_MESSAGES = True
+    # Minimum to open a ticket: view + send + manage_channels + manage_roles
+    # (+ external emojis). read_message_history only powers transcripts and
+    # closure detection, so it must not block /config. Optional/degrading:
+    # manage_messages/pin_messages, create_private_threads + manage_threads,
+    # mention_everyone.
     REQUIRED_BOT_PERMISSIONS = ["manage_channels", "manage_roles"]
+    BASELINE_OPTIONAL = ["read_message_history"]
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)

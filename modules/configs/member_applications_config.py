@@ -23,7 +23,9 @@ import discord
 from discord import ui
 
 from cogs.error_handler import BaseModal, BaseView
-from modules.configs._common import check_guild_perms
+from modules.configs._common import (
+    ack, check_guild_perms, load_before_modal, show,
+)
 from modules.member_applications import (
     CHANNEL_TYPES,
     DISCORD_FEATURE,
@@ -318,10 +320,11 @@ class MemberApplicationsConfigView(BaseView):
         return view
 
     async def _update(self, interaction: discord.Interaction, key: str, value: Any):
+        await ack(interaction)
         working_config = await self._fresh_working_config(interaction)
         working_config[key] = value
         view = await self._rebuild(interaction, working_config, has_changes=True)
-        await interaction.response.edit_message(view=view)
+        await show(interaction, view)
 
     # ----------------------------------------------------------------- #
     # Callbacks
@@ -349,15 +352,21 @@ class MemberApplicationsConfigView(BaseView):
     async def on_edit_reasons(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
-        working_config = await self._fresh_working_config(interaction)
+        # A modal must be the first response: the read (only hits the database
+        # on a restarted shell) is time-bounded instead of followed by an ack.
+        ok, working_config = await load_before_modal(
+            interaction, self._fresh_working_config(interaction))
+        if not ok:
+            return
         locale = i18n.get_user_locale(interaction)
 
         async def on_reasons(modal_interaction: discord.Interaction, reasons: List[str]):
             if not await check_guild_perms(modal_interaction):
                 return
             working_config["rejection_reasons"] = reasons
+            await ack(modal_interaction)
             view = await self._rebuild(modal_interaction, working_config, has_changes=True)
-            await modal_interaction.response.edit_message(view=view)
+            await show(modal_interaction, view)
 
         await interaction.response.send_modal(PresetReasonsModal(
             locale, normalize_reasons(working_config.get("rejection_reasons")), on_reasons,
@@ -373,12 +382,12 @@ class MemberApplicationsConfigView(BaseView):
             interaction.client, interaction.guild_id, interaction.user.id,
             i18n.get_user_locale(interaction),
         )
-        await interaction.response.edit_message(view=main_view)
+        await show(interaction, main_view)
 
     async def on_save(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
-        await interaction.response.defer()
+        await ack(interaction)
 
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
@@ -404,18 +413,19 @@ class MemberApplicationsConfigView(BaseView):
     async def on_cancel(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+        await ack(interaction)
         bot = interaction.client
         saved = await bot.module_manager.get_module_config(interaction.guild_id, MODULE_ID)
         view = MemberApplicationsConfigView(
             bot, interaction.guild_id, interaction.user.id,
             i18n.get_user_locale(interaction), current_config=saved,
         )
-        await interaction.response.edit_message(view=view)
+        await show(interaction, view)
 
     async def on_delete(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
-        await interaction.response.defer()
+        await ack(interaction)
 
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)

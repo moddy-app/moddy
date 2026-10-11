@@ -36,6 +36,7 @@ from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
 import discord
 
 from modules.module_manager import ModuleBase
+from utils.bot_permissions import channel_map, channel_validation_error
 from serverlogs import registry
 from utils.emojis import NEWSPAPER
 
@@ -117,7 +118,20 @@ class LogsModule(ModuleBase):
     MODULE_DESCRIPTION = "Detailed audit logs for everything that happens on the server"
     MODULE_EMOJI = NEWSPAPER
     MODULE_ORDER = 25
-    REQUIRED_BOT_PERMISSIONS = ["manage_webhooks"]
+    # Delivery goes through webhooks, with a plain channel.send fallback
+    # (embeds + files) when a webhook cannot be created.
+    REQUIRED_BOT_PERMISSIONS = ["manage_webhooks", "embed_links", "attach_files"]
+    CHANNEL_PERMISSIONS = ["view_channel", "send_messages", "embed_links"]
+
+    @classmethod
+    def channel_requirements(cls, config):
+        pairs = []
+        for raw in (config.get("categories") or {}).values():
+            if not isinstance(raw, dict):
+                continue
+            for channel_id in raw.get("channel_ids") or []:
+                pairs.append((channel_id, cls.CHANNEL_PERMISSIONS))
+        return channel_map(*pairs)
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)
@@ -196,11 +210,10 @@ class LogsModule(ModuleBase):
                 if channel is None:
                     return False, t('modules.logs.config.errors.channel_not_found',
                                     locale=locale, channel_id=channel_id)
-                permissions = channel.permissions_for(guild.me)
-                if not (permissions.view_channel and permissions.send_messages
-                        and permissions.embed_links):
-                    return False, t('modules.logs.config.errors.missing_permissions',
-                                    locale=locale, channel=channel.mention)
+                error = channel_validation_error(
+                    channel, guild, self.CHANNEL_PERMISSIONS, locale)
+                if error:
+                    return False, error
         return True, None
 
     # ------------------------------------------------------------------ #

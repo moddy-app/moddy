@@ -315,9 +315,11 @@ class AltGuard(commands.Cog):
             )
             return
 
+        await interaction.response.defer(ephemeral=True, thinking=True)  # module load is async
+
         module = await self._module(interaction.guild_id)
         if module is None:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 view=create_error_message(
                     t('modules.altguard.errors.not_configured.title', locale=locale),
                     t('modules.altguard.errors.not_configured.description', locale=locale),
@@ -327,7 +329,7 @@ class AltGuard(commands.Cog):
             return
 
         if member.bot:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 view=create_error_message(
                     t('modules.altguard.errors.bot_target.title', locale=locale),
                     t('modules.altguard.errors.bot_target.description', locale=locale),
@@ -335,8 +337,6 @@ class AltGuard(commands.Cog):
                 ephemeral=True,
             )
             return
-
-        await interaction.response.defer(ephemeral=True, thinking=True)
 
         if verify:
             await module.verify_member(member, actor_id=interaction.user.id)

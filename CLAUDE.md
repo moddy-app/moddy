@@ -216,7 +216,10 @@ moddy/
 │       └── _utils.py
 │
 ├── utils/                     # Utility modules
+│   ├── bot_permissions.py     #   Bot permission checks (baseline, guild + channel level, all gaps at once)
 │   ├── i18n.py                #   Internationalization system (honours the /preferences language override)
+│   ├── loop_monitor.py        #   Event-loop lag monitor + watchdog stack dump + late-interaction logging (10062 diagnosis), notifies stalls > 2.5 s
+│   ├── interaction_guard.py   #   Auto-acknowledges interactions unanswered after ~2 s (defer + response shims), see docs/ERROR_HANDLING.md
 │   ├── user_preferences.py    #   Per-user prefs cache (icon theme + language), loaded at startup
 │   ├── icon_theme.py          #   Light-theme icon swap: rewrites outgoing payloads (white → *_dark twins)
 │   ├── guild_language.py      #   Server language (one setting, every module)
@@ -551,6 +554,13 @@ moddy/
   service it delegates to) makes and setting `REQUIRED_BOT_PERMISSIONS`
   accordingly — do not guess, and do not default to `administrator` as a
   shortcut.
+- `REQUIRED_BOT_PERMISSIONS` lists only the module-specific permissions; the
+  baseline (view_channel, send_messages, read_message_history,
+  use_external_emojis) is merged by `ModuleBase.required_permissions()` unless
+  `SENDS_MESSAGES = False`. Channel-level needs go in
+  `channel_requirements(config)`. /config reports ALL gaps in one message
+  (`utils/bot_permissions.py`); `validate_config` must use
+  `channel_validation_error`, never a first-failure `if not perms.x` chain.
 - See → [docs/COMMANDS.md](docs/COMMANDS.md), [docs/MODULE_SYSTEM.md](docs/MODULE_SYSTEM.md)
 
 ---

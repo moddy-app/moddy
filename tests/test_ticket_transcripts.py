@@ -549,6 +549,7 @@ class TestClosureSuggestionAuthorisation:
         interaction.response.defer = AsyncMock()
         interaction.response.send_message = AsyncMock()
         interaction.response.edit_message = AsyncMock()
+        interaction.edit_original_response = AsyncMock()
         interaction.followup.send = AsyncMock()
         return interaction
 
@@ -563,7 +564,7 @@ class TestClosureSuggestionAuthorisation:
     def patched(self, monkeypatch):
         """Wire the view's two lookups to stubs, keeping its real logic."""
         def install(service, ticket, category, permissions):
-            async def fake_resolve(_interaction):
+            async def fake_resolve(_interaction, **_kwargs):
                 return service, ticket, {}, category
             monkeypatch.setattr("utils.ticket_views._resolve", fake_resolve)
             monkeypatch.setattr("utils.ticket_views.member_permissions",
@@ -619,7 +620,7 @@ class TestClosureSuggestionAuthorisation:
         patched(service, make_ticket(), {}, set())
         interaction = self._interaction(SimpleNamespace(id=5))
         await TicketClosureSuggestionView("fr").on_dismiss(interaction)
-        interaction.response.edit_message.assert_not_awaited()
+        interaction.edit_original_response.assert_not_awaited()
 
     @pytest.mark.parametrize("locale", LOCALES)
     def test_the_card_is_translated_everywhere(self, locale):

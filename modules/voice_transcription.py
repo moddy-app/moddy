@@ -21,6 +21,7 @@ from typing import Any, Dict, List, Optional
 import discord
 
 from modules.module_manager import ModuleBase
+from utils.bot_permissions import channel_map, channel_validation_error
 from utils.emojis import VOICE_CHAT
 from utils.transcription_views import (
     NO_MENTIONS,
@@ -47,6 +48,13 @@ class VoiceTranscriptionModule(ModuleBase):
     MODULE_DESCRIPTION = "Transcrit les messages vocaux en texte"
     MODULE_EMOJI = VOICE_CHAT
     MODULE_ORDER = 110
+
+    @classmethod
+    def channel_requirements(cls, config):
+        return channel_map(*(
+            (channel_id, ["view_channel", "send_messages"])
+            for channel_id in (config.get("channel_ids") or [])
+        ))
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)
@@ -97,12 +105,12 @@ class VoiceTranscriptionModule(ModuleBase):
             channel = guild.get_channel(int(channel_id))
             if channel is None:
                 return False, "Salon introuvable"
-            perms = channel.permissions_for(guild.me)
-            if not perms.send_messages:
-                return False, (
-                    f"Je n'ai pas la permission d'envoyer des messages dans "
-                    f"{channel.mention}"
-                )
+            from utils.guild_language import guild_locale
+            error = channel_validation_error(
+                channel, guild, ["view_channel", "send_messages"],
+                await guild_locale(self.bot, guild))
+            if error:
+                return False, error
 
         return True, None
 

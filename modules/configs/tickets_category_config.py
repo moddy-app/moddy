@@ -34,7 +34,7 @@ import discord
 from discord import ui
 
 from cogs.error_handler import BaseModal, BaseView
-from modules.configs._common import check_guild_perms
+from modules.configs._common import ack, check_guild_perms, load_before_modal, say, show
 from modules.configs.tickets_config import (
     load_config,
     render_panel,
@@ -102,6 +102,7 @@ def _guarded(callback):
 async def render_category(interaction: discord.Interaction, panel_id: str,
                           category_id: str, *, confirm_delete: bool = False) -> None:
     """(Re)build and show one category's editor, falling back up the tree."""
+    await ack(interaction)
     bot = interaction.client
     locale = i18n.get_user_locale(interaction)
     config = await load_config(bot, interaction.guild_id)
@@ -120,6 +121,7 @@ async def render_permissions(interaction: discord.Interaction, panel_id: str,
                              category_id: str,
                              role_id: Optional[int] = None) -> None:
     """(Re)build and show the permissions screen of one category."""
+    await ack(interaction)
     bot = interaction.client
     locale = i18n.get_user_locale(interaction)
     config = await load_config(bot, interaction.guild_id)
@@ -135,10 +137,7 @@ async def render_permissions(interaction: discord.Interaction, panel_id: str,
 
 
 async def _edit(interaction: discord.Interaction, view: ui.LayoutView) -> None:
-    if interaction.response.is_done():
-        await interaction.edit_original_response(view=view)
-    else:
-        await interaction.response.edit_message(view=view)
+    await show(interaction, view)
 
 
 async def _update_category(interaction: discord.Interaction, panel_id: str,
@@ -150,6 +149,7 @@ async def _update_category(interaction: discord.Interaction, panel_id: str,
     shows (name, emoji, colour, description, availability) — everything else
     changes what happens inside a ticket, not what the panel looks like.
     """
+    await ack(interaction)
     bot = interaction.client
     config = await load_config(bot, interaction.guild_id)
     panel, category = locate_category(config, panel_id, category_id)
@@ -158,8 +158,6 @@ async def _update_category(interaction: discord.Interaction, panel_id: str,
         return
 
     category.update(fields)
-    if not interaction.response.is_done():
-        await interaction.response.defer()
 
     success, error = await save_config(
         bot, interaction.guild_id, config, interaction.user.id,
@@ -175,13 +173,21 @@ async def start_category_creation(interaction: discord.Interaction,
     """Ask for the new category's identity, then open its editor."""
     bot = interaction.client
     locale = i18n.get_user_locale(interaction)
-    config = await load_config(bot, interaction.guild_id)
+
+    # A modal must be the first response (no defer possible): bounded read.
+    async def _state():
+        return (await load_config(bot, interaction.guild_id),
+                await get_limits(bot, interaction.guild_id))
+
+    ok, loaded = await load_before_modal(interaction, _state())
+    if not ok:
+        return
+    config, limits = loaded
     panel = find_panel(config, panel_id)
     if not panel:
         await render_root(interaction)
         return
 
-    limits = await get_limits(bot, interaction.guild_id)
     cap = max_categories_for_style(panel['style'], limits['max_categories'])
     if len(panel.get('categories', [])) >= cap:
         description = t('modules.tickets.errors.category_limit', locale=locale, max=cap)
@@ -189,13 +195,12 @@ async def start_category_creation(interaction: discord.Interaction,
             from modules.configs.tickets_config import PREMIUM_URL
             description += ("\n\n" + t('modules.tickets.errors.premium_upsell',
                                        locale=locale, url=PREMIUM_URL))
-        await interaction.response.send_message(
-            view=create_error_message(
-                t('modules.tickets.errors.title', locale=locale), description),
-            ephemeral=True)
+        await say(interaction, view=create_error_message(
+            t('modules.tickets.errors.title', locale=locale), description))
         return
 
     async def create(inner: discord.Interaction, fields: Dict[str, Any]):
+        await ack(inner)
         inner_config = await load_config(bot, inner.guild_id)
         inner_panel = find_panel(inner_config, panel_id)
         if not inner_panel:
@@ -205,8 +210,6 @@ async def start_category_creation(interaction: discord.Interaction,
         inner_panel.setdefault('categories', []).append({
             'id': category_id, 'enabled': True, **fields,
         })
-        if not inner.response.is_done():
-            await inner.response.defer()
         success, error = await save_config(bot, inner.guild_id, inner_config,
                                            inner.user.id, repost_panel_id=panel_id)
         if not success:
@@ -535,7 +538,10 @@ class TicketCategoryButton(
         await render_panel(interaction, self.panel_id)
 
     async def _on_identity(self, interaction: discord.Interaction):
-        category = await self._category(interaction)
+        # A modal must be the first response: bounded read for the pre-fill.
+        ok, category = await load_before_modal(interaction, self._category(interaction))
+        if not ok:
+            return
         if not category:
             await render_panel(interaction, self.panel_id)
             return
@@ -549,19 +555,31 @@ class TicketCategoryButton(
                                fields, repost=True)
 
     async def _on_messages(self, interaction: discord.Interaction):
-        category = await self._category(interaction)
+        from utils.guild_language import guild_locale
+
+        async def _state():
+            return (await self._category(interaction),
+                    await guild_locale(interaction.client, interaction.guild))
+
+        # A modal must be the first response: bounded read for the pre-fill.
+        ok, loaded = await load_before_modal(interaction, _state())
+        if not ok:
+            return
+        category, server_locale = loaded
         if not category:
             await render_panel(interaction, self.panel_id)
             return
-        from utils.guild_language import guild_locale
         modal = CategoryMessagesModal(
             i18n.get_user_locale(interaction), category, self._apply_plain,
-            await guild_locale(interaction.client, interaction.guild))
+            server_locale)
         modal.bot = interaction.client
         await interaction.response.send_modal(modal)
 
     async def _on_options(self, interaction: discord.Interaction):
-        category = await self._category(interaction)
+        # A modal must be the first response: bounded read for the pre-fill.
+        ok, category = await load_before_modal(interaction, self._category(interaction))
+        if not ok:
+            return
         if not category:
             await render_panel(interaction, self.panel_id)
             return
@@ -577,6 +595,7 @@ class TicketCategoryButton(
         await render_permissions(interaction, self.panel_id, self.category_id)
 
     async def _on_toggle(self, interaction: discord.Interaction):
+        await ack(interaction)
         category = await self._category(interaction)
         if not category:
             await render_panel(interaction, self.panel_id)
@@ -590,6 +609,7 @@ class TicketCategoryButton(
                               confirm_delete=True)
 
     async def _on_delconfirm(self, interaction: discord.Interaction):
+        await ack(interaction)
         bot = interaction.client
         config = await load_config(bot, interaction.guild_id)
         panel = find_panel(config, self.panel_id)
@@ -599,7 +619,6 @@ class TicketCategoryButton(
 
         panel['categories'] = [c for c in panel.get('categories', [])
                                if c['id'] != self.category_id]
-        await interaction.response.defer()
         success, error = await save_config(bot, interaction.guild_id, config,
                                            interaction.user.id,
                                            repost_panel_id=self.panel_id)
@@ -928,6 +947,7 @@ class TicketPermSelect(
     async def callback(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+        await ack(interaction)
         chosen = [p for p in TICKET_PERMISSIONS
                   if p in (interaction.data.get('values') or [])]
 
@@ -947,7 +967,7 @@ class TicketPermSelect(
             permissions.pop(str(self.role_id), None)
         category['permissions'] = permissions
 
-        await interaction.response.defer()
+        await ack(interaction)
         success, error = await save_config(bot, interaction.guild_id, config,
                                            interaction.user.id)
         if not success:
@@ -998,6 +1018,7 @@ class TicketPermButton(
             return
 
         # 'clear'
+        await ack(interaction)
         bot = interaction.client
         config = await load_config(bot, interaction.guild_id)
         _, category = locate_category(config, self.panel_id, self.category_id)
@@ -1009,7 +1030,7 @@ class TicketPermButton(
         permissions.pop(str(self.role_id), None)
         category['permissions'] = permissions
 
-        await interaction.response.defer()
+        await ack(interaction)
         success, error = await save_config(bot, interaction.guild_id, config,
                                            interaction.user.id)
         if not success:

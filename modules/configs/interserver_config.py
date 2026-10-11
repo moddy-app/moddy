@@ -11,7 +11,7 @@ import logging
 from utils.i18n import i18n, t
 from cogs.error_handler import BaseView
 from utils.emojis import GROUPS, REQUIRED_FIELDS, WARNING, BACK, SAVE, UNDONE, DELETE
-from modules.configs._common import check_guild_perms
+from modules.configs._common import check_guild_perms, ack, show
 
 logger = logging.getLogger('moddy.modules.interserver_config')
 
@@ -257,6 +257,7 @@ class InterServerConfigView(BaseView):
         """Callback quand un salon est sélectionné"""
         if not await check_guild_perms(interaction):
             return
+        await ack(interaction)
 
         working_config = await self._fresh_working_config(interaction)
         if interaction.data['values']:
@@ -265,18 +266,19 @@ class InterServerConfigView(BaseView):
             working_config['channel_id'] = None
 
         view = await self._rebuild(interaction, working_config, has_changes=True)
-        await interaction.response.edit_message(view=view)
+        await show(interaction, view)
 
     async def on_type_select(self, interaction: discord.Interaction):
         """Callback quand un type d'inter-serveur est sélectionné"""
         if not await check_guild_perms(interaction):
             return
+        await ack(interaction)
 
         working_config = await self._fresh_working_config(interaction)
         working_config['interserver_type'] = interaction.data['values'][0]
 
         view = await self._rebuild(interaction, working_config, has_changes=True)
-        await interaction.response.edit_message(view=view)
+        await show(interaction, view)
 
     async def on_back(self, interaction: discord.Interaction):
         """Retour au menu principal"""
@@ -286,14 +288,14 @@ class InterServerConfigView(BaseView):
         from cogs.config import ConfigMainView
         locale = i18n.get_user_locale(interaction)
         main_view = ConfigMainView(interaction.client, interaction.guild_id, interaction.user.id, locale)
-        await interaction.response.edit_message(view=main_view)
+        await show(interaction, main_view)
 
     async def on_save(self, interaction: discord.Interaction):
         """Sauvegarde la configuration"""
         if not await check_guild_perms(interaction):
             return
 
-        await interaction.response.defer()
+        await ack(interaction)
 
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
@@ -318,19 +320,20 @@ class InterServerConfigView(BaseView):
         """Annule les modifications"""
         if not await check_guild_perms(interaction):
             return
+        await ack(interaction)
 
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
         saved = await bot.module_manager.get_module_config(interaction.guild_id, 'interserver')
         view = InterServerConfigView(bot, interaction.guild_id, interaction.user.id, locale, current_config=saved)
-        await interaction.response.edit_message(view=view)
+        await show(interaction, view)
 
     async def on_delete(self, interaction: discord.Interaction):
         """Supprime la configuration"""
         if not await check_guild_perms(interaction):
             return
 
-        await interaction.response.defer()
+        await ack(interaction)
 
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)

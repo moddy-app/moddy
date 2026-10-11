@@ -877,6 +877,35 @@
     "not_your_message": {
       "title": "No es tu mensaje",
       "description": "<:undone:1519800313324896327> No puedes usar estos botones, pertenecen a otro usuario."
+    },
+    "card": {
+      "title": "Algo salió mal...",
+      "code": "**Código de error:** `{error_code}`",
+      "logged": "-# Este error se ha registrado automáticamente y nuestro equipo lo revisará.\n-# Si el problema persiste, contacta con el soporte con este código de error.",
+      "support": "Soporte",
+      "status": "Estado"
+    },
+    "too_slow": {
+      "title": "Moddy tardó demasiado en responder",
+      "body": "Discord cerró esta interacción antes de que Moddy pudiera responder. Inténtalo de nuevo.\n**Código de error:** `{error_code}`",
+      "dm_body": "Moddy no pudo responder a tiempo y Discord cerró la interacción. Inténtalo de nuevo.\n**Código de error:** `{error_code}`"
+    },
+    "dm_fallback": {
+      "title": "Moddy no pudo responderte",
+      "intro": "No pude responder donde me usaste (la interacción expiró), así que te aviso por aquí.",
+      "body": "Algo salió mal con tu última acción y no pude responderte donde me usaste.\n**Código de error:** `{error_code}`"
+    },
+    "inactive": {
+      "title": "Este control ya no está activo",
+      "body": "Este botón, menú o formulario ya no está activo. Vuelve a ejecutar el comando."
+    },
+    "still_working": {
+      "title": "Esto está tardando más de lo esperado",
+      "body": "Si no aparece nada en breve, inténtalo de nuevo."
+    },
+    "command_unavailable": {
+      "title": "Este comando no está disponible",
+      "body": "Este comando ya no existe o no está disponible ahora mismo. Discord puede necesitar un momento para actualizar su lista; inténtalo más tarde."
     }
   },
   "common": {
@@ -944,13 +973,17 @@
         "bot_not_in_guild": "<:error:1519790252594827264> Moddy debe estar presente en este servidor para usar este comando.",
         "wrong_user": "<:error:1519790252594827264> Solo quien inició la configuración puede usar esta interfaz.",
         "no_user_perms": "<:error:1519790252594827264> Debes tener el permiso de **Gestionar servidor** para usar este comando.",
+        "slow_retry": "<:error:1519790252594827264> La carga ha tardado demasiado. Vuelve a hacer clic.",
         "required_fields": "<:undone:1519800313324896327> **Configuración no válida** - Se deben rellenar los siguientes campos:\n• {fields}",
         "channel_not_found": "Canal no encontrado",
         "missing_bot_perms": {
           "title": "Permisos insuficientes",
-          "description": "Moddy necesita el siguiente permiso para configurar **{module}**:\n{permissions}\n\nVuelve a invitar al bot o concédele este permiso manualmente.",
-          "button": "Volver a invitar a Moddy"
-        }
+          "description": "Moddy necesita los siguientes permisos para configurar **{module}**:\n{permissions}\n\nVuelve a invitar al bot o concédele estos permisos manualmente (y revisa los permisos de los canales implicados).",
+          "button": "Volver a invitar a Moddy",
+          "in_channel": "En {channel}:"
+        },
+        "channel_missing_perms": "<:error:1519790252594827264> A Moddy le faltan permisos en {channel}:\n{permissions}",
+        "guild_missing_perms": "<:error:1519790252594827264> A Moddy le faltan permisos en este servidor:\n{permissions}"
       },
       "current_value": "Valor actual:",
       "not_configured": "Sin configurar"
@@ -3639,6 +3672,7 @@
         "destination_missing": "Esta categoría no tiene un destino válido. Avisa a un administrador.",
         "too_many_open": "Ya tienes `{max}` ticket(s) abierto(s) en esta categoría. Cierra uno antes de abrir otro.",
         "cannot_create_channel": "Moddy no ha podido crear el canal del ticket. Comprueba sus permisos en la categoría de destino.",
+        "missing_bot_permissions": "A Moddy le faltan permisos para gestionar tickets: {permissions}. Concédeselos en la categoría de destino (o en todo el servidor).",
         "already_closed": "Este ticket ya está cerrado.",
         "close_already_requested": "Ya hay una solicitud de cierre pendiente en este ticket.",
         "no_close_request": "No hay ninguna solicitud de cierre pendiente en este ticket.",

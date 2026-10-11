@@ -264,7 +264,15 @@ class TicketModule(ModuleBase):
     # liste contre guild.me.guild_permissions avant d'ouvrir l'écran de
     # configuration du module, et affiche un message "permissions
     # manquantes" avec un lien de réinvitation ciblé si besoin.
+    # Ne lister QUE le spécifique au module : la base (view_channel,
+    # send_messages, read_message_history, use_external_emojis) est ajoutée par
+    # ModuleBase.required_permissions() sauf SENDS_MESSAGES = False.
     REQUIRED_BOT_PERMISSIONS = ["manage_channels", "manage_roles"]
+    SENDS_MESSAGES = True                 # False : le module n'écrit jamais dans un salon
+    BASELINE_OPTIONAL = []                # éléments de la base qui ne bloquent pas
+    # Permissions requises dans les salons déjà configurés (overwrites inclus) :
+    # @classmethod
+    # def channel_requirements(cls, config): return channel_map((config.get("channel_id"), ["view_channel", "send_messages"]))
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)
@@ -536,7 +544,14 @@ Le module Welcome Channel est un exemple complet incluant :
 
 ### Permissions requises
 
-- **Bot** : Permissions administrateur sur le serveur
+- **Bot** : jamais Administrateur. Avant d'ouvrir l'écran d'un module, `check_bot_perms`
+  (`modules/configs/_common.py`) vérifie en UN seul message TOUTES les permissions
+  manquantes : base + `REQUIRED_BOT_PERMISSIONS` (`ModuleBase.required_permissions()`)
+  au niveau serveur, puis `ModuleBase.channel_requirements(config)` dans les salons
+  configurés (overwrites inclus). Le lien de réinvitation couvre tout. Les
+  `validate_config` utilisent `utils/bot_permissions.channel_validation_error`
+  (liste toutes les lacunes d'un salon d'un coup, jamais de court-circuit).
+  Helpers purs, sans réseau : `utils/bot_permissions.py`.
 - **Utilisateur** : Permission "Gérer le serveur"
 
 ### Interface

@@ -29,6 +29,7 @@ import discord
 from discord import ui
 
 from modules.module_manager import ModuleBase
+from utils.bot_permissions import channel_map, channel_validation_error
 from utils.emojis import WAVING_HAND
 from utils.i18n import t
 
@@ -195,6 +196,14 @@ class WelcomeChannelModule(ModuleBase):
     MODULE_EMOJI = WAVING_HAND
     MODULE_ORDER = 40
 
+    @classmethod
+    def channel_requirements(cls, config):
+        return channel_map(*(
+            (entry.get("channel_id"), ["view_channel", "send_messages"])
+            for entry in (config.get("messages") or [])
+            if isinstance(entry, dict)
+        ))
+
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)
         self.messages: List[Dict[str, Any]] = []
@@ -245,10 +254,10 @@ class WelcomeChannelModule(ModuleBase):
             if not isinstance(channel, discord.TextChannel):
                 return False, t('modules.welcome_channel.errors.channel_type', locale=locale)
 
-            perms = channel.permissions_for(guild.me)
-            if not perms.send_messages or not perms.view_channel:
-                return False, t('modules.welcome_channel.errors.no_send_permission',
-                                locale=locale, channel=channel.mention)
+            error = channel_validation_error(
+                channel, guild, ["view_channel", "send_messages"], locale)
+            if error:
+                return False, error
 
             message = (entry.get('message') or '').strip()
             if not message:

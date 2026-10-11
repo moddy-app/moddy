@@ -561,8 +561,9 @@ class AutomodModule(ModuleBase):
     MODULE_EMOJI = "<:shield:1521471376815292498>"
     MODULE_ORDER = 10
     # manage_nicknames: the profile feature resets an inappropriate nickname.
+    # attach_files: log / evidence cards re-upload the offending images.
     REQUIRED_BOT_PERMISSIONS = ["manage_messages", "ban_members", "moderate_members",
-                                "manage_nicknames"]
+                                "manage_nicknames", "attach_files"]
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)

@@ -8,13 +8,59 @@ import discord
 from discord import app_commands
 from typing import Optional
 import functools
+import time
 import types
+from typing import Dict, Tuple
 
 # Discord requires the initial ack (response.send_message / defer) within 3s
 # of receiving the interaction. This lookup runs before that ack, so it must
 # never be allowed to eat into that budget on a slow/stuck DB call — a
 # timeout here falls back to the default, same as any other lookup failure.
-_PREFERENCE_LOOKUP_TIMEOUT = 1.5
+_PREFERENCE_LOOKUP_TIMEOUT = 0.8
+
+# user_id -> (DEFAULT_INCOGNITO value or None, expiry). The preference is read
+# before the first response of nearly every slash command; a short in-process
+# cache keeps that DB round trip (and any pool wait) off the 3 s ack budget.
+_PREF_TTL = 60.0
+_PREF_CACHE_MAX = 4096
+_pref_cache: "Dict[int, Tuple[Optional[bool], float]]" = {}
+
+
+def invalidate_incognito_cache(user_id: Optional[int] = None) -> None:
+    """Forget the cached DEFAULT_INCOGNITO of one user (or of everyone)."""
+    if user_id is None:
+        _pref_cache.clear()
+    else:
+        _pref_cache.pop(int(user_id), None)
+
+
+async def resolve_default_incognito(bot, user_id: int, default: bool = True) -> bool:
+    """The user's default for ephemeral replies, safe to await before an ack.
+
+    Cached for ``_PREF_TTL`` seconds and bounded by ``_PREFERENCE_LOOKUP_TIMEOUT``;
+    any failure (including a timeout) falls back to ``default``.
+    """
+    if not getattr(bot, "db", None):
+        return default
+    now = time.monotonic()
+    hit = _pref_cache.get(user_id)
+    if hit and hit[1] > now:
+        pref = hit[0]
+    else:
+        try:
+            pref = await asyncio.wait_for(
+                bot.db.get_attribute('user', user_id, 'DEFAULT_INCOGNITO'),
+                timeout=_PREFERENCE_LOOKUP_TIMEOUT,
+            )
+        except Exception as e:
+            import logging
+            logging.getLogger('moddy').warning(
+                "Incognito preference lookup failed (%s); using default", type(e).__name__)
+            return default
+        if len(_pref_cache) >= _PREF_CACHE_MAX:
+            _pref_cache.clear()
+        _pref_cache[user_id] = (pref, now + _PREF_TTL)
+    return default if pref is None else bool(pref)
 
 
 def add_incognito_option(default_value: bool = True):
@@ -34,28 +80,8 @@ def add_incognito_option(default_value: bool = True):
             if incognito is None:
                 # First, check the user attribute for the default preference
                 if hasattr(self, 'bot') and self.bot.db:
-                    try:
-                        # Get the DEFAULT_INCOGNITO preference. Bounded so a slow
-                        # DB call can't burn through Discord's 3s ack window —
-                        # the command's own first response hasn't been sent yet.
-                        user_pref = await asyncio.wait_for(
-                            self.bot.db.get_attribute('user', interaction.user.id, 'DEFAULT_INCOGNITO'),
-                            timeout=_PREFERENCE_LOOKUP_TIMEOUT,
-                        )
-
-                        # If the user has a defined preference
-                        if user_pref is not None:
-                            # If DEFAULT_INCOGNITO is False, we want messages to be public by default
-                            incognito = user_pref
-                        else:
-                            # No preference defined, use the default value
-                            incognito = default_value
-                    except Exception as e:
-                        # In case of an error (including a timeout), use the default value
-                        import logging
-                        logger = logging.getLogger('moddy')
-                        logger.error(f"Error getting incognito preference: {e}")
-                        incognito = default_value
+                    incognito = await resolve_default_incognito(
+                        self.bot, interaction.user.id, default_value)
                 else:
                     incognito = default_value
 

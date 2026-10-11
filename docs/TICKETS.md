@@ -337,6 +337,41 @@ outrank the role overwrite that just muted them.
 scratch on every change rather than patching it. That is what keeps escalation,
 closure and participant edits from drifting into states nobody can explain.
 
+### Bot permissions (no Administrator, no Moddy role)
+
+Moddy never needs `Administrator`, and never looks a role up by name: it works
+with only what `@everyone` and its own invite grant. Discord answers
+`50013 Missing Permissions` to any channel create/edit whose overwrites
+**allow or deny** a permission the bot does not hold itself, so
+`TicketService.safe_overwrites()` wraps `build_overwrites()` and **clamps every
+overwrite** (`clamp_overwrites`) to the bot's permissions in the destination
+category (`bot_permissions_for`; guild-level when there is no category). Staff
+bits the bot lacks (e.g. `manage_messages`) simply drop out; the ticket still
+opens. When a *core* permission is missing the user gets
+`modules.tickets.errors.missing_bot_permissions`, naming exactly what is
+missing, instead of a generic failure.
+
+**Minimum (core flow)** -- `view_channel`, `send_messages`, `manage_channels`
+(create / rename / move / delete channels), `manage_roles` ("Manage
+Permissions": required to set any overwrite). `read_message_history` and the
+rest come from `@everyone`/the bot's own overwrite when held.
+
+**Optional** (feature degrades, never the ticket):
+
+| Permission | Without it |
+|---|---|
+| `manage_messages` / `pin_messages` | the control message is not pinned; staff cannot be given message management in the channel |
+| `create_private_threads` + `manage_threads` | the staff-thread button answers "cannot create thread" |
+| `read_message_history` | no transcript capture / closure detection |
+| `embed_links`, `attach_files` | nothing the bot sends needs them (Components V2) |
+| `mention_everyone` | pings of non-mentionable roles do not ring |
+
+**Closing answers before it deletes.** The deferred reply of an interaction
+started in a ticket lives in that channel, so a follow-up sent after the
+channel is deleted fails with `10008 Unknown Message`.
+`close_ticket(..., before_delete=hook)` runs the confirmation / rating card
+just before the channel goes (`close_then_answer` in `utils/ticket_views.py`).
+
 | State | Who can see the channel |
 |---|---|
 | Open | `@everyone` denied · the bot · every role with `view` · the opener · everyone added by hand |

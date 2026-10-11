@@ -53,61 +53,14 @@ async def _route_error(
     context: str,
 ) -> None:
     """Route an unexpected exception to the centralized ErrorTracker cog."""
-    compact_tb = "".join(
-        traceback.format_exception(type(error), error, error.__traceback__)
-    ).replace("\n", " ⮐ ")
-    logger.error(f"Unexpected error in TokenDetector/{context}: {compact_tb}")
-
-    bot = interaction.client
-    error_tracker = bot.get_cog("ErrorTracker") if bot else None
-
-    if error_tracker:
-        error_code = error_tracker.generate_error_code(error)
-        error_details = error_tracker.format_error_details(error)
-        error_details.update({
-            "command": f"TokenDetector:{context}",
-            "user": f"{interaction.user} ({interaction.user.id})",
-            "guild": (
-                f"{interaction.guild.name} ({interaction.guild.id})"
-                if interaction.guild else "DM"
-            ),
-            "channel": (
-                f"#{interaction.channel.name}"
-                if hasattr(interaction.channel, "name") else "DM"
-            ),
-        })
-
-        sentry_id = capture_error_to_sentry(error, {
-            "error_type": "DynamicItem Error",
-            "error_code": error_code,
-            "context": context,
-            "user_id": interaction.user.id if interaction.user else None,
-            "guild_id": interaction.guild.id if interaction.guild else None,
-        })
-        if sentry_id:
-            error_details["sentry_event_id"] = sentry_id
-
-        error_tracker.store_error(error_code, error_details)
-        await error_tracker.store_error_db(error_code, error_details)
-        await error_tracker.send_error_log(error_code, error_details, is_fatal=False)
-
-        error_view = ErrorView(error_code)
-        try:
-            if interaction.response.is_done():
-                await interaction.followup.send(view=error_view, ephemeral=True)
-            else:
-                await interaction.response.send_message(view=error_view, ephemeral=True)
-        except Exception:
-            pass
-    else:
-        try:
-            msg = "An unexpected error occurred and has been logged."
-            if interaction.response.is_done():
-                await interaction.followup.send(msg, ephemeral=True)
-            else:
-                await interaction.response.send_message(msg, ephemeral=True)
-        except Exception:
-            pass
+    from cogs.error_handler import report_interaction_error
+    await report_interaction_error(
+        interaction, error,
+        command=f"TokenDetector:{context}",
+        error_type="DynamicItem Error",
+        log_label=f"Unexpected error in TokenDetector/{context}",
+        sentry_extra={"context": context},
+    )
 
 
 class _ErrorRoutingMixin:

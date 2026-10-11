@@ -819,14 +819,8 @@ async def _guild_locale(bot, guild: discord.Guild) -> str:
 
 async def _resolve_incognito(bot, user_id: int, default: bool = True) -> bool:
     """Resolve incognito from user preference or the given default."""
-    try:
-        if bot.db:
-            pref = await bot.db.get_attribute("user", user_id, "DEFAULT_INCOGNITO")
-            if pref is not None:
-                return bool(pref)
-    except Exception:
-        pass
-    return default
+    from utils.incognito import resolve_default_incognito
+    return await resolve_default_incognito(bot, user_id, default)
 
 
 # ---------------------------------------------------------------------------

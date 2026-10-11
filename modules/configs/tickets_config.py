@@ -35,7 +35,7 @@ import discord
 from discord import ui
 
 from cogs.error_handler import BaseModal, BaseView
-from modules.configs._common import check_guild_perms
+from modules.configs._common import ack, check_guild_perms, load_before_modal, show
 from modules.tickets import (
     DEFAULT_ACCENT_COLOR,
     MAX_RETENTION_DAYS,
@@ -134,6 +134,7 @@ async def report_save_error(interaction: discord.Interaction, error: Optional[st
 
 async def render_root(interaction: discord.Interaction) -> None:
     """(Re)build and show the panel list."""
+    await ack(interaction)
     view = await TicketsConfigView.create(
         interaction.client, interaction.guild_id, interaction.user.id,
         i18n.get_user_locale(interaction))
@@ -144,6 +145,7 @@ async def render_panel(interaction: discord.Interaction, panel_id: str) -> None:
     """(Re)build and show one panel's editor, or fall back to the list."""
     from modules.configs.tickets_panel_config import TicketPanelConfigView
 
+    await ack(interaction)
     bot = interaction.client
     locale = i18n.get_user_locale(interaction)
     config = await load_config(bot, interaction.guild_id)
@@ -158,10 +160,7 @@ async def render_panel(interaction: discord.Interaction, panel_id: str) -> None:
 
 async def _edit(interaction: discord.Interaction, view: ui.LayoutView) -> None:
     """Replace the panel in place, whether or not the interaction was deferred."""
-    if interaction.response.is_done():
-        await interaction.edit_original_response(view=view)
-    else:
-        await interaction.response.edit_message(view=view)
+    await show(interaction, view)
 
 
 def parse_hex_color(value: Optional[str]) -> Optional[int]:
@@ -421,8 +420,16 @@ class TicketsConfigView(BaseView):
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
 
-        config = await load_config(bot, interaction.guild_id)
-        limits = await get_limits(bot, interaction.guild_id)
+        # A modal must be the first response (no defer possible), so the
+        # limit check reads under a time bound (load_before_modal).
+        async def _state():
+            return (await load_config(bot, interaction.guild_id),
+                    await get_limits(bot, interaction.guild_id))
+
+        ok, loaded = await load_before_modal(interaction, _state())
+        if not ok:
+            return
+        config, limits = loaded
         if len(config['panels']) >= limits['max_panels']:
             await self._limit_reached(interaction, locale, limits)
             return
@@ -433,6 +440,7 @@ class TicketsConfigView(BaseView):
 
     async def _create_panel(self, interaction: discord.Interaction,
                             fields: Dict[str, Any]):
+        await ack(interaction)
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
         config = await load_config(bot, interaction.guild_id)
@@ -473,7 +481,7 @@ class TicketsConfigView(BaseView):
             return
         values = interaction.data.get('values') or []
         if not values or values[0] == "none":
-            await interaction.response.defer()
+            await ack(interaction)
             return
         await render_panel(interaction, values[0])
 
@@ -482,7 +490,7 @@ class TicketsConfigView(BaseView):
             return
         from cogs.config import ConfigMainView
         locale = i18n.get_user_locale(interaction)
-        await interaction.response.edit_message(view=ConfigMainView(
+        await show(interaction, ConfigMainView(
             interaction.client, interaction.guild_id, interaction.user.id, locale))
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
@@ -499,6 +507,7 @@ class TicketsConfigView(BaseView):
 # =========================================================================== #
 async def render_settings(interaction: discord.Interaction) -> None:
     """(Re)build and show the ticket settings screen."""
+    await ack(interaction)
     view = await TicketsSettingsView.create(
         interaction.client, interaction.guild_id,
         i18n.get_user_locale(interaction))
@@ -662,6 +671,7 @@ class TicketsSettingsView(BaseView):
                      changes: Dict[str, Any]) -> None:
         """Merge changes into the stored settings. No panel re-post: none of
         these settings is visible on a panel message."""
+        await ack(interaction)
         bot = interaction.client
         config = await load_config(bot, interaction.guild_id)
         config['settings'].update(changes)
@@ -683,7 +693,11 @@ class TicketsSettingsView(BaseView):
         if not await check_guild_perms(interaction):
             return
         locale = i18n.get_user_locale(interaction)
-        config = await load_config(interaction.client, interaction.guild_id)
+        # Modal pre-fill: bounded read, the modal must be the first response.
+        ok, config = await load_before_modal(
+            interaction, load_config(interaction.client, interaction.guild_id))
+        if not ok:
+            return
         await interaction.response.send_modal(
             TicketsSettingsModal(locale, config['settings'], self._apply))
 

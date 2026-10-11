@@ -20,6 +20,7 @@ the interaction and from the encoded ids.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import re
 from typing import List, Optional, Tuple
@@ -73,11 +74,27 @@ async def card_locale(interaction: discord.Interaction) -> str:
     no server, so the reader's own language wins. Ephemeral errors always use
     the clicker's language.
     """
-    from utils.guild_language import guild_locale
-
     if interaction.guild is None:
         return i18n.get_user_locale(interaction)
-    return await guild_locale(interaction.client, interaction.guild)
+    return await bounded_guild_locale(interaction)
+
+
+async def bounded_guild_locale(interaction: discord.Interaction,
+                               timeout: float = 1.0) -> str:
+    """Server language, without ever eating the 3 s first-response budget.
+
+    The setting is cached after one read per guild, so this is instant except
+    on a cold cache. On a slow database the lookup keeps running in the
+    background (it warms the cache) and the automatic language answers now.
+    """
+    from utils.guild_language import guild_locale, guild_locale_cached
+
+    task = asyncio.ensure_future(guild_locale(interaction.client, interaction.guild))
+    task.add_done_callback(lambda f: f.cancelled() or f.exception())
+    try:
+        return await asyncio.wait_for(asyncio.shield(task), timeout)
+    except asyncio.TimeoutError:
+        return guild_locale_cached(interaction.client, interaction.guild)
 
 
 def format_duration(seconds: float) -> str:

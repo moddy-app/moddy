@@ -285,19 +285,26 @@ class EmbeddingEngine:
         # Session 7: stash the normalised PRIMARY vector so a later precedent
         # query (same message) reuses it without a second embedding call.
         self._vector_cache.set(cache_key(content), _normalize_vec(vectors[0]))
-        best_score = -1.0
-        best_cat = ""
         refs = list(zip(self._ref_vectors, self._ref_categories))
         if self._learned_vectors:
             refs += list(zip(self._learned_vectors, self._learned_categories))
-        for raw in vectors:
-            query = _normalize_vec(raw)
-            for vec, cat in refs:
-                sim = _dot(vec, query)
-                if sim > best_score:
-                    best_score = sim
-                    best_cat = cat
-        return best_score, best_cat
+
+        def _best() -> Tuple[float, str]:
+            # Pure-Python dot products over ~1536-dim vectors: tens of ms per
+            # message x segments x references. Off the event loop, so a busy
+            # automod server cannot delay interaction acknowledgements.
+            best_score = -1.0
+            best_cat = ""
+            for raw in vectors:
+                query = _normalize_vec(raw)
+                for vec, cat in refs:
+                    sim = _dot(vec, query)
+                    if sim > best_score:
+                        best_score = sim
+                        best_cat = cat
+            return best_score, best_cat
+
+        return await asyncio.to_thread(_best)
 
     async def score_with_vector(
         self, content: str,

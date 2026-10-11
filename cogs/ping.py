@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import Optional
 
 import discord
+from utils.incognito import resolve_default_incognito
 from discord import SeparatorSpacing
 
 from config import COLORS
@@ -33,14 +34,10 @@ class PublicPing(Cog):
         """Commande slash /ping avec i18n automatique et Components V2"""
 
         # === BLOC INCOGNITO ===
-        if incognito is None and self.bot.db:
-            try:
-                user_pref = await self.bot.db.get_attribute('user', interaction.user.id, 'DEFAULT_INCOGNITO')
-                ephemeral = True if user_pref is None else user_pref
-            except:
-                ephemeral = True
+        if incognito is None:
+            ephemeral = await resolve_default_incognito(self.bot, interaction.user.id)
         else:
-            ephemeral = incognito if incognito is not None else True
+            ephemeral = incognito
 
         # Mesure du temps de début
         start = time.perf_counter()

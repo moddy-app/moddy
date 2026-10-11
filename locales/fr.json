@@ -876,6 +876,35 @@
     "not_your_message": {
       "title": "Ce n'est pas votre message",
       "description": "<:undone:1519800313324896327> Vous ne pouvez pas utiliser ces boutons, ils appartiennent à un autre utilisateur."
+    },
+    "card": {
+      "title": "Une erreur est survenue...",
+      "code": "**Code d'erreur :** `{error_code}`",
+      "logged": "-# Cette erreur a été enregistrée automatiquement et sera examinée par notre équipe.\n-# Si le problème persiste, contactez le support avec ce code d'erreur.",
+      "support": "Support",
+      "status": "Statut"
+    },
+    "too_slow": {
+      "title": "Moddy a été trop lent à répondre",
+      "body": "Discord a fermé cette interaction avant que Moddy puisse répondre. Veuillez réessayer.\n**Code d'erreur :** `{error_code}`",
+      "dm_body": "Moddy n'a pas pu répondre à temps et Discord a fermé l'interaction. Veuillez réessayer.\n**Code d'erreur :** `{error_code}`"
+    },
+    "dm_fallback": {
+      "title": "Moddy n'a pas pu vous répondre",
+      "intro": "Je n'ai pas pu répondre là où vous m'avez utilisé (l'interaction a expiré), je vous préviens donc ici.",
+      "body": "Un problème est survenu avec votre dernière action et je n'ai pas pu vous répondre là où vous m'avez utilisé.\n**Code d'erreur :** `{error_code}`"
+    },
+    "inactive": {
+      "title": "Ce contrôle n'est plus actif",
+      "body": "Ce bouton, ce menu ou ce formulaire n'est plus actif. Veuillez relancer la commande."
+    },
+    "still_working": {
+      "title": "Cela prend plus de temps que prévu",
+      "body": "Si rien n'apparaît bientôt, veuillez réessayer."
+    },
+    "command_unavailable": {
+      "title": "Cette commande n'est pas disponible",
+      "body": "Cette commande n'existe plus ou n'est pas disponible pour le moment. Discord peut avoir besoin d'un instant pour actualiser sa liste ; réessayez plus tard."
     }
   },
   "common": {
@@ -943,13 +972,17 @@
         "bot_not_in_guild": "<:error:1519790252594827264> Moddy doit être présent sur ce serveur pour utiliser cette commande.",
         "wrong_user": "<:error:1519790252594827264> Seul l'utilisateur qui a lancé la configuration peut utiliser cette interface.",
         "no_user_perms": "<:error:1519790252594827264> Vous devez avoir la permission **Gérer le serveur** pour utiliser cette commande.",
+        "slow_retry": "<:error:1519790252594827264> Le chargement a pris trop de temps. Cliquez à nouveau.",
         "required_fields": "<:undone:1519800313324896327> **Configuration invalide** - Les champs suivants doivent être remplis :\n• {fields}",
         "channel_not_found": "Salon introuvable",
         "missing_bot_perms": {
           "title": "Permissions insuffisantes",
-          "description": "Moddy a besoin de la permission suivante pour configurer **{module}** :\n{permissions}\n\nVeuillez réinviter le bot ou lui accorder cette permission manuellement.",
-          "button": "Réinviter Moddy"
-        }
+          "description": "Moddy a besoin des permissions suivantes pour configurer **{module}** :\n{permissions}\n\nVeuillez réinviter le bot ou lui accorder ces permissions manuellement (et vérifier les permissions des salons concernés).",
+          "button": "Réinviter Moddy",
+          "in_channel": "Dans {channel} :"
+        },
+        "channel_missing_perms": "<:error:1519790252594827264> Moddy n'a pas toutes les permissions nécessaires dans {channel} :\n{permissions}",
+        "guild_missing_perms": "<:error:1519790252594827264> Moddy n'a pas toutes les permissions nécessaires sur ce serveur :\n{permissions}"
       },
       "current_value": "Valeur actuelle :",
       "not_configured": "Non configuré"
@@ -3638,6 +3671,7 @@
         "destination_missing": "Cette catégorie n'a pas de destination valide. Prévenez un administrateur.",
         "too_many_open": "Vous avez déjà `{max}` ticket(s) ouvert(s) dans cette catégorie. Fermez-en un avant d'en ouvrir un autre.",
         "cannot_create_channel": "Moddy n'a pas pu créer le salon du ticket. Vérifiez ses permissions sur la catégorie de destination.",
+        "missing_bot_permissions": "Il manque à Moddy des permissions pour gérer les tickets : {permissions}. Accordez-les-lui sur la catégorie de destination (ou sur le serveur).",
         "already_closed": "Ce ticket est déjà fermé.",
         "close_already_requested": "Une demande de fermeture est déjà en attente sur ce ticket.",
         "no_close_request": "Aucune demande de fermeture n'est en attente sur ce ticket.",

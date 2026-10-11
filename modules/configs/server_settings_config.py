@@ -27,7 +27,7 @@ import discord
 from discord import ui
 
 from cogs.error_handler import BaseView
-from modules.configs._common import check_guild_perms
+from modules.configs._common import ack, check_guild_perms, say, show
 from utils.emojis import BACK, SETTINGS, TRANSLATE
 from utils.guild_language import (
     AUTO,
@@ -169,6 +169,7 @@ class ServerSettingsConfigView(BaseView):
         there is nothing to stage, and no half-saved state to explain."""
         if not await check_guild_perms(interaction):
             return
+        await ack(interaction)
 
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
@@ -179,13 +180,12 @@ class ServerSettingsConfigView(BaseView):
         except Exception as e:
             logger.error(f"Could not save the language of guild {interaction.guild_id}: {e}",
                          exc_info=True)
-            await interaction.response.send_message(
-                t('modules.config.save.error', locale=locale, error=str(e)), ephemeral=True)
+            await say(interaction, t('modules.config.save.error', locale=locale, error=str(e)))
             return
 
         view = ServerSettingsConfigView(bot, interaction.guild_id, interaction.user.id,
                                         locale, stored)
-        await interaction.response.edit_message(view=view)
+        await show(interaction, view)
         await interaction.followup.send(
             t('modules.config.save.success', locale=locale), ephemeral=True)
 
@@ -208,7 +208,7 @@ class ServerSettingsConfigView(BaseView):
         locale = i18n.get_user_locale(interaction)
         main_view = ConfigMainView(interaction.client, interaction.guild_id,
                                    interaction.user.id, locale)
-        await interaction.response.edit_message(view=main_view)
+        await show(interaction, main_view)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         return await check_guild_perms(interaction)

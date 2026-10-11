@@ -130,13 +130,16 @@ class AnnouncementLanguageButton(
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
 
+        # Public button on a busy channel: ack first, the DB read can wait.
+        await interaction.response.defer(ephemeral=True, thinking=False)
+
         row = None
         if getattr(bot, "db", None):
             row = await bot.db.get_announcement_translations(self.message_id)
         text = (row or {}).get("translations", {}).get(self.code)
 
         if not text:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 view=create_error_message(
                     t("announcement_translation.error.title", locale=locale),
                     t("announcement_translation.error.missing", locale=locale)),
@@ -147,7 +150,7 @@ class AnnouncementLanguageButton(
         container = ui.Container()
         container.add_item(ui.TextDisplay(text[:_MAX_RENDERED]))
         view.add_item(container)
-        await interaction.response.send_message(view=view, ephemeral=True)
+        await interaction.followup.send(view=view, ephemeral=True)
 
 
 class AnnouncementTranslationView(BaseView):

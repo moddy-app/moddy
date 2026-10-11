@@ -4,6 +4,7 @@ Allows users to customize their experience
 """
 import re
 import discord
+from utils.incognito import resolve_default_incognito
 from discord import app_commands, ui
 from discord.ext import commands
 from discord.ui import Container, TextDisplay, Separator
@@ -166,9 +167,11 @@ class TimezoneSelect(ui.DynamicItem[ui.Select], template=_CID_SELECT_TEMPLATE):
         locale = i18n.get_user_locale(interaction)
         selected_tz = self.item.values[0]
 
+        # Ack first: the DB write can wait, Discord's 3 s window cannot.
+        await interaction.response.defer(ephemeral=True)
         await bot.db.update_user_data(interaction.user.id, "reminder_timezone", selected_tz)
 
-        await interaction.response.send_message(
+        await interaction.followup.send(
             t("commands.preferences.timezone.success", locale=locale,
               timezone=TIMEZONE_NAMES.get(selected_tz, selected_tz)),
             ephemeral=True,
@@ -179,9 +182,11 @@ async def _refresh_home(interaction: discord.Interaction) -> None:
     """Re-render the home page in the user's (possibly new) locale and theme."""
     bot = interaction.client
     locale = i18n.get_user_locale(interaction)
+    if not interaction.response.is_done():
+        await interaction.response.defer()  # ack first, the DB read is not bounded
     user_data = await bot.db.get_user(interaction.user.id)
     view = PreferencesView(bot, interaction.user.id, locale, user_data)
-    await interaction.response.edit_message(view=view)
+    await interaction.edit_original_response(view=view)
 
 
 class ThemeSelect(ui.DynamicItem[ui.Select], template=_CID_THEME_TEMPLATE):
@@ -213,6 +218,7 @@ class ThemeSelect(ui.DynamicItem[ui.Select], template=_CID_THEME_TEMPLATE):
     async def callback(self, interaction: discord.Interaction):
         if await _reject_if_not_owner(interaction, self.owner_id):
             return
+        await interaction.response.defer()  # ack first, the DB write can wait
         await user_preferences.set_icon_theme(
             interaction.client, interaction.user.id, self.item.values[0])
         await _refresh_home(interaction)
@@ -251,6 +257,7 @@ class LanguageSelect(ui.DynamicItem[ui.Select], template=_CID_LANG_TEMPLATE):
     async def callback(self, interaction: discord.Interaction):
         if await _reject_if_not_owner(interaction, self.owner_id):
             return
+        await interaction.response.defer()  # ack first, the DB write can wait
         await user_preferences.set_language(
             interaction.client, interaction.user.id, self.item.values[0])
         await _refresh_home(interaction)
@@ -295,10 +302,11 @@ class PreferencesManageButton(ui.DynamicItem[ui.Button], template=_CID_BTN_TEMPL
 
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
+        await interaction.response.defer()  # ack first, then the DB read
         user_data = await bot.db.get_user(interaction.user.id)
         page = "timezone" if self.action == "timezone" else "home"
         view = PreferencesView(bot, interaction.user.id, locale, user_data, page=page)
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
 
 
 class PreferencesView(BaseView):
@@ -433,14 +441,12 @@ class Preferences(commands.Cog):
     ):
         """Open preferences menu"""
         # Handle incognito setting
-        if incognito is None and self.bot.db:
-            try:
-                user_pref = await self.bot.db.get_attribute('user', interaction.user.id, 'DEFAULT_INCOGNITO')
-                ephemeral = True if user_pref is None else user_pref
-            except:
-                ephemeral = True
+        if incognito is None:
+            ephemeral = await resolve_default_incognito(self.bot, interaction.user.id)
         else:
-            ephemeral = incognito if incognito is not None else True
+            ephemeral = incognito
+
+        await interaction.response.defer(ephemeral=ephemeral)  # DB read below
 
         # Get user data
         user_data = await self.bot.db.get_user(interaction.user.id)
@@ -453,7 +459,7 @@ class Preferences(commands.Cog):
             user_data,
         )
 
-        await interaction.response.send_message(view=view, ephemeral=ephemeral)
+        await interaction.followup.send(view=view, ephemeral=ephemeral)
 
 
 async def setup(bot):

@@ -10,6 +10,7 @@ from typing import Optional, List, Dict, Any
 from zoneinfo import ZoneInfo
 
 import discord
+from utils.incognito import resolve_default_incognito
 from discord import app_commands, ui
 from discord.ext import commands, tasks
 from discord.ui import LayoutView, Container, TextDisplay, Separator
@@ -335,6 +336,22 @@ async def _refresh_manage_card(bot, owner_id: int, locale: str,
         pass
 
 
+
+async def _deferred_error(interaction: discord.Interaction, text: str,
+                          ephemeral: bool) -> None:
+    """Answer an error after ``defer(ephemeral=ephemeral)``, always privately.
+
+    A deferred public "thinking" message cannot be turned ephemeral, so when
+    the command was public it is withdrawn and the error is sent on its own.
+    """
+    if not ephemeral:
+        try:
+            await interaction.delete_original_response()
+        except discord.HTTPException:
+            pass
+    await interaction.followup.send(text, ephemeral=True)
+
+
 class ReminderAddModal(BaseModal):
     """Modal for adding a new reminder"""
 
@@ -368,6 +385,7 @@ class ReminderAddModal(BaseModal):
         self.add_item(self.time_input)
 
     async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)  # DB work below
         message = self.message_input.value
         time_str = self.time_input.value
 
@@ -376,14 +394,14 @@ class ReminderAddModal(BaseModal):
         remind_at = parse_time_string(time_str, user_tz)
 
         if not remind_at:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 t("commands.reminder.errors.invalid_time", interaction),
                 ephemeral=True
             )
             return
 
         if remind_at <= datetime.now(ZoneInfo('UTC')):
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 t("commands.reminder.errors.past_time", interaction),
                 ephemeral=True
             )
@@ -392,7 +410,7 @@ class ReminderAddModal(BaseModal):
         # Check max reminders
         existing = await self.bot.db.get_user_reminders(interaction.user.id)
         if len(existing) >= 50:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 t("commands.reminder.errors.max_reminders", interaction),
                 ephemeral=True
             )
@@ -409,7 +427,7 @@ class ReminderAddModal(BaseModal):
         )
 
         # Simple confirmation message
-        await interaction.response.send_message(
+        await interaction.followup.send(
             t("commands.reminder.success.created", interaction, id=reminder_id),
             ephemeral=True
         )
@@ -452,6 +470,7 @@ class ReminderEditModal(BaseModal):
         self.add_item(self.time_input)
 
     async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)  # DB work below
         message = self.message_input.value
         time_str = self.time_input.value.strip() if self.time_input.value else None
 
@@ -461,14 +480,14 @@ class ReminderEditModal(BaseModal):
             new_remind_at = parse_time_string(time_str, user_tz)
 
             if not new_remind_at:
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     t("commands.reminder.errors.invalid_time", interaction),
                     ephemeral=True
                 )
                 return
 
             if new_remind_at <= datetime.now(ZoneInfo('UTC')):
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     t("commands.reminder.errors.past_time", interaction),
                     ephemeral=True
                 )
@@ -483,7 +502,7 @@ class ReminderEditModal(BaseModal):
         )
 
         # Simple confirmation message
-        await interaction.response.send_message(
+        await interaction.followup.send(
             t("commands.reminder.success.edited", interaction, id=self.reminder['id']),
             ephemeral=True
         )
@@ -563,10 +582,11 @@ class ReminderSelectForDelete(ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         reminder_id = int(self.values[0])
+        await interaction.response.defer(ephemeral=True)  # ack before the DB write
         await self.bot.db.delete_reminder(reminder_id, interaction.user.id)
 
         # Simple confirmation message
-        await interaction.response.send_message(
+        await interaction.followup.send(
             t("commands.reminder.success.deleted", interaction, id=reminder_id),
             ephemeral=True
         )
@@ -657,8 +677,12 @@ class ReminderManageButton(ui.DynamicItem[ui.Button], template=_CID_REM_TEMPLATE
             return
 
         if self.action in ("edit", "delete"):
+            await interaction.response.defer(ephemeral=True)  # DB read below
             reminders = await bot.db.get_user_reminders(owner_id)
             if not reminders:
+                await interaction.followup.send(
+                    t("commands.reminder.errors.not_found", locale=locale),
+                    ephemeral=True)
                 return
             select_view = LayoutView()
             container = Container()
@@ -673,14 +697,15 @@ class ReminderManageButton(ui.DynamicItem[ui.Button], template=_CID_REM_TEMPLATE
             ))
             container.add_item(row)
             select_view.add_item(container)
-            await interaction.response.send_message(view=select_view, ephemeral=True)
+            await interaction.followup.send(view=select_view, ephemeral=True)
             return
 
         # "history" and "back" both just re-render the card in place.
+        await interaction.response.defer()  # ack first, then the DB reads
         view = await RemindersManageView.build_for(
             bot, owner_id, locale, show_history=(self.action == "history")
         )
-        await interaction.response.edit_message(view=view)
+        await interaction.edit_original_response(view=view)
 
 
 class RemindersManageView(BaseView):
@@ -967,14 +992,10 @@ class Reminder(commands.Cog):
     ):
         """Add a new reminder"""
         # Handle incognito setting
-        if incognito is None and self.bot.db:
-            try:
-                user_pref = await self.bot.db.get_attribute('user', interaction.user.id, 'DEFAULT_INCOGNITO')
-                ephemeral = True if user_pref is None else user_pref
-            except:
-                ephemeral = True
+        if incognito is None:
+            ephemeral = await resolve_default_incognito(self.bot, interaction.user.id)
         else:
-            ephemeral = incognito if incognito is not None else True
+            ephemeral = incognito
 
         # Validate message length
         if len(message) > 1000:
@@ -983,6 +1004,9 @@ class Reminder(commands.Cog):
                 ephemeral=True
             )
             return
+
+        # Ack now: the timezone + reminder-count lookups hit the database.
+        await interaction.response.defer(ephemeral=ephemeral)
 
         # Get user timezone (auto-detected or from preferences)
         user_tz = await get_user_timezone(self.bot, interaction.user.id, str(interaction.locale))
@@ -994,26 +1018,23 @@ class Reminder(commands.Cog):
         remind_at = parse_time_string(time, user_tz)
 
         if not remind_at:
-            await interaction.response.send_message(
-                t("commands.reminder.errors.invalid_time", interaction),
-                ephemeral=True
-            )
+            await _deferred_error(
+                interaction, t("commands.reminder.errors.invalid_time", interaction),
+                ephemeral)
             return
 
         if remind_at <= datetime.now(ZoneInfo('UTC')):
-            await interaction.response.send_message(
-                t("commands.reminder.errors.past_time", interaction),
-                ephemeral=True
-            )
+            await _deferred_error(
+                interaction, t("commands.reminder.errors.past_time", interaction),
+                ephemeral)
             return
 
         # Check max reminders
         existing = await self.bot.db.get_user_reminders(interaction.user.id)
         if len(existing) >= 50:
-            await interaction.response.send_message(
-                t("commands.reminder.errors.max_reminders", interaction),
-                ephemeral=True
-            )
+            await _deferred_error(
+                interaction, t("commands.reminder.errors.max_reminders", interaction),
+                ephemeral)
             return
 
         # Create reminder
@@ -1027,7 +1048,7 @@ class Reminder(commands.Cog):
         )
 
         # Simple confirmation message
-        await interaction.response.send_message(
+        await interaction.followup.send(
             t("commands.reminder.success.created", interaction, id=reminder_id),
             ephemeral=ephemeral
         )
@@ -1048,14 +1069,12 @@ class Reminder(commands.Cog):
     ):
         """Manage reminders"""
         # Handle incognito setting
-        if incognito is None and self.bot.db:
-            try:
-                user_pref = await self.bot.db.get_attribute('user', interaction.user.id, 'DEFAULT_INCOGNITO')
-                ephemeral = True if user_pref is None else user_pref
-            except:
-                ephemeral = True
+        if incognito is None:
+            ephemeral = await resolve_default_incognito(self.bot, interaction.user.id)
         else:
-            ephemeral = incognito if incognito is not None else True
+            ephemeral = incognito
+
+        await interaction.response.defer(ephemeral=ephemeral)  # DB reads below
 
         # Get user timezone (auto-detected or from preferences)
         user_tz = await get_user_timezone(self.bot, interaction.user.id, str(interaction.locale))
@@ -1072,7 +1091,7 @@ class Reminder(commands.Cog):
             user_tz,
         )
 
-        await interaction.response.send_message(view=view, ephemeral=ephemeral)
+        await interaction.followup.send(view=view, ephemeral=ephemeral)
 
 
 async def setup(bot):

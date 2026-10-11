@@ -37,6 +37,7 @@ from automod import custom_infractions, infractions
 from automod.rules_check import validate_custom_infraction
 from cogs.error_handler import BaseModal, BaseView
 from modules.configs import automod_ai_common as common
+from modules.configs._common import load_before_modal
 from modules.configs.automod_ai_common import (
     TYPE_ID_RE, back_row, cid, go, row, select, title, tp,
 )
@@ -69,6 +70,7 @@ def _guarded(callback):
 # Rendering entry points
 # =========================================================================== #
 async def render_sanctions(interaction: discord.Interaction) -> None:
+    await common.ack(interaction)
     cfg = await common.load_cfg(interaction.client, interaction.guild_id)
     await common.respond(interaction, AutomodSanctionsView(
         interaction.client, interaction.guild_id, i18n.get_user_locale(interaction), cfg))
@@ -77,6 +79,7 @@ async def render_sanctions(interaction: discord.Interaction) -> None:
 async def render_type(interaction: discord.Interaction, cat: str, *,
                       confirm_delete: bool = False) -> None:
     """Open the screen of one infraction type (back to the list if it is gone)."""
+    await common.ack(interaction)
     cfg = await common.load_cfg(interaction.client, interaction.guild_id)
     if not common.type_exists(cfg, cat):
         await common.respond(interaction, AutomodSanctionsView(
@@ -175,7 +178,7 @@ class AutomodSanctionsView(BaseView):
     async def on_pick(self, interaction: discord.Interaction):
         values = interaction.data.get("values") or []
         if not values:
-            await interaction.response.defer()
+            await common.ack(interaction)
             return
         await render_type(interaction, values[0])
 
@@ -183,7 +186,20 @@ class AutomodSanctionsView(BaseView):
         values = interaction.data.get("values") or []
         choice = values[0] if values else ""
         locale = i18n.get_user_locale(interaction)
-        cfg = await common.load_cfg(interaction.client, interaction.guild_id)
+        load = common.load_cfg(interaction.client, interaction.guild_id)
+        if choice == "scratch":
+            # The modal must be the first response, so the limit check reads
+            # the config under a time bound instead of after an ack.
+            ok, cfg = await load_before_modal(interaction, load)
+            if not ok:
+                return
+        elif choice in custom_infractions.TEMPLATES:
+            await common.ack(interaction)
+            cfg = await load
+        else:
+            load.close()
+            await common.ack(interaction)
+            return
         if len(cfg["infractions_perso"]) >= custom_infractions.MAX_INFRACTIONS:
             await common.send_error(interaction, tp(
                 "list.limit", locale, max=custom_infractions.MAX_INFRACTIONS))
@@ -193,10 +209,6 @@ class AutomodSanctionsView(BaseView):
             modal.bot = interaction.client
             await interaction.response.send_modal(modal)
             return
-        if choice not in custom_infractions.TEMPLATES:
-            await interaction.response.defer()
-            return
-        await interaction.response.defer()
         await add_from_template(interaction, cfg, choice)
 
     async def on_back(self, interaction: discord.Interaction):
@@ -283,6 +295,7 @@ class TypeButton(
         await render_type(interaction, self.cat)
 
     async def _on_toggle(self, interaction: discord.Interaction):
+        await common.ack(interaction)
         cfg = await common.load_cfg(interaction.client, interaction.guild_id)
         if not common.type_exists(cfg, self.cat):
             await render_sanctions(interaction)
@@ -290,19 +303,24 @@ class TypeButton(
         entry = dict(common.entry_of(cfg, self.cat))
         entry["enabled"] = entry.get("enabled", True) is False
         common.store_entry(cfg, self.cat, entry)
-        await interaction.response.defer()
+        await common.ack(interaction)
         await common.save_cfg(interaction, cfg)
         await render_type(interaction, self.cat)
 
     async def _on_reset(self, interaction: discord.Interaction):
+        await common.ack(interaction)
         cfg = await common.load_cfg(interaction.client, interaction.guild_id)
         cfg["sanctions"].pop(self.cat, None)
-        await interaction.response.defer()
+        await common.ack(interaction)
         await common.save_cfg(interaction, cfg)
         await render_type(interaction, self.cat)
 
     async def _on_custom(self, interaction: discord.Interaction):
-        cfg = await common.load_cfg(interaction.client, interaction.guild_id)
+        # Modal pre-fill needs the stored sanction: bounded read (see load_before_modal).
+        ok, cfg = await load_before_modal(
+            interaction, common.load_cfg(interaction.client, interaction.guild_id))
+        if not ok:
+            return
         if not common.type_exists(cfg, self.cat):
             await render_sanctions(interaction)
             return
@@ -315,7 +333,10 @@ class TypeButton(
         await interaction.response.send_modal(modal)
 
     async def _on_edit(self, interaction: discord.Interaction):
-        cfg = await common.load_cfg(interaction.client, interaction.guild_id)
+        ok, cfg = await load_before_modal(
+            interaction, common.load_cfg(interaction.client, interaction.guild_id))
+        if not ok:
+            return
         found = custom_infractions.find(cfg["infractions_perso"], self.cat)
         if found is None:
             await render_sanctions(interaction)
@@ -329,6 +350,7 @@ class TypeButton(
         await render_type(interaction, self.cat, confirm_delete=True)
 
     async def _on_delyes(self, interaction: discord.Interaction):
+        await common.ack(interaction)
         cfg = await common.load_cfg(interaction.client, interaction.guild_id)
         cfg["infractions_perso"] = [
             e for e in cfg["infractions_perso"]
@@ -336,7 +358,7 @@ class TypeButton(
         # The sanction of a deleted infraction must go with it: the module
         # refuses a config holding the sanction of an unknown infraction.
         cfg["sanctions"].pop(self.cat, None)
-        await interaction.response.defer()
+        await common.ack(interaction)
         await common.save_cfg(interaction, cfg)
         await render_sanctions(interaction)
 
@@ -361,6 +383,7 @@ class TypeActionSelect(
     async def callback(self, interaction: discord.Interaction):
         if not await common.gate(interaction):
             return
+        await common.ack(interaction)
         values = interaction.data.get("values") or []
         cfg = await common.load_cfg(interaction.client, interaction.guild_id)
         typ = common.resolve_type(cfg, self.cat)
@@ -368,12 +391,12 @@ class TypeActionSelect(
             await render_sanctions(interaction)
             return
         if not values or values[0] not in profile_actions(self.cat):
-            await interaction.response.defer()
+            await common.ack(interaction)
             return
         entry = dict(common.entry_of(cfg, self.cat))
         entry["action_profil"] = values[0]
         common.store_entry(cfg, self.cat, entry)
-        await interaction.response.defer()
+        await common.ack(interaction)
         await common.save_cfg(interaction, cfg)
         await render_type(interaction, self.cat)
 
@@ -545,8 +568,8 @@ class SanctionModal(BaseModal):
 async def apply_sanctions(interaction: discord.Interaction, cat: str,
                           crans: Dict[str, int], recidive: bool) -> None:
     """Store the per-severity sanctions picked in :class:`SanctionModal`."""
+    await common.ack(interaction)
     cfg = await common.load_cfg(interaction.client, interaction.guild_id)
-    await interaction.response.defer()
     if not common.type_exists(cfg, cat):
         await render_sanctions(interaction)
         return
@@ -617,6 +640,8 @@ class InfractionModal(BaseModal):
                                component=self.keywords_input))
 
     async def on_submit(self, interaction: discord.Interaction):
+        # Acknowledge first (config read + AI safety check follow).
+        await common.ack(interaction)
         locale = self.locale
         bot = interaction.client
         existing = self.existing
@@ -637,8 +662,6 @@ class InfractionModal(BaseModal):
             return
         entry = cleaned[0]
 
-        # The AI call can take a few seconds: acknowledge first.
-        await interaction.response.defer()
         safe, reason = await validate_custom_infraction(bot, interaction.guild_id, entry)
         if not safe:
             if reason == "too_long":

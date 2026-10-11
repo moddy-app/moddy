@@ -141,6 +141,22 @@ def _guarded(callback):
     return wrapper
 
 
+async def _ack(interaction: discord.Interaction, *, update: bool = False) -> None:
+    """Acknowledge the interaction now (Discord wants an answer within 3 s).
+
+    Idempotent: does nothing when something already answered. ``update=True``
+    is the quiet component acknowledgement (``defer()``) for a click that will
+    rewrite its own message through ``edit_original_response``; otherwise an
+    ephemeral "thinking" message is shown, to be replaced by the follow-up.
+    """
+    if interaction.response.is_done():
+        return
+    if update:
+        await interaction.response.defer()
+    else:
+        await interaction.response.defer(ephemeral=True, thinking=True)
+
+
 async def send_error(interaction: discord.Interaction, description: str,
                      locale: Optional[str] = None) -> None:
     """Ephemeral error card, whatever state the interaction is in."""
@@ -309,6 +325,7 @@ async def _open_from_panel(interaction: discord.Interaction, panel_id: str,
 
     locale = i18n.get_user_locale(interaction)
     bot = interaction.client
+    await _ack(interaction)  # module lookup + channel creation are slow
     service = getattr(bot, 'tickets', None)
     if service is None or interaction.guild is None:
         await send_error(interaction,
@@ -328,7 +345,7 @@ async def _open_from_panel(interaction: discord.Interaction, panel_id: str,
                          t('modules.tickets.errors.category_gone', locale=locale), locale)
         return
 
-    await interaction.response.defer(ephemeral=True, thinking=True)
+    await _ack(interaction)
     try:
         channel = await service.open_ticket(interaction.user, panel, category)
     except TicketError as e:
@@ -402,6 +419,36 @@ async def _close_done_description(service, guild_id: int, locale: str) -> str:
     return t(key, locale=locale)
 
 
+async def close_then_answer(interaction: discord.Interaction, close, answer) -> None:
+    """Run a closure and answer the interaction while its channel still exists.
+
+    The deferred "thinking" message of an interaction started inside a ticket
+    lives in that very channel. When the server deletes closed channels (the
+    default) any follow-up sent *after* the deletion fails with
+    ``404 10008 Unknown Message``. ``close`` is a callable taking the
+    ``before_delete`` hook to hand to the service; ``answer`` is the coroutine
+    function sending the confirmation. It runs from the hook when the channel is
+    about to go, otherwise right after the closure -- exactly once.
+    """
+    from services.ticket_service import TicketError
+
+    answered = False
+
+    async def once() -> None:
+        nonlocal answered
+        if answered:
+            return
+        answered = True
+        await answer()
+
+    try:
+        await close(once)
+    except TicketError as e:
+        await handle_ticket_error(interaction, e)
+        return
+    await once()
+
+
 async def close_and_offer_rating(interaction: discord.Interaction, service,
                                  ticket: Dict[str, Any], locale: str, *,
                                  reason: Optional[str] = None,
@@ -422,38 +469,48 @@ async def close_and_offer_rating(interaction: discord.Interaction, service,
     from utils.ticket_rating_views import offer_rating
 
     channel = interaction.channel
-    try:
-        await service.close_ticket(channel, interaction.user, reason)
-    except TicketError as e:
-        await handle_ticket_error(interaction, e)
-        return
 
-    if interaction.user.id == ticket.get('owner_id'):
-        try:
-            if await offer_rating(interaction, interaction.client,
-                                  interaction.guild, channel_id=channel.id,
-                                  trigger=trigger or TRIGGER_SELF_CLOSE,
-                                  locale=locale):
-                return
-        except Exception as e:  # noqa: BLE001 - never fail a closure over this
-            import logging
-            logging.getLogger('moddy.tickets.rating').warning(
-                f"[Tickets] Could not offer a rating in {channel.id}: {e}")
+    async def answer() -> None:
+        if interaction.user.id == ticket.get('owner_id'):
+            try:
+                if await offer_rating(interaction, interaction.client,
+                                      interaction.guild, channel_id=channel.id,
+                                      trigger=trigger or TRIGGER_SELF_CLOSE,
+                                      locale=locale):
+                    return
+            except Exception as e:  # noqa: BLE001 - never fail a closure over this
+                import logging
+                logging.getLogger('moddy.tickets.rating').warning(
+                    f"[Tickets] Could not offer a rating in {channel.id}: {e}")
 
-    await send_success(interaction,
-                       t('modules.tickets.close.done_title', locale=locale),
-                       await _close_done_description(
-                           service, interaction.guild_id, locale))
+        await send_success(interaction,
+                           t('modules.tickets.close.done_title', locale=locale),
+                           await _close_done_description(
+                               service, interaction.guild_id, locale))
+
+    await close_then_answer(
+        interaction,
+        lambda hook: service.close_ticket(channel, interaction.user, reason,
+                                          before_delete=hook),
+        answer)
 
 
-async def _resolve(interaction: discord.Interaction):
+async def _resolve(interaction: discord.Interaction, *, ack: bool = True,
+                   update: bool = False):
     """``(service, ticket, panel, category)`` for the channel a click came from.
 
     Answers the user and returns ``None`` when the channel is not (or is no
     longer) a ticket, which is the only thing every caller does about it.
+
+    The lookup hits the database, so the interaction is acknowledged FIRST
+    (``ack``; ``update`` for a click that edits its own message). Pass
+    ``ack=False`` only when the caller must answer with a modal, which has to
+    be the first response.
     """
     from services.ticket_service import TicketError
 
+    if ack:
+        await _ack(interaction, update=update)
     service = getattr(interaction.client, 'tickets', None)
     locale = i18n.get_user_locale(interaction)
     if service is None or not isinstance(interaction.channel, discord.TextChannel):
@@ -556,19 +613,9 @@ class TicketControlView(BaseView):
 
     # -- callbacks (everything re-derived from the interaction) ------------ #
     async def on_close(self, interaction: discord.Interaction):
-        resolved = await _resolve(interaction)
-        if not resolved:
-            return
-        service, ticket, panel, category = resolved
+        # The modal must be the first response, so no database lookup may come
+        # before it: the permission check lives in ``_do_close`` (on submit).
         locale = i18n.get_user_locale(interaction)
-        granted = member_permissions(interaction.user, category, ticket)
-        if PERM_CLOSE not in granted:
-            # The one refusal that is really a redirection: tell them about
-            # the action that *is* theirs rather than just saying no.
-            await send_error(
-                interaction,
-                t('modules.tickets.errors.use_close_request', locale=locale), locale)
-            return
         await interaction.response.send_modal(
             TicketReasonModal(locale, 'close', self._do_close))
 
@@ -577,8 +624,14 @@ class TicketControlView(BaseView):
         if not resolved:
             return
         service, ticket, panel, category = resolved
-        await interaction.response.defer(ephemeral=True, thinking=True)
         locale = i18n.get_user_locale(interaction)
+        if PERM_CLOSE not in member_permissions(interaction.user, category, ticket):
+            # The one refusal that is really a redirection: tell them about
+            # the action that *is* theirs rather than just saying no.
+            await send_error(
+                interaction,
+                t('modules.tickets.errors.use_close_request', locale=locale), locale)
+            return
         await close_and_offer_rating(interaction, service, ticket, locale,
                                      reason=reason)
 
@@ -601,7 +654,7 @@ class TicketControlView(BaseView):
         if not resolved:
             return
         service, ticket, panel, category = resolved
-        await interaction.response.defer(ephemeral=True, thinking=True)
+        await _ack(interaction)
         try:
             _, to_staff = await service.request_close(
                 interaction.channel, interaction.user, reason)
@@ -631,7 +684,10 @@ class TicketControlView(BaseView):
         await run_staff_thread(interaction, service)
 
     async def on_participants(self, interaction: discord.Interaction):
-        resolved = await _resolve(interaction)
+        # Unavoidable lookup before the modal: the form is pre-filled with the
+        # ticket's current participants, and send_modal cannot follow a defer.
+        # One indexed query + cached module config.
+        resolved = await _resolve(interaction, ack=False)
         if not resolved:
             return
         service, ticket, panel, category = resolved
@@ -722,7 +778,7 @@ class TicketClosedView(BaseView):
         if not resolved:
             return
         service = resolved[0]
-        await interaction.response.defer(ephemeral=True, thinking=True)
+        await _ack(interaction)
         try:
             await service.reopen_ticket(interaction.channel, interaction.user)
         except TicketError as e:
@@ -745,11 +801,10 @@ class TicketClosedView(BaseView):
                 interaction,
                 t('modules.tickets.errors.missing_permission', locale=locale), locale)
             return
-        await interaction.response.send_message(
-            view=create_success_message(
-                t('modules.tickets.delete.pending_title', locale=locale),
-                t('modules.tickets.delete.pending_description', locale=locale)),
-            ephemeral=True)
+        await send_success(
+            interaction,
+            t('modules.tickets.delete.pending_title', locale=locale),
+            t('modules.tickets.delete.pending_description', locale=locale))
         try:
             await service.delete_ticket(interaction.channel, interaction.user)
         except TicketError as e:
@@ -853,13 +908,13 @@ class TicketClosureSuggestionView(BaseView):
         if PERM_CLOSE in granted:
             # The opener closing their own ticket is one of the three moments
             # a rating is asked for; everyone else just closes it.
-            await interaction.response.defer(ephemeral=True, thinking=True)
+            await _ack(interaction)
             await close_and_offer_rating(interaction, service, ticket, locale)
             return
 
         # No `close`: this becomes a request, exactly as if they had run
         # /ticket close-request. Suggesting is not granting.
-        await interaction.response.defer(ephemeral=True, thinking=True)
+        await _ack(interaction)
         try:
             await service.request_close(interaction.channel, interaction.user)
         except TicketError as e:
@@ -871,7 +926,7 @@ class TicketClosureSuggestionView(BaseView):
             t('modules.tickets.close_request.sent_description_to_staff', locale=locale))
 
     async def on_dismiss(self, interaction: discord.Interaction):
-        resolved = await _resolve(interaction)
+        resolved = await _resolve(interaction, update=True)
         if not resolved:
             return
         service, ticket, panel, category = resolved
@@ -884,7 +939,7 @@ class TicketClosureSuggestionView(BaseView):
         detector = getattr(interaction.client, 'ticket_closure', None)
         if detector is not None:
             detector.note_dismissed(interaction.channel.id)
-        await interaction.response.edit_message(
+        await interaction.edit_original_response(
             view=_closure_suggestion_dismissed(interaction.user, locale))
 
     @classmethod
@@ -966,18 +1021,21 @@ class TicketOwnerLeftView(BaseView):
                 interaction,
                 t('modules.tickets.errors.missing_permission', locale=locale), locale)
             return
-        await interaction.response.defer(ephemeral=True, thinking=True)
-        try:
-            await service.close_ticket(
+        await _ack(interaction)
+
+        async def answer() -> None:
+            await send_success(interaction,
+                               t('modules.tickets.close.done_title', locale=locale),
+                               await _close_done_description(
+                                   service, interaction.guild_id, locale))
+
+        await close_then_answer(
+            interaction,
+            lambda hook: service.close_ticket(
                 interaction.channel, interaction.user,
-                t('modules.tickets.owner_left.reason', locale=locale))
-        except TicketError as e:
-            await handle_ticket_error(interaction, e)
-            return
-        await send_success(interaction,
-                           t('modules.tickets.close.done_title', locale=locale),
-                           await _close_done_description(
-                               service, interaction.guild_id, locale))
+                t('modules.tickets.owner_left.reason', locale=locale),
+                before_delete=hook),
+            answer)
 
     @classmethod
     def register_persistent(cls, bot) -> None:
@@ -1052,35 +1110,39 @@ class TicketCloseRequestView(BaseView):
         if not resolved:
             return
         service, ticket, panel, category = resolved
-        await interaction.response.defer(ephemeral=True, thinking=True)
-        try:
-            await service.accept_close_request(interaction.channel, interaction.user)
-        except TicketError as e:
-            await handle_ticket_error(interaction, e)
-            return
-
+        await _ack(interaction)
         locale = i18n.get_user_locale(interaction)
-        # The staff offered the closure and the member took it: that is one of
-        # the three moments a rating is asked for.
-        if interaction.user.id == ticket.get('owner_id'):
-            from db.repositories.ticket_ratings import TRIGGER_CLOSE_REQUEST
-            from utils.ticket_rating_views import offer_rating
-            try:
-                if await offer_rating(interaction, interaction.client,
-                                      interaction.guild,
-                                      channel_id=interaction.channel.id,
-                                      trigger=TRIGGER_CLOSE_REQUEST, locale=locale):
-                    return
-            except Exception:  # noqa: BLE001 - the ticket is already closed
-                pass
-        await send_success(interaction,
-                           t('modules.tickets.close.done_title', locale=locale),
-                           await _close_done_description(
-                               service, interaction.guild_id, locale))
+        channel = interaction.channel
+
+        async def answer() -> None:
+            # The staff offered the closure and the member took it: that is one
+            # of the three moments a rating is asked for.
+            if interaction.user.id == ticket.get('owner_id'):
+                from db.repositories.ticket_ratings import TRIGGER_CLOSE_REQUEST
+                from utils.ticket_rating_views import offer_rating
+                try:
+                    if await offer_rating(interaction, interaction.client,
+                                          interaction.guild,
+                                          channel_id=channel.id,
+                                          trigger=TRIGGER_CLOSE_REQUEST,
+                                          locale=locale):
+                        return
+                except Exception:  # noqa: BLE001 - the ticket is already closed
+                    pass
+            await send_success(interaction,
+                               t('modules.tickets.close.done_title', locale=locale),
+                               await _close_done_description(
+                                   service, interaction.guild_id, locale))
+
+        await close_then_answer(
+            interaction,
+            lambda hook: service.accept_close_request(
+                channel, interaction.user, before_delete=hook),
+            answer)
 
     async def on_refuse(self, interaction: discord.Interaction):
         from services.ticket_service import TicketError
-        resolved = await _resolve(interaction)
+        resolved = await _resolve(interaction, update=True)
         if not resolved:
             return
         service = resolved[0]
@@ -1090,7 +1152,7 @@ class TicketCloseRequestView(BaseView):
             await handle_ticket_error(interaction, e)
             return
         locale = i18n.get_user_locale(interaction)
-        await interaction.response.edit_message(
+        await interaction.edit_original_response(
             view=_close_request_resolved(interaction.user, locale))
 
     @classmethod
@@ -1171,7 +1233,7 @@ class TicketEscalationView(BaseView):
         if not resolved:
             return
         service = resolved[0]
-        await interaction.response.defer(ephemeral=True, thinking=True)
+        await _ack(interaction)
         try:
             await service.deescalate(interaction.channel, interaction.user)
         except TicketError as e:
@@ -1209,6 +1271,7 @@ async def start_escalation(interaction: discord.Interaction, service,
     from services.ticket_service import TicketError
 
     locale = i18n.get_user_locale(interaction)
+    await _ack(interaction)
     if PERM_ADMIN not in member_permissions(interaction.user, category, ticket):
         await send_error(interaction,
                          t('modules.tickets.errors.missing_permission', locale=locale),
@@ -1217,11 +1280,11 @@ async def start_escalation(interaction: discord.Interaction, service,
 
     manual = list(ticket.get('participants', [])) + list(ticket.get('participant_roles', []))
     if manual:
-        await interaction.response.send_message(
+        await interaction.followup.send(
             view=TicketEscalateConfirmView(ticket, reason, locale), ephemeral=True)
         return
 
-    await interaction.response.defer(ephemeral=True, thinking=True)
+    await _ack(interaction)
     try:
         await service.escalate(interaction.channel, interaction.user, reason=reason)
     except TicketError as e:
@@ -1300,12 +1363,11 @@ class TicketEscalateConfirmView(BaseView):
     async def _escalate(self, interaction: discord.Interaction, *,
                         keep: bool, mute: bool):
         from services.ticket_service import TicketError
-        resolved = await _resolve(interaction)
+        resolved = await _resolve(interaction, update=True)
         if not resolved:
             return
         service = resolved[0]
         locale = i18n.get_user_locale(interaction)
-        await interaction.response.defer()
         try:
             await service.escalate(interaction.channel, interaction.user,
                                    reason=self.reason, keep_participants=keep,
@@ -1496,7 +1558,7 @@ async def _apply_participants(interaction: discord.Interaction, mode: str,
     # list stops "remove the owner" from being one submit.
     users = [uid for uid in users if uid != ticket['owner_id']]
 
-    await interaction.response.defer(ephemeral=True, thinking=True)
+    await _ack(interaction)
     await interaction.client.db.set_participants(
         interaction.channel.id, users=users, roles=roles)
     ticket = await service.get_ticket(interaction.channel.id) or ticket
@@ -1572,7 +1634,7 @@ async def run_staff_thread(interaction: discord.Interaction, service) -> None:
     from services.ticket_service import TicketError
 
     locale = i18n.get_user_locale(interaction)
-    await interaction.response.defer(ephemeral=True, thinking=True)
+    await _ack(interaction)
     try:
         thread = await service.open_staff_thread(interaction.channel, interaction.user)
     except TicketError as e:
@@ -1597,7 +1659,7 @@ async def run_claim(interaction: discord.Interaction, service, *,
     from services.ticket_service import TicketError
 
     locale = i18n.get_user_locale(interaction)
-    await interaction.response.defer(ephemeral=True, thinking=True)
+    await _ack(interaction)
     try:
         if force is None:
             _, claimed = await service.toggle_claim(interaction.channel,

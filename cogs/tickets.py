@@ -71,12 +71,20 @@ ticket_group = app_commands.Group(
 )
 
 
-async def _service_and_ticket(interaction: discord.Interaction):
+async def _service_and_ticket(interaction: discord.Interaction, *,
+                              ack: bool = True):
     """``(service, ticket, panel, category)`` for the channel the command ran in.
 
     Answers the user and returns ``None`` when the channel is not a ticket —
     the check every single subcommand starts with.
+
+    The lookup hits the database, so the interaction is deferred (ephemeral
+    "thinking") BEFORE it: every later answer goes through the follow-up,
+    which ``send_error`` / ``send_success`` already do. ``ack=False`` is for
+    the two commands that answer with a modal, which must be the first response.
     """
+    if ack and not interaction.response.is_done():
+        await interaction.response.defer(ephemeral=True, thinking=True)
     service = getattr(interaction.client, 'tickets', None)
     locale = i18n.get_user_locale(interaction)
     if service is None or not isinstance(interaction.channel, discord.TextChannel):
@@ -103,7 +111,6 @@ async def ticket_close(interaction: discord.Interaction, reason: Optional[str] =
     service, ticket = resolved[0], resolved[1]
     locale = i18n.get_user_locale(interaction)
 
-    await interaction.response.defer(ephemeral=True, thinking=True)
     # Same tail as the control-bar button, so a member closing their own
     # ticket is asked to rate it whichever of the two they used.
     await close_and_offer_rating(interaction, service, ticket, locale,
@@ -122,7 +129,6 @@ async def ticket_reopen(interaction: discord.Interaction):
     service = resolved[0]
     locale = i18n.get_user_locale(interaction)
 
-    await interaction.response.defer(ephemeral=True, thinking=True)
     try:
         await service.reopen_ticket(interaction.channel, interaction.user)
     except TicketError as e:
@@ -145,7 +151,6 @@ async def ticket_close_request(interaction: discord.Interaction,
     service = resolved[0]
     locale = i18n.get_user_locale(interaction)
 
-    await interaction.response.defer(ephemeral=True, thinking=True)
     try:
         _, to_staff = await service.request_close(
             interaction.channel, interaction.user, reason)
@@ -183,7 +188,6 @@ async def ticket_deescalate(interaction: discord.Interaction):
     service = resolved[0]
     locale = i18n.get_user_locale(interaction)
 
-    await interaction.response.defer(ephemeral=True, thinking=True)
     try:
         await service.deescalate(interaction.channel, interaction.user)
     except TicketError as e:
@@ -245,7 +249,6 @@ async def ticket_move(interaction: discord.Interaction, category: str):
                          locale)
         return
 
-    await interaction.response.defer(ephemeral=True, thinking=True)
     try:
         await service.move_ticket(interaction.channel, interaction.user,
                                   panel_id, category_id)
@@ -263,20 +266,21 @@ async def ticket_move(interaction: discord.Interaction, category: str):
 @ticket_group.command(name="rename", description="Rename this ticket")
 @app_commands.describe(name="The new channel name (leave empty to open a form)")
 async def ticket_rename(interaction: discord.Interaction, name: Optional[str] = None):
-    resolved = await _service_and_ticket(interaction)
-    if not resolved:
-        return
-    service, ticket, panel, category = resolved
     locale = i18n.get_user_locale(interaction)
 
-    if PERM_RENAME not in member_permissions(interaction.user, category, ticket):
-        await send_error(interaction,
-                         t('modules.tickets.errors.missing_permission', locale=locale),
-                         locale)
-        return
-
     async def apply(inner: discord.Interaction, new_name: str):
-        await inner.response.defer(ephemeral=True, thinking=True)
+        # Ack first, then resolve + check: the form (when name is omitted) is
+        # opened before any lookup, so the permission check lives here, on
+        # submit, where it also catches a role removed while the form was open.
+        resolved = await _service_and_ticket(inner)
+        if not resolved:
+            return
+        service, ticket, panel, category = resolved
+        if PERM_RENAME not in member_permissions(inner.user, category, ticket):
+            await send_error(inner,
+                             t('modules.tickets.errors.missing_permission',
+                               locale=locale), locale)
+            return
         try:
             final = await service.rename_ticket(inner.channel, inner.user, new_name)
         except TicketError as e:
@@ -321,7 +325,6 @@ async def _participant_action(interaction: discord.Interaction,
     service = resolved[0]
     locale = i18n.get_user_locale(interaction)
 
-    await interaction.response.defer(ephemeral=True, thinking=True)
     try:
         if add:
             await service.add_participant(interaction.channel, interaction.user, target)
@@ -342,7 +345,10 @@ async def _participant_action(interaction: discord.Interaction,
 @ticket_group.command(name="participants",
                       description="See and edit who has access to this ticket")
 async def ticket_participants(interaction: discord.Interaction):
-    resolved = await _service_and_ticket(interaction)
+    # No ack: the answer is a modal, which must be the first response. The
+    # lookup is unavoidable (the form is pre-filled with the current
+    # participants): one indexed query plus the cached module config.
+    resolved = await _service_and_ticket(interaction, ack=False)
     if not resolved:
         return
     service, ticket, panel, category = resolved
@@ -429,7 +435,7 @@ async def ticket_info(interaction: discord.Interaction):
         ) or t('modules.tickets.fields.none', locale=locale),
     })
 
-    await interaction.response.send_message(
+    await interaction.followup.send(
         view=create_success_message(
             t('modules.tickets.info.title', locale=locale, number=ticket['number']),
             t('modules.tickets.info.description', locale=locale),
@@ -472,6 +478,7 @@ async def ticket_stats(interaction: discord.Interaction,
                        staff: Optional[discord.Member] = None,
                        days: Optional[int] = None):
     locale = i18n.get_user_locale(interaction)
+    await interaction.response.defer(ephemeral=True, thinking=True)
     service = getattr(interaction.client, 'tickets', None)
     if service is None or not interaction.client.db or interaction.guild is None:
         await send_error(interaction,
@@ -486,7 +493,6 @@ async def ticket_stats(interaction: discord.Interaction,
         return
 
     days = max(1, min(days or DEFAULT_STATS_DAYS, MAX_STATS_DAYS))
-    await interaction.response.defer(ephemeral=True, thinking=True)
     db = interaction.client.db
 
     if staff is not None:

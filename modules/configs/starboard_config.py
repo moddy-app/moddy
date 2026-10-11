@@ -11,7 +11,9 @@ import logging
 from utils.i18n import i18n, t
 from cogs.error_handler import BaseView, BaseModal
 from utils.emojis import STAR, REQUIRED_FIELDS, EDIT, BACK, SAVE, UNDONE, DELETE, is_standard_discord_emoji
-from modules.configs._common import check_guild_perms
+from modules.configs._common import (
+    ack, check_guild_perms, load_before_modal, show,
+)
 
 logger = logging.getLogger('moddy.modules.starboard_config')
 
@@ -312,6 +314,7 @@ class StarboardConfigView(BaseView):
         """Channel selector callback"""
         if not await check_guild_perms(interaction):
             return
+        await ack(interaction)
 
         working_config = await self._fresh_working_config(interaction)
         if interaction.data['values']:
@@ -320,20 +323,26 @@ class StarboardConfigView(BaseView):
             working_config['channel_id'] = None
 
         view = await self._rebuild(interaction, working_config, has_changes=True)
-        await interaction.response.edit_message(view=view)
+        await show(interaction, view)
 
     async def on_edit_reaction_count(self, interaction: discord.Interaction):
         """Edit reaction count"""
         if not await check_guild_perms(interaction):
             return
 
-        working_config = await self._fresh_working_config(interaction)
+        # A modal must be the first response: the read (only hits the database
+        # on a restarted shell) is time-bounded instead of followed by an ack.
+        ok, working_config = await load_before_modal(
+            interaction, self._fresh_working_config(interaction))
+        if not ok:
+            return
         locale = i18n.get_user_locale(interaction)
 
         async def _on_submit(modal_interaction: discord.Interaction, new_count: int):
             working_config['reaction_count'] = new_count
+            await ack(modal_interaction)
             view = await self._rebuild(modal_interaction, working_config, has_changes=True)
-            await modal_interaction.response.edit_message(view=view)
+            await show(modal_interaction, view)
 
         modal = ReactionCountModal(locale, working_config['reaction_count'], _on_submit)
         modal.bot = interaction.client
@@ -344,13 +353,19 @@ class StarboardConfigView(BaseView):
         if not await check_guild_perms(interaction):
             return
 
-        working_config = await self._fresh_working_config(interaction)
+        # A modal must be the first response: the read (only hits the database
+        # on a restarted shell) is time-bounded instead of followed by an ack.
+        ok, working_config = await load_before_modal(
+            interaction, self._fresh_working_config(interaction))
+        if not ok:
+            return
         locale = i18n.get_user_locale(interaction)
 
         async def _on_submit(modal_interaction: discord.Interaction, new_emoji: str):
             working_config['emoji'] = new_emoji
+            await ack(modal_interaction)
             view = await self._rebuild(modal_interaction, working_config, has_changes=True)
-            await modal_interaction.response.edit_message(view=view)
+            await show(modal_interaction, view)
 
         modal = EmojiModal(locale, working_config['emoji'], _on_submit)
         modal.bot = interaction.client
@@ -366,14 +381,14 @@ class StarboardConfigView(BaseView):
         from cogs.config import ConfigMainView
         locale = i18n.get_user_locale(interaction)
         main_view = ConfigMainView(interaction.client, interaction.guild_id, interaction.user.id, locale)
-        await interaction.response.edit_message(view=main_view)
+        await show(interaction, main_view)
 
     async def on_save(self, interaction: discord.Interaction):
         """Save configuration"""
         if not await check_guild_perms(interaction):
             return
 
-        await interaction.response.defer()
+        await ack(interaction)
 
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
@@ -398,19 +413,20 @@ class StarboardConfigView(BaseView):
         """Cancel changes"""
         if not await check_guild_perms(interaction):
             return
+        await ack(interaction)
 
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
         saved = await bot.module_manager.get_module_config(interaction.guild_id, 'starboard')
         view = StarboardConfigView(bot, interaction.guild_id, interaction.user.id, locale, current_config=saved)
-        await interaction.response.edit_message(view=view)
+        await show(interaction, view)
 
     async def on_delete(self, interaction: discord.Interaction):
         """Delete configuration"""
         if not await check_guild_perms(interaction):
             return
 
-        await interaction.response.defer()
+        await ack(interaction)
 
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)

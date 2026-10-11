@@ -67,9 +67,36 @@ class ModuleBase(ABC):
     # actions. Moddy never asks for Administrator (CLAUDE.md #12) — /config
     # checks this list against guild.me.guild_permissions before opening the
     # module's config screen (see modules/configs/_common.py::check_bot_perms).
-    # Leave empty when the module needs nothing beyond the baseline permissions
-    # every slash command already implies (view/send in the invoking channel).
+    # List ONLY what is specific to this module: the baseline (see
+    # utils/bot_permissions.BASELINE_BOT_PERMISSIONS) is merged in by
+    # required_permissions() for every module that posts messages.
     REQUIRED_BOT_PERMISSIONS: List[str] = []
+    # True when the module posts messages in channels (Components V2 + custom
+    # emojis): view/send/history/external emojis are then required too. Set to
+    # False for modules that never write in a channel (roles, nickname, ...).
+    SENDS_MESSAGES: bool = True
+    # Baseline permissions this module can live without (degrades, never
+    # breaks); they are dropped from the blocking list.
+    BASELINE_OPTIONAL: List[str] = []
+
+    @classmethod
+    def required_permissions(cls) -> List[str]:
+        """Everything the bot must hold guild-wide: baseline + module list.
+
+        This is what /config checks, all at once, before opening the screen.
+        """
+        from utils.bot_permissions import BASELINE_BOT_PERMISSIONS, merge_permissions
+        baseline = ([k for k in BASELINE_BOT_PERMISSIONS if k not in cls.BASELINE_OPTIONAL]
+                    if cls.SENDS_MESSAGES else [])
+        return merge_permissions(baseline, cls.REQUIRED_BOT_PERMISSIONS)
+
+    @classmethod
+    def channel_requirements(cls, config: Dict[str, Any]) -> Dict[int, List[str]]:
+        """``{channel_id: [permissions]}`` the bot needs in the channels this
+        stored config points at. Checked next to the guild-level list so channel
+        overwrites that deny the bot are reported up front too. Pure: read the
+        config dict only, never the network."""
+        return {}
 
     def __init__(self, bot, guild_id: int):
         """
