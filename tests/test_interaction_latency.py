@@ -50,17 +50,17 @@ class TestExpiredInteraction:
             assert error_handler.expired_interaction_kind(outer) == "unknown_message"
 
     @pytest.mark.asyncio
-    async def test_view_on_error_swallows_without_user_message(self):
+    async def test_expired_errors_are_no_longer_swallowed(self):
+        """10062/10008/10015 go through the full error path (see test_interaction_guard.py)."""
         view = error_handler.BaseView()
         it = _interaction()
         it.response.is_done.return_value = False
         it.response.send_message = AsyncMock()
-        it.followup.send = AsyncMock()
+        it.client.get_cog.return_value = None      # no tracker: still reported + user answered
         before = error_handler._EXPIRED_COUNTS.get("unknown_interaction", 0)
         await view.on_error(it, _not_found(10062), MagicMock(custom_id="c"))
-        it.response.send_message.assert_not_called()
-        it.followup.send.assert_not_called()
         assert error_handler._EXPIRED_COUNTS["unknown_interaction"] == before + 1
+        it.response.send_message.assert_awaited_once()
 
 
 class TestLoopMonitor:

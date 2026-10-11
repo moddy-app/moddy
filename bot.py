@@ -1012,6 +1012,13 @@ class ModdyBot(ModdyFrameworkBot):
         # (10062 Unknown interaction), so make stalls visible in the logs.
         from utils import loop_monitor
         loop_monitor.start()
+        loop_monitor.set_notifier(self._notify_ops)
+
+        # Interaction guard: acknowledge any interaction nobody answered within
+        # ~2 s so Discord never shows "This interaction failed" (patches
+        # discord.py once, before the gateway connects).
+        from utils import interaction_guard
+        interaction_guard.install()
 
         # Fetch bot version from GitHub
         await self.fetch_version()
@@ -1408,44 +1415,15 @@ class ModdyBot(ModdyFrameworkBot):
             # Delegate to the cog's handler which uses Components V2
             await error_cog.on_app_command_error(interaction, error)
         else:
-            # Fallback if the ErrorTracker is not loaded
+            # Fallback if the ErrorTracker is not loaded: same delivery chain
+            # (response -> followup -> edit -> DM), no error code available.
             logger.error(f"Slash command error (no ErrorTracker): {error}", exc_info=error)
-
-            try:
-                # Simple fallback message with Components V2 (no embed needed)
-                from discord import ui
-
-                class FallbackErrorView(ui.LayoutView):
-                    def __init__(self):
-                        super().__init__(timeout=None)
-                        container = ui.Container()
-                        container.add_item(
-                            ui.TextDisplay(f"### {ERROR_EMOJI} An Error Occurred")
-                        )
-                        container.add_item(
-                            ui.TextDisplay("An unexpected error occurred. Please try again.")
-                        )
-                        button_row = ui.ActionRow()
-                        support_btn = ui.Button(
-                            label="Support Server",
-                            style=discord.ButtonStyle.link,
-                            url="https://moddy.app/support"
-                        )
-                        button_row.add_item(support_btn)
-                        container.add_item(button_row)
-                        self.add_item(container)
-
-                if interaction.response.is_done():
-                    # Try to send a followup message first (preferred)
-                    try:
-                        await interaction.followup.send(view=FallbackErrorView(), ephemeral=True)
-                    except:
-                        # If followup fails, edit the original response as fallback
-                        await interaction.edit_original_response(content=None, view=FallbackErrorView())
-                else:
-                    await interaction.response.send_message(view=FallbackErrorView(), ephemeral=True)
-            except Exception as e:
-                logger.error(f"Failed to send fallback error message: {e}")
+            from cogs.error_handler import report_interaction_error
+            actual = error.original if hasattr(error, "original") else error
+            await report_interaction_error(
+                interaction, actual,
+                command=interaction.command.name if interaction.command else "Unknown",
+                error_type="App Command Error")
 
 
     async def fetch_dev_team(self):
@@ -2294,6 +2272,12 @@ class ModdyBot(ModdyFrameworkBot):
             logger.error(f"Error checking global sanctions: {e}")
 
         return False  # Pas suspendu
+
+    async def _notify_ops(self, **notice) -> None:
+        """Throttled operational notice to the error channel (loop stalls, guard)."""
+        tracker = self.get_cog("ErrorTracker")
+        if tracker is not None:
+            await tracker.send_ops_notice(**notice)
 
     async def on_interaction(self, interaction: discord.Interaction):
         """

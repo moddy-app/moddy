@@ -877,6 +877,35 @@
     "not_your_message": {
       "title": "Esta não é sua mensagem",
       "description": "<:undone:1519800313324896327> Você não pode usar estes botões, eles pertencem a outro usuário."
+    },
+    "card": {
+      "title": "Algo deu errado...",
+      "code": "**Código de erro:** `{error_code}`",
+      "logged": "-# Este erro foi registrado automaticamente e será analisado pela nossa equipe.\n-# Se o problema persistir, entre em contato com o suporte com este código de erro.",
+      "support": "Suporte",
+      "status": "Status"
+    },
+    "too_slow": {
+      "title": "O Moddy demorou demais para responder",
+      "body": "O Discord encerrou esta interação antes que o Moddy pudesse responder. Tente novamente.\n**Código de erro:** `{error_code}`",
+      "dm_body": "O Moddy não conseguiu responder a tempo e o Discord encerrou a interação. Tente novamente.\n**Código de erro:** `{error_code}`"
+    },
+    "dm_fallback": {
+      "title": "O Moddy não conseguiu te responder",
+      "intro": "Não consegui responder onde você me usou (a interação expirou), então estou avisando por aqui.",
+      "body": "Algo deu errado com sua última ação e não consegui te responder onde você me usou.\n**Código de erro:** `{error_code}`"
+    },
+    "inactive": {
+      "title": "Este controle não está mais ativo",
+      "body": "Este botão, menu ou formulário não está mais ativo. Execute o comando novamente."
+    },
+    "still_working": {
+      "title": "Está demorando mais do que o esperado",
+      "body": "Se nada aparecer em breve, tente novamente."
+    },
+    "command_unavailable": {
+      "title": "Este comando não está disponível",
+      "body": "Este comando não existe mais ou não está disponível no momento. O Discord pode precisar de um instante para atualizar a lista; tente novamente mais tarde."
     }
   },
   "common": {
@@ -944,6 +973,7 @@
         "bot_not_in_guild": "<:error:1519790252594827264> O Moddy precisa estar presente neste servidor para usar este comando.",
         "wrong_user": "<:error:1519790252594827264> Apenas o usuário que iniciou a configuração pode usar esta interface.",
         "no_user_perms": "<:error:1519790252594827264> Você precisa da permissão **Gerenciar Servidor** para usar este comando.",
+        "slow_retry": "<:error:1519790252594827264> O carregamento demorou demais. Clique novamente.",
         "required_fields": "<:undone:1519800313324896327> **Configuração inválida** - Os seguintes campos devem ser preenchidos:\n• {fields}",
         "channel_not_found": "Canal não encontrado",
         "missing_bot_perms": {

@@ -7,6 +7,7 @@
 4. [Best Practices](#best-practices)
 5. [Logging](#logging)
 6. [Troubleshooting](#troubleshooting)
+7. [Interaction guard and delivery chain](#interaction-guard-and-delivery-chain)
 
 ---
 
@@ -18,7 +19,8 @@ The error handling system ensures:
 - ✅ **ALL errors are logged** with full traceback in a single line
 - ✅ **ALL errors are stored** in the database
 - ✅ **ALL errors are sent** to the Discord error logging channel
-- ✅ **ALL users ALWAYS receive** an error embed with an error code
+- ✅ **ALL users ALWAYS receive** an error card with an error code (localized, by DM when the interaction is dead)
+- ✅ **Expired interactions (10062 / 10008 / 10015) are NOT exempt**: they take the full path too
 - ✅ **NO errors escape** without proper handling
 
 ---
@@ -44,12 +46,17 @@ Caught by appropriate handler (on_app_command_error, BaseView.on_error, etc.)
     ↓
 Full traceback logged in ONE single line (not fragmented)
     ↓
-Error stored in database
+Sentry capture
     ↓
-Error sent to Discord error logging channel
+User receives the error card (delivery chain: response → followup →
+edit original → DM fallback), outcome recorded as `user_reached`
     ↓
-User receives error embed with error code
+Error stored in database + sent to the Discord error logging channel
 ```
+
+All interaction-bound handlers (`BaseView.on_error`, `BaseModal.on_error`, the
+app-command handler, `report_component_error`, the token detector) call the
+same function, `cogs.error_handler.report_interaction_error`.
 
 ---
 
@@ -406,3 +413,111 @@ normal error.
 3. *DB pool starvation.* `DB_POOL_MAX_SIZE` defaults to 8 and `pool.acquire()`
    has no timeout: a burst of background queries makes every awaiting callback
    late. Raise the pool or keep hot-path queries cached.
+
+
+---
+
+## Interaction guard and delivery chain
+
+> Owner requirement: errors may be noisy in the logs, but the user must never be
+> impacted silently, the owner must be notified when they are, and even when
+> everything fails the user must **never** see Discord's "This interaction
+> failed" without a message from the bot.
+
+Discord invalidates an interaction token that has not received an initial
+response within **3 s** (`10062 Unknown interaction`). After an initial response
+(a defer counts) the token is valid for **15 min** (followups, edits).
+
+### 1. Prevention: `utils/interaction_guard.py`
+
+`interaction_guard.install()` (called from `bot.setup_hook`, patches discord.py
+once, same style as `utils/icon_theme.py`) arms a timer in `Interaction.__init__`
+- the earliest hook, before the view store / command tree see the interaction.
+The deadline is **2.0 s after the interaction's snowflake timestamp**, so
+gateway delay and event-loop lag are already counted (clamped to 0 when late;
+a skewed local clock is estimated from the youngest recent ages). If nothing
+responded by then the guard acknowledges it:
+
+| Interaction | Guard action |
+|---|---|
+| component (button / select / `DynamicItem`) | `defer()` - invisible deferred update |
+| modal submit | `defer()` (update if it came from a component message, else `thinking=True, ephemeral=True`) |
+| slash / context-menu command | `defer(thinking=True, ephemeral=True)` - never publish ephemeral content |
+| autocomplete / ping | skipped |
+| component or modal **no handler claimed** (stopped view, dead non-persistent view, unknown modal) | ephemeral "no longer active" card (`errors.inactive`) instead of a silent defer |
+
+`BaseView._dispatch_item`, `ViewStore.schedule_dynamic_item_call` and
+`Modal._dispatch_submit` are wrapped only to mark an interaction as claimed.
+
+**Feature code needs no change.** After an auto-defer the
+`InteractionResponse` methods are redirected:
+
+| Feature call | After the guard deferred |
+|---|---|
+| `response.send_message(...)` | `followup.send(..., wait=True)` (same kwargs; `delete_after` emulated) |
+| `response.edit_message(...)` | `edit_original_response(...)` (`delete_after` emulated) |
+| `response.defer(...)` | no-op (an ephemeral `thinking` request keeps the first followup private) |
+| `response.send_modal(...)` | raises `InteractionTooSlow` (a modal can only be an initial response); the error handler shows `errors.too_slow` ("Moddy was too slow, please retry") |
+| `response.is_done()` | `True` |
+
+Known behaviour differences, only on the slow path: a public command reply
+becomes ephemeral (the guard deferred ephemerally); `send_message` returns the
+followup `Message` instead of an `InteractionCallbackResponse` (no caller uses
+the return value). The guard and a feature answering at the same instant are
+reconciled through Discord's `40060`: whoever loses degrades gracefully, nothing
+is answered twice.
+
+A guard-deferred "thinking" still empty after 120 s is replaced by a
+"taking longer than expected" card (`errors.still_working`).
+
+**Owner visibility.** Each activation is logged as a WARNING naming the slow
+handler (command / `custom_id`) and the age, and posted (throttled: per handler
+10 min, 6/min overall) to the error channel as an `InteractionGuard` notice
+(`ErrorTracker.send_ops_notice`). If the guard itself gets `10062` the loop
+already stalled: it goes through the full error path with the DM fallback.
+
+### 2. Delivery chain: `deliver_view`
+
+For every error card, in order, each attempt time-boxed (8 s) and logged on
+failure:
+
+1. `response.send_message` (if the response is not done)
+2. `followup.send(ephemeral=True)`
+3. `edit_original_response`
+4. **DM fallback** when the token is dead (`10062` / `10015`, or older than
+   15 min) or every path failed: `dm_error_fallback` sends the localized
+   `ErrorView(dm=True)` through `bot.notifications` (`NotificationSource.official("moddy")`,
+   CLAUDE.md rule #11), at most **one per user per 5 min**.
+
+The outcome is stored in the error details (`user_reached`: `response`,
+`followup`, `edit_original`, `dm`, `dm_throttled`, `dm_failed`,
+`dm_unavailable`, `none`) and shown in the error-channel post and the database
+`context` column, with the interaction age, loop lag and guard state
+(`interaction_context`). The cards are localized in the five locales
+(`errors.card.*`, `errors.too_slow.*`, `errors.dm_fallback.*`,
+`errors.inactive`, `errors.still_working`, `errors.command_unavailable`).
+
+### 3. Expired interactions are fully reported
+
+10062 / 10008 / 10015 get an error code, Sentry event, database row and
+error-channel post like any other error, plus `expired_kind` and
+`interaction_age` in the details. A second expired error for the *same*
+interaction (guard + handler racing) is not repeated.
+
+### 4. Event-loop stalls
+
+`utils/loop_monitor.py` still logs lag and the blocked main-thread stack. A stall
+longer than **2.5 s** is also reported to the error channel once the loop
+recovers (throttled to one per 5 min) with the captured stack
+(`loop_monitor.set_notifier`, wired in `bot.setup_hook`).
+
+### Rules for new code
+
+- Keep calling `interaction.response.defer()` yourself before slow work: the
+  guard is a safety net, not a replacement (a guard activation is reported as
+  user-impacting latency).
+- Never open a modal after slow work: `send_modal` must be the first response.
+- Never swallow an interaction error: let it reach `on_error`, or call
+  `report_interaction_error` / `report_component_error`.
+- Upgrading discord.py: `tests/test_interaction_guard.py` fails if a patched
+  attribute moved.
