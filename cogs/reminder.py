@@ -10,6 +10,7 @@ from typing import Optional, List, Dict, Any
 from zoneinfo import ZoneInfo
 
 import discord
+from utils.incognito import resolve_default_incognito
 from discord import app_commands, ui
 from discord.ext import commands, tasks
 from discord.ui import LayoutView, Container, TextDisplay, Separator
@@ -563,10 +564,11 @@ class ReminderSelectForDelete(ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         reminder_id = int(self.values[0])
+        await interaction.response.defer(ephemeral=True)  # ack before the DB write
         await self.bot.db.delete_reminder(reminder_id, interaction.user.id)
 
         # Simple confirmation message
-        await interaction.response.send_message(
+        await interaction.followup.send(
             t("commands.reminder.success.deleted", interaction, id=reminder_id),
             ephemeral=True
         )
@@ -967,14 +969,10 @@ class Reminder(commands.Cog):
     ):
         """Add a new reminder"""
         # Handle incognito setting
-        if incognito is None and self.bot.db:
-            try:
-                user_pref = await self.bot.db.get_attribute('user', interaction.user.id, 'DEFAULT_INCOGNITO')
-                ephemeral = True if user_pref is None else user_pref
-            except:
-                ephemeral = True
+        if incognito is None:
+            ephemeral = await resolve_default_incognito(self.bot, interaction.user.id)
         else:
-            ephemeral = incognito if incognito is not None else True
+            ephemeral = incognito
 
         # Validate message length
         if len(message) > 1000:
@@ -1048,14 +1046,10 @@ class Reminder(commands.Cog):
     ):
         """Manage reminders"""
         # Handle incognito setting
-        if incognito is None and self.bot.db:
-            try:
-                user_pref = await self.bot.db.get_attribute('user', interaction.user.id, 'DEFAULT_INCOGNITO')
-                ephemeral = True if user_pref is None else user_pref
-            except:
-                ephemeral = True
+        if incognito is None:
+            ephemeral = await resolve_default_incognito(self.bot, interaction.user.id)
         else:
-            ephemeral = incognito if incognito is not None else True
+            ephemeral = incognito
 
         # Get user timezone (auto-detected or from preferences)
         user_tz = await get_user_timezone(self.bot, interaction.user.id, str(interaction.locale))

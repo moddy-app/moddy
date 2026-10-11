@@ -1008,6 +1008,11 @@ class ModdyBot(ModdyFrameworkBot):
         """Called once on bot startup"""
         logger.info("Initial setup...")
 
+        # Event-loop lag monitor: a blocked loop ages every pending interaction
+        # (10062 Unknown interaction), so make stalls visible in the logs.
+        from utils import loop_monitor
+        loop_monitor.start()
+
         # Fetch bot version from GitHub
         await self.fetch_version()
         self.heartbeat.version = self.version or "0.0.0"
@@ -2124,11 +2129,14 @@ class ModdyBot(ModdyFrameworkBot):
                 user_suspended = guild_suspended = False
             else:
                 user_suspended = await global_sanctions.is_suspended(
-                    self, user_id=interaction.user.id)
+                    self, user_id=interaction.user.id,
+                    budget=global_sanctions.INTERACTION_LOOKUP_BUDGET)
                 guild_suspended = (
                     not user_suspended
                     and interaction.guild_id is not None
-                    and await global_sanctions.is_suspended(self, guild_id=interaction.guild_id)
+                    and await global_sanctions.is_suspended(
+                        self, guild_id=interaction.guild_id,
+                        budget=global_sanctions.INTERACTION_LOOKUP_BUDGET)
                 )
 
             if user_suspended or guild_suspended:
@@ -2220,11 +2228,14 @@ class ModdyBot(ModdyFrameworkBot):
                 return False
 
             user_suspended = await global_sanctions.is_suspended(
-                self, user_id=interaction.user.id)
+                self, user_id=interaction.user.id,
+                budget=global_sanctions.INTERACTION_LOOKUP_BUDGET)
             guild_suspended = (
                 not user_suspended
                 and interaction.guild_id is not None
-                and await global_sanctions.is_suspended(self, guild_id=interaction.guild_id)
+                and await global_sanctions.is_suspended(
+                    self, guild_id=interaction.guild_id,
+                    budget=global_sanctions.INTERACTION_LOOKUP_BUDGET)
             )
 
             if user_suspended or guild_suspended:
@@ -2289,6 +2300,11 @@ class ModdyBot(ModdyFrameworkBot):
         INTERCEPTION pour les composants (boutons, selects, modals).
         Les slash commands sont gérées par _global_sanction_check via tree.interaction_check.
         """
+        # How old is the interaction when we first see it? (diagnoses loop lag
+        # vs. slow callbacks when a 10062 shows up.)
+        from utils import loop_monitor
+        loop_monitor.observe_interaction_age(interaction)
+
         # Les app commands sont déjà gérées par _global_sanction_check
         if interaction.type == discord.InteractionType.application_command:
             return

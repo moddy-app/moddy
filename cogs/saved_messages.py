@@ -5,6 +5,7 @@ Allows users to save messages to a personal library via context menu
 
 import re
 import discord
+from utils.incognito import resolve_default_incognito
 from discord import app_commands, ui
 from discord.ext import commands
 from discord.ui import Container, TextDisplay, Separator
@@ -644,11 +645,12 @@ class SavedMessagesDetailButton(ui.DynamicItem[ui.Button], template=_CID_DETAIL_
         message_id = interaction.message.id if interaction.message else None
 
         if self.action == "back":
+            await interaction.response.defer()  # ack first, then the DB reads
             offset = self.page * 10
             messages = await bot.db.get_saved_messages(owner_id, limit=10, offset=offset)
             total_count = await bot.db.count_saved_messages(owner_id)
             view = SavedMessagesLibraryView(bot, owner_id, messages, locale, page=self.page, total_count=total_count)
-            await interaction.response.edit_message(view=view)
+            await interaction.edit_original_response(view=view)
             return
 
         detail_msg = await bot.db.get_saved_message(self.saved_id, owner_id)
@@ -736,14 +738,10 @@ class SavedMessages(commands.Cog):
     ):
         """View saved messages library"""
         # Handle incognito setting
-        if incognito is None and self.bot.db:
-            try:
-                user_pref = await self.bot.db.get_attribute('user', interaction.user.id, 'DEFAULT_INCOGNITO')
-                ephemeral = True if user_pref is None else user_pref
-            except:
-                ephemeral = True
+        if incognito is None:
+            ephemeral = await resolve_default_incognito(self.bot, interaction.user.id)
         else:
-            ephemeral = incognito if incognito is not None else True
+            ephemeral = incognito
 
         # Get saved messages
         messages = await self.bot.db.get_saved_messages(interaction.user.id, limit=10, offset=0)

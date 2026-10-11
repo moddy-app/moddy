@@ -362,3 +362,47 @@ class MyConfigView(BaseView):
 **For more information, see:**
 - `cogs/error_handler.py` - The complete error handling implementation
 - `main.py` - Logging configuration with `CompactExceptionFormatter`
+
+---
+
+## Expired interactions (10062 / 10008 / 10015) and the 3-second window
+
+Discord requires the **first response** (`defer`, `send_message`,
+`edit_message`, `send_modal`) within 3 s of *creating* the interaction.
+`404 ... 10062 Unknown interaction` therefore means the ack came too late (or
+the token was already used/expired). `10008 Unknown Message` on a follow-up /
+`edit_original_response` means the message was deleted or dismissed; `10015`
+means the webhook token expired (15 min).
+
+**Handling** (`cogs/error_handler.py::expired_interaction_kind` /
+`log_expired_interaction`): `BaseView.on_error`, `BaseModal.on_error`, the app
+command handler, `report_component_error` and the token-detector router treat
+these as *expected*: one `WARNING` line (view/item, interaction age, user,
+guild, recent loop lag), an in-process counter, and at most one Sentry sample
+per kind every 10 minutes. No error code, no DB row, no `ErrorView` (the
+channel it would use is the one that failed). Any other `NotFound` is still a
+normal error.
+
+**Root causes to look for** (do not just rely on the handler):
+
+1. *Event loop blocked.* `utils/loop_monitor.py` (started in `setup_hook`)
+   logs `Event loop lag: Ns` and, from a watchdog thread, the main thread's
+   stack while it is blocked (`Event loop blocked for Ns; main thread is at`).
+   `on_interaction` logs `Interaction received late: age=...` when an
+   interaction is already >1.5 s old on arrival, i.e. the delay happened before
+   any callback ran. Never run CPU-heavy work on the loop: use
+   `asyncio.to_thread` (zstd/json of transcripts, embedding dot products, PIL).
+2. *Slow work before the first response.* Ack first. Rules:
+   - A callback that needs a DB/HTTP/`fetch_*` round trip before it can render
+     must `await interaction.response.defer(...)` first, then use
+     `edit_original_response` / `followup.send`.
+   - `send_modal` must be the first response and cannot follow a defer, so do
+     only cache/sync work before it.
+   - The default-incognito preference is read through
+     `utils.incognito.resolve_default_incognito` (60 s cache, 0.8 s bound).
+   - Sanction checks on the interaction path use a budget
+     (`global_sanctions.INTERACTION_LOOKUP_BUDGET`, 1 s, fail-open, single
+     flight, stale "no sanction" served while refreshing).
+3. *DB pool starvation.* `DB_POOL_MAX_SIZE` defaults to 8 and `pool.acquire()`
+   has no timeout: a burst of background queries makes every awaiting callback
+   late. Raise the pool or keep hot-path queries cached.

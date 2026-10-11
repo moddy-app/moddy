@@ -218,6 +218,7 @@ moddy/
 ├── utils/                     # Utility modules
 │   ├── bot_permissions.py     #   Bot permission checks (baseline, guild + channel level, all gaps at once)
 │   ├── i18n.py                #   Internationalization system (honours the /preferences language override)
+│   ├── loop_monitor.py        #   Event-loop lag monitor + watchdog stack dump + late-interaction logging (10062 diagnosis)
 │   ├── user_preferences.py    #   Per-user prefs cache (icon theme + language), loaded at startup
 │   ├── icon_theme.py          #   Light-theme icon swap: rewrites outgoing payloads (white → *_dark twins)
 │   ├── guild_language.py      #   Server language (one setting, every module)

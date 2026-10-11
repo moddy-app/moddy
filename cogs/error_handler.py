@@ -96,6 +96,84 @@ def capture_error_to_sentry(error: Exception, context: Dict[str, Any] = None) ->
         return None
 
 
+# ---------------------------------------------------------------------------
+# Expired-interaction errors (10062 / 10008 / 10015)
+# ---------------------------------------------------------------------------
+# These are Discord telling us the interaction (or the message it points at) is
+# gone: the 3 s initial-response window elapsed, the token passed its 15 min
+# life, or the user dismissed the ephemeral message. Nothing can be shown to
+# the user (the very channel we would use to tell them is the one that
+# failed), so building an error code + DB row + ErrorView only produces a
+# second failure and noise that hides real bugs. They are logged as warnings
+# with enough context to diagnose lag (see utils/loop_monitor.py) and sampled
+# to Sentry. Real bugs that merely *surface* as 404s are still visible: the
+# warning names the view/item and how old the interaction was.
+EXPIRED_INTERACTION_CODES = {
+    10062: "unknown_interaction",
+    10008: "unknown_message",
+    10015: "unknown_webhook",
+}
+_EXPIRED_COUNTS: Dict[str, int] = {}
+_EXPIRED_LAST_SENTRY: Dict[str, float] = {}
+_EXPIRED_SENTRY_INTERVAL = 600.0  # at most one Sentry sample per kind / 10 min
+
+
+def expired_interaction_kind(error: BaseException) -> Optional[str]:
+    """Name of the expired-interaction kind wrapped by ``error``, else None."""
+    seen = set()
+    current: Optional[BaseException] = error
+    while current is not None and id(current) not in seen:
+        seen.add(id(current))
+        if isinstance(current, discord.NotFound):
+            kind = EXPIRED_INTERACTION_CODES.get(getattr(current, "code", None))
+            if kind:
+                return kind
+        current = (getattr(current, "original", None)
+                   or current.__cause__ or current.__context__)
+    return None
+
+
+def log_expired_interaction(kind: str, source: str,
+                            interaction: Optional[discord.Interaction] = None,
+                            error: Optional[BaseException] = None) -> None:
+    """Warn (never error) about an expired interaction, count it and sample it."""
+    import time as _time
+    _EXPIRED_COUNTS[kind] = _EXPIRED_COUNTS.get(kind, 0) + 1
+    age = "?"
+    user = guild = "?"
+    if interaction is not None:
+        try:
+            age = f"{(discord.utils.utcnow() - interaction.created_at).total_seconds():.1f}s"
+            user = str(interaction.user.id) if interaction.user else "?"
+            guild = str(interaction.guild_id)
+        except Exception:
+            pass
+    lag = ""
+    try:
+        from utils.loop_monitor import last_lag_summary
+        lag = f" loop={last_lag_summary()}"
+    except Exception:
+        pass
+    logger.warning(
+        "Expired interaction (%s) in %s: age=%s user=%s guild=%s total=%d%s",
+        kind, source, age, user, guild, _EXPIRED_COUNTS[kind], lag)
+    if SENTRY_DSN and error is not None:
+        now = _time.monotonic()
+        if now - _EXPIRED_LAST_SENTRY.get(kind, -1e9) >= _EXPIRED_SENTRY_INTERVAL:
+            _EXPIRED_LAST_SENTRY[kind] = now
+            try:
+                with sentry_sdk.push_scope() as scope:
+                    scope.set_tag("error_type", "Expired Interaction")
+                    scope.set_tag("expired_kind", kind)
+                    scope.set_extra("source", source)
+                    scope.set_extra("age", age)
+                    scope.set_extra("count_since_boot", _EXPIRED_COUNTS[kind])
+                    scope.fingerprint = ["expired-interaction", kind]
+                    sentry_sdk.capture_exception(error)
+            except Exception:
+                pass
+
+
 async def fetch_sentry_issue_id(event_id: str, project_slug: str = "moddy") -> Optional[str]:
     """
     Fetch the Sentry Issue ID (group ID) from the Sentry API using the event ID.
@@ -232,6 +310,12 @@ class BaseView(ui.LayoutView):
         This ensures ALL UI errors are caught and handled properly.
         NO EXCEPTIONS ESCAPE THIS HANDLER.
         """
+        if (kind := expired_interaction_kind(error)):
+            log_expired_interaction(
+                kind, f"{self.__class__.__name__}.{item.__class__.__name__}"
+                f"({getattr(item, 'custom_id', None)})", interaction, error)
+            return
+
         # Log the error with FULL traceback in ONE SINGLE log entry
         error_tb = ''.join(traceback.format_exception(type(error), error, error.__traceback__))
         compact_tb = error_tb.replace('\n', ' ⮐ ')
@@ -344,6 +428,10 @@ class BaseModal(ui.Modal):
         """
         Called when an error occurs in a Modal submit.
         """
+        if (kind := expired_interaction_kind(error)):
+            log_expired_interaction(kind, f"Modal:{self.__class__.__name__}", interaction, error)
+            return
+
         # Log with FULL traceback in ONE line
         error_tb = ''.join(traceback.format_exception(type(error), error, error.__traceback__))
         compact_tb = error_tb.replace('\n', ' ⮐ ')
@@ -858,6 +946,13 @@ class ErrorTracker(commands.Cog):
         # Mark error as handled to prevent duplicate processing
         error.__error_handled__ = True
 
+        # Expired interaction (10062/10008/10015): nothing can reach the user.
+        if (kind := expired_interaction_kind(error)):
+            log_expired_interaction(
+                kind, f"/{interaction.command.qualified_name if interaction.command else '?'}",
+                interaction, error)
+            return
+
         # Ignored errors
         if isinstance(error, discord.app_commands.CommandNotFound):
             return
@@ -1020,6 +1115,10 @@ async def report_component_error(
     unknown error still gets an error code, a Sentry capture, a Discord log and
     a user-facing ``ErrorView`` — exactly like every other UI error.
     """
+    if (kind := expired_interaction_kind(error)):
+        log_expired_interaction(kind, f"Component:{source}", interaction, error)
+        return
+
     error_tb = ''.join(traceback.format_exception(type(error), error, error.__traceback__))
     logger.error(f"Component error in {source} - {error_tb.replace(chr(10), ' ⮐ ')}")
 

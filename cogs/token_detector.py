@@ -53,6 +53,10 @@ async def _route_error(
     context: str,
 ) -> None:
     """Route an unexpected exception to the centralized ErrorTracker cog."""
+    from cogs.error_handler import expired_interaction_kind, log_expired_interaction
+    if (kind := expired_interaction_kind(error)):
+        log_expired_interaction(kind, f"TokenDetector/{context}", interaction, error)
+        return
     compact_tb = "".join(
         traceback.format_exception(type(error), error, error.__traceback__)
     ).replace("\n", " ⮐ ")
