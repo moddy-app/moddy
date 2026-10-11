@@ -366,16 +366,9 @@ class ConfigMainView(BaseView):
                 locale
             )
         elif module_id == 'automod_ai':
-            from modules.configs.automod_ai_config import AutomodAIConfigView
-            config_view = AutomodAIConfigView(
-                bot,
-                guild_id,
-                user_id,
-                locale,
-                module_config
-            )
-            # Session 7: load the learned-precedents count before first render.
-            await config_view.load_precedent_stats()
+            from modules.configs.automod_ai_config import open_automod_panel
+            # First run -> the setup wizard; configured -> the home screen.
+            config_view = await open_automod_panel(bot, guild_id, locale, module_config)
         # Ajouter d'autres modules ici au fur et à mesure
 
         if config_view:

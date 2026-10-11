@@ -818,6 +818,39 @@ jours, la rétention de Discord.
 
 See → [MEMBER_APPLICATIONS.md](MEMBER_APPLICATIONS.md).
 
+### 19 ter. Tables de l'Automod AI
+
+Le module `automod_ai` stocke sa configuration dans `guilds.data.modules.automod_ai`
+(JSONB, voir [AUTOMOD_AI_CONFIG.md](AUTOMOD_AI_CONFIG.md)) et possède ses propres
+tables, toutes écrites par le bot : `automod_eval_candidates`, `automod_precedents`,
+`automod_label_items`, `automod_image_hashes`, `automod_learned_references`,
+`automod_learned_terms`, `case_appeals` et — depuis 2026-10-10 —
+**`automod_profile_holds`**.
+
+**`automod_profile_holds`** — un membre mis en sourdine (timeout Discord) tant qu'il
+n'a pas corrigé son avatar ou sa bannière (action `hold` de la modération des
+profils). Une ligne par `(guild_id, user_id, kind)` (clé primaire), `kind` =
+`avatar` | `banner`.
+
+- `categorie` (TEXT) — `profil_avatar_nsfw` | `profil_avatar_choquant`
+- `asset_key` (TEXT) — clé de l'asset Discord signalé
+- `case_id` (UUID) / `sanction_id` (UUID) — le dossier et la sanction MUTE ouverts par le hold
+- `created_at` (TIMESTAMPTZ)
+- `timeout_until` (TIMESTAMPTZ) — fin du timeout en vigueur ; index `idx_profile_holds_timeout`,
+  utilisé par le balayage de 6 h qui le renouvelle tant que le profil reste signalé
+
+Supprimée quand le profil est corrigé, que la sanction est révoquée (appel, label
+équipe) ou que la fonctionnalité est désactivée.
+
+**`automod_label_items.kind`** accepte en plus `profil_avatar_nsfw`,
+`profil_avatar_choquant` et `profil_pseudo` (migration idempotente dans `db/base.py`).
+
+**Repository:** `db/repositories/automod_profiles.py` — `AutomodProfileRepository`
+(le reste : `automod_learning.py`, `precedents.py`, `eval_candidates.py`, `appeals.py`).
+Schémas complets → [AUTOMOD_AI_CONFIG.md §8](AUTOMOD_AI_CONFIG.md).
+
+---
+
 ### 20. Tables de statistiques
 
 Cinq tables, un seul principe : **agréger avant d'écrire**. Un événement

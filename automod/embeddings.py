@@ -25,7 +25,7 @@ import math
 from pathlib import Path
 from typing import Awaitable, Callable, Dict, List, Optional, Sequence, Tuple
 
-from . import constants
+from . import constants, custom_infractions
 from .cache import MISS, LruTtlCache
 from .normalize import collapse_repeats, normalize_spaced
 
@@ -148,6 +148,17 @@ class EmbeddingEngine:
             max_entries=constants.PRECEDENT_QUERY_VECTOR_CACHE,
             ttl_seconds=constants.PRECEDENT_CACHE_TTL_SECONDS,
         )
+        # Custom (server-defined) infraction references: reference-text digest →
+        # normalised vectors aligned with ``custom_infractions.reference_texts``.
+        # Keyed by CONTENT, not by guild: servers that added the same template in
+        # the same language share one embedding call and one set of vectors, and
+        # editing an infraction simply produces a new digest (the old entry ages
+        # out of the LRU).
+        self._custom_cache: LruTtlCache = LruTtlCache(
+            max_entries=constants.PERSO_REFS_CACHE_MAX_GUILDS,
+            ttl_seconds=constants.PERSO_REFS_CACHE_TTL_SECONDS,
+        )
+        self._custom_inflight: Dict[str, "asyncio.Future"] = {}
 
     @property
     def ready(self) -> bool:
@@ -287,6 +298,93 @@ class EmbeddingEngine:
                     best_score = sim
                     best_cat = cat
         return best_score, best_cat
+
+    async def score_with_vector(
+        self, content: str,
+    ) -> Optional[Tuple[float, str, Optional["array.array"]]]:
+        """Like :meth:`score`, but also returns the message's embedding vector.
+
+        Returns ``(score, categorie, vector)``. ``score`` is ``-1.0`` and
+        ``categorie`` ``""`` when the global references are unavailable (not
+        ready) — the vector alone is still useful to the custom-infraction
+        routing. ``None`` when neither is available.
+
+        The vector is the one captured while scoring (``embed_query`` reads the
+        same bounded cache), so a message is embedded **once** whether or not the
+        guild has custom infractions: this method never adds an embedding call to
+        a message that :meth:`score` already embedded.
+        """
+        scored = await self.score(content)
+        vector = await self.embed_query(content)
+        if scored is None and vector is None:
+            return None
+        score, categorie = scored if scored is not None else (-1.0, "")
+        return score, categorie, vector
+
+    async def custom_references(
+        self, infractions: Sequence[dict],
+    ) -> List[Tuple["array.array", str]]:
+        """Normalised ``[(vector, perso_id)]`` of a guild's custom infractions.
+
+        Each infraction's description and examples are embedded **once** per
+        content version (one batched call, cached by content digest, concurrent
+        identical requests single-flighted) and then reused for every message.
+        Goes through the same embed function as the global references, i.e. the
+        gateway's ``automod_embed`` call type. Returns ``[]`` when there is
+        nothing to embed or the embedding is unavailable — a failure is never
+        cached, so the next message retries.
+        """
+        refs = custom_infractions.reference_texts(infractions)
+        if not refs:
+            return []
+        digest = custom_infractions.references_digest(refs)
+
+        cached = self._custom_cache.get(digest)
+        if cached is not MISS:
+            return [(v, pid) for v, (pid, _t) in zip(cached, refs)]
+
+        pending = self._custom_inflight.get(digest)
+        if pending is not None:
+            vectors = await pending
+        else:
+            loop = asyncio.get_event_loop()
+            future: "asyncio.Future" = loop.create_future()
+            future.add_done_callback(_retrieve_result)
+            self._custom_inflight[digest] = future
+            try:
+                raw = await self._embed_fn([text for _pid, text in refs])
+                vectors = ([_normalize_vec(v) for v in raw]
+                           if raw and len(raw) == len(refs) else None)
+            except BaseException as exc:
+                self._custom_inflight.pop(digest, None)
+                if not future.done():
+                    future.set_exception(exc)
+                raise
+            else:
+                if vectors is not None:
+                    self._custom_cache.set(digest, vectors)
+                self._custom_inflight.pop(digest, None)
+                if not future.done():
+                    future.set_result(vectors)
+        if not vectors:
+            return []
+        return [(v, pid) for v, (pid, _t) in zip(vectors, refs)]
+
+    @staticmethod
+    def best_custom_match(
+        vector: Optional[Sequence[float]],
+        references: Sequence[Tuple["array.array", str]],
+    ) -> Optional[Tuple[float, str]]:
+        """``(max_cosine, perso_id)`` of ``vector`` against the references."""
+        if vector is None or not references:
+            return None
+        query = _normalize_vec(vector)
+        best: Optional[Tuple[float, str]] = None
+        for ref, pid in references:
+            sim = _dot(ref, query)
+            if best is None or sim > best[0]:
+                best = (sim, pid)
+        return best
 
     async def embed_query(self, content: str) -> Optional["array.array"]:
         """Return the **normalised** primary embedding vector of ``content``.

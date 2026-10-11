@@ -7,7 +7,9 @@ re-implementing the heuristic on its side.
 
 Currently:
 - POST /automod/rules_check — validate an `indications` text before it is
-  written into `guilds.data.modules.automod_ai.indications`.
+  written into `guilds.data.modules.automod_ai.indications`, or (with an
+  `infraction` object instead) a server-defined custom infraction before it is
+  written into `guilds.data.modules.automod_ai.infractions_perso`.
 
 The text is embedded verbatim into the moderation engine's system prompt, so it
 must never be saved without passing `automod.rules_check.validate_rules`
@@ -26,7 +28,10 @@ import logging
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
-from automod.rules_check import validate_rules, MAX_RULES_LENGTH
+from automod import custom_infractions
+from automod.rules_check import (
+    validate_rules, validate_custom_infraction, MAX_RULES_LENGTH,
+)
 
 logger = logging.getLogger("moddy.internal_api.automod")
 
@@ -51,6 +56,12 @@ _REASONS = {
             "Les indications ressemblent à une tentative de manipulation de l'IA. "
             "Raison : {reason}"
         ),
+        "infraction_unsafe": "Cette infraction ressemble à une tentative de manipulation de l'IA.",
+        "infraction_unsafe_detail": (
+            "Cette infraction ressemble à une tentative de manipulation de l'IA. "
+            "Raison : {reason}"
+        ),
+        "infraction_invalid": "Infraction personnalisée invalide ({code}).",
     },
     "en-US": {
         "too_long": f"The guidance is too long (max {MAX_RULES_LENGTH} characters).",
@@ -62,6 +73,11 @@ _REASONS = {
         "unsafe_detail": (
             "The guidance looks like an attempt to manipulate the AI. Reason: {reason}"
         ),
+        "infraction_unsafe": "This infraction looks like an attempt to manipulate the AI.",
+        "infraction_unsafe_detail": (
+            "This infraction looks like an attempt to manipulate the AI. Reason: {reason}"
+        ),
+        "infraction_invalid": "Invalid custom infraction ({code}).",
     },
 }
 
@@ -87,6 +103,12 @@ async def rules_check(request: Request):
 
     Body: `{"guild_id": "123...", "indications": "...", "locale": "fr"}`
     (`locale` is optional and only picks the language of `reason`).
+
+    A custom infraction is checked the same way with
+    `{"guild_id": "123...", "infraction": {"id", "nom", "description",
+    "exemples", "mots_cles", "modele"}}` (its schema is validated first, 400
+    `invalid_infraction` on failure; Moddy's unmodified templates are trusted).
+    The response shape is identical.
 
     Returns `{"ok": true}` or `{"ok": false, "reason": "..."}` with `reason`
     ready to be shown to the admin.
@@ -114,6 +136,10 @@ async def rules_check(request: Request):
         return _error(400, "invalid_guild_id", f"Invalid guild_id: {raw_guild_id!r}")
     if not (_MIN_SNOWFLAKE <= guild_id <= _MAX_SNOWFLAKE):
         return _error(400, "invalid_guild_id", f"Invalid guild_id: {raw_guild_id!r}")
+
+    # --- custom infraction (alternative to `indications`) ----------------
+    if "infraction" in payload:
+        return await _check_infraction(payload, guild_id)
 
     # --- indications ------------------------------------------------------
     indications = payload.get("indications")
@@ -152,4 +178,39 @@ async def rules_check(request: Request):
         code = "unsafe"
 
     logger.info("automod rules_check rejected (guild %s): %s", guild_id, code)
+    return {"ok": False, "reason": message, "code": code}
+
+
+async def _check_infraction(payload: dict, guild_id: int):
+    """`rules_check` for a custom infraction object (schema, then the AI guard)."""
+    from ..server import get_bot
+
+    strings = _strings(payload.get("locale") or "fr")
+    infraction = payload.get("infraction")
+    code = custom_infractions.validate_entry(infraction)
+    if code is not None:
+        return _error(400, "invalid_infraction",
+                      strings["infraction_invalid"].format(code=code))
+
+    bot = get_bot()
+    if bot is None or not bot.is_ready():
+        return _error(503, "bot_not_ready", strings["unavailable"])
+    if bot.get_guild(guild_id) is None:
+        return _error(404, "unknown_guild", f"Unknown guild: {guild_id}")
+
+    safe, reason = await validate_custom_infraction(bot, guild_id, infraction)
+    if safe:
+        return {"ok": True}
+
+    if reason in ("too_long", "unavailable"):
+        message = strings[reason]
+        code = reason
+    elif reason:
+        message = strings["infraction_unsafe_detail"].format(reason=reason)
+        code = "unsafe"
+    else:
+        message = strings["infraction_unsafe"]
+        code = "unsafe"
+
+    logger.info("automod rules_check infraction rejected (guild %s): %s", guild_id, code)
     return {"ok": False, "reason": message, "code": code}

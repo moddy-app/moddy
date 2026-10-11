@@ -145,8 +145,11 @@ class AppealService:
             if decision == "accept":
                 await self._revoke_case_sanction(appeal, by_type, by_id)
                 await self._reverse_discord(guild, subject_id, old_action)
+                await self._drop_profile_hold(appeal)
+                await self._allow_profile_subject(appeal)
             elif decision == "transform":
                 await self._revoke_case_sanction(appeal, by_type, by_id)
+                await self._drop_profile_hold(appeal)
                 if new_reason:
                     await self.db.update_case_reason(_as_uuid(appeal["case_id"]), new_reason)
                 await self._record_new_sanction(
@@ -304,6 +307,10 @@ class AppealService:
         for ev in reversed(case.get("events", [])):
             p = ev.get("payload") or {}
             if ev.get("type") == "evidence" and p.get("source") == "automod":
+                # A profile case (avatar / banner / name) has no message: a server
+                # precedent is matched against messages, so it learns nothing here.
+                if str(p.get("origine") or "").startswith("profil_"):
+                    return None
                 extrait = p.get("extrait") or ""
                 if extrait:
                     return extrait, p.get("categorie") or "", p.get("gravite") or ""
@@ -359,6 +366,44 @@ class AppealService:
             "guild", subject_id=appeal["subject_id"], action=action,
             scope_id=appeal["guild_id"], by_type=by_type, by_id=by_id,
         )
+
+    async def _allow_profile_subject(self, appeal: dict) -> None:
+        """Accepted appeal on a profile sanction: that asset / name is cleared.
+
+        Without it the hold row is gone but the asset is still flagged, so a
+        rejoin (once the done marker expired) would hold the same avatar again.
+        """
+        profiles = getattr(self.bot, "automod_profiles", None)
+        if profiles is None:
+            return
+        try:
+            case = await self.db.get_case_by_id(_as_uuid(appeal["case_id"]))
+            for ev in reversed((case or {}).get("events", [])):
+                p = ev.get("payload") or {}
+                origine = str(p.get("origine") or "")
+                if ev.get("type") != "evidence" or p.get("source") != "automod" \
+                        or not origine.startswith("profil_"):
+                    continue
+                if origine == "profil_pseudo":
+                    from services.automod_profile_service import name_subject, normalize_name
+                    subject = name_subject(normalize_name(p.get("extrait") or ""))
+                else:
+                    subject = (p.get("profil") or {}).get("asset_key")
+                if subject:
+                    await profiles.allow_profile(int(appeal["guild_id"]), subject)
+                return
+        except Exception as e:  # noqa: BLE001 — the ruling itself is already applied
+            logger.debug("appeal profile allow marker failed: %s", e)
+
+    async def _drop_profile_hold(self, appeal: dict) -> None:
+        """A profile "hold" ends with its sanction (appeal accepted / modified)."""
+        sanction_id = appeal.get("sanction_id")
+        if not sanction_id:
+            return
+        try:
+            await self.db.delete_profile_hold_by_sanction(sanction_id)
+        except Exception as e:  # noqa: BLE001 — the ruling itself is already applied
+            logger.debug("appeal profile hold cleanup failed: %s", e)
 
     def _transform_expiry(self, action: str, duration_hours: Optional[int]):
         """Expiry for a transformed sanction: explicit hours, else a mute default."""
@@ -657,8 +702,11 @@ class AppealService:
         for ev in reversed(case.get("events", [])):
             p = ev.get("payload") or {}
             if ev.get("type") == "evidence" and p.get("source") == "automod":
+                # An avatar / banner case "quotes" an asset URL, not a message:
+                # nothing to show as proof (the name of a pseudo case is shown).
+                is_image = p.get("origine") in ("profil_avatar", "profil_banniere")
                 return {
-                    "text": p.get("extrait") or None,
+                    "text": None if is_image else (p.get("extrait") or None),
                     "author": p.get("author_name"),
                     "message_id": str(p["message_id"]) if p.get("message_id") else None,
                     "ts": p.get("ts"),

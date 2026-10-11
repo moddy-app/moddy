@@ -95,10 +95,12 @@ async def _status_panel(ctx) -> BaseView:
         f" · {t('staff.automod.revoked_24h', locale=loc)} `{queue['revoked_24h']}`"))
     container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
     ss = budget.get("safe_search", {})
+    ssp = budget.get("safe_search_profile", {})
     ocr = budget.get("document_text", {})
     container.add_item(ui.TextDisplay(
         f"**{t('staff.automod.budget', locale=loc)}**\n"
         f"- SafeSearch `{ss.get('used', 0)}` / `{ss.get('limit', 0)}`\n"
+        f"- SafeSearch (profiles) `{ssp.get('used', 0)}` / `{ssp.get('limit', 0)}`\n"
         f"- /ocr `{ocr.get('used', 0)}` / `{ocr.get('limit', 0)}`"))
     container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
     container.add_item(ui.TextDisplay(

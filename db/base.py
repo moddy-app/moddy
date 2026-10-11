@@ -26,6 +26,7 @@ from db.repositories.enforcements import EnforcementRepository
 from db.repositories.eval_candidates import EvalCandidateRepository
 from db.repositories.precedents import PrecedentRepository
 from db.repositories.automod_learning import AutomodLearningRepository
+from db.repositories.automod_profiles import AutomodProfileRepository
 from db.repositories.saved_roles import SavedRolesRepository
 from db.repositories.token_alerts import TokenAlertRepository
 from db.repositories.token_secrets import TokenSecretRepository
@@ -71,6 +72,7 @@ class ModdyDatabase(
     EvalCandidateRepository,
     PrecedentRepository,
     AutomodLearningRepository,
+    AutomodProfileRepository,
     SavedRolesRepository,
     TokenAlertRepository,
     TokenSecretRepository,
@@ -875,7 +877,9 @@ class ModdyDatabase(
                 CREATE TABLE IF NOT EXISTS automod_label_items (
                     id              UUID PRIMARY KEY,
                     kind            TEXT NOT NULL
-                        CHECK (kind IN ('texte','image_scam','image_nsfw','image_gore')),
+                        CHECK (kind IN ('texte','image_scam','image_nsfw','image_gore',
+                                        'profil_avatar_nsfw','profil_avatar_choquant',
+                                        'profil_pseudo')),
                     motif           TEXT NOT NULL
                         CHECK (motif IN ('sanction','doute','simulation')),
                     guild_id        BIGINT NOT NULL,
@@ -940,6 +944,56 @@ class ModdyDatabase(
                     END IF;
                 END $$;
             """)
+
+            # 2026-10-10: the member-profile labeling lanes (avatar / banner
+            # SafeSearch verdicts and display-name verdicts). Widen once.
+            await conn.execute("""
+                DO $$
+                BEGIN
+                    IF EXISTS (
+                        SELECT 1 FROM pg_constraint
+                        WHERE conname = 'automod_label_items_kind_check'
+                          AND pg_get_constraintdef(oid) NOT LIKE '%profil_pseudo%'
+                    ) THEN
+                        ALTER TABLE automod_label_items
+                            DROP CONSTRAINT automod_label_items_kind_check;
+                        ALTER TABLE automod_label_items
+                            ADD CONSTRAINT automod_label_items_kind_check
+                            CHECK (kind IN ('texte','image_scam','image_nsfw','image_gore',
+                                            'profil_avatar_nsfw','profil_avatar_choquant',
+                                            'profil_pseudo'));
+                    END IF;
+                END $$;
+            """)
+
+            # automod_profile_holds — a member timed out until they fix their
+            # avatar / banner (Automod AI, profile feature, action "hold").
+            # One row per (guild, member, kind). `timeout_until` is when the
+            # Discord timeout currently in force ends; the profile sweep renews
+            # it while the profile is still flagged. `sanction_id` / `case_id`
+            # point at the MUTE sanction the hold opened (revoked when fixed).
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS automod_profile_holds (
+                    guild_id      BIGINT NOT NULL,
+                    user_id       BIGINT NOT NULL,
+                    kind          TEXT NOT NULL CHECK (kind IN ('avatar','banner')),
+                    categorie     TEXT,
+                    asset_key     TEXT,
+                    case_id       UUID,
+                    sanction_id   UUID,
+                    created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+                    timeout_until TIMESTAMPTZ,
+                    PRIMARY KEY (guild_id, user_id, kind)
+                )
+            """)
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_profile_holds_timeout "
+                "ON automod_profile_holds (timeout_until)")
+            # 2026-10-10: when the sweep last re-screened the hold (banner removals
+            # raise no gateway event, so every hold is re-checked on a cadence).
+            await conn.execute(
+                "ALTER TABLE automod_profile_holds "
+                "ADD COLUMN IF NOT EXISTS last_checked TIMESTAMPTZ")
 
             # 2026-09-27: `gore` hashes (graphic-violence images). Tables created
             # before that carry the two-value CHECK: widen it once, idempotently.
@@ -1734,6 +1788,11 @@ class ModdyDatabase(
                 # crypto images runs on gpt-4.1-nano vision, capped per guild.
                 ("guild",  "automod_safesearch",  "default", -1),
                 ("global", "automod_safesearch",  "default", -1),
+                # Member-profile SafeSearch (avatars / banners): its own monthly
+                # Google budget ("safe_search_profile" rule), same unlimited
+                # per-guild quota — the automod applies a daily per-guild share.
+                ("guild",  "automod_profile_safesearch", "default", -1),
+                ("global", "automod_profile_safesearch", "default", -1),
                 ("guild",  "automod_image_ocr",   "default", 300),
                 ("global", "automod_image_ocr",   "default", -1),
                 # /ocr (Google Vision DOCUMENT_TEXT_DETECTION). The monthly

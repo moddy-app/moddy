@@ -37,12 +37,14 @@ import discord
 
 import config
 from automod import constants as ac
+from automod import infractions
 from automod.image_hash import (
     KIND_GORE, KIND_NSFW, KIND_SCAM, VERDICT_ALLOW, VERDICT_BLOCK, from_hex,
 )
 from automod.normalize import collapse_repeats
 from automod.schemas import (
     ORIGINE_IMAGE_HASH, ORIGINE_IMAGE_NSFW, ORIGINE_IMAGE_OCR,
+    ORIGINE_PROFIL_AVATAR, ORIGINE_PROFIL_BANNIERE, ORIGINE_PROFIL_PSEUDO,
 )
 
 logger = logging.getLogger("moddy.services.automod_labels")
@@ -51,9 +53,16 @@ KIND_TEXTE = "texte"
 KIND_IMAGE_SCAM = "image_scam"
 KIND_IMAGE_NSFW = "image_nsfw"
 KIND_IMAGE_GORE = "image_gore"
+#: Member profiles (avatar / banner SafeSearch verdicts, display names).
+KIND_PROFIL_AVATAR_NSFW = "profil_avatar_nsfw"
+KIND_PROFIL_AVATAR_CHOQUANT = "profil_avatar_choquant"
+KIND_PROFIL_PSEUDO = "profil_pseudo"
+PROFILE_LANES = (KIND_PROFIL_AVATAR_NSFW, KIND_PROFIL_AVATAR_CHOQUANT, KIND_PROFIL_PSEUDO)
 #: Lanes whose item is an image judged by SafeSearch (no text to learn from).
-SAFESEARCH_LANES = (KIND_IMAGE_NSFW, KIND_IMAGE_GORE)
-IMAGE_LANES = (KIND_IMAGE_SCAM, KIND_IMAGE_NSFW, KIND_IMAGE_GORE)
+SAFESEARCH_LANES = (KIND_IMAGE_NSFW, KIND_IMAGE_GORE,
+                    KIND_PROFIL_AVATAR_NSFW, KIND_PROFIL_AVATAR_CHOQUANT)
+IMAGE_LANES = (KIND_IMAGE_SCAM, KIND_IMAGE_NSFW, KIND_IMAGE_GORE,
+               KIND_PROFIL_AVATAR_NSFW, KIND_PROFIL_AVATAR_CHOQUANT)
 
 #: Team panels are always English (like appeals and support requests).
 PANEL_LOCALE = "en-US"
@@ -66,6 +75,11 @@ def label_kind(decision) -> str:
     """Which queue lane a decision belongs to."""
     origine = getattr(decision, "origine", "texte")
     categorie = getattr(decision, "categorie", "")
+    if origine == ORIGINE_PROFIL_PSEUDO:
+        return KIND_PROFIL_PSEUDO
+    if origine in (ORIGINE_PROFIL_AVATAR, ORIGINE_PROFIL_BANNIERE):
+        return (KIND_PROFIL_AVATAR_CHOQUANT if categorie == "profil_avatar_choquant"
+                else KIND_PROFIL_AVATAR_NSFW)
     if origine == ORIGINE_IMAGE_NSFW:
         return KIND_IMAGE_GORE if categorie == "contenu_choquant" else KIND_IMAGE_NSFW
     if origine == ORIGINE_IMAGE_OCR:
@@ -88,7 +102,9 @@ def dedup_key(kind: str, *, phash: str = "", text: str = "", guild_id: int = 0) 
 
 
 def build_details(decision, *, motif: str, bareme=None, applied: List[str],
-                  guild_name: str = "", case_id=None, message=None) -> Dict[str, Any]:
+                  guild_name: str = "", case_id=None, message=None,
+                  categorie_label: str = "", guild_id: Optional[int] = None,
+                  hold_kind: Optional[str] = None) -> Dict[str, Any]:
     """The JSON snapshot stored on the item (what the card renders)."""
     details: Dict[str, Any] = {
         "guild_name": guild_name,
@@ -96,6 +112,11 @@ def build_details(decision, *, motif: str, bareme=None, applied: List[str],
         "doute": getattr(decision, "doute", None),
         "sanctionnable": bool(decision.sanctionnable),
         "categorie": decision.categorie,
+        # Human name of a server-defined infraction (server-authored text); empty
+        # for the built-in categories, which the card prints as-is.
+        "categorie_label": (categorie_label
+                            if categorie_label and categorie_label != decision.categorie
+                            else ""),
         "gravite": decision.gravite,
         "confiance": decision.confiance,
         "raison": decision.raison,
@@ -115,12 +136,18 @@ def build_details(decision, *, motif: str, bareme=None, applied: List[str],
     image = getattr(decision, "image", None)
     if image is not None:
         details["image"] = dataclasses.asdict(image)
-    if motif == "sanction" and case_id is not None and message is not None:
+    # A profile item has no message: the guild comes from the member instead.
+    sanction_guild = (message.guild.id if message is not None and message.guild
+                      else guild_id)
+    if motif == "sanction" and case_id is not None and (
+            message is not None or guild_id is not None):
         details["sanctions"] = [{
-            "guild_id": message.guild.id if message.guild else None,
+            "guild_id": sanction_guild,
             "case_id": str(case_id),
             "author_id": int(decision.auteur_id),
-            "message_id": int(decision.message_id),
+            "message_id": int(decision.message_id) if message is not None else None,
+            # Set when the sanction is a profile "hold": revoking it frees the member.
+            **({"hold_kind": hold_kind} if hold_kind else {}),
         }]
     return details
 
@@ -157,30 +184,41 @@ class AutomodLabelService:
         except Exception:  # noqa: BLE001
             return True
 
-    async def enqueue(self, *, message: discord.Message, decision, motif: str,
-                      bareme=None, case_id=None, applied: Optional[List[str]] = None,
-                      judged_text: str = "") -> Optional[str]:
-        """Copy one decision to the team queue. Returns the item id (or None)."""
+    async def enqueue(self, *, message: Optional[discord.Message] = None, decision,
+                      motif: str, bareme=None, case_id=None,
+                      applied: Optional[List[str]] = None, judged_text: str = "",
+                      categorie_label: str = "", member: Optional[discord.Member] = None,
+                      image_bytes: Optional[bytes] = None,
+                      hold_kind: Optional[str] = None) -> Optional[str]:
+        """Copy one decision to the team queue. Returns the item id (or None).
+
+        A member-profile decision has no ``message``: ``member`` is given instead
+        (and ``image_bytes`` is the downscaled avatar / banner for the card).
+        """
         db = getattr(self.bot, "db", None)
         channel = self._channel()
         if db is None or channel is None:
             return None
+        guild = message.guild if message is not None else (
+            member.guild if member is not None else None)
         kind = label_kind(decision)
         image = getattr(decision, "image", None)
         phash = image.phash if image is not None else ""
         key = dedup_key(kind, phash=phash, text=judged_text,
-                        guild_id=message.guild.id if message.guild else 0)
+                        guild_id=guild.id if guild else 0)
         details = build_details(
             decision, motif=motif, bareme=bareme, applied=applied or [],
-            guild_name=message.guild.name if message.guild else "",
-            case_id=case_id, message=message,
+            guild_name=guild.name if guild else "",
+            case_id=case_id, message=message, categorie_label=categorie_label,
+            guild_id=guild.id if guild else None, hold_kind=hold_kind,
         )
 
         # Whether the card will carry the image (it is re-uploaded from the
-        # short-lived prepared-image cache); later edits must know it.
+        # short-lived prepared-image cache, or from the bytes we were given);
+        # later edits must know it.
         svc = getattr(self.bot, "automod_images", None)
-        details["image_attached"] = bool(
-            phash and svc is not None and svc.cached_by_phash(phash) is not None)
+        details["image_attached"] = bool(phash and (
+            image_bytes or (svc is not None and svc.cached_by_phash(phash) is not None)))
 
         # A duplicate still waiting for a label: count it (and remember its
         # sanction, so one label can revoke them all) instead of a new card.
@@ -198,8 +236,9 @@ class AutomodLabelService:
 
         item_id = await db.create_label_item(
             kind=kind, motif=motif,
-            guild_id=message.guild.id if message.guild else 0,
-            channel_id=message.channel.id, message_id=int(decision.message_id),
+            guild_id=guild.id if guild else 0,
+            channel_id=message.channel.id if message is not None else None,
+            message_id=int(decision.message_id) if message is not None else None,
             author_id=int(decision.auteur_id), contenu=judged_text,
             phash=_signed_or_none(image.phash) if image is not None and image.phash else None,
             dhash=_signed_or_none(image.dhash) if image is not None and image.dhash else None,
@@ -210,31 +249,35 @@ class AutomodLabelService:
         row = await db.get_label_item(item_id)
         if row is None:
             return item_id
-        await self._post_card(channel, row)
+        await self._post_card(channel, row, image_bytes)
         return item_id
 
     # ------------------------------------------------------------------ #
     # Cards
     # ------------------------------------------------------------------ #
 
-    def _image_file(self, row: Dict[str, Any]) -> Optional[discord.File]:
+    def _image_file(self, row: Dict[str, Any],
+                    data: Optional[bytes] = None) -> Optional[discord.File]:
         if not (row.get("details") or {}).get("image_attached"):
             return None
         image = (row.get("details") or {}).get("image") or {}
         phash = image.get("phash")
-        svc = getattr(self.bot, "automod_images", None)
-        if not phash or svc is None:
+        if not phash:
             return None
-        img = svc.cached_by_phash(phash)
-        if img is None:
-            return None
+        if data is None:
+            svc = getattr(self.bot, "automod_images", None)
+            img = svc.cached_by_phash(phash) if svc is not None else None
+            if img is None:
+                return None
+            data = img.data
         # Always spoilered on the team card — NSFW above all, but a scam image
         # is no pleasure to scroll past either.
-        return discord.File(io.BytesIO(img.data), filename=f"image_{phash}.jpg", spoiler=True)
+        return discord.File(io.BytesIO(data), filename=f"image_{phash}.jpg", spoiler=True)
 
-    async def _post_card(self, channel, row: Dict[str, Any]) -> None:
+    async def _post_card(self, channel, row: Dict[str, Any],
+                         image_bytes: Optional[bytes] = None) -> None:
         from utils.automod_label_views import render_label_card
-        file = self._image_file(row)
+        file = self._image_file(row, image_bytes)
         if file is None and (row.get("details") or {}).get("image_attached"):
             # The cache expired between enqueue and post: say so on the row.
             row["details"]["image_attached"] = False
@@ -307,12 +350,14 @@ class AutomodLabelService:
             return "contenu_nsfw"
         if row["kind"] == KIND_IMAGE_GORE:
             return "contenu_choquant"
+        if row["kind"] in (KIND_PROFIL_AVATAR_NSFW, KIND_PROFIL_AVATAR_CHOQUANT):
+            return row["kind"]
         return row.get("categorie_humaine") or details.get("categorie") or ""
 
     def _hash_kind(self, row: Dict[str, Any]) -> str:
         """Hash kind a labeled image teaches: scam, gore or nsfw."""
-        return {KIND_IMAGE_SCAM: KIND_SCAM, KIND_IMAGE_GORE: KIND_GORE}.get(
-            row["kind"], KIND_NSFW)
+        return {KIND_IMAGE_SCAM: KIND_SCAM, KIND_IMAGE_GORE: KIND_GORE,
+                KIND_PROFIL_AVATAR_CHOQUANT: KIND_GORE}.get(row["kind"], KIND_NSFW)
 
     async def _learn_positive(self, row: Dict[str, Any], by: int) -> Dict[str, Any]:
         outcome: Dict[str, Any] = {}
@@ -326,7 +371,10 @@ class AutomodLabelService:
             outcome["hash"] = VERDICT_BLOCK
         categorie = self._category_of(row)
         text = (row.get("contenu") or "").strip()
-        if row["kind"] not in SAFESEARCH_LANES and text and categorie:
+        # A name teaches nothing global (like a server's own infraction): the
+        # same word can be a joke on one server and an insult on another.
+        if (row["kind"] not in SAFESEARCH_LANES and row["kind"] != KIND_PROFIL_PSEUDO
+                and text and categorie):
             outcome["reference"] = await self.learn_reference(
                 text, categorie, label_item_id=row["id"], added_by=by)
         await self._eval_candidate(row, "correct", by)
@@ -356,6 +404,15 @@ class AutomodLabelService:
                     outcome["precedent"] = True
                 except Exception as exc:  # noqa: BLE001
                     logger.debug("automod labeling precedent failed: %s", exc)
+        if row["kind"] == KIND_PROFIL_PSEUDO and text:
+            # The cached name verdicts of every server must stop flagging it.
+            profiles = getattr(self.bot, "automod_profiles", None)
+            if profiles is not None:
+                try:
+                    await profiles.allow_name(text)
+                    outcome["name_allowed"] = True
+                except Exception as exc:  # noqa: BLE001
+                    logger.debug("automod labeling name allow failed: %s", exc)
         await self._eval_candidate(row, "faux_positif", by)
         revoked = await self.revoke_bot_sanctions(row, by)
         if revoked:
@@ -364,7 +421,8 @@ class AutomodLabelService:
 
     async def _eval_candidate(self, row: Dict[str, Any], verdict: str, by: int) -> None:
         """Feed the offline golden-set corpus (``make eval-import``)."""
-        if row["kind"] in SAFESEARCH_LANES or not (row.get("contenu") or "").strip():
+        if (row["kind"] in SAFESEARCH_LANES or row["kind"] == KIND_PROFIL_PSEUDO
+                or not (row.get("contenu") or "").strip()):
             return
         db = self.bot.db
         details = row.get("details") or {}
@@ -396,6 +454,10 @@ class AutomodLabelService:
                               added_by: Optional[int] = None) -> str:
         """Embed ``text`` and add it as a learned reference ("added" /
         "duplicate" / "unavailable")."""
+        if infractions.is_perso(categorie):
+            # A server's own infraction is private to that server: it must never
+            # become a global learned reference that routes messages everywhere.
+            return "skipped"
         engine = self._engine()
         vector = await engine.embeddings.embed_query(text[:ac.PREFILTRE_MAX_CHARS])
         if vector is None:
@@ -470,6 +532,14 @@ class AutomodLabelService:
             if not case:
                 continue
             guild = self.bot.get_guild(int(entry.get("guild_id") or 0))
+            if entry.get("hold_kind"):
+                # A profile "hold" ends with its sanction.
+                try:
+                    await db.delete_profile_hold(
+                        int(entry.get("guild_id") or 0), int(entry.get("author_id") or 0),
+                        entry["hold_kind"])
+                except Exception as exc:  # noqa: BLE001
+                    logger.debug("automod labeling hold cleanup failed: %s", exc)
             lifted: List[str] = []
             for sanction in case.get("sanctions") or []:
                 if str(sanction.get("status")) != "active":
@@ -487,12 +557,18 @@ class AutomodLabelService:
                         reason="[Automod] révoqué par l'équipe Moddy")
             if not lifted:
                 continue
+            renamed_back = False
+            if row.get("kind") == KIND_PROFIL_PSEUDO:
+                renamed_back = await self._restore_nickname(
+                    guild, int(entry.get("author_id") or 0))
             try:
                 await db.add_event(
                     _uuid.UUID(str(case_id)), EventType.COMMENT.value,
                     author_type=AuthorType.SYSTEM.value,
                     content="Sanction révoquée : l'équipe Moddy a jugé ce contenu non sanctionnable "
-                            "(file d'étiquetage de l'automod).",
+                            "(file d'étiquetage de l'automod)."
+                            + (" Le pseudo « Moderated name » a été réinitialisé."
+                               if renamed_back else ""),
                     payload={"kind": "automod_label_revoked", "label_item_id": row["id"]},
                 )
             except Exception as exc:  # noqa: BLE001
@@ -501,6 +577,31 @@ class AutomodLabelService:
         if total:
             await db.mark_label_item_revoked(row["id"])
         return total
+
+    async def _restore_nickname(self, guild: Optional[discord.Guild],
+                                user_id: int) -> bool:
+        """Best effort: drop the "Moderated name" nickname the automod set.
+
+        Only when the member's nickname is still exactly that placeholder (in
+        the server language): a nickname they chose since is left alone.
+        """
+        if guild is None or not user_id:
+            return False
+        try:
+            from utils.guild_language import guild_locale
+            from utils.i18n import t
+            member = guild.get_member(user_id)
+            if member is None or not getattr(member, "nick", None):
+                return False
+            locale = await guild_locale(self.bot, guild)
+            moderated = t("modules.automod_ai.profile.moderated_name", locale=locale)[:32]
+            if member.nick != moderated:
+                return False
+            await member.edit(nick=None, reason="[Automod] révoqué par l'équipe Moddy")
+            return True
+        except Exception as exc:  # noqa: BLE001 — permissions / hierarchy
+            logger.debug("automod labeling nickname restore failed: %s", exc)
+            return False
 
     async def _notify_revocation(self, guild: Optional[discord.Guild], entry: dict,
                                  case: dict, lifted: List[str]) -> None:

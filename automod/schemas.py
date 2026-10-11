@@ -21,6 +21,13 @@ ORIGINE_IMAGE_OCR = "image_ocr"        # text OCR-extracted from a posted image
 ORIGINE_IMAGE_HASH = "image_hash"      # known image (perceptual hash, team-validated)
 ORIGINE_IMAGE_NSFW = "image_nsfw"      # Google SafeSearch verdict
 ORIGINES_IMAGE = frozenset({ORIGINE_IMAGE_OCR, ORIGINE_IMAGE_HASH, ORIGINE_IMAGE_NSFW})
+# Member profiles (docs/AUTOMOD_AI.md "Profiles"): there is no message, the
+# judged thing is a name (text, through the funnel) or an avatar / banner (image).
+ORIGINE_PROFIL_PSEUDO = "profil_pseudo"
+ORIGINE_PROFIL_AVATAR = "profil_avatar"
+ORIGINE_PROFIL_BANNIERE = "profil_banniere"
+ORIGINES_PROFIL = frozenset({ORIGINE_PROFIL_PSEUDO, ORIGINE_PROFIL_AVATAR,
+                             ORIGINE_PROFIL_BANNIERE})
 
 
 @dataclass
@@ -161,3 +168,6 @@ class Decision:
     contenu_juge: str = ""
     image: Optional[ImageMeta] = None
     doute: Optional[str] = None
+    # Member profiles: the category the funnel itself answered before the
+    # profile feature re-labelled the verdict ``profil_pseudo`` (audit trail).
+    categorie_origine: str = ""

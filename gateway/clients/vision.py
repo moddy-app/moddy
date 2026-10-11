@@ -12,6 +12,10 @@ from ..ratelimit import UNIT_REQUESTS
 # billed feature) are keyed on the operation name instead.
 MODEL_SAFE_SEARCH = "safe_search"
 MODEL_DOCUMENT_TEXT = "document_text"
+# Same SafeSearch operation, accounted on its own monthly budget (member
+# profiles). The key only selects the rate-limit rules; the adapter dispatches
+# on the operation, so the real SafeSearch API is still what gets called.
+MODEL_SAFE_SEARCH_PROFILE = "safe_search_profile"
 
 
 @dataclass
@@ -62,7 +66,8 @@ class VisionClient:
     async def _run(self, operation: str, image: bytes, *, mime: Optional[str],
                    quota: Optional[QuotaPlan], call_type: str,
                    correlation_id: Optional[str], metadata: Optional[dict],
-                   extra_payload: Optional[dict] = None):
+                   extra_payload: Optional[dict] = None,
+                   budget_model: Optional[str] = None):
         payload = {
             # Metadata only — the bytes themselves ride on `binary`.
             "mime": mime,
@@ -73,7 +78,7 @@ class VisionClient:
         spec = CallSpec(
             provider="google_vision",
             operation=operation,
-            model=operation,
+            model=budget_model or operation,
             payload=payload,
             quota=quota or [],
             call_type=call_type,
@@ -93,10 +98,15 @@ class VisionClient:
         call_type: str = "automod_safesearch",
         correlation_id: Optional[str] = None,
         metadata: Optional[dict] = None,
+        budget_model: Optional[str] = None,
     ) -> SafeSearchResult:
+        """SafeSearch one image. ``budget_model`` (e.g.
+        :data:`MODEL_SAFE_SEARCH_PROFILE`) picks the monthly budget the call is
+        accounted on; the default is the message-image budget."""
         data = await self._run(
             MODEL_SAFE_SEARCH, image, mime=mime, quota=quota, call_type=call_type,
             correlation_id=correlation_id, metadata=metadata,
+            budget_model=budget_model,
         ) or {}
         return SafeSearchResult(**{k: data.get(k, "UNKNOWN") for k in
                                    ("adult", "racy", "violence", "medical", "spoof")})

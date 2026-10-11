@@ -55,6 +55,7 @@ moddy/
 │   ├── logs.py                #   Advanced server logs — Discord wiring only
 │   ├── social_notifications.py #  Social notifications dispatch + feeds service wiring
 │   ├── altguard.py            #   AltGuard verdicts, membership events, /altguard verify|unverify
+│   ├── automod_profiles.py    #   Automod member profiles: periodic hold sweep (renew / lift timeouts)
 │   ├── tickets.py             #   /ticket group (module-gated) + channel cleanup + staff-thread guard
 │   ├── interserver_commands.py #  Inter-server commands
 │   ├── ping.py, user.py, avatar.py, banner.py, roll.py, moddy.py
@@ -86,7 +87,8 @@ moddy/
 │   ├── altguard.py            #   AltGuard anti multi-account verification gate
 │   ├── member_applications.py #   Member Applications (review Discord "Apply to Join" in a channel)
 │   ├── tickets.py             #   Tickets (panels, categories, permissions, claim)
-│   ├── automod_ai.py          #   Automod AI (applies decisions, cases+evidence, scalable features)
+│   ├── automod_ai.py          #   Automod AI (applies decisions, cases+evidence, scalable features,
+│   │                          #   member profiles: avatar / banner / names via apply_profile_decision)
 │   ├── bot_customization.py   #   Bot identity per guild (nick/avatar/banner/bio + name style)
 │   ├── voice_transcription.py #   Voice message transcription (button or automatic)
 │   ├── logs.py                #   Advanced server logs (config + routing, 163 events)
@@ -97,8 +99,11 @@ moddy/
 │       ├── member_applications_config.py  # Member Applications (channel, roles, preset reasons Modal V2)
 │       ├── social_notifications_config.py
 │       ├── bump_reminder_config.py        # Bump reminders list + Modal V2
-│       ├── automod_ai_config.py
-│       ├── automod_ai_precedents_view.py  # Learned-precedents browser (S7)
+│       ├── automod_ai_config.py           # Automod AI: first-run wizard + home (instant save, persistent)
+│       ├── automod_ai_sanctions_config.py # Automod AI: sanctions list, one type, custom infractions, Modals V2
+│       ├── automod_ai_advanced_config.py  # Automod AI: monitoring, AI guidance, exemptions, advanced
+│       ├── automod_ai_common.py           # Automod AI panel: load/save/validate, wording, navigation
+│       ├── automod_ai_precedents_view.py  # Learned-precedents browser (persistent dynamic items)
 │       ├── welcome_channel_config.py      # Welcome messages list + add/manage (Modal V2)
 │       ├── welcome_dm_config.py           # Welcome DMs list + add/manage (Modal V2)
 │       ├── tickets_config.py              # Tickets: panel list (root screen)
@@ -136,17 +141,19 @@ moddy/
 │   └── detect.py              #   Success/failure funnel, next-bump time, intervals
 │
 ├── automod/                   # Automod AI DETECTION pipeline (decides only; no side effects)
+│   ├── infractions.py         #   Infraction catalogue (single source of truth) + per-server `sanctions` schema/validation
+│   ├── custom_infractions.py  #   Server-defined infractions: schema, templates, keywords, routing refs
 │   ├── image_hash.py          #   Pillow-only pHash/dHash, safe decode, known-hash index
 │   ├── scam_anchors.py        #   OCR-noise-tolerant scam anchor scorer (routes to nano)
 │   ├── image_policy.py        #   SafeSearch → verdict, monthly pacing, scam pre-rules
 │   ├── engine.py              #   Shared per-bot orchestrator (funnel entry)
-│   ├── relations.py / routing.py / precedents.py / bareme.py
+│   ├── presets.py             #   Wizard protection levels (Light/Balanced/Strict) -> full config
 │   ├── prefiltre.py / triviaux.py / blocklist.py / embeddings.py / nano.py
 │   ├── relations.py           #   Relationship graph + target-reaction signals (familiarity)
 │   ├── routing.py             #   Difficulty router (nano→mini) + heavy-sanction confirm (S6)
 │   ├── precedents.py          #   Server precedents matcher (jurisprudence RAG, pure) (S7)
 │   ├── normalize.py / injection.py / rules_check.py / schemas.py / constants.py
-│   ├── bareme.py              #   Deterministic sanction scale (cran ladder + recidivism)
+│   ├── bareme.py              #   Deterministic sanction scale (cran ladder + recidivism, per-server overrides)
 │   ├── cache.py               #   LRU+TTL score cache (embedding de-duplication)
 │   ├── eval/                  #   Regression harness (golden set, offline runner, shadow annotations)
 │   │   ├── golden.jsonl / fixtures.json / golden_baseline.json
@@ -195,6 +202,7 @@ moddy/
 │       ├── eval_candidates.py   #   Automod eval/annotation corpus (automod_eval_candidates)
 │       ├── precedents.py        #   Automod server precedents (automod_precedents, RAG)
 │       ├── automod_learning.py  #   Automod labeling queue + learned hashes/references/terms
+│       ├── automod_profiles.py  #   Automod profile holds (automod_profile_holds)
 │       ├── token_alerts.py, token_secrets.py
 │       ├── subscription.py    #   Subscription read-only queries (incl. is_guild_premium)
 │       ├── notifications.py   #   Notifications, deliveries, abuse reports
@@ -289,6 +297,7 @@ moddy/
 │   ├── appeal_service.py      #   Automod sanction appeals (server / Moddy team, binding)
 │   ├── precedent_service.py   #   Automod server precedents (record + serve, RAG)
 │   ├── automod_image_service.py # Automod images: downloads, hash index, caches, OCR/SafeSearch
+│   ├── automod_profile_service.py # Automod member profiles: avatar/banner/name verdict caches, profile SafeSearch budget
 │   ├── automod_label_service.py # Moddy team labeling queue (learn + revoke bot sanctions)
 │   ├── ocr_service.py         #   Image → text for /ocr and the Transcribe menu
 │   ├── ticket_service.py      #   Ticket lifecycle (open/close/escalate/move/participants)
@@ -305,7 +314,7 @@ moddy/
 ├── internal_api/              # FastAPI internal API
 │   ├── server.py              #   FastAPI app + /health, /ping, /status + router wiring
 │   ├── routes/                #   API route handlers
-│   │   └── automod.py         #     POST /automod/rules_check (indications safety check)
+│   │   └── automod.py         #     POST /automod/rules_check (indications or custom-infraction safety check)
 │   └── middleware/             #   Auth middleware
 │
 ├── schemas/                   # Data schemas
@@ -343,9 +352,11 @@ moddy/
     ├── test_member_applications.py # Member applications: card, dedupe, decisions, poll, gateway, i18n
     ├── test_logs.py           #   Server logs: registry, routing, rendering, delivery
     ├── test_logs_i18n.py      #   Server logs: i18n completeness on the 5 locales
+    ├── test_automod_ai_panel.py #  Automod AI /config panel: presets, screens, instant save, persistence, i18n
     ├── test_stats.py          #   Statistics: registry guards, aggregation, flush, rollup
     ├── test_heartbeat.py      #   Health Monitor heartbeat: payload, lifecycle, status decisions
     ├── test_automod_images.py #   Automod image features, image service, labeling queue + card
+    ├── test_automod_profiles.py # Automod member profiles: holds, rename+warn, caches, budget, events, i18n
     ├── test_ocr.py            #   /ocr service: errors, re-encoding, card
     └── test_staff_user_command.py # /team user: sections, personal-data gate, i18n (5 locales)
 ```
@@ -564,8 +575,8 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/TICKETS_INTEGRATION.md](docs/TICKETS_INTEGRATION.md) | Tickets ↔ backend contract — the transcript/rating tables, the compressed body schema, `/transcripts/<key>` and its authorisation, the rating aggregates |
 | [docs/ALTGUARD.md](docs/ALTGUARD.md) | **AltGuard** — anti multi-account verification gate, consent, service contract, staff commands |
 | [docs/ALTGUARD_INTEGRATION.md](docs/ALTGUARD_INTEGRATION.md) | AltGuard ↔ bot exact wire contract — payload types, error codes, debugging |
-| [docs/AUTOMOD_AI.md](docs/AUTOMOD_AI.md) | Automod AI — detection pipeline, nano decider, scalable features, **images (NSFW + scam screenshots)**, **Moddy team labeling queue**, rules safety check |
-| [docs/AUTOMOD_AI_CONFIG.md](docs/AUTOMOD_AI_CONFIG.md) | Automod AI configuration schema in DB (backend / dashboard integration) |
+| [docs/AUTOMOD_AI.md](docs/AUTOMOD_AI.md) | Automod AI — detection pipeline, nano decider, scalable features, **images (NSFW + scam screenshots)**, **Moddy team labeling queue**, rules + custom-infraction safety check, **infraction catalogue & per-type sanctions**, **custom infractions**, **member profiles** |
+| [docs/AUTOMOD_AI_CONFIG.md](docs/AUTOMOD_AI_CONFIG.md) | Automod AI configuration schema in DB (backend / dashboard integration): `sanctions`, `infractions_perso`, `features.profile`, validation errors, `rules_check` route, tables, Redis keys, deployment order |
 | [docs/BOT_CUSTOMIZATION.md](docs/BOT_CUSTOMIZATION.md) | Bot Customization — per-guild nickname/avatar/banner/bio + name styles, Redis dashboard contract |
 | [docs/PREMIUM.md](docs/PREMIUM.md) | **Premium gating** — how to check whether a server (or a user) is premium |
 | [docs/LINKED_ROLES.md](docs/LINKED_ROLES.md) | **Linked roles** — the `moddy:staff` publication the backend needs, the two Moddy Team roles (`team` / `manager`), and `/team role` / `/team access` / `/team ticket` |

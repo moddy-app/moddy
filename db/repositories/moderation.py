@@ -427,6 +427,19 @@ class ModerationRepository:
                 await self._recompute_status(conn, case_id, StatusTrigger.SYSTEM)
             return sanction_id
 
+    async def extend_sanction_expiry(
+        self, sanction_id: Union[str, uuid.UUID], expires_at: datetime,
+    ) -> bool:
+        """Push an ACTIVE sanction's ``expires_at`` later (never earlier)."""
+        sid = sanction_id if isinstance(sanction_id, uuid.UUID) else uuid.UUID(str(sanction_id))
+        async with self.pool.acquire() as conn:
+            res = await conn.execute(
+                "UPDATE case_sanctions SET expires_at = $2 "
+                "WHERE id = $1 AND status = 'active'::sanction_status "
+                "AND (expires_at IS NULL OR expires_at < $2)",
+                sid, expires_at)
+        return res.endswith(" 1")
+
     async def revoke_sanction(
         self,
         sanction_id: uuid.UUID,

@@ -138,6 +138,10 @@ class ModdyBot(ModdyFrameworkBot):
         from services.automod_image_service import AutomodImageService
         # Automod images: downloads, hash index, verdict cache, OCR/SafeSearch
         self.automod_images = AutomodImageService(self)
+        from services.automod_profile_service import AutomodProfileService
+        # Automod member profiles: avatar / banner / name verdict caches, SafeSearch
+        # on its own budget, bounded background screening
+        self.automod_profiles = AutomodProfileService(self)
         from services.automod_label_service import AutomodLabelService
         # Moddy team labeling queue for automod decisions (docs/AUTOMOD_AI.md §9)
         self.automod_labels = AutomodLabelService(self)

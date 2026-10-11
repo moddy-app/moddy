@@ -32,7 +32,7 @@ from discord import ui
 
 from cogs.error_handler import BaseModal, BaseView
 from utils.components_v2 import create_error_message, create_success_message
-from utils.emojis import DONE, ERROR, IMAGE, SHIELD, TEXT, WARNING
+from utils.emojis import DONE, ERROR, IMAGE, SHIELD, TEXT, USER, WARNING
 from utils.i18n import t
 
 logger = logging.getLogger("moddy.automod_label_views")
@@ -48,9 +48,14 @@ _ACCENT = {
     "non_sanctionnable": 0x57F287,
     "ignore": 0x99AAB5,
 }
-_KIND_EMOJI = {"texte": TEXT, "image_scam": IMAGE, "image_nsfw": IMAGE, "image_gore": IMAGE}
-#: Lanes judged by SafeSearch: no category to correct, no text for the blocklist.
-_SAFESEARCH_LANES = ("image_nsfw", "image_gore")
+_KIND_EMOJI = {"texte": TEXT, "image_scam": IMAGE, "image_nsfw": IMAGE, "image_gore": IMAGE,
+               "profil_avatar_nsfw": USER, "profil_avatar_choquant": USER,
+               "profil_pseudo": USER}
+#: Lanes judged by SafeSearch (also member avatars / banners): no category to
+#: correct, no text for the blocklist. A member name teaches nothing global
+#: either, so it gets the same bare card.
+_SAFESEARCH_LANES = ("image_nsfw", "image_gore", "profil_avatar_nsfw",
+                     "profil_avatar_choquant", "profil_pseudo")
 
 #: Categories the team can pick for a text / scam item (NSFW is image-only).
 TEXT_CATEGORIES = (
@@ -104,10 +109,12 @@ def render_label_card(row: Dict[str, Any], *, image_filename: Optional[str] = No
     lines = [
         f"- **{_l('server')}:** `{_short(details.get('guild_name') or '', 60)}` (`{row.get('guild_id')}`)",
         f"- **{_l('author')}:** <@{row.get('author_id')}> (`{row.get('author_id')}`)",
-        f"- **{_l('channel')}:** <#{row.get('channel_id')}>"
-        + (f" · [{_l('jump')}]({details['jump_url']})" if details.get("jump_url") else ""),
+        *([f"- **{_l('channel')}:** <#{row.get('channel_id')}>"
+           + (f" · [{_l('jump')}]({details['jump_url']})" if details.get("jump_url") else "")]
+          if row.get("channel_id") else []),
         f"- **{_l('why')}:** {why}",
-        f"- **{_l('decision')}:** `{details.get('categorie') or '—'}` · "
+        f"- **{_l('decision')}:** "
+        f"`{details.get('categorie_label') or details.get('categorie') or '—'}` · "
         f"`{details.get('gravite') or '—'}` · {_l('confidence')} `{details.get('confiance') or '—'}` · "
         f"`{details.get('decideur') or '—'}` (`{details.get('signal_source') or '—'}` "
         f"`{details.get('score', 0)}`)",
@@ -140,7 +147,8 @@ def render_label_card(row: Dict[str, Any], *, image_filename: Optional[str] = No
         quote = ui.Container(accent_colour=discord.Colour(_ACCENT.get(verdict, 0x3661FF)),
                              spoiler=True)
         if content:
-            label = _l("ocr_text") if kind == "image_scam" else _l("message")
+            label = (_l("ocr_text") if kind == "image_scam"
+                     else _l("name") if kind == "profil_pseudo" else _l("message"))
             quote.add_item(ui.TextDisplay(f"**{label}**\n>>> {_short(content, 1500)}"))
         if image_filename:
             quote.add_item(ui.MediaGallery(discord.MediaGalleryItem(

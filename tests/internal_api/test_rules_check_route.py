@@ -229,3 +229,95 @@ def test_missing_server_secret_fails_closed(client, monkeypatch):
     monkeypatch.delenv("INTERNAL_API_SECRET", raising=False)
     resp = _post(client, {"guild_id": str(GUILD_ID), "indications": "x"})
     assert resp.status_code == 401
+
+
+# --------------------------------------------------------------------------- #
+# Custom infraction payload ({"guild_id", "infraction": {...}})
+# --------------------------------------------------------------------------- #
+INFRACTION = {
+    "id": "pub1",
+    "nom": "Publicité",
+    "description": "Promotion d'un autre serveur Discord",
+    "exemples": ["Rejoignez mon serveur !"],
+    "mots_cles": ["discord.gg/"],
+    "modele": None,
+}
+
+
+def test_infraction_is_accepted_and_checked_by_the_ai(client, bot):
+    resp = _post(client, {"guild_id": str(GUILD_ID), "infraction": INFRACTION})
+    assert resp.status_code == 200
+    assert resp.json() == {"ok": True}
+    call = bot.calls[-1]
+    assert call["call_type"] == "automod_rules_check"
+    assert "[DATA:" in call["user"]
+    assert "Publicité" in call["user"] and "Rejoignez mon serveur" in call["user"]
+    assert "discord.gg/" not in call["user"]          # keywords never reach a prompt
+
+
+def test_unsafe_infraction_is_rejected_with_same_shape(client, bot):
+    bot.reply = {"safe": False, "raison": "S'adresse à l'IA."}
+    body = _post(client, {"guild_id": str(GUILD_ID), "infraction": INFRACTION}).json()
+    assert body["ok"] is False and body["code"] == "unsafe"
+    assert "S'adresse à l'IA." in body["reason"]
+    assert "infraction" in body["reason"].lower()
+
+
+def test_infraction_reason_is_localised(client, bot):
+    bot.reply = {"safe": False, "raison": ""}
+    en = _post(client, {"guild_id": str(GUILD_ID), "infraction": INFRACTION,
+                        "locale": "en-US"}).json()
+    assert "manipulate the AI" in en["reason"]
+
+
+def test_infraction_gateway_failure_fails_closed(client, bot):
+    bot.reply = GatewayError("openai down")
+    body = _post(client, {"guild_id": str(GUILD_ID), "infraction": INFRACTION}).json()
+    assert body["ok"] is False and body["code"] == "unavailable"
+
+
+def test_unmodified_template_skips_the_ai_call(client, bot):
+    from automod import custom_infractions
+
+    tpl = custom_infractions.from_template("pub_serveur", "fr")
+    resp = _post(client, {"guild_id": str(GUILD_ID), "infraction": tpl})
+    assert resp.json() == {"ok": True}
+    assert bot.calls == []
+
+
+@pytest.mark.parametrize("infraction,fragment", [
+    ({**INFRACTION, "id": "NOT VALID"}, "infraction_id_invalid"),
+    ({**INFRACTION, "nom": ""}, "infraction_nom_invalid"),
+    ({**INFRACTION, "description": "d" * 301}, "infraction_description_invalid"),
+    ({**INFRACTION, "exemples": ["x"] * 6}, "infraction_exemples_invalid"),
+    ({**INFRACTION, "mots_cles": "nope"}, "infraction_mots_cles_invalid"),
+    ({**INFRACTION, "modele": "unknown"}, "infraction_modele_invalid"),
+    ("not-an-object", "infraction_entry_invalid"),
+])
+def test_invalid_infraction_schema_is_a_400_without_ai_call(client, bot, infraction, fragment):
+    resp = _post(client, {"guild_id": str(GUILD_ID), "infraction": infraction})
+    assert resp.status_code == 400
+    payload = resp.json()
+    assert payload["ok"] is False and payload["error"] == "invalid_infraction"
+    assert fragment in payload["reason"]
+    assert bot.calls == []
+
+
+def test_infraction_unknown_guild_and_bot_not_ready(client, bot):
+    resp = _post(client, {"guild_id": "999999999999999999", "infraction": INFRACTION})
+    assert resp.status_code == 404
+    bot.ready = False
+    resp = _post(client, {"guild_id": str(GUILD_ID), "infraction": INFRACTION})
+    assert resp.status_code == 503
+
+
+def test_infraction_requires_auth(client):
+    resp = client.post("/automod/rules_check",
+                       json={"guild_id": str(GUILD_ID), "infraction": INFRACTION})
+    assert resp.status_code == 401
+
+
+def test_indications_flow_unchanged_when_no_infraction_key(client, bot):
+    resp = _post(client, {"guild_id": str(GUILD_ID), "indications": "Pas de spam."})
+    assert resp.json() == {"ok": True}
+    assert "DÉFINITION d'un type" not in bot.calls[-1]["system"]

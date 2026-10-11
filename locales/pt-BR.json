@@ -1580,149 +1580,6 @@
     },
     "automod_ai": {
       "description": "Moderação automática de mensagens problemáticas (IA)",
-      "config": {
-        "title": "Automod",
-        "description": "Moderação assistida por IA: detecta insultos, assédio, discurso de ódio, ameaças e incitação, então aplica sanções e mantém um registro nos casos com evidências.",
-        "summary_active": "<:green_status:1450929035428495505> **Automod ativo** — as mensagens estão sendo analisadas.",
-        "summary_inactive": "<:red_status:1450929038758772940> **Automod inativo**",
-        "summary_need_module": "Ative o módulo para começar.",
-        "summary_need_content": "Ative pelo menos uma detecção para começar.",
-        "section_status": "Status",
-        "module_label": "Módulo Automod",
-        "module_desc": "Interruptor principal do automod.",
-        "content_label": "Detecção de conteúdo",
-        "content_desc": "Insultos, assédio, discurso de ódio, ameaças, incitação (análise por IA).",
-        "state": {
-          "on": "Ativado",
-          "off": "Desativado"
-        },
-        "section_rules": "Regras do servidor",
-        "section_logs": "Canal de registro",
-        "section_exemptions": "Isenções",
-        "section_options": "Opções",
-        "buttons": {
-          "enable_module": "Ativar módulo",
-          "disable_module": "Desativar módulo",
-          "enable_content": "Ativar detecção",
-          "disable_content": "Desativar detecção",
-          "enable_ignore": "Ativar",
-          "disable_ignore": "Desativar",
-          "edit_rules": "Editar regras",
-          "edit_indications": "Editar orientações",
-          "view_precedents": "Ver precedentes"
-        },
-        "rules": {
-          "desc": "Orienta a IA ao julgar mensagens. Verificado contra tentativas de injeção antes de ser salvo.",
-          "current": "Atual",
-          "empty": "Nenhuma regra definida — a IA usa padrões de moderação razoáveis.",
-          "modal_label": "Regras do servidor",
-          "modal_placeholder": "Descreva as regras do seu servidor (respeito, sem insultos…).",
-          "checking": "<a:spinner:1534857169667883078> Verificando as regras com a IA…",
-          "error_unsafe": "<:error:1519790252594827264> Regras rejeitadas: parecem uma tentativa de manipular a IA.\n-# Motivo: {reason}",
-          "error_too_long": "<:error:1519790252594827264> As regras são muito longas (máx. 3000 caracteres).",
-          "error_unavailable": "<:warning:1519789903100121139> Não é possível verificar as regras no momento (serviço de IA indisponível). Tente novamente mais tarde.",
-          "saved": "<:done:1519800188925902881> Regras verificadas e salvas.",
-          "cleared": "<:done:1519800188925902881> Regras apagadas."
-        },
-        "log_channel": {
-          "desc": "Canal onde o Automod publicará suas decisões. (opcional)",
-          "placeholder": "Escolha um canal de registro",
-          "current": "Canal atual",
-          "none": "Nenhum canal definido"
-        },
-        "exempt_roles": {
-          "label": "Cargos isentos",
-          "desc": "Membros com esses cargos nunca são analisados.",
-          "placeholder": "Escolha os cargos a isentar",
-          "none": "Nenhum cargo isento"
-        },
-        "exempt_channels": {
-          "label": "Canais isentos",
-          "desc": "Mensagens nesses canais não são analisadas.",
-          "placeholder": "Escolha os canais a isentar",
-          "none": "Nenhum canal isento"
-        },
-        "ignore_mods": {
-          "label": "Ignorar moderadores",
-          "desc": "Não analisar membros que podem gerenciar mensagens."
-        },
-        "apply_hint": "As alterações são aplicadas imediatamente.",
-        "summary_need_channel": "Defina o **canal de alerta** (obrigatório) para começar.",
-        "section_notify": "Canal de alerta",
-        "notify": {
-          "desc": "Canal onde o Automod notifica o servidor sobre cada ação. Obrigatório.",
-          "placeholder": "Escolha o canal de alerta…",
-          "current": "Atual:",
-          "missing": "Nenhum canal definido — o automod não funcionará até que um seja definido."
-        },
-        "section_severity": "Nível de severidade",
-        "severity": {
-          "desc": "Quanto mais alto o nível, mais sensível e severo é o automod.",
-          "current": "Nível atual:",
-          "placeholder": "Escolha um nível (1 a 5)…",
-          "option": "Nível {n}",
-          "level_1": "Muito leniente — apenas casos evidentes e graves.",
-          "level_2": "Leniente — deixa passar linguagem casual leve.",
-          "level_3": "Equilibrado — moderação razoável (recomendado).",
-          "level_4": "Rigoroso — também age em casos sutis, sanções mais duras.",
-          "level_5": "Muito rigoroso — tolerância mínima, sanções severas."
-        },
-        "section_indications": "Orientações do Automod",
-        "indications": {
-          "desc": "Orienta a IA ao julgar mensagens. Verificado contra tentativas de injeção antes de salvar.",
-          "current": "Atual",
-          "empty": "Nenhuma orientação — a IA aplica padrões de moderação razoáveis.",
-          "modal_title": "Orientações do Automod",
-          "modal_label": "Orientação",
-          "modal_desc": "O que a IA deve observar/tolerar no seu servidor.",
-          "modal_placeholder": "Ex.: sem insultos ou assédio, humor é tolerado…",
-          "saved": "<:done:1519800188925902881> Orientação verificada e salva.",
-          "cleared": "<:done:1519800188925902881> Orientação apagada.",
-          "error_unsafe": "<:error:1519790252594827264> Orientação rejeitada: parece uma tentativa de manipular a IA.\n-# Motivo: {reason}",
-          "error_too_long": "<:error:1519790252594827264> A orientação é muito longa (máx. 3000 caracteres).",
-          "error_unavailable": "<:warning:1519789903100121139> Não é possível verificar a orientação no momento (serviço de IA indisponível). Tente novamente mais tarde.",
-          "checked": "<:done:1519800188925902881> Orientação verificada e adicionada à cópia de trabalho. Pressione Salvar para aplicar."
-        },
-        "status_hint": "Marque/desmarque no menu abaixo para ativar ou desativar.",
-        "activations": {
-          "placeholder": "Ativar / desativar…"
-        },
-        "section_limits": "Limites",
-        "max_action": {
-          "desc": "A ação mais severa que o automod pode aplicar.",
-          "placeholder": "Ação máxima…",
-          "option_warn": "No máximo advertência",
-          "option_mute": "No máximo silenciamento",
-          "option_ban": "Banimento permitido"
-        },
-        "dry_run": {
-          "label": "Modo simulação",
-          "desc": "Detecta e mostra, mas não aplica nenhuma sanção (recomendado na primeira semana)",
-          "active": "Modo simulação ativo: as sanções são mostradas, mas nunca aplicadas."
-        },
-        "section_precedents": "Precedentes",
-        "precedents": {
-          "title": "Precedentes aprendidos",
-          "desc": "O automod aprende a cultura do seu servidor a partir das suas decisões (apelações decididas, anotações do modo simulação).",
-          "empty": "Nenhum precedente aprendido ainda.",
-          "count": "**{n}** precedente(s) aprendido(s)",
-          "last": "último:",
-          "page": "página {current}/{total}",
-          "prev": "Anterior",
-          "next": "Próximo",
-          "verdict_not": "não sancionável",
-          "verdict_yes": "sancionável",
-          "delete_placeholder": "Excluir um precedente incorreto…",
-          "delete_option": "Excluir precedente {n}",
-          "deleted": "Precedente excluído."
-        },
-        "image_nsfw_label": "Imagens NSFW",
-        "image_nsfw_desc": "Imagens sexualmente explícitas (análise do Google SafeSearch).",
-        "image_scam_label": "Golpes em imagem",
-        "image_scam_desc": "Capturas de golpes cripto / sorteios falsos (hash conhecido + leitura do texto).",
-        "image_gore_label": "Imagens chocantes (gore)",
-        "image_gore_desc": "Gore e violência gráfica (análise do Google SafeSearch)."
-      },
       "action": {
         "warn": "Advertência",
         "mute": "Silenciamento",
@@ -1864,6 +1721,68 @@
         "server_decided_title": "Recurso tratado",
         "server_decided": "O recurso de {user} ({route}) foi tratado: **{status}**."
       },
+      "infractions": {
+        "insulte": {
+          "name": "Insultos",
+          "desc": "Insultos e ofensas contra um membro"
+        },
+        "menace": {
+          "name": "Ameaças",
+          "desc": "Ameaças de violência ou retaliação"
+        },
+        "harcelement": {
+          "name": "Assédio",
+          "desc": "Perseguição repetida contra um membro"
+        },
+        "harcelement_sexuel": {
+          "name": "Assédio sexual",
+          "desc": "Comentários ou investidas sexuais indesejados"
+        },
+        "haine_discrimination": {
+          "name": "Ódio e discriminação",
+          "desc": "Falas de ódio por origem, religião, orientação…"
+        },
+        "incitation_automutilation": {
+          "name": "Incentivo à automutilação",
+          "desc": "Levar alguém a se machucar ou tirar a própria vida"
+        },
+        "doxxing": {
+          "name": "Doxxing",
+          "desc": "Divulgação de informações privadas de alguém"
+        },
+        "arnaque_scam": {
+          "name": "Golpes",
+          "desc": "Sorteios falsos, Nitro grátis, cassinos cripto, links armadilha"
+        },
+        "violation_indications": {
+          "name": "Regras do servidor",
+          "desc": "Descumprimento das orientações específicas do seu servidor"
+        },
+        "contenu_nsfw": {
+          "name": "Imagens explícitas",
+          "desc": "Imagens pornográficas ou sexualmente explícitas"
+        },
+        "contenu_choquant": {
+          "name": "Imagens chocantes",
+          "desc": "Imagens de gore ou violência gráfica"
+        },
+        "profil_avatar_nsfw": {
+          "name": "Avatar explícito",
+          "desc": "Foto de perfil pornográfica ou sexualmente explícita"
+        },
+        "profil_avatar_choquant": {
+          "name": "Avatar chocante",
+          "desc": "Foto de perfil de gore ou violência gráfica"
+        },
+        "profil_pseudo": {
+          "name": "Apelido inadequado",
+          "desc": "Apelido ou nome de exibição ofensivo ou de ódio"
+        },
+        "perso": {
+          "name": "Infração personalizada",
+          "desc": "Uma regra específica do seu servidor"
+        }
+      },
       "bareme": {
         "title": "Escala: {sanction} (nível {cran})",
         "cran": "nível {n}",
@@ -1874,6 +1793,7 @@
         "veteran": "Antiguidade (histórico limpo)",
         "fresh_account": "Conta nova",
         "ceiling": "Teto do servidor",
+        "floor_custom": "Piso personalizado",
         "disabled_category": "Categoria desativada",
         "unconfirmed": "Confirmação da IA recusada",
         "review_hint": "Sanção severa decidida pela IA — um moderador pode revisá-la.",
@@ -1919,6 +1839,361 @@
         "body": "A equipe Moddy revisou a decisão do automod sobre {user} ({user_id}) e a considerou injustificada. A sanção do caso {case_ref} foi revogada (uma mensagem apagada não pode ser restaurada).",
         "dm_title": "Sua sanção foi retirada",
         "dm_body": "A equipe Moddy revisou a sanção automática que você recebeu em **{guild}** e a considerou injustificada: ela foi revogada. Desculpe pelo transtorno."
+      },
+      "custom": {
+        "templates": {
+          "pub_serveur": {
+            "name": "Divulgação de servidores",
+            "desc": "Promover outro servidor do Discord, um canal ou um projeto pessoal: convites, \"entre no meu servidor\", autopromoção não solicitada."
+          },
+          "spoilers": {
+            "name": "Spoilers",
+            "desc": "Revelar o enredo ou o final de uma obra (filme, série, jogo, livro) fora do canal ou das tags de spoiler."
+          },
+          "politique_religion": {
+            "name": "Política e religião",
+            "desc": "Debates, propaganda ou posicionamentos políticos ou religiosos que não são bem-vindos neste servidor."
+          },
+          "demande_dm": {
+            "name": "Pedidos no privado",
+            "desc": "Solicitações indesejadas por mensagem privada: pedir para conversar no privado, oferecer ou pedir fotos ou conteúdo privado (nudes)."
+          },
+          "langue": {
+            "name": "Idioma do servidor",
+            "desc": "Mensagens escritas em um idioma diferente do servidor, fora dos canais destinados a outros idiomas."
+          },
+          "liens": {
+            "name": "Links externos",
+            "desc": "Compartilhar links externos (sites, promoções, produtos) sem relação com a conversa ou não permitidos neste servidor."
+          }
+        }
+      },
+      "profile": {
+        "kind": {
+          "avatar": "avatar",
+          "banner": "banner",
+          "pseudo": "nome"
+        },
+        "title": "Moderação de perfil",
+        "title_sim": "Moderação de perfil (simulação)",
+        "member": "Membro",
+        "kind_label": "Verificado",
+        "policy": "Política configurada",
+        "judged_name": "Nome julgado",
+        "image_unavailable": "A imagem não está mais disponível.",
+        "action": {
+          "hold": "Castigo até o perfil ser corrigido",
+          "rename_warn": "Redefinir o nome e advertir",
+          "alert": "Somente alerta",
+          "bareme": "Escala de moderação",
+          "warn": "Advertência (o limite do servidor proíbe um castigo)"
+        },
+        "action_rename": "Nome redefinido",
+        "reason_avatar_nsfw": "Conteúdo explícito na foto de perfil",
+        "reason_avatar_gore": "Conteúdo chocante (gore) na foto de perfil",
+        "reason_banner_nsfw": "Conteúdo explícito no banner do perfil",
+        "reason_banner_gore": "Conteúdo chocante (gore) no banner do perfil",
+        "reason_pseudo": "Nome inadequado: {name}",
+        "explication_pseudo": "O nome foi considerado inadequado para este servidor.",
+        "case_reason_hold": "O {kind} precisa ser alterado (castigo até a correção)",
+        "lift_reason": "[Automod] Perfil corrigido",
+        "dm_hold": "Você está de castigo até alterar seu {kind}. O Moddy verifica de novo automaticamente e remove o castigo assim que estiver tudo certo.",
+        "dm_rename": "Seu nome foi redefinido para \"{moderated}\" neste servidor. Escolha outro, por favor.",
+        "moderated_name": "Nome moderado",
+        "note_hold_failed": "O Moddy não conseguiu aplicar o castigo (permissão ausente ou hierarquia de cargos).",
+        "note_rename_failed": "O Moddy não conseguiu redefinir o apelido (permissão ausente ou hierarquia de cargos): somente advertência.",
+        "note_not_displayed": "Este nome não é o exibido neste servidor: somente advertência.",
+        "fixed_title": "Perfil corrigido",
+        "fixed_body": "{user} ({user_id}) alterou seu {kind}: o castigo foi removido."
+      },
+      "panel": {
+        "status": {
+          "active": "Ativo",
+          "active_hint": "O Moddy está moderando seu servidor em tempo real.",
+          "simulation": "Simulação",
+          "simulation_hint": "O Moddy mostra o que faria, sem punir ninguém.",
+          "off": "Desativado",
+          "off_hint": "O Moddy não está moderando nada no momento.",
+          "setup": "A configurar"
+        },
+        "home": {
+          "title": "Automod IA",
+          "intro": "O Moddy lê mensagens, imagens e perfis e pune sozinho o que quebra suas regras.",
+          "setup_channel": "primeiro escolha o canal onde o Moddy publica seus alertas.",
+          "setup_monitoring": "escolha o que o Moddy deve vigiar.",
+          "channel_title": "Canal de alertas",
+          "channel_hint": "O Moddy publica ali o que detecta e faz. Escolha um canal só para sua equipe.",
+          "channel_placeholder": "Escolher o canal de alertas…",
+          "turn_on": "Ativar",
+          "turn_off": "Desativar",
+          "go_live": "Mudar para o modo real",
+          "choose_level": "Escolher um nível de proteção",
+          "nav_placeholder": "Ajustar com mais detalhe…"
+        },
+        "nav": {
+          "monitoring": "O que é vigiado",
+          "monitoring_desc": "Mensagens, imagens, perfis de membros",
+          "sanctions": "Punições",
+          "sanctions_desc": "O que o Moddy faz em cada tipo de infração",
+          "indications": "Orientações para a IA",
+          "indications_desc": "Explique à IA as regras do seu servidor",
+          "exemptions": "Isenções",
+          "exemptions_desc": "Cargos e canais que nunca são analisados",
+          "advanced": "Avançado",
+          "advanced_desc": "Simulação, punição máxima, sensibilidade…"
+        },
+        "summary": {
+          "messages_on": "**Mensagens**: insultos, ameaças, assédio, ódio, golpes… → {sanctions}",
+          "messages_off": "**Mensagens**: não vigiadas",
+          "sanctions_default": "punições padrão do Moddy",
+          "sanctions_custom": "{n} punição(ões) personalizada(s)",
+          "images_on": "**Imagens**: {what}",
+          "images_off": "**Imagens**: não vigiadas",
+          "img_nsfw": "explícitas",
+          "img_gore": "chocantes",
+          "img_scam": "golpes",
+          "profiles_on": "**Perfis**: {what}",
+          "profiles_off": "**Perfis**: não vigiados",
+          "prof_avatar": "avatares",
+          "prof_banner": "banners",
+          "prof_pseudo": "nomes",
+          "custom_n": "**Infrações do servidor**: {n}",
+          "custom_none": "**Infrações do servidor**: nenhuma"
+        },
+        "wizard": {
+          "title": "Configurar o Automod IA",
+          "step": "Etapa {n} de {total}",
+          "recommended": "recomendado",
+          "choose": "Escolher",
+          "channel_question": "Onde o Moddy deve publicar seus alertas?",
+          "channel_hint": "É a única configuração obrigatória. O Moddy descreve ali cada detecção para sua equipe manter o controle. Escolha um canal que só seus moderadores vejam.",
+          "channel_placeholder": "Escolher o canal de alertas…",
+          "level_question": "Qual nível de proteção você quer?",
+          "level_hint": "Depois você poderá ajustar tudo, tipo de infração por tipo.",
+          "mode_question": "Começar em modo de simulação?",
+          "mode_hint": "Quase pronto! Escolha como o Moddy começa.",
+          "mode_sim": "Começar em simulação",
+          "mode_sim_desc": "O Moddy mostra o que faria sem punir ninguém. Ideal nos primeiros dias para ver se combina com seu servidor.",
+          "mode_sim_button": "Simulação",
+          "mode_live": "Ativar agora",
+          "mode_live_desc": "O Moddy pune imediatamente, para valer.",
+          "mode_live_button": "Ativar"
+        },
+        "preset": {
+          "light": "Leve",
+          "light_desc": "Só casos sérios: insultos graves, ameaças, ódio, golpes e imagens explícitas. Provocações do dia a dia são ignoradas.",
+          "balanced": "Equilibrado",
+          "balanced_desc": "Toda a detecção de mensagens e imagens, com as punições padrão do Moddy.",
+          "strict": "Rigoroso",
+          "strict_desc": "Tudo do Equilibrado, mais os perfis dos membros (avatar, banner, nome), com menos tolerância."
+        },
+        "monitoring": {
+          "title": "O que é vigiado",
+          "intro": "Escolha o que o Moddy deve vigiar. O que ele detectar é punido conforme suas configurações de punições.",
+          "content_title": "Mensagens e imagens",
+          "content_placeholder": "Nada é vigiado",
+          "content": "Mensagens",
+          "content_desc": "Insultos, ameaças, assédio, ódio, golpes…",
+          "image_nsfw": "Imagens explícitas",
+          "image_nsfw_desc": "Conteúdo pornográfico ou sexualmente explícito",
+          "image_gore": "Imagens chocantes",
+          "image_gore_desc": "Gore e violência gráfica",
+          "image_scam": "Imagens de golpe",
+          "image_scam_desc": "Capturas de falsos ganhos, cripto, sorteios fraudulentos",
+          "profile_title": "Perfis dos membros",
+          "profile_placeholder": "Nenhum perfil vigiado",
+          "prof_avatar": "Fotos de perfil",
+          "prof_avatar_desc": "Avatares explícitos ou chocantes",
+          "prof_banner": "Banners",
+          "prof_banner_desc": "Banners explícitos ou chocantes",
+          "prof_pseudo": "Nomes",
+          "prof_pseudo_desc": "Nomes de usuário e de exibição ofensivos ou de ódio",
+          "footer": "As alterações são salvas na hora."
+        },
+        "list": {
+          "title": "Punições",
+          "intro": "Para cada tipo de infração, escolha o que o Moddy faz. Por padrão ele adapta a punição à gravidade e à reincidência. Escolha um tipo para ajustá-lo.",
+          "pick_placeholder": "Escolher um tipo para ajustar…",
+          "add_placeholder": "+ Adicionar uma infração",
+          "add_scratch": "Criar do zero",
+          "add_scratch_desc": "Descreva você mesmo uma infração própria do seu servidor",
+          "no_custom": "Nenhuma por enquanto: adicione uma abaixo (propaganda, spoilers, política…).",
+          "limit": "Você atingiu o limite de {max} infrações do servidor. Exclua uma para adicionar outra."
+        },
+        "family": {
+          "message": "Mensagens",
+          "image": "Imagens",
+          "profil": "Perfis",
+          "perso": "Próprias deste servidor"
+        },
+        "sanction": {
+          "default": "Padrão do Moddy",
+          "custom": "Personalizada",
+          "always": "Sempre: {sanction}",
+          "no_escalation": "sem escalada",
+          "disabled": "Desativada: mensagem apagada, sem punição",
+          "disabled_profile": "Desativada: nada acontece"
+        },
+        "gravity": {
+          "basse": "Baixa",
+          "moyenne": "Média",
+          "haute": "Alta",
+          "critique": "Crítica"
+        },
+        "gravity_label": {
+          "basse": "Gravidade baixa",
+          "moyenne": "Gravidade média",
+          "haute": "Gravidade alta",
+          "critique": "Gravidade crítica"
+        },
+        "gravity_desc": {
+          "basse": "Limítrofe ou leve: um deslize sem grandes consequências.",
+          "moyenne": "Claro: a infração é inequívoca.",
+          "haute": "Sério: palavras ou conteúdo muito inadequados.",
+          "critique": "Extremo: o pior, sem equívoco."
+        },
+        "cran": {
+          "0": "Só apagar",
+          "1": "Aviso",
+          "2": "Castigo 2 h",
+          "3": "Castigo 12 h",
+          "4": "Castigo 48 h",
+          "5": "Castigo 7 dias",
+          "6": "Castigo 28 dias",
+          "7": "Banimento"
+        },
+        "profile_action": {
+          "hold": "Castigo até o perfil ser corrigido",
+          "hold_desc": "O membro fica de castigo até mudar; é retirado automaticamente.",
+          "rename_warn": "Redefinir o nome + aviso",
+          "rename_warn_desc": "O nome é redefinido e o membro é avisado.",
+          "alert": "Só alerta",
+          "alert_desc": "O Moddy avisa sua equipe, sem fazer nada ao membro.",
+          "bareme": "Usar a escala de punições",
+          "bareme_desc": "Como uma mensagem: a punição depende da gravidade."
+        },
+        "type": {
+          "sanction": "Punição",
+          "default_hint": "O Moddy adapta a punição à gravidade e a endurece para reincidentes.",
+          "not_monitored": "Esta detecção está desativada agora: ative em “O que é vigiado”.",
+          "off": "O Moddy continua apagando a mensagem, mas não pune.",
+          "off_profile": "O Moddy ignora esta verificação.",
+          "enabled": "Ativada",
+          "disabled": "Desativada",
+          "customise": "Personalizar",
+          "reset": "Restaurar padrão",
+          "profile_action": "O que fazer se houver um problema?",
+          "profile_action_hint": "Escolha como o Moddy reage a esta verificação de perfil.",
+          "edit": "Editar",
+          "delete": "Excluir",
+          "cancel": "Cancelar",
+          "delete_title": "Excluir esta infração?",
+          "delete_body": "“{name}” não será mais detectada e sua configuração de punição também será removida. Os casos já registrados são mantidos.",
+          "delete_confirm": "Sim, excluir"
+        },
+        "customise": {
+          "modal_title": "Punições: {name}",
+          "escalate": "Endurecer na reincidência",
+          "escalate_desc": "Um membro reincidente recebe uma punição mais pesada que as escolhidas acima."
+        },
+        "infraction": {
+          "modal_title_new": "Nova infração",
+          "modal_title_edit": "Editar infração",
+          "name_label": "Nome",
+          "name_desc": "Exibido nos alertas e nas mensagens aos membros.",
+          "name_placeholder": "Ex.: Propaganda",
+          "description_label": "Descrição",
+          "description_desc": "Explique à IA o que procurar.",
+          "description_placeholder": "Ex.: divulgação de outro servidor ou links de convite",
+          "examples_label": "Exemplos de mensagens",
+          "examples_desc": "Opcional. Um por linha, no máximo 5.",
+          "examples_placeholder": "Entrem no meu servidor, é incrível!",
+          "keywords_label": "Palavras-chave",
+          "keywords_desc": "Opcional. Separadas por vírgulas, no máximo 20.",
+          "keywords_placeholder": "discord.gg/, entre no meu servidor",
+          "error_invalid": "O nome e a descrição são obrigatórios.",
+          "error_too_long": "O texto desta infração é longo demais.",
+          "error_unavailable": "Não foi possível verificar esta infração agora (serviço de IA indisponível). Tente novamente mais tarde.",
+          "error_unsafe": "Infração recusada: parece uma tentativa de manipular a IA.\n-# Motivo: {reason}"
+        },
+        "errors": {
+          "title": "Alteração recusada",
+          "save_failed": "Nada foi alterado.\n-# Motivo: {error}"
+        },
+        "indications": {
+          "title": "Orientações para a IA",
+          "intro": "Escreva em linguagem simples o que é permitido ou proibido no seu servidor (ex.: “sem propaganda, spoilers só em #spoilers”). A IA leva isso em conta ao julgar uma mensagem.",
+          "current": "Orientações atuais",
+          "empty": "Sem orientações: a IA aplica uma moderação razoável por padrão.",
+          "edit": "Editar as orientações",
+          "clear": "Limpar",
+          "modal_title": "Orientações para a IA",
+          "modal_label": "Orientações",
+          "modal_desc": "O que a IA deve vigiar ou tolerar no seu servidor (máx. 3000 caracteres).",
+          "modal_placeholder": "Ex.: sem insultos nem propaganda, humor é tolerado…",
+          "saved": "Orientações verificadas e salvas.",
+          "cleared": "Orientações limpas.",
+          "error_unsafe": "Orientações recusadas: parecem uma tentativa de manipular a IA.\n-# Motivo: {reason}",
+          "error_too_long": "As orientações são longas demais (máx. 3000 caracteres).",
+          "error_unavailable": "Não foi possível verificar as orientações agora (serviço de IA indisponível). Tente novamente mais tarde."
+        },
+        "exemptions": {
+          "title": "Isenções",
+          "intro": "Membros com estes cargos e mensagens destes canais nunca são analisados. Vale para todas as detecções.",
+          "roles_title": "Cargos isentos",
+          "roles_placeholder": "Escolher cargos…",
+          "channels_title": "Canais isentos",
+          "channels_placeholder": "Escolher canais…",
+          "moderators_hint": "Membros que podem gerenciar mensagens também são ignorados enquanto este botão estiver ativado.",
+          "moderators": "Ignorar moderadores"
+        },
+        "advanced": {
+          "title": "Avançado",
+          "intro": "Ajustes finos. Os valores padrão servem para a maioria dos servidores.",
+          "simulation_title": "Modo de simulação",
+          "simulation_hint": "O Moddy mostra o que faria sem punir nada. Recomendado nos primeiros dias.",
+          "simulation": "Simulação",
+          "max_title": "Punição máxima",
+          "max_hint": "A punição mais pesada que o Moddy pode aplicar sozinho.",
+          "max_warn": "Aviso no máximo",
+          "max_mute": "Castigo no máximo",
+          "max_ban": "Banimento permitido",
+          "sensitivity_title": "Sensibilidade da detecção",
+          "sensitivity_hint": "Quanto mais rigoroso, mais casos sutis o Moddy detecta.",
+          "level_1": "Muito tolerante",
+          "level_1_desc": "Só casos graves e flagrantes.",
+          "level_2": "Tolerante",
+          "level_2_desc": "Deixa passar a linguagem informal leve.",
+          "level_3": "Equilibrado (recomendado)",
+          "level_3_desc": "Uma moderação razoável.",
+          "level_4": "Rigoroso",
+          "level_4_desc": "Também age em casos sutis.",
+          "level_5": "Muito rigoroso",
+          "level_5_desc": "Tolerância mínima.",
+          "precedents_title": "Precedentes aprendidos",
+          "precedents_hint": "O Moddy aprende a cultura do seu servidor a partir das suas decisões (recursos, anotações na simulação).",
+          "precedents_count": "{n} precedente(s) aprendido(s)",
+          "precedents": "Ver precedentes",
+          "delete": "Excluir a configuração",
+          "delete_title": "Excluir toda a configuração?",
+          "delete_body": "O Automod IA para e todas as suas configurações (punições, infrações, orientações, isenções) são apagadas. Os casos já registrados são mantidos.",
+          "delete_confirm": "Sim, excluir tudo",
+          "cancel": "Cancelar"
+        },
+        "precedents": {
+          "title": "Precedentes aprendidos",
+          "intro": "As decisões da sua equipe nas quais o Moddy se baseia. Exclua as erradas.",
+          "empty": "Nenhum precedente aprendido ainda.",
+          "count": "**{n}** precedente(s) aprendido(s)",
+          "page": "página {current}/{total}",
+          "prev": "Anterior",
+          "next": "Próximo",
+          "verdict_not": "não punível",
+          "verdict_yes": "punível",
+          "delete_placeholder": "Excluir um precedente errado…",
+          "delete_option": "Excluir o precedente {n}",
+          "deleted": "Precedente excluído."
+        }
       }
     },
     "voice_transcription": {
@@ -4883,7 +5158,10 @@
       "texte": "Text",
       "image_scam": "Scam image",
       "image_nsfw": "NSFW image",
-      "image_gore": "Shocking image (gore)"
+      "image_gore": "Shocking image (gore)",
+      "profil_avatar_nsfw": "Foto de perfil (NSFW)",
+      "profil_avatar_choquant": "Foto de perfil (gore)",
+      "profil_pseudo": "Nome de membro"
     },
     "motif": {
       "sanction": "Sanctioned by the bot",
@@ -4944,6 +5222,7 @@
       "empty": "Type at least one term and pick a category.",
       "done_title": "Blocklist updated",
       "done": "{n} term(s) added to `{category}`."
-    }
+    },
+    "name": "Nome"
   }
 }

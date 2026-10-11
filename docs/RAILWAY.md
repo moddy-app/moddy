@@ -194,10 +194,16 @@ sont configurées dans `gateway/config.py` et surchargeables via
 ### GOOGLE_VISION_API_KEY
 **Valeur :** Clé API Google Cloud (Vision API activée ; un compte de facturation
 est exigé par Google même dans la tranche gratuite). Optionnelle : sans elle,
-la détection d'images NSFW de l'automod et `/ocr` sont désactivées.
+la détection d'images NSFW de l'automod, la modération des avatars/bannières
+des membres et `/ocr` sont désactivées.
 **Note :** la tranche gratuite (1000 unités / mois / fonctionnalité) est
 protégée par des règles mensuelles *fail-closed* : `GOOGLE_VISION_SAFESEARCH_MONTHLY`
-et `GOOGLE_VISION_OCR_MONTHLY` (défaut `1000`) — voir [API_GATEWAY.md](API_GATEWAY.md).
+(images des messages), `GOOGLE_VISION_SAFESEARCH_PROFILE_MONTHLY` (avatars et
+bannières des membres, budget **séparé**, défaut `1000`) et `GOOGLE_VISION_OCR_MONTHLY`
+(défaut `1000`) — voir [API_GATEWAY.md](API_GATEWAY.md). Attention : Google
+facture après 1000 unités / mois **par compte**, donc les deux budgets SafeSearch
+cumulés (1000 + 1000 par défaut) peuvent dépasser la tranche gratuite ; baissez
+l'une des deux variables si besoin.
 
 ### MODDY_AUTOMOD_LABEL_CHANNEL_ID
 **Valeur :** ID du salon (serveur de l'équipe Moddy) où arrive la file
