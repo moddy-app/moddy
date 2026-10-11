@@ -20,6 +20,7 @@ exclusion in docs/PERSISTENT_VIEWS.md.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import datetime, timezone
 from typing import List, Optional
@@ -120,7 +121,13 @@ class AltGuardPanelView(BaseView):
         # Someone already through the gate has nothing to verify: sending them
         # to the service would collect their data for an answer the server
         # already has, and burn one of their five hourly attempts.
-        if await _already_verified(interaction):
+        # Bounded (fail-open, like any lookup failure): send_modal has to be
+        # the first response, inside Discord's 3 s window.
+        try:
+            already = await asyncio.wait_for(_already_verified(interaction), 1.5)
+        except asyncio.TimeoutError:
+            already = False
+        if already:
             await interaction.response.send_message(
                 view=build_already_verified_card(locale), ephemeral=True,
             )

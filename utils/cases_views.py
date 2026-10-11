@@ -188,6 +188,33 @@ _MESSAGE_LINK_RE = re.compile(
 )
 
 
+
+async def _ack(interaction: discord.Interaction) -> None:
+    """Quiet acknowledgement (deferred update) before any DB work; idempotent.
+
+    The screen is then rewritten with ``edit_original_response`` (see ``_edit``).
+    """
+    if not interaction.response.is_done():
+        await interaction.response.defer()
+
+
+async def _edit(interaction: discord.Interaction, view) -> None:
+    """Rewrite the browser message, whether or not the click was acknowledged."""
+    if interaction.response.is_done():
+        await interaction.edit_original_response(view=view)
+    else:
+        await interaction.response.edit_message(view=view)
+
+
+async def _say(interaction: discord.Interaction, content=None, *, view=discord.utils.MISSING,
+               ephemeral: bool = True) -> None:
+    """Send an (ephemeral) answer as a response or, once acknowledged, a follow-up."""
+    if interaction.response.is_done():
+        await interaction.followup.send(content, view=view, ephemeral=ephemeral)
+    else:
+        await interaction.response.send_message(content, view=view, ephemeral=ephemeral)
+
+
 class CasesBrowserView(BaseView):
     """Filterable, paginated browser over moderation cases.
 
@@ -328,9 +355,10 @@ class CasesBrowserView(BaseView):
         )
 
     async def _rehydrate_and_list(self, interaction: discord.Interaction):
+        await _ack(interaction)  # the reload below hits the database
         view = self._make_live_from_interaction(interaction, self.mode)
         await view._reload()
-        await interaction.response.edit_message(view=view)
+        await _edit(interaction, view)
 
     async def _rehydrate_and_detail(self, interaction: discord.Interaction, case_id: str):
         view = self._make_live_from_interaction(interaction, self.mode)
@@ -396,20 +424,23 @@ class CasesBrowserView(BaseView):
 
     async def refresh(self, interaction: Optional[discord.Interaction] = None):
         """Reload data, rebuild, and (if given) edit the live message."""
+        if interaction is not None:
+            await _ack(interaction)  # the reload below hits the database
         await self._reload()
         if interaction is not None:
-            await interaction.response.edit_message(view=self)
+            await _edit(interaction, self)
 
     async def show_detail(self, interaction: discord.Interaction, case_id: str):
         """Load a case folder and switch to the detail screen."""
+        await _ack(interaction)  # the case load below hits the database
         data = await self.bot.db.get_case_by_id(_uuid.UUID(case_id))
         if not data:
-            await interaction.response.send_message(
+            await _say(interaction,
                 t("commands.cases.error", locale=self.locale), ephemeral=True)
             return
         self.detail = Case.from_db(data["case"], data["sanctions"], data["events"])
         self._build_detail()
-        await interaction.response.edit_message(view=self)
+        await _edit(interaction, self)
 
     async def open_reference(self, reference: str) -> bool:
         """Render the detail screen for a case given by its public reference.
@@ -860,7 +891,7 @@ class CasesBrowserView(BaseView):
         if self.viewer_id is None:
             return True
         if interaction.user.id != self.viewer_id:
-            await interaction.response.send_message(
+            await _say(interaction,
                 t("commands.cases.not_yours", locale=self.locale), ephemeral=True)
             return False
         return True
@@ -930,7 +961,7 @@ class CasesBrowserView(BaseView):
         member = interaction.user
         if isinstance(member, discord.Member) and can_view_server_cases(member):
             return True
-        await interaction.response.send_message(view=_perm_error(self.locale), ephemeral=True)
+        await _say(interaction, view=_perm_error(self.locale), ephemeral=True)
         return False
 
     async def _on_comment(self, interaction: discord.Interaction):
@@ -972,7 +1003,7 @@ class CasesBrowserView(BaseView):
             if _can_issue_action(interaction.user, a)
         ]
         if not allowed:
-            await interaction.response.send_message(
+            await _say(interaction,
                 t("commands.cases.browser.no_permitted_actions", locale=self.locale),
                 ephemeral=True)
             return
@@ -987,14 +1018,14 @@ class CasesBrowserView(BaseView):
             return
         active = [s for s in self.detail.sanctions if s.status == SanctionStatus.ACTIVE]
         if not active:
-            await interaction.response.send_message(
+            await _say(interaction,
                 t("commands.cases.browser.no_active_sanctions", locale=self.locale),
                 ephemeral=True)
             return
         # Only sanctions whose kind this member may lift.
         permitted = [s for s in active if _can_issue_action(interaction.user, s.action)]
         if not permitted:
-            await interaction.response.send_message(
+            await _say(interaction,
                 t("commands.cases.browser.no_permitted_actions", locale=self.locale),
                 ephemeral=True)
             return
@@ -1009,6 +1040,7 @@ class CasesBrowserView(BaseView):
             return
         case = self.detail
         new_status = "closed" if case.is_open else "open"
+        await _ack(interaction)
         await self.bot.db.set_status_manual(
             _uuid.UUID(case.id), new_status, "discord_user", interaction.user.id,
         )
@@ -1073,7 +1105,7 @@ class CasesBrowserView(BaseView):
                 f"-# {t('commands.cases.browser.no_evidence', locale=self.locale)}"
             ))
             view.add_item(container)
-            await interaction.response.send_message(view=view, ephemeral=True)
+            await _say(interaction, view=view, ephemeral=True)
             return
 
         if message_blocks:
@@ -1095,7 +1127,7 @@ class CasesBrowserView(BaseView):
             )
             view.add_item(gallery)
 
-        await interaction.response.send_message(view=view, ephemeral=True)
+        await _say(interaction, view=view, ephemeral=True)
 
 
 # --------------------------------------------------------------------------- #
@@ -1263,6 +1295,7 @@ class CaseCommentModalV2(BaseModal):
         self.add_item(self.text)
 
     async def on_submit(self, interaction: discord.Interaction):
+        await _ack(interaction)
         content = (self.text.component.value or "").strip()
         if content:
             await self.browser.bot.db.add_event(
@@ -1295,6 +1328,7 @@ class CaseEditReasonModalV2(BaseModal):
         self.add_item(self.reason)
 
     async def on_submit(self, interaction: discord.Interaction):
+        await _ack(interaction)
         new_reason = (self.reason.component.value or "").strip()
         if new_reason and new_reason != self.case.reason:
             await self.browser.bot.db.update_case_reason(
@@ -1326,17 +1360,18 @@ class CaseAddEvidenceModalV2(BaseModal):
         self.add_item(self.link)
 
     async def on_submit(self, interaction: discord.Interaction):
+        await _ack(interaction)  # message fetches below are REST calls
         loc = self.browser.locale
         raw = (self.link.component.value or "").strip()
         match = _MESSAGE_LINK_RE.match(raw)
         if not match:
-            await interaction.response.send_message(
+            await _say(interaction,
                 t("commands.cases.browser.evidence_link_invalid", locale=loc), ephemeral=True)
             return
 
         link_guild_id = match.group("guild_id")
         if self.case.scope_id and link_guild_id != str(self.case.scope_id):
-            await interaction.response.send_message(
+            await _say(interaction,
                 t("commands.cases.browser.evidence_wrong_server", locale=loc), ephemeral=True)
             return
 
@@ -1360,7 +1395,7 @@ class CaseAddEvidenceModalV2(BaseModal):
                     message = None
 
         if message is None:
-            await interaction.response.send_message(
+            await _say(interaction,
                 t("commands.cases.browser.evidence_message_not_found", locale=loc), ephemeral=True)
             return
 
@@ -1441,10 +1476,11 @@ class CaseAddSanctionModalV2(BaseModal):
         self.add_item(self.duration)
 
     async def on_submit(self, interaction: discord.Interaction):
+        await _ack(interaction)
         action = SanctionAction(self.action_label.component.values[0])
 
         if not isinstance(interaction.user, discord.Member) or not _can_issue_action(interaction.user, action):
-            await interaction.response.send_message(view=_perm_error(self.browser.locale), ephemeral=True)
+            await _say(interaction, view=_perm_error(self.browser.locale), ephemeral=True)
             return
 
         expires_at = None
@@ -1452,7 +1488,7 @@ class CaseAddSanctionModalV2(BaseModal):
             try:
                 expires_at = _parse_duration_hours(self.duration.component.value)
             except ValueError:
-                await interaction.response.send_message(
+                await _say(interaction,
                     t("commands.cases.browser.invalid_duration", locale=self.browser.locale),
                     ephemeral=True)
                 return
@@ -1492,6 +1528,7 @@ class CaseRevokeModalV2(BaseModal):
         self.add_item(self.sanction_label)
 
     async def on_submit(self, interaction: discord.Interaction):
+        await _ack(interaction)
         sanction_id = _uuid.UUID(self.sanction_label.component.values[0])
         # Re-check the specific permission for the targeted sanction's action.
         target = next((s for s in self.case.sanctions if str(s.id) == str(sanction_id)), None)
@@ -1499,7 +1536,7 @@ class CaseRevokeModalV2(BaseModal):
             not isinstance(interaction.user, discord.Member)
             or not _can_issue_action(interaction.user, target.action)
         ):
-            await interaction.response.send_message(view=_perm_error(self.browser.locale), ephemeral=True)
+            await _say(interaction, view=_perm_error(self.browser.locale), ephemeral=True)
             return
         await self.browser.bot.db.revoke_sanction(
             sanction_id, "discord_user", interaction.user.id)

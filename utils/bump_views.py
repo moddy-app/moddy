@@ -63,11 +63,11 @@ def _guarded(callback):
 
 async def card_locale(interaction: discord.Interaction) -> str:
     """Language of a **public** bump card — the server's, not the clicker's."""
-    from utils.guild_language import guild_locale
+    from utils.transcription_views import bounded_guild_locale
 
     if interaction.guild is None:
         return i18n.get_locale(interaction)
-    return await guild_locale(interaction.client, interaction.guild)
+    return await bounded_guild_locale(interaction)
 
 
 # --------------------------------------------------------------------------- #
@@ -125,13 +125,14 @@ class BumpOptInButton(
             )
             return
 
+        await interaction.response.defer()  # ack: DB reads/writes below
         bot = interaction.client
         # Read the live row rather than the card: the card may be describing a
         # bump that a later one has already replaced.
         states = await bot.db.get_guild_bump_states(interaction.guild_id)
         state = states.get(self.bot_key)
         if not state or state.get("bumper_id") != self.user_id or state.get("sent"):
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 t("modules.bump_reminder.card.optin_expired", locale=locale),
                 ephemeral=True,
             )
@@ -150,7 +151,7 @@ class BumpOptInButton(
             locale=public_locale, ping_mode="button", armed=armed,
             guild_name=interaction.guild.name if interaction.guild else "",
         )
-        await interaction.response.edit_message(view=view, allowed_mentions=NO_MENTIONS)
+        await interaction.edit_original_response(view=view, allowed_mentions=NO_MENTIONS)
         await interaction.followup.send(
             view=create_success_message(
                 t(

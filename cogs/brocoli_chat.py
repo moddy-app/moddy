@@ -144,16 +144,16 @@ class BrocoliChat(commands.Cog):
         locale = str(interaction.locale) if interaction.locale else "en-US"
         guild = interaction.guild
 
+        await interaction.response.defer(ephemeral=True)  # the state read hits the DB
+
         state = await self._state(guild.id)
         existing = guild.get_channel(int(state.get("channel_id", 0) or 0))
         if existing is not None:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 view=notice_card("exists", locale, channel=existing.mention),
                 ephemeral=True,
             )
             return
-
-        await interaction.response.defer(ephemeral=True)
 
         # Administrators only: the conversation genre is `guild_config`, which
         # the backend refuses to anyone without admin rights. A channel open to
@@ -416,8 +416,8 @@ class BrocoliChat(commands.Cog):
         """
         # The cards land in the channel, where the whole server reads them, so
         # they follow the server language rather than the clicker's client.
+        await interaction.response.defer()  # ack before the locale lookup (DB)
         locale = await guild_locale(self.bot, interaction.guild)
-        await interaction.response.defer()
 
         try:
             stream = self.client.decide(

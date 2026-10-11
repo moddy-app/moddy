@@ -199,12 +199,20 @@ def render_revocation_notice(locale: str, *, author_id: int, case_ref: str) -> u
 # Controls (persistent)
 # =========================================================================== #
 
+async def _say(interaction: discord.Interaction, view) -> None:
+    """Ephemeral answer, before or after the interaction was acknowledged."""
+    if interaction.response.is_done():
+        await interaction.followup.send(view=view, ephemeral=True)
+    else:
+        await interaction.response.send_message(view=view, ephemeral=True)
+
+
 async def _guard_staff(interaction: discord.Interaction) -> bool:
     from utils.staff_permissions import has_staff_node
     if await has_staff_node(interaction.client, interaction.user.id, STAFF_NODE):
         return True
-    await interaction.response.send_message(view=create_error_message(
-        _l("errors.title"), _l("errors.no_permission")), ephemeral=True)
+    await _say(interaction, create_error_message(
+        _l("errors.title"), _l("errors.no_permission")))
     return False
 
 
@@ -212,8 +220,8 @@ async def _load(interaction: discord.Interaction, item_id: str) -> Optional[Dict
     db = getattr(interaction.client, "db", None)
     row = await db.get_label_item(item_id) if db else None
     if row is None:
-        await interaction.response.send_message(view=create_error_message(
-            _l("errors.title"), _l("errors.gone")), ephemeral=True)
+        await _say(interaction, create_error_message(
+            _l("errors.title"), _l("errors.gone")))
     return row
 
 
@@ -257,23 +265,24 @@ class LabelVerdictButton(
 
     @_guarded
     async def callback(self, interaction: discord.Interaction):
+        # Ack first: the staff-node lookup and the row read hit the database,
+        # and the effects below can take seconds.
+        await interaction.response.defer()
         if not await _guard_staff(interaction):
             return
         row = await _load(interaction, self.item_id)
         if row is None:
             return
         if row.get("verdict"):
-            await interaction.response.send_message(view=create_error_message(
-                _l("errors.title"), _l("errors.already")), ephemeral=True)
+            await _say(interaction, create_error_message(
+                _l("errors.title"), _l("errors.already")))
             return
         verdict = _VERDICT_BY_CODE[self.code]
         categorie = row.get("categorie_humaine") or (row.get("details") or {}).get("categorie")
         if verdict == "sanctionnable" and row["kind"] == "texte" and not categorie:
-            await interaction.response.send_message(view=create_error_message(
-                _l("errors.title"), _l("errors.need_category")), ephemeral=True)
+            await _say(interaction, create_error_message(
+                _l("errors.title"), _l("errors.need_category")))
             return
-        # Effects can take a few seconds (embedding, revocation, DMs).
-        await interaction.response.defer()
         service = getattr(interaction.client, "automod_labels", None)
         updated = await service.label(self.item_id, verdict=verdict,
                                       labeler_id=interaction.user.id) if service else None
@@ -307,6 +316,7 @@ class LabelCategorySelect(
 
     @_guarded
     async def callback(self, interaction: discord.Interaction):
+        await interaction.response.defer()  # ack first: permission + DB write
         if not await _guard_staff(interaction):
             return
         value = (self.item.values or [""])[0]
@@ -314,10 +324,10 @@ class LabelCategorySelect(
             return
         row = await interaction.client.db.set_label_item_category(self.item_id, value)
         if row is None:
-            await interaction.response.send_message(view=create_error_message(
-                _l("errors.title"), _l("errors.already")), ephemeral=True)
+            await _say(interaction, create_error_message(
+                _l("errors.title"), _l("errors.already")))
             return
-        await interaction.response.edit_message(
+        await interaction.edit_original_response(
             view=render_label_card(row, image_filename=_card_filename(row)))
 
 
@@ -340,6 +350,8 @@ class LabelTermsButton(
 
     @_guarded
     async def callback(self, interaction: discord.Interaction):
+        # Unavoidable lookups before the modal: send_modal must be the first
+        # response, and the form is pre-selected with the item's category.
         if not await _guard_staff(interaction):
             return
         row = await _load(interaction, self.item_id)
@@ -388,24 +400,24 @@ class LabelTermsModal(BaseModal):
 
     async def on_submit(self, interaction: discord.Interaction):
         from utils.staff_permissions import has_staff_node
+        await interaction.response.defer(ephemeral=True)  # permission + DB work below
         if not await has_staff_node(interaction.client, interaction.user.id, STAFF_NODE):
-            await interaction.response.send_message(view=create_error_message(
-                _l("errors.title"), _l("errors.no_permission")), ephemeral=True)
+            await _say(interaction, create_error_message(
+                _l("errors.title"), _l("errors.no_permission")))
             return
         raw = self.terms.component.value or ""
         terms = [line.strip() for line in re.split(r"[\n,]", raw) if line.strip()][:25]
         mode = self.mode.component.value or "words"
         categorie = (self.category.component.values or [""])[0]
         if not terms or categorie not in TEXT_CATEGORIES:
-            await interaction.response.send_message(view=create_error_message(
-                _l("errors.title"), _l("terms.empty")), ephemeral=True)
+            await _say(interaction, create_error_message(
+                _l("errors.title"), _l("terms.empty")))
             return
         service = getattr(interaction.client, "automod_labels", None)
         added = await service.add_terms(self.item_id, terms, categorie, mode,
                                         interaction.user.id) if service else 0
-        await interaction.response.send_message(view=create_success_message(
-            _l("terms.done_title"), _l("terms.done", n=added, category=categorie)),
-            ephemeral=True)
+        await _say(interaction, create_success_message(
+            _l("terms.done_title"), _l("terms.done", n=added, category=categorie)))
 
 
 class LabelPersistence(BaseView):

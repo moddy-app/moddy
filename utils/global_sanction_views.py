@@ -529,7 +529,8 @@ class GlobalSanctionModal(BaseModal):
 class GlobalSanctionHaltModal(BaseModal):
     """Collect the appeal reference / note before stopping a countdown."""
 
-    def __init__(self, *, bot, group_id: str, locale: str = "en-US", on_done=None):
+    def __init__(self, *, bot, group_id: str, locale: str = "en-US", on_done=None,
+                 verify_staff: bool = False):
         super().__init__(
             title=t("global_sanctions.staff.halt_title", locale=locale)[:45],
             timeout=600,
@@ -538,6 +539,7 @@ class GlobalSanctionHaltModal(BaseModal):
         self.group_id = group_id
         self.locale = locale
         self.on_done = on_done
+        self.verify_staff = verify_staff
 
         self.reason_label = ui.Label(
             text=t("global_sanctions.staff.halt_reason_label", locale=locale)[:45],
@@ -550,6 +552,12 @@ class GlobalSanctionHaltModal(BaseModal):
 
     async def on_submit(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
+        if self.verify_staff and not await _may_manage(interaction):
+            await interaction.followup.send(view=_error_panel(
+                t("global_sanctions.staff.denied_title", locale=self.locale),
+                t("global_sanctions.staff.denied", locale=self.locale),
+            ), ephemeral=True)
+            return
         reason = (self.reason_label.component.value or "").strip() or None
         row = await self.bot.global_sanctions.halt(
             self.group_id, by_id=interaction.user.id, reason=reason)
@@ -573,7 +581,8 @@ class GlobalSanctionHaltModal(BaseModal):
 class GlobalSanctionResumeModal(BaseModal):
     """Restart a halted countdown — the appeal was refused."""
 
-    def __init__(self, *, bot, group_id: str, locale: str = "en-US", on_done=None):
+    def __init__(self, *, bot, group_id: str, locale: str = "en-US", on_done=None,
+                 verify_staff: bool = False):
         super().__init__(
             title=t("global_sanctions.staff.resume_title", locale=locale)[:45],
             timeout=600,
@@ -582,6 +591,7 @@ class GlobalSanctionResumeModal(BaseModal):
         self.group_id = group_id
         self.locale = locale
         self.on_done = on_done
+        self.verify_staff = verify_staff
 
         self.grace_label = ui.Label(
             text=t("global_sanctions.staff.grace_label", locale=locale)[:45],
@@ -616,6 +626,12 @@ class GlobalSanctionResumeModal(BaseModal):
             return
 
         await interaction.response.defer(ephemeral=True)
+        if self.verify_staff and not await _may_manage(interaction):
+            await interaction.followup.send(view=_error_panel(
+                t("global_sanctions.staff.denied_title", locale=self.locale),
+                t("global_sanctions.staff.denied", locale=self.locale),
+            ), ephemeral=True)
+            return
         reason = (self.reason_label.component.value or "").strip() or None
         row = await self.bot.global_sanctions.resume(
             self.group_id, by_id=interaction.user.id,
@@ -795,14 +811,12 @@ class GlobalSanctionHaltButton(
     async def callback(self, interaction: discord.Interaction):
         from utils.i18n import i18n
         locale = i18n.get_user_locale(interaction)
-        if not await _may_manage(interaction):
-            await interaction.response.send_message(view=_error_panel(
-                t("global_sanctions.staff.denied_title", locale=locale),
-                t("global_sanctions.staff.denied", locale=locale),
-            ), ephemeral=True)
-            return
+        # The staff-permission lookup hits the database and send_modal must be
+        # the first response: the modal opens at once and re-checks the
+        # permission on submit (verify_staff=True) before doing anything.
         await interaction.response.send_modal(GlobalSanctionHaltModal(
             bot=interaction.client, group_id=self.group_id, locale=locale,
+            verify_staff=True,
         ))
 
 
@@ -831,14 +845,12 @@ class GlobalSanctionResumeButton(
     async def callback(self, interaction: discord.Interaction):
         from utils.i18n import i18n
         locale = i18n.get_user_locale(interaction)
-        if not await _may_manage(interaction):
-            await interaction.response.send_message(view=_error_panel(
-                t("global_sanctions.staff.denied_title", locale=locale),
-                t("global_sanctions.staff.denied", locale=locale),
-            ), ephemeral=True)
-            return
+        # The staff-permission lookup hits the database and send_modal must be
+        # the first response: the modal opens at once and re-checks the
+        # permission on submit (verify_staff=True) before doing anything.
         await interaction.response.send_modal(GlobalSanctionResumeModal(
             bot=interaction.client, group_id=self.group_id, locale=locale,
+            verify_staff=True,
         ))
 
 

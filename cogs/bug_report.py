@@ -15,6 +15,7 @@ See docs/SUPPORT_REQUESTS.md.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Optional
 
@@ -139,7 +140,14 @@ class BugReport(commands.Cog):
             ), ephemeral=True)
             return
 
-        if await service.is_rate_limited(interaction.user.id, KIND_BUG):
+        # Bounded and fail-open: send_modal must be the first response, inside
+        # Discord's 3 s window, so a slow database must not hold it back.
+        try:
+            limited = await asyncio.wait_for(
+                service.is_rate_limited(interaction.user.id, KIND_BUG), 1.5)
+        except asyncio.TimeoutError:
+            limited = False
+        if limited:
             await interaction.response.send_message(view=create_error_message(
                 t("support.errors.rate_limited.title", locale=locale),
                 t("support.errors.rate_limited.description", locale=locale),

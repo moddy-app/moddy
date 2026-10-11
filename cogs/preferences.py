@@ -446,6 +446,8 @@ class Preferences(commands.Cog):
         else:
             ephemeral = incognito
 
+        await interaction.response.defer(ephemeral=ephemeral)  # DB read below
+
         # Get user data
         user_data = await self.bot.db.get_user(interaction.user.id)
 
@@ -457,7 +459,7 @@ class Preferences(commands.Cog):
             user_data,
         )
 
-        await interaction.response.send_message(view=view, ephemeral=ephemeral)
+        await interaction.followup.send(view=view, ephemeral=ephemeral)
 
 
 async def setup(bot):

@@ -206,12 +206,14 @@ class ShadowAnnotateButton(
                 ephemeral=True)
             return
 
+        await interaction.response.defer()  # ack first: DB write + precedent feed
+
         verdict_humain = _VERDICT_BY_CODE[self.code][0]
         row = await bot.db.annotate_eval_candidate(
             self.candidate_id, verdict_humain, annotated_by=interaction.user.id)
         if not row:
             from utils.components_v2 import create_error_message
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 view=create_error_message(
                     t("modules.automod_ai.shadow.error.title", locale=locale),
                     t("modules.automod_ai.shadow.error.gone", locale=locale)),
@@ -224,7 +226,7 @@ class ShadowAnnotateButton(
         await self._feed_precedent(bot, row)
 
         # Re-render the card in place (buttons → the recorded ruling).
-        await interaction.response.edit_message(view=render_shadow_card(row))
+        await interaction.edit_original_response(view=render_shadow_card(row))
 
     @staticmethod
     async def _feed_precedent(bot, row: Dict[str, Any]) -> None:

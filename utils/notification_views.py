@@ -240,16 +240,24 @@ def build_report_log(
 # Review buttons (persistent)
 # =========================================================================== #
 
+async def _say(interaction: discord.Interaction, view) -> None:
+    """Ephemeral answer, before or after the interaction was acknowledged."""
+    if interaction.response.is_done():
+        await interaction.followup.send(view=view, ephemeral=True)
+    else:
+        await interaction.response.send_message(view=view, ephemeral=True)
+
+
 async def _load_review(interaction: discord.Interaction, report_id: str, locale: str):
     """Fetch (report, notification) or answer the click with an error."""
     notifications = getattr(interaction.client, "notifications", None)
     report = await notifications.get_report(report_id) if notifications else None
     if not report:
-        await interaction.response.send_message(view=create_error_message(
+        await _say(interaction, create_error_message(
             t("notifications.errors.unknown.title", locale=locale),
             t("notifications.errors.unknown_report.description", locale=locale,
               uuid=report_id),
-        ), ephemeral=True)
+        ))
         return None, None
     record = await notifications.get(report["notification_id"])
     return report, record
@@ -261,17 +269,17 @@ async def _guard_reviewer(interaction: discord.Interaction, report: Dict[str, An
     from utils.staff_permissions import has_staff_node
 
     if not await has_staff_node(interaction.client, interaction.user.id, "notif_review"):
-        await interaction.response.send_message(view=create_error_message(
+        await _say(interaction, create_error_message(
             t("notifications.review.no_permission.title", locale=locale),
             t("notifications.review.no_permission.description", locale=locale),
-        ), ephemeral=True)
+        ))
         return False
 
     if interaction.user.id == report.get("reporter_id"):
-        await interaction.response.send_message(view=create_error_message(
+        await _say(interaction, create_error_message(
             t("notifications.review.own_report.title", locale=locale),
             t("notifications.review.own_report.description", locale=locale),
-        ), ephemeral=True)
+        ))
         return False
 
     return True
@@ -302,6 +310,7 @@ class NotifReviewClaimButton(
     @_guarded
     async def callback(self, interaction: discord.Interaction):
         locale = i18n.get_user_locale(interaction)
+        await interaction.response.defer()  # ack first: report + permission lookups
         report, _record = await _load_review(interaction, self.report_id, locale)
         if not report or not await _guard_reviewer(interaction, report, locale):
             return
@@ -331,6 +340,7 @@ class NotifReviewPreviewButton(
     @_guarded
     async def callback(self, interaction: discord.Interaction):
         locale = i18n.get_user_locale(interaction)
+        await interaction.response.defer(ephemeral=True)  # ack first: DB lookups
         report, record = await _load_review(interaction, self.report_id, locale)
         if not report or not record:
             return
@@ -341,7 +351,7 @@ class NotifReviewPreviewButton(
         # the exact wording that reached the recipient, attribution row left
         # off (its buttons belong to the recipient, not to the reviewer).
         content = NotificationContent.from_dict(record.get("content") or {})
-        await interaction.response.send_message(
+        await interaction.followup.send(
             view=build_content_view(content, record.get("variables") or {},
                                     locale=record.get("locale") or locale),
             ephemeral=True,
@@ -376,15 +386,9 @@ class NotifReviewDecisionButton(
     @_guarded
     async def callback(self, interaction: discord.Interaction):
         locale = i18n.get_user_locale(interaction)
-        report, _record = await _load_review(interaction, self.report_id, locale)
-        if not report or not await _guard_reviewer(interaction, report, locale):
-            return
-        if report.get("status") in (ReportStatus.ACCEPTED.value, ReportStatus.REFUSED.value):
-            await interaction.response.send_message(view=create_error_message(
-                t("notifications.review.already_decided.title", locale=locale),
-                t("notifications.review.already_decided.description", locale=locale),
-            ), ephemeral=True)
-            return
+        # The modal opens at once (send_modal must be the first response); the
+        # report lookup, the reviewer check and the "already decided" refusal
+        # all run in NotifDecisionModal.on_submit.
         await interaction.response.send_modal(
             NotifDecisionModal(action=self.action, report_id=self.report_id, locale=locale))
 
@@ -418,6 +422,15 @@ class NotifDecisionModal(BaseModal):
 
     async def on_submit(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True, thinking=True)
+        report, _record = await _load_review(interaction, self.report_id, self.locale)
+        if not report or not await _guard_reviewer(interaction, report, self.locale):
+            return
+        if report.get("status") in (ReportStatus.ACCEPTED.value, ReportStatus.REFUSED.value):
+            await _say(interaction, create_error_message(
+                t("notifications.review.already_decided.title", locale=self.locale),
+                t("notifications.review.already_decided.description", locale=self.locale),
+            ))
+            return
         status = (ReportStatus.ACCEPTED.value if self.action == "accept"
                   else ReportStatus.REFUSED.value)
         ok = await interaction.client.notifications.decide_report(

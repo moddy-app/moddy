@@ -72,6 +72,7 @@ class InterServerCommands(commands.GroupCog, name="interserver", description="Ma
         message_id: str
     ):
         """Signale un message inter-serveur à l'équipe de modération"""
+        await interaction.response.defer(ephemeral=True)  # DB + fetch_user are slow
         try:
             # Récupère les informations du message (supporte Moddy ID et snowflake)
             msg_data = await self._get_message_by_id(message_id)
@@ -81,7 +82,7 @@ class InterServerCommands(commands.GroupCog, name="interserver", description="Ma
                     "Message Not Found",
                     f"No inter-server message found with ID `{message_id}`.\n\nMake sure the ID is correct (Moddy ID like `F6ZEU3VS` or Discord message ID) and the message hasn't been deleted."
                 )
-                await interaction.response.send_message(view=view, ephemeral=True)
+                await interaction.followup.send(view=view, ephemeral=True)
                 return
         except Exception as e:
             logger.error(f"Error validating/fetching message {message_id}: {e}", exc_info=True)
@@ -89,7 +90,7 @@ class InterServerCommands(commands.GroupCog, name="interserver", description="Ma
                 "Error",
                 f"An error occurred while fetching the message. Please verify the ID and try again."
             )
-            await interaction.response.send_message(view=view, ephemeral=True)
+            await interaction.followup.send(view=view, ephemeral=True)
             return
 
         # Récupère le Moddy ID réel du message
@@ -101,7 +102,7 @@ class InterServerCommands(commands.GroupCog, name="interserver", description="Ma
                 "Message Already Deleted",
                 f"The message `{moddy_id}` has already been deleted."
             )
-            await interaction.response.send_message(view=view, ephemeral=True)
+            await interaction.followup.send(view=view, ephemeral=True)
             return
 
         # Crée le rapport dans le salon de rapports
@@ -112,7 +113,7 @@ class InterServerCommands(commands.GroupCog, name="interserver", description="Ma
                     "Error",
                     "Could not access the report channel. Please contact the Moddy team."
                 )
-                await interaction.response.send_message(view=view, ephemeral=True)
+                await interaction.followup.send(view=view, ephemeral=True)
                 return
 
             # Récupère l'auteur du message
@@ -190,14 +191,15 @@ class InterServerCommands(commands.GroupCog, name="interserver", description="Ma
 
                 async def on_claim(self, interaction: discord.Interaction):
                     """Permet à un modérateur de claim le rapport"""
-                    # Vérifie les permissions
+                    # Ack first: the staff-role lookup may hit the database.
+                    await interaction.response.defer()
                     from utils.staff_permissions import staff_permissions, StaffRole
                     user_roles = await staff_permissions.get_user_roles(interaction.user.id)
 
                     # Vérifie si l'utilisateur est au moins modérateur
                     allowed_roles = [StaffRole.DEV, StaffRole.MANAGER, StaffRole.SUPERVISOR_MOD, StaffRole.MODERATOR]
                     if not any(role in allowed_roles for role in user_roles):
-                        await interaction.response.send_message(
+                        await interaction.followup.send(
                             "You don't have permission to claim reports.",
                             ephemeral=True
                         )
@@ -205,7 +207,7 @@ class InterServerCommands(commands.GroupCog, name="interserver", description="Ma
 
                     self.claimed_by = interaction.user
                     self._build_view()
-                    await interaction.response.edit_message(view=self)
+                    await interaction.edit_original_response(view=self)
 
                 async def on_processed(self, interaction: discord.Interaction):
                     """Marque le rapport comme traité avec un formulaire pour les actions prises"""
@@ -216,13 +218,14 @@ class InterServerCommands(commands.GroupCog, name="interserver", description="Ma
 
                 async def on_skip(self, interaction: discord.Interaction):
                     """Skip le rapport sans raison"""
-                    # Vérifie les permissions
+                    # Ack first: the staff-role lookup may hit the database.
+                    await interaction.response.defer()
                     from utils.staff_permissions import staff_permissions, StaffRole
                     user_roles = await staff_permissions.get_user_roles(interaction.user.id)
 
                     allowed_roles = [StaffRole.DEV, StaffRole.MANAGER, StaffRole.SUPERVISOR_MOD, StaffRole.MODERATOR]
                     if not any(role in allowed_roles for role in user_roles):
-                        await interaction.response.send_message(
+                        await interaction.followup.send(
                             "You don't have permission to skip reports.",
                             ephemeral=True
                         )
@@ -236,7 +239,7 @@ class InterServerCommands(commands.GroupCog, name="interserver", description="Ma
                     )
                     self.add_item(container)
 
-                    await interaction.response.edit_message(view=self)
+                    await interaction.edit_original_response(view=self)
 
             # Envoie le rapport
             report_view = ReportView(
@@ -256,7 +259,7 @@ class InterServerCommands(commands.GroupCog, name="interserver", description="Ma
                 "Report Sent",
                 f"Your report for message `{moddy_id}` has been sent to the moderation team.\n\nThank you for helping keep the inter-server chat safe!"
             )
-            await interaction.response.send_message(view=view, ephemeral=True)
+            await interaction.followup.send(view=view, ephemeral=True)
 
             logger.info(f"Report sent for message {moddy_id} by {interaction.user} ({interaction.user.id})")
 
@@ -266,7 +269,7 @@ class InterServerCommands(commands.GroupCog, name="interserver", description="Ma
                 "Error",
                 f"An error occurred while sending your report. Please try again later."
             )
-            await interaction.response.send_message(view=view, ephemeral=True)
+            await interaction.followup.send(view=view, ephemeral=True)
 
     @app_commands.command(
         name="info",
@@ -284,6 +287,7 @@ class InterServerCommands(commands.GroupCog, name="interserver", description="Ma
         incognito: bool = False
     ):
         """Obtient des informations sur un message inter-serveur"""
+        await interaction.response.defer(ephemeral=True)  # DB + fetch_user are slow
         try:
             # Récupère les informations du message (supporte Moddy ID et snowflake)
             msg_data = await self._get_message_by_id(message_id)
@@ -293,7 +297,7 @@ class InterServerCommands(commands.GroupCog, name="interserver", description="Ma
                     "Message Not Found",
                     f"No inter-server message found with ID `{message_id}`.\n\nMake sure the ID is correct (Moddy ID like `F6ZEU3VS` or Discord message ID) and the message hasn't been deleted."
                 )
-                await interaction.response.send_message(view=view, ephemeral=True)
+                await interaction.followup.send(view=view, ephemeral=True)
                 return
         except Exception as e:
             logger.error(f"Error validating/fetching message {message_id}: {e}", exc_info=True)
@@ -301,7 +305,7 @@ class InterServerCommands(commands.GroupCog, name="interserver", description="Ma
                 "Error",
                 f"An error occurred while fetching the message. Please verify the ID and try again."
             )
-            await interaction.response.send_message(view=view, ephemeral=True)
+            await interaction.followup.send(view=view, ephemeral=True)
             return
 
         # Récupère le Moddy ID réel du message
@@ -341,7 +345,7 @@ class InterServerCommands(commands.GroupCog, name="interserver", description="Ma
         if not incognito:
             logger.info(f"Info request for message {moddy_id} by {interaction.user} ({interaction.user.id})")
 
-        await interaction.response.send_message(view=view, ephemeral=True)
+        await interaction.followup.send(view=view, ephemeral=True)
 
 
 class ProcessedModal(BaseModal, title="Report Processing"):

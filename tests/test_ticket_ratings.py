@@ -215,7 +215,14 @@ class TestRatingSubmission:
     def _interaction(self):
         interaction = MagicMock()
         interaction.user.id = 1
-        interaction.response.is_done.return_value = False
+        # The modal acknowledges first, so every answer is a follow-up.
+        acked = {"done": False}
+
+        async def defer(**_kwargs):
+            acked["done"] = True
+
+        interaction.response.is_done.side_effect = lambda: acked["done"]
+        interaction.response.defer = AsyncMock(side_effect=defer)
         interaction.response.send_message = AsyncMock()
         interaction.followup.send = AsyncMock()
         return interaction
@@ -259,7 +266,8 @@ class TestRatingSubmission:
         set_comment(modal, None)
         interaction = self._interaction()
         await modal.on_submit(interaction)
-        interaction.response.send_message.assert_awaited()
+        interaction.response.defer.assert_awaited_once()
+        interaction.followup.send.assert_awaited()
 
     async def test_the_log_card_is_refreshed_but_never_fatally(self):
         bot, _db = self._bot({'id': 1, 'score': 4})
@@ -270,7 +278,7 @@ class TestRatingSubmission:
         set_comment(modal, None)
         interaction = self._interaction()
         await modal.on_submit(interaction)          # must not raise
-        interaction.response.send_message.assert_awaited()
+        interaction.followup.send.assert_awaited()
 
 
 # =========================================================================== #
