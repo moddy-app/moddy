@@ -13,6 +13,7 @@ from typing import Optional
 from cogs.error_handler import BaseView
 from utils.components_v2 import create_error_message
 from utils.i18n import i18n, t
+from utils import user_preferences
 
 # --------------------------------------------------------------------------- #
 # custom_id templates
@@ -29,6 +30,18 @@ from utils.i18n import i18n, t
 #   matches its own template — required for test_shell_constructs.
 _CID_BTN_TEMPLATE = r"moddy:pref:manage:(?P<action>timezone|back):(?P<owner>\d{1,20})"
 _CID_SELECT_TEMPLATE = r"moddy:pref:manage:tz_select:(?P<owner>\d{1,20})"
+_CID_THEME_TEMPLATE = r"moddy:pref:manage:theme_select:(?P<owner>\d{1,20})"
+_CID_LANG_TEMPLATE = r"moddy:pref:manage:lang_select:(?P<owner>\d{1,20})"
+
+# Country flags are the one kind of default emoji CLAUDE.md allows.
+# Language names stay in their own language so they are findable from any UI.
+LANGUAGE_OPTIONS = [
+    ("fr", "\U0001F1EB\U0001F1F7", "Fran\u00e7ais"),
+    ("en-US", "\U0001F1FA\U0001F1F8", "English"),
+    ("es-ES", "\U0001F1EA\U0001F1F8", "Espa\u00f1ol"),
+    ("pt-BR", "\U0001F1E7\U0001F1F7", "Portugu\u00eas"),
+    ("de", "\U0001F1E9\U0001F1EA", "Deutsch"),
+]
 
 
 def _guarded(callback):
@@ -162,6 +175,87 @@ class TimezoneSelect(ui.DynamicItem[ui.Select], template=_CID_SELECT_TEMPLATE):
         )
 
 
+async def _refresh_home(interaction: discord.Interaction) -> None:
+    """Re-render the home page in the user's (possibly new) locale and theme."""
+    bot = interaction.client
+    locale = i18n.get_user_locale(interaction)
+    user_data = await bot.db.get_user(interaction.user.id)
+    view = PreferencesView(bot, interaction.user.id, locale, user_data)
+    await interaction.response.edit_message(view=view)
+
+
+class ThemeSelect(ui.DynamicItem[ui.Select], template=_CID_THEME_TEMPLATE):
+    """Discord theme (icon colour) select on the home page. Auth: owner only."""
+
+    def __init__(self, owner_id: int, *, locale: str = "en-US", current: str = "dark"):
+        options = [
+            discord.SelectOption(
+                label=t(f"commands.preferences.theme.options.{value}", locale=locale)[:100],
+                value=value,
+                default=(value == current),
+            )
+            for value in user_preferences.ICON_THEMES
+        ]
+        super().__init__(
+            ui.Select(
+                placeholder=t("commands.preferences.theme.placeholder", locale=locale),
+                options=options,
+                custom_id=f"moddy:pref:manage:theme_select:{owner_id}",
+            )
+        )
+        self.owner_id = owner_id
+
+    @classmethod
+    async def from_custom_id(cls, interaction: discord.Interaction, item: ui.Select, match: re.Match):
+        return cls(int(match["owner"]), locale=i18n.get_user_locale(interaction))
+
+    @_guarded
+    async def callback(self, interaction: discord.Interaction):
+        if await _reject_if_not_owner(interaction, self.owner_id):
+            return
+        await user_preferences.set_icon_theme(
+            interaction.client, interaction.user.id, self.item.values[0])
+        await _refresh_home(interaction)
+
+
+class LanguageSelect(ui.DynamicItem[ui.Select], template=_CID_LANG_TEMPLATE):
+    """Personal language select (Auto + 5 locales). Auth: owner only."""
+
+    def __init__(self, owner_id: int, *, locale: str = "en-US", current: Optional[str] = None):
+        options = [
+            discord.SelectOption(
+                label=t("commands.preferences.language.auto", locale=locale)[:100],
+                value="auto",
+                description=t("commands.preferences.language.auto_description", locale=locale)[:100],
+                default=(current is None),
+            )
+        ]
+        options += [
+            discord.SelectOption(label=name, value=code, emoji=flag, default=(code == current))
+            for code, flag, name in LANGUAGE_OPTIONS
+        ]
+        super().__init__(
+            ui.Select(
+                placeholder=t("commands.preferences.language.placeholder", locale=locale),
+                options=options,
+                custom_id=f"moddy:pref:manage:lang_select:{owner_id}",
+            )
+        )
+        self.owner_id = owner_id
+
+    @classmethod
+    async def from_custom_id(cls, interaction: discord.Interaction, item: ui.Select, match: re.Match):
+        return cls(int(match["owner"]), locale=i18n.get_user_locale(interaction))
+
+    @_guarded
+    async def callback(self, interaction: discord.Interaction):
+        if await _reject_if_not_owner(interaction, self.owner_id):
+            return
+        await user_preferences.set_language(
+            interaction.client, interaction.user.id, self.item.values[0])
+        await _refresh_home(interaction)
+
+
 class PreferencesManageButton(ui.DynamicItem[ui.Button], template=_CID_BTN_TEMPLATE):
     """A button on the /preferences card. Auth: owner only."""
 
@@ -262,6 +356,26 @@ class PreferencesView(BaseView):
         btn_row.add_item(PreferencesManageButton("timezone", self.user_id or 0, locale=self.locale))
         container.add_item(btn_row)
 
+        container.add_item(Separator(spacing=SeparatorSpacing.small))
+
+        # Discord theme: the selects show their own state (no "current value" line)
+        owner = self.user_id or 0
+        container.add_item(TextDisplay(t("commands.preferences.theme.label", locale=self.locale)))
+        theme_row = discord.ui.ActionRow()
+        theme_row.add_item(ThemeSelect(
+            owner, locale=self.locale, current=user_preferences.get_icon_theme(self.user_id)))
+        container.add_item(theme_row)
+
+        container.add_item(Separator(spacing=SeparatorSpacing.small))
+
+        # Language
+        container.add_item(TextDisplay(t("commands.preferences.language.label", locale=self.locale)))
+        lang_row = discord.ui.ActionRow()
+        lang_row.add_item(LanguageSelect(
+            owner, locale=self.locale,
+            current=user_preferences.get_language_override(self.user_id)))
+        container.add_item(lang_row)
+
         # Footer
         container.add_item(TextDisplay(t("commands.preferences.footer", locale=self.locale)))
 
@@ -294,7 +408,7 @@ class PreferencesView(BaseView):
     def register_persistent(cls, bot) -> None:
         """Auth model: owner only — owner_id is encoded in each item's
         custom_id and compared to interaction.user.id on click."""
-        bot.add_dynamic_items(PreferencesManageButton, TimezoneSelect)
+        bot.add_dynamic_items(PreferencesManageButton, TimezoneSelect, ThemeSelect, LanguageSelect)
 
 
 class Preferences(commands.Cog):

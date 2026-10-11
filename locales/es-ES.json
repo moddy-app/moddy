@@ -490,6 +490,20 @@
         "success": "<:done:1519800188925902881> Zona horaria cambiada a **{timezone}**.",
         "auto_detected": "detectada automáticamente"
       },
+      "theme": {
+        "label": "**Tema de Discord**\n¿Usas Discord en modo claro? Elige Claro para que los iconos sigan siendo visibles.",
+        "placeholder": "Elige tu tema de Discord...",
+        "options": {
+          "dark": "Oscuro (predeterminado)",
+          "light": "Claro"
+        }
+      },
+      "language": {
+        "label": "**Idioma de Moddy**\nDe forma predeterminada, Moddy sigue el idioma de tu cliente de Discord. Elige un idioma para forzarlo.",
+        "placeholder": "Elige tu idioma...",
+        "auto": "Automático",
+        "auto_description": "Sigue el idioma de tu Discord"
+      },
       "footer": "-# Consejo: tu zona horaria afecta a la hora de los recordatorios.",
       "errors": {
         "author_only": "<:undone:1519800313324896327> No puedes usar estos botones, pertenecen a otro usuario."

@@ -46,6 +46,18 @@ class UserRepository:
         """Met à jour une partie spécifique de la data utilisateur"""
         await self._update_entity_data('users', 'user_id', user_id, path, value)
 
+    async def get_users_with_preferences(self):
+        """(user_id, preferences dict) for every user with stored preferences.
+
+        Feeds the in-memory cache of ``utils.user_preferences`` at startup.
+        """
+        async with self.pool.acquire() as conn:
+            rows = await conn.fetch(
+                "SELECT user_id, data->'preferences' AS prefs FROM users "
+                "WHERE jsonb_typeof(data->'preferences') = 'object'"
+            )
+        return [(r['user_id'], self._parse_jsonb(r['prefs'])) for r in rows]
+
     async def get_all_user_ids(self, limit: int = 100000) -> List[int]:
         """Every user Moddy knows about.
 

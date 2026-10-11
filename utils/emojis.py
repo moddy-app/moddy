@@ -3,6 +3,8 @@ Centralized emoji registry for Moddy.
 All custom Discord emojis are defined here.
 To change an emoji, update it in this file — it will propagate everywhere.
 """
+import re
+from typing import Any, Dict, Tuple
 
 # =============================================================================
 # CORE UI EMOJIS
@@ -776,3 +778,177 @@ def log_emoji(name: str, default: str = "") -> str:
     must never stop a log from being delivered.
     """
     return LOG_EMOJIS.get(name, default)
+
+
+# ---------------------------------------------------------------------------
+# Dark icon variants (per-user "icon theme")
+# ---------------------------------------------------------------------------
+# Most icons above are white, which is invisible on Discord's light theme.
+# A black twin named ``<original name>_dark`` is uploaded for them. Users who
+# pick the light theme in /preferences get those twins swapped in centrally at
+# send time (see utils/icon_theme.py); no call site changes. To add one: upload
+# ``<name>_dark`` and add it to DARK_VARIANTS. See docs/ICON_THEME.md.
+DARK_VARIANTS: Dict[str, int] = {
+    "1__dark": 1558775913238364180,
+    "2__dark": 1558775915008364689,
+    "3__dark": 1558775917545922601,
+    "4__dark": 1558775919626162258,
+    "add_dark": 1558776138330013696,
+    "at_dark": 1558776109288521739,
+    "attribution_dark": 1558776100950253638,
+    "back_dark": 1558776178838478912,
+    "balance_dark": 1558776249290326096,
+    "banner_dark": 1558776146592538624,
+    "blacklist_dark": 1558776199944339456,
+    "book_dark": 1558776104880447510,
+    "bug_dark": 1558776165358108712,
+    "build_dark": 1558776740313038990,
+    "claim_dark": 1558776738282999828,
+    "code_dark": 1558776167681499227,
+    "color_dark": 1558776236619071540,
+    "commands_dark": 1558776170168852560,
+    "commit_dark": 1558776260895969313,
+    "cooldown_dark": 1558776226041045062,
+    "copyright_dark": 1558776246937059380,
+    "data_object_dark": 1558776177089450096,
+    "delete_dark": 1558776181141278843,
+    "dinvites_dark": 1558776749125402735,
+    "dollars_dark": 1558776742271918110,
+    "done_dark": 1558776230629740584,
+    "download_dark": 1558776189680750614,
+    "edit_dark": 1558776183318118480,
+    "emoji_dark": 1558776238586466385,
+    "error_dark": 1558776125671604245,
+    "exclamation_dark": 1558776298980114432,
+    "explore_dark": 1558776221456932864,
+    "extension_dark": 1558776142540963850,
+    "eye_m_dark": 1558776159498403920,
+    "face_dark": 1558776152959488110,
+    "favorite_dark": 1558776103236149318,
+    "filter_dark": 1558776267879227523,
+    "flag_dark": 1558776111691989013,
+    "folder_dark": 1558776282836111470,
+    "folders_dark": 1558776270475501628,
+    "FrameBug_dark": 1558776263009632259,
+    "groups_dark": 1558776116942999592,
+    "hand_dark": 1558776294391418890,
+    "history_dark": 1558776192709169182,
+    "ia_dark": 1558776187575083059,
+    "idea_dark": 1558776240851263548,
+    "image_dark": 1558776284685795358,
+    "import_dark": 1558776253530636319,
+    "info_dark": 1558776163223212173,
+    "invalidsnowflake_dark": 1558776207401680997,
+    "label_dark": 1558776234677243964,
+    "legal_dark": 1558776242575122475,
+    "link_dark": 1558776292135149589,
+    "lock_dark": 1558776223570726923,
+    "logout_dark": 1558776172744146984,
+    "manageuser_dark": 1558776215156822036,
+    "message_dark": 1558776130306179142,
+    "mic_off_dark": 1558776265413107733,
+    "ModdyIcon_dark": 1558776087507374160,
+    "ModdyIconCarre_dark": 1558776084777009172,
+    "ModdyIconCarreMin_dark": 1558776090028281877,
+    "network_ping_dark": 1558776148803063868,
+    "next_dark": 1558776136362893382,
+    "note_dark": 1558776132831154206,
+    "notifications_dark": 1558776161067073600,
+    "pause_dark": 1558776091689226272,
+    "pending_dark": 1558776286774558750,
+    "person_off_dark": 1558776185411084339,
+    "play_dark": 1558776094247751732,
+    "policy_dark": 1558776244789710960,
+    "premium_dark": 1558776174962810971,
+    "railway_dark": 1558776068150919170,
+    "random_dark": 1558776150631915561,
+    "reply_dark": 1558776123586908160,
+    "rocket_launch_dark": 1558776759409844284,
+    "rss_dark": 1558776096718200902,
+    "save_dark": 1558776144503767171,
+    "search_dark": 1558776127743336608,
+    "send_dark": 1558776157531541675,
+    "server_dark": 1558776098618085439,
+    "settings_dark": 1558776228364816435,
+    "shapes_dark": 1558776762329075722,
+    "shield_dark": 1558776289232683019,
+    "snowflake_dark": 1558776205040296036,
+    "star_dark": 1558776107157950565,
+    "support_dark": 1558776202775371856,
+    "sync_dark": 1558776256516857886,
+    "text_dark": 1558776140519444570,
+    "threads_dark": 1558776728581574756,
+    "ticket_dark": 1558776735296917614,
+    "time_dark": 1558776213084839997,
+    "toogle_off_dark": 1558776732197191713,
+    "toogle_on_dark": 1558776730443841550,
+    "track_dark": 1558776195145932831,
+    "translate_dark": 1558776258643628093,
+    "undone_dark": 1558776232508915715,
+    "update_dark": 1558776251404132443,
+    "user_dark": 1558776217229066412,
+    "verified1_dark": 1558776219489804298,
+    "voice_chat_dark": 1558776296354619473,
+    "warning_dark": 1558776119446994975,
+    "waving_hand_dark": 1558776114594324480,
+    "web_dark": 1558776209909882880,
+    "webhook_dark": 1558776155337916506,
+}
+
+# Original ids that are hardcoded outside this module (other .py files or the
+# locale files) or that predate the constants above. name -> extra ids.
+_EXTRA_ORIGINAL_IDS: Dict[str, Tuple[int, ...]] = {
+    "attribution": (1519788726476079104,),
+    "data_object": (1519795407453159474,),
+    "extension": (1519792289625538713,),
+    "face": (1519793231699775578,),
+    "favorite": (1519788838292295781,),
+    "FrameBug": (1519805334988787843,),
+    "label": (1519800544456343744,),
+    "network_ping": (1519792879613247540,),
+    "notifications": (1519793619861508147,),
+    "railway": (1451333311199838218,),
+    "random": (1519793103563788390,),
+    "send": (1519793414185553940,),
+    "server": (1519788576420921476,),
+    "warning": (1398729560895422505,),
+}
+
+_EMOJI_TOKEN_RE = re.compile(r"<a?:([A-Za-z0-9_]+):(\d+)>")
+
+
+def _iter_module_emoji_strings(value: Any, depth: int = 0):
+    if depth > 4:
+        return
+    if isinstance(value, str):
+        yield value
+    elif isinstance(value, dict):
+        for k, v in value.items():
+            yield from _iter_module_emoji_strings(k, depth + 1)
+            yield from _iter_module_emoji_strings(v, depth + 1)
+    elif isinstance(value, (list, tuple, set, frozenset)):
+        for v in value:
+            yield from _iter_module_emoji_strings(v, depth + 1)
+
+
+def _build_light_to_dark() -> Dict[int, Tuple[str, int]]:
+    """Map every original emoji id to ``(dark name, dark id)``, matching by name."""
+    ids_by_name: Dict[str, set] = {}
+    for key, value in list(globals().items()):
+        if key.startswith("__") or key in ("DARK_VARIANTS", "LIGHT_TO_DARK"):
+            continue
+        for text in _iter_module_emoji_strings(value):
+            for m in _EMOJI_TOKEN_RE.finditer(text):
+                ids_by_name.setdefault(m.group(1), set()).add(int(m.group(2)))
+    for name, ids in _EXTRA_ORIGINAL_IDS.items():
+        ids_by_name.setdefault(name, set()).update(ids)
+
+    mapping: Dict[int, Tuple[str, int]] = {}
+    for dark_name, dark_id in DARK_VARIANTS.items():
+        original = dark_name[: -len("_dark")]
+        for original_id in ids_by_name.get(original, ()):
+            mapping[original_id] = (dark_name, dark_id)
+    return mapping
+
+
+LIGHT_TO_DARK: Dict[int, Tuple[str, int]] = _build_light_to_dark()

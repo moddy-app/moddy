@@ -60,7 +60,7 @@ moddy/
 │   ├── interserver_commands.py #  Inter-server commands
 │   ├── ping.py, user.py, avatar.py, banner.py, roll.py, moddy.py
 │   ├── subscription.py        #   Premium features
-│   ├── preferences.py         #   User preferences
+│   ├── preferences.py         #   /preferences (timezone, Discord theme → icon colour, forced language)
 │   ├── blacklist_check.py     #   Global suspension gate for prefix commands (cases system)
 │   ├── cases_user.py          #   Personal cases browser (/mycases — all servers, filters, read-only)
 │   ├── cases_server.py        #   Server cases browser (/cases — guild scope, mod actions, perms)
@@ -216,7 +216,9 @@ moddy/
 │       └── _utils.py
 │
 ├── utils/                     # Utility modules
-│   ├── i18n.py                #   Internationalization system
+│   ├── i18n.py                #   Internationalization system (honours the /preferences language override)
+│   ├── user_preferences.py    #   Per-user prefs cache (icon theme + language), loaded at startup
+│   ├── icon_theme.py          #   Light-theme icon swap: rewrites outgoing payloads (white → *_dark twins)
 │   ├── guild_language.py      #   Server language (one setting, every module)
 │   ├── command_translator.py  #   Slash command name/description localization (32 locales)
 │   ├── emojis.py              #   Emoji constants
@@ -358,6 +360,8 @@ moddy/
     ├── test_automod_images.py #   Automod image features, image service, labeling queue + card
     ├── test_automod_profiles.py # Automod member profiles: holds, rename+warn, caches, budget, events, i18n
     ├── test_ocr.py            #   /ocr service: errors, re-encoding, card
+    ├── test_icon_theme.py     #   Icon theme: light→dark mapping, payload swap, discord.py patch guard
+    ├── test_user_preferences.py # Preferences cache, language override, /preferences selects
     └── test_staff_user_command.py # /team user: sections, personal-data gate, i18n (5 locales)
 ```
 
@@ -391,6 +395,13 @@ moddy/
 - **NEVER** use default Unicode emojis (except country flags)
 - Use custom emojis from `/utils/emojis.py`
 - Full list → [docs/EMOJIS.md](docs/EMOJIS.md)
+- **Light-theme twins**: most icons are white, invisible on Discord's light theme.
+  A user who picks *Light* in `/preferences` gets every icon that has a
+  `<name>_dark` twin swapped automatically at send time (`utils/icon_theme.py`
+  patches discord.py's payload builders). **Never** pick the `_dark` variant by
+  hand in code. A new white icon needs its `<name>_dark` uploaded and added to
+  `DARK_VARIANTS` in `utils/emojis.py`. Public messages the bot sends on its
+  own (logs, welcome, panels) stay white. See → [docs/ICON_THEME.md](docs/ICON_THEME.md)
 
 ### 4. Internationalization (i18n)
 - **ALL** user-facing text must use the i18n system
@@ -407,6 +418,9 @@ moddy/
   the single setting stored in `guilds.data.settings.language` (`/config` →
   *Server settings*). Anything one person reads privately (ephemeral reply,
   `/config` screen, error) keeps `i18n.get_user_locale(interaction)`.
+  That call also honours the language a user forced in `/preferences`
+  (`utils/user_preferences.py`) — always go through it, never read
+  `interaction.locale` directly.
   **Adding a language dropdown to a module's config is a bug.**
 - See → [docs/COMMAND_LOCALIZATION.md](docs/COMMAND_LOCALIZATION.md),
   [docs/SERVER_LANGUAGE.md](docs/SERVER_LANGUAGE.md)
@@ -554,6 +568,7 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/PERSISTENT_VIEWS.md](docs/PERSISTENT_VIEWS.md) | Any view that should survive a bot restart (most views) |
 | [docs/ERROR_HANDLING.md](docs/ERROR_HANDLING.md) | Any code with Views, Modals, or error handling |
 | [docs/EMOJIS.md](docs/EMOJIS.md) | When you need to use an emoji/icon |
+| [docs/ICON_THEME.md](docs/ICON_THEME.md) | **Icon theme** — light-theme users get the black `_dark` icons; how the send-time swap works, adding an icon, discord.py upgrade guard |
 
 ### Feature-Specific
 | Document | When to Read |

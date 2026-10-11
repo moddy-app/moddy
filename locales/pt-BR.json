@@ -490,6 +490,20 @@
         "success": "<:done:1519800188925902881> Fuso horário alterado para **{timezone}**.",
         "auto_detected": "detectado automaticamente"
       },
+      "theme": {
+        "label": "**Tema do Discord**\nUsa o Discord no modo claro? Escolha Claro para que os ícones continuem visíveis.",
+        "placeholder": "Escolha seu tema do Discord...",
+        "options": {
+          "dark": "Escuro (padrão)",
+          "light": "Claro"
+        }
+      },
+      "language": {
+        "label": "**Idioma do Moddy**\nPor padrão, o Moddy segue o idioma do seu Discord. Escolha um idioma para forçá-lo.",
+        "placeholder": "Escolha seu idioma...",
+        "auto": "Automático",
+        "auto_description": "Segue o idioma do seu Discord"
+      },
       "footer": "-# Dica: seu fuso horário afeta os horários dos lembretes.",
       "errors": {
         "author_only": "<:undone:1519800313324896327> Você não pode usar estes botões, eles pertencem a outro usuário."

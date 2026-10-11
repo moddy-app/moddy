@@ -136,6 +136,17 @@ class I18n:
         Returns:
             Le code de locale à utiliser (ex: "fr", "en-US")
         """
+        # A language forced in /preferences wins over the Discord client locale.
+        # (Server-wide text uses utils/guild_language.py and never goes here.)
+        try:
+            from utils.user_preferences import get_language_override
+            user = getattr(interaction, "user", None)
+            override = get_language_override(getattr(user, "id", None))
+            if override and override in self._supported_locales:
+                return override
+        except Exception:  # noqa: BLE001 — never break locale resolution
+            pass
+
         # Récupérer la locale de Discord
         discord_locale = str(interaction.locale)
 

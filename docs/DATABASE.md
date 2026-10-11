@@ -953,6 +953,13 @@ Les **données** contiennent des informations structurées plus complexes, comme
 }
 ```
 
+> User-level display preferences live in `users.data.preferences`
+> (`{"icon_theme": "dark"|"light", "language": "<locale>"}`, absent key =
+> default). Always go through `utils/user_preferences.py` (in-memory cache,
+> loaded at startup by `load_all`) rather than reading the column directly.
+> `language` only affects what that person reads privately
+> (`i18n.get_user_locale`); see [SERVER_LANGUAGE.md](SERVER_LANGUAGE.md).
+
 ---
 
 ## Syntaxe PostgreSQL et JSONB

@@ -32,6 +32,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence
 import discord
 
 import config
+from utils.icon_theme import use_icon_theme_for
 from notifications.models import (
     DeliveryStatus, NotificationContent, NotificationSource,
     Platform, RecipientType, ReportStatus,
@@ -289,10 +290,12 @@ class NotificationService:
             )
         payload = await self._build_view(record, content, source, variables, view,
                                          locale, attribution)
-        return await self._deliver(
-            destination=user, record=record, view=payload,
-            files=files, allowed_mentions=allowed_mentions,
-        )
+        # DMs follow the recipient's icon theme (light Discord theme -> dark icons).
+        with use_icon_theme_for(getattr(user, "id", None)):
+            return await self._deliver(
+                destination=user, record=record, view=payload,
+                files=files, allowed_mentions=allowed_mentions,
+            )
 
     async def send_channel(
         self,
