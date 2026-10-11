@@ -30,6 +30,7 @@ import discord
 from discord import ui
 
 from cogs.error_handler import BaseView, BaseModal
+from modules.configs._common import ack, show, say
 from modules.social_notifications import (
     SUPPORTED_PLATFORMS,
     MAX_MESSAGE_LENGTH,
@@ -135,10 +136,10 @@ async def _check_perms(interaction: discord.Interaction) -> bool:
     """Authorize a config interaction: requires Manage Server in this guild."""
     perms = getattr(interaction.user, "guild_permissions", None)
     if not interaction.guild_id or perms is None or not perms.manage_guild:
-        await interaction.response.send_message(
+        await say(
+            interaction,
             t('modules.social_notifications.errors.no_permission',
               locale=i18n.get_user_locale(interaction)),
-            ephemeral=True,
         )
         return False
     return True
@@ -146,15 +147,13 @@ async def _check_perms(interaction: discord.Interaction) -> bool:
 
 async def _render_main(interaction: discord.Interaction) -> None:
     """(Re)build and show the main panel from a live interaction."""
+    await ack(interaction)
     bot = interaction.client
     locale = i18n.get_user_locale(interaction)
     view = await SocialNotificationsConfigView.create(
         bot, interaction.guild_id, interaction.user.id, locale
     )
-    if interaction.response.is_done():
-        await interaction.edit_original_response(view=view)
-    else:
-        await interaction.response.edit_message(view=view)
+    await show(interaction, view)
 
 
 # =========================================================================== #
@@ -434,6 +433,7 @@ class SocialNotificationsConfigView(BaseView):
     async def on_add(self, interaction: discord.Interaction):
         if not await _check_perms(interaction):
             return
+        await ack(interaction)
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
         is_premium = False
@@ -442,11 +442,12 @@ class SocialNotificationsConfigView(BaseView):
         except Exception:
             pass
         add_view = AddSubscriptionView(bot, interaction.guild_id, locale, is_premium)
-        await interaction.response.edit_message(view=add_view)
+        await show(interaction, add_view)
 
     async def on_manage_select(self, interaction: discord.Interaction):
         if not await _check_perms(interaction):
             return
+        await ack(interaction)
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
         key = interaction.data['values'][0]
@@ -456,15 +457,16 @@ class SocialNotificationsConfigView(BaseView):
             await _render_main(interaction)
             return
         manage_view = ManageSubscriptionView(bot, interaction.guild_id, locale, sub)
-        await interaction.response.edit_message(view=manage_view)
+        await show(interaction, manage_view)
 
     async def on_back(self, interaction: discord.Interaction):
         if not await _check_perms(interaction):
             return
+        await ack(interaction)
         from cogs.config import ConfigMainView
         locale = i18n.get_user_locale(interaction)
         main_view = ConfigMainView(interaction.client, interaction.guild_id, interaction.user.id, locale)
-        await interaction.response.edit_message(view=main_view)
+        await show(interaction, main_view)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         return await _check_perms(interaction)
@@ -665,6 +667,7 @@ class AddSubscriptionView(BaseView):
     async def on_platform_select(self, interaction: discord.Interaction):
         if not await _check_perms(interaction):
             return
+        await ack(interaction)
         self.platform = interaction.data['values'][0]
         # Reset platform-specific customization to that platform's defaults.
         self.message = None
@@ -673,22 +676,24 @@ class AddSubscriptionView(BaseView):
         self.show_media = True
         self.customized = False
         self._build_view()
-        await interaction.response.edit_message(view=self)
+        await show(interaction, self)
 
     async def on_channel_select(self, interaction: discord.Interaction):
         if not await _check_perms(interaction):
             return
+        await ack(interaction)
         values = interaction.data.get('values')
         self.channel_id = int(values[0]) if values else None
         self._build_view()
-        await interaction.response.edit_message(view=self)
+        await show(interaction, self)
 
     async def on_role_select(self, interaction: discord.Interaction):
         if not await _check_perms(interaction):
             return
+        await ack(interaction)
         self.role_ids = [int(r) for r in interaction.data.get('values', [])]
         self._build_view()
-        await interaction.response.edit_message(view=self)
+        await show(interaction, self)
 
     async def on_set_account(self, interaction: discord.Interaction):
         if not await _check_perms(interaction):
@@ -701,7 +706,7 @@ class AddSubscriptionView(BaseView):
         # Turn a pasted profile URL into a clean handle right away.
         self.identifier = normalize_identifier(self.platform or "", identifier) or None
         self._build_view()
-        await interaction.response.edit_message(view=self)
+        await show(interaction, self)
 
     async def on_customize(self, interaction: discord.Interaction):
         if not await _check_perms(interaction):
@@ -723,14 +728,14 @@ class AddSubscriptionView(BaseView):
         self.show_media = show_media
         self.customized = True
         self._build_view()
-        await interaction.response.edit_message(view=self)
+        await show(interaction, self)
 
     async def on_confirm(self, interaction: discord.Interaction):
         if not await _check_perms(interaction):
             return
         if not self._can_confirm:
             return
-        await interaction.response.defer()
+        await ack(interaction)
 
         cog = interaction.client.get_cog("SocialNotifications")
         if not cog:
@@ -924,19 +929,21 @@ class ManageSubscriptionView(BaseView):
     async def on_channel_select(self, interaction: discord.Interaction):
         if not await _check_perms(interaction):
             return
+        await ack(interaction)
         values = interaction.data.get('values')
         if values:
             await self._persist(channel_id=int(values[0]))
         self._build_view()
-        await interaction.response.edit_message(view=self)
+        await show(interaction, self)
 
     async def on_role_select(self, interaction: discord.Interaction):
         if not await _check_perms(interaction):
             return
+        await ack(interaction)
         role_ids = [int(r) for r in interaction.data.get('values', [])]
         await self._persist(mention_role_ids=role_ids)
         self._build_view()
-        await interaction.response.edit_message(view=self)
+        await show(interaction, self)
 
     async def on_edit_message(self, interaction: discord.Interaction):
         if not await _check_perms(interaction):
@@ -952,24 +959,26 @@ class ManageSubscriptionView(BaseView):
 
     async def _on_message_edited(self, interaction: discord.Interaction, message: str,
                                  color: Optional[int], show_avatar: bool, show_media: bool):
+        await ack(interaction)
         await self._persist(
             message=message, embed_color=color,
             show_avatar=show_avatar, show_media=show_media,
         )
         self._build_view()
-        await interaction.response.edit_message(view=self)
+        await show(interaction, self)
 
     async def on_toggle(self, interaction: discord.Interaction):
         if not await _check_perms(interaction):
             return
+        await ack(interaction)
         await self._persist(enabled=not self.sub.get('enabled', True))
         self._build_view()
-        await interaction.response.edit_message(view=self)
+        await show(interaction, self)
 
     async def on_remove(self, interaction: discord.Interaction):
         if not await _check_perms(interaction):
             return
-        await interaction.response.defer()
+        await ack(interaction)
         cog = interaction.client.get_cog("SocialNotifications")
         if cog:
             await cog.remove_subscription(self.guild_id, self.sub['platform'], self.sub['target_id'])

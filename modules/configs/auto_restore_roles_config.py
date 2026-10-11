@@ -11,7 +11,7 @@ import logging
 from utils.i18n import i18n, t
 from cogs.error_handler import BaseView
 from utils.emojis import REFRESH, REQUIRED_FIELDS, DONE, DELETE, BACK, SAVE, UNDONE
-from modules.configs._common import check_guild_perms
+from modules.configs._common import check_guild_perms, ack, show
 
 logger = logging.getLogger('moddy.modules.auto_restore_roles_config')
 
@@ -337,6 +337,7 @@ class AutoRestoreRolesConfigView(BaseView):
         """Callback quand le mode est sélectionné"""
         if not await check_guild_perms(interaction):
             return
+        await ack(interaction)
 
         working_config = await self._fresh_working_config(interaction)
         selected_mode = interaction.data['values'][0]
@@ -347,12 +348,13 @@ class AutoRestoreRolesConfigView(BaseView):
             working_config['included_roles'] = []
 
         view = await self._rebuild(interaction, working_config, has_changes=True)
-        await interaction.response.edit_message(view=view)
+        await show(interaction, view)
 
     async def on_excluded_roles_select(self, interaction: discord.Interaction):
         """Callback quand les rôles exclus sont sélectionnés"""
         if not await check_guild_perms(interaction):
             return
+        await ack(interaction)
 
         working_config = await self._fresh_working_config(interaction)
         if interaction.data['values']:
@@ -361,12 +363,13 @@ class AutoRestoreRolesConfigView(BaseView):
             working_config['excluded_roles'] = []
 
         view = await self._rebuild(interaction, working_config, has_changes=True)
-        await interaction.response.edit_message(view=view)
+        await show(interaction, view)
 
     async def on_included_roles_select(self, interaction: discord.Interaction):
         """Callback quand les rôles inclus sont sélectionnés"""
         if not await check_guild_perms(interaction):
             return
+        await ack(interaction)
 
         working_config = await self._fresh_working_config(interaction)
         if interaction.data['values']:
@@ -375,12 +378,13 @@ class AutoRestoreRolesConfigView(BaseView):
             working_config['included_roles'] = []
 
         view = await self._rebuild(interaction, working_config, has_changes=True)
-        await interaction.response.edit_message(view=view)
+        await show(interaction, view)
 
     async def on_log_channel_select(self, interaction: discord.Interaction):
         """Callback quand le salon de logs est sélectionné"""
         if not await check_guild_perms(interaction):
             return
+        await ack(interaction)
 
         working_config = await self._fresh_working_config(interaction)
         if interaction.data['values']:
@@ -389,14 +393,14 @@ class AutoRestoreRolesConfigView(BaseView):
             working_config['log_channel_id'] = None
 
         view = await self._rebuild(interaction, working_config, has_changes=True)
-        await interaction.response.edit_message(view=view)
+        await show(interaction, view)
 
     async def on_save(self, interaction: discord.Interaction):
         """Sauvegarde la configuration"""
         if not await check_guild_perms(interaction):
             return
 
-        await interaction.response.defer()
+        await ack(interaction)
 
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
@@ -421,19 +425,20 @@ class AutoRestoreRolesConfigView(BaseView):
         """Annule les modifications"""
         if not await check_guild_perms(interaction):
             return
+        await ack(interaction)
 
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
         saved = await bot.module_manager.get_module_config(interaction.guild_id, 'auto_restore_roles')
         view = AutoRestoreRolesConfigView(bot, interaction.guild_id, interaction.user.id, locale, current_config=saved)
-        await interaction.response.edit_message(view=view)
+        await show(interaction, view)
 
     async def on_delete(self, interaction: discord.Interaction):
         """Supprime la configuration"""
         if not await check_guild_perms(interaction):
             return
 
-        await interaction.response.defer()
+        await ack(interaction)
 
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
@@ -454,7 +459,7 @@ class AutoRestoreRolesConfigView(BaseView):
         from cogs.config import ConfigMainView
         locale = i18n.get_user_locale(interaction)
         main_view = ConfigMainView(interaction.client, interaction.guild_id, interaction.user.id, locale)
-        await interaction.response.edit_message(view=main_view)
+        await show(interaction, main_view)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         return await check_guild_perms(interaction)

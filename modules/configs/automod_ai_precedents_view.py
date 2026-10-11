@@ -51,6 +51,7 @@ def page_count(total: int) -> int:
 
 
 async def render_precedents(interaction: discord.Interaction, page: int = 0) -> None:
+    await common.ack(interaction)
     bot = interaction.client
     try:
         rows = await bot.db.list_precedents(interaction.guild_id, with_vectors=False)
@@ -110,6 +111,7 @@ class PrecedentsDeleteSelect(
     async def callback(self, interaction: discord.Interaction):
         if not await common.gate(interaction):
             return
+        await common.ack(interaction)
         values = interaction.data.get("values") or []
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
@@ -123,7 +125,6 @@ class PrecedentsDeleteSelect(
                 svc = getattr(bot, "precedents", None)
                 if svc is not None:
                     svc.invalidate(interaction.guild_id)
-        await interaction.response.defer()
         await render_precedents(interaction, self.page)
         if values:
             await interaction.followup.send(tp("precedents.deleted", locale), ephemeral=True)

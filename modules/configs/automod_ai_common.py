@@ -33,7 +33,7 @@ from discord import ui
 from automod import constants as ac
 from automod import custom_infractions, infractions
 from automod.presets import blank_config
-from modules.configs._common import check_guild_perms
+from modules.configs._common import ack, check_guild_perms, show
 from utils import emojis
 from utils.components_v2 import create_error_message
 from utils.i18n import i18n, t
@@ -235,10 +235,7 @@ async def save_cfg(interaction: discord.Interaction, cfg: Dict[str, Any]) -> boo
 
 async def respond(interaction: discord.Interaction, view: discord.ui.LayoutView) -> None:
     """Show ``view`` in place of the panel, whether or not it was deferred."""
-    if interaction.response.is_done():
-        await interaction.edit_original_response(view=view)
-    else:
-        await interaction.response.edit_message(view=view)
+    await show(interaction, view)
 
 
 async def gate(interaction: discord.Interaction) -> bool:
@@ -266,6 +263,8 @@ _SCREENS = {
 
 async def go(interaction: discord.Interaction, screen: str, **kwargs: Any) -> None:
     """Open ``screen`` in place of the current one (lazy import: no cycles)."""
+    # Acknowledge first: every screen loads state from the database.
+    await ack(interaction)
     module_name, func_name = _SCREENS[screen]
     func = getattr(importlib.import_module(module_name), func_name)
     await func(interaction, **kwargs)
@@ -541,4 +540,4 @@ async def back_to_modules(interaction: discord.Interaction) -> None:
     from cogs.config import ConfigMainView
     locale = i18n.get_user_locale(interaction)
     view = ConfigMainView(interaction.client, interaction.guild_id, interaction.user.id, locale)
-    await interaction.response.edit_message(view=view)
+    await show(interaction, view)

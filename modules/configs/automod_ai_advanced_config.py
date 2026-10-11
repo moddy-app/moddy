@@ -31,6 +31,7 @@ from automod import constants as ac
 from automod.rules_check import MAX_RULES_LENGTH, validate_rules
 from cogs.error_handler import BaseModal, BaseView
 from modules.configs import automod_ai_common as common
+from modules.configs._common import load_before_modal
 from modules.configs.automod_ai_common import back_row, button, cid, go, row, select, title, tp
 from utils.emojis import (
     BOOK, DELETE, EDIT, GROUPS, IMAGE, MESSAGE, SEARCH, SETTINGS,
@@ -50,16 +51,19 @@ async def _screen_state(interaction: discord.Interaction):
 
 
 async def render_monitoring(interaction: discord.Interaction) -> None:
+    await common.ack(interaction)
     bot, gid, locale, cfg = await _screen_state(interaction)
     await common.respond(interaction, AutomodMonitoringView(bot, gid, locale, cfg))
 
 
 async def render_indications(interaction: discord.Interaction) -> None:
+    await common.ack(interaction)
     bot, gid, locale, cfg = await _screen_state(interaction)
     await common.respond(interaction, AutomodIndicationsView(bot, gid, locale, cfg))
 
 
 async def render_exemptions(interaction: discord.Interaction) -> None:
+    await common.ack(interaction)
     bot, gid, locale, cfg = await _screen_state(interaction)
     await common.respond(interaction, AutomodExemptionsView(bot, gid, locale, cfg))
 
@@ -92,7 +96,7 @@ class _ScreenView(BaseView):
     async def _commit(self, interaction: discord.Interaction, cfg: Dict[str, Any],
                       render) -> None:
         """Save, then re-render from the database (also after a refusal)."""
-        await interaction.response.defer()
+        await common.ack(interaction)
         await common.save_cfg(interaction, cfg)
         await render(interaction)
 
@@ -151,6 +155,7 @@ class AutomodMonitoringView(_ScreenView):
         self.add_item(back_row(self.on_back, "mon", locale))
 
     async def on_content(self, interaction: discord.Interaction):
+        await common.ack(interaction)
         chosen = set(interaction.data.get("values") or [])
         cfg = await common.load_cfg(interaction.client, interaction.guild_id)
         for key, _ in _CONTENT_OPTIONS:
@@ -158,6 +163,7 @@ class AutomodMonitoringView(_ScreenView):
         await self._commit(interaction, cfg, render_monitoring)
 
     async def on_profile(self, interaction: discord.Interaction):
+        await common.ack(interaction)
         chosen = set(interaction.data.get("values") or [])
         cfg = await common.load_cfg(interaction.client, interaction.guild_id)
         profile = cfg["features"]["profile"]
@@ -189,7 +195,7 @@ class IndicationsModal(BaseModal):
     async def on_submit(self, interaction: discord.Interaction):
         locale = self.locale
         text = (self.field.component.value or "").strip()
-        await interaction.response.defer()
+        await common.ack(interaction)
         if text:  # clearing needs no AI call
             safe, reason = await validate_rules(interaction.client, interaction.guild_id, text)
             if not safe:
@@ -238,12 +244,17 @@ class AutomodIndicationsView(_ScreenView):
         self.add_item(back_row(self.on_back, "ind", locale))
 
     async def on_edit(self, interaction: discord.Interaction):
-        cfg = await common.load_cfg(interaction.client, interaction.guild_id)
+        # A modal must be the first response: bounded read for the pre-fill.
+        ok, cfg = await load_before_modal(
+            interaction, common.load_cfg(interaction.client, interaction.guild_id))
+        if not ok:
+            return
         modal = IndicationsModal(i18n.get_user_locale(interaction), cfg["indications"])
         modal.bot = interaction.client
         await interaction.response.send_modal(modal)
 
     async def on_clear(self, interaction: discord.Interaction):
+        await common.ack(interaction)
         cfg = await common.load_cfg(interaction.client, interaction.guild_id)
         cfg["indications"] = ""
         await self._commit(interaction, cfg, render_indications)
@@ -297,6 +308,7 @@ class AutomodExemptionsView(_ScreenView):
         self.add_item(back_row(self.on_back, "exm", locale))
 
     async def on_roles(self, interaction: discord.Interaction):
+        await common.ack(interaction)
         ids = [int(v) for v in interaction.data.get("values") or []]
         cfg = await common.load_cfg(interaction.client, interaction.guild_id)
         for fid in common.EXEMPT_FEATURES:
@@ -304,6 +316,7 @@ class AutomodExemptionsView(_ScreenView):
         await self._commit(interaction, cfg, render_exemptions)
 
     async def on_channels(self, interaction: discord.Interaction):
+        await common.ack(interaction)
         ids = [int(v) for v in interaction.data.get("values") or []]
         cfg = await common.load_cfg(interaction.client, interaction.guild_id)
         for fid in common.EXEMPT_FEATURES:
@@ -312,6 +325,7 @@ class AutomodExemptionsView(_ScreenView):
         await self._commit(interaction, cfg, render_exemptions)
 
     async def on_moderators(self, interaction: discord.Interaction):
+        await common.ack(interaction)
         cfg = await common.load_cfg(interaction.client, interaction.guild_id)
         cfg["ignore_moderators"] = not cfg["ignore_moderators"]
         await self._commit(interaction, cfg, render_exemptions)
@@ -400,11 +414,13 @@ class AutomodAdvancedView(_ScreenView):
                 button(self.on_delete_yes, custom_id=cid("adv", "delyes"), label="-")))
 
     async def on_dry_run(self, interaction: discord.Interaction):
+        await common.ack(interaction)
         cfg = await common.load_cfg(interaction.client, interaction.guild_id)
         cfg["dry_run"] = not cfg["dry_run"]
         await self._commit(interaction, cfg, render_advanced)
 
     async def on_max_action(self, interaction: discord.Interaction):
+        await common.ack(interaction)
         values = interaction.data.get("values") or []
         cfg = await common.load_cfg(interaction.client, interaction.guild_id)
         if values and values[0] in _MAX_ACTIONS:
@@ -412,6 +428,7 @@ class AutomodAdvancedView(_ScreenView):
         await self._commit(interaction, cfg, render_advanced)
 
     async def on_severity(self, interaction: discord.Interaction):
+        await common.ack(interaction)
         values = interaction.data.get("values") or []
         cfg = await common.load_cfg(interaction.client, interaction.guild_id)
         if values:
@@ -428,6 +445,7 @@ class AutomodAdvancedView(_ScreenView):
         await render_advanced(interaction)
 
     async def on_delete_yes(self, interaction: discord.Interaction):
+        await common.ack(interaction)
         await interaction.client.module_manager.delete_module_config(
             interaction.guild_id, common.MODULE_ID)
         await go(interaction, "wizard_channel")
@@ -435,6 +453,7 @@ class AutomodAdvancedView(_ScreenView):
 
 async def render_advanced(interaction: discord.Interaction, *, confirm_delete: bool = False) -> None:
     """Advanced screen; loads the precedent count shown next to its button."""
+    await common.ack(interaction)
     bot, gid, locale, cfg = await _screen_state(interaction)
     count = None
     db = getattr(bot, "db", None)

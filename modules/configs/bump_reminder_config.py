@@ -45,7 +45,9 @@ from modules.bump_reminder import (
     normalize_config,
     reminders_per_bot,
 )
-from modules.configs._common import check_guild_perms
+from modules.configs._common import (
+    ack, check_guild_perms, load_before_modal, say, show,
+)
 from utils.components_v2 import create_success_message
 from utils.emojis import (
     ADD, BACK, DELETE, EDIT, INFO, PAUSE, PLAY, REQUIRED_FIELDS, ROCKET_LAUNCH, TIME,
@@ -95,14 +97,12 @@ async def _save(bot, guild_id: int, reminders: List[Dict[str, Any]],
 
 
 async def _render_main(interaction: discord.Interaction) -> None:
+    await ack(interaction)
     bot = interaction.client
     locale = i18n.get_user_locale(interaction)
     view = await BumpReminderConfigView.create(
         bot, interaction.guild_id, interaction.user.id, locale)
-    if interaction.response.is_done():
-        await interaction.edit_original_response(view=view)
-    else:
-        await interaction.response.edit_message(view=view)
+    await show(interaction, view)
 
 
 def _ping_label(mode: str, locale: str) -> str:
@@ -417,14 +417,20 @@ class BumpReminderConfigView(BaseView):
         locale = i18n.get_user_locale(interaction)
 
         # Re-check against live config: the panel may have been open a while.
-        reminders = await _load(bot, interaction.guild_id)
-        cap = await reminders_per_bot(bot, interaction.guild_id)
-        counts = count_by_bot(reminders)
-        available = [s.key for s in BUMP_BOTS if counts.get(s.key, 0) < cap]
+        # A modal must be the first response, so this read is time-bounded
+        # (load_before_modal) instead of followed by an ack.
+        async def _available_bots():
+            reminders = await _load(bot, interaction.guild_id)
+            cap = await reminders_per_bot(bot, interaction.guild_id)
+            counts = count_by_bot(reminders)
+            return [s.key for s in BUMP_BOTS if counts.get(s.key, 0) < cap]
+
+        ok, available = await load_before_modal(interaction, _available_bots())
+        if not ok:
+            return
         if not available:
-            await interaction.response.send_message(
-                t('modules.bump_reminder.config.all_configured', locale=locale),
-                ephemeral=True)
+            await say(interaction,
+                      t('modules.bump_reminder.config.all_configured', locale=locale))
             return
 
         modal = BumpReminderModal(
@@ -435,6 +441,7 @@ class BumpReminderConfigView(BaseView):
     async def on_manage_select(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+        await ack(interaction)
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
         entry_id = interaction.data['values'][0]
@@ -446,7 +453,7 @@ class BumpReminderConfigView(BaseView):
         states = await bot.db.get_guild_bump_states(interaction.guild_id)
         view = ManageBumpReminderView(bot, interaction.guild_id, locale, entry,
                                       states.get(entry['bot']))
-        await interaction.response.edit_message(view=view)
+        await show(interaction, view)
 
     async def on_back(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
@@ -455,7 +462,7 @@ class BumpReminderConfigView(BaseView):
         locale = i18n.get_user_locale(interaction)
         main_view = ConfigMainView(interaction.client, interaction.guild_id,
                                    interaction.user.id, locale)
-        await interaction.response.edit_message(view=main_view)
+        await show(interaction, main_view)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         return await check_guild_perms(interaction)
@@ -605,15 +612,14 @@ class ManageBumpReminderView(BaseView):
             return
         success, error = result
         if not success:
-            await interaction.response.send_message(
-                t('modules.config.save.error', locale=locale, error=error or ''),
-                ephemeral=True)
+            await say(interaction,
+                      t('modules.config.save.error', locale=locale, error=error or ''))
             return
         bot = interaction.client
         states = await bot.db.get_guild_bump_states(interaction.guild_id)
         view = ManageBumpReminderView(bot, interaction.guild_id, locale, self.entry,
                                       states.get(self.entry['bot']))
-        await interaction.response.edit_message(view=view)
+        await show(interaction, view)
 
     # -- callbacks -------------------------------------------------------- #
     async def on_edit(self, interaction: discord.Interaction):
@@ -622,13 +628,21 @@ class ManageBumpReminderView(BaseView):
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
 
-        reminders = await _load(bot, interaction.guild_id)
+        # Modal pre-fill: bounded read, the modal must be the first response.
+        async def _current():
+            reminders = await _load(bot, interaction.guild_id)
+            cap = await reminders_per_bot(bot, interaction.guild_id)
+            return reminders, cap
+
+        ok, loaded = await load_before_modal(interaction, _current())
+        if not ok:
+            return
+        reminders, cap = loaded
         entry = next((r for r in reminders if r['id'] == self.entry.get('id')), None)
         if not entry:
             await _render_main(interaction)
             return
 
-        cap = await reminders_per_bot(bot, interaction.guild_id)
         counts = count_by_bot(reminders)
         available = [s.key for s in BUMP_BOTS if counts.get(s.key, 0) < cap]
 
@@ -647,6 +661,7 @@ class ManageBumpReminderView(BaseView):
     async def on_toggle(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+        await ack(interaction)
         await self._refresh(
             interaction,
             await self._apply(interaction, enabled=not self.entry.get('enabled', True)),
@@ -657,7 +672,7 @@ class ManageBumpReminderView(BaseView):
             return
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
-        await interaction.response.defer()
+        await ack(interaction)
 
         reminders = await _load(bot, interaction.guild_id)
         entry = next((r for r in reminders if r['id'] == self.entry.get('id')), None)
@@ -735,7 +750,7 @@ async def _create_reminder(interaction: discord.Interaction, *, bot_key: str,
                            ping_mode: str, raw_interval: str) -> None:
     bot = interaction.client
     locale = i18n.get_user_locale(interaction)
-    await interaction.response.defer()
+    await ack(interaction)
 
     interval = _resolve_interval(raw_interval, bot_key)
     if interval is None:
@@ -763,7 +778,7 @@ def _edit_reminder(entry_id: str):
                       ping_mode: str, raw_interval: str) -> None:
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
-        await interaction.response.defer()
+        await ack(interaction)
 
         interval = _resolve_interval(raw_interval, bot_key)
         if interval is None:

@@ -44,7 +44,7 @@ from modules.bot_customization import (
     parse_hex_color,
     style_is_empty,
 )
-from modules.configs._common import check_guild_perms
+from modules.configs._common import ack, check_guild_perms, load_before_modal, say, show
 from utils.components_v2 import create_error_message, create_success_message
 from utils.emojis import (
     AT, BACK, BANNER, DELETE, EDIT, IMAGE, MODDY_SQUARE, NOTE, PREMIUM, STAR,
@@ -274,7 +274,7 @@ async def _submit_identity(interaction: discord.Interaction, *, nickname: str,
 
     bot = interaction.client
     locale = i18n.get_user_locale(interaction)
-    await interaction.response.defer()
+    await ack(interaction)
 
     if not await has_identity_access(bot, interaction.guild_id):
         await interaction.followup.send(
@@ -320,7 +320,7 @@ async def _submit_style(interaction: discord.Interaction, *, font_id: Optional[i
 
     bot = interaction.client
     locale = i18n.get_user_locale(interaction)
-    await interaction.response.defer()
+    await ack(interaction)
 
     try:
         colors = [c for c in (parse_hex_color(color1), parse_hex_color(color2))
@@ -603,17 +603,27 @@ class BotCustomizationConfigView(BaseView):
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
 
-        if not await has_identity_access(bot, interaction.guild_id):
-            await interaction.response.send_message(
+        # The modal must be the first response (no defer possible): read the
+        # access flag and the stored identity together, under a time bound.
+        async def _load():
+            return (await has_identity_access(bot, interaction.guild_id),
+                    await bot.module_manager.get_module_config(interaction.guild_id, MODULE_ID) or {})
+
+        ok, loaded = await load_before_modal(interaction, _load())
+        if not ok:
+            return
+        has_access, config = loaded
+
+        if not has_access:
+            await say(
+                interaction,
                 view=create_error_message(
                     t('modules.bot_customization.premium.title', locale=locale),
                     t('modules.bot_customization.premium.description', locale=locale),
                 ),
-                ephemeral=True,
             )
             return
 
-        config = await bot.module_manager.get_module_config(interaction.guild_id, MODULE_ID) or {}
         await interaction.response.send_modal(BotIdentityModal(bot, locale, config))
 
     async def on_edit_style(self, interaction: discord.Interaction):
@@ -622,8 +632,13 @@ class BotCustomizationConfigView(BaseView):
 
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
-        config = await bot.module_manager.get_module_config(interaction.guild_id, MODULE_ID) or {}
-        style = config.get("style") or {}
+        # Modal pre-fill: bounded read, the modal must be the first response.
+        ok, config = await load_before_modal(
+            interaction,
+            bot.module_manager.get_module_config(interaction.guild_id, MODULE_ID))
+        if not ok:
+            return
+        style = (config or {}).get("style") or {}
         await interaction.response.send_modal(NameStyleModal(bot, locale, style))
 
     async def on_reset_identity(self, interaction: discord.Interaction):
@@ -642,7 +657,7 @@ class BotCustomizationConfigView(BaseView):
 
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
-        await interaction.response.defer()
+        await ack(interaction)
 
         kwargs: Dict[str, Any] = {}
         if identity:
@@ -678,7 +693,7 @@ class BotCustomizationConfigView(BaseView):
         main_view = ConfigMainView(
             interaction.client, interaction.guild_id, interaction.user.id, locale,
         )
-        await interaction.response.edit_message(view=main_view)
+        await show(interaction, main_view)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         return await check_guild_perms(interaction)

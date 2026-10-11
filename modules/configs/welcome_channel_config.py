@@ -28,7 +28,7 @@ import discord
 from discord import ui
 
 from cogs.error_handler import BaseView, BaseModal
-from modules.configs._common import check_guild_perms
+from modules.configs._common import check_guild_perms, ack, show, say
 from modules.welcome_channel import (
     CHANNEL_TYPES,
     DEFAULT_ACCENT_COLOR,
@@ -125,15 +125,13 @@ async def _save_messages(bot, guild_id: int,
 
 async def _render_main(interaction: discord.Interaction) -> None:
     """(Re)build and show the main panel from a live interaction."""
+    await ack(interaction)
     bot = interaction.client
     locale = i18n.get_user_locale(interaction)
     view = await WelcomeChannelConfigView.create(
         bot, interaction.guild_id, interaction.user.id, locale
     )
-    if interaction.response.is_done():
-        await interaction.edit_original_response(view=view)
-    else:
-        await interaction.response.edit_message(view=view)
+    await show(interaction, view)
 
 
 # =========================================================================== #
@@ -325,22 +323,22 @@ class WelcomeChannelConfigView(BaseView):
     async def on_add(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+        await ack(interaction)
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
         messages = await _load_messages(bot, interaction.guild_id)
         if len(messages) >= MAX_WELCOME_MESSAGES:
-            await interaction.response.send_message(
+            await say(interaction,
                 t('modules.welcome_channel.errors.too_many', locale=locale,
-                  max=MAX_WELCOME_MESSAGES),
-                ephemeral=True,
-            )
+                  max=MAX_WELCOME_MESSAGES))
             return
         add_view = AddWelcomeMessageView(bot, interaction.guild_id, locale)
-        await interaction.response.edit_message(view=add_view)
+        await show(interaction, add_view)
 
     async def on_manage_select(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+        await ack(interaction)
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
         entry_id = interaction.data['values'][0]
@@ -350,7 +348,7 @@ class WelcomeChannelConfigView(BaseView):
             await _render_main(interaction)
             return
         manage_view = ManageWelcomeMessageView(bot, interaction.guild_id, locale, entry)
-        await interaction.response.edit_message(view=manage_view)
+        await show(interaction, manage_view)
 
     async def on_back(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
@@ -358,7 +356,7 @@ class WelcomeChannelConfigView(BaseView):
         from cogs.config import ConfigMainView
         locale = i18n.get_user_locale(interaction)
         main_view = ConfigMainView(interaction.client, interaction.guild_id, interaction.user.id, locale)
-        await interaction.response.edit_message(view=main_view)
+        await show(interaction, main_view)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         return await check_guild_perms(interaction)
@@ -477,7 +475,7 @@ class AddWelcomeMessageView(BaseView):
         values = interaction.data.get('values')
         self.channel_id = int(values[0]) if values else None
         self._build_view()
-        await interaction.response.edit_message(view=self)
+        await show(interaction, self)
 
     async def on_customize(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
@@ -493,14 +491,14 @@ class AddWelcomeMessageView(BaseView):
         self.accent_color = color
         self.customized = True
         self._build_view()
-        await interaction.response.edit_message(view=self)
+        await show(interaction, self)
 
     async def on_confirm(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
         if not self._can_confirm:
             return
-        await interaction.response.defer()
+        await ack(interaction)
 
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
@@ -703,18 +701,17 @@ class ManageWelcomeMessageView(BaseView):
             return
         success, error = result
         if not success:
-            await interaction.response.send_message(
-                t('modules.config.save.error', locale=locale, error=error or ''),
-                ephemeral=True,
-            )
+            await say(interaction,
+                t('modules.config.save.error', locale=locale, error=error or ''))
             return
         view = ManageWelcomeMessageView(interaction.client, interaction.guild_id, locale, self.entry)
-        await interaction.response.edit_message(view=view)
+        await show(interaction, view)
 
     # -- callbacks -------------------------------------------------------- #
     async def on_channel_select(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+        await ack(interaction)
         values = interaction.data.get('values')
         if not values:
             await _render_main(interaction)
@@ -734,6 +731,7 @@ class ManageWelcomeMessageView(BaseView):
 
     async def _on_message_edited(self, interaction: discord.Interaction, message: str,
                                  color: Optional[int]):
+        await ack(interaction)
         await self._refresh(
             interaction, await self._apply(interaction, message=message, accent_color=color)
         )
@@ -741,6 +739,7 @@ class ManageWelcomeMessageView(BaseView):
     async def on_toggle(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+        await ack(interaction)
         await self._refresh(
             interaction,
             await self._apply(interaction, enabled=not self.entry.get('enabled', True)),
@@ -749,7 +748,7 @@ class ManageWelcomeMessageView(BaseView):
     async def on_remove(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
-        await interaction.response.defer()
+        await ack(interaction)
 
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)

@@ -11,7 +11,7 @@ import logging
 from utils.i18n import i18n, t
 from cogs.error_handler import BaseView
 from utils.emojis import MANAGE_USER, BACK, SAVE, UNDONE, DELETE
-from modules.configs._common import check_guild_perms
+from modules.configs._common import check_guild_perms, ack, show
 
 logger = logging.getLogger('moddy.modules.auto_role_config')
 
@@ -234,6 +234,7 @@ class AutoRoleConfigView(BaseView):
         """Callback quand les rôles membres sont sélectionnés"""
         if not await check_guild_perms(interaction):
             return
+        await ack(interaction)
 
         working_config = await self._fresh_working_config(interaction)
         if interaction.data['values']:
@@ -242,12 +243,13 @@ class AutoRoleConfigView(BaseView):
             working_config['member_roles'] = []
 
         view = await self._rebuild(interaction, working_config, has_changes=True)
-        await interaction.response.edit_message(view=view)
+        await show(interaction, view)
 
     async def on_bot_roles_select(self, interaction: discord.Interaction):
         """Callback quand les rôles bots sont sélectionnés"""
         if not await check_guild_perms(interaction):
             return
+        await ack(interaction)
 
         working_config = await self._fresh_working_config(interaction)
         if interaction.data['values']:
@@ -256,14 +258,14 @@ class AutoRoleConfigView(BaseView):
             working_config['bot_roles'] = []
 
         view = await self._rebuild(interaction, working_config, has_changes=True)
-        await interaction.response.edit_message(view=view)
+        await show(interaction, view)
 
     async def on_save(self, interaction: discord.Interaction):
         """Sauvegarde la configuration"""
         if not await check_guild_perms(interaction):
             return
 
-        await interaction.response.defer()
+        await ack(interaction)
 
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
@@ -288,19 +290,20 @@ class AutoRoleConfigView(BaseView):
         """Annule les modifications"""
         if not await check_guild_perms(interaction):
             return
+        await ack(interaction)
 
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
         saved = await bot.module_manager.get_module_config(interaction.guild_id, 'auto_role')
         view = AutoRoleConfigView(bot, interaction.guild_id, interaction.user.id, locale, current_config=saved)
-        await interaction.response.edit_message(view=view)
+        await show(interaction, view)
 
     async def on_delete(self, interaction: discord.Interaction):
         """Supprime la configuration"""
         if not await check_guild_perms(interaction):
             return
 
-        await interaction.response.defer()
+        await ack(interaction)
 
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
@@ -321,7 +324,7 @@ class AutoRoleConfigView(BaseView):
         from cogs.config import ConfigMainView
         locale = i18n.get_user_locale(interaction)
         main_view = ConfigMainView(interaction.client, interaction.guild_id, interaction.user.id, locale)
-        await interaction.response.edit_message(view=main_view)
+        await show(interaction, main_view)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         return await check_guild_perms(interaction)

@@ -15,7 +15,7 @@ import logging
 from utils.i18n import i18n, t
 from cogs.error_handler import BaseView, BaseModal
 from utils.emojis import TIMER, REQUIRED_FIELDS, EDIT, BACK, SAVE, UNDONE, DELETE, ADD
-from modules.configs._common import check_guild_perms
+from modules.configs._common import check_guild_perms, ack, show
 
 logger = logging.getLogger('moddy.modules.adaptive_slowmode_config')
 
@@ -295,7 +295,7 @@ class AdaptiveSlowmodeChannelConfigView(BaseView):
         if not values:
             self.channel_id = None
             self._build_view()
-            await interaction.response.edit_message(view=self)
+            await show(interaction, self)
             return
 
         selected_id = int(values[0])
@@ -311,7 +311,7 @@ class AdaptiveSlowmodeChannelConfigView(BaseView):
 
         self.channel_id = selected_id
         self._build_view()
-        await interaction.response.edit_message(view=self)
+        await show(interaction, self)
 
     async def on_edit_min_delay(self, interaction: discord.Interaction):
         if not await self.check_user(interaction):
@@ -335,7 +335,7 @@ class AdaptiveSlowmodeChannelConfigView(BaseView):
             return
         self.config["min_delay"] = value
         self._build_view()
-        await interaction.response.edit_message(view=self)
+        await show(interaction, self)
 
     async def on_edit_max_delay(self, interaction: discord.Interaction):
         if not await self.check_user(interaction):
@@ -365,14 +365,14 @@ class AdaptiveSlowmodeChannelConfigView(BaseView):
             return
         self.config["max_delay"] = value
         self._build_view()
-        await interaction.response.edit_message(view=self)
+        await show(interaction, self)
 
     async def on_sensitivity_select(self, interaction: discord.Interaction):
         if not await self.check_user(interaction):
             return
         self.config["sensitivity"] = interaction.data["values"][0]
         self._build_view()
-        await interaction.response.edit_message(view=self)
+        await show(interaction, self)
 
     async def on_back(self, interaction: discord.Interaction):
         if not await self.check_user(interaction):
@@ -383,7 +383,7 @@ class AdaptiveSlowmodeChannelConfigView(BaseView):
         parent.working_config = self.working_config
         parent.has_changes = self.working_config != parent.current_config
         parent._build_view()
-        await interaction.response.edit_message(view=parent)
+        await show(interaction, parent)
 
     async def on_save(self, interaction: discord.Interaction):
         if not await self.check_user(interaction):
@@ -403,7 +403,7 @@ class AdaptiveSlowmodeChannelConfigView(BaseView):
         parent.has_changes = True
         parent.has_existing_config = self.has_existing_config
         parent._build_view()
-        await interaction.response.edit_message(view=parent)
+        await show(interaction, parent)
 
     # ------------------------------------------------------------------
 
@@ -618,6 +618,7 @@ class AdaptiveSlowmodeConfigView(BaseView):
     async def on_add_channel(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+        await ack(interaction)
         working_config = await self._fresh_working_config(interaction)
         locale = i18n.get_user_locale(interaction)
         channel_view = AdaptiveSlowmodeChannelConfigView(
@@ -628,21 +629,22 @@ class AdaptiveSlowmodeConfigView(BaseView):
             working_config=working_config,
             has_existing_config=self.has_existing_config if self._is_live_for(interaction) else bool(working_config.get("channels")),
         )
-        await interaction.response.edit_message(view=channel_view)
+        await show(interaction, channel_view)
 
     async def on_back(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
         from cogs.config import ConfigMainView
         locale = i18n.get_user_locale(interaction)
-        await interaction.response.edit_message(
-            view=ConfigMainView(interaction.client, interaction.guild_id, interaction.user.id, locale)
+        await show(
+            interaction,
+            ConfigMainView(interaction.client, interaction.guild_id, interaction.user.id, locale),
         )
 
     async def on_save(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
-        await interaction.response.defer()
+        await ack(interaction)
 
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
@@ -666,16 +668,17 @@ class AdaptiveSlowmodeConfigView(BaseView):
     async def on_cancel(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+        await ack(interaction)
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
         saved = await bot.module_manager.get_module_config(interaction.guild_id, "adaptive_slowmode")
         view = AdaptiveSlowmodeConfigView(bot, interaction.guild_id, interaction.user.id, locale, current_config=saved)
-        await interaction.response.edit_message(view=view)
+        await show(interaction, view)
 
     async def on_delete(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
-        await interaction.response.defer()
+        await ack(interaction)
 
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
@@ -736,6 +739,7 @@ class SlowmodeListButton(ui.DynamicItem[ui.Button], template=_CID_LIST_ITEM_TEMP
     async def callback(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
+        await ack(interaction)
 
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
@@ -754,7 +758,7 @@ class SlowmodeListButton(ui.DynamicItem[ui.Button], template=_CID_LIST_ITEM_TEMP
                 working_config=working_config, has_existing_config=has_existing_config,
                 channel_id=self.channel_id, channel_config=dict(ch_cfg),
             )
-            await interaction.response.edit_message(view=channel_view)
+            await show(interaction, channel_view)
             return
 
         # remove
@@ -764,4 +768,4 @@ class SlowmodeListButton(ui.DynamicItem[ui.Button], template=_CID_LIST_ITEM_TEMP
         view.working_config = working_config
         view.has_changes = True
         view._build_view()
-        await interaction.response.edit_message(view=view)
+        await show(interaction, view)

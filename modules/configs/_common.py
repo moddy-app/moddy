@@ -17,7 +17,9 @@ module's config screen opens, instead of gating the whole /config command
 behind Administrator.
 """
 
-from typing import List, Mapping, Optional, Sequence
+import asyncio
+import logging
+from typing import Any, Awaitable, List, Mapping, Optional, Sequence, Tuple
 
 import discord
 from discord import ui
@@ -38,10 +40,11 @@ async def check_guild_perms(interaction: discord.Interaction) -> bool:
     perms = getattr(interaction.user, "guild_permissions", None)
     if not interaction.guild_id or perms is None or not perms.manage_guild:
         locale = i18n.get_user_locale(interaction)
-        await interaction.response.send_message(
-            t("modules.config.errors.no_user_perms", locale=locale),
-            ephemeral=True,
-        )
+        message = t("modules.config.errors.no_user_perms", locale=locale)
+        if interaction.response.is_done():
+            await interaction.followup.send(message, ephemeral=True)
+        else:
+            await interaction.response.send_message(message, ephemeral=True)
         return False
     return True
 
@@ -121,3 +124,73 @@ async def check_bot_perms(
     else:
         await interaction.response.send_message(view=error_view, ephemeral=True)
     return False
+
+
+# ---------------------------------------------------------------------------
+# Ack-first helpers
+#
+# Discord requires the initial response within 3 s. Config callbacks read and
+# write the database, so they acknowledge the interaction FIRST (a deferred
+# update for component interactions) and only then do the slow work. Never
+# call ``interaction.response.edit_message`` after slow awaits; use ``show``.
+# ---------------------------------------------------------------------------
+
+async def ack(interaction: discord.Interaction) -> None:
+    """Acknowledge ``interaction`` right away if nothing answered it yet.
+
+    For a component / modal-submit interaction this is a deferred update (the
+    original message is edited later with ``show``). Safe to call twice and
+    safe after any other response (no-op).
+    """
+    if interaction.response.is_done():
+        return
+    try:
+        await interaction.response.defer()
+    except (discord.InteractionResponded, discord.NotFound):
+        # Already answered (e.g. by the global guard) or expired: nothing to do.
+        pass
+
+
+async def show(interaction: discord.Interaction, view: discord.ui.LayoutView) -> None:
+    """Replace the panel message with ``view``.
+
+    Uses the fast ``edit_message`` path when the interaction is still
+    unanswered, ``edit_original_response`` once it was acknowledged.
+    """
+    if interaction.response.is_done():
+        await interaction.edit_original_response(view=view)
+    else:
+        await interaction.response.edit_message(view=view)
+
+
+async def say(interaction: discord.Interaction, *args, **kwargs) -> None:
+    """Send an ephemeral message whether or not the interaction was acked."""
+    kwargs.setdefault("ephemeral", True)
+    if interaction.response.is_done():
+        await interaction.followup.send(*args, **kwargs)
+    else:
+        await interaction.response.send_message(*args, **kwargs)
+
+
+# A modal must be the interaction's FIRST response (it cannot follow a defer),
+# so a callback that opens a pre-filled modal cannot ack first. When the
+# pre-fill needs the database, read it under a bound well below Discord's 3 s.
+MODAL_LOAD_TIMEOUT = 1.5
+
+
+async def load_before_modal(interaction: discord.Interaction,
+                            coro: Awaitable[Any]) -> Tuple[bool, Any]:
+    """Await ``coro`` (a DB read feeding a modal) with a hard time bound.
+
+    Returns ``(True, value)``. If the read is too slow (or fails), tells the
+    user to click again, as the first response, and returns ``(False, None)``;
+    the caller must then return without opening the modal.
+    """
+    try:
+        return True, await asyncio.wait_for(coro, timeout=MODAL_LOAD_TIMEOUT)
+    except Exception as e:  # noqa: BLE001 - timeout or DB error: never let the click fail
+        logging.getLogger("moddy").warning(
+            "Modal pre-fill load failed (%s); asking the user to retry", type(e).__name__)
+        locale = i18n.get_user_locale(interaction)
+        await say(interaction, t("modules.config.errors.slow_retry", locale=locale))
+        return False, None
