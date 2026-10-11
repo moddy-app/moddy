@@ -17,7 +17,7 @@ module's config screen opens, instead of gating the whole /config command
 behind Administrator.
 """
 
-from typing import List, Sequence
+from typing import List, Mapping, Optional, Sequence
 
 import discord
 from discord import ui
@@ -25,7 +25,12 @@ from discord import ui
 from config import COLORS
 from utils.emojis import EMOJIS
 from utils.i18n import i18n, t
-from utils.team_access_views import permission_label
+from utils.bot_permissions import (
+    format_missing,
+    merge_permissions,
+    missing_channel_permissions,
+    missing_guild_permissions,
+)
 
 
 async def check_guild_perms(interaction: discord.Interaction) -> bool:
@@ -42,9 +47,11 @@ async def check_guild_perms(interaction: discord.Interaction) -> bool:
 
 
 def missing_bot_permissions(guild: discord.Guild, required: Sequence[str]) -> List[str]:
-    """Permission keys from ``required`` that the bot does not hold in ``guild``."""
-    mine = guild.me.guild_permissions if guild.me else discord.Permissions.none()
-    return [key for key in required if not getattr(mine, key, False)]
+    """Permission keys from ``required`` that the bot does not hold in ``guild``.
+
+    Never short-circuits: every missing permission is returned at once.
+    """
+    return missing_guild_permissions(guild, required)
 
 
 async def check_bot_perms(
@@ -53,25 +60,34 @@ async def check_bot_perms(
     *,
     module_name: str = "",
     followup: bool = False,
+    channel_requirements: Optional[Mapping[int, Sequence[str]]] = None,
 ) -> bool:
     """Authorize opening a module's config screen: the bot must hold every
-    permission that module declares in ``REQUIRED_BOT_PERMISSIONS``.
+    permission the module needs.
 
-    Sends a Components V2 "missing permissions" message (naming exactly what
-    is missing, with a re-invite link scoped to just that) and returns False
-    when something is missing. Pass ``followup=True`` when the interaction's
-    initial response was already used (e.g. deferred).
+    ``required`` is the module's full guild-level list (use
+    ``module_class.required_permissions()``: baseline + module specific).
+    ``channel_requirements`` (``module_class.channel_requirements(config)``)
+    adds the permissions needed in the channels the module is configured for,
+    so channel overwrites that deny the bot show up too.
+
+    ALL gaps are listed in one Components V2 message with a re-invite link
+    scoped to every missing permission, then False is returned. Pass
+    ``followup=True`` when the interaction's initial response was already used
+    (e.g. deferred). Cache reads only: no network call.
     """
     guild = interaction.guild
-    if not required or guild is None or guild.me is None:
+    if guild is None or guild.me is None:
         return True
 
-    missing = missing_bot_permissions(guild, required)
-    if not missing:
+    missing = missing_guild_permissions(guild, required)
+    channel_missing = missing_channel_permissions(
+        guild, channel_requirements or {}, skip=missing)
+    if not missing and not channel_missing:
         return True
 
     locale = i18n.get_user_locale(interaction)
-    permissions_list = "\n".join(f"• {permission_label(key, locale)}" for key in missing)
+    permissions_list = format_missing(missing, channel_missing, locale)
 
     error_view = ui.LayoutView(timeout=None)
     error_container = ui.Container(accent_colour=discord.Colour(COLORS["error"]))
@@ -85,8 +101,9 @@ async def check_bot_perms(
     error_view.add_item(error_container)
 
     invite_perms = discord.Permissions.none()
-    for key in missing:
-        setattr(invite_perms, key, True)
+    for key in merge_permissions(missing, *channel_missing.values()):
+        if hasattr(invite_perms, key):
+            setattr(invite_perms, key, True)
 
     button_row = ui.ActionRow()
     button_row.add_item(ui.Button(

@@ -213,14 +213,24 @@ class ConfigMainView(BaseView):
         # module déclare les permissions dont IL a besoin, vérifiées ici
         # avant d'ouvrir son écran de configuration.
         module_class = bot.module_manager.registered_modules.get(module_id)
-        if module_class and not await check_bot_perms(
-            interaction, module_class.REQUIRED_BOT_PERMISSIONS,
-            module_name=module_class.MODULE_NAME, followup=True,
-        ):
-            return
 
         # Récupère la configuration actuelle du module
         module_config = await bot.module_manager.get_module_config(guild_id, module_id)
+
+        # One combined check: baseline + module permissions guild-wide AND the
+        # permissions needed in the channels already configured. Everything
+        # missing is listed at once, never one permission per attempt.
+        try:
+            channel_needs = (module_class.channel_requirements(module_config or {})
+                             if module_class else {})
+        except Exception:
+            channel_needs = {}  # malformed stored config: guild-level check still runs
+        if module_class and not await check_bot_perms(
+            interaction, module_class.required_permissions(),
+            module_name=module_class.MODULE_NAME, followup=True,
+            channel_requirements=channel_needs,
+        ):
+            return
 
         # Sanction globale "limité" : un module jamais configuré ne peut plus
         # être mis en place. On le dit tout de suite plutôt qu'à la sauvegarde.

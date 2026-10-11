@@ -36,6 +36,7 @@ import discord
 
 from bumpreminder import MAX_INTERVAL, MIN_INTERVAL, bot_by_key, detect
 from modules.module_manager import ModuleBase
+from utils.bot_permissions import channel_map, channel_validation_error
 from utils.emojis import ROCKET_LAUNCH
 from utils.i18n import t
 
@@ -176,6 +177,14 @@ class BumpReminderModule(ModuleBase):
     MODULE_EMOJI = ROCKET_LAUNCH
     MODULE_ORDER = 85
 
+    @classmethod
+    def channel_requirements(cls, config):
+        return channel_map(*(
+            (entry.get("channel_id"), ["view_channel", "send_messages"])
+            for entry in (config.get("reminders") or [])
+            if isinstance(entry, dict)
+        ))
+
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)
         self.reminders: List[Dict[str, Any]] = []
@@ -238,10 +247,10 @@ class BumpReminderModule(ModuleBase):
             if not isinstance(channel, discord.TextChannel):
                 return False, t('modules.bump_reminder.errors.channel_type', locale=locale)
 
-            perms = channel.permissions_for(guild.me)
-            if not perms.view_channel or not perms.send_messages:
-                return False, t('modules.bump_reminder.errors.no_send_permission',
-                                locale=locale, channel=channel.mention)
+            error = channel_validation_error(
+                channel, guild, ["view_channel", "send_messages"], locale)
+            if error:
+                return False, error
 
             # Two reminders for the same directory in the same channel would
             # post the same card twice, every time.

@@ -38,6 +38,7 @@ from db.repositories.altguard import (
     VERDICT_PASSED, VERDICT_TO_STATUS,
 )
 from modules.module_manager import ModuleBase
+from utils.bot_permissions import channel_map, channel_validation_error
 from utils.emojis import FINGERPRINT
 from utils.guild_language import DEFAULT_LOCALE, guild_locale
 
@@ -69,6 +70,14 @@ class AltGuardModule(ModuleBase):
     # Assigns/removes the verified & unverified roles and edits the gate
     # channel's permission overwrites (validate_config already checks this).
     REQUIRED_BOT_PERMISSIONS = ["manage_roles"]
+
+    @classmethod
+    def channel_requirements(cls, config):
+        # The panel channel needs the baseline; the log channel only a post.
+        return channel_map(
+            (config.get("channel_id"), ["view_channel", "send_messages"]),
+            (config.get("log_channel_id"), ["view_channel", "send_messages"]),
+        )
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)
@@ -123,8 +132,15 @@ class AltGuardModule(ModuleBase):
         if not guild:
             return False, "Server not found"
 
-        if not guild.me.guild_permissions.manage_roles:
-            return False, "I need the Manage Roles permission to run the verification gate"
+        from utils.bot_permissions import missing_guild_permissions
+        from utils.i18n import t
+        from utils.guild_language import guild_locale
+        locale = await guild_locale(self.bot, self.guild_id)
+        gaps = missing_guild_permissions(guild, self.required_permissions())
+        if gaps:
+            from utils.bot_permissions import format_missing
+            return False, t("modules.config.errors.guild_missing_perms", locale=locale,
+                            permissions=format_missing(gaps, {}, locale))
 
         channel = guild.get_channel(config_data.get('channel_id')) if config_data.get('channel_id') else None
         if not channel:
@@ -132,9 +148,10 @@ class AltGuardModule(ModuleBase):
         if not isinstance(channel, discord.TextChannel):
             return False, "The verification channel must be a text channel"
 
-        perms = channel.permissions_for(guild.me)
-        if not (perms.view_channel and perms.send_messages):
-            return False, f"I cannot post in {channel.mention}"
+        error = channel_validation_error(
+            channel, guild, ["view_channel", "send_messages"], locale)
+        if error:
+            return False, error
 
         unverified_id = config_data.get('unverified_role_id')
         verified_id = config_data.get('verified_role_id')
@@ -160,8 +177,10 @@ class AltGuardModule(ModuleBase):
             log_channel = guild.get_channel(log_channel_id)
             if not log_channel:
                 return False, "Log channel not found"
-            if not log_channel.permissions_for(guild.me).send_messages:
-                return False, f"I cannot post in {log_channel.mention}"
+            error = channel_validation_error(
+                log_channel, guild, ["view_channel", "send_messages"], locale)
+            if error:
+                return False, error
 
         return True, None
 

@@ -948,9 +948,12 @@
         "channel_not_found": "Canal não encontrado",
         "missing_bot_perms": {
           "title": "Permissões Insuficientes",
-          "description": "O Moddy precisa da seguinte permissão para configurar **{module}**:\n{permissions}\n\nReconvide o bot ou conceda essa permissão manualmente.",
-          "button": "Reconvidar o Moddy"
-        }
+          "description": "O Moddy precisa das seguintes permissões para configurar **{module}**:\n{permissions}\n\nReconvide o bot ou conceda essas permissões manualmente (e verifique as permissões dos canais envolvidos).",
+          "button": "Reconvidar o Moddy",
+          "in_channel": "Em {channel}:"
+        },
+        "channel_missing_perms": "<:error:1519790252594827264> O Moddy não tem todas as permissões necessárias em {channel}:\n{permissions}",
+        "guild_missing_perms": "<:error:1519790252594827264> O Moddy não tem todas as permissões necessárias neste servidor:\n{permissions}"
       },
       "current_value": "Valor atual:",
       "not_configured": "Não configurado"
@@ -3639,6 +3642,7 @@
         "destination_missing": "Esta categoria não tem um destino válido. Avise um administrador.",
         "too_many_open": "Você já tem `{max}` ticket(s) aberto(s) nesta categoria. Feche um antes de abrir outro.",
         "cannot_create_channel": "O Moddy não conseguiu criar o canal do ticket. Verifique as permissões dele na categoria de destino.",
+        "missing_bot_permissions": "O Moddy não tem as permissões necessárias para gerenciar tickets: {permissions}. Conceda-as na categoria de destino (ou em todo o servidor).",
         "already_closed": "Este ticket já está fechado.",
         "close_already_requested": "Já há um pedido de fechamento pendente neste ticket.",
         "no_close_request": "Não há nenhum pedido de fechamento pendente neste ticket.",

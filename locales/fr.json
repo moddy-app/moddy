@@ -947,9 +947,12 @@
         "channel_not_found": "Salon introuvable",
         "missing_bot_perms": {
           "title": "Permissions insuffisantes",
-          "description": "Moddy a besoin de la permission suivante pour configurer **{module}** :\n{permissions}\n\nVeuillez réinviter le bot ou lui accorder cette permission manuellement.",
-          "button": "Réinviter Moddy"
-        }
+          "description": "Moddy a besoin des permissions suivantes pour configurer **{module}** :\n{permissions}\n\nVeuillez réinviter le bot ou lui accorder ces permissions manuellement (et vérifier les permissions des salons concernés).",
+          "button": "Réinviter Moddy",
+          "in_channel": "Dans {channel} :"
+        },
+        "channel_missing_perms": "<:error:1519790252594827264> Moddy n'a pas toutes les permissions nécessaires dans {channel} :\n{permissions}",
+        "guild_missing_perms": "<:error:1519790252594827264> Moddy n'a pas toutes les permissions nécessaires sur ce serveur :\n{permissions}"
       },
       "current_value": "Valeur actuelle :",
       "not_configured": "Non configuré"
@@ -3638,6 +3641,7 @@
         "destination_missing": "Cette catégorie n'a pas de destination valide. Prévenez un administrateur.",
         "too_many_open": "Vous avez déjà `{max}` ticket(s) ouvert(s) dans cette catégorie. Fermez-en un avant d'en ouvrir un autre.",
         "cannot_create_channel": "Moddy n'a pas pu créer le salon du ticket. Vérifiez ses permissions sur la catégorie de destination.",
+        "missing_bot_permissions": "Il manque à Moddy des permissions pour gérer les tickets : {permissions}. Accordez-les-lui sur la catégorie de destination (ou sur le serveur).",
         "already_closed": "Ce ticket est déjà fermé.",
         "close_already_requested": "Une demande de fermeture est déjà en attente sur ce ticket.",
         "no_close_request": "Aucune demande de fermeture n'est en attente sur ce ticket.",

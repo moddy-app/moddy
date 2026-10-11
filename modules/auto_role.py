@@ -25,6 +25,7 @@ class AutoRoleModule(ModuleBase):
     MODULE_EMOJI = MANAGE_USER
     MODULE_ORDER = 30
     REQUIRED_BOT_PERMISSIONS = ["manage_roles"]
+    SENDS_MESSAGES = False  # roles only, never writes in a channel
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)

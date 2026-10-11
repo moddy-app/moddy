@@ -948,9 +948,12 @@
         "channel_not_found": "Channel not found",
         "missing_bot_perms": {
           "title": "Insufficient Permissions",
-          "description": "Moddy needs the following permission to configure **{module}**:\n{permissions}\n\nPlease re-invite the bot or grant it this permission manually.",
-          "button": "Re-invite Moddy"
-        }
+          "description": "Moddy needs the following permissions to configure **{module}**:\n{permissions}\n\nPlease re-invite the bot or grant it these permissions manually (and check the permissions of the channels involved).",
+          "button": "Re-invite Moddy",
+          "in_channel": "In {channel}:"
+        },
+        "channel_missing_perms": "<:error:1519790252594827264> Moddy is missing permissions in {channel}:\n{permissions}",
+        "guild_missing_perms": "<:error:1519790252594827264> Moddy is missing permissions on this server:\n{permissions}"
       },
       "current_value": "Current value:",
       "not_configured": "Not configured"
@@ -3639,6 +3642,7 @@
         "destination_missing": "This category has no valid destination. Warn an administrator.",
         "too_many_open": "You already have `{max}` open ticket(s) in this category. Close one before opening another.",
         "cannot_create_channel": "Moddy could not create the ticket channel. Check its permissions on the destination category.",
+        "missing_bot_permissions": "Moddy is missing permissions to run tickets: {permissions}. Grant them on the destination category (or server-wide).",
         "already_closed": "This ticket is already closed.",
         "close_already_requested": "A closure request is already pending on this ticket.",
         "no_close_request": "No closure request is pending on this ticket.",

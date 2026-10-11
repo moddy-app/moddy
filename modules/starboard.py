@@ -11,6 +11,7 @@ import discord
 
 from cogs.error_handler import BaseView
 from modules.module_manager import ModuleBase
+from utils.bot_permissions import channel_map, channel_validation_error
 from utils.emojis import STAR, is_standard_discord_emoji
 from utils.i18n import t, i18n
 from utils.safe_http import UnsafeURL, safe_get_bytes, validate_public_url
@@ -309,6 +310,11 @@ class StarboardModule(ModuleBase):
             logger.error(f"Error loading starboard config: {e}")
             return False
 
+    @classmethod
+    def channel_requirements(cls, config):
+        return channel_map((config.get("channel_id"),
+                            ["view_channel", "send_messages"]))
+
     async def validate_config(self, config_data: Dict[str, Any]) -> tuple[bool, Optional[str]]:
         """Validate configuration"""
         # Channel ID is required
@@ -329,9 +335,12 @@ class StarboardModule(ModuleBase):
                 return False, "Le salon doit être un salon textuel"
 
             # Check permissions
-            perms = channel.permissions_for(guild.me)
-            if not perms.send_messages:
-                return False, f"Je n'ai pas la permission d'envoyer des messages dans {channel.mention}"
+            from utils.guild_language import guild_locale
+            error = channel_validation_error(
+                channel, guild, ["view_channel", "send_messages"],
+                await guild_locale(self.bot, guild))
+            if error:
+                return False, error
 
         except Exception as e:
             return False, f"Erreur de validation du salon : {str(e)}"

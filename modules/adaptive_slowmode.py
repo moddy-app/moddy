@@ -15,6 +15,7 @@ import discord
 import logging
 
 from modules.module_manager import ModuleBase
+from utils.bot_permissions import channel_map, channel_validation_error
 from utils.emojis import TIMER
 
 logger = logging.getLogger('moddy.modules.adaptive_slowmode')
@@ -94,6 +95,14 @@ class AdaptiveSlowmodeModule(ModuleBase):
     MODULE_EMOJI = TIMER
     MODULE_ORDER = 70
     REQUIRED_BOT_PERMISSIONS = ["manage_channels"]
+    SENDS_MESSAGES = False  # only edits the channels' slowmode
+
+    @classmethod
+    def channel_requirements(cls, config):
+        return channel_map(*(
+            (channel_id, ["view_channel", "manage_channels"])
+            for channel_id in (config.get("channels") or {})
+        ))
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)
@@ -149,8 +158,12 @@ class AdaptiveSlowmodeModule(ModuleBase):
                 return False, f"Salon `{ch_id}` introuvable"
             if not isinstance(channel, discord.TextChannel):
                 return False, f"Le salon {channel.mention} doit être un salon textuel"
-            if not channel.permissions_for(guild.me).manage_channels:
-                return False, f"Permission **Gérer les salons** manquante sur {channel.mention}"
+            from utils.guild_language import guild_locale
+            error = channel_validation_error(
+                channel, guild, ["view_channel", "manage_channels"],
+                await guild_locale(self.bot, guild))
+            if error:
+                return False, error
 
             min_delay = ch_cfg.get("min_delay", 0)
             max_delay = ch_cfg.get("max_delay", 120)

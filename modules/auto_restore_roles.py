@@ -9,6 +9,7 @@ import logging
 from datetime import datetime
 
 from modules.module_manager import ModuleBase
+from utils.bot_permissions import channel_map, channel_validation_error
 from utils.emojis import REFRESH, HISTORY, DONE
 
 logger = logging.getLogger('moddy.modules.auto_restore_roles')
@@ -26,7 +27,13 @@ class AutoRestoreRolesModule(ModuleBase):
     MODULE_DESCRIPTION = "Restaure automatiquement les rôles des utilisateurs qui reviennent"
     MODULE_EMOJI = REFRESH
     MODULE_ORDER = 60
-    REQUIRED_BOT_PERMISSIONS = ["manage_roles"]
+    # embed_links: the optional log messages are embeds.
+    REQUIRED_BOT_PERMISSIONS = ["manage_roles", "embed_links"]
+
+    @classmethod
+    def channel_requirements(cls, config):
+        return channel_map((config.get("log_channel_id"),
+                            ["view_channel", "send_messages", "embed_links"]))
 
     # Modes de sauvegarde
     MODE_ALL = "all"  # Tous les rôles
@@ -98,11 +105,12 @@ class AutoRestoreRolesModule(ModuleBase):
                     return False, "Le salon de logs doit être un salon textuel"
 
                 # Vérifie les permissions
-                perms = channel.permissions_for(guild.me)
-                if not perms.send_messages:
-                    return False, f"Je n'ai pas la permission d'envoyer des messages dans {channel.mention}"
-                if not perms.embed_links:
-                    return False, f"Je n'ai pas la permission d'envoyer des embeds dans {channel.mention}"
+                from utils.guild_language import guild_locale
+                error = channel_validation_error(
+                    channel, guild, ["view_channel", "send_messages", "embed_links"],
+                    await guild_locale(self.bot, guild))
+                if error:
+                    return False, error
 
             except Exception as e:
                 return False, f"Erreur de validation du salon : {str(e)}"

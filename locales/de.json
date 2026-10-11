@@ -948,9 +948,12 @@
         "channel_not_found": "Kanal nicht gefunden",
         "missing_bot_perms": {
           "title": "Unzureichende Berechtigungen",
-          "description": "Moddy benötigt die folgende Berechtigung, um **{module}** zu konfigurieren:\n{permissions}\n\nBitte lade den Bot erneut ein oder erteile ihm diese Berechtigung manuell.",
-          "button": "Moddy erneut einladen"
-        }
+          "description": "Moddy benötigt die folgenden Berechtigungen, um **{module}** zu konfigurieren:\n{permissions}\n\nBitte lade den Bot erneut ein oder erteile ihm diese Berechtigungen manuell (und prüfe die Berechtigungen der betroffenen Kanäle).",
+          "button": "Moddy erneut einladen",
+          "in_channel": "In {channel}:"
+        },
+        "channel_missing_perms": "<:error:1519790252594827264> Moddy fehlen Berechtigungen in {channel}:\n{permissions}",
+        "guild_missing_perms": "<:error:1519790252594827264> Moddy fehlen Berechtigungen auf diesem Server:\n{permissions}"
       },
       "current_value": "Aktueller Wert:",
       "not_configured": "Nicht konfiguriert"
@@ -3639,6 +3642,7 @@
         "destination_missing": "Diese Kategorie hat kein gültiges Ziel. Sag einem Administrator Bescheid.",
         "too_many_open": "Du hast bereits `{max}` offene(s) Ticket(s) in dieser Kategorie. Schließe eins, bevor du ein weiteres öffnest.",
         "cannot_create_channel": "Moddy konnte den Ticket-Kanal nicht erstellen. Prüfe die Rechte in der Zielkategorie.",
+        "missing_bot_permissions": "Moddy fehlen Rechte für Tickets: {permissions}. Vergib sie in der Zielkategorie (oder serverweit).",
         "already_closed": "Dieses Ticket ist bereits geschlossen.",
         "close_already_requested": "Für dieses Ticket liegt bereits eine Schließungsanfrage vor.",
         "no_close_request": "Für dieses Ticket liegt keine Schließungsanfrage vor.",

@@ -13,6 +13,7 @@ from datetime import datetime, timedelta, timezone
 import asyncio
 
 from modules.module_manager import ModuleBase
+from utils.bot_permissions import channel_map, channel_validation_error
 from utils.emojis import GROUPS, UNDONE, DONE, VERIFIED, LOADING as LOADING_EMOJI, REPLY as REPLY_EMOJI
 from utils.members import get_or_fetch_member
 
@@ -37,7 +38,17 @@ class InterServerModule(ModuleBase):
     MODULE_DESCRIPTION = "Connecte plusieurs serveurs via des salons dédiés"
     MODULE_EMOJI = GROUPS
     MODULE_ORDER = 100
-    REQUIRED_BOT_PERMISSIONS = ["manage_webhooks"]
+    # Webhook relay + reactions on relayed messages + deleting moderated ones
+    # + the 3 s slowmode / topic it sets on the channel.
+    REQUIRED_BOT_PERMISSIONS = ["manage_webhooks", "manage_channels",
+                                "manage_messages", "add_reactions"]
+    CHANNEL_PERMISSIONS = ["view_channel", "send_messages", "manage_webhooks",
+                           "add_reactions", "manage_messages", "manage_channels"]
+
+    @classmethod
+    def channel_requirements(cls, config):
+        return channel_map((config.get("channel_id"), cls.CHANNEL_PERMISSIONS))
+
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)
@@ -90,18 +101,12 @@ class InterServerModule(ModuleBase):
                     return False, "Le salon doit être un salon textuel"
 
                 # Vérifie les permissions
-                perms = channel.permissions_for(guild.me)
-                if not perms.send_messages:
-                    return False, f"Je n'ai pas la permission d'envoyer des messages dans {channel.mention}"
-
-                if not perms.manage_webhooks:
-                    return False, f"Je n'ai pas la permission de gérer les webhooks dans {channel.mention}"
-
-                if not perms.add_reactions:
-                    return False, f"Je n'ai pas la permission d'ajouter des réactions dans {channel.mention}"
-
-                if not perms.manage_messages:
-                    return False, f"Je n'ai pas la permission de gérer les messages dans {channel.mention}"
+                from utils.guild_language import guild_locale
+                error = channel_validation_error(
+                    channel, guild, self.CHANNEL_PERMISSIONS,
+                    await guild_locale(self.bot, guild))
+                if error:
+                    return False, error
 
             except Exception as e:
                 return False, f"Erreur de validation : {str(e)}"

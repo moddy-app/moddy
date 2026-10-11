@@ -34,6 +34,7 @@ from typing import Any, Dict, List, Optional
 import discord
 
 from modules.module_manager import ModuleBase
+from utils.bot_permissions import channel_map, channel_validation_error
 from utils.emojis import ASSIGNMENT
 from utils.i18n import t
 
@@ -91,6 +92,11 @@ class MemberApplicationsModule(ModuleBase):
     # else: the review card is a plain message in a channel the server picks,
     # checked for View/Send at save time.
     REQUIRED_BOT_PERMISSIONS = ["kick_members"]
+
+    @classmethod
+    def channel_requirements(cls, config):
+        return channel_map((config.get("channel_id"),
+                            ["view_channel", "send_messages"]))
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)
@@ -156,10 +162,10 @@ class MemberApplicationsModule(ModuleBase):
             return False, t("modules.member_applications.errors.channel_not_found", locale=locale)
         if not isinstance(channel, discord.TextChannel):
             return False, t("modules.member_applications.errors.channel_type", locale=locale)
-        perms = channel.permissions_for(guild.me)
-        if not perms.view_channel or not perms.send_messages:
-            return False, t("modules.member_applications.errors.no_send_permission",
-                            locale=locale, channel=channel.mention)
+        error = channel_validation_error(
+            channel, guild, ["view_channel", "send_messages"], locale)
+        if error:
+            return False, error
 
         return True, None
 
