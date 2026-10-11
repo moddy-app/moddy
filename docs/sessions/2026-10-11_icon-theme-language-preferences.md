@@ -36,6 +36,8 @@
 - **Module icons.** AltGuard → `fingerprint`, Logs → `newspaper`, Member
   applications → `assignment`, Adaptive slowmode → `timer`, Auto restore roles
   → `refresh` (`MODULE_EMOJI` + config screen title), each with its `_dark` twin.
+- **Coloured buttons** (primary / success / danger) always keep the white icon;
+  only grey buttons (secondary / link) follow the theme.
 
 ## Decisions
 

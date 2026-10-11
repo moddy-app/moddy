@@ -82,11 +82,25 @@ def _swap_emoji_dict(obj: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     return new
 
 
+# Button component type and the styles drawn with a coloured background
+# (primary / blurple, success / green, danger / red). Their icon sits on a
+# colour, never on the client background, so the white icon is right on every
+# theme. Grey buttons (secondary, link) follow the theme like the rest.
+_BUTTON_TYPE = 2
+_COLOURED_BUTTON_STYLES = frozenset({1, 3, 4})
+
+
+def _is_coloured_button(obj: Dict[str, Any]) -> bool:
+    return obj.get("type") == _BUTTON_TYPE and obj.get("style") in _COLOURED_BUTTON_STYLES
+
+
 def swap_payload(obj: Any) -> Any:
     """Recursively rewrite a JSON payload. Never mutates ``obj``; returns a copy."""
     if isinstance(obj, str):
         return swap_text(obj)
     if isinstance(obj, dict):
+        if _is_coloured_button(obj):
+            return dict(obj)
         swapped = _swap_emoji_dict(obj)
         source = swapped if swapped is not None else obj
         return {k: swap_payload(v) for k, v in source.items()}

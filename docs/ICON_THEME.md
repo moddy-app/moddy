@@ -77,3 +77,11 @@ to `DARK_VARIANTS` in `utils/emojis.py`. If the original is hardcoded outside
 fails if a patched function/method moves or is renamed. When it does, re-read the
 new source (which builders do `send_message`, `edit_message`, `send_modal` use?)
 and update the target lists in `utils/icon_theme.py`.
+
+## Coloured buttons keep the white icon
+
+A button drawn on a coloured background — `primary` (blurple), `success`
+(green), `danger` (red) — shows its icon on that colour, not on the client
+background, so the white icon is the readable one on both themes.
+`swap_payload` leaves those buttons untouched. Grey buttons (`secondary`,
+`link`) follow the user's theme like the rest of the message.
