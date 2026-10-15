@@ -250,12 +250,18 @@ def confirmation_card(
     conversation_id: str,
     *,
     locale: str = "en-US",
+    text: str = "",
 ) -> ui.LayoutView:
     """The card that asks a human before Brocoli writes anything.
 
     Built from the backend's ``permission_request`` payload. ``params`` is never
     sent by the backend — it carries the full config — so everything shown here
     comes from ``preview``, which exists for exactly this.
+
+    ``text`` is whatever Brocoli said on the way to asking. It belongs on this
+    same card: the member is already looking at the message that was streaming,
+    and moving the question to a second one would leave them reading upwards to
+    understand what they are agreeing to.
     """
     preview = payload.get("preview") or {}
     risk = payload.get("risk", "low")
@@ -265,6 +271,10 @@ def confirmation_card(
     container = ui.Container(
         accent_colour=COLORS["error"] if risk == "critical" else COLORS["warning"]
     )
+    if text:
+        container.add_item(ui.TextDisplay(_truncate(text, MAX_TEXT // 2)))
+        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+
     container.add_item(
         ui.TextDisplay(f"### {SETTINGS} {t('brocoli.confirm.title', locale=locale)}")
     )
@@ -293,6 +303,8 @@ def confirmation_card(
     if diff:
         container.add_item(ui.Separator())
         container.add_item(ui.TextDisplay("\n".join(_render_diff(diff, locale))))
+
+    container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
     row = ui.ActionRow()
     row.add_item(
