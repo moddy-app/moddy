@@ -18,7 +18,7 @@ from utils.emojis import TIMER, REQUIRED_FIELDS, EDIT, BACK, SAVE, UNDONE, DELET
 from config import COLORS
 from modules.configs._common import (
     check_guild_perms, ack, show, crumb, crumb_segment, state_accent, config_state,
-    module_state_row, open_main_config,
+    module_manage_button, open_main_config,
 )
 
 logger = logging.getLogger('moddy.modules.adaptive_slowmode_config')
@@ -29,7 +29,6 @@ _CID_CHANNEL_LIST_ADD = "moddy:aslow:list:add"
 _CID_CHANNEL_LIST_BACK = "moddy:aslow:list:back"
 _CID_CHANNEL_LIST_SAVE = "moddy:aslow:list:save"
 _CID_CHANNEL_LIST_CANCEL = "moddy:aslow:list:cancel"
-_CID_CHANNEL_LIST_DELETE = "moddy:aslow:list:delete"
 
 # Per-channel row buttons (edit/remove) — one pair per configured channel,
 # so the target channel_id must be encoded (it is not otherwise on the
@@ -494,15 +493,6 @@ class AdaptiveSlowmodeConfigView(BaseView):
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
-        # Play / pause: only on a clean, saved config (a state click rebuilds
-        # the screen from the saved config and would drop pending edits).
-        state_items = [] if self.has_changes else module_state_row(
-            "adaptive_slowmode", state, self.locale)
-        for item in state_items:
-            container.add_item(item)
-        if state_items:
-            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-
         # ── Channel list ──────────────────────────────────────────────
         channels = self.working_config.get("channels", {})
 
@@ -592,15 +582,8 @@ class AdaptiveSlowmodeConfigView(BaseView):
             )
             cancel_btn.callback = self.on_cancel
             btn_row.add_item(cancel_btn)
-        if (not self.has_changes and self.has_existing_config) or is_shell:
-            delete_btn = ui.Button(
-                emoji=discord.PartialEmoji.from_str(DELETE),
-                label=t("modules.config.buttons.delete", locale=self.locale),
-                style=discord.ButtonStyle.danger,
-                custom_id=_CID_CHANNEL_LIST_DELETE,
-            )
-            delete_btn.callback = self.on_delete
-            btn_row.add_item(delete_btn)
+        if not self.has_changes and self.has_existing_config:
+            btn_row.add_item(module_manage_button("adaptive_slowmode", self.locale))
 
         self.add_item(btn_row)
 
@@ -693,24 +676,6 @@ class AdaptiveSlowmodeConfigView(BaseView):
         saved = await bot.module_manager.get_module_config(interaction.guild_id, "adaptive_slowmode")
         view = AdaptiveSlowmodeConfigView(bot, interaction.guild_id, interaction.user.id, locale, current_config=saved)
         await show(interaction, view)
-
-    async def on_delete(self, interaction: discord.Interaction):
-        if not await check_guild_perms(interaction):
-            return
-        await ack(interaction)
-
-        bot = interaction.client
-        locale = i18n.get_user_locale(interaction)
-        success = await bot.module_manager.delete_module_config(interaction.guild_id, "adaptive_slowmode")
-
-        if success:
-            view = AdaptiveSlowmodeConfigView(bot, interaction.guild_id, interaction.user.id, locale, current_config=None)
-            await interaction.followup.send(t("modules.config.delete.success", locale=locale), ephemeral=True)
-            await interaction.edit_original_response(view=view)
-        else:
-            await interaction.followup.send(t("modules.config.delete.error", locale=locale), ephemeral=True)
-
-    # ------------------------------------------------------------------
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         return await check_guild_perms(interaction)

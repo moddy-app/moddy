@@ -20,6 +20,7 @@ class AutoRoleModule(ModuleBase):
     """
 
     MODULE_ID = "auto_role"
+    CONFIG_DELETABLE = True
     MODULE_NAME = "Auto Role"
     MODULE_DESCRIPTION = "Attribue automatiquement des rôles aux nouveaux membres"
     MODULE_EMOJI = MANAGE_USER

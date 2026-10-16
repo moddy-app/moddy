@@ -90,6 +90,7 @@ class AdaptiveSlowmodeModule(ModuleBase):
     """
 
     MODULE_ID = "adaptive_slowmode"
+    CONFIG_DELETABLE = True
     MODULE_NAME = "Adaptive Slowmode"
     MODULE_DESCRIPTION = "Ajuste automatiquement le slowmode selon l'activité"
     MODULE_EMOJI = TIMER

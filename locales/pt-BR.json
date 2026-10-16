@@ -1072,17 +1072,6 @@
           "paused": "O módulo está em pausa: não faz nada e seus comandos estão ocultos. Sua configuração é mantida.",
           "simulation": "O módulo observa e simula suas ações sem aplicar nada."
         },
-        "buttons": {
-          "pause": "Pausar",
-          "resume": "Retomar",
-          "activate": "Ativar",
-          "simulation": "Simulação"
-        },
-        "changed": {
-          "active": "Módulo retomado.",
-          "paused": "Módulo em pausa.",
-          "simulation": "Módulo em simulação."
-        },
         "errors": {
           "not_configured": "Este módulo ainda não tem uma configuração salva.",
           "failed": "Não foi possível alterar o estado do módulo. Tente novamente."
@@ -1095,6 +1084,24 @@
         "settings": "Configurações",
         "permissions": "Permissões",
         "options": "Opções"
+      },
+      "manage": {
+        "button": "Gerenciar",
+        "title": "Gerenciar o módulo",
+        "intro": "O estado do módulo e a sua configuração.",
+        "state_placeholder": "Alterar o estado do módulo",
+        "options": {
+          "active": "O módulo funciona normalmente.",
+          "simulation": "Observa e simula as suas ações sem aplicar nada.",
+          "paused": "Para de agir e os seus comandos ficam ocultos."
+        },
+        "delete": {
+          "title": "Excluir a configuração",
+          "hint": "Apaga todas as configurações deste módulo no servidor.",
+          "confirm_title": "Excluir a configuração?",
+          "confirm_body": "Todas as configurações deste módulo serão apagadas e ele vai parar. Esta ação é irreversível.",
+          "confirm": "Sim, excluir"
+        }
       }
     },
     "welcome_channel": {
@@ -2329,12 +2336,6 @@
           "title": "Duração do castigo",
           "label": "Duração",
           "desc": "ex.: 16h53, 1d 2h ou 90m (de 1 minuto a 28 dias)."
-        },
-        "delete": {
-          "title": "Excluir a configuração?",
-          "body": "O Automod para e todas as suas configurações (monitoramento, punições, infrações personalizadas, isenções) são apagadas. Os casos já registrados são mantidos.",
-          "confirm": "Sim, excluir tudo",
-          "cancel": "Cancelar"
         }
       }
     },
@@ -2934,9 +2935,6 @@
           "none": "Desativar tudo",
           "prev": "Página anterior",
           "next": "Próxima página"
-        },
-        "clear": {
-          "button": "Excluir tudo"
         },
         "options": {
           "button": "Opções",

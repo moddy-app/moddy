@@ -82,7 +82,7 @@ Config stored at `guilds.data.modules.voice_transcription`:
 
 | Key | Type | Meaning |
 |---|---|---|
-| `state` | `"active"` \| `"paused"` | Generic module state (docs/guides/MODULE_SYSTEM.md 3 quater); absent = active. Pause / resume is the state row on the panel. |
+| `state` | `"active"` \| `"paused"` | Generic module state (docs/guides/MODULE_SYSTEM.md 3 quater); absent = active. Pause / resume is in the panel's **Manage** screen. |
 | `mode` | `"button"` \| `"auto"` | `button`: reply with a Transcribe button. `auto`: transcribe immediately. |
 | `channel_ids` | list[int] | Empty = every channel. Otherwise only these (max 25). |
 

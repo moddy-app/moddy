@@ -1,6 +1,5 @@
 """
-``/config`` -> **Automod**: the home screen, the first-run wizard and the delete
-confirmation.
+``/config`` -> **Automod**: the home screen and the first-run wizard.
 
 The panel is built around one rule: *the only thing a server must decide is
 where Moddy posts its alerts*. Everything else has a sensible ready-made answer.
@@ -10,11 +9,11 @@ where Moddy posts its alerts*. Everything else has a sensible ready-made answer.
   then "simulation or live". Every step has a **Skip** button: it applies the
   *Balanced* level in *Simulation* (the recommended level, and the state in
   which nobody can be sanctioned by mistake) and opens the home.
-* **Home** -- the generic module state (Active / Simulation / Paused, with its
-  buttons), a few sentences saying what the automod does, the alerts channel and
-  a menu (outside the container) to the detail screens. The home saves instantly;
-  the detail screens use Save / Cancel (see ``automod_ai_common``). The
-  "Delete configuration" button sits outside the container too.
+* **Home** -- a few sentences saying what the automod does, the alerts channel
+  and a menu (outside the container) to the detail screens. The home saves
+  instantly; the detail screens use Save / Cancel (see ``automod_ai_common``).
+  The state (Active / Simulation / Paused) and "Delete configuration" live in
+  the shared Manage panel, opened by the small button under the menu.
 
 The state is the generic one (``guilds.data.modules.automod_ai.state``, see
 docs/guides/MODULE_SYSTEM.md): ``simulation`` is the former ``dry_run``.
@@ -23,8 +22,8 @@ Persistence
 -----------
 Every screen here has static ``moddy:automod:cfg:<screen>:<action>`` custom_ids
 and is registered as a shell: ``interaction.guild_id`` plus a Manage Server check
-(re-run on every click) is the whole auth context a guild panel needs. The state
-buttons are the shared :class:`modules.configs._common.ModuleStateButton`. The
+(re-run on every click) is the whole auth context a guild panel needs. The Manage
+button is the shared :class:`modules.configs._common.ModuleManageButton`. The
 screens scoped to an entity (an infraction type, a page of precedents) use
 ``DynamicItem`` s, registered by :class:`AutomodConfigPersistence`.
 """
@@ -40,14 +39,13 @@ from discord import ui
 from automod.presets import DEFAULT_PRESET, PRESETS, preset_config
 from cogs.error_handler import BaseView
 from config import COLORS
-from modules.automod_ai import AutomodModule
 from modules.configs import automod_ai_common as common
-from modules.configs._common import module_state_row, state_accent
+from modules.configs._common import module_manage_button, state_accent
 from modules.configs.automod_ai_common import (
     back_row, button, cid, go, row, select, title, tp, trail,
 )
 from utils.emojis import (
-    BACK, DELETE, GROUPS, IMAGE, LEGAL, MESSAGE, REQUIRED_FIELDS, SEARCH, SETTINGS,
+    BACK, GROUPS, IMAGE, LEGAL, MESSAGE, REQUIRED_FIELDS, SEARCH, SETTINGS,
     SHIELD, USER, WARNING,
 )
 from utils.i18n import i18n, t
@@ -150,12 +148,6 @@ async def render_wizard_mode(interaction: discord.Interaction) -> None:
         interaction.client, interaction.guild_id, i18n.get_user_locale(interaction)))
 
 
-async def render_delete(interaction: discord.Interaction) -> None:
-    await common.ack(interaction)
-    await common.respond(interaction, AutomodDeleteView(
-        interaction.client, interaction.guild_id, i18n.get_user_locale(interaction)))
-
-
 # =========================================================================== #
 # Home
 # =========================================================================== #
@@ -194,13 +186,6 @@ class AutomodAIConfigView(BaseView):
         if setup:
             container.add_item(ui.TextDisplay(setup))
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-
-        # Generic module state: Active / Simulation / Paused (shared buttons).
-        if not is_shell:
-            for item in module_state_row(common.MODULE_ID, state, locale,
-                                         supports_simulation=AutomodModule.SUPPORTS_SIMULATION):
-                container.add_item(item)
-            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
         container.add_item(ui.TextDisplay(summary_lines(cfg, locale)))
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
@@ -241,9 +226,8 @@ class AutomodAIConfigView(BaseView):
         self.add_item(row(
             button(self.on_back, custom_id=cid("home", "back"),
                    label=t("modules.config.buttons.back", locale=locale), emoji=BACK),
-            button(self.on_delete, custom_id=cid("home", "delete"),
-                   label=t("modules.config.buttons.delete", locale=locale), emoji=DELETE,
-                   style=discord.ButtonStyle.danger)))
+            # State and deletion live in the shared Manage panel.
+            module_manage_button(common.MODULE_ID, locale)))
 
     # -- callbacks (everything is re-derived from the interaction) -------- #
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
@@ -269,62 +253,8 @@ class AutomodAIConfigView(BaseView):
             return
         await go(interaction, screen)
 
-    async def on_delete(self, interaction: discord.Interaction):
-        await go(interaction, "delete")
-
     async def on_back(self, interaction: discord.Interaction):
         await common.back_to_modules(interaction)
-
-    @classmethod
-    def register_persistent(cls, bot) -> None:
-        """Auth model: Manage Server in the guild (checked on every click)."""
-        bot.add_view(cls())
-
-
-class AutomodDeleteView(BaseView):
-    """Confirmation before deleting the whole configuration (red)."""
-
-    __persistent__ = True
-
-    def __init__(self, bot=None, guild_id: Optional[int] = None, locale: str = "en-US"):
-        super().__init__()  # timeout=None
-        self.bot = bot
-        self.guild_id = guild_id
-        self.locale = locale
-        self._build_view()
-
-    def _build_view(self) -> None:
-        self.clear_items()
-        locale = self.locale
-        container = ui.Container(accent_colour=discord.Colour(COLORS["error"]))
-        container.add_item(trail(locale, t("modules.config.buttons.delete", locale=locale)))
-        container.add_item(ui.TextDisplay(f"### {WARNING} {tp('delete.title', locale)}"))
-        container.add_item(ui.TextDisplay(tp("delete.body", locale)))
-        self.add_item(container)
-        self.add_item(row(
-            button(self.on_no, custom_id=cid("del", "no"), label=tp("delete.cancel", locale)),
-            button(self.on_yes, custom_id=cid("del", "yes"), label=tp("delete.confirm", locale),
-                   emoji=DELETE, style=discord.ButtonStyle.danger)))
-
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        return await common.gate(interaction)
-
-    async def on_no(self, interaction: discord.Interaction):
-        await go(interaction, "home")
-
-    async def on_yes(self, interaction: discord.Interaction):
-        await common.ack(interaction)
-        locale = i18n.get_user_locale(interaction)
-        deleted = await interaction.client.module_manager.delete_module_config(
-            interaction.guild_id, common.MODULE_ID)
-        if not deleted:
-            await common.send_error(interaction, t("modules.config.delete.error", locale=locale))
-            await go(interaction, "home")
-            return
-        common.draft_clear_guild(interaction.guild_id)
-        await go(interaction, "wizard_channel")
-        await interaction.followup.send(t("modules.config.delete.success", locale=locale),
-                                        ephemeral=True)
 
     @classmethod
     def register_persistent(cls, bot) -> None:

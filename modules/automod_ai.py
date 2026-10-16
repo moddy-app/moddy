@@ -578,6 +578,7 @@ class AutomodModule(ModuleBase):
     """AI-assisted automod. See module docstring."""
 
     MODULE_ID = "automod_ai"
+    CONFIG_DELETABLE = True
     MODULE_NAME = "Automod"
     MODULE_DESCRIPTION = "Modération automatique des messages problématiques (IA)"
     MODULE_EMOJI = "<:shield:1521471376815292498>"
@@ -589,6 +590,13 @@ class AutomodModule(ModuleBase):
     # attach_files: log / evidence cards re-upload the offending images.
     REQUIRED_BOT_PERMISSIONS = ["manage_messages", "ban_members", "moderate_members",
                                 "manage_nicknames", "attach_files"]
+
+    @classmethod
+    async def before_config_delete(cls, bot, guild_id: int) -> None:
+        """Drop the /config drafts: they would otherwise be merged onto the
+        next configuration."""
+        from modules.configs.automod_ai_common import draft_clear_guild
+        draft_clear_guild(guild_id)
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)

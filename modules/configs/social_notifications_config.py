@@ -33,7 +33,7 @@ from cogs.error_handler import BaseView, BaseModal
 from config import COLORS
 from modules.configs._common import (
     ack, show, say, crumb, crumb_segment, open_main_config, state_accent, config_state,
-    module_state_row,
+    module_manage_button,
 )
 from modules.social_notifications import (
     SUPPORTED_PLATFORMS,
@@ -363,13 +363,6 @@ class SocialNotificationsConfigView(BaseView):
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
-        # Every action saves instantly: there is never a pending change to lose.
-        state_items = module_state_row('social_notifications', self.module_state, self.locale)
-        for item in state_items:
-            container.add_item(item)
-        if state_items:
-            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-
         if self.subscriptions:
             container.add_item(ui.TextDisplay(
                 f"**{t('modules.social_notifications.config.list.title', locale=self.locale)}**\n"
@@ -435,6 +428,8 @@ class SocialNotificationsConfigView(BaseView):
         )
         add_btn.callback = self.on_add
         button_row.add_item(add_btn)
+        if self.module_state is not None:
+            button_row.add_item(module_manage_button('social_notifications', self.locale))
         self.add_item(button_row)
 
     def _render_entry(self, sub: Dict[str, Any]) -> str:

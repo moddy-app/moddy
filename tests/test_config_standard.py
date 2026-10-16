@@ -1,5 +1,6 @@
 """/config UI standard: every module screen opens with a breadcrumb and an accent,
-and the state row shows up on a saved module only while nothing is pending."""
+and the Manage button (state + deletion) sits outside the container, on a saved
+module only, while nothing is pending."""
 
 import pytest
 from discord import ui
@@ -48,14 +49,27 @@ def test_screen_starts_with_breadcrumb_and_has_accent(cls):
     assert container.accent_colour is not None
 
 
-def test_state_row_hidden_while_changes_are_pending():
+_MANAGE = _common._CID_MANAGE_PREFIX
+
+
+def _outside_ids(view):
+    return [getattr(i, "item", i).custom_id for c in view.children
+            if isinstance(c, ui.ActionRow) for i in c.children]
+
+
+def test_manage_button_outside_container_and_hidden_while_changes_are_pending():
     view = AutoRoleConfigView(None, 1, 2, "en-US", {"member_roles": [5], "state": "paused"})
-    ids = lambda v: [getattr(i, "item", i).custom_id for c in _container(v).children
-                     if isinstance(c, ui.ActionRow) for i in c.children]
-    assert any(str(i).startswith(_common._CID_STATE_PREFIX) for i in ids(view))
+    inside = [getattr(c, "custom_id", None) for c in _container(view).walk_children()]
+    assert not any(str(i).startswith(("moddy:config:", _MANAGE)) for i in inside)
+    assert f"{_MANAGE}:auto_role:open" in _outside_ids(view)
     view.has_changes = True
     view._build_view()
-    assert not any(str(i).startswith(_common._CID_STATE_PREFIX) for i in ids(view))
+    assert not any(str(i).startswith(_MANAGE) for i in _outside_ids(view))
+
+
+def test_manage_button_hidden_without_config():
+    view = AutoRoleConfigView(None, 1, 2, "en-US", None)
+    assert not any(str(i).startswith(_MANAGE) for i in _outside_ids(view))
 
 
 # --- voice transcription: legacy `enabled` flag -> generic state ------------
@@ -79,12 +93,21 @@ async def test_voice_module_loads_legacy_config_as_paused():
     assert module.state == "paused" and module.enabled is False
 
 
-def test_voice_panel_shows_state_row_for_legacy_paused_config():
-    view = VoiceTranscriptionConfigView(
-        None, 1, 2, "en-US", {"mode": "button", "enabled": False})
-    labels = [getattr(getattr(i, "item", i), "label", None) for c in _container(view).children if isinstance(c, ui.ActionRow)
-              for i in c.children]
-    assert any("esume" in (l or "") for l in labels)
+@pytest.mark.asyncio
+async def test_manage_panel_shows_legacy_paused_voice_config_as_paused():
+    from types import SimpleNamespace
+    from unittest.mock import AsyncMock
+    from modules.voice_transcription import VoiceTranscriptionModule
+    mgr = SimpleNamespace(
+        registered_modules={"voice_transcription": VoiceTranscriptionModule},
+        get_module_config=AsyncMock(return_value={"mode": "button", "enabled": False}))
+    view = await _common.build_manage_view(SimpleNamespace(module_manager=mgr), 1, "en-US",
+                                           "voice_transcription")
+    text = "\n".join(c.content for c in view.walk_children() if isinstance(c, ui.TextDisplay))
+    assert "Paused" in text
+    select = next(i for i in view.walk_children()
+                  if getattr(i, "custom_id", "") == f"{_MANAGE}:voice_transcription:state")
+    assert [o.value for o in select.item.options if o.default] == ["paused"]
 
 
 # --- social notifications: pause --------------------------------------------

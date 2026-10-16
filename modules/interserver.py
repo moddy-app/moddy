@@ -34,6 +34,7 @@ class InterServerModule(ModuleBase):
     """
 
     MODULE_ID = "interserver"
+    CONFIG_DELETABLE = True
     MODULE_NAME = "Inter-Server"
     MODULE_DESCRIPTION = "Connecte plusieurs serveurs via des salons dédiés"
     MODULE_EMOJI = GROUPS

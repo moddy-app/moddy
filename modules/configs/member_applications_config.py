@@ -29,7 +29,7 @@ from modules.configs._common import (
     config_state,
     crumb,
     load_before_modal,
-    module_state_row,
+    module_manage_button,
     open_main_config,
     show,
     state_accent,
@@ -45,7 +45,7 @@ from modules.member_applications import (
     normalize_reasons,
 )
 from utils.emojis import (
-    ASSIGNMENT, BACK, DELETE, DONE, EDIT, SAVE, UNDONE, WARNING,
+    ASSIGNMENT, BACK, DONE, EDIT, SAVE, UNDONE, WARNING,
 )
 from utils.i18n import i18n, t
 
@@ -58,7 +58,6 @@ _CID_REASONS = "moddy:member_apps:config:reasons"
 _CID_BACK = "moddy:member_apps:config:back"
 _CID_SAVE = "moddy:member_apps:config:save"
 _CID_CANCEL = "moddy:member_apps:config:cancel"
-_CID_DELETE = "moddy:member_apps:config:delete"
 _CID_REASONS_INPUT = "moddy:member_apps:config:reasons_input"
 
 _P = "modules.member_applications.config"
@@ -177,14 +176,6 @@ class MemberApplicationsConfigView(BaseView):
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
-        # Play / pause: only on a clean, saved config (a state click rebuilds the
-        # screen from the saved config and would drop pending edits).
-        state_items = [] if self.has_changes else module_state_row('member_applications', state, self.locale)
-        for item in state_items:
-            container.add_item(item)
-        if state_items:
-            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-
         # --- Review channel ------------------------------------------------ #
         container.add_item(ui.TextDisplay(
             f"**{t(f'{_P}.channel.section_title', locale=loc)}**\n"
@@ -292,15 +283,8 @@ class MemberApplicationsConfigView(BaseView):
             cancel_btn.callback = self.on_cancel
             button_row.add_item(cancel_btn)
 
-        if (not self.has_changes and self.has_existing_config) or is_shell:
-            delete_btn = ui.Button(
-                emoji=discord.PartialEmoji.from_str(DELETE),
-                label=t("modules.config.buttons.delete", locale=loc),
-                style=discord.ButtonStyle.danger,
-                custom_id=_CID_DELETE,
-            )
-            delete_btn.callback = self.on_delete
-            button_row.add_item(delete_btn)
+        if not self.has_changes and self.has_existing_config:
+            button_row.add_item(module_manage_button(MODULE_ID, self.locale))
 
         self.add_item(button_row)
 
@@ -435,24 +419,6 @@ class MemberApplicationsConfigView(BaseView):
             i18n.get_user_locale(interaction), current_config=saved,
         )
         await show(interaction, view)
-
-    async def on_delete(self, interaction: discord.Interaction):
-        if not await check_guild_perms(interaction):
-            return
-        await ack(interaction)
-
-        bot = interaction.client
-        locale = i18n.get_user_locale(interaction)
-        if await bot.module_manager.delete_module_config(interaction.guild_id, MODULE_ID):
-            view = MemberApplicationsConfigView(
-                bot, interaction.guild_id, interaction.user.id, locale, current_config=None,
-            )
-            await interaction.followup.send(
-                t("modules.config.delete.success", locale=locale), ephemeral=True)
-            await interaction.edit_original_response(view=view)
-        else:
-            await interaction.followup.send(
-                t("modules.config.delete.error", locale=locale), ephemeral=True)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         return await check_guild_perms(interaction)
