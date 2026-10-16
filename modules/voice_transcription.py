@@ -57,6 +57,12 @@ class VoiceTranscriptionModule(ModuleBase):
     """Offers a transcription under every voice message of the server."""
 
     MODULE_ID = "voice_transcription"
+
+    @classmethod
+    def stored_state(cls, config_data: Optional[Dict[str, Any]]) -> str:
+        """Generic state, reading a legacy ``enabled: false`` as paused."""
+        return super().stored_state(migrate_legacy_enabled(config_data))
+
     MODULE_NAME = "Voice Transcription"
     MODULE_DESCRIPTION = "Transcrit les messages vocaux en texte"
     MODULE_EMOJI = VOICE_CHAT

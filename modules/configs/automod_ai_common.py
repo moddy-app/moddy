@@ -1,23 +1,33 @@
 """
-Shared plumbing of the Automod AI ``/config`` panel.
+Shared plumbing of the Automod ``/config`` panel.
 
-The panel is split in three screen modules (home + wizard, sanctions, monitoring
-/ guidance / exemptions / advanced) that all rely on this one:
+The panel is split in screen modules (home + wizard, sanctions, monitoring /
+exemptions / advanced) that all rely on this one:
 
-* **instant save** — there is no working copy: every control reads the stored
-  config, changes one thing and writes it back through
-  ``module_manager.save_module_config`` (which validates it and refreshes the
-  live module). A refused change writes nothing and says why;
+* **two save models** — the *home* screen saves instantly (every control reads
+  the stored config, changes one thing and writes it back through
+  ``module_manager.save_module_config``). The four *main sub-views*
+  (monitoring, sanctions, exemptions, advanced) use the classic module model:
+  edits are held as a **draft** and only written when the admin presses Save
+  (Save / Cancel appear only while there is something pending). Deeper screens
+  (one infraction, the custom-infraction editor) have no Save of their own:
+  they edit the draft of their parent sub-view (``sanctions``);
+* **the draft** — an in-memory map ``(guild, user, section) -> projection``
+  with a TTL (:func:`draft_get` / :func:`stash`). It only stores the keys the
+  section owns, never a whole config, so Save merges it onto the freshly loaded
+  stored config and never clobbers what the home or the dashboard wrote
+  meanwhile. It lives in the process: after a restart (or after the TTL) the
+  panel falls back to the stored config, i.e. unsaved edits are dropped;
 * **the config schema** — :func:`normalize_cfg` is the single place that turns
   whatever is stored (legacy keys included) into the dict the screens edit;
-* **plain wording** — sanctions are always described as "Mute 12 h", never as
-  a rung of the internal scale (:func:`sanction_summary`);
+* **plain wording** — a sanction is always shown as its effective actions
+  ("Delete message + Timeout 16 h 53 min"), never as "Moddy default";
 * **navigation** — :func:`go` opens a screen from anywhere without the screen
   modules importing each other.
 
-Persistence: nothing here keeps state. Every callback of every screen re-reads
-the config, the locale and the permissions from the interaction (see
-docs/PERSISTENT_VIEWS.md), so a panel keeps working after a restart.
+Persistence: nothing here keeps state a restart could miss except the draft.
+Every callback of every screen re-reads the config, the locale and the
+permissions from the interaction (see docs/PERSISTENT_VIEWS.md).
 """
 
 from __future__ import annotations
@@ -25,17 +35,20 @@ from __future__ import annotations
 import copy
 import importlib
 import logging
+import time
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import discord
 from discord import ui
 
+from automod import actions as actions_mod
 from automod import constants as ac
 from automod import custom_infractions, infractions
 from automod.presets import blank_config
-from modules.configs._common import ack, check_guild_perms, show
+from cogs.error_handler import BaseView
+from modules.configs._common import ack, check_guild_perms, crumb, show
 from utils import emojis
-from utils.components_v2 import create_error_message
+from utils.errors import build_error_card
 from utils.i18n import i18n, t
 
 logger = logging.getLogger("moddy.modules.automod_ai_config")
@@ -63,46 +76,29 @@ def tp(key: str, locale: str = "en-US", **kwargs: Any) -> str:
     return t(f"modules.automod_ai.panel.{key}", locale=locale, **kwargs)
 
 
+def trail(locale: str, *segments: str) -> ui.TextDisplay:
+    """Breadcrumb ``Config › Automod › …`` -- first item of every container."""
+    return crumb(locale, MODULE_ID, *segments)
+
+
 # --------------------------------------------------------------------------- #
-# Sanction icons
+# Sanction action icons
 # --------------------------------------------------------------------------- #
 # Product-approved exception (see the comment above utils/emojis.LOG_EMOJIS):
 # the sanction ACTION icons of this panel come from the server-logs icon set.
-# Everything else in the panel uses the regular constants of utils/emojis.py.
+# They are only used on the actions picker; the sanctions list has no icons.
 _ACTION_ICON_NAMES = {
     "delete": "messageremove",
     "warn": "Warn",
-    "mute": "timeout",
+    "timeout": "timeout",
     "kick": "kick",
     "ban": "ban",
 }
 
 
 def action_icon(action: str) -> str:
-    """Icon of a sanction action (delete / warn / mute / kick / ban)."""
+    """Icon of a sanction action (delete / warn / timeout / kick / ban)."""
     return emojis.log_emoji(_ACTION_ICON_NAMES.get(action, ""))
-
-
-def cran_action(cran: int) -> str:
-    """Action of a rung of the scale: 0 delete, 1 warn, 2..6 mute, 7 ban."""
-    if cran <= 0:
-        return "delete"
-    if cran == 1:
-        return "warn"
-    return "ban" if cran >= 7 else "mute"
-
-
-def cran_icon(cran: int) -> str:
-    return action_icon(cran_action(cran))
-
-
-def cran_label(cran: int, locale: str) -> str:
-    """"Mute 12 h", "Ban", "Delete only"… — the scale in plain words."""
-    return tp(f"cran.{max(0, min(7, int(cran)))}", locale)
-
-
-#: Rungs offered in the per-gravity pickers, mildest first.
-CRAN_CHOICES: Tuple[int, ...] = tuple(range(infractions.CRAN_MIN, infractions.CRAN_MAX + 1))
 
 
 # --------------------------------------------------------------------------- #
@@ -111,62 +107,60 @@ CRAN_CHOICES: Tuple[int, ...] = tuple(range(infractions.CRAN_MIN, infractions.CR
 #: Features the shared exemption lists are written onto.
 EXEMPT_FEATURES = ("content", "image_nsfw", "image_gore", "image_scam", "profile")
 _PLAIN_FEATURES = ("content", "image_nsfw", "image_gore", "image_scam")
+PROFILE_PARTS = ("avatar", "banner", "pseudo")
 
 
 def normalize_cfg(stored: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     """Turn the stored config into the complete dict the screens edit.
 
-    * legacy keys (``rules``, ``log_channel_id``) are read transparently;
+    * the generic module ``state`` is resolved from the stored config, legacy
+      ``dry_run`` / ``enabled`` flags included (see ``effective_state``), and
+      the legacy keys themselves are **not** carried over, so the next save
+      drops them without losing anything;
+    * the removed free-text AI guidance (``indications`` / ``rules``) is dropped;
     * the legacy ``categories_desactivees`` kill-switch list is folded into
       ``sanctions[<id>].enabled = False`` (an explicit ``enabled`` already in
-      ``sanctions`` wins, exactly like ``AutomodModule.load_config``) and is
-      **not** carried over, so the next save drops it without losing anything;
-    * sanctions of an infraction that no longer exists are dropped, and an
-      entry that would fail validation is replaced by its normalised form;
-    * the exemption lists of every feature are mirrored from ``content`` —
+      ``sanctions`` wins, exactly like ``AutomodModule.load_config``);
+    * every sanction entry is normalised (legacy ``crans`` migrated to
+      ``actions``); entries that say nothing a missing entry would not, and
+      entries of an infraction that no longer exists, are dropped;
+    * the exemption lists of every feature are mirrored from ``content`` --
       the panel edits ONE shared list.
     """
+    from modules.automod_ai import effective_state
+
     cfg = blank_config()
+    cfg.pop("dry_run", None)
+    cfg["state"] = "active"
     if not stored:
         return cfg
-    cfg["enabled"] = bool(stored.get("enabled", False))
-    cfg["indications"] = str(stored.get("indications", stored.get("rules", "")) or "")
+    cfg["state"] = effective_state(stored)
     notify = stored.get("notify_channel_id", stored.get("log_channel_id"))
     cfg["notify_channel_id"] = int(notify) if notify else None
     cfg["ignore_moderators"] = bool(stored.get("ignore_moderators", True))
     cfg["severity"] = ac.clamp_severity(stored.get("severity", ac.SEVERITY_DEFAULT))
     max_action = str(stored.get("max_action", "ban") or "ban")
     cfg["max_action"] = max_action if max_action in ("warn", "mute", "ban") else "ban"
-    cfg["dry_run"] = bool(stored.get("dry_run", False))
     cfg["infractions_perso"] = custom_infractions.normalize(stored.get("infractions_perso"))
 
     known = set(custom_infractions.ids(cfg["infractions_perso"]))
-    raw = stored.get("sanctions") if isinstance(stored.get("sanctions"), dict) else {}
-    sanctions: Dict[str, dict] = {}
-    for cat, entry in raw.items():
-        if not isinstance(entry, dict):
-            continue
-        if cat in infractions.INFRACTIONS:
-            pass
-        elif infractions.is_perso(cat) and infractions.perso_id(cat) in known:
-            pass
-        else:
-            continue
-        if infractions.validate_sanctions({cat: entry}) is not None:
-            entry = infractions.normalize_sanctions({cat: entry}).get(cat)
-            if entry is None:
-                continue
-        sanctions[cat] = copy.deepcopy(entry)
+    raw = {c: copy.deepcopy(e) for c, e in (stored.get("sanctions") or {}).items()
+           if isinstance(e, dict)} if isinstance(stored.get("sanctions"), dict) else {}
+    explicit = set(raw)
     for cat in stored.get("categories_desactivees") or []:
         cat = str(cat)
         if infractions.get(cat) is None:
             continue
+        entry = raw.get(cat)
+        if cat in explicit and "enabled" in (entry or {}):
+            continue
+        raw[cat] = {**(entry or {}), "enabled": False}
+    sanctions: Dict[str, dict] = {}
+    for cat, entry in infractions.normalize_sanctions(raw, known).items():
         if infractions.is_perso(cat) and infractions.perso_id(cat) not in known:
             continue
-        entry = sanctions.get(cat)
-        if isinstance(entry, dict) and "enabled" in entry:
-            continue
-        sanctions[cat] = {**(entry or {}), "enabled": False}
+        if not entry_is_default(cat, entry):
+            sanctions[cat] = entry
     cfg["sanctions"] = sanctions
 
     features = stored.get("features", {}) or {}
@@ -194,6 +188,15 @@ def normalize_cfg(stored: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     return cfg
 
 
+def with_state(cfg: Dict[str, Any], state: str) -> Dict[str, Any]:
+    """``cfg`` with the generic ``state`` set and the legacy ``enabled`` / ``dry_run`` flags gone."""
+    out = dict(cfg)
+    out.pop("dry_run", None)
+    out.pop("enabled", None)
+    out["state"] = state
+    return out
+
+
 async def load_cfg(bot, guild_id: int) -> Dict[str, Any]:
     """The guild's stored config, normalised (blank config when none)."""
     stored = await bot.module_manager.get_module_config(guild_id, MODULE_ID)
@@ -210,13 +213,14 @@ async def send_ephemeral(interaction: discord.Interaction, **kwargs: Any) -> Non
 
 async def send_error(interaction: discord.Interaction, body: str,
                      title: Optional[str] = None) -> None:
+    """An expected error (refused input, refused save): the shared error card."""
     locale = i18n.get_user_locale(interaction)
-    await send_ephemeral(interaction, view=create_error_message(
-        title or tp("errors.title", locale), body))
+    await send_ephemeral(interaction, view=build_error_card(
+        title or tp("errors.title", locale), body, severity="warning"))
 
 
 async def save_cfg(interaction: discord.Interaction, cfg: Dict[str, Any]) -> bool:
-    """Validate and write ``cfg`` (instant save). ``False`` = nothing was written.
+    """Validate and write ``cfg``. ``False`` = nothing was written.
 
     On refusal the reason is shown to the person who clicked and the stored
     config is untouched, so a screen can simply re-render from the database.
@@ -224,6 +228,8 @@ async def save_cfg(interaction: discord.Interaction, cfg: Dict[str, Any]) -> boo
     bot = interaction.client
     cfg = dict(cfg)
     cfg.pop("categories_desactivees", None)
+    cfg.pop("dry_run", None)
+    cfg.pop("enabled", None)
     ok, error = await bot.module_manager.save_module_config(
         interaction.guild_id, MODULE_ID, cfg, actor_id=interaction.user.id)
     if ok:
@@ -244,6 +250,135 @@ async def gate(interaction: discord.Interaction) -> bool:
 
 
 # --------------------------------------------------------------------------- #
+# Drafts (pending edits of the main sub-views)
+# --------------------------------------------------------------------------- #
+SECTIONS = ("monitoring", "sanctions", "exemptions", "advanced")
+
+#: A draft nobody touched for this long is forgotten (seconds).
+DRAFT_TTL = 30 * 60
+_DRAFT_MAX = 512
+_drafts: Dict[Tuple[int, int, str], Tuple[float, Dict[str, Any]]] = {}
+
+
+def project(cfg: Dict[str, Any], section: str) -> Dict[str, Any]:
+    """The part of ``cfg`` a section owns (JSON-able, canonical)."""
+    feats = cfg["features"]
+    if section == "monitoring":
+        return {"features": {fid: bool(feats[fid]["enabled"]) for fid in EXEMPT_FEATURES},
+                "profile": {p: bool(feats["profile"][p]) for p in PROFILE_PARTS}}
+    if section == "exemptions":
+        return {"ignore_moderators": bool(cfg["ignore_moderators"]),
+                "roles": [int(r) for r in feats["content"]["exempt_roles"]],
+                "channels": [int(c) for c in feats["content"]["exempt_channels"]]}
+    if section == "advanced":
+        return {"severity": int(cfg["severity"]), "max_action": cfg["max_action"]}
+    if section == "sanctions":
+        return {"sanctions": copy.deepcopy(cfg["sanctions"]),
+                "infractions_perso": copy.deepcopy(cfg["infractions_perso"])}
+    raise KeyError(section)
+
+
+def apply_projection(cfg: Dict[str, Any], proj: Dict[str, Any], section: str) -> None:
+    """Write a section's projection onto ``cfg`` (in place)."""
+    feats = cfg["features"]
+    if section == "monitoring":
+        for fid, on in proj["features"].items():
+            feats[fid]["enabled"] = bool(on)
+        for part, on in proj["profile"].items():
+            feats["profile"][part] = bool(on)
+    elif section == "exemptions":
+        cfg["ignore_moderators"] = bool(proj["ignore_moderators"])
+        for fid in EXEMPT_FEATURES:
+            feats[fid]["exempt_roles"] = list(proj["roles"])
+            # Profiles are checked on member events: they have no channel.
+            feats[fid]["exempt_channels"] = [] if fid == "profile" else list(proj["channels"])
+    elif section == "advanced":
+        cfg["severity"] = proj["severity"]
+        cfg["max_action"] = proj["max_action"]
+    elif section == "sanctions":
+        cfg["sanctions"] = copy.deepcopy(proj["sanctions"])
+        cfg["infractions_perso"] = copy.deepcopy(proj["infractions_perso"])
+
+
+def _key(guild_id: Optional[int], user_id: Optional[int], section: str):
+    return (int(guild_id or 0), int(user_id or 0), section)
+
+
+def draft_get(guild_id: Optional[int], user_id: Optional[int], section: str
+              ) -> Optional[Dict[str, Any]]:
+    item = _drafts.get(_key(guild_id, user_id, section))
+    if item is None:
+        return None
+    if time.monotonic() - item[0] > DRAFT_TTL:
+        _drafts.pop(_key(guild_id, user_id, section), None)
+        return None
+    return copy.deepcopy(item[1])
+
+
+def draft_set(guild_id: Optional[int], user_id: Optional[int], section: str,
+              proj: Dict[str, Any]) -> None:
+    now = time.monotonic()
+    if len(_drafts) >= _DRAFT_MAX:
+        for key in [k for k, (ts, _) in _drafts.items() if now - ts > DRAFT_TTL]:
+            _drafts.pop(key, None)
+        while len(_drafts) >= _DRAFT_MAX:  # still full: drop the oldest
+            _drafts.pop(min(_drafts, key=lambda k: _drafts[k][0]), None)
+    _drafts[_key(guild_id, user_id, section)] = (now, copy.deepcopy(proj))
+
+
+def draft_clear(guild_id: Optional[int], user_id: Optional[int], section: str) -> None:
+    _drafts.pop(_key(guild_id, user_id, section), None)
+
+
+def draft_clear_guild(guild_id: Optional[int]) -> None:
+    """Forget every draft of a guild (its configuration was just deleted)."""
+    for key in [k for k in _drafts if k[0] == int(guild_id or 0)]:
+        _drafts.pop(key, None)
+
+
+async def load_working(interaction: discord.Interaction, section: str
+                       ) -> Tuple[Dict[str, Any], Dict[str, Any], bool]:
+    """``(stored, working, pending)`` for ``section``.
+
+    ``stored`` is the config in the database; ``working`` is ``stored`` with the
+    caller's draft of the section laid over it; ``pending`` is True when that
+    differs from ``stored`` (a draft equal to the stored value is discarded).
+    """
+    stored = await load_cfg(interaction.client, interaction.guild_id)
+    proj = draft_get(interaction.guild_id, interaction.user.id, section)
+    working = copy.deepcopy(stored)
+    if proj is None:
+        return stored, working, False
+    if proj == project(stored, section):
+        draft_clear(interaction.guild_id, interaction.user.id, section)
+        return stored, working, False
+    apply_projection(working, proj, section)
+    return stored, working, True
+
+
+def stash(interaction: discord.Interaction, section: str, stored: Dict[str, Any],
+          working: Dict[str, Any]) -> bool:
+    """Keep ``working`` as the section's draft. Returns whether it is pending."""
+    proj = project(working, section)
+    if proj == project(stored, section):
+        draft_clear(interaction.guild_id, interaction.user.id, section)
+        return False
+    draft_set(interaction.guild_id, interaction.user.id, section, proj)
+    return True
+
+
+async def save_section(interaction: discord.Interaction, section: str) -> bool:
+    """Write the section's draft (merged onto the fresh stored config)."""
+    _stored, working, pending = await load_working(interaction, section)
+    if not pending:
+        return True
+    if not await save_cfg(interaction, working):
+        return False
+    draft_clear(interaction.guild_id, interaction.user.id, section)
+    return True
+
+
+# --------------------------------------------------------------------------- #
 # Navigation
 # --------------------------------------------------------------------------- #
 _SCREENS = {
@@ -251,8 +386,8 @@ _SCREENS = {
     "wizard_channel": ("modules.configs.automod_ai_config", "render_wizard_channel"),
     "wizard_level": ("modules.configs.automod_ai_config", "render_wizard_level"),
     "wizard_mode": ("modules.configs.automod_ai_config", "render_wizard_mode"),
+    "delete": ("modules.configs.automod_ai_config", "render_delete"),
     "monitoring": ("modules.configs.automod_ai_advanced_config", "render_monitoring"),
-    "indications": ("modules.configs.automod_ai_advanced_config", "render_indications"),
     "exemptions": ("modules.configs.automod_ai_advanced_config", "render_exemptions"),
     "advanced": ("modules.configs.automod_ai_advanced_config", "render_advanced"),
     "precedents": ("modules.configs.automod_ai_precedents_view", "render_precedents"),
@@ -274,6 +409,85 @@ def screen_names() -> Iterable[str]:
     return _SCREENS.keys()
 
 
+class SectionView(BaseView):
+    """Frame of a main sub-view: Back / Save / Cancel over a draft.
+
+    Subclasses set ``SECTION`` (draft key and ``go`` target) and ``SCREEN`` (the
+    custom_id prefix), build their container in ``_build_view`` and end with
+    ``self.add_item(self.footer())``. Persistent: yes. Auth: Manage Server on
+    every click.
+    """
+
+    __persistent__ = True
+    SECTION = ""
+    SCREEN = ""
+
+    def __init__(self, bot=None, guild_id: Optional[int] = None, locale: str = "en-US",
+                 cfg: Optional[Dict[str, Any]] = None, pending: bool = False, **extra: Any):
+        super().__init__()  # timeout=None
+        self.bot = bot
+        self.guild_id = guild_id
+        self.locale = locale
+        self.cfg = normalize_cfg(cfg)
+        self.pending = pending
+        self.extra = extra
+        self._build_view()
+
+    def _build_view(self) -> None:  # pragma: no cover - overridden
+        raise NotImplementedError
+
+    def pending_notice(self) -> List[ui.TextDisplay]:
+        """The "unsaved changes" line, when something is pending."""
+        if not self.pending:
+            return []
+        return [ui.TextDisplay(f"{emojis.WARNING} {tp('pending.notice', self.locale)}")]
+
+    def footer(self) -> ui.ActionRow:
+        """Back (locked while pending) + Save / Cancel (only while pending)."""
+        locale = self.locale
+        is_shell = self.bot is None  # the shell registers every custom_id
+        items = [button(self.on_back, custom_id=cid(self.SCREEN, "back"),
+                        label=t("modules.config.buttons.back", locale=locale),
+                        emoji=emojis.BACK, disabled=self.pending)]
+        if self.pending or is_shell:
+            items.append(button(
+                self.on_save, custom_id=cid(self.SCREEN, "save"),
+                label=t("modules.config.buttons.save", locale=locale),
+                emoji=emojis.SAVE, style=discord.ButtonStyle.success))
+            items.append(button(
+                self.on_cancel, custom_id=cid(self.SCREEN, "cancel"),
+                label=t("modules.config.buttons.cancel", locale=locale),
+                emoji=emojis.UNDONE, style=discord.ButtonStyle.danger))
+        return row(*items)
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        return await gate(interaction)
+
+    async def on_back(self, interaction: discord.Interaction):
+        await ack(interaction)
+        _s, _w, pending = await load_working(interaction, self.SECTION)
+        await go(interaction, self.SECTION if pending else "home")
+
+    async def on_save(self, interaction: discord.Interaction):
+        await ack(interaction)
+        saved = await save_section(interaction, self.SECTION)
+        await go(interaction, self.SECTION)
+        if saved:
+            await interaction.followup.send(t(
+                "modules.config.save.success", locale=i18n.get_user_locale(interaction)),
+                ephemeral=True)
+
+    async def on_cancel(self, interaction: discord.Interaction):
+        await ack(interaction)
+        draft_clear(interaction.guild_id, interaction.user.id, self.SECTION)
+        await go(interaction, self.SECTION)
+
+    @classmethod
+    def register_persistent(cls, bot) -> None:
+        """Auth model: Manage Server in the guild (checked on every click)."""
+        bot.add_view(cls())
+
+
 # --------------------------------------------------------------------------- #
 # Status / summary
 # --------------------------------------------------------------------------- #
@@ -281,24 +495,19 @@ def any_feature_on(cfg: Dict[str, Any]) -> bool:
     return any(cfg["features"][fid]["enabled"] for fid in EXEMPT_FEATURES)
 
 
-def status_of(cfg: Dict[str, Any]) -> str:
-    """``setup`` | ``off`` | ``simulation`` | ``active`` — the home status line.
+def needs_setup(cfg: Dict[str, Any]) -> bool:
+    """Moddy cannot run yet: no alert channel, or nothing monitored.
 
-    ``setup`` means "Moddy cannot run yet": no alert channel, or nothing
-    monitored. It mirrors the running condition of ``AutomodModule.load_config``.
+    Mirrors the running condition of ``AutomodModule.load_config``.
     """
-    if not cfg.get("notify_channel_id") or not any_feature_on(cfg):
-        return "setup"
-    if not cfg.get("enabled"):
-        return "off"
-    return "simulation" if cfg.get("dry_run") else "active"
+    return not cfg.get("notify_channel_id") or not any_feature_on(cfg)
 
 
 def profile_parts(cfg: Dict[str, Any]) -> List[str]:
     prof = cfg["features"]["profile"]
     if not prof["enabled"]:
         return []
-    return [p for p in ("avatar", "banner", "pseudo") if prof.get(p)]
+    return [p for p in PROFILE_PARTS if prof.get(p)]
 
 
 def monitored(cfg: Dict[str, Any], cat: str) -> bool:
@@ -318,9 +527,12 @@ def monitored(cfg: Dict[str, Any], cat: str) -> bool:
 
 
 # --------------------------------------------------------------------------- #
-# Infraction types: names, groups, icons
+# Infraction types: names, groups
 # --------------------------------------------------------------------------- #
 FAMILY_ORDER: Tuple[str, ...] = ("message", "image", "profil", "perso")
+#: Icon of each family heading of the sanctions list (the only icons there).
+FAMILY_ICONS = {"message": emojis.MESSAGE, "image": emojis.IMAGE,
+                "profil": emojis.USER, "perso": emojis.SETTINGS}
 
 
 def type_ids(cfg: Dict[str, Any]) -> Dict[str, List[str]]:
@@ -372,7 +584,7 @@ def entry_of(cfg: Dict[str, Any], cat: str) -> Dict[str, Any]:
 
 
 def entry_is_default(cat: str, entry: Dict[str, Any]) -> bool:
-    """Whether ``entry`` says nothing a missing entry would not (Moddy defaults)."""
+    """Whether ``entry`` says nothing a missing entry would not (Moddy's ladder)."""
     typ = infractions.get(cat)
     if typ is None:
         return False
@@ -380,25 +592,29 @@ def entry_is_default(cat: str, entry: Dict[str, Any]) -> bool:
         return False
     if entry.get("mode", "auto") != "auto":
         return False
+    if entry.get("require_approval") is True or entry.get("recidive", True) is False:
+        return False
     action = entry.get("action_profil")
     return action in (None, typ.default_profile_action)
 
 
+def finalize_entry(cat: str, entry: Dict[str, Any]) -> Dict[str, Any]:
+    """``entry`` in its canonical stored form (what the module would load)."""
+    return infractions.normalize_sanctions({cat: entry}).get(cat) or entry
+
+
 def store_entry(cfg: Dict[str, Any], cat: str, entry: Dict[str, Any]) -> None:
-    """Write ``entry`` for ``cat`` — or drop it when it is plain Moddy defaults."""
+    """Write ``entry`` for ``cat`` -- or drop it when it is plain Moddy defaults."""
+    entry = finalize_entry(cat, entry)
     if entry_is_default(cat, entry):
         cfg["sanctions"].pop(cat, None)
     else:
         cfg["sanctions"][cat] = entry
 
 
-def effective_crans(cat: str, entry: Dict[str, Any]) -> Dict[str, int]:
-    """Cran per gravity this entry applies (the type's defaults unless custom)."""
-    typ = infractions.get(cat)
-    floors = dict(typ.plancher) if typ else dict(infractions.PERSO_DEFAULT_PLANCHER)
-    if entry.get("mode") == "perso" and isinstance(entry.get("crans"), dict):
-        return {g: int(entry["crans"].get(g, floors[g])) for g in infractions.GRAVITES}
-    return floors
+def policy_of(cat: str, entry: Optional[Dict[str, Any]]) -> Optional[infractions.EffectivePolicy]:
+    """What ``cat`` applies for a first offence of medium severity, defaults included."""
+    return infractions.effective_policy(cat, entry or {})
 
 
 def profile_action(cat: str, entry: Dict[str, Any]) -> Optional[str]:
@@ -409,56 +625,58 @@ def profile_action(cat: str, entry: Dict[str, Any]) -> Optional[str]:
     return entry.get("action_profil") or typ.default_profile_action
 
 
-def _crans_text(crans: Dict[str, int], locale: str) -> str:
-    values = [crans[g] for g in infractions.GRAVITES]
-    if len(set(values)) == 1:
-        return tp("sanction.always", locale, sanction=cran_label(values[0], locale))
-    return " · ".join(
-        f"{tp(f'gravity.{g}', locale)}: {cran_label(crans[g], locale)}"
-        for g in infractions.GRAVITES)
+def act_label(action: str, locale: str) -> str:
+    return tp(f"act.{action}", locale)
 
 
-def default_summary(cat: str, locale: str) -> str:
-    """What Moddy does by default, per gravity (shown under "Moddy default")."""
-    return _crans_text(effective_crans(cat, {}), locale)
+def plan_text(actions: Iterable[str], timeout_seconds: Optional[int], locale: str) -> str:
+    """``Delete message + Timeout 16 h 53 min``."""
+    parts = []
+    for action in actions:
+        label = act_label(action, locale)
+        if action == "timeout":
+            label += " " + actions_mod.format_duration(
+                timeout_seconds or actions_mod.DEFAULT_TIMEOUT_SECONDS, locale)
+        parts.append(label)
+    return " + ".join(parts)
 
 
-def sanction_summary(cat: str, entry: Dict[str, Any], locale: str) -> Tuple[str, str]:
-    """``(icon, text)``: the current sanction of a type in plain words.
-
-    ``icon`` is the sanction-action icon (``""`` when there is nothing to
-    point at); ``text`` never contains markdown.
-    """
-    typ = infractions.get(cat)
+def policy_text(cat: str, entry: Optional[Dict[str, Any]], locale: str) -> str:
+    """The sanction of a type in plain words, always its effective value."""
     entry = entry or {}
-    is_profile = typ is not None and typ.famille == "profil"
-    if entry.get("enabled", True) is False:
-        return "", tp("sanction.disabled_profile" if is_profile else "sanction.disabled", locale)
-
+    typ = infractions.get(cat)
+    pol = policy_of(cat, entry)
+    if typ is None or pol is None:
+        return "—"
+    if not pol.enabled:
+        return tp("sanction.disabled_profile" if typ.famille == "profil"
+                  else "sanction.disabled", locale)
     action = profile_action(cat, entry)
-    if action == "hold":
-        return action_icon("mute"), tp("profile_action.hold", locale)
-    if action == "rename_warn":
-        return action_icon("warn"), tp("profile_action.rename_warn", locale)
-    if action == "alert":
-        return "", tp("profile_action.alert", locale)
+    if action in ("hold", "rename_warn", "alert"):
+        return tp(f"profile_action.{action}", locale)
+    text = plan_text(pol.actions, pol.timeout_seconds, locale)
+    if pol.require_approval:
+        text += " · " + tp("sanction.approval", locale)
+    return text
 
-    crans = effective_crans(cat, entry)
-    top = max(crans.values())
-    if entry.get("mode") != "perso":
-        return "", tp("sanction.default", locale)
-    text = _crans_text(crans, locale)
-    if entry.get("recidive", True) is False:
-        text += " · " + tp("sanction.no_escalation", locale)
-    return cran_icon(top), text
+
+def duration_input(seconds: Any) -> str:
+    """A duration as the text a Modal input is pre-filled with (``16h 53m``).
+
+    Locale-neutral units, so :func:`automod.actions.parse_duration` reads it back
+    in every language.
+    """
+    total = max(0, int(seconds or 0))
+    days, rest = divmod(total, 86400)
+    hours, rest = divmod(rest, 3600)
+    minutes, secs = divmod(rest, 60)
+    parts = [f"{n}{u}" for n, u in ((days, "d"), (hours, "h"), (minutes, "m"), (secs, "s")) if n]
+    return " ".join(parts) or "0m"
 
 
 def sanction_line(cat: str, cfg: Dict[str, Any], locale: str) -> str:
-    """One markdown line of the sanctions list: type icon, name, sanction."""
-    icon, text = sanction_summary(cat, entry_of(cfg, cat), locale)
-    name = type_name(cat, cfg, locale)
-    suffix = f"{icon} {text}" if icon else text
-    return f"{type_emoji(cat)} **{name}** · {suffix}"
+    """One bullet of the sanctions list: bold name, effective sanction."""
+    return f"* **{type_name(cat, cfg, locale)}** · {policy_text(cat, entry_of(cfg, cat), locale)}"
 
 
 # --------------------------------------------------------------------------- #

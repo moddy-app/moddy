@@ -1,7 +1,7 @@
 """
-Ready-made protection levels for the Automod AI first-run wizard.
+Ready-made protection levels for the Automod first-run wizard.
 
-A server that opens ``/config`` -> Automod AI for the first time should not have
+A server that opens ``/config`` -> Automod for the first time should not have
 to understand the individual detections: it picks one of three *levels* and
 Moddy fills in the stored config. The module is **pure** (no Discord, no I/O) so
 the levels are table-testable and a future dashboard can reuse the very same
@@ -74,14 +74,12 @@ def blank_config() -> Dict[str, Any]:
         return base
 
     return {
-        "enabled": False,
         "notify_channel_id": None,
         "ignore_moderators": True,
         "severity": ac.SEVERITY_DEFAULT,
         "max_action": "ban",
         "sanctions": {},
         "infractions_perso": [],
-        "dry_run": False,
         "features": {
             "content": feature(),
             "image_nsfw": feature(),
@@ -92,12 +90,13 @@ def blank_config() -> Dict[str, Any]:
     }
 
 
-def preset_config(preset: str, channel_id: Optional[int], *, dry_run: bool = True,
-                  enabled: bool = True,
+def preset_config(preset: str, channel_id: Optional[int], *, state: str = "simulation",
                   base: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Full config of ``preset`` for ``channel_id``.
 
-    ``base`` (an existing, normalised config) is kept for everything a level
+    ``state`` is the generic module state written next to the config
+    (``active`` / ``simulation`` / ``paused``; simulation is the former
+    ``dry_run``). ``base`` (an existing, normalised config) is kept for everything a level
     does not own: custom infractions, exemptions, the maximum
     sanction and the sanctions of types the level leaves alone. Without it the
     result is a complete fresh config.
@@ -110,8 +109,9 @@ def preset_config(preset: str, channel_id: Optional[int], *, dry_run: bool = Tru
 
     if channel_id is not None:
         cfg["notify_channel_id"] = int(channel_id)
-    cfg["enabled"] = bool(enabled)
-    cfg["dry_run"] = bool(dry_run)
+    cfg["state"] = state
+    cfg.pop("enabled", None)
+    cfg.pop("dry_run", None)
     cfg["severity"] = severity
 
     skeleton = blank_config()["features"]

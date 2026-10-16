@@ -483,19 +483,21 @@ was easier not to" is not one.
   Server check is the whole auth context it needs.
 - **`modules/configs/automod_ai_sanctions_config.py::TypeView` and
   `modules/configs/automod_ai_precedents_view.py::AutomodAIPrecedentsView`** —
-  the `/config` → Automod AI *infraction type* screen and the learned-precedents
+  the `/config` → Automod *infraction type* screen and the learned-precedents
   browser. Every interactive child is a persistent `DynamicItem` carrying the
   entity in its `custom_id` (`moddy:automod:cfg:tbtn:<action>:<type>`,
-  `moddy:automod:cfg:tsel:<type>`, `moddy:automod:cfg:prec:<action>:<page>`,
+  `moddy:automod:cfg:tsel:<type>`, `moddy:automod:cfg:tact:<type>`, `moddy:automod:cfg:prec:<action>:<page>`,
   `moddy:automod:cfg:precdel:<page>`), registered through
   `AutomodConfigPersistence.register_persistent` (`bot.add_dynamic_items(...)`).
   The wrappers cannot be built without a type / page and have nothing to carry
   once their items reconstruct themselves on every click, so they are not
-  registered. The other Automod AI screens (wizard steps, home, sanctions list,
-  monitoring, AI guidance, exemptions, advanced) are registered shells with
-  static ids. Changes are applied instantly (no Save), like `LogsCategoryView`.
-  The two destructive confirmations (delete a custom infraction, delete the whole
-  configuration) are **not** in-memory dialogs: the first click re-renders the
+  registered. The other Automod screens (wizard steps, home, delete confirmation,
+  sanctions list, monitoring, exemptions, advanced) are registered shells with
+  static ids. The home saves instantly; the four main sub-views hold a draft and
+  show Save / Cancel while it is pending (drafts are in memory, see
+  AUTOMOD_AI.md §0), so a restart only loses unsaved edits.
+  The two destructive confirmations (delete a custom infraction: `delyes`; delete the whole
+  configuration: `AutomodDeleteView`) are **not** in-memory dialogs: the first click re-renders the
   same screen in confirmation mode (`confirm_delete`), whose *Yes* control is
   itself a persistent item (`delyes`), so they survive a restart too. The Modals
   of the panel (`SanctionModal`, `InfractionModal`, `IndicationsModal`) follow the

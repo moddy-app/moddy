@@ -263,10 +263,7 @@ du module), hook `async on_state_change(old, new)` (pas appelé au boot).
 **Visibilité des commandes** : seules les instances `enabled` publient leurs
 commandes. `paused` => masquées ; `simulation` et `active` => visibles.
 
-**Mapper la simulation** (Automod, à câbler) : mettre `SUPPORTS_SIMULATION =
-True`, puis remplacer la lecture du `dry_run` du module par `self.is_simulation`
-(ou migrer `dry_run` -> `state: "simulation"` à la lecture dans `load_config`).
-Le module reste `enabled`; c'est à lui de ne produire aucun effet de bord.
+**Mapper la simulation** (fait pour Automod) : `SUPPORTS_SIMULATION = True`, et le module lit `self.is_simulation` (Automod : propriété `dry_run`). Les anciens drapeaux racine sont migrés à la lecture par le module (`effective_state` : `enabled: false` -> `paused`, `dry_run: true` -> `simulation`, la pause l'emporte) et supprimés au prochain enregistrement du panneau.
 
 **UI `/config`** (`modules/configs/_common.py`) :
 

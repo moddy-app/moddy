@@ -1,25 +1,30 @@
 """
-``/config`` -> **Automod AI**: the home screen and the first-run wizard.
+``/config`` -> **Automod**: the home screen, the first-run wizard and the delete
+confirmation.
 
 The panel is built around one rule: *the only thing a server must decide is
 where Moddy posts its alerts*. Everything else has a sensible ready-made answer.
 
-* **First run** (no alerts channel yet) — a three-step wizard: the alerts
-  channel, a protection level (Light / Balanced / Strict, see
-  ``automod/presets.py``), then "simulation or live".
-* **Home** — one status line, a few sentences saying what the automod does,
-  the on/off switch, the alerts channel and a menu to the detail screens
-  (what is monitored, sanctions, AI guidance, exemptions, advanced).
+* **First run** (nothing saved yet) -- a three-step wizard: the alerts channel,
+  a protection level (Light / Balanced / Strict, see ``automod/presets.py``),
+  then "simulation or live". Every step has a **Skip** button: it applies the
+  *Balanced* level in *Simulation* (the recommended level, and the state in
+  which nobody can be sanctioned by mistake) and opens the home.
+* **Home** -- the generic module state (Active / Simulation / Paused, with its
+  buttons), a few sentences saying what the automod does, the alerts channel and
+  a menu (outside the container) to the detail screens. The home saves instantly;
+  the detail screens use Save / Cancel (see ``automod_ai_common``). The
+  "Delete configuration" button sits outside the container too.
 
-Every change is saved the moment it is made (``automod_ai_common.save_cfg``);
-there is no Save/Cancel. The other screens live in
-``automod_ai_sanctions_config.py`` and ``automod_ai_advanced_config.py``.
+The state is the generic one (``guilds.data.modules.automod_ai.state``, see
+docs/MODULE_SYSTEM.md): ``simulation`` is the former ``dry_run``.
 
 Persistence
 -----------
 Every screen here has static ``moddy:automod:cfg:<screen>:<action>`` custom_ids
 and is registered as a shell: ``interaction.guild_id`` plus a Manage Server check
-(re-run on every click) is the whole auth context a guild panel needs. The
+(re-run on every click) is the whole auth context a guild panel needs. The state
+buttons are the shared :class:`modules.configs._common.ModuleStateButton`. The
 screens scoped to an entity (an infraction type, a page of precedents) use
 ``DynamicItem`` s, registered by :class:`AutomodConfigPersistence`.
 """
@@ -32,16 +37,20 @@ from typing import Any, Dict, Optional
 import discord
 from discord import ui
 
-from automod.presets import PRESETS, preset_config
+from automod.presets import DEFAULT_PRESET, PRESETS, preset_config
 from cogs.error_handler import BaseView
+from config import COLORS
+from modules.automod_ai import AutomodModule
 from modules.configs import automod_ai_common as common
-from modules.configs.automod_ai_common import back_row, button, cid, go, row, select, title, tp
-from utils.emojis import (
-    BOOK, GREEN_STATUS, GROUPS, IMAGE, LEGAL, MESSAGE, PLAY, RED_STATUS,
-    REQUIRED_FIELDS, SEARCH, SETTINGS, SHIELD, TOGGLE_OFF, TOGGLE_ON, USER,
-    WARNING, YELLOW_STATUS,
+from modules.configs._common import module_state_row, state_accent
+from modules.configs.automod_ai_common import (
+    back_row, button, cid, go, row, select, title, tp, trail,
 )
-from utils.i18n import i18n
+from utils.emojis import (
+    BACK, DELETE, GROUPS, IMAGE, LEGAL, MESSAGE, REQUIRED_FIELDS, SEARCH, SETTINGS,
+    SHIELD, USER, WARNING,
+)
+from utils.i18n import i18n, t
 
 logger = logging.getLogger("moddy.modules.automod_ai_config")
 
@@ -49,37 +58,20 @@ logger = logging.getLogger("moddy.modules.automod_ai_config")
 NAV_ITEMS = (
     ("monitoring", SEARCH),
     ("sanctions", LEGAL),
-    ("indications", BOOK),
     ("exemptions", GROUPS),
     ("advanced", SETTINGS),
 )
 
-_STATUS_DOT = {
-    "active": GREEN_STATUS,
-    "simulation": YELLOW_STATUS,
-    "off": RED_STATUS,
-    "setup": WARNING,
-}
+#: What "Skip" and a fresh start apply: the recommended level, in simulation.
+SKIP_PRESET = DEFAULT_PRESET
+SKIP_STATE = "simulation"
 
 
 # =========================================================================== #
-# Status / summary text
+# Summary text
 # =========================================================================== #
-def status_text(cfg: Dict[str, Any], locale: str) -> str:
-    """The one status line of the home screen."""
-    status = common.status_of(cfg)
-    if status == "setup":
-        hint = tp("home.setup_channel" if not cfg.get("notify_channel_id")
-                  else "home.setup_monitoring", locale)
-        return f"{_STATUS_DOT[status]} **{tp('status.setup', locale)}** — {hint}"
-    return (f"{_STATUS_DOT[status]} **{tp(f'status.{status}', locale)}** — "
-            f"{tp(f'status.{status}_hint', locale)}")
-
-
 def _custom_sanctions(cfg: Dict[str, Any], family: str) -> int:
-    ids = common.type_ids(cfg)[family]
-    return sum(1 for cat in ids if cat in cfg["sanctions"]
-               and not common.entry_is_default(cat, cfg["sanctions"][cat]))
+    return sum(1 for cat in common.type_ids(cfg)[family] if cat in cfg["sanctions"])
 
 
 def summary_lines(cfg: Dict[str, Any], locale: str) -> str:
@@ -88,10 +80,11 @@ def summary_lines(cfg: Dict[str, Any], locale: str) -> str:
     lines = []
 
     if feats["content"]["enabled"]:
+        line = tp("summary.messages_on", locale)
         n = _custom_sanctions(cfg, "message")
-        sanctions = (tp("summary.sanctions_default", locale) if not n
-                     else tp("summary.sanctions_custom", locale, n=n))
-        lines.append(f"{MESSAGE} {tp('summary.messages_on', locale, sanctions=sanctions)}")
+        if n:
+            line += " · " + tp("summary.sanctions_custom", locale, n=n)
+        lines.append(f"{MESSAGE} {line}")
     else:
         lines.append(f"{MESSAGE} {tp('summary.messages_off', locale)}")
 
@@ -111,17 +104,25 @@ def summary_lines(cfg: Dict[str, Any], locale: str) -> str:
     return "\n".join(lines)
 
 
+def setup_text(cfg: Dict[str, Any], locale: str) -> str:
+    """The "needs setup" line (empty when Moddy can run)."""
+    if not common.needs_setup(cfg):
+        return ""
+    hint = tp("home.setup_channel" if not cfg.get("notify_channel_id")
+              else "home.setup_monitoring", locale)
+    return f"{WARNING} **{tp('home.setup_title', locale)}** — {hint}"
+
+
 # =========================================================================== #
 # Rendering entry points
 # =========================================================================== #
 async def open_automod_panel(bot, guild_id: int, locale: str,
                              module_config: Optional[Dict[str, Any]]) -> ui.LayoutView:
-    """First screen of ``/config`` -> Automod AI: the wizard until a channel is
-    chosen, the home afterwards."""
-    cfg = common.normalize_cfg(module_config)
-    if not cfg.get("notify_channel_id"):
+    """First screen of ``/config`` -> Automod: the wizard until something is
+    saved, the home afterwards."""
+    if not module_config:
         return AutomodWizardChannelView(bot, guild_id, locale)
-    return AutomodAIConfigView(bot, guild_id, locale, cfg)
+    return AutomodAIConfigView(bot, guild_id, locale, common.normalize_cfg(module_config))
 
 
 async def render_home(interaction: discord.Interaction) -> None:
@@ -149,14 +150,20 @@ async def render_wizard_mode(interaction: discord.Interaction) -> None:
         interaction.client, interaction.guild_id, i18n.get_user_locale(interaction)))
 
 
+async def render_delete(interaction: discord.Interaction) -> None:
+    await common.ack(interaction)
+    await common.respond(interaction, AutomodDeleteView(
+        interaction.client, interaction.guild_id, i18n.get_user_locale(interaction)))
+
+
 # =========================================================================== #
 # Home
 # =========================================================================== #
 class AutomodAIConfigView(BaseView):
-    """Home of the Automod AI panel.
+    """Home of the Automod panel. Saves instantly (no Save / Cancel).
 
     Persistent: yes. Auth: Manage Server, re-checked on every click (never a
-    stored user id — a restarted shell cannot carry one).
+    stored user id -- a restarted shell cannot carry one).
     """
 
     __persistent__ = True
@@ -177,12 +184,24 @@ class AutomodAIConfigView(BaseView):
         # The registered shell renders every conditional control so that their
         # custom_ids are known to discord.py after a restart.
         is_shell = self.bot is None
+        state = cfg["state"]
 
-        container = ui.Container()
+        container = ui.Container(accent_colour=state_accent(state))
+        container.add_item(trail(locale))
         container.add_item(title(locale, "home.title"))
-        container.add_item(ui.TextDisplay(status_text(cfg, locale)))
         container.add_item(ui.TextDisplay(f"-# {tp('home.intro', locale)}"))
+        setup = setup_text(cfg, locale)
+        if setup:
+            container.add_item(ui.TextDisplay(setup))
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+
+        # Generic module state: Active / Simulation / Paused (shared buttons).
+        if not is_shell:
+            for item in module_state_row(common.MODULE_ID, state, locale,
+                                         supports_simulation=AutomodModule.SUPPORTS_SIMULATION):
+                container.add_item(item)
+            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+
         container.add_item(ui.TextDisplay(summary_lines(cfg, locale)))
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
@@ -200,26 +219,16 @@ class AutomodAIConfigView(BaseView):
             channel_select.default_values = resolved
         container.add_item(row(channel_select))
 
-        # Main switch + the contextual shortcuts.
-        on = bool(cfg["enabled"])
-        buttons = [button(
-            self.on_toggle, custom_id=cid("home", "toggle"),
-            label=tp("home.turn_off" if on else "home.turn_on", locale),
-            emoji=TOGGLE_ON if on else TOGGLE_OFF,
-            style=discord.ButtonStyle.danger if on else discord.ButtonStyle.success)]
-        if cfg["dry_run"] or is_shell:
-            buttons.append(button(
-                self.on_live, custom_id=cid("home", "live"), label=tp("home.go_live", locale),
-                emoji=PLAY, style=discord.ButtonStyle.primary))
         if not common.any_feature_on(cfg) or is_shell:
-            buttons.append(button(
+            container.add_item(row(button(
                 self.on_level, custom_id=cid("home", "level"),
                 label=tp("home.choose_level", locale), emoji=SHIELD,
-                style=discord.ButtonStyle.primary))
-        container.add_item(row(*buttons))
+                style=discord.ButtonStyle.primary)))
+        self.add_item(container)
 
-        # The menu is a select, because each entry deserves a sentence.
-        container.add_item(row(select(
+        # Fine-tune menu: outside the container, a select because each entry
+        # deserves a sentence.
+        self.add_item(row(select(
             self.on_nav, custom_id=cid("home", "nav"),
             placeholder=tp("home.nav_placeholder", locale),
             options=[
@@ -229,8 +238,12 @@ class AutomodAIConfigView(BaseView):
                     emoji=common.emoji_of(emoji))
                 for key, emoji in NAV_ITEMS
             ])))
-        self.add_item(container)
-        self.add_item(back_row(self.on_back, "home", locale))
+        self.add_item(row(
+            button(self.on_back, custom_id=cid("home", "back"),
+                   label=t("modules.config.buttons.back", locale=locale), emoji=BACK),
+            button(self.on_delete, custom_id=cid("home", "delete"),
+                   label=t("modules.config.buttons.delete", locale=locale), emoji=DELETE,
+                   style=discord.ButtonStyle.danger)))
 
     # -- callbacks (everything is re-derived from the interaction) -------- #
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
@@ -239,40 +252,13 @@ class AutomodAIConfigView(BaseView):
     async def on_channel(self, interaction: discord.Interaction):
         await common.ack(interaction)
         values = interaction.data.get("values") or []
-        if not values:
-            await common.ack(interaction)
-            return
-        cfg = await common.load_cfg(interaction.client, interaction.guild_id)
-        cfg["notify_channel_id"] = int(values[0])
-        await common.ack(interaction)
-        await common.save_cfg(interaction, cfg)
-        await render_home(interaction)
-
-    async def on_toggle(self, interaction: discord.Interaction):
-        await common.ack(interaction)
-        cfg = await common.load_cfg(interaction.client, interaction.guild_id)
-        turning_on = not cfg["enabled"]
-        if turning_on and not cfg.get("notify_channel_id"):
-            await go(interaction, "wizard_channel")
-            return
-        if turning_on and not common.any_feature_on(cfg):
-            await go(interaction, "wizard_level")
-            return
-        cfg["enabled"] = turning_on
-        await common.ack(interaction)
-        await common.save_cfg(interaction, cfg)
-        await render_home(interaction)
-
-    async def on_live(self, interaction: discord.Interaction):
-        await common.ack(interaction)
-        cfg = await common.load_cfg(interaction.client, interaction.guild_id)
-        cfg["dry_run"] = False
-        await common.ack(interaction)
-        await common.save_cfg(interaction, cfg)
+        if values:
+            cfg = await common.load_cfg(interaction.client, interaction.guild_id)
+            cfg["notify_channel_id"] = int(values[0])
+            await common.save_cfg(interaction, cfg)
         await render_home(interaction)
 
     async def on_level(self, interaction: discord.Interaction):
-        await common.ack(interaction)
         await go(interaction, "wizard_level")
 
     async def on_nav(self, interaction: discord.Interaction):
@@ -283,8 +269,62 @@ class AutomodAIConfigView(BaseView):
             return
         await go(interaction, screen)
 
+    async def on_delete(self, interaction: discord.Interaction):
+        await go(interaction, "delete")
+
     async def on_back(self, interaction: discord.Interaction):
         await common.back_to_modules(interaction)
+
+    @classmethod
+    def register_persistent(cls, bot) -> None:
+        """Auth model: Manage Server in the guild (checked on every click)."""
+        bot.add_view(cls())
+
+
+class AutomodDeleteView(BaseView):
+    """Confirmation before deleting the whole configuration (red)."""
+
+    __persistent__ = True
+
+    def __init__(self, bot=None, guild_id: Optional[int] = None, locale: str = "en-US"):
+        super().__init__()  # timeout=None
+        self.bot = bot
+        self.guild_id = guild_id
+        self.locale = locale
+        self._build_view()
+
+    def _build_view(self) -> None:
+        self.clear_items()
+        locale = self.locale
+        container = ui.Container(accent_colour=discord.Colour(COLORS["error"]))
+        container.add_item(trail(locale, t("modules.config.buttons.delete", locale=locale)))
+        container.add_item(ui.TextDisplay(f"### {WARNING} {tp('delete.title', locale)}"))
+        container.add_item(ui.TextDisplay(tp("delete.body", locale)))
+        self.add_item(container)
+        self.add_item(row(
+            button(self.on_no, custom_id=cid("del", "no"), label=tp("delete.cancel", locale)),
+            button(self.on_yes, custom_id=cid("del", "yes"), label=tp("delete.confirm", locale),
+                   emoji=DELETE, style=discord.ButtonStyle.danger)))
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        return await common.gate(interaction)
+
+    async def on_no(self, interaction: discord.Interaction):
+        await go(interaction, "home")
+
+    async def on_yes(self, interaction: discord.Interaction):
+        await common.ack(interaction)
+        locale = i18n.get_user_locale(interaction)
+        deleted = await interaction.client.module_manager.delete_module_config(
+            interaction.guild_id, common.MODULE_ID)
+        if not deleted:
+            await common.send_error(interaction, t("modules.config.delete.error", locale=locale))
+            await go(interaction, "home")
+            return
+        common.draft_clear_guild(interaction.guild_id)
+        await go(interaction, "wizard_channel")
+        await interaction.followup.send(t("modules.config.delete.success", locale=locale),
+                                        ephemeral=True)
 
     @classmethod
     def register_persistent(cls, bot) -> None:
@@ -300,6 +340,7 @@ class _WizardView(BaseView):
 
     __persistent__ = True
     STEP = 0
+    SCREEN = ""
 
     def __init__(self, bot=None, guild_id: Optional[int] = None, locale: str = "en-US"):
         super().__init__()  # timeout=None
@@ -309,15 +350,39 @@ class _WizardView(BaseView):
         self._build_view()
 
     def _frame(self, question_key: str, hint_key: str) -> ui.Container:
-        container = ui.Container()
+        container = ui.Container(accent_colour=discord.Colour(COLORS["primary"]))
+        container.add_item(trail(self.locale))
         container.add_item(title(self.locale, "wizard.title"))
         container.add_item(ui.TextDisplay(
             f"-# {tp('wizard.step', self.locale, n=self.STEP, total=3)}\n"
             f"**{tp(question_key, self.locale)}**\n{tp(hint_key, self.locale)}"))
         return container
 
+    def _footer(self) -> None:
+        """Container closing line + the Back / Skip row, shared by every step."""
+        self.add_item(row(
+            button(self.on_back, custom_id=cid(self.SCREEN, "back"),
+                   label=t("modules.config.buttons.back", locale=self.locale), emoji=BACK),
+            button(self.on_skip, custom_id=cid(self.SCREEN, "skip"),
+                   label=tp("wizard.skip", self.locale))))
+
+    def _skip_hint(self) -> ui.TextDisplay:
+        return ui.TextDisplay(f"-# {tp('wizard.skip_hint', self.locale)}")
+
     def _build_view(self) -> None:  # pragma: no cover - overridden
         raise NotImplementedError
+
+    async def on_back(self, interaction: discord.Interaction):  # pragma: no cover
+        raise NotImplementedError
+
+    async def on_skip(self, interaction: discord.Interaction):
+        """Balanced level, simulation, the channel already chosen (if any)."""
+        await common.ack(interaction)
+        cfg = await common.load_cfg(interaction.client, interaction.guild_id)
+        new_cfg = preset_config(SKIP_PRESET, cfg.get("notify_channel_id"),
+                                state=SKIP_STATE, base=cfg)
+        if await common.save_cfg(interaction, new_cfg):
+            await render_home(interaction)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         return await common.gate(interaction)
@@ -329,9 +394,10 @@ class _WizardView(BaseView):
 
 
 class AutomodWizardChannelView(_WizardView):
-    """Step 1 — where Moddy posts its alerts (the one mandatory setting)."""
+    """Step 1 -- where Moddy posts its alerts (the one mandatory setting)."""
 
     STEP = 1
+    SCREEN = "wiz1"
 
     def _build_view(self) -> None:
         self.clear_items()
@@ -342,19 +408,18 @@ class AutomodWizardChannelView(_WizardView):
             min_values=1, max_values=1, custom_id=cid("wiz1", "channel"))
         channel_select.callback = self.on_channel
         container.add_item(row(channel_select))
+        container.add_item(self._skip_hint())
         self.add_item(container)
-        self.add_item(back_row(self.on_back, "wiz1", self.locale))
+        self._footer()
 
     async def on_channel(self, interaction: discord.Interaction):
         await common.ack(interaction)
         values = interaction.data.get("values") or []
         if not values:
-            await common.ack(interaction)
             return
         cfg = await common.load_cfg(interaction.client, interaction.guild_id)
         cfg["notify_channel_id"] = int(values[0])
-        await common.ack(interaction)
-        if await common.save_cfg(interaction, cfg):
+        if await common.save_cfg(interaction, common.with_state(cfg, cfg["state"])):
             await go(interaction, "wizard_level")
 
     async def on_back(self, interaction: discord.Interaction):
@@ -362,9 +427,10 @@ class AutomodWizardChannelView(_WizardView):
 
 
 class AutomodWizardLevelView(_WizardView):
-    """Step 2 — Light / Balanced / Strict."""
+    """Step 2 -- Light / Balanced / Strict."""
 
     STEP = 2
+    SCREEN = "wiz2"
 
     def _build_view(self) -> None:
         self.clear_items()
@@ -381,23 +447,22 @@ class AutomodWizardLevelView(_WizardView):
                     style=(discord.ButtonStyle.success if recommended
                            else discord.ButtonStyle.secondary)))
             container.add_item(section)
+        container.add_item(self._skip_hint())
         self.add_item(container)
-        self.add_item(back_row(self.on_back, "wiz2", self.locale))
+        self._footer()
 
     async def on_level(self, interaction: discord.Interaction):
         await common.ack(interaction)
         preset = (interaction.data.get("custom_id") or "").rsplit(":", 1)[-1]
         if preset not in PRESETS:
-            await common.ack(interaction)
             return
         cfg = await common.load_cfg(interaction.client, interaction.guild_id)
         if not cfg.get("notify_channel_id"):
             await go(interaction, "wizard_channel")
             return
-        # The level is applied switched off and in simulation: step 3 decides.
-        new_cfg = preset_config(preset, cfg["notify_channel_id"], dry_run=True,
-                                enabled=False, base=cfg)
-        await common.ack(interaction)
+        # The level is applied while the module is still paused: step 3 decides
+        # whether Moddy starts in simulation or for real.
+        new_cfg = preset_config(preset, cfg["notify_channel_id"], state="paused", base=cfg)
         if await common.save_cfg(interaction, new_cfg):
             await go(interaction, "wizard_mode")
 
@@ -406,38 +471,37 @@ class AutomodWizardLevelView(_WizardView):
 
 
 class AutomodWizardModeView(_WizardView):
-    """Step 3 — start in simulation (recommended) or enable right away."""
+    """Step 3 -- start in simulation (recommended) or enable right away."""
 
     STEP = 3
+    SCREEN = "wiz3"
 
     def _build_view(self) -> None:
         self.clear_items()
         container = self._frame("wizard.mode_question", "wizard.mode_hint")
-        for action, dry_run in (("sim", True), ("live", False)):
+        for action, simulated in (("sim", True), ("live", False)):
             container.add_item(ui.Section(
                 ui.TextDisplay(
                     f"**{tp(f'wizard.mode_{action}', self.locale)}**"
-                    f"{' — ' + tp('wizard.recommended', self.locale) if dry_run else ''}\n"
+                    f"{' — ' + tp('wizard.recommended', self.locale) if simulated else ''}\n"
                     f"{tp(f'wizard.mode_{action}_desc', self.locale)}"),
                 accessory=button(
                     self.on_mode, custom_id=cid("wiz3", action),
                     label=tp(f"wizard.mode_{action}_button", self.locale),
-                    style=(discord.ButtonStyle.success if dry_run
+                    style=(discord.ButtonStyle.success if simulated
                            else discord.ButtonStyle.secondary))))
+        container.add_item(self._skip_hint())
         self.add_item(container)
-        self.add_item(back_row(self.on_back, "wiz3", self.locale))
+        self._footer()
 
     async def on_mode(self, interaction: discord.Interaction):
         await common.ack(interaction)
         action = (interaction.data.get("custom_id") or "").rsplit(":", 1)[-1]
         if action not in ("sim", "live"):
-            await common.ack(interaction)
             return
         cfg = await common.load_cfg(interaction.client, interaction.guild_id)
-        cfg["enabled"] = True
-        cfg["dry_run"] = action == "sim"
-        await common.ack(interaction)
-        if await common.save_cfg(interaction, cfg):
+        state = "simulation" if action == "sim" else "active"
+        if await common.save_cfg(interaction, common.with_state(cfg, state)):
             await render_home(interaction)
 
     async def on_back(self, interaction: discord.Interaction):
@@ -450,9 +514,9 @@ class AutomodWizardModeView(_WizardView):
 class AutomodConfigPersistence(BaseView):
     """Marker view: registers the dynamic items of the entity-scoped screens.
 
-    The infraction detail screen and the precedents browser are built from
+    The infraction type screen and the precedents browser are built from
     ``DynamicItem`` s (an infraction id / a page number cannot ride in a static
-    custom_id), so their wrappers are not registered — see
+    custom_id), so their wrappers are not registered -- see
     docs/PERSISTENT_VIEWS.md "Deliberate exclusions".
     """
 
@@ -464,7 +528,7 @@ class AutomodConfigPersistence(BaseView):
             PrecedentsDeleteSelect, PrecedentsNavButton,
         )
         from modules.configs.automod_ai_sanctions_config import (
-            TypeActionSelect, TypeButton,
+            TypeActionSelect, TypeActionsSelect, TypeButton,
         )
-        bot.add_dynamic_items(TypeButton, TypeActionSelect,
+        bot.add_dynamic_items(TypeButton, TypeActionSelect, TypeActionsSelect,
                               PrecedentsNavButton, PrecedentsDeleteSelect)

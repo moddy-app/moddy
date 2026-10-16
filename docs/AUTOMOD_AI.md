@@ -1,4 +1,4 @@
-# Moddy — Automod AI (AI message moderation)
+# Moddy — Automod (AI message moderation)
 
 > Read this before touching the `automod/` package, `modules/automod_ai.py`, or
 > `modules/configs/automod_ai_*.py` (the `/config` panel).
@@ -14,6 +14,35 @@ Every external call (embeddings + nano chat + rules safety check) goes through
 **`bot.gateway`** — never a provider SDK. See [API_GATEWAY.md](API_GATEWAY.md).
 
 ---
+
+## 0. The `/config` panel (`modules/configs/automod_ai_*.py`)
+
+* **Home** (instant save): breadcrumb, the generic state row (Active /
+  Simulation / Paused via `module_state_row`, yellow accent in simulation), the
+  alerts channel, a "fine-tune" select **outside the container**, Back and a red
+  **Delete configuration** button (own confirmation screen, then back to the
+  wizard). First run = 3-step wizard (channel, level, simulation/live); every step
+  has **Skip** = *Balanced* level in *simulation* (safest sane default; keeps the
+  channel if one was chosen, otherwise the home asks for it).
+* **Main sub-views** (monitoring, sanctions, exemptions, advanced): classic module
+  save model. Edits go to a **draft** (`automod_ai_common`: in-memory map
+  `(guild, user, section)` -> the keys that section owns, TTL 30 min, lost on
+  restart); Save / Cancel only show while the draft differs from the stored
+  config, Back is locked meanwhile and a warning line says so. Save merges the
+  draft onto the freshly loaded stored config, validates through
+  `save_module_config` and clears it. Deeper screens (one infraction, its timeout
+  Modal V2, the custom-infraction editor) have **no Save**: they edit the
+  `sanctions` draft, shown as pending on the list, written when the list is saved.
+* **Sanctions** shows the *effective* sanction (never "Moddy default"): a bullet
+  list under icon headings (messages / images / profiles / server's own). One
+  infraction = a multi-select of the five actions (conflicts resolved by
+  `automod/actions.py` and explained), the exact timeout duration (button ->
+  Modal V2, `parse_duration`, 1 min to 28 days, shown as text), the moderator
+  approval toggle, an escalation toggle, on/off, reset, and Edit/Delete for custom
+  infractions. Picking actions switches the entry to `mode: "perso"`
+  (one plan for every severity; "Reset" returns to Moddy's ladder).
+* The removed "AI guidance" screen does not exist any more (custom infractions
+  replace it).
 
 ## 1. The funnel (pipeline)
 
@@ -645,7 +674,7 @@ give one-click starting points, filled in the server language.
 > Moddy does not moderate a community it has itself sanctioned. See
 > [GLOBAL_SANCTIONS.md](GLOBAL_SANCTIONS.md).
 
-`MODULE_ID = "automod_ai"` (module name **Automod AI**). Config stored in
+`MODULE_ID = "automod_ai"` (module name **Automod**; the id stays `automod_ai`). Config stored in
 `guilds.data.modules.automod_ai`. A config still stored under the historical
 `automod` key is migrated to `automod_ai` on the next guild load
 (`ModuleManager.LEGACY_MODULE_IDS`), so the classic (non-AI) automod module can
@@ -654,7 +683,7 @@ take the `automod` id later. Full schema (for the dashboard / backend) →
 
 ```json
 {
-  "enabled": true,
+  "state": "active",   // active | simulation | paused (generic module state)
   "notify_channel_id": 123,
   "ignore_moderators": true,
   "severity": 3,
@@ -701,7 +730,8 @@ still read transparently.
   [AUTOMOD_AI_CONFIG.md](AUTOMOD_AI_CONFIG.md).
 - **`categories_desactivees`** (list) — legacy kill-switch, superseded by
   `sanctions[<id>].enabled`; still read, never written by the panel.
-- **`dry_run`** (bool, default `false`) is **shadow mode** (§8): the whole funnel
+- **`state: "simulation"`** (the former `dry_run` flag, now the generic module
+  state; `SUPPORTS_SIMULATION = True`) is **shadow mode** (§8): the whole funnel
   and barème run but **nothing is applied** — no delete/warn/mute/ban, no case, no
   DM. A **SIMULATION** card is posted instead, carrying annotation buttons that
   feed the evaluation corpus. Recommended for a server's first week.
@@ -714,7 +744,7 @@ the guild config, computes the cran and **overwrites `decision.actions` /
 `decision.duree_heures`** from it. nano's qualification is the only thing read
 from the pipeline.
 
-**Shadow mode short-circuit:** if the guild has `dry_run` on, the module stops
+**Shadow mode short-circuit:** if the guild is in `simulation` state (`module.dry_run` == `is_simulation`), the module stops
 right here — it records an eval candidate and posts the SIMULATION card
 (`_notify_shadow`), and returns **before** any delete/case/DM. Everything below
 only runs in normal (non-shadow) mode. Then:
@@ -1096,7 +1126,7 @@ is replaced by server-language wording, the AI explanation stays on the case); a
 - Once a feature deleted the message, the remaining features stop (no double
   sanction on one message).
 - Config: `features.image_nsfw` / `features.image_gore` / `features.image_scam`
-  (`+ scan_all`, no UI), toggled in `/config` → Automod AI → *What is monitored*;
+  (`+ scan_all`, no UI), toggled in `/config` → Automod → *What is monitored*;
   the panel's exemptions apply to every feature.
 
 > A `situation` feature (diffuse harassment / dogpiling, judged on a friction
@@ -1415,15 +1445,16 @@ outputs, so the deterministic layers the harness protects (grounding guards,
 category normalisation, the barème) are exercised for real; only a *prompt*
 change needs `--live` to re-measure.
 
-### 8.3 Shadow mode (`dry_run`)
+### 8.3 Shadow mode (`simulation` state, formerly `dry_run`)
 
-A guild can run the whole system with **nothing applied**. With `dry_run: true`
+A guild can run the whole system with **nothing applied**. With `state: "simulation"`
 the funnel and barème run exactly as normal, but instead of acting the module
 posts a **SIMULATION** card to the alert channel (badge *"SIMULATION — aucune
 action appliquée"*) showing the sanction that *would* have been taken and its
 barème breakdown. **No delete, no warn/mute/ban, no case, no DM.** Toggle it in
-`/config` (Automod AI → Advanced, simulation toggle, or the last wizard step;
-recommended the first week).
+`/config` (Automod home → state buttons, or the last wizard step; **Skip** in the
+wizard also starts in simulation; recommended the first week). A config that still
+has `dry_run: true` / `enabled: false` and no `state` key is migrated on load.
 
 The card carries three **persistent** annotation buttons — **✅ Correct**,
 **❌ Faux positif**, **⚠️ Disproportionné** (`utils/automod_shadow_views.py`,

@@ -185,6 +185,11 @@ class ModuleBase(ABC):
     def is_simulation(self) -> bool:
         return self.state == STATE_SIMULATION
 
+    @classmethod
+    def stored_state(cls, config_data: Optional[Dict[str, Any]]) -> str:
+        """State a stored config is in. Override to migrate legacy on/off flags."""
+        return normalize_state((config_data or {}).get(STATE_KEY), cls.SUPPORTS_SIMULATION)
+
     def apply_state(self, config_data: Optional[Dict[str, Any]]) -> None:
         """Read the stored ``state`` and let a paused module stay off.
 
@@ -193,8 +198,7 @@ class ModuleBase(ABC):
         loaded config but is forced to ``enabled = False``; resuming simply
         reloads, so validity decides again.
         """
-        raw = (config_data or {}).get(STATE_KEY)
-        self.state = normalize_state(raw, self.SUPPORTS_SIMULATION)
+        self.state = self.stored_state(config_data)
         if self.state == STATE_PAUSED:
             self.enabled = False
 
@@ -882,7 +886,7 @@ class ModuleManager:
         config = await self.get_module_config(guild_id, module_id)
         if not config:
             return None
-        return normalize_state(config.get(STATE_KEY), module_class.SUPPORTS_SIMULATION)
+        return module_class.stored_state(config)
 
     async def get_module_statuses(self, guild_id: int) -> Dict[str, str]:
         """``{module_id: state or STATUS_NOT_CONFIGURED}`` for every module, one DB read."""
@@ -901,8 +905,7 @@ class ModuleManager:
                 if not config and new_id == module_id:
                     config = stored.get(old_id)
             if config:
-                statuses[module_id] = normalize_state(
-                    config.get(STATE_KEY), module_class.SUPPORTS_SIMULATION)
+                statuses[module_id] = module_class.stored_state(config)
         return statuses
 
     async def set_module_state(self, guild_id: int, module_id: str, state: str,

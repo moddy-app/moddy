@@ -4,7 +4,9 @@ Learned-precedents browser for the Automod `/config` panel.
 Lists the server precedents the automod has learned from human rulings
 (accepted / refused appeals, shadow-mode annotations — docs/AUTOMOD_AI.md
 §2quinquies), paginated, with per-item deletion so a wrong precedent can be
-purged. Opened from Advanced; **Back** returns there.
+purged. Opened from Advanced; **Back** returns there (a pending Advanced draft is
+kept). Deleting a precedent is a data action, not a setting: it is applied at
+once, there is nothing to save here.
 
 Persistence
 -----------
@@ -26,7 +28,8 @@ from discord import ui
 
 from cogs.error_handler import BaseView
 from modules.configs import automod_ai_common as common
-from modules.configs.automod_ai_common import row, title, tp
+from config import COLORS
+from modules.configs.automod_ai_common import row, title, tp, trail
 from utils.emojis import BACK, DELETE, NEXT, SEARCH
 from utils.i18n import i18n, t
 
@@ -149,7 +152,8 @@ class AutomodAIPrecedentsView(BaseView):
     def _build_view(self) -> None:
         self.clear_items()
         locale, page = self.locale, self.page
-        container = ui.Container()
+        container = ui.Container(accent_colour=discord.Colour(COLORS["primary"]))
+        container.add_item(trail(locale, tp("nav.advanced", locale), tp("precedents.title", locale)))
         container.add_item(title(locale, "precedents.title", SEARCH))
         container.add_item(ui.TextDisplay(tp("precedents.intro", locale)))
 

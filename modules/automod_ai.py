@@ -19,7 +19,9 @@ application / case / logging path below. No other file needs to change.
 Config (stored in ``guilds.data.modules.automod``)::
 
     {
-      "enabled": true,
+      "state": "active" | "simulation" | "paused",   # generic module state (docs/MODULE_SYSTEM.md);
+                                         # legacy root "enabled": false / "dry_run": true are
+                                         # migrated on load (paused wins), dropped on next save
       "notify_channel_id": 123 | null,
       "ignore_moderators": true,
       "severity": 3,                     # 1–5 detection/severity dial
@@ -59,7 +61,9 @@ from typing import Any, Dict, List, Optional
 
 import discord
 
-from modules.module_manager import ModuleBase
+from modules.module_manager import (
+    STATE_ACTIVE, STATE_KEY, STATE_PAUSED, STATE_SIMULATION, ModuleBase, normalize_state,
+)
 from automod import (
     get_engine, Decision, TargetMessage, ContextMessage, AuthorHistory,
 )
@@ -551,14 +555,36 @@ FEATURE_EXTRA_KEYS = {
 # Module
 # ===========================================================================
 
+def effective_state(config: Optional[Dict[str, Any]]) -> str:
+    """Generic module state (``active`` / ``paused`` / ``simulation``) of a stored config.
+
+    A config with a ``state`` key is read as is. One written before the generic
+    state existed is migrated from its legacy flags: ``enabled: false`` is
+    ``paused`` (wins), ``dry_run: true`` is ``simulation``, anything else is
+    ``active``. The flags are never written back (the panel drops them on the
+    next save). Pure, never raises.
+    """
+    config = config or {}
+    if STATE_KEY in config:
+        return normalize_state(config.get(STATE_KEY), True)
+    if config.get("enabled") is False:
+        return STATE_PAUSED
+    if config.get("dry_run"):
+        return STATE_SIMULATION
+    return STATE_ACTIVE
+
+
 class AutomodModule(ModuleBase):
     """AI-assisted automod. See module docstring."""
 
     MODULE_ID = "automod_ai"
-    MODULE_NAME = "Automod AI"
+    MODULE_NAME = "Automod"
     MODULE_DESCRIPTION = "Modération automatique des messages problématiques (IA)"
     MODULE_EMOJI = "<:shield:1521471376815292498>"
     MODULE_ORDER = 10
+    # "simulation" (generic module state) is the former ``dry_run``: the full
+    # funnel runs, nothing is applied, a SIMULATION card is posted instead.
+    SUPPORTS_SIMULATION = True
     # manage_nicknames: the profile feature resets an inappropriate nickname.
     # attach_files: log / evidence cards re-upload the offending images.
     REQUIRED_BOT_PERMISSIONS = ["manage_messages", "ban_members", "moderate_members",
@@ -579,13 +605,25 @@ class AutomodModule(ModuleBase):
         #: key). Passed to the content funnel; ``sanctions["perso:<id>"]`` keys
         #: that no longer point at one of them are dropped on load.
         self.infractions_perso: List[dict] = []
-        # Shadow mode (session 3): run the full funnel but apply nothing — post a
-        # SIMULATION card with annotation buttons instead of sanctioning.
-        self.dry_run: bool = False
         self._features: Dict[str, AutomodFeature] = {}
         self._warmup_task: Optional[asyncio.Task] = None
 
     # -- ModuleBase interface ----------------------------------------------
+
+    @property
+    def dry_run(self) -> bool:
+        """Shadow mode: run the full funnel but apply nothing -- post a SIMULATION
+        card with annotation buttons instead of sanctioning. It IS the generic
+        ``simulation`` module state (a stored legacy ``dry_run`` flag is mapped
+        onto it by :meth:`apply_state`)."""
+        return self.is_simulation
+
+    @classmethod
+    def stored_state(cls, config_data: Optional[Dict[str, Any]]) -> str:
+        """Generic state, with the legacy ``dry_run`` / ``enabled`` flags mapped
+        onto it when the config has no ``state`` key yet (also read by the
+        /config main list through ``ModuleManager.get_module_statuses``)."""
+        return effective_state(config_data)
 
     async def load_config(self, config_data: Dict[str, Any]) -> bool:
         try:
@@ -621,15 +659,16 @@ class AutomodModule(ModuleBase):
                 c for c in legacy
                 if not (isinstance(explicit.get(c), dict) and "enabled" in explicit[c])
             ]
-            self.dry_run = bool(self.config.get("dry_run", False))
-
             features_cfg = self.config.get("features", {}) or {}
             self._features = {}
             for fid, fclass in FEATURE_CLASSES.items():
                 fcfg = features_cfg.get(fid, {})
                 self._features[fid] = fclass(self, fcfg)
 
-            module_on = bool(self.config.get("enabled", False))
+            # Running / not running comes from the generic ``state`` only (a
+            # paused module is switched off by ``apply_state``); the legacy root
+            # ``enabled`` flag is migrated by :func:`effective_state`.
+            module_on = True
             any_feature_on = any(f.enabled for f in self._features.values())
             # The alert channel is MANDATORY: automod does not run without it.
             has_channel = self.notify_channel_id is not None
@@ -682,7 +721,6 @@ class AutomodModule(ModuleBase):
 
     def get_default_config(self) -> Dict[str, Any]:
         return {
-            "enabled": False,
             "notify_channel_id": None,
             "ignore_moderators": True,
             "severity": ac.SEVERITY_DEFAULT,
@@ -690,7 +728,6 @@ class AutomodModule(ModuleBase):
             "categories_desactivees": [],
             "sanctions": {},
             "infractions_perso": [],
-            "dry_run": False,
             "features": {
                 "content": {
                     "enabled": False,

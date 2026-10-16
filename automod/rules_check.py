@@ -77,14 +77,6 @@ Réponds UNIQUEMENT par un objet JSON valide avec EXACTEMENT ces clés :
 - raison : courte explication en français (surtout si safe=false)."""
 
 
-async def validate_rules(bot, guild_id: int, text: str) -> Tuple[bool, str]:  # pragma: no cover
-    """REMOVED feature ("AI guidance"): kept only so the /config advanced screen,
-    which still imports it, keeps loading until that screen drops the setting.
-    Always reports the text as safe because it is never read any more.
-    TODO(config-ui): delete this stub together with the screen's import."""
-    return True, ""
-
-
 def infraction_text(infraction: dict) -> str:
     """The server-authored text of a custom infraction that reaches nano's prompt
     (name, description, examples) — keywords are matched by code, never prompted."""
@@ -100,7 +92,7 @@ async def validate_custom_infraction(
 ) -> Tuple[bool, str]:
     """Anti prompt-injection check of one custom infraction. Returns (safe, reason).
 
-    Runs the same AI guard as :func:`validate_rules` over name + description +
+    Runs the same AI guard as the safety prompt above over name + description +
     examples (everything the decider will read); fails closed on AI/gateway
     errors. Text Moddy wrote itself (an unmodified template) is trusted and
     skips the AI call.

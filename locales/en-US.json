@@ -1735,6 +1735,7 @@
       }
     },
     "automod_ai": {
+      "name": "Automod",
       "description": "Automatic moderation of problematic messages (AI)",
       "action": {
         "warn": "Warning",
@@ -2085,45 +2086,31 @@
         "fixed_body": "{user} ({user_id}) changed their {kind}: the timeout is lifted."
       },
       "panel": {
-        "status": {
-          "active": "Active",
-          "active_hint": "Moddy is moderating your server in real time.",
-          "simulation": "Simulation",
-          "simulation_hint": "Moddy shows what it would do, without sanctioning anyone.",
-          "off": "Off",
-          "off_hint": "Moddy is not moderating anything right now.",
-          "setup": "Needs setup"
-        },
         "home": {
-          "title": "Automod AI",
+          "title": "Automod",
           "intro": "Moddy reads messages, images and profiles, and sanctions rule-breaking on its own.",
           "setup_channel": "first choose the channel where Moddy posts its alerts.",
           "setup_monitoring": "choose what Moddy should watch.",
           "channel_title": "Alerts channel",
           "channel_hint": "Moddy posts what it detects and does there. Pick a channel only your team can see.",
           "channel_placeholder": "Choose the alerts channel…",
-          "turn_on": "Turn on",
-          "turn_off": "Turn off",
-          "go_live": "Switch to real mode",
           "choose_level": "Choose a protection level",
-          "nav_placeholder": "Fine-tune…"
+          "nav_placeholder": "Fine-tune…",
+          "setup_title": "Needs setup"
         },
         "nav": {
           "monitoring": "What is monitored",
           "monitoring_desc": "Messages, images, member profiles",
           "sanctions": "Sanctions",
           "sanctions_desc": "What Moddy does for each type of infraction",
-          "indications": "AI guidance",
-          "indications_desc": "Tell the AI about your server's own rules",
           "exemptions": "Exemptions",
           "exemptions_desc": "Roles and channels that are never checked",
           "advanced": "Advanced",
-          "advanced_desc": "Simulation, maximum sanction, sensitivity…"
+          "advanced_desc": "Maximum sanction, sensitivity, precedents"
         },
         "summary": {
-          "messages_on": "**Messages**: insults, threats, harassment, hate, scams… → {sanctions}",
+          "messages_on": "**Messages**: insults, threats, harassment, hate, scams…",
           "messages_off": "**Messages**: not monitored",
-          "sanctions_default": "Moddy's default sanctions",
           "sanctions_custom": "{n} customised sanction(s)",
           "images_on": "**Images**: {what}",
           "images_off": "**Images**: not monitored",
@@ -2139,7 +2126,7 @@
           "custom_none": "**Server-specific infractions**: none"
         },
         "wizard": {
-          "title": "Set up Automod AI",
+          "title": "Set up Automod",
           "step": "Step {n} of {total}",
           "recommended": "recommended",
           "choose": "Choose",
@@ -2155,7 +2142,9 @@
           "mode_sim_button": "Simulation",
           "mode_live": "Enable now",
           "mode_live_desc": "Moddy sanctions right away, for real.",
-          "mode_live_button": "Enable"
+          "mode_live_button": "Enable",
+          "skip": "Skip",
+          "skip_hint": "Skip starts with the Balanced level in simulation mode: Moddy shows what it would do without sanctioning anyone. You can change everything later."
         },
         "preset": {
           "light": "Light",
@@ -2185,12 +2174,11 @@
           "prof_banner": "Banners",
           "prof_banner_desc": "Explicit or shocking banners",
           "prof_pseudo": "Names",
-          "prof_pseudo_desc": "Insulting or hateful usernames and display names",
-          "footer": "Changes are saved right away."
+          "prof_pseudo_desc": "Insulting or hateful usernames and display names"
         },
         "list": {
           "title": "Sanctions",
-          "intro": "For each type of infraction, choose what Moddy does. By default it adapts the sanction to the severity and to repeat offences. Pick a type to adjust it.",
+          "intro": "What Moddy does for each type of infraction. Pick one to change its actions.",
           "pick_placeholder": "Pick a type to adjust…",
           "add_placeholder": "+ Add an infraction",
           "add_scratch": "Create from scratch",
@@ -2205,40 +2193,9 @@
           "perso": "Specific to this server"
         },
         "sanction": {
-          "default": "Moddy default",
-          "custom": "Customised",
-          "always": "Always: {sanction}",
-          "no_escalation": "no escalation",
           "disabled": "Off: message deleted, no sanction",
-          "disabled_profile": "Off: nothing happens"
-        },
-        "gravity": {
-          "basse": "Low",
-          "moyenne": "Medium",
-          "haute": "High",
-          "critique": "Critical"
-        },
-        "gravity_label": {
-          "basse": "Low severity",
-          "moyenne": "Medium severity",
-          "haute": "High severity",
-          "critique": "Critical severity"
-        },
-        "gravity_desc": {
-          "basse": "Borderline or mild: a slip with little consequence.",
-          "moyenne": "Clear: the infraction is unmistakable.",
-          "haute": "Serious: very inappropriate words or content.",
-          "critique": "Extreme: the worst, unequivocally."
-        },
-        "cran": {
-          "0": "Delete only",
-          "1": "Warn",
-          "2": "Mute 2 h",
-          "3": "Mute 12 h",
-          "4": "Mute 48 h",
-          "5": "Mute 7 days",
-          "6": "Mute 28 days",
-          "7": "Ban"
+          "disabled_profile": "Off: nothing happens",
+          "approval": "approval required"
         },
         "profile_action": {
           "hold": "Timeout until the profile is fixed",
@@ -2251,14 +2208,11 @@
           "bareme_desc": "Like a message: the sanction depends on the severity."
         },
         "type": {
-          "sanction": "Sanction",
-          "default_hint": "Moddy adapts the sanction to the severity and makes it heavier for repeat offenders.",
           "not_monitored": "This check is off right now: turn it on in “What is monitored”.",
           "off": "Moddy still deletes the message but applies no sanction.",
           "off_profile": "Moddy ignores this check.",
           "enabled": "Enabled",
           "disabled": "Disabled",
-          "customise": "Customise",
           "reset": "Reset to default",
           "profile_action": "What to do when there is a problem?",
           "profile_action_hint": "Choose how Moddy reacts to this profile check.",
@@ -2267,12 +2221,19 @@
           "cancel": "Cancel",
           "delete_title": "Delete this infraction?",
           "delete_body": "“{name}” will no longer be detected and its sanction setting is removed too. Cases already recorded are kept.",
-          "delete_confirm": "Yes, delete"
-        },
-        "customise": {
-          "modal_title": "Sanctions: {name}",
+          "delete_confirm": "Yes, delete",
+          "actions": "Actions",
+          "actions_hint": "Everything picked here happens at once.",
+          "conflicts": "A ban or a kick replaces warn and timeout, and a ban replaces a kick.",
+          "dropped": "{winner} replaces: {dropped} removed.",
+          "timeout_title": "Timeout duration",
+          "timeout_button": "Change duration",
+          "approval": "Moderator approval",
+          "approval_hint": "With approval, a moderator confirms in the alerts channel before Moddy sanctions. The message is still deleted at once.",
           "escalate": "Escalate on repeat offences",
-          "escalate_desc": "A member who reoffends gets a heavier sanction than the ones chosen above."
+          "note_auto": "Shown for a first offence of medium severity: Moddy adapts it to the severity and raises it for repeat offenders.",
+          "note_custom": "These actions apply to every severity.",
+          "pending_hint": "Unsaved: save your changes from the Sanctions screen."
         },
         "infraction": {
           "modal_title_new": "New infraction",
@@ -2296,24 +2257,9 @@
         },
         "errors": {
           "title": "Change refused",
-          "save_failed": "Nothing was changed.\n-# Reason: {error}"
-        },
-        "indications": {
-          "title": "AI guidance",
-          "intro": "Write in plain language what is allowed or forbidden on your server (e.g. “no advertising, spoilers only in #spoilers”). The AI takes it into account when it judges a message.",
-          "current": "Current guidance",
-          "empty": "No guidance: the AI applies reasonable moderation by default.",
-          "edit": "Edit the guidance",
-          "clear": "Clear",
-          "modal_title": "AI guidance",
-          "modal_label": "Guidance",
-          "modal_desc": "What the AI should watch for or tolerate on your server (3000 characters max).",
-          "modal_placeholder": "e.g. no insults or advertising, humour is tolerated…",
-          "saved": "Guidance checked and saved.",
-          "cleared": "Guidance cleared.",
-          "error_unsafe": "Guidance refused: it looks like an attempt to manipulate the AI.\n-# Reason: {reason}",
-          "error_too_long": "The guidance is too long (3000 characters max).",
-          "error_unavailable": "The guidance could not be checked right now (AI service unavailable). Try again later."
+          "save_failed": "Nothing was changed.\n-# Reason: {error}",
+          "timeout_invalid": "“{value}” is not a duration I can read.\n-# Examples: {examples}",
+          "timeout_range": "The duration must be between 1 minute and 28 days."
         },
         "exemptions": {
           "title": "Exemptions",
@@ -2328,9 +2274,6 @@
         "advanced": {
           "title": "Advanced",
           "intro": "Fine adjustments. The defaults suit most servers.",
-          "simulation_title": "Simulation mode",
-          "simulation_hint": "Moddy shows what it would do without sanctioning anything. Recommended for the first days.",
-          "simulation": "Simulation",
           "max_title": "Maximum sanction",
           "max_hint": "The heaviest sanction Moddy may apply on its own.",
           "max_warn": "Warn at most",
@@ -2351,12 +2294,7 @@
           "precedents_title": "Learned precedents",
           "precedents_hint": "Moddy learns your server's culture from your decisions (appeals, simulation annotations).",
           "precedents_count": "{n} precedent(s) learned",
-          "precedents": "View precedents",
-          "delete": "Delete configuration",
-          "delete_title": "Delete the whole configuration?",
-          "delete_body": "Automod AI stops and all its settings (sanctions, infractions, guidance, exemptions) are erased. Cases already recorded are kept.",
-          "delete_confirm": "Yes, delete everything",
-          "cancel": "Cancel"
+          "precedents": "View precedents"
         },
         "precedents": {
           "title": "Learned precedents",
@@ -2371,6 +2309,32 @@
           "delete_placeholder": "Delete a wrong precedent…",
           "delete_option": "Delete precedent {n}",
           "deleted": "Precedent deleted."
+        },
+        "pending": {
+          "notice": "You have unsaved changes. Save or cancel them before leaving."
+        },
+        "act": {
+          "delete": "Delete message",
+          "delete_desc": "Removes the offending message",
+          "warn": "Warn",
+          "warn_desc": "Gives the member a warning",
+          "timeout": "Timeout",
+          "timeout_desc": "Mutes the member for a set time",
+          "kick": "Kick",
+          "kick_desc": "Removes the member, who can rejoin",
+          "ban": "Ban",
+          "ban_desc": "Bans the member from the server"
+        },
+        "timeout_modal": {
+          "title": "Timeout duration",
+          "label": "Duration",
+          "desc": "e.g. 16h53, 1d 2h or 90m (1 minute to 28 days)."
+        },
+        "delete": {
+          "title": "Delete the configuration?",
+          "body": "Automod stops and all its settings (monitoring, sanctions, custom infractions, exemptions) are erased. Cases already recorded are kept.",
+          "confirm": "Yes, delete everything",
+          "cancel": "Cancel"
         }
       }
     },
@@ -5000,7 +4964,7 @@
       "moddy": "Moddy",
       "welcome_dm": "Welcome message",
       "moderation": "Moderation",
-      "automod_ai": "Automod AI",
+      "automod_ai": "Automod",
       "appeals": "Appeals",
       "altguard": "AltGuard",
       "tickets": "Tickets",

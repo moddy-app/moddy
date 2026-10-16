@@ -214,3 +214,15 @@ def test_locales_have_state_keys():
         assert {"active", "paused", "simulation", "not_configured"} <= set(c["state"])
         assert c["breadcrumb"]["root"]
         assert set(c["state"]["buttons"]) == {"pause", "resume", "activate", "simulation"}
+
+
+def test_stored_state_maps_legacy_flags_for_statuses():
+    """The /config main list reads legacy on/off flags through stored_state()."""
+    from modules.automod_ai import AutomodModule
+    from modules.voice_transcription import VoiceTranscriptionModule
+
+    assert AutomodModule.stored_state({"enabled": False, "dry_run": True}) == "paused"
+    assert AutomodModule.stored_state({"dry_run": True}) == "simulation"
+    assert AutomodModule.stored_state({"state": "active", "dry_run": True}) == "active"
+    assert VoiceTranscriptionModule.stored_state({"enabled": False}) == "paused"
+    assert VoiceTranscriptionModule.stored_state({}) == "active"

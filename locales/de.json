@@ -1735,6 +1735,7 @@
       }
     },
     "automod_ai": {
+      "name": "Automod",
       "description": "Automatische Moderation problematischer Nachrichten (KI)",
       "action": {
         "warn": "Verwarnung",
@@ -2085,45 +2086,31 @@
         "fixed_body": "{user} ({user_id}) hat das Profil korrigiert ({kind}): der Timeout ist aufgehoben."
       },
       "panel": {
-        "status": {
-          "active": "Aktiv",
-          "active_hint": "Moddy moderiert deinen Server in Echtzeit.",
-          "simulation": "Simulation",
-          "simulation_hint": "Moddy zeigt, was er tun würde, ohne jemanden zu sanktionieren.",
-          "off": "Aus",
-          "off_hint": "Moddy moderiert im Moment nichts.",
-          "setup": "Einrichtung nötig"
-        },
         "home": {
-          "title": "Automod KI",
+          "title": "Automod",
           "intro": "Moddy liest Nachrichten, Bilder und Profile und sanktioniert Regelverstöße selbstständig.",
           "setup_channel": "wähle zuerst den Kanal, in dem Moddy seine Meldungen postet.",
           "setup_monitoring": "wähle, was Moddy überwachen soll.",
           "channel_title": "Meldungskanal",
           "channel_hint": "Moddy postet dort, was er erkennt und tut. Wähle einen Kanal nur für dein Team.",
           "channel_placeholder": "Meldungskanal wählen…",
-          "turn_on": "Einschalten",
-          "turn_off": "Ausschalten",
-          "go_live": "Zum echten Modus wechseln",
           "choose_level": "Schutzstufe wählen",
-          "nav_placeholder": "Feiner einstellen…"
+          "nav_placeholder": "Feiner einstellen…",
+          "setup_title": "Einrichtung nötig"
         },
         "nav": {
           "monitoring": "Was überwacht wird",
           "monitoring_desc": "Nachrichten, Bilder, Mitgliedsprofile",
           "sanctions": "Sanktionen",
           "sanctions_desc": "Was Moddy bei jeder Art von Verstoß tut",
-          "indications": "Hinweise für die KI",
-          "indications_desc": "Erkläre der KI die Regeln deines Servers",
           "exemptions": "Ausnahmen",
           "exemptions_desc": "Rollen und Kanäle, die nie geprüft werden",
           "advanced": "Erweitert",
-          "advanced_desc": "Simulation, Höchststrafe, Empfindlichkeit…"
+          "advanced_desc": "Höchststrafe, Empfindlichkeit, Präzedenzfälle"
         },
         "summary": {
-          "messages_on": "**Nachrichten**: Beleidigungen, Drohungen, Belästigung, Hass, Betrug … → {sanctions}",
+          "messages_on": "**Nachrichten**: Beleidigungen, Drohungen, Belästigung, Hass, Betrug …",
           "messages_off": "**Nachrichten**: nicht überwacht",
-          "sanctions_default": "Standardsanktionen von Moddy",
           "sanctions_custom": "{n} angepasste Sanktion(en)",
           "images_on": "**Bilder**: {what}",
           "images_off": "**Bilder**: nicht überwacht",
@@ -2139,7 +2126,7 @@
           "custom_none": "**Server-eigene Verstöße**: keine"
         },
         "wizard": {
-          "title": "Automod KI einrichten",
+          "title": "Automod einrichten",
           "step": "Schritt {n} von {total}",
           "recommended": "empfohlen",
           "choose": "Wählen",
@@ -2155,7 +2142,9 @@
           "mode_sim_button": "Simulation",
           "mode_live": "Jetzt aktivieren",
           "mode_live_desc": "Moddy sanktioniert sofort, wirklich.",
-          "mode_live_button": "Aktivieren"
+          "mode_live_button": "Aktivieren",
+          "skip": "Überspringen",
+          "skip_hint": "Überspringen startet mit der Stufe Ausgewogen im Simulationsmodus: Moddy zeigt, was er tun würde, ohne jemanden zu sanktionieren. Du kannst später alles ändern."
         },
         "preset": {
           "light": "Leicht",
@@ -2185,12 +2174,11 @@
           "prof_banner": "Banner",
           "prof_banner_desc": "Explizite oder verstörende Banner",
           "prof_pseudo": "Namen",
-          "prof_pseudo_desc": "Beleidigende oder hasserfüllte Benutzer- und Anzeigenamen",
-          "footer": "Änderungen werden sofort gespeichert."
+          "prof_pseudo_desc": "Beleidigende oder hasserfüllte Benutzer- und Anzeigenamen"
         },
         "list": {
           "title": "Sanktionen",
-          "intro": "Wähle für jede Art von Verstoß, was Moddy tut. Standardmäßig passt er die Sanktion an Schwere und Wiederholung an. Wähle eine Art, um sie anzupassen.",
+          "intro": "Was Moddy bei jeder Art von Verstoß tut. Wähle eine aus, um ihre Aktionen zu ändern.",
           "pick_placeholder": "Art zum Anpassen wählen…",
           "add_placeholder": "+ Verstoß hinzufügen",
           "add_scratch": "Von Grund auf erstellen",
@@ -2205,40 +2193,9 @@
           "perso": "Speziell für diesen Server"
         },
         "sanction": {
-          "default": "Moddy-Standard",
-          "custom": "Angepasst",
-          "always": "Immer: {sanction}",
-          "no_escalation": "ohne Steigerung",
           "disabled": "Aus: Nachricht gelöscht, keine Sanktion",
-          "disabled_profile": "Aus: nichts passiert"
-        },
-        "gravity": {
-          "basse": "Niedrig",
-          "moyenne": "Mittel",
-          "haute": "Hoch",
-          "critique": "Kritisch"
-        },
-        "gravity_label": {
-          "basse": "Geringe Schwere",
-          "moyenne": "Mittlere Schwere",
-          "haute": "Hohe Schwere",
-          "critique": "Kritische Schwere"
-        },
-        "gravity_desc": {
-          "basse": "Grenzfall oder leicht: ein Ausrutscher ohne große Folgen.",
-          "moyenne": "Eindeutig: der Verstoß ist klar.",
-          "haute": "Ernst: sehr unangemessene Worte oder Inhalte.",
-          "critique": "Extrem: das Schlimmste, ohne Zweifel."
-        },
-        "cran": {
-          "0": "Nur löschen",
-          "1": "Verwarnung",
-          "2": "Timeout 2 Std.",
-          "3": "Timeout 12 Std.",
-          "4": "Timeout 48 Std.",
-          "5": "Timeout 7 Tage",
-          "6": "Timeout 28 Tage",
-          "7": "Bann"
+          "disabled_profile": "Aus: nichts passiert",
+          "approval": "Freigabe nötig"
         },
         "profile_action": {
           "hold": "Timeout, bis das Profil korrigiert ist",
@@ -2251,14 +2208,11 @@
           "bareme_desc": "Wie bei einer Nachricht: die Sanktion hängt von der Schwere ab."
         },
         "type": {
-          "sanction": "Sanktion",
-          "default_hint": "Moddy passt die Sanktion an die Schwere an und verschärft sie bei Wiederholungstätern.",
           "not_monitored": "Diese Erkennung ist gerade aus: schalte sie unter „Was überwacht wird“ ein.",
           "off": "Moddy löscht die Nachricht weiterhin, sanktioniert aber nicht.",
           "off_profile": "Moddy ignoriert diese Prüfung.",
           "enabled": "Aktiviert",
           "disabled": "Deaktiviert",
-          "customise": "Anpassen",
           "reset": "Zurücksetzen",
           "profile_action": "Was tun bei einem Problem?",
           "profile_action_hint": "Wähle, wie Moddy bei dieser Profilprüfung reagiert.",
@@ -2267,12 +2221,19 @@
           "cancel": "Abbrechen",
           "delete_title": "Diesen Verstoß löschen?",
           "delete_body": "„{name}“ wird nicht mehr erkannt und die Sanktionseinstellung wird ebenfalls entfernt. Bereits erfasste Fälle bleiben erhalten.",
-          "delete_confirm": "Ja, löschen"
-        },
-        "customise": {
-          "modal_title": "Sanktionen: {name}",
+          "delete_confirm": "Ja, löschen",
+          "actions": "Aktionen",
+          "actions_hint": "Alles, was du hier auswählst, passiert gleichzeitig.",
+          "conflicts": "Ein Bann oder Kick ersetzt Verwarnung und Timeout, und ein Bann ersetzt einen Kick.",
+          "dropped": "{winner} ersetzt: {dropped} entfernt.",
+          "timeout_title": "Timeout-Dauer",
+          "timeout_button": "Dauer ändern",
+          "approval": "Freigabe durch Moderator",
+          "approval_hint": "Mit Freigabe bestätigt ein Moderator im Meldungskanal, bevor Moddy sanktioniert. Die Nachricht wird trotzdem sofort gelöscht.",
           "escalate": "Bei Wiederholung verschärfen",
-          "escalate_desc": "Wer erneut auffällt, erhält eine härtere Sanktion als oben gewählt."
+          "note_auto": "Angezeigt für einen Erstverstoß mittlerer Schwere: Moddy passt ihn an die Schwere an und verschärft ihn bei Wiederholungstätern.",
+          "note_custom": "Diese Aktionen gelten für jede Schwere.",
+          "pending_hint": "Ungespeichert: Speichere deine Änderungen im Bildschirm Sanktionen."
         },
         "infraction": {
           "modal_title_new": "Neuer Verstoß",
@@ -2296,24 +2257,9 @@
         },
         "errors": {
           "title": "Änderung abgelehnt",
-          "save_failed": "Es wurde nichts geändert.\n-# Grund: {error}"
-        },
-        "indications": {
-          "title": "Hinweise für die KI",
-          "intro": "Schreibe in einfachen Worten, was auf deinem Server erlaubt oder verboten ist (z. B. „keine Werbung, Spoiler nur in #spoiler“). Die KI berücksichtigt das bei der Beurteilung einer Nachricht.",
-          "current": "Aktuelle Hinweise",
-          "empty": "Keine Hinweise: Die KI moderiert standardmäßig vernünftig.",
-          "edit": "Hinweise bearbeiten",
-          "clear": "Löschen",
-          "modal_title": "Hinweise für die KI",
-          "modal_label": "Hinweise",
-          "modal_desc": "Was die KI auf deinem Server beachten oder tolerieren soll (max. 3000 Zeichen).",
-          "modal_placeholder": "z. B. keine Beleidigungen oder Werbung, Humor wird toleriert …",
-          "saved": "Hinweise geprüft und gespeichert.",
-          "cleared": "Hinweise gelöscht.",
-          "error_unsafe": "Hinweise abgelehnt: Sie sehen nach einem Manipulationsversuch der KI aus.\n-# Grund: {reason}",
-          "error_too_long": "Die Hinweise sind zu lang (max. 3000 Zeichen).",
-          "error_unavailable": "Die Hinweise konnten gerade nicht geprüft werden (KI-Dienst nicht verfügbar). Versuche es später erneut."
+          "save_failed": "Es wurde nichts geändert.\n-# Grund: {error}",
+          "timeout_invalid": "„{value}“ ist keine Dauer, die ich lesen kann.\n-# Beispiele: {examples}",
+          "timeout_range": "Die Dauer muss zwischen 1 Minute und 28 Tagen liegen."
         },
         "exemptions": {
           "title": "Ausnahmen",
@@ -2328,9 +2274,6 @@
         "advanced": {
           "title": "Erweitert",
           "intro": "Feineinstellungen. Die Standardwerte passen für die meisten Server.",
-          "simulation_title": "Simulationsmodus",
-          "simulation_hint": "Moddy zeigt, was er tun würde, ohne etwas zu sanktionieren. Empfohlen für die ersten Tage.",
-          "simulation": "Simulation",
           "max_title": "Höchststrafe",
           "max_hint": "Die schwerste Sanktion, die Moddy allein verhängen darf.",
           "max_warn": "Höchstens Verwarnung",
@@ -2351,12 +2294,7 @@
           "precedents_title": "Gelernte Präzedenzfälle",
           "precedents_hint": "Moddy lernt die Kultur deines Servers aus deinen Entscheidungen (Einsprüche, Annotationen in der Simulation).",
           "precedents_count": "{n} Präzedenzfall/-fälle gelernt",
-          "precedents": "Präzedenzfälle ansehen",
-          "delete": "Konfiguration löschen",
-          "delete_title": "Gesamte Konfiguration löschen?",
-          "delete_body": "Automod KI stoppt und alle Einstellungen (Sanktionen, Verstöße, Hinweise, Ausnahmen) werden gelöscht. Bereits erfasste Fälle bleiben erhalten.",
-          "delete_confirm": "Ja, alles löschen",
-          "cancel": "Abbrechen"
+          "precedents": "Präzedenzfälle ansehen"
         },
         "precedents": {
           "title": "Gelernte Präzedenzfälle",
@@ -2371,6 +2309,32 @@
           "delete_placeholder": "Fehlerhaften Präzedenzfall löschen…",
           "delete_option": "Präzedenzfall {n} löschen",
           "deleted": "Präzedenzfall gelöscht."
+        },
+        "pending": {
+          "notice": "Du hast ungespeicherte Änderungen. Speichere oder verwirf sie, bevor du gehst."
+        },
+        "act": {
+          "delete": "Nachricht löschen",
+          "delete_desc": "Entfernt die regelwidrige Nachricht",
+          "warn": "Verwarnen",
+          "warn_desc": "Verwarnt das Mitglied",
+          "timeout": "Timeout",
+          "timeout_desc": "Stummschaltung für eine festgelegte Zeit",
+          "kick": "Kicken",
+          "kick_desc": "Entfernt das Mitglied, das wieder beitreten kann",
+          "ban": "Bannen",
+          "ban_desc": "Bannt das Mitglied vom Server"
+        },
+        "timeout_modal": {
+          "title": "Timeout-Dauer",
+          "label": "Dauer",
+          "desc": "z. B. 16h53, 1d 2h oder 90m (1 Minute bis 28 Tage)."
+        },
+        "delete": {
+          "title": "Konfiguration löschen?",
+          "body": "Automod stoppt und alle Einstellungen (Überwachung, Sanktionen, eigene Verstöße, Ausnahmen) werden gelöscht. Bereits erfasste Fälle bleiben erhalten.",
+          "confirm": "Ja, alles löschen",
+          "cancel": "Abbrechen"
         }
       }
     },
@@ -5000,7 +4964,7 @@
       "moddy": "Moddy",
       "welcome_dm": "Willkommensnachricht",
       "moderation": "Moderation",
-      "automod_ai": "Automod KI",
+      "automod_ai": "Automod",
       "appeals": "Einsprüche",
       "altguard": "AltGuard",
       "tickets": "Tickets",

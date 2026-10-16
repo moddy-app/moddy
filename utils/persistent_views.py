@@ -57,13 +57,12 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     from modules.configs.server_settings_config import ServerSettingsConfigView
     from modules.configs.adaptive_slowmode_config import AdaptiveSlowmodeConfigView
     from modules.configs.automod_ai_config import (
-        AutomodAIConfigView, AutomodWizardChannelView, AutomodWizardLevelView,
-        AutomodWizardModeView, AutomodConfigPersistence,
+        AutomodAIConfigView, AutomodDeleteView, AutomodWizardChannelView,
+        AutomodWizardLevelView, AutomodWizardModeView, AutomodConfigPersistence,
     )
     from modules.configs.automod_ai_sanctions_config import AutomodSanctionsView
     from modules.configs.automod_ai_advanced_config import (
-        AutomodMonitoringView, AutomodIndicationsView, AutomodExemptionsView,
-        AutomodAdvancedView,
+        AutomodMonitoringView, AutomodExemptionsView, AutomodAdvancedView,
     )
     from staff.commands.team.help import HelpView
     from staff.commands.dev.serverlist import ServerListView
@@ -232,17 +231,17 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         # announcement's message id; public — clicking only shows the stored
         # translation of a message the reader can already see).
         AnnouncementTranslationView,
-        # Group 13 — /config automod AI panel (guild permission auth). Every
+        # Group 13 — /config automod panel (guild permission auth). Every
         # screen has static custom_ids and is a registered shell; the
         # infraction type screen and the precedents browser are dynamic items
         # registered by AutomodConfigPersistence (their wrappers are not).
         AutomodAIConfigView,
+        AutomodDeleteView,
         AutomodWizardChannelView,
         AutomodWizardLevelView,
         AutomodWizardModeView,
         AutomodSanctionsView,
         AutomodMonitoringView,
-        AutomodIndicationsView,
         AutomodExemptionsView,
         AutomodAdvancedView,
         AutomodConfigPersistence,

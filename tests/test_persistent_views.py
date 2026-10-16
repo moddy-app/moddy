@@ -143,7 +143,9 @@ def _dynamic_item_cases():
         TicketCategoryButton, TicketCategoryDestination, TicketCategoryRoles,
         TicketPermRoleSelect, TicketPermSelect, TicketPermButton,
     )
-    from modules.configs.automod_ai_sanctions_config import TypeActionSelect, TypeButton
+    from modules.configs.automod_ai_sanctions_config import (
+        TypeActionSelect, TypeActionsSelect, TypeButton,
+    )
     from modules.configs.automod_ai_precedents_view import (
         PrecedentsDeleteSelect, PrecedentsNavButton,
     )
@@ -204,6 +206,7 @@ def _dynamic_item_cases():
         # Automod AI /config — one infraction type, and the precedents browser.
         (TypeButton, ("toggle", "insulte")),
         (TypeActionSelect, ("profil_pseudo",)),
+        (TypeActionsSelect, ("insulte",)),
         (PrecedentsNavButton, ("next", 2)),
         (PrecedentsDeleteSelect, (2,)),
     ]

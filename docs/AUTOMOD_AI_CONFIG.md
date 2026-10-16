@@ -1,4 +1,4 @@
-# Automod AI — configuration schema (backend / dashboard integration)
+# Automod — configuration schema (backend / dashboard integration)
 
 > Contract between the **bot** and the **backend / dashboard** for configuring the
 > `automod_ai` module. Pipeline internals → [AUTOMOD_AI.md](AUTOMOD_AI.md).
@@ -10,7 +10,7 @@
 | Field | Value |
 |---|---|
 | `MODULE_ID` | `automod_ai` |
-| Display name | `Automod AI` |
+| Display name | `Automod` (was "Automod AI"; ids unchanged) |
 | Code | `modules/automod_ai.py` (load / validate / defaults), `automod/infractions.py` (`sanctions`), `automod/custom_infractions.py` (`infractions_perso`), `automod/presets.py` (wizard levels). Config UI `modules/configs/automod_ai_config.py` (home + wizard), `automod_ai_sanctions_config.py`, `automod_ai_advanced_config.py`, `automod_ai_common.py` |
 | Storage | `guilds.data.modules.automod_ai` (JSONB) |
 
@@ -56,7 +56,7 @@ Deleting a config = writing `{}` (that is what the "Delete" button does).
 
 ```jsonc
 {
-  "enabled": false,                 // bool  — master switch
+  "state": "active",                // "active" | "simulation" | "paused" — generic module state (§3.4)
   "notify_channel_id": null,        // int|null — REQUIRED for the module to run
   "ignore_moderators": true,        // bool  — skip members with manage_messages
   "severity": 3,                    // int 1..5
@@ -64,7 +64,6 @@ Deleting a config = writing `{}` (that is what the "Delete" button does).
   "categories_desactivees": [],     // string[] — LEGACY kill-switch, read-only (see §3.3 / §10)
   "sanctions": {},                  // object — per-infraction sanction policy (§3.1)
   "infractions_perso": [],          // object[] — server-defined infractions, max 10 (§3.2)
-  "dry_run": false,                 // bool  — shadow mode: decide, apply nothing
   "features": {
     "content": {
       "enabled": false,             // bool
@@ -103,7 +102,7 @@ Deleting a config = writing `{}` (that is what the "Delete" button does).
 
 | Field | Type | Default | Notes |
 |---|---|---|---|
-| `enabled` | bool | `false` | Master switch. Not sufficient on its own — see §4. |
+| `state` | enum | `"active"` | Generic module state (docs/MODULE_SYSTEM.md §3 quater). `active` runs; `paused` keeps the config and stops the module; **`simulation`** is shadow mode (the former `dry_run`): the whole funnel + barème run, but nothing is applied (no delete, no sanction, no case, no DM) and a SIMULATION card with ✅/❌/⚠️ annotation buttons is posted to `notify_channel_id` instead. The legacy root `enabled` and `dry_run` keys are **removed** (§3.4). Not sufficient on its own — see §4. |
 | `notify_channel_id` | int \| null | `null` | **Mandatory.** Text or announcement channel where every automod decision, shadow card and budget notice is posted. Without it the module never runs. |
 | `ignore_moderators` | bool | `true` | Members with `manage_messages` are skipped entirely. |
 | `severity` | int 1–5 | `3` | Detection dial: scales the embedding routing threshold (1 = 0.62 … 5 = 0.35) and the barème's global cran shift. Values outside 1–5 are clamped. |
@@ -111,7 +110,6 @@ Deleting a config = writing `{}` (that is what the "Delete" button does).
 | `categories_desactivees` | string[] | `[]` | **LEGACY, superseded by `sanctions[<id>].enabled = false`.** Still read: every listed id (any catalogue id or `perso:<id>`) is treated as disabled unless `sanctions[<id>]` carries an explicit `enabled`. A decision in a disabled type is downgraded to deletion only. The bot's panel folds it into `sanctions` on load and **never writes the key back**; new writes (backend/dashboard) must not set it — see §3.3. |
 | `sanctions` | object | `{}` | Per-infraction sanction policy, keyed by infraction id. Absent key = Moddy defaults. Shape and bounds → §3.1. |
 | `infractions_perso` | object[] | `[]` | The server's own infraction types (max 10). Shape and bounds → §3.2. |
-| `dry_run` | bool | `false` | **Shadow mode**: the whole funnel + barème run, but nothing is applied (no delete, no sanction, no case, no DM). A SIMULATION card with ✅/❌/⚠️ annotation buttons is posted to `notify_channel_id` instead. |
 | `features.content.enabled` | bool | `false` | The AI message detector (text funnel). |
 | `features.content.exempt_roles` | int[] | `[]` | Members holding any of these roles are not moderated. |
 | `features.content.exempt_channels` | int[] | `[]` | These channels (and threads whose parent is listed) are not moderated. |
@@ -253,14 +251,14 @@ rejected by validation with `sanctions_action_profil_invalid`).
 * **Deleting an infraction = deleting `sanctions["perso:<id>"]` in the same write.** An orphan `perso:*` sanction is rejected by `validate_config` (`Barème d'une infraction personnalisée inconnue (<id>)`), so the save would fail.
 * **Exemptions are shared.** The bot's panel edits ONE exemption list (copied from `features.content`) and writes it on every feature (roles only for `profile`; `profile.exempt_channels` is always `[]`). A dashboard that stores different lists per feature will see them flattened the next time an admin saves from Discord; keep them identical.
 * The panel also keeps `scan_all` (no UI: ops/backend-set), rewrites unknown keys of `features.<id>` away, and never writes `categories_desactivees`.
-* Wizard levels (`automod/presets.py`, **Light / Balanced / Strict**) are plain configs: Light = `content`+`image_nsfw`+`image_scam`, severity 2, `sanctions.insulte = {enabled: true, mode: "perso", actions: ["delete"], recidive: true}` (repeat offenders still escalate); Balanced = + `image_gore`, severity 3, defaults; Strict = + `profile` (avatar, banner, pseudo), severity 4. The wizard applies a level **switched off and in `dry_run: true`** (`enabled: false`, `notify_channel_id` set, existing indications / custom infractions / exemptions / unrelated sanctions kept); its last step switches the module on, in simulation (recommended) or in real mode. A dashboard offering levels should reproduce the same data (`preset_config`).
+* Wizard levels (`automod/presets.py`, **Light / Balanced / Strict**) are plain configs: Light = `content`+`image_nsfw`+`image_scam`, severity 2, `sanctions.insulte = {enabled: true, mode: "perso", actions: ["delete"], recidive: true}` (repeat offenders still escalate); Balanced = + `image_gore`, severity 3, defaults; Strict = + `profile` (avatar, banner, pseudo), severity 4. The wizard applies a level with `state: "paused"` (`notify_channel_id` set, existing custom infractions / exemptions / unrelated sanctions kept); its last step sets `state` to `simulation` (recommended) or `active`. Every wizard step also has a **Skip** button: it applies **Balanced** with `state: "simulation"` (the recommended level, and the one state in which nobody can be sanctioned by mistake) and opens the home. A dashboard offering levels should reproduce the same data (`preset_config`).
 
 ## 4. When is the module actually running?
 
 The bot computes `enabled` at load time as:
 
 ```
-running = config.enabled
+running = state != "paused"
           AND any(features[*].enabled)      # content, image_nsfw, image_gore, image_scam or profile
           AND notify_channel_id is not null
 ```
@@ -269,12 +267,24 @@ running = config.enabled
 runs (it is driven by member events instead of messages). A dashboard should
 mirror this to display the real state, and warn when the alert channel is
 missing (that is the most common misconfiguration). The bot's panel shows four
-states: *Active* (running, `dry_run` false), *Simulation* (running, `dry_run`
-true), *Off*, *Needs setup* (no alert channel).
+states: *Active*, *Simulation* (`state: "simulation"`) and *Paused*
+(`state: "paused"`), plus a *Needs setup* warning (no alert channel or nothing
+monitored) on top of any of them.
 
 Also skipped at runtime, whatever the config: bots, servers under a global
 `restrict`/`ban` sanction, and (per feature) exempt roles/channels and members
 with `manage_messages` when `ignore_moderators`.
+
+### 3.4 State, and the removed `enabled` / `dry_run` keys
+
+Running or not running comes from the generic `state` only. The old module-level
+switches are gone from the schema: a stored config **without** a `state` key is
+migrated on load (bot side, `modules.automod_ai.effective_state`): root
+`enabled: false` -> `paused`, else `dry_run: true` -> `simulation`, else `active`
+(paused wins when both are set). With a `state` key, `enabled` / `dry_run` are
+ignored. The bot's `/config` panel drops both keys the next time it saves.
+Writers (backend / dashboard) must set `state` and never write `enabled` or
+`dry_run`. The per-feature `features.<id>.enabled` flags are unrelated and stay.
 
 ## 5. Validation rules (bot-side, `AutomodModule.validate_config`)
 
@@ -322,7 +332,7 @@ route of §6.2): `infractions_perso_invalid` (not a list), `infractions_perso_to
 `infraction_modele_invalid` (not a known template id).
 
 Not validated by the bot (the runtime tolerates them): `exempt_roles` /
-`exempt_channels` content, `dry_run`, `ignore_moderators`, `scan_all`.
+`exempt_channels` content, `ignore_moderators`, `scan_all`.
 
 Legacy keys are still read transparently on load: `log_channel_id` → `notify_channel_id`, `categories_desactivees` → `sanctions`
 (see below). New writes must use the new names.

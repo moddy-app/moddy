@@ -1735,6 +1735,7 @@
       }
     },
     "automod_ai": {
+      "name": "Automod",
       "description": "Moderação automática de mensagens problemáticas (IA)",
       "action": {
         "warn": "Advertência",
@@ -2085,45 +2086,31 @@
         "fixed_body": "{user} ({user_id}) alterou seu {kind}: o castigo foi removido."
       },
       "panel": {
-        "status": {
-          "active": "Ativo",
-          "active_hint": "O Moddy está moderando seu servidor em tempo real.",
-          "simulation": "Simulação",
-          "simulation_hint": "O Moddy mostra o que faria, sem punir ninguém.",
-          "off": "Desativado",
-          "off_hint": "O Moddy não está moderando nada no momento.",
-          "setup": "A configurar"
-        },
         "home": {
-          "title": "Automod IA",
+          "title": "Automod",
           "intro": "O Moddy lê mensagens, imagens e perfis e pune sozinho o que quebra suas regras.",
           "setup_channel": "primeiro escolha o canal onde o Moddy publica seus alertas.",
           "setup_monitoring": "escolha o que o Moddy deve vigiar.",
           "channel_title": "Canal de alertas",
           "channel_hint": "O Moddy publica ali o que detecta e faz. Escolha um canal só para sua equipe.",
           "channel_placeholder": "Escolher o canal de alertas…",
-          "turn_on": "Ativar",
-          "turn_off": "Desativar",
-          "go_live": "Mudar para o modo real",
           "choose_level": "Escolher um nível de proteção",
-          "nav_placeholder": "Ajustar com mais detalhe…"
+          "nav_placeholder": "Ajustar com mais detalhe…",
+          "setup_title": "Configuração necessária"
         },
         "nav": {
           "monitoring": "O que é vigiado",
           "monitoring_desc": "Mensagens, imagens, perfis de membros",
           "sanctions": "Punições",
           "sanctions_desc": "O que o Moddy faz em cada tipo de infração",
-          "indications": "Orientações para a IA",
-          "indications_desc": "Explique à IA as regras do seu servidor",
           "exemptions": "Isenções",
           "exemptions_desc": "Cargos e canais que nunca são analisados",
           "advanced": "Avançado",
-          "advanced_desc": "Simulação, punição máxima, sensibilidade…"
+          "advanced_desc": "Punição máxima, sensibilidade, precedentes"
         },
         "summary": {
-          "messages_on": "**Mensagens**: insultos, ameaças, assédio, ódio, golpes… → {sanctions}",
+          "messages_on": "**Mensagens**: insultos, ameaças, assédio, ódio, golpes…",
           "messages_off": "**Mensagens**: não vigiadas",
-          "sanctions_default": "punições padrão do Moddy",
           "sanctions_custom": "{n} punição(ões) personalizada(s)",
           "images_on": "**Imagens**: {what}",
           "images_off": "**Imagens**: não vigiadas",
@@ -2139,7 +2126,7 @@
           "custom_none": "**Infrações do servidor**: nenhuma"
         },
         "wizard": {
-          "title": "Configurar o Automod IA",
+          "title": "Configurar o Automod",
           "step": "Etapa {n} de {total}",
           "recommended": "recomendado",
           "choose": "Escolher",
@@ -2155,7 +2142,9 @@
           "mode_sim_button": "Simulação",
           "mode_live": "Ativar agora",
           "mode_live_desc": "O Moddy pune imediatamente, para valer.",
-          "mode_live_button": "Ativar"
+          "mode_live_button": "Ativar",
+          "skip": "Pular",
+          "skip_hint": "Pular começa com o nível Equilibrado em modo simulação: o Moddy mostra o que faria sem punir ninguém. Você poderá mudar tudo depois."
         },
         "preset": {
           "light": "Leve",
@@ -2185,12 +2174,11 @@
           "prof_banner": "Banners",
           "prof_banner_desc": "Banners explícitos ou chocantes",
           "prof_pseudo": "Nomes",
-          "prof_pseudo_desc": "Nomes de usuário e de exibição ofensivos ou de ódio",
-          "footer": "As alterações são salvas na hora."
+          "prof_pseudo_desc": "Nomes de usuário e de exibição ofensivos ou de ódio"
         },
         "list": {
           "title": "Punições",
-          "intro": "Para cada tipo de infração, escolha o que o Moddy faz. Por padrão ele adapta a punição à gravidade e à reincidência. Escolha um tipo para ajustá-lo.",
+          "intro": "O que o Moddy faz em cada tipo de infração. Escolha um para mudar suas ações.",
           "pick_placeholder": "Escolher um tipo para ajustar…",
           "add_placeholder": "+ Adicionar uma infração",
           "add_scratch": "Criar do zero",
@@ -2205,40 +2193,9 @@
           "perso": "Próprias deste servidor"
         },
         "sanction": {
-          "default": "Padrão do Moddy",
-          "custom": "Personalizada",
-          "always": "Sempre: {sanction}",
-          "no_escalation": "sem escalada",
           "disabled": "Desativada: mensagem apagada, sem punição",
-          "disabled_profile": "Desativada: nada acontece"
-        },
-        "gravity": {
-          "basse": "Baixa",
-          "moyenne": "Média",
-          "haute": "Alta",
-          "critique": "Crítica"
-        },
-        "gravity_label": {
-          "basse": "Gravidade baixa",
-          "moyenne": "Gravidade média",
-          "haute": "Gravidade alta",
-          "critique": "Gravidade crítica"
-        },
-        "gravity_desc": {
-          "basse": "Limítrofe ou leve: um deslize sem grandes consequências.",
-          "moyenne": "Claro: a infração é inequívoca.",
-          "haute": "Sério: palavras ou conteúdo muito inadequados.",
-          "critique": "Extremo: o pior, sem equívoco."
-        },
-        "cran": {
-          "0": "Só apagar",
-          "1": "Aviso",
-          "2": "Castigo 2 h",
-          "3": "Castigo 12 h",
-          "4": "Castigo 48 h",
-          "5": "Castigo 7 dias",
-          "6": "Castigo 28 dias",
-          "7": "Banimento"
+          "disabled_profile": "Desativada: nada acontece",
+          "approval": "aprovação necessária"
         },
         "profile_action": {
           "hold": "Castigo até o perfil ser corrigido",
@@ -2251,14 +2208,11 @@
           "bareme_desc": "Como uma mensagem: a punição depende da gravidade."
         },
         "type": {
-          "sanction": "Punição",
-          "default_hint": "O Moddy adapta a punição à gravidade e a endurece para reincidentes.",
           "not_monitored": "Esta detecção está desativada agora: ative em “O que é vigiado”.",
           "off": "O Moddy continua apagando a mensagem, mas não pune.",
           "off_profile": "O Moddy ignora esta verificação.",
           "enabled": "Ativada",
           "disabled": "Desativada",
-          "customise": "Personalizar",
           "reset": "Restaurar padrão",
           "profile_action": "O que fazer se houver um problema?",
           "profile_action_hint": "Escolha como o Moddy reage a esta verificação de perfil.",
@@ -2267,12 +2221,19 @@
           "cancel": "Cancelar",
           "delete_title": "Excluir esta infração?",
           "delete_body": "“{name}” não será mais detectada e sua configuração de punição também será removida. Os casos já registrados são mantidos.",
-          "delete_confirm": "Sim, excluir"
-        },
-        "customise": {
-          "modal_title": "Punições: {name}",
-          "escalate": "Endurecer na reincidência",
-          "escalate_desc": "Um membro reincidente recebe uma punição mais pesada que as escolhidas acima."
+          "delete_confirm": "Sim, excluir",
+          "actions": "Ações",
+          "actions_hint": "Tudo o que for escolhido aqui acontece ao mesmo tempo.",
+          "conflicts": "Um banimento ou uma expulsão substitui a advertência e o castigo, e um banimento substitui uma expulsão.",
+          "dropped": "{winner} substitui: {dropped} removido(s).",
+          "timeout_title": "Duração do castigo",
+          "timeout_button": "Mudar a duração",
+          "approval": "Aprovação de um moderador",
+          "approval_hint": "Com aprovação, um moderador confirma no canal de alertas antes de o Moddy punir. A mensagem continua sendo apagada na hora.",
+          "escalate": "Agravar em caso de reincidência",
+          "note_auto": "Mostrado para uma primeira infração de gravidade média: o Moddy adapta à gravidade e agrava para reincidentes.",
+          "note_custom": "Estas ações valem para todas as gravidades.",
+          "pending_hint": "Não salvo: salve suas alterações pela tela Punições."
         },
         "infraction": {
           "modal_title_new": "Nova infração",
@@ -2296,24 +2257,9 @@
         },
         "errors": {
           "title": "Alteração recusada",
-          "save_failed": "Nada foi alterado.\n-# Motivo: {error}"
-        },
-        "indications": {
-          "title": "Orientações para a IA",
-          "intro": "Escreva em linguagem simples o que é permitido ou proibido no seu servidor (ex.: “sem propaganda, spoilers só em #spoilers”). A IA leva isso em conta ao julgar uma mensagem.",
-          "current": "Orientações atuais",
-          "empty": "Sem orientações: a IA aplica uma moderação razoável por padrão.",
-          "edit": "Editar as orientações",
-          "clear": "Limpar",
-          "modal_title": "Orientações para a IA",
-          "modal_label": "Orientações",
-          "modal_desc": "O que a IA deve vigiar ou tolerar no seu servidor (máx. 3000 caracteres).",
-          "modal_placeholder": "Ex.: sem insultos nem propaganda, humor é tolerado…",
-          "saved": "Orientações verificadas e salvas.",
-          "cleared": "Orientações limpas.",
-          "error_unsafe": "Orientações recusadas: parecem uma tentativa de manipular a IA.\n-# Motivo: {reason}",
-          "error_too_long": "As orientações são longas demais (máx. 3000 caracteres).",
-          "error_unavailable": "Não foi possível verificar as orientações agora (serviço de IA indisponível). Tente novamente mais tarde."
+          "save_failed": "Nada foi alterado.\n-# Motivo: {error}",
+          "timeout_invalid": "“{value}” não é uma duração que eu consiga ler.\n-# Exemplos: {examples}",
+          "timeout_range": "A duração deve ficar entre 1 minuto e 28 dias."
         },
         "exemptions": {
           "title": "Isenções",
@@ -2328,9 +2274,6 @@
         "advanced": {
           "title": "Avançado",
           "intro": "Ajustes finos. Os valores padrão servem para a maioria dos servidores.",
-          "simulation_title": "Modo de simulação",
-          "simulation_hint": "O Moddy mostra o que faria sem punir nada. Recomendado nos primeiros dias.",
-          "simulation": "Simulação",
           "max_title": "Punição máxima",
           "max_hint": "A punição mais pesada que o Moddy pode aplicar sozinho.",
           "max_warn": "Aviso no máximo",
@@ -2351,12 +2294,7 @@
           "precedents_title": "Precedentes aprendidos",
           "precedents_hint": "O Moddy aprende a cultura do seu servidor a partir das suas decisões (recursos, anotações na simulação).",
           "precedents_count": "{n} precedente(s) aprendido(s)",
-          "precedents": "Ver precedentes",
-          "delete": "Excluir a configuração",
-          "delete_title": "Excluir toda a configuração?",
-          "delete_body": "O Automod IA para e todas as suas configurações (punições, infrações, orientações, isenções) são apagadas. Os casos já registrados são mantidos.",
-          "delete_confirm": "Sim, excluir tudo",
-          "cancel": "Cancelar"
+          "precedents": "Ver precedentes"
         },
         "precedents": {
           "title": "Precedentes aprendidos",
@@ -2371,6 +2309,32 @@
           "delete_placeholder": "Excluir um precedente errado…",
           "delete_option": "Excluir o precedente {n}",
           "deleted": "Precedente excluído."
+        },
+        "pending": {
+          "notice": "Você tem alterações não salvas. Salve ou cancele antes de sair."
+        },
+        "act": {
+          "delete": "Apagar a mensagem",
+          "delete_desc": "Remove a mensagem infratora",
+          "warn": "Advertir",
+          "warn_desc": "Dá uma advertência ao membro",
+          "timeout": "Castigo",
+          "timeout_desc": "Silencia o membro por um tempo definido",
+          "kick": "Expulsar",
+          "kick_desc": "Remove o membro, que pode voltar",
+          "ban": "Banir",
+          "ban_desc": "Bane o membro do servidor"
+        },
+        "timeout_modal": {
+          "title": "Duração do castigo",
+          "label": "Duração",
+          "desc": "ex.: 16h53, 1d 2h ou 90m (de 1 minuto a 28 dias)."
+        },
+        "delete": {
+          "title": "Excluir a configuração?",
+          "body": "O Automod para e todas as suas configurações (monitoramento, punições, infrações personalizadas, isenções) são apagadas. Os casos já registrados são mantidos.",
+          "confirm": "Sim, excluir tudo",
+          "cancel": "Cancelar"
         }
       }
     },
@@ -5000,7 +4964,7 @@
       "moddy": "Moddy",
       "welcome_dm": "Mensagem de boas-vindas",
       "moderation": "Moderação",
-      "automod_ai": "Automod IA",
+      "automod_ai": "Automod",
       "appeals": "Recursos",
       "altguard": "AltGuard",
       "tickets": "Tickets",
