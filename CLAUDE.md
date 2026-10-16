@@ -403,6 +403,13 @@ moddy/
 - **NEVER** use default Unicode emojis (except country flags)
 - Use custom emojis from `/utils/emojis.py`
 - Full list → [docs/EMOJIS.md](docs/EMOJIS.md)
+- **No "close enough" icons.** If no existing icon clearly fits what you are
+  showing, do **not** pick a vaguely related one or reuse an icon that already
+  means something else. Stop and ask the user to upload a better-suited icon
+  (describe it, and remind them it needs a white version plus a `_dark` twin),
+  then add the IDs they give you to `utils/emojis.py` and `docs/EMOJIS.md`.
+  Until they do, use no icon rather than a misleading one, and list every icon
+  you are waiting on in your final report.
 - **Light-theme twins**: most icons are white, invisible on Discord's light theme.
   A user who picks *Light* in `/preferences` gets every icon that has a
   `<name>_dark` twin swapped automatically at send time (`utils/icon_theme.py`
