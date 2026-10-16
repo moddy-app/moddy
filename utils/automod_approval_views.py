@@ -32,7 +32,7 @@ from config import COLORS
 from utils.automod_render import (
     action_label, actions_text, bareme_breakdown, failed_lines, sanction_name,
 )
-from utils.emojis import SHIELD, DONE, UNDONE, get_sanction_accent
+from utils.emojis import PENDING, SHIELD, DONE, UNDONE, get_sanction_accent
 from utils.i18n import t, i18n
 
 logger = logging.getLogger("moddy.automod_approval")
@@ -80,7 +80,7 @@ def render_alert_card(*, locale: str, decision, bareme, snapshot: Dict[str, Any]
     container.add_item(ui.TextDisplay(f"### {SHIELD} {t(f'{_BASE}.{title_key}', locale=locale)}"))
 
     if status == "pending":
-        container.add_item(ui.TextDisplay(f"**{t(f'{_BASE}.approval.pending', locale=locale)}**"))
+        container.add_item(ui.TextDisplay(f"{PENDING} **{t(f'{_BASE}.approval.pending', locale=locale)}**"))
     elif status in ("approved", "rejected"):
         icon = DONE if status == "approved" else UNDONE
         by = f" — <@{decided_by}>" if decided_by else ""

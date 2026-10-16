@@ -48,7 +48,7 @@ from modules.configs.automod_ai_common import (
     TYPE_ID_RE, SectionView, cid, row, select, title, tp, trail,
 )
 from utils.emojis import (
-    ADD, BACK, DELETE, EDIT, LEGAL, SYNC, TIME, TOGGLE_OFF, TOGGLE_ON, WARNING,
+    ADD, BACK, DELETE, EDIT, LEGAL, PENDING, SYNC, TIME, TOGGLE_OFF, TOGGLE_ON, WARNING,
 )
 from utils.errors import InvalidInput
 from utils.i18n import i18n, t
@@ -573,7 +573,7 @@ class TypeView(BaseView):
 
         toggles = []
         if not is_profile and actions_mod.sanction_actions(policy.actions):
-            container.add_item(ui.TextDisplay(f"-# {tp('type.approval_hint', locale)}"))
+            container.add_item(ui.TextDisplay(f"-# {PENDING} {tp('type.approval_hint', locale)}"))
             on = policy.require_approval
             toggles.append(TypeButton(
                 "approval", cat, label=tp("type.approval", locale),

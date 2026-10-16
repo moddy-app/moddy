@@ -23,5 +23,6 @@ Summary of the whole day on branch `claude/sleepy-hamilton-u9g461`.
 - `serverlogs/renderer.py`, `cogs/auto_restore_roles_commands.py`, `cogs/console_logger.py`, `cogs/dev_logger.py` and `utils/staff_logger.py` still use `discord.Embed`.
 - A kick creates no case (no `SanctionAction.KICK`).
 - Automod section drafts live in memory and are lost on restart (30 min TTL).
-- Optional icons wanted from the owner: a simulation state icon and a "pending moderator approval" icon.
+
 - Adaptive slowmode request from the owner is still pending.
+- Icons wired: `labs` (simulation state), `pending` hourglass (automod moderator approval pending).
