@@ -23,6 +23,8 @@ from services.feeds_client import FeedsClient
 from modules.social_notifications import (
     build_notification_view,
     desired_poll_interval,
+    ensure_module_config,
+    is_guild_paused,
     platform_subscription_limit,
     normalize_identifier,
 )
@@ -127,6 +129,11 @@ class SocialNotifications(commands.Cog):
             poll_interval=poll,
             created_by=created_by,
         )
+        # Minimal stored config so the module can be paused from /config.
+        try:
+            await ensure_module_config(self.bot, guild.id)
+        except Exception:
+            logger.warning("[Social] Could not store the module config", exc_info=True)
         return True, reply
 
     async def remove_subscription(self, guild_id: int, platform: str, target_id: str) -> None:
@@ -244,9 +251,17 @@ class SocialNotifications(commands.Cog):
         if not followers:
             return
 
+        paused: Dict[int, bool] = {}
         for sub in followers:
             guild = self.bot.get_guild(sub["guild_id"])
             if not guild:
+                continue
+            if guild.id not in paused:
+                try:
+                    paused[guild.id] = await is_guild_paused(self.bot, guild.id)
+                except Exception:
+                    paused[guild.id] = False
+            if paused[guild.id]:
                 continue
             channel = guild.get_channel(sub["channel_id"])
             if not isinstance(channel, (discord.TextChannel, discord.Thread)):

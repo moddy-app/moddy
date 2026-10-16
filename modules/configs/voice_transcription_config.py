@@ -24,9 +24,11 @@ from modules.configs._common import (
     show,
     state_accent,
 )
-from modules.voice_transcription import MAX_CHANNELS, MODE_BUTTON, MODES
+from modules.voice_transcription import (
+    MAX_CHANNELS, MODE_BUTTON, MODES, migrate_legacy_enabled,
+)
 from utils.emojis import (
-    BACK, DELETE, SAVE, TOGGLE_OFF, TOGGLE_ON, UNDONE, VOICE_CHAT,
+    BACK, DELETE, SAVE, UNDONE, VOICE_CHAT,
 )
 from utils.i18n import i18n, t
 
@@ -65,11 +67,11 @@ class VoiceTranscriptionConfigView(BaseView):
         from modules.voice_transcription import VoiceTranscriptionModule
         default_config = VoiceTranscriptionModule(bot, guild_id).get_default_config()
 
-        # `mode` is always written on save — unlike `enabled`, it is a safe
+        # `mode` is always written on save — it is a safe
         # marker for "this guild has a stored configuration".
         if current_config and current_config.get("mode") is not None:
             self.current_config = default_config.copy()
-            self.current_config.update(current_config)
+            self.current_config.update(migrate_legacy_enabled(current_config))
             self.has_existing_config = True
         else:
             self.current_config = default_config
@@ -109,30 +111,17 @@ class VoiceTranscriptionConfigView(BaseView):
         if state_items:
             container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
-        # --- Status -------------------------------------------------- #
-        enabled = bool(self.working_config.get("enabled"))
-        status_key = "enabled" if enabled else "disabled"
-        container.add_item(ui.TextDisplay(
-            f"**{t('modules.voice_transcription.config.status.section_title', locale=self.locale)}**\n"
-            f"-# {t('modules.voice_transcription.config.status.section_description', locale=self.locale)}\n"
-            f"-# {t('modules.config.current_value', locale=self.locale)} "
-            f"**{t(f'modules.voice_transcription.config.status.{status_key}', locale=self.locale)}**"
-        ))
-
-        toggle_row = ui.ActionRow()
-        toggle_btn = ui.Button(
-            label=t(
-                'modules.voice_transcription.config.status.disable' if enabled
-                else 'modules.voice_transcription.config.status.enable',
-                locale=self.locale,
-            ),
-            style=discord.ButtonStyle.secondary if enabled else discord.ButtonStyle.success,
-            emoji=discord.PartialEmoji.from_str(TOGGLE_ON if enabled else TOGGLE_OFF),
-            custom_id=_CID_TOGGLE,
-        )
-        toggle_btn.callback = self.on_toggle
-        toggle_row.add_item(toggle_btn)
-        container.add_item(toggle_row)
+        # Retired on/off toggle: pause / resume is the generic state row above.
+        # Only the registration shell keeps the button, so a panel posted before
+        # the change still dispatches (see on_toggle).
+        if self.bot is None:
+            legacy_row = ui.ActionRow()
+            legacy_btn = ui.Button(
+                label="-", style=discord.ButtonStyle.secondary, custom_id=_CID_TOGGLE,
+            )
+            legacy_btn.callback = self.on_toggle
+            legacy_row.add_item(legacy_btn)
+            container.add_item(legacy_row)
 
         # --- Mode ------------------------------------------------------ #
         container.add_item(ui.TextDisplay(
@@ -262,7 +251,7 @@ class VoiceTranscriptionConfigView(BaseView):
         config = VoiceTranscriptionModule(bot, interaction.guild_id).get_default_config()
         saved = await bot.module_manager.get_module_config(interaction.guild_id, _MODULE_ID)
         if saved and saved.get("mode") is not None:
-            config.update(saved)
+            config.update(migrate_legacy_enabled(saved))
         return config
 
     async def _rebuild(self, interaction: discord.Interaction,
@@ -289,10 +278,9 @@ class VoiceTranscriptionConfigView(BaseView):
             return
         await ack(interaction)
 
+        # Old panel: the toggle no longer exists, just show the current screen.
         working_config = await self._fresh_working_config(interaction)
-        working_config["enabled"] = not bool(working_config.get("enabled"))
-
-        view = await self._rebuild(interaction, working_config, has_changes=True)
+        view = await self._rebuild(interaction, working_config, has_changes=False)
         await show(interaction, view)
 
     async def on_mode_select(self, interaction: discord.Interaction):

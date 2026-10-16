@@ -32,7 +32,8 @@ from discord import ui
 from cogs.error_handler import BaseView, BaseModal
 from config import COLORS
 from modules.configs._common import (
-    ack, show, say, crumb, crumb_segment, open_main_config,
+    ack, show, say, crumb, crumb_segment, open_main_config, state_accent, config_state,
+    module_state_row,
 )
 from modules.social_notifications import (
     SUPPORTED_PLATFORMS,
@@ -297,7 +298,8 @@ class SocialNotificationsConfigView(BaseView):
 
     def __init__(self, bot=None, guild_id: Optional[int] = None, user_id: Optional[int] = None,
                  locale: str = "en-US", subscriptions: Optional[List[Dict[str, Any]]] = None,
-                 service_alive: bool = True, is_premium: bool = False):
+                 service_alive: bool = True, is_premium: bool = False,
+                 module_state: Optional[str] = None):
         super().__init__()  # timeout=None
         self.bot = bot
         self.guild_id = guild_id
@@ -306,6 +308,7 @@ class SocialNotificationsConfigView(BaseView):
         self.subscriptions = subscriptions or []
         self.service_alive = service_alive
         self.is_premium = is_premium
+        self.module_state = module_state
 
         self._build_view()
 
@@ -322,11 +325,21 @@ class SocialNotificationsConfigView(BaseView):
             is_premium = await bot.db.is_guild_premium(guild_id)
         except Exception:
             pass
-        return cls(bot, guild_id, user_id, locale, subscriptions, service_alive, is_premium)
+        # Subscriptions are table-backed; the minimal stored config is what lets
+        # the module be paused (also backfills guilds that subscribed before).
+        saved = None
+        if subscriptions:
+            try:
+                from modules.social_notifications import ensure_module_config
+                saved = await ensure_module_config(bot, guild_id)
+            except Exception:
+                saved = None
+        return cls(bot, guild_id, user_id, locale, subscriptions, service_alive, is_premium,
+                   module_state=config_state(saved) if subscriptions else None)
 
     def _build_view(self):
         self.clear_items()
-        container = ui.Container(accent_colour=discord.Colour(COLORS["primary"]))
+        container = ui.Container(accent_colour=state_accent(self.module_state))
         container.add_item(crumb(self.locale, 'social_notifications'))
 
         container.add_item(ui.TextDisplay(
@@ -349,6 +362,13 @@ class SocialNotificationsConfigView(BaseView):
             ))
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+
+        # Every action saves instantly: there is never a pending change to lose.
+        state_items = module_state_row('social_notifications', self.module_state, self.locale)
+        for item in state_items:
+            container.add_item(item)
+        if state_items:
+            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
         if self.subscriptions:
             container.add_item(ui.TextDisplay(

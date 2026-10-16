@@ -75,7 +75,6 @@ Config stored at `guilds.data.modules.voice_transcription`:
 
 ```json
 {
-  "enabled": true,
   "mode": "button",
   "channel_ids": []
 }
@@ -83,12 +82,17 @@ Config stored at `guilds.data.modules.voice_transcription`:
 
 | Key | Type | Meaning |
 |---|---|---|
-| `enabled` | bool | Module on/off. Persisted (not derived). |
+| `state` | `"active"` \| `"paused"` | Generic module state (docs/MODULE_SYSTEM.md 3 quater); absent = active. Pause / resume is the state row on the panel. |
 | `mode` | `"button"` \| `"auto"` | `button`: reply with a Transcribe button. `auto`: transcribe immediately. |
 | `channel_ids` | list[int] | Empty = every channel. Otherwise only these (max 25). |
 
-`mode` is the marker the config panel uses to detect an existing configuration
-(never `enabled`, which reads as a legitimate `false`).
+`mode` is the marker the config panel uses to detect an existing configuration.
+
+**Legacy `enabled` flag.** Older configs stored `"enabled": false` to switch the
+module off. `migrate_legacy_enabled()` (`modules/voice_transcription.py`) turns it
+into `"state": "paused"` on every load and on the panel, and drops the key; the next
+save writes the new shape. The old panel toggle button is gone (its custom_id is
+still registered and just re-renders the screen).
 
 In `auto` mode a failure is silent: the placeholder is deleted and nothing is
 posted. An automatic feature that apologises in the channel on every hiccup is

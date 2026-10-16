@@ -253,6 +253,33 @@ def desired_poll_interval(platform: str, is_premium: bool) -> Optional[int]:
     return cfg["premium"] if is_premium else cfg["free"]
 
 
+#: Minimal stored config. Subscriptions live in a table, but a module can only
+#: be paused when a config exists (``guilds.data.modules.social_notifications``),
+#: and ``state`` is stored next to it.
+CONFIG_MARKER = {"configured": True}
+
+
+async def ensure_module_config(bot, guild_id: int) -> Optional[Dict[str, Any]]:
+    """Make sure the guild has the minimal config; return the stored config."""
+    manager = getattr(bot, "module_manager", None)
+    if manager is None:
+        return None
+    saved = await manager.get_module_config(guild_id, "social_notifications")
+    if saved:
+        return saved
+    ok, _ = await manager.save_module_config(
+        guild_id, "social_notifications", dict(CONFIG_MARKER))
+    return dict(CONFIG_MARKER) if ok else None
+
+
+async def is_guild_paused(bot, guild_id: int) -> bool:
+    """True when the guild paused the module (dispatch must skip it)."""
+    manager = getattr(bot, "module_manager", None)
+    if manager is None:
+        return False
+    return await manager.get_module_state(guild_id, "social_notifications") == "paused"
+
+
 class SocialNotificationsModule(ModuleBase):
     """Registration shell so the module appears in ``/config`` (table-backed)."""
 
