@@ -15,7 +15,11 @@ import logging
 from utils.i18n import i18n, t
 from cogs.error_handler import BaseView, BaseModal
 from utils.emojis import TIMER, REQUIRED_FIELDS, EDIT, BACK, SAVE, UNDONE, DELETE, ADD
-from modules.configs._common import check_guild_perms, ack, show
+from config import COLORS
+from modules.configs._common import (
+    check_guild_perms, ack, show, crumb, crumb_segment, state_accent, config_state,
+    module_state_row, open_main_config,
+)
 
 logger = logging.getLogger('moddy.modules.adaptive_slowmode_config')
 
@@ -31,7 +35,7 @@ _CID_CHANNEL_LIST_DELETE = "moddy:aslow:list:delete"
 # so the target channel_id must be encoded (it is not otherwise on the
 # interaction). \d{1,20} rather than a tighter \d{17,20}: a bare shell
 # built with channel=0 must still match its own template (see
-# docs/PERSISTENT_VIEWS.md Migration log, Step 6).
+# docs/guides/PERSISTENT_VIEWS.md Migration log, Step 6).
 _CID_LIST_ITEM_TEMPLATE = r"moddy:aslow:listitem:(?P<action>edit|remove):(?P<channel>\d{1,20})"
 
 
@@ -106,7 +110,7 @@ class AdaptiveSlowmodeChannelConfigView(BaseView):
     result into the parent list view's working_config — which is itself an
     unsaved draft until *that* view's own Save is clicked. Losing an
     in-progress channel edit on a restart is the same accepted loss as
-    CaseCreationView (docs/PERSISTENT_VIEWS.md Appendix B.1.c): there is
+    CaseCreationView (docs/guides/PERSISTENT_VIEWS.md Appendix B.1.c): there is
     nothing in the DB yet to recover, so the user reopens Add/Edit and
     re-enters it. See Migration log, Step 11.
 
@@ -155,7 +159,11 @@ class AdaptiveSlowmodeChannelConfigView(BaseView):
 
     def _build_view(self):
         self.clear_items()
-        container = ui.Container()
+        container = ui.Container(accent_colour=discord.Colour(COLORS["primary"]))
+        container.add_item(crumb(
+            self.locale, "adaptive_slowmode",
+            crumb_segment(self.locale, "manage" if self.edit_mode else "add"),
+        ))
 
         # ── Header ────────────────────────────────────────────────────
         title_key = (
@@ -377,8 +385,9 @@ class AdaptiveSlowmodeChannelConfigView(BaseView):
     async def on_back(self, interaction: discord.Interaction):
         if not await self.check_user(interaction):
             return
+        saved = await self.bot.module_manager.get_module_config(self.guild_id, "adaptive_slowmode")
         parent = AdaptiveSlowmodeConfigView(
-            self.bot, self.guild_id, self.user_id, self.locale,
+            self.bot, self.guild_id, self.user_id, self.locale, current_config=saved,
         )
         parent.working_config = self.working_config
         parent.has_changes = self.working_config != parent.current_config
@@ -396,8 +405,9 @@ class AdaptiveSlowmodeChannelConfigView(BaseView):
             return
 
         self.working_config.setdefault("channels", {})[str(self.channel_id)] = dict(self.config)
+        saved = await self.bot.module_manager.get_module_config(self.guild_id, "adaptive_slowmode")
         parent = AdaptiveSlowmodeConfigView(
-            self.bot, self.guild_id, self.user_id, self.locale,
+            self.bot, self.guild_id, self.user_id, self.locale, current_config=saved,
         )
         parent.working_config = self.working_config
         parent.has_changes = True
@@ -450,6 +460,8 @@ class AdaptiveSlowmodeConfigView(BaseView):
         self.user_id  = user_id
         self.locale   = locale
 
+        # The module state lives next to "channels" in the stored config.
+        self.state = config_state(current_config)
         if current_config and current_config.get("channels"):
             self.current_config    = {"channels": copy.deepcopy(current_config["channels"])}
             self.has_existing_config = True
@@ -468,7 +480,9 @@ class AdaptiveSlowmodeConfigView(BaseView):
 
     def _build_view(self):
         self.clear_items()
-        container = ui.Container()
+        state = self.state if self.has_existing_config else None
+        container = ui.Container(accent_colour=state_accent(state))
+        container.add_item(crumb(self.locale, "adaptive_slowmode"))
 
         # ── Header ────────────────────────────────────────────────────
         container.add_item(ui.TextDisplay(
@@ -479,6 +493,15 @@ class AdaptiveSlowmodeConfigView(BaseView):
         ))
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+
+        # Play / pause: only on a clean, saved config (a state click rebuilds
+        # the screen from the saved config and would drop pending edits).
+        state_items = [] if self.has_changes else module_state_row(
+            "adaptive_slowmode", state, self.locale)
+        for item in state_items:
+            container.add_item(item)
+        if state_items:
+            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
         # ── Channel list ──────────────────────────────────────────────
         channels = self.working_config.get("channels", {})
@@ -634,12 +657,7 @@ class AdaptiveSlowmodeConfigView(BaseView):
     async def on_back(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
-        from cogs.config import ConfigMainView
-        locale = i18n.get_user_locale(interaction)
-        await show(
-            interaction,
-            ConfigMainView(interaction.client, interaction.guild_id, interaction.user.id, locale),
-        )
+        await open_main_config(interaction)
 
     async def on_save(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
@@ -656,8 +674,9 @@ class AdaptiveSlowmodeConfigView(BaseView):
         )
 
         if success:
+            saved = await bot.module_manager.get_module_config(interaction.guild_id, "adaptive_slowmode")
             view = AdaptiveSlowmodeConfigView(bot, interaction.guild_id, interaction.user.id, locale,
-                                               current_config=working_config)
+                                               current_config=saved or working_config)
             await interaction.followup.send(t("modules.config.save.success", locale=locale), ephemeral=True)
             await interaction.edit_original_response(view=view)
         else:

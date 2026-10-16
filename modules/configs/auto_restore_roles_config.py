@@ -11,7 +11,16 @@ import logging
 from utils.i18n import i18n, t
 from cogs.error_handler import BaseView
 from utils.emojis import REFRESH, REQUIRED_FIELDS, DONE, DELETE, BACK, SAVE, UNDONE
-from modules.configs._common import check_guild_perms, ack, show
+from modules.configs._common import (
+    ack,
+    check_guild_perms,
+    config_state,
+    crumb,
+    module_state_row,
+    open_main_config,
+    show,
+    state_accent,
+)
 
 logger = logging.getLogger('moddy.modules.auto_restore_roles_config')
 
@@ -74,7 +83,10 @@ class AutoRestoreRolesConfigView(BaseView):
         """Construit l'interface de configuration"""
         self.clear_items()
 
-        container = ui.Container()
+        # Accent follows the module state (gray when paused).
+        state = config_state(self.current_config) if self.has_existing_config else None
+        container = ui.Container(accent_colour=state_accent(state))
+        container.add_item(crumb(self.locale, 'auto_restore_roles'))
 
         # Header
         container.add_item(ui.TextDisplay(
@@ -85,6 +97,14 @@ class AutoRestoreRolesConfigView(BaseView):
         ))
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+
+        # Play / pause: only on a clean, saved config (a state click rebuilds the
+        # screen from the saved config and would drop pending edits).
+        state_items = [] if self.has_changes else module_state_row('auto_restore_roles', state, self.locale)
+        for item in state_items:
+            container.add_item(item)
+        if state_items:
+            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
         # Mode selector (Required field)
         from modules.auto_restore_roles import AutoRestoreRolesModule
@@ -456,10 +476,7 @@ class AutoRestoreRolesConfigView(BaseView):
         if not await check_guild_perms(interaction):
             return
 
-        from cogs.config import ConfigMainView
-        locale = i18n.get_user_locale(interaction)
-        main_view = ConfigMainView(interaction.client, interaction.guild_id, interaction.user.id, locale)
-        await show(interaction, main_view)
+        await open_main_config(interaction)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         return await check_guild_perms(interaction)

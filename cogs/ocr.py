@@ -7,7 +7,7 @@ Discord caps apps at five message context menus and all five are taken, so
 "Transcribe" handles audio *and* images instead of a sixth menu.
 
 The result is ephemeral by default (``incognito``) — it is the requester's
-text, not the channel's. See docs/OCR.md.
+text, not the channel's. See docs/features/OCR.md.
 """
 
 from __future__ import annotations

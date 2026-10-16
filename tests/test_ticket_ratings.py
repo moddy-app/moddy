@@ -170,7 +170,7 @@ class TestRatingModal:
         assert comment.max_length == MAX_COMMENT_LENGTH
 
     def test_a_radio_group_exposes_value_not_values(self):
-        """docs/MODALS_V2.md — reading `.values` here silently returns nothing."""
+        """docs/guides/MODALS_V2.md — reading `.values` here silently returns nothing."""
         modal = self._modal()
         assert hasattr(modal.score.component, 'value')
         assert not hasattr(modal.score.component, 'values')

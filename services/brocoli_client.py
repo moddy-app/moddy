@@ -7,7 +7,7 @@ module only carries requests and parses the event stream.
 
 Authentication goes through a signed identity assertion
 (``utils/brocoli_signature.py``): the bot says *who is typing*, the backend
-derives what that person may do. See ``docs/BROCOLI_CHANNEL.md``.
+derives what that person may do. See ``docs/features/BROCOLI_CHANNEL.md``.
 
 Every call is signed individually — the assertion is per-request, not a token
 held for the length of a conversation. A request whose assertion is replayed is

@@ -46,7 +46,7 @@ class GatewayLogger:
         # bot.stats, when the gateway runs inside the bot. api_calls stays the
         # fine-grained truth; these counters are the same facts pre-aggregated
         # per guild and per day, so "what did this server cost us in August"
-        # is a three-row read instead of a scan (see docs/STATS.md).
+        # is a three-row read instead of a scan (see docs/infra/STATS.md).
         self._stats = stats
         self._flush_task: Optional[asyncio.Task] = None
 

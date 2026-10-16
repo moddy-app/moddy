@@ -10,7 +10,7 @@ the bot's source of truth for "who follows what" and is used to:
   - dispatch incoming notifications to every guild that follows a target,
   - decide when to send a `subscribe`/`unsubscribe` command to the service
     (subscribe on the first follow, unsubscribe only when the last guild drops
-    the target — see docs/SOCIAL_NOTIFICATIONS.md).
+    the target — see docs/features/SOCIAL_NOTIFICATIONS.md).
 
 IMPORTANT: We always store the *canonical* ``target_id`` returned by the
 service, never the raw user input.

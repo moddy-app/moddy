@@ -5,7 +5,7 @@ floor per (category, gravity), recidivism decay + weighting, confidence caps,
 veteran clemency, fresh-account malus, the guild ``max_action`` ceiling, the
 category kill-switch and the 0–7 bounds. Session 2 requires ≥15 cases.
 
-See docs/AUTOMOD_AI.md §2bis and docs/archive/AUTOMOD_V2_PLAN.md (Session 2, §2.7).
+See docs/features/AUTOMOD.md §2bis and docs/archive/AUTOMOD_V2_PLAN.md (Session 2, §2.7).
 """
 
 from dataclasses import dataclass
@@ -88,7 +88,7 @@ class TestPlancher:
         ("menace", "critique", 7),
         ("haine_discrimination", "moyenne", 4),
         ("doxxing", "basse", 4),
-        ("violation_indications", "basse", 0),
+        ("perso:abc", "basse", 0),
     ])
     def test_floor_first_offence_no_history(self, cat, grav, expected):
         # A plain member, severity 3, no history → the cran is exactly the floor.
@@ -194,8 +194,8 @@ class TestConfig:
         assert _cran(_Verdict("menace", "critique"), config=cfg) == 6
 
     def test_disabled_category_is_deletion_only(self):
-        cfg = ConfigBareme(categories_desactivees=("violation_indications",))
-        assert _cran(_Verdict("violation_indications", "critique"), config=cfg) == 0
+        cfg = ConfigBareme(categories_desactivees=("perso:abc",))
+        assert _cran(_Verdict("perso:abc", "critique"), config=cfg) == 0
 
     def test_deletion_survives_the_ceiling(self):
         # Even bridled to "warn", the offending message is still deleted.
@@ -210,14 +210,14 @@ class TestConfig:
 class TestResultat:
     def test_cran_never_below_zero(self):
         cfg = ConfigBareme(max_action="warn")
-        result = calculer(_Verdict("violation_indications", "basse"), [], _veteran(),
+        result = calculer(_Verdict("perso:abc", "basse"), [], _veteran(),
                           severite_guild=1, config=cfg, now=NOW)
         assert result.cran == 0
 
     def test_breakdown_sum_holds_even_when_clamped(self):
         # floor 0 + severity(-1) would go to -1; the clamp brings it back to 0
         # and records a "borne" component so the breakdown still sums to the cran.
-        result = calculer(_Verdict("violation_indications", "basse"), [], _member(),
+        result = calculer(_Verdict("perso:abc", "basse"), [], _member(),
                           severite_guild=1, now=NOW)
         assert result.cran == 0
         assert sum(c.delta for c in result.composantes) == result.cran

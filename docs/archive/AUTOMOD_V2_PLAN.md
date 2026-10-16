@@ -29,7 +29,7 @@
 - `automod/constants.py` — `NANO_TEMPERATURE = 0.0`, `NANO_MAX_TOKENS = 300`, set de catégories
   canoniques exporté.
 - `tests/automod/test_nano_grounding.py` — 7+ cas couvrant les 7 scénarios exigés (§1.4).
-- `docs/AUTOMOD_AI.md` — §2 réécrit (contrat v2, garde grounding, catégories canoniques).
+- `docs/features/AUTOMOD.md` — §2 réécrit (contrat v2, garde grounding, catégories canoniques).
 
 **Décisions :**
 - Le bloc de sévérité disparaît du prompt nano (la sévérité ne pilote plus que le seuil

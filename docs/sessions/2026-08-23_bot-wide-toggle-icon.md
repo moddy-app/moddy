@@ -23,8 +23,8 @@ icon is exactly as generic as a Back arrow — it says nothing about logs.
   now split into their own `_ICON_ALL` / `_ICON_NONE` (still `Checked` /
   `Notchecked`, the logs set): they are a bulk *action* with a fixed icon,
   not a state that flips — a checkbox concept, not a switch.
-- **`docs/EMOJIS.md`** — the two ids updated.
-- **`docs/LOGS.md`** — the *Icons* section documents the toggle pair as the
+- **`docs/guides/EMOJIS.md`** — the two ids updated.
+- **`docs/features/LOGS.md`** — the *Icons* section documents the toggle pair as the
   fourth generic-chrome exception, and explains why "enable/disable all"
   stays on the logs set instead.
 
@@ -53,9 +53,9 @@ icon is exactly as generic as a Back arrow — it says nothing about logs.
 | File | Change |
 |---|---|
 | `utils/emojis.py` | `TOGGLE_ON` / `TOGGLE_OFF` repointed to the new ids |
-| `docs/EMOJIS.md` | the two ids updated |
+| `docs/guides/EMOJIS.md` | the two ids updated |
 | `modules/configs/logs_config.py` | toggles use `TOGGLE_ON`/`TOGGLE_OFF`; "all"/"none" split into their own constants |
-| `docs/LOGS.md` | *Icons* section: toggle pair as a fourth generic-chrome exception |
+| `docs/features/LOGS.md` | *Icons* section: toggle pair as a fourth generic-chrome exception |
 | `docs/sessions/2026-08-23_bot-wide-toggle-icon.md` | this file |
 | `tests/test_logs.py` | icon-bucket test extended; new bot-wide guard test |
 

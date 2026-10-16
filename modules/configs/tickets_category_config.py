@@ -20,7 +20,7 @@ Persistence: every control is a :class:`discord.ui.DynamicItem` carrying the
 panel and category ids (and, on the permissions screen, the role id) in its
 ``custom_id``, registered through :class:`TicketsConfigPersistence`. The
 wrapper views are therefore not registered — same reasoning as
-``LogsCategoryView``, see docs/PERSISTENT_VIEWS.md — which is also why every
+``LogsCategoryView``, see docs/guides/PERSISTENT_VIEWS.md — which is also why every
 change here applies immediately.
 """
 
@@ -34,7 +34,7 @@ import discord
 from discord import ui
 
 from cogs.error_handler import BaseModal, BaseView
-from modules.configs._common import ack, check_guild_perms, load_before_modal, say, show
+from modules.configs._common import ack, check_guild_perms, crumb, crumb_segment, load_before_modal, say, show
 from modules.configs.tickets_config import (
     load_config,
     render_panel,
@@ -728,6 +728,7 @@ class TicketCategoryConfigView(BaseView):
             self.panel.get('accent_color') or DEFAULT_ACCENT_COLOR))
 
         icon = self.category.get('emoji') or TICKET_CATEGORY
+        container.add_item(crumb(self.locale, 'tickets', self.panel['name'], self.category['name']))
         container.add_item(ui.TextDisplay(f"### {icon} {self.category['name']}"))
         container.add_item(ui.TextDisplay(
             f"-# {t('modules.tickets.category.subtitle', locale=self.locale, panel=self.panel['name'])}"))
@@ -1062,6 +1063,9 @@ class TicketPermissionsConfigView(BaseView):
         container = ui.Container(accent_colour=discord.Colour(
             self.panel.get('accent_color') or DEFAULT_ACCENT_COLOR))
 
+        container.add_item(crumb(
+            self.locale, 'tickets', self.panel['name'], self.category['name'],
+            crumb_segment(self.locale, 'permissions')))
         container.add_item(ui.TextDisplay(
             f"### {PERM_EMOJI} "
             f"{t('modules.tickets.permissions.title', locale=self.locale)}"))

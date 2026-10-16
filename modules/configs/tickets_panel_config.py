@@ -11,7 +11,7 @@ in its ``custom_id`` (``moddy:tickets:pnl…:<panel_id>``), registered through
 The wrapper view is therefore **not** registered: it cannot be built without a
 panel, and there is nothing left for it to carry once its children reconstruct
 themselves on every click. Same pattern as ``LogsCategoryView`` — see
-docs/PERSISTENT_VIEWS.md "Deliberate exclusions".
+docs/guides/PERSISTENT_VIEWS.md "Deliberate exclusions".
 
 That is also why changes apply immediately: a ``DynamicItem`` has no ``self``
 to stage them on.
@@ -28,7 +28,7 @@ from discord import ui
 
 from cogs.error_handler import BaseView
 from modules.configs._common import (
-    ack, check_guild_perms, load_before_modal, show,
+    ack, check_guild_perms, crumb, load_before_modal, show,
 )
 from modules.configs.tickets_config import (
     PanelAppearanceModal,
@@ -60,7 +60,7 @@ logger = logging.getLogger('moddy.modules.tickets_panel_config')
 _ENTRY_ID = r"[a-z0-9_]+"
 
 # One template per component *type*, with disjoint action alternations, so no
-# two DynamicItem classes can ever cross-match (see docs/PERSISTENT_VIEWS.md).
+# two DynamicItem classes can ever cross-match (see docs/guides/PERSISTENT_VIEWS.md).
 _BUTTON_ACTIONS = "back|edit|addcat|repost|toggle|delete|delconfirm"
 _SELECT_ACTIONS = "style|category"
 
@@ -328,6 +328,7 @@ class TicketPanelConfigView(BaseView):
         container = ui.Container(accent_colour=discord.Colour(
             self.panel.get('accent_color') or DEFAULT_ACCENT_COLOR))
 
+        container.add_item(crumb(self.locale, 'tickets', self.panel['name']))
         container.add_item(ui.TextDisplay(
             f"### {TICKET_PANEL} {self.panel['name']}"))
         container.add_item(ui.TextDisplay(

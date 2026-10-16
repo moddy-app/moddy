@@ -28,7 +28,7 @@ the requested permission bitfield, the requester's id and which role is being
 asked for, so a card answered three weeks and two restarts later behaves exactly
 like a fresh one. The role segment is optional in every template: cards posted
 before there were two roles are still answerable, and mean the base role. See
-docs/PERSISTENT_VIEWS.md and docs/LINKED_ROLES.md.
+docs/guides/PERSISTENT_VIEWS.md and docs/features/LINKED_ROLES.md.
 """
 
 from __future__ import annotations
@@ -45,6 +45,7 @@ from staff.framework import design
 from utils import emojis
 from utils.components_v2 import create_error_message
 from utils.i18n import i18n, t
+from utils.errors import NotYours
 from utils.moddy_team_role import TEAM, can_manage, find_team_role, kind_from_key
 
 logger = logging.getLogger('moddy.team_access')
@@ -161,15 +162,7 @@ async def _reject_stranger(interaction: discord.Interaction, requester_id: int) 
     """True when the clicker is not the staffer who opened this picker."""
     if interaction.user.id == requester_id:
         return False
-    locale = i18n.get_user_locale(interaction)
-    await interaction.response.send_message(
-        view=create_error_message(
-            t("errors.not_your_message.title", locale=locale),
-            t("errors.not_your_message.description", locale=locale),
-        ),
-        ephemeral=True,
-    )
-    return True
+    raise NotYours()
 
 
 # --------------------------------------------------------------------------- #

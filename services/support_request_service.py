@@ -19,7 +19,7 @@ What it does:
 defensive: a database outage costs the record and the buttons, never the
 message the user was trying to send.
 
-See docs/SUPPORT_REQUESTS.md.
+See docs/features/SUPPORT_REQUESTS.md.
 """
 
 from __future__ import annotations

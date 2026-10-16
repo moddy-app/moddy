@@ -28,7 +28,7 @@ What now works:
 - `/moddy`, `/moddy → Attribution`, `/moddy → We Support`, and the back buttons on both sub-views **survive a bot restart**.
 - Every custom_id follows the `moddy:<cog>:<view>:<action>` convention.
 - A single audit point (`utils/persistent_views.py::_collect_persistent_view_classes`) lists every persistent view class.
-- A full developer doc (`docs/PERSISTENT_VIEWS.md`) explains the pattern, custom_id convention, auth table, and a per-view migration cookbook.
+- A full developer doc (`docs/guides/PERSISTENT_VIEWS.md`) explains the pattern, custom_id convention, auth table, and a per-view migration cookbook.
 
 ---
 
@@ -72,9 +72,9 @@ What now works:
 - **`CLAUDE.md`**
   - Added new mandatory rule **8. Persistent Views** with a 5-step quick checklist.
   - Bumped the old "Language" rule to #9.
-  - Added `docs/PERSISTENT_VIEWS.md` to the Core References table.
+  - Added `docs/guides/PERSISTENT_VIEWS.md` to the Core References table.
 
-- **`docs/PERSISTENT_VIEWS.md`** *(new file)* — ~230 lines covering:
+- **`docs/guides/PERSISTENT_VIEWS.md`** *(new file)* — ~230 lines covering:
   - Why persistence, and how discord.py dispatch works.
   - The Moddy contract (full code template).
   - Custom ID convention + what never to encode.
@@ -85,7 +85,7 @@ What now works:
   - How to verify a view is persistent (snippet).
   - Deliberate exclusions (Modals, ErrorView, WebhookView).
 
-- **`docs/COMPONENTS_V2.md`** — added a callout below the LayoutView section warning never to inherit `ui.LayoutView` directly, and pointing to `PERSISTENT_VIEWS.md`.
+- **`docs/guides/COMPONENTS_V2.md`** — added a callout below the LayoutView section warning never to inherit `ui.LayoutView` directly, and pointing to `PERSISTENT_VIEWS.md`.
 
 ---
 
@@ -145,7 +145,7 @@ All Foundation + Group 1 verification steps from the plan were executed:
 
 ## ⚠️ Follow-up work — Groups 2–5
 
-The foundation is ready. Each group below is **self-contained** and can be shipped as its own PR. Follow `docs/PERSISTENT_VIEWS.md` cookbook for each view. The list is ordered by effort (easiest first).
+The foundation is ready. Each group below is **self-contained** and can be shipped as its own PR. Follow `docs/guides/PERSISTENT_VIEWS.md` cookbook for each view. The list is ordered by effort (easiest first).
 
 ### Group 2 — External lookup (re-fetch by identifier)
 
@@ -180,7 +180,7 @@ Views whose state is entirely reconstructable from `user_id` + DB. Use `DynamicI
 
 ### Group 4 — Guild config panels (biggest refactor)
 
-Views holding a `working_config` with pending unsaved edits. Accepted UX: on restart, the view rebuilds from the DB-saved config and pending edits are lost (documented in `docs/PERSISTENT_VIEWS.md`).
+Views holding a `working_config` with pending unsaved edits. Accepted UX: on restart, the view rebuilds from the DB-saved config and pending edits are lost (documented in `docs/guides/PERSISTENT_VIEWS.md`).
 
 Pattern for all of them:
 - Custom_id root: `moddy:config:<module>:<action>:<guild_id>`
@@ -238,7 +238,7 @@ Pattern for all of them:
 
 Created:
 - `utils/persistent_views.py`
-- `docs/PERSISTENT_VIEWS.md`
+- `docs/guides/PERSISTENT_VIEWS.md`
 - `docs/sessions/2026-04-09_persistent-views-foundation.md` (this file)
 
 Modified:
@@ -249,4 +249,4 @@ Modified:
 - `cogs/banner.py` — migrated to BaseView, dropped explicit timeout
 - `cogs/avatar.py` — dropped explicit timeout (was already BaseView)
 - `CLAUDE.md` — new "Persistent Views" mandatory rule + doc pointer
-- `docs/COMPONENTS_V2.md` — callout pointing to PERSISTENT_VIEWS.md
+- `docs/guides/COMPONENTS_V2.md` — callout pointing to PERSISTENT_VIEWS.md

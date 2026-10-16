@@ -23,7 +23,7 @@ it, and the card is answered long after the request was made.
 ``pre_escalation_claim`` is where that value is parked while the ticket is
 escalated, so cancelling an escalation restores the claim it interrupted.
 
-See docs/TICKETS.md.
+See docs/features/TICKETS.md.
 """
 
 from __future__ import annotations

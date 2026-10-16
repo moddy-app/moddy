@@ -6,7 +6,7 @@
 * ``delete_hash`` / ``delete_reference`` / ``delete_term`` ``<id>`` — purge one
   wrongly learned entry (the id is shown on ``status`` listings and in the DB).
 
-See docs/AUTOMOD_AI.md §9.
+See docs/features/AUTOMOD.md §9.
 """
 
 import discord

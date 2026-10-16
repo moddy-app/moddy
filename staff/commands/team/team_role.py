@@ -21,7 +21,7 @@ this command opens a **window** in which the staffer who ran it holds
 rather than stripping the staffer twice. The card then reports what came of it,
 and falls back on the manual instructions when the window could not be opened.
 
-See docs/LINKED_ROLES.md.
+See docs/features/LINKED_ROLES.md.
 """
 
 import logging

@@ -6,7 +6,7 @@ victimless insult/threat, or a speculative reason all void the sanction. The
 chat call is stubbed (a fake ``chat_fn`` returning a crafted raw verdict), so no
 gateway/network is touched — the full ``juger`` round-trip runs offline.
 
-See docs/AUTOMOD_AI.md §2 and docs/archive/AUTOMOD_V2_PLAN.md (Session 1, §1.4).
+See docs/features/AUTOMOD.md §2 and docs/archive/AUTOMOD_V2_PLAN.md (Session 1, §1.4).
 """
 
 import pytest
@@ -54,7 +54,7 @@ async def _judge(raw, content, *, categorie_signal="insulte"):
         target,
         signal,
         guild_name="Guild",
-        rules="",
+       
         history=AuthorHistory(),
         chat_fn=_chat_returning(raw),
         fetch_context=_no_context,

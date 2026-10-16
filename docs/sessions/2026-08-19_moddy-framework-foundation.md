@@ -13,7 +13,7 @@ discord.py.
 - `moddy/` — Public bot, cog, command, UI, interaction, testing, and ext APIs.
 - `tests/test_moddy_framework.py` — Contract tests for inheritance, command
   installation contexts, and Components V2 construction.
-- `docs/MODDY_FRAMEWORK.md` — API, migration, and testing guide.
+- `docs/guides/MODDY_FRAMEWORK.md` — API, migration, and testing guide.
 
 ## Decisions & Rationale
 

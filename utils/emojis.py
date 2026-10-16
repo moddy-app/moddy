@@ -38,6 +38,7 @@ BACK = "<:back:1519795556665397431>"
 NEXT = "<:next:1519791619526754354>"
 PAUSE = "<:pause:1519787332801269811>"
 PLAY = "<:play:1519787501789773996>"
+LABS = "<:labs:1560741865915949107>"  # Simulation state (module state, automod dry run)
 LOGOUT = "<:logout:1519795093605974098>"
 DOWNLOAD = "<:download:1519796568255889578>"
 REPLY = "<:reply:1519790151130415154>"
@@ -109,7 +110,7 @@ IMAGE = "<:image:1520593192892764260>"
 SHIELD = "<:shield:1521471376815292498>"   # automod icon
 HAND = "<:hand:1521517865348632706>"       # appeal "claim" button
 LINK = "<:link:1521517863607734385>"       # appeal "invite" button
-PENDING = "<:pending:1521282587962900611>"  # appeal "pending" status
+PENDING = "<:pending:1521282587962900611>"  # hourglass: appeal pending, automod moderator approval pending
 ROCKET = "<a:Rocket:1535783839870353499>"  # bot customization bio attribution
 ROCKET_LAUNCH = "<:rocket_launch:1545028494298447873>"  # Bump Reminder module
 SHAPES = "<:shapes:1552314638782300260>"  # Member Applications module
@@ -246,6 +247,7 @@ SUPPORTS_COMMANDS = "<:supportscommands:1439636938372944012>"
 
 EMOJIS = {
     # Status
+    "labs": LABS,
     "done": DONE,
     "undone": UNDONE,
     "loading": LOADING,
@@ -578,7 +580,7 @@ def get_user_verification_badge(user_data: dict, moddy_attributes: dict, user_ve
 # =============================================================================
 # SERVER LOGS EMOJI SET
 # -----------------------------------------------------------------------------
-# The icon set of the advanced server logs (see docs/LOGS.md). It is kept as a
+# The icon set of the advanced server logs (see docs/features/LOGS.md). It is kept as a
 # dictionary rather than 158 module constants for two reasons: the names come
 # from Discord's own vocabulary (``createchannel``, ``timedout``, ``Notchecked``)
 # and several of them would collide with the general constants above, and the
@@ -793,7 +795,7 @@ def log_emoji(name: str, default: str = "") -> str:
 # A black twin named ``<original name>_dark`` is uploaded for them. Users who
 # pick the light theme in /preferences get those twins swapped in centrally at
 # send time (see utils/icon_theme.py); no call site changes. To add one: upload
-# ``<name>_dark`` and add it to DARK_VARIANTS. See docs/ICON_THEME.md.
+# ``<name>_dark`` and add it to DARK_VARIANTS. See docs/guides/ICON_THEME.md.
 DARK_VARIANTS: Dict[str, int] = {
     "1__dark": 1558775913238364180,
     "2__dark": 1558775915008364689,
@@ -864,6 +866,7 @@ DARK_VARIANTS: Dict[str, int] = {
     "pending_dark": 1558776286774558750,
     "person_off_dark": 1558776185411084339,
     "play_dark": 1558776094247751732,
+    "labs_dark": 1560741864154333225,
     "policy_dark": 1558776244789710960,
     "premium_dark": 1558776174962810971,
     "railway_dark": 1558776068150919170,
@@ -923,7 +926,7 @@ _EXTRA_ORIGINAL_IDS: Dict[str, Tuple[int, ...]] = {
     "send": (1519793414185553940,),
     "server": (1519788576420921476,),
     "warning": (1398729560895422505,),
-    # Listed in docs/EMOJIS.md but not used as a constant yet — mapped so they
+    # Listed in docs/guides/EMOJIS.md but not used as a constant yet — mapped so they
     # switch as soon as someone uses them.
     "1_": (1386154327499997275,),
     "2_": (1386154384974413906,),

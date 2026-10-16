@@ -1,4 +1,4 @@
-"""Automod member profiles — avatar / banner / names (docs/AUTOMOD_AI.md "Profiles").
+"""Automod member profiles — avatar / banner / names (docs/features/AUTOMOD.md "Profiles").
 
 No network, no Discord, no DB: every collaborator is a small fake, in the style of
 tests/test_automod_images.py.
@@ -245,7 +245,7 @@ class FakeGuild:
             top_role=100,
             guild_permissions=types.SimpleNamespace(
                 manage_nicknames=nick_perm, moderate_members=moderate_perm,
-                ban_members=True, manage_messages=True),
+                ban_members=True, kick_members=True, manage_messages=True),
         )
         self.channel = FakeChannel()
 
@@ -292,6 +292,15 @@ class FakeMember:
         self.timed_out_until = (NOW + duration) if duration else None
 
     async def edit(self, **kw):
+        if "timed_out_until" in kw:
+            # The sanction path times out through `edit` and checks the member
+            # Discord returns: record it like `timeout` and echo ourselves back.
+            until = kw["timed_out_until"]
+            duration = timedelta(seconds=round(
+                (until - datetime.now(timezone.utc)).total_seconds())) if until else None
+            self.timeouts.append((duration, kw.get("reason")))
+            self.timed_out_until = until
+            return self
         self.edits.append(kw)
         if "nick" in kw:
             self.nick = kw["nick"]
@@ -765,7 +774,7 @@ async def test_name_verdicts_are_cached_per_normalized_name(monkeypatch):
     engine = FakeEngine(_name_decision(sanctionnable=False))
     env.bot._automod_engine = engine
     svc = env.bot.automod_profiles
-    kw = dict(user_id=5, guild_id=1, guild_name="G", rules="", severity=3,
+    kw = dict(user_id=5, guild_id=1, guild_name="G", severity=3,
               response_language="English")
     await svc.judge_name("Some  Name", **kw)
     second = await svc.judge_name("some name", **kw)
@@ -1197,23 +1206,19 @@ async def test_a_failed_banner_fetch_keeps_the_hold(monkeypatch):
     assert (1, 5, "banner") not in env.bot.db.holds
 
 
-def test_name_cache_is_per_indications_but_shared_without():
-    assert name_cache_key("x", "") == name_cache_key("x") == name_cache_key("x", "  ")
-    assert name_cache_key("x", "no jokes") != name_cache_key("x")
-    assert name_cache_key("x", "no jokes") != name_cache_key("x", "other rules")
+def test_name_cache_key_is_global_and_normalized():
+    assert name_cache_key("X") == name_cache_key("x")
 
 
-async def test_a_verdict_from_one_servers_indications_is_not_reused_by_another(monkeypatch):
+async def test_a_name_verdict_is_shared_between_servers(monkeypatch):
     env = Env(monkeypatch)
     engine = FakeEngine(_name_decision(), only=_is_bad)
     env.bot._automod_engine = engine
     svc = env.bot.automod_profiles
     kw = dict(user_id=5, guild_name="G", severity=3, response_language="English")
-    await svc.judge_name("BadName", guild_id=1, rules="ban the word bad", **kw)
-    other = await svc.judge_name("BadName", guild_id=2, rules="", **kw)
-    assert len(engine.calls) == 2 and other.fresh is True
-    again = await svc.judge_name("BadName", guild_id=3, rules="", **kw)
-    assert len(engine.calls) == 2 and again.fresh is False
+    await svc.judge_name("BadName", guild_id=1, **kw)
+    again = await svc.judge_name("BadName", guild_id=2, **kw)
+    assert len(engine.calls) == 1 and again.fresh is False
 
 
 async def test_a_team_negative_label_stops_every_guild_flagging_the_name(monkeypatch):
@@ -1221,7 +1226,7 @@ async def test_a_team_negative_label_stops_every_guild_flagging_the_name(monkeyp
     engine = FakeEngine(_name_decision(), only=_is_bad)
     env.bot._automod_engine = engine
     svc = env.bot.automod_profiles
-    kw = dict(user_id=5, guild_id=1, guild_name="G", rules="", severity=3,
+    kw = dict(user_id=5, guild_id=1, guild_name="G", severity=3,
               response_language="English")
     assert (await svc.judge_name("BadName", **kw)).decision.sanctionnable
     labels = AutomodLabelService(env.bot)
@@ -1234,7 +1239,7 @@ async def test_a_team_negative_label_stops_every_guild_flagging_the_name(monkeyp
     out = await labels._learn_negative(row, 42)
     assert out["name_allowed"] is True
     n = len(engine.calls)
-    judged = await svc.judge_name("badname", **{**kw, "guild_id": 2, "rules": "r"})
+    judged = await svc.judge_name("badname", **{**kw, "guild_id": 2})
     assert judged.decision is None and len(engine.calls) == n
 
 

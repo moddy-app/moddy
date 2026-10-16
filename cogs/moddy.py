@@ -4,6 +4,7 @@ Displays information about the Moddy bot
 """
 
 import discord
+from config import COLORS
 from utils.incognito import resolve_default_incognito
 from discord import app_commands, ui
 from discord.ext import commands
@@ -42,7 +43,7 @@ class AttributionView(BaseView):
         """Build the attributions view."""
         self.clear_items()
 
-        container = ui.Container()
+        container = ui.Container(accent_colour=COLORS["primary"])
 
         # Title
         container.add_item(ui.TextDisplay(
@@ -126,7 +127,7 @@ class WeSupportView(BaseView):
         """Build the we support view."""
         self.clear_items()
 
-        container = ui.Container()
+        container = ui.Container(accent_colour=COLORS["primary"])
 
         # Title
         container.add_item(ui.TextDisplay(
@@ -197,7 +198,7 @@ class ModdyMainView(BaseView):
         """Build the main about view."""
         self.clear_items()
 
-        container = ui.Container()
+        container = ui.Container(accent_colour=COLORS["primary"])
 
         # Title
         container.add_item(ui.TextDisplay(

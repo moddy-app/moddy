@@ -12,7 +12,15 @@ from utils.i18n import i18n, t
 from cogs.error_handler import BaseView, BaseModal
 from utils.emojis import STAR, REQUIRED_FIELDS, EDIT, BACK, SAVE, UNDONE, DELETE, is_standard_discord_emoji
 from modules.configs._common import (
-    ack, check_guild_perms, load_before_modal, show,
+    ack,
+    check_guild_perms,
+    config_state,
+    crumb,
+    load_before_modal,
+    module_state_row,
+    open_main_config,
+    show,
+    state_accent,
 )
 
 logger = logging.getLogger('moddy.modules.starboard_config')
@@ -144,7 +152,10 @@ class StarboardConfigView(BaseView):
         """Build configuration interface"""
         self.clear_items()
 
-        container = ui.Container()
+        # Accent follows the module state (gray when paused).
+        state = config_state(self.current_config) if self.has_existing_config else None
+        container = ui.Container(accent_colour=state_accent(state))
+        container.add_item(crumb(self.locale, 'starboard'))
 
         # Header
         container.add_item(ui.TextDisplay(
@@ -155,6 +166,14 @@ class StarboardConfigView(BaseView):
         ))
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+
+        # Play / pause: only on a clean, saved config (a state click rebuilds the
+        # screen from the saved config and would drop pending edits).
+        state_items = [] if self.has_changes else module_state_row('starboard', state, self.locale)
+        for item in state_items:
+            container.add_item(item)
+        if state_items:
+            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
         # Channel selector (Required field)
         container.add_item(ui.TextDisplay(
@@ -378,10 +397,7 @@ class StarboardConfigView(BaseView):
         if not await check_guild_perms(interaction):
             return
 
-        from cogs.config import ConfigMainView
-        locale = i18n.get_user_locale(interaction)
-        main_view = ConfigMainView(interaction.client, interaction.guild_id, interaction.user.id, locale)
-        await show(interaction, main_view)
+        await open_main_config(interaction)
 
     async def on_save(self, interaction: discord.Interaction):
         """Save configuration"""

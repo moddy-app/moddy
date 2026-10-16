@@ -5,7 +5,7 @@ Unlike the Moddy Health Monitor (services/heartbeat.py, checks-driven,
 JSON body, 20s), Better Stack's heartbeat contract is a bare URL: a plain
 GET on the heartbeat URL means "alive", a GET on ``<url>/fail`` reports a
 failure explicitly. No body is required either way — see
-docs/HEALTH_MONITOR.md for the full contract and rationale.
+docs/infra/HEALTH_MONITOR.md for the full contract and rationale.
 
 Fire-and-forget like the other heartbeat: a failed push only logs, the loop
 never blocks anything else and never stops itself.

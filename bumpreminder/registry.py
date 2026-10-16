@@ -190,7 +190,7 @@ BUMP_BOTS: Tuple[BumpBot, ...] = (
     # --------------------------------------------------------------- D-INVITES
     # The hard one: a successful bump is a bare image with a "view the server"
     # button and not one word of text, so the asset filename is the only signal
-    # a success carries — see the note in docs/BUMP_REMINDER.md.
+    # a success carries — see the note in docs/features/BUMP_REMINDER.md.
     #
     # Its refusal, by contrast, is explicit: `bump-error.png` plus "Tu pourras
     # bump à nouveau <t:…>". Both markers below are taken from a captured

@@ -1,6 +1,6 @@
 """Automod profile holds — members timed out until they fix their avatar / banner.
 
-One table (``automod_profile_holds``), see docs/AUTOMOD_AI.md "Profiles". A row
+One table (``automod_profile_holds``), see docs/features/AUTOMOD.md "Profiles". A row
 exists while the Discord timeout opened by the ``hold`` profile action is being
 kept in force: it is renewed by the profile sweep while the profile is still
 flagged and deleted the moment the profile is fixed (or the team revokes the

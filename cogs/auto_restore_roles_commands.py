@@ -240,4 +240,7 @@ class AutoRestoreRolesCommands(commands.Cog):
 
 async def setup(bot):
     """Charge le cog"""
-    await bot.add_cog(AutoRestoreRolesCommands(bot))
+    cog = AutoRestoreRolesCommands(bot)
+    await bot.add_cog(cog)
+    # Published only in servers where the module is active.
+    bot.register_module_commands('auto_restore_roles', list(cog.get_app_commands()))

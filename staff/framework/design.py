@@ -4,7 +4,7 @@ Standardized Components V2 design helpers for the staff command system.
 Every staff command renders through these helpers so the whole staff surface
 stays visually consistent: ``### <emoji> Title`` headers, coloured accent bars
 on every container, ``-#`` hints, and backticked dynamic values (see
-``docs/DESIGN.md``).
+``docs/guides/DESIGN.md``).
 
 The helpers return ready-to-send :class:`BaseView` instances (rule: every view
 inherits from ``BaseView``). Commands that need interactive components build a
@@ -82,7 +82,7 @@ def make_container(accent: Optional[object] = "neutral") -> ui.Container:
 
 
 def title_line(emoji: str, title: str) -> str:
-    """Build a ``### <emoji> Title`` header line (DESIGN.md standard)."""
+    """Build a ``### <emoji> Title`` header line (docs/guides/DESIGN.md standard)."""
     return f"### {emoji} {title}"
 
 

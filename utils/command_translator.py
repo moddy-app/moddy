@@ -54,7 +54,7 @@ single invalid localized name makes the whole command sync fail:
 
 Invalid entries are logged and ignored rather than raised.
 
-See → docs/COMMAND_LOCALIZATION.md
+See → docs/guides/COMMAND_LOCALIZATION.md
 """
 
 from __future__ import annotations

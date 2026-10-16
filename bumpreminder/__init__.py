@@ -17,7 +17,7 @@ The Discord-facing halves live elsewhere:
 - ``cogs/bump_reminder.py``    — the listener and the 30s sweeper loop
 - ``utils/bump_views.py``      — the thank-you and reminder cards
 
-See docs/BUMP_REMINDER.md.
+See docs/features/BUMP_REMINDER.md.
 """
 
 from bumpreminder.registry import (

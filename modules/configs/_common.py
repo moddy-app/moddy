@@ -5,7 +5,7 @@ Every guild config panel (AutoRoleConfigView, StarboardConfigView,
 InterServerConfigView, ...) previously re-checked ownership by comparing
 interaction.user.id against a self.user_id captured at command time. That
 breaks on a restarted persistent-view shell, where self.user_id is None
-(docs/PERSISTENT_VIEWS.md Appendix B.5: "interaction.guild_id is already on
+(docs/guides/PERSISTENT_VIEWS.md Appendix B.5: "interaction.guild_id is already on
 the interaction, a static custom_id + re-checked manage_guild is enough" —
 no DynamicItem needed for this class of view). check_guild_perms() re-derives
 authorization from the interaction alone, matching SocialNotificationsConfigView.
@@ -19,14 +19,20 @@ behind Administrator.
 
 import asyncio
 import logging
-from typing import Any, Awaitable, List, Mapping, Optional, Sequence, Tuple
+import re
+from typing import Any, Awaitable, Dict, List, Mapping, Optional, Sequence, Tuple
 
 import discord
 from discord import ui
 
 from config import COLORS
-from utils.emojis import EMOJIS
+from utils.emojis import EMOJIS, LABS, PAUSE, PLAY, WARNING
 from utils.i18n import i18n, t
+from cogs.error_handler import BaseView
+from modules.module_manager import (
+    STATE_ACTIVE, STATE_PAUSED, STATE_SIMULATION, STATE_KEY, STATUS_NOT_CONFIGURED,
+    normalize_state,
+)
 from utils.bot_permissions import (
     format_missing,
     merge_permissions,
@@ -194,3 +200,194 @@ async def load_before_modal(interaction: discord.Interaction,
         locale = i18n.get_user_locale(interaction)
         await say(interaction, t("modules.config.errors.slow_retry", locale=locale))
         return False, None
+
+
+async def open_main_config(interaction: discord.Interaction) -> None:
+    """Back to the /config main screen (with module states and the limited banner)."""
+    from cogs.config import ConfigMainView
+    from utils import global_sanctions
+    await ack(interaction)
+    bot = interaction.client
+    limited = await global_sanctions.is_limited(
+        bot, user_id=interaction.user.id, guild_id=interaction.guild_id)
+    view = await ConfigMainView.create(
+        bot, interaction.guild_id, interaction.user.id,
+        i18n.get_user_locale(interaction), limited=limited)
+    await show(interaction, view)
+
+
+# ---------------------------------------------------------------------------
+# Module state (play / pause / simulation) -- see docs/guides/MODULE_SYSTEM.md
+# ---------------------------------------------------------------------------
+
+#: Container accent per state (docs/guides/DESIGN.md): active = primary, paused = neutral
+#: gray, simulation = warning yellow. ``None`` / not configured = primary.
+_STATE_ACCENTS = {
+    STATE_ACTIVE: "primary",
+    STATE_PAUSED: "neutral",
+    STATE_SIMULATION: "warning",
+}
+_STATE_EMOJIS = {STATE_ACTIVE: PLAY, STATE_PAUSED: PAUSE, STATE_SIMULATION: LABS}
+
+
+def state_accent(state: Optional[str]) -> discord.Colour:
+    """Accent colour of a module screen for ``state`` (pass it to ``ui.Container``)."""
+    return discord.Colour(COLORS[_STATE_ACCENTS.get(state or STATE_ACTIVE, "primary")])
+
+
+def config_state(config: Optional[Mapping[str, Any]], *,
+                 supports_simulation: bool = False) -> Optional[str]:
+    """State stored in a module config dict, or None when there is no saved config."""
+    if not config:
+        return None
+    return normalize_state(config.get(STATE_KEY), supports_simulation)
+
+
+def state_label(status: Optional[str], locale: str) -> str:
+    """Localised word for a state (or for ``STATUS_NOT_CONFIGURED`` / None)."""
+    key = status if status in (STATE_ACTIVE, STATE_PAUSED, STATE_SIMULATION) else "not_configured"
+    return t(f"modules.config.state.{key}", locale=locale)
+
+
+def breadcrumb(locale: str, module_name: Optional[str] = None, *segments: str) -> ui.TextDisplay:
+    """Discreet navigation trail for every /config sub-view (not the main screen).
+
+    ``-# Config › Automod › Sanctions › Doxxing``. Put it as the FIRST item of
+    the container, above the ``###`` title. ``module_name`` is the module's
+    display name (``module_class.MODULE_NAME``); ``segments`` are already
+    translated, innermost last. Dynamic names (an infraction, a panel) go in
+    as they are -- no backticks, it is navigation, not data.
+    """
+    parts = [t("modules.config.breadcrumb.root", locale=locale)]
+    if module_name:
+        parts.append(module_name)
+    parts.extend(s for s in segments if s)
+    return ui.TextDisplay("-# " + " › ".join(parts))
+
+
+_MODULE_NAME_FALLBACKS = {
+    "logs": "Logs",
+    "social_notifications": "Social Notifications",
+    "tickets": "Tickets",
+}
+
+
+def crumb(locale: str, module_id: str, *segments: str) -> ui.TextDisplay:
+    """:func:`breadcrumb` for a module id: resolves the localised module name."""
+    name = t(f"modules.{module_id}.name", locale=locale)
+    if name.startswith("["):
+        name = _MODULE_NAME_FALLBACKS.get(module_id, module_id)
+    return breadcrumb(locale, name, *segments)
+
+
+def crumb_segment(locale: str, key: str) -> str:
+    """Generic breadcrumb segment: add / manage / settings / permissions / options."""
+    return t(f"modules.config.breadcrumb.{key}", locale=locale)
+
+
+_CID_STATE_PREFIX = "moddy:config:state"
+
+
+def _state_button(module_id: str, target: str, current: str, locale: str) -> "ModuleStateButton":
+    return ModuleStateButton(module_id, target, current=current, locale=locale)
+
+
+def module_state_row(module_id: str, state: Optional[str], locale: str, *,
+                     supports_simulation: bool = False) -> List[Any]:
+    """The state line + play/pause buttons, to add to a module's home container.
+
+    ``state`` comes from :func:`config_state` (None = no saved config -> returns
+    ``[]``: nothing to pause yet). Usage::
+
+        for item in module_state_row("auto_role", state, locale):
+            container.add_item(item)
+
+    The text line is needed because a button does not show state. Buttons offer
+    the OTHER states: Pause when active, Resume when paused; modules with
+    ``SUPPORTS_SIMULATION`` also get Simulation / Activate. Clicks are handled
+    by the persistent :class:`ModuleStateButton`, which rebuilds the module's
+    home screen afterwards, so the view needs no callback of its own.
+    """
+    if state is None:
+        return []
+    line = (
+        f"**{t('modules.config.state.label', locale=locale)}** "
+        f"{_STATE_EMOJIS[state]} {state_label(state, locale)}\n"
+        f"-# {t(f'modules.config.state.description.{state}', locale=locale)}"
+    )
+    targets = [s for s in (STATE_ACTIVE, STATE_SIMULATION, STATE_PAUSED)
+               if s != state and (s != STATE_SIMULATION or supports_simulation)]
+    row = ui.ActionRow()
+    for target in targets:
+        row.add_item(_state_button(module_id, target, state, locale))
+    return [ui.TextDisplay(line), row]
+
+
+class ModuleStateButton(
+    ui.DynamicItem[ui.Button],
+    template=rf"{_CID_STATE_PREFIX}:(?P<module>[a-z0-9_]{{1,40}}):(?P<target>active|paused|simulation)",
+):
+    """Switch a module to ``target`` state. Persistent for every module panel.
+
+    Auth: Manage Server, re-checked on every click; the guild comes from the
+    interaction, the module and target from the custom_id, so the button works
+    on any view and survives restarts without per-view registration.
+    """
+
+    def __init__(self, module_id: str, target: str, *, current: str = STATE_ACTIVE,
+                 locale: str = "en-US"):
+        if target == STATE_PAUSED:
+            key, emoji, style = "pause", PAUSE, discord.ButtonStyle.secondary
+        elif target == STATE_SIMULATION:
+            key, emoji, style = "simulation", LABS, discord.ButtonStyle.secondary
+        else:
+            key = "resume" if current == STATE_PAUSED else "activate"
+            emoji, style = PLAY, discord.ButtonStyle.primary
+        super().__init__(ui.Button(
+            label=t(f"modules.config.state.buttons.{key}", locale=locale),
+            emoji=discord.PartialEmoji.from_str(emoji),
+            style=style,
+            custom_id=f"{_CID_STATE_PREFIX}:{module_id}:{target}",
+        ))
+        self.module_id = module_id
+        self.target = target
+
+    @classmethod
+    async def from_custom_id(cls, interaction: discord.Interaction, item: ui.Button,
+                             match: "re.Match"):
+        return cls(match["module"], match["target"])
+
+    async def callback(self, interaction: discord.Interaction):
+        if not await check_guild_perms(interaction):
+            return
+        await ack(interaction)
+
+        bot = interaction.client
+        locale = i18n.get_user_locale(interaction)
+        ok, error = await bot.module_manager.set_module_state(
+            interaction.guild_id, self.module_id, self.target,
+            actor_id=interaction.user.id,
+        )
+        if not ok:
+            key = "not_configured" if error == "not_configured" else "failed"
+            await say(interaction, t(f"modules.config.state.errors.{key}", locale=locale))
+            return
+
+        # Rebuild the module's home screen so the state line, accent and
+        # buttons reflect the new state.
+        from cogs.config import build_module_config_view
+        config = await bot.module_manager.get_module_config(interaction.guild_id, self.module_id)
+        view = await build_module_config_view(
+            bot, interaction.guild_id, interaction.user.id, locale, self.module_id, config)
+        if view is not None:
+            await show(interaction, view)
+
+
+class ModuleStatePersistence(BaseView):
+    """Marker view: registers :class:`ModuleStateButton` at startup."""
+
+    __persistent__ = True
+
+    @classmethod
+    def register_persistent(cls, bot) -> None:
+        bot.add_dynamic_items(ModuleStateButton)

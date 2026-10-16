@@ -1,7 +1,7 @@
 """
-Ready-made protection levels for the Automod AI first-run wizard.
+Ready-made protection levels for the Automod first-run wizard.
 
-A server that opens ``/config`` -> Automod AI for the first time should not have
+A server that opens ``/config`` -> Automod for the first time should not have
 to understand the individual detections: it picks one of three *levels* and
 Moddy fills in the stored config. The module is **pure** (no Discord, no I/O) so
 the levels are table-testable and a future dashboard can reuse the very same
@@ -16,7 +16,7 @@ Levels
 * ``strict``   — everything of ``balanced`` plus member profiles (avatar,
                  banner, names), severity 4.
 
-The result is the exact stored schema documented in docs/AUTOMOD_AI_CONFIG.md.
+The result is the exact stored schema documented in docs/integration/AUTOMOD_CONFIG.md.
 """
 
 from __future__ import annotations
@@ -41,14 +41,22 @@ _LEVELS: Dict[str, Tuple[Tuple[str, ...], int]] = {
 }
 
 #: Sanction overrides a level brings on top of Moddy's defaults. ``light`` only
-#: deletes ordinary insults and keeps the sanctions for the serious ones.
+#: deletes ordinary insults (serious ones keep a timeout; repeat offenders
+#: still escalate through the recidivism ladder) and keeps the default sanctions for the serious types.
 _LEVEL_SANCTIONS: Dict[str, Dict[str, Dict[str, Any]]] = {
     "light": {
         "insulte": {
             "enabled": True,
             "mode": "perso",
-            "crans": {"basse": 0, "moyenne": 0, "haute": 2, "critique": 3},
+            "actions": ["delete"],
+            "timeout_seconds": None,
             "recidive": True,
+            "require_approval": False,
+            # Serious insults keep a sanction (the old ladder: cran 2 / cran 3).
+            "by_gravity": {
+                "haute": {"actions": ["delete", "timeout"], "timeout_seconds": 2 * 3600},
+                "critique": {"actions": ["delete", "timeout"], "timeout_seconds": 12 * 3600},
+            },
         },
     },
 }
@@ -66,15 +74,12 @@ def blank_config() -> Dict[str, Any]:
         return base
 
     return {
-        "enabled": False,
-        "indications": "",
         "notify_channel_id": None,
         "ignore_moderators": True,
         "severity": ac.SEVERITY_DEFAULT,
         "max_action": "ban",
         "sanctions": {},
         "infractions_perso": [],
-        "dry_run": False,
         "features": {
             "content": feature(),
             "image_nsfw": feature(),
@@ -85,13 +90,14 @@ def blank_config() -> Dict[str, Any]:
     }
 
 
-def preset_config(preset: str, channel_id: Optional[int], *, dry_run: bool = True,
-                  enabled: bool = True,
+def preset_config(preset: str, channel_id: Optional[int], *, state: str = "simulation",
                   base: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Full config of ``preset`` for ``channel_id``.
 
-    ``base`` (an existing, normalised config) is kept for everything a level
-    does not own: indications, custom infractions, exemptions, the maximum
+    ``state`` is the generic module state written next to the config
+    (``active`` / ``simulation`` / ``paused``; simulation is the former
+    ``dry_run``). ``base`` (an existing, normalised config) is kept for everything a level
+    does not own: custom infractions, exemptions, the maximum
     sanction and the sanctions of types the level leaves alone. Without it the
     result is a complete fresh config.
 
@@ -103,8 +109,9 @@ def preset_config(preset: str, channel_id: Optional[int], *, dry_run: bool = Tru
 
     if channel_id is not None:
         cfg["notify_channel_id"] = int(channel_id)
-    cfg["enabled"] = bool(enabled)
-    cfg["dry_run"] = bool(dry_run)
+    cfg["state"] = state
+    cfg.pop("enabled", None)
+    cfg.pop("dry_run", None)
     cfg["severity"] = severity
 
     skeleton = blank_config()["features"]

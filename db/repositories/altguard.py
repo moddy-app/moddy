@@ -13,7 +13,7 @@ Two tables (created in ``db/base.py``):
 
 Neither table holds personal data beyond Discord ids (already public on the
 server): AltGuard never sends the bot a fingerprint, an email or an IP.
-See docs/ALTGUARD.md.
+See docs/features/ALTGUARD.md.
 """
 
 from __future__ import annotations
@@ -51,7 +51,7 @@ VERDICT_TO_STATUS = {
 
 
 def _parse_reasons(value: Any) -> List[str]:
-    """JSONB may come back as a list or as a JSON string (see DATABASE.md)."""
+    """JSONB may come back as a list or as a JSON string (see docs/infra/DATABASE.md)."""
     if not value:
         return []
     if isinstance(value, list):

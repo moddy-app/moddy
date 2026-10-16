@@ -13,6 +13,7 @@ Security design:
 """
 
 from __future__ import annotations
+from config import COLORS
 
 import asyncio
 import base64
@@ -368,7 +369,7 @@ def _expired_view() -> BaseView:
 
 def _already_done_view(action: str) -> BaseView:
     view = BaseView()
-    c = ui.Container()
+    c = ui.Container(accent_colour=COLORS["neutral"])
     c.add_item(ui.TextDisplay(
         f"### {INFO} Already Done\n"
         f"This action ({action}) has already been performed."
@@ -421,7 +422,7 @@ class UserDetailsButton(
             f"**Message content:**\n>>> {masked}"
         )
         view = BaseView()
-        c = ui.Container()
+        c = ui.Container(accent_colour=COLORS["primary"])
         c.add_item(ui.TextDisplay(f"### {INFO} Message Details"))
         c.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
         c.add_item(ui.TextDisplay(body))
@@ -468,7 +469,7 @@ class UserInvalidateButton(
             return
 
         view = BaseView()
-        c = ui.Container()
+        c = ui.Container(accent_colour=COLORS["warning"])
         c.add_item(ui.TextDisplay(
             f"### {WARNING} Confirm Token Invalidation\n"
             "This will invalidate the session token that was exposed. "
@@ -534,7 +535,7 @@ class UserConfirmInvalidateButton(
                 success = status in (200, 204)
 
         view = BaseView()
-        c = ui.Container()
+        c = ui.Container(accent_colour=COLORS["success"])
         if success:
             c.add_item(ui.TextDisplay(
                 f"### {DONE} Session Token Invalidated\n"
@@ -607,7 +608,7 @@ class UserCancelButton(
 
     async def callback(self, interaction: discord.Interaction) -> None:
         view = BaseView()
-        c = ui.Container()
+        c = ui.Container(accent_colour=COLORS["neutral"])
         c.add_item(ui.TextDisplay(
             f"### {DONE} Cancelled\n"
             "No action was taken. Your security alert is still active above."
@@ -679,7 +680,7 @@ class UserDeleteMsgButton(
                     deleted = await _delete_message_api(session, token, self.cid, self.mid)
 
         view = BaseView()
-        c = ui.Container()
+        c = ui.Container(accent_colour=COLORS["success"])
         if deleted:
             c.add_item(ui.TextDisplay(
                 f"### {DONE} Message Deleted\n"
@@ -777,7 +778,7 @@ class BotDetailsButton(
             f"**Message content:**\n>>> {masked}"
         )
         view = BaseView()
-        c = ui.Container()
+        c = ui.Container(accent_colour=COLORS["primary"])
         c.add_item(ui.TextDisplay(f"### {INFO} Message Details"))
         c.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
         c.add_item(ui.TextDisplay(body))
@@ -839,7 +840,7 @@ class BotDeleteMsgButton(
             logger.debug(f"Bot alert — bot delete attempt failed: {exc}")
 
         view = BaseView()
-        c = ui.Container()
+        c = ui.Container(accent_colour=COLORS["success"])
         if deleted:
             c.add_item(ui.TextDisplay(
                 f"### {DONE} Message Deleted\n"
@@ -1032,7 +1033,7 @@ async def _record_alert(bot, user_id: int, kind: str) -> Optional[dict]:
     """Register the alert as an official notification before sending it.
 
     A leaked-token alert is Moddy speaking as an institution: it deliberately
-    carries **no** attribution or report buttons (docs/NOTIFICATIONS.md), but it
+    carries **no** attribution or report buttons (docs/guides/NOTIFICATIONS.md), but it
     is stored and counted like every other notification, and the delivery is
     marked below once one of the two send paths succeeds.
     """

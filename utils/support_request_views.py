@@ -19,7 +19,7 @@ Every button is a :class:`discord.ui.DynamicItem` whose ``custom_id`` carries
 the request uuid (or nothing at all, for the entry-point button), registered
 through :class:`SupportPersistence`. A request opened today must still be
 answerable after next week's deploy. Modals are one-shot, per the documented
-exclusion in docs/PERSISTENT_VIEWS.md.
+exclusion in docs/guides/PERSISTENT_VIEWS.md.
 """
 
 from __future__ import annotations

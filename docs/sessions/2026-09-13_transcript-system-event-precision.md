@@ -48,7 +48,7 @@ is exactly the premature-generality this codebase avoids.
 ## Files
 
 `services/ticket_transcript_service.py`, `tests/test_ticket_transcripts.py`
-(7 new tests), `docs/TICKETS_INTEGRATION.md`.
+(7 new tests), `docs/integration/TICKETS_INTEGRATION.md`.
 
 ## Verification
 

@@ -5,6 +5,7 @@ a dropdown (select menu), and buttons in every available style.
 """
 
 import re
+from config import COLORS
 
 import discord
 from discord import ui
@@ -52,7 +53,7 @@ class EmojiPreviewView(BaseView):
     def __init__(self, partial_emoji: discord.PartialEmoji, emoji_str: str):
         super().__init__()  # timeout=None
 
-        container = ui.Container()
+        container = ui.Container(accent_colour=COLORS["developer"])
 
         # ── Header ──────────────────────────────────────────────────────────
         container.add_item(ui.TextDisplay(
@@ -125,7 +126,7 @@ class EmojiPreviewView(BaseView):
 
 def _plain(text: str) -> BaseView:
     view = BaseView()
-    c = ui.Container()
+    c = ui.Container(accent_colour=COLORS["developer"])
     c.add_item(ui.TextDisplay(text))
     view.add_item(c)
     return view

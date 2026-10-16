@@ -25,6 +25,7 @@ interaction) and use the Modals V2 ``Label``-wrapping form.
 """
 
 from __future__ import annotations
+from config import COLORS
 
 import logging
 import re
@@ -177,7 +178,7 @@ def build_sanction_dm_view(
                 if proof_message_id else "")
         ts_part = f" — <t:{proof_ts}:S>" if proof_ts else ""
         head = f"**{proof_author or '—'}**{ts_part}"
-        proof = ui.Container(spoiler=True)
+        proof = ui.Container(accent_colour=COLORS["neutral"], spoiler=True)
         if is_long(proof_text):
             fname = f"message_{proof_message_id or 'content'}.txt"
             files.append(make_text_file(proof_text, fname))
@@ -316,7 +317,7 @@ def build_review_view(
                 if proof.get("message_id") else "")
         ts_part = f" — <t:{proof['ts']}:S>" if proof.get("ts") else ""
         head_line = f"**{proof.get('author') or '—'}**{ts_part}"
-        pc = ui.Container(spoiler=True)
+        pc = ui.Container(accent_colour=COLORS["neutral"], spoiler=True)
         pc.add_item(ui.TextDisplay(f"**{t('modules.automod_ai.appeal.review.proof', locale=locale)}:**"))
         if is_long(proof["text"]):
             fname = f"proof_{proof.get('message_id') or 'content'}.txt"
@@ -336,7 +337,7 @@ def build_review_view(
     if context_text:
         fname = f"context_{(technical or {}).get('case_uuid') or appeal_id}.txt"
         files.append(make_text_file(context_text, fname))
-        cc = ui.Container()
+        cc = ui.Container(accent_colour=COLORS["primary"])
         cc.add_item(ui.TextDisplay(f"**{t('modules.automod_ai.appeal.review.context', locale=locale)}:**"))
         cc.add_item(ui.File(f"attachment://{fname}"))
         view.add_item(cc)

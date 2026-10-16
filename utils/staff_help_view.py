@@ -3,11 +3,13 @@ Staff Help View - Interactive help system with category selection
 """
 
 import discord
+from config import COLORS
 from discord.ui import Container, TextDisplay, ActionRow, Select
 from typing import List, Dict, Optional
 import logging
 
 from cogs.error_handler import BaseView
+from utils.errors import NotYours
 from utils.staff_permissions import staff_permissions, StaffRole, CommandType
 from utils.emojis import EMOJIS
 
@@ -141,7 +143,7 @@ class StaffHelpView(BaseView):
         """Build the view with category selector and command list"""
         self.clear_items()
 
-        container = Container()
+        container = Container(accent_colour=COLORS["developer"])
 
         # Title
         container.add_item(TextDisplay(
@@ -210,11 +212,7 @@ class StaffHelpView(BaseView):
     async def on_category_select(self, interaction: discord.Interaction):
         """Handle category selection"""
         if interaction.user.id != self.user_id:
-            await interaction.response.send_message(
-                f"{EMOJIS['error']} This help menu is not for you.",
-                ephemeral=True
-            )
-            return
+            raise NotYours()
 
         value = interaction.data['values'][0]
         self.selected_category = value

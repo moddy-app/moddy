@@ -17,7 +17,7 @@ A complete module, from the detection core to the `/config` panel:
 - `modules/configs/bump_reminder_config.py` — the panel and its Modal V2.
 - `modules.bump_reminder.*` in all five locales (68 keys each).
 - `tests/test_bump_reminder.py` (141 tests) + `tests/data/bump_payloads.json`.
-- `docs/BUMP_REMINDER.md`, plus DATABASE / EMOJIS / CLAUDE.md updates.
+- `docs/features/BUMP_REMINDER.md`, plus DATABASE / EMOJIS / CLAUDE.md updates.
 
 Full suite: **1683 passed**.
 
@@ -150,7 +150,7 @@ That test fails against the old guessed markers, which is how it earns its place
 the config modal. `ui.RadioGroup` is single-choice and exposes `.value`; I wrote
 `.values[0]` by analogy with `CheckboxGroup`. Two things let it ship:
 
-- `docs/MODALS_V2.md` documented `RadioGroup` in three lines and **never said
+- `docs/guides/MODALS_V2.md` documented `RadioGroup` in three lines and **never said
   how to read it**, while every other component there has a "Valeurs" section.
   I was also the repo's first `RadioGroup` user, so there was no precedent to
   copy. That doc now carries the accessor, the option parameters, and a table of
@@ -190,7 +190,7 @@ the better default anyway and one less thing for the reader to look up.
 
 - **D-INVITES is the fragile detector.** Its successful bump is a bare image with
   no text at all; the asset filename (`bump.png`) is the only signal. If they
-  rename it, detection stops. Documented in `docs/BUMP_REMINDER.md`.
+  rename it, detection stops. Documented in `docs/features/BUMP_REMINDER.md`.
 - **The directory ordering is an editorial judgement**, not a measured ranking.
   DISBOARD is verifiably largest; the rest are ordered by bot account age and
   reputation because no comparable published guild counts exist. Reordering is a

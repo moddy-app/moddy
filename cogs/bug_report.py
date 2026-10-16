@@ -10,7 +10,7 @@ reporter as a DM through the notification system, and they can answer back.
 The command is global (usable in servers and in DMs) precisely because a bug is
 often "Moddy did not answer me anywhere".
 
-See docs/SUPPORT_REQUESTS.md.
+See docs/features/SUPPORT_REQUESTS.md.
 """
 
 from __future__ import annotations
@@ -34,7 +34,7 @@ logger = logging.getLogger("moddy.cogs.bug_report")
 
 
 class BugReportModal(BaseModal):
-    """The report itself — Modal V2 (docs/MODALS_V2.md).
+    """The report itself — Modal V2 (docs/guides/MODALS_V2.md).
 
     Three fields is the most a user will fill in when annoyed: what happened,
     how to reproduce it, and where. ``where`` is prefilled from the interaction

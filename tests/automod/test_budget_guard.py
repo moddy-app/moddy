@@ -146,7 +146,7 @@ class TestBudgetIntegration:
         await _fill_to_cap(engine, redis, 1)
         out = await engine.analyze(
             TargetMessage("1", "9", "veiled threat"), guild_id=1, guild_name="g",
-            rules="", author_history=AuthorHistory(), fetch_context=_no_context,
+            author_history=AuthorHistory(), fetch_context=_no_context,
             severity=3, response_language="French", channel_id=100)
         assert out is None            # dropped by the budget guard
         assert calls == []            # nano never called
@@ -159,7 +159,7 @@ class TestBudgetIntegration:
         # An explicit insult hits the regex blocklist → flagrant → still judged.
         out = await engine.analyze(
             TargetMessage("1", "9", "espèce de connard"), guild_id=1,
-            guild_name="g", rules="", author_history=AuthorHistory(),
+            guild_name="g", author_history=AuthorHistory(),
             fetch_context=_no_context, severity=3, response_language="French",
             channel_id=100)
         assert out is not None and out.sanctionnable

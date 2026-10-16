@@ -11,7 +11,7 @@ The two tables that do keep one row per occurrence — ``guild_events`` and
 and they earn it: they are what the growth curve, the retention cohorts and
 the acquisition report are computed from.
 
-See docs/STATS.md.
+See docs/infra/STATS.md.
 """
 
 import json

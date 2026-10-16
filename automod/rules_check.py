@@ -1,11 +1,12 @@
 """
-Server-rules safety check.
+Custom-infraction safety check.
 
-Before a server's moderation rules text is saved, it is run past the AI to make
-sure it is a *legitimate ruleset* and not a prompt-injection payload. The rules
-are later embedded verbatim into nano's system prompt, so a malicious admin (or
-a compromised one) could otherwise try to smuggle instructions that bend the
-moderation engine.
+Before a server-defined infraction (name, description, examples) is saved, it is
+run past the AI to make sure it is a *legitimate definition* and not a
+prompt-injection payload. The text is later embedded in nano's system prompt, so
+a malicious admin could otherwise try to smuggle instructions that bend the
+moderation engine. (The free-text "AI guidance" this check used to serve has
+been removed: custom infractions replace it.)
 
 The untrusted text is nonce-fenced and the model is asked for a strict JSON
 verdict. Like every external call, this goes through ``bot.gateway``.
@@ -22,7 +23,7 @@ from .injection import new_nonce, fence
 
 logger = logging.getLogger("moddy.automod.rules_check")
 
-# Hard cap on rules length (also enforced by the modal).
+# Hard cap on the checked text length.
 MAX_RULES_LENGTH = 3000
 
 
@@ -76,11 +77,6 @@ Réponds UNIQUEMENT par un objet JSON valide avec EXACTEMENT ces clés :
 - raison : courte explication en français (surtout si safe=false)."""
 
 
-async def validate_rules(bot, guild_id: int, text: str) -> Tuple[bool, str]:
-    """Return (safe, reason). Fails closed on AI/gateway errors."""
-    return await _check(bot, guild_id, text, infraction=False)
-
-
 def infraction_text(infraction: dict) -> str:
     """The server-authored text of a custom infraction that reaches nano's prompt
     (name, description, examples) — keywords are matched by code, never prompted."""
@@ -96,7 +92,7 @@ async def validate_custom_infraction(
 ) -> Tuple[bool, str]:
     """Anti prompt-injection check of one custom infraction. Returns (safe, reason).
 
-    Runs the same AI guard as :func:`validate_rules` over name + description +
+    Runs the same AI guard as the safety prompt above over name + description +
     examples (everything the decider will read); fails closed on AI/gateway
     errors. Text Moddy wrote itself (an unmodified template) is trusted and
     skips the AI call.

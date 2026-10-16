@@ -14,7 +14,7 @@ Three responsibilities:
 3. **Server-side commands.** ``/altguard verify`` and ``/altguard unverify``
    let a guild's moderators override the gate for one member.
 
-See docs/ALTGUARD.md.
+See docs/features/ALTGUARD.md.
 """
 
 from __future__ import annotations
@@ -356,4 +356,8 @@ class AltGuard(commands.Cog):
 
 
 async def setup(bot):
-    await bot.add_cog(AltGuard(bot))
+    cog = AltGuard(bot)
+    await bot.add_cog(cog)
+    # /altguard exists only in servers where the module is active.
+    bot.register_module_commands('altguard', [
+        c for c in cog.get_app_commands() if c.name == 'altguard'])

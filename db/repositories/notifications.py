@@ -23,7 +23,7 @@ Four tables, one idea per table:
     Abuse reports filed by recipients, with the review-panel message they were
     posted to and the staff decision.
 
-See docs/NOTIFICATIONS.md.
+See docs/guides/NOTIFICATIONS.md.
 """
 
 from __future__ import annotations

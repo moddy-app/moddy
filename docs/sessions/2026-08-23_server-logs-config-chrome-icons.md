@@ -3,7 +3,7 @@
 ## What was done
 
 Fixed a scope mistake from the icon-set session: "the config panel may only
-use the logs icon set" (§`docs/LOGS.md`) had been applied to **every** icon on
+use the logs icon set" (§`docs/features/LOGS.md`) had been applied to **every** icon on
 the panel, including three that are not specific to logs at all — going back
 a screen, opening Options, clearing the configuration. Those are the same
 kind of control every other `/config` panel has, and they now use the bot's
@@ -45,7 +45,7 @@ general icons like the rest of them:
 | File | Change |
 |---|---|
 | `modules/configs/logs_config.py` | `_ICON_BACK`/`_ICON_OPTIONS`/`_ICON_CLEAR` on the general set; pagination split into `_ICON_PREV`/`_ICON_NEXT` |
-| `docs/LOGS.md` | *Icons* section rewritten: which icons stay generic and why, and a fix for a stale "channels shares its icon" line left over from the previous session |
+| `docs/features/LOGS.md` | *Icons* section rewritten: which icons stay generic and why, and a fix for a stale "channels shares its icon" line left over from the previous session |
 | `tests/test_logs.py` | the panel-source test now checks each icon against the right bucket |
 
 ## Tests

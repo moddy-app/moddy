@@ -56,7 +56,7 @@ now that closing deletes the channel it would have run in.
 `close.done_description` and `messages.close_hint` (no longer "the card
 posted in the channel" — there isn't one anymore).
 
-`docs/TICKETS.md`, `docs/TICKETS_INTEGRATION.md`, `docs/PERSISTENT_VIEWS.md`:
+`docs/features/TICKETS.md`, `docs/integration/TICKETS_INTEGRATION.md`, `docs/guides/PERSISTENT_VIEWS.md`:
 updated the closing/reopening description, the actions table, the
 `close_message` placeholder doc, and the persistence surface table to match.
 

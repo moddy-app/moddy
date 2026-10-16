@@ -35,7 +35,7 @@ channel, a restart loses it, and the customer still has their mail and their
 Stripe receipt. The backend already deduplicates per invoice; the Redis key
 here is a second belt for the case where the same event is replayed.
 
-See docs/SUBSCRIPTION_SCHEMA.md §3.
+See docs/integration/SUBSCRIPTION_SCHEMA.md §3.
 """
 
 from __future__ import annotations

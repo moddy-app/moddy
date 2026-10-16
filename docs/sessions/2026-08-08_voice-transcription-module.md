@@ -62,9 +62,9 @@ Model: `whisper-large-v3-turbo` via Groq (`GROQ_API_KEY`).
 - `locales/{fr,en-US,es-ES,pt-BR,de}.json` — `transcription.*` (cards, errors)
   and `modules.voice_transcription.*` (module + config panel).
 - `locales/commands/*.json` — `Transcribe` context menu name, all 32 locales.
-- `docs/VOICE_TRANSCRIPTION.md` **(new)**, plus `CLAUDE.md`,
-  `docs/API_GATEWAY.md`, `docs/PERSISTENT_VIEWS.md`, `docs/EMOJIS.md`,
-  `docs/RAILWAY.md`.
+- `docs/features/VOICE_TRANSCRIPTION.md` **(new)**, plus `CLAUDE.md`,
+  `docs/infra/API_GATEWAY.md`, `docs/guides/PERSISTENT_VIEWS.md`, `docs/guides/EMOJIS.md`,
+  `docs/infra/RAILWAY.md`.
 
 ### Tests
 

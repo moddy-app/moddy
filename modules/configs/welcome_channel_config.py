@@ -8,14 +8,14 @@ panel is a list + add/manage flow rather than a single form:
   Main panel ──► Add message ──► (channel + message customization) ──► confirm
             └──► Manage message ──► change channel / edit message / pause / remove
 
-Message customization goes through a **Modal V2** (see docs/MODALS_V2.md): the
+Message customization goes through a **Modal V2** (see docs/guides/MODALS_V2.md): the
 full text, the placeholder cheat-sheet and the accent colour in one modal.
 
 Actions are applied immediately (no Save/Cancel batching): each one writes the
 whole message list back through ``module_manager.save_module_config`` so the
 module instance is revalidated and reloaded on every change.
 
-Persistence (see docs/PERSISTENT_VIEWS.md): every interactive component uses a
+Persistence (see docs/guides/PERSISTENT_VIEWS.md): every interactive component uses a
 stable, namespaced ``custom_id`` and the views never time out. Callbacks
 re-derive their context from ``interaction`` + the DB.
 """
@@ -28,7 +28,11 @@ import discord
 from discord import ui
 
 from cogs.error_handler import BaseView, BaseModal
-from modules.configs._common import check_guild_perms, ack, show, say
+from config import COLORS
+from modules.configs._common import (
+    check_guild_perms, ack, show, say, crumb, crumb_segment, state_accent, config_state,
+    module_state_row, open_main_config,
+)
 from modules.welcome_channel import (
     CHANNEL_TYPES,
     DEFAULT_ACCENT_COLOR,
@@ -202,26 +206,31 @@ class WelcomeChannelConfigView(BaseView):
     __persistent__ = True
 
     def __init__(self, bot=None, guild_id: Optional[int] = None, user_id: Optional[int] = None,
-                 locale: str = "en-US", messages: Optional[List[Dict[str, Any]]] = None):
+                 locale: str = "en-US", messages: Optional[List[Dict[str, Any]]] = None,
+                 module_state: Optional[str] = None):
         super().__init__()  # timeout=None
         self.bot = bot
         self.guild_id = guild_id
         self.user_id = user_id
         self.locale = locale
         self.messages = messages or []
+        self.module_state = module_state
 
         self._build_view()
 
     @classmethod
     async def create(cls, bot, guild_id: int, user_id: int, locale: str):
         """Async factory: load the guild's messages before building the panel."""
-        messages = await _load_messages(bot, guild_id)
-        return cls(bot, guild_id, user_id, locale, messages)
+        saved = await bot.module_manager.get_module_config(guild_id, _MODULE_ID)
+        messages = normalize_config(saved)['messages']
+        return cls(bot, guild_id, user_id, locale, messages,
+                   module_state=config_state(saved) if messages else None)
 
     # -- construction ----------------------------------------------------- #
     def _build_view(self):
         self.clear_items()
-        container = ui.Container()
+        container = ui.Container(accent_colour=state_accent(self.module_state))
+        container.add_item(crumb(self.locale, _MODULE_ID))
 
         container.add_item(ui.TextDisplay(
             f"### {WAVING_HAND} {t('modules.welcome_channel.config.title', locale=self.locale)}"
@@ -234,6 +243,13 @@ class WelcomeChannelConfigView(BaseView):
         ))
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+
+        # Every action saves instantly: there is never a pending change to lose.
+        state_items = module_state_row(_MODULE_ID, self.module_state, self.locale)
+        for item in state_items:
+            container.add_item(item)
+        if state_items:
+            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
         if self.messages:
             container.add_item(ui.TextDisplay(
@@ -353,10 +369,7 @@ class WelcomeChannelConfigView(BaseView):
     async def on_back(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
-        from cogs.config import ConfigMainView
-        locale = i18n.get_user_locale(interaction)
-        main_view = ConfigMainView(interaction.client, interaction.guild_id, interaction.user.id, locale)
-        await show(interaction, main_view)
+        await open_main_config(interaction)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         return await check_guild_perms(interaction)
@@ -376,7 +389,7 @@ class AddWelcomeMessageView(BaseView):
     Persistent: yes. The in-progress wizard state (channel picked, message
     typed) is not persisted anywhere — on a restart the shell rebuilds an
     empty form, same accepted loss as AddSubscriptionView (see
-    docs/PERSISTENT_VIEWS.md Appendix B.1.c). Every callback re-checks
+    docs/guides/PERSISTENT_VIEWS.md Appendix B.1.c). Every callback re-checks
     check_guild_perms(interaction), so no auth state depends on self either.
     """
 
@@ -401,7 +414,8 @@ class AddWelcomeMessageView(BaseView):
 
     def _build_view(self):
         self.clear_items()
-        container = ui.Container()
+        container = ui.Container(accent_colour=discord.Colour(COLORS["primary"]))
+        container.add_item(crumb(self.locale, _MODULE_ID, crumb_segment(self.locale, 'add')))
 
         container.add_item(ui.TextDisplay(
             f"### {ADD} {t('modules.welcome_channel.add.title', locale=self.locale)}"
@@ -579,6 +593,7 @@ class ManageWelcomeMessageView(BaseView):
         container = ui.Container(
             accent_colour=discord.Colour(entry_accent_color(self.entry)),
         )
+        container.add_item(crumb(self.locale, _MODULE_ID, crumb_segment(self.locale, 'manage')))
 
         channel = self.bot.get_channel(self.entry['channel_id']) \
             if self.bot and self.entry.get('channel_id') else None

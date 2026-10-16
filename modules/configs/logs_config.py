@@ -27,7 +27,11 @@ import discord
 from discord import ui
 
 from cogs.error_handler import BaseView
-from modules.configs._common import check_guild_perms, ack, show
+from config import COLORS
+from modules.configs._common import (
+    check_guild_perms, ack, show, crumb, crumb_segment, state_accent, config_state,
+    module_state_row, open_main_config,
+)
 from modules.logs import (
     MAX_CHANNELS_PER_CATEGORY, MAX_IGNORED_CHANNELS, MAX_IGNORED_ROLES,
     LogsModule, config_from_raw,
@@ -150,7 +154,10 @@ class LogsConfigView(BaseView):
 
     def _build_view(self):
         self.clear_items()
-        container = ui.Container()
+        # A stored config has at least one category entry; the default one has none.
+        state = config_state(self.module.config) if self.module.categories else None
+        container = ui.Container(accent_colour=state_accent(state))
+        container.add_item(crumb(self.locale, _MODULE_ID))
 
         container.add_item(ui.TextDisplay(
             f"### {NEWSPAPER} {t('modules.logs.config.title', locale=self.locale)}"
@@ -159,6 +166,13 @@ class LogsConfigView(BaseView):
             t('modules.logs.config.description', locale=self.locale)
         ))
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+
+        # Every change saves instantly: no pending edit can be lost by a state click.
+        state_items = module_state_row(_MODULE_ID, state, self.locale)
+        for item in state_items:
+            container.add_item(item)
+        if state_items:
+            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
         container.add_item(ui.TextDisplay(self._summary()))
 
         # Category picker.
@@ -256,7 +270,7 @@ class LogsConfigView(BaseView):
 
         # Rendered on the registration shell too, so its custom_id is known
         # after a restart even when no guild has a configuration yet
-        # (docs/PERSISTENT_VIEWS.md, gotcha 2).
+        # (docs/guides/PERSISTENT_VIEWS.md, gotcha 2).
         if self.bot is None or self.module.bound_categories:
             clear = ui.Button(
                 emoji=discord.PartialEmoji.from_str(_ICON_CLEAR),
@@ -325,10 +339,7 @@ class LogsConfigView(BaseView):
     async def on_back(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
-        from cogs.config import ConfigMainView
-        locale = i18n.get_user_locale(interaction)
-        await show(interaction, ConfigMainView(
-            interaction.client, interaction.guild_id, interaction.user.id, locale))
+        await open_main_config(interaction)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         return await check_guild_perms(interaction)
@@ -406,7 +417,8 @@ class LogsCategoryView(BaseView):
         self.clear_items()
         spec = self.spec
         config = self.module.category(self.category_id)
-        container = ui.Container()
+        container = ui.Container(accent_colour=discord.Colour(COLORS["primary"]))
+        container.add_item(crumb(self.locale, _MODULE_ID, t(spec.name_key, locale=self.locale)))
 
         container.add_item(ui.TextDisplay(
             f"### {spec.emoji} {t(spec.name_key, locale=self.locale)}"
@@ -672,7 +684,8 @@ class LogsOptionsView(BaseView):
 
     def _build_view(self):
         self.clear_items()
-        container = ui.Container()
+        container = ui.Container(accent_colour=discord.Colour(COLORS["primary"]))
+        container.add_item(crumb(self.locale, _MODULE_ID, crumb_segment(self.locale, "options")))
 
         container.add_item(ui.TextDisplay(
             f"### {_ICON_OPTIONS} {t('modules.logs.config.options.title', locale=self.locale)}"

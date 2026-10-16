@@ -110,7 +110,7 @@ is documented in the plan but is a dashboard operation, not a code change.
 `services/precedent_service.py`, `services/feeds_client.py`,
 `serverlogs/listeners/polls.py`, `staff/commands/team/server.py`,
 `staff/commands/mod/altguard/_shared.py`, `automod/engine.py`,
-`automod/constants.py`, `gateway/quota.py`, `docs/RAILWAY.md`, `CLAUDE.md`.
+`automod/constants.py`, `gateway/quota.py`, `docs/infra/RAILWAY.md`, `CLAUDE.md`.
 
 ## Known issues / follow-ups
 
@@ -122,7 +122,7 @@ is documented in the plan but is a dashboard operation, not a code change.
   cost. Worth watching in production before deciding.
 - **`MALLOC_ARENA_MAX=2` is not set by this commit** — it is a Railway env var,
   and probably the single best effort/reward item left. Documented in
-  `docs/RAILWAY.md`.
+  `docs/infra/RAILWAY.md`.
 - **Not touched, and where the money actually is:** consolidating the four
   Postgres instances into one (~27.5% of the bill), the Health service that
   duplicates Better Stack, and the Backend / moddy-feeds services (33% combined),

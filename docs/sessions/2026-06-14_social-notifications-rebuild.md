@@ -29,7 +29,7 @@ over shared Redis (replacing the old YouTube-only WebSub implementation).
   (`PLATFORM_EMOJIS`, `get_platform_emoji`) — currently placeholders.
 - **i18n:** full `modules.social_notifications.*` keys (fr + en); old
   `modules.youtube_notifications.*` removed.
-- **Docs:** `docs/SOCIAL_NOTIFICATIONS.md` + CLAUDE.md structure/index updates.
+- **Docs:** `docs/features/SOCIAL_NOTIFICATIONS.md` + CLAUDE.md structure/index updates.
 
 ## Files removed
 - `cogs/youtube_websub.py`

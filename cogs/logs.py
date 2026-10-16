@@ -3,7 +3,7 @@
 This cog is deliberately dumb: it owns the ``@commands.Cog.listener()``
 methods and forwards each one to a builder in :mod:`serverlogs.listeners`.
 Nothing here decides what a log says, where it goes or what it looks like —
-that lives in ``serverlogs/`` (see ``docs/LOGS.md``).
+that lives in ``serverlogs/`` (see ``docs/features/LOGS.md``).
 
 Keeping the wiring separate is what makes the system editable: adding a
 field to a log means touching one small builder, and adding an event means

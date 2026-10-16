@@ -40,10 +40,29 @@ MODES = (MODE_BUTTON, MODE_AUTO)
 MAX_CHANNELS = 25
 
 
+def migrate_legacy_enabled(config: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """Fold the retired ``enabled`` flag into the generic module state.
+
+    ``enabled: false`` becomes ``state: "paused"`` (unless a state is already
+    stored); the key is dropped so the next save writes the new shape.
+    """
+    config = dict(config or {})
+    legacy = config.pop("enabled", None)
+    if legacy is False and not config.get("state"):
+        config["state"] = "paused"
+    return config
+
+
 class VoiceTranscriptionModule(ModuleBase):
     """Offers a transcription under every voice message of the server."""
 
     MODULE_ID = "voice_transcription"
+
+    @classmethod
+    def stored_state(cls, config_data: Optional[Dict[str, Any]]) -> str:
+        """Generic state, reading a legacy ``enabled: false`` as paused."""
+        return super().stored_state(migrate_legacy_enabled(config_data))
+
     MODULE_NAME = "Voice Transcription"
     MODULE_DESCRIPTION = "Transcrit les messages vocaux en texte"
     MODULE_EMOJI = VOICE_CHAT
@@ -68,20 +87,21 @@ class VoiceTranscriptionModule(ModuleBase):
 
     def get_default_config(self) -> Dict[str, Any]:
         return {
-            "enabled": True,
             "mode": MODE_BUTTON,
             "channel_ids": [],
         }
 
     async def load_config(self, config_data: Dict[str, Any]) -> bool:
         try:
+            config_data = migrate_legacy_enabled(config_data)
             self.config = config_data
             self.mode = config_data.get("mode") or MODE_BUTTON
             if self.mode not in MODES:
                 self.mode = MODE_BUTTON
             raw_channels = config_data.get("channel_ids") or []
             self.channel_ids = [int(c) for c in raw_channels if str(c).isdigit()]
-            self.enabled = bool(config_data.get("enabled", False))
+            # Pause / resume is the generic module state (apply_state).
+            self.enabled = True
             return True
         except Exception as e:
             logger.error(f"Error loading voice_transcription config: {e}")

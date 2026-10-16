@@ -28,7 +28,7 @@ a cached `utils.subscription.is_guild_premium` helper and wired the existing
 - `modules/bot_customization.py` — module, validation, single write path, backend task handler
 - `modules/configs/bot_customization_config.py` — `/config` panel + two Modals V2
 - `tests/test_bot_customization.py` — validation tests (22)
-- `docs/BOT_CUSTOMIZATION.md`, `docs/PREMIUM.md`
+- `docs/features/BOT_CUSTOMIZATION.md`, `docs/guides/PREMIUM.md`
 
 **Modified**
 - `bot.py` — `bot_customization_update` task on the `moddy:tasks` stream + guild premium cache invalidation
@@ -38,7 +38,7 @@ a cached `utils.subscription.is_guild_premium` helper and wired the existing
 - `utils/emojis.py` — `ROCKET`
 - `utils/persistent_views.py` — `BotCustomizationConfigView` registered
 - `locales/{fr,en-US,es-ES,pt-BR,de}.json` — full `modules.bot_customization` block
-- `CLAUDE.md`, `docs/TECHNICAL_LOGS.md`
+- `CLAUDE.md`, `docs/infra/TECHNICAL_LOGS.md`
 
 ## Decisions
 
@@ -82,4 +82,4 @@ a cached `utils.subscription.is_guild_premium` helper and wired the existing
 - The 190-character member-bio limit is assumed from Discord's user-bio limit;
   worth confirming empirically for bot members.
 - Backend still has to implement its half of the Redis contract (task producer +
-  result consumer) — spec delivered separately, mirrored in `docs/BOT_CUSTOMIZATION.md`.
+  result consumer) — spec delivered separately, mirrored in `docs/features/BOT_CUSTOMIZATION.md`.

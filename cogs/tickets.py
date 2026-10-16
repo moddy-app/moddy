@@ -14,7 +14,7 @@ module is enabled**. ``setup()`` hands it to
 ``ModdyBot.register_module_commands``, which publishes it per guild and
 withdraws it the moment the module is switched off.
 
-See docs/TICKETS.md.
+See docs/features/TICKETS.md.
 """
 
 from __future__ import annotations

@@ -5,7 +5,7 @@ This module is the single place where every ``BaseView`` subclass that must
 survive a bot restart is registered. It is called once in
 ``bot.setup_hook`` after all cogs have been loaded.
 
-See ``docs/PERSISTENT_VIEWS.md`` for the full pattern, custom_id convention,
+See ``docs/guides/PERSISTENT_VIEWS.md`` for the full pattern, custom_id convention,
 and a cookbook for adding a new persistent view.
 """
 
@@ -53,16 +53,16 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     )
     from utils.bump_views import BumpReminderPersistence
     from cogs.config import ConfigMainView
+    from modules.configs._common import ModuleStatePersistence
     from modules.configs.server_settings_config import ServerSettingsConfigView
     from modules.configs.adaptive_slowmode_config import AdaptiveSlowmodeConfigView
     from modules.configs.automod_ai_config import (
-        AutomodAIConfigView, AutomodWizardChannelView, AutomodWizardLevelView,
-        AutomodWizardModeView, AutomodConfigPersistence,
+        AutomodAIConfigView, AutomodDeleteView, AutomodWizardChannelView,
+        AutomodWizardLevelView, AutomodWizardModeView, AutomodConfigPersistence,
     )
     from modules.configs.automod_ai_sanctions_config import AutomodSanctionsView
     from modules.configs.automod_ai_advanced_config import (
-        AutomodMonitoringView, AutomodIndicationsView, AutomodExemptionsView,
-        AutomodAdvancedView,
+        AutomodMonitoringView, AutomodExemptionsView, AutomodAdvancedView,
     )
     from staff.commands.team.help import HelpView
     from staff.commands.dev.serverlist import ServerListView
@@ -72,6 +72,7 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     from utils.appeal_views import AppealPersistence
     from utils.global_sanction_views import GlobalSanctionPersistence
     from utils.automod_shadow_views import ShadowAnnotationPersistence
+    from utils.automod_approval_views import AutomodApprovalPersistence
     from utils.automod_label_views import LabelPersistence
     from utils.transcription_views import TranscriptionPersistence
     from utils.brocoli_views import BrocoliDecisionPersistence
@@ -115,6 +116,7 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         GlobalSanctionPersistence,
         # Group 5 — automod shadow-mode annotation buttons (dynamic items)
         ShadowAnnotationPersistence,
+        AutomodApprovalPersistence,
         # Group 5bis — automod Moddy team labeling queue (dynamic items)
         LabelPersistence,
         # Group 6 — /preferences (owner-only dynamic items)
@@ -153,9 +155,12 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         # see utils/guild_language.py)
         ConfigMainView,
         ServerSettingsConfigView,
+        # Group 11b — play/pause button shared by every module's /config
+        # home screen (dynamic item carrying module id + target state)
+        ModuleStatePersistence,
         # Group 12 — /config adaptive slowmode panel (guild permission +
         # channel-scoped dynamic items; AdaptiveSlowmodeChannelConfigView
-        # is deliberately excluded, see docs/PERSISTENT_VIEWS.md Step 11)
+        # is deliberately excluded, see docs/guides/PERSISTENT_VIEWS.md Step 11)
         AdaptiveSlowmodeConfigView,
         # Group 12b — /config voice transcription panel (guild permission auth)
         VoiceTranscriptionConfigView,
@@ -183,14 +188,14 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         # (guild permission auth) plus the category panel's dynamic items,
         # which carry the category and page in their custom_id.
         # LogsCategoryView itself is deliberately not registered — see its
-        # docstring and docs/PERSISTENT_VIEWS.md "Deliberate exclusions".
+        # docstring and docs/guides/PERSISTENT_VIEWS.md "Deliberate exclusions".
         LogsConfigView,
         LogsOptionsView,
         LogsPersistence,
         # Group 12g — Tickets. The /config root panel is a normal registered
         # view (guild permission auth); the panel/category/permission screens
         # are built from dynamic items carrying the entity ids, registered by
-        # TicketsConfigPersistence — see docs/PERSISTENT_VIEWS.md "Deliberate
+        # TicketsConfigPersistence — see docs/guides/PERSISTENT_VIEWS.md "Deliberate
         # exclusions". The ticket-channel views need no id at all: the channel
         # a click comes from IS the ticket.
         TicketsConfigView,
@@ -226,17 +231,17 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         # announcement's message id; public — clicking only shows the stored
         # translation of a message the reader can already see).
         AnnouncementTranslationView,
-        # Group 13 — /config automod AI panel (guild permission auth). Every
+        # Group 13 — /config automod panel (guild permission auth). Every
         # screen has static custom_ids and is a registered shell; the
         # infraction type screen and the precedents browser are dynamic items
         # registered by AutomodConfigPersistence (their wrappers are not).
         AutomodAIConfigView,
+        AutomodDeleteView,
         AutomodWizardChannelView,
         AutomodWizardLevelView,
         AutomodWizardModeView,
         AutomodSanctionsView,
         AutomodMonitoringView,
-        AutomodIndicationsView,
         AutomodExemptionsView,
         AutomodAdvancedView,
         AutomodConfigPersistence,
@@ -247,7 +252,7 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         ServerListView,
         # Group 15 — /manage staff panel (owner-scoped dynamic items).
         # HIGH PRIVILEGE — grants/revokes staff roles. See
-        # docs/PERSISTENT_VIEWS.md Step 15: requires human review before merge.
+        # docs/guides/PERSISTENT_VIEWS.md Step 15: requires human review before merge.
         StaffManagerPanel,
         # Group 16 — /team access: the staffer's permission picker
         # (requester-scoped dynamic items) and the request card an

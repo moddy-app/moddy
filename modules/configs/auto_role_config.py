@@ -11,7 +11,10 @@ import logging
 from utils.i18n import i18n, t
 from cogs.error_handler import BaseView
 from utils.emojis import MANAGE_USER, BACK, SAVE, UNDONE, DELETE
-from modules.configs._common import check_guild_perms, ack, show
+from modules.configs._common import (
+    check_guild_perms, ack, show, state_accent, config_state, module_state_row,
+    open_main_config, crumb,
+)
 
 logger = logging.getLogger('moddy.modules.auto_role_config')
 
@@ -70,7 +73,10 @@ class AutoRoleConfigView(BaseView):
         """Construit l'interface de configuration"""
         self.clear_items()
 
-        container = ui.Container()
+        # Accent follows the module state (gray when paused).
+        state = config_state(self.current_config) if self.has_existing_config else None
+        container = ui.Container(accent_colour=state_accent(state))
+        container.add_item(crumb(self.locale, 'auto_role'))
 
         # Header
         container.add_item(ui.TextDisplay(
@@ -81,6 +87,13 @@ class AutoRoleConfigView(BaseView):
         ))
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+
+        # Play / pause (only once a config is saved)
+        state_items = [] if self.has_changes else module_state_row('auto_role', state, self.locale)
+        for item in state_items:
+            container.add_item(item)
+        if state_items:
+            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
         # Member roles selector
         container.add_item(ui.TextDisplay(
@@ -321,10 +334,7 @@ class AutoRoleConfigView(BaseView):
         if not await check_guild_perms(interaction):
             return
 
-        from cogs.config import ConfigMainView
-        locale = i18n.get_user_locale(interaction)
-        main_view = ConfigMainView(interaction.client, interaction.guild_id, interaction.user.id, locale)
-        await show(interaction, main_view)
+        await open_main_config(interaction)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         return await check_guild_perms(interaction)

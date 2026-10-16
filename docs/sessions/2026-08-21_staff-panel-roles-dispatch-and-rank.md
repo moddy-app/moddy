@@ -36,8 +36,8 @@ to the new command (`setstaff` still opens the panel).
 - `staff/commands/manage/rank.py` — **new**
 - `locales/{fr,en-US,es-ES,pt-BR,de}.json` — `staff.manage.rank.*`
 - `tests/test_persistent_views.py` — `test_dynamic_item_templates_do_not_overlap`
-- `docs/PERSISTENT_VIEWS.md` — non-overlapping template rule
-- `docs/STAFF_SYSTEM.md` — `/manage rank` row + implementation files
+- `docs/guides/PERSISTENT_VIEWS.md` — non-overlapping template rule
+- `docs/guides/STAFF_SYSTEM.md` — `/manage rank` row + implementation files
 
 ## Decisions
 
@@ -45,10 +45,10 @@ to the new command (`setstaff` still opens the panel).
   replacing the set; replacing is what the panel is for, and `m.unrank`
   already covers full removal.
 - No `locales/commands/*.json` entries: staff commands are deliberately not
-  localized (see docs/COMMAND_LOCALIZATION.md).
+  localized (see docs/guides/COMMAND_LOCALIZATION.md).
 
 ## Follow-ups
 
 - The panel still applies role/permission changes immediately (Save is only a
   confirmation) — unchanged by this session, still flagged in
-  docs/PERSISTENT_VIEWS.md Step 15.
+  docs/guides/PERSISTENT_VIEWS.md Step 15.

@@ -11,7 +11,7 @@ Volume is counted from transcripts, not from the ``tickets`` table: a closed
 ticket whose channel was tidied away still counts towards the work its staff
 did, and ``tickets`` rows do not survive that.
 
-See docs/TICKETS.md.
+See docs/features/TICKETS.md.
 """
 
 from __future__ import annotations

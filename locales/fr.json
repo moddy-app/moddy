@@ -857,6 +857,80 @@
     }
   },
   "errors": {
+    "expected": {
+      "generic": {
+        "title": "Action impossible",
+        "description": "Ça n'a pas fonctionné. Vérifiez votre action et réessayez."
+      },
+      "missing_permissions": {
+        "title": "Permission manquante",
+        "description": "Il vous faut {permissions} pour faire ça. Demandez à un admin si besoin."
+      },
+      "bot_missing_permissions": {
+        "title": "Moddy a besoin de permissions",
+        "description": "Il manque {permissions} à Moddy ici. Accordez-la, puis réessayez."
+      },
+      "invalid_input": {
+        "title": "Saisie invalide",
+        "description": "Cette valeur n'est pas valide. Vérifiez-la et réessayez."
+      },
+      "invalid_input_field": {
+        "title": "Saisie invalide",
+        "description": "{field} n'est pas valide. Vérifiez-le et réessayez."
+      },
+      "not_found": {
+        "title": "Introuvable",
+        "description": "Je n'ai pas trouvé ça. Vérifiez et réessayez."
+      },
+      "not_found_named": {
+        "title": "Introuvable",
+        "description": "Je n'ai pas trouvé {what}. Vérifiez et réessayez."
+      },
+      "unresolved_argument": {
+        "title": "Introuvable",
+        "description": "`{value}` ne correspond à rien que je puisse voir. Mentionnez-le ou utilisez son ID."
+      },
+      "cooldown": {
+        "title": "Doucement",
+        "description": "Vous pourrez réutiliser ceci dans `{retry}`."
+      },
+      "module_disabled": {
+        "title": "Fonction inactive",
+        "description": "Cette fonction n'est pas active sur ce serveur. Un admin peut l'activer dans `/config`."
+      },
+      "module_disabled_named": {
+        "title": "Fonction inactive",
+        "description": "{module} n'est pas actif sur ce serveur. Un admin peut l'activer dans `/config`."
+      },
+      "premium_required": {
+        "title": "Fonction Premium",
+        "description": "Cela nécessite Moddy Premium. Voyez les offres avec `/subscription`."
+      },
+      "premium_required_named": {
+        "title": "Fonction Premium",
+        "description": "{feature} nécessite Moddy Premium. Voyez les offres avec `/subscription`."
+      },
+      "not_allowed": {
+        "title": "Non autorisé",
+        "description": "Vous ne pouvez pas faire ça ici. Demandez à un admin si besoin."
+      },
+      "not_yours": {
+        "title": "Pas votre message",
+        "description": "Ces contrôles appartiennent à quelqu'un d'autre. Lancez la commande vous-même."
+      },
+      "guild_only": {
+        "title": "Serveur uniquement",
+        "description": "Cela ne marche que dans un serveur. Lancez-le sur un serveur avec Moddy."
+      },
+      "unavailable": {
+        "title": "Indisponible",
+        "description": "Ce n'est pas disponible pour le moment. Réessayez dans un instant."
+      },
+      "missing_argument": {
+        "title": "Argument manquant",
+        "description": "{argument} est requis. Ajoutez-le et réessayez."
+      }
+    },
     "generic": {
       "title": "Une erreur est survenue",
       "description": "**Code d'erreur :** `{error_code}`\n\nCette erreur a été enregistrée et sera analysée.\nVous pouvez fournir ce code au développeur si nécessaire."
@@ -985,7 +1059,42 @@
         "guild_missing_perms": "<:error:1519790252594827264> Moddy n'a pas toutes les permissions nécessaires sur ce serveur :\n{permissions}"
       },
       "current_value": "Valeur actuelle :",
-      "not_configured": "Non configuré"
+      "not_configured": "Non configuré",
+      "state": {
+        "label": "État",
+        "active": "Actif",
+        "paused": "En pause",
+        "simulation": "Simulation",
+        "not_configured": "Non configuré",
+        "description": {
+          "active": "Le module est actif.",
+          "paused": "Le module est en pause : il n'agit plus et ses commandes sont masquées. Votre configuration est conservée.",
+          "simulation": "Le module observe et simule ses actions sans rien appliquer."
+        },
+        "buttons": {
+          "pause": "Mettre en pause",
+          "resume": "Reprendre",
+          "activate": "Activer",
+          "simulation": "Simulation"
+        },
+        "changed": {
+          "active": "Module repris.",
+          "paused": "Module mis en pause.",
+          "simulation": "Module en simulation."
+        },
+        "errors": {
+          "not_configured": "Ce module n'a pas encore de configuration enregistrée.",
+          "failed": "Impossible de changer l'état du module. Réessayez."
+        }
+      },
+      "breadcrumb": {
+        "root": "Configuration",
+        "add": "Ajouter",
+        "manage": "Gérer",
+        "settings": "Paramètres",
+        "permissions": "Permissions",
+        "options": "Options"
+      }
     },
     "welcome_channel": {
       "name": "Welcome Channel",
@@ -1625,6 +1734,7 @@
       }
     },
     "automod_ai": {
+      "name": "Automod",
       "description": "Modération automatique des messages problématiques (IA)",
       "action": {
         "warn": "Avertissement",
@@ -1644,7 +1754,33 @@
         "appeal_hint": "L'utilisateur peut contester cette décision auprès de l'équipe de Moddy ou de votre équipe de modération.",
         "detection_only": "Détection seule",
         "deleted": "Supprimé",
-        "message_id": "Message ID"
+        "message_id": "Message ID",
+        "planned": "Actions prévues",
+        "not_applied": "Non appliqué"
+      },
+      "failure": {
+        "case": "Dossier non enregistré",
+        "reason_hierarchy": "rôle trop élevé pour Moddy",
+        "reason_permission": "permission manquante",
+        "reason_absent": "membre absent du serveur",
+        "reason_discord": "erreur Discord",
+        "reason_unverified": "non confirmé par Discord",
+        "reason_case": "échec de l'enregistrement"
+      },
+      "approval": {
+        "title": "Automod · validation requise",
+        "pending": "En attente de validation d'un modérateur",
+        "hint": "Aucune sanction n'est appliquée tant qu'un modérateur n'a pas validé. Le message a déjà été supprimé.",
+        "approved": "Sanction validée",
+        "rejected": "Sanction refusée, rien n'a été appliqué",
+        "expired": "Délai dépassé, rien n'a été appliqué",
+        "button_ok": "Valider",
+        "button_no": "Refuser",
+        "error_title": "Action impossible",
+        "gone": "Cette demande est introuvable.",
+        "already_handled": "Cette demande a déjà été traitée.",
+        "no_perms": "Tu n'as pas la permission de modération nécessaire pour traiter cette sanction.",
+        "unavailable": "Automod est indisponible sur ce serveur pour le moment."
       },
       "dm": {
         "title": "Sanction automatique",
@@ -1800,10 +1936,6 @@
           "name": "Arnaques",
           "desc": "Faux concours, Nitro gratuit, casinos crypto, liens piégés"
         },
-        "violation_indications": {
-          "name": "Règles du serveur",
-          "desc": "Non-respect des indications propres à ton serveur"
-        },
         "contenu_nsfw": {
           "name": "Images explicites",
           "desc": "Images pornographiques ou sexuellement explicites"
@@ -1953,45 +2085,31 @@
         "fixed_body": "{user} ({user_id}) a corrigé son profil ({kind}) : le timeout est levé."
       },
       "panel": {
-        "status": {
-          "active": "Actif",
-          "active_hint": "Moddy modère ton serveur en temps réel.",
-          "simulation": "Simulation",
-          "simulation_hint": "Moddy montre ce qu'il ferait, sans sanctionner personne.",
-          "off": "Désactivé",
-          "off_hint": "Moddy ne modère rien pour l'instant.",
-          "setup": "À configurer"
-        },
         "home": {
-          "title": "Automod IA",
+          "title": "Automod",
           "intro": "Moddy lit les messages, les images et les profils, et sanctionne tout seul ce qui enfreint tes règles.",
           "setup_channel": "choisis d'abord le salon où Moddy publie ses alertes.",
           "setup_monitoring": "choisis ce que Moddy doit surveiller.",
           "channel_title": "Salon d'alertes",
           "channel_hint": "Moddy y publie ce qu'il détecte et ce qu'il fait. Choisis un salon réservé à ton équipe.",
           "channel_placeholder": "Choisir le salon d'alertes…",
-          "turn_on": "Activer",
-          "turn_off": "Désactiver",
-          "go_live": "Passer en mode réel",
           "choose_level": "Choisir un niveau de protection",
-          "nav_placeholder": "Régler plus finement…"
+          "nav_placeholder": "Régler plus finement…",
+          "setup_title": "Configuration requise"
         },
         "nav": {
           "monitoring": "Ce qui est surveillé",
           "monitoring_desc": "Messages, images, profils des membres",
           "sanctions": "Sanctions",
           "sanctions_desc": "Ce que Moddy fait pour chaque type d'infraction",
-          "indications": "Consignes pour l'IA",
-          "indications_desc": "Explique à l'IA les règles propres à ton serveur",
           "exemptions": "Exemptions",
           "exemptions_desc": "Rôles et salons jamais analysés",
           "advanced": "Avancé",
-          "advanced_desc": "Simulation, sanction maximale, sensibilité…"
+          "advanced_desc": "Sanction maximale, sensibilité, précédents"
         },
         "summary": {
-          "messages_on": "**Messages** : insultes, menaces, harcèlement, haine, arnaques… → {sanctions}",
+          "messages_on": "**Messages** : insultes, menaces, harcèlement, haine, arnaques…",
           "messages_off": "**Messages** : non surveillés",
-          "sanctions_default": "sanctions par défaut de Moddy",
           "sanctions_custom": "{n} sanction(s) personnalisée(s)",
           "images_on": "**Images** : {what}",
           "images_off": "**Images** : non surveillées",
@@ -2007,7 +2125,7 @@
           "custom_none": "**Infractions du serveur** : aucune"
         },
         "wizard": {
-          "title": "Configurer l'Automod IA",
+          "title": "Configurer l'Automod",
           "step": "Étape {n} sur {total}",
           "recommended": "recommandé",
           "choose": "Choisir",
@@ -2023,7 +2141,9 @@
           "mode_sim_button": "Simulation",
           "mode_live": "Activer maintenant",
           "mode_live_desc": "Moddy sanctionne tout de suite, pour de vrai.",
-          "mode_live_button": "Activer"
+          "mode_live_button": "Activer",
+          "skip": "Passer",
+          "skip_hint": "Passer démarre avec le niveau Équilibré en mode simulation : Moddy montre ce qu'il ferait sans sanctionner personne. Tu pourras tout modifier ensuite."
         },
         "preset": {
           "light": "Léger",
@@ -2053,12 +2173,11 @@
           "prof_banner": "Bannières",
           "prof_banner_desc": "Bannières explicites ou choquantes",
           "prof_pseudo": "Pseudos",
-          "prof_pseudo_desc": "Pseudos et noms d'affichage injurieux ou haineux",
-          "footer": "Les changements sont enregistrés tout de suite."
+          "prof_pseudo_desc": "Pseudos et noms d'affichage injurieux ou haineux"
         },
         "list": {
           "title": "Sanctions",
-          "intro": "Pour chaque type d'infraction, choisis ce que Moddy fait. Par défaut, il adapte la sanction à la gravité et aux récidives. Choisis un type pour le régler.",
+          "intro": "Ce que Moddy fait pour chaque type d'infraction. Choisis-en un pour modifier ses actions.",
           "pick_placeholder": "Choisir un type à régler…",
           "add_placeholder": "+ Ajouter une infraction",
           "add_scratch": "Créer de zéro",
@@ -2073,40 +2192,9 @@
           "perso": "Propres à ce serveur"
         },
         "sanction": {
-          "default": "Sanction par défaut de Moddy",
-          "custom": "Personnalisée",
-          "always": "Toujours : {sanction}",
-          "no_escalation": "sans escalade",
           "disabled": "Désactivée : message supprimé, sans sanction",
-          "disabled_profile": "Désactivée : rien ne se passe"
-        },
-        "gravity": {
-          "basse": "Faible",
-          "moyenne": "Moyenne",
-          "haute": "Élevée",
-          "critique": "Critique"
-        },
-        "gravity_label": {
-          "basse": "Gravité faible",
-          "moyenne": "Gravité moyenne",
-          "haute": "Gravité élevée",
-          "critique": "Gravité critique"
-        },
-        "gravity_desc": {
-          "basse": "Limite ou léger : un écart sans grande conséquence.",
-          "moyenne": "Clair : l'infraction ne fait pas de doute.",
-          "haute": "Sérieux : propos ou contenu très déplacé.",
-          "critique": "Extrême : le pire, sans équivoque."
-        },
-        "cran": {
-          "0": "Suppression seule",
-          "1": "Avertissement",
-          "2": "Mute 2 h",
-          "3": "Mute 12 h",
-          "4": "Mute 48 h",
-          "5": "Mute 7 jours",
-          "6": "Mute 28 jours",
-          "7": "Bannissement"
+          "disabled_profile": "Désactivée : rien ne se passe",
+          "approval": "validation requise"
         },
         "profile_action": {
           "hold": "Mute jusqu'à correction du profil",
@@ -2119,14 +2207,11 @@
           "bareme_desc": "Comme pour un message : la sanction dépend de la gravité."
         },
         "type": {
-          "sanction": "Sanction",
-          "default_hint": "Moddy adapte la sanction à la gravité, et la durcit pour les récidivistes.",
           "not_monitored": "Cette détection est désactivée pour l'instant : active-la dans « Ce qui est surveillé ».",
           "off": "Moddy supprime toujours le message, mais ne sanctionne pas.",
           "off_profile": "Moddy ignore ce contrôle.",
           "enabled": "Activée",
           "disabled": "Désactivée",
-          "customise": "Personnaliser",
           "reset": "Remettre par défaut",
           "profile_action": "Que faire en cas de problème ?",
           "profile_action_hint": "Choisis la réaction de Moddy pour ce contrôle de profil.",
@@ -2135,12 +2220,19 @@
           "cancel": "Annuler",
           "delete_title": "Supprimer cette infraction ?",
           "delete_body": "« {name} » ne sera plus détectée et son réglage de sanction sera supprimé aussi. Les cas déjà enregistrés sont conservés.",
-          "delete_confirm": "Oui, supprimer"
-        },
-        "customise": {
-          "modal_title": "Sanctions : {name}",
-          "escalate": "Durcir en cas de récidive",
-          "escalate_desc": "Un membre qui recommence reçoit une sanction plus lourde que celles choisies ci-dessus."
+          "delete_confirm": "Oui, supprimer",
+          "actions": "Actions",
+          "actions_hint": "Tout ce qui est choisi ici est fait en même temps.",
+          "conflicts": "Un bannissement ou une expulsion remplace l'avertissement et l'exclusion, et un bannissement remplace une expulsion.",
+          "dropped": "{winner} remplace : {dropped} retiré(s).",
+          "timeout_title": "Durée de l'exclusion",
+          "timeout_button": "Changer la durée",
+          "approval": "Validation d'un modérateur",
+          "approval_hint": "Avec validation, un modérateur confirme dans le salon d'alertes avant que Moddy ne sanctionne. Le message est quand même supprimé tout de suite.",
+          "escalate": "Aggraver en cas de récidive",
+          "note_auto": "Affiché pour une première infraction de gravité moyenne : Moddy l'adapte à la gravité et l'alourdit pour les récidivistes.",
+          "note_custom": "Ces actions s'appliquent à toutes les gravités.",
+          "pending_hint": "Non enregistré : enregistre tes modifications depuis l'écran Sanctions."
         },
         "infraction": {
           "modal_title_new": "Nouvelle infraction",
@@ -2164,24 +2256,9 @@
         },
         "errors": {
           "title": "Modification refusée",
-          "save_failed": "Rien n'a été modifié.\n-# Raison : {error}"
-        },
-        "indications": {
-          "title": "Consignes pour l'IA",
-          "intro": "Écris en langage simple ce qui est permis ou interdit chez toi (ex. : « pas de pub, spoilers seulement dans #spoilers »). L'IA en tient compte quand elle juge un message.",
-          "current": "Consignes actuelles",
-          "empty": "Aucune consigne : l'IA applique une modération raisonnable par défaut.",
-          "edit": "Modifier les consignes",
-          "clear": "Effacer",
-          "modal_title": "Consignes pour l'IA",
-          "modal_label": "Consignes",
-          "modal_desc": "Ce que l'IA doit surveiller ou tolérer chez toi (3000 caractères max).",
-          "modal_placeholder": "Ex. : pas d'insultes ni de pub, l'humour est toléré…",
-          "saved": "Consignes vérifiées et enregistrées.",
-          "cleared": "Consignes effacées.",
-          "error_unsafe": "Consignes refusées : elles ressemblent à une tentative de manipulation de l'IA.\n-# Raison : {reason}",
-          "error_too_long": "Les consignes sont trop longues (3000 caractères max).",
-          "error_unavailable": "Impossible de vérifier les consignes pour le moment (service IA indisponible). Réessaie plus tard."
+          "save_failed": "Rien n'a été modifié.\n-# Raison : {error}",
+          "timeout_invalid": "« {value} » n'est pas une durée que je comprends.\n-# Exemples : {examples}",
+          "timeout_range": "La durée doit être comprise entre 1 minute et 28 jours."
         },
         "exemptions": {
           "title": "Exemptions",
@@ -2196,9 +2273,6 @@
         "advanced": {
           "title": "Avancé",
           "intro": "Des réglages fins. Les valeurs par défaut conviennent à la plupart des serveurs.",
-          "simulation_title": "Mode simulation",
-          "simulation_hint": "Moddy montre ce qu'il ferait sans rien sanctionner. Recommandé les premiers jours.",
-          "simulation": "Simulation",
           "max_title": "Sanction maximale",
           "max_hint": "La sanction la plus lourde que Moddy peut appliquer seul.",
           "max_warn": "Avertissement au maximum",
@@ -2219,12 +2293,7 @@
           "precedents_title": "Précédents appris",
           "precedents_hint": "Moddy apprend la culture de ton serveur à partir de tes décisions (appels, annotations en simulation).",
           "precedents_count": "{n} précédent(s) appris",
-          "precedents": "Voir les précédents",
-          "delete": "Supprimer la configuration",
-          "delete_title": "Supprimer toute la configuration ?",
-          "delete_body": "L'Automod IA s'arrête et tous ses réglages (sanctions, infractions, consignes, exemptions) sont effacés. Les cas déjà enregistrés sont conservés.",
-          "delete_confirm": "Oui, tout supprimer",
-          "cancel": "Annuler"
+          "precedents": "Voir les précédents"
         },
         "precedents": {
           "title": "Précédents appris",
@@ -2239,6 +2308,32 @@
           "delete_placeholder": "Supprimer un précédent erroné…",
           "delete_option": "Supprimer le précédent {n}",
           "deleted": "Précédent supprimé."
+        },
+        "pending": {
+          "notice": "Tu as des modifications non enregistrées. Enregistre-les ou annule-les avant de quitter."
+        },
+        "act": {
+          "delete": "Supprimer le message",
+          "delete_desc": "Retire le message fautif",
+          "warn": "Avertir",
+          "warn_desc": "Donne un avertissement au membre",
+          "timeout": "Exclusion temporaire",
+          "timeout_desc": "Rend le membre muet pour une durée donnée",
+          "kick": "Expulser",
+          "kick_desc": "Retire le membre, qui peut revenir",
+          "ban": "Bannir",
+          "ban_desc": "Bannit le membre du serveur"
+        },
+        "timeout_modal": {
+          "title": "Durée de l'exclusion",
+          "label": "Durée",
+          "desc": "ex. 16h53, 1j 2h ou 90min (de 1 minute à 28 jours)."
+        },
+        "delete": {
+          "title": "Supprimer la configuration ?",
+          "body": "L'Automod s'arrête et tous ses réglages (surveillance, sanctions, infractions personnalisées, exemptions) sont effacés. Les cas déjà enregistrés sont conservés.",
+          "confirm": "Oui, tout supprimer",
+          "cancel": "Annuler"
         }
       }
     },
@@ -4741,7 +4836,7 @@
       },
       "guild": {
         "title": "Serveur limité",
-        "description": "Ce serveur fait l'objet d'une limitation : le premium est désactivé, l'automod IA est désactivé et aucun nouveau module ne peut être configuré."
+        "description": "Ce serveur fait l'objet d'une limitation : le premium est désactivé, l'automod est désactivé et aucun nouveau module ne peut être configuré."
       },
       "banner_title": "Limitation en cours",
       "no_new_modules": "Les modules déjà configurés restent modifiables, mais aucun nouveau module ne peut être mis en place tant que la limitation est active.",
@@ -4760,7 +4855,7 @@
       "appeal": "Si tu penses qu'il s'agit d'une erreur, tu peux faire appel sur notre [**serveur support**]({url}).",
       "implies_title": "Ce que ça implique pour toi :",
       "implies_warn": "Cet avertissement reste à ton dossier et compte en cas de récidive",
-      "implies_limited": "Le premium est désactivé, l'automod IA est coupé et tu ne peux plus configurer de nouveaux modules",
+      "implies_limited": "Le premium est désactivé, l'automod est coupé et tu ne peux plus configurer de nouveaux modules",
       "implies_suspended": "Tu n'as plus accès à aucun service de Moddy",
       "implies_subscription": "Ton abonnement sera résilié sans remboursement",
       "implies_subscription_now": "Ton abonnement est résilié sans remboursement",
@@ -4868,7 +4963,7 @@
       "moddy": "Moddy",
       "welcome_dm": "Message de bienvenue",
       "moderation": "Modération",
-      "automod_ai": "Automod IA",
+      "automod_ai": "Automod",
       "appeals": "Appels",
       "altguard": "AltGuard",
       "tickets": "Tickets",

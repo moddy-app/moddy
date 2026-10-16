@@ -5,6 +5,7 @@ tracking channel so the code can be updated in bulk afterwards.
 """
 
 import re
+from config import COLORS
 
 import discord
 from discord import ui
@@ -38,7 +39,7 @@ async def _find_app_emoji(bot, name, emoji_id):
 
 def _plain(text: str) -> BaseView:
     view = BaseView()
-    c = ui.Container()
+    c = ui.Container(accent_colour=COLORS["developer"])
     c.add_item(ui.TextDisplay(text))
     view.add_item(c)
     return view

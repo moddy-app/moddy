@@ -35,7 +35,7 @@ the failure was invisible.
   `raw_role_mentions` against what was asked, logging anything Discord dropped.
 - `tests/test_bump_reminder.py` — covers the helper (mentionable vs not, and the
   permission overriding the flag). 170 pass.
-- `docs/BUMP_REMINDER.md` — new section on the render/notify distinction and how
+- `docs/features/BUMP_REMINDER.md` — new section on the render/notify distinction and how
   to read the two log lines.
 
 ## Decisions

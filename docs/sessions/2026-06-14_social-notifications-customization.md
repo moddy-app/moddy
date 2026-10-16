@@ -54,7 +54,7 @@ targeted improvements only.
   `db/repositories/social.py`, `cogs/social_notifications.py`,
   `modules/social_notifications.py`, `modules/configs/social_notifications_config.py`,
   `utils/persistent_views.py`, `locales/{en-US,fr}.json`,
-  `CLAUDE.md` (always-persist rule), `docs/SOCIAL_NOTIFICATIONS.md`.
+  `CLAUDE.md` (always-persist rule), `docs/features/SOCIAL_NOTIFICATIONS.md`.
 
 ## ⚠️ Backend integration (schema change to mirror)
 `social_subscriptions` gained `embed_color`, `show_avatar`, `show_media`. The
@@ -78,7 +78,7 @@ caption). Backend Option A (`moddy:tasks`) passthrough fields added:
 
 ## Known follow-ups
 - Could not runtime-test the discord UI here (discord.py not installed in the
-  session env); Modals V2 / Checkbox usage follows `docs/MODALS_V2.md`.
+  session env); Modals V2 / Checkbox usage follows `docs/guides/MODALS_V2.md`.
 - Restart-persistence covers the **main panel** (the durable entry point). The
   Add/Manage sub-panels are `timeout=None` (never expire during a run) and are
   always re-entered from the main panel; fully persisting their mid-flow state

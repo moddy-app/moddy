@@ -22,7 +22,7 @@ ticket (not optional); when they come back, put them back into it.
 ## Decisions worth recording
 
 **DiscordChatExporter was asked for, and not used.** It is a .NET CLI. The repo
-has no Dockerfile (Nixpacks, `python main.py`), and `docs/RAILWAY.md` is
+has no Dockerfile (Nixpacks, `python main.py`), and `docs/infra/RAILWAY.md` is
 explicit that resident memory is ~93% of the bill. Using it would have meant a
 custom image with a second language runtime, a subprocess per closure, the bot
 token in argv, and a full REST re-fetch of every history — to produce HTML we
@@ -124,7 +124,7 @@ an escalation that happened meanwhile is honoured.
 `services/data/ticket_closure_references.json`, `utils/compression.py`,
 `utils/ticket_rating_views.py`, `utils/ticket_stats_views.py`,
 `tests/test_ticket_transcripts.py`, `tests/test_ticket_ratings.py`,
-`docs/TICKETS_INTEGRATION.md`.
+`docs/integration/TICKETS_INTEGRATION.md`.
 
 **Modified** — `db/base.py` (3 tables + indexes + mixins),
 `db/repositories/tickets.py` (two queries), `modules/tickets.py` (settings,
@@ -134,8 +134,8 @@ membership), `utils/ticket_views.py` (transcript links, suggestion card,
 owner-left card, the shared close tail), `cogs/tickets.py` (`/ticket stats`,
 message + membership listeners, retention loop), `bot.py`,
 `utils/persistent_views.py`, `stats/registry.py`, `requirements.txt`,
-the 5 `locales/*.json`, the 32 `locales/commands/*.json`, `docs/TICKETS.md`,
-`docs/PERSISTENT_VIEWS.md`, `docs/RAILWAY.md`, `CLAUDE.md`,
+the 5 `locales/*.json`, the 32 `locales/commands/*.json`, `docs/features/TICKETS.md`,
+`docs/guides/PERSISTENT_VIEWS.md`, `docs/infra/RAILWAY.md`, `CLAUDE.md`,
 `tests/test_tickets.py`.
 
 ## Verification
@@ -152,7 +152,7 @@ touched module imports under a real `bot.py` load.
 
 - The dashboard side of `GET /transcripts/<key>` does not exist yet; the
   contract it has to satisfy — including **withholding `staff_thread` from the
-  ticket's own author** — is `docs/TICKETS_INTEGRATION.md`.
+  ticket's own author** — is `docs/integration/TICKETS_INTEGRATION.md`.
 - Closure detection has no telemetry on its own accuracy beyond
   `ticket.closure_suggested`. If false positives show up, the honest fix is an
   annotation loop like automod's `eval/`, not a threshold nudged by feel.

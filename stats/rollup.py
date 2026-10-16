@@ -19,7 +19,7 @@ the rollup deletes the hourly rows in the same transaction that writes the
 daily ones. Running it twice changes nothing, which is what makes it safe to
 run on every boot as well as on a schedule.
 
-See docs/STATS.md.
+See docs/infra/STATS.md.
 """
 
 from __future__ import annotations

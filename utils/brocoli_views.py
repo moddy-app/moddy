@@ -9,7 +9,7 @@ The confirmation buttons are :class:`discord.ui.DynamicItem` s. They have to be:
 the decision is scoped to a conversation *and* an action, neither of which
 ``interaction.guild_id`` or ``interaction.user.id`` can supply, so a static
 ``custom_id`` would not be enough to re-derive the state after a restart (see
-``docs/PERSISTENT_VIEWS.md``). Everything the callback needs is encoded in the
+``docs/guides/PERSISTENT_VIEWS.md``). Everything the callback needs is encoded in the
 ``custom_id`` and re-read from the interaction — ``self`` is a fresh shell on
 every single click, not just after a restart.
 
@@ -126,10 +126,17 @@ def notice_card(kind: str, locale: str = "en-US", **params) -> ui.LayoutView:
         kind = "unavailable"
     accent, icon = _NOTICES[kind]
 
+    title = t(f'brocoli.notice.{kind}.title', locale=locale)
+    description = t(f"brocoli.notice.{kind}.description", locale=locale, **params)
+    if kind not in ("created", "exists"):
+        # Problems go through the shared expected-error card (utils/errors.py).
+        from utils.errors import build_error_card
+        return build_error_card(title, description, accent=accent, icon=icon)
+
     view = BaseView()
     container = ui.Container(accent_colour=accent)
     container.add_item(
-        ui.TextDisplay(f"### {icon} {t(f'brocoli.notice.{kind}.title', locale=locale)}")
+        ui.TextDisplay(f"### {icon} {title}")
     )
     container.add_item(
         ui.TextDisplay(t(f"brocoli.notice.{kind}.description", locale=locale, **params))

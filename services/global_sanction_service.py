@@ -19,7 +19,7 @@ case per target, one notice, one countdown. This service owns that workflow:
    sanctioned servers and tells the backend to run the billing side.
 
 Every step publishes on ``moddy:sanctions`` so the backend can react (billing,
-data retention, dashboards). See ``docs/GLOBAL_SANCTIONS.md``.
+data retention, dashboards). See ``docs/features/GLOBAL_SANCTIONS.md``.
 """
 
 from __future__ import annotations
@@ -418,7 +418,7 @@ class GlobalSanctionService:
         )
         # Official Moddy notice: recorded and counted like every other
         # notification, but it deliberately carries no attribution or report
-        # buttons — this IS Moddy speaking (docs/NOTIFICATIONS.md).
+        # buttons — this IS Moddy speaking (docs/guides/NOTIFICATIONS.md).
         result = await self.bot.notifications.send_dm(
             user,
             content=self._notice_content(level, reason),

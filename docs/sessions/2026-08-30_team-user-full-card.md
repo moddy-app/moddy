@@ -48,7 +48,7 @@ so a single failing table degrades one section instead of the whole panel.
 - `locales/{fr,en-US,es-ES,pt-BR,de}.json` — new `staff.team.user.*` keys
 - `tests/test_staff_user_command.py` *(new)* — sections, gate on/off, degraded
   reads, i18n on the 5 locales
-- `docs/STAFF_SYSTEM.md`, `docs/STAFF_COMMANDS_FRAMEWORK.md`, `CLAUDE.md` — docs
+- `docs/guides/STAFF_SYSTEM.md`, `docs/guides/STAFF_COMMANDS_FRAMEWORK.md`, `CLAUDE.md` — docs
 
 ## Follow-ups
 

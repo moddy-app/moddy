@@ -20,7 +20,7 @@ Three rules shape this module:
 - **Fire and forget.** A promotion must never fail because Redis hiccuped; a
   lost message is caught by the backend's periodic resynchronisation.
 
-See docs/LINKED_ROLES.md.
+See docs/features/LINKED_ROLES.md.
 """
 
 from __future__ import annotations

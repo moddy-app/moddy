@@ -29,7 +29,7 @@ one log per *act* instead of one per registry event.
   component displays, so CLAUDE.md rule 9 wants the text).
 - **i18n** — `config.options.toggles.merge` / `.merge_description` and
   `values.merged_with` in the five locales.
-- **`docs/LOGS.md`** — new *Merging duplicates* section, `merge_duplicates` in
+- **`docs/features/LOGS.md`** — new *Merging duplicates* section, `merge_duplicates` in
   the stored-schema table and in the dashboard contract.
 
 ## Decisions made and why
@@ -74,7 +74,7 @@ one log per *act* instead of one per registry event.
 | `modules/logs.py` | `merge_duplicates` config field |
 | `modules/configs/logs_config.py` | Options toggle |
 | `locales/{fr,en-US,es-ES,pt-BR,de}.json` | toggle label + description, `values.merged_with` |
-| `docs/LOGS.md` | *Merging duplicates* section + schema |
+| `docs/features/LOGS.md` | *Merging duplicates* section + schema |
 | `tests/test_logs.py` | 7 new tests |
 
 ## Known issues / follow-ups

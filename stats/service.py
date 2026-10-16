@@ -29,7 +29,7 @@ Redis is still used for one thing counting cannot do in a dictionary:
 distinct-people counts, through a HyperLogLog that survives a restart and
 never stores a single id (see :meth:`StatsService.observe_unique`).
 
-See docs/STATS.md.
+See docs/infra/STATS.md.
 """
 
 from __future__ import annotations
@@ -336,6 +336,6 @@ def hll_key(metric: str, scope: str, scope_id, day: str) -> str:
     ``scope_id`` may be ``"*"`` to build a scan pattern.
 
     ``stats:*`` is this system's own namespace — not ``moddy:*`` (the
-    backend's) nor a service's, per docs/REDIS_COMMUNICATION.md §5.
+    backend's) nor a service's, per docs/integration/REDIS_COMMUNICATION.md §5.
     """
     return f"stats:hll:{metric}:{scope}:{scope_id}:{day}"

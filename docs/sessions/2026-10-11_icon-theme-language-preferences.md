@@ -24,14 +24,14 @@
 
 ## Files
 
-- New: `utils/icon_theme.py`, `utils/user_preferences.py`, `docs/ICON_THEME.md`,
+- New: `utils/icon_theme.py`, `utils/user_preferences.py`, `docs/guides/ICON_THEME.md`,
   `tests/test_icon_theme.py`, `tests/test_user_preferences.py`.
 - Edited: `utils/emojis.py` (`DARK_VARIANTS`, `LIGHT_TO_DARK`), `utils/i18n.py`,
   `cogs/preferences.py` (theme + language `DynamicItem` selects), `bot.py`
   (cache load + `icon_theme.install()` in `setup_database`),
   `db/repositories/users.py` (`get_users_with_preferences`),
   `notifications/service.py`, `locales/*.json` (5), `CLAUDE.md`,
-  `docs/DATABASE.md`, `docs/SERVER_LANGUAGE.md`.
+  `docs/infra/DATABASE.md`, `docs/guides/SERVER_LANGUAGE.md`.
 
 - **Module icons.** AltGuard → `fingerprint`, Logs → `newspaper`, Member
   applications → `assignment`, Adaptive slowmode → `timer`, Auto restore roles
@@ -50,7 +50,7 @@
 ## Known issues / follow-ups
 
 - Every uploaded `_dark` icon is now mapped (18 originals came from the ids in
-  docs/EMOJIS.md; `verified1` and `lock` were confirmed by the user).
+  docs/guides/EMOJIS.md; `verified1` and `lock` were confirmed by the user).
 - Messages sent by the bot on its own in channels (logs, welcome, panels) and
   `interaction.message.edit()` outside a response keep white icons.
 - Public interaction responses follow the interactor's theme for everyone.

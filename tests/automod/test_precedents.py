@@ -2,7 +2,7 @@
 shortcut, the embedding-vector reuse, and the engine wiring (injection + stop).
 
 Everything is offline: the embeddings are controlled (no gateway), nano's
-``_judge`` is stubbed. See docs/AUTOMOD_AI.md §2quinquies.
+``_judge`` is stubbed. See docs/features/AUTOMOD.md §2quinquies.
 """
 
 import array
@@ -160,7 +160,7 @@ def _target(content):
     return TargetMessage(id="1", author_id="2", content=content)
 
 
-COMMON = dict(guild_id=10, guild_name="G", rules="",
+COMMON = dict(guild_id=10, guild_name="G",
               author_history=AuthorHistory())
 
 

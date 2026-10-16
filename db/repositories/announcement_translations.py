@@ -9,7 +9,7 @@ storing this rather than translating on demand.
 The row is the only state the buttons have: they are ``DynamicItem``s carrying
 the message id in their ``custom_id``, so a restart changes nothing.
 
-See docs/ANNOUNCEMENT_TRANSLATION.md.
+See docs/features/ANNOUNCEMENT_TRANSLATION.md.
 """
 
 import json

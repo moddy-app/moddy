@@ -13,7 +13,7 @@ guild, all users combined), each one rendering as a Components V2 container:
   - an individual enabled/paused switch.
 
 Configuration lives in ``guilds.data.modules.welcome_channel`` (JSONB) — see
-docs/WELCOME_MESSAGES.md for the full schema and the backend/dashboard contract.
+docs/features/WELCOME_MESSAGES.md for the full schema and the backend/dashboard contract.
 
 Legacy (v1) configurations are migrated on read by :func:`normalize_config`, so
 a guild that configured the old single-channel + embed version keeps its channel

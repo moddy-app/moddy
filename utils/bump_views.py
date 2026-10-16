@@ -16,7 +16,7 @@ and which people it may notify is stated explicitly at send time rather than
 left to Discord's defaults, so a stale config can never ping something the
 server did not choose.
 
-See docs/BUMP_REMINDER.md.
+See docs/features/BUMP_REMINDER.md.
 """
 
 import logging
@@ -34,6 +34,7 @@ from utils import i18n
 from utils.components_v2 import create_success_message
 from utils.emojis import ROCKET_LAUNCH, TIME
 from utils.i18n import t
+from utils.errors import NotYours
 
 logger = logging.getLogger('moddy.bump_views')
 
@@ -115,15 +116,7 @@ class BumpOptInButton(
         locale = i18n.get_locale(interaction)
 
         if interaction.user.id != self.user_id:
-            from utils.components_v2 import create_error_message
-            await interaction.response.send_message(
-                view=create_error_message(
-                    t("errors.not_your_message.title", locale=locale),
-                    t("errors.not_your_message.description", locale=locale),
-                ),
-                ephemeral=True,
-            )
-            return
+            raise NotYours()
 
         await interaction.response.defer()  # ack: DB reads/writes below
         bot = interaction.client

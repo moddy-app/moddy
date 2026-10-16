@@ -50,7 +50,7 @@ seconds, so they can do the clicks themselves.
 | `utils/emojis.py` | `STAFF` repointed — the `:staff:` artwork was deleted |
 | `tests/test_linked_roles.py` | binding tests dropped, window tests added (44 pass) |
 | `locales/*.json` (×5) | `window_*`, `blocked_*`; the `auto_*` keys removed |
-| `docs/LINKED_ROLES.md`, `CLAUDE.md` | rewritten around the window |
+| `docs/features/LINKED_ROLES.md`, `CLAUDE.md` | rewritten around the window |
 
 ## Decisions and why
 

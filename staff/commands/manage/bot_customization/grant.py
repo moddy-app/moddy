@@ -4,7 +4,7 @@ independent of its premium subscription.
 
 Stored as the ``BOT_CUSTOMIZATION`` guild attribute — see
 ``modules/bot_customization.py::has_identity_access`` and
-``docs/BOT_CUSTOMIZATION.md``.
+``docs/features/BOT_CUSTOMIZATION.md``.
 """
 
 from staff.framework import StaffCommand, SlashOption, staff_command, design, CommandType, parse_guild_id

@@ -25,7 +25,7 @@ making the view persistent (`timeout=None`).
   is both cleaner UX and what makes persistence simple (no in-memory draft to
   lose on restart). The reset/delete button is always rendered (disabled when
   nothing is stored) so its custom_id stays registered on the shell.
-- **Redesigned layout** per `docs/DESIGN.md`: title + description + a live
+- **Redesigned layout** per `docs/guides/DESIGN.md`: title + description + a live
   status summary (🟢 active / 🔴 inactive with the reason), then clear sections
   — État (module + content toggles), Règlement (with preview), Salon de logs,
   Exemptions (roles + channels), Options (ignore moderators) — each with a bold

@@ -1,4 +1,4 @@
-"""/ocr + the Transcribe menu on images (docs/OCR.md).
+"""/ocr + the Transcribe menu on images (docs/features/OCR.md).
 
 The service's error mapping, the card rendering and the size handling — the
 gateway is faked, nothing leaves the process.

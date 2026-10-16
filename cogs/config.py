@@ -5,7 +5,7 @@ One screen, one dropdown: every module Moddy offers, plus the server-wide
 settings entry that used to sit on its own button. Below the container come the
 two links a server owner reaches for when the panel is not enough — the support
 server and the dashboard — as link buttons *outside* the container, the way
-docs/DESIGN.md wants call-to-actions that leave Discord.
+docs/guides/DESIGN.md wants call-to-actions that leave Discord.
 
 Access: anyone with **Manage Server**. The panel used to be gated behind the
 TEAM/BETA attributes while the module system was being built; Moddy is in beta
@@ -25,7 +25,10 @@ from utils import global_sanctions
 from utils.components_v2 import create_limited_message
 from cogs.error_handler import BaseView
 from utils.incognito import resolve_default_incognito
-from modules.configs._common import check_guild_perms, check_bot_perms, ack, show
+from modules.configs._common import (
+    check_guild_perms, check_bot_perms, ack, show, state_label,
+)
+from modules.module_manager import STATUS_NOT_CONFIGURED
 
 logger = logging.getLogger('moddy.cogs.config')
 
@@ -34,6 +37,152 @@ _CID_MODULE_SELECT = "moddy:config:main:module_select"
 #: Value of the dropdown entry that opens the server-wide settings screen.
 #: Prefixed so it can never collide with a module id.
 SETTINGS_OPTION = "__server_settings__"
+
+
+async def build_module_config_view(bot, guild_id: int, user_id: int, locale: str,
+                                   module_id: str, module_config: Optional[dict]):
+    """Build a module's home config screen, or None for an unknown module.
+
+    Shared by the /config dropdown and by the play/pause button
+    (``modules.configs._common.ModuleStateButton``), which re-renders the same
+    screen after a state change.
+    """
+    config_view = None
+
+    if module_id == 'welcome_channel':
+        from modules.configs.welcome_channel_config import WelcomeChannelConfigView
+        config_view = await WelcomeChannelConfigView.create(
+            bot,
+            guild_id,
+            user_id,
+            locale
+        )
+    elif module_id == 'welcome_dm':
+        from modules.configs.welcome_dm_config import WelcomeDmConfigView
+        config_view = await WelcomeDmConfigView.create(
+            bot,
+            guild_id,
+            user_id,
+            locale
+        )
+    elif module_id == 'interserver':
+        from modules.configs.interserver_config import InterServerConfigView
+        config_view = InterServerConfigView(
+            bot,
+            guild_id,
+            user_id,
+            locale,
+            module_config
+        )
+    elif module_id == 'starboard':
+        from modules.configs.starboard_config import StarboardConfigView
+        config_view = StarboardConfigView(
+            bot,
+            guild_id,
+            user_id,
+            locale,
+            module_config
+        )
+    elif module_id == 'auto_restore_roles':
+        from modules.configs.auto_restore_roles_config import AutoRestoreRolesConfigView
+        config_view = AutoRestoreRolesConfigView(
+            bot,
+            guild_id,
+            user_id,
+            locale,
+            module_config
+        )
+    elif module_id == 'auto_role':
+        from modules.configs.auto_role_config import AutoRoleConfigView
+        config_view = AutoRoleConfigView(
+            bot,
+            guild_id,
+            user_id,
+            locale,
+            module_config
+        )
+    elif module_id == 'social_notifications':
+        from modules.configs.social_notifications_config import SocialNotificationsConfigView
+        config_view = await SocialNotificationsConfigView.create(
+            bot,
+            guild_id,
+            user_id,
+            locale
+        )
+    elif module_id == 'bump_reminder':
+        from modules.configs.bump_reminder_config import BumpReminderConfigView
+        config_view = await BumpReminderConfigView.create(
+            bot,
+            guild_id,
+            user_id,
+            locale
+        )
+    elif module_id == 'adaptive_slowmode':
+        from modules.configs.adaptive_slowmode_config import AdaptiveSlowmodeConfigView
+        config_view = AdaptiveSlowmodeConfigView(
+            bot,
+            guild_id,
+            user_id,
+            locale,
+            module_config
+        )
+    elif module_id == 'voice_transcription':
+        from modules.configs.voice_transcription_config import VoiceTranscriptionConfigView
+        config_view = VoiceTranscriptionConfigView(
+            bot,
+            guild_id,
+            user_id,
+            locale,
+            module_config
+        )
+    elif module_id == 'bot_customization':
+        from modules.configs.bot_customization_config import BotCustomizationConfigView
+        config_view = await BotCustomizationConfigView.create(
+            bot,
+            guild_id,
+            user_id,
+            locale
+        )
+    elif module_id == 'member_applications':
+        from modules.configs.member_applications_config import MemberApplicationsConfigView
+        config_view = MemberApplicationsConfigView(
+            bot,
+            guild_id,
+            user_id,
+            locale,
+            module_config
+        )
+    elif module_id == 'altguard':
+        from modules.configs.altguard_config import AltGuardConfigView
+        config_view = AltGuardConfigView(
+            bot,
+            guild_id,
+            user_id,
+            locale,
+            module_config
+        )
+    elif module_id == 'logs':
+        from modules.configs.logs_config import LogsConfigView
+        config_view = await LogsConfigView.create(
+            bot,
+            guild_id,
+            user_id,
+            locale
+        )
+    elif module_id == 'tickets':
+        from modules.configs.tickets_config import TicketsConfigView
+        config_view = await TicketsConfigView.create(
+            bot,
+            guild_id,
+            user_id,
+            locale
+        )
+    elif module_id == 'automod_ai':
+        from modules.configs.automod_ai_config import open_automod_panel
+        # First run -> the setup wizard; configured -> the home screen.
+        config_view = await open_automod_panel(bot, guild_id, locale, module_config)
+
+    return config_view
 
 
 class ConfigMainView(BaseView):
@@ -49,7 +198,8 @@ class ConfigMainView(BaseView):
     __persistent__ = True
 
     def __init__(self, bot=None, guild_id: Optional[int] = None, user_id: Optional[int] = None,
-                 locale: str = "en-US", limited: bool = False):
+                 locale: str = "en-US", limited: bool = False,
+                 statuses: Optional[dict] = None):
         """
         Initialise la vue principale
 
@@ -70,8 +220,20 @@ class ConfigMainView(BaseView):
         self.user_id = user_id
         self.locale = locale
         self.limited = limited
+        # {module_id: state or STATUS_NOT_CONFIGURED}, see
+        # ModuleManager.get_module_statuses(); empty -> no state prefix.
+        self.statuses = statuses or {}
 
         self._build_view()
+
+    @classmethod
+    async def create(cls, bot, guild_id: int, user_id: int, locale: str,
+                     limited: bool = False) -> "ConfigMainView":
+        """Build the main screen WITH each module's state. Use this (or
+        ``modules.configs._common.open_main_config``) for every "Back" button:
+        the plain constructor shows no state."""
+        statuses = await bot.module_manager.get_module_statuses(guild_id)
+        return cls(bot, guild_id, user_id, locale, limited=limited, statuses=statuses)
 
     # ----------------------------------------------------------------- #
     # Rendering
@@ -132,6 +294,11 @@ class ConfigMainView(BaseView):
 
         for module_info in self.bot.module_manager.get_available_modules():
             description = t(f"modules.{module_info['id']}.description", locale=self.locale)
+            status = self.statuses.get(module_info['id'])
+            if status:
+                # "Paused · Automatically assigns roles..." -- the state leads,
+                # so the list reads as a dashboard of what is running.
+                description = f"{state_label(status, self.locale)} · {description}"
             options.append(discord.SelectOption(
                 label=module_info['name'],
                 value=module_info['id'],
@@ -245,142 +412,8 @@ class ConfigMainView(BaseView):
             )
             return
 
-        # Import dynamique de la vue de configuration correspondante
-        config_view = None
-
-        if module_id == 'welcome_channel':
-            from modules.configs.welcome_channel_config import WelcomeChannelConfigView
-            config_view = await WelcomeChannelConfigView.create(
-                bot,
-                guild_id,
-                user_id,
-                locale
-            )
-        elif module_id == 'welcome_dm':
-            from modules.configs.welcome_dm_config import WelcomeDmConfigView
-            config_view = await WelcomeDmConfigView.create(
-                bot,
-                guild_id,
-                user_id,
-                locale
-            )
-        elif module_id == 'interserver':
-            from modules.configs.interserver_config import InterServerConfigView
-            config_view = InterServerConfigView(
-                bot,
-                guild_id,
-                user_id,
-                locale,
-                module_config
-            )
-        elif module_id == 'starboard':
-            from modules.configs.starboard_config import StarboardConfigView
-            config_view = StarboardConfigView(
-                bot,
-                guild_id,
-                user_id,
-                locale,
-                module_config
-            )
-        elif module_id == 'auto_restore_roles':
-            from modules.configs.auto_restore_roles_config import AutoRestoreRolesConfigView
-            config_view = AutoRestoreRolesConfigView(
-                bot,
-                guild_id,
-                user_id,
-                locale,
-                module_config
-            )
-        elif module_id == 'auto_role':
-            from modules.configs.auto_role_config import AutoRoleConfigView
-            config_view = AutoRoleConfigView(
-                bot,
-                guild_id,
-                user_id,
-                locale,
-                module_config
-            )
-        elif module_id == 'social_notifications':
-            from modules.configs.social_notifications_config import SocialNotificationsConfigView
-            config_view = await SocialNotificationsConfigView.create(
-                bot,
-                guild_id,
-                user_id,
-                locale
-            )
-        elif module_id == 'bump_reminder':
-            from modules.configs.bump_reminder_config import BumpReminderConfigView
-            config_view = await BumpReminderConfigView.create(
-                bot,
-                guild_id,
-                user_id,
-                locale
-            )
-        elif module_id == 'adaptive_slowmode':
-            from modules.configs.adaptive_slowmode_config import AdaptiveSlowmodeConfigView
-            config_view = AdaptiveSlowmodeConfigView(
-                bot,
-                guild_id,
-                user_id,
-                locale,
-                module_config
-            )
-        elif module_id == 'voice_transcription':
-            from modules.configs.voice_transcription_config import VoiceTranscriptionConfigView
-            config_view = VoiceTranscriptionConfigView(
-                bot,
-                guild_id,
-                user_id,
-                locale,
-                module_config
-            )
-        elif module_id == 'bot_customization':
-            from modules.configs.bot_customization_config import BotCustomizationConfigView
-            config_view = await BotCustomizationConfigView.create(
-                bot,
-                guild_id,
-                user_id,
-                locale
-            )
-        elif module_id == 'member_applications':
-            from modules.configs.member_applications_config import MemberApplicationsConfigView
-            config_view = MemberApplicationsConfigView(
-                bot,
-                guild_id,
-                user_id,
-                locale,
-                module_config
-            )
-        elif module_id == 'altguard':
-            from modules.configs.altguard_config import AltGuardConfigView
-            config_view = AltGuardConfigView(
-                bot,
-                guild_id,
-                user_id,
-                locale,
-                module_config
-            )
-        elif module_id == 'logs':
-            from modules.configs.logs_config import LogsConfigView
-            config_view = await LogsConfigView.create(
-                bot,
-                guild_id,
-                user_id,
-                locale
-            )
-        elif module_id == 'tickets':
-            from modules.configs.tickets_config import TicketsConfigView
-            config_view = await TicketsConfigView.create(
-                bot,
-                guild_id,
-                user_id,
-                locale
-            )
-        elif module_id == 'automod_ai':
-            from modules.configs.automod_ai_config import open_automod_panel
-            # First run -> the setup wizard; configured -> the home screen.
-            config_view = await open_automod_panel(bot, guild_id, locale, module_config)
-        # Ajouter d'autres modules ici au fur et à mesure
+        config_view = await build_module_config_view(
+            bot, guild_id, user_id, locale, module_id, module_config)
 
         if config_view:
             # Affiche la vue de configuration du module
@@ -471,12 +504,14 @@ class Config(commands.Cog):
         )
 
         # Affiche le menu principal de configuration
+        statuses = await self.bot.module_manager.get_module_statuses(interaction.guild.id)
         main_view = ConfigMainView(
             self.bot,
             interaction.guild.id,
             interaction.user.id,
             str(interaction.locale),
             limited=limited,
+            statuses=statuses,
         )
 
         await interaction.followup.send(view=main_view, ephemeral=ephemeral)

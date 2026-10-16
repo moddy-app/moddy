@@ -9,7 +9,7 @@ the gateway call and error typing all live here, so the two UIs stay thin and
 behave identically.
 
 Every provider call goes through ``bot.gateway.transcription`` — see
-docs/API_GATEWAY.md. Nothing in this file talks to Groq directly.
+docs/infra/API_GATEWAY.md. Nothing in this file talks to Groq directly.
 """
 
 from __future__ import annotations
@@ -49,7 +49,7 @@ MAX_DURATION_SECONDS = 30 * 60
 
 # Per-user throttle. Deliberately DISABLED (0) for now — per-user and per-guild
 # caps are meant to be introduced later through `quota_overrides`
-# (docs/API_GATEWAY.md), which needs no code change. The machinery is kept here
+# (docs/infra/API_GATEWAY.md), which needs no code change. The machinery is kept here
 # so a hard, instant cap can be switched on without redesigning the flow.
 MAX_USES_PER_MINUTE_PER_USER = 0
 

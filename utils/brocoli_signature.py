@@ -26,7 +26,7 @@ string, ``separators=(",", ":")``, ``sort_keys=True``, ``ensure_ascii=True``,
 and ``signature`` is excluded. Sorted order is therefore always
 ``guild_id, issued_at, request_id, user_id``.
 
-See ``docs/BROCOLI_CHANNEL.md`` and the backend's ``docs/BOT_ASSERTED_AUTH.md``.
+See ``docs/features/BROCOLI_CHANNEL.md`` and the backend's ``docs/BOT_ASSERTED_AUTH.md``.
 """
 
 from __future__ import annotations

@@ -51,8 +51,8 @@ What shipped:
 - `staff/commands/com/send.py`, `staff/commands/com/_send_modal.py` — `/com send`
 - `tests/test_notifications.py` — 39 tests (hashing, reproducibility,
   attribution rules, report authorization, i18n completeness on 5 locales)
-- `docs/NOTIFICATIONS.md`
-- `docs/NOTIFICATIONS_INTEGRATION.md` — backend/dashboard contract: tables read
+- `docs/guides/NOTIFICATIONS.md`
+- `docs/integration/NOTIFICATIONS_INTEGRATION.md` — backend/dashboard contract: tables read
   vs owned, exact payload rendering, the placeholder algorithm the backend must
   match character for character, the mail/dashboard delivery loop
 
@@ -74,8 +74,8 @@ What shipped:
   `staff.com.*`
 - `tests/test_persistent_views.py`, `tests/test_altguard.py`,
   `tests/test_expiration_notifications.py`, `tests/test_tickets.py`
-- `CLAUDE.md` (rule #11), `docs/PERSISTENT_VIEWS.md`, `docs/DATABASE.md`,
-  `docs/STAFF_COMMANDS_FRAMEWORK.md`, `docs/RAILWAY.md`, `docs/WELCOME_DM.md`
+- `CLAUDE.md` (rule #11), `docs/guides/PERSISTENT_VIEWS.md`, `docs/infra/DATABASE.md`,
+  `docs/guides/STAFF_COMMANDS_FRAMEWORK.md`, `docs/infra/RAILWAY.md`, `docs/features/WELCOME_DM.md`
 
 ## Decisions & Rationale
 
@@ -121,7 +121,7 @@ What shipped:
 - [ ] The **mail** and **dashboard** platforms are declared, stored and rendered
       (`to_email()` / `to_dashboard()`) but nothing sends them: their delivery
       rows stay `pending` for the backend to pick up and mark. The contract is
-      now written (`docs/NOTIFICATIONS_INTEGRATION.md`); the backend side is
+      now written (`docs/integration/NOTIFICATIONS_INTEGRATION.md`); the backend side is
       not built. Note that no bot caller opts into a non-Discord platform yet,
       so there are no pending rows to consume until one does.
 - [ ] **The backend cannot trigger a send.** There is no `moddy:tasks` type for

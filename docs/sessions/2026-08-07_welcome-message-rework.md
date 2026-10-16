@@ -40,8 +40,8 @@ DMs therefore never fired. Both modules are now dispatched.
 | `cogs/module_events.py` | Dispatch `welcome_channel` **and** `welcome_dm` (was the non-existent `'welcome'`) |
 | `utils/persistent_views.py` | Register the two new views |
 | `locales/{fr,en-US,es-ES,pt-BR,de}.json` | `modules.welcome_channel` subtree replaced |
-| `docs/WELCOME_MESSAGES.md` | **New** — DB schema, placeholders, validation contract, dashboard integration |
-| `docs/MODULE_SYSTEM.md` | Refreshed the stale "Module Welcome" example section |
+| `docs/features/WELCOME_MESSAGES.md` | **New** — DB schema, placeholders, validation contract, dashboard integration |
+| `docs/guides/MODULE_SYSTEM.md` | Refreshed the stale "Module Welcome" example section |
 | `CLAUDE.md` | Structure + documentation index |
 
 ## Decisions
@@ -83,7 +83,7 @@ DMs therefore never fired. Both modules are now dispatched.
 
 ## Follow-ups
 
-- The dashboard must mirror the §4 validation rules of `docs/WELCOME_MESSAGES.md`
+- The dashboard must mirror the §4 validation rules of `docs/features/WELCOME_MESSAGES.md`
   and emit `module_updated` after writing, or the bot serves a stale config
   until restart.
 - `welcome_dm` still uses the old embed-based config UI — worth the same rework

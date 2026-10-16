@@ -23,7 +23,7 @@ and a ``due_at`` in the future. No timer, no task, no cache — so a restart cos
 nothing and loses nothing: the sweeper's next pass picks up whatever came due
 while the bot was down.
 
-See docs/BUMP_REMINDER.md.
+See docs/features/BUMP_REMINDER.md.
 """
 
 import logging

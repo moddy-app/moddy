@@ -3,6 +3,7 @@ User preferences command for Moddy
 Allows users to customize their experience
 """
 import re
+from config import COLORS
 import discord
 from utils.incognito import resolve_default_incognito
 from discord import app_commands, ui
@@ -14,6 +15,7 @@ from typing import Optional
 from cogs.error_handler import BaseView
 from utils.components_v2 import create_error_message
 from utils.i18n import i18n, t
+from utils.errors import NotYours
 from utils import user_preferences
 
 # --------------------------------------------------------------------------- #
@@ -23,7 +25,7 @@ from utils import user_preferences
 #
 # Owner-only: interaction_check cannot work on a restarted shell (self.user_id
 # is None), so ownership is encoded per-item and re-checked on every click
-# instead (Appendix B.2 of docs/PERSISTENT_VIEWS.md).
+# instead (Appendix B.2 of docs/guides/PERSISTENT_VIEWS.md).
 # --------------------------------------------------------------------------- #
 
 #   \d{1,20} (not the tighter \d{17,20} snowflake range) so a bare shell
@@ -65,15 +67,7 @@ async def _reject_if_not_owner(interaction: discord.Interaction, owner_id: int) 
     """Return True (and answer ephemerally) if the clicker is not the owner."""
     if interaction.user.id == owner_id:
         return False
-    locale = i18n.get_user_locale(interaction)
-    await interaction.response.send_message(
-        view=create_error_message(
-            t("errors.not_your_message.title", locale=locale),
-            t("errors.not_your_message.description", locale=locale),
-        ),
-        ephemeral=True,
-    )
-    return True
+    raise NotYours()
 
 # Common timezones for selection
 TIMEZONE_OPTIONS = [
@@ -341,7 +335,7 @@ class PreferencesView(BaseView):
 
     def _build_home_page(self):
         """Build the home page with all preference options"""
-        container = Container()
+        container = Container(accent_colour=COLORS["primary"])
 
         # Title and description
         container.add_item(TextDisplay(t("commands.preferences.title", locale=self.locale)))
@@ -391,7 +385,7 @@ class PreferencesView(BaseView):
 
     def _build_timezone_page(self):
         """Build the timezone settings page with back button"""
-        container = Container()
+        container = Container(accent_colour=COLORS["primary"])
 
         # Title and description
         container.add_item(TextDisplay(t("commands.preferences.timezone.title", locale=self.locale)))

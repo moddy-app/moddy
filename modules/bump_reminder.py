@@ -24,7 +24,7 @@ The pieces:
 - ``utils/bump_views.py``      — the thank-you and reminder cards
 - ``modules/configs/bump_reminder_config.py`` — the /config panel
 
-See docs/BUMP_REMINDER.md.
+See docs/features/BUMP_REMINDER.md.
 """
 
 import logging
@@ -149,7 +149,7 @@ async def reminders_per_bot(bot, guild_id: int) -> int:
     """How many reminders this guild may keep **per directory**.
 
     Uses the subscription helper, never a guild attribute — there is no PREMIUM
-    guild attribute (docs/PREMIUM.md), and the helper is the Redis-cached path
+    guild attribute (docs/guides/PREMIUM.md), and the helper is the Redis-cached path
     the config panel can afford to call on every render.
     """
     from utils.subscription import is_guild_premium

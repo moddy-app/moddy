@@ -43,7 +43,7 @@ that *every* sanction in Moddy flows through cases.
 ## Files modified / added
 - Added: `services/case_service.py`, `cogs/case_sync.py`,
   `staff/commands/mod/case/sanction.py`, `staff/commands/mod/case/revoke.py`,
-  `docs/MODERATION_CASES.md`.
+  `docs/features/MODERATION_CASES.md`.
 - Rewrote: `utils/moderation_cases.py`, `db/repositories/moderation.py`,
   `utils/case_management_views.py`, `cogs/cases_user.py`,
   `staff/commands/mod/case/{_shared,create,view,list,edit,close,note}.py`.

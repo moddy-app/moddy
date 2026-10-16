@@ -66,11 +66,11 @@ every module with a visible panel has the same gap:
 - `bot.py` — `_handle_module_config_push`, `update_panel` task rewired
 - `tests/test_altguard.py` — 4 tests (push applies all three effects, deletion
   writes nothing back, incomplete config removes the panel, `persist` flag)
-- `docs/ALTGUARD_INTEGRATION.md` — new §5 (event, ack, guaranteed delivery,
+- `docs/integration/ALTGUARD_INTEGRATION.md` — new §5 (event, ack, guaranteed delivery,
   backend checklist) + 4 symptom rows
-- `docs/ALTGUARD.md` — "Saving from the dashboard"
-- `docs/MODULE_SYSTEM.md` — §3 bis on the hook
-- `docs/REDIS_COMMUNICATION.md` — inventory rows for `moddy:bot`,
+- `docs/features/ALTGUARD.md` — "Saving from the dashboard"
+- `docs/guides/MODULE_SYSTEM.md` — §3 bis on the hook
+- `docs/integration/REDIS_COMMUNICATION.md` — inventory rows for `moddy:bot`,
   `moddy:dashboard`, `moddy:tasks`
 
 ## Known issues / follow-ups

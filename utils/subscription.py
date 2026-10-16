@@ -13,7 +13,7 @@ Two scopes live here:
   dashboard, which fills ``subscription_servers``. This — not a ``PREMIUM``
   attribute — is the source of truth for premium server features.
 
-See ``docs/PREMIUM.md``.
+See ``docs/guides/PREMIUM.md``.
 """
 
 import json

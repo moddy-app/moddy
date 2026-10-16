@@ -1,6 +1,6 @@
 """Automod images — module features, shared image service, labeling queue.
 
-docs/AUTOMOD_AI.md §4.2 (image_scam), §4.3 (image_nsfw), §9 (labeling queue).
+docs/features/AUTOMOD.md §4.2 (image_scam), §4.3 (image_nsfw), §9 (labeling queue).
 No network, no Discord, no DB: every collaborator is a small fake.
 """
 
@@ -88,7 +88,6 @@ class FakeModule:
     def __init__(self, bot):
         self.bot = bot
         self.guild_id = 1
-        self.rules = ""
         self.severity = 3
 
     def guild_locale(self, guild):

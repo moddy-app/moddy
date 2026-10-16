@@ -11,7 +11,7 @@ documentation gap and the three loose ends left behind in the code.
 
 ### Documentation (the standing CLAUDE.md rule)
 
-- **`docs/LOGS.md` (new)** — the reference for the whole system: what a server
+- **`docs/features/LOGS.md` (new)** — the reference for the whole system: what a server
   sees, the layer-by-layer architecture and who is allowed to decide what, the
   18 categories, the `/config` panel, the **exact stored schema** of
   `guilds.data.modules.logs` with the backend/dashboard contract, how to add an
@@ -22,9 +22,9 @@ documentation gap and the three loose ends left behind in the code.
 - **`CLAUDE.md`** — `serverlogs/` added to the project tree (with its six
   modules and the `listeners/` package), plus `cogs/logs.py`,
   `modules/logs.py`, `modules/configs/logs_config.py`, `tests/test_logs.py`
-  and `tests/test_logs_i18n.py`; `docs/LOGS.md` added to the documentation
+  and `tests/test_logs_i18n.py`; `docs/features/LOGS.md` added to the documentation
   index.
-- **`docs/PERSISTENT_VIEWS.md` → "Deliberate exclusions"** — `LogsCategoryView`
+- **`docs/guides/PERSISTENT_VIEWS.md` → "Deliberate exclusions"** — `LogsCategoryView`
   documented with its three `DynamicItem` templates, why the wrapper has
   nothing to register, and why that is also the reason the category screen
   applies changes immediately instead of behind a Save button.
@@ -55,7 +55,7 @@ documentation gap and the three loose ends left behind in the code.
   the description because the description carries the facts and the fields
   carry the detail.
 - **`on_external_config_change()` stays unimplemented** for the logs module,
-  and `docs/LOGS.md` says so explicitly. The hook exists for modules whose
+  and `docs/features/LOGS.md` says so explicitly. The hook exists for modules whose
   configuration is *visible* in Discord (a panel to re-post, overwrites to
   re-apply); the logs module posts nothing and holds no Discord-side state, so
   the standard config reload is the whole of the change. Documented as a
@@ -80,10 +80,10 @@ documentation gap and the three loose ends left behind in the code.
 
 | File | Change |
 |---|---|
-| `docs/LOGS.md` | **new** — full system reference |
+| `docs/features/LOGS.md` | **new** — full system reference |
 | `docs/sessions/2026-08-23_advanced-server-logs.md` | **new** — this file |
 | `CLAUDE.md` | project tree + documentation index |
-| `docs/PERSISTENT_VIEWS.md` | `LogsCategoryView` exclusion |
+| `docs/guides/PERSISTENT_VIEWS.md` | `LogsCategoryView` exclusion |
 | `serverlogs/registry.py` | category emojis from `utils/emojis.py` |
 | `serverlogs/renderer.py` | `LogEntry._fit()` enforces `MAX_EMBED_TOTAL` |
 | `modules/logs.py` | `MODULE_EMOJI = NOTE` |
@@ -96,7 +96,7 @@ documentation gap and the three loose ends left behind in the code.
 - **Nothing has run against a real Discord server.** Still to check on a test
   guild: webhook creation and reuse, the `manage_webhooks` fallback, batching
   under a burst of deletions, the 1–2 s audit-correlation windows, and the
-  rendering of at least one event per category. Listed in `docs/LOGS.md`.
+  rendering of at least one event per category. Listed in `docs/features/LOGS.md`.
 - **`channel_voice_status_update`** is matched on the raw audit action id `192`
   (`cogs/logs.py::_VOICE_STATUS_ACTION`) — Discord ships no gateway event and
   discord.py has no enum member. Unconfirmed live; if the id is wrong the event

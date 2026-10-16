@@ -15,7 +15,7 @@
   `InteractionTooSlow`). Unclaimed components get an "inactive" card. Throttled ops notice
   to the error channel on every activation.
 - `utils/loop_monitor.py`: stalls > 2.5 s are reported to the error channel with the stack.
-- Docs: `docs/ERROR_HANDLING.md` (new section), `CLAUDE.md` tree.
+- Docs: `docs/guides/ERROR_HANDLING.md` (new section), `CLAUDE.md` tree.
 - Tests: `tests/test_interaction_guard.py` (+ updated `tests/test_interaction_latency.py`).
 
 ## Decisions

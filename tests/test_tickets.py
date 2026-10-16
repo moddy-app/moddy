@@ -1085,7 +1085,7 @@ _SOURCE_FILES = (
 
 # Keys built with an f-string cannot be read off the source, so every value the
 # interpolation can take is listed here. A new permission or action added
-# without a line here is a gap this test cannot see — see docs/TICKETS.md
+# without a line here is a gap this test cannot see — see docs/features/TICKETS.md
 # "Extending the module".
 _INTERPOLATED_KEYS = (
     [f"modules.tickets.actions.{a}" for a in
@@ -1166,7 +1166,7 @@ class TestNoContentWithLayoutView:
         #
         # `content=NotificationContent(...)` is NOT a message content: it is the
         # uniform payload handed to `bot.notifications.send_dm` (see
-        # docs/NOTIFICATIONS.md), which never reaches Discord as a `content`
+        # docs/guides/NOTIFICATIONS.md), which never reaches Discord as a `content`
         # field. Only a bare `content=` next to a `view=` is the 400 this
         # guards against.
         offenders = [

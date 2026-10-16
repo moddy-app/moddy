@@ -32,7 +32,7 @@ Every per-module language dropdown was removed.
   cards — cache-or-automatic + background warm-up).
 - `modules/configs/server_settings_config.py` — `ServerSettingsConfigView`,
   persistent, Manage Server auth, one dropdown that saves on selection.
-- `docs/SERVER_LANGUAGE.md` — the contract (rules, code usage, dashboard
+- `docs/guides/SERVER_LANGUAGE.md` — the contract (rules, code usage, dashboard
   event, adding a language).
 - `tests/test_guild_language.py` — 14 tests: locale matching, the Community
   rule, cache/invalidation, DB failure degradation, the sync reader.
@@ -93,10 +93,10 @@ Every per-module language dropdown was removed.
 
 ### Docs
 
-`CLAUDE.md` (i18n rule + structure + index), `docs/MODULE_SYSTEM.md` (which
-language a module speaks), `docs/ALTGUARD.md`, `docs/AUTOMOD_AI.md`,
-`docs/AUTOMOD_AI_CONFIG.md`, `docs/LOGS.md`, `docs/TICKETS.md`,
-`docs/BACKEND-INTEGRATION.md`, `docs/REDIS_COMMUNICATION.md`.
+`CLAUDE.md` (i18n rule + structure + index), `docs/guides/MODULE_SYSTEM.md` (which
+language a module speaks), `docs/features/ALTGUARD.md`, `docs/features/AUTOMOD.md`,
+`docs/integration/AUTOMOD_CONFIG.md`, `docs/features/LOGS.md`, `docs/features/TICKETS.md`,
+`docs/integration/BACKEND-INTEGRATION.md`, `docs/integration/REDIS_COMMUNICATION.md`.
 
 ## Decisions & Rationale
 

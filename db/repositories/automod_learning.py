@@ -1,7 +1,7 @@
 """
 Automod images + Moddy team labeling queue repository.
 
-Four global tables (docs/AUTOMOD_AI.md §4.2/§4.3/§9):
+Four global tables (docs/features/AUTOMOD.md §4.2/§4.3/§9):
 
 * ``automod_label_items``        — decisions copied to the team for labeling;
 * ``automod_image_hashes``       — team-validated perceptual hashes (block/allow);
@@ -33,7 +33,7 @@ HASH_VERDICTS = ("block", "allow")
 TERM_MODES = ("words", "compact")
 
 # Hard caps keeping the in-memory learned sets small (resident memory is the
-# first cost line on Railway — see docs/RAILWAY.md).
+# first cost line on Railway — see docs/infra/RAILWAY.md).
 MAX_LEARNED_REFERENCES = 1000
 MAX_IMAGE_HASHES = 20000
 

@@ -37,9 +37,9 @@ inside the join handler).
 | `cogs/config.py` | Route `welcome_dm` through the new async `create()` factory |
 | `utils/persistent_views.py` | Register `ManageWelcomeDmView` alongside the list view |
 | `locales/{fr,en-US,es-ES,pt-BR,de}.json` | `modules.welcome_dm` subtree replaced |
-| `docs/WELCOME_DM.md` | **New** — DB schema, placeholders, validation contract, dashboard integration |
-| `docs/WELCOME_MESSAGES.md` | Cross-link to the sibling module |
-| `docs/PERSISTENT_VIEWS.md` | Stale `working_config` example (`WelcomeChannelConfigView` no longer has one) → `StarboardConfigView` |
+| `docs/features/WELCOME_DM.md` | **New** — DB schema, placeholders, validation contract, dashboard integration |
+| `docs/features/WELCOME_MESSAGES.md` | Cross-link to the sibling module |
+| `docs/guides/PERSISTENT_VIEWS.md` | Stale `working_config` example (`WelcomeChannelConfigView` no longer has one) → `StarboardConfigView` |
 | `CLAUDE.md` | Structure + documentation index |
 
 ## Decisions
@@ -77,6 +77,6 @@ inside the join handler).
 
 ## Follow-ups
 
-- The dashboard must mirror the §4 validation rules of `docs/WELCOME_DM.md` and
+- The dashboard must mirror the §4 validation rules of `docs/features/WELCOME_DM.md` and
   emit `module_updated` after writing, or the bot serves a stale config until
   restart.

@@ -24,6 +24,7 @@ from cogs.error_handler import BaseView, BaseModal
 from staff.framework import design
 from utils import emojis
 from utils.i18n import t
+from utils.errors import NotYours
 from utils.moderation_cases import (
     CaseType,
     SubjectType,
@@ -187,10 +188,7 @@ class CaseCreationView(BaseView):
 
     async def _guard(self, interaction: discord.Interaction) -> bool:
         if interaction.user.id != self.staff_id:
-            await interaction.response.send_message(
-                t("staff.common.not_your_menu", locale=self.locale), ephemeral=True
-            )
-            return False
+            raise NotYours()
         return True
 
     async def _on_type(self, interaction: discord.Interaction):
@@ -345,9 +343,7 @@ class AddSanctionView(BaseView):
 
     async def _on_action(self, interaction: discord.Interaction):
         if interaction.user.id != self.staff_id:
-            await interaction.response.send_message(
-                t("staff.common.not_your_menu", locale=self.locale), ephemeral=True)
-            return
+            raise NotYours()
         action = SanctionAction(interaction.data["values"][0])
         modal = AddSanctionModal(
             bot=self.bot, staff_id=self.staff_id, case_id=self.case_id,
@@ -454,9 +450,7 @@ class RevokeSanctionView(BaseView):
 
     async def _on_select(self, interaction: discord.Interaction):
         if interaction.user.id != self.staff_id:
-            await interaction.response.send_message(
-                t("staff.common.not_your_menu", locale=self.locale), ephemeral=True)
-            return
+            raise NotYours()
         import uuid as _uuid
         sanction_id = _uuid.UUID(interaction.data["values"][0])
         await interaction.response.defer(ephemeral=True)

@@ -4,6 +4,7 @@ Allows users to save messages to a personal library via context menu
 """
 
 import re
+from config import COLORS
 import discord
 from utils.incognito import resolve_default_incognito
 from discord import app_commands, ui
@@ -11,6 +12,7 @@ from discord.ext import commands
 from discord.ui import Container, TextDisplay, Separator
 from discord import SeparatorSpacing
 from cogs.error_handler import BaseView
+from utils.errors import NotYours, InvalidInput, NotFound, Unavailable
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 import logging
@@ -34,7 +36,7 @@ logger = logging.getLogger('moddy.saved_messages')
 # on self.page from a live view). `owner_id` is re-checked on every click.
 # \d{1,20} (not a tighter snowflake range): a bare shell built with
 # owner_id=0 must still match its own template (see
-# docs/PERSISTENT_VIEWS.md Migration log, Step 6).
+# docs/guides/PERSISTENT_VIEWS.md Migration log, Step 6).
 # --------------------------------------------------------------------------- #
 
 _CID_LIST_TEMPLATE = r"moddy:svm:manage:(?P<action>view|prev|next|pageinfo):(?P<owner>\d{1,20}):(?P<page>\d{1,6})"
@@ -64,15 +66,7 @@ async def _reject_if_not_owner(interaction: discord.Interaction, owner_id: int) 
     """Return True (and answer ephemerally) if the clicker is not the owner."""
     if interaction.user.id == owner_id:
         return False
-    locale = i18n.get_user_locale(interaction)
-    await interaction.response.send_message(
-        view=create_error_message(
-            t("errors.not_your_message.title", locale=locale),
-            t("errors.not_your_message.description", locale=locale),
-        ),
-        ephemeral=True,
-    )
-    return True
+    raise NotYours()
 
 
 def message_to_raw_data(message: discord.Message) -> Dict:
@@ -217,7 +211,7 @@ async def _refresh_library_card(bot, owner_id: int, locale: str,
 
     Keyed on (channel_id, message_id) rather than a live view, so it works
     the same whether the card's original view object is still alive or the
-    bot restarted in between (docs/PERSISTENT_VIEWS.md Appendix B.1.b).
+    bot restarted in between (docs/guides/PERSISTENT_VIEWS.md Appendix B.1.b).
     """
     if not channel_id or not message_id:
         return
@@ -320,17 +314,13 @@ class ViewMessageModal(ui.Modal):
         try:
             msg_id = int(self.id_input.value.strip().replace('#', ''))
         except ValueError:
-            error_msg = t("commands.saved_messages.errors.invalid_id", interaction)
-            await interaction.followup.send(error_msg, ephemeral=True)
-            return
+            raise InvalidInput(description=t("commands.saved_messages.errors.invalid_id", interaction))
 
         # Les erreurs imprévues seront gérées par le système global
         saved_msg = await self.bot.db.get_saved_message(msg_id, interaction.user.id)
 
         if not saved_msg:
-            error_msg = t("commands.saved_messages.errors.not_found", interaction)
-            await interaction.followup.send(error_msg, ephemeral=True)
-            return
+            raise NotFound(description=t("commands.saved_messages.errors.not_found", interaction))
 
         await _refresh_library_card(
             self.bot, self.owner_id, self.locale, self.card_channel_id, self.card_message_id,
@@ -364,7 +354,7 @@ class SavedMessagesLibraryView(BaseView):
     def _build_view(self):
         self.clear_items()
 
-        container = Container()
+        container = Container(accent_colour=COLORS["primary"])
 
         if self.show_detail and self.detail_msg:
             # Vue détaillée d'un message
@@ -672,10 +662,7 @@ class SavedMessagesDetailButton(ui.DynamicItem[ui.Button], template=_CID_DETAIL_
 
         detail_msg = await bot.db.get_saved_message(self.saved_id, owner_id)
         if not detail_msg:
-            send = (interaction.followup.send if interaction.response.is_done()
-                    else interaction.response.send_message)
-            await send(t("common.error", locale=locale), ephemeral=True)
-            return
+            raise NotFound()
 
         if self.action == "edit_note":
             # Unavoidable read before the modal (send_modal cannot follow a
@@ -700,7 +687,7 @@ class SavedMessagesDetailButton(ui.DynamicItem[ui.Button], template=_CID_DETAIL_
                     ephemeral=True,
                 )
             else:
-                await interaction.followup.send(t("common.error", locale=locale), ephemeral=True)
+                raise Unavailable()
             return
 
         if self.action == "delete":
@@ -716,7 +703,7 @@ class SavedMessagesDetailButton(ui.DynamicItem[ui.Button], template=_CID_DETAIL_
                     show_detail=False, page=self.page,
                 )
             else:
-                await interaction.followup.send(t("common.error", locale=locale), ephemeral=True)
+                raise Unavailable()
 
 
 class SavedMessages(commands.Cog):

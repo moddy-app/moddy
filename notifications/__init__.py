@@ -15,7 +15,7 @@ across platforms.
         variables={"user": member.mention},
     )
 
-See docs/NOTIFICATIONS.md.
+See docs/guides/NOTIFICATIONS.md.
 """
 
 from notifications.models import (

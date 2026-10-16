@@ -48,7 +48,7 @@ def _stamp(moment: Optional[datetime], style: str = "R") -> str:
 
 
 def _code(value: Any) -> str:
-    """Backtick a dynamic value (DESIGN.md rule), ``—`` when empty."""
+    """Backtick a dynamic value (docs/guides/DESIGN.md rule), ``—`` when empty."""
     text = str(value) if value not in (None, "") else "—"
     return f"`{text}`"
 

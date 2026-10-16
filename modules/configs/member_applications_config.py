@@ -24,7 +24,15 @@ from discord import ui
 
 from cogs.error_handler import BaseModal, BaseView
 from modules.configs._common import (
-    ack, check_guild_perms, load_before_modal, show,
+    ack,
+    check_guild_perms,
+    config_state,
+    crumb,
+    load_before_modal,
+    module_state_row,
+    open_main_config,
+    show,
+    state_accent,
 )
 from modules.member_applications import (
     CHANNEL_TYPES,
@@ -156,7 +164,10 @@ class MemberApplicationsConfigView(BaseView):
     def _build_view(self):
         self.clear_items()
         loc = self.locale
-        container = ui.Container()
+        # Accent follows the module state (gray when paused).
+        state = config_state(self.current_config) if self.has_existing_config else None
+        container = ui.Container(accent_colour=state_accent(state))
+        container.add_item(crumb(self.locale, 'member_applications'))
 
         container.add_item(ui.TextDisplay(f"### {ASSIGNMENT} {t(f'{_P}.title', locale=loc)}"))
         container.add_item(ui.TextDisplay(t(f"{_P}.description", locale=loc)))
@@ -165,6 +176,14 @@ class MemberApplicationsConfigView(BaseView):
             container.add_item(ui.TextDisplay(f"-# {discord_line}"))
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+
+        # Play / pause: only on a clean, saved config (a state click rebuilds the
+        # screen from the saved config and would drop pending edits).
+        state_items = [] if self.has_changes else module_state_row('member_applications', state, self.locale)
+        for item in state_items:
+            container.add_item(item)
+        if state_items:
+            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
         # --- Review channel ------------------------------------------------ #
         container.add_item(ui.TextDisplay(
@@ -251,7 +270,7 @@ class MemberApplicationsConfigView(BaseView):
 
         # Registration shell (self.bot is None): render every conditional
         # button so discord.py learns each custom_id — see
-        # docs/PERSISTENT_VIEWS.md, gotcha 2.
+        # docs/guides/PERSISTENT_VIEWS.md, gotcha 2.
         is_shell = self.bot is None
 
         if self.has_changes or is_shell:
@@ -377,12 +396,7 @@ class MemberApplicationsConfigView(BaseView):
     async def on_back(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
-        from cogs.config import ConfigMainView
-        main_view = ConfigMainView(
-            interaction.client, interaction.guild_id, interaction.user.id,
-            i18n.get_user_locale(interaction),
-        )
-        await show(interaction, main_view)
+        await open_main_config(interaction)
 
     async def on_save(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):

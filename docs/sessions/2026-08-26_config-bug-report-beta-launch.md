@@ -71,16 +71,16 @@ coroutine`). One missing `await`.
 **New:** `cogs/bug_report.py`, `services/support_request_service.py`,
 `utils/support_request_views.py`, `utils/install_welcome.py`,
 `utils/beta_announcement.py`, `staff/commands/com/beta.py`,
-`db/repositories/support_requests.py`, `docs/SUPPORT_REQUESTS.md`,
+`db/repositories/support_requests.py`, `docs/features/SUPPORT_REQUESTS.md`,
 `tests/test_support_requests.py`
 
 **Changed:** `cogs/config.py`, `modules/welcome_dm.py`, `bot.py`, `config.py`,
 `db/base.py`, `notifications/models.py`, `notifications/render.py`,
 `utils/emojis.py`, `utils/persistent_views.py`,
 `utils/staff_role_permissions.py`, the five `locales/*.json`, the 32
-`locales/commands/*.json`, `CLAUDE.md`, `docs/DATABASE.md`,
-`docs/NOTIFICATIONS.md`, `docs/PERSISTENT_VIEWS.md`, `docs/RAILWAY.md`,
-`docs/STAFF_SYSTEM.md`, `docs/EMOJIS.md`
+`locales/commands/*.json`, `CLAUDE.md`, `docs/infra/DATABASE.md`,
+`docs/guides/NOTIFICATIONS.md`, `docs/guides/PERSISTENT_VIEWS.md`, `docs/infra/RAILWAY.md`,
+`docs/guides/STAFF_SYSTEM.md`, `docs/guides/EMOJIS.md`
 
 ## Decisions
 

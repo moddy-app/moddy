@@ -15,7 +15,7 @@ every call site, the swap happens centrally at send time:
 
 ``install()`` is the only public entry point; everything is idempotent and
 every transformation falls back to the untouched payload on error. See
-docs/ICON_THEME.md.
+docs/guides/ICON_THEME.md.
 """
 from __future__ import annotations
 

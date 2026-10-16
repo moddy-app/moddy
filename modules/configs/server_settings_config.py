@@ -27,7 +27,8 @@ import discord
 from discord import ui
 
 from cogs.error_handler import BaseView
-from modules.configs._common import ack, check_guild_perms, say, show
+from config import COLORS
+from modules.configs._common import ack, breadcrumb, check_guild_perms, open_main_config, say, show
 from utils.emojis import BACK, SETTINGS, TRANSLATE
 from utils.guild_language import (
     AUTO,
@@ -88,7 +89,9 @@ class ServerSettingsConfigView(BaseView):
     def _build_view(self) -> None:
         self.clear_items()
 
-        container = ui.Container()
+        container = ui.Container(accent_colour=discord.Colour(COLORS["primary"]))
+        container.add_item(breadcrumb(
+            self.locale, None, t('modules.config.settings.title', locale=self.locale)))
 
         container.add_item(ui.TextDisplay(
             f"### {SETTINGS} {t('modules.config.settings.title', locale=self.locale)}"
@@ -204,11 +207,7 @@ class ServerSettingsConfigView(BaseView):
         if not await check_guild_perms(interaction):
             return
 
-        from cogs.config import ConfigMainView
-        locale = i18n.get_user_locale(interaction)
-        main_view = ConfigMainView(interaction.client, interaction.guild_id,
-                                   interaction.user.id, locale)
-        await show(interaction, main_view)
+        await open_main_config(interaction)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         return await check_guild_perms(interaction)

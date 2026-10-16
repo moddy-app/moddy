@@ -23,7 +23,7 @@ reason transcripts do not have a foreign key on ``tickets``.
 Scores are adjectives, never numbers. "3/5" means nothing consistent across
 people; "Correct" does.
 
-See docs/TICKETS.md and docs/MODALS_V2.md.
+See docs/features/TICKETS.md and docs/guides/MODALS_V2.md.
 """
 
 from __future__ import annotations
@@ -186,7 +186,7 @@ class TicketRatingModal(BaseModal):
         self.add_item(self.comment)
 
     def _chosen_score(self) -> int:
-        # RadioGroup exposes `.value`, not `.values` — see docs/MODALS_V2.md.
+        # RadioGroup exposes `.value`, not `.values` — see docs/guides/MODALS_V2.md.
         raw = getattr(self.score.component, 'value', None)
         try:
             return max(MIN_SCORE, min(MAX_SCORE, int(raw)))

@@ -17,8 +17,8 @@ the bot's Discord permissions.
   error when the secret is missing or shorter than 32 chars, and a warning while
   the escape hatch is on.
 - `tests/test_task_signature.py`: 31 tests, all passing.
-- Docs: new `docs/TASK_SIGNATURE.md`, plus updates to `CLAUDE.md`,
-  `docs/RAILWAY.md`, `docs/BACKEND-INTEGRATION.md`, `docs/REDIS_COMMUNICATION.md`.
+- Docs: new `docs/integration/TASK_SIGNATURE.md`, plus updates to `CLAUDE.md`,
+  `docs/infra/RAILWAY.md`, `docs/integration/BACKEND-INTEGRATION.md`, `docs/integration/REDIS_COMMUNICATION.md`.
 
 ## Files modified
 
@@ -28,8 +28,8 @@ the bot's Discord permissions.
 | `bot.py` | Verification in the stream consumer + resume point always advances |
 | `config.py` | `TASK_STREAM_SECRET`, `TASK_STREAM_ALLOW_UNSIGNED`, boot diagnostics |
 | `tests/test_task_signature.py` | **new** — contract test suite |
-| `docs/TASK_SIGNATURE.md` | **new** — full contract |
-| `CLAUDE.md`, `docs/RAILWAY.md`, `docs/BACKEND-INTEGRATION.md`, `docs/REDIS_COMMUNICATION.md` | Cross-references, env vars, key inventory |
+| `docs/integration/TASK_SIGNATURE.md` | **new** — full contract |
+| `CLAUDE.md`, `docs/infra/RAILWAY.md`, `docs/integration/BACKEND-INTEGRATION.md`, `docs/integration/REDIS_COMMUNICATION.md` | Cross-references, env vars, key inventory |
 
 ## Decisions
 
@@ -58,6 +58,6 @@ the bot's Discord permissions.
 
 - Deployment: set `TASK_STREAM_SECRET` (same value) on both Railway services
   **before** deploying, ship the bot first, then the backend, then make sure
-  `TASK_STREAM_ALLOW_UNSIGNED` is off. See `docs/TASK_SIGNATURE.md` §6.
+  `TASK_STREAM_ALLOW_UNSIGNED` is off. See `docs/integration/TASK_SIGNATURE.md` §6.
 - The backend must start signing; until it does, tasks are rejected unless the
   escape hatch is enabled.

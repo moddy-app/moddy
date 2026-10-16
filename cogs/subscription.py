@@ -5,6 +5,7 @@ The bot never modifies subscription data.
 """
 
 import logging
+from config import COLORS
 from datetime import timezone
 
 import discord
@@ -38,7 +39,7 @@ class SubscriptionView(BaseView):
 
     def _build(self):
         self.clear_items()
-        container = ui.Container()
+        container = ui.Container(accent_colour=COLORS["primary"])
 
         container.add_item(ui.TextDisplay(f"### {PREMIUM} Your Subscription"))
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))

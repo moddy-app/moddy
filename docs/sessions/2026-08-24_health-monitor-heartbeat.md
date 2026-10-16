@@ -27,8 +27,8 @@ What shipped:
   Not ready -> `down`; a shard down -> `degraded`; else `ok`.
 - `config.py`: `HM_URL` / `HM_INGEST_TOKEN`, both optional — either missing
   disables the heartbeat with a `logger.warning`, never a crash.
-- `docs/HEALTH_MONITOR.md` (new) documents the contract and the bot-side
-  wiring; `docs/RAILWAY.md` gets the two new env vars; `CLAUDE.md` project
+- `docs/infra/HEALTH_MONITOR.md` (new) documents the contract and the bot-side
+  wiring; `docs/infra/RAILWAY.md` gets the two new env vars; `CLAUDE.md` project
   structure + doc index updated.
 - `tests/test_heartbeat.py`: payload defaults/overrides, start()/stop()
   lifecycle (no-op without config), and the down/degraded/ok decision table
@@ -40,8 +40,8 @@ What shipped:
 - `services/heartbeat.py` (new)
 - `bot.py`
 - `config.py`
-- `docs/HEALTH_MONITOR.md` (new)
-- `docs/RAILWAY.md`
+- `docs/infra/HEALTH_MONITOR.md` (new)
+- `docs/infra/RAILWAY.md`
 - `CLAUDE.md`
 - `tests/test_heartbeat.py` (new)
 

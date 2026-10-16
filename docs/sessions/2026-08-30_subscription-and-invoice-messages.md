@@ -64,7 +64,7 @@ instead of an opaque Stripe API error.
 - `locales/{en-US,fr,es-ES,pt-BR,de}.json` — invoice block rewritten, `services.stripe`
 - `staff/commands/manage/stripe/trial.py` — trial length cap
 - `tests/test_invoice_notifications.py` — updated + new cases (English-only, Stripe footer/attribution, trial end in body)
-- `docs/SUBSCRIPTION_SCHEMA.md`, `docs/NOTIFICATIONS.md`, `docs/EMOJIS.md`
+- `docs/integration/SUBSCRIPTION_SCHEMA.md`, `docs/guides/NOTIFICATIONS.md`, `docs/guides/EMOJIS.md`
 
 ## Decisions and why
 

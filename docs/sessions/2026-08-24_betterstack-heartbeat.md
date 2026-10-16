@@ -25,8 +25,8 @@ What shipped:
   the bot is fine.
 - `config.py`: `BETTERSTACK_HEARTBEAT_URL`, optional — missing disables the
   ping with a `logger.warning`, never a crash.
-- `docs/HEALTH_MONITOR.md` restructured into two sections (Moddy Health
-  Monitor / Better Stack) with a comparison table up top; `docs/RAILWAY.md`
+- `docs/infra/HEALTH_MONITOR.md` restructured into two sections (Moddy Health
+  Monitor / Better Stack) with a comparison table up top; `docs/infra/RAILWAY.md`
   gets the new env var; `CLAUDE.md` project structure updated.
 - `tests/test_heartbeat.py` extended: `BetterStackHeartbeat` start()/stop()
   lifecycle, plain-vs-`/fail` URL selection, and `_is_bot_healthy` against
@@ -37,8 +37,8 @@ What shipped:
 - `services/betterstack_heartbeat.py` (new)
 - `bot.py`
 - `config.py`
-- `docs/HEALTH_MONITOR.md`
-- `docs/RAILWAY.md`
+- `docs/infra/HEALTH_MONITOR.md`
+- `docs/infra/RAILWAY.md`
 - `CLAUDE.md`
 - `tests/test_heartbeat.py`
 
