@@ -26,7 +26,7 @@ import discord
 from discord import ui
 
 from config import COLORS
-from utils.emojis import EMOJIS, PAUSE, PLAY, WARNING
+from utils.emojis import EMOJIS, LABS, PAUSE, PLAY, WARNING
 from utils.i18n import i18n, t
 from cogs.error_handler import BaseView
 from modules.module_manager import (
@@ -227,7 +227,7 @@ _STATE_ACCENTS = {
     STATE_PAUSED: "neutral",
     STATE_SIMULATION: "warning",
 }
-_STATE_EMOJIS = {STATE_ACTIVE: PLAY, STATE_PAUSED: PAUSE, STATE_SIMULATION: WARNING}
+_STATE_EMOJIS = {STATE_ACTIVE: PLAY, STATE_PAUSED: PAUSE, STATE_SIMULATION: LABS}
 
 
 def state_accent(state: Optional[str]) -> discord.Colour:
@@ -339,7 +339,7 @@ class ModuleStateButton(
         if target == STATE_PAUSED:
             key, emoji, style = "pause", PAUSE, discord.ButtonStyle.secondary
         elif target == STATE_SIMULATION:
-            key, emoji, style = "simulation", WARNING, discord.ButtonStyle.secondary
+            key, emoji, style = "simulation", LABS, discord.ButtonStyle.secondary
         else:
             key = "resume" if current == STATE_PAUSED else "activate"
             emoji, style = PLAY, discord.ButtonStyle.primary

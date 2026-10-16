@@ -369,3 +369,4 @@ category, a log says what happened.
 <:members_icon:1540896707854733412>  `members_icon`
 <:messages_icon:1540896709863936160>  `messages_icon`
 <:Servers_icon:1540896711378075668>  `Servers_icon`
+<:labs:1560741865915949107>  `labs` — Simulation state (`LABS`; light-theme twin `labs_dark` 1560741864154333225)

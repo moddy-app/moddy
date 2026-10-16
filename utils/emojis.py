@@ -38,6 +38,7 @@ BACK = "<:back:1519795556665397431>"
 NEXT = "<:next:1519791619526754354>"
 PAUSE = "<:pause:1519787332801269811>"
 PLAY = "<:play:1519787501789773996>"
+LABS = "<:labs:1560741865915949107>"  # Simulation state (module state, automod dry run)
 LOGOUT = "<:logout:1519795093605974098>"
 DOWNLOAD = "<:download:1519796568255889578>"
 REPLY = "<:reply:1519790151130415154>"
@@ -246,6 +247,7 @@ SUPPORTS_COMMANDS = "<:supportscommands:1439636938372944012>"
 
 EMOJIS = {
     # Status
+    "labs": LABS,
     "done": DONE,
     "undone": UNDONE,
     "loading": LOADING,
@@ -864,6 +866,7 @@ DARK_VARIANTS: Dict[str, int] = {
     "pending_dark": 1558776286774558750,
     "person_off_dark": 1558776185411084339,
     "play_dark": 1558776094247751732,
+    "labs_dark": 1560741864154333225,
     "policy_dark": 1558776244789710960,
     "premium_dark": 1558776174962810971,
     "railway_dark": 1558776068150919170,

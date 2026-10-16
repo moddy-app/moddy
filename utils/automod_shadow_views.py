@@ -28,7 +28,7 @@ from discord import ui
 
 from cogs.error_handler import BaseView
 from utils.i18n import t, i18n
-from utils.emojis import SHIELD, SEARCH, DONE, UNDONE, WARNING, get_sanction_accent
+from utils.emojis import LABS, SHIELD, SEARCH, DONE, UNDONE, WARNING, get_sanction_accent
 from utils.automod_render import actions_text, bareme_breakdown, sanction_name
 
 logger = logging.getLogger("moddy.automod_shadow")
@@ -82,7 +82,7 @@ def render_shadow_card(candidate: Dict[str, Any]) -> ui.LayoutView:
     container.add_item(ui.TextDisplay(
         f"### {SHIELD} {t('modules.automod_ai.log.title', locale=locale)}"))
     container.add_item(ui.TextDisplay(
-        f"{SEARCH} **{t('modules.automod_ai.shadow.badge', locale=locale)}**"))
+        f"{LABS} **{t('modules.automod_ai.shadow.badge', locale=locale)}**"))
 
     author_id = candidate.get("author_id")
     channel_id = candidate.get("channel_id")
