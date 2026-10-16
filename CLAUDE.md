@@ -324,7 +324,7 @@ moddy/
 ├── internal_api/              # FastAPI internal API
 │   ├── server.py              #   FastAPI app + /health, /ping, /status + router wiring
 │   ├── routes/                #   API route handlers
-│   │   └── automod.py         #     POST /automod/rules_check (indications or custom-infraction safety check)
+│   │   └── automod.py         #     POST /automod/rules_check (custom-infraction safety check)
 │   └── middleware/             #   Auth middleware
 │
 ├── schemas/                   # Data schemas
