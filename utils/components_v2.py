@@ -56,32 +56,18 @@ def create_simple_message(
     return view
 
 
-def create_error_message(title: str, description: str, fields: Optional[List[Dict[str, str]]] = None) -> LayoutView:
+def create_error_message(title: str, description: str, fields: Optional[List[Dict[str, str]]] = None, **options) -> LayoutView:
     """
-    Create an error message using Components V2
+    Create an expected-error card (Components V2).
 
-    Args:
-        title: Error title
-        description: Error description
-        fields: Optional list of fields
-
-    Returns:
-        LayoutView ready to send
+    Delegates to ``utils.errors.build_error_card`` so every error shares one
+    look. ``options`` (``severity``, ``accent``, ``icon``, ``hint``, ``buttons``)
+    customise the card; an ``icon`` replaces the default one.
     """
-    view = LayoutView()
-    container = Container()
+    from utils.errors import build_error_card
 
-    error_text = f"{EMOJIS['error']} **{title}**\n{description}"
-    container.add_item(TextDisplay(error_text))
-
-    if fields:
-        container.add_item(Separator(spacing=SeparatorSpacing.small))
-        for field in fields:
-            field_text = f"**{field['name']}**\n{field['value']}"
-            container.add_item(TextDisplay(field_text))
-
-    view.add_item(container)
-    return view
+    options.setdefault("severity", "error")
+    return build_error_card(title, description, fields=fields, **options)
 
 
 def create_success_message(title: str, description: str, fields: Optional[List[Dict[str, str]]] = None, footer: Optional[str] = None) -> LayoutView:
@@ -150,32 +136,18 @@ def create_info_message(title: str, description: str, fields: Optional[List[Dict
     return view
 
 
-def create_warning_message(title: str, description: str, fields: Optional[List[Dict[str, str]]] = None) -> LayoutView:
+def create_warning_message(title: str, description: str, fields: Optional[List[Dict[str, str]]] = None, **options) -> LayoutView:
     """
-    Create a warning message using Components V2
+    Create a warning card (Components V2).
 
-    Args:
-        title: Warning title
-        description: Warning description
-        fields: Optional list of fields
-
-    Returns:
-        LayoutView ready to send
+    Delegates to ``utils.errors.build_error_card`` so every error shares one
+    look. ``options`` (``severity``, ``accent``, ``icon``, ``hint``, ``buttons``)
+    customise the card; an ``icon`` replaces the default one.
     """
-    view = LayoutView()
-    container = Container()
+    from utils.errors import build_error_card
 
-    warning_text = f"⚠️ **{title}**\n{description}"
-    container.add_item(TextDisplay(warning_text))
-
-    if fields:
-        container.add_item(Separator(spacing=SeparatorSpacing.small))
-        for field in fields:
-            field_text = f"**{field['name']}**\n{field['value']}"
-            container.add_item(TextDisplay(field_text))
-
-    view.add_item(container)
-    return view
+    options.setdefault("severity", "warning")
+    return build_error_card(title, description, fields=fields, **options)
 
 
 def create_staff_info_message(

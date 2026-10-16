@@ -8,6 +8,7 @@
 5. [Logging](#logging)
 6. [Troubleshooting](#troubleshooting)
 7. [Interaction guard and delivery chain](#interaction-guard-and-delivery-chain)
+8. [Expected errors](#expected-errors)
 
 ---
 
@@ -521,3 +522,94 @@ recovers (throttled to one per 5 min) with the captured stack
   `report_interaction_error` / `report_component_error`.
 - Upgrading discord.py: `tests/test_interaction_guard.py` fails if a patched
   attribute moved.
+
+
+---
+
+## Expected errors
+
+> One system for every error a user sees. An **unexpected** error (a bug) gets
+> the `ErrorView` card with an error code, Sentry, a database row and an
+> error-channel post. An **expected** error (missing permission, invalid input,
+> not found, cooldown, module disabled, premium required...) is not a bug: it
+> gets a calm, uniform card with **no code, no Sentry, no DB row, no log above
+> INFO**.
+
+Code: `utils/errors.py` (exceptions + card builder). Handling:
+`cogs/error_handler.py::report_expected_error`, called from
+`report_interaction_error` (so `BaseView.on_error`, `BaseModal.on_error`,
+`report_component_error` and the app-command handler all recognise it) and from
+`on_command_error` (prefix / hybrid commands).
+
+### Raising
+
+```python
+from utils.errors import NotFound, InvalidInput, MissingPermissions, ModuleDisabled
+
+async def on_button(self, interaction):           # inside any view / modal / command
+    role = guild.get_role(role_id)
+    if role is None:
+        raise NotFound(f"`{role_id}`")            # "I couldn't find `123`. Check it and try again."
+    if not 1 <= minutes <= 60:
+        raise InvalidInput("duration")            # "`duration` isn't valid. ..."
+    if not module_active:
+        raise ModuleDisabled("Tickets")
+```
+
+Do not catch it in the callback: let it propagate. Never wrap it in
+`create_error_message` yourself unless you need to answer *and* continue.
+
+| Class | Use for | Severity |
+|---|---|---|
+| `MissingPermissions(perms)` | the **user** lacks a permission | warning |
+| `BotMissingPermissions(perms)` | **Moddy** lacks a permission | warning |
+| `InvalidInput(field=None)` | a value is not acceptable | warning |
+| `NotFound(what=None)` | something referred to does not exist | warning |
+| `Cooldown(retry_after)` | rate limit | info |
+| `ModuleDisabled(module=None)` | module not active on this server | info |
+| `PremiumRequired(feature=None)` | premium feature (premium icon) | info |
+| `NotAllowed()` / `NotYours()` / `GuildOnly()` / `Unavailable()` / `MissingArgument(name)` | the rest | warning / info |
+| `ModdyError(description, title=, severity=, icon=, accent=, hint=, fields=, buttons=)` | anything else (literal, already localized text) | error |
+
+Strings come from `errors.expected.<key>.title|description|hint` in the five
+locales (`ModdyError(key="...", **variables)`), or are passed literally.
+discord.py built-ins are mapped automatically: `MissingPermissions`,
+`BotMissingPermissions`, `CommandOnCooldown`, `NoPrivateMessage`,
+`TransformerError`, `MissingRole`, `MissingRequiredArgument`, `BadArgument`.
+A plain `CheckFailure` renders "Not allowed" unless the check already answered
+the interaction (then it stays silent). Prefix commands keep ignoring
+`CommandNotFound`, `NotOwner`, `DisabledCommand`.
+
+### The card
+
+`build_error_card(title, description, *, severity, accent, icon, hint, fields, buttons)`
+is the only builder. `create_error_message` / `create_warning_message`
+(`utils/components_v2.py`) delegate to it, so existing call sites share the look.
+
+| Severity | Accent | Default icon |
+|---|---|---|
+| `info` | blurple | info |
+| `warning` | yellow | warning |
+| `error` | red | error |
+| `critical` | dark red | exclamation |
+
+Never green (green is success only). A custom `icon` **replaces** the default
+one (`icon=""` shows none): one icon per title. The unexpected card is dark red
+with the bug icon, an error code and Support/Status buttons: that is how users
+tell "your input" from "our bug". Buttons must be link buttons (the card is not
+persistent; it is an error-recovery view, see PERSISTENT_VIEWS.md exclusions).
+
+### Writing guidelines (every expected error)
+
+- **Tone**: calm, direct, "you/vous". No apology, no blame, no exclamation marks,
+  no jargon, no raw exception text.
+- **Content**: what happened + what to do next. Description is 1-2 short
+  sentences (about 10-20 words). Title is 2-5 words, a noun phrase.
+- **Dynamic values** in backticks; the `hint` (`-#`) is optional extra context.
+- All text through i18n in the 5 locales.
+
+| Do | Don't |
+|---|---|
+| `Missing permission` / `You need `Manage Roles` to do this. Ask an admin if you need access.` | `Error!! You are not allowed to execute this command because of insufficient perms.` |
+| `Not found` / `I couldn't find `123`. Check it and try again.` | `Oops, something went wrong :(` |
+| `Slow down` / `You can use this again in `4s`.` | `Cooldown active, wait 4.0 seconds` |

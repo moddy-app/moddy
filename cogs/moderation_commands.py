@@ -203,14 +203,10 @@ async def _send_sanction_dm(
         logger.warning("Could not send DM to %s: %s", user.id, exc)
 
 
-def _make_error_view(title: str, desc: str) -> BaseView:
-    view = BaseView()
-    container = ui.Container(
-        ui.TextDisplay(f"### {emojis.ERROR} {title}\n{desc}"),
-        accent_colour=discord.Colour(COLORS["error"]),
-    )
-    view.add_item(container)
-    return view
+def _make_error_view(title: str, desc: str) -> ui.LayoutView:
+    """Expected-error card (centralized look, see utils/errors.py)."""
+    from utils.errors import build_error_card
+    return build_error_card(title, desc, severity="error")
 
 
 def _hierarchy_check(

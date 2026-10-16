@@ -569,6 +569,38 @@ def _who(interaction: discord.Interaction) -> Dict[str, Any]:
     }
 
 
+async def report_expected_error(interaction: discord.Interaction, error, *, command: str = "") -> str:
+    """Render an EXPECTED error (``utils.errors.ModdyError``) for the user.
+
+    No error code, no Sentry, no database row, no error-channel post: it is a
+    user-facing condition, not a bug. Delivery follows the same chain as every
+    error card (response -> followup -> edit original) but never falls back to
+    a DM. Returns the delivery outcome (``silent`` when a failed check already
+    answered the interaction).
+    """
+    from utils.errors import to_expected_error
+    expected = to_expected_error(error)
+    if expected is None:
+        return "none"
+    if expected.only_if_unanswered:
+        try:
+            if interaction.response.is_done():
+                return "silent"
+        except Exception:  # noqa: BLE001
+            pass
+    logger.info("Expected error [%s] %s: %s", command or "?", type(expected).__name__, expected)
+    try:
+        view = expected.render(locale_for(interaction))
+    except Exception as exc:  # noqa: BLE001 - a broken card must not turn into silence
+        logger.error("Could not render expected error %r: %s", expected, exc, exc_info=True)
+        return "none"
+    reached = await deliver_view(interaction, view)
+    if reached == "none":
+        logger.warning("Expected error card not delivered to user %s on %s",
+                       getattr(getattr(interaction, "user", None), "id", "?"), interaction.id)
+    return reached
+
+
 _FATAL_TYPES = (RuntimeError, AttributeError, ImportError, MemoryError, SystemError, ModuleNotFoundError)
 
 
@@ -593,6 +625,11 @@ async def report_interaction_error(
     returned error code is ``None`` only when the same interaction was already
     reported for an expired token (the guard and the handler racing).
     """
+    from utils.errors import to_expected_error
+    if to_expected_error(error) is not None:
+        await report_expected_error(interaction, error, command=command)
+        return None
+
     bot = bot or getattr(interaction, "client", None)
     kind = expired_interaction_kind(error)
     extras = getattr(interaction, "extras", None)
@@ -985,44 +1022,20 @@ class ErrorTracker(commands.Cog):
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):
         """Handles command errors"""
-        # Ignored errors (already handled)
-        ignored = (
-            commands.CommandNotFound,
-            commands.NotOwner,
-            commands.CheckFailure,
-            commands.DisabledCommand,
-            commands.NoPrivateMessage
-        )
-
-        if isinstance(error, ignored):
+        # Silent by design (unknown command, owner-only, disabled)
+        if isinstance(error, (commands.CommandNotFound, commands.NotOwner, commands.DisabledCommand)):
             return
 
-        # Errors with specific handling (no log)
-        if isinstance(error, commands.MissingPermissions):
-            embed = discord.Embed(
-                title="Insufficient Permissions",
-                description=f"Missing permissions: `{', '.join(error.missing_permissions)}`",
-                color=COLORS["error"]
-            )
-            await ctx.send(embed=embed)
+        # Expected errors (ModdyError, missing permissions, cooldown, bad
+        # argument...): a uniform card, no error code, no logging as an error.
+        from utils.errors import to_expected_error
+        expected = to_expected_error(error)
+        if expected is not None:
+            await self._send_expected(ctx, expected)
             return
 
-        if isinstance(error, commands.CommandOnCooldown):
-            embed = discord.Embed(
-                title="Cooldown Active",
-                description=f"Try again in `{error.retry_after:.1f}` seconds",
-                color=COLORS["warning"]
-            )
-            await ctx.send(embed=embed)
-            return
-
-        if isinstance(error, commands.MissingRequiredArgument):
-            embed = discord.Embed(
-                title="Missing Argument",
-                description=f"The argument `{error.param.name}` is required",
-                color=COLORS["error"]
-            )
-            await ctx.send(embed=embed)
+        # Any other check failure already told the user (or must stay silent)
+        if isinstance(error, commands.CheckFailure):
             return
 
         # For all other errors, we log
@@ -1087,6 +1100,18 @@ class ErrorTracker(commands.Cog):
                     await _dm_fallback()
         except Exception as send_error:
             logger.error(f"Failed to send error message to user: {send_error}")
+
+    async def _send_expected(self, ctx: commands.Context, expected) -> None:
+        """Show an expected-error card for a prefix / hybrid command."""
+        interaction = getattr(ctx, 'interaction', None)
+        if interaction is not None:
+            await report_expected_error(
+                interaction, expected, command=str(ctx.command) if ctx.command else "")
+            return
+        try:
+            await ctx.send(view=expected.render("en-US"))
+        except discord.HTTPException as send_error:
+            logger.warning("Could not send the expected-error card: %s", send_error)
 
     @commands.Cog.listener()
     async def on_error(self, event: str, *args, **kwargs):
@@ -1154,65 +1179,13 @@ class ErrorTracker(commands.Cog):
                 interaction, InfoNoticeView("errors.command_unavailable", locale_for(interaction)))
             return
 
-        # Errors with specific handling
-        if isinstance(error, discord.app_commands.MissingPermissions):
-            # Create inline view for permissions error
-            class PermissionErrorView(ui.LayoutView):
-                def __init__(self):
-                    super().__init__(timeout=None)
-                    container = ui.Container()
-                    container.add_item(
-                        ui.TextDisplay(f"### <:error:1519790252594827264> Insufficient Permissions")
-                    )
-                    container.add_item(
-                        ui.TextDisplay("You don't have the necessary permissions to execute this command.")
-                    )
-                    button_row = ui.ActionRow()
-                    support_btn = ui.Button(
-                        label="Support Server",
-                        style=discord.ButtonStyle.link,
-                        url="https://moddy.app/support"
-                    )
-                    button_row.add_item(support_btn)
-                    container.add_item(button_row)
-                    self.add_item(container)
-
-            await self._reply_card(interaction, PermissionErrorView())
-            return
-
-        if isinstance(error, discord.app_commands.CommandOnCooldown):
-            # Create inline view for cooldown error
-            class CooldownErrorView(ui.LayoutView):
-                def __init__(self, retry_after: float):
-                    super().__init__(timeout=None)
-                    container = ui.Container()
-                    container.add_item(
-                        ui.TextDisplay(f"### ⏱️ Cooldown Active")
-                    )
-                    container.add_item(
-                        ui.TextDisplay(f"Please try again in `{retry_after:.1f}` seconds.")
-                    )
-                    self.add_item(container)
-
-            await self._reply_card(interaction, CooldownErrorView(error.retry_after))
-            return
-
-        # Argument that couldn't be resolved (e.g. a username typed where a
-        # Member/User is expected) — a user mistake, not a bug. Show a friendly
-        # message instead of an error code.
-        if isinstance(error, discord.app_commands.TransformerError):
-            class NotFoundView(ui.LayoutView):
-                def __init__(self):
-                    super().__init__(timeout=None)
-                    container = ui.Container()
-                    container.add_item(ui.TextDisplay(
-                        f"### <:warning:1519789903100121139> Couldn't find that"))
-                    container.add_item(ui.TextDisplay(
-                        f"`{str(error.value)[:80]}` doesn't match a member or user I can see. "
-                        f"Try mentioning them or using their ID."))
-                    self.add_item(container)
-
-            await self._reply_card(interaction, NotFoundView())
+        # Expected errors (ModdyError, missing permissions, cooldown, unresolved
+        # argument, failed check...): a uniform card, no error code, no report.
+        from utils.errors import to_expected_error
+        if to_expected_error(error) is not None:
+            await report_expected_error(
+                interaction, error,
+                command=interaction.command.name if interaction.command else "Unknown")
             return
 
         # For all other errors: the full path (code, Sentry, DB, error channel,

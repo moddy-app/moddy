@@ -858,6 +858,80 @@
     }
   },
   "errors": {
+    "expected": {
+      "generic": {
+        "title": "No se pudo",
+        "description": "Eso no funcionó. Revisa lo que hiciste e inténtalo de nuevo."
+      },
+      "missing_permissions": {
+        "title": "Falta un permiso",
+        "description": "Necesitas {permissions} para hacer esto. Pide acceso a un admin si lo necesitas."
+      },
+      "bot_missing_permissions": {
+        "title": "Moddy necesita permisos",
+        "description": "A Moddy le falta {permissions} aquí. Concédelo e inténtalo de nuevo."
+      },
+      "invalid_input": {
+        "title": "Entrada no válida",
+        "description": "Ese valor no es válido. Revísalo e inténtalo de nuevo."
+      },
+      "invalid_input_field": {
+        "title": "Entrada no válida",
+        "description": "{field} no es válido. Revísalo e inténtalo de nuevo."
+      },
+      "not_found": {
+        "title": "No encontrado",
+        "description": "No encontré eso. Revisa e inténtalo de nuevo."
+      },
+      "not_found_named": {
+        "title": "No encontrado",
+        "description": "No encontré {what}. Revisa e inténtalo de nuevo."
+      },
+      "unresolved_argument": {
+        "title": "No encontrado",
+        "description": "`{value}` no coincide con nada que pueda ver. Menciónalo o usa su ID."
+      },
+      "cooldown": {
+        "title": "Más despacio",
+        "description": "Podrás usar esto de nuevo en `{retry}`."
+      },
+      "module_disabled": {
+        "title": "Función inactiva",
+        "description": "Esta función no está activa en este servidor. Un admin puede activarla en `/config`."
+      },
+      "module_disabled_named": {
+        "title": "Función inactiva",
+        "description": "{module} no está activo en este servidor. Un admin puede activarlo en `/config`."
+      },
+      "premium_required": {
+        "title": "Función Premium",
+        "description": "Esto requiere Moddy Premium. Mira los planes con `/subscription`."
+      },
+      "premium_required_named": {
+        "title": "Función Premium",
+        "description": "{feature} requiere Moddy Premium. Mira los planes con `/subscription`."
+      },
+      "not_allowed": {
+        "title": "No permitido",
+        "description": "No puedes hacer esto aquí. Pide acceso a un admin si lo necesitas."
+      },
+      "not_yours": {
+        "title": "No es tu mensaje",
+        "description": "Estos controles son de otra persona. Ejecuta el comando tú mismo."
+      },
+      "guild_only": {
+        "title": "Solo en servidores",
+        "description": "Esto solo funciona en un servidor. Ejecútalo en un servidor con Moddy."
+      },
+      "unavailable": {
+        "title": "No disponible",
+        "description": "Esto no está disponible ahora. Inténtalo de nuevo en un momento."
+      },
+      "missing_argument": {
+        "title": "Falta un argumento",
+        "description": "{argument} es obligatorio. Añádelo e inténtalo de nuevo."
+      }
+    },
     "generic": {
       "title": "Se ha producido un error",
       "description": "**Código de error:** `{error_code}`\n\nEste error se ha registrado y será analizado.\nPuedes proporcionar este código al desarrollador si es necesario."
@@ -986,7 +1060,37 @@
         "guild_missing_perms": "<:error:1519790252594827264> A Moddy le faltan permisos en este servidor:\n{permissions}"
       },
       "current_value": "Valor actual:",
-      "not_configured": "Sin configurar"
+      "not_configured": "Sin configurar",
+      "state": {
+        "label": "Estado",
+        "active": "Activo",
+        "paused": "En pausa",
+        "simulation": "Simulación",
+        "not_configured": "Sin configurar",
+        "description": {
+          "active": "El módulo está en funcionamiento.",
+          "paused": "El módulo está en pausa: no hace nada y sus comandos están ocultos. Tu configuración se conserva.",
+          "simulation": "El módulo observa y simula sus acciones sin aplicar nada."
+        },
+        "buttons": {
+          "pause": "Pausar",
+          "resume": "Reanudar",
+          "activate": "Activar",
+          "simulation": "Simulación"
+        },
+        "changed": {
+          "active": "Módulo reanudado.",
+          "paused": "Módulo en pausa.",
+          "simulation": "Módulo en simulación."
+        },
+        "errors": {
+          "not_configured": "Este módulo aún no tiene una configuración guardada.",
+          "failed": "No se pudo cambiar el estado del módulo. Inténtalo de nuevo."
+        }
+      },
+      "breadcrumb": {
+        "root": "Configuración"
+      }
     },
     "welcome_channel": {
       "name": "Canal de bienvenida",

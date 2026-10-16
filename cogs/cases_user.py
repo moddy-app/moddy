@@ -75,16 +75,13 @@ class CasesUserCog(commands.Cog):
         await interaction.followup.send(view=view, ephemeral=True)
 
 
-def _not_found(locale: str, reference: str) -> BaseView:
-    view = BaseView()
-    container = ui.Container(accent_colour=discord.Colour(COLORS["error"]))
-    container.add_item(ui.TextDisplay(
-        f"### {emojis.ERROR} {t('commands.cases.browser.not_found_title', locale=locale)}"
-    ))
-    container.add_item(ui.TextDisplay(
-        t('commands.cases.browser.not_found', locale=locale, id=f"`{reference}`")))
-    view.add_item(container)
-    return view
+def _not_found(locale: str, reference: str) -> ui.LayoutView:
+    from utils.errors import build_error_card
+    return build_error_card(
+        t('commands.cases.browser.not_found_title', locale=locale),
+        t('commands.cases.browser.not_found', locale=locale, id=f"`{reference}`"),
+        severity="warning",
+    )
 
 
 async def setup(bot):

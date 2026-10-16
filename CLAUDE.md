@@ -219,6 +219,7 @@ moddy/
 │   ├── bot_permissions.py     #   Bot permission checks (baseline, guild + channel level, all gaps at once)
 │   ├── i18n.py                #   Internationalization system (honours the /preferences language override)
 │   ├── loop_monitor.py        #   Event-loop lag monitor + watchdog stack dump + late-interaction logging (10062 diagnosis), notifies stalls > 2.5 s
+│   ├── errors.py              #   Expected errors: ModdyError family + build_error_card (one look for every non-bug error)
 │   ├── interaction_guard.py   #   Auto-acknowledges interactions unanswered after ~2 s (defer + response shims), see docs/ERROR_HANDLING.md
 │   ├── user_preferences.py    #   Per-user prefs cache (icon theme + language), loaded at startup
 │   ├── icon_theme.py          #   Light-theme icon swap: rewrites outgoing payloads (white → *_dark twins)
@@ -452,7 +453,7 @@ moddy/
 
 ### 8. Error Handling
 - For "unexpected" errors in cogs/modules: let the global error handler manage them
-- For expected errors: use `create_error_message()` / `create_success_message()` from `utils/components_v2.py`
+- For expected errors: `raise` a `utils.errors.ModdyError` subclass (`NotFound`, `InvalidInput`, `MissingPermissions`, `Cooldown`...) and let it propagate, or build the card with `build_error_card()` / `create_error_message()`. See docs/ERROR_HANDLING.md → Expected errors
 
 ### 8. Persistent Views — **MANDATORY, NO EXCEPTIONS**
 - **You MUST use persistent views for EVERY interactive Discord component,

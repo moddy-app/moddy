@@ -858,6 +858,80 @@
     }
   },
   "errors": {
+    "expected": {
+      "generic": {
+        "title": "Nicht möglich",
+        "description": "Das hat nicht geklappt. Prüfe deine Eingabe und versuche es erneut."
+      },
+      "missing_permissions": {
+        "title": "Berechtigung fehlt",
+        "description": "Dafür brauchst du {permissions}. Frag bei Bedarf einen Admin."
+      },
+      "bot_missing_permissions": {
+        "title": "Moddy braucht Berechtigungen",
+        "description": "Moddy fehlt hier {permissions}. Erteile sie und versuche es erneut."
+      },
+      "invalid_input": {
+        "title": "Ungültige Eingabe",
+        "description": "Dieser Wert ist ungültig. Prüfe ihn und versuche es erneut."
+      },
+      "invalid_input_field": {
+        "title": "Ungültige Eingabe",
+        "description": "{field} ist ungültig. Prüfe es und versuche es erneut."
+      },
+      "not_found": {
+        "title": "Nicht gefunden",
+        "description": "Ich habe das nicht gefunden. Prüfe es und versuche es erneut."
+      },
+      "not_found_named": {
+        "title": "Nicht gefunden",
+        "description": "Ich habe {what} nicht gefunden. Prüfe es und versuche es erneut."
+      },
+      "unresolved_argument": {
+        "title": "Nicht gefunden",
+        "description": "`{value}` passt zu nichts, was ich sehen kann. Erwähne es oder nutze die ID."
+      },
+      "cooldown": {
+        "title": "Langsam",
+        "description": "Du kannst das in `{retry}` erneut nutzen."
+      },
+      "module_disabled": {
+        "title": "Funktion inaktiv",
+        "description": "Diese Funktion ist auf diesem Server nicht aktiv. Ein Admin kann sie unter `/config` aktivieren."
+      },
+      "module_disabled_named": {
+        "title": "Funktion inaktiv",
+        "description": "{module} ist auf diesem Server nicht aktiv. Ein Admin kann es unter `/config` aktivieren."
+      },
+      "premium_required": {
+        "title": "Premium-Funktion",
+        "description": "Dafür brauchst du Moddy Premium. Die Pläne findest du mit `/subscription`."
+      },
+      "premium_required_named": {
+        "title": "Premium-Funktion",
+        "description": "{feature} braucht Moddy Premium. Die Pläne findest du mit `/subscription`."
+      },
+      "not_allowed": {
+        "title": "Nicht erlaubt",
+        "description": "Das darfst du hier nicht. Frag bei Bedarf einen Admin."
+      },
+      "not_yours": {
+        "title": "Nicht deine Nachricht",
+        "description": "Diese Bedienelemente gehören jemand anderem. Führe den Befehl selbst aus."
+      },
+      "guild_only": {
+        "title": "Nur auf Servern",
+        "description": "Das funktioniert nur auf einem Server. Nutze es auf einem Server mit Moddy."
+      },
+      "unavailable": {
+        "title": "Nicht verfügbar",
+        "description": "Das ist gerade nicht verfügbar. Versuche es gleich noch einmal."
+      },
+      "missing_argument": {
+        "title": "Fehlendes Argument",
+        "description": "{argument} ist erforderlich. Füge es hinzu und versuche es erneut."
+      }
+    },
     "generic": {
       "title": "Ein Fehler ist aufgetreten",
       "description": "**Fehlercode:** `{error_code}`\n\nDieser Fehler wurde protokolliert und wird analysiert.\nDu kannst diesen Code bei Bedarf dem Entwickler mitteilen."
@@ -986,7 +1060,37 @@
         "guild_missing_perms": "<:error:1519790252594827264> Moddy fehlen Berechtigungen auf diesem Server:\n{permissions}"
       },
       "current_value": "Aktueller Wert:",
-      "not_configured": "Nicht konfiguriert"
+      "not_configured": "Nicht konfiguriert",
+      "state": {
+        "label": "Status",
+        "active": "Aktiv",
+        "paused": "Pausiert",
+        "simulation": "Simulation",
+        "not_configured": "Nicht konfiguriert",
+        "description": {
+          "active": "Das Modul läuft.",
+          "paused": "Das Modul ist pausiert: Es tut nichts und seine Befehle sind ausgeblendet. Deine Konfiguration bleibt erhalten.",
+          "simulation": "Das Modul beobachtet und simuliert seine Aktionen, ohne etwas anzuwenden."
+        },
+        "buttons": {
+          "pause": "Pausieren",
+          "resume": "Fortsetzen",
+          "activate": "Aktivieren",
+          "simulation": "Simulation"
+        },
+        "changed": {
+          "active": "Modul fortgesetzt.",
+          "paused": "Modul pausiert.",
+          "simulation": "Modul in Simulation."
+        },
+        "errors": {
+          "not_configured": "Dieses Modul hat noch keine gespeicherte Konfiguration.",
+          "failed": "Der Modulstatus konnte nicht geändert werden. Bitte versuche es erneut."
+        }
+      },
+      "breadcrumb": {
+        "root": "Konfiguration"
+      }
     },
     "welcome_channel": {
       "name": "Willkommenskanal",

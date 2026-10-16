@@ -857,6 +857,80 @@
     }
   },
   "errors": {
+    "expected": {
+      "generic": {
+        "title": "Action impossible",
+        "description": "Ça n'a pas fonctionné. Vérifiez votre action et réessayez."
+      },
+      "missing_permissions": {
+        "title": "Permission manquante",
+        "description": "Il vous faut {permissions} pour faire ça. Demandez à un admin si besoin."
+      },
+      "bot_missing_permissions": {
+        "title": "Moddy a besoin de permissions",
+        "description": "Il manque {permissions} à Moddy ici. Accordez-la, puis réessayez."
+      },
+      "invalid_input": {
+        "title": "Saisie invalide",
+        "description": "Cette valeur n'est pas valide. Vérifiez-la et réessayez."
+      },
+      "invalid_input_field": {
+        "title": "Saisie invalide",
+        "description": "{field} n'est pas valide. Vérifiez-le et réessayez."
+      },
+      "not_found": {
+        "title": "Introuvable",
+        "description": "Je n'ai pas trouvé ça. Vérifiez et réessayez."
+      },
+      "not_found_named": {
+        "title": "Introuvable",
+        "description": "Je n'ai pas trouvé {what}. Vérifiez et réessayez."
+      },
+      "unresolved_argument": {
+        "title": "Introuvable",
+        "description": "`{value}` ne correspond à rien que je puisse voir. Mentionnez-le ou utilisez son ID."
+      },
+      "cooldown": {
+        "title": "Doucement",
+        "description": "Vous pourrez réutiliser ceci dans `{retry}`."
+      },
+      "module_disabled": {
+        "title": "Fonction inactive",
+        "description": "Cette fonction n'est pas active sur ce serveur. Un admin peut l'activer dans `/config`."
+      },
+      "module_disabled_named": {
+        "title": "Fonction inactive",
+        "description": "{module} n'est pas actif sur ce serveur. Un admin peut l'activer dans `/config`."
+      },
+      "premium_required": {
+        "title": "Fonction Premium",
+        "description": "Cela nécessite Moddy Premium. Voyez les offres avec `/subscription`."
+      },
+      "premium_required_named": {
+        "title": "Fonction Premium",
+        "description": "{feature} nécessite Moddy Premium. Voyez les offres avec `/subscription`."
+      },
+      "not_allowed": {
+        "title": "Non autorisé",
+        "description": "Vous ne pouvez pas faire ça ici. Demandez à un admin si besoin."
+      },
+      "not_yours": {
+        "title": "Pas votre message",
+        "description": "Ces contrôles appartiennent à quelqu'un d'autre. Lancez la commande vous-même."
+      },
+      "guild_only": {
+        "title": "Serveur uniquement",
+        "description": "Cela ne marche que dans un serveur. Lancez-le sur un serveur avec Moddy."
+      },
+      "unavailable": {
+        "title": "Indisponible",
+        "description": "Ce n'est pas disponible pour le moment. Réessayez dans un instant."
+      },
+      "missing_argument": {
+        "title": "Argument manquant",
+        "description": "{argument} est requis. Ajoutez-le et réessayez."
+      }
+    },
     "generic": {
       "title": "Une erreur est survenue",
       "description": "**Code d'erreur :** `{error_code}`\n\nCette erreur a été enregistrée et sera analysée.\nVous pouvez fournir ce code au développeur si nécessaire."
@@ -985,7 +1059,37 @@
         "guild_missing_perms": "<:error:1519790252594827264> Moddy n'a pas toutes les permissions nécessaires sur ce serveur :\n{permissions}"
       },
       "current_value": "Valeur actuelle :",
-      "not_configured": "Non configuré"
+      "not_configured": "Non configuré",
+      "state": {
+        "label": "État",
+        "active": "Actif",
+        "paused": "En pause",
+        "simulation": "Simulation",
+        "not_configured": "Non configuré",
+        "description": {
+          "active": "Le module est actif.",
+          "paused": "Le module est en pause : il n'agit plus et ses commandes sont masquées. Votre configuration est conservée.",
+          "simulation": "Le module observe et simule ses actions sans rien appliquer."
+        },
+        "buttons": {
+          "pause": "Mettre en pause",
+          "resume": "Reprendre",
+          "activate": "Activer",
+          "simulation": "Simulation"
+        },
+        "changed": {
+          "active": "Module repris.",
+          "paused": "Module mis en pause.",
+          "simulation": "Module en simulation."
+        },
+        "errors": {
+          "not_configured": "Ce module n'a pas encore de configuration enregistrée.",
+          "failed": "Impossible de changer l'état du module. Réessayez."
+        }
+      },
+      "breadcrumb": {
+        "root": "Configuration"
+      }
     },
     "welcome_channel": {
       "name": "Welcome Channel",
