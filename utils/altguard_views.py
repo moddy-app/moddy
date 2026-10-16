@@ -356,26 +356,19 @@ def build_error_card(locale: str, key: str, *, retry_after: Optional[int] = None
     able to say which one. It names no internal host and leaks no signal about
     the detection itself.
     """
-    view = ui.LayoutView(timeout=None)
-    container = ui.Container(accent_colour=ERROR_ACCENT)
-
-    container.add_item(ui.TextDisplay(
-        f"### {ERROR} {t(f'modules.altguard.errors.{key}.title', locale=locale)}"
-    ))
     description = t(f'modules.altguard.errors.{key}.description', locale=locale)
     if key == 'rate_limited' and retry_after:
         description += "\n" + t(
             'modules.altguard.errors.rate_limited.retry', locale=locale, seconds=retry_after,
         )
-    container.add_item(ui.TextDisplay(description))
-
-    if code:
-        container.add_item(ui.TextDisplay(
-            f"-# {t('modules.altguard.errors.code', locale=locale, code=f'`{code}`')}"
-        ))
-
-    view.add_item(container)
-    return view
+    hint = (t('modules.altguard.errors.code', locale=locale, code=f'`{code}`')
+            if code else None)
+    # Same card as every other expected error (utils/errors.py).
+    from utils.errors import build_error_card as _expected_card
+    return _expected_card(
+        t(f'modules.altguard.errors.{key}.title', locale=locale),
+        description, severity="warning", hint=hint,
+    )
 
 
 def build_already_verified_card(locale: str) -> ui.LayoutView:

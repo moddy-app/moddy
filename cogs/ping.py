@@ -89,7 +89,7 @@ class PublicPing(Cog):
 
         # Créer le message initial avec Components V2
         view = LayoutView()
-        container = Container()
+        container = Container(accent_colour=COLORS["primary"])
 
         # Header avec titre
         title = t("commands.ping.response.title", interaction)
@@ -153,7 +153,7 @@ class PublicPing(Cog):
 
         # Créer le message mis à jour avec la latence réelle
         view_updated = LayoutView()
-        container_updated = Container()
+        container_updated = Container(accent_colour=COLORS["primary"])
 
         # Header
         container_updated.add_item(TextDisplay(f"### {title}"))

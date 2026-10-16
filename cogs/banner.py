@@ -4,6 +4,7 @@ Displays a user's banner with Components V2
 """
 
 import discord
+from config import COLORS
 from discord import app_commands, ui
 from discord.ext import commands
 from typing import Optional
@@ -38,7 +39,7 @@ class BannerView(BaseView):
         self.clear_items()
 
         # Create main container
-        container = ui.Container()
+        container = ui.Container(accent_colour=COLORS["primary"])
 
         # Get user info
         user_id = self.user_data.get("id")

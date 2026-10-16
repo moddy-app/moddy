@@ -73,8 +73,9 @@ def build_content_view(
 
     view = BaseView()
     container = ui.Container(
-        accent_colour=discord.Colour(resolved.accent_color)
-        if resolved.accent_color is not None else None
+        accent_colour=discord.Colour(
+            resolved.accent_color if resolved.accent_color is not None else 0x5865F2
+        )
     )
 
     heading = f"### {resolved.icon} {resolved.title}".replace("###  ", "### ")

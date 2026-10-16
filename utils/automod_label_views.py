@@ -61,7 +61,7 @@ _SAFESEARCH_LANES = ("image_nsfw", "image_gore", "profil_avatar_nsfw",
 TEXT_CATEGORIES = (
     "insulte", "menace", "harcelement", "harcelement_sexuel",
     "haine_discrimination", "incitation_automutilation", "doxxing",
-    "arnaque_scam", "violation_indications",
+    "arnaque_scam",
 )
 
 

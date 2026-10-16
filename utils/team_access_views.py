@@ -45,6 +45,7 @@ from staff.framework import design
 from utils import emojis
 from utils.components_v2 import create_error_message
 from utils.i18n import i18n, t
+from utils.errors import NotYours
 from utils.moddy_team_role import TEAM, can_manage, find_team_role, kind_from_key
 
 logger = logging.getLogger('moddy.team_access')
@@ -161,15 +162,7 @@ async def _reject_stranger(interaction: discord.Interaction, requester_id: int) 
     """True when the clicker is not the staffer who opened this picker."""
     if interaction.user.id == requester_id:
         return False
-    locale = i18n.get_user_locale(interaction)
-    await interaction.response.send_message(
-        view=create_error_message(
-            t("errors.not_your_message.title", locale=locale),
-            t("errors.not_your_message.description", locale=locale),
-        ),
-        ephemeral=True,
-    )
-    return True
+    raise NotYours()
 
 
 # --------------------------------------------------------------------------- #

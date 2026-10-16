@@ -29,7 +29,7 @@ from discord import ui
 from cogs.error_handler import BaseView
 from utils.i18n import t, i18n
 from utils.emojis import SHIELD, SEARCH, DONE, UNDONE, WARNING, get_sanction_accent
-from utils.automod_render import bareme_breakdown, sanction_name
+from utils.automod_render import actions_text, bareme_breakdown, sanction_name
 
 logger = logging.getLogger("moddy.automod_shadow")
 
@@ -91,7 +91,7 @@ def render_shadow_card(candidate: Dict[str, Any]) -> ui.LayoutView:
         f"<@{author_id}> (`{author_id}`)\n"
         f"- **{t('modules.automod_ai.log.channel', locale=locale)} :** <#{channel_id}>\n"
         f"- **{t('modules.automod_ai.shadow.would_apply', locale=locale)} :** "
-        f"{sanction_name(actions, locale)}\n"
+        f"{actions_text(actions, locale, bareme.get('duree_secondes')) or sanction_name(actions, locale)}\n"
         f"- **{t('modules.automod_ai.log.reason', locale=locale)} :** "
         f"{verdict.get('raison') or '—'}"
     )
@@ -151,7 +151,7 @@ def render_shadow_card(candidate: Dict[str, Any]) -> ui.LayoutView:
 
 
 def _primary_action(actions: List[str]) -> Optional[str]:
-    for a in ("ban", "mute", "warn"):
+    for a in ("ban", "kick", "mute", "warn"):
         if a in (actions or []):
             return a
     return None

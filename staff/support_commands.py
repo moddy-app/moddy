@@ -86,7 +86,7 @@ class SupportCommands(StaffCommandsCog):
 
         can_view = staff_permissions.has_permission(role_perms, "subscription_view")
 
-        container = ui.Container()
+        container = ui.Container(accent_colour=COLORS["developer"])
         container.add_item(ui.TextDisplay(f"### {SUPPORT} Support Commands"))
         container.add_item(ui.TextDisplay("Available support commands based on your permissions."))
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
@@ -172,7 +172,7 @@ class SupportCommands(StaffCommandsCog):
             status_emoji = GREEN_STATUS if is_premium else RED_STATUS
             status_label = "Active Premium" if is_premium else "No Premium"
 
-            container = ui.Container()
+            container = ui.Container(accent_colour=COLORS["developer"])
             container.add_item(ui.TextDisplay(f"### {PREMIUM} Subscription Information"))
             container.add_item(ui.TextDisplay(f"User: {user.mention} (`{user_id}`)"))
             container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))

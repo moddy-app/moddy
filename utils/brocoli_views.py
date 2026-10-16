@@ -126,10 +126,17 @@ def notice_card(kind: str, locale: str = "en-US", **params) -> ui.LayoutView:
         kind = "unavailable"
     accent, icon = _NOTICES[kind]
 
+    title = t(f'brocoli.notice.{kind}.title', locale=locale)
+    description = t(f"brocoli.notice.{kind}.description", locale=locale, **params)
+    if kind not in ("created", "exists"):
+        # Problems go through the shared expected-error card (utils/errors.py).
+        from utils.errors import build_error_card
+        return build_error_card(title, description, accent=accent, icon=icon)
+
     view = BaseView()
     container = ui.Container(accent_colour=accent)
     container.add_item(
-        ui.TextDisplay(f"### {icon} {t(f'brocoli.notice.{kind}.title', locale=locale)}")
+        ui.TextDisplay(f"### {icon} {title}")
     )
     container.add_item(
         ui.TextDisplay(t(f"brocoli.notice.{kind}.description", locale=locale, **params))

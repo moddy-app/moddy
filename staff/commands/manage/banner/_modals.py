@@ -8,6 +8,7 @@ from discord import ui
 from staff.framework import design
 from utils import emojis
 from utils.i18n import t
+from utils.errors import NotYours
 from cogs.error_handler import BaseView, BaseModal
 
 VALID_TYPES = ("announcement", "incident", "maintenance", "information", "warning", "resolved")
@@ -132,8 +133,7 @@ class BannerTypeSelectView(BaseView):
 
     async def _guard(self, interaction: discord.Interaction) -> bool:
         if interaction.user.id != self.author_id:
-            await interaction.response.send_message(t("staff.common.not_your_menu", locale=self.locale), ephemeral=True)
-            return False
+            raise NotYours()
         return True
 
     async def _typed(self, interaction: discord.Interaction):

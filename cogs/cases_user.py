@@ -63,7 +63,7 @@ class CasesUserCog(commands.Cog):
         # Friendly empty state when the member has no cases at all.
         if view.total == 0 and not view._has_active_filters():
             empty = BaseView()
-            container = ui.Container(accent_colour=discord.Colour(COLORS["success"]))
+            container = ui.Container(accent_colour=discord.Colour(COLORS["primary"]))
             container.add_item(ui.TextDisplay(
                 f"### {emojis.DONE} {t('commands.cases.empty_title', locale=locale)}"
             ))

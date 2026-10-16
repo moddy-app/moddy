@@ -441,7 +441,7 @@ class InfoNoticeView(ui.LayoutView):
     def __init__(self, key_prefix: str, locale: Optional[str] = None, **variables):
         super().__init__(timeout=None)
         loc = locale or "en-US"
-        container = ui.Container()
+        container = ui.Container(accent_colour=COLORS["warning"])
         container.add_item(ui.TextDisplay(
             f"### <:warning:1519789903100121139> {_tr(key_prefix + '.title', loc)}"))
         container.add_item(ui.TextDisplay(_tr(key_prefix + ".body", loc, **variables)))

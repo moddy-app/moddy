@@ -4,6 +4,7 @@ Permet de signaler et d'obtenir des informations sur les messages inter-serveur
 """
 
 import discord
+from config import COLORS
 from discord import app_commands, ui
 from discord.ext import commands
 from typing import Optional, Dict
@@ -148,6 +149,7 @@ class InterServerCommands(commands.GroupCog, name="interserver", description="Ma
                     container = ui.Container(
                         ui.TextDisplay(content=f"### <:warning:1398729560895422505> Inter-Server Report"),
                         ui.TextDisplay(content=f"**Moddy ID:** `{self.moddy_id}`\n**Author:** {self.author_mention}\n**Server:** {self.guild_name} (`{self.guild_id}`)\n**Reported by:** {self.reporter_mention}\n{f'**Claimed by:** {self.claimed_by.mention}' if self.claimed_by else ''}\n**Content:**\n{self.content[:1000] if self.content else '*No content*'}"),
+                        accent_colour=COLORS["warning"],
                     )
                     self.add_item(container)
 
@@ -236,6 +238,7 @@ class InterServerCommands(commands.GroupCog, name="interserver", description="Ma
                     container = ui.Container(
                         ui.TextDisplay(content=f"### <:warning:1398729560895422505> Inter-Server Report - Skipped"),
                         ui.TextDisplay(content=f"**Moddy ID:** `{self.moddy_id}`\n**Skipped by:** {interaction.user.mention}\n**Reason:** No action required"),
+                        accent_colour=COLORS["warning"],
                     )
                     self.add_item(container)
 
@@ -336,6 +339,7 @@ class InterServerCommands(commands.GroupCog, name="interserver", description="Ma
                 container = ui.Container(
                     ui.TextDisplay(content=f"### <:info:1519793991045091388> Inter-Server Message Info"),
                     ui.TextDisplay(content=f"**Moddy ID:** `{moddy_id}`\n**Author:** {author_info}\n**Original Server:** {guild_info}\n**Sent:** {timestamp_str}\n**Relayed to:** {relayed_count} servers\n**Status:** {msg_data['status']}\n**Moddy Team Message:** {'✅ Yes' if msg_data.get('is_moddy_team') else '❌ No'}\n\n**Content:**\n{msg_data['content'][:500] if msg_data['content'] else '*No content*'}"),
+                    accent_colour=COLORS["primary"],
                 )
                 self.add_item(container)
 
@@ -372,6 +376,7 @@ class ProcessedModal(BaseModal, title="Report Processing"):
                 container = ui.Container(
                     ui.TextDisplay(content=f"### <:done:1519800188925902881> Report Processed"),
                     ui.TextDisplay(content=f"**Moddy ID:** `{moddy_id}`\n**Processed by:** {processed_by.mention}\n**Actions taken:**\n{actions}"),
+                    accent_colour=COLORS["success"],
                 )
                 self.add_item(container)
 

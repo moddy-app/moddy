@@ -127,17 +127,14 @@ def _ts(dt: Optional[datetime], style: str = "R") -> str:
     return f"<t:{int(dt.timestamp())}:{style}>" if dt else "—"
 
 
-def _perm_error(locale: str) -> BaseView:
+def _perm_error(locale: str) -> ui.LayoutView:
     """Standard 'missing permission' panel for case mutations."""
-    view = BaseView()
-    container = ui.Container(accent_colour=discord.Colour(COLORS["error"]))
-    container.add_item(ui.TextDisplay(
-        f"### {emojis.ERROR} {t('commands.cases.browser.permission_denied_title', locale=locale)}"
-    ))
-    container.add_item(ui.TextDisplay(
-        t("commands.cases.browser.action_permission_denied", locale=locale)))
-    view.add_item(container)
-    return view
+    from utils.errors import build_error_card
+    return build_error_card(
+        t('commands.cases.browser.permission_denied_title', locale=locale),
+        t("commands.cases.browser.action_permission_denied", locale=locale),
+        severity="warning",
+    )
 
 
 def _action_emoji_safe(action_value: str) -> str:
@@ -666,9 +663,8 @@ class CasesBrowserView(BaseView):
     def _build_detail(self):
         self.clear_items()
         case = self.detail
-        # Container accent reflects the case state (green = open, red = closed)
-        # — same colour language as the list dots.
-        accent = COLORS["success"] if case.is_open else COLORS["error"]
+        # Container accent reflects the case state (blurple = open, gray = closed).
+        accent = COLORS["primary"] if case.is_open else COLORS["neutral"]
         container = ui.Container(accent_colour=discord.Colour(accent))
 
         # Header (folder emoji, no status dot before the field — the accent bar

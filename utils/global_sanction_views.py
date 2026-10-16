@@ -890,13 +890,9 @@ def _parse_int(raw: Optional[str], default: int) -> int:
     return value
 
 
-def _error_panel(title: str, description: str) -> BaseView:
-    view = BaseView()
-    container = ui.Container(accent_colour=discord.Colour(0xED4245))
-    container.add_item(ui.TextDisplay(f"### {emojis.ERROR} {title}"))
-    container.add_item(ui.TextDisplay(description))
-    view.add_item(container)
-    return view
+def _error_panel(title: str, description: str) -> ui.LayoutView:
+    from utils.errors import build_error_card
+    return build_error_card(title, description, severity="error")
 
 
 def _success_panel(title: str, description: str) -> BaseView:

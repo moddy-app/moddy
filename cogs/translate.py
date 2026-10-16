@@ -6,13 +6,14 @@ Uses the DeepL API via the centralized gateway.
 import discord
 from discord import app_commands, ui
 from cogs.error_handler import BaseView
+from utils.errors import NotYours, Unavailable
 from discord.ext import commands
 from typing import Optional
 import re
 from datetime import datetime, timedelta
 import asyncio
 
-from utils.embeds import ModdyEmbed, ModdyResponse, ModdyColors
+from utils.components_v2 import create_error_message, create_success_message
 from utils.incognito import add_incognito_option, get_incognito_setting
 from config import COLORS
 from utils.i18n import i18n
@@ -40,7 +41,7 @@ class TranslateView(BaseView):
         self.clear_items()
 
         # Create main container
-        container = ui.Container()
+        container = ui.Container(accent_colour=COLORS["primary"])
 
         # Add title at the top
         view_title = i18n.get("commands.translate.view.title", locale=self.locale)
@@ -135,10 +136,7 @@ class TranslateView(BaseView):
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         """Checks that it's the author using the menu"""
         if interaction.user != self.author:
-            locale = i18n.get_user_locale(interaction)
-            error_msg = i18n.get("commands.translate.view.author_only", locale=locale)
-            await interaction.response.send_message(error_msg, ephemeral=True)
-            return False
+            raise NotYours()
         return True
 
     async def translate_callback(self, interaction: discord.Interaction):
@@ -158,8 +156,7 @@ class TranslateView(BaseView):
                 self.build_view()
                 await interaction.edit_original_response(view=self)
             else:
-                error_msg = i18n.get("common.error", locale=self.locale)
-                await interaction.followup.send(error_msg, ephemeral=True)
+                raise Unavailable()
 
 
 class Translate(commands.Cog):
@@ -388,15 +385,15 @@ class Translate(commands.Cog):
         can_use, remaining = await self.check_rate_limit(interaction.user.id)
         if not can_use:
             error_msg = i18n.get("commands.translate.errors.rate_limit", locale=locale, seconds=remaining)
-            error_embed = ModdyResponse.error(i18n.get("common.error", locale=locale), error_msg)
-            await interaction.response.send_message(embed=error_embed, ephemeral=True)
+            error_embed = create_error_message(i18n.get("common.error", locale=locale), error_msg)
+            await interaction.response.send_message(view=error_embed, ephemeral=True)
             return
 
         # Check the length of the text
         if len(text) > 3000:
             error_msg = i18n.get("commands.translate.errors.too_long", locale=locale)
-            error_embed = ModdyResponse.error(i18n.get("common.error", locale=locale), error_msg)
-            await interaction.response.send_message(embed=error_embed, ephemeral=True)
+            error_embed = create_error_message(i18n.get("common.error", locale=locale), error_msg)
+            await interaction.response.send_message(view=error_embed, ephemeral=True)
             return
 
         # Sanitize mentions
@@ -410,8 +407,8 @@ class Translate(commands.Cog):
         # Check that the gateway / DeepL is available
         if not getattr(self.bot, "gateway", None) or not self.bot.gateway.deepl_available():
             error_msg = i18n.get("commands.translate.errors.api_error", locale=locale)
-            error_embed = ModdyResponse.error(i18n.get("common.error", locale=locale), error_msg)
-            await interaction.response.send_message(embed=error_embed, ephemeral=True)
+            error_embed = create_error_message(i18n.get("common.error", locale=locale), error_msg)
+            await interaction.response.send_message(view=error_embed, ephemeral=True)
             return
 
         # Loading message with animated emoji
@@ -442,8 +439,8 @@ class Translate(commands.Cog):
             await interaction.edit_original_response(content=None, embed=None, view=view)
         else:
             error_msg = i18n.get("commands.translate.errors.api_error", locale=locale)
-            error_embed = ModdyResponse.error(i18n.get("common.error", locale=locale), error_msg)
-            await interaction.edit_original_response(embed=error_embed)
+            error_embed = create_error_message(i18n.get("common.error", locale=locale), error_msg)
+            await interaction.edit_original_response(content=None, embed=None, view=error_embed)
 
     @app_commands.command(
         name="translate",
@@ -507,8 +504,8 @@ class Translate(commands.Cog):
         if not message.content or message.content.strip() == "":
             locale = i18n.get_user_locale(interaction)
             error_msg = i18n.get("commands.translate.errors.no_content", locale=locale)
-            error_embed = ModdyResponse.error(i18n.get("common.error", locale=locale), error_msg)
-            await interaction.response.send_message(embed=error_embed, ephemeral=True)
+            error_embed = create_error_message(i18n.get("common.error", locale=locale), error_msg)
+            await interaction.response.send_message(view=error_embed, ephemeral=True)
             return
 
         # Call the common translation logic (always ephemeral for context menu)

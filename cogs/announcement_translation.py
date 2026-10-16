@@ -15,6 +15,7 @@ See docs/ANNOUNCEMENT_TRANSLATION.md.
 """
 
 from __future__ import annotations
+from config import COLORS
 
 import logging
 import re
@@ -147,7 +148,7 @@ class AnnouncementLanguageButton(
             return
 
         view = ui.LayoutView(timeout=None)
-        container = ui.Container()
+        container = ui.Container(accent_colour=COLORS["primary"])
         container.add_item(ui.TextDisplay(text[:_MAX_RENDERED]))
         view.add_item(container)
         await interaction.followup.send(view=view, ephemeral=True)
@@ -170,7 +171,7 @@ class AnnouncementTranslationView(BaseView):
             # Shell instance (registration only): the buttons are DynamicItems,
             # registered by class, so an empty shell is all that is needed.
             return
-        container = ui.Container()
+        container = ui.Container(accent_colour=COLORS["primary"])
         row = ui.ActionRow()
         for code in self.codes:
             row.add_item(AnnouncementLanguageButton(code, self.message_id))

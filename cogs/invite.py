@@ -4,6 +4,7 @@ Displays information about Discord invites (Server, Group DM, Friend)
 """
 
 import discord
+from config import COLORS
 from utils.incognito import resolve_default_incognito
 from discord import app_commands, ui
 from cogs.error_handler import BaseView
@@ -33,7 +34,7 @@ class InviteView(BaseView):
         """Builds the Components V2 view for invite information"""
         self.clear_items()
 
-        container = ui.Container()
+        container = ui.Container(accent_colour=COLORS["primary"])
 
         # Get invite type
         invite_type = self.invite_data.get('type', 0)
@@ -388,7 +389,7 @@ class ServerInfoView(BaseView):
         """Builds the Components V2 view for server information"""
         self.clear_items()
 
-        container = ui.Container()
+        container = ui.Container(accent_colour=COLORS["primary"])
         guild = self.invite_data.get('guild', {})
         profile = self.invite_data.get('profile', {})
         guild_id = guild.get('id', 'Unknown')

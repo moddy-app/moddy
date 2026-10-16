@@ -1824,7 +1824,7 @@ def build_reopen_dm(guild: discord.Guild, ticket: Dict[str, Any],
     which vanished from their list is back.
     """
     view = ui.LayoutView(timeout=None)
-    container = ui.Container(accent_colour=discord.Colour(0x57F287))
+    container = ui.Container(accent_colour=discord.Colour(0x5865F2))
 
     container.add_item(ui.TextDisplay(
         f"### {TICKET_REOPEN} {t('modules.tickets.reopen.dm_title', locale=locale)}"))

@@ -4,13 +4,15 @@ Allows users to inspect and manage Discord webhooks
 """
 
 import discord
+from config import COLORS
 from discord import app_commands, ui
 from discord.ext import commands
 from typing import Optional
 import aiohttp
 import re
 
-from utils.embeds import ModdyEmbed, ModdyResponse, ModdyColors
+from utils.components_v2 import create_error_message, create_success_message
+from utils.errors import NotYours
 from utils.incognito import add_incognito_option, get_incognito_setting
 from utils.i18n import i18n
 from cogs.error_handler import BaseView, BaseModal
@@ -31,7 +33,7 @@ class WebhookView(BaseView):
         self.clear_items()
 
         # Create main container
-        container = ui.Container()
+        container = ui.Container(accent_colour=COLORS["primary"])
 
         # Webhook info display
         webhook_info = self.format_webhook_info()
@@ -124,11 +126,7 @@ class WebhookView(BaseView):
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         """Checks that it's the author using the buttons"""
         if interaction.user != self.author:
-            await interaction.response.send_message(
-                i18n.get("commands.webhook.errors.author_only", locale=self.locale),
-                ephemeral=True
-            )
-            return False
+            raise NotYours()
         return True
 
     async def delete_webhook(self, interaction: discord.Interaction):
@@ -139,7 +137,7 @@ class WebhookView(BaseView):
             error_title = i18n.get("commands.webhook.errors.url_not_found.title", locale=self.locale)
             error_desc = i18n.get("commands.webhook.errors.url_not_found.description", locale=self.locale)
             await interaction.response.send_message(
-                embed=ModdyResponse.error(error_title, error_desc),
+                view=create_error_message(error_title, error_desc),
                 ephemeral=True
             )
             return
@@ -154,7 +152,7 @@ class WebhookView(BaseView):
                         # Success
                         success_title = i18n.get("commands.webhook.delete.success.title", locale=self.locale)
                         success_desc = i18n.get("commands.webhook.delete.success.description", locale=self.locale, name=self.webhook_data.get('name'))
-                        success_embed = ModdyResponse.success(success_title, success_desc)
+                        success_embed = create_success_message(success_title, success_desc)
 
                         # Disable all buttons (they're inside an ActionRow)
                         for item in self.children:
@@ -164,18 +162,18 @@ class WebhookView(BaseView):
                                         button.disabled = True
 
                         await interaction.edit_original_response(view=self)
-                        await interaction.followup.send(embed=success_embed, ephemeral=True)
+                        await interaction.followup.send(view=success_embed, ephemeral=True)
                     else:
                         error_text = await response.text()
                         error_title = i18n.get("commands.webhook.delete.failed.title", locale=self.locale)
                         error_desc = i18n.get("commands.webhook.delete.failed.description", locale=self.locale, status=response.status, error=error_text[:100])
-                        error_embed = ModdyResponse.error(error_title, error_desc)
-                        await interaction.followup.send(embed=error_embed, ephemeral=True)
+                        error_embed = create_error_message(error_title, error_desc)
+                        await interaction.followup.send(view=error_embed, ephemeral=True)
         except Exception as e:
             error_title = i18n.get("commands.webhook.errors.generic.title", locale=self.locale)
             error_desc = i18n.get("commands.webhook.errors.generic.description", locale=self.locale, error=str(e)[:100])
-            error_embed = ModdyResponse.error(error_title, error_desc)
-            await interaction.followup.send(embed=error_embed, ephemeral=True)
+            error_embed = create_error_message(error_title, error_desc)
+            await interaction.followup.send(view=error_embed, ephemeral=True)
 
     async def show_edit_modal(self, interaction: discord.Interaction):
         """Shows modal to edit webhook"""
@@ -197,7 +195,7 @@ class WebhookView(BaseView):
             error_title = i18n.get("commands.webhook.errors.url_not_found.title", locale=self.locale)
             error_desc = i18n.get("commands.webhook.errors.url_not_found.description", locale=self.locale)
             await interaction.followup.send(
-                embed=ModdyResponse.error(error_title, error_desc),
+                view=create_error_message(error_title, error_desc),
                 ephemeral=True
             )
             return
@@ -213,19 +211,19 @@ class WebhookView(BaseView):
                         success_title = i18n.get("commands.webhook.refresh.success.title", locale=self.locale)
                         success_desc = i18n.get("commands.webhook.refresh.success.description", locale=self.locale)
                         await interaction.followup.send(
-                            embed=ModdyResponse.success(success_title, success_desc),
+                            view=create_success_message(success_title, success_desc),
                             ephemeral=True
                         )
                     else:
                         error_title = i18n.get("commands.webhook.refresh.failed.title", locale=self.locale)
                         error_desc = i18n.get("commands.webhook.refresh.failed.description", locale=self.locale, status=response.status)
-                        error_embed = ModdyResponse.error(error_title, error_desc)
-                        await interaction.followup.send(embed=error_embed, ephemeral=True)
+                        error_embed = create_error_message(error_title, error_desc)
+                        await interaction.followup.send(view=error_embed, ephemeral=True)
         except Exception as e:
             error_title = i18n.get("commands.webhook.errors.generic.title", locale=self.locale)
             error_desc = i18n.get("commands.webhook.errors.generic.description", locale=self.locale, error=str(e)[:100])
-            error_embed = ModdyResponse.error(error_title, error_desc)
-            await interaction.followup.send(embed=error_embed, ephemeral=True)
+            error_embed = create_error_message(error_title, error_desc)
+            await interaction.followup.send(view=error_embed, ephemeral=True)
 
 
 class EditWebhookModal(BaseModal):
@@ -259,7 +257,7 @@ class EditWebhookModal(BaseModal):
             error_title = i18n.get("commands.webhook.errors.url_not_found.title", locale=self.locale)
             error_desc = i18n.get("commands.webhook.errors.url_not_found.description", locale=self.locale)
             await interaction.followup.send(
-                embed=ModdyResponse.error(error_title, error_desc),
+                view=create_error_message(error_title, error_desc),
                 ephemeral=True
             )
             return
@@ -276,19 +274,19 @@ class EditWebhookModal(BaseModal):
 
                         success_title = i18n.get("commands.webhook.edit.success.title", locale=self.locale)
                         success_desc = i18n.get("commands.webhook.edit.success.description", locale=self.locale, name=new_name)
-                        success_embed = ModdyResponse.success(success_title, success_desc)
-                        await interaction.followup.send(embed=success_embed, ephemeral=True)
+                        success_embed = create_success_message(success_title, success_desc)
+                        await interaction.followup.send(view=success_embed, ephemeral=True)
                     else:
                         error_text = await response.text()
                         error_title = i18n.get("commands.webhook.edit.failed.title", locale=self.locale)
                         error_desc = i18n.get("commands.webhook.edit.failed.description", locale=self.locale, status=response.status, error=error_text[:100])
-                        error_embed = ModdyResponse.error(error_title, error_desc)
-                        await interaction.followup.send(embed=error_embed, ephemeral=True)
+                        error_embed = create_error_message(error_title, error_desc)
+                        await interaction.followup.send(view=error_embed, ephemeral=True)
         except Exception as e:
             error_title = i18n.get("commands.webhook.errors.generic.title", locale=self.locale)
             error_desc = i18n.get("commands.webhook.errors.generic.description", locale=self.locale, error=str(e)[:100])
-            error_embed = ModdyResponse.error(error_title, error_desc)
-            await interaction.followup.send(embed=error_embed, ephemeral=True)
+            error_embed = create_error_message(error_title, error_desc)
+            await interaction.followup.send(view=error_embed, ephemeral=True)
 
 
 class SendMessageModal(BaseModal):
@@ -331,7 +329,7 @@ class SendMessageModal(BaseModal):
             error_title = i18n.get("commands.webhook.errors.url_not_found.title", locale=self.locale)
             error_desc = i18n.get("commands.webhook.errors.url_not_found.description", locale=self.locale)
             await interaction.followup.send(
-                embed=ModdyResponse.error(error_title, error_desc),
+                view=create_error_message(error_title, error_desc),
                 ephemeral=True
             )
             return
@@ -347,19 +345,19 @@ class SendMessageModal(BaseModal):
                     if response.status in [200, 204]:
                         success_title = i18n.get("commands.webhook.send.success.title", locale=self.locale)
                         success_desc = i18n.get("commands.webhook.send.success.description", locale=self.locale)
-                        success_embed = ModdyResponse.success(success_title, success_desc)
-                        await interaction.followup.send(embed=success_embed, ephemeral=True)
+                        success_embed = create_success_message(success_title, success_desc)
+                        await interaction.followup.send(view=success_embed, ephemeral=True)
                     else:
                         error_text = await response.text()
                         error_title = i18n.get("commands.webhook.send.failed.title", locale=self.locale)
                         error_desc = i18n.get("commands.webhook.send.failed.description", locale=self.locale, status=response.status, error=error_text[:100])
-                        error_embed = ModdyResponse.error(error_title, error_desc)
-                        await interaction.followup.send(embed=error_embed, ephemeral=True)
+                        error_embed = create_error_message(error_title, error_desc)
+                        await interaction.followup.send(view=error_embed, ephemeral=True)
         except Exception as e:
             error_title = i18n.get("commands.webhook.errors.generic.title", locale=self.locale)
             error_desc = i18n.get("commands.webhook.errors.generic.description", locale=self.locale, error=str(e)[:100])
-            error_embed = ModdyResponse.error(error_title, error_desc)
-            await interaction.followup.send(embed=error_embed, ephemeral=True)
+            error_embed = create_error_message(error_title, error_desc)
+            await interaction.followup.send(view=error_embed, ephemeral=True)
 
 
 class Webhook(commands.Cog):
@@ -440,8 +438,8 @@ class Webhook(commands.Cog):
         if not webhook_id or not webhook_token:
             error_title = i18n.get("commands.webhook.errors.invalid_webhook.title", locale=locale)
             error_desc = i18n.get("commands.webhook.errors.invalid_webhook.description", locale=locale)
-            error_embed = ModdyResponse.error(error_title, error_desc)
-            await interaction.edit_original_response(content=None, embed=error_embed)
+            error_embed = create_error_message(error_title, error_desc)
+            await interaction.edit_original_response(content=None, embed=None, view=error_embed)
             return
 
         # Fetch webhook data
@@ -450,8 +448,8 @@ class Webhook(commands.Cog):
         if not webhook_data:
             error_title = i18n.get("commands.webhook.errors.not_found.title", locale=locale)
             error_desc = i18n.get("commands.webhook.errors.not_found.description", locale=locale)
-            error_embed = ModdyResponse.error(error_title, error_desc)
-            await interaction.edit_original_response(content=None, embed=error_embed)
+            error_embed = create_error_message(error_title, error_desc)
+            await interaction.edit_original_response(content=None, embed=None, view=error_embed)
             return
 
         # Create the view with webhook management

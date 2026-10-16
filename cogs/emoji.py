@@ -4,8 +4,10 @@ Displays information about a Discord emoji with Components V2
 """
 
 import discord
+from config import COLORS
 from discord import app_commands, ui
 from cogs.error_handler import BaseView
+from utils.errors import NotFound, NotYours
 from discord.ext import commands
 from typing import Optional
 import re
@@ -34,7 +36,7 @@ class EmojiView(BaseView):
         self.clear_items()
 
         # Create main container
-        container = ui.Container()
+        container = ui.Container(accent_colour=COLORS["primary"])
 
         # Get emoji info
         emoji_id = self.emoji_data.get("id")
@@ -106,7 +108,7 @@ class EmojiNavigationView(BaseView):
         emoji_data = self.emoji_list[self.current_index]
 
         # Create main container
-        container = ui.Container()
+        container = ui.Container(accent_colour=COLORS["primary"])
 
         # Get emoji info
         emoji_id = emoji_data.get("id")
@@ -199,9 +201,7 @@ class EmojiNavigationView(BaseView):
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         """Ensures only the author can use the navigation"""
         if interaction.user != self.author:
-            error_msg = i18n.get("commands.emoji.context_menu.author_only", locale=self.locale)
-            await interaction.response.send_message(error_msg, ephemeral=True)
-            return False
+            raise NotYours()
         return True
 
     async def prev_callback(self, interaction: discord.Interaction):
@@ -300,9 +300,7 @@ class Emoji(commands.Cog):
 
         # Check if any emojis were found
         if not emoji_list:
-            error_msg = i18n.get("commands.emoji.context_menu.no_emojis", locale=locale)
-            await interaction.response.send_message(error_msg, ephemeral=True)
-            return
+            raise NotFound(description=i18n.get("commands.emoji.context_menu.no_emojis", locale=locale))
 
         # Send loading message
         loading_msg = i18n.get("commands.emoji.context_menu.loading", locale=locale, count=len(emoji_list))

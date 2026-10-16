@@ -60,10 +60,10 @@ CALL_TYPE_FIX = "text_fix"
 CALL_TYPE_REPHRASE = "text_rephrase"
 CALL_TYPE_SUMMARIZE = "text_summarize"
 
-# Container accent bars — one colour per command so the cards read at a glance
-ACCENT_FIX = COLORS["success"]
+# Container accent bars — informational result cards share the primary accent
+ACCENT_FIX = COLORS["primary"]
 ACCENT_REPHRASE = COLORS["primary"]
-ACCENT_SUMMARIZE = COLORS["developer"]
+ACCENT_SUMMARIZE = COLORS["primary"]
 
 # Style presets for /rephrase — key → prompt instruction sent to the model
 REPHRASE_STYLES: dict[str, str] = {

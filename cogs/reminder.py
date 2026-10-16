@@ -3,6 +3,7 @@ Reminder system for Moddy
 Uses database persistence and tasks.loop for scheduling
 """
 import asyncio
+from config import COLORS
 import re
 import logging
 from datetime import datetime, timedelta
@@ -17,6 +18,7 @@ from discord.ui import LayoutView, Container, TextDisplay, Separator
 from discord import SeparatorSpacing
 from cogs.error_handler import BaseView
 
+from utils.errors import NotYours, InvalidInput, ModdyError, NotFound
 from utils.i18n import i18n, t
 from utils.components_v2 import create_error_message
 from utils.members import get_or_fetch_member
@@ -294,15 +296,7 @@ async def _reject_if_not_owner(interaction: discord.Interaction, owner_id: int) 
     """Return True (and answer ephemerally) if the clicker is not the owner."""
     if interaction.user.id == owner_id:
         return False
-    locale = i18n.get_user_locale(interaction)
-    await interaction.response.send_message(
-        view=create_error_message(
-            t("errors.not_your_message.title", locale=locale),
-            t("errors.not_your_message.description", locale=locale),
-        ),
-        ephemeral=True,
-    )
-    return True
+    raise NotYours()
 
 
 async def _refresh_manage_card(bot, owner_id: int, locale: str,
@@ -349,7 +343,8 @@ async def _deferred_error(interaction: discord.Interaction, text: str,
             await interaction.delete_original_response()
         except discord.HTTPException:
             pass
-    await interaction.followup.send(text, ephemeral=True)
+    card = ModdyError(text, severity="warning").render(i18n.get_user_locale(interaction))
+    await interaction.followup.send(view=card, ephemeral=True)
 
 
 class ReminderAddModal(BaseModal):
@@ -394,27 +389,15 @@ class ReminderAddModal(BaseModal):
         remind_at = parse_time_string(time_str, user_tz)
 
         if not remind_at:
-            await interaction.followup.send(
-                t("commands.reminder.errors.invalid_time", interaction),
-                ephemeral=True
-            )
-            return
+            raise InvalidInput(description=t("commands.reminder.errors.invalid_time", interaction))
 
         if remind_at <= datetime.now(ZoneInfo('UTC')):
-            await interaction.followup.send(
-                t("commands.reminder.errors.past_time", interaction),
-                ephemeral=True
-            )
-            return
+            raise InvalidInput(description=t("commands.reminder.errors.past_time", interaction))
 
         # Check max reminders
         existing = await self.bot.db.get_user_reminders(interaction.user.id)
         if len(existing) >= 50:
-            await interaction.followup.send(
-                t("commands.reminder.errors.max_reminders", interaction),
-                ephemeral=True
-            )
-            return
+            raise ModdyError(description=t("commands.reminder.errors.max_reminders", interaction), severity="warning")
 
         # Create reminder
         reminder_id = await self.bot.db.create_reminder(
@@ -480,18 +463,10 @@ class ReminderEditModal(BaseModal):
             new_remind_at = parse_time_string(time_str, user_tz)
 
             if not new_remind_at:
-                await interaction.followup.send(
-                    t("commands.reminder.errors.invalid_time", interaction),
-                    ephemeral=True
-                )
-                return
+                raise InvalidInput(description=t("commands.reminder.errors.invalid_time", interaction))
 
             if new_remind_at <= datetime.now(ZoneInfo('UTC')):
-                await interaction.followup.send(
-                    t("commands.reminder.errors.past_time", interaction),
-                    ephemeral=True
-                )
-                return
+                raise InvalidInput(description=t("commands.reminder.errors.past_time", interaction))
 
         # Update reminder
         await self.bot.db.update_reminder(
@@ -680,12 +655,9 @@ class ReminderManageButton(ui.DynamicItem[ui.Button], template=_CID_REM_TEMPLATE
             await interaction.response.defer(ephemeral=True)  # DB read below
             reminders = await bot.db.get_user_reminders(owner_id)
             if not reminders:
-                await interaction.followup.send(
-                    t("commands.reminder.errors.not_found", locale=locale),
-                    ephemeral=True)
-                return
+                raise NotFound(description=t("commands.reminder.errors.not_found", locale=locale))
             select_view = LayoutView()
-            container = Container()
+            container = Container(accent_colour=COLORS["primary"])
             select_cls = ReminderSelectForEdit if self.action == "edit" else ReminderSelectForDelete
             key = "commands.reminder.modals.select_reminder_edit" if self.action == "edit" \
                 else "commands.reminder.modals.select_reminder_delete"
@@ -746,7 +718,7 @@ class RemindersManageView(BaseView):
         # Clear existing items
         self.clear_items()
 
-        container = Container()
+        container = Container(accent_colour=COLORS["primary"])
 
         if self.show_history:
             # History view
@@ -889,7 +861,7 @@ class Reminder(commands.Cog):
 
         # Build the reminder message - NO content field, everything in container
         view = LayoutView()
-        container = Container()
+        container = Container(accent_colour=COLORS["primary"])
 
         # Add mention inside the container for channel reminders
         if send_in_channel and channel_id and guild_id:
@@ -932,7 +904,7 @@ class Reminder(commands.Cog):
             try:
                 # For DMs, rebuild without the mention
                 view_dm = LayoutView()
-                container_dm = Container()
+                container_dm = Container(accent_colour=COLORS["primary"])
                 container_dm.add_item(TextDisplay(t("commands.reminder.notification.title", locale="en")))
                 container_dm.add_item(TextDisplay(f"> {reminder['message']}"))
 
@@ -999,11 +971,7 @@ class Reminder(commands.Cog):
 
         # Validate message length
         if len(message) > 1000:
-            await interaction.response.send_message(
-                t("commands.reminder.errors.too_long", interaction),
-                ephemeral=True
-            )
-            return
+            raise InvalidInput(description=t("commands.reminder.errors.too_long", interaction))
 
         # Ack now: the timezone + reminder-count lookups hit the database.
         await interaction.response.defer(ephemeral=ephemeral)

@@ -28,7 +28,7 @@ from utils.i18n import t
 CASE_URL = "https://moddy.app/cases?{ref}"
 
 # Green — an expiration is always good news for the subject.
-EXPIRY_ACCENT = 0x57F287
+EXPIRY_ACCENT = 0x5865F2
 
 # Sanction → title icon. The lift, not the sanction, so a check for the
 # reversible ones and the sanction's own icon otherwise.

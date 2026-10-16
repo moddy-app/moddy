@@ -5,6 +5,7 @@ Display detailed information about a Discord user
 
 import discord
 from utils.incognito import resolve_default_incognito
+from utils.errors import NotYours
 from discord import app_commands, ui
 from cogs.error_handler import BaseView
 from discord.ext import commands
@@ -62,7 +63,7 @@ class UserInfoView(BaseView):
         self.clear_items()
 
         # Create main container
-        container = ui.Container()
+        container = ui.Container(accent_colour=COLORS["primary"])
 
         # Get user info
         user_id = self.user_data.get("id", "Unknown")
@@ -436,15 +437,11 @@ class UserInfoView(BaseView):
         """Handle Bot Info button click"""
         # Check if the user is the author
         if interaction.user.id != self.author_id:
-            await interaction.response.send_message(
-                i18n.get("commands.user.errors.author_only", locale=self.locale),
-                ephemeral=True
-            )
-            return
+            raise NotYours()
 
         # Create bot info view with Components V2
         bot_view = ui.LayoutView()
-        bot_container = ui.Container()
+        bot_container = ui.Container(accent_colour=COLORS["primary"])
 
         # Title
         bot_name = self.bot_data.get("name", "Unknown")
@@ -538,11 +535,7 @@ class UserInfoView(BaseView):
         """Handle Description button click"""
         # Check if the user is the author
         if interaction.user.id != self.author_id:
-            await interaction.response.send_message(
-                i18n.get("commands.user.errors.author_only", locale=self.locale),
-                ephemeral=True
-            )
-            return
+            raise NotYours()
 
         # Get bot description
         description = self.bot_data.get("description", "")
@@ -555,7 +548,7 @@ class UserInfoView(BaseView):
 
         # Create description view
         desc_view = ui.LayoutView()
-        desc_container = ui.Container()
+        desc_container = ui.Container(accent_colour=COLORS["primary"])
         desc_container.add_item(ui.TextDisplay(f"### {TEXT} Description"))
         desc_container.add_item(ui.TextDisplay(f"```{description}```"))
         desc_view.add_item(desc_container)
@@ -566,11 +559,7 @@ class UserInfoView(BaseView):
         """Handle Avatar button click"""
         # Check if the user is the author
         if interaction.user.id != self.author_id:
-            await interaction.response.send_message(
-                i18n.get("commands.user.errors.author_only", locale=self.locale),
-                ephemeral=True
-            )
-            return
+            raise NotYours()
 
         user_id = self.user_data.get("id")
         avatar_hash = self.user_data.get("avatar")
@@ -602,7 +591,8 @@ class UserInfoView(BaseView):
             ui.MediaGallery(
                 discord.MediaGalleryItem(media=avatar_url)
             ),
-            ui.TextDisplay(f"**Download:** [256]({avatar_url}?size=256) • [512]({avatar_url}?size=512) • [1024]({avatar_url}?size=1024) • [2048]({avatar_url}?size=2048)")
+            ui.TextDisplay(f"**Download:** [256]({avatar_url}?size=256) • [512]({avatar_url}?size=512) • [1024]({avatar_url}?size=1024) • [2048]({avatar_url}?size=2048)"),
+            accent_colour=COLORS["primary"],
         )
 
         avatar_view.add_item(avatar_container)
@@ -612,11 +602,7 @@ class UserInfoView(BaseView):
         """Handle Banner button click"""
         # Check if the user is the author
         if interaction.user.id != self.author_id:
-            await interaction.response.send_message(
-                i18n.get("commands.user.errors.author_only", locale=self.locale),
-                ephemeral=True
-            )
-            return
+            raise NotYours()
 
         user_id = self.user_data.get("id")
         banner_hash = self.user_data.get("banner")
@@ -648,7 +634,8 @@ class UserInfoView(BaseView):
             ui.MediaGallery(
                 discord.MediaGalleryItem(media=banner_url)
             ),
-            ui.TextDisplay(f"**Download:** [256]({banner_url}?size=256) • [512]({banner_url}?size=512) • [1024]({banner_url}?size=1024) • [2048]({banner_url}?size=2048)")
+            ui.TextDisplay(f"**Download:** [256]({banner_url}?size=256) • [512]({banner_url}?size=512) • [1024]({banner_url}?size=1024) • [2048]({banner_url}?size=2048)"),
+            accent_colour=COLORS["primary"],
         )
 
         banner_view.add_item(banner_container)

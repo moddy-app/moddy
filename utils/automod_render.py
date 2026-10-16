@@ -131,7 +131,54 @@ def sanction_name(actions, locale: str) -> str:
     from utils.i18n import t
 
     actions = actions or []
-    for a in ("ban", "mute", "warn"):
+    for a in ("ban", "kick", "mute", "warn"):
         if a in actions:
             return t(f"modules.automod_ai.action.{a}", locale=locale)
     return t("modules.automod_ai.action.supprimer", locale=locale)
+
+
+def action_label(action: str, locale: str, seconds=None) -> str:
+    """Name of one action; a timeout shows its exact duration (``16 h 53 min``).
+
+    ``action`` is an internal name (``supprimer`` / ``warn`` / ``mute`` /
+    ``kick`` / ``ban``).
+    """
+    from automod import actions as act
+    from utils.i18n import t
+
+    label = t(f"modules.automod_ai.action.{action}", locale=locale)
+    if action == "mute" and seconds:
+        label += f" ({act.format_duration(seconds, locale)})"
+    return label
+
+
+def actions_text(actions, locale: str, seconds=None) -> str:
+    """Comma-separated action names in application order ('' if none)."""
+    from automod import actions as act
+
+    got = set(actions or [])
+    return ", ".join(action_label(a, locale, seconds)
+                     for a in act.INTERNAL_ORDER if a in got)
+
+
+def failed_lines(failed, locale: str) -> str:
+    """One bullet per action that should have been applied but was not.
+
+    ``failed`` maps an internal action (or ``case``) to a reason code
+    (``modules.automod_ai.failure.<code>``). Empty string when nothing failed.
+    """
+    from automod import actions as act
+    from utils.i18n import t
+
+    if not failed:
+        return ""
+    lines = []
+    order = list(act.INTERNAL_ORDER) + ["case"]
+    for a in order:
+        if a not in failed:
+            continue
+        name = (t("modules.automod_ai.failure.case", locale=locale) if a == "case"
+                else t(f"modules.automod_ai.action.{a}", locale=locale))
+        reason = t(f"modules.automod_ai.failure.reason_{failed[a]}", locale=locale)
+        lines.append(f"- {name} · {reason}")
+    return "\n".join(lines)
