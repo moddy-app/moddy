@@ -1089,7 +1089,12 @@
         }
       },
       "breadcrumb": {
-        "root": "Config"
+        "root": "Config",
+        "add": "Add",
+        "manage": "Manage",
+        "settings": "Settings",
+        "permissions": "Permissions",
+        "options": "Options"
       }
     },
     "welcome_channel": {
@@ -1749,7 +1754,33 @@
         "appeal_hint": "The member can contest this decision with the Moddy team or your moderation team.",
         "detection_only": "Detection only",
         "deleted": "Deleted",
-        "message_id": "Message ID"
+        "message_id": "Message ID",
+        "planned": "Planned actions",
+        "not_applied": "Not applied"
+      },
+      "failure": {
+        "case": "Case not recorded",
+        "reason_hierarchy": "role too high for Moddy",
+        "reason_permission": "missing permission",
+        "reason_absent": "member not in the server",
+        "reason_discord": "Discord error",
+        "reason_unverified": "not confirmed by Discord",
+        "reason_case": "recording failed"
+      },
+      "approval": {
+        "title": "Automod · approval required",
+        "pending": "Waiting for a moderator's approval",
+        "hint": "Nothing is applied until a moderator approves. The message has already been deleted.",
+        "approved": "Sanction approved",
+        "rejected": "Sanction rejected, nothing was applied",
+        "expired": "Expired, nothing was applied",
+        "button_ok": "Approve",
+        "button_no": "Reject",
+        "error_title": "Action not possible",
+        "gone": "This request could not be found.",
+        "already_handled": "This request has already been handled.",
+        "no_perms": "You don't have the moderation permission needed to handle this sanction.",
+        "unavailable": "Automod is unavailable on this server right now."
       },
       "dm": {
         "title": "Automatic sanction",
@@ -1904,10 +1935,6 @@
         "arnaque_scam": {
           "name": "Scams",
           "desc": "Fake giveaways, free Nitro, crypto casinos, trap links"
-        },
-        "violation_indications": {
-          "name": "Server rules",
-          "desc": "Breaking the guidelines specific to your server"
         },
         "contenu_nsfw": {
           "name": "Explicit images",

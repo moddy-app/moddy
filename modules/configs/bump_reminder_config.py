@@ -45,8 +45,10 @@ from modules.bump_reminder import (
     normalize_config,
     reminders_per_bot,
 )
+from config import COLORS
 from modules.configs._common import (
-    ack, check_guild_perms, load_before_modal, say, show,
+    ack, check_guild_perms, config_state, crumb, crumb_segment, load_before_modal,
+    module_state_row, open_main_config, say, show, state_accent,
 )
 from utils.components_v2 import create_success_message
 from utils.emojis import (
@@ -260,12 +262,13 @@ class BumpReminderConfigView(BaseView):
                  user_id: Optional[int] = None, locale: str = "en-US",
                  reminders: Optional[List[Dict[str, Any]]] = None,
                  states: Optional[Dict[str, Dict[str, Any]]] = None,
-                 cap: int = 1):
+                 cap: int = 1, module_state: Optional[str] = None):
         super().__init__()  # timeout=None
         self.bot = bot
         self.guild_id = guild_id
         self.user_id = user_id
         self.locale = locale
+        self.module_state = module_state
         self.reminders = reminders or []
         self.states = states or {}
         self.cap = cap
@@ -280,10 +283,12 @@ class BumpReminderConfigView(BaseView):
         a dead form — reading the panel answers "is this working?" without
         anyone having to wait for the next bump to find out.
         """
-        reminders = await _load(bot, guild_id)
+        saved = await bot.module_manager.get_module_config(guild_id, _MODULE_ID)
+        reminders = normalize_config(saved)['reminders']
         states = await bot.db.get_guild_bump_states(guild_id)
         cap = await reminders_per_bot(bot, guild_id)
-        return cls(bot, guild_id, user_id, locale, reminders, states, cap)
+        return cls(bot, guild_id, user_id, locale, reminders, states, cap,
+                   module_state=config_state(saved) if reminders else None)
 
     # -- construction ----------------------------------------------------- #
     def _available_bots(self) -> List[str]:
@@ -293,7 +298,8 @@ class BumpReminderConfigView(BaseView):
 
     def _build_view(self):
         self.clear_items()
-        container = ui.Container()
+        container = ui.Container(accent_colour=state_accent(self.module_state))
+        container.add_item(crumb(self.locale, _MODULE_ID))
 
         container.add_item(ui.TextDisplay(
             f"### {ROCKET_LAUNCH} {t('modules.bump_reminder.config.title', locale=self.locale)}"
@@ -306,6 +312,13 @@ class BumpReminderConfigView(BaseView):
         ))
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+
+        # Every action saves instantly: there is never a pending change to lose.
+        state_items = module_state_row(_MODULE_ID, self.module_state, self.locale)
+        for item in state_items:
+            container.add_item(item)
+        if state_items:
+            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
         if self.reminders:
             container.add_item(ui.TextDisplay(
@@ -458,11 +471,7 @@ class BumpReminderConfigView(BaseView):
     async def on_back(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
-        from cogs.config import ConfigMainView
-        locale = i18n.get_user_locale(interaction)
-        main_view = ConfigMainView(interaction.client, interaction.guild_id,
-                                   interaction.user.id, locale)
-        await show(interaction, main_view)
+        await open_main_config(interaction)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         return await check_guild_perms(interaction)
@@ -495,7 +504,10 @@ class ManageBumpReminderView(BaseView):
 
     def _build_view(self):
         self.clear_items()
-        container = ui.Container()
+        paused = not self.entry.get('enabled', True)
+        container = ui.Container(accent_colour=discord.Colour(
+            COLORS["neutral"] if paused else COLORS["primary"]))
+        container.add_item(crumb(self.locale, _MODULE_ID, crumb_segment(self.locale, "manage")))
         spec = bot_by_key(self.entry.get('bot') or '')
 
         if spec is None:

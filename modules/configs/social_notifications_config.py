@@ -30,7 +30,10 @@ import discord
 from discord import ui
 
 from cogs.error_handler import BaseView, BaseModal
-from modules.configs._common import ack, show, say
+from config import COLORS
+from modules.configs._common import (
+    ack, show, say, crumb, crumb_segment, open_main_config,
+)
 from modules.social_notifications import (
     SUPPORTED_PLATFORMS,
     MAX_MESSAGE_LENGTH,
@@ -323,7 +326,8 @@ class SocialNotificationsConfigView(BaseView):
 
     def _build_view(self):
         self.clear_items()
-        container = ui.Container()
+        container = ui.Container(accent_colour=discord.Colour(COLORS["primary"]))
+        container.add_item(crumb(self.locale, 'social_notifications'))
 
         container.add_item(ui.TextDisplay(
             f"### {SOCIAL} {t('modules.social_notifications.config.title', locale=self.locale)}"
@@ -462,11 +466,7 @@ class SocialNotificationsConfigView(BaseView):
     async def on_back(self, interaction: discord.Interaction):
         if not await _check_perms(interaction):
             return
-        await ack(interaction)
-        from cogs.config import ConfigMainView
-        locale = i18n.get_user_locale(interaction)
-        main_view = ConfigMainView(interaction.client, interaction.guild_id, interaction.user.id, locale)
-        await show(interaction, main_view)
+        await open_main_config(interaction)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         return await _check_perms(interaction)
@@ -522,7 +522,9 @@ class AddSubscriptionView(BaseView):
 
     def _build_view(self):
         self.clear_items()
-        container = ui.Container()
+        container = ui.Container(accent_colour=discord.Colour(COLORS["primary"]))
+        container.add_item(crumb(self.locale, 'social_notifications',
+                                 crumb_segment(self.locale, 'add')))
 
         container.add_item(ui.TextDisplay(
             f"### {ADD} {t('modules.social_notifications.add.title', locale=self.locale)}"
@@ -819,11 +821,13 @@ class ManageSubscriptionView(BaseView):
 
     def _build_view(self):
         self.clear_items()
-        container = ui.Container()
+        container = ui.Container(accent_colour=discord.Colour(COLORS["primary"]))
 
         platform = self.sub.get('platform', '')
         emoji = get_platform_emoji(platform)
         name = self.sub.get('display_name') or self.sub.get('identifier') or self.sub.get('target_id', '')
+        container.add_item(crumb(self.locale, 'social_notifications',
+                                 discord.utils.escape_markdown(str(name)).replace('\n', ' ')))
         container.add_item(ui.TextDisplay(
             f"### {emoji} {discord.utils.escape_markdown(str(name))}"
         ))

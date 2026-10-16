@@ -1088,7 +1088,12 @@
         }
       },
       "breadcrumb": {
-        "root": "Configuration"
+        "root": "Configuration",
+        "add": "Ajouter",
+        "manage": "Gérer",
+        "settings": "Paramètres",
+        "permissions": "Permissions",
+        "options": "Options"
       }
     },
     "welcome_channel": {
@@ -1748,7 +1753,33 @@
         "appeal_hint": "L'utilisateur peut contester cette décision auprès de l'équipe de Moddy ou de votre équipe de modération.",
         "detection_only": "Détection seule",
         "deleted": "Supprimé",
-        "message_id": "Message ID"
+        "message_id": "Message ID",
+        "planned": "Actions prévues",
+        "not_applied": "Non appliqué"
+      },
+      "failure": {
+        "case": "Dossier non enregistré",
+        "reason_hierarchy": "rôle trop élevé pour Moddy",
+        "reason_permission": "permission manquante",
+        "reason_absent": "membre absent du serveur",
+        "reason_discord": "erreur Discord",
+        "reason_unverified": "non confirmé par Discord",
+        "reason_case": "échec de l'enregistrement"
+      },
+      "approval": {
+        "title": "Automod · validation requise",
+        "pending": "En attente de validation d'un modérateur",
+        "hint": "Aucune sanction n'est appliquée tant qu'un modérateur n'a pas validé. Le message a déjà été supprimé.",
+        "approved": "Sanction validée",
+        "rejected": "Sanction refusée, rien n'a été appliqué",
+        "expired": "Délai dépassé, rien n'a été appliqué",
+        "button_ok": "Valider",
+        "button_no": "Refuser",
+        "error_title": "Action impossible",
+        "gone": "Cette demande est introuvable.",
+        "already_handled": "Cette demande a déjà été traitée.",
+        "no_perms": "Tu n'as pas la permission de modération nécessaire pour traiter cette sanction.",
+        "unavailable": "Automod est indisponible sur ce serveur pour le moment."
       },
       "dm": {
         "title": "Sanction automatique",
@@ -1903,10 +1934,6 @@
         "arnaque_scam": {
           "name": "Arnaques",
           "desc": "Faux concours, Nitro gratuit, casinos crypto, liens piégés"
-        },
-        "violation_indications": {
-          "name": "Règles du serveur",
-          "desc": "Non-respect des indications propres à ton serveur"
         },
         "contenu_nsfw": {
           "name": "Images explicites",

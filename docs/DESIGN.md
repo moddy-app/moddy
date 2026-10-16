@@ -268,6 +268,14 @@ container.add_item(ui.TextDisplay("<:warning:...> **Security Warning**"))
   `breadcrumb(locale, MODULE_NAME, *segments)` -> `-# Config › Automod › Sanctions › Doxxing`,
   as the FIRST item of the container, above the `###` title. Small text above
   the title reads as navigation without competing with the heading.
+- **Module name in the trail**: `crumb(locale, module_id, *segments)` resolves the
+  localised module name; generic segments (`add`, `manage`, `settings`,
+  `permissions`, `options`) come from `crumb_segment(locale, key)`.
+- **Pending edits and the state row**: on views with a Save / Cancel batch, the state
+  row is hidden while `has_changes` is true (a state click rebuilds the screen from
+  the saved config and would drop the edits). Instant-save screens always show it.
+- **Table-backed modules** (Social Notifications) have no stored config to carry a
+  state, so they get the breadcrumb and accent but no state row.
 
 ### **Standard Configuration Structure**
 

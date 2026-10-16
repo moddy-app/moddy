@@ -23,7 +23,16 @@ from discord import ui
 
 from cogs.error_handler import BaseView
 from modules.altguard import MODULE_ID
-from modules.configs._common import check_guild_perms, ack, show
+from modules.configs._common import (
+    ack,
+    check_guild_perms,
+    config_state,
+    crumb,
+    module_state_row,
+    open_main_config,
+    show,
+    state_accent,
+)
 from utils.emojis import BACK, FINGERPRINT, DELETE, SAVE, UNDONE
 from utils.i18n import i18n, t
 
@@ -84,7 +93,10 @@ class AltGuardConfigView(BaseView):
     def _build_view(self) -> None:
         self.clear_items()
 
-        container = ui.Container()
+        # Accent follows the module state (gray when paused).
+        state = config_state(self.current_config) if self.has_existing_config else None
+        container = ui.Container(accent_colour=state_accent(state))
+        container.add_item(crumb(self.locale, 'altguard'))
 
         container.add_item(ui.TextDisplay(
             f"### {FINGERPRINT} {t('modules.altguard.config.title', locale=self.locale)}"
@@ -94,6 +106,14 @@ class AltGuardConfigView(BaseView):
         ))
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+
+        # Play / pause: only on a clean, saved config (a state click rebuilds the
+        # screen from the saved config and would drop pending edits).
+        state_items = [] if self.has_changes else module_state_row('altguard', state, self.locale)
+        for item in state_items:
+            container.add_item(item)
+        if state_items:
+            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
         # --- Verification channel -------------------------------------- #
         container.add_item(ui.TextDisplay(
@@ -307,12 +327,7 @@ class AltGuardConfigView(BaseView):
         if not await check_guild_perms(interaction):
             return
 
-        from cogs.config import ConfigMainView
-        locale = i18n.get_user_locale(interaction)
-        main_view = ConfigMainView(
-            interaction.client, interaction.guild_id, interaction.user.id, locale,
-        )
-        await show(interaction, main_view)
+        await open_main_config(interaction)
 
     async def on_save(self, interaction: discord.Interaction) -> None:
         if not await check_guild_perms(interaction):

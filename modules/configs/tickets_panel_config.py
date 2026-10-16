@@ -28,7 +28,7 @@ from discord import ui
 
 from cogs.error_handler import BaseView
 from modules.configs._common import (
-    ack, check_guild_perms, load_before_modal, show,
+    ack, check_guild_perms, crumb, load_before_modal, show,
 )
 from modules.configs.tickets_config import (
     PanelAppearanceModal,
@@ -328,6 +328,7 @@ class TicketPanelConfigView(BaseView):
         container = ui.Container(accent_colour=discord.Colour(
             self.panel.get('accent_color') or DEFAULT_ACCENT_COLOR))
 
+        container.add_item(crumb(self.locale, 'tickets', self.panel['name']))
         container.add_item(ui.TextDisplay(
             f"### {TICKET_PANEL} {self.panel['name']}"))
         container.add_item(ui.TextDisplay(

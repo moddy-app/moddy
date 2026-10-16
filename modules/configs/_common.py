@@ -265,6 +265,26 @@ def breadcrumb(locale: str, module_name: Optional[str] = None, *segments: str) -
     return ui.TextDisplay("-# " + " › ".join(parts))
 
 
+_MODULE_NAME_FALLBACKS = {
+    "logs": "Logs",
+    "social_notifications": "Social Notifications",
+    "tickets": "Tickets",
+}
+
+
+def crumb(locale: str, module_id: str, *segments: str) -> ui.TextDisplay:
+    """:func:`breadcrumb` for a module id: resolves the localised module name."""
+    name = t(f"modules.{module_id}.name", locale=locale)
+    if name.startswith("["):
+        name = _MODULE_NAME_FALLBACKS.get(module_id, module_id)
+    return breadcrumb(locale, name, *segments)
+
+
+def crumb_segment(locale: str, key: str) -> str:
+    """Generic breadcrumb segment: add / manage / settings / permissions / options."""
+    return t(f"modules.config.breadcrumb.{key}", locale=locale)
+
+
 _CID_STATE_PREFIX = "moddy:config:state"
 
 

@@ -35,7 +35,11 @@ import discord
 from discord import ui
 
 from cogs.error_handler import BaseModal, BaseView
-from modules.configs._common import ack, check_guild_perms, load_before_modal, show
+from config import COLORS
+from modules.configs._common import (
+    ack, check_guild_perms, config_state, crumb, crumb_segment, load_before_modal,
+    module_state_row, open_main_config, show, state_accent,
+)
 from modules.tickets import (
     DEFAULT_ACCENT_COLOR,
     MAX_RETENTION_DAYS,
@@ -286,12 +290,14 @@ class TicketsConfigView(BaseView):
     def __init__(self, bot=None, guild_id: Optional[int] = None,
                  user_id: Optional[int] = None, locale: str = "en-US",
                  panels: Optional[List[Dict[str, Any]]] = None,
-                 limits: Optional[Dict[str, Any]] = None):
+                 limits: Optional[Dict[str, Any]] = None,
+                 module_state: Optional[str] = None):
         super().__init__()  # timeout=None
         self.bot = bot
         self.guild_id = guild_id
         self.user_id = user_id
         self.locale = locale
+        self.module_state = module_state
         self.panels = panels or []
         self.limits = limits or {'premium': False, 'max_panels': 0, 'max_categories': 0}
 
@@ -301,12 +307,15 @@ class TicketsConfigView(BaseView):
     async def create(cls, bot, guild_id: int, user_id: int, locale: str):
         config = await load_config(bot, guild_id)
         limits = await get_limits(bot, guild_id)
-        return cls(bot, guild_id, user_id, locale, config['panels'], limits)
+        saved = await bot.module_manager.get_module_config(guild_id, 'tickets')
+        return cls(bot, guild_id, user_id, locale, config['panels'], limits,
+                   module_state=config_state(saved) if config['panels'] else None)
 
     # -- construction ------------------------------------------------------ #
     def _build_view(self):
         self.clear_items()
-        container = ui.Container()
+        container = ui.Container(accent_colour=state_accent(self.module_state))
+        container.add_item(crumb(self.locale, 'tickets'))
 
         container.add_item(ui.TextDisplay(
             f"### {TICKET} {t('modules.tickets.config.title', locale=self.locale)}"))
@@ -320,6 +329,13 @@ class TicketsConfigView(BaseView):
             container.add_item(ui.TextDisplay(hint))
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+
+        # Every action saves instantly: there is never a pending change to lose.
+        state_items = module_state_row('tickets', self.module_state, self.locale)
+        for item in state_items:
+            container.add_item(item)
+        if state_items:
+            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
         if self.panels:
             for panel in self.panels:
@@ -488,10 +504,7 @@ class TicketsConfigView(BaseView):
     async def on_back(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):
             return
-        from cogs.config import ConfigMainView
-        locale = i18n.get_user_locale(interaction)
-        await show(interaction, ConfigMainView(
-            interaction.client, interaction.guild_id, interaction.user.id, locale))
+        await open_main_config(interaction)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         return await check_guild_perms(interaction)
@@ -600,7 +613,8 @@ class TicketsSettingsView(BaseView):
 
     def _build_view(self):
         self.clear_items()
-        container = ui.Container()
+        container = ui.Container(accent_colour=discord.Colour(COLORS["primary"]))
+        container.add_item(crumb(self.locale, 'tickets', crumb_segment(self.locale, 'settings')))
         container.add_item(ui.TextDisplay(
             f"### {SETTINGS} {t('modules.tickets.settings.title', locale=self.locale)}"))
         container.add_item(ui.TextDisplay(

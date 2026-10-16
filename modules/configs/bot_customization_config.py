@@ -44,7 +44,10 @@ from modules.bot_customization import (
     parse_hex_color,
     style_is_empty,
 )
-from modules.configs._common import ack, check_guild_perms, load_before_modal, say, show
+from modules.configs._common import (
+    ack, check_guild_perms, config_state, crumb, load_before_modal, module_state_row,
+    open_main_config, say, show, state_accent,
+)
 from utils.components_v2 import create_error_message, create_success_message
 from utils.emojis import (
     AT, BACK, BANNER, DELETE, EDIT, IMAGE, MODDY_SQUARE, NOTE, PREMIUM, STAR,
@@ -394,6 +397,7 @@ class BotCustomizationConfigView(BaseView):
         self.locale = locale
         self.is_premium = is_premium
 
+        self.state = config_state(current_config)
         config = BotCustomizationModule(bot, guild_id).get_default_config()
         if current_config:
             config.update(current_config)
@@ -417,7 +421,8 @@ class BotCustomizationConfigView(BaseView):
     def _build_view(self):
         self.clear_items()
 
-        container = ui.Container()
+        container = ui.Container(accent_colour=state_accent(self.state))
+        container.add_item(crumb(self.locale, MODULE_ID))
         container.add_item(ui.TextDisplay(
             f"### {MODDY_SQUARE} {t('modules.bot_customization.config.title', locale=self.locale)}"
         ))
@@ -426,6 +431,13 @@ class BotCustomizationConfigView(BaseView):
         ))
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+
+        # Every edit saves instantly, so there is never a pending change to lose.
+        state_items = module_state_row(MODULE_ID, self.state, self.locale)
+        for item in state_items:
+            container.add_item(item)
+        if state_items:
+            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
         self._build_identity_section(container)
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
         self._build_style_section(container)
@@ -688,12 +700,7 @@ class BotCustomizationConfigView(BaseView):
         if not await check_guild_perms(interaction):
             return
 
-        from cogs.config import ConfigMainView
-        locale = i18n.get_user_locale(interaction)
-        main_view = ConfigMainView(
-            interaction.client, interaction.guild_id, interaction.user.id, locale,
-        )
-        await show(interaction, main_view)
+        await open_main_config(interaction)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         return await check_guild_perms(interaction)

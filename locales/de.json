@@ -1089,7 +1089,12 @@
         }
       },
       "breadcrumb": {
-        "root": "Konfiguration"
+        "root": "Konfiguration",
+        "add": "Hinzufügen",
+        "manage": "Verwalten",
+        "settings": "Einstellungen",
+        "permissions": "Berechtigungen",
+        "options": "Optionen"
       }
     },
     "welcome_channel": {
@@ -1749,7 +1754,33 @@
         "appeal_hint": "Das Mitglied kann diese Entscheidung beim Moddy-Team oder eurem Moderationsteam anfechten.",
         "detection_only": "Nur Erkennung",
         "deleted": "Gelöscht",
-        "message_id": "Nachrichten-ID"
+        "message_id": "Nachrichten-ID",
+        "planned": "Geplante Aktionen",
+        "not_applied": "Nicht angewendet"
+      },
+      "failure": {
+        "case": "Fall nicht gespeichert",
+        "reason_hierarchy": "Rolle zu hoch für Moddy",
+        "reason_permission": "fehlende Berechtigung",
+        "reason_absent": "Mitglied nicht auf dem Server",
+        "reason_discord": "Discord-Fehler",
+        "reason_unverified": "von Discord nicht bestätigt",
+        "reason_case": "Speichern fehlgeschlagen"
+      },
+      "approval": {
+        "title": "Automod · Freigabe erforderlich",
+        "pending": "Wartet auf die Freigabe durch einen Moderator",
+        "hint": "Es wird nichts angewendet, bis ein Moderator zustimmt. Die Nachricht wurde bereits gelöscht.",
+        "approved": "Strafe freigegeben",
+        "rejected": "Strafe abgelehnt, nichts wurde angewendet",
+        "expired": "Frist abgelaufen, nichts wurde angewendet",
+        "button_ok": "Freigeben",
+        "button_no": "Ablehnen",
+        "error_title": "Aktion nicht möglich",
+        "gone": "Diese Anfrage wurde nicht gefunden.",
+        "already_handled": "Diese Anfrage wurde bereits bearbeitet.",
+        "no_perms": "Dir fehlt die nötige Moderationsberechtigung, um diese Strafe zu bearbeiten.",
+        "unavailable": "Automod ist auf diesem Server gerade nicht verfügbar."
       },
       "dm": {
         "title": "Automatische Sanktion",
@@ -1904,10 +1935,6 @@
         "arnaque_scam": {
           "name": "Betrug",
           "desc": "Fake-Gewinnspiele, Gratis-Nitro, Krypto-Casinos, Fallen-Links"
-        },
-        "violation_indications": {
-          "name": "Serverregeln",
-          "desc": "Verstoß gegen die Vorgaben deines Servers"
         },
         "contenu_nsfw": {
           "name": "Explizite Bilder",

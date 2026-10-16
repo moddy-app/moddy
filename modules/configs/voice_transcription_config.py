@@ -14,7 +14,16 @@ import discord
 from discord import ui
 
 from cogs.error_handler import BaseView
-from modules.configs._common import check_guild_perms, ack, show
+from modules.configs._common import (
+    ack,
+    check_guild_perms,
+    config_state,
+    crumb,
+    module_state_row,
+    open_main_config,
+    show,
+    state_accent,
+)
 from modules.voice_transcription import MAX_CHANNELS, MODE_BUTTON, MODES
 from utils.emojis import (
     BACK, DELETE, SAVE, TOGGLE_OFF, TOGGLE_ON, UNDONE, VOICE_CHAT,
@@ -78,7 +87,10 @@ class VoiceTranscriptionConfigView(BaseView):
     def _build_view(self):
         self.clear_items()
 
-        container = ui.Container()
+        # Accent follows the module state (gray when paused).
+        state = config_state(self.current_config) if self.has_existing_config else None
+        container = ui.Container(accent_colour=state_accent(state))
+        container.add_item(crumb(self.locale, 'voice_transcription'))
 
         container.add_item(ui.TextDisplay(
             f"### {VOICE_CHAT} {t('modules.voice_transcription.config.title', locale=self.locale)}"
@@ -88,6 +100,14 @@ class VoiceTranscriptionConfigView(BaseView):
         ))
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+
+        # Play / pause: only on a clean, saved config (a state click rebuilds the
+        # screen from the saved config and would drop pending edits).
+        state_items = [] if self.has_changes else module_state_row('voice_transcription', state, self.locale)
+        for item in state_items:
+            container.add_item(item)
+        if state_items:
+            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
         # --- Status -------------------------------------------------- #
         enabled = bool(self.working_config.get("enabled"))
@@ -306,12 +326,7 @@ class VoiceTranscriptionConfigView(BaseView):
         if not await check_guild_perms(interaction):
             return
 
-        from cogs.config import ConfigMainView
-        locale = i18n.get_user_locale(interaction)
-        main_view = ConfigMainView(
-            interaction.client, interaction.guild_id, interaction.user.id, locale,
-        )
-        await show(interaction, main_view)
+        await open_main_config(interaction)
 
     async def on_save(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):

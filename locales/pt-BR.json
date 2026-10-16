@@ -1089,7 +1089,12 @@
         }
       },
       "breadcrumb": {
-        "root": "Configuração"
+        "root": "Configuração",
+        "add": "Adicionar",
+        "manage": "Gerenciar",
+        "settings": "Configurações",
+        "permissions": "Permissões",
+        "options": "Opções"
       }
     },
     "welcome_channel": {
@@ -1749,7 +1754,33 @@
         "appeal_hint": "O membro pode contestar esta decisão junto à equipe Moddy ou à sua equipe de moderação.",
         "detection_only": "Somente detecção",
         "deleted": "Excluída",
-        "message_id": "ID da Mensagem"
+        "message_id": "ID da Mensagem",
+        "planned": "Ações previstas",
+        "not_applied": "Não aplicado"
+      },
+      "failure": {
+        "case": "Caso não registrado",
+        "reason_hierarchy": "cargo alto demais para o Moddy",
+        "reason_permission": "permissão ausente",
+        "reason_absent": "membro fora do servidor",
+        "reason_discord": "erro do Discord",
+        "reason_unverified": "não confirmado pelo Discord",
+        "reason_case": "falha ao registrar"
+      },
+      "approval": {
+        "title": "Automod · aprovação necessária",
+        "pending": "Aguardando a aprovação de um moderador",
+        "hint": "Nada é aplicado até que um moderador aprove. A mensagem já foi excluída.",
+        "approved": "Sanção aprovada",
+        "rejected": "Sanção recusada, nada foi aplicado",
+        "expired": "Prazo esgotado, nada foi aplicado",
+        "button_ok": "Aprovar",
+        "button_no": "Recusar",
+        "error_title": "Ação impossível",
+        "gone": "Não foi possível encontrar esta solicitação.",
+        "already_handled": "Esta solicitação já foi tratada.",
+        "no_perms": "Você não tem a permissão de moderação necessária para tratar esta sanção.",
+        "unavailable": "O Automod está indisponível neste servidor no momento."
       },
       "dm": {
         "title": "Sanção automática",
@@ -1904,10 +1935,6 @@
         "arnaque_scam": {
           "name": "Golpes",
           "desc": "Sorteios falsos, Nitro grátis, cassinos cripto, links armadilha"
-        },
-        "violation_indications": {
-          "name": "Regras do servidor",
-          "desc": "Descumprimento das orientações específicas do seu servidor"
         },
         "contenu_nsfw": {
           "name": "Imagens explícitas",
