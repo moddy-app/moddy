@@ -13,7 +13,7 @@ alert channel, in every state of an incident:
 The buttons are :class:`discord.ui.DynamicItem` whose ``custom_id`` carries the
 approval id (``moddy:automod:approval:<ok|no>:<id>``); everything else is read
 back from ``automod_pending_approvals`` on every click, so they survive a
-restart and nothing lives in memory (docs/PERSISTENT_VIEWS.md).
+restart and nothing lives in memory (docs/guides/PERSISTENT_VIEWS.md).
 """
 
 from __future__ import annotations

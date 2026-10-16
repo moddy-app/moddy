@@ -7,13 +7,13 @@ server never sees the customization of this one.
 
 Two tiers:
 
-- **Premium** (guild linked to an active subscription, see ``docs/PREMIUM.md``):
+- **Premium** (guild linked to an active subscription, see ``docs/guides/PREMIUM.md``):
   nickname, avatar, banner and bio. The bio keeps a trailing attribution line
   (``Powered by @**Moddy**``) which the server cannot remove.
 - **Free**: the *name style* (font, effect, colours) applied to the bot's
   display name. This is the undocumented ``display_name_font_id`` /
   ``display_name_effect_id`` / ``display_name_colors`` trio — see
-  ``docs/BOT_CUSTOMIZATION.md``.
+  ``docs/features/BOT_CUSTOMIZATION.md``.
 
 Persistence asymmetry, and why ``resync_style`` exists: nickname, avatar,
 banner and bio are stored by Discord and survive anything. The name style does **not**
@@ -77,7 +77,7 @@ ALLOWED_IMAGE_TYPES = {
 }
 
 # --------------------------------------------------------------------------- #
-# Name styles (undocumented API — tested, see docs/BOT_CUSTOMIZATION.md)
+# Name styles (undocumented API — tested, see docs/features/BOT_CUSTOMIZATION.md)
 # --------------------------------------------------------------------------- #
 
 # font id -> human name. Discord accepts 1..12 but only these render a font

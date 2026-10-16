@@ -23,7 +23,7 @@ DeepL calls in `cogs/translate.py` with a centralized, scalable API gateway
 | `gateway/adapters/deepl.py` | `DeepLAdapter` — translate via aiohttp (free or pro tier) |
 | `gateway/clients/ai.py` | `AIClient` — `gw.ai.embed()`, `gw.ai.chat()` |
 | `gateway/clients/translation.py` | `TranslationClient` — `gw.translation.translate()` |
-| `docs/API_GATEWAY.md` | Full documentation for the gateway |
+| `docs/infra/API_GATEWAY.md` | Full documentation for the gateway |
 
 ## Files modified
 
@@ -40,7 +40,7 @@ DeepL calls in `cogs/translate.py` with a centralized, scalable API gateway
 ## Files deleted
 
 - `services/openai_client.py` — replaced by `gateway/`
-- `docs/OPENAI.md` — replaced by `docs/API_GATEWAY.md`
+- `docs/OPENAI.md` — replaced by `docs/infra/API_GATEWAY.md`
 
 ## Key decisions
 

@@ -60,7 +60,7 @@
 `automod/schemas.py`, `utils/appeal_views.py`, `services/appeal_service.py`,
 `db/repositories/appeals.py`, `db/repositories/moderation.py`, `db/base.py`,
 `bot.py`, `cogs/error_handler.py`, `utils/emojis.py`, `utils/automod_render.py`
-(new), `locales/fr.json`, `locales/en-US.json`, `docs/MODERATION_CASES.md`.
+(new), `locales/fr.json`, `locales/en-US.json`, `docs/features/MODERATION_CASES.md`.
 
 ## Decisions
 - One case per automod incident (instead of dedup-append) — fixes both the

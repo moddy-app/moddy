@@ -39,7 +39,7 @@ only drops their resolver cache, no DM from here.
   expired rows.
 - `locales/{fr,en-US,es-ES,pt-BR,de}.json` — `commands.moderation.expiry_dm.*`.
 - `tests/test_expiration_notifications.py` **(new)** — 16 offline tests.
-- Docs: `docs/MODERATION_CASES.md` §7bis, `docs/PERSISTENT_VIEWS.md`, `CLAUDE.md`.
+- Docs: `docs/features/MODERATION_CASES.md` §7bis, `docs/guides/PERSISTENT_VIEWS.md`, `CLAUDE.md`.
 
 ## Decisions
 

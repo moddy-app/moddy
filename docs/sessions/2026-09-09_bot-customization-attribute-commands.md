@@ -39,11 +39,11 @@ The free name style (font/effect/colours) stays ungated, as before.
 - `modules/configs/bot_customization_config.py` — replaced the three direct `is_guild_premium` checks
 - `utils/staff_role_permissions.py` — new `bot_customization_manage` permission node (Manager role)
 - `locales/{en-US,fr,es-ES,pt-BR,de}.json` — new `staff.manage.customization.*` keys
-- `docs/BOT_CUSTOMIZATION.md`, `docs/PREMIUM.md`, `docs/STAFF_SYSTEM.md` — documented the new attribute and commands
+- `docs/features/BOT_CUSTOMIZATION.md`, `docs/guides/PREMIUM.md`, `docs/guides/STAFF_SYSTEM.md` — documented the new attribute and commands
 
 ## Decisions made and why
 
-- **New attribute name, not `PREMIUM`.** `docs/PREMIUM.md` explicitly warns
+- **New attribute name, not `PREMIUM`.** `docs/guides/PREMIUM.md` explicitly warns
   there is no `PREMIUM` guild attribute and that one must not be used to gate
   a server feature (premium is subscription-derived only, via
   `subscription_servers`). A dedicated `BOT_CUSTOMIZATION` attribute keeps

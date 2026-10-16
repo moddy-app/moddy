@@ -8,14 +8,14 @@ panel is a list + add/manage flow rather than a single form:
   Main panel ──► Add message ──► (channel + message customization) ──► confirm
             └──► Manage message ──► change channel / edit message / pause / remove
 
-Message customization goes through a **Modal V2** (see docs/MODALS_V2.md): the
+Message customization goes through a **Modal V2** (see docs/guides/MODALS_V2.md): the
 full text, the placeholder cheat-sheet and the accent colour in one modal.
 
 Actions are applied immediately (no Save/Cancel batching): each one writes the
 whole message list back through ``module_manager.save_module_config`` so the
 module instance is revalidated and reloaded on every change.
 
-Persistence (see docs/PERSISTENT_VIEWS.md): every interactive component uses a
+Persistence (see docs/guides/PERSISTENT_VIEWS.md): every interactive component uses a
 stable, namespaced ``custom_id`` and the views never time out. Callbacks
 re-derive their context from ``interaction`` + the DB.
 """
@@ -389,7 +389,7 @@ class AddWelcomeMessageView(BaseView):
     Persistent: yes. The in-progress wizard state (channel picked, message
     typed) is not persisted anywhere — on a restart the shell rebuilds an
     empty form, same accepted loss as AddSubscriptionView (see
-    docs/PERSISTENT_VIEWS.md Appendix B.1.c). Every callback re-checks
+    docs/guides/PERSISTENT_VIEWS.md Appendix B.1.c). Every callback re-checks
     check_guild_perms(interaction), so no auth state depends on self either.
     """
 

@@ -9,7 +9,7 @@ The confirmation buttons are :class:`discord.ui.DynamicItem` s. They have to be:
 the decision is scoped to a conversation *and* an action, neither of which
 ``interaction.guild_id`` or ``interaction.user.id`` can supply, so a static
 ``custom_id`` would not be enough to re-derive the state after a restart (see
-``docs/PERSISTENT_VIEWS.md``). Everything the callback needs is encoded in the
+``docs/guides/PERSISTENT_VIEWS.md``). Everything the callback needs is encoded in the
 ``custom_id`` and re-read from the interaction — ``self`` is a fresh shell on
 every single click, not just after a restart.
 

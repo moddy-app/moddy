@@ -22,7 +22,7 @@ Actions apply immediately (no Save/Cancel batching): each one writes the whole
 list back through ``module_manager.save_module_config``, so the module is
 revalidated and reloaded on every change.
 
-Persistence (docs/PERSISTENT_VIEWS.md): stable namespaced custom_ids, no
+Persistence (docs/guides/PERSISTENT_VIEWS.md): stable namespaced custom_ids, no
 timeouts, and every callback re-derives its context from ``interaction`` + the
 database rather than from ``self``.
 """
@@ -239,7 +239,7 @@ class BumpReminderModal(BaseModal):
             channel_id=channels[0].id if channels else None,
             role_ids=[role.id for role in self.role_select.values],
             # RadioGroup is single-choice: `.value`, not the `.values` list
-            # every select and CheckboxGroup exposes. See docs/MODALS_V2.md.
+            # every select and CheckboxGroup exposes. See docs/guides/MODALS_V2.md.
             ping_mode=self.ping_group.value or DEFAULT_PING_MODE,
             raw_interval=self.interval_input.value,
         )

@@ -1,4 +1,4 @@
-"""Tests for the two Health Monitor heartbeats (see docs/HEALTH_MONITOR.md).
+"""Tests for the two Health Monitor heartbeats (see docs/infra/HEALTH_MONITOR.md).
 
 Nothing here talks to the network: ``HeartbeatClient`` and
 ``BetterStackHeartbeat`` are tested on their pure payload-building logic and

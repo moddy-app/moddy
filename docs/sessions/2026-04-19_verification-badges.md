@@ -17,7 +17,7 @@ Implemented a 3-tier verification badge system for user display names, a staff c
 | `locales/fr.json` | Added `verified_org_member_notice` and `verified_org_notice` keys in `commands.user.view` |
 | `locales/en-US.json` | Same |
 | `CLAUDE.md` | Added rule §7 — Verification Badge on Usernames |
-| `docs/EMOJIS.md` | Updated `verified` emoji ID; added `verified_org` and `verified_org_member` |
+| `docs/guides/EMOJIS.md` | Updated `verified` emoji ID; added `verified_org` and `verified_org_member` |
 
 ## Badge logic (`get_user_verification_badge`)
 

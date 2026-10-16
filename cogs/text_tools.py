@@ -1,14 +1,14 @@
 """
 AI text tools for Moddy — /fix, /rephrase and /summarize.
 
-Every OpenAI call goes through the centralized gateway (see docs/API_GATEWAY.md):
+Every OpenAI call goes through the centralized gateway (see docs/infra/API_GATEWAY.md):
 - /fix       → gpt-4.1-nano  (call_type: text_fix)
 - /rephrase  → gpt-4.1-mini  (call_type: text_rephrase)
 - /summarize → gpt-4.1-mini  (call_type: text_summarize)
 
 Each command is available both as a slash command (text passed directly as a
 command option) and as a message context menu (opens a Modal V2, see
-docs/MODALS_V2.md, to pick the action/preset on the pre-filled message).
+docs/guides/MODALS_V2.md, to pick the action/preset on the pre-filled message).
 
 Safety: the input is fenced with a random nonce (anti prompt injection) and,
 for public (non-incognito) answers, every mention-looking token is stripped from

@@ -1,4 +1,4 @@
-"""Automod images — the pure core (docs/AUTOMOD_AI.md §4.2/§4.3).
+"""Automod images — the pure core (docs/features/AUTOMOD.md §4.2/§4.3).
 
 Perceptual hashing, the known-hash index, the OCR-tolerant scam anchors, the
 SafeSearch policy, the monthly pacing, the scam pre-rules, and how the engine

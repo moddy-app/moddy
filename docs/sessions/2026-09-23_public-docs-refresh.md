@@ -30,7 +30,7 @@ docs repo, in the three doc languages (EN/FR/ES).
   transcript body precision) were left out of the public changelog.
 - The transcript "staff thread withheld from the author" rule was not
   documented publicly: it is a dashboard contract not implemented yet
-  (`docs/TICKETS_INTEGRATION.md`).
+  (`docs/integration/TICKETS_INTEGRATION.md`).
 - The exact Discord settings path to enable Apply to Join was not asserted,
   since it could not be verified.
 

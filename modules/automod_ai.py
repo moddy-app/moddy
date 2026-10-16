@@ -1,7 +1,7 @@
 """
 Automod module — AI-assisted moderation of problematic messages.
 
-This module is the **caller** described in ``docs/AUTOMOD_AI.md``: it owns
+This module is the **caller** described in ``docs/features/AUTOMOD.md``: it owns
 configuration and *applies* the decisions produced by the detection pipeline
 (``automod/``). The pipeline only decides; this module deletes / warns / mutes /
 bans, records cases (with evidence) through :class:`CaseService`, logs to the
@@ -19,7 +19,7 @@ application / case / logging path below. No other file needs to change.
 Config (stored in ``guilds.data.modules.automod``)::
 
     {
-      "state": "active" | "simulation" | "paused",   # generic module state (docs/MODULE_SYSTEM.md);
+      "state": "active" | "simulation" | "paused",   # generic module state (docs/guides/MODULE_SYSTEM.md);
                                          # legacy root "enabled": false / "dry_run": true are
                                          # migrated on load (paused wins), dropped on next save
       "notify_channel_id": 123 | null,
@@ -47,7 +47,7 @@ The sanction itself is not decided by nano: the detection pipeline only
 *qualifies* the message (category + gravity + confidence) and the deterministic
 barème (``automod/bareme.py``) computes the sanction cran from that
 qualification, the member's recidivism history and the guild config. See
-``docs/AUTOMOD_AI.md`` §2bis.
+``docs/features/AUTOMOD.md`` §2bis.
 """
 
 from __future__ import annotations
@@ -249,7 +249,7 @@ class ContentModerationFeature(AutomodFeature):
 
 
 class _ImageFeature(AutomodFeature):
-    """Shared helpers of the two image features (docs/AUTOMOD_AI.md §4.2/§4.3).
+    """Shared helpers of the two image features (docs/features/AUTOMOD.md §4.2/§4.3).
 
     The heavy lifting (download, hashing, caches, paid calls) lives in
     ``bot.automod_images`` (``services/automod_image_service.py``); the
@@ -408,7 +408,7 @@ class ImageScamFeature(_ImageFeature):
 
 
 class _SafeSearchFeature(_ImageFeature):
-    """One SafeSearch axis as its own feature (docs/AUTOMOD_AI.md §4.3).
+    """One SafeSearch axis as its own feature (docs/features/AUTOMOD.md §4.3).
 
     ``image_nsfw`` (sexual content) and ``image_gore`` (gore / graphic
     violence) are independent toggles but read the SAME SafeSearch result:
@@ -1385,7 +1385,7 @@ class AutomodModule(ModuleBase):
 
         # Counted here — after the barème settled the sanction, before shadow
         # mode short-circuits — so a server running in simulation produces the
-        # same statistics as one applying them (see docs/STATS.md).
+        # same statistics as one applying them (see docs/infra/STATS.md).
         self.count("decision")
         heaviest = next(
             (a for a in ("ban", "kick", "mute", "warn", "supprimer") if a in decision.actions),
@@ -2307,7 +2307,7 @@ class AutomodModule(ModuleBase):
     # the member to ``screen_member`` as a bounded background task. The shared
     # caches, the SafeSearch budget and the name verdicts live in
     # ``bot.automod_profiles`` (``services/automod_profile_service.py``); this
-    # module only applies the server's policy. See docs/AUTOMOD_AI.md "Profiles".
+    # module only applies the server's policy. See docs/features/AUTOMOD.md "Profiles".
 
     _PROFILE_SCOPE_ALL = frozenset({"avatar", "banner", "pseudo"})
 

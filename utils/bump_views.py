@@ -16,7 +16,7 @@ and which people it may notify is stated explicitly at send time rather than
 left to Discord's defaults, so a stale config can never ping something the
 server did not choose.
 
-See docs/BUMP_REMINDER.md.
+See docs/features/BUMP_REMINDER.md.
 """
 
 import logging

@@ -1,7 +1,7 @@
 """`/manage stripecreate` — ask the backend to create a Stripe customer for a user.
 
 Fire-and-forget: publishes a `create_stripe_customer` event on `moddy:dashboard`
-(see docs/REDIS_COMMUNICATION.md). The backend listener
+(see docs/integration/REDIS_COMMUNICATION.md). The backend listener
 (`app/redis/stripe_events.py`) creates the local user row if missing, creates
 the Stripe customer, and stores `stripe_customer_id`/`email` — idempotent if
 one already exists. No acknowledgement is expected here; if the backend is

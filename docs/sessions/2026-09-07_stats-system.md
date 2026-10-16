@@ -27,7 +27,7 @@ one row.
 - `db/repositories/stats.py` — `StatsRepository`: additive upserts, dashboard
   reads, growth/cohort/acquisition queries, partition management.
 - `cogs/stats_events.py` — the Discord listeners that emit.
-- `docs/STATS.md`, `tests/test_stats.py`.
+- `docs/infra/STATS.md`, `tests/test_stats.py`.
 
 **Modified**
 - `db/base.py` — DDL for `stats_counters`, `stats_snapshots`, `guild_events`,
@@ -41,7 +41,7 @@ one row.
 - `notifications/service.py`, `services/case_service.py`,
   `services/ticket_service.py`, `cogs/bump_reminder.py`,
   `serverlogs/service.py` — one counter each at their existing choke point.
-- `CLAUDE.md`, `docs/DATABASE.md`, `docs/REDIS_COMMUNICATION.md`.
+- `CLAUDE.md`, `docs/infra/DATABASE.md`, `docs/integration/REDIS_COMMUNICATION.md`.
 
 ## Decisions
 
@@ -84,7 +84,7 @@ stores nothing; a chart carries the last known value forward.
 ## Follow-ups
 
 - **`guild_installs` is not filled in yet.** The backend must write the row at
-  the OAuth2 callback (contract in `docs/STATS.md` §6). Until it does,
+  the OAuth2 callback (contract in `docs/infra/STATS.md` §6). Until it does,
   `source` stays NULL everywhere and the acquisition report is empty — the bot
   works fine with the table empty.
 - More emitters can be added as needed; each is one line at an existing choke

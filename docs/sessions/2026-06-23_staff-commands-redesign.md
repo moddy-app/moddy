@@ -37,7 +37,7 @@ option, one file per command.
   (108 keys, FR + EN, audited — no missing keys).
 - **No double-dispatch**: legacy `staff/dev_commands.py` now defers any command
   owned by the new router.
-- Docs: `docs/STAFF_COMMANDS_FRAMEWORK.md`, CLAUDE.md structure update.
+- Docs: `docs/guides/STAFF_COMMANDS_FRAMEWORK.md`, CLAUDE.md structure update.
 
 ## Validation
 - All files byte-compile.

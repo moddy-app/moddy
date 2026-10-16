@@ -35,7 +35,7 @@ _CID_CHANNEL_LIST_DELETE = "moddy:aslow:list:delete"
 # so the target channel_id must be encoded (it is not otherwise on the
 # interaction). \d{1,20} rather than a tighter \d{17,20}: a bare shell
 # built with channel=0 must still match its own template (see
-# docs/PERSISTENT_VIEWS.md Migration log, Step 6).
+# docs/guides/PERSISTENT_VIEWS.md Migration log, Step 6).
 _CID_LIST_ITEM_TEMPLATE = r"moddy:aslow:listitem:(?P<action>edit|remove):(?P<channel>\d{1,20})"
 
 
@@ -110,7 +110,7 @@ class AdaptiveSlowmodeChannelConfigView(BaseView):
     result into the parent list view's working_config — which is itself an
     unsaved draft until *that* view's own Save is clicked. Losing an
     in-progress channel edit on a restart is the same accepted loss as
-    CaseCreationView (docs/PERSISTENT_VIEWS.md Appendix B.1.c): there is
+    CaseCreationView (docs/guides/PERSISTENT_VIEWS.md Appendix B.1.c): there is
     nothing in the DB yet to recover, so the user reopens Add/Edit and
     re-enters it. See Migration log, Step 11.
 

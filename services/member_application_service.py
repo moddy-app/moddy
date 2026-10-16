@@ -19,7 +19,7 @@ are used here: ``GET /guilds/{id}/requests`` and ``PATCH
 route to fetch one request by id, which is why the card is always rebuilt from
 the snapshot stored in ``member_applications.request``.
 
-See docs/MEMBER_APPLICATIONS.md.
+See docs/features/MEMBER_APPLICATIONS.md.
 """
 
 from __future__ import annotations

@@ -6,7 +6,7 @@ produce a moderation :class:`Decision`. This package **decides**; it never
 applies sanctions, never writes to a database, never executes anything. The
 caller (``modules/automod_ai.py``) consumes the :class:`Decision` and acts on it.
 
-Funnel order (see ``docs/AUTOMOD_AI.md``):
+Funnel order (see ``docs/features/AUTOMOD.md``):
 
     1. pre-filter        (bot / system / empty -> STOP)
     2. trivial allowlist ("ok", "mdr", "gg"…    -> STOP)

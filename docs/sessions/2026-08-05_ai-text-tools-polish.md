@@ -57,7 +57,7 @@ pre-filled modal.
 |---|---|
 | `cogs/text_tools.py` | Single context menu + `MenuModal`, accents, conditional sanitizing, per-command language rules, no length check |
 | `locales/fr.json`, `locales/en-US.json` | `text_tools.menu.*` added, `ai_notice` rewritten, `errors.too_long` and `modal.description` removed, titles/footers updated |
-| `docs/TEXT_TOOLS.md` | Rewritten to match |
+| `docs/features/TEXT_TOOLS.md` | Rewritten to match |
 
 ## Known issues / follow-ups
 

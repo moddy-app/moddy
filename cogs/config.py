@@ -5,7 +5,7 @@ One screen, one dropdown: every module Moddy offers, plus the server-wide
 settings entry that used to sit on its own button. Below the container come the
 two links a server owner reaches for when the panel is not enough — the support
 server and the dashboard — as link buttons *outside* the container, the way
-docs/DESIGN.md wants call-to-actions that leave Discord.
+docs/guides/DESIGN.md wants call-to-actions that leave Discord.
 
 Access: anyone with **Manage Server**. The panel used to be gated behind the
 TEAM/BETA attributes while the module system was being built; Moddy is in beta

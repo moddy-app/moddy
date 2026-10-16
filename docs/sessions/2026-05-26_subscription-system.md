@@ -18,7 +18,7 @@ Pub/Sub listener, user-facing command, staff command, and documentation.
 | `cogs/staff_subscription.py` | **New** — `/staff subscription-info <user>` slash command with full data including `stripe_customer_id` and server `added_at` |
 | `locales/fr.json` | **Updated** — added `commands.subscription.*` keys |
 | `locales/en-US.json` | **Updated** — added `commands.subscription.*` keys |
-| `docs/SUBSCRIPTION_SCHEMA.md` | **New** — DB schema, Redis contract, Pub/Sub contract, backend responsibilities |
+| `docs/integration/SUBSCRIPTION_SCHEMA.md` | **New** — DB schema, Redis contract, Pub/Sub contract, backend responsibilities |
 | `CLAUDE.md` | **Updated** — project structure, utils list, docs index |
 
 ## Decisions made

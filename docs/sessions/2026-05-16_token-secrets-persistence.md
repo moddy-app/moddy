@@ -45,7 +45,7 @@ but `data["token"]` was always `""`, so `UserConfirmInvalidateButton` would fall
 | `db/base.py` | Import + MRO + `token_secrets` table |
 | `cogs/token_detector.py` | `_derive_alert_key`, secret save/fetch/delete, cleanup |
 | `CLAUDE.md` | Added `token_alerts.py, token_secrets.py` to repo listing |
-| `docs/DATABASE.md` | Documented `token_secrets` table |
+| `docs/infra/DATABASE.md` | Documented `token_secrets` table |
 
 ## Decisions made
 

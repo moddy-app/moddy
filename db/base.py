@@ -519,7 +519,7 @@ class ModdyDatabase(
 
             # ----------------------------------------------------------------
             # Moderation cases (case / sanction / event model).
-            # See docs/MODERATION_CASES.md. A case is a moderation folder
+            # See docs/features/MODERATION_CASES.md. A case is a moderation folder
             # decoupled from the Discord context: subject / issuer / scope are
             # each a (*_type, *_id) couple so new kinds can be added without a
             # structural migration.
@@ -757,7 +757,7 @@ class ModdyDatabase(
             # and how it ended. `request` is the join request as Discord sent
             # it: bots cannot fetch a single request by id, so every re-render
             # of the card reads it from here. Purged after 180 days, Discord's
-            # own retention. See docs/MEMBER_APPLICATIONS.md.
+            # own retention. See docs/features/MEMBER_APPLICATIONS.md.
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS member_applications (
                     request_id       BIGINT      PRIMARY KEY,
@@ -793,7 +793,7 @@ class ModdyDatabase(
             # post time (one DeepL call per language), read on every button
             # click. The translation buttons carry the message id, so this row
             # is the only thing they need to survive a restart.
-            # See docs/ANNOUNCEMENT_TRANSLATION.md.
+            # See docs/features/ANNOUNCEMENT_TRANSLATION.md.
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS announcement_translations (
                     message_id   BIGINT      PRIMARY KEY,
@@ -811,7 +811,7 @@ class ModdyDatabase(
             # appeal, "false positive" button). `verdict_humain` is filled when a
             # moderator annotates the card; `imported` flips once the candidate
             # has been folded into golden.jsonl (`make eval-import`). See
-            # docs/AUTOMOD_AI.md (Évaluation) and docs/archive/AUTOMOD_V2_PLAN.md (Session 3).
+            # docs/features/AUTOMOD.md (Évaluation) and docs/archive/AUTOMOD_V2_PLAN.md (Session 3).
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS automod_eval_candidates (
                     id             UUID PRIMARY KEY,
@@ -848,7 +848,7 @@ class ModdyDatabase(
             # before the decision call. `embedding` is a float32-packed BYTEA of
             # the normalised vector (pgvector-free; cosine is a dot product in
             # Python). Capped at PRECEDENT_MAX_PER_GUILD, oldest evicted. See
-            # docs/AUTOMOD_AI.md §2quinquies and docs/archive/AUTOMOD_V2_PLAN.md (Session 7).
+            # docs/features/AUTOMOD.md §2quinquies and docs/archive/AUTOMOD_V2_PLAN.md (Session 7).
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS automod_precedents (
                     id             BIGSERIAL PRIMARY KEY,
@@ -867,7 +867,7 @@ class ModdyDatabase(
                 "CREATE INDEX IF NOT EXISTS idx_automod_precedents_guild "
                 "ON automod_precedents (guild_id, created_at)")
 
-            # Automod images + the Moddy team labeling queue (docs/AUTOMOD_AI.md
+            # Automod images + the Moddy team labeling queue (docs/features/AUTOMOD.md
             # §4.2/§4.3/§9). Global tables — scam images and scam wording are
             # the same on every server, so what the team teaches the bot on one
             # server protects all of them.
@@ -973,7 +973,7 @@ class ModdyDatabase(
             # posted in the alert channel; `payload` holds the decision snapshot
             # needed to apply it later (the offending message is already gone).
             # Resolved by a guarded UPDATE so two clicks cannot both win.
-            # See docs/AUTOMOD_AI.md ("Moderator approval").
+            # See docs/features/AUTOMOD.md ("Moderator approval").
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS automod_pending_approvals (
                     id              BIGSERIAL   PRIMARY KEY,
@@ -1078,7 +1078,7 @@ class ModdyDatabase(
             """)
 
             # altguard_verifications — one row per verdict published by the
-            # AltGuard service on ``altguard:verdict`` (docs/ALTGUARD.md).
+            # AltGuard service on ``altguard:verdict`` (docs/features/ALTGUARD.md).
             # `id` is the service's ``verification_id``: it doubles as the
             # idempotency key (a replayed Pub/Sub message must not re-apply an
             # action) and as the public "refusal id" a Moddy staffer looks up
@@ -1182,7 +1182,7 @@ class ModdyDatabase(
                 "ON tickets (guild_id, owner_id, status)")
 
             # ---------------------------------------------------------------
-            # Ticket transcripts (docs/TICKETS.md, docs/TICKETS_INTEGRATION.md)
+            # Ticket transcripts (docs/features/TICKETS.md, docs/integration/TICKETS_INTEGRATION.md)
             # One row per *closure*: the archived conversation of a ticket.
             #
             # Deliberately NOT a foreign key on `tickets`: that row is DELETEd
@@ -1194,7 +1194,7 @@ class ModdyDatabase(
             #
             # `key` is the public handle used in the dashboard URL: a UUID so
             # the id space cannot be walked. `payload` is the compressed JSON
-            # body (see docs/TICKETS_INTEGRATION.md for its schema and for the
+            # body (see docs/integration/TICKETS_INTEGRATION.md for its schema and for the
             # decompression algorithm implied by `codec`).
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS ticket_transcripts (
@@ -1282,7 +1282,7 @@ class ModdyDatabase(
                 "ON ticket_ratings (guild_id, channel_id)")
 
             # ---------------------------------------------------------------
-            # Centralized notifications (docs/NOTIFICATIONS.md)
+            # Centralized notifications (docs/guides/NOTIFICATIONS.md)
             # Every message Moddy sends to a human is one row in
             # `notifications`. The wording itself lives once in
             # `notification_contents`, keyed by the hash of its TEMPLATE
@@ -1384,7 +1384,7 @@ class ModdyDatabase(
                 "ON notification_reports (status, created_at DESC)")
 
             # ---------------------------------------------------------------
-            # Support requests (docs/SUPPORT_REQUESTS.md)
+            # Support requests (docs/features/SUPPORT_REQUESTS.md)
             # What users send *to the Moddy team*: a bug report
             # (/bug-report) or a configuration-help request (the button under
             # Moddy's own announcements). One table for both, because the
@@ -1844,7 +1844,7 @@ class ModdyDatabase(
                 )
 
             # ----------------------------------------------------------- #
-            # Statistics (see docs/STATS.md)
+            # Statistics (see docs/infra/STATS.md)
             #
             # Frequent events never write a row: they are counted in Redis
             # and upserted here in aggregate, so a server that runs ten
@@ -1930,7 +1930,7 @@ class ModdyDatabase(
             # the OAuth2 callback (it is the only side that sees the UTM in
             # the `state`); the bot stamps `confirmed_at` when the guild
             # actually shows up, which is what makes a conversion rate per
-            # source computable. See docs/STATS.md.
+            # source computable. See docs/infra/STATS.md.
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS guild_installs (
                     guild_id      BIGINT      PRIMARY KEY,

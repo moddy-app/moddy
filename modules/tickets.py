@@ -26,7 +26,7 @@ Slash commands (``/ticket …``) are published **only in guilds where this
 module is enabled** — see ``cogs/tickets.py`` and
 ``ModdyBot.register_module_commands``.
 
-See docs/TICKETS.md.
+See docs/features/TICKETS.md.
 """
 
 from __future__ import annotations
@@ -472,7 +472,7 @@ async def get_limits(bot, guild_id: int) -> Dict[str, Any]:
 
     Premium is read at call time (never cached on a view): a panel can sit open
     for hours, and a stale render must never grant an entitlement.
-    See docs/PREMIUM.md.
+    See docs/guides/PREMIUM.md.
     """
     from utils.subscription import is_guild_premium
 
@@ -828,7 +828,7 @@ class TicketsModule(ModuleBase):
         Reloading the config is not enough here: a panel is a *message* in
         Discord. Its title, its buttons and its very existence are stored
         state that only a re-post can bring in line — exactly what ``/config``
-        does on save. See docs/MODULE_SYSTEM.md §3bis.
+        does on save. See docs/guides/MODULE_SYSTEM.md §3bis.
         """
         if action == EXTERNAL_DELETED:
             # The stored config is already gone: only clean Discord up, never

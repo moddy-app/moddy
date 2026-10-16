@@ -38,7 +38,7 @@ information-dense; booleans use the `done` / `undone` emojis.
   dispatched via `asyncio.create_task` so webhook latency never blocks writes.
 
 ### Docs
-- `docs/TECHNICAL_LOGS.md` (new) + `CLAUDE.md` (structure + index).
+- `docs/infra/TECHNICAL_LOGS.md` (new) + `CLAUDE.md` (structure + index).
 
 ## Decisions
 - **Webhooks over channel.send**: per the request; resilient to channel perms.

@@ -21,7 +21,7 @@ The canonical string is a *double* serialization: ``payload`` is itself a JSON
 string inside the canonical object, so its quotes are escaped. Both levels use
 ``separators=(",", ":")``, ``sort_keys=True`` and ``ensure_ascii=True`` (the
 Python defaults for the last one). The ``signature`` field is excluded from the
-computation. See ``docs/TASK_SIGNATURE.md``.
+computation. See ``docs/integration/TASK_SIGNATURE.md``.
 """
 
 from __future__ import annotations
@@ -183,7 +183,7 @@ async def verify_task(
     is otherwise valid, so garbage cannot flood the dedup keyspace.
 
     ``allow_unsigned`` exists solely for the deployment window described in
-    ``docs/TASK_SIGNATURE.md`` §6, where the bot ships before the backend
+    ``docs/integration/TASK_SIGNATURE.md`` §6, where the bot ships before the backend
     starts signing. It defaults to off and must be turned back off as soon as
     the backend is in production.
     """

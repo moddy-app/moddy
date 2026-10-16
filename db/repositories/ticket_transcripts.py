@@ -16,12 +16,12 @@ time for exactly that reason.
 ``key`` is the public handle: a UUID, so the dashboard URL cannot be walked by
 incrementing an id. ``payload`` is the JSON body compressed with ``codec``
 (``utils/compression.py``); its schema is documented field by field in
-docs/TICKETS_INTEGRATION.md, which is what the backend implements against.
+docs/integration/TICKETS_INTEGRATION.md, which is what the backend implements against.
 
 Authors live in their own table rather than inside the payload so that listing
 transcripts ("who spoke in this ticket") never has to decompress anything.
 
-See docs/TICKETS.md.
+See docs/features/TICKETS.md.
 """
 
 from __future__ import annotations

@@ -52,9 +52,9 @@ labels only.
   keyword does not exist in the pinned discord.py 2.7.1 and every panel build
   raised `TypeError`.
 - `tests/test_altguard.py` — 30 tests (see below).
-- `docs/ALTGUARD.md` — full module documentation.
-- `CLAUDE.md`, `docs/RAILWAY.md`, `docs/REDIS_COMMUNICATION.md`,
-  `docs/STAFF_COMMANDS_FRAMEWORK.md` — structure, env vars, channels, staff
+- `docs/features/ALTGUARD.md` — full module documentation.
+- `CLAUDE.md`, `docs/infra/RAILWAY.md`, `docs/integration/REDIS_COMMUNICATION.md`,
+  `docs/guides/STAFF_COMMANDS_FRAMEWORK.md` — structure, env vars, channels, staff
   commands.
 
 ### Unrelated i18n fixes (reported at runtime)

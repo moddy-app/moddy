@@ -1,5 +1,5 @@
 """
-Automod labeling queue — the Moddy team card and its controls (docs/AUTOMOD_AI.md §9).
+Automod labeling queue — the Moddy team card and its controls (docs/features/AUTOMOD.md §9).
 
 The card sits in ``config.MODDY_AUTOMOD_LABEL_CHANNEL_ID`` (Moddy team guild) and
 is always rendered in English, like the other team panels. It shows what the
@@ -18,7 +18,7 @@ terms" opens a Modal V2 to add terms to the (learned) blocklist.
 Persistence: every control is a :class:`discord.ui.DynamicItem` whose
 ``custom_id`` carries the item uuid, registered through
 :class:`LabelPersistence`; the card is rebuilt from the DB row on each click.
-The Modal is one-shot (documented exclusion in docs/PERSISTENT_VIEWS.md).
+The Modal is one-shot (documented exclusion in docs/guides/PERSISTENT_VIEWS.md).
 """
 
 from __future__ import annotations

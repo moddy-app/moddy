@@ -24,7 +24,7 @@ Two rules shape the side effects here:
   channel per ten minutes; making a claim wait that out would be far worse
   than a name catching up late.
 
-See docs/TICKETS.md.
+See docs/features/TICKETS.md.
 """
 
 from __future__ import annotations
@@ -77,7 +77,7 @@ logger = logging.getLogger('moddy.services.tickets')
 # `tickets` table, so every verb, button and command already written works on
 # it; these two sentinels are what tell it apart from a configured ticket, and
 # `TicketService.staff_ticket_context` builds its panel and category on the fly
-# from the guild's Moddy Team role. See docs/LINKED_ROLES.md.
+# from the guild's Moddy Team role. See docs/features/LINKED_ROLES.md.
 # --------------------------------------------------------------------------- #
 STAFF_PANEL_ID = "__moddy_staff__"
 STAFF_CATEGORY_ID = "__moddy_staff__"

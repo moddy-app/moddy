@@ -5,7 +5,7 @@ This module is the single place where every ``BaseView`` subclass that must
 survive a bot restart is registered. It is called once in
 ``bot.setup_hook`` after all cogs have been loaded.
 
-See ``docs/PERSISTENT_VIEWS.md`` for the full pattern, custom_id convention,
+See ``docs/guides/PERSISTENT_VIEWS.md`` for the full pattern, custom_id convention,
 and a cookbook for adding a new persistent view.
 """
 
@@ -160,7 +160,7 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         ModuleStatePersistence,
         # Group 12 — /config adaptive slowmode panel (guild permission +
         # channel-scoped dynamic items; AdaptiveSlowmodeChannelConfigView
-        # is deliberately excluded, see docs/PERSISTENT_VIEWS.md Step 11)
+        # is deliberately excluded, see docs/guides/PERSISTENT_VIEWS.md Step 11)
         AdaptiveSlowmodeConfigView,
         # Group 12b — /config voice transcription panel (guild permission auth)
         VoiceTranscriptionConfigView,
@@ -188,14 +188,14 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         # (guild permission auth) plus the category panel's dynamic items,
         # which carry the category and page in their custom_id.
         # LogsCategoryView itself is deliberately not registered — see its
-        # docstring and docs/PERSISTENT_VIEWS.md "Deliberate exclusions".
+        # docstring and docs/guides/PERSISTENT_VIEWS.md "Deliberate exclusions".
         LogsConfigView,
         LogsOptionsView,
         LogsPersistence,
         # Group 12g — Tickets. The /config root panel is a normal registered
         # view (guild permission auth); the panel/category/permission screens
         # are built from dynamic items carrying the entity ids, registered by
-        # TicketsConfigPersistence — see docs/PERSISTENT_VIEWS.md "Deliberate
+        # TicketsConfigPersistence — see docs/guides/PERSISTENT_VIEWS.md "Deliberate
         # exclusions". The ticket-channel views need no id at all: the channel
         # a click comes from IS the ticket.
         TicketsConfigView,
@@ -252,7 +252,7 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         ServerListView,
         # Group 15 — /manage staff panel (owner-scoped dynamic items).
         # HIGH PRIVILEGE — grants/revokes staff roles. See
-        # docs/PERSISTENT_VIEWS.md Step 15: requires human review before merge.
+        # docs/guides/PERSISTENT_VIEWS.md Step 15: requires human review before merge.
         StaffManagerPanel,
         # Group 16 — /team access: the staffer's permission picker
         # (requester-scoped dynamic items) and the request card an

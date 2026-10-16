@@ -7,7 +7,7 @@ Three pieces, one rule — aggregate before writing:
   unfailing), flushing an aggregate to Postgres once a minute,
 * :mod:`stats.rollup` photographs the gauges daily and ages the data out.
 
-See docs/STATS.md.
+See docs/infra/STATS.md.
 """
 
 from stats.registry import Metric

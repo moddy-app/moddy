@@ -20,7 +20,7 @@ matter how many servers Moddy is in. Reminders live as rows, never as timers, so
 the bot holds nothing in memory and a restart costs nothing: whatever came due
 while it was down is simply due now, and goes out with a note saying it is late.
 
-See docs/BUMP_REMINDER.md.
+See docs/features/BUMP_REMINDER.md.
 """
 
 import logging

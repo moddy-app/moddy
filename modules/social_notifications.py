@@ -22,7 +22,7 @@ Polling intervals
 The external service clamps the requested ``poll_interval`` to each platform's
 bounds. We deliberately request a FAST interval for premium guilds and a
 slower-but-reasonable one for free guilds. These values MUST be mirrored in the
-backend so both sides agree — see docs/SOCIAL_NOTIFICATIONS.md.
+backend so both sides agree — see docs/features/SOCIAL_NOTIFICATIONS.md.
 """
 
 import logging

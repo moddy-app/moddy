@@ -49,7 +49,7 @@ ASSIGNABLE_ROLES = [
 # to edit it, "not your menu" semantics) must be encoded: neither is
 # otherwise on the interaction, and unlike every other DynamicItem in this
 # codebase a click here has real privilege-escalation consequences if the
-# wrong id were ever trusted. See docs/PERSISTENT_VIEWS.md Migration log,
+# wrong id were ever trusted. See docs/guides/PERSISTENT_VIEWS.md Migration log,
 # Step 15 — THIS VIEW REQUIRES HUMAN REVIEW BEFORE MERGE.
 # --------------------------------------------------------------------------- #
 # One template PER DynamicItem class. They must not overlap: discord.py keys
@@ -139,13 +139,13 @@ class StaffManagerPanel(BaseView):
     in-memory pending edit for a later Save click. This was forced by
     DynamicItem's reconstruction model (every click is rebuilt fresh via
     ``from_custom_id``, live or restarted, with no access to a previous
-    click's Python state — see docs/PERSISTENT_VIEWS.md Migration log,
+    click's Python state — see docs/guides/PERSISTENT_VIEWS.md Migration log,
     Step 15). Save is kept only as a confirmation of the already-applied
     state; it performs no additional write.
 
     HIGH PRIVILEGE — grants/revokes staff roles and permissions. A dispatch
     bug here is a privilege-escalation bug. Reviewed as part of the
-    persistent-views migration (docs/PERSISTENT_VIEWS.md Step 15) but
+    persistent-views migration (docs/guides/PERSISTENT_VIEWS.md Step 15) but
     flagged there for mandatory human review before merge.
     """
 

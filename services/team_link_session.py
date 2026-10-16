@@ -1,7 +1,7 @@
 """The window in which a staffer sets the linked-role requirements.
 
 Discord refuses the binding to bot tokens (``20001 — Bots cannot use this
-endpoint``, established the hard way; see docs/LINKED_ROLES.md). Only a human
+endpoint``, established the hard way; see docs/features/LINKED_ROLES.md). Only a human
 holding **Manage Roles** can go through *Server Settings → Roles → Moddy Team →
 Links*. So `/team role` lends that permission to the staffer who ran it, for the
 length of one window, inside a box built to be as small as a box can be:

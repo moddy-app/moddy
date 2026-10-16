@@ -4,7 +4,7 @@ Ticket transcripts — archiving a ticket's conversation when it closes.
 This is a native exporter: it reads the channel through ``channel.history()``
 and writes a compact JSON body. No external exporter binary, no extra runtime,
 no subprocess and no bot token leaving the process — the Railway bill is driven
-almost entirely by resident memory (docs/RAILWAY.md), and a .NET runtime kept
+almost entirely by resident memory (docs/infra/RAILWAY.md), and a .NET runtime kept
 around to archive a few hundred tickets a day would be the most expensive line
 in it.
 
@@ -26,7 +26,7 @@ component tree. :func:`extract_component_text` walks it, otherwise every card
 Moddy wrote — the opening message, the closing card, every claim notice — would
 be archived blank.
 
-See docs/TICKETS.md and docs/TICKETS_INTEGRATION.md (the backend contract).
+See docs/features/TICKETS.md and docs/integration/TICKETS_INTEGRATION.md (the backend contract).
 """
 
 from __future__ import annotations
@@ -44,7 +44,7 @@ from utils.compression import compress
 logger = logging.getLogger('moddy.tickets.transcript')
 
 # Body schema version. Bump it when the meaning of a key changes; the backend
-# switches on it (docs/TICKETS_INTEGRATION.md).
+# switches on it (docs/integration/TICKETS_INTEGRATION.md).
 TRANSCRIPT_VERSION = 1
 
 # Above this, only the most recent messages are kept and ``truncated`` is set.
@@ -251,7 +251,7 @@ class TicketTranscriptService:
         if staff_thread is not None:
             # Kept under its own key, never merged into the conversation: this
             # is staff-only content and the dashboard must hide it from the
-            # ticket's own author (docs/TICKETS_INTEGRATION.md).
+            # ticket's own author (docs/integration/TICKETS_INTEGRATION.md).
             try:
                 thread_messages, thread_authors, thread_truncated = \
                     await self._read_channel(staff_thread)

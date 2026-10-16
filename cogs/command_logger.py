@@ -5,7 +5,7 @@ Sends a compact technical log to the webhook-based command feed whenever a
 regular user command is used. Staff commands are intentionally skipped here —
 they are covered by the staff command/action feeds via StaffLogger.
 
-See utils/tech_logger.py and docs/TECHNICAL_LOGS.md.
+See utils/tech_logger.py and docs/infra/TECHNICAL_LOGS.md.
 """
 
 import logging

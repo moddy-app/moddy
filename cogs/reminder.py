@@ -269,7 +269,7 @@ def format_datetime_for_user(dt: datetime, user_tz: ZoneInfo, locale: str = "en"
 #
 # \d{1,20} rather than a tighter \d{17,20} snowflake range: a bare shell
 # (owner_id defaulting to 0) must still match its own template — see
-# docs/PERSISTENT_VIEWS.md Migration log, Step 6.
+# docs/guides/PERSISTENT_VIEWS.md Migration log, Step 6.
 # --------------------------------------------------------------------------- #
 
 _REM_ACTIONS = "add|edit|delete|history|back"
@@ -306,7 +306,7 @@ async def _refresh_manage_card(bot, owner_id: int, locale: str,
 
     Keyed on (channel_id, message_id) rather than a live view or interaction
     object, so it works the same whether the card was just opened or the bot
-    restarted in between (docs/PERSISTENT_VIEWS.md Appendix B.1.b: replace a
+    restarted in between (docs/guides/PERSISTENT_VIEWS.md Appendix B.1.b: replace a
     parent_view reference with a rebuild-from-DB helper).
     """
     if not channel_id or not message_id:

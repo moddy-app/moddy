@@ -135,5 +135,5 @@ server is growth. The refusal DM names which case applies.
 
 - The bot leaves suspended guilds but never re-joins if the sanction is lifted
   after execution; the owner has to re-invite.
-- `docs/DATABASE.md` still documents a legacy `moderation_cases` table that the
+- `docs/infra/DATABASE.md` still documents a legacy `moderation_cases` table that the
   cases system replaced — pre-existing drift, untouched here.

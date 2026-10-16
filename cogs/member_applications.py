@@ -22,7 +22,7 @@ twice still gets exactly one card.
 
 A third loop purges applications past Discord's own 180-day retention.
 
-See docs/MEMBER_APPLICATIONS.md.
+See docs/features/MEMBER_APPLICATIONS.md.
 """
 
 import logging

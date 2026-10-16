@@ -66,7 +66,7 @@ see).
 `service.setting` as an `AsyncMock` (was missing — `_close_done_description`
 awaits it).
 
-`docs/TICKETS.md`, `docs/TICKETS_INTEGRATION.md`, `docs/PERSISTENT_VIEWS.md`:
+`docs/features/TICKETS.md`, `docs/integration/TICKETS_INTEGRATION.md`, `docs/guides/PERSISTENT_VIEWS.md`:
 updated to describe both paths.
 
 ## Decisions made and why

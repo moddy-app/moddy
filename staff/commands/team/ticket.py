@@ -11,7 +11,7 @@ Team** role, which is why the role has to exist before a ticket can be opened â€
 otherwise we would be opening a channel we cannot read ourselves. Nobody else,
 including the server's own support team, unless somebody adds them.
 
-See docs/TICKETS.md and docs/LINKED_ROLES.md.
+See docs/features/TICKETS.md and docs/features/LINKED_ROLES.md.
 """
 
 import logging

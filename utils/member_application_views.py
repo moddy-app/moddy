@@ -14,7 +14,7 @@ chose — so a card left in the channel for a month is as safe as a fresh one.
 **The reject modal** (Modal V2) asks for the reason Discord shows the
 applicant, with the server's preset reasons in a select above a free-text field.
 
-See docs/MEMBER_APPLICATIONS.md.
+See docs/features/MEMBER_APPLICATIONS.md.
 """
 
 from __future__ import annotations

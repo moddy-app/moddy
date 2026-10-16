@@ -14,7 +14,7 @@ attribute the rating is snapshotted at rating time.
 it, but the member can change it in the modal; it is NULL when they picked
 "nobody in particular".
 
-See docs/TICKETS.md.
+See docs/features/TICKETS.md.
 """
 
 from __future__ import annotations

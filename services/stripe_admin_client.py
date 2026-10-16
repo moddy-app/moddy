@@ -1,6 +1,6 @@
 """Stripe admin actions — signed request/response over Redis Pub/Sub.
 
-Wire contract (see docs/REDIS_COMMUNICATION.md):
+Wire contract (see docs/integration/REDIS_COMMUNICATION.md):
 
 - **Request** (bot -> backend): published on ``moddy:dashboard`` as
   ``{"type": "stripe_action", "action": ..., "request_id": ..., "discord_id": ...,
@@ -10,7 +10,7 @@ Wire contract (see docs/REDIS_COMMUNICATION.md):
   correlated to the request by ``request_id``.
 
 Both directions are HMAC-SHA256 signed with the shared ``TASK_STREAM_SECRET``
-(the same secret as ``moddy:tasks``, see docs/TASK_SIGNATURE.md) — this channel
+(the same secret as ``moddy:tasks``, see docs/integration/TASK_SIGNATURE.md) — this channel
 carries real money movement (refunds, subscription cancellation), so an
 unsigned or forged message must never be actionable. The signature covers the
 whole message body (every field except ``signature`` itself, plus an

@@ -69,7 +69,7 @@ there can be fourteen now.
 | `tests/test_linked_roles.py` | 82 tests (was 52) |
 | `tests/test_staff_response_tracking.py` | **new** — 9 tests on the deletion contract |
 | `locales/*.json` (×5) | `metadata`, `scope_hint`, `window_partial` as an outcome, `window_kept_roles`; `{role}`→`{roles}`; `state` dropped |
-| `docs/LINKED_ROLES.md`, `docs/STAFF_SYSTEM.md`, `CLAUDE.md` | rewritten around the two roles |
+| `docs/features/LINKED_ROLES.md`, `docs/guides/STAFF_SYSTEM.md`, `CLAUDE.md` | rewritten around the two roles |
 
 ## Decisions and why
 
@@ -141,7 +141,7 @@ that matter while the clock runs: the roles come back, anything else is undone.
 
 - **The backend does not publish `manager` yet.** Until it does, a linked
   manager role exists and stays empty — no error anywhere, just nobody in it.
-  The contract is written out in `docs/LINKED_ROLES.md` → *The `manager`
+  The contract is written out in `docs/features/LINKED_ROLES.md` → *The `manager`
   metadata*; who exactly is a manager (Dev + Manager, or Supervisors too) is the
   backend's to compute and was not fixed here.
 - **Still nothing run against a live guild**, same as the previous session: the

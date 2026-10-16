@@ -36,7 +36,7 @@ logger = logging.getLogger('moddy.saved_messages')
 # on self.page from a live view). `owner_id` is re-checked on every click.
 # \d{1,20} (not a tighter snowflake range): a bare shell built with
 # owner_id=0 must still match its own template (see
-# docs/PERSISTENT_VIEWS.md Migration log, Step 6).
+# docs/guides/PERSISTENT_VIEWS.md Migration log, Step 6).
 # --------------------------------------------------------------------------- #
 
 _CID_LIST_TEMPLATE = r"moddy:svm:manage:(?P<action>view|prev|next|pageinfo):(?P<owner>\d{1,20}):(?P<page>\d{1,6})"
@@ -211,7 +211,7 @@ async def _refresh_library_card(bot, owner_id: int, locale: str,
 
     Keyed on (channel_id, message_id) rather than a live view, so it works
     the same whether the card's original view object is still alive or the
-    bot restarted in between (docs/PERSISTENT_VIEWS.md Appendix B.1.b).
+    bot restarted in between (docs/guides/PERSISTENT_VIEWS.md Appendix B.1.b).
     """
     if not channel_id or not message_id:
         return

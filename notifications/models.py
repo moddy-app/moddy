@@ -22,7 +22,7 @@ Three ideas carry the whole design:
   (:meth:`NotificationContent.to_email` / :meth:`to_dashboard`), so a
   suspension notice reads the same wherever the recipient sees it.
 
-See docs/NOTIFICATIONS.md.
+See docs/guides/NOTIFICATIONS.md.
 """
 
 from __future__ import annotations

@@ -200,7 +200,7 @@ class VoiceTranscriptionConfigView(BaseView):
 
         # Registration shell (self.bot is None): render every conditional
         # button so discord.py learns each custom_id — see
-        # docs/PERSISTENT_VIEWS.md, gotcha 2.
+        # docs/guides/PERSISTENT_VIEWS.md, gotcha 2.
         is_shell = self.bot is None
 
         if self.has_changes or is_shell:

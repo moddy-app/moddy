@@ -44,9 +44,9 @@ channel), a `discord.Embed` holding the starred message, and a
     description were already inert (Discord never notifies from mentions
     inside embeds, only from plain message content), so this specifically
     guards the content line.
-- `docs/COMPONENTS_V2.md` — added an "Exception documentée" section
+- `docs/guides/COMPONENTS_V2.md` — added an "Exception documentée" section
   pointing at `StarboardModule` so the deviation isn't mistaken for drift.
-- `docs/PERSISTENT_VIEWS.md` — added `_StarboardJumpView` to "Deliberate
+- `docs/guides/PERSISTENT_VIEWS.md` — added `_StarboardJumpView` to "Deliberate
   exclusions" (link-only button, no callback to persist; also explains why
   it isn't a `BaseView`).
 
@@ -76,7 +76,7 @@ channel), a `discord.Embed` holding the starred message, and a
       live).
 - [ ] `tests/test_persistent_views.py` could not be run in this session
       (`discord.py` isn't installed in this environment); reviewed manually
-      against `docs/PERSISTENT_VIEWS.md`'s exclusion criteria instead. Worth
+      against `docs/guides/PERSISTENT_VIEWS.md`'s exclusion criteria instead. Worth
       running in CI/a full environment before merge.
 
 ---
@@ -134,7 +134,7 @@ share page) showed nothing, the top content line was unwanted, and a new
     there's no content line left to hold the count.
 - `locales/{fr,en-US,es-ES,pt-BR,de}.json` — added
   `modules.starboard.message.reactors.{title,empty,not_found,more}`.
-- `docs/PERSISTENT_VIEWS.md`, `docs/COMPONENTS_V2.md` — updated the
+- `docs/guides/PERSISTENT_VIEWS.md`, `docs/guides/COMPONENTS_V2.md` — updated the
   `_StarboardJumpView` references to `_StarboardCardView` and documented
   the reactors `DynamicItem`'s persistence/error-handling approach.
 
@@ -204,7 +204,7 @@ sites instead of reasoning about them:
   - **Author name moved back to the header** (`embed.set_author()`), per
     request — round 2's footer placement was wrong. Still no verification
     badge, and still shown only once (no duplicate name).
-- `docs/COMPONENTS_V2.md` — reverted the "footer" wording back to header.
+- `docs/guides/COMPONENTS_V2.md` — reverted the "footer" wording back to header.
 
 ### Verification
 

@@ -11,7 +11,7 @@ Lifecycle: ``pending`` -> ``approved`` | ``rejected`` | ``expired``. The status
 change is a single guarded ``UPDATE ... WHERE status = 'pending'`` so two
 moderators clicking at once cannot both win (:meth:`claim_approval`).
 
-See docs/AUTOMOD_AI.md ("Moderator approval").
+See docs/features/AUTOMOD.md ("Moderator approval").
 """
 
 from __future__ import annotations

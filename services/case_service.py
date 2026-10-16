@@ -212,7 +212,7 @@ class CaseService:
         return result
 
     def _count(self, spec, scope_id, action: str) -> None:
-        """One counter per case opened (see docs/STATS.md).
+        """One counter per case opened (see docs/infra/STATS.md).
 
         A guild-scoped case counts for that guild; a platform-scoped one is
         not a server's business, so it counts globally.

@@ -14,7 +14,7 @@ module.
 The Discord side of it costs nothing measurable: each listener is a handful
 of dictionary operations, and ``bot.stats.incr`` neither awaits nor raises.
 
-See docs/STATS.md.
+See docs/infra/STATS.md.
 """
 
 import logging
@@ -126,7 +126,7 @@ class StatsEvents(Cog):
         try:
             # The backend wrote the UTM at the OAuth2 callback; all the bot
             # can add is that the install actually landed. No row means a
-            # direct invite — not an error (see docs/STATS.md).
+            # direct invite — not an error (see docs/infra/STATS.md).
             source = await db.confirm_install(guild.id)
         except Exception as exc:
             logger.debug("stats: could not confirm the install of %s: %s", guild.id, exc)

@@ -16,11 +16,11 @@ Complete reorganization and rewrite of the project documentation (`/docs/`) for 
 - `/docs/sessions/2026-03-21_docs-reorganization.md` — This file
 
 ### Renamed Files (consistent UPPER_SNAKE_CASE naming)
-- `docs/Components_V2.md` → `docs/COMPONENTS_V2.md`
-- `docs/Module_System.md` → `docs/MODULE_SYSTEM.md`
-- `docs/Error_Handling.md` → `docs/ERROR_HANDLING.md`
-- `docs/emojis.md` → `docs/EMOJIS.md`
-- `docs/RAILWAY_ENV_VARS.md` → `docs/RAILWAY.md`
+- `docs/Components_V2.md` → `docs/guides/COMPONENTS_V2.md`
+- `docs/Module_System.md` → `docs/guides/MODULE_SYSTEM.md`
+- `docs/Error_Handling.md` → `docs/guides/ERROR_HANDLING.md`
+- `docs/emojis.md` → `docs/guides/EMOJIS.md`
+- `docs/RAILWAY_ENV_VARS.md` → `docs/infra/RAILWAY.md`
 
 ### Deleted Files (replaced by merged or new docs)
 - `docs/claude.md` — Replaced by root `/CLAUDE.md`
@@ -29,10 +29,10 @@ Complete reorganization and rewrite of the project documentation (`/docs/`) for 
 - `docs/internal-api.md` — Merged into `docs/INTERNAL_API.md`
 
 ### Rewritten Files
-- `docs/AGENTS.md` — Completely rewritten; removed outdated project structure, removed duplicated DB docs, kept incognito system docs and emoji quick reference, added cross-references to CLAUDE.md
-- `docs/DESIGN.md` — Fixed broken cross-references to renamed docs
-- `docs/RAILWAY.md` — Fixed broken cross-references
-- `docs/MODULE_SYSTEM.md` — Fixed broken cross-reference to Components_V2
+- `docs/guides/AGENTS.md` — Completely rewritten; removed outdated project structure, removed duplicated DB docs, kept incognito system docs and emoji quick reference, added cross-references to CLAUDE.md
+- `docs/guides/DESIGN.md` — Fixed broken cross-references to renamed docs
+- `docs/infra/RAILWAY.md` — Fixed broken cross-references
+- `docs/guides/MODULE_SYSTEM.md` — Fixed broken cross-reference to Components_V2
 - `docs/endpoints/INTEGRATION_COMPLETE.md` — Fixed broken cross-references
 
 ## Decisions & Rationale

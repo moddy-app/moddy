@@ -270,7 +270,7 @@ class LogsConfigView(BaseView):
 
         # Rendered on the registration shell too, so its custom_id is known
         # after a restart even when no guild has a configuration yet
-        # (docs/PERSISTENT_VIEWS.md, gotcha 2).
+        # (docs/guides/PERSISTENT_VIEWS.md, gotcha 2).
         if self.bot is None or self.module.bound_categories:
             clear = ui.Button(
                 emoji=discord.PartialEmoji.from_str(_ICON_CLEAR),

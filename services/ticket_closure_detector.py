@@ -32,7 +32,7 @@ puts a card in front of everybody in the channel.
 Everything this keeps between messages is in memory. Losing a debounce timer to
 a redeploy costs one slightly-early suggestion, which is not worth a table.
 
-See docs/TICKETS.md.
+See docs/features/TICKETS.md.
 """
 
 from __future__ import annotations

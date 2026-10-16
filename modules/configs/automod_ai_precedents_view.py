@@ -2,7 +2,7 @@
 Learned-precedents browser for the Automod `/config` panel.
 
 Lists the server precedents the automod has learned from human rulings
-(accepted / refused appeals, shadow-mode annotations — docs/AUTOMOD_AI.md
+(accepted / refused appeals, shadow-mode annotations — docs/features/AUTOMOD.md
 §2quinquies), paginated, with per-item deletion so a wrong precedent can be
 purged. Opened from Advanced; **Back** returns there (a pending Advanced draft is
 kept). Deleting a precedent is a data action, not a setting: it is applied at

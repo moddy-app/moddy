@@ -14,7 +14,7 @@ callback and let it propagate::
     raise ModdyError(title=t(...), description=t(...), severity="warning")
 
 Build a card directly (without raising) with :func:`build_error_card`.
-See ``docs/ERROR_HANDLING.md`` for the writing guidelines.
+See ``docs/guides/ERROR_HANDLING.md`` for the writing guidelines.
 """
 
 from __future__ import annotations

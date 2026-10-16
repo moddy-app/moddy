@@ -27,7 +27,7 @@ Rows are purged after 180 days, the same retention Discord applies to the
 join requests themselves: the answers are personal data and outlive their use
 the moment the application is closed.
 
-See docs/MEMBER_APPLICATIONS.md.
+See docs/features/MEMBER_APPLICATIONS.md.
 """
 
 import json

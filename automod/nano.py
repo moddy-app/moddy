@@ -52,7 +52,7 @@ _ALLOWED_CONFIANCE = {"low", "medium", "high"}
 _ALLOWED_CIBLE = {"membre", "auteur_lui_meme", "groupe", "aucune"}
 
 # Canonical FR category set (v2 contract) + folding of the legacy detector /
-# stored values onto it. See docs/AUTOMOD_AI.md §2. Anything unknown folds to "".
+# stored values onto it. See docs/features/AUTOMOD.md §2. Anything unknown folds to "".
 CATEGORIES = frozenset(constants.CATEGORIES)
 CATEGORIE_ALIASES = {
     # legacy blocklist / references categories → canonical v2 category
@@ -544,7 +544,7 @@ def validate_grounding(verdict: dict, contenu_cible: str,
 
     Makes a hallucinated verdict mechanically impossible: the model cannot get a
     sanction applied for words the author never wrote, for a victimless category,
-    or on speculative grounds. See docs/AUTOMOD_AI.md §2.
+    or on speculative grounds. See docs/features/AUTOMOD.md §2.
     """
     if not verdict.get("sanctionnable"):
         return verdict

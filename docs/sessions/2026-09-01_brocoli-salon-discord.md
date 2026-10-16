@@ -79,7 +79,7 @@ Décisions :
 | `locales/{fr,en-US}.json` | bloc `brocoli` |
 | `locales/commands/*.json` | **les 32** |
 | `tests/test_brocoli.py` | **nouveau**, 15 cas |
-| `docs/BROCOLI_CHANNEL.md` | **nouveau** |
+| `docs/features/BROCOLI_CHANNEL.md` | **nouveau** |
 
 Décisions :
 

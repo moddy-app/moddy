@@ -35,11 +35,11 @@ join request routes are open to bot tokens: `GET /guilds/{id}/requests` and
 - `db/repositories/member_applications.py` and `db/base.py`: the
   `member_applications` table and its repository.
 - `cogs/config.py` and `utils/persistent_views.py`: registration.
-- `utils/emojis.py` and `docs/EMOJIS.md`: `SHAPES` (`<:shapes:1552314638782300260>`),
+- `utils/emojis.py` and `docs/guides/EMOJIS.md`: `SHAPES` (`<:shapes:1552314638782300260>`),
   the module icon.
 - `locales/*.json`: `modules.member_applications.*` in the 5 languages.
 - `tests/test_member_applications.py`: 66 tests.
-- `docs/MEMBER_APPLICATIONS.md` (new), `docs/DATABASE.md` and `CLAUDE.md`.
+- `docs/features/MEMBER_APPLICATIONS.md` (new), `docs/infra/DATABASE.md` and `CLAUDE.md`.
 
 ## Decisions & Rationale
 
@@ -100,6 +100,6 @@ restarted from `main`, that commit replayed on top, and this change added:
   `BUMP_DIRECTORY_EMOJIS` (key → emoji). `bumpreminder/registry.py` now reads
   `BumpBot.emoji` from it instead of hardcoding each string, so there is one
   source for the icons.
-- `docs/EMOJIS.md`: a "Bump Reminder directory icons" section.
+- `docs/guides/EMOJIS.md`: a "Bump Reminder directory icons" section.
 - `tests/test_bump_reminder.py::TestDirectoryIcons`: every directory has its
   icon, and the registry matches the dict.

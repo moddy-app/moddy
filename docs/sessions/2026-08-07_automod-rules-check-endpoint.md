@@ -36,8 +36,8 @@ The backend must reject the write on anything other than `{"ok": true}`.
 | `internal_api/server.py` | Public `check_auth()` / `get_bot()` helpers (`_check_auth` kept as an alias), router wiring, docstring. |
 | `tests/internal_api/test_rules_check_route.py` | **New.** 19 tests via FastAPI `TestClient`, bot + gateway stubbed. |
 | `requirements-dev.txt` | Added `httpx` (needed by `TestClient`). |
-| `docs/AUTOMOD_AI_CONFIG.md` | § 6 now documents the endpoint contract (backend-facing). |
-| `docs/AUTOMOD_AI.md` | Indications safety check section points at the route. |
+| `docs/integration/AUTOMOD_CONFIG.md` | § 6 now documents the endpoint contract (backend-facing). |
+| `docs/features/AUTOMOD.md` | Indications safety check section points at the route. |
 | `CLAUDE.md` | Structure tree: `internal_api/routes/automod.py`, `tests/internal_api/`. |
 
 ## Decisions
@@ -86,5 +86,5 @@ over-cap text, gateway outage (fails closed), empty text (no AI call), every
   through `PUT /guilds/{id}/modules/automod_ai` (acceptance criterion 4 — needs
   both services running, not doable from this repo alone).
 - There is still no `docs/INTERNAL_API.md`; the internal API is documented
-  per-feature (here, `AUTOMOD_AI_CONFIG.md § 6`). Worth consolidating if a
+  per-feature (here, `AUTOMOD_CONFIG.md § 6`). Worth consolidating if a
   third route lands.

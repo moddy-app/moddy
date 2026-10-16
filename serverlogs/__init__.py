@@ -13,7 +13,7 @@ Layout of the system::
     modules/configs/logs_config.py     the /config panel
     cogs/logs.py                       the Discord wiring
 
-Documentation: ``docs/LOGS.md``.
+Documentation: ``docs/features/LOGS.md``.
 
 The submodules are intentionally *not* imported here: ``modules/logs.py``
 imports :mod:`serverlogs.registry` at module-discovery time, long before

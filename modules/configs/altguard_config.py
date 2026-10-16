@@ -72,7 +72,7 @@ class AltGuardConfigView(BaseView):
 
         # `channel_id` is always written on save, so it is a safe marker for
         # "this guild has a stored configuration" (unlike the computed
-        # `enabled`, see docs/MODULE_SYSTEM.md).
+        # `enabled`, see docs/guides/MODULE_SYSTEM.md).
         if current_config and current_config.get("channel_id") is not None:
             self.current_config = default_config.copy()
             self.current_config.update(current_config)
@@ -215,7 +215,7 @@ class AltGuardConfigView(BaseView):
 
         # Registration shell (self.bot is None): render every conditional
         # button so discord.py learns each custom_id — see
-        # docs/PERSISTENT_VIEWS.md, gotcha 2.
+        # docs/guides/PERSISTENT_VIEWS.md, gotcha 2.
         is_shell = self.bot is None
 
         if self.has_changes or is_shell:

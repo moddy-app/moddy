@@ -9,7 +9,7 @@ persistence models:
   reconstructed from their ``custom_id`` on every click.
 - **The ticket control bar** (pinned in the ticket channel), **the closing
   card**, **the close request** (asked either way round — see
-  docs/TICKETS.md), **the escalation notice** and **the claim notice**.
+  docs/features/TICKETS.md), **the escalation notice** and **the claim notice**.
   A ticket action always happens *inside* its own channel, so
   ``interaction.channel_id`` is the ticket's identity: these need no id in
   their custom_ids at all and are plain registered persistent views with
@@ -35,7 +35,7 @@ Two rules that shape every card below:
   message, which the service deletes immediately
   (``TicketService.ping``): it rings once and leaves nothing behind.
 
-See docs/TICKETS.md and docs/PERSISTENT_VIEWS.md.
+See docs/features/TICKETS.md and docs/guides/PERSISTENT_VIEWS.md.
 """
 
 from __future__ import annotations
@@ -130,7 +130,7 @@ def _guarded(callback):
 
     A ``DynamicItem`` dispatched through ``bot.add_dynamic_items`` has no live
     ``BaseView``, so ``BaseView.on_error`` never fires and an unhandled
-    exception would simply vanish. See docs/PERSISTENT_VIEWS.md.
+    exception would simply vanish. See docs/guides/PERSISTENT_VIEWS.md.
     """
     async def wrapper(self, interaction: discord.Interaction):
         try:
@@ -1424,7 +1424,7 @@ class TicketParticipantsModal(BaseModal):
     to **Add** — the answer that can never destroy anything.
 
     Modals are the one surface that is deliberately not persistent (see
-    docs/PERSISTENT_VIEWS.md "Deliberate exclusions"): they are answered in the
+    docs/guides/PERSISTENT_VIEWS.md "Deliberate exclusions"): they are answered in the
     moment, and Discord closes them on a restart anyway.
     """
 

@@ -30,7 +30,7 @@ DEVELOPER_IDS: List[int] = [int(id.strip()) for id in dev_ids_str.split(",") if 
 MODDY_TEAM_GUILD_ID: int = int(os.environ.get("MODDY_GUILD_ID", "1394001780148535387"))
 MODDY_APPEAL_CHANNEL_ID: int = int(os.environ.get("MODDY_APPEAL_CHANNEL_ID", "1521246998127317114"))
 
-# Centralized notifications (docs/NOTIFICATIONS.md): where abuse reports filed
+# Centralized notifications (docs/guides/NOTIFICATIONS.md): where abuse reports filed
 # from a DM's flag button are reviewed, and where every step of their handling
 # is logged. Both live in the Moddy team guild.
 MODDY_NOTIF_REPORT_CHANNEL_ID: int = int(
@@ -38,7 +38,7 @@ MODDY_NOTIF_REPORT_CHANNEL_ID: int = int(
 MODDY_NOTIF_REPORT_LOG_CHANNEL_ID: int = int(
     os.environ.get("MODDY_NOTIF_REPORT_LOG_CHANNEL_ID", "1541233478522241034"))
 
-# Announcement translation (docs/ANNOUNCEMENT_TRANSLATION.md): the Moddy team
+# Announcement translation (docs/features/ANNOUNCEMENT_TRANSLATION.md): the Moddy team
 # channels whose messages are translated into every language the bot speaks the
 # moment they are posted. Deliberately a hardcoded list and not a module: this
 # is a support-server tool, not a feature offered to servers.
@@ -51,7 +51,7 @@ ANNOUNCEMENT_TRANSLATION_CHANNEL_IDS: list[int] = [
     if part.strip().isdigit()
 ]
 
-# Support requests (docs/SUPPORT_REQUESTS.md): where /bug-report lands, and
+# Support requests (docs/features/SUPPORT_REQUESTS.md): where /bug-report lands, and
 # where a server owner asking the team to configure Moddy for them lands. Both
 # live in the Moddy team guild and are answered from the card itself.
 MODDY_BUG_REPORT_CHANNEL_ID: int = int(
@@ -59,7 +59,7 @@ MODDY_BUG_REPORT_CHANNEL_ID: int = int(
 MODDY_CONFIG_HELP_CHANNEL_ID: int = int(
     os.environ.get("MODDY_CONFIG_HELP_CHANNEL_ID", "1542307892970131516"))
 
-# Automod labeling queue (docs/AUTOMOD_AI.md §9): every automod sanction and
+# Automod labeling queue (docs/features/AUTOMOD.md §9): every automod sanction and
 # every doubtful decision is copied here, in the Moddy team guild, for the team
 # to label. 0 = queue disabled (nothing is copied) until the channel exists.
 def _int_or_zero(value: str) -> int:
@@ -136,7 +136,7 @@ REDIS_PASSWORD: Optional[str] = os.environ.get("REDIS_PASSWORD") or None
 # `moddy:tasks` - Variable Railway: TASK_STREAM_SECRET
 # Générer avec: python -c "import secrets; print(secrets.token_urlsafe(48))"
 # NE JAMAIS réutiliser REDIS_PASSWORD : le modèle de menace est précisément
-# celui d'un attaquant qui possède déjà l'accès Redis. Voir docs/TASK_SIGNATURE.md
+# celui d'un attaquant qui possède déjà l'accès Redis. Voir docs/integration/TASK_SIGNATURE.md
 TASK_STREAM_SECRET: str = os.environ.get("TASK_STREAM_SECRET", "")
 
 # =============================================================================
@@ -152,7 +152,7 @@ BROCOLI_API_URL: str = os.environ.get("BROCOLI_API_URL", "https://api.moddy.app"
 # NE JAMAIS réutiliser TASK_STREAM_SECRET : celui-là protège Redis contre un
 # attaquant qui y a déjà accès, celui-ci permet de parler au nom d'un compte
 # Discord. Rayons d'explosion différents, rotations indépendantes.
-# Voir docs/BROCOLI_CHANNEL.md
+# Voir docs/features/BROCOLI_CHANNEL.md
 BOT_ASSERT_SECRET: str = os.environ.get("BOT_ASSERT_SECRET", "")
 
 # Guildes où la commande de création du salon est enregistrée. Vide = aucune :
@@ -175,7 +175,7 @@ BROCOLI_CHANNEL_IDS: list[int] = [
     if part.strip().isdigit()
 ]
 
-# Fenêtre de déploiement uniquement (docs/TASK_SIGNATURE.md §6) : accepte les
+# Fenêtre de déploiement uniquement (docs/integration/TASK_SIGNATURE.md §6) : accepte les
 # entrées non signées tant que le backend ne signe pas encore. À remettre à
 # false dès que le backend est en production.
 TASK_STREAM_ALLOW_UNSIGNED: bool = os.environ.get(
@@ -200,7 +200,7 @@ TOKEN_DETECTOR_KEY: str = os.environ.get("TOKEN_DETECTOR_KEY", "")
 # ALTGUARD (anti multi-account verification service)
 # =============================================================================
 # The bot never talks to AltGuard's database: it calls two HTTP endpoints and
-# exchanges two Redis Pub/Sub channels with it (see docs/ALTGUARD.md).
+# exchanges two Redis Pub/Sub channels with it (see docs/features/ALTGUARD.md).
 
 # Base URL of the AltGuard service - Variable Railway: ALTGUARD_API_URL
 ALTGUARD_API_URL: str = os.environ.get(
@@ -211,7 +211,7 @@ ALTGUARD_API_URL: str = os.environ.get(
 ALTGUARD_BOT_TOKEN: str = os.environ.get("ALTGUARD_BOT_TOKEN", "")
 
 # =============================================================================
-# MODDY HEALTH MONITOR (dead man's switch — see docs/HEALTH_MONITOR.md)
+# MODDY HEALTH MONITOR (dead man's switch — see docs/infra/HEALTH_MONITOR.md)
 # =============================================================================
 # The bot pushes a heartbeat every 20s; the monitor never polls it. Either
 # variable missing disables the heartbeat with a warning, never a crash.
@@ -223,7 +223,7 @@ HM_URL: str = os.environ.get("HM_URL", "").rstrip("/")
 HM_INGEST_TOKEN: str = os.environ.get("HM_INGEST_TOKEN", "")
 
 # =============================================================================
-# BETTER STACK HEARTBEAT MONITOR (cron/heartbeat monitor, see docs/HEALTH_MONITOR.md)
+# BETTER STACK HEARTBEAT MONITOR (cron/heartbeat monitor, see docs/infra/HEALTH_MONITOR.md)
 # =============================================================================
 # Separate from the Moddy Health Monitor above: a plain GET every 3 minutes to
 # a secret Better Stack URL means "alive"; GET .../fail reports a failure
@@ -241,7 +241,7 @@ BETTERSTACK_HEARTBEAT_URL: str = os.environ.get("BETTERSTACK_HEARTBEAT_URL", "")
 # webhooks, one channel per event type. Each category reads its own webhook URL
 # from a Railway environment variable. Any category left unset silently falls
 # back to LOG_WEBHOOK_DEFAULT (and if that is unset too, the category is muted).
-# See docs/TECHNICAL_LOGS.md for the full contract.
+# See docs/infra/TECHNICAL_LOGS.md for the full contract.
 
 # category -> environment variable name
 LOG_WEBHOOK_ENV = {

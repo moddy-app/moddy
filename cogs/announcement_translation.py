@@ -11,7 +11,7 @@ and shows it ephemerally, as plain text, with nothing around it.
 Translating up front rather than on click is the whole design: an announcement
 read by a thousand people costs five DeepL calls, not a thousand.
 
-See docs/ANNOUNCEMENT_TRANSLATION.md.
+See docs/features/ANNOUNCEMENT_TRANSLATION.md.
 """
 
 from __future__ import annotations

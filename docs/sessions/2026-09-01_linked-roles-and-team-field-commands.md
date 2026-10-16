@@ -57,7 +57,7 @@ own ticket configuration, via the sentinel `panel_id = category_id =
 | `staff/commands/manage/{rank,unrank,staff}.py`, `bot.py` | publish on `moddy:staff` after each write |
 | `utils/persistent_views.py` | registers the two `/team access` views |
 | `locales/*.json` (×5) | `staff.team.{role,access,ticket}.*` |
-| `docs/LINKED_ROLES.md` | **new** — the full contract |
+| `docs/features/LINKED_ROLES.md` | **new** — the full contract |
 | `CLAUDE.md`, `docs/{STAFF_SYSTEM,STAFF_COMMANDS_FRAMEWORK,TICKETS,REDIS_COMMUNICATION,PERSISTENT_VIEWS}.md` | updated |
 
 ## Decisions and why

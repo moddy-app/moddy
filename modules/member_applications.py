@@ -23,7 +23,7 @@ The pieces:
 - ``utils/member_application_views.py``      — the card, its buttons, the reject modal
 - ``modules/configs/member_applications_config.py`` — the /config panel
 
-See docs/MEMBER_APPLICATIONS.md.
+See docs/features/MEMBER_APPLICATIONS.md.
 """
 
 from __future__ import annotations

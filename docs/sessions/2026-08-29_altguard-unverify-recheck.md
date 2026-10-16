@@ -15,7 +15,7 @@ panel button, and could not re-verify.
   role *before* falling back to the DB. If the member wears that role, the
   answer is always "not verified" — and if the DB disagreed, it is corrected
   on the spot (`resync_stale_verified_status`).
-- `docs/ALTGUARD.md`: documented the role-outranks-DB rule in the "Member
+- `docs/features/ALTGUARD.md`: documented the role-outranks-DB rule in the "Member
   journey" §3 (Consent).
 - `tests/test_altguard.py`: added
   `test_the_unverified_role_outranks_a_stale_verified_db_row`.

@@ -1033,7 +1033,7 @@ async def _record_alert(bot, user_id: int, kind: str) -> Optional[dict]:
     """Register the alert as an official notification before sending it.
 
     A leaked-token alert is Moddy speaking as an institution: it deliberately
-    carries **no** attribution or report buttons (docs/NOTIFICATIONS.md), but it
+    carries **no** attribution or report buttons (docs/guides/NOTIFICATIONS.md), but it
     is stored and counted like every other notification, and the delivery is
     marked below once one of the two send paths succeeds.
     """

@@ -18,7 +18,7 @@ rich Components V2 card) and *who* is behind it
 a database outage degrades a DM to "sent without attribution", it never
 swallows the message itself.
 
-See docs/NOTIFICATIONS.md.
+See docs/guides/NOTIFICATIONS.md.
 """
 
 from __future__ import annotations
@@ -205,7 +205,7 @@ class NotificationService:
 
     def _count_delivery(self, record: Optional[Dict[str, Any]],
                         platform: Platform, ok: bool) -> None:
-        """Fold one delivery into the daily counters (see docs/STATS.md)."""
+        """Fold one delivery into the daily counters (see docs/infra/STATS.md)."""
         stats = getattr(self.bot, "stats", None)
         if stats is None:
             return

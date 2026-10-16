@@ -28,7 +28,7 @@ No API attaches a linked-role requirement to a role. The official one has no
 field for it, and the undocumented route the Discord client uses
 (``PUT /guilds/{id}/roles/{id}/connections/configuration``) answers a bot token
 with ``20001 — Bots cannot use this endpoint``. That was established against the
-live API, not assumed; see docs/LINKED_ROLES.md.
+live API, not assumed; see docs/features/LINKED_ROLES.md.
 
 So the step belongs to a human holding *Manage Roles*, and `/team role` lends
 that permission to the staffer for the length of one window rather than sending

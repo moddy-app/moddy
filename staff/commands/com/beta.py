@@ -152,7 +152,7 @@ CONFIRM_WORD = "SEND"
 class BetaConfirmModal(BaseModal):
     """Type the word, send the campaign.
 
-    Modal V2 (docs/MODALS_V2.md): a TextDisplay states exactly what is about to
+    Modal V2 (docs/guides/MODALS_V2.md): a TextDisplay states exactly what is about to
     happen, and one field takes the confirmation word.
     """
 

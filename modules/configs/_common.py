@@ -5,7 +5,7 @@ Every guild config panel (AutoRoleConfigView, StarboardConfigView,
 InterServerConfigView, ...) previously re-checked ownership by comparing
 interaction.user.id against a self.user_id captured at command time. That
 breaks on a restarted persistent-view shell, where self.user_id is None
-(docs/PERSISTENT_VIEWS.md Appendix B.5: "interaction.guild_id is already on
+(docs/guides/PERSISTENT_VIEWS.md Appendix B.5: "interaction.guild_id is already on
 the interaction, a static custom_id + re-checked manage_guild is enough" —
 no DynamicItem needed for this class of view). check_guild_perms() re-derives
 authorization from the interaction alone, matching SocialNotificationsConfigView.
@@ -217,10 +217,10 @@ async def open_main_config(interaction: discord.Interaction) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Module state (play / pause / simulation) -- see docs/MODULE_SYSTEM.md
+# Module state (play / pause / simulation) -- see docs/guides/MODULE_SYSTEM.md
 # ---------------------------------------------------------------------------
 
-#: Container accent per state (DESIGN.md): active = primary, paused = neutral
+#: Container accent per state (docs/guides/DESIGN.md): active = primary, paused = neutral
 #: gray, simulation = warning yellow. ``None`` / not configured = primary.
 _STATE_ACCENTS = {
     STATE_ACTIVE: "primary",

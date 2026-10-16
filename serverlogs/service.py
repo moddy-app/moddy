@@ -135,7 +135,7 @@ class LogService:
         if not channel_ids:
             return
         # One counter per *entry*, not per destination: a server sending the
-        # same event to three channels logged one thing (see docs/STATS.md).
+        # same event to three channels logged one thing (see docs/infra/STATS.md).
         stats = getattr(self.bot, "stats", None)
         if stats is not None:
             stats.incr("log.dispatched", guild_id=getattr(module, "guild_id", None),

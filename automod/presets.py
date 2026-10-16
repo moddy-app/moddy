@@ -16,7 +16,7 @@ Levels
 * ``strict``   — everything of ``balanced`` plus member profiles (avatar,
                  banner, names), severity 4.
 
-The result is the exact stored schema documented in docs/AUTOMOD_AI_CONFIG.md.
+The result is the exact stored schema documented in docs/integration/AUTOMOD_CONFIG.md.
 """
 
 from __future__ import annotations

@@ -1,5 +1,5 @@
 """
-Moddy team labeling queue for the automod (docs/AUTOMOD_AI.md §9).
+Moddy team labeling queue for the automod (docs/features/AUTOMOD.md §9).
 
 Lives on ``bot.automod_labels``. Every automod **sanction** and every
 **doubtful** decision (text or image) is copied to a Moddy team channel, where

@@ -42,7 +42,7 @@ A classic (rule-based) automod module is coming and will take the `automod` id.
 - i18n namespace `modules.automod.*` → `modules.automod_ai.*` (locales + call
   sites).
 - `cogs/config.py` and `cogs/module_events.py` now dispatch on `automod_ai`.
-- `docs/AUTOMOD.md` → `docs/AUTOMOD_AI.md` (references updated repo-wide).
+- `docs/AUTOMOD.md` → `docs/features/AUTOMOD.md` (references updated repo-wide).
 
 The detection package stays `automod/` — it is the AI pipeline, not the module.
 
@@ -57,9 +57,9 @@ The detection package stays `automod/` — it is the AI pipeline, not the module
 
 ### 4. Documentation
 
-- New `docs/AUTOMOD_AI_CONFIG.md` — the config schema in DB, validation rules,
+- New `docs/integration/AUTOMOD_CONFIG.md` — the config schema in DB, validation rules,
   cache invalidation, related tables and cost levers, for the backend/dashboard.
-- `docs/AUTOMOD_AI.md` — §3 header (new id + migration), §4 rewritten without
+- `docs/features/AUTOMOD.md` — §3 header (new id + migration), §4 rewritten without
   `situation`, situation tunables and the `automod_situation` quota row removed.
 - `CLAUDE.md` — project structure + documentation index updated.
 

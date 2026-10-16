@@ -62,10 +62,10 @@ est désormais déclarée explicitement en anglais
 - `utils/command_translator.py` *(nouveau)*
 - `locales/commands/*.json` *(nouveau — 32 fichiers)*
 - `tests/test_command_localizations.py` *(nouveau)*
-- `docs/COMMAND_LOCALIZATION.md` *(nouveau)*
+- `docs/guides/COMMAND_LOCALIZATION.md` *(nouveau)*
 - `bot.py` — import + `set_translator()` dans `setup_hook()`
 - `cogs/interserver_commands.py` — description du groupe en anglais
-- `CLAUDE.md`, `docs/COMMANDS.md` — structure, règle i18n, index docs
+- `CLAUDE.md`, `docs/guides/COMMANDS.md` — structure, règle i18n, index docs
 
 ## Décisions
 

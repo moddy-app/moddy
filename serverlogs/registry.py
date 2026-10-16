@@ -131,7 +131,7 @@ class LogCategorySpec:
 # ---------------------------------------------------------------------------
 # The catalogue. Order inside a category is the order shown in /config.
 # Icons come from utils/emojis.py::LOG_EMOJIS — the server-logs icon set, the
-# only one this feature is allowed to draw from (see docs/LOGS.md). The one
+# only one this feature is allowed to draw from (see docs/features/LOGS.md). The one
 # declared here is the category icon shown in /config; what a *log* falls back
 # to is _CATEGORY_LOG_ICONS below.
 # ---------------------------------------------------------------------------

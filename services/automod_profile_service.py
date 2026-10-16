@@ -3,7 +3,7 @@ Automod member profiles — the shared, per-bot plumbing of the ``profile`` feat
 
 Lives on ``bot.automod_profiles``. The feature in ``modules/automod_ai.py`` only
 applies the per-guild policy; everything that must be shared across guilds and
-across events lives here (docs/AUTOMOD_AI.md "Profiles"):
+across events lives here (docs/features/AUTOMOD.md "Profiles"):
 
 * **Avatars and banners** — one verdict per Discord *asset key*
   (``asset.key``, e.g. ``a_abc123``), cached in Redis (``automod:avatar:<key>``,

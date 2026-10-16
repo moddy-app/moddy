@@ -22,7 +22,7 @@ Discord's **official** API has nothing — no field on the role payload, and
 | `staff/commands/team/team_role.py` | binds after creating; three state wordings; the failure reason on the card |
 | `tests/test_linked_roles.py` | +16 tests (payload, merge, every failure mode, the `premium` trap) |
 | `locales/*.json` (×5) | `linked_auto`, `auto_{no_metadata,unsupported,forbidden,failed}`; `howto` reworded |
-| `docs/LINKED_ROLES.md` | "Why the linking step is manual" → "How the binding is done" |
+| `docs/features/LINKED_ROLES.md` | "Why the linking step is manual" → "How the binding is done" |
 
 ## Decisions and why
 

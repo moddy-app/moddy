@@ -179,7 +179,7 @@ moddy/
 │   │                          #   /team role, /team access, /team ticket — the
 │   │                          #   two Moddy Team linked roles (team + manager),
 │   │                          #   permission requests and staff tickets,
-│   │                          #   see docs/LINKED_ROLES.md)
+│   │                          #   see docs/features/LINKED_ROLES.md)
 │   ├── commands/mod/          #   /mod commands + case/, global/ and altguard/ sub-groups
 │   │                          #   (incl. /mod notif — notification lookup by uuid)
 │   ├── commands/com/          #   /com commands (/com send — notification to a user,
@@ -223,7 +223,7 @@ moddy/
 │   ├── i18n.py                #   Internationalization system (honours the /preferences language override)
 │   ├── loop_monitor.py        #   Event-loop lag monitor + watchdog stack dump + late-interaction logging (10062 diagnosis), notifies stalls > 2.5 s
 │   ├── errors.py              #   Expected errors: ModdyError family + build_error_card (one look for every non-bug error)
-│   ├── interaction_guard.py   #   Auto-acknowledges interactions unanswered after ~2 s (defer + response shims), see docs/ERROR_HANDLING.md
+│   ├── interaction_guard.py   #   Auto-acknowledges interactions unanswered after ~2 s (defer + response shims), see docs/guides/ERROR_HANDLING.md
 │   ├── user_preferences.py    #   Per-user prefs cache (icon theme + language), loaded at startup
 │   ├── icon_theme.py          #   Light-theme icon swap: rewrites outgoing payloads (white → *_dark twins)
 │   ├── guild_language.py      #   Server language (one setting, every module)
@@ -334,7 +334,7 @@ moddy/
 │   └── commands/              #   Slash command names + descriptions, one file per
 │                              #   Discord locale (fr.json, de.json, ja.json… 32 total)
 │
-├── docs/                      # Documentation (see below)
+├── docs/                      # Documentation: guides/ features/ integration/ infra/ archive/ sessions/ public/ (see docs/README.md)
 └── tests/                     # Test files
     ├── automod/               #   pytest suite for the pure-Python detection core
     │                          #   (`pip install -r requirements-dev.txt && pytest`)
@@ -391,32 +391,32 @@ moddy/
 ### 1. Components V2 Only
 - **ALWAYS** use `ui.Container()` + `ui.TextDisplay()` — **NEVER** use `discord.Embed()`
 - Use `ui.LayoutView` or `BaseView` (which extends it)
-- See → [docs/COMPONENTS_V2.md](docs/COMPONENTS_V2.md)
+- See → [docs/guides/COMPONENTS_V2.md](docs/guides/COMPONENTS_V2.md)
 
 ### 2. BaseView / BaseModal Required
 - **ALL** Views must inherit from `BaseView`
 - **ALL** Modals must inherit from `BaseModal`
 - These ensure errors are caught and routed to the centralized error handler
-- See → [docs/ERROR_HANDLING.md](docs/ERROR_HANDLING.md)
+- See → [docs/guides/ERROR_HANDLING.md](docs/guides/ERROR_HANDLING.md)
 
 ### 3. Custom Emojis Only
 - **NEVER** use default Unicode emojis (except country flags)
 - Use custom emojis from `/utils/emojis.py`
-- Full list → [docs/EMOJIS.md](docs/EMOJIS.md)
+- Full list → [docs/guides/EMOJIS.md](docs/guides/EMOJIS.md)
 - **No "close enough" icons.** If no existing icon clearly fits what you are
   showing, do **not** pick a vaguely related one or reuse an icon that already
   means something else. Do **not** stop working: carry on with the task, use
   no icon there for now, and tell the user which icon is missing (describe what
   it should depict, and remind them it needs a white version plus a `_dark`
   twin) so they can upload it. When they give you the IDs, add them to
-  `utils/emojis.py` and `docs/EMOJIS.md` and wire them in.
+  `utils/emojis.py` and `docs/guides/EMOJIS.md` and wire them in.
 - **Light-theme twins**: most icons are white, invisible on Discord's light theme.
   A user who picks *Light* in `/preferences` gets every icon that has a
   `<name>_dark` twin swapped automatically at send time (`utils/icon_theme.py`
   patches discord.py's payload builders). **Never** pick the `_dark` variant by
   hand in code. A new white icon needs its `<name>_dark` uploaded and added to
   `DARK_VARIANTS` in `utils/emojis.py`. Public messages the bot sends on its
-  own (logs, welcome, panels) stay white. See → [docs/ICON_THEME.md](docs/ICON_THEME.md)
+  own (logs, welcome, panels) stay white. See → [docs/guides/ICON_THEME.md](docs/guides/ICON_THEME.md)
 
 ### 4. Internationalization (i18n)
 - **ALL** user-facing text must use the i18n system
@@ -437,8 +437,8 @@ moddy/
   (`utils/user_preferences.py`) — always go through it, never read
   `interaction.locale` directly.
   **Adding a language dropdown to a module's config is a bug.**
-- See → [docs/COMMAND_LOCALIZATION.md](docs/COMMAND_LOCALIZATION.md),
-  [docs/SERVER_LANGUAGE.md](docs/SERVER_LANGUAGE.md)
+- See → [docs/guides/COMMAND_LOCALIZATION.md](docs/guides/COMMAND_LOCALIZATION.md),
+  [docs/guides/SERVER_LANGUAGE.md](docs/guides/SERVER_LANGUAGE.md)
 
 ### 5. Title Format
 - Titles in Components V2 must use: `### <:emoji:id> Title Text`
@@ -464,7 +464,7 @@ moddy/
 
 ### 8. Error Handling
 - For "unexpected" errors in cogs/modules: let the global error handler manage them
-- For expected errors: `raise` a `utils.errors.ModdyError` subclass (`NotFound`, `InvalidInput`, `MissingPermissions`, `Cooldown`...) and let it propagate, or build the card with `build_error_card()` / `create_error_message()`. See docs/ERROR_HANDLING.md → Expected errors
+- For expected errors: `raise` a `utils.errors.ModdyError` subclass (`NotFound`, `InvalidInput`, `MissingPermissions`, `Cooldown`...) and let it propagate, or build the card with `build_error_card()` / `create_error_message()`. See docs/guides/ERROR_HANDLING.md → Expected errors
 
 ### 8. Persistent Views — **MANDATORY, NO EXCEPTIONS**
 - **You MUST use persistent views for EVERY interactive Discord component,
@@ -478,7 +478,7 @@ moddy/
   whose buttons stop working after a restart (or after a few minutes of
   inactivity) is **not acceptable** and will be rejected in review.
 - The **only** acceptable exceptions are the ones explicitly listed and
-  justified in [docs/PERSISTENT_VIEWS.md → "Deliberate exclusions"](docs/PERSISTENT_VIEWS.md)
+  justified in [docs/guides/PERSISTENT_VIEWS.md → "Deliberate exclusions"](docs/guides/PERSISTENT_VIEWS.md)
   (modals, error-recovery views, secret-displaying views, in-memory-callback
   confirm dialogs, and similar). If you believe a new view needs to be
   excluded, add it to that section with the same level of concrete
@@ -504,7 +504,7 @@ moddy/
   `python3 -m pytest tests/test_persistent_views.py -q` — it asserts every
   registered view is actually persistent and that no two views collide on a
   `custom_id`. A view is not done until this suite covers it.
-- See → [docs/PERSISTENT_VIEWS.md](docs/PERSISTENT_VIEWS.md) for the full
+- See → [docs/guides/PERSISTENT_VIEWS.md](docs/guides/PERSISTENT_VIEWS.md) for the full
   contract, the custom_id convention, auth models, and worked examples.
 
 ### 9. "Current value" only when nothing else shows it
@@ -540,7 +540,7 @@ moddy/
 - The only exception is a sender with a genuinely exotic delivery path (the
   token detector opens the DM channel with the user's own token). It still calls
   `record()` and then `mark_delivered()` / `mark_failed()`.
-- See → [docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md)
+- See → [docs/guides/NOTIFICATIONS.md](docs/guides/NOTIFICATIONS.md)
 
 ### 12. Never require Administrator — declare per-module bot permissions instead
 - **Moddy must never require the `Administrator` permission**, neither as the
@@ -573,79 +573,83 @@ moddy/
   `channel_requirements(config)`. /config reports ALL gaps in one message
   (`utils/bot_permissions.py`); `validate_config` must use
   `channel_validation_error`, never a first-failure `if not perms.x` chain.
-- See → [docs/COMMANDS.md](docs/COMMANDS.md), [docs/MODULE_SYSTEM.md](docs/MODULE_SYSTEM.md)
+- See → [docs/guides/COMMANDS.md](docs/guides/COMMANDS.md), [docs/guides/MODULE_SYSTEM.md](docs/guides/MODULE_SYSTEM.md)
 
 ---
 
 ## Documentation Index
 
-All documentation is in [docs/](docs/). Read the relevant file **before** working on a feature.
+All documentation is in [docs/](docs/) (structure and conventions: [docs/README.md](docs/README.md)). Read the relevant file **before** working on a feature.
 
-### Core References (read these first when relevant)
+### Guides — cross-cutting rules (read first when relevant)
+`docs/guides/` — Rules and how-tos that apply to any feature: UI, i18n, errors, persistence, commands, modules, notifications, staff.
 | Document | When to Read |
 |---|---|
-| [docs/DESIGN.md](docs/DESIGN.md) | Any UI/UX work, configuration panels, interactive components |
-| [docs/COMPONENTS_V2.md](docs/COMPONENTS_V2.md) | Any code that creates Discord UI elements |
-| [docs/MODALS_V2.md](docs/MODALS_V2.md) | Any code that builds a Modal (Label / TextDisplay / Select in modals) |
-| [docs/PERSISTENT_VIEWS.md](docs/PERSISTENT_VIEWS.md) | Any view that should survive a bot restart (most views) |
-| [docs/ERROR_HANDLING.md](docs/ERROR_HANDLING.md) | Any code with Views, Modals, or error handling |
-| [docs/EMOJIS.md](docs/EMOJIS.md) | When you need to use an emoji/icon |
-| [docs/ICON_THEME.md](docs/ICON_THEME.md) | **Icon theme** — light-theme users get the black `_dark` icons; how the send-time swap works, adding an icon, discord.py upgrade guard |
+| [docs/guides/AGENTS.md](docs/guides/AGENTS.md) | Agent system documentation |
+| [docs/guides/COMMANDS.md](docs/guides/COMMANDS.md) | Creating or modifying slash commands |
+| [docs/guides/COMMAND_LOCALIZATION.md](docs/guides/COMMAND_LOCALIZATION.md) | Translating slash command names/descriptions (32 Discord locales) |
+| [docs/guides/COMPONENTS_V2.md](docs/guides/COMPONENTS_V2.md) | Any code that creates Discord UI elements |
+| [docs/guides/DESIGN.md](docs/guides/DESIGN.md) | Any UI/UX work, configuration panels, interactive components |
+| [docs/guides/EMOJIS.md](docs/guides/EMOJIS.md) | When you need to use an emoji/icon |
+| [docs/guides/ERROR_HANDLING.md](docs/guides/ERROR_HANDLING.md) | Any code with Views, Modals, or error handling |
+| [docs/guides/ICON_THEME.md](docs/guides/ICON_THEME.md) | **Icon theme** — light-theme users get the black `_dark` icons; how the send-time swap works, adding an icon, discord.py upgrade guard |
+| [docs/guides/MODALS_V2.md](docs/guides/MODALS_V2.md) | Any code that builds a Modal (Label / TextDisplay / Select in modals) |
+| [docs/guides/MODDY_FRAMEWORK.md](docs/guides/MODDY_FRAMEWORK.md) | Internal framework public API and migration |
+| [docs/guides/MODULE_SYSTEM.md](docs/guides/MODULE_SYSTEM.md) | Creating or modifying server modules |
+| [docs/guides/NOTIFICATIONS.md](docs/guides/NOTIFICATIONS.md) | **Centralized notifications** — every DM/mail/dashboard message, attribution buttons, abuse reports, `/com send`, `/mod notif` |
+| [docs/guides/PERSISTENT_VIEWS.md](docs/guides/PERSISTENT_VIEWS.md) | Any view that should survive a bot restart (most views) |
+| [docs/guides/PREMIUM.md](docs/guides/PREMIUM.md) | **Premium gating** — how to check whether a server (or a user) is premium |
+| [docs/guides/SERVER_LANGUAGE.md](docs/guides/SERVER_LANGUAGE.md) | **Server language** — the single setting every module reads; what follows the server vs. the user |
+| [docs/guides/STAFF_COMMANDS_FRAMEWORK.md](docs/guides/STAFF_COMMANDS_FRAMEWORK.md) | Staff command engine internals (message + slash from one definition) |
+| [docs/guides/STAFF_SYSTEM.md](docs/guides/STAFF_SYSTEM.md) | Staff/dev commands, permissions, roles |
 
-### Feature-Specific
+### Features — one doc per feature or module
+`docs/features/` — How a feature works on the bot side.
 | Document | When to Read |
 |---|---|
-| [docs/COMMANDS.md](docs/COMMANDS.md) | Creating or modifying slash commands |
-| [docs/MODDY_FRAMEWORK.md](docs/MODDY_FRAMEWORK.md) | Internal framework public API and migration |
-| [docs/COMMAND_LOCALIZATION.md](docs/COMMAND_LOCALIZATION.md) | Translating slash command names/descriptions (32 Discord locales) |
-| [docs/TEXT_TOOLS.md](docs/TEXT_TOOLS.md) | AI text tools — `/fix`, `/rephrase`, `/summarize` (models, presets, mention stripping) |
-| [docs/ANNOUNCEMENT_TRANSLATION.md](docs/ANNOUNCEMENT_TRANSLATION.md) | **Announcement translation** — support-server announcements translated once into every language, one flag button per language |
-| [docs/VOICE_TRANSCRIPTION.md](docs/VOICE_TRANSCRIPTION.md) | Voice transcription — context menu, module, Groq Whisper, cost control |
-| [docs/OCR.md](docs/OCR.md) | **OCR** — `/ocr` and the Transcribe menu on images (Google Vision, monthly free tier) |
-| [docs/MODULE_SYSTEM.md](docs/MODULE_SYSTEM.md) | Creating or modifying server modules |
-| [docs/SERVER_LANGUAGE.md](docs/SERVER_LANGUAGE.md) | **Server language** — the single setting every module reads; what follows the server vs. the user |
-| [docs/WELCOME_MESSAGES.md](docs/WELCOME_MESSAGES.md) | Welcome messages module (`welcome_channel`) — config schema, placeholders, backend/dashboard contract |
-| [docs/WELCOME_DM.md](docs/WELCOME_DM.md) | Welcome DM module (`welcome_dm`) — config schema, placeholders, backend/dashboard contract |
-| [docs/BUMP_REMINDER.md](docs/BUMP_REMINDER.md) | **Bump Reminder** — detecting a *successful* bump on 7 directories, the reminder, ping modes, quotas |
-| [docs/MEMBER_APPLICATIONS.md](docs/MEMBER_APPLICATIONS.md) | **Member Applications** — Discord "Apply to Join" reviewed from a channel: what the API allows bots, gateway hook + poll, the card, Approve/Reject, the `member_applications` table |
-| [docs/TICKETS.md](docs/TICKETS.md) | **Tickets** — panels, categories, per-role permissions, the claim system, escalation, transcripts, closure detection, ratings, module-gated `/ticket` commands |
-| [docs/TICKETS_INTEGRATION.md](docs/TICKETS_INTEGRATION.md) | Tickets ↔ backend contract — the transcript/rating tables, the compressed body schema, `/transcripts/<key>` and its authorisation, the rating aggregates |
-| [docs/ALTGUARD.md](docs/ALTGUARD.md) | **AltGuard** — anti multi-account verification gate, consent, service contract, staff commands |
-| [docs/ALTGUARD_INTEGRATION.md](docs/ALTGUARD_INTEGRATION.md) | AltGuard ↔ bot exact wire contract — payload types, error codes, debugging |
-| [docs/AUTOMOD_AI.md](docs/AUTOMOD_AI.md) | Automod — detection pipeline (+ `/config` panel, §0), nano decider, scalable features, **images (NSFW + scam screenshots)**, **Moddy team labeling queue**, rules + custom-infraction safety check, **infraction catalogue & per-type sanctions**, **custom infractions**, **member profiles** |
-| [docs/AUTOMOD_AI_CONFIG.md](docs/AUTOMOD_AI_CONFIG.md) | Automod configuration schema in DB (generic `state` replaces `enabled`/`dry_run`) (backend / dashboard integration): `sanctions`, `infractions_perso`, `features.profile`, validation errors, `rules_check` route, tables, Redis keys, deployment order |
-| [docs/BOT_CUSTOMIZATION.md](docs/BOT_CUSTOMIZATION.md) | Bot Customization — per-guild nickname/avatar/banner/bio + name styles, Redis dashboard contract |
-| [docs/PREMIUM.md](docs/PREMIUM.md) | **Premium gating** — how to check whether a server (or a user) is premium |
-| [docs/LINKED_ROLES.md](docs/LINKED_ROLES.md) | **Linked roles** — the `moddy:staff` publication the backend needs, the two Moddy Team roles (`team` / `manager`), and `/team role` / `/team access` / `/team ticket` |
-| [docs/STAFF_SYSTEM.md](docs/STAFF_SYSTEM.md) | Staff/dev commands, permissions, roles |
-| [docs/SUPPORT_REQUESTS.md](docs/SUPPORT_REQUESTS.md) | **Support requests** — `/bug-report`, the "configure it for me" button, the staff card and its reply flow, the beta-launch campaign |
-| [docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md) | **Centralized notifications** — every DM/mail/dashboard message, attribution buttons, abuse reports, `/com send`, `/mod notif` |
-| [docs/NOTIFICATIONS_INTEGRATION.md](docs/NOTIFICATIONS_INTEGRATION.md) | Notifications ↔ backend contract — tables the backend reads/owns, exact payload rendering + placeholder algorithm, mail/dashboard delivery loop |
-| [docs/LOGS.md](docs/LOGS.md) | **Advanced server logs** — 163 events, registry, rendering, webhook delivery, stored config & dashboard contract |
-| [docs/MODERATION_CASES.md](docs/MODERATION_CASES.md) | Moderation cases/sanctions, the case service & sources, auto-sync |
-| [docs/GLOBAL_SANCTIONS.md](docs/GLOBAL_SANCTIONS.md) | **Global sanctions** — Moddy-team warn / limited / suspended, on users *and* servers |
-| [docs/TECHNICAL_LOGS.md](docs/TECHNICAL_LOGS.md) | Internal technical staff logs (webhook-based, per-event channels) |
-| [docs/HEALTH_MONITOR.md](docs/HEALTH_MONITOR.md) | **Health Monitor heartbeats** — dead man's switch push to `moddy-health-monitor` (`HM_URL`/`HM_INGEST_TOKEN`) and the Better Stack cron ping (`BETTERSTACK_HEARTBEAT_URL`) |
-| [docs/STATS.md](docs/STATS.md) | **Statistics** — recording anything (`bot.stats`), the metric registry, what is stored and for how long, the growth/retention/acquisition queries, the backend UTM contract |
-| [docs/DATABASE.md](docs/DATABASE.md) | Database schema, queries, repository pattern |
+| [docs/features/ALTGUARD.md](docs/features/ALTGUARD.md) | **AltGuard** — anti multi-account verification gate, consent, service contract, staff commands |
+| [docs/features/ANNOUNCEMENT_TRANSLATION.md](docs/features/ANNOUNCEMENT_TRANSLATION.md) | **Announcement translation** — support-server announcements translated once into every language, one flag button per language |
+| [docs/features/AUTOMOD.md](docs/features/AUTOMOD.md) | Automod — detection pipeline (+ `/config` panel, §0), nano decider, scalable features, **images (NSFW + scam screenshots)**, **Moddy team labeling queue**, rules + custom-infraction safety check, **infraction catalogue & per-type sanctions**, **custom infractions**, **member profiles** |
+| [docs/features/BOT_CUSTOMIZATION.md](docs/features/BOT_CUSTOMIZATION.md) | Bot Customization — per-guild nickname/avatar/banner/bio + name styles, Redis dashboard contract |
+| [docs/features/BROCOLI_CHANNEL.md](docs/features/BROCOLI_CHANNEL.md) | **Brocoli in a channel** — the AI assistant as a Discord channel, signed identity assertions, confirmation cards, dev-guild gating |
+| [docs/features/BUMP_REMINDER.md](docs/features/BUMP_REMINDER.md) | **Bump Reminder** — detecting a *successful* bump on 7 directories, the reminder, ping modes, quotas |
+| [docs/features/GLOBAL_SANCTIONS.md](docs/features/GLOBAL_SANCTIONS.md) | **Global sanctions** — Moddy-team warn / limited / suspended, on users *and* servers |
+| [docs/features/LINKED_ROLES.md](docs/features/LINKED_ROLES.md) | **Linked roles** — the `moddy:staff` publication the backend needs, the two Moddy Team roles (`team` / `manager`), and `/team role` / `/team access` / `/team ticket` |
+| [docs/features/LOGS.md](docs/features/LOGS.md) | **Advanced server logs** — 163 events, registry, rendering, webhook delivery, stored config & dashboard contract |
+| [docs/features/MEMBER_APPLICATIONS.md](docs/features/MEMBER_APPLICATIONS.md) | **Member Applications** — Discord "Apply to Join" reviewed from a channel: what the API allows bots, gateway hook + poll, the card, Approve/Reject, the `member_applications` table |
+| [docs/features/MODERATION_CASES.md](docs/features/MODERATION_CASES.md) | Moderation cases/sanctions, the case service & sources, auto-sync |
+| [docs/features/OCR.md](docs/features/OCR.md) | **OCR** — `/ocr` and the Transcribe menu on images (Google Vision, monthly free tier) |
+| [docs/features/SOCIAL_NOTIFICATIONS.md](docs/features/SOCIAL_NOTIFICATIONS.md) | Social Notifications module + `moddy-feeds` Redis contract (what the backend must mirror) |
+| [docs/features/SUPPORT_REQUESTS.md](docs/features/SUPPORT_REQUESTS.md) | **Support requests** — `/bug-report`, the "configure it for me" button, the staff card and its reply flow, the beta-launch campaign |
+| [docs/features/TEXT_TOOLS.md](docs/features/TEXT_TOOLS.md) | AI text tools — `/fix`, `/rephrase`, `/summarize` (models, presets, mention stripping) |
+| [docs/features/TICKETS.md](docs/features/TICKETS.md) | **Tickets** — panels, categories, per-role permissions, the claim system, escalation, transcripts, closure detection, ratings, module-gated `/ticket` commands |
+| [docs/features/VOICE_TRANSCRIPTION.md](docs/features/VOICE_TRANSCRIPTION.md) | Voice transcription — context menu, module, Groq Whisper, cost control |
+| [docs/features/WELCOME_DM.md](docs/features/WELCOME_DM.md) | Welcome DM module (`welcome_dm`) — config schema, placeholders, backend/dashboard contract |
+| [docs/features/WELCOME_MESSAGES.md](docs/features/WELCOME_MESSAGES.md) | Welcome messages module (`welcome_channel`) — config schema, placeholders, backend/dashboard contract |
 
-### Infrastructure
+### Integration — contracts with the backend / dashboard
+`docs/integration/` — Schemas, wire formats and Redis/DB contracts the other services depend on.
 | Document | When to Read |
 |---|---|
-| [docs/API_GATEWAY.md](docs/API_GATEWAY.md) | API Gateway — all external API calls (OpenAI, DeepL, Groq, Google Vision), quotas, provider rate limits (incl. calendar-month fail-closed), resilience, logging |
-| [docs/BACKEND-INTEGRATION.md](docs/BACKEND-INTEGRATION.md) | Bot ↔ Backend integration (Redis, Pub/Sub, Streams, `/status`) |
-| [docs/BROCOLI_CHANNEL.md](docs/BROCOLI_CHANNEL.md) | **Brocoli in a channel** — the AI assistant as a Discord channel, signed identity assertions, confirmation cards, dev-guild gating |
-| [docs/TASK_SIGNATURE.md](docs/TASK_SIGNATURE.md) | **`moddy:tasks` HMAC signature** — canonicalization, anti-replay, `TASK_STREAM_SECRET`, deployment order |
-| [docs/REDIS_COMMUNICATION.md](docs/REDIS_COMMUNICATION.md) | **Redis inter-service communication** — Pub/Sub vs Streams vs plain keys, current channel/stream inventory, checklist for wiring up a new Redis-based service |
-| [docs/SOCIAL_NOTIFICATIONS.md](docs/SOCIAL_NOTIFICATIONS.md) | Social Notifications module + `moddy-feeds` Redis contract (what the backend must mirror) |
-| [docs/SUBSCRIPTION_SCHEMA.md](docs/SUBSCRIPTION_SCHEMA.md) | Subscription DB schema, Redis cache contract, Pub/Sub events (incl. `notify_invoice` — Stripe invoice DMs) |
-| [docs/RAILWAY.md](docs/RAILWAY.md) | Environment variables, deployment, troubleshooting, **memory footprint & Railway cost** |
+| [docs/integration/ALTGUARD_INTEGRATION.md](docs/integration/ALTGUARD_INTEGRATION.md) | AltGuard ↔ bot exact wire contract — payload types, error codes, debugging |
+| [docs/integration/AUTOMOD_CONFIG.md](docs/integration/AUTOMOD_CONFIG.md) | Automod configuration schema in DB (generic `state` replaces `enabled`/`dry_run`) (backend / dashboard integration): `sanctions`, `infractions_perso`, `features.profile`, validation errors, `rules_check` route, tables, Redis keys, deployment order |
+| [docs/integration/BACKEND-INTEGRATION.md](docs/integration/BACKEND-INTEGRATION.md) | Bot ↔ Backend integration (Redis, Pub/Sub, Streams, `/status`) |
+| [docs/integration/NOTIFICATIONS_INTEGRATION.md](docs/integration/NOTIFICATIONS_INTEGRATION.md) | Notifications ↔ backend contract — tables the backend reads/owns, exact payload rendering + placeholder algorithm, mail/dashboard delivery loop |
+| [docs/integration/REDIS_COMMUNICATION.md](docs/integration/REDIS_COMMUNICATION.md) | **Redis inter-service communication** — Pub/Sub vs Streams vs plain keys, current channel/stream inventory, checklist for wiring up a new Redis-based service |
+| [docs/integration/SUBSCRIPTION_SCHEMA.md](docs/integration/SUBSCRIPTION_SCHEMA.md) | Subscription DB schema, Redis cache contract, Pub/Sub events (incl. `notify_invoice` — Stripe invoice DMs) |
+| [docs/integration/TASK_SIGNATURE.md](docs/integration/TASK_SIGNATURE.md) | **`moddy:tasks` HMAC signature** — canonicalization, anti-replay, `TASK_STREAM_SECRET`, deployment order |
+| [docs/integration/TICKETS_INTEGRATION.md](docs/integration/TICKETS_INTEGRATION.md) | Tickets ↔ backend contract — the transcript/rating tables, the compressed body schema, `/transcripts/<key>` and its authorisation, the rating aggregates |
 
-### Other
+### Infrastructure — hosting, gateway, data, monitoring
+`docs/infra/` — Railway, API gateway, database, stats, health and technical logs.
 | Document | When to Read |
 |---|---|
-| [docs/AGENTS.md](docs/AGENTS.md) | Agent system documentation |
-| [docs/STAFF_COMMANDS_FRAMEWORK.md](docs/STAFF_COMMANDS_FRAMEWORK.md) | Staff command engine internals (message + slash from one definition) |
+| [docs/infra/API_GATEWAY.md](docs/infra/API_GATEWAY.md) | API Gateway — all external API calls (OpenAI, DeepL, Groq, Google Vision), quotas, provider rate limits (incl. calendar-month fail-closed), resilience, logging |
+| [docs/infra/DATABASE.md](docs/infra/DATABASE.md) | Database schema, queries, repository pattern |
+| [docs/infra/HEALTH_MONITOR.md](docs/infra/HEALTH_MONITOR.md) | **Health Monitor heartbeats** — dead man's switch push to `moddy-health-monitor` (`HM_URL`/`HM_INGEST_TOKEN`) and the Better Stack cron ping (`BETTERSTACK_HEARTBEAT_URL`) |
+| [docs/infra/RAILWAY.md](docs/infra/RAILWAY.md) | Environment variables, deployment, troubleshooting, **memory footprint & Railway cost** |
+| [docs/infra/STATS.md](docs/infra/STATS.md) | **Statistics** — recording anything (`bot.stats`), the metric registry, what is stored and for how long, the growth/retention/acquisition queries, the backend UTM contract |
+| [docs/infra/TECHNICAL_LOGS.md](docs/infra/TECHNICAL_LOGS.md) | Internal technical staff logs (webhook-based, per-event channels) |
 
 ### Archive
 Point-in-time documents kept for reference but superseded or closed —
@@ -657,7 +661,7 @@ level.
 | Document | What it is |
 |---|---|
 | [docs/archive/SECURITY_AUDIT.md](docs/archive/SECURITY_AUDIT.md) | Security audit report (2026-08-20) — findings fixed and residual risks at that date |
-| [docs/archive/SOCIAL_NOTIFICATIONS_CHANGES_2026-06-14.md](docs/archive/SOCIAL_NOTIFICATIONS_CHANGES_2026-06-14.md) | Backend/dashboard change spec (2026-06-14), now folded into [docs/SOCIAL_NOTIFICATIONS.md](docs/SOCIAL_NOTIFICATIONS.md) |
+| [docs/archive/SOCIAL_NOTIFICATIONS_CHANGES_2026-06-14.md](docs/archive/SOCIAL_NOTIFICATIONS_CHANGES_2026-06-14.md) | Backend/dashboard change spec (2026-06-14), now folded into [docs/features/SOCIAL_NOTIFICATIONS.md](docs/features/SOCIAL_NOTIFICATIONS.md) |
 | [docs/archive/REDIRECTS_BANNERS_SCHEMA.md](docs/archive/REDIRECTS_BANNERS_SCHEMA.md) | `redirect_links`/banners DB schema note written for the backend team |
 | [docs/archive/AUTOMOD_V2_PLAN.md](docs/archive/AUTOMOD_V2_PLAN.md) | Automod v2 implementation plan/progress log — all sessions closed; design rationale still cited from `automod/` code comments |
 
@@ -684,7 +688,7 @@ Server features are implemented as modules in `modules/`:
 - Each module extends `ModuleBase`
 - Config is stored as JSONB in `guilds.data.modules.<module_id>`
 - Config UI lives in `modules/configs/`
-- See → [docs/MODULE_SYSTEM.md](docs/MODULE_SYSTEM.md)
+- See → [docs/guides/MODULE_SYSTEM.md](docs/guides/MODULE_SYSTEM.md)
 
 ### Staff Command System
 Prefix-based commands triggered by mentioning the bot:
@@ -725,23 +729,23 @@ from config import IS_DEV, IS_PROD, IS_MAINTENANCE, ENV_MODE
 ## Quick Reference: Creating a New Feature
 
 ### New Slash Command
-1. Read [docs/COMMANDS.md](docs/COMMANDS.md)
+1. Read [docs/guides/COMMANDS.md](docs/guides/COMMANDS.md)
 2. Create cog in `cogs/`
 3. Use `BaseView` for any UI
 4. Use i18n for all text
 5. Use custom emojis only
 6. Add the command name/description to `/locales/commands/*.json`
-   (see [docs/COMMAND_LOCALIZATION.md](docs/COMMAND_LOCALIZATION.md))
+   (see [docs/guides/COMMAND_LOCALIZATION.md](docs/guides/COMMAND_LOCALIZATION.md))
 
 ### New Server Module
-1. Read [docs/MODULE_SYSTEM.md](docs/MODULE_SYSTEM.md)
+1. Read [docs/guides/MODULE_SYSTEM.md](docs/guides/MODULE_SYSTEM.md)
 2. Create module in `modules/` extending `ModuleBase`
 3. Create config UI in `modules/configs/`
 4. Add i18n keys in `locales/`
 5. Register in module manager
 
 ### New Staff Command
-1. Read [docs/STAFF_SYSTEM.md](docs/STAFF_SYSTEM.md)
+1. Read [docs/guides/STAFF_SYSTEM.md](docs/guides/STAFF_SYSTEM.md)
 2. Add command in the appropriate `staff/` file
 3. Use the permission decorators
 
@@ -755,7 +759,7 @@ Whenever you make changes to the codebase, check whether the documentation needs
 
 - **This file (`CLAUDE.md`)**: If you add/remove/rename cogs, modules, directories, or change architecture, update the project structure and relevant sections here.
 - **Feature docs** (`docs/*.md`): If you modify a feature covered by a doc (e.g., adding a new module, changing the command sync system, adding a DB table), update the corresponding doc.
-- **Emojis** (`docs/EMOJIS.md` and `utils/emojis.py`): If new custom emojis are added, update the list.
+- **Emojis** (`docs/guides/EMOJIS.md` and `utils/emojis.py`): If new custom emojis are added, update the list.
 - **Session logs** (`docs/sessions/`): After each work session, create a summary (see below).
 
 If you create a new system or feature that doesn't fit any existing doc, create a new doc file in `docs/` and add it to the Documentation Index above.

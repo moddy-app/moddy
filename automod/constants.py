@@ -2,7 +2,7 @@
 Tunable constants for the automod pipeline.
 
 All of these are starting values. ``SEUIL_EMBEDDING`` in particular must be
-calibrated against real server traffic — see ``docs/AUTOMOD_AI.md``.
+calibrated against real server traffic — see ``docs/features/AUTOMOD.md``.
 """
 
 # --- Embedding (step 4) -----------------------------------------------------
@@ -63,7 +63,7 @@ EMBEDDING_MODEL: str = "text-embedding-3-small"
 # single embedding call, and in-flight identical requests are additionally
 # coalesced (single-flight) so a burst of N identical messages costs one call,
 # not N. Purely an optimization — it can never change a decision, only avoid a
-# redundant embedding call. See docs/AUTOMOD_AI.md §5 (Volume note).
+# redundant embedding call. See docs/features/AUTOMOD.md §5 (Volume note).
 EMBED_CACHE_ENABLED: bool = True
 # Hard cap on cached message scores (LRU eviction past this). ~4k short strings
 # is a few hundred KB — negligible, and comfortably covers a busy server's
@@ -108,7 +108,7 @@ ROUNDS_MAX: int = 3            # max nano calls per message (1 initial + 2 re-as
 # recidivism) is recomputed every time, since the author's history differs. The
 # cache is per-guild (guidance / severity differ per guild), short-lived, LRU
 # bounded and single-flighted, exactly like the embedding cache. See
-# docs/AUTOMOD_AI.md §5.1.
+# docs/features/AUTOMOD.md §5.1.
 VERDICT_CACHE_ENABLED: bool = True
 VERDICT_CACHE_MAX_ENTRIES: int = 2048
 VERDICT_CACHE_TTL_SECONDS: float = 600.0  # 10 minutes (guidance can change)
@@ -135,7 +135,7 @@ AGGREGATION_MIN_MESSAGES: int = 2
 # funnel keeps running (embeddings are cents) but nano is reserved for the
 # flagrant cases only — a regex hit, or an embedding score comfortably above the
 # routing threshold (+ ``NANO_DEGRADED_SCORE_MARGIN``). No hard cut-off: the
-# system degrades, it never goes blind. See docs/AUTOMOD_AI.md §5.2.
+# system degrades, it never goes blind. See docs/features/AUTOMOD.md §5.2.
 NANO_DAILY_SOFT_CAP: int = 300
 NANO_DEGRADED_SCORE_MARGIN: float = 0.10
 # TTL on the daily counter key (48h so a key set just before UTC midnight still
@@ -151,7 +151,7 @@ BUDGET_KEY_TTL_SECONDS: int = 172800
 # TTL, and decayed on read (half-life 30 days). A short post-message window then
 # observes the target and classifies its reaction. Both are injected into nano's
 # payload as TRUSTED server data — not user text — so nano can tell humour from
-# genuine intent to harm. See docs/AUTOMOD_AI.md §2ter and docs/archive/AUTOMOD_V2_PLAN.md
+# genuine intent to harm. See docs/features/AUTOMOD.md §2ter and docs/archive/AUTOMOD_V2_PLAN.md
 # (Session 5). Familiarity only ever ATTENUATES a verdict (never aggravates).
 RELATION_ENABLED: bool = True
 # 60-day TTL on the per-pair hash — no global graph to maintain, it self-expires.
@@ -201,7 +201,7 @@ CATEGORIES_RELATION_IGNOREE = frozenset({
 # that reaches the decision step as ``evident`` or ``ambigu`` BEFORE spending a
 # call; ``evident`` goes to nano (current behaviour), ``ambigu`` to the smarter,
 # pricier ``mini`` with twice the context. No AI call is spent to route. See
-# docs/AUTOMOD_AI.md §2quater and docs/archive/AUTOMOD_V2_PLAN.md (Session 6).
+# docs/features/AUTOMOD.md §2quater and docs/archive/AUTOMOD_V2_PLAN.md (Session 6).
 MINI_MODEL: str = "gpt-4.1-mini"
 # A mini chat is lean like nano's v2 contract (same JSON verdict) — 300 is plenty.
 MINI_MAX_TOKENS: int = 300
@@ -260,7 +260,7 @@ RIRE_MARQUEURS = frozenset(RIRE_MOTS | set(RIRE_EMOJIS))
 # judgment time). Before a decision call, the current message's embedding is
 # matched (cosine) against the guild's precedents; strong matches are injected
 # into nano/mini as TRUSTED server data, and a near-identical "non_sanctionnable"
-# precedent short-circuits the call entirely. See docs/AUTOMOD_AI.md §2quinquies.
+# precedent short-circuits the call entirely. See docs/features/AUTOMOD.md §2quinquies.
 PRECEDENTS_ENABLED: bool = True
 # How many top matches are injected into the decision prompt.
 PRECEDENT_TOP_K: int = 3
@@ -307,7 +307,7 @@ CALL_TYPE_DECISION_MINI: str = "automod_decision_mini"
 CALL_TYPE_CONFIRM: str = "automod_confirm"
 # Quota-gated chat call for validating a server's rules text.
 CALL_TYPE_RULES_CHECK: str = "automod_rules_check"
-# Embedding call (not quota-gated, see API_GATEWAY.md).
+# Embedding call (not quota-gated, see docs/infra/API_GATEWAY.md).
 CALL_TYPE_EMBED: str = "automod_embed"
 
 
@@ -324,7 +324,7 @@ SOURCE_IMAGE_HASH: str = "image_hash"
 SOURCE_SAFESEARCH: str = "safesearch"
 # Server-defined (custom) infractions: a keyword hit or an embedding match against
 # the guild's own descriptions / examples routes the message to nano
-# (docs/AUTOMOD_AI.md §2sexies). Never decisional on its own.
+# (docs/features/AUTOMOD.md §2sexies). Never decisional on its own.
 SOURCE_PERSO: str = "perso"
 
 
@@ -399,7 +399,7 @@ GRAVITE_TO_SCORE = {
 }
 
 
-# --- Images (docs/AUTOMOD_AI.md §4.2 image_scam / §4.3 image_nsfw) ----------
+# --- Images (docs/features/AUTOMOD.md §4.2 image_scam / §4.3 image_nsfw) ----------
 
 # Call types (quota-gated per guild, seeded in db/base.py).
 CALL_TYPE_IMAGE_OCR: str = "automod_image_ocr"
@@ -449,7 +449,7 @@ NSFW_GUILD_DAILY_SHARE: int = 15      # SafeSearch calls per guild per day at mo
 
 
 # --- Member profiles (avatar / banner / names) -------------------------------
-# docs/AUTOMOD_AI.md "Profiles". SafeSearch on avatars and banners has its OWN
+# docs/features/AUTOMOD.md "Profiles". SafeSearch on avatars and banners has its OWN
 # monthly budget (gateway rule keyed "safe_search_profile") so profile checks can
 # never starve the message images, and the other way round.
 

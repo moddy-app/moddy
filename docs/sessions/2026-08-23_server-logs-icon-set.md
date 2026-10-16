@@ -23,7 +23,7 @@ logs **configuration panel** may use nothing else (the module icon in the
   comes from the set (`_ICON_BACK`, `_ICON_NEXT`, `_ICON_OPTIONS`,
   `_ICON_CLEAR`, `_ICON_ON`, `_ICON_OFF`), and each event in the checklist
   carries its own icon.
-- **Docs** — `docs/EMOJIS.md` lists the set; `docs/LOGS.md` gained an *Icons*
+- **Docs** — `docs/guides/EMOJIS.md` lists the set; `docs/features/LOGS.md` gained an *Icons*
   section (resolution order, the "only source" rule and its one exception).
 
 ## Decisions made and why
@@ -53,7 +53,7 @@ logs **configuration panel** may use nothing else (the module icon in the
 | `serverlogs/registry.py` | category icons, `_EVENT_ICONS`, `event_emoji()` |
 | `serverlogs/renderer.py` | heading with icon inside the description |
 | `modules/configs/logs_config.py` | panel icons + per-event icons in the checklist |
-| `docs/EMOJIS.md`, `docs/LOGS.md` | the set and the rule |
+| `docs/guides/EMOJIS.md`, `docs/features/LOGS.md` | the set and the rule |
 | `tests/test_logs.py` | icon coverage + panel-source tests (updated rendering tests) |
 
 ## Follow-up in the same session: dedicated category icons

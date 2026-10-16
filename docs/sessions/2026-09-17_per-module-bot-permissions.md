@@ -43,7 +43,7 @@ configuration time.
   with `missing_bot_perms` (`{module}` + `{permissions}` placeholders).
 - `CLAUDE.md` — new rule **#12: Never require Administrator — declare
   per-module bot permissions instead**.
-- `docs/MODULE_SYSTEM.md` — documented `REQUIRED_BOT_PERMISSIONS` on the
+- `docs/guides/MODULE_SYSTEM.md` — documented `REQUIRED_BOT_PERMISSIONS` on the
   worked module example.
 
 ## Decisions made and why

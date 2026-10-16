@@ -11,7 +11,7 @@ in its ``custom_id`` (``moddy:tickets:pnl…:<panel_id>``), registered through
 The wrapper view is therefore **not** registered: it cannot be built without a
 panel, and there is nothing left for it to carry once its children reconstruct
 themselves on every click. Same pattern as ``LogsCategoryView`` — see
-docs/PERSISTENT_VIEWS.md "Deliberate exclusions".
+docs/guides/PERSISTENT_VIEWS.md "Deliberate exclusions".
 
 That is also why changes apply immediately: a ``DynamicItem`` has no ``self``
 to stage them on.
@@ -60,7 +60,7 @@ logger = logging.getLogger('moddy.modules.tickets_panel_config')
 _ENTRY_ID = r"[a-z0-9_]+"
 
 # One template per component *type*, with disjoint action alternations, so no
-# two DynamicItem classes can ever cross-match (see docs/PERSISTENT_VIEWS.md).
+# two DynamicItem classes can ever cross-match (see docs/guides/PERSISTENT_VIEWS.md).
 _BUTTON_ACTIONS = "back|edit|addcat|repost|toggle|delete|delconfirm"
 _SELECT_ACTIONS = "style|category"
 

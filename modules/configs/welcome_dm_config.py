@@ -10,13 +10,13 @@ add/manage flow rather than a single form:
 
 There is no channel to pick for a DM, so "add" is the customization modal
 itself: the full text, the placeholder cheat-sheet and the accent colour in one
-Modal V2 (see docs/MODALS_V2.md), submitted straight into the message list.
+Modal V2 (see docs/guides/MODALS_V2.md), submitted straight into the message list.
 
 Actions are applied immediately (no Save/Cancel batching): each one writes the
 whole message list back through ``module_manager.save_module_config`` so the
 module instance is revalidated and reloaded on every change.
 
-Persistence (see docs/PERSISTENT_VIEWS.md): every interactive component uses a
+Persistence (see docs/guides/PERSISTENT_VIEWS.md): every interactive component uses a
 stable, namespaced ``custom_id`` and the views never time out. Callbacks
 re-derive their context from ``interaction`` + the DB.
 """

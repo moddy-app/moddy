@@ -31,9 +31,9 @@ made the docs complete and consistent with the code:
   setting (the alerts channel): first-run wizard (channel, level Light / Balanced
   / Strict, simulation), home, what is monitored, sanctions (list, one type,
   custom infractions), AI guidance, exemptions, advanced, precedents browser.
-- **Docs pass.** `AUTOMOD_AI_CONFIG.md` now documents the whole backend contract
+- **Docs pass.** `AUTOMOD_CONFIG.md` now documents the whole backend contract
   (schema, bounds, validation errors, route extension, tables, Redis keys,
-  deployment order); `AUTOMOD_AI.md`, API_GATEWAY, RAILWAY, DATABASE,
+  deployment order); `AUTOMOD.md`, API_GATEWAY, RAILWAY, DATABASE,
   PERSISTENT_VIEWS, REDIS_COMMUNICATION and the `CLAUDE.md` tree were completed.
 
 ## Changes Made
@@ -58,7 +58,7 @@ Batch D (panel)
 - Tests for A/B: `tests/automod/test_infractions.py`, `tests/automod/test_custom_infractions.py`, `tests/internal_api/test_rules_check_route.py`.
 
 Docs
-- `docs/AUTOMOD_AI_CONFIG.md`, `docs/AUTOMOD_AI.md`, `docs/API_GATEWAY.md`, `docs/RAILWAY.md`, `docs/DATABASE.md`, `docs/PERSISTENT_VIEWS.md`, `docs/REDIS_COMMUNICATION.md`, `CLAUDE.md`.
+- `docs/integration/AUTOMOD_CONFIG.md`, `docs/features/AUTOMOD.md`, `docs/infra/API_GATEWAY.md`, `docs/infra/RAILWAY.md`, `docs/infra/DATABASE.md`, `docs/guides/PERSISTENT_VIEWS.md`, `docs/integration/REDIS_COMMUNICATION.md`, `CLAUDE.md`.
 
 ## Decisions & Rationale
 
@@ -85,7 +85,7 @@ Docs
 - [ ] The es-ES / pt-BR / de translations of the new panel, profile and infraction texts have not been reviewed by native speakers.
 - [ ] `PERSO_SIMILARITY_THRESHOLD` (0.50 at severity 3) is a starting value and needs calibration on real traffic.
 - [ ] Google SafeSearch's free tier is 1000 units/month per account: with the two budgets at their default 1000 each, combined use can exceed the free tier — lower one of the two env vars if that matters.
-- [ ] Backend/dashboard: mirror the contract in `docs/AUTOMOD_AI_CONFIG.md` §10 (infraction safety check before saving, delete `sanctions["perso:<id>"]` with an infraction, never write `categories_desactivees`, keep exemptions identical across features).
+- [ ] Backend/dashboard: mirror the contract in `docs/integration/AUTOMOD_CONFIG.md` §10 (infraction safety check before saving, delete `sanctions["perso:<id>"]` with an infraction, never write `categories_desactivees`, keep exemptions identical across features).
 
 
 ## Review fixes (12 findings)

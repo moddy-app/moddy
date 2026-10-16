@@ -15,7 +15,7 @@ from cogs.error_handler import BaseView
 _PER_PAGE = 10
 # \d{1,20} rather than a tighter \d{17,20} snowflake range: a bare shell
 # built with owner_id=0 must still match its own template (see
-# docs/PERSISTENT_VIEWS.md Migration log, Step 6).
+# docs/guides/PERSISTENT_VIEWS.md Migration log, Step 6).
 _CID_NAV_TEMPLATE = r"moddy:devservers:nav:(?P<action>prev|next):(?P<owner>\d{1,20}):(?P<page>\d{1,6})"
 
 

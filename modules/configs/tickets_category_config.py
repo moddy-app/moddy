@@ -20,7 +20,7 @@ Persistence: every control is a :class:`discord.ui.DynamicItem` carrying the
 panel and category ids (and, on the permissions screen, the role id) in its
 ``custom_id``, registered through :class:`TicketsConfigPersistence`. The
 wrapper views are therefore not registered — same reasoning as
-``LogsCategoryView``, see docs/PERSISTENT_VIEWS.md — which is also why every
+``LogsCategoryView``, see docs/guides/PERSISTENT_VIEWS.md — which is also why every
 change here applies immediately.
 """
 

@@ -32,7 +32,7 @@ is swept by `bot.case_expiry` like any other sanction.
 - **`global_guild` case source** — Moddy-team sanctions against a server.
   `_manual_sources(subject_type)` now filters sources by subject nature, so a
   user target and a guild target each see only what applies.
-- **`docs/GLOBAL_SANCTIONS.md`** — the reference for all of this.
+- **`docs/features/GLOBAL_SANCTIONS.md`** — the reference for all of this.
 - **`tests/test_global_sanctions.py`** — 21 tests (ladder, context resolution,
   cache invalidation, temporary-sanction TTL).
 
@@ -61,7 +61,7 @@ panels and in `/mycases`.
 
 ## Files modified
 
-- New: `utils/global_sanctions.py`, `docs/GLOBAL_SANCTIONS.md`,
+- New: `utils/global_sanctions.py`, `docs/features/GLOBAL_SANCTIONS.md`,
   `tests/test_global_sanctions.py`
 - `bot.py`, `cogs/blacklist_check.py`, `cogs/config.py`
 - `services/case_service.py`, `modules/module_manager.py`, `modules/automod_ai.py`
@@ -73,7 +73,7 @@ panels and in `/mycases`.
 - `locales/{fr,en-US,es-ES,pt-BR,de}.json` (`global_sanctions.*`,
   `staff.mod.case.no_source`)
 - Docs: `CLAUDE.md`, `MODERATION_CASES.md`, `DATABASE.md`,
-  `BACKEND-INTEGRATION.md`, `PREMIUM.md`, `AUTOMOD_AI.md`
+  `BACKEND-INTEGRATION.md`, `PREMIUM.md`, `AUTOMOD.md`
 
 ## Decisions
 

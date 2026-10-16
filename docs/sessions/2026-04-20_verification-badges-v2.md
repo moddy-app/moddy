@@ -18,7 +18,7 @@ Extended and refined the verification badge system implemented the previous sess
 | `locales/fr.json` | Updated `avatar`, `banner`, `user` titles to use `{name}`/`{badge}`; added `verified_date`, `verified_learn_more`, `verified_org_*` notice keys; fixed double-bold bug |
 | `locales/en-US.json` | Same |
 | `CLAUDE.md` | Updated §7 with hyperlink format, `format_verification_badge()`, `global_name` rule, 3-tuple return |
-| `docs/EMOJIS.md` | Updated `verified` emoji ID; added `verified_org` and `verified_org_member` |
+| `docs/guides/EMOJIS.md` | Updated `verified` emoji ID; added `verified_org` and `verified_org_member` |
 
 ## Key decisions
 

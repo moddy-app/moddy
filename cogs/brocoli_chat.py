@@ -23,7 +23,7 @@ Where the guard rails are
 - **Registration** is limited to ``BROCOLI_GUILD_IDS``. Empty = the cog does not
   load at all, so the command cannot leak to every server.
 
-See ``docs/BROCOLI_CHANNEL.md``.
+See ``docs/features/BROCOLI_CHANNEL.md``.
 """
 
 from __future__ import annotations

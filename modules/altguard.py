@@ -22,7 +22,7 @@ What this module owns:
 What it deliberately does NOT own: the decision. Score, reasons and matches
 (the accounts a verification matched with) are audit data for the log
 channel only, never shown to the verified user (that would hand out a
-bypass oracle). See docs/ALTGUARD.md.
+bypass oracle). See docs/features/ALTGUARD.md.
 """
 
 from __future__ import annotations

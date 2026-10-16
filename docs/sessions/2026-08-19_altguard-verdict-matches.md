@@ -29,7 +29,7 @@ needed wiring/documenting on the bot side:
 - `utils/altguard_views.py` — `build_log_card` renders matches
 - `locales/{fr,en-US,es-ES,pt-BR,de}.json` — new `matches` log label
 - `tests/test_altguard.py` — parsing + log card coverage for `matches`
-- `docs/ALTGUARD.md`, `docs/ALTGUARD_INTEGRATION.md` — documented the field
+- `docs/features/ALTGUARD.md`, `docs/integration/ALTGUARD_INTEGRATION.md` — documented the field
   and the `enforced` default flip (with the `shadow_mode` observation path)
 
 ## Known issues / follow-ups

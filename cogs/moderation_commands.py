@@ -127,7 +127,7 @@ async def _send_sanction_dm(
     Shared by the manual /ban /mute /warn modal and the backend-dashboard
     sanction handler so both produce an identical DM. It goes out through
     ``bot.notifications`` like every other DM, attributed to the sanctioning
-    server (docs/NOTIFICATIONS.md).
+    server (docs/guides/NOTIFICATIONS.md).
     """
     try:
         accent = {
@@ -181,7 +181,7 @@ async def _send_sanction_dm(
 
         # Through the notification system: the wording (the reason) is the
         # moderator's own, so the DM is attributed to the server and is
-        # reportable. See docs/NOTIFICATIONS.md.
+        # reportable. See docs/guides/NOTIFICATIONS.md.
         await bot.notifications.send_dm(
             user,
             content=NotificationContent(

@@ -49,7 +49,7 @@ naming the slow handler and reported (throttled) to the error channel.
 
 ``install()`` is idempotent and patches discord.py once, in the style of
 ``utils/icon_theme.py``; ``tests/test_interaction_guard.py`` fails loudly when a
-discord.py upgrade moves a patched attribute. See docs/ERROR_HANDLING.md.
+discord.py upgrade moves a patched attribute. See docs/guides/ERROR_HANDLING.md.
 """
 from __future__ import annotations
 

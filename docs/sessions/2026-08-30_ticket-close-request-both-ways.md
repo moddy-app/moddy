@@ -46,7 +46,7 @@ Either way the card carries the same two buttons (**Close the ticket** /
 - `locales/commands/*.json` (32) — the `ticket close-request` description.
 - `tests/test_tickets.py` — direction/authorization tests and a card-wording
   test; the new i18n keys added to the interpolated-key list.
-- `docs/TICKETS.md`, `docs/DATABASE.md` — the actions table, a new
+- `docs/features/TICKETS.md`, `docs/infra/DATABASE.md` — the actions table, a new
   "A close request points both ways" section, the schema.
 
 ## Decisions & Rationale

@@ -1,5 +1,5 @@
 """
-Heartbeat to the Moddy Health Monitor (see docs/HEALTH_MONITOR.md).
+Heartbeat to the Moddy Health Monitor (see docs/infra/HEALTH_MONITOR.md).
 
 The monitor never polls a service for its state: each service pushes its own
 state every 20 seconds, and silence *is* the signal (dead man's switch — the

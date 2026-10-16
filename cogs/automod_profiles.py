@@ -15,7 +15,7 @@ renewed, fixed -> lifted and announced. Holds of a server that switched the
 feature off are dropped (the timeout simply lapses).
 
 The listeners for joins and profile changes are in ``cogs/module_events.py``.
-See docs/AUTOMOD_AI.md "Profiles".
+See docs/features/AUTOMOD.md "Profiles".
 """
 
 import logging

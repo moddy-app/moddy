@@ -1,7 +1,7 @@
 # 2026-07-12 — Automod v2, Session 1: Grounding & verdict contract v2
 
 Part of the multi-session automod overhaul tracked in
-[`docs/AUTOMOD_V2_PLAN.md`](../AUTOMOD_V2_PLAN.md). This is **Session 1** of 8.
+[`docs/AUTOMOD_V2_PLAN.md`](../archive/AUTOMOD_V2_PLAN.md). This is **Session 1** of 8.
 
 ## Goal
 

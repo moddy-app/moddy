@@ -119,12 +119,12 @@ back to the channel that had vanished from their list (`build_reopen_dm`).
 | `db/base.py` | 4 claim columns + idempotent migration |
 | `db/repositories/tickets.py` | `set_ticket_claim`, claim-aware `set_escalated` |
 | `modules/configs/tickets_category_config.py` | Button picker, `---` hint, behaviour `CheckboxGroup`, claim in the summary |
-| `utils/emojis.py`, `docs/EMOJIS.md` | `TICKET`, `THREADS`, `CLAIM`, `TICKET_CLAIM` |
+| `utils/emojis.py`, `docs/guides/EMOJIS.md` | `TICKET`, `THREADS`, `CLAIM`, `TICKET_CLAIM` |
 | `utils/persistent_views.py` | `TicketParticipantsView` dropped (now a modal) |
 | `locales/*.json` (5) | ~80 keys each |
 | `locales/commands/*.json` (32) | `/ticket claim`, `/ticket unclaim` |
 | `tests/test_tickets.py` | Claim overwrites, status dots, message blocks, button config, participants modal |
-| `docs/TICKETS.md`, `docs/PERSISTENT_VIEWS.md`, `CLAUDE.md` | Documentation |
+| `docs/features/TICKETS.md`, `docs/guides/PERSISTENT_VIEWS.md`, `CLAUDE.md` | Documentation |
 
 ## Decisions and why
 

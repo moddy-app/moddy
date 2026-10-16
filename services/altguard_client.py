@@ -1,7 +1,7 @@
 """
 AltGuard service client — the ONLY contract between the bot and AltGuard.
 
-Two transports, four messages (docs/ALTGUARD.md):
+Two transports, four messages (docs/features/ALTGUARD.md):
 
 HTTP (bot -> service, ``Authorization: Bearer ALTGUARD_BOT_TOKEN``)
   - ``POST /altguard/token``               consent + ids -> personal, single-use

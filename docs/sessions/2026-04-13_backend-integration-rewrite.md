@@ -41,7 +41,7 @@ The backend was rebuilt from scratch with a new architecture. The old model (bot
 - `internal_api/server.py` — Simplified: exposes `GET /health` and `GET /status`
 - `internal_api/middleware/__init__.py` — Emptied
 - `internal_api/routes/__init__.py` — Emptied
-- `docs/RAILWAY.md` — Updated env vars (add REDIS_URL/PASSWORD, remove BACKEND_INTERNAL_URL)
+- `docs/infra/RAILWAY.md` — Updated env vars (add REDIS_URL/PASSWORD, remove BACKEND_INTERNAL_URL)
 - `cogs/subscription.py` — Now queries DB directly (PREMIUM attribute + stripe_customer_id)
 - `staff/support_commands.py` — Removed `sup.invoices` and `sup.refund` (Stripe-only, dashboard only), `sup.subscription` now queries DB
 
@@ -57,7 +57,7 @@ The backend was rebuilt from scratch with a new architecture. The old model (bot
   - Cleaned up `close()` (Redis instead of BackendClient)
 - `requirements.txt` — Removed `httpx` (no longer needed)
 - `CLAUDE.md` — Updated docs index
-- `docs/AGENTS.md` — Updated docs reference
+- `docs/guides/AGENTS.md` — Updated docs reference
 
 ---
 

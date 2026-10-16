@@ -25,7 +25,7 @@ from utils import user_preferences
 #
 # Owner-only: interaction_check cannot work on a restarted shell (self.user_id
 # is None), so ownership is encoded per-item and re-checked on every click
-# instead (Appendix B.2 of docs/PERSISTENT_VIEWS.md).
+# instead (Appendix B.2 of docs/guides/PERSISTENT_VIEWS.md).
 # --------------------------------------------------------------------------- #
 
 #   \d{1,20} (not the tighter \d{17,20} snowflake range) so a bare shell

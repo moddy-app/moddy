@@ -489,7 +489,7 @@ class BotCustomizationConfigView(BaseView):
         ))
 
         # Registration shell (bot is None): render both branches' buttons so
-        # discord.py learns every custom_id — see docs/PERSISTENT_VIEWS.md.
+        # discord.py learns every custom_id — see docs/guides/PERSISTENT_VIEWS.md.
         is_shell = self.bot is None
 
         if self.is_premium or is_shell:

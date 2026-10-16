@@ -15,7 +15,7 @@ commands:
   moderator browses sanctions issued in the guild and can fully manage each
   case.
 
-**UX (per `docs/DESIGN.md` + `docs/MODALS_V2.md`):**
+**UX (per `docs/guides/DESIGN.md` + `docs/guides/MODALS_V2.md`):**
 - List screen: compact paginated overview (`PAGE_SIZE = 5`), status dot + type
   emoji + reference + sanction-action emojis + context + reason snippet.
 - Filters live in a **Modal (Modals V2)** opened from a single *Filters*
@@ -47,7 +47,7 @@ Added `@app_commands.default_permissions(...)` so Discord enforces access
   `list_subject_scopes`, `_case_filters`)
 - `cogs/moderation_commands.py` (`default_permissions` on ban/mute/warn)
 - `locales/en-US.json`, `locales/fr.json` (`commands.cases.browser.*`)
-- `CLAUDE.md`, `docs/MODERATION_CASES.md` (docs)
+- `CLAUDE.md`, `docs/features/MODERATION_CASES.md` (docs)
 
 ## Decisions
 - **Guild scope isolation:** `/sanctions` queries only `discord_guild`-scoped
@@ -98,7 +98,7 @@ Added `@app_commands.default_permissions(...)` so Discord enforces access
 - A shell (`bot=None`) is registered for each mode in
   `utils/persistent_views.py`. After a bot restart, any click rebuilds a fresh
   live view from the interaction's user/guild context. Detail-screen mutations
-  rehydrate to the list view (per `docs/PERSISTENT_VIEWS.md` "working-copy"
+  rehydrate to the list view (per `docs/guides/PERSISTENT_VIEWS.md` "working-copy"
   rule).
 - CLAUDE.md §8 hardened: "MANDATORY — no exceptions". Will be enforced in review.
 

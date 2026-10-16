@@ -43,7 +43,7 @@ from utils.components_v2 import create_suspension_message
 from database import setup_database, db
 # Import du nouveau système i18n
 from utils.i18n import i18n
-# Slash command name/description localization (see docs/COMMAND_LOCALIZATION.md)
+# Slash command name/description localization (see docs/guides/COMMAND_LOCALIZATION.md)
 from utils.command_translator import ModdyCommandTranslator
 # Import du système de permissions staff
 from utils.staff_permissions import setup_staff_permissions
@@ -143,7 +143,7 @@ class ModdyBot(ModdyFrameworkBot):
         # on its own budget, bounded background screening
         self.automod_profiles = AutomodProfileService(self)
         from services.automod_label_service import AutomodLabelService
-        # Moddy team labeling queue for automod decisions (docs/AUTOMOD_AI.md §9)
+        # Moddy team labeling queue for automod decisions (docs/features/AUTOMOD.md §9)
         self.automod_labels = AutomodLabelService(self)
         from services.transcription_service import TranscriptionService
         self.transcription = TranscriptionService(self)  # voice message speech-to-text
@@ -155,7 +155,7 @@ class ModdyBot(ModdyFrameworkBot):
         from services.ticket_service import TicketService
         self.tickets = TicketService(self)  # ticket lifecycle (open/close/escalate…)
         from services.ticket_transcript_service import TicketTranscriptService
-        # Archives a ticket's conversation when it closes (docs/TICKETS.md)
+        # Archives a ticket's conversation when it closes (docs/features/TICKETS.md)
         self.ticket_transcripts = TicketTranscriptService(self)
         from services.ticket_closure_detector import TicketClosureDetector
         # Spots a conversation that has run its course and offers to close it
@@ -169,11 +169,11 @@ class ModdyBot(ModdyFrameworkBot):
         self.stripe_admin = StripeAdminClient(self)
         from notifications import NotificationService
         # Every DM / server notice Moddy sends goes through this: stored,
-        # attributed, reportable (see docs/NOTIFICATIONS.md).
+        # attributed, reportable (see docs/guides/NOTIFICATIONS.md).
         self.notifications = NotificationService(self)
         from services.support_request_service import SupportRequestService
         # Bug reports (/bug-report) and "configure it for me" requests: opened
-        # by users, answered by the team (see docs/SUPPORT_REQUESTS.md).
+        # by users, answered by the team (see docs/features/SUPPORT_REQUESTS.md).
         self.support_requests = SupportRequestService(self)
         from gateway import Gateway
         self.gateway = Gateway()
@@ -181,11 +181,11 @@ class ModdyBot(ModdyFrameworkBot):
         # Statistics. `incr()` is synchronous and never raises: it adds to an
         # in-memory aggregate that a background flush carries to Postgres once
         # a minute, so measuring something can never slow down or break the
-        # feature being measured (see docs/STATS.md).
+        # feature being measured (see docs/infra/STATS.md).
         self.stats = StatsService(self)
         self.stats_rollup = StatsRollup(self)
         from services.heartbeat import HeartbeatClient
-        # Dead man's switch push to the Moddy Health Monitor (docs/HEALTH_MONITOR.md).
+        # Dead man's switch push to the Moddy Health Monitor (docs/infra/HEALTH_MONITOR.md).
         # Started in on_ready (a bot that was never ready has nothing to report).
         self.heartbeat = HeartbeatClient(
             "moddy-bot",
@@ -195,7 +195,7 @@ class ModdyBot(ModdyFrameworkBot):
         )
         from services.betterstack_heartbeat import BetterStackHeartbeat
         # Better Stack cron/heartbeat monitor: a plain ping every 3 minutes,
-        # `/fail` when the bot itself thinks it is unhealthy (docs/HEALTH_MONITOR.md).
+        # `/fail` when the bot itself thinks it is unhealthy (docs/infra/HEALTH_MONITOR.md).
         self.betterstack_heartbeat = BetterStackHeartbeat(
             url=BETTERSTACK_HEARTBEAT_URL,
             healthy=self._is_bot_healthy,
@@ -735,7 +735,7 @@ class ModdyBot(ModdyFrameworkBot):
           Discord-side effect is applied — nothing here knows what changed.
 
         The `module_id` form is the one to use for anything with a panel; see
-        docs/ALTGUARD_INTEGRATION.md.
+        docs/integration/ALTGUARD_INTEGRATION.md.
         """
         import json
         from modules.module_manager import EXTERNAL_DELETED, EXTERNAL_UPDATED
@@ -798,7 +798,7 @@ class ModdyBot(ModdyFrameworkBot):
     async def _consume_task_stream(self):
         """Consume Redis Stream moddy:tasks (critical guaranteed tasks from backend).
 
-        Every entry is HMAC-verified before it runs (see docs/TASK_SIGNATURE.md):
+        Every entry is HMAC-verified before it runs (see docs/integration/TASK_SIGNATURE.md):
         anyone with write access to Redis could otherwise inject a task and have
         the bot execute it with its own permissions. A rejected entry is skipped
         and logged, never retried — otherwise an attacker fills the stream with
@@ -1138,7 +1138,7 @@ class ModdyBot(ModdyFrameworkBot):
         await self.load_extensions()
 
         # Register persistent views (must run AFTER cogs are loaded so that
-        # every view class is importable). See docs/PERSISTENT_VIEWS.md.
+        # every view class is importable). See docs/guides/PERSISTENT_VIEWS.md.
         from utils.persistent_views import register_all_persistent_views
         register_all_persistent_views(self)
 

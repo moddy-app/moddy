@@ -14,7 +14,7 @@ Three responsibilities:
 3. **Server-side commands.** ``/altguard verify`` and ``/altguard unverify``
    let a guild's moderators override the gate for one member.
 
-See docs/ALTGUARD.md.
+See docs/features/ALTGUARD.md.
 """
 
 from __future__ import annotations

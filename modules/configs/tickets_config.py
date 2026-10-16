@@ -18,12 +18,12 @@ That is not a shortcut: the screens below are built from
 :class:`discord.ui.DynamicItem`\\ s that carry the panel (and category) id in
 their ``custom_id`` and reconstruct themselves from scratch on every click, so
 there is no ``self`` to stage edits on. Same reasoning, and the same trade, as
-the Logs category screen — see docs/PERSISTENT_VIEWS.md.
+the Logs category screen — see docs/guides/PERSISTENT_VIEWS.md.
 
 Free servers get ``FREE_MAX_PANELS`` panels and ``FREE_MAX_CATEGORIES``
 categories per panel; premium raises both. The limit is re-read from the
 database at the moment of the action, never from the rendered panel (a screen
-can sit open for hours — see docs/PREMIUM.md).
+can sit open for hours — see docs/guides/PREMIUM.md).
 """
 
 from __future__ import annotations

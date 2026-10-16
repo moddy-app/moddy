@@ -32,7 +32,7 @@ number of readers or clicks — the requirement that drove the whole shape.
 | `utils/persistent_views.py` | Registers the flag buttons (group 12l) |
 | `tests/test_persistent_views.py` | Covers `AnnouncementLanguageButton` |
 | `locales/{fr,en-US,es-ES,pt-BR,de}.json` | `announcement_translation.error.*` |
-| `docs/ANNOUNCEMENT_TRANSLATION.md`, `CLAUDE.md` | Documentation |
+| `docs/features/ANNOUNCEMENT_TRANSLATION.md`, `CLAUDE.md` | Documentation |
 
 ## Decisions
 

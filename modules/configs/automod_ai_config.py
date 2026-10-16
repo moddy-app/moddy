@@ -17,7 +17,7 @@ where Moddy posts its alerts*. Everything else has a sensible ready-made answer.
   "Delete configuration" button sits outside the container too.
 
 The state is the generic one (``guilds.data.modules.automod_ai.state``, see
-docs/MODULE_SYSTEM.md): ``simulation`` is the former ``dry_run``.
+docs/guides/MODULE_SYSTEM.md): ``simulation`` is the former ``dry_run``.
 
 Persistence
 -----------
@@ -517,7 +517,7 @@ class AutomodConfigPersistence(BaseView):
     The infraction type screen and the precedents browser are built from
     ``DynamicItem`` s (an infraction id / a page number cannot ride in a static
     custom_id), so their wrappers are not registered -- see
-    docs/PERSISTENT_VIEWS.md "Deliberate exclusions".
+    docs/guides/PERSISTENT_VIEWS.md "Deliberate exclusions".
     """
 
     __persistent__ = True

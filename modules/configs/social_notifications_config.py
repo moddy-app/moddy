@@ -8,12 +8,12 @@ than batched behind a Save button. The flow is:
   Main panel ──► Add subscription ──► (platform + channel + roles + account + message) ──► confirm
             └──► Manage subscription ──► change channel / roles / message / pause / remove
 
-Message customization is done through **Modals V2** (see docs/MODALS_V2.md):
+Message customization is done through **Modals V2** (see docs/guides/MODALS_V2.md):
   - one modal collects the account handle/URL,
   - a second modal customizes the message (full text incl. title), the accent
     colour and the display toggles (avatar thumbnail / media preview).
 
-Persistence (see docs/PERSISTENT_VIEWS.md): every interactive component uses a
+Persistence (see docs/guides/PERSISTENT_VIEWS.md): every interactive component uses a
 stable, namespaced ``custom_id`` and the views never time out. The main panel is
 registered as a persistent shell (guild permission auth) so it survives a bot
 restart; its callbacks re-derive all context from ``interaction`` + the DB. The
@@ -505,7 +505,7 @@ class AddSubscriptionView(BaseView):
 
     Persistent: yes. The in-progress wizard state (platform/channel/roles
     picked so far) is not persisted anywhere — on a restart the shell
-    rebuilds an empty form, same as CaseCreationView (see PERSISTENT_VIEWS.md
+    rebuilds an empty form, same as CaseCreationView (see docs/guides/PERSISTENT_VIEWS.md
     Appendix B.1.c). Every callback already re-checks _check_perms(interaction)
     on every click, so no auth state depends on self either.
     """

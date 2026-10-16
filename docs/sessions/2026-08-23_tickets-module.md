@@ -46,7 +46,7 @@ modules/configs/tickets_config.py           /config root (panel list)
 modules/configs/tickets_panel_config.py     /config one panel
 modules/configs/tickets_category_config.py  /config one category + permissions
 tests/test_tickets.py                       77 tests
-docs/TICKETS.md
+docs/features/TICKETS.md
 ```
 
 ### Files modified

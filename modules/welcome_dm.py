@@ -13,7 +13,7 @@ combined), each one rendering as a Components V2 container:
   - its own enabled/paused switch.
 
 Configuration lives in ``guilds.data.modules.welcome_dm`` (JSONB) — see
-docs/WELCOME_DM.md for the full schema and the backend/dashboard contract.
+docs/features/WELCOME_DM.md for the full schema and the backend/dashboard contract.
 
 Legacy (v1) configurations are migrated on read by :func:`normalize_config`, so
 a guild that configured the old message + embed version keeps its text.
@@ -162,7 +162,7 @@ def message_variables(member: discord.Member, guild: discord.Guild) -> Dict[str,
     Keys are bare (``server``, not ``{server}``) because this same dict is
     stored as the notification's ``variables`` — that is what lets the exact
     wording of a welcome DM be rebuilt months later from the template alone
-    (see docs/NOTIFICATIONS.md).
+    (see docs/guides/NOTIFICATIONS.md).
     """
     joined_at = getattr(member, 'joined_at', None)
     timestamp = int(joined_at.timestamp()) if joined_at else int(time.time())

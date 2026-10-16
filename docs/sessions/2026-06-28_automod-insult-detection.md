@@ -87,4 +87,4 @@ Added: `automod/` (package + `data/references.json`), `modules/automod.py`,
 `modules/configs/automod_config.py`, `docs/AUTOMOD.md`, this session log.
 Modified: `cogs/module_events.py`, `cogs/config.py`, `db/base.py`,
 `locales/fr.json`, `locales/en-US.json`, `gateway/executor.py`,
-`gateway/logger.py`, `utils/tech_logger.py`, `CLAUDE.md`, `docs/API_GATEWAY.md`.
+`gateway/logger.py`, `utils/tech_logger.py`, `CLAUDE.md`, `docs/infra/API_GATEWAY.md`.

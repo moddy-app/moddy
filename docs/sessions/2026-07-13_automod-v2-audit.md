@@ -5,7 +5,7 @@
 Audit the eight Automod v2 sessions (`docs/AUTOMOD_V2_PLAN.md`) end to end:
 verify each session is actually implemented, documented, and coherent across the
 detection pipeline (`automod/`), the `/config` UI, and the moderation-cases
-system (`docs/MODERATION_CASES.md`). Fix any inconsistency or bug found.
+system (`docs/features/MODERATION_CASES.md`). Fix any inconsistency or bug found.
 
 ## What was verified (all green)
 
@@ -60,7 +60,7 @@ system (`docs/MODERATION_CASES.md`). Fix any inconsistency or bug found.
 ## Files modified
 
 - `modules/configs/automod_config.py` — preserve `categories_desactivees`.
-- `docs/MODERATION_CASES.md` — barème duration wording + appeal→automod coupling.
+- `docs/features/MODERATION_CASES.md` — barème duration wording + appeal→automod coupling.
 - `docs/AUTOMOD_V2_PLAN.md` — S8 completion checkboxes.
 - `CLAUDE.md` — utils structure fixes.
 - `docs/sessions/2026-07-13_automod-v2-audit.md` — this log.

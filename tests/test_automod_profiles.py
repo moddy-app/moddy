@@ -1,4 +1,4 @@
-"""Automod member profiles — avatar / banner / names (docs/AUTOMOD_AI.md "Profiles").
+"""Automod member profiles — avatar / banner / names (docs/features/AUTOMOD.md "Profiles").
 
 No network, no Discord, no DB: every collaborator is a small fake, in the style of
 tests/test_automod_images.py.

@@ -27,7 +27,7 @@ exemptions / advanced) that all rely on this one:
 
 Persistence: nothing here keeps state a restart could miss except the draft.
 Every callback of every screen re-reads the config, the locale and the
-permissions from the interaction (see docs/PERSISTENT_VIEWS.md).
+permissions from the interaction (see docs/guides/PERSISTENT_VIEWS.md).
 """
 
 from __future__ import annotations

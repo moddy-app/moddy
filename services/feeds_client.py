@@ -3,7 +3,7 @@ Feeds service client — Redis transport for the ``moddy-feeds`` integration.
 
 This is the ONLY contract between the bot and the ``moddy-feeds`` service. All
 communication goes through three shared Redis streams (see
-docs/SOCIAL_NOTIFICATIONS.md):
+docs/features/SOCIAL_NOTIFICATIONS.md):
 
   - ``feeds:commands``      bot  -> service   (subscribe / unsubscribe)
   - ``feeds:replies``       service -> bot    (correlated by ``request_id``)

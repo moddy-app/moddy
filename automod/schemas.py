@@ -15,13 +15,13 @@ from typing import List, Optional
 
 
 # Where the judged text comes from. "texte" is an ordinary message; the image
-# origins are set by the automod image features (docs/AUTOMOD_AI.md §4.2/§4.3).
+# origins are set by the automod image features (docs/features/AUTOMOD.md §4.2/§4.3).
 ORIGINE_TEXTE = "texte"
 ORIGINE_IMAGE_OCR = "image_ocr"        # text OCR-extracted from a posted image
 ORIGINE_IMAGE_HASH = "image_hash"      # known image (perceptual hash, team-validated)
 ORIGINE_IMAGE_NSFW = "image_nsfw"      # Google SafeSearch verdict
 ORIGINES_IMAGE = frozenset({ORIGINE_IMAGE_OCR, ORIGINE_IMAGE_HASH, ORIGINE_IMAGE_NSFW})
-# Member profiles (docs/AUTOMOD_AI.md "Profiles"): there is no message, the
+# Member profiles (docs/features/AUTOMOD.md "Profiles"): there is no message, the
 # judged thing is a name (text, through the funnel) or an avatar / banner (image).
 ORIGINE_PROFIL_PSEUDO = "profil_pseudo"
 ORIGINE_PROFIL_AVATAR = "profil_avatar"
@@ -115,7 +115,7 @@ class BlocklistEntry:
 
 @dataclass
 class Decision:
-    """The pipeline's output contract (see docs/AUTOMOD_AI.md §2)."""
+    """The pipeline's output contract (see docs/features/AUTOMOD.md §2)."""
     message_id: str
     auteur_id: str
     sanctionnable: bool
@@ -133,7 +133,7 @@ class Decision:
     a_reverifier: List[str] = field(default_factory=list)
     duree_heures: int = 0       # sanction duration in hours (0 = permanent); barème-owned in v2
     duree_secondes: int = 0     # exact timeout length in seconds (0 = none); barème-owned
-    # v2 grounding contract (docs/AUTOMOD_AI.md §2).
+    # v2 grounding contract (docs/features/AUTOMOD.md §2).
     citation: str = ""          # verbatim substring of the target that justifies the category
     cible: str = "aucune"       # "membre" | "auteur_lui_meme" | "groupe" | "aucune"
     # Set when a deterministic grounding guard voided an otherwise-sanctionnable
@@ -161,7 +161,7 @@ class Decision:
     # shortcut, §7.3). Carries {similarite, message} for logs / the card. None
     # when no precedent shortcut fired.
     precedent_applique: Optional[dict] = None
-    # Images (docs/AUTOMOD_AI.md §4.2/§4.3): where the judged text came from,
+    # Images (docs/features/AUTOMOD.md §4.2/§4.3): where the judged text came from,
     # the text actually judged when it is not ``message.content`` (the OCR of an
     # image), and the image facts. ``doute`` carries the motif when the pipeline
     # was unsure — such a decision is copied to the Moddy team labeling queue.

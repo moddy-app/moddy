@@ -276,7 +276,7 @@ class BaseView(ui.LayoutView):
     ``__persistent__ = True`` and override :meth:`register_persistent`. The
     registration runs once in :func:`bot.setup_hook` via
     ``utils.persistent_views.register_all_persistent_views``. See
-    ``docs/PERSISTENT_VIEWS.md`` for the full pattern.
+    ``docs/guides/PERSISTENT_VIEWS.md`` for the full pattern.
     """
 
     # Override to True on subclasses that should be registered as persistent
@@ -305,7 +305,7 @@ class BaseView(ui.LayoutView):
         - ``bot.add_dynamic_items(...)`` for ``discord.ui.DynamicItem``
           subclasses whose ``custom_id`` encodes state via a regex.
 
-        See ``docs/PERSISTENT_VIEWS.md`` for the cookbook.
+        See ``docs/guides/PERSISTENT_VIEWS.md`` for the cookbook.
         """
         raise NotImplementedError(
             f"{cls.__name__}.__persistent__ is True but register_persistent() "

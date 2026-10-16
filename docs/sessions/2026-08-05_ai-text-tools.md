@@ -31,8 +31,8 @@ command (opening a Modal V2) and as a message context menu:
 | `locales/fr.json`, `locales/en-US.json` | **New** keys: `commands.text_tools`, `commands.fix`, `commands.rephrase`, `commands.summarize` |
 | `db/base.py` | Seeded `quota_limits` rows for the 3 new call types (user/guild/global, unlimited) |
 | `gateway/config.py` | Added `gpt-4.1-mini` input/output cost estimates (was missing, automod already used the model) |
-| `docs/TEXT_TOOLS.md` | **New** — feature documentation |
-| `docs/API_GATEWAY.md` | Documented the 3 new call types |
+| `docs/features/TEXT_TOOLS.md` | **New** — feature documentation |
+| `docs/infra/API_GATEWAY.md` | Documented the 3 new call types |
 | `CLAUDE.md` | Project structure + doc index (`TEXT_TOOLS.md`, `MODALS_V2.md`) |
 
 ## Decisions

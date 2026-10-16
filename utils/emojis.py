@@ -578,7 +578,7 @@ def get_user_verification_badge(user_data: dict, moddy_attributes: dict, user_ve
 # =============================================================================
 # SERVER LOGS EMOJI SET
 # -----------------------------------------------------------------------------
-# The icon set of the advanced server logs (see docs/LOGS.md). It is kept as a
+# The icon set of the advanced server logs (see docs/features/LOGS.md). It is kept as a
 # dictionary rather than 158 module constants for two reasons: the names come
 # from Discord's own vocabulary (``createchannel``, ``timedout``, ``Notchecked``)
 # and several of them would collide with the general constants above, and the
@@ -793,7 +793,7 @@ def log_emoji(name: str, default: str = "") -> str:
 # A black twin named ``<original name>_dark`` is uploaded for them. Users who
 # pick the light theme in /preferences get those twins swapped in centrally at
 # send time (see utils/icon_theme.py); no call site changes. To add one: upload
-# ``<name>_dark`` and add it to DARK_VARIANTS. See docs/ICON_THEME.md.
+# ``<name>_dark`` and add it to DARK_VARIANTS. See docs/guides/ICON_THEME.md.
 DARK_VARIANTS: Dict[str, int] = {
     "1__dark": 1558775913238364180,
     "2__dark": 1558775915008364689,
@@ -923,7 +923,7 @@ _EXTRA_ORIGINAL_IDS: Dict[str, Tuple[int, ...]] = {
     "send": (1519793414185553940,),
     "server": (1519788576420921476,),
     "warning": (1398729560895422505,),
-    # Listed in docs/EMOJIS.md but not used as a constant yet — mapped so they
+    # Listed in docs/guides/EMOJIS.md but not used as a constant yet — mapped so they
     # switch as soon as someone uses them.
     "1_": (1386154327499997275,),
     "2_": (1386154384974413906,),

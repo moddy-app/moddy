@@ -23,7 +23,7 @@ Root cause: `db/base.py::_init_tables()` contained `CREATE TABLE IF NOT EXISTS` 
 ## Decisions
 
 - Used the same idempotent migration pattern already present in the codebase (DO $$ BEGIN IF NOT EXISTS … END $$) rather than touching the existing `CREATE TABLE IF NOT EXISTS users` block, to avoid any risk of column-order issues on fresh installs.
-- Tables match the schema specified in `docs/SUBSCRIPTION_SCHEMA.md` exactly.
+- Tables match the schema specified in `docs/integration/SUBSCRIPTION_SCHEMA.md` exactly.
 
 ## Known issues / follow-ups
 

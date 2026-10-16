@@ -1,7 +1,7 @@
 """
 AltGuard UI — verification panel, consent modal, link delivery and log cards.
 
-Flow (docs/ALTGUARD.md §"Parcours membre"):
+Flow (docs/features/ALTGUARD.md §"Parcours membre"):
 
 1. :class:`AltGuardPanelView` — the single, permanent message in the
    verification channel. One button, one job.
@@ -15,7 +15,7 @@ Flow (docs/ALTGUARD.md §"Parcours membre"):
 
 The panel view is persistent (guild-wide, anyone may click — the interaction
 itself identifies the member). The modal is not, per the documented modal
-exclusion in docs/PERSISTENT_VIEWS.md.
+exclusion in docs/guides/PERSISTENT_VIEWS.md.
 """
 
 from __future__ import annotations
@@ -189,7 +189,7 @@ async def _already_verified(interaction: discord.Interaction) -> bool:
 class AltGuardConsentModal(BaseModal):
     """Explicit consent, collected before any call to AltGuard.
 
-    Not persistent — modals never are (docs/PERSISTENT_VIEWS.md, "Deliberate
+    Not persistent — modals never are (docs/guides/PERSISTENT_VIEWS.md, "Deliberate
     exclusions"). Nothing is lost if the bot restarts while it is open: the
     member re-opens it from the panel, which is persistent.
     """
@@ -208,7 +208,7 @@ class AltGuardConsentModal(BaseModal):
         self.add_item(self.notice)
 
         # A CheckboxGroup with min_values=1 and required=True is the officially
-        # supported way to make a tick mandatory (docs/MODALS_V2.md): a bare
+        # supported way to make a tick mandatory (docs/guides/MODALS_V2.md): a bare
         # Checkbox cannot be required, so the modal would submit unticked.
         self.agreement = ui.Label(
             text=t('modules.altguard.consent.agree_label', locale=locale)[:45],

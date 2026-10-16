@@ -214,7 +214,7 @@ class ModuleBase(ABC):
 
         Being enabled and being used are different questions, and only the
         second one says whether a feature earns its place. Synchronous and
-        unfailing, like every statistic (see docs/STATS.md).
+        unfailing, like every statistic (see docs/infra/STATS.md).
         """
         stats = getattr(self.bot, "stats", None)
         if stats is None:

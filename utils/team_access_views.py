@@ -28,7 +28,7 @@ the requested permission bitfield, the requester's id and which role is being
 asked for, so a card answered three weeks and two restarts later behaves exactly
 like a fresh one. The role segment is optional in every template: cards posted
 before there were two roles are still answerable, and mean the base role. See
-docs/PERSISTENT_VIEWS.md and docs/LINKED_ROLES.md.
+docs/guides/PERSISTENT_VIEWS.md and docs/features/LINKED_ROLES.md.
 """
 
 from __future__ import annotations
