@@ -53,7 +53,7 @@ def _build(monkeypatch, *, slow: asyncio.Event = None):
 
 
 _COMMON = dict(
-    guild_id=1, guild_name="g", rules="", author_history=AuthorHistory(),
+    guild_id=1, guild_name="g", author_history=AuthorHistory(),
     fetch_context=_no_context, correlation_id="c", severity=3,
     response_language="French",
 )

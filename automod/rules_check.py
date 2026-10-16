@@ -1,11 +1,12 @@
 """
-Server-rules safety check.
+Custom-infraction safety check.
 
-Before a server's moderation rules text is saved, it is run past the AI to make
-sure it is a *legitimate ruleset* and not a prompt-injection payload. The rules
-are later embedded verbatim into nano's system prompt, so a malicious admin (or
-a compromised one) could otherwise try to smuggle instructions that bend the
-moderation engine.
+Before a server-defined infraction (name, description, examples) is saved, it is
+run past the AI to make sure it is a *legitimate definition* and not a
+prompt-injection payload. The text is later embedded in nano's system prompt, so
+a malicious admin could otherwise try to smuggle instructions that bend the
+moderation engine. (The free-text "AI guidance" this check used to serve has
+been removed: custom infractions replace it.)
 
 The untrusted text is nonce-fenced and the model is asked for a strict JSON
 verdict. Like every external call, this goes through ``bot.gateway``.
@@ -22,7 +23,7 @@ from .injection import new_nonce, fence
 
 logger = logging.getLogger("moddy.automod.rules_check")
 
-# Hard cap on rules length (also enforced by the modal).
+# Hard cap on the checked text length.
 MAX_RULES_LENGTH = 3000
 
 
@@ -76,9 +77,12 @@ Réponds UNIQUEMENT par un objet JSON valide avec EXACTEMENT ces clés :
 - raison : courte explication en français (surtout si safe=false)."""
 
 
-async def validate_rules(bot, guild_id: int, text: str) -> Tuple[bool, str]:
-    """Return (safe, reason). Fails closed on AI/gateway errors."""
-    return await _check(bot, guild_id, text, infraction=False)
+async def validate_rules(bot, guild_id: int, text: str) -> Tuple[bool, str]:  # pragma: no cover
+    """REMOVED feature ("AI guidance"): kept only so the /config advanced screen,
+    which still imports it, keeps loading until that screen drops the setting.
+    Always reports the text as safe because it is never read any more.
+    TODO(config-ui): delete this stub together with the screen's import."""
+    return True, ""
 
 
 def infraction_text(infraction: dict) -> str:

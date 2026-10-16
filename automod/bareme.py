@@ -21,6 +21,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple
 
+from . import actions as act
 from . import infractions
 
 # ---------------------------------------------------------------------------
@@ -228,11 +229,28 @@ class ResultatBareme:
     #: use the cran ladder like a message. ``None`` for every other type (and
     #: for a disabled type). Applied by the profile feature, not the barème.
     action_profil: Optional[str] = None
+    #: Exact timeout length in seconds (``None`` when no timeout is planned).
+    #: ``duree_heures`` is kept for older readers (whole hours, rounded up).
+    duree_secondes: Optional[int] = None
+    #: A moderator must approve the sanction actions in the alert channel first.
+    require_approval: bool = False
 
     @property
     def sanction_reelle(self) -> bool:
         """Whether a real sanction (beyond deletion) is applied."""
-        return any(a in ("warn", "mute", "ban") for a in self.actions)
+        return any(a in ("warn", "mute", "kick", "ban") for a in self.actions)
+
+
+def _hours(seconds: Optional[int]) -> Optional[int]:
+    return None if seconds is None else -(-int(seconds) // 3600)
+
+
+def _ladder_result(cran: int, **kw) -> "ResultatBareme":
+    """A result carrying the ladder's actions for ``cran`` (auto mode)."""
+    actions, duree = ladder_for(cran)
+    seconds = duree * 3600 if "mute" in actions and duree else None
+    return ResultatBareme(cran=cran, actions=actions, duree_heures=duree,
+                          duree_secondes=seconds, **kw)
 
 
 def calculer(
@@ -265,17 +283,22 @@ def calculer(
     # Kill-switch: a disabled category never earns more than deletion.
     if categorie in config.desactivees():
         composantes.append(Composante("categorie_desactivee", 0, categorie))
-        actions, duree = ladder_for(0)
-        return ResultatBareme(
-            cran=0, actions=actions, duree_heures=duree,
-            categorie=categorie, gravite=gravite, points_recidive=0.0,
+        return _ladder_result(
+            0, categorie=categorie, gravite=gravite, points_recidive=0.0,
             composantes=composantes,
         )
 
     typ = infractions.get(categorie)
     entree = (config.sanctions or {}).get(categorie)
     entree = entree if isinstance(entree, dict) else {}
+    # Legacy ``crans`` entries are upgraded on the fly (normalised configs
+    # already carry ``actions``).
+    entree = infractions.migrate_entry(categorie, entree)
     perso = typ is not None and entree.get("mode") == "perso"
+    require_approval = entree.get("require_approval") is True and (
+        typ is None or typ.famille != "profil")
+    plan_actions: List[str] = []
+    plan_timeout: Optional[int] = None
 
     action_profil: Optional[str] = None
     if typ is not None and typ.famille == "profil":
@@ -283,9 +306,20 @@ def calculer(
 
     # -- Floor -----------------------------------------------------------
     if perso:
-        crans = entree.get("crans") if isinstance(entree.get("crans"), dict) else {}
-        plancher = infractions._coerce_cran(
-            crans.get(gravite), typ.plancher.get(gravite, PLANCHER_DEFAUT))
+        plan = (entree.get("by_gravity") or {}).get(gravite)
+        plan = plan if isinstance(plan, dict) and "actions" in plan else entree
+        if "actions" in plan:
+            plan_actions = act.normalize_actions(plan.get("actions"))
+        else:
+            plan_actions = act.cran_to_plan(typ.plancher.get(gravite, PLANCHER_DEFAUT))[0]
+        if "timeout" in plan_actions:
+            plan_timeout = act.coerce_timeout_seconds(plan.get("timeout_seconds"))
+        if "kick" in plan_actions and config.plafond_cran < CRAN_MAX:
+            # A kick removes the member: only allowed when the server lets
+            # automod ban. Under a lower ceiling it becomes the longest timeout.
+            plan_actions = [a for a in plan_actions if a != "kick"] + ["timeout"]
+            plan_timeout = act.TIMEOUT_MAX_SECONDS
+        plancher = act.floor_cran(plan_actions, plan_timeout)
         code_plancher = "plancher_perso"
     else:
         default = typ.plancher.get(gravite, PLANCHER_DEFAUT) if typ else PLANCHER_DEFAUT
@@ -352,12 +386,25 @@ def calculer(
         composantes.append(Composante("borne", borne - cran, ""))
         cran = borne
 
-    actions, duree = ladder_for(cran)
+    if perso and cran == plancher:
+        # Untouched floor: exactly what the server chose (exact timeout included).
+        actions, seconds = act.plan_to_internal(plan_actions, plan_timeout)
+        duree = _hours(seconds)
+    elif perso:
+        # Escalated (recidivism) or lowered (confidence / ceiling): the sanction
+        # follows the ladder, the light actions the server chose are kept.
+        actions, seconds = act.rebuild_for_cran(plan_actions, cran)
+        duree = _hours(seconds)
+    else:
+        actions, duree = ladder_for(cran)
+        seconds = duree * 3600 if "mute" in actions and duree else None
+    if not any(a in actions for a in ("warn", "mute", "kick", "ban")):
+        require_approval = False
     return ResultatBareme(
-        cran=cran, actions=actions, duree_heures=duree,
+        cran=cran, actions=actions, duree_heures=duree, duree_secondes=seconds,
         categorie=categorie, gravite=gravite, points_recidive=points,
         composantes=composantes, needs_review=cran >= 6,
-        action_profil=action_profil,
+        action_profil=action_profil, require_approval=require_approval,
     )
 
 
@@ -381,12 +428,14 @@ def appliquer_non_confirme(res: ResultatBareme) -> ResultatBareme:
         return res
     composantes = list(res.composantes)
     composantes.append(Composante("confirmation_refusee", cap - res.cran, ""))
-    actions, duree = ladder_for(cap)
+    actions, seconds = act.rebuild_for_cran(
+        act.to_stored(res.actions), cap)
     return ResultatBareme(
-        cran=cap, actions=actions, duree_heures=duree,
-        categorie=res.categorie, gravite=res.gravite,
+        cran=cap, actions=actions, duree_heures=_hours(seconds),
+        duree_secondes=seconds, categorie=res.categorie, gravite=res.gravite,
         points_recidive=res.points_recidive, composantes=composantes,
         needs_review=True, action_profil=res.action_profil,
+        require_approval=res.require_approval,
     )
 
 

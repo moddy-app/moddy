@@ -308,14 +308,14 @@ class TestEngineOcr:
         engine, seen = _engine(monkeypatch)
         t = TargetMessage(id="1", author_id="2", origine=ORIGINE_IMAGE_OCR,
                           content="BANK CARO bonus USDT deposit")
-        await engine.analyze(t, guild_id=1, guild_name="G", rules="",
+        await engine.analyze(t, guild_id=1, guild_name="G",
                              author_history=AuthorHistory(), fetch_context=_no_context)
         assert seen["signal"].source == constants.SOURCE_ANCRES_SCAM
 
     async def test_ocr_text_routes_by_anchors_and_is_stamped(self, monkeypatch):
         engine, seen = _engine(monkeypatch)
         t = TargetMessage(id="1", author_id="2", content=SCAM_OCR, origine=ORIGINE_IMAGE_OCR)
-        d = await engine.analyze(t, guild_id=1, guild_name="G", rules="",
+        d = await engine.analyze(t, guild_id=1, guild_name="G",
                                  author_history=AuthorHistory(),
                                  fetch_context=_no_context, channel_id=5)
         # The static blocklist ("withdrawalsuccess") or the anchors — either way

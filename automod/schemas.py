@@ -119,7 +119,7 @@ class Decision:
     message_id: str
     auteur_id: str
     sanctionnable: bool
-    # ⊆ {"ban", "mute", "warn", "supprimer"}. In v2 these are decided by the
+    # ⊆ {"ban", "kick", "mute", "warn", "supprimer"}. In v2 these are decided by the
     # deterministic barème (automod/bareme.py), NOT by nano: the pipeline leaves
     # them empty and the module fills them from the barème's cran.
     actions: List[str]
@@ -132,6 +132,7 @@ class Decision:
     score_detecteur: float      # detector input score
     a_reverifier: List[str] = field(default_factory=list)
     duree_heures: int = 0       # sanction duration in hours (0 = permanent); barème-owned in v2
+    duree_secondes: int = 0     # exact timeout length in seconds (0 = none); barème-owned
     # v2 grounding contract (docs/AUTOMOD_AI.md §2).
     citation: str = ""          # verbatim substring of the target that justifies the category
     cible: str = "aucune"       # "membre" | "auteur_lui_meme" | "groupe" | "aucune"

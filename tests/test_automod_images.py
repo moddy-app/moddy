@@ -88,7 +88,6 @@ class FakeModule:
     def __init__(self, bot):
         self.bot = bot
         self.guild_id = 1
-        self.rules = ""
         self.severity = 3
 
     def guild_locale(self, guild):

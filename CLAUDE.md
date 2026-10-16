@@ -154,6 +154,8 @@ moddy/
 │   ├── precedents.py          #   Server precedents matcher (jurisprudence RAG, pure) (S7)
 │   ├── normalize.py / injection.py / rules_check.py / schemas.py / constants.py
 │   ├── bareme.py              #   Deterministic sanction scale (cran ladder + recidivism, per-server overrides)
+│   ├── actions.py             #   Multi-action vocabulary (delete/warn/timeout/kick/ban), exact timeouts parse/format, cran bridge
+│   ├── approvals.py           #   Moderator-approval snapshots, permissions, expiry (pure)
 │   ├── cache.py               #   LRU+TTL score cache (embedding de-duplication)
 │   ├── eval/                  #   Regression harness (golden set, offline runner, shadow annotations)
 │   │   ├── golden.jsonl / fixtures.json / golden_baseline.json
@@ -203,6 +205,7 @@ moddy/
 │       ├── precedents.py        #   Automod server precedents (automod_precedents, RAG)
 │       ├── automod_learning.py  #   Automod labeling queue + learned hashes/references/terms
 │       ├── automod_profiles.py  #   Automod profile holds (automod_profile_holds)
+│       ├── automod_approvals.py #   Automod pending moderator approvals (automod_pending_approvals)
 │       ├── token_alerts.py, token_secrets.py
 │       ├── subscription.py    #   Subscription read-only queries (incl. is_guild_premium)
 │       ├── notifications.py   #   Notifications, deliveries, abuse reports
@@ -239,6 +242,7 @@ moddy/
 │   ├── moddy_team_role.py     #   The two Moddy Team roles: kinds, find/create/remember, linked state
 │   ├── team_access_views.py   #   /team access: permission picker + admin request card (persistent)
 │   ├── automod_shadow_views.py #  Automod shadow-mode (dry_run) SIMULATION card + annotation buttons (persistent)
+│   ├── automod_approval_views.py # Automod alert card (applied vs failed actions) + moderator Approve/Reject buttons (persistent)
 │   ├── automod_label_views.py #   Automod team labeling card, labels/category/terms (persistent) + Modal V2
 │   ├── ocr_views.py           #   /ocr cards (loading, result, error)
 │   ├── sanction_reversal.py   #   Undo the Discord side of a sanction (appeals + labeling queue)

@@ -20,13 +20,13 @@ Config (stored in ``guilds.data.modules.automod``)::
 
     {
       "enabled": true,
-      "indications": "server guidance (AI-validated for prompt injection)",
       "notify_channel_id": 123 | null,
       "ignore_moderators": true,
       "severity": 3,                     # 1–5 detection/severity dial
       "max_action": "ban",              # barème hard ceiling: warn|mute|ban
       "categories_desactivees": [],      # LEGACY kill-switch (read, migrated into "sanctions")
-      "sanctions": {},                   # per-infraction policy (automod/infractions.py)
+      "sanctions": {},                   # per-infraction policy: actions, exact timeout,
+                                         # approval option (automod/infractions.py)
       "infractions_perso": [],           # server-defined infractions (automod/custom_infractions.py)
       "features": {
         "content": {
@@ -65,6 +65,8 @@ from automod import (
 )
 from automod import constants as ac
 from automod import bareme as ab
+from automod import actions as act
+from automod import approvals
 from automod import infractions
 from automod import custom_infractions
 from automod import image_policy as aip
@@ -176,7 +178,6 @@ class ContentModerationFeature(AutomodFeature):
             target,
             guild_id=self.guild_id,
             guild_name=message.guild.name if message.guild else "",
-            rules=self.module.rules,
             author_history=history,
             fetch_context=self.module.make_context_loader(message),
             is_bot=message.author.bot,
@@ -229,8 +230,7 @@ class ContentModerationFeature(AutomodFeature):
                 target,
                 guild_id=self.guild_id,
                 guild_name=origin.guild.name if origin.guild else "",
-                rules=self.module.rules,
-                author_history=history,
+                    author_history=history,
                 fetch_context=self.module.make_context_loader(msg),
                 force_nano=True,   # already flagged → straight to nano
                 severity=self.module.severity,
@@ -388,8 +388,7 @@ class ImageScamFeature(_ImageFeature):
                 target,
                 guild_id=self.guild_id,
                 guild_name=message.guild.name if message.guild else "",
-                rules=self.module.rules,
-                author_history=await self.module.build_author_history(message.author.id),
+                    author_history=await self.module.build_author_history(message.author.id),
                 fetch_context=self.module.make_context_loader(message),
                 severity=self.module.severity,
                 response_language=self.module.response_language(message.guild),
@@ -567,7 +566,6 @@ class AutomodModule(ModuleBase):
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)
-        self.rules: str = ""
         self.notify_channel_id: Optional[int] = None
         self.ignore_moderators: bool = True
         self.severity: int = ac.SEVERITY_DEFAULT
@@ -592,8 +590,9 @@ class AutomodModule(ModuleBase):
     async def load_config(self, config_data: Dict[str, Any]) -> bool:
         try:
             self.config = config_data or {}
-            # "indications" replaces the legacy "rules" key (read both).
-            self.rules = str(self.config.get("indications", self.config.get("rules", "")) or "")
+            # The former free-text "indications" / "rules" keys (AI guidance) are
+            # ignored: custom infractions replace them. A stored value is simply
+            # not read (and dropped the next time the config is saved).
             # "notify_channel_id" replaces the legacy "log_channel_id".
             self.notify_channel_id = self.config.get("notify_channel_id", self.config.get("log_channel_id"))
             self.ignore_moderators = bool(self.config.get("ignore_moderators", True))
@@ -651,10 +650,6 @@ class AutomodModule(ModuleBase):
             if not channel or not isinstance(channel, discord.TextChannel):
                 return False, "Salon d'alertes invalide"
 
-        indications = config_data.get("indications", config_data.get("rules", ""))
-        if indications and len(indications) > 3000:
-            return False, "Les indications sont trop longues (max 3000 caractères)"
-
         severity = config_data.get("severity")
         if severity is not None and ac.clamp_severity(severity) != int(severity):
             return False, "Niveau de sévérité invalide (1 à 5)"
@@ -688,7 +683,6 @@ class AutomodModule(ModuleBase):
     def get_default_config(self) -> Dict[str, Any]:
         return {
             "enabled": False,
-            "indications": "",
             "notify_channel_id": None,
             "ignore_moderators": True,
             "severity": ac.SEVERITY_DEFAULT,
@@ -770,6 +764,11 @@ class AutomodModule(ModuleBase):
 
         # Global moderator exemption.
         if self.ignore_moderators and message.author.guild_permissions.manage_messages:
+            return
+
+        # The owner and anyone Moddy cannot outrank are never moderated: skip
+        # before spending a single AI call on them.
+        if self._is_protected(message.author):
             return
 
         for feature in self._features.values():
@@ -1167,7 +1166,7 @@ class AutomodModule(ModuleBase):
 
     def _sanction_name(self, bareme: ab.ResultatBareme, locale: str) -> str:
         """Human name of the applied sanction (most punitive action)."""
-        for a in ("ban", "mute", "warn"):
+        for a in ("ban", "kick", "mute", "warn"):
             if a in bareme.actions:
                 return t(f"modules.automod_ai.action.{a}", locale=locale)
         return t("modules.automod_ai.action.supprimer", locale=locale)
@@ -1183,12 +1182,14 @@ class AutomodModule(ModuleBase):
         store[(self.guild_id, user_id, action)] = time.time()
 
     async def _delete_offending(self, message: discord.Message,
-                                decision: Decision) -> bool:
+                                decision: Decision) -> tuple:
         """Delete the offending message and every aggregated fragment.
 
-        Returns True if at least one message was deleted. For a normal decision
-        this is just ``decision.message_id``; for an aggregate (fragmented
-        harassment) it is every id in ``decision.agregat_de``.
+        Returns ``(deleted_any, errored)``: ``errored`` is True when Discord
+        refused a deletion (permission / HTTP error); a message that is simply
+        already gone is neither. For a normal decision this is just
+        ``decision.message_id``; for an aggregate (fragmented harassment) it is
+        every id in ``decision.agregat_de``.
         """
         ids: List[str] = []
         for raw in [decision.message_id, *getattr(decision, "agregat_de", [])]:
@@ -1196,6 +1197,7 @@ class AutomodModule(ModuleBase):
                 ids.append(raw)
 
         deleted_any = False
+        errored = False
         # A sanctioned image posted in several channels (cross-post of a
         # compromised account): every copy goes, not just this one.
         image = getattr(decision, "image", None)
@@ -1209,22 +1211,29 @@ class AutomodModule(ModuleBase):
                 try:
                     await channel.get_partial_message(int(message_id)).delete()
                     deleted_any = True
-                except (discord.NotFound, discord.Forbidden, discord.HTTPException):
+                except discord.NotFound:
                     continue
+                except (discord.Forbidden, discord.HTTPException):
+                    errored = True
 
         for raw_id in ids:
             msg = message if str(message.id) == raw_id else None
             if msg is None:
                 try:
                     msg = await message.channel.fetch_message(int(raw_id))
-                except (discord.NotFound, discord.Forbidden, discord.HTTPException, ValueError):
+                except (discord.NotFound, ValueError):
+                    continue
+                except (discord.Forbidden, discord.HTTPException):
+                    errored = True
                     continue
             try:
                 await msg.delete()
                 deleted_any = True
-            except (discord.NotFound, discord.Forbidden, discord.HTTPException):
+            except discord.NotFound:
                 continue
-        return deleted_any
+            except (discord.Forbidden, discord.HTTPException):
+                errored = True
+        return deleted_any, errored
 
     def _judged_text(self, message: Optional[discord.Message], decision: Decision) -> str:
         """The text the decision is about: the aggregate, the OCR of an image,
@@ -1261,6 +1270,53 @@ class AutomodModule(ModuleBase):
         except Exception as e:  # noqa: BLE001
             logger.warning("automod: labeling enqueue failed (guild %s): %s", self.guild_id, e)
 
+    # -- Hierarchy protection ----------------------------------------------
+
+    @staticmethod
+    def _is_protected(member) -> bool:
+        """Whether automod must never sanction ``member`` (not an option).
+
+        True for the server owner and for any member whose top role is not
+        strictly below Moddy's own: Discord would refuse to act on them anyway,
+        and announcing a sanction that cannot happen would be a lie. Such
+        members are skipped before any detection, deletion, case or message.
+        """
+        guild = getattr(member, "guild", None)
+        me = getattr(guild, "me", None)
+        if guild is None or me is None:
+            return True
+        if member.id == getattr(guild, "owner_id", None) \
+                or member == getattr(guild, "owner", None):
+            return True
+        return not (me.top_role > member.top_role)
+
+    def _blocker(self, guild, member, permission: str, *, allow_absent: bool = False
+                 ) -> Optional[str]:
+        """Why an action on ``member`` cannot be attempted (a failure code), or None."""
+        me = getattr(guild, "me", None)
+        if me is None:
+            return act.FAIL_PERMISSION
+        if member is None:
+            return None if allow_absent else act.FAIL_ABSENT
+        if self._is_protected(member):
+            return act.FAIL_HIERARCHY
+        if not getattr(me.guild_permissions, permission, False):
+            return act.FAIL_PERMISSION
+        return None
+
+    # -- Decision application ----------------------------------------------
+
+    def _message_snapshot(self, message: discord.Message, decision: Decision) -> Dict[str, Any]:
+        """What the alert card / case evidence need to know about the message."""
+        return {
+            "message_id": str(decision.message_id or message.id),
+            "channel_id": message.channel.id,
+            "jump_url": getattr(message, "jump_url", ""),
+            "author_name": getattr(message.author, "display_name", str(message.author)),
+            "ts": int(message.created_at.timestamp()),
+            "content": self._judged_text(message, decision),
+        }
+
     async def apply_decision(self, message: discord.Message, decision: Decision):
         if not decision.sanctionnable:
             # Unsure, and nothing applied: the team still gets a copy — the
@@ -1286,6 +1342,7 @@ class AutomodModule(ModuleBase):
 
         decision.actions = list(bareme.actions)
         decision.duree_heures = bareme.duree_heures or 0
+        decision.duree_secondes = bareme.duree_secondes or 0
         if not decision.actions:
             return
 
@@ -1294,7 +1351,7 @@ class AutomodModule(ModuleBase):
         # same statistics as one applying them (see docs/STATS.md).
         self.count("decision")
         heaviest = next(
-            (a for a in ("ban", "mute", "warn", "delete") if a in decision.actions),
+            (a for a in ("ban", "kick", "mute", "warn", "supprimer") if a in decision.actions),
             decision.actions[0],
         )
         stats = getattr(self.bot, "stats", None)
@@ -1314,38 +1371,30 @@ class AutomodModule(ModuleBase):
 
         guild = message.guild
         member = guild.get_member(int(decision.auteur_id)) if guild else None
-        actions = decision.actions
+        # Never sanction the owner or anyone Moddy cannot outrank: skip cleanly.
+        if member is not None and self._is_protected(member):
+            logger.debug("automod: skipped protected member %s (guild %s)",
+                         member.id, self.guild_id)
+            return
 
-        applied: List[str] = []
+        snapshot = self._message_snapshot(message, decision)
+        sanctions = act.sanction_actions(decision.actions)
+        if bareme.require_approval and sanctions and member is not None:
+            await self._request_approval(message, decision, bareme, member, snapshot)
+            return
 
-        # 1. Delete the offending message(s) (no case needed for this). An
-        #    aggregate decision (fragmented harassment) carries every fragment id
-        #    in `agregat_de`; all of them go.
-        if "supprimer" in actions:
-            if await self._delete_offending(message, decision):
-                applied.append("supprimer")
+        # 1-3. Execute (delete → Discord sanctions → case), verifying each step.
+        outcome = await self._execute_incident(
+            guild, member, decision, bareme, snapshot, message=message)
 
-        # 2. Record the case FIRST so the Discord audit-log reason can carry the
-        #    public case reference, exactly like a manual sanction.
-        case_ref, case_id, primary_action, primary_sanction_id = \
-            await self._record_case(message, decision, bareme)
-
-        # 3. Apply the Discord-side sanction with the standardized reason.
-        applied.extend(await self._apply_discord_sanction(
-            guild, member, decision, case_ref, actions))
-
-        # A warn carries no Discord-side action but IS a recorded sanction —
-        # surface it so the notification doesn't read "aucune".
-        if "warn" in actions and "warn" not in applied:
-            applied.append("warn")
-
-        # 4. Notify the server in the mandatory alert channel, then remember the
-        #    log message on the case so later appeal updates reply to it.
-        log_msg = await self._notify_channel(message, decision, applied, case_ref, primary_action, bareme)
-        if log_msg is not None and case_id is not None:
+        # 4. Tell the server exactly what happened, then remember the log
+        #    message on the case so later appeal updates reply to it.
+        log_msg = await self._notify_channel(
+            message, decision, bareme, snapshot, outcome)
+        if log_msg is not None and outcome.case_id is not None:
             try:
                 await self.bot.db.add_event(
-                    case_id, EventType.EVIDENCE.value,
+                    outcome.case_id, EventType.EVIDENCE.value,
                     author_type=AuthorType.SYSTEM.value,
                     payload={"kind": "automod_log",
                              "channel_id": log_msg.channel.id,
@@ -1355,80 +1404,296 @@ class AutomodModule(ModuleBase):
                 logger.debug("automod: could not store log ref: %s", e)
 
         # 5. DM the sanctioned member (like a manual mod action) with the
-        #    appeal buttons — only when a real sanction was opened.
-        if case_id is not None and primary_action is not None and member is not None:
+        #    appeal buttons — only for a sanction that really was recorded.
+        if outcome.case_id is not None and outcome.primary_action is not None \
+                and member is not None:
             await self._send_sanction_dm(
-                member, case_id, case_ref, primary_action, primary_sanction_id, decision, message,
-            )
+                member, outcome.case_id, outcome.case_ref, outcome.primary_action,
+                outcome.sanction_id, decision, message, snapshot=snapshot)
 
         # 6. Copy to the Moddy team labeling queue (every sanction). A team
         #    "non sanctionnable" revokes this sanction; nothing else is applied.
         await self._enqueue_label(message, decision, motif="sanction", bareme=bareme,
-                                  case_id=case_id, applied=applied)
+                                  case_id=outcome.case_id, applied=list(outcome.applied))
+
+    async def _execute_incident(self, guild, member, decision: Decision,
+                                bareme: ab.ResultatBareme, snapshot: Dict[str, Any], *,
+                                message: Optional[discord.Message] = None,
+                                delete_message: bool = True,
+                                ) -> approvals.IncidentOutcome:
+        """Apply an incident's actions FIRST, verify them, THEN record the case.
+
+        Nothing is announced before it happened: ``outcome.applied`` lists what
+        really took effect, ``outcome.failed`` what should have but did not (and
+        a reason code). The case only carries the sanctions that were applied
+        (a warn counts once its case is recorded), so the record is the truth.
+        """
+        out = approvals.IncidentOutcome()
+        actions = list(decision.actions)
+
+        if "supprimer" in actions and delete_message and message is not None:
+            deleted, errored = await self._delete_offending(message, decision)
+            if deleted or not errored:
+                out.applied.append("supprimer")
+            else:
+                out.failed["supprimer"] = act.FAIL_PERMISSION
+
+        applied, failed = await self._apply_discord_sanction(
+            guild, member, decision, None, actions, user_id=int(decision.auteur_id))
+        out.applied.extend(applied)
+        out.failed.update(failed)
+
+        # Case: ONE per incident, with only the sanctions that really happened.
+        to_record = [a for a in applied if a in ("mute", "ban")]
+        if "warn" in actions:
+            to_record.append("warn")
+        ref, case_id, primary, sanction_id, recorded = await self._record_case(
+            message, decision, bareme, member=member, snapshot=snapshot,
+            applied=to_record)
+        if "warn" in actions:
+            if "warn" in recorded:
+                out.applied.append("warn")
+            else:
+                out.failed["warn"] = act.FAIL_CASE
+        if any(a in applied for a in ("mute", "ban")) \
+                and not any(a in recorded for a in ("mute", "ban")):
+            out.failed["case"] = act.FAIL_CASE
+        out.case_ref, out.case_id = ref, case_id
+        out.primary_action, out.sanction_id = primary, sanction_id
+        out.applied = [a for a in act.INTERNAL_ORDER if a in set(out.applied)]
+        return out
 
     async def _apply_discord_sanction(self, guild: Optional[discord.Guild],
                                       member: Optional[discord.Member],
                                       decision: Decision, case_ref: Optional[str],
-                                      actions: List[str]) -> List[str]:
-        """Apply the ban / timeout half of a sanction. Returns what was applied.
+                                      actions: List[str], *,
+                                      user_id: Optional[int] = None) -> tuple:
+        """Apply the ban / kick / timeout half of a sanction and VERIFY it.
 
-        Shared by the message path and the profile path (``bareme`` / ``hold``).
-        Nothing is attempted on the owner, on a member Moddy's top role does not
-        outrank, or without the matching permission.
+        Returns ``(applied, failed)``: ``applied`` the internal action names that
+        took effect, ``failed`` ``{action: reason code}`` (see
+        ``automod.actions.FAIL_REASONS``) for those that were wanted and did
+        not. Shared by the message path and the profile path.
+
+        A ban supersedes a kick, which supersedes a timeout. A timeout is
+        confirmed against the member the API returns (``timed_out_until``), not
+        assumed from the absence of an error.
         """
         applied: List[str] = []
-        me = guild.me if guild else None
-        can_act = member is not None and me is not None and member != guild.owner \
-            and (me.top_role > member.top_role)
+        failed: Dict[str, str] = {}
+        uid = user_id or (member.id if member is not None else None)
+        removal = "ban" if "ban" in actions else ("kick" if "kick" in actions else None)
 
-        if "ban" in actions and can_act and me.guild_permissions.ban_members:
-            ban_expires = self._expiry_for(decision, "ban")
-            audit = self._audit_reason(case_ref, ban_expires, decision.raison)
-            try:
-                self._mark_moddy_initiated(member.id, "ban")
-                # A scam account (usually compromised) spams every channel:
-                # its last hour of messages goes with the ban.
-                purge = 3600 if decision.categorie in ab.CATEGORIES_BAN_DIRECT else 0
-                await guild.ban(member, reason=audit, delete_message_seconds=purge)
-                applied.append("ban")
-            except (discord.Forbidden, discord.HTTPException):
-                pass
-        elif "mute" in actions and can_act and me.guild_permissions.moderate_members:
-            duration = self._duration_td(decision) or _MUTE_DURATIONS.get(
-                decision.gravite, timedelta(hours=1))
-            audit = self._audit_reason(
-                case_ref, datetime.now(timezone.utc) + duration, decision.raison)
-            try:
-                self._mark_moddy_initiated(member.id, "mute")
-                await member.timeout(duration, reason=audit)
-                applied.append("mute")
-            except (discord.Forbidden, discord.HTTPException):
-                pass
-        return applied
+        if removal == "ban":
+            code = self._blocker(guild, member, "ban_members", allow_absent=True)
+            if code is None and member is None and uid is None:
+                code = act.FAIL_ABSENT
+            if code is not None:
+                failed["ban"] = code
+            else:
+                audit = self._audit_reason(case_ref, self._expiry_for(decision, "ban"),
+                                           decision.raison)
+                try:
+                    self._mark_moddy_initiated(uid, "ban")
+                    # A scam account (usually compromised) spams every channel:
+                    # its last hour of messages goes with the ban.
+                    purge = 3600 if decision.categorie in ab.CATEGORIES_BAN_DIRECT else 0
+                    await guild.ban(member if member is not None else discord.Object(id=uid),
+                                    reason=audit, delete_message_seconds=purge)
+                    applied.append("ban")
+                except discord.Forbidden:
+                    failed["ban"] = act.FAIL_HIERARCHY
+                except discord.HTTPException:
+                    failed["ban"] = act.FAIL_DISCORD
+        elif removal == "kick":
+            code = self._blocker(guild, member, "kick_members")
+            if code is not None:
+                failed["kick"] = code
+            else:
+                audit = self._audit_reason(case_ref, None, decision.raison)
+                try:
+                    self._mark_moddy_initiated(member.id, "kick")
+                    await guild.kick(member, reason=audit)
+                    applied.append("kick")
+                except discord.Forbidden:
+                    failed["kick"] = act.FAIL_HIERARCHY
+                except discord.HTTPException:
+                    failed["kick"] = act.FAIL_DISCORD
+        elif "mute" in actions:
+            code = self._blocker(guild, member, "moderate_members")
+            if code is not None:
+                failed["mute"] = code
+            else:
+                duration = self._duration_td(decision) or _MUTE_DURATIONS.get(
+                    decision.gravite, timedelta(hours=1))
+                until = datetime.now(timezone.utc) + duration
+                try:
+                    self._mark_moddy_initiated(member.id, "mute")
+                    updated = await member.edit(
+                        timed_out_until=until,
+                        reason=self._audit_reason(case_ref, until, decision.raison))
+                    # `edit` returns the member as Discord now has it.
+                    if updated is None or act.timeout_verified(
+                            getattr(updated, "timed_out_until", None), until):
+                        applied.append("mute")
+                    else:
+                        failed["mute"] = act.FAIL_UNVERIFIED
+                except discord.Forbidden:
+                    failed["mute"] = act.FAIL_HIERARCHY
+                except discord.HTTPException:
+                    failed["mute"] = act.FAIL_DISCORD
+        return applied, failed
 
     # Discord timeout / temporary sanction max (28 days).
-    _MAX_DURATION = timedelta(days=28)
+    _MAX_DURATION = timedelta(seconds=act.TIMEOUT_MAX_SECONDS)
 
     def _duration_td(self, decision: Decision) -> Optional[timedelta]:
-        """nano-decided sanction duration (clamped), or None for permanent."""
-        hours = getattr(decision, "duree_heures", 0) or 0
-        if hours <= 0:
+        """The decided timeout length (exact, clamped to 28 d), or None."""
+        seconds = getattr(decision, "duree_secondes", 0) or 0
+        if seconds <= 0:
+            seconds = (getattr(decision, "duree_heures", 0) or 0) * 3600
+        if seconds <= 0:
             return None
-        return min(timedelta(hours=hours), self._MAX_DURATION)
+        return min(timedelta(seconds=seconds), self._MAX_DURATION)
 
     def _expiry_for(self, decision: Decision, action: str):
         """Absolute ``expires_at`` for a sanction action (or None = permanent).
 
-        A mute is always temporary (Discord timeouts require a duration); ban
-        and warn are permanent unless nano set an explicit duration.
+        Only a timeout expires (Discord requires a duration for it); warns and
+        bans are permanent records.
         """
-        td = self._duration_td(decision)
         if action == "mute":
             return datetime.now(timezone.utc) + (
-                td or _MUTE_DURATIONS.get(decision.gravite, timedelta(hours=1)))
-        if action in ("ban", "warn") and td is not None:
-            return datetime.now(timezone.utc) + td
+                self._duration_td(decision)
+                or _MUTE_DURATIONS.get(decision.gravite, timedelta(hours=1)))
         return None
+
+    # -- Moderator approval ----------------------------------------------------
+
+    async def _request_approval(self, message: discord.Message, decision: Decision,
+                                bareme: ab.ResultatBareme, member: discord.Member,
+                                snapshot: Dict[str, Any]) -> None:
+        """Park a sanction until a moderator approves it in the alert channel.
+
+        The offending message is deleted right away when the plan includes a
+        deletion (removing harmful content is not what needs a second opinion,
+        and leaving it up while waiting would defeat the point); everything
+        else — warn, timeout, kick, ban, the case, the member's DM — waits for
+        the click. The decision is snapshotted in ``automod_pending_approvals``
+        so the buttons work after a restart.
+        """
+        db = getattr(self.bot, "db", None)
+        guild = message.guild
+        locale = self.guild_locale(guild)
+        deleted = False
+        if "supprimer" in decision.actions:
+            got, _errored = await self._delete_offending(message, decision)
+            deleted = got
+        snapshot = dict(snapshot, context_text=await self._build_context_text(message))
+        files, attachments = self._card_files(decision, snapshot, message.id)
+        payload = approvals.build_payload(
+            decision, bareme, snapshot, locale=locale, deleted=deleted,
+            attachments=attachments)
+        approval_id = await db.create_automod_approval(
+            guild_id=self.guild_id, user_id=int(decision.auteur_id),
+            payload=payload, expires_at=approvals.expiry()) if db else None
+        if approval_id is None:
+            # Cannot park it durably: do not sanction blindly, tell the team.
+            logger.error("automod: could not store an approval (guild %s)", self.guild_id)
+            outcome = approvals.IncidentOutcome(
+                applied=["supprimer"] if deleted else [],
+                failed={a: act.FAIL_DISCORD for a in act.sanction_actions(decision.actions)})
+            await self._notify_channel(message, decision, bareme, snapshot, outcome)
+            return
+        view = self._approval_card(decision, bareme, snapshot, locale,
+                                   status="pending", approval_id=approval_id,
+                                   attachments=attachments, deleted=deleted)
+        channel = self._alert_channel(guild)
+        if channel is None:
+            await db.claim_automod_approval(approval_id, "expired", None)
+            return
+        try:
+            sent = await channel.send(view=view, files=files,
+                                      allowed_mentions=discord.AllowedMentions.none())
+        except discord.Forbidden:
+            files = [f for f in files if not f.filename.startswith("image_")]
+            view = self._drop_image_gallery(view)
+            try:
+                sent = await channel.send(view=view, files=files,
+                                          allowed_mentions=discord.AllowedMentions.none())
+                payload["attachments"].pop("image", None)
+            except (discord.Forbidden, discord.HTTPException):
+                await db.claim_automod_approval(approval_id, "expired", None)
+                return
+        except discord.HTTPException:
+            await db.claim_automod_approval(approval_id, "expired", None)
+            return
+        await db.set_automod_approval_card(approval_id, sent.channel.id, sent.id, payload)
+
+    def _approval_card(self, decision, bareme, snapshot, locale, *, status,
+                       approval_id=None, attachments=None, deleted=False,
+                       outcome=None, decided_by=None):
+        from utils.automod_approval_views import render_alert_card
+        attachments = attachments or {}
+        return render_alert_card(
+            locale=locale, decision=decision, bareme=bareme, snapshot=snapshot,
+            outcome=outcome, status=status, planned=list(decision.actions),
+            seconds=decision.duree_secondes or bareme.duree_secondes,
+            infractions_perso=self.infractions_perso, approval_id=approval_id,
+            decided_by=decided_by, deleted=deleted,
+            text_file=attachments.get("text_file"), image_name=attachments.get("image"))
+
+    async def apply_approval(self, row: Dict[str, Any], moderator) -> "discord.ui.LayoutView":
+        """A moderator approved: execute the stored plan and return the new card.
+
+        ``row`` is the claimed (``approved``) database row. The same checks as a
+        live sanction run again now (the member may have left, been promoted
+        above Moddy, …) and the card reports exactly what happened.
+        """
+        payload = row.get("payload") or {}
+        decision = approvals.decision_from_payload(payload.get("decision"))
+        bareme = approvals.bareme_from_payload(payload.get("bareme") or {})
+        snapshot = payload.get("snapshot") or {}
+        locale = payload.get("locale") or "en-US"
+        guild = self.bot.get_guild(int(row["guild_id"]))
+        member = await get_or_fetch_member(guild, int(row["user_id"])) if guild else None
+        if member is not None and self._is_protected(member):
+            outcome = approvals.IncidentOutcome(failed={
+                a: act.FAIL_HIERARCHY for a in act.sanction_actions(decision.actions)})
+        else:
+            # The deletion already happened when the card was posted.
+            decision.actions = [a for a in decision.actions if a != "supprimer"]
+            outcome = await self._execute_incident(
+                guild, member, decision, bareme, snapshot,
+                message=None, delete_message=False)
+            if payload.get("deleted"):
+                outcome.applied.insert(0, "supprimer")
+            if outcome.case_id is not None and outcome.primary_action and member is not None:
+                await self._send_sanction_dm(
+                    member, outcome.case_id, outcome.case_ref, outcome.primary_action,
+                    outcome.sanction_id, decision, None, snapshot=snapshot)
+        try:
+            await self.bot.db.set_automod_approval_result(row["id"], outcome.to_payload())
+        except Exception as e:  # noqa: BLE001
+            logger.debug("automod: approval result not stored: %s", e)
+        self.count("approval_approved")
+        return self._approval_card(
+            decision, bareme, snapshot, locale, status="approved", outcome=outcome,
+            attachments=payload.get("attachments"), deleted=bool(payload.get("deleted")),
+            decided_by=getattr(moderator, "id", None))
+
+    async def close_approval(self, row: Dict[str, Any], status: str, moderator
+                             ) -> "discord.ui.LayoutView":
+        """Rejected (or expired): nothing is sanctioned; return the resolved card."""
+        payload = row.get("payload") or {}
+        decision = approvals.decision_from_payload(payload.get("decision"))
+        bareme = approvals.bareme_from_payload(payload.get("bareme") or {})
+        self.count("approval_" + status)
+        return self._approval_card(
+            decision, bareme, payload.get("snapshot") or {}, payload.get("locale") or "en-US",
+            status=status, attachments=payload.get("attachments"),
+            deleted=bool(payload.get("deleted")),
+            decided_by=getattr(moderator, "id", None) if status == "rejected" else None)
 
     def _audit_reason(self, case_ref: Optional[str], expires_at, reason: str) -> str:
         """Discord audit-log reason, identical in shape to manual sanctions.
@@ -1445,7 +1710,9 @@ class AutomodModule(ModuleBase):
                            bareme: Optional[ab.ResultatBareme] = None, *,
                            member: Optional[discord.Member] = None,
                            case_reason: Optional[str] = None,
-                           profile: Optional[dict] = None):
+                           profile: Optional[dict] = None,
+                           snapshot: Optional[Dict[str, Any]] = None,
+                           applied: Optional[List[str]] = None):
         """Open ONE guild case for this incident, attach its sanctions + evidence.
 
         Each automod incident is its own case: the first sanction opens a fresh
@@ -1453,31 +1720,39 @@ class AutomodModule(ModuleBase):
         are added to *that* case. This avoids every future automod action piling
         onto one ever-open folder (which also kept reusing the same reference).
 
-        Returns ``(case_ref, case_id, primary_action, primary_sanction_id)`` so
-        the caller can DM the member an appealable notice. ``primary_action`` is
-        the most punitive recorded sanction (ban > mute > warn).
+        Returns ``(case_ref, case_id, primary_action, primary_sanction_id,
+        recorded)`` so the caller can DM the member an appealable notice.
+        ``primary_action`` is the most punitive recorded sanction (ban > mute >
+        warn) and ``recorded`` lists every sanction that really was written.
+
+        ``applied`` limits the case to the sanctions that really took effect
+        (the truth, not the plan); it defaults to the decided actions. A kick is
+        not a case sanction (``SanctionAction`` has no kick). ``snapshot``
+        describes the offending message when it is no longer available (a
+        sanction approved later).
 
         A profile decision has no message: ``member`` is given instead, and
         ``profile`` (``kind`` / ``origine`` / ``extrait`` / ``asset_key`` /
         ``asset_url``) describes what was judged.
         """
         if not getattr(self.bot, "cases", None):
-            return None, None, None, None
+            return None, None, None, None, []
 
         # Decided actions that are real sanctions (deletion is not a sanction),
         # ordered most-punitive first so the case opens on the primary sanction.
         order = {"ban": 3, "mute": 2, "warn": 1}
         sanction_actions = sorted(
-            [a for a in decision.actions if _ACTION_TO_SANCTION.get(a) is not None],
+            [a for a in (applied if applied is not None else decision.actions)
+             if _ACTION_TO_SANCTION.get(a) is not None],
             key=lambda a: order.get(a, 0), reverse=True,
         )
         if not sanction_actions:
-            return None, None, None, None  # deletion-only: no case folder
+            return None, None, None, None, []  # deletion-only: no case folder
 
         # Factual reason (issuer already identifies automod — no "[Automod]" noise).
         # A custom infraction shows its server-authored name, never the raw id.
         guild = message.guild if message is not None else (
-            member.guild if member is not None else None)
+            member.guild if member is not None else self.bot.get_guild(self.guild_id))
         categorie_label = infraction_label(
             decision.categorie, self.guild_locale(guild), self.infractions_perso)
         case_reason = (case_reason or decision.raison or categorie_label
@@ -1487,6 +1762,8 @@ class AutomodModule(ModuleBase):
         # the judged name, or the avatar / banner URL.
         if profile is not None:
             extrait = (profile.get("extrait") or "")[:1500]
+        elif message is None and snapshot:
+            extrait = (snapshot.get("content") or "")[:1500]
         else:
             extrait = self._judged_text(message, decision)[:1500]
         note = f"Automod · {categorie_label} · {decision.gravite}"
@@ -1494,6 +1771,7 @@ class AutomodModule(ModuleBase):
         case_ref = case_id = None
         primary_action = None
         primary_sanction_id = None
+        recorded: List[str] = []
         for idx, action in enumerate(sanction_actions):
             expires_at = self._expiry_for(decision, action)
             if idx == 0:
@@ -1516,25 +1794,41 @@ class AutomodModule(ModuleBase):
                 case_ref = result["reference"]
                 primary_action = action
                 primary_sanction_id = result.get("sanction_id")
+                recorded.append(action)
             else:
                 # Further sanctions of the SAME decision → same case folder.
                 if case_id is None:
                     continue
-                await self.bot.db.add_sanction(
-                    case_id, _ACTION_TO_SANCTION[action].value,
-                    IssuerType.AUTOMOD.value,
-                    self.bot.user.id if self.bot.user else None,
-                    expires_at=expires_at, note=note,
-                )
+                try:
+                    await self.bot.db.add_sanction(
+                        case_id, _ACTION_TO_SANCTION[action].value,
+                        IssuerType.AUTOMOD.value,
+                        self.bot.user.id if self.bot.user else None,
+                        expires_at=expires_at, note=note,
+                    )
+                    recorded.append(action)
+                except Exception as e:  # noqa: BLE001
+                    logger.error("automod: could not add %s sanction to case %s: %s",
+                                 action, case_ref, e)
 
         # Attach the offending message (or profile) as evidence on the case.
         if case_id is not None:
-            if message is not None:
-                jump = getattr(message, "jump_url", "")
-                context_text = await self._build_context_text(message)
+            if message is not None or (snapshot and profile is None):
+                if message is not None:
+                    jump = getattr(message, "jump_url", "")
+                    context_text = await self._build_context_text(message)
+                    channel_id = message.channel.id
+                    author_name = getattr(message.author, "display_name", str(message.author))
+                    ts = int(message.created_at.timestamp())
+                else:
+                    jump = snapshot.get("jump_url", "")
+                    context_text = snapshot.get("context_text", "")
+                    channel_id = snapshot.get("channel_id")
+                    author_name = snapshot.get("author_name") or str(decision.auteur_id)
+                    ts = snapshot.get("ts") or int(time.time())
                 evidence = (
                     f"Message de <@{decision.auteur_id}> (`{decision.auteur_id}`) dans "
-                    f"<#{message.channel.id}> :\n"
+                    f"<#{channel_id}> :\n"
                     f"> {extrait or '*(vide)*'}\n\n"
                     f"Détection : `{decision.signal_source}` · catégorie `{categorie_label}` "
                     f"· gravité `{decision.gravite}` · score `{decision.score_detecteur:.2f}` "
@@ -1543,10 +1837,10 @@ class AutomodModule(ModuleBase):
                 )
                 where = {
                     "message_id": decision.message_id,
-                    "channel_id": message.channel.id,
+                    "channel_id": channel_id,
                     "jump_url": jump,
-                    "author_name": getattr(message.author, "display_name", str(message.author)),
-                    "ts": int(message.created_at.timestamp()),
+                    "author_name": author_name,
+                    "ts": ts,
                     "context_text": context_text,
                 }
             else:
@@ -1590,7 +1884,8 @@ class AutomodModule(ModuleBase):
                         "gravite": decision.gravite,
                         "score_detecteur": round(decision.score_detecteur, 4),
                         "confiance": decision.confiance,
-                        "actions": decision.actions,
+                        "actions": list(recorded or decision.actions),
+                        "actions_prevues": list(decision.actions),
                         # Automod images: where the judged text came from and
                         # the image facts (hash, SafeSearch, scam anchors).
                         "origine": (profile or {}).get("origine")
@@ -1616,7 +1911,7 @@ class AutomodModule(ModuleBase):
             except Exception as e:
                 logger.error("automod: failed to attach evidence to case %s: %s", case_ref, e)
 
-        return case_ref, case_id, primary_action, primary_sanction_id
+        return case_ref, case_id, primary_action, primary_sanction_id, recorded
 
     def guild_locale(self, guild: Optional[discord.Guild]) -> str:
         """The locale automod speaks in this guild.
@@ -1642,7 +1937,8 @@ class AutomodModule(ModuleBase):
     async def _send_sanction_dm(self, member: discord.Member, case_id, case_ref: str,
                                 primary_action: str, primary_sanction_id, decision: Decision,
                                 message: Optional[discord.Message] = None, *,
-                                explication: Optional[str] = None):
+                                explication: Optional[str] = None,
+                                snapshot: Optional[Dict[str, Any]] = None):
         """DM the member their sanction with Server / Moddy-team appeal buttons."""
         if not primary_sanction_id:
             return  # cannot offer an appeal without a sanction to target
@@ -1650,7 +1946,8 @@ class AutomodModule(ModuleBase):
         guild = member.guild
         locale = self.guild_locale(guild)
         # A profile sanction quotes the judged name (an avatar has no text proof).
-        content = self._judged_text(message, decision)
+        snap = snapshot if (message is None and snapshot) else None
+        content = (snap.get("content") if snap else self._judged_text(message, decision))
         view, files = build_sanction_dm_view(
             locale=locale,
             guild_name=guild.name if guild else "",
@@ -1663,9 +1960,12 @@ class AutomodModule(ModuleBase):
             sanction_id=str(primary_sanction_id),
             expires_at=self._expiry_for(decision, primary_action),
             proof_text=content or None,
-            proof_author=getattr(message.author, "display_name", None) if message else None,
-            proof_message_id=str(message.id) if message else None,
-            proof_ts=int(message.created_at.timestamp()) if message else None,
+            proof_author=(getattr(message.author, "display_name", None) if message
+                          else (snap or {}).get("author_name")),
+            proof_message_id=(str(message.id) if message
+                              else ((snap or {}).get("message_id"))),
+            proof_ts=(int(message.created_at.timestamp()) if message
+                      else (snap or {}).get("ts")),
         )
         try:
             # Through the notification system: the sanction is worded by Moddy
@@ -1763,6 +2063,8 @@ class AutomodModule(ModuleBase):
         bareme_payload = {
             "cran": bareme.cran,
             "duree_heures": bareme.duree_heures,
+            "duree_secondes": bareme.duree_secondes,
+            "require_approval": bareme.require_approval,
             "needs_review": bareme.needs_review,
             "actions": list(bareme.actions),
             "points_recidive": round(bareme.points_recidive, 2),
@@ -1889,121 +2191,71 @@ class AutomodModule(ModuleBase):
         return discord.File(io.BytesIO(img.data), filename=f"image_{image.phash}.jpg",
                             spoiler=True)
 
-    async def _notify_channel(self, message: discord.Message, decision: Decision,
-                              applied: List[str], case_ref: Optional[str],
-                              primary_action: Optional[str] = None,
-                              bareme: Optional[ab.ResultatBareme] = None):
-        """Post the decision to the mandatory server alert channel.
-
-        Returns the sent message (or None) so the caller can link it to the
-        case. The accent colour follows the sanction (orange warn / red ban…),
-        the offending message is quoted in a spoiler, and a long message is
-        attached as a ``.txt`` file instead of being truncated.
-        """
-        if not self.notify_channel_id:
+    def _alert_channel(self, guild) -> Optional[discord.TextChannel]:
+        """The mandatory alert channel if Moddy can post in it, else None."""
+        if not self.notify_channel_id or guild is None:
             return None
-        guild = message.guild
-        channel = guild.get_channel(int(self.notify_channel_id)) if guild else None
+        channel = guild.get_channel(int(self.notify_channel_id))
         if not channel or not isinstance(channel, discord.TextChannel):
             return None
         me = guild.me
-        if not channel.permissions_for(me).send_messages:
+        if me is None or not channel.permissions_for(me).send_messages:
             return None
+        return channel
 
-        from discord import ui
-        from utils.emojis import SHIELD, get_sanction_accent
+    def _card_files(self, decision: Decision, snapshot: Dict[str, Any], message_id):
+        """The attachments that ride with an alert card: ``(files, names)``.
+
+        A long message is attached as a ``.txt`` instead of being truncated, an
+        image decision carries its (spoilered) image. ``names`` remembers what
+        was attached so a later edit re-renders the very same view.
+        """
         from utils.automod_render import is_long, make_text_file
-        from config import COLORS
-
-        locale = self.guild_locale(guild)
-        accent = get_sanction_accent(primary_action) if primary_action else COLORS["warning"]
-
-        def _label(a: str) -> str:
-            return t(f"modules.automod_ai.action.{a}", locale=locale)
-
-        actions_txt = ", ".join(_label(a) for a in applied) if applied \
-            else t("modules.automod_ai.log.detection_only", locale=locale)
-
-        view = ui.LayoutView(timeout=None)
-        container = ui.Container(accent_colour=discord.Colour(accent))
-        container.add_item(ui.TextDisplay(
-            f"### {SHIELD} {t('modules.automod_ai.log.title', locale=locale)}"))
-        body = (
-            f"- **{t('modules.automod_ai.log.author', locale=locale)} :** "
-            f"<@{decision.auteur_id}> (`{decision.auteur_id}`)\n"
-            f"- **{t('modules.automod_ai.log.channel', locale=locale)} :** <#{message.channel.id}>\n"
-            f"- **{t('modules.automod_ai.log.actions', locale=locale)} :** {actions_txt}\n"
-            f"- **{t('modules.automod_ai.log.reason', locale=locale)} :** {decision.raison or '—'}"
-        )
-        if decision.explication:
-            body += (f"\n- **{t('modules.automod_ai.log.explanation', locale=locale)} :** "
-                     f"{decision.explication}")
-        if case_ref:
-            body += f"\n- **{t('modules.automod_ai.log.case', locale=locale)} :** `{case_ref}`"
-        container.add_item(ui.TextDisplay(body))
-
-        # Deterministic barème breakdown: explain the sanction line by line.
-        if bareme is not None and bareme.composantes:
-            sanction_name = self._sanction_name(bareme, locale)
-            header = t("modules.automod_ai.bareme.title", locale=locale,
-                       sanction=sanction_name, cran=bareme.cran)
-            container.add_item(ui.TextDisplay(
-                f"**{header}**\n{self._bareme_breakdown(bareme, locale)}"))
-            if bareme.needs_review:
-                # A cran downgraded by an unconfirmed heavy sanction (§6.3) gets a
-                # dedicated hint ("ban proposed, degraded after AI review"); an
-                # otherwise-heavy automod cran gets the plain review hint.
-                downgraded = any(c.code == "confirmation_refusee"
-                                 for c in bareme.composantes)
-                hint_key = ("bareme.review_hint_unconfirmed" if downgraded
-                            else "bareme.review_hint")
-                container.add_item(ui.TextDisplay(
-                    f"-# {t(f'modules.automod_ai.{hint_key}', locale=locale)}"))
-
-        container.add_item(ui.TextDisplay(
-            f"-# {t('modules.automod_ai.log.appeal_hint', locale=locale)}"))
-        view.add_item(container)
-
-        # Offending message — spoilered, attached as a file when too long. For an
-        # aggregate, show the concatenated fragments that were judged together.
         files: List[discord.File] = []
-        content = self._judged_text(message, decision)
-        deleted = "supprimer" in applied
-        ts = int(message.created_at.timestamp())
-        author_name = getattr(message.author, "display_name", str(message.author))
-        meta = f"-# {t('modules.automod_ai.log.message_id', locale=locale)} : ``{message.id}``"
-        if deleted:
-            meta += f" · {t('modules.automod_ai.log.deleted', locale=locale)}"
-
-        quote = ui.Container(accent_colour=discord.Colour(accent), spoiler=True)
+        names: Dict[str, Any] = {}
+        content = snapshot.get("content") or ""
         if content and is_long(content):
-            fname = f"message_{message.id}.txt"
+            fname = f"message_{message_id}.txt"
             files.append(make_text_file(content, fname))
-            quote.add_item(ui.TextDisplay(f"**{author_name}** — <t:{ts}:S>"))
-            quote.add_item(ui.File(f"attachment://{fname}"))
-            quote.add_item(ui.TextDisplay(meta))
-        else:
-            shown = content if content else "*…*"
-            quote.add_item(ui.TextDisplay(f"**{author_name}** — <t:{ts}:S>\n> {shown}\n{meta}"))
-        # Automod images: the (downscaled) image itself, always spoilered.
+            names["text_file"] = fname
         image_file = self._image_file(decision)
         if image_file is not None:
             files.append(image_file)
-            quote.add_item(ui.MediaGallery(discord.MediaGalleryItem(
-                f"attachment://{image_file.filename}", spoiler=True)))
-        view.add_item(quote)
+            names["image"] = image_file.filename
+        return files, names
 
+    async def _notify_channel(self, message: discord.Message, decision: Decision,
+                              bareme: Optional[ab.ResultatBareme],
+                              snapshot: Dict[str, Any],
+                              outcome: approvals.IncidentOutcome):
+        """Post what happened to the mandatory server alert channel.
+
+        Returns the sent message (or None) so the caller can link it to the
+        case. The card lists the actions that REALLY took effect and, briefly,
+        those that failed and why (``utils/automod_approval_views.py``).
+        """
+        guild = message.guild
+        channel = self._alert_channel(guild)
+        if channel is None:
+            return None
+        files, names = self._card_files(decision, snapshot, message.id)
+        view = self._approval_card(
+            decision, bareme, snapshot, self.guild_locale(guild), status="done",
+            attachments=names, outcome=outcome,
+            deleted="supprimer" in outcome.applied)
         try:
-            return await channel.send(view=view, files=files)
+            return await channel.send(view=view, files=files,
+                                      allowed_mentions=discord.AllowedMentions.none())
         except discord.Forbidden:
-            if image_file is None:
+            if "image" not in names:
                 return None
             # No "Attach Files" in the alert channel: never lose the alert
             # itself — resend without the image.
-            files = [f for f in files if f is not image_file]
+            files = [f for f in files if f.filename != names["image"]]
             view = self._drop_image_gallery(view)
             try:
-                return await channel.send(view=view, files=files)
+                return await channel.send(view=view, files=files,
+                                          allowed_mentions=discord.AllowedMentions.none())
             except (discord.Forbidden, discord.HTTPException):
                 return None
         except discord.HTTPException:
@@ -2095,8 +2347,9 @@ class AutomodModule(ModuleBase):
     # -- Gates ----------------------------------------------------------------
 
     def _profile_exempt(self, member: discord.Member) -> bool:
-        """Bots, the owner (cannot be timed out), exempt roles, moderators."""
-        if member.bot or member.id == getattr(member.guild, "owner_id", None):
+        """Bots, the owner and anyone Moddy cannot outrank (never moderated),
+        exempt roles, moderators."""
+        if member.bot or self._is_protected(member):
             return True
         feature = self.profile
         exempt_roles = set(feature.config.get("exempt_roles", [])) if feature else set()
@@ -2295,7 +2548,7 @@ class AutomodModule(ModuleBase):
         for norm, value in candidates.items():
             judgement = await svc.judge_name(
                 value, user_id=member.id, guild_id=self.guild_id, guild_name=guild.name,
-                rules=self.rules, severity=self.severity,
+                severity=self.severity,
                 response_language=self.response_language(guild))
             d = judgement.decision
             if d is None:
@@ -2567,6 +2820,8 @@ class AutomodModule(ModuleBase):
         action, actions, duree = self._profile_plan(bareme, decision)
         decision.actions = list(actions)
         decision.duree_heures = duree
+        decision.duree_secondes = ((bareme.duree_secondes or 0) if action == "bareme"
+                                   else duree * 3600)
 
         # Server-language wording (a cached verdict may have been written in
         # another language): the funnel's own explanation stays on the case.
@@ -2612,33 +2867,45 @@ class AutomodModule(ModuleBase):
 
         applied: List[str] = []
         notes: List[str] = []
+        failed: Dict[str, str] = {}
         case_ref = case_id = primary_action = sanction_id = None
+
+        # Apply FIRST and verify, THEN record the case (only what happened).
+        timed_out = False
+        if action in ("hold", "bareme"):
+            discord_applied, failed = await self._apply_discord_sanction(
+                guild, member, decision, None, actions)
+            applied.extend(discord_applied)
+            timed_out = "mute" in discord_applied
+            if action == "hold" and not timed_out:
+                notes.append("hold_failed")
+        elif action == "rename_warn":
+            outcome = await self._rename_member(member, decision, None)
+            if outcome == "ok":
+                applied.append("rename")
+            else:
+                notes.append("rename_failed" if outcome == "failed" else "not_displayed")
 
         if action != "alert":
             case_reason = decision.raison
             if action == "hold":
                 case_reason = t("modules.automod_ai.profile.case_reason_hold",
                                 locale=locale, kind=label)
-            case_ref, case_id, primary_action, sanction_id = await self._record_case(
-                None, decision, bareme, member=member, case_reason=case_reason,
-                profile=profile)
-
-        timed_out = False
-        if action in ("hold", "bareme"):
-            discord_applied = await self._apply_discord_sanction(
-                guild, member, decision, case_ref, actions)
-            applied.extend(discord_applied)
-            timed_out = "mute" in discord_applied
-            if action == "hold" and not timed_out:
-                notes.append("hold_failed")
-        elif action == "rename_warn":
-            outcome = await self._rename_member(member, decision, case_ref)
-            if outcome == "ok":
-                applied.append("rename")
-            else:
-                notes.append("rename_failed" if outcome == "failed" else "not_displayed")
-        if "warn" in actions and "warn" not in applied:
-            applied.append("warn")
+            to_record = [a for a in applied if a in ("mute", "ban")]
+            if "warn" in actions:
+                to_record.append("warn")
+            case_ref, case_id, primary_action, sanction_id, recorded = \
+                await self._record_case(
+                    None, decision, bareme, member=member, case_reason=case_reason,
+                    profile=profile, applied=to_record)
+            if "warn" in actions:
+                if "warn" in recorded:
+                    applied.append("warn")
+                else:
+                    failed["warn"] = act.FAIL_CASE
+            if any(a in applied for a in ("mute", "ban")) \
+                    and not any(a in recorded for a in ("mute", "ban")):
+                failed["case"] = act.FAIL_CASE
 
         hold_stored = False
         if action == "hold" and timed_out and getattr(self.bot, "db", None):
@@ -2654,7 +2921,8 @@ class AutomodModule(ModuleBase):
 
         log_msg = await self._notify_profile(
             member, decision, applied, case_ref, primary_action, bareme, action=action,
-            kind=kind, image_bytes=image_bytes, notes=notes, asset_url=asset_url)
+            kind=kind, image_bytes=image_bytes, notes=notes, asset_url=asset_url,
+            failed=failed)
         if log_msg is not None and case_id is not None:
             try:
                 await self.bot.db.add_event(
@@ -2685,7 +2953,7 @@ class AutomodModule(ModuleBase):
                       case_ref: Optional[str], primary_action: Optional[str],
                       bareme: ab.ResultatBareme, *, action: str, kind: str,
                       image_bytes: Optional[bytes], notes: Optional[List[str]] = None,
-                      simulation: bool = False):
+                      simulation: bool = False, failed: Optional[Dict[str, str]] = None):
         """The profile alert / simulation card: ``(view, files, image_file)``."""
         import io
         from discord import ui
@@ -2734,6 +3002,11 @@ class AutomodModule(ModuleBase):
                        sanction=self._sanction_name(bareme, locale), cran=bareme.cran)
             container.add_item(ui.TextDisplay(
                 f"**{header}**\n{self._bareme_breakdown(bareme, locale)}"))
+        if failed:
+            from utils.automod_render import failed_lines
+            container.add_item(ui.TextDisplay(
+                f"**{t('modules.automod_ai.log.not_applied', locale=locale)}**\n"
+                f"{failed_lines(failed, locale)}"))
         for note in notes or []:
             container.add_item(ui.TextDisplay(
                 f"-# {t(f'modules.automod_ai.profile.note_{note}', locale=locale)}"))
@@ -2767,7 +3040,8 @@ class AutomodModule(ModuleBase):
                               primary_action: Optional[str], bareme: ab.ResultatBareme, *,
                               action: str, kind: str, image_bytes: Optional[bytes],
                               notes: Optional[List[str]] = None, simulation: bool = False,
-                              asset_url: Optional[str] = None):
+                              asset_url: Optional[str] = None,
+                              failed: Optional[Dict[str, str]] = None):
         """Post a profile alert (or simulation) card; returns the sent message."""
         guild = member.guild
         channel = guild.get_channel(int(self.notify_channel_id)) \
@@ -2777,7 +3051,8 @@ class AutomodModule(ModuleBase):
             return None
         view, files, image_file = self._profile_card(
             member, decision, applied, case_ref, primary_action, bareme, action=action,
-            kind=kind, image_bytes=image_bytes, notes=notes, simulation=simulation)
+            kind=kind, image_bytes=image_bytes, notes=notes, simulation=simulation,
+            failed=failed)
         try:
             return await channel.send(view=view, files=files,
                                       allowed_mentions=discord.AllowedMentions.none())

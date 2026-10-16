@@ -41,14 +41,22 @@ _LEVELS: Dict[str, Tuple[Tuple[str, ...], int]] = {
 }
 
 #: Sanction overrides a level brings on top of Moddy's defaults. ``light`` only
-#: deletes ordinary insults and keeps the sanctions for the serious ones.
+#: deletes ordinary insults (serious ones keep a timeout; repeat offenders
+#: still escalate through the recidivism ladder) and keeps the default sanctions for the serious types.
 _LEVEL_SANCTIONS: Dict[str, Dict[str, Dict[str, Any]]] = {
     "light": {
         "insulte": {
             "enabled": True,
             "mode": "perso",
-            "crans": {"basse": 0, "moyenne": 0, "haute": 2, "critique": 3},
+            "actions": ["delete"],
+            "timeout_seconds": None,
             "recidive": True,
+            "require_approval": False,
+            # Serious insults keep a sanction (the old ladder: cran 2 / cran 3).
+            "by_gravity": {
+                "haute": {"actions": ["delete", "timeout"], "timeout_seconds": 2 * 3600},
+                "critique": {"actions": ["delete", "timeout"], "timeout_seconds": 12 * 3600},
+            },
         },
     },
 }
@@ -67,7 +75,6 @@ def blank_config() -> Dict[str, Any]:
 
     return {
         "enabled": False,
-        "indications": "",
         "notify_channel_id": None,
         "ignore_moderators": True,
         "severity": ac.SEVERITY_DEFAULT,
@@ -91,7 +98,7 @@ def preset_config(preset: str, channel_id: Optional[int], *, dry_run: bool = Tru
     """Full config of ``preset`` for ``channel_id``.
 
     ``base`` (an existing, normalised config) is kept for everything a level
-    does not own: indications, custom infractions, exemptions, the maximum
+    does not own: custom infractions, exemptions, the maximum
     sanction and the sanctions of types the level leaves alone. Without it the
     result is a complete fresh config.
 

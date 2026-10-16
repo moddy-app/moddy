@@ -73,6 +73,7 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     from utils.appeal_views import AppealPersistence
     from utils.global_sanction_views import GlobalSanctionPersistence
     from utils.automod_shadow_views import ShadowAnnotationPersistence
+    from utils.automod_approval_views import AutomodApprovalPersistence
     from utils.automod_label_views import LabelPersistence
     from utils.transcription_views import TranscriptionPersistence
     from utils.brocoli_views import BrocoliDecisionPersistence
@@ -116,6 +117,7 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         GlobalSanctionPersistence,
         # Group 5 — automod shadow-mode annotation buttons (dynamic items)
         ShadowAnnotationPersistence,
+        AutomodApprovalPersistence,
         # Group 5bis — automod Moddy team labeling queue (dynamic items)
         LabelPersistence,
         # Group 6 — /preferences (owner-only dynamic items)

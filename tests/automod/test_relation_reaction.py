@@ -53,7 +53,7 @@ def _build(monkeypatch):
 
 
 _COMMON = dict(
-    guild_id=1, guild_name="g", rules="", author_history=AuthorHistory(),
+    guild_id=1, guild_name="g", author_history=AuthorHistory(),
     fetch_context=_no_context, correlation_id="c", severity=3,
     response_language="French",
 )
@@ -171,6 +171,6 @@ class TestPromptInjection:
     def test_system_prompt_block_only_when_relation_present(self):
         with_block = nano.build_system_prompt(
             "g", "", 0, "abcd1234", bloc_relation=nano.RELATION_PROMPT_BLOCK)
-        without = nano.build_system_prompt("g", "", 0, "abcd1234")
+        without = nano.build_system_prompt("g", 0, "abcd1234")
         assert "RELATION (objective server data" in with_block
         assert "RELATION (objective server data" not in without

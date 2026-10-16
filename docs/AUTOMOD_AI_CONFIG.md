@@ -57,7 +57,6 @@ Deleting a config = writing `{}` (that is what the "Delete" button does).
 ```jsonc
 {
   "enabled": false,                 // bool  — master switch
-  "indications": "",                // string ≤ 3000 — server guidance injected in the AI prompt
   "notify_channel_id": null,        // int|null — REQUIRED for the module to run
   "ignore_moderators": true,        // bool  — skip members with manage_messages
   "severity": 3,                    // int 1..5
@@ -105,7 +104,6 @@ Deleting a config = writing `{}` (that is what the "Delete" button does).
 | Field | Type | Default | Notes |
 |---|---|---|---|
 | `enabled` | bool | `false` | Master switch. Not sufficient on its own — see §4. |
-| `indications` | string | `""` | Server guidance ("no insults even as a joke", "English only"…). Max **3000** chars. Embedded verbatim in the model's system prompt, so it **must** pass the prompt-injection safety check (§6). |
 | `notify_channel_id` | int \| null | `null` | **Mandatory.** Text or announcement channel where every automod decision, shadow card and budget notice is posted. Without it the module never runs. |
 | `ignore_moderators` | bool | `true` | Members with `manage_messages` are skipped entirely. |
 | `severity` | int 1–5 | `3` | Detection dial: scales the embedding routing threshold (1 = 0.62 … 5 = 0.35) and the barème's global cran shift. Values outside 1–5 are clamped. |
@@ -143,30 +141,70 @@ the backend must not invent keys. A missing feature block means "off with defaul
 "sanctions": {
   "insulte": {                       // key = infraction id (catalogue id or "perso:<id>")
     "enabled": true,                 // bool, default true — false = deletion only (kill-switch)
-    "mode": "auto",                  // "auto" (default: Moddy's policy) | "perso" (the server's ladder)
-    "crans": {"basse": 1, "moyenne": 1, "haute": 2, "critique": 3},  // int 0..7 per gravity
-    "recidive": true                 // bool, default true — perso mode only: escalate on repeat offences
+    "mode": "perso",                 // "auto" (default: Moddy's ladder) | "perso" (the server's own actions)
+    "actions": ["delete", "warn", "timeout"],  // perso: the set applied (see "Actions" below)
+    "timeout_seconds": 60780,        // perso + "timeout": EXACT duration, 60..2419200 (16 h 53 min here)
+    "recidive": true,                // bool, default true — repeat offences escalate the set (see below)
+    "require_approval": false,       // bool, default false — a moderator approves in the alert channel first
+    "by_gravity": {                  // optional, perso only — per-gravity override of actions/timeout_seconds
+      "critique": {"actions": ["delete", "ban"], "timeout_seconds": null}
+    }
   },
   "profil_avatar_nsfw": { "action_profil": "hold" }   // profile types only
 }
 ```
 
-An **absent entry is the default** ("auto" = Moddy's policy); the panel's *Reset to
-default* deletes the key. In `auto` mode `crans`/`recidive` are ignored (the
-barème uses its built-in floors, severity shift, veteran clemency, fresh-account
-malus, recidivism). In `perso` mode the server's `crans` are the floor per gravity
-(missing gravities fall back to the type's default floor) and the barème **skips**
-the severity shift, veteran clemency and fresh-account malus; recidivism escalation
-stays on unless `recidive` is `false`. The confidence caps and the `max_action`
-ceiling always apply. See [AUTOMOD_AI.md §2bis](AUTOMOD_AI.md).
+An **absent entry is the default** ("auto" = Moddy's ladder); the panel's *Reset to
+default* deletes the key. The effective values — defaults included — are returned
+by `automod.infractions.effective_policy(id, entry, gravite)`; a UI never needs to
+print "Moddy default".
 
-The ladder a cran maps to: `0` delete only · `1` warn · `2..6` mute 2 h / 12 h / 48 h / 168 h / 672 h · `7` ban.
+**Actions** (`automod/actions.py`). Stored names: `delete`, `warn`, `timeout`,
+`kick`, `ban` (internally `supprimer`, `warn`, `mute`, `kick`, `ban`). Rules,
+applied by `normalize_sanctions` and the barème (validation accepts conflicts, the
+loader resolves them):
+
+* `ban` supersedes `kick`; `kick` / `ban` supersede `timeout` and `warn` (a removed
+  member gets one removal notice); `delete` combines with everything; `warn` +
+  `timeout` combine. An empty list means `["delete"]`.
+* `timeout_seconds` only exists when `timeout` is an action; 60 s ≤ value ≤ 28 d
+  (Discord's limit); missing → 3600. Parse/format helpers: `parse_duration`
+  (`"16h53"`, `"1d2h"`, `"90m"`, `"2 jours 3 heures"`…) and `format_duration`
+  (`"16 h 53 min"`, localized).
+* A kick is not a case sanction (`case_sync` never recorded kicks): it is applied
+  and shown on the alert card but opens no case and sends no appealable DM.
+  Under `max_action` below `ban`, a `kick` becomes a 28-day timeout.
+
+**Integration with the barème** (the single cran ladder is kept): in `auto` mode the
+cran gives one sanction (`0` delete only · `1` warn · `2..6` timeout 2 h / 12 h /
+48 h / 7 d / 28 d · `7` ban), as before. In `perso` mode the chosen set is the
+*floor*: its cran is `ban`=7, `kick`=6, `timeout` = the rung its duration falls on
+(≤2 h → 2, ≤12 h → 3, ≤48 h → 4, ≤7 d → 5, else 6), `warn`=1, delete only = 0. The
+barème then adds the recidivism crans (unless `recidive` is `false`), applies the
+confidence caps and the `max_action` ceiling, and **skips** the severity shift,
+veteran clemency and fresh-account malus. If the final cran equals the floor the
+server gets *exactly* its set and its exact timeout; if it moved (escalation or a
+cap) the sanction follows the ladder at the final cran (duration included) while
+the lighter actions the server chose (`delete`, `warn`) are kept. `by_gravity`
+lets a gravity use another plan (produced by the migration of the legacy shape; a
+UI may ignore it, but must not keep it after rewriting `actions` —
+`infractions.set_entry_actions` clears it).
+
+**Moderator approval** (`require_approval`): see [AUTOMOD_AI.md "Moderator
+approval"](AUTOMOD_AI.md). Ignored (stored as `false`) for profile types and for a
+plan without `warn`/`timeout`/`kick`/`ban`.
+
+**Legacy shape** (still read, migrated on load, never written back):
+`mode: "perso"` + `crans: {basse, moyenne, haute, critique}` (ints 0..7). The base
+plan comes from the `moyenne` cran, every gravity that maps to a different plan
+goes to `by_gravity` — the resulting sanctions are identical to the old ladder.
+`crans` of an `auto` entry are ignored, as before.
 
 **Valid ids** (`automod/infractions.py`, the single catalogue):
 
 | Family | Ids | `crans` defaults (`basse/moyenne/haute/critique`) |
 |---|---|---|
-| message | `insulte` 1/1/2/3 · `menace` 2/3/6/7 · `harcelement` 1/2/3/5 · `harcelement_sexuel` 3/5/7/7 · `haine_discrimination` 2/4/6/7 · `incitation_automutilation` 3/5/7/7 · `doxxing` 4/6/7/7 · `arnaque_scam` 7/7/7/7 · `violation_indications` 0/1/2/4 | |
+| message | `insulte` 1/1/2/3 · `menace` 2/3/6/7 · `harcelement` 1/2/3/5 · `harcelement_sexuel` 3/5/7/7 · `haine_discrimination` 2/4/6/7 · `incitation_automutilation` 3/5/7/7 · `doxxing` 4/6/7/7 · `arnaque_scam` 7/7/7/7 | |
 | image | `contenu_nsfw` 0/2/3/5 · `contenu_choquant` 0/1/2/4 | |
 | profile | `profil_avatar_nsfw` 0/2/3/5 · `profil_avatar_choquant` 0/1/2/4 · `profil_pseudo` 1/1/2/3 | |
 | custom | `perso:<id>` where `<id>` is the `id` of an `infractions_perso` entry | 0/1/2/4 |
@@ -184,9 +222,9 @@ The ladder a cran maps to: `0` delete only · `1` warn · `2..6` mute 2 h / 12 h
 
 Normalisation on load (`normalize_sanctions` + `AutomodModule.load_config`): unknown
 ids and non-object entries are dropped; a `perso:<id>` whose `<id>` is not in
-`infractions_perso` is dropped (orphan); a bad `mode` becomes `auto`; crans are
-clamped to 0..7 (garbage → the type's default); `enabled`/`recidive` are `true`
-unless exactly `false`; `action_profil` outside the four values falls back to the
+`infractions_perso` is dropped (orphan); a bad `mode` becomes `auto`; legacy `crans` are migrated (see above); `actions` are conflict-resolved and
+`timeout_seconds` clamped to 60..2419200; `enabled`/`recidive` are `true`
+unless exactly `false`; `require_approval` is `true` only when exactly `true`; `action_profil` outside the four values falls back to the
 type's default; `hold` on `profil_pseudo` is coerced to `rename_warn` (and
 rejected by validation with `sanctions_action_profil_invalid`).
 
@@ -204,7 +242,7 @@ rejected by validation with `sanctions_action_profil_invalid`).
 ```
 
 * Max **10** entries. `modele` ∈ `pub_serveur`, `spoilers`, `politique_religion`, `demande_dm`, `langue`, `liens` (or `null`).
-* The downstream category is `perso:<id>` everywhere (cases, evidence, `sanctions` keys). Its sanction policy is `sanctions["perso:<id>"]` (default floors `0/1/2/4`, same as `violation_indications`).
+* The downstream category is `perso:<id>` everywhere (cases, evidence, `sanctions` keys). Its sanction policy is `sanctions["perso:<id>"]` (default floors `0/1/2/4`).
 * Keywords route a message to the AI without any embedding call (accent/leet/repeat tolerant; a keyword containing `. / : \ @ #` is a literal substring, also with whitespace evasion); descriptions + examples are embedded once and compared with the message's existing vector (threshold `0.50` at severity 3, scaled by `severity`). Routing only *routes*: the AI still decides.
 * Text normalisation on load (`custom_infractions.normalize`): entries with a malformed/duplicate `id`, empty `nom` or empty `description` are dropped; text is trimmed, whitespace collapsed, `[DATA:…]` fence markers stripped and cut to its limit; list entries are de-duplicated (case-insensitive) and capped; an unknown `modele` becomes `null`; the list is capped at 10.
 * **Every infraction must pass the prompt-injection safety check before being saved** (name + description + examples reach the model's prompt) — see §6.2. The bot's `validate_config` does **not** run it (it is an AI call); the panel and the backend each must. Moddy's own unmodified templates are trusted and skip the check.
@@ -215,7 +253,7 @@ rejected by validation with `sanctions_action_profil_invalid`).
 * **Deleting an infraction = deleting `sanctions["perso:<id>"]` in the same write.** An orphan `perso:*` sanction is rejected by `validate_config` (`Barème d'une infraction personnalisée inconnue (<id>)`), so the save would fail.
 * **Exemptions are shared.** The bot's panel edits ONE exemption list (copied from `features.content`) and writes it on every feature (roles only for `profile`; `profile.exempt_channels` is always `[]`). A dashboard that stores different lists per feature will see them flattened the next time an admin saves from Discord; keep them identical.
 * The panel also keeps `scan_all` (no UI: ops/backend-set), rewrites unknown keys of `features.<id>` away, and never writes `categories_desactivees`.
-* Wizard levels (`automod/presets.py`, **Light / Balanced / Strict**) are plain configs: Light = `content`+`image_nsfw`+`image_scam`, severity 2, `sanctions.insulte = {enabled: true, mode: "perso", crans: {basse: 0, moyenne: 0, haute: 2, critique: 3}, recidive: true}`; Balanced = + `image_gore`, severity 3, defaults; Strict = + `profile` (avatar, banner, pseudo), severity 4. The wizard applies a level **switched off and in `dry_run: true`** (`enabled: false`, `notify_channel_id` set, existing indications / custom infractions / exemptions / unrelated sanctions kept); its last step switches the module on, in simulation (recommended) or in real mode. A dashboard offering levels should reproduce the same data (`preset_config`).
+* Wizard levels (`automod/presets.py`, **Light / Balanced / Strict**) are plain configs: Light = `content`+`image_nsfw`+`image_scam`, severity 2, `sanctions.insulte = {enabled: true, mode: "perso", actions: ["delete"], recidive: true}` (repeat offenders still escalate); Balanced = + `image_gore`, severity 3, defaults; Strict = + `profile` (avatar, banner, pseudo), severity 4. The wizard applies a level **switched off and in `dry_run: true`** (`enabled: false`, `notify_channel_id` set, existing indications / custom infractions / exemptions / unrelated sanctions kept); its last step switches the module on, in simulation (recommended) or in real mode. A dashboard offering levels should reproduce the same data (`preset_config`).
 
 ## 4. When is the module actually running?
 
@@ -248,16 +286,15 @@ the **first failure** is returned (French strings, verbatim):
 |---|---|---|
 | 1 | the guild is known to the bot | `Serveur introuvable` |
 | 2 | `notify_channel_id` (or legacy `log_channel_id`), when not null, resolves to a text channel of the guild | `Salon d'alertes invalide` |
-| 3 | `len(indications) <= 3000` (or legacy `rules`) | `Les indications sont trop longues (max 3000 caractères)` |
-| 4 | `severity`, when present, is an integer 1..5 (**not** clamped here) | `Niveau de sévérité invalide (1 à 5)` |
-| 5 | `max_action`, when present, ∈ `warn`/`mute`/`ban` | `Action maximale invalide` |
-| 6 | `sanctions` passes `validate_sanctions` | `Barème personnalisé invalide (<code>)` |
-| 7 | `infractions_perso` passes `custom_infractions.validate` | `Infractions personnalisées invalides (<code>)` |
-| 8 | every `perso:<id>` key of `sanctions` is the id of an `infractions_perso` entry | `Barème d'une infraction personnalisée inconnue (<key>)` |
-| 9 | every key of `features` is a known feature id | `Fonctionnalité inconnue : <id>` |
-| 10 | `features.profile.avatar` / `.banner` / `.pseudo`, when present and non-null, are booleans | `Option de profil invalide : <key>` |
+| 3 | `severity`, when present, is an integer 1..5 (**not** clamped here) | `Niveau de sévérité invalide (1 à 5)` |
+| 4 | `max_action`, when present, ∈ `warn`/`mute`/`ban` | `Action maximale invalide` |
+| 5 | `sanctions` passes `validate_sanctions` | `Barème personnalisé invalide (<code>)` |
+| 6 | `infractions_perso` passes `custom_infractions.validate` | `Infractions personnalisées invalides (<code>)` |
+| 7 | every `perso:<id>` key of `sanctions` is the id of an `infractions_perso` entry | `Barème d'une infraction personnalisée inconnue (<key>)` |
+| 8 | every key of `features` is a known feature id | `Fonctionnalité inconnue : <id>` |
+| 9 | `features.profile.avatar` / `.banner` / `.pseudo`, when present and non-null, are booleans | `Option de profil invalide : <key>` |
 
-`<code>` of rule 6 (`automod/infractions.py::validate_sanctions`):
+`<code>` of the `sanctions` rule (`automod/infractions.py::validate_sanctions`):
 
 | Code | Meaning |
 |---|---|
@@ -265,12 +302,17 @@ the **first failure** is returned (French strings, verbatim):
 | `sanctions_unknown_id` | a key is neither a catalogue id nor a well-formed `perso:<[a-z0-9]{1,12}>` |
 | `sanctions_entry_invalid` | an entry is not an object |
 | `sanctions_mode_invalid` | `mode` ∉ `auto`/`perso` |
-| `sanctions_flag_invalid` | `enabled` or `recidive` is not a boolean |
+| `sanctions_flag_invalid` | `enabled`, `recidive` or `require_approval` is not a boolean |
 | `sanctions_crans_invalid` | `crans` is not an object, has a key ∉ `basse`/`moyenne`/`haute`/`critique`, or a value that is not an integer (booleans refused) |
 | `sanctions_cran_range` | a cran outside 0..7 |
+| `sanctions_actions_invalid` | `actions` (or a `by_gravity` plan's) is not a list of strings |
+| `sanctions_action_unknown` | an action ∉ `delete`/`warn`/`timeout`/`kick`/`ban` (conflicts such as kick+ban are valid: resolved on load) |
+| `sanctions_timeout_invalid` | `timeout_seconds` is not an integer (booleans refused; `null` accepted) |
+| `sanctions_timeout_range` | `timeout_seconds` outside 60..2419200 (1 minute .. 28 days) |
+| `sanctions_by_gravity_invalid` | `by_gravity` is not an object keyed by gravity with object values |
 | `sanctions_action_profil_invalid` | `action_profil` ∉ `hold`/`alert`/`rename_warn`/`bareme`, set on a non-profile type, or `hold` on `profil_pseudo` |
 
-`<code>` of rule 7 (`custom_infractions.validate`, also returned per entry by the
+`<code>` of the `infractions_perso` rule (`custom_infractions.validate`, also returned per entry by the
 route of §6.2): `infractions_perso_invalid` (not a list), `infractions_perso_too_many`
 (> 10), `infraction_entry_invalid`, `infraction_id_invalid`,
 `infraction_id_duplicate`, `infraction_nom_invalid` (missing/blank/> 40),
@@ -282,8 +324,7 @@ route of §6.2): `infractions_perso_invalid` (not a list), `infractions_perso_to
 Not validated by the bot (the runtime tolerates them): `exempt_roles` /
 `exempt_channels` content, `dry_run`, `ignore_moderators`, `scan_all`.
 
-Legacy keys are still read transparently on load: `rules` → `indications`,
-`log_channel_id` → `notify_channel_id`, `categories_desactivees` → `sanctions`
+Legacy keys are still read transparently on load: `log_channel_id` → `notify_channel_id`, `categories_desactivees` → `sanctions`
 (see below). New writes must use the new names.
 
 **Legacy migration of `categories_desactivees`.** On load (both in the live module
@@ -295,68 +336,15 @@ written back until an admin saves from the panel, which then omits the key** (th
 data is preserved, in `sanctions`). A backend reading the config must apply the
 same fold to display the right state.
 
-## 6. Safety checks (`indications` and custom infractions)
+## 6. Safety check (custom infractions)
 
-### 6.1 `indications`
+The free-text "AI guidance" (`indications`) was **removed**: custom infractions
+(§3.2) replace it. A stored `indications` / `rules` key is ignored by the bot
+(never read, dropped on the next save); the dashboard should stop writing it.
+`POST /automod/rules_check` now only checks custom infractions, so the former
+`{"indications": …}` body gets `400 missing_infraction`.
 
-`indications` is injected verbatim into the model's system prompt, so any text
-edited from the bot's own panel is first validated by an AI call
-(`automod/rules_check.py`, call type `automod_rules_check`) that rejects
-prompt-injection attempts ("ignore your instructions", "never sanction @X"…).
-
-**A dashboard that lets an admin write `indications` must run the same check.**
-Do not re-implement the heuristic — call the bot's internal API, which runs the
-exact same code path:
-
-```
-POST {BOT_INTERNAL_URL}/automod/rules_check
-Authorization: Bearer {INTERNAL_API_SECRET}
-Content-Type: application/json
-
-{ "guild_id": "123456789012345678", "indications": "texte à contrôler", "locale": "fr" }
-```
-
-`locale` is optional (`fr` by default, `en-US` supported) and only picks the
-language of `reason`.
-
-**200 — the check ran:**
-
-```json
-{ "ok": true }
-```
-
-```json
-{ "ok": false,
-  "reason": "Les indications ressemblent à une tentative de manipulation de l'IA. Raison : …",
-  "code": "unsafe" }
-```
-
-`reason` is a full sentence, ready to be shown to the admin as-is. `code` is
-`unsafe`, `too_long` or `unavailable` (`unavailable` = the AI could not be
-reached — the check **fails closed**, so the text must not be saved).
-
-**4xx/5xx — the check could not run.** The body is
-`{"ok": false, "error": "<code>", "reason": "<message>"}`:
-
-| Status | `error` | When |
-|---|---|---|
-| `400` | `invalid_json`, `invalid_body` | Body is not a JSON object |
-| `400` | `missing_guild_id`, `invalid_guild_id` | `guild_id` absent or not a snowflake |
-| `400` | `missing_indications`, `invalid_indications` | `indications` absent or not a string |
-| `401` | `unauthorized` | Bad/missing `Authorization` header |
-| `404` | `unknown_guild` | The bot is not in that guild |
-| `503` | `bot_not_ready` | The bot is starting or disconnected |
-
-Every failure mode is explicit — the route never returns a silent pass. The
-backend should therefore **reject the write on anything other than
-`{"ok": true}`**. An empty/whitespace-only `indications` returns `ok: true`
-without an AI call (clearing the field is always allowed), mirroring the bot's
-own panel.
-
-Implementation: `internal_api/routes/automod.py` →
-`automod/rules_check.py::validate_rules`.
-
-### 6.2 Custom infractions (same route, `infraction` instead of `indications`)
+### 6.1 Custom infractions
 
 A custom infraction's `nom`, `description` and `exemples` are read by the model,
 so they need the same guard. The check is **per entry** (the keywords never reach
@@ -372,27 +360,25 @@ Authorization: Bearer {INTERNAL_API_SECRET}
   "locale": "fr" }
 ```
 
-* If the body contains an `infraction` key it is used **instead of** `indications`
-  (the key's presence decides; `indications` is then ignored).
+* The body must contain an `infraction` object (`400 missing_infraction` otherwise).
 * The entry is first validated structurally (`custom_infractions.validate_entry`,
-  the codes of §5 rule 7). A schema failure is **`400`**
+  the codes of the `infractions_perso` rule of §5). A schema failure is **`400`**
   `{"ok": false, "error": "invalid_infraction", "reason": "Infraction personnalisée invalide (<code>)"}`
   (EN: `Invalid custom infraction (<code>)`) — no AI call is made.
-* Then the guild checks of §6.1 apply (`503 bot_not_ready`, `404 unknown_guild`,
+* Then the guild checks apply (`503 bot_not_ready`, `404 unknown_guild`,
   `400 missing_guild_id` / `invalid_guild_id`, `401 unauthorized`, `400 invalid_json`
-  / `invalid_body`). `missing_indications` / `invalid_indications` are never
-  returned in this mode.
+  / `invalid_body`).
 * **200** `{"ok": true}` or `{"ok": false, "reason": "<sentence>", "code": "unsafe" | "unavailable" | "too_long"}`.
   `reason` reads "Cette infraction ressemble à une tentative de manipulation de
   l'IA. Raison : …" (EN: "This infraction looks like an attempt to manipulate the
-  AI. Reason: …"). Fails closed like §6.1: reject the write unless `ok` is `true`.
+  AI. Reason: …"). Fails closed: reject the write unless `ok` is `true`.
 * An entry whose `modele` is a Moddy template **and** whose `nom`, `description`
   and `exemples` equal that template (in any of the 5 locales) is trusted:
   `{"ok": true}` with no AI call. Any edit of those fields makes it a normal entry.
 * The AI prompt gets an extra paragraph: examples are fictional member messages,
   so rude or promotional wording in them is not an injection by itself; only text
   aimed at the AI / system, or trying to change its rules or output, is rejected.
-* Call type `automod_rules_check` (shares the §9 quota with `indications`).
+* Call type `automod_rules_check` (§9 quota).
 
 Run it for each new or edited entry **before** saving (entries that are unchanged
 since their last accepted save need no re-check). Implementation:
@@ -414,6 +400,16 @@ have the same effect. Without the event, the change is only picked up on the
 next bot restart.
 
 ## 8. Related tables (read-mostly for the dashboard)
+
+### `automod_pending_approvals` (moderator approval)
+
+One row per approval card (`require_approval`). `status` ∈ `pending` / `approved` /
+`rejected` / `expired`; `payload` (JSONB) holds the decision snapshot
+(`decision`, `bareme`, `snapshot` of the deleted message, `locale`, `deleted`,
+`attachments`), `result` the outcome once resolved (`applied`, `failed`,
+`case_ref`), `channel_id` / `card_message_id` the card, `expires_at` the deadline
+(48 h). A dashboard may list pending rows but must not resolve them itself: the
+bot applies the sanction when a moderator clicks the card.
 
 These are written by the bot; the dashboard can read them to display automod
 activity. None of them is part of the module configuration.
@@ -604,7 +600,7 @@ See [API_GATEWAY.md](API_GATEWAY.md) for the quota model.
 | Key | TTL | Content |
 |---|---|---|
 | `automod:avatar:<asset key>` | 30 d | Verdict of a profile image (avatar **or** banner), keyed by Discord asset key — global, shared by every server |
-| `automod:pseudo:<sha1 of normalized name>[:<12-hex digest of the guild's indications>]` | 30 d | Verdict of a judged name. Without indications the key is global (shared by every server); a server with indications gets its own suffixed key. A *clean* verdict is reused only by a server whose severity is not stricter |
+| `automod:pseudo:<sha1 of normalized name>` | 30 d | Verdict of a judged name, one global key shared by every server. A *clean* verdict is reused only by a server whose severity is not stricter |
 | `automod:pseudo:allow:<sha1 of normalized name>` | 30 d | Name cleared by the Moddy team ("not sanctionable" label): never flagged again, on any server |
 | `automod:profile:allow:<guild>:<asset key \| n:<hash>>` | 90 d | Asset/name cleared for one server by an accepted appeal |
 | `automod:profile:done:<guild>:<user>:<asset key \| n:<hash>>` | 7 d (assets) / 24 h (names) | "Already sanctioned for this asset/name" marker; cleared when a hold is lifted. Simulation mode uses a separate `sim:`-prefixed marker that live mode ignores |
@@ -639,11 +635,11 @@ Backend / dashboard checklist:
    `sanctions[<id>].enabled = false`. Apply the legacy fold (§5) when reading.
 3. **Deleting a custom infraction deletes `sanctions["perso:<id>"]`** in the same
    write (otherwise the bot refuses the save: rule 8).
-4. **Run the infraction safety check** (§6.2) on every new or edited custom
-   infraction before saving, and the `indications` check (§6.1) as before; reject
+4. **Run the infraction safety check** (§6.1) on every new or edited custom
+   infraction before saving; reject
    on anything other than `{"ok": true}`. Skip it only for unmodified Moddy templates
    (the route already does).
-5. **Validate** with the rules of §5 (ids, cran 0..7, `action_profil` only on
+5. **Validate** with the rules of §5 (ids, `actions`, `timeout_seconds` 60..2419200, `action_profil` only on
    `profil_*`, ≤ 10 infractions, text limits). Ids of custom infractions are
    `[a-z0-9]{1,12}`; generate them random and never reuse one.
 6. **Keep exemptions identical across features** (the panel edits one list).

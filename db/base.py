@@ -27,6 +27,7 @@ from db.repositories.eval_candidates import EvalCandidateRepository
 from db.repositories.precedents import PrecedentRepository
 from db.repositories.automod_learning import AutomodLearningRepository
 from db.repositories.automod_profiles import AutomodProfileRepository
+from db.repositories.automod_approvals import AutomodApprovalRepository
 from db.repositories.saved_roles import SavedRolesRepository
 from db.repositories.token_alerts import TokenAlertRepository
 from db.repositories.token_secrets import TokenSecretRepository
@@ -73,6 +74,7 @@ class ModdyDatabase(
     PrecedentRepository,
     AutomodLearningRepository,
     AutomodProfileRepository,
+    AutomodApprovalRepository,
     SavedRolesRepository,
     TokenAlertRepository,
     TokenSecretRepository,
@@ -965,6 +967,36 @@ class ModdyDatabase(
                     END IF;
                 END $$;
             """)
+
+            # automod_pending_approvals — sanctions waiting for a moderator's
+            # "go" (infraction option `require_approval`). One row per card
+            # posted in the alert channel; `payload` holds the decision snapshot
+            # needed to apply it later (the offending message is already gone).
+            # Resolved by a guarded UPDATE so two clicks cannot both win.
+            # See docs/AUTOMOD_AI.md ("Moderator approval").
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS automod_pending_approvals (
+                    id              BIGSERIAL   PRIMARY KEY,
+                    guild_id        BIGINT      NOT NULL,
+                    user_id         BIGINT      NOT NULL,
+                    channel_id      BIGINT,
+                    card_message_id BIGINT,
+                    status          TEXT        NOT NULL DEFAULT 'pending'
+                        CHECK (status IN ('pending','approved','rejected','expired')),
+                    payload         JSONB       NOT NULL,
+                    result          JSONB,
+                    resolved_by     BIGINT,
+                    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+                    expires_at      TIMESTAMPTZ NOT NULL,
+                    resolved_at     TIMESTAMPTZ
+                )
+            """)
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_automod_approvals_pending "
+                "ON automod_pending_approvals (expires_at) WHERE status = 'pending'")
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_automod_approvals_guild "
+                "ON automod_pending_approvals (guild_id, created_at)")
 
             # automod_profile_holds — a member timed out until they fix their
             # avatar / banner (Automod AI, profile feature, action "hold").

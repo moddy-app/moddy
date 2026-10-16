@@ -2,7 +2,7 @@
 AutomodEngine — the shared, per-bot orchestrator for the content pipeline.
 
 One engine instance is shared by every guild (the blocklist and the embedding
-references are global, identical everywhere); guild-specific inputs (rules,
+references are global, identical everywhere); guild-specific inputs (custom infractions,
 author history, context) are passed per call. This is the scalable seam: a guild
 module owns *configuration and actions*, the engine owns *detection*.
 
@@ -187,7 +187,6 @@ class AutomodEngine:
         *,
         guild_id: int,
         guild_name: str,
-        rules: str,
         author_history: AuthorHistory,
         fetch_context: ContextFn,
         is_bot: bool = False,
@@ -227,7 +226,7 @@ class AutomodEngine:
         verdict-cached (the reaction is specific to this message).
         """
         decision = await self._analyze(
-            target, guild_id=guild_id, guild_name=guild_name, rules=rules,
+            target, guild_id=guild_id, guild_name=guild_name,
             author_history=author_history, fetch_context=fetch_context,
             is_bot=is_bot, is_system=is_system, force_nano=force_nano,
             severity=severity, response_language=response_language,
@@ -250,7 +249,6 @@ class AutomodEngine:
         *,
         guild_id: int,
         guild_name: str,
-        rules: str,
         author_history: AuthorHistory,
         fetch_context: ContextFn,
         is_bot: bool,
@@ -274,7 +272,7 @@ class AutomodEngine:
             )
             return await self._decide(
                 target, signal, guild_id=guild_id, guild_name=guild_name,
-                rules=rules, author_history=author_history,
+                author_history=author_history,
                 fetch_context=fetch_context, correlation_id=correlation_id,
                 severity=severity, response_language=response_language,
                 relation_fn=relation_fn, precedents_fn=precedents_fn,
@@ -297,7 +295,7 @@ class AutomodEngine:
                     guild_id, channel_id, target.author_id, [str(target.id)])
             return await self._decide(
                 target, signal, guild_id=guild_id, guild_name=guild_name,
-                rules=rules, author_history=author_history,
+                author_history=author_history,
                 fetch_context=fetch_context, correlation_id=correlation_id,
                 severity=severity, response_language=response_language,
                 relation_fn=relation_fn, precedents_fn=precedents_fn,
@@ -308,7 +306,7 @@ class AutomodEngine:
         if channel_id is not None:
             return await self._maybe_aggregate(
                 target, guild_id=guild_id, channel_id=channel_id,
-                guild_name=guild_name, rules=rules, author_history=author_history,
+                guild_name=guild_name, author_history=author_history,
                 fetch_context=fetch_context, correlation_id=correlation_id,
                 severity=severity, response_language=response_language,
                 custom_infractions=custom_infractions,
@@ -465,7 +463,6 @@ class AutomodEngine:
         *,
         guild_id: int,
         guild_name: str,
-        rules: str,
         author_history: AuthorHistory,
         fetch_context: ContextFn,
         correlation_id: str,
@@ -553,7 +550,7 @@ class AutomodEngine:
 
         return await self._nano_call(
             key, target, signal, guild_id=guild_id, guild_name=guild_name,
-            rules=rules, author_history=author_history, fetch_context=fetch_context,
+            author_history=author_history, fetch_context=fetch_context,
             correlation_id=correlation_id, severity=severity,
             response_language=response_language, agregat_de=agregat_de,
             relation=relation, cacheable=cacheable, niveau=niveau,
@@ -575,7 +572,7 @@ class AutomodEngine:
 
     async def _nano_call(
         self, key: str, target: TargetMessage, signal: Signal, *,
-        guild_id: int, guild_name: str, rules: str,
+        guild_id: int, guild_name: str,
         author_history: AuthorHistory, fetch_context: ContextFn,
         correlation_id: str, severity: int, response_language: str,
         agregat_de: Optional[List[str]],
@@ -600,7 +597,7 @@ class AutomodEngine:
         try:
             decision = await self._judge(
                 target, signal, guild_id=guild_id, guild_name=guild_name,
-                rules=rules, author_history=author_history,
+                author_history=author_history,
                 fetch_context=fetch_context, correlation_id=correlation_id,
                 severity=severity, response_language=response_language,
                 agregat_de=agregat_de, relation=relation, niveau=niveau,
@@ -634,7 +631,6 @@ class AutomodEngine:
         *,
         guild_id: int,
         guild_name: str,
-        rules: str,
         author_history: AuthorHistory,
         fetch_context: ContextFn,
         correlation_id: str,
@@ -663,7 +659,6 @@ class AutomodEngine:
             target,
             signal,
             guild_name=guild_name,
-            rules=rules,
             history=author_history,
             chat_fn=chat_fn,
             fetch_context=fetch_context,
@@ -1040,7 +1035,6 @@ class AutomodEngine:
         guild_id: int,
         channel_id: int,
         guild_name: str,
-        rules: str,
         author_history: AuthorHistory,
         fetch_context: ContextFn,
         correlation_id: str,
@@ -1080,7 +1074,7 @@ class AutomodEngine:
             id=str(target.id), author_id=author_id, content=concat)
         return await self._decide(
             agg_target, signal, guild_id=guild_id, guild_name=guild_name,
-            rules=rules, author_history=author_history, fetch_context=fetch_context,
+            author_history=author_history, fetch_context=fetch_context,
             correlation_id=correlation_id, severity=severity,
             response_language=response_language, agregat_de=frag_ids,
             custom_infractions=custom_infractions,

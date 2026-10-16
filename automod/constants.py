@@ -372,7 +372,6 @@ CATEGORIES = (
     "incitation_automutilation",
     "doxxing",
     "arnaque_scam",
-    "violation_indications",
     # A server-defined infraction: nano answers "infraction_perso" + a "perso"
     # P-id; the engine maps it to the real "perso:<id>" category.
     CATEGORIE_PERSO,
@@ -481,3 +480,12 @@ PROFILE_QUEUE_MAX: int = 200
 #: than this left and the profile is still flagged.
 PROFILE_HOLD_DURATION_HOURS: int = 28 * 24
 PROFILE_HOLD_RENEW_WINDOW_HOURS: int = 36
+
+
+# ---------------------------------------------------------------------------
+# Moderator approval (infraction option ``require_approval``)
+# ---------------------------------------------------------------------------
+
+#: How long an approval card stays actionable. A sanction applied days after
+#: the message would be arbitrary: past this, the buttons only mark it expired.
+APPROVAL_TTL_HOURS: int = 48

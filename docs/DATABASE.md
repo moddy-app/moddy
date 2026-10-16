@@ -827,6 +827,16 @@ tables, toutes écrites par le bot : `automod_eval_candidates`, `automod_precede
 `automod_learned_terms`, `case_appeals` et — depuis 2026-10-10 —
 **`automod_profile_holds`**.
 
+**`automod_pending_approvals`** — sanctions en attente du « feu vert » d'un modérateur
+(option `require_approval` d'une infraction). Une ligne par carte postée dans le salon
+d'alertes : `id` (BIGSERIAL), `guild_id`, `user_id`, `channel_id` / `card_message_id`
+(la carte), `status` (`pending` · `approved` · `rejected` · `expired`), `payload` JSONB
+(instantané de la décision : décision, barème, message supprimé, locale),
+`result` JSONB (actions appliquées / échouées, dossier), `resolved_by`, `created_at`,
+`expires_at` (48 h), `resolved_at`. La résolution est un `UPDATE … WHERE status =
+'pending'` (un seul clic gagne). Dépôt : `db/repositories/automod_approvals.py`.
+Voir [AUTOMOD_AI.md](AUTOMOD_AI.md) « Moderator approval ».
+
 **`automod_profile_holds`** — un membre mis en sourdine (timeout Discord) tant qu'il
 n'a pas corrigé son avatar ou sa bannière (action `hold` de la modération des
 profils). Une ligne par `(guild_id, user_id, kind)` (clé primaire), `kind` =

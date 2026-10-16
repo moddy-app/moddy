@@ -62,7 +62,7 @@ def target(content):
 COMMON = dict(
     guild_id=10,
     guild_name="Guild",
-    rules="",
+   
     author_history=AuthorHistory(),
     fetch_context=_no_context,
 )

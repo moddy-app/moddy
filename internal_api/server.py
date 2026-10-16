@@ -5,7 +5,7 @@ Expose :
 - GET  /health              : health check Railway (toujours 200 si le process tourne)
 - GET  /status              : métriques du bot, appelé par le backend quand un staff
                               demande le statut du bot via le dashboard.
-- POST /automod/rules_check : contrôle anti-injection des `indications` automod
+- POST /automod/rules_check : contrôle anti-injection d'une infraction personnalisée automod
                               (routes/automod.py).
 
 Authentification : header `Authorization: Bearer {INTERNAL_API_SECRET}`

@@ -15,7 +15,7 @@ LEGACY_PLANCHER = {
     "insulte": (1, 1, 2, 3), "harcelement": (1, 2, 3, 5), "menace": (2, 3, 6, 7),
     "haine_discrimination": (2, 4, 6, 7), "incitation_automutilation": (3, 5, 7, 7),
     "harcelement_sexuel": (3, 5, 7, 7), "doxxing": (4, 6, 7, 7),
-    "arnaque_scam": (7, 7, 7, 7), "violation_indications": (0, 1, 2, 4),
+    "arnaque_scam": (7, 7, 7, 7),
     "contenu_nsfw": (0, 2, 3, 5), "contenu_choquant": (0, 1, 2, 4),
 }
 
@@ -43,7 +43,7 @@ def test_legacy_floors_identical():
         for g, want in zip(inf.GRAVITES, floors):
             assert b.PLANCHER[(cat, g)] == want
             assert inf.INFRACTIONS[cat].plancher[g] == want
-    assert len(b.PLANCHER) == 44
+    assert len(b.PLANCHER) == 40
 
 
 def test_flags_derived():
@@ -61,7 +61,7 @@ def test_nano_categories_unchanged_and_in_catalogue():
 
 
 def test_families_and_profile_floors():
-    assert len(inf.ids_by_famille("message")) == 9
+    assert len(inf.ids_by_famille("message")) == 8
     assert inf.ids_by_famille("image") == ["contenu_nsfw", "contenu_choquant"]
     assert inf.ids_by_famille("profil") == [
         "profil_avatar_nsfw", "profil_avatar_choquant", "profil_pseudo"]
@@ -84,7 +84,7 @@ def test_perso_ids():
     t = inf.get("perso:x1")
     assert t.famille == "perso" and t.plancher == inf.PERSO_DEFAULT_PLANCHER
     assert inf.get("nope") is None and inf.get("insulte").id == "insulte"
-    assert inf.PERSO_DEFAULT_PLANCHER == inf.INFRACTIONS["violation_indications"].plancher
+    assert "violation_indications" not in inf.INFRACTIONS
 
 
 # -- normalize / validate ----------------------------------------------------
@@ -97,7 +97,13 @@ def test_normalize_drops_garbage_and_clamps():
     }
     out = inf.normalize_sanctions(raw)
     assert set(out) == {"insulte", "perso:ok1", "profil_pseudo"}
-    assert out["insulte"]["crans"] == {"basse": 7, "moyenne": 0, "haute": 2, "critique": 3}
+    # Legacy crans are migrated: base plan = "moyenne" (cran 0 -> delete only),
+    # the other gravities are kept as overrides.
+    assert "crans" not in out["insulte"]
+    assert out["insulte"]["actions"] == ["delete"]
+    assert out["insulte"]["by_gravity"]["basse"]["actions"] == ["delete", "ban"]
+    assert out["insulte"]["by_gravity"]["haute"] == {"actions": ["delete", "timeout"],
+                                                     "timeout_seconds": 7200}
     assert out["insulte"]["recidive"] is True and out["insulte"]["enabled"] is True
     assert out["profil_pseudo"]["action_profil"] == "rename_warn"
     assert out["profil_pseudo"]["enabled"] is False

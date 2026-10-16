@@ -319,7 +319,9 @@ Given a `BaseView` subclass like `OldView(bot, guild_id, user_id, locale)`:
 - **`DynamicItem`, entity-scoped, no live view at all** (marker-view
   pattern — use when several unrelated cards share one button type):
   `ShadowAnnotateButton` ([utils/automod_shadow_views.py](../utils/automod_shadow_views.py),
-  simplest) and the five buttons in
+  simplest), `ApprovalButton` ([utils/automod_approval_views.py](../utils/automod_approval_views.py),
+  automod moderator approval, `moddy:automod:approval:<ok|no>:<id>`, state in
+  `automod_pending_approvals`) and the five buttons in
   [`utils/appeal_views.py`](../utils/appeal_views.py). Both wrap every
   callback in a local `_guarded` decorator — **copy that too**: a
   `DynamicItem` dispatched via `bot.add_dynamic_items` has no live

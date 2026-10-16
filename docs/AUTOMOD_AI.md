@@ -119,7 +119,7 @@ that is the deterministic barème's job (session 2). The key v2 fields:
 
 **Canonical categories** (`automod.constants.CATEGORIES`): `insulte`, `menace`,
 `harcelement`, `harcelement_sexuel`, `haine_discrimination`,
-`incitation_automutilation`, `doxxing`, `arnaque_scam`, `violation_indications`,
+`incitation_automutilation`, `doxxing`, `arnaque_scam`,
 `contenu_nsfw` (explicit images) and `contenu_choquant` (gore / graphic violence
 in an image) — the last two decided by SafeSearch only, never by nano. nano may
 additionally answer `infraction_perso` (+ a `perso` P-id) for a server-defined
@@ -263,13 +263,44 @@ overrides the policy of one type. `bareme.calculer` reads `ConfigBareme.sanction
 | Entry | Effect on the cran |
 |---|---|
 | absent / `mode: "auto"` | Moddy's defaults, unchanged (floor, severity shift, veteran clemency, fresh-account malus, recidivism) |
-| `mode: "perso"` | Floor = the server's `crans[gravité]` (0..7). **Skips** the severity shift, veteran clemency and the fresh-account malus ("the server gets exactly what it chose"). Recidivism stays unless `recidive: false`. Confidence caps and the `max_action` ceiling still apply |
+| `mode: "perso"` | Floor = the cran of the server's `actions` (+ exact `timeout_seconds`), see "Multiple actions" below (legacy: `crans[gravité]`, migrated). **Skips** the severity shift, veteran clemency and the fresh-account malus ("the server gets exactly what it chose"). Recidivism stays unless `recidive: false`. Confidence caps and the `max_action` ceiling still apply |
 | `enabled: false` | Deletion only (kill-switch above) |
 | `action_profil` (profile types) | Not a cran: tells the profile feature what to do (§4.4). Carried on `ResultatBareme.action_profil`; `None` for every other type and for a disabled type |
 
 The breakdown (`composantes`) shows `plancher_perso` instead of `plancher` for a
 custom ladder. Legacy `categories_desactivees` is folded into
 `sanctions[<id>].enabled` when the config is loaded (an explicit `enabled` wins).
+
+### Multiple actions per infraction (`automod/actions.py`)
+
+An infraction (catalogue or custom) can apply several actions at once, chosen
+among `delete`, `warn`, `timeout`, `kick`, `ban`, with an **exact** timeout
+(`timeout_seconds`, 1 min .. 28 d; `parse_duration("16h53")` /
+`format_duration`). Conflicts are resolved, never rejected: `ban` > `kick` >
+{`timeout`, `warn`}; `delete` combines with all. Schema:
+[AUTOMOD_AI_CONFIG.md §3.1](AUTOMOD_AI_CONFIG.md).
+
+**How it sits on the cran ladder.** The ladder stays the one source of truth for
+escalation, so recidivism, the confidence caps, `max_action` and the
+heavy-sanction confirmation all keep working:
+
+1. The chosen set has a **floor cran** (`actions.floor_cran`): ban 7, kick 6,
+   timeout by duration (≤2 h → 2, ≤12 h → 3, ≤48 h → 4, ≤7 d → 5, else 6), warn
+   1, delete only 0.
+2. The barème runs as usual from that floor (recidivism unless `recidive: false`;
+   no severity/veteran/fresh-account adjustments in `perso` mode).
+3. Final cran = floor → the server gets **exactly** its set and its exact
+   timeout. Final cran ≠ floor (escalated or capped) → the sanction is the
+   ladder's at that cran (with its duration), and the lighter actions the server
+   chose (`delete`, `warn`) are kept.
+4. `ResultatBareme` carries `actions` (internal names), `duree_secondes` (exact;
+   `duree_heures` is the rounded-up legacy view) and `require_approval`.
+
+Why: replacing the ladder by free-form actions would have dropped recidivism
+escalation; mapping the set onto a cran keeps one coherent explanation ("plancher
+· récidive · plafond…") on the card and in the case evidence. A legacy
+`mode: perso` + `crans` entry is migrated on load to the equivalent plan
+(`infractions.migrate_entry`), per-gravity differences kept in `by_gravity`.
 
 ### Explainability
 
@@ -553,9 +584,9 @@ a wrong precedent can always be purged (it also busts the service cache).
 A server declares its own infraction types in `infractions_perso` (max 10):
 `{id [a-z0-9]{1,12}, nom <=40, description <=300, exemples <=5x200, mots_cles <=20x60, modele}`.
 Downstream the category is `perso:<id>`; its sanction is `sanctions["perso:<id>"]`
-(§2bis; default floors `0/1/2/4` like `violation_indications`). Orphan `perso:*`
-sanctions are dropped on load and rejected by `validate_config`. `indications` is
-untouched. Entries are normalised on load (`custom_infractions.normalize`: bad
+(§2bis; default floors `0/1/2/4`). Orphan `perso:*`
+sanctions are dropped on load and rejected by `validate_config`. They replace the
+removed free-text "AI guidance". Entries are normalised on load (`custom_infractions.normalize`: bad
 entries dropped, text cut to its limits, lists de-duplicated, max 10) and strictly
 validated on save (`validate` / `validate_entry`); error codes and the full schema
 → [AUTOMOD_AI_CONFIG.md §3.2 and §5](AUTOMOD_AI_CONFIG.md). Six Moddy **templates**
@@ -585,7 +616,7 @@ give one-click starting points, filled in the server language.
   Aggregation (fragmented messages) also uses custom routing. The OCR image path
   does not.
 - **nano.** Only when the guild has custom infractions, a block after the
-  indications lists them as `[P1] <fenced nom: description>` (opaque ids, real ids
+  role description lists them as `[P1] <fenced nom: description>` (opaque ids, real ids
   never shown, nano still judges cold and is not told which one routed). nano
   answers `"categorie": "infraction_perso", "perso": "P<n>"`; `validate_grounding`
   rejects an unknown P-id (`grounding_perso_inconnu`); `juger` maps it to
@@ -624,7 +655,6 @@ take the `automod` id later. Full schema (for the dashboard / backend) →
 ```json
 {
   "enabled": true,
-  "indications": "automod guidance (AI-validated for prompt injection)",
   "notify_channel_id": 123,
   "ignore_moderators": true,
   "severity": 3,
@@ -657,7 +687,9 @@ still read transparently.
 - **`severity`** (1–5) scales detection sensitivity (the embedding threshold,
   see `constants.embedding_threshold_for`) and is the barème's global cran shift.
   Default 3.
-- **`indications`** (ex-`rules`) is the guidance fed to nano's system prompt.
+- The former **`indications`** ("AI guidance") setting is **removed**: custom
+  infractions replace it. A stored value is ignored by the bot and dropped on the
+  next save; nano's prompt no longer has a guidance section.
 - **`max_action`** (`warn`/`mute`/`ban`, default `ban`) is the barème's hard
   ceiling — a server can forbid the automod from ever muting/banning.
 - The language of the sanction reason / member DM is the **server language**
@@ -687,24 +719,62 @@ right here — it records an eval candidate and posts the SIMULATION card
 (`_notify_shadow`), and returns **before** any delete/case/DM. Everything below
 only runs in normal (non-shadow) mode. Then:
 
-- `supprimer` → delete the message.
-- `ban` (precedence) / `mute` (Discord timeout, duration by gravity) → applied
-  if role hierarchy + permissions allow, and the action is marked in
-  `bot._moddy_initiated_sanctions` so `case_sync` doesn't double-record the
-  audit-log echo.
-- For each real sanction action, a **guild case** is opened/extended through
-  `bot.cases.record_sanction(source="guild", issuer_type=AUTOMOD, …)`, with the
-  **factual `raison`** as the case reason. The offending message is attached as
-  an **`evidence`** timeline event (extract, jump URL, `explication`, signal,
-  score, confidence, category, gravity).
-- The case is recorded **before** the Discord action, so the audit-log reason
-  carries the public case reference in the **same format as manual sanctions**:
-  `[<REF>] @Moddy (<expiry>) : <raison>` (mirrors
-  `cogs.moderation_commands._build_discord_reason`). A timed mute also carries
-  its `expires_at` on the case sanction.
-- A Components V2 card is posted to the **mandatory alert channel**.
-- The sanctioned member is **DM'd** a sanction notice (like a manual mod action)
-  carrying the appeal buttons — see §7.
+**Protection (not an option).** The server owner and any member whose top role is
+not strictly below Moddy's (`AutomodModule._is_protected`) are skipped before
+anything else: no AI call, no deletion, no case, no DM, no card (message path,
+profile path and approvals alike; re-checked when a pending approval is applied).
+
+**Apply first, verify, then announce** (`_execute_incident`). Nothing is shown as
+done before it happened:
+
+1. `supprimer` → delete the message(s); a Discord refusal is reported (a message
+   that is already gone is not an error).
+2. `ban` / `kick` / `mute` (`_apply_discord_sanction`; ban > kick > timeout) with
+   the permission and hierarchy checks; the action is marked in
+   `bot._moddy_initiated_sanctions` so `case_sync` skips the audit-log echo. A
+   timeout is applied with `member.edit(timed_out_until=…)` and **verified**
+   against the member Discord returns (`actions.timeout_verified`). Every failure
+   gets a reason code (`hierarchy`, `permission`, `absent`, `discord`,
+   `unverified`, `case`).
+3. The **guild case** (`bot.cases.record_sanction(source="guild",
+   issuer_type=AUTOMOD, …)`) only carries the sanctions that were really applied
+   (a `warn` counts once its case is written; a kick is not a case sanction). The
+   factual `raison` is the reason and the message is attached as `evidence`. The
+   audit-log reason therefore reads `[Automod] @Moddy (<expiry>) : <raison>`
+   (the public case reference does not exist yet when Discord is called).
+4. The alert card (`utils/automod_approval_views.render_alert_card`, shared with
+   the approval flow) lists the actions that took effect and, under "Not
+   applied", each failed one with a short reason. Accent turns yellow when
+   something failed.
+5. The member is **DM'd through `bot.notifications`** (appeal buttons, §7) only
+   for a sanction that was really recorded.
+
+### Moderator approval (`require_approval`)
+
+Per infraction option. When the plan contains a `warn` / `timeout` / `kick` /
+`ban`, the module does not sanction on its own:
+
+- The offending message is **deleted immediately** (harmful content should not
+  stay up while waiting, and removal is not what needs a second opinion).
+  Everything else — warn, timeout, kick, ban, the case, the member's DM — waits.
+- A card with the evidence and persistent **Approve / Reject** buttons is posted
+  in the alert channel; the decision snapshot (decision, barème, message snapshot
+  with context) is stored in `automod_pending_approvals`
+  (`db/repositories/automod_approvals.py`) so the buttons survive restarts.
+- `ApprovalButton` (`utils/automod_approval_views.py`) is a `DynamicItem`
+  (`moddy:automod:approval:<ok|no>:<id>`), registered through
+  `AutomodApprovalPersistence`. Every click re-reads the row; only members with
+  the matching permission may decide (`actions.approval_permission`:
+  `ban_members` for a ban, `kick_members` for a kick, else `moderate_members`;
+  administrators always). The row is claimed by one guarded `UPDATE … WHERE
+  status = 'pending'`, so two moderators cannot both win.
+- **Approve** → `AutomodModule.apply_approval`: protection and permission checks
+  run again *now*, then the same apply → verify → case → DM path as a live
+  sanction; the card is edited to show exactly what happened. **Reject** → nothing
+  applied, card edited. After `APPROVAL_TTL_HOURS` (48) the buttons only mark the
+  request expired.
+- Not supported on profile infractions (their `action_profil` is the policy).
+  Approvals are not copied to the team labeling queue.
 
 ### Evasion hardening (repeated / concatenated content)
 
@@ -727,7 +797,7 @@ writes it with `bot.module_manager.save_module_config` (which runs
 `AutomodModule.validate_config` and refreshes the live module). A refused change
 writes nothing and shows the reason. CLAUDE.md rule 9 applies: no "current
 value" text under a select / channel / role picker; the stored value is printed
-only where a button opens a Modal (the AI guidance, the sanction of a type).
+only where a button opens a Modal (the sanction of a type).
 
 | Screen | File | What it is |
 |---|---|---|
@@ -736,7 +806,6 @@ only where a button opens a Modal (the AI guidance, the sanction of a type).
 | **What is monitored** | `automod_ai_advanced_config.py` | two multi-selects: messages + 3 image kinds, and avatar / banner / names (`features.profile.*`) |
 | **Sanctions** | `automod_ai_sanctions_config.py` | types grouped Messages · Images · Profiles · Specific to this server, each with its sanction in plain words; a type select; *+ Add an infraction* (Moddy template in one click — no AI check — or from scratch, validated by `rules_check.validate_custom_infraction`, max 10) |
 | **One type** | same | description, Enabled toggle, *Customise* (Modal V2: four severity pickers + an "escalate on repeat offences" checkbox), *Reset to default*, the profile action select, and Edit / Delete (confirmation) for custom infractions |
-| **AI guidance** | `automod_ai_advanced_config.py` | the `indications` text, same AI injection check as before (`validate_rules`) |
 | **Exemptions** | same | roles + channels (shared by every feature) and *Ignore moderators* |
 | **Advanced** | same | simulation toggle, maximum sanction, sensitivity (*Very tolerant … Very strict*), learned precedents (`automod_ai_precedents_view.py`), delete the configuration (confirmation) |
 
@@ -765,33 +834,30 @@ screens use `DynamicItem`s: `moddy:automod:cfg:tbtn:<action>:<type>` /
 `moddy:automod:cfg:precdel:<page>` (precedents), registered by
 `AutomodConfigPersistence`. Tests: `tests/test_automod_ai_panel.py`.
 
-### Indications safety check
+### Custom-infraction safety check
 
-When an admin edits the **indications** in `/config`, the text is run past the
-AI (`automod/rules_check.py`, call_type `automod_rules_check`) **before** being
-accepted and stored, because the indications are embedded verbatim
-into nano's system prompt. The check **fails closed**: if the AI is unavailable,
-the text is rejected.
+When an admin creates or edits a custom infraction in `/config`, its text
+(name, description, examples) is run past the AI (`automod/rules_check.py`,
+call_type `automod_rules_check`) **before** being stored, because it is embedded
+in nano's system prompt. The check **fails closed**. (The former free-text "AI
+guidance" and its check were removed.)
 
-The same check is exposed to the backend over the internal API so the dashboard
-runs the identical guard instead of re-implementing it:
+The same check is exposed to the backend over the internal API:
 
 ```
 POST {BOT_INTERNAL_URL}/automod/rules_check
-{ "guild_id": "…", "indications": "…" }  →  { "ok": true } | { "ok": false, "reason": "…" }
+{ "guild_id": "…", "infraction": {…} }  →  { "ok": true } | { "ok": false, "reason": "…" }
 ```
 
-The same route also accepts `{"guild_id": "…", "infraction": {…}}` to check ONE
-custom infraction (name + description + examples; keywords are never prompted):
-the entry is validated structurally first (`400 invalid_infraction`), then run
+The entry is validated structurally first (`400 invalid_infraction`), then run
 through `rules_check.validate_custom_infraction` (an extra prompt paragraph tells
 the guard that examples are fictional messages; unmodified Moddy templates are
-trusted and skip the AI call). The panel runs it when an infraction is created
-from scratch or edited.
+trusted and skip the AI call). A body without `infraction` is `400
+missing_infraction`.
 
 See `internal_api/routes/automod.py` and
-[AUTOMOD_AI_CONFIG.md § 6](AUTOMOD_AI_CONFIG.md#6-safety-checks-indications-and-custom-infractions)
-for the full contract (error codes, locales, fail-closed semantics).
+[AUTOMOD_AI_CONFIG.md § 6](AUTOMOD_AI_CONFIG.md#6-safety-check-custom-infractions)
+for the full contract.
 
 ---
 
@@ -938,9 +1004,7 @@ pseudo}` (`exempt_roles` shared, `exempt_channels` unused). The module runs when
   relation, no precedents). Any sanctionable verdict is re-labelled category
   `profil_pseudo` (nano's own category kept in the evidence as `categorie_nano`).
   Verdicts cached per normalized name in Redis `automod:pseudo:<sha1>` (30 d;
-  a server **with indications** gets its own key `…:<sha1 of the indications,
-  12 hex>`, since they influence the verdict; servers without share the global
-  key; a *clean* verdict is only reused by a server whose severity is not
+  one global key shared by every server; a *clean* verdict is only reused by a server whose severity is not
   stricter). A cached verdict never bypasses per-server gates: the type's
   `enabled` / `action_profil` are read when the decision is applied.
   A team "not sanctionable" label on a name writes a global allow marker

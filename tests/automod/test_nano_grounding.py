@@ -54,7 +54,7 @@ async def _judge(raw, content, *, categorie_signal="insulte"):
         target,
         signal,
         guild_name="Guild",
-        rules="",
+       
         history=AuthorHistory(),
         chat_fn=_chat_returning(raw),
         fetch_context=_no_context,

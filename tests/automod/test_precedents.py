@@ -160,7 +160,7 @@ def _target(content):
     return TargetMessage(id="1", author_id="2", content=content)
 
 
-COMMON = dict(guild_id=10, guild_name="G", rules="",
+COMMON = dict(guild_id=10, guild_name="G",
               author_history=AuthorHistory())
 
 

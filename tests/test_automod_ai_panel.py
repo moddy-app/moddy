@@ -194,8 +194,9 @@ class TestPresets:
         assert (light["severity"], balanced["severity"], strict["severity"]) == (2, 3, 4)
         assert balanced["sanctions"] == {} and strict["sanctions"] == {}
         # Light only deletes ordinary insults; the serious ones are still sanctioned.
-        crans = light["sanctions"]["insulte"]["crans"]
-        assert crans["basse"] == crans["moyenne"] == 0 and crans["haute"] >= 1
+        entry = light["sanctions"]["insulte"]
+        assert entry["actions"] == ["delete"]
+        assert "timeout" in entry["by_gravity"]["haute"]["actions"]
         for preset in PRESETS:
             assert set(features_on(preset)) == {
                 k for k, f in preset_config(preset, 1)["features"].items() if f["enabled"]}

@@ -17,8 +17,7 @@ across events lives here (docs/AUTOMOD_AI.md "Profiles"):
   user per ten minutes, shared by every guild.
 * **Names** — nickname / display name / username go through the text funnel
   (``engine.analyze`` with the ``profil_pseudo`` origin). A verdict is cached per
-  normalized name (``automod:pseudo:<sha1>[:<rules digest>]``, 30 d; shared across guilds
-  without indications, per-indications otherwise).
+  normalized name (``automod:pseudo:<sha1>``, 30 d; shared across guilds).
 * **Idempotence** — a "done" marker per (guild, member, asset or name) stops a
   profile event storm from sanctioning the same thing twice.
 * **Scheduling** — screenings run as bounded background tasks so a raid of joins
@@ -113,19 +112,10 @@ def normalize_name(name: str) -> str:
     return (collapse_repeats(text) or text)[:_NAME_MAX_CHARS]
 
 
-def name_cache_key(name: str, rules: str = "") -> str:
-    """Verdict cache key of a name.
-
-    The verdict depends on the guild's indications (``rules``), so a guild that
-    has some gets its own key (digest of the text); the common case, no
-    indications, shares one global key.
-    """
-    key = "automod:pseudo:" + hashlib.sha1(
+def name_cache_key(name: str) -> str:
+    """Verdict cache key of a name (one global key, shared by every guild)."""
+    return "automod:pseudo:" + hashlib.sha1(
         normalize_name(name).encode("utf-8")).hexdigest()
-    rules = (rules or "").strip()
-    if rules:
-        key += ":" + hashlib.sha1(rules.encode("utf-8")).hexdigest()[:12]
-    return key
 
 
 def name_allow_key(name: str) -> str:
@@ -486,7 +476,7 @@ class AutomodProfileService:
             pass
 
     async def judge_name(self, name: str, *, user_id: int, guild_id: int,
-                         guild_name: str, rules: str, severity: int,
+                         guild_name: str, severity: int,
                          response_language: str) -> NameJudgement:
         """Judge one name through the text funnel (cached per normalized name).
 
@@ -502,7 +492,7 @@ class AutomodProfileService:
             return NameJudgement(None, fresh=False)
         if await self.is_name_allowed(text):
             return NameJudgement(None, fresh=False)
-        key = name_cache_key(text, rules)
+        key = name_cache_key(text)
         rec = await self._load_name(key)
         if rec is not None and (rec.get("s") or int(rec.get("sev", 0)) >= int(severity)):
             self.stat("cache_hit")
@@ -518,7 +508,7 @@ class AutomodProfileService:
 
         engine = get_engine(self.bot)
         decision = await engine.analyze(
-            target, guild_id=guild_id, guild_name=guild_name, rules=rules,
+            target, guild_id=guild_id, guild_name=guild_name,
             author_history=AuthorHistory(), fetch_context=no_context,
             severity=severity, response_language=response_language,
         )
