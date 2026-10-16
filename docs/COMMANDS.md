@@ -204,6 +204,18 @@ for command in self.tree.walk_commands():
 
 ---
 
+## Commandes d'un module (synchro par serveur)
+
+Une commande qui appartient à un module n'est synchronisée que sur les serveurs
+où le module est **actif** (activé ET non en pause ; la simulation compte
+comme actif). Déclarez-la normalement, puis dans `setup()` :
+`bot.register_module_commands(MODULE_ID, list(cog.get_app_commands()))` : elle
+est retirée de l'arbre global et publiée par serveur au boot (`on_ready`), à
+l'arrivée dans un serveur et à chaque changement d'état/config
+(`resync_module_commands`, sérialisé par serveur, sauté si rien n'a changé).
+Les commandes utilisables en DM / installation utilisateur restent globales.
+Détails : [MODULE_SYSTEM.md](MODULE_SYSTEM.md#3-ter-commandes-slash-réservées-aux-serveurs-qui-utilisent-le-module).
+
 ## Exemples Pratiques
 
 ### Exemple 1 : Commande de profil utilisateur (GLOBALE)

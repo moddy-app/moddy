@@ -382,4 +382,7 @@ class ProcessedModal(BaseModal, title="Report Processing"):
 
 
 async def setup(bot):
-    await bot.add_cog(InterServerCommands(bot))
+    cog = InterServerCommands(bot)
+    await bot.add_cog(cog)
+    # Published only where the (currently disabled) module is active.
+    bot.register_module_commands('interserver', list(cog.get_app_commands()))

@@ -53,6 +53,7 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     )
     from utils.bump_views import BumpReminderPersistence
     from cogs.config import ConfigMainView
+    from modules.configs._common import ModuleStatePersistence
     from modules.configs.server_settings_config import ServerSettingsConfigView
     from modules.configs.adaptive_slowmode_config import AdaptiveSlowmodeConfigView
     from modules.configs.automod_ai_config import (
@@ -153,6 +154,9 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         # see utils/guild_language.py)
         ConfigMainView,
         ServerSettingsConfigView,
+        # Group 11b — play/pause button shared by every module's /config
+        # home screen (dynamic item carrying module id + target state)
+        ModuleStatePersistence,
         # Group 12 — /config adaptive slowmode panel (guild permission +
         # channel-scoped dynamic items; AdaptiveSlowmodeChannelConfigView
         # is deliberately excluded, see docs/PERSISTENT_VIEWS.md Step 11)

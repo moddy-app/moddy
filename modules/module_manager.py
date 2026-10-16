@@ -3,6 +3,7 @@ Module Manager pour Moddy
 Gère le chargement, la configuration et le fonctionnement des modules de serveur
 """
 
+import functools
 import logging
 from typing import Dict, Any, Optional, List, Type
 from abc import ABC, abstractmethod
@@ -38,6 +39,37 @@ DISABLED_MODULES: set = {
     # docs/sessions/2026-09-17_disable-interserver-module.md.
     "interserver",
 }
+
+# --------------------------------------------------------------------------- #
+# Generic module state (play / pause / simulation)
+#
+# Stored in the module's own config dict: ``guilds.data.modules.<id>.state``.
+# Absent (or unknown) means ``"active"``, so every config written before this
+# key existed keeps running. The dashboard/backend may read and write it.
+# --------------------------------------------------------------------------- #
+STATE_KEY = "state"
+STATE_ACTIVE = "active"
+STATE_PAUSED = "paused"
+STATE_SIMULATION = "simulation"
+ALL_STATES = (STATE_ACTIVE, STATE_PAUSED, STATE_SIMULATION)
+
+# Status of a module on the /config main screen: its state, or this when the
+# guild never saved a config for it.
+STATUS_NOT_CONFIGURED = "not_configured"
+
+
+def normalize_state(raw: Any, supports_simulation: bool = False) -> str:
+    """Map a stored value to a usable state. Never raises.
+
+    Unknown values fall back to ``active`` (a typo must not silently switch a
+    moderation module off), and ``simulation`` is only honoured by modules that
+    declare ``SUPPORTS_SIMULATION``.
+    """
+    if raw == STATE_PAUSED:
+        return STATE_PAUSED
+    if raw == STATE_SIMULATION and supports_simulation:
+        return STATE_SIMULATION
+    return STATE_ACTIVE
 
 
 class ModuleBase(ABC):
@@ -78,6 +110,38 @@ class ModuleBase(ABC):
     # Baseline permissions this module can live without (degrades, never
     # breaks); they are dropped from the blocking list.
     BASELINE_OPTIONAL: List[str] = []
+    # Opt-in third state. A module that sets this True is "running but not
+    # acting" in simulation: it keeps ``enabled`` True (so its commands stay
+    # visible) and must itself read ``self.is_simulation`` to skip side effects
+    # (Automod maps it onto its ``dry_run`` behaviour).
+    SUPPORTS_SIMULATION: bool = False
+
+    def __init_subclass__(cls, **kwargs):
+        """Wrap every subclass ``load_config`` so the generic state is applied
+        however a module reloads itself (manager, or its own bookkeeping write):
+        a paused module can never be switched back on by a stray reload."""
+        super().__init_subclass__(**kwargs)
+        original = cls.__dict__.get("load_config")
+        if original is None or getattr(original, "_applies_state", False):
+            return
+
+        @functools.wraps(original)
+        async def load_config(self, config_data):
+            ok = await original(self, config_data)
+            self.apply_state(config_data)
+            return ok
+
+        load_config._applies_state = True
+        cls.load_config = load_config
+
+    @classmethod
+    def supported_states(cls) -> List[str]:
+        """States an admin may pick for this module, in display order."""
+        states = [STATE_ACTIVE]
+        if cls.SUPPORTS_SIMULATION:
+            states.append(STATE_SIMULATION)
+        states.append(STATE_PAUSED)
+        return states
 
     @classmethod
     def required_permissions(cls) -> List[str]:
@@ -110,6 +174,36 @@ class ModuleBase(ABC):
         self.guild_id = guild_id
         self.config: Dict[str, Any] = {}
         self.enabled = False
+        # Generic play/pause state, filled by apply_state() after load_config.
+        self.state: str = STATE_ACTIVE
+
+    @property
+    def is_paused(self) -> bool:
+        return self.state == STATE_PAUSED
+
+    @property
+    def is_simulation(self) -> bool:
+        return self.state == STATE_SIMULATION
+
+    def apply_state(self, config_data: Optional[Dict[str, Any]]) -> None:
+        """Read the stored ``state`` and let a paused module stay off.
+
+        Called by the manager right after ``load_config`` (which decides
+        ``enabled`` from the config's validity). A paused module keeps its
+        loaded config but is forced to ``enabled = False``; resuming simply
+        reloads, so validity decides again.
+        """
+        raw = (config_data or {}).get(STATE_KEY)
+        self.state = normalize_state(raw, self.SUPPORTS_SIMULATION)
+        if self.state == STATE_PAUSED:
+            self.enabled = False
+
+    async def on_state_change(self, old: str, new: str) -> None:
+        """Hook: the state changed (``/config`` button or a dashboard push).
+
+        Not called at boot. ``enable()``/``disable()`` already cover pausing and
+        resuming; use this for active <-> simulation or to tidy a panel.
+        """
 
     def count(self, action: str, value: int = 1) -> None:
         """Record that this module actually *did* something.
@@ -252,6 +346,12 @@ class ModuleManager:
         self.registered_modules: Dict[str, Type[ModuleBase]] = {}  # module_id -> Module class
         self.active_modules: Dict[int, Dict[str, ModuleBase]] = {}  # guild_id -> {module_id -> Module instance}
 
+    async def _load_instance(self, module: ModuleBase, config: Dict[str, Any]) -> bool:
+        """``load_config`` + the generic state, the only way configs get loaded."""
+        ok = await module.load_config(config)
+        module.apply_state(config)
+        return ok
+
     def register_module(self, module_class: Type[ModuleBase]):
         """
         Enregistre un nouveau type de module
@@ -351,7 +451,7 @@ class ModuleManager:
                 module_instance = module_class(self.bot, guild_id)
 
                 # Charge la configuration
-                if await module_instance.load_config(config_data):
+                if await self._load_instance(module_instance, config_data):
                     self.active_modules[guild_id][module_id] = module_instance
                     # Active le module si la config est valide (enabled est déterminé dans load_config)
                     if module_instance.enabled:
@@ -446,10 +546,11 @@ class ModuleManager:
         if guild_id not in self.active_modules:
             await self.load_guild_modules(guild_id)
         module = self.active_modules.get(guild_id, {}).get(module_id)
+        cached = module is not None
         if module is None and (config or action == EXTERNAL_UPDATED):
             module = self.registered_modules[module_id](self.bot, guild_id)
             if config:
-                await module.load_config(config)
+                await self._load_instance(module, config)
 
         if action == EXTERNAL_DELETED:
             if module is None:
@@ -471,7 +572,8 @@ class ModuleManager:
             logger.info(f"Module {module_id} unloaded for guild {guild_id} (external delete)")
             return {"ok": True, "action": action, "cleaned": True, **recap}
 
-        if not await module.load_config(config):
+        old_state = module.state if cached else None
+        if not await self._load_instance(module, config):
             logger.error(f"[FAIL] Could not load pushed {module_id} config for guild {guild_id}")
             return {"ok": False, "error": "invalid_config"}
 
@@ -481,13 +583,17 @@ class ModuleManager:
         else:
             await module.disable()
 
+        if old_state is not None and old_state != module.state:
+            await self._notify_state_change(module, old_state, module.state)
+
         recap = await self._run_external_hook(module, action, guild_id, module_id)
         await self._sync_module_commands(guild_id, module_id)
         logger.info(
             f"Module {module_id} reloaded from a pushed config for guild {guild_id} "
             f"(enabled: {module.enabled})"
         )
-        return {"ok": True, "action": action, "enabled": module.enabled, **recap}
+        return {"ok": True, "action": action, "enabled": module.enabled,
+                "state": module.state, **recap}
 
     async def apply_language_change(self, guild_id: int) -> Dict[str, Any]:
         """Re-apply what the server language is *baked into* after it changed.
@@ -629,6 +735,17 @@ class ModuleManager:
             module_class = self.registered_modules[module_id]
             temp_instance = module_class(self.bot, guild_id)
 
+            # The generic state is not part of any module's own schema: carry
+            # the stored one over (a config view rebuilt from defaults would
+            # otherwise silently resume a paused module) and keep it out of
+            # validation.
+            config_data = dict(config_data)
+            if STATE_KEY not in config_data:
+                previous = await self.get_module_config(guild_id, module_id) or {}
+                if STATE_KEY in previous:
+                    config_data[STATE_KEY] = previous[STATE_KEY]
+            state_value = config_data.pop(STATE_KEY, None)
+
             # Vérifie que tous les champs obligatoires sont remplis
             required_fields = temp_instance.get_required_fields()
             missing_fields = []
@@ -657,6 +774,9 @@ class ModuleManager:
             if not is_valid:
                 return False, error_msg
 
+            if state_value is not None:
+                config_data[STATE_KEY] = state_value
+
             # S'assure que le serveur existe dans la DB
             await self.bot.db.get_guild(guild_id)
 
@@ -677,11 +797,11 @@ class ModuleManager:
             if module_id in self.active_modules[guild_id]:
                 # Met à jour l'instance existante
                 module_instance = self.active_modules[guild_id][module_id]
-                await module_instance.load_config(config_data)
+                await self._load_instance(module_instance, config_data)
             else:
                 # Crée une nouvelle instance
                 module_instance = module_class(self.bot, guild_id)
-                await module_instance.load_config(config_data)
+                await self._load_instance(module_instance, config_data)
                 self.active_modules[guild_id][module_id] = module_instance
 
             # Active/désactive selon la validité de la config (enabled est déterminé dans load_config)
@@ -738,6 +858,103 @@ class ModuleManager:
         except Exception as e:
             logger.error(f"[FAIL] Error deleting module config: {e}", exc_info=True)
             return False
+
+    # ----------------------------------------------------------------- #
+    # Generic state API (play / pause / simulation)
+    # ----------------------------------------------------------------- #
+
+    async def _notify_state_change(self, module: ModuleBase, old: str, new: str) -> None:
+        try:
+            await module.on_state_change(old, new)
+        except Exception as e:
+            logger.error(f"[FAIL] {module.MODULE_ID}.on_state_change failed for guild "
+                         f"{module.guild_id}: {e}", exc_info=True)
+
+    async def get_module_state(self, guild_id: int, module_id: str) -> Optional[str]:
+        """``active`` / ``paused`` / ``simulation``, or None if never configured.
+
+        Reads the stored config (the source of truth, also written by the
+        dashboard), so it is right even when the instance cache is cold.
+        """
+        module_class = self.registered_modules.get(module_id)
+        if module_class is None:
+            return None
+        config = await self.get_module_config(guild_id, module_id)
+        if not config:
+            return None
+        return normalize_state(config.get(STATE_KEY), module_class.SUPPORTS_SIMULATION)
+
+    async def get_module_statuses(self, guild_id: int) -> Dict[str, str]:
+        """``{module_id: state or STATUS_NOT_CONFIGURED}`` for every module, one DB read."""
+        statuses = {mid: STATUS_NOT_CONFIGURED for mid in self.registered_modules}
+        if not self.bot.db:
+            return statuses
+        try:
+            guild_data = await self.bot.db.get_guild(guild_id)
+            stored = (guild_data or {}).get('data', {}).get('modules', {}) or {}
+        except Exception as e:
+            logger.error(f"[FAIL] Could not read module states for guild {guild_id}: {e}")
+            return statuses
+        for module_id, module_class in self.registered_modules.items():
+            config = stored.get(module_id)
+            for old_id, new_id in LEGACY_MODULE_IDS.items():
+                if not config and new_id == module_id:
+                    config = stored.get(old_id)
+            if config:
+                statuses[module_id] = normalize_state(
+                    config.get(STATE_KEY), module_class.SUPPORTS_SIMULATION)
+        return statuses
+
+    async def set_module_state(self, guild_id: int, module_id: str, state: str,
+                               actor_id: Optional[int] = None) -> tuple[bool, Optional[str]]:
+        """Pause, resume or put a configured module in simulation.
+
+        Persists ``state`` next to the config (the rest is untouched), reloads
+        the live instance (a paused module keeps its config but stops: ``enabled``
+        False, ``on_disable`` called), then re-syncs the guild's commands — they
+        appear/disappear with the state. Returns ``(ok, error_code)`` where
+        ``error_code`` is ``unknown_module``, ``invalid_state``,
+        ``not_configured``, ``no_database`` or ``internal_error``.
+        """
+        module_class = self.registered_modules.get(module_id)
+        if module_class is None:
+            return False, "unknown_module"
+        if state not in module_class.supported_states():
+            return False, "invalid_state"
+        if not self.bot.db:
+            return False, "no_database"
+        try:
+            config = await self.get_module_config(guild_id, module_id)
+            if not config:
+                return False, "not_configured"
+
+            await self.bot.db.update_guild_data(
+                guild_id, f"modules.{module_id}", {**config, STATE_KEY: state})
+            new_config = {**config, STATE_KEY: state}
+
+            if guild_id not in self.active_modules:
+                await self.load_guild_modules(guild_id)
+            module = self.active_modules.get(guild_id, {}).get(module_id)
+            if module is None:
+                module = module_class(self.bot, guild_id)
+                self.active_modules.setdefault(guild_id, {})[module_id] = module
+
+            old_state, was_enabled = module.state, module.enabled
+            await self._load_instance(module, new_config)
+            if module.enabled and not was_enabled:
+                await module.enable()
+            elif was_enabled and not module.enabled:
+                await module.disable()
+            if old_state != module.state:
+                await self._notify_state_change(module, old_state, module.state)
+
+            await self._sync_module_commands(guild_id, module_id)
+            logger.info(f"Module {module_id} state {old_state} -> {module.state} "
+                        f"for guild {guild_id} (actor: {actor_id})")
+            return True, None
+        except Exception as e:
+            logger.error(f"[FAIL] Error setting state of {module_id}: {e}", exc_info=True)
+            return False, "internal_error"
 
     async def get_module_config(self, guild_id: int, module_id: str) -> Optional[Dict[str, Any]]:
         """

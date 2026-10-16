@@ -199,6 +199,99 @@ doit pas en consommer un.
 Voir l'implémentation de référence : `cogs/tickets.py` et
 [TICKETS.md](TICKETS.md#slash-commands-published-per-guild).
 
+#### Commandes d'un Cog appartenant à un module
+
+Une commande déclarée **dans un Cog** (`/altguard`, `/clear-saved-roles`…) est
+ajoutée à l'arbre global par `add_cog()`. `bot.register_module_commands()` la
+**retire de l'arbre global** puis la publie par serveur, donc il suffit de :
+
+```python
+async def setup(bot):
+    cog = MonCog(bot)
+    await bot.add_cog(cog)
+    bot.register_module_commands(MODULE_ID, list(cog.get_app_commands()))
+```
+
+Enregistrés ainsi : `/altguard` (altguard), `/clear-saved-roles` et
+`/view-saved-roles` (auto_restore_roles), les commandes d'interserver
+(module désactivé) et `/ticket` (tickets). Restent **globales** volontairement
+les commandes utilisables en DM / installation utilisateur, même liées à un
+module : le menu contextuel *Transcribe* (voice_transcription).
+Les syncs d'un même serveur sont sérialisés par un verrou
+(`ModdyBot._module_sync_locks`) et sautés si l'ensemble des modules actifs n'a
+pas changé. La traduction des noms/descriptions (`CommandTranslator`) s'applique
+à l'arbre d'un serveur comme à l'arbre global.
+
+### 3 quater. État d'un module : actif / en pause / simulation
+
+Tout module peut être **mis en pause sans perdre sa configuration**.
+
+**Clé stockée** : `guilds.data.modules.<module_id>.state`, au sein de la
+configuration du module (le dashboard/backend peut la lire et l'écrire) :
+
+| Valeur | Sens |
+|---|---|
+| `"active"` ou clé absente | Le module tourne (valeur par défaut, rétrocompatible) |
+| `"paused"` | Config conservée, module arrêté (`enabled=False`, `on_disable` appelé), commandes masquées |
+| `"simulation"` | Opt-in : le module tourne mais n'agit pas ; commandes visibles. Ignoré (= `active`) si le module ne déclare pas `SUPPORTS_SIMULATION = True` |
+
+Une valeur inconnue vaut `active` (une faute de frappe n'éteint jamais la
+modération). `save_module_config` conserve la clé existante quand la config
+sauvegardée ne la contient pas : un écran de config reconstruit depuis les
+valeurs par défaut ne reprend donc pas un module en pause. La clé n'est pas
+validée par `validate_config`, ne fait pas partie du schéma du module.
+
+**API `ModuleBase`** : `SUPPORTS_SIMULATION` (classe), `supported_states()`,
+`self.state`, `is_paused`, `is_simulation`, `apply_state(config)` (appelé
+automatiquement après **tout** `load_config`, y compris un rechargement interne
+du module), hook `async on_state_change(old, new)` (pas appelé au boot).
+
+**API `ModuleManager`** :
+
+- `await set_module_state(guild_id, module_id, state, actor_id=None) -> (ok, error)`
+  : persiste, recharge l'instance, appelle `enable()`/`disable()`, notifie
+  `on_state_change`, resynchronise les commandes. Erreurs : `unknown_module`,
+  `invalid_state`, `not_configured`, `no_database`, `internal_error`.
+- `await get_module_state(guild_id, module_id)` -> `active|paused|simulation|None`
+  (None = jamais configuré) ; `await get_module_statuses(guild_id)` -> dict de
+  tous les modules (`STATUS_NOT_CONFIGURED` si jamais configuré), une seule
+  lecture DB (écran principal de `/config`).
+- Chemin externe (dashboard) : `reload_module()` relit le config, applique
+  l'état, notifie `on_state_change`, resynchronise les commandes ; la réponse
+  contient `state`. Un push sans `module_id` resynchronise aussi les commandes.
+
+**Visibilité des commandes** : seules les instances `enabled` publient leurs
+commandes. `paused` => masquées ; `simulation` et `active` => visibles.
+
+**Mapper la simulation** (Automod, à câbler) : mettre `SUPPORTS_SIMULATION =
+True`, puis remplacer la lecture du `dry_run` du module par `self.is_simulation`
+(ou migrer `dry_run` -> `state: "simulation"` à la lecture dans `load_config`).
+Le module reste `enabled`; c'est à lui de ne produire aucun effet de bord.
+
+**UI `/config`** (`modules/configs/_common.py`) :
+
+```python
+from modules.configs._common import (
+    config_state, state_accent, module_state_row, breadcrumb, open_main_config)
+
+state = config_state(saved_config, supports_simulation=ModuleCls.SUPPORTS_SIMULATION)
+container = ui.Container(accent_colour=state_accent(state))   # primary / gris / jaune
+for item in module_state_row("auto_role", state, locale,
+                             supports_simulation=ModuleCls.SUPPORTS_SIMULATION):
+    container.add_item(item)          # [] tant qu'aucune config n'est sauvegardée
+```
+
+Le bouton (`ModuleStateButton`, DynamicItem `moddy:config:state:<module>:<cible>`,
+enregistré par `ModuleStatePersistence`) gère le clic seul : vérifie Gérer le
+serveur, appelle `set_module_state`, puis reconstruit l'écran d'accueil via
+`cogs.config.build_module_config_view`. Un écran d'accueil de module doit donc
+être constructible depuis ce builder. Le bouton « Retour » doit utiliser
+`await open_main_config(interaction)` (l'écran principal affiche l'état de
+chaque module dans la description de l'entrée du menu).
+
+Sous-vues de `/config` : `breadcrumb(locale, MODULE_NAME, "Sanctions", name)`
+en **premier** item du container (voir DESIGN.md).
+
 ### 4. Stockage en base de données
 
 Les configurations sont stockées dans PostgreSQL :

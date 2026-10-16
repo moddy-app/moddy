@@ -228,6 +228,7 @@ class ModdyBot(ModdyFrameworkBot):
         # Discord rate-limits guild command syncs hard, so a config save that
         # does not change which modules own commands must not spend one.
         self._guild_module_commands: Dict[int, frozenset] = {}
+        self._module_sync_locks: Dict[int, asyncio.Lock] = {}
 
 
         # Configure global error handler
@@ -750,6 +751,9 @@ class ModdyBot(ModdyFrameworkBot):
         if not module_id:
             try:
                 await self.module_manager.unload_guild_modules(guild_id)
+                # The dashboard may have paused/resumed a module: the cache
+                # reload inside resync decides whether a sync is needed.
+                await self.resync_module_commands(guild_id)
                 logger.info(
                     f"[PubSub] Module cache invalidated for guild {guild_id} ({event_type})"
                 )
@@ -1229,6 +1233,14 @@ class ModdyBot(ModdyFrameworkBot):
         removed again the moment the module is switched off, so a server that
         does not use a module never sees its commands at all.
         """
+        # A command that belongs to a Cog was already added to the global tree
+        # by add_cog(); take it back out so it is published per guild only.
+        for command in commands_list:
+            try:
+                self.tree.remove_command(
+                    command.name, type=getattr(command, 'type', discord.AppCommandType.chat_input))
+            except Exception:
+                pass
         self.module_slash_commands[module_id] = list(commands_list)
         logger.info(f"Module commands registered for '{module_id}': "
                     f"{[c.name for c in commands_list]}")
@@ -1302,6 +1314,13 @@ class ModdyBot(ModdyFrameworkBot):
             )
             return False
 
+        # Serialise per guild: two quick toggles must not interleave their
+        # compute-then-sync steps and leave the older set published.
+        lock = self._module_sync_locks.setdefault(guild_id, asyncio.Lock())
+        async with lock:
+            return await self._resync_module_commands_locked(guild, guild_id)
+
+    async def _resync_module_commands_locked(self, guild: discord.Guild, guild_id: int) -> bool:
         module_ids = await self.get_enabled_module_ids(guild_id)
         if self._guild_module_commands.get(guild_id) == frozenset(module_ids):
             logger.debug(f"Module commands unchanged for guild {guild_id} "

@@ -356,4 +356,8 @@ class AltGuard(commands.Cog):
 
 
 async def setup(bot):
-    await bot.add_cog(AltGuard(bot))
+    cog = AltGuard(bot)
+    await bot.add_cog(cog)
+    # /altguard exists only in servers where the module is active.
+    bot.register_module_commands('altguard', [
+        c for c in cog.get_app_commands() if c.name == 'altguard'])

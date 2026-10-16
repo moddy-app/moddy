@@ -256,6 +256,19 @@ container.add_item(ui.TextDisplay("<:warning:...> **Security Warning**"))
 
 ## 🎛️ Configuration Panel Design
 
+### **Module state, accent and breadcrumb**
+
+- **Accent colour follows the module state**: active = primary, paused =
+  neutral gray, simulation = warning yellow (`_common.state_accent`). Success
+  green is only for "saved" confirmations.
+- **State row**: on a module's home screen, `module_state_row()` adds a text
+  line (`**State** <icon> Active` + a `-#` explanation) and the Pause / Resume /
+  Simulation buttons. Only once the module has a saved config.
+- **Breadcrumb**: every /config sub-view (not the main screen) starts with
+  `breadcrumb(locale, MODULE_NAME, *segments)` -> `-# Config › Automod › Sanctions › Doxxing`,
+  as the FIRST item of the container, above the `###` title. Small text above
+  the title reads as navigation without competing with the heading.
+
 ### **Standard Configuration Structure**
 
 Based on the interserver configuration and other modules, follow this structure:
