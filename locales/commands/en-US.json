@@ -21,10 +21,10 @@
   },
   "context_menus": {
     "Save Message": {
-      "name": "Save Message"
+      "name": "Save message"
     },
     "Get Emojis": {
-      "name": "Get Emojis"
+      "name": "Get emojis"
     },
     "Translate": {
       "name": "Translate"

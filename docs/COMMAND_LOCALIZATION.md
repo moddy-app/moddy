@@ -133,6 +133,16 @@ sans lever d'exception) :
 | Nom de menu contextuel | 1–32 caractères, espaces et majuscules autorisés |
 | Unicité | Deux commandes ne peuvent pas partager le même nom localisé dans une même langue |
 
+### Casse (identique dans toutes les langues)
+
+- **Commandes, groupes, paramètres** : toujours en minuscules.
+- **Menus contextuels** : première lettre en majuscule, le reste selon les
+  règles de la langue (« Sauvegarder le message », « Nachricht speichern »).
+- **Descriptions** : première lettre en majuscule.
+- Les écritures sans casse (japonais, chinois, coréen, thaï, hindi) sont exemptées.
+
+Appliqué par `tests/test_command_casing.py`.
+
 Les mots composés utilisent donc un tiret : `effacer-rôles-sauvegardés`,
 `mentett-rangok-törlése`, `mis-casos`.
 
