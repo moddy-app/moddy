@@ -271,6 +271,7 @@ class StarboardModule(ModuleBase):
     """
 
     MODULE_ID = "starboard"
+    CONFIG_DELETABLE = True
     MODULE_NAME = "Starboard"
     MODULE_DESCRIPTION = "Tableau d'honneur des messages populaires"
     MODULE_EMOJI = STAR

@@ -10,13 +10,13 @@ import logging
 
 from utils.i18n import i18n, t
 from cogs.error_handler import BaseView
-from utils.emojis import GROUPS, REQUIRED_FIELDS, WARNING, BACK, SAVE, UNDONE, DELETE
+from utils.emojis import GROUPS, REQUIRED_FIELDS, WARNING, BACK, SAVE, UNDONE
 from modules.configs._common import (
     ack,
     check_guild_perms,
     config_state,
     crumb,
-    module_state_row,
+    module_manage_button,
     open_main_config,
     show,
     state_accent,
@@ -27,7 +27,6 @@ logger = logging.getLogger('moddy.modules.interserver_config')
 _CID_BACK = "moddy:interserver:config:back"
 _CID_SAVE = "moddy:interserver:config:save"
 _CID_CANCEL = "moddy:interserver:config:cancel"
-_CID_DELETE = "moddy:interserver:config:delete"
 _CID_CHANNEL_SELECT = "moddy:interserver:config:channel_select"
 _CID_TYPE_SELECT = "moddy:interserver:config:type_select"
 
@@ -100,14 +99,6 @@ class InterServerConfigView(BaseView):
         ))
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-
-        # Play / pause: only on a clean, saved config (a state click rebuilds the
-        # screen from the saved config and would drop pending edits).
-        state_items = [] if self.has_changes else module_state_row('interserver', state, self.locale)
-        for item in state_items:
-            container.add_item(item)
-        if state_items:
-            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
         # Section : Salon inter-serveur
         container.add_item(ui.TextDisplay(
@@ -224,16 +215,8 @@ class InterServerConfigView(BaseView):
             )
             cancel_btn.callback = self.on_cancel
             button_row.add_item(cancel_btn)
-        if (not self.has_changes and self.has_existing_config) or is_shell:
-            # Bouton Supprimer la configuration (si config existe)
-            delete_btn = ui.Button(
-                emoji=discord.PartialEmoji.from_str(DELETE),
-                label=t('modules.config.buttons.delete', locale=self.locale),
-                style=discord.ButtonStyle.danger,
-                custom_id=_CID_DELETE
-            )
-            delete_btn.callback = self.on_delete
-            button_row.add_item(delete_btn)
+        if not self.has_changes and self.has_existing_config:
+            button_row.add_item(module_manage_button('interserver', self.locale))
 
         self.add_item(button_row)
 
@@ -344,24 +327,6 @@ class InterServerConfigView(BaseView):
         saved = await bot.module_manager.get_module_config(interaction.guild_id, 'interserver')
         view = InterServerConfigView(bot, interaction.guild_id, interaction.user.id, locale, current_config=saved)
         await show(interaction, view)
-
-    async def on_delete(self, interaction: discord.Interaction):
-        """Supprime la configuration"""
-        if not await check_guild_perms(interaction):
-            return
-
-        await ack(interaction)
-
-        bot = interaction.client
-        locale = i18n.get_user_locale(interaction)
-        success = await bot.module_manager.delete_module_config(interaction.guild_id, 'interserver')
-
-        if success:
-            view = InterServerConfigView(bot, interaction.guild_id, interaction.user.id, locale, current_config=None)
-            await interaction.followup.send(t('modules.config.delete.success', locale=locale), ephemeral=True)
-            await interaction.edit_original_response(view=view)
-        else:
-            await interaction.followup.send(t('modules.config.delete.error', locale=locale), ephemeral=True)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         """Vérifie les permissions pour chaque interaction"""

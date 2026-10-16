@@ -114,6 +114,7 @@ class LogsModule(ModuleBase):
     """Server logs configuration holder and event router."""
 
     MODULE_ID = MODULE_ID
+    CONFIG_DELETABLE = True
     MODULE_NAME = "Logs"
     MODULE_DESCRIPTION = "Detailed audit logs for everything that happens on the server"
     MODULE_EMOJI = NEWSPAPER

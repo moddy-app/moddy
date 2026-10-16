@@ -17,11 +17,12 @@ Every external call (embeddings + nano chat + rules safety check) goes through
 
 ## 0. The `/config` panel (`modules/configs/automod_ai_*.py`)
 
-* **Home** (instant save): breadcrumb, the generic state row (Active /
-  Simulation / Paused via `module_state_row`, yellow accent in simulation), the
-  alerts channel, a "fine-tune" select **outside the container**, Back and a red
-  **Delete configuration** button (own confirmation screen, then back to the
-  wizard). First run = 3-step wizard (channel, level, simulation/live); every step
+* **Home** (instant save): breadcrumb, the alerts channel (yellow accent in
+  simulation), a "fine-tune" select **outside the container**, Back and the small
+  shared **Manage** button: the generic Manage panel (MODULE_SYSTEM.md) holds the
+  state select (Active / Simulation / Paused) and **Delete configuration**
+  (in-place confirmation; `before_config_delete` drops the drafts, then back to
+  the wizard). First run = 3-step wizard (channel, level, simulation/live); every step
   has **Skip** = *Balanced* level in *simulation* (safest sane default; keeps the
   channel if one was chosen, otherwise the home asks for it).
 * **Main sub-views** (monitoring, sanctions, exemptions, advanced): classic module

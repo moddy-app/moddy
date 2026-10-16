@@ -1072,17 +1072,6 @@
           "paused": "The module is paused: it does nothing and its commands are hidden. Your configuration is kept.",
           "simulation": "The module watches and simulates its actions without applying anything."
         },
-        "buttons": {
-          "pause": "Pause",
-          "resume": "Resume",
-          "activate": "Activate",
-          "simulation": "Simulation"
-        },
-        "changed": {
-          "active": "Module resumed.",
-          "paused": "Module paused.",
-          "simulation": "Module set to simulation."
-        },
         "errors": {
           "not_configured": "This module has no saved configuration yet.",
           "failed": "Could not change the module state. Please try again."
@@ -1095,6 +1084,24 @@
         "settings": "Settings",
         "permissions": "Permissions",
         "options": "Options"
+      },
+      "manage": {
+        "button": "Manage",
+        "title": "Manage module",
+        "intro": "The module's state and its configuration.",
+        "state_placeholder": "Change the module state",
+        "options": {
+          "active": "The module works normally.",
+          "simulation": "It watches and simulates its actions without applying anything.",
+          "paused": "It stops acting and its commands are hidden."
+        },
+        "delete": {
+          "title": "Delete configuration",
+          "hint": "Erases every setting of this module on the server.",
+          "confirm_title": "Delete the configuration?",
+          "confirm_body": "Every setting of this module will be erased and it will stop. This cannot be undone.",
+          "confirm": "Yes, delete"
+        }
       }
     },
     "welcome_channel": {
@@ -2329,12 +2336,6 @@
           "title": "Timeout duration",
           "label": "Duration",
           "desc": "e.g. 16h53, 1d 2h or 90m (1 minute to 28 days)."
-        },
-        "delete": {
-          "title": "Delete the configuration?",
-          "body": "Automod stops and all its settings (monitoring, sanctions, custom infractions, exemptions) are erased. Cases already recorded are kept.",
-          "confirm": "Yes, delete everything",
-          "cancel": "Cancel"
         }
       }
     },
@@ -2934,9 +2935,6 @@
           "none": "Disable all",
           "prev": "Previous page",
           "next": "Next page"
-        },
-        "clear": {
-          "button": "Delete everything"
         },
         "options": {
           "button": "Options",

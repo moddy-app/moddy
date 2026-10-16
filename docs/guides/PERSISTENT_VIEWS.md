@@ -491,15 +491,16 @@ was easier not to" is not one.
   `AutomodConfigPersistence.register_persistent` (`bot.add_dynamic_items(...)`).
   The wrappers cannot be built without a type / page and have nothing to carry
   once their items reconstruct themselves on every click, so they are not
-  registered. The other Automod screens (wizard steps, home, delete confirmation,
+  registered. The other Automod screens (wizard steps, home,
   sanctions list, monitoring, exemptions, advanced) are registered shells with
   static ids. The home saves instantly; the four main sub-views hold a draft and
   show Save / Cancel while it is pending (drafts are in memory, see
   AUTOMOD.md §0), so a restart only loses unsaved edits.
-  The two destructive confirmations (delete a custom infraction: `delyes`; delete the whole
-  configuration: `AutomodDeleteView`) are **not** in-memory dialogs: the first click re-renders the
-  same screen in confirmation mode (`confirm_delete`), whose *Yes* control is
-  itself a persistent item (`delyes`), so they survive a restart too. The Modals
+  The destructive confirmations (delete a custom infraction: `delyes`; delete the whole
+  configuration: the shared Manage panel's `moddy:config:manage:<module>:confirm`) are
+  **not** in-memory dialogs: the first click re-renders the same screen in confirmation
+  mode (`confirm_delete`), whose *Yes* control is itself a persistent item, so they
+  survive a restart too. The Modals
   of the panel (`SanctionModal`, `InfractionModal`, `IndicationsModal`) follow the
   standing "modals are not persistent" exclusion. The previous panel's ids
   (`moddy:automod:config:*`) were dropped on purpose: a message still showing the

@@ -458,7 +458,7 @@ def _full_cfg(n_custom=10):
     return cfg
 
 
-_SHELLS = (home.AutomodAIConfigView, home.AutomodDeleteView, home.AutomodWizardChannelView,
+_SHELLS = (home.AutomodAIConfigView, home.AutomodWizardChannelView,
            home.AutomodWizardLevelView, home.AutomodWizardModeView, sanc.AutomodSanctionsView,
            adv.AutomodMonitoringView, adv.AutomodExemptionsView, adv.AutomodAdvancedView)
 
@@ -466,7 +466,6 @@ _SHELLS = (home.AutomodAIConfigView, home.AutomodDeleteView, home.AutomodWizardC
 def _all_views(locale, cfg):
     bot = make_bot()
     yield "home", home.AutomodAIConfigView(bot, GUILD, locale, cfg)
-    yield "delete", home.AutomodDeleteView(bot, GUILD, locale)
     yield "wiz1", home.AutomodWizardChannelView(bot, GUILD, locale)
     yield "wiz2", home.AutomodWizardLevelView(bot, GUILD, locale)
     yield "wiz3", home.AutomodWizardModeView(bot, GUILD, locale)
@@ -501,7 +500,7 @@ class TestScreens:
         for cls in _SHELLS:
             shell = cls()
             assert shell.timeout is None and shell.is_persistent() and cls.__persistent__
-        assert {"moddy:automod:cfg:home:level", "moddy:automod:cfg:home:delete"} <= set(
+        assert {"moddy:automod:cfg:home:level", "moddy:config:manage:automod_ai:open"} <= set(
             cids(home.AutomodAIConfigView()))
         for screen in ("sanctions", "mon", "exm", "adv"):
             ids = cids({"sanctions": sanc.AutomodSanctionsView, "mon": adv.AutomodMonitoringView,
@@ -519,6 +518,8 @@ class TestScreens:
             ids = cids(cls())
             assert len(ids) == len(set(ids)), cls.__name__
             for cid in ids:
+                if cid.startswith("moddy:config:manage:"):  # the shared Manage panel
+                    continue
                 assert pattern.match(cid) and len(cid) <= 100, cid
                 assert cid not in seen, (cid, cls.__name__)
                 seen[cid] = cls.__name__
@@ -537,13 +538,16 @@ class TestScreens:
         assert nav and nav[0].custom_id == "moddy:automod:cfg:home:nav"
         inside = {getattr(c, "custom_id", None) for c in top[0].walk_children()}
         assert "moddy:automod:cfg:home:nav" not in inside
-        delete = [c for c in top[2].children if getattr(c, "custom_id", "").endswith("home:delete")]
-        assert delete and delete[0].style == discord.ButtonStyle.danger
-        assert not any(i and i.endswith(("adv:delete", "home:toggle", "adv:dryrun")) for i in cids(view))
-        # Simulation state: yellow accent, the shared state buttons are there.
+        # State and deletion moved to the shared Manage panel: one small
+        # button outside the container, nothing state-related inside it.
+        manage = [c for c in top[2].children
+                  if getattr(c, "custom_id", "") == "moddy:config:manage:automod_ai:open"]
+        assert manage and manage[0].item.style == discord.ButtonStyle.secondary
+        assert not any(i and i.startswith("moddy:config:") for i in inside)
+        assert not any(i and i.endswith(("home:delete", "adv:delete", "home:toggle", "adv:dryrun"))
+                       for i in cids(view))
+        # Simulation state: the yellow accent still shows it.
         assert top[0].accent_colour == discord.Colour(0xFEE75C)
-        assert "moddy:config:state:automod_ai:active" in cids(view)
-        assert "moddy:config:state:automod_ai:paused" in cids(view)
         paused = home.AutomodAIConfigView(make_bot(), GUILD, "en-US",
                                           common.normalize_cfg(configured(state="paused")))
         assert paused.children[0].accent_colour != discord.Colour(0xFEE75C)
@@ -567,7 +571,7 @@ class TestScreens:
         assert "moddy:automod:cfg:sanctions:save" not in idle
         assert "moddy:automod:cfg:sanctions:save" in busy and "moddy:automod:cfg:sanctions:cancel" in busy
         for name, view in _all_views("en-US", cfg):
-            if name.startswith(("type", "precedents", "home", "wiz", "delete")):
+            if name.startswith(("type", "precedents", "home", "wiz")):
                 assert not any(c.endswith((":save", ":cancel")) for c in cids(view)), name
 
     def test_type_screens_use_only_dynamic_items(self):
@@ -580,7 +584,7 @@ class TestScreens:
     def test_every_subscreen_has_a_back_button(self):
         back = i18n.get("modules.config.buttons.back", locale="fr")
         for name, view in _all_views("fr", _full_cfg()):
-            if name in ("home", "wiz1", "delete", "type_delete"):
+            if name in ("home", "wiz1", "type_delete"):
                 continue
             labels = [getattr(getattr(c, "item", c), "label", None) for c in view.walk_children()]
             assert back in labels, name
@@ -1022,19 +1026,19 @@ class TestWizard:
         await home.AutomodAIConfigView().on_channel(FakeInteraction(bot, values=[str(CHANNEL)]))
         assert bot.module_manager.saves
 
-    async def test_delete_configuration_needs_confirmation(self):
+    async def test_delete_configuration_clears_drafts_and_reopens_the_wizard(self):
+        from modules.configs._common import ModuleManageButton
         bot = make_bot(configured())
+        bot.module_manager.registered_modules = {"automod_ai": AutomodModule}
+        common.draft_set(GUILD, 1, "advanced", {"x": 1})
         it = FakeInteraction(bot)
-        await home.AutomodAIConfigView().on_delete(it)
-        assert isinstance(it.last, home.AutomodDeleteView) and not bot.module_manager.deleted
-        view = it.last
-        top = view.children[0]
-        assert top.accent_colour == discord.Colour(0xED4245)
-        await home.AutomodDeleteView().on_no(FakeInteraction(bot))
+        await ModuleManageButton("automod_ai", "delete").callback(it)
         assert not bot.module_manager.deleted
+        assert "moddy:config:manage:automod_ai:confirm" in cids(it.last)
         it = FakeInteraction(bot)
-        await home.AutomodDeleteView().on_yes(it)
+        await ModuleManageButton("automod_ai", "confirm").callback(it)
         assert bot.module_manager.deleted and isinstance(it.last, home.AutomodWizardChannelView)
+        assert common.draft_get(GUILD, 1, "advanced") is None
 
     def test_home_summary_mentions_what_is_on(self):
         text = home.summary_lines(common.normalize_cfg(configured(infractions_perso=[entry(), entry("b")])), "en-US")

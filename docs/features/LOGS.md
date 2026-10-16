@@ -138,8 +138,8 @@ log icon:
 - the module icon in the `/config` module picker (`LogsModule.MODULE_EMOJI`);
 - going back a screen (root panel, the category screen, the options screen) —
   `BACK`;
-- opening Options (`SETTINGS`) and clearing the whole configuration
-  (`DELETE`);
+- opening Options (`SETTINGS`) (clearing the whole configuration is the shared
+  Manage panel's "Delete configuration");
 - the three real on/off settings — ignore bots, attach transcripts, merge
   duplicates — which use `TOGGLE_ON` / `TOGGLE_OFF`, **the only toggle icon
   pair anywhere in the bot** (every other `/config` panel with a switch uses
@@ -228,7 +228,7 @@ Three screens, **no save button** — every change applies immediately:
 
 | Screen | What it does |
 |---|---|
-| **Root** | One line per configured category, a picker to open one, a "send everything to one channel" shortcut, and a "clear everything" button |
+| **Root** | One line per configured category, a picker to open one, a "send everything to one channel" shortcut, and the shared **Manage** button (state + delete configuration) |
 | **Category** | The channels this category posts to (up to `MAX_CHANNELS_PER_CATEGORY = 3`) and a paginated checklist of its events (25 per page) |
 | **Options** | Ignored channels, ignored roles, ignore bots, attach transcripts, merge duplicates, log language |
 

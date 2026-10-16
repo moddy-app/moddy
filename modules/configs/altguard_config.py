@@ -28,12 +28,12 @@ from modules.configs._common import (
     check_guild_perms,
     config_state,
     crumb,
-    module_state_row,
+    module_manage_button,
     open_main_config,
     show,
     state_accent,
 )
-from utils.emojis import BACK, FINGERPRINT, DELETE, SAVE, UNDONE
+from utils.emojis import BACK, FINGERPRINT, SAVE, UNDONE
 from utils.i18n import i18n, t
 
 logger = logging.getLogger("moddy.modules.altguard_config")
@@ -45,7 +45,6 @@ _CID_LOG_CHANNEL = "moddy:altguard:config:log_channel"
 _CID_BACK = "moddy:altguard:config:back"
 _CID_SAVE = "moddy:altguard:config:save"
 _CID_CANCEL = "moddy:altguard:config:cancel"
-_CID_DELETE = "moddy:altguard:config:delete"
 
 
 class AltGuardConfigView(BaseView):
@@ -106,14 +105,6 @@ class AltGuardConfigView(BaseView):
         ))
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-
-        # Play / pause: only on a clean, saved config (a state click rebuilds the
-        # screen from the saved config and would drop pending edits).
-        state_items = [] if self.has_changes else module_state_row('altguard', state, self.locale)
-        for item in state_items:
-            container.add_item(item)
-        if state_items:
-            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
         # --- Verification channel -------------------------------------- #
         container.add_item(ui.TextDisplay(
@@ -237,15 +228,8 @@ class AltGuardConfigView(BaseView):
             cancel_btn.callback = self.on_cancel
             button_row.add_item(cancel_btn)
 
-        if (not self.has_changes and self.has_existing_config) or is_shell:
-            delete_btn = ui.Button(
-                emoji=discord.PartialEmoji.from_str(DELETE),
-                label=t('modules.config.buttons.delete', locale=self.locale),
-                style=discord.ButtonStyle.danger,
-                custom_id=_CID_DELETE,
-            )
-            delete_btn.callback = self.on_delete
-            button_row.add_item(delete_btn)
+        if not self.has_changes and self.has_existing_config:
+            button_row.add_item(module_manage_button(MODULE_ID, self.locale))
 
         self.add_item(button_row)
 
@@ -389,36 +373,6 @@ class AltGuardConfigView(BaseView):
             bot, interaction.guild_id, interaction.user.id, locale, current_config=saved,
         )
         await show(interaction, view)
-
-    async def on_delete(self, interaction: discord.Interaction) -> None:
-        if not await check_guild_perms(interaction):
-            return
-
-        await ack(interaction)
-
-        bot = interaction.client
-        locale = i18n.get_user_locale(interaction)
-
-        # Take the panel down before dropping the config: afterwards the module
-        # instance is gone and nothing knows which message to delete.
-        module = await bot.module_manager.get_module_instance(interaction.guild_id, MODULE_ID)
-        if module:
-            await module.delete_panel()
-
-        success = await bot.module_manager.delete_module_config(interaction.guild_id, MODULE_ID)
-
-        if success:
-            view = AltGuardConfigView(
-                bot, interaction.guild_id, interaction.user.id, locale, current_config=None,
-            )
-            await interaction.followup.send(
-                t('modules.config.delete.success', locale=locale), ephemeral=True,
-            )
-            await interaction.edit_original_response(view=view)
-        else:
-            await interaction.followup.send(
-                t('modules.config.delete.error', locale=locale), ephemeral=True,
-            )
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         return await check_guild_perms(interaction)

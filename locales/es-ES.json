@@ -1072,17 +1072,6 @@
           "paused": "El módulo está en pausa: no hace nada y sus comandos están ocultos. Tu configuración se conserva.",
           "simulation": "El módulo observa y simula sus acciones sin aplicar nada."
         },
-        "buttons": {
-          "pause": "Pausar",
-          "resume": "Reanudar",
-          "activate": "Activar",
-          "simulation": "Simulación"
-        },
-        "changed": {
-          "active": "Módulo reanudado.",
-          "paused": "Módulo en pausa.",
-          "simulation": "Módulo en simulación."
-        },
         "errors": {
           "not_configured": "Este módulo aún no tiene una configuración guardada.",
           "failed": "No se pudo cambiar el estado del módulo. Inténtalo de nuevo."
@@ -1095,6 +1084,24 @@
         "settings": "Ajustes",
         "permissions": "Permisos",
         "options": "Opciones"
+      },
+      "manage": {
+        "button": "Gestionar",
+        "title": "Gestionar el módulo",
+        "intro": "El estado del módulo y su configuración.",
+        "state_placeholder": "Cambiar el estado del módulo",
+        "options": {
+          "active": "El módulo funciona con normalidad.",
+          "simulation": "Observa y simula sus acciones sin aplicar nada.",
+          "paused": "Deja de actuar y sus comandos se ocultan."
+        },
+        "delete": {
+          "title": "Eliminar la configuración",
+          "hint": "Borra todos los ajustes de este módulo en el servidor.",
+          "confirm_title": "¿Eliminar la configuración?",
+          "confirm_body": "Se borrarán todos los ajustes de este módulo y se detendrá. Esta acción es irreversible.",
+          "confirm": "Sí, eliminar"
+        }
       }
     },
     "welcome_channel": {
@@ -2329,12 +2336,6 @@
           "title": "Duración del aislamiento",
           "label": "Duración",
           "desc": "p. ej. 16h53, 1d 2h o 90m (de 1 minuto a 28 días)."
-        },
-        "delete": {
-          "title": "¿Eliminar la configuración?",
-          "body": "El Automod se detiene y se borran todos sus ajustes (supervisión, sanciones, infracciones personalizadas, exenciones). Los casos ya registrados se conservan.",
-          "confirm": "Sí, borrar todo",
-          "cancel": "Cancelar"
         }
       }
     },
@@ -2934,9 +2935,6 @@
           "none": "Desactivar todo",
           "prev": "Página anterior",
           "next": "Página siguiente"
-        },
-        "clear": {
-          "button": "Eliminar todo"
         },
         "options": {
           "button": "Opciones",

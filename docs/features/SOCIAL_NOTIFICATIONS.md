@@ -55,7 +55,7 @@ Subscriptions live in `social_subscriptions`, but the module still stores a mini
 config at `guilds.data.modules.social_notifications` (`{"configured": true}`, plus
 the generic `state` key). It is written by `ensure_module_config()` when a guild adds
 a subscription and backfilled when an existing guild opens the panel. The panel shows
-the generic state row; `_dispatch_event` skips guilds whose state is `paused`
+the generic state (panel's **Manage** button); `_dispatch_event` skips guilds whose state is `paused`
 (`is_guild_paused`). Subscriptions and service-side polling are untouched, so resuming
 needs no re-subscription (events published while paused are not replayed).
 

@@ -1071,17 +1071,6 @@
           "paused": "Le module est en pause : il n'agit plus et ses commandes sont masquées. Votre configuration est conservée.",
           "simulation": "Le module observe et simule ses actions sans rien appliquer."
         },
-        "buttons": {
-          "pause": "Mettre en pause",
-          "resume": "Reprendre",
-          "activate": "Activer",
-          "simulation": "Simulation"
-        },
-        "changed": {
-          "active": "Module repris.",
-          "paused": "Module mis en pause.",
-          "simulation": "Module en simulation."
-        },
         "errors": {
           "not_configured": "Ce module n'a pas encore de configuration enregistrée.",
           "failed": "Impossible de changer l'état du module. Réessayez."
@@ -1094,6 +1083,24 @@
         "settings": "Paramètres",
         "permissions": "Permissions",
         "options": "Options"
+      },
+      "manage": {
+        "button": "Gérer",
+        "title": "Gérer le module",
+        "intro": "L'état du module et sa configuration.",
+        "state_placeholder": "Changer l'état du module",
+        "options": {
+          "active": "Le module agit normalement.",
+          "simulation": "Il observe et simule ses actions, sans rien appliquer.",
+          "paused": "Il n'agit plus et ses commandes sont masquées."
+        },
+        "delete": {
+          "title": "Supprimer la configuration",
+          "hint": "Efface tous les réglages de ce module sur le serveur.",
+          "confirm_title": "Supprimer la configuration ?",
+          "confirm_body": "Tous les réglages de ce module seront effacés et il s'arrêtera. Cette action est irréversible.",
+          "confirm": "Oui, supprimer"
+        }
       }
     },
     "welcome_channel": {
@@ -2328,12 +2335,6 @@
           "title": "Durée de l'exclusion",
           "label": "Durée",
           "desc": "ex. 16h53, 1j 2h ou 90min (de 1 minute à 28 jours)."
-        },
-        "delete": {
-          "title": "Supprimer la configuration ?",
-          "body": "L'Automod s'arrête et tous ses réglages (surveillance, sanctions, infractions personnalisées, exemptions) sont effacés. Les cas déjà enregistrés sont conservés.",
-          "confirm": "Oui, tout supprimer",
-          "cancel": "Annuler"
         }
       }
     },
@@ -2933,9 +2934,6 @@
           "none": "Tout désactiver",
           "prev": "Page précédente",
           "next": "Page suivante"
-        },
-        "clear": {
-          "button": "Tout supprimer"
         },
         "options": {
           "button": "Options",

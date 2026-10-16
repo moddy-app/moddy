@@ -269,20 +269,33 @@ commandes. `paused` => masquées ; `simulation` et `active` => visibles.
 
 ```python
 from modules.configs._common import (
-    config_state, state_accent, module_state_row, breadcrumb, open_main_config)
+    config_state, state_accent, module_manage_button, breadcrumb, open_main_config)
 
 state = config_state(saved_config, supports_simulation=ModuleCls.SUPPORTS_SIMULATION)
 container = ui.Container(accent_colour=state_accent(state))   # primary / gris / jaune
-for item in module_state_row("auto_role", state, locale,
-                             supports_simulation=ModuleCls.SUPPORTS_SIMULATION):
-    container.add_item(item)          # [] tant qu'aucune config n'est sauvegardée
+...
+self.add_item(container)
+# Rangée de boutons HORS du container : Retour, ..., puis « Gérer »
+if state is not None and not self.has_changes:   # config sauvegardée, rien en attente
+    button_row.add_item(module_manage_button("auto_role", locale))
 ```
 
-Le bouton (`ModuleStateButton`, DynamicItem `moddy:config:state:<module>:<cible>`,
-enregistré par `ModuleStatePersistence`) gère le clic seul : vérifie Gérer le
-serveur, appelle `set_module_state`, puis reconstruit l'écran d'accueil via
-`cogs.config.build_module_config_view`. Un écran d'accueil de module doit donc
-être constructible depuis ce builder. Le bouton « Retour » doit utiliser
+L'état ne s'affiche **pas** dans le container de l'écran d'accueil : le petit
+bouton **Gérer** (`ModuleManageButton`, DynamicItem
+`moddy:config:manage:<module>:open`) ouvre le panneau générique
+`ModuleManageView` : la ligne d'état, un select Actif / Simulation / En pause
+(une phrase par option, `ModuleStateSelect`, `moddy:config:manage:<module>:state`)
+et, si le module déclare `CONFIG_DELETABLE = True`, « Supprimer la
+configuration » avec confirmation sur le même écran (`:delete` -> `:confirm` /
+`:cancel`). Tout est enregistré par `ModuleStatePersistence` et re-vérifie Gérer
+le serveur à chaque clic. Avant la suppression, le panneau appelle le hook de
+classe `before_config_delete(bot, guild_id)` (AltGuard retire son panneau,
+Automod vide ses brouillons) puis `delete_module_config`. « Retour » et la fin
+de la suppression reconstruisent l'écran d'accueil via
+`cogs.config.build_module_config_view` : un écran d'accueil de module doit donc
+être constructible depuis ce builder. `CONFIG_DELETABLE` reste `False` pour les
+modules dont la config possède des choses hors de la ligne en base (panneaux
+postés, abonnements de flux, rappels planifiés) tant qu'aucun hook ne les nettoie. Le bouton « Retour » doit utiliser
 `await open_main_config(interaction)` (l'écran principal affiche l'état de
 chaque module dans la description de l'entrée du menu).
 

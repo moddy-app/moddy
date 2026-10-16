@@ -386,7 +386,6 @@ _SCREENS = {
     "wizard_channel": ("modules.configs.automod_ai_config", "render_wizard_channel"),
     "wizard_level": ("modules.configs.automod_ai_config", "render_wizard_level"),
     "wizard_mode": ("modules.configs.automod_ai_config", "render_wizard_mode"),
-    "delete": ("modules.configs.automod_ai_config", "render_delete"),
     "monitoring": ("modules.configs.automod_ai_advanced_config", "render_monitoring"),
     "exemptions": ("modules.configs.automod_ai_advanced_config", "render_exemptions"),
     "advanced": ("modules.configs.automod_ai_advanced_config", "render_advanced"),

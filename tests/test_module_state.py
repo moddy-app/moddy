@@ -166,54 +166,107 @@ def test_breadcrumb_text():
     assert crumb.content == "-# Config › Automod › Sanctions › Doxxing"
 
 
-def test_state_row_hidden_without_config():
-    assert _common.module_state_row("demo", None, "en-US") == []
+def _manage_view(state, sim=False, deletable=False, confirm=False):
+    return _common.ModuleManageView("demo", state, "en-US", supports_simulation=sim,
+                                    deletable=deletable, confirm_delete=confirm)
 
 
-def test_state_row_buttons():
-    def ids(state, sim):
-        items = _common.module_state_row("demo", state, "en-US", supports_simulation=sim)
-        return [b.custom_id for b in items[1].children]
-
-    assert ids("active", False) == ["moddy:config:state:demo:paused"]
-    assert ids("paused", False) == ["moddy:config:state:demo:active"]
-    assert ids("active", True) == ["moddy:config:state:demo:simulation",
-                                   "moddy:config:state:demo:paused"]
-    assert ids("simulation", True) == ["moddy:config:state:demo:active",
-                                       "moddy:config:state:demo:paused"]
+def _ids(view):
+    return [getattr(i, "item", i).custom_id for i in view.walk_children()
+            if getattr(getattr(i, "item", i), "custom_id", None)]
 
 
-def test_state_button_template_matches_own_custom_id():
-    btn = _common.ModuleStateButton("auto_restore_roles", "paused")
-    m = re.fullmatch(_common.ModuleStateButton.__discord_ui_compiled_template__,
-                     btn.item.custom_id)
-    assert m and m["module"] == "auto_restore_roles" and m["target"] == "paused"
+def test_manage_button_custom_id():
+    btn = _common.module_manage_button("auto_role", "en-US")
+    assert btn.item.custom_id == "moddy:config:manage:auto_role:open"
+    assert btn.item.style == discord.ButtonStyle.secondary
 
 
-async def test_button_callback_sets_state(monkeypatch):
-    mgr = SimpleNamespace(set_module_state=AsyncMock(return_value=(True, None)),
-                          get_module_config=AsyncMock(return_value={"channel": 1}))
-    bot = SimpleNamespace(module_manager=mgr)
-    resp = MagicMock(is_done=MagicMock(return_value=False), defer=AsyncMock(),
+def test_manage_panel_state_select_options():
+    def options(state, sim):
+        view = _manage_view(state, sim)
+        select = next(i for i in view.walk_children()
+                      if getattr(i, "custom_id", "") == "moddy:config:manage:demo:state")
+        return [(o.value, o.default) for o in select.item.options]
+
+    assert options("active", False) == [("active", True), ("paused", False)]
+    assert options("paused", True) == [("active", False), ("simulation", False), ("paused", True)]
+
+
+def test_manage_panel_delete_only_when_deletable_and_confirmed():
+    assert not any(i.endswith((":delete", ":confirm")) for i in _ids(_manage_view("active")))
+    ids = _ids(_manage_view("active", deletable=True))
+    assert "moddy:config:manage:demo:delete" in ids and "moddy:config:manage:demo:confirm" not in ids
+    ids = _ids(_manage_view("active", deletable=True, confirm=True))
+    assert {"moddy:config:manage:demo:confirm", "moddy:config:manage:demo:cancel"} <= set(ids)
+    assert "moddy:config:manage:demo:back" in ids
+
+
+def test_manage_templates_match_own_custom_ids():
+    btn = _common.ModuleManageButton("auto_restore_roles", "confirm")
+    m = re.fullmatch(_common.ModuleManageButton.__discord_ui_compiled_template__, btn.item.custom_id)
+    assert m and m["module"] == "auto_restore_roles" and m["action"] == "confirm"
+    sel = _common.ModuleStateSelect("auto_restore_roles", current="active")
+    m = re.fullmatch(_common.ModuleStateSelect.__discord_ui_compiled_template__, sel.item.custom_id)
+    assert m and m["module"] == "auto_restore_roles"
+
+
+def _interaction(bot, values=None):
+    resp = MagicMock(is_done=MagicMock(side_effect=[False, True, True, True]), defer=AsyncMock(),
                      edit_message=AsyncMock())
     inter = MagicMock(client=bot, response=resp, guild_id=1, locale="en-US",
+                      data={"values": values or []},
                       user=SimpleNamespace(id=2, guild_permissions=SimpleNamespace(manage_guild=True)))
     inter.edit_original_response = AsyncMock()
+    inter.followup.send = AsyncMock()
+    return inter
+
+
+class _Demo:
+    SUPPORTS_SIMULATION = False
+    CONFIG_DELETABLE = True
+    before_config_delete = AsyncMock()
+
+    @staticmethod
+    def stored_state(cfg):
+        return cfg.get("state", "active")
+
+
+async def test_state_select_sets_state_and_rerenders_panel():
+    mgr = SimpleNamespace(set_module_state=AsyncMock(return_value=(True, None)),
+                          get_module_config=AsyncMock(return_value={"state": "paused"}),
+                          registered_modules={"demo": _Demo})
+    inter = _interaction(SimpleNamespace(module_manager=mgr), values=["paused"])
+    await _common.ModuleStateSelect("demo").callback(inter)
+    mgr.set_module_state.assert_awaited_once_with(1, "demo", "paused", actor_id=2)
+    view = inter.edit_original_response.await_args.kwargs["view"]
+    assert isinstance(view, _common.ModuleManageView)
+
+
+async def test_confirm_runs_hook_then_deletes(monkeypatch):
+    mgr = SimpleNamespace(delete_module_config=AsyncMock(return_value=True),
+                          get_module_config=AsyncMock(return_value=None),
+                          registered_modules={"demo": _Demo})
     import cogs.config as cfg
     monkeypatch.setattr(cfg, "build_module_config_view", AsyncMock(return_value=MagicMock()))
-    resp.is_done = MagicMock(side_effect=[False, True])
-    await _common.ModuleStateButton("demo", "paused").callback(inter)
-    mgr.set_module_state.assert_awaited_once_with(1, "demo", "paused", actor_id=2)
+    inter = _interaction(SimpleNamespace(module_manager=mgr))
+    await _common.ModuleManageButton("demo", "confirm").callback(inter)
+    _Demo.before_config_delete.assert_awaited_once()
+    mgr.delete_module_config.assert_awaited_once_with(1, "demo")
     inter.edit_original_response.assert_awaited_once()
 
 
-def test_locales_have_state_keys():
+def test_locales_have_manage_keys():
     import json
     for loc in ("fr", "en-US", "es-ES", "pt-BR", "de"):
         c = json.load(open(f"locales/{loc}.json", encoding="utf-8"))["modules"]["config"]
         assert {"active", "paused", "simulation", "not_configured"} <= set(c["state"])
         assert c["breadcrumb"]["root"]
-        assert set(c["state"]["buttons"]) == {"pause", "resume", "activate", "simulation"}
+        m = c["manage"]
+        assert m["button"] and m["title"] and m["state_placeholder"]
+        assert set(m["options"]) == {"active", "paused", "simulation"}
+        assert all(len(v) <= 100 for v in m["options"].values())
+        assert {"title", "hint", "confirm_title", "confirm_body", "confirm"} <= set(m["delete"])
 
 
 def test_stored_state_maps_legacy_flags_for_statuses():

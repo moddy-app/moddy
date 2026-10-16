@@ -30,7 +30,7 @@ from cogs.error_handler import BaseView
 from config import COLORS
 from modules.configs._common import (
     check_guild_perms, ack, show, crumb, crumb_segment, state_accent, config_state,
-    module_state_row, open_main_config,
+    module_manage_button, open_main_config,
 )
 from modules.logs import (
     MAX_CHANNELS_PER_CATEGORY, MAX_IGNORED_CHANNELS, MAX_IGNORED_ROLES,
@@ -38,7 +38,7 @@ from modules.logs import (
 )
 from serverlogs import registry
 from utils.emojis import (
-    BACK, DELETE, NEWSPAPER, SETTINGS, TOGGLE_OFF, TOGGLE_ON, log_emoji,
+    BACK, NEWSPAPER, SETTINGS, TOGGLE_OFF, TOGGLE_ON, log_emoji,
 )
 from utils.i18n import i18n, t
 
@@ -48,13 +48,12 @@ _MODULE_ID = "logs"
 
 # Every icon of this panel comes from the server-logs set
 # (``utils/emojis.py::LOG_EMOJIS``), with three exceptions kept on the bot's
-# normal icons: navigating back a screen, opening Options and clearing the
-# whole config are generic UI actions, not something specific to logs, so
-# they use the same BACK/SETTINGS/DELETE the rest of /config uses — plus the
+# normal icons: navigating back a screen and opening Options are generic UI
+# actions, not something specific to logs, so they use the same BACK/SETTINGS
+# the rest of /config uses — plus the
 # module icon in the /config picker.
 _ICON_BACK = BACK
 _ICON_OPTIONS = SETTINGS
-_ICON_CLEAR = DELETE
 #: Pagination chevrons inside the category checklist — distinct from "go back
 #: a screen" above, these stay in the logs set.
 _ICON_PREV = log_emoji("left")
@@ -78,7 +77,6 @@ EVENTS_PER_PAGE = 25
 _CID_CATEGORY = "moddy:logs:config:category"
 _CID_MASS_CHANNEL = "moddy:logs:config:mass_channel"
 _CID_OPTIONS = "moddy:logs:config:options"
-_CID_CLEAR = "moddy:logs:config:clear"
 _CID_BACK = "moddy:logs:config:back"
 
 # Options panel.
@@ -167,12 +165,6 @@ class LogsConfigView(BaseView):
         ))
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
-        # Every change saves instantly: no pending edit can be lost by a state click.
-        state_items = module_state_row(_MODULE_ID, state, self.locale)
-        for item in state_items:
-            container.add_item(item)
-        if state_items:
-            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
         container.add_item(ui.TextDisplay(self._summary()))
 
         # Category picker.
@@ -268,18 +260,8 @@ class LogsConfigView(BaseView):
         options.callback = self.on_options
         row.add_item(options)
 
-        # Rendered on the registration shell too, so its custom_id is known
-        # after a restart even when no guild has a configuration yet
-        # (docs/guides/PERSISTENT_VIEWS.md, gotcha 2).
-        if self.bot is None or self.module.bound_categories:
-            clear = ui.Button(
-                emoji=discord.PartialEmoji.from_str(_ICON_CLEAR),
-                label=t('modules.logs.config.clear.button', locale=self.locale),
-                style=discord.ButtonStyle.danger,
-                custom_id=_CID_CLEAR,
-            )
-            clear.callback = self.on_clear
-            row.add_item(clear)
+        if self.module.categories:  # a stored config
+            row.add_item(module_manage_button(_MODULE_ID, self.locale))
 
         self.add_item(row)
 
@@ -321,20 +303,6 @@ class LogsConfigView(BaseView):
         await ack(interaction)
         view = await LogsOptionsView.create(interaction)
         await show(interaction, view)
-
-    async def on_clear(self, interaction: discord.Interaction):
-        if not await check_guild_perms(interaction):
-            return
-        await ack(interaction)
-
-        bot = interaction.client
-        locale = i18n.get_user_locale(interaction)
-        success = await bot.module_manager.delete_module_config(
-            interaction.guild_id, _MODULE_ID)
-        if not success:
-            await _refuse(interaction, t('modules.config.delete.error', locale=locale))
-            return
-        await _rerender_root(interaction)
 
     async def on_back(self, interaction: discord.Interaction):
         if not await check_guild_perms(interaction):

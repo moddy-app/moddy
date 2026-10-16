@@ -57,7 +57,7 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     from modules.configs.server_settings_config import ServerSettingsConfigView
     from modules.configs.adaptive_slowmode_config import AdaptiveSlowmodeConfigView
     from modules.configs.automod_ai_config import (
-        AutomodAIConfigView, AutomodDeleteView, AutomodWizardChannelView,
+        AutomodAIConfigView, AutomodWizardChannelView,
         AutomodWizardLevelView, AutomodWizardModeView, AutomodConfigPersistence,
     )
     from modules.configs.automod_ai_sanctions_config import AutomodSanctionsView
@@ -236,7 +236,6 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         # infraction type screen and the precedents browser are dynamic items
         # registered by AutomodConfigPersistence (their wrappers are not).
         AutomodAIConfigView,
-        AutomodDeleteView,
         AutomodWizardChannelView,
         AutomodWizardLevelView,
         AutomodWizardModeView,

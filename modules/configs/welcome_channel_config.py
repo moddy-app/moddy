@@ -31,7 +31,7 @@ from cogs.error_handler import BaseView, BaseModal
 from config import COLORS
 from modules.configs._common import (
     check_guild_perms, ack, show, say, crumb, crumb_segment, state_accent, config_state,
-    module_state_row, open_main_config,
+    module_manage_button, open_main_config,
 )
 from modules.welcome_channel import (
     CHANNEL_TYPES,
@@ -244,13 +244,6 @@ class WelcomeChannelConfigView(BaseView):
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
-        # Every action saves instantly: there is never a pending change to lose.
-        state_items = module_state_row(_MODULE_ID, self.module_state, self.locale)
-        for item in state_items:
-            container.add_item(item)
-        if state_items:
-            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-
         if self.messages:
             container.add_item(ui.TextDisplay(
                 f"**{t('modules.welcome_channel.config.list.title', locale=self.locale)}**\n"
@@ -311,6 +304,8 @@ class WelcomeChannelConfigView(BaseView):
         )
         add_btn.callback = self.on_add
         button_row.add_item(add_btn)
+        if self.module_state is not None:
+            button_row.add_item(module_manage_button(_MODULE_ID, self.locale))
         self.add_item(button_row)
 
     def _entry_label(self, entry: Dict[str, Any]) -> str:

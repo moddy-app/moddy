@@ -23,6 +23,7 @@ class AutoRestoreRolesModule(ModuleBase):
     """
 
     MODULE_ID = "auto_restore_roles"
+    CONFIG_DELETABLE = True
     MODULE_NAME = "Auto Restore Roles"
     MODULE_DESCRIPTION = "Restaure automatiquement les rôles des utilisateurs qui reviennent"
     MODULE_EMOJI = REFRESH

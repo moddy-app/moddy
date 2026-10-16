@@ -10,14 +10,14 @@ import logging
 
 from utils.i18n import i18n, t
 from cogs.error_handler import BaseView, BaseModal
-from utils.emojis import STAR, REQUIRED_FIELDS, EDIT, BACK, SAVE, UNDONE, DELETE, is_standard_discord_emoji
+from utils.emojis import STAR, REQUIRED_FIELDS, EDIT, BACK, SAVE, UNDONE, is_standard_discord_emoji
 from modules.configs._common import (
     ack,
     check_guild_perms,
     config_state,
     crumb,
     load_before_modal,
-    module_state_row,
+    module_manage_button,
     open_main_config,
     show,
     state_accent,
@@ -31,7 +31,6 @@ _CID_EDIT_EMOJI = "moddy:starboard:config:edit_emoji"
 _CID_BACK = "moddy:starboard:config:back"
 _CID_SAVE = "moddy:starboard:config:save"
 _CID_CANCEL = "moddy:starboard:config:cancel"
-_CID_DELETE = "moddy:starboard:config:delete"
 
 
 class EmojiModal(BaseModal, title="Émoji de réaction"):
@@ -167,14 +166,6 @@ class StarboardConfigView(BaseView):
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
-        # Play / pause: only on a clean, saved config (a state click rebuilds the
-        # screen from the saved config and would drop pending edits).
-        state_items = [] if self.has_changes else module_state_row('starboard', state, self.locale)
-        for item in state_items:
-            container.add_item(item)
-        if state_items:
-            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-
         # Channel selector (Required field)
         container.add_item(ui.TextDisplay(
             f"**{t('modules.starboard.config.channel.section_title', locale=self.locale)}**{REQUIRED_FIELDS}\n"
@@ -284,16 +275,8 @@ class StarboardConfigView(BaseView):
             )
             cancel_btn.callback = self.on_cancel
             button_row.add_item(cancel_btn)
-        if (not self.has_changes and self.has_existing_config) or is_shell:
-            # Delete button (if config exists)
-            delete_btn = ui.Button(
-                emoji=discord.PartialEmoji.from_str(DELETE),
-                label=t('modules.config.buttons.delete', locale=self.locale),
-                style=discord.ButtonStyle.danger,
-                custom_id=_CID_DELETE
-            )
-            delete_btn.callback = self.on_delete
-            button_row.add_item(delete_btn)
+        if not self.has_changes and self.has_existing_config:
+            button_row.add_item(module_manage_button('starboard', self.locale))
 
         self.add_item(button_row)
 
@@ -436,24 +419,6 @@ class StarboardConfigView(BaseView):
         saved = await bot.module_manager.get_module_config(interaction.guild_id, 'starboard')
         view = StarboardConfigView(bot, interaction.guild_id, interaction.user.id, locale, current_config=saved)
         await show(interaction, view)
-
-    async def on_delete(self, interaction: discord.Interaction):
-        """Delete configuration"""
-        if not await check_guild_perms(interaction):
-            return
-
-        await ack(interaction)
-
-        bot = interaction.client
-        locale = i18n.get_user_locale(interaction)
-        success = await bot.module_manager.delete_module_config(interaction.guild_id, 'starboard')
-
-        if success:
-            view = StarboardConfigView(bot, interaction.guild_id, interaction.user.id, locale, current_config=None)
-            await interaction.followup.send(t('modules.config.delete.success', locale=locale), ephemeral=True)
-            await interaction.edit_original_response(view=view)
-        else:
-            await interaction.followup.send(t('modules.config.delete.error', locale=locale), ephemeral=True)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         """Check permissions for each interaction"""

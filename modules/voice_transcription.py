@@ -57,6 +57,7 @@ class VoiceTranscriptionModule(ModuleBase):
     """Offers a transcription under every voice message of the server."""
 
     MODULE_ID = "voice_transcription"
+    CONFIG_DELETABLE = True
 
     @classmethod
     def stored_state(cls, config_data: Optional[Dict[str, Any]]) -> str:

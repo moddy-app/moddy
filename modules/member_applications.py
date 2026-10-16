@@ -83,6 +83,7 @@ class MemberApplicationsModule(ModuleBase):
     """Posts Discord membership applications in a review channel."""
 
     MODULE_ID = MODULE_ID
+    CONFIG_DELETABLE = True
     MODULE_NAME = "Member Applications"
     MODULE_DESCRIPTION = "Review Discord membership applications from a channel"
     MODULE_EMOJI = ASSIGNMENT

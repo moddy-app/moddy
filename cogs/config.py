@@ -43,9 +43,9 @@ async def build_module_config_view(bot, guild_id: int, user_id: int, locale: str
                                    module_id: str, module_config: Optional[dict]):
     """Build a module's home config screen, or None for an unknown module.
 
-    Shared by the /config dropdown and by the play/pause button
-    (``modules.configs._common.ModuleStateButton``), which re-renders the same
-    screen after a state change.
+    Shared by the /config dropdown and by the shared Manage panel
+    (``modules.configs._common.ModuleManageButton``), whose Back and
+    delete-configuration actions land back on this screen.
     """
     config_view = None
 

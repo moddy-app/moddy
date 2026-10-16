@@ -10,9 +10,9 @@ import logging
 
 from utils.i18n import i18n, t
 from cogs.error_handler import BaseView
-from utils.emojis import MANAGE_USER, BACK, SAVE, UNDONE, DELETE
+from utils.emojis import MANAGE_USER, BACK, SAVE, UNDONE
 from modules.configs._common import (
-    check_guild_perms, ack, show, state_accent, config_state, module_state_row,
+    check_guild_perms, ack, show, state_accent, config_state, module_manage_button,
     open_main_config, crumb,
 )
 
@@ -23,7 +23,6 @@ _CID_BOT_ROLES = "moddy:autorole:config:bot_roles"
 _CID_BACK = "moddy:autorole:config:back"
 _CID_SAVE = "moddy:autorole:config:save"
 _CID_CANCEL = "moddy:autorole:config:cancel"
-_CID_DELETE = "moddy:autorole:config:delete"
 
 
 class AutoRoleConfigView(BaseView):
@@ -87,13 +86,6 @@ class AutoRoleConfigView(BaseView):
         ))
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-
-        # Play / pause (only once a config is saved)
-        state_items = [] if self.has_changes else module_state_row('auto_role', state, self.locale)
-        for item in state_items:
-            container.add_item(item)
-        if state_items:
-            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
         # Member roles selector
         container.add_item(ui.TextDisplay(
@@ -199,16 +191,8 @@ class AutoRoleConfigView(BaseView):
             )
             cancel_btn.callback = self.on_cancel
             button_row.add_item(cancel_btn)
-        if (not self.has_changes and self.has_existing_config) or is_shell:
-            # Delete button
-            delete_btn = ui.Button(
-                emoji=discord.PartialEmoji.from_str(DELETE),
-                label=t('modules.config.buttons.delete', locale=self.locale),
-                style=discord.ButtonStyle.danger,
-                custom_id=_CID_DELETE,
-            )
-            delete_btn.callback = self.on_delete
-            button_row.add_item(delete_btn)
+        if not self.has_changes and self.has_existing_config:
+            button_row.add_item(module_manage_button('auto_role', self.locale))
 
         self.add_item(button_row)
 
@@ -310,24 +294,6 @@ class AutoRoleConfigView(BaseView):
         saved = await bot.module_manager.get_module_config(interaction.guild_id, 'auto_role')
         view = AutoRoleConfigView(bot, interaction.guild_id, interaction.user.id, locale, current_config=saved)
         await show(interaction, view)
-
-    async def on_delete(self, interaction: discord.Interaction):
-        """Supprime la configuration"""
-        if not await check_guild_perms(interaction):
-            return
-
-        await ack(interaction)
-
-        bot = interaction.client
-        locale = i18n.get_user_locale(interaction)
-        success = await bot.module_manager.delete_module_config(interaction.guild_id, 'auto_role')
-
-        if success:
-            view = AutoRoleConfigView(bot, interaction.guild_id, interaction.user.id, locale, current_config=None)
-            await interaction.followup.send(t('modules.config.delete.success', locale=locale), ephemeral=True)
-            await interaction.edit_original_response(view=view)
-        else:
-            await interaction.followup.send(t('modules.config.delete.error', locale=locale), ephemeral=True)
 
     async def on_back(self, interaction: discord.Interaction):
         """Retourne au menu principal"""

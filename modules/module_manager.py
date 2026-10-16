@@ -115,6 +115,11 @@ class ModuleBase(ABC):
     # visible) and must itself read ``self.is_simulation`` to skip side effects
     # (Automod maps it onto its ``dry_run`` behaviour).
     SUPPORTS_SIMULATION: bool = False
+    # True when /config -> Manage offers "Delete configuration" for this
+    # module. Off for modules whose config owns things outside the stored row
+    # (posted panels, feed subscriptions, scheduled reminders) unless
+    # ``before_config_delete`` cleans them up.
+    CONFIG_DELETABLE: bool = False
 
     def __init_subclass__(cls, **kwargs):
         """Wrap every subclass ``load_config`` so the generic state is applied
@@ -184,6 +189,11 @@ class ModuleBase(ABC):
     @property
     def is_simulation(self) -> bool:
         return self.state == STATE_SIMULATION
+
+    @classmethod
+    async def before_config_delete(cls, bot, guild_id: int) -> None:
+        """Run by /config -> Manage right before the stored config is deleted
+        (take down what the config owns outside the database). No-op by default."""
 
     @classmethod
     def stored_state(cls, config_data: Optional[Dict[str, Any]]) -> str:

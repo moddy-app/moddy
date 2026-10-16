@@ -59,6 +59,7 @@ class AltGuardModule(ModuleBase):
     """Anti multi-account verification gate."""
 
     MODULE_ID = MODULE_ID
+    CONFIG_DELETABLE = True
     MODULE_NAME = "AltGuard"
     MODULE_DESCRIPTION = "Anti multi-account verification before server access"
     # The /config picker uses the shield (it is a protection module); the
@@ -78,6 +79,14 @@ class AltGuardModule(ModuleBase):
             (config.get("channel_id"), ["view_channel", "send_messages"]),
             (config.get("log_channel_id"), ["view_channel", "send_messages"]),
         )
+
+    @classmethod
+    async def before_config_delete(cls, bot, guild_id: int) -> None:
+        """Take the panel down first: once the config is gone nothing knows
+        which message to delete."""
+        module = await bot.module_manager.get_module_instance(guild_id, MODULE_ID)
+        if module:
+            await module.delete_panel()
 
     def __init__(self, bot, guild_id: int):
         super().__init__(bot, guild_id)
