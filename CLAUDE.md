@@ -87,7 +87,7 @@ moddy/
 │   ├── altguard.py            #   AltGuard anti multi-account verification gate
 │   ├── member_applications.py #   Member Applications (review Discord "Apply to Join" in a channel)
 │   ├── tickets.py             #   Tickets (panels, categories, permissions, claim)
-│   ├── automod_ai.py          #   Automod AI (applies decisions, cases+evidence, scalable features,
+│   ├── automod_ai.py          #   Automod (applies decisions, cases+evidence, scalable features,
 │   │                          #   member profiles: avatar / banner / names via apply_profile_decision)
 │   ├── bot_customization.py   #   Bot identity per guild (nick/avatar/banner/bio + name style)
 │   ├── voice_transcription.py #   Voice message transcription (button or automatic)
@@ -99,10 +99,10 @@ moddy/
 │       ├── member_applications_config.py  # Member Applications (channel, roles, preset reasons Modal V2)
 │       ├── social_notifications_config.py
 │       ├── bump_reminder_config.py        # Bump reminders list + Modal V2
-│       ├── automod_ai_config.py           # Automod AI: first-run wizard + home (instant save, persistent)
-│       ├── automod_ai_sanctions_config.py # Automod AI: sanctions list, one type, custom infractions, Modals V2
-│       ├── automod_ai_advanced_config.py  # Automod AI: monitoring, AI guidance, exemptions, advanced
-│       ├── automod_ai_common.py           # Automod AI panel: load/save/validate, wording, navigation
+│       ├── automod_ai_config.py           # Automod: first-run wizard (+ Skip), home (instant save, generic state, delete)
+│       ├── automod_ai_sanctions_config.py # Automod: sanctions list, one infraction (multi-actions, timeout Modal V2, approval), custom infractions
+│       ├── automod_ai_advanced_config.py  # Automod: monitoring, exemptions, advanced (draft + Save/Cancel)
+│       ├── automod_ai_common.py           # Automod panel: normalize, drafts (pending edits), effective wording, navigation
 │       ├── automod_ai_precedents_view.py  # Learned-precedents browser (persistent dynamic items)
 │       ├── welcome_channel_config.py      # Welcome messages list + add/manage (Modal V2)
 │       ├── welcome_dm_config.py           # Welcome DMs list + add/manage (Modal V2)
@@ -140,7 +140,7 @@ moddy/
 │   ├── registry.py            #   The 7 supported directories + their markers
 │   └── detect.py              #   Success/failure funnel, next-bump time, intervals
 │
-├── automod/                   # Automod AI DETECTION pipeline (decides only; no side effects)
+├── automod/                   # Automod DETECTION pipeline (decides only; no side effects)
 │   ├── infractions.py         #   Infraction catalogue (single source of truth) + per-server `sanctions` schema/validation
 │   ├── custom_infractions.py  #   Server-defined infractions: schema, templates, keywords, routing refs
 │   ├── image_hash.py          #   Pillow-only pHash/dHash, safe decode, known-hash index
@@ -362,7 +362,7 @@ moddy/
     ├── test_member_applications.py # Member applications: card, dedupe, decisions, poll, gateway, i18n
     ├── test_logs.py           #   Server logs: registry, routing, rendering, delivery
     ├── test_logs_i18n.py      #   Server logs: i18n completeness on the 5 locales
-    ├── test_automod_ai_panel.py #  Automod AI /config panel: presets, screens, instant save, persistence, i18n
+    ├── test_automod_ai_panel.py #  Automod /config panel: presets, state migration, drafts + Save, screens, persistence, i18n
     ├── test_stats.py          #   Statistics: registry guards, aggregation, flush, rollup
     ├── test_heartbeat.py      #   Health Monitor heartbeat: payload, lifecycle, status decisions
     ├── test_automod_images.py #   Automod image features, image service, labeling queue + card
@@ -405,11 +405,11 @@ moddy/
 - Full list → [docs/EMOJIS.md](docs/EMOJIS.md)
 - **No "close enough" icons.** If no existing icon clearly fits what you are
   showing, do **not** pick a vaguely related one or reuse an icon that already
-  means something else. Stop and ask the user to upload a better-suited icon
-  (describe it, and remind them it needs a white version plus a `_dark` twin),
-  then add the IDs they give you to `utils/emojis.py` and `docs/EMOJIS.md`.
-  Until they do, use no icon rather than a misleading one, and list every icon
-  you are waiting on in your final report.
+  means something else. Do **not** stop working: carry on with the task, use
+  no icon there for now, and tell the user which icon is missing (describe what
+  it should depict, and remind them it needs a white version plus a `_dark`
+  twin) so they can upload it. When they give you the IDs, add them to
+  `utils/emojis.py` and `docs/EMOJIS.md` and wire them in.
 - **Light-theme twins**: most icons are white, invisible on Discord's light theme.
   A user who picks *Light* in `/preferences` gets every icon that has a
   `<name>_dark` twin swapped automatically at send time (`utils/icon_theme.py`
@@ -612,8 +612,8 @@ All documentation is in [docs/](docs/). Read the relevant file **before** workin
 | [docs/TICKETS_INTEGRATION.md](docs/TICKETS_INTEGRATION.md) | Tickets ↔ backend contract — the transcript/rating tables, the compressed body schema, `/transcripts/<key>` and its authorisation, the rating aggregates |
 | [docs/ALTGUARD.md](docs/ALTGUARD.md) | **AltGuard** — anti multi-account verification gate, consent, service contract, staff commands |
 | [docs/ALTGUARD_INTEGRATION.md](docs/ALTGUARD_INTEGRATION.md) | AltGuard ↔ bot exact wire contract — payload types, error codes, debugging |
-| [docs/AUTOMOD_AI.md](docs/AUTOMOD_AI.md) | Automod AI — detection pipeline, nano decider, scalable features, **images (NSFW + scam screenshots)**, **Moddy team labeling queue**, rules + custom-infraction safety check, **infraction catalogue & per-type sanctions**, **custom infractions**, **member profiles** |
-| [docs/AUTOMOD_AI_CONFIG.md](docs/AUTOMOD_AI_CONFIG.md) | Automod AI configuration schema in DB (backend / dashboard integration): `sanctions`, `infractions_perso`, `features.profile`, validation errors, `rules_check` route, tables, Redis keys, deployment order |
+| [docs/AUTOMOD_AI.md](docs/AUTOMOD_AI.md) | Automod — detection pipeline (+ `/config` panel, §0), nano decider, scalable features, **images (NSFW + scam screenshots)**, **Moddy team labeling queue**, rules + custom-infraction safety check, **infraction catalogue & per-type sanctions**, **custom infractions**, **member profiles** |
+| [docs/AUTOMOD_AI_CONFIG.md](docs/AUTOMOD_AI_CONFIG.md) | Automod configuration schema in DB (generic `state` replaces `enabled`/`dry_run`) (backend / dashboard integration): `sanctions`, `infractions_perso`, `features.profile`, validation errors, `rules_check` route, tables, Redis keys, deployment order |
 | [docs/BOT_CUSTOMIZATION.md](docs/BOT_CUSTOMIZATION.md) | Bot Customization — per-guild nickname/avatar/banner/bio + name styles, Redis dashboard contract |
 | [docs/PREMIUM.md](docs/PREMIUM.md) | **Premium gating** — how to check whether a server (or a user) is premium |
 | [docs/LINKED_ROLES.md](docs/LINKED_ROLES.md) | **Linked roles** — the `moddy:staff` publication the backend needs, the two Moddy Team roles (`team` / `manager`), and `/team role` / `/team access` / `/team ticket` |
