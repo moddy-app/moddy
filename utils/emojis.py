@@ -392,6 +392,7 @@ SANCTION_ACTION_EMOJIS = {
     "warn": WARNING,
     "mute": TIME,
     "ban": LEGAL,
+    "kick": LOGOUT,
     "restrict": UNDONE,
     "revoke_access": DELETE,
 }
@@ -403,6 +404,7 @@ SANCTION_DM_EMOJIS = {
     "warn": WARNING,
     "mute": MIC_OFF,
     "ban": LEGAL,
+    "kick": LOGOUT,
     "restrict": UNDONE,
     "revoke_access": DELETE,
 }
@@ -413,6 +415,7 @@ SANCTION_ACCENT_COLORS = {
     "warn": 0xF28500,
     "mute": 0xDA3E27,
     "ban": 0xDA3E27,
+    "kick": 0xDA3E27,
     "restrict": 0xF28500,
     "revoke_access": 0xDA3E27,
 }

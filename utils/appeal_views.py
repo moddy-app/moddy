@@ -81,6 +81,12 @@ def _action_emoji(action: Optional[str]) -> str:
 # Render helpers (used by the module + the appeal service)
 # =========================================================================== #
 
+# A kick is over the moment it lands: there is nothing to lift or reduce, the
+# member is free to rejoin, so neither the expiry line nor the appeal buttons
+# make sense for it.
+NON_APPEALABLE_ACTIONS = frozenset({"kick"})
+
+
 def build_sanction_dm_view(
     *,
     locale: str,
@@ -137,7 +143,9 @@ def build_sanction_dm_view(
     lines.append(
         f"- **{t('modules.automod_ai.dm.responsible', locale=locale)}:** "
         f"{t('modules.automod_ai.dm.responsible_value', locale=locale)}")
-    lines.append(f"- **{t('modules.automod_ai.dm.expires', locale=locale)}:** {expires_txt}")
+    if action not in NON_APPEALABLE_ACTIONS:
+        # A kick is already over: there is no duration to announce.
+        lines.append(f"- **{t('modules.automod_ai.dm.expires', locale=locale)}:** {expires_txt}")
 
     # Keep the sanction lines + case/sent-by in ONE TextDisplay so there is no
     # empty line between "Automatically expires" and "Case ID". Only the
@@ -194,7 +202,7 @@ def build_sanction_dm_view(
         view.add_item(proof)
 
     # — Appeal buttons (BELOW the proof), only while no appeal exists yet —
-    if not appeal_status:
+    if not appeal_status and action not in NON_APPEALABLE_ACTIONS:
         row = ui.ActionRow()
         row.add_item(AppealNewButton("s", case_id, sanction_id, locale=locale))
         row.add_item(AppealNewButton("t", case_id, sanction_id, locale=locale))

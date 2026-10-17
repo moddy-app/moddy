@@ -34,6 +34,7 @@ SANCTION_EVENTS: Mapping[str, tuple] = {
     "warn": ("warn_add", "warn_remove"),
     "mute": ("mute_add", "mute_remove"),
     "ban": ("ban_add", "ban_remove"),
+    "kick": ("kick_add", "kick_remove"),
     "restrict": ("case_update", "case_update"),
     "revoke_access": ("case_update", "case_update"),
 }

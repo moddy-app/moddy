@@ -556,6 +556,10 @@ class ModdyDatabase(
                     CREATE TYPE sanction_action AS ENUM ('warn', 'mute', 'ban', 'restrict', 'revoke_access');
                 EXCEPTION WHEN duplicate_object THEN null; END $$;
             """)
+            # `kick` joined the enum after the first release: extend existing
+            # databases in place (idempotent, no table rewrite).
+            await conn.execute(
+                "ALTER TYPE sanction_action ADD VALUE IF NOT EXISTS 'kick'")
             await conn.execute("""
                 DO $$ BEGIN
                     CREATE TYPE sanction_status AS ENUM ('active', 'expired', 'revoked');

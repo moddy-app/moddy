@@ -100,6 +100,7 @@ _MUTE_DURATIONS = {
 _ACTION_TO_SANCTION = {
     "warn": SanctionAction.WARN,
     "mute": SanctionAction.MUTE,
+    "kick": SanctionAction.KICK,
     "ban": SanctionAction.BAN,
     "supprimer": None,
 }
@@ -1481,7 +1482,7 @@ class AutomodModule(ModuleBase):
         out.failed.update(failed)
 
         # Case: ONE per incident, with only the sanctions that really happened.
-        to_record = [a for a in applied if a in ("mute", "ban")]
+        to_record = [a for a in applied if a in ("mute", "kick", "ban")]
         if "warn" in actions:
             to_record.append("warn")
         ref, case_id, primary, sanction_id, recorded = await self._record_case(
@@ -1492,8 +1493,8 @@ class AutomodModule(ModuleBase):
                 out.applied.append("warn")
             else:
                 out.failed["warn"] = act.FAIL_CASE
-        if any(a in applied for a in ("mute", "ban")) \
-                and not any(a in recorded for a in ("mute", "ban")):
+        if any(a in applied for a in ("mute", "kick", "ban")) \
+                and not any(a in recorded for a in ("mute", "kick", "ban")):
             out.failed["case"] = act.FAIL_CASE
         out.case_ref, out.case_id = ref, case_id
         out.primary_action, out.sanction_id = primary, sanction_id
@@ -1759,14 +1760,13 @@ class AutomodModule(ModuleBase):
 
         Returns ``(case_ref, case_id, primary_action, primary_sanction_id,
         recorded)`` so the caller can DM the member an appealable notice.
-        ``primary_action`` is the most punitive recorded sanction (ban > mute >
-        warn) and ``recorded`` lists every sanction that really was written.
+        ``primary_action`` is the most punitive recorded sanction (ban > kick >
+        mute > warn) and ``recorded`` lists every sanction that really was written.
 
         ``applied`` limits the case to the sanctions that really took effect
         (the truth, not the plan); it defaults to the decided actions. A kick is
-        not a case sanction (``SanctionAction`` has no kick). ``snapshot``
-        describes the offending message when it is no longer available (a
-        sanction approved later).
+        recorded as a ``kick`` sanction. ``snapshot`` describes the offending
+        message when it is no longer available (a sanction approved later).
 
         A profile decision has no message: ``member`` is given instead, and
         ``profile`` (``kind`` / ``origine`` / ``extrait`` / ``asset_key`` /
@@ -1777,7 +1777,7 @@ class AutomodModule(ModuleBase):
 
         # Decided actions that are real sanctions (deletion is not a sanction),
         # ordered most-punitive first so the case opens on the primary sanction.
-        order = {"ban": 3, "mute": 2, "warn": 1}
+        order = {"ban": 4, "kick": 3, "mute": 2, "warn": 1}
         sanction_actions = sorted(
             [a for a in (applied if applied is not None else decision.actions)
              if _ACTION_TO_SANCTION.get(a) is not None],
@@ -2928,7 +2928,7 @@ class AutomodModule(ModuleBase):
             if action == "hold":
                 case_reason = t("modules.automod_ai.profile.case_reason_hold",
                                 locale=locale, kind=label)
-            to_record = [a for a in applied if a in ("mute", "ban")]
+            to_record = [a for a in applied if a in ("mute", "kick", "ban")]
             if "warn" in actions:
                 to_record.append("warn")
             case_ref, case_id, primary_action, sanction_id, recorded = \
@@ -2940,8 +2940,8 @@ class AutomodModule(ModuleBase):
                     applied.append("warn")
                 else:
                     failed["warn"] = act.FAIL_CASE
-            if any(a in applied for a in ("mute", "ban")) \
-                    and not any(a in recorded for a in ("mute", "ban")):
+            if any(a in applied for a in ("mute", "kick", "ban")) \
+                    and not any(a in recorded for a in ("mute", "kick", "ban")):
                 failed["case"] = act.FAIL_CASE
 
         hold_stored = False

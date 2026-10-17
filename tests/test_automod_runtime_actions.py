@@ -242,6 +242,21 @@ async def test_case_only_records_what_really_happened():
     assert out.primary_action == "warn"
 
 
+async def test_an_applied_kick_opens_a_case():
+    g = Guild(perms=("kick_members",))
+    m = Member(g)
+    cases = Cases()
+    mod, bot = make_module(g, cases)
+    d = decision(["kick"])
+    bareme = ab.ResultatBareme(cran=6, actions=["kick"], duree_heures=0,
+                               categorie="insulte", gravite="haute", points_recidive=0.0)
+    out = await mod._execute_incident(g, m, d, bareme, {"content": "x"}, message=None,
+                                      delete_message=False)
+    assert out.applied == ["kick"]
+    assert cases.recorded == ["kick"] and out.case_ref == "ABC123"
+    assert out.primary_action == "kick" and "case" not in out.failed
+
+
 async def test_nothing_applied_means_no_case_and_no_dm_trigger():
     g = Guild(perms=())
     cases = Cases()

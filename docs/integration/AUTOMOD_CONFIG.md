@@ -169,8 +169,9 @@ loader resolves them):
   (Discord's limit); missing → 3600. Parse/format helpers: `parse_duration`
   (`"16h53"`, `"1d2h"`, `"90m"`, `"2 jours 3 heures"`…) and `format_duration`
   (`"16 h 53 min"`, localized).
-* A kick is not a case sanction (`case_sync` never recorded kicks): it is applied
-  and shown on the alert card but opens no case and sends no appealable DM.
+* A kick is a case sanction (`sanction_action` enum value `kick`, guild source): an
+  applied kick opens a case like a ban (primary action order ban > kick > mute > warn).
+  Its DM has no expiry and no appeal buttons (nothing to undo — the member may rejoin).
   Under `max_action` below `ban`, a `kick` becomes a 28-day timeout.
 
 **Integration with the barème** (the single cran ladder is kept): in `auto` mode the

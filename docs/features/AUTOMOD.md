@@ -25,9 +25,12 @@ Every external call (embeddings + nano chat + rules safety check) goes through
   has **Skip** = *Balanced* level in *simulation* (safest sane default; keeps the
   channel if one was chosen, otherwise the home asks for it).
 * **Main sub-views** (monitoring, sanctions, exemptions, advanced): classic module
-  save model. Edits go to a **draft** (`automod_ai_common`: in-memory map
-  `(guild, user, section)` -> the keys that section owns, TTL 30 min, lost on
-  restart); Save / Cancel only show while the draft differs from the stored
+  save model. Edits go to a **draft** (`automod_ai_common`: stored in
+  Redis under `moddy:automod:draft:<guild>:<user>:<section>`, JSON of the keys
+  that section owns, TTL 30 min refreshed on every write, so it survives a
+  restart; in-memory map fallback when Redis is absent or errors — then lost on
+  restart). Save with no draft left (expired / lost) raises the expected error
+  `errors.expected.automod_draft_expired` instead of a silent no-op; Save / Cancel only show while the draft differs from the stored
   config, Back is locked meanwhile and a warning line says so. Save merges the
   draft onto the freshly loaded stored config, validates through
   `save_module_config` and clears it. Deeper screens (one infraction, its timeout
@@ -768,7 +771,7 @@ done before it happened:
    `unverified`, `case`).
 3. The **guild case** (`bot.cases.record_sanction(source="guild",
    issuer_type=AUTOMOD, …)`) only carries the sanctions that were really applied
-   (a `warn` counts once its case is written; a kick is not a case sanction). The
+   (a `warn` counts once its case is written; a kick is recorded as a `kick` case sanction, with a DM without appeal buttons). The
    factual `raison` is the reason and the message is attached as `evidence`. The
    audit-log reason therefore reads `[Automod] @Moddy (<expiry>) : <raison>`
    (the public case reference does not exist yet when Discord is called).

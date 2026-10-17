@@ -48,7 +48,9 @@ Tables (created in `db/base.py::_init_tables`):
 
 PostgreSQL ENUM types: `case_type`, `subject_type`, `issuer_type`, `scope_type`,
 `case_status`, `sanction_action`, `sanction_status`, `event_type`, `author_type`.
-`sanction_action` is extensible (`ALTER TYPE … ADD VALUE`).
+`sanction_action` is extensible (`ALTER TYPE … ADD VALUE`): `kick` was added that way,
+idempotently, in `db/base.py` (`ALTER TYPE sanction_action ADD VALUE IF NOT EXISTS 'kick'`) so
+existing databases pick it up at startup.
 
 The public `reference` is a 6-char code from the unambiguous alphabet
 `ABCDEFGHJKMNPQRSTUVWXYZ23456789` (no O/0, I/1), generated with retry on the
@@ -106,7 +108,7 @@ Three sources ship today (`SOURCES` registry):
 |---|---|---|---|---|---|
 | `global` | `global` | user | `platform` | Moddy staff (manual) | warn, restrict, ban |
 | `global_guild` | `global` | guild | `platform` | Moddy staff (manual) | warn, restrict, ban |
-| `guild` | `guild` | user | the server | auto (Discord events) | warn, mute, ban |
+| `guild` | `guild` | user | the server | auto (Discord events) | warn, mute, kick, ban |
 
 The two `global*` sources carry the **Moddy-team global sanctions** — `warn`
 (informational), `restrict` (limited service) and `ban` (suspended, no access at
@@ -166,7 +168,7 @@ dispatched from `bot.py::_process_case_task`:
 
 | Task type | Payload | Effect |
 |---|---|---|
-| `case_add_sanction` | `case_id`, `action` (warn/mute/ban — no kick), `expires_at?`, `note?`, `issuer_id`, `request_id` | Discord action + DM + `db.add_sanction` on the existing case |
+| `case_add_sanction` | `case_id`, `action` (warn/mute/ban — a kick cannot be added from the dashboard yet), `expires_at?`, `note?`, `issuer_id`, `request_id` | Discord action + DM + `db.add_sanction` on the existing case |
 | `case_revoke_sanction` | `case_id`, `sanction_id`, `note?`, `actor_id`, `request_id` | Reverses the Discord action + `db.revoke_sanction` |
 
 The reply is `{"type": "<task_type>_result", "request_id", "guild_id", "ok": bool, "case": <assembled case>}` on success, or `"error"` (`case_not_found` /
@@ -207,12 +209,18 @@ lets the case auto-close.
 Requires the bot to have **View Audit Log** in the guild. Bot targets are
 ignored.
 
-Kicks are **not** recorded as cases — `/kick` still performs the Discord
-action (and DMs the member) but no longer opens/appends a case.
+Kicks **are** recorded as cases (`SanctionAction.KICK`, guild source only): from
+the audit log for a manual kick, from `/kick`, and from automod. A kick is
+instantaneous: no `expires_at`, never swept by `bot.case_expiry`, nothing to lift on
+Discord (revoking one only clears the record, like a warn). Icon: `LOGOUT`; accent
+red like a ban; permission to add one by hand: `kick_members`. Its DM shows no
+expiry line and **no appeal buttons** — the member is already out and may rejoin, so
+there is nothing for an appeal to undo (`utils/appeal_views.NON_APPEALABLE_ACTIONS`).
 
 | Audit action | Effect |
 |---|---|
 | `ban` | record `guild` / `ban` |
+| `kick` | record `guild` / `kick` (skipped when Moddy did it) |
 | `unban` | revoke active `guild` / `ban` |
 | `member_update` (timeout set) | record `guild` / `mute` with `expires_at` |
 | `member_update` (timeout cleared) | revoke active `guild` / `mute` |

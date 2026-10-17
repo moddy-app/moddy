@@ -84,7 +84,8 @@ SOURCES: Dict[str, CaseSource] = {
         case_type=CaseType.GUILD,
         scope_type=ScopeType.DISCORD_GUILD,
         subject_type=SubjectType.DISCORD_USER,
-        actions=[SanctionAction.WARN, SanctionAction.MUTE, SanctionAction.BAN],
+        actions=[SanctionAction.WARN, SanctionAction.MUTE, SanctionAction.KICK,
+                 SanctionAction.BAN],
         manual=False,            # opened automatically from Discord events
         requires_scope_id=True,
     ),

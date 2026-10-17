@@ -151,6 +151,10 @@ async def _send_sanction_dm(
         else:
             expires_text = t("commands.moderation.dm.permanent", locale=dm_locale)
 
+        # A kick is already over: no duration to announce.
+        expires_line = ("" if action == "kick" else
+                        f"> **{t('commands.moderation.dm.expires', locale=dm_locale)}:** {expires_text}\n")
+
         guild_name = guild.name
         guild_id = guild.id
         guild_url = f"https://discord.com/channels/{guild_id}"
@@ -159,7 +163,7 @@ async def _send_sanction_dm(
             f"### {sanction_emoji} {title}\n"
             f"> **{t('commands.moderation.dm.reason', locale=dm_locale)}:** {reason}\n"
             f"> **{t('commands.moderation.dm.responsible', locale=dm_locale)}:** <@{mod_id}>\n"
-            f"> **{t('commands.moderation.dm.expires', locale=dm_locale)}:** {expires_text}\n"
+            f"{expires_line}"
             f"> **{t('commands.moderation.dm.case_id', locale=dm_locale)}:**"
             f" [``{reference}``]({MODDY_CASE_URL.format(ref=reference)})\n"
             f"-# {t('commands.moderation.dm.sent_by', locale=dm_locale, guild=guild_name, guild_id=guild_id, guild_url=guild_url)}"
@@ -654,23 +658,21 @@ class SanctionModal(BaseModal):
             self.bot._moddy_initiated_sanctions = {}
         self.bot._moddy_initiated_sanctions[(self.guild.id, user.id, self.action)] = time.time()
 
-        # Kick is a plain Discord action — it is no longer recorded as a case.
         case_result = None
-        if self.action != "kick":
-            try:
-                case_result = await self.bot.cases.record_sanction(
-                    "guild",
-                    subject_id=user.id,
-                    action=self.action,
-                    reason=reason,
-                    issuer_type="discord_user",
-                    issuer_id=self.mod.id,
-                    scope_id=self.guild.id,
-                    expires_at=expires_at,
-                    group_id=group_id,
-                )
-            except Exception as exc:
-                logger.error("Failed to record case for %s in guild %s: %s", user.id, self.guild.id, exc)
+        try:
+            case_result = await self.bot.cases.record_sanction(
+                "guild",
+                subject_id=user.id,
+                action=self.action,
+                reason=reason,
+                issuer_type="discord_user",
+                issuer_id=self.mod.id,
+                scope_id=self.guild.id,
+                expires_at=expires_at,
+                group_id=group_id,
+            )
+        except Exception as exc:
+            logger.error("Failed to record case for %s in guild %s: %s", user.id, self.guild.id, exc)
 
         if case_result and attachments:
             await self._attach_evidence(case_result["id"], attachments)
