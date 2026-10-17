@@ -269,20 +269,28 @@ commandes. `paused` => masquées ; `simulation` et `active` => visibles.
 
 ```python
 from modules.configs._common import (
-    config_state, state_accent, module_state_row, breadcrumb, open_main_config)
+    config_state, state_accent, module_manage_button, breadcrumb, open_main_config)
 
 state = config_state(saved_config, supports_simulation=ModuleCls.SUPPORTS_SIMULATION)
 container = ui.Container(accent_colour=state_accent(state))   # primary / gris / jaune
-for item in module_state_row("auto_role", state, locale,
-                             supports_simulation=ModuleCls.SUPPORTS_SIMULATION):
-    container.add_item(item)          # [] tant qu'aucune config n'est sauvegardée
+...
+manage = module_manage_button("auto_role", state, locale)   # None sans config sauvegardée
+if manage is not None:
+    button_row.add_item(manage)      # rangée du bas, HORS du container, à côté de Retour
 ```
 
-Le bouton (`ModuleStateButton`, DynamicItem `moddy:config:state:<module>:<cible>`,
-enregistré par `ModuleStatePersistence`) gère le clic seul : vérifie Gérer le
-serveur, appelle `set_module_state`, puis reconstruit l'écran d'accueil via
-`cogs.config.build_module_config_view`. Un écran d'accueil de module doit donc
-être constructible depuis ce builder. Le bouton « Retour » doit utiliser
+Le bouton « Gérer » (DynamicItem `moddy:config:manage:<module>`) ouvre le panneau
+partagé `build_manage_view` : un select d'état (`moddy:config:manage:<module>:state`,
+appelle `set_module_state`) et, sauf `CONFIG_DELETABLE = False` sur la classe du
+module, « Supprimer la configuration » avec écran de confirmation
+(`…:delete` / `…:delete_yes`, appelle `delete_module_config`). « Retour »
+(`…:home`) et la fin de la suppression reconstruisent l'écran d'accueil via
+`cogs.config.build_module_config_view` : un écran d'accueil de module doit donc
+être constructible depuis ce builder. Tous ces items sont enregistrés par
+`ModuleStatePersistence` ; l'ancien `ModuleStateButton`
+(`moddy:config:state:<module>:<cible>`) reste enregistré pour les anciens
+panneaux. `CONFIG_DELETABLE = False` : bot_customization, bump_reminder,
+logs, social_notifications, tickets, welcome_channel, welcome_dm. Le bouton « Retour » doit utiliser
 `await open_main_config(interaction)` (l'écran principal affiche l'état de
 chaque module dans la description de l'entrée du menu).
 

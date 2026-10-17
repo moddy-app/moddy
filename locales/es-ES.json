@@ -1095,6 +1095,34 @@
         "settings": "Ajustes",
         "permissions": "Permisos",
         "options": "Opciones"
+      },
+      "manage": {
+        "button": "Gestionar",
+        "title": "Gestionar el módulo",
+        "state_title": "Estado del módulo",
+        "state_hint": "Elige si el módulo funciona. Tu configuración siempre se conserva.",
+        "placeholder": "Cambiar el estado del módulo",
+        "danger_title": "Zona de peligro",
+        "delete_hint": "Borra toda la configuración del módulo. No se puede deshacer.",
+        "delete_button": "Eliminar la configuración",
+        "confirm_title": "¿Eliminar la configuración?",
+        "confirm_text": "Se borrará toda la configuración de **{module}**. No se puede deshacer.",
+        "confirm_button": "Sí, eliminar",
+        "cancel_button": "Cancelar",
+        "options": {
+          "active": {
+            "label": "Activo",
+            "description": "El módulo funciona con normalidad."
+          },
+          "simulation": {
+            "label": "Simulación",
+            "description": "Observa y simula sus acciones sin aplicar nada."
+          },
+          "paused": {
+            "label": "En pausa",
+            "description": "No hace nada; sus comandos están ocultos."
+          }
+        }
       }
     },
     "welcome_channel": {

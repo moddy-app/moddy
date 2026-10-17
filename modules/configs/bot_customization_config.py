@@ -45,7 +45,7 @@ from modules.bot_customization import (
     style_is_empty,
 )
 from modules.configs._common import (
-    ack, check_guild_perms, config_state, crumb, load_before_modal, module_state_row,
+    ack, check_guild_perms, config_state, crumb, load_before_modal, module_manage_button,
     open_main_config, say, show, state_accent,
 )
 from utils.components_v2 import create_error_message, create_success_message
@@ -433,11 +433,8 @@ class BotCustomizationConfigView(BaseView):
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
         # Every edit saves instantly, so there is never a pending change to lose.
-        state_items = module_state_row(MODULE_ID, self.state, self.locale)
-        for item in state_items:
-            container.add_item(item)
-        if state_items:
-            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+        # Module management (state, delete): one small button outside the container.
+        self._manage_button = module_manage_button(MODULE_ID, self.state, self.locale)
         self._build_identity_section(container)
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
         self._build_style_section(container)
@@ -585,6 +582,8 @@ class BotCustomizationConfigView(BaseView):
         )
         back_btn.callback = self.on_back
         row.add_item(back_btn)
+        if getattr(self, '_manage_button', None) is not None:
+            row.add_item(self._manage_button)
 
         is_shell = self.bot is None
         has_config = bool(

@@ -228,6 +228,8 @@ class WelcomeDmModule(ModuleBase):
     """Sends one or more welcome DMs when a member joins the guild."""
 
     MODULE_ID = "welcome_dm"
+
+    CONFIG_DELETABLE = False
     MODULE_NAME = "Welcome DM"
     MODULE_DESCRIPTION = "Welcome messages sent in private to new members"
     MODULE_EMOJI = WAVING_HAND

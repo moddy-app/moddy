@@ -38,7 +38,7 @@ from cogs.error_handler import BaseModal, BaseView
 from config import COLORS
 from modules.configs._common import (
     ack, check_guild_perms, config_state, crumb, crumb_segment, load_before_modal,
-    module_state_row, open_main_config, show, state_accent,
+    module_manage_button, open_main_config, show, state_accent,
 )
 from modules.tickets import (
     DEFAULT_ACCENT_COLOR,
@@ -331,11 +331,8 @@ class TicketsConfigView(BaseView):
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
         # Every action saves instantly: there is never a pending change to lose.
-        state_items = module_state_row('tickets', self.module_state, self.locale)
-        for item in state_items:
-            container.add_item(item)
-        if state_items:
-            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+        # Module management (state, delete): one small button outside the container.
+        self._manage_button = module_manage_button('tickets', self.module_state, self.locale)
 
         if self.panels:
             for panel in self.panels:
@@ -384,6 +381,8 @@ class TicketsConfigView(BaseView):
         )
         back.callback = self.on_back
         button_row.add_item(back)
+        if getattr(self, '_manage_button', None) is not None:
+            button_row.add_item(self._manage_button)
 
         add = ui.Button(
             emoji=discord.PartialEmoji.from_str(ADD),

@@ -191,6 +191,8 @@ class WelcomeChannelModule(ModuleBase):
     """Posts one or more welcome messages when a member joins the guild."""
 
     MODULE_ID = "welcome_channel"
+
+    CONFIG_DELETABLE = False
     MODULE_NAME = "Welcome Channel"
     MODULE_DESCRIPTION = "Welcome messages posted in public channels"
     MODULE_EMOJI = WAVING_HAND

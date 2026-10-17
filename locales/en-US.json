@@ -1095,6 +1095,34 @@
         "settings": "Settings",
         "permissions": "Permissions",
         "options": "Options"
+      },
+      "manage": {
+        "button": "Manage",
+        "title": "Manage module",
+        "state_title": "Module state",
+        "state_hint": "Choose whether the module runs. Your configuration is always kept.",
+        "placeholder": "Change the module state",
+        "danger_title": "Danger zone",
+        "delete_hint": "Erases the whole module configuration. This cannot be undone.",
+        "delete_button": "Delete configuration",
+        "confirm_title": "Delete the configuration?",
+        "confirm_text": "The whole **{module}** configuration will be erased. This cannot be undone.",
+        "confirm_button": "Yes, delete",
+        "cancel_button": "Cancel",
+        "options": {
+          "active": {
+            "label": "Active",
+            "description": "The module works normally."
+          },
+          "simulation": {
+            "label": "Simulation",
+            "description": "Watches and simulates its actions without applying anything."
+          },
+          "paused": {
+            "label": "Paused",
+            "description": "Does nothing; its commands are hidden."
+          }
+        }
       }
     },
     "welcome_channel": {

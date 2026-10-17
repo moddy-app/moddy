@@ -1094,6 +1094,34 @@
         "settings": "Paramètres",
         "permissions": "Permissions",
         "options": "Options"
+      },
+      "manage": {
+        "button": "Gérer",
+        "title": "Gérer le module",
+        "state_title": "État du module",
+        "state_hint": "Choisissez si le module tourne. Votre configuration est toujours conservée.",
+        "placeholder": "Changer l'état du module",
+        "danger_title": "Zone de danger",
+        "delete_hint": "Efface toute la configuration du module. Action irréversible.",
+        "delete_button": "Supprimer la configuration",
+        "confirm_title": "Supprimer la configuration ?",
+        "confirm_text": "Toute la configuration de **{module}** sera effacée. Cette action est irréversible.",
+        "confirm_button": "Oui, supprimer",
+        "cancel_button": "Annuler",
+        "options": {
+          "active": {
+            "label": "Actif",
+            "description": "Le module agit normalement."
+          },
+          "simulation": {
+            "label": "Simulation",
+            "description": "Observe et simule ses actions, sans rien appliquer."
+          },
+          "paused": {
+            "label": "En pause",
+            "description": "Ne fait plus rien, ses commandes sont masquées."
+          }
+        }
       }
     },
     "welcome_channel": {

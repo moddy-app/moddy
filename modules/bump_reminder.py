@@ -172,6 +172,8 @@ class BumpReminderModule(ModuleBase):
     """Detects successful bumps and schedules the follow-up reminder."""
 
     MODULE_ID = "bump_reminder"
+
+    CONFIG_DELETABLE = False
     MODULE_NAME = "Bump Reminder"
     MODULE_DESCRIPTION = "Thanks whoever bumps and calls the channel back when it can be bumped again"
     MODULE_EMOJI = ROCKET_LAUNCH

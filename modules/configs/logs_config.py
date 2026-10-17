@@ -30,7 +30,7 @@ from cogs.error_handler import BaseView
 from config import COLORS
 from modules.configs._common import (
     check_guild_perms, ack, show, crumb, crumb_segment, state_accent, config_state,
-    module_state_row, open_main_config,
+    module_manage_button, open_main_config,
 )
 from modules.logs import (
     MAX_CHANNELS_PER_CATEGORY, MAX_IGNORED_CHANNELS, MAX_IGNORED_ROLES,
@@ -168,11 +168,8 @@ class LogsConfigView(BaseView):
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
         # Every change saves instantly: no pending edit can be lost by a state click.
-        state_items = module_state_row(_MODULE_ID, state, self.locale)
-        for item in state_items:
-            container.add_item(item)
-        if state_items:
-            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+        # Module management (state, delete): one small button outside the container.
+        self._manage_button = module_manage_button(_MODULE_ID, state, self.locale)
         container.add_item(ui.TextDisplay(self._summary()))
 
         # Category picker.
@@ -258,6 +255,8 @@ class LogsConfigView(BaseView):
         )
         back.callback = self.on_back
         row.add_item(back)
+        if getattr(self, '_manage_button', None) is not None:
+            row.add_item(self._manage_button)
 
         options = ui.Button(
             emoji=discord.PartialEmoji.from_str(_ICON_OPTIONS),

@@ -44,6 +44,8 @@ logger = logging.getLogger('moddy.modules.logs')
 
 MODULE_ID = "logs"
 
+CONFIG_DELETABLE = False
+
 #: How many channels a single category may fan out to.
 MAX_CHANNELS_PER_CATEGORY = 3
 #: How many channels/roles the server-wide ignore lists accept.

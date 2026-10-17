@@ -1,3 +1,4 @@
+import discord
 """/config UI standard: every module screen opens with a breadcrumb and an accent,
 and the state row shows up on a saved module only while nothing is pending."""
 
@@ -48,14 +49,47 @@ def test_screen_starts_with_breadcrumb_and_has_accent(cls):
     assert container.accent_colour is not None
 
 
-def test_state_row_hidden_while_changes_are_pending():
+def _outside_ids(view):
+    """custom_ids of the action rows placed after the container."""
+    return [getattr(i, "item", i).custom_id for c in view.children
+            if isinstance(c, ui.ActionRow) for i in c.children]
+
+
+def test_manage_button_outside_container_and_hidden_while_changes_are_pending():
     view = AutoRoleConfigView(None, 1, 2, "en-US", {"member_roles": [5], "state": "paused"})
-    ids = lambda v: [getattr(i, "item", i).custom_id for c in _container(v).children
-                     if isinstance(c, ui.ActionRow) for i in c.children]
-    assert any(str(i).startswith(_common._CID_STATE_PREFIX) for i in ids(view))
+    inside = [getattr(i, "custom_id", None) for i in _container(view).walk_children()]
+    assert not any(str(i).startswith(_common._CID_STATE_PREFIX) for i in inside)
+    assert not any(str(i).startswith(_common._CID_MANAGE_PREFIX) for i in inside)
+    assert "moddy:config:manage:auto_role" in _outside_ids(view)
     view.has_changes = True
     view._build_view()
-    assert not any(str(i).startswith(_common._CID_STATE_PREFIX) for i in ids(view))
+    assert "moddy:config:manage:auto_role" not in _outside_ids(view)
+
+
+def test_manage_panel_state_select_and_delete():
+    view = _common.build_manage_view("automod_ai", "simulation", "en-US", module_name="Automod",
+                                     supports_simulation=True)
+    container = _container(view)
+    selects = [getattr(c, 'item', c) for c in container.walk_children()
+               if isinstance(getattr(c, 'item', c), ui.Select)]
+    assert len(selects) == 1
+    options = {o.value: o.default for o in selects[0].options}
+    assert options == {"active": False, "simulation": True, "paused": False}
+    ids = [getattr(getattr(c, 'item', c), "custom_id", None) for c in container.walk_children()]
+    assert "moddy:config:manage:automod_ai:delete" in ids
+    assert container.accent_colour == discord.Colour(0xFEE75C)
+    # No simulation option for a module that does not support it, no delete when not deletable.
+    plain = _common.build_manage_view("tickets", "active", "en-US", module_name="Tickets",
+                                      deletable=False)
+    plain_ids = [getattr(getattr(c, 'item', c), "custom_id", None)
+                 for c in _container(plain).walk_children()]
+    assert "moddy:config:manage:tickets:delete" not in plain_ids
+    sel = [getattr(c, 'item', c) for c in _container(plain).walk_children()
+           if isinstance(getattr(c, 'item', c), ui.Select)][0]
+    assert [o.value for o in sel.options] == ["active", "paused"]
+    confirm = _common.build_manage_view("auto_role", "active", "en-US", module_name="Auto Role",
+                                        confirm_delete=True)
+    assert "moddy:config:manage:auto_role:delete_yes" in _outside_ids(confirm)
 
 
 # --- voice transcription: legacy `enabled` flag -> generic state ------------
@@ -79,12 +113,11 @@ async def test_voice_module_loads_legacy_config_as_paused():
     assert module.state == "paused" and module.enabled is False
 
 
-def test_voice_panel_shows_state_row_for_legacy_paused_config():
+def test_voice_panel_legacy_paused_config_is_paused():
     view = VoiceTranscriptionConfigView(
         None, 1, 2, "en-US", {"mode": "button", "enabled": False})
-    labels = [getattr(getattr(i, "item", i), "label", None) for c in _container(view).children if isinstance(c, ui.ActionRow)
-              for i in c.children]
-    assert any("esume" in (l or "") for l in labels)
+    assert _container(view).accent_colour == discord.Colour(0x99AAB5)
+    assert "moddy:config:manage:voice_transcription" in _outside_ids(view)
 
 
 # --- social notifications: pause --------------------------------------------

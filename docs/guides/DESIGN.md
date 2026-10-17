@@ -261,9 +261,14 @@ container.add_item(ui.TextDisplay("<:warning:...> **Security Warning**"))
 - **Accent colour follows the module state**: active = primary, paused =
   neutral gray, simulation = warning yellow (`_common.state_accent`). Success
   green is only for "saved" confirmations.
-- **State row**: on a module's home screen, `module_state_row()` adds a text
-  line (`**State** <icon> Active` + a `-#` explanation) and the Pause / Resume /
-  Simulation buttons. Only once the module has a saved config.
+- **Manage button + panel**: module state and configuration deletion never sit
+  inside a home container. `module_manage_button()` returns one small
+  secondary "Manage" button (settings icon) that goes in the bottom action row,
+  next to Back, once the module has a saved config. It opens the shared Manage
+  panel (`build_manage_view`): a state select (Active / Simulation / Paused,
+  each with a one-line description, current state pre-selected) and, unless the
+  module sets `CONFIG_DELETABLE = False`, a "Danger zone" with **Delete
+  configuration** + a red confirmation screen. Back returns to the module home.
 - **Breadcrumb**: every /config sub-view (not the main screen) starts with
   `breadcrumb(locale, MODULE_NAME, *segments)` -> `-# Config › Automod › Sanctions › Doxxing`,
   as the FIRST item of the container, above the `###` title. Small text above
@@ -271,11 +276,9 @@ container.add_item(ui.TextDisplay("<:warning:...> **Security Warning**"))
 - **Module name in the trail**: `crumb(locale, module_id, *segments)` resolves the
   localised module name; generic segments (`add`, `manage`, `settings`,
   `permissions`, `options`) come from `crumb_segment(locale, key)`.
-- **Pending edits and the state row**: on views with a Save / Cancel batch, the state
-  row is hidden while `has_changes` is true (a state click rebuilds the screen from
-  the saved config and would drop the edits). Instant-save screens always show it.
-- **Table-backed modules** (Social Notifications) have no stored config to carry a
-  state, so they get the breadcrumb and accent but no state row.
+- **Pending edits and the Manage button**: on views with a Save / Cancel batch, the
+  Manage button is hidden while `has_changes` is true (the panel works on the saved
+  config and would drop the edits). Instant-save screens always show it.
 
 ### **Standard Configuration Structure**
 

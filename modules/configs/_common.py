@@ -26,7 +26,7 @@ import discord
 from discord import ui
 
 from config import COLORS
-from utils.emojis import EMOJIS, LABS, PAUSE, PLAY, WARNING
+from utils.emojis import BACK, DELETE, EMOJIS, LABS, PAUSE, PLAY, SETTINGS, UNDONE, WARNING
 from utils.i18n import i18n, t
 from cogs.error_handler import BaseView
 from modules.module_manager import (
@@ -272,12 +272,17 @@ _MODULE_NAME_FALLBACKS = {
 }
 
 
-def crumb(locale: str, module_id: str, *segments: str) -> ui.TextDisplay:
-    """:func:`breadcrumb` for a module id: resolves the localised module name."""
+def module_display_name(locale: str, module_id: str) -> str:
+    """Localised display name of a module (``modules.<id>.name``, with fallbacks)."""
     name = t(f"modules.{module_id}.name", locale=locale)
     if name.startswith("["):
         name = _MODULE_NAME_FALLBACKS.get(module_id, module_id)
-    return breadcrumb(locale, name, *segments)
+    return name
+
+
+def crumb(locale: str, module_id: str, *segments: str) -> ui.TextDisplay:
+    """:func:`breadcrumb` for a module id: resolves the localised module name."""
+    return breadcrumb(locale, module_display_name(locale, module_id), *segments)
 
 
 def crumb_segment(locale: str, key: str) -> str:
@@ -390,4 +395,246 @@ class ModuleStatePersistence(BaseView):
 
     @classmethod
     def register_persistent(cls, bot) -> None:
-        bot.add_dynamic_items(ModuleStateButton)
+        bot.add_dynamic_items(ModuleStateButton, ModuleManageButton, ModuleStateSelect,
+                              ModuleManageAction)
+
+
+# ---------------------------------------------------------------------------
+# "Manage" panel: one small button outside every module home container opens
+# it; it holds the module state (select) and the configuration deletion.
+# ---------------------------------------------------------------------------
+
+_CID_MANAGE_PREFIX = "moddy:config:manage"
+_MODULE_RE = r"[a-z0-9_]{1,40}"
+
+
+def _module_class(bot, module_id: str):
+    manager = getattr(bot, "module_manager", None)
+    return (getattr(manager, "registered_modules", None) or {}).get(module_id)
+
+
+def module_manage_button(module_id: str, state: Optional[str],
+                         locale: str) -> Optional["ModuleManageButton"]:
+    """Small "Manage" button for a module home screen, or None when unconfigured.
+
+    Put it in the screen's bottom action row (outside the container), next to
+    Back. Usage::
+
+        self._manage_button = module_manage_button("auto_role", state, locale)
+        ...
+        if self._manage_button is not None:
+            button_row.add_item(self._manage_button)
+    """
+    if state is None:
+        return None
+    return ModuleManageButton(module_id, locale=locale)
+
+
+def _state_option(state: str, current: str, locale: str) -> discord.SelectOption:
+    return discord.SelectOption(
+        label=t(f"modules.config.manage.options.{state}.label", locale=locale),
+        description=t(f"modules.config.manage.options.{state}.description", locale=locale),
+        value=state,
+        emoji=discord.PartialEmoji.from_str(_STATE_EMOJIS[state]),
+        default=state == current,
+    )
+
+
+def build_manage_view(module_id: str, state: str, locale: str, *,
+                      module_name: str, supports_simulation: bool = False,
+                      deletable: bool = True, confirm_delete: bool = False) -> BaseView:
+    """The Manage panel (or its delete confirmation when ``confirm_delete``)."""
+    view = BaseView(timeout=None)
+    if confirm_delete:
+        container = ui.Container(accent_colour=discord.Colour(COLORS["error"]))
+        container.add_item(crumb(locale, module_id, t("modules.config.manage.button", locale=locale)))
+        container.add_item(ui.TextDisplay(
+            f"### {DELETE} {t('modules.config.manage.confirm_title', locale=locale)}\n"
+            f"{t('modules.config.manage.confirm_text', locale=locale, module=module_name)}"))
+        view.add_item(container)
+        row = ui.ActionRow()
+        row.add_item(ModuleManageAction(module_id, "open", locale=locale,
+                                        label_key="cancel_button", emoji=UNDONE))
+        row.add_item(ModuleManageAction(module_id, "delete_yes", locale=locale,
+                                        label_key="confirm_button", emoji=DELETE,
+                                        style=discord.ButtonStyle.danger))
+        view.add_item(row)
+        return view
+
+    container = ui.Container(accent_colour=state_accent(state))
+    container.add_item(crumb(locale, module_id, t("modules.config.manage.button", locale=locale)))
+    container.add_item(ui.TextDisplay(f"### {SETTINGS} {t('modules.config.manage.title', locale=locale)}"))
+    container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+    container.add_item(ui.TextDisplay(
+        f"**{t('modules.config.manage.state_title', locale=locale)}**\n"
+        f"-# {t('modules.config.manage.state_hint', locale=locale)}"))
+    # The select shows the current state itself (default option): no extra line.
+    states = [STATE_ACTIVE] + ([STATE_SIMULATION] if supports_simulation else []) + [STATE_PAUSED]
+    select_row = ui.ActionRow()
+    select_row.add_item(ModuleStateSelect(module_id, [
+        _state_option(s, state, locale) for s in states], locale=locale))
+    container.add_item(select_row)
+    if deletable:
+        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+        container.add_item(ui.TextDisplay(
+            f"**{t('modules.config.manage.danger_title', locale=locale)}**\n"
+            f"-# {t('modules.config.manage.delete_hint', locale=locale)}"))
+        danger_row = ui.ActionRow()
+        danger_row.add_item(ModuleManageAction(module_id, "delete", locale=locale,
+                                               label_key="delete_button", emoji=DELETE,
+                                               style=discord.ButtonStyle.danger))
+        container.add_item(danger_row)
+    view.add_item(container)
+
+    row = ui.ActionRow()
+    row.add_item(ModuleManageAction(module_id, "home", locale=locale, emoji=BACK))
+    view.add_item(row)
+    return view
+
+
+async def _open_manage(interaction: discord.Interaction, module_id: str, *,
+                       confirm_delete: bool = False) -> None:
+    bot = interaction.client
+    locale = i18n.get_user_locale(interaction)
+    module_cls = _module_class(bot, module_id)
+    if module_cls is None:
+        return
+    config = await bot.module_manager.get_module_config(interaction.guild_id, module_id)
+    if not config:
+        # Nothing left to manage (deleted elsewhere): back to the module home.
+        await _open_module_home(interaction, module_id)
+        return
+    view = build_manage_view(
+        module_id, module_cls.stored_state(config), locale,
+        module_name=module_display_name(locale, module_id),
+        supports_simulation=bool(getattr(module_cls, "SUPPORTS_SIMULATION", False)),
+        deletable=bool(getattr(module_cls, "CONFIG_DELETABLE", True)),
+        confirm_delete=confirm_delete,
+    )
+    await show(interaction, view)
+
+
+async def _open_module_home(interaction: discord.Interaction, module_id: str) -> None:
+    from cogs.config import build_module_config_view
+    bot = interaction.client
+    locale = i18n.get_user_locale(interaction)
+    config = await bot.module_manager.get_module_config(interaction.guild_id, module_id)
+    view = await build_module_config_view(
+        bot, interaction.guild_id, interaction.user.id, locale, module_id, config)
+    if view is not None:
+        await show(interaction, view)
+    else:
+        await open_main_config(interaction)
+
+
+class ModuleManageButton(
+    ui.DynamicItem[ui.Button],
+    template=rf"{_CID_MANAGE_PREFIX}:(?P<module>{_MODULE_RE})",
+):
+    """Opens the Manage panel of a module. Auth: Manage Server, every click."""
+
+    def __init__(self, module_id: str, *, locale: str = "en-US"):
+        super().__init__(ui.Button(
+            label=t("modules.config.manage.button", locale=locale),
+            emoji=discord.PartialEmoji.from_str(SETTINGS),
+            style=discord.ButtonStyle.secondary,
+            custom_id=f"{_CID_MANAGE_PREFIX}:{module_id}",
+        ))
+        self.module_id = module_id
+
+    @classmethod
+    async def from_custom_id(cls, interaction, item, match: "re.Match"):
+        return cls(match["module"])
+
+    async def callback(self, interaction: discord.Interaction):
+        if not await check_guild_perms(interaction):
+            return
+        await ack(interaction)
+        await _open_manage(interaction, self.module_id)
+
+
+class ModuleStateSelect(
+    ui.DynamicItem[ui.Select],
+    template=rf"{_CID_MANAGE_PREFIX}:(?P<module>{_MODULE_RE}):state",
+):
+    """State picker of the Manage panel; applies the chosen state at once."""
+
+    def __init__(self, module_id: str, options: Optional[List[discord.SelectOption]] = None,
+                 *, locale: str = "en-US"):
+        super().__init__(ui.Select(
+            placeholder=t("modules.config.manage.placeholder", locale=locale),
+            options=options or [discord.SelectOption(label=STATE_ACTIVE, value=STATE_ACTIVE)],
+            min_values=1, max_values=1,
+            custom_id=f"{_CID_MANAGE_PREFIX}:{module_id}:state",
+        ))
+        self.module_id = module_id
+
+    @classmethod
+    async def from_custom_id(cls, interaction, item, match: "re.Match"):
+        return cls(match["module"])
+
+    async def callback(self, interaction: discord.Interaction):
+        if not await check_guild_perms(interaction):
+            return
+        await ack(interaction)
+        values = (interaction.data or {}).get("values") or []
+        target = values[0] if values else None
+        if target not in (STATE_ACTIVE, STATE_PAUSED, STATE_SIMULATION):
+            return
+        bot = interaction.client
+        locale = i18n.get_user_locale(interaction)
+        ok, error = await bot.module_manager.set_module_state(
+            interaction.guild_id, self.module_id, target, actor_id=interaction.user.id)
+        if not ok:
+            key = "not_configured" if error == "not_configured" else "failed"
+            await say(interaction, t(f"modules.config.state.errors.{key}", locale=locale))
+            return
+        await _open_manage(interaction, self.module_id)
+
+
+class ModuleManageAction(
+    ui.DynamicItem[ui.Button],
+    template=rf"{_CID_MANAGE_PREFIX}:(?P<module>{_MODULE_RE}):(?P<action>home|open|delete|delete_yes)",
+):
+    """Back to the module home / delete flow buttons of the Manage panel."""
+
+    def __init__(self, module_id: str, action: str, *, locale: str = "en-US",
+                 label_key: Optional[str] = None, emoji: Optional[str] = None,
+                 style: discord.ButtonStyle = discord.ButtonStyle.secondary):
+        label = (t(f"modules.config.manage.{label_key}", locale=locale) if label_key
+                 else t("modules.config.buttons.back", locale=locale))
+        super().__init__(ui.Button(
+            label=label,
+            emoji=discord.PartialEmoji.from_str(emoji) if emoji else None,
+            style=style,
+            custom_id=f"{_CID_MANAGE_PREFIX}:{module_id}:{action}",
+        ))
+        self.module_id = module_id
+        self.action = action
+
+    @classmethod
+    async def from_custom_id(cls, interaction, item, match: "re.Match"):
+        return cls(match["module"], match["action"])
+
+    async def callback(self, interaction: discord.Interaction):
+        if not await check_guild_perms(interaction):
+            return
+        await ack(interaction)
+        if self.action == "home":
+            await _open_module_home(interaction, self.module_id)
+        elif self.action == "open":
+            await _open_manage(interaction, self.module_id)
+        elif self.action == "delete":
+            await _open_manage(interaction, self.module_id, confirm_delete=True)
+        elif self.action == "delete_yes":
+            module_cls = _module_class(interaction.client, self.module_id)
+            if module_cls is None or not getattr(module_cls, "CONFIG_DELETABLE", True):
+                return
+            ok = await interaction.client.module_manager.delete_module_config(
+                interaction.guild_id, self.module_id)
+            if not ok:
+                locale = i18n.get_user_locale(interaction)
+                await say(interaction, t("modules.config.delete.error", locale=locale))
+                return
+            # The module home renders its "not configured" screen (or wizard).
+            await _open_module_home(interaction, self.module_id)

@@ -18,7 +18,7 @@ from utils.emojis import TIMER, REQUIRED_FIELDS, EDIT, BACK, SAVE, UNDONE, DELET
 from config import COLORS
 from modules.configs._common import (
     check_guild_perms, ack, show, crumb, crumb_segment, state_accent, config_state,
-    module_state_row, open_main_config,
+    module_manage_button, open_main_config,
 )
 
 logger = logging.getLogger('moddy.modules.adaptive_slowmode_config')
@@ -496,12 +496,9 @@ class AdaptiveSlowmodeConfigView(BaseView):
 
         # Play / pause: only on a clean, saved config (a state click rebuilds
         # the screen from the saved config and would drop pending edits).
-        state_items = [] if self.has_changes else module_state_row(
+        # Module management (state, delete): one small button outside the container.
+        self._manage_button = None if self.has_changes else module_manage_button(
             "adaptive_slowmode", state, self.locale)
-        for item in state_items:
-            container.add_item(item)
-        if state_items:
-            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
         # ── Channel list ──────────────────────────────────────────────
         channels = self.working_config.get("channels", {})
@@ -569,6 +566,8 @@ class AdaptiveSlowmodeConfigView(BaseView):
         )
         back_btn.callback = self.on_back
         btn_row.add_item(back_btn)
+        if getattr(self, '_manage_button', None) is not None:
+            btn_row.add_item(self._manage_button)
 
         # Registration shell (self.bot is None): register EVERY button's
         # custom_id regardless of has_changes/has_existing_config.
@@ -592,7 +591,8 @@ class AdaptiveSlowmodeConfigView(BaseView):
             )
             cancel_btn.callback = self.on_cancel
             btn_row.add_item(cancel_btn)
-        if (not self.has_changes and self.has_existing_config) or is_shell:
+        # Deletion lives in the Manage panel; the shell keeps the old id registered.
+        if is_shell:
             delete_btn = ui.Button(
                 emoji=discord.PartialEmoji.from_str(DELETE),
                 label=t("modules.config.buttons.delete", locale=self.locale),

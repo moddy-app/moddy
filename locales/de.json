@@ -1095,6 +1095,34 @@
         "settings": "Einstellungen",
         "permissions": "Berechtigungen",
         "options": "Optionen"
+      },
+      "manage": {
+        "button": "Verwalten",
+        "title": "Modul verwalten",
+        "state_title": "Modulstatus",
+        "state_hint": "Lege fest, ob das Modul läuft. Deine Konfiguration bleibt immer erhalten.",
+        "placeholder": "Modulstatus ändern",
+        "danger_title": "Gefahrenzone",
+        "delete_hint": "Löscht die gesamte Modulkonfiguration. Kann nicht rückgängig gemacht werden.",
+        "delete_button": "Konfiguration löschen",
+        "confirm_title": "Konfiguration löschen?",
+        "confirm_text": "Die gesamte Konfiguration von **{module}** wird gelöscht. Kann nicht rückgängig gemacht werden.",
+        "confirm_button": "Ja, löschen",
+        "cancel_button": "Abbrechen",
+        "options": {
+          "active": {
+            "label": "Aktiv",
+            "description": "Das Modul arbeitet normal."
+          },
+          "simulation": {
+            "label": "Simulation",
+            "description": "Beobachtet und simuliert seine Aktionen, ohne etwas anzuwenden."
+          },
+          "paused": {
+            "label": "Pausiert",
+            "description": "Tut nichts; seine Befehle sind ausgeblendet."
+          }
+        }
       }
     },
     "welcome_channel": {

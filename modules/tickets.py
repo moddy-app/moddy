@@ -44,6 +44,8 @@ logger = logging.getLogger('moddy.modules.tickets')
 
 MODULE_ID = "tickets"
 
+CONFIG_DELETABLE = False
+
 # --------------------------------------------------------------------------- #
 # Limits (free vs premium)
 # --------------------------------------------------------------------------- #

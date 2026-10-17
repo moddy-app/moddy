@@ -537,13 +537,15 @@ class TestScreens:
         assert nav and nav[0].custom_id == "moddy:automod:cfg:home:nav"
         inside = {getattr(c, "custom_id", None) for c in top[0].walk_children()}
         assert "moddy:automod:cfg:home:nav" not in inside
-        delete = [c for c in top[2].children if getattr(c, "custom_id", "").endswith("home:delete")]
-        assert delete and delete[0].style == discord.ButtonStyle.danger
-        assert not any(i and i.endswith(("adv:delete", "home:toggle", "adv:dryrun")) for i in cids(view))
-        # Simulation state: yellow accent, the shared state buttons are there.
+        # State + delete live in the shared Manage panel: one small button
+        # in the bottom row, outside the container.
+        bottom = [getattr(c, "custom_id", "") for c in top[2].children]
+        assert "moddy:config:manage:automod_ai" in bottom
+        assert not any(i and i.endswith(("home:delete", "adv:delete", "home:toggle", "adv:dryrun"))
+                       for i in cids(view))
+        assert not any(i and i.startswith("moddy:config:state:") for i in cids(view))
+        # Simulation state: yellow accent.
         assert top[0].accent_colour == discord.Colour(0xFEE75C)
-        assert "moddy:config:state:automod_ai:active" in cids(view)
-        assert "moddy:config:state:automod_ai:paused" in cids(view)
         paused = home.AutomodAIConfigView(make_bot(), GUILD, "en-US",
                                           common.normalize_cfg(configured(state="paused")))
         assert paused.children[0].accent_colour != discord.Colour(0xFEE75C)

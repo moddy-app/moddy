@@ -49,6 +49,8 @@ logger = logging.getLogger("moddy.modules.bot_customization")
 
 MODULE_ID = "bot_customization"
 
+CONFIG_DELETABLE = False
+
 # --------------------------------------------------------------------------- #
 # Discord limits
 # --------------------------------------------------------------------------- #

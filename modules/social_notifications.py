@@ -284,6 +284,8 @@ class SocialNotificationsModule(ModuleBase):
     """Registration shell so the module appears in ``/config`` (table-backed)."""
 
     MODULE_ID = "social_notifications"
+
+    CONFIG_DELETABLE = False
     MODULE_NAME = "Social Notifications"
     MODULE_DESCRIPTION = "Get notified when social accounts post new content"
     MODULE_EMOJI = SOCIAL

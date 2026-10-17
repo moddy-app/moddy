@@ -26,3 +26,9 @@ Summary of the whole day on branch `claude/sleepy-hamilton-u9g461`.
 
 - Adaptive slowmode request from the owner is still pending.
 - Icons wired: `labs` (simulation state), `pending` hourglass (automod moderator approval pending).
+- Module state moved out of the home containers: one small **Manage** button
+  (bottom row, next to Back) opens a shared panel with a state select (Active /
+  Simulation / Paused, described options) and **Delete configuration**
+  (confirmation). Module-specific delete buttons were removed from the homes
+  (old custom_ids stay registered on the shells). `CONFIG_DELETABLE = False` for
+  modules whose data lives elsewhere or that have their own reset.

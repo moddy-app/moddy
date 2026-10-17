@@ -115,6 +115,10 @@ class ModuleBase(ABC):
     # visible) and must itself read ``self.is_simulation`` to skip side effects
     # (Automod maps it onto its ``dry_run`` behaviour).
     SUPPORTS_SIMULATION: bool = False
+    # Whether /config's Manage panel offers "Delete configuration". Off for
+    # modules whose data lives elsewhere (tables, per-item lists) or that have
+    # their own reset action.
+    CONFIG_DELETABLE: bool = True
 
     def __init_subclass__(cls, **kwargs):
         """Wrap every subclass ``load_config`` so the generic state is applied

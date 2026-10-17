@@ -42,7 +42,7 @@ from cogs.error_handler import BaseView
 from config import COLORS
 from modules.automod_ai import AutomodModule
 from modules.configs import automod_ai_common as common
-from modules.configs._common import module_state_row, state_accent
+from modules.configs._common import module_manage_button, state_accent
 from modules.configs.automod_ai_common import (
     back_row, button, cid, go, row, select, title, tp, trail,
 )
@@ -195,13 +195,6 @@ class AutomodAIConfigView(BaseView):
             container.add_item(ui.TextDisplay(setup))
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
-        # Generic module state: Active / Simulation / Paused (shared buttons).
-        if not is_shell:
-            for item in module_state_row(common.MODULE_ID, state, locale,
-                                         supports_simulation=AutomodModule.SUPPORTS_SIMULATION):
-                container.add_item(item)
-            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
-
         container.add_item(ui.TextDisplay(summary_lines(cfg, locale)))
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
@@ -238,12 +231,20 @@ class AutomodAIConfigView(BaseView):
                     emoji=common.emoji_of(emoji))
                 for key, emoji in NAV_ITEMS
             ])))
-        self.add_item(row(
-            button(self.on_back, custom_id=cid("home", "back"),
-                   label=t("modules.config.buttons.back", locale=locale), emoji=BACK),
-            button(self.on_delete, custom_id=cid("home", "delete"),
-                   label=t("modules.config.buttons.delete", locale=locale), emoji=DELETE,
-                   style=discord.ButtonStyle.danger)))
+        # Generic module management (state Active / Simulation / Paused, delete)
+        # lives in the shared Manage panel, opened by one small button.
+        bottom = [button(self.on_back, custom_id=cid("home", "back"),
+                         label=t("modules.config.buttons.back", locale=locale), emoji=BACK)]
+        if is_shell:
+            # Old panels may still carry the former Delete button: keep its id.
+            bottom.append(button(self.on_delete, custom_id=cid("home", "delete"),
+                                 label=t("modules.config.buttons.delete", locale=locale),
+                                 emoji=DELETE, style=discord.ButtonStyle.danger))
+        else:
+            manage = module_manage_button(common.MODULE_ID, state, locale)
+            if manage is not None:
+                bottom.append(manage)
+        self.add_item(row(*bottom))
 
     # -- callbacks (everything is re-derived from the interaction) -------- #
     async def interaction_check(self, interaction: discord.Interaction) -> bool:

@@ -28,7 +28,7 @@ from modules.configs._common import (
     check_guild_perms,
     config_state,
     crumb,
-    module_state_row,
+    module_manage_button,
     open_main_config,
     show,
     state_accent,
@@ -109,11 +109,8 @@ class AltGuardConfigView(BaseView):
 
         # Play / pause: only on a clean, saved config (a state click rebuilds the
         # screen from the saved config and would drop pending edits).
-        state_items = [] if self.has_changes else module_state_row('altguard', state, self.locale)
-        for item in state_items:
-            container.add_item(item)
-        if state_items:
-            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+        # Module management (state, delete): one small button outside the container.
+        self._manage_button = None if self.has_changes else module_manage_button('altguard', state, self.locale)
 
         # --- Verification channel -------------------------------------- #
         container.add_item(ui.TextDisplay(
@@ -212,6 +209,8 @@ class AltGuardConfigView(BaseView):
         )
         back_btn.callback = self.on_back
         button_row.add_item(back_btn)
+        if getattr(self, '_manage_button', None) is not None:
+            button_row.add_item(self._manage_button)
 
         # Registration shell (self.bot is None): render every conditional
         # button so discord.py learns each custom_id — see
@@ -237,7 +236,8 @@ class AltGuardConfigView(BaseView):
             cancel_btn.callback = self.on_cancel
             button_row.add_item(cancel_btn)
 
-        if (not self.has_changes and self.has_existing_config) or is_shell:
+        # Deletion lives in the Manage panel; the shell keeps the old id registered.
+        if is_shell:
             delete_btn = ui.Button(
                 emoji=discord.PartialEmoji.from_str(DELETE),
                 label=t('modules.config.buttons.delete', locale=self.locale),
