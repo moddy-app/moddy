@@ -14,10 +14,13 @@ import pytest
 
 from modules.logs import LogsModule, config_from_raw
 from serverlogs import registry
-from serverlogs.dispatcher import LogDispatcher, MAX_EMBEDS_PER_MESSAGE
+from serverlogs.dispatcher import (
+    LogDispatcher, MAX_COMPONENTS_PER_MESSAGE, MAX_TEXT_PER_MESSAGE, build_view,
+    pack_cards,
+)
 from serverlogs.service import LogService
 from serverlogs.renderer import (
-    KIND_COLORS, MAX_EMBED_TOTAL, LogEntry, build_transcript, fmt_duration,
+    KIND_COLORS, MAX_CARD_TEXT, LogCard, LogEntry, build_transcript, fmt_duration,
     fmt_number, fmt_time, fmt_user,
 )
 
@@ -195,20 +198,30 @@ def test_ignored_roles_and_bots():
 def test_entry_renders_a_heading_then_quoted_labelled_lines():
     entry = LogEntry("user_join", "en-US")
     entry.line("member_count", fmt_number(664))
-    embed = entry.to_embed()
-    heading, first_line = embed.description.split("\n")[:2]
-    # Custom emojis only render in a description, never in an embed title.
+    card = entry.to_card()
+    heading, first_line = card.body.split("\n")[:2]
     assert heading.startswith("### <:")
-    assert embed.title is None
     assert first_line.startswith("> **")
-    assert "`664`" in embed.description
-    assert embed.colour.value == KIND_COLORS[registry.KIND_CREATE]
+    assert "`664`" in card.text
+    assert card.accent == KIND_COLORS[registry.KIND_CREATE]
+
+
+def test_a_card_builds_an_accented_container():
+    entry = LogEntry("user_join", "en-US")
+    entry.line("member_count", fmt_number(664))
+    entry.thumbnail("https://cdn.example/a.png")
+    entry.image("https://cdn.example/b.png")
+    container = entry.to_card().build_container()
+    assert isinstance(container, discord.ui.Container)
+    assert int(container.accent_colour) == KIND_COLORS[registry.KIND_CREATE]
+    kinds = [type(c) for c in container.children]
+    assert discord.ui.Section in kinds and discord.ui.MediaGallery in kinds
 
 
 def test_moderation_events_use_the_moderation_accent():
-    assert LogEntry("ban_add", "en-US").to_embed().colour.value == \
+    assert LogEntry("ban_add", "en-US").to_card().accent == \
         KIND_COLORS[registry.KIND_MODERATION]
-    assert LogEntry("channel_delete", "en-US").to_embed().colour.value == \
+    assert LogEntry("channel_delete", "en-US").to_card().accent == \
         KIND_COLORS[registry.KIND_DELETE]
 
 
@@ -224,34 +237,37 @@ def test_a_long_block_moves_to_an_attachment():
     entry.block("message", "x" * 3000, filename="message.txt")
     assert len(entry.files) == 1
     assert entry.files[0].filename == "message.txt"
-    field = entry.to_embed().fields[0]
-    assert len(field.value) <= 1024
+    card = entry.to_card()
+    assert len(card.blocks[0]) <= 1100
+    assert card.file_names == ["message.txt"]
+    assert any(isinstance(c, discord.ui.File)
+               for c in card.build_container().children)
 
 
 def test_a_short_block_stays_inline():
     entry = LogEntry("message_delete", "en-US")
     entry.block("message", "hello")
     assert entry.files == []
-    assert entry.to_embed().fields[0].value == "hello"
+    assert entry.to_card().blocks[0].endswith("\nhello")
 
 
-def test_an_oversized_embed_is_cut_down_to_a_deliverable_size():
-    """Discord rejects the whole message past its total budget, not just the field."""
+def test_an_oversized_card_is_cut_down_to_a_deliverable_size():
+    """Discord rejects the whole message past its text budget."""
     entry = LogEntry("channel_permissions_update", "en-US")
     for index in range(25):
         entry.block(f"role_{index}", "y" * 900)
-    embed = entry.to_embed()
-    assert len(embed) <= MAX_EMBED_TOTAL
-    assert len(embed.fields) < 25
-    assert "-#" in (embed.description or "")
+    card = entry.to_card()
+    assert card.chars <= MAX_CARD_TEXT
+    assert len(card.blocks) < 25
+    assert "-#" in card.body.split("\n")[-1]
 
 
-def test_an_embed_within_budget_is_left_alone():
+def test_a_card_within_budget_is_left_alone():
     entry = LogEntry("message_delete", "en-US")
     entry.block("message", "hello")
-    embed = entry.to_embed()
-    assert embed.description.count("\n") == 0, "only the heading, no extra note"
-    assert len(embed.fields) == 1
+    card = entry.to_card()
+    assert card.body.count("\n") == 0, "only the heading, no extra note"
+    assert len(card.blocks) == 1
 
 
 def test_markdown_in_names_is_escaped():
@@ -295,8 +311,33 @@ def test_transcript_lists_every_message():
 # Delivery
 # --------------------------------------------------------------------------- #
 
+def _small_card(index=0):
+    return LogCard(accent=1, body=f"### {index}")
+
+
+def test_packing_respects_the_component_and_text_limits():
+    cards = [_small_card(i) for i in range(MAX_COMPONENTS_PER_MESSAGE * 2)]
+    groups = pack_cards(cards)
+    assert sum(len(g) for g in groups) == len(cards)
+    assert len(groups) >= 2
+    for group in groups:
+        assert sum(c.components for c in group) <= MAX_COMPONENTS_PER_MESSAGE
+        assert sum(c.chars for c in group) <= MAX_TEXT_PER_MESSAGE
+
+    heavy = [LogCard(accent=1, body="z" * 1800) for _ in range(5)]
+    groups = pack_cards(heavy)
+    assert [len(g) for g in groups] == [2, 2, 1]
+
+
+def test_a_packed_view_stays_within_discord_limits():
+    group = pack_cards([_small_card(i) for i in range(60)])[0]
+    view = build_view(group)
+    assert view.has_components_v2()
+    assert not view.is_dispatchable()
+
+
 @pytest.mark.asyncio
-async def test_dispatcher_batches_embeds_into_one_call():
+async def test_dispatcher_batches_cards_into_few_calls():
     sent = []
 
     class _Channel:
@@ -311,14 +352,14 @@ async def test_dispatcher_batches_embeds_into_one_call():
     # No webhook is resolvable without a guild, so delivery falls back to send.
     dispatcher._webhooks[1] = None
 
-    for index in range(MAX_EMBEDS_PER_MESSAGE + 2):
-        dispatcher.enqueue(1, discord.Embed(title=str(index)))
+    for index in range(12):
+        dispatcher.enqueue(1, _small_card(index))
     await asyncio.sleep(1.2)
     await dispatcher.close()
 
     assert sent, "nothing was delivered"
-    assert sum(len(call["embeds"]) for call in sent) == MAX_EMBEDS_PER_MESSAGE + 2
-    assert max(len(call["embeds"]) for call in sent) > 1, "no batching happened"
+    assert sum(len(call["view"].children) for call in sent) == 12
+    assert max(len(call["view"].children) for call in sent) > 1, "no batching happened"
 
 
 @pytest.mark.asyncio
@@ -329,7 +370,7 @@ async def test_dispatcher_drops_the_oldest_under_a_flood():
     instance._queues[1] = queue
 
     for index in range(5):
-        instance.enqueue(1, discord.Embed(title=str(index)))
+        instance.enqueue(1, _small_card(index))
 
     assert queue.qsize() <= 2
     assert instance._dropped[1] == 3
@@ -363,8 +404,8 @@ def _merge_service(module):
 
     service.module = _module
     sent = []
-    service.dispatcher.enqueue = lambda channel_id, embed, files=None: sent.append(
-        (channel_id, embed))
+    service.dispatcher.enqueue = lambda channel_id, card, files=None: sent.append(
+        (channel_id, card))
     return service, sent
 
 
@@ -404,8 +445,8 @@ async def test_one_act_sent_to_one_channel_becomes_one_log():
     await service.close()
 
     assert len(sent) == 1
-    _channel, embed = sent[0]
-    description = embed.description
+    _channel, card = sent[0]
+    description = card.text
     # The richest entry won, and it kept what the others knew.
     assert "N6A8Q2" in description        # from the case
     assert "in a month" in description    # from the timeout
@@ -432,8 +473,8 @@ async def test_merging_never_empties_a_channel_that_wanted_the_other_event():
     await service.close()
 
     assert sorted(channel for channel, _ in sent) == [222, 333]
-    for _channel, embed in sent:
-        assert "Merged with" not in (embed.description or "")
+    for _channel, card in sent:
+        assert "Merged with" not in card.text
 
 
 @pytest.mark.asyncio
@@ -476,9 +517,9 @@ def test_absorbing_keeps_the_subject_and_the_executor():
 
     loser.actor(_Bot())
 
-    embed = winner.absorb(loser).to_embed()
-    assert "tomorrow" in embed.description
-    assert embed.footer.text == "Moddy#3735"
+    card = winner.absorb(loser).to_card()
+    assert "tomorrow" in card.text
+    assert "Moddy#3735" in card.footer
 
 
 # --------------------------------------------------------------------------- #

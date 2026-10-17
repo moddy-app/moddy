@@ -24,7 +24,7 @@
 
 ## What a server sees
 
-One embed per event, in the channel the category is bound to:
+One Components V2 container per event, in the channel the category is bound to:
 
 ```
 ┌──────────────────────────────────────────────┐
@@ -33,14 +33,21 @@ One embed per event, in the channel the category is bound to:
 │ > **Added:** <@&966…>                        │
 │ > **Reason:** Join Roles                     │
 │                                     [avatar] │  thumbnail   = the subject
-│ Moddy#0001                       26/07 13:12 │  footer      = executor + timestamp
+│ -# Moddy#0001 • 26/07 13:12                  │  footer      = executor + timestamp
 └──────────────────────────────────────────────┘
 ```
 
-The heading is a `### ` line **inside the description**, not `embed.title`:
-Discord renders custom emojis in an embed description and prints them as raw
-text in a title. An entry that carries a jump link (`entry.url()`) turns its
-heading into a markdown link instead of using `embed.url`.
+The container is a non-interactive `ui.Container` whose `accent_colour` is
+the event kind's colour. The heading is a `### <icon> Title` line; an entry
+that carries a jump link (`entry.url()`) turns it into a markdown link.
+The subject's avatar is a `ui.Thumbnail` accessory of a `ui.Section`, a
+large picture is a `ui.MediaGallery`, multi-line fields (`block()`) are one
+`**Name**` + value text display, and attached files (transcripts) are
+`ui.File("attachment://…")` — in a V2 message an attachment that is not
+referenced by a component is not displayed. `LogEntry.to_card()` resolves
+an entry into a `LogCard` (plain data); every send calls
+`LogCard.build_container()` for a fresh container, because a UI item can
+belong to only one view and a log may go to several channels.
 
 The accent colour states the nature of the event at a glance:
 
@@ -56,13 +63,13 @@ The kind is **inferred** from the event name (`*_create` → create, `*_delete`
 `registry._KIND_OVERRIDES` for the names that would infer wrong (`ban_add`
 is moderation, not a creation).
 
-> **Components V2 exception.** These messages use a classic
-> `discord.Embed`, not `ui.Container`. Logs are posted through a channel
-> **webhook**, and Discord rejects the `IS_COMPONENTS_V2` flag on a webhook
-> message that carries a classic embed. This is the same documented
-> exception `modules/starboard.py` relies on, and it is the only place in
-> the logs system where CLAUDE.md rule 1 does not apply. Everything else —
-> the `/config` panel and its modals — is Components V2 as usual.
+> **Why this works through a webhook.** Discord accepts non-interactive
+> Components V2 from any webhook when `with_components=true` is passed
+> (discord.py sets it whenever `view=` is given; only *interactive*
+> components need an application-owned webhook). Logs contain no buttons,
+> so no embed fallback is needed: a missing webhook falls back to
+> `channel.send(view=…)`, still Components V2. The view is a display-only
+> `BaseView` subclass, deliberately not persistent.
 
 ---
 
@@ -262,7 +269,7 @@ there is no `self` on which to stage pending edits. See
 | `ignored_channel_ids` | array of snowflake strings | `[]` | Max **25**. Matches the channel, its parent category, and a thread's parent. |
 | `ignored_role_ids` | array of snowflake strings | `[]` | Max **25**. A member holding one of these roles is never the subject of a log. |
 | `ignore_bots` | bool | `false` | Skip events whose subject/actor is a bot. |
-| `attach_transcripts` | bool | `true` | Attach `.txt` transcripts and overflow files. When `false`, files are dropped and only the embed is sent. |
+| `attach_transcripts` | bool | `true` | Attach `.txt` transcripts and overflow files. When `false`, files are dropped and only the card is sent. |
 | `merge_duplicates` | bool | `true` | Deliver one log per **act** instead of one per registry event — see *Merging duplicates* below. |
 
 The **language of the log messages** is not stored here: it is the server
@@ -368,8 +375,10 @@ rate-limit buckets and slow every other command down, so:
 * every log goes out through a **channel webhook** named `Moddy Logs`,
   created on demand (requires `manage_webhooks`), with its own rate-limit
   bucket;
-* up to **10 embeds per request**, batched over a **0.75 s** window, so a
-  burst of 200 deletions collapses into a handful of calls;
+* several cards per request, batched over a **0.75 s** window and packed
+  within Components V2 limits (`MAX_COMPONENTS_PER_MESSAGE = 40`,
+  `MAX_TEXT_PER_MESSAGE = 4000`; `pack_cards()`), so a burst of 200
+  deletions collapses into a handful of calls;
 * **one worker task and one bounded queue per destination channel**
   (`QUEUE_MAXSIZE = 500`). When the queue is full the **oldest** pending
   entry is dropped and counted — a flood degrades into "the most recent
@@ -390,15 +399,16 @@ sent on their own — attachments are per-message and cannot be batched.
 
 ### Size limits
 
-Individual values are capped in the renderer (`MAX_DESCRIPTION = 4000`,
-`MAX_FIELD_VALUE = 1000`), and a block longer than a field allows is moved
-to a `.txt` attachment rather than silently cut. On top of that,
-`LogEntry._fit()` enforces `MAX_EMBED_TOTAL = 5800` on the **whole** embed:
-Discord rejects an over-budget message entirely, so a log with many fields
-(a permission diff over a dozen roles) would otherwise never arrive.
-Trailing fields are dropped first, the description is shortened only if that
-is not enough, and the reader is always told the log was shortened
-(`modules.logs.values.size_limit`).
+Individual values are capped in the renderer (`MAX_FIELD_VALUE = 1000`), and
+a block longer than that is moved to a `.txt` attachment rather than
+silently cut. On top of that, `LogCard.fit()` enforces
+`MAX_CARD_TEXT = 3600` characters on the whole card (the message limit is
+4000 shared by every card in it): Discord rejects an over-budget message
+entirely, so a log with many fields (a permission diff over a dozen roles)
+would otherwise never arrive. Trailing fields are dropped first, the body
+is shortened only if that is not enough, and the reader is always told the
+log was shortened (`modules.logs.values.size_limit`). A card uses at most
+about 10 components, so the 40-component cap is rarely the binding limit.
 
 ---
 
@@ -437,7 +447,7 @@ Three steps, nothing else:
 2. **i18n** — add two keys **in all five locales**
    (`fr`, `en-US`, `es-ES`, `pt-BR`, `de`):
    * `modules.logs.events.<category>.<event>` — the short name in `/config`
-   * `modules.logs.titles.<category>.<event>` — the embed title
+   * `modules.logs.titles.<category>.<event>` — the card heading
 3. **Builder** — emit it from a listener in `serverlogs/listeners/`, and
    wire the gateway event in `cogs/logs.py` if it is a new one.
 

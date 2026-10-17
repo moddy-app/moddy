@@ -6,8 +6,9 @@ would burn the bot's own rate-limit buckets and slow every other command
 down, so every log goes out through a **channel webhook** instead:
 
 * webhooks have their own rate-limit bucket, separate from the bot user;
-* one webhook call can carry **10 embeds**, so a burst collapses into a
-  handful of requests;
+* one webhook call can carry several log cards (Components V2 allows 40
+  components and 4000 characters of text per message), so a burst collapses
+  into a handful of requests;
 * if the webhook is missing or unusable, delivery falls back to a plain
   ``channel.send`` so a misconfigured server still gets its logs.
 
@@ -24,12 +25,18 @@ from typing import Dict, List, Optional, Tuple
 
 import discord
 
+from cogs.error_handler import BaseView
+from serverlogs.renderer import LogCard
+
 logger = logging.getLogger('moddy.serverlogs.dispatcher')
 
 #: Name of the webhook Moddy creates in each log channel.
 WEBHOOK_NAME = "Moddy Logs"
-#: Discord's own limit for embeds in a single message.
-MAX_EMBEDS_PER_MESSAGE = 10
+#: Discord's Components V2 limits for a single message (nested items count).
+MAX_COMPONENTS_PER_MESSAGE = 40
+MAX_TEXT_PER_MESSAGE = 4000
+#: Cards collected per batching window (several messages may result).
+MAX_CARDS_PER_BATCH = 40
 #: How long a worker waits for more entries before flushing a batch.
 BATCH_WINDOW = 0.75
 #: Pending entries kept per channel before the oldest are dropped.
@@ -37,12 +44,12 @@ QUEUE_MAXSIZE = 500
 
 
 class _Payload:
-    """One queued log message: its embed and any attachments."""
+    """One queued log message: its card and any attachments."""
 
-    __slots__ = ("embed", "files")
+    __slots__ = ("card", "files")
 
-    def __init__(self, embed: discord.Embed, files: List[discord.File]):
-        self.embed = embed
+    def __init__(self, card: LogCard, files: List[discord.File]):
+        self.card = card
         self.files = files
 
     @property
@@ -50,6 +57,40 @@ class _Payload:
         # Files are per-message, so an entry carrying a transcript is sent on
         # its own rather than merged into a batch.
         return not self.files
+
+
+def pack_cards(cards: List[LogCard]) -> List[List[LogCard]]:
+    """Greedily group cards into messages within Discord's V2 limits.
+
+    A card alone always gets a message, even if it were over budget (the
+    renderer keeps every card under :data:`MAX_TEXT_PER_MESSAGE`).
+    """
+    groups: List[List[LogCard]] = []
+    current: List[LogCard] = []
+    components = chars = 0
+    for card in cards:
+        if current and (components + card.components > MAX_COMPONENTS_PER_MESSAGE
+                        or chars + card.chars > MAX_TEXT_PER_MESSAGE):
+            groups.append(current)
+            current, components, chars = [], 0, 0
+        current.append(card)
+        components += card.components
+        chars += card.chars
+    if current:
+        groups.append(current)
+    return groups
+
+
+class _LogView(BaseView):
+    """Display-only view: a stack of log containers. Nothing to click, so it
+    is deliberately not persistent (see PERSISTENT_VIEWS.md)."""
+
+
+def build_view(cards: List[LogCard]) -> discord.ui.LayoutView:
+    view = _LogView()
+    for card in cards:
+        view.add_item(card.build_container())
+    return view
 
 
 class LogDispatcher:
@@ -67,7 +108,7 @@ class LogDispatcher:
     # Public API
     # ------------------------------------------------------------------ #
 
-    def enqueue(self, channel_id: int, embed: discord.Embed,
+    def enqueue(self, channel_id: int, card: LogCard,
                 files: Optional[List[discord.File]] = None) -> None:
         """Hand one rendered log to the channel's worker. Never blocks."""
         queue = self._queues.get(channel_id)
@@ -75,7 +116,7 @@ class LogDispatcher:
             queue = asyncio.Queue(maxsize=QUEUE_MAXSIZE)
             self._queues[channel_id] = queue
 
-        payload = _Payload(embed, files or [])
+        payload = _Payload(card, files or [])
         try:
             queue.put_nowait(payload)
         except asyncio.QueueFull:
@@ -148,7 +189,7 @@ class LogDispatcher:
         """Collect further batchable entries within the batching window."""
         collected: List[_Payload] = []
         deadline = asyncio.get_running_loop().time() + BATCH_WINDOW
-        while len(collected) < MAX_EMBEDS_PER_MESSAGE - 1:
+        while len(collected) < MAX_CARDS_PER_BATCH - 1:
             remaining = deadline - asyncio.get_running_loop().time()
             if remaining <= 0:
                 break
@@ -172,22 +213,25 @@ class LogDispatcher:
         mergeable = [p for p in batch if p.batchable]
         standalone = [p for p in batch if not p.batchable]
 
-        for chunk_start in range(0, len(mergeable), MAX_EMBEDS_PER_MESSAGE):
-            chunk = mergeable[chunk_start:chunk_start + MAX_EMBEDS_PER_MESSAGE]
-            await self._send(channel, [p.embed for p in chunk], [])
+        for group in pack_cards([p.card for p in mergeable]):
+            await self._send(channel, group, [])
 
         for payload in standalone:
-            await self._send(channel, [payload.embed], payload.files)
+            await self._send(channel, [payload.card], payload.files)
 
-    async def _send(self, channel, embeds: List[discord.Embed],
+    async def _send(self, channel, cards: List[LogCard],
                     files: List[discord.File]) -> None:
-        if not embeds:
+        if not cards:
             return
 
         webhook, thread = await self._get_webhook(channel)
         if webhook is not None:
             try:
-                kwargs = {"embeds": embeds, "files": files} if files else {"embeds": embeds}
+                # Non-interactive Components V2 is accepted from any webhook
+                # (discord.py passes ``with_components`` when a view is given).
+                kwargs = {"view": build_view(cards)}
+                if files:
+                    kwargs["files"] = files
                 if thread is not None:
                     kwargs["thread"] = thread
                 await webhook.send(wait=False, **kwargs)
@@ -200,7 +244,7 @@ class LogDispatcher:
                 self.invalidate_webhook(channel.id)
 
         try:
-            await channel.send(embeds=embeds, files=files or discord.utils.MISSING)
+            await channel.send(view=build_view(cards), files=files or discord.utils.MISSING)
         except discord.HTTPException as e:
             logger.warning(f"[Logs] Fallback send failed in {channel.id}: {e}")
 

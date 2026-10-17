@@ -243,64 +243,6 @@ class I18n:
         """Alias court pour get()"""
         return self.get(key, interaction, **kwargs)
 
-    def get_embed(self, key: str, interaction: discord.Interaction,
-                  **kwargs) -> discord.Embed:
-        """
-        Crée un embed depuis les traductions
-
-        Args:
-            key: Clé de base pour l'embed (ex: "commands.ping.response")
-            interaction: Interaction Discord
-            **kwargs: Variables supplémentaires
-
-        Returns:
-            Un discord.Embed configuré
-        """
-        from config import COLORS
-
-        # Récupérer les éléments de l'embed
-        title = self.get(f"{key}.title", interaction, **kwargs)
-        description = self.get(f"{key}.description", interaction, **kwargs)
-
-        # Créer l'embed
-        embed = discord.Embed(
-            title=title if title != f"[{key}.title]" else None,
-            description=description if description != f"[{key}.description]" else None,
-            color=COLORS.get("primary", 0x5865F2)
-        )
-
-        # Ajouter les fields si ils existent
-        fields_key = f"{key}.fields"
-        locale = self.get_user_locale(interaction)
-        fields_data = self._get_nested_key(
-            self._translations.get(locale, {}),
-            fields_key
-        )
-
-        if isinstance(fields_data, list):
-            for field in fields_data:
-                if isinstance(field, dict):
-                    name = field.get('name', 'Unknown')
-                    value = field.get('value', 'Unknown')
-                    inline = field.get('inline', False)
-
-                    # Remplacer les variables dans les fields
-                    if kwargs:
-                        try:
-                            name = name.format(**kwargs)
-                            value = value.format(**kwargs)
-                        except:
-                            pass
-
-                    embed.add_field(name=name, value=value, inline=inline)
-
-        # Footer si existe
-        footer = self.get(f"{key}.footer", interaction, **kwargs)
-        if footer and footer != f"[{key}.footer]":
-            embed.set_footer(text=footer)
-
-        return embed
-
     @property
     def supported_locales(self) -> set:
         """Retourne les langues supportées"""
@@ -319,11 +261,6 @@ i18n = I18n()
 def t(key: str, interaction: Optional[discord.Interaction] = None, **kwargs) -> str:
     """Fonction raccourci pour obtenir une traduction"""
     return i18n.get(key, interaction, **kwargs)
-
-
-def get_embed(key: str, interaction: discord.Interaction, **kwargs) -> discord.Embed:
-    """Fonction raccourci pour créer un embed traduit"""
-    return i18n.get_embed(key, interaction, **kwargs)
 
 
 def get_locale(interaction: discord.Interaction) -> str:

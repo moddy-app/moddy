@@ -21,6 +21,19 @@ Implementation: [`utils/tech_logger.py`](../../utils/tech_logger.py) — the
 
 ---
 
+## Channel-based staff logs (Components V2)
+
+Besides the webhook feeds, a few logs are posted by the bot itself in fixed
+staff channels: dev commands (`cogs/dev_logger.py`), console output
+(`cogs/console_logger.py`), error reports (`cogs/error_handler.py`) and staff
+actions (`utils/staff_logger.py`). They are built with
+`utils/log_cards.py::build_log_card` (one accent-coloured container, `###`
+title, `**name**` fields, `-#` footer with a timestamp) and sent with
+`channel.send(view=...)` — no `discord.Embed`. A V2 message cannot carry
+`content` and holds at most 4000 characters, so the builder trims fields and
+pings (fatal errors, critical alerts) are sent as a separate message by
+`send_log_card(..., ping=)`. Console output is sent as one card per log type.
+
 ## Configuration (environment variables)
 
 Each category reads its own webhook URL. Any category left unset falls back to

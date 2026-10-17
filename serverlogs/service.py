@@ -143,12 +143,12 @@ class LogService:
         if not module.attach_transcripts:
             entry.files.clear()
 
-        embed = entry.to_embed()
+        card = entry.to_card()
         for index, channel_id in enumerate(channel_ids):
             # discord.File objects are single-use streams; re-read them for
             # every destination so a fan-out doesn't send empty attachments.
             files = entry.files if index == 0 else _clone_files(entry.files)
-            self.dispatcher.enqueue(channel_id, embed, files)
+            self.dispatcher.enqueue(channel_id, card, files)
 
     # ------------------------------------------------------------------ #
     # Merging one act told several times

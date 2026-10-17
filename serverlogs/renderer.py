@@ -2,7 +2,7 @@
 
 **This is the only place that decides what a log looks like.** Listeners
 describe *what happened* by pushing labelled lines onto a :class:`LogEntry`;
-this module turns that into the embed everyone sees:
+this module turns that into the card everyone sees:
 
 .. code-block:: text
 
@@ -12,17 +12,17 @@ this module turns that into the embed everyone sees:
     │ > **Added:** <@&966…>                        │
     │ > **Reason:** Join Roles                     │
     │                                     [avatar] │  thumbnail = the subject
-    │ Moddy#0001                       26/07 13:12 │  footer = executor, timestamp
+    │ -# Moddy#0001 • 26/07 13:12                  │  footer = executor, timestamp
     └──────────────────────────────────────────────┘
 
 Changing the wording of a log therefore never means touching Python: the
 title comes from ``modules.logs.titles.<category>.<event>`` and every label
 from ``modules.logs.fields.<label>``, in all five locales.
 
-Embeds are a **documented exception** to the Components V2 rule (CLAUDE.md
-rule 1): logs are posted through channel webhooks, and Discord rejects the
-``IS_COMPONENTS_V2`` message flag on webhook messages that carry a classic
-embed — the same exception ``modules/starboard.py`` already relies on.
+Each log is a Components V2 ``ui.Container`` (non-interactive) with the
+event's semantic accent colour. Webhooks accept it through
+``with_components`` (discord.py sets it whenever a view is passed), so
+there is no embed anywhere in the logs system.
 """
 
 from __future__ import annotations
@@ -38,9 +38,10 @@ from utils.i18n import t
 
 # Discord hard limits, with a safety margin so a rendered value can never
 # make the whole webhook call fail.
-MAX_DESCRIPTION = 4000
 MAX_FIELD_VALUE = 1000
-MAX_EMBED_TOTAL = 5800
+#: Components V2 allows 4000 characters of text per *message*; one card may
+#: use most of it, the dispatcher packs several small ones into a message.
+MAX_CARD_TEXT = 3600
 
 #: Accent colour per event kind (see registry.KIND_*).
 KIND_COLORS = {
@@ -342,17 +343,16 @@ class LogEntry:
             self._merged.append(title)
         return self
 
-    def to_embed(self) -> discord.Embed:
+    def to_card(self) -> "LogCard":
+        """Resolve the entry into a :class:`LogCard` (pure data, size-checked)."""
         spec = registry.EVENTS.get(_full_key(self.event))
         kind = self.kind or (spec.kind if spec else registry.KIND_UPDATE)
         title = self._title_override or (
             t(spec.title_key, locale=self.locale) if spec else self.event
         )
 
-        # The heading lives in the description, not in ``embed.title``:
-        # Discord renders custom emojis in a description and prints them as
-        # raw text in a title. The jump link an entry may carry (``url()``)
-        # becomes a markdown link on the heading instead of ``embed.url``.
+        # The jump link an entry may carry (``url()``) becomes a markdown
+        # link on the heading.
         heading = truncate(title, 250)
         if self._url:
             heading = f"[{heading}]({self._url})"
@@ -364,49 +364,124 @@ class LogEntry:
                      events=", ".join(self._merged))
             lines.append(f"-# {note}")
 
-        embed = discord.Embed(
-            description=truncate("\n".join(lines), MAX_DESCRIPTION) or None,
-            colour=KIND_COLORS.get(kind, FALLBACK_COLOR),
-            timestamp=self._timestamp,
-        )
-        for name, value, inline in self._blocks:
-            embed.add_field(name=truncate(name, 250),
-                            value=truncate(value, MAX_FIELD_VALUE),
-                            inline=inline)
-        if self._thumbnail:
-            embed.set_thumbnail(url=self._thumbnail)
-        if self._image:
-            embed.set_image(url=self._image)
+        blocks = [f"**{truncate(name, 250)}**\n{truncate(value, MAX_FIELD_VALUE)}"
+                  for name, value, _inline in self._blocks]
+
+        footer = None
         if self._footer_text:
-            embed.set_footer(text=truncate(self._footer_text, 2000),
-                             icon_url=self._footer_icon)
-        return self._fit(embed)
+            footer = f"-# {escape(truncate(self._footer_text, 200))} • " \
+                     f"{fmt_time(self._timestamp, 'f')}"
+        else:
+            footer = f"-# {fmt_time(self._timestamp, 'f')}"
 
-    def _fit(self, embed: discord.Embed) -> discord.Embed:
-        """Keep the whole embed inside Discord's total-size budget.
+        card = LogCard(
+            accent=KIND_COLORS.get(kind, FALLBACK_COLOR),
+            body="\n".join(lines),
+            blocks=blocks,
+            footer=footer,
+            thumbnail=self._thumbnail,
+            image=self._image,
+            file_names=[f.filename for f in self._files],
+        )
+        return card.fit(t("modules.logs.values.size_limit", locale=self.locale))
 
-        Every individual value is capped already, but a log made of many
-        fields (a permission diff spanning a dozen roles) can still add up
-        past the limit — and Discord rejects the *whole* message, so the log
-        would simply never arrive. Trailing fields are dropped first (they
-        carry the detail, the description carries the facts), the
-        description is shortened only if that is not enough, and the reader
-        is always told the log was shortened.
+
+class LogCard:
+    """One log, resolved to plain data — the Components V2 container to be.
+
+    Kept as data (not a ``ui.Container``) because the same log is sent to
+    several channels and a UI item can only belong to one view: every send
+    calls :meth:`build_container` for a fresh one. It also lets the
+    dispatcher count components and characters *before* building anything,
+    which is what its packing into messages relies on.
+    """
+
+    __slots__ = ("accent", "body", "blocks", "footer", "thumbnail", "image",
+                 "file_names")
+
+    def __init__(self, *, accent: int, body: str, blocks: Optional[List[str]] = None,
+                 footer: Optional[str] = None, thumbnail: Optional[str] = None,
+                 image: Optional[str] = None, file_names: Optional[List[str]] = None):
+        self.accent = accent
+        self.body = body
+        self.blocks = list(blocks or [])
+        self.footer = footer
+        self.thumbnail = thumbnail
+        self.image = image
+        self.file_names = list(file_names or [])
+
+    # -- layout ------------------------------------------------------------ #
+
+    @property
+    def main_text(self) -> str:
+        """Heading + lines (+ the footer when there is no detail text)."""
+        if self.blocks or not self.footer:
+            return self.body
+        return f"{self.body}\n{self.footer}"
+
+    @property
+    def detail_text(self) -> str:
+        """Multi-line fields (+ the footer), shown under the main text."""
+        if not self.blocks:
+            return ""
+        parts = list(self.blocks)
+        text = "\n\n".join(parts)
+        return f"{text}\n{self.footer}" if self.footer else text
+
+    @property
+    def text(self) -> str:
+        """Every character of text the card shows."""
+        return "\n".join(p for p in (self.main_text, self.detail_text) if p)
+
+    @property
+    def chars(self) -> int:
+        return len(self.main_text) + len(self.detail_text)
+
+    @property
+    def components(self) -> int:
+        """Components the card uses, nested ones included (Discord caps 40)."""
+        count = 1                                   # the container
+        count += 3 if self.thumbnail else 1         # section + text + thumbnail
+        if self.detail_text:
+            count += 1
+        if self.image:
+            count += 2                              # gallery + its item
+        return count + len(self.file_names)
+
+    def fit(self, note: str) -> "LogCard":
+        """Keep the card inside :data:`MAX_CARD_TEXT`.
+
+        Discord rejects an over-budget message entirely, so a log with many
+        fields (a permission diff over a dozen roles) would otherwise never
+        arrive. Trailing fields are dropped first, the body is shortened only
+        if that is not enough, and the reader is told the log was shortened.
         """
-        if len(embed) <= MAX_EMBED_TOTAL:
-            return embed
+        if self.chars <= MAX_CARD_TEXT:
+            return self
+        budget = MAX_CARD_TEXT - len(note) - 8
+        while self.blocks and self.chars > budget:
+            self.blocks.pop()
+        if self.chars > budget:
+            keep = max(len(self.body) - (self.chars - budget), 1)
+            self.body = truncate(self.body, keep)
+        self.body = f"{self.body}\n-# {note}"
+        return self
 
-        note = "\n-# " + t("modules.logs.values.size_limit", locale=self.locale)
-        budget = MAX_EMBED_TOTAL - len(note)
-
-        while embed.fields and len(embed) > budget:
-            embed.remove_field(len(embed.fields) - 1)
-        if len(embed) > budget:
-            description = embed.description or ""
-            keep = max(len(description) - (len(embed) - budget), 1)
-            embed.description = truncate(description, keep)
-        embed.description = (embed.description or "") + note
-        return embed
+    def build_container(self) -> discord.ui.Container:
+        ui = discord.ui
+        children: List[Any] = []
+        main = ui.TextDisplay(self.main_text)
+        if self.thumbnail:
+            children.append(ui.Section(main, accessory=ui.Thumbnail(self.thumbnail)))
+        else:
+            children.append(main)
+        if self.detail_text:
+            children.append(ui.TextDisplay(self.detail_text))
+        if self.image:
+            children.append(ui.MediaGallery(discord.MediaGalleryItem(self.image)))
+        for name in self.file_names:
+            children.append(ui.File(f"attachment://{name}"))
+        return ui.Container(*children, accent_colour=self.accent)
 
 
 def _full_key(event: str) -> str:

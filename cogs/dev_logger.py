@@ -11,6 +11,7 @@ import json
 from typing import Optional, Dict, Any
 
 from config import COLORS
+from utils.log_cards import build_log_card, send_log_card
 
 
 class DevCommandLogger(commands.Cog):
@@ -46,46 +47,25 @@ class DevCommandLogger(commands.Cog):
         if not channel:
             return
 
-        # Determine the color based on the result
+        # Determine the colour based on the result
         if success:
             color = COLORS["success"]
-            status = "✅ Success"
+            status = "Success"
         else:
             color = COLORS["error"]
-            status = "❌ Failure"
+            status = "Failure"
 
-        # Create the main embed
-        embed = discord.Embed(
-            title=f"Dev Command: `{ctx.command.name}`",
-            color=color,
-            timestamp=datetime.now(timezone.utc)
-        )
-
-        # User information
-        embed.add_field(
-            name="👤 User",
-            value=f"{ctx.author.mention}\n`{ctx.author}` (`{ctx.author.id}`)",
-            inline=True
-        )
+        fields = [
+            ("User", f"{ctx.author.mention}\n`{ctx.author}` (`{ctx.author.id}`)"),
+        ]
 
         # Information about the execution location
         if ctx.guild:
             location = f"**Server:** {ctx.guild.name}\n**Channel:** {ctx.channel.mention}"
         else:
             location = "**DM**"
-
-        embed.add_field(
-            name="📍 Location",
-            value=location,
-            inline=True
-        )
-
-        # Status and execution time
-        embed.add_field(
-            name="📊 Status",
-            value=f"{status}\n**Time:** `{execution_time:.2f}s`",
-            inline=True
-        )
+        fields.append(("Location", location))
+        fields.append(("Status", f"{status}\n**Time:** `{execution_time:.2f}s`"))
 
         # Full command
         # Mask tokens or sensitive info
@@ -98,11 +78,7 @@ class DevCommandLogger(commands.Cog):
                     words[i] = f"{word[:6]}...{word[-4:]}"
             command_text = " ".join(words)
 
-        embed.add_field(
-            name="💬 Command",
-            value=f"```\n{command_text[:500]}\n```",
-            inline=False
-        )
+        fields.append(("Command", f"```\n{command_text[:500]}\n```"))
 
         # Command arguments
         if ctx.args or ctx.kwargs:
@@ -115,11 +91,7 @@ class DevCommandLogger(commands.Cog):
                 args_str += f"**Kwargs:** {', '.join(kwargs_list)}"
 
             if args_str:
-                embed.add_field(
-                    name="📝 Arguments",
-                    value=args_str[:1024],
-                    inline=False
-                )
+                fields.append(("Arguments", args_str[:1024]))
 
         # Error if failure
         if error:
@@ -132,32 +104,27 @@ class DevCommandLogger(commands.Cog):
                 tb_short = '\n'.join(tb_lines[-3:])[:500]
                 error_details += f"\n```py\n{tb_short}\n```"
 
-            embed.add_field(
-                name="⚠️ Error",
-                value=error_details,
-                inline=False
-            )
+            fields.append(("Error", error_details))
 
         # Additional information
         if additional_info:
             info_str = "\n".join([f"**{k}:** {v}" for k, v in list(additional_info.items())[:5]])
-            embed.add_field(
-                name="ℹ️ Additional Info",
-                value=info_str[:1024],
-                inline=False
-            )
+            fields.append(("Additional Info", info_str[:1024]))
 
         # Footer with stats
         command_count = self.command_stats.get(ctx.command.name, 0) + 1
         self.command_stats[ctx.command.name] = command_count
-        embed.set_footer(
-            text=f"Usage #{command_count} • Module: {ctx.command.cog.__class__.__name__}",
-            icon_url=ctx.author.display_avatar.url
+
+        view = build_log_card(
+            f"Dev Command: `{ctx.command.name}`",
+            accent=color,
+            fields=fields,
+            footer=f"Usage #{command_count} • Module: {ctx.command.cog.__class__.__name__}",
         )
 
         # Send the log
         try:
-            await channel.send(embed=embed)
+            await channel.send(view=view)
         except Exception as e:
             print(f"Error sending log: {e}")
 
@@ -215,41 +182,23 @@ class LoggingSystem(commands.Cog):
         if not channel:
             return
 
-        embed = discord.Embed(
-            title=f"🔧 Dev Action: {action}",
-            color=COLORS["info"],
-            timestamp=datetime.now(timezone.utc)
-        )
-
-        embed.add_field(
-            name="User",
-            value=f"{ctx.author.mention} (`{ctx.author.id}`)",
-            inline=True
-        )
-
+        fields = [("User", f"{ctx.author.mention} (`{ctx.author.id}`)")]
         if ctx.guild:
-            embed.add_field(
-                name="Server",
-                value=f"{ctx.guild.name}",
-                inline=True
-            )
-
+            fields.append(("Server", f"{ctx.guild.name}"))
         if details:
             for key, value in details.items():
-                embed.add_field(
-                    name=key,
-                    value=str(value)[:1024],
-                    inline=False
-                )
+                fields.append((str(key), str(value)[:1024]))
 
-        embed.set_footer(
-            text=f"Action: {action}",
-            icon_url=ctx.author.display_avatar.url
+        view = build_log_card(
+            f"Dev Action: {action}",
+            accent=COLORS["info"],
+            fields=fields,
+            footer=f"Action: {action}",
         )
 
         try:
-            await channel.send(embed=embed)
-        except:
+            await channel.send(view=view)
+        except Exception:
             pass
 
     async def log_critical(self, title: str, description: str, ping_dev: bool = True):
@@ -258,23 +207,22 @@ class LoggingSystem(commands.Cog):
         if not channel:
             return
 
-        embed = discord.Embed(
-            title=f"🚨 {title}",
+        view = build_log_card(
+            title,
+            accent=COLORS["error"],
             description=description,
-            color=COLORS["error"],
-            timestamp=datetime.now(timezone.utc)
         )
 
-        content = None
+        ping = None
         if ping_dev:
             # Ping the first dev of the team
             if self.bot._dev_team_ids:
                 dev_id = next(iter(self.bot._dev_team_ids))
-                content = f"<@{dev_id}> Critical alert!"
+                ping = f"<@{dev_id}> Critical alert!"
 
         try:
-            await channel.send(content=content, embed=embed)
-        except:
+            await send_log_card(channel, view, ping=ping)
+        except Exception:
             pass
 
 

@@ -16,6 +16,7 @@ import sys
 from collections import deque
 import os
 
+from utils.log_cards import build_log_card, send_log_card
 from config import COLORS
 import logging
 
@@ -879,57 +880,24 @@ class ErrorTracker(commands.Cog):
         # Determine the color based on severity
         color = COLORS["error"] if is_fatal else COLORS["warning"]
 
-        embed = discord.Embed(
-            title=f"{'Fatal Error' if is_fatal else 'Error'} Detected",
-            color=color,
-            timestamp=datetime.now(timezone.utc)
-        )
-
-        # Header with the error code
-        embed.add_field(
-            name="Error Code",
-            value=f"`{error_code}`",
-            inline=True
-        )
-
-        embed.add_field(
-            name="Type",
-            value=f"`{error_details['type']}`",
-            inline=True
-        )
-
-        embed.add_field(
-            name="File",
-            value=f"`{error_details['file']}:{error_details['line']}`",
-            inline=True
-        )
-
-        # Error message
-        embed.add_field(
-            name="Message",
-            value=f"```{error_details['message'][:500]}```",
-            inline=False
-        )
+        fields = [
+            ("Error Code", f"`{error_code}`"),
+            ("Type", f"`{error_details['type']}`"),
+            ("File", f"`{error_details['file']}:{error_details['line']}`"),
+            ("Message", f"```{error_details['message'][:500]}```"),
+        ]
 
         # Context if available
         if 'command' in error_details:
-            embed.add_field(
-                name="Context",
-                value=(
-                    f"**Command:** `{error_details['command']}`\n"
-                    f"**User:** {error_details['user']}\n"
-                    f"**Server:** {error_details['guild']}\n"
-                    f"**Channel:** {error_details['channel']}"
-                ),
-                inline=False
-            )
+            fields.append(("Context", (
+                f"**Command:** `{error_details['command']}`\n"
+                f"**User:** {error_details['user']}\n"
+                f"**Server:** {error_details['guild']}\n"
+                f"**Channel:** {error_details['channel']}"
+            )))
 
             if 'message' in error_details:
-                embed.add_field(
-                    name="Original Message",
-                    value=f"```{error_details['message']}```",
-                    inline=False
-                )
+                fields.append(("Original Message", f"```{error_details['message']}```"))
 
         # How the user was (or was not) reached + the interaction's health
         if error_details.get('user_reached'):
@@ -938,33 +906,30 @@ class ErrorTracker(commands.Cog):
             if ictx:
                 lines.append("**Interaction:** " + " ".join(
                     f"`{k}={v}`" for k, v in ictx.items()))
-            embed.add_field(name="Delivery", value="\n".join(lines)[:1000], inline=False)
+            fields.append(("Delivery", "\n".join(lines)[:1000]))
 
         if error_details.get('stack'):
-            embed.add_field(
-                name="Stack",
-                value=f"```\n{str(error_details['stack'])[-900:]}```",
-                inline=False
-            )
+            fields.append(("Stack", f"```\n{str(error_details['stack'])[-900:]}```"))
 
         # Traceback for fatal errors
         if is_fatal and 'traceback' in error_details:
-            embed.add_field(
-                name="Traceback",
-                value=f"```py\n{error_details['traceback'][:500]}```",
-                inline=False
-            )
+            fields.append(("Traceback", f"```py\n{error_details['traceback'][:500]}```"))
 
         # Note about the DB
-        if self.bot.db:
-            embed.set_footer(text="✅ Error saved to the database")
-        else:
-            embed.set_footer(text="⚠️ Database not connected - Error cached only")
+        footer = ("Error saved to the database" if self.bot.db
+                  else "Database not connected - error cached only")
 
-        # Ping for fatal errors
-        content = f"<@{self.dev_user_id}> Fatal error detected!" if is_fatal else None
+        view = build_log_card(
+            f"{'Fatal Error' if is_fatal else 'Error'} Detected",
+            accent=color,
+            fields=fields,
+            footer=footer,
+        )
 
-        await channel.send(content=content, embed=embed)
+        # Ping for fatal errors (a Components V2 message cannot carry content)
+        ping = f"<@{self.dev_user_id}> Fatal error detected!" if is_fatal else None
+
+        await send_log_card(channel, view, ping=ping)
 
         # Technical log (webhook-based, dedicated error feed)
         tech = getattr(self.bot, "tech_logger", None)

@@ -7,7 +7,7 @@ import discord
 from discord.ext import commands
 from typing import Optional, Dict, Any
 import logging
-from datetime import datetime, timezone
+from utils.log_cards import build_log_card
 
 logger = logging.getLogger('moddy.staff_logger')
 
@@ -116,25 +116,10 @@ class StaffLogger:
             from config import COLORS
             color = COLORS["success"] if success else COLORS["error"]
 
-            embed = discord.Embed(
-                title=f"{'✅' if success else '❌'} Staff Action: {action}",
-                description=description,
-                color=color,
-                timestamp=datetime.now(timezone.utc)
-            )
-
-            embed.add_field(
-                name="👤 Executor",
-                value=f"{executor.mention} ({executor})\nID: `{executor.id}`",
-                inline=True
-            )
+            fields = [("Executor", f"{executor.mention} ({executor})\nID: `{executor.id}`")]
 
             if target:
-                embed.add_field(
-                    name="🎯 Target",
-                    value=target,
-                    inline=True
-                )
+                fields.append(("Target", target))
 
             if additional_info:
                 info_parts = []
@@ -150,13 +135,15 @@ class StaffLogger:
                     info_parts.append(f"**{key}:** {value_str}")
 
                 if info_parts:
-                    embed.add_field(
-                        name="ℹ️ Details",
-                        value="\n".join(info_parts),
-                        inline=False
-                    )
+                    fields.append(("Details", "\n".join(info_parts)))
 
-            await channel.send(embed=embed)
+            view = build_log_card(
+                f"Staff Action: {action}" + ("" if success else " (failed)"),
+                accent=color,
+                description=description,
+                fields=fields,
+            )
+            await channel.send(view=view)
             logger.info(f"Logged staff action: {action} by {executor.id}")
 
         except Exception as e:

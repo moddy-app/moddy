@@ -266,7 +266,6 @@ moddy/
 │   ├── moderation_cases.py    #   Cases domain model + enums + reference gen
 │   ├── global_sanctions.py    #   Global (Moddy-team) sanction levels: warn/limited/suspended
 │   ├── global_sanction_views.py #  Global sanction UI (notice DMs, staff panels, Modals V2)
-│   ├── embeds.py
 │   ├── announcement_setup.py
 │   ├── task_signature.py      #   moddy:tasks HMAC verification (signature, freshness, anti-replay)
 │   ├── brocoli_signature.py   #   HMAC identity assertions sent to the backend's /ai surface

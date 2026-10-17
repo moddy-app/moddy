@@ -121,7 +121,8 @@ class LogsModule(ModuleBase):
     MODULE_EMOJI = NEWSPAPER
     MODULE_ORDER = 25
     # Delivery goes through webhooks, with a plain channel.send fallback
-    # (embeds + files) when a webhook cannot be created.
+    # (Components V2 cards + files) when a webhook cannot be created. embed_links
+    # is kept: thumbnails and media galleries render linked media.
     REQUIRED_BOT_PERMISSIONS = ["manage_webhooks", "embed_links", "attach_files"]
     CHANNEL_PERMISSIONS = ["view_channel", "send_messages", "embed_links"]
 

@@ -14,6 +14,7 @@ from collections import deque
 import traceback
 
 from config import COLORS
+from utils.log_cards import build_log_card
 
 
 class ConsoleColors:
@@ -228,36 +229,28 @@ class ConsoleLogger(commands.Cog):
                 grouped_logs[log_type] = []
             grouped_logs[log_type].append(log['content'])
 
-        # Create an embed for each type
-        embeds = []
-        for log_type, contents in grouped_logs.items():
-            # Limit the content to respect Discord limits
-            content = '\n'.join(contents)
-            if len(content) > 4000:
-                content = content[:3997] + '...'
+        titles = {
+            'info': "Logs Info",
+            'warning': "Logs Warning",
+            'error': "Logs Error",
+            'debug': "Logs Debug",
+            'stdout': "Console Output",
+            'stderr': "Console Error"
+        }
 
-            embed = discord.Embed(
-                description=f"```\n{content}\n```",
-                color=colors.get(log_type, COLORS["primary"]),
-                timestamp=datetime.now(timezone.utc)
-            )
-
-            # Title according to type
-            titles = {
-                'info': "Logs Info",
-                'warning': "Logs Warning",
-                'error': "Logs Error",
-                'debug': "Logs Debug",
-                'stdout': "Console Output",
-                'stderr': "Console Error"
-            }
-            embed.set_author(name=titles.get(log_type, "Logs"))
-
-            embeds.append(embed)
-
-        # Send embeds (max 10 per message)
+        # One card per type (a Components V2 message holds at most 4000 characters)
         try:
-            await channel.send(embeds=embeds[:10])
+            for log_type, contents in grouped_logs.items():
+                content = '\n'.join(contents)
+                if len(content) > 3400:
+                    content = content[:3397] + '...'
+
+                view = build_log_card(
+                    titles.get(log_type, "Logs"),
+                    accent=colors.get(log_type, COLORS["primary"]),
+                    description=f"```\n{content}\n```",
+                )
+                await channel.send(view=view)
         except Exception as e:
             # In case of an error, we only log locally
             print(f"Error sending Discord logs: {e}")
