@@ -282,10 +282,17 @@ class AutomodAdvancedView(SectionView):
             container.add_item(ui.TextDisplay(
                 f"**{tp('advanced.precedents_title', locale)}**\n-# {tp('advanced.precedents_hint', locale)}"
                 + (f"\n-# {tp('advanced.precedents_count', locale, n=count)}" if count else "")))
+            use = cfg["use_precedents"]
+            buttons = [button(
+                self.on_use_precedents, custom_id=cid("adv", "useprec"),
+                label=tp("advanced.precedents_use", locale),
+                emoji=TOGGLE_ON if use else TOGGLE_OFF,
+                style=discord.ButtonStyle.success if use else discord.ButtonStyle.secondary)]
             if count or is_shell:
-                container.add_item(row(button(
+                buttons.append(button(
                     self.on_precedents, custom_id=cid("adv", "precedents"),
-                    label=tp("advanced.precedents", locale), emoji=SEARCH)))
+                    label=tp("advanced.precedents", locale), emoji=SEARCH))
+            container.add_item(row(*buttons))
         self.add_item(container)
         self.add_item(self.footer())
 
@@ -295,6 +302,11 @@ class AutomodAdvancedView(SectionView):
         def mutate(cfg):
             if values and values[0] in _MAX_ACTIONS:
                 cfg["max_action"] = values[0]
+        await _edit(interaction, self.SECTION, mutate, render_advanced)
+
+    async def on_use_precedents(self, interaction: discord.Interaction):
+        def mutate(cfg):
+            cfg["use_precedents"] = not cfg["use_precedents"]
         await _edit(interaction, self.SECTION, mutate, render_advanced)
 
     async def on_severity(self, interaction: discord.Interaction):

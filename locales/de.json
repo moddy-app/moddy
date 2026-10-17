@@ -2300,6 +2300,7 @@
           "level_5_desc": "Minimale Toleranz.",
           "precedents_title": "Gelernte Präzedenzfälle",
           "precedents_hint": "Moddy lernt die Kultur deines Servers aus deinen Entscheidungen (Einsprüche, Annotationen in der Simulation).",
+          "precedents_use": "Gelernte Präzedenzfälle nutzen",
           "precedents_count": "{n} Präzedenzfall/-fälle gelernt",
           "precedents": "Präzedenzfälle ansehen"
         },

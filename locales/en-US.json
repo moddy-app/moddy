@@ -2300,6 +2300,7 @@
           "level_5_desc": "Minimal tolerance.",
           "precedents_title": "Learned precedents",
           "precedents_hint": "Moddy learns your server's culture from your decisions (appeals, simulation annotations).",
+          "precedents_use": "Use learned precedents",
           "precedents_count": "{n} precedent(s) learned",
           "precedents": "View precedents"
         },

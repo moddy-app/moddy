@@ -78,6 +78,7 @@ def blank_config() -> Dict[str, Any]:
         "ignore_moderators": True,
         "severity": ac.SEVERITY_DEFAULT,
         "max_action": "ban",
+        "use_precedents": True,
         "sanctions": {},
         "infractions_perso": [],
         "features": {

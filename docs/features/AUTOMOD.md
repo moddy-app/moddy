@@ -517,6 +517,12 @@ human "not sanctionable" ruling short-circuits the call entirely. No
 fine-tuning, no new model — the bot learns each server's local norms from the
 corrections its moderators are already making.
 
+**Per-server switch:** `use_precedents` (config root, default `true`, `/config` →
+Advanced toggle) stops the server's precedents from being *consulted*
+(`AutomodModule.make_precedents_provider` returns `None`); recording keeps
+running. It covers only these per-guild precedents — the Moddy team's learned
+references and terms (`automod_learned_*`) are global and have no per-guild switch.
+
 The ranking + shortcut logic is **pure and table-tested** (`automod/precedents.py`):
 it receives an already-computed query vector and the guild's already-loaded
 precedents and returns ranked matches. Storage/loading and the one-off embedding
@@ -689,6 +695,7 @@ take the `automod` id later. Full schema (for the dashboard / backend) →
   "ignore_moderators": true,
   "severity": 3,
   "max_action": "ban",
+  "use_precedents": true,
   "sanctions": { "insulte": { "enabled": true, "mode": "perso",
                               "crans": {"basse": 0, "moyenne": 0, "haute": 2, "critique": 3},
                               "recidive": true } },

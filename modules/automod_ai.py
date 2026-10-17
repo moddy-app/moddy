@@ -26,6 +26,9 @@ Config (stored in ``guilds.data.modules.automod``)::
       "ignore_moderators": true,
       "severity": 3,                     # 1–5 detection/severity dial
       "max_action": "ban",              # barème hard ceiling: warn|mute|ban
+      "use_precedents": true,            # false = the guild's learned precedents are not
+                                         # consulted (they keep being recorded); the team's
+                                         # global references/terms are NOT covered
       "categories_desactivees": [],      # LEGACY kill-switch (read, migrated into "sanctions")
       "sanctions": {},                   # per-infraction policy: actions, exact timeout,
                                          # approval option (automod/infractions.py)
@@ -605,6 +608,8 @@ class AutomodModule(ModuleBase):
         self.severity: int = ac.SEVERITY_DEFAULT
         # v2 barème knobs (session 2).
         self.max_action: str = "ban"          # "warn" | "mute" | "ban"
+        #: Consult the guild's learned precedents (``use_precedents``, default on).
+        self.use_precedents: bool = True
         self.categories_desactivees: List[str] = []
         #: Normalised per-infraction policy (``sanctions`` config key), with the
         #: legacy ``categories_desactivees`` already folded in.
@@ -647,6 +652,9 @@ class AutomodModule(ModuleBase):
             # v2 barème config.
             max_action = str(self.config.get("max_action", "ban") or "ban")
             self.max_action = max_action if max_action in ("warn", "mute", "ban") else "ban"
+            # Only an explicit ``false`` switches precedents off (a typo keeps them on,
+            # like the generic ``state``).
+            self.use_precedents = self.config.get("use_precedents") is not False
             raw_sanctions = self.config.get("sanctions")
             legacy = [str(c) for c in (self.config.get("categories_desactivees", []) or [])]
             self.infractions_perso = custom_infractions.normalize(
@@ -705,6 +713,10 @@ class AutomodModule(ModuleBase):
         if max_action is not None and max_action not in ("warn", "mute", "ban"):
             return False, "Action maximale invalide"
 
+        use_precedents = config_data.get("use_precedents")
+        if use_precedents is not None and not isinstance(use_precedents, bool):
+            return False, "Option des précédents invalide"
+
         sanctions_err = infractions.validate_sanctions(config_data.get("sanctions"))
         if sanctions_err:
             return False, f"Barème personnalisé invalide ({sanctions_err})"
@@ -733,6 +745,7 @@ class AutomodModule(ModuleBase):
             "ignore_moderators": True,
             "severity": ac.SEVERITY_DEFAULT,
             "max_action": "ban",
+            "use_precedents": True,
             "categories_desactivees": [],
             "sanctions": {},
             "infractions_perso": [],
@@ -1039,9 +1052,11 @@ class AutomodModule(ModuleBase):
 
         Delegates to the shared :class:`PrecedentService`, which matches this
         message against the guild's learned human rulings (session 7). Returns
-        None (no precedent block) when precedents are disabled or there is no DB.
+        None (no precedent block) when precedents are disabled (globally, or by the
+        guild's ``use_precedents`` switch) or there is no DB. Recording a precedent
+        from a human ruling is NOT affected by the switch.
         """
-        if not ac.PRECEDENTS_ENABLED:
+        if not ac.PRECEDENTS_ENABLED or not self.use_precedents:
             return None
         svc = getattr(self.bot, "precedents", None)
         if svc is None:

@@ -141,6 +141,7 @@ def normalize_cfg(stored: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     cfg["severity"] = ac.clamp_severity(stored.get("severity", ac.SEVERITY_DEFAULT))
     max_action = str(stored.get("max_action", "ban") or "ban")
     cfg["max_action"] = max_action if max_action in ("warn", "mute", "ban") else "ban"
+    cfg["use_precedents"] = stored.get("use_precedents") is not False
     cfg["infractions_perso"] = custom_infractions.normalize(stored.get("infractions_perso"))
 
     known = set(custom_infractions.ids(cfg["infractions_perso"]))
@@ -271,7 +272,8 @@ def project(cfg: Dict[str, Any], section: str) -> Dict[str, Any]:
                 "roles": [int(r) for r in feats["content"]["exempt_roles"]],
                 "channels": [int(c) for c in feats["content"]["exempt_channels"]]}
     if section == "advanced":
-        return {"severity": int(cfg["severity"]), "max_action": cfg["max_action"]}
+        return {"severity": int(cfg["severity"]), "max_action": cfg["max_action"],
+                "use_precedents": bool(cfg["use_precedents"])}
     if section == "sanctions":
         return {"sanctions": copy.deepcopy(cfg["sanctions"]),
                 "infractions_perso": copy.deepcopy(cfg["infractions_perso"])}
@@ -295,6 +297,7 @@ def apply_projection(cfg: Dict[str, Any], proj: Dict[str, Any], section: str) ->
     elif section == "advanced":
         cfg["severity"] = proj["severity"]
         cfg["max_action"] = proj["max_action"]
+        cfg["use_precedents"] = bool(proj.get("use_precedents", True))
     elif section == "sanctions":
         cfg["sanctions"] = copy.deepcopy(proj["sanctions"])
         cfg["infractions_perso"] = copy.deepcopy(proj["infractions_perso"])

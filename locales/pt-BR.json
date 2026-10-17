@@ -2300,6 +2300,7 @@
           "level_5_desc": "Tolerância mínima.",
           "precedents_title": "Precedentes aprendidos",
           "precedents_hint": "O Moddy aprende a cultura do seu servidor a partir das suas decisões (recursos, anotações na simulação).",
+          "precedents_use": "Usar os precedentes aprendidos",
           "precedents_count": "{n} precedente(s) aprendido(s)",
           "precedents": "Ver precedentes"
         },

@@ -2299,6 +2299,7 @@
           "level_5_desc": "Tolérance minimale.",
           "precedents_title": "Précédents appris",
           "precedents_hint": "Moddy apprend la culture de ton serveur à partir de tes décisions (appels, annotations en simulation).",
+          "precedents_use": "Utiliser les précédents appris",
           "precedents_count": "{n} précédent(s) appris",
           "precedents": "Voir les précédents"
         },

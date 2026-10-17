@@ -61,6 +61,7 @@ Deleting a config = writing `{}` (that is what the "Delete" button does).
   "ignore_moderators": true,        // bool  — skip members with manage_messages
   "severity": 3,                    // int 1..5
   "max_action": "ban",              // "warn" | "mute" | "ban" — hard ceiling of the barème
+  "use_precedents": true,           // bool — false = the guild's learned precedents are not consulted
   "categories_desactivees": [],     // string[] — LEGACY kill-switch, read-only (see §3.3 / §10)
   "sanctions": {},                  // object — per-infraction sanction policy (§3.1)
   "infractions_perso": [],          // object[] — server-defined infractions, max 10 (§3.2)
@@ -107,6 +108,7 @@ Deleting a config = writing `{}` (that is what the "Delete" button does).
 | `ignore_moderators` | bool | `true` | Members with `manage_messages` are skipped entirely. |
 | `severity` | int 1–5 | `3` | Detection dial: scales the embedding routing threshold (1 = 0.62 … 5 = 0.35) and the barème's global cran shift. Values outside 1–5 are clamped. |
 | `max_action` | enum | `"ban"` | Hardest sanction the automod may apply: `warn` < `mute` < `ban`. The barème caps itself at this level. |
+| `use_precedents` | bool | `true` | Whether the guild's **own** learned precedents (`automod_precedents`: appeals, shadow annotations) are matched against new messages. Only a real `false` switches them off (anything else, a string included, reads as on). New precedents keep being recorded while it is off. It does **not** cover the Moddy team's learned references / terms (`automod_learned_*`): those are global, shared by every server, with no per-guild switch. Also exposed in `/config` → Advanced. A non-boolean is refused by `validate_config` (`Option des précédents invalide`). |
 | `categories_desactivees` | string[] | `[]` | **LEGACY, superseded by `sanctions[<id>].enabled = false`.** Still read: every listed id (any catalogue id or `perso:<id>`) is treated as disabled unless `sanctions[<id>]` carries an explicit `enabled`. A decision in a disabled type is downgraded to deletion only. The bot's panel folds it into `sanctions` on load and **never writes the key back**; new writes (backend/dashboard) must not set it — see §3.3. |
 | `sanctions` | object | `{}` | Per-infraction sanction policy, keyed by infraction id. Absent key = Moddy defaults. Shape and bounds → §3.1. |
 | `infractions_perso` | object[] | `[]` | The server's own infraction types (max 10). Shape and bounds → §3.2. |
@@ -303,6 +305,7 @@ the **first failure** is returned (French strings, verbatim):
 | 7 | every `perso:<id>` key of `sanctions` is the id of an `infractions_perso` entry | `Barème d'une infraction personnalisée inconnue (<key>)` |
 | 8 | every key of `features` is a known feature id | `Fonctionnalité inconnue : <id>` |
 | 9 | `features.profile.avatar` / `.banner` / `.pseudo`, when present and non-null, are booleans | `Option de profil invalide : <key>` |
+| 10 | `use_precedents`, when present and non-null, is a boolean | `Option des précédents invalide` |
 
 `<code>` of the `sanctions` rule (`automod/infractions.py::validate_sanctions`):
 
