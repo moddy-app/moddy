@@ -114,7 +114,7 @@ async def _edit_entry(interaction: discord.Interaction, cat: str, mutate) -> Non
     entry = dict(common.entry_of(working, cat))
     notice = mutate(entry, working, i18n.get_user_locale(interaction)) or ""
     common.store_entry(working, cat, entry)
-    common.stash(interaction, "sanctions", stored, working)
+    await common.stash(interaction, "sanctions", stored, working)
     await render_type(interaction, cat, notice=notice)
 
 
@@ -258,7 +258,7 @@ async def add_from_template(interaction: discord.Interaction, stored: Dict[str, 
         template_id, locale=server_locale,
         existing_ids=custom_infractions.ids(working["infractions_perso"]))
     working["infractions_perso"].append(entry)
-    common.stash(interaction, "sanctions", stored, working)
+    await common.stash(interaction, "sanctions", stored, working)
     await render_type(interaction, custom_infractions.categorie_of(entry))
 
 
@@ -317,7 +317,7 @@ class TypeButton(
         await common.ack(interaction)
         stored, working, _pending = await common.load_working(interaction, "sanctions")
         working["sanctions"].pop(self.cat, None)
-        common.stash(interaction, "sanctions", stored, working)
+        await common.stash(interaction, "sanctions", stored, working)
         await render_type(interaction, self.cat)
 
     async def _on_timeout(self, interaction: discord.Interaction):
@@ -363,7 +363,7 @@ class TypeButton(
         # The sanction of a deleted infraction must go with it: the module
         # refuses a config holding the sanction of an unknown infraction.
         working["sanctions"].pop(self.cat, None)
-        common.stash(interaction, "sanctions", stored, working)
+        await common.stash(interaction, "sanctions", stored, working)
         await render_sanctions(interaction)
 
 
@@ -736,5 +736,5 @@ class InfractionModal(BaseModal):
                     "list.limit", locale, max=custom_infractions.MAX_INFRACTIONS))
                 return
             current.append(entry)
-        common.stash(interaction, "sanctions", stored, working)
+        await common.stash(interaction, "sanctions", stored, working)
         await render_type(interaction, custom_infractions.categorie_of(entry))

@@ -322,7 +322,7 @@ class AutomodDeleteView(BaseView):
             await common.send_error(interaction, t("modules.config.delete.error", locale=locale))
             await go(interaction, "home")
             return
-        common.draft_clear_guild(interaction.guild_id)
+        await common.draft_clear_guild(interaction.client, interaction.guild_id)
         await go(interaction, "wizard_channel")
         await interaction.followup.send(t("modules.config.delete.success", locale=locale),
                                         ephemeral=True)

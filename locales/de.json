@@ -683,6 +683,7 @@
         "warn": "Verwarnung",
         "mute": "Stummschaltung",
         "ban": "Bann",
+        "kick": "Kick",
         "restrict": "Einschränkung",
         "revoke_access": "Zugriff entziehen"
       },
@@ -862,6 +863,11 @@
       "generic": {
         "title": "Nicht möglich",
         "description": "Das hat nicht geklappt. Prüfe deine Eingabe und versuche es erneut."
+      },
+      "automod_draft_expired": {
+        "title": "Änderungen abgelaufen",
+        "description": "Deine ungespeicherten Änderungen sind abgelaufen oder gingen verloren (Neustart des Bots), bevor sie gespeichert werden konnten.",
+        "hint": "Nimm die Änderungen erneut vor und speichere sie innerhalb von 30 Minuten."
       },
       "missing_permissions": {
         "title": "Berechtigung fehlt",
@@ -4415,6 +4421,7 @@
           "warn": "Verwarnung",
           "mute": "Stummschaltung",
           "ban": "Bann",
+          "kick": "Kick",
           "restrict": "Einschränkung",
           "revoke_access": "Zugriff entziehen"
         },

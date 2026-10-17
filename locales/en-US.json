@@ -683,6 +683,7 @@
         "warn": "Warn",
         "mute": "Mute",
         "ban": "Ban",
+        "kick": "Kick",
         "restrict": "Restrict",
         "revoke_access": "Revoke Access"
       },
@@ -862,6 +863,11 @@
       "generic": {
         "title": "Can't do that",
         "description": "That didn't work. Check what you did and try again."
+      },
+      "automod_draft_expired": {
+        "title": "Changes expired",
+        "description": "Your unsaved changes expired or were lost (bot restart) before they could be saved.",
+        "hint": "Make your changes again, then save within 30 minutes."
       },
       "missing_permissions": {
         "title": "Missing permission",
@@ -4415,6 +4421,7 @@
           "warn": "Warn",
           "mute": "Mute",
           "ban": "Ban",
+          "kick": "Kick",
           "restrict": "Restrict",
           "revoke_access": "Revoke Access"
         },

@@ -683,6 +683,7 @@
         "warn": "Aviso",
         "mute": "Silencio",
         "ban": "Expulsión permanente",
+        "kick": "Expulsión",
         "restrict": "Restricción",
         "revoke_access": "Revocar acceso"
       },
@@ -862,6 +863,11 @@
       "generic": {
         "title": "No se pudo",
         "description": "Eso no funcionó. Revisa lo que hiciste e inténtalo de nuevo."
+      },
+      "automod_draft_expired": {
+        "title": "Cambios caducados",
+        "description": "Tus cambios sin guardar caducaron o se perdieron (reinicio del bot) antes de poder guardarlos.",
+        "hint": "Vuelve a hacer los cambios y guárdalos en un plazo de 30 minutos."
       },
       "missing_permissions": {
         "title": "Falta un permiso",
@@ -4415,6 +4421,7 @@
           "warn": "Aviso",
           "mute": "Silencio",
           "ban": "Expulsión permanente",
+          "kick": "Expulsión",
           "restrict": "Restricción",
           "revoke_access": "Revocar acceso"
         },

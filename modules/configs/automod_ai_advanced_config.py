@@ -82,7 +82,7 @@ async def _edit(interaction: discord.Interaction, section: str, mutate, render) 
     await common.ack(interaction)
     stored, working, _pending = await common.load_working(interaction, section)
     mutate(working)
-    common.stash(interaction, section, stored, working)
+    await common.stash(interaction, section, stored, working)
     await render(interaction)
 
 

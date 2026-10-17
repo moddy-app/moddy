@@ -86,6 +86,37 @@ class FakeManager:
         return True
 
 
+class FakeRedis:
+    """Minimal async Redis: get/set(ex)/delete/scan_iter; ``broken`` raises everywhere."""
+
+    def __init__(self, broken=False):
+        self.data, self.ttl, self.broken = {}, {}, broken
+
+    def _check(self):
+        if self.broken:
+            raise ConnectionError("redis down")
+
+    async def get(self, key):
+        self._check()
+        return self.data.get(key)
+
+    async def set(self, key, value, ex=None):
+        self._check()
+        self.data[key], self.ttl[key] = value, ex
+
+    async def delete(self, *keys):
+        self._check()
+        for k in keys:
+            self.data.pop(k, None)
+
+    async def scan_iter(self, match=None, count=None):
+        self._check()
+        prefix = match.rstrip("*")
+        for k in list(self.data):
+            if k.startswith(prefix):
+                yield k
+
+
 def make_bot(stored=None):
     bot = types.SimpleNamespace(db=None, get_guild=lambda gid: FakeGuild())
     bot.module_manager = FakeManager(bot, stored)
@@ -406,11 +437,56 @@ class TestDrafts:
         assert stored["severity"] == 5 and stored["ignore_moderators"] is False
 
     async def test_drafts_expire_and_are_per_user_and_section(self, monkeypatch):
-        common.draft_set(GUILD, 1, "advanced", {"severity": 5, "max_action": "ban"})
-        assert common.draft_get(GUILD, 2, "advanced") is None
-        assert common.draft_get(GUILD, 1, "monitoring") is None
+        bot = make_bot(configured())
+        await common.draft_set(bot, GUILD, 1, "advanced", {"severity": 5, "max_action": "ban"})
+        assert await common.draft_get(bot, GUILD, 2, "advanced") is None
+        assert await common.draft_get(bot, GUILD, 1, "monitoring") is None
         monkeypatch.setattr(common.time, "monotonic", lambda: 10 ** 9)
-        assert common.draft_get(GUILD, 1, "advanced") is None
+        assert await common.draft_get(bot, GUILD, 1, "advanced") is None
+
+    async def test_draft_lives_in_redis_with_ttl_and_survives_a_restart(self):
+        redis = FakeRedis()
+        bot = make_bot(configured())
+        bot.redis = redis
+        await adv.AutomodAdvancedView().on_severity(FakeInteraction(bot, values=["5"]))
+        key = "moddy:automod:draft:%d:1:advanced" % GUILD
+        assert json.loads(redis.data[key])["severity"] == 5
+        assert redis.ttl[key] == common.DRAFT_TTL and not common._drafts
+        common._drafts.clear()                                    # "restart": memory gone
+        _s, working, pending = await common.load_working(FakeInteraction(bot), "advanced")
+        assert pending and working["severity"] == 5
+        await adv.AutomodAdvancedView().on_save(FakeInteraction(bot))
+        assert bot.module_manager.stored["severity"] == 5 and key not in redis.data
+
+    async def test_redis_errors_fall_back_to_memory(self):
+        bot = make_bot(configured())
+        bot.redis = FakeRedis(broken=True)
+        await adv.AutomodAdvancedView().on_severity(FakeInteraction(bot, values=["5"]))
+        assert common._drafts                                     # kept in memory
+        await adv.AutomodAdvancedView().on_save(FakeInteraction(bot))
+        assert bot.module_manager.stored["severity"] == 5 and not common._drafts
+
+    async def test_save_after_the_draft_expired_says_so(self):
+        from utils.errors import ModdyError
+        bot = make_bot(configured())
+        bot.redis = FakeRedis()
+        await adv.AutomodAdvancedView().on_severity(FakeInteraction(bot, values=["5"]))
+        bot.redis.data.clear()                                    # TTL elapsed
+        before = dict(bot.module_manager.stored)
+        with pytest.raises(ModdyError) as err:
+            await adv.AutomodAdvancedView().on_save(FakeInteraction(bot))
+        assert err.value.key == "automod_draft_expired"
+        assert bot.module_manager.stored == before and bot.module_manager.saves == []
+        for loc in ("fr", "en-US", "es-ES", "pt-BR", "de"):
+            assert err.value.render(loc) is not None
+
+    async def test_guild_purge_clears_redis_drafts(self):
+        bot = make_bot(configured())
+        bot.redis = FakeRedis()
+        await common.draft_set(bot, GUILD, 1, "advanced", {"severity": 5, "max_action": "ban"})
+        await common.draft_set(bot, GUILD + 1, 1, "advanced", {"severity": 5, "max_action": "ban"})
+        await common.draft_clear_guild(bot, GUILD)
+        assert list(bot.redis.data) == ["moddy:automod:draft:%d:1:advanced" % (GUILD + 1)]
 
     async def test_back_is_locked_while_pending(self):
         bot = make_bot(configured())

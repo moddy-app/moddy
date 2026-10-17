@@ -13,11 +13,13 @@ exemptions / advanced) that all rely on this one:
   (one infraction, the custom-infraction editor) have no Save of their own:
   they edit the draft of their parent sub-view (``sanctions``);
 * **the draft** — an in-memory map ``(guild, user, section) -> projection``
-  with a TTL (:func:`draft_get` / :func:`stash`). It only stores the keys the
+  with a TTL (:func:`draft_get` / :func:`stash`), kept in **Redis**
+  (``moddy:automod:draft:<guild>:<user>:<section>``, JSON, 30 min refreshed on
+  every write) so it survives a restart, and in memory when Redis is absent or fails. It only stores the keys the
   section owns, never a whole config, so Save merges it onto the freshly loaded
   stored config and never clobbers what the home or the dashboard wrote
-  meanwhile. It lives in the process: after a restart (or after the TTL) the
-  panel falls back to the stored config, i.e. unsaved edits are dropped;
+  meanwhile. Without Redis, a restart (or the TTL) drops the draft; pressing Save
+  then raises the ``automod_draft_expired`` expected error instead of a no-op;
 * **the config schema** — :func:`normalize_cfg` is the single place that turns
   whatever is stored (legacy keys included) into the dict the screens edit;
 * **plain wording** — a sanction is always shown as its effective actions
@@ -34,6 +36,7 @@ from __future__ import annotations
 
 import copy
 import importlib
+import json
 import logging
 import time
 from typing import Any, Dict, Iterable, List, Optional, Tuple
@@ -48,7 +51,7 @@ from automod.presets import blank_config
 from cogs.error_handler import BaseView
 from modules.configs._common import ack, check_guild_perms, crumb, show
 from utils import emojis
-from utils.errors import build_error_card
+from utils.errors import ModdyError, build_error_card
 from utils.i18n import i18n, t
 
 logger = logging.getLogger("moddy.modules.automod_ai_config")
@@ -257,6 +260,7 @@ SECTIONS = ("monitoring", "sanctions", "exemptions", "advanced")
 #: A draft nobody touched for this long is forgotten (seconds).
 DRAFT_TTL = 30 * 60
 _DRAFT_MAX = 512
+DRAFT_REDIS_PREFIX = "moddy:automod:draft"
 _drafts: Dict[Tuple[int, int, str], Tuple[float, Dict[str, Any]]] = {}
 
 
@@ -304,8 +308,17 @@ def _key(guild_id: Optional[int], user_id: Optional[int], section: str):
     return (int(guild_id or 0), int(user_id or 0), section)
 
 
-def draft_get(guild_id: Optional[int], user_id: Optional[int], section: str
-              ) -> Optional[Dict[str, Any]]:
+def draft_redis_key(guild_id: Optional[int], user_id: Optional[int], section: str) -> str:
+    """Redis key of one draft (see docs/integration/REDIS_COMMUNICATION.md)."""
+    g, u, sec = _key(guild_id, user_id, section)
+    return f"{DRAFT_REDIS_PREFIX}:{g}:{u}:{sec}"
+
+
+def _redis(bot):
+    return getattr(bot, "redis", None)
+
+
+def _mem_get(guild_id, user_id, section) -> Optional[Dict[str, Any]]:
     item = _drafts.get(_key(guild_id, user_id, section))
     if item is None:
         return None
@@ -315,8 +328,7 @@ def draft_get(guild_id: Optional[int], user_id: Optional[int], section: str
     return copy.deepcopy(item[1])
 
 
-def draft_set(guild_id: Optional[int], user_id: Optional[int], section: str,
-              proj: Dict[str, Any]) -> None:
+def _mem_set(guild_id, user_id, section, proj: Dict[str, Any]) -> None:
     now = time.monotonic()
     if len(_drafts) >= _DRAFT_MAX:
         for key in [k for k, (ts, _) in _drafts.items() if now - ts > DRAFT_TTL]:
@@ -326,14 +338,62 @@ def draft_set(guild_id: Optional[int], user_id: Optional[int], section: str,
     _drafts[_key(guild_id, user_id, section)] = (now, copy.deepcopy(proj))
 
 
-def draft_clear(guild_id: Optional[int], user_id: Optional[int], section: str) -> None:
+async def draft_get(bot, guild_id: Optional[int], user_id: Optional[int], section: str
+                    ) -> Optional[Dict[str, Any]]:
+    """The caller's pending projection of ``section`` (Redis, then memory)."""
+    redis = _redis(bot)
+    if redis is not None:
+        try:
+            raw = await redis.get(draft_redis_key(guild_id, user_id, section))
+            if raw:
+                if isinstance(raw, bytes):
+                    raw = raw.decode()
+                data = json.loads(raw)
+                if isinstance(data, dict):
+                    return data
+        except Exception as exc:  # Redis down / corrupt value: never break a click
+            logger.warning("Automod draft read failed (%s): falling back to memory", exc)
+    return _mem_get(guild_id, user_id, section)
+
+
+async def draft_set(bot, guild_id: Optional[int], user_id: Optional[int], section: str,
+                    proj: Dict[str, Any]) -> None:
+    """Store a draft in Redis (TTL refreshed), or in memory when Redis fails."""
+    redis = _redis(bot)
+    if redis is not None:
+        try:
+            await redis.set(draft_redis_key(guild_id, user_id, section),
+                            json.dumps(proj), ex=DRAFT_TTL)
+            _drafts.pop(_key(guild_id, user_id, section), None)
+            return
+        except Exception as exc:
+            logger.warning("Automod draft write failed (%s): keeping it in memory", exc)
+    _mem_set(guild_id, user_id, section, proj)
+
+
+async def draft_clear(bot, guild_id: Optional[int], user_id: Optional[int], section: str) -> None:
     _drafts.pop(_key(guild_id, user_id, section), None)
+    redis = _redis(bot)
+    if redis is not None:
+        try:
+            await redis.delete(draft_redis_key(guild_id, user_id, section))
+        except Exception as exc:
+            logger.warning("Automod draft delete failed (%s)", exc)
 
 
-def draft_clear_guild(guild_id: Optional[int]) -> None:
+async def draft_clear_guild(bot, guild_id: Optional[int]) -> None:
     """Forget every draft of a guild (its configuration was just deleted)."""
     for key in [k for k in _drafts if k[0] == int(guild_id or 0)]:
         _drafts.pop(key, None)
+    redis = _redis(bot)
+    if redis is not None:
+        try:
+            keys = [k async for k in redis.scan_iter(
+                match=f"{DRAFT_REDIS_PREFIX}:{int(guild_id or 0)}:*", count=200)]
+            if keys:
+                await redis.delete(*keys)
+        except Exception as exc:
+            logger.warning("Automod guild draft purge failed (%s)", exc)
 
 
 async def load_working(interaction: discord.Interaction, section: str
@@ -344,37 +404,48 @@ async def load_working(interaction: discord.Interaction, section: str
     caller's draft of the section laid over it; ``pending`` is True when that
     differs from ``stored`` (a draft equal to the stored value is discarded).
     """
-    stored = await load_cfg(interaction.client, interaction.guild_id)
-    proj = draft_get(interaction.guild_id, interaction.user.id, section)
+    bot = interaction.client
+    stored = await load_cfg(bot, interaction.guild_id)
+    proj = await draft_get(bot, interaction.guild_id, interaction.user.id, section)
     working = copy.deepcopy(stored)
     if proj is None:
         return stored, working, False
     if proj == project(stored, section):
-        draft_clear(interaction.guild_id, interaction.user.id, section)
+        await draft_clear(bot, interaction.guild_id, interaction.user.id, section)
         return stored, working, False
-    apply_projection(working, proj, section)
+    try:
+        apply_projection(working, proj, section)
+    except (KeyError, TypeError, ValueError):  # malformed draft: drop it
+        await draft_clear(bot, interaction.guild_id, interaction.user.id, section)
+        return stored, copy.deepcopy(stored), False
     return stored, working, True
 
 
-def stash(interaction: discord.Interaction, section: str, stored: Dict[str, Any],
-          working: Dict[str, Any]) -> bool:
+async def stash(interaction: discord.Interaction, section: str, stored: Dict[str, Any],
+                working: Dict[str, Any]) -> bool:
     """Keep ``working`` as the section's draft. Returns whether it is pending."""
+    bot = interaction.client
     proj = project(working, section)
     if proj == project(stored, section):
-        draft_clear(interaction.guild_id, interaction.user.id, section)
+        await draft_clear(bot, interaction.guild_id, interaction.user.id, section)
         return False
-    draft_set(interaction.guild_id, interaction.user.id, section, proj)
+    await draft_set(bot, interaction.guild_id, interaction.user.id, section, proj)
     return True
 
 
 async def save_section(interaction: discord.Interaction, section: str) -> bool:
-    """Write the section's draft (merged onto the fresh stored config)."""
+    """Write the section's draft (merged onto the fresh stored config).
+
+    Raises an expected error when there is no draft any more: the Save button
+    outlived it (30-minute TTL, restart without Redis) and silently doing
+    nothing would make the admin believe their edits were saved.
+    """
     _stored, working, pending = await load_working(interaction, section)
     if not pending:
-        return True
+        raise ModdyError(key="automod_draft_expired", severity="warning")
     if not await save_cfg(interaction, working):
         return False
-    draft_clear(interaction.guild_id, interaction.user.id, section)
+    await draft_clear(interaction.client, interaction.guild_id, interaction.user.id, section)
     return True
 
 
@@ -479,7 +550,7 @@ class SectionView(BaseView):
 
     async def on_cancel(self, interaction: discord.Interaction):
         await ack(interaction)
-        draft_clear(interaction.guild_id, interaction.user.id, self.SECTION)
+        await draft_clear(interaction.client, interaction.guild_id, interaction.user.id, self.SECTION)
         await go(interaction, self.SECTION)
 
     @classmethod

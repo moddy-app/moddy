@@ -682,6 +682,7 @@
         "warn": "Avertissement",
         "mute": "Mute",
         "ban": "Bannissement",
+        "kick": "Expulsion",
         "restrict": "Restriction",
         "revoke_access": "Révoquer l'accès"
       },
@@ -861,6 +862,11 @@
       "generic": {
         "title": "Action impossible",
         "description": "Ça n'a pas fonctionné. Vérifiez votre action et réessayez."
+      },
+      "automod_draft_expired": {
+        "title": "Modifications expirées",
+        "description": "Vos modifications non enregistrées ont expiré ou ont été perdues (redémarrage du bot) avant l'enregistrement.",
+        "hint": "Refaites vos changements puis enregistrez-les dans les 30 minutes."
       },
       "missing_permissions": {
         "title": "Permission manquante",
@@ -4414,6 +4420,7 @@
           "warn": "Avertissement",
           "mute": "Mute",
           "ban": "Bannissement",
+          "kick": "Expulsion",
           "restrict": "Restriction",
           "revoke_access": "Révoquer l'accès"
         },
