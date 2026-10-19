@@ -424,6 +424,87 @@
           "description": "此伺服器中包含該圖片的訊息連結"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "檢查密碼是否出現在資料外洩中"
+    },
+    "password": {
+      "name": "密碼",
+      "description": "產生安全的隨機密碼或密碼短語",
+      "parameters": {
+        "length": {
+          "name": "長度",
+          "description": "長度（8-128）；密碼短語：約每 4 個字元 1 個詞"
+        },
+        "type": {
+          "name": "類型",
+          "description": "密碼類型（預設：強）"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "產生隨機 UUID（v4 或 v7）",
+      "parameters": {
+        "version": {
+          "name": "版本",
+          "description": "UUID 版本（預設：v4）"
+        },
+        "count": {
+          "name": "數量",
+          "description": "產生數量（1-10）"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "計算文字或檔案的 MD5、SHA-1、SHA-256 和 SHA-512",
+      "parameters": {
+        "text": {
+          "name": "文字",
+          "description": "要雜湊的文字（文字與檔案都留空則開啟表單）"
+        },
+        "file": {
+          "name": "檔案",
+          "description": "要雜湊的檔案（上限 25 MB）"
+        },
+        "compare": {
+          "name": "比較",
+          "description": "用於比較的已知雜湊"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "解碼 JSON Web Token（標頭與內容）"
+    },
+    "color": {
+      "name": "顏色",
+      "description": "轉換顏色並檢查其對比度",
+      "parameters": {
+        "color": {
+          "name": "顏色",
+          "description": "HEX、rgb()、hsl()、CSS 名稱、Discord 數字或 random"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "強"
+    },
+    "clear": {
+      "name": "無易混字元"
+    },
+    "passphrase": {
+      "name": "密碼短語"
+    },
+    "v4": {
+      "name": "v4（隨機）"
+    },
+    "v7": {
+      "name": "v7（依時間排序）"
     }
   }
 }

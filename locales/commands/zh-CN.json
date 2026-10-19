@@ -424,6 +424,87 @@
           "description": "此服务器中包含该图片的消息链接"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "检查密码是否出现在数据泄露中"
+    },
+    "password": {
+      "name": "密码",
+      "description": "生成安全的随机密码或密码短语",
+      "parameters": {
+        "length": {
+          "name": "长度",
+          "description": "长度（8-128）；密码短语：约每 4 个字符 1 个词"
+        },
+        "type": {
+          "name": "类型",
+          "description": "密码类型（默认：强）"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "生成随机 UUID（v4 或 v7）",
+      "parameters": {
+        "version": {
+          "name": "版本",
+          "description": "UUID 版本（默认：v4）"
+        },
+        "count": {
+          "name": "数量",
+          "description": "生成数量（1-10）"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "计算文本或文件的 MD5、SHA-1、SHA-256 和 SHA-512",
+      "parameters": {
+        "text": {
+          "name": "文本",
+          "description": "要哈希的文本（文本和文件都留空则打开表单）"
+        },
+        "file": {
+          "name": "文件",
+          "description": "要哈希的文件（最大 25 MB）"
+        },
+        "compare": {
+          "name": "比较",
+          "description": "用于比较的已知哈希"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "解码 JSON Web Token（头部和负载）"
+    },
+    "color": {
+      "name": "颜色",
+      "description": "转换颜色并检查其对比度",
+      "parameters": {
+        "color": {
+          "name": "颜色",
+          "description": "HEX、rgb()、hsl()、CSS 名称、Discord 数字或 random"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "强"
+    },
+    "clear": {
+      "name": "无易混字符"
+    },
+    "passphrase": {
+      "name": "密码短语"
+    },
+    "v4": {
+      "name": "v4（随机）"
+    },
+    "v7": {
+      "name": "v7（按时间排序）"
     }
   }
 }

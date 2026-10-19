@@ -424,6 +424,87 @@
           "description": "Tautan pesan dari server ini yang berisi gambar"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "Periksa apakah kata sandi pernah muncul dalam kebocoran data"
+    },
+    "password": {
+      "name": "kata-sandi",
+      "description": "Buat kata sandi atau frasa sandi acak yang aman",
+      "parameters": {
+        "length": {
+          "name": "panjang",
+          "description": "Panjang (8-128); frasa sandi: sekitar 1 kata per 4 karakter"
+        },
+        "type": {
+          "name": "jenis",
+          "description": "Jenis kata sandi (default: kuat)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "Buat UUID acak (v4 atau v7)",
+      "parameters": {
+        "version": {
+          "name": "versi",
+          "description": "Versi UUID (default: v4)"
+        },
+        "count": {
+          "name": "jumlah",
+          "description": "Jumlah yang dibuat (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "Hitung MD5, SHA-1, SHA-256, dan SHA-512 dari teks atau berkas",
+      "parameters": {
+        "text": {
+          "name": "teks",
+          "description": "Teks untuk di-hash (kosongkan teks dan berkas untuk formulir)"
+        },
+        "file": {
+          "name": "berkas",
+          "description": "Berkas untuk di-hash (maks. 25 MB)"
+        },
+        "compare": {
+          "name": "bandingkan",
+          "description": "Hash yang diketahui untuk dibandingkan"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "Dekode JSON Web Token (header dan isi)"
+    },
+    "color": {
+      "name": "warna",
+      "description": "Konversi warna dan periksa kontrasnya",
+      "parameters": {
+        "color": {
+          "name": "warna",
+          "description": "HEX, rgb(), hsl(), nama CSS, angka Discord, atau random"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "Kuat"
+    },
+    "clear": {
+      "name": "Tanpa karakter mirip"
+    },
+    "passphrase": {
+      "name": "Frasa sandi"
+    },
+    "v4": {
+      "name": "v4 (acak)"
+    },
+    "v7": {
+      "name": "v7 (berurutan waktu)"
     }
   }
 }

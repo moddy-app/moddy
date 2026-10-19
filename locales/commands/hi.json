@@ -424,6 +424,87 @@
           "description": "इस सर्वर के उस संदेश का लिंक जिसमें छवि है"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "जांचें कि कोई पासवर्ड डेटा लीक में आया है या नहीं"
+    },
+    "password": {
+      "name": "पासवर्ड",
+      "description": "एक सुरक्षित रैंडम पासवर्ड या पासफ़्रेज़ बनाएं",
+      "parameters": {
+        "length": {
+          "name": "लंबाई",
+          "description": "लंबाई (8-128); पासफ़्रेज़: लगभग 4 अक्षरों पर 1 शब्द"
+        },
+        "type": {
+          "name": "प्रकार",
+          "description": "पासवर्ड का प्रकार (डिफ़ॉल्ट: मज़बूत)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "रैंडम UUID बनाएं (v4 या v7)",
+      "parameters": {
+        "version": {
+          "name": "संस्करण",
+          "description": "UUID संस्करण (डिफ़ॉल्ट: v4)"
+        },
+        "count": {
+          "name": "संख्या",
+          "description": "कितने बनाने हैं (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "टेक्स्ट या फ़ाइल का MD5, SHA-1, SHA-256 और SHA-512 निकालें",
+      "parameters": {
+        "text": {
+          "name": "टेक्स्ट",
+          "description": "हैश के लिए टेक्स्ट (फ़ॉर्म के लिए टेक्स्ट और फ़ाइल खाली छोड़ें)"
+        },
+        "file": {
+          "name": "फ़ाइल",
+          "description": "हैश के लिए फ़ाइल (अधिकतम 25 MB)"
+        },
+        "compare": {
+          "name": "तुलना",
+          "description": "तुलना के लिए ज्ञात हैश"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "JSON Web Token डिकोड करें (हेडर और सामग्री)"
+    },
+    "color": {
+      "name": "रंग",
+      "description": "रंग बदलें और उसका कंट्रास्ट जांचें",
+      "parameters": {
+        "color": {
+          "name": "रंग",
+          "description": "HEX, rgb(), hsl(), CSS नाम, Discord संख्या या random"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "मज़बूत"
+    },
+    "clear": {
+      "name": "मिलते-जुलते अक्षरों के बिना"
+    },
+    "passphrase": {
+      "name": "पासफ़्रेज़"
+    },
+    "v4": {
+      "name": "v4 (रैंडम)"
+    },
+    "v7": {
+      "name": "v7 (समय क्रम में)"
     }
   }
 }

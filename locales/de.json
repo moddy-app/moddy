@@ -5567,6 +5567,118 @@
         "back": "Zurück"
       },
       "page": "Seite {page}/{pages}"
+    },
+    "pwned": {
+      "title": "Passwortprüfung",
+      "modal_title": "Passwort prüfen",
+      "modal_help": "Dein Passwort verlässt Moddy nie im Klartext: Nur die ersten 5 Zeichen seines SHA-1-Fingerabdrucks gehen an Have I Been Pwned (k-Anonymität). Nichts wird protokolliert oder gespeichert.",
+      "input_label": "Passwort",
+      "found": "In Datenlecks gefunden",
+      "found_count": "{count}-mal in bekannten Datenlecks gesehen.",
+      "found_advice": "Benutze es nicht mehr. Ändere es überall, wo du es wiederverwendet hast, und lass einen Passwortmanager ein neues erzeugen, oder probier {command}.",
+      "not_found": "In bekannten Datenlecks nicht gefunden",
+      "not_found_note": "Das macht es nicht sicher: Ein kurzes oder erratbares Passwort lässt sich trotzdem knacken. {command} erzeugt ein starkes.",
+      "open_site": "Passwörter bei Have I Been Pwned",
+      "errors": {
+        "unavailable": "Have I Been Pwned antwortet gerade nicht. Versuch es gleich noch einmal.",
+        "cooldown": "Zu viele Prüfungen hintereinander. Warte {retry} bis zur nächsten."
+      }
+    },
+    "password": {
+      "title": "Passwortgenerator",
+      "kinds": {
+        "strong": "Stark",
+        "clear": "Ohne Verwechslungszeichen",
+        "passphrase": "Passphrase"
+      },
+      "strength": {
+        "weak": "Schwach",
+        "fair": "Mittel",
+        "good": "Gut",
+        "strong": "Stark",
+        "excellent": "Ausgezeichnet"
+      },
+      "entropy": "{bar} **{label}** · {bits} Entropie",
+      "bits": "{n} Bit",
+      "summary_chars": "{kind} · {length} Zeichen",
+      "summary_words": "{kind} · {words} Wörter",
+      "hint": "Kopiere es jetzt und bewahre es in einem Passwortmanager auf: Moddy speichert nichts."
+    },
+    "uuid": {
+      "title": "UUID",
+      "version": {
+        "v4": "Version 4 · zufällig",
+        "v7": "Version 7 · zeitlich geordnet, sortierbar"
+      }
+    },
+    "hash": {
+      "title": "Hashes",
+      "modal_title": "Text oder Datei hashen",
+      "modal_help": "Gib einen Text ein oder lade eine Datei hoch. Die Hashes werden direkt berechnet, nichts wird gespeichert.",
+      "text_label": "Text",
+      "text_placeholder": "Wird genau so gehasht, wie du ihn tippst",
+      "file_label": "Datei",
+      "file_description": "Bis 25 MB",
+      "compare_label": "Vergleichen mit (optional)",
+      "compare_placeholder": "Bekannten Hash einfügen",
+      "subject": "Gehasht",
+      "subject_text": "Text · {count} Zeichen",
+      "subject_file": "{name} · {size}",
+      "utf8_note": "Der Text wird als UTF-8 gehasht, genau wie eingegeben (ohne Leerzeichen zu entfernen).",
+      "match": "Entspricht {algo}",
+      "no_match": "Entspricht keinem dieser Hashes",
+      "errors": {
+        "both": "Gib entweder einen Text oder eine Datei an, nicht beides.",
+        "download_failed": "Moddy konnte diese Datei nicht herunterladen. Lade sie erneut hoch."
+      }
+    },
+    "jwt": {
+      "title": "JWT-Decoder",
+      "modal_title": "JWT dekodieren",
+      "modal_help": "Füge keinen Token ein, der noch gültig ist: Wer ihn besitzt, kann in deinem Namen handeln. Das Dekodieren passiert auf Moddy, nichts wird geprüft oder gespeichert.",
+      "input_label": "Token",
+      "header": "Header",
+      "payload": "Payload",
+      "status": {
+        "valid": "Gültig",
+        "expired": "Abgelaufen",
+        "not_yet": "Noch nicht gültig"
+      },
+      "claims": {
+        "iat": "Ausgestellt",
+        "nbf": "Gültig ab",
+        "exp": "Läuft ab",
+        "iss": "Aussteller",
+        "sub": "Subjekt",
+        "aud": "Zielgruppe"
+      },
+      "alg_none": "Der Algorithmus ist none: Dieser Token hat keine Signatur, jeder hätte ihn schreiben können. Akzeptiere ihn nie.",
+      "unverified": "Signatur nicht geprüft: Moddy liest nur, was der Token behauptet, und kann nicht sagen, ob er echt ist.",
+      "truncated": "Langer Inhalt: Das vollständige JSON hängt an.",
+      "bad_time": "Der Wert {claim} ist kein gültiges Datum.",
+      "errors": {
+        "empty": "Füge zuerst einen Token ein.",
+        "not_a_jwt": "Das sieht nicht nach einem JWT aus. Erwartet werden drei durch Punkte getrennte Teile, etwa `xxxxx.yyyyy.zzzzz`.",
+        "encrypted": "Das ist ein verschlüsselter Token (JWE): Sein Inhalt ist ohne den Schlüssel nicht lesbar."
+      }
+    },
+    "color": {
+      "title": "Farbe",
+      "closest": "Nächster CSS-Name",
+      "exact": "CSS-Name",
+      "alpha_note": "Die Transparenz ({alpha}) wird ignoriert: Die Farbe wird deckend gezeigt.",
+      "contrast_title": "Kontrast (WCAG 2.x)",
+      "contrast_dark": "Als Text auf Discord dunkel",
+      "contrast_light": "Als Text auf Discord hell",
+      "contrast_white": "Hinter weißem Text",
+      "contrast_black": "Hinter schwarzem Text",
+      "levels": "AA {aa} · AAA {aaa} · großer Text AA {aa_large} · AAA {aaa_large}",
+      "random_button": "Zufällige Farbe",
+      "errors": {
+        "empty": "Gib eine Farbe an.",
+        "invalid": "Diese Farbe kenne ich nicht. Probier {examples}.",
+        "out_of_range": "Eine Discord-Farbe ist eine Zahl von `0` bis `16777215`."
+      }
     }
   }
 }

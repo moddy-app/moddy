@@ -424,6 +424,87 @@
           "description": "Linkki tämän palvelimen viestiin, jossa kuva on"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "Tarkista, onko salasana esiintynyt tietovuodossa"
+    },
+    "password": {
+      "name": "salasana",
+      "description": "Luo turvallinen satunnainen salasana tai salalause",
+      "parameters": {
+        "length": {
+          "name": "pituus",
+          "description": "Pituus (8-128); salalause: noin 1 sana 4 merkkiä kohti"
+        },
+        "type": {
+          "name": "tyyppi",
+          "description": "Salasanan tyyppi (oletus: vahva)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "Luo satunnaisia UUID-tunnisteita (v4 tai v7)",
+      "parameters": {
+        "version": {
+          "name": "versio",
+          "description": "UUID-versio (oletus: v4)"
+        },
+        "count": {
+          "name": "määrä",
+          "description": "Montako luodaan (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "Laske tekstin tai tiedoston MD5, SHA-1, SHA-256 ja SHA-512",
+      "parameters": {
+        "text": {
+          "name": "teksti",
+          "description": "Tiivistettävä teksti (jätä teksti ja tiedosto tyhjiksi lomaketta varten)"
+        },
+        "file": {
+          "name": "tiedosto",
+          "description": "Tiivistettävä tiedosto (enintään 25 Mt)"
+        },
+        "compare": {
+          "name": "vertaa",
+          "description": "Tunnettu tiiviste vertailuun"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "Pura JSON Web Token (otsake ja sisältö)"
+    },
+    "color": {
+      "name": "väri",
+      "description": "Muunna väri ja tarkista sen kontrasti",
+      "parameters": {
+        "color": {
+          "name": "väri",
+          "description": "HEX, rgb(), hsl(), CSS-nimi, Discord-luku tai random"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "Vahva"
+    },
+    "clear": {
+      "name": "Ilman sekoittuvia merkkejä"
+    },
+    "passphrase": {
+      "name": "Salalause"
+    },
+    "v4": {
+      "name": "v4 (satunnainen)"
+    },
+    "v7": {
+      "name": "v7 (aikajärjestetty)"
     }
   }
 }

@@ -424,6 +424,87 @@
           "description": "Ссылка на сообщение этого сервера с изображением"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "Проверить, встречался ли пароль в утечках данных"
+    },
+    "password": {
+      "name": "пароль",
+      "description": "Создать надёжный случайный пароль или парольную фразу",
+      "parameters": {
+        "length": {
+          "name": "длина",
+          "description": "Длина (8-128); фраза: примерно 1 слово на 4 символа"
+        },
+        "type": {
+          "name": "тип",
+          "description": "Тип пароля (по умолчанию: надёжный)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "Создать случайные UUID (v4 или v7)",
+      "parameters": {
+        "version": {
+          "name": "версия",
+          "description": "Версия UUID (по умолчанию: v4)"
+        },
+        "count": {
+          "name": "количество",
+          "description": "Сколько создать (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "Вычислить MD5, SHA-1, SHA-256 и SHA-512 текста или файла",
+      "parameters": {
+        "text": {
+          "name": "текст",
+          "description": "Текст для хеша (оставьте текст и файл пустыми для формы)"
+        },
+        "file": {
+          "name": "файл",
+          "description": "Файл для хеша (макс. 25 МБ)"
+        },
+        "compare": {
+          "name": "сравнить",
+          "description": "Известный хеш для сравнения"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "Расшифровать JSON Web Token (заголовок и содержимое)"
+    },
+    "color": {
+      "name": "цвет",
+      "description": "Преобразовать цвет и проверить его контраст",
+      "parameters": {
+        "color": {
+          "name": "цвет",
+          "description": "HEX, rgb(), hsl(), имя CSS, число Discord или random"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "Надёжный"
+    },
+    "clear": {
+      "name": "Без похожих символов"
+    },
+    "passphrase": {
+      "name": "Парольная фраза"
+    },
+    "v4": {
+      "name": "v4 (случайный)"
+    },
+    "v7": {
+      "name": "v7 (по времени)"
     }
   }
 }

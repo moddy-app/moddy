@@ -424,6 +424,87 @@
           "description": "Link naar een bericht op deze server met de afbeelding"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "Controleer of een wachtwoord in een datalek is verschenen"
+    },
+    "password": {
+      "name": "wachtwoord",
+      "description": "Genereer een veilig willekeurig wachtwoord of wachtzin",
+      "parameters": {
+        "length": {
+          "name": "lengte",
+          "description": "Lengte (8-128); wachtzin: ongeveer 1 woord per 4 tekens"
+        },
+        "type": {
+          "name": "type",
+          "description": "Soort wachtwoord (standaard: sterk)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "Genereer willekeurige UUID's (v4 of v7)",
+      "parameters": {
+        "version": {
+          "name": "versie",
+          "description": "UUID-versie (standaard: v4)"
+        },
+        "count": {
+          "name": "aantal",
+          "description": "Hoeveel er worden gemaakt (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "Bereken MD5, SHA-1, SHA-256 en SHA-512 van een tekst of bestand",
+      "parameters": {
+        "text": {
+          "name": "tekst",
+          "description": "Tekst om te hashen (laat tekst en bestand leeg voor een formulier)"
+        },
+        "file": {
+          "name": "bestand",
+          "description": "Bestand om te hashen (max. 25 MB)"
+        },
+        "compare": {
+          "name": "vergelijk",
+          "description": "Een bekende hash om mee te vergelijken"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "Decodeer een JSON Web Token (header en payload)"
+    },
+    "color": {
+      "name": "kleur",
+      "description": "Reken een kleur om en controleer het contrast",
+      "parameters": {
+        "color": {
+          "name": "kleur",
+          "description": "HEX, rgb(), hsl(), CSS-naam, Discord-getal of random"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "Sterk"
+    },
+    "clear": {
+      "name": "Zonder verwarrende tekens"
+    },
+    "passphrase": {
+      "name": "Wachtzin"
+    },
+    "v4": {
+      "name": "v4 (willekeurig)"
+    },
+    "v7": {
+      "name": "v7 (op tijd gesorteerd)"
     }
   }
 }

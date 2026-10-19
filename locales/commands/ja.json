@@ -424,6 +424,87 @@
           "description": "画像を含むこのサーバーのメッセージのリンク"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "パスワードがデータ漏洩に含まれていないか確認します"
+    },
+    "password": {
+      "name": "パスワード",
+      "description": "安全なランダムパスワードまたはパスフレーズを生成します",
+      "parameters": {
+        "length": {
+          "name": "長さ",
+          "description": "長さ（8〜128）。パスフレーズは4文字につき約1語"
+        },
+        "type": {
+          "name": "種類",
+          "description": "パスワードの種類（既定：強力）"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "ランダムなUUIDを生成します（v4またはv7）",
+      "parameters": {
+        "version": {
+          "name": "バージョン",
+          "description": "UUIDのバージョン（既定：v4）"
+        },
+        "count": {
+          "name": "個数",
+          "description": "生成する数（1〜10）"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "テキストまたはファイルのMD5・SHA-1・SHA-256・SHA-512を計算します",
+      "parameters": {
+        "text": {
+          "name": "テキスト",
+          "description": "ハッシュするテキスト（テキストとファイルを空にするとフォームを開きます）"
+        },
+        "file": {
+          "name": "ファイル",
+          "description": "ハッシュするファイル（最大25MB）"
+        },
+        "compare": {
+          "name": "比較",
+          "description": "比較する既知のハッシュ"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "JSON Web Token（ヘッダーとペイロード）をデコードします"
+    },
+    "color": {
+      "name": "カラー",
+      "description": "色を変換してコントラストを確認します",
+      "parameters": {
+        "color": {
+          "name": "色",
+          "description": "HEX、rgb()、hsl()、CSS名、Discordの数値、またはrandom"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "強力"
+    },
+    "clear": {
+      "name": "紛らわしい文字なし"
+    },
+    "passphrase": {
+      "name": "パスフレーズ"
+    },
+    "v4": {
+      "name": "v4（ランダム）"
+    },
+    "v7": {
+      "name": "v7（時系列順）"
     }
   }
 }

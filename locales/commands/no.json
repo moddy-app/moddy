@@ -424,6 +424,87 @@
           "description": "Lenke til en melding på denne serveren med bildet"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "Sjekk om et passord har dukket opp i en datalekkasje"
+    },
+    "password": {
+      "name": "passord",
+      "description": "Lag et sikkert tilfeldig passord eller passfrase",
+      "parameters": {
+        "length": {
+          "name": "lengde",
+          "description": "Lengde (8-128); passfrase: omtrent 1 ord per 4 tegn"
+        },
+        "type": {
+          "name": "type",
+          "description": "Type passord (standard: sterkt)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "Lag tilfeldige UUID-er (v4 eller v7)",
+      "parameters": {
+        "version": {
+          "name": "versjon",
+          "description": "UUID-versjon (standard: v4)"
+        },
+        "count": {
+          "name": "antall",
+          "description": "Hvor mange som lages (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "Beregn MD5, SHA-1, SHA-256 og SHA-512 for en tekst eller fil",
+      "parameters": {
+        "text": {
+          "name": "tekst",
+          "description": "Tekst som skal hashes (la tekst og fil stå tomme for et skjema)"
+        },
+        "file": {
+          "name": "fil",
+          "description": "Fil som skal hashes (maks 25 MB)"
+        },
+        "compare": {
+          "name": "sammenlign",
+          "description": "En kjent hash å sammenligne med"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "Dekod et JSON Web Token (header og innhold)"
+    },
+    "color": {
+      "name": "farge",
+      "description": "Konverter en farge og sjekk kontrasten",
+      "parameters": {
+        "color": {
+          "name": "farge",
+          "description": "HEX, rgb(), hsl(), CSS-navn, Discord-tall eller random"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "Sterkt"
+    },
+    "clear": {
+      "name": "Uten forvekslingstegn"
+    },
+    "passphrase": {
+      "name": "Passfrase"
+    },
+    "v4": {
+      "name": "v4 (tilfeldig)"
+    },
+    "v7": {
+      "name": "v7 (tidsordnet)"
     }
   }
 }

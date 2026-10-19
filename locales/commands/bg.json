@@ -424,6 +424,87 @@
           "description": "Връзка към съобщение от този сървър с изображението"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "Проверява дали парола е попадала в изтичане на данни"
+    },
+    "password": {
+      "name": "парола",
+      "description": "Създава сигурна случайна парола или парола-фраза",
+      "parameters": {
+        "length": {
+          "name": "дължина",
+          "description": "Дължина (8-128); фраза: около 1 дума на 4 знака"
+        },
+        "type": {
+          "name": "вид",
+          "description": "Вид парола (по подразбиране: силна)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "Създава случайни UUID (v4 или v7)",
+      "parameters": {
+        "version": {
+          "name": "версия",
+          "description": "Версия на UUID (по подразбиране: v4)"
+        },
+        "count": {
+          "name": "брой",
+          "description": "Колко да се създадат (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "Изчислява MD5, SHA-1, SHA-256 и SHA-512 на текст или файл",
+      "parameters": {
+        "text": {
+          "name": "текст",
+          "description": "Текст за хеш (остави текста и файла празни за формуляр)"
+        },
+        "file": {
+          "name": "файл",
+          "description": "Файл за хеш (макс. 25 МБ)"
+        },
+        "compare": {
+          "name": "сравни",
+          "description": "Известен хеш за сравнение"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "Декодира JSON Web Token (заглавие и съдържание)"
+    },
+    "color": {
+      "name": "цвят",
+      "description": "Преобразува цвят и проверява контраста му",
+      "parameters": {
+        "color": {
+          "name": "цвят",
+          "description": "HEX, rgb(), hsl(), име в CSS, число на Discord или random"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "Силна"
+    },
+    "clear": {
+      "name": "Без подобни знаци"
+    },
+    "passphrase": {
+      "name": "Парола-фраза"
+    },
+    "v4": {
+      "name": "v4 (случайна)"
+    },
+    "v7": {
+      "name": "v7 (по време)"
     }
   }
 }

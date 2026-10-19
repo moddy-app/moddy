@@ -424,6 +424,87 @@
           "description": "ลิงก์ข้อความในเซิร์ฟเวอร์นี้ที่มีภาพ"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "ตรวจสอบว่ารหัสผ่านเคยปรากฏในข้อมูลรั่วไหลหรือไม่"
+    },
+    "password": {
+      "name": "รหัสผ่าน",
+      "description": "สร้างรหัสผ่านหรือวลีรหัสผ่านสุ่มที่ปลอดภัย",
+      "parameters": {
+        "length": {
+          "name": "ความยาว",
+          "description": "ความยาว (8-128) วลีรหัสผ่าน: ประมาณ 1 คำต่อ 4 ตัวอักษร"
+        },
+        "type": {
+          "name": "ชนิด",
+          "description": "ชนิดรหัสผ่าน (ค่าเริ่มต้น: แข็งแรง)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "สร้าง UUID แบบสุ่ม (v4 หรือ v7)",
+      "parameters": {
+        "version": {
+          "name": "เวอร์ชัน",
+          "description": "เวอร์ชัน UUID (ค่าเริ่มต้น: v4)"
+        },
+        "count": {
+          "name": "จำนวน",
+          "description": "จำนวนที่จะสร้าง (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "คำนวณ MD5, SHA-1, SHA-256 และ SHA-512 ของข้อความหรือไฟล์",
+      "parameters": {
+        "text": {
+          "name": "ข้อความ",
+          "description": "ข้อความที่จะแฮช (เว้นข้อความและไฟล์ว่างเพื่อเปิดแบบฟอร์ม)"
+        },
+        "file": {
+          "name": "ไฟล์",
+          "description": "ไฟล์ที่จะแฮช (สูงสุด 25 MB)"
+        },
+        "compare": {
+          "name": "เปรียบเทียบ",
+          "description": "ค่าแฮชที่ทราบเพื่อเปรียบเทียบ"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "ถอดรหัส JSON Web Token (ส่วนหัวและเนื้อหา)"
+    },
+    "color": {
+      "name": "สี",
+      "description": "แปลงสีและตรวจสอบค่าความต่างสี",
+      "parameters": {
+        "color": {
+          "name": "สี",
+          "description": "HEX, rgb(), hsl(), ชื่อ CSS, เลข Discord หรือ random"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "แข็งแรง"
+    },
+    "clear": {
+      "name": "ไม่มีตัวอักษรที่คล้ายกัน"
+    },
+    "passphrase": {
+      "name": "วลีรหัสผ่าน"
+    },
+    "v4": {
+      "name": "v4 (สุ่ม)"
+    },
+    "v7": {
+      "name": "v7 (เรียงตามเวลา)"
     }
   }
 }

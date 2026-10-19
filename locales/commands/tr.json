@@ -424,6 +424,87 @@
           "description": "Bu sunucudaki görseli içeren mesajın bağlantısı"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "Bir şifrenin veri sızıntısında görünüp görünmediğini denetler"
+    },
+    "password": {
+      "name": "şifre",
+      "description": "Güvenli rastgele bir şifre veya parola cümlesi üretir",
+      "parameters": {
+        "length": {
+          "name": "uzunluk",
+          "description": "Uzunluk (8-128); parola cümlesi: 4 karakterde yaklaşık 1 kelime"
+        },
+        "type": {
+          "name": "tür",
+          "description": "Şifre türü (varsayılan: güçlü)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "Rastgele UUID üretir (v4 veya v7)",
+      "parameters": {
+        "version": {
+          "name": "sürüm",
+          "description": "UUID sürümü (varsayılan: v4)"
+        },
+        "count": {
+          "name": "adet",
+          "description": "Kaç tane üretilecek (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "Bir metnin veya dosyanın MD5, SHA-1, SHA-256 ve SHA-512 özetini hesaplar",
+      "parameters": {
+        "text": {
+          "name": "metin",
+          "description": "Özeti alınacak metin (form için metni ve dosyayı boş bırak)"
+        },
+        "file": {
+          "name": "dosya",
+          "description": "Özeti alınacak dosya (en çok 25 MB)"
+        },
+        "compare": {
+          "name": "karşılaştır",
+          "description": "Karşılaştırılacak bilinen bir özet"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "Bir JSON Web Token'ı çözer (başlık ve içerik)"
+    },
+    "color": {
+      "name": "renk",
+      "description": "Bir rengi dönüştürür ve kontrastını denetler",
+      "parameters": {
+        "color": {
+          "name": "renk",
+          "description": "HEX, rgb(), hsl(), CSS adı, Discord sayısı veya random"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "Güçlü"
+    },
+    "clear": {
+      "name": "Benzer karakterler olmadan"
+    },
+    "passphrase": {
+      "name": "Parola cümlesi"
+    },
+    "v4": {
+      "name": "v4 (rastgele)"
+    },
+    "v7": {
+      "name": "v7 (zamana göre sıralı)"
     }
   }
 }

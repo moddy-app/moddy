@@ -424,6 +424,87 @@
           "description": "Nuoroda į šio serverio žinutę su vaizdu"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "Patikrina, ar slaptažodis pasirodė duomenų nutekėjime"
+    },
+    "password": {
+      "name": "slaptažodis",
+      "description": "Sugeneruoja saugų atsitiktinį slaptažodį ar slaptafrazę",
+      "parameters": {
+        "length": {
+          "name": "ilgis",
+          "description": "Ilgis (8-128); slaptafrazė: apie 1 žodis 4 simboliams"
+        },
+        "type": {
+          "name": "tipas",
+          "description": "Slaptažodžio rūšis (numatyta: stiprus)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "Sugeneruoja atsitiktinius UUID (v4 arba v7)",
+      "parameters": {
+        "version": {
+          "name": "versija",
+          "description": "UUID versija (numatyta: v4)"
+        },
+        "count": {
+          "name": "kiekis",
+          "description": "Kiek sugeneruoti (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "Apskaičiuoja teksto ar failo MD5, SHA-1, SHA-256 ir SHA-512",
+      "parameters": {
+        "text": {
+          "name": "tekstas",
+          "description": "Tekstas maišai (palik tekstą ir failą tuščius formai)"
+        },
+        "file": {
+          "name": "failas",
+          "description": "Failas maišai (maks. 25 MB)"
+        },
+        "compare": {
+          "name": "palyginti",
+          "description": "Žinoma maiša palyginimui"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "Dekoduoja JSON Web Token (antraštę ir turinį)"
+    },
+    "color": {
+      "name": "spalva",
+      "description": "Konvertuoja spalvą ir patikrina jos kontrastą",
+      "parameters": {
+        "color": {
+          "name": "spalva",
+          "description": "HEX, rgb(), hsl(), CSS pavadinimas, Discord skaičius arba random"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "Stiprus"
+    },
+    "clear": {
+      "name": "Be painiojamų simbolių"
+    },
+    "passphrase": {
+      "name": "Slaptafrazė"
+    },
+    "v4": {
+      "name": "v4 (atsitiktinis)"
+    },
+    "v7": {
+      "name": "v7 (pagal laiką)"
     }
   }
 }

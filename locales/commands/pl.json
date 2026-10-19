@@ -424,6 +424,87 @@
           "description": "Link do wiadomości z tego serwera z obrazem"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "Sprawdza, czy hasło pojawiło się w wycieku danych"
+    },
+    "password": {
+      "name": "hasło",
+      "description": "Generuje bezpieczne losowe hasło lub frazę hasłową",
+      "parameters": {
+        "length": {
+          "name": "długość",
+          "description": "Długość (8-128); fraza: ok. 1 słowo na 4 znaki"
+        },
+        "type": {
+          "name": "typ",
+          "description": "Rodzaj hasła (domyślnie: silne)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "Generuje losowe UUID (v4 lub v7)",
+      "parameters": {
+        "version": {
+          "name": "wersja",
+          "description": "Wersja UUID (domyślnie: v4)"
+        },
+        "count": {
+          "name": "liczba",
+          "description": "Ile wygenerować (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "Oblicza MD5, SHA-1, SHA-256 i SHA-512 tekstu lub pliku",
+      "parameters": {
+        "text": {
+          "name": "tekst",
+          "description": "Tekst do zahaszowania (zostaw tekst i plik puste, by otworzyć formularz)"
+        },
+        "file": {
+          "name": "plik",
+          "description": "Plik do zahaszowania (maks. 25 MB)"
+        },
+        "compare": {
+          "name": "porównaj",
+          "description": "Znany hash do porównania"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "Dekoduje JSON Web Token (nagłówek i treść)"
+    },
+    "color": {
+      "name": "kolor",
+      "description": "Konwertuje kolor i sprawdza jego kontrast",
+      "parameters": {
+        "color": {
+          "name": "kolor",
+          "description": "HEX, rgb(), hsl(), nazwa CSS, liczba Discorda lub random"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "Silne"
+    },
+    "clear": {
+      "name": "Bez podobnych znaków"
+    },
+    "passphrase": {
+      "name": "Fraza hasłowa"
+    },
+    "v4": {
+      "name": "v4 (losowy)"
+    },
+    "v7": {
+      "name": "v7 (uporządkowany w czasie)"
     }
   }
 }
