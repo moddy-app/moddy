@@ -62,3 +62,9 @@ Pillow>=10.0.0
 # library in the wheel (manylinux_2_28 / macOS / Windows), no system package.
 # Pinned: the Context/Settings API it relies on is recent and still moving.
 c2pa-python==0.38.0
+
+# /exif (tools/metadata.py): PDF metadata (pure Python, ~1 MB) and audio/video
+# tags (pure Python, ~0.5 MB). Both imported lazily, only when such a file is
+# inspected. HEIC photos also need pillow-heif (see the media tools).
+pypdf>=4.0.0
+mutagen>=1.47.0
