@@ -37,6 +37,9 @@
     },
     "Find source": {
       "name": "Найти источник"
+    },
+    "Check links": {
+      "name": "Проверить ссылки"
     }
   },
   "commands": {
@@ -599,6 +602,60 @@
         "username": {
           "name": "никнейм",
           "description": "Никнейм для поиска"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Кто и когда зарегистрировал домен (регистратор, даты, серверы имён)",
+      "parameters": {
+        "domain": {
+          "name": "домен",
+          "description": "Имя домена или ссылка, например example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "DNS-записи домена (A, MX, TXT, NS...) и защита почты",
+      "parameters": {
+        "domain": {
+          "name": "домен",
+          "description": "Имя домена или ссылка, например example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Проверить HTTPS-сертификат сайта (срок, издатель, имена)",
+      "parameters": {
+        "domain": {
+          "name": "домен",
+          "description": "Имя домена или ссылка, например example.com"
+        },
+        "port": {
+          "name": "порт",
+          "description": "Порт (по умолчанию 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "поддомены",
+      "description": "Список поддоменов домена из публичных сертификатов",
+      "parameters": {
+        "domain": {
+          "name": "домен",
+          "description": "Имя домена или ссылка, например example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "проверка-ссылки",
+      "description": "Проверить, опасна ли ссылка: редиректы, возраст домена, репутация",
+      "parameters": {
+        "url": {
+          "name": "ссылка",
+          "description": "Ссылка для проверки"
         }
       }
     }

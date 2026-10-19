@@ -95,6 +95,35 @@ def _tracemoe_rules() -> List[RateRule]:
     ]
 
 
+def _virustotal_rules() -> List[RateRule]:
+    """VirusTotal public API (free key): 4 requests a minute, 500 a day.
+
+    The three operations (report, submit, analysis) share one budget — the
+    limit is per API key. The free tier forbids commercial use: see
+    docs/features/TOOLS_WEB.md before pointing a premium plan at it.
+    """
+    return [
+        RateRule("rpm", UNIT_REQUESTS, MINUTE, _int_env("VIRUSTOTAL_PER_MINUTE", 4)),
+        RateRule("rpd", UNIT_REQUESTS, DAY, _int_env("VIRUSTOTAL_PER_DAY", 500)),
+    ]
+
+
+def _urlscan_scan_rules() -> List[RateRule]:
+    """urlscan.io scan submissions (unlisted visibility, free account)."""
+    return [
+        RateRule("rpm", UNIT_REQUESTS, MINUTE, _int_env("URLSCAN_SCAN_PER_MINUTE", 10)),
+        RateRule("rpd", UNIT_REQUESTS, DAY, _int_env("URLSCAN_SCAN_PER_DAY", 400)),
+    ]
+
+
+def _urlscan_result_rules() -> List[RateRule]:
+    """urlscan.io result retrievals (one gateway call = one polling loop)."""
+    return [
+        RateRule("rpm", UNIT_REQUESTS, MINUTE, _int_env("URLSCAN_RESULT_PER_MINUTE", 60)),
+        RateRule("rpd", UNIT_REQUESTS, DAY, _int_env("URLSCAN_RESULT_PER_DAY", 4_000)),
+    ]
+
+
 def _default_model_rate_limits() -> Dict[Tuple[str, str], List[RateRule]]:
     """(provider, model) → the rules enforced for it. Add new models here.
 
@@ -126,6 +155,11 @@ def _default_model_rate_limits() -> Dict[Tuple[str, str], List[RateRule]]:
         # Reverse image search (/sauce). The operation is the model key.
         ("saucenao", "search"): _saucenao_rules(),
         ("tracemoe", "search"): _tracemoe_rules(),
+        # /link-check reputation (VirusTotal: one budget for every operation) and
+        # sandboxed scan (urlscan: submit and result are counted separately).
+        ("virustotal", "public_api"): _virustotal_rules(),
+        ("urlscan", "scan"): _urlscan_scan_rules(),
+        ("urlscan", "result"): _urlscan_result_rules(),
     }
 
 
@@ -137,6 +171,8 @@ class GatewayConfig:
     google_vision_api_key: Optional[str] = None
     saucenao_api_key: Optional[str] = None
     tracemoe_api_key: Optional[str] = None  # optional: trace.moe works anonymously
+    virustotal_api_key: Optional[str] = None  # /link-check reputation (optional)
+    urlscan_api_key: Optional[str] = None     # /link-check scan + screenshot (optional)
     deepl_free: bool = True
 
     # Timeouts (seconds)
@@ -150,6 +186,8 @@ class GatewayConfig:
     timeout_vision: float = 30.0
     # Reverse image search: the provider fetches the image and compares it.
     timeout_search: float = 25.0
+    # urlscan.io result: the adapter polls inside one call for up to ~40 s.
+    timeout_scan: float = 60.0
 
     # Retry
     max_retries: int = 3
@@ -189,6 +227,8 @@ class GatewayConfig:
             google_vision_api_key=os.environ.get("GOOGLE_VISION_API_KEY") or None,
             saucenao_api_key=os.environ.get("SAUCENAO_API_KEY") or None,
             tracemoe_api_key=os.environ.get("TRACEMOE_API_KEY") or None,
+            virustotal_api_key=os.environ.get("VIRUSTOTAL_API_KEY") or None,
+            urlscan_api_key=os.environ.get("URLSCAN_API_KEY") or None,
             deepl_free=os.environ.get("DEEPL_FREE", "true").lower() != "false",
             timeout_embed=float(os.environ.get("GATEWAY_TIMEOUT_EMBED", "10")),
             timeout_chat=float(os.environ.get("GATEWAY_TIMEOUT_CHAT", "30")),
@@ -196,6 +236,7 @@ class GatewayConfig:
             timeout_transcribe=float(os.environ.get("GATEWAY_TIMEOUT_TRANSCRIBE", "90")),
             timeout_vision=float(os.environ.get("GATEWAY_TIMEOUT_VISION", "30")),
             timeout_search=float(os.environ.get("GATEWAY_TIMEOUT_SEARCH", "25")),
+            timeout_scan=float(os.environ.get("GATEWAY_TIMEOUT_SCAN", "60")),
             max_retries=int(os.environ.get("GATEWAY_MAX_RETRIES", "3")),
             retry_base_delay=float(os.environ.get("GATEWAY_RETRY_BASE_DELAY", "0.5")),
             cb_failure_threshold=int(os.environ.get("GATEWAY_CB_FAILURE_THRESHOLD", "5")),

@@ -37,6 +37,9 @@
     },
     "Find source": {
       "name": "Buscar origen"
+    },
+    "Check links": {
+      "name": "Verificar enlaces"
     }
   },
   "commands": {
@@ -599,6 +602,60 @@
         "username": {
           "name": "nombre-de-usuario",
           "description": "El nombre de usuario que buscar"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Quién registró un dominio y cuándo (registrador, fechas, servidores de nombres)",
+      "parameters": {
+        "domain": {
+          "name": "dominio",
+          "description": "Nombre de dominio o enlace, por ejemplo example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "Registros DNS de un dominio (A, MX, TXT, NS...) y protección del correo",
+      "parameters": {
+        "domain": {
+          "name": "dominio",
+          "description": "Nombre de dominio o enlace, por ejemplo example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Verifica el certificado HTTPS de un sitio (validez, emisor, nombres)",
+      "parameters": {
+        "domain": {
+          "name": "dominio",
+          "description": "Nombre de dominio o enlace, por ejemplo example.com"
+        },
+        "port": {
+          "name": "puerto",
+          "description": "Puerto (443 por defecto)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "subdominios",
+      "description": "Lista los subdominios de un dominio vistos en certificados públicos",
+      "parameters": {
+        "domain": {
+          "name": "dominio",
+          "description": "Nombre de dominio o enlace, por ejemplo example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "verificar-enlace",
+      "description": "Verifica si un enlace es peligroso: redirecciones, antigüedad, reputación",
+      "parameters": {
+        "url": {
+          "name": "enlace",
+          "description": "El enlace a verificar"
         }
       }
     }

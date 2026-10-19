@@ -37,6 +37,9 @@
     },
     "Find source": {
       "name": "Bron zoeken"
+    },
+    "Check links": {
+      "name": "Links controleren"
     }
   },
   "commands": {
@@ -599,6 +602,60 @@
         "username": {
           "name": "gebruikersnaam",
           "description": "De gebruikersnaam om te zoeken"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Wie een domein heeft geregistreerd en wanneer (registrar, data, nameservers)",
+      "parameters": {
+        "domain": {
+          "name": "domein",
+          "description": "Domeinnaam of link, bijvoorbeeld example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "DNS-records van een domein (A, MX, TXT, NS...) en e-mailbeveiliging",
+      "parameters": {
+        "domain": {
+          "name": "domein",
+          "description": "Domeinnaam of link, bijvoorbeeld example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Controleer het HTTPS-certificaat van een website (geldigheid, uitgever, namen)",
+      "parameters": {
+        "domain": {
+          "name": "domein",
+          "description": "Domeinnaam of link, bijvoorbeeld example.com"
+        },
+        "port": {
+          "name": "poort",
+          "description": "Poort (standaard 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "subdomeinen",
+      "description": "Toont de subdomeinen van een domein uit openbare certificaten",
+      "parameters": {
+        "domain": {
+          "name": "domein",
+          "description": "Domeinnaam of link, bijvoorbeeld example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "link-controleren",
+      "description": "Controleer of een link gevaarlijk is: doorverwijzingen, domeinleeftijd, reputatie",
+      "parameters": {
+        "url": {
+          "name": "link",
+          "description": "De te controleren link"
         }
       }
     }

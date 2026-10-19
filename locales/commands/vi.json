@@ -37,6 +37,9 @@
     },
     "Find source": {
       "name": "Tìm nguồn"
+    },
+    "Check links": {
+      "name": "Kiểm tra liên kết"
     }
   },
   "commands": {
@@ -599,6 +602,60 @@
         "username": {
           "name": "tên-người-dùng",
           "description": "Tên người dùng cần tìm"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Ai đã đăng ký tên miền và khi nào (nhà đăng ký, ngày, máy chủ tên)",
+      "parameters": {
+        "domain": {
+          "name": "tên-miền",
+          "description": "Tên miền hoặc liên kết, ví dụ example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "Bản ghi DNS của tên miền (A, MX, TXT, NS...) và bảo vệ email",
+      "parameters": {
+        "domain": {
+          "name": "tên-miền",
+          "description": "Tên miền hoặc liên kết, ví dụ example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Kiểm tra chứng chỉ HTTPS của một trang web (hiệu lực, bên cấp, tên)",
+      "parameters": {
+        "domain": {
+          "name": "tên-miền",
+          "description": "Tên miền hoặc liên kết, ví dụ example.com"
+        },
+        "port": {
+          "name": "cổng",
+          "description": "Cổng (mặc định 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "tên-miền-phụ",
+      "description": "Liệt kê các tên miền phụ thấy trong chứng chỉ công khai",
+      "parameters": {
+        "domain": {
+          "name": "tên-miền",
+          "description": "Tên miền hoặc liên kết, ví dụ example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "kiểm-tra-liên-kết",
+      "description": "Kiểm tra liên kết có nguy hiểm không: chuyển hướng, tuổi tên miền, uy tín",
+      "parameters": {
+        "url": {
+          "name": "liên-kết",
+          "description": "Liên kết cần kiểm tra"
         }
       }
     }

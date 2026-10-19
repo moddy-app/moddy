@@ -37,6 +37,9 @@
     },
     "Find source": {
       "name": "ค้นหาแหล่งที่มา"
+    },
+    "Check links": {
+      "name": "ตรวจสอบลิงก์"
     }
   },
   "commands": {
@@ -599,6 +602,60 @@
         "username": {
           "name": "ชื่อผู้ใช้",
           "description": "ชื่อผู้ใช้ที่ต้องการค้นหา"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "ดูว่าใครจดทะเบียนโดเมนและเมื่อไหร่ (ผู้จดทะเบียน วันที่ เนมเซิร์ฟเวอร์)",
+      "parameters": {
+        "domain": {
+          "name": "โดเมน",
+          "description": "ชื่อโดเมนหรือลิงก์ เช่น example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "เรคคอร์ด DNS ของโดเมน (A, MX, TXT, NS...) และการป้องกันอีเมล",
+      "parameters": {
+        "domain": {
+          "name": "โดเมน",
+          "description": "ชื่อโดเมนหรือลิงก์ เช่น example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "ตรวจใบรับรอง HTTPS ของเว็บไซต์ (ความถูกต้อง ผู้ออก ชื่อ)",
+      "parameters": {
+        "domain": {
+          "name": "โดเมน",
+          "description": "ชื่อโดเมนหรือลิงก์ เช่น example.com"
+        },
+        "port": {
+          "name": "พอร์ต",
+          "description": "พอร์ต (ค่าเริ่มต้น 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "ซับโดเมน",
+      "description": "แสดงซับโดเมนของโดเมนที่พบในใบรับรองสาธารณะ",
+      "parameters": {
+        "domain": {
+          "name": "โดเมน",
+          "description": "ชื่อโดเมนหรือลิงก์ เช่น example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "ตรวจลิงก์",
+      "description": "ตรวจว่าลิงก์อันตรายหรือไม่: การเปลี่ยนเส้นทาง อายุโดเมน ชื่อเสียง",
+      "parameters": {
+        "url": {
+          "name": "ลิงก์",
+          "description": "ลิงก์ที่ต้องการตรวจ"
         }
       }
     }

@@ -37,6 +37,9 @@
     },
     "Find source": {
       "name": "Finn kilde"
+    },
+    "Check links": {
+      "name": "Sjekk lenker"
     }
   },
   "commands": {
@@ -599,6 +602,60 @@
         "username": {
           "name": "brukernavn",
           "description": "Brukernavnet du vil søke etter"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Hvem som har registrert et domene, og når (registrar, datoer, navneservere)",
+      "parameters": {
+        "domain": {
+          "name": "domene",
+          "description": "Domenenavn eller lenke, for eksempel example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "DNS-poster for et domene (A, MX, TXT, NS...) og e-postbeskyttelse",
+      "parameters": {
+        "domain": {
+          "name": "domene",
+          "description": "Domenenavn eller lenke, for eksempel example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Sjekk HTTPS-sertifikatet til et nettsted (gyldighet, utsteder, navn)",
+      "parameters": {
+        "domain": {
+          "name": "domene",
+          "description": "Domenenavn eller lenke, for eksempel example.com"
+        },
+        "port": {
+          "name": "port",
+          "description": "Port (standard 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "underdomener",
+      "description": "Viser underdomenene til et domene sett i offentlige sertifikater",
+      "parameters": {
+        "domain": {
+          "name": "domene",
+          "description": "Domenenavn eller lenke, for eksempel example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "lenkesjekk",
+      "description": "Sjekk om en lenke er farlig: omdirigeringer, domenets alder, omdømme",
+      "parameters": {
+        "url": {
+          "name": "lenke",
+          "description": "Lenken som skal sjekkes"
         }
       }
     }

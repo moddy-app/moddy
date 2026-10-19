@@ -37,6 +37,9 @@
     },
     "Find source": {
       "name": "स्रोत खोजें"
+    },
+    "Check links": {
+      "name": "लिंक जांचें"
     }
   },
   "commands": {
@@ -599,6 +602,60 @@
         "username": {
           "name": "यूज़रनेम",
           "description": "खोजने के लिए यूज़रनेम"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "किसने डोमेन पंजीकृत किया और कब (रजिस्ट्रार, तिथियां, नेम सर्वर)",
+      "parameters": {
+        "domain": {
+          "name": "डोमेन",
+          "description": "डोमेन नाम या लिंक, जैसे example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "डोमेन के DNS रिकॉर्ड (A, MX, TXT, NS...) और ईमेल सुरक्षा",
+      "parameters": {
+        "domain": {
+          "name": "डोमेन",
+          "description": "डोमेन नाम या लिंक, जैसे example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "वेबसाइट का HTTPS प्रमाणपत्र जांचें (वैधता, जारीकर्ता, नाम)",
+      "parameters": {
+        "domain": {
+          "name": "डोमेन",
+          "description": "डोमेन नाम या लिंक, जैसे example.com"
+        },
+        "port": {
+          "name": "पोर्ट",
+          "description": "पोर्ट (डिफ़ॉल्ट 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "सबडोमेन",
+      "description": "सार्वजनिक प्रमाणपत्रों में दिखे डोमेन के सबडोमेन की सूची",
+      "parameters": {
+        "domain": {
+          "name": "डोमेन",
+          "description": "डोमेन नाम या लिंक, जैसे example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "लिंक-जांच",
+      "description": "जांचें कि लिंक खतरनाक है या नहीं: रीडायरेक्ट, डोमेन की उम्र, प्रतिष्ठा",
+      "parameters": {
+        "url": {
+          "name": "लिंक",
+          "description": "जांचने के लिए लिंक"
         }
       }
     }

@@ -37,6 +37,9 @@
     },
     "Find source": {
       "name": "Kaynağı bul"
+    },
+    "Check links": {
+      "name": "Bağlantıları kontrol et"
     }
   },
   "commands": {
@@ -599,6 +602,60 @@
         "username": {
           "name": "kullanıcı-adı",
           "description": "Aranacak kullanıcı adı"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Bir alan adını kimin ne zaman kaydettiği (kayıt kuruluşu, tarihler, ad sunucuları)",
+      "parameters": {
+        "domain": {
+          "name": "alan-adı",
+          "description": "Alan adı veya bağlantı, örneğin example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "Bir alan adının DNS kayıtları (A, MX, TXT, NS...) ve e-posta koruması",
+      "parameters": {
+        "domain": {
+          "name": "alan-adı",
+          "description": "Alan adı veya bağlantı, örneğin example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Bir sitenin HTTPS sertifikasını kontrol et (geçerlilik, veren, adlar)",
+      "parameters": {
+        "domain": {
+          "name": "alan-adı",
+          "description": "Alan adı veya bağlantı, örneğin example.com"
+        },
+        "port": {
+          "name": "port",
+          "description": "Port (varsayılan 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "alt-alan-adları",
+      "description": "Genel sertifikalarda görülen alt alan adlarını listeler",
+      "parameters": {
+        "domain": {
+          "name": "alan-adı",
+          "description": "Alan adı veya bağlantı, örneğin example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "bağlantı-kontrolü",
+      "description": "Bağlantı tehlikeli mi kontrol et: yönlendirmeler, alan adı yaşı, itibar",
+      "parameters": {
+        "url": {
+          "name": "bağlantı",
+          "description": "Kontrol edilecek bağlantı"
         }
       }
     }

@@ -179,6 +179,11 @@ _ALL: Tuple[Metric, ...] = (
     Metric("sauce.used", scope=SCOPE_GLOBAL, dimensions=("source", "found"),
            doc="/sauce or the Find source menu searched an image "
                "(source: slash | menu | link; found: yes | no)."),
+    Metric("domain_tools.used", scope=SCOPE_GLOBAL, dimensions=("tool",),
+           doc="/whois, /dns, /ssl or /subdomains answered (tool: whois | dns | ssl | subdomains)."),
+    Metric("link_check.used", scope=SCOPE_GLOBAL, dimensions=("source", "verdict"),
+           doc="/link-check or the Check links menu analysed a link (source: slash | menu; "
+               "verdict: safe | suspicious | dangerous | unreachable)."),
     Metric("ai_detector.verdict", scope=SCOPE_GLOBAL, dimensions=("kind", "source"),
            doc="The AI image detector reached a verdict (kind: ai_full | "
                "ai_partial | photo | photo_edited | unsigned; source: auto | command)."),

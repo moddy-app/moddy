@@ -37,6 +37,9 @@
     },
     "Find source": {
       "name": "查找来源"
+    },
+    "Check links": {
+      "name": "检查链接"
     }
   },
   "commands": {
@@ -599,6 +602,60 @@
         "username": {
           "name": "用户名",
           "description": "要查找的用户名"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "查询域名由谁在何时注册（注册商、日期、域名服务器）",
+      "parameters": {
+        "domain": {
+          "name": "域名",
+          "description": "域名或链接，例如 example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "查看域名的 DNS 记录（A、MX、TXT、NS...）和邮件防护",
+      "parameters": {
+        "domain": {
+          "name": "域名",
+          "description": "域名或链接，例如 example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "检查网站的 HTTPS 证书（有效期、颁发者、名称）",
+      "parameters": {
+        "domain": {
+          "name": "域名",
+          "description": "域名或链接，例如 example.com"
+        },
+        "port": {
+          "name": "端口",
+          "description": "端口（默认 443）"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "子域名",
+      "description": "列出公开证书中出现的域名子域名",
+      "parameters": {
+        "domain": {
+          "name": "域名",
+          "description": "域名或链接，例如 example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "链接检查",
+      "description": "检查链接是否危险：重定向、域名年龄、信誉",
+      "parameters": {
+        "url": {
+          "name": "链接",
+          "description": "要检查的链接"
         }
       }
     }

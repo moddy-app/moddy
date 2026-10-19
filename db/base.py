@@ -1843,6 +1843,11 @@ class ModdyDatabase(
                 ("user",   "tldr", "default", 10),
                 ("guild",  "tldr", "default", 100),
                 ("global", "tldr", "default", -1),
+                # /link-check (VirusTotal + urlscan.io). One check counts once;
+                # the providers' account limits are the gateway rate rules.
+                ("user",   "link_check", "default", 10),
+                ("guild",  "link_check", "default", 100),
+                ("global", "link_check", "default", -1),
             ]:
                 await conn.execute(
                     """

@@ -37,6 +37,9 @@
     },
     "Find source": {
       "name": "Εύρεση πηγής"
+    },
+    "Check links": {
+      "name": "Έλεγχος συνδέσμων"
     }
   },
   "commands": {
@@ -599,6 +602,60 @@
         "username": {
           "name": "ψευδώνυμο",
           "description": "Το ψευδώνυμο προς αναζήτηση"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Ποιος κατοχύρωσε έναν τομέα και πότε (καταχωρητής, ημερομηνίες, διακομιστές ονομάτων)",
+      "parameters": {
+        "domain": {
+          "name": "τομέας",
+          "description": "Όνομα τομέα ή σύνδεσμος, π.χ. example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "Εγγραφές DNS ενός τομέα (A, MX, TXT, NS...) και προστασία email",
+      "parameters": {
+        "domain": {
+          "name": "τομέας",
+          "description": "Όνομα τομέα ή σύνδεσμος, π.χ. example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Έλεγξε το πιστοποιητικό HTTPS ενός ιστότοπου (ισχύς, εκδότης, ονόματα)",
+      "parameters": {
+        "domain": {
+          "name": "τομέας",
+          "description": "Όνομα τομέα ή σύνδεσμος, π.χ. example.com"
+        },
+        "port": {
+          "name": "θύρα",
+          "description": "Θύρα (προεπιλογή 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "υποτομείς",
+      "description": "Λίστα υποτομέων ενός τομέα από δημόσια πιστοποιητικά",
+      "parameters": {
+        "domain": {
+          "name": "τομέας",
+          "description": "Όνομα τομέα ή σύνδεσμος, π.χ. example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "έλεγχος-συνδέσμου",
+      "description": "Έλεγξε αν ένας σύνδεσμος είναι επικίνδυνος: ανακατευθύνσεις, ηλικία, φήμη",
+      "parameters": {
+        "url": {
+          "name": "σύνδεσμος",
+          "description": "Ο σύνδεσμος προς έλεγχο"
         }
       }
     }

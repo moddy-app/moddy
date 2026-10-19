@@ -37,6 +37,9 @@
     },
     "Find source": {
       "name": "Rasti šaltinį"
+    },
+    "Check links": {
+      "name": "Patikrinti nuorodas"
     }
   },
   "commands": {
@@ -599,6 +602,60 @@
         "username": {
           "name": "naudotojo-vardas",
           "description": "Ieškomas naudotojo vardas"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Kas užregistravo domeną ir kada (registratorius, datos, vardų serveriai)",
+      "parameters": {
+        "domain": {
+          "name": "domenas",
+          "description": "Domeno vardas arba nuoroda, pvz., example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "Domeno DNS įrašai (A, MX, TXT, NS...) ir el. pašto apsauga",
+      "parameters": {
+        "domain": {
+          "name": "domenas",
+          "description": "Domeno vardas arba nuoroda, pvz., example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Patikrink svetainės HTTPS sertifikatą (galiojimas, išdavėjas, vardai)",
+      "parameters": {
+        "domain": {
+          "name": "domenas",
+          "description": "Domeno vardas arba nuoroda, pvz., example.com"
+        },
+        "port": {
+          "name": "prievadas",
+          "description": "Prievadas (numatytasis 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "subdomenai",
+      "description": "Domeno subdomenų, matytų viešuose sertifikatuose, sąrašas",
+      "parameters": {
+        "domain": {
+          "name": "domenas",
+          "description": "Domeno vardas arba nuoroda, pvz., example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "nuorodos-patikra",
+      "description": "Patikrink, ar nuoroda pavojinga: peradresavimai, domeno amžius, reputacija",
+      "parameters": {
+        "url": {
+          "name": "nuoroda",
+          "description": "Tikrintina nuoroda"
         }
       }
     }

@@ -37,6 +37,9 @@
     },
     "Find source": {
       "name": "Etsi lähde"
+    },
+    "Check links": {
+      "name": "Tarkista linkit"
     }
   },
   "commands": {
@@ -599,6 +602,60 @@
         "username": {
           "name": "käyttäjänimi",
           "description": "Etsittävä käyttäjänimi"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Kuka rekisteröi verkkotunnuksen ja milloin (rekisterinpitäjä, päivämäärät, nimipalvelimet)",
+      "parameters": {
+        "domain": {
+          "name": "verkkotunnus",
+          "description": "Verkkotunnus tai linkki, esim. example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "Verkkotunnuksen DNS-tietueet (A, MX, TXT, NS...) ja sähköpostin suojaus",
+      "parameters": {
+        "domain": {
+          "name": "verkkotunnus",
+          "description": "Verkkotunnus tai linkki, esim. example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Tarkista verkkosivuston HTTPS-varmenne (voimassaolo, myöntäjä, nimet)",
+      "parameters": {
+        "domain": {
+          "name": "verkkotunnus",
+          "description": "Verkkotunnus tai linkki, esim. example.com"
+        },
+        "port": {
+          "name": "portti",
+          "description": "Portti (oletus 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "aliverkkotunnukset",
+      "description": "Listaa verkkotunnuksen julkisissa varmenteissa näkyvät aliverkkotunnukset",
+      "parameters": {
+        "domain": {
+          "name": "verkkotunnus",
+          "description": "Verkkotunnus tai linkki, esim. example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "linkkitarkistus",
+      "description": "Tarkista, onko linkki vaarallinen: uudelleenohjaukset, tunnuksen ikä, maine",
+      "parameters": {
+        "url": {
+          "name": "linkki",
+          "description": "Tarkistettava linkki"
         }
       }
     }

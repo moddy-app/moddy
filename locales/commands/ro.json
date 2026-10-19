@@ -37,6 +37,9 @@
     },
     "Find source": {
       "name": "Găsește sursa"
+    },
+    "Check links": {
+      "name": "Verifică linkurile"
     }
   },
   "commands": {
@@ -599,6 +602,60 @@
         "username": {
           "name": "nume-utilizator",
           "description": "Numele de utilizator căutat"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Cine a înregistrat un domeniu și când (registrar, date, servere de nume)",
+      "parameters": {
+        "domain": {
+          "name": "domeniu",
+          "description": "Numele domeniului sau un link, de exemplu example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "Înregistrările DNS ale unui domeniu (A, MX, TXT, NS...) și protecția e-mailului",
+      "parameters": {
+        "domain": {
+          "name": "domeniu",
+          "description": "Numele domeniului sau un link, de exemplu example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Verifică certificatul HTTPS al unui site (valabilitate, emitent, nume)",
+      "parameters": {
+        "domain": {
+          "name": "domeniu",
+          "description": "Numele domeniului sau un link, de exemplu example.com"
+        },
+        "port": {
+          "name": "port",
+          "description": "Port (implicit 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "subdomenii",
+      "description": "Listează subdomeniile unui domeniu văzute în certificatele publice",
+      "parameters": {
+        "domain": {
+          "name": "domeniu",
+          "description": "Numele domeniului sau un link, de exemplu example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "verificare-link",
+      "description": "Verifică dacă un link e periculos: redirecționări, vechimea domeniului, reputație",
+      "parameters": {
+        "url": {
+          "name": "link",
+          "description": "Linkul de verificat"
         }
       }
     }
