@@ -17,6 +17,7 @@ import re
 import secrets
 from dataclasses import dataclass
 from functools import lru_cache
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 RGB = Tuple[int, int, int]
@@ -317,6 +318,21 @@ _SAMPLE = "Aa  Moddy"
 _PANEL_OUTLINE: RGB = (0x8E, 0x90, 0x9C)
 
 
+#: Inter (SIL OFL), shipped in the repo; see assets/fonts/README.md.
+FONT_PATH = Path(__file__).resolve().parent.parent / "assets" / "fonts" / "Inter-Bold.otf"
+
+
+def _load_font(image_font, size: int):
+    """Inter Bold when present, Pillow's built-in font otherwise."""
+    try:
+        return image_font.truetype(str(FONT_PATH), size)
+    except OSError:
+        try:
+            return image_font.load_default(size=size)  # scalable since Pillow 10.1
+        except TypeError:  # pragma: no cover - very old Pillow: tiny bitmap font
+            return image_font.load_default()
+
+
 def render_preview(rgb: RGB) -> bytes:
     """PNG: a wide swatch, then the colour as text on Discord dark and light.
 
@@ -330,10 +346,7 @@ def render_preview(rgb: RGB) -> bytes:
 
     draw.rounded_rectangle((0, 0, IMAGE_WIDTH - 1, _SWATCH_H - 1), _RADIUS, fill=rgb + (255,))
 
-    try:
-        font = ImageFont.load_default(size=72)  # scalable since Pillow 10.1
-    except TypeError:  # pragma: no cover - very old Pillow: tiny bitmap font
-        font = ImageFont.load_default()
+    font = _load_font(ImageFont, 72)
 
     panel_w = (IMAGE_WIDTH - _GAP) // 2
     top = _SWATCH_H + _GAP
