@@ -144,7 +144,8 @@ def measure(text: str) -> TextStats:
     for token in _WORD.findall(text):
         unspaced = sum(1 for c in token if _is_unspaced(c))
         count += max(1, unspaced // 2) if unspaced else 1
-        words.append(token.lower())
+        # A run of an unspaced script is many words: judge its variety by characters.
+        words.extend(token) if unspaced else words.append(token.lower())
     alpha = sum(1 for c in visible if c.isalpha())
     return TextStats(letters=letters, words=count, distinct_words=len(set(words)),
                      letter_ratio=alpha / len(visible))
