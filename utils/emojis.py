@@ -192,6 +192,12 @@ VERCEL = ""
 NETLIFY = ""
 NOTION = ""
 ZOOM = ""
+# Added by the lookup tools (/status): one logo each, empty until uploaded.
+ANTHROPIC = ""       # /status — Claude (Anthropic) logo
+EPIC_GAMES = ""      # /status — Epic Games logo
+NPM = ""             # /status — npm logo
+DIGITALOCEAN = ""    # /status — DigitalOcean logo
+FIGMA = ""           # /status — Figma logo
 # Twitch reuses TWITCH (social notifications) and OpenAI reuses OPENAI above.
 
 # =============================================================================
