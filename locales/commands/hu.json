@@ -23,6 +23,9 @@
     "Save Message": {
       "name": "Üzenet mentése"
     },
+    "Get Emojis": {
+      "name": "Emojik lekérése"
+    },
     "Translate": {
       "name": "Fordítás"
     },
@@ -31,9 +34,6 @@
     },
     "Transcribe": {
       "name": "Átirat készítése"
-    },
-    "Check links": {
-      "name": "Linkek ellenőrzése"
     }
   },
   "commands": {

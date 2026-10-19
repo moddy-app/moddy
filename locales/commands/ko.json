@@ -23,6 +23,9 @@
     "Save Message": {
       "name": "메시지 저장"
     },
+    "Get Emojis": {
+      "name": "이모지 가져오기"
+    },
     "Translate": {
       "name": "번역"
     },
@@ -31,9 +34,6 @@
     },
     "Transcribe": {
       "name": "받아쓰기"
-    },
-    "Check links": {
-      "name": "링크 확인"
     }
   },
   "commands": {

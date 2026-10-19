@@ -179,7 +179,7 @@ _ALL: Tuple[Metric, ...] = (
     Metric("domain_tools.used", scope=SCOPE_GLOBAL, dimensions=("tool",),
            doc="/whois, /dns, /ssl or /subdomains answered (tool: whois | dns | ssl | subdomains)."),
     Metric("link_check.used", scope=SCOPE_GLOBAL, dimensions=("source", "verdict"),
-           doc="/link-check or the Check links menu analysed a link (source: slash | menu; "
+           doc="/link-check analysed a link (source: slash; "
                "verdict: safe | suspicious | dangerous | unreachable)."),
     Metric("ai_detector.verdict", scope=SCOPE_GLOBAL, dimensions=("kind", "source"),
            doc="The AI image detector reached a verdict (kind: ai_full | "

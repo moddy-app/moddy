@@ -23,6 +23,9 @@
     "Save Message": {
       "name": "Mesajı kaydet"
     },
+    "Get Emojis": {
+      "name": "Emojileri al"
+    },
     "Translate": {
       "name": "Çevir"
     },
@@ -31,9 +34,6 @@
     },
     "Transcribe": {
       "name": "Yazıya dök"
-    },
-    "Check links": {
-      "name": "Bağlantıları kontrol et"
     }
   },
   "commands": {

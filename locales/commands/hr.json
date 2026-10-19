@@ -23,6 +23,9 @@
     "Save Message": {
       "name": "Spremi poruku"
     },
+    "Get Emojis": {
+      "name": "Dohvati emoji"
+    },
     "Translate": {
       "name": "Prevedi"
     },
@@ -31,9 +34,6 @@
     },
     "Transcribe": {
       "name": "Transkribiraj"
-    },
-    "Check links": {
-      "name": "Provjeri poveznice"
     }
   },
   "commands": {

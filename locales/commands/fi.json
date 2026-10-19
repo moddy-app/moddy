@@ -23,6 +23,9 @@
     "Save Message": {
       "name": "Tallenna viesti"
     },
+    "Get Emojis": {
+      "name": "Hae emojit"
+    },
     "Translate": {
       "name": "Käännä"
     },
@@ -31,9 +34,6 @@
     },
     "Transcribe": {
       "name": "Litteroi"
-    },
-    "Check links": {
-      "name": "Tarkista linkit"
     }
   },
   "commands": {

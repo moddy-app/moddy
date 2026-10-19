@@ -6298,7 +6298,6 @@
     },
     "linkcheck": {
       "title": "Verificação de link",
-      "multi_title": "Links desta mensagem",
       "following": "Seguindo os redirecionamentos…",
       "verdict": {
         "safe": "Nenhuma ameaça detectada",
@@ -6371,14 +6370,10 @@
         "shortener": "O link passa por um encurtador",
         "many_redirects": "{count} redirecionamentos seguidos"
       },
-      "multi_redirects": "{count} redirecionamento(s) a partir de {host}",
-      "multi_skipped": "{count} link(s) não examinado(s).",
-      "multi_hint": "Envie um só link para /link-check para a verificação completa: redirecionamentos, análise e captura.",
       "errors": {
         "empty": "Digite um link para verificar.",
         "invalid_url": "Este não é um link web válido.",
-        "unsupported_scheme": "Só links http e https podem ser verificados.",
-        "no_links": "Não encontrei nenhum link verificável nesta mensagem."
+        "unsupported_scheme": "Só links http e https podem ser verificados."
       },
       "error_title": "Verificação do link impossível"
     },

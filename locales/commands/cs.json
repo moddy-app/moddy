@@ -23,6 +23,9 @@
     "Save Message": {
       "name": "Uložit zprávu"
     },
+    "Get Emojis": {
+      "name": "Získat emoji"
+    },
     "Translate": {
       "name": "Přeložit"
     },
@@ -31,9 +34,6 @@
     },
     "Transcribe": {
       "name": "Přepsat do textu"
-    },
-    "Check links": {
-      "name": "Zkontrolovat odkazy"
     }
   },
   "commands": {

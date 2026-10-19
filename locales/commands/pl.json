@@ -23,6 +23,9 @@
     "Save Message": {
       "name": "Zapisz wiadomość"
     },
+    "Get Emojis": {
+      "name": "Pobierz emoji"
+    },
     "Translate": {
       "name": "Przetłumacz"
     },
@@ -31,9 +34,6 @@
     },
     "Transcribe": {
       "name": "Transkrybuj"
-    },
-    "Check links": {
-      "name": "Sprawdź linki"
     }
   },
   "commands": {

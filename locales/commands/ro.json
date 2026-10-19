@@ -23,6 +23,9 @@
     "Save Message": {
       "name": "Salvează mesajul"
     },
+    "Get Emojis": {
+      "name": "Obține emoji"
+    },
     "Translate": {
       "name": "Tradu"
     },
@@ -31,9 +34,6 @@
     },
     "Transcribe": {
       "name": "Transcrie"
-    },
-    "Check links": {
-      "name": "Verifică linkurile"
     }
   },
   "commands": {

@@ -23,6 +23,9 @@
     "Save Message": {
       "name": "儲存訊息"
     },
+    "Get Emojis": {
+      "name": "取得表情符號"
+    },
     "Translate": {
       "name": "翻譯"
     },
@@ -31,9 +34,6 @@
     },
     "Transcribe": {
       "name": "轉錄文字"
-    },
-    "Check links": {
-      "name": "檢查連結"
     }
   },
   "commands": {

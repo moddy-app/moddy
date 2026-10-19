@@ -23,6 +23,9 @@
     "Save Message": {
       "name": "Simpan pesan"
     },
+    "Get Emojis": {
+      "name": "Ambil emoji"
+    },
     "Translate": {
       "name": "Terjemahkan"
     },
@@ -31,9 +34,6 @@
     },
     "Transcribe": {
       "name": "Transkripsikan"
-    },
-    "Check links": {
-      "name": "Periksa tautan"
     }
   },
   "commands": {

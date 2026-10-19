@@ -1,4 +1,4 @@
-"""Domain and link tools: /whois /dns /ssl /subdomains /link-check + "Check links" menu.
+"""Domain and link tools: /whois /dns /ssl /subdomains /link-check.
 
 Pure logic (tools/domain, tools/linkcheck), the network service with a fake
 transport, the cards (walked through ``view.walk_children()``), the persistent
@@ -753,16 +753,6 @@ def test_link_card_without_providers_and_with_errors():
     assert "Could not be reached" in joined(card) and accent(card) == tc.ACCENT_NEUTRAL
 
 
-def test_links_summary_card():
-    a = link_target()
-    b = link_target(url="https://example.com/", final="https://example.com/", hops=1)
-    card = views.build_links_card([(a, svc.VtOutcome("ok", lc.VtResult(malicious=9), "x")), (b, None)],
-                                  "en-US", skipped=2)
-    body = joined(card)
-    assert "evil.test/login" in body and "example.com" in body and "2 link(s) not examined" in body
-    assert accent(card) == tc.ACCENT_ERROR
-
-
 @pytest.mark.parametrize("days, expected", [(1, "1 day"), (20, "20 days"), (90, "3 months"), (800, "2 years")])
 def test_age_label(days, expected):
     assert views.age_label(days, "en-US") == expected
@@ -848,8 +838,7 @@ def test_every_dynamic_key_used_by_the_code_exists():
     need |= {"whois.errors.not_registered", "whois.errors.no_rdap", "dns.errors.nxdomain",
              "ssl.errors.bad_port", "ssl.errors.dns_failed", "ssl.errors.tls_failed", "ssl.errors.unreachable",
              "subdomains.errors.crtsh_down", "subdomains.errors.too_large",
-             "linkcheck.errors.empty", "linkcheck.errors.invalid_url", "linkcheck.errors.unsupported_scheme",
-             "linkcheck.errors.no_links"}
+             "linkcheck.errors.empty", "linkcheck.errors.invalid_url", "linkcheck.errors.unsupported_scheme"}
     missing = sorted(k for k in need if k not in en)
     assert not missing, missing
 
@@ -882,15 +871,6 @@ def test_prepare_link_input():
     assert exc3.value.tool == "linkcheck" and exc3.value.code == "unsupported_scheme"
     assert _port_in("example.com:8443") == 8443 and _port_in("example.com:22") == 443
     assert _port_in("https://example.com") == 443
-
-
-def test_message_links_reads_content_and_embeds():
-    from cogs.tools_web import ToolsWeb
-
-    message = types.SimpleNamespace(content="look https://a.test/x and www.b.test",
-                                    embeds=[types.SimpleNamespace(url="https://c.test/")])
-    assert ToolsWeb.message_links(message) == ["https://a.test/x", "https://www.b.test", "https://c.test/"]
-    assert ToolsWeb.message_links(types.SimpleNamespace(content="nothing", embeds=[])) == []
 
 
 def test_rate_limit_per_member():

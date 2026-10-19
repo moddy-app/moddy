@@ -54,7 +54,7 @@ moddy/
 │   ├── ai_detector.py         #   /ai-check (C2PA + generation metadata, image or message link)
 │   ├── tools_text.py          #   /define, /tldr, /regex, /diff, /textstats (docs/features/TOOLS_TEXT.md)
 │   ├── tools_security.py      #   /pwned, /password, /uuid, /hash, /jwt, /color
-│   ├── tools_web.py           #   /whois, /dns, /ssl, /subdomains, /link-check + "Check links" menu
+│   ├── tools_web.py           #   /whois, /dns, /ssl, /subdomains, /link-check
 │   ├── tools_lookup.py        #   /status, /company, /username
 │   ├── tools_media.py         #   /image (resize, compress, convert, remove background), /convert
 │   ├── tools_inspect.py       #   /sauce (SauceNAO + trace.moe; no menu: the 5 message menus are taken)
@@ -761,7 +761,7 @@ Prefix-based commands triggered by mentioning the bot:
   - Must have `@app_commands.guild_only()`
 - Sync happens in 2 phases: `setup_hook()` (global) → `on_ready()` (per-guild)
 - **Message context menus: Discord allows 5 per app, and all 5 are taken**
-  (`Save Message`, `Translate`, `AI text tools`, `Transcribe`, `Check links`). A sixth
+  (`Save Message`, `Get Emojis`, `Translate`, `AI text tools`, `Transcribe`). A sixth
   makes the extension that registers it fail at startup (`CommandLimitReached`).
   A new tool gets a slash command, or is merged into an existing menu.
   `tests/test_context_menu_limit.py` guards it.

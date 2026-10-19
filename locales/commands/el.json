@@ -23,6 +23,9 @@
     "Save Message": {
       "name": "Αποθήκευση μηνύματος"
     },
+    "Get Emojis": {
+      "name": "Λήψη emoji"
+    },
     "Translate": {
       "name": "Μετάφραση"
     },
@@ -31,9 +34,6 @@
     },
     "Transcribe": {
       "name": "Μεταγραφή"
-    },
-    "Check links": {
-      "name": "Έλεγχος συνδέσμων"
     }
   },
   "commands": {

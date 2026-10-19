@@ -6383,7 +6383,6 @@
     },
     "linkcheck": {
       "title": "Vérification de lien",
-      "multi_title": "Liens de ce message",
       "following": "Suivi des redirections…",
       "verdict": {
         "safe": "Aucune menace détectée",
@@ -6456,14 +6455,10 @@
         "shortener": "Le lien passe par un raccourcisseur",
         "many_redirects": "{count} redirections à la suite"
       },
-      "multi_redirects": "{count} redirection(s) depuis {host}",
-      "multi_skipped": "{count} lien(s) non examiné(s).",
-      "multi_hint": "Envoie un seul lien à /link-check pour la vérification complète : redirections, analyse et capture.",
       "errors": {
         "empty": "Tape un lien à vérifier.",
         "invalid_url": "Ce n'est pas un lien web valide.",
-        "unsupported_scheme": "Seuls les liens http et https peuvent être vérifiés.",
-        "no_links": "Je n'ai trouvé aucun lien vérifiable dans ce message."
+        "unsupported_scheme": "Seuls les liens http et https peuvent être vérifiés."
       },
       "error_title": "Vérification du lien impossible"
     },

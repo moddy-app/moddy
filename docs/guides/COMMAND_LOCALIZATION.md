@@ -111,7 +111,7 @@ Règles de résolution :
   `incognito` une seule fois par langue, tout en gardant une description
   spécifique là où c'est utile (`avatar.user` ≠ `ban.user`).
 - **Menus contextuels** : section `context_menus`, clé = nom anglais exact
-  (`"Save Message"`, `"Translate"`, `"AI text tools"`, `"Transcribe"`, `"Check links"`).
+  (`"Save Message"`, `"Get Emojis"`, `"Translate"`, `"AI text tools"`, `"Transcribe"`).
   Discord allows 5 message menus per app and they are all taken:
   `tests/test_context_menu_limit.py` fails when a sixth one is declared.
 - **Choix** (`app_commands.Choice`) : section `choices`, clé = *valeur* du choix.

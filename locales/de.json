@@ -6298,7 +6298,6 @@
     },
     "linkcheck": {
       "title": "Link-Prüfung",
-      "multi_title": "Links in dieser Nachricht",
       "following": "Weiterleitungen werden verfolgt …",
       "verdict": {
         "safe": "Keine Bedrohung erkannt",
@@ -6371,14 +6370,10 @@
         "shortener": "Der Link läuft über einen Kurzlink-Dienst",
         "many_redirects": "{count} Weiterleitungen hintereinander"
       },
-      "multi_redirects": "{count} Weiterleitung(en) ab {host}",
-      "multi_skipped": "{count} Link(s) nicht geprüft.",
-      "multi_hint": "Schick einen einzelnen Link an /link-check für die vollständige Prüfung: Weiterleitungen, Scan und Screenshot.",
       "errors": {
         "empty": "Gib einen Link zum Prüfen ein.",
         "invalid_url": "Das ist kein gültiger Weblink.",
-        "unsupported_scheme": "Nur http- und https-Links lassen sich prüfen.",
-        "no_links": "Ich habe in dieser Nachricht keinen prüfbaren Link gefunden."
+        "unsupported_scheme": "Nur http- und https-Links lassen sich prüfen."
       },
       "error_title": "Link-Prüfung nicht möglich"
     },

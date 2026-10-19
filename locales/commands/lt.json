@@ -23,6 +23,9 @@
     "Save Message": {
       "name": "Išsaugoti žinutę"
     },
+    "Get Emojis": {
+      "name": "Gauti jaustukus"
+    },
     "Translate": {
       "name": "Versti"
     },
@@ -31,9 +34,6 @@
     },
     "Transcribe": {
       "name": "Transkribuoti"
-    },
-    "Check links": {
-      "name": "Patikrinti nuorodas"
     }
   },
   "commands": {

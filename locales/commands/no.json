@@ -23,6 +23,9 @@
     "Save Message": {
       "name": "Lagre melding"
     },
+    "Get Emojis": {
+      "name": "Hent emojier"
+    },
     "Translate": {
       "name": "Oversett"
     },
@@ -31,9 +34,6 @@
     },
     "Transcribe": {
       "name": "Transkriber"
-    },
-    "Check links": {
-      "name": "Sjekk lenker"
     }
   },
   "commands": {

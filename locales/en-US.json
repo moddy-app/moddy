@@ -6384,7 +6384,6 @@
     },
     "linkcheck": {
       "title": "Link check",
-      "multi_title": "Links in this message",
       "following": "Following the redirects…",
       "verdict": {
         "safe": "No threat detected",
@@ -6457,14 +6456,10 @@
         "shortener": "The link goes through a link shortener",
         "many_redirects": "{count} redirects in a row"
       },
-      "multi_redirects": "{count} redirect(s) from {host}",
-      "multi_skipped": "{count} link(s) not examined.",
-      "multi_hint": "Send one link to /link-check for the full check: redirects, scan and screenshot.",
       "errors": {
         "empty": "Type a link to check.",
         "invalid_url": "This is not a valid web link.",
-        "unsupported_scheme": "Only http and https links can be checked.",
-        "no_links": "I found no link I can check in this message."
+        "unsupported_scheme": "Only http and https links can be checked."
       },
       "error_title": "Link check failed"
     },

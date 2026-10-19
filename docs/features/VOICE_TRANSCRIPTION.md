@@ -105,10 +105,10 @@ message-driven module.
 
 ## The context menu
 
-`Transcribe` is one of the **five** message context menus Discord allows — the
-five are `Save Message`, `Translate`, `AI text tools`, `Transcribe` and
-`Check links` (`Get Emojis` and `Find source` were dropped to make room: `/emoji`
-now takes several emojis, `/sauce` takes a message link). A sixth one
+`Transcribe` is the **fifth and last** message context menu Discord allows
+(with `Save Message`, `Get Emojis`, `Translate`, `AI text tools`). `Find source` and
+`Check links` were dropped for that reason: `/sauce` takes a message link and
+`/link-check` a link. A sixth one
 means merging two of them, as `AI text tools` already does for `/fix`,
 `/rephrase` and `/summarize` — and as `Transcribe` itself does for images: on a
 message with an image and no audio it extracts the text instead (OCR, see

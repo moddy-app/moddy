@@ -1,6 +1,6 @@
 """
 Network side of the domain and link tools: ``/whois``, ``/dns``, ``/ssl``,
-``/subdomains``, ``/link-check`` and the "Check links" menu.
+``/subdomains`` and ``/link-check``.
 
 The pure logic (parsing, verdicts) lives in ``tools/domain/`` and
 ``tools/linkcheck.py``; the cards live in ``utils/tools_web_views.py``. This

@@ -23,6 +23,9 @@
     "Save Message": {
       "name": "संदेश सहेजें"
     },
+    "Get Emojis": {
+      "name": "इमोजी प्राप्त करें"
+    },
     "Translate": {
       "name": "अनुवाद करें"
     },
@@ -31,9 +34,6 @@
     },
     "Transcribe": {
       "name": "प्रतिलेखन करें"
-    },
-    "Check links": {
-      "name": "लिंक जांचें"
     }
   },
   "commands": {

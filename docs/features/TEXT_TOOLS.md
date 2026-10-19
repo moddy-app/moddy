@@ -43,7 +43,7 @@ value client-side, so there is no server-side length check.
 ### One context menu for three tools
 
 Discord caps **message context menus at 5 globally**, and the bot already ships
-three (`Save Message`, `Translate`, `Transcribe`). Shipping one menu per tool
+three (`Save Message`, `Get Emojis`, `Translate`). Shipping one menu per tool
 overflows the limit and makes cog loading fail with
 `CommandLimitReached: maximum number of message context menu commands exceeded 5`.
 

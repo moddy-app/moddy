@@ -12,7 +12,7 @@
 | **Transcribe** message context menu, on a message with an image and no audio | everywhere | public card (like a voice transcription), in the server language |
 
 Discord caps apps at **five** message context menus and all five are taken
-(`Save Message`, `Translate`, `AI text tools`, `Transcribe`, `Check links`), so
+(`Save Message`, `Get Emojis`, `Translate`, `AI text tools`, `Transcribe`), so
 `Transcribe` covers images too instead of a sixth "OCR" menu. Audio always wins
 when a message carries both.
 

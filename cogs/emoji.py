@@ -7,7 +7,7 @@ import discord
 from config import COLORS
 from discord import app_commands, ui
 from cogs.error_handler import BaseView
-from utils.errors import NotYours
+from utils.errors import NotFound, NotYours
 from discord.ext import commands
 from typing import Optional
 import re
@@ -225,6 +225,33 @@ class Emoji(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+        # Create and add context menu command
+        self.emoji_context_menu = app_commands.ContextMenu(
+            name="Get Emojis",
+            callback=self.emoji_context_menu_callback
+        )
+        self.bot.tree.add_command(self.emoji_context_menu)
+
+    @staticmethod
+    def extract_emoji_info(emoji_str: str) -> Optional[tuple[str, str, bool]]:
+        """
+        Extracts emoji ID, name, and whether it's animated from emoji string
+
+        Returns:
+            tuple[emoji_id, emoji_name, is_animated_format] or None if invalid
+        """
+        # Match custom Discord emoji format: <:name:id> or <a:name:id>
+        pattern = r'<(a)?:([^:]+):(\d+)>'
+        match = re.match(pattern, emoji_str)
+
+        if match:
+            is_animated_format = bool(match.group(1))  # 'a' prefix for animated
+            emoji_name = match.group(2)
+            emoji_id = match.group(3)
+            return emoji_id, emoji_name, is_animated_format
+
+        return None
+
     @staticmethod
     def extract_all_emojis(text: str) -> list[tuple[str, str, bool]]:
         """
@@ -263,6 +290,49 @@ class Emoji(commands.Cog):
         # Convert to seconds
         return int(timestamp_ms / 1000)
 
+    async def emoji_context_menu_callback(self, interaction: discord.Interaction, message: discord.Message):
+        """Context menu command callback to extract and display emojis from a message"""
+        # Get the user's locale
+        locale = i18n.get_user_locale(interaction)
+
+        # Extract all emojis from the message
+        emoji_list = self.extract_all_emojis(message.content)
+
+        # Check if any emojis were found
+        if not emoji_list:
+            raise NotFound(description=i18n.get("commands.emoji.context_menu.no_emojis", locale=locale))
+
+        # Send loading message
+        loading_msg = i18n.get("commands.emoji.context_menu.loading", locale=locale, count=len(emoji_list))
+        await interaction.response.send_message(loading_msg, ephemeral=True)
+
+        # Process all emojis
+        emoji_data_list = []
+        for emoji_id, emoji_name, is_animated_format in emoji_list:
+            # Get creation timestamp from snowflake
+            created_timestamp = self.snowflake_to_timestamp(emoji_id)
+
+            # Build emoji data — the "a:" prefix in the emoji's raw format
+            # already reflects its real animation state (Discord encodes it
+            # correctly when the message was written), so trust it directly
+            # instead of probing the CDN.
+            emoji_data = {
+                "id": emoji_id,
+                "name": emoji_name,
+                "animated": is_animated_format,
+                "created_at": created_timestamp
+            }
+            emoji_data_list.append(emoji_data)
+
+        # Create the navigation view with all emojis
+        view = EmojiNavigationView(emoji_data_list, locale, self.bot, interaction.user)
+
+        # Send response with Components V2
+        await interaction.edit_original_response(
+            content=None,
+            view=view
+        )
+
     @app_commands.command(
         name="emoji",
         description="Display information about a Discord emoji"
@@ -291,38 +361,42 @@ class Emoji(commands.Cog):
         loading_msg = i18n.get("commands.emoji.loading", locale=locale)
         await interaction.response.send_message(loading_msg, ephemeral=ephemeral)
 
-        # Every custom emoji of the input: a single one, or the whole text of a message
-        emoji_list = self.extract_all_emojis(emoji)
+        # Try to extract emoji info
+        emoji_info = self.extract_emoji_info(emoji)
 
-        if not emoji_list:
+        if not emoji_info:
             # Check if it's a default Unicode emoji (no custom format)
             # Unicode emojis don't have the <:name:id> format
             error_msg = i18n.get("commands.emoji.errors.default_emoji", locale=locale, emoji=emoji)
             await interaction.edit_original_response(content=error_msg)
             return
 
+        emoji_id, emoji_name, is_animated_format = emoji_info
+
+        # Get creation timestamp from snowflake
+        created_timestamp = self.snowflake_to_timestamp(emoji_id)
+
         # Build emoji data — trust the "a:" prefix from the raw emoji format,
         # which already reflects the emoji's real animation state.
-        emoji_data_list = [
-            {
-                "id": emoji_id,
-                "name": emoji_name,
-                "animated": is_animated_format,
-                "created_at": self.snowflake_to_timestamp(emoji_id),
-            }
-            for emoji_id, emoji_name, is_animated_format in emoji_list
-        ]
+        emoji_data = {
+            "id": emoji_id,
+            "name": emoji_name,
+            "animated": is_animated_format,
+            "created_at": created_timestamp
+        }
 
-        if len(emoji_data_list) == 1:
-            view = EmojiView(emoji_data_list[0], locale, self.bot)
-        else:
-            view = EmojiNavigationView(emoji_data_list, locale, self.bot, interaction.user)
+        # Create the view with emoji data
+        view = EmojiView(emoji_data, locale, self.bot)
 
         # Send response with Components V2
         await interaction.edit_original_response(
             content=None,
             view=view
         )
+
+    async def cog_unload(self):
+        """Remove context menu when cog is unloaded"""
+        self.bot.tree.remove_command(self.emoji_context_menu.name, type=self.emoji_context_menu.type)
 
 
 async def setup(bot):

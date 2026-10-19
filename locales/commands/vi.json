@@ -23,6 +23,9 @@
     "Save Message": {
       "name": "Lưu tin nhắn"
     },
+    "Get Emojis": {
+      "name": "Lấy emoji"
+    },
     "Translate": {
       "name": "Dịch"
     },
@@ -31,9 +34,6 @@
     },
     "Transcribe": {
       "name": "Chuyển thành văn bản"
-    },
-    "Check links": {
-      "name": "Kiểm tra liên kết"
     }
   },
   "commands": {

@@ -13,10 +13,10 @@ A batch of fixes and removals on the utility tools after a first run in producti
   verb is gone from `tools.common.by.*` (5 locales) and from every card. A tool
   computed on Moddy now shows no source line; `requested by` stays.
 * **Startup error `CommandLimitReached` (5 message menus)**: the bot declared 7
-  message context menus. `Find source` (tools_inspect) is removed, and `Get Emojis`
-  too — `/emoji` now accepts several emojis in its text, so pasting a whole message
-  does what the menu did. Remaining menus: `Save Message`, `Translate`, `AI text
-  tools`, `Transcribe`, `Check links`. Loading the 12 affected cogs on a bare bot
+  message context menus. `Find source` (tools_inspect) and `Check links` (tools_web,
+  with its multi-link summary card) are removed; `/sauce` and `/link-check` stay as
+  slash commands. Remaining menus, the original five: `Save Message`, `Get Emojis`,
+  `Translate`, `AI text tools`, `Transcribe`. Loading the 12 affected cogs on a bare bot
   now succeeds. `tests/test_context_menu_limit.py` guards it (and checks every menu
   is localized in the 32 command locale files).
 * **`/diff`**: the word mode (struck-through / bold) is gone; the answer is only a
@@ -55,8 +55,9 @@ VOICE_TRANSCRIPTION, OCR, TEXT_TOOLS, COMMAND_LOCALIZATION, EMOJIS, CLAUDE.md).
 
 ## Decisions
 
-* Which two menus to give up: the two newest and least essential ones, keeping the
-  five documented as taken (see VOICE_TRANSCRIPTION.md). Easy to swap.
+* Which two menus to give up: the two newest ones (Find source, Check links), keeping
+  the five documented as taken (see VOICE_TRANSCRIPTION.md). `Get Emojis` was first
+  dropped then restored at the user's request.
 * No source line rather than a replacement wording for local tools.
 
 ## Known issues / follow-ups
