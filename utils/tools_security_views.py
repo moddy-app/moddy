@@ -400,7 +400,6 @@ class ToolsSecurityPersistence(BaseView):
 PERSISTENT_VIEWS: list = [ToolsSecurityPersistence]
 DYNAMIC_ITEM_CASES: list = [
     (PasswordRegenButton, ("strong", 20)),
-    (PasswordRegenButton, ("passphrase", 128)),
     (UuidRegenButton, ("v7", 10)),
     (ColorRandomButton, ()),
 ]
