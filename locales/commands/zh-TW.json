@@ -424,6 +424,36 @@
           "description": "此伺服器中包含該圖片的訊息連結"
         }
       }
+    },
+    "status": {
+      "name": "狀態",
+      "description": "檢查 Discord、GitHub 等服務是否正常運作",
+      "parameters": {
+        "service": {
+          "name": "服務",
+          "description": "要查看的服務（留空查看全部概覽）"
+        }
+      }
+    },
+    "company": {
+      "name": "公司",
+      "description": "依名稱、SIREN 或 SIRET 查詢法國公司",
+      "parameters": {
+        "search": {
+          "name": "搜尋",
+          "description": "公司名稱、SIREN（9 位）或 SIRET（14 位）"
+        }
+      }
+    },
+    "username": {
+      "name": "使用者名稱",
+      "description": "查找某個使用者名稱在數百個網站上的使用情況",
+      "parameters": {
+        "username": {
+          "name": "使用者名稱",
+          "description": "要查找的使用者名稱"
+        }
+      }
     }
   }
 }

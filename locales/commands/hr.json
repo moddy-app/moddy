@@ -424,6 +424,36 @@
           "description": "Poveznica na poruku s ovog poslužitelja sa slikom"
         }
       }
+    },
+    "status": {
+      "name": "status",
+      "description": "Provjerava rade li Discord, GitHub i druge usluge",
+      "parameters": {
+        "service": {
+          "name": "usluga",
+          "description": "Usluga za provjeru (prazno: pregled svih)"
+        }
+      }
+    },
+    "company": {
+      "name": "tvrtka",
+      "description": "Pronađi francusku tvrtku po nazivu, SIREN-u ili SIRET-u",
+      "parameters": {
+        "search": {
+          "name": "pretraga",
+          "description": "Naziv tvrtke, SIREN (9 znamenki) ili SIRET (14 znamenki)"
+        }
+      }
+    },
+    "username": {
+      "name": "korisničko-ime",
+      "description": "Pronađi gdje se korisničko ime koristi na stotinama stranica",
+      "parameters": {
+        "username": {
+          "name": "korisničko-ime",
+          "description": "Korisničko ime koje tražiš"
+        }
+      }
     }
   }
 }

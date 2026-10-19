@@ -424,6 +424,36 @@
           "description": "Hivatkozás a szerver egy képet tartalmazó üzenetére"
         }
       }
+    },
+    "status": {
+      "name": "állapot",
+      "description": "Ellenőrzi, működik-e a Discord, a GitHub és más szolgáltatás",
+      "parameters": {
+        "service": {
+          "name": "szolgáltatás",
+          "description": "Egy szolgáltatás (üresen: mindegyik áttekintése)"
+        }
+      }
+    },
+    "company": {
+      "name": "cég",
+      "description": "Francia cég keresése név, SIREN vagy SIRET alapján",
+      "parameters": {
+        "search": {
+          "name": "keresés",
+          "description": "Cégnév, SIREN (9 számjegy) vagy SIRET (14 számjegy)"
+        }
+      }
+    },
+    "username": {
+      "name": "felhasználónév",
+      "description": "Megkeresi, hol használnak egy felhasználónevet több száz oldalon",
+      "parameters": {
+        "username": {
+          "name": "felhasználónév",
+          "description": "A keresett felhasználónév"
+        }
+      }
     }
   }
 }

@@ -424,6 +424,36 @@
           "description": "Link de uma mensagem deste servidor com a imagem"
         }
       }
+    },
+    "status": {
+      "name": "status",
+      "description": "Verifica se o Discord, o GitHub e outros serviços estão no ar",
+      "parameters": {
+        "service": {
+          "name": "servico",
+          "description": "Um serviço a consultar (vazio para ver todos)"
+        }
+      }
+    },
+    "company": {
+      "name": "empresa",
+      "description": "Busca uma empresa francesa por nome, SIREN ou SIRET",
+      "parameters": {
+        "search": {
+          "name": "busca",
+          "description": "Um nome de empresa, um SIREN (9 dígitos) ou um SIRET (14 dígitos)"
+        }
+      }
+    },
+    "username": {
+      "name": "nome-de-usuario",
+      "description": "Descobre onde um nome de usuário é usado em centenas de sites",
+      "parameters": {
+        "username": {
+          "name": "nome-de-usuario",
+          "description": "O nome de usuário a procurar"
+        }
+      }
     }
   }
 }

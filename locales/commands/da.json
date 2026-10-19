@@ -424,6 +424,36 @@
           "description": "Link til en besked på denne server med billedet"
         }
       }
+    },
+    "status": {
+      "name": "status",
+      "description": "Tjek om Discord, GitHub og andre tjenester kører",
+      "parameters": {
+        "service": {
+          "name": "tjeneste",
+          "description": "En tjeneste at se på (tom: overblik over alle)"
+        }
+      }
+    },
+    "company": {
+      "name": "virksomhed",
+      "description": "Slå en fransk virksomhed op på navn, SIREN eller SIRET",
+      "parameters": {
+        "search": {
+          "name": "søgning",
+          "description": "Et firmanavn, et SIREN (9 cifre) eller et SIRET (14 cifre)"
+        }
+      }
+    },
+    "username": {
+      "name": "brugernavn",
+      "description": "Find ud af, hvor et brugernavn bruges på hundredvis af sider",
+      "parameters": {
+        "username": {
+          "name": "brugernavn",
+          "description": "Brugernavnet der skal søges efter"
+        }
+      }
     }
   }
 }

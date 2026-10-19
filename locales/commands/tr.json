@@ -424,6 +424,36 @@
           "description": "Bu sunucudaki görseli içeren mesajın bağlantısı"
         }
       }
+    },
+    "status": {
+      "name": "durum",
+      "description": "Discord, GitHub ve diğer hizmetlerin çalışıp çalışmadığını kontrol eder",
+      "parameters": {
+        "service": {
+          "name": "hizmet",
+          "description": "Bakılacak hizmet (boş: hepsinin özeti)"
+        }
+      }
+    },
+    "company": {
+      "name": "şirket",
+      "description": "Fransız şirketini ad, SIREN veya SIRET ile arar",
+      "parameters": {
+        "search": {
+          "name": "arama",
+          "description": "Şirket adı, SIREN (9 hane) veya SIRET (14 hane)"
+        }
+      }
+    },
+    "username": {
+      "name": "kullanıcı-adı",
+      "description": "Bir kullanıcı adının yüzlerce sitede nerede kullanıldığını bulur",
+      "parameters": {
+        "username": {
+          "name": "kullanıcı-adı",
+          "description": "Aranacak kullanıcı adı"
+        }
+      }
     }
   }
 }

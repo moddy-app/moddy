@@ -424,6 +424,36 @@
           "description": "画像を含むこのサーバーのメッセージのリンク"
         }
       }
+    },
+    "status": {
+      "name": "ステータス",
+      "description": "Discord、GitHubなどのサービスが稼働中か確認します",
+      "parameters": {
+        "service": {
+          "name": "サービス",
+          "description": "確認するサービス（空欄ですべての概要）"
+        }
+      }
+    },
+    "company": {
+      "name": "企業",
+      "description": "フランスの企業を名前、SIREN、SIRETで検索します",
+      "parameters": {
+        "search": {
+          "name": "検索",
+          "description": "企業名、SIREN（9桁）、またはSIRET（14桁）"
+        }
+      }
+    },
+    "username": {
+      "name": "ユーザー名",
+      "description": "何百ものサイトでユーザー名が使われている場所を探します",
+      "parameters": {
+        "username": {
+          "name": "ユーザー名",
+          "description": "探すユーザー名"
+        }
+      }
     }
   }
 }

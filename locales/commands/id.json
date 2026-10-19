@@ -424,6 +424,36 @@
           "description": "Tautan pesan dari server ini yang berisi gambar"
         }
       }
+    },
+    "status": {
+      "name": "status",
+      "description": "Periksa apakah Discord, GitHub, dan layanan lain berjalan",
+      "parameters": {
+        "service": {
+          "name": "layanan",
+          "description": "Layanan yang dicek (kosong: ringkasan semuanya)"
+        }
+      }
+    },
+    "company": {
+      "name": "perusahaan",
+      "description": "Cari perusahaan Prancis dengan nama, SIREN, atau SIRET",
+      "parameters": {
+        "search": {
+          "name": "pencarian",
+          "description": "Nama perusahaan, SIREN (9 digit), atau SIRET (14 digit)"
+        }
+      }
+    },
+    "username": {
+      "name": "nama-pengguna",
+      "description": "Temukan di mana sebuah nama pengguna dipakai di ratusan situs",
+      "parameters": {
+        "username": {
+          "name": "nama-pengguna",
+          "description": "Nama pengguna yang dicari"
+        }
+      }
     }
   }
 }

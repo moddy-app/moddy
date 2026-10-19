@@ -424,6 +424,36 @@
           "description": "此服务器中包含该图片的消息链接"
         }
       }
+    },
+    "status": {
+      "name": "状态",
+      "description": "检查 Discord、GitHub 等服务是否正常运行",
+      "parameters": {
+        "service": {
+          "name": "服务",
+          "description": "要查看的服务（留空查看全部概览）"
+        }
+      }
+    },
+    "company": {
+      "name": "公司",
+      "description": "按名称、SIREN 或 SIRET 查询法国公司",
+      "parameters": {
+        "search": {
+          "name": "搜索",
+          "description": "公司名称、SIREN（9 位）或 SIRET（14 位）"
+        }
+      }
+    },
+    "username": {
+      "name": "用户名",
+      "description": "查找某个用户名在数百个网站上的使用情况",
+      "parameters": {
+        "username": {
+          "name": "用户名",
+          "description": "要查找的用户名"
+        }
+      }
     }
   }
 }

@@ -424,6 +424,36 @@
           "description": "इस सर्वर के उस संदेश का लिंक जिसमें छवि है"
         }
       }
+    },
+    "status": {
+      "name": "स्थिति",
+      "description": "जाँचें कि Discord, GitHub और अन्य सेवाएँ चल रही हैं या नहीं",
+      "parameters": {
+        "service": {
+          "name": "सेवा",
+          "description": "देखने के लिए एक सेवा (खाली: सभी का अवलोकन)"
+        }
+      }
+    },
+    "company": {
+      "name": "कंपनी",
+      "description": "नाम, SIREN या SIRET से फ्रांसीसी कंपनी खोजें",
+      "parameters": {
+        "search": {
+          "name": "खोज",
+          "description": "कंपनी का नाम, SIREN (9 अंक) या SIRET (14 अंक)"
+        }
+      }
+    },
+    "username": {
+      "name": "यूज़रनेम",
+      "description": "सैकड़ों साइटों पर यूज़रनेम कहाँ इस्तेमाल हुआ है, पता करें",
+      "parameters": {
+        "username": {
+          "name": "यूज़रनेम",
+          "description": "खोजने के लिए यूज़रनेम"
+        }
+      }
     }
   }
 }

@@ -424,6 +424,36 @@
           "description": "Link zu einer Nachricht dieses Servers mit dem Bild"
         }
       }
+    },
+    "status": {
+      "name": "status",
+      "description": "Prüft, ob Discord, GitHub und andere Dienste erreichbar sind",
+      "parameters": {
+        "service": {
+          "name": "dienst",
+          "description": "Ein Dienst (leer lassen für die Übersicht aller Dienste)"
+        }
+      }
+    },
+    "company": {
+      "name": "unternehmen",
+      "description": "Sucht ein französisches Unternehmen per Name, SIREN oder SIRET",
+      "parameters": {
+        "search": {
+          "name": "suche",
+          "description": "Ein Firmenname, eine SIREN (9 Ziffern) oder SIRET (14 Ziffern)"
+        }
+      }
+    },
+    "username": {
+      "name": "benutzername",
+      "description": "Findet, wo ein Benutzername auf Hunderten von Seiten genutzt wird",
+      "parameters": {
+        "username": {
+          "name": "benutzername",
+          "description": "Der gesuchte Benutzername"
+        }
+      }
     }
   }
 }

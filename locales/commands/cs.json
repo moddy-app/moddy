@@ -424,6 +424,36 @@
           "description": "Odkaz na zprávu z tohoto serveru s obrázkem"
         }
       }
+    },
+    "status": {
+      "name": "stav",
+      "description": "Zjistí, zda běží Discord, GitHub a další služby",
+      "parameters": {
+        "service": {
+          "name": "služba",
+          "description": "Služba ke kontrole (prázdné: přehled všech)"
+        }
+      }
+    },
+    "company": {
+      "name": "firma",
+      "description": "Vyhledá francouzskou firmu podle názvu, SIREN nebo SIRET",
+      "parameters": {
+        "search": {
+          "name": "hledání",
+          "description": "Název firmy, SIREN (9 číslic) nebo SIRET (14 číslic)"
+        }
+      }
+    },
+    "username": {
+      "name": "přezdívka",
+      "description": "Zjistí, kde se přezdívka používá na stovkách webů",
+      "parameters": {
+        "username": {
+          "name": "přezdívka",
+          "description": "Hledaná přezdívka"
+        }
+      }
     }
   }
 }

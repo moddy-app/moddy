@@ -424,6 +424,36 @@
           "description": "Ссылка на сообщение этого сервера с изображением"
         }
       }
+    },
+    "status": {
+      "name": "статус",
+      "description": "Проверяет, работают ли Discord, GitHub и другие сервисы",
+      "parameters": {
+        "service": {
+          "name": "сервис",
+          "description": "Сервис для проверки (пусто: обзор всех)"
+        }
+      }
+    },
+    "company": {
+      "name": "компания",
+      "description": "Ищет французскую компанию по названию, SIREN или SIRET",
+      "parameters": {
+        "search": {
+          "name": "поиск",
+          "description": "Название компании, SIREN (9 цифр) или SIRET (14 цифр)"
+        }
+      }
+    },
+    "username": {
+      "name": "никнейм",
+      "description": "Находит, где используется никнейм на сотнях сайтов",
+      "parameters": {
+        "username": {
+          "name": "никнейм",
+          "description": "Никнейм для поиска"
+        }
+      }
     }
   }
 }

@@ -424,6 +424,36 @@
           "description": "Liên kết tới tin nhắn trên máy chủ này có hình ảnh"
         }
       }
+    },
+    "status": {
+      "name": "trạng-thái",
+      "description": "Kiểm tra Discord, GitHub và các dịch vụ khác có đang hoạt động không",
+      "parameters": {
+        "service": {
+          "name": "dịch-vụ",
+          "description": "Dịch vụ cần xem (để trống: tổng quan tất cả)"
+        }
+      }
+    },
+    "company": {
+      "name": "công-ty",
+      "description": "Tra cứu công ty Pháp theo tên, SIREN hoặc SIRET",
+      "parameters": {
+        "search": {
+          "name": "tìm-kiếm",
+          "description": "Tên công ty, SIREN (9 chữ số) hoặc SIRET (14 chữ số)"
+        }
+      }
+    },
+    "username": {
+      "name": "tên-người-dùng",
+      "description": "Tìm nơi một tên người dùng được dùng trên hàng trăm trang",
+      "parameters": {
+        "username": {
+          "name": "tên-người-dùng",
+          "description": "Tên người dùng cần tìm"
+        }
+      }
     }
   }
 }
