@@ -424,6 +424,87 @@
           "description": "Hivatkozás a szerver egy képet tartalmazó üzenetére"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "Ellenőrzi, hogy egy jelszó szerepelt-e adatszivárgásban"
+    },
+    "password": {
+      "name": "jelszó",
+      "description": "Biztonságos véletlen jelszót vagy jelmondatot készít",
+      "parameters": {
+        "length": {
+          "name": "hossz",
+          "description": "Hossz (8-128); jelmondat: kb. 1 szó 4 karakterenként"
+        },
+        "type": {
+          "name": "típus",
+          "description": "A jelszó fajtája (alapértelmezett: erős)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "Véletlen UUID-ket készít (v4 vagy v7)",
+      "parameters": {
+        "version": {
+          "name": "verzió",
+          "description": "UUID-verzió (alapértelmezett: v4)"
+        },
+        "count": {
+          "name": "darab",
+          "description": "Hányat készítsen (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "Kiszámítja egy szöveg vagy fájl MD5, SHA-1, SHA-256 és SHA-512 értékét",
+      "parameters": {
+        "text": {
+          "name": "szöveg",
+          "description": "Hashelendő szöveg (hagyd üresen a szöveget és a fájlt az űrlaphoz)"
+        },
+        "file": {
+          "name": "fájl",
+          "description": "Hashelendő fájl (legfeljebb 25 MB)"
+        },
+        "compare": {
+          "name": "összehasonlítás",
+          "description": "Ismert hash az összehasonlításhoz"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "Dekódol egy JSON Web Tokent (fejléc és tartalom)"
+    },
+    "color": {
+      "name": "szín",
+      "description": "Átvált egy színt, és ellenőrzi a kontrasztját",
+      "parameters": {
+        "color": {
+          "name": "szín",
+          "description": "HEX, rgb(), hsl(), CSS-név, Discord-szám vagy random"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "Erős"
+    },
+    "clear": {
+      "name": "Félreérthető karakterek nélkül"
+    },
+    "passphrase": {
+      "name": "Jelmondat"
+    },
+    "v4": {
+      "name": "v4 (véletlen)"
+    },
+    "v7": {
+      "name": "v7 (időrendi)"
     }
   }
 }

@@ -5653,6 +5653,118 @@
         "back": "Back"
       },
       "page": "Page {page}/{pages}"
+    },
+    "pwned": {
+      "title": "Password check",
+      "modal_title": "Check a password",
+      "modal_help": "Your password never leaves Moddy in clear text: only the first 5 characters of its SHA-1 fingerprint are sent to Have I Been Pwned (k-anonymity). Nothing is logged or stored.",
+      "input_label": "Password",
+      "found": "Found in data breaches",
+      "found_count": "Seen {count} times in known breaches.",
+      "found_advice": "Stop using it. Change it everywhere you reused it, and let a password manager create a new one, or try {command}.",
+      "not_found": "Not found in known breaches",
+      "not_found_note": "That does not make it strong: a short or guessable password can still be cracked. {command} can create a strong one.",
+      "open_site": "Passwords on Have I Been Pwned",
+      "errors": {
+        "unavailable": "Have I Been Pwned is not answering right now. Try again in a moment.",
+        "cooldown": "Too many checks in a row. Wait {retry} before the next one."
+      }
+    },
+    "password": {
+      "title": "Password generator",
+      "kinds": {
+        "strong": "Strong",
+        "clear": "No look-alikes",
+        "passphrase": "Passphrase"
+      },
+      "strength": {
+        "weak": "Weak",
+        "fair": "Fair",
+        "good": "Good",
+        "strong": "Strong",
+        "excellent": "Excellent"
+      },
+      "entropy": "{bar} **{label}** · {bits} of entropy",
+      "bits": "{n} bits",
+      "summary_chars": "{kind} · {length} characters",
+      "summary_words": "{kind} · {words} words",
+      "hint": "Copy it now and keep it in a password manager: Moddy stores nothing."
+    },
+    "uuid": {
+      "title": "UUID",
+      "version": {
+        "v4": "Version 4 · random",
+        "v7": "Version 7 · time-ordered, sortable"
+      }
+    },
+    "hash": {
+      "title": "Hashes",
+      "modal_title": "Hash a text or a file",
+      "modal_help": "Fill in a text or upload a file. Hashes are computed on the spot, nothing is stored.",
+      "text_label": "Text",
+      "text_placeholder": "Hashed exactly as typed",
+      "file_label": "File",
+      "file_description": "Up to 25 MB",
+      "compare_label": "Compare with (optional)",
+      "compare_placeholder": "Paste a known hash",
+      "subject": "Hashed",
+      "subject_text": "Text · {count} characters",
+      "subject_file": "{name} · {size}",
+      "utf8_note": "Text is hashed as UTF-8, exactly as typed (no trimming).",
+      "match": "Matches {algo}",
+      "no_match": "Matches none of these hashes",
+      "errors": {
+        "both": "Give either a text or a file, not both.",
+        "download_failed": "Moddy could not download that file. Upload it again."
+      }
+    },
+    "jwt": {
+      "title": "JWT decoder",
+      "modal_title": "Decode a JWT",
+      "modal_help": "Don't paste a token that is still valid: anyone holding it can act as you. Decoding happens on Moddy, nothing is verified or stored.",
+      "input_label": "Token",
+      "header": "Header",
+      "payload": "Payload",
+      "status": {
+        "valid": "Valid",
+        "expired": "Expired",
+        "not_yet": "Not yet valid"
+      },
+      "claims": {
+        "iat": "Issued",
+        "nbf": "Not valid before",
+        "exp": "Expires",
+        "iss": "Issuer",
+        "sub": "Subject",
+        "aud": "Audience"
+      },
+      "alg_none": "The algorithm is none: this token has no signature, so anyone could have written it. Never accept it.",
+      "unverified": "Signature not verified: Moddy only reads what the token claims, it cannot tell whether it is genuine.",
+      "truncated": "Long content: the full JSON is attached.",
+      "bad_time": "The {claim} claim is not a valid date.",
+      "errors": {
+        "empty": "Paste a token first.",
+        "not_a_jwt": "This does not look like a JWT. Expected three parts separated by dots, like `xxxxx.yyyyy.zzzzz`.",
+        "encrypted": "This is an encrypted token (JWE): its content cannot be read without the key."
+      }
+    },
+    "color": {
+      "title": "Colour",
+      "closest": "Closest CSS name",
+      "exact": "CSS name",
+      "alpha_note": "Transparency ({alpha}) is ignored: the colour is shown opaque.",
+      "contrast_title": "Contrast (WCAG 2.x)",
+      "contrast_dark": "As text on Discord dark",
+      "contrast_light": "As text on Discord light",
+      "contrast_white": "Behind white text",
+      "contrast_black": "Behind black text",
+      "levels": "AA {aa} · AAA {aaa} · large text AA {aa_large} · AAA {aaa_large}",
+      "random_button": "Random colour",
+      "errors": {
+        "empty": "Give a colour to look at.",
+        "invalid": "I don't recognise that colour. Try {examples}.",
+        "out_of_range": "A Discord colour is a number from `0` to `16777215`."
+      }
     }
   }
 }

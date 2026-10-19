@@ -424,6 +424,87 @@
           "description": "Посилання на повідомлення цього сервера із зображенням"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "Перевірити, чи траплявся пароль у витоках даних"
+    },
+    "password": {
+      "name": "пароль",
+      "description": "Створити надійний випадковий пароль або парольну фразу",
+      "parameters": {
+        "length": {
+          "name": "довжина",
+          "description": "Довжина (8-128); фраза: приблизно 1 слово на 4 символи"
+        },
+        "type": {
+          "name": "тип",
+          "description": "Тип пароля (за замовчуванням: надійний)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "Створити випадкові UUID (v4 або v7)",
+      "parameters": {
+        "version": {
+          "name": "версія",
+          "description": "Версія UUID (за замовчуванням: v4)"
+        },
+        "count": {
+          "name": "кількість",
+          "description": "Скільки створити (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "Обчислити MD5, SHA-1, SHA-256 і SHA-512 тексту або файлу",
+      "parameters": {
+        "text": {
+          "name": "текст",
+          "description": "Текст для хешу (залиште текст і файл порожніми для форми)"
+        },
+        "file": {
+          "name": "файл",
+          "description": "Файл для хешу (макс. 25 МБ)"
+        },
+        "compare": {
+          "name": "порівняти",
+          "description": "Відомий хеш для порівняння"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "Розшифрувати JSON Web Token (заголовок і вміст)"
+    },
+    "color": {
+      "name": "колір",
+      "description": "Перетворити колір і перевірити його контраст",
+      "parameters": {
+        "color": {
+          "name": "колір",
+          "description": "HEX, rgb(), hsl(), назва CSS, число Discord або random"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "Надійний"
+    },
+    "clear": {
+      "name": "Без схожих символів"
+    },
+    "passphrase": {
+      "name": "Парольна фраза"
+    },
+    "v4": {
+      "name": "v4 (випадковий)"
+    },
+    "v7": {
+      "name": "v7 (за часом)"
     }
   }
 }

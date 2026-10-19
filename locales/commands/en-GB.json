@@ -424,6 +424,87 @@
           "description": "Link to a message of this server containing the image"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "Check if a password has appeared in a data breach"
+    },
+    "password": {
+      "name": "password",
+      "description": "Generate a secure random password or passphrase",
+      "parameters": {
+        "length": {
+          "name": "length",
+          "description": "Length (8-128); passphrase: about 1 word per 4 characters"
+        },
+        "type": {
+          "name": "type",
+          "description": "Kind of password (default: strong)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "Generate random UUIDs (v4 or v7)",
+      "parameters": {
+        "version": {
+          "name": "version",
+          "description": "UUID version (default: v4)"
+        },
+        "count": {
+          "name": "count",
+          "description": "How many to generate (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "Compute MD5, SHA-1, SHA-256 and SHA-512 of a text or file",
+      "parameters": {
+        "text": {
+          "name": "text",
+          "description": "Text to hash (leave text and file empty for a form)"
+        },
+        "file": {
+          "name": "file",
+          "description": "File to hash (max 25 MB)"
+        },
+        "compare": {
+          "name": "compare",
+          "description": "A known hash to compare with"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "Decode a JSON Web Token (header and payload)"
+    },
+    "color": {
+      "name": "colour",
+      "description": "Convert a colour and check its contrast",
+      "parameters": {
+        "color": {
+          "name": "colour",
+          "description": "HEX, rgb(), hsl(), CSS name, Discord number or random"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "Strong"
+    },
+    "clear": {
+      "name": "No look-alikes"
+    },
+    "passphrase": {
+      "name": "Passphrase"
+    },
+    "v4": {
+      "name": "v4 (random)"
+    },
+    "v7": {
+      "name": "v7 (time-ordered)"
     }
   }
 }

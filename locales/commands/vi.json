@@ -424,6 +424,87 @@
           "description": "Liên kết tới tin nhắn trên máy chủ này có hình ảnh"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "Kiểm tra mật khẩu có xuất hiện trong vụ rò rỉ dữ liệu không"
+    },
+    "password": {
+      "name": "mật-khẩu",
+      "description": "Tạo mật khẩu hoặc cụm mật khẩu ngẫu nhiên an toàn",
+      "parameters": {
+        "length": {
+          "name": "độ-dài",
+          "description": "Độ dài (8-128); cụm mật khẩu: khoảng 1 từ mỗi 4 ký tự"
+        },
+        "type": {
+          "name": "loại",
+          "description": "Loại mật khẩu (mặc định: mạnh)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "Tạo UUID ngẫu nhiên (v4 hoặc v7)",
+      "parameters": {
+        "version": {
+          "name": "phiên-bản",
+          "description": "Phiên bản UUID (mặc định: v4)"
+        },
+        "count": {
+          "name": "số-lượng",
+          "description": "Số lượng cần tạo (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "Tính MD5, SHA-1, SHA-256 và SHA-512 của văn bản hoặc tệp",
+      "parameters": {
+        "text": {
+          "name": "văn-bản",
+          "description": "Văn bản cần băm (để trống văn bản và tệp để mở biểu mẫu)"
+        },
+        "file": {
+          "name": "tệp",
+          "description": "Tệp cần băm (tối đa 25 MB)"
+        },
+        "compare": {
+          "name": "so-sánh",
+          "description": "Một mã băm đã biết để so sánh"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "Giải mã JSON Web Token (phần đầu và nội dung)"
+    },
+    "color": {
+      "name": "màu",
+      "description": "Chuyển đổi màu và kiểm tra độ tương phản",
+      "parameters": {
+        "color": {
+          "name": "màu",
+          "description": "HEX, rgb(), hsl(), tên CSS, số Discord hoặc random"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "Mạnh"
+    },
+    "clear": {
+      "name": "Không ký tự dễ nhầm"
+    },
+    "passphrase": {
+      "name": "Cụm mật khẩu"
+    },
+    "v4": {
+      "name": "v4 (ngẫu nhiên)"
+    },
+    "v7": {
+      "name": "v7 (theo thời gian)"
     }
   }
 }

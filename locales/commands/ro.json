@@ -424,6 +424,87 @@
           "description": "Link către un mesaj de pe acest server cu imaginea"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "Verifică dacă o parolă a apărut într-o scurgere de date"
+    },
+    "password": {
+      "name": "parolă",
+      "description": "Generează o parolă sau o frază secretă aleatorie și sigură",
+      "parameters": {
+        "length": {
+          "name": "lungime",
+          "description": "Lungime (8-128); frază secretă: aprox. 1 cuvânt la 4 caractere"
+        },
+        "type": {
+          "name": "tip",
+          "description": "Tipul parolei (implicit: puternică)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "Generează UUID-uri aleatorii (v4 sau v7)",
+      "parameters": {
+        "version": {
+          "name": "versiune",
+          "description": "Versiunea UUID (implicit: v4)"
+        },
+        "count": {
+          "name": "număr",
+          "description": "Câte să genereze (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "Calculează MD5, SHA-1, SHA-256 și SHA-512 pentru un text sau fișier",
+      "parameters": {
+        "text": {
+          "name": "text",
+          "description": "Text pentru hash (lasă textul și fișierul goale pentru formular)"
+        },
+        "file": {
+          "name": "fișier",
+          "description": "Fișier pentru hash (max. 25 MB)"
+        },
+        "compare": {
+          "name": "compară",
+          "description": "Un hash cunoscut cu care să compare"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "Decodifică un JSON Web Token (antet și conținut)"
+    },
+    "color": {
+      "name": "culoare",
+      "description": "Convertește o culoare și verifică contrastul",
+      "parameters": {
+        "color": {
+          "name": "culoare",
+          "description": "HEX, rgb(), hsl(), nume CSS, număr Discord sau random"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "Puternică"
+    },
+    "clear": {
+      "name": "Fără caractere ambigue"
+    },
+    "passphrase": {
+      "name": "Frază secretă"
+    },
+    "v4": {
+      "name": "v4 (aleatoriu)"
+    },
+    "v7": {
+      "name": "v7 (ordonat în timp)"
     }
   }
 }

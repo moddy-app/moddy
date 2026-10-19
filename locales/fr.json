@@ -5652,6 +5652,118 @@
         "back": "Retour"
       },
       "page": "Page {page}/{pages}"
+    },
+    "pwned": {
+      "title": "Vérification de mot de passe",
+      "modal_title": "Vérifier un mot de passe",
+      "modal_help": "Ton mot de passe ne quitte jamais Moddy en clair : seuls les 5 premiers caractères de son empreinte SHA-1 sont envoyés à Have I Been Pwned (k-anonymat). Rien n'est enregistré.",
+      "input_label": "Mot de passe",
+      "found": "Trouvé dans des fuites de données",
+      "found_count": "Vu {count} fois dans des fuites connues.",
+      "found_advice": "Ne l'utilise plus. Change-le partout où tu l'as réutilisé, et laisse un gestionnaire de mots de passe en créer un nouveau, ou essaie {command}.",
+      "not_found": "Absent des fuites connues",
+      "not_found_note": "Ça ne veut pas dire qu'il est solide : un mot de passe court ou devinable peut quand même être craqué. {command} peut en créer un solide.",
+      "open_site": "Mots de passe sur Have I Been Pwned",
+      "errors": {
+        "unavailable": "Have I Been Pwned ne répond pas pour le moment. Réessaie dans un instant.",
+        "cooldown": "Trop de vérifications à la suite. Attends {retry} avant la prochaine."
+      }
+    },
+    "password": {
+      "title": "Générateur de mot de passe",
+      "kinds": {
+        "strong": "Fort",
+        "clear": "Sans caractères ambigus",
+        "passphrase": "Phrase de passe"
+      },
+      "strength": {
+        "weak": "Faible",
+        "fair": "Moyen",
+        "good": "Bon",
+        "strong": "Fort",
+        "excellent": "Excellent"
+      },
+      "entropy": "{bar} **{label}** · {bits} d'entropie",
+      "bits": "{n} bits",
+      "summary_chars": "{kind} · {length} caractères",
+      "summary_words": "{kind} · {words} mots",
+      "hint": "Copie-le maintenant et garde-le dans un gestionnaire de mots de passe : Moddy ne conserve rien."
+    },
+    "uuid": {
+      "title": "UUID",
+      "version": {
+        "v4": "Version 4 · aléatoire",
+        "v7": "Version 7 · ordonné dans le temps, triable"
+      }
+    },
+    "hash": {
+      "title": "Empreintes",
+      "modal_title": "Hacher un texte ou un fichier",
+      "modal_help": "Saisis un texte ou envoie un fichier. Les empreintes sont calculées sur place, rien n'est conservé.",
+      "text_label": "Texte",
+      "text_placeholder": "Haché exactement comme saisi",
+      "file_label": "Fichier",
+      "file_description": "25 Mo maximum",
+      "compare_label": "Comparer avec (facultatif)",
+      "compare_placeholder": "Colle une empreinte connue",
+      "subject": "Haché",
+      "subject_text": "Texte · {count} caractères",
+      "subject_file": "{name} · {size}",
+      "utf8_note": "Le texte est haché en UTF-8, exactement tel que saisi (sans retirer d'espaces).",
+      "match": "Correspond à {algo}",
+      "no_match": "Ne correspond à aucune de ces empreintes",
+      "errors": {
+        "both": "Donne soit un texte, soit un fichier, pas les deux.",
+        "download_failed": "Moddy n'a pas pu télécharger ce fichier. Renvoie-le."
+      }
+    },
+    "jwt": {
+      "title": "Décodeur JWT",
+      "modal_title": "Décoder un JWT",
+      "modal_help": "Ne colle pas un jeton encore valide : quiconque le détient peut agir à ta place. Le décodage se fait sur Moddy, rien n'est vérifié ni conservé.",
+      "input_label": "Jeton",
+      "header": "En-tête",
+      "payload": "Contenu",
+      "status": {
+        "valid": "Valide",
+        "expired": "Expiré",
+        "not_yet": "Pas encore valide"
+      },
+      "claims": {
+        "iat": "Émis",
+        "nbf": "Valide à partir de",
+        "exp": "Expire",
+        "iss": "Émetteur",
+        "sub": "Sujet",
+        "aud": "Audience"
+      },
+      "alg_none": "L'algorithme est none : ce jeton n'a aucune signature, n'importe qui aurait pu l'écrire. Ne l'accepte jamais.",
+      "unverified": "Signature non vérifiée : Moddy lit seulement ce que le jeton affirme, il ne peut pas dire s'il est authentique.",
+      "truncated": "Contenu long : le JSON complet est en pièce jointe.",
+      "bad_time": "La valeur {claim} n'est pas une date valide.",
+      "errors": {
+        "empty": "Colle d'abord un jeton.",
+        "not_a_jwt": "Ça ne ressemble pas à un JWT. Il faut trois parties séparées par des points, comme `xxxxx.yyyyy.zzzzz`.",
+        "encrypted": "C'est un jeton chiffré (JWE) : son contenu est illisible sans la clé."
+      }
+    },
+    "color": {
+      "title": "Couleur",
+      "closest": "Nom CSS le plus proche",
+      "exact": "Nom CSS",
+      "alpha_note": "La transparence ({alpha}) est ignorée : la couleur est affichée opaque.",
+      "contrast_title": "Contraste (WCAG 2.x)",
+      "contrast_dark": "En texte sur Discord sombre",
+      "contrast_light": "En texte sur Discord clair",
+      "contrast_white": "Sous du texte blanc",
+      "contrast_black": "Sous du texte noir",
+      "levels": "AA {aa} · AAA {aaa} · grand texte AA {aa_large} · AAA {aaa_large}",
+      "random_button": "Couleur aléatoire",
+      "errors": {
+        "empty": "Donne une couleur à afficher.",
+        "invalid": "Je ne reconnais pas cette couleur. Essaie {examples}.",
+        "out_of_range": "Une couleur Discord est un nombre de `0` à `16777215`."
+      }
     }
   }
 }

@@ -424,6 +424,87 @@
           "description": "Odkaz na zprávu z tohoto serveru s obrázkem"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "Zkontroluje, zda se heslo objevilo v úniku dat"
+    },
+    "password": {
+      "name": "heslo",
+      "description": "Vygeneruje bezpečné náhodné heslo nebo přístupovou frázi",
+      "parameters": {
+        "length": {
+          "name": "délka",
+          "description": "Délka (8-128); fráze: asi 1 slovo na 4 znaky"
+        },
+        "type": {
+          "name": "typ",
+          "description": "Druh hesla (výchozí: silné)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "Vygeneruje náhodná UUID (v4 nebo v7)",
+      "parameters": {
+        "version": {
+          "name": "verze",
+          "description": "Verze UUID (výchozí: v4)"
+        },
+        "count": {
+          "name": "počet",
+          "description": "Kolik jich vytvořit (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "Spočítá MD5, SHA-1, SHA-256 a SHA-512 textu nebo souboru",
+      "parameters": {
+        "text": {
+          "name": "text",
+          "description": "Text k hashování (nech text i soubor prázdné pro formulář)"
+        },
+        "file": {
+          "name": "soubor",
+          "description": "Soubor k hashování (max. 25 MB)"
+        },
+        "compare": {
+          "name": "porovnat",
+          "description": "Známý hash k porovnání"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "Dekóduje JSON Web Token (hlavičku a obsah)"
+    },
+    "color": {
+      "name": "barva",
+      "description": "Převede barvu a zkontroluje její kontrast",
+      "parameters": {
+        "color": {
+          "name": "barva",
+          "description": "HEX, rgb(), hsl(), název CSS, číslo Discordu nebo random"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "Silné"
+    },
+    "clear": {
+      "name": "Bez podobných znaků"
+    },
+    "passphrase": {
+      "name": "Přístupová fráze"
+    },
+    "v4": {
+      "name": "v4 (náhodné)"
+    },
+    "v7": {
+      "name": "v7 (řazené v čase)"
     }
   }
 }

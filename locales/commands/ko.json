@@ -424,6 +424,87 @@
           "description": "이미지가 포함된 이 서버 메시지의 링크"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "비밀번호가 데이터 유출에 포함되었는지 확인합니다"
+    },
+    "password": {
+      "name": "비밀번호",
+      "description": "안전한 무작위 비밀번호 또는 암호 문구를 생성합니다",
+      "parameters": {
+        "length": {
+          "name": "길이",
+          "description": "길이 (8-128). 암호 문구: 4글자당 약 1단어"
+        },
+        "type": {
+          "name": "종류",
+          "description": "비밀번호 종류 (기본값: 강력)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "무작위 UUID를 생성합니다 (v4 또는 v7)",
+      "parameters": {
+        "version": {
+          "name": "버전",
+          "description": "UUID 버전 (기본값: v4)"
+        },
+        "count": {
+          "name": "개수",
+          "description": "생성할 개수 (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "텍스트 또는 파일의 MD5, SHA-1, SHA-256, SHA-512를 계산합니다",
+      "parameters": {
+        "text": {
+          "name": "텍스트",
+          "description": "해시할 텍스트 (텍스트와 파일을 비워 두면 양식이 열립니다)"
+        },
+        "file": {
+          "name": "파일",
+          "description": "해시할 파일 (최대 25MB)"
+        },
+        "compare": {
+          "name": "비교",
+          "description": "비교할 알려진 해시"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "JSON Web Token(헤더와 페이로드)을 해독합니다"
+    },
+    "color": {
+      "name": "색상",
+      "description": "색상을 변환하고 대비를 확인합니다",
+      "parameters": {
+        "color": {
+          "name": "색",
+          "description": "HEX, rgb(), hsl(), CSS 이름, Discord 숫자 또는 random"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "강력"
+    },
+    "clear": {
+      "name": "헷갈리는 문자 없음"
+    },
+    "passphrase": {
+      "name": "암호 문구"
+    },
+    "v4": {
+      "name": "v4 (무작위)"
+    },
+    "v7": {
+      "name": "v7 (시간순)"
     }
   }
 }

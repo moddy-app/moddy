@@ -5567,6 +5567,118 @@
         "back": "Voltar"
       },
       "page": "Página {page}/{pages}"
+    },
+    "pwned": {
+      "title": "Verificação de senha",
+      "modal_title": "Verificar uma senha",
+      "modal_help": "Sua senha nunca sai do Moddy em texto puro: só os 5 primeiros caracteres da impressão SHA-1 são enviados ao Have I Been Pwned (k-anonimato). Nada é registrado ou guardado.",
+      "input_label": "Senha",
+      "found": "Encontrada em vazamentos de dados",
+      "found_count": "Vista {count} vezes em vazamentos conhecidos.",
+      "found_advice": "Pare de usá-la. Troque em todos os lugares onde você a repetiu e deixe um gerenciador de senhas criar uma nova, ou experimente {command}.",
+      "not_found": "Não aparece em vazamentos conhecidos",
+      "not_found_note": "Isso não a torna forte: uma senha curta ou previsível ainda pode ser quebrada. {command} pode criar uma forte.",
+      "open_site": "Senhas no Have I Been Pwned",
+      "errors": {
+        "unavailable": "O Have I Been Pwned não está respondendo agora. Tente de novo em instantes.",
+        "cooldown": "Verificações demais seguidas. Espere {retry} antes da próxima."
+      }
+    },
+    "password": {
+      "title": "Gerador de senhas",
+      "kinds": {
+        "strong": "Forte",
+        "clear": "Sem caracteres ambíguos",
+        "passphrase": "Frase secreta"
+      },
+      "strength": {
+        "weak": "Fraca",
+        "fair": "Média",
+        "good": "Boa",
+        "strong": "Forte",
+        "excellent": "Excelente"
+      },
+      "entropy": "{bar} **{label}** · {bits} de entropia",
+      "bits": "{n} bits",
+      "summary_chars": "{kind} · {length} caracteres",
+      "summary_words": "{kind} · {words} palavras",
+      "hint": "Copie agora e guarde em um gerenciador de senhas: o Moddy não guarda nada."
+    },
+    "uuid": {
+      "title": "UUID",
+      "version": {
+        "v4": "Versão 4 · aleatório",
+        "v7": "Versão 7 · ordenado no tempo, classificável"
+      }
+    },
+    "hash": {
+      "title": "Hashes",
+      "modal_title": "Calcular o hash de um texto ou arquivo",
+      "modal_help": "Digite um texto ou envie um arquivo. Os hashes são calculados na hora, nada é guardado.",
+      "text_label": "Texto",
+      "text_placeholder": "Processado exatamente como digitado",
+      "file_label": "Arquivo",
+      "file_description": "Até 25 MB",
+      "compare_label": "Comparar com (opcional)",
+      "compare_placeholder": "Cole um hash conhecido",
+      "subject": "Processado",
+      "subject_text": "Texto · {count} caracteres",
+      "subject_file": "{name} · {size}",
+      "utf8_note": "O texto é processado em UTF-8, exatamente como digitado (sem remover espaços).",
+      "match": "Corresponde a {algo}",
+      "no_match": "Não corresponde a nenhum destes hashes",
+      "errors": {
+        "both": "Informe um texto ou um arquivo, não os dois.",
+        "download_failed": "O Moddy não conseguiu baixar esse arquivo. Envie-o de novo."
+      }
+    },
+    "jwt": {
+      "title": "Decodificador JWT",
+      "modal_title": "Decodificar um JWT",
+      "modal_help": "Não cole um token que ainda seja válido: quem o tiver pode agir como você. A decodificação acontece no Moddy, nada é verificado nem guardado.",
+      "input_label": "Token",
+      "header": "Cabeçalho",
+      "payload": "Conteúdo",
+      "status": {
+        "valid": "Válido",
+        "expired": "Expirado",
+        "not_yet": "Ainda não válido"
+      },
+      "claims": {
+        "iat": "Emitido",
+        "nbf": "Válido a partir de",
+        "exp": "Expira",
+        "iss": "Emissor",
+        "sub": "Sujeito",
+        "aud": "Audiência"
+      },
+      "alg_none": "O algoritmo é none: este token não tem assinatura, qualquer pessoa poderia tê-lo escrito. Nunca o aceite.",
+      "unverified": "Assinatura não verificada: o Moddy só lê o que o token afirma, não sabe dizer se é autêntico.",
+      "truncated": "Conteúdo longo: o JSON completo está em anexo.",
+      "bad_time": "O valor {claim} não é uma data válida.",
+      "errors": {
+        "empty": "Cole um token primeiro.",
+        "not_a_jwt": "Isso não parece um JWT. São três partes separadas por pontos, como `xxxxx.yyyyy.zzzzz`.",
+        "encrypted": "É um token criptografado (JWE): o conteúdo não pode ser lido sem a chave."
+      }
+    },
+    "color": {
+      "title": "Cor",
+      "closest": "Nome CSS mais próximo",
+      "exact": "Nome CSS",
+      "alpha_note": "A transparência ({alpha}) é ignorada: a cor é mostrada opaca.",
+      "contrast_title": "Contraste (WCAG 2.x)",
+      "contrast_dark": "Como texto no Discord escuro",
+      "contrast_light": "Como texto no Discord claro",
+      "contrast_white": "Sob texto branco",
+      "contrast_black": "Sob texto preto",
+      "levels": "AA {aa} · AAA {aaa} · texto grande AA {aa_large} · AAA {aaa_large}",
+      "random_button": "Cor aleatória",
+      "errors": {
+        "empty": "Informe uma cor.",
+        "invalid": "Não reconheço essa cor. Tente {examples}.",
+        "out_of_range": "Uma cor do Discord é um número de `0` a `16777215`."
+      }
     }
   }
 }

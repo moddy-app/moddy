@@ -424,6 +424,87 @@
           "description": "Länk till ett meddelande på den här servern med bilden"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "Kontrollera om ett lösenord har förekommit i ett dataläckage"
+    },
+    "password": {
+      "name": "lösenord",
+      "description": "Skapa ett säkert slumpmässigt lösenord eller lösenfras",
+      "parameters": {
+        "length": {
+          "name": "längd",
+          "description": "Längd (8-128); lösenfras: cirka 1 ord per 4 tecken"
+        },
+        "type": {
+          "name": "typ",
+          "description": "Typ av lösenord (standard: starkt)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "Skapa slumpmässiga UUID (v4 eller v7)",
+      "parameters": {
+        "version": {
+          "name": "version",
+          "description": "UUID-version (standard: v4)"
+        },
+        "count": {
+          "name": "antal",
+          "description": "Hur många som ska skapas (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "Beräkna MD5, SHA-1, SHA-256 och SHA-512 för en text eller fil",
+      "parameters": {
+        "text": {
+          "name": "text",
+          "description": "Text att hasha (lämna text och fil tomma för ett formulär)"
+        },
+        "file": {
+          "name": "fil",
+          "description": "Fil att hasha (max 25 MB)"
+        },
+        "compare": {
+          "name": "jämför",
+          "description": "En känd hash att jämföra med"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "Avkoda en JSON Web Token (header och innehåll)"
+    },
+    "color": {
+      "name": "färg",
+      "description": "Konvertera en färg och kontrollera dess kontrast",
+      "parameters": {
+        "color": {
+          "name": "färg",
+          "description": "HEX, rgb(), hsl(), CSS-namn, Discord-tal eller random"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "Starkt"
+    },
+    "clear": {
+      "name": "Utan förväxlingsbara tecken"
+    },
+    "passphrase": {
+      "name": "Lösenfras"
+    },
+    "v4": {
+      "name": "v4 (slumpmässig)"
+    },
+    "v7": {
+      "name": "v7 (tidsordnad)"
     }
   }
 }

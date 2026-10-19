@@ -424,6 +424,87 @@
           "description": "Lien d'un message de ce serveur contenant l'image"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "Vérifie si un mot de passe est apparu dans une fuite de données"
+    },
+    "password": {
+      "name": "mot-de-passe",
+      "description": "Génère un mot de passe ou une phrase de passe aléatoire et sûr",
+      "parameters": {
+        "length": {
+          "name": "longueur",
+          "description": "Longueur (8-128) ; phrase de passe : environ 1 mot pour 4 caractères"
+        },
+        "type": {
+          "name": "type",
+          "description": "Type de mot de passe (par défaut : fort)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "Génère des UUID aléatoires (v4 ou v7)",
+      "parameters": {
+        "version": {
+          "name": "version",
+          "description": "Version d'UUID (par défaut : v4)"
+        },
+        "count": {
+          "name": "nombre",
+          "description": "Nombre à générer (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "Calcule le MD5, SHA-1, SHA-256 et SHA-512 d'un texte ou fichier",
+      "parameters": {
+        "text": {
+          "name": "texte",
+          "description": "Texte à hacher (laisse texte et fichier vides pour un formulaire)"
+        },
+        "file": {
+          "name": "fichier",
+          "description": "Fichier à hacher (25 Mo max)"
+        },
+        "compare": {
+          "name": "comparer",
+          "description": "Une empreinte connue à comparer"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "Décode un JSON Web Token (en-tête et contenu)"
+    },
+    "color": {
+      "name": "couleur",
+      "description": "Convertit une couleur et vérifie son contraste",
+      "parameters": {
+        "color": {
+          "name": "couleur",
+          "description": "HEX, rgb(), hsl(), nom CSS, nombre Discord ou random"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "Fort"
+    },
+    "clear": {
+      "name": "Sans caractères ambigus"
+    },
+    "passphrase": {
+      "name": "Phrase de passe"
+    },
+    "v4": {
+      "name": "v4 (aléatoire)"
+    },
+    "v7": {
+      "name": "v7 (ordonné dans le temps)"
     }
   }
 }

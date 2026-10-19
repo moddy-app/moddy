@@ -424,6 +424,87 @@
           "description": "Σύνδεσμος μηνύματος αυτού του διακομιστή με την εικόνα"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "Ελέγχει αν ένας κωδικός εμφανίστηκε σε διαρροή δεδομένων"
+    },
+    "password": {
+      "name": "κωδικός",
+      "description": "Δημιουργεί έναν ασφαλή τυχαίο κωδικό ή φράση πρόσβασης",
+      "parameters": {
+        "length": {
+          "name": "μήκος",
+          "description": "Μήκος (8-128), φράση: περίπου 1 λέξη ανά 4 χαρακτήρες"
+        },
+        "type": {
+          "name": "τύπος",
+          "description": "Είδος κωδικού (προεπιλογή: ισχυρός)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "Δημιουργεί τυχαία UUID (v4 ή v7)",
+      "parameters": {
+        "version": {
+          "name": "έκδοση",
+          "description": "Έκδοση UUID (προεπιλογή: v4)"
+        },
+        "count": {
+          "name": "αριθμός",
+          "description": "Πόσα να δημιουργηθούν (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "Υπολογίζει MD5, SHA-1, SHA-256 και SHA-512 κειμένου ή αρχείου",
+      "parameters": {
+        "text": {
+          "name": "κείμενο",
+          "description": "Κείμενο για hash (άφησε κείμενο και αρχείο κενά για φόρμα)"
+        },
+        "file": {
+          "name": "αρχείο",
+          "description": "Αρχείο για hash (έως 25 MB)"
+        },
+        "compare": {
+          "name": "σύγκριση",
+          "description": "Ένα γνωστό hash για σύγκριση"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "Αποκωδικοποιεί ένα JSON Web Token (κεφαλίδα και περιεχόμενο)"
+    },
+    "color": {
+      "name": "χρώμα",
+      "description": "Μετατρέπει ένα χρώμα και ελέγχει την αντίθεσή του",
+      "parameters": {
+        "color": {
+          "name": "χρώμα",
+          "description": "HEX, rgb(), hsl(), όνομα CSS, αριθμός Discord ή random"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "Ισχυρός"
+    },
+    "clear": {
+      "name": "Χωρίς όμοιους χαρακτήρες"
+    },
+    "passphrase": {
+      "name": "Φράση πρόσβασης"
+    },
+    "v4": {
+      "name": "v4 (τυχαίο)"
+    },
+    "v7": {
+      "name": "v7 (χρονικά ταξινομημένο)"
     }
   }
 }

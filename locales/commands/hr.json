@@ -424,6 +424,87 @@
           "description": "Poveznica na poruku s ovog poslužitelja sa slikom"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "Provjerava je li se lozinka pojavila u curenju podataka"
+    },
+    "password": {
+      "name": "lozinka",
+      "description": "Generira sigurnu nasumičnu lozinku ili zaporku",
+      "parameters": {
+        "length": {
+          "name": "dužina",
+          "description": "Duljina (8-128); zaporka: oko 1 riječ na 4 znaka"
+        },
+        "type": {
+          "name": "vrsta",
+          "description": "Vrsta lozinke (zadano: jaka)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "Generira nasumične UUID-ove (v4 ili v7)",
+      "parameters": {
+        "version": {
+          "name": "verzija",
+          "description": "Verzija UUID-a (zadano: v4)"
+        },
+        "count": {
+          "name": "broj",
+          "description": "Koliko ih generirati (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "Izračunava MD5, SHA-1, SHA-256 i SHA-512 teksta ili datoteke",
+      "parameters": {
+        "text": {
+          "name": "tekst",
+          "description": "Tekst za hash (ostavi tekst i datoteku praznima za obrazac)"
+        },
+        "file": {
+          "name": "datoteka",
+          "description": "Datoteka za hash (maks. 25 MB)"
+        },
+        "compare": {
+          "name": "usporedi",
+          "description": "Poznati hash za usporedbu"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "Dekodira JSON Web Token (zaglavlje i sadržaj)"
+    },
+    "color": {
+      "name": "boja",
+      "description": "Pretvara boju i provjerava njezin kontrast",
+      "parameters": {
+        "color": {
+          "name": "boja",
+          "description": "HEX, rgb(), hsl(), CSS naziv, Discord broj ili random"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "Jaka"
+    },
+    "clear": {
+      "name": "Bez zamjenjivih znakova"
+    },
+    "passphrase": {
+      "name": "Zaporka"
+    },
+    "v4": {
+      "name": "v4 (nasumično)"
+    },
+    "v7": {
+      "name": "v7 (vremenski poredano)"
     }
   }
 }
