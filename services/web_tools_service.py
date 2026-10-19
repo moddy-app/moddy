@@ -250,7 +250,7 @@ class WebToolsService:
                 raise api_error(exc, "whois") from None
         if resp is None or resp.status == 404:
             raise ToolError("not_registered" if base else "no_rdap", tool="whois",
-                            domain=domain.registrable_unicode, tld=domain.suffix)
+                            domain=domain.registrable_unicode, tld=f".{domain.suffix}")
         try:
             record = rdap.parse_domain(resp.json(), server=urlsplit(url).hostname)
         except PublicAPIError:

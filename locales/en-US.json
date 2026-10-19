@@ -5765,6 +5765,231 @@
         "invalid": "I don't recognise that colour. Try {examples}.",
         "out_of_range": "A Discord colour is a number from `0` to `16777215`."
       }
+    },
+    "domain": {
+      "errors": {
+        "empty": "Type a domain name or a link.",
+        "invalid": "This does not look like a valid domain. Try something like `example.com`.",
+        "too_long": "This domain name is too long.",
+        "ip_not_allowed": "This command works with domain names, not IP addresses.",
+        "reserved": "This name is reserved for private networks: it cannot be looked up on the Internet.",
+        "private_address": "This address belongs to a private network. Moddy only looks at public servers.",
+        "cooldown": "Too many lookups in a row. Wait {retry} before the next one."
+      }
+    },
+    "whois": {
+      "title": "WHOIS",
+      "registrar": "Registrar",
+      "created": "Created",
+      "expires": "Expires",
+      "updated": "Last updated",
+      "status": "Status",
+      "nameservers": "Name servers",
+      "dnssec": "DNSSEC",
+      "dnssec_signed": "Signed",
+      "dnssec_unsigned": "Not signed",
+      "more": "+{count} more",
+      "registrar_record": "Registrar record",
+      "shared_hosting": "This name belongs to a hosting platform ({platform}): the record shown is the platform's, not the site owner's.",
+      "subdomain_note": "Showing the record of {domain}, the registered domain.",
+      "alert": {
+        "very_recent": "Registered only {days} days ago. Brand-new domains are often used for scams.",
+        "recent": "Registered {days} days ago. It is a recent domain: stay careful.",
+        "expired": "This domain has expired.",
+        "expiring": "Expires in {days} days."
+      },
+      "alert_status": {
+        "on_hold": "The registry has put this domain on hold: it may not work.",
+        "pending_delete": "This domain is about to be deleted.",
+        "redemption": "This domain is in its redemption period: it has expired, but its owner can still recover it.",
+        "inactive": "This domain is inactive."
+      },
+      "statuses": {
+        "active": "Active",
+        "transfer_locked": "Transfer locked",
+        "delete_locked": "Deletion locked",
+        "update_locked": "Update locked",
+        "renew_locked": "Renewal locked",
+        "grace_period": "Grace period",
+        "pending": "Change pending",
+        "pending_transfer": "Transfer pending",
+        "inactive": "Inactive",
+        "on_hold": "On hold",
+        "redemption": "Redemption period",
+        "pending_delete": "Pending deletion"
+      },
+      "errors": {
+        "not_registered": "{domain} does not appear to be registered.",
+        "no_rdap": "The registry of {tld} does not publish public records through RDAP: there is nothing to show."
+      }
+    },
+    "dns": {
+      "title": "DNS records",
+      "name": "Name",
+      "type_all": "All records",
+      "select_placeholder": "Record type",
+      "none_at_all": "No DNS record found for this name.",
+      "none_of_type": "No {type} record for this name.",
+      "more_records": "+{count} more",
+      "truncated": "The list is long: the full version is attached.",
+      "ttl": "TTL",
+      "ttl_units": {
+        "s": "s",
+        "min": "min",
+        "h": "h",
+        "d": "d"
+      },
+      "dnssec_ok": "Validated with DNSSEC by the resolver",
+      "email_title": "Email protection",
+      "missing": "Missing",
+      "failed_types": "Could not query: {types}.",
+      "spf": {
+        "strict": "Strict (-all): only authorised servers may send",
+        "soft": "Soft (~all): unauthorised mail is flagged, not rejected",
+        "neutral": "Neutral (?all): no protection",
+        "open": "Open (+all): anyone may send as this domain",
+        "unknown": "Present"
+      },
+      "dmarc": {
+        "none": "Monitoring only (p=none)",
+        "quarantine": "Quarantine (p=quarantine)",
+        "reject": "Reject (p=reject)",
+        "unknown": "Present"
+      },
+      "errors": {
+        "nxdomain": "{domain} does not exist: no DNS server knows this name."
+      }
+    },
+    "ssl": {
+      "title": "SSL certificate",
+      "verdict": {
+        "valid": "Valid certificate",
+        "expiring": "Valid, but it expires soon",
+        "invalid": "Invalid certificate"
+      },
+      "reasons": {
+        "expired": "The certificate has expired.",
+        "not_yet_valid": "The certificate is not valid yet.",
+        "self_signed": "The certificate is self-signed: nobody vouches for it.",
+        "untrusted_issuer": "The issuer is not trusted by browsers.",
+        "hostname_mismatch": "The certificate was issued for other names than this one.",
+        "revoked": "The certificate has been revoked.",
+        "invalid": "The certificate could not be verified."
+      },
+      "subject": "Issued to",
+      "issuer": "Issued by",
+      "validity": "Validity",
+      "names": "Names",
+      "more": "+{count} more",
+      "protocol": "Protocol",
+      "key": "Key",
+      "signature": "Signature",
+      "read_directly": "Read directly from the server by Moddy",
+      "errors": {
+        "bad_port": "This port is not supported. Pick one of the standard TLS ports.",
+        "dns_failed": "{host} does not resolve to an IP address.",
+        "tls_failed": "The server did not complete a TLS handshake on port {port}: it may not use encryption there.",
+        "unreachable": "Could not connect to {host} on port {port}. The server may be down or block unknown visitors."
+      }
+    },
+    "subdomains": {
+      "title": "Subdomains",
+      "domain": "Domain",
+      "summary": "{count} found in public certificates",
+      "wildcards": "{count} wildcard patterns",
+      "none": "No subdomain appeared in public certificates.",
+      "truncated": "Only the first {shown} of {total} names are kept.",
+      "hint": "Only names that showed up in a public certificate are listed: private or unencrypted subdomains are missing.",
+      "export_message": "{count} subdomains, one per line.",
+      "errors": {
+        "crtsh_down": "crt.sh did not answer. This free service is often overloaded: try again in a moment.",
+        "too_large": "{domain} has too many certificates to list at once. Try a more specific subdomain."
+      }
+    },
+    "linkcheck": {
+      "title": "Link check",
+      "multi_title": "Links in this message",
+      "following": "Following the redirects…",
+      "verdict": {
+        "safe": "No threat detected",
+        "suspicious": "Suspicious link",
+        "dangerous": "Dangerous link: do not open it",
+        "unreachable": "Could not be reached"
+      },
+      "redirects": "Redirections",
+      "chain_meta": "(page redirect)",
+      "chain_errors": {
+        "too_many_redirects": "Stopped: too many redirects.",
+        "loop": "Stopped: the redirects loop.",
+        "blocked": "Stopped: this address points to a private network, Moddy does not go there.",
+        "timeout": "Stopped: the site took too long to answer.",
+        "unreachable": "Stopped: the site cannot be reached.",
+        "bad_redirect": "Stopped: the redirect is invalid.",
+        "tls": "Stopped: the site's HTTPS certificate is invalid."
+      },
+      "connection": "Connection",
+      "https": "HTTPS (encrypted)",
+      "http": "HTTP (not encrypted)",
+      "domain_age": "Domain age",
+      "age": {
+        "day_one": "{count} day",
+        "day_other": "{count} days",
+        "month_one": "{count} month",
+        "month_other": "{count} months",
+        "year_one": "{count} year",
+        "year_other": "{count} years"
+      },
+      "vt_label": "VirusTotal",
+      "urlscan_label": "urlscan.io",
+      "vt_clean": "No engine flags this link ({engines} checked)",
+      "vt_flagged": "{bad} of {engines} engines flag this link",
+      "vt_suspicious_extra": " · {count} find it suspicious",
+      "vt_stale": "(older analysis)",
+      "urlscan_clean": "No threat found on the page",
+      "urlscan_malicious": "Malicious page",
+      "urlscan_suspicious": "Suspicious page",
+      "urlscan_brands": "Imitates: {brands}",
+      "urlscan_country": "Server in {country}",
+      "provider": {
+        "running": "Analysing…",
+        "pending": "Analysis not finished yet: open the full report",
+        "quota": "Daily limit reached: only Moddy's own checks were done",
+        "busy": "Busy right now, try again in a minute",
+        "refused": "This page could not be scanned",
+        "failed": "Could not be checked"
+      },
+      "no_reputation": "Online reputation checks (VirusTotal, urlscan.io) are not enabled on this Moddy.",
+      "report_vt": "VirusTotal report",
+      "report_urlscan": "urlscan.io report",
+      "screenshot_alt": "Screenshot of the page",
+      "screenshot_note": "Screenshot taken by urlscan.io. Click it to reveal it: the page may show disturbing content.",
+      "honesty": "No threat detected does not mean a link is safe. When in doubt, do not open it.",
+      "reasons": {
+        "vt_malicious": "Flagged as malicious by {count} VirusTotal engines",
+        "vt_suspicious": "Flagged as suspicious by {count} VirusTotal engines",
+        "urlscan_malicious": "urlscan.io judges the page malicious",
+        "urlscan_suspicious": "urlscan.io finds the page suspicious",
+        "age_very_recent": "The domain was registered only {days} days ago",
+        "age_recent": "The domain was registered {days} days ago",
+        "idn_mixed_script": "The address mixes alphabets (look-alike letters)",
+        "idn_lookalike": "The address uses letters that imitate Latin ones",
+        "userinfo": "The link hides its real destination behind a fake login part (before the @)",
+        "ip_host": "The link points to a raw IP address",
+        "loop": "The redirects loop forever",
+        "too_many_redirects": "Too many redirects",
+        "http_only": "The destination is not encrypted (HTTP)",
+        "shortener": "The link goes through a link shortener",
+        "many_redirects": "{count} redirects in a row"
+      },
+      "multi_redirects": "redirects {count} times from {host}",
+      "multi_skipped": "{count} link(s) not examined.",
+      "multi_hint": "Send one link to /link-check for the full check: redirects, scan and screenshot.",
+      "errors": {
+        "empty": "Type a link to check.",
+        "invalid_url": "This is not a valid web link.",
+        "unsupported_scheme": "Only http and https links can be checked.",
+        "no_links": "I found no link I can check in this message."
+      }
     }
   }
 }
