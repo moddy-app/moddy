@@ -33,11 +33,12 @@ A batch of fixes and removals on the utility tools after a first run in producti
 * **`/exif` removed**: cog command, `tools/metadata.py`, its cards and persistent
   "All tags" button, the `exif.used` metric, `mutagen` from requirements, the
   `tools.exif.*` strings and the command locale entries.
-* **`/image`** ("This card no longer holds its image"): the Resize / Compress modals
-  now keep the message the button was clicked on, and when a card message shows no
-  image it is fetched back through the interaction token (works for ephemeral cards)
-  with a warning log listing what was seen. Root cause on Discord's side could not
-  be observed from the sandbox; the log will tell if it persists.
+* **`/image`** ("This card no longer holds its image"): root cause confirmed from the
+  production log (`flags=32832`, `attachments=[]`, `fetched=[]`): a Components V2
+  message has **no `attachments`**, neither on the click nor when fetched back, so the
+  buttons never found the image. The card's image is now read from its components
+  (`CardImage` over the media gallery / file / thumbnail items). The Resize / Compress
+  modals also keep the message the button was clicked on.
 * **`/subdomains`**: crt.sh is regularly down (502 even for small domains, checked
   live). On failure Moddy now falls back to Cert Spotter (keyless, 3 pages max); the
   card names the provider that answered. The fallback answer is cached 30 min.
