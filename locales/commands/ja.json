@@ -658,6 +658,30 @@
           "description": "確認するリンク"
         }
       }
+    },
+    "image": {
+      "name": "画像",
+      "description": "画像を表示し、サイズ変更・圧縮・変換・背景の削除ができます",
+      "parameters": {
+        "file": {
+          "name": "ファイル",
+          "description": "処理する画像（PNG、JPEG、WebP、GIF、HEIC、AVIF など）"
+        }
+      }
+    },
+    "convert": {
+      "name": "変換",
+      "description": "ファイルを別の形式に変換します（画像・文書・音声・動画・アーカイブなど）",
+      "parameters": {
+        "file": {
+          "name": "ファイル",
+          "description": "変換するファイル（最大25MB）"
+        },
+        "format": {
+          "name": "形式",
+          "description": "変換先の形式（空欄にすると一覧から選べます）"
+        }
+      }
     }
   },
   "choices": {

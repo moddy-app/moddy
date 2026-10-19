@@ -107,6 +107,7 @@ class Gateway:
         self.tracemoe = None
         self.virustotal = None
         self.urlscan = None
+        self.cloudconvert = None
 
     async def start(self, redis, pool, tech_logger=None, stats=None) -> None:
         """Boot the gateway. Call after Redis + DB pool are ready."""
@@ -129,6 +130,8 @@ class Gateway:
         from .adapters.virustotal import VirusTotalAdapter
         from .adapters.urlscan import UrlscanAdapter
         from .clients.web_security import UrlscanClient, VirusTotalClient
+        from .adapters.cloudconvert import CloudConvertAdapter
+        from .clients.conversion import CloudConvertClient
 
         self._quota = QuotaManager(redis, pool)
         self._ratelimiter = RateLimiter(redis, self.config.model_rate_limits)
@@ -218,6 +221,17 @@ class Gateway:
                 _log.error("urlscan adapter failed to start: %s", exc)
         else:
             _log.warning("URLSCAN_API_KEY not set — urlscan adapter disabled")
+        # Office documents / ebooks for /convert: optional, the feature is hidden
+        # (not broken) when the key is absent.
+        if self.config.cloudconvert_api_key:
+            try:
+                adapter = CloudConvertAdapter(self.config.cloudconvert_api_key)
+                await adapter.start()
+                self._adapters["cloudconvert"] = adapter
+            except Exception as exc:
+                _log.error("CloudConvert adapter failed to start: %s", exc)
+        else:
+            _log.warning("CLOUDCONVERT_API_KEY not set — CloudConvert adapter disabled")
 
         self._executor = GatewayExecutor(
             adapters=self._adapters,
@@ -236,6 +250,7 @@ class Gateway:
         self.tracemoe = TraceMoeClient(self._executor)
         self.virustotal = VirusTotalClient(self._executor)
         self.urlscan = UrlscanClient(self._executor)
+        self.cloudconvert = CloudConvertClient(self._executor)
 
         self._gw_logger.start()
         self._started = True
@@ -282,6 +297,8 @@ class Gateway:
 
     def urlscan_available(self) -> bool:
         return "urlscan" in self._adapters
+    def cloudconvert_available(self) -> bool:
+        return "cloudconvert" in self._adapters
 
     async def quota_available(self, target: "QuotaTarget") -> bool:
         """Convenience check for consumer-side availability gating."""

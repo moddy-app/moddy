@@ -1848,6 +1848,12 @@ class ModdyDatabase(
                 ("user",   "link_check", "default", 10),
                 ("guild",  "link_check", "default", 100),
                 ("global", "link_check", "default", -1),
+                # /convert, CloudConvert path only (office documents, ebooks).
+                # Local conversions are not metered. 5 a day per member keeps
+                # the provider's 25 free conversions a day from vanishing.
+                ("user",   "convert_cloud", "default", 5),
+                ("guild",  "convert_cloud", "default", 30),
+                ("global", "convert_cloud", "default", -1),
             ]:
                 await conn.execute(
                     """

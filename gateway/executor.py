@@ -59,6 +59,7 @@ class GatewayExecutor:
             "analysis": self._config.timeout_search,
             "scan_submit": self._config.timeout_search,
             "scan_result": self._config.timeout_scan,
+            "convert": self._config.timeout_convert,
         }.get(operation, 30.0)
 
     async def execute(self, spec: CallSpec) -> Any:

@@ -658,6 +658,30 @@
           "description": "要檢查的連結"
         }
       }
+    },
+    "image": {
+      "name": "圖片",
+      "description": "顯示圖片，並可調整大小、壓縮、轉換或移除背景",
+      "parameters": {
+        "file": {
+          "name": "檔案",
+          "description": "要處理的圖片（PNG、JPEG、WebP、GIF、HEIC、AVIF 等）"
+        }
+      }
+    },
+    "convert": {
+      "name": "轉換",
+      "description": "將檔案轉換為其他格式（圖片、文件、音訊、影片、壓縮檔等）",
+      "parameters": {
+        "file": {
+          "name": "檔案",
+          "description": "要轉換的檔案（上限 25 MB）"
+        },
+        "format": {
+          "name": "格式",
+          "description": "目標格式（留空則從清單中選擇）"
+        }
+      }
     }
   },
   "choices": {

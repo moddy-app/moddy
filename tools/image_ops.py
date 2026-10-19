@@ -249,6 +249,11 @@ def _load_frames(raw: bytes, *, animated_ok: bool) -> Tuple[List, List[int], int
         img.close()
 
 
+def load_frames(raw: bytes, *, animated_ok: bool = False):
+    """Public face of the safe decoder (used by ``tools/bg_removal.py``)."""
+    return _load_frames(raw, animated_ok=animated_ok)
+
+
 def _needs_rgba(frame) -> bool:
     return (frame.mode in ("RGBA", "LA", "PA", "P") and
             (frame.mode != "P" or "transparency" in frame.info)) or \

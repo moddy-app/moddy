@@ -658,6 +658,30 @@
           "description": "Tarkistettava linkki"
         }
       }
+    },
+    "image": {
+      "name": "kuva",
+      "description": "Näyttää kuvan ja antaa muuttaa sen kokoa, pakata, muuntaa tai poistaa taustan",
+      "parameters": {
+        "file": {
+          "name": "tiedosto",
+          "description": "Käsiteltävä kuva (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "muunna",
+      "description": "Muuntaa tiedoston toiseen muotoon (kuvat, asiakirjat, ääni, video, arkistot...)",
+      "parameters": {
+        "file": {
+          "name": "tiedosto",
+          "description": "Muunnettava tiedosto (enintään 25 Mt)"
+        },
+        "format": {
+          "name": "muoto",
+          "description": "Kohdemuoto (jätä tyhjäksi valitaksesi luettelosta)"
+        }
+      }
     }
   },
   "choices": {

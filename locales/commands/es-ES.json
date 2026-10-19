@@ -658,6 +658,30 @@
           "description": "El enlace a comprobar"
         }
       }
+    },
+    "image": {
+      "name": "imagen",
+      "description": "Muestra una imagen y permite cambiar su tamaño, comprimirla, convertirla o quitar el fondo",
+      "parameters": {
+        "file": {
+          "name": "archivo",
+          "description": "La imagen a tratar (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "convertir",
+      "description": "Convierte un archivo a otro formato (imágenes, documentos, audio, vídeo, archivos...)",
+      "parameters": {
+        "file": {
+          "name": "archivo",
+          "description": "El archivo a convertir (máx. 25 MB)"
+        },
+        "format": {
+          "name": "formato",
+          "description": "Formato de destino (déjalo vacío para elegir de una lista)"
+        }
+      }
     }
   },
   "choices": {

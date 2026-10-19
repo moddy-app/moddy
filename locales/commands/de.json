@@ -658,6 +658,30 @@
           "description": "Der zu prüfende Link"
         }
       }
+    },
+    "image": {
+      "name": "bild",
+      "description": "Zeigt ein Bild und ändert Größe, komprimiert, wandelt um oder entfernt den Hintergrund",
+      "parameters": {
+        "file": {
+          "name": "datei",
+          "description": "Das zu bearbeitende Bild (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "umwandeln",
+      "description": "Wandelt eine Datei in ein anderes Format um (Bilder, Dokumente, Audio, Video, Archive...)",
+      "parameters": {
+        "file": {
+          "name": "datei",
+          "description": "Die umzuwandelnde Datei (max. 25 MB)"
+        },
+        "format": {
+          "name": "format",
+          "description": "Zielformat (leer lassen, um aus einer Liste zu wählen)"
+        }
+      }
     }
   },
   "choices": {

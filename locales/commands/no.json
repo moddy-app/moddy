@@ -658,6 +658,30 @@
           "description": "Lenken som skal sjekkes"
         }
       }
+    },
+    "image": {
+      "name": "bilde",
+      "description": "Viser et bilde og lar deg endre størrelse, komprimere, konvertere eller fjerne bakgrunnen",
+      "parameters": {
+        "file": {
+          "name": "fil",
+          "description": "Bildet som skal behandles (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "konverter",
+      "description": "Konverterer en fil til et annet format (bilder, dokumenter, lyd, video, arkiver...)",
+      "parameters": {
+        "file": {
+          "name": "fil",
+          "description": "Filen som skal konverteres (maks. 25 MB)"
+        },
+        "format": {
+          "name": "format",
+          "description": "Målformat (la stå tomt for å velge fra en liste)"
+        }
+      }
     }
   },
   "choices": {

@@ -658,6 +658,30 @@
           "description": "Kontrol edilecek bağlantı"
         }
       }
+    },
+    "image": {
+      "name": "gorsel",
+      "description": "Bir görseli gösterir; boyutunu değiştirir, sıkıştırır, dönüştürür veya arka planını kaldırır",
+      "parameters": {
+        "file": {
+          "name": "dosya",
+          "description": "İşlenecek görsel (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "donustur",
+      "description": "Bir dosyayı başka bir biçime dönüştürür (görseller, belgeler, ses, video, arşivler...)",
+      "parameters": {
+        "file": {
+          "name": "dosya",
+          "description": "Dönüştürülecek dosya (en çok 25 MB)"
+        },
+        "format": {
+          "name": "bicim",
+          "description": "Hedef biçim (listeden seçmek için boş bırak)"
+        }
+      }
     }
   },
   "choices": {

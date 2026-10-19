@@ -658,6 +658,30 @@
           "description": "De te controleren link"
         }
       }
+    },
+    "image": {
+      "name": "afbeelding",
+      "description": "Toont een afbeelding: formaat wijzigen, comprimeren, converteren of achtergrond verwijderen",
+      "parameters": {
+        "file": {
+          "name": "bestand",
+          "description": "De afbeelding om te bewerken (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "converteer",
+      "description": "Zet een bestand om naar een ander formaat (afbeeldingen, documenten, audio, video, archieven...)",
+      "parameters": {
+        "file": {
+          "name": "bestand",
+          "description": "Het te converteren bestand (max. 25 MB)"
+        },
+        "format": {
+          "name": "formaat",
+          "description": "Doelformaat (laat leeg om uit een lijst te kiezen)"
+        }
+      }
     }
   },
   "choices": {

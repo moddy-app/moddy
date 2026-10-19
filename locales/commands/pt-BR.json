@@ -658,6 +658,30 @@
           "description": "O link a verificar"
         }
       }
+    },
+    "image": {
+      "name": "imagem",
+      "description": "Mostra uma imagem e permite redimensionar, comprimir, converter ou remover o fundo",
+      "parameters": {
+        "file": {
+          "name": "arquivo",
+          "description": "A imagem a tratar (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "converter",
+      "description": "Converte um arquivo para outro formato (imagens, documentos, áudio, vídeo, arquivos...)",
+      "parameters": {
+        "file": {
+          "name": "arquivo",
+          "description": "O arquivo a converter (máx. 25 MB)"
+        },
+        "format": {
+          "name": "formato",
+          "description": "Formato de destino (deixe vazio para escolher numa lista)"
+        }
+      }
     }
   },
   "choices": {
