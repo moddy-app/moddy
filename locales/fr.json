@@ -5774,7 +5774,8 @@
         "reserved": "Ce nom est réservé aux réseaux privés : on ne peut pas le chercher sur Internet.",
         "private_address": "Cette adresse appartient à un réseau privé. Moddy ne regarde que les serveurs publics.",
         "cooldown": "Trop de recherches d'affilée. Attends {retry} avant la suivante."
-      }
+      },
+      "error_title": "Recherche impossible"
     },
     "whois": {
       "title": "WHOIS",
@@ -5820,7 +5821,8 @@
       "errors": {
         "not_registered": "{domain} ne semble pas être enregistré.",
         "no_rdap": "Le registre de {tld} ne publie pas ses fiches publiques via RDAP : il n'y a rien à afficher."
-      }
+      },
+      "error_title": "Recherche WHOIS impossible"
     },
     "dns": {
       "title": "Enregistrements DNS",
@@ -5857,7 +5859,8 @@
       },
       "errors": {
         "nxdomain": "{domain} n'existe pas : aucun serveur DNS ne connaît ce nom."
-      }
+      },
+      "error_title": "Recherche DNS impossible"
     },
     "ssl": {
       "title": "Certificat SSL",
@@ -5889,7 +5892,8 @@
         "dns_failed": "{host} ne correspond à aucune adresse IP.",
         "tls_failed": "Le serveur n'a pas terminé de négociation TLS sur le port {port} : il n'y chiffre peut-être pas.",
         "unreachable": "Impossible de se connecter à {host} sur le port {port}. Le serveur est peut-être hors ligne ou bloque les inconnus."
-      }
+      },
+      "error_title": "Vérification du certificat impossible"
     },
     "subdomains": {
       "title": "Sous-domaines",
@@ -5903,7 +5907,8 @@
       "errors": {
         "crtsh_down": "crt.sh n'a pas répondu. Ce service gratuit est souvent surchargé : réessaie dans un instant.",
         "too_large": "{domain} a trop de certificats pour tout lister d'un coup. Essaie un sous-domaine plus précis."
-      }
+      },
+      "error_title": "Recherche de sous-domaines impossible"
     },
     "linkcheck": {
       "title": "Vérification de lien",
@@ -5988,7 +5993,8 @@
         "invalid_url": "Ce n'est pas un lien web valide.",
         "unsupported_scheme": "Seuls les liens http et https peuvent être vérifiés.",
         "no_links": "Je n'ai trouvé aucun lien vérifiable dans ce message."
-      }
+      },
+      "error_title": "Vérification du lien impossible"
     }
   }
 }

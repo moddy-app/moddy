@@ -5775,7 +5775,8 @@
         "reserved": "This name is reserved for private networks: it cannot be looked up on the Internet.",
         "private_address": "This address belongs to a private network. Moddy only looks at public servers.",
         "cooldown": "Too many lookups in a row. Wait {retry} before the next one."
-      }
+      },
+      "error_title": "Cannot look this up"
     },
     "whois": {
       "title": "WHOIS",
@@ -5821,7 +5822,8 @@
       "errors": {
         "not_registered": "{domain} does not appear to be registered.",
         "no_rdap": "The registry of {tld} does not publish public records through RDAP: there is nothing to show."
-      }
+      },
+      "error_title": "WHOIS lookup failed"
     },
     "dns": {
       "title": "DNS records",
@@ -5858,7 +5860,8 @@
       },
       "errors": {
         "nxdomain": "{domain} does not exist: no DNS server knows this name."
-      }
+      },
+      "error_title": "DNS lookup failed"
     },
     "ssl": {
       "title": "SSL certificate",
@@ -5890,7 +5893,8 @@
         "dns_failed": "{host} does not resolve to an IP address.",
         "tls_failed": "The server did not complete a TLS handshake on port {port}: it may not use encryption there.",
         "unreachable": "Could not connect to {host} on port {port}. The server may be down or block unknown visitors."
-      }
+      },
+      "error_title": "Certificate check failed"
     },
     "subdomains": {
       "title": "Subdomains",
@@ -5904,7 +5908,8 @@
       "errors": {
         "crtsh_down": "crt.sh did not answer. This free service is often overloaded: try again in a moment.",
         "too_large": "{domain} has too many certificates to list at once. Try a more specific subdomain."
-      }
+      },
+      "error_title": "Subdomain search failed"
     },
     "linkcheck": {
       "title": "Link check",
@@ -5989,7 +5994,8 @@
         "invalid_url": "This is not a valid web link.",
         "unsupported_scheme": "Only http and https links can be checked.",
         "no_links": "I found no link I can check in this message."
-      }
+      },
+      "error_title": "Link check failed"
     }
   }
 }

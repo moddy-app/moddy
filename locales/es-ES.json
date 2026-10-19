@@ -5689,7 +5689,8 @@
         "reserved": "Este nombre está reservado a redes privadas: no se puede consultar en Internet.",
         "private_address": "Esta dirección pertenece a una red privada. Moddy solo consulta servidores públicos.",
         "cooldown": "Demasiadas consultas seguidas. Espera {retry} antes de la siguiente."
-      }
+      },
+      "error_title": "Consulta imposible"
     },
     "whois": {
       "title": "WHOIS",
@@ -5735,7 +5736,8 @@
       "errors": {
         "not_registered": "{domain} no parece estar registrado.",
         "no_rdap": "El registro de {tld} no publica fichas públicas mediante RDAP: no hay nada que mostrar."
-      }
+      },
+      "error_title": "Búsqueda WHOIS imposible"
     },
     "dns": {
       "title": "Registros DNS",
@@ -5772,7 +5774,8 @@
       },
       "errors": {
         "nxdomain": "{domain} no existe: ningún servidor DNS conoce este nombre."
-      }
+      },
+      "error_title": "Consulta DNS imposible"
     },
     "ssl": {
       "title": "Certificado SSL",
@@ -5804,7 +5807,8 @@
         "dns_failed": "{host} no se resuelve a ninguna dirección IP.",
         "tls_failed": "El servidor no completó el protocolo TLS en el puerto {port}: puede que no use cifrado ahí.",
         "unreachable": "No se pudo conectar a {host} en el puerto {port}. El servidor puede estar caído o bloquear visitantes desconocidos."
-      }
+      },
+      "error_title": "Comprobación del certificado imposible"
     },
     "subdomains": {
       "title": "Subdominios",
@@ -5818,7 +5822,8 @@
       "errors": {
         "crtsh_down": "crt.sh no respondió. Este servicio gratuito suele estar saturado: inténtalo de nuevo en un momento.",
         "too_large": "{domain} tiene demasiados certificados para listarlos de golpe. Prueba un subdominio más concreto."
-      }
+      },
+      "error_title": "Búsqueda de subdominios imposible"
     },
     "linkcheck": {
       "title": "Verificación de enlace",
@@ -5903,7 +5908,8 @@
         "invalid_url": "Este no es un enlace web válido.",
         "unsupported_scheme": "Solo se pueden comprobar enlaces http y https.",
         "no_links": "No encontré ningún enlace que pueda comprobar en este mensaje."
-      }
+      },
+      "error_title": "Comprobación del enlace imposible"
     }
   }
 }

@@ -5689,7 +5689,8 @@
         "reserved": "Dieser Name ist privaten Netzwerken vorbehalten und lässt sich im Internet nicht abfragen.",
         "private_address": "Diese Adresse gehört zu einem privaten Netzwerk. Moddy fragt nur öffentliche Server ab.",
         "cooldown": "Zu viele Abfragen hintereinander. Warte {retry} bis zur nächsten."
-      }
+      },
+      "error_title": "Abfrage nicht möglich"
     },
     "whois": {
       "title": "WHOIS",
@@ -5735,7 +5736,8 @@
       "errors": {
         "not_registered": "{domain} scheint nicht registriert zu sein.",
         "no_rdap": "Die Registry von {tld} veröffentlicht keine öffentlichen Einträge über RDAP: Es gibt nichts anzuzeigen."
-      }
+      },
+      "error_title": "WHOIS-Abfrage nicht möglich"
     },
     "dns": {
       "title": "DNS-Einträge",
@@ -5772,7 +5774,8 @@
       },
       "errors": {
         "nxdomain": "{domain} existiert nicht: Kein DNS-Server kennt diesen Namen."
-      }
+      },
+      "error_title": "DNS-Abfrage nicht möglich"
     },
     "ssl": {
       "title": "SSL-Zertifikat",
@@ -5804,7 +5807,8 @@
         "dns_failed": "{host} lässt sich keiner IP-Adresse zuordnen.",
         "tls_failed": "Der Server hat auf Port {port} keinen TLS-Handshake abgeschlossen: Dort wird womöglich nicht verschlüsselt.",
         "unreachable": "Verbindung zu {host} auf Port {port} nicht möglich. Der Server ist evtl. offline oder blockiert Unbekannte."
-      }
+      },
+      "error_title": "Zertifikatsprüfung nicht möglich"
     },
     "subdomains": {
       "title": "Subdomains",
@@ -5818,7 +5822,8 @@
       "errors": {
         "crtsh_down": "crt.sh hat nicht geantwortet. Dieser kostenlose Dienst ist oft überlastet: Versuch es gleich nochmal.",
         "too_large": "{domain} hat zu viele Zertifikate für eine komplette Liste. Versuch eine genauere Subdomain."
-      }
+      },
+      "error_title": "Subdomain-Suche nicht möglich"
     },
     "linkcheck": {
       "title": "Link-Prüfung",
@@ -5903,7 +5908,8 @@
         "invalid_url": "Das ist kein gültiger Weblink.",
         "unsupported_scheme": "Nur http- und https-Links lassen sich prüfen.",
         "no_links": "Ich habe in dieser Nachricht keinen prüfbaren Link gefunden."
-      }
+      },
+      "error_title": "Link-Prüfung nicht möglich"
     }
   }
 }
