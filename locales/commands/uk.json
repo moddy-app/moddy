@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "Розшифрувати"
+    },
+    "Check links": {
+      "name": "Перевірити посилання"
     }
   },
   "commands": {
@@ -486,6 +489,60 @@
         "color": {
           "name": "колір",
           "description": "HEX, rgb(), hsl(), назва CSS, число Discord або random"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Хто і коли зареєстрував домен (реєстратор, дати, сервери імен)",
+      "parameters": {
+        "domain": {
+          "name": "домен",
+          "description": "Назва домену або посилання, наприклад example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "DNS-записи домену (A, MX, TXT, NS...) і захист пошти",
+      "parameters": {
+        "domain": {
+          "name": "домен",
+          "description": "Назва домену або посилання, наприклад example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Перевірити HTTPS-сертифікат сайту (термін дії, видавець, імена)",
+      "parameters": {
+        "domain": {
+          "name": "домен",
+          "description": "Назва домену або посилання, наприклад example.com"
+        },
+        "port": {
+          "name": "порт",
+          "description": "Порт (типово 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "піддомени",
+      "description": "Список піддоменів домену з публічних сертифікатів",
+      "parameters": {
+        "domain": {
+          "name": "домен",
+          "description": "Назва домену або посилання, наприклад example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "перевірка-посилання",
+      "description": "Перевірити, чи небезпечне посилання: редиректи, вік домену, репутація",
+      "parameters": {
+        "url": {
+          "name": "посилання",
+          "description": "Посилання для перевірки"
         }
       }
     }

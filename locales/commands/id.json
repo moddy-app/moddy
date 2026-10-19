@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "Transkripsikan"
+    },
+    "Check links": {
+      "name": "Periksa tautan"
     }
   },
   "commands": {
@@ -486,6 +489,60 @@
         "color": {
           "name": "warna",
           "description": "HEX, rgb(), hsl(), nama CSS, angka Discord, atau random"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Siapa yang mendaftarkan domain dan kapan (registrar, tanggal, name server)",
+      "parameters": {
+        "domain": {
+          "name": "domain",
+          "description": "Nama domain atau tautan, misalnya example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "Rekaman DNS sebuah domain (A, MX, TXT, NS...) dan perlindungan email",
+      "parameters": {
+        "domain": {
+          "name": "domain",
+          "description": "Nama domain atau tautan, misalnya example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Periksa sertifikat HTTPS sebuah situs (validitas, penerbit, nama)",
+      "parameters": {
+        "domain": {
+          "name": "domain",
+          "description": "Nama domain atau tautan, misalnya example.com"
+        },
+        "port": {
+          "name": "port",
+          "description": "Port (bawaan 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "subdomain",
+      "description": "Daftar subdomain sebuah domain yang terlihat di sertifikat publik",
+      "parameters": {
+        "domain": {
+          "name": "domain",
+          "description": "Nama domain atau tautan, misalnya example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "cek-tautan",
+      "description": "Periksa apakah tautan berbahaya: pengalihan, usia domain, reputasi",
+      "parameters": {
+        "url": {
+          "name": "tautan",
+          "description": "Tautan yang diperiksa"
         }
       }
     }

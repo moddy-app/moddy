@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "Транскрибиране"
+    },
+    "Check links": {
+      "name": "Провери линковете"
     }
   },
   "commands": {
@@ -486,6 +489,60 @@
         "color": {
           "name": "цвят",
           "description": "HEX, rgb(), hsl(), име в CSS, число на Discord или random"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Кой е регистрирал домейн и кога (регистратор, дати, сървъри на имена)",
+      "parameters": {
+        "domain": {
+          "name": "домейн",
+          "description": "Име на домейн или линк, например example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "DNS записи на домейн (A, MX, TXT, NS...) и защита на имейла",
+      "parameters": {
+        "domain": {
+          "name": "домейн",
+          "description": "Име на домейн или линк, например example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Провери HTTPS сертификата на уебсайт (валидност, издател, имена)",
+      "parameters": {
+        "domain": {
+          "name": "домейн",
+          "description": "Име на домейн или линк, например example.com"
+        },
+        "port": {
+          "name": "порт",
+          "description": "Порт (по подразбиране 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "поддомейни",
+      "description": "Списък с поддомейните на домейн, видени в публични сертификати",
+      "parameters": {
+        "domain": {
+          "name": "домейн",
+          "description": "Име на домейн или линк, например example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "проверка-на-линк",
+      "description": "Провери дали линк е опасен: пренасочвания, възраст на домейна, репутация",
+      "parameters": {
+        "url": {
+          "name": "линк",
+          "description": "Линкът за проверка"
         }
       }
     }

@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "Transkribiraj"
+    },
+    "Check links": {
+      "name": "Provjeri poveznice"
     }
   },
   "commands": {
@@ -486,6 +489,60 @@
         "color": {
           "name": "boja",
           "description": "HEX, rgb(), hsl(), CSS naziv, Discord broj ili random"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Tko je registrirao domenu i kada (registrar, datumi, poslužitelji imena)",
+      "parameters": {
+        "domain": {
+          "name": "domena",
+          "description": "Naziv domene ili poveznica, npr. example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "DNS zapisi domene (A, MX, TXT, NS...) i zaštita e-pošte",
+      "parameters": {
+        "domain": {
+          "name": "domena",
+          "description": "Naziv domene ili poveznica, npr. example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Provjeri HTTPS certifikat web-mjesta (valjanost, izdavatelj, imena)",
+      "parameters": {
+        "domain": {
+          "name": "domena",
+          "description": "Naziv domene ili poveznica, npr. example.com"
+        },
+        "port": {
+          "name": "port",
+          "description": "Port (zadano 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "poddomene",
+      "description": "Popis poddomena domene viđenih u javnim certifikatima",
+      "parameters": {
+        "domain": {
+          "name": "domena",
+          "description": "Naziv domene ili poveznica, npr. example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "provjera-poveznice",
+      "description": "Provjeri je li poveznica opasna: preusmjeravanja, starost domene, reputacija",
+      "parameters": {
+        "url": {
+          "name": "poveznica",
+          "description": "Poveznica za provjeru"
         }
       }
     }

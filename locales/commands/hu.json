@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "Átirat készítése"
+    },
+    "Check links": {
+      "name": "Linkek ellenőrzése"
     }
   },
   "commands": {
@@ -486,6 +489,60 @@
         "color": {
           "name": "szín",
           "description": "HEX, rgb(), hsl(), CSS-név, Discord-szám vagy random"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Ki regisztrálta a domaint, és mikor (regisztrátor, dátumok, névszerverek)",
+      "parameters": {
+        "domain": {
+          "name": "domain",
+          "description": "Domainnév vagy link, pl. example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "Egy domain DNS-rekordjai (A, MX, TXT, NS...) és az e-mail védelme",
+      "parameters": {
+        "domain": {
+          "name": "domain",
+          "description": "Domainnév vagy link, pl. example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Egy weboldal HTTPS-tanúsítványának ellenőrzése (érvényesség, kiállító, nevek)",
+      "parameters": {
+        "domain": {
+          "name": "domain",
+          "description": "Domainnév vagy link, pl. example.com"
+        },
+        "port": {
+          "name": "port",
+          "description": "Port (alapértelmezett: 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "aldomainek",
+      "description": "A domain nyilvános tanúsítványokban látott aldomainjei",
+      "parameters": {
+        "domain": {
+          "name": "domain",
+          "description": "Domainnév vagy link, pl. example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "link-ellenőrzés",
+      "description": "Ellenőrzi, veszélyes-e egy link: átirányítások, domain kora, hírnév",
+      "parameters": {
+        "url": {
+          "name": "link",
+          "description": "Az ellenőrizendő link"
         }
       }
     }

@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "Transcrever"
+    },
+    "Check links": {
+      "name": "Verificar links"
     }
   },
   "commands": {
@@ -486,6 +489,60 @@
         "color": {
           "name": "cor",
           "description": "HEX, rgb(), hsl(), nome CSS, número do Discord ou random"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Quem registrou um domínio e quando (registrador, datas, servidores de nomes)",
+      "parameters": {
+        "domain": {
+          "name": "dominio",
+          "description": "Nome de domínio ou link, por exemplo example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "Registros DNS de um domínio (A, MX, TXT, NS...) e proteção de e-mail",
+      "parameters": {
+        "domain": {
+          "name": "dominio",
+          "description": "Nome de domínio ou link, por exemplo example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Verifique o certificado HTTPS de um site (validade, emissor, nomes)",
+      "parameters": {
+        "domain": {
+          "name": "dominio",
+          "description": "Nome de domínio ou link, por exemplo example.com"
+        },
+        "port": {
+          "name": "porta",
+          "description": "Porta (padrão 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "subdominios",
+      "description": "Lista os subdomínios de um domínio vistos em certificados públicos",
+      "parameters": {
+        "domain": {
+          "name": "dominio",
+          "description": "Nome de domínio ou link, por exemplo example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "verificar-link",
+      "description": "Verifique se um link é perigoso: redirecionamentos, idade do domínio, reputação",
+      "parameters": {
+        "url": {
+          "name": "link",
+          "description": "O link a verificar"
         }
       }
     }

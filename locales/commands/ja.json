@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "文字起こし"
+    },
+    "Check links": {
+      "name": "リンクを確認"
     }
   },
   "commands": {
@@ -486,6 +489,60 @@
         "color": {
           "name": "色",
           "description": "HEX、rgb()、hsl()、CSS名、Discordの数値、またはrandom"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "ドメインの登録者と登録日を調べます（レジストラ、日付、ネームサーバー）",
+      "parameters": {
+        "domain": {
+          "name": "ドメイン",
+          "description": "ドメイン名またはリンク（例：example.com）"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "ドメインのDNSレコード（A、MX、TXT、NS...）とメール保護を表示します",
+      "parameters": {
+        "domain": {
+          "name": "ドメイン",
+          "description": "ドメイン名またはリンク（例：example.com）"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "サイトのHTTPS証明書を確認します（有効性、発行者、名前）",
+      "parameters": {
+        "domain": {
+          "name": "ドメイン",
+          "description": "ドメイン名またはリンク（例：example.com）"
+        },
+        "port": {
+          "name": "ポート",
+          "description": "ポート（既定は443）"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "サブドメイン",
+      "description": "公開証明書に現れたドメインのサブドメインを一覧表示します",
+      "parameters": {
+        "domain": {
+          "name": "ドメイン",
+          "description": "ドメイン名またはリンク（例：example.com）"
+        }
+      }
+    },
+    "link-check": {
+      "name": "リンク確認",
+      "description": "リンクが危険か確認します：リダイレクト、ドメインの年齢、評判",
+      "parameters": {
+        "url": {
+          "name": "リンク",
+          "description": "確認するリンク"
         }
       }
     }

@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "Transcribe"
+    },
+    "Check links": {
+      "name": "Check links"
     }
   },
   "commands": {
@@ -486,6 +489,60 @@
         "color": {
           "name": "colour",
           "description": "HEX, rgb(), hsl(), CSS name, Discord number or random"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Who registered a domain, and when (registrar, dates, name servers)",
+      "parameters": {
+        "domain": {
+          "name": "domain",
+          "description": "Domain name or link, for example example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "DNS records of a domain (A, MX, TXT, NS...) and e-mail protection",
+      "parameters": {
+        "domain": {
+          "name": "domain",
+          "description": "Domain name or link, for example example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Check the HTTPS certificate of a website (validity, issuer, names)",
+      "parameters": {
+        "domain": {
+          "name": "domain",
+          "description": "Domain name or link, for example example.com"
+        },
+        "port": {
+          "name": "port",
+          "description": "Port (default 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "subdomains",
+      "description": "List the subdomains of a domain seen in public certificates",
+      "parameters": {
+        "domain": {
+          "name": "domain",
+          "description": "Domain name or link, for example example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "link-check",
+      "description": "Check if a link is dangerous: redirects, domain age, reputation",
+      "parameters": {
+        "url": {
+          "name": "url",
+          "description": "The link to check"
         }
       }
     }

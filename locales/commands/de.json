@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "Transkribieren"
+    },
+    "Check links": {
+      "name": "Links prüfen"
     }
   },
   "commands": {
@@ -486,6 +489,60 @@
         "color": {
           "name": "farbe",
           "description": "HEX, rgb(), hsl(), CSS-Name, Discord-Zahl oder random"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Wer eine Domain registriert hat und wann (Registrar, Daten, Nameserver)",
+      "parameters": {
+        "domain": {
+          "name": "domain",
+          "description": "Domainname oder Link, z. B. example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "DNS-Einträge einer Domain (A, MX, TXT, NS ...) und E-Mail-Schutz",
+      "parameters": {
+        "domain": {
+          "name": "domain",
+          "description": "Domainname oder Link, z. B. example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Prüft das HTTPS-Zertifikat einer Website (Gültigkeit, Aussteller, Namen)",
+      "parameters": {
+        "domain": {
+          "name": "domain",
+          "description": "Domainname oder Link, z. B. example.com"
+        },
+        "port": {
+          "name": "port",
+          "description": "Port (Standard 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "subdomains",
+      "description": "Listet die Subdomains einer Domain aus öffentlichen Zertifikaten auf",
+      "parameters": {
+        "domain": {
+          "name": "domain",
+          "description": "Domainname oder Link, z. B. example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "link-prüfen",
+      "description": "Prüft, ob ein Link gefährlich ist: Weiterleitungen, Domain-Alter, Ruf",
+      "parameters": {
+        "url": {
+          "name": "link",
+          "description": "Der zu prüfende Link"
         }
       }
     }

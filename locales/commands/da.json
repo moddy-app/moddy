@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "Transskriber"
+    },
+    "Check links": {
+      "name": "Tjek links"
     }
   },
   "commands": {
@@ -486,6 +489,60 @@
         "color": {
           "name": "farve",
           "description": "HEX, rgb(), hsl(), CSS-navn, Discord-tal eller random"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Hvem der har registreret et domæne, og hvornår (registrar, datoer, navneservere)",
+      "parameters": {
+        "domain": {
+          "name": "domæne",
+          "description": "Domænenavn eller link, fx example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "DNS-records for et domæne (A, MX, TXT, NS...) og mailbeskyttelse",
+      "parameters": {
+        "domain": {
+          "name": "domæne",
+          "description": "Domænenavn eller link, fx example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Tjek et websteds HTTPS-certifikat (gyldighed, udsteder, navne)",
+      "parameters": {
+        "domain": {
+          "name": "domæne",
+          "description": "Domænenavn eller link, fx example.com"
+        },
+        "port": {
+          "name": "port",
+          "description": "Port (standard 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "underdomæner",
+      "description": "List et domænes underdomæner set i offentlige certifikater",
+      "parameters": {
+        "domain": {
+          "name": "domæne",
+          "description": "Domænenavn eller link, fx example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "linktjek",
+      "description": "Tjek om et link er farligt: omdirigeringer, domænets alder, omdømme",
+      "parameters": {
+        "url": {
+          "name": "link",
+          "description": "Linket der skal tjekkes"
         }
       }
     }

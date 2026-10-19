@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "轉錄文字"
+    },
+    "Check links": {
+      "name": "檢查連結"
     }
   },
   "commands": {
@@ -486,6 +489,60 @@
         "color": {
           "name": "顏色",
           "description": "HEX、rgb()、hsl()、CSS 名稱、Discord 數字或 random"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "查詢網域由誰在何時註冊（註冊商、日期、名稱伺服器）",
+      "parameters": {
+        "domain": {
+          "name": "網域",
+          "description": "網域名稱或連結，例如 example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "檢視網域的 DNS 記錄（A、MX、TXT、NS...）與郵件防護",
+      "parameters": {
+        "domain": {
+          "name": "網域",
+          "description": "網域名稱或連結，例如 example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "檢查網站的 HTTPS 憑證（有效期、簽發者、名稱）",
+      "parameters": {
+        "domain": {
+          "name": "網域",
+          "description": "網域名稱或連結，例如 example.com"
+        },
+        "port": {
+          "name": "連接埠",
+          "description": "連接埠（預設 443）"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "子網域",
+      "description": "列出公開憑證中出現的網域子網域",
+      "parameters": {
+        "domain": {
+          "name": "網域",
+          "description": "網域名稱或連結，例如 example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "連結檢查",
+      "description": "檢查連結是否危險：重新導向、網域年齡、信譽",
+      "parameters": {
+        "url": {
+          "name": "連結",
+          "description": "要檢查的連結"
         }
       }
     }

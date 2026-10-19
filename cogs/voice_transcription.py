@@ -11,8 +11,8 @@ The answer is deliberately **public**: a transcription exists so the channel can
 read a voice note, not just the person who asked. Only failures are private.
 
 The menu also reads **images** (OCR, ``services/ocr_service.py``): Discord caps
-apps at five message context menus and all five are taken, so a message with an
-image and no audio gets its text extracted instead of a sixth "OCR" menu.
+apps at 15 message context menus (it was 5 for a long time), so a message with
+an image and no audio gets its text extracted instead of a dedicated "OCR" menu.
 """
 
 from __future__ import annotations
@@ -41,9 +41,8 @@ class VoiceTranscription(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-        # Discord allows 5 message context menus globally; this is the fifth
-        # (Save Message, Get Emojis, Translate, AI text tools, Transcribe) —
-        # which is why it also covers images (OCR) rather than a sixth menu.
+        # Discord allows 15 message context menus globally (it was 5 when this
+        # was written). One "Transcribe" entry covers audio and images (OCR).
         self.transcribe_menu = app_commands.ContextMenu(
             name="Transcribe",
             callback=self.transcribe_context_menu,

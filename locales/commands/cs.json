@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "Přepsat do textu"
+    },
+    "Check links": {
+      "name": "Zkontrolovat odkazy"
     }
   },
   "commands": {
@@ -486,6 +489,60 @@
         "color": {
           "name": "barva",
           "description": "HEX, rgb(), hsl(), název CSS, číslo Discordu nebo random"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Kdo doménu zaregistroval a kdy (registrátor, data, jmenné servery)",
+      "parameters": {
+        "domain": {
+          "name": "doména",
+          "description": "Název domény nebo odkaz, například example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "DNS záznamy domény (A, MX, TXT, NS...) a ochrana e-mailu",
+      "parameters": {
+        "domain": {
+          "name": "doména",
+          "description": "Název domény nebo odkaz, například example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Zkontroluj HTTPS certifikát webu (platnost, vydavatel, jména)",
+      "parameters": {
+        "domain": {
+          "name": "doména",
+          "description": "Název domény nebo odkaz, například example.com"
+        },
+        "port": {
+          "name": "port",
+          "description": "Port (výchozí 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "subdomény",
+      "description": "Vypíše subdomény domény viditelné ve veřejných certifikátech",
+      "parameters": {
+        "domain": {
+          "name": "doména",
+          "description": "Název domény nebo odkaz, například example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "kontrola-odkazu",
+      "description": "Zjisti, zda je odkaz nebezpečný: přesměrování, stáří domény, reputace",
+      "parameters": {
+        "url": {
+          "name": "odkaz",
+          "description": "Odkaz ke kontrole"
         }
       }
     }

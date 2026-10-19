@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "Transkribera"
+    },
+    "Check links": {
+      "name": "Kontrollera länkar"
     }
   },
   "commands": {
@@ -486,6 +489,60 @@
         "color": {
           "name": "färg",
           "description": "HEX, rgb(), hsl(), CSS-namn, Discord-tal eller random"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Vem som registrerade en domän och när (registrar, datum, namnservrar)",
+      "parameters": {
+        "domain": {
+          "name": "domän",
+          "description": "Domännamn eller länk, till exempel example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "DNS-poster för en domän (A, MX, TXT, NS...) och e-postskydd",
+      "parameters": {
+        "domain": {
+          "name": "domän",
+          "description": "Domännamn eller länk, till exempel example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Kontrollera en webbplats HTTPS-certifikat (giltighet, utfärdare, namn)",
+      "parameters": {
+        "domain": {
+          "name": "domän",
+          "description": "Domännamn eller länk, till exempel example.com"
+        },
+        "port": {
+          "name": "port",
+          "description": "Port (standard 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "underdomäner",
+      "description": "Listar en doméns underdomäner som setts i offentliga certifikat",
+      "parameters": {
+        "domain": {
+          "name": "domän",
+          "description": "Domännamn eller länk, till exempel example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "länkkontroll",
+      "description": "Kontrollera om en länk är farlig: omdirigeringar, domänens ålder, rykte",
+      "parameters": {
+        "url": {
+          "name": "länk",
+          "description": "Länken som ska kontrolleras"
         }
       }
     }

@@ -3,8 +3,8 @@
 
 Global command (servers, DMs, user installs). The image can also be OCR'd from
 a message with the **Transcribe** context menu (``cogs/voice_transcription.py``):
-Discord caps apps at five message context menus and all five are taken, so
-"Transcribe" handles audio *and* images instead of a sixth menu.
+Discord caps apps at 15 message context menus (it was 5 for a long time, which
+is why "Transcribe" handles audio *and* images instead of a dedicated menu).
 
 The result is ephemeral by default (``incognito``) — it is the requester's
 text, not the channel's. See docs/features/OCR.md.

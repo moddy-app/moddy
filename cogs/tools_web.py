@@ -183,7 +183,7 @@ class ToolsWeb(commands.Cog):
                           description="Check the HTTPS certificate of a website (validity, issuer, names)")
     @app_commands.allowed_installs(guilds=True, users=True)
     @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
-    @app_commands.describe(domain="Domain name, address or link, for example example.com",
+    @app_commands.describe(domain="Domain name or link, for example example.com",
                            port="Port (default 443)",
                            incognito="Make response visible only to you")
     @app_commands.choices(port=[app_commands.Choice(name=str(p), value=p)
@@ -247,7 +247,7 @@ class ToolsWeb(commands.Cog):
                           description="Check if a link is dangerous: redirects, domain age, reputation")
     @app_commands.allowed_installs(guilds=True, users=True)
     @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
-    @app_commands.describe(url="The link to check (it is never opened by you)",
+    @app_commands.describe(url="The link to check",
                            incognito="Make response visible only to you")
     @add_incognito_option()
     async def link_check_command(self, interaction: discord.Interaction,
