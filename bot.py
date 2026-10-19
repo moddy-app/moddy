@@ -155,6 +155,9 @@ class ModdyBot(ModdyFrameworkBot):
         from services.public_api import PublicAPI
         # Keyless public APIs for the utility tools (Wiktionary, RDAP, crt.sh…)
         self.public_api = PublicAPI(self)
+        from services.music_links_service import MusicLinksService
+        # Spotify link -> Deezer / Apple Music / YouTube Music (module + /music link)
+        self.music_links = MusicLinksService(self)
         from services.altguard_client import AltGuardClient
         # AltGuard anti multi-account verification (HTTP + altguard:* Pub/Sub)
         self.altguard = AltGuardClient(self)
@@ -2467,6 +2470,7 @@ class ModdyBot(ModdyFrameworkBot):
         await self.betterstack_heartbeat.stop()
 
         await self.ai_detector.stop()
+        await self.music_links.stop()
 
         try:
             await self.public_api.close()

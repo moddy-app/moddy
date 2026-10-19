@@ -182,6 +182,14 @@ _ALL: Tuple[Metric, ...] = (
     Metric("ai_detector.verdict", scope=SCOPE_GLOBAL, dimensions=("kind", "source"),
            doc="The AI image detector reached a verdict (kind: ai_full | "
                "ai_partial | photo | photo_edited | unsigned; source: auto | command)."),
+    Metric("music_links.resolved", scope=SCOPE_GLOBAL, dimensions=("kind", "source"),
+           doc="A Spotify link was read and looked up on other platforms (kind: "
+               "track | album | artist; source: auto | command)."),
+    Metric("music_links.posted", scope=SCOPE_GLOBAL, dimensions=("kind",),
+           doc="The music links module replied under a message with links to other platforms."),
+    Metric("music_links.failed", scope=SCOPE_GLOBAL, dimensions=("reason", "source"),
+           doc="A Spotify link could not be resolved (reason: not_found | unavailable | "
+               "unsupported; source: auto | command)."),
     # -- Uniques (HyperLogLog, never a list of ids) ------------------------ #
     Metric("user.active", kind=KIND_UNIQUE, scope=SCOPE_GUILD,
            doc="Distinct people who used Moddy in this server, per day."),
