@@ -402,8 +402,9 @@ def _int_or_none(raw: Optional[str]) -> Optional[int]:
 class ResizeModal(BaseModal):
     """Width / height / percent + how to fit. Opened by the Resize button."""
 
-    def __init__(self, locale: str):
+    def __init__(self, locale: str, message: Optional[discord.Message] = None):
         super().__init__(title=t("tools.image.resize_title", locale=locale)[:45])
+        self.message = message
         self.add_item(ui.TextDisplay(t("tools.image.resize_help", locale=locale)))
         self.width = ui.Label(
             text=t("tools.image.width_label", locale=locale)[:45],
@@ -431,6 +432,8 @@ class ResizeModal(BaseModal):
 
     async def on_submit(self, interaction: discord.Interaction):
         locale = i18n.get_user_locale(interaction)
+        if interaction.message is None:
+            interaction.message = self.message
         try:
             width = _int_or_none(self.width.component.value)
             height = _int_or_none(self.height.component.value)
@@ -452,8 +455,9 @@ class ResizeModal(BaseModal):
 class CompressModal(BaseModal):
     """Compression strength. Opened by the Compress button."""
 
-    def __init__(self, locale: str):
+    def __init__(self, locale: str, message: Optional[discord.Message] = None):
         super().__init__(title=t("tools.image.compress_title", locale=locale)[:45])
+        self.message = message
         self.add_item(ui.TextDisplay(t("tools.image.compress_help", locale=locale)))
         self.level = ui.Label(
             text=t("tools.image.level_label", locale=locale)[:45],
@@ -466,6 +470,8 @@ class CompressModal(BaseModal):
         self.add_item(self.level)
 
     async def on_submit(self, interaction: discord.Interaction):
+        if interaction.message is None:
+            interaction.message = self.message
         await apply_image_action(interaction, "compress",
                                  {"level": self.level.component.value or image_ops.BALANCED})
 
@@ -488,7 +494,8 @@ class ImageResizeButton(ui.DynamicItem[ui.Button], template=r"moddy:tools:image:
 
     @tc.guarded
     async def callback(self, interaction: discord.Interaction):
-        await interaction.response.send_modal(ResizeModal(i18n.get_user_locale(interaction)))
+        await interaction.response.send_modal(
+            ResizeModal(i18n.get_user_locale(interaction), interaction.message))
 
 
 class ImageCompressButton(ui.DynamicItem[ui.Button], template=r"moddy:tools:image:compress"):
@@ -504,7 +511,8 @@ class ImageCompressButton(ui.DynamicItem[ui.Button], template=r"moddy:tools:imag
 
     @tc.guarded
     async def callback(self, interaction: discord.Interaction):
-        await interaction.response.send_modal(CompressModal(i18n.get_user_locale(interaction)))
+        await interaction.response.send_modal(
+            CompressModal(i18n.get_user_locale(interaction), interaction.message))
 
 
 class ImageBackgroundButton(ui.DynamicItem[ui.Button], template=r"moddy:tools:image:bg"):

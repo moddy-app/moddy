@@ -936,3 +936,19 @@ def test_card_texts_resolve_in_every_locale():
         picker = views.build_convert_picker(filename="a.png", src="png", size=10, token="abcdefghij",
                                             targets=["jpg", "pdf"], locale=locale)
         assert not re.search(r"\btools\.(image|convert)\.", walk_text(picker)), locale
+
+
+@pytest.mark.parametrize("locale", LOCALES)
+async def test_modals_build_within_discord_limits(locale):
+    for modal in (views.ResizeModal(locale), views.CompressModal(locale)):
+        assert len(modal.title) <= 45
+        top = [c for c in modal.children]
+        assert 1 <= len(top) <= 5
+        for item in top:
+            if isinstance(item, ui.Label):
+                assert len(item.text) <= 45 and len(item.description or "") <= 100
+    resize = views.ResizeModal(locale)
+    assert [o.value for o in resize.mode.component.options] == ["fit", "exact", "fill"]
+    assert sum(o.default for o in resize.mode.component.options) == 1
+    compress = views.CompressModal(locale)
+    assert [o.value for o in compress.level.component.options] == ["light", "balanced", "strong"]
