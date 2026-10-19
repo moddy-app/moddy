@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "받아쓰기"
+    },
+    "Find source": {
+      "name": "출처 찾기"
     }
   },
   "commands": {
@@ -418,6 +421,30 @@
         "image": {
           "name": "이미지",
           "description": "확인할 이미지 (PNG, JPEG 또는 WebP)"
+        },
+        "message": {
+          "name": "메시지",
+          "description": "이미지가 포함된 이 서버 메시지의 링크"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "파일에 숨겨진 메타데이터를 보여줍니다",
+      "parameters": {
+        "file": {
+          "name": "파일",
+          "description": "이미지, PDF, Office 문서, 오디오 또는 비디오 파일"
+        }
+      }
+    },
+    "sauce": {
+      "name": "출처",
+      "description": "이미지의 출처를 찾습니다",
+      "parameters": {
+        "image": {
+          "name": "이미지",
+          "description": "검색할 이미지 (PNG, JPEG, WebP 또는 GIF)"
         },
         "message": {
           "name": "메시지",

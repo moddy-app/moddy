@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "Transkripsikan"
+    },
+    "Find source": {
+      "name": "Cari sumber"
     }
   },
   "commands": {
@@ -418,6 +421,30 @@
         "image": {
           "name": "gambar",
           "description": "Gambar yang akan diperiksa (PNG, JPEG, atau WebP)"
+        },
+        "message": {
+          "name": "pesan",
+          "description": "Tautan pesan dari server ini yang berisi gambar"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "Menampilkan metadata tersembunyi dari sebuah file",
+      "parameters": {
+        "file": {
+          "name": "berkas",
+          "description": "Gambar, PDF, dokumen Office, file audio atau video"
+        }
+      }
+    },
+    "sauce": {
+      "name": "sumber",
+      "description": "Menemukan sumber sebuah gambar",
+      "parameters": {
+        "image": {
+          "name": "gambar",
+          "description": "Gambar yang dicari (PNG, JPEG, WebP, atau GIF)"
         },
         "message": {
           "name": "pesan",

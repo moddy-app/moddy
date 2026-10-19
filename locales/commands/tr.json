@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "Yazıya dök"
+    },
+    "Find source": {
+      "name": "Kaynağı bul"
     }
   },
   "commands": {
@@ -418,6 +421,30 @@
         "image": {
           "name": "gorsel",
           "description": "Kontrol edilecek görsel (PNG, JPEG veya WebP)"
+        },
+        "message": {
+          "name": "mesaj",
+          "description": "Bu sunucudaki görseli içeren mesajın bağlantısı"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "Bir dosyanın gizli meta verilerini gösterir",
+      "parameters": {
+        "file": {
+          "name": "dosya",
+          "description": "Görsel, PDF, Office belgesi, ses veya video dosyası"
+        }
+      }
+    },
+    "sauce": {
+      "name": "kaynak",
+      "description": "Bir görselin kaynağını bulur",
+      "parameters": {
+        "image": {
+          "name": "gorsel",
+          "description": "Aranacak görsel (PNG, JPEG, WebP veya GIF)"
         },
         "message": {
           "name": "mesaj",

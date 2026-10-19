@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "ถอดเสียงเป็นข้อความ"
+    },
+    "Find source": {
+      "name": "ค้นหาแหล่งที่มา"
     }
   },
   "commands": {
@@ -418,6 +421,30 @@
         "image": {
           "name": "ภาพ",
           "description": "ภาพที่ต้องการตรวจสอบ (PNG, JPEG หรือ WebP)"
+        },
+        "message": {
+          "name": "ข้อความ",
+          "description": "ลิงก์ข้อความในเซิร์ฟเวอร์นี้ที่มีภาพ"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "แสดงข้อมูลเมทาดาทาที่ซ่อนอยู่ของไฟล์",
+      "parameters": {
+        "file": {
+          "name": "ไฟล์",
+          "description": "รูปภาพ, PDF, เอกสาร Office, ไฟล์เสียงหรือวิดีโอ"
+        }
+      }
+    },
+    "sauce": {
+      "name": "sauce",
+      "description": "ค้นหาแหล่งที่มาของรูปภาพ",
+      "parameters": {
+        "image": {
+          "name": "รูปภาพ",
+          "description": "รูปภาพที่ต้องการค้นหา (PNG, JPEG, WebP หรือ GIF)"
         },
         "message": {
           "name": "ข้อความ",

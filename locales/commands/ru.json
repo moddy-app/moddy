@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "Расшифровать"
+    },
+    "Find source": {
+      "name": "Найти источник"
     }
   },
   "commands": {
@@ -418,6 +421,30 @@
         "image": {
           "name": "изображение",
           "description": "Изображение для проверки (PNG, JPEG или WebP)"
+        },
+        "message": {
+          "name": "сообщение",
+          "description": "Ссылка на сообщение этого сервера с изображением"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "Показывает скрытые метаданные файла",
+      "parameters": {
+        "file": {
+          "name": "файл",
+          "description": "Изображение, PDF, документ Office, аудио- или видеофайл"
+        }
+      }
+    },
+    "sauce": {
+      "name": "источник",
+      "description": "Находит источник изображения",
+      "parameters": {
+        "image": {
+          "name": "изображение",
+          "description": "Изображение для поиска (PNG, JPEG, WebP или GIF)"
         },
         "message": {
           "name": "сообщение",

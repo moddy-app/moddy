@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "Transskriber"
+    },
+    "Find source": {
+      "name": "Find kilde"
     }
   },
   "commands": {
@@ -418,6 +421,30 @@
         "image": {
           "name": "billede",
           "description": "Billedet, der skal tjekkes (PNG, JPEG eller WebP)"
+        },
+        "message": {
+          "name": "besked",
+          "description": "Link til en besked på denne server med billedet"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "Viser de skjulte metadata i en fil",
+      "parameters": {
+        "file": {
+          "name": "fil",
+          "description": "Billede, PDF, Office-dokument, lyd- eller videofil"
+        }
+      }
+    },
+    "sauce": {
+      "name": "kilde",
+      "description": "Finder kilden til et billede",
+      "parameters": {
+        "image": {
+          "name": "billede",
+          "description": "Billedet, der skal søges efter (PNG, JPEG, WebP eller GIF)"
         },
         "message": {
           "name": "besked",

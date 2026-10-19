@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "Transkribieren"
+    },
+    "Find source": {
+      "name": "Quelle finden"
     }
   },
   "commands": {
@@ -418,6 +421,30 @@
         "image": {
           "name": "bild",
           "description": "Das zu prüfende Bild (PNG, JPEG oder WebP)"
+        },
+        "message": {
+          "name": "nachricht",
+          "description": "Link zu einer Nachricht dieses Servers mit dem Bild"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "Zeigt die versteckten Metadaten einer Datei",
+      "parameters": {
+        "file": {
+          "name": "datei",
+          "description": "Bild, PDF, Office-Dokument, Audio- oder Videodatei"
+        }
+      }
+    },
+    "sauce": {
+      "name": "quelle",
+      "description": "Findet die Quelle eines Bildes",
+      "parameters": {
+        "image": {
+          "name": "bild",
+          "description": "Das zu suchende Bild (PNG, JPEG, WebP oder GIF)"
         },
         "message": {
           "name": "nachricht",

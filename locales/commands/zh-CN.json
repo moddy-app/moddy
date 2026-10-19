@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "转录文字"
+    },
+    "Find source": {
+      "name": "查找来源"
     }
   },
   "commands": {
@@ -418,6 +421,30 @@
         "image": {
           "name": "图片",
           "description": "要检查的图片（PNG、JPEG 或 WebP）"
+        },
+        "message": {
+          "name": "消息",
+          "description": "此服务器中包含该图片的消息链接"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "显示文件中隐藏的元数据",
+      "parameters": {
+        "file": {
+          "name": "文件",
+          "description": "图片、PDF、Office 文档、音频或视频文件"
+        }
+      }
+    },
+    "sauce": {
+      "name": "来源",
+      "description": "查找图片的来源",
+      "parameters": {
+        "image": {
+          "name": "图片",
+          "description": "要搜索的图片（PNG、JPEG、WebP 或 GIF）"
         },
         "message": {
           "name": "消息",

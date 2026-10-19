@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "Transkribera"
+    },
+    "Find source": {
+      "name": "Hitta källa"
     }
   },
   "commands": {
@@ -418,6 +421,30 @@
         "image": {
           "name": "bild",
           "description": "Bilden som ska kontrolleras (PNG, JPEG eller WebP)"
+        },
+        "message": {
+          "name": "meddelande",
+          "description": "Länk till ett meddelande på den här servern med bilden"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "Visar de dolda metadata i en fil",
+      "parameters": {
+        "file": {
+          "name": "fil",
+          "description": "Bild, PDF, Office-dokument, ljud- eller videofil"
+        }
+      }
+    },
+    "sauce": {
+      "name": "kalla",
+      "description": "Hittar källan till en bild",
+      "parameters": {
+        "image": {
+          "name": "bild",
+          "description": "Bilden att söka efter (PNG, JPEG, WebP eller GIF)"
         },
         "message": {
           "name": "meddelande",

@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "Chuyển thành văn bản"
+    },
+    "Find source": {
+      "name": "Tìm nguồn"
     }
   },
   "commands": {
@@ -418,6 +421,30 @@
         "image": {
           "name": "hinh-anh",
           "description": "Hình ảnh cần kiểm tra (PNG, JPEG hoặc WebP)"
+        },
+        "message": {
+          "name": "tin-nhan",
+          "description": "Liên kết tới tin nhắn trên máy chủ này có hình ảnh"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "Hiển thị siêu dữ liệu ẩn của một tệp",
+      "parameters": {
+        "file": {
+          "name": "tep",
+          "description": "Ảnh, PDF, tài liệu Office, tệp âm thanh hoặc video"
+        }
+      }
+    },
+    "sauce": {
+      "name": "nguon",
+      "description": "Tìm nguồn của một hình ảnh",
+      "parameters": {
+        "image": {
+          "name": "hinh-anh",
+          "description": "Ảnh cần tìm (PNG, JPEG, WebP hoặc GIF)"
         },
         "message": {
           "name": "tin-nhan",
