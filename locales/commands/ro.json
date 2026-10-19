@@ -571,6 +571,36 @@
           "description": "Textul de analizat (lasă gol pentru a deschide un formular)"
         }
       }
+    },
+    "status": {
+      "name": "stare",
+      "description": "Verifică dacă Discord, GitHub și alte servicii funcționează",
+      "parameters": {
+        "service": {
+          "name": "serviciu",
+          "description": "Un serviciu de verificat (gol: privire de ansamblu)"
+        }
+      }
+    },
+    "company": {
+      "name": "companie",
+      "description": "Caută o companie franceză după nume, SIREN sau SIRET",
+      "parameters": {
+        "search": {
+          "name": "căutare",
+          "description": "Numele companiei, un SIREN (9 cifre) sau un SIRET (14 cifre)"
+        }
+      }
+    },
+    "username": {
+      "name": "nume-utilizator",
+      "description": "Găsește unde este folosit un nume de utilizator pe sute de site-uri",
+      "parameters": {
+        "username": {
+          "name": "nume-utilizator",
+          "description": "Numele de utilizator căutat"
+        }
+      }
     }
   },
   "choices": {

@@ -571,6 +571,36 @@
           "description": "ข้อความที่จะวิเคราะห์ (เว้นว่างเพื่อเปิดแบบฟอร์ม)"
         }
       }
+    },
+    "status": {
+      "name": "สถานะ",
+      "description": "ตรวจสอบว่า Discord, GitHub และบริการอื่น ๆ ทำงานอยู่หรือไม่",
+      "parameters": {
+        "service": {
+          "name": "บริการ",
+          "description": "บริการที่ต้องการดู (เว้นว่างเพื่อดูภาพรวม)"
+        }
+      }
+    },
+    "company": {
+      "name": "บริษัท",
+      "description": "ค้นหาบริษัทฝรั่งเศสจากชื่อ SIREN หรือ SIRET",
+      "parameters": {
+        "search": {
+          "name": "ค้นหา",
+          "description": "ชื่อบริษัท SIREN (9 หลัก) หรือ SIRET (14 หลัก)"
+        }
+      }
+    },
+    "username": {
+      "name": "ชื่อผู้ใช้",
+      "description": "ค้นหาว่าชื่อผู้ใช้ถูกใช้ที่ไหนบ้างในหลายร้อยเว็บไซต์",
+      "parameters": {
+        "username": {
+          "name": "ชื่อผู้ใช้",
+          "description": "ชื่อผู้ใช้ที่ต้องการค้นหา"
+        }
+      }
     }
   },
   "choices": {

@@ -571,6 +571,36 @@
           "description": "The text to analyse (leave empty to open a form)"
         }
       }
+    },
+    "status": {
+      "name": "status",
+      "description": "Check whether Discord, GitHub and other services are up",
+      "parameters": {
+        "service": {
+          "name": "service",
+          "description": "A service to look at (leave empty for an overview of all of them)"
+        }
+      }
+    },
+    "company": {
+      "name": "company",
+      "description": "Look up a French company by name, SIREN or SIRET",
+      "parameters": {
+        "search": {
+          "name": "search",
+          "description": "A company name, a SIREN (9 digits) or a SIRET (14 digits)"
+        }
+      }
+    },
+    "username": {
+      "name": "username",
+      "description": "Find where a username is used across hundreds of sites",
+      "parameters": {
+        "username": {
+          "name": "username",
+          "description": "The username to look for"
+        }
+      }
     }
   },
   "choices": {

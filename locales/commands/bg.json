@@ -571,6 +571,36 @@
           "description": "Текстът за анализ (остави празно, за да отвориш форма)"
         }
       }
+    },
+    "status": {
+      "name": "статус",
+      "description": "Проверява дали Discord, GitHub и други услуги работят",
+      "parameters": {
+        "service": {
+          "name": "услуга",
+          "description": "Услуга за проверка (празно: преглед на всички)"
+        }
+      }
+    },
+    "company": {
+      "name": "фирма",
+      "description": "Търси френска фирма по име, SIREN или SIRET",
+      "parameters": {
+        "search": {
+          "name": "търсене",
+          "description": "Име на фирма, SIREN (9 цифри) или SIRET (14 цифри)"
+        }
+      }
+    },
+    "username": {
+      "name": "псевдоним",
+      "description": "Намира къде се използва едно потребителско име в стотици сайтове",
+      "parameters": {
+        "username": {
+          "name": "псевдоним",
+          "description": "Потребителското име за търсене"
+        }
+      }
     }
   },
   "choices": {

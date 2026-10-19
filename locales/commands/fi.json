@@ -571,6 +571,36 @@
           "description": "Analysoitava teksti (jätä tyhjäksi avataksesi lomakkeen)"
         }
       }
+    },
+    "status": {
+      "name": "tila",
+      "description": "Tarkista, toimivatko Discord, GitHub ja muut palvelut",
+      "parameters": {
+        "service": {
+          "name": "palvelu",
+          "description": "Tarkasteltava palvelu (tyhjä: yleiskatsaus kaikista)"
+        }
+      }
+    },
+    "company": {
+      "name": "yritys",
+      "description": "Hae ranskalainen yritys nimellä, SIREN- tai SIRET-numerolla",
+      "parameters": {
+        "search": {
+          "name": "haku",
+          "description": "Yrityksen nimi, SIREN (9 numeroa) tai SIRET (14 numeroa)"
+        }
+      }
+    },
+    "username": {
+      "name": "käyttäjänimi",
+      "description": "Selvitä, missä käyttäjänimeä käytetään sadoilla sivustoilla",
+      "parameters": {
+        "username": {
+          "name": "käyttäjänimi",
+          "description": "Etsittävä käyttäjänimi"
+        }
+      }
     }
   },
   "choices": {

@@ -571,6 +571,36 @@
           "description": "Teksten som skal analyseres (la stå tom for å åpne et skjema)"
         }
       }
+    },
+    "status": {
+      "name": "status",
+      "description": "Sjekk om Discord, GitHub og andre tjenester fungerer",
+      "parameters": {
+        "service": {
+          "name": "tjeneste",
+          "description": "En tjeneste å se på (tom: oversikt over alle)"
+        }
+      }
+    },
+    "company": {
+      "name": "bedrift",
+      "description": "Slå opp en fransk bedrift på navn, SIREN eller SIRET",
+      "parameters": {
+        "search": {
+          "name": "søk",
+          "description": "Et firmanavn, et SIREN (9 sifre) eller et SIRET (14 sifre)"
+        }
+      }
+    },
+    "username": {
+      "name": "brukernavn",
+      "description": "Finn ut hvor et brukernavn brukes på hundrevis av nettsteder",
+      "parameters": {
+        "username": {
+          "name": "brukernavn",
+          "description": "Brukernavnet du vil søke etter"
+        }
+      }
     }
   },
   "choices": {

@@ -571,6 +571,36 @@
           "description": "Analizuojamas tekstas (palik tuščią, kad atsidarytų forma)"
         }
       }
+    },
+    "status": {
+      "name": "būsena",
+      "description": "Patikrina, ar veikia Discord, GitHub ir kitos paslaugos",
+      "parameters": {
+        "service": {
+          "name": "paslauga",
+          "description": "Paslauga (palik tuščią: visų apžvalga)"
+        }
+      }
+    },
+    "company": {
+      "name": "įmonė",
+      "description": "Ieško Prancūzijos įmonės pagal pavadinimą, SIREN ar SIRET",
+      "parameters": {
+        "search": {
+          "name": "paieška",
+          "description": "Įmonės pavadinimas, SIREN (9 skaitmenys) ar SIRET (14 skaitmenų)"
+        }
+      }
+    },
+    "username": {
+      "name": "naudotojo-vardas",
+      "description": "Randa, kur naudotojo vardas naudojamas šimtuose svetainių",
+      "parameters": {
+        "username": {
+          "name": "naudotojo-vardas",
+          "description": "Ieškomas naudotojo vardas"
+        }
+      }
     }
   },
   "choices": {

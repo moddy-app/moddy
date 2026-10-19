@@ -35,7 +35,7 @@ KIND_TEXT = "text"
 KIND_SIREN = "siren"
 KIND_SIRET = "siret"
 
-#: The only SIREN for which the SIRET checksum is "sum of digits divisible by 5".
+#: The only SIREN whose SIRETs may also be valid with "sum of digits divisible by 5".
 LA_POSTE_SIREN = "356000000"
 
 
@@ -61,9 +61,11 @@ def siren_valid(siren: str) -> bool:
 def siret_valid(siret: str) -> bool:
     if len(siret) != 14 or not siret.isdigit():
         return False
-    if siret.startswith(LA_POSTE_SIREN):
-        return sum(int(c) for c in siret) % 5 == 0
-    return luhn_valid(siret)
+    if luhn_valid(siret):
+        return True
+    # La Poste numbers its establishments by another rule (digit sum divisible
+    # by 5) on top of the usual checksum; the head office passes the Luhn test.
+    return siret.startswith(LA_POSTE_SIREN) and sum(int(c) for c in siret) % 5 == 0
 
 
 @dataclass(frozen=True)

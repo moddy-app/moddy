@@ -571,6 +571,36 @@
           "description": "Le texte à analyser (laisse vide pour ouvrir un formulaire)"
         }
       }
+    },
+    "status": {
+      "name": "statut",
+      "description": "Vérifie si Discord, GitHub et d'autres services fonctionnent",
+      "parameters": {
+        "service": {
+          "name": "service",
+          "description": "Un service à consulter (vide : vue d'ensemble de tous)"
+        }
+      }
+    },
+    "company": {
+      "name": "entreprise",
+      "description": "Cherche une entreprise française par nom, SIREN ou SIRET",
+      "parameters": {
+        "search": {
+          "name": "recherche",
+          "description": "Un nom d'entreprise, un SIREN (9 chiffres) ou un SIRET (14 chiffres)"
+        }
+      }
+    },
+    "username": {
+      "name": "pseudo",
+      "description": "Trouve où un pseudo est utilisé sur des centaines de sites",
+      "parameters": {
+        "username": {
+          "name": "pseudo",
+          "description": "Le pseudo à chercher"
+        }
+      }
     }
   },
   "choices": {

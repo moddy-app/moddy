@@ -571,6 +571,36 @@
           "description": "El texto a analizar (déjalo vacío para abrir un formulario)"
         }
       }
+    },
+    "status": {
+      "name": "estado",
+      "description": "Comprueba si Discord, GitHub y otros servicios funcionan",
+      "parameters": {
+        "service": {
+          "name": "servicio",
+          "description": "Un servicio a consultar (vacío para ver todos)"
+        }
+      }
+    },
+    "company": {
+      "name": "empresa",
+      "description": "Busca una empresa francesa por nombre, SIREN o SIRET",
+      "parameters": {
+        "search": {
+          "name": "busqueda",
+          "description": "Un nombre de empresa, un SIREN (9 cifras) o un SIRET (14 cifras)"
+        }
+      }
+    },
+    "username": {
+      "name": "nombre-de-usuario",
+      "description": "Encuentra dónde se usa un nombre de usuario en cientos de sitios",
+      "parameters": {
+        "username": {
+          "name": "nombre-de-usuario",
+          "description": "El nombre de usuario que buscar"
+        }
+      }
     }
   },
   "choices": {
