@@ -72,7 +72,12 @@ _PART_RE = re.compile(rf"^({_NUM})(%|deg|turn|rad|grad)?$")
 def named_colors() -> Dict[str, RGB]:
     """The 148 CSS named colours (``gray`` and ``grey`` spellings included)."""
     from PIL import ImageColor
-    return {name: _hex_to_rgb(value[1:]) for name, value in ImageColor.colormap.items()}
+    # Pillow caches resolved names in ``colormap`` as (r, g, b) tuples once
+    # anything calls ``getrgb(name)``, so values are either "#rrggbb" or tuples.
+    return {
+        name: _hex_to_rgb(value[1:]) if isinstance(value, str) else tuple(value[:3])
+        for name, value in ImageColor.colormap.items()
+    }
 
 
 def _hex_to_rgb(digits: str) -> RGB:
