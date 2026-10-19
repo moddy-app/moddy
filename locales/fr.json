@@ -5667,7 +5667,7 @@
       },
       "summary": {
         "ok": "Les `{total}` services fonctionnent normalement.",
-        "problems": "Problèmes signalés sur `{problems}` services sur `{total}`.",
+        "problems": "Services avec un problème : `{problems}` sur `{total}`.",
         "maintenance": "Maintenance en cours : `{count}`.",
         "unknown": "Page de statut injoignable : `{count}`."
       },

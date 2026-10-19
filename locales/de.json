@@ -5582,7 +5582,7 @@
       },
       "summary": {
         "ok": "Alle `{total}` Dienste laufen normal.",
-        "problems": "Probleme bei `{problems}` von `{total}` Diensten gemeldet.",
+        "problems": "Dienste mit Problemen: `{problems}` von `{total}`.",
         "maintenance": "Wartung läuft: `{count}`.",
         "unknown": "Statusseite nicht erreichbar: `{count}`."
       },

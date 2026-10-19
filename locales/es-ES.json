@@ -5582,7 +5582,7 @@
       },
       "summary": {
         "ok": "Los `{total}` servicios funcionan con normalidad.",
-        "problems": "Problemas notificados en `{problems}` de `{total}` servicios.",
+        "problems": "Servicios con problemas: `{problems}` de `{total}`.",
         "maintenance": "Mantenimiento en curso: `{count}`.",
         "unknown": "Página de estado inaccesible: `{count}`."
       },
