@@ -66,6 +66,35 @@ def _google_vision_monthly_rules(env_name: str, default: int) -> List[RateRule]:
     )]
 
 
+def _saucenao_rules() -> List[RateRule]:
+    """SauceNAO account limits: a 30-second burst window and a daily cap.
+
+    Defaults are deliberately below what a free account is documented to allow
+    (third-party wrappers quote 6-8 searches per 30 s and 100-200 per day;
+    SauceNAO's own page is the reference — check it before raising them). Raise
+    them here or via the env vars when the account tier changes.
+    """
+    return [
+        RateRule("r30s", UNIT_REQUESTS, 30, _int_env("SAUCENAO_PER_30S", 6)),
+        RateRule("rpd", UNIT_REQUESTS, DAY, _int_env("SAUCENAO_PER_DAY", 100)),
+    ]
+
+
+def _tracemoe_rules() -> List[RateRule]:
+    """trace.moe quota: 100 searches a month anonymously, more with a key.
+
+    The anonymous allowance is shared by every Moddy user (one IP), so the rule
+    is a calendar-month counter in UTC. With ``TRACEMOE_API_KEY`` set the
+    default rises to 1000 — set ``TRACEMOE_MONTHLY`` to the account's real quota.
+    """
+    default = 1_000 if os.environ.get("TRACEMOE_API_KEY") else 100
+    return [
+        RateRule("rpmo", UNIT_REQUESTS, MONTH, _int_env("TRACEMOE_MONTHLY", default),
+                 calendar=CALENDAR_MONTH, tz="UTC"),
+        RateRule("rpm", UNIT_REQUESTS, MINUTE, _int_env("TRACEMOE_PER_MINUTE", 30)),
+    ]
+
+
 def _default_model_rate_limits() -> Dict[Tuple[str, str], List[RateRule]]:
     """(provider, model) → the rules enforced for it. Add new models here.
 
@@ -94,6 +123,9 @@ def _default_model_rate_limits() -> Dict[Tuple[str, str], List[RateRule]]:
         ("google_vision", "document_text"): _google_vision_monthly_rules(
             "GOOGLE_VISION_OCR_MONTHLY", 1_000
         ),
+        # Reverse image search (/sauce). The operation is the model key.
+        ("saucenao", "search"): _saucenao_rules(),
+        ("tracemoe", "search"): _tracemoe_rules(),
     }
 
 
@@ -103,6 +135,8 @@ class GatewayConfig:
     deepl_api_key: Optional[str] = None
     groq_api_key: Optional[str] = None
     google_vision_api_key: Optional[str] = None
+    saucenao_api_key: Optional[str] = None
+    tracemoe_api_key: Optional[str] = None  # optional: trace.moe works anonymously
     deepl_free: bool = True
 
     # Timeouts (seconds)
@@ -114,6 +148,8 @@ class GatewayConfig:
     timeout_transcribe: float = 90.0
     # Image calls upload a few MB and run OCR/vision server-side.
     timeout_vision: float = 30.0
+    # Reverse image search: the provider fetches the image and compares it.
+    timeout_search: float = 25.0
 
     # Retry
     max_retries: int = 3
@@ -151,12 +187,15 @@ class GatewayConfig:
             deepl_api_key=os.environ.get("DEEPL_API_KEY") or None,
             groq_api_key=os.environ.get("GROQ_API_KEY") or None,
             google_vision_api_key=os.environ.get("GOOGLE_VISION_API_KEY") or None,
+            saucenao_api_key=os.environ.get("SAUCENAO_API_KEY") or None,
+            tracemoe_api_key=os.environ.get("TRACEMOE_API_KEY") or None,
             deepl_free=os.environ.get("DEEPL_FREE", "true").lower() != "false",
             timeout_embed=float(os.environ.get("GATEWAY_TIMEOUT_EMBED", "10")),
             timeout_chat=float(os.environ.get("GATEWAY_TIMEOUT_CHAT", "30")),
             timeout_translate=float(os.environ.get("GATEWAY_TIMEOUT_TRANSLATE", "15")),
             timeout_transcribe=float(os.environ.get("GATEWAY_TIMEOUT_TRANSCRIBE", "90")),
             timeout_vision=float(os.environ.get("GATEWAY_TIMEOUT_VISION", "30")),
+            timeout_search=float(os.environ.get("GATEWAY_TIMEOUT_SEARCH", "25")),
             max_retries=int(os.environ.get("GATEWAY_MAX_RETRIES", "3")),
             retry_base_delay=float(os.environ.get("GATEWAY_RETRY_BASE_DELAY", "0.5")),
             cb_failure_threshold=int(os.environ.get("GATEWAY_CB_FAILURE_THRESHOLD", "5")),

@@ -1833,6 +1833,12 @@ class ModdyDatabase(
                 ("user",   "ocr_command", "default", 10),
                 ("guild",  "ocr_command", "default", 100),
                 ("global", "ocr_command", "default", -1),
+                # /sauce reverse image search (SauceNAO + trace.moe). One search
+                # counts once, whatever number of providers it queries; the
+                # providers' own account limits are the gateway rate rules.
+                ("user",   "sauce", "default", 15),
+                ("guild",  "sauce", "default", 150),
+                ("global", "sauce", "default", -1),
             ]:
                 await conn.execute(
                     """
