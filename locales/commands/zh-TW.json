@@ -488,6 +488,20 @@
           "description": "HEX、rgb()、hsl()、CSS 名稱、Discord 數字或 random"
         }
       }
+    },
+    "music": {
+      "name": "音樂",
+      "description": "音樂工具"
+    },
+    "music link": {
+      "name": "連結",
+      "description": "在其他平台上找到 Spotify 的歌曲、專輯或藝人",
+      "parameters": {
+        "url": {
+          "name": "連結",
+          "description": "Spotify 連結（歌曲、專輯或藝人）"
+        }
+      }
     }
   },
   "choices": {

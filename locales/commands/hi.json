@@ -488,6 +488,20 @@
           "description": "HEX, rgb(), hsl(), CSS नाम, Discord संख्या या random"
         }
       }
+    },
+    "music": {
+      "name": "संगीत",
+      "description": "संगीत टूल"
+    },
+    "music link": {
+      "name": "लिंक",
+      "description": "Spotify का गाना, एल्बम या कलाकार दूसरे प्लेटफ़ॉर्म पर खोजें",
+      "parameters": {
+        "url": {
+          "name": "लिंक",
+          "description": "Spotify लिंक (गाना, एल्बम या कलाकार)"
+        }
+      }
     }
   },
   "choices": {

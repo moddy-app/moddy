@@ -488,6 +488,20 @@
           "description": "HEX, rgb(), hsl(), nama CSS, angka Discord, atau random"
         }
       }
+    },
+    "music": {
+      "name": "musik",
+      "description": "Alat musik"
+    },
+    "music link": {
+      "name": "tautan",
+      "description": "Temukan lagu, album, atau artis Spotify di platform lain",
+      "parameters": {
+        "url": {
+          "name": "tautan",
+          "description": "Tautan Spotify (lagu, album, atau artis)"
+        }
+      }
     }
   },
   "choices": {

@@ -488,6 +488,20 @@
           "description": "HEX, rgb(), hsl(), CSS-név, Discord-szám vagy random"
         }
       }
+    },
+    "music": {
+      "name": "zene",
+      "description": "Zenei eszközök"
+    },
+    "music link": {
+      "name": "link",
+      "description": "Keress meg egy Spotify-számot, albumot vagy előadót más platformokon",
+      "parameters": {
+        "url": {
+          "name": "link",
+          "description": "A Spotify-link (szám, album vagy előadó)"
+        }
+      }
     }
   },
   "choices": {

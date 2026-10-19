@@ -488,6 +488,20 @@
           "description": "HEX, rgb(), hsl(), όνομα CSS, αριθμός Discord ή random"
         }
       }
+    },
+    "music": {
+      "name": "μουσικη",
+      "description": "Μουσικά εργαλεία"
+    },
+    "music link": {
+      "name": "συνδεσμος",
+      "description": "Βρες ένα τραγούδι, άλμπουμ ή καλλιτέχνη του Spotify σε άλλες πλατφόρμες",
+      "parameters": {
+        "url": {
+          "name": "συνδεσμος",
+          "description": "Ο σύνδεσμος Spotify (τραγούδι, άλμπουμ ή καλλιτέχνης)"
+        }
+      }
     }
   },
   "choices": {

@@ -488,6 +488,20 @@
           "description": "HEX, rgb(), hsl(), CSS 이름, Discord 숫자 또는 random"
         }
       }
+    },
+    "music": {
+      "name": "음악",
+      "description": "음악 도구"
+    },
+    "music link": {
+      "name": "링크",
+      "description": "Spotify 곡, 앨범, 아티스트를 다른 플랫폼에서 찾기",
+      "parameters": {
+        "url": {
+          "name": "링크",
+          "description": "Spotify 링크 (곡, 앨범 또는 아티스트)"
+        }
+      }
     }
   },
   "choices": {

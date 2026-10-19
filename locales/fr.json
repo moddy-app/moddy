@@ -4021,6 +4021,37 @@
         "id": "Indonésien",
         "bg": "Bulgare"
       }
+    },
+    "music_links": {
+      "name": "Liens musique",
+      "description": "Ajoute Deezer, Apple Music et YouTube Music sous les liens Spotify",
+      "config": {
+        "title": "Liens musique",
+        "description": "Quand quelqu'un poste un lien Spotify, Moddy répond discrètement avec le même titre sur les autres plateformes. Il ne répond que s'il a trouvé la même chanson. Actif par défaut sur tous les serveurs : tu peux le mettre en pause depuis **Gérer**.",
+        "platforms": {
+          "section_title": "Plateformes proposées",
+          "section_description": "Coche les plateformes affichées sous les liens Spotify",
+          "placeholder": "Aucune plateforme",
+          "deezer_description": "Lien direct vers le titre",
+          "apple_music_description": "Lien direct vers le titre",
+          "youtube_music_description": "Lien de recherche, pas le titre exact"
+        },
+        "channels": {
+          "section_title": "Salons ignorés",
+          "section_description": "Moddy ne répond jamais dans ces salons (ni dans leurs fils)",
+          "placeholder": "Aucun salon ignoré"
+        }
+      },
+      "platforms": {
+        "spotify": "Spotify",
+        "deezer": "Deezer",
+        "apple_music": "Apple Music",
+        "youtube_music": "YouTube Music"
+      },
+      "reply": {
+        "artist_tag": "artiste",
+        "album_tag": "album"
+      }
     }
   },
   "languages": {
@@ -5844,6 +5875,25 @@
         "empty": "Donne une couleur à afficher.",
         "invalid": "Je ne reconnais pas cette couleur. Essaie {examples}.",
         "out_of_range": "Une couleur Discord est un nombre de `0` à `16777215`."
+      }
+    },
+    "music": {
+      "title": {
+        "track": "Chanson",
+        "album": "Album",
+        "artist": "Artiste"
+      },
+      "fields": {
+        "album": "Album",
+        "year": "Année",
+        "duration": "Durée"
+      },
+      "no_match": "Je n'ai pas trouvé ce titre sur Deezer ni sur Apple Music. Le bouton YouTube Music ouvre une recherche.",
+      "errors": {
+        "not_spotify": "Ce n'est pas un lien Spotify. Colle le lien d'une chanson, d'un album ou d'un artiste.",
+        "unsupported": "Les playlists, épisodes et podcasts n'ont pas d'équivalent sur les autres plateformes. Essaie avec une chanson, un album ou un artiste.",
+        "not_found": "Ce lien Spotify ne mène à rien. Vérifie qu'il est complet.",
+        "unavailable": "Je n'arrive pas à lire la page Spotify pour le moment. Réessaie dans un instant."
       }
     }
   }

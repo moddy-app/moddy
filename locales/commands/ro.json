@@ -488,6 +488,20 @@
           "description": "HEX, rgb(), hsl(), nume CSS, număr Discord sau random"
         }
       }
+    },
+    "music": {
+      "name": "muzica",
+      "description": "Instrumente muzicale"
+    },
+    "music link": {
+      "name": "link",
+      "description": "Găsește o melodie, un album sau un artist Spotify pe alte platforme",
+      "parameters": {
+        "url": {
+          "name": "link",
+          "description": "Linkul Spotify (o melodie, un album sau un artist)"
+        }
+      }
     }
   },
   "choices": {

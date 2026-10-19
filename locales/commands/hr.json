@@ -488,6 +488,20 @@
           "description": "HEX, rgb(), hsl(), CSS naziv, Discord broj ili random"
         }
       }
+    },
+    "music": {
+      "name": "glazba",
+      "description": "Glazbeni alati"
+    },
+    "music link": {
+      "name": "poveznica",
+      "description": "Pronađi Spotify pjesmu, album ili izvođača na drugim platformama",
+      "parameters": {
+        "url": {
+          "name": "poveznica",
+          "description": "Spotify poveznica (pjesma, album ili izvođač)"
+        }
+      }
     }
   },
   "choices": {

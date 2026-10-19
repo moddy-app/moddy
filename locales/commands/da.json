@@ -488,6 +488,20 @@
           "description": "HEX, rgb(), hsl(), CSS-navn, Discord-tal eller random"
         }
       }
+    },
+    "music": {
+      "name": "musik",
+      "description": "Musikværktøjer"
+    },
+    "music link": {
+      "name": "link",
+      "description": "Find en Spotify-sang, et album eller en kunstner på andre platforme",
+      "parameters": {
+        "url": {
+          "name": "link",
+          "description": "Spotify-linket (en sang, et album eller en kunstner)"
+        }
+      }
     }
   },
   "choices": {

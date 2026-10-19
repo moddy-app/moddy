@@ -488,6 +488,20 @@
           "description": "HEX, rgb(), hsl(), ชื่อ CSS, เลข Discord หรือ random"
         }
       }
+    },
+    "music": {
+      "name": "เพลง",
+      "description": "เครื่องมือเพลง"
+    },
+    "music link": {
+      "name": "ลิงก์",
+      "description": "ค้นหาเพลง อัลบั้ม หรือศิลปินจาก Spotify บนแพลตฟอร์มอื่น",
+      "parameters": {
+        "url": {
+          "name": "ลิงก์",
+          "description": "ลิงก์ Spotify (เพลง อัลบั้ม หรือศิลปิน)"
+        }
+      }
     }
   },
   "choices": {

@@ -488,6 +488,20 @@
           "description": "HEX, rgb(), hsl(), CSS-nimi, Discord-luku tai random"
         }
       }
+    },
+    "music": {
+      "name": "musiikki",
+      "description": "Musiikkityökalut"
+    },
+    "music link": {
+      "name": "linkki",
+      "description": "Etsi Spotify-kappale, albumi tai artisti muilta alustoilta",
+      "parameters": {
+        "url": {
+          "name": "linkki",
+          "description": "Spotify-linkki (kappale, albumi tai artisti)"
+        }
+      }
     }
   },
   "choices": {

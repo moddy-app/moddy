@@ -488,6 +488,20 @@
           "description": "HEX, rgb(), hsl(), tên CSS, số Discord hoặc random"
         }
       }
+    },
+    "music": {
+      "name": "nhac",
+      "description": "Công cụ âm nhạc"
+    },
+    "music link": {
+      "name": "lien-ket",
+      "description": "Tìm bài hát, album hoặc nghệ sĩ Spotify trên các nền tảng khác",
+      "parameters": {
+        "url": {
+          "name": "lien-ket",
+          "description": "Liên kết Spotify (bài hát, album hoặc nghệ sĩ)"
+        }
+      }
     }
   },
   "choices": {

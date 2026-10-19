@@ -4022,6 +4022,37 @@
         "id": "Indonesian",
         "bg": "Bulgarian"
       }
+    },
+    "music_links": {
+      "name": "Music links",
+      "description": "Adds Deezer, Apple Music and YouTube Music under Spotify links",
+      "config": {
+        "title": "Music links",
+        "description": "When someone posts a Spotify link, Moddy quietly replies with the same song on other platforms. It only answers when it found the same song. On by default in every server: you can pause it from **Manage**.",
+        "platforms": {
+          "section_title": "Platforms offered",
+          "section_description": "Tick the platforms shown under Spotify links",
+          "placeholder": "No platform",
+          "deezer_description": "Direct link to the song",
+          "apple_music_description": "Direct link to the song",
+          "youtube_music_description": "Search link, not the exact song"
+        },
+        "channels": {
+          "section_title": "Ignored channels",
+          "section_description": "Moddy never answers in these channels (nor in their threads)",
+          "placeholder": "No ignored channel"
+        }
+      },
+      "platforms": {
+        "spotify": "Spotify",
+        "deezer": "Deezer",
+        "apple_music": "Apple Music",
+        "youtube_music": "YouTube Music"
+      },
+      "reply": {
+        "artist_tag": "artist",
+        "album_tag": "album"
+      }
     }
   },
   "languages": {
@@ -5845,6 +5876,25 @@
         "empty": "Give a colour to look at.",
         "invalid": "I don't recognise that colour. Try {examples}.",
         "out_of_range": "A Discord colour is a number from `0` to `16777215`."
+      }
+    },
+    "music": {
+      "title": {
+        "track": "Song",
+        "album": "Album",
+        "artist": "Artist"
+      },
+      "fields": {
+        "album": "Album",
+        "year": "Year",
+        "duration": "Duration"
+      },
+      "no_match": "I could not find this one on Deezer or Apple Music. The YouTube Music button opens a search.",
+      "errors": {
+        "not_spotify": "This is not a Spotify link. Paste the link of a song, an album or an artist.",
+        "unsupported": "Playlists, episodes and podcasts have no equivalent on other platforms. Try a song, an album or an artist.",
+        "not_found": "This Spotify link leads nowhere. Check that it is complete.",
+        "unavailable": "I cannot read the Spotify page right now. Try again in a moment."
       }
     }
   }
