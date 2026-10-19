@@ -144,32 +144,32 @@ def normalize_indicator(value: Optional[str]) -> str:
 def indicator_dot(indicator: str) -> str:
     """Status dot icon of a page indicator (may be "" until artwork exists)."""
     return {
-        IND_NONE: em.GREEN_STATUS,
-        IND_MINOR: em.YELLOW_STATUS,
-        IND_MAJOR: em.RED_STATUS,
-        IND_CRITICAL: em.RED_STATUS,
-        IND_MAINTENANCE: em.BLUE_STATUS,
+        IND_NONE: em.STATUS_OK,
+        IND_MINOR: em.STATUS_DEGRADED,
+        IND_MAJOR: em.STATUS_DOWN,
+        IND_CRITICAL: em.STATUS_DOWN,
+        IND_MAINTENANCE: em.STATUS_MAINTENANCE,
     }.get(indicator, em.GREY_STATUS)
 
 
 def component_dot(status: str) -> str:
     return {
-        COMP_OPERATIONAL: em.GREEN_STATUS,
-        COMP_DEGRADED: em.YELLOW_STATUS,
-        COMP_PARTIAL: em.YELLOW_STATUS,
-        COMP_MAJOR: em.RED_STATUS,
-        COMP_MAINTENANCE: em.BLUE_STATUS,
+        COMP_OPERATIONAL: em.STATUS_OK,
+        COMP_DEGRADED: em.STATUS_DEGRADED,
+        COMP_PARTIAL: em.STATUS_DEGRADED,
+        COMP_MAJOR: em.STATUS_DOWN,
+        COMP_MAINTENANCE: em.STATUS_MAINTENANCE,
     }.get(status, em.GREY_STATUS)
 
 
 def impact_dot(impact: str) -> str:
     """Dot of an incident impact (none / minor / major / critical)."""
     return {
-        "minor": em.YELLOW_STATUS,
-        "major": em.RED_STATUS,
-        "critical": em.RED_STATUS,
-        "maintenance": em.BLUE_STATUS,
-    }.get(impact, em.YELLOW_STATUS)
+        "minor": em.STATUS_DEGRADED,
+        "major": em.STATUS_DOWN,
+        "critical": em.STATUS_DOWN,
+        "maintenance": em.STATUS_MAINTENANCE,
+    }.get(impact, em.STATUS_DEGRADED)
 
 
 # --------------------------------------------------------------------------- #

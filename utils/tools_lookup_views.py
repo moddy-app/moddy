@@ -287,7 +287,7 @@ def _maintenance_section(summary: sr.ServiceSummary, locale: str) -> Optional[st
                      end=tc.discord_timestamp(item.end, "t") if item.end else "—")
         else:
             when = ""
-        title = _with_dot(em.BLUE_STATUS, f"**{tc.escape_markdown(item.name)}**")
+        title = _with_dot(em.STATUS_MAINTENANCE, f"**{tc.escape_markdown(item.name)}**")
         blocks.append(f"{title}\n-# {when}" if when else title)
     if len(summary.maintenances) > MAX_MAINTENANCES:
         blocks.append(f"-# {t('tools.status.more', locale=locale, count=len(summary.maintenances) - MAX_MAINTENANCES)}")

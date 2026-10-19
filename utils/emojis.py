@@ -130,59 +130,62 @@ THREADS = "<:threads:1541216661699436675>"  # private staff thread
 COLOR = "<:color:1519800727231266858>"              # /color
 LOCK = "<:lock:1519799617087213779>"                # /ssl (certificate)
 DATA_OBJECT = "<:data_object:1519795407453159474>"  # JSON blocks (/jwt)
-DICTIONARY = ""      # /define — Material `dictionary`
-REGEX = ""           # /regex — Material `regular_expression`
-TAG = ""             # /hash — Material `tag`
-DIFFERENCE = ""      # /diff — Material `difference`
-ANALYTICS = ""       # /textstats — Material `analytics`
-PASSWORD = ""        # /password — Material `password`
-NUMBERS = ""         # /uuid — Material `123`
-TOKEN = ""           # /jwt — Material `token`
-GPP_MAYBE = ""       # /pwned — Material `gpp_maybe`
-MONITOR_HEART = ""   # /status — Material `monitor_heart`
-BLUE_STATUS = ""     # /status: maintenance (same style as green_status)
+DICTIONARY = "<:dictionary:1561781519226380308>"      # /define — Material `dictionary`
+REGEX = "<:regex:1561781501308313641>"           # /regex — Material `regular_expression`
+TAG = "<:tag:1561781499206959124>"             # /hash — Material `tag`
+DIFFERENCE = "<:difference:1561781494861791463>"      # /diff — Material `difference`
+ANALYTICS = "<:analytics:1561781493179879604>"       # /textstats — Material `analytics`
+PASSWORD = "<:password:1561781486036713532>"        # /password — Material `password`
+NUMBERS = "<:number:1561781484640141412>"         # /uuid — Material `123`
+TOKEN = "<:token:1561781479774748842>"           # /jwt — Material `token`
+GPP_MAYBE = "<:gpp_maybe:1561781478399152249>"       # /pwned — Material `gpp_maybe`
+MONITOR_HEART = "<:monitor_heart:1561781474611691530>"   # /status — Material `monitor_heart`
+STATUS_OK = "<:check_circle:1561786624948437075>"           # /status: operational
+STATUS_DEGRADED = "<:degraded:1561786622075207760>"         # /status: degraded / partial
+STATUS_DOWN = "<:down:1561786623648342147>"                 # /status: major outage
+STATUS_MAINTENANCE = "<:maintenance:1561786620498157618>"   # /status: maintenance
 GREY_STATUS = ""     # /status: unknown (same style as green_status)
-BUSINESS = ""        # /company — Material `business`
-DNS = ""             # /dns — Material `dns`
-ACCOUNT_TREE = ""    # /subdomains — Material `account_tree`
-ALT_ROUTE = ""       # /link-check redirect chain — Material `alt_route`
-PERSON_SEARCH = ""   # /username — Material `person_search`
-ASPECT_RATIO = ""    # /image resize — Material `aspect_ratio`
-COMPRESS = ""        # /image compress — Material `compress`
-TRANSFORM = ""       # /convert — Material `transform`
-AUTO_FIX_HIGH = ""   # /image remove background — Material `auto_fix_high`
-FRAME_INSPECT = ""   # /exif — Material `frame_inspect`
-LOCATION_ON = ""     # /exif GPS — Material `location_on`
-IMAGE_SEARCH = ""    # /sauce — Material `image_search`
-MOVIE = ""           # /sauce anime result — Material `movie`
-MUSIC_NOTE = ""      # /music + music links module — Material `music_note`
+BUSINESS = "<:business:1561781472694898728>"        # /company — Material `business`
+DNS = "<:dns:1561781468781617192>"             # /dns — Material `dns`
+ACCOUNT_TREE = "<:account_tree:1561781467309416528>"    # /subdomains — Material `account_tree`
+ALT_ROUTE = "<:alt_route:1561781445440045147>"       # /link-check redirect chain — Material `alt_route`
+PERSON_SEARCH = "<:person_search:1561781444043612190>"   # /username — Material `person_search`
+ASPECT_RATIO = "<:aspect_ratio:1561781438825898036>"    # /image resize — Material `aspect_ratio`
+COMPRESS = "<:compress:1561781432450285671>"        # /image compress — Material `compress`
+TRANSFORM = "<:transform:1561781428595724389>"       # /convert — Material `transform`
+AUTO_FIX_HIGH = "<:auto_fix_high:1561781427295490210>"   # /image remove background — Material `auto_fix_high`
+FRAME_INSPECT = "<:frame_inspect:1561781422824620092>"   # /exif — Material `frame_inspect`
+LOCATION_ON = "<:location_on:1561781406848262205>"     # /exif GPS — Material `location_on`
+IMAGE_SEARCH = "<:image_search:1561781402201231410>"    # /sauce — Material `image_search`
+MOVIE = "<:movie:1561781400561000560>"           # /sauce anime result — Material `movie`
+MUSIC_NOTE = "<:music_note:1561781396366950511>"      # /music + music links module — Material `music_note`
 # Service logos — shown next to the service name in each tool's footer phrase
 # ("Provided by <logo> **X**", utils/tool_card.source_line) and on
 # link buttons. Coloured brand artwork is visible on both themes: no `_dark`
 # twin needed unless the logo itself is white/black.
-SPOTIFY = ""
-DEEZER = ""
-APPLE_MUSIC = ""
-YOUTUBE_MUSIC = ""
-WIKTIONARY = ""      # /define
-HIBP = ""            # /pwned — Have I Been Pwned
-OPENAI = ""          # /tldr
+SPOTIFY = "<:spotify:1561795193353543741>"
+DEEZER = "<:deezer:1561795191365570590>"
+APPLE_MUSIC = "<:apple_music:1561795189411024926>"
+YOUTUBE_MUSIC = "<:youtube_music:1561795187917979688>"
+WIKTIONARY = "<:Wiktionary:1561795186525339668>"      # /define
+HIBP = "<:hipb:1561795171346161774>"            # /pwned — Have I Been Pwned
+OPENAI = "<:openai:1561795168573853797>"          # /tldr
 DEEPL = ""           # translate button
-DATA_GOUV = ""       # /company — Annuaire des Entreprises / data.gouv
-CLOUDFLARE = ""      # /dns (DNS-over-HTTPS) + /status
+DATA_GOUV = "<:data_gouv:1561795167147524137>"       # /company — Annuaire des Entreprises / data.gouv
+CLOUDFLARE = "<:cloudflare:1561795165864071168>"      # /dns (DNS-over-HTTPS) + /status
 CRTSH = ""           # /subdomains — crt.sh (Certificate Transparency)
 VIRUSTOTAL = ""      # /link-check
 URLSCAN = ""         # /link-check
 WHATSMYNAME = ""     # /username
 SAUCENAO = ""        # /sauce
 TRACEMOE = ""        # /sauce
-ANILIST = ""         # /sauce anime link
-GOOGLE_LENS = ""     # /sauce link button
-YANDEX = ""          # /sauce link button
-BING = ""            # /sauce link button
-TINEYE = ""          # /sauce link button
+ANILIST = "<:anilist:1561795163834290276>"         # /sauce anime link
+GOOGLE_LENS = "<:google_lens:1561795162093387789>"     # /sauce link button
+YANDEX = "<:yandex:1561795161002999948>"          # /sauce link button
+BING = "<:bing:1561795159815880735>"            # /sauce link button
+TINEYE = "<:tineye:1561795158750666892>"          # /sauce link button
 CLOUDCONVERT = ""    # /convert (office documents, ebooks)
-OPENSTREETMAP = ""   # /exif GPS map button
+OPENSTREETMAP = "<:openstreetmap:1561795156984729712>"   # /exif GPS map button
 # /status services (one logo each)
 DISCORD_LOGO = ""
 GITHUB = ""
@@ -880,6 +883,32 @@ def log_emoji(name: str, default: str = "") -> str:
 # send time (see utils/icon_theme.py); no call site changes. To add one: upload
 # ``<name>_dark`` and add it to DARK_VARIANTS. See docs/guides/ICON_THEME.md.
 DARK_VARIANTS: Dict[str, int] = {
+    # Utility tools
+    "dictionary_dark": 1561781504231739493,
+    "regex_dark": 1561781502839361566,
+    "tag_dark": 1561781497831235665,
+    "difference_dark": 1561781496254046218,
+    "analytics_dark": 1561781491774791733,
+    "password_dark": 1561781487441940642,
+    "number_dark": 1561781482983391334,
+    "token_dark": 1561781481070796904,
+    "gpp_maybe_dark": 1561781477187002368,
+    "monitor_heart_dark": 1561781475907477624,
+    "business_dark": 1561781471159787600,
+    "dns_dark": 1561781469997834241,
+    "account_tree_dark": 1561781466013376565,
+    "alt_route_dark": 1561781464566202530,
+    "person_search_dark": 1561781442613346344,
+    "aspect_ratio_dark": 1561781441220579348,
+    "compress_dark": 1561781431045197984,
+    "transform_dark": 1561781429833048104,
+    "auto_fix_high_dark": 1561781425878081578,
+    "frame_inspect_dark": 1561781424640491661,
+    "location_on_dark": 1561781405204095227,
+    "image_search_dark": 1561781403794931873,
+    "movie_dark": 1561781399080534056,
+    "music_note_dark": 1561781397893546085,
+    "openai_dark": 1561795169894797473,
     "1__dark": 1558775913238364180,
     "2__dark": 1558775915008364689,
     "3__dark": 1558775917545922601,

@@ -177,46 +177,29 @@ status page buttons), `LINK` (/link-check), `IMAGE` (/image), `TRANSLATE`
 `NEXT`, `DOWNLOAD`, `DONE`, `ERROR`, `WARNING`, `INFO`, `LOADING`,
 `GREEN_STATUS` / `YELLOW_STATUS` / `RED_STATUS`.
 
-**Empty, artwork to upload** (white + `_dark` twin, Material Symbols name):
+**Uploaded** (white + `<name>_dark` twin in `DARK_VARIANTS`, ids in
+`utils/emojis.py`): `DICTIONARY` (/define), `REGEX`, `TAG` (/hash), `DIFFERENCE`
+(/diff), `ANALYTICS` (/textstats), `PASSWORD`, `NUMBERS` (`number`, /uuid),
+`TOKEN` (/jwt), `GPP_MAYBE` (/pwned), `MONITOR_HEART` (/status), `BUSINESS`
+(/company), `DNS`, `ACCOUNT_TREE` (/subdomains), `ALT_ROUTE` (redirect chain),
+`PERSON_SEARCH` (/username), `ASPECT_RATIO`, `COMPRESS`, `TRANSFORM`,
+`AUTO_FIX_HIGH` (/image, /convert), `FRAME_INSPECT`, `LOCATION_ON` (/exif),
+`IMAGE_SEARCH`, `MOVIE` (/sauce), `MUSIC_NOTE` (/music + module).
 
-| Constant | Material icon | Used by |
-|---|---|---|
-| `DICTIONARY` | `dictionary` | /define |
-| `REGEX` | `regular_expression` | /regex |
-| `TAG` | `tag` | /hash |
-| `DIFFERENCE` | `difference` | /diff |
-| `ANALYTICS` | `analytics` | /textstats |
-| `PASSWORD` | `password` | /password |
-| `NUMBERS` | `123` | /uuid |
-| `TOKEN` | `token` | /jwt |
-| `GPP_MAYBE` | `gpp_maybe` | /pwned |
-| `MONITOR_HEART` | `monitor_heart` | /status |
-| `BLUE_STATUS` | filled dot, `green_status` style | /status: maintenance |
-| `GREY_STATUS` | filled dot, `green_status` style | /status: unknown |
-| `BUSINESS` | `business` | /company |
-| `DNS` | `dns` | /dns |
-| `ACCOUNT_TREE` | `account_tree` | /subdomains |
-| `ALT_ROUTE` | `alt_route` | /link-check redirect chain |
-| `PERSON_SEARCH` | `person_search` | /username |
-| `ASPECT_RATIO` | `aspect_ratio` | /image resize |
-| `COMPRESS` | `compress` | /image compress |
-| `TRANSFORM` | `transform` | /convert |
-| `AUTO_FIX_HIGH` | `auto_fix_high` | /image remove background |
-| `FRAME_INSPECT` | `frame_inspect` | /exif |
-| `LOCATION_ON` | `location_on` | /exif GPS |
-| `IMAGE_SEARCH` | `image_search` | /sauce |
-| `MOVIE` | `movie` | /sauce anime result |
-| `MUSIC_NOTE` | `music_note` | /music + music links module (module icon too) |
+**/status dots** (coloured, no twin): `STATUS_OK` (`check_circle`),
+`STATUS_DEGRADED` (`degraded`), `STATUS_DOWN` (`down`), `STATUS_MAINTENANCE`
+(`maintenance`). `GREY_STATUS` (unknown) is still empty — the state is written
+as text anyway.
 
-**Service logos** (coloured brand artwork, no `_dark` twin unless the logo is
-white or black), all empty for now: `SPOTIFY`, `DEEZER`, `APPLE_MUSIC`,
-`YOUTUBE_MUSIC`, `WIKTIONARY`, `HIBP`, `OPENAI`, `DEEPL`, `DATA_GOUV`,
-`CLOUDFLARE`, `CRTSH`, `VIRUSTOTAL`, `URLSCAN`, `WHATSMYNAME`, `SAUCENAO`,
-`TRACEMOE`, `ANILIST`, `GOOGLE_LENS`, `YANDEX`, `BING`, `TINEYE`,
-`CLOUDCONVERT`, `OPENSTREETMAP`, and the /status services `DISCORD_LOGO`,
-`GITHUB`, `REDDIT`, `DROPBOX`, `ATLASSIAN`, `VERCEL`, `NETLIFY`,
-`ZOOM`, `ANTHROPIC`, `EPIC_GAMES`, `NPM`, `DIGITALOCEAN`, `FIGMA` (Twitch
-reuses `TWITCH`).
+**Service logos uploaded** (coloured, no twin except `openai_dark`): `SPOTIFY`,
+`DEEZER`, `APPLE_MUSIC`, `YOUTUBE_MUSIC`, `WIKTIONARY`, `HIBP`, `OPENAI`,
+`DATA_GOUV`, `CLOUDFLARE`, `ANILIST`, `GOOGLE_LENS`, `YANDEX`, `BING`, `TINEYE`,
+`OPENSTREETMAP`.
+
+**Still empty**: `GREY_STATUS`, `DEEPL`, `CRTSH`, `VIRUSTOTAL`, `URLSCAN`,
+`WHATSMYNAME`, `SAUCENAO`, `TRACEMOE`, `CLOUDCONVERT`, and the /status service
+logos `DISCORD_LOGO`, `GITHUB`, `REDDIT`, `DROPBOX`, `ATLASSIAN`, `VERCEL`,
+`NETLIFY`, `ZOOM`, `ANTHROPIC`, `EPIC_GAMES`, `NPM`, `DIGITALOCEAN`, `FIGMA`.
 
 ## Bump Reminder directory icons — `utils/emojis.py::BUMP_DIRECTORY_EMOJIS`
 
