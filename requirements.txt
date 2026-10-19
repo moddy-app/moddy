@@ -68,3 +68,31 @@ c2pa-python==0.38.0
 # first eligible message of a server loads it) — see docs/features/TRANSLATE_BUTTON.md.
 # Pinned: 0.4 changed the model-loading API we call (from_model_file).
 py3langid==0.4.0
+
+# /image and /convert (docs/features/TOOLS_MEDIA.md). Every library below is
+# imported lazily, inside the function that needs it: nothing is loaded at boot.
+# Background removal: u2netp (4.6 MB model, downloaded once) run directly, no
+# rembg package. onnxruntime is ~90 MB resident once imported (first removal);
+# the session is dropped after 10 min idle but the library stays mapped.
+onnxruntime>=1.18
+numpy>=1.26
+# HEIC (iPhone) read/write and AVIF for images.
+pillow-heif>=0.18
+# PDF -> PNG/JPEG (pypdfium2) and PDF -> text (pypdf).
+pypdfium2>=4.30
+pypdf>=4.2
+# Spreadsheets (CSV/XLSX/ODS; ODS is read/written with the standard library).
+openpyxl>=3.1
+# Markdown <-> HTML <-> text, DOCX -> text/Markdown/HTML (markdownify pulls beautifulsoup4).
+markdown>=3.6
+markdownify>=0.13
+mammoth>=1.8
+# 7z archives.
+py7zr>=0.21
+# Audio and small video: the wheel ships the ffmpeg binary (~80 MB on disk,
+# 0 MB of RAM when idle). One conversion at a time, size/duration capped.
+imageio-ffmpeg>=0.5
+# JSON/YAML/TOML/XML data conversion (safe loaders only).
+PyYAML>=6.0
+tomli-w>=1.0
+xmltodict>=0.13
