@@ -488,6 +488,30 @@
           "description": "HEX, rgb(), hsl(), CSS-név, Discord-szám vagy random"
         }
       }
+    },
+    "image": {
+      "name": "kep",
+      "description": "Megjelenít egy képet, majd átméretezi, tömöríti, átalakítja vagy eltávolítja a hátterét",
+      "parameters": {
+        "file": {
+          "name": "fájl",
+          "description": "A feldolgozandó kép (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "atalakitas",
+      "description": "Egy fájlt másik formátumra alakít (képek, dokumentumok, hang, videó, archívumok...)",
+      "parameters": {
+        "file": {
+          "name": "fájl",
+          "description": "Az átalakítandó fájl (max. 25 MB)"
+        },
+        "format": {
+          "name": "formatum",
+          "description": "Célformátum (hagyd üresen, hogy listából válassz)"
+        }
+      }
     }
   },
   "choices": {

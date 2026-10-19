@@ -488,6 +488,30 @@
           "description": "HEX, rgb(), hsl(), CSS नाम, Discord संख्या या random"
         }
       }
+    },
+    "image": {
+      "name": "छवि",
+      "description": "छवि दिखाता है और उसका आकार बदलने, संपीड़ित करने, बदलने या पृष्ठभूमि हटाने देता है",
+      "parameters": {
+        "file": {
+          "name": "फ़ाइल",
+          "description": "संसाधित करने वाली छवि (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "रूपांतरित",
+      "description": "किसी फ़ाइल को दूसरे प्रारूप में बदलता है (छवियाँ, दस्तावेज़, ऑडियो, वीडियो, संग्रह...)",
+      "parameters": {
+        "file": {
+          "name": "फ़ाइल",
+          "description": "बदलने वाली फ़ाइल (अधिकतम 25 MB)"
+        },
+        "format": {
+          "name": "प्रारूप",
+          "description": "लक्ष्य प्रारूप (सूची से चुनने के लिए खाली छोड़ें)"
+        }
+      }
     }
   },
   "choices": {

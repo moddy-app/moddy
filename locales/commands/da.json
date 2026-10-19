@@ -488,6 +488,30 @@
           "description": "HEX, rgb(), hsl(), CSS-navn, Discord-tal eller random"
         }
       }
+    },
+    "image": {
+      "name": "billede",
+      "description": "Viser et billede og lader dig ændre størrelse, komprimere, konvertere eller fjerne baggrunden",
+      "parameters": {
+        "file": {
+          "name": "fil",
+          "description": "Billedet der skal behandles (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "konverter",
+      "description": "Konverterer en fil til et andet format (billeder, dokumenter, lyd, video, arkiver...)",
+      "parameters": {
+        "file": {
+          "name": "fil",
+          "description": "Filen der skal konverteres (maks. 25 MB)"
+        },
+        "format": {
+          "name": "format",
+          "description": "Målformat (lad stå tomt for at vælge fra en liste)"
+        }
+      }
     }
   },
   "choices": {

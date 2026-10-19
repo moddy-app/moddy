@@ -488,6 +488,30 @@
           "description": "HEX, rgb(), hsl(), nazwa CSS, liczba Discorda lub random"
         }
       }
+    },
+    "image": {
+      "name": "obraz",
+      "description": "Pokazuje obraz i pozwala zmienić rozmiar, skompresować, przekonwertować lub usunąć tło",
+      "parameters": {
+        "file": {
+          "name": "plik",
+          "description": "Obraz do obróbki (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "konwertuj",
+      "description": "Konwertuje plik do innego formatu (obrazy, dokumenty, audio, wideo, archiwa...)",
+      "parameters": {
+        "file": {
+          "name": "plik",
+          "description": "Plik do konwersji (maks. 25 MB)"
+        },
+        "format": {
+          "name": "format",
+          "description": "Format docelowy (zostaw puste, aby wybrać z listy)"
+        }
+      }
     }
   },
   "choices": {

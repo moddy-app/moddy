@@ -488,6 +488,30 @@
           "description": "HEX, rgb(), hsl(), CSS pavadinimas, Discord skaičius arba random"
         }
       }
+    },
+    "image": {
+      "name": "vaizdas",
+      "description": "Parodo vaizdą ir leidžia keisti dydį, suspausti, konvertuoti arba pašalinti foną",
+      "parameters": {
+        "file": {
+          "name": "failas",
+          "description": "Vaizdas apdorojimui (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "konvertuoti",
+      "description": "Konvertuoja failą į kitą formatą (vaizdai, dokumentai, garsas, vaizdo įrašai, archyvai...)",
+      "parameters": {
+        "file": {
+          "name": "failas",
+          "description": "Failas konvertavimui (maks. 25 MB)"
+        },
+        "format": {
+          "name": "formatas",
+          "description": "Tikslinis formatas (palik tuščią, kad pasirinktum iš sąrašo)"
+        }
+      }
     }
   },
   "choices": {

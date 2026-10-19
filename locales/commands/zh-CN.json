@@ -488,6 +488,30 @@
           "description": "HEX、rgb()、hsl()、CSS 名称、Discord 数字或 random"
         }
       }
+    },
+    "image": {
+      "name": "图片",
+      "description": "显示图片，并可调整大小、压缩、转换或去除背景",
+      "parameters": {
+        "file": {
+          "name": "文件",
+          "description": "要处理的图片（PNG、JPEG、WebP、GIF、HEIC、AVIF 等）"
+        }
+      }
+    },
+    "convert": {
+      "name": "转换",
+      "description": "将文件转换为其他格式（图片、文档、音频、视频、压缩包等）",
+      "parameters": {
+        "file": {
+          "name": "文件",
+          "description": "要转换的文件（最大 25 MB）"
+        },
+        "format": {
+          "name": "格式",
+          "description": "目标格式（留空则从列表中选择）"
+        }
+      }
     }
   },
   "choices": {

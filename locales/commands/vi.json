@@ -488,6 +488,30 @@
           "description": "HEX, rgb(), hsl(), tên CSS, số Discord hoặc random"
         }
       }
+    },
+    "image": {
+      "name": "hình-ảnh",
+      "description": "Hiển thị ảnh rồi đổi kích thước, nén, chuyển đổi hoặc xóa nền",
+      "parameters": {
+        "file": {
+          "name": "tệp",
+          "description": "Ảnh cần xử lý (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "chuyển-đổi",
+      "description": "Chuyển tệp sang định dạng khác (ảnh, tài liệu, âm thanh, video, lưu trữ...)",
+      "parameters": {
+        "file": {
+          "name": "tệp",
+          "description": "Tệp cần chuyển đổi (tối đa 25 MB)"
+        },
+        "format": {
+          "name": "định-dạng",
+          "description": "Định dạng đích (để trống để chọn từ danh sách)"
+        }
+      }
     }
   },
   "choices": {

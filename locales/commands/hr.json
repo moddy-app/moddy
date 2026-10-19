@@ -488,6 +488,30 @@
           "description": "HEX, rgb(), hsl(), CSS naziv, Discord broj ili random"
         }
       }
+    },
+    "image": {
+      "name": "slika",
+      "description": "Prikazuje sliku i omogućuje promjenu veličine, kompresiju, pretvorbu ili uklanjanje pozadine",
+      "parameters": {
+        "file": {
+          "name": "datoteka",
+          "description": "Slika za obradu (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "pretvori",
+      "description": "Pretvara datoteku u drugi format (slike, dokumenti, zvuk, video, arhive...)",
+      "parameters": {
+        "file": {
+          "name": "datoteka",
+          "description": "Datoteka za pretvorbu (maks. 25 MB)"
+        },
+        "format": {
+          "name": "format",
+          "description": "Ciljni format (ostavi prazno za odabir s popisa)"
+        }
+      }
     }
   },
   "choices": {

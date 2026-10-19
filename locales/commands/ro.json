@@ -488,6 +488,30 @@
           "description": "HEX, rgb(), hsl(), nume CSS, număr Discord sau random"
         }
       }
+    },
+    "image": {
+      "name": "imagine",
+      "description": "Afișează o imagine și o poate redimensiona, comprima, converti sau îi poate elimina fundalul",
+      "parameters": {
+        "file": {
+          "name": "fișier",
+          "description": "Imaginea de procesat (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "converteste",
+      "description": "Convertește un fișier în alt format (imagini, documente, audio, video, arhive...)",
+      "parameters": {
+        "file": {
+          "name": "fișier",
+          "description": "Fișierul de convertit (max. 25 MB)"
+        },
+        "format": {
+          "name": "format",
+          "description": "Formatul țintă (lasă gol pentru a alege dintr-o listă)"
+        }
+      }
     }
   },
   "choices": {

@@ -488,6 +488,30 @@
           "description": "HEX, rgb(), hsl(), ชื่อ CSS, เลข Discord หรือ random"
         }
       }
+    },
+    "image": {
+      "name": "รูปภาพ",
+      "description": "แสดงรูปภาพ แล้วปรับขนาด บีบอัด แปลงไฟล์ หรือลบพื้นหลัง",
+      "parameters": {
+        "file": {
+          "name": "ไฟล์",
+          "description": "รูปภาพที่ต้องการจัดการ (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "แปลงไฟล์",
+      "description": "แปลงไฟล์เป็นรูปแบบอื่น (รูปภาพ เอกสาร เสียง วิดีโอ ไฟล์บีบอัด...)",
+      "parameters": {
+        "file": {
+          "name": "ไฟล์",
+          "description": "ไฟล์ที่ต้องการแปลง (สูงสุด 25 MB)"
+        },
+        "format": {
+          "name": "รูปแบบ",
+          "description": "รูปแบบปลายทาง (เว้นว่างไว้เพื่อเลือกจากรายการ)"
+        }
+      }
     }
   },
   "choices": {

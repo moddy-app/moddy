@@ -488,6 +488,30 @@
           "description": "HEX, rgb(), hsl(), CSS name, Discord number or random"
         }
       }
+    },
+    "image": {
+      "name": "image",
+      "description": "Preview an image, then resize, compress, convert it or remove its background",
+      "parameters": {
+        "file": {
+          "name": "file",
+          "description": "The image to work on (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "convert",
+      "description": "Convert a file to another format (images, documents, audio, video, archives...)",
+      "parameters": {
+        "file": {
+          "name": "file",
+          "description": "The file to convert (max 25 MB)"
+        },
+        "format": {
+          "name": "format",
+          "description": "Target format (leave empty to pick from a list)"
+        }
+      }
     }
   },
   "choices": {

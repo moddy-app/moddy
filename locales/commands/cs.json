@@ -488,6 +488,30 @@
           "description": "HEX, rgb(), hsl(), název CSS, číslo Discordu nebo random"
         }
       }
+    },
+    "image": {
+      "name": "obrazek",
+      "description": "Zobrazí obrázek a umožní změnit velikost, komprimovat, převést nebo odstranit pozadí",
+      "parameters": {
+        "file": {
+          "name": "soubor",
+          "description": "Obrázek ke zpracování (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "prevest",
+      "description": "Převede soubor do jiného formátu (obrázky, dokumenty, audio, video, archivy...)",
+      "parameters": {
+        "file": {
+          "name": "soubor",
+          "description": "Soubor k převodu (max. 25 MB)"
+        },
+        "format": {
+          "name": "format",
+          "description": "Cílový formát (nech prázdné pro výběr ze seznamu)"
+        }
+      }
     }
   },
   "choices": {

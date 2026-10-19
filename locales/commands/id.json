@@ -488,6 +488,30 @@
           "description": "HEX, rgb(), hsl(), nama CSS, angka Discord, atau random"
         }
       }
+    },
+    "image": {
+      "name": "gambar",
+      "description": "Menampilkan gambar lalu mengubah ukuran, mengompres, mengonversi, atau menghapus latar belakangnya",
+      "parameters": {
+        "file": {
+          "name": "berkas",
+          "description": "Gambar yang akan diproses (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "konversi",
+      "description": "Mengonversi file ke format lain (gambar, dokumen, audio, video, arsip...)",
+      "parameters": {
+        "file": {
+          "name": "berkas",
+          "description": "File yang akan dikonversi (maks. 25 MB)"
+        },
+        "format": {
+          "name": "format",
+          "description": "Format tujuan (kosongkan untuk memilih dari daftar)"
+        }
+      }
     }
   },
   "choices": {
