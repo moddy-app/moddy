@@ -151,7 +151,7 @@ async def convert_media(src: str, dst: str, raw: bytes, filename: str) -> Conver
             if duration is None and "Invalid data" in info:
                 raise MediaError("unreadable")
             if duration is not None and duration > cap + 0.5:
-                raise MediaError("too_long", max=cap if cap < 120 else f"{cap // 60} min")
+                raise MediaError("too_long", max=f"{cap} s" if cap < 120 else f"{cap // 60} min")
 
             code, err = await _run(build_command(exe, src, dst, in_path, out_path, cap),
                                    F.FFMPEG_TIMEOUT)
