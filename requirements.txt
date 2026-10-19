@@ -68,3 +68,11 @@ c2pa-python==0.38.0
 # first eligible message of a server loads it) — see docs/features/TRANSLATE_BUTTON.md.
 # Pinned: 0.4 changed the model-loading API we call (from_model_file).
 py3langid==0.4.0
+
+# Text tools (/regex): third-party regex engine with a match timeout (ReDoS guard).
+# Lazy-imported, ~1 MB wheel, no system package.
+regex>=2024.0.0
+
+# Text tools (/textstats): hyphenation dictionaries used to count syllables for the
+# readability score (lazy-imported, pure Python, ~5 MB with its dictionaries).
+pyphen>=0.14.0

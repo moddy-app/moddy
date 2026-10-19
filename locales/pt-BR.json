@@ -5679,6 +5679,166 @@
         "invalid": "Não reconheço essa cor. Tente {examples}.",
         "out_of_range": "Uma cor do Discord é um número de `0` a `16777215`."
       }
+    },
+    "define": {
+      "title": "Dicionário",
+      "senses_placeholder": "Outros sentidos",
+      "view_on": "Ver no Wikcionário",
+      "synonyms": "Sinônimos",
+      "more": "Mais {count} definição(ões) no Wikcionário.",
+      "fallback_note": "Não encontrado no Wikcionário em {lang}, então isto vem do Wikcionário em inglês.",
+      "licence": "Wikcionário {wiki} · CC BY-SA",
+      "lang": {
+        "fr": "francês",
+        "en": "inglês",
+        "es": "espanhol",
+        "pt": "português",
+        "de": "alemão"
+      },
+      "pos": {
+        "abbreviation": "Abreviatura",
+        "adjective": "Adjetivo",
+        "adverb": "Advérbio",
+        "article": "Artigo",
+        "conjunction": "Conjunção",
+        "determiner": "Determinante",
+        "interjection": "Interjeição",
+        "name": "Nome próprio (nome, sobrenome)",
+        "noun": "Substantivo",
+        "numeral": "Numeral",
+        "onomatopoeia": "Onomatopeia",
+        "other": "Outro",
+        "particle": "Partícula",
+        "phrase": "Locução",
+        "prefix": "Prefixo",
+        "preposition": "Preposição",
+        "pronoun": "Pronome",
+        "proper_noun": "Nome próprio",
+        "proverb": "Provérbio",
+        "suffix": "Sufixo",
+        "symbol": "Símbolo",
+        "verb": "Verbo"
+      },
+      "errors": {
+        "not_found": "Nenhuma entrada para {word}. Confira a ortografia ou tente outro idioma.",
+        "invalid_word": "Isso não é uma palavra ou expressão que eu possa procurar."
+      }
+    },
+    "tldr": {
+      "title": "Resumindo",
+      "loading": "Lendo a conversa…",
+      "scope": "Resumido",
+      "scope_value": "{count} mensagens em {channel}",
+      "ai_note": "Escrito por uma IA: ela pode errar. Confira as mensagens originais se for importante.",
+      "jump": "ir para a mensagem",
+      "errors": {
+        "not_enough": "Não há mensagens recentes suficientes para resumir (são necessárias pelo menos {min}).",
+        "no_access": "Você não pode ler o histórico deste canal, então o Moddy não pode resumi-lo para você.",
+        "bot_no_access": "O Moddy não consegue ler o histórico deste canal. Dê a ele as permissões Ver canal e Ler histórico de mensagens aqui."
+      }
+    },
+    "regex": {
+      "title": "Testador de regex",
+      "modal_title": "Testar uma expressão regular",
+      "modal_help": "Digite um padrão e o texto onde testá-lo. As correspondências são destacadas no resultado.",
+      "pattern_label": "Padrão",
+      "pattern_placeholder": "\\b\\w+@\\w+\\.\\w+\\b",
+      "text_label": "Texto de teste",
+      "text_placeholder": "O texto em que o padrão será aplicado",
+      "flags_label": "Opções",
+      "flags": {
+        "i": "Ignorar maiúsculas (i)",
+        "m": "Multilinha (m)",
+        "s": "O ponto inclui quebras de linha (s)",
+        "x": "Detalhado (x)"
+      },
+      "count_one": "{count} correspondência",
+      "count_other": "{count} correspondências",
+      "count_capped": "{count}+ correspondências",
+      "no_match": "Nenhuma correspondência",
+      "no_match_hint": "O padrão é válido, mas não encontra nada neste texto. Edite-o para tentar de novo.",
+      "col_index": "#",
+      "col_position": "Posição",
+      "col_match": "Encontrado",
+      "col_groups": "Grupos",
+      "pattern": "Padrão",
+      "truncated": "A lista completa de correspondências está anexada.",
+      "errors": {
+        "empty_pattern": "Digite um padrão para testar.",
+        "empty_text": "Digite um texto para testar o padrão.",
+        "invalid_pattern": "O padrão não é válido: {detail}. Edite-o e tente de novo.",
+        "timeout": "O padrão demorou demais, em geral por um retrocesso catastrófico. Simplifique-o.",
+        "pattern_too_long": "O padrão é longo demais (máximo de {max} caracteres).",
+        "too_complex": "O padrão é complexo demais para compilar. Simplifique-o."
+      }
+    },
+    "diff": {
+      "title": "Comparação de textos",
+      "modal_title": "Comparar dois textos",
+      "modal_help": "Cole os dois textos e escolha como compará-los.",
+      "before_label": "Antes",
+      "after_label": "Depois",
+      "mode_label": "Comparar por",
+      "mode": {
+        "lines": "Linha",
+        "words": "Palavra"
+      },
+      "mode_hint": {
+        "lines": "Um diff vermelho / verde, como no Git",
+        "words": "Palavras riscadas e em negrito"
+      },
+      "identical": "Os dois textos são idênticos.",
+      "changes": "Alterações",
+      "legend_words": "As palavras ~~riscadas~~ foram removidas, as palavras em **negrito** foram adicionadas.",
+      "truncated": "A comparação completa está anexada.",
+      "errors": {
+        "empty_input": "Informe pelo menos um dos dois textos."
+      }
+    },
+    "textstats": {
+      "title": "Estatísticas do texto",
+      "modal_title": "Analisar um texto",
+      "modal_help": "Cole um texto para contar as palavras e medir a legibilidade. Nada é guardado.",
+      "text_label": "Texto",
+      "text_placeholder": "O texto a analisar",
+      "words_big": "{count} palavras",
+      "characters": "Caracteres",
+      "characters_value": "{total} ({no_spaces} sem espaços)",
+      "sentences": "Frases",
+      "paragraphs": "Parágrafos",
+      "avg": "Palavras por frase",
+      "reading": "Tempo de leitura",
+      "speaking": "Tempo de fala",
+      "language": "Idioma",
+      "languages": {
+        "fr": "francês",
+        "en": "inglês",
+        "es": "espanhol",
+        "pt": "português",
+        "de": "alemão"
+      },
+      "readability": "Legibilidade",
+      "levels": {
+        "very_easy": "Muito fácil",
+        "easy": "Fácil",
+        "average": "Médio",
+        "difficult": "Difícil",
+        "very_difficult": "Muito difícil"
+      },
+      "formula": "Fórmula: {name}",
+      "formulas": {
+        "fr": "Kandel-Moles",
+        "en": "Flesch",
+        "es": "Fernández Huerta",
+        "de": "Amstad",
+        "pt": "Martins"
+      },
+      "not_enough": "Adicione pelo menos {min} palavras para obter uma pontuação de legibilidade.",
+      "no_language": "Sem pontuação de legibilidade: o idioma não foi reconhecido (francês, inglês, espanhol, português e alemão são aceitos).",
+      "top_words": "Palavras mais usadas",
+      "errors": {
+        "empty_input": "Não há texto para analisar."
+      }
     }
   }
 }

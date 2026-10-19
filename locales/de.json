@@ -5679,6 +5679,166 @@
         "invalid": "Diese Farbe kenne ich nicht. Probier {examples}.",
         "out_of_range": "Eine Discord-Farbe ist eine Zahl von `0` bis `16777215`."
       }
+    },
+    "define": {
+      "title": "Wörterbuch",
+      "senses_placeholder": "Weitere Bedeutungen",
+      "view_on": "Im Wiktionary ansehen",
+      "synonyms": "Synonyme",
+      "more": "{count} weitere Definition(en) im Wiktionary.",
+      "fallback_note": "Im Wiktionary ({lang}) nicht gefunden, daher stammt dies aus dem englischen.",
+      "licence": "Wiktionary {wiki} · CC BY-SA",
+      "lang": {
+        "fr": "Französisch",
+        "en": "Englisch",
+        "es": "Spanisch",
+        "pt": "Portugiesisch",
+        "de": "Deutsch"
+      },
+      "pos": {
+        "abbreviation": "Abkürzung",
+        "adjective": "Adjektiv",
+        "adverb": "Adverb",
+        "article": "Artikel",
+        "conjunction": "Konjunktion",
+        "determiner": "Determinativ",
+        "interjection": "Interjektion",
+        "name": "Eigenname (Vor-, Nachname)",
+        "noun": "Substantiv",
+        "numeral": "Numerale",
+        "onomatopoeia": "Onomatopoetikum",
+        "other": "Sonstiges",
+        "particle": "Partikel",
+        "phrase": "Redewendung",
+        "prefix": "Präfix",
+        "preposition": "Präposition",
+        "pronoun": "Pronomen",
+        "proper_noun": "Eigenname",
+        "proverb": "Sprichwort",
+        "suffix": "Suffix",
+        "symbol": "Symbol",
+        "verb": "Verb"
+      },
+      "errors": {
+        "not_found": "Kein Eintrag für {word}. Prüfe die Schreibweise oder versuche eine andere Sprache.",
+        "invalid_word": "Das ist kein Wort und kein Ausdruck, den ich nachschlagen kann."
+      }
+    },
+    "tldr": {
+      "title": "Kurz gesagt",
+      "loading": "Ich lese die Unterhaltung…",
+      "scope": "Zusammengefasst",
+      "scope_value": "{count} Nachrichten in {channel}",
+      "ai_note": "Von einer KI geschrieben: Sie kann sich irren. Prüfe bei Wichtigem die Originalnachrichten.",
+      "jump": "zur Nachricht",
+      "errors": {
+        "not_enough": "Es gibt nicht genug aktuelle Nachrichten zum Zusammenfassen (mindestens {min} nötig).",
+        "no_access": "Du kannst den Verlauf dieses Kanals nicht lesen, daher kann Moddy ihn nicht für dich zusammenfassen.",
+        "bot_no_access": "Moddy kann den Verlauf dieses Kanals nicht lesen. Gib ihm hier die Berechtigungen Kanal ansehen und Nachrichtenverlauf anzeigen."
+      }
+    },
+    "regex": {
+      "title": "Regex-Tester",
+      "modal_title": "Regulären Ausdruck testen",
+      "modal_help": "Gib ein Muster und den Text zum Testen ein. Treffer werden im Ergebnis hervorgehoben.",
+      "pattern_label": "Muster",
+      "pattern_placeholder": "\\b\\w+@\\w+\\.\\w+\\b",
+      "text_label": "Testtext",
+      "text_placeholder": "Der Text, auf den das Muster angewendet wird",
+      "flags_label": "Optionen",
+      "flags": {
+        "i": "Groß-/Kleinschreibung ignorieren (i)",
+        "m": "Mehrzeilig (m)",
+        "s": "Punkt umfasst Zeilenumbrüche (s)",
+        "x": "Ausführlich (x)"
+      },
+      "count_one": "{count} Treffer",
+      "count_other": "{count} Treffer",
+      "count_capped": "{count}+ Treffer",
+      "no_match": "Kein Treffer",
+      "no_match_hint": "Das Muster ist gültig, findet in diesem Text aber nichts. Bearbeite es und versuche es erneut.",
+      "col_index": "#",
+      "col_position": "Position",
+      "col_match": "Treffer",
+      "col_groups": "Gruppen",
+      "pattern": "Muster",
+      "truncated": "Die vollständige Trefferliste ist angehängt.",
+      "errors": {
+        "empty_pattern": "Gib ein Muster zum Testen ein.",
+        "empty_text": "Gib einen Text ein, auf dem das Muster getestet wird.",
+        "invalid_pattern": "Das Muster ist ungültig: {detail}. Bearbeite es und versuche es erneut.",
+        "timeout": "Das Muster hat zu lange gebraucht, meist wegen katastrophalem Backtracking. Vereinfache es.",
+        "pattern_too_long": "Das Muster ist zu lang (höchstens {max} Zeichen).",
+        "too_complex": "Das Muster ist zu komplex zum Kompilieren. Vereinfache es."
+      }
+    },
+    "diff": {
+      "title": "Textvergleich",
+      "modal_title": "Zwei Texte vergleichen",
+      "modal_help": "Füge die beiden Texte ein und wähle, wie sie verglichen werden.",
+      "before_label": "Vorher",
+      "after_label": "Nachher",
+      "mode_label": "Vergleichen nach",
+      "mode": {
+        "lines": "Zeile",
+        "words": "Wort"
+      },
+      "mode_hint": {
+        "lines": "Ein rot-grüner Diff, wie in Git",
+        "words": "Durchgestrichene und fette Wörter"
+      },
+      "identical": "Die beiden Texte sind identisch.",
+      "changes": "Änderungen",
+      "legend_words": "~~Durchgestrichene~~ Wörter wurden entfernt, **fette** Wörter wurden hinzugefügt.",
+      "truncated": "Der vollständige Vergleich ist angehängt.",
+      "errors": {
+        "empty_input": "Gib mindestens einen der beiden Texte an."
+      }
+    },
+    "textstats": {
+      "title": "Textstatistik",
+      "modal_title": "Text analysieren",
+      "modal_help": "Füge einen Text ein, um seine Wörter zu zählen und die Lesbarkeit zu messen. Nichts wird gespeichert.",
+      "text_label": "Text",
+      "text_placeholder": "Der zu analysierende Text",
+      "words_big": "{count} Wörter",
+      "characters": "Zeichen",
+      "characters_value": "{total} ({no_spaces} ohne Leerzeichen)",
+      "sentences": "Sätze",
+      "paragraphs": "Absätze",
+      "avg": "Wörter pro Satz",
+      "reading": "Lesezeit",
+      "speaking": "Sprechzeit",
+      "language": "Sprache",
+      "languages": {
+        "fr": "Französisch",
+        "en": "Englisch",
+        "es": "Spanisch",
+        "pt": "Portugiesisch",
+        "de": "Deutsch"
+      },
+      "readability": "Lesbarkeit",
+      "levels": {
+        "very_easy": "Sehr leicht",
+        "easy": "Leicht",
+        "average": "Mittel",
+        "difficult": "Schwer",
+        "very_difficult": "Sehr schwer"
+      },
+      "formula": "Formel: {name}",
+      "formulas": {
+        "fr": "Kandel-Moles",
+        "en": "Flesch",
+        "es": "Fernández Huerta",
+        "de": "Amstad",
+        "pt": "Martins"
+      },
+      "not_enough": "Füge mindestens {min} Wörter hinzu, um einen Lesbarkeitswert zu erhalten.",
+      "no_language": "Kein Lesbarkeitswert: Die Sprache wurde nicht erkannt (unterstützt werden Französisch, Englisch, Spanisch, Portugiesisch und Deutsch).",
+      "top_words": "Häufigste Wörter",
+      "errors": {
+        "empty_input": "Es gibt keinen Text zum Analysieren."
+      }
     }
   }
 }
