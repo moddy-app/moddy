@@ -668,6 +668,50 @@ def test_find_source_attachment_skips_the_preview():
     assert views.find_source_attachment(types.SimpleNamespace(attachments=[att(views.PREVIEW_NAME)])) is None
 
 
+def _v2_message(*components):
+    """A Components V2 card as Discord returns it: no attachments, only components."""
+    from discord.components import _component_factory
+    container = _component_factory({"type": 17, "id": 1, "components": list(components)}, None)
+    return types.SimpleNamespace(attachments=[], components=[container])
+
+
+def _gallery(name, ctype="image/png"):
+    return {"type": 12, "id": 2, "items": [{"media": {
+        "url": f"https://cdn.discordapp.com/attachments/1/2/{name}?ex=1", "content_type": ctype}}]}
+
+
+def test_image_is_found_in_the_components_of_a_v2_card():
+    message = _v2_message(_gallery("photo.png"))
+    found = views.find_source_attachment(message)
+    assert found.filename == "photo.png" and found.url.startswith("https://cdn.discordapp.com/")
+    assert views.is_image_attachment(found)
+
+
+def test_v2_card_with_a_preview_returns_the_original_file_not_the_preview():
+    message = _v2_message(
+        _gallery(views.PREVIEW_NAME),
+        {"type": 13, "id": 3, "name": "scan.tiff", "size": 99,
+         "file": {"url": "https://cdn.discordapp.com/attachments/1/3/scan.tiff?ex=1"}})
+    assert views.find_source_attachment(message).filename == "scan.tiff"
+    only_preview = _v2_message(_gallery(views.PREVIEW_NAME))
+    assert views.find_source_attachment(only_preview) is None
+    info = image_ops.ImageInfo("tiff", 10, 10, 100, "RGB", False, False, 1)
+    files = views.card_files_from_message(message, views.find_source_attachment(message), info)
+    assert files.gallery == views.PREVIEW_NAME and files.file_ref == "scan.tiff"
+
+
+async def test_card_image_reads_through_its_media_item():
+    class Media:
+        url = "https://cdn.discordapp.com/attachments/1/2/a%20b.png?ex=1"
+        content_type = "image/png"
+
+        async def read(self):
+            return b"bytes"
+
+    card = views.CardImage(Media())
+    assert card.filename == "a b.png" and await card.read() == b"bytes"
+
+
 async def test_card_image_is_fetched_back_when_the_interaction_message_has_none():
     att = lambda name: types.SimpleNamespace(filename=name, content_type="image/png")
     bare = types.SimpleNamespace(id=1, attachments=[], flags=discord.MessageFlags._from_value(0))

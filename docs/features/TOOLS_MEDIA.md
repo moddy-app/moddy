@@ -40,14 +40,17 @@ a PNG preview; the original rides along as a file component.
 
 ### Stateless buttons
 
-The card **always carries the image as an attachment**; each button re-reads it
-from `interaction.message.attachments` (the preview, named `moddy-preview.png`,
-is skipped). When that message shows no image, the card is fetched back through
-the interaction token (`interaction.original_response()`, works for ephemeral
-cards too) and the miss is logged with the attachment names seen. The Resize /
-Compress modals keep the message the button was clicked on (a modal submit does
-not reliably repeat its attachments). Nothing is stored anywhere, so the buttons
-survive restarts and never expire. Custom ids: `moddy:tools:image:{resize,compress,convert,bg}`.
+The card **always carries the image as an upload**; each button re-reads it. A
+Components V2 message has **no `attachments`** (Discord returns an empty list, on the
+click and when fetched back): its uploads are only reachable through its components. So
+`card_images()` reads the media items of the `MediaGallery`, `File` and `Thumbnail`
+components (`CardImage`, whose `read()` downloads the CDN url) after any classic
+attachment; the preview (`moddy-preview.png`) is skipped and a `File` component, which
+holds the original of a non-previewable format, wins over the gallery. When a card still
+shows no image the message is fetched back through the interaction token and the miss is
+logged with what was seen. The Resize / Compress modals keep the message the button was
+clicked on. Nothing is stored anywhere, so the buttons survive restarts and never
+expire. Custom ids: `moddy:tools:image:{resize,compress,convert,bg}`.
 Modals are the documented persistence exclusion (they live only for the
 interaction that opened them).
 

@@ -23,6 +23,7 @@ import io
 import logging
 import re
 from typing import Any, Dict, List, Optional, Sequence, Tuple
+from urllib.parse import unquote, urlsplit
 
 import discord
 from discord import ui
@@ -65,9 +66,64 @@ def safe_filename(name: str) -> str:
 # --------------------------------------------------------------------------- #
 
 
-def find_source_attachment(message: Optional[discord.Message]) -> Optional[discord.Attachment]:
-    """The image a card is about: its first image attachment that is not the preview."""
-    for attachment in getattr(message, "attachments", None) or []:
+class CardImage:
+    """An image carried by a Components V2 card.
+
+    A V2 message has **no** ``attachments``: the files it uploaded are only
+    reachable through its components (media gallery, file, thumbnail), as media
+    items whose ``url`` is the CDN address of the upload. This wraps one of them
+    with the few attributes the readers need (``filename``, ``url``,
+    ``content_type``, ``size``, ``read()``), like a :class:`discord.Attachment`.
+    """
+
+    def __init__(self, media: Any, *, filename: Optional[str] = None, size: Optional[int] = None):
+        self.media = media
+        self.url: str = media.url
+        self.content_type: Optional[str] = getattr(media, "content_type", None)
+        self.filename: str = filename or _name_from_url(media.url)
+        self.size: int = size or 0
+
+    async def read(self) -> bytes:
+        return await self.media.read()
+
+    def __repr__(self) -> str:
+        return f"<CardImage {self.filename!r}>"
+
+
+def _name_from_url(url: str) -> str:
+    return unquote(urlsplit(url).path.rsplit("/", 1)[-1]) or "image"
+
+
+def _walk_components(components) -> Any:
+    for component in components or []:
+        yield component
+        yield from _walk_components(getattr(component, "children", None))
+        accessory = getattr(component, "accessory", None)
+        if accessory is not None:
+            yield from _walk_components([accessory])
+
+
+def card_images(message: Optional[discord.Message]) -> List[Any]:
+    """Every image-like file of a card: classic attachments, then V2 components.
+
+    A ``File`` component comes before the gallery: for a format Discord cannot
+    display it carries the original, while the gallery shows the PNG preview.
+    """
+    found: List[Any] = list(getattr(message, "attachments", None) or [])
+    files, media = [], []
+    for component in _walk_components(getattr(message, "components", None)):
+        if isinstance(component, discord.FileComponent):
+            files.append(CardImage(component.media, filename=component.name, size=component.size))
+        elif isinstance(component, discord.MediaGalleryComponent):
+            media.extend(CardImage(item.media) for item in component.items)
+        elif isinstance(component, discord.ThumbnailComponent):
+            media.append(CardImage(component.media))
+    return found + files + media
+
+
+def find_source_attachment(message: Optional[discord.Message]) -> Optional[Any]:
+    """The image a card is about: its first image file that is not the preview."""
+    for attachment in card_images(message):
         if attachment.filename == PREVIEW_NAME:
             continue
         if is_image_attachment(attachment):
@@ -181,12 +237,12 @@ async def make_card_files(service: MediaToolsService, data: bytes, filename: str
     return CardFiles([discord.File(io.BytesIO(preview), PREVIEW_NAME)], PREVIEW_NAME, None)
 
 
-def card_files_from_message(message: discord.Message, source: discord.Attachment,
+def card_files_from_message(message: discord.Message, source: Any,
                             info: image_ops.ImageInfo) -> CardFiles:
     """References to the attachments a card already carries (nothing is re-uploaded)."""
     if info.format_key in formats.PREVIEWABLE_IMAGE_KEYS:
         return CardFiles([], source.filename, None)
-    has_preview = any(a.filename == PREVIEW_NAME for a in message.attachments)
+    has_preview = any(a.filename == PREVIEW_NAME for a in card_images(message))
     return CardFiles([], PREVIEW_NAME if has_preview else None, source.filename)
 
 
@@ -292,8 +348,8 @@ async def find_card_attachment(interaction: discord.Interaction) -> Optional[dis
         logger.warning(
             "image card without a readable image: message=%s flags=%s attachments=%s fetched=%s",
             interaction.message.id, interaction.message.flags.value,
-            [a.filename for a in interaction.message.attachments],
-            [a.filename for a in getattr(fetched, "attachments", [])])
+            [a.filename for a in card_images(interaction.message)],
+            [a.filename for a in card_images(fetched)])
     return attachment
 
 
