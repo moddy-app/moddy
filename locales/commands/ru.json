@@ -488,6 +488,20 @@
           "description": "HEX, rgb(), hsl(), имя CSS, число Discord или random"
         }
       }
+    },
+    "music": {
+      "name": "музыка",
+      "description": "Музыкальные инструменты"
+    },
+    "music link": {
+      "name": "ссылка",
+      "description": "Найди трек, альбом или исполнителя из Spotify на других платформах",
+      "parameters": {
+        "url": {
+          "name": "ссылка",
+          "description": "Ссылка Spotify (трек, альбом или исполнитель)"
+        }
+      }
     }
   },
   "choices": {

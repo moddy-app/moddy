@@ -488,6 +488,20 @@
           "description": "HEX, rgb(), hsl(), CSS-naam, Discord-getal of random"
         }
       }
+    },
+    "music": {
+      "name": "muziek",
+      "description": "Muziekhulpmiddelen"
+    },
+    "music link": {
+      "name": "link",
+      "description": "Vind een Spotify-nummer, -album of -artiest op andere platforms",
+      "parameters": {
+        "url": {
+          "name": "link",
+          "description": "De Spotify-link (een nummer, album of artiest)"
+        }
+      }
     }
   },
   "choices": {

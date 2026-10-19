@@ -488,6 +488,20 @@
           "description": "HEX, rgb(), hsl(), CSS pavadinimas, Discord skaičius arba random"
         }
       }
+    },
+    "music": {
+      "name": "muzika",
+      "description": "Muzikos įrankiai"
+    },
+    "music link": {
+      "name": "nuoroda",
+      "description": "Rask „Spotify“ dainą, albumą ar atlikėją kitose platformose",
+      "parameters": {
+        "url": {
+          "name": "nuoroda",
+          "description": "„Spotify“ nuoroda (daina, albumas ar atlikėjas)"
+        }
+      }
     }
   },
   "choices": {

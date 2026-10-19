@@ -488,6 +488,20 @@
           "description": "HEX、rgb()、hsl()、CSS名、Discordの数値、またはrandom"
         }
       }
+    },
+    "music": {
+      "name": "音楽",
+      "description": "音楽ツール"
+    },
+    "music link": {
+      "name": "リンク",
+      "description": "Spotifyの曲・アルバム・アーティストを他のサービスで探す",
+      "parameters": {
+        "url": {
+          "name": "リンク",
+          "description": "Spotifyのリンク（曲・アルバム・アーティスト）"
+        }
+      }
     }
   },
   "choices": {

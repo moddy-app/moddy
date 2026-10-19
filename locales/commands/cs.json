@@ -488,6 +488,20 @@
           "description": "HEX, rgb(), hsl(), název CSS, číslo Discordu nebo random"
         }
       }
+    },
+    "music": {
+      "name": "hudba",
+      "description": "Hudební nástroje"
+    },
+    "music link": {
+      "name": "odkaz",
+      "description": "Najdi skladbu, album nebo interpreta ze Spotify na jiných platformách",
+      "parameters": {
+        "url": {
+          "name": "odkaz",
+          "description": "Odkaz na Spotify (skladba, album nebo interpret)"
+        }
+      }
     }
   },
   "choices": {

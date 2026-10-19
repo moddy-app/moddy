@@ -488,6 +488,20 @@
           "description": "HEX, rgb(), hsl(), nazwa CSS, liczba Discorda lub random"
         }
       }
+    },
+    "music": {
+      "name": "muzyka",
+      "description": "Narzędzia muzyczne"
+    },
+    "music link": {
+      "name": "link",
+      "description": "Znajdź utwór, album lub artystę ze Spotify na innych platformach",
+      "parameters": {
+        "url": {
+          "name": "link",
+          "description": "Link do Spotify (utwór, album lub artysta)"
+        }
+      }
     }
   },
   "choices": {
