@@ -5681,6 +5681,7 @@
       }
     },
     "define": {
+      "error_title": "Nachschlagen nicht möglich",
       "title": "Wörterbuch",
       "senses_placeholder": "Weitere Bedeutungen",
       "view_on": "Im Wiktionary ansehen",
@@ -5725,6 +5726,7 @@
       }
     },
     "tldr": {
+      "error_title": "Zusammenfassen nicht möglich",
       "title": "Kurz gesagt",
       "loading": "Ich lese die Unterhaltung…",
       "scope": "Zusammengefasst",
@@ -5738,6 +5740,7 @@
       }
     },
     "regex": {
+      "error_title": "Test nicht möglich",
       "title": "Regex-Tester",
       "modal_title": "Regulären Ausdruck testen",
       "modal_help": "Gib ein Muster und den Text zum Testen ein. Treffer werden im Ergebnis hervorgehoben.",
@@ -5773,6 +5776,7 @@
       }
     },
     "diff": {
+      "error_title": "Vergleich nicht möglich",
       "title": "Textvergleich",
       "modal_title": "Zwei Texte vergleichen",
       "modal_help": "Füge die beiden Texte ein und wähle, wie sie verglichen werden.",
@@ -5796,6 +5800,7 @@
       }
     },
     "textstats": {
+      "error_title": "Analyse nicht möglich",
       "title": "Textstatistik",
       "modal_title": "Text analysieren",
       "modal_help": "Füge einen Text ein, um seine Wörter zu zählen und die Lesbarkeit zu messen. Nichts wird gespeichert.",

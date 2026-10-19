@@ -5767,6 +5767,7 @@
       }
     },
     "define": {
+      "error_title": "Could not look it up",
       "title": "Dictionary",
       "senses_placeholder": "Other senses",
       "view_on": "View on Wiktionary",
@@ -5811,6 +5812,7 @@
       }
     },
     "tldr": {
+      "error_title": "Could not summarise",
       "title": "In short",
       "loading": "Reading the conversation…",
       "scope": "Summarised",
@@ -5824,6 +5826,7 @@
       }
     },
     "regex": {
+      "error_title": "Could not test the pattern",
       "title": "Regex tester",
       "modal_title": "Test a regular expression",
       "modal_help": "Enter a pattern and the text to test it on. Matches are highlighted in the result.",
@@ -5859,6 +5862,7 @@
       }
     },
     "diff": {
+      "error_title": "Could not compare",
       "title": "Text comparison",
       "modal_title": "Compare two texts",
       "modal_help": "Paste the texts and choose how to compare them.",
@@ -5882,6 +5886,7 @@
       }
     },
     "textstats": {
+      "error_title": "Could not analyse the text",
       "title": "Text statistics",
       "modal_title": "Analyse a text",
       "modal_help": "Paste a text to count its words and measure its readability. Nothing is stored.",

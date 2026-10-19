@@ -5766,6 +5766,7 @@
       }
     },
     "define": {
+      "error_title": "Recherche impossible",
       "title": "Dictionnaire",
       "senses_placeholder": "Autres sens",
       "view_on": "Voir sur Wiktionnaire",
@@ -5810,6 +5811,7 @@
       }
     },
     "tldr": {
+      "error_title": "Résumé impossible",
       "title": "En bref",
       "loading": "Je lis la conversation…",
       "scope": "Résumé de",
@@ -5823,6 +5825,7 @@
       }
     },
     "regex": {
+      "error_title": "Test impossible",
       "title": "Testeur de regex",
       "modal_title": "Tester une expression régulière",
       "modal_help": "Saisis un motif et le texte sur lequel le tester. Les correspondances sont surlignées dans le résultat.",
@@ -5858,6 +5861,7 @@
       }
     },
     "diff": {
+      "error_title": "Comparaison impossible",
       "title": "Comparaison de textes",
       "modal_title": "Comparer deux textes",
       "modal_help": "Colle les deux textes et choisis comment les comparer.",
@@ -5881,6 +5885,7 @@
       }
     },
     "textstats": {
+      "error_title": "Analyse impossible",
       "title": "Statistiques du texte",
       "modal_title": "Analyser un texte",
       "modal_help": "Colle un texte pour compter ses mots et mesurer sa lisibilité. Rien n'est conservé.",

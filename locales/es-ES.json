@@ -5681,6 +5681,7 @@
       }
     },
     "define": {
+      "error_title": "No se pudo buscar",
       "title": "Diccionario",
       "senses_placeholder": "Otros sentidos",
       "view_on": "Ver en Wikcionario",
@@ -5725,6 +5726,7 @@
       }
     },
     "tldr": {
+      "error_title": "No se pudo resumir",
       "title": "En resumen",
       "loading": "Leyendo la conversación…",
       "scope": "Resumido",
@@ -5738,6 +5740,7 @@
       }
     },
     "regex": {
+      "error_title": "No se pudo probar el patrón",
       "title": "Probador de regex",
       "modal_title": "Probar una expresión regular",
       "modal_help": "Escribe un patrón y el texto donde probarlo. Las coincidencias se resaltan en el resultado.",
@@ -5773,6 +5776,7 @@
       }
     },
     "diff": {
+      "error_title": "No se pudo comparar",
       "title": "Comparación de textos",
       "modal_title": "Comparar dos textos",
       "modal_help": "Pega los dos textos y elige cómo compararlos.",
@@ -5796,6 +5800,7 @@
       }
     },
     "textstats": {
+      "error_title": "No se pudo analizar el texto",
       "title": "Estadísticas del texto",
       "modal_title": "Analizar un texto",
       "modal_help": "Pega un texto para contar sus palabras y medir su legibilidad. No se guarda nada.",
