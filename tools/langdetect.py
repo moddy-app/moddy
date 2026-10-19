@@ -144,7 +144,8 @@ def measure(text: str) -> TextStats:
     for token in _WORD.findall(text):
         unspaced = sum(1 for c in token if _is_unspaced(c))
         count += max(1, unspaced // 2) if unspaced else 1
-        words.append(token.lower())
+        # A run of an unspaced script is many words: judge its variety by characters.
+        words.extend(token) if unspaced else words.append(token.lower())
     alpha = sum(1 for c in visible if c.isalpha())
     return TextStats(letters=letters, words=count, distinct_words=len(set(words)),
                      letter_ratio=alpha / len(visible))
@@ -194,7 +195,7 @@ class Detection:
 class Detector:
     """``py3langid`` restricted to :data:`SUPPORTED_LANGUAGES`, loaded on first use.
 
-    The model is the one heavy thing in the translate button (~70 MB resident,
+    The model is the one heavy thing in the translate button (~55-65 MB resident,
     numpy included), so nothing is imported or built until a server actually
     needs a verdict, and the loading itself is meant to run in a worker thread
     (:meth:`load`). Classification afterwards is ~0.05 ms: safe on the event loop.

@@ -3940,6 +3940,87 @@
           "placeholder": "Aucun salon ignoré"
         }
       }
+    },
+    "translate_button": {
+      "name": "Bouton Traduire",
+      "description": "Propose une traduction sous les messages écrits dans une autre langue",
+      "config": {
+        "title": "Bouton Traduire",
+        "description": "Quand quelqu'un écrit dans une langue que ton serveur ne parle pas, Moddy ajoute un petit bouton **Traduire** sous le message. Celui qui clique reçoit la traduction en privé, dans sa propre langue. La détection se fait dans Moddy et rien n'est envoyé nulle part avant un clic. Activé par défaut sur tous les serveurs : tu peux le mettre en pause depuis **Gérer**.",
+        "learnt": {
+          "section_title": "Langues habituellement parlées ici",
+          "section_description": "Apprises sur les {days} derniers jours de messages : une langue qui en représente au moins 10 % n'a jamais de bouton",
+          "learning": "Moddy apprend encore : `{sample}` / `{needed}` messages analysés",
+          "none": "Seulement la langue du serveur pour l'instant"
+        },
+        "languages": {
+          "section_title": "Autres langues à ignorer",
+          "section_description": "Les messages dans ces langues n'ont jamais de bouton, en plus de la langue du serveur et de celles apprises par Moddy",
+          "placeholder": "Aucune langue en plus"
+        },
+        "delay": {
+          "section_title": "Durée du bouton",
+          "section_description": "Combien de temps le petit message reste sous le message d'origine",
+          "placeholder": "Choisis une durée",
+          "options": {
+            "120": "2 minutes",
+            "300": "5 minutes",
+            "600": "10 minutes",
+            "1800": "30 minutes",
+            "0": "Ne jamais supprimer"
+          }
+        },
+        "channels": {
+          "section_title": "Salons ignorés",
+          "section_description": "Moddy ne propose jamais de traduction dans ces salons (ni dans leurs fils)",
+          "placeholder": "Aucun salon ignoré"
+        }
+      },
+      "prompt": {
+        "detected": "{language} détecté",
+        "button": "Traduire"
+      },
+      "loading": "Traduction en cours…",
+      "card": {
+        "title": "Traduction",
+        "jump": "Message d'origine"
+      },
+      "errors": {
+        "title": "Traduction indisponible",
+        "failed": "La traduction a échoué. Réessaie dans un instant.",
+        "unavailable": "La traduction n'est pas disponible pour le moment. Réessaie plus tard.",
+        "rate_limited": "Tu cliques trop vite. Attends une minute puis réessaie.",
+        "gone": "Le message d'origine n'existe plus.",
+        "empty": "Il n'y a rien à traduire dans ce message.",
+        "quota": "Tu as atteint ta limite quotidienne de traductions. Réessaie demain."
+      },
+      "languages": {
+        "en": "Anglais",
+        "fr": "Français",
+        "de": "Allemand",
+        "es": "Espagnol",
+        "pt": "Portugais",
+        "it": "Italien",
+        "nl": "Néerlandais",
+        "pl": "Polonais",
+        "ru": "Russe",
+        "uk": "Ukrainien",
+        "tr": "Turc",
+        "ar": "Arabe",
+        "ja": "Japonais",
+        "ko": "Coréen",
+        "zh": "Chinois",
+        "sv": "Suédois",
+        "da": "Danois",
+        "no": "Norvégien",
+        "fi": "Finnois",
+        "cs": "Tchèque",
+        "ro": "Roumain",
+        "hu": "Hongrois",
+        "el": "Grec",
+        "id": "Indonésien",
+        "bg": "Bulgare"
+      }
     }
   },
   "languages": {
