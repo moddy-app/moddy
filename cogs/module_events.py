@@ -263,6 +263,22 @@ class ModuleEvents(commands.Cog):
         except Exception as e:
             logger.error(f"Error in on_message (ai_detector) for guild {message.guild.id}: {e}", exc_info=True)
 
+        try:
+            # Music links: Spotify links get Deezer / Apple Music / YouTube Music
+            # buttons. Default-enabled module; replies from a background task.
+            from tools.music import has_spotify_hint
+            if has_spotify_hint(message.content):
+                music_module = await self.bot.module_manager.get_module_instance(
+                    message.guild.id,
+                    'music_links'
+                )
+
+                if music_module and music_module.enabled:
+                    await music_module.on_message(message)
+
+        except Exception as e:
+            logger.error(f"Error in on_message (music_links) for guild {message.guild.id}: {e}", exc_info=True)
+
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction: discord.Reaction, user):
         """Cached-message reaction → feed the automod relationship graph (~0 cost).
