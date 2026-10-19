@@ -38,7 +38,9 @@ import aiohttp
 from services.public_api import PublicAPIError
 from tools import linkcheck as lc
 from tools.domain import crtsh, doh, rdap, tls
-from tools.domain.names import DomainError, DomainName, is_public_ip, parse_ip, parse_target
+from tools.domain.names import (
+    DomainError, DomainName, is_public_ip, parse_ip, parse_target, shared_hosting_suffix,
+)
 from utils import safe_http
 from utils.tool_card import ToolError
 
@@ -224,7 +226,10 @@ class WebToolsService:
 
     async def whois(self, domain: DomainName) -> rdap.DomainRecord:
         """RDAP record of the registrable domain. Raises ``ToolError`` (tool ``whois``)."""
-        name = domain.registrable_ascii
+        # On a hosting platform (foo.github.io) the customer owns no registration:
+        # the record shown is the platform's own.
+        name = (shared_hosting_suffix(domain.ascii) if domain.shared_hosting else None) \
+            or domain.registrable_ascii
         api = self.api
         key = api.cache_key("rdap", name)
         cached = await api.cache_get(key)
