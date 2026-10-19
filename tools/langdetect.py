@@ -195,7 +195,7 @@ class Detection:
 class Detector:
     """``py3langid`` restricted to :data:`SUPPORTED_LANGUAGES`, loaded on first use.
 
-    The model is the one heavy thing in the translate button (~70 MB resident,
+    The model is the one heavy thing in the translate button (~55-65 MB resident,
     numpy included), so nothing is imported or built until a server actually
     needs a verdict, and the loading itself is meant to run in a worker thread
     (:meth:`load`). Classification afterwards is ~0.05 ms: safe on the event loop.
