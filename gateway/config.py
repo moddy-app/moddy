@@ -95,6 +95,19 @@ def _tracemoe_rules() -> List[RateRule]:
     ]
 
 
+def _cloudconvert_rules() -> List[RateRule]:
+    """CloudConvert account limits: a burst cap and the daily free allowance.
+
+    The free plan gives 25 conversions a day; past that every conversion spends
+    paid credits, so the daily rule is **fail-closed** and defaults to the free
+    allowance. Raise ``CLOUDCONVERT_PER_DAY`` once a credit pack is bought.
+    """
+    return [
+        RateRule("rpm", UNIT_REQUESTS, MINUTE, _int_env("CLOUDCONVERT_PER_MINUTE", 10)),
+        RateRule("rpd", UNIT_REQUESTS, DAY, _int_env("CLOUDCONVERT_PER_DAY", 25), fail_closed=True),
+    ]
+
+
 def _default_model_rate_limits() -> Dict[Tuple[str, str], List[RateRule]]:
     """(provider, model) → the rules enforced for it. Add new models here.
 
@@ -126,6 +139,8 @@ def _default_model_rate_limits() -> Dict[Tuple[str, str], List[RateRule]]:
         # Reverse image search (/sauce). The operation is the model key.
         ("saucenao", "search"): _saucenao_rules(),
         ("tracemoe", "search"): _tracemoe_rules(),
+        # Office documents / ebooks conversion (/convert, cloud path only).
+        ("cloudconvert", "convert"): _cloudconvert_rules(),
     }
 
 
@@ -137,6 +152,7 @@ class GatewayConfig:
     google_vision_api_key: Optional[str] = None
     saucenao_api_key: Optional[str] = None
     tracemoe_api_key: Optional[str] = None  # optional: trace.moe works anonymously
+    cloudconvert_api_key: Optional[str] = None  # /convert office docs + ebooks; hidden when absent
     deepl_free: bool = True
 
     # Timeouts (seconds)
@@ -150,6 +166,8 @@ class GatewayConfig:
     timeout_vision: float = 30.0
     # Reverse image search: the provider fetches the image and compares it.
     timeout_search: float = 25.0
+    # Document conversion (CloudConvert job: import + convert + export, polled).
+    timeout_convert: float = 120.0
 
     # Retry
     max_retries: int = 3
@@ -189,6 +207,7 @@ class GatewayConfig:
             google_vision_api_key=os.environ.get("GOOGLE_VISION_API_KEY") or None,
             saucenao_api_key=os.environ.get("SAUCENAO_API_KEY") or None,
             tracemoe_api_key=os.environ.get("TRACEMOE_API_KEY") or None,
+            cloudconvert_api_key=os.environ.get("CLOUDCONVERT_API_KEY") or None,
             deepl_free=os.environ.get("DEEPL_FREE", "true").lower() != "false",
             timeout_embed=float(os.environ.get("GATEWAY_TIMEOUT_EMBED", "10")),
             timeout_chat=float(os.environ.get("GATEWAY_TIMEOUT_CHAT", "30")),
@@ -196,6 +215,7 @@ class GatewayConfig:
             timeout_transcribe=float(os.environ.get("GATEWAY_TIMEOUT_TRANSCRIBE", "90")),
             timeout_vision=float(os.environ.get("GATEWAY_TIMEOUT_VISION", "30")),
             timeout_search=float(os.environ.get("GATEWAY_TIMEOUT_SEARCH", "25")),
+            timeout_convert=float(os.environ.get("GATEWAY_TIMEOUT_CONVERT", "120")),
             max_retries=int(os.environ.get("GATEWAY_MAX_RETRIES", "3")),
             retry_base_delay=float(os.environ.get("GATEWAY_RETRY_BASE_DELAY", "0.5")),
             cb_failure_threshold=int(os.environ.get("GATEWAY_CB_FAILURE_THRESHOLD", "5")),

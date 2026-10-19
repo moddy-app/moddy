@@ -105,6 +105,7 @@ class Gateway:
         self.vision = None
         self.saucenao = None
         self.tracemoe = None
+        self.cloudconvert = None
 
     async def start(self, redis, pool, tech_logger=None, stats=None) -> None:
         """Boot the gateway. Call after Redis + DB pool are ready."""
@@ -124,6 +125,8 @@ class Gateway:
         from .adapters.saucenao import SauceNAOAdapter
         from .adapters.tracemoe import TraceMoeAdapter
         from .clients.image_search import SauceNAOClient, TraceMoeClient
+        from .adapters.cloudconvert import CloudConvertAdapter
+        from .clients.conversion import CloudConvertClient
 
         self._quota = QuotaManager(redis, pool)
         self._ratelimiter = RateLimiter(redis, self.config.model_rate_limits)
@@ -193,6 +196,18 @@ class Gateway:
         except Exception as exc:
             _log.error("trace.moe adapter failed to start: %s", exc)
 
+        # Office documents / ebooks for /convert: optional, the feature is hidden
+        # (not broken) when the key is absent.
+        if self.config.cloudconvert_api_key:
+            try:
+                adapter = CloudConvertAdapter(self.config.cloudconvert_api_key)
+                await adapter.start()
+                self._adapters["cloudconvert"] = adapter
+            except Exception as exc:
+                _log.error("CloudConvert adapter failed to start: %s", exc)
+        else:
+            _log.warning("CLOUDCONVERT_API_KEY not set — CloudConvert adapter disabled")
+
         self._executor = GatewayExecutor(
             adapters=self._adapters,
             quota=self._quota,
@@ -208,6 +223,7 @@ class Gateway:
         self.vision = VisionClient(self._executor)
         self.saucenao = SauceNAOClient(self._executor)
         self.tracemoe = TraceMoeClient(self._executor)
+        self.cloudconvert = CloudConvertClient(self._executor)
 
         self._gw_logger.start()
         self._started = True
@@ -248,6 +264,9 @@ class Gateway:
 
     def tracemoe_available(self) -> bool:
         return "tracemoe" in self._adapters
+
+    def cloudconvert_available(self) -> bool:
+        return "cloudconvert" in self._adapters
 
     async def quota_available(self, target: "QuotaTarget") -> bool:
         """Convenience check for consumer-side availability gating."""
