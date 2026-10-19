@@ -105,6 +105,8 @@ class Gateway:
         self.vision = None
         self.saucenao = None
         self.tracemoe = None
+        self.virustotal = None
+        self.urlscan = None
 
     async def start(self, redis, pool, tech_logger=None, stats=None) -> None:
         """Boot the gateway. Call after Redis + DB pool are ready."""
@@ -124,6 +126,9 @@ class Gateway:
         from .adapters.saucenao import SauceNAOAdapter
         from .adapters.tracemoe import TraceMoeAdapter
         from .clients.image_search import SauceNAOClient, TraceMoeClient
+        from .adapters.virustotal import VirusTotalAdapter
+        from .adapters.urlscan import UrlscanAdapter
+        from .clients.web_security import UrlscanClient, VirusTotalClient
 
         self._quota = QuotaManager(redis, pool)
         self._ratelimiter = RateLimiter(redis, self.config.model_rate_limits)
@@ -193,6 +198,27 @@ class Gateway:
         except Exception as exc:
             _log.error("trace.moe adapter failed to start: %s", exc)
 
+        # Link reputation (/link-check). Both are optional: without a key the
+        # command still answers with its local checks and says what is missing.
+        if self.config.virustotal_api_key:
+            try:
+                adapter = VirusTotalAdapter(self.config.virustotal_api_key)
+                await adapter.start()
+                self._adapters["virustotal"] = adapter
+            except Exception as exc:
+                _log.error("VirusTotal adapter failed to start: %s", exc)
+        else:
+            _log.warning("VIRUSTOTAL_API_KEY not set — VirusTotal adapter disabled")
+        if self.config.urlscan_api_key:
+            try:
+                adapter = UrlscanAdapter(self.config.urlscan_api_key)
+                await adapter.start()
+                self._adapters["urlscan"] = adapter
+            except Exception as exc:
+                _log.error("urlscan adapter failed to start: %s", exc)
+        else:
+            _log.warning("URLSCAN_API_KEY not set — urlscan adapter disabled")
+
         self._executor = GatewayExecutor(
             adapters=self._adapters,
             quota=self._quota,
@@ -208,6 +234,8 @@ class Gateway:
         self.vision = VisionClient(self._executor)
         self.saucenao = SauceNAOClient(self._executor)
         self.tracemoe = TraceMoeClient(self._executor)
+        self.virustotal = VirusTotalClient(self._executor)
+        self.urlscan = UrlscanClient(self._executor)
 
         self._gw_logger.start()
         self._started = True
@@ -248,6 +276,12 @@ class Gateway:
 
     def tracemoe_available(self) -> bool:
         return "tracemoe" in self._adapters
+
+    def virustotal_available(self) -> bool:
+        return "virustotal" in self._adapters
+
+    def urlscan_available(self) -> bool:
+        return "urlscan" in self._adapters
 
     async def quota_available(self, target: "QuotaTarget") -> bool:
         """Convenience check for consumer-side availability gating."""
