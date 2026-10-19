@@ -34,6 +34,12 @@
     },
     "Transcribe": {
       "name": "Transcribe"
+    },
+    "Find source": {
+      "name": "Find source"
+    },
+    "Check links": {
+      "name": "Check links"
     }
   },
   "commands": {
@@ -424,6 +430,275 @@
           "description": "Link to a message of this server containing the image"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "Check if a password has appeared in a data breach"
+    },
+    "password": {
+      "name": "password",
+      "description": "Generate a secure random password or passphrase",
+      "parameters": {
+        "length": {
+          "name": "length",
+          "description": "Length (8-128); passphrase: about 1 word per 4 characters"
+        },
+        "type": {
+          "name": "type",
+          "description": "Kind of password (default: strong)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "Generate random UUIDs (v4 or v7)",
+      "parameters": {
+        "version": {
+          "name": "version",
+          "description": "UUID version (default: v4)"
+        },
+        "count": {
+          "name": "count",
+          "description": "How many to generate (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "Compute MD5, SHA-1, SHA-256 and SHA-512 of a text or file",
+      "parameters": {
+        "text": {
+          "name": "text",
+          "description": "Text to hash (leave text and file empty for a form)"
+        },
+        "file": {
+          "name": "file",
+          "description": "File to hash (max 25 MB)"
+        },
+        "compare": {
+          "name": "compare",
+          "description": "A known hash to compare with"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "Decode a JSON Web Token (header and payload)"
+    },
+    "color": {
+      "name": "colour",
+      "description": "Convert a colour and check its contrast",
+      "parameters": {
+        "color": {
+          "name": "colour",
+          "description": "HEX, rgb(), hsl(), CSS name, Discord number or random"
+        }
+      }
+    },
+    "music": {
+      "name": "music",
+      "description": "Music tools"
+    },
+    "music link": {
+      "name": "link",
+      "description": "Find a Spotify song, album or artist on other platforms",
+      "parameters": {
+        "url": {
+          "name": "url",
+          "description": "The Spotify link (a song, an album or an artist)"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "Show the hidden metadata of a file",
+      "parameters": {
+        "file": {
+          "name": "file",
+          "description": "Image, PDF, Office document, audio or video file"
+        }
+      }
+    },
+    "sauce": {
+      "name": "sauce",
+      "description": "Find the source of an image",
+      "parameters": {
+        "image": {
+          "name": "image",
+          "description": "The image to search (PNG, JPEG, WebP or GIF)"
+        },
+        "message": {
+          "name": "message",
+          "description": "Link to a message of this server containing the image"
+        }
+      }
+    },
+    "define": {
+      "name": "define",
+      "description": "Look a word up in Wiktionary",
+      "parameters": {
+        "word": {
+          "name": "word",
+          "description": "The word or expression to look up"
+        },
+        "language": {
+          "name": "language",
+          "description": "Wiktionary language (default: yours)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "Summarise the latest messages of this channel",
+      "parameters": {
+        "messages": {
+          "name": "messages",
+          "description": "How many recent messages to read (default: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "Test a regular expression on a text"
+    },
+    "diff": {
+      "name": "diff",
+      "description": "Compare two texts and show what changed"
+    },
+    "textstats": {
+      "name": "textstats",
+      "description": "Count words and measure reading time and readability",
+      "parameters": {
+        "text": {
+          "name": "text",
+          "description": "The text to analyse (leave empty to open a form)"
+        }
+      }
+    },
+    "status": {
+      "name": "status",
+      "description": "Check whether Discord, GitHub and other services are up",
+      "parameters": {
+        "service": {
+          "name": "service",
+          "description": "A service to look at (leave empty for an overview of all of them)"
+        }
+      }
+    },
+    "company": {
+      "name": "company",
+      "description": "Look up a French company by name, SIREN or SIRET",
+      "parameters": {
+        "search": {
+          "name": "search",
+          "description": "A company name, a SIREN (9 digits) or a SIRET (14 digits)"
+        }
+      }
+    },
+    "username": {
+      "name": "username",
+      "description": "Find where a username is used across hundreds of sites",
+      "parameters": {
+        "username": {
+          "name": "username",
+          "description": "The username to look for"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Who registered a domain, and when (registrar, dates, name servers)",
+      "parameters": {
+        "domain": {
+          "name": "domain",
+          "description": "Domain name or link, for example example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "DNS records of a domain (A, MX, TXT, NS...) and e-mail protection",
+      "parameters": {
+        "domain": {
+          "name": "domain",
+          "description": "Domain name or link, for example example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Check the HTTPS certificate of a website (validity, issuer, names)",
+      "parameters": {
+        "domain": {
+          "name": "domain",
+          "description": "Domain name or link, for example example.com"
+        },
+        "port": {
+          "name": "port",
+          "description": "Port (default 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "subdomains",
+      "description": "List the subdomains of a domain seen in public certificates",
+      "parameters": {
+        "domain": {
+          "name": "domain",
+          "description": "Domain name or link, for example example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "link-check",
+      "description": "Check if a link is dangerous: redirects, domain age, reputation",
+      "parameters": {
+        "url": {
+          "name": "url",
+          "description": "The link to check"
+        }
+      }
+    },
+    "image": {
+      "name": "image",
+      "description": "Preview an image, then resize, compress, convert it or remove its background",
+      "parameters": {
+        "file": {
+          "name": "file",
+          "description": "The image to work on (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "convert",
+      "description": "Convert a file to another format (images, documents, audio, video, archives...)",
+      "parameters": {
+        "file": {
+          "name": "file",
+          "description": "The file to convert (max 25 MB)"
+        },
+        "format": {
+          "name": "format",
+          "description": "Target format (leave empty to pick from a list)"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "Strong"
+    },
+    "clear": {
+      "name": "No look-alikes"
+    },
+    "passphrase": {
+      "name": "Passphrase"
+    },
+    "v4": {
+      "name": "v4 (random)"
+    },
+    "v7": {
+      "name": "v7 (time-ordered)"
     }
   }
 }

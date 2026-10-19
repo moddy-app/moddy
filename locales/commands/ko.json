@@ -34,6 +34,12 @@
     },
     "Transcribe": {
       "name": "받아쓰기"
+    },
+    "Find source": {
+      "name": "출처 찾기"
+    },
+    "Check links": {
+      "name": "링크 확인"
     }
   },
   "commands": {
@@ -424,6 +430,275 @@
           "description": "이미지가 포함된 이 서버 메시지의 링크"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "비밀번호가 데이터 유출에 포함되었는지 확인합니다"
+    },
+    "password": {
+      "name": "비밀번호",
+      "description": "안전한 무작위 비밀번호 또는 암호 문구를 생성합니다",
+      "parameters": {
+        "length": {
+          "name": "길이",
+          "description": "길이 (8-128). 암호 문구: 4글자당 약 1단어"
+        },
+        "type": {
+          "name": "종류",
+          "description": "비밀번호 종류 (기본값: 강력)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "무작위 UUID를 생성합니다 (v4 또는 v7)",
+      "parameters": {
+        "version": {
+          "name": "버전",
+          "description": "UUID 버전 (기본값: v4)"
+        },
+        "count": {
+          "name": "개수",
+          "description": "생성할 개수 (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "텍스트 또는 파일의 MD5, SHA-1, SHA-256, SHA-512를 계산합니다",
+      "parameters": {
+        "text": {
+          "name": "텍스트",
+          "description": "해시할 텍스트 (텍스트와 파일을 비워 두면 양식이 열립니다)"
+        },
+        "file": {
+          "name": "파일",
+          "description": "해시할 파일 (최대 25MB)"
+        },
+        "compare": {
+          "name": "비교",
+          "description": "비교할 알려진 해시"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "JSON Web Token(헤더와 페이로드)을 해독합니다"
+    },
+    "color": {
+      "name": "색상",
+      "description": "색상을 변환하고 대비를 확인합니다",
+      "parameters": {
+        "color": {
+          "name": "색",
+          "description": "HEX, rgb(), hsl(), CSS 이름, Discord 숫자 또는 random"
+        }
+      }
+    },
+    "music": {
+      "name": "음악",
+      "description": "음악 도구"
+    },
+    "music link": {
+      "name": "링크",
+      "description": "Spotify 곡, 앨범, 아티스트를 다른 플랫폼에서 찾기",
+      "parameters": {
+        "url": {
+          "name": "링크",
+          "description": "Spotify 링크 (곡, 앨범 또는 아티스트)"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "파일에 숨겨진 메타데이터를 보여줍니다",
+      "parameters": {
+        "file": {
+          "name": "파일",
+          "description": "이미지, PDF, Office 문서, 오디오 또는 비디오 파일"
+        }
+      }
+    },
+    "sauce": {
+      "name": "출처",
+      "description": "이미지의 출처를 찾습니다",
+      "parameters": {
+        "image": {
+          "name": "이미지",
+          "description": "검색할 이미지 (PNG, JPEG, WebP 또는 GIF)"
+        },
+        "message": {
+          "name": "메시지",
+          "description": "이미지가 포함된 이 서버 메시지의 링크"
+        }
+      }
+    },
+    "define": {
+      "name": "정의",
+      "description": "위키낱말사전에서 단어를 찾아봅니다",
+      "parameters": {
+        "word": {
+          "name": "단어",
+          "description": "찾아볼 단어 또는 표현"
+        },
+        "language": {
+          "name": "언어",
+          "description": "위키낱말사전 언어(기본값: 내 언어)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "이 채널의 최근 메시지를 요약합니다",
+      "parameters": {
+        "messages": {
+          "name": "메시지수",
+          "description": "읽을 최근 메시지 수(기본값: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "정규식",
+      "description": "텍스트에 정규식을 테스트합니다"
+    },
+    "diff": {
+      "name": "비교",
+      "description": "두 텍스트를 비교하고 바뀐 부분을 보여줍니다"
+    },
+    "textstats": {
+      "name": "텍스트통계",
+      "description": "단어 수를 세고 읽는 시간과 가독성을 측정합니다",
+      "parameters": {
+        "text": {
+          "name": "텍스트",
+          "description": "분석할 텍스트(비워 두면 양식이 열립니다)"
+        }
+      }
+    },
+    "status": {
+      "name": "상태",
+      "description": "Discord, GitHub 등 서비스가 정상인지 확인합니다",
+      "parameters": {
+        "service": {
+          "name": "서비스",
+          "description": "확인할 서비스 (비워 두면 전체 개요)"
+        }
+      }
+    },
+    "company": {
+      "name": "기업",
+      "description": "이름, SIREN 또는 SIRET으로 프랑스 기업을 검색합니다",
+      "parameters": {
+        "search": {
+          "name": "검색",
+          "description": "기업 이름, SIREN(9자리) 또는 SIRET(14자리)"
+        }
+      }
+    },
+    "username": {
+      "name": "사용자명",
+      "description": "수백 개 사이트에서 사용자명이 쓰이는 곳을 찾습니다",
+      "parameters": {
+        "username": {
+          "name": "사용자명",
+          "description": "찾을 사용자명"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "도메인을 누가 언제 등록했는지 확인합니다 (등록기관, 날짜, 네임서버)",
+      "parameters": {
+        "domain": {
+          "name": "도메인",
+          "description": "도메인 이름 또는 링크 (예: example.com)"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "도메인의 DNS 레코드(A, MX, TXT, NS...)와 이메일 보호를 확인합니다",
+      "parameters": {
+        "domain": {
+          "name": "도메인",
+          "description": "도메인 이름 또는 링크 (예: example.com)"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "웹사이트의 HTTPS 인증서를 확인합니다 (유효성, 발급자, 이름)",
+      "parameters": {
+        "domain": {
+          "name": "도메인",
+          "description": "도메인 이름 또는 링크 (예: example.com)"
+        },
+        "port": {
+          "name": "포트",
+          "description": "포트 (기본값 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "서브도메인",
+      "description": "공개 인증서에서 확인된 도메인의 서브도메인을 나열합니다",
+      "parameters": {
+        "domain": {
+          "name": "도메인",
+          "description": "도메인 이름 또는 링크 (예: example.com)"
+        }
+      }
+    },
+    "link-check": {
+      "name": "링크-확인",
+      "description": "링크가 위험한지 확인합니다: 리디렉션, 도메인 나이, 평판",
+      "parameters": {
+        "url": {
+          "name": "링크",
+          "description": "확인할 링크"
+        }
+      }
+    },
+    "image": {
+      "name": "이미지",
+      "description": "이미지를 보여 주고 크기 조절, 압축, 변환, 배경 제거를 할 수 있습니다",
+      "parameters": {
+        "file": {
+          "name": "파일",
+          "description": "처리할 이미지 (PNG, JPEG, WebP, GIF, HEIC, AVIF 등)"
+        }
+      }
+    },
+    "convert": {
+      "name": "변환",
+      "description": "파일을 다른 형식으로 변환합니다 (이미지, 문서, 오디오, 동영상, 압축 파일 등)",
+      "parameters": {
+        "file": {
+          "name": "파일",
+          "description": "변환할 파일 (최대 25MB)"
+        },
+        "format": {
+          "name": "형식",
+          "description": "대상 형식 (비워 두면 목록에서 선택)"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "강력"
+    },
+    "clear": {
+      "name": "헷갈리는 문자 없음"
+    },
+    "passphrase": {
+      "name": "암호 문구"
+    },
+    "v4": {
+      "name": "v4 (무작위)"
+    },
+    "v7": {
+      "name": "v7 (시간순)"
     }
   }
 }

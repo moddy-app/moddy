@@ -34,6 +34,12 @@
     },
     "Transcribe": {
       "name": "Расшифровать"
+    },
+    "Find source": {
+      "name": "Найти источник"
+    },
+    "Check links": {
+      "name": "Проверить ссылки"
     }
   },
   "commands": {
@@ -424,6 +430,275 @@
           "description": "Ссылка на сообщение этого сервера с изображением"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "Проверить, встречался ли пароль в утечках данных"
+    },
+    "password": {
+      "name": "пароль",
+      "description": "Создать надёжный случайный пароль или парольную фразу",
+      "parameters": {
+        "length": {
+          "name": "длина",
+          "description": "Длина (8-128); фраза: примерно 1 слово на 4 символа"
+        },
+        "type": {
+          "name": "тип",
+          "description": "Тип пароля (по умолчанию: надёжный)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "Создать случайные UUID (v4 или v7)",
+      "parameters": {
+        "version": {
+          "name": "версия",
+          "description": "Версия UUID (по умолчанию: v4)"
+        },
+        "count": {
+          "name": "количество",
+          "description": "Сколько создать (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "Вычислить MD5, SHA-1, SHA-256 и SHA-512 текста или файла",
+      "parameters": {
+        "text": {
+          "name": "текст",
+          "description": "Текст для хеша (оставьте текст и файл пустыми для формы)"
+        },
+        "file": {
+          "name": "файл",
+          "description": "Файл для хеша (макс. 25 МБ)"
+        },
+        "compare": {
+          "name": "сравнить",
+          "description": "Известный хеш для сравнения"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "Расшифровать JSON Web Token (заголовок и содержимое)"
+    },
+    "color": {
+      "name": "цвет",
+      "description": "Преобразовать цвет и проверить его контраст",
+      "parameters": {
+        "color": {
+          "name": "цвет",
+          "description": "HEX, rgb(), hsl(), имя CSS, число Discord или random"
+        }
+      }
+    },
+    "music": {
+      "name": "музыка",
+      "description": "Музыкальные инструменты"
+    },
+    "music link": {
+      "name": "ссылка",
+      "description": "Найди трек, альбом или исполнителя из Spotify на других платформах",
+      "parameters": {
+        "url": {
+          "name": "ссылка",
+          "description": "Ссылка Spotify (трек, альбом или исполнитель)"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "Показывает скрытые метаданные файла",
+      "parameters": {
+        "file": {
+          "name": "файл",
+          "description": "Изображение, PDF, документ Office, аудио- или видеофайл"
+        }
+      }
+    },
+    "sauce": {
+      "name": "источник",
+      "description": "Находит источник изображения",
+      "parameters": {
+        "image": {
+          "name": "изображение",
+          "description": "Изображение для поиска (PNG, JPEG, WebP или GIF)"
+        },
+        "message": {
+          "name": "сообщение",
+          "description": "Ссылка на сообщение этого сервера с изображением"
+        }
+      }
+    },
+    "define": {
+      "name": "определение",
+      "description": "Ищет слово в Викисловаре",
+      "parameters": {
+        "word": {
+          "name": "слово",
+          "description": "Слово или выражение для поиска"
+        },
+        "language": {
+          "name": "язык",
+          "description": "Язык Викисловаря (по умолчанию ваш)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "Кратко пересказывает последние сообщения канала",
+      "parameters": {
+        "messages": {
+          "name": "сообщения",
+          "description": "Сколько последних сообщений прочитать (по умолчанию 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "регулярка",
+      "description": "Проверяет регулярное выражение на тексте"
+    },
+    "diff": {
+      "name": "сравнение",
+      "description": "Сравнивает два текста и показывает изменения"
+    },
+    "textstats": {
+      "name": "статистика-текста",
+      "description": "Считает слова, время чтения и читаемость",
+      "parameters": {
+        "text": {
+          "name": "текст",
+          "description": "Текст для анализа (оставьте пустым, чтобы открыть форму)"
+        }
+      }
+    },
+    "status": {
+      "name": "статус",
+      "description": "Проверяет, работают ли Discord, GitHub и другие сервисы",
+      "parameters": {
+        "service": {
+          "name": "сервис",
+          "description": "Сервис для проверки (пусто: обзор всех)"
+        }
+      }
+    },
+    "company": {
+      "name": "компания",
+      "description": "Ищет французскую компанию по названию, SIREN или SIRET",
+      "parameters": {
+        "search": {
+          "name": "поиск",
+          "description": "Название компании, SIREN (9 цифр) или SIRET (14 цифр)"
+        }
+      }
+    },
+    "username": {
+      "name": "никнейм",
+      "description": "Находит, где используется никнейм на сотнях сайтов",
+      "parameters": {
+        "username": {
+          "name": "никнейм",
+          "description": "Никнейм для поиска"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Кто и когда зарегистрировал домен (регистратор, даты, серверы имён)",
+      "parameters": {
+        "domain": {
+          "name": "домен",
+          "description": "Имя домена или ссылка, например example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "DNS-записи домена (A, MX, TXT, NS...) и защита почты",
+      "parameters": {
+        "domain": {
+          "name": "домен",
+          "description": "Имя домена или ссылка, например example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Проверить HTTPS-сертификат сайта (срок, издатель, имена)",
+      "parameters": {
+        "domain": {
+          "name": "домен",
+          "description": "Имя домена или ссылка, например example.com"
+        },
+        "port": {
+          "name": "порт",
+          "description": "Порт (по умолчанию 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "поддомены",
+      "description": "Список поддоменов домена из публичных сертификатов",
+      "parameters": {
+        "domain": {
+          "name": "домен",
+          "description": "Имя домена или ссылка, например example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "проверка-ссылки",
+      "description": "Проверить, опасна ли ссылка: редиректы, возраст домена, репутация",
+      "parameters": {
+        "url": {
+          "name": "ссылка",
+          "description": "Ссылка для проверки"
+        }
+      }
+    },
+    "image": {
+      "name": "изображение",
+      "description": "Показывает изображение: изменить размер, сжать, конвертировать или убрать фон",
+      "parameters": {
+        "file": {
+          "name": "файл",
+          "description": "Изображение для обработки (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "конвертировать",
+      "description": "Конвертирует файл в другой формат (изображения, документы, аудио, видео, архивы...)",
+      "parameters": {
+        "file": {
+          "name": "файл",
+          "description": "Файл для конвертации (макс. 25 МБ)"
+        },
+        "format": {
+          "name": "формат",
+          "description": "Целевой формат (оставьте пустым, чтобы выбрать из списка)"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "Надёжный"
+    },
+    "clear": {
+      "name": "Без похожих символов"
+    },
+    "passphrase": {
+      "name": "Парольная фраза"
+    },
+    "v4": {
+      "name": "v4 (случайный)"
+    },
+    "v7": {
+      "name": "v7 (по времени)"
     }
   }
 }

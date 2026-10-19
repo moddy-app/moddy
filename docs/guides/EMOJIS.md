@@ -162,6 +162,45 @@
 Every `<name>_dark` twin lives in `utils/emojis.py::DARK_VARIANTS` (see
 [ICON_THEME.md](ICON_THEME.md)).
 
+## Utility tools icons — `utils/emojis.py` block "UTILITY TOOLS"
+
+Icons of the tool family ([TOOLS.md](../features/TOOLS.md)). A constant that is
+an **empty string** has no artwork yet: `utils/tool_card.py` (`heading`,
+`with_icon`, `button_emoji`, `source_line`) drops it cleanly, so uploading the
+artwork is a one-line change here (plus the `_dark` twin in `DARK_VARIANTS`).
+Never point one of these at an unrelated icon.
+
+**Uploaded and reused** (same meaning): `COLOR` (/color), `LOCK` (/ssl),
+`DATA_OBJECT` (/jwt JSON), `TEXT` (/tldr, like /summarize), `WEB` (/whois,
+status page buttons), `LINK` (/link-check), `IMAGE` (/image), `TRANSLATE`
+(translate button module), `HISTORY` (domain age), `REFRESH`, `EDIT`, `BACK`,
+`NEXT`, `DOWNLOAD`, `DONE`, `ERROR`, `WARNING`, `INFO`, `LOADING`,
+`GREEN_STATUS` / `YELLOW_STATUS` / `RED_STATUS`.
+
+**Uploaded** (white + `<name>_dark` twin in `DARK_VARIANTS`, ids in
+`utils/emojis.py`): `DICTIONARY` (/define), `REGEX`, `TAG` (/hash), `DIFFERENCE`
+(/diff), `ANALYTICS` (/textstats), `PASSWORD`, `NUMBERS` (`number`, /uuid),
+`TOKEN` (/jwt), `GPP_MAYBE` (/pwned), `MONITOR_HEART` (/status), `BUSINESS`
+(/company), `DNS`, `ACCOUNT_TREE` (/subdomains), `ALT_ROUTE` (redirect chain),
+`PERSON_SEARCH` (/username), `ASPECT_RATIO`, `COMPRESS`, `TRANSFORM`,
+`AUTO_FIX_HIGH` (/image, /convert), `FRAME_INSPECT`, `LOCATION_ON` (/exif),
+`IMAGE_SEARCH`, `MOVIE` (/sauce), `MUSIC_NOTE` (/music + module).
+
+**/status dots** (coloured, no twin): `STATUS_OK` (`check_circle`),
+`STATUS_DEGRADED` (`degraded`), `STATUS_DOWN` (`down`), `STATUS_MAINTENANCE`
+(`maintenance`). `GREY_STATUS` (unknown) is still empty — the state is written
+as text anyway.
+
+**Service logos uploaded** (coloured, no twin except `openai_dark`): `SPOTIFY`,
+`DEEZER`, `APPLE_MUSIC`, `YOUTUBE_MUSIC`, `WIKTIONARY`, `HIBP`, `OPENAI`,
+`DATA_GOUV`, `CLOUDFLARE`, `ANILIST`, `GOOGLE_LENS`, `YANDEX`, `BING`, `TINEYE`,
+`OPENSTREETMAP`.
+
+**Deliberately without an icon for now** (owner decision, 2026-10-19 — the helpers drop them): `GREY_STATUS`, `DEEPL`, `CRTSH`, `VIRUSTOTAL`, `URLSCAN`,
+`WHATSMYNAME`, `SAUCENAO`, `TRACEMOE`, `CLOUDCONVERT`, and the /status service
+logos `DISCORD_LOGO`, `GITHUB`, `REDDIT`, `DROPBOX`, `ATLASSIAN`, `VERCEL`,
+`NETLIFY`, `ZOOM`, `ANTHROPIC`, `EPIC_GAMES`, `NPM`, `DIGITALOCEAN`, `FIGMA`.
+
 ## Bump Reminder directory icons — `utils/emojis.py::BUMP_DIRECTORY_EMOJIS`
 
 One icon per server directory supported by the Bump Reminder module

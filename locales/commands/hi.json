@@ -34,6 +34,12 @@
     },
     "Transcribe": {
       "name": "प्रतिलेखन करें"
+    },
+    "Find source": {
+      "name": "स्रोत खोजें"
+    },
+    "Check links": {
+      "name": "लिंक जांचें"
     }
   },
   "commands": {
@@ -424,6 +430,275 @@
           "description": "इस सर्वर के उस संदेश का लिंक जिसमें छवि है"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "जांचें कि कोई पासवर्ड डेटा लीक में आया है या नहीं"
+    },
+    "password": {
+      "name": "पासवर्ड",
+      "description": "एक सुरक्षित रैंडम पासवर्ड या पासफ़्रेज़ बनाएं",
+      "parameters": {
+        "length": {
+          "name": "लंबाई",
+          "description": "लंबाई (8-128); पासफ़्रेज़: लगभग 4 अक्षरों पर 1 शब्द"
+        },
+        "type": {
+          "name": "प्रकार",
+          "description": "पासवर्ड का प्रकार (डिफ़ॉल्ट: मज़बूत)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "रैंडम UUID बनाएं (v4 या v7)",
+      "parameters": {
+        "version": {
+          "name": "संस्करण",
+          "description": "UUID संस्करण (डिफ़ॉल्ट: v4)"
+        },
+        "count": {
+          "name": "संख्या",
+          "description": "कितने बनाने हैं (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "टेक्स्ट या फ़ाइल का MD5, SHA-1, SHA-256 और SHA-512 निकालें",
+      "parameters": {
+        "text": {
+          "name": "टेक्स्ट",
+          "description": "हैश के लिए टेक्स्ट (फ़ॉर्म के लिए टेक्स्ट और फ़ाइल खाली छोड़ें)"
+        },
+        "file": {
+          "name": "फ़ाइल",
+          "description": "हैश के लिए फ़ाइल (अधिकतम 25 MB)"
+        },
+        "compare": {
+          "name": "तुलना",
+          "description": "तुलना के लिए ज्ञात हैश"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "JSON Web Token डिकोड करें (हेडर और सामग्री)"
+    },
+    "color": {
+      "name": "रंग",
+      "description": "रंग बदलें और उसका कंट्रास्ट जांचें",
+      "parameters": {
+        "color": {
+          "name": "रंग",
+          "description": "HEX, rgb(), hsl(), CSS नाम, Discord संख्या या random"
+        }
+      }
+    },
+    "music": {
+      "name": "संगीत",
+      "description": "संगीत टूल"
+    },
+    "music link": {
+      "name": "लिंक",
+      "description": "Spotify का गाना, एल्बम या कलाकार दूसरे प्लेटफ़ॉर्म पर खोजें",
+      "parameters": {
+        "url": {
+          "name": "लिंक",
+          "description": "Spotify लिंक (गाना, एल्बम या कलाकार)"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "किसी फ़ाइल का छिपा हुआ मेटाडेटा दिखाता है",
+      "parameters": {
+        "file": {
+          "name": "फ़ाइल",
+          "description": "छवि, PDF, Office दस्तावेज़, ऑडियो या वीडियो फ़ाइल"
+        }
+      }
+    },
+    "sauce": {
+      "name": "sauce",
+      "description": "किसी छवि का स्रोत खोजता है",
+      "parameters": {
+        "image": {
+          "name": "छवि",
+          "description": "खोजने के लिए छवि (PNG, JPEG, WebP या GIF)"
+        },
+        "message": {
+          "name": "संदेश",
+          "description": "इस सर्वर के उस संदेश का लिंक जिसमें छवि है"
+        }
+      }
+    },
+    "define": {
+      "name": "परिभाषा",
+      "description": "विक्षनरी में कोई शब्द खोजता है",
+      "parameters": {
+        "word": {
+          "name": "शब्द",
+          "description": "खोजने के लिए शब्द या अभिव्यक्ति"
+        },
+        "language": {
+          "name": "भाषा",
+          "description": "विक्षनरी की भाषा (डिफ़ॉल्ट: आपकी भाषा)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "इस चैनल के नवीनतम संदेशों का सारांश देता है",
+      "parameters": {
+        "messages": {
+          "name": "संदेश",
+          "description": "पढ़ने के लिए हाल के संदेशों की संख्या (डिफ़ॉल्ट: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "टेक्स्ट पर रेगुलर एक्सप्रेशन आज़माता है"
+    },
+    "diff": {
+      "name": "अंतर",
+      "description": "दो टेक्स्ट की तुलना करके बदलाव दिखाता है"
+    },
+    "textstats": {
+      "name": "टेक्स्ट-आंकड़े",
+      "description": "शब्द गिनता है और पढ़ने का समय व पठनीयता मापता है",
+      "parameters": {
+        "text": {
+          "name": "टेक्स्ट",
+          "description": "विश्लेषण के लिए टेक्स्ट (फ़ॉर्म खोलने के लिए खाली छोड़ें)"
+        }
+      }
+    },
+    "status": {
+      "name": "स्थिति",
+      "description": "जाँचें कि Discord, GitHub और अन्य सेवाएँ चल रही हैं या नहीं",
+      "parameters": {
+        "service": {
+          "name": "सेवा",
+          "description": "देखने के लिए एक सेवा (खाली: सभी का अवलोकन)"
+        }
+      }
+    },
+    "company": {
+      "name": "कंपनी",
+      "description": "नाम, SIREN या SIRET से फ्रांसीसी कंपनी खोजें",
+      "parameters": {
+        "search": {
+          "name": "खोज",
+          "description": "कंपनी का नाम, SIREN (9 अंक) या SIRET (14 अंक)"
+        }
+      }
+    },
+    "username": {
+      "name": "यूज़रनेम",
+      "description": "सैकड़ों साइटों पर यूज़रनेम कहाँ इस्तेमाल हुआ है, पता करें",
+      "parameters": {
+        "username": {
+          "name": "यूज़रनेम",
+          "description": "खोजने के लिए यूज़रनेम"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "किसने डोमेन पंजीकृत किया और कब (रजिस्ट्रार, तिथियां, नेम सर्वर)",
+      "parameters": {
+        "domain": {
+          "name": "डोमेन",
+          "description": "डोमेन नाम या लिंक, जैसे example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "डोमेन के DNS रिकॉर्ड (A, MX, TXT, NS...) और ईमेल सुरक्षा",
+      "parameters": {
+        "domain": {
+          "name": "डोमेन",
+          "description": "डोमेन नाम या लिंक, जैसे example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "वेबसाइट का HTTPS प्रमाणपत्र जांचें (वैधता, जारीकर्ता, नाम)",
+      "parameters": {
+        "domain": {
+          "name": "डोमेन",
+          "description": "डोमेन नाम या लिंक, जैसे example.com"
+        },
+        "port": {
+          "name": "पोर्ट",
+          "description": "पोर्ट (डिफ़ॉल्ट 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "सबडोमेन",
+      "description": "सार्वजनिक प्रमाणपत्रों में दिखे डोमेन के सबडोमेन की सूची",
+      "parameters": {
+        "domain": {
+          "name": "डोमेन",
+          "description": "डोमेन नाम या लिंक, जैसे example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "लिंक-जांच",
+      "description": "जांचें कि लिंक खतरनाक है या नहीं: रीडायरेक्ट, डोमेन की उम्र, प्रतिष्ठा",
+      "parameters": {
+        "url": {
+          "name": "लिंक",
+          "description": "जांचने के लिए लिंक"
+        }
+      }
+    },
+    "image": {
+      "name": "छवि",
+      "description": "छवि दिखाता है और उसका आकार बदलने, संपीड़ित करने, बदलने या पृष्ठभूमि हटाने देता है",
+      "parameters": {
+        "file": {
+          "name": "फ़ाइल",
+          "description": "संसाधित करने वाली छवि (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "रूपांतरित",
+      "description": "किसी फ़ाइल को दूसरे प्रारूप में बदलता है (छवियाँ, दस्तावेज़, ऑडियो, वीडियो, संग्रह...)",
+      "parameters": {
+        "file": {
+          "name": "फ़ाइल",
+          "description": "बदलने वाली फ़ाइल (अधिकतम 25 MB)"
+        },
+        "format": {
+          "name": "प्रारूप",
+          "description": "लक्ष्य प्रारूप (सूची से चुनने के लिए खाली छोड़ें)"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "मज़बूत"
+    },
+    "clear": {
+      "name": "मिलते-जुलते अक्षरों के बिना"
+    },
+    "passphrase": {
+      "name": "पासफ़्रेज़"
+    },
+    "v4": {
+      "name": "v4 (रैंडम)"
+    },
+    "v7": {
+      "name": "v7 (समय क्रम में)"
     }
   }
 }

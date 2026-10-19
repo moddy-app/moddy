@@ -186,6 +186,24 @@ async def build_module_config_view(bot, guild_id: int, user_id: int, locale: str
             locale,
             module_config
         )
+    elif module_id == 'music_links':
+        from modules.configs.music_links_config import MusicLinksConfigView
+        config_view = MusicLinksConfigView(
+            bot,
+            guild_id,
+            user_id,
+            locale,
+            module_config
+        )
+    elif module_id == 'translate_button':
+        from modules.configs.translate_button_config import TranslateButtonConfigView
+        config_view = await TranslateButtonConfigView.create(
+            bot,
+            guild_id,
+            user_id,
+            locale,
+            module_config
+        )
     elif module_id == 'automod_ai':
         from modules.configs.automod_ai_config import open_automod_panel
         # First run -> the setup wizard; configured -> the home screen.
@@ -312,7 +330,7 @@ class ConfigMainView(BaseView):
                 label=module_info['name'],
                 value=module_info['id'],
                 description=description[:100],
-                emoji=module_info['emoji'],
+                emoji=module_info['emoji'] or None,  # an empty icon = no icon
             ))
 
         select = ui.Select(

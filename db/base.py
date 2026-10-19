@@ -1833,6 +1833,27 @@ class ModdyDatabase(
                 ("user",   "ocr_command", "default", 10),
                 ("guild",  "ocr_command", "default", 100),
                 ("global", "ocr_command", "default", -1),
+                # /sauce reverse image search (SauceNAO + trace.moe). One search
+                # counts once, whatever number of providers it queries; the
+                # providers' own account limits are the gateway rate rules.
+                ("user",   "sauce", "default", 15),
+                ("guild",  "sauce", "default", 150),
+                ("global", "sauce", "default", -1),
+                # /tldr channel summary (OpenAI gpt-4.1-mini): 10 a day per member.
+                ("user",   "tldr", "default", 10),
+                ("guild",  "tldr", "default", 100),
+                ("global", "tldr", "default", -1),
+                # /link-check (VirusTotal + urlscan.io). One check counts once;
+                # the providers' account limits are the gateway rate rules.
+                ("user",   "link_check", "default", 10),
+                ("guild",  "link_check", "default", 100),
+                ("global", "link_check", "default", -1),
+                # /convert, CloudConvert path only (office documents, ebooks).
+                # Local conversions are not metered. 5 a day per member keeps
+                # the provider's 25 free conversions a day from vanishing.
+                ("user",   "convert_cloud", "default", 5),
+                ("guild",  "convert_cloud", "default", 30),
+                ("global", "convert_cloud", "default", -1),
             ]:
                 await conn.execute(
                     """

@@ -34,6 +34,12 @@
     },
     "Transcribe": {
       "name": "Átirat készítése"
+    },
+    "Find source": {
+      "name": "Forrás keresése"
+    },
+    "Check links": {
+      "name": "Linkek ellenőrzése"
     }
   },
   "commands": {
@@ -424,6 +430,275 @@
           "description": "Hivatkozás a szerver egy képet tartalmazó üzenetére"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "Ellenőrzi, hogy egy jelszó szerepelt-e adatszivárgásban"
+    },
+    "password": {
+      "name": "jelszó",
+      "description": "Biztonságos véletlen jelszót vagy jelmondatot készít",
+      "parameters": {
+        "length": {
+          "name": "hossz",
+          "description": "Hossz (8-128); jelmondat: kb. 1 szó 4 karakterenként"
+        },
+        "type": {
+          "name": "típus",
+          "description": "A jelszó fajtája (alapértelmezett: erős)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "Véletlen UUID-ket készít (v4 vagy v7)",
+      "parameters": {
+        "version": {
+          "name": "verzió",
+          "description": "UUID-verzió (alapértelmezett: v4)"
+        },
+        "count": {
+          "name": "darab",
+          "description": "Hányat készítsen (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "Kiszámítja egy szöveg vagy fájl MD5, SHA-1, SHA-256 és SHA-512 értékét",
+      "parameters": {
+        "text": {
+          "name": "szöveg",
+          "description": "Hashelendő szöveg (hagyd üresen a szöveget és a fájlt az űrlaphoz)"
+        },
+        "file": {
+          "name": "fájl",
+          "description": "Hashelendő fájl (legfeljebb 25 MB)"
+        },
+        "compare": {
+          "name": "összehasonlítás",
+          "description": "Ismert hash az összehasonlításhoz"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "Dekódol egy JSON Web Tokent (fejléc és tartalom)"
+    },
+    "color": {
+      "name": "szín",
+      "description": "Átvált egy színt, és ellenőrzi a kontrasztját",
+      "parameters": {
+        "color": {
+          "name": "szín",
+          "description": "HEX, rgb(), hsl(), CSS-név, Discord-szám vagy random"
+        }
+      }
+    },
+    "music": {
+      "name": "zene",
+      "description": "Zenei eszközök"
+    },
+    "music link": {
+      "name": "link",
+      "description": "Keress meg egy Spotify-számot, albumot vagy előadót más platformokon",
+      "parameters": {
+        "url": {
+          "name": "link",
+          "description": "A Spotify-link (szám, album vagy előadó)"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "Megmutatja egy fájl rejtett metaadatait",
+      "parameters": {
+        "file": {
+          "name": "fajl",
+          "description": "Kép, PDF, Office-dokumentum, hang- vagy videófájl"
+        }
+      }
+    },
+    "sauce": {
+      "name": "forras",
+      "description": "Megkeresi egy kép forrását",
+      "parameters": {
+        "image": {
+          "name": "kep",
+          "description": "A keresendő kép (PNG, JPEG, WebP vagy GIF)"
+        },
+        "message": {
+          "name": "uzenet",
+          "description": "Hivatkozás a szerver egy képet tartalmazó üzenetére"
+        }
+      }
+    },
+    "define": {
+      "name": "meghatározás",
+      "description": "Szót keres a Wikiszótárban",
+      "parameters": {
+        "word": {
+          "name": "szó",
+          "description": "A keresett szó vagy kifejezés"
+        },
+        "language": {
+          "name": "nyelv",
+          "description": "A Wikiszótár nyelve (alapértelmezett: a tiéd)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "Összefoglalja a csatorna legutóbbi üzeneteit",
+      "parameters": {
+        "messages": {
+          "name": "üzenetek",
+          "description": "Hány legutóbbi üzenetet olvasson el (alapértelmezett: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "Reguláris kifejezést tesztel egy szövegen"
+    },
+    "diff": {
+      "name": "összehasonlítás",
+      "description": "Összehasonlít két szöveget, és megmutatja a változásokat"
+    },
+    "textstats": {
+      "name": "szövegstatisztika",
+      "description": "Megszámolja a szavakat, méri az olvasási időt és az olvashatóságot",
+      "parameters": {
+        "text": {
+          "name": "szöveg",
+          "description": "Az elemzendő szöveg (hagyd üresen az űrlap megnyitásához)"
+        }
+      }
+    },
+    "status": {
+      "name": "állapot",
+      "description": "Ellenőrzi, működik-e a Discord, a GitHub és más szolgáltatás",
+      "parameters": {
+        "service": {
+          "name": "szolgáltatás",
+          "description": "Egy szolgáltatás (üresen: mindegyik áttekintése)"
+        }
+      }
+    },
+    "company": {
+      "name": "cég",
+      "description": "Francia cég keresése név, SIREN vagy SIRET alapján",
+      "parameters": {
+        "search": {
+          "name": "keresés",
+          "description": "Cégnév, SIREN (9 számjegy) vagy SIRET (14 számjegy)"
+        }
+      }
+    },
+    "username": {
+      "name": "felhasználónév",
+      "description": "Megkeresi, hol használnak egy felhasználónevet több száz oldalon",
+      "parameters": {
+        "username": {
+          "name": "felhasználónév",
+          "description": "A keresett felhasználónév"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Ki regisztrálta a domaint, és mikor (regisztrátor, dátumok, névszerverek)",
+      "parameters": {
+        "domain": {
+          "name": "domain",
+          "description": "Domainnév vagy link, pl. example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "Egy domain DNS-rekordjai (A, MX, TXT, NS...) és az e-mail védelme",
+      "parameters": {
+        "domain": {
+          "name": "domain",
+          "description": "Domainnév vagy link, pl. example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Egy weboldal HTTPS-tanúsítványának ellenőrzése (érvényesség, kiállító, nevek)",
+      "parameters": {
+        "domain": {
+          "name": "domain",
+          "description": "Domainnév vagy link, pl. example.com"
+        },
+        "port": {
+          "name": "port",
+          "description": "Port (alapértelmezett: 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "aldomainek",
+      "description": "A domain nyilvános tanúsítványokban látott aldomainjei",
+      "parameters": {
+        "domain": {
+          "name": "domain",
+          "description": "Domainnév vagy link, pl. example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "link-ellenőrzés",
+      "description": "Ellenőrzi, veszélyes-e egy link: átirányítások, domain kora, hírnév",
+      "parameters": {
+        "url": {
+          "name": "link",
+          "description": "Az ellenőrizendő link"
+        }
+      }
+    },
+    "image": {
+      "name": "kep",
+      "description": "Megjelenít egy képet, majd átméretezi, tömöríti, átalakítja vagy eltávolítja a hátterét",
+      "parameters": {
+        "file": {
+          "name": "fájl",
+          "description": "A feldolgozandó kép (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "atalakitas",
+      "description": "Egy fájlt másik formátumra alakít (képek, dokumentumok, hang, videó, archívumok...)",
+      "parameters": {
+        "file": {
+          "name": "fájl",
+          "description": "Az átalakítandó fájl (max. 25 MB)"
+        },
+        "format": {
+          "name": "formatum",
+          "description": "Célformátum (hagyd üresen, hogy listából válassz)"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "Erős"
+    },
+    "clear": {
+      "name": "Félreérthető karakterek nélkül"
+    },
+    "passphrase": {
+      "name": "Jelmondat"
+    },
+    "v4": {
+      "name": "v4 (véletlen)"
+    },
+    "v7": {
+      "name": "v7 (időrendi)"
     }
   }
 }

@@ -34,6 +34,12 @@
     },
     "Transcribe": {
       "name": "Transkriber"
+    },
+    "Find source": {
+      "name": "Finn kilde"
+    },
+    "Check links": {
+      "name": "Sjekk lenker"
     }
   },
   "commands": {
@@ -424,6 +430,275 @@
           "description": "Lenke til en melding på denne serveren med bildet"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "Sjekk om et passord har dukket opp i en datalekkasje"
+    },
+    "password": {
+      "name": "passord",
+      "description": "Lag et sikkert tilfeldig passord eller passfrase",
+      "parameters": {
+        "length": {
+          "name": "lengde",
+          "description": "Lengde (8-128); passfrase: omtrent 1 ord per 4 tegn"
+        },
+        "type": {
+          "name": "type",
+          "description": "Type passord (standard: sterkt)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "Lag tilfeldige UUID-er (v4 eller v7)",
+      "parameters": {
+        "version": {
+          "name": "versjon",
+          "description": "UUID-versjon (standard: v4)"
+        },
+        "count": {
+          "name": "antall",
+          "description": "Hvor mange som lages (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "Beregn MD5, SHA-1, SHA-256 og SHA-512 for en tekst eller fil",
+      "parameters": {
+        "text": {
+          "name": "tekst",
+          "description": "Tekst som skal hashes (la tekst og fil stå tomme for et skjema)"
+        },
+        "file": {
+          "name": "fil",
+          "description": "Fil som skal hashes (maks 25 MB)"
+        },
+        "compare": {
+          "name": "sammenlign",
+          "description": "En kjent hash å sammenligne med"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "Dekod et JSON Web Token (header og innhold)"
+    },
+    "color": {
+      "name": "farge",
+      "description": "Konverter en farge og sjekk kontrasten",
+      "parameters": {
+        "color": {
+          "name": "farge",
+          "description": "HEX, rgb(), hsl(), CSS-navn, Discord-tall eller random"
+        }
+      }
+    },
+    "music": {
+      "name": "musikk",
+      "description": "Musikkverktøy"
+    },
+    "music link": {
+      "name": "lenke",
+      "description": "Finn en Spotify-låt, et album eller en artist på andre plattformer",
+      "parameters": {
+        "url": {
+          "name": "lenke",
+          "description": "Spotify-lenken (en låt, et album eller en artist)"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "Viser de skjulte metadataene i en fil",
+      "parameters": {
+        "file": {
+          "name": "fil",
+          "description": "Bilde, PDF, Office-dokument, lyd- eller videofil"
+        }
+      }
+    },
+    "sauce": {
+      "name": "kilde",
+      "description": "Finner kilden til et bilde",
+      "parameters": {
+        "image": {
+          "name": "bilde",
+          "description": "Bildet som skal søkes etter (PNG, JPEG, WebP eller GIF)"
+        },
+        "message": {
+          "name": "melding",
+          "description": "Lenke til en melding på denne serveren med bildet"
+        }
+      }
+    },
+    "define": {
+      "name": "definer",
+      "description": "Slår opp et ord i Wiktionary",
+      "parameters": {
+        "word": {
+          "name": "ord",
+          "description": "Ordet eller uttrykket som skal slås opp"
+        },
+        "language": {
+          "name": "språk",
+          "description": "Wiktionarys språk (standard: ditt)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "Oppsummerer de siste meldingene i denne kanalen",
+      "parameters": {
+        "messages": {
+          "name": "meldinger",
+          "description": "Hvor mange siste meldinger som leses (standard: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "Tester et regulært uttrykk på en tekst"
+    },
+    "diff": {
+      "name": "sammenlign",
+      "description": "Sammenligner to tekster og viser hva som er endret"
+    },
+    "textstats": {
+      "name": "tekststatistikk",
+      "description": "Teller ord og måler lesetid og lesbarhet",
+      "parameters": {
+        "text": {
+          "name": "tekst",
+          "description": "Teksten som skal analyseres (la stå tom for å åpne et skjema)"
+        }
+      }
+    },
+    "status": {
+      "name": "status",
+      "description": "Sjekk om Discord, GitHub og andre tjenester fungerer",
+      "parameters": {
+        "service": {
+          "name": "tjeneste",
+          "description": "En tjeneste å se på (tom: oversikt over alle)"
+        }
+      }
+    },
+    "company": {
+      "name": "bedrift",
+      "description": "Slå opp en fransk bedrift på navn, SIREN eller SIRET",
+      "parameters": {
+        "search": {
+          "name": "søk",
+          "description": "Et firmanavn, et SIREN (9 sifre) eller et SIRET (14 sifre)"
+        }
+      }
+    },
+    "username": {
+      "name": "brukernavn",
+      "description": "Finn ut hvor et brukernavn brukes på hundrevis av nettsteder",
+      "parameters": {
+        "username": {
+          "name": "brukernavn",
+          "description": "Brukernavnet du vil søke etter"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Hvem som har registrert et domene, og når (registrar, datoer, navneservere)",
+      "parameters": {
+        "domain": {
+          "name": "domene",
+          "description": "Domenenavn eller lenke, for eksempel example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "DNS-poster for et domene (A, MX, TXT, NS...) og e-postbeskyttelse",
+      "parameters": {
+        "domain": {
+          "name": "domene",
+          "description": "Domenenavn eller lenke, for eksempel example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Sjekk HTTPS-sertifikatet til et nettsted (gyldighet, utsteder, navn)",
+      "parameters": {
+        "domain": {
+          "name": "domene",
+          "description": "Domenenavn eller lenke, for eksempel example.com"
+        },
+        "port": {
+          "name": "port",
+          "description": "Port (standard 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "underdomener",
+      "description": "Viser underdomenene til et domene sett i offentlige sertifikater",
+      "parameters": {
+        "domain": {
+          "name": "domene",
+          "description": "Domenenavn eller lenke, for eksempel example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "lenkesjekk",
+      "description": "Sjekk om en lenke er farlig: omdirigeringer, domenets alder, omdømme",
+      "parameters": {
+        "url": {
+          "name": "lenke",
+          "description": "Lenken som skal sjekkes"
+        }
+      }
+    },
+    "image": {
+      "name": "bilde",
+      "description": "Viser et bilde og lar deg endre størrelse, komprimere, konvertere eller fjerne bakgrunnen",
+      "parameters": {
+        "file": {
+          "name": "fil",
+          "description": "Bildet som skal behandles (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "konverter",
+      "description": "Konverterer en fil til et annet format (bilder, dokumenter, lyd, video, arkiver...)",
+      "parameters": {
+        "file": {
+          "name": "fil",
+          "description": "Filen som skal konverteres (maks. 25 MB)"
+        },
+        "format": {
+          "name": "format",
+          "description": "Målformat (la stå tomt for å velge fra en liste)"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "Sterkt"
+    },
+    "clear": {
+      "name": "Uten forvekslingstegn"
+    },
+    "passphrase": {
+      "name": "Passfrase"
+    },
+    "v4": {
+      "name": "v4 (tilfeldig)"
+    },
+    "v7": {
+      "name": "v7 (tidsordnet)"
     }
   }
 }

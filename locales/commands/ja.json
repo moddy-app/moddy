@@ -34,6 +34,12 @@
     },
     "Transcribe": {
       "name": "文字起こし"
+    },
+    "Find source": {
+      "name": "出典を探す"
+    },
+    "Check links": {
+      "name": "リンクを確認"
     }
   },
   "commands": {
@@ -424,6 +430,275 @@
           "description": "画像を含むこのサーバーのメッセージのリンク"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "パスワードがデータ漏洩に含まれていないか確認します"
+    },
+    "password": {
+      "name": "パスワード",
+      "description": "安全なランダムパスワードまたはパスフレーズを生成します",
+      "parameters": {
+        "length": {
+          "name": "長さ",
+          "description": "長さ（8〜128）。パスフレーズは4文字につき約1語"
+        },
+        "type": {
+          "name": "種類",
+          "description": "パスワードの種類（既定：強力）"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "ランダムなUUIDを生成します（v4またはv7）",
+      "parameters": {
+        "version": {
+          "name": "バージョン",
+          "description": "UUIDのバージョン（既定：v4）"
+        },
+        "count": {
+          "name": "個数",
+          "description": "生成する数（1〜10）"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "テキストまたはファイルのMD5・SHA-1・SHA-256・SHA-512を計算します",
+      "parameters": {
+        "text": {
+          "name": "テキスト",
+          "description": "ハッシュするテキスト（テキストとファイルを空にするとフォームを開きます）"
+        },
+        "file": {
+          "name": "ファイル",
+          "description": "ハッシュするファイル（最大25MB）"
+        },
+        "compare": {
+          "name": "比較",
+          "description": "比較する既知のハッシュ"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "JSON Web Token（ヘッダーとペイロード）をデコードします"
+    },
+    "color": {
+      "name": "カラー",
+      "description": "色を変換してコントラストを確認します",
+      "parameters": {
+        "color": {
+          "name": "色",
+          "description": "HEX、rgb()、hsl()、CSS名、Discordの数値、またはrandom"
+        }
+      }
+    },
+    "music": {
+      "name": "音楽",
+      "description": "音楽ツール"
+    },
+    "music link": {
+      "name": "リンク",
+      "description": "Spotifyの曲・アルバム・アーティストを他のサービスで探す",
+      "parameters": {
+        "url": {
+          "name": "リンク",
+          "description": "Spotifyのリンク（曲・アルバム・アーティスト）"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "ファイルに隠されたメタデータを表示します",
+      "parameters": {
+        "file": {
+          "name": "ファイル",
+          "description": "画像、PDF、Office文書、音声または動画ファイル"
+        }
+      }
+    },
+    "sauce": {
+      "name": "出典",
+      "description": "画像の出典を探します",
+      "parameters": {
+        "image": {
+          "name": "画像",
+          "description": "検索する画像 (PNG、JPEG、WebP、GIF)"
+        },
+        "message": {
+          "name": "メッセージ",
+          "description": "画像を含むこのサーバーのメッセージのリンク"
+        }
+      }
+    },
+    "define": {
+      "name": "定義",
+      "description": "ウィクショナリーで単語を調べます",
+      "parameters": {
+        "word": {
+          "name": "単語",
+          "description": "調べる単語または表現"
+        },
+        "language": {
+          "name": "言語",
+          "description": "ウィクショナリーの言語（既定：あなたの言語）"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "このチャンネルの最新メッセージを要約します",
+      "parameters": {
+        "messages": {
+          "name": "メッセージ数",
+          "description": "読み取る最近のメッセージ数（既定：50）"
+        }
+      }
+    },
+    "regex": {
+      "name": "正規表現",
+      "description": "テキストに対して正規表現をテストします"
+    },
+    "diff": {
+      "name": "差分",
+      "description": "2つのテキストを比較して変更点を表示します"
+    },
+    "textstats": {
+      "name": "文字統計",
+      "description": "単語数を数え、読む時間と読みやすさを測ります",
+      "parameters": {
+        "text": {
+          "name": "テキスト",
+          "description": "分析するテキスト（空のままにするとフォームを開きます）"
+        }
+      }
+    },
+    "status": {
+      "name": "ステータス",
+      "description": "Discord、GitHubなどのサービスが稼働中か確認します",
+      "parameters": {
+        "service": {
+          "name": "サービス",
+          "description": "確認するサービス（空欄ですべての概要）"
+        }
+      }
+    },
+    "company": {
+      "name": "企業",
+      "description": "フランスの企業を名前、SIREN、SIRETで検索します",
+      "parameters": {
+        "search": {
+          "name": "検索",
+          "description": "企業名、SIREN（9桁）、またはSIRET（14桁）"
+        }
+      }
+    },
+    "username": {
+      "name": "ユーザー名",
+      "description": "何百ものサイトでユーザー名が使われている場所を探します",
+      "parameters": {
+        "username": {
+          "name": "ユーザー名",
+          "description": "探すユーザー名"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "ドメインの登録者と登録日を調べます（レジストラ、日付、ネームサーバー）",
+      "parameters": {
+        "domain": {
+          "name": "ドメイン",
+          "description": "ドメイン名またはリンク（例：example.com）"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "ドメインのDNSレコード（A、MX、TXT、NS...）とメール保護を表示します",
+      "parameters": {
+        "domain": {
+          "name": "ドメイン",
+          "description": "ドメイン名またはリンク（例：example.com）"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "サイトのHTTPS証明書を確認します（有効性、発行者、名前）",
+      "parameters": {
+        "domain": {
+          "name": "ドメイン",
+          "description": "ドメイン名またはリンク（例：example.com）"
+        },
+        "port": {
+          "name": "ポート",
+          "description": "ポート（既定は443）"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "サブドメイン",
+      "description": "公開証明書に現れたドメインのサブドメインを一覧表示します",
+      "parameters": {
+        "domain": {
+          "name": "ドメイン",
+          "description": "ドメイン名またはリンク（例：example.com）"
+        }
+      }
+    },
+    "link-check": {
+      "name": "リンク確認",
+      "description": "リンクが危険か確認します：リダイレクト、ドメインの年齢、評判",
+      "parameters": {
+        "url": {
+          "name": "リンク",
+          "description": "確認するリンク"
+        }
+      }
+    },
+    "image": {
+      "name": "画像",
+      "description": "画像を表示し、サイズ変更・圧縮・変換・背景の削除ができます",
+      "parameters": {
+        "file": {
+          "name": "ファイル",
+          "description": "処理する画像（PNG、JPEG、WebP、GIF、HEIC、AVIF など）"
+        }
+      }
+    },
+    "convert": {
+      "name": "変換",
+      "description": "ファイルを別の形式に変換します（画像・文書・音声・動画・アーカイブなど）",
+      "parameters": {
+        "file": {
+          "name": "ファイル",
+          "description": "変換するファイル（最大25MB）"
+        },
+        "format": {
+          "name": "形式",
+          "description": "変換先の形式（空欄にすると一覧から選べます）"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "強力"
+    },
+    "clear": {
+      "name": "紛らわしい文字なし"
+    },
+    "passphrase": {
+      "name": "パスフレーズ"
+    },
+    "v4": {
+      "name": "v4（ランダム）"
+    },
+    "v7": {
+      "name": "v7（時系列順）"
     }
   }
 }

@@ -34,6 +34,12 @@
     },
     "Transcribe": {
       "name": "Transcribir"
+    },
+    "Find source": {
+      "name": "Buscar origen"
+    },
+    "Check links": {
+      "name": "Comprobar enlaces"
     }
   },
   "commands": {
@@ -424,6 +430,275 @@
           "description": "Enlace de un mensaje de este servidor con la imagen"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "Comprueba si una contraseña ha aparecido en una filtración de datos"
+    },
+    "password": {
+      "name": "contraseña",
+      "description": "Genera una contraseña o frase de contraseña aleatoria y segura",
+      "parameters": {
+        "length": {
+          "name": "longitud",
+          "description": "Longitud (8-128); frase: unas 4 letras por palabra"
+        },
+        "type": {
+          "name": "tipo",
+          "description": "Tipo de contraseña (por defecto: segura)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "Genera UUID aleatorios (v4 o v7)",
+      "parameters": {
+        "version": {
+          "name": "versión",
+          "description": "Versión de UUID (por defecto: v4)"
+        },
+        "count": {
+          "name": "cantidad",
+          "description": "Cuántos generar (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "Calcula MD5, SHA-1, SHA-256 y SHA-512 de un texto o archivo",
+      "parameters": {
+        "text": {
+          "name": "texto",
+          "description": "Texto para el hash (deja texto y archivo vacíos para un formulario)"
+        },
+        "file": {
+          "name": "archivo",
+          "description": "Archivo para el hash (máx. 25 MB)"
+        },
+        "compare": {
+          "name": "comparar",
+          "description": "Un hash conocido con el que comparar"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "Decodifica un JSON Web Token (cabecera y contenido)"
+    },
+    "color": {
+      "name": "color",
+      "description": "Convierte un color y comprueba su contraste",
+      "parameters": {
+        "color": {
+          "name": "color",
+          "description": "HEX, rgb(), hsl(), nombre CSS, número de Discord o random"
+        }
+      }
+    },
+    "music": {
+      "name": "musica",
+      "description": "Herramientas de música"
+    },
+    "music link": {
+      "name": "enlace",
+      "description": "Encuentra una canción, álbum o artista de Spotify en otras plataformas",
+      "parameters": {
+        "url": {
+          "name": "enlace",
+          "description": "El enlace de Spotify (una canción, un álbum o un artista)"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "Muestra los metadatos ocultos de un archivo",
+      "parameters": {
+        "file": {
+          "name": "archivo",
+          "description": "Imagen, PDF, documento Office, archivo de audio o vídeo"
+        }
+      }
+    },
+    "sauce": {
+      "name": "fuente",
+      "description": "Encuentra el origen de una imagen",
+      "parameters": {
+        "image": {
+          "name": "imagen",
+          "description": "La imagen que buscar (PNG, JPEG, WebP o GIF)"
+        },
+        "message": {
+          "name": "mensaje",
+          "description": "Enlace de un mensaje de este servidor con la imagen"
+        }
+      }
+    },
+    "define": {
+      "name": "definir",
+      "description": "Busca una palabra en el Wikcionario",
+      "parameters": {
+        "word": {
+          "name": "palabra",
+          "description": "La palabra o expresión a buscar"
+        },
+        "language": {
+          "name": "idioma",
+          "description": "Idioma del Wikcionario (por defecto: el tuyo)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "Resume los últimos mensajes de este canal",
+      "parameters": {
+        "messages": {
+          "name": "mensajes",
+          "description": "Cuántos mensajes recientes leer (por defecto: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "Prueba una expresión regular sobre un texto"
+    },
+    "diff": {
+      "name": "comparar",
+      "description": "Compara dos textos y muestra qué ha cambiado"
+    },
+    "textstats": {
+      "name": "estadisticas-texto",
+      "description": "Cuenta palabras y mide el tiempo de lectura y la legibilidad",
+      "parameters": {
+        "text": {
+          "name": "texto",
+          "description": "El texto a analizar (déjalo vacío para abrir un formulario)"
+        }
+      }
+    },
+    "status": {
+      "name": "estado",
+      "description": "Comprueba si Discord, GitHub y otros servicios funcionan",
+      "parameters": {
+        "service": {
+          "name": "servicio",
+          "description": "Un servicio a consultar (vacío para ver todos)"
+        }
+      }
+    },
+    "company": {
+      "name": "empresa",
+      "description": "Busca una empresa francesa por nombre, SIREN o SIRET",
+      "parameters": {
+        "search": {
+          "name": "busqueda",
+          "description": "Un nombre de empresa, un SIREN (9 cifras) o un SIRET (14 cifras)"
+        }
+      }
+    },
+    "username": {
+      "name": "nombre-de-usuario",
+      "description": "Encuentra dónde se usa un nombre de usuario en cientos de sitios",
+      "parameters": {
+        "username": {
+          "name": "nombre-de-usuario",
+          "description": "El nombre de usuario que buscar"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Quién registró un dominio y cuándo (registrador, fechas, servidores de nombres)",
+      "parameters": {
+        "domain": {
+          "name": "dominio",
+          "description": "Nombre de dominio o enlace, por ejemplo example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "Registros DNS de un dominio (A, MX, TXT, NS...) y protección del correo",
+      "parameters": {
+        "domain": {
+          "name": "dominio",
+          "description": "Nombre de dominio o enlace, por ejemplo example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Comprueba el certificado HTTPS de un sitio (validez, emisor, nombres)",
+      "parameters": {
+        "domain": {
+          "name": "dominio",
+          "description": "Nombre de dominio o enlace, por ejemplo example.com"
+        },
+        "port": {
+          "name": "puerto",
+          "description": "Puerto (443 por defecto)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "subdominios",
+      "description": "Lista los subdominios de un dominio vistos en certificados públicos",
+      "parameters": {
+        "domain": {
+          "name": "dominio",
+          "description": "Nombre de dominio o enlace, por ejemplo example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "verificar-enlace",
+      "description": "Comprueba si un enlace es peligroso: redirecciones, antigüedad, reputación",
+      "parameters": {
+        "url": {
+          "name": "enlace",
+          "description": "El enlace a comprobar"
+        }
+      }
+    },
+    "image": {
+      "name": "imagen",
+      "description": "Muestra una imagen y permite cambiar su tamaño, comprimirla, convertirla o quitar el fondo",
+      "parameters": {
+        "file": {
+          "name": "archivo",
+          "description": "La imagen a tratar (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "convertir",
+      "description": "Convierte un archivo a otro formato (imágenes, documentos, audio, vídeo, archivos...)",
+      "parameters": {
+        "file": {
+          "name": "archivo",
+          "description": "El archivo a convertir (máx. 25 MB)"
+        },
+        "format": {
+          "name": "formato",
+          "description": "Formato de destino (déjalo vacío para elegir de una lista)"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "Segura"
+    },
+    "clear": {
+      "name": "Sin caracteres ambiguos"
+    },
+    "passphrase": {
+      "name": "Frase de contraseña"
+    },
+    "v4": {
+      "name": "v4 (aleatorio)"
+    },
+    "v7": {
+      "name": "v7 (ordenado por tiempo)"
     }
   }
 }

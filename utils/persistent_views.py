@@ -31,6 +31,9 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     """
     # Imported lazily so this module can be imported before cogs are loaded.
     from cogs.moddy import ModdyMainView, AttributionView, WeSupportView
+    from utils.tool_views_registry import (
+        persistent_view_classes as tool_persistent_view_classes,
+    )
     from cogs.preferences import PreferencesView
     from cogs.reminder import RemindersManageView
     from cogs.saved_messages import SavedMessagesLibraryView
@@ -269,6 +272,11 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         # Moddy Team role's permissions.
         TeamAccessPickerView,
         TeamAccessRequestView,
+        # Group 17 — utility tools (/define, /regex, /password, /status,
+        # /image…) and the music links / translate button modules. Each theme
+        # lists its own classes in its views module; see
+        # utils/tool_views_registry.py and docs/features/TOOLS.md.
+        *tool_persistent_view_classes(),
     ]
 
 

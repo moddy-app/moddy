@@ -34,6 +34,12 @@
     },
     "Transcribe": {
       "name": "ถอดเสียงเป็นข้อความ"
+    },
+    "Find source": {
+      "name": "ค้นหาแหล่งที่มา"
+    },
+    "Check links": {
+      "name": "ตรวจสอบลิงก์"
     }
   },
   "commands": {
@@ -424,6 +430,275 @@
           "description": "ลิงก์ข้อความในเซิร์ฟเวอร์นี้ที่มีภาพ"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "ตรวจสอบว่ารหัสผ่านเคยปรากฏในข้อมูลรั่วไหลหรือไม่"
+    },
+    "password": {
+      "name": "รหัสผ่าน",
+      "description": "สร้างรหัสผ่านหรือวลีรหัสผ่านสุ่มที่ปลอดภัย",
+      "parameters": {
+        "length": {
+          "name": "ความยาว",
+          "description": "ความยาว (8-128) วลีรหัสผ่าน: ประมาณ 1 คำต่อ 4 ตัวอักษร"
+        },
+        "type": {
+          "name": "ชนิด",
+          "description": "ชนิดรหัสผ่าน (ค่าเริ่มต้น: แข็งแรง)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "สร้าง UUID แบบสุ่ม (v4 หรือ v7)",
+      "parameters": {
+        "version": {
+          "name": "เวอร์ชัน",
+          "description": "เวอร์ชัน UUID (ค่าเริ่มต้น: v4)"
+        },
+        "count": {
+          "name": "จำนวน",
+          "description": "จำนวนที่จะสร้าง (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "คำนวณ MD5, SHA-1, SHA-256 และ SHA-512 ของข้อความหรือไฟล์",
+      "parameters": {
+        "text": {
+          "name": "ข้อความ",
+          "description": "ข้อความที่จะแฮช (เว้นข้อความและไฟล์ว่างเพื่อเปิดแบบฟอร์ม)"
+        },
+        "file": {
+          "name": "ไฟล์",
+          "description": "ไฟล์ที่จะแฮช (สูงสุด 25 MB)"
+        },
+        "compare": {
+          "name": "เปรียบเทียบ",
+          "description": "ค่าแฮชที่ทราบเพื่อเปรียบเทียบ"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "ถอดรหัส JSON Web Token (ส่วนหัวและเนื้อหา)"
+    },
+    "color": {
+      "name": "สี",
+      "description": "แปลงสีและตรวจสอบค่าความต่างสี",
+      "parameters": {
+        "color": {
+          "name": "สี",
+          "description": "HEX, rgb(), hsl(), ชื่อ CSS, เลข Discord หรือ random"
+        }
+      }
+    },
+    "music": {
+      "name": "เพลง",
+      "description": "เครื่องมือเพลง"
+    },
+    "music link": {
+      "name": "ลิงก์",
+      "description": "ค้นหาเพลง อัลบั้ม หรือศิลปินจาก Spotify บนแพลตฟอร์มอื่น",
+      "parameters": {
+        "url": {
+          "name": "ลิงก์",
+          "description": "ลิงก์ Spotify (เพลง อัลบั้ม หรือศิลปิน)"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "แสดงข้อมูลเมทาดาทาที่ซ่อนอยู่ของไฟล์",
+      "parameters": {
+        "file": {
+          "name": "ไฟล์",
+          "description": "รูปภาพ, PDF, เอกสาร Office, ไฟล์เสียงหรือวิดีโอ"
+        }
+      }
+    },
+    "sauce": {
+      "name": "sauce",
+      "description": "ค้นหาแหล่งที่มาของรูปภาพ",
+      "parameters": {
+        "image": {
+          "name": "รูปภาพ",
+          "description": "รูปภาพที่ต้องการค้นหา (PNG, JPEG, WebP หรือ GIF)"
+        },
+        "message": {
+          "name": "ข้อความ",
+          "description": "ลิงก์ข้อความในเซิร์ฟเวอร์นี้ที่มีภาพ"
+        }
+      }
+    },
+    "define": {
+      "name": "ความหมาย",
+      "description": "ค้นหาคำใน Wiktionary",
+      "parameters": {
+        "word": {
+          "name": "คำ",
+          "description": "คำหรือวลีที่ต้องการค้นหา"
+        },
+        "language": {
+          "name": "ภาษา",
+          "description": "ภาษาของ Wiktionary (ค่าเริ่มต้น: ภาษาของคุณ)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "สรุปข้อความล่าสุดของช่องนี้",
+      "parameters": {
+        "messages": {
+          "name": "ข้อความ",
+          "description": "จำนวนข้อความล่าสุดที่จะอ่าน (ค่าเริ่มต้น: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "ทดสอบนิพจน์ปกติกับข้อความ"
+    },
+    "diff": {
+      "name": "เปรียบเทียบ",
+      "description": "เปรียบเทียบสองข้อความและแสดงสิ่งที่เปลี่ยนไป"
+    },
+    "textstats": {
+      "name": "สถิติข้อความ",
+      "description": "นับคำ วัดเวลาอ่านและความอ่านง่าย",
+      "parameters": {
+        "text": {
+          "name": "ข้อความ",
+          "description": "ข้อความที่จะวิเคราะห์ (เว้นว่างเพื่อเปิดแบบฟอร์ม)"
+        }
+      }
+    },
+    "status": {
+      "name": "สถานะ",
+      "description": "ตรวจสอบว่า Discord, GitHub และบริการอื่น ๆ ทำงานอยู่หรือไม่",
+      "parameters": {
+        "service": {
+          "name": "บริการ",
+          "description": "บริการที่ต้องการดู (เว้นว่างเพื่อดูภาพรวม)"
+        }
+      }
+    },
+    "company": {
+      "name": "บริษัท",
+      "description": "ค้นหาบริษัทฝรั่งเศสจากชื่อ SIREN หรือ SIRET",
+      "parameters": {
+        "search": {
+          "name": "ค้นหา",
+          "description": "ชื่อบริษัท SIREN (9 หลัก) หรือ SIRET (14 หลัก)"
+        }
+      }
+    },
+    "username": {
+      "name": "ชื่อผู้ใช้",
+      "description": "ค้นหาว่าชื่อผู้ใช้ถูกใช้ที่ไหนบ้างในหลายร้อยเว็บไซต์",
+      "parameters": {
+        "username": {
+          "name": "ชื่อผู้ใช้",
+          "description": "ชื่อผู้ใช้ที่ต้องการค้นหา"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "ดูว่าใครจดทะเบียนโดเมนและเมื่อไหร่ (ผู้จดทะเบียน วันที่ เนมเซิร์ฟเวอร์)",
+      "parameters": {
+        "domain": {
+          "name": "โดเมน",
+          "description": "ชื่อโดเมนหรือลิงก์ เช่น example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "เรคคอร์ด DNS ของโดเมน (A, MX, TXT, NS...) และการป้องกันอีเมล",
+      "parameters": {
+        "domain": {
+          "name": "โดเมน",
+          "description": "ชื่อโดเมนหรือลิงก์ เช่น example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "ตรวจใบรับรอง HTTPS ของเว็บไซต์ (ความถูกต้อง ผู้ออก ชื่อ)",
+      "parameters": {
+        "domain": {
+          "name": "โดเมน",
+          "description": "ชื่อโดเมนหรือลิงก์ เช่น example.com"
+        },
+        "port": {
+          "name": "พอร์ต",
+          "description": "พอร์ต (ค่าเริ่มต้น 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "ซับโดเมน",
+      "description": "แสดงซับโดเมนของโดเมนที่พบในใบรับรองสาธารณะ",
+      "parameters": {
+        "domain": {
+          "name": "โดเมน",
+          "description": "ชื่อโดเมนหรือลิงก์ เช่น example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "ตรวจลิงก์",
+      "description": "ตรวจว่าลิงก์อันตรายหรือไม่: การเปลี่ยนเส้นทาง อายุโดเมน ชื่อเสียง",
+      "parameters": {
+        "url": {
+          "name": "ลิงก์",
+          "description": "ลิงก์ที่ต้องการตรวจ"
+        }
+      }
+    },
+    "image": {
+      "name": "รูปภาพ",
+      "description": "แสดงรูปภาพ แล้วปรับขนาด บีบอัด แปลงไฟล์ หรือลบพื้นหลัง",
+      "parameters": {
+        "file": {
+          "name": "ไฟล์",
+          "description": "รูปภาพที่ต้องการจัดการ (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "แปลงไฟล์",
+      "description": "แปลงไฟล์เป็นรูปแบบอื่น (รูปภาพ เอกสาร เสียง วิดีโอ ไฟล์บีบอัด...)",
+      "parameters": {
+        "file": {
+          "name": "ไฟล์",
+          "description": "ไฟล์ที่ต้องการแปลง (สูงสุด 25 MB)"
+        },
+        "format": {
+          "name": "รูปแบบ",
+          "description": "รูปแบบปลายทาง (เว้นว่างไว้เพื่อเลือกจากรายการ)"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "แข็งแรง"
+    },
+    "clear": {
+      "name": "ไม่มีตัวอักษรที่คล้ายกัน"
+    },
+    "passphrase": {
+      "name": "วลีรหัสผ่าน"
+    },
+    "v4": {
+      "name": "v4 (สุ่ม)"
+    },
+    "v7": {
+      "name": "v7 (เรียงตามเวลา)"
     }
   }
 }

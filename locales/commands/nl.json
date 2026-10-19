@@ -34,6 +34,12 @@
     },
     "Transcribe": {
       "name": "Transcriberen"
+    },
+    "Find source": {
+      "name": "Bron zoeken"
+    },
+    "Check links": {
+      "name": "Links controleren"
     }
   },
   "commands": {
@@ -424,6 +430,275 @@
           "description": "Link naar een bericht op deze server met de afbeelding"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "Controleer of een wachtwoord in een datalek is verschenen"
+    },
+    "password": {
+      "name": "wachtwoord",
+      "description": "Genereer een veilig willekeurig wachtwoord of wachtzin",
+      "parameters": {
+        "length": {
+          "name": "lengte",
+          "description": "Lengte (8-128); wachtzin: ongeveer 1 woord per 4 tekens"
+        },
+        "type": {
+          "name": "type",
+          "description": "Soort wachtwoord (standaard: sterk)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "Genereer willekeurige UUID's (v4 of v7)",
+      "parameters": {
+        "version": {
+          "name": "versie",
+          "description": "UUID-versie (standaard: v4)"
+        },
+        "count": {
+          "name": "aantal",
+          "description": "Hoeveel er worden gemaakt (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "Bereken MD5, SHA-1, SHA-256 en SHA-512 van een tekst of bestand",
+      "parameters": {
+        "text": {
+          "name": "tekst",
+          "description": "Tekst om te hashen (laat tekst en bestand leeg voor een formulier)"
+        },
+        "file": {
+          "name": "bestand",
+          "description": "Bestand om te hashen (max. 25 MB)"
+        },
+        "compare": {
+          "name": "vergelijk",
+          "description": "Een bekende hash om mee te vergelijken"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "Decodeer een JSON Web Token (header en payload)"
+    },
+    "color": {
+      "name": "kleur",
+      "description": "Reken een kleur om en controleer het contrast",
+      "parameters": {
+        "color": {
+          "name": "kleur",
+          "description": "HEX, rgb(), hsl(), CSS-naam, Discord-getal of random"
+        }
+      }
+    },
+    "music": {
+      "name": "muziek",
+      "description": "Muziekhulpmiddelen"
+    },
+    "music link": {
+      "name": "link",
+      "description": "Vind een Spotify-nummer, -album of -artiest op andere platforms",
+      "parameters": {
+        "url": {
+          "name": "link",
+          "description": "De Spotify-link (een nummer, album of artiest)"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "Toont de verborgen metadata van een bestand",
+      "parameters": {
+        "file": {
+          "name": "bestand",
+          "description": "Afbeelding, pdf, Office-document, audio- of videobestand"
+        }
+      }
+    },
+    "sauce": {
+      "name": "bron",
+      "description": "Zoekt de bron van een afbeelding",
+      "parameters": {
+        "image": {
+          "name": "afbeelding",
+          "description": "De afbeelding om te zoeken (PNG, JPEG, WebP of GIF)"
+        },
+        "message": {
+          "name": "bericht",
+          "description": "Link naar een bericht op deze server met de afbeelding"
+        }
+      }
+    },
+    "define": {
+      "name": "definieer",
+      "description": "Zoekt een woord op in Wiktionary",
+      "parameters": {
+        "word": {
+          "name": "woord",
+          "description": "Het woord of de uitdrukking om op te zoeken"
+        },
+        "language": {
+          "name": "taal",
+          "description": "Taal van Wiktionary (standaard: die van jou)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "Vat de laatste berichten van dit kanaal samen",
+      "parameters": {
+        "messages": {
+          "name": "berichten",
+          "description": "Hoeveel recente berichten er gelezen worden (standaard: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "Test een reguliere expressie op een tekst"
+    },
+    "diff": {
+      "name": "vergelijk",
+      "description": "Vergelijkt twee teksten en toont wat er veranderd is"
+    },
+    "textstats": {
+      "name": "tekststatistieken",
+      "description": "Telt woorden en meet leestijd en leesbaarheid",
+      "parameters": {
+        "text": {
+          "name": "tekst",
+          "description": "De tekst om te analyseren (laat leeg om een formulier te openen)"
+        }
+      }
+    },
+    "status": {
+      "name": "status",
+      "description": "Controleer of Discord, GitHub en andere diensten werken",
+      "parameters": {
+        "service": {
+          "name": "dienst",
+          "description": "Een dienst om te bekijken (leeg: overzicht van alle)"
+        }
+      }
+    },
+    "company": {
+      "name": "bedrijf",
+      "description": "Zoek een Frans bedrijf op naam, SIREN of SIRET",
+      "parameters": {
+        "search": {
+          "name": "zoekopdracht",
+          "description": "Een bedrijfsnaam, een SIREN (9 cijfers) of een SIRET (14 cijfers)"
+        }
+      }
+    },
+    "username": {
+      "name": "gebruikersnaam",
+      "description": "Zoek waar een gebruikersnaam wordt gebruikt op honderden sites",
+      "parameters": {
+        "username": {
+          "name": "gebruikersnaam",
+          "description": "De gebruikersnaam om te zoeken"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Wie een domein heeft geregistreerd en wanneer (registrar, data, nameservers)",
+      "parameters": {
+        "domain": {
+          "name": "domein",
+          "description": "Domeinnaam of link, bijvoorbeeld example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "DNS-records van een domein (A, MX, TXT, NS...) en e-mailbeveiliging",
+      "parameters": {
+        "domain": {
+          "name": "domein",
+          "description": "Domeinnaam of link, bijvoorbeeld example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Controleer het HTTPS-certificaat van een website (geldigheid, uitgever, namen)",
+      "parameters": {
+        "domain": {
+          "name": "domein",
+          "description": "Domeinnaam of link, bijvoorbeeld example.com"
+        },
+        "port": {
+          "name": "poort",
+          "description": "Poort (standaard 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "subdomeinen",
+      "description": "Toont de subdomeinen van een domein uit openbare certificaten",
+      "parameters": {
+        "domain": {
+          "name": "domein",
+          "description": "Domeinnaam of link, bijvoorbeeld example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "link-controleren",
+      "description": "Controleer of een link gevaarlijk is: doorverwijzingen, domeinleeftijd, reputatie",
+      "parameters": {
+        "url": {
+          "name": "link",
+          "description": "De te controleren link"
+        }
+      }
+    },
+    "image": {
+      "name": "afbeelding",
+      "description": "Toont een afbeelding: formaat wijzigen, comprimeren, converteren of achtergrond verwijderen",
+      "parameters": {
+        "file": {
+          "name": "bestand",
+          "description": "De afbeelding om te bewerken (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "converteer",
+      "description": "Zet een bestand om naar een ander formaat (afbeeldingen, documenten, audio, video, archieven...)",
+      "parameters": {
+        "file": {
+          "name": "bestand",
+          "description": "Het te converteren bestand (max. 25 MB)"
+        },
+        "format": {
+          "name": "formaat",
+          "description": "Doelformaat (laat leeg om uit een lijst te kiezen)"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "Sterk"
+    },
+    "clear": {
+      "name": "Zonder verwarrende tekens"
+    },
+    "passphrase": {
+      "name": "Wachtzin"
+    },
+    "v4": {
+      "name": "v4 (willekeurig)"
+    },
+    "v7": {
+      "name": "v7 (op tijd gesorteerd)"
     }
   }
 }

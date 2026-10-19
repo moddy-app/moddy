@@ -34,6 +34,12 @@
     },
     "Transcribe": {
       "name": "Transkripsikan"
+    },
+    "Find source": {
+      "name": "Cari sumber"
+    },
+    "Check links": {
+      "name": "Periksa tautan"
     }
   },
   "commands": {
@@ -424,6 +430,275 @@
           "description": "Tautan pesan dari server ini yang berisi gambar"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "Periksa apakah kata sandi pernah muncul dalam kebocoran data"
+    },
+    "password": {
+      "name": "kata-sandi",
+      "description": "Buat kata sandi atau frasa sandi acak yang aman",
+      "parameters": {
+        "length": {
+          "name": "panjang",
+          "description": "Panjang (8-128); frasa sandi: sekitar 1 kata per 4 karakter"
+        },
+        "type": {
+          "name": "jenis",
+          "description": "Jenis kata sandi (default: kuat)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "Buat UUID acak (v4 atau v7)",
+      "parameters": {
+        "version": {
+          "name": "versi",
+          "description": "Versi UUID (default: v4)"
+        },
+        "count": {
+          "name": "jumlah",
+          "description": "Jumlah yang dibuat (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "Hitung MD5, SHA-1, SHA-256, dan SHA-512 dari teks atau berkas",
+      "parameters": {
+        "text": {
+          "name": "teks",
+          "description": "Teks untuk di-hash (kosongkan teks dan berkas untuk formulir)"
+        },
+        "file": {
+          "name": "berkas",
+          "description": "Berkas untuk di-hash (maks. 25 MB)"
+        },
+        "compare": {
+          "name": "bandingkan",
+          "description": "Hash yang diketahui untuk dibandingkan"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "Dekode JSON Web Token (header dan isi)"
+    },
+    "color": {
+      "name": "warna",
+      "description": "Konversi warna dan periksa kontrasnya",
+      "parameters": {
+        "color": {
+          "name": "warna",
+          "description": "HEX, rgb(), hsl(), nama CSS, angka Discord, atau random"
+        }
+      }
+    },
+    "music": {
+      "name": "musik",
+      "description": "Alat musik"
+    },
+    "music link": {
+      "name": "tautan",
+      "description": "Temukan lagu, album, atau artis Spotify di platform lain",
+      "parameters": {
+        "url": {
+          "name": "tautan",
+          "description": "Tautan Spotify (lagu, album, atau artis)"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "Menampilkan metadata tersembunyi dari sebuah file",
+      "parameters": {
+        "file": {
+          "name": "berkas",
+          "description": "Gambar, PDF, dokumen Office, file audio atau video"
+        }
+      }
+    },
+    "sauce": {
+      "name": "sumber",
+      "description": "Menemukan sumber sebuah gambar",
+      "parameters": {
+        "image": {
+          "name": "gambar",
+          "description": "Gambar yang dicari (PNG, JPEG, WebP, atau GIF)"
+        },
+        "message": {
+          "name": "pesan",
+          "description": "Tautan pesan dari server ini yang berisi gambar"
+        }
+      }
+    },
+    "define": {
+      "name": "definisi",
+      "description": "Mencari kata di Wiktionary",
+      "parameters": {
+        "word": {
+          "name": "kata",
+          "description": "Kata atau ungkapan yang dicari"
+        },
+        "language": {
+          "name": "bahasa",
+          "description": "Bahasa Wiktionary (default: bahasamu)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "Meringkas pesan terbaru di kanal ini",
+      "parameters": {
+        "messages": {
+          "name": "pesan",
+          "description": "Jumlah pesan terbaru yang dibaca (default: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "Menguji ekspresi reguler pada teks"
+    },
+    "diff": {
+      "name": "bandingkan",
+      "description": "Membandingkan dua teks dan menunjukkan perubahannya"
+    },
+    "textstats": {
+      "name": "statistik-teks",
+      "description": "Menghitung kata serta mengukur waktu baca dan keterbacaan",
+      "parameters": {
+        "text": {
+          "name": "teks",
+          "description": "Teks yang dianalisis (kosongkan untuk membuka formulir)"
+        }
+      }
+    },
+    "status": {
+      "name": "status",
+      "description": "Periksa apakah Discord, GitHub, dan layanan lain berjalan",
+      "parameters": {
+        "service": {
+          "name": "layanan",
+          "description": "Layanan yang dicek (kosong: ringkasan semuanya)"
+        }
+      }
+    },
+    "company": {
+      "name": "perusahaan",
+      "description": "Cari perusahaan Prancis dengan nama, SIREN, atau SIRET",
+      "parameters": {
+        "search": {
+          "name": "pencarian",
+          "description": "Nama perusahaan, SIREN (9 digit), atau SIRET (14 digit)"
+        }
+      }
+    },
+    "username": {
+      "name": "nama-pengguna",
+      "description": "Temukan di mana sebuah nama pengguna dipakai di ratusan situs",
+      "parameters": {
+        "username": {
+          "name": "nama-pengguna",
+          "description": "Nama pengguna yang dicari"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Siapa yang mendaftarkan domain dan kapan (registrar, tanggal, name server)",
+      "parameters": {
+        "domain": {
+          "name": "domain",
+          "description": "Nama domain atau tautan, misalnya example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "Rekaman DNS sebuah domain (A, MX, TXT, NS...) dan perlindungan email",
+      "parameters": {
+        "domain": {
+          "name": "domain",
+          "description": "Nama domain atau tautan, misalnya example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Periksa sertifikat HTTPS sebuah situs (validitas, penerbit, nama)",
+      "parameters": {
+        "domain": {
+          "name": "domain",
+          "description": "Nama domain atau tautan, misalnya example.com"
+        },
+        "port": {
+          "name": "port",
+          "description": "Port (bawaan 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "subdomain",
+      "description": "Daftar subdomain sebuah domain yang terlihat di sertifikat publik",
+      "parameters": {
+        "domain": {
+          "name": "domain",
+          "description": "Nama domain atau tautan, misalnya example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "cek-tautan",
+      "description": "Periksa apakah tautan berbahaya: pengalihan, usia domain, reputasi",
+      "parameters": {
+        "url": {
+          "name": "tautan",
+          "description": "Tautan yang diperiksa"
+        }
+      }
+    },
+    "image": {
+      "name": "gambar",
+      "description": "Menampilkan gambar lalu mengubah ukuran, mengompres, mengonversi, atau menghapus latar belakangnya",
+      "parameters": {
+        "file": {
+          "name": "berkas",
+          "description": "Gambar yang akan diproses (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "konversi",
+      "description": "Mengonversi file ke format lain (gambar, dokumen, audio, video, arsip...)",
+      "parameters": {
+        "file": {
+          "name": "berkas",
+          "description": "File yang akan dikonversi (maks. 25 MB)"
+        },
+        "format": {
+          "name": "format",
+          "description": "Format tujuan (kosongkan untuk memilih dari daftar)"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "Kuat"
+    },
+    "clear": {
+      "name": "Tanpa karakter mirip"
+    },
+    "passphrase": {
+      "name": "Frasa sandi"
+    },
+    "v4": {
+      "name": "v4 (acak)"
+    },
+    "v7": {
+      "name": "v7 (berurutan waktu)"
     }
   }
 }

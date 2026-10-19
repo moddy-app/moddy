@@ -34,6 +34,12 @@
     },
     "Transcribe": {
       "name": "Litteroi"
+    },
+    "Find source": {
+      "name": "Etsi lähde"
+    },
+    "Check links": {
+      "name": "Tarkista linkit"
     }
   },
   "commands": {
@@ -424,6 +430,275 @@
           "description": "Linkki tämän palvelimen viestiin, jossa kuva on"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "Tarkista, onko salasana esiintynyt tietovuodossa"
+    },
+    "password": {
+      "name": "salasana",
+      "description": "Luo turvallinen satunnainen salasana tai salalause",
+      "parameters": {
+        "length": {
+          "name": "pituus",
+          "description": "Pituus (8-128); salalause: noin 1 sana 4 merkkiä kohti"
+        },
+        "type": {
+          "name": "tyyppi",
+          "description": "Salasanan tyyppi (oletus: vahva)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "Luo satunnaisia UUID-tunnisteita (v4 tai v7)",
+      "parameters": {
+        "version": {
+          "name": "versio",
+          "description": "UUID-versio (oletus: v4)"
+        },
+        "count": {
+          "name": "määrä",
+          "description": "Montako luodaan (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "Laske tekstin tai tiedoston MD5, SHA-1, SHA-256 ja SHA-512",
+      "parameters": {
+        "text": {
+          "name": "teksti",
+          "description": "Tiivistettävä teksti (jätä teksti ja tiedosto tyhjiksi lomaketta varten)"
+        },
+        "file": {
+          "name": "tiedosto",
+          "description": "Tiivistettävä tiedosto (enintään 25 Mt)"
+        },
+        "compare": {
+          "name": "vertaa",
+          "description": "Tunnettu tiiviste vertailuun"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "Pura JSON Web Token (otsake ja sisältö)"
+    },
+    "color": {
+      "name": "väri",
+      "description": "Muunna väri ja tarkista sen kontrasti",
+      "parameters": {
+        "color": {
+          "name": "väri",
+          "description": "HEX, rgb(), hsl(), CSS-nimi, Discord-luku tai random"
+        }
+      }
+    },
+    "music": {
+      "name": "musiikki",
+      "description": "Musiikkityökalut"
+    },
+    "music link": {
+      "name": "linkki",
+      "description": "Etsi Spotify-kappale, albumi tai artisti muilta alustoilta",
+      "parameters": {
+        "url": {
+          "name": "linkki",
+          "description": "Spotify-linkki (kappale, albumi tai artisti)"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "Näyttää tiedoston piilotetut metatiedot",
+      "parameters": {
+        "file": {
+          "name": "tiedosto",
+          "description": "Kuva, PDF, Office-asiakirja, ääni- tai videotiedosto"
+        }
+      }
+    },
+    "sauce": {
+      "name": "lahde",
+      "description": "Etsii kuvan lähteen",
+      "parameters": {
+        "image": {
+          "name": "kuva",
+          "description": "Haettava kuva (PNG, JPEG, WebP tai GIF)"
+        },
+        "message": {
+          "name": "viesti",
+          "description": "Linkki tämän palvelimen viestiin, jossa kuva on"
+        }
+      }
+    },
+    "define": {
+      "name": "määrittele",
+      "description": "Hakee sanan Wikisanakirjasta",
+      "parameters": {
+        "word": {
+          "name": "sana",
+          "description": "Haettava sana tai ilmaus"
+        },
+        "language": {
+          "name": "kieli",
+          "description": "Wikisanakirjan kieli (oletus: omasi)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "Tiivistää tämän kanavan viimeisimmät viestit",
+      "parameters": {
+        "messages": {
+          "name": "viestit",
+          "description": "Montako viimeisintä viestiä luetaan (oletus: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "Testaa säännöllistä lauseketta tekstillä"
+    },
+    "diff": {
+      "name": "vertaa",
+      "description": "Vertaa kahta tekstiä ja näyttää muutokset"
+    },
+    "textstats": {
+      "name": "tekstitilastot",
+      "description": "Laskee sanat sekä mittaa lukuajan ja luettavuuden",
+      "parameters": {
+        "text": {
+          "name": "teksti",
+          "description": "Analysoitava teksti (jätä tyhjäksi avataksesi lomakkeen)"
+        }
+      }
+    },
+    "status": {
+      "name": "tila",
+      "description": "Tarkista, toimivatko Discord, GitHub ja muut palvelut",
+      "parameters": {
+        "service": {
+          "name": "palvelu",
+          "description": "Tarkasteltava palvelu (tyhjä: yleiskatsaus kaikista)"
+        }
+      }
+    },
+    "company": {
+      "name": "yritys",
+      "description": "Hae ranskalainen yritys nimellä, SIREN- tai SIRET-numerolla",
+      "parameters": {
+        "search": {
+          "name": "haku",
+          "description": "Yrityksen nimi, SIREN (9 numeroa) tai SIRET (14 numeroa)"
+        }
+      }
+    },
+    "username": {
+      "name": "käyttäjänimi",
+      "description": "Selvitä, missä käyttäjänimeä käytetään sadoilla sivustoilla",
+      "parameters": {
+        "username": {
+          "name": "käyttäjänimi",
+          "description": "Etsittävä käyttäjänimi"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Kuka rekisteröi verkkotunnuksen ja milloin (rekisterinpitäjä, päivämäärät, nimipalvelimet)",
+      "parameters": {
+        "domain": {
+          "name": "verkkotunnus",
+          "description": "Verkkotunnus tai linkki, esim. example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "Verkkotunnuksen DNS-tietueet (A, MX, TXT, NS...) ja sähköpostin suojaus",
+      "parameters": {
+        "domain": {
+          "name": "verkkotunnus",
+          "description": "Verkkotunnus tai linkki, esim. example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Tarkista verkkosivuston HTTPS-varmenne (voimassaolo, myöntäjä, nimet)",
+      "parameters": {
+        "domain": {
+          "name": "verkkotunnus",
+          "description": "Verkkotunnus tai linkki, esim. example.com"
+        },
+        "port": {
+          "name": "portti",
+          "description": "Portti (oletus 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "aliverkkotunnukset",
+      "description": "Listaa verkkotunnuksen julkisissa varmenteissa näkyvät aliverkkotunnukset",
+      "parameters": {
+        "domain": {
+          "name": "verkkotunnus",
+          "description": "Verkkotunnus tai linkki, esim. example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "linkkitarkistus",
+      "description": "Tarkista, onko linkki vaarallinen: uudelleenohjaukset, tunnuksen ikä, maine",
+      "parameters": {
+        "url": {
+          "name": "linkki",
+          "description": "Tarkistettava linkki"
+        }
+      }
+    },
+    "image": {
+      "name": "kuva",
+      "description": "Näyttää kuvan ja antaa muuttaa sen kokoa, pakata, muuntaa tai poistaa taustan",
+      "parameters": {
+        "file": {
+          "name": "tiedosto",
+          "description": "Käsiteltävä kuva (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "muunna",
+      "description": "Muuntaa tiedoston toiseen muotoon (kuvat, asiakirjat, ääni, video, arkistot...)",
+      "parameters": {
+        "file": {
+          "name": "tiedosto",
+          "description": "Muunnettava tiedosto (enintään 25 Mt)"
+        },
+        "format": {
+          "name": "muoto",
+          "description": "Kohdemuoto (jätä tyhjäksi valitaksesi luettelosta)"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "Vahva"
+    },
+    "clear": {
+      "name": "Ilman sekoittuvia merkkejä"
+    },
+    "passphrase": {
+      "name": "Salalause"
+    },
+    "v4": {
+      "name": "v4 (satunnainen)"
+    },
+    "v7": {
+      "name": "v7 (aikajärjestetty)"
     }
   }
 }

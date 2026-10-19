@@ -52,6 +52,13 @@ moddy/
 │   ├── voice_transcription.py #   "Transcribe" context menu (Groq Whisper; images → OCR)
 │   ├── ocr.py                 #   /ocr (Google Vision document OCR)
 │   ├── ai_detector.py         #   /ai-check (C2PA + generation metadata, image or message link)
+│   ├── tools_text.py          #   /define, /tldr, /regex, /diff, /textstats (docs/features/TOOLS_TEXT.md)
+│   ├── tools_security.py      #   /pwned, /password, /uuid, /hash, /jwt, /color
+│   ├── tools_web.py           #   /whois, /dns, /ssl, /subdomains, /link-check + "Check links" menu
+│   ├── tools_lookup.py        #   /status, /company, /username
+│   ├── tools_media.py         #   /image (resize, compress, convert, remove background), /convert
+│   ├── tools_inspect.py       #   /exif, /sauce + "Find source" menu
+│   ├── music_links.py         #   /music link (Spotify → Deezer / Apple Music / YouTube Music)
 │   ├── webhook.py             #   Webhook management
 │   ├── logs.py                #   Advanced server logs — Discord wiring only
 │   ├── social_notifications.py #  Social notifications dispatch + feeds service wiring
@@ -94,6 +101,8 @@ moddy/
 │   ├── voice_transcription.py #   Voice message transcription (button or automatic)
 │   ├── ai_detector.py         #   AI Detector: replies under C2PA-attested images (DEFAULT_ENABLED)
 │   ├── logs.py                #   Advanced server logs (config + routing, 163 events)
+│   ├── music_links.py         #   Music links: alternatives under Spotify links (DEFAULT_ENABLED)
+│   ├── translate_button.py    #   Translate button under foreign-language messages (DEFAULT_ENABLED)
 │   └── configs/               #   Components V2 config UIs per module
 │       ├── server_settings_config.py      # Server-wide settings (language)
 │       ├── adaptive_slowmode_config.py
@@ -128,6 +137,15 @@ moddy/
 │                              #   members, messages, channels, roles, guild, threads, voice,
 │                              #   invites, assets, scheduled_events, stage, polls,
 │                              #   integrations, automod, moderation
+│
+├── tools/                     # Utility tools core (pure; no Discord, no DB) — docs/features/TOOLS.md
+│   ├── wiktionary.py, regex_test.py, diffing.py, textstats.py, text_escape.py   # text
+│   ├── hashing.py, generators.py, jwt_decode.py, color.py, data/                  # security & dev
+│   ├── domain/ (rdap, doh, tls, crtsh, names), linkcheck.py                       # domains & links
+│   ├── status_registry.py, company.py, whatsmyname.py                            # lookups
+│   ├── image_ops.py, bg_removal.py (u2netp via onnxruntime), convert/, media_errors.py
+│   ├── metadata.py, sauce.py                                                     # inspection
+│   └── music.py, langdetect.py (py3langid)                                       # modules
 │
 ├── stats/                     # Statistics (aggregate before writing)
 │   ├── registry.py            #   Every metric declared once (no migration to add one)
@@ -282,7 +300,11 @@ moddy/
 │   ├── task_signature.py      #   moddy:tasks HMAC verification (signature, freshness, anti-replay)
 │   ├── brocoli_signature.py   #   HMAC identity assertions sent to the backend's /ai surface
 │   ├── brocoli_views.py       #   Brocoli channel cards + persistent confirmation buttons
-│   └── incognito.py
+│   ├── incognito.py
+│   ├── tool_card.py           #   Shared tool card (ToolCard, source_line, loading/error/expired, save_state)
+│   ├── tool_views_registry.py #   Feeds every tools_*_views PERSISTENT_VIEWS / DYNAMIC_ITEM_CASES
+│   ├── tools_{text,security,web,lookup,media,inspect}_views.py # Tool cards + persistent items
+│   └── music_links_views.py, translate_button_views.py         # Module replies + persistent items
 │
 ├── gateway/                   # Centralized API gateway (ALL external API calls go here)
 │   ├── __init__.py            #   Gateway class (bot.gateway) — public surface
@@ -298,12 +320,18 @@ moddy/
 │   │   ├── openai.py          #     embed + chat
 │   │   ├── deepl.py           #     translate
 │   │   ├── groq.py            #     transcribe (whisper-large-v3-turbo)
-│   │   └── google_vision.py   #     SafeSearch + document OCR (monthly free tier)
+│   │   ├── google_vision.py   #     SafeSearch + document OCR (monthly free tier)
+│   │   ├── saucenao.py, tracemoe.py #   /sauce
+│   │   ├── virustotal.py, urlscan.py #  /link-check
+│   │   └── cloudconvert.py    #     /convert (office documents, ebooks)
 │   └── clients/               #   High-level clients
 │       ├── ai.py              #     bot.gateway.ai
 │       ├── translation.py     #     bot.gateway.translation
 │       ├── transcription.py   #     bot.gateway.transcription
-│       └── vision.py          #     bot.gateway.vision
+│       ├── vision.py          #     bot.gateway.vision
+│       ├── image_search.py    #     bot.gateway.saucenao / tracemoe
+│       ├── web_security.py    #     bot.gateway.virustotal / urlscan
+│       └── conversion.py      #     bot.gateway.cloudconvert
 │
 ├── services/                  # External service clients
 │   ├── altguard_client.py     #   AltGuard service client (HTTP + altguard:* Pub/Sub)
@@ -331,7 +359,13 @@ moddy/
 │   ├── team_link_session.py   #   /team role: the window in which a staffer links the roles
 │   ├── heartbeat.py           #   Moddy Health Monitor heartbeat (dead man's switch)
 │   ├── betterstack_heartbeat.py #  Better Stack cron/heartbeat monitor ping (3 min)
-│   └── railway_diagnostic.py  #   Railway diagnostics
+│   ├── railway_diagnostic.py  #   Railway diagnostics
+│   ├── public_api.py          #   bot.public_api: keyless public APIs (shared session, cache, public-only resolver)
+│   ├── web_tools_service.py   #   /whois /dns /ssl /subdomains /link-check orchestration
+│   ├── media_tools_service.py #   /image + /convert engines (local + CloudConvert)
+│   ├── sauce_service.py       #   /sauce (SauceNAO + trace.moe)
+│   ├── music_links_service.py #   Spotify page → Deezer / iTunes matching + cache
+│   └── translate_button_service.py # Language gating, learned languages, DeepL click flow
 │
 ├── internal_api/              # FastAPI internal API
 │   ├── server.py              #   FastAPI app + /health, /ping, /status + router wiring
@@ -384,7 +418,9 @@ moddy/
     │                          #   privacy, module, default-enabled manager, service
     ├── test_icon_theme.py     #   Icon theme: light→dark mapping, payload swap, discord.py patch guard
     ├── test_user_preferences.py # Preferences cache, language override, /preferences selects
-    └── test_staff_user_command.py # /team user: sections, personal-data gate, i18n (5 locales)
+    ├── test_staff_user_command.py # /team user: sections, personal-data gate, i18n (5 locales)
+    ├── test_tools_{text,security,web,lookup,media,inspect}.py # Utility tools per theme
+    └── test_music_links.py, test_translate_button.py          # The two default-enabled modules
 ```
 
 ---
@@ -637,6 +673,9 @@ All documentation is in [docs/](docs/) (structure and conventions: [docs/README.
 | [docs/features/SOCIAL_NOTIFICATIONS.md](docs/features/SOCIAL_NOTIFICATIONS.md) | Social Notifications module + `moddy-feeds` Redis contract (what the backend must mirror) |
 | [docs/features/SUPPORT_REQUESTS.md](docs/features/SUPPORT_REQUESTS.md) | **Support requests** — `/bug-report`, the "configure it for me" button, the staff card and its reply flow, the beta-launch campaign |
 | [docs/features/TEXT_TOOLS.md](docs/features/TEXT_TOOLS.md) | AI text tools — `/fix`, `/rephrase`, `/summarize` (models, presets, mention stripping) |
+| [docs/features/TOOLS.md](docs/features/TOOLS.md) | **Utility tools** — shared design contract (card anatomy, source phrase, Modals V2, secrets, persistence, network); per theme: [TOOLS_TEXT](docs/features/TOOLS_TEXT.md), [TOOLS_SECURITY](docs/features/TOOLS_SECURITY.md), [TOOLS_WEB](docs/features/TOOLS_WEB.md), [TOOLS_LOOKUP](docs/features/TOOLS_LOOKUP.md), [TOOLS_MEDIA](docs/features/TOOLS_MEDIA.md), [TOOLS_INSPECT](docs/features/TOOLS_INSPECT.md) |
+| [docs/features/MUSIC_LINKS.md](docs/features/MUSIC_LINKS.md) | **Music links** — module + `/music`: Spotify page → Deezer / Apple Music / YouTube Music |
+| [docs/features/TRANSLATE_BUTTON.md](docs/features/TRANSLATE_BUTTON.md) | **Translate button** — local language detection, server's usual languages, DeepL on click |
 | [docs/features/TICKETS.md](docs/features/TICKETS.md) | **Tickets** — panels, categories, per-role permissions, the claim system, escalation, transcripts, closure detection, ratings, module-gated `/ticket` commands |
 | [docs/features/VOICE_TRANSCRIPTION.md](docs/features/VOICE_TRANSCRIPTION.md) | Voice transcription — context menu, module, Groq Whisper, cost control |
 | [docs/features/WELCOME_DM.md](docs/features/WELCOME_DM.md) | Welcome DM module (`welcome_dm`) — config schema, placeholders, backend/dashboard contract |
@@ -678,6 +717,7 @@ level.
 | [docs/archive/SECURITY_AUDIT.md](docs/archive/SECURITY_AUDIT.md) | Security audit report (2026-08-20) — findings fixed and residual risks at that date |
 | [docs/archive/SOCIAL_NOTIFICATIONS_CHANGES_2026-06-14.md](docs/archive/SOCIAL_NOTIFICATIONS_CHANGES_2026-06-14.md) | Backend/dashboard change spec (2026-06-14), now folded into [docs/features/SOCIAL_NOTIFICATIONS.md](docs/features/SOCIAL_NOTIFICATIONS.md) |
 | [docs/archive/REDIRECTS_BANNERS_SCHEMA.md](docs/archive/REDIRECTS_BANNERS_SCHEMA.md) | `redirect_links`/banners DB schema note written for the backend team |
+| [docs/archive/UTILITY_TOOLS_PLAN.md](docs/archive/UTILITY_TOOLS_PLAN.md) | Utility tools plan (validated) + the agent brief [UTILITY_TOOLS_AGENT_BRIEF.md](docs/archive/UTILITY_TOOLS_AGENT_BRIEF.md) |
 | [docs/archive/AUTOMOD_V2_PLAN.md](docs/archive/AUTOMOD_V2_PLAN.md) | Automod v2 implementation plan/progress log — all sessions closed; design rationale still cited from `automod/` code comments |
 
 ### Session Logs

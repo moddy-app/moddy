@@ -3941,6 +3941,118 @@
           "placeholder": "Ningún canal ignorado"
         }
       }
+    },
+    "translate_button": {
+      "name": "Botón Traducir",
+      "description": "Ofrece una traducción bajo los mensajes escritos en otro idioma",
+      "config": {
+        "title": "Botón Traducir",
+        "description": "Cuando alguien escribe en un idioma que tu servidor no habla, Moddy añade un pequeño botón **Traducir** bajo el mensaje. Quien lo pulsa recibe la traducción en privado, en su propio idioma. La detección se hace dentro de Moddy y no se envía nada a ningún sitio antes de un clic. Activado por defecto en todos los servidores: puedes ponerlo en pausa desde **Gestionar**.",
+        "learnt": {
+          "section_title": "Idiomas que se suelen hablar aquí",
+          "section_description": "Aprendidos de los mensajes de los últimos {days} días: un idioma que supone al menos el 10 % nunca recibe botón",
+          "learning": "Moddy sigue aprendiendo: `{sample}` / `{needed}` mensajes analizados",
+          "none": "Solo el idioma del servidor por ahora"
+        },
+        "languages": {
+          "section_title": "Otros idiomas a ignorar",
+          "section_description": "Los mensajes en estos idiomas nunca reciben botón, además del idioma del servidor y los que Moddy ha aprendido",
+          "placeholder": "Ningún idioma extra"
+        },
+        "delay": {
+          "section_title": "Duración del botón",
+          "section_description": "Cuánto tiempo permanece el mensajito bajo el original",
+          "placeholder": "Elige una duración",
+          "options": {
+            "120": "2 minutos",
+            "300": "5 minutos",
+            "600": "10 minutos",
+            "1800": "30 minutos",
+            "0": "No borrar nunca"
+          }
+        },
+        "channels": {
+          "section_title": "Canales ignorados",
+          "section_description": "Moddy nunca ofrece una traducción en estos canales (ni en sus hilos)",
+          "placeholder": "Ningún canal ignorado"
+        }
+      },
+      "prompt": {
+        "detected": "{language} detectado",
+        "button": "Traducir"
+      },
+      "loading": "Traduciendo…",
+      "card": {
+        "title": "Traducción",
+        "jump": "Mensaje original"
+      },
+      "errors": {
+        "title": "Traducción no disponible",
+        "failed": "La traducción ha fallado. Inténtalo de nuevo en un momento.",
+        "unavailable": "La traducción no está disponible ahora mismo. Inténtalo más tarde.",
+        "rate_limited": "Estás pulsando demasiado rápido. Espera un minuto e inténtalo de nuevo.",
+        "gone": "El mensaje original ya no existe.",
+        "empty": "No hay nada que traducir en este mensaje.",
+        "quota": "Has alcanzado tu límite diario de traducciones. Inténtalo mañana."
+      },
+      "languages": {
+        "en": "Inglés",
+        "fr": "Francés",
+        "de": "Alemán",
+        "es": "Español",
+        "pt": "Portugués",
+        "it": "Italiano",
+        "nl": "Neerlandés",
+        "pl": "Polaco",
+        "ru": "Ruso",
+        "uk": "Ucraniano",
+        "tr": "Turco",
+        "ar": "Árabe",
+        "ja": "Japonés",
+        "ko": "Coreano",
+        "zh": "Chino",
+        "sv": "Sueco",
+        "da": "Danés",
+        "no": "Noruego",
+        "fi": "Finés",
+        "cs": "Checo",
+        "ro": "Rumano",
+        "hu": "Húngaro",
+        "el": "Griego",
+        "id": "Indonesio",
+        "bg": "Búlgaro"
+      }
+    },
+    "music_links": {
+      "name": "Enlaces de música",
+      "description": "Añade Deezer, Apple Music y YouTube Music bajo los enlaces de Spotify",
+      "config": {
+        "title": "Enlaces de música",
+        "description": "Cuando alguien publica un enlace de Spotify, Moddy responde con discreción con la misma canción en otras plataformas. Solo responde si ha encontrado la misma canción. Activado por defecto en todos los servidores: puedes pausarlo desde **Gestionar**.",
+        "platforms": {
+          "section_title": "Plataformas ofrecidas",
+          "section_description": "Marca las plataformas que se muestran bajo los enlaces de Spotify",
+          "placeholder": "Ninguna plataforma",
+          "deezer_description": "Enlace directo a la canción",
+          "apple_music_description": "Enlace directo a la canción",
+          "youtube_music_description": "Enlace de búsqueda, no la canción exacta"
+        },
+        "channels": {
+          "section_title": "Canales ignorados",
+          "section_description": "Moddy nunca responde en estos canales (ni en sus hilos)",
+          "placeholder": "Ningún canal ignorado"
+        }
+      },
+      "platforms": {
+        "spotify": "Spotify",
+        "deezer": "Deezer",
+        "apple_music": "Apple Music",
+        "youtube_music": "YouTube Music"
+      },
+      "reply": {
+        "artist_tag": "artista",
+        "album_tag": "álbum"
+      }
     }
   },
   "languages": {
@@ -5523,6 +5635,1005 @@
       "download_failed": "No se pudo descargar la imagen.",
       "bad_link": "Este enlace no es un enlace de mensaje de Discord válido.",
       "other_server": "Solo se pueden verificar mensajes de este servidor."
+    }
+  },
+  "tools": {
+    "common": {
+      "loading": "Un momento…",
+      "requested_by": "solicitado por {user}",
+      "by": {
+        "provided_by": "Proporcionado por {source}",
+        "data_provided_by": "Datos proporcionados por {source}",
+        "translated_by": "Traducido por {source}",
+        "checked_by": "Verificado por {source}",
+        "scanned_by": "Analizado por {source}",
+        "converted_by": "Convertido por {source}",
+        "summarized_by": "Resumido por {source}",
+        "found_by": "Encontrado por {source}",
+        "computed_locally": "Calculado por el propio Moddy, no se envía nada a otro sitio"
+      },
+      "error_title": "No es posible ahora mismo",
+      "errors": {
+        "failed": "Algo salió mal. Inténtalo de nuevo en un momento.",
+        "unavailable": "Este servicio no está disponible ahora mismo. Inténtalo más tarde.",
+        "timeout": "El servicio tardó demasiado en responder. Inténtalo de nuevo en un momento.",
+        "network": "No se pudo contactar con el servicio. Inténtalo de nuevo en un momento.",
+        "rate_limited": "Demasiadas solicitudes ahora mismo. Inténtalo dentro de un minuto.",
+        "quota": "Has alcanzado tu límite de uso de hoy. Se restablece mañana.",
+        "cooldown": "Espera {retry} más antes de volver a usarlo.",
+        "not_found": "Sin resultados.",
+        "expired": "Esta tarjeta ha caducado. Vuelve a usar el comando para empezar de nuevo.",
+        "too_large": "El archivo es demasiado grande (máximo {max}).",
+        "empty_input": "No hay nada que analizar: proporciona un texto o un archivo.",
+        "guild_only": "Este comando solo funciona en un servidor donde esté Moddy."
+      },
+      "buttons": {
+        "refresh": "Actualizar",
+        "regenerate": "Regenerar",
+        "retry": "Reintentar",
+        "edit": "Editar",
+        "export": "Exportar",
+        "open": "Abrir",
+        "previous": "Anterior",
+        "next": "Siguiente",
+        "back": "Volver"
+      },
+      "page": "Página {page}/{pages}"
+    },
+    "pwned": {
+      "title": "Comprobación de contraseña",
+      "modal_title": "Comprobar una contraseña",
+      "modal_help": "Tu contraseña nunca sale de Moddy en texto claro: solo se envían a Have I Been Pwned los 5 primeros caracteres de su huella SHA-1 (k-anonimato). No se registra ni se guarda nada.",
+      "input_label": "Contraseña",
+      "found": "Encontrada en filtraciones de datos",
+      "found_count": "Vista {count} veces en filtraciones conocidas.",
+      "found_advice": "Deja de usarla. Cámbiala en todos los sitios donde la repetiste y deja que un gestor de contraseñas cree una nueva, o prueba {command}.",
+      "not_found": "No aparece en filtraciones conocidas",
+      "not_found_note": "Eso no la hace segura: una contraseña corta o fácil de adivinar sigue pudiendo descifrarse. {command} puede crear una segura.",
+      "open_site": "Contraseñas en Have I Been Pwned",
+      "errors": {
+        "unavailable": "Have I Been Pwned no responde ahora mismo. Inténtalo de nuevo en un momento.",
+        "cooldown": "Demasiadas comprobaciones seguidas. Espera {retry} antes de la siguiente."
+      }
+    },
+    "password": {
+      "title": "Generador de contraseñas",
+      "kinds": {
+        "strong": "Segura",
+        "clear": "Sin caracteres ambiguos",
+        "passphrase": "Frase de contraseña"
+      },
+      "strength": {
+        "weak": "Débil",
+        "fair": "Media",
+        "good": "Buena",
+        "strong": "Fuerte",
+        "excellent": "Excelente"
+      },
+      "entropy": "{bar} **{label}** · {bits} de entropía",
+      "bits": "{n} bits",
+      "summary_chars": "{kind} · {length} caracteres",
+      "summary_words": "{kind} · {words} palabras",
+      "hint": "Cópiala ahora y guárdala en un gestor de contraseñas: Moddy no guarda nada."
+    },
+    "uuid": {
+      "title": "UUID",
+      "version": {
+        "v4": "Versión 4 · aleatorio",
+        "v7": "Versión 7 · ordenado por tiempo, ordenable"
+      }
+    },
+    "hash": {
+      "title": "Hashes",
+      "modal_title": "Calcular el hash de un texto o archivo",
+      "modal_help": "Escribe un texto o sube un archivo. Los hashes se calculan al momento, no se guarda nada.",
+      "text_label": "Texto",
+      "text_placeholder": "Se procesa exactamente como lo escribes",
+      "file_label": "Archivo",
+      "file_description": "Hasta 25 MB",
+      "compare_label": "Comparar con (opcional)",
+      "compare_placeholder": "Pega un hash conocido",
+      "subject": "Procesado",
+      "subject_text": "Texto · {count} caracteres",
+      "subject_file": "{name} · {size}",
+      "utf8_note": "El texto se procesa en UTF-8, exactamente como lo escribiste (sin recortar espacios).",
+      "match": "Coincide con {algo}",
+      "no_match": "No coincide con ninguno de estos hashes",
+      "errors": {
+        "both": "Indica un texto o un archivo, no ambos.",
+        "download_failed": "Moddy no pudo descargar ese archivo. Vuelve a subirlo."
+      }
+    },
+    "jwt": {
+      "title": "Decodificador JWT",
+      "modal_title": "Decodificar un JWT",
+      "modal_help": "No pegues un token que siga siendo válido: quien lo tenga puede actuar en tu nombre. La decodificación se hace en Moddy, nada se verifica ni se guarda.",
+      "input_label": "Token",
+      "header": "Cabecera",
+      "payload": "Contenido",
+      "status": {
+        "valid": "Válido",
+        "expired": "Caducado",
+        "not_yet": "Aún no válido"
+      },
+      "claims": {
+        "iat": "Emitido",
+        "nbf": "Válido desde",
+        "exp": "Caduca",
+        "iss": "Emisor",
+        "sub": "Sujeto",
+        "aud": "Audiencia"
+      },
+      "alg_none": "El algoritmo es none: este token no tiene firma, cualquiera pudo escribirlo. No lo aceptes nunca.",
+      "unverified": "Firma no verificada: Moddy solo lee lo que el token afirma, no puede saber si es auténtico.",
+      "truncated": "Contenido largo: el JSON completo va adjunto.",
+      "bad_time": "El valor {claim} no es una fecha válida.",
+      "errors": {
+        "empty": "Pega primero un token.",
+        "not_a_jwt": "Esto no parece un JWT. Debe tener tres partes separadas por puntos, como `xxxxx.yyyyy.zzzzz`.",
+        "encrypted": "Es un token cifrado (JWE): su contenido no se puede leer sin la clave."
+      }
+    },
+    "color": {
+      "title": "Color",
+      "closest": "Nombre CSS más cercano",
+      "exact": "Nombre CSS",
+      "alpha_note": "La transparencia ({alpha}) se ignora: el color se muestra opaco.",
+      "contrast_title": "Contraste (WCAG 2.x)",
+      "contrast_dark": "Como texto sobre Discord oscuro",
+      "contrast_light": "Como texto sobre Discord claro",
+      "contrast_white": "Bajo texto blanco",
+      "contrast_black": "Bajo texto negro",
+      "levels": "AA {aa} · AAA {aaa} · texto grande AA {aa_large} · AAA {aaa_large}",
+      "random_button": "Color aleatorio",
+      "errors": {
+        "empty": "Indica un color.",
+        "invalid": "No reconozco ese color. Prueba {examples}.",
+        "out_of_range": "Un color de Discord es un número de `0` a `16777215`."
+      }
+    },
+    "music": {
+      "title": {
+        "track": "Canción",
+        "album": "Álbum",
+        "artist": "Artista"
+      },
+      "fields": {
+        "album": "Álbum",
+        "year": "Año",
+        "duration": "Duración"
+      },
+      "no_match": "No he encontrado este tema en Deezer ni en Apple Music. El botón de YouTube Music abre una búsqueda.",
+      "errors": {
+        "not_spotify": "Esto no es un enlace de Spotify. Pega el enlace de una canción, un álbum o un artista.",
+        "unsupported": "Las listas, los episodios y los pódcast no tienen equivalente en otras plataformas. Prueba con una canción, un álbum o un artista.",
+        "not_found": "Este enlace de Spotify no lleva a ningún sitio. Comprueba que esté completo.",
+        "unavailable": "No puedo leer la página de Spotify ahora mismo. Inténtalo de nuevo en un momento."
+      }
+    },
+    "exif": {
+      "title": "Metadatos del archivo",
+      "loading": "Leyendo el archivo…",
+      "yes": "Sí",
+      "no": "No",
+      "all_tags": "Todas las etiquetas",
+      "open_map": "Abrir en OpenStreetMap",
+      "raw_sent": "Aquí tienes todas las etiquetas encontradas en el archivo.",
+      "more_hidden": "{count} etiqueta(s) más sin mostrar. Usa **Todas las etiquetas** para verlo todo.",
+      "nothing_title": "No se ha encontrado nada",
+      "nothing_body": "Este archivo no contiene metadatos legibles.",
+      "nothing_body_image": "No hay metadatos en esta imagen. Es habitual: Discord suele quitarlos al enviar una imagen, pero no siempre, y algunos archivos nunca los tuvieron.",
+      "hints": {
+        "location": "**Este archivo contiene una posición GPS.** Quítala antes de compartir el original.",
+        "person": "También contiene un nombre (autor, propietario…).",
+        "ai": "Indica haber sido creado o retocado con IA.",
+        "c2pa": "Contiene Content Credentials (C2PA): `/verificar-ia` puede comprobarlas."
+      },
+      "error_title": "No se puede leer este archivo",
+      "errors": {
+        "unsupported": "Este tipo de archivo no es compatible. Prueba con una imagen, un PDF, un documento Office o un archivo de audio o vídeo.",
+        "unreadable": "Este archivo parece dañado o vacío, así que no se ha podido leer nada.",
+        "download": "Discord no me ha dejado descargar este archivo. Envíalo de nuevo e inténtalo otra vez.",
+        "timeout": "La descarga del archivo ha tardado demasiado. Inténtalo de nuevo en un momento."
+      },
+      "fields": {
+        "coordinates": "Coordenadas",
+        "altitude": "Altitud",
+        "place": "Lugar",
+        "author": "Autor",
+        "last_modified_by": "Última modificación por",
+        "company": "Empresa",
+        "owner": "Propietario",
+        "artist": "Artista",
+        "copyright": "Derechos de autor",
+        "make": "Marca",
+        "model": "Modelo",
+        "lens": "Objetivo",
+        "serial": "Número de serie",
+        "exposure": "Exposición",
+        "aperture": "Apertura",
+        "iso": "ISO",
+        "focal_length": "Distancia focal",
+        "focal_length_35": "Distancia focal (equiv. 35 mm)",
+        "taken": "Tomada el",
+        "digitized": "Digitalizada el",
+        "modified": "Modificada el",
+        "created": "Creada el",
+        "printed": "Impresa el",
+        "software": "Software",
+        "creator_tool": "Creado con",
+        "producer": "Productor",
+        "generator": "Generador",
+        "edit_history": "Historial de edición",
+        "digital_source": "Fuente digital",
+        "application": "Aplicación",
+        "revision": "Revisión",
+        "edit_time": "Tiempo de edición",
+        "title": "Título",
+        "subject": "Asunto",
+        "keywords": "Palabras clave",
+        "description": "Descripción",
+        "comment": "Comentario",
+        "pages": "Páginas",
+        "words": "Palabras",
+        "encrypted": "Cifrado",
+        "version": "Versión",
+        "album": "Álbum",
+        "track": "Pista",
+        "year": "Año",
+        "genre": "Género",
+        "duration": "Duración",
+        "bitrate": "Tasa de bits",
+        "sample_rate": "Frecuencia de muestreo",
+        "channels": "Canales",
+        "encoder": "Codificador",
+        "cover": "Carátula",
+        "codec": "Códec",
+        "dimensions": "Dimensiones",
+        "dpi": "Resolución (DPI)",
+        "orientation": "Orientación",
+        "color_profile": "Perfil de color",
+        "frames": "Fotogramas",
+        "format": "Formato"
+      },
+      "groups": {
+        "author": "Autor",
+        "location": "Ubicación",
+        "camera": "Cámara",
+        "capture": "Toma",
+        "dates": "Fechas",
+        "software": "Software",
+        "document": "Documento",
+        "media": "Audio / vídeo",
+        "image": "Imagen"
+      },
+      "kinds": {
+        "image": "Imagen",
+        "pdf": "Documento PDF",
+        "office": "Documento Office",
+        "audio": "Audio",
+        "video": "Vídeo"
+      }
+    },
+    "sauce": {
+      "title": "Origen de la imagen",
+      "loading": "Buscando el origen…",
+      "untitled": "Sin título",
+      "by_author": "por {author}",
+      "episode": "Episodio {episode}",
+      "at": "en {time}",
+      "anime_title": "Anime",
+      "best_title": "Mejor resultado",
+      "also_title": "También encontrado",
+      "nothing_title": "No se ha encontrado un origen fiable",
+      "nothing_body": "Ningún resultado es lo bastante parecido. Prueba con una versión sin recortar y de mayor calidad, o busca a mano con los botones de abajo.",
+      "partial": "{providers} no respondió: el resultado puede estar incompleto.",
+      "confidence": {
+        "high": "muy probable",
+        "likely": "probable",
+        "possible": "posible"
+      },
+      "error_title": "Búsqueda imposible",
+      "errors": {
+        "unavailable": "La búsqueda de imágenes no está disponible ahora mismo. Inténtalo más tarde.",
+        "quota": "Has usado tus 15 búsquedas de imagen de hoy. Se renuevan mañana.",
+        "busy": "Los servicios de búsqueda están muy saturados. Inténtalo en unos minutos.",
+        "unreadable": "Los servicios de búsqueda no han podido leer esta imagen. Prueba con otro archivo o una captura de pantalla.",
+        "no_image": "Indica una imagen o el enlace de un mensaje que contenga una.",
+        "not_image": "Este archivo no es una imagen que la búsqueda pueda leer (PNG, JPEG, WebP o GIF).",
+        "bad_link": "Ese no es un enlace de mensaje válido. Cópialo con *Copiar enlace del mensaje*.",
+        "other_server": "Ese mensaje no está en este servidor. Usa la opción de imagen.",
+        "gone": "No puedo leer ese mensaje. Comprueba el enlace y que puedes ver su canal.",
+        "timeout": "La búsqueda ha tardado demasiado. Inténtalo de nuevo en un momento.",
+        "failed": "La búsqueda ha fallado. Inténtalo de nuevo en un momento."
+      }
+    },
+    "define": {
+      "error_title": "No se pudo buscar",
+      "title": "Diccionario",
+      "senses_placeholder": "Otros sentidos",
+      "view_on": "Ver en Wikcionario",
+      "synonyms": "Sinónimos",
+      "more": "{count} definición(es) más en Wikcionario.",
+      "fallback_note": "No se encontró en el Wikcionario en {lang}, así que esto viene del Wikcionario en inglés.",
+      "licence": "CC BY-SA",
+      "lang": {
+        "fr": "francés",
+        "en": "inglés",
+        "es": "español",
+        "pt": "portugués",
+        "de": "alemán"
+      },
+      "pos": {
+        "abbreviation": "Abreviatura",
+        "adjective": "Adjetivo",
+        "adverb": "Adverbio",
+        "article": "Artículo",
+        "conjunction": "Conjunción",
+        "determiner": "Determinante",
+        "interjection": "Interjección",
+        "name": "Nombre propio (nombre, apellido)",
+        "noun": "Sustantivo",
+        "numeral": "Numeral",
+        "onomatopoeia": "Onomatopeya",
+        "other": "Otro",
+        "particle": "Partícula",
+        "phrase": "Locución",
+        "prefix": "Prefijo",
+        "preposition": "Preposición",
+        "pronoun": "Pronombre",
+        "proper_noun": "Nombre propio",
+        "proverb": "Proverbio",
+        "suffix": "Sufijo",
+        "symbol": "Símbolo",
+        "verb": "Verbo"
+      },
+      "errors": {
+        "not_found": "No hay ninguna entrada para {word}. Revisa la ortografía o prueba con otro idioma.",
+        "invalid_word": "Eso no es una palabra o expresión que pueda buscar."
+      }
+    },
+    "tldr": {
+      "error_title": "No se pudo resumir",
+      "title": "En resumen",
+      "loading": "Leyendo la conversación…",
+      "scope": "Resumido",
+      "scope_value": "{count} mensajes en {channel}",
+      "ai_note": "Escrito por una IA: puede equivocarse. Revisa los mensajes originales si es importante.",
+      "jump": "ir al mensaje",
+      "errors": {
+        "not_enough": "No hay suficientes mensajes recientes para resumir (se necesitan al menos {min}).",
+        "no_access": "No puedes leer el historial de este canal, así que Moddy no puede resumirlo para ti.",
+        "bot_no_access": "Moddy no puede leer el historial de este canal. Dale los permisos Ver canal y Leer el historial de mensajes aquí."
+      }
+    },
+    "regex": {
+      "error_title": "No se pudo probar el patrón",
+      "title": "Probador de regex",
+      "modal_title": "Probar una expresión regular",
+      "modal_help": "Escribe un patrón y el texto donde probarlo. Las coincidencias se resaltan en el resultado.",
+      "pattern_label": "Patrón",
+      "pattern_placeholder": "\\b\\w+@\\w+\\.\\w+\\b",
+      "text_label": "Texto de prueba",
+      "text_placeholder": "El texto sobre el que se aplica el patrón",
+      "flags_label": "Opciones",
+      "flags": {
+        "i": "Ignorar mayúsculas (i)",
+        "m": "Multilínea (m)",
+        "s": "El punto incluye saltos de línea (s)",
+        "x": "Detallado (x)"
+      },
+      "count_one": "{count} coincidencia",
+      "count_other": "{count} coincidencias",
+      "count_capped": "{count}+ coincidencias",
+      "no_match": "Sin coincidencias",
+      "no_match_hint": "El patrón es válido pero no encuentra nada en este texto. Edítalo para volver a probar.",
+      "col_index": "#",
+      "col_position": "Posición",
+      "col_match": "Encontrado",
+      "col_groups": "Grupos",
+      "pattern": "Patrón",
+      "truncated": "Se adjunta la lista completa de coincidencias.",
+      "errors": {
+        "empty_pattern": "Escribe un patrón para probar.",
+        "empty_text": "Escribe un texto para probar el patrón.",
+        "invalid_pattern": "El patrón no es válido: {detail}. Edítalo e inténtalo de nuevo.",
+        "timeout": "El patrón tardó demasiado, normalmente por un retroceso catastrófico. Simplifícalo.",
+        "pattern_too_long": "El patrón es demasiado largo (máximo {max} caracteres).",
+        "too_complex": "El patrón es demasiado complejo para compilarlo. Simplifícalo."
+      }
+    },
+    "diff": {
+      "error_title": "No se pudo comparar",
+      "title": "Comparación de textos",
+      "modal_title": "Comparar dos textos",
+      "modal_help": "Pega los dos textos y elige cómo compararlos.",
+      "before_label": "Antes",
+      "after_label": "Después",
+      "mode_label": "Comparar por",
+      "mode": {
+        "lines": "Línea",
+        "words": "Palabra"
+      },
+      "mode_hint": {
+        "lines": "Un diff rojo / verde, como en Git",
+        "words": "Palabras tachadas y en negrita"
+      },
+      "identical": "Los dos textos son idénticos.",
+      "changes": "Cambios",
+      "legend_words": "Las palabras ~~tachadas~~ se eliminaron, las palabras en **negrita** se añadieron.",
+      "truncated": "Se adjunta la comparación completa.",
+      "errors": {
+        "empty_input": "Indica al menos uno de los dos textos."
+      }
+    },
+    "textstats": {
+      "error_title": "No se pudo analizar el texto",
+      "title": "Estadísticas del texto",
+      "modal_title": "Analizar un texto",
+      "modal_help": "Pega un texto para contar sus palabras y medir su legibilidad. No se guarda nada.",
+      "text_label": "Texto",
+      "text_placeholder": "El texto a analizar",
+      "words_big": "{count} palabras",
+      "characters": "Caracteres",
+      "characters_value": "{total} ({no_spaces} sin espacios)",
+      "sentences": "Frases",
+      "paragraphs": "Párrafos",
+      "avg": "Palabras por frase",
+      "reading": "Tiempo de lectura",
+      "speaking": "Tiempo de habla",
+      "language": "Idioma",
+      "languages": {
+        "fr": "francés",
+        "en": "inglés",
+        "es": "español",
+        "pt": "portugués",
+        "de": "alemán"
+      },
+      "readability": "Legibilidad",
+      "levels": {
+        "very_easy": "Muy fácil",
+        "easy": "Fácil",
+        "average": "Normal",
+        "difficult": "Difícil",
+        "very_difficult": "Muy difícil"
+      },
+      "formula": "Fórmula: {name}",
+      "formulas": {
+        "fr": "Kandel-Moles",
+        "en": "Flesch",
+        "es": "Fernández Huerta",
+        "de": "Amstad",
+        "pt": "Martins"
+      },
+      "not_enough": "Añade al menos {min} palabras para obtener una puntuación de legibilidad.",
+      "no_language": "Sin puntuación de legibilidad: no se reconoció el idioma (se admiten francés, inglés, español, portugués y alemán).",
+      "top_words": "Palabras más usadas",
+      "errors": {
+        "empty_input": "No hay ningún texto que analizar."
+      }
+    },
+    "status": {
+      "title": "Estado de los servicios",
+      "pick_placeholder": "Ver el detalle de un servicio…",
+      "updated": "actualizado {time}",
+      "since": "desde {time}",
+      "more": "+ {count} más",
+      "open_page": "Página de estado",
+      "unreachable": "No se pudo leer la página de estado de {name} en este momento, así que su estado es desconocido. Inténtalo de nuevo en un momento.",
+      "all_good": "Ningún problema notificado: los `{count}` componentes funcionan.",
+      "errors": {
+        "not_found": "No sigo ningún servicio llamado {query}. Empieza a escribir un nombre y elige una de las sugerencias, o déjalo vacío para verlos todos."
+      },
+      "summary": {
+        "ok": "Los `{total}` servicios funcionan con normalidad.",
+        "problems": "Servicios con problemas: `{problems}` de `{total}`.",
+        "maintenance": "Mantenimiento en curso: `{count}`.",
+        "unknown": "Página de estado inaccesible: `{count}`."
+      },
+      "states": {
+        "none": "Operativo",
+        "minor": "Problema menor",
+        "major": "Caída grave",
+        "critical": "Caída crítica",
+        "maintenance": "Mantenimiento",
+        "unknown": "Desconocido"
+      },
+      "components": {
+        "operational": "Operativo",
+        "degraded_performance": "Degradado",
+        "partial_outage": "Caída parcial",
+        "major_outage": "Caída grave",
+        "under_maintenance": "Mantenimiento"
+      },
+      "sections": {
+        "components": "Componentes afectados",
+        "incidents": "Incidentes en curso",
+        "maintenance": "Mantenimiento"
+      },
+      "incident_status": {
+        "investigating": "Investigando",
+        "identified": "Causa identificada",
+        "monitoring": "Solución aplicada, en observación",
+        "scheduled": "Programado",
+        "in_progress": "En curso",
+        "verifying": "Verificando"
+      },
+      "maintenance_now": "en curso, termina {time}",
+      "maintenance_planned": "prevista {start} → {end}"
+    },
+    "company": {
+      "title": "Empresa",
+      "pick_placeholder": "Abrir la ficha de una empresa…",
+      "results_intro": "`{total}` empresas coinciden con {query}. Estas son las `{shown}` primeras: elige una abajo para ver su ficha.",
+      "directory_button": "Annuaire des Entreprises",
+      "directors_more": "+ {count} más",
+      "establishments": "{total} ({open} abiertos)",
+      "errors": {
+        "too_short": "Escribe al menos {min} caracteres del nombre de la empresa, o un SIREN (9 cifras) o SIRET (14 cifras).",
+        "bad_number": "{number} no es un SIREN ni un SIRET válido: el dígito de control no coincide. Revisa el número e inténtalo de nuevo.",
+        "not_found": "No se encontró ninguna empresa francesa para {query}. Revisa la ortografía o busca con el SIREN."
+      },
+      "status": {
+        "active": "Activa",
+        "closed": "Cerrada",
+        "closed_on": "Cerrada el {date}"
+      },
+      "labels": {
+        "status": "Estado",
+        "acronym": "Siglas",
+        "also_known_as": "También conocida como",
+        "legal_form": "Forma jurídica",
+        "activity": "Actividad (NAF)",
+        "created": "Creación",
+        "category": "Tipo",
+        "searched_establishment": "Establecimiento buscado",
+        "headquarters": "Sede",
+        "establishments": "Establecimientos",
+        "headcount": "Plantilla",
+        "directors": "Directivos"
+      },
+      "age": {
+        "years_one": "{count} año",
+        "years_other": "{count} años",
+        "months_one": "{count} mes",
+        "months_other": "{count} meses",
+        "and": "y",
+        "new": "menos de un mes"
+      },
+      "headcount": {
+        "none": "Sin empleados",
+        "zero": "Empleadora, sin empleados a fin de año",
+        "range": "De {low} a {high} empleados",
+        "plus": "{low} empleados o más",
+        "year": "(en {year})"
+      },
+      "kind": {
+        "association": "Asociación",
+        "ess": "Economía social y solidaria"
+      },
+      "size": {
+        "PME": "Pyme",
+        "ETI": "Empresa de tamaño intermedio",
+        "GE": "Gran empresa"
+      }
+    },
+    "username": {
+      "title": "Búsqueda de nombre de usuario",
+      "searching": "Buscando {name} en cientos de sitios…",
+      "found": "Resultados para {name}\n**Perfiles encontrados** · `{count}`\n**Sitios comprobados** · `{checked}`",
+      "none": "No se encontró ningún perfil de {name} en los `{checked}` sitios comprobados.",
+      "cut": "La búsqueda se cortó tras {seconds} s: `{unchecked}` sitios no respondieron a tiempo.",
+      "unchecked": "`{count}` sitios no respondieron o rechazaron la comprobación.",
+      "note": "Algunos sitios bloquean las IP de centros de datos, así que pueden faltar algunos perfiles. Una coincidencia solo indica que el nombre está en uso allí, no que sea la misma persona.",
+      "continued": "(continuación)",
+      "export_button": "Exportar .txt",
+      "export_title": "Exportación",
+      "export_body": "Los perfiles encontrados para {name}, en un archivo de texto.",
+      "errors": {
+        "empty": "Escribe el nombre de usuario que quieres buscar.",
+        "too_long": "Este nombre de usuario es demasiado largo: máximo {max} caracteres.",
+        "invalid": "Un nombre de usuario solo puede contener letras, cifras, puntos, guiones y guiones bajos (máximo {max} caracteres).",
+        "busy": "Moddy ya está haciendo otras búsquedas de nombres de usuario. Inténtalo de nuevo en un minuto.",
+        "dataset": "No se pudo cargar la lista de sitios en este momento. Inténtalo de nuevo en un momento."
+      },
+      "categories": {
+        "social": "Redes sociales",
+        "gaming": "Videojuegos",
+        "coding": "Código",
+        "tech": "Tecnología",
+        "video": "Vídeo",
+        "music": "Música",
+        "images": "Imágenes",
+        "art": "Arte",
+        "blog": "Blogs",
+        "hobby": "Aficiones",
+        "business": "Profesional",
+        "finance": "Finanzas",
+        "shopping": "Compras",
+        "dating": "Citas",
+        "news": "Noticias",
+        "political": "Política",
+        "health": "Salud",
+        "archived": "Archivos",
+        "misc": "Otros"
+      }
+    },
+    "domain": {
+      "errors": {
+        "empty": "Escribe un nombre de dominio o un enlace.",
+        "invalid": "Esto no parece un dominio válido. Prueba algo como `example.com`.",
+        "too_long": "Este nombre de dominio es demasiado largo.",
+        "ip_not_allowed": "Este comando funciona con nombres de dominio, no con direcciones IP.",
+        "reserved": "Este nombre está reservado a redes privadas: no se puede consultar en Internet.",
+        "private_address": "Esta dirección pertenece a una red privada. Moddy solo consulta servidores públicos.",
+        "cooldown": "Demasiadas consultas seguidas. Espera {retry} antes de la siguiente."
+      },
+      "error_title": "Consulta imposible"
+    },
+    "whois": {
+      "title": "WHOIS",
+      "registrar": "Registrador",
+      "created": "Creación",
+      "expires": "Vencimiento",
+      "updated": "Última modificación",
+      "status": "Estado",
+      "nameservers": "Servidores de nombres",
+      "dnssec": "DNSSEC",
+      "dnssec_signed": "Activado",
+      "dnssec_unsigned": "No activado",
+      "more": "+{count} más",
+      "registrar_record": "Ficha del registrador",
+      "shared_hosting": "Este nombre pertenece a una plataforma de alojamiento ({platform}): la ficha mostrada es la de la plataforma, no la del dueño del sitio.",
+      "subdomain_note": "Se muestra la ficha de {domain}, el dominio registrado.",
+      "alert": {
+        "very_recent": "Registrado hace solo {days} días. Los dominios recién creados se usan a menudo en estafas.",
+        "recent": "Registrado hace {days} días. Es un dominio reciente: ten cuidado.",
+        "expired": "Este dominio ha vencido.",
+        "expiring": "Vence en {days} días."
+      },
+      "alert_status": {
+        "on_hold": "El registro ha suspendido este dominio: puede que no funcione.",
+        "pending_delete": "Este dominio está a punto de eliminarse.",
+        "redemption": "Este dominio está en periodo de redención: ha vencido, pero su dueño aún puede recuperarlo.",
+        "inactive": "Este dominio está inactivo."
+      },
+      "statuses": {
+        "active": "Activo",
+        "transfer_locked": "Transferencia bloqueada",
+        "delete_locked": "Eliminación bloqueada",
+        "update_locked": "Modificación bloqueada",
+        "renew_locked": "Renovación bloqueada",
+        "grace_period": "Periodo de gracia",
+        "pending": "Cambio pendiente",
+        "pending_transfer": "Transferencia pendiente",
+        "inactive": "Inactivo",
+        "on_hold": "Suspendido",
+        "redemption": "Periodo de redención",
+        "pending_delete": "Eliminación pendiente"
+      },
+      "errors": {
+        "not_registered": "{domain} no parece estar registrado.",
+        "no_rdap": "El registro de {tld} no publica fichas públicas mediante RDAP: no hay nada que mostrar."
+      },
+      "error_title": "Búsqueda WHOIS imposible"
+    },
+    "dns": {
+      "title": "Registros DNS",
+      "name": "Nombre",
+      "type_all": "Todos los registros",
+      "select_placeholder": "Tipo de registro",
+      "none_at_all": "No se encontró ningún registro DNS para este nombre.",
+      "none_of_type": "Ningún registro {type} para este nombre.",
+      "more_records": "+{count} más",
+      "truncated": "La lista es larga: se adjunta la versión completa.",
+      "ttl": "TTL",
+      "ttl_units": {
+        "s": "s",
+        "min": "min",
+        "h": "h",
+        "d": "d"
+      },
+      "dnssec_ok": "Validado con DNSSEC por el resolvedor",
+      "email_title": "Protección del correo",
+      "missing": "Ausente",
+      "failed_types": "No se pudo consultar: {types}.",
+      "spf": {
+        "strict": "Estricto (-all): solo los servidores autorizados pueden enviar",
+        "soft": "Flexible (~all): el correo no autorizado se marca, no se rechaza",
+        "neutral": "Neutral (?all): sin protección",
+        "open": "Abierto (+all): cualquiera puede enviar en nombre de este dominio",
+        "unknown": "Presente"
+      },
+      "dmarc": {
+        "none": "Solo supervisión (p=none)",
+        "quarantine": "Cuarentena (p=quarantine)",
+        "reject": "Rechazo (p=reject)",
+        "unknown": "Presente"
+      },
+      "errors": {
+        "nxdomain": "{domain} no existe: ningún servidor DNS conoce este nombre."
+      },
+      "error_title": "Consulta DNS imposible"
+    },
+    "ssl": {
+      "title": "Certificado SSL",
+      "verdict": {
+        "valid": "Certificado válido",
+        "expiring": "Válido, pero vence pronto",
+        "invalid": "Certificado no válido"
+      },
+      "reasons": {
+        "expired": "El certificado ha vencido.",
+        "not_yet_valid": "El certificado aún no es válido.",
+        "self_signed": "El certificado es autofirmado: nadie lo avala.",
+        "untrusted_issuer": "Los navegadores no confían en el emisor.",
+        "hostname_mismatch": "El certificado se emitió para otros nombres distintos de este.",
+        "revoked": "El certificado ha sido revocado.",
+        "invalid": "No se pudo verificar el certificado."
+      },
+      "subject": "Emitido para",
+      "issuer": "Emisor",
+      "validity": "Validez",
+      "names": "Nombres",
+      "more": "+{count} más",
+      "protocol": "Protocolo",
+      "key": "Clave",
+      "signature": "Firma",
+      "read_directly": "Leído directamente del servidor por Moddy",
+      "errors": {
+        "bad_port": "Este puerto no es compatible. Elige uno de los puertos TLS estándar.",
+        "dns_failed": "{host} no se resuelve a ninguna dirección IP.",
+        "tls_failed": "El servidor no completó el protocolo TLS en el puerto {port}: puede que no use cifrado ahí.",
+        "unreachable": "No se pudo conectar a {host} en el puerto {port}. El servidor puede estar caído o bloquear visitantes desconocidos."
+      },
+      "error_title": "Comprobación del certificado imposible"
+    },
+    "subdomains": {
+      "title": "Subdominios",
+      "domain": "Dominio",
+      "summary": "{count} encontrados en certificados públicos",
+      "wildcards": "{count} comodines (*.)",
+      "none": "Ningún subdominio aparece en los certificados públicos.",
+      "truncated": "Solo se conservan los primeros {shown} de {total} nombres.",
+      "hint": "Solo se listan los nombres que aparecieron en un certificado público: faltan los subdominios privados o sin cifrado.",
+      "export_message": "{count} subdominios, uno por línea.",
+      "errors": {
+        "crtsh_down": "crt.sh no respondió. Este servicio gratuito suele estar saturado: inténtalo de nuevo en un momento.",
+        "too_large": "{domain} tiene demasiados certificados para listarlos de golpe. Prueba un subdominio más concreto."
+      },
+      "error_title": "Búsqueda de subdominios imposible"
+    },
+    "linkcheck": {
+      "title": "Verificación de enlace",
+      "multi_title": "Enlaces de este mensaje",
+      "following": "Siguiendo las redirecciones…",
+      "verdict": {
+        "safe": "Ninguna amenaza detectada",
+        "suspicious": "Enlace sospechoso",
+        "dangerous": "Enlace peligroso: no lo abras",
+        "unreachable": "No se pudo acceder"
+      },
+      "redirects": "Redirecciones",
+      "chain_meta": "(redirección de la página)",
+      "chain_errors": {
+        "too_many_redirects": "Detenido: demasiadas redirecciones.",
+        "loop": "Detenido: las redirecciones dan vueltas en bucle.",
+        "blocked": "Detenido: esta dirección apunta a una red privada, Moddy no entra ahí.",
+        "timeout": "Detenido: el sitio tarda demasiado en responder.",
+        "unreachable": "Detenido: no se puede acceder al sitio.",
+        "bad_redirect": "Detenido: la redirección no es válida.",
+        "tls": "Detenido: el certificado HTTPS del sitio no es válido."
+      },
+      "connection": "Conexión",
+      "https": "HTTPS (cifrada)",
+      "http": "HTTP (sin cifrar)",
+      "domain_age": "Antigüedad del dominio",
+      "age": {
+        "day_one": "{count} día",
+        "day_other": "{count} días",
+        "month_one": "{count} mes",
+        "month_other": "{count} meses",
+        "year_one": "{count} año",
+        "year_other": "{count} años"
+      },
+      "vt_label": "VirusTotal",
+      "urlscan_label": "urlscan.io",
+      "vt_clean": "Ningún motor marca este enlace ({engines} comprobados)",
+      "vt_flagged": "{bad} de {engines} motores marcan este enlace",
+      "vt_suspicious_extra": " · {count} lo consideran sospechoso",
+      "vt_stale": "(análisis anterior)",
+      "urlscan_clean": "Ninguna amenaza encontrada en la página",
+      "urlscan_malicious": "Página maliciosa",
+      "urlscan_suspicious": "Página sospechosa",
+      "urlscan_brands": "Imita: {brands}",
+      "urlscan_country": "Servidor en {country}",
+      "provider": {
+        "running": "Analizando…",
+        "pending": "El análisis aún no ha terminado: abre el informe completo",
+        "quota": "Límite diario alcanzado: solo se hicieron las comprobaciones propias de Moddy",
+        "busy": "Ocupado ahora, inténtalo en un minuto",
+        "refused": "No se pudo analizar esta página",
+        "failed": "No se pudo comprobar"
+      },
+      "no_reputation": "Las comprobaciones de reputación en línea (VirusTotal, urlscan.io) no están activadas en este Moddy.",
+      "report_vt": "Informe de VirusTotal",
+      "report_urlscan": "Informe de urlscan.io",
+      "screenshot_alt": "Captura de pantalla de la página",
+      "screenshot_note": "Captura tomada por urlscan.io. Haz clic para verla: la página puede mostrar contenido perturbador.",
+      "honesty": "«Ninguna amenaza detectada» no significa que sea seguro. Ante la duda, no abras el enlace.",
+      "reasons": {
+        "vt_malicious": "Marcado como malicioso por {count} motores de VirusTotal",
+        "vt_suspicious": "Marcado como sospechoso por {count} motores de VirusTotal",
+        "urlscan_malicious": "urlscan.io considera la página maliciosa",
+        "urlscan_suspicious": "urlscan.io considera la página sospechosa",
+        "age_very_recent": "El dominio se registró hace solo {days} días",
+        "age_recent": "El dominio se registró hace {days} días",
+        "idn_mixed_script": "La dirección mezcla alfabetos (letras parecidas)",
+        "idn_lookalike": "La dirección usa letras que imitan letras latinas",
+        "userinfo": "El enlace oculta su destino real tras un falso usuario (antes de la @)",
+        "ip_host": "El enlace apunta a una dirección IP sin nombre",
+        "loop": "Las redirecciones dan vueltas sin fin",
+        "too_many_redirects": "Demasiadas redirecciones",
+        "http_only": "El destino no está cifrado (HTTP)",
+        "shortener": "El enlace pasa por un acortador",
+        "many_redirects": "{count} redirecciones seguidas"
+      },
+      "multi_redirects": "{count} redirección(es) desde {host}",
+      "multi_skipped": "{count} enlace(s) sin examinar.",
+      "multi_hint": "Envía un solo enlace a /link-check para la comprobación completa: redirecciones, análisis y captura.",
+      "errors": {
+        "empty": "Escribe un enlace para comprobar.",
+        "invalid_url": "Este no es un enlace web válido.",
+        "unsupported_scheme": "Solo se pueden comprobar enlaces http y https.",
+        "no_links": "No encontré ningún enlace que pueda comprobar en este mensaje."
+      },
+      "error_title": "Comprobación del enlace imposible"
+    },
+    "image": {
+      "title": "Imagen",
+      "format": "Formato",
+      "dimensions": "Dimensiones",
+      "weight": "Peso",
+      "transparency": "Transparencia",
+      "animation": "Animación",
+      "yes": "Sí",
+      "no": "No",
+      "frames": "{count} fotogramas",
+      "btn_resize": "Cambiar tamaño",
+      "btn_compress": "Comprimir",
+      "btn_convert": "Convertir",
+      "btn_background": "Quitar el fondo",
+      "loading_resize": "Cambiando el tamaño de la imagen…",
+      "loading_compress": "Comprimiendo la imagen…",
+      "loading_bg": "Quitando el fondo…",
+      "loading_convert": "Convirtiendo la imagen…",
+      "unchanged": "Ya es tan ligera como se puede: no hay nada que ganar, así que se devuelve la imagen tal cual.",
+      "suggestion": "Una versión {format} pesaría unos {size}. Usa **Convertir** para obtenerla.",
+      "bg_note": "Funciona mejor con un sujeto bien definido; el pelo fino, el cristal y los fondos recargados quedan aproximados.",
+      "too_big_to_attach": "Esta imagen supera el límite de subida de este servidor ({max}), así que los botones no están disponibles. Envía una copia más ligera.",
+      "notes": {
+        "animation_lost": "Este formato no admite animaciones: solo se conservó el primer fotograma.",
+        "alpha_flattened": "Este formato no tiene transparencia: se sustituyó por un fondo blanco.",
+        "ico_resized": "Los iconos están limitados a 256 px: la imagen se redujo.",
+        "saved_as_png": "Este formato no se puede escribir aquí, así que el resultado es un PNG.",
+        "downscaled": "La imagen también se redujo a un tamaño menor.",
+        "frames_capped": "Solo se conservaron los primeros 300 fotogramas de la animación."
+      },
+      "resize_title": "Cambiar el tamaño de la imagen",
+      "resize_help": "Indica un ancho, un alto o un porcentaje. Con un solo lado, el otro se ajusta. Un porcentaje sustituye al ancho y al alto.",
+      "width_label": "Ancho (px)",
+      "height_label": "Alto (px)",
+      "percent_label": "O un porcentaje",
+      "percent_hint": "Por ejemplo, 50 para reducirla a la mitad.",
+      "mode_label": "Si se indican ancho y alto",
+      "modes": {
+        "fit": "Ajustar dentro",
+        "fit_hint": "Mantiene las proporciones, no se recorta nada.",
+        "exact": "Tamaño exacto",
+        "exact_hint": "Estira la imagen a este tamaño exacto.",
+        "fill": "Rellenar y recortar",
+        "fill_hint": "Mantiene las proporciones y recorta lo que sobra."
+      },
+      "compress_title": "Comprimir la imagen",
+      "compress_help": "Cuanto más fuerte es la compresión, más ligero es el archivo, con una pérdida de calidad visible en las fotos.",
+      "level_label": "Compresión",
+      "levels": {
+        "light": "Ligera",
+        "light_hint": "Casi sin cambios visibles.",
+        "balanced": "Equilibrada",
+        "balanced_hint": "La mejor opción para la mayoría de las imágenes.",
+        "strong": "Fuerte",
+        "strong_hint": "El archivo más pequeño, con calidad claramente menor."
+      },
+      "errors": {
+        "not_image": "Este archivo no es una imagen. Envía un PNG, JPEG, WebP, GIF, BMP, TIFF, ICO, HEIC o AVIF.",
+        "unreadable": "No se pudo leer esta imagen. Puede estar dañada: prueba con otra copia.",
+        "unsupported": "Este formato de imagen no es compatible aquí.",
+        "too_large": "El archivo es demasiado grande (máximo {max} MB).",
+        "too_many_pixels": "Esta imagen es demasiado grande para procesarla (máximo {max} megapíxeles).",
+        "too_many_frames": "Esta animación tiene demasiados fotogramas (máximo {max}).",
+        "animation_too_big": "Esta animación es demasiado pesada para procesarla. Prueba con una más corta o más pequeña.",
+        "invalid_size": "Cada lado debe medir entre 1 y {max} px.",
+        "invalid_percent": "El porcentaje debe estar entre 1 y {max}.",
+        "invalid_number": "Escribe solo números enteros, por ejemplo 1280.",
+        "nothing_to_do": "Indica un ancho, un alto o un porcentaje.",
+        "not_compressible": "Los iconos no se pueden comprimir más.",
+        "download_failed": "Moddy no pudo descargar esta imagen. Inténtalo de nuevo en un momento.",
+        "result_too_large": "El resultado supera el límite de subida de este servidor ({max}). Prueba un tamaño menor o una compresión más fuerte.",
+        "model_unavailable": "Quitar el fondo no está disponible ahora mismo. Inténtalo de nuevo en unos minutos.",
+        "no_subject": "No se encontró ningún sujeto claro, así que no hay nada que recortar.",
+        "expired": "Esta tarjeta ya no contiene su imagen. Vuelve a ejecutar **/image**.",
+        "timeout": "Tardó demasiado. Prueba con una imagen más pequeña."
+      }
+    },
+    "convert": {
+      "title": "Convertir",
+      "file": "Archivo",
+      "detected": "Detectado",
+      "conversion": "Conversión",
+      "weight": "Peso",
+      "pages": "Páginas",
+      "pick": "Convertir a:",
+      "cloud_hint": "Los documentos de ofimática y los ebooks los convierte CloudConvert: 5 al día por persona.",
+      "option_cloud": "Maquetación fiel, 5 al día",
+      "groups": {
+        "image": "Imágenes",
+        "data": "Datos",
+        "sheet": "Hojas de cálculo",
+        "document": "Documentos",
+        "ebook": "Ebooks",
+        "archive": "Archivos comprimidos",
+        "audio": "Audio",
+        "video": "Vídeo"
+      },
+      "loading": "Convirtiendo…",
+      "download": "Descargar (24 h)",
+      "link_note": "El archivo supera el límite de subida de este servidor: aquí tienes un enlace de descarga válido durante 24 horas.",
+      "notes": {
+        "first_sheet_only": "Solo se convirtió la primera hoja.",
+        "null_dropped": "Este formato no tiene valores vacíos: se omitieron los campos vacíos.",
+        "images_dropped": "Se omitieron las imágenes; se conservaron el texto y la estructura.",
+        "pages_capped": "Solo se convirtieron las primeras páginas.",
+        "entries_skipped": "Se omitieron algunas entradas peligrosas (enlaces, rutas superiores).",
+        "animation_lost": "Este formato no admite animaciones: solo se conservó el primer fotograma.",
+        "alpha_flattened": "Este formato no tiene transparencia: se sustituyó por un fondo blanco.",
+        "ico_resized": "Los iconos están limitados a 256 px: la imagen se redujo.",
+        "frames_capped": "Solo se conservaron los primeros 300 fotogramas de la animación.",
+        "saved_as_png": "Este formato no se puede escribir aquí, así que el resultado es un PNG."
+      },
+      "errors": {
+        "unsupported_type": "Moddy no puede convertir {name}: este tipo de archivo no es compatible.",
+        "bad_target": "{source} no puede convertirse en {format}. Puede convertirse en: {available}.",
+        "unsupported": "Esta conversión no está disponible.",
+        "too_large": "El archivo es demasiado grande (máximo {max} MB).",
+        "unreadable": "No se pudo leer este archivo. Puede estar dañado: prueba con otra copia.",
+        "protected": "Este archivo está protegido con contraseña. Quita primero la protección.",
+        "no_text": "No se encontró texto: este PDF probablemente es un escaneo. Prueba **/ocr** con sus páginas.",
+        "not_tabular": "Este contenido no es una tabla, así que no puede convertirse en una hoja de cálculo ni en un CSV.",
+        "unconvertible": "Este contenido no se puede expresar en el formato elegido.",
+        "invalid_data": "El archivo no es válido ({detail}).",
+        "unsafe_data": "Este archivo usa demasiadas referencias para convertirlo con seguridad.",
+        "too_many_cells": "Esta tabla es demasiado grande (máximo {max} celdas).",
+        "too_many_files": "Este archivo comprimido contiene demasiados archivos (máximo {max}).",
+        "archive_too_big": "Este archivo comprimido es demasiado grande al descomprimirlo (máximo {max} MB).",
+        "unsafe_archive": "Este archivo comprimido parece peligroso (relación de compresión extrema) y se rechazó.",
+        "empty_file": "Este archivo está vacío.",
+        "too_long": "Este archivo es demasiado largo (máximo {max}).",
+        "timeout": "La conversión tardó demasiado. Prueba con un archivo más corto o más pequeño.",
+        "convert_failed": "La conversión falló. El archivo puede estar dañado o usar una función no compatible.",
+        "ffmpeg_unavailable": "La conversión de audio y vídeo no está disponible ahora mismo.",
+        "no_stream": "Este archivo no contiene ninguna pista de audio o vídeo utilizable.",
+        "quota": "Has usado tus 5 conversiones de documentos de ofimática de hoy. Las imágenes, los datos, el audio y los archivos comprimidos no tienen límite. Se reinicia mañana.",
+        "cloud_busy": "La conversión de documentos tiene mucha demanda ahora mismo. Inténtalo de nuevo en unos minutos.",
+        "cloud_unavailable": "La conversión de documentos y ebooks no está disponible ahora mismo.",
+        "download_failed": "Moddy no pudo descargar este archivo. Vuelve a ejecutar **/convert**.",
+        "result_too_large": "El resultado supera el límite de subida de este servidor ({max}).",
+        "expired": "Esta tarjeta ha caducado. Vuelve a ejecutar **/convert** para empezar de nuevo.",
+        "too_many_pixels": "Esta imagen es demasiado grande para procesarla (máximo {max} megapíxeles).",
+        "too_many_frames": "Esta animación tiene demasiados fotogramas (máximo {max}).",
+        "animation_too_big": "Esta animación es demasiado pesada para procesarla. Prueba con una más corta o más pequeña."
+      }
     }
   }
 }

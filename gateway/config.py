@@ -66,6 +66,77 @@ def _google_vision_monthly_rules(env_name: str, default: int) -> List[RateRule]:
     )]
 
 
+def _saucenao_rules() -> List[RateRule]:
+    """SauceNAO account limits: a 30-second burst window and a daily cap.
+
+    Defaults are deliberately below what a free account is documented to allow
+    (third-party wrappers quote 6-8 searches per 30 s and 100-200 per day;
+    SauceNAO's own page is the reference — check it before raising them). Raise
+    them here or via the env vars when the account tier changes.
+    """
+    return [
+        RateRule("r30s", UNIT_REQUESTS, 30, _int_env("SAUCENAO_PER_30S", 6)),
+        RateRule("rpd", UNIT_REQUESTS, DAY, _int_env("SAUCENAO_PER_DAY", 100)),
+    ]
+
+
+def _tracemoe_rules() -> List[RateRule]:
+    """trace.moe quota: 100 searches a month anonymously, more with a key.
+
+    The anonymous allowance is shared by every Moddy user (one IP), so the rule
+    is a calendar-month counter in UTC. With ``TRACEMOE_API_KEY`` set the
+    default rises to 1000 — set ``TRACEMOE_MONTHLY`` to the account's real quota.
+    """
+    default = 1_000 if os.environ.get("TRACEMOE_API_KEY") else 100
+    return [
+        RateRule("rpmo", UNIT_REQUESTS, MONTH, _int_env("TRACEMOE_MONTHLY", default),
+                 calendar=CALENDAR_MONTH, tz="UTC"),
+        RateRule("rpm", UNIT_REQUESTS, MINUTE, _int_env("TRACEMOE_PER_MINUTE", 30)),
+    ]
+
+
+def _virustotal_rules() -> List[RateRule]:
+    """VirusTotal public API (free key): 4 requests a minute, 500 a day.
+
+    The three operations (report, submit, analysis) share one budget — the
+    limit is per API key. The free tier forbids commercial use: see
+    docs/features/TOOLS_WEB.md before pointing a premium plan at it.
+    """
+    return [
+        RateRule("rpm", UNIT_REQUESTS, MINUTE, _int_env("VIRUSTOTAL_PER_MINUTE", 4)),
+        RateRule("rpd", UNIT_REQUESTS, DAY, _int_env("VIRUSTOTAL_PER_DAY", 500)),
+    ]
+
+
+def _urlscan_scan_rules() -> List[RateRule]:
+    """urlscan.io scan submissions (unlisted visibility, free account)."""
+    return [
+        RateRule("rpm", UNIT_REQUESTS, MINUTE, _int_env("URLSCAN_SCAN_PER_MINUTE", 10)),
+        RateRule("rpd", UNIT_REQUESTS, DAY, _int_env("URLSCAN_SCAN_PER_DAY", 400)),
+    ]
+
+
+def _urlscan_result_rules() -> List[RateRule]:
+    """urlscan.io result retrievals (one gateway call = one polling loop)."""
+    return [
+        RateRule("rpm", UNIT_REQUESTS, MINUTE, _int_env("URLSCAN_RESULT_PER_MINUTE", 60)),
+        RateRule("rpd", UNIT_REQUESTS, DAY, _int_env("URLSCAN_RESULT_PER_DAY", 4_000)),
+    ]
+
+
+def _cloudconvert_rules() -> List[RateRule]:
+    """CloudConvert account limits: a burst cap and the daily free allowance.
+
+    The free plan gives 25 conversions a day; past that every conversion spends
+    paid credits, so the daily rule is **fail-closed** and defaults to the free
+    allowance. Raise ``CLOUDCONVERT_PER_DAY`` once a credit pack is bought.
+    """
+    return [
+        RateRule("rpm", UNIT_REQUESTS, MINUTE, _int_env("CLOUDCONVERT_PER_MINUTE", 10)),
+        RateRule("rpd", UNIT_REQUESTS, DAY, _int_env("CLOUDCONVERT_PER_DAY", 25), fail_closed=True),
+    ]
+
+
 def _default_model_rate_limits() -> Dict[Tuple[str, str], List[RateRule]]:
     """(provider, model) → the rules enforced for it. Add new models here.
 
@@ -94,6 +165,16 @@ def _default_model_rate_limits() -> Dict[Tuple[str, str], List[RateRule]]:
         ("google_vision", "document_text"): _google_vision_monthly_rules(
             "GOOGLE_VISION_OCR_MONTHLY", 1_000
         ),
+        # Reverse image search (/sauce). The operation is the model key.
+        ("saucenao", "search"): _saucenao_rules(),
+        ("tracemoe", "search"): _tracemoe_rules(),
+        # /link-check reputation (VirusTotal: one budget for every operation) and
+        # sandboxed scan (urlscan: submit and result are counted separately).
+        ("virustotal", "public_api"): _virustotal_rules(),
+        ("urlscan", "scan"): _urlscan_scan_rules(),
+        ("urlscan", "result"): _urlscan_result_rules(),
+        # Office documents / ebooks conversion (/convert, cloud path only).
+        ("cloudconvert", "convert"): _cloudconvert_rules(),
     }
 
 
@@ -103,6 +184,11 @@ class GatewayConfig:
     deepl_api_key: Optional[str] = None
     groq_api_key: Optional[str] = None
     google_vision_api_key: Optional[str] = None
+    saucenao_api_key: Optional[str] = None
+    tracemoe_api_key: Optional[str] = None  # optional: trace.moe works anonymously
+    virustotal_api_key: Optional[str] = None  # /link-check reputation (optional)
+    urlscan_api_key: Optional[str] = None     # /link-check scan + screenshot (optional)
+    cloudconvert_api_key: Optional[str] = None  # /convert office docs + ebooks; hidden when absent
     deepl_free: bool = True
 
     # Timeouts (seconds)
@@ -114,6 +200,12 @@ class GatewayConfig:
     timeout_transcribe: float = 90.0
     # Image calls upload a few MB and run OCR/vision server-side.
     timeout_vision: float = 30.0
+    # Reverse image search: the provider fetches the image and compares it.
+    timeout_search: float = 25.0
+    # urlscan.io result: the adapter polls inside one call for up to ~40 s.
+    timeout_scan: float = 60.0
+    # Document conversion (CloudConvert job: import + convert + export, polled).
+    timeout_convert: float = 120.0
 
     # Retry
     max_retries: int = 3
@@ -151,12 +243,20 @@ class GatewayConfig:
             deepl_api_key=os.environ.get("DEEPL_API_KEY") or None,
             groq_api_key=os.environ.get("GROQ_API_KEY") or None,
             google_vision_api_key=os.environ.get("GOOGLE_VISION_API_KEY") or None,
+            saucenao_api_key=os.environ.get("SAUCENAO_API_KEY") or None,
+            tracemoe_api_key=os.environ.get("TRACEMOE_API_KEY") or None,
+            virustotal_api_key=os.environ.get("VIRUSTOTAL_API_KEY") or None,
+            urlscan_api_key=os.environ.get("URLSCAN_API_KEY") or None,
+            cloudconvert_api_key=os.environ.get("CLOUDCONVERT_API_KEY") or None,
             deepl_free=os.environ.get("DEEPL_FREE", "true").lower() != "false",
             timeout_embed=float(os.environ.get("GATEWAY_TIMEOUT_EMBED", "10")),
             timeout_chat=float(os.environ.get("GATEWAY_TIMEOUT_CHAT", "30")),
             timeout_translate=float(os.environ.get("GATEWAY_TIMEOUT_TRANSLATE", "15")),
             timeout_transcribe=float(os.environ.get("GATEWAY_TIMEOUT_TRANSCRIBE", "90")),
             timeout_vision=float(os.environ.get("GATEWAY_TIMEOUT_VISION", "30")),
+            timeout_search=float(os.environ.get("GATEWAY_TIMEOUT_SEARCH", "25")),
+            timeout_scan=float(os.environ.get("GATEWAY_TIMEOUT_SCAN", "60")),
+            timeout_convert=float(os.environ.get("GATEWAY_TIMEOUT_CONVERT", "120")),
             max_retries=int(os.environ.get("GATEWAY_MAX_RETRIES", "3")),
             retry_base_delay=float(os.environ.get("GATEWAY_RETRY_BASE_DELAY", "0.5")),
             cb_failure_threshold=int(os.environ.get("GATEWAY_CB_FAILURE_THRESHOLD", "5")),

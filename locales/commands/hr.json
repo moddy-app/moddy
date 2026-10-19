@@ -34,6 +34,12 @@
     },
     "Transcribe": {
       "name": "Transkribiraj"
+    },
+    "Find source": {
+      "name": "Pronađi izvor"
+    },
+    "Check links": {
+      "name": "Provjeri poveznice"
     }
   },
   "commands": {
@@ -424,6 +430,275 @@
           "description": "Poveznica na poruku s ovog poslužitelja sa slikom"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "Provjerava je li se lozinka pojavila u curenju podataka"
+    },
+    "password": {
+      "name": "lozinka",
+      "description": "Generira sigurnu nasumičnu lozinku ili zaporku",
+      "parameters": {
+        "length": {
+          "name": "dužina",
+          "description": "Duljina (8-128); zaporka: oko 1 riječ na 4 znaka"
+        },
+        "type": {
+          "name": "vrsta",
+          "description": "Vrsta lozinke (zadano: jaka)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "Generira nasumične UUID-ove (v4 ili v7)",
+      "parameters": {
+        "version": {
+          "name": "verzija",
+          "description": "Verzija UUID-a (zadano: v4)"
+        },
+        "count": {
+          "name": "broj",
+          "description": "Koliko ih generirati (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "Izračunava MD5, SHA-1, SHA-256 i SHA-512 teksta ili datoteke",
+      "parameters": {
+        "text": {
+          "name": "tekst",
+          "description": "Tekst za hash (ostavi tekst i datoteku praznima za obrazac)"
+        },
+        "file": {
+          "name": "datoteka",
+          "description": "Datoteka za hash (maks. 25 MB)"
+        },
+        "compare": {
+          "name": "usporedi",
+          "description": "Poznati hash za usporedbu"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "Dekodira JSON Web Token (zaglavlje i sadržaj)"
+    },
+    "color": {
+      "name": "boja",
+      "description": "Pretvara boju i provjerava njezin kontrast",
+      "parameters": {
+        "color": {
+          "name": "boja",
+          "description": "HEX, rgb(), hsl(), CSS naziv, Discord broj ili random"
+        }
+      }
+    },
+    "music": {
+      "name": "glazba",
+      "description": "Glazbeni alati"
+    },
+    "music link": {
+      "name": "poveznica",
+      "description": "Pronađi Spotify pjesmu, album ili izvođača na drugim platformama",
+      "parameters": {
+        "url": {
+          "name": "poveznica",
+          "description": "Spotify poveznica (pjesma, album ili izvođač)"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "Prikazuje skrivene metapodatke datoteke",
+      "parameters": {
+        "file": {
+          "name": "datoteka",
+          "description": "Slika, PDF, Office dokument, audio ili video datoteka"
+        }
+      }
+    },
+    "sauce": {
+      "name": "izvor",
+      "description": "Pronalazi izvor slike",
+      "parameters": {
+        "image": {
+          "name": "slika",
+          "description": "Slika za pretraživanje (PNG, JPEG, WebP ili GIF)"
+        },
+        "message": {
+          "name": "poruka",
+          "description": "Poveznica na poruku s ovog poslužitelja sa slikom"
+        }
+      }
+    },
+    "define": {
+      "name": "definicija",
+      "description": "Traži riječ u Wječniku",
+      "parameters": {
+        "word": {
+          "name": "riječ",
+          "description": "Riječ ili izraz koji se traži"
+        },
+        "language": {
+          "name": "jezik",
+          "description": "Jezik Wječnika (zadano: tvoj)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "Sažima najnovije poruke u ovom kanalu",
+      "parameters": {
+        "messages": {
+          "name": "poruke",
+          "description": "Koliko nedavnih poruka pročitati (zadano: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "Testira regularni izraz na tekstu"
+    },
+    "diff": {
+      "name": "usporedi",
+      "description": "Uspoređuje dva teksta i prikazuje što se promijenilo"
+    },
+    "textstats": {
+      "name": "statistika-teksta",
+      "description": "Broji riječi te mjeri vrijeme čitanja i čitljivost",
+      "parameters": {
+        "text": {
+          "name": "tekst",
+          "description": "Tekst za analizu (ostavi prazno za otvaranje obrasca)"
+        }
+      }
+    },
+    "status": {
+      "name": "status",
+      "description": "Provjerava rade li Discord, GitHub i druge usluge",
+      "parameters": {
+        "service": {
+          "name": "usluga",
+          "description": "Usluga za provjeru (prazno: pregled svih)"
+        }
+      }
+    },
+    "company": {
+      "name": "tvrtka",
+      "description": "Pronađi francusku tvrtku po nazivu, SIREN-u ili SIRET-u",
+      "parameters": {
+        "search": {
+          "name": "pretraga",
+          "description": "Naziv tvrtke, SIREN (9 znamenki) ili SIRET (14 znamenki)"
+        }
+      }
+    },
+    "username": {
+      "name": "korisničko-ime",
+      "description": "Pronađi gdje se korisničko ime koristi na stotinama stranica",
+      "parameters": {
+        "username": {
+          "name": "korisničko-ime",
+          "description": "Korisničko ime koje tražiš"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Tko je registrirao domenu i kada (registrar, datumi, poslužitelji imena)",
+      "parameters": {
+        "domain": {
+          "name": "domena",
+          "description": "Naziv domene ili poveznica, npr. example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "DNS zapisi domene (A, MX, TXT, NS...) i zaštita e-pošte",
+      "parameters": {
+        "domain": {
+          "name": "domena",
+          "description": "Naziv domene ili poveznica, npr. example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Provjeri HTTPS certifikat web-mjesta (valjanost, izdavatelj, imena)",
+      "parameters": {
+        "domain": {
+          "name": "domena",
+          "description": "Naziv domene ili poveznica, npr. example.com"
+        },
+        "port": {
+          "name": "port",
+          "description": "Port (zadano 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "poddomene",
+      "description": "Popis poddomena domene viđenih u javnim certifikatima",
+      "parameters": {
+        "domain": {
+          "name": "domena",
+          "description": "Naziv domene ili poveznica, npr. example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "provjera-poveznice",
+      "description": "Provjeri je li poveznica opasna: preusmjeravanja, starost domene, reputacija",
+      "parameters": {
+        "url": {
+          "name": "poveznica",
+          "description": "Poveznica za provjeru"
+        }
+      }
+    },
+    "image": {
+      "name": "slika",
+      "description": "Prikazuje sliku i omogućuje promjenu veličine, kompresiju, pretvorbu ili uklanjanje pozadine",
+      "parameters": {
+        "file": {
+          "name": "datoteka",
+          "description": "Slika za obradu (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "pretvori",
+      "description": "Pretvara datoteku u drugi format (slike, dokumenti, zvuk, video, arhive...)",
+      "parameters": {
+        "file": {
+          "name": "datoteka",
+          "description": "Datoteka za pretvorbu (maks. 25 MB)"
+        },
+        "format": {
+          "name": "format",
+          "description": "Ciljni format (ostavi prazno za odabir s popisa)"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "Jaka"
+    },
+    "clear": {
+      "name": "Bez zamjenjivih znakova"
+    },
+    "passphrase": {
+      "name": "Zaporka"
+    },
+    "v4": {
+      "name": "v4 (nasumično)"
+    },
+    "v7": {
+      "name": "v7 (vremenski poredano)"
     }
   }
 }

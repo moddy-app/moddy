@@ -34,6 +34,12 @@
     },
     "Transcribe": {
       "name": "Transkribieren"
+    },
+    "Find source": {
+      "name": "Quelle finden"
+    },
+    "Check links": {
+      "name": "Links prüfen"
     }
   },
   "commands": {
@@ -424,6 +430,275 @@
           "description": "Link zu einer Nachricht dieses Servers mit dem Bild"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "Prüft, ob ein Passwort in einem Datenleck aufgetaucht ist"
+    },
+    "password": {
+      "name": "passwort",
+      "description": "Erzeugt ein sicheres zufälliges Passwort oder eine Passphrase",
+      "parameters": {
+        "length": {
+          "name": "länge",
+          "description": "Länge (8-128); Passphrase: etwa 1 Wort pro 4 Zeichen"
+        },
+        "type": {
+          "name": "typ",
+          "description": "Art des Passworts (Standard: stark)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "Erzeugt zufällige UUIDs (v4 oder v7)",
+      "parameters": {
+        "version": {
+          "name": "version",
+          "description": "UUID-Version (Standard: v4)"
+        },
+        "count": {
+          "name": "anzahl",
+          "description": "Wie viele erzeugt werden (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "Berechnet MD5, SHA-1, SHA-256 und SHA-512 eines Textes oder einer Datei",
+      "parameters": {
+        "text": {
+          "name": "text",
+          "description": "Text zum Hashen (Text und Datei leer lassen für ein Formular)"
+        },
+        "file": {
+          "name": "datei",
+          "description": "Datei zum Hashen (max. 25 MB)"
+        },
+        "compare": {
+          "name": "vergleichen",
+          "description": "Ein bekannter Hash zum Vergleichen"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "Dekodiert ein JSON Web Token (Header und Payload)"
+    },
+    "color": {
+      "name": "farbe",
+      "description": "Wandelt eine Farbe um und prüft ihren Kontrast",
+      "parameters": {
+        "color": {
+          "name": "farbe",
+          "description": "HEX, rgb(), hsl(), CSS-Name, Discord-Zahl oder random"
+        }
+      }
+    },
+    "music": {
+      "name": "musik",
+      "description": "Musik-Werkzeuge"
+    },
+    "music link": {
+      "name": "link",
+      "description": "Finde einen Spotify-Song, ein Album oder einen Künstler auf anderen Plattformen",
+      "parameters": {
+        "url": {
+          "name": "link",
+          "description": "Der Spotify-Link (ein Song, ein Album oder ein Künstler)"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "Zeigt die versteckten Metadaten einer Datei",
+      "parameters": {
+        "file": {
+          "name": "datei",
+          "description": "Bild, PDF, Office-Dokument, Audio- oder Videodatei"
+        }
+      }
+    },
+    "sauce": {
+      "name": "quelle",
+      "description": "Findet die Quelle eines Bildes",
+      "parameters": {
+        "image": {
+          "name": "bild",
+          "description": "Das zu suchende Bild (PNG, JPEG, WebP oder GIF)"
+        },
+        "message": {
+          "name": "nachricht",
+          "description": "Link zu einer Nachricht dieses Servers mit dem Bild"
+        }
+      }
+    },
+    "define": {
+      "name": "definition",
+      "description": "Schlägt ein Wort im Wiktionary nach",
+      "parameters": {
+        "word": {
+          "name": "wort",
+          "description": "Das gesuchte Wort oder der Ausdruck"
+        },
+        "language": {
+          "name": "sprache",
+          "description": "Sprache des Wiktionary (Standard: deine)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "Fasst die letzten Nachrichten dieses Kanals zusammen",
+      "parameters": {
+        "messages": {
+          "name": "nachrichten",
+          "description": "Wie viele aktuelle Nachrichten gelesen werden (Standard: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "Testet einen regulären Ausdruck auf einem Text"
+    },
+    "diff": {
+      "name": "vergleich",
+      "description": "Vergleicht zwei Texte und zeigt, was sich geändert hat"
+    },
+    "textstats": {
+      "name": "textstatistik",
+      "description": "Zählt Wörter und misst Lesezeit und Lesbarkeit",
+      "parameters": {
+        "text": {
+          "name": "text",
+          "description": "Der zu analysierende Text (leer lassen, um ein Formular zu öffnen)"
+        }
+      }
+    },
+    "status": {
+      "name": "status",
+      "description": "Prüft, ob Discord, GitHub und andere Dienste erreichbar sind",
+      "parameters": {
+        "service": {
+          "name": "dienst",
+          "description": "Ein Dienst (leer lassen für die Übersicht aller Dienste)"
+        }
+      }
+    },
+    "company": {
+      "name": "unternehmen",
+      "description": "Sucht ein französisches Unternehmen per Name, SIREN oder SIRET",
+      "parameters": {
+        "search": {
+          "name": "suche",
+          "description": "Ein Firmenname, eine SIREN (9 Ziffern) oder SIRET (14 Ziffern)"
+        }
+      }
+    },
+    "username": {
+      "name": "benutzername",
+      "description": "Findet, wo ein Benutzername auf Hunderten von Seiten genutzt wird",
+      "parameters": {
+        "username": {
+          "name": "benutzername",
+          "description": "Der gesuchte Benutzername"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Wer eine Domain registriert hat und wann (Registrar, Daten, Nameserver)",
+      "parameters": {
+        "domain": {
+          "name": "domain",
+          "description": "Domainname oder Link, z. B. example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "DNS-Einträge einer Domain (A, MX, TXT, NS ...) und E-Mail-Schutz",
+      "parameters": {
+        "domain": {
+          "name": "domain",
+          "description": "Domainname oder Link, z. B. example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Prüft das HTTPS-Zertifikat einer Website (Gültigkeit, Aussteller, Namen)",
+      "parameters": {
+        "domain": {
+          "name": "domain",
+          "description": "Domainname oder Link, z. B. example.com"
+        },
+        "port": {
+          "name": "port",
+          "description": "Port (Standard 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "subdomains",
+      "description": "Listet die Subdomains einer Domain aus öffentlichen Zertifikaten auf",
+      "parameters": {
+        "domain": {
+          "name": "domain",
+          "description": "Domainname oder Link, z. B. example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "link-prüfen",
+      "description": "Prüft, ob ein Link gefährlich ist: Weiterleitungen, Domain-Alter, Ruf",
+      "parameters": {
+        "url": {
+          "name": "link",
+          "description": "Der zu prüfende Link"
+        }
+      }
+    },
+    "image": {
+      "name": "bild",
+      "description": "Zeigt ein Bild und ändert Größe, komprimiert, wandelt um oder entfernt den Hintergrund",
+      "parameters": {
+        "file": {
+          "name": "datei",
+          "description": "Das zu bearbeitende Bild (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "umwandeln",
+      "description": "Wandelt eine Datei in ein anderes Format um (Bilder, Dokumente, Audio, Video, Archive...)",
+      "parameters": {
+        "file": {
+          "name": "datei",
+          "description": "Die umzuwandelnde Datei (max. 25 MB)"
+        },
+        "format": {
+          "name": "format",
+          "description": "Zielformat (leer lassen, um aus einer Liste zu wählen)"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "Stark"
+    },
+    "clear": {
+      "name": "Ohne Verwechslungszeichen"
+    },
+    "passphrase": {
+      "name": "Passphrase"
+    },
+    "v4": {
+      "name": "v4 (zufällig)"
+    },
+    "v7": {
+      "name": "v7 (zeitlich geordnet)"
     }
   }
 }

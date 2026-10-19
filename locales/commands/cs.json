@@ -34,6 +34,12 @@
     },
     "Transcribe": {
       "name": "Přepsat do textu"
+    },
+    "Find source": {
+      "name": "Najít zdroj"
+    },
+    "Check links": {
+      "name": "Zkontrolovat odkazy"
     }
   },
   "commands": {
@@ -424,6 +430,275 @@
           "description": "Odkaz na zprávu z tohoto serveru s obrázkem"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "Zkontroluje, zda se heslo objevilo v úniku dat"
+    },
+    "password": {
+      "name": "heslo",
+      "description": "Vygeneruje bezpečné náhodné heslo nebo přístupovou frázi",
+      "parameters": {
+        "length": {
+          "name": "délka",
+          "description": "Délka (8-128); fráze: asi 1 slovo na 4 znaky"
+        },
+        "type": {
+          "name": "typ",
+          "description": "Druh hesla (výchozí: silné)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "Vygeneruje náhodná UUID (v4 nebo v7)",
+      "parameters": {
+        "version": {
+          "name": "verze",
+          "description": "Verze UUID (výchozí: v4)"
+        },
+        "count": {
+          "name": "počet",
+          "description": "Kolik jich vytvořit (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "Spočítá MD5, SHA-1, SHA-256 a SHA-512 textu nebo souboru",
+      "parameters": {
+        "text": {
+          "name": "text",
+          "description": "Text k hashování (nech text i soubor prázdné pro formulář)"
+        },
+        "file": {
+          "name": "soubor",
+          "description": "Soubor k hashování (max. 25 MB)"
+        },
+        "compare": {
+          "name": "porovnat",
+          "description": "Známý hash k porovnání"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "Dekóduje JSON Web Token (hlavičku a obsah)"
+    },
+    "color": {
+      "name": "barva",
+      "description": "Převede barvu a zkontroluje její kontrast",
+      "parameters": {
+        "color": {
+          "name": "barva",
+          "description": "HEX, rgb(), hsl(), název CSS, číslo Discordu nebo random"
+        }
+      }
+    },
+    "music": {
+      "name": "hudba",
+      "description": "Hudební nástroje"
+    },
+    "music link": {
+      "name": "odkaz",
+      "description": "Najdi skladbu, album nebo interpreta ze Spotify na jiných platformách",
+      "parameters": {
+        "url": {
+          "name": "odkaz",
+          "description": "Odkaz na Spotify (skladba, album nebo interpret)"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "Zobrazí skrytá metadata souboru",
+      "parameters": {
+        "file": {
+          "name": "soubor",
+          "description": "Obrázek, PDF, dokument Office, zvukový nebo video soubor"
+        }
+      }
+    },
+    "sauce": {
+      "name": "zdroj",
+      "description": "Najde zdroj obrázku",
+      "parameters": {
+        "image": {
+          "name": "obrazek",
+          "description": "Obrázek k vyhledání (PNG, JPEG, WebP nebo GIF)"
+        },
+        "message": {
+          "name": "zprava",
+          "description": "Odkaz na zprávu z tohoto serveru s obrázkem"
+        }
+      }
+    },
+    "define": {
+      "name": "definice",
+      "description": "Vyhledá slovo ve Wikislovníku",
+      "parameters": {
+        "word": {
+          "name": "slovo",
+          "description": "Slovo nebo výraz k vyhledání"
+        },
+        "language": {
+          "name": "jazyk",
+          "description": "Jazyk Wikislovníku (výchozí: tvůj)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "Shrne poslední zprávy v tomto kanálu",
+      "parameters": {
+        "messages": {
+          "name": "zprávy",
+          "description": "Kolik posledních zpráv přečíst (výchozí: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "Otestuje regulární výraz na textu"
+    },
+    "diff": {
+      "name": "porovnat",
+      "description": "Porovná dva texty a ukáže, co se změnilo"
+    },
+    "textstats": {
+      "name": "statistiky-textu",
+      "description": "Spočítá slova a změří dobu čtení a čitelnost",
+      "parameters": {
+        "text": {
+          "name": "text",
+          "description": "Text k analýze (nech prázdné pro otevření formuláře)"
+        }
+      }
+    },
+    "status": {
+      "name": "stav",
+      "description": "Zjistí, zda běží Discord, GitHub a další služby",
+      "parameters": {
+        "service": {
+          "name": "služba",
+          "description": "Služba ke kontrole (prázdné: přehled všech)"
+        }
+      }
+    },
+    "company": {
+      "name": "firma",
+      "description": "Vyhledá francouzskou firmu podle názvu, SIREN nebo SIRET",
+      "parameters": {
+        "search": {
+          "name": "hledání",
+          "description": "Název firmy, SIREN (9 číslic) nebo SIRET (14 číslic)"
+        }
+      }
+    },
+    "username": {
+      "name": "přezdívka",
+      "description": "Zjistí, kde se přezdívka používá na stovkách webů",
+      "parameters": {
+        "username": {
+          "name": "přezdívka",
+          "description": "Hledaná přezdívka"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Kdo doménu zaregistroval a kdy (registrátor, data, jmenné servery)",
+      "parameters": {
+        "domain": {
+          "name": "doména",
+          "description": "Název domény nebo odkaz, například example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "DNS záznamy domény (A, MX, TXT, NS...) a ochrana e-mailu",
+      "parameters": {
+        "domain": {
+          "name": "doména",
+          "description": "Název domény nebo odkaz, například example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Zkontroluj HTTPS certifikát webu (platnost, vydavatel, jména)",
+      "parameters": {
+        "domain": {
+          "name": "doména",
+          "description": "Název domény nebo odkaz, například example.com"
+        },
+        "port": {
+          "name": "port",
+          "description": "Port (výchozí 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "subdomény",
+      "description": "Vypíše subdomény domény viditelné ve veřejných certifikátech",
+      "parameters": {
+        "domain": {
+          "name": "doména",
+          "description": "Název domény nebo odkaz, například example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "kontrola-odkazu",
+      "description": "Zjisti, zda je odkaz nebezpečný: přesměrování, stáří domény, reputace",
+      "parameters": {
+        "url": {
+          "name": "odkaz",
+          "description": "Odkaz ke kontrole"
+        }
+      }
+    },
+    "image": {
+      "name": "obrazek",
+      "description": "Zobrazí obrázek a umožní změnit velikost, komprimovat, převést nebo odstranit pozadí",
+      "parameters": {
+        "file": {
+          "name": "soubor",
+          "description": "Obrázek ke zpracování (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "prevest",
+      "description": "Převede soubor do jiného formátu (obrázky, dokumenty, audio, video, archivy...)",
+      "parameters": {
+        "file": {
+          "name": "soubor",
+          "description": "Soubor k převodu (max. 25 MB)"
+        },
+        "format": {
+          "name": "format",
+          "description": "Cílový formát (nech prázdné pro výběr ze seznamu)"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "Silné"
+    },
+    "clear": {
+      "name": "Bez podobných znaků"
+    },
+    "passphrase": {
+      "name": "Přístupová fráze"
+    },
+    "v4": {
+      "name": "v4 (náhodné)"
+    },
+    "v7": {
+      "name": "v7 (řazené v čase)"
     }
   }
 }

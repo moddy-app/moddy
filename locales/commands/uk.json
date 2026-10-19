@@ -34,6 +34,12 @@
     },
     "Transcribe": {
       "name": "Розшифрувати"
+    },
+    "Find source": {
+      "name": "Знайти джерело"
+    },
+    "Check links": {
+      "name": "Перевірити посилання"
     }
   },
   "commands": {
@@ -424,6 +430,275 @@
           "description": "Посилання на повідомлення цього сервера із зображенням"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "Перевірити, чи траплявся пароль у витоках даних"
+    },
+    "password": {
+      "name": "пароль",
+      "description": "Створити надійний випадковий пароль або парольну фразу",
+      "parameters": {
+        "length": {
+          "name": "довжина",
+          "description": "Довжина (8-128); фраза: приблизно 1 слово на 4 символи"
+        },
+        "type": {
+          "name": "тип",
+          "description": "Тип пароля (за замовчуванням: надійний)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "Створити випадкові UUID (v4 або v7)",
+      "parameters": {
+        "version": {
+          "name": "версія",
+          "description": "Версія UUID (за замовчуванням: v4)"
+        },
+        "count": {
+          "name": "кількість",
+          "description": "Скільки створити (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "Обчислити MD5, SHA-1, SHA-256 і SHA-512 тексту або файлу",
+      "parameters": {
+        "text": {
+          "name": "текст",
+          "description": "Текст для хешу (залиште текст і файл порожніми для форми)"
+        },
+        "file": {
+          "name": "файл",
+          "description": "Файл для хешу (макс. 25 МБ)"
+        },
+        "compare": {
+          "name": "порівняти",
+          "description": "Відомий хеш для порівняння"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "Розшифрувати JSON Web Token (заголовок і вміст)"
+    },
+    "color": {
+      "name": "колір",
+      "description": "Перетворити колір і перевірити його контраст",
+      "parameters": {
+        "color": {
+          "name": "колір",
+          "description": "HEX, rgb(), hsl(), назва CSS, число Discord або random"
+        }
+      }
+    },
+    "music": {
+      "name": "музика",
+      "description": "Музичні інструменти"
+    },
+    "music link": {
+      "name": "посилання",
+      "description": "Знайди трек, альбом або виконавця зі Spotify на інших платформах",
+      "parameters": {
+        "url": {
+          "name": "посилання",
+          "description": "Посилання Spotify (трек, альбом або виконавець)"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "Показує приховані метадані файлу",
+      "parameters": {
+        "file": {
+          "name": "файл",
+          "description": "Зображення, PDF, документ Office, аудіо- або відеофайл"
+        }
+      }
+    },
+    "sauce": {
+      "name": "джерело",
+      "description": "Знаходить джерело зображення",
+      "parameters": {
+        "image": {
+          "name": "зображення",
+          "description": "Зображення для пошуку (PNG, JPEG, WebP або GIF)"
+        },
+        "message": {
+          "name": "повідомлення",
+          "description": "Посилання на повідомлення цього сервера із зображенням"
+        }
+      }
+    },
+    "define": {
+      "name": "визначення",
+      "description": "Шукає слово у Вікісловнику",
+      "parameters": {
+        "word": {
+          "name": "слово",
+          "description": "Слово або вираз для пошуку"
+        },
+        "language": {
+          "name": "мова",
+          "description": "Мова Вікісловника (за замовчуванням ваша)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "Коротко переказує останні повідомлення каналу",
+      "parameters": {
+        "messages": {
+          "name": "повідомлення",
+          "description": "Скільки останніх повідомлень прочитати (за замовчуванням 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "регулярка",
+      "description": "Перевіряє регулярний вираз на тексті"
+    },
+    "diff": {
+      "name": "порівняння",
+      "description": "Порівнює два тексти й показує зміни"
+    },
+    "textstats": {
+      "name": "статистика-тексту",
+      "description": "Рахує слова, час читання та читабельність",
+      "parameters": {
+        "text": {
+          "name": "текст",
+          "description": "Текст для аналізу (залиште порожнім, щоб відкрити форму)"
+        }
+      }
+    },
+    "status": {
+      "name": "статус",
+      "description": "Перевіряє, чи працюють Discord, GitHub та інші сервіси",
+      "parameters": {
+        "service": {
+          "name": "сервіс",
+          "description": "Сервіс для перевірки (порожньо: огляд усіх)"
+        }
+      }
+    },
+    "company": {
+      "name": "компанія",
+      "description": "Шукає французьку компанію за назвою, SIREN або SIRET",
+      "parameters": {
+        "search": {
+          "name": "пошук",
+          "description": "Назва компанії, SIREN (9 цифр) або SIRET (14 цифр)"
+        }
+      }
+    },
+    "username": {
+      "name": "нікнейм",
+      "description": "Знаходить, де використовується нікнейм на сотнях сайтів",
+      "parameters": {
+        "username": {
+          "name": "нікнейм",
+          "description": "Нікнейм для пошуку"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Хто і коли зареєстрував домен (реєстратор, дати, сервери імен)",
+      "parameters": {
+        "domain": {
+          "name": "домен",
+          "description": "Назва домену або посилання, наприклад example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "DNS-записи домену (A, MX, TXT, NS...) і захист пошти",
+      "parameters": {
+        "domain": {
+          "name": "домен",
+          "description": "Назва домену або посилання, наприклад example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Перевірити HTTPS-сертифікат сайту (термін дії, видавець, імена)",
+      "parameters": {
+        "domain": {
+          "name": "домен",
+          "description": "Назва домену або посилання, наприклад example.com"
+        },
+        "port": {
+          "name": "порт",
+          "description": "Порт (типово 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "піддомени",
+      "description": "Список піддоменів домену з публічних сертифікатів",
+      "parameters": {
+        "domain": {
+          "name": "домен",
+          "description": "Назва домену або посилання, наприклад example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "перевірка-посилання",
+      "description": "Перевірити, чи небезпечне посилання: редиректи, вік домену, репутація",
+      "parameters": {
+        "url": {
+          "name": "посилання",
+          "description": "Посилання для перевірки"
+        }
+      }
+    },
+    "image": {
+      "name": "зображення",
+      "description": "Показує зображення: змінити розмір, стиснути, конвертувати або прибрати фон",
+      "parameters": {
+        "file": {
+          "name": "файл",
+          "description": "Зображення для обробки (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "конвертувати",
+      "description": "Конвертує файл в інший формат (зображення, документи, аудіо, відео, архіви...)",
+      "parameters": {
+        "file": {
+          "name": "файл",
+          "description": "Файл для конвертації (макс. 25 МБ)"
+        },
+        "format": {
+          "name": "формат",
+          "description": "Цільовий формат (залиште порожнім, щоб вибрати зі списку)"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "Надійний"
+    },
+    "clear": {
+      "name": "Без схожих символів"
+    },
+    "passphrase": {
+      "name": "Парольна фраза"
+    },
+    "v4": {
+      "name": "v4 (випадковий)"
+    },
+    "v7": {
+      "name": "v7 (за часом)"
     }
   }
 }

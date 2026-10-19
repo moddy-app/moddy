@@ -34,6 +34,12 @@
     },
     "Transcribe": {
       "name": "Μεταγραφή"
+    },
+    "Find source": {
+      "name": "Εύρεση πηγής"
+    },
+    "Check links": {
+      "name": "Έλεγχος συνδέσμων"
     }
   },
   "commands": {
@@ -424,6 +430,275 @@
           "description": "Σύνδεσμος μηνύματος αυτού του διακομιστή με την εικόνα"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "Ελέγχει αν ένας κωδικός εμφανίστηκε σε διαρροή δεδομένων"
+    },
+    "password": {
+      "name": "κωδικός",
+      "description": "Δημιουργεί έναν ασφαλή τυχαίο κωδικό ή φράση πρόσβασης",
+      "parameters": {
+        "length": {
+          "name": "μήκος",
+          "description": "Μήκος (8-128), φράση: περίπου 1 λέξη ανά 4 χαρακτήρες"
+        },
+        "type": {
+          "name": "τύπος",
+          "description": "Είδος κωδικού (προεπιλογή: ισχυρός)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "Δημιουργεί τυχαία UUID (v4 ή v7)",
+      "parameters": {
+        "version": {
+          "name": "έκδοση",
+          "description": "Έκδοση UUID (προεπιλογή: v4)"
+        },
+        "count": {
+          "name": "αριθμός",
+          "description": "Πόσα να δημιουργηθούν (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "Υπολογίζει MD5, SHA-1, SHA-256 και SHA-512 κειμένου ή αρχείου",
+      "parameters": {
+        "text": {
+          "name": "κείμενο",
+          "description": "Κείμενο για hash (άφησε κείμενο και αρχείο κενά για φόρμα)"
+        },
+        "file": {
+          "name": "αρχείο",
+          "description": "Αρχείο για hash (έως 25 MB)"
+        },
+        "compare": {
+          "name": "σύγκριση",
+          "description": "Ένα γνωστό hash για σύγκριση"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "Αποκωδικοποιεί ένα JSON Web Token (κεφαλίδα και περιεχόμενο)"
+    },
+    "color": {
+      "name": "χρώμα",
+      "description": "Μετατρέπει ένα χρώμα και ελέγχει την αντίθεσή του",
+      "parameters": {
+        "color": {
+          "name": "χρώμα",
+          "description": "HEX, rgb(), hsl(), όνομα CSS, αριθμός Discord ή random"
+        }
+      }
+    },
+    "music": {
+      "name": "μουσικη",
+      "description": "Μουσικά εργαλεία"
+    },
+    "music link": {
+      "name": "συνδεσμος",
+      "description": "Βρες ένα τραγούδι, άλμπουμ ή καλλιτέχνη του Spotify σε άλλες πλατφόρμες",
+      "parameters": {
+        "url": {
+          "name": "συνδεσμος",
+          "description": "Ο σύνδεσμος Spotify (τραγούδι, άλμπουμ ή καλλιτέχνης)"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "Εμφανίζει τα κρυφά μεταδεδομένα ενός αρχείου",
+      "parameters": {
+        "file": {
+          "name": "αρχείο",
+          "description": "Εικόνα, PDF, έγγραφο Office, αρχείο ήχου ή βίντεο"
+        }
+      }
+    },
+    "sauce": {
+      "name": "πηγή",
+      "description": "Βρίσκει την πηγή μιας εικόνας",
+      "parameters": {
+        "image": {
+          "name": "εικόνα",
+          "description": "Η εικόνα προς αναζήτηση (PNG, JPEG, WebP ή GIF)"
+        },
+        "message": {
+          "name": "μήνυμα",
+          "description": "Σύνδεσμος μηνύματος αυτού του διακομιστή με την εικόνα"
+        }
+      }
+    },
+    "define": {
+      "name": "ορισμός",
+      "description": "Αναζητά μια λέξη στο Βικιλεξικό",
+      "parameters": {
+        "word": {
+          "name": "λέξη",
+          "description": "Η λέξη ή η έκφραση προς αναζήτηση"
+        },
+        "language": {
+          "name": "γλώσσα",
+          "description": "Γλώσσα του Βικιλεξικού (προεπιλογή: η δική σου)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "Συνοψίζει τα τελευταία μηνύματα αυτού του καναλιού",
+      "parameters": {
+        "messages": {
+          "name": "μηνύματα",
+          "description": "Πόσα πρόσφατα μηνύματα θα διαβαστούν (προεπιλογή: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "Δοκιμάζει μια κανονική έκφραση σε ένα κείμενο"
+    },
+    "diff": {
+      "name": "σύγκριση",
+      "description": "Συγκρίνει δύο κείμενα και δείχνει τι άλλαξε"
+    },
+    "textstats": {
+      "name": "στατιστικά-κειμένου",
+      "description": "Μετράει λέξεις, χρόνο ανάγνωσης και αναγνωσιμότητα",
+      "parameters": {
+        "text": {
+          "name": "κείμενο",
+          "description": "Το κείμενο προς ανάλυση (άφησέ το κενό για να ανοίξει φόρμα)"
+        }
+      }
+    },
+    "status": {
+      "name": "κατάσταση",
+      "description": "Ελέγχει αν λειτουργούν το Discord, το GitHub και άλλες υπηρεσίες",
+      "parameters": {
+        "service": {
+          "name": "υπηρεσία",
+          "description": "Μια υπηρεσία (κενό: επισκόπηση όλων)"
+        }
+      }
+    },
+    "company": {
+      "name": "εταιρεία",
+      "description": "Αναζητά γαλλική εταιρεία με όνομα, SIREN ή SIRET",
+      "parameters": {
+        "search": {
+          "name": "αναζήτηση",
+          "description": "Όνομα εταιρείας, SIREN (9 ψηφία) ή SIRET (14 ψηφία)"
+        }
+      }
+    },
+    "username": {
+      "name": "ψευδώνυμο",
+      "description": "Βρίσκει πού χρησιμοποιείται ένα ψευδώνυμο σε εκατοντάδες ιστότοπους",
+      "parameters": {
+        "username": {
+          "name": "ψευδώνυμο",
+          "description": "Το ψευδώνυμο προς αναζήτηση"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Ποιος κατοχύρωσε έναν τομέα και πότε (καταχωρητής, ημερομηνίες, διακομιστές ονομάτων)",
+      "parameters": {
+        "domain": {
+          "name": "τομέας",
+          "description": "Όνομα τομέα ή σύνδεσμος, π.χ. example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "Εγγραφές DNS ενός τομέα (A, MX, TXT, NS...) και προστασία email",
+      "parameters": {
+        "domain": {
+          "name": "τομέας",
+          "description": "Όνομα τομέα ή σύνδεσμος, π.χ. example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Έλεγξε το πιστοποιητικό HTTPS ενός ιστότοπου (ισχύς, εκδότης, ονόματα)",
+      "parameters": {
+        "domain": {
+          "name": "τομέας",
+          "description": "Όνομα τομέα ή σύνδεσμος, π.χ. example.com"
+        },
+        "port": {
+          "name": "θύρα",
+          "description": "Θύρα (προεπιλογή 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "υποτομείς",
+      "description": "Λίστα υποτομέων ενός τομέα από δημόσια πιστοποιητικά",
+      "parameters": {
+        "domain": {
+          "name": "τομέας",
+          "description": "Όνομα τομέα ή σύνδεσμος, π.χ. example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "έλεγχος-συνδέσμου",
+      "description": "Έλεγξε αν ένας σύνδεσμος είναι επικίνδυνος: ανακατευθύνσεις, ηλικία, φήμη",
+      "parameters": {
+        "url": {
+          "name": "σύνδεσμος",
+          "description": "Ο σύνδεσμος προς έλεγχο"
+        }
+      }
+    },
+    "image": {
+      "name": "εικονα",
+      "description": "Εμφανίζει μια εικόνα και αλλάζει μέγεθος, συμπιέζει, μετατρέπει ή αφαιρεί το φόντο",
+      "parameters": {
+        "file": {
+          "name": "αρχείο",
+          "description": "Η εικόνα προς επεξεργασία (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "μετατροπη",
+      "description": "Μετατρέπει ένα αρχείο σε άλλη μορφή (εικόνες, έγγραφα, ήχος, βίντεο, αρχεία...)",
+      "parameters": {
+        "file": {
+          "name": "αρχείο",
+          "description": "Το αρχείο προς μετατροπή (μέγ. 25 MB)"
+        },
+        "format": {
+          "name": "μορφη",
+          "description": "Μορφή προορισμού (άφησέ το κενό για επιλογή από λίστα)"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "Ισχυρός"
+    },
+    "clear": {
+      "name": "Χωρίς όμοιους χαρακτήρες"
+    },
+    "passphrase": {
+      "name": "Φράση πρόσβασης"
+    },
+    "v4": {
+      "name": "v4 (τυχαίο)"
+    },
+    "v7": {
+      "name": "v7 (χρονικά ταξινομημένο)"
     }
   }
 }

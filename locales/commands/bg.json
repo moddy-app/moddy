@@ -34,6 +34,12 @@
     },
     "Transcribe": {
       "name": "Транскрибиране"
+    },
+    "Find source": {
+      "name": "Намери източник"
+    },
+    "Check links": {
+      "name": "Провери линковете"
     }
   },
   "commands": {
@@ -424,6 +430,275 @@
           "description": "Връзка към съобщение от този сървър с изображението"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "Проверява дали парола е попадала в изтичане на данни"
+    },
+    "password": {
+      "name": "парола",
+      "description": "Създава сигурна случайна парола или парола-фраза",
+      "parameters": {
+        "length": {
+          "name": "дължина",
+          "description": "Дължина (8-128); фраза: около 1 дума на 4 знака"
+        },
+        "type": {
+          "name": "вид",
+          "description": "Вид парола (по подразбиране: силна)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "Създава случайни UUID (v4 или v7)",
+      "parameters": {
+        "version": {
+          "name": "версия",
+          "description": "Версия на UUID (по подразбиране: v4)"
+        },
+        "count": {
+          "name": "брой",
+          "description": "Колко да се създадат (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "Изчислява MD5, SHA-1, SHA-256 и SHA-512 на текст или файл",
+      "parameters": {
+        "text": {
+          "name": "текст",
+          "description": "Текст за хеш (остави текста и файла празни за формуляр)"
+        },
+        "file": {
+          "name": "файл",
+          "description": "Файл за хеш (макс. 25 МБ)"
+        },
+        "compare": {
+          "name": "сравни",
+          "description": "Известен хеш за сравнение"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "Декодира JSON Web Token (заглавие и съдържание)"
+    },
+    "color": {
+      "name": "цвят",
+      "description": "Преобразува цвят и проверява контраста му",
+      "parameters": {
+        "color": {
+          "name": "цвят",
+          "description": "HEX, rgb(), hsl(), име в CSS, число на Discord или random"
+        }
+      }
+    },
+    "music": {
+      "name": "музика",
+      "description": "Музикални инструменти"
+    },
+    "music link": {
+      "name": "линк",
+      "description": "Намери песен, албум или изпълнител от Spotify в други платформи",
+      "parameters": {
+        "url": {
+          "name": "линк",
+          "description": "Връзката към Spotify (песен, албум или изпълнител)"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "Показва скритите метаданни на файл",
+      "parameters": {
+        "file": {
+          "name": "файл",
+          "description": "Изображение, PDF, документ на Office, аудио или видео файл"
+        }
+      }
+    },
+    "sauce": {
+      "name": "sauce",
+      "description": "Намира източника на изображение",
+      "parameters": {
+        "image": {
+          "name": "изображение",
+          "description": "Изображението за търсене (PNG, JPEG, WebP или GIF)"
+        },
+        "message": {
+          "name": "съобщение",
+          "description": "Връзка към съобщение от този сървър с изображението"
+        }
+      }
+    },
+    "define": {
+      "name": "дефиниция",
+      "description": "Търси дума в Уикиречника",
+      "parameters": {
+        "word": {
+          "name": "дума",
+          "description": "Думата или изразът за търсене"
+        },
+        "language": {
+          "name": "език",
+          "description": "Език на Уикиречника (по подразбиране: твоят)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "Обобщава последните съобщения в този канал",
+      "parameters": {
+        "messages": {
+          "name": "съобщения",
+          "description": "Колко скорошни съобщения да прочете (по подразбиране: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "Тества регулярен израз върху текст"
+    },
+    "diff": {
+      "name": "сравнение",
+      "description": "Сравнява два текста и показва какво е променено"
+    },
+    "textstats": {
+      "name": "статистика-текст",
+      "description": "Брои думи и измерва времето за четене и четимостта",
+      "parameters": {
+        "text": {
+          "name": "текст",
+          "description": "Текстът за анализ (остави празно, за да отвориш форма)"
+        }
+      }
+    },
+    "status": {
+      "name": "статус",
+      "description": "Проверява дали Discord, GitHub и други услуги работят",
+      "parameters": {
+        "service": {
+          "name": "услуга",
+          "description": "Услуга за проверка (празно: преглед на всички)"
+        }
+      }
+    },
+    "company": {
+      "name": "фирма",
+      "description": "Търси френска фирма по име, SIREN или SIRET",
+      "parameters": {
+        "search": {
+          "name": "търсене",
+          "description": "Име на фирма, SIREN (9 цифри) или SIRET (14 цифри)"
+        }
+      }
+    },
+    "username": {
+      "name": "псевдоним",
+      "description": "Намира къде се използва едно потребителско име в стотици сайтове",
+      "parameters": {
+        "username": {
+          "name": "псевдоним",
+          "description": "Потребителското име за търсене"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Кой е регистрирал домейн и кога (регистратор, дати, сървъри на имена)",
+      "parameters": {
+        "domain": {
+          "name": "домейн",
+          "description": "Име на домейн или линк, например example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "DNS записи на домейн (A, MX, TXT, NS...) и защита на имейла",
+      "parameters": {
+        "domain": {
+          "name": "домейн",
+          "description": "Име на домейн или линк, например example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Провери HTTPS сертификата на уебсайт (валидност, издател, имена)",
+      "parameters": {
+        "domain": {
+          "name": "домейн",
+          "description": "Име на домейн или линк, например example.com"
+        },
+        "port": {
+          "name": "порт",
+          "description": "Порт (по подразбиране 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "поддомейни",
+      "description": "Списък с поддомейните на домейн, видени в публични сертификати",
+      "parameters": {
+        "domain": {
+          "name": "домейн",
+          "description": "Име на домейн или линк, например example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "проверка-на-линк",
+      "description": "Провери дали линк е опасен: пренасочвания, възраст на домейна, репутация",
+      "parameters": {
+        "url": {
+          "name": "линк",
+          "description": "Линкът за проверка"
+        }
+      }
+    },
+    "image": {
+      "name": "изображение",
+      "description": "Показва изображение: промяна на размера, компресиране, преобразуване или премахване на фона",
+      "parameters": {
+        "file": {
+          "name": "файл",
+          "description": "Изображението за обработка (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "конвертирай",
+      "description": "Преобразува файл в друг формат (изображения, документи, аудио, видео, архиви...)",
+      "parameters": {
+        "file": {
+          "name": "файл",
+          "description": "Файлът за преобразуване (макс. 25 МБ)"
+        },
+        "format": {
+          "name": "формат",
+          "description": "Целеви формат (оставете празно, за да изберете от списък)"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "Силна"
+    },
+    "clear": {
+      "name": "Без подобни знаци"
+    },
+    "passphrase": {
+      "name": "Парола-фраза"
+    },
+    "v4": {
+      "name": "v4 (случайна)"
+    },
+    "v7": {
+      "name": "v7 (по време)"
     }
   }
 }

@@ -34,6 +34,12 @@
     },
     "Transcribe": {
       "name": "Transkribuoti"
+    },
+    "Find source": {
+      "name": "Rasti šaltinį"
+    },
+    "Check links": {
+      "name": "Patikrinti nuorodas"
     }
   },
   "commands": {
@@ -424,6 +430,275 @@
           "description": "Nuoroda į šio serverio žinutę su vaizdu"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "Patikrina, ar slaptažodis pasirodė duomenų nutekėjime"
+    },
+    "password": {
+      "name": "slaptažodis",
+      "description": "Sugeneruoja saugų atsitiktinį slaptažodį ar slaptafrazę",
+      "parameters": {
+        "length": {
+          "name": "ilgis",
+          "description": "Ilgis (8-128); slaptafrazė: apie 1 žodis 4 simboliams"
+        },
+        "type": {
+          "name": "tipas",
+          "description": "Slaptažodžio rūšis (numatyta: stiprus)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "Sugeneruoja atsitiktinius UUID (v4 arba v7)",
+      "parameters": {
+        "version": {
+          "name": "versija",
+          "description": "UUID versija (numatyta: v4)"
+        },
+        "count": {
+          "name": "kiekis",
+          "description": "Kiek sugeneruoti (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "Apskaičiuoja teksto ar failo MD5, SHA-1, SHA-256 ir SHA-512",
+      "parameters": {
+        "text": {
+          "name": "tekstas",
+          "description": "Tekstas maišai (palik tekstą ir failą tuščius formai)"
+        },
+        "file": {
+          "name": "failas",
+          "description": "Failas maišai (maks. 25 MB)"
+        },
+        "compare": {
+          "name": "palyginti",
+          "description": "Žinoma maiša palyginimui"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "Dekoduoja JSON Web Token (antraštę ir turinį)"
+    },
+    "color": {
+      "name": "spalva",
+      "description": "Konvertuoja spalvą ir patikrina jos kontrastą",
+      "parameters": {
+        "color": {
+          "name": "spalva",
+          "description": "HEX, rgb(), hsl(), CSS pavadinimas, Discord skaičius arba random"
+        }
+      }
+    },
+    "music": {
+      "name": "muzika",
+      "description": "Muzikos įrankiai"
+    },
+    "music link": {
+      "name": "nuoroda",
+      "description": "Rask „Spotify“ dainą, albumą ar atlikėją kitose platformose",
+      "parameters": {
+        "url": {
+          "name": "nuoroda",
+          "description": "„Spotify“ nuoroda (daina, albumas ar atlikėjas)"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "Parodo paslėptus failo metaduomenis",
+      "parameters": {
+        "file": {
+          "name": "failas",
+          "description": "Vaizdas, PDF, Office dokumentas, garso ar vaizdo failas"
+        }
+      }
+    },
+    "sauce": {
+      "name": "saltinis",
+      "description": "Randa vaizdo šaltinį",
+      "parameters": {
+        "image": {
+          "name": "paveikslelis",
+          "description": "Ieškomas vaizdas (PNG, JPEG, WebP arba GIF)"
+        },
+        "message": {
+          "name": "zinute",
+          "description": "Nuoroda į šio serverio žinutę su vaizdu"
+        }
+      }
+    },
+    "define": {
+      "name": "apibrėžimas",
+      "description": "Ieško žodžio Vikižodyne",
+      "parameters": {
+        "word": {
+          "name": "žodis",
+          "description": "Ieškomas žodis ar posakis"
+        },
+        "language": {
+          "name": "kalba",
+          "description": "Vikižodyno kalba (numatytoji: tavo)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "Apibendrina naujausias šio kanalo žinutes",
+      "parameters": {
+        "messages": {
+          "name": "žinutės",
+          "description": "Kiek naujausių žinučių perskaityti (numatyta: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "Išbando reguliarųjį reiškinį tekste"
+    },
+    "diff": {
+      "name": "palyginti",
+      "description": "Palygina du tekstus ir parodo, kas pasikeitė"
+    },
+    "textstats": {
+      "name": "teksto-statistika",
+      "description": "Suskaičiuoja žodžius, išmatuoja skaitymo laiką ir skaitomumą",
+      "parameters": {
+        "text": {
+          "name": "tekstas",
+          "description": "Analizuojamas tekstas (palik tuščią, kad atsidarytų forma)"
+        }
+      }
+    },
+    "status": {
+      "name": "būsena",
+      "description": "Patikrina, ar veikia Discord, GitHub ir kitos paslaugos",
+      "parameters": {
+        "service": {
+          "name": "paslauga",
+          "description": "Paslauga (palik tuščią: visų apžvalga)"
+        }
+      }
+    },
+    "company": {
+      "name": "įmonė",
+      "description": "Ieško Prancūzijos įmonės pagal pavadinimą, SIREN ar SIRET",
+      "parameters": {
+        "search": {
+          "name": "paieška",
+          "description": "Įmonės pavadinimas, SIREN (9 skaitmenys) ar SIRET (14 skaitmenų)"
+        }
+      }
+    },
+    "username": {
+      "name": "naudotojo-vardas",
+      "description": "Randa, kur naudotojo vardas naudojamas šimtuose svetainių",
+      "parameters": {
+        "username": {
+          "name": "naudotojo-vardas",
+          "description": "Ieškomas naudotojo vardas"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Kas užregistravo domeną ir kada (registratorius, datos, vardų serveriai)",
+      "parameters": {
+        "domain": {
+          "name": "domenas",
+          "description": "Domeno vardas arba nuoroda, pvz., example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "Domeno DNS įrašai (A, MX, TXT, NS...) ir el. pašto apsauga",
+      "parameters": {
+        "domain": {
+          "name": "domenas",
+          "description": "Domeno vardas arba nuoroda, pvz., example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Patikrink svetainės HTTPS sertifikatą (galiojimas, išdavėjas, vardai)",
+      "parameters": {
+        "domain": {
+          "name": "domenas",
+          "description": "Domeno vardas arba nuoroda, pvz., example.com"
+        },
+        "port": {
+          "name": "prievadas",
+          "description": "Prievadas (numatytasis 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "subdomenai",
+      "description": "Domeno subdomenų, matytų viešuose sertifikatuose, sąrašas",
+      "parameters": {
+        "domain": {
+          "name": "domenas",
+          "description": "Domeno vardas arba nuoroda, pvz., example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "nuorodos-patikra",
+      "description": "Patikrink, ar nuoroda pavojinga: peradresavimai, domeno amžius, reputacija",
+      "parameters": {
+        "url": {
+          "name": "nuoroda",
+          "description": "Tikrintina nuoroda"
+        }
+      }
+    },
+    "image": {
+      "name": "vaizdas",
+      "description": "Parodo vaizdą ir leidžia keisti dydį, suspausti, konvertuoti arba pašalinti foną",
+      "parameters": {
+        "file": {
+          "name": "failas",
+          "description": "Vaizdas apdorojimui (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "konvertuoti",
+      "description": "Konvertuoja failą į kitą formatą (vaizdai, dokumentai, garsas, vaizdo įrašai, archyvai...)",
+      "parameters": {
+        "file": {
+          "name": "failas",
+          "description": "Failas konvertavimui (maks. 25 MB)"
+        },
+        "format": {
+          "name": "formatas",
+          "description": "Tikslinis formatas (palik tuščią, kad pasirinktum iš sąrašo)"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "Stiprus"
+    },
+    "clear": {
+      "name": "Be painiojamų simbolių"
+    },
+    "passphrase": {
+      "name": "Slaptafrazė"
+    },
+    "v4": {
+      "name": "v4 (atsitiktinis)"
+    },
+    "v7": {
+      "name": "v7 (pagal laiką)"
     }
   }
 }

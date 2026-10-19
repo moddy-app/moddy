@@ -174,9 +174,34 @@ _ALL: Tuple[Metric, ...] = (
            doc="The Moddy team labeled an automod decision (labeling queue)."),
     Metric("ocr.used", scope=SCOPE_GLOBAL, dimensions=("source",),
            doc="/ocr or the Transcribe menu extracted text from an image."),
+    Metric("exif.used", scope=SCOPE_GLOBAL, dimensions=("kind",),
+           doc="/exif read a file's metadata (kind: image | pdf | office | audio | video)."),
+    Metric("sauce.used", scope=SCOPE_GLOBAL, dimensions=("source", "found"),
+           doc="/sauce or the Find source menu searched an image "
+               "(source: slash | menu | link; found: yes | no)."),
+    Metric("domain_tools.used", scope=SCOPE_GLOBAL, dimensions=("tool",),
+           doc="/whois, /dns, /ssl or /subdomains answered (tool: whois | dns | ssl | subdomains)."),
+    Metric("link_check.used", scope=SCOPE_GLOBAL, dimensions=("source", "verdict"),
+           doc="/link-check or the Check links menu analysed a link (source: slash | menu; "
+               "verdict: safe | suspicious | dangerous | unreachable)."),
     Metric("ai_detector.verdict", scope=SCOPE_GLOBAL, dimensions=("kind", "source"),
            doc="The AI image detector reached a verdict (kind: ai_full | "
                "ai_partial | photo | photo_edited | unsigned; source: auto | command)."),
+    Metric("music_links.resolved", scope=SCOPE_GLOBAL, dimensions=("kind", "source"),
+           doc="A Spotify link was read and looked up on other platforms (kind: "
+               "track | album | artist; source: auto | command)."),
+    Metric("music_links.posted", scope=SCOPE_GLOBAL, dimensions=("kind",),
+           doc="The music links module replied under a message with links to other platforms."),
+    Metric("music_links.failed", scope=SCOPE_GLOBAL, dimensions=("reason", "source"),
+           doc="A Spotify link could not be resolved (reason: not_found | unavailable | "
+               "unsupported; source: auto | command)."),
+    Metric("translate_button.prompted", scope=SCOPE_GLOBAL, dimensions=("language",),
+           doc="The translate button was offered (or extended) under a message "
+               "in a foreign language; `language` is the detected one."),
+    Metric("translate_button.clicked", scope=SCOPE_GLOBAL,
+           doc="Someone clicked a translate button."),
+    Metric("translate_button.cache_hit", scope=SCOPE_GLOBAL,
+           doc="A click was served from the 24 h translation cache (no DeepL call)."),
     # -- Uniques (HyperLogLog, never a list of ids) ------------------------ #
     Metric("user.active", kind=KIND_UNIQUE, scope=SCOPE_GUILD,
            doc="Distinct people who used Moddy in this server, per day."),

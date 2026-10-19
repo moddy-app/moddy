@@ -3941,6 +3941,118 @@
           "placeholder": "No ignored channel"
         }
       }
+    },
+    "translate_button": {
+      "name": "Translate Button",
+      "description": "Offers a translation under messages in another language",
+      "config": {
+        "title": "Translate Button",
+        "description": "When someone writes in a language your server does not speak, Moddy adds a small **Translate** button under the message. Whoever clicks gets the translation privately, in their own language. Detection happens inside Moddy and nothing is sent anywhere until someone clicks. On by default in every server: you can pause it from **Manage**.",
+        "learnt": {
+          "section_title": "Languages usually spoken here",
+          "section_description": "Learnt from the last {days} days of messages: a language that makes up at least 10 % of them never gets a button",
+          "learning": "Still learning: `{sample}` / `{needed}` messages analysed so far",
+          "none": "Only the server language so far"
+        },
+        "languages": {
+          "section_title": "Other languages to ignore",
+          "section_description": "Messages in these languages never get a button, on top of the server language and the ones Moddy learnt",
+          "placeholder": "No extra language"
+        },
+        "delay": {
+          "section_title": "Button lifetime",
+          "section_description": "How long the small prompt stays under the message",
+          "placeholder": "Choose a duration",
+          "options": {
+            "120": "2 minutes",
+            "300": "5 minutes",
+            "600": "10 minutes",
+            "1800": "30 minutes",
+            "0": "Never delete"
+          }
+        },
+        "channels": {
+          "section_title": "Ignored channels",
+          "section_description": "Moddy never offers a translation in these channels (nor in their threads)",
+          "placeholder": "No ignored channel"
+        }
+      },
+      "prompt": {
+        "detected": "{language} detected",
+        "button": "Translate"
+      },
+      "loading": "Translating…",
+      "card": {
+        "title": "Translation",
+        "jump": "Original message"
+      },
+      "errors": {
+        "title": "Translation unavailable",
+        "failed": "The translation failed. Try again in a moment.",
+        "unavailable": "Translation is not available right now. Try again later.",
+        "rate_limited": "You are clicking too fast. Wait a minute and try again.",
+        "gone": "The original message no longer exists.",
+        "empty": "There is nothing to translate in this message.",
+        "quota": "You reached your daily translation limit. Try again tomorrow."
+      },
+      "languages": {
+        "en": "English",
+        "fr": "French",
+        "de": "German",
+        "es": "Spanish",
+        "pt": "Portuguese",
+        "it": "Italian",
+        "nl": "Dutch",
+        "pl": "Polish",
+        "ru": "Russian",
+        "uk": "Ukrainian",
+        "tr": "Turkish",
+        "ar": "Arabic",
+        "ja": "Japanese",
+        "ko": "Korean",
+        "zh": "Chinese",
+        "sv": "Swedish",
+        "da": "Danish",
+        "no": "Norwegian",
+        "fi": "Finnish",
+        "cs": "Czech",
+        "ro": "Romanian",
+        "hu": "Hungarian",
+        "el": "Greek",
+        "id": "Indonesian",
+        "bg": "Bulgarian"
+      }
+    },
+    "music_links": {
+      "name": "Music links",
+      "description": "Adds Deezer, Apple Music and YouTube Music under Spotify links",
+      "config": {
+        "title": "Music links",
+        "description": "When someone posts a Spotify link, Moddy quietly replies with the same song on other platforms. It only answers when it found the same song. On by default in every server: you can pause it from **Manage**.",
+        "platforms": {
+          "section_title": "Platforms offered",
+          "section_description": "Tick the platforms shown under Spotify links",
+          "placeholder": "No platform",
+          "deezer_description": "Direct link to the song",
+          "apple_music_description": "Direct link to the song",
+          "youtube_music_description": "Search link, not the exact song"
+        },
+        "channels": {
+          "section_title": "Ignored channels",
+          "section_description": "Moddy never answers in these channels (nor in their threads)",
+          "placeholder": "No ignored channel"
+        }
+      },
+      "platforms": {
+        "spotify": "Spotify",
+        "deezer": "Deezer",
+        "apple_music": "Apple Music",
+        "youtube_music": "YouTube Music"
+      },
+      "reply": {
+        "artist_tag": "artist",
+        "album_tag": "album"
+      }
     }
   },
   "languages": {
@@ -5609,6 +5721,1005 @@
       "download_failed": "Could not download the image.",
       "bad_link": "This is not a valid Discord message link.",
       "other_server": "Only messages from this server can be checked."
+    }
+  },
+  "tools": {
+    "common": {
+      "loading": "One moment…",
+      "requested_by": "requested by {user}",
+      "by": {
+        "provided_by": "Provided by {source}",
+        "data_provided_by": "Data provided by {source}",
+        "translated_by": "Translated by {source}",
+        "checked_by": "Checked by {source}",
+        "scanned_by": "Scanned by {source}",
+        "converted_by": "Converted by {source}",
+        "summarized_by": "Summarized by {source}",
+        "found_by": "Found by {source}",
+        "computed_locally": "Computed by Moddy itself, nothing is sent elsewhere"
+      },
+      "error_title": "Not possible right now",
+      "errors": {
+        "failed": "Something went wrong. Try again in a moment.",
+        "unavailable": "This service is unavailable right now. Try again later.",
+        "timeout": "The service took too long to answer. Try again in a moment.",
+        "network": "The service could not be reached. Try again in a moment.",
+        "rate_limited": "Too many requests right now. Try again in a minute.",
+        "quota": "You have reached your usage limit for today. It resets tomorrow.",
+        "cooldown": "Wait {retry} more before running it again.",
+        "not_found": "No results.",
+        "expired": "This card has expired. Run the command again to start over.",
+        "too_large": "The file is too large (maximum {max}).",
+        "empty_input": "There is nothing to analyse: give a text or a file.",
+        "guild_only": "This command only works in a server where Moddy is present."
+      },
+      "buttons": {
+        "refresh": "Refresh",
+        "regenerate": "Regenerate",
+        "retry": "Retry",
+        "edit": "Edit",
+        "export": "Export",
+        "open": "Open",
+        "previous": "Previous",
+        "next": "Next",
+        "back": "Back"
+      },
+      "page": "Page {page}/{pages}"
+    },
+    "pwned": {
+      "title": "Password check",
+      "modal_title": "Check a password",
+      "modal_help": "Your password never leaves Moddy in clear text: only the first 5 characters of its SHA-1 fingerprint are sent to Have I Been Pwned (k-anonymity). Nothing is logged or stored.",
+      "input_label": "Password",
+      "found": "Found in data breaches",
+      "found_count": "Seen {count} times in known breaches.",
+      "found_advice": "Stop using it. Change it everywhere you reused it, and let a password manager create a new one, or try {command}.",
+      "not_found": "Not found in known breaches",
+      "not_found_note": "That does not make it strong: a short or guessable password can still be cracked. {command} can create a strong one.",
+      "open_site": "Passwords on Have I Been Pwned",
+      "errors": {
+        "unavailable": "Have I Been Pwned is not answering right now. Try again in a moment.",
+        "cooldown": "Too many checks in a row. Wait {retry} before the next one."
+      }
+    },
+    "password": {
+      "title": "Password generator",
+      "kinds": {
+        "strong": "Strong",
+        "clear": "No look-alikes",
+        "passphrase": "Passphrase"
+      },
+      "strength": {
+        "weak": "Weak",
+        "fair": "Fair",
+        "good": "Good",
+        "strong": "Strong",
+        "excellent": "Excellent"
+      },
+      "entropy": "{bar} **{label}** · {bits} of entropy",
+      "bits": "{n} bits",
+      "summary_chars": "{kind} · {length} characters",
+      "summary_words": "{kind} · {words} words",
+      "hint": "Copy it now and keep it in a password manager: Moddy stores nothing."
+    },
+    "uuid": {
+      "title": "UUID",
+      "version": {
+        "v4": "Version 4 · random",
+        "v7": "Version 7 · time-ordered, sortable"
+      }
+    },
+    "hash": {
+      "title": "Hashes",
+      "modal_title": "Hash a text or a file",
+      "modal_help": "Fill in a text or upload a file. Hashes are computed on the spot, nothing is stored.",
+      "text_label": "Text",
+      "text_placeholder": "Hashed exactly as typed",
+      "file_label": "File",
+      "file_description": "Up to 25 MB",
+      "compare_label": "Compare with (optional)",
+      "compare_placeholder": "Paste a known hash",
+      "subject": "Hashed",
+      "subject_text": "Text · {count} characters",
+      "subject_file": "{name} · {size}",
+      "utf8_note": "Text is hashed as UTF-8, exactly as typed (no trimming).",
+      "match": "Matches {algo}",
+      "no_match": "Matches none of these hashes",
+      "errors": {
+        "both": "Give either a text or a file, not both.",
+        "download_failed": "Moddy could not download that file. Upload it again."
+      }
+    },
+    "jwt": {
+      "title": "JWT decoder",
+      "modal_title": "Decode a JWT",
+      "modal_help": "Don't paste a token that is still valid: anyone holding it can act as you. Decoding happens on Moddy, nothing is verified or stored.",
+      "input_label": "Token",
+      "header": "Header",
+      "payload": "Payload",
+      "status": {
+        "valid": "Valid",
+        "expired": "Expired",
+        "not_yet": "Not yet valid"
+      },
+      "claims": {
+        "iat": "Issued",
+        "nbf": "Not valid before",
+        "exp": "Expires",
+        "iss": "Issuer",
+        "sub": "Subject",
+        "aud": "Audience"
+      },
+      "alg_none": "The algorithm is none: this token has no signature, so anyone could have written it. Never accept it.",
+      "unverified": "Signature not verified: Moddy only reads what the token claims, it cannot tell whether it is genuine.",
+      "truncated": "Long content: the full JSON is attached.",
+      "bad_time": "The {claim} claim is not a valid date.",
+      "errors": {
+        "empty": "Paste a token first.",
+        "not_a_jwt": "This does not look like a JWT. Expected three parts separated by dots, like `xxxxx.yyyyy.zzzzz`.",
+        "encrypted": "This is an encrypted token (JWE): its content cannot be read without the key."
+      }
+    },
+    "color": {
+      "title": "Colour",
+      "closest": "Closest CSS name",
+      "exact": "CSS name",
+      "alpha_note": "Transparency ({alpha}) is ignored: the colour is shown opaque.",
+      "contrast_title": "Contrast (WCAG 2.x)",
+      "contrast_dark": "As text on Discord dark",
+      "contrast_light": "As text on Discord light",
+      "contrast_white": "Behind white text",
+      "contrast_black": "Behind black text",
+      "levels": "AA {aa} · AAA {aaa} · large text AA {aa_large} · AAA {aaa_large}",
+      "random_button": "Random colour",
+      "errors": {
+        "empty": "Give a colour to look at.",
+        "invalid": "I don't recognise that colour. Try {examples}.",
+        "out_of_range": "A Discord colour is a number from `0` to `16777215`."
+      }
+    },
+    "music": {
+      "title": {
+        "track": "Song",
+        "album": "Album",
+        "artist": "Artist"
+      },
+      "fields": {
+        "album": "Album",
+        "year": "Year",
+        "duration": "Duration"
+      },
+      "no_match": "I could not find this one on Deezer or Apple Music. The YouTube Music button opens a search.",
+      "errors": {
+        "not_spotify": "This is not a Spotify link. Paste the link of a song, an album or an artist.",
+        "unsupported": "Playlists, episodes and podcasts have no equivalent on other platforms. Try a song, an album or an artist.",
+        "not_found": "This Spotify link leads nowhere. Check that it is complete.",
+        "unavailable": "I cannot read the Spotify page right now. Try again in a moment."
+      }
+    },
+    "exif": {
+      "title": "File metadata",
+      "loading": "Reading the file…",
+      "yes": "Yes",
+      "no": "No",
+      "all_tags": "All tags",
+      "open_map": "Open in OpenStreetMap",
+      "raw_sent": "Here is every tag found in the file.",
+      "more_hidden": "{count} more tag(s) not shown. Use **All tags** to see everything.",
+      "nothing_title": "Nothing found",
+      "nothing_body": "This file carries no readable metadata.",
+      "nothing_body_image": "No metadata in this image. That is common: Discord often removes it when a picture is sent, but not always, and some files simply never had any.",
+      "hints": {
+        "location": "**This file contains a GPS position.** Remove it before sharing the original.",
+        "person": "It also carries a name (author, owner…).",
+        "ai": "It declares having been created or edited with AI.",
+        "c2pa": "It carries Content Credentials (C2PA): `/ai-check` can verify them."
+      },
+      "error_title": "Cannot read this file",
+      "errors": {
+        "unsupported": "This type of file is not supported. Try an image, a PDF, an Office document, or an audio or video file.",
+        "unreadable": "This file looks damaged or empty, so nothing could be read.",
+        "download": "Discord did not let me download this file. Send it again and retry.",
+        "timeout": "Downloading the file took too long. Try again in a moment."
+      },
+      "fields": {
+        "coordinates": "Coordinates",
+        "altitude": "Altitude",
+        "place": "Place",
+        "author": "Author",
+        "last_modified_by": "Last modified by",
+        "company": "Company",
+        "owner": "Owner",
+        "artist": "Artist",
+        "copyright": "Copyright",
+        "make": "Brand",
+        "model": "Model",
+        "lens": "Lens",
+        "serial": "Serial number",
+        "exposure": "Exposure",
+        "aperture": "Aperture",
+        "iso": "ISO",
+        "focal_length": "Focal length",
+        "focal_length_35": "Focal length (35 mm)",
+        "taken": "Taken",
+        "digitized": "Digitized",
+        "modified": "Modified",
+        "created": "Created",
+        "printed": "Printed",
+        "software": "Software",
+        "creator_tool": "Created with",
+        "producer": "Producer",
+        "generator": "Generator",
+        "edit_history": "Edit history",
+        "digital_source": "Digital source",
+        "application": "Application",
+        "revision": "Revision",
+        "edit_time": "Editing time",
+        "title": "Title",
+        "subject": "Subject",
+        "keywords": "Keywords",
+        "description": "Description",
+        "comment": "Comment",
+        "pages": "Pages",
+        "words": "Words",
+        "encrypted": "Encrypted",
+        "version": "Version",
+        "album": "Album",
+        "track": "Track",
+        "year": "Year",
+        "genre": "Genre",
+        "duration": "Duration",
+        "bitrate": "Bitrate",
+        "sample_rate": "Sample rate",
+        "channels": "Channels",
+        "encoder": "Encoder",
+        "cover": "Cover art",
+        "codec": "Codec",
+        "dimensions": "Dimensions",
+        "dpi": "Resolution (DPI)",
+        "orientation": "Orientation",
+        "color_profile": "Colour profile",
+        "frames": "Frames",
+        "format": "Format"
+      },
+      "groups": {
+        "author": "Author",
+        "location": "Location",
+        "camera": "Camera",
+        "capture": "Shot",
+        "dates": "Dates",
+        "software": "Software",
+        "document": "Document",
+        "media": "Audio / video",
+        "image": "Image"
+      },
+      "kinds": {
+        "image": "Image",
+        "pdf": "PDF document",
+        "office": "Office document",
+        "audio": "Audio",
+        "video": "Video"
+      }
+    },
+    "sauce": {
+      "title": "Image source",
+      "loading": "Searching for the source…",
+      "untitled": "Untitled",
+      "by_author": "by {author}",
+      "episode": "Episode {episode}",
+      "at": "at {time}",
+      "anime_title": "Anime",
+      "best_title": "Best match",
+      "also_title": "Also found",
+      "nothing_title": "No reliable source found",
+      "nothing_body": "No match is similar enough. Try again with an uncropped, higher-resolution version, or search by hand with the buttons below.",
+      "partial": "{providers} did not answer: the result may be incomplete.",
+      "confidence": {
+        "high": "very likely",
+        "likely": "likely",
+        "possible": "possible"
+      },
+      "error_title": "Search impossible",
+      "errors": {
+        "unavailable": "Image search is not available right now. Try again later.",
+        "quota": "You have used your 15 image searches for today. It resets tomorrow.",
+        "busy": "The search services are very busy. Try again in a few minutes.",
+        "unreadable": "The search services could not read this image. Try another file or a screenshot.",
+        "no_image": "Give an image or a link to a message that contains one.",
+        "not_image": "This file is not an image the search can read (PNG, JPEG, WebP or GIF).",
+        "bad_link": "That is not a valid message link. Copy it with *Copy message link*.",
+        "other_server": "That message is not in this server. Use the image option instead.",
+        "gone": "I cannot read that message. Check the link and that you can see its channel.",
+        "timeout": "The search took too long. Try again in a moment.",
+        "failed": "The search failed. Try again in a moment."
+      }
+    },
+    "define": {
+      "error_title": "Could not look it up",
+      "title": "Dictionary",
+      "senses_placeholder": "Other senses",
+      "view_on": "View on Wiktionary",
+      "synonyms": "Synonyms",
+      "more": "{count} more definition(s) on Wiktionary.",
+      "fallback_note": "Not found on the {lang} Wiktionary, so this comes from the English one.",
+      "licence": "CC BY-SA",
+      "lang": {
+        "fr": "French",
+        "en": "English",
+        "es": "Spanish",
+        "pt": "Portuguese",
+        "de": "German"
+      },
+      "pos": {
+        "abbreviation": "Abbreviation",
+        "adjective": "Adjective",
+        "adverb": "Adverb",
+        "article": "Article",
+        "conjunction": "Conjunction",
+        "determiner": "Determiner",
+        "interjection": "Interjection",
+        "name": "Name",
+        "noun": "Noun",
+        "numeral": "Numeral",
+        "onomatopoeia": "Onomatopoeia",
+        "other": "Other",
+        "particle": "Particle",
+        "phrase": "Phrase",
+        "prefix": "Prefix",
+        "preposition": "Preposition",
+        "pronoun": "Pronoun",
+        "proper_noun": "Proper noun",
+        "proverb": "Proverb",
+        "suffix": "Suffix",
+        "symbol": "Symbol",
+        "verb": "Verb"
+      },
+      "errors": {
+        "not_found": "No entry for {word}. Check the spelling, or try another language.",
+        "invalid_word": "This is not a valid word or expression to look up."
+      }
+    },
+    "tldr": {
+      "error_title": "Could not summarise",
+      "title": "In short",
+      "loading": "Reading the conversation…",
+      "scope": "Summarised",
+      "scope_value": "{count} messages in {channel}",
+      "ai_note": "Written by an AI: it can make mistakes. Check the original messages when it matters.",
+      "jump": "jump",
+      "errors": {
+        "not_enough": "There are not enough recent messages to summarise (at least {min} are needed).",
+        "no_access": "You cannot read the history of this channel, so Moddy cannot summarise it for you.",
+        "bot_no_access": "Moddy cannot read the history of this channel. Give it the View Channel and Read Message History permissions here."
+      }
+    },
+    "regex": {
+      "error_title": "Could not test the pattern",
+      "title": "Regex tester",
+      "modal_title": "Test a regular expression",
+      "modal_help": "Enter a pattern and the text to test it on. Matches are highlighted in the result.",
+      "pattern_label": "Pattern",
+      "pattern_placeholder": "\\b\\w+@\\w+\\.\\w+\\b",
+      "text_label": "Text to test",
+      "text_placeholder": "The text the pattern runs on",
+      "flags_label": "Flags",
+      "flags": {
+        "i": "Ignore case (i)",
+        "m": "Multiline (m)",
+        "s": "Dot matches newline (s)",
+        "x": "Verbose (x)"
+      },
+      "count_one": "{count} match",
+      "count_other": "{count} matches",
+      "count_capped": "{count}+ matches",
+      "no_match": "No match",
+      "no_match_hint": "The pattern is valid but finds nothing in this text. Edit it to try again.",
+      "col_index": "#",
+      "col_position": "Position",
+      "col_match": "Match",
+      "col_groups": "Groups",
+      "pattern": "Pattern",
+      "truncated": "The full list of matches is attached.",
+      "errors": {
+        "empty_pattern": "Enter a pattern to test.",
+        "empty_text": "Enter a text to test the pattern on.",
+        "invalid_pattern": "The pattern is not valid: {detail}. Edit it and try again.",
+        "timeout": "The pattern took too long to run, which usually means catastrophic backtracking. Simplify it.",
+        "pattern_too_long": "The pattern is too long (maximum {max} characters).",
+        "too_complex": "The pattern is too complex to compile. Simplify it."
+      }
+    },
+    "diff": {
+      "error_title": "Could not compare",
+      "title": "Text comparison",
+      "modal_title": "Compare two texts",
+      "modal_help": "Paste the texts and choose how to compare them.",
+      "before_label": "Before",
+      "after_label": "After",
+      "mode_label": "Compare by",
+      "mode": {
+        "lines": "Line",
+        "words": "Word"
+      },
+      "mode_hint": {
+        "lines": "A red / green diff, like in Git",
+        "words": "Struck-through and bold words"
+      },
+      "identical": "The two texts are identical.",
+      "changes": "Changes",
+      "legend_words": "~~Struck-through~~ words were removed, **bold** words were added.",
+      "truncated": "The full comparison is attached.",
+      "errors": {
+        "empty_input": "Give at least one of the two texts."
+      }
+    },
+    "textstats": {
+      "error_title": "Could not analyse the text",
+      "title": "Text statistics",
+      "modal_title": "Analyse a text",
+      "modal_help": "Paste a text to count its words and measure its readability. Nothing is stored.",
+      "text_label": "Text",
+      "text_placeholder": "The text to analyse",
+      "words_big": "{count} words",
+      "characters": "Characters",
+      "characters_value": "{total} ({no_spaces} without spaces)",
+      "sentences": "Sentences",
+      "paragraphs": "Paragraphs",
+      "avg": "Words per sentence",
+      "reading": "Reading time",
+      "speaking": "Speaking time",
+      "language": "Language",
+      "languages": {
+        "fr": "French",
+        "en": "English",
+        "es": "Spanish",
+        "pt": "Portuguese",
+        "de": "German"
+      },
+      "readability": "Readability",
+      "levels": {
+        "very_easy": "Very easy",
+        "easy": "Easy",
+        "average": "Average",
+        "difficult": "Difficult",
+        "very_difficult": "Very difficult"
+      },
+      "formula": "Formula: {name}",
+      "formulas": {
+        "fr": "Kandel-Moles",
+        "en": "Flesch",
+        "es": "Fernández Huerta",
+        "de": "Amstad",
+        "pt": "Martins"
+      },
+      "not_enough": "Add at least {min} words to get a readability score.",
+      "no_language": "No readability score: the language could not be recognised (French, English, Spanish, Portuguese and German are supported).",
+      "top_words": "Most used words",
+      "errors": {
+        "empty_input": "There is no text to analyse."
+      }
+    },
+    "status": {
+      "title": "Service status",
+      "pick_placeholder": "See the details of a service…",
+      "updated": "updated {time}",
+      "since": "since {time}",
+      "more": "+ {count} more",
+      "open_page": "Status page",
+      "unreachable": "The status page of {name} could not be read right now, so its state is unknown. Try again in a moment.",
+      "all_good": "No problem reported: all `{count}` components are operational.",
+      "errors": {
+        "not_found": "I don't follow a service called {query}. Start typing a name and pick one from the suggestions, or leave it empty to see all of them."
+      },
+      "summary": {
+        "ok": "All `{total}` services are running normally.",
+        "problems": "Services with a problem: `{problems}` of `{total}`.",
+        "maintenance": "Maintenance in progress: `{count}`.",
+        "unknown": "Status page unreachable: `{count}`."
+      },
+      "states": {
+        "none": "Operational",
+        "minor": "Minor problem",
+        "major": "Major outage",
+        "critical": "Critical outage",
+        "maintenance": "Maintenance",
+        "unknown": "Unknown"
+      },
+      "components": {
+        "operational": "Operational",
+        "degraded_performance": "Degraded",
+        "partial_outage": "Partial outage",
+        "major_outage": "Major outage",
+        "under_maintenance": "Maintenance"
+      },
+      "sections": {
+        "components": "Affected components",
+        "incidents": "Ongoing incidents",
+        "maintenance": "Maintenance"
+      },
+      "incident_status": {
+        "investigating": "Investigating",
+        "identified": "Cause identified",
+        "monitoring": "Fix applied, monitoring",
+        "scheduled": "Scheduled",
+        "in_progress": "In progress",
+        "verifying": "Verifying"
+      },
+      "maintenance_now": "in progress, ends {time}",
+      "maintenance_planned": "planned {start} → {end}"
+    },
+    "company": {
+      "title": "Company",
+      "pick_placeholder": "Open a company's record…",
+      "results_intro": "`{total}` companies match {query}. Here are the first `{shown}`: pick one below to see its record.",
+      "directory_button": "Annuaire des Entreprises",
+      "directors_more": "+ {count} more",
+      "establishments": "{total} ({open} open)",
+      "errors": {
+        "too_short": "Type at least {min} characters of the company name, or a SIREN (9 digits) or SIRET (14 digits).",
+        "bad_number": "{number} is not a valid SIREN or SIRET: the check digit does not match. Check the number and try again.",
+        "not_found": "No French company found for {query}. Check the spelling, or search with the SIREN instead."
+      },
+      "status": {
+        "active": "Active",
+        "closed": "Closed",
+        "closed_on": "Closed on {date}"
+      },
+      "labels": {
+        "status": "Status",
+        "acronym": "Acronym",
+        "also_known_as": "Also known as",
+        "legal_form": "Legal form",
+        "activity": "Activity (NAF)",
+        "created": "Created",
+        "category": "Type",
+        "searched_establishment": "Searched establishment",
+        "headquarters": "Headquarters",
+        "establishments": "Establishments",
+        "headcount": "Headcount",
+        "directors": "Directors"
+      },
+      "age": {
+        "years_one": "{count} year",
+        "years_other": "{count} years",
+        "months_one": "{count} month",
+        "months_other": "{count} months",
+        "and": "and",
+        "new": "less than a month"
+      },
+      "headcount": {
+        "none": "No employees",
+        "zero": "Employer, no employee at year end",
+        "range": "{low} to {high} employees",
+        "plus": "{low} employees or more",
+        "year": "(in {year})"
+      },
+      "kind": {
+        "association": "Association",
+        "ess": "Social and solidarity economy"
+      },
+      "size": {
+        "PME": "SME",
+        "ETI": "Mid-size company",
+        "GE": "Large company"
+      }
+    },
+    "username": {
+      "title": "Username search",
+      "searching": "Looking for {name} on hundreds of sites…",
+      "found": "Results for {name}\n**Profiles found** · `{count}`\n**Sites checked** · `{checked}`",
+      "none": "No profile found for {name} on the `{checked}` sites checked.",
+      "cut": "The search was cut after {seconds} s: `{unchecked}` sites did not answer in time.",
+      "unchecked": "`{count}` sites did not answer or refused the check.",
+      "note": "Some sites block datacenter IP addresses, so a few profiles can be missing. A match only means the name is taken there: it is not proof that it is the same person.",
+      "continued": "(continued)",
+      "export_button": "Export .txt",
+      "export_title": "Export",
+      "export_body": "The profiles found for {name}, as a text file.",
+      "errors": {
+        "empty": "Type the username to look for.",
+        "too_long": "This username is too long: {max} characters at most.",
+        "invalid": "A username can only contain letters, digits, dots, dashes and underscores ({max} characters at most).",
+        "busy": "Moddy is already running other username searches. Try again in a minute.",
+        "dataset": "The list of sites could not be loaded right now. Try again in a moment."
+      },
+      "categories": {
+        "social": "Social networks",
+        "gaming": "Gaming",
+        "coding": "Code",
+        "tech": "Tech",
+        "video": "Video",
+        "music": "Music",
+        "images": "Images",
+        "art": "Art",
+        "blog": "Blogs",
+        "hobby": "Hobbies",
+        "business": "Business",
+        "finance": "Finance",
+        "shopping": "Shopping",
+        "dating": "Dating",
+        "news": "News",
+        "political": "Politics",
+        "health": "Health",
+        "archived": "Archives",
+        "misc": "Other"
+      }
+    },
+    "domain": {
+      "errors": {
+        "empty": "Type a domain name or a link.",
+        "invalid": "This does not look like a valid domain. Try something like `example.com`.",
+        "too_long": "This domain name is too long.",
+        "ip_not_allowed": "This command works with domain names, not IP addresses.",
+        "reserved": "This name is reserved for private networks: it cannot be looked up on the Internet.",
+        "private_address": "This address belongs to a private network. Moddy only looks at public servers.",
+        "cooldown": "Too many lookups in a row. Wait {retry} before the next one."
+      },
+      "error_title": "Cannot look this up"
+    },
+    "whois": {
+      "title": "WHOIS",
+      "registrar": "Registrar",
+      "created": "Created",
+      "expires": "Expires",
+      "updated": "Last updated",
+      "status": "Status",
+      "nameservers": "Name servers",
+      "dnssec": "DNSSEC",
+      "dnssec_signed": "Signed",
+      "dnssec_unsigned": "Not signed",
+      "more": "+{count} more",
+      "registrar_record": "Registrar record",
+      "shared_hosting": "This name belongs to a hosting platform ({platform}): the record shown is the platform's, not the site owner's.",
+      "subdomain_note": "Showing the record of {domain}, the registered domain.",
+      "alert": {
+        "very_recent": "Registered only {days} days ago. Brand-new domains are often used for scams.",
+        "recent": "Registered {days} days ago. It is a recent domain: stay careful.",
+        "expired": "This domain has expired.",
+        "expiring": "Expires in {days} days."
+      },
+      "alert_status": {
+        "on_hold": "The registry has put this domain on hold: it may not work.",
+        "pending_delete": "This domain is about to be deleted.",
+        "redemption": "This domain is in its redemption period: it has expired, but its owner can still recover it.",
+        "inactive": "This domain is inactive."
+      },
+      "statuses": {
+        "active": "Active",
+        "transfer_locked": "Transfer locked",
+        "delete_locked": "Deletion locked",
+        "update_locked": "Update locked",
+        "renew_locked": "Renewal locked",
+        "grace_period": "Grace period",
+        "pending": "Change pending",
+        "pending_transfer": "Transfer pending",
+        "inactive": "Inactive",
+        "on_hold": "On hold",
+        "redemption": "Redemption period",
+        "pending_delete": "Pending deletion"
+      },
+      "errors": {
+        "not_registered": "{domain} does not appear to be registered.",
+        "no_rdap": "The registry of {tld} does not publish public records through RDAP: there is nothing to show."
+      },
+      "error_title": "WHOIS lookup failed"
+    },
+    "dns": {
+      "title": "DNS records",
+      "name": "Name",
+      "type_all": "All records",
+      "select_placeholder": "Record type",
+      "none_at_all": "No DNS record found for this name.",
+      "none_of_type": "No {type} record for this name.",
+      "more_records": "+{count} more",
+      "truncated": "The list is long: the full version is attached.",
+      "ttl": "TTL",
+      "ttl_units": {
+        "s": "s",
+        "min": "min",
+        "h": "h",
+        "d": "d"
+      },
+      "dnssec_ok": "Validated with DNSSEC by the resolver",
+      "email_title": "Email protection",
+      "missing": "Missing",
+      "failed_types": "Could not query: {types}.",
+      "spf": {
+        "strict": "Strict (-all): only authorised servers may send",
+        "soft": "Soft (~all): unauthorised mail is flagged, not rejected",
+        "neutral": "Neutral (?all): no protection",
+        "open": "Open (+all): anyone may send as this domain",
+        "unknown": "Present"
+      },
+      "dmarc": {
+        "none": "Monitoring only (p=none)",
+        "quarantine": "Quarantine (p=quarantine)",
+        "reject": "Reject (p=reject)",
+        "unknown": "Present"
+      },
+      "errors": {
+        "nxdomain": "{domain} does not exist: no DNS server knows this name."
+      },
+      "error_title": "DNS lookup failed"
+    },
+    "ssl": {
+      "title": "SSL certificate",
+      "verdict": {
+        "valid": "Valid certificate",
+        "expiring": "Valid, but it expires soon",
+        "invalid": "Invalid certificate"
+      },
+      "reasons": {
+        "expired": "The certificate has expired.",
+        "not_yet_valid": "The certificate is not valid yet.",
+        "self_signed": "The certificate is self-signed: nobody vouches for it.",
+        "untrusted_issuer": "The issuer is not trusted by browsers.",
+        "hostname_mismatch": "The certificate was issued for other names than this one.",
+        "revoked": "The certificate has been revoked.",
+        "invalid": "The certificate could not be verified."
+      },
+      "subject": "Issued to",
+      "issuer": "Issued by",
+      "validity": "Validity",
+      "names": "Names",
+      "more": "+{count} more",
+      "protocol": "Protocol",
+      "key": "Key",
+      "signature": "Signature",
+      "read_directly": "Read directly from the server by Moddy",
+      "errors": {
+        "bad_port": "This port is not supported. Pick one of the standard TLS ports.",
+        "dns_failed": "{host} does not resolve to an IP address.",
+        "tls_failed": "The server did not complete a TLS handshake on port {port}: it may not use encryption there.",
+        "unreachable": "Could not connect to {host} on port {port}. The server may be down or block unknown visitors."
+      },
+      "error_title": "Certificate check failed"
+    },
+    "subdomains": {
+      "title": "Subdomains",
+      "domain": "Domain",
+      "summary": "{count} found in public certificates",
+      "wildcards": "{count} wildcard patterns",
+      "none": "No subdomain appeared in public certificates.",
+      "truncated": "Only the first {shown} of {total} names are kept.",
+      "hint": "Only names that showed up in a public certificate are listed: private or unencrypted subdomains are missing.",
+      "export_message": "{count} subdomains, one per line.",
+      "errors": {
+        "crtsh_down": "crt.sh did not answer. This free service is often overloaded: try again in a moment.",
+        "too_large": "{domain} has too many certificates to list at once. Try a more specific subdomain."
+      },
+      "error_title": "Subdomain search failed"
+    },
+    "linkcheck": {
+      "title": "Link check",
+      "multi_title": "Links in this message",
+      "following": "Following the redirects…",
+      "verdict": {
+        "safe": "No threat detected",
+        "suspicious": "Suspicious link",
+        "dangerous": "Dangerous link: do not open it",
+        "unreachable": "Could not be reached"
+      },
+      "redirects": "Redirections",
+      "chain_meta": "(page redirect)",
+      "chain_errors": {
+        "too_many_redirects": "Stopped: too many redirects.",
+        "loop": "Stopped: the redirects loop.",
+        "blocked": "Stopped: this address points to a private network, Moddy does not go there.",
+        "timeout": "Stopped: the site took too long to answer.",
+        "unreachable": "Stopped: the site cannot be reached.",
+        "bad_redirect": "Stopped: the redirect is invalid.",
+        "tls": "Stopped: the site's HTTPS certificate is invalid."
+      },
+      "connection": "Connection",
+      "https": "HTTPS (encrypted)",
+      "http": "HTTP (not encrypted)",
+      "domain_age": "Domain age",
+      "age": {
+        "day_one": "{count} day",
+        "day_other": "{count} days",
+        "month_one": "{count} month",
+        "month_other": "{count} months",
+        "year_one": "{count} year",
+        "year_other": "{count} years"
+      },
+      "vt_label": "VirusTotal",
+      "urlscan_label": "urlscan.io",
+      "vt_clean": "No engine flags this link ({engines} checked)",
+      "vt_flagged": "{bad} of {engines} engines flag this link",
+      "vt_suspicious_extra": " · {count} find it suspicious",
+      "vt_stale": "(older analysis)",
+      "urlscan_clean": "No threat found on the page",
+      "urlscan_malicious": "Malicious page",
+      "urlscan_suspicious": "Suspicious page",
+      "urlscan_brands": "Imitates: {brands}",
+      "urlscan_country": "Server in {country}",
+      "provider": {
+        "running": "Analysing…",
+        "pending": "Analysis not finished yet: open the full report",
+        "quota": "Daily limit reached: only Moddy's own checks were done",
+        "busy": "Busy right now, try again in a minute",
+        "refused": "This page could not be scanned",
+        "failed": "Could not be checked"
+      },
+      "no_reputation": "Online reputation checks (VirusTotal, urlscan.io) are not enabled on this Moddy.",
+      "report_vt": "VirusTotal report",
+      "report_urlscan": "urlscan.io report",
+      "screenshot_alt": "Screenshot of the page",
+      "screenshot_note": "Screenshot taken by urlscan.io. Click it to reveal it: the page may show disturbing content.",
+      "honesty": "No threat detected does not mean a link is safe. When in doubt, do not open it.",
+      "reasons": {
+        "vt_malicious": "Flagged as malicious by {count} VirusTotal engines",
+        "vt_suspicious": "Flagged as suspicious by {count} VirusTotal engines",
+        "urlscan_malicious": "urlscan.io judges the page malicious",
+        "urlscan_suspicious": "urlscan.io finds the page suspicious",
+        "age_very_recent": "The domain was registered only {days} days ago",
+        "age_recent": "The domain was registered {days} days ago",
+        "idn_mixed_script": "The address mixes alphabets (look-alike letters)",
+        "idn_lookalike": "The address uses letters that imitate Latin ones",
+        "userinfo": "The link hides its real destination behind a fake login part (before the @)",
+        "ip_host": "The link points to a raw IP address",
+        "loop": "The redirects loop forever",
+        "too_many_redirects": "Too many redirects",
+        "http_only": "The destination is not encrypted (HTTP)",
+        "shortener": "The link goes through a link shortener",
+        "many_redirects": "{count} redirects in a row"
+      },
+      "multi_redirects": "{count} redirect(s) from {host}",
+      "multi_skipped": "{count} link(s) not examined.",
+      "multi_hint": "Send one link to /link-check for the full check: redirects, scan and screenshot.",
+      "errors": {
+        "empty": "Type a link to check.",
+        "invalid_url": "This is not a valid web link.",
+        "unsupported_scheme": "Only http and https links can be checked.",
+        "no_links": "I found no link I can check in this message."
+      },
+      "error_title": "Link check failed"
+    },
+    "image": {
+      "title": "Image",
+      "format": "Format",
+      "dimensions": "Dimensions",
+      "weight": "Weight",
+      "transparency": "Transparency",
+      "animation": "Animation",
+      "yes": "Yes",
+      "no": "No",
+      "frames": "{count} frames",
+      "btn_resize": "Resize",
+      "btn_compress": "Compress",
+      "btn_convert": "Convert",
+      "btn_background": "Remove background",
+      "loading_resize": "Resizing the image…",
+      "loading_compress": "Compressing the image…",
+      "loading_bg": "Removing the background…",
+      "loading_convert": "Converting the image…",
+      "unchanged": "Already as light as it gets: nothing to gain, so the image is returned untouched.",
+      "suggestion": "A {format} version would weigh about {size}. Use **Convert** to get it.",
+      "bg_note": "Works best on a clear subject; fine hair, glass and busy backgrounds stay approximate.",
+      "too_big_to_attach": "This image is above this server's upload limit ({max}), so the buttons are unavailable. Send a lighter copy.",
+      "notes": {
+        "animation_lost": "This format cannot hold an animation: only the first frame was kept.",
+        "alpha_flattened": "This format has no transparency: it was replaced by a white background.",
+        "ico_resized": "Icons are limited to 256 px: the image was shrunk to fit.",
+        "saved_as_png": "This format cannot be written here, so the result is a PNG.",
+        "downscaled": "The image was also reduced to a smaller size.",
+        "frames_capped": "Only the first 300 frames of the animation were kept."
+      },
+      "resize_title": "Resize the image",
+      "resize_help": "Give a width, a height, or a percentage. With only one side, the other follows. A percentage replaces width and height.",
+      "width_label": "Width (px)",
+      "height_label": "Height (px)",
+      "percent_label": "Or a percentage",
+      "percent_hint": "For example 50 to halve the image.",
+      "mode_label": "When width and height are both given",
+      "modes": {
+        "fit": "Fit inside",
+        "fit_hint": "Keeps the proportions, nothing is cropped.",
+        "exact": "Exact size",
+        "exact_hint": "Stretches the image to exactly this size.",
+        "fill": "Fill and crop",
+        "fill_hint": "Keeps the proportions and crops the overflow."
+      },
+      "compress_title": "Compress the image",
+      "compress_help": "A stronger compression gives a lighter file, with a visible quality loss on photos.",
+      "level_label": "Compression",
+      "levels": {
+        "light": "Light",
+        "light_hint": "Almost no visible change.",
+        "balanced": "Balanced",
+        "balanced_hint": "The best trade-off for most images.",
+        "strong": "Strong",
+        "strong_hint": "Smallest file, quality visibly lower."
+      },
+      "errors": {
+        "not_image": "This file is not an image. Send a PNG, JPEG, WebP, GIF, BMP, TIFF, ICO, HEIC or AVIF file.",
+        "unreadable": "This image could not be read. It may be damaged: try another copy.",
+        "unsupported": "This image format is not supported here.",
+        "too_large": "The file is too large (maximum {max} MB).",
+        "too_many_pixels": "This image is too big to process (maximum {max} megapixels).",
+        "too_many_frames": "This animation has too many frames (maximum {max}).",
+        "animation_too_big": "This animation is too heavy to process. Try a shorter or smaller one.",
+        "invalid_size": "A side must be between 1 and {max} px.",
+        "invalid_percent": "The percentage must be between 1 and {max}.",
+        "invalid_number": "Enter whole numbers only, for example 1280.",
+        "nothing_to_do": "Give a width, a height or a percentage.",
+        "not_compressible": "Icons cannot be compressed any further.",
+        "download_failed": "Moddy could not download this image. Try again in a moment.",
+        "result_too_large": "The result is above this server's upload limit ({max}). Try a smaller size or a stronger compression.",
+        "model_unavailable": "Background removal is not available right now. Try again in a few minutes.",
+        "no_subject": "No clear subject was found, so there is nothing to cut out.",
+        "expired": "This card no longer holds its image. Run **/image** again.",
+        "timeout": "This took too long. Try a smaller image."
+      }
+    },
+    "convert": {
+      "title": "Convert",
+      "file": "File",
+      "detected": "Detected",
+      "conversion": "Conversion",
+      "weight": "Weight",
+      "pages": "Pages",
+      "pick": "Convert it to:",
+      "cloud_hint": "Office documents and ebooks are converted by CloudConvert: 5 a day per person.",
+      "option_cloud": "Office rendering, 5 a day",
+      "groups": {
+        "image": "Images",
+        "data": "Data",
+        "sheet": "Spreadsheets",
+        "document": "Documents",
+        "ebook": "Ebooks",
+        "archive": "Archives",
+        "audio": "Audio",
+        "video": "Video"
+      },
+      "loading": "Converting…",
+      "download": "Download (24 h)",
+      "link_note": "The file is above this server's upload limit: here is a download link, valid for 24 hours.",
+      "notes": {
+        "first_sheet_only": "Only the first sheet was converted.",
+        "null_dropped": "This format has no empty value: empty fields were left out.",
+        "images_dropped": "Images were left out; the text and structure were kept.",
+        "pages_capped": "Only the first pages were converted.",
+        "entries_skipped": "Some unsafe entries (links, parent paths) were skipped.",
+        "animation_lost": "This format cannot hold an animation: only the first frame was kept.",
+        "alpha_flattened": "This format has no transparency: it was replaced by a white background.",
+        "ico_resized": "Icons are limited to 256 px: the image was shrunk to fit.",
+        "frames_capped": "Only the first 300 frames of the animation were kept.",
+        "saved_as_png": "This format cannot be written here, so the result is a PNG."
+      },
+      "errors": {
+        "unsupported_type": "Moddy cannot convert {name}: this type of file is not supported.",
+        "bad_target": "{source} cannot become {format}. It can become: {available}.",
+        "unsupported": "This conversion is not available.",
+        "too_large": "The file is too large (maximum {max} MB).",
+        "unreadable": "This file could not be read. It may be damaged: try another copy.",
+        "protected": "This file is protected by a password. Remove the protection first.",
+        "no_text": "No text found: this PDF is probably a scan. Try **/ocr** on its pages.",
+        "not_tabular": "This content is not a table, so it cannot become a spreadsheet or a CSV.",
+        "unconvertible": "This content cannot be expressed in the chosen format.",
+        "invalid_data": "The file is not valid ({detail}).",
+        "unsafe_data": "This file uses too many references to be converted safely.",
+        "too_many_cells": "This table is too big (maximum {max} cells).",
+        "too_many_files": "This archive holds too many files (maximum {max}).",
+        "archive_too_big": "This archive is too big once unpacked (maximum {max} MB).",
+        "unsafe_archive": "This archive looks unsafe (extreme compression ratio) and was refused.",
+        "empty_file": "This file is empty.",
+        "too_long": "This file is too long (maximum {max}).",
+        "timeout": "The conversion took too long. Try a shorter or smaller file.",
+        "convert_failed": "The conversion failed. The file may be damaged or use an unsupported feature.",
+        "ffmpeg_unavailable": "Audio and video conversion is not available right now.",
+        "no_stream": "There is no usable audio or video track in this file.",
+        "quota": "You have used your 5 office-document conversions for today. Images, data, audio and archives are not limited. It resets tomorrow.",
+        "cloud_busy": "Document conversion is very busy right now. Try again in a few minutes.",
+        "cloud_unavailable": "Document and ebook conversion is not available right now.",
+        "download_failed": "Moddy could not download this file. Run **/convert** again.",
+        "result_too_large": "The result is above this server's upload limit ({max}).",
+        "expired": "This card has expired. Run **/convert** again to start over.",
+        "too_many_pixels": "This image is too big to process (maximum {max} megapixels).",
+        "too_many_frames": "This animation has too many frames (maximum {max}).",
+        "animation_too_big": "This animation is too heavy to process. Try a shorter or smaller one."
+      }
     }
   }
 }

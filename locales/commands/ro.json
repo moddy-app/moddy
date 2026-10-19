@@ -34,6 +34,12 @@
     },
     "Transcribe": {
       "name": "Transcrie"
+    },
+    "Find source": {
+      "name": "Găsește sursa"
+    },
+    "Check links": {
+      "name": "Verifică linkurile"
     }
   },
   "commands": {
@@ -424,6 +430,275 @@
           "description": "Link către un mesaj de pe acest server cu imaginea"
         }
       }
+    },
+    "pwned": {
+      "name": "pwned",
+      "description": "Verifică dacă o parolă a apărut într-o scurgere de date"
+    },
+    "password": {
+      "name": "parolă",
+      "description": "Generează o parolă sau o frază secretă aleatorie și sigură",
+      "parameters": {
+        "length": {
+          "name": "lungime",
+          "description": "Lungime (8-128); frază secretă: aprox. 1 cuvânt la 4 caractere"
+        },
+        "type": {
+          "name": "tip",
+          "description": "Tipul parolei (implicit: puternică)"
+        }
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "description": "Generează UUID-uri aleatorii (v4 sau v7)",
+      "parameters": {
+        "version": {
+          "name": "versiune",
+          "description": "Versiunea UUID (implicit: v4)"
+        },
+        "count": {
+          "name": "număr",
+          "description": "Câte să genereze (1-10)"
+        }
+      }
+    },
+    "hash": {
+      "name": "hash",
+      "description": "Calculează MD5, SHA-1, SHA-256 și SHA-512 pentru un text sau fișier",
+      "parameters": {
+        "text": {
+          "name": "text",
+          "description": "Text pentru hash (lasă textul și fișierul goale pentru formular)"
+        },
+        "file": {
+          "name": "fișier",
+          "description": "Fișier pentru hash (max. 25 MB)"
+        },
+        "compare": {
+          "name": "compară",
+          "description": "Un hash cunoscut cu care să compare"
+        }
+      }
+    },
+    "jwt": {
+      "name": "jwt",
+      "description": "Decodifică un JSON Web Token (antet și conținut)"
+    },
+    "color": {
+      "name": "culoare",
+      "description": "Convertește o culoare și verifică contrastul",
+      "parameters": {
+        "color": {
+          "name": "culoare",
+          "description": "HEX, rgb(), hsl(), nume CSS, număr Discord sau random"
+        }
+      }
+    },
+    "music": {
+      "name": "muzica",
+      "description": "Instrumente muzicale"
+    },
+    "music link": {
+      "name": "link",
+      "description": "Găsește o melodie, un album sau un artist Spotify pe alte platforme",
+      "parameters": {
+        "url": {
+          "name": "link",
+          "description": "Linkul Spotify (o melodie, un album sau un artist)"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "Afișează metadatele ascunse ale unui fișier",
+      "parameters": {
+        "file": {
+          "name": "fisier",
+          "description": "Imagine, PDF, document Office, fișier audio sau video"
+        }
+      }
+    },
+    "sauce": {
+      "name": "sursa",
+      "description": "Găsește sursa unei imagini",
+      "parameters": {
+        "image": {
+          "name": "imagine",
+          "description": "Imaginea de căutat (PNG, JPEG, WebP sau GIF)"
+        },
+        "message": {
+          "name": "mesaj",
+          "description": "Link către un mesaj de pe acest server cu imaginea"
+        }
+      }
+    },
+    "define": {
+      "name": "definește",
+      "description": "Caută un cuvânt în Wikționar",
+      "parameters": {
+        "word": {
+          "name": "cuvânt",
+          "description": "Cuvântul sau expresia de căutat"
+        },
+        "language": {
+          "name": "limbă",
+          "description": "Limba Wikționarului (implicit: a ta)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "Rezumă ultimele mesaje de pe acest canal",
+      "parameters": {
+        "messages": {
+          "name": "mesaje",
+          "description": "Câte mesaje recente să citească (implicit: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "Testează o expresie regulată pe un text"
+    },
+    "diff": {
+      "name": "compară",
+      "description": "Compară două texte și arată ce s-a schimbat"
+    },
+    "textstats": {
+      "name": "statistici-text",
+      "description": "Numără cuvintele și măsoară timpul de citire și lizibilitatea",
+      "parameters": {
+        "text": {
+          "name": "text",
+          "description": "Textul de analizat (lasă gol pentru a deschide un formular)"
+        }
+      }
+    },
+    "status": {
+      "name": "stare",
+      "description": "Verifică dacă Discord, GitHub și alte servicii funcționează",
+      "parameters": {
+        "service": {
+          "name": "serviciu",
+          "description": "Un serviciu de verificat (gol: privire de ansamblu)"
+        }
+      }
+    },
+    "company": {
+      "name": "companie",
+      "description": "Caută o companie franceză după nume, SIREN sau SIRET",
+      "parameters": {
+        "search": {
+          "name": "căutare",
+          "description": "Numele companiei, un SIREN (9 cifre) sau un SIRET (14 cifre)"
+        }
+      }
+    },
+    "username": {
+      "name": "nume-utilizator",
+      "description": "Găsește unde este folosit un nume de utilizator pe sute de site-uri",
+      "parameters": {
+        "username": {
+          "name": "nume-utilizator",
+          "description": "Numele de utilizator căutat"
+        }
+      }
+    },
+    "whois": {
+      "name": "whois",
+      "description": "Cine a înregistrat un domeniu și când (registrar, date, servere de nume)",
+      "parameters": {
+        "domain": {
+          "name": "domeniu",
+          "description": "Numele domeniului sau un link, de exemplu example.com"
+        }
+      }
+    },
+    "dns": {
+      "name": "dns",
+      "description": "Înregistrările DNS ale unui domeniu (A, MX, TXT, NS...) și protecția e-mailului",
+      "parameters": {
+        "domain": {
+          "name": "domeniu",
+          "description": "Numele domeniului sau un link, de exemplu example.com"
+        }
+      }
+    },
+    "ssl": {
+      "name": "ssl",
+      "description": "Verifică certificatul HTTPS al unui site (valabilitate, emitent, nume)",
+      "parameters": {
+        "domain": {
+          "name": "domeniu",
+          "description": "Numele domeniului sau un link, de exemplu example.com"
+        },
+        "port": {
+          "name": "port",
+          "description": "Port (implicit 443)"
+        }
+      }
+    },
+    "subdomains": {
+      "name": "subdomenii",
+      "description": "Listează subdomeniile unui domeniu văzute în certificatele publice",
+      "parameters": {
+        "domain": {
+          "name": "domeniu",
+          "description": "Numele domeniului sau un link, de exemplu example.com"
+        }
+      }
+    },
+    "link-check": {
+      "name": "verificare-link",
+      "description": "Verifică dacă un link e periculos: redirecționări, vechimea domeniului, reputație",
+      "parameters": {
+        "url": {
+          "name": "link",
+          "description": "Linkul de verificat"
+        }
+      }
+    },
+    "image": {
+      "name": "imagine",
+      "description": "Afișează o imagine și o poate redimensiona, comprima, converti sau îi poate elimina fundalul",
+      "parameters": {
+        "file": {
+          "name": "fișier",
+          "description": "Imaginea de procesat (PNG, JPEG, WebP, GIF, HEIC, AVIF...)"
+        }
+      }
+    },
+    "convert": {
+      "name": "converteste",
+      "description": "Convertește un fișier în alt format (imagini, documente, audio, video, arhive...)",
+      "parameters": {
+        "file": {
+          "name": "fișier",
+          "description": "Fișierul de convertit (max. 25 MB)"
+        },
+        "format": {
+          "name": "format",
+          "description": "Formatul țintă (lasă gol pentru a alege dintr-o listă)"
+        }
+      }
+    }
+  },
+  "choices": {
+    "strong": {
+      "name": "Puternică"
+    },
+    "clear": {
+      "name": "Fără caractere ambigue"
+    },
+    "passphrase": {
+      "name": "Frază secretă"
+    },
+    "v4": {
+      "name": "v4 (aleatoriu)"
+    },
+    "v7": {
+      "name": "v7 (ordonat în timp)"
     }
   }
 }

@@ -2,9 +2,9 @@
 ``/ocr`` — extract the text of an image (Google Vision document OCR).
 
 Global command (servers, DMs, user installs). The image can also be OCR'd from
-a message with the **Transcribe** context menu (``cogs/voice_transcription.py``):
-Discord caps apps at five message context menus and all five are taken, so
-"Transcribe" handles audio *and* images instead of a sixth menu.
+a message with the **Transcribe** context menu (``cogs/voice_transcription.py``),
+which handles audio *and* images (Discord allows 15 message context menus per
+app; sharing one keeps the menu short).
 
 The result is ephemeral by default (``incognito``) — it is the requester's
 text, not the channel's. See docs/features/OCR.md.
