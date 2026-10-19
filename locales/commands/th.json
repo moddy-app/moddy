@@ -23,9 +23,6 @@
     "Save Message": {
       "name": "บันทึกข้อความ"
     },
-    "Get Emojis": {
-      "name": "ดึงอิโมจิ"
-    },
     "Translate": {
       "name": "แปล"
     },
@@ -34,9 +31,6 @@
     },
     "Transcribe": {
       "name": "ถอดเสียงเป็นข้อความ"
-    },
-    "Find source": {
-      "name": "ค้นหาแหล่งที่มา"
     },
     "Check links": {
       "name": "ตรวจสอบลิงก์"
@@ -497,25 +491,11 @@
     },
     "music": {
       "name": "เพลง",
-      "description": "เครื่องมือเพลง"
-    },
-    "music link": {
-      "name": "ลิงก์",
       "description": "ค้นหาเพลง อัลบั้ม หรือศิลปินจาก Spotify บนแพลตฟอร์มอื่น",
       "parameters": {
         "url": {
           "name": "ลิงก์",
           "description": "ลิงก์ Spotify (เพลง อัลบั้ม หรือศิลปิน)"
-        }
-      }
-    },
-    "exif": {
-      "name": "exif",
-      "description": "แสดงข้อมูลเมทาดาทาที่ซ่อนอยู่ของไฟล์",
-      "parameters": {
-        "file": {
-          "name": "ไฟล์",
-          "description": "รูปภาพ, PDF, เอกสาร Office, ไฟล์เสียงหรือวิดีโอ"
         }
       }
     },

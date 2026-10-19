@@ -23,9 +23,6 @@
     "Save Message": {
       "name": "Guardar mensaje"
     },
-    "Get Emojis": {
-      "name": "Obtener emojis"
-    },
     "Translate": {
       "name": "Traducir"
     },
@@ -34,9 +31,6 @@
     },
     "Transcribe": {
       "name": "Transcribir"
-    },
-    "Find source": {
-      "name": "Buscar origen"
     },
     "Check links": {
       "name": "Comprobar enlaces"
@@ -497,25 +491,11 @@
     },
     "music": {
       "name": "musica",
-      "description": "Herramientas de música"
-    },
-    "music link": {
-      "name": "enlace",
       "description": "Encuentra una canción, álbum o artista de Spotify en otras plataformas",
       "parameters": {
         "url": {
           "name": "enlace",
           "description": "El enlace de Spotify (una canción, un álbum o un artista)"
-        }
-      }
-    },
-    "exif": {
-      "name": "exif",
-      "description": "Muestra los metadatos ocultos de un archivo",
-      "parameters": {
-        "file": {
-          "name": "archivo",
-          "description": "Imagen, PDF, documento Office, archivo de audio o vídeo"
         }
       }
     },

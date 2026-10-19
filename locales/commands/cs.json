@@ -23,9 +23,6 @@
     "Save Message": {
       "name": "Uložit zprávu"
     },
-    "Get Emojis": {
-      "name": "Získat emoji"
-    },
     "Translate": {
       "name": "Přeložit"
     },
@@ -34,9 +31,6 @@
     },
     "Transcribe": {
       "name": "Přepsat do textu"
-    },
-    "Find source": {
-      "name": "Najít zdroj"
     },
     "Check links": {
       "name": "Zkontrolovat odkazy"
@@ -497,25 +491,11 @@
     },
     "music": {
       "name": "hudba",
-      "description": "Hudební nástroje"
-    },
-    "music link": {
-      "name": "odkaz",
       "description": "Najdi skladbu, album nebo interpreta ze Spotify na jiných platformách",
       "parameters": {
         "url": {
           "name": "odkaz",
           "description": "Odkaz na Spotify (skladba, album nebo interpret)"
-        }
-      }
-    },
-    "exif": {
-      "name": "exif",
-      "description": "Zobrazí skrytá metadata souboru",
-      "parameters": {
-        "file": {
-          "name": "soubor",
-          "description": "Obrázek, PDF, dokument Office, zvukový nebo video soubor"
         }
       }
     },

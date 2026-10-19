@@ -160,7 +160,7 @@ class ModdyBot(ModdyFrameworkBot):
         # Keyless public APIs for the utility tools (Wiktionary, RDAP, crt.sh…)
         self.public_api = PublicAPI(self)
         from services.music_links_service import MusicLinksService
-        # Spotify link -> Deezer / Apple Music / YouTube Music (module + /music link)
+        # Spotify link -> Deezer / Apple Music / YouTube Music (module + /music)
         self.music_links = MusicLinksService(self)
         from services.altguard_client import AltGuardClient
         # AltGuard anti multi-account verification (HTTP + altguard:* Pub/Sub)

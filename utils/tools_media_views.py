@@ -218,8 +218,7 @@ def build_image_card(info: image_ops.ImageInfo, locale: str, card_files: CardFil
                     size=tc.inline(_fmt_size(suggestion[1], locale))))
     for text in hints:
         card.hint(text)
-    card.footer(tc.source_line(locale, verb="computed_locally"),
-                tc.requested_by(locale, requester_id))
+    card.footer(tc.requested_by(locale, requester_id))
     rows = [image_buttons_row(locale)] if buttons else []
     return card.build(view=_view(), rows=rows)
 
@@ -273,9 +272,34 @@ async def _show_error(interaction: discord.Interaction, exc: MediaError, tool: s
         await tc.respond(interaction, view=card, ephemeral=True)
 
 
+async def find_card_attachment(interaction: discord.Interaction) -> Optional[discord.Attachment]:
+    """The image of the card an interaction comes from.
+
+    ``interaction.message`` is the first place to look; when it carries no image
+    (Discord does not always repeat the attachments of the message a Modal was
+    opened from), the message is fetched back through the interaction token,
+    which also works for ephemeral cards.
+    """
+    attachment = find_source_attachment(interaction.message)
+    if attachment is not None or interaction.message is None:
+        return attachment
+    try:
+        fetched = await interaction.original_response()
+    except discord.HTTPException:
+        fetched = None
+    attachment = find_source_attachment(fetched)
+    if attachment is None:
+        logger.warning(
+            "image card without a readable image: message=%s flags=%s attachments=%s fetched=%s",
+            interaction.message.id, interaction.message.flags.value,
+            [a.filename for a in interaction.message.attachments],
+            [a.filename for a in getattr(fetched, "attachments", [])])
+    return attachment
+
+
 async def _read_source(service: MediaToolsService, interaction: discord.Interaction
                        ) -> Tuple[bytes, discord.Attachment]:
-    attachment = find_source_attachment(interaction.message)
+    attachment = await find_card_attachment(interaction)
     if attachment is None:
         raise MediaError("expired")
     return await service.read_attachment(attachment), attachment
@@ -432,8 +456,7 @@ class ResizeModal(BaseModal):
 
     async def on_submit(self, interaction: discord.Interaction):
         locale = i18n.get_user_locale(interaction)
-        if interaction.message is None:
-            interaction.message = self.message
+        interaction.message = self.message or interaction.message
         try:
             width = _int_or_none(self.width.component.value)
             height = _int_or_none(self.height.component.value)
@@ -470,8 +493,7 @@ class CompressModal(BaseModal):
         self.add_item(self.level)
 
     async def on_submit(self, interaction: discord.Interaction):
-        if interaction.message is None:
-            interaction.message = self.message
+        interaction.message = self.message or interaction.message
         await apply_image_action(interaction, "compress",
                                  {"level": self.level.component.value or image_ops.BALANCED})
 
@@ -548,7 +570,7 @@ class ImageConvertButton(ui.DynamicItem[ui.Button], template=r"moddy:tools:image
     async def callback(self, interaction: discord.Interaction):
         locale = i18n.get_user_locale(interaction)
         service = get_service(interaction.client)
-        attachment = find_source_attachment(interaction.message)
+        attachment = await find_card_attachment(interaction)
         if attachment is None:
             raise tc.ToolError("expired", tool="image")
         try:
@@ -598,7 +620,6 @@ def build_convert_picker(*, filename: str, src: str, size: int, token: str,
     has_cloud = any(formats.engine_for(src, k) == formats.E_CLOUD for k in targets)
     if has_cloud:
         card.hint(t("tools.convert.cloud_hint", locale=locale))
-    card.footer(tc.source_line(locale, verb="computed_locally"))
     rows = []
     for group, keys in grouped_targets(targets).items():
         row = ui.ActionRow()
@@ -740,8 +761,7 @@ async def present_conversion(service: MediaToolsService, interaction: discord.In
         card.footer(tc.source_line(locale, (CLOUDCONVERT, "CloudConvert"), verb="converted_by"),
                     tc.requested_by(locale, requester))
     else:
-        card.footer(tc.source_line(locale, verb="computed_locally"),
-                    tc.requested_by(locale, requester))
+        card.footer(tc.requested_by(locale, requester))
     view = card.build(view=_view(), rows=rows)
     await _finish(interaction, view, files=files)
 

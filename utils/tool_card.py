@@ -271,7 +271,7 @@ def source_line(locale: str, *names: SourceName, verb: str = "provided_by") -> s
 
     ``verb`` picks the phrase under ``tools.common.by.<verb>`` (``provided_by``,
     ``translated_by``, ``checked_by``, ``converted_by``, ``summarized_by``,
-    ``found_by``, ``scanned_by``, ``computed_locally``...). Each name is either
+    ``found_by``, ``scanned_by``...). Each name is either
     a plain string or ``(logo, name)``: the logo sits right next to the name it
     belongs to — ``Translated by <logo> **DeepL**`` — and is dropped while its
     artwork is not uploaded. Several names read as a list: ``A, B & C``.

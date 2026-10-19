@@ -438,8 +438,11 @@ def build_subdomains_card(result: crtsh.SubdomainResult, page: int, locale: str,
             card.hint(t("tools.subdomains.truncated", locale=locale,
                         shown=tc.format_number(len(result.names), locale),
                         total=tc.format_number(result.total, locale)))
+    if result.source != "crt.sh":
+        card.hint(t("tools.subdomains.fallback", locale=locale, source=result.source))
     card.hint(t("tools.subdomains.hint", locale=locale))
-    card.footer(tc.source_line(locale, (CRTSH, "crt.sh"), verb="data_provided_by"),
+    logo = CRTSH if result.source == "crt.sh" else None
+    card.footer(tc.source_line(locale, (logo, result.source), verb="data_provided_by"),
                 tc.requested_by(locale, requester_id))
 
     rows = []

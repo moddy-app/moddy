@@ -4,7 +4,7 @@ Moddy ships a family of everyday tools: text (`/define`, `/tldr`, `/regex`,
 `/diff`, `/textstats`), security & dev (`/pwned`, `/password`, `/uuid`, `/hash`,
 `/jwt`, `/color`), domains & links (`/whois`, `/dns`, `/ssl`, `/subdomains`,
 `/link-check`), lookups (`/status`, `/company`, `/username`), media & files
-(`/image`, `/convert`), inspection (`/exif`, `/sauce`) and two automatic
+(`/image`, `/convert`), inspection (`/sauce`) and two automatic
 modules (music links, translate button).
 
 This page is the **contract every tool follows**. Per-theme details:
@@ -68,9 +68,8 @@ card.footer(source_line(locale, (WIKTIONARY, "Wiktionary"), verb="provided_by"))
   dropped, leaving `Provided by **Wiktionary**`.
 - Verbs live under `tools.common.by.*`: `provided_by`, `data_provided_by`,
   `translated_by`, `checked_by`, `scanned_by`, `converted_by`,
-  `summarized_by`, `found_by`, and `computed_locally` (no `{source}`: "Computed
-  by Moddy itself, nothing is sent elsewhere" — use it for local tools like
-  `/hash`, `/diff`, `/password`, it reassures people).
+  `summarized_by` and `found_by`. A tool computed on Moddy itself shows no
+  source line at all (nothing to credit, and "computed locally" only added noise).
 - Several services: `source_line(locale, (A_LOGO, "SauceNAO"), (B_LOGO, "trace.moe"), verb="found_by")`.
 - Licence attributions (Wiktionary and WhatsMyName are CC BY-SA) are satisfied
   by naming them this way plus a link button to the original page when there is one.
@@ -108,7 +107,7 @@ card.footer(source_line(locale, (WIKTIONARY, "Wiktionary"), verb="provided_by"))
 - Default: `@add_incognito_option()` + `get_incognito_setting(interaction)`
   (user preference, ephemeral by default).
 - **Always ephemeral, no incognito option**: `/pwned`, `/password`, `/uuid`,
-  `/jwt`, `/exif` (may reveal GPS).
+  `/jwt`.
 - Public answers containing user text are sent with `NO_MENTIONS`.
 - Locale: `i18n.get_user_locale(interaction)` for anything one person reads;
   `guild_locale(bot, guild)` for what a whole server reads (module replies).

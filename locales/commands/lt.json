@@ -23,9 +23,6 @@
     "Save Message": {
       "name": "Išsaugoti žinutę"
     },
-    "Get Emojis": {
-      "name": "Gauti jaustukus"
-    },
     "Translate": {
       "name": "Versti"
     },
@@ -34,9 +31,6 @@
     },
     "Transcribe": {
       "name": "Transkribuoti"
-    },
-    "Find source": {
-      "name": "Rasti šaltinį"
     },
     "Check links": {
       "name": "Patikrinti nuorodas"
@@ -497,25 +491,11 @@
     },
     "music": {
       "name": "muzika",
-      "description": "Muzikos įrankiai"
-    },
-    "music link": {
-      "name": "nuoroda",
       "description": "Rask „Spotify“ dainą, albumą ar atlikėją kitose platformose",
       "parameters": {
         "url": {
           "name": "nuoroda",
           "description": "„Spotify“ nuoroda (daina, albumas ar atlikėjas)"
-        }
-      }
-    },
-    "exif": {
-      "name": "exif",
-      "description": "Parodo paslėptus failo metaduomenis",
-      "parameters": {
-        "file": {
-          "name": "failas",
-          "description": "Vaizdas, PDF, Office dokumentas, garso ar vaizdo failas"
         }
       }
     },

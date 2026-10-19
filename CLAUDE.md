@@ -40,7 +40,7 @@ moddy/
 │   ├── invite.py              #   /invite command
 │   ├── bug_report.py          #   /bug-report command (Modal V2 → team channel)
 │   ├── brocoli_chat.py        #   Brocoli in a channel (dev-guild gated, SSE → Components V2)
-│   ├── emoji.py               #   Emoji management
+│   ├── emoji.py               #   /emoji (one emoji, or several pasted from a message)
 │   ├── reminder.py            #   /reminder command
 │   ├── bump_reminder.py       #   Bump Reminder listener + 30s sweeper loop
 │   ├── member_applications.py #   Discord join requests: gateway parser hook + reconciliation poll
@@ -57,8 +57,8 @@ moddy/
 │   ├── tools_web.py           #   /whois, /dns, /ssl, /subdomains, /link-check + "Check links" menu
 │   ├── tools_lookup.py        #   /status, /company, /username
 │   ├── tools_media.py         #   /image (resize, compress, convert, remove background), /convert
-│   ├── tools_inspect.py       #   /exif, /sauce + "Find source" menu
-│   ├── music_links.py         #   /music link (Spotify → Deezer / Apple Music / YouTube Music)
+│   ├── tools_inspect.py       #   /sauce (SauceNAO + trace.moe; no menu: the 5 message menus are taken)
+│   ├── music_links.py         #   /music (Spotify → Deezer / Apple Music / YouTube Music)
 │   ├── webhook.py             #   Webhook management
 │   ├── logs.py                #   Advanced server logs — Discord wiring only
 │   ├── social_notifications.py #  Social notifications dispatch + feeds service wiring
@@ -144,7 +144,7 @@ moddy/
 │   ├── domain/ (rdap, doh, tls, crtsh, names), linkcheck.py                       # domains & links
 │   ├── status_registry.py, company.py, whatsmyname.py                            # lookups
 │   ├── image_ops.py, bg_removal.py (u2netp via onnxruntime), convert/, media_errors.py
-│   ├── metadata.py, sauce.py                                                     # inspection
+│   ├── sauce.py                                                                  # inspection
 │   └── music.py, langdetect.py (py3langid)                                       # modules
 │
 ├── stats/                     # Statistics (aggregate before writing)
@@ -760,6 +760,11 @@ Prefix-based commands triggered by mentioning the bot:
 - **Guild-only commands** (e.g., `/config`): only in servers where Moddy is installed
   - Must have `@app_commands.guild_only()`
 - Sync happens in 2 phases: `setup_hook()` (global) → `on_ready()` (per-guild)
+- **Message context menus: Discord allows 5 per app, and all 5 are taken**
+  (`Save Message`, `Translate`, `AI text tools`, `Transcribe`, `Check links`). A sixth
+  makes the extension that registers it fail at startup (`CommandLimitReached`).
+  A new tool gets a slash command, or is merged into an existing menu.
+  `tests/test_context_menu_limit.py` guards it.
 
 ### Colors
 ```python

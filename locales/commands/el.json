@@ -23,9 +23,6 @@
     "Save Message": {
       "name": "Αποθήκευση μηνύματος"
     },
-    "Get Emojis": {
-      "name": "Λήψη emoji"
-    },
     "Translate": {
       "name": "Μετάφραση"
     },
@@ -34,9 +31,6 @@
     },
     "Transcribe": {
       "name": "Μεταγραφή"
-    },
-    "Find source": {
-      "name": "Εύρεση πηγής"
     },
     "Check links": {
       "name": "Έλεγχος συνδέσμων"
@@ -497,25 +491,11 @@
     },
     "music": {
       "name": "μουσικη",
-      "description": "Μουσικά εργαλεία"
-    },
-    "music link": {
-      "name": "συνδεσμος",
       "description": "Βρες ένα τραγούδι, άλμπουμ ή καλλιτέχνη του Spotify σε άλλες πλατφόρμες",
       "parameters": {
         "url": {
           "name": "συνδεσμος",
           "description": "Ο σύνδεσμος Spotify (τραγούδι, άλμπουμ ή καλλιτέχνης)"
-        }
-      }
-    },
-    "exif": {
-      "name": "exif",
-      "description": "Εμφανίζει τα κρυφά μεταδεδομένα ενός αρχείου",
-      "parameters": {
-        "file": {
-          "name": "αρχείο",
-          "description": "Εικόνα, PDF, έγγραφο Office, αρχείο ήχου ή βίντεο"
         }
       }
     },

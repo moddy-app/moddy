@@ -42,8 +42,12 @@ a PNG preview; the original rides along as a file component.
 
 The card **always carries the image as an attachment**; each button re-reads it
 from `interaction.message.attachments` (the preview, named `moddy-preview.png`,
-is skipped). Nothing is stored anywhere, so the buttons survive restarts and
-never expire. Custom ids: `moddy:tools:image:{resize,compress,convert,bg}`.
+is skipped). When that message shows no image, the card is fetched back through
+the interaction token (`interaction.original_response()`, works for ephemeral
+cards too) and the miss is logged with the attachment names seen. The Resize /
+Compress modals keep the message the button was clicked on (a modal submit does
+not reliably repeat its attachments). Nothing is stored anywhere, so the buttons
+survive restarts and never expire. Custom ids: `moddy:tools:image:{resize,compress,convert,bg}`.
 Modals are the documented persistence exclusion (they live only for the
 interaction that opened them).
 
@@ -162,7 +166,7 @@ Details that matter:
 Gateway provider `cloudconvert` (adapter + client, see `docs/infra/API_GATEWAY.md`).
 Everything with a light local library is converted on Moddy; CloudConvert is the
 only path that sends a file elsewhere, and the card says so
-(`Converted by CloudConvert`, the other cards say `Computed by Moddy itself`).
+(`Converted by CloudConvert`; cards computed on Moddy show no source line).
 
 * Job = `import/url` (CloudConvert downloads the file from the Discord CDN URL
   stored in the card state) -> `convert` -> `export/url` (link valid 24 h),

@@ -98,11 +98,21 @@ Limits: no OCSP / CRL / Certificate Transparency check, no chain display; "valid
 
 ## `/subdomains domain`
 
-`crt.sh` (Certificate Transparency logs) as JSON, query `%.domain`, 30 s timeout, response
+`crt.sh` (Certificate Transparency logs) as JSON, query `%.domain`, 20 s timeout, response
 cap 24 MB parsed in a worker thread. `www.example.com` is treated as `example.com`.
 Names are deduplicated, wildcards (`*.x`) are not listed as subdomains but counted, e-mail
 addresses and foreign names are dropped; at most 5000 names are kept (the true total is
 shown). Result cached 6 h (the *extracted* list, not crt.sh's raw answer).
+
+**Fallback.** crt.sh is regularly overloaded (502 / timeouts, even for small domains).
+When it fails (timeout, network, 5xx, 429, unreadable answer) Moddy asks **Cert Spotter**
+(`api.certspotter.com/v1/issuances?include_subdomains=true&expand=dns_names`, keyless,
+rate limited) and walks at most 3 pages of issuances (`CERTSPOTTER_MAX_PAGES`). Its list
+can be shorter than crt.sh's, so the card says which provider answered
+(`tools.subdomains.fallback`) and the footer names it. That answer is cached 30 min
+instead of 6 h so crt.sh is tried again soon. A domain too big for crt.sh
+(`too_large`) is not sent to the fallback: it would show a sliver of it. Only when both
+fail does the user get the "did not answer" card with **Retry**.
 
 Card: count, 40 names per page, **Previous / Next** and **Export** (`.txt`, sent
 privately) when there is more than one page — all persistent

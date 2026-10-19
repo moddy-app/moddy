@@ -1,208 +1,30 @@
 """
-Views of the inspect utility tools (``/exif``, ``/sauce``) — see
-docs/features/TOOLS_INSPECT.md.
+Views of the inspect utility tool (``/sauce``) — see docs/features/TOOLS_INSPECT.md.
 
-Cards are built with ``utils/tool_card.py``. The only interactive component is
-the ``All tags`` button of ``/exif``: a :class:`discord.ui.DynamicItem` whose
-``custom_id`` carries a short state token (the raw tag dump does not fit in a
-``custom_id`` and cannot be re-derived from the ephemeral card), registered at
-startup by :class:`InspectPersistence`. Everything else is a link button.
+Cards are built with ``utils/tool_card.py``. Every button is a link (the matches
+and the reverse-search engines), so nothing here needs persistence.
 """
 
 from __future__ import annotations
 
-import io
 import re
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
-import discord
 from discord import ui
 
 from cogs.error_handler import BaseView
-from tools import metadata as md
 from tools import sauce as sc
 from utils import emojis as em
-from utils.i18n import i18n, t
+from utils.i18n import t
 from utils.tool_card import (
-    ACCENT_INFO, ACCENT_NEUTRAL, ACCENT_WARNING, NO_MENTIONS, ToolCard, ToolError,
-    button_emoji, detail, escape_markdown, expired_card, format_bytes, guarded, heading,
-    inline, link_button, link_row, load_state, requested_by, save_state, source_line,
-    tool_error_card, truncate, with_icon,
+    ACCENT_INFO, ACCENT_NEUTRAL, ToolCard, ToolError, escape_markdown, inline, link_button,
+    link_row, requested_by, source_line, tool_error_card, truncate,
 )
-
-PERSISTENT_VIEWS: list = []
-DYNAMIC_ITEM_CASES: list = []
-
-#: State kind of the raw tag dump (``save_state``).
-RAW_STATE_KIND = "exif_raw"
-#: The stored dump is cut here (a few hundred KB of tags help nobody).
-MAX_RAW_CHARS = 150_000
-#: Budget of the field lines of one /exif card (the message cap is 4000).
-EXIF_FIELDS_BUDGET = 2700
-MAX_EXIF_FIELDS = 40
 
 
 def _icon(name: str) -> str:
     """Icon constant of ``utils.emojis`` (empty until the artwork is uploaded)."""
     return getattr(em, name, "") or ""
-
-
-# --------------------------------------------------------------------------- #
-# /exif
-# --------------------------------------------------------------------------- #
-
-
-def _field_value(value: str, locale: str) -> str:
-    """Booleans are stored as tokens by the reader; translate them here."""
-    if value == md.YES:
-        return t("tools.exif.yes", locale=locale)
-    if value == md.NO:
-        return t("tools.exif.no", locale=locale)
-    return value
-
-
-def _label(kind: str, key: str, locale: str) -> str:
-    text = i18n.get(f"tools.exif.{kind}.{key}", locale=locale)
-    return key.replace("_", " ").capitalize() if text.startswith("[") else text
-
-
-def _kind_label(report: md.MetadataReport, locale: str) -> str:
-    text = i18n.get(f"tools.exif.kinds.{report.kind}", locale=locale)
-    name = report.kind if text.startswith("[") else text
-    return f"{name} · {report.format}" if report.format else name
-
-
-def exif_file_line(filename: str, report: md.MetadataReport, locale: str) -> str:
-    safe, _ = truncate(md.clean(filename, 80) or "—", 80)
-    return " · ".join((inline(safe), _kind_label(report, locale), format_bytes(report.size, locale)))
-
-
-def build_exif_card(report: md.MetadataReport, filename: str, locale: str, *,
-                    raw_token: Optional[str] = None) -> ui.LayoutView:
-    """The /exif answer: what the file reveals, most sensitive first."""
-    meaningful = report.meaningful
-    accent = ACCENT_WARNING if report.has_location else ACCENT_INFO
-    if not meaningful and not report.has_coordinates:
-        accent = ACCENT_NEUTRAL
-
-    card = ToolCard(icon=_icon("FRAME_INSPECT"), title=t("tools.exif.title", locale=locale),
-                    accent=accent)
-    card.text(exif_file_line(filename, report, locale))
-
-    # Privacy verdict first: it is what people came to learn.
-    hints: List[str] = []
-    if report.has_location or report.has_coordinates:
-        hints.append(t("tools.exif.hints.location", locale=locale))
-    if report.has_person:
-        hints.append(t("tools.exif.hints.person", locale=locale))
-    if md.FLAG_AI in report.flags:
-        hints.append(t("tools.exif.hints.ai", locale=locale))
-    if md.FLAG_C2PA in report.flags:
-        hints.append(t("tools.exif.hints.c2pa", locale=locale))
-    if hints:
-        card.text("\n".join(hints))
-
-    if not meaningful:
-        card.section(t("tools.exif.nothing_title", locale=locale),
-                     t("tools.exif.nothing_body_image" if report.kind == md.KIND_IMAGE
-                       else "tools.exif.nothing_body", locale=locale))
-        # The bare image properties are still worth showing, compactly.
-        props = [detail(_label("fields", f.key, locale), _field_value(f.value, locale))
-                 for f in report.fields]
-        if props:
-            card.text("\n".join(props))
-    else:
-        budget = EXIF_FIELDS_BUDGET
-        shown = 0
-        hidden = 0
-        for group, fields in report.groups():
-            lines: List[str] = []
-            for f in fields:
-                line = detail(_label("fields", f.key, locale), _field_value(f.value, locale))
-                if shown >= MAX_EXIF_FIELDS or budget - len(line) < 0:
-                    hidden += 1
-                    continue
-                budget -= len(line) + 1
-                shown += 1
-                lines.append(line)
-            if lines:
-                icon = _icon("LOCATION_ON") if group == md.GROUP_LOCATION else None
-                card.section(_label("groups", group, locale), "\n".join(lines), icon=icon)
-        if hidden:
-            card.hint(t("tools.exif.more_hidden", locale=locale, count=hidden))
-
-    card.footer(source_line(locale, verb="computed_locally"))
-
-    rows: List[ui.Item] = []
-    buttons: List[ui.Button] = []
-    if report.has_coordinates:
-        buttons.append(link_button(t("tools.exif.open_map", locale=locale),
-                                   md.osm_url(report.latitude, report.longitude),
-                                   icon=_icon("OPENSTREETMAP")))
-    row = link_row(*buttons)
-    # The raw dump button lives in the same action row as the map link.
-    if raw_token:
-        if row is None:
-            row = ui.ActionRow()
-        row.add_item(ExifRawButton(raw_token, locale))
-    if row is not None:
-        rows.append(row)
-    return card.build(view=BaseView(), rows=rows)
-
-
-def raw_state_payload(report: md.MetadataReport, filename: str) -> Optional[dict]:
-    """What ``save_state`` keeps for the ``All tags`` button (``None``: nothing to show)."""
-    if not report.raw:
-        return None
-    text = md.raw_dump(report, filename)
-    text, _ = truncate(text, MAX_RAW_CHARS)
-    return {"name": md.clean(filename, 60) or "file", "text": text}
-
-
-class ExifRawButton(ui.DynamicItem[ui.Button],
-                    template=r"moddy:tools:exif:raw:(?P<token>[A-Za-z0-9]{10})"):
-    """Sends every tag found as a ``.txt`` file, privately."""
-
-    def __init__(self, token: str, locale: str = "en-US"):
-        super().__init__(ui.Button(
-            label=t("tools.exif.all_tags", locale=locale)[:80],
-            style=discord.ButtonStyle.secondary,
-            custom_id=f"moddy:tools:exif:raw:{token}",
-        ))
-        self.token = token
-
-    @classmethod
-    async def from_custom_id(cls, interaction: discord.Interaction, item: ui.Button,
-                             match: re.Match):
-        return cls(match["token"])
-
-    @guarded
-    async def callback(self, interaction: discord.Interaction):
-        locale = i18n.get_user_locale(interaction)
-        payload = await load_state(interaction.client, RAW_STATE_KIND, self.token)
-        if not payload:
-            await interaction.response.send_message(view=expired_card(locale), ephemeral=True)
-            return
-        name = re.sub(r"[^A-Za-z0-9._-]+", "_", str(payload.get("name", "file")))[:50] or "file"
-        data = str(payload.get("text", "")).encode("utf-8")
-        await interaction.response.send_message(
-            content=t("tools.exif.raw_sent", locale=locale),
-            file=discord.File(io.BytesIO(data), filename=f"metadata-{name}.txt"),
-            ephemeral=True, allowed_mentions=NO_MENTIONS)
-
-
-class InspectPersistence(BaseView):
-    """Marker view: registers the dynamic items of the inspect tools at startup."""
-
-    __persistent__ = True
-
-    @classmethod
-    def register_persistent(cls, bot) -> None:
-        bot.add_dynamic_items(ExifRawButton)
-
-
-PERSISTENT_VIEWS.append(InspectPersistence)
-DYNAMIC_ITEM_CASES.append((ExifRawButton, ("abcDEF1234",)))
 
 
 # --------------------------------------------------------------------------- #
@@ -300,8 +122,12 @@ def build_sauce_card(result: sc.SauceResult, locale: str, *,
                 lines.append(f"-# {_percent(m.similarity)} · {target} · {escape_markdown(m.site)}")
             card.text("\n".join(lines))
     else:
+        # Without SauceNAO only anime screenshots can be recognised: say so, instead
+        # of letting an artwork or a photo look like "no match anywhere".
+        anime_only = not result.used_saucenao and "saucenao" not in result.failed
         card.section(t("tools.sauce.nothing_title", locale=locale),
-                     t("tools.sauce.nothing_body", locale=locale))
+                     t("tools.sauce.nothing_body_anime_only" if anime_only
+                       else "tools.sauce.nothing_body", locale=locale))
 
     if result.failed:
         names = ", ".join({"saucenao": "SauceNAO", "tracemoe": "trace.moe"}.get(n, n)
@@ -337,6 +163,4 @@ def render_error(error, locale: str, tool: str, **params) -> ui.LayoutView:
     return tool_error_card(error, locale, tool=tool, **params)
 
 
-__all__ = ["PERSISTENT_VIEWS", "DYNAMIC_ITEM_CASES", "build_exif_card", "build_sauce_card",
-           "raw_state_payload", "ExifRawButton", "InspectPersistence", "render_loading",
-           "render_error", "ToolError", "heading", "button_emoji", "save_state"]
+__all__ = ["build_sauce_card", "render_loading", "render_error", "ToolError"]

@@ -1,8 +1,8 @@
-# Music links — the `music_links` module and `/music link`
+# Music links — the `music_links` module and `/music`
 
 Someone posts a Spotify link; half the channel uses Deezer, Apple Music or
 YouTube Music. Moddy answers under the message, silently, with one dim line and
-link buttons to the same song elsewhere. `/music link` does the same on demand
+link buttons to the same song elsewhere. `/music` does the same on demand
 with a richer card (cover, album, year, duration).
 
 | Piece | File |
@@ -12,7 +12,7 @@ with a richer card (cover, album, year, duration).
 | Module (default-enabled) | `modules/music_links.py` |
 | `/config` screen | `modules/configs/music_links_config.py` |
 | Cards | `utils/music_links_views.py` |
-| `/music link` command | `cogs/music_links.py` |
+| `/music` command | `cogs/music_links.py` |
 | Gateway wiring | `cogs/module_events.py` (`on_message`), `cogs/config.py` (`music_links` screen), `bot.py` (`self.music_links`) |
 | Tests | `tests/test_music_links.py`, fixtures in `tests/data/music/` |
 
@@ -49,7 +49,7 @@ dependency, no gateway provider):
 `tools.music.find_links` (pure): `open.spotify.com/(embed/)?(intl-xx/)?(track|album|artist)/<22 chars>`,
 the `user/<name>/` prefix, and the short links `spotify.link`, `spoti.fi`,
 `spotify.app.link`. Playlists, episodes and shows have no equivalent elsewhere:
-the module ignores them, `/music link` explains it. At most 3 links per message,
+the module ignores them, `/music` explains it. At most 3 links per message,
 no duplicates.
 
 Short links are followed by `MusicLinksService.resolve_short`: HTTPS only,
@@ -109,7 +109,7 @@ The view is persistent (`__persistent__`, custom_ids `moddy:music_links:config:*
 auth = Manage Server re-checked on every click) and registered through
 `utils/music_links_views.PERSISTENT_VIEWS`.
 
-## 5. `/music link <url>` (French: `/musique lien`)
+## 5. `/music <url>` (French: `/musique`)
 
 Global, user-installable, works in DMs. Ephemeral by default (`incognito`
 option). The card has the cover, title, artist, album, year and duration, a
@@ -175,7 +175,7 @@ helpers drop them): `MUSIC_NOTE` (module and card heading), `SPOTIFY`,
 ## 11. Known limitations
 
 - **Spotify may block Railway's IP** (403 / 429 on the public page). The module
-  then stays silent and `/music link` shows "I cannot read the Spotify page
+  then stays silent and `/music` shows "I cannot read the Spotify page
   right now"; failures are cached for an hour so the IP is not hammered. This
   cannot be fully verified outside production.
 - The Spotify markup is not a contract: if the `og:` / `music:` tags change, the

@@ -1,52 +1,36 @@
 """
-Inspection tools: ``/exif`` (what a file reveals about its origin) and
-``/sauce`` (where an image comes from) with the **Find source** message
-context menu. See docs/features/TOOLS_INSPECT.md.
+Inspection tool: ``/sauce`` (where an image comes from). See
+docs/features/TOOLS_INSPECT.md.
 
-* ``/exif`` is always ephemeral (no incognito option): a photo may carry the
-  GPS position of someone's home.
-* ``/sauce`` runs SauceNAO and trace.moe in parallel through the gateway
-  (``services/sauce_service.py``). The image comes from an attachment, a link to
-  a message of this server, or the message the context menu is used on.
+``/sauce`` runs SauceNAO and trace.moe in parallel through the gateway
+(``services/sauce_service.py``). The image comes from an attachment or from a
+link to a message of this server. There is no message context menu: Discord caps
+an app at five and all five are taken (docs/features/VOICE_TRANSCRIPTION.md).
 """
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import re
-from typing import Optional, Tuple
+from typing import Optional
 
 import discord
 from discord import app_commands
 from discord.ext import commands
 
 from services import sauce_service as ss
-from tools import metadata as md
 from tools import sauce as sc
 from utils.i18n import i18n
-from utils.incognito import add_incognito_option, get_incognito_setting, resolve_default_incognito
-from utils.tool_card import NO_MENTIONS, ToolError, save_state
-from utils.tools_inspect_views import (
-    RAW_STATE_KIND, build_exif_card, build_sauce_card, raw_state_payload, render_error,
-    render_loading,
-)
+from utils.incognito import add_incognito_option, get_incognito_setting
+from utils.tool_card import NO_MENTIONS, ToolError
+from utils.tools_inspect_views import build_sauce_card, render_error, render_loading
 
 logger = logging.getLogger("moddy.tools_inspect")
-
-#: Largest file /exif downloads (Discord's own cap for most users).
-MAX_EXIF_BYTES = 25 * 1024 * 1024
-DOWNLOAD_TIMEOUT = 30
-#: At most this many files are parsed at once (CPU-bound, in worker threads).
-_EXIF_SLOTS = asyncio.Semaphore(2)
 
 MESSAGE_LINK_RE = re.compile(
     r"https?://(?:(?:ptb|canary)\.)?discord(?:app)?\.com/channels/"
     r"(?P<guild_id>\d+)/(?P<channel_id>\d+)/(?P<message_id>\d+)"
 )
-
-_ALLOWED_INSTALLS = app_commands.AppInstallationType(guild=True, user=True)
-_ALLOWED_CONTEXTS = app_commands.AppCommandContext(guild=True, dm_channel=True, private_channel=True)
 
 
 async def _card_locale(interaction: discord.Interaction, ephemeral: bool) -> str:
@@ -58,67 +42,10 @@ async def _card_locale(interaction: discord.Interaction, ephemeral: bool) -> str
 
 
 class ToolsInspect(commands.Cog):
-    """``/exif``, ``/sauce`` and the Find source menu."""
+    """``/sauce``"""
 
     def __init__(self, bot):
         self.bot = bot
-        self.find_source_menu = app_commands.ContextMenu(
-            name="Find source",
-            callback=self.find_source_context_menu,
-            allowed_installs=_ALLOWED_INSTALLS,
-            allowed_contexts=_ALLOWED_CONTEXTS,
-        )
-        self.bot.tree.add_command(self.find_source_menu)
-
-    async def cog_unload(self):
-        self.bot.tree.remove_command(self.find_source_menu.name, type=self.find_source_menu.type)
-
-    # ------------------------------------------------------------------ #
-    # /exif
-    # ------------------------------------------------------------------ #
-
-    @app_commands.command(name="exif", description="Show the hidden metadata of a file")
-    @app_commands.allowed_installs(guilds=True, users=True)
-    @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
-    @app_commands.describe(file="Image, PDF, Office document, audio or video file")
-    async def exif_command(self, interaction: discord.Interaction, file: discord.Attachment):
-        locale = i18n.get_user_locale(interaction)
-        if file.size and file.size > MAX_EXIF_BYTES:
-            await interaction.response.send_message(
-                view=render_error(ToolError("too_large", tool="exif", max="25 MB"), locale, "exif"),
-                ephemeral=True)
-            return
-
-        await interaction.response.send_message(view=render_loading(locale, "exif"), ephemeral=True)
-        try:
-            report = await self._inspect(file)
-        except ToolError as exc:
-            await interaction.edit_original_response(view=render_error(exc, locale, "exif"))
-            return
-
-        token = None
-        payload = raw_state_payload(report, file.filename)
-        if payload is not None:
-            token = await save_state(self.bot, RAW_STATE_KIND, payload)
-        self._count("exif.used", kind=report.kind)
-        await interaction.edit_original_response(
-            view=build_exif_card(report, file.filename, locale, raw_token=token),
-            allowed_mentions=NO_MENTIONS)
-
-    async def _inspect(self, file: discord.Attachment) -> md.MetadataReport:
-        try:
-            data = await asyncio.wait_for(file.read(), DOWNLOAD_TIMEOUT)
-        except asyncio.TimeoutError as exc:
-            raise ToolError("timeout", tool="exif") from exc
-        except (discord.HTTPException, discord.NotFound) as exc:
-            raise ToolError("download", tool="exif") from exc
-        if len(data) > MAX_EXIF_BYTES:
-            raise ToolError("too_large", tool="exif", max="25 MB")
-        async with _EXIF_SLOTS:
-            try:
-                return await asyncio.to_thread(md.inspect_file, data, file.filename)
-            except md.MetadataError as exc:
-                raise ToolError(exc.code, tool="exif") from exc
 
     # ------------------------------------------------------------------ #
     # /sauce
@@ -192,22 +119,6 @@ class ToolsInspect(commands.Cog):
         if source is None:
             raise ToolError("no_image", tool="sauce")
         return source
-
-    async def find_source_context_menu(self, interaction: discord.Interaction,
-                                       message: discord.Message):
-        locale = i18n.get_user_locale(interaction)
-        try:
-            source = ss.from_message(message)
-            if source is None:
-                raise ToolError("no_image", tool="sauce")
-            if not self._available():
-                raise ToolError("unavailable", tool="sauce")
-        except ToolError as exc:
-            await interaction.response.send_message(
-                view=render_error(exc, locale, "sauce"), ephemeral=True)
-            return
-        ephemeral = await resolve_default_incognito(self.bot, interaction.user.id)
-        await self._run(interaction, source, ephemeral=ephemeral, origin="menu")
 
     def _available(self) -> bool:
         return any(ss.available(self.bot))

@@ -23,9 +23,6 @@
     "Save Message": {
       "name": "Spara meddelande"
     },
-    "Get Emojis": {
-      "name": "Hämta emojis"
-    },
     "Translate": {
       "name": "Översätt"
     },
@@ -34,9 +31,6 @@
     },
     "Transcribe": {
       "name": "Transkribera"
-    },
-    "Find source": {
-      "name": "Hitta källa"
     },
     "Check links": {
       "name": "Kontrollera länkar"
@@ -497,25 +491,11 @@
     },
     "music": {
       "name": "musik",
-      "description": "Musikverktyg"
-    },
-    "music link": {
-      "name": "lank",
       "description": "Hitta en Spotify-låt, ett album eller en artist på andra plattformar",
       "parameters": {
         "url": {
           "name": "lank",
           "description": "Spotify-länken (en låt, ett album eller en artist)"
-        }
-      }
-    },
-    "exif": {
-      "name": "exif",
-      "description": "Visar de dolda metadata i en fil",
-      "parameters": {
-        "file": {
-          "name": "fil",
-          "description": "Bild, PDF, Office-dokument, ljud- eller videofil"
         }
       }
     },

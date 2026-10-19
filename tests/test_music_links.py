@@ -1,4 +1,4 @@
-"""Music links: the module (default-enabled), ``/music link`` and the pure core.
+"""Music links: the module (default-enabled), ``/music`` and the pure core.
 
 Spotify pages, Deezer and iTunes payloads are real captures kept in
 ``tests/data/music`` (trimmed); the network is faked, nothing leaves the process.
@@ -508,9 +508,8 @@ def test_music_command_is_localized_in_every_locale():
     for path in sorted((ROOT / "locales" / "commands").glob("*.json")):
         data = json.loads(path.read_text(encoding="utf-8"))["commands"]
         assert data["music"]["name"] and data["music"]["description"], path.name
-        link = data["music link"]
-        assert link["name"] and link["description"], path.name
-        assert link["parameters"]["url"]["name"], path.name
+        assert data["music"]["parameters"]["url"]["name"], path.name
+        assert "music link" not in data, path.name
     fr = json.loads((ROOT / "locales" / "commands" / "fr.json").read_text(encoding="utf-8"))["commands"]
     assert fr["music"]["name"] == "musique"
 
@@ -1012,7 +1011,7 @@ class TestService:
 
 
 # --------------------------------------------------------------------------- #
-# /music link
+# /music
 # --------------------------------------------------------------------------- #
 
 
@@ -1039,7 +1038,7 @@ class TestCommand:
     async def call(self, cog, url, interaction=None):
         interaction = interaction or FakeInteraction()
         interaction.namespace.incognito = None
-        await cog.link.callback(cog, interaction, url, None)
+        await cog.music.callback(cog, interaction, url, None)
         return interaction
 
     def first_view_text(self, interaction):
@@ -1090,7 +1089,7 @@ class TestCommand:
         interaction = FakeInteraction()
         interaction.namespace.incognito = None
         with pytest.raises(ValueError):
-            await cog.link.callback(cog, interaction, f"https://open.spotify.com/track/{TRACK_ID}", None)
+            await cog.music.callback(cog, interaction, f"https://open.spotify.com/track/{TRACK_ID}", None)
         interaction.edit_original_response.assert_awaited_once()
 
     async def test_without_a_service_says_unavailable(self):
@@ -1101,10 +1100,10 @@ class TestCommand:
 
     def test_command_shape(self):
         from cogs.music_links import MusicLinks
-        group = MusicLinks.music_group
-        assert group.name == "music" and [c.name for c in group.commands] == ["link"]
-        assert group.allowed_installs.guild and group.allowed_installs.user
-        assert group.allowed_contexts.guild and group.allowed_contexts.dm_channel
+        command = MusicLinks.music
+        assert command.name == "music"
+        assert command.allowed_installs.guild and command.allowed_installs.user
+        assert command.allowed_contexts.guild and command.allowed_contexts.dm_channel
 
 
 # --------------------------------------------------------------------------- #

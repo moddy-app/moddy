@@ -23,9 +23,6 @@
     "Save Message": {
       "name": "Spremi poruku"
     },
-    "Get Emojis": {
-      "name": "Dohvati emoji"
-    },
     "Translate": {
       "name": "Prevedi"
     },
@@ -34,9 +31,6 @@
     },
     "Transcribe": {
       "name": "Transkribiraj"
-    },
-    "Find source": {
-      "name": "Pronađi izvor"
     },
     "Check links": {
       "name": "Provjeri poveznice"
@@ -497,25 +491,11 @@
     },
     "music": {
       "name": "glazba",
-      "description": "Glazbeni alati"
-    },
-    "music link": {
-      "name": "poveznica",
       "description": "Pronađi Spotify pjesmu, album ili izvođača na drugim platformama",
       "parameters": {
         "url": {
           "name": "poveznica",
           "description": "Spotify poveznica (pjesma, album ili izvođač)"
-        }
-      }
-    },
-    "exif": {
-      "name": "exif",
-      "description": "Prikazuje skrivene metapodatke datoteke",
-      "parameters": {
-        "file": {
-          "name": "datoteka",
-          "description": "Slika, PDF, Office dokument, audio ili video datoteka"
         }
       }
     },

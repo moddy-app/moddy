@@ -23,9 +23,6 @@
     "Save Message": {
       "name": "Lưu tin nhắn"
     },
-    "Get Emojis": {
-      "name": "Lấy emoji"
-    },
     "Translate": {
       "name": "Dịch"
     },
@@ -34,9 +31,6 @@
     },
     "Transcribe": {
       "name": "Chuyển thành văn bản"
-    },
-    "Find source": {
-      "name": "Tìm nguồn"
     },
     "Check links": {
       "name": "Kiểm tra liên kết"
@@ -497,25 +491,11 @@
     },
     "music": {
       "name": "nhac",
-      "description": "Công cụ âm nhạc"
-    },
-    "music link": {
-      "name": "lien-ket",
       "description": "Tìm bài hát, album hoặc nghệ sĩ Spotify trên các nền tảng khác",
       "parameters": {
         "url": {
           "name": "lien-ket",
           "description": "Liên kết Spotify (bài hát, album hoặc nghệ sĩ)"
-        }
-      }
-    },
-    "exif": {
-      "name": "exif",
-      "description": "Hiển thị siêu dữ liệu ẩn của một tệp",
-      "parameters": {
-        "file": {
-          "name": "tep",
-          "description": "Ảnh, PDF, tài liệu Office, tệp âm thanh hoặc video"
         }
       }
     },

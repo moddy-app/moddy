@@ -23,9 +23,6 @@
     "Save Message": {
       "name": "Bericht opslaan"
     },
-    "Get Emojis": {
-      "name": "Emoji's ophalen"
-    },
     "Translate": {
       "name": "Vertalen"
     },
@@ -34,9 +31,6 @@
     },
     "Transcribe": {
       "name": "Transcriberen"
-    },
-    "Find source": {
-      "name": "Bron zoeken"
     },
     "Check links": {
       "name": "Links controleren"
@@ -497,25 +491,11 @@
     },
     "music": {
       "name": "muziek",
-      "description": "Muziekhulpmiddelen"
-    },
-    "music link": {
-      "name": "link",
       "description": "Vind een Spotify-nummer, -album of -artiest op andere platforms",
       "parameters": {
         "url": {
           "name": "link",
           "description": "De Spotify-link (een nummer, album of artiest)"
-        }
-      }
-    },
-    "exif": {
-      "name": "exif",
-      "description": "Toont de verborgen metadata van een bestand",
-      "parameters": {
-        "file": {
-          "name": "bestand",
-          "description": "Afbeelding, pdf, Office-document, audio- of videobestand"
         }
       }
     },

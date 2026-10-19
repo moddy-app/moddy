@@ -112,7 +112,6 @@ def build_password_card(password: str, kind: str, length: int, locale: str) -> u
                 bits=tc.inline(t("tools.password.bits", locale=locale, n=int(bits)))))
     card.hint(summary)
     card.hint(t("tools.password.hint", locale=locale))
-    card.footer(tc.source_line(locale, verb="computed_locally"))
     return card.build(view=_view(), rows=[_row(PasswordRegenButton(kind, length, locale))])
 
 
@@ -154,7 +153,6 @@ def build_uuid_card(uuids: Sequence[str], version: str, locale: str) -> ui.Layou
     card = tc.ToolCard(title=t("tools.uuid.title", locale=locale), icon=NUMBERS)
     card.code("\n".join(uuids))
     card.hint(t(f"tools.uuid.version.{version}", locale=locale))
-    card.footer(tc.source_line(locale, verb="computed_locally"))
     return card.build(view=_view(), rows=[_row(UuidRegenButton(version, len(uuids), locale))])
 
 
@@ -210,8 +208,7 @@ def build_hash_card(digests: Dict[str, str], *, subject: str, is_text: bool, loc
         card.section(label, tc.code_block(digests[key]))
     if is_text:
         card.hint(t("tools.hash.utf8_note", locale=locale))
-    card.footer(tc.source_line(locale, verb="computed_locally"),
-                tc.requested_by(locale, requester_id))
+    card.footer(tc.requested_by(locale, requester_id))
     return card.build()
 
 
@@ -268,7 +265,6 @@ def build_jwt_card(decoded: jwtd.DecodedJwt, locale: str) -> Tuple[ui.LayoutView
         card.hint(t("tools.jwt.bad_time", locale=locale, claim=tc.inline(claim)))
 
     card.hint(t("tools.jwt.unverified", locale=locale))
-    card.footer(tc.source_line(locale, verb="computed_locally"))
     return card.build(), files
 
 
@@ -308,22 +304,6 @@ async def build_color_message(rgb: colors.RGB, locale: str, *, alpha: Optional[f
     return build_color_card(rgb, locale, alpha=alpha, requester_id=requester_id), files
 
 
-def _levels(contrast: colors.Contrast, locale: str) -> str:
-    mark = lambda ok: DONE if ok else ERROR  # noqa: E731
-    return t("tools.color.levels", locale=locale, aa=mark(contrast.aa), aaa=mark(contrast.aaa),
-             aa_large=mark(contrast.aa_large), aaa_large=mark(contrast.aaa_large))
-
-
-def contrast_rows(rgb: colors.RGB) -> List[Tuple[str, colors.Contrast]]:
-    """``[(i18n key suffix, contrast)]``: the colour as text, then as a background."""
-    return [
-        ("dark", colors.wcag(rgb, colors.DISCORD_DARK_BG)),
-        ("light", colors.wcag(rgb, colors.DISCORD_LIGHT_BG)),
-        ("white", colors.wcag(rgb, colors.WHITE)),
-        ("black", colors.wcag(rgb, colors.BLACK)),
-    ]
-
-
 def build_color_card(rgb: colors.RGB, locale: str, *, alpha: Optional[float] = None,
                      requester_id: Optional[int] = None) -> ui.LayoutView:
     card = tc.ToolCard(title=t("tools.color.title", locale=locale), icon=COLOR,
@@ -342,13 +322,17 @@ def build_color_card(rgb: colors.RGB, locale: str, *, alpha: Optional[float] = N
     card.details(lines)
 
     rows = []
-    for key, contrast in contrast_rows(rgb):
-        rows.append(tc.detail(t(f"tools.color.contrast_{key}", locale=locale),
-                              colors.format_ratio(contrast.ratio))
-                    + f"\n-# {_levels(contrast, locale)}")
-    card.section(t("tools.color.contrast_title", locale=locale), "\n".join(rows))
-    card.footer(tc.source_line(locale, verb="computed_locally"),
-                tc.requested_by(locale, requester_id))
+    for name, text_colour in (("black", colors.BLACK), ("white", colors.WHITE)):
+        ratio = colors.contrast_ratio(rgb, text_colour)
+        level = colors.readability(ratio)
+        rows.append(tc.with_icon(
+            DONE if level in ("excellent", "good") else ERROR,
+            t("tools.color.readability_line", locale=locale,
+              text=t(f"tools.color.text_{name}", locale=locale),
+              verdict=t(f"tools.color.readability.{level}", locale=locale),
+              ratio=tc.inline(colors.format_ratio(ratio)))))
+    card.section(t("tools.color.readability_title", locale=locale), "\n".join(rows))
+    card.footer(tc.requested_by(locale, requester_id))
     return card.build(view=_view(), rows=[_row(ColorRandomButton(locale))])
 
 

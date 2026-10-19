@@ -52,8 +52,11 @@ BOOTSTRAP_TTL = 24 * 3600
 DOH_TIMEOUT = 6.0
 DNS_CACHE_TTL = 300
 TLS_TIMEOUT = 8.0
-SUBDOMAINS_TIMEOUT = 30.0
+SUBDOMAINS_TIMEOUT = 20.0
 SUBDOMAINS_CACHE_TTL = 6 * 3600
+#: The fallback answer is shorter: let crt.sh be tried again sooner.
+SUBDOMAINS_FALLBACK_CACHE_TTL = 30 * 60
+SUBDOMAINS_FALLBACK_TIMEOUT = 15.0
 SUBDOMAINS_MAX_BYTES = 24 * 1024 * 1024
 FETCH_TIMEOUT = 8.0
 FETCH_BODY_BYTES = 32 * 1024
@@ -446,7 +449,13 @@ class WebToolsService:
         return crtsh.extract(data, domain)
 
     async def subdomains(self, domain: str) -> crtsh.SubdomainResult:
-        """Names found in Certificate Transparency logs. Raises ``ToolError`` (tool ``subdomains``)."""
+        """Names found in Certificate Transparency logs. Raises ``ToolError`` (tool ``subdomains``).
+
+        crt.sh is the complete source but often overloaded; when it fails
+        (timeout, 5xx, rate limit) Cert Spotter answers instead, with a shorter
+        list. A domain too big for crt.sh stays an error: the fallback would
+        only show a sliver of it.
+        """
         api = self.api
         key = api.cache_key("crtsh", domain)
         cached = await api.cache_get(key)
@@ -454,25 +463,53 @@ class WebToolsService:
             return crtsh.SubdomainResult(**cached)
 
         api.set_host_limit("crt.sh", 2)
+        ttl = SUBDOMAINS_CACHE_TTL
         try:
-            resp = await api.request(
-                "GET", crtsh.SEARCH_URL, params=crtsh.query_params(domain),
-                timeout=SUBDOMAINS_TIMEOUT, max_bytes=SUBDOMAINS_MAX_BYTES)
+            result = await self._subdomains_crtsh(domain)
         except PublicAPIError as exc:
             if exc.code == "too_large":
                 raise ToolError("too_large", tool="subdomains", domain=domain) from None
-            if exc.code == "rate_limited":
-                raise ToolError("rate_limited", tool="subdomains") from None
-            if exc.code == "timeout":
-                raise ToolError("crtsh_down", tool="subdomains", reason="timeout") from None
-            raise ToolError("crtsh_down", tool="subdomains", reason=exc.code) from None
-        try:
-            result = await asyncio.to_thread(self._parse_crt, resp.body, domain)
-        except (ValueError, UnicodeDecodeError):
-            raise ToolError("crtsh_down", tool="subdomains", reason="bad_payload") from None
+            logger.info("crt.sh failed for %s (%s): falling back to Cert Spotter", domain, exc.code)
+            try:
+                result = await self._subdomains_certspotter(domain)
+            except (PublicAPIError, ValueError):
+                if exc.code == "rate_limited":
+                    raise ToolError("rate_limited", tool="subdomains") from None
+                raise ToolError("crtsh_down", tool="subdomains", reason=exc.code) from None
+            ttl = SUBDOMAINS_FALLBACK_CACHE_TTL
         await api.cache_set(key, {
             "domain": result.domain, "names": result.names, "wildcards": result.wildcards,
-            "total": result.total, "certificates": result.certificates}, SUBDOMAINS_CACHE_TTL)
+            "total": result.total, "certificates": result.certificates,
+            "source": result.source}, ttl)
+        return result
+
+    async def _subdomains_crtsh(self, domain: str) -> crtsh.SubdomainResult:
+        resp = await self.api.request(
+            "GET", crtsh.SEARCH_URL, params=crtsh.query_params(domain),
+            timeout=SUBDOMAINS_TIMEOUT, max_bytes=SUBDOMAINS_MAX_BYTES)
+        try:
+            return await asyncio.to_thread(self._parse_crt, resp.body, domain)
+        except (ValueError, UnicodeDecodeError) as exc:
+            raise PublicAPIError("bad_payload", url=crtsh.SEARCH_URL) from exc
+
+    async def _subdomains_certspotter(self, domain: str) -> crtsh.SubdomainResult:
+        """Up to ``CERTSPOTTER_MAX_PAGES`` pages of issuances (the free tier is rate limited)."""
+        rows: list = []
+        after = None
+        for _ in range(crtsh.CERTSPOTTER_MAX_PAGES):
+            resp = await self.api.request(
+                "GET", crtsh.CERTSPOTTER_URL, params=crtsh.certspotter_params(domain, after),
+                timeout=SUBDOMAINS_FALLBACK_TIMEOUT, max_bytes=SUBDOMAINS_MAX_BYTES)
+            data = resp.json()
+            if not isinstance(data, list):
+                raise ValueError("unexpected Cert Spotter payload")
+            rows.extend(crtsh.certspotter_rows(data))
+            last_id = data[-1].get("id") if data and isinstance(data[-1], dict) else None
+            if last_id is None:
+                break
+            after = last_id
+        result = crtsh.extract(rows, domain)
+        result.source = "Cert Spotter"
         return result
 
     # ------------------------------------------------------------------ #

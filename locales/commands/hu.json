@@ -23,9 +23,6 @@
     "Save Message": {
       "name": "Üzenet mentése"
     },
-    "Get Emojis": {
-      "name": "Emojik lekérése"
-    },
     "Translate": {
       "name": "Fordítás"
     },
@@ -34,9 +31,6 @@
     },
     "Transcribe": {
       "name": "Átirat készítése"
-    },
-    "Find source": {
-      "name": "Forrás keresése"
     },
     "Check links": {
       "name": "Linkek ellenőrzése"
@@ -497,25 +491,11 @@
     },
     "music": {
       "name": "zene",
-      "description": "Zenei eszközök"
-    },
-    "music link": {
-      "name": "link",
       "description": "Keress meg egy Spotify-számot, albumot vagy előadót más platformokon",
       "parameters": {
         "url": {
           "name": "link",
           "description": "A Spotify-link (szám, album vagy előadó)"
-        }
-      }
-    },
-    "exif": {
-      "name": "exif",
-      "description": "Megmutatja egy fájl rejtett metaadatait",
-      "parameters": {
-        "file": {
-          "name": "fajl",
-          "description": "Kép, PDF, Office-dokumentum, hang- vagy videófájl"
         }
       }
     },

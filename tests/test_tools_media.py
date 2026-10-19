@@ -668,6 +668,45 @@ def test_find_source_attachment_skips_the_preview():
     assert views.find_source_attachment(types.SimpleNamespace(attachments=[att(views.PREVIEW_NAME)])) is None
 
 
+async def test_card_image_is_fetched_back_when_the_interaction_message_has_none():
+    att = lambda name: types.SimpleNamespace(filename=name, content_type="image/png")
+    bare = types.SimpleNamespace(id=1, attachments=[], flags=discord.MessageFlags._from_value(0))
+    full = types.SimpleNamespace(attachments=[att("photo.png")])
+
+    class Interaction:
+        message = bare
+
+        async def original_response(self):
+            return full
+
+    assert (await views.find_card_attachment(Interaction())).filename == "photo.png"
+
+    class Gone(Interaction):
+        async def original_response(self):
+            return bare
+
+    assert await views.find_card_attachment(Gone()) is None
+
+
+async def test_modals_keep_the_message_the_button_was_clicked_on():
+    card = types.SimpleNamespace(attachments=[types.SimpleNamespace(filename="a.png", content_type="image/png")])
+    stripped = types.SimpleNamespace(attachments=[])
+    interaction = types.SimpleNamespace(message=stripped)
+    modal = views.CompressModal("en-US", card)
+    seen = {}
+
+    async def fake_apply(inter, op, params):
+        seen["message"] = inter.message
+
+    original = views.apply_image_action
+    views.apply_image_action = fake_apply
+    try:
+        await modal.on_submit(interaction)
+    finally:
+        views.apply_image_action = original
+    assert seen["message"] is card
+
+
 def test_convert_picker_groups_targets_and_flags_cloud_formats():
     targets = ["png", "jpg", "pdf", "docx"]
     view = views.build_convert_picker(filename="x.docx", src="docx", size=2048, token="abcdefghij",

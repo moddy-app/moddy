@@ -23,9 +23,6 @@
     "Save Message": {
       "name": "Mesajı kaydet"
     },
-    "Get Emojis": {
-      "name": "Emojileri al"
-    },
     "Translate": {
       "name": "Çevir"
     },
@@ -34,9 +31,6 @@
     },
     "Transcribe": {
       "name": "Yazıya dök"
-    },
-    "Find source": {
-      "name": "Kaynağı bul"
     },
     "Check links": {
       "name": "Bağlantıları kontrol et"
@@ -497,25 +491,11 @@
     },
     "music": {
       "name": "muzik",
-      "description": "Müzik araçları"
-    },
-    "music link": {
-      "name": "baglanti",
       "description": "Bir Spotify şarkısını, albümünü veya sanatçısını diğer platformlarda bul",
       "parameters": {
         "url": {
           "name": "baglanti",
           "description": "Spotify bağlantısı (şarkı, albüm veya sanatçı)"
-        }
-      }
-    },
-    "exif": {
-      "name": "exif",
-      "description": "Bir dosyanın gizli meta verilerini gösterir",
-      "parameters": {
-        "file": {
-          "name": "dosya",
-          "description": "Görsel, PDF, Office belgesi, ses veya video dosyası"
         }
       }
     },

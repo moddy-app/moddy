@@ -282,6 +282,18 @@ def wcag(a: RGB, b: RGB) -> Contrast:
     return Contrast(ratio, ratio >= 4.5, ratio >= 7.0, ratio >= 3.0, ratio >= 4.5)
 
 
+def readability(ratio: float) -> str:
+    """Plain verdict for text of one colour on the other: ``excellent`` (WCAG AAA),
+    ``good`` (AA), ``weak`` (large text only) or ``poor``."""
+    if ratio >= 7.0:
+        return "excellent"
+    if ratio >= 4.5:
+        return "good"
+    if ratio >= 3.0:
+        return "weak"
+    return "poor"
+
+
 def format_ratio(ratio: float) -> str:
     """Two decimals (``4.48:1``). A ratio just below a WCAG threshold is floored
     instead, so a failing 4.4999 never reads ``4.50:1`` next to a red cross."""
