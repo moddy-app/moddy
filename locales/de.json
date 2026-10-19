@@ -3941,6 +3941,87 @@
           "placeholder": "Kein ignorierter Kanal"
         }
       }
+    },
+    "translate_button": {
+      "name": "Übersetzen-Button",
+      "description": "Bietet unter Nachrichten in einer anderen Sprache eine Übersetzung an",
+      "config": {
+        "title": "Übersetzen-Button",
+        "description": "Schreibt jemand in einer Sprache, die dein Server nicht spricht, fügt Moddy unter der Nachricht einen kleinen **Übersetzen**-Button hinzu. Wer klickt, erhält die Übersetzung privat in der eigenen Sprache. Die Erkennung läuft in Moddy selbst, vor einem Klick wird nichts verschickt. In jedem Server standardmäßig aktiv: Du kannst es über **Verwalten** pausieren.",
+        "learnt": {
+          "section_title": "Hier üblicherweise gesprochene Sprachen",
+          "section_description": "Aus den Nachrichten der letzten {days} Tage gelernt: Eine Sprache mit mindestens 10 % Anteil bekommt nie einen Button",
+          "learning": "Moddy lernt noch: `{sample}` / `{needed}` Nachrichten analysiert",
+          "none": "Bisher nur die Serversprache"
+        },
+        "languages": {
+          "section_title": "Weitere Sprachen ignorieren",
+          "section_description": "Nachrichten in diesen Sprachen bekommen nie einen Button, zusätzlich zur Serversprache und den von Moddy gelernten",
+          "placeholder": "Keine weitere Sprache"
+        },
+        "delay": {
+          "section_title": "Lebensdauer des Buttons",
+          "section_description": "Wie lange die kleine Nachricht unter dem Original bleibt",
+          "placeholder": "Dauer wählen",
+          "options": {
+            "120": "2 Minuten",
+            "300": "5 Minuten",
+            "600": "10 Minuten",
+            "1800": "30 Minuten",
+            "0": "Nie löschen"
+          }
+        },
+        "channels": {
+          "section_title": "Ignorierte Kanäle",
+          "section_description": "Moddy bietet in diesen Kanälen (und ihren Threads) nie eine Übersetzung an",
+          "placeholder": "Kein ignorierter Kanal"
+        }
+      },
+      "prompt": {
+        "detected": "{language} erkannt",
+        "button": "Übersetzen"
+      },
+      "loading": "Wird übersetzt…",
+      "card": {
+        "title": "Übersetzung",
+        "jump": "Originalnachricht"
+      },
+      "errors": {
+        "title": "Übersetzung nicht verfügbar",
+        "failed": "Die Übersetzung ist fehlgeschlagen. Versuch es gleich noch einmal.",
+        "unavailable": "Die Übersetzung ist gerade nicht verfügbar. Versuch es später noch einmal.",
+        "rate_limited": "Du klickst zu schnell. Warte eine Minute und versuche es erneut.",
+        "gone": "Die ursprüngliche Nachricht existiert nicht mehr.",
+        "empty": "In dieser Nachricht gibt es nichts zu übersetzen.",
+        "quota": "Du hast dein tägliches Übersetzungslimit erreicht. Versuch es morgen wieder."
+      },
+      "languages": {
+        "en": "Englisch",
+        "fr": "Französisch",
+        "de": "Deutsch",
+        "es": "Spanisch",
+        "pt": "Portugiesisch",
+        "it": "Italienisch",
+        "nl": "Niederländisch",
+        "pl": "Polnisch",
+        "ru": "Russisch",
+        "uk": "Ukrainisch",
+        "tr": "Türkisch",
+        "ar": "Arabisch",
+        "ja": "Japanisch",
+        "ko": "Koreanisch",
+        "zh": "Chinesisch",
+        "sv": "Schwedisch",
+        "da": "Dänisch",
+        "no": "Norwegisch",
+        "fi": "Finnisch",
+        "cs": "Tschechisch",
+        "ro": "Rumänisch",
+        "hu": "Ungarisch",
+        "el": "Griechisch",
+        "id": "Indonesisch",
+        "bg": "Bulgarisch"
+      }
     }
   },
   "languages": {

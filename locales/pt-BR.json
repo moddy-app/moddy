@@ -3941,6 +3941,87 @@
           "placeholder": "Nenhum canal ignorado"
         }
       }
+    },
+    "translate_button": {
+      "name": "Botão Traduzir",
+      "description": "Oferece uma tradução sob mensagens escritas em outro idioma",
+      "config": {
+        "title": "Botão Traduzir",
+        "description": "Quando alguém escreve em um idioma que o seu servidor não fala, o Moddy adiciona um pequeno botão **Traduzir** sob a mensagem. Quem clica recebe a tradução em privado, no próprio idioma. A detecção acontece dentro do Moddy e nada é enviado a lugar nenhum antes de um clique. Ativado por padrão em todos os servidores: você pode pausá-lo em **Gerenciar**.",
+        "learnt": {
+          "section_title": "Idiomas normalmente falados aqui",
+          "section_description": "Aprendidos com as mensagens dos últimos {days} dias: um idioma que representa pelo menos 10 % nunca recebe botão",
+          "learning": "O Moddy ainda está aprendendo: `{sample}` / `{needed}` mensagens analisadas",
+          "none": "Só o idioma do servidor por enquanto"
+        },
+        "languages": {
+          "section_title": "Outros idiomas a ignorar",
+          "section_description": "Mensagens nesses idiomas nunca recebem botão, além do idioma do servidor e dos que o Moddy aprendeu",
+          "placeholder": "Nenhum idioma extra"
+        },
+        "delay": {
+          "section_title": "Duração do botão",
+          "section_description": "Quanto tempo a mensagenzinha fica sob a original",
+          "placeholder": "Escolha uma duração",
+          "options": {
+            "120": "2 minutos",
+            "300": "5 minutos",
+            "600": "10 minutos",
+            "1800": "30 minutos",
+            "0": "Nunca apagar"
+          }
+        },
+        "channels": {
+          "section_title": "Canais ignorados",
+          "section_description": "O Moddy nunca oferece tradução nesses canais (nem nos tópicos deles)",
+          "placeholder": "Nenhum canal ignorado"
+        }
+      },
+      "prompt": {
+        "detected": "{language} detectado",
+        "button": "Traduzir"
+      },
+      "loading": "Traduzindo…",
+      "card": {
+        "title": "Tradução",
+        "jump": "Mensagem original"
+      },
+      "errors": {
+        "title": "Tradução indisponível",
+        "failed": "A tradução falhou. Tente de novo em instantes.",
+        "unavailable": "A tradução não está disponível agora. Tente mais tarde.",
+        "rate_limited": "Você está clicando rápido demais. Espere um minuto e tente de novo.",
+        "gone": "A mensagem original não existe mais.",
+        "empty": "Não há nada para traduzir nesta mensagem.",
+        "quota": "Você atingiu seu limite diário de traduções. Tente amanhã."
+      },
+      "languages": {
+        "en": "Inglês",
+        "fr": "Francês",
+        "de": "Alemão",
+        "es": "Espanhol",
+        "pt": "Português",
+        "it": "Italiano",
+        "nl": "Holandês",
+        "pl": "Polonês",
+        "ru": "Russo",
+        "uk": "Ucraniano",
+        "tr": "Turco",
+        "ar": "Árabe",
+        "ja": "Japonês",
+        "ko": "Coreano",
+        "zh": "Chinês",
+        "sv": "Sueco",
+        "da": "Dinamarquês",
+        "no": "Norueguês",
+        "fi": "Finlandês",
+        "cs": "Tcheco",
+        "ro": "Romeno",
+        "hu": "Húngaro",
+        "el": "Grego",
+        "id": "Indonésio",
+        "bg": "Búlgaro"
+      }
     }
   },
   "languages": {

@@ -3941,6 +3941,87 @@
           "placeholder": "No ignored channel"
         }
       }
+    },
+    "translate_button": {
+      "name": "Translate Button",
+      "description": "Offers a translation under messages in another language",
+      "config": {
+        "title": "Translate Button",
+        "description": "When someone writes in a language your server does not speak, Moddy adds a small **Translate** button under the message. Whoever clicks gets the translation privately, in their own language. Detection happens inside Moddy and nothing is sent anywhere until someone clicks. On by default in every server: you can pause it from **Manage**.",
+        "learnt": {
+          "section_title": "Languages usually spoken here",
+          "section_description": "Learnt from the last {days} days of messages: a language that makes up at least 10 % of them never gets a button",
+          "learning": "Still learning: `{sample}` / `{needed}` messages analysed so far",
+          "none": "Only the server language so far"
+        },
+        "languages": {
+          "section_title": "Other languages to ignore",
+          "section_description": "Messages in these languages never get a button, on top of the server language and the ones Moddy learnt",
+          "placeholder": "No extra language"
+        },
+        "delay": {
+          "section_title": "Button lifetime",
+          "section_description": "How long the small prompt stays under the message",
+          "placeholder": "Choose a duration",
+          "options": {
+            "120": "2 minutes",
+            "300": "5 minutes",
+            "600": "10 minutes",
+            "1800": "30 minutes",
+            "0": "Never delete"
+          }
+        },
+        "channels": {
+          "section_title": "Ignored channels",
+          "section_description": "Moddy never offers a translation in these channels (nor in their threads)",
+          "placeholder": "No ignored channel"
+        }
+      },
+      "prompt": {
+        "detected": "{language} detected",
+        "button": "Translate"
+      },
+      "loading": "Translating…",
+      "card": {
+        "title": "Translation",
+        "jump": "Original message"
+      },
+      "errors": {
+        "title": "Translation unavailable",
+        "failed": "The translation failed. Try again in a moment.",
+        "unavailable": "Translation is not available right now. Try again later.",
+        "rate_limited": "You are clicking too fast. Wait a minute and try again.",
+        "gone": "The original message no longer exists.",
+        "empty": "There is nothing to translate in this message.",
+        "quota": "You reached your daily translation limit. Try again tomorrow."
+      },
+      "languages": {
+        "en": "English",
+        "fr": "French",
+        "de": "German",
+        "es": "Spanish",
+        "pt": "Portuguese",
+        "it": "Italian",
+        "nl": "Dutch",
+        "pl": "Polish",
+        "ru": "Russian",
+        "uk": "Ukrainian",
+        "tr": "Turkish",
+        "ar": "Arabic",
+        "ja": "Japanese",
+        "ko": "Korean",
+        "zh": "Chinese",
+        "sv": "Swedish",
+        "da": "Danish",
+        "no": "Norwegian",
+        "fi": "Finnish",
+        "cs": "Czech",
+        "ro": "Romanian",
+        "hu": "Hungarian",
+        "el": "Greek",
+        "id": "Indonesian",
+        "bg": "Bulgarian"
+      }
     }
   },
   "languages": {
