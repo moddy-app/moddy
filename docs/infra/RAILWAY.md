@@ -98,6 +98,19 @@ Railway facture la RAM à la GB-minute, et c'est de loin le premier poste de
 coût du projet (≈93 % de la facture, contre ≈4 % pour le CPU). Ces variables
 existent uniquement pour piloter cette empreinte.
 
+### Boîte à outils : onnxruntime et py3langid (chargés à la demande)
+Rien n'est chargé au démarrage ; le coût n'apparaît qu'au premier usage.
+- **Suppression de fond** (`/image`, `tools/bg_removal.py`) : onnxruntime + numpy
+  ≈ +87 Mo à l'import, pic ≈ 176 Mo de RSS pendant une image de 12 Mpx, ≈ 124 Mo
+  après le déchargement du modèle (10 min sans usage). La bibliothèque onnxruntime
+  reste mappée (≈ +95 Mo au-dessus du repos) jusqu'au redémarrage. Le modèle
+  u2netp (4,7 Mo) est téléchargé une fois par déploiement (`U2NETP_DIR`,
+  `U2NETP_URL`, `U2NETP_SHA256` pour surcharger).
+- **Bouton Traduire** (`tools/langdetect.py`) : py3langid ≈ +55 à +65 Mo résidents
+  après le premier message éligible, pic transitoire ≈ 134 Mo pendant le chargement.
+- **ffmpeg** (`imageio-ffmpeg`, `/convert` audio/vidéo) : ≈ 80 Mo de disque, 0 Mo
+  de RAM au repos (processus externe, une conversion à la fois).
+
 ### MALLOC_ARENA_MAX
 **Valeur recommandée :** `2`
 **Description :** glibc alloue une arène mémoire (jusqu'à 64 Mo) **par thread**
@@ -204,6 +217,23 @@ bannières des membres, budget **séparé**, défaut `1000`) et `GOOGLE_VISION_O
 facture après 1000 unités / mois **par compte**, donc les deux budgets SafeSearch
 cumulés (1000 + 1000 par défaut) peuvent dépasser la tranche gratuite ; baissez
 l'une des deux variables si besoin.
+
+### SAUCENAO_API_KEY / TRACEMOE_API_KEY
+**Valeur :** clés gratuites SauceNAO et trace.moe. `/sauce` et le menu « Trouver
+la source ». Sans SauceNAO, seule la recherche anime ; sans trace.moe la limite
+est de 100 recherches par mois pour l'IP du bot.
+
+### VIRUSTOTAL_API_KEY / URLSCAN_API_KEY
+**Valeur :** clés VirusTotal et urlscan.io, optionnelles. `/link-check` et le menu
+« Vérifier les liens » ; sans elles, seules les vérifications locales.
+**Attention :** l'offre gratuite de VirusTotal **interdit l'usage commercial**
+(Moddy a un Premium) : laisser vide ou prendre une licence commerciale.
+
+### CLOUDCONVERT_API_KEY
+**Valeur :** clé CloudConvert, optionnelle. `/convert` pour la bureautique avec
+mise en page (DOCX/ODT/PPTX ↔ PDF) et les ebooks ; sans elle ces formats sont
+masqués. 25 conversions gratuites par jour (`CLOUDCONVERT_PER_DAY`, fail-closed).
+Limites et délais : voir [API_GATEWAY.md](API_GATEWAY.md).
 
 ### MODDY_AUTOMOD_LABEL_CHANNEL_ID
 **Valeur :** ID du salon (serveur de l'équipe Moddy) où arrive la file
