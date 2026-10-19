@@ -5524,5 +5524,49 @@
       "bad_link": "Das ist kein gültiger Discord-Nachrichtenlink.",
       "other_server": "Nur Nachrichten dieses Servers können geprüft werden."
     }
+  },
+  "tools": {
+    "common": {
+      "loading": "Einen Moment…",
+      "requested_by": "angefordert von {user}",
+      "by": {
+        "provided_by": "Bereitgestellt von {source}",
+        "data_provided_by": "Daten bereitgestellt von {source}",
+        "translated_by": "Übersetzt von {source}",
+        "checked_by": "Geprüft von {source}",
+        "scanned_by": "Analysiert von {source}",
+        "converted_by": "Konvertiert von {source}",
+        "summarized_by": "Zusammengefasst von {source}",
+        "found_by": "Gefunden von {source}",
+        "computed_locally": "Direkt von Moddy berechnet, nichts wird woandershin gesendet"
+      },
+      "error_title": "Gerade nicht möglich",
+      "errors": {
+        "failed": "Etwas ist schiefgelaufen. Versuche es gleich noch einmal.",
+        "unavailable": "Dieser Dienst ist gerade nicht verfügbar. Versuche es später erneut.",
+        "timeout": "Der Dienst hat zu lange gebraucht. Versuche es gleich noch einmal.",
+        "network": "Der Dienst ist nicht erreichbar. Versuche es gleich noch einmal.",
+        "rate_limited": "Gerade zu viele Anfragen. Versuche es in einer Minute erneut.",
+        "quota": "Du hast dein Nutzungslimit für heute erreicht. Es wird morgen zurückgesetzt.",
+        "cooldown": "Warte noch {retry}, bevor du es erneut startest.",
+        "not_found": "Keine Ergebnisse.",
+        "expired": "Diese Karte ist abgelaufen. Führe den Befehl erneut aus, um neu zu beginnen.",
+        "too_large": "Die Datei ist zu groß (maximal {max}).",
+        "empty_input": "Es gibt nichts zu analysieren: gib einen Text oder eine Datei an.",
+        "guild_only": "Dieser Befehl funktioniert nur auf einem Server, auf dem Moddy ist."
+      },
+      "buttons": {
+        "refresh": "Aktualisieren",
+        "regenerate": "Neu erzeugen",
+        "retry": "Erneut versuchen",
+        "edit": "Bearbeiten",
+        "export": "Exportieren",
+        "open": "Öffnen",
+        "previous": "Zurück",
+        "next": "Weiter",
+        "back": "Zurück"
+      },
+      "page": "Seite {page}/{pages}"
+    }
   }
 }

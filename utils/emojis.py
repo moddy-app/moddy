@@ -120,6 +120,81 @@ CLAIM = "<:claim:1541239118888181770>"      # take a ticket in charge
 THREADS = "<:threads:1541216661699436675>"  # private staff thread
 
 # =============================================================================
+# UTILITY TOOLS (/define, /hash, /whois, /image, /music, ...)
+# -----------------------------------------------------------------------------
+# Icons already uploaded are real tokens. The others are EMPTY until their
+# artwork (white + `_dark` twin) is uploaded: every tool card renders an empty
+# icon as "no icon" (utils/tool_card.py), so filling the id here is the only
+# change needed once it exists. Never point one of these at an unrelated icon.
+# =============================================================================
+COLOR = "<:color:1519800727231266858>"              # /color
+LOCK = "<:lock:1519799617087213779>"                # /ssl (certificate)
+DATA_OBJECT = "<:data_object:1519795407453159474>"  # JSON blocks (/jwt)
+DICTIONARY = ""      # /define — Material `dictionary`
+REGEX = ""           # /regex — Material `regular_expression`
+TAG = ""             # /hash — Material `tag`
+DIFFERENCE = ""      # /diff — Material `difference`
+ANALYTICS = ""       # /textstats — Material `analytics`
+PASSWORD = ""        # /password — Material `password`
+NUMBERS = ""         # /uuid — Material `123`
+TOKEN = ""           # /jwt — Material `token`
+GPP_MAYBE = ""       # /pwned — Material `gpp_maybe`
+MONITOR_HEART = ""   # /status — Material `monitor_heart`
+BLUE_STATUS = ""     # /status: maintenance (same style as green_status)
+GREY_STATUS = ""     # /status: unknown (same style as green_status)
+BUSINESS = ""        # /company — Material `business`
+DNS = ""             # /dns — Material `dns`
+ACCOUNT_TREE = ""    # /subdomains — Material `account_tree`
+ALT_ROUTE = ""       # /link-check redirect chain — Material `alt_route`
+PERSON_SEARCH = ""   # /username — Material `person_search`
+ASPECT_RATIO = ""    # /image resize — Material `aspect_ratio`
+COMPRESS = ""        # /image compress — Material `compress`
+TRANSFORM = ""       # /convert — Material `transform`
+AUTO_FIX_HIGH = ""   # /image remove background — Material `auto_fix_high`
+FRAME_INSPECT = ""   # /exif — Material `frame_inspect`
+LOCATION_ON = ""     # /exif GPS — Material `location_on`
+IMAGE_SEARCH = ""    # /sauce — Material `image_search`
+MOVIE = ""           # /sauce anime result — Material `movie`
+MUSIC_NOTE = ""      # /music + music links module — Material `music_note`
+# Service logos — shown in the "Source: **X**" footer line of each tool and on
+# link buttons. Coloured brand artwork is visible on both themes: no `_dark`
+# twin needed unless the logo itself is white/black.
+SPOTIFY = ""
+DEEZER = ""
+APPLE_MUSIC = ""
+YOUTUBE_MUSIC = ""
+WIKTIONARY = ""      # /define
+HIBP = ""            # /pwned — Have I Been Pwned
+OPENAI = ""          # /tldr
+DEEPL = ""           # translate button
+DATA_GOUV = ""       # /company — Annuaire des Entreprises / data.gouv
+CLOUDFLARE = ""      # /dns (DNS-over-HTTPS) + /status
+CRTSH = ""           # /subdomains — crt.sh (Certificate Transparency)
+VIRUSTOTAL = ""      # /link-check
+URLSCAN = ""         # /link-check
+WHATSMYNAME = ""     # /username
+SAUCENAO = ""        # /sauce
+TRACEMOE = ""        # /sauce
+ANILIST = ""         # /sauce anime link
+GOOGLE_LENS = ""     # /sauce link button
+YANDEX = ""          # /sauce link button
+BING = ""            # /sauce link button
+TINEYE = ""          # /sauce link button
+CLOUDCONVERT = ""    # /convert (office documents, ebooks)
+OPENSTREETMAP = ""   # /exif GPS map button
+# /status services (one logo each)
+DISCORD_LOGO = ""
+GITHUB = ""
+REDDIT = ""
+DROPBOX = ""
+ATLASSIAN = ""
+VERCEL = ""
+NETLIFY = ""
+NOTION = ""
+ZOOM = ""
+# Twitch reuses TWITCH (social notifications) and OpenAI reuses OPENAI above.
+
+# =============================================================================
 # TICKETS MODULE
 # -----------------------------------------------------------------------------
 # Everything in the Tickets module references these constants, so replacing an

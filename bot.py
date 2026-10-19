@@ -152,6 +152,9 @@ class ModdyBot(ModdyFrameworkBot):
         from services.ai_detector_service import AiDetectorService
         # C2PA / generation-metadata AI image detector (module + /ai-check)
         self.ai_detector = AiDetectorService(self)
+        from services.public_api import PublicAPI
+        # Keyless public APIs for the utility tools (Wiktionary, RDAP, crt.sh…)
+        self.public_api = PublicAPI(self)
         from services.altguard_client import AltGuardClient
         # AltGuard anti multi-account verification (HTTP + altguard:* Pub/Sub)
         self.altguard = AltGuardClient(self)
@@ -2464,6 +2467,11 @@ class ModdyBot(ModdyFrameworkBot):
         await self.betterstack_heartbeat.stop()
 
         await self.ai_detector.stop()
+
+        try:
+            await self.public_api.close()
+        except Exception as e:
+            logger.error(f"[FAIL] Error closing the public API client: {e}")
 
         # Close the AltGuard HTTP session
         try:

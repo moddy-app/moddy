@@ -5610,5 +5610,49 @@
       "bad_link": "This is not a valid Discord message link.",
       "other_server": "Only messages from this server can be checked."
     }
+  },
+  "tools": {
+    "common": {
+      "loading": "One moment…",
+      "requested_by": "requested by {user}",
+      "by": {
+        "provided_by": "Provided by {source}",
+        "data_provided_by": "Data provided by {source}",
+        "translated_by": "Translated by {source}",
+        "checked_by": "Checked by {source}",
+        "scanned_by": "Scanned by {source}",
+        "converted_by": "Converted by {source}",
+        "summarized_by": "Summarized by {source}",
+        "found_by": "Found by {source}",
+        "computed_locally": "Computed by Moddy itself, nothing is sent elsewhere"
+      },
+      "error_title": "Not possible right now",
+      "errors": {
+        "failed": "Something went wrong. Try again in a moment.",
+        "unavailable": "This service is unavailable right now. Try again later.",
+        "timeout": "The service took too long to answer. Try again in a moment.",
+        "network": "The service could not be reached. Try again in a moment.",
+        "rate_limited": "Too many requests right now. Try again in a minute.",
+        "quota": "You have reached your usage limit for today. It resets tomorrow.",
+        "cooldown": "Wait {retry} more before running it again.",
+        "not_found": "No results.",
+        "expired": "This card has expired. Run the command again to start over.",
+        "too_large": "The file is too large (maximum {max}).",
+        "empty_input": "There is nothing to analyse: give a text or a file.",
+        "guild_only": "This command only works in a server where Moddy is present."
+      },
+      "buttons": {
+        "refresh": "Refresh",
+        "regenerate": "Regenerate",
+        "retry": "Retry",
+        "edit": "Edit",
+        "export": "Export",
+        "open": "Open",
+        "previous": "Previous",
+        "next": "Next",
+        "back": "Back"
+      },
+      "page": "Page {page}/{pages}"
+    }
   }
 }

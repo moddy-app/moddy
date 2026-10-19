@@ -213,6 +213,19 @@ registered shell (see the mutate-and-resend gotcha below) — those are lost.
 **Accepted UX**: the view rebuilds from the DB-saved config on the next
 click; the user re-applies their unsaved edits. No drafts table.
 
+### Short-lived input state (utility tools)
+Some tool cards act on input that fits neither a `custom_id` nor the message
+itself — `/regex`'s pattern + test text, `/username`'s list of found profiles.
+They store it with `utils.tool_card.save_state()` (Redis, 24 h TTL, in-process
+LRU when Redis is down) and put only the 10-char token in the `custom_id` of a
+`DynamicItem`. The item is persistent — it survives restarts — but the data
+behind it has a lifetime: once the token is gone the click answers
+`expired_card()` ("run the command again"). **Accepted UX**, same reasoning as
+the working copies above: the input is the user's own, retyping it is cheap,
+and keeping it forever would store user text for no reason. Prefer, in order:
+state in the `custom_id` → state re-derived from `interaction.message` → a
+state token. See docs/features/TOOLS.md §6.
+
 ---
 
 ## Two gotchas found migrating the guild config panels

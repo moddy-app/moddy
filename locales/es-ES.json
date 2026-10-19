@@ -5524,5 +5524,49 @@
       "bad_link": "Este enlace no es un enlace de mensaje de Discord válido.",
       "other_server": "Solo se pueden verificar mensajes de este servidor."
     }
+  },
+  "tools": {
+    "common": {
+      "loading": "Un momento…",
+      "requested_by": "solicitado por {user}",
+      "by": {
+        "provided_by": "Proporcionado por {source}",
+        "data_provided_by": "Datos proporcionados por {source}",
+        "translated_by": "Traducido por {source}",
+        "checked_by": "Verificado por {source}",
+        "scanned_by": "Analizado por {source}",
+        "converted_by": "Convertido por {source}",
+        "summarized_by": "Resumido por {source}",
+        "found_by": "Encontrado por {source}",
+        "computed_locally": "Calculado por el propio Moddy, no se envía nada a otro sitio"
+      },
+      "error_title": "No es posible ahora mismo",
+      "errors": {
+        "failed": "Algo salió mal. Inténtalo de nuevo en un momento.",
+        "unavailable": "Este servicio no está disponible ahora mismo. Inténtalo más tarde.",
+        "timeout": "El servicio tardó demasiado en responder. Inténtalo de nuevo en un momento.",
+        "network": "No se pudo contactar con el servicio. Inténtalo de nuevo en un momento.",
+        "rate_limited": "Demasiadas solicitudes ahora mismo. Inténtalo dentro de un minuto.",
+        "quota": "Has alcanzado tu límite de uso de hoy. Se restablece mañana.",
+        "cooldown": "Espera {retry} más antes de volver a usarlo.",
+        "not_found": "Sin resultados.",
+        "expired": "Esta tarjeta ha caducado. Vuelve a usar el comando para empezar de nuevo.",
+        "too_large": "El archivo es demasiado grande (máximo {max}).",
+        "empty_input": "No hay nada que analizar: proporciona un texto o un archivo.",
+        "guild_only": "Este comando solo funciona en un servidor donde esté Moddy."
+      },
+      "buttons": {
+        "refresh": "Actualizar",
+        "regenerate": "Regenerar",
+        "retry": "Reintentar",
+        "edit": "Editar",
+        "export": "Exportar",
+        "open": "Abrir",
+        "previous": "Anterior",
+        "next": "Siguiente",
+        "back": "Volver"
+      },
+      "page": "Página {page}/{pages}"
+    }
   }
 }

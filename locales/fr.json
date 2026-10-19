@@ -5609,5 +5609,49 @@
       "bad_link": "Ce lien n'est pas un lien de message Discord valide.",
       "other_server": "Seuls les messages de ce serveur peuvent être vérifiés."
     }
+  },
+  "tools": {
+    "common": {
+      "loading": "Un instant…",
+      "requested_by": "demandé par {user}",
+      "by": {
+        "provided_by": "Fourni par {source}",
+        "data_provided_by": "Données fournies par {source}",
+        "translated_by": "Traduit par {source}",
+        "checked_by": "Vérifié par {source}",
+        "scanned_by": "Analysé par {source}",
+        "converted_by": "Converti par {source}",
+        "summarized_by": "Résumé par {source}",
+        "found_by": "Trouvé par {source}",
+        "computed_locally": "Calculé directement par Moddy, rien n'est envoyé ailleurs"
+      },
+      "error_title": "Impossible pour le moment",
+      "errors": {
+        "failed": "Quelque chose s'est mal passé. Réessaie dans un instant.",
+        "unavailable": "Ce service est indisponible pour le moment. Réessaie plus tard.",
+        "timeout": "Le service a mis trop de temps à répondre. Réessaie dans un instant.",
+        "network": "Impossible de joindre le service. Réessaie dans un instant.",
+        "rate_limited": "Trop de demandes en ce moment. Réessaie dans une minute.",
+        "quota": "Tu as atteint ta limite d'utilisation pour aujourd'hui. Elle se réinitialise demain.",
+        "cooldown": "Patiente encore {retry} avant de relancer.",
+        "not_found": "Aucun résultat.",
+        "expired": "Cette carte a expiré. Relance la commande pour recommencer.",
+        "too_large": "Le fichier est trop volumineux (maximum {max}).",
+        "empty_input": "Il n'y a rien à analyser : donne un texte ou un fichier.",
+        "guild_only": "Cette commande ne fonctionne que dans un serveur où Moddy est présent."
+      },
+      "buttons": {
+        "refresh": "Actualiser",
+        "regenerate": "Régénérer",
+        "retry": "Réessayer",
+        "edit": "Modifier",
+        "export": "Exporter",
+        "open": "Ouvrir",
+        "previous": "Précédent",
+        "next": "Suivant",
+        "back": "Retour"
+      },
+      "page": "Page {page}/{pages}"
+    }
   }
 }
