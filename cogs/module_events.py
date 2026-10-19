@@ -263,6 +263,22 @@ class ModuleEvents(commands.Cog):
         except Exception as e:
             logger.error(f"Error in on_message (ai_detector) for guild {message.guild.id}: {e}", exc_info=True)
 
+        try:
+            # Translate Button: offer a translation under a message in a language
+            # the server does not speak. Default-enabled module; the cheap
+            # length test keeps "ok lol" away from the module lookup.
+            if len(message.content) >= 20:
+                translate_module = await self.bot.module_manager.get_module_instance(
+                    message.guild.id,
+                    'translate_button'
+                )
+
+                if translate_module and translate_module.enabled:
+                    await translate_module.on_message(message)
+
+        except Exception as e:
+            logger.error(f"Error in on_message (translate_button) for guild {message.guild.id}: {e}", exc_info=True)
+
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction: discord.Reaction, user):
         """Cached-message reaction → feed the automod relationship graph (~0 cost).

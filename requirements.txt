@@ -62,3 +62,9 @@ Pillow>=10.0.0
 # library in the wheel (manylinux_2_28 / macOS / Windows), no system package.
 # Pinned: the Context/Settings API it relies on is recent and still moving.
 c2pa-python==0.38.0
+
+# Translate button (modules/translate_button.py): local, free language
+# detection. Pulls in numpy. Resident cost ~70 MB once loaded (lazy: only the
+# first eligible message of a server loads it) — see docs/features/TRANSLATE_BUTTON.md.
+# Pinned: 0.4 changed the model-loading API we call (from_model_file).
+py3langid==0.4.0

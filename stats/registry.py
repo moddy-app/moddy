@@ -177,6 +177,13 @@ _ALL: Tuple[Metric, ...] = (
     Metric("ai_detector.verdict", scope=SCOPE_GLOBAL, dimensions=("kind", "source"),
            doc="The AI image detector reached a verdict (kind: ai_full | "
                "ai_partial | photo | photo_edited | unsigned; source: auto | command)."),
+    Metric("translate_button.prompted", scope=SCOPE_GLOBAL, dimensions=("language",),
+           doc="The translate button was offered (or extended) under a message "
+               "in a foreign language; `language` is the detected one."),
+    Metric("translate_button.clicked", scope=SCOPE_GLOBAL,
+           doc="Someone clicked a translate button."),
+    Metric("translate_button.cache_hit", scope=SCOPE_GLOBAL,
+           doc="A click was served from the 24 h translation cache (no DeepL call)."),
     # -- Uniques (HyperLogLog, never a list of ids) ------------------------ #
     Metric("user.active", kind=KIND_UNIQUE, scope=SCOPE_GUILD,
            doc="Distinct people who used Moddy in this server, per day."),

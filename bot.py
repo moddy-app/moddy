@@ -152,6 +152,10 @@ class ModdyBot(ModdyFrameworkBot):
         from services.ai_detector_service import AiDetectorService
         # C2PA / generation-metadata AI image detector (module + /ai-check)
         self.ai_detector = AiDetectorService(self)
+        from services.translate_button_service import TranslateButtonService
+        # Translate button: local language detection, learnt server languages,
+        # prompts, DeepL translation on click (module translate_button)
+        self.translate_button = TranslateButtonService(self)
         from services.public_api import PublicAPI
         # Keyless public APIs for the utility tools (Wiktionary, RDAP, crt.sh…)
         self.public_api = PublicAPI(self)
@@ -1116,6 +1120,9 @@ class ModdyBot(ModdyFrameworkBot):
         # Background — never delays startup; until it is loaded only unsigned
         # PNG generation metadata can be detected.
         self.ai_detector.start()
+
+        # Translate button: flushes the learnt-language counters to Redis.
+        self.translate_button.start()
 
         # Automod: what the Moddy team taught the bot (learned references,
         # blocklist terms, image hashes). Background — never delays startup.
@@ -2467,6 +2474,7 @@ class ModdyBot(ModdyFrameworkBot):
         await self.betterstack_heartbeat.stop()
 
         await self.ai_detector.stop()
+        await self.translate_button.stop()
 
         try:
             await self.public_api.close()
