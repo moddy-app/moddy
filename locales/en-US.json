@@ -5653,6 +5653,152 @@
         "back": "Back"
       },
       "page": "Page {page}/{pages}"
+    },
+    "status": {
+      "title": "Service status",
+      "pick_placeholder": "See the details of a service…",
+      "updated": "updated {time}",
+      "since": "since {time}",
+      "more": "+ {count} more",
+      "open_page": "Status page",
+      "unreachable": "The status page of {name} could not be read right now, so its state is unknown. Try again in a moment.",
+      "all_good": "No problem reported: all `{count}` components are operational.",
+      "errors": {
+        "not_found": "I don't follow a service called {query}. Start typing a name and pick one from the suggestions, or leave it empty to see all of them."
+      },
+      "summary": {
+        "ok": "All `{total}` services are running normally.",
+        "problems": "Problems reported on `{problems}` of `{total}` services.",
+        "maintenance": "Maintenance in progress: `{count}`.",
+        "unknown": "Status page unreachable: `{count}`."
+      },
+      "states": {
+        "none": "Operational",
+        "minor": "Minor problem",
+        "major": "Major outage",
+        "critical": "Critical outage",
+        "maintenance": "Maintenance",
+        "unknown": "Unknown"
+      },
+      "components": {
+        "operational": "Operational",
+        "degraded_performance": "Degraded",
+        "partial_outage": "Partial outage",
+        "major_outage": "Major outage",
+        "under_maintenance": "Maintenance"
+      },
+      "sections": {
+        "components": "Affected components",
+        "incidents": "Ongoing incidents",
+        "maintenance": "Maintenance"
+      },
+      "incident_status": {
+        "investigating": "Investigating",
+        "identified": "Cause identified",
+        "monitoring": "Fix applied, monitoring",
+        "scheduled": "Scheduled",
+        "in_progress": "In progress",
+        "verifying": "Verifying"
+      },
+      "maintenance_now": "in progress, ends {time}",
+      "maintenance_planned": "planned {start} → {end}"
+    },
+    "company": {
+      "title": "Company",
+      "pick_placeholder": "Open a company's record…",
+      "results_intro": "`{total}` companies match {query}. Here are the first `{shown}`: pick one below to see its record.",
+      "directory_button": "Annuaire des Entreprises",
+      "directors_more": "+ {count} more",
+      "establishments": "{total} ({open} open)",
+      "errors": {
+        "too_short": "Type at least {min} characters of the company name, or a SIREN (9 digits) or SIRET (14 digits).",
+        "bad_number": "{number} is not a valid SIREN or SIRET: the check digit does not match. Check the number and try again.",
+        "not_found": "No French company found for {query}. Check the spelling, or search with the SIREN instead."
+      },
+      "status": {
+        "active": "Active",
+        "closed": "Closed",
+        "closed_on": "Closed on {date}"
+      },
+      "labels": {
+        "status": "Status",
+        "acronym": "Acronym",
+        "also_known_as": "Also known as",
+        "legal_form": "Legal form",
+        "activity": "Activity (NAF)",
+        "created": "Created",
+        "category": "Type",
+        "searched_establishment": "Searched establishment",
+        "headquarters": "Headquarters",
+        "establishments": "Establishments",
+        "headcount": "Headcount",
+        "directors": "Directors"
+      },
+      "age": {
+        "years_one": "{count} year",
+        "years_other": "{count} years",
+        "months_one": "{count} month",
+        "months_other": "{count} months",
+        "and": "and",
+        "new": "less than a month"
+      },
+      "headcount": {
+        "none": "No employees",
+        "zero": "Employer, no employee at year end",
+        "range": "{low} to {high} employees",
+        "plus": "{low} employees or more",
+        "year": "(in {year})"
+      },
+      "kind": {
+        "association": "Association",
+        "ess": "Social and solidarity economy"
+      },
+      "size": {
+        "PME": "SME",
+        "ETI": "Mid-size company",
+        "GE": "Large company"
+      }
+    },
+    "username": {
+      "title": "Username search",
+      "searching": "Looking for {name} on hundreds of sites…",
+      "found": "Results for {name}\n**Profiles found** · `{count}`\n**Sites checked** · `{checked}`",
+      "none": "No profile found for {name} on the `{checked}` sites checked.",
+      "cut": "The search was cut after {seconds} s: `{unchecked}` sites did not answer in time.",
+      "unchecked": "`{count}` sites did not answer or refused the check.",
+      "note": "Some sites block datacenter IP addresses, so a few profiles can be missing. A match only means the name is taken there: it is not proof that it is the same person.",
+      "continued": "(continued)",
+      "export_button": "Export .txt",
+      "export_title": "Export",
+      "export_body": "The profiles found for {name}, as a text file.",
+      "errors": {
+        "empty": "Type the username to look for.",
+        "too_long": "This username is too long: {max} characters at most.",
+        "invalid": "A username can only contain letters, digits, dots, dashes and underscores ({max} characters at most).",
+        "busy": "Moddy is already running other username searches. Try again in a minute.",
+        "dataset": "The list of sites could not be loaded right now. Try again in a moment."
+      },
+      "categories": {
+        "social": "Social networks",
+        "gaming": "Gaming",
+        "coding": "Code",
+        "tech": "Tech",
+        "video": "Video",
+        "music": "Music",
+        "images": "Images",
+        "art": "Art",
+        "blog": "Blogs",
+        "hobby": "Hobbies",
+        "business": "Business",
+        "finance": "Finance",
+        "shopping": "Shopping",
+        "dating": "Dating",
+        "news": "News",
+        "political": "Politics",
+        "health": "Health",
+        "archived": "Archives",
+        "misc": "Other"
+      }
     }
   }
 }

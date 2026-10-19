@@ -375,14 +375,16 @@ def company_status_text(company: co.Company, locale: str) -> str:
 
 
 def age_text(created: date, today: date, locale: str) -> str:
+    """``14 years and 7 months`` (singular / plural per unit, ``and`` per language)."""
     years, months = co.age_parts(created, today)
-    if years and months:
-        return t("tools.company.age.years_months", locale=locale, years=years, months=months)
-    if years:
-        return t("tools.company.age.years", locale=locale, years=years)
-    if months:
-        return t("tools.company.age.months", locale=locale, months=months)
-    return t("tools.company.age.new", locale=locale)
+    parts = []
+    for unit, count in (("years", years), ("months", months)):
+        if count:
+            form = "one" if count == 1 else "other"
+            parts.append(t(f"tools.company.age.{unit}_{form}", locale=locale, count=count))
+    if not parts:
+        return t("tools.company.age.new", locale=locale)
+    return f" {t('tools.company.age.and', locale=locale)} ".join(parts)
 
 
 def headcount_text(company: co.Company, locale: str) -> Optional[str]:

@@ -5652,6 +5652,152 @@
         "back": "Retour"
       },
       "page": "Page {page}/{pages}"
+    },
+    "status": {
+      "title": "État des services",
+      "pick_placeholder": "Voir le détail d'un service…",
+      "updated": "mis à jour {time}",
+      "since": "depuis {time}",
+      "more": "+ {count} autres",
+      "open_page": "Page de statut",
+      "unreachable": "La page de statut de {name} est injoignable pour le moment, son état est donc inconnu. Réessaie dans un instant.",
+      "all_good": "Aucun problème signalé : les `{count}` composants fonctionnent.",
+      "errors": {
+        "not_found": "Je ne suis aucun service qui s'appelle {query}. Commence à taper un nom et choisis-en un dans les suggestions, ou laisse vide pour tout voir."
+      },
+      "summary": {
+        "ok": "Les `{total}` services fonctionnent normalement.",
+        "problems": "Problèmes signalés sur `{problems}` services sur `{total}`.",
+        "maintenance": "Maintenance en cours : `{count}`.",
+        "unknown": "Page de statut injoignable : `{count}`."
+      },
+      "states": {
+        "none": "Opérationnel",
+        "minor": "Problème mineur",
+        "major": "Panne majeure",
+        "critical": "Panne critique",
+        "maintenance": "Maintenance",
+        "unknown": "Inconnu"
+      },
+      "components": {
+        "operational": "Opérationnel",
+        "degraded_performance": "Dégradé",
+        "partial_outage": "Panne partielle",
+        "major_outage": "Panne majeure",
+        "under_maintenance": "Maintenance"
+      },
+      "sections": {
+        "components": "Composants touchés",
+        "incidents": "Incidents en cours",
+        "maintenance": "Maintenance"
+      },
+      "incident_status": {
+        "investigating": "En cours d'analyse",
+        "identified": "Cause identifiée",
+        "monitoring": "Correctif appliqué, surveillance",
+        "scheduled": "Planifiée",
+        "in_progress": "En cours",
+        "verifying": "Vérification"
+      },
+      "maintenance_now": "en cours, fin {time}",
+      "maintenance_planned": "prévue {start} → {end}"
+    },
+    "company": {
+      "title": "Entreprise",
+      "pick_placeholder": "Ouvrir la fiche d'une entreprise…",
+      "results_intro": "`{total}` entreprises correspondent à {query}. Voici les `{shown}` premières : choisis-en une ci-dessous pour voir sa fiche.",
+      "directory_button": "Annuaire des Entreprises",
+      "directors_more": "+ {count} autres",
+      "establishments": "{total} ({open} ouverts)",
+      "errors": {
+        "too_short": "Tape au moins {min} caractères du nom de l'entreprise, ou un SIREN (9 chiffres) ou un SIRET (14 chiffres).",
+        "bad_number": "{number} n'est pas un SIREN ou un SIRET valide : la clé de contrôle ne correspond pas. Vérifie le numéro et réessaie.",
+        "not_found": "Aucune entreprise française trouvée pour {query}. Vérifie l'orthographe, ou cherche plutôt avec le SIREN."
+      },
+      "status": {
+        "active": "En activité",
+        "closed": "Fermée",
+        "closed_on": "Fermée le {date}"
+      },
+      "labels": {
+        "status": "Statut",
+        "acronym": "Sigle",
+        "also_known_as": "Aussi connue sous",
+        "legal_form": "Forme juridique",
+        "activity": "Activité (NAF)",
+        "created": "Création",
+        "category": "Type",
+        "searched_establishment": "Établissement recherché",
+        "headquarters": "Siège",
+        "establishments": "Établissements",
+        "headcount": "Effectif",
+        "directors": "Dirigeants"
+      },
+      "age": {
+        "years_one": "{count} an",
+        "years_other": "{count} ans",
+        "months_one": "{count} mois",
+        "months_other": "{count} mois",
+        "and": "et",
+        "new": "moins d'un mois"
+      },
+      "headcount": {
+        "none": "Aucun salarié",
+        "zero": "Employeur, aucun salarié en fin d'année",
+        "range": "{low} à {high} salariés",
+        "plus": "{low} salariés ou plus",
+        "year": "(en {year})"
+      },
+      "kind": {
+        "association": "Association",
+        "ess": "Économie sociale et solidaire"
+      },
+      "size": {
+        "PME": "PME",
+        "ETI": "Entreprise de taille intermédiaire",
+        "GE": "Grande entreprise"
+      }
+    },
+    "username": {
+      "title": "Recherche de pseudo",
+      "searching": "Je cherche {name} sur des centaines de sites…",
+      "found": "Résultats pour {name}\n**Profils trouvés** · `{count}`\n**Sites vérifiés** · `{checked}`",
+      "none": "Aucun profil trouvé pour {name} sur les `{checked}` sites vérifiés.",
+      "cut": "La recherche a été coupée après {seconds} s : `{unchecked}` sites n'ont pas répondu à temps.",
+      "unchecked": "`{count}` sites n'ont pas répondu ou ont refusé la vérification.",
+      "note": "Certains sites bloquent les adresses IP de datacenter : il peut donc manquer quelques profils. Une correspondance prouve seulement que le pseudo est pris là-bas, pas que c'est la même personne.",
+      "continued": "(suite)",
+      "export_button": "Exporter en .txt",
+      "export_title": "Export",
+      "export_body": "Les profils trouvés pour {name}, dans un fichier texte.",
+      "errors": {
+        "empty": "Tape le pseudo à chercher.",
+        "too_long": "Ce pseudo est trop long : {max} caractères maximum.",
+        "invalid": "Un pseudo ne peut contenir que des lettres, des chiffres, des points, des tirets et des underscores ({max} caractères maximum).",
+        "busy": "Moddy fait déjà d'autres recherches de pseudo. Réessaie dans une minute.",
+        "dataset": "La liste des sites n'a pas pu être chargée pour le moment. Réessaie dans un instant."
+      },
+      "categories": {
+        "social": "Réseaux sociaux",
+        "gaming": "Jeux vidéo",
+        "coding": "Code",
+        "tech": "Tech",
+        "video": "Vidéo",
+        "music": "Musique",
+        "images": "Images",
+        "art": "Art",
+        "blog": "Blogs",
+        "hobby": "Loisirs",
+        "business": "Professionnel",
+        "finance": "Finance",
+        "shopping": "Shopping",
+        "dating": "Rencontres",
+        "news": "Actualités",
+        "political": "Politique",
+        "health": "Santé",
+        "archived": "Archives",
+        "misc": "Autres"
+      }
     }
   }
 }
