@@ -103,6 +103,8 @@ class Gateway:
         self.translation = None
         self.transcription = None
         self.vision = None
+        self.saucenao = None
+        self.tracemoe = None
 
     async def start(self, redis, pool, tech_logger=None, stats=None) -> None:
         """Boot the gateway. Call after Redis + DB pool are ready."""
@@ -119,6 +121,9 @@ class Gateway:
         from .adapters.deepl import DeepLAdapter
         from .adapters.groq import GroqAdapter
         from .adapters.google_vision import GoogleVisionAdapter
+        from .adapters.saucenao import SauceNAOAdapter
+        from .adapters.tracemoe import TraceMoeAdapter
+        from .clients.image_search import SauceNAOClient, TraceMoeClient
 
         self._quota = QuotaManager(redis, pool)
         self._ratelimiter = RateLimiter(redis, self.config.model_rate_limits)
@@ -170,6 +175,24 @@ class Gateway:
         else:
             _log.warning("GOOGLE_VISION_API_KEY not set — Google Vision adapter disabled")
 
+        # Reverse image search (/sauce). SauceNAO needs a key; trace.moe works
+        # anonymously (the key only raises its quota), so it always starts.
+        if self.config.saucenao_api_key:
+            try:
+                adapter = SauceNAOAdapter(self.config.saucenao_api_key)
+                await adapter.start()
+                self._adapters["saucenao"] = adapter
+            except Exception as exc:
+                _log.error("SauceNAO adapter failed to start: %s", exc)
+        else:
+            _log.warning("SAUCENAO_API_KEY not set — SauceNAO adapter disabled")
+        try:
+            adapter = TraceMoeAdapter(self.config.tracemoe_api_key)
+            await adapter.start()
+            self._adapters["tracemoe"] = adapter
+        except Exception as exc:
+            _log.error("trace.moe adapter failed to start: %s", exc)
+
         self._executor = GatewayExecutor(
             adapters=self._adapters,
             quota=self._quota,
@@ -183,6 +206,8 @@ class Gateway:
         self.translation = TranslationClient(self._executor)
         self.transcription = TranscriptionClient(self._executor)
         self.vision = VisionClient(self._executor)
+        self.saucenao = SauceNAOClient(self._executor)
+        self.tracemoe = TraceMoeClient(self._executor)
 
         self._gw_logger.start()
         self._started = True
@@ -217,6 +242,12 @@ class Gateway:
 
     def google_vision_available(self) -> bool:
         return "google_vision" in self._adapters
+
+    def saucenao_available(self) -> bool:
+        return "saucenao" in self._adapters
+
+    def tracemoe_available(self) -> bool:
+        return "tracemoe" in self._adapters
 
     async def quota_available(self, target: "QuotaTarget") -> bool:
         """Convenience check for consumer-side availability gating."""
