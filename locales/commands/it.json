@@ -529,6 +529,48 @@
           "description": "Link a un messaggio di questo server con l'immagine"
         }
       }
+    },
+    "define": {
+      "name": "definisci",
+      "description": "Cerca una parola nel Wikizionario",
+      "parameters": {
+        "word": {
+          "name": "parola",
+          "description": "La parola o espressione da cercare"
+        },
+        "language": {
+          "name": "lingua",
+          "description": "Lingua del Wikizionario (predefinita: la tua)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "Riassume gli ultimi messaggi di questo canale",
+      "parameters": {
+        "messages": {
+          "name": "messaggi",
+          "description": "Quanti messaggi recenti leggere (predefinito: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "Testa un'espressione regolare su un testo"
+    },
+    "diff": {
+      "name": "confronta",
+      "description": "Confronta due testi e mostra cosa è cambiato"
+    },
+    "textstats": {
+      "name": "statistiche-testo",
+      "description": "Conta le parole e misura tempo di lettura e leggibilità",
+      "parameters": {
+        "text": {
+          "name": "testo",
+          "description": "Il testo da analizzare (lascia vuoto per aprire un modulo)"
+        }
+      }
     }
   },
   "choices": {

@@ -6032,6 +6032,171 @@
         "timeout": "La recherche a pris trop de temps. Réessaie dans un instant.",
         "failed": "La recherche a échoué. Réessaie dans un instant."
       }
+    },
+    "define": {
+      "error_title": "Recherche impossible",
+      "title": "Dictionnaire",
+      "senses_placeholder": "Autres sens",
+      "view_on": "Voir sur Wiktionnaire",
+      "synonyms": "Synonymes",
+      "more": "{count} autre(s) définition(s) sur Wiktionnaire.",
+      "fallback_note": "Introuvable sur le Wiktionnaire ({lang}), donc ceci vient du Wiktionnaire anglais.",
+      "licence": "Wiktionnaire {wiki} · CC BY-SA",
+      "lang": {
+        "fr": "français",
+        "en": "anglais",
+        "es": "espagnol",
+        "pt": "portugais",
+        "de": "allemand"
+      },
+      "pos": {
+        "abbreviation": "Abréviation",
+        "adjective": "Adjectif",
+        "adverb": "Adverbe",
+        "article": "Article",
+        "conjunction": "Conjonction",
+        "determiner": "Déterminant",
+        "interjection": "Interjection",
+        "name": "Nom propre (prénom, nom)",
+        "noun": "Nom",
+        "numeral": "Numéral",
+        "onomatopoeia": "Onomatopée",
+        "other": "Autre",
+        "particle": "Particule",
+        "phrase": "Locution",
+        "prefix": "Préfixe",
+        "preposition": "Préposition",
+        "pronoun": "Pronom",
+        "proper_noun": "Nom propre",
+        "proverb": "Proverbe",
+        "suffix": "Suffixe",
+        "symbol": "Symbole",
+        "verb": "Verbe"
+      },
+      "errors": {
+        "not_found": "Aucune entrée pour {word}. Vérifie l'orthographe ou essaie une autre langue.",
+        "invalid_word": "Ce n'est pas un mot ou une expression que je peux chercher."
+      }
+    },
+    "tldr": {
+      "error_title": "Résumé impossible",
+      "title": "En bref",
+      "loading": "Je lis la conversation…",
+      "scope": "Résumé de",
+      "scope_value": "{count} messages dans {channel}",
+      "ai_note": "Écrit par une IA : elle peut se tromper. Relis les messages d'origine si c'est important.",
+      "jump": "aller au message",
+      "errors": {
+        "not_enough": "Il n'y a pas assez de messages récents à résumer (il en faut au moins {min}).",
+        "no_access": "Tu ne peux pas lire l'historique de ce salon, Moddy ne peut donc pas le résumer pour toi.",
+        "bot_no_access": "Moddy ne peut pas lire l'historique de ce salon. Donne-lui les permissions Voir le salon et Lire l'historique des messages ici."
+      }
+    },
+    "regex": {
+      "error_title": "Test impossible",
+      "title": "Testeur de regex",
+      "modal_title": "Tester une expression régulière",
+      "modal_help": "Saisis un motif et le texte sur lequel le tester. Les correspondances sont surlignées dans le résultat.",
+      "pattern_label": "Motif",
+      "pattern_placeholder": "\\b\\w+@\\w+\\.\\w+\\b",
+      "text_label": "Texte à tester",
+      "text_placeholder": "Le texte sur lequel le motif s'applique",
+      "flags_label": "Options",
+      "flags": {
+        "i": "Ignorer la casse (i)",
+        "m": "Multiligne (m)",
+        "s": "Le point inclut les retours à la ligne (s)",
+        "x": "Verbeux (x)"
+      },
+      "count_one": "{count} correspondance",
+      "count_other": "{count} correspondances",
+      "count_capped": "{count}+ correspondances",
+      "no_match": "Aucune correspondance",
+      "no_match_hint": "Le motif est valide mais ne trouve rien dans ce texte. Modifie-le pour réessayer.",
+      "col_index": "#",
+      "col_position": "Position",
+      "col_match": "Trouvé",
+      "col_groups": "Groupes",
+      "pattern": "Motif",
+      "truncated": "La liste complète des correspondances est jointe.",
+      "errors": {
+        "empty_pattern": "Saisis un motif à tester.",
+        "empty_text": "Saisis un texte sur lequel tester le motif.",
+        "invalid_pattern": "Le motif n'est pas valide : {detail}. Modifie-le et réessaie.",
+        "timeout": "Le motif a pris trop de temps, souvent à cause d'un retour sur trace catastrophique. Simplifie-le.",
+        "pattern_too_long": "Le motif est trop long ({max} caractères maximum).",
+        "too_complex": "Le motif est trop complexe à compiler. Simplifie-le."
+      }
+    },
+    "diff": {
+      "error_title": "Comparaison impossible",
+      "title": "Comparaison de textes",
+      "modal_title": "Comparer deux textes",
+      "modal_help": "Colle les deux textes et choisis comment les comparer.",
+      "before_label": "Avant",
+      "after_label": "Après",
+      "mode_label": "Comparer par",
+      "mode": {
+        "lines": "Ligne",
+        "words": "Mot"
+      },
+      "mode_hint": {
+        "lines": "Un diff rouge / vert, comme dans Git",
+        "words": "Mots barrés et en gras"
+      },
+      "identical": "Les deux textes sont identiques.",
+      "changes": "Changements",
+      "legend_words": "Les mots ~~barrés~~ ont été retirés, les mots en **gras** ont été ajoutés.",
+      "truncated": "La comparaison complète est jointe.",
+      "errors": {
+        "empty_input": "Donne au moins l'un des deux textes."
+      }
+    },
+    "textstats": {
+      "error_title": "Analyse impossible",
+      "title": "Statistiques du texte",
+      "modal_title": "Analyser un texte",
+      "modal_help": "Colle un texte pour compter ses mots et mesurer sa lisibilité. Rien n'est conservé.",
+      "text_label": "Texte",
+      "text_placeholder": "Le texte à analyser",
+      "words_big": "{count} mots",
+      "characters": "Caractères",
+      "characters_value": "{total} ({no_spaces} sans les espaces)",
+      "sentences": "Phrases",
+      "paragraphs": "Paragraphes",
+      "avg": "Mots par phrase",
+      "reading": "Temps de lecture",
+      "speaking": "Temps de parole",
+      "language": "Langue",
+      "languages": {
+        "fr": "français",
+        "en": "anglais",
+        "es": "espagnol",
+        "pt": "portugais",
+        "de": "allemand"
+      },
+      "readability": "Lisibilité",
+      "levels": {
+        "very_easy": "Très facile",
+        "easy": "Facile",
+        "average": "Moyen",
+        "difficult": "Difficile",
+        "very_difficult": "Très difficile"
+      },
+      "formula": "Formule : {name}",
+      "formulas": {
+        "fr": "Kandel-Moles",
+        "en": "Flesch",
+        "es": "Fernández Huerta",
+        "de": "Amstad",
+        "pt": "Martins"
+      },
+      "not_enough": "Ajoute au moins {min} mots pour obtenir un score de lisibilité.",
+      "no_language": "Pas de score de lisibilité : la langue n'a pas été reconnue (français, anglais, espagnol, portugais et allemand sont gérés).",
+      "top_words": "Mots les plus utilisés",
+      "errors": {
+        "empty_input": "Il n'y a aucun texte à analyser."
+      }
     }
   }
 }

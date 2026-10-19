@@ -5947,6 +5947,171 @@
         "timeout": "La búsqueda ha tardado demasiado. Inténtalo de nuevo en un momento.",
         "failed": "La búsqueda ha fallado. Inténtalo de nuevo en un momento."
       }
+    },
+    "define": {
+      "error_title": "No se pudo buscar",
+      "title": "Diccionario",
+      "senses_placeholder": "Otros sentidos",
+      "view_on": "Ver en Wikcionario",
+      "synonyms": "Sinónimos",
+      "more": "{count} definición(es) más en Wikcionario.",
+      "fallback_note": "No se encontró en el Wikcionario en {lang}, así que esto viene del Wikcionario en inglés.",
+      "licence": "Wikcionario {wiki} · CC BY-SA",
+      "lang": {
+        "fr": "francés",
+        "en": "inglés",
+        "es": "español",
+        "pt": "portugués",
+        "de": "alemán"
+      },
+      "pos": {
+        "abbreviation": "Abreviatura",
+        "adjective": "Adjetivo",
+        "adverb": "Adverbio",
+        "article": "Artículo",
+        "conjunction": "Conjunción",
+        "determiner": "Determinante",
+        "interjection": "Interjección",
+        "name": "Nombre propio (nombre, apellido)",
+        "noun": "Sustantivo",
+        "numeral": "Numeral",
+        "onomatopoeia": "Onomatopeya",
+        "other": "Otro",
+        "particle": "Partícula",
+        "phrase": "Locución",
+        "prefix": "Prefijo",
+        "preposition": "Preposición",
+        "pronoun": "Pronombre",
+        "proper_noun": "Nombre propio",
+        "proverb": "Proverbio",
+        "suffix": "Sufijo",
+        "symbol": "Símbolo",
+        "verb": "Verbo"
+      },
+      "errors": {
+        "not_found": "No hay ninguna entrada para {word}. Revisa la ortografía o prueba con otro idioma.",
+        "invalid_word": "Eso no es una palabra o expresión que pueda buscar."
+      }
+    },
+    "tldr": {
+      "error_title": "No se pudo resumir",
+      "title": "En resumen",
+      "loading": "Leyendo la conversación…",
+      "scope": "Resumido",
+      "scope_value": "{count} mensajes en {channel}",
+      "ai_note": "Escrito por una IA: puede equivocarse. Revisa los mensajes originales si es importante.",
+      "jump": "ir al mensaje",
+      "errors": {
+        "not_enough": "No hay suficientes mensajes recientes para resumir (se necesitan al menos {min}).",
+        "no_access": "No puedes leer el historial de este canal, así que Moddy no puede resumirlo para ti.",
+        "bot_no_access": "Moddy no puede leer el historial de este canal. Dale los permisos Ver canal y Leer el historial de mensajes aquí."
+      }
+    },
+    "regex": {
+      "error_title": "No se pudo probar el patrón",
+      "title": "Probador de regex",
+      "modal_title": "Probar una expresión regular",
+      "modal_help": "Escribe un patrón y el texto donde probarlo. Las coincidencias se resaltan en el resultado.",
+      "pattern_label": "Patrón",
+      "pattern_placeholder": "\\b\\w+@\\w+\\.\\w+\\b",
+      "text_label": "Texto de prueba",
+      "text_placeholder": "El texto sobre el que se aplica el patrón",
+      "flags_label": "Opciones",
+      "flags": {
+        "i": "Ignorar mayúsculas (i)",
+        "m": "Multilínea (m)",
+        "s": "El punto incluye saltos de línea (s)",
+        "x": "Detallado (x)"
+      },
+      "count_one": "{count} coincidencia",
+      "count_other": "{count} coincidencias",
+      "count_capped": "{count}+ coincidencias",
+      "no_match": "Sin coincidencias",
+      "no_match_hint": "El patrón es válido pero no encuentra nada en este texto. Edítalo para volver a probar.",
+      "col_index": "#",
+      "col_position": "Posición",
+      "col_match": "Encontrado",
+      "col_groups": "Grupos",
+      "pattern": "Patrón",
+      "truncated": "Se adjunta la lista completa de coincidencias.",
+      "errors": {
+        "empty_pattern": "Escribe un patrón para probar.",
+        "empty_text": "Escribe un texto para probar el patrón.",
+        "invalid_pattern": "El patrón no es válido: {detail}. Edítalo e inténtalo de nuevo.",
+        "timeout": "El patrón tardó demasiado, normalmente por un retroceso catastrófico. Simplifícalo.",
+        "pattern_too_long": "El patrón es demasiado largo (máximo {max} caracteres).",
+        "too_complex": "El patrón es demasiado complejo para compilarlo. Simplifícalo."
+      }
+    },
+    "diff": {
+      "error_title": "No se pudo comparar",
+      "title": "Comparación de textos",
+      "modal_title": "Comparar dos textos",
+      "modal_help": "Pega los dos textos y elige cómo compararlos.",
+      "before_label": "Antes",
+      "after_label": "Después",
+      "mode_label": "Comparar por",
+      "mode": {
+        "lines": "Línea",
+        "words": "Palabra"
+      },
+      "mode_hint": {
+        "lines": "Un diff rojo / verde, como en Git",
+        "words": "Palabras tachadas y en negrita"
+      },
+      "identical": "Los dos textos son idénticos.",
+      "changes": "Cambios",
+      "legend_words": "Las palabras ~~tachadas~~ se eliminaron, las palabras en **negrita** se añadieron.",
+      "truncated": "Se adjunta la comparación completa.",
+      "errors": {
+        "empty_input": "Indica al menos uno de los dos textos."
+      }
+    },
+    "textstats": {
+      "error_title": "No se pudo analizar el texto",
+      "title": "Estadísticas del texto",
+      "modal_title": "Analizar un texto",
+      "modal_help": "Pega un texto para contar sus palabras y medir su legibilidad. No se guarda nada.",
+      "text_label": "Texto",
+      "text_placeholder": "El texto a analizar",
+      "words_big": "{count} palabras",
+      "characters": "Caracteres",
+      "characters_value": "{total} ({no_spaces} sin espacios)",
+      "sentences": "Frases",
+      "paragraphs": "Párrafos",
+      "avg": "Palabras por frase",
+      "reading": "Tiempo de lectura",
+      "speaking": "Tiempo de habla",
+      "language": "Idioma",
+      "languages": {
+        "fr": "francés",
+        "en": "inglés",
+        "es": "español",
+        "pt": "portugués",
+        "de": "alemán"
+      },
+      "readability": "Legibilidad",
+      "levels": {
+        "very_easy": "Muy fácil",
+        "easy": "Fácil",
+        "average": "Normal",
+        "difficult": "Difícil",
+        "very_difficult": "Muy difícil"
+      },
+      "formula": "Fórmula: {name}",
+      "formulas": {
+        "fr": "Kandel-Moles",
+        "en": "Flesch",
+        "es": "Fernández Huerta",
+        "de": "Amstad",
+        "pt": "Martins"
+      },
+      "not_enough": "Añade al menos {min} palabras para obtener una puntuación de legibilidad.",
+      "no_language": "Sin puntuación de legibilidad: no se reconoció el idioma (se admiten francés, inglés, español, portugués y alemán).",
+      "top_words": "Palabras más usadas",
+      "errors": {
+        "empty_input": "No hay ningún texto que analizar."
+      }
     }
   }
 }

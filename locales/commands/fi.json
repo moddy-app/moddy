@@ -529,6 +529,48 @@
           "description": "Linkki tämän palvelimen viestiin, jossa kuva on"
         }
       }
+    },
+    "define": {
+      "name": "määrittele",
+      "description": "Hakee sanan Wikisanakirjasta",
+      "parameters": {
+        "word": {
+          "name": "sana",
+          "description": "Haettava sana tai ilmaus"
+        },
+        "language": {
+          "name": "kieli",
+          "description": "Wikisanakirjan kieli (oletus: omasi)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "Tiivistää tämän kanavan viimeisimmät viestit",
+      "parameters": {
+        "messages": {
+          "name": "viestit",
+          "description": "Montako viimeisintä viestiä luetaan (oletus: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "Testaa säännöllistä lauseketta tekstillä"
+    },
+    "diff": {
+      "name": "vertaa",
+      "description": "Vertaa kahta tekstiä ja näyttää muutokset"
+    },
+    "textstats": {
+      "name": "tekstitilastot",
+      "description": "Laskee sanat sekä mittaa lukuajan ja luettavuuden",
+      "parameters": {
+        "text": {
+          "name": "teksti",
+          "description": "Analysoitava teksti (jätä tyhjäksi avataksesi lomakkeen)"
+        }
+      }
     }
   },
   "choices": {

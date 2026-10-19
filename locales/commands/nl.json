@@ -529,6 +529,48 @@
           "description": "Link naar een bericht op deze server met de afbeelding"
         }
       }
+    },
+    "define": {
+      "name": "definieer",
+      "description": "Zoekt een woord op in Wiktionary",
+      "parameters": {
+        "word": {
+          "name": "woord",
+          "description": "Het woord of de uitdrukking om op te zoeken"
+        },
+        "language": {
+          "name": "taal",
+          "description": "Taal van Wiktionary (standaard: die van jou)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "Vat de laatste berichten van dit kanaal samen",
+      "parameters": {
+        "messages": {
+          "name": "berichten",
+          "description": "Hoeveel recente berichten er gelezen worden (standaard: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "Test een reguliere expressie op een tekst"
+    },
+    "diff": {
+      "name": "vergelijk",
+      "description": "Vergelijkt twee teksten en toont wat er veranderd is"
+    },
+    "textstats": {
+      "name": "tekststatistieken",
+      "description": "Telt woorden en meet leestijd en leesbaarheid",
+      "parameters": {
+        "text": {
+          "name": "tekst",
+          "description": "De tekst om te analyseren (laat leeg om een formulier te openen)"
+        }
+      }
     }
   },
   "choices": {

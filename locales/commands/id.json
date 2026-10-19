@@ -529,6 +529,48 @@
           "description": "Tautan pesan dari server ini yang berisi gambar"
         }
       }
+    },
+    "define": {
+      "name": "definisi",
+      "description": "Mencari kata di Wiktionary",
+      "parameters": {
+        "word": {
+          "name": "kata",
+          "description": "Kata atau ungkapan yang dicari"
+        },
+        "language": {
+          "name": "bahasa",
+          "description": "Bahasa Wiktionary (default: bahasamu)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "Meringkas pesan terbaru di kanal ini",
+      "parameters": {
+        "messages": {
+          "name": "pesan",
+          "description": "Jumlah pesan terbaru yang dibaca (default: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "Menguji ekspresi reguler pada teks"
+    },
+    "diff": {
+      "name": "bandingkan",
+      "description": "Membandingkan dua teks dan menunjukkan perubahannya"
+    },
+    "textstats": {
+      "name": "statistik-teks",
+      "description": "Menghitung kata serta mengukur waktu baca dan keterbacaan",
+      "parameters": {
+        "text": {
+          "name": "teks",
+          "description": "Teks yang dianalisis (kosongkan untuk membuka formulir)"
+        }
+      }
     }
   },
   "choices": {

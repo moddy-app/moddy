@@ -529,6 +529,48 @@
           "description": "Link către un mesaj de pe acest server cu imaginea"
         }
       }
+    },
+    "define": {
+      "name": "definește",
+      "description": "Caută un cuvânt în Wikționar",
+      "parameters": {
+        "word": {
+          "name": "cuvânt",
+          "description": "Cuvântul sau expresia de căutat"
+        },
+        "language": {
+          "name": "limbă",
+          "description": "Limba Wikționarului (implicit: a ta)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "Rezumă ultimele mesaje de pe acest canal",
+      "parameters": {
+        "messages": {
+          "name": "mesaje",
+          "description": "Câte mesaje recente să citească (implicit: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "Testează o expresie regulată pe un text"
+    },
+    "diff": {
+      "name": "compară",
+      "description": "Compară două texte și arată ce s-a schimbat"
+    },
+    "textstats": {
+      "name": "statistici-text",
+      "description": "Numără cuvintele și măsoară timpul de citire și lizibilitatea",
+      "parameters": {
+        "text": {
+          "name": "text",
+          "description": "Textul de analizat (lasă gol pentru a deschide un formular)"
+        }
+      }
     }
   },
   "choices": {

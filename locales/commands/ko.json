@@ -529,6 +529,48 @@
           "description": "이미지가 포함된 이 서버 메시지의 링크"
         }
       }
+    },
+    "define": {
+      "name": "정의",
+      "description": "위키낱말사전에서 단어를 찾아봅니다",
+      "parameters": {
+        "word": {
+          "name": "단어",
+          "description": "찾아볼 단어 또는 표현"
+        },
+        "language": {
+          "name": "언어",
+          "description": "위키낱말사전 언어(기본값: 내 언어)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "이 채널의 최근 메시지를 요약합니다",
+      "parameters": {
+        "messages": {
+          "name": "메시지수",
+          "description": "읽을 최근 메시지 수(기본값: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "정규식",
+      "description": "텍스트에 정규식을 테스트합니다"
+    },
+    "diff": {
+      "name": "비교",
+      "description": "두 텍스트를 비교하고 바뀐 부분을 보여줍니다"
+    },
+    "textstats": {
+      "name": "텍스트통계",
+      "description": "단어 수를 세고 읽는 시간과 가독성을 측정합니다",
+      "parameters": {
+        "text": {
+          "name": "텍스트",
+          "description": "분석할 텍스트(비워 두면 양식이 열립니다)"
+        }
+      }
     }
   },
   "choices": {

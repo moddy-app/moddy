@@ -6033,6 +6033,171 @@
         "timeout": "The search took too long. Try again in a moment.",
         "failed": "The search failed. Try again in a moment."
       }
+    },
+    "define": {
+      "error_title": "Could not look it up",
+      "title": "Dictionary",
+      "senses_placeholder": "Other senses",
+      "view_on": "View on Wiktionary",
+      "synonyms": "Synonyms",
+      "more": "{count} more definition(s) on Wiktionary.",
+      "fallback_note": "Not found on the {lang} Wiktionary, so this comes from the English one.",
+      "licence": "{wiki} Wiktionary · CC BY-SA",
+      "lang": {
+        "fr": "French",
+        "en": "English",
+        "es": "Spanish",
+        "pt": "Portuguese",
+        "de": "German"
+      },
+      "pos": {
+        "abbreviation": "Abbreviation",
+        "adjective": "Adjective",
+        "adverb": "Adverb",
+        "article": "Article",
+        "conjunction": "Conjunction",
+        "determiner": "Determiner",
+        "interjection": "Interjection",
+        "name": "Name",
+        "noun": "Noun",
+        "numeral": "Numeral",
+        "onomatopoeia": "Onomatopoeia",
+        "other": "Other",
+        "particle": "Particle",
+        "phrase": "Phrase",
+        "prefix": "Prefix",
+        "preposition": "Preposition",
+        "pronoun": "Pronoun",
+        "proper_noun": "Proper noun",
+        "proverb": "Proverb",
+        "suffix": "Suffix",
+        "symbol": "Symbol",
+        "verb": "Verb"
+      },
+      "errors": {
+        "not_found": "No entry for {word}. Check the spelling, or try another language.",
+        "invalid_word": "This is not a valid word or expression to look up."
+      }
+    },
+    "tldr": {
+      "error_title": "Could not summarise",
+      "title": "In short",
+      "loading": "Reading the conversation…",
+      "scope": "Summarised",
+      "scope_value": "{count} messages in {channel}",
+      "ai_note": "Written by an AI: it can make mistakes. Check the original messages when it matters.",
+      "jump": "jump",
+      "errors": {
+        "not_enough": "There are not enough recent messages to summarise (at least {min} are needed).",
+        "no_access": "You cannot read the history of this channel, so Moddy cannot summarise it for you.",
+        "bot_no_access": "Moddy cannot read the history of this channel. Give it the View Channel and Read Message History permissions here."
+      }
+    },
+    "regex": {
+      "error_title": "Could not test the pattern",
+      "title": "Regex tester",
+      "modal_title": "Test a regular expression",
+      "modal_help": "Enter a pattern and the text to test it on. Matches are highlighted in the result.",
+      "pattern_label": "Pattern",
+      "pattern_placeholder": "\\b\\w+@\\w+\\.\\w+\\b",
+      "text_label": "Text to test",
+      "text_placeholder": "The text the pattern runs on",
+      "flags_label": "Flags",
+      "flags": {
+        "i": "Ignore case (i)",
+        "m": "Multiline (m)",
+        "s": "Dot matches newline (s)",
+        "x": "Verbose (x)"
+      },
+      "count_one": "{count} match",
+      "count_other": "{count} matches",
+      "count_capped": "{count}+ matches",
+      "no_match": "No match",
+      "no_match_hint": "The pattern is valid but finds nothing in this text. Edit it to try again.",
+      "col_index": "#",
+      "col_position": "Position",
+      "col_match": "Match",
+      "col_groups": "Groups",
+      "pattern": "Pattern",
+      "truncated": "The full list of matches is attached.",
+      "errors": {
+        "empty_pattern": "Enter a pattern to test.",
+        "empty_text": "Enter a text to test the pattern on.",
+        "invalid_pattern": "The pattern is not valid: {detail}. Edit it and try again.",
+        "timeout": "The pattern took too long to run, which usually means catastrophic backtracking. Simplify it.",
+        "pattern_too_long": "The pattern is too long (maximum {max} characters).",
+        "too_complex": "The pattern is too complex to compile. Simplify it."
+      }
+    },
+    "diff": {
+      "error_title": "Could not compare",
+      "title": "Text comparison",
+      "modal_title": "Compare two texts",
+      "modal_help": "Paste the texts and choose how to compare them.",
+      "before_label": "Before",
+      "after_label": "After",
+      "mode_label": "Compare by",
+      "mode": {
+        "lines": "Line",
+        "words": "Word"
+      },
+      "mode_hint": {
+        "lines": "A red / green diff, like in Git",
+        "words": "Struck-through and bold words"
+      },
+      "identical": "The two texts are identical.",
+      "changes": "Changes",
+      "legend_words": "~~Struck-through~~ words were removed, **bold** words were added.",
+      "truncated": "The full comparison is attached.",
+      "errors": {
+        "empty_input": "Give at least one of the two texts."
+      }
+    },
+    "textstats": {
+      "error_title": "Could not analyse the text",
+      "title": "Text statistics",
+      "modal_title": "Analyse a text",
+      "modal_help": "Paste a text to count its words and measure its readability. Nothing is stored.",
+      "text_label": "Text",
+      "text_placeholder": "The text to analyse",
+      "words_big": "{count} words",
+      "characters": "Characters",
+      "characters_value": "{total} ({no_spaces} without spaces)",
+      "sentences": "Sentences",
+      "paragraphs": "Paragraphs",
+      "avg": "Words per sentence",
+      "reading": "Reading time",
+      "speaking": "Speaking time",
+      "language": "Language",
+      "languages": {
+        "fr": "French",
+        "en": "English",
+        "es": "Spanish",
+        "pt": "Portuguese",
+        "de": "German"
+      },
+      "readability": "Readability",
+      "levels": {
+        "very_easy": "Very easy",
+        "easy": "Easy",
+        "average": "Average",
+        "difficult": "Difficult",
+        "very_difficult": "Very difficult"
+      },
+      "formula": "Formula: {name}",
+      "formulas": {
+        "fr": "Kandel-Moles",
+        "en": "Flesch",
+        "es": "Fernández Huerta",
+        "de": "Amstad",
+        "pt": "Martins"
+      },
+      "not_enough": "Add at least {min} words to get a readability score.",
+      "no_language": "No readability score: the language could not be recognised (French, English, Spanish, Portuguese and German are supported).",
+      "top_words": "Most used words",
+      "errors": {
+        "empty_input": "There is no text to analyse."
+      }
     }
   }
 }

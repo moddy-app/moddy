@@ -529,6 +529,48 @@
           "description": "Liên kết tới tin nhắn trên máy chủ này có hình ảnh"
         }
       }
+    },
+    "define": {
+      "name": "định-nghĩa",
+      "description": "Tra một từ trong Wiktionary",
+      "parameters": {
+        "word": {
+          "name": "từ",
+          "description": "Từ hoặc cụm từ cần tra"
+        },
+        "language": {
+          "name": "ngôn-ngữ",
+          "description": "Ngôn ngữ của Wiktionary (mặc định: của bạn)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "Tóm tắt các tin nhắn mới nhất của kênh này",
+      "parameters": {
+        "messages": {
+          "name": "tin-nhắn",
+          "description": "Số tin nhắn gần đây cần đọc (mặc định: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "Thử một biểu thức chính quy trên văn bản"
+    },
+    "diff": {
+      "name": "so-sánh",
+      "description": "So sánh hai văn bản và cho thấy điểm thay đổi"
+    },
+    "textstats": {
+      "name": "thống-kê-văn-bản",
+      "description": "Đếm từ, đo thời gian đọc và độ dễ đọc",
+      "parameters": {
+        "text": {
+          "name": "văn-bản",
+          "description": "Văn bản cần phân tích (để trống để mở biểu mẫu)"
+        }
+      }
     }
   },
   "choices": {

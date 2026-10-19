@@ -529,6 +529,48 @@
           "description": "Link do wiadomości z tego serwera z obrazem"
         }
       }
+    },
+    "define": {
+      "name": "definicja",
+      "description": "Szuka słowa w Wikisłowniku",
+      "parameters": {
+        "word": {
+          "name": "słowo",
+          "description": "Słowo lub wyrażenie do wyszukania"
+        },
+        "language": {
+          "name": "język",
+          "description": "Język Wikisłownika (domyślnie: twój)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "Streszcza ostatnie wiadomości na tym kanale",
+      "parameters": {
+        "messages": {
+          "name": "wiadomości",
+          "description": "Ile ostatnich wiadomości przeczytać (domyślnie: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "Testuje wyrażenie regularne na tekście"
+    },
+    "diff": {
+      "name": "porównaj",
+      "description": "Porównuje dwa teksty i pokazuje zmiany"
+    },
+    "textstats": {
+      "name": "statystyki-tekstu",
+      "description": "Liczy słowa oraz mierzy czas czytania i czytelność",
+      "parameters": {
+        "text": {
+          "name": "tekst",
+          "description": "Tekst do analizy (zostaw puste, aby otworzyć formularz)"
+        }
+      }
     }
   },
   "choices": {

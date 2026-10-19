@@ -529,6 +529,48 @@
           "description": "Enlace de un mensaje de este servidor con la imagen"
         }
       }
+    },
+    "define": {
+      "name": "definir",
+      "description": "Busca una palabra en el Wikcionario",
+      "parameters": {
+        "word": {
+          "name": "palabra",
+          "description": "La palabra o expresión a buscar"
+        },
+        "language": {
+          "name": "idioma",
+          "description": "Idioma del Wikcionario (por defecto: el tuyo)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "Resume los últimos mensajes de este canal",
+      "parameters": {
+        "messages": {
+          "name": "mensajes",
+          "description": "Cuántos mensajes recientes leer (por defecto: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "Prueba una expresión regular sobre un texto"
+    },
+    "diff": {
+      "name": "comparar",
+      "description": "Compara dos textos y muestra qué cambió"
+    },
+    "textstats": {
+      "name": "estadisticas-texto",
+      "description": "Cuenta palabras y mide el tiempo de lectura y la legibilidad",
+      "parameters": {
+        "text": {
+          "name": "texto",
+          "description": "El texto a analizar (déjalo vacío para abrir un formulario)"
+        }
+      }
     }
   },
   "choices": {

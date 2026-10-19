@@ -1839,6 +1839,10 @@ class ModdyDatabase(
                 ("user",   "sauce", "default", 15),
                 ("guild",  "sauce", "default", 150),
                 ("global", "sauce", "default", -1),
+                # /tldr channel summary (OpenAI gpt-4.1-mini): 10 a day per member.
+                ("user",   "tldr", "default", 10),
+                ("guild",  "tldr", "default", 100),
+                ("global", "tldr", "default", -1),
             ]:
                 await conn.execute(
                     """

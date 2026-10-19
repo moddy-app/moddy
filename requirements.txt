@@ -74,3 +74,11 @@ py3langid==0.4.0
 # inspected. HEIC photos also need pillow-heif (see the media tools).
 pypdf>=4.0.0
 mutagen>=1.47.0
+
+# Text tools (/regex): third-party regex engine with a match timeout (ReDoS guard).
+# Lazy-imported, ~1 MB wheel, no system package.
+regex>=2024.0.0
+
+# Text tools (/textstats): hyphenation dictionaries used to count syllables for the
+# readability score (lazy-imported, pure Python, ~5 MB with its dictionaries).
+pyphen>=0.14.0

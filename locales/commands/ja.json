@@ -529,6 +529,48 @@
           "description": "画像を含むこのサーバーのメッセージのリンク"
         }
       }
+    },
+    "define": {
+      "name": "定義",
+      "description": "ウィクショナリーで単語を調べます",
+      "parameters": {
+        "word": {
+          "name": "単語",
+          "description": "調べる単語または表現"
+        },
+        "language": {
+          "name": "言語",
+          "description": "ウィクショナリーの言語（既定：あなたの言語）"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "このチャンネルの最新メッセージを要約します",
+      "parameters": {
+        "messages": {
+          "name": "メッセージ数",
+          "description": "読み取る最近のメッセージ数（既定：50）"
+        }
+      }
+    },
+    "regex": {
+      "name": "正規表現",
+      "description": "テキストに対して正規表現をテストします"
+    },
+    "diff": {
+      "name": "差分",
+      "description": "2つのテキストを比較して変更点を表示します"
+    },
+    "textstats": {
+      "name": "文字統計",
+      "description": "単語数を数え、読む時間と読みやすさを測ります",
+      "parameters": {
+        "text": {
+          "name": "テキスト",
+          "description": "分析するテキスト（空のままにするとフォームを開きます）"
+        }
+      }
     }
   },
   "choices": {
