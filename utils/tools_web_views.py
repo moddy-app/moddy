@@ -89,7 +89,7 @@ async def begin(interaction: discord.Interaction) -> bool:
     if in_place:
         await interaction.response.defer()
     else:
-        await interaction.response.defer(ephemeral=True)
+        await interaction.response.defer(ephemeral=True, thinking=True)
     return in_place
 
 
@@ -527,7 +527,7 @@ class SubdomainsExportButton(
     @tc.guarded
     async def callback(self, interaction: discord.Interaction):
         locale = i18n.get_user_locale(interaction)
-        await interaction.response.defer(ephemeral=True)
+        await interaction.response.defer(ephemeral=True, thinking=True)
         try:
             result = await _subdomains_result(interaction, self.domain)
         except tc.ToolError as exc:
