@@ -754,6 +754,5 @@ PERSISTENT_VIEWS: list = [StatusOverviewView, CompanyResultsView, LookupPersiste
 DYNAMIC_ITEM_CASES: list = [
     (StatusRefreshButton, ("cloudflare",)),
     (UsernamePageButton, (_TOKEN, 2, "next")),
-    (UsernamePageButton, (_TOKEN, 0, "prev")),
     (UsernameExportButton, (_TOKEN,)),
 ]
