@@ -196,7 +196,7 @@ as text anyway.
 `DATA_GOUV`, `CLOUDFLARE`, `ANILIST`, `GOOGLE_LENS`, `YANDEX`, `BING`, `TINEYE`,
 `OPENSTREETMAP`.
 
-**Still empty**: `GREY_STATUS`, `DEEPL`, `CRTSH`, `VIRUSTOTAL`, `URLSCAN`,
+**Deliberately without an icon for now** (owner decision, 2026-10-19 — the helpers drop them): `GREY_STATUS`, `DEEPL`, `CRTSH`, `VIRUSTOTAL`, `URLSCAN`,
 `WHATSMYNAME`, `SAUCENAO`, `TRACEMOE`, `CLOUDCONVERT`, and the /status service
 logos `DISCORD_LOGO`, `GITHUB`, `REDDIT`, `DROPBOX`, `ATLASSIAN`, `VERCEL`,
 `NETLIFY`, `ZOOM`, `ANTHROPIC`, `EPIC_GAMES`, `NPM`, `DIGITALOCEAN`, `FIGMA`.
