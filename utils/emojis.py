@@ -156,7 +156,6 @@ LOCATION_ON = ""     # /exif GPS — Material `location_on`
 IMAGE_SEARCH = ""    # /sauce — Material `image_search`
 MOVIE = ""           # /sauce anime result — Material `movie`
 MUSIC_NOTE = ""      # /music + music links module — Material `music_note`
-SUMMARIZE = ""       # /tldr — Material `summarize` (a document with bullet lines)
 # Service logos — shown in the "Source: **X**" footer line of each tool and on
 # link buttons. Coloured brand artwork is visible on both themes: no `_dark`
 # twin needed unless the logo itself is white/black.

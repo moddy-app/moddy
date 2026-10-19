@@ -213,7 +213,7 @@ def build_status_overview(summaries: Sequence[sr.ServiceSummary], locale: str, *
     card.text("\n".join(lines))
     card.footer(
         tc.source_line(locale, (em.ATLASSIAN, "Atlassian Statuspage"), verb="provided_by"),
-        t("tools.status.updated", locale=locale, time=_rel(fetched)),
+        t("tools.status.updated", locale=locale, time=_rel(fetched)) if fetched else None,
         tc.requested_by(locale, requester_id))
     return StatusOverviewView(card, {s.key: s for s in summaries}, locale)
 
@@ -350,7 +350,8 @@ def build_status_detail(service: sr.Service, summary: sr.ServiceSummary, locale:
 
     card.footer(
         tc.source_line(locale, (service.logo, f"{service.name} Status"), verb="provided_by"),
-        t("tools.status.updated", locale=locale, time=_rel(summary.fetched_at)),
+        (t("tools.status.updated", locale=locale, time=_rel(summary.fetched_at))
+         if summary.fetched_at else None),
         tc.requested_by(locale, requester_id))
 
     row = ui.ActionRow(StatusRefreshButton(service.key, locale))

@@ -6042,7 +6042,7 @@
       "synonyms": "Synonyms",
       "more": "{count} more definition(s) on Wiktionary.",
       "fallback_note": "Not found on the {lang} Wiktionary, so this comes from the English one.",
-      "licence": "{wiki} Wiktionary · CC BY-SA",
+      "licence": "CC BY-SA",
       "lang": {
         "fr": "French",
         "en": "English",
@@ -6565,7 +6565,7 @@
         "shortener": "The link goes through a link shortener",
         "many_redirects": "{count} redirects in a row"
       },
-      "multi_redirects": "redirects {count} times from {host}",
+      "multi_redirects": "{count} redirect(s) from {host}",
       "multi_skipped": "{count} link(s) not examined.",
       "multi_hint": "Send one link to /link-check for the full check: redirects, scan and screenshot.",
       "errors": {

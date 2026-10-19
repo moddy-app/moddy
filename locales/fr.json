@@ -6041,7 +6041,7 @@
       "synonyms": "Synonymes",
       "more": "{count} autre(s) définition(s) sur Wiktionnaire.",
       "fallback_note": "Introuvable sur le Wiktionnaire ({lang}), donc ceci vient du Wiktionnaire anglais.",
-      "licence": "Wiktionnaire {wiki} · CC BY-SA",
+      "licence": "CC BY-SA",
       "lang": {
         "fr": "français",
         "en": "anglais",
@@ -6564,7 +6564,7 @@
         "shortener": "Le lien passe par un raccourcisseur",
         "many_redirects": "{count} redirections à la suite"
       },
-      "multi_redirects": "{count} redirections depuis {host}",
+      "multi_redirects": "{count} redirection(s) depuis {host}",
       "multi_skipped": "{count} lien(s) non examiné(s).",
       "multi_hint": "Envoie un seul lien à /link-check pour la vérification complète : redirections, analyse et capture.",
       "errors": {

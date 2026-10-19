@@ -138,8 +138,7 @@ an `error_title`. Errors live under `tools.<tool>.errors.<code>` with the shared
 
 Used (empty until uploaded, dropped cleanly): `DICTIONARY`, `REGEX`,
 `DIFFERENCE`, `ANALYTICS`, `WIKTIONARY`, `OPENAI`, `EDIT` (uploaded).
-Added: `SUMMARIZE` (Material `summarize`, a document with bullet lines) for
-`/tldr`.
+`/tldr` reuses `TEXT`, like `/summarize`.
 
 ## Known limitations
 

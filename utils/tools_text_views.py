@@ -34,7 +34,7 @@ from tools import text_escape as esc
 from tools import textstats as ts
 from tools import wiktionary as wk
 from utils import tool_card as tc
-from utils.emojis import ANALYTICS, DICTIONARY, DIFFERENCE, EDIT, REGEX, SUMMARIZE, WIKTIONARY, OPENAI
+from utils.emojis import ANALYTICS, DICTIONARY, DIFFERENCE, EDIT, REGEX, TEXT, WIKTIONARY, OPENAI
 from utils.i18n import i18n, t
 
 NO_MENTIONS = tc.NO_MENTIONS
@@ -216,7 +216,7 @@ class DefineSenseSelect(
 
 def build_tldr_card(summary: str, locale: str, *, channel_id: int, count: int,
                     requester_id: Optional[int] = None) -> ui.LayoutView:
-    card = tc.ToolCard(title=t("tools.tldr.title", locale=locale), icon=SUMMARIZE)
+    card = tc.ToolCard(title=t("tools.tldr.title", locale=locale), icon=TEXT)
     card.text(tc.truncate(summary, 3000)[0])
     card.details([tc.detail(t("tools.tldr.scope", locale=locale),
                             t("tools.tldr.scope_value", locale=locale, count=tc.inline(count),

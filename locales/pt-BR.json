@@ -5956,7 +5956,7 @@
       "synonyms": "Sinônimos",
       "more": "Mais {count} definição(ões) no Wikcionário.",
       "fallback_note": "Não encontrado no Wikcionário em {lang}, então isto vem do Wikcionário em inglês.",
-      "licence": "Wikcionário {wiki} · CC BY-SA",
+      "licence": "CC BY-SA",
       "lang": {
         "fr": "francês",
         "en": "inglês",
@@ -6479,7 +6479,7 @@
         "shortener": "O link passa por um encurtador",
         "many_redirects": "{count} redirecionamentos seguidos"
       },
-      "multi_redirects": "{count} redirecionamentos a partir de {host}",
+      "multi_redirects": "{count} redirecionamento(s) a partir de {host}",
       "multi_skipped": "{count} link(s) não examinado(s).",
       "multi_hint": "Envie um só link para /link-check para a verificação completa: redirecionamentos, análise e captura.",
       "errors": {

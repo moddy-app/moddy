@@ -274,7 +274,7 @@ def source_line(locale: str, *names: SourceName, verb: str = "provided_by") -> s
     ``found_by``, ``scanned_by``, ``computed_locally``...). Each name is either
     a plain string or ``(logo, name)``: the logo sits right next to the name it
     belongs to — ``Translated by <logo> **DeepL**`` — and is dropped while its
-    artwork is not uploaded. Several names are joined with ``&``.
+    artwork is not uploaded. Several names read as a list: ``A, B & C``.
     """
     parts = []
     for name in names:
@@ -282,7 +282,8 @@ def source_line(locale: str, *names: SourceName, verb: str = "provided_by") -> s
             continue
         logo, label = name if isinstance(name, tuple) else (None, name)
         parts.append(with_icon(logo, f"**{label}**"))
-    return t(f"tools.common.by.{verb}", locale=locale, source=" & ".join(parts))
+    joined = " & ".join(parts) if len(parts) < 3 else f"{', '.join(parts[:-1])} & {parts[-1]}"
+    return t(f"tools.common.by.{verb}", locale=locale, source=joined)
 
 
 def link_button(label: str, url: str, *, icon: Optional[str] = None) -> ui.Button:
