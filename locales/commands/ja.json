@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "文字起こし"
+    },
+    "Find source": {
+      "name": "出典を探す"
     }
   },
   "commands": {
@@ -500,6 +503,30 @@
         "url": {
           "name": "リンク",
           "description": "Spotifyのリンク（曲・アルバム・アーティスト）"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "ファイルに隠されたメタデータを表示します",
+      "parameters": {
+        "file": {
+          "name": "ファイル",
+          "description": "画像、PDF、Office文書、音声または動画ファイル"
+        }
+      }
+    },
+    "sauce": {
+      "name": "出典",
+      "description": "画像の出典を探します",
+      "parameters": {
+        "image": {
+          "name": "画像",
+          "description": "検索する画像 (PNG、JPEG、WebP、GIF)"
+        },
+        "message": {
+          "name": "メッセージ",
+          "description": "画像を含むこのサーバーのメッセージのリンク"
         }
       }
     }

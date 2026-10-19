@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "Transcrie"
+    },
+    "Find source": {
+      "name": "Găsește sursa"
     }
   },
   "commands": {
@@ -500,6 +503,30 @@
         "url": {
           "name": "link",
           "description": "Linkul Spotify (o melodie, un album sau un artist)"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "Afișează metadatele ascunse ale unui fișier",
+      "parameters": {
+        "file": {
+          "name": "fisier",
+          "description": "Imagine, PDF, document Office, fișier audio sau video"
+        }
+      }
+    },
+    "sauce": {
+      "name": "sursa",
+      "description": "Găsește sursa unei imagini",
+      "parameters": {
+        "image": {
+          "name": "imagine",
+          "description": "Imaginea de căutat (PNG, JPEG, WebP sau GIF)"
+        },
+        "message": {
+          "name": "mesaj",
+          "description": "Link către un mesaj de pe acest server cu imaginea"
         }
       }
     }

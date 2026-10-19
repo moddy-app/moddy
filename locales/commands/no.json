@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "Transkriber"
+    },
+    "Find source": {
+      "name": "Finn kilde"
     }
   },
   "commands": {
@@ -500,6 +503,30 @@
         "url": {
           "name": "lenke",
           "description": "Spotify-lenken (en låt, et album eller en artist)"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "Viser de skjulte metadataene i en fil",
+      "parameters": {
+        "file": {
+          "name": "fil",
+          "description": "Bilde, PDF, Office-dokument, lyd- eller videofil"
+        }
+      }
+    },
+    "sauce": {
+      "name": "kilde",
+      "description": "Finner kilden til et bilde",
+      "parameters": {
+        "image": {
+          "name": "bilde",
+          "description": "Bildet som skal søkes etter (PNG, JPEG, WebP eller GIF)"
+        },
+        "message": {
+          "name": "melding",
+          "description": "Lenke til en melding på denne serveren med bildet"
         }
       }
     }

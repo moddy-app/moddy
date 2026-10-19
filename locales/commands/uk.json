@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "Розшифрувати"
+    },
+    "Find source": {
+      "name": "Знайти джерело"
     }
   },
   "commands": {
@@ -500,6 +503,30 @@
         "url": {
           "name": "посилання",
           "description": "Посилання Spotify (трек, альбом або виконавець)"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "Показує приховані метадані файлу",
+      "parameters": {
+        "file": {
+          "name": "файл",
+          "description": "Зображення, PDF, документ Office, аудіо- або відеофайл"
+        }
+      }
+    },
+    "sauce": {
+      "name": "джерело",
+      "description": "Знаходить джерело зображення",
+      "parameters": {
+        "image": {
+          "name": "зображення",
+          "description": "Зображення для пошуку (PNG, JPEG, WebP або GIF)"
+        },
+        "message": {
+          "name": "повідомлення",
+          "description": "Посилання на повідомлення цього сервера із зображенням"
         }
       }
     }

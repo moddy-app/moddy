@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "Μεταγραφή"
+    },
+    "Find source": {
+      "name": "Εύρεση πηγής"
     }
   },
   "commands": {
@@ -500,6 +503,30 @@
         "url": {
           "name": "συνδεσμος",
           "description": "Ο σύνδεσμος Spotify (τραγούδι, άλμπουμ ή καλλιτέχνης)"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "Εμφανίζει τα κρυφά μεταδεδομένα ενός αρχείου",
+      "parameters": {
+        "file": {
+          "name": "αρχείο",
+          "description": "Εικόνα, PDF, έγγραφο Office, αρχείο ήχου ή βίντεο"
+        }
+      }
+    },
+    "sauce": {
+      "name": "πηγή",
+      "description": "Βρίσκει την πηγή μιας εικόνας",
+      "parameters": {
+        "image": {
+          "name": "εικόνα",
+          "description": "Η εικόνα προς αναζήτηση (PNG, JPEG, WebP ή GIF)"
+        },
+        "message": {
+          "name": "μήνυμα",
+          "description": "Σύνδεσμος μηνύματος αυτού του διακομιστή με την εικόνα"
         }
       }
     }

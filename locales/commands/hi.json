@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "प्रतिलेखन करें"
+    },
+    "Find source": {
+      "name": "स्रोत खोजें"
     }
   },
   "commands": {
@@ -500,6 +503,30 @@
         "url": {
           "name": "लिंक",
           "description": "Spotify लिंक (गाना, एल्बम या कलाकार)"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "किसी फ़ाइल का छिपा हुआ मेटाडेटा दिखाता है",
+      "parameters": {
+        "file": {
+          "name": "फ़ाइल",
+          "description": "छवि, PDF, Office दस्तावेज़, ऑडियो या वीडियो फ़ाइल"
+        }
+      }
+    },
+    "sauce": {
+      "name": "sauce",
+      "description": "किसी छवि का स्रोत खोजता है",
+      "parameters": {
+        "image": {
+          "name": "छवि",
+          "description": "खोजने के लिए छवि (PNG, JPEG, WebP या GIF)"
+        },
+        "message": {
+          "name": "संदेश",
+          "description": "इस सर्वर के उस संदेश का लिंक जिसमें छवि है"
         }
       }
     }

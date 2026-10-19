@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "Transkribuoti"
+    },
+    "Find source": {
+      "name": "Rasti šaltinį"
     }
   },
   "commands": {
@@ -500,6 +503,30 @@
         "url": {
           "name": "nuoroda",
           "description": "„Spotify“ nuoroda (daina, albumas ar atlikėjas)"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "Parodo paslėptus failo metaduomenis",
+      "parameters": {
+        "file": {
+          "name": "failas",
+          "description": "Vaizdas, PDF, Office dokumentas, garso ar vaizdo failas"
+        }
+      }
+    },
+    "sauce": {
+      "name": "saltinis",
+      "description": "Randa vaizdo šaltinį",
+      "parameters": {
+        "image": {
+          "name": "paveikslelis",
+          "description": "Ieškomas vaizdas (PNG, JPEG, WebP arba GIF)"
+        },
+        "message": {
+          "name": "zinute",
+          "description": "Nuoroda į šio serverio žinutę su vaizdu"
         }
       }
     }

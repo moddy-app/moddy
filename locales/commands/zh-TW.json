@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "轉錄文字"
+    },
+    "Find source": {
+      "name": "尋找來源"
     }
   },
   "commands": {
@@ -500,6 +503,30 @@
         "url": {
           "name": "連結",
           "description": "Spotify 連結（歌曲、專輯或藝人）"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "顯示檔案中隱藏的中繼資料",
+      "parameters": {
+        "file": {
+          "name": "檔案",
+          "description": "圖片、PDF、Office 文件、音訊或影片檔案"
+        }
+      }
+    },
+    "sauce": {
+      "name": "來源",
+      "description": "尋找圖片的來源",
+      "parameters": {
+        "image": {
+          "name": "圖片",
+          "description": "要搜尋的圖片（PNG、JPEG、WebP 或 GIF）"
+        },
+        "message": {
+          "name": "訊息",
+          "description": "此伺服器中包含該圖片的訊息連結"
         }
       }
     }

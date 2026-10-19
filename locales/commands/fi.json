@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "Litteroi"
+    },
+    "Find source": {
+      "name": "Etsi lähde"
     }
   },
   "commands": {
@@ -500,6 +503,30 @@
         "url": {
           "name": "linkki",
           "description": "Spotify-linkki (kappale, albumi tai artisti)"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "Näyttää tiedoston piilotetut metatiedot",
+      "parameters": {
+        "file": {
+          "name": "tiedosto",
+          "description": "Kuva, PDF, Office-asiakirja, ääni- tai videotiedosto"
+        }
+      }
+    },
+    "sauce": {
+      "name": "lahde",
+      "description": "Etsii kuvan lähteen",
+      "parameters": {
+        "image": {
+          "name": "kuva",
+          "description": "Haettava kuva (PNG, JPEG, WebP tai GIF)"
+        },
+        "message": {
+          "name": "viesti",
+          "description": "Linkki tämän palvelimen viestiin, jossa kuva on"
         }
       }
     }

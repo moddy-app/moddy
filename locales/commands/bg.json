@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "Транскрибиране"
+    },
+    "Find source": {
+      "name": "Намери източник"
     }
   },
   "commands": {
@@ -500,6 +503,30 @@
         "url": {
           "name": "линк",
           "description": "Връзката към Spotify (песен, албум или изпълнител)"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "Показва скритите метаданни на файл",
+      "parameters": {
+        "file": {
+          "name": "файл",
+          "description": "Изображение, PDF, документ на Office, аудио или видео файл"
+        }
+      }
+    },
+    "sauce": {
+      "name": "sauce",
+      "description": "Намира източника на изображение",
+      "parameters": {
+        "image": {
+          "name": "изображение",
+          "description": "Изображението за търсене (PNG, JPEG, WebP или GIF)"
+        },
+        "message": {
+          "name": "съобщение",
+          "description": "Връзка към съобщение от този сървър с изображението"
         }
       }
     }

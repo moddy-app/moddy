@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "Přepsat do textu"
+    },
+    "Find source": {
+      "name": "Najít zdroj"
     }
   },
   "commands": {
@@ -500,6 +503,30 @@
         "url": {
           "name": "odkaz",
           "description": "Odkaz na Spotify (skladba, album nebo interpret)"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "Zobrazí skrytá metadata souboru",
+      "parameters": {
+        "file": {
+          "name": "soubor",
+          "description": "Obrázek, PDF, dokument Office, zvukový nebo video soubor"
+        }
+      }
+    },
+    "sauce": {
+      "name": "zdroj",
+      "description": "Najde zdroj obrázku",
+      "parameters": {
+        "image": {
+          "name": "obrazek",
+          "description": "Obrázek k vyhledání (PNG, JPEG, WebP nebo GIF)"
+        },
+        "message": {
+          "name": "zprava",
+          "description": "Odkaz na zprávu z tohoto serveru s obrázkem"
         }
       }
     }

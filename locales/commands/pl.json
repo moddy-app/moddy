@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "Transkrybuj"
+    },
+    "Find source": {
+      "name": "Znajdź źródło"
     }
   },
   "commands": {
@@ -500,6 +503,30 @@
         "url": {
           "name": "link",
           "description": "Link do Spotify (utwór, album lub artysta)"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "Pokazuje ukryte metadane pliku",
+      "parameters": {
+        "file": {
+          "name": "plik",
+          "description": "Obraz, PDF, dokument Office, plik audio lub wideo"
+        }
+      }
+    },
+    "sauce": {
+      "name": "zrodlo",
+      "description": "Znajduje źródło obrazu",
+      "parameters": {
+        "image": {
+          "name": "obraz",
+          "description": "Obraz do wyszukania (PNG, JPEG, WebP lub GIF)"
+        },
+        "message": {
+          "name": "wiadomosc",
+          "description": "Link do wiadomości z tego serwera z obrazem"
         }
       }
     }

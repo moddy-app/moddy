@@ -68,3 +68,9 @@ c2pa-python==0.38.0
 # first eligible message of a server loads it) — see docs/features/TRANSLATE_BUTTON.md.
 # Pinned: 0.4 changed the model-loading API we call (from_model_file).
 py3langid==0.4.0
+
+# /exif (tools/metadata.py): PDF metadata (pure Python, ~1 MB) and audio/video
+# tags (pure Python, ~0.5 MB). Both imported lazily, only when such a file is
+# inspected. HEIC photos also need pillow-heif (see the media tools).
+pypdf>=4.0.0
+mutagen>=1.47.0

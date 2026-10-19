@@ -273,9 +273,9 @@ class TextTools(commands.Cog):
         self.bot = bot
         self.user_usage: dict[int, list[datetime]] = {}
 
-        # Discord allows only 5 message context menus globally, and three are
-        # already taken (Save Message, Get Emojis, Translate) — the three tools
-        # therefore share a single menu whose modal carries the action select.
+        # The three tools share a single menu whose modal carries the action
+        # select, rather than spending three of the 15 message context menus
+        # Discord allows per app.
         self.text_menu = app_commands.ContextMenu(
             name="AI text tools",
             callback=self.text_context_menu,

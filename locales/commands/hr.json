@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "Transkribiraj"
+    },
+    "Find source": {
+      "name": "Pronađi izvor"
     }
   },
   "commands": {
@@ -500,6 +503,30 @@
         "url": {
           "name": "poveznica",
           "description": "Spotify poveznica (pjesma, album ili izvođač)"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "Prikazuje skrivene metapodatke datoteke",
+      "parameters": {
+        "file": {
+          "name": "datoteka",
+          "description": "Slika, PDF, Office dokument, audio ili video datoteka"
+        }
+      }
+    },
+    "sauce": {
+      "name": "izvor",
+      "description": "Pronalazi izvor slike",
+      "parameters": {
+        "image": {
+          "name": "slika",
+          "description": "Slika za pretraživanje (PNG, JPEG, WebP ili GIF)"
+        },
+        "message": {
+          "name": "poruka",
+          "description": "Poveznica na poruku s ovog poslužitelja sa slikom"
         }
       }
     }

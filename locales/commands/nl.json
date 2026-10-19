@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "Transcriberen"
+    },
+    "Find source": {
+      "name": "Bron zoeken"
     }
   },
   "commands": {
@@ -500,6 +503,30 @@
         "url": {
           "name": "link",
           "description": "De Spotify-link (een nummer, album of artiest)"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "Toont de verborgen metadata van een bestand",
+      "parameters": {
+        "file": {
+          "name": "bestand",
+          "description": "Afbeelding, pdf, Office-document, audio- of videobestand"
+        }
+      }
+    },
+    "sauce": {
+      "name": "bron",
+      "description": "Zoekt de bron van een afbeelding",
+      "parameters": {
+        "image": {
+          "name": "afbeelding",
+          "description": "De afbeelding om te zoeken (PNG, JPEG, WebP of GIF)"
+        },
+        "message": {
+          "name": "bericht",
+          "description": "Link naar een bericht op deze server met de afbeelding"
         }
       }
     }

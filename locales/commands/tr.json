@@ -34,6 +34,9 @@
     },
     "Transcribe": {
       "name": "Yazıya dök"
+    },
+    "Find source": {
+      "name": "Kaynağı bul"
     }
   },
   "commands": {
@@ -500,6 +503,30 @@
         "url": {
           "name": "baglanti",
           "description": "Spotify bağlantısı (şarkı, albüm veya sanatçı)"
+        }
+      }
+    },
+    "exif": {
+      "name": "exif",
+      "description": "Bir dosyanın gizli meta verilerini gösterir",
+      "parameters": {
+        "file": {
+          "name": "dosya",
+          "description": "Görsel, PDF, Office belgesi, ses veya video dosyası"
+        }
+      }
+    },
+    "sauce": {
+      "name": "kaynak",
+      "description": "Bir görselin kaynağını bulur",
+      "parameters": {
+        "image": {
+          "name": "gorsel",
+          "description": "Aranacak görsel (PNG, JPEG, WebP veya GIF)"
+        },
+        "message": {
+          "name": "mesaj",
+          "description": "Bu sunucudaki görseli içeren mesajın bağlantısı"
         }
       }
     }
