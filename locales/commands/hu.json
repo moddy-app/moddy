@@ -410,6 +410,20 @@
           "description": "Az olvasandó kép"
         }
       }
+    },
+    "ai-check": {
+      "name": "mi-ellenorzes",
+      "description": "Ellenőrzi, hogy egy képet MI hozott-e létre",
+      "parameters": {
+        "image": {
+          "name": "kep",
+          "description": "Az ellenőrizendő kép (PNG, JPEG vagy WebP)"
+        },
+        "message": {
+          "name": "uzenet",
+          "description": "Hivatkozás a szerver egy képet tartalmazó üzenetére"
+        }
+      }
     }
   }
 }

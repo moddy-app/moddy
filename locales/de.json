@@ -3907,6 +3907,40 @@
         "pending_title": "Wird gelöscht",
         "pending_description": "Der Kanal und sein Gespräch werden gelöscht."
       }
+    },
+    "ai_detector": {
+      "name": "KI-Detektor",
+      "description": "Kennzeichnet KI-generierte Bilder anhand von C2PA-Signaturen",
+      "config": {
+        "title": "KI-Detektor",
+        "description": "Moddy prüft die C2PA-Signatur der auf dem Server geposteten Bilder und zeigt an, wenn ein Bild von einer KI erzeugt oder bearbeitet wurde oder wenn ein Foto authentifiziert ist. Er antwortet nur, wenn überprüfbare Informationen vorliegen. Standardmäßig auf allen Servern aktiv: Du kannst ihn über **Verwalten** pausieren.",
+        "categories": {
+          "section_title": "Angezeigte Ergebnisse",
+          "section_description": "Wähle die Ergebnisarten, die Moddy unter Bildern veröffentlicht",
+          "placeholder": "Kein Ergebnis angezeigt",
+          "ai_full": {
+            "label": "KI-generierte Bilder",
+            "description": "Vollständig von einer KI erstellte Bilder (geprüfte Signatur)"
+          },
+          "ai_partial": {
+            "label": "Mit KI bearbeitete Bilder",
+            "description": "Mit einem generativen KI-Werkzeug veränderte Bilder"
+          },
+          "photo": {
+            "label": "Authentifizierte Fotos",
+            "description": "Von der Kamera signierte Fotos, bearbeitet oder nicht"
+          },
+          "unsigned": {
+            "label": "Generierungs-Metadaten",
+            "description": "PNGs mit Stable-Diffusion- oder ComfyUI-Parametern"
+          }
+        },
+        "channels": {
+          "section_title": "Ignorierte Kanäle",
+          "section_description": "Moddy antwortet nie in diesen Kanälen (auch nicht in ihren Threads)",
+          "placeholder": "Kein ignorierter Kanal"
+        }
+      }
     }
   },
   "languages": {
@@ -5365,5 +5399,130 @@
       "done": "{n} term(s) added to `{category}`."
     },
     "name": "Name"
+  },
+  "ai_detector": {
+    "loading": "Bild wird analysiert",
+    "learn_more": "Mehr erfahren",
+    "details_button": "Weitere Informationen",
+    "no_verdict_title": "Keine überprüfbaren Informationen",
+    "unknown_tool": "ein nicht angegebenes Werkzeug",
+    "unknown_issuer": "ein zertifizierter Aussteller",
+    "unknown_device": "Kamera",
+    "tool_with_issuer": "**{tool}** ({issuer})",
+    "tool_only": "**{tool}**",
+    "verdicts": {
+      "ai_full": {
+        "title": "Von künstlicher Intelligenz erzeugter Inhalt",
+        "body": "Dieses Bild wurde am **{date}** vollständig von {tool_part} erzeugt.",
+        "body_no_date": "Dieses Bild wurde vollständig von {tool_part} erzeugt.",
+        "footer": "Diese Information stammt aus der in die Datei eingebetteten C2PA-Signatur von {issuer}, kryptografisch geprüft und nicht fälschbar. [**Mehr erfahren**]({url})"
+      },
+      "ai_partial": {
+        "title": "Teilweise von künstlicher Intelligenz erzeugter Inhalt",
+        "body": "Dieses Bild wurde mit generativen KI-Werkzeugen über {tool_part} verändert.",
+        "footer": "Diese Information stammt aus dem signierten C2PA-Verlauf der Datei, kryptografisch geprüft, der eine KI-Bearbeitung bestätigt, ohne immer den betroffenen Bereich anzugeben. [**Mehr erfahren**]({url})"
+      },
+      "photo": {
+        "title": "Authentifizierte Fotografie",
+        "body": "Diese Fotografie wurde am **{date}** mit einer **{device}** aufgenommen und nicht durch KI verändert.",
+        "body_no_date": "Diese Fotografie wurde mit einer **{device}** aufgenommen und nicht durch KI verändert.",
+        "footer": "Die bei der Aufnahme von {issuer} angebrachte C2PA-Signatur wurde geprüft: Sie bestätigt die Herkunft des Bildes, nicht aber die Echtheit der fotografierten Szene. [**Mehr erfahren**]({url})"
+      },
+      "photo_edited": {
+        "title": "Authentifizierte und bearbeitete Fotografie",
+        "body": "Diese Fotografie wurde mit einer **{device}** aufgenommen und anschließend mit **{tool}** bearbeitet ({actions}), ohne generative KI.",
+        "body_no_tool": "Diese Fotografie wurde mit einer **{device}** aufgenommen und anschließend bearbeitet ({actions}), ohne generative KI.",
+        "footer": "Die Herkunft des Bildes und die Liste der Bearbeitungen stammen aus seinem signierten C2PA-Verlauf, kryptografisch geprüft. [**Mehr erfahren**]({url})"
+      },
+      "unsigned": {
+        "title": "Wahrscheinlich von künstlicher Intelligenz erzeugter Inhalt",
+        "body": "Dieses Bild enthält Generierungsparameter, die typisch für **{tool}** sind.",
+        "footer": "Diese Metadaten sind nicht signiert: ein starkes Indiz, aber kein Beweis. [**Mehr erfahren**]({url})"
+      }
+    },
+    "actions": {
+      "created": "Erstellung",
+      "opened": "Öffnen",
+      "placed": "Element eingefügt",
+      "removed": "Element entfernt",
+      "edited": "Bearbeitung",
+      "cropped": "Zuschnitt",
+      "color_adjustments": "Farben",
+      "resized": "Größenänderung",
+      "filtered": "Filter",
+      "drawing": "Zeichnung",
+      "orientation": "Drehung",
+      "redacted": "Schwärzung",
+      "converted": "Formatumwandlung",
+      "transcoded": "Formatumwandlung",
+      "edited_metadata": "Metadaten",
+      "published": "Veröffentlichung",
+      "repackaged": "Neuverpackung"
+    },
+    "source_types": {
+      "trainedAlgorithmicMedia": "generative KI",
+      "compositeWithTrainedAlgorithmicMedia": "Komposition mit generativer KI",
+      "digitalCapture": "digitale Aufnahme",
+      "computationalCapture": "Aufnahme (Softwareverarbeitung)",
+      "algorithmicMedia": "algorithmisches Medium (ohne trainierte KI)",
+      "digitalCreation": "digitale Erstellung",
+      "compositeCapture": "Komposition aus Aufnahmen",
+      "composite": "Komposition",
+      "screenCapture": "Bildschirmfoto",
+      "minorHumanEdits": "geringfügige menschliche Bearbeitung"
+    },
+    "details": {
+      "title": "Details der Analyse",
+      "verdict": "Ergebnis:",
+      "source": "Quelle:",
+      "source_c2pa": "geprüfte C2PA-Signatur",
+      "source_unsigned": "nicht signierte Metadaten",
+      "signature_title": "Signatur",
+      "issuer": "Aussteller:",
+      "validation": "Prüfung:",
+      "validation_trusted": "Signatur intakt, Zertifikat auf der offiziellen C2PA-Vertrauensliste",
+      "algorithm": "Algorithmus:",
+      "signed_at": "Signiert am:",
+      "generator": "Werkzeug:",
+      "device": "Kamera:",
+      "history_title": "Signierter Verlauf",
+      "history_more": "… und {count} weitere(r) Schritt(e)",
+      "history_empty": "Keine Aktion angegeben.",
+      "chain": "{manifests} signierte(s) Manifest(e) · {ingredients} Bestandteil(e)",
+      "metadata_title": "Erkannte Metadaten",
+      "fields": "Felder:",
+      "setting": "{name}: `{value}`",
+      "prompt_hidden": "Der Prompt wird nie angezeigt.",
+      "privacy": "Moddy zeigt niemals den Standort, den Urheber oder andere personenbezogene Daten aus der Datei an.",
+      "how_title": "Wie funktioniert das?",
+      "how_body": "C2PA ist ein offener Standard (Adobe, Microsoft, Google, OpenAI, Sony, Leica…): Das Werkzeug oder die Kamera, die ein Bild erzeugt, fügt ein signiertes Manifest hinzu, das seine Herkunft und Bearbeitungen beschreibt. Moddy lädt die Originaldatei herunter, prüft, ob die Signatur intakt ist und ob das Zertifikat des Ausstellers auf der offiziellen C2PA-Vertrauensliste steht, und liest dann die angegebenen Aktionen. Bei PNGs erkennt Moddy außerdem die Parameter, die Stable Diffusion und ComfyUI in die Datei schreiben.",
+      "reliability_title": "Wie verlässlich ist dieses Ergebnis?",
+      "reliability_c2pa": "Die Signatur garantiert, dass die Datei seit der Signierung unverändert ist und dass ihr Aussteller von der C2PA anerkannt wird: Niemand kann dieses Ergebnis ohne den Schlüssel des Ausstellers erzeugen. Sie gibt wieder, was der Aussteller angegeben hat – und nur das.",
+      "reliability_unsigned": "Diese Parameter sind nicht signiert: Jeder kann sie hinzufügen oder entfernen. Ihr Vorhandensein ist ein starkes Indiz für KI-Generierung, kein Beweis.",
+      "reliability_photo": "Ein authentifiziertes Foto belegt die Kamera und das Aufnahmedatum, nicht die Wahrheit des Gezeigten (eine gestellte Szene bleibt gestellt).",
+      "absence": "Kein Ergebnis beweist nichts: Ein Bildschirmfoto, erneutes Speichern oder die meisten sozialen Netzwerke entfernen diese Informationen."
+    },
+    "reasons": {
+      "unsupported": "Nur PNG-, JPEG- und WebP-Bilder können geprüft werden.",
+      "no_data": "Dieses Bild enthält weder eine C2PA-Signatur noch Generierungs-Metadaten. Das macht es nicht authentisch: Diese Informationen gehen leicht verloren.",
+      "untrusted": "Dieses Bild trägt eine gültige C2PA-Signatur, aber sein Aussteller steht nicht auf der offiziellen C2PA-Vertrauensliste: Sein Inhalt kann nicht garantiert werden.",
+      "invalid": "Dieses Bild trägt eine ungültige C2PA-Signatur: Die Datei wurde nach der Signierung verändert oder die Signatur ist beschädigt.",
+      "unclassified": "Dieses Bild trägt eine vertrauenswürdige C2PA-Signatur, aber sein Verlauf gibt seine Herkunft (KI oder Aufnahme) nicht an.",
+      "trust_unavailable": "Die C2PA-Vertrauensliste ist noch nicht geladen, versuche es gleich noch einmal.",
+      "error": "Die C2PA-Signatur dieses Bildes konnte nicht gelesen werden.",
+      "busy": "Es laufen zu viele Analysen, versuche es gleich noch einmal."
+    },
+    "errors": {
+      "title": "Prüfung nicht möglich",
+      "failed": "Die Prüfung ist fehlgeschlagen, versuche es gleich noch einmal.",
+      "unavailable": "Der KI-Detektor ist vorübergehend nicht verfügbar.",
+      "gone": "Dieses Bild ist nicht mehr verfügbar (Nachricht gelöscht oder nicht zugänglich).",
+      "no_image": "Kein PNG-, JPEG- oder WebP-Bild zum Prüfen. Hänge ein Bild an oder gib den Link einer Nachricht an, die eines enthält.",
+      "unsupported": "Nur PNG-, JPEG- und WebP-Bilder können geprüft werden.",
+      "too_large": "Dieses Bild ist zu groß für eine Prüfung (maximal 25 MB).",
+      "download_failed": "Das Bild konnte nicht heruntergeladen werden.",
+      "bad_link": "Das ist kein gültiger Discord-Nachrichtenlink.",
+      "other_server": "Nur Nachrichten dieses Servers können geprüft werden."
+    }
   }
 }

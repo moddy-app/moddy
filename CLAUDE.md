@@ -51,6 +51,7 @@ moddy/
 │   ├── text_tools.py          #   /fix, /rephrase, /summarize (OpenAI, Modal V2 + context menus)
 │   ├── voice_transcription.py #   "Transcribe" context menu (Groq Whisper; images → OCR)
 │   ├── ocr.py                 #   /ocr (Google Vision document OCR)
+│   ├── ai_detector.py         #   /ai-check (C2PA + generation metadata, image or message link)
 │   ├── webhook.py             #   Webhook management
 │   ├── logs.py                #   Advanced server logs — Discord wiring only
 │   ├── social_notifications.py #  Social notifications dispatch + feeds service wiring
@@ -91,6 +92,7 @@ moddy/
 │   │                          #   member profiles: avatar / banner / names via apply_profile_decision)
 │   ├── bot_customization.py   #   Bot identity per guild (nick/avatar/banner/bio + name style)
 │   ├── voice_transcription.py #   Voice message transcription (button or automatic)
+│   ├── ai_detector.py         #   AI Detector: replies under C2PA-attested images (DEFAULT_ENABLED)
 │   ├── logs.py                #   Advanced server logs (config + routing, 163 events)
 │   └── configs/               #   Components V2 config UIs per module
 │       ├── server_settings_config.py      # Server-wide settings (language)
@@ -112,6 +114,7 @@ moddy/
 │       │                                  # (tickets_config.py also holds the module-wide
 │       │                                  #  settings screen: transcripts, detection, ratings, logs)
 │       ├── voice_transcription_config.py  # Voice transcription (status, mode, channels)
+│       ├── ai_detector_config.py          # AI Detector (announced verdicts, ignored channels)
 │       ├── bot_customization_config.py    # Bot customization (identity Modal V2 + name style)
 │       ├── logs_config.py                 # Server logs (categories, events, options)
 │
@@ -139,6 +142,13 @@ moddy/
 ├── bumpreminder/              # Bump detection core (pure; no Discord, no DB)
 │   ├── registry.py            #   The 7 supported directories + their markers
 │   └── detect.py              #   Success/failure funnel, next-bump time, intervals
+│
+├── aidetector/                # AI image detector core (pure; no Discord, no DB)
+│   ├── formats.py             #   Magic-byte sniffing + cheap C2PA marker test
+│   ├── png_text.py            #   Unsigned SD / ComfyUI parameters in PNG text chunks
+│   ├── manifest.py            #   Trusted C2PA store -> verdict + privacy whitelist
+│   ├── verify.py              #   c2pa-python read (trust list, EKUs, network off)
+│   └── analysis.py            #   One image -> Analysis (verdict or reason)
 │
 ├── automod/                   # Automod DETECTION pipeline (decides only; no side effects)
 │   ├── infractions.py         #   Infraction catalogue (single source of truth) + per-server `sanctions` schema/validation
@@ -245,6 +255,7 @@ moddy/
 │   ├── automod_approval_views.py # Automod alert card (applied vs failed actions) + moderator Approve/Reject buttons (persistent)
 │   ├── automod_label_views.py #   Automod team labeling card, labels/category/terms (persistent) + Modal V2
 │   ├── ocr_views.py           #   /ocr cards (loading, result, error)
+│   ├── ai_detector_views.py   #   AI detector verdict card, details panel, persistent button
 │   ├── sanction_reversal.py   #   Undo the Discord side of a sanction (appeals + labeling queue)
 │   ├── automod_render.py      #   Shared automod card helpers (barème breakdown, sanction name/accent)
 │   ├── notification_views.py  #   Notification abuse-report review panels (staff side)
@@ -310,6 +321,7 @@ moddy/
 │   ├── automod_profile_service.py # Automod member profiles: avatar/banner/name verdict caches, profile SafeSearch budget
 │   ├── automod_label_service.py # Moddy team labeling queue (learn + revoke bot sanctions)
 │   ├── ocr_service.py         #   Image → text for /ocr and the Transcribe menu
+│   ├── ai_detector_service.py #   AI detector: C2PA trust list (Redis 24 h), downloads, to_thread
 │   ├── ticket_service.py      #   Ticket lifecycle (open/close/escalate/move/participants)
 │   ├── member_application_service.py # Join request API calls + review card lifecycle
 │   ├── ticket_transcript_service.py # Archives a closing ticket's conversation (compressed JSON)
@@ -368,6 +380,8 @@ moddy/
     ├── test_automod_images.py #   Automod image features, image service, labeling queue + card
     ├── test_automod_profiles.py # Automod member profiles: holds, rename+warn, caches, budget, events, i18n
     ├── test_ocr.py            #   /ocr service: errors, re-encoding, card
+    ├── test_ai_detector.py    #   AI detector: signed C2PA fixtures, classification, cards,
+    │                          #   privacy, module, default-enabled manager, service
     ├── test_icon_theme.py     #   Icon theme: light→dark mapping, payload swap, discord.py patch guard
     ├── test_user_preferences.py # Preferences cache, language override, /preferences selects
     └── test_staff_user_command.py # /team user: sections, personal-data gate, i18n (5 locales)
@@ -607,6 +621,7 @@ All documentation is in [docs/](docs/) (structure and conventions: [docs/README.
 `docs/features/` — How a feature works on the bot side.
 | Document | When to Read |
 |---|---|
+| [docs/features/AI_DETECTOR.md](docs/features/AI_DETECTOR.md) | **AI Detector** — C2PA Content Credentials (official trust list, EKUs), verdict templates, privacy whitelist, details button, `/ai-check`, default-enabled module |
 | [docs/features/ALTGUARD.md](docs/features/ALTGUARD.md) | **AltGuard** — anti multi-account verification gate, consent, service contract, staff commands |
 | [docs/features/ANNOUNCEMENT_TRANSLATION.md](docs/features/ANNOUNCEMENT_TRANSLATION.md) | **Announcement translation** — support-server announcements translated once into every language, one flag button per language |
 | [docs/features/AUTOMOD.md](docs/features/AUTOMOD.md) | Automod — detection pipeline (+ `/config` panel, §0), nano decider, scalable features, **images (NSFW + scam screenshots)**, **Moddy team labeling queue**, rules + custom-infraction safety check, **infraction catalogue & per-type sanctions**, **custom infractions**, **member profiles** |
@@ -687,6 +702,8 @@ await bot.db.staff.get_permissions(user_id)
 Server features are implemented as modules in `modules/`:
 - Each module extends `ModuleBase`
 - Config is stored as JSONB in `guilds.data.modules.<module_id>`
+- Opt-in by default; `DEFAULT_ENABLED = True` makes a module run everywhere with
+  its defaults until a server pauses it (absent / `{}` config = defaults, active)
 - Config UI lives in `modules/configs/`
 - See → [docs/guides/MODULE_SYSTEM.md](docs/guides/MODULE_SYSTEM.md)
 

@@ -410,6 +410,20 @@
           "description": "要读取的图片"
         }
       }
+    },
+    "ai-check": {
+      "name": "ai检测",
+      "description": "检查图片是否由 AI 生成",
+      "parameters": {
+        "image": {
+          "name": "图片",
+          "description": "要检查的图片（PNG、JPEG 或 WebP）"
+        },
+        "message": {
+          "name": "消息",
+          "description": "此服务器中包含该图片的消息链接"
+        }
+      }
     }
   }
 }

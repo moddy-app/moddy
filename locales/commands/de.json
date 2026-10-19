@@ -410,6 +410,20 @@
           "description": "Das zu lesende Bild"
         }
       }
+    },
+    "ai-check": {
+      "name": "ki-prüfen",
+      "description": "Prüft, ob ein Bild von einer KI erzeugt wurde",
+      "parameters": {
+        "image": {
+          "name": "bild",
+          "description": "Das zu prüfende Bild (PNG, JPEG oder WebP)"
+        },
+        "message": {
+          "name": "nachricht",
+          "description": "Link zu einer Nachricht dieses Servers mit dem Bild"
+        }
+      }
     }
   }
 }

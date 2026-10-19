@@ -410,6 +410,20 @@
           "description": "De afbeelding om te lezen"
         }
       }
+    },
+    "ai-check": {
+      "name": "ai-controle",
+      "description": "Controleer of een afbeelding door AI is gemaakt",
+      "parameters": {
+        "image": {
+          "name": "afbeelding",
+          "description": "De te controleren afbeelding (PNG, JPEG of WebP)"
+        },
+        "message": {
+          "name": "bericht",
+          "description": "Link naar een bericht op deze server met de afbeelding"
+        }
+      }
     }
   }
 }

@@ -410,6 +410,20 @@
           "description": "읽을 이미지"
         }
       }
+    },
+    "ai-check": {
+      "name": "ai-확인",
+      "description": "이미지가 AI로 생성되었는지 확인합니다",
+      "parameters": {
+        "image": {
+          "name": "이미지",
+          "description": "확인할 이미지 (PNG, JPEG 또는 WebP)"
+        },
+        "message": {
+          "name": "메시지",
+          "description": "이미지가 포함된 이 서버 메시지의 링크"
+        }
+      }
     }
   }
 }

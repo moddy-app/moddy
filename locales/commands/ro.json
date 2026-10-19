@@ -410,6 +410,20 @@
           "description": "Imaginea de citit"
         }
       }
+    },
+    "ai-check": {
+      "name": "verificare-ia",
+      "description": "Verifică dacă o imagine a fost generată de IA",
+      "parameters": {
+        "image": {
+          "name": "imagine",
+          "description": "Imaginea de verificat (PNG, JPEG sau WebP)"
+        },
+        "message": {
+          "name": "mesaj",
+          "description": "Link către un mesaj de pe acest server cu imaginea"
+        }
+      }
     }
   }
 }

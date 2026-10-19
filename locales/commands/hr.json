@@ -410,6 +410,20 @@
           "description": "Slika za čitanje"
         }
       }
+    },
+    "ai-check": {
+      "name": "provjera-ai",
+      "description": "Provjerava je li slika generirana umjetnom inteligencijom",
+      "parameters": {
+        "image": {
+          "name": "slika",
+          "description": "Slika za provjeru (PNG, JPEG ili WebP)"
+        },
+        "message": {
+          "name": "poruka",
+          "description": "Poveznica na poruku s ovog poslužitelja sa slikom"
+        }
+      }
     }
   }
 }

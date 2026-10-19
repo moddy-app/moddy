@@ -248,6 +248,21 @@ class ModuleEvents(commands.Cog):
         except Exception as e:
             logger.error(f"Error in on_message (voice_transcription) for guild {message.guild.id}: {e}", exc_info=True)
 
+        try:
+            # AI Detector: answer images whose origin is C2PA-attested (or that
+            # carry unsigned generation parameters). Default-enabled module.
+            if message.attachments:
+                detector_module = await self.bot.module_manager.get_module_instance(
+                    message.guild.id,
+                    'ai_detector'
+                )
+
+                if detector_module and detector_module.enabled:
+                    await detector_module.on_message(message)
+
+        except Exception as e:
+            logger.error(f"Error in on_message (ai_detector) for guild {message.guild.id}: {e}", exc_info=True)
+
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction: discord.Reaction, user):
         """Cached-message reaction → feed the automod relationship graph (~0 cost).

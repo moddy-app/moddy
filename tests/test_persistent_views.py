@@ -114,6 +114,7 @@ def _dynamic_item_cases():
         LabelCategorySelect, LabelTermsButton, LabelVerdictButton,
     )
     from utils.transcription_views import TranscribeButton
+    from utils.ai_detector_views import AiDetectorDetailsButton
     from utils.appeal_views import (
         AppealNewButton, AppealClaimButton, AppealInviteButton,
         AppealDecisionButton, AppealAcceptChoiceButton,
@@ -158,6 +159,7 @@ def _dynamic_item_cases():
         (LabelCategorySelect, (_U,)),
         (LabelTermsButton, (_U,)),
         (TranscribeButton, (_SNOWFLAKE, _SNOWFLAKE2)),
+        (AiDetectorDetailsButton, (_SNOWFLAKE, _SNOWFLAKE2, _SNOWFLAKE)),
         (AppealNewButton, ("s", _U, _U)),
         (AppealClaimButton, (_U,)),
         (AppealInviteButton, (_U,)),

@@ -410,6 +410,20 @@
           "description": "पढ़ी जाने वाली छवि"
         }
       }
+    },
+    "ai-check": {
+      "name": "एआई-जांच",
+      "description": "जांचें कि कोई छवि एआई से बनी है या नहीं",
+      "parameters": {
+        "image": {
+          "name": "छवि",
+          "description": "जांचने के लिए छवि (PNG, JPEG या WebP)"
+        },
+        "message": {
+          "name": "संदेश",
+          "description": "इस सर्वर के उस संदेश का लिंक जिसमें छवि है"
+        }
+      }
     }
   }
 }

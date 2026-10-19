@@ -410,6 +410,20 @@
           "description": "Okunacak görsel"
         }
       }
+    },
+    "ai-check": {
+      "name": "yz-kontrol",
+      "description": "Bir görselin yapay zekâ ile üretilip üretilmediğini kontrol eder",
+      "parameters": {
+        "image": {
+          "name": "gorsel",
+          "description": "Kontrol edilecek görsel (PNG, JPEG veya WebP)"
+        },
+        "message": {
+          "name": "mesaj",
+          "description": "Bu sunucudaki görseli içeren mesajın bağlantısı"
+        }
+      }
     }
   }
 }

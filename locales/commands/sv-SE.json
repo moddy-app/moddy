@@ -410,6 +410,20 @@
           "description": "Bilden som ska läsas"
         }
       }
+    },
+    "ai-check": {
+      "name": "ai-kontroll",
+      "description": "Kontrollera om en bild har skapats av AI",
+      "parameters": {
+        "image": {
+          "name": "bild",
+          "description": "Bilden som ska kontrolleras (PNG, JPEG eller WebP)"
+        },
+        "message": {
+          "name": "meddelande",
+          "description": "Länk till ett meddelande på den här servern med bilden"
+        }
+      }
     }
   }
 }

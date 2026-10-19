@@ -317,6 +317,9 @@ async def build_manage_view(bot, guild_id: int, locale: str, module_id: str, *,
     if module_class is None:
         return None
     config = await bot.module_manager.get_module_config(guild_id, module_id)
+    if not config and getattr(module_class, "DEFAULT_ENABLED", False):
+        # Never saved, but running with its defaults: still manageable.
+        config = module_class(bot, guild_id).get_default_config()
     if not config:
         return None
     return ModuleManageView(module_id, module_class.stored_state(config), locale,

@@ -94,6 +94,7 @@ MANAGE_USER = "<:manageuser:1519798563880698066>"
 LEGAL = "<:legal:1519801263397539890>"
 MIC_OFF = "<:mic_off:1520555496665255936>"
 VOICE_CHAT = "<:voice_chat:1535700758601666672>"  # voice transcription module
+AI_SHIELD = "<:ai_shield:1561544570809098342>"  # AI detector module (C2PA) — no _dark twin yet
 CHECK = "<:check_100dp_FFFFFF_FILL1_wght700:1519751484517122088>"
 BANNER = "<:banner:1519792732716007634>"
 TEXT = "<:text:1519791921462120601>"
@@ -318,6 +319,7 @@ EMOJIS = {
     "translate": TRANSLATE,
     "webhook": WEBHOOK,
     "voice_chat": VOICE_CHAT,
+    "ai_shield": AI_SHIELD,
     # Status dots
     "green_status": GREEN_STATUS,
     "yellow_status": YELLOW_STATUS,

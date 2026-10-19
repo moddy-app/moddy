@@ -120,6 +120,13 @@ class ModuleBase(ABC):
     # (posted panels, feed subscriptions, scheduled reminders) unless
     # ``before_config_delete`` cleans them up.
     CONFIG_DELETABLE: bool = False
+    # True when the module runs in every guild that never saved a config for
+    # it, with ``get_default_config()`` (opt-out instead of opt-in). The guild
+    # can still pause it (generic state) or narrow it down in /config. An
+    # absent or empty stored config then means "defaults, active" everywhere:
+    # loading, /config statuses, the Manage panel and dashboard pushes. See
+    # docs/guides/MODULE_SYSTEM.md -> "3 quinquies. Modules actifs par défaut".
+    DEFAULT_ENABLED: bool = False
 
     def __init_subclass__(cls, **kwargs):
         """Wrap every subclass ``load_config`` so the generic state is applied
@@ -360,6 +367,30 @@ class ModuleManager:
         self.registered_modules: Dict[str, Type[ModuleBase]] = {}  # module_id -> Module class
         self.active_modules: Dict[int, Dict[str, ModuleBase]] = {}  # guild_id -> {module_id -> Module instance}
 
+    def effective_config(self, module_id: str,
+                         config: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+        """The config a module runs with: the stored one, or — for a
+        ``DEFAULT_ENABLED`` module never configured (absent or ``{}``) — its
+        defaults. None when the module is unknown or simply not configured."""
+        if config:
+            return config
+        module_class = self.registered_modules.get(module_id)
+        if module_class is not None and module_class.DEFAULT_ENABLED:
+            return module_class(self.bot, 0).get_default_config()
+        return config
+
+    async def _load_default_modules(self, guild_id: int) -> None:
+        """Instantiate every DEFAULT_ENABLED module the guild has no config for."""
+        loaded = self.active_modules.setdefault(guild_id, {})
+        for module_id, module_class in self.registered_modules.items():
+            if not module_class.DEFAULT_ENABLED or module_id in loaded:
+                continue
+            module_instance = module_class(self.bot, guild_id)
+            if await self._load_instance(module_instance, module_instance.get_default_config()):
+                loaded[module_id] = module_instance
+                if module_instance.enabled:
+                    await module_instance.enable()
+
     async def _load_instance(self, module: ModuleBase, config: Dict[str, Any]) -> bool:
         """``load_config`` + the generic state, the only way configs get loaded."""
         ok = await module.load_config(config)
@@ -474,6 +505,9 @@ class ModuleManager:
                 else:
                     logger.error(f"[FAIL] Failed to load module {module_id} for guild {guild_id}")
 
+            # Opt-out modules run with their defaults where nothing is stored.
+            await self._load_default_modules(guild_id)
+
             logger.info(f"Loaded {len(self.active_modules[guild_id])} modules for guild {guild_id}")
 
         except Exception as e:
@@ -543,7 +577,11 @@ class ModuleManager:
             return {"ok": False, "error": "config_unreadable"}
 
         # ``delete_module_config`` stores an empty object rather than removing the
-        # key, so an empty config *is* a deletion however the event labelled it.
+        # key, so an empty config *is* a deletion however the event labelled it —
+        # except for a default-enabled module, which goes back to its defaults.
+        if not config and self.registered_modules[module_id].DEFAULT_ENABLED:
+            config = self.effective_config(module_id, config)
+            action = EXTERNAL_UPDATED
         if not config:
             action = EXTERNAL_DELETED
 
@@ -702,6 +740,11 @@ class ModuleManager:
             return None  # fail open — a lookup error must not break /config
 
         if not global_sanctions.at_least(level, global_sanctions.GlobalLevel.LIMITED):
+            return None
+
+        # A default-enabled module already runs here: tuning it is not new.
+        module_class = self.registered_modules.get(module_id)
+        if module_class is not None and module_class.DEFAULT_ENABLED:
             return None
 
         # Already configured? Then it is not a new module — let it through.
@@ -865,6 +908,10 @@ class ModuleManager:
 
             logger.info(f"Configuration deleted for module {module_id} in guild {guild_id}")
 
+            # A default-enabled module is not gone, it is back to its defaults.
+            if guild_id in self.active_modules:
+                await self._load_default_modules(guild_id)
+
             # Its commands must disappear from the guild along with it.
             await self._sync_module_commands(guild_id, module_id)
             return True
@@ -893,7 +940,8 @@ class ModuleManager:
         module_class = self.registered_modules.get(module_id)
         if module_class is None:
             return None
-        config = await self.get_module_config(guild_id, module_id)
+        config = self.effective_config(
+            module_id, await self.get_module_config(guild_id, module_id))
         if not config:
             return None
         return module_class.stored_state(config)
@@ -914,6 +962,7 @@ class ModuleManager:
             for old_id, new_id in LEGACY_MODULE_IDS.items():
                 if not config and new_id == module_id:
                     config = stored.get(old_id)
+            config = self.effective_config(module_id, config)
             if config:
                 statuses[module_id] = module_class.stored_state(config)
         return statuses
@@ -937,7 +986,8 @@ class ModuleManager:
         if not self.bot.db:
             return False, "no_database"
         try:
-            config = await self.get_module_config(guild_id, module_id)
+            config = self.effective_config(
+                module_id, await self.get_module_config(guild_id, module_id))
             if not config:
                 return False, "not_configured"
 

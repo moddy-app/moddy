@@ -410,6 +410,20 @@
           "description": "Obraz do odczytania"
         }
       }
+    },
+    "ai-check": {
+      "name": "sprawdz-ai",
+      "description": "Sprawdź, czy obraz został wygenerowany przez AI",
+      "parameters": {
+        "image": {
+          "name": "obraz",
+          "description": "Obraz do sprawdzenia (PNG, JPEG lub WebP)"
+        },
+        "message": {
+          "name": "wiadomosc",
+          "description": "Link do wiadomości z tego serwera z obrazem"
+        }
+      }
     }
   }
 }

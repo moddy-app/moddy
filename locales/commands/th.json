@@ -410,6 +410,20 @@
           "description": "รูปภาพที่จะอ่าน"
         }
       }
+    },
+    "ai-check": {
+      "name": "ตรวจเอไอ",
+      "description": "ตรวจสอบว่าภาพสร้างโดย AI หรือไม่",
+      "parameters": {
+        "image": {
+          "name": "ภาพ",
+          "description": "ภาพที่ต้องการตรวจสอบ (PNG, JPEG หรือ WebP)"
+        },
+        "message": {
+          "name": "ข้อความ",
+          "description": "ลิงก์ข้อความในเซิร์ฟเวอร์นี้ที่มีภาพ"
+        }
+      }
     }
   }
 }

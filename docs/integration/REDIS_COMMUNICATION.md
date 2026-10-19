@@ -113,6 +113,7 @@ the event was produced: task queues, command/reply RPC, notification feeds.
 | `stats:hll:{metric}:{scope}:{id}:{day}` | Bot (`stats/service.py`) | HyperLogLog of distinct people per day, TTL 3 days. Never holds a list of ids — the daily rollup reads `PFCOUNT` and stores one number ([STATS.md](../infra/STATS.md)) |
 | `automod:avatar:{asset key}`, `automod:pseudo:{sha1}[:{indications digest}]`, `automod:pseudo:allow:{sha1}`, `automod:profile:allow:{guild}:{subject}`, `automod:profile:done:{guild}:{user}:{subject}`, `automod:profile:share:{guild}:{day}` | Bot (`services/automod_profile_service.py`, `automod_image_service.py`) | Automod member-profile caches (profile image verdicts 30 d, name verdicts 30 d), team/appeal allow markers (30 d / 90 d), idempotence markers (7 d / 24 h) and the per-guild daily SafeSearch share (2 d). Pure caches/counters, no other service reads them ([AUTOMOD_CONFIG.md §9](AUTOMOD_CONFIG.md)) |
 | `automod:budget:{guild}:{day}`, `automod:budget:cap:{guild}` | Bot (cap overridable by Backend) | Automod per-guild daily nano budget counter / soft-cap override ([AUTOMOD.md §5.3](../features/AUTOMOD.md)) |
+| `moddy:ai_detector:trust_list` | Bot (`services/ai_detector_service.py`) | Official C2PA trust list (PEM), `SET EX 86400`; shared by every bot process, re-downloaded by whichever process finds it expired ([AI_DETECTOR.md](../features/AI_DETECTOR.md)) |
 
 ---
 

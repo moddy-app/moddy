@@ -77,6 +77,8 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     from utils.transcription_views import TranscriptionPersistence
     from utils.brocoli_views import BrocoliDecisionPersistence
     from modules.configs.voice_transcription_config import VoiceTranscriptionConfigView
+    from modules.configs.ai_detector_config import AiDetectorConfigView
+    from utils.ai_detector_views import AiDetectorPersistence
     from modules.configs.bot_customization_config import BotCustomizationConfigView
     from modules.configs.altguard_config import AltGuardConfigView
     from modules.configs.logs_config import (
@@ -168,6 +170,12 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         # (dynamic item, public: anyone who sees the voice message may click)
         TranscriptionPersistence,
         BrocoliDecisionPersistence,
+        # Group 12c bis — /config AI detector panel (guild permission auth)
+        # and the "More information" button under each verdict card
+        # (dynamic item keyed by channel/message/attachment; public, the
+        # details are shown ephemerally to whoever clicks).
+        AiDetectorConfigView,
+        AiDetectorPersistence,
         # Group 12d — /config bot customization panel (guild permission auth;
         # its two modals are excluded like every other modal)
         BotCustomizationConfigView,
