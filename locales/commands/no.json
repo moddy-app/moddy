@@ -488,6 +488,48 @@
           "description": "HEX, rgb(), hsl(), CSS-navn, Discord-tall eller random"
         }
       }
+    },
+    "define": {
+      "name": "definer",
+      "description": "Slår opp et ord i Wiktionary",
+      "parameters": {
+        "word": {
+          "name": "ord",
+          "description": "Ordet eller uttrykket som skal slås opp"
+        },
+        "language": {
+          "name": "språk",
+          "description": "Wiktionarys språk (standard: ditt)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "Oppsummerer de siste meldingene i denne kanalen",
+      "parameters": {
+        "messages": {
+          "name": "meldinger",
+          "description": "Hvor mange siste meldinger som leses (standard: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "Tester et regulært uttrykk på en tekst"
+    },
+    "diff": {
+      "name": "sammenlign",
+      "description": "Sammenligner to tekster og viser hva som er endret"
+    },
+    "textstats": {
+      "name": "tekststatistikk",
+      "description": "Teller ord og måler lesetid og lesbarhet",
+      "parameters": {
+        "text": {
+          "name": "tekst",
+          "description": "Teksten som skal analyseres (la stå tom for å åpne et skjema)"
+        }
+      }
     }
   },
   "choices": {

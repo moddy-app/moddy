@@ -488,6 +488,48 @@
           "description": "HEX, rgb(), hsl(), CSS pavadinimas, Discord skaičius arba random"
         }
       }
+    },
+    "define": {
+      "name": "apibrėžimas",
+      "description": "Ieško žodžio Vikižodyne",
+      "parameters": {
+        "word": {
+          "name": "žodis",
+          "description": "Ieškomas žodis ar posakis"
+        },
+        "language": {
+          "name": "kalba",
+          "description": "Vikižodyno kalba (numatytoji: tavo)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "Apibendrina naujausias šio kanalo žinutes",
+      "parameters": {
+        "messages": {
+          "name": "žinutės",
+          "description": "Kiek naujausių žinučių perskaityti (numatyta: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "Išbando reguliarųjį reiškinį tekste"
+    },
+    "diff": {
+      "name": "palyginti",
+      "description": "Palygina du tekstus ir parodo, kas pasikeitė"
+    },
+    "textstats": {
+      "name": "teksto-statistika",
+      "description": "Suskaičiuoja žodžius, išmatuoja skaitymo laiką ir skaitomumą",
+      "parameters": {
+        "text": {
+          "name": "tekstas",
+          "description": "Analizuojamas tekstas (palik tuščią, kad atsidarytų forma)"
+        }
+      }
     }
   },
   "choices": {

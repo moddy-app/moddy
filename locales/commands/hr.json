@@ -488,6 +488,48 @@
           "description": "HEX, rgb(), hsl(), CSS naziv, Discord broj ili random"
         }
       }
+    },
+    "define": {
+      "name": "definicija",
+      "description": "Traži riječ u Wječniku",
+      "parameters": {
+        "word": {
+          "name": "riječ",
+          "description": "Riječ ili izraz koji se traži"
+        },
+        "language": {
+          "name": "jezik",
+          "description": "Jezik Wječnika (zadano: tvoj)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "Sažima najnovije poruke u ovom kanalu",
+      "parameters": {
+        "messages": {
+          "name": "poruke",
+          "description": "Koliko nedavnih poruka pročitati (zadano: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "Testira regularni izraz na tekstu"
+    },
+    "diff": {
+      "name": "usporedi",
+      "description": "Uspoređuje dva teksta i prikazuje što se promijenilo"
+    },
+    "textstats": {
+      "name": "statistika-teksta",
+      "description": "Broji riječi te mjeri vrijeme čitanja i čitljivost",
+      "parameters": {
+        "text": {
+          "name": "tekst",
+          "description": "Tekst za analizu (ostavi prazno za otvaranje obrasca)"
+        }
+      }
     }
   },
   "choices": {

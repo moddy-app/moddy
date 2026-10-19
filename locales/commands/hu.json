@@ -488,6 +488,48 @@
           "description": "HEX, rgb(), hsl(), CSS-név, Discord-szám vagy random"
         }
       }
+    },
+    "define": {
+      "name": "meghatározás",
+      "description": "Szót keres a Wikiszótárban",
+      "parameters": {
+        "word": {
+          "name": "szó",
+          "description": "A keresett szó vagy kifejezés"
+        },
+        "language": {
+          "name": "nyelv",
+          "description": "A Wikiszótár nyelve (alapértelmezett: a tiéd)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "Összefoglalja a csatorna legutóbbi üzeneteit",
+      "parameters": {
+        "messages": {
+          "name": "üzenetek",
+          "description": "Hány legutóbbi üzenetet olvasson el (alapértelmezett: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "Reguláris kifejezést tesztel egy szövegen"
+    },
+    "diff": {
+      "name": "összehasonlítás",
+      "description": "Összehasonlít két szöveget, és megmutatja a változásokat"
+    },
+    "textstats": {
+      "name": "szövegstatisztika",
+      "description": "Megszámolja a szavakat, méri az olvasási időt és az olvashatóságot",
+      "parameters": {
+        "text": {
+          "name": "szöveg",
+          "description": "Az elemzendő szöveg (hagyd üresen az űrlap megnyitásához)"
+        }
+      }
     }
   },
   "choices": {

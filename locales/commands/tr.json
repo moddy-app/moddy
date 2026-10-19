@@ -488,6 +488,48 @@
           "description": "HEX, rgb(), hsl(), CSS adı, Discord sayısı veya random"
         }
       }
+    },
+    "define": {
+      "name": "tanım",
+      "description": "Vikisözlük'te bir sözcük arar",
+      "parameters": {
+        "word": {
+          "name": "sözcük",
+          "description": "Aranacak sözcük veya ifade"
+        },
+        "language": {
+          "name": "dil",
+          "description": "Vikisözlük dili (varsayılan: seninki)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "Bu kanalın son mesajlarını özetler",
+      "parameters": {
+        "messages": {
+          "name": "mesajlar",
+          "description": "Okunacak son mesaj sayısı (varsayılan: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "Bir metin üzerinde düzenli ifade dener"
+    },
+    "diff": {
+      "name": "karşılaştır",
+      "description": "İki metni karşılaştırıp değişenleri gösterir"
+    },
+    "textstats": {
+      "name": "metin-istatistikleri",
+      "description": "Sözcükleri sayar, okuma süresini ve okunabilirliği ölçer",
+      "parameters": {
+        "text": {
+          "name": "metin",
+          "description": "Çözümlenecek metin (form açmak için boş bırak)"
+        }
+      }
     }
   },
   "choices": {

@@ -488,6 +488,48 @@
           "description": "HEX, rgb(), hsl(), ชื่อ CSS, เลข Discord หรือ random"
         }
       }
+    },
+    "define": {
+      "name": "ความหมาย",
+      "description": "ค้นหาคำใน Wiktionary",
+      "parameters": {
+        "word": {
+          "name": "คำ",
+          "description": "คำหรือวลีที่ต้องการค้นหา"
+        },
+        "language": {
+          "name": "ภาษา",
+          "description": "ภาษาของ Wiktionary (ค่าเริ่มต้น: ภาษาของคุณ)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "สรุปข้อความล่าสุดของช่องนี้",
+      "parameters": {
+        "messages": {
+          "name": "ข้อความ",
+          "description": "จำนวนข้อความล่าสุดที่จะอ่าน (ค่าเริ่มต้น: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "ทดสอบนิพจน์ปกติกับข้อความ"
+    },
+    "diff": {
+      "name": "เปรียบเทียบ",
+      "description": "เปรียบเทียบสองข้อความและแสดงสิ่งที่เปลี่ยนไป"
+    },
+    "textstats": {
+      "name": "สถิติข้อความ",
+      "description": "นับคำ วัดเวลาอ่านและความอ่านง่าย",
+      "parameters": {
+        "text": {
+          "name": "ข้อความ",
+          "description": "ข้อความที่จะวิเคราะห์ (เว้นว่างเพื่อเปิดแบบฟอร์ม)"
+        }
+      }
     }
   },
   "choices": {

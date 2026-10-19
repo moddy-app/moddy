@@ -488,6 +488,48 @@
           "description": "HEX, rgb(), hsl(), CSS-Name, Discord-Zahl oder random"
         }
       }
+    },
+    "define": {
+      "name": "definition",
+      "description": "Schlägt ein Wort im Wiktionary nach",
+      "parameters": {
+        "word": {
+          "name": "wort",
+          "description": "Das gesuchte Wort oder der Ausdruck"
+        },
+        "language": {
+          "name": "sprache",
+          "description": "Sprache des Wiktionary (Standard: deine)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "Fasst die letzten Nachrichten dieses Kanals zusammen",
+      "parameters": {
+        "messages": {
+          "name": "nachrichten",
+          "description": "Wie viele aktuelle Nachrichten gelesen werden (Standard: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "Testet einen regulären Ausdruck auf einem Text"
+    },
+    "diff": {
+      "name": "vergleich",
+      "description": "Vergleicht zwei Texte und zeigt, was sich geändert hat"
+    },
+    "textstats": {
+      "name": "textstatistik",
+      "description": "Zählt Wörter und misst Lesezeit und Lesbarkeit",
+      "parameters": {
+        "text": {
+          "name": "text",
+          "description": "Der zu analysierende Text (leer lassen, um ein Formular zu öffnen)"
+        }
+      }
     }
   },
   "choices": {

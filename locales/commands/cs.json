@@ -488,6 +488,48 @@
           "description": "HEX, rgb(), hsl(), název CSS, číslo Discordu nebo random"
         }
       }
+    },
+    "define": {
+      "name": "definice",
+      "description": "Vyhledá slovo ve Wikislovníku",
+      "parameters": {
+        "word": {
+          "name": "slovo",
+          "description": "Slovo nebo výraz k vyhledání"
+        },
+        "language": {
+          "name": "jazyk",
+          "description": "Jazyk Wikislovníku (výchozí: tvůj)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "Shrne poslední zprávy v tomto kanálu",
+      "parameters": {
+        "messages": {
+          "name": "zprávy",
+          "description": "Kolik posledních zpráv přečíst (výchozí: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "Otestuje regulární výraz na textu"
+    },
+    "diff": {
+      "name": "porovnat",
+      "description": "Porovná dva texty a ukáže, co se změnilo"
+    },
+    "textstats": {
+      "name": "statistiky-textu",
+      "description": "Spočítá slova a změří dobu čtení a čitelnost",
+      "parameters": {
+        "text": {
+          "name": "text",
+          "description": "Text k analýze (nech prázdné pro otevření formuláře)"
+        }
+      }
     }
   },
   "choices": {

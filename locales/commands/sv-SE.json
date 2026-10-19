@@ -488,6 +488,48 @@
           "description": "HEX, rgb(), hsl(), CSS-namn, Discord-tal eller random"
         }
       }
+    },
+    "define": {
+      "name": "definiera",
+      "description": "Slår upp ett ord i Wiktionary",
+      "parameters": {
+        "word": {
+          "name": "ord",
+          "description": "Ordet eller uttrycket att slå upp"
+        },
+        "language": {
+          "name": "språk",
+          "description": "Wiktionarys språk (standard: ditt)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "Sammanfattar de senaste meddelandena i den här kanalen",
+      "parameters": {
+        "messages": {
+          "name": "meddelanden",
+          "description": "Hur många senaste meddelanden som läses (standard: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "Testar ett reguljärt uttryck på en text"
+    },
+    "diff": {
+      "name": "jämför",
+      "description": "Jämför två texter och visar vad som ändrats"
+    },
+    "textstats": {
+      "name": "textstatistik",
+      "description": "Räknar ord och mäter lästid och läsbarhet",
+      "parameters": {
+        "text": {
+          "name": "text",
+          "description": "Texten som ska analyseras (lämna tomt för att öppna ett formulär)"
+        }
+      }
     }
   },
   "choices": {

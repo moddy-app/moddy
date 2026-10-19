@@ -488,6 +488,48 @@
           "description": "HEX、rgb()、hsl()、CSS 名称、Discord 数字或 random"
         }
       }
+    },
+    "define": {
+      "name": "定义",
+      "description": "在维基词典中查词",
+      "parameters": {
+        "word": {
+          "name": "单词",
+          "description": "要查询的单词或表达"
+        },
+        "language": {
+          "name": "语言",
+          "description": "维基词典语言（默认：你的语言）"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "总结此频道的最新消息",
+      "parameters": {
+        "messages": {
+          "name": "消息数",
+          "description": "要读取的最近消息数（默认：50）"
+        }
+      }
+    },
+    "regex": {
+      "name": "正则",
+      "description": "在文本上测试正则表达式"
+    },
+    "diff": {
+      "name": "对比",
+      "description": "比较两段文本并显示改动"
+    },
+    "textstats": {
+      "name": "文本统计",
+      "description": "统计字数，并衡量阅读时间和可读性",
+      "parameters": {
+        "text": {
+          "name": "文本",
+          "description": "要分析的文本（留空则打开表单）"
+        }
+      }
     }
   },
   "choices": {

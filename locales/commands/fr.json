@@ -488,6 +488,48 @@
           "description": "HEX, rgb(), hsl(), nom CSS, nombre Discord ou random"
         }
       }
+    },
+    "define": {
+      "name": "dico",
+      "description": "Cherche un mot dans le Wiktionnaire",
+      "parameters": {
+        "word": {
+          "name": "mot",
+          "description": "Le mot ou l'expression à chercher"
+        },
+        "language": {
+          "name": "langue",
+          "description": "Langue du Wiktionnaire (par défaut : la tienne)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "Résume les derniers messages de ce salon",
+      "parameters": {
+        "messages": {
+          "name": "messages",
+          "description": "Nombre de messages récents à lire (par défaut : 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "Teste une expression régulière sur un texte"
+    },
+    "diff": {
+      "name": "diff",
+      "description": "Compare deux textes et montre ce qui a changé"
+    },
+    "textstats": {
+      "name": "stats-texte",
+      "description": "Compte les mots, mesure le temps de lecture et la lisibilité",
+      "parameters": {
+        "text": {
+          "name": "texte",
+          "description": "Le texte à analyser (laisse vide pour ouvrir un formulaire)"
+        }
+      }
     }
   },
   "choices": {

@@ -488,6 +488,48 @@
           "description": "HEX, rgb(), hsl(), CSS name, Discord number or random"
         }
       }
+    },
+    "define": {
+      "name": "define",
+      "description": "Look a word up in Wiktionary",
+      "parameters": {
+        "word": {
+          "name": "word",
+          "description": "The word or expression to look up"
+        },
+        "language": {
+          "name": "language",
+          "description": "Wiktionary language (default: yours)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "Summarise the latest messages of this channel",
+      "parameters": {
+        "messages": {
+          "name": "messages",
+          "description": "How many recent messages to read (default: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "Test a regular expression on a text"
+    },
+    "diff": {
+      "name": "diff",
+      "description": "Compare two texts and show what changed"
+    },
+    "textstats": {
+      "name": "textstats",
+      "description": "Count words and measure reading time and readability",
+      "parameters": {
+        "text": {
+          "name": "text",
+          "description": "The text to analyse (leave empty to open a form)"
+        }
+      }
     }
   },
   "choices": {

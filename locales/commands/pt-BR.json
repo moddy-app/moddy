@@ -488,6 +488,48 @@
           "description": "HEX, rgb(), hsl(), nome CSS, número do Discord ou random"
         }
       }
+    },
+    "define": {
+      "name": "definir",
+      "description": "Procura uma palavra no Wikcionário",
+      "parameters": {
+        "word": {
+          "name": "palavra",
+          "description": "A palavra ou expressão a procurar"
+        },
+        "language": {
+          "name": "idioma",
+          "description": "Idioma do Wikcionário (padrão: o seu)"
+        }
+      }
+    },
+    "tldr": {
+      "name": "tldr",
+      "description": "Resume as últimas mensagens deste canal",
+      "parameters": {
+        "messages": {
+          "name": "mensagens",
+          "description": "Quantas mensagens recentes ler (padrão: 50)"
+        }
+      }
+    },
+    "regex": {
+      "name": "regex",
+      "description": "Testa uma expressão regular em um texto"
+    },
+    "diff": {
+      "name": "comparar",
+      "description": "Compara dois textos e mostra o que mudou"
+    },
+    "textstats": {
+      "name": "estatisticas-texto",
+      "description": "Conta palavras e mede o tempo de leitura e a legibilidade",
+      "parameters": {
+        "text": {
+          "name": "texto",
+          "description": "O texto a analisar (deixe vazio para abrir um formulário)"
+        }
+      }
     }
   },
   "choices": {
