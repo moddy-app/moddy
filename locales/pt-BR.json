@@ -3941,6 +3941,37 @@
           "placeholder": "Nenhum canal ignorado"
         }
       }
+    },
+    "music_links": {
+      "name": "Links de música",
+      "description": "Adiciona Deezer, Apple Music e YouTube Music sob os links do Spotify",
+      "config": {
+        "title": "Links de música",
+        "description": "Quando alguém posta um link do Spotify, o Moddy responde discretamente com a mesma música em outras plataformas. Ele só responde quando encontra a mesma música. Ativado por padrão em todos os servidores: você pode pausá-lo em **Gerenciar**.",
+        "platforms": {
+          "section_title": "Plataformas oferecidas",
+          "section_description": "Marque as plataformas exibidas sob os links do Spotify",
+          "placeholder": "Nenhuma plataforma",
+          "deezer_description": "Link direto para a música",
+          "apple_music_description": "Link direto para a música",
+          "youtube_music_description": "Link de busca, não a música exata"
+        },
+        "channels": {
+          "section_title": "Canais ignorados",
+          "section_description": "O Moddy nunca responde nesses canais (nem nos tópicos deles)",
+          "placeholder": "Nenhum canal ignorado"
+        }
+      },
+      "platforms": {
+        "spotify": "Spotify",
+        "deezer": "Deezer",
+        "apple_music": "Apple Music",
+        "youtube_music": "YouTube Music"
+      },
+      "reply": {
+        "artist_tag": "artista",
+        "album_tag": "álbum"
+      }
     }
   },
   "languages": {
@@ -5678,6 +5709,25 @@
         "empty": "Informe uma cor.",
         "invalid": "Não reconheço essa cor. Tente {examples}.",
         "out_of_range": "Uma cor do Discord é um número de `0` a `16777215`."
+      }
+    },
+    "music": {
+      "title": {
+        "track": "Música",
+        "album": "Álbum",
+        "artist": "Artista"
+      },
+      "fields": {
+        "album": "Álbum",
+        "year": "Ano",
+        "duration": "Duração"
+      },
+      "no_match": "Não encontrei esta faixa no Deezer nem no Apple Music. O botão do YouTube Music abre uma busca.",
+      "errors": {
+        "not_spotify": "Isto não é um link do Spotify. Cole o link de uma música, de um álbum ou de um artista.",
+        "unsupported": "Playlists, episódios e podcasts não têm equivalente em outras plataformas. Tente uma música, um álbum ou um artista.",
+        "not_found": "Este link do Spotify não leva a lugar nenhum. Confira se está completo.",
+        "unavailable": "Não consigo ler a página do Spotify agora. Tente novamente em instantes."
       }
     }
   }

@@ -3941,6 +3941,37 @@
           "placeholder": "Ningún canal ignorado"
         }
       }
+    },
+    "music_links": {
+      "name": "Enlaces de música",
+      "description": "Añade Deezer, Apple Music y YouTube Music bajo los enlaces de Spotify",
+      "config": {
+        "title": "Enlaces de música",
+        "description": "Cuando alguien publica un enlace de Spotify, Moddy responde con discreción con la misma canción en otras plataformas. Solo responde si ha encontrado la misma canción. Activado por defecto en todos los servidores: puedes pausarlo desde **Gestionar**.",
+        "platforms": {
+          "section_title": "Plataformas ofrecidas",
+          "section_description": "Marca las plataformas que se muestran bajo los enlaces de Spotify",
+          "placeholder": "Ninguna plataforma",
+          "deezer_description": "Enlace directo a la canción",
+          "apple_music_description": "Enlace directo a la canción",
+          "youtube_music_description": "Enlace de búsqueda, no la canción exacta"
+        },
+        "channels": {
+          "section_title": "Canales ignorados",
+          "section_description": "Moddy nunca responde en estos canales (ni en sus hilos)",
+          "placeholder": "Ningún canal ignorado"
+        }
+      },
+      "platforms": {
+        "spotify": "Spotify",
+        "deezer": "Deezer",
+        "apple_music": "Apple Music",
+        "youtube_music": "YouTube Music"
+      },
+      "reply": {
+        "artist_tag": "artista",
+        "album_tag": "álbum"
+      }
     }
   },
   "languages": {
@@ -5678,6 +5709,25 @@
         "empty": "Indica un color.",
         "invalid": "No reconozco ese color. Prueba {examples}.",
         "out_of_range": "Un color de Discord es un número de `0` a `16777215`."
+      }
+    },
+    "music": {
+      "title": {
+        "track": "Canción",
+        "album": "Álbum",
+        "artist": "Artista"
+      },
+      "fields": {
+        "album": "Álbum",
+        "year": "Año",
+        "duration": "Duración"
+      },
+      "no_match": "No he encontrado este tema en Deezer ni en Apple Music. El botón de YouTube Music abre una búsqueda.",
+      "errors": {
+        "not_spotify": "Esto no es un enlace de Spotify. Pega el enlace de una canción, un álbum o un artista.",
+        "unsupported": "Las listas, los episodios y los pódcast no tienen equivalente en otras plataformas. Prueba con una canción, un álbum o un artista.",
+        "not_found": "Este enlace de Spotify no lleva a ningún sitio. Comprueba que esté completo.",
+        "unavailable": "No puedo leer la página de Spotify ahora mismo. Inténtalo de nuevo en un momento."
       }
     }
   }

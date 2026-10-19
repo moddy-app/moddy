@@ -3941,6 +3941,37 @@
           "placeholder": "Kein ignorierter Kanal"
         }
       }
+    },
+    "music_links": {
+      "name": "Musik-Links",
+      "description": "Fügt Deezer, Apple Music und YouTube Music unter Spotify-Links hinzu",
+      "config": {
+        "title": "Musik-Links",
+        "description": "Wenn jemand einen Spotify-Link postet, antwortet Moddy dezent mit demselben Song auf anderen Plattformen. Moddy antwortet nur, wenn er denselben Song gefunden hat. Standardmäßig auf jedem Server aktiv: Du kannst es unter **Verwalten** pausieren.",
+        "platforms": {
+          "section_title": "Angebotene Plattformen",
+          "section_description": "Wähle die Plattformen, die unter Spotify-Links angezeigt werden",
+          "placeholder": "Keine Plattform",
+          "deezer_description": "Direkter Link zum Song",
+          "apple_music_description": "Direkter Link zum Song",
+          "youtube_music_description": "Suchlink, nicht der genaue Song"
+        },
+        "channels": {
+          "section_title": "Ignorierte Kanäle",
+          "section_description": "Moddy antwortet in diesen Kanälen nie (auch nicht in deren Threads)",
+          "placeholder": "Kein ignorierter Kanal"
+        }
+      },
+      "platforms": {
+        "spotify": "Spotify",
+        "deezer": "Deezer",
+        "apple_music": "Apple Music",
+        "youtube_music": "YouTube Music"
+      },
+      "reply": {
+        "artist_tag": "Künstler",
+        "album_tag": "Album"
+      }
     }
   },
   "languages": {
@@ -5678,6 +5709,25 @@
         "empty": "Gib eine Farbe an.",
         "invalid": "Diese Farbe kenne ich nicht. Probier {examples}.",
         "out_of_range": "Eine Discord-Farbe ist eine Zahl von `0` bis `16777215`."
+      }
+    },
+    "music": {
+      "title": {
+        "track": "Song",
+        "album": "Album",
+        "artist": "Künstler"
+      },
+      "fields": {
+        "album": "Album",
+        "year": "Jahr",
+        "duration": "Dauer"
+      },
+      "no_match": "Ich habe diesen Titel weder auf Deezer noch auf Apple Music gefunden. Der YouTube-Music-Button öffnet eine Suche.",
+      "errors": {
+        "not_spotify": "Das ist kein Spotify-Link. Füge den Link eines Songs, eines Albums oder eines Künstlers ein.",
+        "unsupported": "Playlists, Episoden und Podcasts haben auf anderen Plattformen kein Gegenstück. Probiere einen Song, ein Album oder einen Künstler.",
+        "not_found": "Dieser Spotify-Link führt ins Leere. Prüfe, ob er vollständig ist.",
+        "unavailable": "Ich kann die Spotify-Seite gerade nicht lesen. Versuche es gleich noch einmal."
       }
     }
   }
