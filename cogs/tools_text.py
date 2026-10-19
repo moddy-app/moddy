@@ -254,7 +254,7 @@ class ToolsText(commands.Cog):
 
     async def _summarise(self, interaction: discord.Interaction, history: List[discord.Message],
                          locale: str, *, strip: bool) -> str:
-        from gateway import QuotaTarget
+        from gateway.spec import QuotaTarget
         from gateway.errors import GatewayError, QuotaExceededError
 
         transcript, urls = format_history(history)
