@@ -1,6 +1,6 @@
 """
 Music links service (``bot.music_links``) — a Spotify link in, the same song on
-other platforms out. Shared by the ``music_links`` module and ``/music link``.
+other platforms out. Shared by the ``music_links`` module and ``/music``.
 
 The Odesli / song.link public API is dead (``401 PUBLIC_API_ACCESS_DEPRECATED``)
 and the Spotify Web API is closed to new apps, so the resolution is home-made

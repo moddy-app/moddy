@@ -183,7 +183,7 @@ status page buttons), `LINK` (/link-check), `IMAGE` (/image), `TRANSLATE`
 `TOKEN` (/jwt), `GPP_MAYBE` (/pwned), `MONITOR_HEART` (/status), `BUSINESS`
 (/company), `DNS`, `ACCOUNT_TREE` (/subdomains), `ALT_ROUTE` (redirect chain),
 `PERSON_SEARCH` (/username), `ASPECT_RATIO`, `COMPRESS`, `TRANSFORM`,
-`AUTO_FIX_HIGH` (/image, /convert), `FRAME_INSPECT`, `LOCATION_ON` (/exif),
+`AUTO_FIX_HIGH` (/image, /convert), `FRAME_INSPECT`, `LOCATION_ON`, `OPENSTREETMAP` (unused since `/exif` was removed),
 `IMAGE_SEARCH`, `MOVIE` (/sauce), `MUSIC_NOTE` (/music + module).
 
 **/status dots** (coloured, no twin): `STATUS_OK` (`check_circle`),

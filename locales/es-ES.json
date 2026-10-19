@@ -5649,8 +5649,7 @@
         "scanned_by": "Analizado por {source}",
         "converted_by": "Convertido por {source}",
         "summarized_by": "Resumido por {source}",
-        "found_by": "Encontrado por {source}",
-        "computed_locally": "Calculado por el propio Moddy, no se envía nada a otro sitio"
+        "found_by": "Encontrado por {source}"
       },
       "error_title": "No es posible ahora mismo",
       "errors": {
@@ -5779,12 +5778,16 @@
       "closest": "Nombre CSS más cercano",
       "exact": "Nombre CSS",
       "alpha_note": "La transparencia ({alpha}) se ignora: el color se muestra opaco.",
-      "contrast_title": "Contraste (WCAG 2.x)",
-      "contrast_dark": "Como texto sobre Discord oscuro",
-      "contrast_light": "Como texto sobre Discord claro",
-      "contrast_white": "Bajo texto blanco",
-      "contrast_black": "Bajo texto negro",
-      "levels": "AA {aa} · AAA {aaa} · texto grande AA {aa_large} · AAA {aaa_large}",
+      "readability_title": "Legibilidad del texto",
+      "readability_line": "**{text}** · {verdict} ({ratio})",
+      "text_black": "Texto negro",
+      "text_white": "Texto blanco",
+      "readability": {
+        "excellent": "Excelente",
+        "good": "Legible",
+        "weak": "Difícil de leer",
+        "poor": "Ilegible"
+      },
       "random_button": "Color aleatorio",
       "errors": {
         "empty": "Indica un color.",
@@ -5811,110 +5814,6 @@
         "unavailable": "No puedo leer la página de Spotify ahora mismo. Inténtalo de nuevo en un momento."
       }
     },
-    "exif": {
-      "title": "Metadatos del archivo",
-      "loading": "Leyendo el archivo…",
-      "yes": "Sí",
-      "no": "No",
-      "all_tags": "Todas las etiquetas",
-      "open_map": "Abrir en OpenStreetMap",
-      "raw_sent": "Aquí tienes todas las etiquetas encontradas en el archivo.",
-      "more_hidden": "{count} etiqueta(s) más sin mostrar. Usa **Todas las etiquetas** para verlo todo.",
-      "nothing_title": "No se ha encontrado nada",
-      "nothing_body": "Este archivo no contiene metadatos legibles.",
-      "nothing_body_image": "No hay metadatos en esta imagen. Es habitual: Discord suele quitarlos al enviar una imagen, pero no siempre, y algunos archivos nunca los tuvieron.",
-      "hints": {
-        "location": "**Este archivo contiene una posición GPS.** Quítala antes de compartir el original.",
-        "person": "También contiene un nombre (autor, propietario…).",
-        "ai": "Indica haber sido creado o retocado con IA.",
-        "c2pa": "Contiene Content Credentials (C2PA): `/verificar-ia` puede comprobarlas."
-      },
-      "error_title": "No se puede leer este archivo",
-      "errors": {
-        "unsupported": "Este tipo de archivo no es compatible. Prueba con una imagen, un PDF, un documento Office o un archivo de audio o vídeo.",
-        "unreadable": "Este archivo parece dañado o vacío, así que no se ha podido leer nada.",
-        "download": "Discord no me ha dejado descargar este archivo. Envíalo de nuevo e inténtalo otra vez.",
-        "timeout": "La descarga del archivo ha tardado demasiado. Inténtalo de nuevo en un momento."
-      },
-      "fields": {
-        "coordinates": "Coordenadas",
-        "altitude": "Altitud",
-        "place": "Lugar",
-        "author": "Autor",
-        "last_modified_by": "Última modificación por",
-        "company": "Empresa",
-        "owner": "Propietario",
-        "artist": "Artista",
-        "copyright": "Derechos de autor",
-        "make": "Marca",
-        "model": "Modelo",
-        "lens": "Objetivo",
-        "serial": "Número de serie",
-        "exposure": "Exposición",
-        "aperture": "Apertura",
-        "iso": "ISO",
-        "focal_length": "Distancia focal",
-        "focal_length_35": "Distancia focal (equiv. 35 mm)",
-        "taken": "Tomada el",
-        "digitized": "Digitalizada el",
-        "modified": "Modificada el",
-        "created": "Creada el",
-        "printed": "Impresa el",
-        "software": "Software",
-        "creator_tool": "Creado con",
-        "producer": "Productor",
-        "generator": "Generador",
-        "edit_history": "Historial de edición",
-        "digital_source": "Fuente digital",
-        "application": "Aplicación",
-        "revision": "Revisión",
-        "edit_time": "Tiempo de edición",
-        "title": "Título",
-        "subject": "Asunto",
-        "keywords": "Palabras clave",
-        "description": "Descripción",
-        "comment": "Comentario",
-        "pages": "Páginas",
-        "words": "Palabras",
-        "encrypted": "Cifrado",
-        "version": "Versión",
-        "album": "Álbum",
-        "track": "Pista",
-        "year": "Año",
-        "genre": "Género",
-        "duration": "Duración",
-        "bitrate": "Tasa de bits",
-        "sample_rate": "Frecuencia de muestreo",
-        "channels": "Canales",
-        "encoder": "Codificador",
-        "cover": "Carátula",
-        "codec": "Códec",
-        "dimensions": "Dimensiones",
-        "dpi": "Resolución (DPI)",
-        "orientation": "Orientación",
-        "color_profile": "Perfil de color",
-        "frames": "Fotogramas",
-        "format": "Formato"
-      },
-      "groups": {
-        "author": "Autor",
-        "location": "Ubicación",
-        "camera": "Cámara",
-        "capture": "Toma",
-        "dates": "Fechas",
-        "software": "Software",
-        "document": "Documento",
-        "media": "Audio / vídeo",
-        "image": "Imagen"
-      },
-      "kinds": {
-        "image": "Imagen",
-        "pdf": "Documento PDF",
-        "office": "Documento Office",
-        "audio": "Audio",
-        "video": "Vídeo"
-      }
-    },
     "sauce": {
       "title": "Origen de la imagen",
       "loading": "Buscando el origen…",
@@ -5927,6 +5826,7 @@
       "also_title": "También encontrado",
       "nothing_title": "No se ha encontrado un origen fiable",
       "nothing_body": "Ningún resultado es lo bastante parecido. Prueba con una versión sin recortar y de mayor calidad, o busca a mano con los botones de abajo.",
+      "nothing_body_anime_only": "Esta vez solo se pudieron reconocer capturas de anime, no ilustraciones ni fotos. Prueba los botones de búsqueda de abajo.",
       "partial": "{providers} no respondió: el resultado puede estar incompleto.",
       "confidence": {
         "high": "muy probable",
@@ -6047,21 +5947,12 @@
       "error_title": "No se pudo comparar",
       "title": "Comparación de textos",
       "modal_title": "Comparar dos textos",
-      "modal_help": "Pega los dos textos y elige cómo compararlos.",
+      "modal_help": "Pega los dos textos que quieres comparar.",
       "before_label": "Antes",
       "after_label": "Después",
-      "mode_label": "Comparar por",
-      "mode": {
-        "lines": "Línea",
-        "words": "Palabra"
-      },
-      "mode_hint": {
-        "lines": "Un diff rojo / verde, como en Git",
-        "words": "Palabras tachadas y en negrita"
-      },
       "identical": "Los dos textos son idénticos.",
       "changes": "Cambios",
-      "legend_words": "Las palabras ~~tachadas~~ se eliminaron, las palabras en **negrita** se añadieron.",
+      "legend": "Las líneas en rojo (`-`) se eliminaron, las líneas en verde (`+`) se añadieron.",
       "truncated": "Se adjunta la comparación completa.",
       "errors": {
         "empty_input": "Indica al menos uno de los dos textos."
@@ -6396,6 +6287,7 @@
       "wildcards": "{count} comodines (*.)",
       "none": "Ningún subdominio aparece en los certificados públicos.",
       "truncated": "Solo se conservan los primeros {shown} de {total} nombres.",
+      "fallback": "crt.sh no respondió, así que esta lista viene de {source} y puede ser más corta.",
       "hint": "Solo se listan los nombres que aparecieron en un certificado público: faltan los subdominios privados o sin cifrado.",
       "export_message": "{count} subdominios, uno por línea.",
       "errors": {
@@ -6406,7 +6298,6 @@
     },
     "linkcheck": {
       "title": "Verificación de enlace",
-      "multi_title": "Enlaces de este mensaje",
       "following": "Siguiendo las redirecciones…",
       "verdict": {
         "safe": "Ninguna amenaza detectada",
@@ -6479,14 +6370,10 @@
         "shortener": "El enlace pasa por un acortador",
         "many_redirects": "{count} redirecciones seguidas"
       },
-      "multi_redirects": "{count} redirección(es) desde {host}",
-      "multi_skipped": "{count} enlace(s) sin examinar.",
-      "multi_hint": "Envía un solo enlace a /link-check para la comprobación completa: redirecciones, análisis y captura.",
       "errors": {
         "empty": "Escribe un enlace para comprobar.",
         "invalid_url": "Este no es un enlace web válido.",
-        "unsupported_scheme": "Solo se pueden comprobar enlaces http y https.",
-        "no_links": "No encontré ningún enlace que pueda comprobar en este mensaje."
+        "unsupported_scheme": "Solo se pueden comprobar enlaces http y https."
       },
       "error_title": "Comprobación del enlace imposible"
     },

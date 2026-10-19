@@ -299,7 +299,7 @@ def build_regex_card(pattern: str, text: str, flags: Sequence[str], result: rx.R
     if flags:
         lines.append(tc.detail(t("tools.regex.flags_label", locale=locale), " ".join(flags)))
     card.details(lines)
-    card.footer(tc.source_line(locale, verb="computed_locally"), tc.requested_by(locale, requester_id))
+    card.footer(tc.requested_by(locale, requester_id))
     return card.build(view=_view(), rows=[_row(RegexEditButton(token, locale))]), files
 
 
@@ -389,23 +389,17 @@ class RegexEditButton(ui.DynamicItem[ui.Button], template=r"moddy:tools:regex:ed
 # /diff
 # --------------------------------------------------------------------------- #
 
-MODE_LINES = "lines"
-MODE_WORDS = "words"
+def diff_state(before: str, after: str) -> Dict[str, Any]:
+    return {"b": before, "a": after}
 
 
-def diff_state(before: str, after: str, mode: str) -> Dict[str, Any]:
-    return {"b": before, "a": after, "m": mode if mode in (MODE_LINES, MODE_WORDS) else MODE_LINES}
-
-
-async def compute_diff(before: str, after: str, mode: str):
+async def compute_diff(before: str, after: str):
     if not before and not after:
         raise tc.ToolError("empty_input", tool="diff")
-    if mode == MODE_WORDS:
-        return await _in_thread(diffing.diff_words, before, after)
     return await _in_thread(diffing.diff_lines, before, after)
 
 
-def build_diff_card(result, mode: str, locale: str, *, token: str,
+def build_diff_card(result, locale: str, *, token: str,
                     requester_id: Optional[int] = None) -> Tuple[ui.LayoutView, List[discord.File]]:
     from utils.automod_render import make_text_file
 
@@ -415,15 +409,6 @@ def build_diff_card(result, mode: str, locale: str, *, token: str,
                        accent=tc.ACCENT_NEUTRAL if identical else tc.ACCENT_INFO)
     if identical:
         card.text(f"**{t('tools.diff.identical', locale=locale)}**")
-    elif mode == MODE_WORDS:
-        marks = {"removed": ("~~", "~~"), "added": ("**", "**")}
-        body, clipped = esc.clip_segments(result.segments, DIFF_LIMIT, marks)
-        card.text(body)
-        if clipped:
-            files.append(make_text_file(result.full, "diff.txt"))
-            card.file("diff.txt")
-            card.hint(t("tools.diff.truncated", locale=locale))
-        card.hint(t("tools.diff.legend_words", locale=locale))
     else:
         block, file = tc.fit_or_attach(result.text, limit=DIFF_LIMIT, filename="diff.diff", lang="diff")
         card.text(block)
@@ -431,11 +416,11 @@ def build_diff_card(result, mode: str, locale: str, *, token: str,
             files.append(make_text_file(result.full, "diff.diff"))
             card.file("diff.diff")
             card.hint(t("tools.diff.truncated", locale=locale))
+        card.hint(t("tools.diff.legend", locale=locale))
     card.details([
         tc.detail(t("tools.diff.changes", locale=locale), diffing.stats_line(result.added, result.removed)),
-        tc.detail(t("tools.diff.mode_label", locale=locale), t(f"tools.diff.mode.{mode}", locale=locale)),
     ])
-    card.footer(tc.source_line(locale, verb="computed_locally"), tc.requested_by(locale, requester_id))
+    card.footer(tc.requested_by(locale, requester_id))
     return card.build(view=_view(), rows=[_row(DiffEditButton(token, locale))]), files
 
 
@@ -455,42 +440,33 @@ class DiffModal(BaseModal):
             text=t("tools.diff.after_label", locale=locale)[:45],
             component=ui.TextInput(style=discord.TextStyle.paragraph, required=False,
                                    max_length=diffing.MAX_TEXT_LENGTH, default=(prefill.get("a") or None)))
-        current = prefill.get("m") or MODE_LINES
-        self.mode = ui.Label(
-            text=t("tools.diff.mode_label", locale=locale)[:45],
-            component=ui.RadioGroup(required=True, options=[
-                discord.RadioGroupOption(label=t(f"tools.diff.mode.{key}", locale=locale)[:100], value=key,
-                                         description=t(f"tools.diff.mode_hint.{key}", locale=locale)[:100],
-                                         default=(key == current))
-                for key in (MODE_LINES, MODE_WORDS)]))
-        for item in (self.before, self.after, self.mode):
+        for item in (self.before, self.after):
             self.add_item(item)
 
     async def on_submit(self, interaction: discord.Interaction):
         await submit_diff(
             interaction, self.before.component.value or "", self.after.component.value or "",
-            self.mode.component.value or MODE_LINES, ephemeral=self.ephemeral,
-            edit_in_place=self.edit_in_place)
+            ephemeral=self.ephemeral, edit_in_place=self.edit_in_place)
 
 
-async def submit_diff(interaction: discord.Interaction, before: str, after: str, mode: str, *,
+async def submit_diff(interaction: discord.Interaction, before: str, after: str, *,
                       ephemeral: bool, edit_in_place: bool) -> None:
     locale = i18n.get_user_locale(interaction)
-    state = diff_state(before, after, mode)
+    state = diff_state(before, after)
     try:
-        result = await compute_diff(before, after, state["m"])
+        result = await compute_diff(before, after)
     except tc.ToolError as exc:
         await deliver(interaction, tc.tool_error_card(exc, locale), ephemeral=True,
                       edit_in_place=False)
         return
     token = await tc.save_state(interaction.client, STATE_DIFF, state)
-    view, files = build_diff_card(result, state["m"], locale, token=token,
+    view, files = build_diff_card(result, locale, token=token,
                                   requester_id=None if ephemeral else interaction.user.id)
     await deliver(interaction, view, files=files, ephemeral=ephemeral, edit_in_place=edit_in_place)
 
 
 class DiffEditButton(ui.DynamicItem[ui.Button], template=r"moddy:tools:diff:edit:(?P<token>[A-Za-z0-9]{10})"):
-    """"Edit": reopens the modal with the two stored texts and the mode."""
+    """"Edit": reopens the modal with the two stored texts."""
 
     def __init__(self, token: str, locale: str = "en-US"):
         super().__init__(ui.Button(
@@ -558,7 +534,7 @@ def build_textstats_card(stats: ts.TextStats, locale: str, *,
     if stats.top_words:
         top = " · ".join(f"{tc.inline(word)} ×{count}" for word, count in stats.top_words)
         card.text(f"**{t('tools.textstats.top_words', locale=locale)}** · {top}")
-    card.footer(tc.source_line(locale, verb="computed_locally"), tc.requested_by(locale, requester_id))
+    card.footer(tc.requested_by(locale, requester_id))
     return card.build()
 
 

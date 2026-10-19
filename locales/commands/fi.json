@@ -34,12 +34,6 @@
     },
     "Transcribe": {
       "name": "Litteroi"
-    },
-    "Find source": {
-      "name": "Etsi lähde"
-    },
-    "Check links": {
-      "name": "Tarkista linkit"
     }
   },
   "commands": {
@@ -497,25 +491,11 @@
     },
     "music": {
       "name": "musiikki",
-      "description": "Musiikkityökalut"
-    },
-    "music link": {
-      "name": "linkki",
       "description": "Etsi Spotify-kappale, albumi tai artisti muilta alustoilta",
       "parameters": {
         "url": {
           "name": "linkki",
           "description": "Spotify-linkki (kappale, albumi tai artisti)"
-        }
-      }
-    },
-    "exif": {
-      "name": "exif",
-      "description": "Näyttää tiedoston piilotetut metatiedot",
-      "parameters": {
-        "file": {
-          "name": "tiedosto",
-          "description": "Kuva, PDF, Office-asiakirja, ääni- tai videotiedosto"
         }
       }
     },

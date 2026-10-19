@@ -1,4 +1,4 @@
-"""/exif, /sauce and the Find source menu (docs/features/TOOLS_INSPECT.md).
+"""/sauce (docs/features/TOOLS_INSPECT.md).
 
 Cards are checked by walking their components, the cog with a fake
 interaction; the gateway and the network are never touched.
@@ -6,7 +6,6 @@ interaction; the gateway and the network are never touched.
 
 from __future__ import annotations
 
-import io
 import json
 import types
 from pathlib import Path
@@ -14,9 +13,7 @@ from pathlib import Path
 import discord
 import pytest
 from discord import ui
-from PIL import Image
 
-from tools import metadata as md
 from tools import sauce as sc
 from utils import tools_inspect_views as tv
 from utils.tool_card import ToolError
@@ -40,22 +37,6 @@ def buttons(view):
 
 def link_urls(view):
     return [b.url for b in buttons(view) if getattr(b, "url", None)]
-
-
-def geotagged_jpeg() -> bytes:
-    exif = Image.Exif()
-    exif[0x010F], exif[0x0110], exif[0x013B] = "Canon", "EOS", "Jane"
-    gps = exif.get_ifd(0x8825)
-    gps[1], gps[2], gps[3], gps[4] = "N", (48.0, 51.0, 24.0), "E", (2.0, 17.0, 40.0)
-    out = io.BytesIO()
-    Image.new("RGB", (40, 30), "red").save(out, "JPEG", exif=exif)
-    return out.getvalue()
-
-
-def plain_png() -> bytes:
-    out = io.BytesIO()
-    Image.new("RGB", (8, 8), "blue").save(out, "PNG")
-    return out.getvalue()
 
 
 class FakeAttachment:
@@ -87,22 +68,11 @@ def _locale_keys(locale, tool):
     return _flat(data["tools"][tool])
 
 
-@pytest.mark.parametrize("tool", ["exif", "sauce"])
+@pytest.mark.parametrize("tool", ["sauce"])
 def test_tool_strings_have_the_same_keys_in_the_five_locales(tool):
     reference = set(_locale_keys("en-US", tool))
     for locale in LOCALES:
         assert set(_locale_keys(locale, tool)) == reference, locale
-
-
-@pytest.mark.parametrize("locale", LOCALES)
-def test_every_exif_vocabulary_word_is_translated(locale):
-    keys = _locale_keys(locale, "exif")
-    for field in md.FIELD_KEYS:
-        assert keys.get(f"fields.{field}"), (locale, field)
-    for group in md.GROUP_ORDER:
-        assert keys.get(f"groups.{group}"), (locale, group)
-    for kind in (md.KIND_IMAGE, md.KIND_PDF, md.KIND_OFFICE, md.KIND_AUDIO, md.KIND_VIDEO):
-        assert keys.get(f"kinds.{kind}"), (locale, kind)
 
 
 @pytest.mark.parametrize("locale", LOCALES)
@@ -111,61 +81,6 @@ def test_placeholders_survive_translation(locale):
     import re
     for key, value in ref.items():
         assert set(re.findall(r"\{\w+\}", value)) == set(re.findall(r"\{\w+\}", keys[key])), key
-
-
-# --------------------------------------------------------------------------- #
-# /exif cards
-# --------------------------------------------------------------------------- #
-
-
-def test_geotagged_photo_card_warns_and_offers_the_map():
-    report = md.inspect_file(geotagged_jpeg(), "holiday.jpg")
-    view = tv.build_exif_card(report, "holiday.jpg", "en-US", raw_token="abcDEF1234")
-    body = texts(view)
-    assert "GPS" in body and "`48.856667, 2.294444`" in body
-    assert "`Canon`" in body and "`holiday.jpg`" in body
-    assert any("openstreetmap.org" in u for u in link_urls(view))
-    raw = [c for c in view.walk_children() if isinstance(c, tv.ExifRawButton)]
-    assert raw and raw[0].item.custom_id == "moddy:tools:exif:raw:abcDEF1234"
-    assert raw, "the All tags button is missing"
-    assert view.children[0].accent_colour == discord.Colour(tv.ACCENT_WARNING)
-
-
-def test_card_without_metadata_is_honest_about_discord():
-    report = md.inspect_file(plain_png(), "x.png")
-    view = tv.build_exif_card(report, "x.png", "en-US")
-    body = texts(view)
-    assert "Discord" in body and "Nothing found" in body
-    assert not link_urls(view)
-    assert not [c for c in view.walk_children() if isinstance(c, tv.ExifRawButton)]
-
-
-def test_long_report_stays_inside_the_message_budget():
-    report = md.MetadataReport(kind=md.KIND_PDF, format="PDF", size=10)
-    for i in range(120):
-        report.fields.append(md.Field(md.GROUP_DOCUMENT, "comment" if i % 2 else "title", "x" * 190 + str(i)))
-    view = tv.build_exif_card(report, "big.pdf", "fr")
-    assert len(texts(view)) < 4000
-
-
-@pytest.mark.parametrize("locale", LOCALES)
-def test_cards_render_in_every_locale(locale):
-    report = md.inspect_file(geotagged_jpeg(), "a.jpg")
-    assert "[" not in texts(tv.build_exif_card(report, "a.jpg", locale)).split("\n")[0]
-    assert not any(t.startswith("[tools.") for t in texts(tv.build_exif_card(report, "a.jpg", locale)).split())
-
-
-def test_raw_state_payload_is_none_without_tags():
-    assert tv.raw_state_payload(md.MetadataReport(kind="image", format="PNG", size=1), "a.png") is None
-    payload = tv.raw_state_payload(md.inspect_file(geotagged_jpeg(), "a.jpg"), "a.jpg")
-    assert "GPS" in payload["text"] and payload["name"] == "a.jpg"
-
-
-def test_raw_button_custom_id_round_trip():
-    item = tv.ExifRawButton("abcDEF1234")
-    cid = item.item.custom_id
-    match = tv.ExifRawButton.__discord_ui_compiled_template__.fullmatch(cid)
-    assert match and match["token"] == "abcDEF1234" and len(cid) <= 100
 
 
 class FakeResponse:
@@ -198,49 +113,11 @@ class FakeInteraction:
         self.edits.append(kwargs)
 
 
-async def test_raw_button_sends_the_dump_then_expires():
-    bot = types.SimpleNamespace(redis=None)
-    token = await tv.save_state(bot, tv.RAW_STATE_KIND, {"name": "a b.jpg", "text": "[EXIF] Make: Canon\n"})
-    interaction = FakeInteraction(bot)
-    await tv.ExifRawButton(token).callback(interaction)
-    sent = interaction.response.sent[0]
-    assert sent["ephemeral"] and sent["file"].filename == "metadata-a_b.jpg.txt"
-
-    gone = FakeInteraction(bot)
-    await tv.ExifRawButton("zzzzzzzzzz").callback(gone)
-    assert gone.response.sent[0]["ephemeral"] and gone.response.sent[0]["view"]
-
-
-# --------------------------------------------------------------------------- #
-# /exif command
-# --------------------------------------------------------------------------- #
-
-
 def make_cog(**bot_attrs):
     from cogs.tools_inspect import ToolsInspect
     tree = types.SimpleNamespace(add_command=lambda c: None, remove_command=lambda *a, **k: None)
     bot = types.SimpleNamespace(tree=tree, redis=None, stats=None, db=None, **bot_attrs)
     return ToolsInspect(bot), bot
-
-
-async def test_exif_command_is_always_ephemeral_and_reads_the_file():
-    cog, bot = make_cog()
-    interaction = FakeInteraction(bot)
-    await cog.exif_command.callback(cog, interaction, FakeAttachment(geotagged_jpeg(), filename="a.jpg"))
-    assert interaction.response.sent[0]["ephemeral"] is True
-    assert "48.856667" in texts(interaction.edits[0]["view"])
-
-
-async def test_exif_command_refuses_unknown_and_oversized_files():
-    cog, bot = make_cog()
-    interaction = FakeInteraction(bot)
-    await cog.exif_command.callback(cog, interaction, FakeAttachment(b"not a known format", filename="a.bin"))
-    assert "support" in texts(interaction.edits[0]["view"]).lower()
-
-    big = FakeInteraction(bot)
-    await cog.exif_command.callback(cog, big, FakeAttachment(b"x", size=26 * 1024 * 1024))
-    assert big.response.sent[0]["ephemeral"]
-    assert "25 MB" in texts(big.response.sent[0]["view"])
 
 
 # --------------------------------------------------------------------------- #
@@ -286,6 +163,16 @@ def test_sauce_card_nothing_found_still_offers_manual_search():
     body = texts(view)
     assert "Aucune source fiable" in body and "trace.moe" in body
     assert len(link_urls(view)) == 4
+
+
+def test_sauce_card_says_when_only_anime_could_be_searched():
+    only_trace = sauce_result(used_saucenao=False)
+    body = texts(tv.build_sauce_card(only_trace, "en-US"))
+    assert "Only anime screenshots" in body
+    # SauceNAO was asked (or failed): the generic wording stays
+    assert "Only anime screenshots" not in texts(tv.build_sauce_card(sauce_result(), "en-US"))
+    failed = sauce_result(used_saucenao=False, failed=["saucenao"])
+    assert "Only anime screenshots" not in texts(tv.build_sauce_card(failed, "en-US"))
 
 
 def test_unusable_image_url_yields_no_engine_buttons():
@@ -386,71 +273,9 @@ async def test_sauce_link_respects_channel_permissions(available):
     assert caught.value.code == "gone"
 
 
-async def test_find_source_menu_reads_the_message_image(available, monkeypatch):
-    cog, bot = make_cog()
-    search, calls = fake_search(sauce_result())
-    monkeypatch.setattr(available, "search", search)
-    message = types.SimpleNamespace(attachments=[FakeAttachment(b"x")], embeds=[])
-    interaction = FakeInteraction(bot)
-    await cog.find_source_context_menu(interaction, message)
-    assert calls[0][1]["origin"] == "menu"
-    assert interaction.response.sent[0]["ephemeral"] is True  # default preference
-
-    empty = FakeInteraction(bot)
-    await cog.find_source_context_menu(empty, types.SimpleNamespace(attachments=[], embeds=[]))
-    assert "image" in texts(empty.response.sent[0]["view"]).lower()
-    assert empty.response.sent[0]["ephemeral"] is True
-
-
 # --------------------------------------------------------------------------- #
-# Readers (tools/metadata.py) and parsers (tools/sauce.py)
+# Parsers (tools/sauce.py)
 # --------------------------------------------------------------------------- #
-
-_CORE = ('<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/'
-         'core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/">{}</cp:coreProperties>')
-
-
-def _docx(core: str) -> bytes:
-    import zipfile
-    out = io.BytesIO()
-    with zipfile.ZipFile(out, "w") as zf:
-        zf.writestr("docProps/core.xml", core)
-        zf.writestr("word/document.xml", "<x/>")
-    return out.getvalue()
-
-
-def test_pdf_metadata_is_read():
-    from pypdf import PdfWriter
-    writer = PdfWriter()
-    writer.add_blank_page(100, 100)
-    writer.add_metadata({"/Author": "Ann", "/Title": "Plan", "/Producer": "Acme"})
-    out = io.BytesIO()
-    writer.write(out)
-    report = md.inspect_file(out.getvalue(), "plan.pdf")
-    found = {(f.group, f.key): f.value for f in report.fields}
-    assert report.kind == md.KIND_PDF and report.has_person
-    assert found[("author", "author")] == "Ann" and found[("document", "title")] == "Plan"
-
-
-def test_office_document_properties_are_read():
-    report = md.inspect_file(_docx(_CORE.format("<dc:creator>Bob</dc:creator>")), "a.docx")
-    assert report.kind == md.KIND_OFFICE
-    assert ("author", "author", "Bob") in [(f.group, f.key, f.value) for f in report.fields]
-
-
-def test_office_xml_with_a_dtd_is_refused_not_expanded():
-    core = '<!DOCTYPE x [<!ENTITY a "boom">]>' + _CORE.format("<dc:creator>&a;</dc:creator>")
-    report = md.inspect_file(_docx(core), "a.docx")
-    assert all("boom" not in f.value for f in report.fields)
-
-
-def test_unknown_and_empty_files_raise_clear_codes():
-    with pytest.raises(md.MetadataError) as unknown:
-        md.inspect_file(b"just some text", "a.txt")
-    assert unknown.value.code == "unsupported"
-    with pytest.raises(md.MetadataError) as empty:
-        md.inspect_file(b"", "a.png")
-    assert empty.value.code == "unreadable"
 
 
 def test_saucenao_threshold_and_explicit_filter():

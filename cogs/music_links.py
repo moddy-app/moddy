@@ -1,5 +1,5 @@
 """
-``/music link`` — the same song on every platform, from a Spotify link.
+``/music`` — the same song on every platform, from a Spotify link.
 
 Same resolution as the ``music_links`` module (``services/music_links_service.py``)
 but on demand and richer: cover, title, artist, album, year, duration, then a
@@ -32,23 +32,17 @@ MAX_INPUT_LENGTH = 300
 
 
 class MusicLinks(commands.Cog):
-    music_group = app_commands.Group(
-        name="music",
-        description="Music tools",
-        allowed_installs=app_commands.AppInstallationType(guild=True, user=True),
-        allowed_contexts=app_commands.AppCommandContext(
-            guild=True, dm_channel=True, private_channel=True),
-    )
-
     def __init__(self, bot):
         self.bot = bot
 
-    @music_group.command(name="link", description="Find a Spotify song, album or artist on other platforms")
+    @app_commands.command(name="music", description="Find a Spotify song, album or artist on other platforms")
+    @app_commands.allowed_installs(guilds=True, users=True)
+    @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
     @app_commands.describe(url="The Spotify link (a song, an album or an artist)")
     @add_incognito_option()
-    async def link(self, interaction: discord.Interaction,
-                   url: app_commands.Range[str, 1, MAX_INPUT_LENGTH],
-                   incognito: Optional[bool] = None):
+    async def music(self, interaction: discord.Interaction,
+                    url: app_commands.Range[str, 1, MAX_INPUT_LENGTH],
+                    incognito: Optional[bool] = None):
         locale = i18n.get_user_locale(interaction)
         ephemeral = get_incognito_setting(interaction)
         service = getattr(self.bot, "music_links", None)

@@ -276,11 +276,11 @@ async def test_regex_edit_button_reopens_prefilled_modal():
 
 async def test_diff_edit_button_and_expired_state():
     interaction = fake_interaction(ephemeral=False)
-    token = await tc.save_state(interaction.client, v.STATE_DIFF, v.diff_state("a", "b", "words"))
+    token = await tc.save_state(interaction.client, v.STATE_DIFF, v.diff_state("a", "b"))
     await v.DiffEditButton(token).callback(interaction)
     kind, modal = interaction.response.calls[0]
     assert isinstance(modal, v.DiffModal) and modal.edit_in_place is False
-    assert [o.value for o in modal.mode.component.options if o.default] == ["words"]
+    assert modal.before.component.default == "a" and modal.after.component.default == "b"
 
     expired = fake_interaction()
     await v.DiffEditButton("zzzzzzzzzz").callback(expired)
@@ -330,12 +330,12 @@ def test_modals_are_valid_v2_modals():
     modal = v.RegexModal("en-US", ephemeral=True)
     assert isinstance(modal.flags.component, ui.CheckboxGroup)
     assert len(modal.flags.component.options) == 4
-    assert isinstance(v.DiffModal("en-US", ephemeral=True).mode.component, ui.RadioGroup)
+    assert not hasattr(v.DiffModal("en-US", ephemeral=True), "mode")
 
 
 async def test_diff_submit_with_nothing_is_an_error():
     interaction = fake_interaction()
-    await v.submit_diff(interaction, "", "", "lines", ephemeral=True, edit_in_place=False)
+    await v.submit_diff(interaction, "", "", ephemeral=True, edit_in_place=False)
     assert "at least one" in joined(interaction.response.calls[0][1]["view"])
 
 
@@ -345,8 +345,8 @@ async def test_diff_submit_with_nothing_is_an_error():
 
 
 async def test_diff_lines_card():
-    result = await v.compute_diff("a\nb\nc", "a\nB\nc\nd", "lines")
-    view, files = v.build_diff_card(result, "lines", "en-US", token="abcDEF1234")
+    result = await v.compute_diff("a\nb\nc", "a\nB\nc\nd")
+    view, files = v.build_diff_card(result, "en-US", token="abcDEF1234")
     body = joined(view)
     assert "```diff" in body and "- b" in body and "+ B" in body
     assert "`+2 -1`" in body
@@ -354,23 +354,24 @@ async def test_diff_lines_card():
     assert children(view, ui.Button)[0].custom_id == "moddy:tools:diff:edit:abcDEF1234"
 
 
-async def test_diff_words_card_marks_and_escapes():
-    result = await v.compute_diff("the *quick* fox", "the slow fox", "words")
-    view, _ = v.build_diff_card(result, "words", "en-US", token="abcDEF1234")
+async def test_diff_is_a_coloured_code_block_only():
+    result = await v.compute_diff("the quick fox", "the slow fox")
+    view, _ = v.build_diff_card(result, "en-US", token="abcDEF1234")
     body = joined(view)
-    assert "~~" in body and "**" in body and "slow" in body
-    assert "Struck-through" in body
+    assert "```diff" in body and "- the quick fox" in body and "+ the slow fox" in body
+    assert "~~" not in body
+    assert "red" in body and "green" in body
 
 
 async def test_diff_identical_and_long_output_attaches():
-    result = await v.compute_diff("same", "same", "lines")
-    view, _ = v.build_diff_card(result, "lines", "fr", token="abcDEF1234")
+    result = await v.compute_diff("same", "same")
+    view, _ = v.build_diff_card(result, "fr", token="abcDEF1234")
     assert "identiques" in joined(view)
 
     before = "\n".join(f"line {i}" for i in range(400))
     after = "\n".join(f"LINE {i}" for i in range(400))
-    result = await v.compute_diff(before, after, "lines")
-    view, files = v.build_diff_card(result, "lines", "en-US", token="abcDEF1234")
+    result = await v.compute_diff(before, after)
+    view, files = v.build_diff_card(result, "en-US", token="abcDEF1234")
     assert files and files[0].filename == "diff.diff"
     assert len(joined(view)) < 4000
 

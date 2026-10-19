@@ -34,12 +34,6 @@
     },
     "Transcribe": {
       "name": "Транскрибиране"
-    },
-    "Find source": {
-      "name": "Намери източник"
-    },
-    "Check links": {
-      "name": "Провери линковете"
     }
   },
   "commands": {
@@ -497,25 +491,11 @@
     },
     "music": {
       "name": "музика",
-      "description": "Музикални инструменти"
-    },
-    "music link": {
-      "name": "линк",
       "description": "Намери песен, албум или изпълнител от Spotify в други платформи",
       "parameters": {
         "url": {
           "name": "линк",
           "description": "Връзката към Spotify (песен, албум или изпълнител)"
-        }
-      }
-    },
-    "exif": {
-      "name": "exif",
-      "description": "Показва скритите метаданни на файл",
-      "parameters": {
-        "file": {
-          "name": "файл",
-          "description": "Изображение, PDF, документ на Office, аудио или видео файл"
         }
       }
     },

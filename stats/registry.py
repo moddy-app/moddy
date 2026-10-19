@@ -174,15 +174,12 @@ _ALL: Tuple[Metric, ...] = (
            doc="The Moddy team labeled an automod decision (labeling queue)."),
     Metric("ocr.used", scope=SCOPE_GLOBAL, dimensions=("source",),
            doc="/ocr or the Transcribe menu extracted text from an image."),
-    Metric("exif.used", scope=SCOPE_GLOBAL, dimensions=("kind",),
-           doc="/exif read a file's metadata (kind: image | pdf | office | audio | video)."),
     Metric("sauce.used", scope=SCOPE_GLOBAL, dimensions=("source", "found"),
-           doc="/sauce or the Find source menu searched an image "
-               "(source: slash | menu | link; found: yes | no)."),
+           doc="/sauce searched an image (source: slash | link; found: yes | no)."),
     Metric("domain_tools.used", scope=SCOPE_GLOBAL, dimensions=("tool",),
            doc="/whois, /dns, /ssl or /subdomains answered (tool: whois | dns | ssl | subdomains)."),
     Metric("link_check.used", scope=SCOPE_GLOBAL, dimensions=("source", "verdict"),
-           doc="/link-check or the Check links menu analysed a link (source: slash | menu; "
+           doc="/link-check analysed a link (source: slash; "
                "verdict: safe | suspicious | dangerous | unreachable)."),
     Metric("ai_detector.verdict", scope=SCOPE_GLOBAL, dimensions=("kind", "source"),
            doc="The AI image detector reached a verdict (kind: ai_full | "

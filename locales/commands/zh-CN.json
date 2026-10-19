@@ -34,12 +34,6 @@
     },
     "Transcribe": {
       "name": "转录文字"
-    },
-    "Find source": {
-      "name": "查找来源"
-    },
-    "Check links": {
-      "name": "检查链接"
     }
   },
   "commands": {
@@ -497,25 +491,11 @@
     },
     "music": {
       "name": "音乐",
-      "description": "音乐工具"
-    },
-    "music link": {
-      "name": "链接",
       "description": "在其他平台上找到 Spotify 的歌曲、专辑或艺人",
       "parameters": {
         "url": {
           "name": "链接",
           "description": "Spotify 链接（歌曲、专辑或艺人）"
-        }
-      }
-    },
-    "exif": {
-      "name": "exif",
-      "description": "显示文件中隐藏的元数据",
-      "parameters": {
-        "file": {
-          "name": "文件",
-          "description": "图片、PDF、Office 文档、音频或视频文件"
         }
       }
     },

@@ -1,4 +1,4 @@
-"""Pure logic of /link-check and the "Check links" menu.
+"""Pure logic of /link-check.
 
 * extracting URLs from a message and normalising what a person typed;
 * following a redirect chain hop by hop through an injected ``fetch`` (so it is

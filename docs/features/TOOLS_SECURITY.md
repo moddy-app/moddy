@@ -48,8 +48,7 @@ haveibeenpwned.com/Passwords. Errors: `timeout`, `network`, `rate_limited`,
 Everything goes through `secrets` (CSPRNG, Fisher-Yates with `randbelow`); at least
 one character of each class. The card shows the password in a code block, an
 entropy bar with a strength label (weak / fair / good / strong / excellent at
-40 / 60 / 80 / 120 bits), the kind and size, and the footer "Computed by Moddy
-itself". A **Regenerate** button edits the message in place.
+40 / 60 / 80 / 120 bits) and the kind and size. A **Regenerate** button edits the message in place.
 
 ### `/uuid`
 v4 (`uuid.uuid4`) or v7 (RFC 9562, `uuid.uuid7` on Python 3.14+, an in-house
@@ -73,7 +72,7 @@ and payload as JSON (long ones are cut and the full text is attached as
 (valid / expired / not yet valid), `iss`, `sub`, `aud`, a warning for `alg: none`,
 and always the honest note that **the signature is not verified**. Time claims in
 milliseconds are understood, absurd values are flagged. Encrypted tokens (JWE)
-get a dedicated error. Footer: computed locally.
+get a dedicated error.
 
 ### `/color`
 Accepts `#RGB`, `#RGBA`, `#RRGGBB`, `#RRGGBBAA`, `rgb()/rgba()`, `hsl()/hsla()`,
@@ -82,8 +81,11 @@ integer (`5793266`), and `random`. Alpha is parsed but ignored (the card says so
 The card is accented with the colour itself, shows a Pillow-rendered image (wide
 swatch + "Aa Moddy" in that colour on a Discord dark and a light surface, set in
 **Inter Bold**), a code block with HEX / RGB / HSL / HSV / CMYK / Discord int, the
-exact or closest CSS name (within an RGB distance of 30), and WCAG contrast ratios
-against Discord dark, Discord light, white and black with AA / AAA marks. The
+exact or closest CSS name (within an RGB distance of 30), and a short
+**readability** section: black text and white text on that colour, each with a plain
+verdict (excellent / readable / hard to read / unreadable, from the WCAG ratio:
+7 / 4.5 / 3) and the ratio. The AA / AAA grid against Discord dark and light was
+dropped: nobody could read it. The
 **Random colour** button edits an ephemeral card in place; on a public card it
 answers privately instead.
 

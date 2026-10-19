@@ -19,7 +19,7 @@ show and ignores channels on the module screen.
 ``on_message`` never waits for the network: it hands the work to
 ``bot.music_links.spawn`` (bounded in time and in number). The resolution
 itself lives in ``services/music_links_service.py`` and is shared with
-``/music link``. See docs/features/MUSIC_LINKS.md.
+``/music``. See docs/features/MUSIC_LINKS.md.
 """
 
 from __future__ import annotations

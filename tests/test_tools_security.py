@@ -264,7 +264,7 @@ def test_password_card_contains_password_and_persistent_button():
     assert "Ab3$xyz!" in _all_text(view)
     ids = [c.custom_id for c in view.walk_children() if hasattr(c, "custom_id")]
     assert ids == ["moddy:tools:password:regen:strong:8"]
-    assert "computed" in _all_text(view).lower()
+    assert "computed" not in _all_text(view).lower()
 
 
 def test_uuid_card_lists_every_uuid():
@@ -305,7 +305,8 @@ def test_color_card_and_message():
     card = views.build_color_card((88, 101, 242), "en-US", alpha=0.5, requester_id=3)
     text = _all_text(card)
     assert "#5865F2" in text.upper()
-    assert "WCAG" in text or "contrast" in text.lower()
+    assert "WCAG" not in text and "AAA" not in text
+    assert "Black text" in text and "White text" in text
     assert card.children[0].accent_colour.value == 0x5865F2
     view, files = asyncio.run(views.build_color_message((1, 2, 3), "fr"))
     assert files[0].filename == views.COLOR_FILENAME
@@ -573,8 +574,10 @@ def test_every_literal_and_dynamic_key_resolves():
         assert f"tools.password.strength.{level}" in keys
     for version in gen.VERSIONS:
         assert f"tools.uuid.version.{version}" in keys
-    for name in ("dark", "light", "white", "black"):
-        assert f"tools.color.contrast_{name}" in keys
+    for level in ("excellent", "good", "weak", "poor"):
+        assert f"tools.color.readability.{level}" in keys
+    for name in ("white", "black"):
+        assert f"tools.color.text_{name}" in keys
     for code in ("both", "download_failed"):
         assert f"tools.hash.errors.{code}" in keys
     for code in ("empty", "encrypted", "not_a_jwt"):

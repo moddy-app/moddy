@@ -34,12 +34,6 @@
     },
     "Transcribe": {
       "name": "Transkribieren"
-    },
-    "Find source": {
-      "name": "Quelle finden"
-    },
-    "Check links": {
-      "name": "Links prüfen"
     }
   },
   "commands": {
@@ -497,25 +491,11 @@
     },
     "music": {
       "name": "musik",
-      "description": "Musik-Werkzeuge"
-    },
-    "music link": {
-      "name": "link",
       "description": "Finde einen Spotify-Song, ein Album oder einen Künstler auf anderen Plattformen",
       "parameters": {
         "url": {
           "name": "link",
           "description": "Der Spotify-Link (ein Song, ein Album oder ein Künstler)"
-        }
-      }
-    },
-    "exif": {
-      "name": "exif",
-      "description": "Zeigt die versteckten Metadaten einer Datei",
-      "parameters": {
-        "file": {
-          "name": "datei",
-          "description": "Bild, PDF, Office-Dokument, Audio- oder Videodatei"
         }
       }
     },

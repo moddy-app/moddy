@@ -14,6 +14,10 @@ from dataclasses import dataclass, field
 from typing import Any, Iterable, List
 
 SEARCH_URL = "https://crt.sh/"
+#: Fallback when crt.sh is overloaded (it often is): same Certificate
+#: Transparency data, keyless, but paginated and rate limited.
+CERTSPOTTER_URL = "https://api.certspotter.com/v1/issuances"
+CERTSPOTTER_MAX_PAGES = 3
 PAGE_SIZE = 40
 #: A domain with more names than this keeps only the first ones (sorted); the
 #: full count is still reported.
@@ -29,6 +33,7 @@ class SubdomainResult:
     wildcards: int = 0                              # distinct wildcard names seen
     total: int = 0                                  # distinct names before the cap
     certificates: int = 0                           # rows crt.sh returned
+    source: str = "crt.sh"                          # which provider answered
 
     @property
     def truncated(self) -> bool:
@@ -38,6 +43,23 @@ class SubdomainResult:
 def query_params(domain: str) -> dict:
     """``%.example.com`` is crt.sh's "any subdomain" pattern (URL-encoded by aiohttp)."""
     return {"q": f"%.{domain}", "output": "json"}
+
+
+def certspotter_params(domain: str, after: Any = None) -> dict:
+    params = {"domain": domain, "include_subdomains": "true", "expand": "dns_names"}
+    if after is not None:
+        params["after"] = str(after)
+    return params
+
+
+def certspotter_rows(entries: Any) -> List[dict]:
+    """Cert Spotter issuances -> the row shape :func:`extract` reads."""
+    rows = []
+    for entry in entries if isinstance(entries, list) else []:
+        names = entry.get("dns_names") if isinstance(entry, dict) else None
+        if isinstance(names, list):
+            rows.append({"name_value": "\n".join(str(n) for n in names)})
+    return rows
 
 
 def extract(entries: Iterable[Any], domain: str, *, cap: int = MAX_NAMES) -> SubdomainResult:

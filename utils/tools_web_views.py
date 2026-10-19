@@ -1,6 +1,6 @@
 """
 Views of the web utility tools (``/whois``, ``/dns``, ``/ssl``, ``/subdomains``,
-``/link-check`` and the "Check links" menu) — see docs/features/TOOLS_WEB.md.
+``/link-check``) — see docs/features/TOOLS_WEB.md.
 
 Cards are built with ``utils/tool_card.py``; the logic they show lives in
 ``tools/domain/`` and ``tools/linkcheck.py``. Every interactive component is
@@ -438,8 +438,11 @@ def build_subdomains_card(result: crtsh.SubdomainResult, page: int, locale: str,
             card.hint(t("tools.subdomains.truncated", locale=locale,
                         shown=tc.format_number(len(result.names), locale),
                         total=tc.format_number(result.total, locale)))
+    if result.source != "crt.sh":
+        card.hint(t("tools.subdomains.fallback", locale=locale, source=result.source))
     card.hint(t("tools.subdomains.hint", locale=locale))
-    card.footer(tc.source_line(locale, (CRTSH, "crt.sh"), verb="data_provided_by"),
+    logo = CRTSH if result.source == "crt.sh" else None
+    card.footer(tc.source_line(locale, (logo, result.source), verb="data_provided_by"),
                 tc.requested_by(locale, requester_id))
 
     rows = []
@@ -739,45 +742,6 @@ def build_link_card(target, vt, scan, locale: str, *, requester_id: Optional[int
                                       scan.report_url, icon=URLSCAN))
     row = tc.link_row(*buttons)
     return card.build(rows=[row] if row else [])
-
-
-def build_links_card(items: Sequence[Tuple[object, object]], locale: str, *,
-                     skipped: int = 0) -> ui.LayoutView:
-    """Several links of one message: one line each (``items`` = ``[(LinkTarget, VtOutcome)]``)."""
-    verdicts = []
-    for target, vt in items:
-        result = vt.result if vt is not None and vt.state == "ok" else None
-        verdicts.append(lc.assess(target.signals, result, None))
-    worst = max((v.level for v in verdicts),
-                key=lambda lv: (lc.LEVEL_SAFE, lc.LEVEL_SUSPICIOUS, lc.LEVEL_DANGEROUS).index(lv),
-                default=lc.LEVEL_SAFE)
-    accent, _ = _LEVEL_STYLE[worst]
-    card = tc.ToolCard(title=t("tools.linkcheck.multi_title", locale=locale), icon=LINK,
-                       accent=accent)
-    lines = []
-    for (target, vt), verdict in zip(items, verdicts):
-        _, icon = _LEVEL_STYLE[verdict.level]
-        if not target.signals.reached and verdict.level == lc.LEVEL_SAFE:
-            icon = WARNING
-        line = tc.with_icon(icon, f"`{lc.display_url(target.chain.final_url, 70)}`")
-        shown = [r for r in verdict.reasons if r.severity != "info"][:2]
-        if shown:
-            line += "\n-# " + " · ".join(reason_text(r, locale) for r in shown)
-        elif not target.signals.reached:
-            line += "\n-# " + t("tools.linkcheck.verdict.unreachable", locale=locale)
-        if target.chain.redirects:
-            line += "\n-# " + t("tools.linkcheck.multi_redirects", locale=locale,
-                                count=target.chain.redirects,
-                                host=lc.display_url(target.prepared.url, 40))
-        lines.append(line)
-    card.text("\n".join(lines))
-    if skipped:
-        card.hint(t("tools.linkcheck.multi_skipped", locale=locale, count=skipped))
-    card.hint(t("tools.linkcheck.multi_hint", locale=locale))
-    sources = [(VIRUSTOTAL, "VirusTotal")] if any(
-        vt is not None and vt.state == "ok" for _, vt in items) else []
-    card.footer(tc.source_line(locale, *sources, verb="scanned_by") if sources else None)
-    return card.build()
 
 
 # --------------------------------------------------------------------------- #

@@ -34,12 +34,6 @@
     },
     "Transcribe": {
       "name": "Расшифровать"
-    },
-    "Find source": {
-      "name": "Найти источник"
-    },
-    "Check links": {
-      "name": "Проверить ссылки"
     }
   },
   "commands": {
@@ -497,25 +491,11 @@
     },
     "music": {
       "name": "музыка",
-      "description": "Музыкальные инструменты"
-    },
-    "music link": {
-      "name": "ссылка",
       "description": "Найди трек, альбом или исполнителя из Spotify на других платформах",
       "parameters": {
         "url": {
           "name": "ссылка",
           "description": "Ссылка Spotify (трек, альбом или исполнитель)"
-        }
-      }
-    },
-    "exif": {
-      "name": "exif",
-      "description": "Показывает скрытые метаданные файла",
-      "parameters": {
-        "file": {
-          "name": "файл",
-          "description": "Изображение, PDF, документ Office, аудио- или видеофайл"
         }
       }
     },

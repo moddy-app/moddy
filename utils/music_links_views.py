@@ -1,12 +1,12 @@
 """
-Views of the music links module and ``/music link`` — see docs/features/MUSIC_LINKS.md.
+Views of the music links module and ``/music`` — see docs/features/MUSIC_LINKS.md.
 
 Two cards, one look:
 
 * the **automatic reply** under a Spotify link: one dim line (``♪ Title —
   Artist``) and the link buttons, nothing else — it is read by a whole channel,
   so it stays discreet;
-* the **command card** (``/music link``): the cover, title, artist, album, year,
+* the **command card** (``/music``): the cover, title, artist, album, year,
   duration, the link buttons and the "found by" footer, in the standard tool
   card anatomy (utils/tool_card.py).
 
@@ -104,13 +104,13 @@ def build_reply_view(infos: Sequence[mu.MusicInfo], platforms: Sequence[str],
 
 
 # --------------------------------------------------------------------------- #
-# Command card (/music link)
+# Command card (/music)
 # --------------------------------------------------------------------------- #
 
 
 def build_link_card(info: mu.MusicInfo, locale: str, *,
                     requested_by_id: Optional[int] = None) -> ui.LayoutView:
-    """The richer card of ``/music link``: cover, details, every link."""
+    """The richer card of ``/music``: cover, details, every link."""
     card = ToolCard(title=t(f"tools.music.title.{info.kind}", locale=locale),
                     icon=MUSIC_NOTE, accent=ACCENT_INFO)
 

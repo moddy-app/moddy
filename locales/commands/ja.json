@@ -34,12 +34,6 @@
     },
     "Transcribe": {
       "name": "文字起こし"
-    },
-    "Find source": {
-      "name": "出典を探す"
-    },
-    "Check links": {
-      "name": "リンクを確認"
     }
   },
   "commands": {
@@ -497,25 +491,11 @@
     },
     "music": {
       "name": "音楽",
-      "description": "音楽ツール"
-    },
-    "music link": {
-      "name": "リンク",
       "description": "Spotifyの曲・アルバム・アーティストを他のサービスで探す",
       "parameters": {
         "url": {
           "name": "リンク",
           "description": "Spotifyのリンク（曲・アルバム・アーティスト）"
-        }
-      }
-    },
-    "exif": {
-      "name": "exif",
-      "description": "ファイルに隠されたメタデータを表示します",
-      "parameters": {
-        "file": {
-          "name": "ファイル",
-          "description": "画像、PDF、Office文書、音声または動画ファイル"
         }
       }
     },

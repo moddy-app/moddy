@@ -1,7 +1,6 @@
 # Domain and link tools
 
-`/whois`, `/dns`, `/ssl`, `/subdomains`, `/link-check` and the message menu
-**Check links**. They follow the shared contract of [TOOLS.md](TOOLS.md) (card
+`/whois`, `/dns`, `/ssl`, `/subdomains` and `/link-check`. They follow the shared contract of [TOOLS.md](TOOLS.md) (card
 anatomy, phrase-style source footer, loading / error cards, persistence).
 
 | Piece | File |
@@ -98,11 +97,21 @@ Limits: no OCSP / CRL / Certificate Transparency check, no chain display; "valid
 
 ## `/subdomains domain`
 
-`crt.sh` (Certificate Transparency logs) as JSON, query `%.domain`, 30 s timeout, response
+`crt.sh` (Certificate Transparency logs) as JSON, query `%.domain`, 20 s timeout, response
 cap 24 MB parsed in a worker thread. `www.example.com` is treated as `example.com`.
 Names are deduplicated, wildcards (`*.x`) are not listed as subdomains but counted, e-mail
 addresses and foreign names are dropped; at most 5000 names are kept (the true total is
 shown). Result cached 6 h (the *extracted* list, not crt.sh's raw answer).
+
+**Fallback.** crt.sh is regularly overloaded (502 / timeouts, even for small domains).
+When it fails (timeout, network, 5xx, 429, unreadable answer) Moddy asks **Cert Spotter**
+(`api.certspotter.com/v1/issuances?include_subdomains=true&expand=dns_names`, keyless,
+rate limited) and walks at most 3 pages of issuances (`CERTSPOTTER_MAX_PAGES`). Its list
+can be shorter than crt.sh's, so the card says which provider answered
+(`tools.subdomains.fallback`) and the footer names it. That answer is cached 30 min
+instead of 6 h so crt.sh is tried again soon. A domain too big for crt.sh
+(`too_large`) is not sent to the fallback: it would show a sliver of it. Only when both
+fail does the user get the "did not answer" card with **Retry**.
 
 Card: count, 40 names per page, **Previous / Next** and **Export** (`.txt`, sent
 privately) when there is more than one page — all persistent
@@ -114,7 +123,7 @@ certificates asks for a more specific name.
 Honest limit, said on the card: only names that appeared in a public certificate are
 listed — private or HTTP-only subdomains are invisible.
 
-## `/link-check url` and the **Check links** menu
+## `/link-check url`
 
 A link is *never opened by the member* and never shown as a clickable link: the card
 prints it in a code block.
@@ -177,13 +186,8 @@ site. Results cached 15 min per URL.
 | Provider rate limit / 429 / 402 / 403 | *Busy right now, try again in a minute* |
 | Provider error / timeout | *Could not be checked* |
 
-### The menu
-
-**Check links** (message menu, ephemeral): the links of the message content and embed
-URLs. One link → the full `/link-check` flow. Several (5 examined at most, the rest
-counted) → one compact card, one line per link with its verdict and first reasons: local
-checks plus VirusTotal's **existing** report only (no submission, no urlscan). No usable
-link → "I found no link I can check in this message."
+> There is no "Check links" message menu: Discord caps an app at five message
+> context menus and they are all taken (see VOICE_TRANSCRIPTION.md).
 
 ## Gateway wiring (docs/infra/API_GATEWAY.md)
 
@@ -209,7 +213,7 @@ Runtime strings under `tools.domain` (input errors shared by the four domain com
 `/link-check`), `tools.whois`, `tools.dns`, `tools.ssl`, `tools.subdomains`,
 `tools.linkcheck`, identical keys (and placeholders) in the five locales — checked by
 `tests/test_tools_web.py`. Slash command names, descriptions and parameters, and the
-context menu (`context_menus."Check links"`), are in the 32 `locales/commands/*.json`.
+are in the 32 `locales/commands/*.json`.
 `whois`, `dns` and `ssl` keep their Latin names in every language, like `hash`.
 
 ## Persistence

@@ -10,7 +10,7 @@ error cards, Modals V2, persistence, icons).
 | `utils/tools_text_views.py` | Cards, Modals V2, persistent dynamic items (`ToolsTextPersistence`) |
 | `tools/wiktionary.py` | Wiktionary parsing for 5 editions + REST fallback + cache (pure) |
 | `tools/regex_test.py` | `regex`-package engine with a match timeout (pure) |
-| `tools/diffing.py` | Line / word diff on `difflib` (pure) |
+| `tools/diffing.py` | Line diff on `difflib` (pure) |
 | `tools/textstats.py` | Counts, reading time, language guess, per-language readability (pure) |
 | `tools/text_escape.py` | Safe markdown for user text shown outside a code block (pure) |
 | `tests/test_tools_text.py` | Logic, cards, modals, state, i18n parity, cog declaration |
@@ -87,11 +87,13 @@ Localised names/descriptions: the 32 `locales/commands/*.json` files
 
 ### `/diff`
 
-* Modal V2: **Before**, **After**, **Compare by** (`RadioGroup`: line / word).
-* Line mode → a ```` ```diff ```` block (collapsed to `@@ … @@` with two lines
-  of context) and `+x -y`. Word mode → merged text with ~~removed~~ and
-  **added** words. Output over ~2800 characters is shortened and the complete
-  `diff.diff` / `diff.txt` is attached. Identical texts say so.
+* Modal V2: **Before** and **After**.
+* The answer is **only** a Discord ```` ```diff ```` code block — removed lines in red
+  (`-`), added lines in green (`+`), unchanged context in grey, long unchanged runs
+  collapsed to `@@ … @@` with two lines of context — plus the `+x -y` count and a
+  one-line legend. A word-by-word mode with struck-through / bold words existed and
+  was dropped: it was hard to read. Output over ~2800 characters is shortened and the
+  complete `diff.diff` is attached. Identical texts say so.
 * **Edit** button (`moddy:tools:diff:edit:<token>`), same mechanism as `/regex`.
 
 ### `/textstats`
@@ -105,7 +107,7 @@ Localised names/descriptions: the 32 `locales/commands/*.json` files
   (pt); syllables come from `pyphen` (vowel-group fallback when a dictionary is
   missing). Below 30 words, or for an unrecognised language, the card says why
   there is no score instead of showing a wrong one.
-* Everything is computed on Moddy: footer `Computed by Moddy itself`.
+* Everything is computed on Moddy: no source line in the footer.
 
 ## Persistence
 

@@ -34,12 +34,6 @@
     },
     "Transcribe": {
       "name": "प्रतिलेखन करें"
-    },
-    "Find source": {
-      "name": "स्रोत खोजें"
-    },
-    "Check links": {
-      "name": "लिंक जांचें"
     }
   },
   "commands": {
@@ -497,25 +491,11 @@
     },
     "music": {
       "name": "संगीत",
-      "description": "संगीत टूल"
-    },
-    "music link": {
-      "name": "लिंक",
       "description": "Spotify का गाना, एल्बम या कलाकार दूसरे प्लेटफ़ॉर्म पर खोजें",
       "parameters": {
         "url": {
           "name": "लिंक",
           "description": "Spotify लिंक (गाना, एल्बम या कलाकार)"
-        }
-      }
-    },
-    "exif": {
-      "name": "exif",
-      "description": "किसी फ़ाइल का छिपा हुआ मेटाडेटा दिखाता है",
-      "parameters": {
-        "file": {
-          "name": "फ़ाइल",
-          "description": "छवि, PDF, Office दस्तावेज़, ऑडियो या वीडियो फ़ाइल"
         }
       }
     },

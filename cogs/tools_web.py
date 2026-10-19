@@ -1,6 +1,6 @@
 """
 Domain and link utility tools: ``/whois``, ``/dns``, ``/ssl``, ``/subdomains``,
-``/link-check`` and the "Check links" message menu.
+``/link-check``.
 
 See docs/features/TOOLS_WEB.md and the shared contract in docs/features/TOOLS.md.
 The network work lives in ``services/web_tools_service.py``, the cards in
@@ -40,8 +40,6 @@ logger = logging.getLogger("moddy.tools_web")
 
 #: Lookups a member can start per minute (every command fans out to public APIs).
 LOOKUPS_PER_MINUTE = 10
-#: Links examined when the menu is used on a message that has several.
-MENU_MAX_LINKS = lc.MAX_URLS_PER_MESSAGE
 
 
 def _tool_error(exc: tc.ToolError, locale: str) -> discord.ui.LayoutView:
@@ -49,24 +47,12 @@ def _tool_error(exc: tc.ToolError, locale: str) -> discord.ui.LayoutView:
 
 
 class ToolsWeb(commands.Cog):
-    """/whois /dns /ssl /subdomains /link-check + "Check links" menu"""
+    """/whois /dns /ssl /subdomains /link-check"""
 
     def __init__(self, bot):
         self.bot = bot
         self.service = svc.WebToolsService(bot)
         self._usage: Dict[int, List[float]] = {}
-
-        self.check_links_menu = app_commands.ContextMenu(
-            name="Check links",
-            callback=self.check_links_context_menu,
-            allowed_installs=app_commands.AppInstallationType(guild=True, user=True),
-            allowed_contexts=app_commands.AppCommandContext(
-                guild=True, dm_channel=True, private_channel=True),
-        )
-        self.bot.tree.add_command(self.check_links_menu)
-
-    async def cog_unload(self):
-        self.bot.tree.remove_command(self.check_links_menu.name, type=self.check_links_menu.type)
 
     # ------------------------------------------------------------------ #
     # Shared helpers
@@ -350,77 +336,6 @@ class ToolsWeb(commands.Cog):
                            scan.result if scan.state == "ok" else None)
         verdict = "unreachable" if (not reached and result.level == lc.LEVEL_SAFE) else result.level
         self._count("link_check.used", source=source, verdict=verdict)
-
-    @staticmethod
-    def message_links(message: discord.Message) -> List[str]:
-        texts = [message.content or ""]
-        for embed in message.embeds or []:
-            if embed.url:
-                texts.append(embed.url)
-        return lc.extract_urls(*texts, limit=MENU_MAX_LINKS + 1)
-
-    async def check_links_context_menu(self, interaction: discord.Interaction,
-                                       message: discord.Message):
-        locale = i18n.get_user_locale(interaction)
-        urls = self.message_links(message)
-        try:
-            self.check_rate(interaction.user.id)
-            if not urls:
-                raise tc.ToolError("no_links", tool="linkcheck")
-        except tc.ToolError as exc:
-            await tc.respond(interaction, view=_tool_error(exc, locale), ephemeral=True)
-            return
-
-        prepared_list: List[lc.PreparedUrl] = []
-        for url in urls[:MENU_MAX_LINKS]:
-            try:
-                prepared_list.append(self.prepare(url))
-            except tc.ToolError:
-                continue  # a link we must not contact is simply not examined
-        skipped = max(0, len(urls) - MENU_MAX_LINKS) + (min(len(urls), MENU_MAX_LINKS)
-                                                       - len(prepared_list))
-        if not prepared_list:
-            await tc.respond(interaction, view=_tool_error(
-                tc.ToolError("no_links", tool="linkcheck"), locale), ephemeral=True)
-            return
-
-        await interaction.response.send_message(
-            view=tc.loading_card(locale, t("tools.linkcheck.following", locale=locale)),
-            ephemeral=True)
-        if len(prepared_list) == 1 and skipped == 0:
-            await self.run_link_check(interaction, prepared_list[0], locale, ephemeral=True,
-                                      source="menu")
-            return
-        await self.run_links_summary(interaction, prepared_list, locale, skipped)
-
-    async def run_links_summary(self, interaction: discord.Interaction,
-                                prepared_list: List[lc.PreparedUrl], locale: str,
-                                skipped: int) -> None:
-        """Several links: local checks for each, VirusTotal's existing report when there is one."""
-        service = self.service
-        sem = asyncio.Semaphore(3)
-
-        async def inspect(prepared: lc.PreparedUrl):
-            async with sem:
-                return await service.inspect_link(prepared)
-
-        targets = await asyncio.gather(*(inspect(p) for p in prepared_list))
-        outcomes = [None] * len(targets)
-        use_vt, _ = service.providers()
-        if use_vt:
-            plan = await service.quota_plan(interaction.user.id, interaction.guild_id)
-            if plan is not None:
-                meta = {"user_id": interaction.user.id, "guild_id": interaction.guild_id}
-                for index, target in enumerate(targets):
-                    outcomes[index] = await service.check_virustotal(
-                        target.chain.final_url, plan=plan if index == 0 else None,
-                        report_only=True, metadata=meta)
-        view = views.build_links_card(list(zip(targets, outcomes)), locale, skipped=skipped)
-        await self._show(interaction, view)
-        worst = max((lc.assess(t_.signals, o.result if o and o.state == "ok" else None).level
-                     for t_, o in zip(targets, outcomes)),
-                    key=(lc.LEVEL_SAFE, lc.LEVEL_SUSPICIOUS, lc.LEVEL_DANGEROUS).index)
-        self._count("link_check.used", source="menu", verdict=worst)
 
 
 def _port_in(raw: str) -> int:

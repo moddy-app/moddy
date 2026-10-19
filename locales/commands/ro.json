@@ -34,12 +34,6 @@
     },
     "Transcribe": {
       "name": "Transcrie"
-    },
-    "Find source": {
-      "name": "Găsește sursa"
-    },
-    "Check links": {
-      "name": "Verifică linkurile"
     }
   },
   "commands": {
@@ -497,25 +491,11 @@
     },
     "music": {
       "name": "muzica",
-      "description": "Instrumente muzicale"
-    },
-    "music link": {
-      "name": "link",
       "description": "Găsește o melodie, un album sau un artist Spotify pe alte platforme",
       "parameters": {
         "url": {
           "name": "link",
           "description": "Linkul Spotify (o melodie, un album sau un artist)"
-        }
-      }
-    },
-    "exif": {
-      "name": "exif",
-      "description": "Afișează metadatele ascunse ale unui fișier",
-      "parameters": {
-        "file": {
-          "name": "fisier",
-          "description": "Imagine, PDF, document Office, fișier audio sau video"
         }
       }
     },

@@ -34,12 +34,6 @@
     },
     "Transcribe": {
       "name": "Transskriber"
-    },
-    "Find source": {
-      "name": "Find kilde"
-    },
-    "Check links": {
-      "name": "Tjek links"
     }
   },
   "commands": {
@@ -497,25 +491,11 @@
     },
     "music": {
       "name": "musik",
-      "description": "Musikværktøjer"
-    },
-    "music link": {
-      "name": "link",
       "description": "Find en Spotify-sang, et album eller en kunstner på andre platforme",
       "parameters": {
         "url": {
           "name": "link",
           "description": "Spotify-linket (en sang, et album eller en kunstner)"
-        }
-      }
-    },
-    "exif": {
-      "name": "exif",
-      "description": "Viser de skjulte metadata i en fil",
-      "parameters": {
-        "file": {
-          "name": "fil",
-          "description": "Billede, PDF, Office-dokument, lyd- eller videofil"
         }
       }
     },

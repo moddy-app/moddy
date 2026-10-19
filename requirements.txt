@@ -69,11 +69,6 @@ c2pa-python==0.38.0
 # Pinned: 0.4 changed the model-loading API we call (from_model_file).
 py3langid==0.4.0
 
-# /exif (tools/metadata.py): audio/video tags (pure Python, ~0.5 MB), imported
-# lazily. PDF metadata uses pypdf and HEIC photos pillow-heif (both listed with
-# the media tools below).
-mutagen>=1.47.0
-
 # Text tools (/regex): third-party regex engine with a match timeout (ReDoS guard).
 # Lazy-imported, ~1 MB wheel, no system package.
 regex>=2024.0.0

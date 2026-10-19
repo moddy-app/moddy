@@ -34,12 +34,6 @@
     },
     "Transcribe": {
       "name": "받아쓰기"
-    },
-    "Find source": {
-      "name": "출처 찾기"
-    },
-    "Check links": {
-      "name": "링크 확인"
     }
   },
   "commands": {
@@ -497,25 +491,11 @@
     },
     "music": {
       "name": "음악",
-      "description": "음악 도구"
-    },
-    "music link": {
-      "name": "링크",
       "description": "Spotify 곡, 앨범, 아티스트를 다른 플랫폼에서 찾기",
       "parameters": {
         "url": {
           "name": "링크",
           "description": "Spotify 링크 (곡, 앨범 또는 아티스트)"
-        }
-      }
-    },
-    "exif": {
-      "name": "exif",
-      "description": "파일에 숨겨진 메타데이터를 보여줍니다",
-      "parameters": {
-        "file": {
-          "name": "파일",
-          "description": "이미지, PDF, Office 문서, 오디오 또는 비디오 파일"
         }
       }
     },

@@ -34,12 +34,6 @@
     },
     "Transcribe": {
       "name": "Transkripsikan"
-    },
-    "Find source": {
-      "name": "Cari sumber"
-    },
-    "Check links": {
-      "name": "Periksa tautan"
     }
   },
   "commands": {
@@ -497,25 +491,11 @@
     },
     "music": {
       "name": "musik",
-      "description": "Alat musik"
-    },
-    "music link": {
-      "name": "tautan",
       "description": "Temukan lagu, album, atau artis Spotify di platform lain",
       "parameters": {
         "url": {
           "name": "tautan",
           "description": "Tautan Spotify (lagu, album, atau artis)"
-        }
-      }
-    },
-    "exif": {
-      "name": "exif",
-      "description": "Menampilkan metadata tersembunyi dari sebuah file",
-      "parameters": {
-        "file": {
-          "name": "berkas",
-          "description": "Gambar, PDF, dokumen Office, file audio atau video"
         }
       }
     },
