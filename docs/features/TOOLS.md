@@ -2,9 +2,10 @@
 
 Moddy ships a family of everyday tools: text (`/define`, `/tldr`, `/regex`,
 `/diff`, `/textstats`), security & dev (`/pwned`, `/password`, `/uuid`, `/hash`,
-`/jwt`, `/color`), web & OSINT (`/status`, `/company`, `/whois`, `/dns`, `/ssl`,
-`/subdomains`, `/link-check`, `/username`), media & files (`/image`, `/convert`,
-`/exif`, `/sauce`) and two automatic modules (music links, translate button).
+`/jwt`, `/color`), domains & links (`/whois`, `/dns`, `/ssl`, `/subdomains`,
+`/link-check`), lookups (`/status`, `/company`, `/username`), media & files
+(`/image`, `/convert`), inspection (`/exif`, `/sauce`) and two automatic
+modules (music links, translate button).
 
 This page is the **contract every tool follows**. Per-theme details:
 
@@ -12,8 +13,10 @@ This page is the **contract every tool follows**. Per-theme details:
 |---|---|---|---|
 | Text | [TOOLS_TEXT.md](TOOLS_TEXT.md) | `cogs/tools_text.py` | `utils/tools_text_views.py` |
 | Security & dev | [TOOLS_SECURITY.md](TOOLS_SECURITY.md) | `cogs/tools_security.py` | `utils/tools_security_views.py` |
-| Web & OSINT | [TOOLS_WEB.md](TOOLS_WEB.md) | `cogs/tools_web.py` | `utils/tools_web_views.py` |
+| Domains & links | [TOOLS_WEB.md](TOOLS_WEB.md) | `cogs/tools_web.py` | `utils/tools_web_views.py` |
+| Lookups | [TOOLS_LOOKUP.md](TOOLS_LOOKUP.md) | `cogs/tools_lookup.py` | `utils/tools_lookup_views.py` |
 | Media & files | [TOOLS_MEDIA.md](TOOLS_MEDIA.md) | `cogs/tools_media.py` | `utils/tools_media_views.py` |
+| Inspection | [TOOLS_INSPECT.md](TOOLS_INSPECT.md) | `cogs/tools_inspect.py` | `utils/tools_inspect_views.py` |
 | Music links | [MUSIC_LINKS.md](MUSIC_LINKS.md) | `cogs/music_links.py`, `modules/music_links.py` | `utils/music_links_views.py` |
 | Translate button | [TRANSLATE_BUTTON.md](TRANSLATE_BUTTON.md) | `modules/translate_button.py` | `utils/translate_button_views.py` |
 

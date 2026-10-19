@@ -22,7 +22,9 @@ TOOL_VIEW_MODULES: Tuple[str, ...] = (
     "utils.tools_text_views",
     "utils.tools_security_views",
     "utils.tools_web_views",
+    "utils.tools_lookup_views",
     "utils.tools_media_views",
+    "utils.tools_inspect_views",
     "utils.music_links_views",
     "utils.translate_button_views",
 )
