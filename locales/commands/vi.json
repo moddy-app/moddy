@@ -410,6 +410,20 @@
           "description": "Hình ảnh cần đọc"
         }
       }
+    },
+    "ai-check": {
+      "name": "kiem-tra-ai",
+      "description": "Kiểm tra xem hình ảnh có do AI tạo ra không",
+      "parameters": {
+        "image": {
+          "name": "hinh-anh",
+          "description": "Hình ảnh cần kiểm tra (PNG, JPEG hoặc WebP)"
+        },
+        "message": {
+          "name": "tin-nhan",
+          "description": "Liên kết tới tin nhắn trên máy chủ này có hình ảnh"
+        }
+      }
     }
   }
 }

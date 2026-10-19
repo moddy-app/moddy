@@ -410,6 +410,20 @@
           "description": "Gambar yang akan dibaca"
         }
       }
+    },
+    "ai-check": {
+      "name": "cek-ai",
+      "description": "Periksa apakah gambar dibuat oleh AI",
+      "parameters": {
+        "image": {
+          "name": "gambar",
+          "description": "Gambar yang akan diperiksa (PNG, JPEG, atau WebP)"
+        },
+        "message": {
+          "name": "pesan",
+          "description": "Tautan pesan dari server ini yang berisi gambar"
+        }
+      }
     }
   }
 }

@@ -410,6 +410,20 @@
           "description": "A imagem a ser lida"
         }
       }
+    },
+    "ai-check": {
+      "name": "verificar-ia",
+      "description": "Verifica se uma imagem foi gerada por IA",
+      "parameters": {
+        "image": {
+          "name": "imagem",
+          "description": "A imagem a verificar (PNG, JPEG ou WebP)"
+        },
+        "message": {
+          "name": "mensagem",
+          "description": "Link de uma mensagem deste servidor com a imagem"
+        }
+      }
     }
   }
 }

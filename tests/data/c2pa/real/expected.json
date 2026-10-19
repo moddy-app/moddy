@@ -1,0 +1,4 @@
+{
+  "_comment": "file name -> expected verdict kind (ai_full | ai_partial | photo | photo_edited | unsigned | null). Optional keys per file: issuer, tool. Verified against ../C2PA-TRUST-LIST.pem, offline.",
+  "files": {}
+}

@@ -410,6 +410,20 @@
           "description": "Luettava kuva"
         }
       }
+    },
+    "ai-check": {
+      "name": "tekoäly-tarkistus",
+      "description": "Tarkistaa, onko kuva tekoälyn luoma",
+      "parameters": {
+        "image": {
+          "name": "kuva",
+          "description": "Tarkistettava kuva (PNG, JPEG tai WebP)"
+        },
+        "message": {
+          "name": "viesti",
+          "description": "Linkki tämän palvelimen viestiin, jossa kuva on"
+        }
+      }
     }
   }
 }

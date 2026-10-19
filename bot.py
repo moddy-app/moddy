@@ -149,6 +149,9 @@ class ModdyBot(ModdyFrameworkBot):
         self.transcription = TranscriptionService(self)  # voice message speech-to-text
         from services.ocr_service import OcrService
         self.ocr = OcrService(self)  # image → text (/ocr + Transcribe menu on images)
+        from services.ai_detector_service import AiDetectorService
+        # C2PA / generation-metadata AI image detector (module + /ai-check)
+        self.ai_detector = AiDetectorService(self)
         from services.altguard_client import AltGuardClient
         # AltGuard anti multi-account verification (HTTP + altguard:* Pub/Sub)
         self.altguard = AltGuardClient(self)
@@ -1105,6 +1108,11 @@ class ModdyBot(ModdyFrameworkBot):
             logger.info("API gateway ready")
         except Exception as e:
             logger.error(f"[FAIL] API gateway startup error: {e}")
+
+        # AI image detector: the official C2PA trust list (Redis-cached, 24 h).
+        # Background — never delays startup; until it is loaded only unsigned
+        # PNG generation metadata can be detected.
+        self.ai_detector.start()
 
         # Automod: what the Moddy team taught the bot (learned references,
         # blocklist terms, image hashes). Background — never delays startup.
@@ -2454,6 +2462,8 @@ class ModdyBot(ModdyFrameworkBot):
         # Stop the Health Monitor heartbeat
         await self.heartbeat.stop()
         await self.betterstack_heartbeat.stop()
+
+        await self.ai_detector.stop()
 
         # Close the AltGuard HTTP session
         try:

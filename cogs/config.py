@@ -177,6 +177,15 @@ async def build_module_config_view(bot, guild_id: int, user_id: int, locale: str
             user_id,
             locale
         )
+    elif module_id == 'ai_detector':
+        from modules.configs.ai_detector_config import AiDetectorConfigView
+        config_view = AiDetectorConfigView(
+            bot,
+            guild_id,
+            user_id,
+            locale,
+            module_config
+        )
     elif module_id == 'automod_ai':
         from modules.configs.automod_ai_config import open_automod_panel
         # First run -> the setup wizard; configured -> the home screen.
@@ -402,9 +411,10 @@ class ConfigMainView(BaseView):
 
         # Sanction globale "limité" : un module jamais configuré ne peut plus
         # être mis en place. On le dit tout de suite plutôt qu'à la sauvegarde.
-        if not module_config and await global_sanctions.is_limited(
+        if (not module_config and not getattr(module_class, 'DEFAULT_ENABLED', False)
+                and await global_sanctions.is_limited(
             bot, user_id=user_id, guild_id=guild_id
-        ):
+        )):
             guild_limited = await global_sanctions.is_limited(bot, guild_id=guild_id)
             await interaction.followup.send(
                 view=create_limited_message(locale, guild=guild_limited),

@@ -410,6 +410,20 @@
           "description": "Skaitomas paveikslėlis"
         }
       }
+    },
+    "ai-check": {
+      "name": "di-patikra",
+      "description": "Patikrina, ar vaizdą sukūrė dirbtinis intelektas",
+      "parameters": {
+        "image": {
+          "name": "vaizdas",
+          "description": "Tikrinamas vaizdas (PNG, JPEG arba WebP)"
+        },
+        "message": {
+          "name": "zinute",
+          "description": "Nuoroda į šio serverio žinutę su vaizdu"
+        }
+      }
     }
   }
 }

@@ -302,6 +302,37 @@ chaque module dans la description de l'entrée du menu).
 Sous-vues de `/config` : `breadcrumb(locale, MODULE_NAME, "Sanctions", name)`
 en **premier** item du container (voir DESIGN.md).
 
+### 3 quinquies. Modules actifs par défaut (`DEFAULT_ENABLED`)
+
+Par défaut un module n'existe dans un serveur que lorsqu'une config y est
+sauvegardée (opt-in). Un module qui déclare `DEFAULT_ENABLED = True` tourne au
+contraire **dans tous les serveurs**, avec `get_default_config()`, tant que le
+serveur n'a rien sauvegardé (opt-out). Premier module concerné :
+`ai_detector` (voir [docs/features/AI_DETECTOR.md](../features/AI_DETECTOR.md)).
+
+Règle unique : **config absente ou vide (`{}`) = valeurs par défaut, état
+`active`**. Le `ModuleManager` l'applique partout :
+
+| Chemin | Comportement pour un module `DEFAULT_ENABLED` sans config |
+|---|---|
+| `load_guild_modules` | instance créée avec les défauts (`_load_default_modules`) |
+| `get_module_statuses` / `get_module_state` | `active` (jamais `not_configured`) |
+| `set_module_state` | écrit `{**défauts, "state": ...}` en base (la pause survit au redémarrage) |
+| `reload_module` (push dashboard d'une config vide) | retour aux défauts (`action: "updated"`), pas de déchargement |
+| `delete_module_config` | l'instance est recréée avec les défauts |
+| `_blocked_as_new_module` (sanction « limité ») | jamais bloqué : le module tourne déjà |
+| Panneau **Gérer** (`build_manage_view`) | disponible avant toute sauvegarde |
+
+`ModuleManager.effective_config(module_id, config)` renvoie la config avec
+laquelle le module tourne réellement (stockée, ou défauts). L'écran de config
+d'un tel module affiche toujours le bouton **Gérer** (il a toujours un état) ;
+« désactiver » le module = le mettre en pause. `CONFIG_DELETABLE` n'a de sens
+que comme « réinitialiser » : il reste `False` pour `ai_detector`.
+
+**Dashboard/backend** : traiter une clé `modules.<id>` absente ou vide comme
+« actif avec les valeurs par défaut » pour ces modules ; écrire
+`{"state": "paused", ...}` pour les éteindre.
+
 ### 4. Stockage en base de données
 
 Les configurations sont stockées dans PostgreSQL :

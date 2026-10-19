@@ -174,6 +174,9 @@ _ALL: Tuple[Metric, ...] = (
            doc="The Moddy team labeled an automod decision (labeling queue)."),
     Metric("ocr.used", scope=SCOPE_GLOBAL, dimensions=("source",),
            doc="/ocr or the Transcribe menu extracted text from an image."),
+    Metric("ai_detector.verdict", scope=SCOPE_GLOBAL, dimensions=("kind", "source"),
+           doc="The AI image detector reached a verdict (kind: ai_full | "
+               "ai_partial | photo | photo_edited | unsigned; source: auto | command)."),
     # -- Uniques (HyperLogLog, never a list of ids) ------------------------ #
     Metric("user.active", kind=KIND_UNIQUE, scope=SCOPE_GUILD,
            doc="Distinct people who used Moddy in this server, per day."),

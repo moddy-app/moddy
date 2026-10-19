@@ -410,6 +410,20 @@
           "description": "Obrázek k přečtení"
         }
       }
+    },
+    "ai-check": {
+      "name": "kontrola-ai",
+      "description": "Zkontroluje, zda byl obrázek vytvořen umělou inteligencí",
+      "parameters": {
+        "image": {
+          "name": "obrazek",
+          "description": "Obrázek ke kontrole (PNG, JPEG nebo WebP)"
+        },
+        "message": {
+          "name": "zprava",
+          "description": "Odkaz na zprávu z tohoto serveru s obrázkem"
+        }
+      }
     }
   }
 }

@@ -410,6 +410,20 @@
           "description": "読み取る画像"
         }
       }
+    },
+    "ai-check": {
+      "name": "ai判定",
+      "description": "画像がAIで生成されたかを確認します",
+      "parameters": {
+        "image": {
+          "name": "画像",
+          "description": "確認する画像（PNG・JPEG・WebP）"
+        },
+        "message": {
+          "name": "メッセージ",
+          "description": "画像を含むこのサーバーのメッセージのリンク"
+        }
+      }
     }
   }
 }

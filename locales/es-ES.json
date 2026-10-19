@@ -3907,6 +3907,40 @@
         "pending_title": "Eliminando",
         "pending_description": "Se están eliminando el canal y su conversación."
       }
+    },
+    "ai_detector": {
+      "name": "Detector de IA",
+      "description": "Señala las imágenes generadas por IA gracias a las firmas C2PA",
+      "config": {
+        "title": "Detector de IA",
+        "description": "Moddy verifica la firma C2PA de las imágenes enviadas en el servidor e indica cuándo una imagen fue generada o modificada por IA, o cuándo una foto está autenticada. Solo responde cuando existe información verificable. Activo por defecto en todos los servidores: puedes pausarlo desde **Gestionar**.",
+        "categories": {
+          "section_title": "Resultados anunciados",
+          "section_description": "Marca los tipos de resultados que Moddy publica bajo las imágenes",
+          "placeholder": "Ningún resultado anunciado",
+          "ai_full": {
+            "label": "Imágenes generadas por IA",
+            "description": "Imágenes creadas por completo por una IA (firma verificada)"
+          },
+          "ai_partial": {
+            "label": "Imágenes retocadas con IA",
+            "description": "Imágenes modificadas con una herramienta de IA generativa"
+          },
+          "photo": {
+            "label": "Fotos autenticadas",
+            "description": "Fotos firmadas por la cámara, retocadas o no"
+          },
+          "unsigned": {
+            "label": "Metadatos de generación",
+            "description": "PNG con parámetros de Stable Diffusion o ComfyUI"
+          }
+        },
+        "channels": {
+          "section_title": "Canales ignorados",
+          "section_description": "Moddy nunca responde en estos canales (ni en sus hilos)",
+          "placeholder": "Ningún canal ignorado"
+        }
+      }
     }
   },
   "languages": {
@@ -5365,5 +5399,130 @@
       "done": "{n} term(s) added to `{category}`."
     },
     "name": "Nombre"
+  },
+  "ai_detector": {
+    "loading": "Analizando la imagen",
+    "learn_more": "Más información",
+    "details_button": "Más información",
+    "no_verdict_title": "Ninguna información verificable",
+    "unknown_tool": "una herramienta no especificada",
+    "unknown_issuer": "un emisor certificado",
+    "unknown_device": "cámara",
+    "tool_with_issuer": "**{tool}** ({issuer})",
+    "tool_only": "**{tool}**",
+    "verdicts": {
+      "ai_full": {
+        "title": "Contenido generado por inteligencia artificial",
+        "body": "Esta imagen fue generada por completo por {tool_part} el **{date}**.",
+        "body_no_date": "Esta imagen fue generada por completo por {tool_part}.",
+        "footer": "Esta información proviene de la firma C2PA de {issuer} integrada en el archivo, verificada criptográficamente e imposible de falsificar. [**Más información**]({url})"
+      },
+      "ai_partial": {
+        "title": "Contenido generado parcialmente por inteligencia artificial",
+        "body": "Esta imagen fue modificada con herramientas de IA generativa mediante {tool_part}.",
+        "footer": "Esta información proviene del historial firmado C2PA del archivo, verificado criptográficamente, que atestigua una modificación con IA sin precisar siempre la zona afectada. [**Más información**]({url})"
+      },
+      "photo": {
+        "title": "Fotografía autenticada",
+        "body": "Esta fotografía fue tomada con una **{device}** el **{date}** y no ha sido modificada por IA.",
+        "body_no_date": "Esta fotografía fue tomada con una **{device}** y no ha sido modificada por IA.",
+        "footer": "Se verificó la firma C2PA aplicada por {issuer} al tomar la foto, lo que certifica el origen de la imagen pero no la autenticidad de la escena fotografiada. [**Más información**]({url})"
+      },
+      "photo_edited": {
+        "title": "Fotografía autenticada y retocada",
+        "body": "Esta fotografía fue tomada con una **{device}** y luego retocada con **{tool}** ({actions}), sin IA generativa.",
+        "body_no_tool": "Esta fotografía fue tomada con una **{device}** y luego retocada ({actions}), sin IA generativa.",
+        "footer": "El origen de la imagen y la lista de retoques provienen de su historial firmado C2PA, verificado criptográficamente. [**Más información**]({url})"
+      },
+      "unsigned": {
+        "title": "Contenido probablemente generado por inteligencia artificial",
+        "body": "Esta imagen contiene parámetros de generación propios de **{tool}**.",
+        "footer": "Estos metadatos no están firmados: son un indicio fuerte, sin valor de prueba. [**Más información**]({url})"
+      }
+    },
+    "actions": {
+      "created": "creación",
+      "opened": "apertura",
+      "placed": "elemento insertado",
+      "removed": "elemento eliminado",
+      "edited": "retoques",
+      "cropped": "recorte",
+      "color_adjustments": "colores",
+      "resized": "cambio de tamaño",
+      "filtered": "filtros",
+      "drawing": "dibujo",
+      "orientation": "rotación",
+      "redacted": "ocultación",
+      "converted": "conversión de formato",
+      "transcoded": "conversión de formato",
+      "edited_metadata": "metadatos",
+      "published": "publicación",
+      "repackaged": "reempaquetado"
+    },
+    "source_types": {
+      "trainedAlgorithmicMedia": "IA generativa",
+      "compositeWithTrainedAlgorithmicMedia": "composición con IA generativa",
+      "digitalCapture": "captura digital",
+      "computationalCapture": "captura (procesamiento por software)",
+      "algorithmicMedia": "medio algorítmico (sin IA entrenada)",
+      "digitalCreation": "creación digital",
+      "compositeCapture": "composición de capturas",
+      "composite": "composición",
+      "screenCapture": "captura de pantalla",
+      "minorHumanEdits": "retoques humanos menores"
+    },
+    "details": {
+      "title": "Detalles del análisis",
+      "verdict": "Resultado:",
+      "source": "Fuente:",
+      "source_c2pa": "firma C2PA verificada",
+      "source_unsigned": "metadatos sin firmar",
+      "signature_title": "Firma",
+      "issuer": "Emisor:",
+      "validation": "Validación:",
+      "validation_trusted": "firma intacta, certificado en la lista de confianza oficial de C2PA",
+      "algorithm": "Algoritmo:",
+      "signed_at": "Firmada el:",
+      "generator": "Herramienta:",
+      "device": "Cámara:",
+      "history_title": "Historial firmado",
+      "history_more": "… y {count} paso(s) más",
+      "history_empty": "Ninguna acción declarada.",
+      "chain": "{manifests} manifiesto(s) firmado(s) · {ingredients} ingrediente(s)",
+      "metadata_title": "Metadatos detectados",
+      "fields": "Campos:",
+      "setting": "{name}: `{value}`",
+      "prompt_hidden": "El prompt nunca se muestra.",
+      "privacy": "Moddy nunca muestra la ubicación, el autor ni ningún dato personal contenido en el archivo.",
+      "how_title": "¿Cómo funciona?",
+      "how_body": "C2PA es un estándar abierto (Adobe, Microsoft, Google, OpenAI, Sony, Leica…): la herramienta o la cámara que produce una imagen le adjunta un manifiesto firmado que describe su origen y sus modificaciones. Moddy descarga el archivo original, comprueba que la firma está intacta y que el certificado del emisor figura en la lista de confianza oficial de C2PA, y luego lee las acciones declaradas. En los PNG, Moddy también detecta los parámetros que Stable Diffusion y ComfyUI escriben en el archivo.",
+      "reliability_title": "¿Qué confianza merece este resultado?",
+      "reliability_c2pa": "La firma garantiza que el archivo no ha cambiado desde que se firmó y que su emisor está reconocido por C2PA: nadie puede fabricar este resultado sin la clave del emisor. Refleja lo que el emisor declaró, y solo eso.",
+      "reliability_unsigned": "Estos parámetros no están firmados: cualquiera puede añadirlos o quitarlos. Su presencia es un indicio fuerte de generación por IA, no una prueba.",
+      "reliability_photo": "Una foto autenticada prueba la cámara y la fecha de la toma, no la veracidad de lo que muestra (una escena preparada sigue siendo preparada).",
+      "absence": "La ausencia de resultado no prueba nada: una captura de pantalla, un nuevo guardado o la mayoría de redes sociales eliminan esta información."
+    },
+    "reasons": {
+      "unsupported": "Solo se pueden verificar imágenes PNG, JPEG y WebP.",
+      "no_data": "Esta imagen no contiene firma C2PA ni metadatos de generación. Eso no significa que sea auténtica: esta información se pierde fácilmente.",
+      "untrusted": "Esta imagen tiene una firma C2PA válida, pero su emisor no figura en la lista de confianza oficial de C2PA: su contenido no puede garantizarse.",
+      "invalid": "Esta imagen tiene una firma C2PA no válida: el archivo se modificó después de firmarse o la firma está dañada.",
+      "unclassified": "Esta imagen tiene una firma C2PA de confianza, pero su historial no indica su origen (IA o captura).",
+      "trust_unavailable": "La lista de confianza C2PA aún no está cargada, inténtalo de nuevo en unos instantes.",
+      "error": "No se pudo leer la firma C2PA de esta imagen.",
+      "busy": "Hay demasiados análisis en curso, inténtalo de nuevo en unos instantes."
+    },
+    "errors": {
+      "title": "Verificación imposible",
+      "failed": "La verificación falló, inténtalo de nuevo en unos instantes.",
+      "unavailable": "El detector de IA no está disponible por el momento.",
+      "gone": "Esta imagen ya no está disponible (mensaje eliminado o inaccesible).",
+      "no_image": "No hay ninguna imagen PNG, JPEG o WebP que verificar. Adjunta una imagen o indica el enlace de un mensaje que la contenga.",
+      "unsupported": "Solo se pueden verificar imágenes PNG, JPEG y WebP.",
+      "too_large": "Esta imagen es demasiado pesada para verificarla (25 MB como máximo).",
+      "download_failed": "No se pudo descargar la imagen.",
+      "bad_link": "Este enlace no es un enlace de mensaje de Discord válido.",
+      "other_server": "Solo se pueden verificar mensajes de este servidor."
+    }
   }
 }

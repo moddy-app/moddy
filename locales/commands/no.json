@@ -410,6 +410,20 @@
           "description": "Bildet som skal leses"
         }
       }
+    },
+    "ai-check": {
+      "name": "ki-sjekk",
+      "description": "Sjekk om et bilde er generert av KI",
+      "parameters": {
+        "image": {
+          "name": "bilde",
+          "description": "Bildet som skal sjekkes (PNG, JPEG eller WebP)"
+        },
+        "message": {
+          "name": "melding",
+          "description": "Lenke til en melding på denne serveren med bildet"
+        }
+      }
     }
   }
 }
