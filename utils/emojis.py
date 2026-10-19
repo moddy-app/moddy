@@ -156,7 +156,8 @@ LOCATION_ON = ""     # /exif GPS — Material `location_on`
 IMAGE_SEARCH = ""    # /sauce — Material `image_search`
 MOVIE = ""           # /sauce anime result — Material `movie`
 MUSIC_NOTE = ""      # /music + music links module — Material `music_note`
-# Service logos — shown in the "Source: **X**" footer line of each tool and on
+# Service logos — shown next to the service name in each tool's footer phrase
+# ("Provided by <logo> **X**", utils/tool_card.source_line) and on
 # link buttons. Coloured brand artwork is visible on both themes: no `_dark`
 # twin needed unless the logo itself is white/black.
 SPOTIFY = ""
@@ -190,7 +191,6 @@ DROPBOX = ""
 ATLASSIAN = ""
 VERCEL = ""
 NETLIFY = ""
-NOTION = ""
 ZOOM = ""
 # Added by the lookup tools (/status): one logo each, empty until uploaded.
 ANTHROPIC = ""       # /status — Claude (Anthropic) logo

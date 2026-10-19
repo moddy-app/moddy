@@ -183,6 +183,11 @@ Limits are cached in memory with a 60-second TTL to avoid PG hits on the hot pat
 | `ocr_command` | user | **10** |
 | `ocr_command` | guild | **100** |
 | `ocr_command` | global | -1 |
+| `tldr` | user / guild | **10** / **100** |
+| `link_check` | user / guild | **10** / **100** |
+| `sauce` | user / guild | **15** / **150** |
+| `convert_cloud` | user / guild | **5** / **30** |
+| `tldr` / `link_check` / `sauce` / `convert_cloud` | global | -1 |
 
 To add a limit for a specific guild:
 ```sql
@@ -213,6 +218,11 @@ ON CONFLICT (scope, key, type) DO UPDATE SET daily_limit = EXCLUDED.daily_limit;
 | `automod_safesearch` | google_vision/safe_search | guild + global | ✅ |
 | `automod_profile_safesearch` | google_vision/safe_search (accounted on `safe_search_profile`) | guild + global | ✅ |
 | `ocr_command` | google_vision/document_text | user + guild + global | ✅ |
+| `tldr` | openai/chat (`gpt-4.1-mini`) | user + guild | ✅ |
+| `link_check` | virustotal/`url_report`·`url_submit`·`analysis` + urlscan/`scan_submit`·`scan_result` | user + guild (charged once, on the first provider call) | ✅ |
+| `sauce` | saucenao/search + tracemoe/search | user + guild (charged once) | ✅ |
+| `convert_cloud` | cloudconvert/convert | user + guild | ✅ |
+| `translation` (source `translate_button`) | deepl/translate | user (the person who clicks) | ✅ |
 
 > `text_*` calls come from `cogs/text_tools.py` (`/fix`, `/rephrase`, `/summarize`).
 > The guild target is only added when the command runs inside a server — in DMs
@@ -227,6 +237,25 @@ ON CONFLICT (scope, key, type) DO UPDATE SET daily_limit = EXCLUDED.daily_limit;
 > `voice_transcription` comes from `services/transcription_service.py`
 > (see [VOICE_TRANSCRIPTION.md](../features/VOICE_TRANSCRIPTION.md)). Same rule for the
 > guild target; it is additionally capped by the provider rate limits below.
+>
+> Utility tools ([TOOLS.md](../features/TOOLS.md)): `tldr` from `cogs/tools_text.py`;
+> `link_check` from `services/web_tools_service.py` via `bot.gateway.virustotal` /
+> `bot.gateway.urlscan` (`gateway/clients/web_security.py`) — the checked URL
+> travels in `CallSpec.binary`, only its host is logged; `sauce` from
+> `services/sauce_service.py` via `gateway/clients/image_search.py`;
+> `convert_cloud` from `services/media_tools_service.py` via
+> `bot.gateway.cloudconvert` (`gateway/clients/conversion.py`) — the Discord CDN
+> import URL goes in `metadata`, never in `payload`, and export links must be on
+> `*.cloudconvert.com`. Every one of these providers is optional: without its key
+> the adapter is not started and the feature degrades (local checks only for
+> `/link-check`, "unavailable" for `/sauce`, office/ebook formats hidden in
+> `/convert`).
+>
+> **Not through the gateway:** keyless public APIs (Wiktionary, HIBP range,
+> RDAP, DNS-over-HTTPS, crt.sh, Statuspage, Annuaire des Entreprises, Deezer,
+> iTunes Search, Spotify pages, WhatsMyName sites) go through `bot.public_api`
+> (`services/public_api.py`). Documented exception: `/username` makes ~650
+> requests per search, which would flood the gateway's per-call logging.
 
 ---
 
@@ -251,6 +280,22 @@ Rules live in `gateway/config.py` and mirror the provider console:
 | google_vision / `safe_search` | `rpmo` | 1 000 requests | **calendar month** (Pacific), fail-closed | `GOOGLE_VISION_SAFESEARCH_MONTHLY` |
 | google_vision / `safe_search_profile` | `rpmo` | 1 000 requests | **calendar month** (Pacific), fail-closed — a separate budget for member avatars / banners (same SafeSearch API call, own accounting key) | `GOOGLE_VISION_SAFESEARCH_PROFILE_MONTHLY` |
 | google_vision / `document_text` | `rpmo` | 1 000 requests | **calendar month** (Pacific), fail-closed | `GOOGLE_VISION_OCR_MONTHLY` |
+| saucenao / `search` | `r30s` | 6 requests | 30 s | `SAUCENAO_PER_30S` |
+| | `rpd` | 100 requests | 1 day | `SAUCENAO_PER_DAY` |
+| tracemoe / `search` | `rpmo` | 100 (1 000 with a key) | calendar month (UTC) | `TRACEMOE_MONTHLY` |
+| | `rpm` | 30 requests | 1 min | `TRACEMOE_PER_MINUTE` |
+| virustotal / `public_api` (all three operations) | `rpm` | 4 requests | 1 min | `VIRUSTOTAL_PER_MINUTE` |
+| | `rpd` | 500 requests | 1 day | `VIRUSTOTAL_PER_DAY` |
+| urlscan / `scan` | `rpm` / `rpd` | 10 / 400 | 1 min / 1 day | `URLSCAN_SCAN_PER_MINUTE` / `URLSCAN_SCAN_PER_DAY` |
+| urlscan / `result` | `rpm` / `rpd` | 60 / 4 000 | 1 min / 1 day | `URLSCAN_RESULT_PER_MINUTE` / `URLSCAN_RESULT_PER_DAY` |
+| cloudconvert / `convert` | `rpm` | 10 requests | 1 min | `CLOUDCONVERT_PER_MINUTE` |
+| | `rpd` | 25 requests (free allowance), **fail-closed** | 1 day | `CLOUDCONVERT_PER_DAY` |
+
+> **VirusTotal's free (public) API forbids commercial use.** Moddy has a paid
+> Premium: keep `VIRUSTOTAL_API_KEY` unset, or buy a commercial licence, before
+> enabling it in production. At 4 requests a minute the whole bot gets roughly
+> one fresh analysis a minute; `/link-check` then says "busy" and keeps its local
+> checks.
 
 The OpenAI values mirror our org's Tier 1 limits (platform.openai.com → Limits
 → Rate limits). Only RPM is enforced (not TPM) — estimating tokens ahead of
@@ -398,6 +443,15 @@ except (APIUnavailableError, GatewayError):
 | `GATEWAY_CB_FAILURE_THRESHOLD` | `5` | Circuit breaker failure count |
 | `GATEWAY_CB_COOLDOWN` | `60` | Circuit breaker cooldown (seconds) |
 | `LOG_WEBHOOK_API_CALL` | — | Webhook for API call logs (falls back to `LOG_WEBHOOK_DEFAULT`) |
+| `SAUCENAO_API_KEY` | — | `/sauce` (SauceNAO). Absent → SauceNAO disabled |
+| `TRACEMOE_API_KEY` | — | `/sauce` anime search (optional: anonymous = 100 searches a month per IP) |
+| `VIRUSTOTAL_API_KEY` | — | `/link-check` reputation (optional). **Free tier forbids commercial use** |
+| `URLSCAN_API_KEY` | — | `/link-check` sandboxed scan + screenshot (optional) |
+| `CLOUDCONVERT_API_KEY` | — | `/convert` office documents and ebooks (optional; formats hidden without it) |
+| `CLOUDCONVERT_SANDBOX` | `false` | Use CloudConvert's sandbox API (testing) |
+| `GATEWAY_TIMEOUT_SEARCH` | `25` | SauceNAO / trace.moe / VirusTotal / urlscan submit timeout (seconds) |
+| `GATEWAY_TIMEOUT_SCAN` | `60` | urlscan result (the adapter polls up to ~40 s inside one call) |
+| `GATEWAY_TIMEOUT_CONVERT` | `120` | CloudConvert job (import + convert + export, polled) |
 
 ---
 

@@ -162,6 +162,62 @@
 Every `<name>_dark` twin lives in `utils/emojis.py::DARK_VARIANTS` (see
 [ICON_THEME.md](ICON_THEME.md)).
 
+## Utility tools icons — `utils/emojis.py` block "UTILITY TOOLS"
+
+Icons of the tool family ([TOOLS.md](../features/TOOLS.md)). A constant that is
+an **empty string** has no artwork yet: `utils/tool_card.py` (`heading`,
+`with_icon`, `button_emoji`, `source_line`) drops it cleanly, so uploading the
+artwork is a one-line change here (plus the `_dark` twin in `DARK_VARIANTS`).
+Never point one of these at an unrelated icon.
+
+**Uploaded and reused** (same meaning): `COLOR` (/color), `LOCK` (/ssl),
+`DATA_OBJECT` (/jwt JSON), `TEXT` (/tldr, like /summarize), `WEB` (/whois,
+status page buttons), `LINK` (/link-check), `IMAGE` (/image), `TRANSLATE`
+(translate button module), `HISTORY` (domain age), `REFRESH`, `EDIT`, `BACK`,
+`NEXT`, `DOWNLOAD`, `DONE`, `ERROR`, `WARNING`, `INFO`, `LOADING`,
+`GREEN_STATUS` / `YELLOW_STATUS` / `RED_STATUS`.
+
+**Empty, artwork to upload** (white + `_dark` twin, Material Symbols name):
+
+| Constant | Material icon | Used by |
+|---|---|---|
+| `DICTIONARY` | `dictionary` | /define |
+| `REGEX` | `regular_expression` | /regex |
+| `TAG` | `tag` | /hash |
+| `DIFFERENCE` | `difference` | /diff |
+| `ANALYTICS` | `analytics` | /textstats |
+| `PASSWORD` | `password` | /password |
+| `NUMBERS` | `123` | /uuid |
+| `TOKEN` | `token` | /jwt |
+| `GPP_MAYBE` | `gpp_maybe` | /pwned |
+| `MONITOR_HEART` | `monitor_heart` | /status |
+| `BLUE_STATUS` | filled dot, `green_status` style | /status: maintenance |
+| `GREY_STATUS` | filled dot, `green_status` style | /status: unknown |
+| `BUSINESS` | `business` | /company |
+| `DNS` | `dns` | /dns |
+| `ACCOUNT_TREE` | `account_tree` | /subdomains |
+| `ALT_ROUTE` | `alt_route` | /link-check redirect chain |
+| `PERSON_SEARCH` | `person_search` | /username |
+| `ASPECT_RATIO` | `aspect_ratio` | /image resize |
+| `COMPRESS` | `compress` | /image compress |
+| `TRANSFORM` | `transform` | /convert |
+| `AUTO_FIX_HIGH` | `auto_fix_high` | /image remove background |
+| `FRAME_INSPECT` | `frame_inspect` | /exif |
+| `LOCATION_ON` | `location_on` | /exif GPS |
+| `IMAGE_SEARCH` | `image_search` | /sauce |
+| `MOVIE` | `movie` | /sauce anime result |
+| `MUSIC_NOTE` | `music_note` | /music + music links module (module icon too) |
+
+**Service logos** (coloured brand artwork, no `_dark` twin unless the logo is
+white or black), all empty for now: `SPOTIFY`, `DEEZER`, `APPLE_MUSIC`,
+`YOUTUBE_MUSIC`, `WIKTIONARY`, `HIBP`, `OPENAI`, `DEEPL`, `DATA_GOUV`,
+`CLOUDFLARE`, `CRTSH`, `VIRUSTOTAL`, `URLSCAN`, `WHATSMYNAME`, `SAUCENAO`,
+`TRACEMOE`, `ANILIST`, `GOOGLE_LENS`, `YANDEX`, `BING`, `TINEYE`,
+`CLOUDCONVERT`, `OPENSTREETMAP`, and the /status services `DISCORD_LOGO`,
+`GITHUB`, `REDDIT`, `DROPBOX`, `ATLASSIAN`, `VERCEL`, `NETLIFY`,
+`ZOOM`, `ANTHROPIC`, `EPIC_GAMES`, `NPM`, `DIGITALOCEAN`, `FIGMA` (Twitch
+reuses `TWITCH`).
+
 ## Bump Reminder directory icons — `utils/emojis.py::BUMP_DIRECTORY_EMOJIS`
 
 One icon per server directory supported by the Bump Reminder module
