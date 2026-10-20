@@ -102,7 +102,7 @@ moddy/
 │   ├── ai_detector.py         #   AI Detector: replies under C2PA-attested images (DEFAULT_ENABLED)
 │   ├── logs.py                #   Advanced server logs (config + routing, 163 events)
 │   ├── music_links.py         #   Music links: alternatives under Spotify links (DEFAULT_ENABLED)
-│   ├── translate_button.py    #   Translate button under foreign-language messages (DEFAULT_ENABLED)
+│   ├── translate_button.py    #   Translate button under foreign-language messages (opt-in)
 │   └── configs/               #   Components V2 config UIs per module
 │       ├── server_settings_config.py      # Server-wide settings (language)
 │       ├── adaptive_slowmode_config.py
@@ -420,7 +420,7 @@ moddy/
     ├── test_user_preferences.py # Preferences cache, language override, /preferences selects
     ├── test_staff_user_command.py # /team user: sections, personal-data gate, i18n (5 locales)
     ├── test_tools_{text,security,web,lookup,media,inspect}.py # Utility tools per theme
-    └── test_music_links.py, test_translate_button.py          # The two default-enabled modules
+    └── test_music_links.py, test_translate_button.py          # Music links (default-enabled) + translate button (opt-in)
 ```
 
 ---

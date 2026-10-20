@@ -732,7 +732,7 @@ class TestModule:
     def test_defaults_and_normalisation(self):
         from modules.translate_button import TranslateButtonModule, normalize_config
         from services.translate_button_service import DEFAULT_DELETE_AFTER
-        assert TranslateButtonModule.DEFAULT_ENABLED is True
+        assert TranslateButtonModule.DEFAULT_ENABLED is False
         assert TranslateButtonModule.REQUIRED_BOT_PERMISSIONS == []
         assert normalize_config(None) == {"ignored_channel_ids": [], "extra_languages": [],
                                           "delete_after": DEFAULT_DELETE_AFTER}
