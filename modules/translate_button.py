@@ -13,8 +13,8 @@ A server's *usual* languages are learnt from the last two weeks of messages
 nagged. Extra languages can be added by hand, channels ignored, and the
 prompt's lifetime chosen in /config.
 
-**Default-enabled** (``DEFAULT_ENABLED``): runs everywhere until a server pauses
-it from /config -> Manage. See docs/features/TRANSLATE_BUTTON.md.
+**Opt-in**: off until a server enables it from /config. See
+docs/features/TRANSLATE_BUTTON.md.
 """
 
 from __future__ import annotations
@@ -66,7 +66,7 @@ class TranslateButtonModule(ModuleBase):
     MODULE_DESCRIPTION = "Propose une traduction sous les messages dans une autre langue"
     MODULE_EMOJI = TRANSLATE
     MODULE_ORDER = 106
-    DEFAULT_ENABLED = True
+    DEFAULT_ENABLED = False
     # Replies in the channel the message was posted in; the prompt is deleted
     # by the bot itself (its own message), so no Manage Messages either.
     REQUIRED_BOT_PERMISSIONS: List[str] = []

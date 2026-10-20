@@ -10,8 +10,8 @@ with one dim line and a button:
 Whoever clicks gets the translation **privately** (ephemeral), in **their own**
 language, with `Translated by <DeepL logo> **DeepL**` as the source phrase.
 
-The module is **enabled by default** on every server (`DEFAULT_ENABLED`, like the
-AI Detector) and can be paused from `/config` -> *Translate Button* -> **Manage**.
+The module is **opt-in** (`DEFAULT_ENABLED = False`): a server turns it on from
+`/config` -> *Translate Button*.
 Design contract: [TOOLS.md](TOOLS.md). Module rules: [../guides/MODULE_SYSTEM.md](../guides/MODULE_SYSTEM.md).
 
 ## Files
@@ -106,7 +106,7 @@ Error codes (`modules.translate_button.errors.*`): `failed`, `unavailable`,
 
 ## `/config` panel
 
-Stored in `guilds.data.modules.translate_button` (absent or `{}` = defaults, active):
+Stored in `guilds.data.modules.translate_button` (absent or `{}` = module not enabled):
 
 ```json
 {
