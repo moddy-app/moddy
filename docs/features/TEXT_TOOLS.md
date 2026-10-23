@@ -12,7 +12,7 @@ piece of text through OpenAI:
 
 | Command | What it does | Model | `call_type` | Accent |
 |---|---|---|---|---|
-| `/fix` | Fixes spelling, grammar, punctuation, accents — nothing else | `gpt-4.1-nano` | `text_fix` | `success` |
+| `/fix` | Fixes spelling, grammar, punctuation, accents — nothing else | `gpt-5.6-luna` | `text_fix` | `success` |
 | `/rephrase` | Rewrites the text in a chosen style, same meaning | `gpt-4.1-mini` | `text_rephrase` | `primary` |
 | `/summarize` | Condenses the text to its key points | `gpt-4.1-mini` | `text_summarize` | `developer` |
 

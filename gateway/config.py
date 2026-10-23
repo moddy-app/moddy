@@ -149,7 +149,7 @@ def _default_model_rate_limits() -> Dict[Tuple[str, str], List[RateRule]]:
         ("openai", "text-embedding-3-small"): _openai_rpm_rules(
             "OPENAI_EMBED_RPM", 3_000
         ),
-        ("openai", "gpt-4.1-nano"): _openai_rpm_rules("OPENAI_NANO_RPM", 500),
+        ("openai", "gpt-5.6-luna"): _openai_rpm_rules("OPENAI_NANO_RPM", 500),
         ("openai", "gpt-4.1-mini"): _openai_rpm_rules("OPENAI_MINI_RPM", 500),
         # Google Vision has no model: rules are keyed on the billed feature.
         ("google_vision", "safe_search"): _google_vision_monthly_rules(
@@ -228,8 +228,8 @@ class GatewayConfig:
     # Cost estimates (USD per 1M tokens)
     cost_table: dict = field(default_factory=lambda: {
         ("openai", "text-embedding-3-small", "input"): 0.02,
-        ("openai", "gpt-4.1-nano", "input"): 0.10,
-        ("openai", "gpt-4.1-nano", "output"): 0.40,
+        ("openai", "gpt-5.6-luna", "input"): 0.20,
+        ("openai", "gpt-5.6-luna", "output"): 1.20,
         ("openai", "gpt-4.1-mini", "input"): 0.40,
         ("openai", "gpt-4.1-mini", "output"): 1.60,
         ("openai", "gpt-4o-mini", "input"): 0.15,

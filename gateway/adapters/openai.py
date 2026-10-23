@@ -14,6 +14,34 @@ logger = logging.getLogger("moddy.gateway.openai")
 
 _BASE_URL = "https://api.openai.com/v1"
 
+# Default chat / vision model. gpt-4.1-nano was shut down on 2026-10-23;
+# OpenAI names gpt-5.6-luna as its replacement.
+DEFAULT_CHAT_MODEL = "gpt-5.6-luna"
+
+
+def _is_reasoning_model(model: str) -> bool:
+    """GPT-5+ and o-series models: reasoning models with a stricter Chat API."""
+    return model.startswith(("gpt-5", "gpt-6", "o1", "o3", "o4"))
+
+
+def _adapt_params(model: str, body: dict) -> dict:
+    """Translate the classic Chat Completions knobs for reasoning models.
+
+    Callers keep passing ``temperature`` / ``max_tokens`` whatever the model:
+    reasoning models reject ``max_tokens`` (it is ``max_completion_tokens``)
+    and any non-default ``temperature``. Reasoning is turned off by default so
+    the output budget is not eaten by hidden reasoning tokens and latency stays
+    what the old non-reasoning models gave — the callers here classify, fix
+    or extract text, none of them needs reasoning.
+    """
+    if not _is_reasoning_model(model):
+        return body
+    if "max_tokens" in body:
+        body["max_completion_tokens"] = body.pop("max_tokens")
+    body.pop("temperature", None)
+    body.setdefault("reasoning_effort", "none")
+    return body
+
 
 class OpenAIAdapter(BaseAdapter):
     provider = "openai"
@@ -69,12 +97,12 @@ class OpenAIAdapter(BaseAdapter):
         )
 
     async def _chat(self, spec: CallSpec) -> AdapterResult:
-        model = spec.model or "gpt-4.1-nano"
+        model = spec.model or DEFAULT_CHAT_MODEL
         payload = dict(spec.payload)
         json_mode = payload.pop("json_mode", False)
         messages = payload.pop("messages", [])
 
-        body: dict = {"model": model, "messages": messages, **payload}
+        body: dict = _adapt_params(model, {"model": model, "messages": messages, **payload})
         if json_mode:
             body["response_format"] = {"type": "json_object"}
 
@@ -108,7 +136,7 @@ class OpenAIAdapter(BaseAdapter):
         """
         if not spec.binary:
             raise ConfigurationError("vision requires image bytes on CallSpec.binary")
-        model = spec.model or "gpt-4.1-nano"
+        model = spec.model or DEFAULT_CHAT_MODEL
         payload = dict(spec.payload or {})
         mime = payload.pop("mime", None) or "image/png"
         detail = payload.pop("detail", None) or "high"
@@ -127,7 +155,7 @@ class OpenAIAdapter(BaseAdapter):
             messages.append({"role": "system", "content": system})
         messages.append({"role": "user", "content": user_parts})
 
-        body: dict = {"model": model, "messages": messages, **payload}
+        body: dict = _adapt_params(model, {"model": model, "messages": messages, **payload})
         if json_mode:
             body["response_format"] = {"type": "json_object"}
 

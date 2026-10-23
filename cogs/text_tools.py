@@ -2,7 +2,7 @@
 AI text tools for Moddy — /fix, /rephrase and /summarize.
 
 Every OpenAI call goes through the centralized gateway (see docs/infra/API_GATEWAY.md):
-- /fix       → gpt-4.1-nano  (call_type: text_fix)
+- /fix       → gpt-5.6-luna  (call_type: text_fix)
 - /rephrase  → gpt-4.1-mini  (call_type: text_rephrase)
 - /summarize → gpt-4.1-mini  (call_type: text_summarize)
 
@@ -52,7 +52,7 @@ MAX_OUTPUT_LENGTH = 3500         # hard cap before rendering (Discord component 
 MAX_USES_PER_MINUTE = 10         # per-user in-memory rate limit
 AI_TIMEOUT = 25.0                # seconds — the gateway chat timeout is 30 s
 
-FIX_MODEL = "gpt-4.1-nano"
+FIX_MODEL = "gpt-5.6-luna"
 REPHRASE_MODEL = "gpt-4.1-mini"
 SUMMARIZE_MODEL = "gpt-4.1-mini"
 

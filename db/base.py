@@ -1817,7 +1817,7 @@ class ModdyDatabase(
                 # Automod images. The binding cap on SafeSearch is the
                 # monthly Google Vision allowance (fail-closed rule in
                 # gateway/config.py) plus the automod's own pacing; the OCR of
-                # crypto images runs on gpt-4.1-nano vision, capped per guild.
+                # crypto images runs on gpt-5.6-luna vision, capped per guild.
                 ("guild",  "automod_safesearch",  "default", -1),
                 ("global", "automod_safesearch",  "default", -1),
                 # Member-profile SafeSearch (avatars / banners): its own monthly

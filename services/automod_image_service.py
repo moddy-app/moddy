@@ -14,7 +14,7 @@ owns everything that must be shared across guilds and across the two features:
 * the **per-hash verdict cache** in Redis (an image already analysed costs
   nothing again, on any server);
 * **cross-post tracking** (same image, same author, several channels);
-* the paid calls — **OCR** (gpt-4.1-nano vision) and **SafeSearch** (Google
+* the paid calls — **OCR** (gpt-5.6-luna vision) and **SafeSearch** (Google
   Vision, with the smoothed monthly pacing and a per-guild daily share) — all
   through ``bot.gateway``, never a provider SDK.
 

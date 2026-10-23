@@ -104,7 +104,13 @@ def target_matcher(action: discord.AuditLogAction, target_id: Optional[int] = No
         if entry.action != action:
             return False
         if target_id is not None:
-            entry_target_id = getattr(entry.target, "id", None) or entry.target_id
+            # `entry.target` is resolved lazily and raises on some entries with
+            # no target id; discord.py exposes the raw id only as `_target_id`.
+            try:
+                entry_target_id = getattr(entry.target, "id", None)
+            except (TypeError, ValueError):
+                entry_target_id = None
+            entry_target_id = entry_target_id or getattr(entry, "_target_id", None)
             if entry_target_id != target_id:
                 return False
         return extra(entry) if extra else True

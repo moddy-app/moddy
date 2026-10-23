@@ -307,7 +307,7 @@ _AI_SENTINEL_INJECTION = "INJECTION_DETECTED"
 _AI_TOTAL_TIMEOUT = 2.8  # seconds — must leave room for send_modal within the 3 s window
 _AI_FETCH_TIMEOUT = 1.2  # seconds — budget for the message-history scan
 _AI_CHAT_MIN_TIMEOUT = 1.0  # seconds — floor left for the OpenAI call, even if the fetch was slow
-_AI_MODEL = "gpt-4.1-nano"
+_AI_MODEL = "gpt-5.6-luna"
 
 
 async def _suggestion_language(bot, guild: discord.Guild) -> str:

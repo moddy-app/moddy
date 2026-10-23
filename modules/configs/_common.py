@@ -265,18 +265,9 @@ def breadcrumb(locale: str, module_name: Optional[str] = None, *segments: str) -
     return ui.TextDisplay("-# " + " › ".join(parts))
 
 
-_MODULE_NAME_FALLBACKS = {
-    "logs": "Logs",
-    "social_notifications": "Social Notifications",
-    "tickets": "Tickets",
-}
-
-
 def crumb(locale: str, module_id: str, *segments: str) -> ui.TextDisplay:
     """:func:`breadcrumb` for a module id: resolves the localised module name."""
     name = t(f"modules.{module_id}.name", locale=locale)
-    if name.startswith("["):
-        name = _MODULE_NAME_FALLBACKS.get(module_id, module_id)
     return breadcrumb(locale, name, *segments)
 
 

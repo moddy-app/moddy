@@ -13,7 +13,7 @@ class AIClient:
     Usage:
         vectors = await gw.ai.embed(["hello", "world"])
         result  = await gw.ai.chat(
-            system=..., user=..., model="gpt-4.1-nano",
+            system=..., user=..., model="gpt-5.6-luna",
             quota=[QuotaTarget.guild(guild_id, "ban_reason")],
             call_type="ban_reason",
             metadata={"guild_id": guild_id, "user_id": user_id},
@@ -51,7 +51,7 @@ class AIClient:
         *,
         system: str,
         user: str,
-        model: str = "gpt-4.1-nano",
+        model: str = "gpt-5.6-luna",
         json_mode: bool = False,
         temperature: float = 0.7,
         max_tokens: Optional[int] = None,
@@ -92,7 +92,7 @@ class AIClient:
         mime: str = "image/png",
         system: str = "",
         prompt: str = "",
-        model: str = "gpt-4.1-nano",
+        model: str = "gpt-5.6-luna",
         detail: str = "high",
         json_mode: bool = False,
         temperature: float = 0.0,

@@ -3,6 +3,7 @@ import asyncio
 import json
 import logging
 import time
+from collections import deque
 from datetime import datetime, timezone
 from typing import Any, Optional
 
@@ -10,6 +11,10 @@ from .spec import CallSpec
 from .config import GatewayConfig
 
 logger = logging.getLogger("moddy.gateway.logger")
+
+# Without Redis the buffer lives in memory instead: bounded, so a PG outage
+# drops the oldest log rows rather than growing without limit.
+_LOCAL_BUFFER_MAX = 10_000
 
 
 def _estimate_cost(
@@ -49,6 +54,7 @@ class GatewayLogger:
         # is a three-row read instead of a scan (see docs/infra/STATS.md).
         self._stats = stats
         self._flush_task: Optional[asyncio.Task] = None
+        self._local: deque = deque(maxlen=_LOCAL_BUFFER_MAX)
 
     def set_tech_logger(self, tech_logger) -> None:
         self._tech_logger = tech_logger
@@ -119,11 +125,14 @@ class GatewayLogger:
 
         self._count(entry)
 
-        # Push to Redis buffer (non-blocking)
-        try:
-            await self._redis.rpush(self._config.log_buffer_key, json.dumps(entry))
-        except Exception as exc:
-            logger.debug("Redis buffer push failed: %s", exc)
+        # Push to the buffer (Redis, or memory when Redis is not configured)
+        if self._redis is None:
+            self._local.append(entry)
+        else:
+            try:
+                await self._redis.rpush(self._config.log_buffer_key, json.dumps(entry))
+            except Exception as exc:
+                logger.debug("Redis buffer push failed: %s", exc)
 
         # Real-time webhook (best-effort, fire-and-forget)
         if self._tech_logger:
@@ -192,68 +201,86 @@ class GatewayLogger:
 
         batch_size = self._config.log_flush_batch
         rows = []
-        try:
-            pipe = self._redis.pipeline()
-            for _ in range(batch_size):
-                pipe.lpop(self._config.log_buffer_key)
-            results = await pipe.execute()
-            rows = [json.loads(r) for r in results if r]
-        except Exception as exc:
-            logger.warning("Failed to pop log buffer from Redis: %s", exc)
-            return
+        if self._redis is None:
+            while self._local and len(rows) < batch_size:
+                rows.append(self._local.popleft())
+        else:
+            rows = await self._pop_redis(batch_size)
+            if rows is None:
+                return
 
         if not rows:
             return
 
         try:
-            async with self._pool.acquire() as conn:
-                await conn.executemany(
-                    """
-                    INSERT INTO api_calls (
-                        correlation_id, call_type, provider, operation, model,
-                        guild_id, user_id, quota_targets,
-                        tokens_prompt, tokens_completion, tokens_total,
-                        latency_ms, attempts, success, error_type,
-                        estimated_cost, created_at
-                    ) VALUES (
-                        $1, $2, $3, $4, $5,
-                        $6, $7, $8::jsonb,
-                        $9, $10, $11,
-                        $12, $13, $14, $15,
-                        $16, $17
-                    )
-                    """,
-                    [
-                        (
-                            row["correlation_id"],
-                            row["call_type"],
-                            row["provider"],
-                            row["operation"],
-                            row.get("model"),
-                            row.get("guild_id"),
-                            row.get("user_id"),
-                            json.dumps(row.get("quota_targets", [])),
-                            row.get("tokens_prompt", 0),
-                            row.get("tokens_completion", 0),
-                            row.get("tokens_total", 0),
-                            row.get("latency_ms", 0),
-                            row.get("attempts", 1),
-                            row["success"],
-                            row.get("error_type"),
-                            row.get("estimated_cost"),
-                            datetime.fromisoformat(row["ts"]),
-                        )
-                        for row in rows
-                    ],
-                )
+            await self._insert_rows(rows)
             logger.debug("Flushed %d gateway log entries to PG", len(rows))
         except Exception as exc:
             logger.warning("PG flush failed (%d rows): %s", len(rows), exc)
-            # Re-queue entries at the front of the buffer
-            try:
-                pipe = self._redis.pipeline()
-                for row in reversed(rows):
-                    pipe.lpush(self._config.log_buffer_key, json.dumps(row))
-                await pipe.execute()
-            except Exception as exc2:
-                logger.error("Failed to re-queue log entries: %s", exc2)
+            await self._requeue(rows)
+
+    async def _pop_redis(self, batch_size: int) -> Optional[list]:
+        try:
+            pipe = self._redis.pipeline()
+            for _ in range(batch_size):
+                pipe.lpop(self._config.log_buffer_key)
+            results = await pipe.execute()
+            return [json.loads(r) for r in results if r]
+        except Exception as exc:
+            logger.warning("Failed to pop log buffer from Redis: %s", exc)
+            return None
+
+    async def _insert_rows(self, rows: list) -> None:
+        async with self._pool.acquire() as conn:
+            await conn.executemany(
+                """
+                INSERT INTO api_calls (
+                    correlation_id, call_type, provider, operation, model,
+                    guild_id, user_id, quota_targets,
+                    tokens_prompt, tokens_completion, tokens_total,
+                    latency_ms, attempts, success, error_type,
+                    estimated_cost, created_at
+                ) VALUES (
+                    $1, $2, $3, $4, $5,
+                    $6, $7, $8::jsonb,
+                    $9, $10, $11,
+                    $12, $13, $14, $15,
+                    $16, $17
+                )
+                """,
+                [
+                    (
+                        row["correlation_id"],
+                        row["call_type"],
+                        row["provider"],
+                        row["operation"],
+                        row.get("model"),
+                        row.get("guild_id"),
+                        row.get("user_id"),
+                        json.dumps(row.get("quota_targets", [])),
+                        row.get("tokens_prompt", 0),
+                        row.get("tokens_completion", 0),
+                        row.get("tokens_total", 0),
+                        row.get("latency_ms", 0),
+                        row.get("attempts", 1),
+                        row["success"],
+                        row.get("error_type"),
+                        row.get("estimated_cost"),
+                        datetime.fromisoformat(row["ts"]),
+                    )
+                    for row in rows
+                ],
+            )
+
+    async def _requeue(self, rows: list) -> None:
+        """Put rows back at the front of the buffer after a failed PG write."""
+        if self._redis is None:
+            self._local.extendleft(reversed(rows))
+            return
+        try:
+            pipe = self._redis.pipeline()
+            for row in reversed(rows):
+                pipe.lpush(self._config.log_buffer_key, json.dumps(row))
+            await pipe.execute()
+        except Exception as exc2:
+            logger.error("Failed to re-queue log entries: %s", exc2)
