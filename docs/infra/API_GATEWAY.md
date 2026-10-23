@@ -34,7 +34,7 @@ from gateway import QuotaTarget
 result = await bot.gateway.ai.chat(
     system="You are a helpful assistant.",
     user="Summarize the following text: ...",
-    model="gpt-4.1-nano",
+    model="gpt-5.6-luna",
     temperature=0.3,
     max_tokens=150,
     quota=[QuotaTarget.guild(guild.id, "ban_reason")],
@@ -42,6 +42,9 @@ result = await bot.gateway.ai.chat(
     metadata={"guild_id": guild.id, "user_id": user.id},
 )
 # result: str (or dict if json_mode=True)
+# Reasoning models (gpt-5*, gpt-6*, o-series): the OpenAI adapter maps
+# max_tokens → max_completion_tokens, drops temperature (only the default is
+# accepted) and sends reasoning_effort="none" unless the payload sets one.
 
 # AI embed (not quota-gated)
 vectors = await bot.gateway.ai.embed(
@@ -79,7 +82,7 @@ result = await bot.gateway.transcription.transcribe(
 text = await bot.gateway.ai.vision(
     image=jpeg_bytes, mime="image/jpeg",
     system="You are an OCR engine…", prompt="Transcribe the text of this image.",
-    model="gpt-4.1-nano", detail="high", max_tokens=700,
+    model="gpt-5.6-luna", detail="high", max_tokens=700,
     quota=[QuotaTarget.guild(guild.id, "automod_image_ocr")],
     call_type="automod_image_ocr",
 )
@@ -209,12 +212,12 @@ ON CONFLICT (scope, key, type) DO UPDATE SET daily_limit = EXCLUDED.daily_limit;
 | `automod_embed` | openai/embed | — | ❌ |
 | `automod_decision` | openai/chat | guild | ✅ |
 | `automod_rules_check` | openai/chat | guild | ✅ |
-| `text_fix` | openai/chat (`gpt-4.1-nano`) | user + guild | ✅ |
+| `text_fix` | openai/chat (`gpt-5.6-luna`) | user + guild | ✅ |
 | `text_rephrase` | openai/chat (`gpt-4.1-mini`) | user + guild | ✅ |
 | `text_summarize` | openai/chat (`gpt-4.1-mini`) | user + guild | ✅ |
 
 | `voice_transcription` | groq/transcribe (`whisper-large-v3-turbo`) | user + guild | ✅ |
-| `automod_image_ocr` | openai/vision (`gpt-4.1-nano`) | guild + global | ✅ |
+| `automod_image_ocr` | openai/vision (`gpt-5.6-luna`) | guild + global | ✅ |
 | `automod_safesearch` | google_vision/safe_search | guild + global | ✅ |
 | `automod_profile_safesearch` | google_vision/safe_search (accounted on `safe_search_profile`) | guild + global | ✅ |
 | `ocr_command` | google_vision/document_text | user + guild + global | ✅ |
@@ -275,7 +278,7 @@ Rules live in `gateway/config.py` and mirror the provider console:
 | | `ash` | 7 200 audio seconds | 1 hour | `GROQ_WHISPER_AUDIO_SECONDS_PER_HOUR` |
 | | `asd` | 28 800 audio seconds | 1 day | `GROQ_WHISPER_AUDIO_SECONDS_PER_DAY` |
 | openai / `text-embedding-3-small` | `rpm` | 3 000 requests | 1 min | `OPENAI_EMBED_RPM` |
-| openai / `gpt-4.1-nano` | `rpm` | 500 requests | 1 min | `OPENAI_NANO_RPM` |
+| openai / `gpt-5.6-luna` | `rpm` | 500 requests | 1 min | `OPENAI_NANO_RPM` |
 | openai / `gpt-4.1-mini` | `rpm` | 500 requests | 1 min | `OPENAI_MINI_RPM` |
 | google_vision / `safe_search` | `rpmo` | 1 000 requests | **calendar month** (Pacific), fail-closed | `GOOGLE_VISION_SAFESEARCH_MONTHLY` |
 | google_vision / `safe_search_profile` | `rpmo` | 1 000 requests | **calendar month** (Pacific), fail-closed — a separate budget for member avatars / banners (same SafeSearch API call, own accounting key) | `GOOGLE_VISION_SAFESEARCH_PROFILE_MONTHLY` |
@@ -436,7 +439,7 @@ except (APIUnavailableError, GatewayError):
 | `GROQ_WHISPER_AUDIO_SECONDS_PER_HOUR` | `7200` | Whisper audio seconds per hour |
 | `GROQ_WHISPER_AUDIO_SECONDS_PER_DAY` | `28800` | Whisper audio seconds per day |
 | `OPENAI_EMBED_RPM` | `3000` | `text-embedding-3-small` requests per minute (provider account) |
-| `OPENAI_NANO_RPM` | `500` | `gpt-4.1-nano` requests per minute |
+| `OPENAI_NANO_RPM` | `500` | `gpt-5.6-luna` requests per minute |
 | `OPENAI_MINI_RPM` | `500` | `gpt-4.1-mini` requests per minute |
 | `GATEWAY_MAX_RETRIES` | `3` | Max retry attempts |
 | `GATEWAY_RETRY_BASE_DELAY` | `0.5` | Retry base delay (seconds) |

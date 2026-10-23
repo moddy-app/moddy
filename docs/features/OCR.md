@@ -18,7 +18,7 @@ when a message carries both.
 
 ## Engine: Google Cloud Vision `DOCUMENT_TEXT_DETECTION`
 
-Chosen over the automod's gpt-4.1-nano vision because a person asking for the
+Chosen over the automod's gpt-5.6-luna vision because a person asking for the
 text wants it verbatim with its layout; dense-document OCR does that best.
 
 - Through `bot.gateway.vision.document_text` (never a provider SDK), call type

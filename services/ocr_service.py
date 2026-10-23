@@ -2,7 +2,7 @@
 OCR — extract the text of an image for a person (``/ocr`` and the Transcribe menu).
 
 Distinct from the automod's image OCR on purpose: that one runs silently on
-suspicious images and only needs the scam vocabulary to survive (gpt-4.1-nano
+suspicious images and only needs the scam vocabulary to survive (gpt-5.6-luna
 vision, a fraction of a cent). This one answers a human who wants the text,
 layout included, so it uses the dedicated document OCR — Google Cloud Vision
 ``DOCUMENT_TEXT_DETECTION`` — through ``bot.gateway.vision``.

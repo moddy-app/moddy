@@ -57,7 +57,16 @@ class CaseSync(commands.Cog):
             return
 
         action = entry.action
-        target = entry.target
+        # Only bans, unbans and member updates become cases: skip the rest
+        # before touching `entry.target`, which discord.py resolves lazily and
+        # can raise on entries with no target id (e.g. some channel actions).
+        A = discord.AuditLogAction
+        if action not in (A.ban, A.unban, A.member_update):
+            return
+        try:
+            target = entry.target
+        except (TypeError, ValueError):
+            return
         target_id = getattr(target, "id", None)
         if target_id is None:
             return
@@ -69,7 +78,6 @@ class CaseSync(commands.Cog):
         reason = entry.reason or "External moderation action"
 
         try:
-            A = discord.AuditLogAction
             if action == A.ban:
                 if self._is_moddy_initiated(guild.id, target_id, "ban"):
                     return

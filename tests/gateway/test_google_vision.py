@@ -115,8 +115,8 @@ class TestCalendarMonth:
 
     async def test_ordinary_rules_still_fail_open_without_redis(self):
         rule = RateRule("rpm", UNIT_REQUESTS, 60, 1)
-        limiter = RateLimiter(None, {("openai", "gpt-4.1-nano"): [rule]})
-        await limiter.acquire("openai", "gpt-4.1-nano", {UNIT_REQUESTS: 1})
+        limiter = RateLimiter(None, {("openai", "gpt-5.6-luna"): [rule]})
+        await limiter.acquire("openai", "gpt-5.6-luna", {UNIT_REQUESTS: 1})
 
 
 def test_default_config_caps_both_vision_features_monthly():

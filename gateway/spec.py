@@ -41,7 +41,7 @@ QuotaPlan = list[QuotaTarget]
 class CallSpec:
     provider: str           # "openai" | "deepl" | "groq"
     operation: str          # "embed" | "chat" | "translate" | "transcribe"
-    model: Optional[str]    # "text-embedding-3-small" | "gpt-4.1-nano" | None
+    model: Optional[str]    # "text-embedding-3-small" | "gpt-5.6-luna" | None
     payload: dict
     quota: QuotaPlan        # [] = not quota-gated
     call_type: str          # "ban_reason" | "translation" | …

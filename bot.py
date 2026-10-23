@@ -216,7 +216,7 @@ class ModdyBot(ModdyFrameworkBot):
         self.redis = None  # Redis client (shared with backend)
         self._dev_team_ids: Set[int] = set()
         self.maintenance_mode = False
-        self.version = None  # Bot version from GitHub releases
+        self.version = None  # Deployed commit (short SHA), see fetch_version
 
         # Cache for server prefixes
         self.prefix_cache = {}
@@ -287,23 +287,15 @@ class ModdyBot(ModdyFrameworkBot):
             logger.error(f"Could not log fatal error: {e}")
 
     async def fetch_version(self):
-        """Fetch the bot version from GitHub releases"""
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
-                    "https://api.github.com/repos/juthing/MODDY/releases/latest",
-                    timeout=aiohttp.ClientTimeout(total=10)
-                ) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        self.version = data.get("tag_name", "Unknown")
-                        logger.info(f"Bot version: {self.version}")
-                    else:
-                        logger.warning(f"[WARN] Failed to fetch version: HTTP {response.status}")
-                        self.version = "Unknown"
-        except Exception as e:
-            logger.error(f"[FAIL] Error fetching version: {e}")
-            self.version = "Unknown"
+        """Resolve the bot version from the deployed commit.
+
+        The GitHub releases endpoint this used to read 404s (the repository is
+        private and publishes no releases); Railway injects the deployed
+        commit instead, which needs no network call.
+        """
+        sha = os.environ.get("RAILWAY_GIT_COMMIT_SHA", "")
+        self.version = sha[:7] if sha else "Unknown"
+        logger.info(f"Bot version: {self.version}")
 
     def wire_internal_api(self):
         """

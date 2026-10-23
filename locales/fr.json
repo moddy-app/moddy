@@ -1481,6 +1481,7 @@
       }
     },
     "social_notifications": {
+      "name": "Notifications sociales",
       "description": "Soyez notifié quand des comptes sociaux publient du nouveau contenu (YouTube, Twitch, Bluesky, RSS…)",
       "platforms": {
         "youtube": "YouTube",
@@ -2713,6 +2714,7 @@
       }
     },
     "logs": {
+      "name": "Logs",
       "fields": {
         "account_created": "Création du compte",
         "action": "Action",
@@ -3443,6 +3445,7 @@
       }
     },
     "tickets": {
+      "name": "Tickets",
       "description": "Tickets de support avec panneaux, catégories et permissions par rôle",
       "config": {
         "title": "Tickets",

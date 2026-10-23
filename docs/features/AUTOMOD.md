@@ -112,7 +112,7 @@ Only **nano decides**. Regex and embedding merely *route*. Output is a
 
 | Param | Value |
 |---|---|
-| model | `gpt-4.1-nano` |
+| model | `gpt-5.6-luna` |
 | response | `json_object` (json_mode) |
 | temperature | `0.0` (classification, not generation) |
 | max tokens | `300` |
@@ -462,7 +462,7 @@ classifier (§2ter) so the two never drift.
 
 | difficulté | decider | model | context |
 |---|---|---|---|
-| `evident` | nano (current behaviour) | `gpt-4.1-nano` | `CONTEXTE_INITIAL` |
+| `evident` | nano (current behaviour) | `gpt-5.6-luna` | `CONTEXTE_INITIAL` |
 | `ambigu` | **mini** | `gpt-4.1-mini` | `CONTEXTE_INITIAL × 2` |
 
 Same v2 prompt / contract — only the model, the initial context window and the
@@ -931,7 +931,7 @@ image posted (attachments only, ≤ 4 / message, ≥ 128 px, ≤ 8 MB)
      text empty / link / scam words +1 · same image in ≥ 3 channels (10 min) +3 ·
      screenshot-like layout +1
    ▼
-4. OCR — gpt-4.1-nano vision (call_type automod_image_ocr, guild quota 300/day)
+4. OCR — gpt-5.6-luna vision (call_type automod_image_ocr, guild quota 300/day)
    ▼
 5. OCR text → engine.analyze(TargetMessage(origine="image_ocr"))
    blocklist → scam anchors → embedding → nano (dedicated prompt block:
@@ -1232,14 +1232,14 @@ degraded_guilds). Without `bot.redis` the guard is inert.
 
 ### 5.4 Cost order of magnitude
 
-For **1M messages/month** on an active server, at `gpt-4.1-nano`
-(~$0.10/M in, $0.40/M out) and `text-embedding-3-small` (~$0.02/M):
+For **1M messages/month** on an active server, at `gpt-5.6-luna`
+(~$0.20/M in, $1.20/M out) and `text-embedding-3-small` (~$0.02/M):
 
 | Stage | Estimated volume | Cost/month |
 |---|---|---|
 | Pre-filter + trivial (free) | 100 % → stops ~55 % | $0 |
 | Embeddings (~25 tok/msg, ~30 % cache hit) | ~450k msgs | **≈ $0.20** |
-| Nano (~2 % cross the threshold, ~1200 in / 120 out) | ~9k calls | **≈ $1.50** |
+| Nano (~2 % cross the threshold, ~1200 in / 120 out) | ~9k calls | **≈ $3.50** |
 | Mini (session 6, ~5 % of nano verdicts) | ~450 calls | ≈ $0.80 |
 
 The dangerous line item is **not** the unit price — it is a mis-calibrated
@@ -1268,7 +1268,7 @@ budget guard (5.3): they bound exactly those two failure modes.
 
 | Constant | Default | Meaning |
 |---|---|---|
-| `IMAGE_OCR_MODEL` | `gpt-4.1-nano` | vision model reading scam screenshots |
+| `IMAGE_OCR_MODEL` | `gpt-5.6-luna` | vision model reading scam screenshots |
 | `IMAGE_MAX_SIDE` | 1280 | longest side sent to OCR / SafeSearch |
 | `IMAGE_MAX_BYTES` / `IMAGE_MIN_SIDE` / `IMAGE_MAX_PER_MESSAGE` | 8 MB / 128 px / 4 | which attachments are looked at |
 | `IMAGE_CONCURRENCY` / `IMAGE_QUEUE_MAX` | 4 / 64 | process-wide image jobs (memory bound) |

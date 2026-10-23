@@ -87,7 +87,7 @@ PREFILTRE_MAX_CHARS: int = 1500
 
 # nano model + sampling. This is classification, not generation: temperature 0
 # removes needless randomness from what should be a deterministic verdict.
-NANO_MODEL: str = "gpt-4.1-nano"
+NANO_MODEL: str = "gpt-5.6-luna"
 NANO_TEMPERATURE: float = 0.0
 # The v2 verdict contract is lean (no free-form ladder reasoning), so 300 tokens
 # is comfortably enough for the JSON object.
@@ -407,7 +407,7 @@ CALL_TYPE_SAFESEARCH: str = "automod_safesearch"
 
 # Model reading the text off a posted image (crypto-scam pipeline). Vision nano
 # is ~$0.0001/image and costs no resident memory (vs a local OCR engine).
-IMAGE_OCR_MODEL: str = "gpt-4.1-nano"
+IMAGE_OCR_MODEL: str = "gpt-5.6-luna"
 IMAGE_OCR_MAX_TOKENS: int = 700
 # Longest side the image is downscaled to before OCR / SafeSearch (bytes on the
 # wire and vision tokens scale with it; screenshots stay readable at 1280).

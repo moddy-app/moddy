@@ -8,7 +8,7 @@ and the api_calls PG table.
 
 Usage (from any cog or module):
     result = await bot.gateway.ai.chat(
-        system=..., user=..., model="gpt-4.1-nano",
+        system=..., user=..., model="gpt-5.6-luna",
         quota=[QuotaTarget.guild(guild_id, "ban_reason")],
         call_type="ban_reason",
         metadata={"guild_id": guild_id, "user_id": user_id},
