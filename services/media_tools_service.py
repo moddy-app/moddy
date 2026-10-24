@@ -120,6 +120,10 @@ class MediaToolsService:
                               limit: int = formats.MAX_INPUT_BYTES) -> bytes:
         if attachment.size and attachment.size > limit:
             raise MediaError("too_large", max=limit // (1024 * 1024))
+        if getattr(attachment, "from_components", False):
+            # A media item parsed from a V2 card carries no ConnectionState, so
+            # ``read()`` raises; its CDN URL is downloaded directly instead.
+            return await self.read_url(attachment.url, limit)
         try:
             data = await attachment.read()
         except (discord.HTTPException, discord.NotFound) as exc:
