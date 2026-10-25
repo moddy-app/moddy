@@ -45,9 +45,19 @@ that, and the Translate button lets anyone read it in their own language.
    reader's language (`i18n.get_user_locale` → `fr`/`en`/`es`/`pt`/`de`). A
    reader already in the announcement's language is told so.
 
+### Reading the text
+
+The text that is hashed and translated comes from `announcement_text()`:
+`content` when it has any, otherwise every `TextDisplay` of a Components V2
+message (an app or webhook posting through Components V2 leaves `content`
+empty), otherwise the embeds' titles, descriptions and fields. A copy whose
+text cannot be read is still answered: `IS_CROSSPOST` + the reference already
+prove it is Discord's relay of that very message.
+
 ### Edits
 
-Editing an authenticated announcement in the support server withdraws its
+Editing the readable text of an authenticated announcement (read from the
+full message of the update, so publishing or an unfurl does not count) withdraws its
 authentication (row deleted) and posts a new Authenticate card marked as
 edited. Copies that arrive afterwards (or that arrived with a different text)
 are answered once it is re-authenticated. Confirmations already posted are

@@ -252,9 +252,37 @@ class TestEdit:
         db.verifications[SOURCE_ID] = {"content_hash": content_hash(TEXT)}
         payload = SimpleNamespace(guild_id=MODDY_TEAM_GUILD_ID, channel_id=SOURCE_CHANNEL,
                                   message_id=SOURCE_ID, data={"content": TEXT},
-                                  message=None, cached_message=None)
+                                  message=SimpleNamespace(content=TEXT), cached_message=None)
         await AnnouncementVerification(make_bot(db)).on_raw_message_edit(payload)
         assert SOURCE_ID in db.verifications
+
+
+class TestAnnouncementText:
+    def test_components_v2_text_is_read(self):
+        from discord.components import _component_factory
+        container = _component_factory({"type": 17, "id": 1, "components": [
+            {"type": 10, "id": 2, "content": "# Update"},
+            {"type": 9, "id": 3, "components": [{"type": 10, "id": 4, "content": "Details"}],
+             "accessory": {"type": 11, "id": 5, "media": {"url": "https://x/y.png"}}},
+        ]}, None)
+        message = SimpleNamespace(content="", components=[container], embeds=[])
+        assert av.announcement_text(message) == "# Update\n\nDetails"
+
+    def test_embed_text_is_read(self):
+        embed = discord.Embed(title="Title", description="Body")
+        message = SimpleNamespace(content="", components=[], embeds=[embed])
+        assert av.announcement_text(message) == "Title\n\nBody"
+
+    def test_plain_content_wins(self):
+        assert av.announcement_text(SimpleNamespace(content=" hi ", components=[], embeds=[])) == "hi"
+
+    async def test_copy_without_readable_text_is_still_answered(self):
+        db = FakeDB()
+        db.verifications[SOURCE_ID] = {"content_hash": content_hash(TEXT)}
+        cog = AnnouncementVerification(make_bot(db))
+        message = relayed_copy(content="")
+        await cog.on_message(message)
+        assert len(message.channel.reactions) == 1
 
 
 def test_language_code():
