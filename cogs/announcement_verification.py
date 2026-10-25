@@ -101,39 +101,41 @@ def _guarded(callback):
 # Cards
 # --------------------------------------------------------------------------- #
 
+def _card(item, accent: int) -> BaseView:
+    """One small line in a container with a coloured edge."""
+    view = BaseView()
+    container = ui.Container(accent_colour=accent)
+    container.add_item(item)
+    view.add_item(container)
+    return view
+
+
 def build_verify_card(message_id: int, locale: str, *, edited: bool = False) -> BaseView:
     """Support-server reply to a fresh (or edited) announcement: one small line + the button."""
     key = "edited" if edited else "pending"
-    view = BaseView()
-    view.add_item(ui.Section(
+    return _card(ui.Section(
         ui.TextDisplay(f"-# {t(f'announcement_verification.verify.{key}', locale=locale)}"),
         accessory=VerifyAnnouncementButton(message_id, label=t(
             "announcement_verification.verify.button", locale=locale)),
-    ))
-    return view
+    ), COLORS["warning"] if edited else COLORS["primary"])
 
 
 def build_verified_card(user_id: int, locale: str, *, translated: bool) -> BaseView:
     """The verify card once the announcement is authenticated (no button)."""
-    view = BaseView()
     line = t("announcement_verification.verified.line", locale=locale, user=f"<@{user_id}>")
     if not translated:
         line += f" · {t('announcement_verification.verified.no_translation', locale=locale)}"
-    view.add_item(ui.TextDisplay(f"-# {VERIFIED} {line}"))
-    return view
+    return _card(ui.TextDisplay(f"-# {VERIFIED} {line}"), COLORS["success"])
 
 
 def build_confirmation_card(source_id: int, locale: str, *, translatable: bool) -> BaseView:
     """The reply under a relayed copy, in the following server's language."""
-    view = BaseView()
     text = ui.TextDisplay(
         f"-# {VERIFIED} {t('announcement_verification.confirmation.line', locale=locale)}")
     if translatable:
-        view.add_item(ui.Section(text, accessory=TranslateAnnouncementButton(
-            source_id, label=t("announcement_verification.confirmation.translate", locale=locale))))
-    else:
-        view.add_item(text)
-    return view
+        text = ui.Section(text, accessory=TranslateAnnouncementButton(
+            source_id, label=t("announcement_verification.confirmation.translate", locale=locale)))
+    return _card(text, COLORS["primary"])
 
 
 def _notice(text: str, *, accent: int = COLORS["primary"]) -> ui.LayoutView:
