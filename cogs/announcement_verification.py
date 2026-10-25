@@ -34,7 +34,7 @@ from cogs.announcement_translation import (
 )
 from cogs.error_handler import BaseView
 from config import ANNOUNCEMENT_VERIFICATION_CHANNEL_IDS, COLORS, MODDY_TEAM_GUILD_ID
-from utils.emojis import TRANSLATE, VERIFIED
+from utils.emojis import STATUS_OK, TRANSLATE, VERIFIED
 from utils.i18n import i18n, t
 
 logger = logging.getLogger('moddy.announcement_verification')
@@ -128,14 +128,14 @@ def build_verified_card(user_id: int, locale: str, *, translated: bool) -> BaseV
     return _card(ui.TextDisplay(f"-# {VERIFIED} {line}"), COLORS["success"])
 
 
-def build_confirmation_card(source_id: int, locale: str, *, translatable: bool) -> BaseView:
-    """The reply under a relayed copy, in the following server's language."""
-    text = ui.TextDisplay(
-        f"-# {VERIFIED} {t('announcement_verification.confirmation.line', locale=locale)}")
-    if translatable:
-        text = ui.Section(text, accessory=TranslateAnnouncementButton(
-            source_id, label=t("announcement_verification.confirmation.translate", locale=locale)))
-    return _card(text, COLORS["primary"])
+def build_translate_reply(source_id: int, locale: str) -> BaseView:
+    """The reply under a relayed copy: the Translate button, nothing else."""
+    view = BaseView()
+    row = ui.ActionRow()
+    row.add_item(TranslateAnnouncementButton(
+        source_id, label=t("announcement_verification.confirmation.translate", locale=locale)))
+    view.add_item(row)
+    return view
 
 
 def _notice(text: str, *, accent: int = COLORS["primary"]) -> ui.LayoutView:
@@ -310,23 +310,35 @@ async def authenticate(bot, source: discord.Message, *, verified_by: int) -> boo
 
 
 async def answer_copy(bot, channel, message_id: int, source_id: int) -> bool:
-    """Reply to one relayed copy with the confirmation card."""
-    row = await bot.db.get_announcement_translations(source_id)
-    translatable = bool(row and row.get("translations"))
-    locale = await _server_locale(bot, getattr(channel, "guild", None))
-    view = build_confirmation_card(source_id, locale, translatable=translatable)
-    reference = discord.MessageReference(
-        message_id=message_id, channel_id=channel.id,
-        guild_id=getattr(getattr(channel, "guild", None), "id", None),
-        fail_if_not_exists=False)
+    """Mark one relayed copy authentic: a reaction, then the Translate button.
+
+    The reaction is the confirmation; the reply only exists when there is a
+    translation to offer.
+    """
+    done = False
     try:
-        await channel.send(view=view, reference=reference, allowed_mentions=NO_MENTIONS)
-        return True
+        await channel.get_partial_message(message_id).add_reaction(STATUS_OK)
+        done = True
     except discord.HTTPException as exc:
         # Missing permissions in a server's updates channel is common and final.
-        logger.info("Confirmation under copy %s (channel %s) failed: %s",
+        logger.info("Reaction on copy %s (channel %s) failed: %s", message_id, channel.id, exc)
+
+    try:
+        row = await bot.db.get_announcement_translations(source_id)
+        if not (row and row.get("translations")):
+            return done
+        locale = await _server_locale(bot, getattr(channel, "guild", None))
+        reference = discord.MessageReference(
+            message_id=message_id, channel_id=channel.id,
+            guild_id=getattr(getattr(channel, "guild", None), "id", None),
+            fail_if_not_exists=False)
+        await channel.send(view=build_translate_reply(source_id, locale), reference=reference,
+                           allowed_mentions=NO_MENTIONS)
+        return True
+    except discord.HTTPException as exc:
+        logger.info("Translate button under copy %s (channel %s) failed: %s",
                     message_id, channel.id, exc)
-        return False
+        return done
     finally:
         await bot.db.mark_announcement_crosspost_answered(message_id)
 

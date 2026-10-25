@@ -48,7 +48,7 @@ moddy/
 │   ├── saved_messages.py      #   Message bookmarking
 │   ├── translate.py           #   /translate (DeepL)
 │   ├── announcement_translation.py #  Support-server announcements translated once → flag buttons
-│   ├── announcement_verification.py # Manager/Dev authenticate announcements → confirmation + Translate under relayed copies
+│   ├── announcement_verification.py # Manager/Dev authenticate announcements → check_circle reaction + Translate button under relayed copies
 │   ├── text_tools.py          #   /fix, /rephrase, /summarize (OpenAI, Modal V2 + context menus)
 │   ├── voice_transcription.py #   "Transcribe" context menu (Groq Whisper; images → OCR)
 │   ├── ocr.py                 #   /ocr (Google Vision document OCR)
@@ -663,7 +663,7 @@ All documentation is in [docs/](docs/) (structure and conventions: [docs/README.
 | [docs/features/AI_DETECTOR.md](docs/features/AI_DETECTOR.md) | **AI Detector** — C2PA Content Credentials (official trust list, EKUs), verdict templates, privacy whitelist, details button, `/ai-check`, default-enabled module |
 | [docs/features/ALTGUARD.md](docs/features/ALTGUARD.md) | **AltGuard** — anti multi-account verification gate, consent, service contract, staff commands |
 | [docs/features/ANNOUNCEMENT_TRANSLATION.md](docs/features/ANNOUNCEMENT_TRANSLATION.md) | **Announcement translation** — support-server announcements translated once into every language, one flag button per language |
-| [docs/features/ANNOUNCEMENT_VERIFICATION.md](docs/features/ANNOUNCEMENT_VERIFICATION.md) | **Announcement verification** — Managers/Devs authenticate support-server announcements; every relayed copy in a following server gets a confirmation + Translate button |
+| [docs/features/ANNOUNCEMENT_VERIFICATION.md](docs/features/ANNOUNCEMENT_VERIFICATION.md) | **Announcement verification** — Managers/Devs authenticate support-server announcements; every relayed copy in a following server gets a check_circle reaction + Translate button |
 | [docs/features/AUTOMOD.md](docs/features/AUTOMOD.md) | Automod — detection pipeline (+ `/config` panel, §0), nano decider, scalable features, **images (NSFW + scam screenshots)**, **Moddy team labeling queue**, rules + custom-infraction safety check, **infraction catalogue & per-type sanctions**, **custom infractions**, **member profiles** |
 | [docs/features/BOT_CUSTOMIZATION.md](docs/features/BOT_CUSTOMIZATION.md) | Bot Customization — per-guild nickname/avatar/banner/bio + name styles, Redis dashboard contract |
 | [docs/features/BROCOLI_CHANNEL.md](docs/features/BROCOLI_CHANNEL.md) | **Brocoli in a channel** — the AI assistant as a Discord channel, signed identity assertions, confirmation cards, dev-guild gating |

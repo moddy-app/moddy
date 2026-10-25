@@ -2,7 +2,7 @@
 
 > Support-server only. A Manager or Developer of the Moddy team authenticates an
 > announcement; every copy Discord relays into a server that follows the
-> channel then gets a confirmation card with a **Translate** button.
+> channel then gets a `check_circle` reaction and a **Translate** button.
 
 ---
 
@@ -11,7 +11,7 @@
 Servers follow Moddy's announcement channel (`utils/announcement_setup.py`
 sets it up). Discord relays each published announcement as a webhook message
 whose author name is whatever the follow webhook is called, so members cannot
-tell a real Moddy announcement from a look-alike. The confirmation card answers
+tell a real Moddy announcement from a look-alike. The `check_circle` reaction answers
 that, and the Translate button lets anyone read it in their own language.
 
 ---
@@ -36,8 +36,8 @@ that, and the Translate button lets anyone read it in their own language.
    - a `reference` to the support server **and** a watched channel.
 4. Each copy is recorded in `announcement_crossposts` (dedupe). If the
    announcement is authenticated and the copy's text has the same hash, Moddy
-   replies under it with one small line ("Verified message from the Moddy team"), in the **server language**,
-   with a **Translate** button when translations exist.
+   reacts to it with `check_circle` (`STATUS_OK`) and, when translations
+   exist, replies with the **Translate** button alone (label in the server language).
 5. A copy that arrived *before* authentication stays recorded and unanswered;
    pressing Authenticate starts a background pass that answers them
    (`answer_backlog`, 0.25 s between replies).
@@ -65,7 +65,7 @@ the team can post or edit in that channel.
 | Who can authenticate | Moddy team Managers and Developers (super-admin and Discord dev team included) |
 | Languages | `fr`, `en`, `es`, `pt`, `de` (DeepL via `bot.gateway.translation`) |
 
-A server where Moddy cannot send in the updates channel simply gets no
+A server where Moddy cannot react (`add_reactions`) or send in the updates channel simply gets no
 confirmation (logged at INFO, copy marked answered — no retry).
 
 ---
