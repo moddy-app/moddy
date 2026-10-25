@@ -5422,19 +5422,18 @@
   },
   "announcement_verification": {
     "verify": {
-      "title": "Diese Ankündigung authentifizieren",
-      "description": "Nur Manager und Entwickler des Moddy Teams können diese Ankündigung authentifizieren. Danach bestätigt Moddy ihre Echtheit unter jeder Kopie, die in folgenden Servern veröffentlicht wird, und bietet eine Übersetzung an.",
-      "edited": "Die Ankündigung wurde nach der Authentifizierung bearbeitet: Sie muss erneut authentifiziert werden.",
+      "pending": "Authentifizierung erforderlich",
+      "edited": "Nach der Authentifizierung bearbeitet",
+      "restricted": "Nur für Manager und Entwickler des Moddy Teams.",
       "button": "Authentifizieren"
     },
     "verified": {
-      "title": "Ankündigung authentifiziert",
-      "description": "Authentifiziert von {user} {time}. Kopien in folgenden Servern erhalten eine Bestätigung.",
-      "no_translation": "Es konnte keine Übersetzung erstellt werden: Kopien werden ohne Übersetzen-Button bestätigt."
+      "line": "**Authentifiziert** von {user} · {time}",
+      "no_translation": "Keine Übersetzung verfügbar."
     },
     "confirmation": {
-      "title": "Offizielle Moddy-Ankündigung",
-      "description": "Diese Nachricht wurde vom Moddy-Team über seinen offiziellen Server veröffentlicht und von einem Verantwortlichen authentifiziert.",
+      "title": "Offizielle Ankündigung",
+      "subtitle": "Vom Moddy-Team veröffentlicht und authentifiziert.",
       "translate": "Übersetzen"
     },
     "translate": {

@@ -5508,19 +5508,18 @@
   },
   "announcement_verification": {
     "verify": {
-      "title": "Authenticate this announcement",
-      "description": "Only Moddy Team managers and developers can authenticate this announcement. Once it is authenticated, Moddy confirms its authenticity under every copy published in following servers and offers to translate it.",
-      "edited": "The announcement was edited after it was authenticated: it must be authenticated again.",
+      "pending": "Authentication required",
+      "edited": "Edited after authentication",
+      "restricted": "Restricted to Moddy Team managers and developers.",
       "button": "Authenticate"
     },
     "verified": {
-      "title": "Announcement authenticated",
-      "description": "Authenticated by {user} {time}. Copies published in following servers will get a confirmation.",
-      "no_translation": "No translation could be generated: copies will be confirmed without a translate button."
+      "line": "**Authenticated** by {user} · {time}",
+      "no_translation": "No translation available."
     },
     "confirmation": {
-      "title": "Official Moddy announcement",
-      "description": "This message was published by the Moddy team from its official server and authenticated by a team lead.",
+      "title": "Official announcement",
+      "subtitle": "Published and authenticated by the Moddy team.",
       "translate": "Translate"
     },
     "translate": {

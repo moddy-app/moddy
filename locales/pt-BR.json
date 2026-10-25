@@ -5422,19 +5422,18 @@
   },
   "announcement_verification": {
     "verify": {
-      "title": "Autenticar este anúncio",
-      "description": "Apenas os managers e desenvolvedores da Moddy Team podem autenticar este anúncio. Depois de autenticado, o Moddy confirma sua autenticidade abaixo de cada cópia publicada nos servidores seguidores e oferece a tradução.",
-      "edited": "O anúncio foi editado depois de ser autenticado: ele precisa ser autenticado novamente.",
+      "pending": "Autenticação necessária",
+      "edited": "Editado após a autenticação",
+      "restricted": "Reservado aos managers e desenvolvedores da Moddy Team.",
       "button": "Autenticar"
     },
     "verified": {
-      "title": "Anúncio autenticado",
-      "description": "Autenticado por {user} {time}. As cópias publicadas nos servidores seguidores receberão uma confirmação.",
-      "no_translation": "Nenhuma tradução pôde ser gerada: as cópias serão confirmadas sem botão de tradução."
+      "line": "**Autenticado** por {user} · {time}",
+      "no_translation": "Nenhuma tradução disponível."
     },
     "confirmation": {
-      "title": "Anúncio oficial do Moddy",
-      "description": "Esta mensagem foi publicada pela equipe do Moddy a partir do servidor oficial e autenticada por um responsável.",
+      "title": "Anúncio oficial",
+      "subtitle": "Publicado e autenticado pela equipe do Moddy.",
       "translate": "Traduzir"
     },
     "translate": {

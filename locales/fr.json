@@ -5507,19 +5507,18 @@
   },
   "announcement_verification": {
     "verify": {
-      "title": "Authentifier cette annonce",
-      "description": "Seuls les managers et les développeurs de la Moddy Team peuvent authentifier cette annonce. Une fois authentifiée, Moddy confirme son authenticité sous chaque copie publiée sur les serveurs abonnés et propose de la traduire.",
-      "edited": "L'annonce a été modifiée après son authentification : elle doit être authentifiée à nouveau.",
+      "pending": "Authentification requise",
+      "edited": "Modifiée après authentification",
+      "restricted": "Réservé aux managers et développeurs de la Moddy Team.",
       "button": "Authentifier"
     },
     "verified": {
-      "title": "Annonce authentifiée",
-      "description": "Authentifiée par {user} {time}. Les copies publiées sur les serveurs abonnés recevront une confirmation.",
-      "no_translation": "Aucune traduction n'a pu être générée : les copies seront confirmées sans bouton de traduction."
+      "line": "**Authentifiée** par {user} · {time}",
+      "no_translation": "Aucune traduction disponible."
     },
     "confirmation": {
-      "title": "Annonce officielle de Moddy",
-      "description": "Ce message a bien été publié par l'équipe Moddy depuis son serveur officiel et authentifié par un responsable.",
+      "title": "Annonce officielle",
+      "subtitle": "Publiée et authentifiée par l'équipe Moddy.",
       "translate": "Traduire"
     },
     "translate": {
