@@ -5423,6 +5423,30 @@
       "missing": "Die Übersetzung dieser Ankündigung ist nicht mehr verfügbar."
     }
   },
+  "announcement_verification": {
+    "verify": {
+      "pending": "Nur Manager und Entwickler können diese Nachricht authentifizieren.",
+      "edited": "Nachricht bearbeitet, bitte erneut authentifizieren.",
+      "button": "Authentifizieren"
+    },
+    "verified": {
+      "line": "Authentifiziert von {user}",
+      "no_translation": "ohne Übersetzung"
+    },
+    "confirmation": {
+      "line": "Verifizierte Nachricht des Moddy-Teams",
+      "translate": "Übersetzen"
+    },
+    "translate": {
+      "same_language": "Diese Ankündigung ist bereits in deiner Sprache verfasst."
+    },
+    "error": {
+      "title": "Authentifizierung fehlgeschlagen",
+      "deleted": "Diese Ankündigung wurde gelöscht.",
+      "forbidden_title": "Eingeschränkte Aktion",
+      "forbidden": "Nur Manager und Entwickler des Moddy Teams können eine Ankündigung authentifizieren."
+    }
+  },
   "ocr": {
     "title": "Extrahierter Text",
     "loading": "Bild wird gelesen",

@@ -5509,6 +5509,30 @@
       "missing": "The translation of this announcement is no longer available."
     }
   },
+  "announcement_verification": {
+    "verify": {
+      "pending": "Only managers and developers can authenticate this message.",
+      "edited": "Message edited, authenticate it again.",
+      "button": "Authenticate"
+    },
+    "verified": {
+      "line": "Authenticated by {user}",
+      "no_translation": "no translation"
+    },
+    "confirmation": {
+      "line": "Verified message from the Moddy team",
+      "translate": "Translate"
+    },
+    "translate": {
+      "same_language": "This announcement is already written in your language."
+    },
+    "error": {
+      "title": "Authentication failed",
+      "deleted": "This announcement has been deleted.",
+      "forbidden_title": "Restricted action",
+      "forbidden": "Only Moddy Team managers and developers can authenticate an announcement."
+    }
+  },
   "ocr": {
     "title": "Extracted text",
     "loading": "Reading the image",

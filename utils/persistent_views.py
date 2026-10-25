@@ -103,6 +103,7 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     from utils.support_request_views import SupportPersistence
     from utils.beta_announcement import BetaPersistence
     from cogs.announcement_translation import AnnouncementTranslationView
+    from cogs.announcement_verification import AnnouncementVerificationView
 
     return [
         # Group 1 — /moddy (public informational, no user auth)
@@ -242,6 +243,11 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         # announcement's message id; public — clicking only shows the stored
         # translation of a message the reader can already see).
         AnnouncementTranslationView,
+        # Group 12m — support-server announcement authentication: the
+        # Authenticate button (Manager/Dev re-checked on every click) and the
+        # Translate button under each relayed copy (public), both dynamic items
+        # keyed by the announcement's message id.
+        AnnouncementVerificationView,
         # Group 13 — /config automod panel (guild permission auth). Every
         # screen has static custom_ids and is a registered shell; the
         # infraction type screen and the precedents browser are dynamic items

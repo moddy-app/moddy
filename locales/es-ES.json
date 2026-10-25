@@ -5423,6 +5423,30 @@
       "missing": "La traducción de este anuncio ya no está disponible."
     }
   },
+  "announcement_verification": {
+    "verify": {
+      "pending": "Solo los managers y desarrolladores pueden autenticar este mensaje.",
+      "edited": "Mensaje modificado, vuelve a autenticarlo.",
+      "button": "Autenticar"
+    },
+    "verified": {
+      "line": "Autenticado por {user}",
+      "no_translation": "sin traducción"
+    },
+    "confirmation": {
+      "line": "Mensaje verificado del equipo de Moddy",
+      "translate": "Traducir"
+    },
+    "translate": {
+      "same_language": "Este anuncio ya está escrito en tu idioma."
+    },
+    "error": {
+      "title": "No se pudo autenticar",
+      "deleted": "Este anuncio ha sido eliminado.",
+      "forbidden_title": "Acción restringida",
+      "forbidden": "Solo los managers y desarrolladores del Moddy Team pueden autenticar un anuncio."
+    }
+  },
   "ocr": {
     "title": "Texto extraído",
     "loading": "Leyendo la imagen",
