@@ -67,9 +67,18 @@ class FakeChannel:
         self.id = cid
         self.guild = guild or SimpleNamespace(id=99)
         self.sent = []
+        self.reactions = []
 
     async def send(self, **kw):
         self.sent.append(kw)
+
+    def get_partial_message(self, mid):
+        channel = self
+
+        class Partial:
+            async def add_reaction(self, emoji):
+                channel.reactions.append((mid, emoji))
+        return Partial()
 
 
 def make_bot(db=None, channels=()):
@@ -121,6 +130,7 @@ class TestCopies:
         await cog.on_message(message)
         await cog.on_message(message)
 
+        assert message.channel.reactions == [(COPY_ID, av.STATUS_OK)]
         assert len(message.channel.sent) == 1
         ids = [c.item.custom_id for c in message.channel.sent[0]["view"].walk_children()
                if isinstance(c, discord.ui.DynamicItem)]
@@ -137,7 +147,7 @@ class TestCopies:
         db.verifications[SOURCE_ID] = {"content_hash": content_hash(TEXT)}
         av._BACKLOG_PAUSE = 0
         assert await cog.answer_backlog(SOURCE_ID) == 1
-        assert len(target.sent) == 1
+        assert target.reactions == [(COPY_ID, av.STATUS_OK)]
         assert await cog.answer_backlog(SOURCE_ID) == 0
 
     async def test_copy_with_another_text_is_not_confirmed(self):
@@ -146,7 +156,15 @@ class TestCopies:
         cog = AnnouncementVerification(make_bot(db))
         message = relayed_copy()
         await cog.on_message(message)
-        assert message.channel.sent == []
+        assert message.channel.sent == [] and message.channel.reactions == []
+
+    async def test_no_translation_means_reaction_only(self):
+        db = FakeDB()
+        db.verifications[SOURCE_ID] = {"content_hash": content_hash(TEXT)}
+        cog = AnnouncementVerification(make_bot(db))
+        message = relayed_copy()
+        await cog.on_message(message)
+        assert len(message.channel.reactions) == 1 and message.channel.sent == []
 
 
 class TestVerifyButton:
