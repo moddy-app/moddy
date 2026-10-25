@@ -1347,6 +1347,12 @@
           "section_title": "Roles for bots",
           "section_description": "Roles that will be automatically assigned to bots joining the server",
           "placeholder": "Select roles for bots"
+        },
+        "tag_roles": {
+          "section_title": "Server tag roles",
+          "section_description": "Roles given to members who display the server tag, and removed when they take it off",
+          "section_description_tag": "Roles given to members who display the `{tag}` tag, and removed when they take it off",
+          "placeholder": "Select roles for the server tag"
         }
       }
     },

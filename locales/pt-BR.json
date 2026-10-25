@@ -1347,6 +1347,12 @@
           "section_title": "Cargos para bots",
           "section_description": "Cargos que serão atribuídos automaticamente aos bots que entrarem no servidor",
           "placeholder": "Selecione os cargos para bots"
+        },
+        "tag_roles": {
+          "section_title": "Cargos da tag do servidor",
+          "section_description": "Cargos atribuídos aos membros que exibem a tag do servidor, e removidos quando a tiram",
+          "section_description_tag": "Cargos atribuídos aos membros que exibem a tag `{tag}`, e removidos quando a tiram",
+          "placeholder": "Selecione os cargos para a tag do servidor"
         }
       }
     },

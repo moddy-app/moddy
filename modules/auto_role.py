@@ -9,6 +9,7 @@ import logging
 
 from modules.module_manager import ModuleBase
 from utils.emojis import MANAGE_USER
+from utils.guild_tags import wears_tag
 
 logger = logging.getLogger('moddy.modules.auto_role')
 
@@ -34,6 +35,7 @@ class AutoRoleModule(ModuleBase):
         # Configuration
         self.member_roles: List[int] = []  # Rôles pour les utilisateurs normaux
         self.bot_roles: List[int] = []     # Rôles pour les bots
+        self.tag_roles: List[int] = []     # Rôles tant que le membre porte le tag du serveur
 
     async def load_config(self, config_data: Dict[str, Any]) -> bool:
         """Charge la configuration depuis la DB"""
@@ -43,9 +45,10 @@ class AutoRoleModule(ModuleBase):
             # Charge les rôles
             self.member_roles = config_data.get('member_roles', [])
             self.bot_roles = config_data.get('bot_roles', [])
+            self.tag_roles = config_data.get('tag_roles', [])
 
             # Le module est activé si au moins un rôle est configuré
-            self.enabled = len(self.member_roles) > 0 or len(self.bot_roles) > 0
+            self.enabled = bool(self.member_roles or self.bot_roles or self.tag_roles)
 
             return True
         except Exception as e:
@@ -56,10 +59,11 @@ class AutoRoleModule(ModuleBase):
         """Valide la configuration"""
         member_roles = config_data.get('member_roles', [])
         bot_roles = config_data.get('bot_roles', [])
+        tag_roles = config_data.get('tag_roles', [])
 
         # Au moins un rôle doit être configuré
-        if not member_roles and not bot_roles:
-            return False, "Vous devez configurer au moins un rôle (pour les membres ou pour les bots)"
+        if not member_roles and not bot_roles and not tag_roles:
+            return False, "Vous devez configurer au moins un rôle (pour les membres, les bots ou le tag du serveur)"
 
         # Vérifie que les rôles existent
         guild = self.bot.get_guild(self.guild_id)
@@ -72,8 +76,7 @@ class AutoRoleModule(ModuleBase):
         managed_roles = []   # Rôles gérés automatiquement
         missing_roles = []   # Rôles introuvables
 
-        # Vérifie les rôles membres
-        for role_id in member_roles:
+        for role_id in dict.fromkeys([*member_roles, *bot_roles, *tag_roles]):
             role = guild.get_role(role_id)
             if not role:
                 missing_roles.append(f"<@&{role_id}>")
@@ -92,30 +95,6 @@ class AutoRoleModule(ModuleBase):
             # Vérifie que le bot peut attribuer ce rôle
             if role >= guild.me.top_role:
                 roles_too_high.append(role.mention)
-
-        # Vérifie les rôles bots
-        for role_id in bot_roles:
-            role = guild.get_role(role_id)
-            if not role:
-                missing_roles.append(f"<@&{role_id}>")
-                continue
-
-            # Vérifie que le rôle n'est pas @everyone
-            if role.id == guild.id:
-                if role.mention not in everyone_roles:
-                    everyone_roles.append(role.mention)
-                continue
-
-            # Vérifie que le rôle n'est pas managé
-            if role.managed:
-                if role.mention not in managed_roles:
-                    managed_roles.append(role.mention)
-                continue
-
-            # Vérifie que le bot peut attribuer ce rôle
-            if role >= guild.me.top_role:
-                if role.mention not in roles_too_high:
-                    roles_too_high.append(role.mention)
 
         # Retourne le premier problème trouvé avec tous les rôles concernés
         if missing_roles:
@@ -149,7 +128,8 @@ class AutoRoleModule(ModuleBase):
         """Retourne la configuration par défaut"""
         return {
             'member_roles': [],
-            'bot_roles': []
+            'bot_roles': [],
+            'tag_roles': [],
         }
 
     async def _altguard_holds_back(self, member: discord.Member) -> bool:
@@ -227,6 +207,11 @@ class AutoRoleModule(ModuleBase):
                         role = guild.get_role(role_id)
                         if role and role < guild.me.top_role:
                             roles_to_add.append(role)
+                # Il rejoint en portant déjà le tag du serveur
+                if wears_tag(member, self.guild_id):
+                    for role in self._assignable(guild, self.tag_roles):
+                        if role not in roles_to_add:
+                            roles_to_add.append(role)
 
             # Attribue les rôles si il y en a
             if roles_to_add:
@@ -246,4 +231,62 @@ class AutoRoleModule(ModuleBase):
             logger.error(
                 f"Error adding auto roles to {member.name} in guild {self.guild_id}: {e}",
                 exc_info=True
+            )
+
+    @staticmethod
+    def _assignable(guild: discord.Guild, role_ids: List[int]) -> List[discord.Role]:
+        roles = []
+        for role_id in role_ids:
+            role = guild.get_role(role_id)
+            if role and role < guild.me.top_role and not role.managed:
+                roles.append(role)
+        return roles
+
+    async def sync_tag_roles(self, member: discord.Member):
+        """Give the tag roles while ``member`` wears the server tag, take them back after.
+
+        Called on every member update carrying the user's ``primary_guild``
+        (``cogs/server_tag_events.py``). Idempotent: only the difference
+        between what the member has and what the tag says reaches Discord, so
+        the update our own role edit triggers is a no-op.
+        """
+        if not self.enabled or not self.tag_roles or member.bot:
+            return
+
+        guild = self.bot.get_guild(self.guild_id)
+        if not guild:
+            return
+
+        tag_roles = self._assignable(guild, self.tag_roles)
+        if not tag_roles:
+            return
+
+        try:
+            if wears_tag(member, self.guild_id):
+                missing = [r for r in tag_roles if r not in member.roles]
+                if not missing:
+                    return
+                # Same AltGuard rule as the join roles: nothing before the gate opens.
+                if await self._altguard_holds_back(member):
+                    return
+                await member.add_roles(*missing, reason="Auto Role (server tag)")
+                self.count("roles_added", len(missing))
+                logger.info(
+                    f"Added {len(missing)} tag role(s) to {member.id} in guild {self.guild_id}"
+                )
+            else:
+                extra = [r for r in tag_roles if r in member.roles]
+                if not extra:
+                    return
+                await member.remove_roles(*extra, reason="Auto Role (server tag removed)")
+                logger.info(
+                    f"Removed {len(extra)} tag role(s) from {member.id} in guild {self.guild_id}"
+                )
+        except discord.Forbidden:
+            logger.warning(
+                f"Missing permissions to sync tag roles for {member.id} in guild {self.guild_id}"
+            )
+        except discord.HTTPException as e:
+            logger.error(
+                f"Error syncing tag roles for {member.id} in guild {self.guild_id}: {e}"
             )
