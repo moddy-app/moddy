@@ -51,6 +51,17 @@ ANNOUNCEMENT_TRANSLATION_CHANNEL_IDS: list[int] = [
     if part.strip().isdigit()
 ]
 
+# Announcement verification (docs/features/ANNOUNCEMENT_VERIFICATION.md): the
+# support-server announcement channels whose posts a Manager or Developer can
+# authenticate. Servers following them get a confirmation under each relayed copy.
+ANNOUNCEMENT_VERIFICATION_CHANNEL_IDS: list[int] = [
+    int(part.strip())
+    for part in os.environ.get(
+        "ANNOUNCEMENT_VERIFICATION_CHANNEL_IDS", "1410338969107042515",
+    ).split(",")
+    if part.strip().isdigit()
+]
+
 # Support requests (docs/features/SUPPORT_REQUESTS.md): where /bug-report lands, and
 # where a server owner asking the team to configure Moddy for them lands. Both
 # live in the Moddy team guild and are answered from the card itself.

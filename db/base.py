@@ -45,6 +45,7 @@ from db.repositories.support_requests import SupportRequestRepository
 from db.repositories.bump import BumpReminderRepository
 from db.repositories.member_applications import MemberApplicationRepository
 from db.repositories.announcement_translations import AnnouncementTranslationRepository
+from db.repositories.announcement_verifications import AnnouncementVerificationRepository
 from db.repositories.stats import StatsRepository
 
 logger = logging.getLogger('moddy.database')
@@ -92,6 +93,7 @@ class ModdyDatabase(
     BumpReminderRepository,
     MemberApplicationRepository,
     AnnouncementTranslationRepository,
+    AnnouncementVerificationRepository,
     StatsRepository,
 ):
     """Gestionnaire principal de la base de données"""
@@ -803,6 +805,38 @@ class ModdyDatabase(
                     translations JSONB       NOT NULL DEFAULT '{}'::jsonb,
                     created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
                 )
+            """)
+
+            # announcement_verifications — the support-server announcements a
+            # Manager or Developer authenticated; announcement_crossposts — every
+            # copy Discord relayed into a following server, so a copy that
+            # arrived before the authentication is answered once it happens,
+            # and none is answered twice.
+            # See docs/features/ANNOUNCEMENT_VERIFICATION.md.
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS announcement_verifications (
+                    message_id   BIGINT      PRIMARY KEY,
+                    guild_id     BIGINT      NOT NULL,
+                    channel_id   BIGINT      NOT NULL,
+                    content_hash TEXT        NOT NULL,
+                    verified_by  BIGINT      NOT NULL,
+                    verified_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+                )
+            """)
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS announcement_crossposts (
+                    message_id        BIGINT      PRIMARY KEY,
+                    source_message_id BIGINT      NOT NULL,
+                    guild_id          BIGINT      NOT NULL,
+                    channel_id        BIGINT      NOT NULL,
+                    answered_at       TIMESTAMPTZ,
+                    created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
+                )
+            """)
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_announcement_crossposts_pending
+                ON announcement_crossposts (source_message_id)
+                WHERE answered_at IS NULL
             """)
 
             # automod_eval_candidates — the annotation corpus that feeds the

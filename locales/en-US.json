@@ -5506,6 +5506,33 @@
       "missing": "The translation of this announcement is no longer available."
     }
   },
+  "announcement_verification": {
+    "verify": {
+      "title": "Authenticate this announcement",
+      "description": "Only Moddy Team managers and developers can authenticate this announcement. Once it is authenticated, Moddy confirms its authenticity under every copy published in following servers and offers to translate it.",
+      "edited": "The announcement was edited after it was authenticated: it must be authenticated again.",
+      "button": "Authenticate"
+    },
+    "verified": {
+      "title": "Announcement authenticated",
+      "description": "Authenticated by {user} {time}. Copies published in following servers will get a confirmation.",
+      "no_translation": "No translation could be generated: copies will be confirmed without a translate button."
+    },
+    "confirmation": {
+      "title": "Official Moddy announcement",
+      "description": "This message was published by the Moddy team from its official server and authenticated by a team lead.",
+      "translate": "Translate"
+    },
+    "translate": {
+      "same_language": "This announcement is already written in your language."
+    },
+    "error": {
+      "title": "Authentication failed",
+      "deleted": "This announcement has been deleted.",
+      "forbidden_title": "Restricted action",
+      "forbidden": "Only Moddy Team managers and developers can authenticate an announcement."
+    }
+  },
   "ocr": {
     "title": "Extracted text",
     "loading": "Reading the image",
