@@ -53,6 +53,33 @@ def content_hash(text: Optional[str]) -> str:
     return hashlib.sha256((text or "").strip().encode("utf-8")).hexdigest()
 
 
+def _walk(components):
+    for component in components or []:
+        yield component
+        yield from _walk(getattr(component, "children", None))
+        accessory = getattr(component, "accessory", None)
+        if accessory is not None:
+            yield from _walk([accessory])
+
+
+def announcement_text(message) -> str:
+    """The readable text of an announcement, wherever it lives.
+
+    An announcement posted by an app is often a Components V2 message (text in
+    ``TextDisplay`` components, ``content`` empty) or an embed; both are read.
+    """
+    content = (getattr(message, "content", None) or "").strip()
+    if content:
+        return content
+    parts = [c.content for c in _walk(getattr(message, "components", None))
+             if isinstance(c, discord.TextDisplay) and c.content]
+    if not parts:
+        for embed in getattr(message, "embeds", None) or []:
+            parts += [x for x in (embed.title, embed.description) if x]
+            parts += [f"**{f.name}**\n{f.value}" for f in embed.fields]
+    return "\n\n".join(p.strip() for p in parts if p and p.strip())
+
+
 def relayed_source_id(message: discord.Message) -> Optional[int]:
     """Id of the support-server announcement ``message`` is a relayed copy of.
 
@@ -286,7 +313,7 @@ async def authenticate(bot, source: discord.Message, *, verified_by: int) -> boo
 
     Returns whether translations are available for its relayed copies.
     """
-    content = (source.content or "").strip()
+    content = announcement_text(source)
     translated = False
     gateway = getattr(bot, "gateway", None)
     if content and gateway and gateway.deepl_available():
@@ -304,7 +331,7 @@ async def authenticate(bot, source: discord.Message, *, verified_by: int) -> boo
 
     await bot.db.save_announcement_verification(
         source.id, guild_id=source.guild.id, channel_id=source.channel.id,
-        content_hash=content_hash(source.content), verified_by=verified_by)
+        content_hash=content_hash(content), verified_by=verified_by)
     logger.info("Announcement %s authenticated by %s", source.id, verified_by)
     return translated
 
@@ -418,7 +445,10 @@ class AnnouncementVerification(commands.Cog):
         verification = await self.bot.db.get_announcement_verification(source_id)
         if verification is None:
             return  # answered by the backlog once a Manager/Dev authenticates it
-        if content_hash(message.content) != verification["content_hash"]:
+        # A copy with no readable text (components not relayed) is still a
+        # Discord relay of that very message (IS_CROSSPOST + reference).
+        text = announcement_text(message)
+        if text and content_hash(text) != verification["content_hash"]:
             logger.warning("Copy %s of announcement %s differs from the authenticated text",
                            message.id, source_id)
             return
@@ -431,23 +461,20 @@ class AnnouncementVerification(commands.Cog):
             return
         if not self._is_source_channel(payload.guild_id, payload.channel_id):
             return
-        if "content" not in payload.data:
-            return  # embed unfurl or flag change, not a text edit
+        # Publishing, an embed unfurl or a flag change also fire an update:
+        # only a change of the readable text counts, read from the whole message
+        # (a Components V2 announcement has an empty ``content``).
+        message = getattr(payload, "message", None)
+        if message is None:
+            return
         verification = await self.bot.db.get_announcement_verification(payload.message_id)
         if verification is None:
             return
-        if content_hash(payload.data.get("content")) == verification["content_hash"]:
+        if content_hash(announcement_text(message)) == verification["content_hash"]:
             return
         await self.bot.db.delete_announcement_verification(payload.message_id)
         logger.warning("Announcement %s edited after authentication — authentication withdrawn",
                        payload.message_id)
-        message = getattr(payload, "message", None) or payload.cached_message
-        if message is None:
-            channel = self.bot.get_channel(payload.channel_id)
-            try:
-                message = await channel.fetch_message(payload.message_id)
-            except (discord.HTTPException, AttributeError):
-                return
         await self._post_verify_card(message, edited=True)
 
 
