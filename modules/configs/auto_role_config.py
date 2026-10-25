@@ -11,6 +11,7 @@ import logging
 from utils.i18n import i18n, t
 from cogs.error_handler import BaseView
 from utils.emojis import MANAGE_USER, BACK, SAVE, UNDONE
+from utils import guild_tags
 from modules.configs._common import (
     check_guild_perms, ack, show, state_accent, config_state, module_manage_button,
     open_main_config, crumb,
@@ -20,6 +21,7 @@ logger = logging.getLogger('moddy.modules.auto_role_config')
 
 _CID_MEMBER_ROLES = "moddy:autorole:config:member_roles"
 _CID_BOT_ROLES = "moddy:autorole:config:bot_roles"
+_CID_TAG_ROLES = "moddy:autorole:config:tag_roles"
 _CID_BACK = "moddy:autorole:config:back"
 _CID_SAVE = "moddy:autorole:config:save"
 _CID_CANCEL = "moddy:autorole:config:cancel"
@@ -51,7 +53,8 @@ class AutoRoleConfigView(BaseView):
         # Check if we have a real saved config (check for any configured roles)
         if current_config and (
             current_config.get('member_roles') or
-            current_config.get('bot_roles')
+            current_config.get('bot_roles') or
+            current_config.get('tag_roles')
         ):
             # Merge with defaults to ensure all keys exist
             self.current_config = default_config.copy()
@@ -87,68 +90,52 @@ class AutoRoleConfigView(BaseView):
 
         container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
 
-        # Member roles selector
-        container.add_item(ui.TextDisplay(
-            f"**{t('modules.auto_role.config.member_roles.section_title', locale=self.locale)}**\n"
-            f"-# {t('modules.auto_role.config.member_roles.section_description', locale=self.locale)}"
-        ))
+        guild = self.bot.get_guild(self.guild_id) if self.bot is not None else None
 
-        member_roles_row = ui.ActionRow()
-        member_roles_select = ui.RoleSelect(
-            placeholder=t('modules.auto_role.config.member_roles.placeholder', locale=self.locale),
-            min_values=0,
-            max_values=25,
-            custom_id=_CID_MEMBER_ROLES,
-        )
+        self._add_role_section(container, guild, 'member_roles', _CID_MEMBER_ROLES,
+                               self.on_member_roles_select)
+        self._add_role_section(container, guild, 'bot_roles', _CID_BOT_ROLES,
+                               self.on_bot_roles_select)
 
-        # Pre-select current member roles
-        if self.working_config.get('member_roles') and self.bot is not None:
-            guild = self.bot.get_guild(self.guild_id)
-            if guild:
-                default_roles = []
-                for role_id in self.working_config['member_roles']:
-                    role = guild.get_role(role_id)
-                    if role:
-                        default_roles.append(role)
-                if default_roles:
-                    member_roles_select.default_values = default_roles
-
-        member_roles_select.callback = self.on_member_roles_select
-        member_roles_row.add_item(member_roles_select)
-        container.add_item(member_roles_row)
-
-        # Bot roles selector
-        container.add_item(ui.TextDisplay(
-            f"**{t('modules.auto_role.config.bot_roles.section_title', locale=self.locale)}**\n"
-            f"-# {t('modules.auto_role.config.bot_roles.section_description', locale=self.locale)}"
-        ))
-
-        bot_roles_row = ui.ActionRow()
-        bot_roles_select = ui.RoleSelect(
-            placeholder=t('modules.auto_role.config.bot_roles.placeholder', locale=self.locale),
-            min_values=0,
-            max_values=25,
-            custom_id=_CID_BOT_ROLES,
-        )
-
-        # Pre-select current bot roles
-        if self.working_config.get('bot_roles') and self.bot is not None:
-            guild = self.bot.get_guild(self.guild_id)
-            if guild:
-                default_roles = []
-                for role_id in self.working_config['bot_roles']:
-                    role = guild.get_role(role_id)
-                    if role:
-                        default_roles.append(role)
-                if default_roles:
-                    bot_roles_select.default_values = default_roles
-
-        bot_roles_select.callback = self.on_bot_roles_select
-        bot_roles_row.add_item(bot_roles_select)
-        container.add_item(bot_roles_row)
+        # Server tag roles: only for a server that has a tag. The registration
+        # shell (no bot) always carries the select so its custom_id dispatches.
+        if self.bot is None or guild_tags.guild_has_tag(guild):
+            tag = guild_tags.known_tag(self.guild_id) if self.guild_id else None
+            self._add_role_section(
+                container, guild, 'tag_roles', _CID_TAG_ROLES, self.on_tag_roles_select,
+                description_key='section_description_tag' if tag else 'section_description',
+                tag=tag,
+            )
 
         self.add_item(container)
         self._add_action_buttons()
+
+    def _add_role_section(self, container: ui.Container, guild: Optional[discord.Guild],
+                          key: str, custom_id: str, callback, *,
+                          description_key: str = 'section_description', **params):
+        """One "title + description + RoleSelect" block for the ``key`` role list."""
+        base = f'modules.auto_role.config.{key}'
+        container.add_item(ui.TextDisplay(
+            f"**{t(f'{base}.section_title', locale=self.locale)}**\n"
+            f"-# {t(f'{base}.{description_key}', locale=self.locale, **params)}"
+        ))
+
+        select = ui.RoleSelect(
+            placeholder=t(f'{base}.placeholder', locale=self.locale),
+            min_values=0,
+            max_values=25,
+            custom_id=custom_id,
+        )
+        # Pre-select the current roles
+        if guild is not None:
+            default_roles = [r for r in map(guild.get_role, self.working_config.get(key) or []) if r]
+            if default_roles:
+                select.default_values = default_roles
+
+        select.callback = callback
+        row = ui.ActionRow()
+        row.add_item(select)
+        container.add_item(row)
 
     def _add_action_buttons(self):
         """Ajoute les boutons Back/Save/Cancel/Delete"""
@@ -209,7 +196,7 @@ class AutoRoleConfigView(BaseView):
         from modules.auto_role import AutoRoleModule
         default_config = AutoRoleModule(bot, interaction.guild_id).get_default_config()
         saved = await bot.module_manager.get_module_config(interaction.guild_id, 'auto_role')
-        if saved and (saved.get('member_roles') or saved.get('bot_roles')):
+        if saved and (saved.get('member_roles') or saved.get('bot_roles') or saved.get('tag_roles')):
             default_config.update(saved)
         return default_config
 
@@ -227,35 +214,28 @@ class AutoRoleConfigView(BaseView):
         view._build_view()
         return view
 
-    async def on_member_roles_select(self, interaction: discord.Interaction):
-        """Callback quand les rôles membres sont sélectionnés"""
+    async def _on_roles_select(self, interaction: discord.Interaction, key: str):
         if not await check_guild_perms(interaction):
             return
         await ack(interaction)
 
         working_config = await self._fresh_working_config(interaction)
-        if interaction.data['values']:
-            working_config['member_roles'] = [int(role_id) for role_id in interaction.data['values']]
-        else:
-            working_config['member_roles'] = []
+        working_config[key] = [int(role_id) for role_id in interaction.data.get('values', [])]
 
         view = await self._rebuild(interaction, working_config, has_changes=True)
         await show(interaction, view)
+
+    async def on_member_roles_select(self, interaction: discord.Interaction):
+        """Callback quand les rôles membres sont sélectionnés"""
+        await self._on_roles_select(interaction, 'member_roles')
 
     async def on_bot_roles_select(self, interaction: discord.Interaction):
         """Callback quand les rôles bots sont sélectionnés"""
-        if not await check_guild_perms(interaction):
-            return
-        await ack(interaction)
+        await self._on_roles_select(interaction, 'bot_roles')
 
-        working_config = await self._fresh_working_config(interaction)
-        if interaction.data['values']:
-            working_config['bot_roles'] = [int(role_id) for role_id in interaction.data['values']]
-        else:
-            working_config['bot_roles'] = []
-
-        view = await self._rebuild(interaction, working_config, has_changes=True)
-        await show(interaction, view)
+    async def on_tag_roles_select(self, interaction: discord.Interaction):
+        """Callback quand les rôles du tag du serveur sont sélectionnés"""
+        await self._on_roles_select(interaction, 'tag_roles')
 
     async def on_save(self, interaction: discord.Interaction):
         """Sauvegarde la configuration"""

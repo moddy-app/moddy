@@ -1347,6 +1347,12 @@
           "section_title": "Rollen für Bots",
           "section_description": "Rollen, die Bots beim Beitritt zum Server automatisch zugewiesen werden",
           "placeholder": "Wähle Rollen für Bots"
+        },
+        "tag_roles": {
+          "section_title": "Rollen für den Server-Tag",
+          "section_description": "Rollen für Mitglieder, die den Server-Tag tragen – sie werden entfernt, sobald der Tag abgelegt wird",
+          "section_description_tag": "Rollen für Mitglieder, die den Tag `{tag}` tragen – sie werden entfernt, sobald der Tag abgelegt wird",
+          "placeholder": "Rollen für den Server-Tag auswählen"
         }
       }
     },

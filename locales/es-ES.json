@@ -1347,6 +1347,12 @@
           "section_title": "Roles para bots",
           "section_description": "Roles que se asignarán automáticamente a los bots que se unan al servidor",
           "placeholder": "Selecciona roles para bots"
+        },
+        "tag_roles": {
+          "section_title": "Roles de la etiqueta del servidor",
+          "section_description": "Roles asignados a los miembros que muestran la etiqueta del servidor, y retirados cuando la quitan",
+          "section_description_tag": "Roles asignados a los miembros que muestran la etiqueta `{tag}`, y retirados cuando la quitan",
+          "placeholder": "Selecciona roles para la etiqueta del servidor"
         }
       }
     },

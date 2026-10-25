@@ -1346,6 +1346,12 @@
           "section_title": "Rôles pour les bots",
           "section_description": "Rôles qui seront attribués automatiquement aux bots qui rejoignent le serveur",
           "placeholder": "Sélectionnez des rôles pour les bots"
+        },
+        "tag_roles": {
+          "section_title": "Rôles du tag du serveur",
+          "section_description": "Rôles attribués aux membres qui affichent le tag du serveur, et retirés quand ils l'enlèvent",
+          "section_description_tag": "Rôles attribués aux membres qui affichent le tag `{tag}`, et retirés quand ils l'enlèvent",
+          "placeholder": "Sélectionnez des rôles pour le tag du serveur"
         }
       }
     },

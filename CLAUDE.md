@@ -37,6 +37,7 @@ moddy/
 │   ├── config.py              #   /config command (module configuration)
 │   ├── module_events.py       #   Event handlers for modules
 │   ├── team_link_events.py    #   Gateway wiring + boot recovery for the linking window
+│   ├── server_tag_events.py   #   Gateway hooks: server tag text + Auto Role tag roles sync
 │   ├── invite.py              #   /invite command
 │   ├── bug_report.py          #   /bug-report command (Modal V2 → team channel)
 │   ├── brocoli_chat.py        #   Brocoli in a channel (dev-guild gated, SSE → Components V2)
@@ -86,7 +87,7 @@ moddy/
 │   ├── module_manager.py      #   ModuleManager + ModuleBase class
 │   ├── welcome_channel.py     #   Welcome messages in channels (up to 5, Components V2)
 │   ├── welcome_dm.py          #   Welcome DMs to new members (up to 3, Components V2)
-│   ├── auto_role.py           #   Auto role assignment
+│   ├── auto_role.py           #   Auto role assignment (join roles + server tag roles)
 │   ├── auto_restore_roles.py  #   Role restoration on rejoin
 │   ├── starboard.py           #   Reaction-based starboard
 │   ├── adaptive_slowmode.py   #   Adaptive slowmode (EWMA + hysteresis)
@@ -257,6 +258,7 @@ moddy/
 │   ├── user_preferences.py    #   Per-user prefs cache (icon theme + language), loaded at startup
 │   ├── icon_theme.py          #   Light-theme icon swap: rewrites outgoing payloads (white → *_dark twins)
 │   ├── guild_language.py      #   Server language (one setting, every module)
+│   ├── guild_tags.py          #   Server tags: does a server have one, is a member wearing it
 │   ├── command_translator.py  #   Slash command name/description localization (32 locales)
 │   ├── emojis.py              #   Emoji constants
 │   ├── components_v2.py       #   V2 helper functions (create_error_message, etc.)
@@ -391,6 +393,7 @@ moddy/
     ├── gateway/               #   Provider rate limits + executor reservation lifecycle
     ├── test_guild_language.py #   Server language: auto rule, cache, invalidation
     ├── test_altguard.py       #   AltGuard verdicts, gate roles, auto_role hold-back
+    ├── test_auto_role_tags.py #   Auto Role server tag roles: detection, sync, panel, gateway hook
     ├── test_global_sanctions.py   # Global sanction levels, cache TTL, user/guild context
     ├── test_global_sanction_flow.py # Groups, notices, countdown, Redis events, allowlists
     ├── test_bot_customization.py  # Bot customization validation (bio budget, styles)
@@ -665,6 +668,7 @@ All documentation is in [docs/](docs/) (structure and conventions: [docs/README.
 | [docs/features/ANNOUNCEMENT_TRANSLATION.md](docs/features/ANNOUNCEMENT_TRANSLATION.md) | **Announcement translation** — support-server announcements translated once into every language, one flag button per language |
 | [docs/features/ANNOUNCEMENT_VERIFICATION.md](docs/features/ANNOUNCEMENT_VERIFICATION.md) | **Announcement verification** — Managers/Devs authenticate support-server announcements; every relayed copy in a following server gets a check_circle reaction + Translate button |
 | [docs/features/AUTOMOD.md](docs/features/AUTOMOD.md) | Automod — detection pipeline (+ `/config` panel, §0), nano decider, scalable features, **images (NSFW + scam screenshots)**, **Moddy team labeling queue**, rules + custom-infraction safety check, **infraction catalogue & per-type sanctions**, **custom infractions**, **member profiles** |
+| [docs/features/AUTO_ROLE.md](docs/features/AUTO_ROLE.md) | **Auto Role** — join roles for members/bots + roles mirrored on the server tag (gateway hook, tag detection) |
 | [docs/features/BOT_CUSTOMIZATION.md](docs/features/BOT_CUSTOMIZATION.md) | Bot Customization — per-guild nickname/avatar/banner/bio + name styles, Redis dashboard contract |
 | [docs/features/BROCOLI_CHANNEL.md](docs/features/BROCOLI_CHANNEL.md) | **Brocoli in a channel** — the AI assistant as a Discord channel, signed identity assertions, confirmation cards, dev-guild gating |
 | [docs/features/BUMP_REMINDER.md](docs/features/BUMP_REMINDER.md) | **Bump Reminder** — detecting a *successful* bump on 7 directories, the reminder, ping modes, quotas |
