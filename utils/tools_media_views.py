@@ -74,7 +74,13 @@ class CardImage:
     items whose ``url`` is the CDN address of the upload. This wraps one of them
     with the few attributes the readers need (``filename``, ``url``,
     ``content_type``, ``size``, ``read()``), like a :class:`discord.Attachment`.
+
+    Its media item usually has no ``ConnectionState`` (``read()`` would raise),
+    so :meth:`MediaToolsService.read_attachment` downloads ``url`` instead when
+    it sees ``from_components``.
     """
+
+    from_components = True
 
     def __init__(self, media: Any, *, filename: Optional[str] = None, size: Optional[int] = None):
         self.media = media

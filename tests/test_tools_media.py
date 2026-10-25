@@ -700,6 +700,23 @@ def test_v2_card_with_a_preview_returns_the_original_file_not_the_preview():
     assert files.gallery == views.PREVIEW_NAME and files.file_ref == "scan.tiff"
 
 
+def test_v2_card_image_is_downloaded_by_url_not_by_stateless_read():
+    """A media item parsed from a card has no ConnectionState: read() raises."""
+    found = views.find_source_attachment(_v2_message(_gallery("photo.png")))
+    with pytest.raises(discord.DiscordException):
+        asyncio.run(found.read())
+    service = svc.MediaToolsService(types.SimpleNamespace())
+    calls = []
+
+    async def read_url(url, limit=0):
+        calls.append(url)
+        return b"png"
+
+    service.read_url = read_url
+    assert asyncio.run(service.read_attachment(found)) == b"png"
+    assert calls == [found.url]
+
+
 async def test_card_image_reads_through_its_media_item():
     class Media:
         url = "https://cdn.discordapp.com/attachments/1/2/a%20b.png?ex=1"
