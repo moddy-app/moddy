@@ -5508,18 +5508,16 @@
   },
   "announcement_verification": {
     "verify": {
-      "pending": "Authentication required",
-      "edited": "Edited after authentication",
-      "restricted": "Restricted to Moddy Team managers and developers.",
+      "pending": "Only managers and developers can authenticate this message.",
+      "edited": "Message edited, authenticate it again.",
       "button": "Authenticate"
     },
     "verified": {
-      "line": "**Authenticated** by {user} · {time}",
-      "no_translation": "No translation available."
+      "line": "Authenticated by {user}",
+      "no_translation": "no translation"
     },
     "confirmation": {
-      "title": "Official announcement",
-      "subtitle": "Published and authenticated by the Moddy team.",
+      "line": "Verified message from the Moddy team",
       "translate": "Translate"
     },
     "translate": {

@@ -5422,18 +5422,16 @@
   },
   "announcement_verification": {
     "verify": {
-      "pending": "Authentifizierung erforderlich",
-      "edited": "Nach der Authentifizierung bearbeitet",
-      "restricted": "Nur für Manager und Entwickler des Moddy Teams.",
+      "pending": "Nur Manager und Entwickler können diese Nachricht authentifizieren.",
+      "edited": "Nachricht bearbeitet, bitte erneut authentifizieren.",
       "button": "Authentifizieren"
     },
     "verified": {
-      "line": "**Authentifiziert** von {user} · {time}",
-      "no_translation": "Keine Übersetzung verfügbar."
+      "line": "Authentifiziert von {user}",
+      "no_translation": "ohne Übersetzung"
     },
     "confirmation": {
-      "title": "Offizielle Ankündigung",
-      "subtitle": "Vom Moddy-Team veröffentlicht und authentifiziert.",
+      "line": "Verifizierte Nachricht des Moddy-Teams",
       "translate": "Übersetzen"
     },
     "translate": {

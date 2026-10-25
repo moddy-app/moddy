@@ -23,7 +23,6 @@ import asyncio
 import hashlib
 import logging
 import re
-import time
 from typing import Optional
 
 import discord
@@ -35,7 +34,7 @@ from cogs.announcement_translation import (
 )
 from cogs.error_handler import BaseView
 from config import ANNOUNCEMENT_VERIFICATION_CHANNEL_IDS, COLORS, MODDY_TEAM_GUILD_ID
-from utils.emojis import TRANSLATE, VERIFIED, WARNING
+from utils.emojis import TRANSLATE, VERIFIED
 from utils.i18n import i18n, t
 
 logger = logging.getLogger('moddy.announcement_verification')
@@ -103,48 +102,37 @@ def _guarded(callback):
 # --------------------------------------------------------------------------- #
 
 def build_verify_card(message_id: int, locale: str, *, edited: bool = False) -> BaseView:
-    """Support-server reply to a fresh (or edited) announcement: one line + the button."""
+    """Support-server reply to a fresh (or edited) announcement: one small line + the button."""
     key = "edited" if edited else "pending"
-    icon = WARNING if edited else VERIFIED
     view = BaseView()
-    container = ui.Container(accent_colour=COLORS["warning"] if edited else COLORS["neutral"])
-    container.add_item(ui.Section(
-        ui.TextDisplay(
-            f"{icon} **{t(f'announcement_verification.verify.{key}', locale=locale)}**\n"
-            f"-# {t('announcement_verification.verify.restricted', locale=locale)}"),
+    view.add_item(ui.Section(
+        ui.TextDisplay(f"-# {t(f'announcement_verification.verify.{key}', locale=locale)}"),
         accessory=VerifyAnnouncementButton(message_id, label=t(
             "announcement_verification.verify.button", locale=locale)),
     ))
-    view.add_item(container)
     return view
 
 
 def build_verified_card(user_id: int, locale: str, *, translated: bool) -> BaseView:
     """The verify card once the announcement is authenticated (no button)."""
     view = BaseView()
-    container = ui.Container(accent_colour=COLORS["success"])
-    line = t("announcement_verification.verified.line", locale=locale,
-             user=f"<@{user_id}>", time=f"<t:{int(time.time())}:R>")
+    line = t("announcement_verification.verified.line", locale=locale, user=f"<@{user_id}>")
     if not translated:
-        line += f"\n-# {t('announcement_verification.verified.no_translation', locale=locale)}"
-    container.add_item(ui.TextDisplay(f"{VERIFIED} {line}"))
-    view.add_item(container)
+        line += f" · {t('announcement_verification.verified.no_translation', locale=locale)}"
+    view.add_item(ui.TextDisplay(f"-# {VERIFIED} {line}"))
     return view
 
 
 def build_confirmation_card(source_id: int, locale: str, *, translatable: bool) -> BaseView:
     """The reply under a relayed copy, in the following server's language."""
     view = BaseView()
-    container = ui.Container(accent_colour=COLORS["success"])
     text = ui.TextDisplay(
-        f"{VERIFIED} **{t('announcement_verification.confirmation.title', locale=locale)}**\n"
-        f"-# {t('announcement_verification.confirmation.subtitle', locale=locale)}")
+        f"-# {VERIFIED} {t('announcement_verification.confirmation.line', locale=locale)}")
     if translatable:
-        container.add_item(ui.Section(text, accessory=TranslateAnnouncementButton(
+        view.add_item(ui.Section(text, accessory=TranslateAnnouncementButton(
             source_id, label=t("announcement_verification.confirmation.translate", locale=locale))))
     else:
-        container.add_item(text)
-    view.add_item(container)
+        view.add_item(text)
     return view
 
 

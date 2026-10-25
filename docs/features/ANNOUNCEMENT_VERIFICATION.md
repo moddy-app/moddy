@@ -27,7 +27,7 @@ that, and the Translate button lets anyone read it in their own language.
    language but its own (the same `_translate_all` as
    [ANNOUNCEMENT_TRANSLATION.md](ANNOUNCEMENT_TRANSLATION.md), stored in
    `announcement_translations`), records a SHA-256 of its text in
-   `announcement_verifications`, and turns the card into "Authenticated by …".
+   `announcement_verifications`, and turns the card into "Authenticated by …" (one small line).
 3. The announcement is published (the usual Discord **Publish** button; Moddy
    does not publish it). In every following server Discord posts a copy.
    Moddy recognises a copy by:
@@ -36,7 +36,7 @@ that, and the Translate button lets anyone read it in their own language.
    - a `reference` to the support server **and** a watched channel.
 4. Each copy is recorded in `announcement_crossposts` (dedupe). If the
    announcement is authenticated and the copy's text has the same hash, Moddy
-   replies under it with the confirmation card, in the **server language**,
+   replies under it with one small line ("Verified message from the Moddy team"), in the **server language**,
    with a **Translate** button when translations exist.
 5. A copy that arrived *before* authentication stays recorded and unanswered;
    pressing Authenticate starts a background pass that answers them
