@@ -585,6 +585,12 @@ nothing to authorize. The beta campaign's **Translate** button
 reader was not already sent — it re-renders the recipient's own notification
 from its stored template.
 
+**Bump prospects** (`BumpProspectPersistence`, see
+[BUMP_PROSPECTS.md](../features/BUMP_PROSPECTS.md)): Invite, Claim/Unclaim,
+Close and Reopen on the team card, each carrying the prospect server's id
+(`moddy:bumpprospect:<action>:<guild_id>`) and re-checking the `bump_prospect`
+staff node on every click.
+
 **Tickets** (see [TICKETS.md](../features/TICKETS.md)) cover both models at once. Every
 interactive card posted *in a ticket channel* — the control bar, the closing
 card, the close request, the escalation notice, the closure suggestion, the

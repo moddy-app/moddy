@@ -188,6 +188,10 @@ class ModdyBot(ModdyFrameworkBot):
         # Bug reports (/bug-report) and "configure it for me" requests: opened
         # by users, answered by the team (see docs/features/SUPPORT_REQUESTS.md).
         self.support_requests = SupportRequestService(self)
+        from services.bump_prospect_service import BumpProspectService
+        # Servers that bump by hand (a directory, no reminder): one card each
+        # in the team channel (see docs/features/BUMP_PROSPECTS.md).
+        self.bump_prospects = BumpProspectService(self)
         from gateway import Gateway
         self.gateway = Gateway()
         from stats import StatsRollup, StatsService

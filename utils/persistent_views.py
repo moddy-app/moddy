@@ -101,6 +101,7 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     )
     from utils.notification_views import NotificationsPersistence
     from utils.support_request_views import SupportPersistence
+    from utils.bump_prospect_views import BumpProspectPersistence
     from utils.beta_announcement import BetaPersistence
     from cogs.announcement_translation import AnnouncementTranslationView
     from cogs.announcement_verification import AnnouncementVerificationView
@@ -233,6 +234,10 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         # keyed by the request uuid; the entry point carries no owner — the
         # clicker IS the requester).
         SupportPersistence,
+        # Group 12j bis — bump prospect cards in the team channel: Invite,
+        # Claim/Unclaim, Close, Reopen (dynamic items keyed by the prospect
+        # server's id; every click re-checks the bump_prospect staff node).
+        BumpProspectPersistence,
         # Group 12k — the beta-launch announcement's Translate button
         # (dynamic item keyed by the notification uuid; public — it only ever
         # re-renders the DM its reader already has). Temporary: goes away with

@@ -861,6 +861,26 @@ Schémas complets → [AUTOMOD_CONFIG.md §8](../integration/AUTOMOD_CONFIG.md).
 
 ---
 
+### 19b. Table `bump_prospects`
+
+Serveurs qui bumpent sur un annuaire sans aucun rappel — une carte par serveur
+dans le salon équipe. Clé primaire `guild_id` : c'est elle qui garantit une seule
+carte par serveur, quel que soit le nombre d'analyses.
+
+- `guild_id` (BIGINT, PK), `guild_name` (TEXT), `directories` (TEXT[])
+- `status` (TEXT) — `open` / `claimed` / `closed` / `converted` / `left`
+- `claimed_by`, `claimed_at`, `closed_by`, `closed_at`
+- `channel_id`, `message_id` — la carte, pour la rafraîchir
+- `created_at`, `updated_at`
+
+**Index :** `idx_bump_prospects_active` sur `status` (partiel, `open`/`claimed`)
+
+**Repository:** `db/repositories/bump_prospects.py` — `BumpProspectRepository`
+
+See → [BUMP_PROSPECTS.md](../features/BUMP_PROSPECTS.md).
+
+---
+
 ### 20. Tables de statistiques
 
 Cinq tables, un seul principe : **agréger avant d'écrire**. Un événement

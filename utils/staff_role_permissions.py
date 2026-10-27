@@ -48,6 +48,7 @@ COMMUNICATION_PERMISSIONS = [
     "announce",      # Send announcements
     "broadcast",     # Broadcast messages
     "notif_lookup",  # Look a notification up by its uuid (what did we send?)
+    "bump_prospect", # Handle bump prospect cards (invite, claim, close)
 ]
 
 # Permissions specific to Supervisor_Mod role
@@ -130,6 +131,7 @@ def get_permission_label(permission: str) -> str:
         # Communication
         "announce": "Send Announcements",
         "broadcast": "Broadcast Messages",
+        "bump_prospect": "Handle Bump Prospects",
 
         # Notifications
         "notif_review": "Review Notification Abuse Reports",

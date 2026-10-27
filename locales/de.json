@@ -6581,5 +6581,78 @@
         "animation_too_big": "Diese Animation ist zu aufwendig zu verarbeiten. Versuche eine kürzere oder kleinere."
       }
     }
+  },
+  "bump_prospects": {
+    "status": {
+      "open": "Offen",
+      "claimed": "Übernommen",
+      "closed": "Geschlossen",
+      "converted": "Konvertiert",
+      "left": "Moddy entfernt"
+    },
+    "card": {
+      "title": "Bump-Interessent",
+      "status_label": "Status:",
+      "why": "Bumpt auf einem Verzeichnis ohne jede Erinnerung — passt zu Moddys Bump Reminder.",
+      "server": "Server:",
+      "owner": "Eigentümer:",
+      "members": "Mitglieder:",
+      "detected": "Erkannt:",
+      "directories": "Verzeichnisse:",
+      "unknown_guild": "Unbekannter Server",
+      "claimed_by": "Übernommen von",
+      "closed_by": "Geschlossen von",
+      "converted": "Moddys Bump Reminder ist auf diesem Server jetzt aktiviert.",
+      "left": "Moddy ist nicht mehr auf diesem Server."
+    },
+    "buttons": {
+      "invite": "Einladung",
+      "claim": "Übernehmen",
+      "unclaim": "Freigeben",
+      "close": "Schließen",
+      "reopen": "Wieder öffnen"
+    },
+    "invite": {
+      "title": "Einladung bereit",
+      "description": "Einmalig nutzbar, 24 Stunden gültig. Nur du siehst sie.",
+      "open": "Server beitreten"
+    },
+    "errors": {
+      "no_permission": {
+        "title": "Nicht für dich",
+        "description": "Für Bump-Interessenten braucht es die passende Staff-Berechtigung."
+      },
+      "unknown": {
+        "title": "Unbekannter Interessent",
+        "description": "Kein Interessent passt zum Server {guild}."
+      },
+      "not_claimant": {
+        "title": "Bereits übernommen",
+        "description": "{user} kümmert sich darum — nur diese Person kann ihn freigeben."
+      },
+      "stale": {
+        "title": "Bereits geändert",
+        "description": "Diese Karte hat sich inzwischen geändert und zeigt jetzt ihren aktuellen Stand."
+      },
+      "invite_failed": {
+        "title": "Keine Einladung möglich",
+        "description": "Moddy ist nicht mehr auf diesem Server oder kann in keinem Kanal Einladungen erstellen."
+      }
+    },
+    "scan": {
+      "disabled": {
+        "title": "Bump-Interessenten deaktiviert",
+        "description": "Kein Interessenten-Kanal konfiguriert (`MODDY_BUMP_PROSPECT_CHANNEL_ID`)."
+      },
+      "started": {
+        "title": "Neuer Scan gestartet",
+        "description": "{count} Server in der Warteschlange. Dauert etwa {minutes} Min.; eine Zusammenfassung folgt im Interessenten-Kanal."
+      },
+      "summary": {
+        "title": "Scan der Bump-Interessenten abgeschlossen",
+        "description": "Gescannte Server: {scanned}\nNeue Interessenten: {new}\nKonvertiert: {converted}\nNicht geprüft: {skipped}\nDauer: {minutes} Min.",
+        "requested_by": "Angefordert von"
+      }
+    }
   }
 }
