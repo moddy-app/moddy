@@ -206,13 +206,6 @@ class AltGuardConsentModal(BaseModal):
               data=DATA_NOTICE_URL, terms=TERMS_URL, privacy=PRIVACY_URL)
         )
         self.add_item(self.notice)
-        # Second TextDisplay: a single one is capped at 4000 characters and the
-        # full notice (data, purpose, rights, withdrawal) is longer than that.
-        self.notice_rights = ui.TextDisplay(
-            t('modules.altguard.consent.body_rights', locale=locale,
-              data=DATA_NOTICE_URL, terms=TERMS_URL, privacy=PRIVACY_URL)
-        )
-        self.add_item(self.notice_rights)
 
         # A CheckboxGroup with min_values=1 and required=True is the officially
         # supported way to make a tick mandatory (docs/guides/MODALS_V2.md): a bare

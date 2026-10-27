@@ -753,24 +753,19 @@ _LOCALES = ["fr", "en-US", "es-ES", "pt-BR", "de"]
 
 
 @pytest.mark.parametrize("locale", _LOCALES)
-def test_consent_notice_fits_and_carries_every_item(locale):
+def test_consent_notice_names_the_new_data(locale):
     from utils.altguard_views import (
         AltGuardConsentModal, DATA_NOTICE_URL, PRIVACY_URL, TERMS_URL,
     )
 
     modal = AltGuardConsentModal(locale=locale)
-    texts = [modal.notice.content, modal.notice_rights.content]
-    assert all(len(x) <= 4000 for x in texts)
-    assert len(modal.children) <= 5
-    full = "\n".join(texts)
-    # Seven data bullets + four rights bullets, links, no unformatted placeholder.
-    assert modal.notice.content.count("\n- **") == 7
-    assert modal.notice_rights.content.count("\n- **") == 4
+    body = modal.notice.content
+    assert len(body) <= 4000
+    # Linked accounts are the 2026-10-27 addition: the short notice must name them.
+    assert "Steam, Xbox, GitHub" in body
     for url in (DATA_NOTICE_URL, TERMS_URL, PRIVACY_URL):
-        assert url in full
-    assert "{" not in full and "[modules." not in full
-    for retention in ("18", "90", "180", "30", "3"):
-        assert retention in modal.notice.content
+        assert url in body
+    assert "{" not in body and "[modules." not in body
 
 
 def test_data_notice_url_is_the_official_one():

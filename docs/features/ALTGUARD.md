@@ -40,15 +40,13 @@ would move personal data into the bot is a compliance regression.
    manual unverify or a reconciliation gap left a stale row) — the role is what
    the gate actually enforces, and the stale row is corrected to `pending` on
    the way out. Otherwise the button opens a Modal V2
-   carrying the full AltGuard data notice, version **`2026-10-27`**: every
-   data item collected (browser/device characteristics incl. phone model and a
-   technical cookie, Discord email, IP address incl. the public address WebRTC
-   reveals behind a VPN, server list, linked third-party accounts, the account
-   that invited the member, proof of consent), its purpose and retention, the
-   single purpose, the member's rights and how to withdraw consent. The service
-   operator's table is rendered as a bullet list (Discord markdown has no
-   tables) and links the online notice (`https://verify.moddy.app/privacy`),
-   the terms and the privacy policy. Two
+   with a short notice naming what is collected (browser and device
+   characteristics, technical cookie, Discord email, server list, linked
+   accounts such as Steam/Xbox/GitHub, IP address, the account that invited the
+   member), that it is encrypted or fingerprinted, kept for a limited time and
+   erasable on request, and linking the full AltGuard notice
+   (`https://verify.moddy.app/privacy`, every signal and retention period), the
+   terms and the privacy policy. Consent version: **`2026-10-27`**. Two
    checkboxes must be ticked — a `CheckboxGroup` with `min_values=2` and
    `required=True`, since a bare `Checkbox` cannot be made mandatory
    ([docs/guides/MODALS_V2.md](../guides/MODALS_V2.md)). Closing the modal sends nothing
