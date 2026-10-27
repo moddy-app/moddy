@@ -728,6 +728,7 @@ level.
 | [docs/archive/SOCIAL_NOTIFICATIONS_CHANGES_2026-06-14.md](docs/archive/SOCIAL_NOTIFICATIONS_CHANGES_2026-06-14.md) | Backend/dashboard change spec (2026-06-14), now folded into [docs/features/SOCIAL_NOTIFICATIONS.md](docs/features/SOCIAL_NOTIFICATIONS.md) |
 | [docs/archive/REDIRECTS_BANNERS_SCHEMA.md](docs/archive/REDIRECTS_BANNERS_SCHEMA.md) | `redirect_links`/banners DB schema note written for the backend team |
 | [docs/archive/UTILITY_TOOLS_PLAN.md](docs/archive/UTILITY_TOOLS_PLAN.md) | Utility tools plan (validated) + the agent brief [UTILITY_TOOLS_AGENT_BRIEF.md](docs/archive/UTILITY_TOOLS_AGENT_BRIEF.md) |
+| [docs/archive/ALTGUARD_PUBLIC_DOCS_BRIEF_2026-10-27.md](docs/archive/ALTGUARD_PUBLIC_DOCS_BRIEF_2026-10-27.md) | Brief (FR) for the public-docs agent: what changed for members/admins with AltGuard 2026-10-27 (data notice, consent, VPN, inviter, log labels) |
 | [docs/archive/AUTOMOD_V2_PLAN.md](docs/archive/AUTOMOD_V2_PLAN.md) | Automod v2 implementation plan/progress log — all sessions closed; design rationale still cited from `automod/` code comments |
 
 ### Session Logs
