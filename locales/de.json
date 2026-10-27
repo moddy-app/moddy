@@ -2516,12 +2516,13 @@
         "footer": "Mit dem Klick auf diesen Button akzeptierst du unsere [**Nutzungsbedingungen**]({terms}) und unsere [**Datenschutzerklärung**]({privacy}). Die für diese Verifizierung erhobenen Daten sind verschlüsselt. [**Mehr erfahren**]({data})"
       },
       "consent": {
-        "title": "AltGuard-Verifizierung",
-        "body": "Zur Erkennung von Mehrfachkonten erhebt die Verifizierung die Merkmale deines Browsers, ein technisches Cookie, deine Discord-E-Mail-Adresse, die Liste deiner Server und deine IP-Adresse.\n\nDiese Daten sind **verschlüsselt**, werden ausschließlich für diese Erkennung verwendet und nur begrenzt gespeichert.\n\n[**Erhobene Daten**]({data}) · [**Nutzungsbedingungen**]({terms}) · [**Datenschutzerklärung**]({privacy})",
+        "title": "Daten und Datenschutz",
+        "body": "**AltGuard-Verifizierung — Daten und Datenschutz**\nAltGuard prüft beim Beitritt zu einem Discord-Server, dass dieselbe Person nicht mehrere Konten auf den Server mitbringt. Diese Seite beschreibt, was dafür erhoben wird, warum, wie lange es gespeichert wird und wie du deine Rechte ausüben kannst.\n\n**Was erhoben wird** (Daten — Zweck — Speicherdauer)\n- **Technische Merkmale von Browser und Gerät (einschließlich des Handy-Modells) und ein technisches Cookie** — Ein bereits gesehenes Gerät oder einen Browser wiedererkennen, um ein zweites Konto auf demselben Server zu erkennen. *Speicherdauer: 18 Monate Inaktivität*\n- **E-Mail-Adresse (über Discord)** — Ein Konto wiedererkennen, das dasselbe Postfach verwendet. Verschlüsselt gespeichert, nie lesbar, außer bei einer berechtigten, protokollierten Anfrage. *Speicherdauer: 18 Monate Inaktivität*\n- **IP-Adresse, einschließlich der durch WebRTC offengelegten öffentlichen Adresse, wenn die Verbindung über ein VPN läuft** — Schwaches Korrelationssignal zwischen Konten. Nie lesbar gespeichert, nur als nicht umkehrbarer Fingerabdruck. *Speicherdauer: 90 Tage*\n- **Liste deiner Discord-Server (über Discord)** — Die Überschneidung von Servern zwischen zwei Konten messen. Nur als nicht umkehrbare Fingerabdrücke gespeichert, nie als lesbare Server-IDs. *Speicherdauer: 180 Tage*\n- **Mit deinem Discord-Konto verknüpfte Drittkonten (Steam, Xbox, GitHub… über Discord)** — Zwei Discord-Konten erkennen, die mit demselben Drittkonto verknüpft sind. Nur verifizierte Konten werden gelesen und als nicht umkehrbare Fingerabdrücke gespeichert, nie als lesbare Kennungen. *Speicherdauer: 180 Tage*\n- **Das Konto, das dich auf den Server eingeladen hat (über den Bot)** — Eine Verbindung zwischen zwei Konten untermauern, nie allein. Öffentliche Discord-Kennung, gespeichert zusammen mit deiner Servermitgliedschaft. *Speicherdauer: 30 Tage nach Verlassen des Servers*\n- **Nachweis der Einwilligung (Datum und Version der Richtlinie)** — Nachweisen, dass die Erhebung genehmigt wurde. Getrennt von den Daten selbst gespeichert. *Speicherdauer: 3 Jahre*",
         "agree_label": "Einwilligung",
         "agree_description": "Setze beide Haken, um deinen Verifizierungslink zu erzeugen.",
         "agree_terms": "Ich akzeptiere die Nutzungsbedingungen und die Datenschutzerklärung",
-        "agree_processing": "Ich willige in die Verarbeitung dieser Daten zur Erkennung von Mehrfachkonten ein"
+        "agree_processing": "Ich willige in die Verarbeitung dieser Daten zur Erkennung von Mehrfachkonten ein",
+        "body_rights": "**Zweck** — Der einzige Zweck ist die Erkennung mehrerer Konten, die auf denselben Server mitgebracht werden. Keine Daten werden verkauft oder für Werbung genutzt. Die erhobenen Merkmale werden sofort in nicht umkehrbare Fingerabdrücke umgewandelt: Der Discord-Server und sein Bot erhalten immer nur ein Ergebnis (verifiziert, ausstehend, abgelehnt) und einen Score, nie deine Daten.\n\n**Deine Rechte**\n- **Auskunft**: eine Liste dessen erhalten, was über dich gespeichert ist.\n- **Löschung**: die Löschung deiner Verifizierungsdaten verlangen.\n- **Widerruf der Einwilligung**: jederzeit, ohne Begründung.\n- **Berichtigung**: Da die meisten Daten nicht umkehrbare Fingerabdrücke sind, bedeutet Berichtigung meist eine Löschung gefolgt von einer erneuten Verifizierung.\n\n**Einwilligung widerrufen** — Du kannst deine Einwilligung jederzeit widerrufen und die Löschung deiner Verifizierungsdaten verlangen. Der Widerruf berührt nicht die Rechtmäßigkeit der bereits erfolgten Erhebung, führt aber zur Löschung deiner Fingerabdrücke und deiner verifizierten Mitgliedschaften. Die einzige gespeicherte Spur ist der Nachweis der Einwilligung selbst, der für den oben genannten Zeitraum als Beweis aufbewahrt wird.\n\nUm eines dieser Rechte auszuüben, wende dich an das Team des betreffenden Servers, das die Anfrage an den Betreiber des Dienstes weiterleitet.\n\n[**Mehr erfahren**]({data}) · [**Nutzungsbedingungen**]({terms}) · [**Datenschutzerklärung**]({privacy})"
       },
       "link": {
         "title": "Dein Verifizierungslink",
@@ -2529,7 +2530,8 @@
         "expires": "Läuft ab {timestamp}",
         "button": "Verifizierung öffnen",
         "footer": "Die Rolle wird automatisch vergeben, sobald die Verifizierung bestanden ist.",
-        "expired": "Link abgelaufen? Klicke einfach erneut auf den Button im Verifizierungskanal."
+        "expired": "Link abgelaufen? Klicke einfach erneut auf den Button im Verifizierungskanal.",
+        "vpn_hint": "Die Verifizierung ist hinter einem VPN oder Proxy nicht möglich (einschließlich iCloud Private Relay und Cloudflare WARP). Schalte ihn aus und klicke auf der Seite auf *Erneut versuchen* oder starte die Verifizierung neu."
       },
       "errors": {
         "guild_only": "Diese Verifizierung funktioniert nur in einem Server.",
@@ -2618,6 +2620,32 @@
           "description": "Deine Verifizierung wurde auf {server} entzogen. Gehe erneut über den Verifizierungskanal, um den Zugriff zurückzubekommen.",
           "footer": "Bei Fragen wende dich an die Moderation des Servers."
         }
+      },
+      "reasons": {
+        "cookie_match": "Gleicher Browser (AltGuard-Cookie)",
+        "email_match": "Gleiche E-Mail-Adresse",
+        "connection_match": "Gleiches verknüpftes Drittkonto (Steam, Xbox, GitHub…)",
+        "visitor_match": "Gleicher Browser-Fingerabdruck",
+        "render_match": "Gleiches Grafik- und Audio-Rendering",
+        "gpu_match": "Gleiche Grafikkarte",
+        "hardware_match": "Gleiche Hardware-Konfiguration (Bildschirm, CPU, Zeitzone, Modell)",
+        "fonts_match": "Gleiche installierte Schriftarten",
+        "ip_match": "Gleiche IP-Adresse",
+        "ip_prefix_match": "Gleiches Subnetz",
+        "asn_match": "Gleicher Netzbetreiber",
+        "guild_overlap": "Gemeinsame Discord-Server",
+        "guild_overlap_high": "Viele gemeinsame Discord-Server",
+        "join_burst": "Dem Server im Abstand von unter 15 Min. beigetreten",
+        "invited_by": "Von diesem Konto eingeladen (verstärkt eine andere Verbindung)",
+        "account_new_24h": "Konto vor weniger als 24 Std. erstellt",
+        "account_new_7d": "Konto vor weniger als 7 Tagen erstellt",
+        "account_new_30d": "Konto vor weniger als 30 Tagen erstellt",
+        "email_unverified": "E-Mail auf Discord nicht verifiziert",
+        "email_disposable": "Wegwerf-E-Mail",
+        "default_avatar": "Standard-Avatar",
+        "no_badge": "Kein Badge",
+        "datacenter_ip": "Verbindung über Hoster, Cloud oder VPN",
+        "vpn_detected": "VPN entlarvt: die echte IP dahinter wurde gefunden"
       }
     },
     "member_applications": {

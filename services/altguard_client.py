@@ -15,6 +15,9 @@ Redis Pub/Sub (same Redis the bot already uses for ``moddy:*``)
 
 The bot never reads AltGuard's database and never receives personal data:
 everything crossing this boundary is Discord ids, statuses and category labels.
+The optional ``inviter_id`` sent with a token request is the public Discord id
+of whoever created the invite the member joined with (see
+``services/altguard_invites.py``).
 """
 
 from __future__ import annotations
@@ -37,7 +40,7 @@ MEMBERSHIP_CHANNEL = "altguard:membership"
 # /altguard/token. Bump it whenever the wording in
 # ``locales/*.json -> modules.altguard.consent`` changes materially: the
 # service stores it alongside the verification as proof of what was agreed to.
-CONSENT_VERSION = "2026-08"
+CONSENT_VERSION = "2026-10-27"
 
 # Membership states understood by the service.
 MEMBERSHIP_ACTIVE = "active"
@@ -133,6 +136,7 @@ class AltGuardClient:
         guild_id: int,
         consent_at: Optional[datetime] = None,
         consent_version: str = CONSENT_VERSION,
+        inviter_id: Optional[int] = None,
     ) -> Dict[str, Any]:
         """Exchange a recorded consent for a personal authorization URL.
 
@@ -140,6 +144,10 @@ class AltGuardClient:
         single-use and expires after 20 minutes: it must be sent to the user
         **ephemerally**, and a new one requested (with the consent screen shown
         again) rather than reused.
+
+        ``inviter_id`` (snowflake, sent as a string) is included only when known
+        and different from the member; otherwise the key is omitted entirely --
+        never ``null`` or an empty string.
         """
         moment = consent_at or datetime.now(timezone.utc)
         payload = {
@@ -149,6 +157,8 @@ class AltGuardClient:
             # ISO 8601, UTC — the service rejects a timestamp in the future.
             "consent_at": moment.astimezone(timezone.utc).isoformat().replace("+00:00", "Z"),
         }
+        if inviter_id and int(inviter_id) != int(discord_user_id):
+            payload["inviter_id"] = str(inviter_id)
         return await self._post("/altguard/token", payload)
 
     # ------------------------------------------------------------------ #

@@ -8,6 +8,7 @@ self-service explanation of *why* a check failed is a bypass recipe.
 
 from staff.framework import StaffCommand, SlashOption, staff_command, design, CommandType
 from staff.commands.mod.altguard._shared import GROUP, GROUP_DESCRIPTION, PERMISSION
+from utils.altguard_views import format_reasons
 from utils.i18n import t
 
 
@@ -47,7 +48,7 @@ class AltGuardRefusalCommand(StaffCommand):
         guild_label = f"{guild.name} (`{record['guild_id']}`)" if guild else f"`{record['guild_id']}`"
 
         reasons = record.get("reasons") or []
-        reasons_value = ", ".join(f"`{reason}`" for reason in reasons) or "—"
+        reasons_value = format_reasons(reasons, ctx.locale) or "—"
 
         created_at = record.get("created_at")
         when = f"<t:{int(created_at.timestamp())}:F>" if created_at else "—"

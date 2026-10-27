@@ -2516,12 +2516,13 @@
         "footer": "Ao clicar neste botão, você aceita nossos [**Termos de uso**]({terms}) e nossa [**Política de privacidade**]({privacy}). Os dados coletados nesta verificação são criptografados. [**Saiba mais**]({data})"
       },
       "consent": {
-        "title": "Verificação AltGuard",
-        "body": "Para detectar contas múltiplas, a verificação coleta as características do seu navegador, um cookie técnico, seu e-mail do Discord, a lista dos seus servidores e seu endereço IP.\n\nEsses dados são **criptografados**, usados apenas para essa detecção e mantidos por um tempo limitado.\n\n[**Dados coletados**]({data}) · [**Termos de uso**]({terms}) · [**Política de privacidade**]({privacy})",
+        "title": "Dados e privacidade",
+        "body": "**Verificação AltGuard — dados e privacidade**\nO AltGuard verifica, ao entrar em um servidor do Discord, que uma mesma pessoa não está levando várias contas para ele. Esta página descreve o que é coletado para isso, por quê, por quanto tempo é mantido e como exercer seus direitos.\n\n**O que é coletado** (dado — finalidade — retenção)\n- **Características técnicas do navegador e do dispositivo (incluindo o modelo do telefone) e um cookie técnico** — Reconhecer um dispositivo ou navegador já visto, para detectar uma segunda conta levada ao mesmo servidor. *Retenção: 18 meses de inatividade*\n- **Endereço de e-mail (via Discord)** — Reconhecer uma conta que reutiliza a mesma caixa de e-mail. Armazenado criptografado, nunca legível, exceto mediante solicitação legítima e registrada. *Retenção: 18 meses de inatividade*\n- **Endereço IP, incluindo o endereço público revelado pelo WebRTC quando a conexão passa por uma VPN** — Sinal fraco de correlação entre contas. Nunca armazenado de forma legível, somente como uma impressão digital não reversível. *Retenção: 90 dias*\n- **Lista dos seus servidores do Discord (via Discord)** — Medir a sobreposição de servidores entre duas contas. Armazenada somente como impressões digitais não reversíveis, nunca como IDs de servidor legíveis. *Retenção: 180 dias*\n- **Contas de terceiros vinculadas à sua conta do Discord (Steam, Xbox, GitHub…, via Discord)** — Reconhecer duas contas do Discord vinculadas à mesma conta de terceiros. Somente contas verificadas são lidas, armazenadas como impressões digitais não reversíveis, nunca como identificadores legíveis. *Retenção: 180 dias*\n- **A conta que convidou você para o servidor (via bot)** — Corroborar um vínculo entre duas contas, nunca isoladamente. Identificador público do Discord, mantido junto com sua participação no servidor. *Retenção: 30 dias após sair do servidor*\n- **Prova do consentimento (data e versão da política)** — Provar que a coleta foi autorizada. Mantida separadamente dos próprios dados. *Retenção: 3 anos*",
         "agree_label": "Consentimento",
         "agree_description": "Marque as duas caixas para gerar seu link de verificação.",
         "agree_terms": "Aceito os termos de uso e a política de privacidade",
-        "agree_processing": "Aceito o tratamento desses dados para a detecção de contas múltiplas"
+        "agree_processing": "Aceito o tratamento desses dados para a detecção de contas múltiplas",
+        "body_rights": "**Finalidade** — A única finalidade é detectar várias contas levadas para um mesmo servidor. Nenhum dado é vendido ou usado para fins publicitários. As características coletadas são imediatamente transformadas em impressões digitais não reversíveis: o servidor do Discord e seu bot recebem apenas um veredito (verificado, pendente, negado) e uma pontuação, nunca seus dados.\n\n**Seus direitos**\n- **Acesso**: obter a lista do que é mantido sobre você.\n- **Apagamento**: solicitar a exclusão dos seus dados de verificação.\n- **Retirada do consentimento**: a qualquer momento, sem precisar se justificar.\n- **Retificação**: como a maior parte dos dados são impressões digitais não reversíveis, a retificação geralmente consiste em um apagamento seguido de uma nova verificação.\n\n**Retirar seu consentimento** — Você pode retirar seu consentimento e solicitar o apagamento dos seus dados de verificação a qualquer momento. A retirada não afeta a validade da coleta já realizada, mas resulta na exclusão das suas impressões digitais e das suas participações verificadas. O único registro mantido é a prova do próprio consentimento, guardada como prova pelo prazo indicado acima.\n\nPara exercer qualquer um desses direitos, entre em contato com a equipe do servidor em questão, que encaminha a solicitação ao operador do serviço.\n\n[**Saiba mais**]({data}) · [**Termos de uso**]({terms}) · [**Política de privacidade**]({privacy})"
       },
       "link": {
         "title": "Seu link de verificação",
@@ -2529,7 +2530,8 @@
         "expires": "Expira {timestamp}",
         "button": "Abrir a verificação",
         "footer": "O cargo é atribuído automaticamente assim que a verificação é validada.",
-        "expired": "Link expirado? Basta clicar de novo no botão do canal de verificação."
+        "expired": "Link expirado? Basta clicar de novo no botão do canal de verificação.",
+        "vpn_hint": "A verificação não é possível atrás de uma VPN ou proxy (incluindo iCloud Private Relay e Cloudflare WARP). Desative-o e clique em *Tentar novamente* na página, ou reinicie a verificação."
       },
       "errors": {
         "guild_only": "Esta verificação só funciona dentro de um servidor.",
@@ -2618,6 +2620,32 @@
           "description": "Sua verificação foi removida em {server}. Passe novamente pelo canal de verificação para recuperar o acesso.",
           "footer": "Em caso de dúvida, fale com a moderação do servidor."
         }
+      },
+      "reasons": {
+        "cookie_match": "Mesmo navegador (cookie do AltGuard)",
+        "email_match": "Mesmo endereço de e-mail",
+        "connection_match": "Mesma conta de terceiros vinculada (Steam, Xbox, GitHub…)",
+        "visitor_match": "Mesma impressão digital do navegador",
+        "render_match": "Mesma renderização gráfica e de áudio",
+        "gpu_match": "Mesma placa de vídeo",
+        "hardware_match": "Mesma configuração de hardware (tela, CPU, fuso horário, modelo)",
+        "fonts_match": "Mesmas fontes instaladas",
+        "ip_match": "Mesmo endereço IP",
+        "ip_prefix_match": "Mesma sub-rede",
+        "asn_match": "Mesma operadora de rede",
+        "guild_overlap": "Servidores do Discord em comum",
+        "guild_overlap_high": "Muitos servidores do Discord em comum",
+        "join_burst": "Entrou no servidor com menos de 15 min de diferença",
+        "invited_by": "Convidado por esta conta (reforça outro vínculo)",
+        "account_new_24h": "Conta criada há menos de 24 h",
+        "account_new_7d": "Conta criada há menos de 7 dias",
+        "account_new_30d": "Conta criada há menos de 30 dias",
+        "email_unverified": "E-mail não verificado no Discord",
+        "email_disposable": "E-mail descartável",
+        "default_avatar": "Avatar padrão",
+        "no_badge": "Sem emblema",
+        "datacenter_ip": "Conexão a partir de hospedagem, nuvem ou VPN",
+        "vpn_detected": "VPN desmascarada: o IP real por trás foi encontrado"
       }
     },
     "member_applications": {

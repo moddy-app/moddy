@@ -41,8 +41,9 @@ Content-Type: application/json
 {
   "discord_user_id": "987654321098765432",
   "guild_id": "123456789012345678",
-  "consent_version": "2026-08",
-  "consent_at": "2026-08-18T10:00:00.123456Z"
+  "consent_version": "2026-10-27",
+  "consent_at": "2026-10-27T14:00:00.123456Z",
+  "inviter_id": "555555555555555555"
 }
 ```
 
@@ -50,8 +51,9 @@ Content-Type: application/json
 |---|---|---|
 | `discord_user_id` | **string** | snowflake as a decimal string, never an int |
 | `guild_id` | **string** | idem |
-| `consent_version` | string | `CONSENT_VERSION` in `services/altguard_client.py` — currently `"2026-08"` |
+| `consent_version` | string | `CONSENT_VERSION` in `services/altguard_client.py` — currently `"2026-10-27"` |
 | `consent_at` | string | ISO 8601 **UTC**, `+00:00` rewritten as `Z`. Includes microseconds. Always ≤ now, taken at modal submit, a fraction of a second before the request |
+| `inviter_id` | **string**, optional | creator of the invite the member joined with (`altguard_members.inviter_id`, see [ALTGUARD.md → Inviter attribution](../features/ALTGUARD.md#inviter-attribution)). **Omitted** — never `null`, never `""` — when unknown or equal to the member |
 
 - Header is `Content-Type: application/json` (aiohttp `json=` payload).
 - No other header is sent — no `User-Agent` override, no API version header,
@@ -110,7 +112,7 @@ curl -i -X POST "$ALTGUARD_API_URL/altguard/token" \
   -H "Content-Type: application/json" \
   -d '{"discord_user_id":"987654321098765432",
        "guild_id":"123456789012345678",
-       "consent_version":"2026-08",
+       "consent_version":"2026-10-27",
        "consent_at":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}'
 ```
 
@@ -180,9 +182,9 @@ The published value must be a **JSON string** (the bot connects with
 | `verdict` | `passed` \| `flagged` \| `blocked` | **message dropped** |
 | `guild_id`, `discord_user_id` | int **or** numeric string (both are `int()`-ed) | **message dropped** |
 | `score` | int or numeric string | stored as `NULL` |
-| `reasons` | list of strings | stored as `[]` |
+| `reasons` | list of strings — only the signals that actually scored; unknown labels are kept and displayed raw | stored as `[]` |
 | `enforced` | bool | **defaults to `false`** → logged, nothing applied |
-| `matches` | list of `{discord_user_id, score, reasons}`, up to 5, most-linked first, always `[]` on a `passed` | stored as `[]`; malformed entries are dropped individually |
+| `matches` | list of `{discord_user_id, score, reasons}`, up to 5, most-linked first, only accounts that weigh in the decision (certain link or score ≥ 30), always `[]` on a `passed` | stored as `[]`; malformed entries are dropped individually |
 
 > **`matches` is audit data for the log channel, nothing else.** It names the
 > accounts a verification matched with, so a moderator can understand a
@@ -205,6 +207,10 @@ The published value must be a **JSON string** (the bot connects with
 > - field **absent** → `WARNING` in the bot log (*"carries no 'enforced' field"*)
 >   and a log card saying the service did not send it. Service-side defect.
 > - field present and `false` → the ordinary *shadow mode* card. Deliberate.
+
+A verification attempted behind a VPN / proxy / hosting connection is refused
+by the web page and publishes **nothing** on this channel — the member stays
+`pending` until they retry without it. A missing verdict is not an error.
 
 Two consequences worth checking when a verdict "does nothing":
 
@@ -360,6 +366,8 @@ low-stakes invalidation.
 | code `service_unavailable` | service returned 5xx |
 | code `unexpected_status` | a redirect or an unusual 4xx — often a wrong path returning `404`, or a proxy answering `405` |
 | Card with no button | `200` returned without `authorization_url` |
+| code `bad_request` mentioning `inviter_id` | the bot sent an unreadable inviter — should never happen (string snowflake or omitted) |
+| Member clicked the link, no verdict ever arrives | most often a VPN / proxy refused by the page (no verdict by design); the member retries without it |
 | Verdict published, log card says *shadow mode*, roles unchanged | `enforced` is `false` or missing — see the callout in §3. The card names which of the two it is |
 | Verdict published, no log card at all | same `verification_id` already processed (idempotency), or the module is not enabled on that guild |
 | Verdict enforced, role still not applied | the member left, or the bot's role sits below the verified role in the hierarchy — the bot logs both |

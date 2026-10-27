@@ -32,6 +32,7 @@ from services.altguard_client import (
     MEMBERSHIP_ACTIVE, MEMBERSHIP_BANNED, MEMBERSHIP_KICKED, MEMBERSHIP_LEFT,
     parse_verdict,
 )
+from services.altguard_invites import InviteTracker
 from utils.altguard_views import format_member_name
 from utils.components_v2 import create_error_message, create_success_message
 from utils.i18n import i18n, t
@@ -46,6 +47,10 @@ AUDIT_LOOKBACK = timedelta(seconds=10)
 # guild, so hourly is comfortably inside it while still bounding how long a
 # missed Pub/Sub event can stay wrong.
 RESYNC_INTERVAL_HOURS = 1
+
+# Pause between two guilds when taking invite baselines at startup, to stay
+# gentle on the rate limit.
+INVITE_WARM_PAUSE = 1.0  # seconds
 
 # Delay before the startup resync, so the member cache has time to fill. A
 # resync sent with a half-filled cache would mark the missing half as `left`.
@@ -64,10 +69,42 @@ class AltGuard(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        # Inviter attribution (optional, needs manage_guild): only guilds that
+        # run the gate are tracked.
+        self.invites = InviteTracker()
+        bot.altguard_invites = self.invites
+        self._warm_task = asyncio.get_running_loop().create_task(self._warm_invites())
         self.resync_membership.start()
 
     async def cog_unload(self):
         self.resync_membership.cancel()
+        self._warm_task.cancel()
+
+    async def _warm_invites(self) -> None:
+        """Baseline the invites of every AltGuard guild once the bot is ready."""
+        try:
+            await self.bot.wait_until_ready()
+            for guild in list(self.bot.guilds):
+                if await self._module(guild.id) is None:
+                    continue
+                await self.invites.warm(guild)
+                await asyncio.sleep(INVITE_WARM_PAUSE)
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            logger.debug(f"[AltGuard] Invite warm-up failed: {e}")
+
+    @commands.Cog.listener()
+    async def on_invite_create(self, invite: discord.Invite):
+        self.invites.on_invite_create(invite)
+
+    @commands.Cog.listener()
+    async def on_invite_delete(self, invite: discord.Invite):
+        self.invites.on_invite_delete(invite)
+
+    @commands.Cog.listener()
+    async def on_guild_remove(self, guild: discord.Guild):
+        self.invites.forget(guild.id)
 
     # ------------------------------------------------------------------ #
     # Helpers

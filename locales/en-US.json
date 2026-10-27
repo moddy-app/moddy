@@ -2516,12 +2516,13 @@
         "footer": "By clicking this button, you accept our [**Terms of Service**]({terms}) and our [**Privacy Policy**]({privacy}). The data collected for this verification is encrypted. [**Learn more**]({data})"
       },
       "consent": {
-        "title": "AltGuard verification",
-        "body": "To detect multiple accounts, the verification collects your browser characteristics, a technical cookie, your Discord email address, your server list and your IP address.\n\nThis data is **encrypted**, used only for that detection and kept for a limited time.\n\n[**Collected data**]({data}) · [**Terms of Service**]({terms}) · [**Privacy Policy**]({privacy})",
+        "title": "Data and privacy",
+        "body": "**AltGuard verification — data and privacy**\nAltGuard checks, when you join a Discord server, that a single person is not bringing several accounts onto it. This page describes what is collected for that, why, how long it is kept, and how to exercise your rights.\n\n**What is collected** (data — purpose — retention)\n- **Technical characteristics of the browser and device (including the phone model) and a technical cookie** — Recognise a device or browser already seen, to detect a second account brought to the same server. *Retention: 18 months of inactivity*\n- **Email address (via Discord)** — Recognise an account reusing the same mailbox. Stored encrypted, never readable except on a traced, legitimate request. *Retention: 18 months of inactivity*\n- **IP address, including the public address revealed by WebRTC when the connection goes through a VPN** — Weak correlation signal between accounts. Never stored readable, only as a non-reversible fingerprint. *Retention: 90 days*\n- **List of your Discord servers (via Discord)** — Measure server overlap between two accounts. Stored only as non-reversible fingerprints, never as readable server IDs. *Retention: 180 days*\n- **Third-party accounts linked to your Discord account (Steam, Xbox, GitHub…, via Discord)** — Recognise two Discord accounts linked to the same third-party account. Only verified accounts are read, stored as non-reversible fingerprints, never as readable identifiers. *Retention: 180 days*\n- **The account that invited you to the server (via the bot)** — Corroborate a link between two accounts, never on its own. A public Discord identifier, kept with your server membership. *Retention: 30 days after leaving the server*\n- **Proof of consent (date and policy version)** — Prove that collection was authorised. Kept separately from the data itself. *Retention: 3 years*",
         "agree_label": "Consent",
         "agree_description": "Tick both boxes to generate your verification link.",
         "agree_terms": "I accept the terms of service and the privacy policy",
-        "agree_processing": "I accept the processing of this data for multi-account detection"
+        "agree_processing": "I accept the processing of this data for multi-account detection",
+        "body_rights": "**Purpose** — The only purpose is detecting multiple accounts brought onto the same server. No data is sold or used for advertising. The characteristics collected are immediately turned into non-reversible fingerprints: the Discord server and its bot only ever receive a verdict (verified, pending, denied) and a score, never your data.\n\n**Your rights**\n- **Access**: obtain the list of what is kept about you.\n- **Erasure**: request deletion of your verification data.\n- **Withdrawal of consent**: at any time, without having to justify it.\n- **Rectification**: most data being non-reversible fingerprints, rectification usually means erasure followed by a new verification.\n\n**Withdraw your consent** — You may withdraw your consent and request erasure of your verification data at any time. Withdrawal does not affect the validity of collection already performed, but it removes your fingerprints and your verified memberships. The only trace kept is the proof of consent itself, retained as evidence for the period stated above.\n\nTo exercise any of these rights, contact the staff of the server concerned, who forwards the request to the service operator.\n\n[**Learn more**]({data}) · [**Terms of Service**]({terms}) · [**Privacy Policy**]({privacy})"
       },
       "link": {
         "title": "Your verification link",
@@ -2529,7 +2530,8 @@
         "expires": "Expires {timestamp}",
         "button": "Open the verification",
         "footer": "The role is granted automatically as soon as the verification passes.",
-        "expired": "Link expired? Just click the button in the verification channel again."
+        "expired": "Link expired? Just click the button in the verification channel again.",
+        "vpn_hint": "Verification isn't possible behind a VPN or proxy (iCloud Private Relay and Cloudflare WARP included). Turn it off, then click *Try again* on the page, or start the verification again."
       },
       "errors": {
         "guild_only": "This verification only works inside a server.",
@@ -2618,6 +2620,32 @@
           "description": "Your verification was revoked on {server}. Go through the verification channel again to regain access.",
           "footer": "For any question, contact the server's moderators."
         }
+      },
+      "reasons": {
+        "cookie_match": "Same browser (AltGuard cookie)",
+        "email_match": "Same email address",
+        "connection_match": "Same linked third-party account (Steam, Xbox, GitHub…)",
+        "visitor_match": "Same browser fingerprint",
+        "render_match": "Same graphics and audio rendering",
+        "gpu_match": "Same graphics card",
+        "hardware_match": "Same hardware setup (screen, CPU, timezone, model)",
+        "fonts_match": "Same installed fonts",
+        "ip_match": "Same IP address",
+        "ip_prefix_match": "Same subnet",
+        "asn_match": "Same network operator",
+        "guild_overlap": "Discord servers in common",
+        "guild_overlap_high": "Many Discord servers in common",
+        "join_burst": "Joined the server less than 15 min apart",
+        "invited_by": "Invited by this account (reinforces another link)",
+        "account_new_24h": "Account created less than 24 h ago",
+        "account_new_7d": "Account created less than 7 days ago",
+        "account_new_30d": "Account created less than 30 days ago",
+        "email_unverified": "Email not verified on Discord",
+        "email_disposable": "Disposable email",
+        "default_avatar": "Default avatar",
+        "no_badge": "No badge",
+        "datacenter_ip": "Connection from a host, cloud or VPN",
+        "vpn_detected": "VPN unmasked: the real IP behind it was found"
       }
     },
     "member_applications": {

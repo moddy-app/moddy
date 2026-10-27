@@ -212,3 +212,22 @@ class AltGuardRepository:
                 int(guild_id),
             )
             return {row['status']: int(row['total']) for row in rows}
+
+    async def set_altguard_member_inviter(
+        self,
+        guild_id: Union[str, int],
+        user_id: Union[str, int],
+        inviter_id: Optional[Union[str, int]],
+    ) -> None:
+        """Set (or clear, with ``None``) who invited this member on the current join.
+
+        Unlike ``set_altguard_member_status`` this overwrites with NULL: the
+        inviter always refers to the latest join. No row is created here.
+        """
+        async with self.pool.acquire() as conn:
+            await conn.execute(
+                "UPDATE altguard_members SET inviter_id = $3 "
+                "WHERE guild_id = $1 AND user_id = $2",
+                int(guild_id), int(user_id),
+                int(inviter_id) if inviter_id else None,
+            )

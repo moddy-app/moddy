@@ -40,7 +40,7 @@ logger = logging.getLogger('moddy.utils.altguard_views')
 _CID_VERIFY = "moddy:altguard:panel:verify"
 
 # Public documentation surfaced in the consent modal.
-DATA_NOTICE_URL = "https://moddy.app/AltGuard-data"
+DATA_NOTICE_URL = "https://verify.moddy.app/privacy"
 TERMS_URL = "https://moddy.app/terms"
 PRIVACY_URL = "https://moddy.app/privacy"
 
@@ -206,6 +206,13 @@ class AltGuardConsentModal(BaseModal):
               data=DATA_NOTICE_URL, terms=TERMS_URL, privacy=PRIVACY_URL)
         )
         self.add_item(self.notice)
+        # Second TextDisplay: a single one is capped at 4000 characters and the
+        # full notice (data, purpose, rights, withdrawal) is longer than that.
+        self.notice_rights = ui.TextDisplay(
+            t('modules.altguard.consent.body_rights', locale=locale,
+              data=DATA_NOTICE_URL, terms=TERMS_URL, privacy=PRIVACY_URL)
+        )
+        self.add_item(self.notice_rights)
 
         # A CheckboxGroup with min_values=1 and required=True is the officially
         # supported way to make a tick mandatory (docs/guides/MODALS_V2.md): a bare
@@ -261,12 +268,24 @@ class AltGuardConsentModal(BaseModal):
             )
             return
 
+        # The inviter recorded at join time (never shown to the member): the
+        # service uses it to corroborate a link between two accounts.
+        inviter_id: Optional[int] = None
+        if getattr(bot, "db", None):
+            try:
+                row = await bot.db.get_altguard_member(
+                    interaction.guild_id, interaction.user.id)
+                inviter_id = (row or {}).get('inviter_id')
+            except Exception as e:
+                logger.debug(f"[AltGuard] Inviter lookup failed for {interaction.user.id}: {e}")
+
         try:
             result = await client.create_verification_token(
                 discord_user_id=interaction.user.id,
                 guild_id=interaction.guild_id,
                 consent_at=consent_at,
                 consent_version=CONSENT_VERSION,
+                inviter_id=inviter_id,
             )
         except AltGuardError as e:
             # The code is what tells a missing secret from a rejected token
@@ -319,6 +338,9 @@ def build_link_card(locale: str, *, url: str, expires_at: Optional[str] = None) 
     ))
     container.add_item(ui.TextDisplay(
         t('modules.altguard.link.description', locale=locale)
+    ))
+    container.add_item(ui.TextDisplay(
+        f"{WARNING} {t('modules.altguard.link.vpn_hint', locale=locale)}"
     ))
 
     expiry = _parse_expiry(expires_at)
@@ -472,6 +494,30 @@ async def format_member_name(bot, user: discord.abc.User, *, link: bool = True) 
 
 
 # ---------------------------------------------------------------------- #
+# Reason labels (moderator-facing only — never shown to the member)
+# ---------------------------------------------------------------------- #
+
+def format_reason(code: str, locale: str) -> str:
+    """``Label (`code`)`` for a known reason code, bare `` `code` `` otherwise.
+
+    An unknown code (the service may add some before the bot knows them) is
+    displayed as-is: never dropped, never an error. Presence is checked on the
+    returned text because ``t`` answers ``[key]`` for a missing key.
+    """
+    code = str(code)
+    key = f"modules.altguard.reasons.{code}"
+    label = t(key, locale=locale)
+    if not label or label == f"[{key}]":
+        return f"`{code}`"
+    return f"{label} (`{code}`)"
+
+
+def format_reasons(codes, locale: str) -> str:
+    """Comma-separated :func:`format_reason` of every code (empty -> ``""``)."""
+    return ", ".join(format_reason(c, locale) for c in (codes or []))
+
+
+# ---------------------------------------------------------------------- #
 # Log channel cards
 # ---------------------------------------------------------------------- #
 
@@ -510,7 +556,7 @@ def build_log_card(
         if score is not None:
             lines.append(f"**{t('modules.altguard.logs.score', locale=locale)}** `{score}`")
         if reasons:
-            formatted = ", ".join(f"`{reason}`" for reason in reasons)
+            formatted = format_reasons(reasons, locale)
             lines.append(f"**{t('modules.altguard.logs.reasons', locale=locale)}** {formatted}")
         if verification_id:
             lines.append(
@@ -521,7 +567,7 @@ def build_log_card(
         if matches:
             match_lines = [f"**{t('modules.altguard.logs.matches', locale=locale)}**"]
             for match in matches:
-                match_reasons = ", ".join(f"`{r}`" for r in match.get("reasons", []))
+                match_reasons = format_reasons(match.get("reasons", []), locale)
                 line = f"- <@{match['user_id']}> (`{match['user_id']}`)"
                 if match.get("score") is not None:
                     line += f" — {t('modules.altguard.logs.score', locale=locale)} `{match['score']}`"
@@ -564,6 +610,6 @@ def build_log_card(
 __all__ = [
     "AltGuardPanelView", "AltGuardConsentModal", "build_verification_panel",
     "build_link_card", "build_error_card", "build_log_card", "format_member_name",
-    "build_member_dm", "build_already_verified_card",
+    "build_member_dm", "build_already_verified_card", "format_reason", "format_reasons",
     "DATA_NOTICE_URL", "TERMS_URL", "PRIVACY_URL",
 ]

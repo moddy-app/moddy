@@ -1151,11 +1151,16 @@ class ModdyDatabase(
                         CHECK (source IN ('service','server_staff','moddy_staff')),
                     verification_id TEXT,
                     decided_by      BIGINT,
+                    inviter_id      BIGINT,
                     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
                     updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
                     PRIMARY KEY (guild_id, user_id)
                 )
             """)
+            # Who created the invite used by the CURRENT join (public Discord
+            # id), kept until the consent step sends it with the token call.
+            await conn.execute(
+                "ALTER TABLE altguard_members ADD COLUMN IF NOT EXISTS inviter_id BIGINT")
             await conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_altguard_members_status "
                 "ON altguard_members (guild_id, status)")

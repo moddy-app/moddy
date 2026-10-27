@@ -40,19 +40,34 @@ would move personal data into the bot is a compliance regression.
    manual unverify or a reconciliation gap left a stale row) — the role is what
    the gate actually enforces, and the stale row is corrected to `pending` on
    the way out. Otherwise the button opens a Modal V2
-   stating exactly what is collected (browser characteristics, technical cookie,
-   Discord email, server list, IP address), that the data is encrypted, and
-   linking the data notice
-   (`https://moddy.app/AltGuard-data`), the terms and the privacy policy. Two
+   carrying the full AltGuard data notice, version **`2026-10-27`**: every
+   data item collected (browser/device characteristics incl. phone model and a
+   technical cookie, Discord email, IP address incl. the public address WebRTC
+   reveals behind a VPN, server list, linked third-party accounts, the account
+   that invited the member, proof of consent), its purpose and retention, the
+   single purpose, the member's rights and how to withdraw consent. The service
+   operator's table is rendered as a bullet list (Discord markdown has no
+   tables) and links the online notice (`https://verify.moddy.app/privacy`),
+   the terms and the privacy policy. Two
    checkboxes must be ticked — a `CheckboxGroup` with `min_values=2` and
    `required=True`, since a bare `Checkbox` cannot be made mandatory
    ([docs/guides/MODALS_V2.md](../guides/MODALS_V2.md)). Closing the modal sends nothing
    anywhere.
 4. **Token.** On submit, the bot calls `POST /altguard/token` with the Discord
-   ids, `consent_version` and `consent_at`, and answers **ephemerally** with the
-   personal authorization URL: single use, 20 minutes.
-5. **Verification.** The member authorizes on Discord's own screen, the service
-   runs its checks in the browser. The bot has nothing to do here.
+   ids, `consent_version`, `consent_at` and — when known — `inviter_id` (see
+   [Inviter attribution](#inviter-attribution)), and answers **ephemerally** with the
+   personal authorization URL: single use, 20 minutes. The link card also tells
+   the member that verification is impossible behind a VPN or proxy.
+5. **Verification.** The member authorizes on Discord's own screen (scopes
+   `identify email guilds connections` — AltGuard builds the URL, nothing to do
+   bot-side), the service runs its checks in the browser. The bot has nothing to
+   do here. **A VPN, proxy or hosting connection (iCloud Private Relay and
+   Cloudflare WARP included) is refused by the page itself**: the member sees
+   "VPN detected" and a *Retry* button working with the same link for its 20
+   minutes. No verdict is published for such an attempt — it is not a
+   verification — so the member simply stays `pending`. The absence of a
+   verdict is never an error nor a refusal bot-side; an expired link is replaced
+   by running the verification again from the panel (5 token calls / 10 min).
 6. **Verdict.** The service publishes on `altguard:verdict`. The bot applies it:
    `passed` → verified role (+ Auto Role hand-off), `flagged` / `blocked` → the
    member stays behind the gate. Everything is written to the optional log
@@ -77,6 +92,48 @@ show up in `/mod altguard refusal`; `matches` is not persisted — it appears on
 the log card only, at the moment the verdict is applied. The service
 deliberately withholds all three from the browser so a bypass attempt gets no
 oracle; reproducing them bot-side would break the same guarantee.
+
+### Signal labels (`reasons`)
+
+`reasons` only lists the signals that actually scored, and `matches` only the
+accounts that weigh in the decision (a certain link, or a score ≥ 30). Each
+label is rendered on the log card and in `/mod altguard refusal` as a localized
+description followed by the raw code (`modules.altguard.reasons.<code>`,
+`format_reason()` in `utils/altguard_views.py`). **An unknown label is shown
+as-is**, never dropped nor treated as an error — the service may add more.
+Since 2026-10-27: `connection_match` (same linked third-party account),
+`invited_by` (invited by this account — reinforcement only, worth nothing on its
+own; never sanction on it bot-side) and `vpn_detected` (VPN unmasked).
+
+---
+
+## Inviter attribution
+
+`POST /altguard/token` accepts an optional `inviter_id`: an alt is often invited
+through its main account's link, and the service uses it **only to reinforce**
+an existing link (+15 points when the two accounts already share a device,
+network or third-party account).
+
+Discord never says which invite a member used, so
+`services/altguard_invites.py` (`InviteTracker`, held by the AltGuard cog as
+`bot.altguard_invites`) compares `uses` counters:
+
+- **Baseline** — taken for every AltGuard-enabled guild after startup (1 s
+  between guilds) and whenever the module config loads enabled
+  (`/config` or dashboard save). `on_invite_create` / `on_invite_delete` keep it
+  current; `on_guild_remove` drops it.
+- **On join** — once the gate role is applied, a background task re-reads
+  `guild.invites()` under a per-guild lock. Exactly one invite whose counter
+  went up → its creator. Zero (vanity URL, expired / single-use / deleted
+  invite), two or more (simultaneous joins), a cold cache, or the member
+  themselves → nothing. The comparison runs on every human join, verified or
+  not, so the baseline never goes stale.
+- **Storage** — `altguard_members.inviter_id`, overwritten on each join (NULL
+  when unknown), read by the consent modal at submit time. It survives a
+  restart between the join and the click.
+- **Permission** — needs `Manage Server` to list invites. It is optional: it is
+  not in `REQUIRED_BOT_PERMISSIONS`, and without it `inviter_id` is simply
+  omitted. The field is never sent as `null` or empty.
 
 ---
 
@@ -158,12 +215,14 @@ already uses ([docs/integration/REDIS_COMMUNICATION.md](../integration/REDIS_COM
 
 ```json
 {"discord_user_id": "987...", "guild_id": "123...",
- "consent_version": "2026-08", "consent_at": "2026-08-18T10:00:00Z"}
+ "consent_version": "2026-10-27", "consent_at": "2026-10-27T14:00:00Z",
+ "inviter_id": "555..."}
 ```
 
 → `{"authorization_url": "...", "expires_at": "..."}`.
 
-`401` invalid token · `400` malformed call (never retried automatically) ·
+`inviter_id` is optional and omitted when unknown.
+`401` invalid token · `400` malformed call — the body names the faulty field (never retried automatically) ·
 `429` quota (5 calls / 10 min / user, `Retry-After` honoured). The URL is never
 reused: an expired link means a new consent screen and a new call.
 
@@ -254,6 +313,7 @@ account rejoining) — a resync never resurrects a banned account.
 | `status` | `pending` / `verified` / `flagged` / `blocked` |
 | `source` | `service` / `server_staff` / `moddy_staff` |
 | `verification_id`, `decided_by` | what/who decided |
+| `inviter_id` | who created the invite of the current join (public id, NULL when unknown) — sent with the token call |
 | `created_at`, `updated_at` | |
 
 ---
@@ -294,7 +354,7 @@ interactive children beyond a link button — nothing to restore.
 ## Tests
 
 ```bash
-pytest tests/test_altguard.py tests/test_persistent_views.py -q
+pytest tests/test_altguard.py tests/test_altguard_invites.py tests/test_persistent_views.py -q
 ```
 
 Covers verdict parsing (including the shadow-mode default), the membership
