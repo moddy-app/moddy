@@ -43,6 +43,7 @@ from db.repositories.ticket_ratings import TicketRatingRepository
 from db.repositories.notifications import NotificationRepository
 from db.repositories.support_requests import SupportRequestRepository
 from db.repositories.bump import BumpReminderRepository
+from db.repositories.bump_prospects import BumpProspectRepository
 from db.repositories.member_applications import MemberApplicationRepository
 from db.repositories.announcement_translations import AnnouncementTranslationRepository
 from db.repositories.announcement_verifications import AnnouncementVerificationRepository
@@ -91,6 +92,7 @@ class ModdyDatabase(
     NotificationRepository,
     SupportRequestRepository,
     BumpReminderRepository,
+    BumpProspectRepository,
     MemberApplicationRepository,
     AnnouncementTranslationRepository,
     AnnouncementVerificationRepository,
@@ -752,6 +754,31 @@ class ModdyDatabase(
             await conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_bump_reminders_due "
                 "ON bump_reminders (due_at) WHERE sent = FALSE")
+
+            # bump_prospects — one row per server that ever looked like a
+            # prospect (a bump directory, no reminder at all), never more: the
+            # primary key is what guarantees the team gets one card per server
+            # however many scans see it. See docs/features/BUMP_PROSPECTS.md.
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS bump_prospects (
+                    guild_id    BIGINT PRIMARY KEY,
+                    guild_name  TEXT,
+                    directories TEXT[] NOT NULL DEFAULT '{}',
+                    status      TEXT NOT NULL DEFAULT 'open'
+                        CHECK (status IN ('open','claimed','closed','converted','left')),
+                    claimed_by  BIGINT,
+                    claimed_at  TIMESTAMPTZ,
+                    closed_by   BIGINT,
+                    closed_at   TIMESTAMPTZ,
+                    channel_id  BIGINT,
+                    message_id  BIGINT,
+                    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+                    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+                )
+            """)
+            await conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_bump_prospects_active "
+                "ON bump_prospects (status) WHERE status IN ('open','claimed')")
 
             # member_applications — one row per Discord join request Moddy put
             # in front of a server's staff ("Apply to Join"). Discord keeps the

@@ -300,6 +300,14 @@ carte staff (Prendre / Répondre / Fermer)
 **Description :** Salon où atterrissent les demandes « configurez-le pour moi »
 envoyées depuis le bouton sous les annonces de Moddy
 
+## Prospects bump
+
+### MODDY_BUMP_PROSPECT_CHANNEL_ID
+**Valeur :** id de salon (défaut : `1564692382107041894`, `0` = désactivé)
+**Description :** Salon équipe où arrive une carte (Invitation / Prendre en charge /
+Fermer) pour chaque serveur qui bumpe sur un annuaire sans aucun rappel — voir
+[BUMP_PROSPECTS.md](../features/BUMP_PROSPECTS.md)
+
 ### MODDY_SUPPORT_URL / MODDY_DASHBOARD_URL / MODDY_DOCS_URL
 **Valeurs :** `https://moddy.app/support`, `https://dashboard.moddy.app`,
 `https://docs.moddy.app`

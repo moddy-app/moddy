@@ -6667,5 +6667,78 @@
         "animation_too_big": "This animation is too heavy to process. Try a shorter or smaller one."
       }
     }
+  },
+  "bump_prospects": {
+    "status": {
+      "open": "Open",
+      "claimed": "Claimed",
+      "closed": "Closed",
+      "converted": "Converted",
+      "left": "Moddy removed"
+    },
+    "card": {
+      "title": "Bump prospect",
+      "status_label": "Status:",
+      "why": "Bumps on a directory with no reminder at all — a fit for Moddy's Bump Reminder.",
+      "server": "Server:",
+      "owner": "Owner:",
+      "members": "Members:",
+      "detected": "Detected:",
+      "directories": "Directories:",
+      "unknown_guild": "Unknown server",
+      "claimed_by": "Claimed by",
+      "closed_by": "Closed by",
+      "converted": "Moddy's Bump Reminder is now enabled on this server.",
+      "left": "Moddy is no longer on this server."
+    },
+    "buttons": {
+      "invite": "Invite",
+      "claim": "Claim",
+      "unclaim": "Unclaim",
+      "close": "Close",
+      "reopen": "Reopen"
+    },
+    "invite": {
+      "title": "Invite ready",
+      "description": "Single use, valid for 24 hours. Only you can see it.",
+      "open": "Join the server"
+    },
+    "errors": {
+      "no_permission": {
+        "title": "Not for you",
+        "description": "Handling bump prospects needs the matching staff permission."
+      },
+      "unknown": {
+        "title": "Unknown prospect",
+        "description": "No prospect matches the server {guild}."
+      },
+      "not_claimant": {
+        "title": "Already claimed",
+        "description": "{user} is on it — only they can release it."
+      },
+      "stale": {
+        "title": "Already changed",
+        "description": "This card changed in the meantime. It shows its current state now."
+      },
+      "invite_failed": {
+        "title": "No invite possible",
+        "description": "Moddy is no longer on this server, or cannot create an invite in any of its channels."
+      }
+    },
+    "scan": {
+      "disabled": {
+        "title": "Bump prospects disabled",
+        "description": "No prospect channel is configured (`MODDY_BUMP_PROSPECT_CHANNEL_ID`)."
+      },
+      "started": {
+        "title": "Rescan started",
+        "description": "{count} servers queued. It takes about {minutes} min; a summary will be posted in the prospect channel."
+      },
+      "summary": {
+        "title": "Bump prospect rescan finished",
+        "description": "Servers scanned: {scanned}\nNew prospects: {new}\nConverted: {converted}\nNot checked: {skipped}\nDuration: {minutes} min",
+        "requested_by": "Requested by"
+      }
+    }
   }
 }

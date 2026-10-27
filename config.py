@@ -70,6 +70,13 @@ MODDY_BUG_REPORT_CHANNEL_ID: int = int(
 MODDY_CONFIG_HELP_CHANNEL_ID: int = int(
     os.environ.get("MODDY_CONFIG_HELP_CHANNEL_ID", "1542307892970131516"))
 
+# Bump prospects (docs/features/BUMP_PROSPECTS.md): servers that use a bump
+# directory (DISBOARD, DiscordL…) with no bump reminder at all — neither another
+# reminder bot nor Moddy's own module. Each one gets a card here, in the Moddy
+# team guild, for the team to reach out. 0 = feature off.
+MODDY_BUMP_PROSPECT_CHANNEL_ID: int = int(
+    os.environ.get("MODDY_BUMP_PROSPECT_CHANNEL_ID", "1564692382107041894") or 0)
+
 # Automod labeling queue (docs/features/AUTOMOD.md §9): every automod sanction and
 # every doubtful decision is copied here, in the Moddy team guild, for the team
 # to label. 0 = queue disabled (nothing is copied) until the channel exists.

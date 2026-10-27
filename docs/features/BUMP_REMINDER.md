@@ -212,6 +212,10 @@ That window is not decoration: DiscordL's footer carries a `<t:…>` that is the
 | `db/repositories/bump.py` | `bump_reminders` — the live half |
 | `tests/data/bump_payloads.json` | The seven captured replies |
 
+Related, team-side: [BUMP_PROSPECTS.md](BUMP_PROSPECTS.md) — servers that bump
+on a directory with neither this module nor another reminder bot get a card in
+the team server, so the team can pitch this module.
+
 ---
 
 ## Limits (free / premium)

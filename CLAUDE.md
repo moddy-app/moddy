@@ -44,6 +44,7 @@ moddy/
 │   ├── emoji.py               #   /emoji (one emoji, or several pasted from a message)
 │   ├── reminder.py            #   /reminder command
 │   ├── bump_reminder.py       #   Bump Reminder listener + 30s sweeper loop
+│   ├── bump_prospects.py      #   Bump prospects: scan triggers + follow-up loop (internal, team-side)
 │   ├── member_applications.py #   Discord join requests: gateway parser hook + reconciliation poll
 │   ├── stats_events.py        #   Statistics emitters (commands, members, guild joins)
 │   ├── saved_messages.py      #   Message bookmarking
@@ -161,7 +162,8 @@ moddy/
 │
 ├── bumpreminder/              # Bump detection core (pure; no Discord, no DB)
 │   ├── registry.py            #   The 7 supported directories + their markers
-│   └── detect.py              #   Success/failure funnel, next-bump time, intervals
+│   ├── detect.py              #   Success/failure funnel, next-bump time, intervals
+│   └── prospects.py           #   Bump prospects: directory present, no reminder bot
 │
 ├── aidetector/                # AI image detector core (pure; no Discord, no DB)
 │   ├── formats.py             #   Magic-byte sniffing + cheap C2PA marker test
@@ -242,6 +244,7 @@ moddy/
 │       ├── support_requests.py #  Bug reports / config-help requests + their exchange
 │       ├── social.py          #   Social notifications subscriptions
 │       ├── bump.py            #   Pending bump reminders (bump_reminders)
+│       ├── bump_prospects.py  #   Servers bumping without a reminder (bump_prospects)
 │       ├── member_applications.py # Review cards of Discord join requests (member_applications)
 │       ├── announcement_translations.py # Stored announcement translations
 │       ├── announcement_verifications.py # Authenticated announcements + their relayed copies
@@ -290,6 +293,7 @@ moddy/
 │   ├── compression.py         #   zstd (fallback zlib) for stored blobs — one codec decision
 │   ├── transcription_views.py #   Voice transcription cards + persistent Transcribe button
 │   ├── bump_views.py          #   Bump thank-you + reminder cards, opt-in button
+│   ├── bump_prospect_views.py #   Bump prospect team card (Invite/Claim/Close, persistent) + scan summary
 │   ├── member_application_views.py # Application review card, Approve/Reject (persistent), reject Modal V2
 │   ├── appeal_views.py        #   Automod appeal UI (DM buttons + reviewer panels, persistent)
 │   ├── expiration_views.py    #   Sanction-expiration DM (unban/unmute/unwarn + invite)
@@ -360,6 +364,7 @@ moddy/
 │   ├── ticket_transcript_service.py # Archives a closing ticket's conversation (compressed JSON)
 │   ├── ticket_closure_detector.py   # Spots a finished conversation, offers the closure (embeddings)
 │   ├── support_request_service.py # Bug reports + config-help requests (team side)
+│   ├── bump_prospect_service.py # Bump prospects: scan queue, one team card per server, follow-up
 │   ├── transcription_service.py #  Voice/audio speech-to-text (shared by cog + module)
 │   ├── team_link_session.py   #   /team role: the window in which a staffer links the roles
 │   ├── heartbeat.py           #   Moddy Health Monitor heartbeat (dead man's switch)
@@ -412,6 +417,7 @@ moddy/
     ├── test_notifications.py  #   Notifications: hashing, attribution, report rules, i18n
     ├── test_support_requests.py #  Support requests: cards, buttons, beta card, welcome DM
     ├── test_bump_reminder.py  #   Bump detection (real payloads + refusals), config, cards, i18n
+    ├── test_bump_prospects.py #   Bump prospects: detection, one card per server, follow-up, card, i18n
     ├── test_member_applications.py # Member applications: card, dedupe, decisions, poll, gateway, i18n
     ├── test_logs.py           #   Server logs: registry, routing, rendering, delivery
     ├── test_logs_i18n.py      #   Server logs: i18n completeness on the 5 locales
@@ -673,6 +679,7 @@ All documentation is in [docs/](docs/) (structure and conventions: [docs/README.
 | [docs/features/AUTO_ROLE.md](docs/features/AUTO_ROLE.md) | **Auto Role** — join roles for members/bots + roles mirrored on the server tag (gateway hook, tag detection) |
 | [docs/features/BOT_CUSTOMIZATION.md](docs/features/BOT_CUSTOMIZATION.md) | Bot Customization — per-guild nickname/avatar/banner/bio + name styles, Redis dashboard contract |
 | [docs/features/BROCOLI_CHANNEL.md](docs/features/BROCOLI_CHANNEL.md) | **Brocoli in a channel** — the AI assistant as a Discord channel, signed identity assertions, confirmation cards, dev-guild gating |
+| [docs/features/BUMP_PROSPECTS.md](docs/features/BUMP_PROSPECTS.md) | **Bump prospects** (internal) — servers bumping on a directory with no reminder → team card (Invite / Claim / Close), `/dev bumpscan` |
 | [docs/features/BUMP_REMINDER.md](docs/features/BUMP_REMINDER.md) | **Bump Reminder** — detecting a *successful* bump on 7 directories, the reminder, ping modes, quotas |
 | [docs/features/GLOBAL_SANCTIONS.md](docs/features/GLOBAL_SANCTIONS.md) | **Global sanctions** — Moddy-team warn / limited / suspended, on users *and* servers |
 | [docs/features/LINKED_ROLES.md](docs/features/LINKED_ROLES.md) | **Linked roles** — the `moddy:staff` publication the backend needs, the two Moddy Team roles (`team` / `manager`), and `/team role` / `/team access` / `/team ticket` |

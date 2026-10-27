@@ -6666,5 +6666,78 @@
         "animation_too_big": "Cette animation est trop lourde à traiter. Essaie-en une plus courte ou plus petite."
       }
     }
+  },
+  "bump_prospects": {
+    "status": {
+      "open": "Ouvert",
+      "claimed": "Pris en charge",
+      "closed": "Fermé",
+      "converted": "Converti",
+      "left": "Moddy retiré"
+    },
+    "card": {
+      "title": "Prospect bump",
+      "status_label": "Statut :",
+      "why": "Bump sur un annuaire sans aucun rappel — une cible pour le Bump Reminder de Moddy.",
+      "server": "Serveur :",
+      "owner": "Propriétaire :",
+      "members": "Membres :",
+      "detected": "Détecté :",
+      "directories": "Annuaires :",
+      "unknown_guild": "Serveur inconnu",
+      "claimed_by": "Pris en charge par",
+      "closed_by": "Fermé par",
+      "converted": "Le Bump Reminder de Moddy est désormais activé sur ce serveur.",
+      "left": "Moddy n'est plus sur ce serveur."
+    },
+    "buttons": {
+      "invite": "Invitation",
+      "claim": "Prendre en charge",
+      "unclaim": "Libérer",
+      "close": "Fermer",
+      "reopen": "Rouvrir"
+    },
+    "invite": {
+      "title": "Invitation prête",
+      "description": "Usage unique, valable 24 heures. Visible uniquement par toi.",
+      "open": "Rejoindre le serveur"
+    },
+    "errors": {
+      "no_permission": {
+        "title": "Pas pour toi",
+        "description": "Gérer les prospects bump demande la permission staff correspondante."
+      },
+      "unknown": {
+        "title": "Prospect inconnu",
+        "description": "Aucun prospect ne correspond au serveur {guild}."
+      },
+      "not_claimant": {
+        "title": "Déjà pris en charge",
+        "description": "{user} s'en occupe — seule cette personne peut le libérer."
+      },
+      "stale": {
+        "title": "Déjà modifié",
+        "description": "Cette carte a changé entre-temps. Elle affiche maintenant son état actuel."
+      },
+      "invite_failed": {
+        "title": "Invitation impossible",
+        "description": "Moddy n'est plus sur ce serveur, ou ne peut créer d'invitation dans aucun de ses salons."
+      }
+    },
+    "scan": {
+      "disabled": {
+        "title": "Prospects bump désactivés",
+        "description": "Aucun salon de prospects n'est configuré (`MODDY_BUMP_PROSPECT_CHANNEL_ID`)."
+      },
+      "started": {
+        "title": "Analyse relancée",
+        "description": "{count} serveurs en file. Compte environ {minutes} min ; un bilan sera posté dans le salon des prospects."
+      },
+      "summary": {
+        "title": "Analyse des prospects bump terminée",
+        "description": "Serveurs analysés : {scanned}\nNouveaux prospects : {new}\nConvertis : {converted}\nNon vérifiés : {skipped}\nDurée : {minutes} min",
+        "requested_by": "Demandé par"
+      }
+    }
   }
 }
