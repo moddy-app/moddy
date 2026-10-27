@@ -101,6 +101,10 @@ class FakeDB:
             "decided_by": decided_by, "verification_id": verification_id,
         }
 
+    async def set_altguard_member_inviter(self, guild_id, user_id, inviter_id):
+        row = self.members.setdefault((guild_id, user_id), {})
+        row["inviter_id"] = inviter_id
+
     async def record_altguard_verification(self, *, verification_id, **kwargs):
         # Mirrors the repository: False means "already seen".
         if verification_id in self.verifications:
@@ -741,3 +745,105 @@ def test_the_log_card_names_a_missing_enforced_field():
         reasons=[], enforced=False, enforced_missing=False, verification_id="uuid-2",
     ).to_components())
     assert "did not send" not in deliberate
+
+
+# ------------------------------------------- consent notice, reasons, hints
+
+_LOCALES = ["fr", "en-US", "es-ES", "pt-BR", "de"]
+
+
+@pytest.mark.parametrize("locale", _LOCALES)
+def test_consent_notice_names_the_new_data(locale):
+    from utils.altguard_views import (
+        AltGuardConsentModal, DATA_NOTICE_URL, PRIVACY_URL, TERMS_URL,
+    )
+
+    modal = AltGuardConsentModal(locale=locale)
+    body = modal.notice.content
+    assert len(body) <= 4000
+    # Linked accounts are the 2026-10-27 addition: the short notice must name them.
+    assert "Steam, Xbox, GitHub" in body
+    for url in (DATA_NOTICE_URL, TERMS_URL, PRIVACY_URL):
+        assert url in body
+    assert "{" not in body and "[modules." not in body
+
+
+def test_data_notice_url_is_the_official_one():
+    from utils.altguard_views import DATA_NOTICE_URL
+    assert DATA_NOTICE_URL == "https://verify.moddy.app/privacy"
+
+
+def test_format_reason_known_and_unknown():
+    from utils.altguard_views import format_reason, format_reasons
+
+    known = format_reason("cookie_match", "en-US")
+    assert known.endswith("(`cookie_match`)") and known != "`cookie_match`"
+    assert format_reason("brand_new_signal", "en-US") == "`brand_new_signal`"
+    assert format_reasons(["gpu_match", "x_unknown"], "fr").endswith("`x_unknown`")
+    assert format_reasons([], "fr") == ""
+
+
+@pytest.mark.parametrize("locale", _LOCALES)
+def test_every_reason_code_is_translated(locale):
+    from utils.altguard_views import format_reason
+
+    codes = ("cookie_match email_match connection_match visitor_match render_match "
+             "gpu_match hardware_match fonts_match ip_match ip_prefix_match asn_match "
+             "guild_overlap guild_overlap_high join_burst invited_by account_new_24h "
+             "account_new_7d account_new_30d email_unverified email_disposable "
+             "default_avatar no_badge datacenter_ip vpn_detected").split()
+    for code in codes:
+        assert format_reason(code, locale) != f"`{code}`", (locale, code)
+
+
+def test_the_log_card_renders_an_unknown_reason_raw():
+    from utils.altguard_views import build_log_card
+
+    log = build_log_card(locale="en-US", kind="verdict", user_id=42, verdict="flagged",
+                         score=40, reasons=["cookie_match", "mystery_code"],
+                         matches=[{"user_id": 43, "score": 40, "reasons": ["mystery_code"]}],
+                         enforced=True, verification_id="uuid-1")
+    rendered = json.dumps(log.to_components())
+    assert "`mystery_code`" in rendered and "Same browser" in rendered
+
+
+@pytest.mark.parametrize("locale", _LOCALES)
+def test_the_link_card_has_the_vpn_hint_and_no_signals(locale):
+    from utils.altguard_views import build_link_card
+
+    link = build_link_card(locale, url="https://discord.com/oauth2/authorize?x=1",
+                           expires_at="2026-08-18T10:10:00Z")
+    rendered = json.dumps(link.to_components())
+    assert "VPN" in rendered and "WARP" in rendered
+    assert "_match" not in rendered and "score" not in rendered.lower()
+
+
+def test_consent_submit_passes_the_stored_inviter(monkeypatch):
+    from utils.altguard_views import AltGuardConsentModal
+
+    captured = {}
+
+    class Client:
+        configured = True
+
+        async def create_verification_token(self, **kwargs):
+            captured.update(kwargs)
+            return {"authorization_url": "https://x", "expires_at": None}
+
+    class Resp:
+        async def defer(self, **kw): pass
+        async def send_message(self, *a, **kw): pass
+
+    class Follow:
+        async def send(self, *a, **kw): pass
+
+    db = FakeDB()
+    db.members[(1, 2)] = {"status": "pending", "inviter_id": 99}
+    bot = SimpleNamespace(altguard=Client(), db=db)
+    inter = SimpleNamespace(client=bot, guild_id=1, user=SimpleNamespace(id=2),
+                            locale="en-US", response=Resp(), followup=Follow())
+    modal = AltGuardConsentModal(locale="en-US")
+    monkeypatch.setattr(type(modal.agreement.component), "values",
+                        property(lambda self: ["terms", "processing"]), raising=False)
+    asyncio.run(modal.on_submit(inter))
+    assert captured["inviter_id"] == 99

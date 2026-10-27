@@ -2517,7 +2517,7 @@
       },
       "consent": {
         "title": "Verificação AltGuard",
-        "body": "Para detectar contas múltiplas, a verificação coleta as características do seu navegador, um cookie técnico, seu e-mail do Discord, a lista dos seus servidores e seu endereço IP.\n\nEsses dados são **criptografados**, usados apenas para essa detecção e mantidos por um tempo limitado.\n\n[**Dados coletados**]({data}) · [**Termos de uso**]({terms}) · [**Política de privacidade**]({privacy})",
+        "body": "Para detectar contas múltiplas, a verificação coleta as características do seu navegador e do seu dispositivo, um cookie técnico, seu e-mail do Discord, a lista dos seus servidores, as contas vinculadas ao seu Discord (Steam, Xbox, GitHub…), seu endereço IP e a conta que convidou você para o servidor.\n\nEsses dados são **criptografados** ou transformados em impressões não reversíveis, usados apenas para essa detecção e mantidos por um tempo limitado. Você pode retirar seu consentimento e pedir a exclusão deles a qualquer momento pela equipe do servidor.\n\n[**Dados coletados**]({data}) · [**Termos de uso**]({terms}) · [**Política de privacidade**]({privacy})",
         "agree_label": "Consentimento",
         "agree_description": "Marque as duas caixas para gerar seu link de verificação.",
         "agree_terms": "Aceito os termos de uso e a política de privacidade",
@@ -2529,7 +2529,8 @@
         "expires": "Expira {timestamp}",
         "button": "Abrir a verificação",
         "footer": "O cargo é atribuído automaticamente assim que a verificação é validada.",
-        "expired": "Link expirado? Basta clicar de novo no botão do canal de verificação."
+        "expired": "Link expirado? Basta clicar de novo no botão do canal de verificação.",
+        "vpn_hint": "A verificação não é possível atrás de uma VPN ou proxy (incluindo iCloud Private Relay e Cloudflare WARP). Desative-o e clique em *Tentar novamente* na página, ou reinicie a verificação."
       },
       "errors": {
         "guild_only": "Esta verificação só funciona dentro de um servidor.",
@@ -2618,6 +2619,32 @@
           "description": "Sua verificação foi removida em {server}. Passe novamente pelo canal de verificação para recuperar o acesso.",
           "footer": "Em caso de dúvida, fale com a moderação do servidor."
         }
+      },
+      "reasons": {
+        "cookie_match": "Mesmo navegador (cookie do AltGuard)",
+        "email_match": "Mesmo endereço de e-mail",
+        "connection_match": "Mesma conta de terceiros vinculada (Steam, Xbox, GitHub…)",
+        "visitor_match": "Mesma impressão digital do navegador",
+        "render_match": "Mesma renderização gráfica e de áudio",
+        "gpu_match": "Mesma placa de vídeo",
+        "hardware_match": "Mesma configuração de hardware (tela, CPU, fuso horário, modelo)",
+        "fonts_match": "Mesmas fontes instaladas",
+        "ip_match": "Mesmo endereço IP",
+        "ip_prefix_match": "Mesma sub-rede",
+        "asn_match": "Mesma operadora de rede",
+        "guild_overlap": "Servidores do Discord em comum",
+        "guild_overlap_high": "Muitos servidores do Discord em comum",
+        "join_burst": "Entrou no servidor com menos de 15 min de diferença",
+        "invited_by": "Convidado por esta conta (reforça outro vínculo)",
+        "account_new_24h": "Conta criada há menos de 24 h",
+        "account_new_7d": "Conta criada há menos de 7 dias",
+        "account_new_30d": "Conta criada há menos de 30 dias",
+        "email_unverified": "E-mail não verificado no Discord",
+        "email_disposable": "E-mail descartável",
+        "default_avatar": "Avatar padrão",
+        "no_badge": "Sem emblema",
+        "datacenter_ip": "Conexão a partir de hospedagem, nuvem ou VPN",
+        "vpn_detected": "VPN desmascarada: o IP real por trás foi encontrado"
       }
     },
     "member_applications": {

@@ -2517,7 +2517,7 @@
       },
       "consent": {
         "title": "AltGuard verification",
-        "body": "To detect multiple accounts, the verification collects your browser characteristics, a technical cookie, your Discord email address, your server list and your IP address.\n\nThis data is **encrypted**, used only for that detection and kept for a limited time.\n\n[**Collected data**]({data}) · [**Terms of Service**]({terms}) · [**Privacy Policy**]({privacy})",
+        "body": "To detect multiple accounts, the verification collects your browser and device characteristics, a technical cookie, your Discord email address, your server list, the accounts linked to your Discord (Steam, Xbox, GitHub…), your IP address and the account that invited you to the server.\n\nThis data is **encrypted** or turned into non-reversible fingerprints, used only for that detection and kept for a limited time. You can withdraw your consent and request its erasure at any time through the server's staff.\n\n[**Collected data**]({data}) · [**Terms of Service**]({terms}) · [**Privacy Policy**]({privacy})",
         "agree_label": "Consent",
         "agree_description": "Tick both boxes to generate your verification link.",
         "agree_terms": "I accept the terms of service and the privacy policy",
@@ -2529,7 +2529,8 @@
         "expires": "Expires {timestamp}",
         "button": "Open the verification",
         "footer": "The role is granted automatically as soon as the verification passes.",
-        "expired": "Link expired? Just click the button in the verification channel again."
+        "expired": "Link expired? Just click the button in the verification channel again.",
+        "vpn_hint": "Verification isn't possible behind a VPN or proxy (iCloud Private Relay and Cloudflare WARP included). Turn it off, then click *Try again* on the page, or start the verification again."
       },
       "errors": {
         "guild_only": "This verification only works inside a server.",
@@ -2618,6 +2619,32 @@
           "description": "Your verification was revoked on {server}. Go through the verification channel again to regain access.",
           "footer": "For any question, contact the server's moderators."
         }
+      },
+      "reasons": {
+        "cookie_match": "Same browser (AltGuard cookie)",
+        "email_match": "Same email address",
+        "connection_match": "Same linked third-party account (Steam, Xbox, GitHub…)",
+        "visitor_match": "Same browser fingerprint",
+        "render_match": "Same graphics and audio rendering",
+        "gpu_match": "Same graphics card",
+        "hardware_match": "Same hardware setup (screen, CPU, timezone, model)",
+        "fonts_match": "Same installed fonts",
+        "ip_match": "Same IP address",
+        "ip_prefix_match": "Same subnet",
+        "asn_match": "Same network operator",
+        "guild_overlap": "Discord servers in common",
+        "guild_overlap_high": "Many Discord servers in common",
+        "join_burst": "Joined the server less than 15 min apart",
+        "invited_by": "Invited by this account (reinforces another link)",
+        "account_new_24h": "Account created less than 24 h ago",
+        "account_new_7d": "Account created less than 7 days ago",
+        "account_new_30d": "Account created less than 30 days ago",
+        "email_unverified": "Email not verified on Discord",
+        "email_disposable": "Disposable email",
+        "default_avatar": "Default avatar",
+        "no_badge": "No badge",
+        "datacenter_ip": "Connection from a host, cloud or VPN",
+        "vpn_detected": "VPN unmasked: the real IP behind it was found"
       }
     },
     "member_applications": {

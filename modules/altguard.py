@@ -27,6 +27,7 @@ bypass oracle). See docs/features/ALTGUARD.md.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any, Dict, List, Optional
 
@@ -119,6 +120,8 @@ class AltGuardModule(ModuleBase):
             self.enabled = bool(
                 self.channel_id and self.unverified_role_id and self.verified_role_id
             )
+            if self.enabled:
+                self._schedule_invite_warm()
             return True
         except Exception as e:
             logger.error(f"Error loading altguard config: {e}")
@@ -254,6 +257,23 @@ class AltGuardModule(ModuleBase):
     # ------------------------------------------------------------------ #
     # Helpers
     # ------------------------------------------------------------------ #
+
+    @property
+    def _invites(self):
+        """The invite tracker held by the AltGuard cog (None before it loads)."""
+        get_cog = getattr(self.bot, "get_cog", None)
+        cog = get_cog("AltGuard") if get_cog else None
+        return getattr(cog, "invites", None)
+
+    def _schedule_invite_warm(self) -> None:
+        """Take the invite baseline in the background; never blocks the config."""
+        tracker, guild = self._invites, self.guild
+        if tracker is None or guild is None:
+            return  # startup warm-up in the cog covers guilds loaded this early
+        try:
+            asyncio.get_running_loop().create_task(tracker.warm(guild))
+        except RuntimeError:
+            pass
 
     @property
     def guild(self) -> Optional[discord.Guild]:
@@ -586,6 +606,9 @@ class AltGuardModule(ModuleBase):
 
         if await self.is_verified(member.id):
             await self._apply_gate_roles(member, verified=True, reason="AltGuard: already verified")
+            # Still compared: the comparison refreshes the invite baseline,
+            # and a skipped join would make the next attribution wrong.
+            self._schedule_inviter(member, store=False)
             return
 
         if self.bot.db:
@@ -596,6 +619,33 @@ class AltGuardModule(ModuleBase):
                 )
 
         await self._apply_gate_roles(member, verified=False, reason="AltGuard: verification pending")
+        self._schedule_inviter(member, store=True)
+
+    def _schedule_inviter(self, member: discord.Member, *, store: bool) -> None:
+        """Resolve the inviter in the background, after the gate is applied.
+
+        The lookup is a REST call serialized per guild: awaiting it inline
+        would hold every member of a raid outside the gate one by one.
+        """
+        tracker = self._invites
+        if tracker is None:
+            return
+        try:
+            asyncio.get_running_loop().create_task(self._record_inviter(tracker, member, store))
+        except RuntimeError:
+            pass
+
+    async def _record_inviter(self, tracker, member: discord.Member, store: bool) -> None:
+        inviter_id = await tracker.resolve_inviter(member)
+        if not store or not self.bot.db:
+            return
+        try:
+            # The inviter belongs to the current join: a rejoin replaces it
+            # (NULL when unknown). Used only at the consent step.
+            await self.bot.db.set_altguard_member_inviter(
+                self.guild_id, member.id, inviter_id)
+        except Exception as e:
+            logger.debug(f"[AltGuard] Could not store inviter for {member.id}: {e}")
 
     # ------------------------------------------------------------------ #
     # Verdicts

@@ -339,6 +339,7 @@ moddy/
 │
 ├── services/                  # External service clients
 │   ├── altguard_client.py     #   AltGuard service client (HTTP + altguard:* Pub/Sub)
+│   ├── altguard_invites.py    #   Invite-use tracker → inviter_id sent with the AltGuard token call
 │   ├── brocoli_client.py      #   Brocoli HTTP + SSE client (backend /ai surface)
 │   ├── staff_events.py        #   Staff rank changes -> backend (moddy:staff, linked roles)
 │   ├── backend_client.py      #   Backend HTTP client
@@ -392,7 +393,8 @@ moddy/
     │                          #   (FastAPI TestClient, bot + gateway stubbed)
     ├── gateway/               #   Provider rate limits + executor reservation lifecycle
     ├── test_guild_language.py #   Server language: auto rule, cache, invalidation
-    ├── test_altguard.py       #   AltGuard verdicts, gate roles, auto_role hold-back
+    ├── test_altguard.py       #   AltGuard verdicts, gate roles, auto_role hold-back, consent notice, reason labels
+    ├── test_altguard_invites.py # AltGuard inviter attribution + token payload (inviter_id, consent version)
     ├── test_auto_role_tags.py #   Auto Role server tag roles: detection, sync, panel, gateway hook
     ├── test_global_sanctions.py   # Global sanction levels, cache TTL, user/guild context
     ├── test_global_sanction_flow.py # Groups, notices, countdown, Redis events, allowlists

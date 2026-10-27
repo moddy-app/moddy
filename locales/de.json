@@ -2517,7 +2517,7 @@
       },
       "consent": {
         "title": "AltGuard-Verifizierung",
-        "body": "Zur Erkennung von Mehrfachkonten erhebt die Verifizierung die Merkmale deines Browsers, ein technisches Cookie, deine Discord-E-Mail-Adresse, die Liste deiner Server und deine IP-Adresse.\n\nDiese Daten sind **verschlüsselt**, werden ausschließlich für diese Erkennung verwendet und nur begrenzt gespeichert.\n\n[**Erhobene Daten**]({data}) · [**Nutzungsbedingungen**]({terms}) · [**Datenschutzerklärung**]({privacy})",
+        "body": "Zur Erkennung von Mehrfachkonten erhebt die Verifizierung die Merkmale deines Browsers und Geräts, ein technisches Cookie, deine Discord-E-Mail-Adresse, die Liste deiner Server, die mit deinem Discord verknüpften Konten (Steam, Xbox, GitHub…), deine IP-Adresse und das Konto, das dich auf den Server eingeladen hat.\n\nDiese Daten sind **verschlüsselt** oder in nicht umkehrbare Fingerabdrücke umgewandelt, werden ausschließlich für diese Erkennung verwendet und nur begrenzt gespeichert. Du kannst deine Einwilligung jederzeit über das Team des Servers widerrufen und die Löschung verlangen.\n\n[**Erhobene Daten**]({data}) · [**Nutzungsbedingungen**]({terms}) · [**Datenschutzerklärung**]({privacy})",
         "agree_label": "Einwilligung",
         "agree_description": "Setze beide Haken, um deinen Verifizierungslink zu erzeugen.",
         "agree_terms": "Ich akzeptiere die Nutzungsbedingungen und die Datenschutzerklärung",
@@ -2529,7 +2529,8 @@
         "expires": "Läuft ab {timestamp}",
         "button": "Verifizierung öffnen",
         "footer": "Die Rolle wird automatisch vergeben, sobald die Verifizierung bestanden ist.",
-        "expired": "Link abgelaufen? Klicke einfach erneut auf den Button im Verifizierungskanal."
+        "expired": "Link abgelaufen? Klicke einfach erneut auf den Button im Verifizierungskanal.",
+        "vpn_hint": "Die Verifizierung ist hinter einem VPN oder Proxy nicht möglich (einschließlich iCloud Private Relay und Cloudflare WARP). Schalte ihn aus und klicke auf der Seite auf *Erneut versuchen* oder starte die Verifizierung neu."
       },
       "errors": {
         "guild_only": "Diese Verifizierung funktioniert nur in einem Server.",
@@ -2618,6 +2619,32 @@
           "description": "Deine Verifizierung wurde auf {server} entzogen. Gehe erneut über den Verifizierungskanal, um den Zugriff zurückzubekommen.",
           "footer": "Bei Fragen wende dich an die Moderation des Servers."
         }
+      },
+      "reasons": {
+        "cookie_match": "Gleicher Browser (AltGuard-Cookie)",
+        "email_match": "Gleiche E-Mail-Adresse",
+        "connection_match": "Gleiches verknüpftes Drittkonto (Steam, Xbox, GitHub…)",
+        "visitor_match": "Gleicher Browser-Fingerabdruck",
+        "render_match": "Gleiches Grafik- und Audio-Rendering",
+        "gpu_match": "Gleiche Grafikkarte",
+        "hardware_match": "Gleiche Hardware-Konfiguration (Bildschirm, CPU, Zeitzone, Modell)",
+        "fonts_match": "Gleiche installierte Schriftarten",
+        "ip_match": "Gleiche IP-Adresse",
+        "ip_prefix_match": "Gleiches Subnetz",
+        "asn_match": "Gleicher Netzbetreiber",
+        "guild_overlap": "Gemeinsame Discord-Server",
+        "guild_overlap_high": "Viele gemeinsame Discord-Server",
+        "join_burst": "Dem Server im Abstand von unter 15 Min. beigetreten",
+        "invited_by": "Von diesem Konto eingeladen (verstärkt eine andere Verbindung)",
+        "account_new_24h": "Konto vor weniger als 24 Std. erstellt",
+        "account_new_7d": "Konto vor weniger als 7 Tagen erstellt",
+        "account_new_30d": "Konto vor weniger als 30 Tagen erstellt",
+        "email_unverified": "E-Mail auf Discord nicht verifiziert",
+        "email_disposable": "Wegwerf-E-Mail",
+        "default_avatar": "Standard-Avatar",
+        "no_badge": "Kein Badge",
+        "datacenter_ip": "Verbindung über Hoster, Cloud oder VPN",
+        "vpn_detected": "VPN entlarvt: die echte IP dahinter wurde gefunden"
       }
     },
     "member_applications": {
