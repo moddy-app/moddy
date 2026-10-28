@@ -16,13 +16,28 @@ class DevTools(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self._staff_commands = []
+
+    async def cog_load(self):
+        # Publish /testerror on OFFICIAL (staff) servers only: take it out of
+        # the global tree and hand it to the per-guild staff command set.
+        command = self.bot.tree.get_command("testerror")
+        if command is not None:
+            self.bot.tree.remove_command("testerror")
+            self._staff_commands = [command]
+            self.bot.staff_guild_commands.extend(self._staff_commands)
+
+    async def cog_unload(self):
+        for command in self._staff_commands:
+            if command in self.bot.staff_guild_commands:
+                self.bot.staff_guild_commands.remove(command)
+        self._staff_commands = []
 
     @app_commands.command(
         name="testerror",
         description="[DEV ONLY] Generate a test error to verify error handling systems"
     )
-    @app_commands.allowed_installs(guilds=True, users=True)
-    @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
+    @app_commands.guild_only()
     async def test_error(self, interaction: discord.Interaction):
         """
         Test command to generate an error and verify that:
