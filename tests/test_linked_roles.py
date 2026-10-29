@@ -664,3 +664,58 @@ class TestTeamRoleFindsTheStaffer:
         assert seen["member"] is staffer
         window.assert_awaited_once()
         assert sent == ["card", "report"]
+
+
+# --------------------------------------------------------------------------- #
+# Reordering for the window — from a fresh read, every role below Moddy
+# --------------------------------------------------------------------------- #
+class TestBottomPositions:
+    """The reorder is computed from a fresh read and renumbers every role
+    below Moddy's, so no position can collide with Moddy's own."""
+
+    def _me(self, *roles):
+        return SimpleNamespace(roles=list(roles))
+
+    def test_roles_to_link_first_then_throwaway_then_the_rest(self):
+        from services.team_link_session import bottom_positions
+
+        everyone = FakeRole(1, default=True, position=0)
+        temp, team = FakeRole(10, position=1), FakeRole(11, position=2)
+        other, moddy = FakeRole(12, position=3), FakeRole(13, managed=True, position=4)
+        result = bottom_positions([everyone, temp, team, other, moddy],
+                                  self._me(everyone, moddy), [team], temp)
+        assert {r.id: p for r, p in result.items()} == {11: 1, 10: 2, 12: 3}
+
+    def test_only_moddys_role_never_reaches_it(self):
+        """Nothing but Moddy's own role in the server: the throwaway role
+        still lands below it."""
+        from services.team_link_session import bottom_positions
+
+        everyone = FakeRole(1, default=True, position=0)
+        temp, team = FakeRole(10, position=1), FakeRole(11, position=2)
+        moddy = FakeRole(13, managed=True, position=3)
+        result = bottom_positions([everyone, temp, team, moddy],
+                                  self._me(everyone, moddy), [team], temp)
+        assert {r.id: p for r, p in result.items()} == {11: 1, 10: 2}
+        assert max(result.values()) < moddy.position
+        assert moddy not in result and everyone not in result
+
+    def test_roles_above_moddy_are_left_alone(self):
+        from services.team_link_session import bottom_positions
+
+        temp, team = FakeRole(10, position=1), FakeRole(11, position=2)
+        moddy, admin = FakeRole(13, position=3), FakeRole(14, position=4)
+        result = bottom_positions([temp, team, moddy, admin], self._me(moddy), [team], temp)
+        assert admin not in result
+
+    def test_fresh_objects_win_over_cached_ones(self):
+        """The team role passed in comes from the cache; its fetched twin is
+        what goes out."""
+        from services.team_link_session import bottom_positions
+
+        temp, fresh_team = FakeRole(10, position=1), FakeRole(11, position=2)
+        cached_team = FakeRole(11, position=7)
+        moddy = FakeRole(13, position=3)
+        result = bottom_positions([temp, fresh_team, moddy], self._me(moddy),
+                                  [cached_team], temp)
+        assert fresh_team in result and cached_team not in result

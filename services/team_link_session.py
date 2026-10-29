@@ -486,6 +486,10 @@ async def run_window(bot, guild: discord.Guild, member: discord.Member,
     session = LinkSession(bot, guild, member, roles)
     _sessions[guild.id] = session
     outcome = FAILED
+    #: Which setup step is running — the error log names it, since a bare
+    #: "50013 Missing Permissions" fits all three.
+    step = "create the throwaway role"
+    positions: Dict = {}
     try:
         session.temp_role = await guild.create_role(
             name=TEMP_ROLE_NAME,
@@ -495,12 +499,18 @@ async def run_window(bot, guild: discord.Guild, member: discord.Member,
         )
         # The roles to link at the very bottom, the throwaway role directly
         # above them: Discord then lets the staffer edit those and no others.
-        positions = {role: index for index, role in enumerate(roles, start=1)}
-        positions[session.temp_role] = len(roles) + 1
+        # Computed from a fresh read, never the cache: two roles were just
+        # created, and a stale position here asks Discord to move a role
+        # level with (or above) Moddy's own, which it refuses with 50013.
+        step = "read the role hierarchy"
+        fetched = await guild.fetch_roles()
+        step = "reorder the roles"
+        positions = bottom_positions(fetched, guild.me, roles, session.temp_role)
         await guild.edit_role_positions(
             positions=positions,
             reason="Moddy Team linking window",
         )
+        step = "lend the throwaway role / set the other roles aside"
         await _strip_roles(session)
 
         try:
@@ -508,10 +518,15 @@ async def run_window(bot, guild: discord.Guild, member: discord.Member,
                 asyncio.shield(session.finished), timeout=WINDOW_SECONDS)
         except asyncio.TimeoutError:
             outcome = EXPIRED
-    except discord.HTTPException as e:
-        logger.error("Could not open the linking window in guild %s — HTTP %s "
-                     "(Discord code %s): %s", guild.id, getattr(e, "status", "?"),
-                     getattr(e, "code", "?"), getattr(e, "text", None) or e)
+    except (discord.HTTPException, ValueError) as e:
+        me = guild.me
+        logger.error("Could not open the linking window in guild %s (step: %s) — "
+                     "HTTP %s (Discord code %s): %s | Moddy top role at %s | "
+                     "positions sent: %s", guild.id, step,
+                     getattr(e, "status", "?"), getattr(e, "code", "?"),
+                     getattr(e, "text", None) or e,
+                     getattr(getattr(me, "top_role", None), "position", "?"),
+                     {getattr(r, "id", r): p for r, p in positions.items()})
         outcome = FAILED
     finally:
         if outcome in (EXPIRED, CANCELLED, FINISHED):
@@ -521,6 +536,29 @@ async def run_window(bot, guild: discord.Guild, member: discord.Member,
         await _teardown(session)
         _sessions.pop(guild.id, None)
     return WindowResult(outcome, session.linked)
+
+
+def bottom_positions(all_roles, me, team_roles, temp_role) -> Dict:
+    """The full order of every role below Moddy's: the roles to link first,
+    the throwaway role right above them, then the others as they were.
+
+    Every role below Moddy is numbered 1..n, not just the ones that move:
+    positions on Discord can repeat (a new role lands on an occupied slot), and
+    renumbering only two of them could leave the throwaway role level with
+    Moddy's own. Roles are matched by id against ``all_roles`` — a fresh
+    ``fetch_roles()`` — so cached positions never leak in.
+    """
+    by_id = {r.id: r for r in all_roles}
+    my_ids = {r.id for r in getattr(me, "roles", [])}
+    mine = [r for r in all_roles if r.id in my_ids and not r.is_default()]
+    if not mine:
+        raise ValueError("Moddy holds no role in this guild")
+    top = max(mine)
+    moving = [by_id.get(r.id, r) for r in team_roles] + [by_id.get(temp_role.id, temp_role)]
+    moving_ids = {r.id for r in moving}
+    others = sorted(r for r in all_roles
+                    if not r.is_default() and r < top and r.id not in moving_ids)
+    return {role: index for index, role in enumerate(moving + others, start=1)}
 
 
 async def _confirm_outcome(session: LinkSession, outcome: str) -> str:
