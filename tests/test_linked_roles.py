@@ -305,6 +305,7 @@ class FakeRole:
         self.managed = managed
         self.position = position
         self._default = default
+        self.tags = None  # no linked-role requirement
 
     def is_default(self):
         return self._default
@@ -392,27 +393,50 @@ class TestLinkingWindow:
         member = SimpleNamespace(roles=[FakeRole(1, default=True), FakeRole(2, position=5)])
         assert unstrippable_roles(guild, member) == []
 
-    def test_the_window_covers_two_bindings(self):
-        """It stays short — it is an escalation — but seven clicks per role
-        against thirty seconds was already tight for one."""
-        assert 60 <= WINDOW_SECONDS <= 120
+    def test_the_window_is_capped_at_twenty_minutes(self):
+        """The staffer closes it with Finish; the clock is only the backstop."""
+        assert WINDOW_SECONDS == 20 * 60
 
-    def test_the_window_ends_only_once_every_role_is_linked(self):
-        """One role linked out of two is not a success, and resolving there
-        would tear the window down with the second one still unbound."""
+    def test_linking_never_closes_the_window(self):
+        """Only Finish (or the clock) does: the staffer may still be checking,
+        or linking the second role."""
         session = self._session([self.TEAM_ID, self.MANAGER_ID])
-
         session.mark_linked(self.TEAM_ID)
-        assert not session.finished.done()
-
         session.mark_linked(self.MANAGER_ID)
-        assert session.finished.done()
-        assert session.finished.result() == DONE
+        assert not session.finished.done()
+        assert session.pending == set()
+        assert session.linked == {self.TEAM_ID, self.MANAGER_ID}
 
-    def test_a_single_role_window_resolves_on_that_role(self):
+    def test_finish_closes_only_the_staffers_own_window(self):
+        from services import team_link_session as linking
+
         session = self._session([self.TEAM_ID])
-        session.mark_linked(self.TEAM_ID)
-        assert session.finished.result() == DONE
+        linking._sessions[1] = session
+        try:
+            assert linking.finish(1, 999) is False      # somebody else
+            assert not session.finished.done()
+            assert linking.finish(1, 2) is True
+            assert session.finished.result() == linking.FINISHED
+            assert linking.finish(1, 2) is False        # already closed
+            assert linking.finish(5, 2) is False        # no window there
+        finally:
+            linking._sessions.pop(1, None)
+
+    def test_an_already_linked_role_is_not_pending(self):
+        """The window opens anyway; such a role is simply not waited for."""
+        from unittest.mock import patch
+
+        with patch("services.team_link_session.is_linked",
+                   lambda role: role.id == self.TEAM_ID):
+            session = self._session([self.TEAM_ID, self.MANAGER_ID])
+        assert session.pending == {self.MANAGER_ID}
+
+    def test_the_owner_keeps_their_roles(self):
+        """They hold every permission whatever their roles: nothing to contain."""
+        guild = FakeGuildWithMe(bot_top=10)
+        guild.owner_id = 5
+        member = SimpleNamespace(id=5, roles=[FakeRole(2, position=5)])
+        assert removable_roles(guild, member) == []
 
     def test_the_same_role_twice_does_not_resolve_the_other(self):
         """The gateway can repeat an event; it must not count as progress."""
@@ -483,9 +507,11 @@ class TestLinkingWindow:
         """A window that ends with no explanation is a window nobody trusts."""
         with open(f"locales/{locale}.json", encoding="utf-8") as fh:
             role = json.load(fh)["staff"]["team"]["role"]
-        for outcome in (DONE, PARTIAL, EXPIRED, CANCELLED, FAILED):
+        from services.team_link_session import FINISHED
+
+        for outcome in (DONE, PARTIAL, EXPIRED, CANCELLED, FAILED, FINISHED):
             assert f"window_{outcome}" in role, (locale, outcome)
-        for blocker in ("not_member", "owner", "busy", "no_permission", "no_room"):
+        for blocker in ("not_member", "busy", "no_permission", "no_room"):
             assert f"blocked_{blocker}" in role, (locale, blocker)
         # The window can only half-contain a staffer sitting above Moddy, and
         # the card has to say so — silence there would be a false promise.
@@ -589,7 +615,8 @@ class TestLocales:
 # `/team role` finds the staffer even when the member cache does not
 # --------------------------------------------------------------------------- #
 class TestTeamRoleFindsTheStaffer:
-    def test_a_cache_miss_still_opens_the_window(self, monkeypatch):
+    @pytest.mark.parametrize("already_linked", [False, True])
+    def test_a_cache_miss_still_opens_the_window(self, monkeypatch, already_linked):
         """Members are not chunked at startup: `guild.get_member` misses for a
         staffer Moddy has not cached yet. That used to be reported as "not a
         member", and the window — the throwaway role with it — never opened."""
@@ -613,7 +640,8 @@ class TestTeamRoleFindsTheStaffer:
 
         window = AsyncMock(return_value=WindowResult(DONE, {55}))
         monkeypatch.setattr(team_role, "find_team_role", AsyncMock(return_value=role))
-        monkeypatch.setattr(team_role, "is_linked", lambda r: False)
+        # Linked or not, the window opens: every run lends the throwaway role.
+        monkeypatch.setattr(team_role, "is_linked", lambda r: already_linked)
         monkeypatch.setattr(team_role, "_blocker", blocker)
         monkeypatch.setattr(team_role, "_window_card", lambda *a, **k: "card")
         monkeypatch.setattr(team_role.linking, "unstrippable_roles", lambda g, m: [])

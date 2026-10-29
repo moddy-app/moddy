@@ -199,13 +199,21 @@ Since a human must do it, `/team role` lends the permission to the staffer who
 ran it instead of sending them to find an administrator. See
 [`services/team_link_session.py`](../../services/team_link_session.py).
 
-1. The roles that still need a requirement are pushed to the bottom of the
-   hierarchy — positions 1 and 2 when there are two of them.
+0. **Every run opens a window** and lends the throwaway role — even when the
+   roles already carry their requirement (the staffer may be there to check it
+   or redo it).
+1. The Moddy Team roles are pushed to the bottom of the hierarchy — positions
+   1 and 2 when there are two of them.
 2. A throwaway role, `Moddy Team — linking`, carrying **only** `manage_roles`,
    is created directly above them.
 3. Every other role the staffer holds is taken off them and **written to
    `guilds.data.moddy_team.link_session` before the removal**.
-4. They have `WINDOW_SECONDS` (75) to do the clicks themselves.
+   The server's owner keeps theirs: they hold every permission anyway, so
+   there is nothing to contain — they still get the throwaway role.
+4. They do the clicks themselves, then press **Finish** on the window card
+   (`FinishWindowButton`, persistent, `moddy:teamrole:finish:<guild>:<staff>`
+   — only that staffer may press it). `WINDOW_SECONDS` (20 minutes) is only the
+   backstop for a window nobody closes.
 5. Whatever the outcome: roles back, throwaway role deleted, the linked roles
    moved back under Moddy, stored session cleared.
 
@@ -214,26 +222,30 @@ below the throwaway role the staffer can reach exactly the roles they are there
 to link. That containment is the whole reason for the positions.
 
 **One window covers every role**, rather than one window per role: a second pass
-would mean stripping the same staffer of their roles twice in a row. It ends the
-moment the *last* requirement appears, and the outcomes say how far it got:
+would mean stripping the same staffer of their roles twice in a row. Linking a
+role does **not** close the window — only Finish, the clock, or an action
+outside the linking does — and the outcomes say how far it got:
 
 | Outcome | Meaning |
 |---|---|
 | `done` | every role carries a requirement |
-| `partial` | some do, some do not — run the command again; what is linked is not asked for twice |
+| `partial` | the clock ran out with some linked, some not |
+| `finished` | Finish was pressed with a role still unlinked |
 | `expired` | the clock ran out with nothing linked |
 | `cancelled` | the staffer did something outside the linking; it was reverted |
 | `failed` | Discord refused a setup step; nothing was left dangling |
 
-`WINDOW_SECONDS` went from 30 to 75 when the second role landed: seven clicks
-was already tight for thirty seconds, and there can be fourteen now.
+`WINDOW_SECONDS` went from 30 to 75 when the second role landed, then to a
+20-minute cap with a Finish button: a countdown kept running out on staffers
+who were still in the middle of the clicks.
 
 #### Say what it is
 
 This is a privilege escalation, and a deliberate one: **no administrator of the
 server approves it**, unlike `/team access`. It is short, confined, reverted and
 logged, but the honest sentence is that Moddy hands one of its own staff
-`Manage Roles` in somebody else's server for thirty seconds.
+`Manage Roles` in somebody else's server until they press Finish — twenty
+minutes at most.
 
 Two limits follow, and neither is theoretical:
 
@@ -316,7 +328,7 @@ links only the manager one, and leaves the rest alone.
 
 The window is never started on a hope. `_blocker()` refuses it upfront, with its
 own sentence on the card, when: the staffer is not a member of the guild
-(`not_member`), owns it (`owner` — they already have everything), another window
+(`not_member`), another window
 is running (`busy`), Moddy lacks `Manage Roles` (`no_permission`), or the Moddy
 Team roles do not sit below Moddy's own (`no_room`). A window that fails
 halfway leaves somebody without their roles, so it is never opened blind.
@@ -570,6 +582,14 @@ is only for the rest.
 ---
 
 ## The traps
+
+- **Moddy missing from *Links → Add requirement*** (only Discord's own
+  connections listed). The bot cannot cause or fix this: the picker lists an
+  app only when its metadata schema is registered (and the app has its
+  *Linked Roles Verification URL* set in the developer portal). Check the
+  schema with `GET /applications/{app_id}/role-connections/metadata` (bot
+  token): `[]` means it is gone — a backend `PUT` with an empty or partial
+  list replaces the whole schema.
 
 - **Publishing before the database write** → the backend re-reads the old state.
   The most common one by far.

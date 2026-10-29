@@ -151,6 +151,7 @@ def _dynamic_item_cases():
         PrecedentsDeleteSelect, PrecedentsNavButton,
     )
     from utils.staff_flex import FlexSendButton
+    from staff.commands.team.team_role import FinishWindowButton
     from utils.tool_views_registry import dynamic_item_cases as tool_dynamic_item_cases
     _U = "0f7d9c62-3b4e-4a1f-9c2d-5e6f70819a2b"
     _SNOWFLAKE = 123456789012345678
@@ -183,6 +184,7 @@ def _dynamic_item_cases():
         (StaffPanelPermsSelect, (_SNOWFLAKE, _SNOWFLAKE2, "Supervisor_Mod")),
         (StaffPanelActionButton, ("save", _SNOWFLAKE, _SNOWFLAKE2)),
         (FlexSendButton, (_SNOWFLAKE,)),
+        (FinishWindowButton, (_SNOWFLAKE, _SNOWFLAKE2)),
         # Tickets — the public panel (whoever clicks opens a ticket)…
         (TicketOpenButton, ("p_ab12cd", "c_ab12cd")),
         (TicketOpenSelect, ("p_ab12cd",)),
