@@ -11,7 +11,7 @@ Three things were missing, and all three left messages behind:
   overwrote the first and the first stayed forever. Responses are a **list**
   now.
 - **A command answers after the deletion.** `t.role` again — its report lands up
-  to `WINDOW_SECONDS` after the window card, and a staffer who deleted their
+  to `WINDOW_SECONDS` (20 min) after the window card, and a staffer who deleted their
   message in between got the report anyway. A command is marked as running for
   its whole execution, so a deletion during it removes what has been sent and
   what is still to come.

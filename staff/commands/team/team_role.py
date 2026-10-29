@@ -25,6 +25,8 @@ See docs/features/LINKED_ROLES.md.
 """
 
 import logging
+import re
+import time
 from typing import List, Optional, Tuple
 
 import discord
@@ -34,7 +36,8 @@ from staff.framework import (
     StaffCommand, SlashOption, staff_command, design, CommandType, parse_guild_id,
 )
 from utils import emojis
-from utils.i18n import t
+from utils.errors import NotYours
+from utils.i18n import i18n, t
 from utils.members import get_or_fetch_member
 from utils.moddy_team_role import (
     KINDS, LINKED_ROLES_URL, MANAGER, TEAM, TeamRoleKind, can_manage,
@@ -73,10 +76,8 @@ def _blocker(guild: discord.Guild, member, roles: List[discord.Role]) -> str:
     me = guild.me
     if member is None:
         return "not_member"
-    if member.id == guild.owner_id:
-        # The owner already has every permission; lending them one is absurd,
-        # and Discord refuses to edit the owner's roles anyway.
-        return "owner"
+    # The owner is not refused: they get the throwaway role like anybody else
+    # (and keep their own roles — see `linking.removable_roles`).
     if linking.active_session(guild.id) is not None:
         return "busy"
     if not me or not me.guild_permissions.manage_roles:
@@ -104,26 +105,93 @@ def requirement_list(pairs: List[Tuple[TeamRoleKind, discord.Role]]) -> str:
 
 
 def _window_card(locale: str, pairs: List[Tuple[TeamRoleKind, discord.Role]],
-                 staying=()) -> BaseView:
-    """The instructions the staffer has one window to follow.
+                 staying=(), *, guild_id: int, staff_id: int,
+                 deadline: int) -> BaseView:
+    """The instructions, and the Finish button that closes the window.
 
     ``staying`` are the roles Moddy cannot set aside (they sit at or above its
     own). When there are any, the card says the containment is partial rather
     than letting the staffer believe in a box that is not closed.
+    ``deadline`` is the Unix time the window closes on its own.
     """
     view = BaseView()
     container = design.make_container("warning")
     container.add_item(ui.TextDisplay(
-        f"{design.title_line(emojis.PENDING, t('staff.team.role.window_title', locale=locale, seconds=linking.WINDOW_SECONDS))}\n"
+        f"{design.title_line(emojis.PENDING, t('staff.team.role.window_title', locale=locale, minutes=linking.WINDOW_SECONDS // 60))}\n"
         f"{t('staff.team.role.window', locale=locale)}\n"
         f"{requirement_list(pairs)}\n"
-        f"-# {t('staff.team.role.window_note', locale=locale)}"
+        f"-# {t('staff.team.role.window_note', locale=locale, deadline=f'<t:{deadline}:R>')}"
     ))
     if staying:
         container.add_item(ui.TextDisplay(
             f"-# {t('staff.team.role.window_kept_roles', locale=locale, roles=', '.join(r.mention for r in staying))}"))
+    row = ui.ActionRow()
+    row.add_item(FinishWindowButton(guild_id, staff_id, locale=locale))
+    container.add_item(row)
     view.add_item(container)
     return view
+
+
+def _closed_card(locale: str) -> BaseView:
+    """What the window card becomes once the window is over (no button left)."""
+    view = BaseView()
+    container = design.make_container("neutral")
+    container.add_item(ui.TextDisplay(
+        design.title_line(emojis.DONE, t("staff.team.role.window_closed", locale=locale))))
+    view.add_item(container)
+    return view
+
+
+class FinishWindowButton(ui.DynamicItem[ui.Button],
+                         template=r"moddy:teamrole:finish:(?P<guild>\d+):(?P<staff>\d+)"):
+    """**Finish** on the window card: closes the window and gives the roles back.
+
+    Carries the guild (the card may sit in another server when the command
+    targeted one by id) and the staffer, who alone may press it. After a
+    restart the window is already torn down at boot, so a click only says so.
+    """
+
+    def __init__(self, guild_id: int, staff_id: int, *, locale: str = "en-US"):
+        super().__init__(ui.Button(
+            label=t("staff.team.role.finish", locale=locale)[:80],
+            style=discord.ButtonStyle.success,
+            emoji=discord.PartialEmoji.from_str(emojis.DONE),
+            custom_id=f"moddy:teamrole:finish:{guild_id}:{staff_id}",
+        ))
+        self.guild_id = int(guild_id)
+        self.staff_id = int(staff_id)
+
+    @classmethod
+    async def from_custom_id(cls, interaction: discord.Interaction, item: ui.Button,
+                             match: re.Match):
+        return cls(int(match["guild"]), int(match["staff"]),
+                   locale=i18n.get_user_locale(interaction))
+
+    async def callback(self, interaction: discord.Interaction):
+        try:
+            if interaction.user.id != self.staff_id:
+                raise NotYours()
+            if linking.finish(self.guild_id, self.staff_id):
+                # The command edits this card and posts the report itself.
+                await interaction.response.defer()
+                return
+            await interaction.response.send_message(
+                t("staff.team.role.already_closed",
+                  locale=i18n.get_user_locale(interaction)),
+                ephemeral=True)
+        except Exception as e:  # noqa: BLE001 — no live BaseView to catch it
+            from cogs.error_handler import report_component_error
+            await report_component_error(interaction, e, self.__class__.__name__)
+
+
+class TeamRoleWindowPersistence(BaseView):
+    """Marker view: registers the Finish button at startup."""
+
+    __persistent__ = True
+
+    @classmethod
+    def register_persistent(cls, bot) -> None:
+        bot.add_dynamic_items(FinishWindowButton)
 
 
 @staff_command
@@ -210,38 +278,38 @@ class TeamRoleCommand(StaffCommand):
                             ctx.author.id, kind.name, gid)
             roles.append((kind, role))
 
-        # --- 2. the ones that still need a requirement ---------------------
-        pending = [(kind, role) for kind, role in roles if not is_linked(role)]
-        if not pending:
-            logger.info("No linking window in guild %s for staff %s: every role "
-                        "already carries a requirement", gid, ctx.author.id)
+        # --- 2. the window — every time, linked or not ---------------------
+        # A role that already carries a requirement still gets a window: the
+        # staffer may be here to check it, or to redo it.
         outcome = None
-        blocker = ""
         linked_now = set()
-        if pending:
-            # Never `guild.get_member` alone: members are not chunked at startup
-            # (config.CHUNK_GUILDS_AT_STARTUP), so a cache miss would report a
-            # staffer standing in the server as "not a member" and the window —
-            # throwaway role included — would never open.
-            member = await get_or_fetch_member(guild, ctx.author.id)
-            blocker = _blocker(guild, member, [role for _, role in pending])
-            if blocker:
-                # Without this line a refused window leaves no trace in the logs.
-                logger.info("No linking window in guild %s for staff %s: %s",
-                            gid, ctx.author.id, blocker)
-            else:
-                # Tell them what to do *before* the clock starts: the card is
-                # the instructions, and the window is not long enough to read
-                # them afterwards.
-                await ctx.send(view=_window_card(
-                    locale, pending,
-                    staying=linking.unstrippable_roles(guild, member)))
-                result = await linking.run_window(ctx.bot, guild, member,
-                                                  [role for _, role in pending])
-                outcome = result.outcome
-                # The window's own answer, not `role.tags`: a role fetched to
-                # confirm the outcome is not the cached object this holds.
-                linked_now = result.linked_ids
+        # Never `guild.get_member` alone: members are not chunked at startup
+        # (config.CHUNK_GUILDS_AT_STARTUP), so a cache miss would report a
+        # staffer standing in the server as "not a member" and the window —
+        # throwaway role included — would never open.
+        member = await get_or_fetch_member(guild, ctx.author.id)
+        blocker = _blocker(guild, member, [role for _, role in roles])
+        if blocker:
+            # Without this line a refused window leaves no trace in the logs.
+            logger.info("No linking window in guild %s for staff %s: %s",
+                        gid, ctx.author.id, blocker)
+        else:
+            card = await ctx.send(view=_window_card(
+                locale, roles,
+                staying=linking.unstrippable_roles(guild, member),
+                guild_id=guild.id, staff_id=ctx.author.id,
+                deadline=int(time.time()) + linking.WINDOW_SECONDS))
+            result = await linking.run_window(ctx.bot, guild, member,
+                                              [role for _, role in roles])
+            outcome = result.outcome
+            # The window's own answer, not `role.tags`: a role fetched to
+            # confirm the outcome is not the cached object this holds.
+            linked_now = result.linked_ids
+            if card is not None:
+                try:
+                    await card.edit(view=_closed_card(locale))
+                except discord.HTTPException:
+                    pass  # the report below says it all anyway
 
         await ctx.send(view=self._report(locale, guild, roles, created_keys,
                                          outcome, blocker, linked_now))

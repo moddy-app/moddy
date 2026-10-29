@@ -24,7 +24,8 @@ length of one window, inside a box built to be as small as a box can be:
 It is a privilege escalation, and it is a deliberate one: no administrator of
 the server approves it, unlike `/team access`. It is confined, undone, logged
 and short — but the honest description is that Moddy hands one of its own staff
-`Manage Roles` in somebody else's server for half a minute.
+`Manage Roles` in somebody else's server until they press Finish — twenty
+minutes at most.
 
 Two consequences follow, and both are load-bearing:
 
@@ -60,10 +61,10 @@ from utils.members import get_or_fetch_member
 
 logger = logging.getLogger("moddy.team_link_session")
 
-#: How long the staffer has. Seven clicks per role is a lot; the number stays
-#: deliberately tight — the window is an escalation — but it has to cover two
-#: bindings now, not one.
-WINDOW_SECONDS = 75
+#: The longest a window may stay open. The staffer closes it themselves with
+#: the **Finish** button on the card; this is only the backstop for one they
+#: forget — the window is an escalation, it never stays open indefinitely.
+WINDOW_SECONDS = 20 * 60
 
 #: Name of the throwaway role. Recognisable in the audit log of a server that
 #: will, rightly, wonder what happened.
@@ -73,7 +74,8 @@ TEMP_ROLE_NAME = "Moddy Team — linking"
 SESSION_PATH = "moddy_team.link_session"
 
 #: Why a window ended. The card the staffer reads is built from this.
-DONE = "done"              #: every requirement appeared — the whole point
+DONE = "done"              #: every role carries its requirement at the end
+FINISHED = "finished"      #: the staffer pressed Finish with a role still unlinked
 PARTIAL = "partial"        #: one role was linked, the other was not
 EXPIRED = "expired"        #: the clock ran out with nothing linked
 CANCELLED = "cancelled"    #: the staffer did something else, and it was undone
@@ -129,8 +131,10 @@ class LinkSession:
         self.guild = guild
         self.member = member
         self.team_roles: List[discord.Role] = list(team_roles)
-        #: Ids still waiting for a requirement. Emptying it is the success.
-        self.pending: Set[int] = {role.id for role in self.team_roles}
+        #: Ids still waiting for a requirement. A role that already carries one
+        #: is not waiting: the window may be opened to check or redo it.
+        self.pending: Set[int] = {role.id for role in self.team_roles
+                                  if not is_linked(role)}
         #: Ids linked during this window — what tells `partial` from `expired`.
         self.linked: Set[int] = set()
         self.temp_role: Optional[discord.Role] = None
@@ -145,11 +149,14 @@ class LinkSession:
         return {role.id for role in self.team_roles}
 
     def mark_linked(self, role_id: int) -> None:
-        """One of the roles got its requirement; resolve once none is left."""
+        """One of the roles got its requirement.
+
+        Recorded only: the window does not close on it. The staffer closes it
+        with Finish (or the clock does), so they can check what they did — or
+        link the second role — without the box shutting under them.
+        """
         self.linked.add(role_id)
         self.pending.discard(role_id)
-        if not self.pending:
-            self.resolve(DONE)
 
     def resolve(self, outcome: str) -> None:
         """End the window with an outcome. Safe to call more than once."""
@@ -169,6 +176,18 @@ _sessions: Dict[int, LinkSession] = {}
 
 def active_session(guild_id: int) -> Optional[LinkSession]:
     return _sessions.get(guild_id)
+
+
+def finish(guild_id: int, staff_id: int) -> bool:
+    """Close the window ``staff_id`` holds in ``guild_id`` (the Finish button).
+
+    ``False`` when there is none — already closed, or a restart tore it down.
+    """
+    session = _sessions.get(guild_id)
+    if session is None or session.member.id != staff_id or session.finished.done():
+        return False
+    session.resolve(FINISHED)
+    return True
 
 
 # --------------------------------------------------------------------------- #
@@ -226,8 +245,12 @@ def removable_roles(guild: discord.Guild, member: discord.Member) -> List[discor
     - roles **at or above Moddy's own top role**, which Discord refuses to touch
       whoever holds them.
 
-    Everything else goes, and comes back at the end.
+    Everything else goes, and comes back at the end. The server's **owner** keeps
+    everything: they hold every permission whatever their roles, so there is
+    nothing to contain — they still get the throwaway role like anybody else.
     """
+    if getattr(member, "id", None) == getattr(guild, "owner_id", None) is not None:
+        return []
     me = guild.me
     top = me.top_role if me else None
     return [r for r in member.roles
@@ -491,7 +514,7 @@ async def run_window(bot, guild: discord.Guild, member: discord.Member,
                      getattr(e, "code", "?"), getattr(e, "text", None) or e)
         outcome = FAILED
     finally:
-        if outcome in (EXPIRED, CANCELLED):
+        if outcome in (EXPIRED, CANCELLED, FINISHED):
             # The gateway can miss a role update; ask Discord directly before
             # telling a staffer who did everything right that they failed.
             outcome = await _confirm_outcome(session, outcome)
@@ -517,8 +540,8 @@ async def _confirm_outcome(session: LinkSession, outcome: str) -> str:
         return DONE
     # A cancelled window stays cancelled: the staffer did something they should
     # not have, and that is what the card must say, whatever got linked.
-    if outcome == CANCELLED:
-        return CANCELLED
+    if outcome in (CANCELLED, FINISHED):
+        return outcome
     return PARTIAL if session.linked else EXPIRED
 
 
