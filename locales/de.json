@@ -352,7 +352,8 @@
         "add_bot": "Bot hinzufügen",
         "description": "Beschreibung",
         "avatar": "Avatar",
-        "banner": "Banner"
+        "banner": "Banner",
+        "flex": "Flex senden"
       },
       "bot_info": {
         "title": "<:code:1519794490750271641> Bot-Informationen - {name}",

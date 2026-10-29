@@ -414,7 +414,7 @@ was easier not to" is not one.
   by design" per its own docstring: every control is a no-op preview
   handler with nothing to reconstruct.
 - **`cogs/translate.py::TranslateView`, `cogs/invite.py::InviteView` /
-  `ServerInfoView`, `cogs/user.py::UserInfoView`,
+  `ServerInfoView`, `cogs/user.py::UserInfoView` (except its staff Flex button, a persistent `DynamicItem` — `utils/staff_flex.py`),
   `cogs/emoji.py::EmojiNavigationView`** — each renders from a payload
   fetched once from an external API (DeepL, Discord's invite/user APIs) and
   held only in memory; persisting them means re-fetching from that API on

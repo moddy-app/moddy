@@ -225,7 +225,7 @@ arguments (used by `sql` and `jsk`). **Commands must not log themselves.**
 | `server` | `serverinfo` | Server info + DB attributes |
 | `user` | `whois` | Everything about a user: Discord, Moddy account, subscription, staff, attributes, cases, notifications. Email / billing / preferences need the `user_lookup` node |
 | `mutualserver` | — | Mutual guilds with a user |
-| `flex` | — | Public staff verification message |
+| `flex` | — | Public staff verification message. Also reachable from `/user` on yourself in a DM / group DM: a staffer gets a **Flex** button that answers publicly (`utils/staff_flex.py`) |
 | `subscription` | — | Check a user's subscription status |
 | `role` | — | Create (or inspect) a server's **Moddy Team** role — the one bound to the *Moddy Team* linked role |
 | `access` | — | Ask that server's administrators for permissions on the Moddy Team role, with an Accept/Refuse card |

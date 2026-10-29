@@ -20,6 +20,7 @@ from utils.emojis import (
     get_user_verification_badge, format_verification_badge,
 )
 from utils.i18n import i18n
+from utils.staff_flex import FlexSendButton, is_private_context, staff_roles
 
 def _format_org_names(orgs: list, locale: str) -> str:
     """Format a list of org names into a readable string with locale-aware joining."""
@@ -44,8 +45,11 @@ DISCORD_BADGE_URLS = {
 class UserInfoView(BaseView):
     """View for displaying user information using Components V2"""
 
-    def __init__(self, user_data: dict, bot_data: Optional[dict], moddy_attributes: dict, locale: str, author_id: int, bot, user_verification_data: dict = None):
+    def __init__(self, user_data: dict, bot_data: Optional[dict], moddy_attributes: dict, locale: str, author_id: int, bot, user_verification_data: dict = None,
+                 show_flex: bool = False):
         super().__init__(timeout=180)
+        # A staffer looking themselves up in a DM: offer the public flex card.
+        self.show_flex = show_flex
         self.user_data = user_data
         self.bot_data = bot_data
         self.moddy_attributes = moddy_attributes
@@ -431,6 +435,11 @@ class UserInfoView(BaseView):
             )
             button_row.add_item(add_bot_btn)
 
+        if self.show_flex:
+            # Persistent on its own (DynamicItem keyed by the staffer's id),
+            # unlike the rest of this view.
+            button_row.add_item(FlexSendButton(self.author_id, locale=self.locale))
+
         self.add_item(button_row)
 
     async def on_bot_info_click(self, interaction: discord.Interaction):
@@ -718,6 +727,14 @@ class User(commands.Cog):
                 # If user not in DB, that's okay
                 pass
 
+        # Looking yourself up in a DM, as staff: add the Flex button. Its click
+        # answers publicly, so the other side of the DM sees the proof.
+        show_flex = (
+            user.id == interaction.user.id
+            and is_private_context(interaction)
+            and bool(await staff_roles(interaction.user.id))
+        )
+
         # Create the view
         view = UserInfoView(
             user_data=user_data,
@@ -726,7 +743,8 @@ class User(commands.Cog):
             locale=locale,
             author_id=interaction.user.id,
             bot=self.bot,
-            user_verification_data=user_verification_data
+            user_verification_data=user_verification_data,
+            show_flex=show_flex,
         )
 
         # Update the message with the view
