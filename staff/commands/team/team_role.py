@@ -212,6 +212,9 @@ class TeamRoleCommand(StaffCommand):
 
         # --- 2. the ones that still need a requirement ---------------------
         pending = [(kind, role) for kind, role in roles if not is_linked(role)]
+        if not pending:
+            logger.info("No linking window in guild %s for staff %s: every role "
+                        "already carries a requirement", gid, ctx.author.id)
         outcome = None
         blocker = ""
         linked_now = set()
@@ -222,7 +225,11 @@ class TeamRoleCommand(StaffCommand):
             # throwaway role included — would never open.
             member = await get_or_fetch_member(guild, ctx.author.id)
             blocker = _blocker(guild, member, [role for _, role in pending])
-            if not blocker:
+            if blocker:
+                # Without this line a refused window leaves no trace in the logs.
+                logger.info("No linking window in guild %s for staff %s: %s",
+                            gid, ctx.author.id, blocker)
+            else:
                 # Tell them what to do *before* the clock starts: the card is
                 # the instructions, and the window is not long enough to read
                 # them afterwards.
