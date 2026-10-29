@@ -71,6 +71,7 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
     from staff.commands.dev.serverlist import ServerListView
     from staff.commands.manage.staff import StaffManagerPanel
     from utils.team_access_views import TeamAccessPickerView, TeamAccessRequestView
+    from utils.staff_config_views import StaffConfigLauncherView
     from utils.cases_views import CasesBrowserView
     from utils.appeal_views import AppealPersistence
     from utils.global_sanction_views import GlobalSanctionPersistence
@@ -283,6 +284,10 @@ def _collect_persistent_view_classes() -> List[Type["BaseView"]]:
         # Moddy Team role's permissions.
         TeamAccessPickerView,
         TeamAccessRequestView,
+        # Group 16b — `t.config`: the launcher card's button opening the
+        # server's /config panel privately (auth re-derived on every click:
+        # the clicker must be allowed to run t.config).
+        StaffConfigLauncherView,
         # Group 17 — utility tools (/define, /regex, /password, /status,
         # /image…) and the music links / translate button modules. Each theme
         # lists its own classes in its views module; see

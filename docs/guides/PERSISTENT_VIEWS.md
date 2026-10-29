@@ -173,7 +173,7 @@ today's UX, and document it in a comment above `register_persistent`.
 |---|---|---|
 | Public informational (`/moddy`, `/roll`) | **Public** | No check. Anyone who can see the message can click. |
 | Personal data (reminders, preferences, saved messages, user cases) | **Owner only** | Encode `user_id` in the custom_id (via a `DynamicItem`), compare to `interaction.user.id` on click. Reject mismatches with an ephemeral error. |
-| Guild config panels (`/config`, `modules/configs/*`) | **Guild permission** | `interaction.guild_id` is already on the interaction — a static namespaced custom_id plus a re-checked `manage_guild` permission is enough. No `DynamicItem` needed for this class of view. Use the shared `modules/configs/_common.py::check_guild_perms(interaction)` helper rather than re-implementing the check per panel. |
+| Guild config panels (`/config`, `modules/configs/*`) | **Guild permission** | `interaction.guild_id` is already on the interaction — a static namespaced custom_id plus a re-checked `manage_guild` permission is enough. No `DynamicItem` needed for this class of view. Use the shared `modules/configs/_common.py::check_guild_perms(interaction)` helper rather than re-implementing the check per panel — it also carries the one staff key (`t.config`: a staffer, on an **ephemeral** panel only), which a hand-rolled check would miss. |
 | Staff tools (`staff/*`) | **Staff rank** | On click, re-run `utils/staff_permissions.py` check — no user_id in custom_id, unless the view is also owner-scoped (e.g. "only the staffer who opened this may use it"), in which case encode `owner_id` too. |
 
 When the auth check fails, respond with an ephemeral

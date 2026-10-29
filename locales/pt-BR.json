@@ -4506,6 +4506,15 @@
         "open_channel": "Abrir o canal",
         "role_created": "O cargo {role} não existia: acaba de ser criado.",
         "not_linked": "O cargo ainda não está vinculado ao cargo vinculado *Moddy Team*: ninguém o possui até um administrador adicionar o requisito. Rode `/team role` para ver o passo a passo."
+      },
+      "config": {
+        "title": "Configuração do servidor",
+        "description": "Abre o painel `/config` deste servidor para intervir, exatamente como a administração o vê.",
+        "staff_only": "Somente a equipe Moddy: o painel abre em privado, só quem clica o vê.",
+        "open": "Abrir o painel",
+        "not_staff": "<:error:1519790252594827264> Somente a equipe Moddy pode abrir este painel.",
+        "failed_title": "Não foi possível abrir o painel",
+        "guild_only": "Use este comando em um canal de um servidor onde o Moddy está."
       }
     },
     "mod": {

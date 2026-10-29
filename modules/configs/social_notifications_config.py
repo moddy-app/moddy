@@ -137,9 +137,13 @@ def _placeholder_help(platform: str, locale: str) -> str:
 
 
 async def _check_perms(interaction: discord.Interaction) -> bool:
-    """Authorize a config interaction: requires Manage Server in this guild."""
+    """Authorize a config interaction: requires Manage Server in this guild
+    (or a staffer in the private ``t.config`` panel, see check_guild_perms)."""
     perms = getattr(interaction.user, "guild_permissions", None)
-    if not interaction.guild_id or perms is None or not perms.manage_guild:
+    if interaction.guild_id and perms is not None and perms.manage_guild:
+        return True
+    from utils.staff_config_views import is_staff_config_session
+    if not interaction.guild_id or not await is_staff_config_session(interaction):
         await say(
             interaction,
             t('modules.social_notifications.errors.no_permission',
