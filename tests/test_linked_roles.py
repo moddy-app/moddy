@@ -583,3 +583,56 @@ class TestLocales:
             for key, value in french.items():
                 assert (set(re.findall(r"\{(\w+)\}", value))
                         == set(re.findall(r"\{(\w+)\}", other[key]))), (locale, block, key)
+
+
+# --------------------------------------------------------------------------- #
+# `/team role` finds the staffer even when the member cache does not
+# --------------------------------------------------------------------------- #
+class TestTeamRoleFindsTheStaffer:
+    def test_a_cache_miss_still_opens_the_window(self, monkeypatch):
+        """Members are not chunked at startup: `guild.get_member` misses for a
+        staffer Moddy has not cached yet. That used to be reported as "not a
+        member", and the window — the throwaway role with it — never opened."""
+        from unittest.mock import AsyncMock
+
+        import staff.commands.team.team_role as team_role
+
+        staffer = SimpleNamespace(id=7)
+        role = SimpleNamespace(id=55, name="Moddy Team")
+        guild = SimpleNamespace(
+            id=1, name="srv", owner_id=99,
+            get_member=lambda uid: None,
+            fetch_member=AsyncMock(return_value=staffer),
+        )
+        bot = SimpleNamespace(get_guild=lambda gid: guild)
+        seen = {}
+
+        def blocker(g, member, roles):
+            seen["member"] = member
+            return ""
+
+        window = AsyncMock(return_value=WindowResult(DONE, {55}))
+        monkeypatch.setattr(team_role, "find_team_role", AsyncMock(return_value=role))
+        monkeypatch.setattr(team_role, "is_linked", lambda r: False)
+        monkeypatch.setattr(team_role, "_blocker", blocker)
+        monkeypatch.setattr(team_role, "_window_card", lambda *a, **k: "card")
+        monkeypatch.setattr(team_role.linking, "unstrippable_roles", lambda g, m: [])
+        monkeypatch.setattr(team_role.linking, "run_window", window)
+        monkeypatch.setattr(team_role.TeamRoleCommand, "_report",
+                            lambda self, *a: "report")
+
+        sent = []
+
+        async def send(view=None, content=None):
+            sent.append(view)
+
+        ctx = SimpleNamespace(
+            locale="en-US", bot=bot, author=staffer, guild=guild, send=send,
+            opt=lambda name, default=None: {"roles": "team"}.get(name, default),
+        )
+        run(team_role.TeamRoleCommand(bot=None).execute(ctx))
+
+        guild.fetch_member.assert_awaited_once_with(7)
+        assert seen["member"] is staffer
+        window.assert_awaited_once()
+        assert sent == ["card", "report"]

@@ -30,6 +30,7 @@ from staff.framework import (
 )
 from utils import emojis
 from utils.i18n import t
+from utils.members import get_or_fetch_member
 from utils.moddy_team_role import TEAM_ROLE_NAME, find_team_role
 from cogs.error_handler import BaseView
 
@@ -81,7 +82,8 @@ class TeamSeeCommand(StaffCommand):
             return
 
         channel = _target_channel(ctx.channel)
-        member = ctx.guild.get_member(ctx.author.id)
+        # Cache first, REST on a miss: members are not chunked at startup.
+        member = await get_or_fetch_member(ctx.guild, ctx.author.id)
 
         # The whole point: you open a door you are already standing in.
         if member is None or not channel.permissions_for(member).view_channel:

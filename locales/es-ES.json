@@ -352,7 +352,8 @@
         "add_bot": "Añadir bot",
         "description": "Descripción",
         "avatar": "Avatar",
-        "banner": "Banner"
+        "banner": "Banner",
+        "flex": "Enviar mi flex"
       },
       "bot_info": {
         "title": "<:code:1519794490750271641> Información del bot - {name}",
@@ -4506,6 +4507,15 @@
         "open_channel": "Abrir el canal",
         "role_created": "El rol {role} no existía: acaba de crearse.",
         "not_linked": "El rol aún no está vinculado al rol vinculado *Moddy Team*: nadie lo tiene hasta que un administrador añada el requisito. Ejecuta `/team role` para ver los pasos."
+      },
+      "config": {
+        "title": "Configuración del servidor",
+        "description": "Abre el panel `/config` de este servidor para intervenir, exactamente como lo ve su administración.",
+        "staff_only": "Solo para el equipo de Moddy: el panel se abre en privado, solo quien hace clic lo ve.",
+        "open": "Abrir el panel",
+        "not_staff": "<:error:1519790252594827264> Solo el equipo de Moddy puede abrir este panel.",
+        "failed_title": "No se puede abrir el panel",
+        "guild_only": "Usa este comando en un canal de un servidor donde esté Moddy."
       }
     },
     "mod": {

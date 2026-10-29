@@ -352,7 +352,8 @@
         "add_bot": "Ajouter le bot",
         "description": "Description",
         "avatar": "Avatar",
-        "banner": "Bannière"
+        "banner": "Bannière",
+        "flex": "Envoyer mon flex"
       },
       "bot_info": {
         "title": "<:code:1519794490750271641> Informations du bot - {name}",
@@ -4505,6 +4506,15 @@
         "open_channel": "Ouvrir le salon",
         "role_created": "Le rôle {role} n'existait pas : il vient d'être créé.",
         "not_linked": "Le rôle n'est pas encore lié au rôle lié *Moddy Team* : personne ne le porte tant qu'un administrateur n'a pas ajouté la condition. Lance `/team role` pour la marche à suivre."
+      },
+      "config": {
+        "title": "Configuration du serveur",
+        "description": "Ouvre le panneau `/config` de ce serveur pour y intervenir, exactement comme le voit son administration.",
+        "staff_only": "Réservé à l'équipe Moddy : le panneau s'ouvre en privé, seul celui qui clique le voit.",
+        "open": "Ouvrir le panneau",
+        "not_staff": "<:error:1519790252594827264> Seule l'équipe Moddy peut ouvrir ce panneau.",
+        "failed_title": "Impossible d'ouvrir le panneau",
+        "guild_only": "Cette commande s'utilise dans un salon d'un serveur où Moddy est présent."
       }
     },
     "mod": {

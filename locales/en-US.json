@@ -352,7 +352,8 @@
         "add_bot": "Add Bot",
         "description": "Description",
         "avatar": "Avatar",
-        "banner": "Banner"
+        "banner": "Banner",
+        "flex": "Send my flex"
       },
       "bot_info": {
         "title": "<:code:1519794490750271641> Bot Information - {name}",
@@ -4506,6 +4507,15 @@
         "open_channel": "Open the channel",
         "role_created": "The {role} role did not exist: it has just been created.",
         "not_linked": "The role is not bound to the *Moddy Team* linked role yet: nobody holds it until an administrator adds the requirement. Run `/team role` for the steps."
+      },
+      "config": {
+        "title": "Server configuration",
+        "description": "Opens this server's `/config` panel to step in, exactly as its administrators see it.",
+        "staff_only": "Moddy team only: the panel opens privately, only whoever clicks sees it.",
+        "open": "Open the panel",
+        "not_staff": "<:error:1519790252594827264> Only the Moddy team can open this panel.",
+        "failed_title": "Cannot open the panel",
+        "guild_only": "Use this command in a channel of a server Moddy is in."
       }
     },
     "mod": {

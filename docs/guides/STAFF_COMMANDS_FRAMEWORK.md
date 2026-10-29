@@ -225,15 +225,16 @@ arguments (used by `sql` and `jsk`). **Commands must not log themselves.**
 | `server` | `serverinfo` | Server info + DB attributes |
 | `user` | `whois` | Everything about a user: Discord, Moddy account, subscription, staff, attributes, cases, notifications. Email / billing / preferences need the `user_lookup` node |
 | `mutualserver` | — | Mutual guilds with a user |
-| `flex` | — | Public staff verification message |
+| `flex` | — | Public staff verification message. Also reachable from `/user` on yourself in a DM / group DM: a staffer gets a **Flex** button that answers publicly (`utils/staff_flex.py`) |
 | `subscription` | — | Check a user's subscription status |
 | `role` | — | Create (or inspect) a server's **Moddy Team** role — the one bound to the *Moddy Team* linked role |
 | `access` | — | Ask that server's administrators for permissions on the Moddy Team role, with an Accept/Refuse card |
 | `ticket` | — | Open a Moddy staff ticket in a server, without going through its own ticket configuration |
+| `config` | — | Open this server's `/config` panel (the real one) to configure it for them. Always private: the slash form answers ephemerally, `t.config` posts a launcher card whose button (staff-only, re-checked on every click) opens the panel ephemerally — so nobody but staff can interact with it. See `utils/staff_config_views.py` |
 | `help` | — | List available commands *(legacy, message-only)* |
 
-The last three are the field commands: they are what a staffer runs *inside*
-somebody else's server. All three revolve around one role and grant nothing to
+`ticket`, `access`, `role` and `config` are the field commands: they are what a staffer runs *inside*
+somebody else's server. The first three revolve around one role and grant nothing to
 anybody's account — see [LINKED_ROLES.md](../features/LINKED_ROLES.md).
 
 ### `/manage` (Management)

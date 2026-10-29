@@ -35,6 +35,7 @@ from staff.framework import (
 )
 from utils import emojis
 from utils.i18n import t
+from utils.members import get_or_fetch_member
 from utils.moddy_team_role import (
     KINDS, LINKED_ROLES_URL, MANAGER, TEAM, TeamRoleKind, can_manage,
     create_team_role, find_team_role, is_linked,
@@ -215,7 +216,11 @@ class TeamRoleCommand(StaffCommand):
         blocker = ""
         linked_now = set()
         if pending:
-            member = guild.get_member(ctx.author.id)
+            # Never `guild.get_member` alone: members are not chunked at startup
+            # (config.CHUNK_GUILDS_AT_STARTUP), so a cache miss would report a
+            # staffer standing in the server as "not a member" and the window —
+            # throwaway role included — would never open.
+            member = await get_or_fetch_member(guild, ctx.author.id)
             blocker = _blocker(guild, member, [role for _, role in pending])
             if not blocker:
                 # Tell them what to do *before* the clock starts: the card is

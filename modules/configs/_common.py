@@ -42,9 +42,17 @@ from utils.bot_permissions import (
 
 
 async def check_guild_perms(interaction: discord.Interaction) -> bool:
-    """Authorize a config interaction: requires Manage Server in this guild."""
+    """Authorize a config interaction: requires Manage Server in this guild.
+
+    The one other key is a Moddy staffer working in the private panel
+    ``t.config`` handed them (``utils/staff_config_views.py``); a public panel
+    never lets staff through.
+    """
     perms = getattr(interaction.user, "guild_permissions", None)
-    if not interaction.guild_id or perms is None or not perms.manage_guild:
+    if interaction.guild_id and perms is not None and perms.manage_guild:
+        return True
+    from utils.staff_config_views import is_staff_config_session
+    if not interaction.guild_id or not await is_staff_config_session(interaction):
         locale = i18n.get_user_locale(interaction)
         message = t("modules.config.errors.no_user_perms", locale=locale)
         if interaction.response.is_done():

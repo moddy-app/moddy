@@ -210,6 +210,7 @@ moddy/
 │   │                          #   user card: account, billing, cases, notifications;
 │   │                          #   /team role, /team access, /team ticket — the
 │   │                          #   two Moddy Team linked roles (team + manager),
+│   │                          #   /team config — a server's /config panel, staff-only,
 │   │                          #   permission requests and staff tickets,
 │   │                          #   see docs/features/LINKED_ROLES.md)
 │   ├── commands/mod/          #   /mod commands + case/, global/ and altguard/ sub-groups
@@ -276,6 +277,8 @@ moddy/
 │   ├── altguard_views.py      #   AltGuard panel (persistent), consent Modal V2, link + log cards
 │   ├── moddy_team_role.py     #   The two Moddy Team roles: kinds, find/create/remember, linked state
 │   ├── team_access_views.py   #   /team access: permission picker + admin request card (persistent)
+│   ├── staff_config_views.py  #   t.config: launcher card + staff key into /config (private panels only)
+│   ├── staff_flex.py          #   Staff flex card (t.flex) + /user Flex button in DMs (persistent, public answer)
 │   ├── automod_shadow_views.py #  Automod shadow-mode (dry_run) SIMULATION card + annotation buttons (persistent)
 │   ├── automod_approval_views.py # Automod alert card (applied vs failed actions) + moderator Approve/Reject buttons (persistent)
 │   ├── automod_label_views.py #   Automod team labeling card, labels/category/terms (persistent) + Modal V2
@@ -413,6 +416,8 @@ moddy/
     │                          #   settings, membership changes
     ├── test_ticket_ratings.py #   Tickets: rating modal, DM button, stats cards
     ├── test_linked_roles.py   #   moddy:staff publication, /team access catalogue, staff tickets
+    ├── test_staff_config.py   #   t.config: staff key into /config only on private panels, launcher card
+    ├── test_staff_flex.py     #   Flex card, /user Flex button (owner-only, public, DM-only)
     ├── test_transcription.py  #   Voice transcription helpers, guard rails, cards
     ├── test_notifications.py  #   Notifications: hashing, attribution, report rules, i18n
     ├── test_support_requests.py #  Support requests: cards, buttons, beta card, welcome DM
