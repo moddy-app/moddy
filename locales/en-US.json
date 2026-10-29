@@ -4442,7 +4442,8 @@
         "finish": "Finish",
         "window_closed": "Window closed",
         "already_closed": "This window is already closed.",
-        "window_finished": "Window closed, {roles} still has no requirement. Run the command again."
+        "window_finished": "Window closed, {roles} still has no requirement. Run the command again.",
+        "window_crowded": "No room under Moddy's role (Discord has several roles at the same position). In **Server Settings → Roles**, drag Moddy's role up one slot, then run the command again. Nothing was left in place."
       },
       "role_delete": {
         "title": "Moddy Team roles deleted",

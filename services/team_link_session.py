@@ -80,6 +80,7 @@ PARTIAL = "partial"        #: one role was linked, the other was not
 EXPIRED = "expired"        #: the clock ran out with nothing linked
 CANCELLED = "cancelled"    #: the staffer did something else, and it was undone
 FAILED = "failed"          #: Discord refused a step; nothing was left dangling
+CROWDED = "crowded"        #: no free slot under Moddy's role; nothing was left dangling
 
 #: Audit-log actions a staffer must not take while holding the throwaway role.
 #: ``role_update`` is watched too, but exempted for the roles being linked —
@@ -518,6 +519,9 @@ async def run_window(bot, guild: discord.Guild, member: discord.Member,
                 asyncio.shield(session.finished), timeout=WINDOW_SECONDS)
         except asyncio.TimeoutError:
             outcome = EXPIRED
+    except HierarchyCrowded as e:
+        logger.warning("No room under Moddy's role in guild %s: %s", guild.id, e)
+        outcome = CROWDED
     except (discord.HTTPException, ValueError) as e:
         me = guild.me
         logger.error("Could not open the linking window in guild %s (step: %s) — "
@@ -536,6 +540,18 @@ async def run_window(bot, guild: discord.Guild, member: discord.Member,
         await _teardown(session)
         _sessions.pop(guild.id, None)
     return WindowResult(outcome, session.linked)
+
+
+class HierarchyCrowded(ValueError):
+    """Moddy's role sits too low to number the roles under it one by one.
+
+    Discord lets several roles share a position (its docs: "roles with the
+    same position are sorted by id"), and a bot may only hand out positions
+    strictly below its own. When Moddy's role is, say, at 2 with three roles
+    under it, no payload can put the throwaway role above the Moddy Team role
+    — Discord answers 50013, Administrator or not. A human dragging Moddy's
+    role once in *Server Settings → Roles* renumbers the whole list.
+    """
 
 
 def bottom_positions(all_roles, me, team_roles, temp_role) -> Dict:
@@ -558,7 +574,11 @@ def bottom_positions(all_roles, me, team_roles, temp_role) -> Dict:
     moving_ids = {r.id for r in moving}
     others = sorted(r for r in all_roles
                     if not r.is_default() and r < top and r.id not in moving_ids)
-    return {role: index for index, role in enumerate(moving + others, start=1)}
+    order = moving + others
+    if len(order) >= top.position:
+        raise HierarchyCrowded(
+            f"{len(order)} roles to number under Moddy's role at {top.position}")
+    return {role: index for index, role in enumerate(order, start=1)}
 
 
 async def _confirm_outcome(session: LinkSession, outcome: str) -> str:

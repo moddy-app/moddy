@@ -21,3 +21,12 @@ role creation (Moddy's role not shifted up), the payload can still be
 refused; the new log line will show it (`Moddy top role at N` ≤ highest
 position sent). Next step then: ask an admin to drag Moddy's role up once,
 or handle it in code.
+
+## Follow-up: Moddy Team role already there
+Re-running `t.role` with the Moddy Team role already created recreated the
+throwaway role but never lent it. Same failure: the reorder was refused.
+`bottom_positions` now raises `HierarchyCrowded` when Moddy's role sits too
+low to number the roles under it (`len(order) >= top.position`), before
+anything is sent. The window ends with the new `crowded` outcome, the
+throwaway role is deleted, and the card tells the staffer to drag Moddy's role
+up once. The bot cannot do that itself: it may never move its own top role.

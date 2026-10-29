@@ -4442,7 +4442,8 @@
         "finish": "Terminar",
         "window_closed": "Ventana cerrada",
         "already_closed": "Esta ventana ya está cerrada.",
-        "window_finished": "Ventana cerrada, {roles} sigue sin condición. Vuelve a ejecutar el comando."
+        "window_finished": "Ventana cerrada, {roles} sigue sin condición. Vuelve a ejecutar el comando.",
+        "window_crowded": "No hay sitio bajo el rol de Moddy (Discord tiene varios roles en la misma posición). En **Ajustes del servidor → Roles**, sube el rol de Moddy un puesto y vuelve a ejecutar el comando. No se dejó nada a medias."
       },
       "role_delete": {
         "title": "Roles Moddy Team eliminados",

@@ -507,9 +507,9 @@ class TestLinkingWindow:
         """A window that ends with no explanation is a window nobody trusts."""
         with open(f"locales/{locale}.json", encoding="utf-8") as fh:
             role = json.load(fh)["staff"]["team"]["role"]
-        from services.team_link_session import FINISHED
+        from services.team_link_session import CROWDED, FINISHED
 
-        for outcome in (DONE, PARTIAL, EXPIRED, CANCELLED, FAILED, FINISHED):
+        for outcome in (DONE, PARTIAL, EXPIRED, CANCELLED, FAILED, FINISHED, CROWDED):
             assert f"window_{outcome}" in role, (locale, outcome)
         for blocker in ("not_member", "busy", "no_permission", "no_room"):
             assert f"blocked_{blocker}" in role, (locale, blocker)
@@ -719,3 +719,14 @@ class TestBottomPositions:
         result = bottom_positions([temp, fresh_team, moddy], self._me(moddy),
                                   [cached_team], temp)
         assert fresh_team in result and cached_team not in result
+
+    def test_moddy_too_low_is_reported_not_sent(self):
+        """Positions repeat on Discord. With Moddy's role at 2 and the Moddy
+        Team role existing already, the old payload {team: 1, temp: 2} put the
+        throwaway role level with Moddy: 50013, and the role never lent."""
+        from services.team_link_session import HierarchyCrowded, bottom_positions
+
+        temp, team = FakeRole(10, position=1), FakeRole(11, position=1)
+        moddy = FakeRole(13, managed=True, position=2)
+        with pytest.raises(HierarchyCrowded):
+            bottom_positions([temp, team, moddy], self._me(moddy), [team], temp)
