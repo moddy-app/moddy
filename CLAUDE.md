@@ -210,7 +210,7 @@ moddy/
 │   │                          #   user card: account, billing, cases, notifications;
 │   │                          #   /team role, /team access, /team ticket — the
 │   │                          #   two Moddy Team linked roles (team + manager),
-│                          #   /team config — a server's /config panel, staff-only,
+│   │                          #   /team config — a server's /config panel, staff-only,
 │   │                          #   permission requests and staff tickets,
 │   │                          #   see docs/features/LINKED_ROLES.md)
 │   ├── commands/mod/          #   /mod commands + case/, global/ and altguard/ sub-groups
