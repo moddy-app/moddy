@@ -4442,7 +4442,8 @@
         "finish": "Concluir",
         "window_closed": "Janela fechada",
         "already_closed": "Esta janela já está fechada.",
-        "window_finished": "Janela fechada, {roles} continua sem requisito. Execute o comando de novo."
+        "window_finished": "Janela fechada, {roles} continua sem requisito. Execute o comando de novo.",
+        "window_crowded": "Não há espaço abaixo do cargo do Moddy (o Discord tem vários cargos na mesma posição). Em **Configurações do servidor → Cargos**, suba o cargo do Moddy uma posição e execute o comando de novo. Nada ficou pela metade."
       },
       "role_delete": {
         "title": "Cargos Moddy Team excluídos",

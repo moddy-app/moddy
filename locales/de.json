@@ -4442,7 +4442,8 @@
         "finish": "Fertig",
         "window_closed": "Fenster geschlossen",
         "already_closed": "Dieses Fenster ist bereits geschlossen.",
-        "window_finished": "Fenster geschlossen, {roles} hat noch keine Bedingung. Führe den Befehl erneut aus."
+        "window_finished": "Fenster geschlossen, {roles} hat noch keine Bedingung. Führe den Befehl erneut aus.",
+        "window_crowded": "Kein Platz unter Moddys Rolle (Discord hat mehrere Rollen auf derselben Position). Zieh unter **Servereinstellungen → Rollen** Moddys Rolle eine Stufe nach oben und führe den Befehl erneut aus. Es wurde nichts halb erledigt zurückgelassen."
       },
       "role_delete": {
         "title": "Moddy-Team-Rollen gelöscht",

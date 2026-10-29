@@ -4441,7 +4441,8 @@
         "finish": "Terminer",
         "window_closed": "Fenêtre fermée",
         "already_closed": "Cette fenêtre est déjà fermée.",
-        "window_finished": "Fenêtre fermée, il reste {roles} sans condition. Relance la commande."
+        "window_finished": "Fenêtre fermée, il reste {roles} sans condition. Relance la commande.",
+        "window_crowded": "Pas de place sous le rôle de Moddy (Discord a plusieurs rôles à la même position). Dans **Paramètres du serveur → Rôles**, déplace le rôle de Moddy d'un cran vers le haut puis relance la commande. Rien n'a été laissé en place."
       },
       "role_delete": {
         "title": "Rôles Moddy Team supprimés",

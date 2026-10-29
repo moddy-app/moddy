@@ -214,6 +214,10 @@ ran it instead of sending them to find an administrator. See
    (`FinishWindowButton`, persistent, `moddy:teamrole:finish:<guild>:<staff>`
    — only that staffer may press it). `WINDOW_SECONDS` (20 minutes) is only the
    backstop for a window nobody closes.
+   The reorder (`bottom_positions`) works on a fresh `fetch_roles()` and
+   renumbers every role below Moddy's: roles to link, throwaway role, then the
+   rest in their order. It is never computed from the cache — two roles were
+   just created.
 5. Whatever the outcome: roles back, throwaway role deleted, the linked roles
    moved back under Moddy, stored session cleared.
 
@@ -233,7 +237,8 @@ outside the linking does — and the outcomes say how far it got:
 | `finished` | Finish was pressed with a role still unlinked |
 | `expired` | the clock ran out with nothing linked |
 | `cancelled` | the staffer did something outside the linking; it was reverted |
-| `failed` | Discord refused a setup step; nothing was left dangling |
+| `failed` | Discord refused a setup step; nothing was left dangling (the log names the step, Moddy's position and the positions sent) |
+| `crowded` | no free slot under Moddy's role: positions repeat on Discord, so the throwaway role cannot be placed above the Moddy Team role. An admin drags Moddy's role up once (*Server Settings → Roles*), which renumbers the list |
 
 `WINDOW_SECONDS` went from 30 to 75 when the second role landed, then to a
 20-minute cap with a Finish button: a countdown kept running out on staffers
