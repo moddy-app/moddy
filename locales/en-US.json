@@ -2150,7 +2150,7 @@
           "channel_placeholder": "Choose the alerts channel…",
           "level_question": "Which protection level do you want?",
           "level_hint": "You can fine-tune everything afterwards, one type of infraction at a time.",
-          "mode_question": "Start in simulation mode?",
+          "mode_question": "Enable the automod now?",
           "mode_hint": "Almost done! Choose how Moddy starts.",
           "mode_sim": "Start in simulation",
           "mode_sim_desc": "Moddy shows what it would do without sanctioning anyone. Ideal for the first days, to check it fits your server.",
@@ -2159,7 +2159,7 @@
           "mode_live_desc": "Moddy sanctions right away, for real.",
           "mode_live_button": "Enable",
           "skip": "Skip",
-          "skip_hint": "Skip starts with the Balanced level in simulation mode: Moddy shows what it would do without sanctioning anyone. You can change everything later."
+          "skip_hint": "Skip starts with the Balanced level, enabled: Moddy sanctions for real. You can switch to simulation or change everything later."
         },
         "preset": {
           "light": "Light",

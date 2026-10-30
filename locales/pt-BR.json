@@ -2150,7 +2150,7 @@
           "channel_placeholder": "Escolher o canal de alertas…",
           "level_question": "Qual nível de proteção você quer?",
           "level_hint": "Depois você poderá ajustar tudo, tipo de infração por tipo.",
-          "mode_question": "Começar em modo de simulação?",
+          "mode_question": "Ativar o automod agora?",
           "mode_hint": "Quase pronto! Escolha como o Moddy começa.",
           "mode_sim": "Começar em simulação",
           "mode_sim_desc": "O Moddy mostra o que faria sem punir ninguém. Ideal nos primeiros dias para ver se combina com seu servidor.",
@@ -2159,7 +2159,7 @@
           "mode_live_desc": "O Moddy pune imediatamente, para valer.",
           "mode_live_button": "Ativar",
           "skip": "Pular",
-          "skip_hint": "Pular começa com o nível Equilibrado em modo simulação: o Moddy mostra o que faria sem punir ninguém. Você poderá mudar tudo depois."
+          "skip_hint": "Pular começa com o nível Equilibrado, ativado: o Moddy pune para valer. Você poderá mudar para simulação ou alterar tudo depois."
         },
         "preset": {
           "light": "Leve",
