@@ -236,6 +236,10 @@ class ModdyBot(ModdyFrameworkBot):
         # global tree, so they can never leak to non-official servers.
         self.staff_slash_groups = []
 
+        # Standalone staff slash commands (e.g. /testerror): same rule as the
+        # groups above, OFFICIAL guilds only.
+        self.staff_guild_commands = []
+
         # Commands owned by a server module (e.g. /ticket), published ONLY in
         # the guilds where that module is enabled — see
         # register_module_commands(). module_id -> [app command objects].
@@ -1304,6 +1308,8 @@ class ModdyBot(ModdyFrameworkBot):
         if guild.id in official_ids:
             for group in (self.staff_slash_groups or []):
                 self.tree.add_command(group, guild=guild)
+            for command in self.staff_guild_commands:
+                self.tree.add_command(command, guild=guild)
 
     async def resync_module_commands(self, guild_id: int) -> bool:
         """Re-sync a guild's commands if its enabled-module set just changed.
