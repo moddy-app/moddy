@@ -1003,12 +1003,12 @@ class TestWizard:
 
     @pytest.mark.parametrize("cls", [home.AutomodWizardChannelView, home.AutomodWizardLevelView,
                                      home.AutomodWizardModeView])
-    async def test_skip_applies_balanced_in_simulation(self, cls):
+    async def test_skip_applies_balanced_active(self, cls):
         bot = make_bot({"notify_channel_id": CHANNEL})
         it = FakeInteraction(bot)
         await cls().on_skip(it)
         stored = bot.module_manager.stored
-        assert stored["state"] == "simulation" and stored["notify_channel_id"] == CHANNEL
+        assert stored["state"] == "active" and stored["notify_channel_id"] == CHANNEL
         assert stored["severity"] == 3 and stored["features"]["content"]["enabled"]
         assert not stored["features"]["profile"]["enabled"]
         assert isinstance(it.last, home.AutomodAIConfigView)
@@ -1019,7 +1019,7 @@ class TestWizard:
         await home.AutomodWizardChannelView().on_skip(it)
         assert isinstance(it.last, home.AutomodAIConfigView)
         assert "Configuration requise" in texts(it.last) or "Needs setup" in texts(it.last) or "requise" in texts(it.last)
-        assert bot.module_manager.stored["state"] == "simulation"
+        assert bot.module_manager.stored["state"] == "active"
 
     async def test_channel_select_saves_instantly(self):
         bot = make_bot(configured())

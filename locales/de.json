@@ -2150,7 +2150,7 @@
           "channel_placeholder": "Meldungskanal wählen…",
           "level_question": "Welche Schutzstufe möchtest du?",
           "level_hint": "Du kannst danach alles feiner einstellen, Verstoßart für Verstoßart.",
-          "mode_question": "Im Simulationsmodus starten?",
+          "mode_question": "Automod jetzt aktivieren?",
           "mode_hint": "Fast fertig! Wähle, wie Moddy startet.",
           "mode_sim": "Mit Simulation starten",
           "mode_sim_desc": "Moddy zeigt, was er tun würde, ohne jemanden zu sanktionieren. Ideal für die ersten Tage, um zu prüfen, ob es zu deinem Server passt.",
@@ -2159,7 +2159,7 @@
           "mode_live_desc": "Moddy sanktioniert sofort, wirklich.",
           "mode_live_button": "Aktivieren",
           "skip": "Überspringen",
-          "skip_hint": "Überspringen startet mit der Stufe Ausgewogen im Simulationsmodus: Moddy zeigt, was er tun würde, ohne jemanden zu sanktionieren. Du kannst später alles ändern."
+          "skip_hint": "Überspringen startet mit der Stufe Ausgewogen, aktiviert: Moddy sanktioniert wirklich. Du kannst später in die Simulation wechseln oder alles ändern."
         },
         "preset": {
           "light": "Leicht",

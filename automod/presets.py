@@ -90,7 +90,7 @@ def blank_config() -> Dict[str, Any]:
     }
 
 
-def preset_config(preset: str, channel_id: Optional[int], *, state: str = "simulation",
+def preset_config(preset: str, channel_id: Optional[int], *, state: str = "active",
                   base: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Full config of ``preset`` for ``channel_id``.
 

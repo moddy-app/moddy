@@ -2149,7 +2149,7 @@
           "channel_placeholder": "Choisir le salon d'alertes…",
           "level_question": "Quel niveau de protection veux-tu ?",
           "level_hint": "Tu pourras tout ajuster ensuite, type d'infraction par type d'infraction.",
-          "mode_question": "Démarrer en mode simulation ?",
+          "mode_question": "Activer l'automod maintenant ?",
           "mode_hint": "Presque fini ! Choisis comment Moddy démarre.",
           "mode_sim": "Démarrer en simulation",
           "mode_sim_desc": "Moddy montre ce qu'il ferait, sans sanctionner personne. Idéal les premiers jours pour vérifier que ça colle à ton serveur.",
@@ -2158,7 +2158,7 @@
           "mode_live_desc": "Moddy sanctionne tout de suite, pour de vrai.",
           "mode_live_button": "Activer",
           "skip": "Passer",
-          "skip_hint": "Passer démarre avec le niveau Équilibré en mode simulation : Moddy montre ce qu'il ferait sans sanctionner personne. Tu pourras tout modifier ensuite."
+          "skip_hint": "Passer démarre avec le niveau Équilibré, activé : Moddy sanctionne pour de vrai. Tu pourras passer en simulation ou tout modifier ensuite."
         },
         "preset": {
           "light": "Léger",

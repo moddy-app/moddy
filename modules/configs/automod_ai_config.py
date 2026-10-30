@@ -6,9 +6,9 @@ where Moddy posts its alerts*. Everything else has a sensible ready-made answer.
 
 * **First run** (nothing saved yet) -- a three-step wizard: the alerts channel,
   a protection level (Light / Balanced / Strict, see ``automod/presets.py``),
-  then "simulation or live". Every step has a **Skip** button: it applies the
-  *Balanced* level in *Simulation* (the recommended level, and the state in
-  which nobody can be sanctioned by mistake) and opens the home.
+  then "live or simulation". Every step has a **Skip** button: it applies the
+  *Balanced* level, **active** (the recommended level; simulation stays one
+  click away in step 3 and in the Manage panel) and opens the home.
 * **Home** -- a few sentences saying what the automod does, the alerts channel
   and a menu (outside the container) to the detail screens. The home saves
   instantly; the detail screens use Save / Cancel (see ``automod_ai_common``).
@@ -60,9 +60,9 @@ NAV_ITEMS = (
     ("advanced", SETTINGS),
 )
 
-#: What "Skip" and a fresh start apply: the recommended level, in simulation.
+#: What "Skip" and a fresh start apply: the recommended level, active.
 SKIP_PRESET = DEFAULT_PRESET
-SKIP_STATE = "simulation"
+SKIP_STATE = "active"
 
 
 # =========================================================================== #
@@ -306,7 +306,7 @@ class _WizardView(BaseView):
         raise NotImplementedError
 
     async def on_skip(self, interaction: discord.Interaction):
-        """Balanced level, simulation, the channel already chosen (if any)."""
+        """Balanced level, active, the channel already chosen (if any)."""
         await common.ack(interaction)
         cfg = await common.load_cfg(interaction.client, interaction.guild_id)
         new_cfg = preset_config(SKIP_PRESET, cfg.get("notify_channel_id"),
@@ -401,7 +401,7 @@ class AutomodWizardLevelView(_WizardView):
 
 
 class AutomodWizardModeView(_WizardView):
-    """Step 3 -- start in simulation (recommended) or enable right away."""
+    """Step 3 -- enable right away (recommended) or start in simulation."""
 
     STEP = 3
     SCREEN = "wiz3"
@@ -409,16 +409,17 @@ class AutomodWizardModeView(_WizardView):
     def _build_view(self) -> None:
         self.clear_items()
         container = self._frame("wizard.mode_question", "wizard.mode_hint")
-        for action, simulated in (("sim", True), ("live", False)):
+        for action in ("live", "sim"):
+            recommended = action == "live"
             container.add_item(ui.Section(
                 ui.TextDisplay(
                     f"**{tp(f'wizard.mode_{action}', self.locale)}**"
-                    f"{' — ' + tp('wizard.recommended', self.locale) if simulated else ''}\n"
+                    f"{' — ' + tp('wizard.recommended', self.locale) if recommended else ''}\n"
                     f"{tp(f'wizard.mode_{action}_desc', self.locale)}"),
                 accessory=button(
                     self.on_mode, custom_id=cid("wiz3", action),
                     label=tp(f"wizard.mode_{action}_button", self.locale),
-                    style=(discord.ButtonStyle.success if simulated
+                    style=(discord.ButtonStyle.success if recommended
                            else discord.ButtonStyle.secondary))))
         container.add_item(self._skip_hint())
         self.add_item(container)

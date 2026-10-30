@@ -22,9 +22,11 @@ Every external call (embeddings + nano chat + rules safety check) goes through
   shared **Manage** button: the generic Manage panel (MODULE_SYSTEM.md) holds the
   state select (Active / Simulation / Paused) and **Delete configuration**
   (in-place confirmation; `before_config_delete` drops the drafts, then back to
-  the wizard). First run = 3-step wizard (channel, level, simulation/live); every step
-  has **Skip** = *Balanced* level in *simulation* (safest sane default; keeps the
-  channel if one was chosen, otherwise the home asks for it).
+  the wizard). First run = 3-step wizard (channel, level, live/simulation); every step
+  has **Skip** = *Balanced* level, **active** (live is the recommended default;
+  simulation is the second choice of step 3 and stays in the Manage panel; keeps
+  the channel if one was chosen, otherwise the home asks for it — and the module
+  does not run without an alerts channel).
 * **Main sub-views** (monitoring, sanctions, exemptions, advanced): classic module
   save model. Edits go to a **draft** (`automod_ai_common`: in-memory map
   `(guild, user, section)` -> the keys that section owns, TTL 30 min, lost on

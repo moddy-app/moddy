@@ -2150,7 +2150,7 @@
           "channel_placeholder": "Elegir el canal de alertas…",
           "level_question": "¿Qué nivel de protección quieres?",
           "level_hint": "Después podrás ajustarlo todo, tipo de infracción por tipo.",
-          "mode_question": "¿Empezar en modo simulación?",
+          "mode_question": "¿Activar el automod ahora?",
           "mode_hint": "¡Casi listo! Elige cómo empieza Moddy.",
           "mode_sim": "Empezar en simulación",
           "mode_sim_desc": "Moddy muestra lo que haría sin sancionar a nadie. Ideal los primeros días para comprobar que encaja con tu servidor.",
@@ -2159,7 +2159,7 @@
           "mode_live_desc": "Moddy sanciona de inmediato, de verdad.",
           "mode_live_button": "Activar",
           "skip": "Omitir",
-          "skip_hint": "Omitir empieza con el nivel Equilibrado en modo simulación: Moddy muestra lo que haría sin sancionar a nadie. Podrás cambiarlo todo después."
+          "skip_hint": "Omitir empieza con el nivel Equilibrado, activado: Moddy sanciona de verdad. Podrás pasar a simulación o cambiarlo todo después."
         },
         "preset": {
           "light": "Ligero",
