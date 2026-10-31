@@ -1750,7 +1750,7 @@
       },
       "suggest": {
         "title": "Activate bump reminders?",
-        "body": "{emoji} **{name}** was just added to **{server}**. Moddy can thank whoever bumps and call the channel back as soon as `{command}` is available again (every {interval}).",
+        "body": "{emoji} **{name}** was just added to **{server}**. Moddy can remind the channel as soon as `{command}` is available again (every {interval}), so no bump is ever missed.",
         "pick": "Pick the channel where you run the command: the reminder is activated there straight away.",
         "placeholder": "Channel where you bump",
         "footer": "Roles to mention, delay and the rest: {config} → Bump Reminder, in the server.",

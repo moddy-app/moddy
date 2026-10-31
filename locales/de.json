@@ -1750,7 +1750,7 @@
       },
       "suggest": {
         "title": "Bump-Erinnerungen aktivieren?",
-        "body": "{emoji} **{name}** wurde gerade zu **{server}** hinzugefügt. Moddy kann sich bei der Person bedanken, die bumpt, und den Kanal erinnern, sobald `{command}` wieder verfügbar ist (alle {interval}).",
+        "body": "{emoji} **{name}** wurde gerade zu **{server}** hinzugefügt. Moddy kann den Kanal erinnern, sobald `{command}` wieder verfügbar ist (alle {interval}), damit kein Bump mehr verpasst wird.",
         "pick": "Wähle den Kanal, in dem ihr den Befehl ausführt: Die Erinnerung wird dort sofort aktiviert.",
         "placeholder": "Kanal, in dem ihr bumpt",
         "footer": "Zu erwähnende Rollen, Verzögerung und der Rest: {config} → Bump Reminder, auf dem Server.",

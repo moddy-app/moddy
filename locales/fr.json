@@ -1749,7 +1749,7 @@
       },
       "suggest": {
         "title": "Activer les rappels de bump ?",
-        "body": "{emoji} **{name}** vient d'être ajouté sur **{server}**. Moddy peut remercier la personne qui bump et rappeler le salon dès que `{command}` est de nouveau disponible (toutes les {interval}).",
+        "body": "{emoji} **{name}** vient d'être ajouté sur **{server}**. Moddy peut rappeler le salon dès que `{command}` est de nouveau disponible (toutes les {interval}), pour ne plus rater un seul bump.",
         "pick": "Choisis le salon où vous lancez la commande : le rappel y est activé immédiatement.",
         "placeholder": "Salon où vous bumpez",
         "footer": "Rôles à mentionner, délai et le reste : {config} → Bump Reminder, sur le serveur.",
