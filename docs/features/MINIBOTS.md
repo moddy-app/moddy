@@ -159,8 +159,14 @@ built, not before.
 - **`/about`**: what the bot does, "made by the Moddy team", server count, and
   links (add this bot, get Moddy, support, docs).
 - **Welcome DM** to whoever added the bot (installer from the audit log,
-  otherwise the owner), sent through `client.notifications` (service
-  `minibots`, rule #11).
+  otherwise the owner), sent through `client.notifications` (rule #11).
+  - Its source is the `moddy` service, so the attribution line reads
+    "Sent by **Bump Reminder** ✓" once rebranded.
+  - On a bot's very first start it waits for the emoji copy (up to 10 min),
+    so the first message the admin reads is not raw `:emoji:` text.
+- **Users never read the word "mini-bot"**: it is an internal name, kept to
+  the staff screens. `test_users_never_read_the_word_minibot` guards the
+  locales.
 - **Errors**: the `ErrorTracker` cog, so the same error cards and codes as Moddy.
 - **Persistent views**: the common /config ones + `MiniBotSpec.persistent_views`.
 - **Command sync**: global, and only when the commands or their localizations
@@ -178,6 +184,11 @@ application cannot display them. Nothing has to be re-imported by hand:
   - An emoji replaced in Moddy (new id, same name, e.g. `/dev emoji_replace`)
     is re-copied: the source id of every copy is kept in `minibots:emojis:<app>`.
   - When nothing changed, this is a single API call.
+  - The id map fills **as the copy progresses**: what already exists is
+    usable immediately, each uploaded emoji the second it is created.
+  - One copy per **name**. When Moddy uses two ids under one name (an old and
+    a new `warning`), the one defined in `utils/emojis.py` is copied, and both
+    ids point at it.
   - Result logged on the lifecycle webhook (`emojis_synced`).
 - **At send time** the payload builders are wrapped after
   `utils/icon_theme.py`, so the light-theme swap happens first and the
@@ -191,7 +202,9 @@ application cannot display them. Nothing has to be re-imported by hand:
 - **Limits**:
   - an application holds 2000 emojis;
   - the first start of a new mini-bot uploads every icon, which takes a few
-    minutes; until then, a few icons can show as text.
+    minutes. Until an icon is copied, a message using it shows it as text.
+    The welcome DM waits for the copy; other messages in that window
+    (unlikely so early) do not.
 
 ## 5. Redis contract (`minibots:*`)
 
