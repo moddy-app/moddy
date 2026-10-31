@@ -253,7 +253,8 @@ def config_state(config: Optional[Mapping[str, Any]], *,
 
 def state_label(status: Optional[str], locale: str) -> str:
     """Localised word for a state (or for ``STATUS_NOT_CONFIGURED`` / None)."""
-    key = status if status in (STATE_ACTIVE, STATE_PAUSED, STATE_SIMULATION) else "not_configured"
+    key = (status if status in (STATE_ACTIVE, STATE_PAUSED, STATE_SIMULATION, "external")
+           else "not_configured")
     return t(f"modules.config.state.{key}", locale=locale)
 
 

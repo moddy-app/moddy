@@ -34,7 +34,7 @@ from discord import ui, SeparatorSpacing
 from config import LOG_WEBHOOKS, LOG_WEBHOOK_DEFAULT, ENV_MODE
 from utils.emojis import (
     DONE, UNDONE, ADD, LOGOUT, MODDY, BUG, MODDYTEAM_BADGE, SETTINGS, COMMANDS,
-    SAVE, MANAGE_USER, BLACKLIST, TIME, PAUSE, CODE, MODDY_SQUARE,
+    SAVE, MANAGE_USER, BLACKLIST, TIME, PAUSE, CODE, MODDY_SQUARE, SYNC,
 )
 from utils.members import fetch_all_members
 
@@ -55,6 +55,8 @@ _ACCENTS = {
     "security": 0xED4245,       # red
     "api_call": 0x99AAB5,       # grey (high-volume, neutral)
     "bot_customization": 0x245F9F,  # premium blue
+    "minibots": 0x3661FF,       # Moddy blue
+    "minibots_down": 0xED4245,  # red (crash / stop)
 }
 
 # Webhook display name per category (helps when several feeds are watched).
@@ -70,6 +72,7 @@ _USERNAMES = {
     "security": "Moddy • Security",
     "api_call": "Moddy • API Gateway",
     "bot_customization": "Moddy • Bot Customization",
+    "minibots": "Moddy • Mini-bots",
 }
 
 
@@ -326,6 +329,8 @@ class TechLogger:
                     f" • guild `{error_details.get('guild', '?')}`"
                     f" • channel `{error_details.get('channel', '?')}`"
                 )
+            if error_details.get("app"):
+                lines.append(f"**App** `{error_details['app']}` (mini-bot)")
             if is_fatal and error_details.get("traceback"):
                 lines.append(f"**Traceback**\n```py\n{_trunc(error_details['traceback'], 600)}```")
             lines.append(f"{_b(bool(self.bot.db))} saved to database")
@@ -342,6 +347,66 @@ class TechLogger:
             await self._dispatch("error", view, allow_mentions=is_fatal)
         except Exception as exc:
             logger.warning("log_error failed: %s", exc)
+
+    # -------------------------------------------------------------- mini-bots
+
+    async def log_minibot_lifecycle(self, app: str, event: str,
+                                    lines: Optional[list[str]] = None) -> None:
+        """A mini-bot started, became ready, crashed, restarted or stopped."""
+        try:
+            down = event in ("crashed", "stopped")
+            body = [f"**App** `{app}` • **Event** `{event}`", *(lines or [])]
+            view = self._card(
+                "minibots_down" if down else "minibots",
+                PAUSE if down else MODDY, "Mini-bot " + event.replace("_", " "), body,
+                footer_extra=f"app `{app}`",
+            )
+            await self._dispatch("minibots", view)
+        except Exception as exc:
+            logger.warning("log_minibot_lifecycle failed: %s", exc)
+
+    async def log_minibot_guild(self, app: str, guild: discord.Guild, joined: bool,
+                                total: Optional[int] = None) -> None:
+        """A mini-bot was added to (or removed from) a server."""
+        try:
+            lines = [
+                f"**App** `{app}`",
+                f"**Guild** `{guild.name}` `{guild.id}`",
+                f"**Owner** `{guild.owner_id}` • **Members** `{guild.member_count or 0}`",
+            ]
+            if total is not None:
+                lines.append(f"**Now serving** `{total}` guilds")
+            view = self._card(
+                "guild_join" if joined else "guild_remove",
+                ADD if joined else LOGOUT,
+                "Mini-bot joined a guild" if joined else "Mini-bot left a guild",
+                lines, footer_extra=f"app `{app}`",
+            )
+            await self._dispatch("minibots", view)
+        except Exception as exc:
+            logger.warning("log_minibot_guild failed: %s", exc)
+
+    async def log_module_transfer(self, *, guild_id: int, module_id: str, from_app: str,
+                                  to_app: str, actor_id: Optional[int], ok: bool,
+                                  release: str, error: Optional[str] = None,
+                                  via: str = "config") -> None:
+        """A module moved from one application to another (mini-bot -> Moddy)."""
+        try:
+            lines = [
+                f"**Guild** `{guild_id}` • **Module** `{module_id}`",
+                f"**From** `{from_app}` → **To** `{to_app}` • **Via** `{via}`",
+                f"**By** `{actor_id or 'unknown'}`",
+                f"{_b(ok)} transferred • **Release** `{release}`"
+                + (f" • **Error** `{error}`" if error else ""),
+            ]
+            view = self._card(
+                "minibots" if ok else "error_warn", SYNC,
+                "Module transferred" if ok else "Module transfer failed", lines,
+                footer_extra=f"app `{from_app}`",
+            )
+            await self._dispatch("minibots", view)
+        except Exception as exc:
+            logger.warning("log_module_transfer failed: %s", exc)
 
     # ----------------------------------------------------------------- staff
 

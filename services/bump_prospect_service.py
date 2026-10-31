@@ -59,7 +59,9 @@ FOLLOW_UP_MINUTES = 30
 BUMP_MODULE_ID = "bump_reminder"
 
 #: Module states in which Moddy already reminds the server.
-_RUNNING_STATES = ("active", "simulation")
+# "external": a mini-bot (our own Bump Reminder) runs the module there — the
+# server already has a reminder, it is not a prospect any more.
+_RUNNING_STATES = ("active", "simulation", "external")
 
 # Outcomes of one scan, also the keys of a manual run's summary.
 OUTCOME_SKIPPED = "skipped"      # unavailable, the team guild, lookup failed

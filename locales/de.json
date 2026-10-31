@@ -1076,7 +1076,8 @@
         "errors": {
           "not_configured": "Dieses Modul hat noch keine gespeicherte Konfiguration.",
           "failed": "Der Modulstatus konnte nicht geändert werden. Bitte versuche es erneut."
-        }
+        },
+        "external": "Von einem Mini-Bot verwaltet"
       },
       "breadcrumb": {
         "root": "Konfiguration",
@@ -1103,6 +1104,9 @@
           "confirm_body": "Alle Einstellungen dieses Moduls werden gelöscht und es wird gestoppt. Dies kann nicht rückgängig gemacht werden.",
           "confirm": "Ja, löschen"
         }
+      },
+      "external": {
+        "save_refused": "Dieses Modul wird auf diesem Server von **{app}** verwaltet. Übertrage es auf Moddy, um es hier zu bearbeiten."
       }
     },
     "welcome_channel": {
@@ -4298,6 +4302,42 @@
         "done": "Ankündigungen für {name} ({id}) eingerichtet.",
         "fail_title": "Einrichtung fehlgeschlagen",
         "fail": "Ankündigungen für {name} konnten nicht eingerichtet werden."
+      },
+      "minibots": {
+        "title": "Mini-Bots",
+        "description": "{count} Mini-Bot(s) deklariert • Moddy auf {moddy} Servern",
+        "process": "**Prozess:** RAM {ram} • Version {version} • gestartet {since}",
+        "process_down": "**Prozess:** kein aktuelles Lebenszeichen (Dienst gestoppt oder blockiert).",
+        "none": "Noch kein Mini-Bot deklariert (minibots/spec.py).",
+        "state": "Status",
+        "guilds": "Server",
+        "latency": "Latenz",
+        "since": "Verbunden",
+        "restarts": "Neustarts",
+        "last_error": "Letzter Fehler",
+        "states": {
+          "ready": "online",
+          "connecting": "verbindet",
+          "crashed": "abgestürzt",
+          "silent": "stumm",
+          "stopped": "gestoppt",
+          "no_token": "kein Token"
+        }
+      },
+      "minibot": {
+        "unknown": {
+          "title": "Unbekannter Mini-Bot",
+          "description": "Kein Mini-Bot hat die ID {app}."
+        },
+        "unreachable": {
+          "title": "Prozess nicht erreichbar",
+          "description": "Der Mini-Bot-Dienst hört nicht zu (gestoppt oder Redis nicht verfügbar)."
+        },
+        "sent": {
+          "title": "Anfrage gesendet",
+          "restart": "{app} verbindet sich neu.",
+          "reload": "{app} liest seine Module für Server {guild} neu ein."
+        }
       }
     },
     "team": {
@@ -4329,7 +4369,10 @@
         "boost": "Boost",
         "level": "Stufe",
         "boosts": "Boosts",
-        "features": "Funktionen"
+        "features": "Funktionen",
+        "minibots": "Mini-Bots",
+        "minibots_present": "Anwesend",
+        "minibots_modules": "Verwaltete Module"
       },
       "user": {
         "title": "Nutzerinformationen",
@@ -6666,6 +6709,45 @@
         "title": "Scan der Bump-Interessenten abgeschlossen",
         "description": "Gescannte Server: {scanned}\nNeue Interessenten: {new}\nKonvertiert: {converted}\nNicht geprüft: {skipped}\nDauer: {minutes} Min.",
         "requested_by": "Angefordert von"
+      }
+    }
+  },
+  "minibots": {
+    "transfer": {
+      "button": "Auf Moddy übertragen",
+      "errors": {
+        "title": "Übertragung nicht möglich",
+        "forbidden": "Du brauchst die Berechtigung **Server verwalten** auf diesem Server, um seine Module zu übertragen."
+      },
+      "done": {
+        "title": "Übertragung abgeschlossen",
+        "partial_title": "Teilweise übertragen",
+        "body": "Moddy hat übernommen, was **{app}** verwaltet hat, mit denselben Einstellungen:",
+        "nothing": "**{app}** verwaltet auf diesem Server nichts mehr: Alles ist bereits bei Moddy."
+      },
+      "reasons": {
+        "unavailable": "Dienst nicht verfügbar, versuche es gleich noch einmal",
+        "unknown_module": "unbekanntes Modul",
+        "in_progress": "eine Übertragung läuft bereits",
+        "not_configured": "keine Konfiguration zum Übertragen",
+        "already_owned": "wird bereits von Moddy verwaltet",
+        "changed": "die Konfiguration hat sich zwischenzeitlich geändert, versuche es erneut",
+        "internal_error": "interner Fehler, das Team wurde benachrichtigt",
+        "invalid_config": "ungültige Konfiguration, öffne /config, um sie zu korrigieren",
+        "not_owned": "die Konfiguration gehört noch nicht Moddy"
+      },
+      "offer": {
+        "title": "Die Einrichtung von {app} übernehmen",
+        "body": "**{server}** nutzt **{app}** für: {modules}.\n\nModdy kann diese Module mit **genau denselben Einstellungen** übernehmen: Nichts muss neu eingerichtet werden. Panels werden von Moddy neu gepostet, und du bekommst alle zusätzlichen Optionen von Moddy und das Dashboard.",
+        "hint": "Nichts ändert sich, bevor du klickst. Danach kannst du {app} vom Server entfernen."
+      },
+      "banner": {
+        "title": "{app} verwaltet hier Module",
+        "body": "{modules}: Übertrage sie auf Moddy, um alle Optionen zu nutzen."
+      },
+      "external": {
+        "title": "Von {app} verwaltet",
+        "body": "Auf diesem Server wird **{module}** von **{app}** verwaltet. Die Einstellungen können in Moddy erst nach der Übertragung bearbeitet werden.\n\nDie Übertragung behält die Konfiguration unverändert bei, postet die Panels unter Moddy neu und nimmt {app} zurück."
       }
     }
   }

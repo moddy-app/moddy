@@ -192,6 +192,9 @@ _ALL: Tuple[Metric, ...] = (
     Metric("music_links.failed", scope=SCOPE_GLOBAL, dimensions=("reason", "source"),
            doc="A Spotify link could not be resolved (reason: not_found | unavailable | "
                "unsupported; source: auto | command)."),
+    Metric("minibots.transfer", scope=SCOPE_GLOBAL, dimensions=("from_app", "module", "via"),
+           doc="A module moved from a mini-bot to Moddy (the funnel's conversion; "
+               "via: config | dm)."),
     Metric("translate_button.prompted", scope=SCOPE_GLOBAL, dimensions=("language",),
            doc="The translate button was offered (or extended) under a message "
                "in a foreign language; `language` is the detected one."),

@@ -275,6 +275,9 @@ LOG_WEBHOOK_ENV = {
     "api_call": "LOG_WEBHOOK_API_CALL",        # gateway: every outbound API call
     # bot identity changed on a server (nickname / avatar / bio / name style)
     "bot_customization": "LOG_WEBHOOK_BOT_CUSTOMIZATION",
+    # mini-bots: lifecycle of each app, their server joins/leaves, and every
+    # module transfer from a mini-bot to Moddy (docs/features/MINIBOTS.md)
+    "minibots": "LOG_WEBHOOK_MINIBOTS",
 }
 
 # Resolved category -> webhook URL (only those actually configured)
@@ -376,8 +379,10 @@ def validate_config():
 
     print(f"Environment mode: {ENV_MODE.upper()}")
 
-    # Token obligatoire
-    if not TOKEN:
+    # Token obligatoire — sauf pour le service des mini-bots, qui ne se
+    # connecte jamais en tant que Moddy (chaque mini-bot a son propre token,
+    # voir minibots/spec.py et docs/features/MINIBOTS.md).
+    if not TOKEN and os.environ.get("MODDY_SERVICE", "bot") != "minibots":
         errors.append("[FAIL] DISCORD_TOKEN manquant dans les variables d'environnement Railway")
 
     # Vérifier que les dossiers existent

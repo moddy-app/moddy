@@ -192,6 +192,9 @@ class ModdyBot(ModdyFrameworkBot):
         # Servers that bump by hand (a directory, no reminder): one card each
         # in the team channel (see docs/features/BUMP_PROSPECTS.md).
         self.bump_prospects = BumpProspectService(self)
+        # Moving a module from a mini-bot to Moddy (docs/features/MINIBOTS.md)
+        from services.module_transfer import ModuleTransferService
+        self.module_transfer = ModuleTransferService(self)
         from gateway import Gateway
         self.gateway = Gateway()
         from stats import StatsRollup, StatsService
@@ -1660,6 +1663,15 @@ class ModdyBot(ModdyFrameworkBot):
         logger.info(f"Latency: {round(self.latency * 1000)}ms")
         logger.info(f"i18n: {len(i18n.supported_locales)} languages loaded")
 
+        # Which servers Moddy is in, next to the mini-bots (app_guilds): joins
+        # and leaves missed while offline are caught here, in two statements.
+        if self.db:
+            try:
+                from minibots.ownership import MODDY_APP
+                await self.db.reconcile_app_guilds(MODDY_APP, [g.id for g in self.guilds])
+            except Exception as e:
+                logger.error(f"[FAIL] app_guilds reconcile error: {e}")
+
         # Which channels are open tickets, so the closure detector can ignore
         # every other message without touching the database.
         if self.db and getattr(self, 'tickets', None):
@@ -2071,6 +2083,11 @@ class ModdyBot(ModdyFrameworkBot):
         except Exception as e:
             logger.error(f"[FAIL] Error sending the install welcome for guild {guild.id}: {e}")
 
+        # Mini-bots: record that Moddy is here, let the mini-bots re-check the
+        # modules they run with defaults (Moddy now runs those), and offer the
+        # installer to move what a mini-bot already runs here to Moddy.
+        await self._minibots_on_join(guild)
+
         # Setup announcement channel following
         try:
             success, message = await setup_announcement_channel(guild)
@@ -2081,9 +2098,37 @@ class ModdyBot(ModdyFrameworkBot):
         except Exception as e:
             logger.error(f"[FAIL] Error setting up announcement channel for {guild.id}: {e}")
 
+    async def _minibots_on_join(self, guild: discord.Guild) -> None:
+        """Mini-bots side of a join. Never raises."""
+        from minibots import status as mstatus
+        from minibots.ownership import MODDY_APP
+        if self.db:
+            try:
+                await self.db.mark_app_present(MODDY_APP, guild.id, guild.member_count)
+            except Exception as e:
+                logger.error(f"[FAIL] app_guilds write (join {guild.id}): {e}")
+        if self.redis:
+            try:
+                await self.redis.publish(mstatus.CONTROL_CHANNEL, mstatus.control_message(
+                    mstatus.CTRL_RELOAD_GUILD, app="*", guild_id=str(guild.id)))
+            except Exception as e:
+                logger.warning(f"[WARN] Could not notify the mini-bots of guild {guild.id}: {e}")
+        try:
+            from utils.minibot_transfer import offer_transfer
+            await offer_transfer(self, guild)
+        except Exception as e:
+            logger.error(f"[FAIL] Error offering a mini-bot transfer for guild {guild.id}: {e}")
+
     async def on_guild_remove(self, guild: discord.Guild):
         """When the bot leaves a server"""
         logger.info(f"Server left: {guild.name} ({guild.id})")
+
+        if self.db:
+            try:
+                from minibots.ownership import MODDY_APP
+                await self.db.mark_app_absent(MODDY_APP, guild.id)
+            except Exception as e:
+                logger.error(f"[FAIL] app_guilds write (leave {guild.id}): {e}")
 
         # Clean the cache
         self.prefix_cache.pop(guild.id, None)

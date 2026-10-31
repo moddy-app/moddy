@@ -38,6 +38,7 @@ Each category reads its own webhook URL. Any category left unset falls back to
 | `database` | `LOG_WEBHOOK_DATABASE` | Config changes / important DB writes |
 | `security` | `LOG_WEBHOOK_SECURITY` | Sensitive events (blacklist blocks, blacklist attribute…) |
 | `bot_customization` | `LOG_WEBHOOK_BOT_CUSTOMIZATION` | Moddy's per-guild identity changed (nickname / avatar / bio / name style) |
+| `minibots` | `LOG_WEBHOOK_MINIBOTS` | Mini-bots: lifecycle per app (ready / reconnected / crashed / restarted), their server joins/leaves, and every module transfer to Moddy — set it on **both** services ([MINIBOTS.md](../features/MINIBOTS.md)) |
 | _fallback_ | `LOG_WEBHOOK_DEFAULT` | Used for any category without a dedicated URL |
 
 Mapping lives in [`config.py`](../../config.py) (`LOG_WEBHOOK_ENV` → `LOG_WEBHOOKS`).

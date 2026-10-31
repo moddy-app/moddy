@@ -88,6 +88,30 @@ class ServerCommand(StaffCommand):
             except Exception:
                 pass
 
+            # Mini-bots: which of our apps are here, and which modules they run
+            # instead of Moddy (docs/features/MINIBOTS.md).
+            try:
+                from minibots.ownership import MODDY_APP, config_app, is_foreign
+                from minibots.spec import app_display_name
+                apps = sorted(a for a in await bot.db.apps_in_guild(gid) if a != MODDY_APP)
+                stored = (guild_data.get("data", {}) or {}).get("modules", {}) or {}
+                owned = sorted(
+                    f"`{module_id}` → `{config_app(config)}`"
+                    for module_id, config in stored.items() if is_foreign(config, MODDY_APP)
+                )
+                if apps or owned:
+                    lines = [f"**{t('staff.team.server.minibots_present', locale=locale)}:** "
+                             + (", ".join(f"`{app_display_name(a)}`" for a in apps) or "`-`")]
+                    if owned:
+                        lines.append(f"**{t('staff.team.server.minibots_modules', locale=locale)}:** "
+                                     + " • ".join(owned))
+                    fields.append({
+                        "name": f"{emojis.MODDY} {t('staff.team.server.minibots', locale=locale)}",
+                        "value": "\n".join(lines),
+                    })
+            except Exception:
+                pass
+
         if guild.features:
             features = ", ".join(f.replace("_", " ").title() for f in guild.features[:10])
             fields.append({"name": f"{emojis.WEB} {t('staff.team.server.features', locale=locale)}", "value": features})
