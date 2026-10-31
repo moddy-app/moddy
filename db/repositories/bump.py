@@ -45,6 +45,7 @@ def _row_to_dict(row) -> Dict[str, Any]:
         "thanks_channel_id": row["thanks_channel_id"],
         "thanks_message_id": row["thanks_message_id"],
         "bumped_at": row["bumped_at"],
+        "app": row["app"] if "app" in row.keys() else "moddy",
     }
 
 
@@ -54,7 +55,8 @@ class BumpReminderRepository:
     async def record_bump(self, guild_id: int, bot_key: str, *, channel_id: int,
                           due_at: datetime, bumper_id: Optional[int],
                           thanks_channel_id: Optional[int] = None,
-                          thanks_message_id: Optional[int] = None) -> None:
+                          thanks_message_id: Optional[int] = None,
+                          app: str = "moddy") -> None:
         """Arm (or re-arm) the reminder for one directory in one guild.
 
         Deliberately an upsert: somebody bumping again before the previous
@@ -67,8 +69,8 @@ class BumpReminderRepository:
             await conn.execute("""
                 INSERT INTO bump_reminders (
                     guild_id, bot_key, channel_id, due_at, sent, bumper_id,
-                    opt_in, thanks_channel_id, thanks_message_id, bumped_at
-                ) VALUES ($1, $2, $3, $4, FALSE, $5, FALSE, $6, $7, now())
+                    opt_in, thanks_channel_id, thanks_message_id, bumped_at, app
+                ) VALUES ($1, $2, $3, $4, FALSE, $5, FALSE, $6, $7, now(), $8)
                 ON CONFLICT (guild_id, bot_key) DO UPDATE SET
                     channel_id        = EXCLUDED.channel_id,
                     due_at            = EXCLUDED.due_at,
@@ -77,30 +79,34 @@ class BumpReminderRepository:
                     opt_in            = FALSE,
                     thanks_channel_id = EXCLUDED.thanks_channel_id,
                     thanks_message_id = EXCLUDED.thanks_message_id,
-                    bumped_at         = now()
+                    bumped_at         = now(),
+                    app               = EXCLUDED.app
             """, guild_id, bot_key, channel_id, due_at, bumper_id,
-                 thanks_channel_id, thanks_message_id)
+                 thanks_channel_id, thanks_message_id, app)
 
-    async def claim_due_bumps(self, limit: int = 50) -> List[Dict[str, Any]]:
+    async def claim_due_bumps(self, limit: int = 50, app: str = "moddy") -> List[Dict[str, Any]]:
         """Take the reminders that have come due, marking them in the same breath.
 
         The rows flip to ``sent`` inside the statement that returns them, so a
         second sweeper — or this one restarting mid-pass — can never post the
         same reminder twice. ``SKIP LOCKED`` means a row another worker is
         already holding is passed over rather than waited on.
+
+        ``app``: only the rows of that application (Moddy or a mini-bot) —
+        another app's sweeper must never claim them.
         """
         async with self.pool.acquire() as conn:
             rows = await conn.fetch("""
                 UPDATE bump_reminders SET sent = TRUE
                 WHERE (guild_id, bot_key) IN (
                     SELECT guild_id, bot_key FROM bump_reminders
-                    WHERE sent = FALSE AND due_at <= now()
+                    WHERE sent = FALSE AND due_at <= now() AND app = $2
                     ORDER BY due_at
                     LIMIT $1
                     FOR UPDATE SKIP LOCKED
                 )
                 RETURNING *
-            """, limit)
+            """, limit, app)
         return [_row_to_dict(row) for row in rows]
 
     async def get_guild_bump_states(self, guild_id: int) -> Dict[str, Dict[str, Any]]:
@@ -142,3 +148,10 @@ class BumpReminderRepository:
         async with self.pool.acquire() as conn:
             await conn.execute(
                 "DELETE FROM bump_reminders WHERE guild_id = $1", guild_id)
+
+    async def reassign_bump_reminders(self, guild_id: int, app: str) -> None:
+        """Hand a guild's pending reminders to another application — the
+        module was transferred (mini-bot -> Moddy). Countdowns keep running."""
+        async with self.pool.acquire() as conn:
+            await conn.execute(
+                "UPDATE bump_reminders SET app = $2 WHERE guild_id = $1", guild_id, app)

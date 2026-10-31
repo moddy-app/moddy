@@ -289,6 +289,14 @@ premium server's three DISBOARD entries useful rather than three quarters dead.
 
 ---
 
+## The Bump Reminder mini-bot
+
+The same module also runs as a standalone bot, **Bump Reminder** (zero setup,
+welcome DM that knows the server's directories, own name). See
+[MINIBOTS.md §10](MINIBOTS.md). The two never run it twice in one server: the
+config's `app` key names the runner, and each pending row carries its owner
+(`app` column below).
+
 ## The `bump_reminders` table
 
 ```sql
@@ -303,8 +311,11 @@ CREATE TABLE bump_reminders (
     thanks_channel_id BIGINT,
     thanks_message_id BIGINT,
     bumped_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+    app               TEXT        NOT NULL DEFAULT 'moddy',  -- Moddy or a mini-bot
     PRIMARY KEY (guild_id, bot_key)
 );
+CREATE INDEX idx_bump_reminders_app_due
+    ON bump_reminders (app, due_at) WHERE sent = FALSE;
 CREATE INDEX idx_bump_reminders_due
     ON bump_reminders (due_at) WHERE sent = FALSE;
 ```

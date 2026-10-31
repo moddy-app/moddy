@@ -160,6 +160,8 @@ moddy/
 │   ├── staff.py               #   Staff commands on a mini-bot (@Bot d.jsk …), allowlist
 │   ├── queries.py             #   Info questions Moddy's staff commands ask the mini-bots (mutuals, servers…)
 │   ├── emojis.py              #   Moddy's app emojis copied to each mini-bot app + send-time id swap
+│   ├── branding.py            #   Under a mini-bot, translated texts name the bot instead of "Moddy"
+│   └── bots/bump_reminder.py  #   Bump Reminder mini-bot: zero setup, smart welcome, directory added later
 │   ├── runtime.py             #   N clients in ONE process: supervision, heartbeat, control, periodic jobs
 │   └── main.py                #   `python -m minibots.main` (second Railway service)
 │

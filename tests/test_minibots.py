@@ -883,7 +883,10 @@ class TestBuiltins:
         text = "\n".join(getattr(i, "content", "") for i in view.children[0].children)
         assert "Bump Reminder" in text and "Moddy" in text and "`Panel`" in text
         urls = [b.url for b in view.children[1].children]
-        assert urls[0].endswith("client_id=42")
+        assert "client_id=42" in urls[0] and "scope=bot+applications.commands" in urls[0]
+        import discord as _d
+        perms = _d.Permissions(int(urls[0].rsplit("permissions=", 1)[1]))
+        assert perms.send_messages and perms.view_audit_log and not perms.administrator
 
     def test_welcome_content_is_a_template(self):
         from minibots.builtin import welcome_content
@@ -949,3 +952,203 @@ def test_about_command_localized():
     for path in (ROOT / "locales" / "commands").glob("*.json"):
         entry = json.loads(path.read_text(encoding="utf-8"))["commands"]["about"]
         assert entry["name"] and entry["description"]
+
+
+# --------------------------------------------------------------------------- #
+# Branding: a mini-bot speaks under its own name
+# --------------------------------------------------------------------------- #
+
+class TestBranding:
+    def test_rebrand_rules(self):
+        from minibots.branding import rebrand
+        assert rebrand("Moddy watches this channel.", "modules.x", "Bump Reminder") == \
+            "Bump Reminder watches this channel."
+        assert rebrand("Join the Moddy Team", "modules.x", "B") == "Join the Moddy Team"
+        assert rebrand("Get Moddy", "minibots.links.get_moddy", "B") == "Get Moddy"
+        assert rebrand("see moddy.app", "x", "B") == "see moddy.app"
+        assert rebrand("Moddy", "x", None) == "Moddy"
+
+    def test_i18n_hook_only_inside_a_brand(self):
+        from minibots import branding
+        from utils.i18n import t
+        branding.install()
+        plain = t("modules.bump_reminder.add.success", locale="en-US")
+        assert "Moddy" in plain
+        token = branding._brand.set("Bump Reminder")
+        try:
+            assert "Bump Reminder" in t("modules.bump_reminder.add.success", locale="en-US")
+            assert t("minibots.links.get_moddy", locale="en-US") == "Get Moddy"
+        finally:
+            branding._brand.reset(token)
+
+
+# --------------------------------------------------------------------------- #
+# The Bump Reminder mini-bot
+# --------------------------------------------------------------------------- #
+
+class TestBumpReminderBot:
+    def test_spec_is_declared_and_valid(self):
+        from minibots.spec import get_spec
+        spec = get_spec("bump_reminder_bot")
+        assert spec.name == "Bump Reminder" and spec.modules == ("bump_reminder",)
+        assert {"message_content", "integrations"} <= set(spec.intents)
+        assert "members" not in spec.intents and not spec.web_surfaces
+        import importlib
+        for path in (*spec.persistent_views, spec.welcome_builder):
+            module, _, attr = path.partition(":")
+            assert getattr(importlib.import_module(module), attr)
+
+    def test_wants_autosetup(self):
+        from minibots.bots.bump_reminder import wants_autosetup
+        assert wants_autosetup(None, "disboard", True)
+        assert wants_autosetup({"reminders": [{"bot": "dl", "channel_id": 1}]}, "disboard", True)
+        assert not wants_autosetup({"reminders": [{"bot": "disboard", "channel_id": 1}]}, "disboard", True)
+        assert not wants_autosetup({"state": "paused"}, "disboard", True)
+        assert not wants_autosetup(None, "disboard", owns=False)
+
+    def test_autosetup_marker(self):
+        from minibots.bots.bump_reminder import already_set_up, autosetup_path
+        assert autosetup_path("bump_reminder_bot", "disboard") == \
+            "minibots.bump_reminder_bot.bump_autosetup.disboard"
+        data = {"minibots": {"bump_reminder_bot": {"bump_autosetup": {"disboard": "2026"}}}}
+        assert already_set_up(data, "bump_reminder_bot", "disboard")
+        assert not already_set_up(data, "bump_reminder_bot", "dl")
+        assert not already_set_up({}, "bump_reminder_bot", "disboard")
+
+    async def _cog(self, db, monkeypatch, hit=True):
+        import minibots.bots.bump_reminder as mb
+        from modules.bump_reminder import BumpReminderModule
+        import discord as _d
+        from discord.ext import tasks as _tasks
+        monkeypatch.setattr(_tasks.Loop, "start", lambda *a, **k: None)
+        manager, bot = make_manager(db, app="bump_reminder_bot")
+        manager.register_module(BumpReminderModule)
+        manager._blocked_as_new_module = AsyncMock(return_value=None)
+        bot.app_id = "bump_reminder_bot"
+        cog = mb.BumpReminderBotCog(bot)
+        bumps = []
+
+        async def on_bump(message, module, h, entry, note=None):
+            bumps.append((entry, note))
+        cog._on_bump = on_bump
+        spec = mb.BUMP_BOTS[0]
+        monkeypatch.setattr(mb, "detect", lambda m, i: (SimpleNamespace(bot=spec) if hit else None))
+        import utils.guild_language as gl
+        monkeypatch.setattr(gl, "guild_locale", AsyncMock(return_value="en-US"))
+        me = SimpleNamespace(id=42)
+        class FakeChannel(_d.TextChannel):
+            pass  # a subclass without __slots__: attributes can be set
+        channel = FakeChannel.__new__(FakeChannel)
+        channel.id = 555555555555555555
+        channel.permissions_for = lambda m: SimpleNamespace(view_channel=True, send_messages=True)
+        guild = SimpleNamespace(id=GUILD, me=me, get_channel=lambda cid: channel if cid == channel.id else None)
+        bot.get_guild = lambda gid: guild
+        message = SimpleNamespace(guild=guild, channel=channel,
+                                  author=SimpleNamespace(bot=True, id=spec.app_id))
+        return cog, message, bumps, spec
+
+    async def test_first_bump_sets_itself_up(self, monkeypatch):
+        import modules.bump_reminder as br
+        monkeypatch.setattr(br, "channel_validation_error", lambda *a, **k: None)
+        db = FakeDB({})
+        marks = []
+        real_update = db.update_guild_data
+
+        async def update(gid, path, value):
+            marks.append(path)
+            await real_update(gid, path, value)
+        db.update_guild_data = update
+        cog, message, bumps, spec = await self._cog(db, monkeypatch)
+
+        async def validate(self, config):
+            return True, None
+        monkeypatch.setattr(br.BumpReminderModule, "validate_config", validate)
+        assert await cog._auto_setup(message, spec)
+        entry = db.modules["bump_reminder"]["reminders"][0]
+        assert entry["bot"] == spec.key and entry["channel_id"] == message.channel.id
+        assert entry["ping_mode"] == "button" and entry["interval"] == spec.default_interval
+        assert db.modules["bump_reminder"]["app"] == "bump_reminder_bot"
+        assert bumps and "config" in bumps[0][1]
+        assert marks[-1].endswith(f"bump_autosetup.{spec.key}")
+
+    async def test_no_setup_from_a_failed_bump_or_twice(self, monkeypatch):
+        db = FakeDB({})
+        db.update_guild_data = AsyncMock()
+        cog, message, bumps, spec = await self._cog(db, monkeypatch, hit=False)
+        assert not await cog._auto_setup(message, spec)
+        assert "bump_reminder" not in db.modules
+
+        db2 = FakeDB({})
+        cog2, message2, _, spec2 = await self._cog(db2, monkeypatch)
+
+        async def get_guild(gid):
+            return {"data": {"modules": db2.modules, "minibots": {"bump_reminder_bot": {
+                "bump_autosetup": {spec2.key: "2026"}}}}}
+        db2.get_guild = get_guild
+        assert not await cog2._auto_setup(message2, spec2)  # deleted by the admin: respected
+
+    async def test_no_setup_when_moddy_runs_it(self, monkeypatch):
+        db = FakeDB({"bump_reminder": {"reminders": []}})  # Moddy's (no app key)
+        cog, message, bumps, spec = await self._cog(db, monkeypatch)
+        assert not await cog._auto_setup(message, spec)
+
+    async def test_welcome_knows_the_directories(self, monkeypatch):
+        import minibots.bots.bump_reminder as mb
+        spec = mb.BUMP_BOTS[0]
+        monkeypatch.setattr(mb, "directories_present", AsyncMock(return_value=[spec]))
+        import services.bump_suggestion_service as sugg
+        channel = SimpleNamespace(id=777777777777777777, name="bump", position=0)
+        monkeypatch.setattr(sugg, "candidate_channels", lambda g: [channel])
+        manager, bot = make_manager(FakeDB({}), app="bump_reminder_bot")
+        bot.spec = SPEC
+        bot.module_manager = manager
+        guild = SimpleNamespace(id=GUILD, name="My server")
+        content, variables, view = await mb.build_welcome(bot, guild, "fr")
+        assert "{directories}" in content.body and spec.name in variables["directories"]
+        texts = [getattr(i, "content", "") for i in view.children[0].children]
+        assert any("rien à faire" in x.lower() for x in texts)
+        import discord as _d
+        rows = [i for i in view.children[0].children if isinstance(i, _d.ui.ActionRow)]
+        assert len(rows) == 1  # one picker for the one directory present
+
+        # Moddy already runs the module there: no picker, says so.
+        manager.bot.db.modules["bump_reminder"] = {"reminders": []}
+        content, variables, view = await mb.build_welcome(bot, guild, "en-US")
+        assert "Moddy" in content.body
+        assert not [i for i in view.children[0].children if isinstance(i, _d.ui.ActionRow)]
+
+    async def test_transfer_reassigns_pending_rows(self):
+        from modules.bump_reminder import BumpReminderModule
+        db = FakeDB({"bump_reminder": {"reminders": []}})
+        db.reassign_bump_reminders = AsyncMock()
+        db.get_guild_bump_states = AsyncMock(return_value={})
+        manager, bot = make_manager(db)
+        module = BumpReminderModule(bot, GUILD)
+        await module.load_config({"reminders": []})
+        await module.on_transfer_in("bump_reminder_bot")
+        db.reassign_bump_reminders.assert_awaited_once_with(GUILD, "moddy")
+
+    def test_sweeper_claims_only_its_app(self):
+        from cogs.bump_reminder import BumpReminder
+        assert BumpReminder.app.fget(SimpleNamespace(bot=SimpleNamespace())) == "moddy"
+        assert BumpReminder.app.fget(SimpleNamespace(bot=SimpleNamespace(app_id="bump_reminder_bot"))) \
+            == "bump_reminder_bot"
+
+    async def test_moddy_does_not_offer_a_module_a_minibot_runs(self):
+        from services.bump_suggestion_service import BumpSuggestionService
+        db = FakeDB({"bump_reminder": {"reminders": [], "app": "bump_reminder_bot"}})
+        manager, bot = make_manager(db)
+        from modules.bump_reminder import BumpReminderModule
+        manager.register_module(BumpReminderModule)
+        service = BumpSuggestionService(bot)
+        service._claim = AsyncMock(return_value=True)
+        await service._maybe_suggest(SimpleNamespace(id=GUILD), SimpleNamespace(key="disboard"))
+        service._claim.assert_not_awaited()
+
+
+@pytest.mark.parametrize("locale", LOCALES)
+def test_bump_bot_i18n(locale):
+    data = json.loads((ROOT / "locales" / f"{locale}.json").read_text(encoding="utf-8"))
+    for key in ("auto_setup_note", "welcome.title", "welcome.present", "welcome.none",
+                "welcome.elsewhere", "welcome.pick"):
+        assert _get(data, f"minibots.bots.bump_reminder.{key}"), key

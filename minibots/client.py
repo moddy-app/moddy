@@ -96,13 +96,16 @@ class MiniBotClient(commands.Bot):
 
     @contextlib.contextmanager
     def emoji_context(self):
-        """Send with this app's emoji ids from code running outside its task
-        (control requests, periodic jobs)."""
+        """Send with this app's emoji ids and name from code running outside
+        its task (control requests, periodic jobs)."""
+        from minibots.branding import _brand
         from minibots.emojis import _app_map
         token = _app_map.set(self.emoji_map)
+        brand = _brand.set(self.spec.name)
         try:
             yield
         finally:
+            _brand.reset(brand)
             _app_map.reset(token)
 
     # ------------------------------------------------------------ lifecycle

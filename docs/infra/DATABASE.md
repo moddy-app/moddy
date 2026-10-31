@@ -925,6 +925,10 @@ que le bot ne remplit pas seul** : le backend écrit la ligne au callback OAuth2
 `on_guild_join`. `guild_id` (PK), `installer_id`, `source`, `utm` (JSONB),
 `first_seen_at`, `confirmed_at`. Contrat exact → [STATS.md](STATS.md) §6.
 
+**`bump_reminders.app`** — l'application (Moddy ou un mini-bot) qui a armé
+le rappel ; chaque balayeur ne prend que les siens, et un transfert vers Moddy
+réassigne les lignes (`reassign_bump_reminders`).
+
 **`app_guilds`** — quelle application Discord (Moddy = `moddy`, ou un
 mini-bot) est présente sur quel serveur : `(app, guild_id)` PK, `present`,
 `joined_at`, `left_at`, `member_count`. Écrite par chaque application à

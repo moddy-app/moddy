@@ -104,3 +104,27 @@ Known limits:
 - The `guild_messages` intent sends every message to the process: no RAM cost,
   some CPU.
 - Not tested on a live gateway (no mini-bot token yet).
+
+## Third pass — the Bump Reminder mini-bot
+- Merged `main` (bump reminder activation offer, #440) and built on it.
+- `minibots/bots/bump_reminder.py`:
+  - **zero setup**: the first successful bump configures the reminder in that
+    channel, once per (server, directory);
+  - **welcome DM**: lists the directories already present, with an optional
+    one-pick channel picker per directory;
+  - **a directory added later**: `on_integration_create` reuses Moddy's offer,
+    deduplicated through the same Redis key.
+- `minibots/branding.py`: under a mini-bot, translated texts name the bot
+  instead of "Moddy".
+- **Fix found while building it.** `bump_reminders` was shared and unscoped:
+  Moddy's sweeper would have claimed (and lost) the mini-bot's reminders. Now
+  there is an `app` column and per-app claims, and the rows are reassigned on
+  transfer. Verified on PostgreSQL 16.
+- Invite link with computed permissions (never Administrator); `integrations`
+  intent allowed in specs; the emoji scan covers the whole repository (the
+  directory emojis live in `bumpreminder/`).
+
+To do on Jules's side:
+- create the application, enable Message Content, set
+  `MINIBOT_BUMP_REMINDER_TOKEN`;
+- the Message Content intent needs Discord's approval past 100 servers.

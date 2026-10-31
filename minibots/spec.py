@@ -29,7 +29,7 @@ from minibots.ownership import APP_ID_PATTERN, MODDY_APP
 ALLOWED_INTENTS: FrozenSet[str] = frozenset({
     "guild_messages", "message_content", "guild_reactions",
     "moderation", "emojis_and_stickers", "invites", "webhooks",
-    "voice_states", "auto_moderation_execution",
+    "voice_states", "auto_moderation_execution", "integrations",
 })
 
 #: The only web pages a mini-bot's users may reach. Mini-bots have no
@@ -72,6 +72,10 @@ class MiniBotSpec:
     persistent_views: Tuple[str, ...] = ()
     #: Custom status shown under the bot's name.
     activity: str = "/config • /about"
+    #: Optional ``"module.path:function"`` building this bot's own welcome DM:
+    #: ``async def build(client, guild, locale) -> (content, variables, view)``
+    #: or None for the generic one (minibots/builtin.py).
+    welcome_builder: Optional[str] = None
 
     def __post_init__(self):
         if not _APP_ID_RE.match(self.id) or self.id == MODDY_APP:
@@ -100,9 +104,28 @@ class MiniBotSpec:
         }
 
 
-#: Every mini-bot. Empty until the first one is built — the core runs fine
-#: with none (it just idles and reports "0 mini-bots").
-SPECS: Tuple[MiniBotSpec, ...] = ()
+#: Every mini-bot. A spec without its token set is simply not started.
+SPECS: Tuple[MiniBotSpec, ...] = (
+    # Bump Reminder — docs/features/MINIBOTS.md §10. Reads the directories'
+    # replies (other bots' messages: message_content), hears a directory being
+    # added later (integrations: it has no member events).
+    MiniBotSpec(
+        id="bump_reminder_bot",
+        name="Bump Reminder",
+        token_env="MINIBOT_BUMP_REMINDER_TOKEN",
+        modules=("bump_reminder",),
+        module_paths=("modules.bump_reminder",),
+        commands_module="minibots.bots.bump_reminder",
+        intents=frozenset({"message_content", "integrations"}),
+        persistent_views=(
+            "modules.configs.bump_reminder_config:BumpReminderConfigView",
+            "modules.configs.bump_reminder_config:ManageBumpReminderView",
+            "utils.bump_views:BumpReminderPersistence",
+        ),
+        activity="Bump as usual, I'll remind you",
+        welcome_builder="minibots.bots.bump_reminder:build_welcome",
+    ),
+)
 
 
 def _index(specs: Tuple[MiniBotSpec, ...]) -> Dict[str, MiniBotSpec]:

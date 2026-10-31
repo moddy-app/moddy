@@ -763,6 +763,19 @@ class ModdyDatabase(
                     PRIMARY KEY (guild_id, bot_key)
                 )
             """)
+            # Which application owns the pending row (Moddy or a mini-bot):
+            # each one's sweeper only claims its own, so a reminder armed by
+            # the Bump Reminder mini-bot is never swallowed by Moddy's sweeper
+            # (claimed, marked sent, then dropped because Moddy does not run the
+            # module there). Moved with the module on a transfer.
+            await conn.execute("""
+                ALTER TABLE bump_reminders
+                ADD COLUMN IF NOT EXISTS app TEXT NOT NULL DEFAULT 'moddy'
+            """)
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_bump_reminders_app_due
+                ON bump_reminders (app, due_at) WHERE sent = FALSE
+            """)
             await conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_bump_reminders_due "
                 "ON bump_reminders (due_at) WHERE sent = FALSE")

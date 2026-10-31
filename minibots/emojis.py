@@ -62,15 +62,15 @@ def suspend():
 # Which emojis Moddy uses (scanned once)
 # --------------------------------------------------------------------------- #
 
-_SCAN_DIRS = ("utils", "modules", "cogs", "staff", "minibots", "notifications", "services")
+_SKIP_DIRS = {"tests", ".git", "docs", "__pycache__", ".venv", "venv", "node_modules"}
 
 
 def moddy_emojis() -> Dict[int, Tuple[str, bool]]:
-    """``{moddy emoji id: (name, animated)}`` used anywhere in code or locales."""
+    """``{moddy emoji id: (name, animated)}`` used anywhere in code or locales
+    (every Python file of the repository, outside tests and docs)."""
     found: Dict[int, Tuple[str, bool]] = {}
-    files = [ROOT / "config.py"]
-    for folder in _SCAN_DIRS:
-        files.extend((ROOT / folder).rglob("*.py"))
+    files = [path for path in ROOT.rglob("*.py")
+             if not _SKIP_DIRS.intersection(path.relative_to(ROOT).parts)]
     files.extend((ROOT / "locales").glob("*.json"))
     for path in files:
         try:

@@ -127,9 +127,17 @@ class BumpReminder(commands.Cog):
             return
         await self.suggestions.on_member_join(member)
 
+    @property
+    def app(self) -> str:
+        """The application this cog runs for: Moddy, or a mini-bot reusing it."""
+        return getattr(self.bot, "app_id", None) or "moddy"
+
     async def _on_bump(self, message: discord.Message, module,
-                       hit, entry: Dict[str, Any]) -> None:
-        """Thank the bumper and arm the reminder."""
+                       hit, entry: Dict[str, Any], *, note: Optional[str] = None) -> None:
+        """Thank the bumper and arm the reminder.
+
+        ``note``: an extra discreet line on the thank-you card (the mini-bot
+        uses it the first time it sets itself up from a bump)."""
         guild = message.guild
         from utils.guild_language import guild_locale
         locale = await guild_locale(self.bot, guild)
@@ -137,6 +145,7 @@ class BumpReminder(commands.Cog):
         view = build_thanks_card(
             hit.bot, hit.bumper_id, hit.due_at,
             locale=locale, ping_mode=entry['ping_mode'], guild_name=guild.name,
+            note=note,
         )
 
         # The thank-you is a courtesy; the reminder is the promise. So a failed
@@ -170,6 +179,7 @@ class BumpReminder(commands.Cog):
             bumper_id=hit.bumper_id,
             thanks_channel_id=message.channel.id,
             thanks_message_id=getattr(sent, "id", None),
+            app=self.app,
         )
         logger.info(
             f"Bump recorded: guild {guild.id}, {hit.bot.key}, "
@@ -183,7 +193,7 @@ class BumpReminder(commands.Cog):
         if not self.bot.db or not self.bot.db.pool:
             return
         try:
-            for state in await self.bot.db.claim_due_bumps(SWEEP_BATCH):
+            for state in await self.bot.db.claim_due_bumps(SWEEP_BATCH, app=self.app):
                 try:
                     await self._fire(state)
                 except Exception as e:

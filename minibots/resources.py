@@ -47,6 +47,11 @@ def install_process_patches(db) -> None:
         emojis.install()
     except Exception as exc:  # noqa: BLE001
         logger.error("Mini-bots: emoji swap not installed: %s", exc)
+    try:
+        from minibots import branding
+        branding.install()
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Mini-bots: branding not installed: %s", exc)
 
 
 async def load_preferences(db) -> None:

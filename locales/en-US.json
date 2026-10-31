@@ -6876,6 +6876,18 @@
         "title": "Moddy-only command",
         "description": "`{command}` does not run on {name}. Run it with @Moddy: Moddy's info commands already include every mini-bot."
       }
+    },
+    "bots": {
+      "bump_reminder": {
+        "auto_setup_note": "Reminders turned on automatically in this channel. Roles to ping, delay: {config}.",
+        "welcome": {
+          "title": "{name} is ready",
+          "present": "Thanks for adding **{name}** to **{server}**!\n\nI can see {directories} on your server. **There is nothing to do**: bump as usual, and from the first successful bump I thank whoever did it and call the channel back when the next one is possible.\n\nTo ping a role or change the delay: {config}.",
+          "none": "Thanks for adding **{name}** to **{server}**!\n\nAdd a bump site (DISBOARD, DiscordL, French.gg…), then bump as usual: from the first successful bump I thank whoever did it and call the channel back when the next one is possible. Nothing to set up.\n\nTo ping a role or change the delay: {config}.",
+          "elsewhere": "Thanks for adding **{name}** to **{server}**!\n\nOn this server, bump reminders are already handled by **Moddy**: I stay out of the way so reminders are never doubled. You can remove me without losing anything.",
+          "pick": "Rather pick the channel right now? Optional:"
+        }
+      }
     }
   }
 }

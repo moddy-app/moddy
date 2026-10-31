@@ -6790,6 +6790,18 @@
         "title": "Nur auf Moddy",
         "description": "`{command}` läuft nicht auf {name}. Nutze sie mit @Moddy: Moddys Info-Befehle enthalten bereits alle Mini-Bots."
       }
+    },
+    "bots": {
+      "bump_reminder": {
+        "auto_setup_note": "Erinnerungen in diesem Kanal automatisch aktiviert. Rollen zum Erwähnen, Verzögerung: {config}.",
+        "welcome": {
+          "title": "{name} ist bereit",
+          "present": "Danke, dass du **{name}** zu **{server}** hinzugefügt hast!\n\nIch sehe {directories} auf deinem Server. **Du musst nichts tun**: Bumpe wie gewohnt, und ab dem ersten erfolgreichen Bump bedanke ich mich bei der Person und rufe den Kanal, sobald der nächste möglich ist.\n\nRolle erwähnen oder Verzögerung ändern: {config}.",
+          "none": "Danke, dass du **{name}** zu **{server}** hinzugefügt hast!\n\nFüge eine Bump-Seite hinzu (DISBOARD, DiscordL, French.gg…) und bumpe wie gewohnt: Ab dem ersten erfolgreichen Bump bedanke ich mich bei der Person und rufe den Kanal, sobald der nächste möglich ist. Nichts einzurichten.\n\nRolle erwähnen oder Verzögerung ändern: {config}.",
+          "elsewhere": "Danke, dass du **{name}** zu **{server}** hinzugefügt hast!\n\nAuf diesem Server übernimmt **Moddy** bereits die Bump-Erinnerungen: Ich halte mich raus, damit nichts doppelt kommt. Du kannst mich ohne Verlust entfernen.",
+          "pick": "Lieber jetzt gleich den Kanal wählen? Optional:"
+        }
+      }
     }
   }
 }

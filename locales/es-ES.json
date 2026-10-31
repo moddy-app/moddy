@@ -6790,6 +6790,18 @@
         "title": "Comando solo para Moddy",
         "description": "`{command}` no funciona en {name}. Ejecútalo con @Moddy: los comandos de información de Moddy ya incluyen todos los mini-bots."
       }
+    },
+    "bots": {
+      "bump_reminder": {
+        "auto_setup_note": "Recordatorios activados automáticamente en este canal. Roles a mencionar, retraso: {config}.",
+        "welcome": {
+          "title": "{name} está listo",
+          "present": "¡Gracias por añadir **{name}** a **{server}**!\n\nVeo {directories} en tu servidor. **No tienes que hacer nada**: haz bump como siempre y, desde el primer bump correcto, agradezco a quien lo hizo y aviso al canal cuando el siguiente sea posible.\n\nPara mencionar un rol o cambiar el retraso: {config}.",
+          "none": "¡Gracias por añadir **{name}** a **{server}**!\n\nAñade un sitio de bump (DISBOARD, DiscordL, French.gg…) y haz bump como siempre: desde el primer bump correcto, agradezco a quien lo hizo y aviso al canal cuando el siguiente sea posible. Nada que configurar.\n\nPara mencionar un rol o cambiar el retraso: {config}.",
+          "elsewhere": "¡Gracias por añadir **{name}** a **{server}**!\n\nEn este servidor, los recordatorios de bump ya los gestiona **Moddy**: me mantengo al margen para no duplicarlos. Puedes quitarme sin perder nada.",
+          "pick": "¿Prefieres elegir el canal ahora? Opcional:"
+        }
+      }
     }
   }
 }

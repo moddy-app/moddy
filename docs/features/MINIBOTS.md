@@ -6,9 +6,8 @@ exist to bring in servers: a bot named after a single feature is easy to find
 and to add. Once a server is in, it is offered to move to Moddy, where it gets
 every option and the dashboard.
 
-This document covers **the core** that runs and manages them. No concrete
-mini-bot exists yet (`minibots/spec.py::SPECS` is empty); adding one is
-described at the end.
+This document covers **the core** that runs and manages them; adding one is
+described in §8, and the first one, **Bump Reminder**, in §10.
 
 ## 1. Principles
 
@@ -364,3 +363,48 @@ Limits:
   - `MALLOC_ARENA_MAX=2`.
 - Deploy order: Moddy first. It creates `app_guilds` and starts recording its
   own presence. Then the mini-bots service.
+
+## 10. Bump Reminder (`minibots/bots/bump_reminder.py`)
+
+The first mini-bot: Moddy's `bump_reminder` module under its own name and
+token (`MINIBOT_BUMP_REMINDER_TOKEN`, app id `bump_reminder_bot`). Same
+detection, cards, `/config` panel and table as Moddy. What it adds is aimed at
+**zero friction**:
+
+| Moment | What happens |
+|---|---|
+| Added to a server | DM to whoever added it (audit log, else the owner). It lists the directories **already present** (one gateway lookup by ids, no member intent): "nothing to do, bump as usual". It also offers an optional channel picker per directory (the same `BumpSuggestChannelSelect` as Moddy's offer: one pick = activated). If Moddy already runs the module there, it says so and stays out of the way. |
+| First successful bump | No reminder for that directory yet → it **sets itself up in that channel**: directory cooldown, no role, `button` ping mode. It arms the reminder and says so in one `-#` line on the thank-you card. This happens once per (server, directory): marker `guilds.data.minibots.<app>.bump_autosetup.<directory>`, so a reminder the admin deletes stays deleted. A paused module, a failed bump (refusal), or a module Moddy runs → nothing. |
+| A directory added later | `on_integration_create` (intent `integrations`, since the bot has no member events) → the same one-pick DM as Moddy's offer (`services/bump_suggestion_service.py`). It is deduplicated with Moddy's through the same Redis key, so a server with both bots gets one DM. |
+| Every bump after | Exactly Moddy's behaviour: thank-you, "remind me" button, reminder at the end of the cooldown. |
+
+Other points:
+- **Texts**: the module's texts say "Moddy"; under a mini-bot they name the bot
+  (`minibots/branding.py`: wraps `i18n.get` in that process only, keeps the
+  `minibots.*` texts and "Moddy Team / Premium / Support").
+- **`bump_reminders.app`**: every pending row belongs to the app that armed it,
+  and each sweeper claims only its own (`claim_due_bumps(app=…)`). Otherwise
+  Moddy's sweeper would claim a mini-bot's row, mark it sent and drop it.
+  `BumpReminderModule.on_transfer_in` reassigns the rows when the module moves
+  to Moddy, so a countdown in progress survives the transfer.
+- **Moddy's offer** (`BumpSuggestionService`) is skipped when another app owns
+  the module in that server.
+- **Invite link** (`/about`): `bot + applications.commands`, permissions computed
+  from the module (view, send, history, external emojis) + *View Audit Log*.
+  Never Administrator.
+- **Intents**: `guilds`, `guild_messages`, `message_content` (directory replies
+  are other bots' messages), `integrations`. `message_content` is
+  **privileged**: it needs to be justified to Discord once the bot passes
+  100 servers ("reads the replies of bump bots to detect a successful bump").
+- **Bump prospects** (team side): a server where this bot runs the module is no
+  longer a prospect.
+
+Setup checklist:
+1. Create the application on the Developer Portal: name, avatar, description.
+   Enable the **Message Content** intent.
+2. Railway, mini-bots service: `MINIBOT_BUMP_REMINDER_TOKEN`.
+3. Optional: set `application_id` in its `MiniBotSpec` if the bot user id ever
+   differs from the application id. They are the same for every bot created
+   since 2016.
+4. Start: the emojis are copied, the commands published, and the bot shows in
+   `/dev minibots`.

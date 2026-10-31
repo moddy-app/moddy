@@ -58,9 +58,28 @@ def module_names(client, locale: str) -> str:
     return ", ".join(names)
 
 
+#: Asked on top of the modules' own needs: reading who added the bot (its
+#: welcome DM goes to them, not to the owner by default).
+EXTRA_INVITE_PERMISSIONS = ("view_audit_log",)
+
+
+def invite_permissions(client) -> int:
+    """Exactly what the bot's modules need (never Administrator, rule #12)."""
+    perms = discord.Permissions.none()
+    names = set(EXTRA_INVITE_PERMISSIONS)
+    for cls in client.module_manager.registered_modules.values():
+        names.update(cls.required_permissions())
+    for name in names:
+        if hasattr(perms, name):
+            setattr(perms, name, True)
+    return perms.value
+
+
 def invite_url(client) -> str:
+    """Add-to-server link: bot + slash commands, with the right permissions."""
     app_id = client.spec.application_id or (client.user.id if client.user else 0)
-    return f"https://discord.com/oauth2/authorize?client_id={app_id}"
+    return (f"https://discord.com/oauth2/authorize?client_id={app_id}"
+            f"&scope=bot+applications.commands&permissions={invite_permissions(client)}")
 
 
 # --------------------------------------------------------------------------- #
@@ -194,9 +213,13 @@ async def send_welcome(client, guild: discord.Guild) -> bool:
         locale = await guild_locale(client, guild)
         variables = {"name": client.spec.name, "server": guild.name,
                      "modules": module_names(client, locale)}
-        content = welcome_content(client, locale)
+        content, view = welcome_content(client, locale), None
+        if client.spec.welcome_builder:
+            built = await _load(client.spec.welcome_builder)(client, guild, locale)
+            if built is not None:
+                content, variables, view = built
         result = await client.notifications.send_dm(
-            installer, content=content, variables=variables,
+            installer, content=content, variables=variables, view=view,
             source=NotificationSource.service("minibots", author=ContentAuthor.MODDY),
             locale=locale,
         )

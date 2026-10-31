@@ -6790,6 +6790,18 @@
         "title": "Comando exclusivo do Moddy",
         "description": "`{command}` não roda no {name}. Use com @Moddy: os comandos de informação do Moddy já incluem todos os mini-bots."
       }
+    },
+    "bots": {
+      "bump_reminder": {
+        "auto_setup_note": "Lembretes ativados automaticamente neste canal. Cargos a mencionar, intervalo: {config}.",
+        "welcome": {
+          "title": "{name} está pronto",
+          "present": "Obrigado por adicionar **{name}** em **{server}**!\n\nEstou vendo {directories} no seu servidor. **Não precisa fazer nada**: dê bump como sempre e, a partir do primeiro bump bem-sucedido, agradeço quem deu e chamo o canal quando o próximo for possível.\n\nPara mencionar um cargo ou mudar o intervalo: {config}.",
+          "none": "Obrigado por adicionar **{name}** em **{server}**!\n\nAdicione um site de bump (DISBOARD, DiscordL, French.gg…) e dê bump como sempre: a partir do primeiro bump bem-sucedido, agradeço quem deu e chamo o canal quando o próximo for possível. Nada para configurar.\n\nPara mencionar um cargo ou mudar o intervalo: {config}.",
+          "elsewhere": "Obrigado por adicionar **{name}** em **{server}**!\n\nNeste servidor, os lembretes de bump já são feitos pelo **Moddy**: fico de fora para nunca duplicar lembretes. Você pode me remover sem perder nada.",
+          "pick": "Prefere escolher o canal agora? Opcional:"
+        }
+      }
     }
   }
 }

@@ -294,6 +294,16 @@ class BumpReminderModule(ModuleBase):
             logger.error(f"Error syncing bump reminders after {action}: {e}", exc_info=True)
         return {}
 
+    async def on_transfer_in(self, from_app: str) -> Dict[str, Any]:
+        """Taken over from another app (a mini-bot -> Moddy): its pending
+        countdowns become ours, so the next reminder still goes out on time."""
+        app = getattr(getattr(self.bot, "module_manager", None), "app", "moddy")
+        try:
+            await self.bot.db.reassign_bump_reminders(self.guild_id, app)
+        except Exception as e:
+            logger.error(f"Could not reassign bump reminders of guild {self.guild_id}: {e}")
+        return await super().on_transfer_in(from_app)
+
     # ----------------------------------------------------------------- events
     def entry_for(self, channel_id: int, bot_key: str) -> Optional[Dict[str, Any]]:
         """The reminder watching this directory in this channel, if any."""
