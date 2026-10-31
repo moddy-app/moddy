@@ -152,7 +152,7 @@ moddy/
 │
 ├── minibots/                  # Mini-bots core: single-feature Discord apps sharing Moddy's code + DB
 │   ├── ownership.py           #   Pure: who runs a module config (`app` key, absent = moddy), can_claim
-│   ├── spec.py                #   MiniBotSpec + SPECS registry (empty for now), app_display_name
+│   ├── spec.py                #   MiniBotSpec + SPECS registry (Bump Reminder), app_display_name
 │   ├── status.py              #   Redis contract (minibots:status / apps / control / ack)
 │   ├── resources.py           #   Shared once: 1 small DB pool, Redis, i18n, TechLogger
 │   ├── client.py              #   MiniBotClient(commands.Bot): lean cache (no members/messages), ModuleManager(app=…)
@@ -161,9 +161,9 @@ moddy/
 │   ├── queries.py             #   Info questions Moddy's staff commands ask the mini-bots (mutuals, servers…)
 │   ├── emojis.py              #   Moddy's app emojis copied to each mini-bot app + send-time id swap
 │   ├── branding.py            #   Under a mini-bot, translated texts name the bot instead of "Moddy"
-│   └── bots/bump_reminder.py  #   Bump Reminder mini-bot: zero setup, smart welcome, directory added later
 │   ├── runtime.py             #   N clients in ONE process: supervision, heartbeat, control, periodic jobs
-│   └── main.py                #   `python -m minibots.main` (second Railway service)
+│   ├── main.py                #   `python -m minibots.main` (second Railway service)
+│   └── bots/bump_reminder.py  #   Bump Reminder mini-bot: zero setup, smart welcome, directory added later
 │
 ├── stats/                     # Statistics (aggregate before writing)
 │   ├── registry.py            #   Every metric declared once (no migration to add one)
