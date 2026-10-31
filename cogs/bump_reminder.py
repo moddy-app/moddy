@@ -82,6 +82,8 @@ class BumpReminder(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        from services.bump_suggestion_service import BumpSuggestionService
+        self.suggestions = BumpSuggestionService(bot)
         self.sweep_bump_reminders.start()
 
     def cog_unload(self):
@@ -115,6 +117,15 @@ class BumpReminder(commands.Cog):
             logger.error(
                 f"Error handling bump message in guild {message.guild.id}: {e}",
                 exc_info=True)
+
+    @commands.Cog.listener()
+    async def on_member_join(self, member: discord.Member):
+        # A directory joining a server Moddy is already in: offer the module
+        # to whoever added it (services/bump_suggestion_service.py). Humans and
+        # every other bot return on the first two checks.
+        if not member.bot or bot_by_app_id(member.id) is None:
+            return
+        await self.suggestions.on_member_join(member)
 
     async def _on_bump(self, message: discord.Message, module,
                        hit, entry: Dict[str, Any]) -> None:

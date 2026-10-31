@@ -1750,6 +1750,18 @@
       },
       "buttons": {
         "add": "Ajouter"
+      },
+      "suggest": {
+        "title": "Activer les rappels de bump ?",
+        "body": "{emoji} **{name}** vient d'être ajouté sur **{server}**. Moddy peut rappeler le salon dès que `{command}` est de nouveau disponible (toutes les {interval}), pour ne plus rater un seul bump.",
+        "pick": "Choisis le salon où vous lancez la commande : le rappel y est activé immédiatement.",
+        "placeholder": "Salon où vous bumpez",
+        "footer": "Rôles à mentionner, délai et le reste : {config} → Bump Reminder, sur le serveur.",
+        "no_channel": "Moddy ne peut encore écrire dans aucun salon textuel de ce serveur. Donne-lui accès à ton salon de bump, puis configure le rappel avec {config}.",
+        "done_title": "Rappel de bump activé",
+        "done_body": "Moddy surveille maintenant les bumps {emoji} **{name}** dans {channel} sur **{server}**. Ajuste-le quand tu veux avec {config}.",
+        "guild_gone": "Moddy n'est plus sur ce serveur.",
+        "channel_gone": "Ce salon n'existe plus."
       }
     },
     "automod_ai": {

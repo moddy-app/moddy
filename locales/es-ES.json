@@ -1751,6 +1751,18 @@
       },
       "buttons": {
         "add": "Añadir"
+      },
+      "suggest": {
+        "title": "¿Activar los recordatorios de bump?",
+        "body": "{emoji} **{name}** acaba de añadirse a **{server}**. Moddy puede avisar al canal en cuanto `{command}` vuelva a estar disponible (cada {interval}), para no perder ni un bump.",
+        "pick": "Elige el canal donde usáis el comando: el recordatorio se activa ahí al instante.",
+        "placeholder": "Canal donde hacéis bump",
+        "footer": "Roles a mencionar, retraso y lo demás: {config} → Bump Reminder, en el servidor.",
+        "no_channel": "Moddy todavía no puede escribir en ningún canal de texto de este servidor. Dale acceso a tu canal de bump y configura el recordatorio con {config}.",
+        "done_title": "Recordatorio de bump activado",
+        "done_body": "Moddy vigila ahora los bumps de {emoji} **{name}** en {channel} en **{server}**. Ajústalo cuando quieras con {config}.",
+        "guild_gone": "Moddy ya no está en este servidor.",
+        "channel_gone": "Ese canal ya no existe."
       }
     },
     "automod_ai": {

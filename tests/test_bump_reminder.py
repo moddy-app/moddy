@@ -631,7 +631,8 @@ class TestTranslations:
         keys = set()
         for name in ("modules/bump_reminder.py",
                      "modules/configs/bump_reminder_config.py",
-                     "utils/bump_views.py", "cogs/bump_reminder.py"):
+                     "utils/bump_views.py", "cogs/bump_reminder.py",
+                     "services/bump_suggestion_service.py"):
             keys |= set(pattern.findall((ROOT / name).read_text(encoding="utf-8")))
         for mode in ("auto", "button", "never"):
             keys.add(f"modules.bump_reminder.ping.{mode}")
@@ -939,3 +940,75 @@ class TestDirectoryIcons:
         for spec in BUMP_BOTS:
             assert spec.emoji == BUMP_DIRECTORY_EMOJIS[spec.key]
             assert re.fullmatch(r"<:[A-Za-z0-9_]+:\d{17,20}>", spec.emoji), spec.key
+
+
+# --------------------------------------------------------------------------- #
+# Activation offer when a directory joins (services/bump_suggestion_service.py)
+# --------------------------------------------------------------------------- #
+class TestSuggestion:
+
+    def test_offered_when_nothing_is_configured(self):
+        from services.bump_suggestion_service import should_suggest
+        assert should_suggest(None, "disboard")
+        assert should_suggest({}, "disboard")
+
+    def test_not_offered_when_that_directory_already_has_a_reminder(self):
+        from services.bump_suggestion_service import should_suggest
+        stored = {"reminders": [{"bot": "disboard", "channel_id": 1, "enabled": False}]}
+        assert not should_suggest(stored, "disboard")
+        # Another directory is still worth offering.
+        assert should_suggest(stored, "dl")
+
+    def test_not_offered_when_the_module_is_paused(self):
+        from services.bump_suggestion_service import should_suggest
+        assert not should_suggest({"state": "paused", "reminders": []}, "disboard")
+
+    def test_channels_named_bump_come_first_and_the_list_fits_a_select(self):
+        from services.bump_suggestion_service import MAX_CHANNEL_OPTIONS, rank_channels
+        channels = [SimpleNamespace(id=i, name=f"general-{i}", position=i) for i in range(40)]
+        channels.append(SimpleNamespace(id=99, name="Bump-ici", position=50))
+        ranked = rank_channels(channels)
+        assert ranked[0].id == 99
+        assert len(ranked) == MAX_CHANNEL_OPTIONS
+        assert [c.id for c in ranked[1:4]] == [0, 1, 2]
+
+    @pytest.mark.asyncio
+    async def test_offer_is_made_once_per_server_and_directory(self):
+        from services.bump_suggestion_service import BumpSuggestionService
+        service = BumpSuggestionService(SimpleNamespace(redis=None))
+        assert await service._claim(1, "disboard")
+        assert not await service._claim(1, "disboard")
+        assert await service._claim(1, "dl")
+        assert await service._claim(2, "disboard")
+
+    @pytest.mark.parametrize("locale", LOCALES)
+    def test_card_offers_a_picker_naming_server_and_directory(self, locale):
+        from utils.i18n import i18n
+        i18n.load_translations()
+        from bumpreminder import bot_by_key
+        from utils.bump_views import BumpSuggestChannelSelect, build_suggestion_card
+
+        spec = bot_by_key("disboard")
+        guild = SimpleNamespace(id=123, name="My Server")
+        channels = [SimpleNamespace(id=5, name="bump"), SimpleNamespace(id=6, name="general")]
+        view = build_suggestion_card(spec, guild, channels, locale=locale)
+        items = list(view.walk_children())
+        text = "\n".join(getattr(i, "content", "") for i in items)
+        assert "My Server" in text and spec.name in text
+        selects = [i for i in items if isinstance(i, BumpSuggestChannelSelect)]
+        assert len(selects) == 1
+        assert selects[0].item.custom_id == "moddy:bump:suggest:123:disboard"
+        assert [o.value for o in selects[0].item.options] == ["5", "6"]
+
+    def test_card_without_any_channel_has_no_picker(self):
+        from bumpreminder import bot_by_key
+        from utils.bump_views import BumpSuggestChannelSelect, build_suggestion_card
+        view = build_suggestion_card(bot_by_key("dl"), SimpleNamespace(id=1, name="S"), [],
+                                     locale="en-US")
+        assert not any(isinstance(i, BumpSuggestChannelSelect) for i in view.walk_children())
+
+    def test_picker_custom_id_matches_its_own_template(self):
+        from utils.bump_views import BumpSuggestChannelSelect
+        item = BumpSuggestChannelSelect(0, "frenchgg")
+        assert BumpSuggestChannelSelect.__discord_ui_compiled_template__.fullmatch(
+            item.item.custom_id)

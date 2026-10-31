@@ -43,7 +43,7 @@ moddy/
 │   ├── brocoli_chat.py        #   Brocoli in a channel (dev-guild gated, SSE → Components V2)
 │   ├── emoji.py               #   /emoji (one emoji, or several pasted from a message)
 │   ├── reminder.py            #   /reminder command
-│   ├── bump_reminder.py       #   Bump Reminder listener + 30s sweeper loop
+│   ├── bump_reminder.py       #   Bump Reminder listener + 30s sweeper loop + directory-join offer
 │   ├── bump_prospects.py      #   Bump prospects: scan triggers + follow-up loop (internal, team-side)
 │   ├── member_applications.py #   Discord join requests: gateway parser hook + reconciliation poll
 │   ├── stats_events.py        #   Statistics emitters (commands, members, guild joins)
@@ -384,6 +384,7 @@ moddy/
 │   ├── support_request_service.py # Bug reports + config-help requests (team side)
 │   ├── bump_prospect_service.py # Bump prospects: scan queue, one team card per server, follow-up
 │   ├── module_transfer.py     #   Mini-bot → Moddy handoff (lock, release, ownership CAS, adopt, logs)
+│   ├── bump_suggestion_service.py # DMs a one-pick Bump Reminder activation when a directory joins
 │   ├── transcription_service.py #  Voice/audio speech-to-text (shared by cog + module)
 │   ├── team_link_session.py   #   /team role: the window in which a staffer links the roles
 │   ├── heartbeat.py           #   Moddy Health Monitor heartbeat (dead man's switch)
