@@ -27,14 +27,14 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 import discord
 from discord import ui
 
-from bumpreminder import BumpBot, bot_by_key
+from bumpreminder import BumpBot, bot_by_key, format_interval
 from cogs.error_handler import BaseView
 from config import COLORS
 from utils import i18n
 from utils.components_v2 import create_success_message
-from utils.emojis import ROCKET_LAUNCH, TIME
+from utils.emojis import DONE, ROCKET_LAUNCH, TIME
 from utils.i18n import t
-from utils.errors import NotYours
+from utils.errors import MissingPermissions, NotFound, NotYours
 
 logger = logging.getLogger('moddy.bump_views')
 
@@ -172,6 +172,9 @@ class BumpReminderPersistence(BaseView):
         # Auth model: the bumper's id is in the custom_id and re-checked on
         # every click, so no guild or owner context needs storing anywhere.
         bot.add_dynamic_items(BumpOptInButton)
+        # Auth model: the activation picker carries the server and directory in
+        # its custom_id; Manage Server is re-checked on that server per click.
+        bot.add_dynamic_items(BumpSuggestChannelSelect)
 
 
 # --------------------------------------------------------------------------- #
@@ -283,3 +286,164 @@ def unnotifiable_roles(roles: Sequence[discord.Role],
     if can_mention_everyone:
         return []
     return [role for role in roles if not role.mentionable]
+
+
+# --------------------------------------------------------------------------- #
+# The activation offer (services/bump_suggestion_service.py)
+# --------------------------------------------------------------------------- #
+_SUGGEST_PREFIX = "moddy:bump:suggest"
+
+
+def suggestion_content(spec: BumpBot, locale: str):
+    """Uniform payload behind the offer DM. ``{server}`` stays a placeholder."""
+    from notifications.models import NotificationContent
+
+    return NotificationContent(
+        title=t("modules.bump_reminder.suggest.title", locale=locale),
+        body=t("modules.bump_reminder.suggest.body", locale=locale,
+               emoji=spec.emoji, name=spec.name, server="{server}",
+               command=spec.command_hint,
+               interval=format_interval(spec.default_interval)),
+        icon=ROCKET_LAUNCH,
+        accent_color=ACCENT,
+        template_id=f"bump_reminder.suggest.{spec.key}",
+    )
+
+
+def build_suggestion_card(spec: BumpBot, guild: discord.Guild,
+                          channels: Sequence[Any], *, locale: str) -> BaseView:
+    """The DM offering to activate the reminder for a directory just added.
+
+    The picker *is* the activation: choosing a channel creates the reminder
+    there with the directory's defaults. Without any channel Moddy can post in,
+    the card only points at ``/config``.
+    """
+    from config import command_label
+
+    view = BaseView()
+    container = ui.Container(accent_colour=discord.Colour(ACCENT))
+    container.add_item(ui.TextDisplay(
+        f"### {ROCKET_LAUNCH} {t('modules.bump_reminder.suggest.title', locale=locale)}"))
+    container.add_item(ui.TextDisplay(
+        t("modules.bump_reminder.suggest.body", locale=locale,
+          emoji=spec.emoji, name=spec.name, server=guild.name,
+          command=spec.command_hint,
+          interval=format_interval(spec.default_interval))))
+
+    if channels:
+        container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+        container.add_item(ui.TextDisplay(
+            t("modules.bump_reminder.suggest.pick", locale=locale)))
+        row = ui.ActionRow()
+        row.add_item(BumpSuggestChannelSelect(
+            guild.id, spec.key, locale=locale,
+            options=[discord.SelectOption(label=f"#{c.name}"[:100], value=str(c.id))
+                     for c in channels]))
+        container.add_item(row)
+        container.add_item(ui.TextDisplay("-# " + t(
+            "modules.bump_reminder.suggest.footer", locale=locale,
+            config=command_label("config"))))
+    else:
+        container.add_item(ui.TextDisplay(t(
+            "modules.bump_reminder.suggest.no_channel", locale=locale,
+            config=command_label("config"))))
+
+    view.add_item(container)
+    return view
+
+
+def build_suggestion_done_card(spec: BumpBot, guild_name: str, channel_id: int,
+                               *, locale: str) -> BaseView:
+    """What the offer becomes once accepted: no picker left to click twice."""
+    from config import command_label
+
+    view = BaseView()
+    container = ui.Container(accent_colour=discord.Colour(COLORS["success"]))
+    container.add_item(ui.TextDisplay(
+        f"### {DONE} {t('modules.bump_reminder.suggest.done_title', locale=locale)}"))
+    container.add_item(ui.TextDisplay(t(
+        "modules.bump_reminder.suggest.done_body", locale=locale,
+        channel=f"<#{channel_id}>", emoji=spec.emoji, name=spec.name,
+        server=guild_name, config=command_label("config"))))
+    view.add_item(container)
+    return view
+
+
+class BumpSuggestChannelSelect(
+    ui.DynamicItem[ui.Select],
+    template=rf"{_SUGGEST_PREFIX}:(?P<guild>\d{{1,20}}):(?P<bot>[a-z]{{1,16}})",
+):
+    """Channel picker on the offer DM — picking one activates the reminder.
+
+    It lives in a DM, so nothing about the server comes from the interaction:
+    the server and directory are in the custom_id, and Manage Server is checked
+    on that server for whoever clicks, every time.
+    """
+
+    def __init__(self, guild_id: int, bot_key: str, *, locale: str = "en-US",
+                 options: Optional[List[discord.SelectOption]] = None):
+        super().__init__(ui.Select(
+            placeholder=t("modules.bump_reminder.suggest.placeholder", locale=locale)[:150],
+            options=options or [discord.SelectOption(label="-", value="0")],
+            min_values=1, max_values=1,
+            custom_id=f"{_SUGGEST_PREFIX}:{guild_id}:{bot_key}",
+        ))
+        self.guild_id = guild_id
+        self.bot_key = bot_key
+
+    @classmethod
+    async def from_custom_id(cls, interaction: discord.Interaction,
+                             item: ui.Select, match: re.Match):
+        return cls(int(match["guild"]), match["bot"])
+
+    @_guarded
+    async def callback(self, interaction: discord.Interaction):
+        from modules.bump_reminder import DEFAULT_PING_MODE, new_entry, normalize_config
+        from utils.members import get_or_fetch_member
+
+        locale = i18n.get_locale(interaction)
+        bot = interaction.client
+        spec = bot_by_key(self.bot_key)
+        guild = bot.get_guild(self.guild_id)
+        if spec is None or guild is None:
+            raise NotFound(description=t("modules.bump_reminder.suggest.guild_gone", locale=locale))
+
+        member = await get_or_fetch_member(guild, interaction.user.id)
+        if member is None or not member.guild_permissions.manage_guild:
+            raise MissingPermissions(["manage_guild"])
+
+        values = interaction.data.get("values") or []
+        channel = guild.get_channel(int(values[0])) if values and values[0].isdigit() else None
+        if not isinstance(channel, discord.TextChannel):
+            raise NotFound(description=t("modules.bump_reminder.suggest.channel_gone", locale=locale))
+
+        await interaction.response.defer()  # ack: DB read + write below
+
+        stored = await bot.module_manager.get_module_config(guild.id, "bump_reminder")
+        reminders = normalize_config(stored)["reminders"]
+        existing = next((r for r in reminders if r["bot"] == spec.key), None)
+        if existing is not None:
+            # Already done — from /config, the dashboard or another click.
+            await interaction.edit_original_response(view=build_suggestion_done_card(
+                spec, guild.name, existing["channel_id"], locale=locale))
+            return
+
+        reminders.append(new_entry(
+            spec.key, channel_id=channel.id, role_ids=[],
+            ping_mode=DEFAULT_PING_MODE, interval=spec.default_interval,
+            created_by=interaction.user.id,
+        ))
+        success, error = await bot.module_manager.save_module_config(
+            guild.id, "bump_reminder", normalize_config({"reminders": reminders}),
+            actor_id=interaction.user.id,
+        )
+        if not success:
+            await interaction.followup.send(
+                t("modules.config.save.error", locale=locale, error=error or ""),
+                ephemeral=True)
+            return
+
+        logger.info("Bump reminder activated from the offer: guild %s, %s, channel %s, by %s",
+                    guild.id, spec.key, channel.id, interaction.user.id)
+        await interaction.edit_original_response(view=build_suggestion_done_card(
+            spec, guild.name, channel.id, locale=locale))
