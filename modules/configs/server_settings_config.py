@@ -192,6 +192,10 @@ class ServerSettingsConfigView(BaseView):
         await interaction.followup.send(
             t('modules.config.save.success', locale=locale), ephemeral=True)
 
+        # Moddy and the mini-bots each cache the language: tell the other side.
+        from utils.guild_language import broadcast_language_change
+        await broadcast_language_change(bot, interaction.guild_id)
+
         # Panels are messages already written in the previous language: only a
         # re-post brings them in line (AltGuard's gate, the ticket panels).
         manager = getattr(bot, "module_manager", None)

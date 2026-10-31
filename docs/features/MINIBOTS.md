@@ -164,6 +164,16 @@ built, not before.
     (`breadcrumb`, `open_main_config`). A module home hides its own Back
     button with `standalone_module()`; this is done for Bump Reminder, and a
     future one-module bot does the same on its module's home.
+  - **Language**: with no home screen, the module screen carries a **Language**
+    button (`ServerLanguageButton`, persistent `moddy:config:language`). It
+    opens the server settings, whose Back returns to the module.
+  - The server language is one setting shared with Moddy, but each process
+    caches it. A change made on one side refreshes the other:
+    - from a mini-bot, a `settings_updated` on `moddy:bot`: Moddy drops its
+      cache and re-posts its panels;
+    - from Moddy (or a dashboard push), a `reload_guild` on `minibots:control`:
+      the mini-bots drop theirs.
+    - See `utils/guild_language.py::broadcast_language_change`.
 - **`/about`**: what the bot does, "made by the Moddy team", server count, and
   links (add this bot, get Moddy, support, docs).
 - **Welcome DM** to whoever added the bot (installer from the audit log,

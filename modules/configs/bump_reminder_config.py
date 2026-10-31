@@ -49,7 +49,7 @@ from config import COLORS
 from modules.configs._test_send import TestSendButton, test_button_row
 from modules.configs._common import (
     quote, ack, channel_label, check_guild_perms, config_state, crumb, crumb_segment,
-    load_before_modal, module_manage_button, open_main_config, say, show,
+    load_before_modal, ServerLanguageButton, module_manage_button, open_main_config, say, show,
     standalone_module, state_accent,
 )
 from utils.components_v2 import create_success_message
@@ -373,6 +373,10 @@ class BumpReminderConfigView(BaseView):
         button_row.add_item(add_btn)
         if self.module_state is not None:
             button_row.add_item(module_manage_button(_MODULE_ID, self.locale))
+        # One-module app: no home screen holds the server settings, so the
+        # language is reached from here.
+        if standalone_module():
+            button_row.add_item(ServerLanguageButton(locale=self.locale))
         self.add_item(button_row)
 
     def _entry_channel_name(self, entry: Dict[str, Any]) -> str:
