@@ -662,6 +662,10 @@
           "description": "Formato de destino (deixe vazio para escolher numa lista)"
         }
       }
+    },
+    "about": {
+      "name": "sobre",
+      "description": "Sobre este bot"
     }
   },
   "choices": {

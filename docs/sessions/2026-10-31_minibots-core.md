@@ -76,3 +76,31 @@ TECHNICAL_LOGS, MODULE_SYSTEM).
 - Backend/dashboard: refuse saves on modules whose `app` is not `moddy`, show
   "Managed by X"; route AltGuard verification / transcripts for mini-bot apps.
 - Not tested against a live Discord gateway (needs a mini-bot token).
+
+## Second pass (same day)
+Jules's follow-ups:
+- **Logs on Moddy's existing webhooks.** The `minibots` category and
+  `LOG_WEBHOOK_MINIBOTS` are removed. Every card names its bot: footer
+  ``bot `X` ``, webhook username, avatar (`TechLogger.for_app`). Moddy's cards
+  say ``bot `Moddy` `` too.
+- **Info staff commands aggregate the mini-bots** through a Redis query to the
+  mini-bots process (`minibots/queries.py`): `t.mutualserver`, `t.server` and
+  `t.invite` (when Moddy is absent), `d.servers [app]`, `d.stats`.
+- **Action staff commands on a mini-bot.** `@Bot d.jsk` works. The router
+  accepts the bot's own mention; the allowlist is `d.jsk`, `d.sql`,
+  `d.presence`, `d.stats`, `d.servers`, `t.server`, `t.invite`; anything else
+  answers "Moddy-only".
+- **Automatic built-ins**: `/config` (opens the single module), `/about`, a
+  welcome DM through notifications, `ErrorTracker`, persistent views, a
+  hash-gated command sync, the custom status.
+- **Emojis**: Moddy's icons are application emojis, invisible to other apps.
+  They are auto-copied into each mini-bot's application at start (re-copied
+  when replaced in Moddy) and swapped at send time with a ContextVar bound to
+  each client's task.
+
+Known limits:
+- Mutual servers checks at most 100 servers per mini-bot.
+- `t.user` counts Moddy's shared servers only.
+- The `guild_messages` intent sends every message to the process: no RAM cost,
+  some CPU.
+- Not tested on a live gateway (no mini-bot token yet).

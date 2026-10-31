@@ -30,6 +30,12 @@ class InviteCommand(StaffCommand):
             return
 
         guild = ctx.bot.get_guild(gid)
+        if not guild and not getattr(ctx.bot, "app_id", None):
+            # Not on Moddy: a mini-bot present there creates it.
+            view = await _minibot_invite(ctx, gid, locale)
+            if view is not None:
+                await ctx.send(view=view)
+                return
         if not guild:
             await ctx.send(view=design.error(
                 t("staff.team.server_notfound_title", locale=locale),
@@ -75,3 +81,33 @@ class InviteCommand(StaffCommand):
         view.add_item(row)
         await ctx.send(view=view)
         logger.info("Staff %s requested invite for %s (%s)", ctx.author.id, guild.name, guild.id)
+
+
+async def _minibot_invite(ctx, guild_id: int, locale: str):
+    """An invite created by a mini-bot present in the server, or None."""
+    from minibots.queries import ask
+    from minibots.spec import app_display_name
+    results = await ask(ctx.bot, "create_invite",
+                        {"guild_id": str(guild_id), "requested_by": str(ctx.author)}) or {}
+    for app, result in results.items():
+        if not isinstance(result, dict):
+            continue
+        if result.get("error") == "no_perm":
+            return design.error(
+                t("staff.team.invite.fail_title", locale=locale),
+                t("staff.team.invite.no_perm", locale=locale, name=f"**{result.get('name', guild_id)}**"))
+        if result.get("url"):
+            view = BaseView()
+            container = design.make_container("primary")
+            container.add_item(ui.TextDisplay(design.title_line(emojis.WEB, t("staff.team.invite.title", locale=locale))))
+            container.add_item(ui.TextDisplay(
+                f"**{result['name']}**\n`{result['url']}`\n-# "
+                + t("staff.team.invite.via_minibot", locale=locale, app=f"`{app_display_name(app)}`")))
+            view.add_item(container)
+            row = ui.ActionRow()
+            row.add_item(ui.Button(label=t("staff.team.invite.open", locale=locale), url=result["url"],
+                                   style=discord.ButtonStyle.link))
+            view.add_item(row)
+            logger.info("Staff %s requested invite for %s through %s", ctx.author.id, guild_id, app)
+            return view
+    return None

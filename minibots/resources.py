@@ -28,6 +28,37 @@ class _LoggerOwner:
         self.guilds = ()
 
 
+def install_process_patches(db) -> None:
+    """The discord.py patches Moddy installs, once for the whole process:
+    light-theme icons (needs the preferences cache), the interaction guard,
+    then the mini-bot emoji swap (outermost, see minibots/emojis.py)."""
+    try:
+        from utils import icon_theme
+        icon_theme.install()
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Mini-bots: icon theme not installed: %s", exc)
+    try:
+        from utils import interaction_guard
+        interaction_guard.install()
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Mini-bots: interaction guard not installed: %s", exc)
+    try:
+        from minibots import emojis
+        emojis.install()
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Mini-bots: emoji swap not installed: %s", exc)
+
+
+async def load_preferences(db) -> None:
+    if db is None:
+        return
+    try:
+        from utils import user_preferences
+        await user_preferences.load_all(_LoggerOwner(db))
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Mini-bots: user preferences not loaded: %s", exc)
+
+
 class SharedResources:
     def __init__(self, *, db=None, redis=None, tech_logger=None,
                  version: Optional[str] = None):
@@ -69,6 +100,10 @@ class SharedResources:
 
         from utils.tech_logger import TechLogger
         tech_logger = TechLogger(_LoggerOwner(db))
+
+        install_process_patches(db)
+
+        await load_preferences(db)
 
         version = (os.environ.get("RAILWAY_GIT_COMMIT_SHA") or "")[:7] or None
         return cls(db=db, redis=redis, tech_logger=tech_logger, version=version)

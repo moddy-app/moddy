@@ -155,7 +155,11 @@ moddy/
 │   ├── spec.py                #   MiniBotSpec + SPECS registry (empty for now), app_display_name
 │   ├── status.py              #   Redis contract (minibots:status / apps / control / ack)
 │   ├── resources.py           #   Shared once: 1 small DB pool, Redis, i18n, TechLogger
-│   ├── client.py              #   MiniBotClient: lean cache (no members/messages), ModuleManager(app=…)
+│   ├── client.py              #   MiniBotClient(commands.Bot): lean cache (no members/messages), ModuleManager(app=…)
+│   ├── builtin.py             #   Automatic per bot: /config (single module), /about, welcome DM, command sync
+│   ├── staff.py               #   Staff commands on a mini-bot (@Bot d.jsk …), allowlist
+│   ├── queries.py             #   Info questions Moddy's staff commands ask the mini-bots (mutuals, servers…)
+│   ├── emojis.py              #   Moddy's app emojis copied to each mini-bot app + send-time id swap
 │   ├── runtime.py             #   N clients in ONE process: supervision, heartbeat, control, periodic jobs
 │   └── main.py                #   `python -m minibots.main` (second Railway service)
 │

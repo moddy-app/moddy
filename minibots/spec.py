@@ -67,6 +67,11 @@ class MiniBotSpec:
     web_surfaces: FrozenSet[str] = field(default_factory=frozenset)
     #: Discord application id (invite links, backend registry). Optional.
     application_id: Optional[int] = None
+    #: Persistent views of its modules, ``"module.path:ClassName"`` (the common
+    #: /config ones are always registered, see minibots/builtin.py).
+    persistent_views: Tuple[str, ...] = ()
+    #: Custom status shown under the bot's name.
+    activity: str = "/config • /about"
 
     def __post_init__(self):
         if not _APP_ID_RE.match(self.id) or self.id == MODDY_APP:

@@ -97,6 +97,10 @@ MODDY_AUTOMOD_LABEL_HOURLY_CAP: int = _int_or_zero(
 SUPPORT_URL: str = os.environ.get("MODDY_SUPPORT_URL", "https://moddy.app/support")
 DASHBOARD_URL: str = os.environ.get("MODDY_DASHBOARD_URL", "https://dashboard.moddy.app")
 DOCS_URL: str = os.environ.get("MODDY_DOCS_URL", "https://docs.moddy.app")
+# Where a mini-bot sends people who want more than its single feature (its
+# /about, its /config, its welcome DM) — docs/features/MINIBOTS.md.
+MODDY_INVITE_URL: str = os.environ.get(
+    "MODDY_INVITE_URL", "https://discord.com/oauth2/authorize?client_id=1373916203814490194")
 
 # How a command is written inside a message Moddy sends: bold + inline code,
 # e.g. **`/config`**. Not a clickable </config:id> mention — that id changes if
@@ -275,9 +279,6 @@ LOG_WEBHOOK_ENV = {
     "api_call": "LOG_WEBHOOK_API_CALL",        # gateway: every outbound API call
     # bot identity changed on a server (nickname / avatar / bio / name style)
     "bot_customization": "LOG_WEBHOOK_BOT_CUSTOMIZATION",
-    # mini-bots: lifecycle of each app, their server joins/leaves, and every
-    # module transfer from a mini-bot to Moddy (docs/features/MINIBOTS.md)
-    "minibots": "LOG_WEBHOOK_MINIBOTS",
 }
 
 # Resolved category -> webhook URL (only those actually configured)

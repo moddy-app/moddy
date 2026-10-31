@@ -290,8 +290,13 @@ def config_banner_items(guild_id: int, foreign: Dict[str, str], bot,
 
 
 def build_external_module_view(bot, guild_id: int, locale: str, module_id: str,
-                               app: str) -> BaseView:
-    """Shown instead of a module's /config screen when a mini-bot runs it."""
+                               app: str, *, viewer_app: str = "moddy") -> BaseView:
+    """Shown instead of a module's /config screen when another app runs it.
+
+    Seen from Moddy: "Managed by X" + Transfer to Moddy. Seen from a mini-bot
+    (``viewer_app`` is not Moddy): "Managed by Moddy/X here", no button — a
+    mini-bot never takes a module back on its own.
+    """
     from modules.configs._common import breadcrumb
     name = app_display_name(app)
     label = module_label(bot, module_id, locale)
@@ -300,9 +305,13 @@ def build_external_module_view(bot, guild_id: int, locale: str, module_id: str,
     container.add_item(breadcrumb(locale, label))
     container.add_item(ui.TextDisplay(
         f"### {INFO} {t('minibots.transfer.external.title', locale=locale, app=name)}"))
-    container.add_item(ui.TextDisplay(
-        t("minibots.transfer.external.body", locale=locale, app=name, module=label)))
-    container.add_item(ui.ActionRow(TransferToModdyButton(guild_id, app, locale=locale)))
+    if viewer_app == "moddy":
+        container.add_item(ui.TextDisplay(
+            t("minibots.transfer.external.body", locale=locale, app=name, module=label)))
+        container.add_item(ui.ActionRow(TransferToModdyButton(guild_id, app, locale=locale)))
+    else:
+        container.add_item(ui.TextDisplay(
+            t("minibots.transfer.external.elsewhere", locale=locale, app=name, module=label)))
     view.add_item(container)
     view.add_item(ui.ActionRow(ConfigBackButton(locale=locale)))
     return view

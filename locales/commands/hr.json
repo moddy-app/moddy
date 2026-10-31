@@ -662,6 +662,10 @@
           "description": "Ciljni format (ostavi prazno za odabir s popisa)"
         }
       }
+    },
+    "about": {
+      "name": "o-botu",
+      "description": "O ovom botu"
     }
   },
   "choices": {

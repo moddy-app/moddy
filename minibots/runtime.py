@@ -53,6 +53,10 @@ class _AppState:
         self.restarts = 0
         self.last_error: Optional[str] = None
         self.restart_requested = False
+        # Moddy emoji id -> this app's copy. Survives reconnects; bound to the
+        # supervisor task's context so everything the client sends uses it
+        # (minibots/emojis.py).
+        self.emoji_map: Dict[int, tuple] = {}
 
 
 class MiniBotRuntime:
@@ -128,6 +132,10 @@ class MiniBotRuntime:
 
     async def _supervise(self, state: _AppState) -> None:
         import discord
+        from minibots.emojis import set_active_map
+        # This task's context — and every task the client spawns from it
+        # (gateway, events, views) — sends with this app's emoji ids.
+        set_active_map(state.emoji_map)
         backoff = BACKOFF_START
         while not self._stopping:
             client = self._make_client(state.spec)
@@ -179,10 +187,20 @@ class MiniBotRuntime:
             f"**Guilds** `{len(client.guilds)}` • **Modules** `{', '.join(state.spec.modules)}`",
         ])
 
-    async def _lifecycle(self, state: _AppState, event: str, lines: List[str]) -> None:
+    def app_logger(self, state: _AppState):
+        """The technical logger speaking for this app (same webhooks as Moddy)."""
+        client = state.client
+        if client is not None and getattr(client, "tech_logger", None) is not None:
+            return client.tech_logger
         tech = self.resources.tech_logger
+        if tech is None:
+            return None
+        return tech.for_app(tech.bot, state.spec.id, state.spec.name)
+
+    async def _lifecycle(self, state: _AppState, event: str, lines: List[str]) -> None:
+        tech = self.app_logger(state)
         if tech is not None:
-            await tech.log_minibot_lifecycle(state.spec.id, event, lines)
+            await tech.log_minibot_lifecycle(event, lines)
 
     # --------------------------------------------------------------- status
 
@@ -235,6 +253,8 @@ class MiniBotRuntime:
             await asyncio.sleep(mstatus.HEARTBEAT_SECONDS)
 
     async def _run_periodic(self, name: str, interval: float, job) -> None:
+        """A job that sends as a client must wrap the send in
+        ``client.emoji_context()`` (it runs outside any client's task)."""
         while True:
             await asyncio.sleep(interval)
             try:
@@ -274,6 +294,8 @@ class MiniBotRuntime:
                 for client in self.clients():
                     if app in (None, "*", client.app_id) and client.get_guild(guild_id):
                         await client.module_manager.unload_guild_modules(guild_id)
+            elif kind == mstatus.CTRL_QUERY:
+                await self._handle_query(data)
             elif kind == mstatus.CTRL_RESTART:
                 state = self.apps.get(app)
                 if state is not None and state.client is not None:
@@ -281,6 +303,19 @@ class MiniBotRuntime:
                     await state.client.close()
         except Exception as exc:  # noqa: BLE001
             logger.error("Mini-bots control %s failed: %s", kind, exc, exc_info=True)
+
+    async def _handle_query(self, data: dict) -> None:
+        """Answer a staff info question for every ready app (``{app: result}``)."""
+        from minibots import queries
+        method = data.get("method")
+        if method not in mstatus.QUERY_METHODS or not data.get("request_id"):
+            return
+        params = data.get("params") if isinstance(data.get("params"), dict) else {}
+        results = await queries.answer(self.clients(), method, params)
+        redis = self.resources.redis
+        key = mstatus.ack_key(str(data["request_id"]))
+        await redis.rpush(key, json.dumps(results, default=str))
+        await redis.expire(key, mstatus.ACK_TTL)
 
     async def _handle_release(self, data: dict) -> None:
         """Let go of a module Moddy is taking over, then ack.
@@ -292,8 +327,9 @@ class MiniBotRuntime:
         if client is None or not client.is_ready():
             return
         guild_id = int(data["guild_id"])
-        recap = await client.module_manager.release_module(
-            guild_id, str(data["module_id"]), str(data.get("to_app") or "moddy"))
+        with client.emoji_context():
+            recap = await client.module_manager.release_module(
+                guild_id, str(data["module_id"]), str(data.get("to_app") or "moddy"))
         redis = self.resources.redis
         key = mstatus.ack_key(str(data["request_id"]))
         await redis.rpush(key, json.dumps(recap, default=str))

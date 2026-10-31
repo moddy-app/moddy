@@ -1,30 +1,36 @@
 """
-One mini-bot: a deliberately lean ``discord.Client``.
+One mini-bot: a deliberately lean ``commands.Bot``.
 
 Everything a mini-bot does not need is switched off, because each client's
 cache is paid once per bot:
 
-- intents: ``guilds`` + only what its spec declares (never members/presences);
+- intents: ``guilds`` + ``guild_messages`` (staff commands by mention — the
+  content of a message mentioning the bot is delivered without the privileged
+  intent) + only what its spec declares; never members/presences;
 - no message cache (``max_messages=None``), no member cache, no chunking;
-- modules imported only when the bot starts, and loaded per guild lazily (an
-  instance exists only in servers where an event actually needed one).
+- modules imported only when the bot starts, and loaded per guild lazily.
 
-It exposes the attributes the existing modules read on ``bot`` (``db``,
-``redis``, ``module_manager``, ``tech_logger``, ``stats``), so a Moddy module
-runs unchanged under a mini-bot.
+It exposes what the shared code reads on ``bot`` (``db``, ``redis``,
+``module_manager``, ``tech_logger``, ``notifications``, ``stats``,
+``is_developer``, ``launch_time``), so Moddy's modules, /config screens and
+staff commands run unchanged. Built-ins (``/config``, ``/about``, welcome DM)
+come from :mod:`minibots.builtin`, staff commands from :mod:`minibots.staff`.
 """
 
 from __future__ import annotations
 
+import asyncio
+import contextlib
 import importlib
 import inspect
 import logging
 import sys
 import traceback
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Optional
 
 import discord
-from discord import app_commands
+from discord.ext import commands
 
 from minibots.ownership import can_claim
 from minibots.spec import MiniBotSpec
@@ -35,46 +41,81 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("moddy.minibots")
 
+#: A prefix no message ever starts with: mini-bots have no prefix commands
+#: (staff commands are routed by the staff cog, on the bot's mention).
+_NO_PREFIX = "\x00minibot\x00"
+
 
 def build_intents(spec: MiniBotSpec) -> discord.Intents:
     intents = discord.Intents.none()
     intents.guilds = True
+    intents.guild_messages = True
     for name in spec.intents:
         setattr(intents, name, True)
     return intents
 
 
-class MiniBotClient(discord.Client):
+class MiniBotClient(commands.Bot):
     def __init__(self, spec: MiniBotSpec, resources: "SharedResources",
                  runtime: Optional["MiniBotRuntime"] = None):
         super().__init__(
+            command_prefix=_NO_PREFIX,
+            help_command=None,
             intents=build_intents(spec),
             max_messages=None,
             member_cache_flags=discord.MemberCacheFlags.none(),
             chunk_guilds_at_startup=False,
             enable_debug_events=False,
+            activity=discord.CustomActivity(name=spec.activity) if spec.activity else None,
         )
         self.spec = spec
         self.app_id = spec.id
         self.runtime = runtime
         self.resources = resources
-        # Attributes the shared modules expect on ``bot``.
+        self.launch_time = datetime.now(timezone.utc)
+        # What the shared modules / screens / staff commands read on ``bot``.
         self.db = resources.db
         self.redis = resources.redis
-        self.tech_logger = resources.tech_logger
         self.stats = None
         self.module_slash_commands: dict = {}
-        self.tree = app_commands.CommandTree(self)
+        tech = getattr(resources, "tech_logger", None)
+        self.tech_logger = tech.for_app(self, spec.id, spec.name) if tech is not None else None
+        self.staff_logger = None
+        from notifications.service import NotificationService
+        self.notifications = NotificationService(self)
+        state = runtime.apps.get(spec.id) if runtime is not None else None
+        self.emoji_map = state.emoji_map if state is not None else {}
 
         from modules.module_manager import ModuleManager
         self.module_manager = ModuleManager(self, app=spec.id)
         self.module_manager.default_gate = self._default_gate
-        self._presence_reconciled = False
+        self._first_ready_done = False
+
+    def is_developer(self, user_id: int) -> bool:  # replaced by minibots.staff.setup
+        return False
+
+    @contextlib.contextmanager
+    def emoji_context(self):
+        """Send with this app's emoji ids from code running outside its task
+        (control requests, periodic jobs)."""
+        from minibots.emojis import _app_map
+        token = _app_map.set(self.emoji_map)
+        try:
+            yield
+        finally:
+            _app_map.reset(token)
 
     # ------------------------------------------------------------ lifecycle
 
     async def setup_hook(self) -> None:
+        from utils.command_translator import ModdyCommandTranslator
+        from minibots import builtin, staff
+
+        self.tree.on_error = self._on_tree_error
+        await self.tree.set_translator(ModdyCommandTranslator())
         self._register_modules()
+        await builtin.setup(self)
+        await staff.setup(self)
         if self.spec.commands_module:
             module = importlib.import_module(self.spec.commands_module)
             setup = getattr(module, "setup", None)
@@ -96,23 +137,41 @@ class MiniBotClient(discord.Client):
             logger.warning("Mini-bot %s: modules not found: %s", self.app_id, sorted(missing))
 
     async def on_ready(self) -> None:
-        if self.db is not None and not self._presence_reconciled:
+        if self.db is not None:
             try:
                 await self.db.reconcile_app_guilds(self.app_id, [g.id for g in self.guilds])
-                self._presence_reconciled = True
             except Exception as exc:  # noqa: BLE001
                 logger.error("Mini-bot %s: presence reconcile failed: %s", self.app_id, exc)
+        if not self._first_ready_done:
+            self._first_ready_done = True
+            from minibots import builtin, staff
+            from minibots.emojis import sync_application_emojis
+            await staff.learn_developers(self)
+            asyncio.create_task(self._sync_emojis(sync_application_emojis))
+            await builtin.sync_commands(self)
         if self.runtime is not None:
             await self.runtime.on_client_ready(self)
 
+    async def _sync_emojis(self, sync) -> None:
+        stats = await sync(self, self.emoji_map)
+        if stats.get("uploaded") or stats.get("replaced") or stats.get("failed"):
+            state = self.runtime.apps.get(self.app_id) if self.runtime else None
+            if state is not None:
+                await self.runtime._lifecycle(state, "emojis_synced", [
+                    f"**Uploaded** `{stats['uploaded']}` • **Replaced** `{stats['replaced']}` "
+                    f"• **Failed** `{stats['failed']}` "
+                    f"• **Already there** `{stats['present']}`"])
+
     async def on_guild_join(self, guild: discord.Guild) -> None:
+        from minibots import builtin
         if self.db is not None:
             try:
                 await self.db.mark_app_present(self.app_id, guild.id, guild.member_count)
             except Exception as exc:  # noqa: BLE001
                 logger.error("Mini-bot %s: presence write failed: %s", self.app_id, exc)
         if self.tech_logger is not None:
-            await self.tech_logger.log_minibot_guild(self.app_id, guild, True, len(self.guilds))
+            await self.tech_logger.log_guild_join(guild)
+        await builtin.send_welcome(self, guild)
 
     async def on_guild_remove(self, guild: discord.Guild) -> None:
         if self.db is not None:
@@ -122,7 +181,14 @@ class MiniBotClient(discord.Client):
                 logger.error("Mini-bot %s: presence write failed: %s", self.app_id, exc)
         await self.module_manager.unload_guild_modules(guild.id)
         if self.tech_logger is not None:
-            await self.tech_logger.log_minibot_guild(self.app_id, guild, False, len(self.guilds))
+            await self.tech_logger.log_guild_remove(guild)
+
+    async def _on_tree_error(self, interaction: discord.Interaction, error) -> None:
+        tracker = self.get_cog("ErrorTracker")
+        if tracker is not None and hasattr(tracker, "on_app_command_error"):
+            await tracker.on_app_command_error(interaction, error)
+        else:  # pragma: no cover - the tracker is always loaded
+            logger.error("Mini-bot %s: app command error: %s", self.app_id, error)
 
     async def on_error(self, event_method: str, *args, **kwargs) -> None:
         exc_type, exc, tb = sys.exc_info()

@@ -662,6 +662,10 @@
           "description": "Hedef biçim (listeden seçmek için boş bırak)"
         }
       }
+    },
+    "about": {
+      "name": "hakkında",
+      "description": "Bu bot hakkında"
     }
   },
   "choices": {

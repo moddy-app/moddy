@@ -4195,7 +4195,8 @@
         "database": "Base de datos",
         "errors": "Errores",
         "system": "Sistema",
-        "extensions": "Extensiones"
+        "extensions": "Extensiones",
+        "minibots": "Mini-bots"
       },
       "cogs": {
         "title": "Cogs cargados",
@@ -4254,7 +4255,9 @@
         "page": "Página {current}/{total}",
         "empty": "No se encontraron servidores.",
         "members": "Miembros",
-        "joined": "Se unió"
+        "joined": "Se unió",
+        "minibots": "Mini-bots",
+        "minibots_hint": "Lista de un mini-bot: d.servers <id>"
       },
       "sql": {
         "done_title": "Consulta ejecutada",
@@ -4351,7 +4354,8 @@
         "title": "Invitación al servidor",
         "open": "Abrir invitación",
         "fail_title": "No se puede crear la invitación",
-        "no_perm": "Moddy no puede crear invitaciones en {name}."
+        "no_perm": "Moddy no puede crear invitaciones en {name}.",
+        "via_minibot": "Invitación creada por {app} (Moddy no está en este servidor)."
       },
       "server": {
         "title": "Servidor — {name}",
@@ -4372,7 +4376,8 @@
         "features": "Funciones",
         "minibots": "Mini-bots",
         "minibots_present": "Presentes",
-        "minibots_modules": "Módulos gestionados"
+        "minibots_modules": "Módulos gestionados",
+        "via_minibot": "Moddy no está en este servidor. Información vista por: {apps}."
       },
       "user": {
         "title": "Información del usuario",
@@ -4410,7 +4415,9 @@
         "none": "Moddy no comparte ningún servidor con {user}.",
         "top_role": "Rol principal",
         "perms": "Permisos clave",
-        "no_perms": "Ninguno"
+        "no_perms": "Ninguno",
+        "minibots_unreachable": "Mini-bots inaccesibles: solo se muestran los servidores de Moddy.",
+        "minibot_truncated": "Búsqueda limitada a los {scanned} servidores más grandes de {total}."
       },
       "subscription": {
         "title": "Suscripción",
@@ -5213,7 +5220,8 @@
       "support": "Moddy Support",
       "moddy_team": "Moddy Team",
       "subscription": "Suscripción Moddy",
-      "stripe": "Stripe"
+      "stripe": "Stripe",
+      "minibots": "Mini-bot"
     },
     "attribution": {
       "unknown_guild": "Servidor desconocido",
@@ -6747,7 +6755,28 @@
       },
       "external": {
         "title": "Gestionado por {app}",
-        "body": "En este servidor, **{module}** lo gestiona **{app}**. Sus ajustes no se pueden editar desde Moddy hasta que se transfieran.\n\nLa transferencia conserva la configuración tal cual, vuelve a publicar los paneles con Moddy y retira a {app}."
+        "body": "En este servidor, **{module}** lo gestiona **{app}**. Sus ajustes no se pueden editar desde Moddy hasta que se transfieran.\n\nLa transferencia conserva la configuración tal cual, vuelve a publicar los paneles con Moddy y retira a {app}.",
+        "elsewhere": "En este servidor, **{module}** lo gestiona **{app}**. Sus ajustes se editan desde {app}."
+      }
+    },
+    "links": {
+      "get_moddy": "Obtener Moddy",
+      "add_bot": "Añadir {name}"
+    },
+    "about": {
+      "title": "Acerca de {name}",
+      "body": "**{name}** hace una cosa y la hace bien: {modules}.\n\nTodo se configura con /config, directamente en tu servidor.",
+      "moddy": "{name} está hecho por el equipo de **Moddy**. ¿Quieres más opciones, más módulos y un panel web? Moddy retoma tu configuración tal cual.",
+      "stats": "En {guilds} servidores • latencia {latency}"
+    },
+    "welcome": {
+      "title": "Gracias por añadir {name}",
+      "body": "**{name}** ya está en **{server}** para: {modules}.\n\nUsa {config} en tu servidor para configurarlo, y {about} para saber más.\n\n{name} está hecho por el equipo de **Moddy**: si algún día quieres más opciones, Moddy retoma tu configuración en un clic, sin rehacer nada."
+    },
+    "staff": {
+      "moddy_only": {
+        "title": "Comando solo para Moddy",
+        "description": "`{command}` no funciona en {name}. Ejecútalo con @Moddy: los comandos de información de Moddy ya incluyen todos los mini-bots."
       }
     }
   }

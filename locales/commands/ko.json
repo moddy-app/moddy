@@ -662,6 +662,10 @@
           "description": "대상 형식 (비워 두면 목록에서 선택)"
         }
       }
+    },
+    "about": {
+      "name": "about",
+      "description": "이 봇에 대해"
     }
   },
   "choices": {

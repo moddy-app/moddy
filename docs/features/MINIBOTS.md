@@ -92,8 +92,13 @@ minibots/
   ownership.py  pure — who owns a config
   spec.py       MiniBotSpec + SPECS (registry), app_display_name — import-light
   status.py     Redis contract (pure serialisation), shared with Moddy
-  resources.py  SharedResources: 1 asyncpg pool (MINIBOTS_DB_POOL_MAX=3), 1 Redis, i18n, TechLogger
-  client.py     MiniBotClient(discord.Client): lean cache + ModuleManager(app=spec.id)
+  resources.py  SharedResources: 1 asyncpg pool (MINIBOTS_DB_POOL_MAX=3), 1 Redis, i18n,
+                TechLogger, process patches (icon theme, interaction guard, emoji swap)
+  client.py     MiniBotClient(commands.Bot): lean cache + ModuleManager(app=spec.id)
+  builtin.py    automatic /config, /about, welcome DM, error handling, views, command sync
+  staff.py      staff commands on a mini-bot (@Bot d.jsk …), allowlist
+  queries.py    info questions Moddy's staff commands ask the mini-bots (Redis)
+  emojis.py     Moddy's application emojis copied to each app + send-time id swap
   runtime.py    MiniBotRuntime: supervision, heartbeat, control channel, periodic jobs
   main.py       entry point (python -m minibots.main)
 ```
@@ -105,15 +110,21 @@ minibots/
   rest is asyncpg, Redis and aiohttp. Each extra bot only adds its gateway
   connection and its guild cache.
 - **Minimal cache** per client:
-  - `Intents.none()` + `guilds` + the spec's intents only;
+  - `Intents.none()` + `guilds` + `guild_messages` + the spec's intents only.
+    `guild_messages` is needed for `@Bot d.jsk`: a message that mentions the
+    bot carries its content without the privileged intent. Nothing is cached
+    (`max_messages=None`), but every message of every server still reaches
+    the process, so it costs some CPU;
   - `members` and `presences` are refused by `MiniBotSpec`;
   - `max_messages=None` (the default keeps 1000 messages *per bot*);
   - `MemberCacheFlags.none()`, `chunk_guilds_at_startup=False`.
 - **Modules loaded lazily, per server**: an instance exists only where an event
   needed one (`get_module_instance` loads it). Nothing is preloaded at boot.
 - **Light imports**:
-  - `minibots/*` never imports `bot.py`, `cogs/`, `staff/`, onnxruntime, PIL,
-    c2pa, numpy, openai or fastapi;
+  - the process never imports `bot.py`, onnxruntime, PIL, c2pa, numpy, openai
+    or fastapi. It does import what the built-ins need (`cogs.config`,
+    `cogs.error_handler`, the notification views, the 7 allowed staff
+    commands): about 57 MB measured at import, all included;
   - a spec's modules are imported only when its bot starts;
   - guarded by `tests/test_minibots.py::test_minibots_process_imports_stay_light`.
 - **One task per periodic job** for every bot (`runtime.register_periodic`), not
@@ -129,14 +140,59 @@ minibots/
 - `MINIBOTS_ENABLED=id1,id2` narrows the list.
 
 ### What a module sees on `bot`
-`MiniBotClient` exposes the attributes the existing modules read:
-- `db`, `redis`, `module_manager`, `tech_logger`;
-- `stats` (`None` for now);
-- `module_slash_commands`;
+`MiniBotClient` (a `commands.Bot`) exposes what the shared code reads:
+- `db`, `redis`, `module_manager`;
+- `tech_logger` (its own, labelled with the bot), `staff_logger`, `notifications`;
+- `is_developer`, `launch_time`;
+- `stats` (`None` for now), `module_slash_commands`;
 - `resync_module_commands` (no-op: mini-bots publish global commands).
 
-A module that needs another service (`bot.notifications`, …) gets it when the
-mini-bot using it is built, not before.
+A module that needs another service gets it when the mini-bot using it is
+built, not before.
+
+### Built-ins: what every mini-bot gets automatically (`builtin.py`)
+- **`/config`** (guild only, Manage Server). With a single module, it opens
+  that module's screen directly; with several, the regular main screen. The
+  screens and the saves are Moddy's own; the module manager stamps the config
+  with the mini-bot's `app`. The main screen shows "Get Moddy" instead of the
+  dashboard links. A module Moddy (or another app) runs in that server shows
+  "Managed by X here", with no button.
+- **`/about`**: what the bot does, "made by the Moddy team", server count, and
+  links (add this bot, get Moddy, support, docs).
+- **Welcome DM** to whoever added the bot (installer from the audit log,
+  otherwise the owner), sent through `client.notifications` (service
+  `minibots`, rule #11).
+- **Errors**: the `ErrorTracker` cog, so the same error cards and codes as Moddy.
+- **Persistent views**: the common /config ones + `MiniBotSpec.persistent_views`.
+- **Command sync**: global, and only when the commands or their localizations
+  changed (hash in `minibots:cmdhash:<app>`).
+- **Status**: `MiniBotSpec.activity` (default `/config • /about`).
+- Every text is i18n (`minibots.*`, 5 languages). `/about` is localized in the
+  32 command locales; `/config` reuses Moddy's command translation.
+
+### Emojis (`emojis.py`)
+Moddy's icons are **application emojis of the Moddy app**, and another
+application cannot display them. Nothing has to be re-imported by hand:
+- **At each start** (in the background), every emoji used in the code and the
+  locales (about 380) is copied into the mini-bot's own application, **under
+  the same name**, if it is missing. The images come from Discord's CDN.
+  - An emoji replaced in Moddy (new id, same name, e.g. `/dev emoji_replace`)
+    is re-copied: the source id of every copy is kept in `minibots:emojis:<app>`.
+  - When nothing changed, this is a single API call.
+  - Result logged on the lifecycle webhook (`emojis_synced`).
+- **At send time** the payload builders are wrapped after
+  `utils/icon_theme.py`, so the light-theme swap happens first and the
+  mini-bot's copy of the `_dark` twin is used. Each Moddy id is swapped for the
+  mini-bot's.
+  - The id map is bound to the client's supervisor task through a ContextVar,
+    so everything that client sends uses it.
+  - Code running outside the client's task (control requests, periodic jobs)
+    wraps its sends in `client.emoji_context()`.
+  - Technical webhooks keep Moddy's ids (`emojis.suspend()`).
+- **Limits**:
+  - an application holds 2000 emojis;
+  - the first start of a new mini-bot uploads every icon, which takes a few
+    minutes; until then, a few icons can show as text.
 
 ## 5. Redis contract (`minibots:*`)
 
@@ -144,8 +200,10 @@ mini-bot using it is built, not before.
 |---|---|---|
 | `minibots:status` | hash | one field per app (JSON `AppStatus`: state, guilds, latency, restarts, last error) + `_process` (RSS, version, start). Rewritten every 30 s; older than 90 s = `silent`. |
 | `minibots:apps` | hash | public registry per app (name, modules, `web_surfaces`, `application_id`) for the backend. |
-| `minibots:control` | Pub/Sub | `release`, `reload_guild`, `restart`. Idempotent and non-destructive, so not signed. Anything else is ignored. |
-| `minibots:ack:<request_id>` | list | the runtime's answer to a `release` (TTL 60 s). |
+| `minibots:control` | Pub/Sub | `release`, `reload_guild`, `restart`, `query` (read-only info: `guilds`, `mutual_guilds`, `guild_info`, plus `create_invite`, which `t.invite` already does on Moddy). Not signed: every request is idempotent and harmless. Anything else is ignored. |
+| `minibots:ack:<request_id>` | list | the runtime's answer to a `release` or a `query` (`{app: result}`), TTL 60 s. |
+| `minibots:emojis:<app>` | hash | emoji name → the Moddy emoji id it was copied from. |
+| `minibots:cmdhash:<app>` | key | fingerprint of the last global command sync. |
 | `minibots:transfer:<guild>:<module>` | key | transfer lock (`SET NX EX 60`). |
 
 The runtime **does not** listen to `moddy:bot`: there is no dashboard push for a
@@ -208,21 +266,65 @@ runs tickets.
 
 ## 7. Staff and logs
 
-- `/dev minibots` shows each app's state, servers, latency, restarts and last
-  error, plus the process RAM and version.
-- `/dev minibot <restart|reload> <app|*> [guild_id]` acts through
-  `minibots:control`. There is deliberately **no** staff transfer command: the
-  transfer is the admin's decision, and `t.config` opens the same panel for the
-  team.
-- `/team server` adds a "Mini-bots" section: apps present, and modules run by
-  each.
-- Tech logs go to category `minibots` (`LOG_WEBHOOK_MINIBOTS`):
-  - lifecycle: ready, reconnected, crashed, restarted;
-  - a mini-bot's server joins and leaves;
-  - every transfer.
-  - A mini-bot's errors go to the `error` category with an `App` line.
-- Bump prospects (`services/bump_prospect_service.py`): a server where our
-  Bump Reminder mini-bot runs the module (`external`) is no longer a prospect.
+### Logs: Moddy's webhooks, each card names its bot
+- There is no separate category. A mini-bot writes to the **same** webhooks as
+  Moddy: `guild_join`, `guild_remove`, `lifecycle`, `error`, `staff_command`,
+  `database`, …
+- Every card says which bot it comes from, **Moddy included**:
+  - the footer reads ``bot `Bump Reminder` ``;
+  - the webhook username becomes "Bump Reminder • Guild Join";
+  - the avatar is that bot's.
+- How it works: `TechLogger.for_app(bot, app, name)` gives each client its own
+  logger, sharing one HTTP session.
+- Where each event goes:
+  - lifecycle (ready, reconnected, crashed, restarted, emojis synced) → `lifecycle`;
+  - server joins/leaves → `guild_join` / `guild_remove`, same card as Moddy's;
+  - errors → `error`, with an `App` line;
+  - staff commands run on a mini-bot → `staff_command`;
+  - transfers → `database`.
+
+### Info commands on Moddy include every mini-bot
+Moddy has neither the mini-bots' tokens nor their cache, so it asks the
+mini-bots process (`queries.py`, through `minibots:control` → `query`, with an
+8 s timeout):
+
+| Command | What it adds |
+|---|---|
+| `t.mutualserver <user>` | one section per mini-bot sharing servers with the user (top role, key permissions) |
+| `t.server <guild>` | when Moddy is not there: the server as a mini-bot sees it |
+| `t.invite <guild>` | when Moddy is not there: an invite created by a mini-bot present |
+| `d.servers [app]` | Moddy's list plus a count per mini-bot; `d.servers <app>` lists that mini-bot's servers (paginated, persistent) |
+| `d.stats` | a "Mini-bots" field: state, servers, latency, process RAM |
+| `t.server <guild>` (Moddy present) | the "Mini-bots" section: apps present, modules run by each |
+
+Limits:
+- Mini-bots keep no member cache, so `mutual_guilds` asks the gateway server by
+  server (`query_members(user_ids=…)`, no privileged intent). It checks at most
+  **100 servers per mini-bot**, biggest first, and says when the list is cut.
+- If the process does not answer, the card says so and shows Moddy only.
+- `t.user` still counts Moddy's shared servers only. Use `t.mutualserver` for
+  the mini-bots.
+
+### Action commands on a mini-bot: `@BumpReminder d.jsk …`
+- The same router as Moddy, answering the bot's own mention. Same database,
+  same staff roles, same denied commands.
+- The audit log names the bot.
+- Allowed commands (`minibots/staff.py::MINIBOT_STAFF_COMMANDS`):
+  `d.jsk`, `d.sql`, `d.presence`, `d.stats`, `d.servers`, `t.server`, `t.invite`.
+- Any other command answers "Moddy-only command — run it with @Moddy". It is
+  not imported in the mini-bots process.
+- Developers are `DEVELOPER_IDS` plus each mini-bot application's owner or team.
+- `d.shutdown` and `d.reload` are deliberately left out: they would stop or
+  reload the whole process, so every mini-bot at once.
+
+### Control from Moddy
+- `/dev minibots`: each app's state, servers, latency, restarts and last error,
+  plus the process RAM and version.
+- `/dev minibot <restart|reload> <app|*> [guild_id]`.
+- There is no staff transfer command: the transfer is the admin's decision,
+  and `t.config` opens the same panel for the team.
+- Bump prospects: a server where our Bump Reminder mini-bot runs the module
+  (`external`) is no longer a prospect.
 
 ## 8. Adding a mini-bot
 
@@ -236,13 +338,17 @@ runs tickets.
        intents=frozenset({"guild_messages", "message_content"}),
    )
    ```
-3. Write its commands and listeners (`commands_module.setup(client)`). The
-   module's events must be wired to `client.module_manager`.
-4. Check which `bot.<service>` the module reads, and expose those on
+3. Add the module's persistent views to `persistent_views`. `/config`,
+   `/about`, the welcome DM, emojis and staff commands come automatically.
+4. Write its listeners (`commands_module.setup(client)`): the module's events
+   must be wired to `client.module_manager`. A periodic job sends inside
+   `client.emoji_context()`.
+5. Check which `bot.<service>` the module reads, and expose those on
    `MiniBotClient` (or in `SharedResources` if they are shared).
-5. Override `on_transfer_in` / `on_transfer_out` if the module has Discord
+6. Override `on_transfer_in` / `on_transfer_out` if the module has Discord
    state beyond a panel.
-6. Set `MINIBOT_..._TOKEN` on the **mini-bots** Railway service.
+7. Set `MINIBOT_..._TOKEN` on the **mini-bots** Railway service. On first
+   start the emojis are copied and the commands published; nothing manual.
 
 ## 9. Deployment (Railway)
 
@@ -253,7 +359,8 @@ runs tickets.
 - Env vars:
   - `MINIBOT_<X>_TOKEN` (one per mini-bot);
   - optional: `MINIBOTS_ENABLED`, `MINIBOTS_DB_POOL_MAX` (3);
-  - `LOG_WEBHOOK_MINIBOTS` (on both services);
+  - the same `LOG_WEBHOOK_*` as Moddy (cards are labelled per bot);
+  - optional: `MODDY_INVITE_URL` (the "Get Moddy" link);
   - `MALLOC_ARENA_MAX=2`.
 - Deploy order: Moddy first. It creates `app_guilds` and starts recording its
   own presence. Then the mini-bots service.

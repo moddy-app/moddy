@@ -662,6 +662,10 @@
           "description": "Formatul țintă (lasă gol pentru a alege dintr-o listă)"
         }
       }
+    },
+    "about": {
+      "name": "despre",
+      "description": "Despre acest bot"
     }
   },
   "choices": {

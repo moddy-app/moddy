@@ -421,7 +421,8 @@ class TestClient:
         client = MiniBotClient(SPEC, resources)
         assert client.intents.guilds and client.intents.guild_messages
         assert not client.intents.members and not client.intents.presences
-        assert not client.intents.message_content
+        assert not client.intents.message_content  # mentions carry their content anyway
+        assert client.command_prefix not in ("", "!", "d.")
         assert client._connection.max_messages is None
         assert client._connection.member_cache_flags.value == 0
         assert client._connection._chunk_guilds is False
@@ -457,7 +458,9 @@ class TestRuntime:
 
         db = FakeDB({"panel": {"channel": 1, APP_KEY: "bump"}})
         manager, bot = make_manager(db, app="bump")
-        client = SimpleNamespace(app_id="bump", module_manager=manager, is_ready=lambda: True)
+        import contextlib
+        client = SimpleNamespace(app_id="bump", module_manager=manager, is_ready=lambda: True,
+                                 emoji_context=contextlib.nullcontext)
         runtime = MiniBotRuntime((SPEC,), SimpleNamespace(redis=R(), tech_logger=None, version=None))
         runtime.apps["bump"].client = client
         await runtime.handle_control({"type": "release", "request_id": "r1", "guild_id": str(GUILD),
@@ -537,9 +540,12 @@ def test_minibots_process_imports_stay_light():
     code = (
         "import sys, os; os.environ['MODDY_SERVICE']='minibots';"
         "import minibots.main, minibots.runtime, minibots.client, minibots.resources;"
+        "import minibots.builtin, minibots.staff as ms, minibots.queries, minibots.emojis;"
+        "import cogs.config, notifications.service, utils.notification_views, staff.framework.cog;"
+        "[__import__(p) for p in ms.MINIBOT_STAFF_COMMANDS];"
         "import utils.tech_logger, db.base, modules.module_manager;"
-        "heavy=[m for m in ('bot','cogs','onnxruntime','PIL','c2pa','numpy','openai',"
-        "'fastapi','uvicorn','staff') if m in sys.modules];"
+        "heavy=[m for m in ('bot','onnxruntime','PIL','c2pa','numpy','openai',"
+        "'fastapi','uvicorn','cogs.automod','cogs.tickets') if m in sys.modules];"
         "print('HEAVY=' + ','.join(heavy))"
     )
     env = {k: v for k, v in __import__("os").environ.items() if k != "DISCORD_TOKEN"}
@@ -590,11 +596,356 @@ def test_transfer_button_is_registered_persistent():
     assert MinibotTransferPersistence in _collect_persistent_view_classes()
 
 
-def test_tech_log_category_declared():
+def test_no_separate_log_category():
+    """Mini-bots log on Moddy's webhooks; each card names its bot."""
     import config
-    assert config.LOG_WEBHOOK_ENV["minibots"] == "LOG_WEBHOOK_MINIBOTS"
+    assert "minibots" not in config.LOG_WEBHOOK_ENV
 
 
 def test_transfer_metric_declared():
     from stats.registry import get
     assert get("minibots.transfer").dimensions == ("from_app", "module", "via")
+
+
+# --------------------------------------------------------------------------- #
+# Logs: same webhooks, every card names its bot
+# --------------------------------------------------------------------------- #
+
+class TestTechLogs:
+    def _logger(self):
+        from utils.tech_logger import TechLogger
+        root = TechLogger(SimpleNamespace(db=None, user=None))
+        return root, root.for_app(SimpleNamespace(db=None, user=None), "bump", "Bump Reminder")
+
+    def test_username_and_footer_name_the_bot(self):
+        root, mini = self._logger()
+        assert root._username("guild_join") == "Moddy • Guild Join"
+        assert mini._username("guild_join") == "Bump Reminder • Guild Join"
+        assert mini._parent is root and mini._urls == root._urls
+
+        def footer(view):
+            container = view.children[0]
+            return container.children[-1].content
+        assert "bot `Bump Reminder`" in footer(mini._card("lifecycle", "", "t", ["x"]))
+        assert "bot `Moddy`" in footer(root._card("lifecycle", "", "t", ["x"]))
+
+    async def test_lifecycle_goes_to_lifecycle_webhook(self):
+        _, mini = self._logger()
+        sent = []
+
+        async def dispatch(category, view, **kw):
+            sent.append(category)
+        mini._dispatch = dispatch
+        await mini.log_minibot_lifecycle("ready", ["x"])
+        await mini.log_module_transfer(guild_id=1, module_id="m", from_app="bump", to_app="moddy",
+                                       actor_id=None, ok=True, release="acked")
+        assert sent == ["lifecycle", "database"]
+
+
+# --------------------------------------------------------------------------- #
+# Emojis: Moddy's application emojis, remapped to the mini-bot's copies
+# --------------------------------------------------------------------------- #
+
+class TestEmojis:
+    def test_scan_finds_the_code_emojis(self):
+        from minibots.emojis import moddy_emojis
+        from utils.emojis import DONE
+        found = moddy_emojis()
+        done_id = int(DONE.split(":")[2].rstrip(">"))
+        assert found[done_id] == ("done", False)
+
+    def test_build_map_and_swap(self):
+        from minibots.emojis import build_map, swap_payload, swap_text
+        mapping = build_map({111111111111111111: ("done", False)}, {"done": 222222222222222222})
+        assert swap_text("ok <:done:111111111111111111>", mapping) == "ok <:done:222222222222222222>"
+        payload = {"components": [{"type": 2, "emoji": {"id": "111111111111111111", "name": "done"}}]}
+        out = swap_payload(payload, mapping)
+        assert out["components"][0]["emoji"]["id"] == "222222222222222222"
+        assert payload["components"][0]["emoji"]["id"] == "111111111111111111"  # not mutated
+
+    def test_plan_sync(self):
+        from minibots.emojis import plan_sync
+        moddy = {1: ("done", False), 2: ("error", False), 3: ("info", False)}
+        upload, replace = plan_sync(moddy, {"done": 10, "error": 11}, {"done": 1, "error": 99})
+        assert upload == [(3, "info", False)]
+        assert replace == [(2, "error", False)]  # replaced in Moddy since the copy
+
+    async def test_sync_uploads_missing_and_records_sources(self, monkeypatch):
+        from minibots import emojis
+
+        class Session:
+            async def __aenter__(self): return self
+            async def __aexit__(self, *a): return False
+
+            def get(self, url):
+                class Resp:
+                    status = 200
+                    async def __aenter__(self): return self
+                    async def __aexit__(self, *a): return False
+                    async def read(self): return b"png"
+                return Resp()
+        import aiohttp
+        monkeypatch.setattr(aiohttp, "ClientSession", Session)
+        monkeypatch.setattr(emojis, "moddy_emojis",
+                            lambda: {111111111111111111: ("done", False), 333333333333333333: ("info", False)})
+        stored = {}
+
+        class R:
+            async def hgetall(self, key): return {}
+            async def hset(self, key, mapping): stored.update(mapping)
+        created = []
+
+        async def create(name, image):
+            created.append(name)
+            return SimpleNamespace(id=444444444444444444)
+        client = SimpleNamespace(
+            app_id="bump", redis=R(),
+            fetch_application_emojis=AsyncMock(return_value=[SimpleNamespace(name="done", id=222222222222222222)]),
+            create_application_emoji=create)
+        mapping = {}
+        stats = await emojis.sync_application_emojis(client, mapping)
+        assert created == ["info"] and stats["uploaded"] == 1
+        assert mapping[111111111111111111] == ("done", 222222222222222222)
+        assert mapping[333333333333333333] == ("info", 444444444444444444)
+        assert stored == {"done": "111111111111111111", "info": "333333333333333333"}
+
+    def test_patch_only_acts_inside_a_client_context(self):
+        from minibots import emojis
+        from discord.http import handle_message_parameters
+        emojis.install()
+        import discord.http as dhttp
+        mapping = {111111111111111111: ("done", 222222222222222222)}
+        params = dhttp.handle_message_parameters(content="<:done:111111111111111111>")
+        assert "111111111111111111" in params.payload["content"]
+        token = emojis._app_map.set(mapping)
+        try:
+            params = dhttp.handle_message_parameters(content="<:done:111111111111111111>")
+            assert params.payload["content"] == "<:done:222222222222222222>"
+            with emojis.suspend():
+                params = dhttp.handle_message_parameters(content="<:done:111111111111111111>")
+                assert "111111111111111111" in params.payload["content"]
+        finally:
+            emojis._app_map.reset(token)
+
+
+# --------------------------------------------------------------------------- #
+# Staff commands on a mini-bot
+# --------------------------------------------------------------------------- #
+
+class TestMinibotStaff:
+    def test_prefix_is_the_bot_mention(self):
+        from utils.staff_permissions import StaffPermissionManager, CommandType
+        perms = StaffPermissionManager(SimpleNamespace(db=None))
+        assert perms.parse_staff_command("<@42> d.jsk 1+1", bot_id=42) == (CommandType.DEV, "jsk", "1+1")
+        assert perms.parse_staff_command("<@!42> d.jsk", bot_id=42)[1] == "jsk"
+        assert perms.parse_staff_command(perms.STAFF_PREFIX + " d.jsk", bot_id=42) is None
+        assert perms.parse_staff_command(perms.STAFF_PREFIX + " d.jsk")[1] == "jsk"
+
+    async def test_router_keeps_only_allowed_commands(self):
+        from minibots.staff import MINIBOT_STAFF_COMMANDS, make_router_class
+        Router = make_router_class()
+        client = SimpleNamespace(spec=SimpleNamespace(name="Bump Reminder"), app_id="bump",
+                                 user=SimpleNamespace(id=42), db=None, tree=None)
+        router = Router.__new__(Router)
+        router.bot = client
+        router.command_responses, router.cancelled_commands = {}, {}
+        router.message_index, router.subgroup_index = {}, {}
+        await Router.setup(router)
+        modules = {type(c).__module__ for c in router.message_index.values()}
+        assert modules and modules <= set(MINIBOT_STAFF_COMMANDS)
+        assert ("d", "jsk") in router.message_index and ("d", "minibots") not in router.message_index
+        assert router.groups == [] and "mod" in router.owned_types
+
+        sent = []
+
+        async def reply(message, view):
+            sent.append(view)
+        router.reply_with_tracking = reply
+        await router._unknown_command(SimpleNamespace(), SimpleNamespace(value="t"), "mutualserver")
+        text = sent[0].children[0].children[0].content
+        assert "Moddy" in text
+
+
+# --------------------------------------------------------------------------- #
+# Info questions answered by the mini-bots process
+# --------------------------------------------------------------------------- #
+
+def _fake_guild(gid, name, members, *, invite_ok=True):
+    import contextlib  # noqa: F401
+    me = SimpleNamespace(joined_at=None)
+    channel = SimpleNamespace(
+        permissions_for=lambda m: SimpleNamespace(create_instant_invite=invite_ok),
+        create_invite=AsyncMock(return_value=SimpleNamespace(url=f"https://discord.gg/{gid}")))
+    return SimpleNamespace(
+        id=gid, name=name, member_count=members, me=me, owner_id=1,
+        created_at=__import__("datetime").datetime(2020, 1, 1),
+        text_channels=[channel], voice_channels=[], categories=[], roles=[],
+        premium_tier=0, premium_subscription_count=0, features=[],
+        system_channel=None,
+        query_members=AsyncMock(return_value=[]),
+    )
+
+
+def _fake_client(app, guilds):
+    import contextlib
+    return SimpleNamespace(app_id=app, guilds=guilds, is_ready=lambda: True,
+                           get_guild=lambda gid: next((g for g in guilds if g.id == gid), None),
+                           emoji_context=contextlib.nullcontext)
+
+
+class TestQueries:
+    async def test_guilds_sorted_by_size(self):
+        from minibots.queries import answer
+        client = _fake_client("bump", [_fake_guild(1, "a", 5), _fake_guild(2, "b", 50)])
+        out = await answer([client], "guilds", {})
+        assert [r["id"] for r in out["bump"]] == ["2", "1"]
+
+    async def test_mutual_scans_and_reports(self):
+        from minibots.queries import answer
+        member = SimpleNamespace(
+            top_role=SimpleNamespace(name="Mod"),
+            guild_permissions=__import__("discord").Permissions(ban_members=True))
+        hit = _fake_guild(1, "hit", 10)
+        hit.query_members = AsyncMock(return_value=[member])
+        out = await answer([_fake_client("bump", [hit, _fake_guild(2, "miss", 5)])],
+                           "mutual_guilds", {"user_id": "9"})
+        assert out["bump"]["guilds"] == [{"id": "1", "name": "hit", "top_role": "Mod",
+                                          "perms": ["ban_members"]}]
+        assert out["bump"]["truncated"] is False
+
+    async def test_invite_from_first_app_present(self):
+        from minibots.queries import answer
+        a = _fake_client("a", [])
+        b = _fake_client("b", [_fake_guild(7, "g", 3)])
+        out = await answer([a, b], "create_invite", {"guild_id": "7"})
+        assert out == {"b": {"url": "https://discord.gg/7", "name": "g"}}
+
+    async def test_ask_returns_none_without_listener(self):
+        from minibots.queries import ask
+        bot = SimpleNamespace(redis=FakeRedis(listeners=0))
+        assert await ask(bot, "guilds") is None
+        with pytest.raises(ValueError):
+            await ask(bot, "drop_everything")
+
+
+class TestModdyInfoCommands:
+    def test_mutual_fields_per_minibot(self):
+        spec_mod._register_for_tests(
+            MiniBotSpec(id="bump", name="Bump Reminder", token_env="X", modules=("panel",)))
+        try:
+            from staff.commands.team.mutualserver import minibot_fields
+            fields = minibot_fields({"bump": {"guilds": [
+                {"id": "1", "name": "G", "top_role": None, "perms": ["manage_guild"]}],
+                "scanned": 100, "total": 300, "truncated": True}}, "en-US")
+        finally:
+            spec_mod._register_for_tests(*spec_mod.SPECS)
+        assert fields[0]["name"].endswith("Bump Reminder (1)")
+        assert "Manage Server" in fields[0]["value"] and "100" in fields[0]["value"]
+
+    async def test_serverlist_summary_lists_minibots(self):
+        from staff.commands.dev.serverlist import ServerListView, load_rows
+        db = SimpleNamespace(count_guilds_by_app=AsyncMock(return_value={"moddy": 3, "bump": 2}))
+        bot = SimpleNamespace(guilds=[], db=db)
+        rows, summary = await load_rows(bot)
+        assert rows == [] and len(summary) == 1 and "`2`" in summary[0]
+        view = ServerListView(bot, 1, [{"id": "1", "name": "G", "members": 3, "joined": None}],
+                              "en-US", summary=summary)
+        assert view.children
+
+    def test_serverlist_nav_carries_the_app(self):
+        from staff.commands.dev.serverlist import ServerListNavButton
+        button = ServerListNavButton("next", 5, 2, app="bump")
+        match = ServerListNavButton.__discord_ui_compiled_template__.fullmatch(button.item.custom_id)
+        assert match["app"] == "bump" and match["page"] == "2"
+        plain = ServerListNavButton("prev", 5, 0)
+        assert ServerListNavButton.__discord_ui_compiled_template__.fullmatch(
+            plain.item.custom_id)["app"] is None
+
+
+# --------------------------------------------------------------------------- #
+# Built-ins: /config, /about, welcome DM, command sync
+# --------------------------------------------------------------------------- #
+
+class TestBuiltins:
+    def _client(self):
+        manager, bot = make_manager(FakeDB({}), app="bump")
+        bot.spec = SPEC
+        bot.module_manager = manager
+        bot.guilds = [1, 2]
+        bot.latency = 0.05
+        bot.user = SimpleNamespace(id=42)
+        bot.redis = None
+        return bot
+
+    def test_about_card(self):
+        from minibots.builtin import build_about_view
+        view = build_about_view(self._client(), "fr")
+        text = "\n".join(getattr(i, "content", "") for i in view.children[0].children)
+        assert "Bump Reminder" in text and "Moddy" in text and "`Panel`" in text
+        urls = [b.url for b in view.children[1].children]
+        assert urls[0].endswith("client_id=42")
+
+    def test_welcome_content_is_a_template(self):
+        from minibots.builtin import welcome_content
+        content = welcome_content(self._client(), "en-US")
+        assert "{name}" in content.title and "{server}" in content.body and "{modules}" in content.body
+
+    async def test_welcome_goes_through_notifications(self, monkeypatch):
+        import utils.guild_language as gl
+        import utils.install_welcome as iw
+        from minibots.builtin import send_welcome
+        monkeypatch.setattr(gl, "guild_locale", AsyncMock(return_value="en-US"))
+        monkeypatch.setattr(iw, "resolve_installer", AsyncMock(return_value=SimpleNamespace(id=1, bot=False)))
+        client = self._client()
+        client.app_id = "bump"
+        client.notifications = SimpleNamespace(send_dm=AsyncMock(return_value=SimpleNamespace(delivered=True)))
+        assert await send_welcome(client, SimpleNamespace(id=GUILD, name="S"))
+        kwargs = client.notifications.send_dm.await_args.kwargs
+        assert kwargs["source"].service_id == "minibots"
+        assert kwargs["variables"]["name"] == "Bump Reminder"
+
+    async def test_config_opens_the_single_module(self, monkeypatch):
+        import cogs.config as cfg
+        import modules.configs._common as common
+        from minibots.builtin import build_config_home
+        client = self._client()
+        monkeypatch.setattr(common, "check_bot_perms", AsyncMock(return_value=True))
+        monkeypatch.setattr(cfg, "build_module_config_view", AsyncMock(return_value="HOME"))
+        interaction = SimpleNamespace(guild_id=GUILD, user=SimpleNamespace(id=1), locale="en-US")
+        monkeypatch.setattr(__import__("utils.i18n", fromlist=["i18n"]).i18n,
+                            "get_user_locale", lambda i: "en-US")
+        assert await build_config_home(client, interaction) == "HOME"
+
+        # Owned by Moddy here: the mini-bot shows where it is managed, no button.
+        client.module_manager.bot.db.modules["panel"] = {"channel": 1}
+        view = await build_config_home(client, interaction)
+        texts = [getattr(i, "content", "") for i in view.children[0].children]
+        assert any("Moddy" in x for x in texts)
+        assert not any(isinstance(i, __import__("discord").ui.ActionRow) for i in view.children[0].children)
+
+    def test_command_hash_is_stable(self):
+        from minibots.builtin import command_hash
+        from discord import app_commands
+        client = SimpleNamespace(tree=SimpleNamespace(get_commands=lambda: []))
+        assert command_hash(client) == command_hash(client)
+
+
+@pytest.mark.parametrize("locale", LOCALES)
+def test_builtin_i18n(locale):
+    data = json.loads((ROOT / "locales" / f"{locale}.json").read_text(encoding="utf-8"))
+    for key in ("minibots.links.get_moddy", "minibots.links.add_bot", "minibots.about.title",
+                "minibots.about.body", "minibots.about.moddy", "minibots.about.stats",
+                "minibots.welcome.title", "minibots.welcome.body",
+                "minibots.staff.moddy_only.title", "minibots.staff.moddy_only.description",
+                "minibots.transfer.external.elsewhere", "notifications.services.minibots",
+                "staff.team.mutual.minibots_unreachable", "staff.team.mutual.minibot_truncated",
+                "staff.team.server.via_minibot", "staff.team.invite.via_minibot",
+                "staff.dev.serverlist.minibots", "staff.dev.serverlist.minibots_hint",
+                "staff.dev.stats.minibots"):
+        assert _get(data, key), key
+
+
+def test_about_command_localized():
+    for path in (ROOT / "locales" / "commands").glob("*.json"):
+        entry = json.loads(path.read_text(encoding="utf-8"))["commands"]["about"]
+        assert entry["name"] and entry["description"]

@@ -662,6 +662,10 @@
           "description": "目标格式（留空则从列表中选择）"
         }
       }
+    },
+    "about": {
+      "name": "about",
+      "description": "关于此机器人"
     }
   },
   "choices": {

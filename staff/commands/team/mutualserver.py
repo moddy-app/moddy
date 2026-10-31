@@ -62,15 +62,25 @@ class MutualServerCommand(StaffCommand):
 
         rendered, _, _ = await badges.render_user(bot, user)
         mutual = [g for g in bot.guilds if g.get_member(user_id)]
+        # Every mini-bot answers too (minibots/queries.py): Moddy has no
+        # mini-bot cache, the mini-bots process does.
+        from minibots.queries import ask
+        minibots = await ask(bot, "mutual_guilds", {"user_id": str(user_id)})
+        minibot_count = sum(len((r or {}).get("guilds", [])) for r in (minibots or {}).values()
+                            if isinstance(r, dict))
 
-        if not mutual:
+        if not mutual and not minibot_count:
+            description = t("staff.team.mutual.none", locale=locale, user=rendered)
+            if minibots is None:
+                description += "\n-# " + t("staff.team.mutual.minibots_unreachable", locale=locale)
             await ctx.send(view=design.info(
-                t("staff.team.mutual.none_title", locale=locale),
-                t("staff.team.mutual.none", locale=locale, user=rendered),
+                t("staff.team.mutual.none_title", locale=locale), description,
             ))
             return
 
         fields = []
+        if mutual:
+            fields.append({"name": f"{emojis.MODDY} Moddy", "value": f"`{len(mutual)}`"})
         for guild in mutual[:10]:
             member = guild.get_member(user_id)
             if not member:
@@ -87,11 +97,45 @@ class MutualServerCommand(StaffCommand):
         if len(mutual) > 10:
             fields.append({"name": "—", "value": f"-# +{len(mutual) - 10}"})
 
+        fields.extend(minibot_fields(minibots, locale))
+
+        description = rendered
+        if minibots is None:
+            description += "\n-# " + t("staff.team.mutual.minibots_unreachable", locale=locale)
         await ctx.send(view=design.panel(
             "info",
-            t("staff.team.mutual.title", locale=locale, count=len(mutual)),
-            rendered,
-            fields=fields,
+            t("staff.team.mutual.title", locale=locale, count=len(mutual) + minibot_count),
+            description,
+            fields=fields[:24],
             emoji=emojis.GROUPS,
             accent="primary",
         ))
+
+
+def minibot_fields(results, locale: str) -> list:
+    """One field per mini-bot sharing a server with the user."""
+    from minibots.spec import app_display_name
+    fields = []
+    for app, result in sorted((results or {}).items()):
+        if not isinstance(result, dict) or not result.get("guilds"):
+            continue
+        lines = []
+        for row in result["guilds"][:8]:
+            perms = ", ".join(_PERM_LABELS.get(p, p) for p in row.get("perms") or []) \
+                or t("staff.team.mutual.no_perms", locale=locale)
+            lines.append(f"**{row['name']}** `{row['id']}` • `{row.get('top_role') or '—'}` • {perms}")
+        if len(result["guilds"]) > 8:
+            lines.append(f"-# +{len(result['guilds']) - 8}")
+        if result.get("truncated"):
+            lines.append("-# " + t("staff.team.mutual.minibot_truncated", locale=locale,
+                                   scanned=result.get("scanned"), total=result.get("total")))
+        fields.append({"name": f"{emojis.MODDY} {app_display_name(app)} ({len(result['guilds'])})",
+                       "value": "\n".join(lines)[:1000]})
+    return fields
+
+
+_PERM_LABELS = {
+    "administrator": "Administrator", "manage_guild": "Manage Server",
+    "manage_channels": "Manage Channels", "manage_roles": "Manage Roles",
+    "ban_members": "Ban", "kick_members": "Kick", "moderate_members": "Timeout",
+}

@@ -662,6 +662,10 @@
           "description": "Tikslinis formatas (palik tuščią, kad pasirinktum iš sąrašo)"
         }
       }
+    },
+    "about": {
+      "name": "apie",
+      "description": "Apie šį botą"
     }
   },
   "choices": {

@@ -198,10 +198,11 @@ mini-bots dans un seul process (voir [MINIBOTS.md](../features/MINIBOTS.md)).
 - `MINIBOTS_ENABLED` (optionnel) : ids séparés par des virgules ; vide = tous.
 - `MINIBOTS_DB_POOL_MAX` (optionnel, défaut `3`) : le pool PostgreSQL de
   **tous** les mini-bots réunis.
-- `LOG_WEBHOOK_MINIBOTS` : à poser sur les **deux** services.
+- Les mêmes `LOG_WEBHOOK_*` que Moddy : chaque carte indique de quel bot elle vient.
+- `MODDY_INVITE_URL` (optionnel) : le lien « Obtenir Moddy » des mini-bots.
 - `MALLOC_ARENA_MAX=2` : comme pour Moddy.
 
-Coût fixe mesuré : ~59 Mo au chargement (dont ~45 Mo pour discord.py), payés
+Coût fixe mesuré : ~57-59 Mo au chargement (dont ~45 Mo pour discord.py), payés
 une seule fois quel que soit le nombre de mini-bots. Ordre de déploiement :
 Moddy d'abord (il crée `app_guilds`), puis les mini-bots.
 

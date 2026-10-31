@@ -662,6 +662,10 @@
           "description": "Målformat (lad stå tomt for at vælge fra en liste)"
         }
       }
+    },
+    "about": {
+      "name": "om",
+      "description": "Om denne bot"
     }
   },
   "choices": {

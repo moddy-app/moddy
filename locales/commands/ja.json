@@ -662,6 +662,10 @@
           "description": "変換先の形式（空欄にすると一覧から選べます）"
         }
       }
+    },
+    "about": {
+      "name": "about",
+      "description": "このボットについて"
     }
   },
   "choices": {

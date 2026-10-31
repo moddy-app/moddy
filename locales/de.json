@@ -4195,7 +4195,8 @@
         "database": "Datenbank",
         "errors": "Fehler",
         "system": "System",
-        "extensions": "Erweiterungen"
+        "extensions": "Erweiterungen",
+        "minibots": "Mini-Bots"
       },
       "cogs": {
         "title": "Geladene Cogs",
@@ -4254,7 +4255,9 @@
         "page": "Seite {current}/{total}",
         "empty": "Keine Server gefunden.",
         "members": "Mitglieder",
-        "joined": "Beigetreten"
+        "joined": "Beigetreten",
+        "minibots": "Mini-Bots",
+        "minibots_hint": "Liste eines Mini-Bots: d.servers <id>"
       },
       "sql": {
         "done_title": "Abfrage ausgeführt",
@@ -4351,7 +4354,8 @@
         "title": "Servereinladung",
         "open": "Einladung öffnen",
         "fail_title": "Einladung kann nicht erstellt werden",
-        "no_perm": "Moddy kann in {name} keine Einladungen erstellen."
+        "no_perm": "Moddy kann in {name} keine Einladungen erstellen.",
+        "via_minibot": "Einladung von {app} erstellt (Moddy ist nicht auf diesem Server)."
       },
       "server": {
         "title": "Server — {name}",
@@ -4372,7 +4376,8 @@
         "features": "Funktionen",
         "minibots": "Mini-Bots",
         "minibots_present": "Anwesend",
-        "minibots_modules": "Verwaltete Module"
+        "minibots_modules": "Verwaltete Module",
+        "via_minibot": "Moddy ist nicht auf diesem Server. Infos gesehen von: {apps}."
       },
       "user": {
         "title": "Nutzerinformationen",
@@ -4410,7 +4415,9 @@
         "none": "Moddy teilt keine Server mit {user}.",
         "top_role": "Höchste Rolle",
         "perms": "Wichtige Berechtigungen",
-        "no_perms": "Keine"
+        "no_perms": "Keine",
+        "minibots_unreachable": "Mini-Bots nicht erreichbar: nur Moddys Server werden angezeigt.",
+        "minibot_truncated": "Suche auf die {scanned} größten von {total} Servern begrenzt."
       },
       "subscription": {
         "title": "Abonnement",
@@ -5213,7 +5220,8 @@
       "support": "Moddy Support",
       "moddy_team": "Moddy Team",
       "subscription": "Moddy-Abonnement",
-      "stripe": "Stripe"
+      "stripe": "Stripe",
+      "minibots": "Mini-Bot"
     },
     "attribution": {
       "unknown_guild": "Unbekannter Server",
@@ -6747,7 +6755,28 @@
       },
       "external": {
         "title": "Von {app} verwaltet",
-        "body": "Auf diesem Server wird **{module}** von **{app}** verwaltet. Die Einstellungen können in Moddy erst nach der Übertragung bearbeitet werden.\n\nDie Übertragung behält die Konfiguration unverändert bei, postet die Panels unter Moddy neu und nimmt {app} zurück."
+        "body": "Auf diesem Server wird **{module}** von **{app}** verwaltet. Die Einstellungen können in Moddy erst nach der Übertragung bearbeitet werden.\n\nDie Übertragung behält die Konfiguration unverändert bei, postet die Panels unter Moddy neu und nimmt {app} zurück.",
+        "elsewhere": "Auf diesem Server wird **{module}** von **{app}** verwaltet. Die Einstellungen werden über {app} bearbeitet."
+      }
+    },
+    "links": {
+      "get_moddy": "Moddy holen",
+      "add_bot": "{name} hinzufügen"
+    },
+    "about": {
+      "title": "Über {name}",
+      "body": "**{name}** macht eine Sache, und die richtig: {modules}.\n\nAlles wird mit /config eingerichtet, direkt auf deinem Server.",
+      "moddy": "{name} wird vom **Moddy**-Team gemacht. Mehr Optionen, mehr Module und ein Dashboard? Moddy übernimmt deine Einrichtung unverändert.",
+      "stats": "Auf {guilds} Servern • Latenz {latency}"
+    },
+    "welcome": {
+      "title": "Danke, dass du {name} hinzugefügt hast",
+      "body": "**{name}** ist jetzt auf **{server}** für: {modules}.\n\nNutze {config} auf deinem Server zum Einrichten und {about} für mehr Infos.\n\n{name} wird vom **Moddy**-Team gemacht: Wenn du irgendwann mehr Optionen willst, übernimmt Moddy deine Einrichtung mit einem Klick, ohne etwas neu zu machen."
+    },
+    "staff": {
+      "moddy_only": {
+        "title": "Nur auf Moddy",
+        "description": "`{command}` läuft nicht auf {name}. Nutze sie mit @Moddy: Moddys Info-Befehle enthalten bereits alle Mini-Bots."
       }
     }
   }

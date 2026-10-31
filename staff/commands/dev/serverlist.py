@@ -1,11 +1,17 @@
-"""`/dev serverlist` — paginated list of every server Moddy is in."""
+"""`/dev serverlist` — paginated list of every server Moddy (or a mini-bot) is in.
+
+Without ``app``: Moddy's servers, with one summary line per mini-bot. With
+``app``: that mini-bot's servers, asked to the mini-bots process
+(minibots/queries.py). On a mini-bot itself (``@Bot d.servers``) it lists that
+bot's servers directly.
+"""
 
 import re
 
 import discord
 from discord import ui
 
-from staff.framework import StaffCommand, staff_command, design, CommandType
+from staff.framework import StaffCommand, SlashOption, staff_command, design, CommandType
 from staff.framework.design import make_container, title_line
 from utils import emojis
 from utils.i18n import i18n, t
@@ -16,7 +22,8 @@ _PER_PAGE = 10
 # \d{1,20} rather than a tighter \d{17,20} snowflake range: a bare shell
 # built with owner_id=0 must still match its own template (see
 # docs/guides/PERSISTENT_VIEWS.md Migration log, Step 6).
-_CID_NAV_TEMPLATE = r"moddy:devservers:nav:(?P<action>prev|next):(?P<owner>\d{1,20}):(?P<page>\d{1,6})"
+_CID_NAV_TEMPLATE = (r"moddy:devservers:nav:(?P<action>prev|next):(?P<owner>\d{1,20}):(?P<page>\d{1,6})"
+                     r"(?::(?P<app>[a-z][a-z0-9_]{1,31}))?")
 
 
 def _guarded(callback):
@@ -39,6 +46,37 @@ def _sorted_guilds(bot):
     return sorted(bot.guilds, key=lambda g: g.member_count or 0, reverse=True)
 
 
+def _rows(guilds) -> list:
+    """Live guilds -> the plain rows the view renders (same shape as a mini-bot answer)."""
+    rows = []
+    for guild in guilds:
+        joined = guild.me.joined_at if guild.me else None
+        rows.append({"id": str(guild.id), "name": guild.name, "members": guild.member_count or 0,
+                     "joined": int(joined.timestamp()) if joined else None})
+    return rows
+
+
+async def load_rows(bot, app=None):
+    """``(rows, summary_lines)`` for Moddy (``app`` None) or one mini-bot.
+    ``rows`` is None when that mini-bot did not answer."""
+    from minibots.spec import app_display_name
+    if app is None or getattr(bot, "app_id", None):
+        summary = []
+        if not getattr(bot, "app_id", None) and getattr(bot, "db", None):
+            try:
+                counts = await bot.db.count_guilds_by_app()
+            except Exception:
+                counts = {}
+            summary = [f"`{app_display_name(a)}` (`{a}`): `{n}`"
+                       for a, n in sorted(counts.items()) if a != "moddy"]
+        return _rows(_sorted_guilds(bot)), summary
+    from minibots.queries import ask
+    results = await ask(bot, "guilds", {"app": app})
+    if not results or not isinstance(results.get(app), list):
+        return None, []
+    return results[app], []
+
+
 class ServerListNavButton(ui.DynamicItem[ui.Button], template=_CID_NAV_TEMPLATE):
     """Prev/Next button on the /dev servers list. Auth: owner only.
 
@@ -47,23 +85,28 @@ class ServerListNavButton(ui.DynamicItem[ui.Button], template=_CID_NAV_TEMPLATE)
     page — no "current page" state needs to survive anywhere.
     """
 
-    def __init__(self, action: str, owner_id: int, page: int, *, disabled: bool = False):
+    def __init__(self, action: str, owner_id: int, page: int, *, disabled: bool = False,
+                 app: str = None):
         emoji = emojis.BACK if action == "prev" else emojis.NEXT
+        custom_id = f"moddy:devservers:nav:{action}:{owner_id}:{page}"
+        if app:
+            custom_id += f":{app}"
         super().__init__(
             ui.Button(
                 style=discord.ButtonStyle.secondary,
                 emoji=discord.PartialEmoji.from_str(emoji),
-                custom_id=f"moddy:devservers:nav:{action}:{owner_id}:{page}",
+                custom_id=custom_id,
                 disabled=disabled,
             )
         )
         self.action = action
         self.owner_id = owner_id
         self.page = page
+        self.app = app
 
     @classmethod
     async def from_custom_id(cls, interaction: discord.Interaction, item: ui.Button, match: re.Match):
-        return cls(match["action"], int(match["owner"]), int(match["page"]))
+        return cls(match["action"], int(match["owner"]), int(match["page"]), app=match["app"])
 
     @_guarded
     async def callback(self, interaction: discord.Interaction):
@@ -80,9 +123,15 @@ class ServerListNavButton(ui.DynamicItem[ui.Button], template=_CID_NAV_TEMPLATE)
 
         bot = interaction.client
         locale = i18n.get_user_locale(interaction)
-        guilds = _sorted_guilds(bot)
-        view = ServerListView(bot, interaction.user.id, guilds, locale, page=self.page)
-        await interaction.response.edit_message(view=view)
+        if self.app:
+            await interaction.response.defer()
+        rows, summary = await load_rows(bot, self.app)
+        view = ServerListView(bot, interaction.user.id, rows or [], locale, page=self.page,
+                              app=self.app, summary=summary)
+        if interaction.response.is_done():
+            await interaction.edit_original_response(view=view)
+        else:
+            await interaction.response.edit_message(view=view)
 
 
 class ServerListView(BaseView):
@@ -95,11 +144,15 @@ class ServerListView(BaseView):
     __persistent__ = True
 
     def __init__(self, bot=None, author_id: int = None, guilds: list = None,
-                 locale: str = "en-US", per_page: int = _PER_PAGE, page: int = 0):
+                 locale: str = "en-US", per_page: int = _PER_PAGE, page: int = 0,
+                 app: str = None, summary: list = None):
         super().__init__()  # timeout=None
         self.bot = bot
         self.author_id = author_id
+        #: plain rows ({id, name, members, joined}), see _rows()
         self.guilds = guilds or []
+        self.app = app
+        self.summary = summary or []
         self.locale = locale
         self.per_page = per_page
         self.page = page
@@ -112,8 +165,10 @@ class ServerListView(BaseView):
         page_guilds = self.guilds[start:start + self.per_page]
 
         container = make_container("developer")
+        from minibots.spec import app_display_name
+        bot_name = app_display_name(self.app or getattr(self.bot, "app_id", None) or "moddy")
         container.add_item(ui.TextDisplay(
-            f"{title_line(emojis.WEB, t('staff.dev.serverlist.title', locale=self.locale))}\n"
+            f"{title_line(emojis.WEB, t('staff.dev.serverlist.title', locale=self.locale))} • `{bot_name}`\n"
             f"**{t('staff.dev.serverlist.total', locale=self.locale, count=len(self.guilds))}**\n"
             f"-# {t('staff.dev.serverlist.page', locale=self.locale, current=self.page + 1, total=self.total_pages)}"
         ))
@@ -121,22 +176,27 @@ class ServerListView(BaseView):
         if not page_guilds:
             container.add_item(ui.TextDisplay(f"-# {t('staff.dev.serverlist.empty', locale=self.locale)}"))
         for guild in page_guilds:
-            joined = guild.me.joined_at if guild.me else None
-            joined_str = f"<t:{int(joined.timestamp())}:d>" if joined else "—"
+            joined_str = f"<t:{guild['joined']}:d>" if guild.get("joined") else "—"
             container.add_item(ui.TextDisplay(
-                f"**{guild.name}**\n"
-                f"-# `{guild.id}` • {t('staff.dev.serverlist.members', locale=self.locale)}: `{guild.member_count:,}` • {t('staff.dev.serverlist.joined', locale=self.locale)}: {joined_str}"
+                f"**{guild['name']}**\n"
+                f"-# `{guild['id']}` • {t('staff.dev.serverlist.members', locale=self.locale)}: `{guild['members']:,}` • {t('staff.dev.serverlist.joined', locale=self.locale)}: {joined_str}"
             ))
+        if self.summary:
+            container.add_item(ui.Separator(spacing=discord.SeparatorSpacing.small))
+            container.add_item(ui.TextDisplay(
+                f"**{t('staff.dev.serverlist.minibots', locale=self.locale)}**\n" + "\n".join(self.summary)
+                + f"\n-# {t('staff.dev.serverlist.minibots_hint', locale=self.locale)}"))
         self.add_item(container)
 
         if self.total_pages > 1:
             row = ui.ActionRow()
             row.add_item(ServerListNavButton(
                 "prev", self.author_id or 0, max(self.page - 1, 0), disabled=self.page == 0,
+                app=self.app,
             ))
             row.add_item(ServerListNavButton(
                 "next", self.author_id or 0, min(self.page + 1, self.total_pages - 1),
-                disabled=self.page >= self.total_pages - 1,
+                disabled=self.page >= self.total_pages - 1, app=self.app,
             ))
             self.add_item(row)
 
@@ -152,9 +212,30 @@ class ServerListCommand(StaffCommand):
     command_type = CommandType.DEV
     name = "servers"
     aliases = ("serverlist",)
-    description = "Paginated list of every server Moddy is in."
+    description = "Paginated list of every server Moddy (or one mini-bot) is in."
+    options = [
+        SlashOption("app", "string", "Mini-bot id (empty = Moddy).", required=False),
+    ]
+    defer = True
 
     async def execute(self, ctx):
-        guilds = _sorted_guilds(ctx.bot)
-        view = ServerListView(ctx.bot, ctx.author.id, guilds, ctx.locale)
+        app = (ctx.opt("app") or "").strip().lower() or None
+        if app == "moddy":
+            app = None
+        if app is not None and not getattr(ctx.bot, "app_id", None):
+            from minibots.spec import get_spec
+            if get_spec(app) is None:
+                await ctx.send(view=design.error(
+                    t("staff.dev.minibot.unknown.title", locale=ctx.locale),
+                    t("staff.dev.minibot.unknown.description", locale=ctx.locale, app=f"`{app}`")))
+                return
+        rows, summary = await load_rows(ctx.bot, app)
+        if rows is None:
+            await ctx.send(view=design.error(
+                t("staff.dev.minibot.unreachable.title", locale=ctx.locale),
+                t("staff.dev.minibot.unreachable.description", locale=ctx.locale)))
+            return
+        view = ServerListView(ctx.bot, ctx.author.id, rows, ctx.locale,
+                              app=app if not getattr(ctx.bot, "app_id", None) else None,
+                              summary=summary)
         await ctx.send(view=view)

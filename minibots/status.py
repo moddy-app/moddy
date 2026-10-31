@@ -45,7 +45,13 @@ CTRL_RELEASE = "release"
 CTRL_RELOAD_GUILD = "reload_guild"
 #: Reconnect one app (new gateway session).
 CTRL_RESTART = "restart"
-CONTROL_TYPES = (CTRL_RELEASE, CTRL_RELOAD_GUILD, CTRL_RESTART)
+#: Read-only question for every mini-bot (staff info commands on Moddy), the
+#: answer ``{app: result}`` is pushed on ``minibots:ack:<request_id>``.
+CTRL_QUERY = "query"
+CONTROL_TYPES = (CTRL_RELEASE, CTRL_RELOAD_GUILD, CTRL_RESTART, CTRL_QUERY)
+#: Methods a query may call (minibots/queries.py).
+QUERY_METHODS = ("guilds", "mutual_guilds", "guild_info", "create_invite")
+QUERY_TIMEOUT = 8
 
 # --- app states ----------------------------------------------------------------
 STATE_CONNECTING = "connecting"

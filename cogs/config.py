@@ -370,6 +370,23 @@ class ConfigMainView(BaseView):
     def _links_row(self) -> ui.ActionRow:
         """AI setup, dashboard, support and documentation — outside the container."""
         row = ui.ActionRow()
+        if getattr(self.bot, "app_id", None):
+            # A mini-bot has no dashboard (docs/features/MINIBOTS.md): its way
+            # to "more options" is Moddy itself.
+            from config import MODDY_INVITE_URL
+            row.add_item(ui.Button(
+                label=t('minibots.links.get_moddy', locale=self.locale),
+                style=discord.ButtonStyle.link, url=MODDY_INVITE_URL,
+            ))
+            row.add_item(ui.Button(
+                label=t('modules.config.main.links.support', locale=self.locale),
+                style=discord.ButtonStyle.link, url=SUPPORT_URL,
+            ))
+            row.add_item(ui.Button(
+                label=t('modules.config.main.links.docs', locale=self.locale),
+                style=discord.ButtonStyle.link, url=DOCS_URL,
+            ))
+            return row
         row.add_item(ui.Button(
             label=t('modules.config.main.links.ai_configure', locale=self.locale),
             style=discord.ButtonStyle.link,
@@ -430,7 +447,8 @@ class ConfigMainView(BaseView):
             from minibots.ownership import config_app
             from utils.minibot_transfer import build_external_module_view
             await interaction.edit_original_response(view=build_external_module_view(
-                bot, guild_id, locale, module_id, config_app(module_config)))
+                bot, guild_id, locale, module_id, config_app(module_config),
+                viewer_app=bot.module_manager.app))
             return
 
         # One combined check: baseline + module permissions guild-wide AND the

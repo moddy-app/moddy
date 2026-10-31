@@ -4195,7 +4195,8 @@
         "database": "Database",
         "errors": "Errors",
         "system": "System",
-        "extensions": "Extensions"
+        "extensions": "Extensions",
+        "minibots": "Mini-bots"
       },
       "cogs": {
         "title": "Loaded Cogs",
@@ -4254,7 +4255,9 @@
         "page": "Page {current}/{total}",
         "empty": "No servers found.",
         "members": "Members",
-        "joined": "Joined"
+        "joined": "Joined",
+        "minibots": "Mini-bots",
+        "minibots_hint": "One mini-bot's list: d.servers <id>"
       },
       "sql": {
         "done_title": "Query Executed",
@@ -4351,7 +4354,8 @@
         "title": "Server Invite",
         "open": "Open Invite",
         "fail_title": "Cannot Create Invite",
-        "no_perm": "Moddy can't create invites in {name}."
+        "no_perm": "Moddy can't create invites in {name}.",
+        "via_minibot": "Invite created by {app} (Moddy is not on this server)."
       },
       "server": {
         "title": "Server — {name}",
@@ -4372,7 +4376,8 @@
         "features": "Features",
         "minibots": "Mini-bots",
         "minibots_present": "Present",
-        "minibots_modules": "Modules run"
+        "minibots_modules": "Modules run",
+        "via_minibot": "Moddy is not on this server. Information seen by: {apps}."
       },
       "user": {
         "title": "User Information",
@@ -4410,7 +4415,9 @@
         "none": "Moddy shares no servers with {user}.",
         "top_role": "Top Role",
         "perms": "Key Permissions",
-        "no_perms": "None"
+        "no_perms": "None",
+        "minibots_unreachable": "Mini-bots unreachable: only Moddy's servers are listed.",
+        "minibot_truncated": "Search limited to the {scanned} biggest servers out of {total}."
       },
       "subscription": {
         "title": "Subscription",
@@ -5213,7 +5220,8 @@
       "support": "Moddy Support",
       "moddy_team": "Moddy Team",
       "subscription": "Moddy Subscription",
-      "stripe": "Stripe"
+      "stripe": "Stripe",
+      "minibots": "Mini-bot"
     },
     "attribution": {
       "unknown_guild": "Unknown server",
@@ -6833,7 +6841,28 @@
       },
       "external": {
         "title": "Run by {app}",
-        "body": "On this server, **{module}** is run by **{app}**. Its settings cannot be edited from Moddy until they are transferred.\n\nThe transfer keeps the configuration as is, re-posts the panels under Moddy and steps {app} back."
+        "body": "On this server, **{module}** is run by **{app}**. Its settings cannot be edited from Moddy until they are transferred.\n\nThe transfer keeps the configuration as is, re-posts the panels under Moddy and steps {app} back.",
+        "elsewhere": "On this server, **{module}** is run by **{app}**. Its settings are edited from {app}."
+      }
+    },
+    "links": {
+      "get_moddy": "Get Moddy",
+      "add_bot": "Add {name}"
+    },
+    "about": {
+      "title": "About {name}",
+      "body": "**{name}** does one thing and does it well: {modules}.\n\nEverything is set up with /config, right on your server.",
+      "moddy": "{name} is made by the **Moddy** team. Want more options, more modules and a dashboard? Moddy takes your setup over as is.",
+      "stats": "On {guilds} servers • latency {latency}"
+    },
+    "welcome": {
+      "title": "Thanks for adding {name}",
+      "body": "**{name}** is now on **{server}** for: {modules}.\n\nRun {config} on your server to set it up, and {about} to learn more.\n\n{name} is made by the **Moddy** team: if you ever want more options, Moddy takes your setup over in one click, with nothing to redo."
+    },
+    "staff": {
+      "moddy_only": {
+        "title": "Moddy-only command",
+        "description": "`{command}` does not run on {name}. Run it with @Moddy: Moddy's info commands already include every mini-bot."
       }
     }
   }

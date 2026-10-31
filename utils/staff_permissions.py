@@ -234,17 +234,22 @@ class StaffPermissionManager:
 
         return False
 
-    def parse_staff_command(self, content: str) -> Optional[tuple]:
+    def parse_staff_command(self, content: str, bot_id: Optional[int] = None) -> Optional[tuple]:
         """
         Parse staff command syntax: <@1373916203814490194> [type].[command] [args]
         Returns: (command_type: CommandType, command_name: str, args: str) or None
+
+        ``bot_id``: the mention to accept instead of Moddy's — a mini-bot answers
+        ``@BumpReminder d.jsk`` (docs/features/MINIBOTS.md).
         """
-        # Check if message starts with staff prefix
-        if not content.startswith(self.STAFF_PREFIX):
+        prefixes = ((f"<@{bot_id}>", f"<@!{bot_id}>") if bot_id is not None
+                    else (self.STAFF_PREFIX,))
+        prefix = next((p for p in prefixes if content.startswith(p)), None)
+        if prefix is None:
             return None
 
         # Remove prefix and strip
-        content = content[len(self.STAFF_PREFIX):].strip()
+        content = content[len(prefix):].strip()
 
         # Split into parts
         parts = content.split(maxsplit=1)
