@@ -31,3 +31,9 @@
   re-validated by `save_module_config`.
 - Pre-existing unrelated failures: `test_automod_images.py::test_safesearch_respects_pacing`,
   `test_translate_button.py::TestDefaultEnabled::test_runs_where_nothing_is_stored_and_can_be_paused`.
+
+## Also in this session
+- Install welcome DM (`notifications.install.body`, 5 locales): the "Moddy is
+  in beta, bugs are expected" paragraph is replaced by a plain "Found a bug or
+  have an idea? Tell us with /bug-report or on the support server." — Moddy is
+  out of beta.

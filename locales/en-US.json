@@ -5296,7 +5296,7 @@
     },
     "install": {
       "title": "Welcome to Moddy",
-      "body": "Thanks for adding **Moddy** to **{server}**!\n\nEverything is configured from one place: run {config} on your server, or use the dashboard on [**dashboard.moddy.app**]({dashboard}). Moderation, logs, welcome messages, tickets: pick a module, set it up, done.\n\n**One month of premium is on us**, free and without a card, for this server. Join our [**support server**]({support}) and open a ticket to activate it.\n\nRather not set things up yourself? Press the button below and someone from the team will configure it with you. Our [**documentation**]({docs}) walks through every module.\n\nModdy is currently in **beta**, so you may run into bugs. That is expected: tell us with {bug_report} or on the support server, and we will fix them."
+      "body": "Thanks for adding **Moddy** to **{server}**!\n\nEverything is configured from one place: run {config} on your server, or use the dashboard on [**dashboard.moddy.app**]({dashboard}). Moderation, logs, welcome messages, tickets: pick a module, set it up, done.\n\n**One month of premium is on us**, free and without a card, for this server. Join our [**support server**]({support}) and open a ticket to activate it.\n\nRather not set things up yourself? Press the button below and someone from the team will configure it with you. Our [**documentation**]({docs}) walks through every module.\n\nFound a bug or have an idea? Tell us with {bug_report} or on the support server."
     }
   },
   "support": {
