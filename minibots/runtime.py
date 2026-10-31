@@ -132,13 +132,14 @@ class MiniBotRuntime:
 
     async def _supervise(self, state: _AppState) -> None:
         import discord
-        from minibots.branding import set_brand
+        from minibots.branding import set_brand, set_standalone
         from minibots.emojis import set_active_map
         # This task's context — and every task the client spawns from it
         # (gateway, events, views) — sends with this app's emoji ids and
         # speaks under this app's name (minibots/branding.py).
         set_active_map(state.emoji_map)
         set_brand(state.spec.name)
+        set_standalone(state.spec.modules[0] if len(state.spec.modules) == 1 else None)
         backoff = BACKOFF_START
         while not self._stopping:
             client = self._make_client(state.spec)

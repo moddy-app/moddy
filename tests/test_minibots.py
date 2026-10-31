@@ -1300,3 +1300,71 @@ async def test_welcome_points_to_config_past_25_channels(monkeypatch):
 
     _c, _v, view = await mb.build_welcome(bot, guild_with(25), "fr")
     assert [i for i in view.children[0].children if isinstance(i, _d.ui.ActionRow)]
+
+
+# --------------------------------------------------------------------------- #
+# /config of a one-module app: the module screen IS /config
+# --------------------------------------------------------------------------- #
+
+class TestStandaloneConfig:
+    def _home(self):
+        from modules.configs.bump_reminder_config import BumpReminderConfigView
+        return BumpReminderConfigView(None, GUILD, 1, "en-US", reminders=[], states={})
+
+    @staticmethod
+    def _ids(view):
+        found = []
+
+        def walk(item):
+            cid = getattr(item, "custom_id", None)
+            if cid:
+                found.append(cid)
+            for child in getattr(item, "children", []) or []:
+                walk(child)
+        for child in view.children:
+            walk(child)
+        return found
+
+    @staticmethod
+    def _texts(view):
+        return [getattr(i, "content", "") for i in view.children[0].children]
+
+    def test_moddy_keeps_its_home_and_back(self):
+        view = self._home()
+        assert "moddy:bump:main:back" in self._ids(view)
+        assert self._texts(view)[0].startswith("-# ")  # breadcrumb
+
+    def test_minibot_has_no_back_and_no_trail(self):
+        from minibots import branding
+        token = branding._standalone.set("bump_reminder")
+        try:
+            view = self._home()
+        finally:
+            branding._standalone.reset(token)
+        assert "moddy:bump:main:back" not in self._ids(view)
+        assert not self._texts(view)[0].startswith("-# ")
+        assert "moddy:bump:main:add" in self._ids(view)  # the rest of the screen is intact
+
+    def test_trail_drops_the_module_name(self):
+        from minibots import branding
+        from modules.configs._common import breadcrumb
+        assert "Bump" in breadcrumb("en-US", "Bump Reminder", "Manage").content
+        token = branding._standalone.set("bump_reminder")
+        try:
+            content = breadcrumb("en-US", "Bump Reminder", "Manage").content
+        finally:
+            branding._standalone.reset(token)
+        assert "Bump" not in content and "Manage" in content
+
+    async def test_back_to_main_lands_on_the_module(self, monkeypatch):
+        from minibots import branding
+        import modules.configs._common as common
+        home = AsyncMock()
+        monkeypatch.setattr(common, "_show_module_home", home)
+        monkeypatch.setattr(common, "ack", AsyncMock())
+        token = branding._standalone.set("bump_reminder")
+        try:
+            await common.open_main_config(SimpleNamespace())
+        finally:
+            branding._standalone.reset(token)
+        assert home.await_args.args[1] == "bump_reminder"

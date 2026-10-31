@@ -210,11 +210,24 @@ async def load_before_modal(interaction: discord.Interaction,
         return False, None
 
 
+def standalone_module():
+    """The single module of the app answering (a one-feature mini-bot), or
+    None in Moddy. Its /config has no home screen: the module screen is it."""
+    from minibots.branding import standalone_module as _current
+    return _current()
+
+
 async def open_main_config(interaction: discord.Interaction) -> None:
-    """Back to the /config main screen (with module states and the limited banner)."""
+    """Back to the /config main screen (with module states and the limited banner).
+
+    In a one-module app there is no main screen: this lands on the module."""
     from cogs.config import ConfigMainView
     from utils import global_sanctions
     await ack(interaction)
+    module_id = standalone_module()
+    if module_id:
+        await _show_module_home(interaction, module_id)
+        return
     bot = interaction.client
     limited = await global_sanctions.is_limited(
         bot, user_id=interaction.user.id, guild_id=interaction.guild_id)
@@ -268,7 +281,9 @@ def breadcrumb(locale: str, module_name: Optional[str] = None, *segments: str) -
     as they are -- no backticks, it is navigation, not data.
     """
     parts = [t("modules.config.breadcrumb.root", locale=locale)]
-    if module_name:
+    # A one-module app (mini-bot): its /config *is* the module, so the module
+    # name in the trail is noise — "Config › Manage", not "Config › X › Manage".
+    if module_name and not standalone_module():
         parts.append(module_name)
     parts.extend(s for s in segments if s)
     return ui.TextDisplay("-# " + " › ".join(parts))

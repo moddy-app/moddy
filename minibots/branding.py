@@ -27,6 +27,11 @@ from typing import Optional
 
 _brand: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar("minibot_brand", default=None)
 
+#: The single module a one-feature app runs (``/config`` then *is* that module:
+#: no home screen, no "Back" to it). None in Moddy and in multi-module apps.
+_standalone: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar(
+    "minibot_standalone_module", default=None)
+
 #: "Moddy" as a name, not as part of "Moddy Team" / "Moddy Premium" / "Moddy Support".
 _NAME_RE = re.compile(r"\bModdy\b(?!\s+(?:Team|team|Premium|premium|Support|support))")
 
@@ -40,6 +45,15 @@ def current() -> Optional[str]:
 
 def set_brand(name: Optional[str]) -> None:
     _brand.set(name)
+
+
+def standalone_module() -> Optional[str]:
+    """The only module of the app speaking right now, or None (Moddy)."""
+    return _standalone.get()
+
+
+def set_standalone(module_id: Optional[str]) -> None:
+    _standalone.set(module_id)
 
 
 def rebrand(text: str, key: str = "", brand: Optional[str] = None) -> str:

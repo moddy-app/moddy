@@ -156,6 +156,14 @@ built, not before.
   with the mini-bot's `app`. The main screen shows "Get Moddy" instead of the
   dashboard links. A module Moddy (or another app) runs in that server shows
   "Managed by X here", with no button.
+  - **One-module bot (Bump Reminder)**: `/config` *is* the module screen. There
+    is no home screen, no "Back" to one, and no module name in the trail
+    (`Config › Manage`). Any leftover "back to main" lands on the module.
+  - How: the single module is a ContextVar set per client
+    (`branding.standalone_module()`), read by `modules/configs/_common.py`
+    (`breadcrumb`, `open_main_config`). A module home hides its own Back
+    button with `standalone_module()`; this is done for Bump Reminder, and a
+    future one-module bot does the same on its module's home.
 - **`/about`**: what the bot does, "made by the Moddy team", server count, and
   links (add this bot, get Moddy, support, docs).
 - **Welcome DM** to whoever added the bot (installer from the audit log,

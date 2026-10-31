@@ -101,13 +101,15 @@ class MiniBotClient(commands.Bot):
     def emoji_context(self):
         """Send with this app's emoji ids and name from code running outside
         its task (control requests, periodic jobs)."""
-        from minibots.branding import _brand
+        from minibots.branding import _brand, _standalone
         from minibots.emojis import _app_map
         token = _app_map.set(self.emoji_map)
         brand = _brand.set(self.spec.name)
+        single = _standalone.set(self.spec.modules[0] if len(self.spec.modules) == 1 else None)
         try:
             yield
         finally:
+            _standalone.reset(single)
             _brand.reset(brand)
             _app_map.reset(token)
 

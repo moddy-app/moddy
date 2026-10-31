@@ -48,7 +48,7 @@ from modules.bump_reminder import (
 from config import COLORS
 from modules.configs._common import (
     ack, check_guild_perms, config_state, crumb, crumb_segment, load_before_modal,
-    module_manage_button, open_main_config, say, show, state_accent,
+    module_manage_button, open_main_config, say, show, standalone_module, state_accent,
 )
 from utils.components_v2 import create_success_message
 from utils.emojis import (
@@ -299,7 +299,9 @@ class BumpReminderConfigView(BaseView):
     def _build_view(self):
         self.clear_items()
         container = ui.Container(accent_colour=state_accent(self.module_state))
-        container.add_item(crumb(self.locale, _MODULE_ID))
+        # Standalone (the Bump Reminder app): this IS /config — no trail.
+        if not standalone_module():
+            container.add_item(crumb(self.locale, _MODULE_ID))
 
         container.add_item(ui.TextDisplay(
             f"### {ROCKET_LAUNCH} {t('modules.bump_reminder.config.title', locale=self.locale)}"
@@ -358,13 +360,15 @@ class BumpReminderConfigView(BaseView):
         self.add_item(container)
 
         button_row = ui.ActionRow()
-        back_btn = ui.Button(
-            emoji=discord.PartialEmoji.from_str(BACK),
-            label=t('modules.config.buttons.back', locale=self.locale),
-            style=discord.ButtonStyle.secondary, custom_id=_CID_MAIN_BACK,
-        )
-        back_btn.callback = self.on_back
-        button_row.add_item(back_btn)
+        # No "Back" in a one-module app: there is no home screen to go back to.
+        if not standalone_module():
+            back_btn = ui.Button(
+                emoji=discord.PartialEmoji.from_str(BACK),
+                label=t('modules.config.buttons.back', locale=self.locale),
+                style=discord.ButtonStyle.secondary, custom_id=_CID_MAIN_BACK,
+            )
+            back_btn.callback = self.on_back
+            button_row.add_item(back_btn)
 
         add_btn = ui.Button(
             emoji=discord.PartialEmoji.from_str(ADD),
